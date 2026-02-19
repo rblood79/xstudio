@@ -1,7 +1,7 @@
 # XStudio CSS Architecture - ITCSS
 
-**Date:** 2025-11-08
-**Version:** 2.0 (Post Phase 1-3 Refactoring)
+**Date:** 2025-11-08 (초판) / 2026-02-19 (최종 갱신)
+**Version:** 2.1 (Post Phase 1-3 Refactoring, Phase 4 상태 명시)
 
 ---
 
@@ -256,14 +256,17 @@ src/builder/styles/
 - [x] ITCSS directory structure created
 - [x] Master index.css entry point
 
-### **⏳ Pending (Future Phases)**
+### **⏳ Phase 4: 보류 (Deferred)**
 
-- [ ] Extract utilities from inspector.css (425 duplicates → 35 utilities)
-- [ ] Migrate main/sidebar/inspector to modules/
-- [ ] Create base reset.css
-- [ ] Create layout grid.css
+> **상태**: 보류 — Tailwind v4 + tv() 패턴 도입으로 유틸리티 추출 방식이 변경됨. ADR-002 참조.
+> **판단 근거**: inspector.css 유틸리티 추출보다 tv() 기반 컴포넌트 스타일링이 우선. @layer 커버리지는 95%로 충분.
+
+- [ ] ~~Extract utilities from inspector.css (425 duplicates → 35 utilities)~~ → tv() 패턴으로 대체 검토
+- [ ] Migrate main/sidebar/inspector to modules/ (낮은 우선순위)
+- [ ] Create base reset.css (Tailwind preflight로 대체 가능)
+- [ ] ~~Create layout grid.css~~ → Tailwind grid 유틸리티 사용
 - [ ] Consolidate @import chains
-- [ ] Bundle size optimization (30% target)
+- [ ] Bundle size optimization (30% target) — 현재 측정 미실시
 
 ---
 
@@ -333,10 +336,11 @@ export default defineConfig({
 
 ## 📚 Related Documentation
 
-- [CSS Baseline Snapshot](./CSS_BASELINE_SNAPSHOT.md) - Pre-refactoring state
-- [Layer Usage Patterns](./LAYER_USAGE_PATTERNS.md) - @layer analysis
-- [CSS Refactoring Report](./CSS_REFACTORING_REPORT.md) - Original plan
-- [CLAUDE.md](../CLAUDE.md) - Main project guidelines
+- [ADR-002: Styling Approach](../../adr/002-styling-approach.md) - ITCSS + tailwind-variants 결정 배경
+- [ENGINE_CHECKLIST.md](../../ENGINE_CHECKLIST.md) - CSS Level 3 지원 현황 (88%)
+- [CLAUDE.md](../../../CLAUDE.md) - 프로젝트 가이드라인
+
+> **참고**: 이전에 참조되던 `CSS_BASELINE_SNAPSHOT.md`, `LAYER_USAGE_PATTERNS.md`, `CSS_REFACTORING_REPORT.md`는 Phase 1-3 완료 후 별도 생성되지 않았으며, 해당 내용은 본 문서의 Performance Metrics 섹션에 통합됨.
 
 ---
 
@@ -344,9 +348,10 @@ export default defineConfig({
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1 | 2026-02-19 | Phase 4 상태 명시 (보류/대체), 미존재 참조 문서 정리, 날짜 보정 |
 | 2.0 | 2025-11-08 | Phase 1-3 complete: Theme separation, hardcoded color removal, ITCSS structure |
 | 1.0 | 2025-11-08 | Initial baseline documentation |
 
 ---
 
-**Next Steps:** Phase 4 - Testing & Validation
+**현재 상태**: Phase 1-3 완료. Phase 4는 Tailwind v4 + tv() 도입으로 방향 재검토 중.

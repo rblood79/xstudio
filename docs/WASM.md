@@ -108,7 +108,7 @@
 |------|------|------------|
 | CanvasKit (`canvaskit-wasm`) | 디자인 노드/오버레이 렌더링 | `skia/initCanvasKit.ts` |
 | Rust WASM (`xstudio_wasm`) | Taffy 레이아웃(Flex/Grid) 가속 | `wasm-bindings/rustWasm.ts`, `wasm-bindings/taffyLayout.ts` |
-| SpatialIndex WASM | 뷰포트 컬링/히트테스트 가속(옵션) | `wasm-bindings/spatialIndex.ts` (현재 기본 비활성화) |
+| SpatialIndex WASM | 뷰포트 컬링/히트테스트 가속(옵션) | `wasm-bindings/spatialIndex.ts` (현재 기본 비활성화 — Phase 5 CanvasKit 내부 AABB 컬링이 뷰포트 컬링 대체. 라쏘 선택 `query_rect` 재연동만 잔존 과제) |
 
 ### 기존 캐싱 메커니즘
 
@@ -304,8 +304,8 @@ export function getRenderMode(): RenderMode { return 'skia'; }
 - [x] Rust + wasm-pack 프로젝트 초기화 _(rustc 1.93.0, wasm-pack 0.14.0)_
 - [x] Vite WASM 플러그인 설정 _(vite-plugin-wasm 3.5.0)_
 - [x] 빌드 파이프라인 검증 (dev + production) _(pkg/xstudio_wasm_bg.wasm 70KB)_
-- [ ] 벤치마크 유틸리티 작성
-- [ ] 기준선 데이터 수집 (4개 시나리오)
+- [ ] ~~벤치마크 유틸리티 작성~~ — **보류**: CanvasKit Phase 5 도입 후 렌더링 파이프라인이 변경되어 기존 벤치마크 시나리오 재설계 필요. 현재 성능 측정은 Chrome DevTools Performance 탭 + console.time 기반으로 수행 중
+- [ ] ~~기준선 데이터 수집 (4개 시나리오)~~ — **보류**: 벤치마크 유틸리티 보류와 동일 사유
 - [x] Feature Flag 인프라 구축 _(featureFlags.ts, 하드코딩 플래그)_
 - [ ] CI/CD에 `wasm:build` 스텝 추가
 

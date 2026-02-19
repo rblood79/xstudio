@@ -1,19 +1,24 @@
 # WebGL 레이아웃 엔진 근본 원인 재분석 (main 기준, 2026-02)
 
+> **최종 갱신**: 2026-02-19
+> **검증 상태**: 7개 전항목 코드 검증 완료 ✅ (2026-02-19)
+> **관련 문서**: [ENGINE_CHECKLIST.md](../ENGINE_CHECKLIST.md) § 레이아웃 엔진 구조적 근본 원인
+
 ## TL;DR
 
 main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적인 레이아웃 불일치가 구조적으로 발생할 수 있는 지점**은 아래 7가지다.
 
-1. **Taffy 입력 공간을 항상 Definite로 고정**해 `auto` 컨텍스트가 사라짐
-2. **Flex/Grid 부모 높이를 항상 강제 주입**해 cross-axis/stretch 결과가 왜곡됨
-3. **CSS 단위 해석이 px 중심으로 축소**되어 `rem/em/vh/vw/%/calc/var()` 계열이 오차를 유발
-4. **Flex 2-pass 재계산 트리거 조건의 비교 기준이 부정확**해 과/미재계산 발생
-5. **Block 엔진 inline-run 구현이 실제 CSS inline formatting context와 다름**
-6. **`width/height: auto, fit-content` 처리 경로가 엔진별로 분기되어 일관성이 깨짐**
-7. **부모 `display`/`flex-direction` 변화 시 자식 배치 규칙이 blockification/엔진경계에서 틀어질 수 있음**
+| # | 근본 원인 | 검증 | 핵심 증거 |
+|---|-----------|------|-----------|
+| 1 | Taffy 입력 공간을 항상 Definite로 고정 | ✅ CONFIRMED | `TaffyFlexEngine.ts:438-439`, `BuilderCanvas.tsx:720-725` |
+| 2 | Flex/Grid 부모 높이를 항상 강제 주입 | ✅ CONFIRMED | `TaffyFlexEngine.ts:434-439`, `TaffyGridEngine.ts:626-631` |
+| 3 | CSS 단위 해석이 px 중심으로 축소 | ✅ CONFIRMED | `TaffyFlexEngine.ts:205-216` (`parseCSSProp`), `cssValueParser.ts:295-359` (미사용) |
+| 4 | Flex 2-pass 재계산 트리거 비교 기준 부정확 | ✅ CONFIRMED | `TaffyFlexEngine.ts:352` |
+| 5 | Block 엔진 inline-run 구현이 CSS와 다름 | ✅ CONFIRMED | `DropflowBlockEngine.ts:157-250`, `226-231` |
+| 6 | `auto/fit-content` 처리 경로 엔진별 분기 | ✅ CONFIRMED | `DropflowBlockEngine.ts:262-268`, `cssValueParser.ts:306-324` |
+| 7 | blockification 경계에서 자식 배치 규칙 틀어짐 | ✅ CONFIRMED | `index.ts:131-144`, `193-221` |
 
 ---
-
 
 ## 컨테이너-자식 상관관계 관점의 핵심 원인 (요약)
 
@@ -33,6 +38,11 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
 
 ## 1) AvailableSpace를 항상 Definite로 주는 계약 문제
 
+> **검증 결과: ✅ CONFIRMED**
+> - `BuilderCanvas.tsx:720-725` — `availableWidth`/`availableHeight` 항상 수치 계산
+> - `TaffyFlexEngine.ts:438-439` — `parentStyle.width = availableWidth; parentStyle.height = availableHeight;`
+> - `TaffyFlexEngine.ts:453` — `taffy.computeLayout(rootHandle, availableWidth, availableHeight)` — 항상 Definite
+
 ### 관찰
 - WASM 브리지에서 `compute_layout` 호출 시 width/height를 모두 `AvailableSpace::Definite`로 고정한다.
 - 즉, 부모가 CSS적으로 `height:auto`인 상황이라도 레이아웃 계산 관점에서는 항상 "확정된 공간"이 된다.
@@ -42,9 +52,30 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
   줄바꿈, stretch, overflow 판단이 CSS Preview와 달라질 수 있다.
 - 특히 flex/grid에서 cross-axis sizing 및 min-content 계열 계산이 왜곡될 여지가 크다.
 
+### 검증된 코드 경로
+
+```typescript
+// BuilderCanvas.tsx:720-725 — 항상 수치 계산
+const availableWidth = isBodyParent
+  ? pageWidth - parentBorderVal.left - parentBorderVal.right - parentPadding.left - parentPadding.right
+  : parentContentWidth - parentPadding.left - parentPadding.right;
+const availableHeight = isBodyParent
+  ? pageHeight - parentBorderVal.top - parentBorderVal.bottom - parentPadding.top - parentPadding.bottom
+  : parentContentHeight - parentPadding.top - parentPadding.bottom;
+
+// TaffyFlexEngine.ts:438-439 — Definite 할당
+parentStyle.width = availableWidth;
+parentStyle.height = availableHeight;
+```
+
 ---
 
 ## 2) Flex/Grid 엔진에서 부모 height를 항상 주입하는 문제
+
+> **검증 결과: ✅ CONFIRMED**
+> - `TaffyFlexEngine.ts:434-439` — `parentStyle.height = availableHeight` 무조건 할당
+> - `TaffyGridEngine.ts:626-631` — 동일한 무조건 할당 패턴
+> - auto height 체크 조건문 **없음**
 
 ### 관찰
 - `TaffyFlexEngine`과 `TaffyGridEngine` 모두 부모 스타일에
@@ -57,9 +88,30 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
   반대로 텍스트 2줄 높이가 충분히 반영되지 않는 케이스가 생긴다.
 - 버튼/폼 컴포넌트처럼 intrinsic height에 민감한 요소에서 오차가 체감된다.
 
+### 검증된 코드 경로
+
+```typescript
+// TaffyFlexEngine.ts:434-439
+const parentStyle = elementToTaffyStyle(parent, parentComputed);
+parentStyle.display = 'flex';
+parentStyle.width = availableWidth;
+parentStyle.height = availableHeight;  // ← 무조건 주입, auto 체크 없음
+
+// TaffyGridEngine.ts:626-631 — 동일 패턴
+const parentStyle = elementToTaffyGridStyle(parent, parentComputed);
+parentStyle.display = 'grid';
+parentStyle.width = availableWidth;
+parentStyle.height = availableHeight;  // ← 무조건 주입
+```
+
 ---
 
 ## 3) CSS 단위 해석 축소(파서)로 인한 전역 오차
+
+> **검증 결과: ✅ CONFIRMED**
+> - `TaffyFlexEngine.ts:205-216` — `parseCSSProp()`이 `parseFloat()` 기반으로 단위 제거
+> - `cssValueParser.ts:295-359` — 올바른 `resolveCSSSizeValue()` 존재하나 Taffy 엔진에서 **미사용**
+> - `"2rem" → 2`, `"50vh" → 50`, `"calc(...)" → NaN → undefined` 변환 확인
 
 ### 관찰
 - Flex/Grid 엔진의 `parseCSSProp()`는 문자열 값에 대해 `parseFloat` 기반으로 숫자만 추출한다.
@@ -72,9 +124,32 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
 - 레이아웃 엔진 교체(Dropflow/Taffy)와 무관하게,
   "입력 스타일 정규화 계층"에서 이미 오차가 만들어지는 구조다.
 
+### 검증된 코드 경로
+
+```typescript
+// TaffyFlexEngine.ts:205-216 — 문제의 파서
+function parseCSSProp(value: unknown): number | string | undefined {
+  if (value === undefined || value === null || value === '' || value === 'auto') return undefined;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    if (value.endsWith('%')) return value;
+    const num = parseFloat(value);  // ← "2rem" → 2, "50vh" → 50
+    if (!isNaN(num)) return num;
+  }
+  return undefined;
+}
+
+// cssValueParser.ts:295-359 — 올바른 리졸버 (미사용)
+// resolveCSSSizeValue(): rem/em/vh/vw/calc/var/clamp/min/max 모두 지원
+```
+
 ---
 
 ## 4) Flex 2-pass 보정의 비교 기준 오류
+
+> **검증 결과: ✅ CONFIRMED**
+> - `TaffyFlexEngine.ts:352` — `layout.width`를 `availableWidth`(부모 너비)와 비교
+> - 올바른 비교 대상은 자식별 1차 enrichment 기준 너비
 
 ### 관찰
 - 2-pass 재계산 필요 여부를 판단할 때,
@@ -86,9 +161,24 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
   반대로 필요한 케이스에서 정확한 조건을 놓칠 수 있다.
 - 결과적으로 고정 폭 버튼 + 텍스트 줄바꿈 시 높이 재측정이 일관되지 않다.
 
+### 검증된 코드 경로
+
+```typescript
+// TaffyFlexEngine.ts:352
+if (Math.abs(layout.width - availableWidth) > WIDTH_TOLERANCE) {
+    needsSecondPass = true;  // ← availableWidth = 부모 전체 너비
+    break;
+}
+// 올바른 비교: layout.width vs 해당 자식의 1차 enrichment 시 사용된 width
+```
+
 ---
 
 ## 5) DropflowBlockEngine의 inline-run 단순화로 인한 스펙 편차
+
+> **검증 결과: ✅ CONFIRMED**
+> - `DropflowBlockEngine.ts:226-231` — baseline을 middle과 동일하게 처리
+> - `DropflowBlockEngine.ts:399-453` — segment 경계에서 margin collapse 없음
 
 ### 관찰
 - inline-block 혼합 경로(`_mixedCalculate` + `layoutInlineRun`)는
@@ -101,9 +191,30 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
   줄 간격, y-offset, wrapping 포인트가 CSS와 달라질 수 있다.
 - 즉, Block 엔진 교체 후에도 "CSS 렌더러와 동형"이 되지 않는 이유가 남는다.
 
+### 검증된 코드 경로
+
+```typescript
+// DropflowBlockEngine.ts:226-231 — baseline ≈ middle 단순화
+switch (verticalAlign) {
+  case 'baseline':
+  default:
+    // baseline 정렬 시 middle과 동일한 공식 사용
+    yOffset = (line.lineHeight - outerH) / 2 + margin.top;
+    break;
+}
+
+// DropflowBlockEngine.ts:399-453 — segment 경계에서 margin collapse 없음
+// inline→block 전환 시 CSS 규격의 margin collapse 미구현
+```
+
 ---
 
 ## 6) `width/height: auto, fit-content` 처리의 엔진 간 비일관성
+
+> **검증 결과: ✅ CONFIRMED**
+> - Taffy: `auto` → `undefined` (Taffy가 올바르게 해석)
+> - Dropflow: `fit-content` → enrichment 실패 시 `0`으로 붕괴 (`resolveCSSLength:262-268`)
+> - `cssValueParser.ts:306-307` (auto→undefined), `322-324` (fit-content→sentinel -2)
 
 ### 관찰
 - Taffy 경로는 `auto`를 `undefined`로 보내고,
@@ -117,9 +228,29 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
 - 특히 부모 display가 바뀌면서 엔진이 교체되는 순간,
   자식이 같은 속성을 갖고도 width/height 결과가 튀는 현상이 생길 수 있다.
 
+### 검증된 코드 경로
+
+```typescript
+// TaffyFlexEngine.ts:29 — auto → undefined (Taffy가 올바르게 처리)
+if (value === 'auto') return undefined;
+
+// DropflowBlockEngine.ts:262-268 — intrinsic 키워드 → 0 붕괴
+function resolveCSSLength(value: unknown, available: number): number {
+  if (typeof value === 'number') {
+    if (value === FIT_CONTENT || value === MIN_CONTENT || value === MAX_CONTENT) return 0;  // ← 붕괴
+    return value;
+  }
+}
+```
+
 ---
 
 ## 7) 부모 display/flex-direction 변화 시 자식 배치 규칙 경계 문제
+
+> **검증 결과: ✅ CONFIRMED**
+> - `index.ts:131-144` — blockification 규칙 자체는 올바르게 구현
+> - `index.ts:193-221` — `calculateChildrenLayout`에서 적용되나 경계 처리 불완전
+> - 엔진 간 위임(delegation) 시 blockification 미재적용, 컨텍스트 미추적
 
 ### 관찰
 - 디스패처는 부모가 flex/grid일 때 자식 `display`에 blockification을 적용한다.
@@ -132,6 +263,32 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
   자식의 "원래 inline/inline-block 의도"가 blockification + 엔진 경계에서 달라져
   줄바꿈, 폭 수축(shrink), 높이 확장(stretch) 결과가 CSS 기대와 어긋날 수 있다.
 - 즉, "부모 display/방향 변경 시 자식이 깨진다"는 제보와 직접 연결되는 구조다.
+
+### 검증된 코드 경로
+
+```typescript
+// index.ts:131-144 — blockification 규칙 (올바름)
+export function blockifyDisplay(display: string | undefined): string | undefined {
+  switch (display) {
+    case 'inline': return 'block';
+    case 'inline-block': return 'block';
+    case 'inline-flex': return 'flex';
+    case 'inline-grid': return 'grid';
+    default: return display;
+  }
+}
+
+// index.ts:193-221 — 적용 코드 (경계 문제)
+if (isFlexOrGridContainer(display)) {
+  const blockifiedChildren = children.map((child) => {
+    const blockified = blockifyDisplay(childDisplay);
+    return { ...child, props: { ...child.props, style: { ...childStyle, display: blockified } } };
+  });
+  results = engine.calculate(parent, blockifiedChildren, ...);
+}
+// ⚠️ 엔진 간 위임(delegation) 시 blockification 미재적용
+// ⚠️ LayoutContext.parentDisplay는 설정되지만 엔진 내부에서 미사용
+```
 
 ---
 
@@ -154,13 +311,15 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
 
 ## 우선순위 제안 (원인 제거 관점)
 
-1. **브리지/엔진 계약 수정**: available height를 auto/indefinite로 전달할 수 있는 경로 확보
-2. **부모 height 강제 주입 제거**: 실제 CSS 지정이 있을 때만 height 전달
-3. **스타일 정규화 통합**: `cssResolver + cssValueParser`를 Taffy 입력 변환의 단일 소스로 사용
-4. **intrinsic 정책 통합**: `auto/fit-content/min-content/max-content`를 엔진 공통 규칙으로 처리
-5. **2-pass 기준 교정**: 자식별 1차 입력폭 대비 실제폭 비교로 변경
-6. **blockification 경계 검증**: display 전환 시 자식 의도(display semantics) 보존 규칙 정의
-7. **inline formatting 고도화**: line box/baseline/white-space 규칙을 Dropflow 경로와 정합
+| 순위 | 작업 | 관련 원인 | 심각도 |
+|------|------|-----------|--------|
+| 1 | **브리지/엔진 계약 수정**: available height를 auto/indefinite로 전달할 수 있는 경로 확보 | #1 | HIGH |
+| 2 | **부모 height 강제 주입 제거**: 실제 CSS 지정이 있을 때만 height 전달 | #2 | HIGH |
+| 3 | **스타일 정규화 통합**: `cssResolver + cssValueParser`를 Taffy 입력 변환의 단일 소스로 사용 | #3 | HIGH |
+| 4 | **intrinsic 정책 통합**: `auto/fit-content/min-content/max-content`를 엔진 공통 규칙으로 처리 | #6 | HIGH |
+| 5 | **2-pass 기준 교정**: 자식별 1차 입력폭 대비 실제폭 비교로 변경 | #4 | HIGH |
+| 6 | **blockification 경계 검증**: display 전환 시 자식 의도(display semantics) 보존 규칙 정의 | #7 | MEDIUM |
+| 7 | **inline formatting 고도화**: line box/baseline/white-space 규칙을 Dropflow 경로와 정합 | #5 | MEDIUM |
 
 이 순서대로 진행해야 "증상 패치"가 아닌 근본 개선이 가능하다.
 
@@ -192,6 +351,36 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
 - `position: absolute/fixed` 자식의 containing block 해석 차이
 - grid `repeat(auto-fill/auto-fit)`와 gap 계산에서 트랙 수 차이
 - margin collapse가 block 경계/세그먼트 전환에서 CSS와 다르게 적용
+
+## 수정 추적 (Remediation Tracker)
+
+> 최종 갱신: 2026-02-19
+
+| RC # | 근본 원인 | 수정 상태 | 권장 실행 순서 | 관련 파일 | 비고 |
+|------|-----------|----------|---------------|-----------|------|
+| RC-1 | AvailableSpace 항상 Definite | 📋 미착수 | 2단계 | `BuilderCanvas.tsx:720-725`, `TaffyFlexEngine.ts:438-439,453` | RC-2와 함께 수정 권장 |
+| RC-2 | 부모 height 강제 주입 | 📋 미착수 | 2단계 | `TaffyFlexEngine.ts:434-439`, `TaffyGridEngine.ts:626-631` | auto height 체크 조건문 추가 필요 |
+| RC-3 | CSS 단위 px 축소 | 📋 미착수 | **1단계** (최우선) | `TaffyFlexEngine.ts:205-216`, `cssValueParser.ts:295-359` | `resolveCSSSizeValue()` 연결만으로 해결 가능 |
+| RC-4 | 2-pass 재계산 기준 부정확 | 📋 미착수 | 3단계 | `TaffyFlexEngine.ts:352` | 자식별 1차 입력폭 대비 실제폭 비교로 변경 |
+| RC-5 | inline-run baseline 단순화 | 📋 미착수 | 4단계 | `DropflowBlockEngine.ts:157-250,226-231,399-453` | 장기 개선 |
+| RC-6 | auto/fit-content 엔진별 분기 | 📋 미착수 | 3단계 | `DropflowBlockEngine.ts:262-268`, `cssValueParser.ts:306-324` | RC-4와 함께 수정 |
+| RC-7 | blockification 경계 | 📋 미착수 | 4단계 | `index.ts:131-144,193-221` | 장기 개선 |
+
+### 검증 테스트 케이스 (RC별)
+
+수정 완료 시 아래 시나리오로 CSS Preview ↔ Canvas 비교 검증:
+
+| RC # | 테스트 시나리오 | 기대 결과 |
+|------|----------------|-----------|
+| RC-1 | flex 컨테이너(`height:auto`) + 자식 3개 → 콘텐츠 기반 높이 | Canvas 높이 = CSS Preview 높이 |
+| RC-2 | flex 컨테이너(`height:auto`) + `align-items:stretch` + 자식 `height:auto` | 자식 높이가 콘텐츠 기반으로 결정 (과확장 없음) |
+| RC-3 | 자식 `width:50%`, `padding:2rem`, `margin:1em` | 단위 환산 후 px 결과가 CSS Preview와 일치 |
+| RC-4 | flex row + inline-block 자식 + 텍스트 줄바꿈 | 2-pass 후 자식 너비가 정확히 재계산 |
+| RC-5 | block 컨테이너 + inline 텍스트 2줄 + `vertical-align:baseline` | baseline 위치가 CSS Preview와 일치 |
+| RC-6 | 부모 flex + 자식 `width:fit-content` | fit-content가 0으로 붕괴하지 않음 |
+| RC-7 | 부모 `display:flex→block` 전환 + 자식 `display:inline-block` | 전환 후 자식 배치가 CSS Preview와 일치 |
+
+---
 
 ## 실무 권장: 버그 리포트 최소 재현 템플릿
 

@@ -1,4 +1,9 @@
 > **성능 문서 네비게이션**: [인덱스](./PERFORMANCE_INDEX.md) | [태스크](./PERFORMANCE_TASKS.md) | [계획](./PERFORMANCE_PLAN.md) | [Phase 1-4](./PERF_PHASE_1_4.md) | [Phase 5-8](./PERF_PHASE_5_8.md) | [결정사항](./PERF_DECISIONS.md) | [아이디어](./PERF_IDEAS.md) | [보충](./PERF_SUPPLEMENT.md)
+>
+> **문서 구조 안내** (2026-02-19):
+> - 본 인덱스가 성능 문서의 **단일 진입점**입니다
+> - 8개 성능 문서는 역할별로 분리되어 있으며, 중복 내용이 있을 경우 본 인덱스 기준
+> - 관련: [`docs/explanation/architecture/PERF_ARCHITECTURE.md`](../../explanation/architecture/PERF_ARCHITECTURE.md) (아키텍처 레벨 성능 분석), [`docs/explanation/architecture/PERF_PROBLEM.md`](../../explanation/architecture/PERF_PROBLEM.md) (근본 원인 분석)
 
 # XStudio Builder 성능 최적화 가이드
 

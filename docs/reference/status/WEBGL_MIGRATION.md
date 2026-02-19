@@ -1,6 +1,6 @@
 # WebGL Canvas Component Migration Status
 
-> **Last Updated**: 2026-02-06
+> **Last Updated**: 2026-02-19
 > **Branch**: claude/migrate-panel-components-webgl-96QYI
 
 ## Overview
@@ -89,7 +89,7 @@ This document tracks the migration progress of React Aria Components from the if
 | Component | Priority | Complexity | Notes |
 |-----------|----------|------------|-------|
 | ToggleButton | ~~High~~ | ~~Medium~~ | ✅ 렌더링, 선택, 크기 동기화 확인 완료 (2026-02-04) |
-| ToggleButtonGroup | ~~High~~ | ~~Medium~~ | ✅ container-only 패턴, 선택, width/height 스타일 적용 확인 완료 (2026-02-04) |
+| ToggleButtonGroup | ~~High~~ | ~~Medium~~ | ✅ container-only 패턴, 선택, width/height 스타일 적용 확인 완료 (2026-02-04). ⚠️ `indicator` prop 캔버스 미구현 — [구현 계획](../components/TOGGLEBUTTONGROUP.md#캔버스-selectionindicator-구현-계획) 참조 |
 | Badge | Low | Low | Text with background |
 
 #### Form Controls (7 remaining)
@@ -372,6 +372,97 @@ apps/builder/src/builder/workspace/canvas/layout/
 ├── LayoutEngine.ts         # Yoga v3 Flexbox
 └── GridLayout.tsx          # CSS Grid manual
 ```
+
+---
+
+## Component Indicator 캔버스 구현 현황
+
+> **작성일**: 2026-02-19
+
+일부 컴포넌트는 `indicator` (SelectionIndicator, 토글 dot 등) 시각 피드백을 포함한다. CSS 웹과 캔버스 간 구현 정합성 추적.
+
+| 컴포넌트 | Indicator 타입 | CSS 웹 | 캔버스 | 비고 |
+|----------|---------------|--------|--------|------|
+| **Tabs** | 선택 bar (2-4px) | ✅ `SelectionIndicator` | ✅ `PixiTabs.tsx` `drawIndicator()` | 구현 완료 |
+| **Switch** | 토글 dot + 트랙 | ✅ `.indicator` + `:before` | ✅ Spec shapes | 구현 완료 |
+| **Checkbox** | 체크마크 | ✅ `::before` pseudo | ✅ Spec line shapes | 구현 완료 |
+| **Radio** | 내부 dot | ✅ `::after` pseudo | ✅ Spec circle shapes | 구현 완료 |
+| **Badge** | Dot 모드 | ✅ `[data-dot]` | ✅ Spec shapes | 구현 완료 |
+| **ToggleButtonGroup** | 배경 하이라이트 슬라이드 | ✅ `SelectionIndicator` | ❌ **미구현** | [구현 계획](../components/TOGGLEBUTTONGROUP.md#캔버스-selectionindicator-구현-계획) |
+
+### 공통 제약
+
+- **애니메이션 미지원**: 캔버스는 정적 렌더링 (`ENGINE_CHECKLIST.md` §13: Transitions/Animations ❌)
+- CSS `transition` 기반 슬라이드/페이드 효과는 캔버스에서 재현하지 않음
+- 디자인 도구 특성상 정적 indicator 위치 표시로 충분
+
+---
+
+## CSS 웹 ↔ 캔버스 정합성 분석 (2026-02-19)
+
+> 전체 정합성: **62%** (66개 컴포넌트 가중 평균, v2 코드 검증 후 기준 동일)
+> 목표: **~93%** (v2 보정: M-1 제거, Phase A→QW-2/3 의존성 반영)
+> 상세 로드맵: [ENGINE_CHECKLIST.md § 컴포넌트 수준 정합성 로드맵](../../ENGINE_CHECKLIST.md#컴포넌트-수준-정합성-로드맵-css-웹--캔버스)
+
+### 주요 결정사항
+
+| # | 결정 | 근거 |
+|---|------|------|
+| 1 | **애니메이션은 최후순위** (Phase Z) | CSS transition/keyframe 인프라 부재. 정적 디자인 도구 특성상 우선순위 낮음 |
+| 2 | **상태 표현은 CSS 웹 방식 준수** | Spec에 `state: ComponentState` 파라미터 이미 존재. ElementSprite `'default'` 하드코딩만 해제하면 됨 |
+| 3 | **아이콘은 Icon Font 방식 도입** (Pencil 참조) | CanvasKit ParagraphBuilder로 codepoint 렌더링. SVG 변환 불필요, 추가 번들 최소화 |
+| 4 | **FancyButton 제거** | Button의 엄밀한 부분집합 (variants 4/8, sizes 3/5). 참조 0건. gradient 필요 시 Button variant 추가 |
+| 5 | **ScrollBox는 CSS overflow 문제** | 별도 컴포넌트 불필요. 클리핑+오프셋+store 인프라 존재, 스크롤바 UI + 이벤트만 추가 |
+
+### 정합성 갭 원인
+
+| 원인 | 영향도 | 해결 Phase |
+|------|--------|-----------|
+| 컬렉션 아이템 미렌더링 | -8.2% | Phase C |
+| 상태 시각화 부재 (hover/focus/pressed) | -6.8% | Phase A |
+| 아이콘 미렌더링 | -5.5% | Phase B |
+| **레이아웃 엔진 구조적 원인 (7건)** | **-3~5%** | **RC-1~7** |
+| 애니메이션 인프라 부재 | -4.0% | Phase Z (최후) |
+| 그라디언트/복합 렌더링 (Color 계열) | -3.5% | Phase G |
+| 오버레이 아키텍처 부재 | -3.0% | Phase F |
+
+### 레이아웃 엔진 구조적 근본 원인 (7건 검증 완료)
+
+> 상세: [docs/analysis/webgl-layout-root-cause-2026-02.md](../../../docs/analysis/webgl-layout-root-cause-2026-02.md)
+> 로드맵: [ENGINE_CHECKLIST.md § RC 기반 실행 순서](../../ENGINE_CHECKLIST.md#권장-실행-순서-rc-기반)
+
+CSS 속성 지원(88%)과 별개로, 레이아웃 계산 파이프라인에 7건의 구조적 불일치 존재.
+
+| RC# | 원인 | 심각도 |
+|-----|------|--------|
+| RC-1 | AvailableSpace 항상 Definite 고정 | HIGH |
+| RC-2 | 부모 height 무조건 강제 주입 | HIGH |
+| RC-3 | CSS 단위 px 중심 parseFloat 축소 | HIGH |
+| RC-4 | 2-pass 트리거 비교 기준 부정확 | HIGH |
+| RC-5 | inline-run baseline ≈ middle 단순화 | MEDIUM |
+| RC-6 | auto/fit-content 엔진별 분기 처리 | HIGH |
+| RC-7 | blockification 경계 처리 불완전 | MEDIUM |
+
+### 렌더링 정밀도 추가 개선 (Quick Win + Medium) — v2 보정
+
+> 상세: [ENGINE_CHECKLIST.md §15 렌더링 정밀도 개선](../../ENGINE_CHECKLIST.md)
+
+specShapeConverter / nodeRenderers 레벨 수정으로 **전 66개 컴포넌트**에 일괄 적용.
+
+| 구분 | 항목 | 예상 효과 | 난이도 | 의존성 |
+|------|------|-----------|--------|--------|
+| **QW-1** | border-style 패스스루 (dashed/dotted/double) | +1.5% | ~1시간 | 독립 ✅ |
+| **QW-2** | disabled 상태 opacity 일괄 적용 | +2.5% | ~2시간 | **Phase A 선행** ⚠️ |
+| **QW-3** | focus ring (outline) 렌더링 | +3.5% | ~4시간 | **Phase A 선행** ⚠️ |
+| ~~**M-1**~~ | ~~다중 레이어 box-shadow~~ | ~~+5-8%~~ → **제거** | — | **v2: 이미 동작 확인** ✅ |
+| **M-2** | box-shadow spread 파라미터 | +2-3% | 4-8시간 | 독립 |
+| **M-3** | image shape 렌더링 (aspectRatio, objectFit) | +3-5% | 1-2일 | 독립 |
+| **M-4** | CSS 변수 캐시 레이어 (theme 전환 정합성) | +2-3% | 1일 | 독립 |
+| **M-5** | 상태별 스타일 일관성 (42/62 spec 리팩터) | +2% | 4-8시간 | Phase A 권장 |
+| **M-6** | partial border (border-top/right/bottom/left) | +1% | 4-8시간 | 독립 |
+
+**v2 보정 도달 시나리오**:
+- 현재: **62%** → QW-1: **63.5%** → Phase A+QW-2/3: **73.5%** → Phase B~G: **91%** → M-2~6: **~93%**
 
 ---
 

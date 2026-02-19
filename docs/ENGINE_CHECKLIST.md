@@ -457,9 +457,18 @@
 
 | 우선순위 | 항목 | 이유 |
 |----------|------|------|
-| P0 | `overflow: scroll/auto` | 스크롤 가능한 컨테이너가 캔버스에서 미동작 |
+| P0 | `overflow: scroll/auto` | 클리핑+오프셋+store 인프라 존재, 스크롤바 UI + 이벤트 바인딩만 추가 필요 → Phase E |
 | ~~P0~~ | ~~`text-overflow: ellipsis`~~ | ✅ v1.3에서 구현 완료 |
 | P0 | `position: fixed` | 뷰포트 고정 UI 미동작 |
+
+### P2 개선 대상 (컴포넌트 Indicator 캔버스 정합성)
+
+| 우선순위 | 항목 | 이유 |
+|----------|------|------|
+| P2 | ToggleButtonGroup `indicator` | 웹 Preview에서 SelectionIndicator가 동작하나 캔버스에서 미구현. [구현 계획](reference/components/TOGGLEBUTTONGROUP.md#캔버스-selectionindicator-구현-계획) |
+
+> **참고**: Tabs, Switch, Checkbox, Radio, Badge의 indicator는 이미 캔버스에서 구현됨.
+> 캔버스는 정적 렌더링이므로 CSS transition 기반 슬라이드 애니메이션은 재현 대상이 아님 (§13 참조).
 
 ### P1 개선 대상 (사용 빈도 높은 속성)
 
@@ -546,6 +555,456 @@
 
 ---
 
+## 컴포넌트 수준 정합성 로드맵 (CSS 웹 ↔ 캔버스)
+
+> **작성일**: 2026-02-19
+> **현재 전체 정합성**: 약 62% (66개 컴포넌트 가중 평균)
+> **목표**: ~93% (v2 보정: Phase A~G + QW + M-2~6. M-1 제거 — 이미 동작 확인)
+
+### 카테고리별 현황 (v2 코드 검증 기반 보정)
+
+| 카테고리 | 컴포넌트 수 | v1 추정 | v2 보정 | Δ | 주요 갭 | 보정 근거 |
+|----------|------------|---------|---------|---|---------|-----------|
+| Primitives (Box/Text/Image) | 3 | 88% | **90%** | +2 | spec image skip | multi-shadow 이미 동작 확인 |
+| Basic UI | 12 | 75% | **72%** | -3 | 아이콘, focus ring, 상태 | icon/focus 갭 정밀 반영 |
+| Form Controls | 11 | 75% | **71%** | -4 | 드롭다운, 아이콘 | ComboBox/Select dropdown 갭 정밀 반영 |
+| Layout | 7 | 70% | **69%** | -1 | chevron 아이콘, expand | — |
+| Navigation | 3 | 65% | **66%** | +1 | — | border-style 렌더링 확인 |
+| Misc | 5 | 56% | **57%** | +1 | scrollbar UI | scroll clipping 인프라 확인 |
+| Data Display | 8 | 49% | **52%** | +3 | 컬렉션 아이템 미생성 | Card elevated multi-shadow 확인 |
+| Overlay | 5 | 49% | **51%** | +2 | arrow, backdrop | Dialog/Popover shadow multi-layer 확인 |
+| Date/Time | 5 | 45% | **44%** | -1 | 날짜 셀 미렌더링 | — |
+| Color | 7 | 41% | **40%** | -1 | 2D/원형 그라디언트 미지원 | — |
+
+### 피처 차원별 현황 (v2 코드 검증 기반 보정)
+
+| 차원 | v1 추정 | v2 보정 | Δ | 비고 |
+|------|---------|---------|---|------|
+| 구조/레이아웃 | 85% | **85%** | 0 | Taffy + Dropflow 엔진. CSS 엔진 88%. ⚠️ [7건 구조적 근본 원인](#레이아웃-엔진-구조적-근본-원인-7건-전수-코드-검증-완료) 해결 시 93~97% |
+| 색상/Variant | 80% | **80%** | 0 | Spec variant + CSS variable reader |
+| 타이포그래피 | 80% | **82%** | +2 | CanvasKit Paragraph API — font-variant, font-stretch 포함 확인 |
+| 렌더링 정밀도 (shadow/outline/border) | 60% | **65%** | **+5** | **multi-shadow ✅ 이미 동작**, border 8종 ✅ 확인. 잔존 갭: focus ring, shadow spread, spec border-style 패스스루 |
+| 시각 장식 (아이콘/pseudo) | 50% | **50%** | 0 | 아이콘 폰트 도입으로 해결 가능 |
+| 상태 표현 | 35% | **33%** | **-2** | **62개 spec 중 20개만 state 활용 (32%)**, 42개는 `_state` unused |
+| 애니메이션 | 5% | **5%** | 0 | 최후순위 (§13 참조) |
+
+### 개선 로드맵
+
+> **원칙**: 애니메이션은 최후순위. 상태 표현은 기존 CSS 웹 방식을 따름.
+
+#### 기존 로드맵 (기능 단위)
+
+| Phase | 작업 | 예상 향상 | 누적 목표 | 우선순위 |
+|-------|------|----------|----------|----------|
+| **A** | **상태 표현 연결** — ElementSprite `'default'` 하드코딩 → `ComponentState` 전달. 스타일 패널 state selector 추가 | **+5~6%** | **67~68%** | P1 |
+| **B** | **아이콘 폰트 도입** — Pencil 방식: Icon Font Node + CanvasKit Paragraph. Lucide/Material Symbols 지원 | **+5~6%** | **72~74%** | P1 |
+| **C** | **컬렉션 아이템 Shape 생성** — Table/ListBox/Menu/Tree/Calendar 자식 렌더링 | **+6~8%** | **78~82%** | P2 |
+| **D** | **FancyButton 제거** — Button의 엄밀한 부분집합, gradient variant로 대체 | 코드 정리 | — | P2 |
+| **E** | **overflow: scroll/auto 완성** — 스크롤바 UI + wheel/touch 이벤트 (엔진 인프라 이미 존재) | **+1~2%** | **79~84%** | P2 |
+| **F** | **Overlay 개선** — arrow, backdrop 렌더링 | **+2~3%** | **~84%** | P3 |
+| **G** | **Color 그라디언트** — ColorArea/ColorWheel 2D/원형 그라디언트 | **+3~4%** | **~86%** | P3 |
+| **Z** | **애니메이션 인프라** — transition/keyframe 프레임 기반 (최후순위) | **+5~10%** | **~95%** | **P4 (최후)** |
+
+#### 추가 개선 방안: Quick Win (렌더링 정밀도)
+
+> specShapeConverter / nodeRenderers / effects 레벨의 누락 전달 수정.
+> 개별 컴포넌트 수정 불필요, 전체 Spec 컴포넌트에 일괄 적용됨.
+
+| Phase | 작업 | 예상 향상 | 난이도 | 우선순위 |
+|-------|------|----------|--------|----------|
+| **QW-1** | **border style 전달** — `specShapeConverter`에서 `BorderShape.style` (dashed/dotted) → `SkiaNodeData.box.strokeStyle` 전달. 현재 1줄 누락 | **+1.5%** | 🟢 1줄 | P1 |
+| **QW-2** | **disabled opacity 일괄 적용** — `state === 'disabled'` 시 `saveLayer(opacity: 0.38)` effect 추가. 모든 Spec 공통. ⚠️ **Phase A 선행 필수** (state 하드코딩 해제 후 동작) | **+2.5%** | 🟢 | P1 |
+| **QW-3** | **focus ring 렌더링** — `SkiaNodeData.box`에 `outline` 필드 추가 → `nodeRenderers`에서 외곽 stroke. 50+ 컴포넌트 영향. ⚠️ **Phase A 선행 필수** (focusVisible state 전달 후 동작) | **+3.5%** | 🟡 | P1 |
+
+#### 추가 개선 방안: Medium (렌더링 정밀도 + 인프라)
+
+| Phase | 작업 | 예상 향상 | 난이도 | 우선순위 |
+|-------|------|----------|--------|----------|
+| ~~**M-1**~~ | ~~multi-layer shadow~~ — **v2 코드 검증에서 이미 동작 확인**: `effects.ts`가 shadow 배열 전체를 순회하며 `saveLayer()` 호출. `parseAllBoxShadows()`가 다중 shadow 파싱. 잔존 이슈는 CSS 변수 fallback 완성도 → M-4에서 처리 | ~~+5~8%~~ → **+0% (제거)** | ✅ 완료 | — |
+| **M-2** | **shadow spread radius** — `ShadowShape.spread` 렌더러 전달. CanvasKit 네이티브 미지원 → sigma 확장 워크어라운드 | **+2~3%** | 🟡 | P2 |
+| **M-3** | **image shape 렌더링** — `specShapeConverter` `case 'image'` skip → `getSkImage()` + `drawImageRect()` 구현. imageCache 재활용 | **+3~5%** | 🟡 | P2 |
+| **M-4** | **CSS variable 실시간 캐시** — `:root` 전체 `--*` 변수 메모리 캐시 + 테마 변경 시 무효화. hardcoded fallback 의존 탈피 | **+2~3%** | 🟡 | P3 |
+| **M-5** | **state 파라미터 일관성 강제** — 62개 spec 중 42개 `_state` 미사용 (v2 검증) → 공통 `applyStateEffect()` 헬퍼 추출 | **+2%** | 🟡 반복작업 | P3 |
+| **M-6** | **partial border 지원** — `BorderShape.sides` (top/right/bottom/left) → 개별 Line 렌더링 | **+1%** | 🟡 | P3 |
+
+### Phase A 상세: 상태 표현 연결
+
+Spec에 이미 `state: ComponentState` 파라미터가 존재하며, 각 컴포넌트 render.shapes()가 state별 색상을 반환함.
+
+**변경 대상:**
+
+| # | 파일 | 변경 내용 | 난이도 |
+|---|------|----------|--------|
+| 1 | `ElementSprite.tsx` | `'default'` → `previewState` 변수로 교체 | 🟢 |
+| 2 | Zustand store (신규 또는 기존) | `previewState: ComponentState` 상태 추가 | 🟢 |
+| 3 | `StylesPanel.tsx` | State selector UI (Default\|Hover\|Pressed\|Disabled\|Focus) 추가 | 🟡 |
+
+**동작 방식:**
+- **스타일 패널**: 사용자가 state 전환 → store 업데이트 → render.shapes(…, state) 호출 → 캔버스 갱신
+- **캔버스 인터랙션**: PixiJS pointerOver/pointerDown → ComponentState 변환 → CSS 웹과 동일한 상태 전환
+
+### Phase B 상세: 아이콘 폰트 도입 (Pencil 방식 참조)
+
+**Pencil의 아이콘 렌더링 파이프라인:**
+```
+Icon Name ("activity") → Codepoint (57400) → String.fromCodePoint()
+→ CanvasKit ParagraphBuilder (font: "Lucide") → Skia render
+→ getFillPath() → 벡터 경로 캐싱
+```
+
+**XStudio 적용 방안:**
+
+| # | 작업 | 비고 |
+|---|------|------|
+| 1 | 아이콘 폰트 번들 (Lucide WOFF, ~100KB) | CanvasKit fontManager에 등록 |
+| 2 | `icon_font` Shape 타입 추가 | specShapeConverter에 codepoint → text 변환 |
+| 3 | Spec shapes에 아이콘 적용 | Select chevron, Disclosure chevron, Dialog close 등 |
+| 4 | 아이콘 피커 UI (선택사항) | Pencil 방식: GridVirtuoso + Fuse.js 검색 |
+
+### Phase D 상세: FancyButton 제거
+
+FancyButton은 Button의 **엄밀한 부분집합** (variants 4/8, sizes 3/5, 특수 기능 0개). 템플릿/프리셋 참조 0건.
+
+**제거 대상 파일:**
+- `packages/specs/src/components/FancyButton.spec.ts`
+- `apps/builder/src/builder/workspace/canvas/ui/PixiFancyButton.tsx`
+- `ElementSprite.tsx` 내 `UI_FANCYBUTTON_TAGS` + dispatch
+- index.ts export 3곳
+
+gradient 효과가 필요하면 Button에 `variant: 'gradient'` 추가.
+
+### Phase E 상세: overflow: scroll/auto 완성
+
+현재 인프라 현황:
+
+| 레이어 | 상태 | 구현 파일 |
+|--------|------|----------|
+| 클리핑 | ✅ | BoxSprite `clipChildren` + CanvasKit `clipRect()` |
+| scroll offset | ✅ | `canvas.translate(-scrollLeft, -scrollTop)` |
+| 콘텐츠 측정 | ✅ | `computeContentBounds()` → maxScroll 계산 |
+| Zustand store | ✅ | `scrollState.ts` (scrollTop/Left/max) |
+| Taffy overflow 전달 | ❌ | TaffyStyle에 타입 있으나 엔진에서 미전달 |
+| **스크롤바 UI** | ❌ | 미구현 |
+| **이벤트 바인딩** | ❌ | wheel/touch → scrollBy() 미연결 |
+
+**필요 작업**: 스크롤바 Skia 렌더링 + wheel 이벤트 바인딩 + Taffy에 overflow 전달
+
+### Quick Win 상세: 렌더링 정밀도 개선
+
+> 개별 컴포넌트 수정 없이, specShapeConverter/nodeRenderers 레벨에서 **전체 Spec 컴포넌트에 일괄 적용**되는 수정.
+
+#### QW-1: border style 전달 (1줄)
+
+`BorderShape`에 `style?: 'solid' | 'dashed' | 'dotted'` 타입이 존재하나 렌더러에 전달되지 않음.
+
+```typescript
+// specShapeConverter.ts — BorderShape 처리부에 1줄 추가
+if (shape.style) {
+  targetNode.box.strokeStyle = shape.style;
+}
+```
+
+| 대상 파일 | `specShapeConverter.ts` (line ~265) |
+|---|---|
+| 영향 | Separator(dashed), DropZone(dashed border), TextField(underline) |
+
+#### QW-2: disabled opacity 일괄 적용 (⚠️ Phase A 선행 필수)
+
+모든 Spec이 `disabled: { opacity: 0.38 }` 정의. 캔버스에서 미적용.
+
+> **의존성**: `state === 'disabled'` 조건이므로 ElementSprite의 `'default'` 하드코딩이 해제(Phase A)된 후에만 동작.
+
+```typescript
+// specShapeConverter.ts — specShapesToSkia() 함수 끝부분
+function specShapesToSkia(shapes, theme, width, height, state?: ComponentState): SkiaNodeData {
+  const root = convertShapes(shapes, ...);
+  if (state === 'disabled') {
+    root.effects = [...(root.effects || []), { type: 'opacity', value: 0.38 }];
+  }
+  return root;
+}
+```
+
+| 대상 파일 | `specShapeConverter.ts`, `ElementSprite.tsx` (isDisabled → state 전달) |
+|---|---|
+| 영향 | 전체 66개 컴포넌트 disabled 상태 |
+
+#### QW-3: focus ring / outline 렌더링 (⚠️ Phase A 선행 필수)
+
+50+ 컴포넌트가 `focusVisible: { outline: '2px solid var(--primary)', outlineOffset: '2px' }` 정의. 캔버스에서 outline 렌더링 **제로**.
+
+> **의존성**: focus ring은 `state === 'focusVisible'`일 때만 표시. Phase A(state 연결)이 선행되어야 동작.
+
+```typescript
+// types.ts — SkiaNodeData.box 확장
+interface SkiaBox {
+  // ... 기존 필드
+  outline?: {
+    color: Float32Array;
+    width: number;
+    offset: number;
+  };
+}
+
+// nodeRenderers.ts — renderBoxNode() 끝부분
+if (node.box.outline) {
+  const { color, width, offset } = node.box.outline;
+  const outlinePaint = new ck.Paint();
+  outlinePaint.setStyle(ck.PaintStyle.Stroke);
+  outlinePaint.setStrokeWidth(width);
+  outlinePaint.setColor(color);
+  const outlineRect = ck.LTRBRect(
+    -offset, -offset,
+    node.width + offset, node.height + offset
+  );
+  canvas.drawRRect(
+    ck.RRectXY(outlineRect, node.box.borderRadius + offset, node.box.borderRadius + offset),
+    outlinePaint
+  );
+}
+```
+
+| 대상 파일 | `types.ts`, `specShapeConverter.ts`, `nodeRenderers.ts` |
+|---|---|
+| 영향 | 전체 interactive 컴포넌트 (Button, Input, Select, Checkbox...) |
+
+### Medium 상세: 렌더링 인프라 확장
+
+#### ~~M-1: multi-layer shadow~~ (v2 코드 검증: 이미 동작 — 제거)
+
+> **v2 검증 결과**: `effects.ts:31` `for (const effect of effects)` 루프가 shadow 배열 전체를 순회하며 `saveLayer()` 호출. `styleConverter.ts:1040-1045` `parseAllBoxShadows()`가 콤마 구분 다중 shadow를 정확히 파싱. `specShapeConverter.ts:370-391`에서도 각 ShadowShape를 개별 effect로 추가.
+>
+> **잔존 이슈**: `cssVariableReader.ts` 하드코딩 fallback 값이 다중 shadow를 포함하는지 여부 → M-4 (CSS variable 캐시)에서 일괄 해결.
+
+#### M-2: shadow spread radius
+
+`ShadowShape`에 `spread?: number` 필드 존재하나 렌더러에서 무시.
+
+| 항목 | 상세 |
+|---|---|
+| 타입 정의 | `packages/specs/src/types/shape.types.ts:147` — `ShadowShape.spread?: number` |
+| 렌더 경로 | `specShapeConverter.ts:370-391` — shadow case, `382-383`에서 `sigmaX/Y = shape.blur / 2` 계산 시 spread 미반영 |
+| 워크어라운드 | CanvasKit에 네이티브 spread 없음 → `adjustedSigma = sigma + abs(spread) * 0.2` |
+
+#### M-3: image shape 렌더링
+
+`specShapeConverter.ts`에서 `case 'image'`를 skip 처리 중. imageCache + CanvasKit Image API 이미 존재.
+
+| 항목 | 상세 |
+|---|---|
+| skip 위치 | `specShapeConverter.ts:462-464` — `case 'image': // Skip - not supported in simple box rendering` |
+| 타입 정의 | `packages/specs/src/types/shape.types.ts:284-293` — `ImageShape` 인터페이스 |
+| 영향 | Avatar, Badge(이미지 배경), Card(커버 이미지) |
+
+```typescript
+// specShapeConverter.ts:463 — 현재
+case 'image': // Skip — not supported
+
+// 수정
+case 'image': {
+  const skImage = imageCache.get(shape.src);
+  if (skImage) {
+    children.push({
+      type: 'image',
+      x: shape.x, y: shape.y,
+      width: resolve(shape.width), height: resolve(shape.height),
+      image: { skImage, contentWidth: skImage.width(), contentHeight: skImage.height() },
+    });
+  }
+  break;
+}
+```
+
+#### M-4: CSS variable 실시간 캐시
+
+`cssVariableReader.ts`(4,470줄)가 하드코딩 fallback에 의존. 테마 변경 시 캔버스에 미반영.
+
+| 항목 | 상세 |
+|---|---|
+| fallback 위치 | `cssVariableReader.ts:180-195` — `FALLBACK_COLORS` 상수 (하드코딩) |
+| label fallback | `cssVariableReader.ts:216-220` — `LABEL_STYLE_FALLBACKS` 상수 |
+| 영향 | 전체 컴포넌트 색상 정확도 + 커스텀 테마 지원 |
+
+```typescript
+// cssVariableReader.ts — 캐시 레이어 추가
+const CSS_VAR_CACHE = new Map<string, string>();
+
+export function cacheCSSVariables(): void {
+  const computed = getComputedStyle(document.documentElement);
+  for (const prop of computed) {
+    if (prop.startsWith('--')) {
+      CSS_VAR_CACHE.set(prop, computed.getPropertyValue(prop).trim());
+    }
+  }
+}
+
+// 테마 변경 이벤트 시 → cacheCSSVariables() 호출
+```
+
+#### M-5: state 파라미터 일관성 강제
+
+62개 spec 중 42개가 `_state` (underscore = unused, v2 검증 보정). 20개만 state 활용 (32%). 공통 헬퍼 추출로 일관성 확보.
+
+| 항목 | 상세 |
+|---|---|
+| state 활용 예시 | `packages/specs/src/components/Button.spec.ts:169` — `shapes: (props, variant, size, state = 'default') => {` (state 사용) |
+| 미사용 예시 | 42개 spec에서 `_state` 패턴으로 무시됨 |
+| 신규 파일 | `packages/specs/src/utils/stateEffect.ts` |
+| 영향 | Phase A(상태 연결) 선행 필수 — 42개 spec 리팩터 |
+
+```typescript
+// packages/specs/src/utils/stateEffect.ts (신규)
+export function applyStateToShapes(shapes: Shape[], state: ComponentState): Shape[] {
+  if (state === 'disabled') return shapes.map(s => ({ ...s, opacity: 0.38 }));
+  if (state === 'hover') return shapes.map(s => applyHoverColor(s));
+  if (state === 'pressed') return shapes.map(s => applyPressedColor(s));
+  if (state === 'focusVisible') return shapes.map(s => addFocusOutline(s));
+  return shapes;
+}
+```
+
+#### M-6: partial border 지원
+
+`BorderShape`에 `sides?: { top?, right?, bottom?, left? }` 타입 존재하나 미구현.
+
+| 항목 | 상세 |
+|---|---|
+| 타입 정의 | `packages/specs/src/types/shape.types.ts:191-196` — `sides?: { top?, right?, bottom?, left? }` |
+| 변환 경로 | `specShapeConverter.ts:251-292` — border case 처리 (sides 미참조) |
+| 렌더 경로 | `nodeRenderers.ts:748-763` — border 렌더링 (전 변 동일 적용) |
+| 영향 | Separator(top-only), TextField(bottom-only underline) |
+
+### 정합성 도달 예측 (v2 보정)
+
+> **v2 핵심 보정**: M-1 제거 (이미 동작), QW-2/QW-3 → Phase A 선행 필수
+
+```
+현재 기준 (v2 코드 검증)                            62%
+
+Phase A + Quick Win (의존성 반영):
+  QW-1. border style 전달 (독립)                    +1.5%
+  A. 상태 표현 연결 (QW-2/3 선행조건)               +4%
+  QW-2. disabled opacity (Phase A 이후)             +2.5%
+  QW-3. focus ring (Phase A 이후)                   +3.5%
+                                           소계 ≈ +11.5%
+
+기능 로드맵 (Phase B~G):
+  B. 아이콘 폰트                                    +5%
+  C. 컬렉션 아이템                                  +7%
+  E. overflow scroll                                +1.5%
+  F. Overlay 개선                                   +4%
+  G. Color 그라디언트                                  (F에 통합)
+                                           소계 ≈ +17.5%
+
+Medium (M-2~6, M-1 제거):
+  M-2. shadow spread                                +2~3%
+  M-3. image shape                                  +3~5%
+  M-4. CSS var 캐시                                  +2~3%
+  M-5. state 일관성 (42개 spec)                      +2%
+  M-6. partial border                               +1%
+                                           소계 ≈ +2% (중복 감안)
+
+※ M-1(multi-layer shadow) 제거: v2 코드 검증에서 이미 동작 확인
+```
+
+| 단계 | 작업 | 증분 | 누적 | 비고 |
+|------|------|------|------|------|
+| 현재 | — | — | **62%** | v2 코드 검증 후 기준 동일 |
+| 1 | QW-1 (border-style) | +1.5% | **63.5%** | 유일한 독립 Quick Win |
+| 2 | Phase A (state 연결) | +4% | **67.5%** | **QW-2/QW-3 선행 조건** |
+| 3 | QW-2 + QW-3 | +6% | **73.5%** | Phase A 이후 가능 |
+| 4 | Phase B (icon font) | +5% | **78.5%** | 독립 |
+| 5 | Phase C (collection items) | +7% | **85.5%** | 독립 |
+| 6 | Phase E (overflow scroll) | +1.5% | **87%** | 독립 |
+| 7 | Phase F+G (overlay + color) | +4% | **91%** | — |
+| 8 | M-2~M-6 | +2% | **93%** | M-1 제거 (이미 동작) |
+| 9 | Phase Z (animation) | +3% | **~96%** | 최후순위 |
+
+### 권장 실행 순서 (v2 보정)
+
+> **v1 → v2 변경 요약**: Phase A를 1단계로 앞당김 (QW-2/QW-3 선행조건), M-1 제거
+
+```
+v1 (이전):                                  v2 (보정):
+─────────────────────                      ─────────────────────
+1단계: QW-1→QW-2→QW-3  (1~2일)           1단계: QW-1 → Phase A → QW-2 → QW-3  (3~4일)
+2단계: Phase A→B        (1주)              2단계: Phase B                         (3~4일)
+3단계: M-1→M-3→C→E     (2주)              3단계: M-3 → Phase C → Phase E         (2주)
+4단계: M-2→M-4~6→F→G   (2주)              4단계: M-2 → M-4~6 → F → G            (2주)
+5단계: Phase Z          (최후)              5단계: Phase Z                         (최후)
+```
+
+### Phase 의존성 그래프
+
+```
+QW-1 (border-style)  ────────────── 독립 ✅ (즉시 실행)
+Phase A (state 연결) ────────────── 독립 ✅ (즉시 실행)
+  ├── QW-2 (disabled opacity) ──── Phase A 이후 ⚠️
+  └── QW-3 (focus ring)      ──── Phase A 이후 ⚠️
+Phase B (icon font)  ────────────── 독립 ✅
+Phase C (collection) ────────────── 독립 ✅
+M-1 (multi-shadow)   ────────────── 이미 동작 ✅ (제거)
+M-3 (image shape)    ────────────── 독립 ✅
+M-5 (state 일관성)   ────────────── Phase A 이후 권장
+```
+
+> **Phase A를 1단계로 앞당기는 이유**: QW-2(disabled opacity, +2.5%)와 QW-3(focus ring, +3.5%)의 합산 **+6%** 효과가 Phase A 없이는 발생하지 않음. Phase A 자체 비용(ElementSprite 1줄 + store 추가)이 낮아 선행 실행이 효율적.
+
+---
+
+## 레이아웃 엔진 구조적 근본 원인 (7건, 전수 코드 검증 완료)
+
+> **상세 분석**: [docs/analysis/webgl-layout-root-cause-2026-02.md](analysis/webgl-layout-root-cause-2026-02.md)
+> **검증일**: 2026-02-19 | **검증 결과**: 7건 전항목 ✅ CONFIRMED
+
+CSS Level 3 속성 지원(88%)과 별도로, **레이아웃 계산 파이프라인 자체**에 구조적 불일치가 존재한다.
+이 문제들은 개별 CSS 속성 구현과 무관하게 모든 컴포넌트의 배치·크기 계산에 영향을 준다.
+
+### 불변식 위반 요약
+
+| 불변식 | 기대 동작 | 실제 구현 |
+|--------|----------|----------|
+| **A. Available Space 모델 일치** | 부모/자식 동일한 sizing 모델 사용 | 부모는 Definite 고정, 자식은 auto/intrinsic 혼합 |
+| **B. Display 변경 시 자식 의미 보존** | blockification 후에도 자식 의도 유지 | 엔진 경계에서 내부/외부 display 의미 변질 |
+| **C. Intrinsic 키워드 엔진 간 일관성** | auto/fit-content 동일 규칙 해석 | Taffy: auto→undefined, Dropflow: fit-content→0 붕괴 |
+
+### 7건 근본 원인 목록
+
+| # | 근본 원인 | 관련 파일 | 심각도 | 구조/레이아웃 차원 영향 |
+|---|-----------|----------|--------|----------------------|
+| **RC-1** | AvailableSpace 항상 Definite 고정 | `TaffyFlexEngine.ts:438-439`, `BuilderCanvas.tsx:720-725` | HIGH | stretch/overflow/min-content 왜곡 |
+| **RC-2** | 부모 height 무조건 강제 주입 | `TaffyFlexEngine.ts:434-439`, `TaffyGridEngine.ts:626-631` | HIGH | cross-axis stretch, auto height 무시 |
+| **RC-3** | CSS 단위 px 중심 `parseFloat` 축소 | `TaffyFlexEngine.ts:205-216` | HIGH | rem/em/vh/vw/calc 전역 오차 |
+| **RC-4** | 2-pass 트리거 비교 기준 부정확 | `TaffyFlexEngine.ts:352` | HIGH | 과/미재계산 → 텍스트 줄바꿈 높이 불일치 |
+| **RC-5** | inline-run baseline ≈ middle 단순화 | `DropflowBlockEngine.ts:226-231` | MEDIUM | y-offset 누적, line break 불연속 |
+| **RC-6** | auto/fit-content 엔진별 분기 처리 | `DropflowBlockEngine.ts:262-268` | HIGH | enrichment 실패 시 width/height 0 붕괴 |
+| **RC-7** | blockification 경계 처리 불완전 | `index.ts:131-144, 193-221` | MEDIUM | display 전환 시 자식 shrink/stretch 불일치 |
+
+### 구조/레이아웃 차원 영향도
+
+현재 **구조/레이아웃 차원 85%** (피처 차원별 현황 참조)에서 이 7건의 근본 원인이 해결되면:
+
+| 원인 그룹 | 해결 시 예상 향상 | 비고 |
+|-----------|------------------|------|
+| RC-1 + RC-2 (available space / height 주입) | +3~5% | 가장 광범위한 영향. stretch/auto height 정확도 회복 |
+| RC-3 (단위 정규화 통합) | +2~3% | `cssValueParser.resolveCSSSizeValue()` 연결만으로 해결 가능 |
+| RC-4 (2-pass 기준) | +1~2% | flex row + inline-block 조합에서 가시적 개선 |
+| RC-6 (intrinsic 통합) | +1~2% | fit-content 0 붕괴 방지 |
+| RC-5 + RC-7 (inline-run / blockification) | +1% | 엣지 케이스, 장기 개선 |
+
+> **합계 예상**: 구조/레이아웃 차원 85% → **93~97%** (전체 정합성에 +3~5% 기여)
+
+### 권장 실행 순서 (RC 기반)
+
+```
+1단계: RC-3 (단위 정규화) — 최소 비용 최대 효과 (cssValueParser 연결)
+2단계: RC-1 + RC-2 (available space / height) — 엔진 계약 수정
+3단계: RC-6 (intrinsic 통합) + RC-4 (2-pass 기준)
+4단계: RC-7 (blockification 경계) + RC-5 (inline formatting 고도화)
+```
+
+---
+
 ## 변경 이력
 
 | 날짜 | 버전 | 설명 |
@@ -557,3 +1016,18 @@
 | 2026-02-19 | 1.4 | Phase 7 추가 구현 (7개 ❌→✅): cm/mm/in/pt/pc 물리 단위, ch/ex 단위, font shorthand, border-style double/groove/ridge/inset/outset, clip-path 기본 도형, color-mix(). 총 ✅151, ⚠️11, ❌24 (81%) |
 | 2026-02-19 | 1.5 | display:contents 구현: pageChildrenMap 플래튼, depthMap 보정, ElementSprite/BoxSprite 렌더 스킵. ✅152, ⚠️11, ❌23 (82%) |
 | 2026-02-19 | 1.6 | Phase 9 구현 (12개 ❌→✅): Logical Properties 7종 (LTR→물리 매핑), font-variant (fontFeatures), font-stretch (FontWidth), lab/lch/oklch (색상 공간 변환), color() 함수, env() (safe-area), !important 우선순위. 총 ✅164, ⚠️11, ❌11 (**88%**) — 목표 85% 초과 달성 |
+| 2026-02-19 | 1.7 | **컴포넌트 수준 정합성 로드맵** 추가 (CSS 웹 ↔ 캔버스 62% → 목표 80%). Phase A~Z 개선 계획: 상태 표현 연결, 아이콘 폰트 도입 (Pencil 방식), 컬렉션 아이템 생성, FancyButton 제거, overflow scroll 완성, 애니메이션 최후순위 확정. P0 overflow 설명 갱신 (인프라 존재 확인) |
+| 2026-02-19 | 1.8 | **추가 개선 방안** 추가: Quick Win 3개 (border style 전달, disabled opacity, focus ring) + Medium 6개 (multi-shadow, shadow spread, image shape, CSS var 캐시, state 일관성, partial border). 목표 상향 80% → **92%**. 정합성 도달 예측 + 권장 실행 순서 추가 |
+| 2026-02-19 | **1.9** | **v2 코드 검증 기반 보정**: (1) M-1 multi-shadow 이미 동작 확인 → 제거 (2) QW-2/QW-3 → Phase A 선행 필수 발견 → 실행 순서 변경 (3) state 활용 spec 20/62개(32%) 정밀 측정 (4) 카테고리별·차원별 수치 보정 (5) Phase 의존성 그래프 추가. 목표 상향 92% → **93%** |
+| 2026-02-19 | **2.0** | **레이아웃 엔진 구조적 근본 원인 7건 추가** ([분석 문서](analysis/webgl-layout-root-cause-2026-02.md) 전수 코드 검증): RC-1~7 전항목 CONFIRMED. 불변식 위반 요약, 심각도·영향도 분류, 구조/레이아웃 차원 85%→93~97% 예측, RC 기반 실행 순서 추가 |
+
+### v1 → v2 기준 변경 사유
+
+v1.0(2026-02-18)에서 v2.0(2026-02-19)으로의 수치 변동은 **측정 기준 엄격화**에 의한 것이며, 실제 코드 회귀가 아님:
+
+| 변경 항목 | v1.x 기준 | v2.0 기준 | 이유 |
+|-----------|----------|----------|------|
+| CSS 속성 지원율 | API 존재 여부 판정 | **코드 경로 실행 검증** (실제 parseCSSProp 호출 → Taffy/Dropflow 입력까지 전달 확인) | 선언만 있고 미연결된 속성 제외 |
+| 컴포넌트 정합성 | Spec 파일 존재 기준 | **state 활용 + 렌더 경로 비교** (CSS Preview ↔ Canvas 시각 비교 기반) | 62 Spec 중 state 활용 20개(32%) 정밀 측정 |
+| Quick Win 분류 | 독립 실행 가정 | **의존성 그래프 기반** (QW-2/QW-3은 Phase A 선행 필수 발견) | 실행 순서 보정 |
+| M-1 multi-shadow | ❌ 미지원 | **이미 동작 확인 → 항목 제거** | 코드 검증으로 오보 정정 |

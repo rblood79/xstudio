@@ -320,11 +320,151 @@ return (
 - `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts` - auto 기본값 명시
 - `src/builder/components/property/PropertyUnitInput.tsx` - 키워드 유닛 버그 수정
 
+## 캔버스 SelectionIndicator 구현 계획
+
+> **상태**: 📋 Planning
+> **우선순위**: P2
+> **작성일**: 2026-02-19
+> **선행 참조**: PixiTabs.tsx `drawIndicator()` 패턴
+
+### 현재 상태
+
+| 영역 | Indicator 지원 | 비고 |
+|------|---------------|------|
+| **CSS 웹 (Preview)** | ✅ | React Aria 1.13.0 `SelectionIndicator` + CSS transition |
+| **캔버스 (CanvasKit/Skia)** | ❌ | `PixiToggleButtonGroup.tsx`에 배경만 렌더링, indicator 미구현 |
+
+### 문제
+
+`indicator={true}` prop이 설정된 ToggleButtonGroup은 웹 Preview에서 선택된 버튼 뒤에 하이라이트 배경 박스가 슬라이드 이동하지만, 캔버스에서는 해당 시각 피드백이 없음.
+
+### CSS 웹 동작 (참조)
+
+```css
+/* ToggleButtonGroup.css — indicator 활성 시 */
+&[data-indicator="true"] {
+  .react-aria-ToggleButton .react-aria-SelectionIndicator {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: var(--radius-sm);
+    background: var(--surface-container-high);
+    box-shadow: var(--shadow-sm);
+    transition: translate 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                width 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                height 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+```
+
+### 구현 방안
+
+#### 참조 패턴: PixiTabs.tsx drawIndicator()
+
+```typescript
+// PixiTabs.tsx:229-239 (이미 구현됨)
+const drawIndicator = useCallback(
+  (g: PixiGraphics, tab: TabData, isSelected: boolean) => {
+    g.clear();
+    if (!isSelected) return;
+    const width = isVertical ? sizePreset.indicatorHeight : tab.width;
+    const height = isVertical ? tab.height : sizePreset.indicatorHeight;
+    g.rect(0, 0, width, height);
+    g.fill({ color: colorPreset.indicatorColor });
+  },
+  [isVertical, sizePreset.indicatorHeight, colorPreset.indicatorColor]
+);
+```
+
+#### 대상 파일 및 변경사항
+
+| # | 파일 | 변경 내용 | 난이도 |
+|---|------|----------|--------|
+| 1 | `PixiToggleButtonGroup.tsx` | `drawIndicator` 로직 추가: 선택된 버튼 위치/크기 계산 → roundRect 렌더링 | 🟡 |
+| 2 | `cssVariableReader.ts` | ToggleButtonGroup indicator 색상 프리셋 추가 (`indicatorColor`, `indicatorRadius`) | 🟢 |
+| 3 | `unified.types.ts` 또는 spec | `indicator?: boolean` prop 캔버스 전달 경로 확보 | 🟢 |
+
+#### 렌더링 구조 (변경 후)
+
+```
+LayoutContainer (toggleButtonGroupId)
+  ├─ ElementSprite → PixiToggleButtonGroup
+  │   ├─ pixiGraphics (배경 + border)
+  │   └─ pixiGraphics (indicator roundRect)  ← NEW: 선택된 버튼 위치에 렌더링
+  ├─ LayoutContainer (toggleButton1Id) → ElementSprite → PixiToggleButton
+  └─ LayoutContainer (toggleButton2Id) → ElementSprite → PixiToggleButton
+```
+
+#### indicator 위치 계산 로직
+
+```typescript
+// 의사코드 — PixiToggleButtonGroup.tsx에 추가 예정
+const drawIndicator = useCallback(
+  (g: PixiGraphics) => {
+    g.clear();
+    if (!indicator || selectedIndex < 0) return;
+
+    // 선택된 버튼의 위치/크기를 자식 레이아웃 결과에서 계산
+    const selectedChild = childElements[selectedIndex];
+    const childLayout = layoutPositions.get(selectedChild.id);
+    if (!childLayout) return;
+
+    // indicator roundRect 렌더링 (선택된 버튼 영역)
+    g.roundRect(
+      childLayout.x,
+      childLayout.y,
+      childLayout.width,
+      childLayout.height,
+      indicatorRadius
+    );
+    g.fill({ color: indicatorColor });
+  },
+  [indicator, selectedIndex, childElements, layoutPositions, indicatorColor, indicatorRadius]
+);
+```
+
+#### variant별 indicator 색상
+
+| Variant | CSS 변수 | 캔버스 Hex 폴백 |
+|---------|----------|-----------------|
+| `default` | `--surface-container-high` | `0xe8e0d8` |
+| `primary` | `--primary` | `0x3b82f6` |
+| `secondary` | `--secondary` | `0x6366f1` |
+| `tertiary` | `--tertiary` | `0xec4899` |
+| `error` | `--error` | `0xef4444` |
+| `surface` | `--surface-container-highest` | `0xf0e8e0` |
+
+#### 애니메이션 처리
+
+- **CSS 웹**: `translate` + `width` + `height` 200ms transition
+- **캔버스**: 정적 렌더링 (트랜지션 ❌ — `ENGINE_CHECKLIST.md` §13 참조)
+- 빌더는 디자인 도구이므로 정적 indicator 위치 표시만으로 충분
+
+### 의존성
+
+- `PixiToggleButtonGroup.tsx`의 container-only 패턴 유지
+- 자식 ToggleButton의 레이아웃 결과(`layoutPositions`)에 접근 필요
+- `selectedKeys` prop에서 선택 상태 판별
+
+### 관련 구현 사례
+
+| 컴포넌트 | Indicator 타입 | 캔버스 구현 | 참조 파일 |
+|----------|---------------|------------|----------|
+| **Tabs** | 하단/측면 bar | ✅ 구현됨 | `PixiTabs.tsx:229-239` |
+| **Switch** | 토글 dot | ✅ Spec shapes | `ElementSprite.tsx` |
+| **Checkbox** | 체크마크 | ✅ Spec shapes | `ElementSprite.tsx` |
+| **Radio** | 내부 dot | ✅ Spec shapes | `ElementSprite.tsx` |
+| **ToggleButtonGroup** | 배경 하이라이트 | ❌ 미구현 | 본 계획 |
+
+---
+
 ## 관련 파일
 
 - `src/builder/components/ToggleButtonGroup.tsx` - Indicator 로직 (line 47-68)
 - `src/builder/components/components.css` - Indicator CSS (line 390-411)
 - `src/builder/inspector/sections/StyleSection.tsx` - Flexbox controls 사용 예시
+- `apps/builder/src/builder/workspace/canvas/ui/PixiToggleButtonGroup.tsx` - 캔버스 구현
+- `apps/builder/src/builder/workspace/canvas/ui/PixiTabs.tsx` - drawIndicator 참조 패턴
 
 ## 참고 자료
 

@@ -1,4 +1,6 @@
-> **⚠️ 레거시 문서**: 현재 아키텍처와 일치하지 않을 수 있습니다. 역사적 참조 목적.
+> **⚠️ DEPRECATED (2026-02-19)**: 이 문서는 `@pixi/layout` 포크 검토 기준으로 작성되었습니다.
+> Phase 11에서 `@pixi/layout` 완전 제거됨. Pixi Layout 포크 대신 Taffy WASM + Dropflow Fork 채택.
+> 최신 아키텍처: [`docs/WASM.md`](../WASM.md), [`docs/ENGINE.md`](../ENGINE.md)
 
 # Pixi Layout 포크 검토 가이드
 
