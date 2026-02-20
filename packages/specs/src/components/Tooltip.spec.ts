@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Tooltip Props
@@ -95,7 +96,7 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       const sizeName = props.size ?? 'md';
       const maxWidth = TOOLTIP_MAX_WIDTH[sizeName] ?? 150;
 
@@ -105,7 +106,7 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
         ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
         : size.borderRadius;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
       const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
@@ -150,6 +151,34 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
           maxWidth,
         },
       ];
+
+      // Phase F: Arrow indicator (placement 기반)
+      // 삼각형 Path가 없으므로 2개 Line으로 V자 화살표 근사
+      const arrowSize = 6;
+      const placement = props.placement || 'top';
+      const arrowBaseY = placement === 'bottom' ? 0 : size.height as unknown as number;
+      const arrowTipY = placement === 'bottom' ? -arrowSize : arrowSize;
+      const centerX = maxWidth / 2;
+      shapes.push(
+        {
+          type: 'line' as const,
+          x1: centerX - arrowSize,
+          y1: arrowBaseY,
+          x2: centerX,
+          y2: arrowBaseY + arrowTipY,
+          stroke: bgColor,
+          strokeWidth: 2,
+        },
+        {
+          type: 'line' as const,
+          x1: centerX + arrowSize,
+          y1: arrowBaseY,
+          x2: centerX,
+          y2: arrowBaseY + arrowTipY,
+          stroke: bgColor,
+          strokeWidth: 2,
+        },
+      );
 
       return shapes;
     },

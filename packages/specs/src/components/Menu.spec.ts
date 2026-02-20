@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Menu Props
@@ -95,7 +96,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   },
 
   render: {
-    shapes: (_props, variant, size, _state = 'default') => {
+    shapes: (_props, variant, size, state = 'default') => {
       const borderRadius = size.borderRadius;
       const width = 180;
       const ff = fontFamily.sans;
@@ -165,7 +166,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
           width,
           height: totalHeight,
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: resolveStateColors(variant, state).background,
         },
         // 테두리
         {

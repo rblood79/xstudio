@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Popover Props
@@ -97,7 +98,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
   states: {},
 
   render: {
-    shapes: (_props, variant, size, _state = 'default') => {
+    shapes: (_props, variant, size, state = 'default') => {
       const borderRadius = size.borderRadius;
 
       const shapes: Shape[] = [
@@ -121,7 +122,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
           width: 'auto',
           height: 'auto',
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: resolveStateColors(variant, state).background,
         },
         // 테두리
         {
@@ -147,6 +148,21 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
           },
         },
       ];
+
+      // Phase F: Arrow indicator (placement 기반 V자 라인)
+      const arrowSize = 8;
+      const bgFill = resolveStateColors(variant, state).background;
+      shapes.push(
+        {
+          type: 'line' as const,
+          x1: 'auto' as unknown as number,
+          y1: 0,
+          x2: 'auto' as unknown as number,
+          y2: -arrowSize,
+          stroke: bgFill,
+          strokeWidth: 2,
+        },
+      );
 
       return shapes;
     },

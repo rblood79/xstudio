@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Toast Props
@@ -107,7 +108,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       const message = props.message || props.children || 'Notification';
 
       // 사용자 스타일 우선, 없으면 spec 기본값
@@ -121,7 +122,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : 1;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
       const borderColor = props.style?.borderColor
                         ?? (variant.border || ('{color.outline-variant}' as TokenRef));
 

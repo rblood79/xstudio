@@ -75,6 +75,15 @@ export function beginRenderEffects(
           // MakeDropShadowOnly는 소스를 제거하므로 inner shadow에서
           // 콘텐츠가 사라지는 버그 발생 (I-CR1).
           // saveLayer 경계가 외부 그림자를 자연스럽게 클리핑한다.
+
+          // M-2: spread → dilate/erode filter 체인으로 근사
+          let inputFilter: unknown = null;
+          if (effect.spread && effect.spread !== 0) {
+            inputFilter = effect.spread > 0
+              ? scope.track(ck.ImageFilter.MakeDilate(effect.spread, effect.spread, null))
+              : scope.track(ck.ImageFilter.MakeErode(-effect.spread, -effect.spread, null));
+          }
+
           const filter = scope.track(
             ck.ImageFilter.MakeDropShadow(
               effect.dx,
@@ -82,7 +91,7 @@ export function beginRenderEffects(
               effect.sigmaX,
               effect.sigmaY,
               effect.color,
-              null,
+              inputFilter,
             ),
           );
           const paint = scope.track(new ck.Paint());

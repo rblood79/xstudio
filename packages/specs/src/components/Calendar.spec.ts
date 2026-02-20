@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Calendar Props
@@ -96,7 +97,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
   },
 
   render: {
-    shapes: (_props, variant, size, _state = 'default') => {
+    shapes: (_props, variant, size, state = 'default') => {
       const borderRadius = size.borderRadius;
       const cellSize = (size.iconSize ?? 28) + 4;
       const gap = size.gap as unknown as number || 6;
@@ -130,7 +131,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           width: calendarWidth,
           height: totalHeight,
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: resolveStateColors(variant, state).background,
         },
         // 테두리
         {

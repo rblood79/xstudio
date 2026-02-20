@@ -56,6 +56,9 @@ export { isValidTokenRef } from './types';
 export { LUCIDE_ICONS, getIconData } from './icons/lucideIcons';
 export type { LucideIconData } from './icons/lucideIcons';
 
+// ─── Utils ──────────────────────────────────────────────────────────────────
+export { resolveStateColors } from './utils/stateEffect';
+
 // ─── Primitives ──────────────────────────────────────────────────────────────
 export {
   // Colors

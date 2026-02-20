@@ -325,6 +325,34 @@ export function specShapesToSkia(
           ? nodeById.get(shape.target)
           : lastNode;
 
+        // M-6: partial border — sides 지정 시 개별 Line 렌더링
+        if (shape.sides) {
+          const strokeColor = colorValueToFloat32(shape.color, theme);
+          const bw = shape.borderWidth;
+          const tw = targetNode?.width ?? (shape.width === 'auto' ? containerWidth : (shape.width ?? containerWidth));
+          const th = targetNode?.height ?? (shape.height === 'auto' ? containerHeight : (shape.height ?? containerHeight));
+          const ox = targetNode?.x ?? (shape.x ?? 0);
+          const oy = targetNode?.y ?? (shape.y ?? 0);
+
+          if (shape.sides.top) {
+            children.push({ type: 'line' as const, x: 0, y: 0, width: tw, height: bw, visible: true,
+              line: { x1: ox, y1: oy, x2: ox + tw, y2: oy, strokeColor, strokeWidth: bw } });
+          }
+          if (shape.sides.right) {
+            children.push({ type: 'line' as const, x: 0, y: 0, width: bw, height: th, visible: true,
+              line: { x1: ox + tw, y1: oy, x2: ox + tw, y2: oy + th, strokeColor, strokeWidth: bw } });
+          }
+          if (shape.sides.bottom) {
+            children.push({ type: 'line' as const, x: 0, y: 0, width: tw, height: bw, visible: true,
+              line: { x1: ox, y1: oy + th, x2: ox + tw, y2: oy + th, strokeColor, strokeWidth: bw } });
+          }
+          if (shape.sides.left) {
+            children.push({ type: 'line' as const, x: 0, y: 0, width: bw, height: th, visible: true,
+              line: { x1: ox, y1: oy, x2: ox, y2: oy + th, strokeColor, strokeWidth: bw } });
+          }
+          break;
+        }
+
         if (targetNode) {
           const strokeColor = colorValueToFloat32(shape.color, theme);
 
@@ -457,6 +485,8 @@ export function specShapesToSkia(
             sigmaY: shape.blur / 2,
             color: shadowColor,
             inner: shape.inset ?? false,
+            // M-2: spread → dilate/erode filter 근사
+            ...(shape.spread ? { spread: shape.spread } : {}),
           };
           if (!targetNode.effects) targetNode.effects = [];
           targetNode.effects.push(effect);
@@ -493,6 +523,29 @@ export function specShapesToSkia(
             end: [w / 2 + Math.sin(angle) * w / 2, h / 2 + Math.cos(angle) * h / 2],
             colors,
             positions,
+          };
+        } else if (shape.gradient.type === 'conic') {
+          // CSS conic-gradient 0°=12시 → CanvasKit MakeSweepGradient 0°=3시
+          // -90° 보정 + 사용자 angle 적용
+          const angleDeg = (shape.gradient.angle ?? 0) - 90;
+          const angleRad = angleDeg * Math.PI / 180;
+          const cos = Math.cos(angleRad);
+          const sin = Math.sin(angleRad);
+          // CanvasKit 3x3 행렬 (row-major): cx/cy 중심 회전
+          const cx = w / 2;
+          const cy = h / 2;
+          const rotationMatrix = Float32Array.of(
+            cos, -sin, cx - cx * cos + cy * sin,
+            sin, cos, cy - cx * sin - cy * cos,
+            0, 0, 1,
+          );
+          fill = {
+            type: 'angular-gradient',
+            cx,
+            cy,
+            colors,
+            positions,
+            rotationMatrix,
           };
         } else {
           fill = {

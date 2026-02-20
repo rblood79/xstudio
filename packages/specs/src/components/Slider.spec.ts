@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Slider Props
@@ -124,7 +125,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       const variantName = props.variant ?? 'default';
       const sizeName = props.size ?? 'md';
       const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.md;
@@ -142,7 +143,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       const trackRadius = sliderDims.trackHeight / 2;
 
       // 사용자 스타일 우선
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
       const textColor = props.style?.color ?? variant.text;
       const fontSize = props.style?.fontSize ?? size.fontSize;
       const fwRaw = props.style?.fontWeight;

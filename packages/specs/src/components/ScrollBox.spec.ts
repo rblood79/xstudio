@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * ScrollBox Props
@@ -79,7 +80,7 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
       const width = 'auto' as const;
       const height = size.height;
@@ -95,7 +96,7 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : 1;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
       const borderColor = props.style?.borderColor
                         ?? (variant.border || ('{color.outline-variant}' as TokenRef));
 

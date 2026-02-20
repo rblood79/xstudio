@@ -270,8 +270,8 @@ export interface GradientShape {
   height: number | 'auto';
   radius?: number | [number, number, number, number];
   gradient: {
-    type: 'linear' | 'radial';
-    angle?: number; // linear gradient 각도 (0-360)
+    type: 'linear' | 'radial' | 'conic';
+    angle?: number; // linear/conic gradient 각도 (0-360)
     stops: Array<{
       offset: number; // 0-1
       color: ColorValue;

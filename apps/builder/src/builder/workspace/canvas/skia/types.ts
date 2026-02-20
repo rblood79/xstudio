@@ -124,6 +124,8 @@ export interface DropShadowEffect {
   sigmaY: number;
   color: Float32Array; // CanvasKit Color4f
   inner: boolean;
+  /** CSS box-shadow spread (px). CanvasKit에서는 dilate filter로 근사. */
+  spread?: number;
 }
 
 export interface LayerBlurEffect {

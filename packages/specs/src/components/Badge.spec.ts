@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Badge Props
@@ -102,14 +103,14 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
       const borderRadius = styleBr != null
         ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
         : size.borderRadius;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
 
       const shapes: Shape[] = [];
 

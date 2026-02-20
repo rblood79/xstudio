@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Tree Props
@@ -92,7 +93,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
   },
 
   render: {
-    shapes: (_props, variant, size, _state = 'default') => {
+    shapes: (_props, variant, size, state = 'default') => {
       const borderRadius = size.borderRadius;
 
       const ff = fontFamily.sans;
@@ -121,7 +122,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
           width: 'auto',
           height: totalHeight,
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: resolveStateColors(variant, state).background,
         },
         // 테두리
         {

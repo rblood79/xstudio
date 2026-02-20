@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Radio Props
@@ -136,7 +137,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       const variantName = props.variant ?? 'default';
       const sizeName = props.size ?? 'md';
       const radioSize = RADIO_DIMENSIONS[sizeName] ?? RADIO_DIMENSIONS.md;
@@ -162,7 +163,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
         x: outerRadius,
         y: outerRadius,
         radius: outerRadius,
-        fill: variant.background,
+        fill: resolveStateColors(variant, state).background,
         fillAlpha: 0,
       });
 

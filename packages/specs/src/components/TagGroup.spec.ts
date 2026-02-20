@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * TagGroup Props
@@ -105,7 +106,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       const shapes: Shape[] = [];
       const tagFontSize = size.fontSize as unknown as number || 14;
       const tagGap = size.gap || 4;
@@ -160,7 +161,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
             width: chipWidth,
             height: tagHeight,
             radius: borderRadius,
-            fill: variant.background,
+            fill: resolveStateColors(variant, state).background,
           });
 
           // Tag 테두리

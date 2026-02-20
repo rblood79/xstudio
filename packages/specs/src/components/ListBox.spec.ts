@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * ListBox Props
@@ -92,11 +93,11 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 200;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
 
       const styleBr = props.style?.borderRadius;
       const borderRadius = styleBr != null
