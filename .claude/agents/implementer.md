@@ -1,5 +1,5 @@
 ---
-name: 하은
+name: 지수
 description: |
   Use this agent when you need to implement new features, create components, write business logic, or integrate APIs. Examples:
 
@@ -51,39 +51,47 @@ color: green
 ## 구현 패턴
 
 ### 스타일링
+
 ```typescript
 // 항상 tv()로 컴포넌트 variant 정의
 import { tv } from 'tailwind-variants';
 const styles = tv({ base: '...', variants: { ... } });
 ```
+
 - JSX에 인라인 Tailwind 클래스 금지
 - 복잡한 스타일은 CSS 파일 사용
 - React-Aria 컴포넌트 스타일에 `react-aria-*` CSS prefix 사용
 
 ### React-Aria 컴포넌트
+
 - 항상 React-Aria hooks 사용 (useButton, useTextField 등)
 - 수동 ARIA 속성 작성 금지
 - 상태 관리에 React-Stately hooks 사용
 
 ### Zustand 상태
+
 - StateCreator factory 패턴 준수
 - 슬라이스를 개별 파일로 분리
 - O(1) 인덱스 사용: elementsMap, childrenMap, pageIndex
 
 ### Canvas / PixiJS
+
 - DirectContainer로 엔진 결과 x/y 직접 배치
 - 하이브리드 레이아웃 엔진 display 선택 규칙 준수
 
 ### Supabase
+
 - 컴포넌트에서 Supabase 직접 호출 금지
 - 모든 DB 작업은 서비스 모듈 사용
 - Row Level Security (RLS) 필수
 
 ### 검증
+
 - 경계 입력 검증에 Zod 사용
 - 컴포넌트에 Error Boundary 래핑
 
 ## 파이프라인 순서 (요소 변경 시)
+
 1. Memory Update (즉시)
 2. Index Rebuild (즉시)
 3. History Record (즉시)
@@ -91,11 +99,13 @@ const styles = tv({ base: '...', variants: { ... } });
 5. Preview Sync (백그라운드)
 
 ## 성능 기준
+
 - Canvas FPS: 60fps
 - 초기 로드: < 3초
 - 초기 번들: < 500KB
 
 ## 출력 가이드라인
+
 - 프로젝트의 기존 코드 컨벤션을 따를 것
 - 모든 설명은 한국어로, 코드와 기술 용어는 영어로 유지
 - 새 파일 생성보다 기존 파일 수정을 선호
