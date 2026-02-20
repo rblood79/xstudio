@@ -296,6 +296,7 @@ function normalizeStyle(style: TaffyStyle): Record<string, unknown> {
  */
 export class TaffyLayout {
   private engine: WasmTaffyLayoutEngine | null = null;
+  private initFailed = false;
 
   constructor() {
     this.tryInit();
@@ -303,17 +304,26 @@ export class TaffyLayout {
 
   /** Attempt to initialize from the already-loaded WASM module. */
   private tryInit(): void {
+    if (this.initFailed) return;
     if (!isRustWasmReady()) return;
 
     const wasm = getRustWasm() as WasmModuleWithTaffy | null;
     if (!wasm?.TaffyLayoutEngine) return;
 
-    this.engine = new wasm.TaffyLayoutEngine();
+    try {
+      this.engine = new wasm.TaffyLayoutEngine();
+    } catch (err) {
+      this.initFailed = true;
+      if (import.meta.env.DEV) {
+        console.warn('[TaffyLayout] WASM engine instantiation failed, falling back:', err);
+      }
+      this.engine = null;
+    }
   }
 
   /** Whether the WASM engine is available and initialized. */
   isAvailable(): boolean {
-    if (!this.engine && isRustWasmReady()) {
+    if (!this.engine && !this.initFailed && isRustWasmReady()) {
       this.tryInit();
     }
     return this.engine !== null;

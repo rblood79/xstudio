@@ -13,6 +13,7 @@ import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
 import { TaffyLayout } from '../../wasm-bindings/taffyLayout';
 import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayout';
+import { DropflowBlockEngine } from './DropflowBlockEngine';
 import { parseMargin, parsePadding, parseBorder, enrichWithIntrinsicSize, INLINE_BLOCK_TAGS } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
@@ -248,14 +249,38 @@ function resolvePxOffset(value: unknown, ctx: CSSValueContext = {}): number {
 
 // ─── TaffyFlexEngine ─────────────────────────────────────────────────
 
+/** Taffy 미가용 시 Dropflow Block 엔진으로 폴백 */
+const dropflowFallback = new DropflowBlockEngine();
+
 /** 싱글톤 TaffyLayout 인스턴스 */
 let taffyInstance: TaffyLayout | null = null;
+let taffyInitFailed = false;
+
+/**
+ * Taffy WASM 엔진 가용 여부
+ *
+ * selectEngine()에서 조기 라우팅 판단에 사용.
+ * taffyInitFailed가 true면 이미 초기화 실패 확정 → Dropflow로 직접 라우팅.
+ */
+export function isTaffyFlexAvailable(): boolean {
+  return !taffyInitFailed;
+}
 
 function getTaffyLayout(): TaffyLayout | null {
+  if (taffyInitFailed) return null;
   if (!taffyInstance) {
-    taffyInstance = new TaffyLayout();
+    try {
+      taffyInstance = new TaffyLayout();
+    } catch (err) {
+      taffyInitFailed = true;
+      if (import.meta.env.DEV) {
+        console.warn('[TaffyFlexEngine] TaffyLayout creation failed:', err);
+      }
+      return null;
+    }
   }
   if (!taffyInstance.isAvailable()) {
+    taffyInitFailed = true;
     return null;
   }
   return taffyInstance;
@@ -289,13 +314,10 @@ export class TaffyFlexEngine implements LayoutEngine {
 
     const taffy = getTaffyLayout();
 
-    // Taffy WASM이 아직 로드되지 않았으면 빈 결과 반환
-    // (Feature Flag off 경로로 폴백됨)
+    // Taffy WASM이 아직 로드되지 않았으면 Dropflow Block 엔진으로 위임
+    // 빈 배열 반환 시 flex 자식이 모두 레이아웃을 잃으므로 반드시 폴백 필요
     if (!taffy) {
-      if (import.meta.env.DEV) {
-        console.warn('[TaffyFlexEngine] WASM not available, returning empty layout');
-      }
-      return [];
+      return dropflowFallback.calculate(parent, children, availableWidth, availableHeight, context);
     }
 
     // ── CSS 상속 체인 구성 ──────────────────────────────────────────

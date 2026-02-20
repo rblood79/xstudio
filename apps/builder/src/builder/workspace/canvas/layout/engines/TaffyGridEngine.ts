@@ -20,6 +20,7 @@ import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
 import { TaffyLayout } from '../../wasm-bindings/taffyLayout';
 import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayout';
+import { DropflowBlockEngine } from './DropflowBlockEngine';
 import { parseMargin, parsePadding, parseBorder } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
@@ -530,14 +531,37 @@ export function elementToTaffyGridStyle(
 
 // ─── TaffyGridEngine ──────────────────────────────────────────────────
 
+/** Taffy Grid 미가용 시 Dropflow Block 엔진으로 폴백 */
+const dropflowGridFallback = new DropflowBlockEngine();
+
 /** 싱글톤 TaffyLayout 인스턴스 (TaffyFlexEngine과 공유하지 않고 독립 관리) */
 let taffyGridInstance: TaffyLayout | null = null;
+let taffyGridInitFailed = false;
+
+/**
+ * Taffy Grid WASM 엔진 가용 여부
+ *
+ * selectEngine()에서 조기 라우팅 판단에 사용.
+ */
+export function isTaffyGridAvailable(): boolean {
+  return !taffyGridInitFailed;
+}
 
 function getTaffyGridLayout(): TaffyLayout | null {
+  if (taffyGridInitFailed) return null;
   if (!taffyGridInstance) {
-    taffyGridInstance = new TaffyLayout();
+    try {
+      taffyGridInstance = new TaffyLayout();
+    } catch (err) {
+      taffyGridInitFailed = true;
+      if (import.meta.env.DEV) {
+        console.warn('[TaffyGridEngine] TaffyLayout creation failed:', err);
+      }
+      return null;
+    }
   }
   if (!taffyGridInstance.isAvailable()) {
+    taffyGridInitFailed = true;
     return null;
   }
   return taffyGridInstance;
@@ -573,13 +597,9 @@ export class TaffyGridEngine implements LayoutEngine {
 
     const taffy = getTaffyGridLayout();
 
-    // Taffy WASM이 아직 로드되지 않았으면 빈 결과 반환
-    // (Feature Flag off 경로나 기존 GridEngine으로 폴백됨)
+    // Taffy WASM이 아직 로드되지 않았으면 Dropflow Block 엔진으로 위임
     if (!taffy) {
-      if (import.meta.env.DEV) {
-        console.warn('[TaffyGridEngine] WASM not available, returning empty layout');
-      }
-      return [];
+      return dropflowGridFallback.calculate(parent, children, availableWidth, availableHeight, context);
     }
 
     // ── CSS 상속 체인 구성 ──────────────────────────────────────────

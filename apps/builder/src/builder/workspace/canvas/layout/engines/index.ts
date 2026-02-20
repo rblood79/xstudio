@@ -24,7 +24,8 @@ import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import { DropflowBlockEngine } from './DropflowBlockEngine';
-import { TaffyFlexEngine } from './TaffyFlexEngine';
+import { TaffyFlexEngine, isTaffyFlexAvailable } from './TaffyFlexEngine';
+import { isTaffyGridAvailable } from './TaffyGridEngine';
 import { TaffyGridEngine } from './TaffyGridEngine';
 import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
 import { useScrollState } from '../../../../stores/scrollState';
@@ -87,11 +88,13 @@ export function selectEngine(display: string | undefined): LayoutEngine {
   switch (display) {
     case 'flex':
     case 'inline-flex':
-      return wasmReady ? taffyFlexEngine : dropflowBlockEngine;
+      // isRustWasmReady() + isTaffyFlexAvailable() 이중 검사
+      // WASM 모듈은 로드되었지만 Taffy 인스턴스화 실패 시 Dropflow로 라우팅
+      return (wasmReady && isTaffyFlexAvailable()) ? taffyFlexEngine : dropflowBlockEngine;
 
     case 'grid':
     case 'inline-grid':
-      return wasmReady ? taffyGridEngine : dropflowBlockEngine;
+      return (wasmReady && isTaffyGridAvailable()) ? taffyGridEngine : dropflowBlockEngine;
 
     case 'contents':
     case 'block':
