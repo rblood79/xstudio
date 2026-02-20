@@ -1,253 +1,123 @@
 /**
- * PixiGridList.tsx
+ * Pixi GridList
  *
- * WebGL GridList component with CSS synchronization
- * Pattern C: Reads GridListItem children from store
+ * 투명 히트 영역(pixiGraphics) 기반 GridList
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * @package xstudio
+ * @since Phase WebGL Migration
+ * @updated 2026-02-20 A등급 패턴 재작성 (Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
-import { useStore } from '@/builder/stores';
-
-// 🚀 Component Spec
+import { memo, useCallback, useContext, useRef } from 'react';
 import {
-  GridListSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiGridListProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
-export function PixiGridList({
+// ============================================
+// Component
+// ============================================
+
+/**
+ * PixiGridList
+ *
+ * 투명 히트 영역 기반 GridList (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ */
+export const PixiGridList = memo(function PixiGridList({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
-  onChange,
+  //onChange,
 }: PixiGridListProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // 🚀 Spec Migration
-  const sizePreset = useMemo(() => {
-    const sizeSpec = GridListSpec.sizes[size] || GridListSpec.sizes[GridListSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
-  const colorPreset = useMemo(() => {
-    const variantSpec = GridListSpec.variants[variant] || GridListSpec.variants[GridListSpec.defaultVariant];
-    const colors = getSpecVariantColors(variantSpec, 'light');
-    return {
-      backgroundColor: colors.bg,
-      textColor: colors.text,
-      borderColor: colors.border ?? 0xe5e7eb,
-      hoverBgColor: colors.bgHover,
-      selectedBgColor: colors.bgPressed,
-      selectedTextColor: colors.text,
-      focusColor: colors.bg,
-    };
-  }, [variant]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 Spec Migration: variant에 따른 테마 색상
-  const variantColors = useMemo(() => {
-    const variantSpec = GridListSpec.variants[variant] || GridListSpec.variants[GridListSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // Get children from store (GridListItem)
-  const allElements = useStore((state) => state.elements);
-  const childItems = useMemo(() => {
-    return allElements
-      .filter((el) => el.parent_id === element.id && el.tag === 'GridListItem')
-      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-      .map((el) => ({
-        id: el.id,
-        text: (el.props?.children as string) || (el.props?.textValue as string) || 'Item',
-        isSelected: el.props?.isSelected as boolean || false,
-      }));
-  }, [allElements, element.id]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // 🚀 Performance: useRef로 hover 상태 관리 (리렌더링 없음)
-  // useState → useRef 변경으로 pointerover 시 전체 리렌더링 방지
-  const itemGraphicsRefs = useRef<Map<string, PixiGraphics>>(new Map());
-
-  // Calculate dimensions
-  const listWidth = 200;
-  const listHeight = Math.min(
-    300,
-    sizePreset.listPadding * 2 +
-      childItems.length * (sizePreset.itemMinHeight + sizePreset.listGap) -
-      sizePreset.listGap
-  );
-
-  // Text style
-  const textStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontSize: sizePreset.fontSize,
-        fill: colorPreset.textColor,
-        fontFamily: 'Inter, system-ui, sans-serif',
-      }),
-    [sizePreset.fontSize, colorPreset.textColor]
-  );
-
-  // Selected text style
-  const selectedTextStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontSize: sizePreset.fontSize,
-        fill: colorPreset.selectedTextColor,
-        fontFamily: 'Inter, system-ui, sans-serif',
-        fontWeight: '500',
-      }),
-    [sizePreset.fontSize, colorPreset.selectedTextColor]
-  );
-
-  // Draw list container
-  const drawContainer = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-      g.roundRect(0, 0, listWidth, listHeight, sizePreset.borderRadius);
-      g.fill(colorPreset.backgroundColor);
-      g.stroke({ width: 1, color: colorPreset.borderColor });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, listWidth + 4, listHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ width: 2, color: variantColors.bg });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [listWidth, listHeight, sizePreset.borderRadius, colorPreset, isSelected, variantColors.bg]
+    [hitWidth, hitHeight]
   );
 
-  // Draw item background
-  const drawItemBg = useCallback(
-    (
-      g: PixiGraphics,
-      itemWidth: number,
-      itemHeight: number,
-      isHovered: boolean,
-      isItemSelected: boolean
-    ) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      let bgColor = colorPreset.backgroundColor;
-      if (isItemSelected) {
-        bgColor = colorPreset.selectedBgColor;
-      } else if (isHovered) {
-        bgColor = colorPreset.hoverBgColor;
-      }
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      g.roundRect(0, 0, itemWidth, itemHeight, 4);
-      g.fill(bgColor);
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [colorPreset]
+    [element.id, onClick, isDisabled]
   );
-
-  // Handle item click
-  const handleItemClick = useCallback(
-    (itemId: string) => {
-      if (onChange) {
-        onChange(element.id, { selectedItemId: itemId });
-      }
-    },
-    [element.id, onChange]
-  );
-
-  // Handle container click
-  const handleContainerClick = useCallback(() => {
-    if (onClick) {
-      onClick(element.id);
-    }
-  }, [element.id, onClick]);
-
-  const itemWidth = listWidth - sizePreset.listPadding * 2;
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerDown={handleContainerClick}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* List Container */}
-      <pixiGraphics draw={drawContainer} />
-
-      {/* List Items */}
-      {childItems.map((item, index) => {
-        const itemY =
-          sizePreset.listPadding +
-          index * (sizePreset.itemMinHeight + sizePreset.listGap);
-        const isItemSelected = item.isSelected;
-
-        return (
-          <pixiContainer
-            key={item.id}
-            x={sizePreset.listPadding}
-            y={itemY}
-            eventMode="static"
-            cursor="default"
-            onPointerOver={() => {
-              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
-              const g = itemGraphicsRefs.current.get(item.id);
-              if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, true, isItemSelected);
-            }}
-            onPointerOut={() => {
-              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
-              const g = itemGraphicsRefs.current.get(item.id);
-              if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, isItemSelected);
-            }}
-            onPointerDown={(e: { stopPropagation: () => void }) => {
-              e.stopPropagation();
-              handleItemClick(item.id);
-            }}
-          >
-            <pixiGraphics
-              ref={(g) => {
-                if (g) itemGraphicsRefs.current.set(item.id, g);
-              }}
-              draw={(g) =>
-                drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, isItemSelected)
-              }
-            />
-            <pixiText
-              text={item.text}
-              style={isItemSelected ? selectedTextStyle : textStyle}
-              x={sizePreset.itemPaddingX}
-              y={(sizePreset.itemMinHeight - sizePreset.fontSize) / 2}
-            />
-          </pixiContainer>
-        );
-      })}
-
-      {/* Empty state */}
-      {childItems.length === 0 && (
-        <pixiText
-          text="No items"
-          style={
-            new TextStyle({
-              fontSize: sizePreset.fontSize,
-              fill: 0x9ca3af,
-              fontFamily: 'Inter, system-ui, sans-serif',
-              fontStyle: 'italic',
-            })
-          }
-          x={listWidth / 2}
-          y={listHeight / 2}
-          anchor={0.5}
-        />
-      )}
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
 
 export default PixiGridList;

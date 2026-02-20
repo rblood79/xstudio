@@ -1,245 +1,123 @@
 /**
- * PixiPagination - WebGL Pagination Component
+ * Pixi Pagination
  *
- * Phase 8: Notification & Color Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Page navigation controls
+ * 투명 히트 영역(pixiGraphics) 기반 Pagination
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getPaginationSizePreset(): fontSize, buttonSize, gap, borderRadius
- * - getPaginationColorPreset(): backgroundColor, currentBackgroundColor
+ * @since Phase 8
+ * @updated 2026-02-20 A등급 패턴 재작성 (Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
-
-// 🚀 Component Spec
+import { memo, useCallback, useContext, useRef } from 'react';
 import {
-  PaginationSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiPaginationProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiPagination - Page navigation controls
+ * PixiPagination
+ *
+ * 투명 히트 영역 기반 Pagination (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiPagination({
+export const PixiPagination = memo(function PixiPagination({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
+  //onChange,
 }: PixiPaginationProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const currentPage = (props.currentPage as number) || 1;
-  const totalPages = (props.totalPages as number) || 5;
-  const showInfo = (props.showInfo as boolean) ?? true;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // 🚀 Spec Migration
-  const sizePreset = useMemo(() => {
-    const sizeSpec = PaginationSpec.sizes[size] || PaginationSpec.sizes[PaginationSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
-  const colorPreset = useMemo(() => {
-    const variantSpec = PaginationSpec.variants[variant] || PaginationSpec.variants[PaginationSpec.defaultVariant];
-    const colors = getSpecVariantColors(variantSpec, 'light');
-    return {
-      backgroundColor: colors.bg,
-      currentBackgroundColor: colors.bgPressed,
-      textColor: colors.text,
-      borderColor: colors.border ?? 0xe5e7eb,
-      hoverBgColor: colors.bgHover,
-    };
-  }, [variant]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 Spec Migration: variant에 따른 테마 색상
-  const variantColors = useMemo(() => {
-    const variantSpec = PaginationSpec.variants[variant] || PaginationSpec.variants[PaginationSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // Calculate visible pages
-  const getVisiblePages = () => {
-    const pages: (number | string)[] = [];
-    const maxVisible = 5;
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-    if (totalPages <= maxVisible + 2) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push('...');
-
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-
-      for (let i = start; i <= end; i++) pages.push(i);
-
-      if (currentPage < totalPages - 2) pages.push('...');
-      pages.push(totalPages);
-    }
-
-    return pages;
-  };
-
-  const visiblePages = getVisiblePages();
-
-  // Calculate dimensions
-  const navButtonWidth = sizePreset.buttonSize;
-  const totalWidth = navButtonWidth * 2 + sizePreset.gap * (visiblePages.length + 1) + sizePreset.buttonSize * visiblePages.length;
-  const containerHeight = sizePreset.buttonSize + (showInfo ? sizePreset.fontSize + sizePreset.gap : 0);
-
-  // Draw navigation button (prev/next)
-  const drawNavButton = useCallback(
-    (g: PixiGraphics, isDisabled: boolean, isNext: boolean) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Background
-      g.roundRect(0, 0, sizePreset.buttonSize, sizePreset.buttonSize, sizePreset.borderRadius);
-      g.fill({ color: isDisabled ? colorPreset.backgroundColor : colorPreset.hoverBgColor, alpha: isDisabled ? 0.5 : 1 });
-
-      // Arrow
-      const centerX = sizePreset.buttonSize / 2;
-      const centerY = sizePreset.buttonSize / 2;
-      const arrowSize = sizePreset.buttonSize * 0.2;
-
-      if (isNext) {
-        g.moveTo(centerX - arrowSize / 2, centerY - arrowSize);
-        g.lineTo(centerX + arrowSize / 2, centerY);
-        g.lineTo(centerX - arrowSize / 2, centerY + arrowSize);
-      } else {
-        g.moveTo(centerX + arrowSize / 2, centerY - arrowSize);
-        g.lineTo(centerX - arrowSize / 2, centerY);
-        g.lineTo(centerX + arrowSize / 2, centerY + arrowSize);
-      }
-      g.stroke({ color: colorPreset.textColor, width: 2, alpha: isDisabled ? 0.5 : 1 });
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [sizePreset, colorPreset]
+    [hitWidth, hitHeight]
   );
 
-  // Draw page button
-  const drawPageButton = useCallback(
-    (g: PixiGraphics, isCurrent: boolean) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      // Background
-      g.roundRect(0, 0, sizePreset.buttonSize, sizePreset.buttonSize, sizePreset.borderRadius);
-      g.fill({ color: isCurrent ? colorPreset.currentBackgroundColor : colorPreset.backgroundColor });
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
+
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [sizePreset, colorPreset]
+    [element.id, onClick, isDisabled]
   );
-
-  // Draw selection indicator
-  const drawSelection = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-      if (isSelected) {
-        g.roundRect(-2, -2, totalWidth + 4, containerHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: variantColors.bg, width: 2 });
-      }
-    },
-    [totalWidth, containerHeight, sizePreset, isSelected, variantColors.bg]
-  );
-
-  // Text styles
-  const pageTextStyle = useCallback(
-    (isCurrent: boolean): Partial<TextStyle> => ({
-      fontSize: sizePreset.fontSize,
-      fill: colorPreset.textColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontWeight: isCurrent ? 'bold' : 'normal',
-    }),
-    [sizePreset, colorPreset]
-  );
-
-  const ellipsisStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize,
-      fill: colorPreset.textColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-    }),
-    [sizePreset, colorPreset]
-  );
-
-  const infoStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize * 0.85,
-      fill: colorPreset.textColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-    }),
-    [sizePreset, colorPreset]
-  );
-
-  // Calculate positions
-  let currentX = 0;
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => onClick?.(element.id)}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Selection indicator */}
-      <pixiGraphics draw={drawSelection} />
-
-      {/* Previous button */}
-      <pixiGraphics draw={(g) => drawNavButton(g, currentPage === 1, false)} x={currentX} y={0} />
-      {(() => { currentX += sizePreset.buttonSize + sizePreset.gap; return null; })()}
-
-      {/* Page buttons */}
-      {visiblePages.map((page, index) => {
-        const x = currentX;
-        currentX += (typeof page === 'number' ? sizePreset.buttonSize : sizePreset.buttonSize * 0.6) + sizePreset.gap;
-
-        if (typeof page === 'string') {
-          return (
-            <pixiText
-              key={`ellipsis-${index}`}
-              text="..."
-              style={ellipsisStyle}
-              x={x + sizePreset.buttonSize * 0.2}
-              y={(sizePreset.buttonSize - sizePreset.fontSize) / 2}
-            />
-          );
-        }
-
-        const isCurrent = page === currentPage;
-        return (
-          <pixiContainer key={page} x={x} y={0}>
-            <pixiGraphics draw={(g) => drawPageButton(g, isCurrent)} />
-            <pixiText
-              text={String(page)}
-              style={pageTextStyle(isCurrent)}
-              x={sizePreset.buttonSize / 2}
-              y={sizePreset.buttonSize / 2}
-              anchor={{ x: 0.5, y: 0.5 }}
-            />
-          </pixiContainer>
-        );
-      })}
-
-      {/* Next button */}
-      <pixiGraphics draw={(g) => drawNavButton(g, currentPage === totalPages, true)} x={currentX} y={0} />
-
-      {/* Page info */}
-      {showInfo && (
-        <pixiText
-          text={`Page ${currentPage} of ${totalPages}`}
-          style={infoStyle}
-          x={totalWidth / 2}
-          y={sizePreset.buttonSize + sizePreset.gap}
-          anchor={{ x: 0.5, y: 0 }}
-        />
-      )}
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiPagination;

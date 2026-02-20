@@ -165,10 +165,14 @@ function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
       return fromButtonPreset(getToggleButtonSizePreset(size));
 
     // Input 계열
-    case 'TextField':
-      return fromInputPreset(getTextFieldSizePreset(size));
-    case 'TextArea':
-      return fromInputPreset(getTextAreaSizePreset(size));
+    case 'TextField': {
+      const p = getTextFieldSizePreset(size);
+      return fromInputPreset({ fontSize: p.fontSize, paddingX: p.paddingX, paddingY: p.padding, borderRadius: p.borderRadius });
+    }
+    case 'TextArea': {
+      const p = getTextAreaSizePreset(size);
+      return fromInputPreset({ fontSize: p.fontSize, paddingX: p.paddingX, paddingY: p.padding, borderRadius: p.borderRadius });
+    }
     case 'Select':
       return fromInputPreset(getSelectSizePreset(size));
     case 'ComboBox':
@@ -186,7 +190,7 @@ function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
     case 'RadioGroup':
       return fromCheckboxPreset(getRadioSizePreset(size));
     case 'Switch':
-      return fromCheckboxPreset(getSwitchSizePreset(size));
+      return { fontSize: px(getSwitchSizePreset(size).thumbSize) };
 
     // Bar 계열
     case 'ProgressBar':
@@ -197,18 +201,25 @@ function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
       return { fontSize: px(getSliderSizePreset(size).thumbSize) };
 
     // Badge
-    case 'Badge':
-      return fromButtonPreset(getBadgeSizePreset(size));
+    case 'Badge': {
+      const p = getBadgeSizePreset(size);
+      return {
+        fontSize: px(p.fontSize),
+        paddingTop: px(p.paddingY),
+        paddingRight: px(p.paddingX),
+        paddingBottom: px(p.paddingY),
+        paddingLeft: px(p.paddingX),
+      };
+    }
 
     // Card
     case 'Card': {
       const preset = getCardSizePreset(size);
       return {
-        fontSize: px(preset.fontSize),
-        paddingTop: px(preset.paddingY),
-        paddingRight: px(preset.paddingX),
-        paddingBottom: px(preset.paddingY),
-        paddingLeft: px(preset.paddingX),
+        paddingTop: px(preset.padding),
+        paddingRight: px(preset.padding),
+        paddingBottom: px(preset.padding),
+        paddingLeft: px(preset.padding),
         borderRadius: px(preset.borderRadius),
       };
     }

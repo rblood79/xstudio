@@ -1,288 +1,123 @@
 /**
- * PixiSlot - WebGL Slot Container Component
+ * Pixi Slot
  *
- * Phase 8: Notification & Color Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Layout slot placeholder
+ * 투명 히트 영역(pixiGraphics) 기반 Slot
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getSlotSizePreset(): minHeight, padding, borderWidth, iconSize
- * - getSlotColorPreset(): backgroundColor, borderColor, iconColor
+ * @since Phase 8
+ * @updated 2026-02-20 A등급 패턴 재작성 (Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
-
-// 🚀 Spec Migration
+import { memo, useCallback, useContext, useRef } from 'react';
 import {
-  SlotSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiSlotProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiSlot - Layout slot placeholder for content insertion
+ * PixiSlot
+ *
+ * 투명 히트 영역 기반 Slot (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiSlot({
+export const PixiSlot = memo(function PixiSlot({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
+  //onChange,
 }: PixiSlotProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const name = (props.name as string) || 'Content';
-  const description = (props.description as string) || 'Drop content here';
-  const isRequired = (props.isRequired as boolean) || (props.required as boolean) || false;
-  const isEmpty = (props.isEmpty as boolean) ?? true;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // Get presets from CSS (Spec Migration)
-  const sizePreset = useMemo(() => {
-    const sizeSpec = SlotSpec.sizes[size] || SlotSpec.sizes[SlotSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 variant에 따른 테마 색상 (Spec Migration)
-  const variantColors = useMemo(() => {
-    const variantSpec = SlotSpec.variants[variant] || SlotSpec.variants[SlotSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    backgroundColor: 0xf9fafb,
-    borderColor: 0xd1d5db,
-    emptyBorderColor: 0x9ca3af,
-    textColor: variantColors.text,
-    iconColor: variantColors.bg,
-    iconBackgroundColor: 0xf3f4f6,
-    selectedBorderColor: variantColors.bg,
-    requiredBorderColor: 0xef4444,
-    requiredBadgeBackgroundColor: 0xfef2f2,
-    requiredBadgeTextColor: 0xef4444,
-  }), [variantColors]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // Calculate dimensions
-  const slotWidth = (props.width as number) || 280;
-  const slotHeight = (props.height as number) || sizePreset.minHeight;
-
-  // Draw slot container with dashed border
-  const drawContainer = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Background with diagonal pattern (when empty)
-      if (isEmpty) {
-        const bgColor = isRequired ? colorPreset.requiredBorderColor : colorPreset.backgroundColor;
-        g.roundRect(0, 0, slotWidth, slotHeight, sizePreset.borderRadius);
-        g.fill({ color: bgColor, alpha: 0.05 });
-
-        // Diagonal stripes pattern
-        const stripeSpacing = 8;
-        for (let i = -slotHeight; i < slotWidth + slotHeight; i += stripeSpacing) {
-          g.moveTo(i, 0);
-          g.lineTo(i + slotHeight, slotHeight);
-        }
-        g.stroke({ color: colorPreset.borderColor, width: 0.5, alpha: 0.2 });
-      }
-
-      // Dashed border
-      const borderColor = isEmpty
-        ? isRequired
-          ? colorPreset.requiredBorderColor
-          : colorPreset.emptyBorderColor
-        : colorPreset.borderColor;
-
-      drawDashedRect(g, 0, 0, slotWidth, slotHeight, sizePreset.borderRadius, borderColor, sizePreset.borderWidth);
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, slotWidth + 4, slotHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.selectedBorderColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [slotWidth, slotHeight, sizePreset, colorPreset, isEmpty, isRequired, isSelected]
+    [hitWidth, hitHeight]
   );
 
-  // Draw slot icon
-  const drawIcon = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      const iconSize = sizePreset.iconSize;
-      const centerX = iconSize / 2;
-      const centerY = iconSize / 2;
-      const radius = iconSize * 0.4;
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      // Circle background
-      g.circle(centerX, centerY, radius);
-      g.fill({ color: colorPreset.iconBackgroundColor });
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-      // Plus sign
-      const plusSize = radius * 0.5;
-      g.rect(centerX - plusSize, centerY - 1, plusSize * 2, 2);
-      g.rect(centerX - 1, centerY - plusSize, 2, plusSize * 2);
-      g.fill({ color: colorPreset.iconColor });
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [sizePreset, colorPreset]
-  );
-
-  // Draw required badge
-  const drawRequiredBadge = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-      if (!isRequired) return;
-
-      const badgeWidth = 60;
-      const badgeHeight = 18;
-
-      g.roundRect(0, 0, badgeWidth, badgeHeight, 4);
-      g.fill({ color: colorPreset.requiredBadgeBackgroundColor });
-    },
-    [colorPreset, isRequired]
-  );
-
-  // Text styles
-  const nameStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.labelFontSize,
-      fill: colorPreset.textColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontWeight: '600',
-    }),
-    [sizePreset, colorPreset]
-  );
-
-  const descriptionStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.descriptionFontSize,
-      fill: colorPreset.textColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      alpha: 0.7,
-    }),
-    [sizePreset, colorPreset]
-  );
-
-  const requiredStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.descriptionFontSize,
-      fill: colorPreset.requiredBadgeTextColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontWeight: '500',
-    }),
-    [sizePreset, colorPreset]
+    [element.id, onClick, isDisabled]
   );
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => onClick?.(element.id)}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Slot container */}
-      <pixiGraphics draw={drawContainer} />
-
-      {/* Empty state content */}
-      {isEmpty && (
-        <pixiContainer>
-          {/* Icon */}
-          <pixiGraphics draw={drawIcon} />
-
-          {/* Name with optional required badge */}
-          <pixiContainer>
-            <pixiText
-              text={name}
-              style={nameStyle}
-            />
-            {isRequired && (
-              <pixiContainer>
-                <pixiGraphics draw={drawRequiredBadge} />
-                <pixiText
-                  text="Required"
-                  style={requiredStyle}
-                />
-              </pixiContainer>
-            )}
-          </pixiContainer>
-
-          {/* Description */}
-          <pixiText
-            text={description}
-            style={descriptionStyle}
-          />
-        </pixiContainer>
-      )}
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
 
-/**
- * Helper function to draw dashed rounded rectangle
- */
-function drawDashedRect(
-  g: PixiGraphics,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-  color: number,
-  lineWidth: number
-) {
-  const dashLength = 6;
-  const gapLength = 4;
-
-  // Top edge
-  let posX = x + radius;
-  while (posX < x + width - radius) {
-    const endX = Math.min(posX + dashLength, x + width - radius);
-    g.moveTo(posX, y);
-    g.lineTo(endX, y);
-    posX += dashLength + gapLength;
-  }
-
-  // Right edge
-  let posY = y + radius;
-  while (posY < y + height - radius) {
-    const endY = Math.min(posY + dashLength, y + height - radius);
-    g.moveTo(x + width, posY);
-    g.lineTo(x + width, endY);
-    posY += dashLength + gapLength;
-  }
-
-  // Bottom edge
-  posX = x + width - radius;
-  while (posX > x + radius) {
-    const endX = Math.max(posX - dashLength, x + radius);
-    g.moveTo(posX, y + height);
-    g.lineTo(endX, y + height);
-    posX -= dashLength + gapLength;
-  }
-
-  // Left edge
-  posY = y + height - radius;
-  while (posY > y + radius) {
-    const endY = Math.max(posY - dashLength, y + radius);
-    g.moveTo(x, posY);
-    g.lineTo(x, endY);
-    posY -= dashLength + gapLength;
-  }
-
-  // Corner arcs
-  g.arc(x + radius, y + radius, radius, Math.PI, Math.PI * 1.5);
-  g.arc(x + width - radius, y + radius, radius, Math.PI * 1.5, 0);
-  g.arc(x + width - radius, y + height - radius, radius, 0, Math.PI * 0.5);
-  g.arc(x + radius, y + height - radius, radius, Math.PI * 0.5, Math.PI);
-
-  g.stroke({ color, width: lineWidth });
-}
+export default PixiSlot;

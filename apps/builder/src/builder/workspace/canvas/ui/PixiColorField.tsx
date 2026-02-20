@@ -1,177 +1,121 @@
 /**
- * PixiColorField - WebGL Color Field Component
+ * PixiColorField
  *
- * Phase 8: Notification & Color Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Color input field with hex value
+ * 투명 히트 영역(pixiGraphics) 기반 ColorField
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getColorFieldSizePreset(): fontSize, height, padding, borderRadius
- * - getColorFieldColorPreset(): backgroundColor, borderColor, textColor
+ * @updated 2026-02-20 A등급 패턴 전환 (시각적 드로잉 제거, 투명 히트 영역)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useRef, useContext } from 'react';
 import {
-  ColorFieldSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiColorFieldProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiColorField - Color input field with swatch and hex value
+ * PixiColorField
+ *
+ * 투명 히트 영역 기반 ColorField (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiColorField({
+export const PixiColorField = memo(function PixiColorField({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
 }: PixiColorFieldProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const label = (props.label as string) || '';
-  const value = (props.value as string) || '#3b82f6';
-  const isDisabled = (props.isDisabled as boolean) || false;
-  const isInvalid = (props.isInvalid as boolean) || false;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  const sizePreset = useMemo(() => {
-    const sizeSpec = ColorFieldSpec.sizes[size] || ColorFieldSpec.sizes[ColorFieldSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  const variantColors = useMemo(() => {
-    const variantSpec = ColorFieldSpec.variants[variant] || ColorFieldSpec.variants[ColorFieldSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    backgroundColor: 0xffffff,
-    borderColor: 0xd1d5db,
-    focusBorderColor: variantColors.bg,
-    errorBorderColor: 0xef4444,
-    textColor: variantColors.text,
-    labelColor: variantColors.text,
-    disabledBackgroundColor: 0xf3f4f6,
-  }), [variantColors]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // Parse color value
-  const colorValue = useMemo(() => {
-    const hex = value.replace('#', '');
-    return parseInt(hex, 16) || 0x3b82f6;
-  }, [value]);
-
-  // Calculate dimensions
-  const swatchSize = sizePreset.height - sizePreset.padding * 2;
-  const fieldWidth = sizePreset.maxWidth;
-
-  // Draw input field
-  const drawField = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Background
-      const bgColor = isDisabled ? colorPreset.disabledBackgroundColor : colorPreset.backgroundColor;
-      g.roundRect(0, 0, fieldWidth, sizePreset.height, sizePreset.borderRadius);
-      g.fill({ color: bgColor });
-
-      // Border
-      const borderColor = isInvalid
-        ? colorPreset.errorBorderColor
-        : isSelected
-          ? colorPreset.focusBorderColor
-          : colorPreset.borderColor;
-      g.stroke({ color: borderColor, width: 1 });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, fieldWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [fieldWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid]
+    [hitWidth, hitHeight]
   );
 
-  // Draw color swatch
-  const drawSwatch = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      // Swatch background (checkerboard for transparency indication)
-      g.roundRect(0, 0, swatchSize, swatchSize, 4);
-      g.fill({ color: 0xe5e7eb });
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      // Actual color
-      g.roundRect(0, 0, swatchSize, swatchSize, 4);
-      g.fill({ color: colorValue });
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-      // Border
-      g.stroke({ color: 0xcad3dc, width: 0.5 });
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [swatchSize, colorValue]
-  );
-
-  // Text styles
-  const labelStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.labelFontSize,
-      fill: colorPreset.labelColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontWeight: '500',
-    }),
-    [sizePreset, colorPreset]
-  );
-
-  const valueStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize,
-      fill: isDisabled ? colorPreset.disabledBackgroundColor : colorPreset.textColor,
-      fontFamily: 'monospace',
-    }),
-    [sizePreset, colorPreset, isDisabled]
+    [element.id, onClick, isDisabled]
   );
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => !isDisabled && onClick?.(element.id)}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Label */}
-      {label && (
-        <pixiText
-          text={label}
-          style={labelStyle}
-        />
-      )}
-
-      {/* Field container */}
-      <pixiContainer>
-        <pixiGraphics
-          draw={drawField}
-          x={0}
-          y={0}
-        />
-
-        {/* Color swatch */}
-        <pixiGraphics draw={drawSwatch} />
-
-        {/* Hex value */}
-        <pixiText
-          text={value.toUpperCase()}
-          style={valueStyle}
-        />
-      </pixiContainer>
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiColorField;

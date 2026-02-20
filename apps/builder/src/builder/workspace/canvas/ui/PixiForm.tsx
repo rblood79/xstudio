@@ -1,144 +1,103 @@
 /**
- * PixiForm - WebGL Form Container Component
+ * Pixi Form
  *
- * Phase 7: Form & Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Form container with children slots
+ * 투명 히트 영역(pixiGraphics) 기반 Form 컨테이너
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 컨테이너 역할 — eventMode="passive"
  *
- * CSS 동기화:
- * - getFormSizePreset(): padding, gap, borderRadius
- * - getFormColorPreset(): backgroundColor, borderColor
+ * @updated 2026-02-20 A등급 패턴 재작성 (시각 드로잉 제거, Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useContext } from 'react';
+import { Graphics as PixiGraphicsClass } from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
-// 🚀 Spec Migration
-import { FormSpec, getVariantColors as getSpecVariantColors, getSizePreset as getSpecSizePreset } from '@xstudio/specs';
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiFormProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiForm - Form container with visual representation
+ * PixiForm
+ *
+ * 투명 히트 영역 기반 Form 컨테이너 (Skia 렌더링)
+ * - 컨테이너 역할 (eventMode="passive") — 자식 이벤트 전파 허용
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiForm({
+export const PixiForm = memo(function PixiForm({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
 }: PixiFormProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const showBorder = (props.showBorder as boolean) ?? true;
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => {
-    const sizeSpec = FormSpec.sizes[size] || FormSpec.sizes[FormSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(() => {
-    const variantSpec = FormSpec.variants[variant] || FormSpec.variants[FormSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
-
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    backgroundColor: 0xffffff,
-    borderColor: 0xe5e7eb,
-    labelColor: variantColors.text,
-    separatorColor: 0xe5e7eb,
-    focusRingColor: variantColors.bg,
-  }), [variantColors]);
-
-  // Calculate dimensions
-  const formWidth = (props.width as number) || 320;
-  const formHeight = (props.height as number) || 200;
-
-  // Draw form container
-  const drawContainer = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Background
-      g.roundRect(0, 0, formWidth, formHeight, sizePreset.borderRadius);
-      g.fill({ color: colorPreset.backgroundColor });
-
-      // Border
-      if (showBorder) {
-        g.stroke({ color: colorPreset.borderColor, width: 1 });
-      }
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, formWidth + 4, formHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusRingColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [formWidth, formHeight, sizePreset, colorPreset, showBorder, isSelected]
+    [hitWidth, hitHeight]
   );
 
-  // Draw form icon (simple form representation)
-  const drawFormIcon = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      const iconX = formWidth / 2;
-      const iconY = formHeight / 2;
-      const lineWidth = 60;
-      const lineHeight = 8;
-      const lineGap = 16;
+      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-      // Draw placeholder lines (representing form fields)
-      for (let i = 0; i < 3; i++) {
-        const y = iconY - lineGap + i * lineGap;
-        g.roundRect(iconX - lineWidth / 2, y - lineHeight / 2, lineWidth, lineHeight, 4);
-        g.fill({ color: colorPreset.separatorColor });
-      }
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [formWidth, formHeight, colorPreset]
-  );
-
-  // Label style
-  const labelStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.labelFontSize,
-      fill: colorPreset.labelColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontWeight: '500',
-    }),
-    [sizePreset, colorPreset]
+    [element.id, onClick]
   );
 
   return (
-    <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => onClick?.(element.id)}
-    >
-      {/* Form container */}
-      <pixiGraphics draw={drawContainer} />
-
-      {/* Form field placeholders */}
-      <pixiGraphics draw={drawFormIcon} />
-
-      {/* Form label indicator */}
-      <pixiText
-        text="Form"
-        style={labelStyle}
-        x={sizePreset.padding}
-        y={sizePreset.padding}
-        alpha={0.5}
+    <pixiContainer>
+      {/* Form 컨테이너 — 자식 이벤트 전파를 허용하는 passive 모드 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="passive"
+        cursor="default"
+        onPointerDown={handleClick}
       />
     </pixiContainer>
   );
-}
+});
+
+export default PixiForm;

@@ -1,166 +1,123 @@
 /**
- * PixiToolbar - WebGL Toolbar Component
+ * Pixi Toolbar
  *
- * Phase 7: Form & Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Horizontal/Vertical toolbar container
+ * 투명 히트 영역(pixiGraphics) 기반 Toolbar
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getToolbarSizePreset(): height, padding, gap, borderRadius
- * - getToolbarColorPreset(): backgroundColor, borderColor, separatorColor
+ * @since Phase 7
+ * @updated 2026-02-20 A등급 패턴 재작성 (Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useContext, useRef } from 'react';
+import {
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
-// 🚀 Spec Migration
-import { ToolbarSpec, getVariantColors as getSpecVariantColors, getSizePreset as getSpecSizePreset } from '@xstudio/specs';
+// ============================================
+// Types
+// ============================================
 
-const TOOLBAR_COLOR_PRESETS: Record<string, { backgroundColor: number; borderColor: number; separatorColor: number; iconColor: number; hoverBackgroundColor: number }> = {
-  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, separatorColor: 0xe5e7eb, iconColor: 0x374151, hoverBackgroundColor: 0xf3f4f6 },
-  primary: { backgroundColor: 0xeff6ff, borderColor: 0x3b82f6, separatorColor: 0xbfdbfe, iconColor: 0x3b82f6, hoverBackgroundColor: 0xdbeafe },
-  secondary: { backgroundColor: 0xeef2ff, borderColor: 0x6366f1, separatorColor: 0xc7d2fe, iconColor: 0x6366f1, hoverBackgroundColor: 0xe0e7ff },
-  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, separatorColor: 0xe5e7eb, iconColor: 0x374151, hoverBackgroundColor: 0xe5e7eb },
-};
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiToolbarProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiToolbar - Toolbar container with action buttons
+ * PixiToolbar
+ *
+ * 투명 히트 영역 기반 Toolbar (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiToolbar({
+export const PixiToolbar = memo(function PixiToolbar({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
+  //onChange,
 }: PixiToolbarProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const orientation = (props.orientation as string) || 'horizontal';
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => {
-    const sizeSpec = ToolbarSpec.sizes[size] || ToolbarSpec.sizes[ToolbarSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
-  const colorPreset = useMemo(() => TOOLBAR_COLOR_PRESETS[variant] ?? TOOLBAR_COLOR_PRESETS.default, [variant]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(() => {
-    const variantSpec = ToolbarSpec.variants[variant] || ToolbarSpec.variants[ToolbarSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // Calculate dimensions based on orientation
-  const isHorizontal = orientation === 'horizontal';
-  const toolbarWidth = isHorizontal
-    ? (props.width as number) || 200
-    : sizePreset.height;
-  const toolbarHeight = isHorizontal
-    ? sizePreset.height
-    : (props.height as number) || 200;
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // Draw toolbar container
-  const drawContainer = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Background
-      g.roundRect(0, 0, toolbarWidth, toolbarHeight, sizePreset.borderRadius);
-      g.fill({ color: colorPreset.backgroundColor });
-      g.stroke({ color: colorPreset.borderColor, width: 1 });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, toolbarWidth + 4, toolbarHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: variantColors.bg, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [toolbarWidth, toolbarHeight, sizePreset, colorPreset, isSelected, variantColors.bg]
+    [hitWidth, hitHeight]
   );
 
-  // Draw toolbar items placeholder
-  const drawItems = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      const buttonSize = sizePreset.height - sizePreset.padding * 2;
-      const itemCount = 4;
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      for (let i = 0; i < itemCount; i++) {
-        if (isHorizontal) {
-          const x = sizePreset.padding + i * (buttonSize + sizePreset.gap);
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-          // Draw separator before item (except first)
-          if (i === 2) {
-            g.rect(
-              x - sizePreset.gap / 2 - sizePreset.separatorWidth / 2,
-              (toolbarHeight - sizePreset.separatorHeight) / 2,
-              sizePreset.separatorWidth,
-              sizePreset.separatorHeight
-            );
-            g.fill({ color: colorPreset.separatorColor });
-          }
-
-          // Draw button placeholder
-          g.roundRect(x, sizePreset.padding, buttonSize, buttonSize, 4);
-          g.fill({ color: colorPreset.hoverBackgroundColor });
-
-          // Draw icon placeholder
-          const iconSize = buttonSize * 0.5;
-          const iconX = x + (buttonSize - iconSize) / 2;
-          const iconY = sizePreset.padding + (buttonSize - iconSize) / 2;
-          g.roundRect(iconX, iconY, iconSize, iconSize, 2);
-          g.fill({ color: colorPreset.iconColor, alpha: 0.3 });
-        } else {
-          const y = sizePreset.padding + i * (buttonSize + sizePreset.gap);
-
-          // Draw separator before item (except first)
-          if (i === 2) {
-            g.rect(
-              (toolbarWidth - sizePreset.separatorHeight) / 2,
-              y - sizePreset.gap / 2 - sizePreset.separatorWidth / 2,
-              sizePreset.separatorHeight,
-              sizePreset.separatorWidth
-            );
-            g.fill({ color: colorPreset.separatorColor });
-          }
-
-          // Draw button placeholder
-          g.roundRect(sizePreset.padding, y, buttonSize, buttonSize, 4);
-          g.fill({ color: colorPreset.hoverBackgroundColor });
-
-          // Draw icon placeholder
-          const iconSize = buttonSize * 0.5;
-          const iconX = sizePreset.padding + (buttonSize - iconSize) / 2;
-          const iconY = y + (buttonSize - iconSize) / 2;
-          g.roundRect(iconX, iconY, iconSize, iconSize, 2);
-          g.fill({ color: colorPreset.iconColor, alpha: 0.3 });
-        }
-      }
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [sizePreset, colorPreset, toolbarWidth, toolbarHeight, isHorizontal]
+    [element.id, onClick, isDisabled]
   );
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => onClick?.(element.id)}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Toolbar container */}
-      <pixiGraphics draw={drawContainer} />
-
-      {/* Toolbar items */}
-      <pixiGraphics draw={drawItems} />
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiToolbar;

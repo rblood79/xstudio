@@ -7,7 +7,7 @@
  * @see docs/WASM.md §5.6 이펙트 파이프라인
  */
 
-import type { CanvasKit, Canvas } from 'canvaskit-wasm';
+import type { CanvasKit, Canvas, ImageFilter } from 'canvaskit-wasm';
 import type { EffectStyle } from './types';
 import { SkiaDisposable } from './disposable';
 
@@ -77,7 +77,7 @@ export function beginRenderEffects(
           // saveLayer 경계가 외부 그림자를 자연스럽게 클리핑한다.
 
           // M-2: spread → dilate/erode filter 체인으로 근사
-          let inputFilter: unknown = null;
+          let inputFilter: ImageFilter | null = null;
           if (effect.spread && effect.spread !== 0) {
             inputFilter = effect.spread > 0
               ? scope.track(ck.ImageFilter.MakeDilate(effect.spread, effect.spread, null))

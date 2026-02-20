@@ -1,366 +1,66 @@
 /**
  * Pixi Radio
  *
- * 🚀 Phase 11 B2.4: Graphics 기반 RadioGroup
- * 🚀 Phase 11: CSS 변수 기반 리팩토링
+ * 투명 히트 영역(pixiGraphics) 기반 RadioGroup
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * Graphics를 사용하여 직접 라디오 버튼을 그립니다.
- * - PixiButton과 동일한 패턴 (명령형 Graphics)
- * - options가 없으면 기본 placeholder 표시
- *
- * CSS 동기화:
- * - .react-aria-RadioGroup: display: flex, flex-direction: column, gap: var(--gap)
- * - [data-radio-size="sm/md/lg"]: --radio-size, --font-size
- *
- * @since 2025-12-11 Phase 11 B2.4
- * @updated 2025-12-15 P10: Graphics 기반으로 리팩토링
- * @updated 2025-01-07 Phase 11 CSS 변수 기반 리팩토링
- * @updated 2026-02-19 Wave 4: LayoutComputedSizeContext로 히트 영역 통합 (수동 groupDimensions 제거)
+ * @updated 2026-02-20 A등급 패턴 재작성 (시각 드로잉 제거, Skia 렌더링 전환)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useContext, useMemo } from 'react';
-import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
+import { memo, useCallback, useContext } from 'react';
+import { Graphics as PixiGraphicsClass } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
-import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex } from '../sprites/styleConverter';
-import { drawCircle } from '../utils';
-import { useStore } from '../../../stores';
 import { LayoutComputedSizeContext } from '../layoutContext';
-
-// 🚀 Spec Migration
-import { getLabelStylePreset } from '../hooks/useSpecRenderer';
-import {
-  RadioSpec,
-  RADIO_DIMENSIONS,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
 
 // ============================================
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface PixiRadioProps {
   element: Element;
   isSelected?: boolean;
   onChange?: (elementId: string, selectedValue: string) => void;
-  onClick?: (elementId: string) => void;
-}
-
-interface RadioOption {
-  value: string;
-  label: string;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
 }
 
 // ============================================
-// Constants
-// ============================================
-
-// 🚀 Phase 11: CSS 동기화 - 하드코딩된 상수 대신 getRadioSizePreset() 사용
-const DEFAULT_BORDER_COLOR = 0xd1d5db; // fallback gray-300
-
-// 기본 옵션 (options가 없을 때 placeholder로 표시)
-const DEFAULT_OPTIONS: RadioOption[] = [
-  { value: 'option1', label: 'Option 1' },
-  { value: 'option2', label: 'Option 2' },
-];
-
-// ============================================
-// Helper Functions
+// Component
 // ============================================
 
 /**
- * props.options에서 라디오 옵션 파싱
+ * PixiRadio
+ *
+ * 투명 히트 영역 기반 RadioGroup (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ * - onChange: Skia/Preview에서 처리, Pixi에서는 클릭만 전달
  */
-function parseRadioOptionsFromProps(props: Record<string, unknown> | undefined): RadioOption[] | null {
-  if (!props) return null;
-
-  if (Array.isArray(props.options) && props.options.length > 0) {
-    return props.options.map((opt: unknown, index: number) => {
-      if (typeof opt === 'string') {
-        return { value: opt, label: opt };
-      }
-      if (typeof opt === 'object' && opt !== null) {
-        const optObj = opt as Record<string, unknown>;
-        return {
-          value: String(optObj.value || optObj.id || index),
-          label: String(optObj.label || optObj.name || optObj.value || ''),
-        };
-      }
-      return { value: String(index), label: String(opt) };
-    });
-  }
-
-  return null;
-}
-
-/**
- * 자식 Radio 요소들에서 옵션 파싱
- */
-function parseRadioOptionsFromChildren(childRadios: Element[]): RadioOption[] | null {
-  if (childRadios.length === 0) return null;
-
-  return childRadios
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-    .map((radio, index) => {
-      const props = radio.props as Record<string, unknown> | undefined;
-      return {
-        value: String(props?.value || props?.id || radio.id || index),
-        label: String(props?.children || props?.label || props?.text || `Option ${index + 1}`),
-      };
-    });
-}
-
-// ============================================
-// Sub-Component: RadioItem
-// ============================================
-
-interface RadioItemProps {
-  option: RadioOption;
-  isOptionSelected: boolean;
-  radioSize: number;
-  primaryColor: number;
-  textColor: number;
-  fontSize: number;
-  fontFamily: string;
-  itemWidth: number;
-  labelGap: number;
-  onSelect: (value: string) => void;
-}
-
-const RadioItem = memo(function RadioItem({
-  option,
-  isOptionSelected,
-  radioSize,
-  primaryColor,
-  textColor,
-  fontSize,
-  fontFamily,
-  itemWidth,
-  labelGap,
-  onSelect,
-}: RadioItemProps) {
-  const borderColor = isOptionSelected ? primaryColor : DEFAULT_BORDER_COLOR;
-  const backgroundColor = isOptionSelected ? primaryColor : 0xffffff;
-
-  // 라디오 원 그리기
-  // 🚀 Border-Box v2: drawCircle 유틸리티 사용
-  const drawRadio = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-
-      const radius = radioSize / 2;
-      const centerX = radius;
-      const centerY = radius;
-
-      // Border-Box v2: drawCircle 유틸리티로 배경 + 테두리 그리기
-      drawCircle(g, {
-        x: centerX,
-        y: centerY,
-        radius,
-        backgroundColor,
-        backgroundAlpha: 1,
-        border: {
-          width: 2,
-          color: borderColor,
-          alpha: 1,
-        },
-      });
-
-      // 내부 dot (선택된 경우)
-      if (isOptionSelected) {
-        const dotRadius = radioSize * 0.2;
-        g.circle(centerX, centerY, dotRadius);
-        g.fill({ color: 0xffffff, alpha: 1 });
-      }
-    },
-    [radioSize, backgroundColor, borderColor, isOptionSelected]
-  );
-
-  // 텍스트 스타일
-  const textStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily,
-        fontSize,
-        fill: textColor,
-      }),
-    [fontFamily, fontSize, textColor]
-  );
-
-  // 클릭 핸들러
-  const handlePointerDown = useCallback(() => {
-    onSelect(option.value);
-  }, [option.value, onSelect]);
-
-  return (
-    <pixiContainer>
-      <pixiContainer>
-        {/* 라디오 원 */}
-        <pixiGraphics
-          draw={drawRadio}
-          eventMode="static"
-          cursor="default"
-          onPointerDown={handlePointerDown}
-        />
-      </pixiContainer>
-
-      {/* 라벨 텍스트 */}
-      <pixiText
-        text={option.label}
-        style={textStyle}
-        eventMode="static"
-        cursor="default"
-        onPointerDown={handlePointerDown}
-      />
-    </pixiContainer>
-  );
-});
-
-// ============================================
-// Main Component
-// ============================================
-
 export const PixiRadio = memo(function PixiRadio({
   element,
-  onChange,
+  //isSelected,
   onClick,
 }: PixiRadioProps) {
   useExtend(PIXI_COMPONENTS);
-  const style = element.props?.style as CSSStyle | undefined;
-  const props = element.props as Record<string, unknown> | undefined;
 
   // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
   const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // variant에 따른 색상 (default, primary, secondary, tertiary, error, surface)
-  const variant = useMemo(() => {
-    return String(props?.variant || 'default');
-  }, [props?.variant]);
-
-  const variantColors = useMemo(() => {
-    const variantSpec = RadioSpec.variants[variant] || RadioSpec.variants[RadioSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
-
-  // Store에서 자식 Radio 요소들 가져오기
-  const elements = useStore((state) => state.elements);
-  const childRadios = useMemo(() => {
-    return elements.filter(
-      (el) => el.parent_id === element.id && el.tag === 'Radio'
-    );
-  }, [elements, element.id]);
-
-  // 라디오 옵션: 자식 Radio 요소들 > props.options > 기본값
-  const options = useMemo(() => {
-    // 1. 자식 Radio 요소들이 있으면 사용
-    const fromChildren = parseRadioOptionsFromChildren(childRadios);
-    if (fromChildren) return fromChildren;
-
-    // 2. props.options가 있으면 사용
-    const fromProps = parseRadioOptionsFromProps(props);
-    if (fromProps) return fromProps;
-
-    // 3. 기본값
-    return DEFAULT_OPTIONS;
-  }, [childRadios, props]);
-
-  // 선택된 값: RadioGroup props > 자식 Radio의 isSelected > 없음
-  const selectedValue = useMemo(() => {
-    // 1. RadioGroup의 value/selectedValue 우선
-    if (props?.value || props?.selectedValue || props?.defaultValue) {
-      return String(props.value || props.selectedValue || props.defaultValue);
-    }
-
-    // 2. 자식 Radio 중 isSelected/checked가 true인 항목 찾기
-    const selectedChild = childRadios.find((radio) => {
-      const radioProps = radio.props as Record<string, unknown> | undefined;
-      return Boolean(radioProps?.isSelected || radioProps?.checked || radioProps?.defaultSelected);
-    });
-
-    if (selectedChild) {
-      const radioProps = selectedChild.props as Record<string, unknown> | undefined;
-      return String(radioProps?.value || selectedChild.id);
-    }
-
-    return '';
-  }, [props, childRadios]);
-
-  // RadioGroup 라벨
-  const groupLabel = useMemo(() => {
-    return String(props?.label || props?.children || props?.text || '');
-  }, [props]);
-
-  // 방향: props.orientation > style.flexDirection
-  const isHorizontal = useMemo(() => {
-    // 1. orientation prop 확인 (vertical/horizontal)
-    const orientation = props?.orientation;
-    if (orientation === 'horizontal') return true;
-    if (orientation === 'vertical') return false;
-
-    // 2. style.flexDirection 확인 (row/column)
-    const flexDirection = (style as Record<string, unknown>)?.flexDirection;
-    return flexDirection === 'row';
-  }, [props?.orientation, style]);
-
-  // 🚀 Phase 0: CSS 동기화 - size prop에서 사이즈 프리셋 적용
-  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
-  const sizePreset = useMemo(() => {
-    const sizeSpec = RadioSpec.sizes[size] || RadioSpec.sizes[RadioSpec.defaultSize];
-    const specPreset = getSpecSizePreset(sizeSpec, 'light');
-    const dims = RADIO_DIMENSIONS[size] ?? RADIO_DIMENSIONS.md;
-    return {
-      ...specPreset,
-      radioSize: dims.outer,
-      innerDotSize: dims.inner,
-      labelGap: specPreset.gap ?? 8,
-      gap: specPreset.gap ?? 8,
-    };
-  }, [size]);
-  // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
-  const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
-
-  // 스타일 (CSS 사이즈 프리셋 적용)
-  const radioSize = sizePreset.radioSize;
-  const gap = sizePreset.gap;
-  // 🚀 테마 색상 사용 (inline style 오버라이드 지원)
-  const primaryColor = cssColorToHex(style?.backgroundColor, variantColors.bg);
-  const textColor = cssColorToHex(style?.color, variantColors.text);
-  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
-  const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : labelPreset.fontSize;
-  const fontFamily = labelPreset.fontFamily;
-
-  // 라벨이 있으면 옵션들의 Y 오프셋 추가
-  const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
-  const itemWidth = 120;
-
-  // 🚀 Wave 4: LayoutComputedSizeContext 우선, fallback은 수동 계산
-  // computedSize가 있으면 엔진(Taffy/Dropflow) 계산 결과 사용,
-  // 없으면 기존 수동 추정값을 유지하여 하위 호환성 보장
-  const fallbackDimensions = useMemo(() => {
-    const optionCount = options.length;
-    const optionHeight = radioSize + gap;
-
-    if (isHorizontal) {
-      return {
-        width: optionCount * itemWidth,
-        height: labelHeight + radioSize,
-      };
-    }
-    return {
-      width: itemWidth,
-      height: labelHeight + optionCount * optionHeight,
-    };
-  }, [options.length, radioSize, gap, labelHeight, isHorizontal, itemWidth]);
-
-  const hitWidth = computedSize?.width ?? fallbackDimensions.width;
-  const hitHeight = computedSize?.height ?? fallbackDimensions.height;
-
-  // 투명 히트 영역 (엔진 계산 크기 기반)
+  // 투명 히트 영역
   const drawHitArea = useCallback(
-    (g: PixiGraphics) => {
+    (g: PixiGraphicsClass) => {
       g.clear();
       g.rect(0, 0, hitWidth, hitHeight);
       g.fill({ color: 0xffffff, alpha: 0 });
@@ -368,66 +68,27 @@ export const PixiRadio = memo(function PixiRadio({
     [hitWidth, hitHeight]
   );
 
-  // 라벨 텍스트 스타일 - 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
-  const labelTextStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: labelPreset.fontFamily,
-        fontSize: labelPreset.fontSize,
-        fontWeight: labelPreset.fontWeight as import('pixi.js').TextStyleFontWeight,
-        fill: labelPreset.color,
-      }),
-    [labelPreset]
-  );
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-  // 클릭 핸들러
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
-  }, [element.id, onClick]);
+      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-  const handleOptionSelect = useCallback(
-    (optionValue: string) => {
-      onClick?.(element.id);
-      onChange?.(element.id, optionValue);
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [element.id, onClick, onChange]
+    [element.id, onClick]
   );
 
   return (
     <pixiContainer>
-      {/* RadioGroup 라벨 */}
-      {groupLabel && (
-        <pixiText
-          text={groupLabel}
-          style={labelTextStyle}
-          eventMode="none"
-        />
-      )}
-
-      {/* Radio 옵션들 */}
-      <pixiContainer>
-        {options.map((option, index) => {
-          const isOptionSelected = option.value === selectedValue;
-
-          return (
-            <RadioItem
-              key={`${option.value}-${index}`}
-              option={option}
-              isOptionSelected={isOptionSelected}
-              radioSize={radioSize}
-              primaryColor={primaryColor}
-              textColor={textColor}
-              fontSize={fontSize}
-              fontFamily={fontFamily}
-              itemWidth={itemWidth}
-              labelGap={sizePreset.labelGap}
-              onSelect={handleOptionSelect}
-            />
-          );
-        })}
-      </pixiContainer>
-
-      {/* 투명 히트 영역 (그룹 전체 선택용) — 크기는 LayoutComputedSizeContext에서 */}
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"

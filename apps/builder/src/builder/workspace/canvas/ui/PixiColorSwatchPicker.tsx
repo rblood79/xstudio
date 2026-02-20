@@ -1,154 +1,121 @@
 /**
- * PixiColorSwatchPicker - WebGL Color Swatch Picker Component
+ * PixiColorSwatchPicker
  *
- * Phase 8: Notification & Color Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Multiple color swatches with selection
+ * 투명 히트 영역(pixiGraphics) 기반 ColorSwatchPicker
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getColorSwatchPickerSizePreset(): swatchSize, gap, borderRadius
- * - getColorSwatchPickerColorPreset(): selectionOuterColor, focusRingColor
+ * @updated 2026-02-20 A등급 패턴 전환 (시각적 드로잉 제거, 투명 히트 영역)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useRef, useContext } from 'react';
 import {
-  ColorSwatchPickerSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiColorSwatchPickerProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
-// Default color palette
-const DEFAULT_COLORS = [
-  '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6',
-  '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
-];
+// ============================================
+// Component
+// ============================================
 
 /**
- * PixiColorSwatchPicker - Color swatch picker grid
+ * PixiColorSwatchPicker
+ *
+ * 투명 히트 영역 기반 ColorSwatchPicker (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiColorSwatchPicker({
+export const PixiColorSwatchPicker = memo(function PixiColorSwatchPicker({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
 }: PixiColorSwatchPickerProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const colors = (props.colors as string[]) || DEFAULT_COLORS;
-  const selectedColor = (props.value as string) || (props.selectedColor as string) || '';
-  const layout = (props.layout as string) || 'grid'; // grid or stack
-  const columnsPerRow = (props.columns as number) || 5;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  const sizePreset = useMemo(() => {
-    const sizeSpec = ColorSwatchPickerSpec.sizes[size] || ColorSwatchPickerSpec.sizes[ColorSwatchPickerSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  const variantColors = useMemo(() => {
-    const variantSpec = ColorSwatchPickerSpec.variants[variant] || ColorSwatchPickerSpec.variants[ColorSwatchPickerSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    selectionOuterColor: 0x000000,
-    selectionInnerColor: 0xffffff,
-    focusRingColor: variantColors.bg,
-  }), [variantColors]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // Calculate dimensions
-  const isStack = layout === 'stack';
-  const cols = isStack ? 1 : Math.min(columnsPerRow, colors.length);
-  const rows = Math.ceil(colors.length / cols);
-  const containerWidth = cols * sizePreset.swatchSize + (cols - 1) * sizePreset.gap;
-  const containerHeight = rows * sizePreset.swatchSize + (rows - 1) * sizePreset.gap;
-
-  // Parse color to number
-  const parseColor = useCallback((color: string) => {
-    const hex = color.replace('#', '');
-    return parseInt(hex, 16) || 0x3b82f6;
-  }, []);
-
-  // Draw selection indicator
-  const drawSelection = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-      if (isSelected) {
-        g.roundRect(-4, -4, containerWidth + 8, containerHeight + 8, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusRingColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [containerWidth, containerHeight, sizePreset, colorPreset, isSelected]
+    [hitWidth, hitHeight]
   );
 
-  // Draw single swatch
-  const drawSwatch = useCallback(
-    (g: PixiGraphics, color: number, isSwatchSelected: boolean) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      // Swatch
-      g.roundRect(0, 0, sizePreset.swatchSize, sizePreset.swatchSize, sizePreset.borderRadius);
-      g.fill({ color });
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      // Selection indicator (double border)
-      if (isSwatchSelected) {
-        // Outer border (black)
-        g.roundRect(0, 0, sizePreset.swatchSize, sizePreset.swatchSize, sizePreset.borderRadius);
-        g.stroke({ color: colorPreset.selectionOuterColor, width: sizePreset.selectionBorderWidth });
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-        // Inner border (white)
-        const offset = sizePreset.selectionBorderWidth + 2;
-        g.roundRect(
-          offset,
-          offset,
-          sizePreset.swatchSize - offset * 2,
-          sizePreset.swatchSize - offset * 2,
-          Math.max(0, sizePreset.borderRadius - offset)
-        );
-        g.stroke({ color: colorPreset.selectionInnerColor, width: sizePreset.selectionBorderWidth });
-      }
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [sizePreset, colorPreset]
+    [element.id, onClick, isDisabled]
   );
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => onClick?.(element.id)}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Selection indicator */}
-      <pixiGraphics draw={drawSelection} />
-
-      {/* Color swatches */}
-      {colors.map((color, index) => {
-        const col = index % cols;
-        const row = Math.floor(index / cols);
-        const x = col * (sizePreset.swatchSize + sizePreset.gap);
-        const y = row * (sizePreset.swatchSize + sizePreset.gap);
-        const colorNum = parseColor(color);
-        const isSwatchSelected = color.toLowerCase() === selectedColor.toLowerCase();
-
-        return (
-          <pixiGraphics
-            key={`swatch-${index}`}
-            draw={(g) => drawSwatch(g, colorNum, isSwatchSelected)}
-            x={x}
-            y={y}
-          />
-        );
-      })}
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiColorSwatchPicker;

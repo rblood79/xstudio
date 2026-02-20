@@ -1,335 +1,125 @@
 /**
  * Pixi Card
  *
- * 🚀 Phase 2: Card WebGL 컴포넌트 (Pattern A)
- *
- * 콘텐츠 컨테이너 카드 컴포넌트
- * - variant (default, primary, secondary, surface, elevated, outlined) 지원
- * - size (sm, md, lg) 지원
- * - hover 효과 지원
+ * 투명 히트 영역(pixiGraphics) 기반 Card 컨테이너
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
+ * - 컨테이너 컴포넌트: eventMode="passive"
  *
  * @since 2025-12-16 Phase 2 WebGL Migration
+ * @updated 2026-02-20 A등급 패턴 재작성 (Skia 렌더링 전환)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useContext, useRef } from "react";
 import {
-  Graphics as PixiGraphics,
-  TextStyle,
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
-import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex } from "../sprites/styleConverter";
-import { drawBox } from "../utils";
-
-// 🚀 Component Spec
-import {
-  CardSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
-import { useStore } from "../../../stores";
-import { LayoutComputedSizeContext } from "../layoutContext";
-import { useThemeColors } from "../hooks/useThemeColors";
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // ============================================
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface PixiCardProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
-  /** 🚀 Phase 10: Container children 요소들 */
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
+  /** Container children 요소들 */
   childElements?: Element[];
-  /** 🚀 Phase 10: children 요소 렌더링 함수 */
+  /** children 요소 렌더링 함수 */
   renderChildElement?: (element: Element) => React.ReactNode;
-}
-
-interface CardElementProps {
-  children?: string;
-  title?: string;
-  heading?: string;
-  subheading?: string;
-  description?: string;
-  variant?: "default" | "primary" | "secondary" | "surface" | "elevated" | "outlined";
-  size?: "sm" | "md" | "lg";
-  style?: CSSStyle;
 }
 
 // ============================================
 // Component
 // ============================================
 
+/**
+ * PixiCard
+ *
+ * 투명 히트 영역 기반 Card 컨테이너 (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ * - eventMode: "passive" — 컨테이너이므로 자식 이벤트 통과
+ */
 export const PixiCard = memo(function PixiCard({
   element,
-  isSelected,
+  //isSelected,
   onClick,
-  childElements,
-  renderChildElement,
+  //childElements,
+  //renderChildElement,
 }: PixiCardProps) {
   useExtend(PIXI_COMPONENTS);
-  const style = element.props?.style as CSSStyle | undefined;
-  const props = element.props as CardElementProps | undefined;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // 🚀 Store 액션 (선택된 요소의 layout 동기화용)
-  const updateSelectedElementLayout = useStore((s) => s.updateSelectedElementLayout);
-
-  // 상태
-  const [isHovered, setIsHovered] = useState(false);
-
-  // variant, size
-  const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
-  const size = useMemo(() => String(props?.size || "md"), [props?.size]);
-
-  // 🚀 Spec Migration
-  const sizePreset = useMemo(() => {
-    const sizeSpec = CardSpec.sizes[size] || CardSpec.sizes[CardSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
-
-  // 🚀 style.padding 우선 사용, 없으면 sizePreset.padding 사용
-  const effectivePadding = useMemo(() => {
-    if (style?.padding !== undefined) {
-      // padding 값을 숫자로 파싱 (예: '12px' → 12, '0' → 0)
-      const parsed = typeof style.padding === 'number'
-        ? style.padding
-        : parseInt(String(style.padding), 10);
-      return isNaN(parsed) ? sizePreset.padding : parsed;
-    }
-    return sizePreset.padding;
-  }, [style, sizePreset.padding]);
-
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 Spec Migration: variant에 따른 테마 색상
-  const variantColors = useMemo(() => {
-    const variantSpec = CardSpec.variants[variant] || CardSpec.variants[CardSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
-
-  // 색상 프리셋 값들 (CSS 변수에서 읽어온 테마 색상 적용)
-  // 🚀 Phase 8+: .react-aria-Card CSS와 동기화
-  const colorPreset = useMemo(() => ({
-    backgroundColor: themeColors.cardBg,        // CSS: var(--surface-container)
-    hoverBgColor: themeColors.cardBgHover,      // CSS: color-mix(--surface-container, black)
-    textColor: variantColors.text,              // CSS: var(--on-surface)
-    borderColor: themeColors.cardBorder,        // CSS: var(--outline-variant)
-    focusRingColor: variantColors.bg,
-  }), [themeColors, variantColors]);
-
-  // 현재 배경색 계산
-  const currentBgColor = useMemo(() => {
-    if (style?.backgroundColor) {
-      return cssColorToHex(style.backgroundColor, colorPreset.backgroundColor);
-    }
-    return isHovered ? colorPreset.hoverBgColor : colorPreset.backgroundColor;
-  }, [style, isHovered, colorPreset]);
-
-  // 텍스트 색상
-  const textColor = useMemo(() => {
-    if (style?.color) {
-      return cssColorToHex(style.color, colorPreset.textColor);
-    }
-    return colorPreset.textColor;
-  }, [style, colorPreset]);
-
-  // 테두리 색상
-  const borderColor = useMemo(() => {
-    if (style?.borderColor) {
-      return cssColorToHex(style.borderColor, colorPreset.borderColor);
-    }
-    return colorPreset.borderColor;
-  }, [style, colorPreset]);
-
-  // 카드 제목 (heading 또는 title)
-  const cardTitle = useMemo(() => {
-    return String(props?.heading || props?.title || "");
-  }, [props?.heading, props?.title]);
-
-  // 카드 설명 (description 또는 children)
-  const cardDescription = useMemo(() => {
-    return String(props?.description || props?.children || "");
-  }, [props?.description, props?.children]);
-
-  // 🚀 A등급 패턴: LayoutComputedSizeContext만 사용 (PixiButton 패턴)
-  // engines/utils.ts의 calculateContentHeight()가 Card 텍스트 콘텐츠 높이를 정확히 계산하므로
-  // PixiCard에서 자체 높이 계산(measureWrappedTextHeight)을 제거하고 엔진 결과만 신뢰한다.
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
   const computedSize = useContext(LayoutComputedSizeContext);
-  const fallbackWidth = 200;
-  const fallbackHeight = 60;
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // Graphics 그리기용 픽셀 값 (레이아웃 엔진 계산값 우선, fallback 사용)
-  const cardWidth = computedSize?.width ?? fallbackWidth;
-  const cardHeight = computedSize?.height ?? fallbackHeight;
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 카드 배경 그리기
-  const drawCard = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-      const borderWidth = variant === "outlined" ? 2 : variant === "elevated" ? 0 : 1;
-      const hasShadow = variant === "elevated";
-
-      // 그림자 효과 (elevated variant)
-      if (hasShadow) {
-        // 간단한 그림자 시뮬레이션 (여러 레이어)
-        for (let i = 3; i >= 1; i--) {
-          const shadowAlpha = 0.05 * (4 - i);
-          g.roundRect(
-            i * 2,
-            i * 2,
-            cardWidth,
-            cardHeight,
-            sizePreset.borderRadius
-          );
-          g.fill({ color: 0x000000, alpha: shadowAlpha });
-        }
-      }
-
-      // 카드 본체
-      drawBox(g, {
-        width: cardWidth,
-        height: cardHeight,
-        backgroundColor: currentBgColor,
-        backgroundAlpha: 1,
-        borderRadius: sizePreset.borderRadius,
-        border:
-          borderWidth > 0
-            ? { width: borderWidth, color: borderColor, alpha: 1, style: 'solid' as const, radius: sizePreset.borderRadius }
-            : undefined,
-      });
-    },
-    [variant, cardWidth, cardHeight, sizePreset.borderRadius, currentBgColor, borderColor]
-  );
-
-  // 제목 텍스트 스타일
-  const titleStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: "Pretendard, sans-serif",
-        fontSize: 16,
-        fill: textColor,
-        fontWeight: "600",
-        wordWrap: true,
-        wordWrapWidth: cardWidth - effectivePadding * 2,
-      }),
-    [textColor, cardWidth, effectivePadding]
-  );
-
-  // 설명 텍스트 스타일
-  const descriptionStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: "Pretendard, sans-serif",
-        fontSize: 14,
-        fill: textColor,
-        fontWeight: "400",
-        wordWrap: true,
-        wordWrapWidth: cardWidth - effectivePadding * 2,
-      }),
-    [textColor, cardWidth, effectivePadding]
-  );
-
-  // 이벤트 핸들러
-  const handlePointerEnter = useCallback(() => {
-    setIsHovered(true);
-  }, []);
-
-  const handlePointerLeave = useCallback(() => {
-    setIsHovered(false);
-  }, []);
-
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
-  }, [element.id, onClick]);
-
-  // 🚀 Phase 20: 선택된 요소의 computed layout을 store에 동기화
-  // LayoutComputedSizeContext가 변경되면 store 동기화
-  useEffect(() => {
-    if (isSelected && computedSize?.width && computedSize?.height) {
-      updateSelectedElementLayout(element.id, {
-        width: computedSize.width,
-        height: computedSize.height,
-      });
-    }
-  }, [isSelected, element.id, computedSize, updateSelectedElementLayout]);
-
-  // 🚀 Phase 19: 투명 히트 영역
+  // 투명 히트 영역
   const drawHitArea = useCallback(
-    (g: PixiGraphics) => {
+    (g: PixiGraphicsClass) => {
       g.clear();
-      g.rect(0, 0, cardWidth, cardHeight);
+      g.rect(0, 0, hitWidth, hitHeight);
       g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [cardWidth, cardHeight]
+    [hitWidth, hitHeight]
   );
 
-  // 🚀 Phase 10: children이 있으면 배경 크기를 자동으로 조절하기 위해 layout 수정
-  const hasChildren = childElements && childElements.length > 0;
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-  // 🚀 Phase 10: card-header 표시 여부 (heading, subheading, title 중 하나라도 있으면)
-  const hasHeader = cardTitle || props?.subheading;
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-  // 🚀 Phase 10: card-content 표시 여부 (description 또는 children이 있으면)
-  const hasContent = cardDescription || hasChildren;
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+    },
+    [element.id, onClick, isDisabled]
+  );
 
   return (
-    <pixiContainer>
-      {/* 카드 배경 */}
-      <pixiGraphics draw={drawCard} />
-
-      {/* 🚀 Phase 10: card-header (iframe 구조 동기화) */}
-      {hasHeader && (
-        <pixiContainer>
-          {/* heading (또는 title) */}
-          {cardTitle && (
-            <pixiText
-              text={cardTitle}
-              style={titleStyle}
-            />
-          )}
-          {/* subheading */}
-          {props?.subheading && (
-            <pixiText
-              text={String(props.subheading)}
-              style={descriptionStyle}
-            />
-          )}
-        </pixiContainer>
-      )}
-
-      {/* 🚀 Phase 10: card-content (iframe 구조 동기화) */}
-      {/* description과 children이 card-content 안에 수직 배치됨 */}
-      {hasContent && (
-        <pixiContainer>
-          {/* card-description (width: 100%) - 전체 너비 차지 */}
-          {cardDescription && (
-            <pixiContainer>
-              <pixiText
-                text={cardDescription}
-                style={descriptionStyle}
-              />
-            </pixiContainer>
-          )}
-          {/* children-row: 가로 배치 (flex row wrap) - description 아래 */}
-          {hasChildren && renderChildElement && (
-            <pixiContainer>
-              {childElements.map((childEl) => renderChildElement(childEl))}
-            </pixiContainer>
-          )}
-        </pixiContainer>
-      )}
-
-      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
+    <pixiContainer
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
+    >
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 / passive: 컨테이너 자식 이벤트 통과 */}
       <pixiGraphics
         draw={drawHitArea}
-        eventMode="static"
+        eventMode="passive"
         cursor="default"
-        onPointerEnter={handlePointerEnter}
-        onPointerLeave={handlePointerLeave}
         onPointerDown={handleClick}
       />
     </pixiContainer>

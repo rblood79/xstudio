@@ -1,355 +1,120 @@
 /**
- * PixiTree.tsx
+ * PixiTree
  *
- * WebGL Tree component with CSS synchronization
- * Pattern C + Recursive: Reads TreeItem children with hierarchy
+ * 투명 히트 영역 기반 Tree (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  *
- * @package xstudio
+ * @updated 2026-02-20 A등급 패턴으로 재작성 (Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
-import { useStore } from '@/builder/stores';
-
-// 🚀 Component Spec
+import { memo, useCallback, useRef, useContext } from 'react';
 import {
-  TreeSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiTreeProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
-interface TreeItemData {
-  id: string;
-  text: string;
-  depth: number;
-  hasChildren: boolean;
-  isExpanded: boolean;
-  isSelected?: boolean;
-  parentId: string | null;
-}
+// ============================================
+// Component
+// ============================================
 
-export function PixiTree({
+/**
+ * PixiTree
+ *
+ * 투명 히트 영역 기반 Tree (Skia 렌더링)
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ */
+export const PixiTree = memo(function PixiTree({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
-  onChange,
 }: PixiTreeProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // 🚀 Spec Migration
-  const sizePreset = useMemo(() => {
-    const sizeSpec = TreeSpec.sizes[size] || TreeSpec.sizes[TreeSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
-  const colorPreset = useMemo(() => {
-    const variantSpec = TreeSpec.variants[variant] || TreeSpec.variants[TreeSpec.defaultVariant];
-    const colors = getSpecVariantColors(variantSpec, 'light');
-    return {
-      backgroundColor: colors.bg,
-      textColor: colors.text,
-      borderColor: colors.border ?? 0xe5e7eb,
-      hoverBgColor: colors.bgHover,
-      selectedBgColor: colors.bgPressed,
-      selectedTextColor: colors.text,
-      focusColor: colors.bg,
-      expandIconColor: colors.text,
-    };
-  }, [variant]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // Expanded state (local)
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 🚀 Performance: useRef로 hover 상태 관리 (리렌더링 없음)
-  const itemGraphicsRefs = useRef<Map<string, PixiGraphics>>(new Map());
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // Get all TreeItem elements
-  const allElements = useStore((state) => state.elements);
-
-  // Build flat list with depth information
-  const treeItems = useMemo(() => {
-    const result: TreeItemData[] = [];
-
-    // Find direct TreeItem children
-    const getChildren = (parentId: string, depth: number) => {
-      const children = allElements
-        .filter((el) => el.parent_id === parentId && el.tag === 'TreeItem')
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-      children.forEach((child) => {
-        const childTreeItems = allElements.filter(
-          (el) => el.parent_id === child.id && el.tag === 'TreeItem'
-        );
-        const hasChildren = childTreeItems.length > 0;
-        const isExpanded = expandedIds.has(child.id);
-
-        result.push({
-          id: child.id,
-          text:
-            (child.props?.children as string) ||
-            (child.props?.textValue as string) ||
-            'Item',
-          depth,
-          hasChildren,
-          isExpanded,
-          isSelected: child.props?.isSelected as boolean || false,
-          parentId,
-        });
-
-        // Recursively add children if expanded
-        if (hasChildren && isExpanded) {
-          getChildren(child.id, depth + 1);
-        }
-      });
-    };
-
-    getChildren(element.id, 0);
-    return result;
-  }, [allElements, element.id, expandedIds]);
-
-  // Calculate dimensions
-  const treeWidth = 250;
-  const treeHeight = Math.max(
-    80,
-    sizePreset.treePadding * 2 +
-      treeItems.length * (sizePreset.itemMinHeight + sizePreset.treeGap) -
-      (treeItems.length > 0 ? sizePreset.treeGap : 0)
-  );
-
-  // Text style
-  const textStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontSize: sizePreset.fontSize,
-        fill: colorPreset.textColor,
-        fontFamily: 'Inter, system-ui, sans-serif',
-      }),
-    [sizePreset.fontSize, colorPreset.textColor]
-  );
-
-  // Selected text style
-  const selectedTextStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontSize: sizePreset.fontSize,
-        fill: colorPreset.selectedTextColor,
-        fontFamily: 'Inter, system-ui, sans-serif',
-        fontWeight: '500',
-      }),
-    [sizePreset.fontSize, colorPreset.selectedTextColor]
-  );
-
-  // Draw container
-  const drawContainer = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-      g.roundRect(0, 0, treeWidth, treeHeight, sizePreset.borderRadius);
-      g.fill(colorPreset.backgroundColor);
-      g.stroke({ width: 1, color: colorPreset.borderColor });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, treeWidth + 4, treeHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ width: 2, color: colorPreset.focusColor });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [treeWidth, treeHeight, sizePreset.borderRadius, colorPreset, isSelected]
+    [hitWidth, hitHeight]
   );
 
-  // Draw item background
-  const drawItemBg = useCallback(
-    (
-      g: PixiGraphics,
-      width: number,
-      height: number,
-      isHovered: boolean,
-      isItemSelected: boolean
-    ) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      let bgColor = 0xffffff00; // transparent
-      if (isItemSelected) {
-        bgColor = colorPreset.selectedBgColor;
-      } else if (isHovered) {
-        bgColor = colorPreset.hoverBgColor;
-      }
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      if (bgColor !== 0xffffff00) {
-        g.roundRect(0, 0, width, height, 4);
-        g.fill(bgColor);
-      }
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [colorPreset]
+    [element.id, onClick, isDisabled]
   );
-
-  // Draw chevron
-  const drawChevron = useCallback(
-    (g: PixiGraphics, isExpanded: boolean, hasChildren: boolean) => {
-      g.clear();
-
-      if (!hasChildren) return;
-
-      const size = sizePreset.chevronSize;
-      const centerX = size / 2;
-      const centerY = size / 2;
-
-      g.setTransform(centerX, centerY);
-
-      if (isExpanded) {
-        g.rotation = Math.PI / 2;
-      }
-
-      // Draw chevron arrow >
-      g.moveTo(-3, -5);
-      g.lineTo(3, 0);
-      g.lineTo(-3, 5);
-      g.stroke({ width: 2, color: colorPreset.expandIconColor });
-
-      g.setTransform(0, 0);
-    },
-    [sizePreset.chevronSize, colorPreset.expandIconColor]
-  );
-
-  // Toggle expand/collapse
-  const toggleExpand = useCallback((itemId: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(itemId)) {
-        next.delete(itemId);
-      } else {
-        next.add(itemId);
-      }
-      return next;
-    });
-  }, []);
-
-  // Handle item click
-  const handleItemClick = useCallback(
-    (itemId: string) => {
-      if (onChange) {
-        onChange(element.id, { selectedItemId: itemId });
-      }
-    },
-    [element.id, onChange]
-  );
-
-  // Handle container click
-  const handleContainerClick = useCallback(() => {
-    if (onClick) {
-      onClick(element.id);
-    }
-  }, [element.id, onClick]);
-
-  const itemWidth = treeWidth - sizePreset.treePadding * 2;
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerDown={handleContainerClick}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Container */}
-      <pixiGraphics draw={drawContainer} />
-
-      {/* Tree Items */}
-      {treeItems.map((item, index) => {
-        const itemY =
-          sizePreset.treePadding +
-          index * (sizePreset.itemMinHeight + sizePreset.treeGap);
-        const indent = item.depth * sizePreset.indentSize;
-
-        return (
-          <pixiContainer
-            key={item.id}
-            x={sizePreset.treePadding}
-            y={itemY}
-            eventMode="static"
-            cursor="default"
-            onPointerOver={() => {
-              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
-              const g = itemGraphicsRefs.current.get(item.id);
-              if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, true, item.isSelected || false);
-            }}
-            onPointerOut={() => {
-              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
-              const g = itemGraphicsRefs.current.get(item.id);
-              if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, item.isSelected || false);
-            }}
-            onPointerDown={(e: { stopPropagation: () => void }) => {
-              e.stopPropagation();
-              handleItemClick(item.id);
-            }}
-          >
-            {/* Item background */}
-            <pixiGraphics
-              ref={(g) => {
-                if (g) itemGraphicsRefs.current.set(item.id, g);
-              }}
-              draw={(g) =>
-                drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, item.isSelected || false)
-              }
-            />
-
-            {/* Chevron (for expandable items) */}
-            {item.hasChildren && (
-              <pixiContainer
-                x={indent}
-                y={(sizePreset.itemMinHeight - sizePreset.chevronSize) / 2}
-                eventMode="static"
-                cursor="default"
-                onPointerDown={(e: { stopPropagation: () => void }) => {
-                  e.stopPropagation();
-                  toggleExpand(item.id);
-                }}
-              >
-                <pixiGraphics
-                  draw={(g) => drawChevron(g, item.isExpanded, item.hasChildren)}
-                />
-              </pixiContainer>
-            )}
-
-            {/* Item text */}
-            <pixiText
-              text={item.text}
-              style={item.isSelected ? selectedTextStyle : textStyle}
-              x={indent + sizePreset.chevronSize + 4}
-              y={(sizePreset.itemMinHeight - sizePreset.fontSize) / 2}
-            />
-          </pixiContainer>
-        );
-      })}
-
-      {/* Empty state */}
-      {treeItems.length === 0 && (
-        <pixiText
-          text="No items"
-          style={
-            new TextStyle({
-              fontSize: sizePreset.fontSize,
-              fill: 0x9ca3af,
-              fontFamily: 'Inter, system-ui, sans-serif',
-              fontStyle: 'italic',
-            })
-          }
-          x={treeWidth / 2}
-          y={treeHeight / 2}
-          anchor={0.5}
-        />
-      )}
+      {/* 투명 히트 영역 — Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
 
 export default PixiTree;

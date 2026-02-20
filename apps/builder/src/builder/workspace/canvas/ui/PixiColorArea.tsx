@@ -1,162 +1,121 @@
 /**
- * PixiColorArea - WebGL Color Area Component
+ * PixiColorArea
  *
- * Phase 6: Date/Color Components
- * Pattern: Pattern A (JSX + Graphics.draw) - 2D color selection area
+ * 투명 히트 영역(pixiGraphics) 기반 ColorArea
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getColorAreaSizePreset(): width, height, thumbSize
- * - getColorAreaColorPreset(): borderColor, thumbBorderColor
+ * @updated 2026-02-20 A등급 패턴 전환 (시각적 드로잉 제거, 투명 히트 영역)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useRef, useContext } from 'react';
 import {
-  ColorAreaSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiColorAreaProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiColorArea - 2D color selection with saturation/brightness axes
+ * PixiColorArea
+ *
+ * 투명 히트 영역 기반 ColorArea (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiColorArea({
+export const PixiColorArea = memo(function PixiColorArea({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
 }: PixiColorAreaProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const hue = (props.hue as number) ?? 0;
-  const xValue = (props.xValue as number) ?? 0.7;
-  const yValue = (props.yValue as number) ?? 0.3;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  const sizePreset = useMemo(() => {
-    const sizeSpec = ColorAreaSpec.sizes[size] || ColorAreaSpec.sizes[ColorAreaSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  const variantColors = useMemo(() => {
-    const variantSpec = ColorAreaSpec.variants[variant] || ColorAreaSpec.variants[ColorAreaSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    borderColor: 0xd1d5db,
-    focusRingColor: variantColors.bg,
-    thumbBorderColor: 0xffffff,
-    thumbInnerBorderColor: 0xcad3dc,
-  }), [variantColors]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // Calculate thumb position
-  const thumbX = xValue * sizePreset.width;
-  const thumbY = (1 - yValue) * sizePreset.height; // Invert Y (brightness decreases downward)
-
-  // Draw color area with gradient
-  const drawArea = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Draw gradient grid (approximation of saturation/brightness)
-      const gridSize = 8;
-      const cellWidth = sizePreset.width / gridSize;
-      const cellHeight = sizePreset.height / gridSize;
-
-      for (let x = 0; x < gridSize; x++) {
-        for (let y = 0; y < gridSize; y++) {
-          const saturation = x / (gridSize - 1);
-          const brightness = 1 - y / (gridSize - 1);
-          const color = hsbToHex(hue, saturation, brightness);
-
-          g.rect(x * cellWidth, y * cellHeight, cellWidth + 1, cellHeight + 1);
-          g.fill({ color });
-        }
-      }
-
-      // Border
-      g.roundRect(0, 0, sizePreset.width, sizePreset.height, sizePreset.borderRadius);
-      g.stroke({ color: colorPreset.borderColor, width: 1 });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, sizePreset.width + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusRingColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [sizePreset, colorPreset, hue, isSelected]
+    [hitWidth, hitHeight]
   );
 
-  // Draw thumb
-  const drawThumb = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      // Thumb outer circle (white border)
-      g.circle(0, 0, sizePreset.thumbSize / 2);
-      g.fill({ color: colorPreset.thumbBorderColor });
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      // Thumb inner border
-      g.circle(0, 0, sizePreset.thumbSize / 2 - sizePreset.thumbBorderWidth);
-      g.stroke({ color: colorPreset.thumbInnerBorderColor, width: 1 });
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-      // Thumb center (current color)
-      const thumbColor = hsbToHex(hue, xValue, yValue);
-      g.circle(0, 0, sizePreset.thumbSize / 2 - sizePreset.thumbBorderWidth - 1);
-      g.fill({ color: thumbColor });
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [sizePreset, colorPreset, hue, xValue, yValue]
+    [element.id, onClick, isDisabled]
   );
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => onClick?.(element.id)}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Color gradient area */}
-      <pixiGraphics draw={drawArea} />
-
-      {/* Thumb */}
-      <pixiGraphics draw={drawThumb} x={thumbX} y={thumbY} />
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
 
-/**
- * Convert HSB to hex color
- */
-function hsbToHex(h: number, s: number, b: number): number {
-  // HSB to RGB conversion
-  const c = b * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = b - c;
-
-  let r = 0, g = 0, blue = 0;
-  const hue = h % 360;
-
-  if (hue < 60) { r = c; g = x; blue = 0; }
-  else if (hue < 120) { r = x; g = c; blue = 0; }
-  else if (hue < 180) { r = 0; g = c; blue = x; }
-  else if (hue < 240) { r = 0; g = x; blue = c; }
-  else if (hue < 300) { r = x; g = 0; blue = c; }
-  else { r = c; g = 0; blue = x; }
-
-  const rInt = Math.floor((r + m) * 255);
-  const gInt = Math.floor((g + m) * 255);
-  const bInt = Math.floor((blue + m) * 255);
-
-  return (rInt << 16) | (gInt << 8) | bInt;
-}
+export default PixiColorArea;

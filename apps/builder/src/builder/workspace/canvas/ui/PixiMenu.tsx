@@ -1,331 +1,119 @@
 /**
  * Pixi Menu
  *
- * 🚀 Phase 2: Menu WebGL 컴포넌트 (Pattern C)
- *
- * 드롭다운/컨텍스트 메뉴 컴포넌트
- * - variant (default, primary, secondary, tertiary, error, filled) 지원
- * - size (sm, md, lg) 지원
- * - Store에서 MenuItem 자식 요소 읽기
- * - hover/selected 상태 지원
+ * 투명 히트 영역(pixiGraphics) 기반 Menu
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
  * @since 2025-12-16 Phase 2 WebGL Migration
+ * @updated 2026-02-20 A등급 패턴 재작성 (Skia 렌더링 전환)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useContext, useRef } from "react";
 import {
-  Graphics as PixiGraphics,
-  TextStyle,
-  CanvasTextMetrics,
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
-import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex } from "../sprites/styleConverter";
-import { drawBox } from "../utils";
-import { useStore } from "../../../stores";
-
-// 🚀 Component Spec
-import {
-  MenuSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // ============================================
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface PixiMenuProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
-}
-
-interface MenuElementProps {
-  variant?: "default" | "primary" | "secondary" | "tertiary" | "error" | "filled";
-  size?: "sm" | "md" | "lg";
-  style?: CSSStyle;
-}
-
-interface MenuItemData {
-  id: string;
-  text: string;
-  icon?: string;
-  shortcut?: string;
-  isSeparator?: boolean;
-  isDisabled?: boolean;
-  y: number;
-  height: number;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
 }
 
 // ============================================
 // Component
 // ============================================
 
+/**
+ * PixiMenu
+ *
+ * 투명 히트 영역 기반 Menu (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ */
 export const PixiMenu = memo(function PixiMenu({
   element,
+  //isSelected,
   onClick,
 }: PixiMenuProps) {
   useExtend(PIXI_COMPONENTS);
-  const style = element.props?.style as CSSStyle | undefined;
-  const props = element.props as MenuElementProps | undefined;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // Store에서 자식 요소 읽기
-  const elements = useStore((state) => state.elements);
-  const childItems = useMemo(() => {
-    return elements
-      .filter(
-        (el) =>
-          el.parent_id === element.id &&
-          (el.tag === "MenuItem" || el.tag === "MenuSeparator" || el.tag === "Separator")
-      )
-      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }, [elements, element.id]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // variant, size
-  const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
-  const size = useMemo(() => String(props?.size || "md"), [props?.size]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 🚀 Spec Migration
-  const sizePreset = useMemo(() => {
-    const sizeSpec = MenuSpec.sizes[size] || MenuSpec.sizes[MenuSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // 🚀 Spec Migration: variant에 따른 테마 색상
-  const variantColors = useMemo(() => {
-    const variantSpec = MenuSpec.variants[variant] || MenuSpec.variants[MenuSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
-
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    backgroundColor: 0xffffff,
-    borderColor: 0xe5e7eb,
-    textColor: variantColors.text,
-    hoverBgColor: 0xf3f4f6,
-    hoverTextColor: variantColors.bg,
-    separatorColor: 0x9ca3af,
-  }), [variantColors]);
-
-  // hover 상태 관리
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-
-  // 색상 (inline style 오버라이드 지원)
-  const bgColor = useMemo(() => {
-    if (style?.backgroundColor) {
-      return cssColorToHex(style.backgroundColor, colorPreset.backgroundColor);
-    }
-    return colorPreset.backgroundColor;
-  }, [style, colorPreset]);
-
-  const borderColor = useMemo(() => {
-    if (style?.borderColor) {
-      return cssColorToHex(style.borderColor, colorPreset.borderColor);
-    }
-    return colorPreset.borderColor;
-  }, [style, colorPreset]);
-
-  // 레이아웃 계산
-  const menuLayout = useMemo(() => {
-    const items: MenuItemData[] = [];
-    let currentY = sizePreset.containerPadding;
-    let maxWidth = sizePreset.minWidth;
-
-    const textStyle = new TextStyle({
-      fontFamily: "Pretendard, sans-serif",
-      fontSize: sizePreset.fontSize,
-      fontWeight: "600",
-    });
-
-    childItems.forEach((item) => {
-      const isSeparator = item.tag === "MenuSeparator" || item.tag === "Separator";
-      const isDisabled = Boolean(item.props?.isDisabled);
-
-      if (isSeparator) {
-        items.push({
-          id: item.id,
-          text: "",
-          isSeparator: true,
-          y: currentY,
-          height: 1 + sizePreset.itemPaddingY * 2,
-        });
-        currentY += 1 + sizePreset.itemPaddingY * 2;
-      } else {
-        const itemText = String(
-          item.props?.children || item.props?.text || item.props?.title || "Menu Item"
-        );
-        const shortcut = item.props?.shortcut as string | undefined;
-
-        const metrics = CanvasTextMetrics.measureText(itemText, textStyle);
-        const shortcutWidth = shortcut
-          ? CanvasTextMetrics.measureText(shortcut, textStyle).width + 20
-          : 0;
-
-        const itemWidth =
-          sizePreset.itemPaddingX * 2 + metrics.width + shortcutWidth + 20;
-        maxWidth = Math.max(maxWidth, itemWidth);
-
-        const itemHeight = sizePreset.fontSize + sizePreset.itemPaddingY * 2;
-
-        items.push({
-          id: item.id,
-          text: itemText,
-          shortcut,
-          isDisabled,
-          y: currentY,
-          height: itemHeight,
-        });
-
-        currentY += itemHeight;
-      }
-    });
-
-    return {
-      items,
-      totalWidth: maxWidth + sizePreset.containerPadding * 2,
-      totalHeight: currentY + sizePreset.containerPadding,
-    };
-  }, [childItems, sizePreset]);
-
-  // 메뉴 배경 그리기
-  const drawMenuBackground = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-      drawBox(g, {
-        width: menuLayout.totalWidth,
-        height: menuLayout.totalHeight,
-        backgroundColor: bgColor,
-        backgroundAlpha: 1,
-        borderRadius: sizePreset.borderRadius,
-        border: borderColor !== 0x00000000 ? { width: 1, color: borderColor, alpha: 1, style: 'solid' as const, radius: sizePreset.borderRadius } : undefined,
-      });
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [menuLayout.totalWidth, menuLayout.totalHeight, bgColor, borderColor, sizePreset.borderRadius]
+    [hitWidth, hitHeight]
   );
 
-  // 메뉴 아이템 배경 그리기
-  const drawItemBackground = useCallback(
-    (g: PixiGraphics, item: MenuItemData, isHovered: boolean) => {
-      g.clear();
-      if (item.isSeparator) {
-        // 구분선
-        g.rect(
-          sizePreset.containerPadding,
-          0,
-          menuLayout.totalWidth - sizePreset.containerPadding * 2,
-          1
-        );
-        g.fill({ color: colorPreset.separatorColor, alpha: 0.3 });
-      } else if (isHovered && !item.isDisabled) {
-        // hover 배경
-        g.roundRect(
-          sizePreset.containerPadding / 2,
-          0,
-          menuLayout.totalWidth - sizePreset.containerPadding,
-          item.height,
-          4
-        );
-        g.fill({ color: colorPreset.hoverBgColor });
-      }
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
+
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
+
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [menuLayout.totalWidth, sizePreset.containerPadding, colorPreset]
-  );
-
-  // 텍스트 스타일
-  const createTextStyle = useCallback(
-    (isHovered: boolean, isDisabled: boolean) =>
-      new TextStyle({
-        fontFamily: "Pretendard, sans-serif",
-        fontSize: sizePreset.fontSize,
-        fill: isDisabled
-          ? 0x9ca3af
-          : isHovered
-          ? colorPreset.hoverTextColor
-          : colorPreset.textColor,
-        fontWeight: "600",
-      }),
-    [sizePreset, colorPreset]
-  );
-
-  // shortcut 스타일
-  const shortcutStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: "monospace",
-        fontSize: sizePreset.fontSize - 2,
-        fill: 0x9ca3af,
-        fontWeight: "400",
-      }),
-    [sizePreset.fontSize]
-  );
-
-  // 클릭 핸들러
-  const handleItemClick = useCallback(
-    (item: MenuItemData) => {
-      if (!item.isSeparator && !item.isDisabled) {
-        onClick?.(item.id);
-      }
-    },
-    [onClick]
+    [element.id, onClick, isDisabled]
   );
 
   return (
-    <pixiContainer>
-      {/* 메뉴 배경 */}
+    <pixiContainer
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
+    >
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
       <pixiGraphics
-        draw={drawMenuBackground}
-        x={0}
-        y={0}
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
       />
-
-      {/* 메뉴 아이템들 */}
-      <pixiContainer>
-        {menuLayout.items.map((item, index) => {
-          const isHovered = hoveredIndex === index;
-
-          return (
-            <pixiContainer key={item.id} y={item.y}>
-              {/* 아이템 배경 */}
-              <pixiGraphics
-                draw={(g) => drawItemBackground(g, item, isHovered)}
-                x={0}
-                y={0}
-                eventMode="static"
-                cursor="default"
-                onPointerEnter={() => !item.isSeparator && setHoveredIndex(index)}
-                onPointerLeave={() => setHoveredIndex(null)}
-                onPointerDown={() => handleItemClick(item)}
-              />
-
-              {/* 아이템 텍스트 */}
-              {!item.isSeparator && (
-                <>
-                  <pixiText
-                    text={item.text}
-                    style={createTextStyle(isHovered, Boolean(item.isDisabled))}
-                    eventMode="static"
-                    cursor="default"
-                    onPointerEnter={() => setHoveredIndex(index)}
-                    onPointerLeave={() => setHoveredIndex(null)}
-                    onPointerDown={() => handleItemClick(item)}
-                  />
-
-                  {/* 단축키 */}
-                  {item.shortcut && (
-                    <pixiText
-                      text={item.shortcut}
-                      style={shortcutStyle}
-                    />
-                  )}
-                </>
-              )}
-            </pixiContainer>
-          );
-        })}
-      </pixiContainer>
     </pixiContainer>
   );
 });

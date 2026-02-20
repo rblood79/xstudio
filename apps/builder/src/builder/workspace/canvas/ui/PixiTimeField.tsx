@@ -1,191 +1,121 @@
 /**
- * PixiTimeField - WebGL Time Field Component
+ * PixiTimeField
  *
- * Phase 6: Date/Color Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Time input with segments
+ * 투명 히트 영역(pixiGraphics) 기반 TimeField
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getTimeFieldSizePreset(): fontSize, height, padding, gap
- * - getTimeFieldColorPreset(): backgroundColor, borderColor, textColor
+ * @updated 2026-02-20 A등급 패턴 전환 (시각적 드로잉 제거, 투명 히트 영역)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useRef, useContext } from 'react';
 import {
-  TimeFieldSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiTimeFieldProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiTimeField - Time input with hour/minute/second segments
+ * PixiTimeField
+ *
+ * 투명 히트 영역 기반 TimeField (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiTimeField({
+export const PixiTimeField = memo(function PixiTimeField({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
 }: PixiTimeFieldProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const value = (props.value as string) || '12:00';
-  const hourCycle = (props.hourCycle as number) || 12;
-  const showSeconds = (props.showSeconds as boolean) ?? false;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  const sizePreset = useMemo(() => {
-    const sizeSpec = TimeFieldSpec.sizes[size] || TimeFieldSpec.sizes[TimeFieldSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  const variantColors = useMemo(() => {
-    const variantSpec = TimeFieldSpec.variants[variant] || TimeFieldSpec.variants[TimeFieldSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    backgroundColor: 0xffffff,
-    borderColor: 0xd1d5db,
-    focusBorderColor: variantColors.bg,
-    textColor: variantColors.text,
-    placeholderColor: 0x9ca3af,
-  }), [variantColors]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // Parse time value
-  const timeParts = useMemo(() => {
-    const [time, period] = value.split(' ');
-    const parts = time.split(':');
-    return {
-      hour: parts[0] || '12',
-      minute: parts[1] || '00',
-      second: parts[2] || '00',
-      period: period || (hourCycle === 12 ? 'PM' : ''),
-    };
-  }, [value, hourCycle]);
-
-  // Calculate width based on segments
-  const segmentWidth = sizePreset.fontSize * 1.5;
-  const separatorWidth = sizePreset.fontSize * 0.5;
-  const containerWidth = useMemo(() => {
-    let width = sizePreset.padding * 2;
-    width += segmentWidth * 2; // hour
-    width += separatorWidth; // :
-    width += segmentWidth * 2; // minute
-    if (showSeconds) {
-      width += separatorWidth; // :
-      width += segmentWidth * 2; // second
-    }
-    if (hourCycle === 12) {
-      width += sizePreset.gap;
-      width += segmentWidth * 1.5; // AM/PM
-    }
-    return width;
-  }, [sizePreset, segmentWidth, separatorWidth, showSeconds, hourCycle]);
-
-  // Draw container
-  const drawContainer = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Background
-      g.roundRect(0, 0, containerWidth, sizePreset.height, sizePreset.borderRadius);
-      g.fill({ color: colorPreset.backgroundColor });
-      g.stroke({
-        color: isSelected ? colorPreset.focusBorderColor : colorPreset.borderColor,
-        width: 1,
-      });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, containerWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [containerWidth, sizePreset, colorPreset, isSelected]
+    [hitWidth, hitHeight]
   );
 
-  // Text style
-  const textStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize,
-      fill: colorPreset.textColor,
-      fontFamily: 'monospace',
-    }),
-    [sizePreset, colorPreset]
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
+
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
+
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+    },
+    [element.id, onClick, isDisabled]
   );
-
-  const separatorStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize,
-      fill: colorPreset.placeholderColor,
-      fontFamily: 'monospace',
-    }),
-    [sizePreset, colorPreset]
-  );
-
-  // Calculate segment positions
-  let currentX = sizePreset.padding;
-  const centerY = sizePreset.height / 2 - sizePreset.fontSize / 2;
-
-  const segments: Array<{ text: string; x: number; isSeparator: boolean }> = [];
-
-  // Hour
-  segments.push({ text: timeParts.hour.padStart(2, '0'), x: currentX, isSeparator: false });
-  currentX += segmentWidth * 1.2;
-
-  // Separator
-  segments.push({ text: ':', x: currentX, isSeparator: true });
-  currentX += separatorWidth;
-
-  // Minute
-  segments.push({ text: timeParts.minute.padStart(2, '0'), x: currentX, isSeparator: false });
-  currentX += segmentWidth * 1.2;
-
-  if (showSeconds) {
-    // Separator
-    segments.push({ text: ':', x: currentX, isSeparator: true });
-    currentX += separatorWidth;
-
-    // Second
-    segments.push({ text: timeParts.second.padStart(2, '0'), x: currentX, isSeparator: false });
-    currentX += segmentWidth * 1.2;
-  }
-
-  if (hourCycle === 12) {
-    currentX += sizePreset.gap;
-    segments.push({ text: timeParts.period, x: currentX, isSeparator: false });
-  }
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => onClick?.(element.id)}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Container background */}
-      <pixiGraphics draw={drawContainer} />
-
-      {/* Time segments */}
-      {segments.map((segment, index) => (
-        <pixiText
-          key={index}
-          text={segment.text}
-          style={segment.isSeparator ? separatorStyle : textStyle}
-          x={segment.x}
-          y={centerY}
-        />
-      ))}
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiTimeField;

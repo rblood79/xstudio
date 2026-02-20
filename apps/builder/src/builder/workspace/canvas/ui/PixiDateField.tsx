@@ -1,173 +1,121 @@
 /**
- * PixiDateField - WebGL Date Field Component
+ * PixiDateField
  *
- * Phase 6: Date/Color Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Date input with segments
+ * 투명 히트 영역(pixiGraphics) 기반 DateField
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getDateFieldSizePreset(): fontSize, height, padding, gap
- * - getDateFieldColorPreset(): backgroundColor, borderColor, textColor
+ * @updated 2026-02-20 A등급 패턴 전환 (시각적 드로잉 제거, 투명 히트 영역)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useRef, useContext } from 'react';
 import {
-  DateFieldSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiDateFieldProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiDateField - Date input with year/month/day segments
+ * PixiDateField
+ *
+ * 투명 히트 영역 기반 DateField (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiDateField({
+export const PixiDateField = memo(function PixiDateField({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
 }: PixiDateFieldProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const value = (props.value as string) || '2024-01-15';
+  const props = element.props as Record<string, unknown> | undefined;
 
-  const sizePreset = useMemo(() => {
-    const sizeSpec = DateFieldSpec.sizes[size] || DateFieldSpec.sizes[DateFieldSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  const variantColors = useMemo(() => {
-    const variantSpec = DateFieldSpec.variants[variant] || DateFieldSpec.variants[DateFieldSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    backgroundColor: 0xffffff,
-    borderColor: 0xd1d5db,
-    focusBorderColor: variantColors.bg,
-    textColor: variantColors.text,
-    placeholderColor: 0x9ca3af,
-  }), [variantColors]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // Parse date value
-  const dateParts = useMemo(() => {
-    const parts = value.split('-');
-    return {
-      year: parts[0] || '2024',
-      month: parts[1] || '01',
-      day: parts[2] || '15',
-    };
-  }, [value]);
-
-  // Calculate width based on segments
-  const segmentWidth = sizePreset.fontSize * 1.2;
-  const separatorWidth = sizePreset.fontSize * 0.6;
-  const containerWidth = useMemo(() => {
-    let width = sizePreset.padding * 2;
-    width += segmentWidth * 3; // year (4 digits but compact)
-    width += separatorWidth; // /
-    width += segmentWidth * 1.5; // month
-    width += separatorWidth; // /
-    width += segmentWidth * 1.5; // day
-    return width;
-  }, [sizePreset, segmentWidth, separatorWidth]);
-
-  // Draw container
-  const drawContainer = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Background
-      g.roundRect(0, 0, containerWidth, sizePreset.height, sizePreset.borderRadius);
-      g.fill({ color: colorPreset.backgroundColor });
-      g.stroke({
-        color: isSelected ? colorPreset.focusBorderColor : colorPreset.borderColor,
-        width: 1,
-      });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, containerWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [containerWidth, sizePreset, colorPreset, isSelected]
+    [hitWidth, hitHeight]
   );
 
-  // Text style
-  const textStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize,
-      fill: colorPreset.textColor,
-      fontFamily: 'monospace',
-    }),
-    [sizePreset, colorPreset]
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
+
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
+
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+    },
+    [element.id, onClick, isDisabled]
   );
-
-  const separatorStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize,
-      fill: colorPreset.placeholderColor,
-      fontFamily: 'monospace',
-    }),
-    [sizePreset, colorPreset]
-  );
-
-  // Calculate segment positions
-  let currentX = sizePreset.padding;
-  const centerY = sizePreset.height / 2 - sizePreset.fontSize / 2;
-
-  const segments: Array<{ text: string; x: number; isSeparator: boolean }> = [];
-
-  // Year
-  segments.push({ text: dateParts.year, x: currentX, isSeparator: false });
-  currentX += segmentWidth * 2.5;
-
-  // Separator
-  segments.push({ text: '/', x: currentX, isSeparator: true });
-  currentX += separatorWidth;
-
-  // Month
-  segments.push({ text: dateParts.month.padStart(2, '0'), x: currentX, isSeparator: false });
-  currentX += segmentWidth * 1.3;
-
-  // Separator
-  segments.push({ text: '/', x: currentX, isSeparator: true });
-  currentX += separatorWidth;
-
-  // Day
-  segments.push({ text: dateParts.day.padStart(2, '0'), x: currentX, isSeparator: false });
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => onClick?.(element.id)}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Container background */}
-      <pixiGraphics draw={drawContainer} />
-
-      {/* Date segments */}
-      {segments.map((segment, index) => (
-        <pixiText
-          key={index}
-          text={segment.text}
-          style={segment.isSeparator ? separatorStyle : textStyle}
-          x={segment.x}
-          y={centerY}
-        />
-      ))}
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiDateField;

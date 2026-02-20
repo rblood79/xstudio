@@ -740,7 +740,7 @@ const ElementsLayer = memo(function ElementsLayer({
 
       if (import.meta.env.DEV && layouts.length === 0 && children.length > 0) {
         console.warn('[renderWithCustomEngine] Empty layout result!',
-          { engine: engine.constructor.name, parentTag: parentElement.tag, parentDisplay, childCount: children.length });
+          { parentTag: parentElement.tag, parentDisplay, childCount: children.length });
       }
 
       const layoutMap = new Map<string, ComputedLayout>(

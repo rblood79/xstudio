@@ -178,16 +178,16 @@ if (import.meta.env.VITE_ENABLE_HITAREA_MODE === 'true') {
       style &&
       typeof style === 'object' &&
       'alpha' in style &&
-      typeof (style as Record<string, unknown>).alpha === 'number' &&
-      ((style as Record<string, unknown>).alpha as number) <= 0.001
+      typeof (style as unknown as Record<string, unknown>).alpha === 'number' &&
+      ((style as unknown as Record<string, unknown>).alpha as number) <= 0.001
     ) {
       const area = (this as unknown as Record<string, number>).__lastRectArea ?? 0;
       if (area > 0 && area < MAX_HIT_AREA) {
         return originalFill.call(this, {
-          ...(style as Record<string, unknown>),
+          ...(style as unknown as Record<string, unknown>),
           color: 0xff0000,
           alpha: 0.8,
-        });
+        } as unknown as Parameters<typeof originalFill>[0]);
       }
     }
     return originalFill.apply(this, args);

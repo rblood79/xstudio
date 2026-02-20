@@ -10,7 +10,7 @@
  * @see docs/WASM.md §5.11 노드별 renderSkia() 구현
  */
 
-import type { CanvasKit, Canvas, FontMgr, Paragraph, Image as SkImage, EmbindEnumEntity } from 'canvaskit-wasm';
+import type { CanvasKit, Canvas, FontMgr, Paragraph, Image as SkImage, EmbindEnumEntity, Paint } from 'canvaskit-wasm';
 import type { EffectStyle, FillStyle } from './types';
 import type { ClipPathShape } from '../sprites/styleConverter';
 import { applyFill } from './fills';
@@ -528,7 +528,7 @@ function buildClipPath(
 
 type BorderRadius = number | [number, number, number, number];
 
-type SkiaPaint = ReturnType<InstanceType<CanvasKit['Paint']>['constructor']>;
+type SkiaPaint = Paint;
 
 function parseSkiaColor(color: Float32Array): string {
   const r = Math.round(color[0] * 255);

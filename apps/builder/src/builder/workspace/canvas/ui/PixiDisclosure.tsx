@@ -1,219 +1,122 @@
 /**
- * PixiDisclosure - WebGL Disclosure Component
+ * PixiDisclosure
  *
- * Phase 5: Overlay & Special Components
- * Pattern: Pattern A (JSX + Graphics.draw) with expand/collapse state
+ * 투명 히트 영역 기반 Disclosure (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  *
- * CSS 동기화:
- * - getDisclosureSizePreset(): fontSize, padding, gap, chevronSize
- * - getDisclosureColorPreset(): backgroundColor, borderColor, textColor
+ * @updated 2026-02-20 A등급 패턴으로 재작성 (Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo, useState } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
-
-// 🚀 Component Spec
+import { memo, useCallback, useRef, useContext } from 'react';
 import {
-  DisclosureSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiDisclosureProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiDisclosure - Expandable disclosure panel with trigger button
+ * PixiDisclosure
+ *
+ * 투명 히트 영역 기반 Disclosure (Skia 렌더링)
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiDisclosure({
+export const PixiDisclosure = memo(function PixiDisclosure({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
   onChange,
 }: PixiDisclosureProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const title = (props.title as string) || (props.label as string) || 'Disclosure';
-  const content = (props.content as string) || (props.children as string) || 'Panel content';
-  const defaultExpanded = (props.defaultExpanded as boolean) || (props.isExpanded as boolean) || false;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // Internal expanded state
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const [isHovered, setIsHovered] = useState(false);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 Spec Migration
-  const sizePreset = useMemo(() => {
-    const sizeSpec = DisclosureSpec.sizes[size] || DisclosureSpec.sizes[DisclosureSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 🚀 Spec Migration: variant에 따른 테마 색상
-  const variantColors = useMemo(() => {
-    const variantSpec = DisclosureSpec.variants[variant] || DisclosureSpec.variants[DisclosureSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    backgroundColor: 0xffffff,
-    expandedBgColor: 0xf9fafb,
-    borderColor: 0xe5e7eb,
-    textColor: variantColors.text,
-    panelTextColor: 0x6b7280,
-    triggerHoverBgColor: 0xf3f4f6,
-    focusColor: variantColors.bg,
-  }), [variantColors]);
-
-  // Calculate dimensions
-  const containerWidth = (props.width as number) || 280;
-  const triggerHeight = sizePreset.fontSize + sizePreset.padding * 2 + sizePreset.gap;
-  const panelHeight = isExpanded ? sizePreset.fontSize * 2 + sizePreset.padding * 2 : 0;
-  const totalHeight = triggerHeight + (isExpanded ? panelHeight + sizePreset.gap : 0);
-
-  // Draw container background with border
-  const drawContainer = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Background
-      g.roundRect(0, 0, containerWidth, totalHeight, sizePreset.borderRadius);
-      g.fill({ color: isExpanded ? colorPreset.expandedBgColor : colorPreset.backgroundColor });
-      g.stroke({ color: colorPreset.borderColor, width: 1 });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, containerWidth + 4, totalHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [containerWidth, totalHeight, sizePreset, colorPreset, isSelected, isExpanded]
+    [hitWidth, hitHeight]
   );
 
-  // Draw trigger button
-  const drawTrigger = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      // Trigger background (hover state)
-      if (isHovered) {
-        g.roundRect(
-          sizePreset.padding,
-          sizePreset.padding,
-          containerWidth - sizePreset.padding * 2,
-          triggerHeight - sizePreset.padding,
-          sizePreset.borderRadius - 2
-        );
-        g.fill({ color: colorPreset.triggerHoverBgColor });
-      }
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      // Draw chevron icon
-      const chevronX = sizePreset.padding * 2;
-      const chevronY = triggerHeight / 2;
-      const chevronSize = sizePreset.chevronSize / 2;
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-      g.moveTo(chevronX, chevronY - chevronSize);
-      if (isExpanded) {
-        // Pointing down when expanded
-        g.lineTo(chevronX + chevronSize, chevronY + chevronSize / 2);
-        g.lineTo(chevronX - chevronSize, chevronY + chevronSize / 2);
-      } else {
-        // Pointing right when collapsed
-        g.lineTo(chevronX + chevronSize, chevronY);
-        g.lineTo(chevronX, chevronY + chevronSize);
-      }
-      g.closePath();
-      g.fill({ color: colorPreset.textColor });
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+      onChange?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [containerWidth, triggerHeight, sizePreset, colorPreset, isHovered, isExpanded]
+    [element.id, onClick, onChange, isDisabled]
   );
-
-  // Draw panel content area
-  const drawPanel = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-
-      if (!isExpanded) return;
-
-      // Panel separator line
-      g.moveTo(sizePreset.panelIndent, 0);
-      g.lineTo(containerWidth - sizePreset.padding, 0);
-      g.stroke({ color: colorPreset.borderColor, width: 1, alpha: 0.3 });
-    },
-    [containerWidth, sizePreset, colorPreset, isExpanded]
-  );
-
-  // Text styles
-  const titleStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize,
-      fontWeight: '500',
-      fill: colorPreset.textColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-    }),
-    [sizePreset, colorPreset]
-  );
-
-  const contentStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize * 0.9,
-      fill: colorPreset.panelTextColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      wordWrap: true,
-      wordWrapWidth: containerWidth - sizePreset.panelIndent - sizePreset.padding * 2,
-    }),
-    [sizePreset, colorPreset, containerWidth]
-  );
-
-  // Handle click
-  const handleClick = useCallback(() => {
-    setIsExpanded(!isExpanded);
-    onClick?.(element.id);
-    onChange?.(element.id, !isExpanded);
-  }, [element.id, isExpanded, onClick, onChange]);
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerEnter={() => setIsHovered(true)}
-      onPointerLeave={() => setIsHovered(false)}
-      onPointerTap={handleClick}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Container background */}
-      <pixiGraphics draw={drawContainer} />
-
-      {/* Trigger area */}
-      <pixiContainer>
-        {/* Trigger background (hover) */}
-        <pixiGraphics draw={drawTrigger} />
-
-        {/* Title text */}
-        <pixiText
-          text={title}
-          style={titleStyle}
-        />
-      </pixiContainer>
-
-      {/* Panel content (only when expanded) */}
-      {isExpanded && (
-        <pixiContainer>
-          {/* Panel separator line */}
-          <pixiGraphics draw={drawPanel} />
-          <pixiText
-            text={content}
-            style={contentStyle}
-          />
-        </pixiContainer>
-      )}
+      {/* 투명 히트 영역 — Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiDisclosure;

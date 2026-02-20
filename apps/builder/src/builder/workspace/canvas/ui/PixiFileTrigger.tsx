@@ -1,148 +1,101 @@
 /**
- * PixiFileTrigger - WebGL File Trigger Button Component
+ * Pixi FileTrigger
  *
- * Phase 7: Form & Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Button with file upload icon
+ * 투명 히트 영역(pixiGraphics) 기반 FileTrigger
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getFileTriggerSizePreset(): fontSize, height, padding, borderRadius
- * - getFileTriggerColorPreset(): backgroundColor, borderColor, textColor
+ * @updated 2026-02-20 A등급 패턴 재작성 (시각 드로잉 제거, Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useContext } from 'react';
+import { Graphics as PixiGraphicsClass } from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
-// 🚀 Spec Migration
-import { FileTriggerSpec, getVariantColors as getSpecVariantColors, getSizePreset as getSpecSizePreset } from '@xstudio/specs';
+// ============================================
+// Types
+// ============================================
 
-const FILE_TRIGGER_COLOR_PRESETS: Record<string, { backgroundColor: number; borderColor: number; textColor: number; iconColor: number; hoverBackgroundColor: number; focusRingColor: number }> = {
-  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, iconColor: 0x6b7280, hoverBackgroundColor: 0xf3f4f6, focusRingColor: 0x3b82f6 },
-  primary: { backgroundColor: 0x3b82f6, borderColor: 0x3b82f6, textColor: 0xffffff, iconColor: 0xffffff, hoverBackgroundColor: 0x2563eb, focusRingColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0x6366f1, borderColor: 0x6366f1, textColor: 0xffffff, iconColor: 0xffffff, hoverBackgroundColor: 0x4f46e5, focusRingColor: 0x6366f1 },
-  surface: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, iconColor: 0x6b7280, hoverBackgroundColor: 0xe5e7eb, focusRingColor: 0x3b82f6 },
-};
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiFileTriggerProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiFileTrigger - File upload button
+ * PixiFileTrigger
+ *
+ * 투명 히트 영역 기반 FileTrigger (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiFileTrigger({
+export const PixiFileTrigger = memo(function PixiFileTrigger({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
 }: PixiFileTriggerProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const label = (props.label as string) || (props.children as string) || 'Choose file';
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => {
-    const sizeSpec = FileTriggerSpec.sizes[size] || FileTriggerSpec.sizes[FileTriggerSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
-  const colorPreset = useMemo(() => FILE_TRIGGER_COLOR_PRESETS[variant] ?? FILE_TRIGGER_COLOR_PRESETS.default, [variant]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(() => {
-    const variantSpec = FileTriggerSpec.variants[variant] || FileTriggerSpec.variants[FileTriggerSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
-
-  // Calculate dimensions
-  const buttonWidth = (props.width as number) || 140;
-
-  // Draw button
-  const drawButton = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Background
-      g.roundRect(0, 0, buttonWidth, sizePreset.height, sizePreset.borderRadius);
-      g.fill({ color: colorPreset.backgroundColor });
-      g.stroke({ color: colorPreset.borderColor, width: 1 });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, buttonWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: variantColors.bg, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [buttonWidth, sizePreset, colorPreset, isSelected, variantColors.bg]
+    [hitWidth, hitHeight]
   );
 
-  // Draw upload icon
-  const drawIcon = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      const iconSize = sizePreset.iconSize;
-      const centerX = iconSize / 2;
-      const centerY = iconSize / 2;
+      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-      // Draw arrow up
-      const arrowWidth = iconSize * 0.5;
-      const arrowHeight = iconSize * 0.4;
-
-      // Arrow head
-      g.moveTo(centerX, centerY - arrowHeight / 2);
-      g.lineTo(centerX - arrowWidth / 2, centerY);
-      g.lineTo(centerX + arrowWidth / 2, centerY);
-      g.closePath();
-      g.fill({ color: colorPreset.iconColor });
-
-      // Arrow stem
-      g.rect(centerX - arrowWidth / 6, centerY - arrowHeight / 4, arrowWidth / 3, arrowHeight * 0.6);
-      g.fill({ color: colorPreset.iconColor });
-
-      // Base line
-      g.rect(centerX - arrowWidth / 2, centerY + arrowHeight / 3, arrowWidth, 2);
-      g.fill({ color: colorPreset.iconColor });
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [sizePreset, colorPreset]
-  );
-
-  // Text style
-  const textStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize,
-      fill: colorPreset.textColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-    }),
-    [sizePreset, colorPreset]
+    [element.id, onClick]
   );
 
   return (
-    <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => onClick?.(element.id)}
-    >
-      {/* Button background */}
+    <pixiContainer>
       <pixiGraphics
-        draw={drawButton}
-        x={0}
-        y={0}
-      />
-
-      {/* Upload icon */}
-      <pixiGraphics draw={drawIcon} />
-
-      {/* Label */}
-      <pixiText
-        text={label}
-        style={textStyle}
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
       />
     </pixiContainer>
   );
-}
+});
+
+export default PixiFileTrigger;

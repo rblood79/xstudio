@@ -1,250 +1,105 @@
 /**
  * Pixi NumberField
  *
- * 🚀 Phase 3: NumberField WebGL 컴포넌트 (Pattern A)
+ * 투명 히트 영역(pixiGraphics) 기반 NumberField
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * 숫자 입력 필드 with +/- 버튼
- * - variant (default, primary, secondary, tertiary, error, filled) 지원
- * - size (sm, md, lg) 지원
- * - decrement/increment 버튼
- *
- * @since 2025-12-16 Phase 3 WebGL Migration
+ * @updated 2026-02-20 A등급 패턴 재작성 (시각 드로잉 제거, Skia 렌더링 전환)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useState } from "react";
-import { Graphics as PixiGraphics, TextStyle } from "pixi.js";
+import { memo, useCallback, useContext } from "react";
+import { Graphics as PixiGraphicsClass } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
-import type { CSSStyle } from "../sprites/styleConverter";
-
-// 🚀 Spec Migration
-import { resolveTokenColor } from '../hooks/useSpecRenderer';
-import {
-  NumberFieldSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
-import type { TokenRef } from '@xstudio/specs';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // ============================================
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface PixiNumberFieldProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
-}
-
-interface NumberFieldElementProps {
-  variant?: "default" | "primary" | "secondary" | "tertiary" | "error" | "filled";
-  size?: "sm" | "md" | "lg";
-  value?: number;
-  label?: string;
-  placeholder?: string;
-  isDisabled?: boolean;
-  style?: CSSStyle;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
+  onChange?: (elementId: string, value: unknown) => void;
 }
 
 // ============================================
 // Component
 // ============================================
 
+/**
+ * PixiNumberField
+ *
+ * 투명 히트 영역 기반 NumberField (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ * - onChange: Skia/Preview에서 처리, Pixi에서는 클릭만 전달
+ */
 export const PixiNumberField = memo(function PixiNumberField({
   element,
+  //isSelected,
   onClick,
 }: PixiNumberFieldProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props as NumberFieldElementProps | undefined;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // variant, size
-  const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
-  const size = useMemo(() => String(props?.size || "md"), [props?.size]);
-  const label = useMemo(() => String(props?.label || ""), [props?.label]);
-  const value = useMemo(() => Number(props?.value ?? 0), [props?.value]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
+
   const isDisabled = Boolean(props?.isDisabled);
 
-  // 🚀 CSS / Spec에서 프리셋 읽기
-  const sizePreset = useMemo(() => {
-    const sizeSpec = NumberFieldSpec.sizes[size] || NumberFieldSpec.sizes[NumberFieldSpec.defaultSize];
-    const specPreset = getSpecSizePreset(sizeSpec, 'light');
-    // NumberField has extra fields not in spec, provide fallback
-    return {
-      ...specPreset,
-      paddingY: specPreset.paddingY,
-      paddingX: specPreset.paddingX,
-      buttonWidth: 36,
-      inputWidth: specPreset.height * 2.5,
-      labelFontSize: specPreset.fontSize - 2,
-    };
-  }, [size]);
-
-  const colorPreset = useMemo(() => {
-    const variantSpec = NumberFieldSpec.variants[variant] || NumberFieldSpec.variants[NumberFieldSpec.defaultVariant];
-    const vc = getSpecVariantColors(variantSpec, 'light');
-    return {
-      backgroundColor: vc.bg,
-      textColor: vc.text,
-      borderColor: vc.border ?? 0x79747e,
-      labelColor: vc.text,
-      buttonBgColor: resolveTokenColor('{color.surface-container}' as TokenRef, 'light'),
-      buttonHoverBgColor: resolveTokenColor('{color.surface-container-high}' as TokenRef, 'light'),
-    };
-  }, [variant]);
-
-  // hover 상태 관리
-  const [hoveredButton, setHoveredButton] = useState<"decrement" | "increment" | null>(null);
-
-  // 전체 너비/높이 계산
-  const inputHeight = sizePreset.paddingY * 2 + sizePreset.fontSize;
-
-  // 버튼 그리기 (decrement)
-  const drawDecrementButton = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-      const isHovered = hoveredButton === "decrement";
-      const bgColor = isDisabled
-        ? 0x00000011
-        : isHovered
-        ? colorPreset.buttonHoverBgColor
-        : colorPreset.buttonBgColor;
-
-      // 왼쪽 둥근 모서리
-      g.roundRect(0, 0, sizePreset.buttonWidth, inputHeight, sizePreset.borderRadius);
-      g.fill({ color: bgColor });
-      g.setStrokeStyle({ width: 1, color: colorPreset.borderColor });
-      g.stroke();
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [hoveredButton, isDisabled, colorPreset, sizePreset, inputHeight]
+    [hitWidth, hitHeight]
   );
 
-  // 버튼 그리기 (increment)
-  const drawIncrementButton = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-      const isHovered = hoveredButton === "increment";
-      const bgColor = isDisabled
-        ? 0x00000011
-        : isHovered
-        ? colorPreset.buttonHoverBgColor
-        : colorPreset.buttonBgColor;
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      // 오른쪽 둥근 모서리
-      g.roundRect(0, 0, sizePreset.buttonWidth, inputHeight, sizePreset.borderRadius);
-      g.fill({ color: bgColor });
-      g.setStrokeStyle({ width: 1, color: colorPreset.borderColor });
-      g.stroke();
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
+
+      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [hoveredButton, isDisabled, colorPreset, sizePreset, inputHeight]
+    [element.id, onClick, isDisabled]
   );
-
-  // Input 영역 그리기
-  const drawInput = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-      g.rect(0, 0, sizePreset.inputWidth, inputHeight);
-      g.fill({ color: colorPreset.backgroundColor });
-      g.setStrokeStyle({ width: 1, color: colorPreset.borderColor });
-      g.stroke();
-    },
-    [colorPreset, sizePreset, inputHeight]
-  );
-
-  // 텍스트 스타일
-  const buttonTextStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: "Pretendard, sans-serif",
-        fontSize: sizePreset.fontSize,
-        fill: isDisabled ? 0x9ca3af : colorPreset.textColor,
-        fontWeight: "500",
-      }),
-    [sizePreset.fontSize, isDisabled, colorPreset.textColor]
-  );
-
-  const labelTextStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: "Pretendard, sans-serif",
-        fontSize: sizePreset.labelFontSize,
-        fill: colorPreset.labelColor,
-        fontWeight: "500",
-      }),
-    [sizePreset.labelFontSize, colorPreset.labelColor]
-  );
-
-  const valueTextStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: "Pretendard, sans-serif",
-        fontSize: sizePreset.fontSize,
-        fill: isDisabled ? 0x9ca3af : colorPreset.textColor,
-        fontWeight: "400",
-      }),
-    [sizePreset.fontSize, isDisabled, colorPreset.textColor]
-  );
-
-  // 클릭 핸들러
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
-  }, [onClick, element.id]);
 
   return (
     <pixiContainer>
-      {/* 라벨 */}
-      {label && (
-        <pixiText text={label} style={labelTextStyle} />
-      )}
-
-      {/* NumberField 그룹 */}
-      <pixiContainer>
-        {/* Decrement 버튼 */}
-        <pixiContainer>
-          <pixiGraphics
-            draw={drawDecrementButton}
-            eventMode="static"
-            cursor="default"
-            onPointerEnter={() => !isDisabled && setHoveredButton("decrement")}
-            onPointerLeave={() => setHoveredButton(null)}
-            onPointerDown={handleClick}
-          />
-          <pixiText
-            text="−"
-            style={buttonTextStyle}
-          />
-        </pixiContainer>
-
-        {/* Input 영역 */}
-        <pixiContainer>
-          <pixiGraphics
-            draw={drawInput}
-            eventMode="static"
-            cursor="default"
-            onPointerDown={handleClick}
-          />
-          <pixiText
-            text={String(value)}
-            style={valueTextStyle}
-          />
-        </pixiContainer>
-
-        {/* Increment 버튼 */}
-        <pixiContainer>
-          <pixiGraphics
-            draw={drawIncrementButton}
-            eventMode="static"
-            cursor="default"
-            onPointerEnter={() => !isDisabled && setHoveredButton("increment")}
-            onPointerLeave={() => setHoveredButton(null)}
-            onPointerDown={handleClick}
-          />
-          <pixiText
-            text="+"
-            style={buttonTextStyle}
-          />
-        </pixiContainer>
-      </pixiContainer>
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
 });

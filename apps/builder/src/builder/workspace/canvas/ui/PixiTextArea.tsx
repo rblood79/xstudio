@@ -1,201 +1,107 @@
 /**
- * PixiTextArea - WebGL TextArea Component
+ * Pixi TextArea
  *
- * Phase 7: Form & Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Multi-line text input
+ * 투명 히트 영역(pixiGraphics) 기반 TextArea
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getTextAreaSizePreset(): fontSize, minHeight, padding, borderRadius
- * - getTextAreaColorPreset(): backgroundColor, borderColor, textColor
+ * @updated 2026-02-20 A등급 패턴 재작성 (시각 드로잉 제거, Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useContext } from 'react';
+import { Graphics as PixiGraphicsClass } from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
-// 🚀 Spec Migration
-import { resolveTokenColor } from '../hooks/useSpecRenderer';
-import {
-  TextAreaSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
-import type { TokenRef } from '@xstudio/specs';
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiTextAreaProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiTextArea - Multi-line text input with label and description
+ * PixiTextArea
+ *
+ * 투명 히트 영역 기반 TextArea (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ * - onChange: Skia/Preview에서 처리, Pixi에서는 클릭만 전달
  */
-export function PixiTextArea({
+export const PixiTextArea = memo(function PixiTextArea({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
 }: PixiTextAreaProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const label = (props.label as string) || '';
-  const placeholder = (props.placeholder as string) || '';
-  const value = (props.value as string) || '';
-  const description = (props.description as string) || '';
-  const isDisabled = (props.isDisabled as boolean) || false;
-  const isInvalid = (props.isInvalid as boolean) || false;
-  const errorMessage = (props.errorMessage as string) || '';
-  const rows = (props.rows as number) || 3;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // Get presets from CSS / Spec
-  const sizePreset = useMemo(() => {
-    const sizeSpec = TextAreaSpec.sizes[size] || TextAreaSpec.sizes[TextAreaSpec.defaultSize];
-    const specPreset = getSpecSizePreset(sizeSpec, 'light');
-    return {
-      ...specPreset,
-      minHeight: specPreset.height,
-      padding: specPreset.paddingY,
-      paddingX: specPreset.paddingX,
-      lineHeight: 1.5,
-      gap: specPreset.gap ?? 6,
-      labelFontSize: specPreset.fontSize - 2,
-      descriptionFontSize: specPreset.fontSize - 2,
-    };
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(() => {
-    const variantSpec = TextAreaSpec.variants[variant] || TextAreaSpec.variants[TextAreaSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => {
-    return {
-      backgroundColor: variantColors.bg,
-      borderColor: variantColors.border ?? 0x79747e,
-      focusBorderColor: resolveTokenColor('{color.primary}' as TokenRef, 'light'),
-      textColor: variantColors.text,
-      placeholderColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
-      labelColor: variantColors.text,
-      descriptionColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
-      disabledBackgroundColor: resolveTokenColor('{color.surface-container}' as TokenRef, 'light'),
-      disabledTextColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
-      errorBorderColor: resolveTokenColor('{color.error}' as TokenRef, 'light'),
-      errorTextColor: resolveTokenColor('{color.error}' as TokenRef, 'light'),
-    };
-  }, [variantColors]);
-
-  // Calculate dimensions
-  const fieldWidth = (props.width as number) || 280;
-  const fieldHeight = Math.max(sizePreset.minHeight, rows * sizePreset.fontSize * sizePreset.lineHeight + sizePreset.padding * 2);
-
-  // Draw textarea field
-  const drawField = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Background
-      const bgColor = isDisabled ? colorPreset.disabledBackgroundColor : colorPreset.backgroundColor;
-      g.roundRect(0, 0, fieldWidth, fieldHeight, sizePreset.borderRadius);
-      g.fill({ color: bgColor });
-
-      // Border
-      const borderColor = isInvalid
-        ? colorPreset.errorBorderColor
-        : isSelected
-          ? colorPreset.focusBorderColor
-          : colorPreset.borderColor;
-      g.stroke({ color: borderColor, width: 1 });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, fieldWidth + 4, fieldHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [fieldWidth, fieldHeight, sizePreset, colorPreset, isSelected, isDisabled, isInvalid]
+    [hitWidth, hitHeight]
   );
 
-  // Text styles
-  const labelStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.labelFontSize,
-      fill: colorPreset.labelColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontWeight: '500',
-    }),
-    [sizePreset, colorPreset]
-  );
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-  const inputStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize,
-      fill: isDisabled
-        ? colorPreset.disabledTextColor
-        : value
-          ? colorPreset.textColor
-          : colorPreset.placeholderColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      wordWrap: true,
-      wordWrapWidth: fieldWidth - sizePreset.paddingX * 2,
-      lineHeight: sizePreset.fontSize * sizePreset.lineHeight,
-    }),
-    [sizePreset, colorPreset, value, isDisabled, fieldWidth]
-  );
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-  const descriptionStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.descriptionFontSize,
-      fill: isInvalid ? colorPreset.errorTextColor : colorPreset.descriptionColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-    }),
-    [sizePreset, colorPreset, isInvalid]
-  );
+      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-  // Display text
-  const displayText = value || placeholder;
-  const descriptionText = isInvalid && errorMessage ? errorMessage : description;
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+    },
+    [element.id, onClick, isDisabled]
+  );
 
   return (
-    <pixiContainer
-      eventMode="static"
-      cursor="default"
-      onPointerTap={() => onClick?.(element.id)}
-    >
-      {/* Label */}
-      {label && (
-        <pixiText
-          text={label}
-          style={labelStyle}
-        />
-      )}
-
-      {/* TextArea field */}
-      <pixiContainer>
-        <pixiGraphics
-          draw={drawField}
-          x={0}
-          y={0}
-        />
-        <pixiText
-          text={displayText}
-          style={inputStyle}
-        />
-      </pixiContainer>
-
-      {/* Description / Error message */}
-      {descriptionText && (
-        <pixiText
-          text={descriptionText}
-          style={descriptionStyle}
-        />
-      )}
+    <pixiContainer>
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiTextArea;
