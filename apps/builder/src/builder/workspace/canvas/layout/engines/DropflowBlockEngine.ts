@@ -26,14 +26,16 @@ import type {
   XComputedLayout,
   XLayoutContext,
 } from '@xstudio/layout-flow';
-import { enrichWithIntrinsicSize, INLINE_BLOCK_TAGS } from './utils';
+import { enrichWithIntrinsicSize, INLINE_BLOCK_TAGS, calculateBaseline } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 import {
   MIN_CONTENT,
   MAX_CONTENT,
   FIT_CONTENT,
+  resolveCSSSizeValue,
 } from './cssValueParser';
+import type { CSSValueContext } from './cssValueParser';
 
 // ---------------------------------------------------------------------------
 // Element → XElement 변환
@@ -206,6 +208,16 @@ function layoutInlineRun(
   let lineY = startY;
 
   for (const line of lines) {
+    // RC-5: baseline 정렬을 위한 line-level baseline 계산
+    // 각 baseline-aligned 아이템의 baseline을 계산하고, line의 최대 baseline을 결정
+    let lineBaseline = 0;
+    for (const item of line.items) {
+      if (item.verticalAlign === 'baseline' || item.verticalAlign === undefined) {
+        const itemBaseline = item.margin.top + calculateBaseline(item.child, item.h);
+        if (itemBaseline > lineBaseline) lineBaseline = itemBaseline;
+      }
+    }
+
     let x = 0;
     for (const item of line.items) {
       const { child, w, h, margin, verticalAlign } = item;
@@ -224,11 +236,13 @@ function layoutInlineRun(
           yOffset = (line.lineHeight - outerH) / 2 + margin.top;
           break;
         case 'baseline':
-        default:
-          // CSS Preview에서 inline-block 버튼들은 가운데 정렬로 렌더링됨
-          // baseline 정렬 시 텍스트가 동일한 패딩 구조를 가진 요소들은 middle과 유사
-          yOffset = (line.lineHeight - outerH) / 2 + margin.top;
+        default: {
+          // RC-5: 실제 CSS baseline 정렬
+          // 아이템의 baseline을 line의 공통 baseline에 맞춤
+          const itemBaseline = margin.top + calculateBaseline(child, h);
+          yOffset = lineBaseline - itemBaseline + margin.top;
           break;
+        }
       }
 
       results.push({
@@ -261,29 +275,30 @@ function layoutInlineRun(
  */
 function resolveCSSLength(value: unknown, available: number): number {
   if (typeof value === 'number') {
-    // sentinel 값 방어: FIT_CONTENT(-2), MIN_CONTENT(-3), MAX_CONTENT(-4)는
-    // enrichWithIntrinsicSize에서 pixel 값으로 변환되어야 하지만,
-    // 변환이 이루어지지 않은 경우를 대비하여 0으로 처리한다.
-    if (value === FIT_CONTENT || value === MIN_CONTENT || value === MAX_CONTENT) return 0;
+    // RC-6: sentinel 값 fallback — enrichment 실패 시 available 사용
+    // fit-content/max-content → 사용 가능 공간 전체로 fallback
+    if (value === FIT_CONTENT || value === MAX_CONTENT) return available;
+    // min-content → 0 유지 (최소 콘텐츠)
+    if (value === MIN_CONTENT) return 0;
     return value;
   }
   if (typeof value === 'string') {
     const trimmed = value.trim();
-    // intrinsic sizing 키워드는 0으로 처리 (enrichWithIntrinsicSize가 이미 pixel로 변환)
-    if (
-      trimmed === 'auto' ||
-      trimmed === 'fit-content' ||
-      trimmed === 'min-content' ||
-      trimmed === 'max-content'
-    ) {
-      return 0;
+    // RC-6: intrinsic 키워드 fallback — block context의 auto = 100%
+    if (trimmed === 'auto' || trimmed === 'fit-content' || trimmed === 'max-content') {
+      return available;
     }
+    if (trimmed === 'min-content') return 0;
     if (trimmed.endsWith('%')) {
       return (parseFloat(trimmed) / 100) * available;
     }
     if (trimmed.endsWith('px')) {
       return parseFloat(trimmed);
     }
+    // RC-6: resolveCSSSizeValue로 rem/em/vh/vw 등 CSS 단위 해석
+    const ctx: CSSValueContext = {};
+    const resolvedPx = resolveCSSSizeValue(trimmed, ctx);
+    if (resolvedPx !== undefined && resolvedPx >= 0) return resolvedPx;
     // 단위 없는 숫자 문자열
     const n = parseFloat(trimmed);
     if (!isNaN(n) && /^-?\d+(\.\d+)?$/.test(trimmed)) return n;

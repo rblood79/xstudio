@@ -29,6 +29,7 @@ export type {
   GradientShape,
   ImageShape,
   LineShape,
+  IconFontShape,
   ColorValue,
   // Token Types
   TokenRef,
@@ -50,6 +51,10 @@ export type {
 } from './types';
 
 export { isValidTokenRef } from './types';
+
+// ─── Icons ──────────────────────────────────────────────────────────────────
+export { LUCIDE_ICONS, getIconData } from './icons/lucideIcons';
+export type { LucideIconData } from './icons/lucideIcons';
 
 // ─── Primitives ──────────────────────────────────────────────────────────────
 export {

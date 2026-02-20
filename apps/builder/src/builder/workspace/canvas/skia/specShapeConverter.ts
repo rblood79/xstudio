@@ -6,6 +6,7 @@
  */
 
 import type { Shape, ColorValue } from '@xstudio/specs';
+import { getIconData } from '@xstudio/specs';
 import type { SkiaNodeData } from './nodeRenderers';
 import type { EffectStyle, FillStyle } from './types';
 import { resolveColor, resolveToken, hexStringToNumber } from '@xstudio/specs';
@@ -277,6 +278,39 @@ export function specShapesToSkia(
             y2,
             strokeColor,
             strokeWidth: shape.strokeWidth,
+          },
+        };
+
+        children.push(node);
+        lastNode = node;
+        break;
+      }
+
+      case 'icon_font': {
+        if (!shape.iconName) break;
+        const iconData = getIconData(shape.iconName, shape.iconFontFamily ?? 'lucide');
+        if (!iconData) break;
+
+        const strokeColor = shape.fill
+          ? colorValueToFloat32(shape.fill, theme)
+          : Float32Array.of(0, 0, 0, 1);
+        const size = resolveNum(shape.fontSize ?? 16, theme, 16);
+
+        const node: SkiaNodeData = {
+          type: 'icon_path',
+          x: 0,
+          y: 0,
+          width: size,
+          height: size,
+          visible: true,
+          iconPath: {
+            paths: iconData.paths,
+            circles: iconData.circles,
+            cx: shape.x,
+            cy: shape.y,
+            size,
+            strokeColor,
+            strokeWidth: shape.strokeWidth ?? 2,
           },
         };
 

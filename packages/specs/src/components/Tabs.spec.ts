@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { fontFamily } from '../primitives/typography';
 
 /**
  * Tabs Props
@@ -105,45 +106,72 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
       const borderColor = props.style?.borderColor
                         ?? (variant.border || ('{color.outline-variant}' as TokenRef));
 
-      const shapes: Shape[] = [
-        // 탭 리스트 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'flex',
-            flexDirection: isVertical ? 'column' : 'row',
-          },
-        },
-        // 탭 리스트 하단/우측 구분선
-        {
-          type: 'line' as const,
-          x1: 0,
-          y1: isVertical ? 0 : size.height,
-          x2: isVertical ? 0 : 'auto' as unknown as number,
-          y2: isVertical ? 'auto' as unknown as number : size.height,
-          stroke: borderColor,
-          strokeWidth: 1,
-        },
-        // 탭 패널 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'flex',
-            flexDirection: 'column',
-            padding: size.paddingY,
-          },
-        },
-      ];
+      const ff = fontFamily.sans;
+      const tabLabels = ['Tab 1', 'Tab 2', 'Tab 3'];
+      const selectedIdx = 0; // 기본 첫 번째 탭 선택
+      const tabWidth = isVertical ? 120 : 100;
+      const shapes: Shape[] = [];
+
+      // Phase C: 탭 버튼 Shape 생성
+      let tabX = 0;
+      let tabY = 0;
+      for (let i = 0; i < tabLabels.length; i++) {
+        const isSelected = i === selectedIdx;
+
+        // 탭 배경
+        shapes.push({
+          type: 'rect' as const,
+          x: isVertical ? 0 : tabX,
+          y: isVertical ? tabY : 0,
+          width: tabWidth,
+          height: size.height,
+          fill: isSelected ? variant.backgroundHover : variant.background,
+        });
+
+        // 탭 텍스트
+        shapes.push({
+          type: 'text' as const,
+          x: (isVertical ? 0 : tabX) + tabWidth / 2,
+          y: (isVertical ? tabY : 0) + size.height / 2,
+          text: tabLabels[i],
+          fontSize: size.fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: isSelected ? 600 : 400,
+          fill: isSelected ? (variant.textHover ?? variant.text) : variant.text,
+          align: 'center' as const,
+          baseline: 'middle' as const,
+        });
+
+        // 선택된 탭의 하단 인디케이터
+        if (isSelected) {
+          shapes.push({
+            type: 'line' as const,
+            x1: isVertical ? 0 : tabX,
+            y1: isVertical ? tabY + size.height : size.height - 2,
+            x2: isVertical ? 0 : tabX + tabWidth,
+            y2: isVertical ? tabY + size.height : size.height - 2,
+            stroke: '{color.primary}' as TokenRef,
+            strokeWidth: 3,
+          });
+        }
+
+        if (isVertical) {
+          tabY += size.height;
+        } else {
+          tabX += tabWidth;
+        }
+      }
+
+      // 탭 리스트 하단/우측 구분선
+      shapes.push({
+        type: 'line' as const,
+        x1: 0,
+        y1: isVertical ? 0 : size.height,
+        x2: isVertical ? 0 : 'auto' as unknown as number,
+        y2: isVertical ? 'auto' as unknown as number : size.height,
+        stroke: borderColor,
+        strokeWidth: 1,
+      });
 
       return shapes;
     },

@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { fontFamily } from '../primitives/typography';
 
 /**
  * Breadcrumbs Props
@@ -83,24 +84,53 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   },
 
   render: {
-    shapes: (_props, _variant, size, _state = 'default') => {
-      const shapes: Shape[] = [
-        // 브레드크럼 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: size.gap,
-          },
-        },
-      ];
+    shapes: (props, variant, size, _state = 'default') => {
+      const ff = fontFamily.sans;
+      const separator = props.separator ?? '/';
+      const crumbs = ['Home', 'Products', 'Detail'];
+      const shapes: Shape[] = [];
+
+      // Phase C: 브레드크럼 아이템 생성
+      let x = 0;
+      const height = size.height || 24;
+      for (let i = 0; i < crumbs.length; i++) {
+        const isLast = i === crumbs.length - 1;
+
+        // 크럼 텍스트
+        shapes.push({
+          type: 'text' as const,
+          x,
+          y: height / 2,
+          text: crumbs[i],
+          fontSize: size.fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: isLast ? 600 : 400,
+          fill: isLast ? variant.text : ('{color.on-surface-variant}' as TokenRef),
+          align: 'left' as const,
+          baseline: 'middle' as const,
+        });
+
+        // 글자 수 기반 간이 폭 추정 (정확한 측정은 런타임에서)
+        x += crumbs[i].length * ((size.fontSize as unknown as number || 14) * 0.6);
+
+        // 구분자
+        if (!isLast) {
+          x += (size.gap as unknown as number || 8);
+          shapes.push({
+            type: 'text' as const,
+            x,
+            y: height / 2,
+            text: separator,
+            fontSize: size.fontSize as unknown as number,
+            fontFamily: ff,
+            fontWeight: 400,
+            fill: '{color.on-surface-variant}' as TokenRef,
+            align: 'left' as const,
+            baseline: 'middle' as const,
+          });
+          x += (size.gap as unknown as number || 8) + (size.fontSize as unknown as number || 14) * 0.4;
+        }
+      }
 
       return shapes;
     },

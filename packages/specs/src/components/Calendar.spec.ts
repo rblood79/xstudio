@@ -99,7 +99,26 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
     shapes: (_props, variant, size, _state = 'default') => {
       const borderRadius = size.borderRadius;
       const cellSize = (size.iconSize ?? 28) + 4;
-      const calendarWidth = cellSize * 7 + (size.gap ?? 6) * 6 + size.paddingX * 2;
+      const gap = size.gap as unknown as number || 6;
+      const paddingX = size.paddingX as unknown as number || 12;
+      const paddingY = size.paddingY as unknown as number || 12;
+      const fontSize = size.fontSize as unknown as number || 14;
+      const calendarWidth = cellSize * 7 + gap * 6 + paddingX * 2;
+      const ff = fontFamily.sans;
+
+      // Phase C: 캘린더 헤더 + 요일 + 날짜 셀 생성
+      const headerHeight = fontSize + 8;
+      const navRowY = paddingY;
+      const weekdayY = navRowY + headerHeight + gap;
+      const gridStartY = weekdayY + cellSize;
+
+      // January 2024: starts on Monday (dayOffset=1), 31 days
+      const dayOffset = 1; // 0=Sun, 1=Mon
+      const totalDays = 31;
+      const today = 15; // 선택/today 표시용 예시
+
+      const totalRows = Math.ceil((totalDays + dayOffset) / 7);
+      const totalHeight = gridStartY + totalRows * (cellSize + gap) - gap + paddingY;
 
       const shapes: Shape[] = [
         // 배경
@@ -109,7 +128,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           x: 0,
           y: 0,
           width: calendarWidth,
-          height: 'auto',
+          height: totalHeight,
           radius: borderRadius as unknown as number,
           fill: variant.background,
         },
@@ -118,38 +137,94 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           type: 'border' as const,
           target: 'bg',
           borderWidth: 1,
-          color: variant.border ?? '{color.outline-variant}' as TokenRef,
+          color: variant.border ?? ('{color.outline-variant}' as TokenRef),
           radius: borderRadius as unknown as number,
+        },
+        // 네비게이션: 이전 화살표
+        {
+          type: 'icon_font' as const,
+          iconName: 'chevron-left',
+          x: paddingX + cellSize / 2,
+          y: navRowY + headerHeight / 2,
+          fontSize: fontSize + 2,
+          fill: variant.text,
+          strokeWidth: 2,
         },
         // 헤더 텍스트 (월/년)
         {
           type: 'text' as const,
-          x: 0,
-          y: size.paddingY,
+          x: calendarWidth / 2,
+          y: navRowY + headerHeight / 2,
           text: 'January 2024',
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
+          fontSize,
+          fontFamily: ff,
           fontWeight: 600,
           fill: variant.text,
           align: 'center' as const,
-          baseline: 'top' as const,
+          baseline: 'middle' as const,
         },
-        // 콘텐츠 컨테이너 (요일 헤더 + 날짜 그리드)
+        // 네비게이션: 다음 화살표
         {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'grid',
-            gridTemplateColumns: `repeat(7, ${cellSize}px)`,
-            gap: size.gap,
-            padding: size.paddingY,
-          },
+          type: 'icon_font' as const,
+          iconName: 'chevron-right',
+          x: calendarWidth - paddingX - cellSize / 2,
+          y: navRowY + headerHeight / 2,
+          fontSize: fontSize + 2,
+          fill: variant.text,
+          strokeWidth: 2,
         },
       ];
+
+      // 요일 헤더 (Sun ~ Sat)
+      const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+      for (let col = 0; col < 7; col++) {
+        const cx = paddingX + col * (cellSize + gap) + cellSize / 2;
+        shapes.push({
+          type: 'text' as const,
+          x: cx,
+          y: weekdayY + cellSize / 2,
+          text: weekdays[col],
+          fontSize: fontSize - 2,
+          fontFamily: ff,
+          fontWeight: 500,
+          fill: '{color.on-surface-variant}' as TokenRef,
+          align: 'center' as const,
+          baseline: 'middle' as const,
+        });
+      }
+
+      // 날짜 셀
+      for (let day = 1; day <= totalDays; day++) {
+        const idx = day - 1 + dayOffset;
+        const row = Math.floor(idx / 7);
+        const col = idx % 7;
+        const cx = paddingX + col * (cellSize + gap) + cellSize / 2;
+        const cy = gridStartY + row * (cellSize + gap) + cellSize / 2;
+
+        // today 강조 배경
+        if (day === today) {
+          shapes.push({
+            type: 'circle' as const,
+            x: cx,
+            y: cy,
+            radius: cellSize / 2,
+            fill: '{color.primary}' as TokenRef,
+          });
+        }
+
+        shapes.push({
+          type: 'text' as const,
+          x: cx,
+          y: cy,
+          text: String(day),
+          fontSize,
+          fontFamily: ff,
+          fontWeight: day === today ? 600 : 400,
+          fill: day === today ? ('{color.on-primary}' as TokenRef) : variant.text,
+          align: 'center' as const,
+          baseline: 'middle' as const,
+        });
+      }
 
       return shapes;
     },

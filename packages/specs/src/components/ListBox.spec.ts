@@ -158,25 +158,43 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         });
       }
 
-      // 리스트 아이템 컨테이너
-      const stylePad = props.style?.padding;
-      const padding = stylePad != null
-        ? (typeof stylePad === 'number' ? stylePad : parseFloat(String(stylePad)) || 0)
-        : size.paddingY;
-      shapes.push({
-        type: 'container' as const,
-        x: 0,
-        y: props.label ? 20 : 0,
-        width,
-        height: 'auto',
-        children: [],
-        layout: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: size.gap,
-          padding,
-        },
-      });
+      // Phase C: 리스트 아이템 생성
+      const items = props.children
+        ? props.children.split('\n').filter(Boolean)
+        : ['Item 1', 'Item 2', 'Item 3'];
+      const itemHeight = (fontSize as unknown as number) > 16 ? 40 : (fontSize as unknown as number) > 12 ? 36 : 32;
+      const baseY = props.label ? 20 : 0;
+      let itemY = baseY + (size.paddingY as unknown as number || 8);
+
+      for (let i = 0; i < items.length; i++) {
+        // 아이템 배경 (hover/selected 상태 표시용)
+        shapes.push({
+          type: 'rect' as const,
+          x: 0,
+          y: itemY,
+          width,
+          height: itemHeight,
+          fill: i === 0
+            ? variant.backgroundHover  // 첫 번째 아이템을 선택 상태로 표시
+            : bgColor,
+        });
+
+        // 아이템 텍스트
+        shapes.push({
+          type: 'text' as const,
+          x: size.paddingX,
+          y: itemY + itemHeight / 2,
+          text: items[i],
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: i === 0 ? 600 : 400,
+          fill: textColor,
+          align: textAlign,
+          baseline: 'middle' as const,
+        });
+
+        itemY += itemHeight + (size.gap as unknown as number || 4);
+      }
 
       return shapes;
     },

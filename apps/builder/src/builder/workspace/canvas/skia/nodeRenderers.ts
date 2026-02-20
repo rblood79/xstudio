@@ -79,7 +79,7 @@ function setCachedParagraph(key: string, paragraph: Paragraph): void {
 
 /** PixiJS Container에 부착되는 Skia 렌더 정보 */
 export interface SkiaNodeData {
-  type: 'box' | 'text' | 'image' | 'container' | 'line';
+  type: 'box' | 'text' | 'image' | 'container' | 'line' | 'icon_path';
   /** 이 노드를 소유한 element의 ID (AI 이펙트 타겟팅용) */
   elementId?: string;
   /** 노드 로컬 위치/크기 */
@@ -165,6 +165,23 @@ export interface SkiaNodeData {
     strokeColor: Float32Array;
     strokeWidth: number;
   };
+  /** Icon Path 전용 (SVG 경로 기반 아이콘) */
+  iconPath?: {
+    /** SVG path d 속성 배열 */
+    paths: string[];
+    /** SVG circle 요소 배열 */
+    circles?: Array<{ cx: number; cy: number; r: number }>;
+    /** 아이콘 중심 X */
+    cx: number;
+    /** 아이콘 중심 Y */
+    cy: number;
+    /** 렌더링 크기 (24x24 viewBox → 이 크기로 스케일) */
+    size: number;
+    /** stroke 색상 */
+    strokeColor: Float32Array;
+    /** stroke 두께 (24x24 기준, 스케일 전) */
+    strokeWidth: number;
+  };
   /** CSS transform → CanvasKit 3x3 matrix (Float32Array(9)) */
   transform?: Float32Array;
   /** CSS clip-path 도형 (inset, circle, ellipse, polygon) */
@@ -173,6 +190,11 @@ export interface SkiaNodeData {
   clipChildren?: boolean;
   /** overflow:scroll/auto 시 자식 좌표에 적용할 스크롤 오프셋 */
   scrollOffset?: { scrollTop: number; scrollLeft: number };
+  /** overflow:scroll/auto 시 스크롤바 UI (clip 영역 내, scroll offset 미적용) */
+  scrollbar?: {
+    vertical?: { trackHeight: number; thumbHeight: number; thumbY: number };
+    horizontal?: { trackWidth: number; thumbWidth: number; thumbX: number };
+  };
   /** 콘텐츠 기반 최소 높이 (Card 등 auto-height UI 컴포넌트용)
    *  Yoga가 텍스트 bounds를 아직 반영하지 못한 경우의 폴백으로 사용 */
   contentMinHeight?: number;
@@ -304,6 +326,9 @@ function renderNodeInternal(
     case 'line':
       renderLine(ck, canvas, node);
       break;
+    case 'icon_path':
+      renderIconPath(ck, canvas, node);
+      break;
     case 'container':
       // 컨테이너는 자체 콘텐츠 없음
       break;
@@ -349,6 +374,11 @@ function renderNodeInternal(
     // 스크롤 오프셋 변환 복원
     if (hasScrollOffset) {
       canvas.restore();
+    }
+
+    // Phase E: 스크롤바 렌더링 (clip 영역 내, scroll offset 미적용)
+    if (node.scrollbar) {
+      renderScrollbar(ck, canvas, node);
     }
 
     if (node.clipChildren && node.width > 0 && node.height > 0) {
@@ -822,6 +852,114 @@ function renderLine(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   paint.setStrokeCap(ck.StrokeCap.Round);
   paint.setColor(node.line.strokeColor);
   canvas.drawLine(node.line.x1, node.line.y1, node.line.x2, node.line.y2, paint);
+  paint.delete();
+}
+
+/** Icon Path 노드 렌더링 (SVG 경로 기반 아이콘) */
+function renderIconPath(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+  if (!node.iconPath) return;
+  const { paths, circles, cx, cy, size, strokeColor, strokeWidth } = node.iconPath;
+
+  // 24x24 viewBox → 렌더 크기로 스케일
+  const scale = size / 24;
+
+  const paint = new ck.Paint();
+  paint.setAntiAlias(true);
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setStrokeWidth(strokeWidth * scale);
+  paint.setStrokeCap(ck.StrokeCap.Round);
+  paint.setStrokeJoin(ck.StrokeJoin.Round);
+  paint.setColor(strokeColor);
+
+  canvas.save();
+  // 아이콘 중심을 (cx, cy)에 배치: 왼쪽 상단 = (cx - size/2, cy - size/2)
+  canvas.translate(cx - size / 2, cy - size / 2);
+  canvas.scale(scale, scale);
+
+  // SVG path 렌더링
+  for (const d of paths) {
+    const path = ck.Path.MakeFromSVGString(d);
+    if (path) {
+      canvas.drawPath(path, paint);
+      path.delete();
+    }
+  }
+
+  // SVG circle 렌더링
+  if (circles) {
+    for (const c of circles) {
+      canvas.drawCircle(c.cx, c.cy, c.r, paint);
+    }
+  }
+
+  paint.delete();
+  canvas.restore();
+}
+
+/**
+ * Phase E: 스크롤바 UI 렌더링
+ * clip 영역 내에서 scroll offset 미적용 상태로 그린다.
+ */
+function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+  if (!node.scrollbar) return;
+
+  const TRACK_WIDTH = 8;
+  const TRACK_RADIUS = 4;
+  const THUMB_RADIUS = 4;
+  const TRACK_COLOR = Float32Array.of(0, 0, 0, 0.08);
+  const THUMB_COLOR = Float32Array.of(0, 0, 0, 0.25);
+
+  const paint = new ck.Paint();
+  paint.setAntiAlias(true);
+
+  // 수직 스크롤바
+  if (node.scrollbar.vertical) {
+    const { trackHeight, thumbHeight, thumbY } = node.scrollbar.vertical;
+    const trackX = node.width - TRACK_WIDTH - 2;
+    const trackY = 0;
+
+    // Track
+    paint.setStyle(ck.PaintStyle.Fill);
+    paint.setColor(TRACK_COLOR);
+    const trackRRect = ck.RRectXY(
+      ck.LTRBRect(trackX, trackY, trackX + TRACK_WIDTH, trackY + trackHeight),
+      TRACK_RADIUS, TRACK_RADIUS,
+    );
+    canvas.drawRRect(trackRRect, paint);
+
+    // Thumb
+    paint.setColor(THUMB_COLOR);
+    const thumbRRect = ck.RRectXY(
+      ck.LTRBRect(trackX, thumbY, trackX + TRACK_WIDTH, thumbY + thumbHeight),
+      THUMB_RADIUS, THUMB_RADIUS,
+    );
+    canvas.drawRRect(thumbRRect, paint);
+  }
+
+  // 수평 스크롤바
+  if (node.scrollbar.horizontal) {
+    const { trackWidth, thumbWidth, thumbX } = node.scrollbar.horizontal;
+    const trackX = 0;
+    const trackY = node.height - TRACK_WIDTH - 2;
+
+    // Track
+    paint.setStyle(ck.PaintStyle.Fill);
+    paint.setColor(TRACK_COLOR);
+    const trackRRect = ck.RRectXY(
+      ck.LTRBRect(trackX, trackY, trackX + trackWidth, trackY + TRACK_WIDTH),
+      TRACK_RADIUS, TRACK_RADIUS,
+    );
+    canvas.drawRRect(trackRRect, paint);
+
+    // Thumb
+    paint.setColor(THUMB_COLOR);
+    const thumbRRect = ck.RRectXY(
+      ck.LTRBRect(thumbX, trackY, thumbX + thumbWidth, trackY + TRACK_WIDTH),
+      THUMB_RADIUS, THUMB_RADIUS,
+    );
+    canvas.drawRRect(thumbRRect, paint);
+  }
+
   paint.delete();
 }
 

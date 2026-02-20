@@ -255,9 +255,32 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
       ...((style?.overflow === 'scroll' || style?.overflow === 'auto')
         ? (() => {
             const scroll = getScrollState(element.id);
-            return scroll
-              ? { scrollOffset: { scrollTop: scroll.scrollTop, scrollLeft: scroll.scrollLeft } }
-              : {};
+            if (!scroll) return {};
+            const result: Record<string, unknown> = {
+              scrollOffset: { scrollTop: scroll.scrollTop, scrollLeft: scroll.scrollLeft },
+            };
+            // Phase E: 스크롤바 UI 데이터 (maxScroll > 0 일 때만)
+            const w = transform.width;
+            const h = transform.height;
+            const scrollbar: Record<string, unknown> = {};
+            if (scroll.maxScrollTop > 0) {
+              const contentH = h + scroll.maxScrollTop;
+              const thumbH = Math.max(20, (h / contentH) * h);
+              const thumbY = scroll.maxScrollTop > 0
+                ? (scroll.scrollTop / scroll.maxScrollTop) * (h - thumbH) : 0;
+              scrollbar.vertical = { trackHeight: h, thumbHeight: thumbH, thumbY };
+            }
+            if (scroll.maxScrollLeft > 0) {
+              const contentW = w + scroll.maxScrollLeft;
+              const thumbW = Math.max(20, (w / contentW) * w);
+              const thumbX = scroll.maxScrollLeft > 0
+                ? (scroll.scrollLeft / scroll.maxScrollLeft) * (w - thumbW) : 0;
+              scrollbar.horizontal = { trackWidth: w, thumbWidth: thumbW, thumbX };
+            }
+            if (Object.keys(scrollbar).length > 0) {
+              result.scrollbar = scrollbar;
+            }
+            return result;
           })()
         : {}),
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),

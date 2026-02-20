@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { fontFamily } from '../primitives/typography';
 
 /**
  * Menu Props
@@ -96,6 +97,52 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   render: {
     shapes: (_props, variant, size, _state = 'default') => {
       const borderRadius = size.borderRadius;
+      const width = 180;
+      const ff = fontFamily.sans;
+
+      // Phase C: 기본 메뉴 아이템
+      const menuItems = ['Edit', 'Copy', 'Paste', '---', 'Delete'];
+      const itemHeight = 36;
+      const paddingY = size.paddingY as unknown as number || 6;
+      let itemY = paddingY;
+      let totalHeight = paddingY;
+
+      const itemShapes: Shape[] = [];
+      for (const item of menuItems) {
+        if (item === '---') {
+          // 구분선
+          itemShapes.push({
+            type: 'line' as const,
+            x1: 0,
+            y1: itemY + 4,
+            x2: width,
+            y2: itemY + 4,
+            stroke: '{color.outline-variant}' as TokenRef,
+            strokeWidth: 1,
+          });
+          itemY += 9;
+          totalHeight += 9;
+          continue;
+        }
+
+        // 아이템 텍스트
+        itemShapes.push({
+          type: 'text' as const,
+          x: size.paddingX,
+          y: itemY + itemHeight / 2,
+          text: item,
+          fontSize: size.fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: 400,
+          fill: variant.text,
+          align: 'left' as const,
+          baseline: 'middle' as const,
+        });
+
+        itemY += itemHeight;
+        totalHeight += itemHeight;
+      }
+      totalHeight += paddingY;
 
       const shapes: Shape[] = [
         // 그림자
@@ -115,8 +162,8 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
           type: 'roundRect' as const,
           x: 0,
           y: 0,
-          width: 'auto',
-          height: 'auto',
+          width,
+          height: totalHeight,
           radius: borderRadius as unknown as number,
           fill: variant.background,
         },
@@ -128,21 +175,8 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
           color: variant.border || ('{color.outline-variant}' as TokenRef),
           radius: borderRadius as unknown as number,
         },
-        // 메뉴 아이템 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'flex',
-            flexDirection: 'column',
-            gap: size.gap,
-            padding: size.paddingY,
-          },
-        },
+        // 메뉴 아이템
+        ...itemShapes,
       ];
 
       return shapes;

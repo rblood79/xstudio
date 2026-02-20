@@ -217,26 +217,16 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         });
       }
 
-      // 쉐브론 아이콘
+      // 쉐브론 아이콘 (Lucide chevron-down SVG 경로)
       const chevX = width - paddingX - chevronSize / 2;
       const chevY = (props.label ? 20 : 0) + height / 2;
-      const chevHalf = chevronSize / 4;
       shapes.push({
-        type: 'line' as const,
-        x1: chevX - chevHalf,
-        y1: chevY - chevHalf / 2,
-        x2: chevX,
-        y2: chevY + chevHalf / 2,
-        stroke: '{color.on-surface-variant}' as TokenRef,
-        strokeWidth: 2,
-      });
-      shapes.push({
-        type: 'line' as const,
-        x1: chevX,
-        y1: chevY + chevHalf / 2,
-        x2: chevX + chevHalf,
-        y2: chevY - chevHalf / 2,
-        stroke: '{color.on-surface-variant}' as TokenRef,
+        type: 'icon_font' as const,
+        iconName: 'chevron-down',
+        x: chevX,
+        y: chevY,
+        fontSize: chevronSize,
+        fill: '{color.on-surface-variant}' as TokenRef,
         strokeWidth: 2,
       });
 

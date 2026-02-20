@@ -39,7 +39,7 @@ import { BodyLayer } from "./layers";
 import { TextEditOverlay, useTextEdit } from "../overlay";
 // 사용자 컨텐츠 레이아웃은 Taffy/Dropflow 엔진이 처리
 import {
-  selectEngine,
+  calculateChildrenLayout,
   parsePadding,
   parseBorder,
   type ComputedLayout,
@@ -657,10 +657,10 @@ const ElementsLayer = memo(function ElementsLayer({
           cachedPadding = parsePadding(parentStyle);
           const parentDisplay = (parentStyle?.display as string | undefined)
             ?? (containerEl.tag === 'Section' ? 'block' : undefined);
-          const innerEngine = selectEngine(parentDisplay);
           const avW = Math.max(0, containerWidth - cachedPadding.left - cachedPadding.right);
           const avH = Math.max(0, containerHeight - cachedPadding.top - cachedPadding.bottom);
-          const innerLayouts = innerEngine.calculate(
+          // RC-7: calculateChildrenLayout 사용하여 blockification 적용
+          const innerLayouts = calculateChildrenLayout(
             containerEl, containerChildren, avW, avH,
             { bfcId: containerEl.id, parentDisplay }
           );
@@ -708,8 +708,6 @@ const ElementsLayer = memo(function ElementsLayer({
       const parentStyle = parentElement.props?.style as Record<string, unknown> | undefined;
       const rawParentDisplay = parentStyle?.display as string | undefined;
       const parentDisplay = rawParentDisplay ?? (parentElement.tag === 'Section' ? 'block' : undefined);
-      const engine = selectEngine(parentDisplay);
-
       // Body 이중 패딩 방지
       const isBodyParent = parentElement === bodyElement;
       const parentPadding = parsePadding(parentStyle);
@@ -734,8 +732,8 @@ const ElementsLayer = memo(function ElementsLayer({
       const paddingOffsetX = isBodyParent ? 0 : parentPadding.left;
       const paddingOffsetY = isBodyParent ? 0 : parentPadding.top;
 
-      // 엔진 레이아웃 계산
-      const layouts = engine.calculate(
+      // RC-7: calculateChildrenLayout 사용하여 blockification + overflow scroll 처리
+      const layouts = calculateChildrenLayout(
         parentElement, children, availableWidth, availableHeight,
         { bfcId: parentElement.id, parentDisplay }
       );
@@ -799,7 +797,7 @@ const ElementsLayer = memo(function ElementsLayer({
     }
 
     return renderTree(bodyElement?.id ?? null);
-    // wasmLayoutReady: WASM 로드 완료 시 selectEngine()이 Taffy를 반환하므로 재계산 필요
+    // wasmLayoutReady: WASM 로드 완료 시 calculateChildrenLayout()이 Taffy를 사용하므로 재계산 필요
   }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, CONTAINER_TAGS, wasmLayoutReady]);
 
   // body의 border+padding 오프셋 계산 (자식 시작 위치)

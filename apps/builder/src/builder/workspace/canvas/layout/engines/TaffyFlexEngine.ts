@@ -16,7 +16,7 @@ import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayou
 import { parseMargin, parsePadding, parseBorder, enrichWithIntrinsicSize, INLINE_BLOCK_TAGS } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
-import { resolveCSSSizeValue } from './cssValueParser';
+import { resolveCSSSizeValue, FIT_CONTENT, MIN_CONTENT, MAX_CONTENT } from './cssValueParser';
 import type { CSSValueContext } from './cssValueParser';
 
 // ─── Style conversion ────────────────────────────────────────────────
@@ -365,7 +365,10 @@ export class TaffyFlexEngine implements LayoutEngine {
 
       const childStyle = child.props?.style as Record<string, unknown> | undefined;
       const rawHeight = childStyle?.height;
-      const hasAutoHeight = !rawHeight || rawHeight === 'auto' || rawHeight === 'fit-content';
+      // RC-4: intrinsic 키워드 + sentinel 값 모두 auto height로 판정
+      const hasAutoHeight = !rawHeight || rawHeight === 'auto'
+        || rawHeight === 'fit-content' || rawHeight === 'min-content' || rawHeight === 'max-content'
+        || rawHeight === FIT_CONTENT || rawHeight === MIN_CONTENT || rawHeight === MAX_CONTENT;
       if (!hasAutoHeight) continue;
 
       const layout = firstPassResult.find(l => l.elementId === child.id);

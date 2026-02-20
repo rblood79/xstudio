@@ -37,7 +37,8 @@ export type Shape =
   | (ContainerShape & ShapeBase)
   | (GradientShape & ShapeBase)
   | (ImageShape & ShapeBase)
-  | (LineShape & ShapeBase);
+  | (LineShape & ShapeBase)
+  | (IconFontShape & ShapeBase);
 
 /**
  * 사각형
@@ -304,4 +305,28 @@ export interface LineShape {
   stroke: ColorValue;
   strokeWidth: number;
   strokeDasharray?: number[];
+}
+
+/**
+ * 아이콘 (SVG 경로 기반)
+ *
+ * Lucide 등 아이콘 라이브러리의 SVG 경로 데이터를 사용하여
+ * CanvasKit Path로 렌더링. 원본 viewBox는 24x24 기준.
+ */
+export interface IconFontShape {
+  type: 'icon_font';
+  /** 아이콘 이름 (lucideIcons 레지스트리에서 조회) */
+  iconName: string;
+  /** 아이콘 라이브러리 (기본: 'lucide') */
+  iconFontFamily?: string;
+  /** 아이콘 중심 X 좌표 */
+  x: number;
+  /** 아이콘 중심 Y 좌표 */
+  y: number;
+  /** 렌더링 크기 (px, 기본: 16) */
+  fontSize?: number;
+  /** 선 두께 (기본: 2) — Lucide 기본 strokeWidth */
+  strokeWidth?: number;
+  /** 채우기 색상 (stroke 색상으로 사용) */
+  fill?: ColorValue;
 }
