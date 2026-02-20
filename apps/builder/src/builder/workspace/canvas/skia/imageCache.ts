@@ -7,12 +7,42 @@
  * - refCount 기반 참조 관리
  * - LRU 퇴거 정책 (MAX_CACHE_SIZE 초과 시 최소 참조 엔트리 제거)
  * - CORS 모드 설정 (외부 이미지 지원)
+ * - 로딩 완료 시 Canvas 재렌더 트리거 콜백 지원 (specShapeConverter 연동)
  *
  * @see docs/WASM.md §5.11 이미지 렌더링
  */
 
 import type { CanvasKit, Image as SkImage } from 'canvaskit-wasm';
 import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
+
+// ============================================
+// 재렌더 트리거 콜백 레지스트리
+// ============================================
+
+/**
+ * 이미지 로딩 완료 시 호출할 콜백 목록.
+ * specShapeConverter에서 loadSkImage()를 호출한 후 Canvas를 재렌더하려면
+ * SkiaOverlay가 이 콜백을 등록해야 한다.
+ */
+const loadCallbacks = new Set<() => void>();
+
+/**
+ * 이미지 로딩 완료 시 호출할 재렌더 콜백을 등록한다.
+ * @returns 등록 해제 함수
+ */
+export function registerImageLoadCallback(cb: () => void): () => void {
+  loadCallbacks.add(cb);
+  return () => {
+    loadCallbacks.delete(cb);
+  };
+}
+
+/** 등록된 모든 재렌더 콜백을 호출한다 */
+function notifyImageLoaded(): void {
+  for (const cb of loadCallbacks) {
+    cb();
+  }
+}
 
 /** GPU 메모리 보호를 위한 캐시 상한 (엔트리 수) */
 const MAX_CACHE_SIZE = 100;
@@ -88,6 +118,8 @@ export async function loadSkImage(url: string): Promise<SkImage | null> {
         evictLRU();
       }
       cache.set(url, { image, refCount: 1, lastAccess: performance.now() });
+      // 이미지 로딩 완료 → Canvas 재렌더 트리거 (specShapeConverter 연동)
+      notifyImageLoaded();
     }
     return image;
   } catch {

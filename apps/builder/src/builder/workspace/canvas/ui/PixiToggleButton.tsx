@@ -7,7 +7,7 @@
  * - selected/unselected 상태 토글 이벤트 전달
  *
  * @since 2025-12-16 Phase 1 WebGL Migration
- * @updated 2026-02-18 @pixi/ui FancyButton 의존성 제거 (Skia 렌더링 전환)
+ * @updated 2026-02-18 Skia 렌더링 전환 (히트 영역 전용으로 단순화)
  * @updated 2026-02-19 Wave 3: 엔진 계산 크기로 히트 영역 통합 (getToggleButtonLayout 제거)
  */
 

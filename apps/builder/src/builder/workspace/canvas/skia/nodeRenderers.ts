@@ -77,9 +77,23 @@ function setCachedParagraph(key: string, paragraph: Paragraph): void {
 // PixiJS 씬 노드에 부착하는 Skia 렌더 데이터 타입
 // ============================================
 
+/** M-6: partial border 전용 렌더 데이터 */
+export interface PartialBorderData {
+  /** 렌더링할 변 플래그 */
+  sides: { top?: boolean; right?: boolean; bottom?: boolean; left?: boolean };
+  strokeColor: Float32Array;
+  strokeWidth: number;
+  strokeDasharray?: number[];
+  /**
+   * 모서리 반경 (CSS 순서: tl, tr, br, bl)
+   * 값이 있을 때 각 변이 인접 모서리 arc를 포함하여 그려짐
+   */
+  borderRadius: [number, number, number, number];
+}
+
 /** PixiJS Container에 부착되는 Skia 렌더 정보 */
 export interface SkiaNodeData {
-  type: 'box' | 'text' | 'image' | 'container' | 'line' | 'icon_path';
+  type: 'box' | 'text' | 'image' | 'container' | 'line' | 'icon_path' | 'partial_border';
   /** 이 노드를 소유한 element의 ID (AI 이펙트 타겟팅용) */
   elementId?: string;
   /** 노드 로컬 위치/크기 */
@@ -164,7 +178,11 @@ export interface SkiaNodeData {
     y2: number;
     strokeColor: Float32Array;
     strokeWidth: number;
+    /** dash/dot 패턴 (CanvasKit PathEffect.MakeDash 인자, [on, off] 형식) */
+    strokeDasharray?: number[];
   };
+  /** M-6: Partial Border 전용 (radius 있는 변별 테두리) */
+  partialBorder?: PartialBorderData;
   /** Icon Path 전용 (SVG 경로 기반 아이콘) */
   iconPath?: {
     /** SVG path d 속성 배열 */
@@ -328,6 +346,9 @@ function renderNodeInternal(
       break;
     case 'icon_path':
       renderIconPath(ck, canvas, node);
+      break;
+    case 'partial_border':
+      renderPartialBorder(ck, canvas, node);
       break;
     case 'container':
       // 컨테이너는 자체 콘텐츠 없음
@@ -851,7 +872,166 @@ function renderLine(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   paint.setStrokeWidth(node.line.strokeWidth);
   paint.setStrokeCap(ck.StrokeCap.Round);
   paint.setColor(node.line.strokeColor);
+
+  // dash/dot 패턴 적용 (Separator dashed/dotted, sides border style 등)
+  let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
+  if (node.line.strokeDasharray && node.line.strokeDasharray.length >= 2) {
+    dashEffect = ck.PathEffect.MakeDash(node.line.strokeDasharray);
+    paint.setPathEffect(dashEffect);
+  }
+
   canvas.drawLine(node.line.x1, node.line.y1, node.line.x2, node.line.y2, paint);
+
+  if (dashEffect) {
+    paint.setPathEffect(null);
+    dashEffect.delete();
+  }
+  paint.delete();
+}
+
+/**
+ * M-6: Partial Border 렌더링 (border-radius 포함)
+ *
+ * 각 변을 독립적인 Path로 그린다.
+ * 인접 모서리 arc는 해당 변에서만 그려, 활성 변끼리 자연스럽게 이어지도록 한다.
+ *
+ * 좌표계: 부모에서 이미 translate(node.x, node.y)가 적용되어 있으므로
+ * 0~node.width / 0~node.height 기준으로 그린다.
+ *
+ * 각 변의 arc 소유권:
+ *   top-left    corner → top 변 시작 + left 변 끝
+ *   top-right   corner → top 변 끝 + right 변 시작
+ *   bottom-right corner → right 변 끝 + bottom 변 끝
+ *   bottom-left  corner → bottom 변 시작 + left 변 시작
+ */
+function renderPartialBorder(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+  if (!node.partialBorder) return;
+  const { sides, strokeColor, strokeWidth, strokeDasharray, borderRadius } = node.partialBorder;
+  const w = node.width;
+  const h = node.height;
+
+  const maxR = Math.min(w, h) / 2;
+  const [rawTL, rawTR, rawBR, rawBL] = borderRadius;
+  const rTL = Math.min(Math.max(0, rawTL), maxR);
+  const rTR = Math.min(Math.max(0, rawTR), maxR);
+  const rBR = Math.min(Math.max(0, rawBR), maxR);
+  const rBL = Math.min(Math.max(0, rawBL), maxR);
+
+  const paint = new ck.Paint();
+  paint.setAntiAlias(true);
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setStrokeWidth(strokeWidth);
+  paint.setStrokeCap(ck.StrokeCap.Butt);
+  paint.setColor(strokeColor);
+
+  let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
+  if (strokeDasharray && strokeDasharray.length >= 2) {
+    dashEffect = ck.PathEffect.MakeDash(strokeDasharray);
+    paint.setPathEffect(dashEffect);
+  }
+
+  // stroke inset: border-box 기준, stroke 중심이 경계에 놓이도록
+  const inset = strokeWidth / 2;
+
+  /**
+   * 각 변을 Path로 그린다.
+   * 변이 활성화된 경우에만 그리며, 인접한 corner arc를 변 양쪽에 포함시킨다.
+   *
+   * Arc 소유권 규칙:
+   * - top   변: TL arc (시작) + TR arc (끝)
+   * - right 변: TR arc (시작) + BR arc (끝)
+   * - bottom변: BR arc (끝)   + BL arc (시작)  ← 오른쪽→왼쪽 방향
+   * - left  변: BL arc (시작) + TL arc (끝)    ← 아래→위 방향
+   *
+   * 인접 변도 활성화된 경우 corner arc를 공유하게 되지만,
+   * 각 변이 독립 Path이므로 arc 부분이 겹쳐 그려진다.
+   * 겹침은 동일 색/두께이므로 시각적으로 문제없다.
+   */
+
+  if (sides.top) {
+    const path = new ck.Path();
+    // TL 모서리 (arc 포함)
+    if (rTL > 0) {
+      path.moveTo(inset, rTL + inset);
+      path.arcToTangent(inset, inset, rTL + inset, inset, rTL);
+    } else {
+      path.moveTo(inset, inset);
+    }
+    // top edge
+    if (rTR > 0) {
+      path.lineTo(w - rTR - inset, inset);
+      path.arcToTangent(w - inset, inset, w - inset, rTR + inset, rTR);
+    } else {
+      path.lineTo(w - inset, inset);
+    }
+    canvas.drawPath(path, paint);
+    path.delete();
+  }
+
+  if (sides.right) {
+    const path = new ck.Path();
+    // TR 모서리 (arc 포함)
+    if (rTR > 0) {
+      path.moveTo(w - rTR - inset, inset);
+      path.arcToTangent(w - inset, inset, w - inset, rTR + inset, rTR);
+    } else {
+      path.moveTo(w - inset, inset);
+    }
+    // right edge
+    if (rBR > 0) {
+      path.lineTo(w - inset, h - rBR - inset);
+      path.arcToTangent(w - inset, h - inset, w - rBR - inset, h - inset, rBR);
+    } else {
+      path.lineTo(w - inset, h - inset);
+    }
+    canvas.drawPath(path, paint);
+    path.delete();
+  }
+
+  if (sides.bottom) {
+    const path = new ck.Path();
+    // BR 모서리 (arc 포함) — 오른쪽에서 시작
+    if (rBR > 0) {
+      path.moveTo(w - inset, h - rBR - inset);
+      path.arcToTangent(w - inset, h - inset, w - rBR - inset, h - inset, rBR);
+    } else {
+      path.moveTo(w - inset, h - inset);
+    }
+    // bottom edge (오른쪽 → 왼쪽)
+    if (rBL > 0) {
+      path.lineTo(rBL + inset, h - inset);
+      path.arcToTangent(inset, h - inset, inset, h - rBL - inset, rBL);
+    } else {
+      path.lineTo(inset, h - inset);
+    }
+    canvas.drawPath(path, paint);
+    path.delete();
+  }
+
+  if (sides.left) {
+    const path = new ck.Path();
+    // BL 모서리 (arc 포함) — 아래에서 시작
+    if (rBL > 0) {
+      path.moveTo(rBL + inset, h - inset);
+      path.arcToTangent(inset, h - inset, inset, h - rBL - inset, rBL);
+    } else {
+      path.moveTo(inset, h - inset);
+    }
+    // left edge (아래 → 위)
+    if (rTL > 0) {
+      path.lineTo(inset, rTL + inset);
+      path.arcToTangent(inset, inset, rTL + inset, inset, rTL);
+    } else {
+      path.lineTo(inset, inset);
+    }
+    canvas.drawPath(path, paint);
+    path.delete();
+  }
+
+  if (dashEffect) {
+    paint.setPathEffect(null);
+    dashEffect.delete();
+  }
   paint.delete();
 }
 
@@ -1177,12 +1357,52 @@ function renderText(
   }
 }
 
-/** Image 노드 렌더링 */
+/**
+ * Image 노드 렌더링
+ *
+ * 이미지가 없는 경우(로딩 중) box.fillColor로 placeholder를 그린다.
+ * box.borderRadius가 있으면 클리핑을 적용하여 원형/둥근 이미지를 지원한다.
+ */
 function renderImage(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
-  if (!node.image?.skImage) return;
-
   const scope = new SkiaDisposable();
   try {
+    // borderRadius 클리핑 적용 (원형 아바타 등)
+    const br = node.box?.borderRadius ?? 0;
+    const isArrayRadius = Array.isArray(br);
+    const hasRadius = isArrayRadius
+      ? (br as number[]).some(r => r > 0)
+      : (br as number) > 0;
+
+    if (hasRadius) {
+      canvas.save();
+      if (isArrayRadius) {
+        const clipPath = createRoundRectPath(
+          ck, 0, 0, node.width, node.height,
+          br as [number, number, number, number],
+        );
+        canvas.clipPath(clipPath, ck.ClipOp.Intersect, true);
+        clipPath.delete();
+      } else {
+        const r = Math.min(br as number, Math.min(node.width, node.height) / 2);
+        const rrect = ck.RRectXY(ck.LTRBRect(0, 0, node.width, node.height), r, r);
+        canvas.clipRRect(rrect, ck.ClipOp.Intersect, true);
+      }
+    }
+
+    // placeholder: 이미지 미로드(로딩 중 또는 src 없음) 시 fillColor로 배경 표시
+    if (!node.image?.skImage) {
+      if (node.box) {
+        const placeholderPaint = scope.track(new ck.Paint());
+        placeholderPaint.setAntiAlias(true);
+        placeholderPaint.setStyle(ck.PaintStyle.Fill);
+        placeholderPaint.setColor(node.box.fillColor);
+        canvas.drawRect(ck.LTRBRect(0, 0, node.width, node.height), placeholderPaint);
+      }
+      if (hasRadius) canvas.restore();
+      return;
+    }
+
+    // 이미지 렌더링 (object-fit 계산 결과 기반 src/dst rect)
     const paint = scope.track(new ck.Paint());
     paint.setAntiAlias(true);
 
@@ -1200,6 +1420,8 @@ function renderImage(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
     );
 
     canvas.drawImageRect(node.image.skImage, srcRect, dstRect, paint);
+
+    if (hasRadius) canvas.restore();
   } finally {
     scope.dispose();
   }

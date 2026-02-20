@@ -1,21 +1,22 @@
 import { ComponentElementProps } from "../../../types/core/store.types";
-import { ElementUtils } from "../../../utils/element/elementUtils";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
 
 /**
- * Tabs 컴포넌트 정의
+ * Dialog 컴포넌트 정의
+ *
+ * CSS DOM 구조와 동일한 복합 컴포넌트 트리:
+ *   Dialog (parent)
+ *     ├─ Heading   — 제목 텍스트 노드
+ *     ├─ Description — 본문 텍스트 노드
+ *     └─ DialogFooter — 버튼 영역 컨테이너
  */
-export function createTabsDefinition(
+export function createDialogDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-  // 초기 Tab들을 위한 UUID 생성
-  const tab1Id = ElementUtils.generateId();
-  const tab2Id = ElementUtils.generateId();
 
   // ⭐ Layout/Slot System
   const ownerFields = layoutId
@@ -23,12 +24,19 @@ export function createTabsDefinition(
     : { page_id: pageId, layout_id: null };
 
   return {
-    tag: "Tabs",
+    tag: "Dialog",
     parent: {
-      tag: "Tabs",
+      tag: "Dialog",
       props: {
-        defaultSelectedKey: tab1Id,
-        orientation: "horizontal",
+        variant: "primary",
+        size: "md",
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          width: "400px",
+          padding: "24px",
+          gap: "16px",
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -36,55 +44,57 @@ export function createTabsDefinition(
     },
     children: [
       {
-        tag: "Tab",
+        tag: "Heading",
         props: {
-          title: "Tab 1",
-          tabId: tab1Id,
+          children: "Dialog Title",
+          level: 2,
+          style: {
+            display: "block",
+            fontSize: "18px",
+            fontWeight: "600",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
       },
       {
-        tag: "Panel",
+        tag: "Description",
         props: {
-          title: "Panel 1",
-          variant: "tab",
-          tabId: tab1Id,
+          children: "Dialog content goes here.",
+          style: {
+            display: "block",
+            fontSize: "14px",
+            lineHeight: "1.5",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
       },
       {
-        tag: "Tab",
+        tag: "DialogFooter",
         props: {
-          title: "Tab 2",
-          tabId: tab2Id,
+          style: {
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "8px",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 3,
-      },
-      {
-        tag: "Panel",
-        props: {
-          title: "Panel 2",
-          variant: "tab",
-          tabId: tab2Id,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 4,
       },
     ],
   };
 }
 
 /**
- * Card 컴포넌트 정의
+ * Popover 컴포넌트 정의
  *
- * Card를 복합 컴포넌트로 생성하여 title(Heading)과 description(p)을
- * 별도 Element로 관리합니다.
- * → 더블클릭으로 자식 선택, 레이어 트리에서 계층 구조 확인 가능
+ * CSS DOM 구조와 동일한 복합 컴포넌트 트리:
+ *   Popover (parent)
+ *     ├─ Heading   — 팝오버 제목 노드
+ *     └─ Description — 팝오버 내용 노드
  */
-export function createCardDefinition(
+export function createPopoverDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
@@ -97,19 +107,17 @@ export function createCardDefinition(
     : { page_id: pageId, layout_id: null };
 
   return {
-    tag: "Card",
+    tag: "Popover",
     parent: {
-      tag: "Card",
+      tag: "Popover",
       props: {
         variant: "default",
-        size: "md",
-        orientation: "vertical",
+        size: "sm",
         style: {
           display: "flex",
           flexDirection: "column",
-          width: "100%",
+          width: "240px",
           padding: "16px",
-          borderWidth: "1px",
           gap: "8px",
         },
       } as ComponentElementProps,
@@ -121,13 +129,12 @@ export function createCardDefinition(
       {
         tag: "Heading",
         props: {
-          children: "Card Title",
+          children: "Popover Title",
           level: 3,
           style: {
             display: "block",
-            fontSize: "16px",
+            fontSize: "14px",
             fontWeight: "600",
-            lineHeight: "1.4",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -136,13 +143,11 @@ export function createCardDefinition(
       {
         tag: "Description",
         props: {
-          children: "Card description text goes here.",
+          children: "Popover content goes here.",
           style: {
             display: "block",
-            fontSize: "14px",
-            fontWeight: "400",
+            fontSize: "13px",
             lineHeight: "1.5",
-            color: "var(--on-surface-variant)",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -153,9 +158,13 @@ export function createCardDefinition(
 }
 
 /**
- * Tree 컴포넌트 정의
+ * Tooltip 컴포넌트 정의
+ *
+ * CSS DOM 구조와 동일한 복합 컴포넌트 트리:
+ *   Tooltip (parent)
+ *     └─ Description — 툴팁 텍스트 노드
  */
-export function createTreeDefinition(
+export function createTooltipDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
@@ -168,13 +177,17 @@ export function createTreeDefinition(
     : { page_id: pageId, layout_id: null };
 
   return {
-    tag: "Tree",
+    tag: "Tooltip",
     parent: {
-      tag: "Tree",
+      tag: "Tooltip",
       props: {
-        "aria-label": "Tree",
-        selectionMode: "single",
-        selectionBehavior: "replace",
+        variant: "default",
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          padding: "6px 10px",
+          gap: "4px",
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -182,22 +195,17 @@ export function createTreeDefinition(
     },
     children: [
       {
-        tag: "TreeItem",
+        tag: "Description",
         props: {
-          title: "Node 1",
-          hasChildren: true,
+          children: "Tooltip text",
+          style: {
+            display: "block",
+            fontSize: "12px",
+            lineHeight: "1.4",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
-      },
-      {
-        tag: "TreeItem",
-        props: {
-          title: "Node 2",
-          hasChildren: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 2,
       },
     ],
   };

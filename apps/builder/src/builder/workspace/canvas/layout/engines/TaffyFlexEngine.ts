@@ -329,9 +329,13 @@ export class TaffyFlexEngine implements LayoutEngine {
       ?? resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
 
     // RC-3: CSS 단위 해석용 컨텍스트 구성
+    // parentSize: 부모의 computedStyle.fontSize를 em 단위 기준으로 전달
+    // rootFontSize: rem 단위 기준 (16px 고정 — 루트 font-size 기본값)
     const cssCtx: CSSValueContext = {
       viewportWidth: context?.viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1920),
       viewportHeight: context?.viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 1080),
+      parentSize: parentComputed.fontSize,
+      rootFontSize: 16,
     };
 
     try {

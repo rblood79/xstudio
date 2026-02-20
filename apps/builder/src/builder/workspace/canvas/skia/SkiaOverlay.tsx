@@ -24,6 +24,7 @@ import type { SkiaNodeData } from './nodeRenderers';
 import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
 import { initAllWasm } from '../wasm-bindings/init';
 import { skiaFontManager } from './fontManager';
+import { registerImageLoadCallback } from './imageCache';
 import { useAIVisualFeedbackStore } from '../../../stores/aiVisualFeedback';
 import { renderGrid } from './gridRenderer';
 import { buildNodeBoundsMap, renderGeneratingEffects, renderFlashes } from './aiEffects';
@@ -35,6 +36,7 @@ import { buildEdgeGeometryCache, type CachedEdgeGeometry } from './workflowHitTe
 import { computeConnectedEdges } from './workflowGraphUtils';
 import { useWorkflowInteraction, type WorkflowHoverState } from '../hooks/useWorkflowInteraction';
 import { useElementHoverInteraction, type ElementHoverState } from '../hooks/useElementHoverInteraction';
+import { useScrollWheelInteraction } from '../hooks/useScrollWheelInteraction';
 import { renderHoverHighlight, renderEditingContextBorder } from './hoverRenderer';
 import { renderWorkflowMinimap, DEFAULT_MINIMAP_CONFIG, MINIMAP_CANVAS_RATIO, MINIMAP_MIN_WIDTH, MINIMAP_MAX_WIDTH, MINIMAP_MIN_HEIGHT, MINIMAP_MAX_HEIGHT, type MinimapConfig } from './workflowMinimap';
 import { useStore } from '../../../stores';
@@ -522,6 +524,12 @@ export function SkiaOverlay({
     containerEl,
     hoverStateRef: elementHoverStateRef,
     overlayVersionRef,
+    treeBoundsMapRef,
+  });
+
+  // W3-5: overflow:scroll/auto 요소 wheel 이벤트 처리
+  useScrollWheelInteraction({
+    containerEl,
     treeBoundsMapRef,
   });
 
@@ -1265,6 +1273,19 @@ export function SkiaOverlay({
       rendererRef.current?.invalidateContent();
     }
   }, [currentPageId]);
+
+  // 이미지 로딩 완료 시 Canvas 재렌더 트리거
+  // specShapeConverter에서 loadSkImage()를 호출하면 이미지가 비동기로 로딩되고,
+  // 로딩 완료 시 이 콜백이 실행되어 SkiaRenderer에 재렌더를 요청한다.
+  useEffect(() => {
+    if (!ready || !isActive) return;
+
+    const unregister = registerImageLoadCallback(() => {
+      rendererRef.current?.invalidateContent();
+    });
+
+    return unregister;
+  }, [ready, isActive]);
 
   // 리사이즈 대응 (디바운싱 150ms — surface 재생성은 비용이 크므로)
   useEffect(() => {

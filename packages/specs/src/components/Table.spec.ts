@@ -117,9 +117,21 @@ export const TableSpec: ComponentSpec<TableProps> = {
 
   render: {
     shapes: (props, variant, size, _state = 'default') => {
-      const columns = props.columns || [];
-      const rows = props.rows || [];
-      const totalWidth = columns.reduce((sum, col) => sum + (col.width || 100), 0) || 200;
+      // 샘플 데이터 fallback — props가 없을 때 캔버스에 기본 테이블을 표시
+      const DEFAULT_COLUMNS: TableColumn[] = [
+        { id: 'name',  label: 'Name',  width: 120 },
+        { id: 'email', label: 'Email', width: 160 },
+        { id: 'role',  label: 'Role',  width: 80  },
+      ];
+      const DEFAULT_ROWS: TableRow[] = [
+        { id: 'r1', cells: { name: 'John Doe',    email: 'john@example.com', role: 'Admin'  } },
+        { id: 'r2', cells: { name: 'Jane Smith',  email: 'jane@example.com', role: 'Editor' } },
+        { id: 'r3', cells: { name: 'Bob Lee',     email: 'bob@example.com',  role: 'Viewer' } },
+      ];
+
+      const columns = (props.columns && props.columns.length > 0) ? props.columns : DEFAULT_COLUMNS;
+      const rows    = (props.rows    && props.rows.length    > 0) ? props.rows    : DEFAULT_ROWS;
+      const totalWidth = columns.reduce((sum, col) => sum + (col.width || 100), 0) || 360;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;

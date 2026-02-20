@@ -627,6 +627,10 @@ const ElementsLayer = memo(function ElementsLayer({
     'Disclosure', 'DisclosureGroup', 'Accordion',
     'ToggleButtonGroup',  // 🚀 Phase 7: flex container로 자식 ToggleButton 내부 렌더링
     'TagGroup', 'TagList',  // 🚀 웹 CSS 구조 동일: TagGroup (column) → Label + TagList (row wrap) → Tags
+    'Popover', 'Tooltip', 'Menu',  // Overlay/Navigation 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
+    'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',  // Date & Color 복합 컴포넌트
+    'Toast', 'Toolbar',  // Form/Feedback/Action 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
+    'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',  // Input 복합 컴포넌트
   ]), []);
 
   // Phase 11: 엔진이 계산한 레이아웃으로 직접 배치 (Yoga 제거)

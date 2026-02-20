@@ -192,9 +192,6 @@ export function calculateMinRequiredSize(
 /**
  * anchor 0.5 기반 중앙 배치 오프셋 계산
  *
- * FancyButton이 anchor=0.5로 중앙 기준 배치할 때 사용하던 패턴.
- * button.x = width / 2, button.y = height / 2
- *
  * @param containerSize - 컨테이너(부모) 크기
  * @returns 중앙 좌표
  */

@@ -216,10 +216,12 @@ export function specShapesToSkia(
           box: { fillColor, borderRadius: 0 },
         };
 
+        // 음수 좌표를 가진 shape는 backdrop 등 전체화면 오버레이이므로 bgBox로 추출하지 않음
+        const isPositiveOriginR = shape.x >= 0 && shape.y >= 0;
         const isFullWidthR = shape.width === 'auto'
           || (typeof shape.width === 'number' && shape.width >= containerWidth * 0.9);
         const isFullHeightR = shape.height === 'auto' || shape.height === containerHeight;
-        if (!bgExtracted && shape.x === 0 && shape.y === 0
+        if (!bgExtracted && isPositiveOriginR && shape.x === 0 && shape.y === 0
             && isFullWidthR && isFullHeightR) {
           bgBox = node.box;
           bgExtracted = true;
@@ -278,6 +280,8 @@ export function specShapesToSkia(
             y2,
             strokeColor,
             strokeWidth: shape.strokeWidth,
+            // Separator dashed/dotted 등 strokeDasharray 전달
+            ...(shape.strokeDasharray ? { strokeDasharray: shape.strokeDasharray } : {}),
           },
         };
 
@@ -325,7 +329,7 @@ export function specShapesToSkia(
           ? nodeById.get(shape.target)
           : lastNode;
 
-        // M-6: partial border — sides 지정 시 개별 Line 렌더링
+        // M-6: partial border — sides 지정 시 개별 변 렌더링
         if (shape.sides) {
           const strokeColor = colorValueToFloat32(shape.color, theme);
           const bw = shape.borderWidth;
@@ -334,21 +338,61 @@ export function specShapesToSkia(
           const ox = targetNode?.x ?? (shape.x ?? 0);
           const oy = targetNode?.y ?? (shape.y ?? 0);
 
-          if (shape.sides.top) {
-            children.push({ type: 'line' as const, x: 0, y: 0, width: tw, height: bw, visible: true,
-              line: { x1: ox, y1: oy, x2: ox + tw, y2: oy, strokeColor, strokeWidth: bw } });
-          }
-          if (shape.sides.right) {
-            children.push({ type: 'line' as const, x: 0, y: 0, width: bw, height: th, visible: true,
-              line: { x1: ox + tw, y1: oy, x2: ox + tw, y2: oy + th, strokeColor, strokeWidth: bw } });
-          }
-          if (shape.sides.bottom) {
-            children.push({ type: 'line' as const, x: 0, y: 0, width: tw, height: bw, visible: true,
-              line: { x1: ox, y1: oy + th, x2: ox + tw, y2: oy + th, strokeColor, strokeWidth: bw } });
-          }
-          if (shape.sides.left) {
-            children.push({ type: 'line' as const, x: 0, y: 0, width: bw, height: th, visible: true,
-              line: { x1: ox, y1: oy, x2: ox, y2: oy + th, strokeColor, strokeWidth: bw } });
+          // sides border의 style → strokeDasharray 변환
+          const sideStyle = shape.style;
+          const sideDasharray: number[] | undefined =
+            sideStyle === 'dashed' ? [Math.max(bw * 3, 4), Math.max(bw * 2, 3)]
+            : sideStyle === 'dotted' ? [bw, bw * 1.5]
+            : undefined;
+
+          // M-6 개선: border-radius가 있는 경우 partial_border 노드로 렌더링
+          // 우선순위: shape.radius → targetNode.box?.borderRadius
+          const rawRadius = shape.radius ?? targetNode?.box?.borderRadius;
+          const resolvedRadius = rawRadius !== undefined ? resolveRadius(rawRadius, theme) : 0;
+          const radiusArr: [number, number, number, number] = Array.isArray(resolvedRadius)
+            ? resolvedRadius
+            : [resolvedRadius, resolvedRadius, resolvedRadius, resolvedRadius];
+          const hasRadius = radiusArr.some(r => r > 0);
+
+          if (hasRadius) {
+            // Path-based rendering: arc를 포함한 변별 테두리 (radius 표현 가능)
+            children.push({
+              type: 'partial_border' as const,
+              x: ox,
+              y: oy,
+              width: tw,
+              height: th,
+              visible: true,
+              partialBorder: {
+                sides: shape.sides,
+                strokeColor,
+                strokeWidth: bw,
+                borderRadius: radiusArr,
+                ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}),
+              },
+            });
+          } else {
+            // 기존 line-based rendering (radius 없을 때 유지)
+            if (shape.sides.top) {
+              children.push({ type: 'line' as const, x: 0, y: 0, width: tw, height: bw, visible: true,
+                line: { x1: ox, y1: oy, x2: ox + tw, y2: oy, strokeColor, strokeWidth: bw,
+                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}) } });
+            }
+            if (shape.sides.right) {
+              children.push({ type: 'line' as const, x: 0, y: 0, width: bw, height: th, visible: true,
+                line: { x1: ox + tw, y1: oy, x2: ox + tw, y2: oy + th, strokeColor, strokeWidth: bw,
+                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}) } });
+            }
+            if (shape.sides.bottom) {
+              children.push({ type: 'line' as const, x: 0, y: 0, width: tw, height: bw, visible: true,
+                line: { x1: ox, y1: oy + th, x2: ox + tw, y2: oy + th, strokeColor, strokeWidth: bw,
+                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}) } });
+            }
+            if (shape.sides.left) {
+              children.push({ type: 'line' as const, x: 0, y: 0, width: bw, height: th, visible: true,
+                line: { x1: ox, y1: oy, x2: ox, y2: oy + th, strokeColor, strokeWidth: bw,
+                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}) } });
+            }
           }
           break;
         }
@@ -403,13 +447,22 @@ export function specShapesToSkia(
         // Resolve fontSize (might be TokenRef like '{typography.text-md}')
         const fontSize = resolveNum(shape.fontSize, theme, 14);
 
+        // Resolve lineHeight:
+        // - shape.lineHeight <= 5 → 배수값 (1.5 등) → fontSize * 배수
+        // - shape.lineHeight > 5  → px값으로 직접 사용
+        // - undefined → 기본값 fontSize * 1.2
+        const lineHeightPx = shape.lineHeight
+          ? (shape.lineHeight <= 5
+            ? fontSize * shape.lineHeight
+            : resolveNum(shape.lineHeight, theme, fontSize * 1.2))
+          : fontSize * 1.2;
+
         // Calculate paddingTop based on baseline
         let paddingTop = shape.y;
         if (shape.baseline === 'middle') {
           // 수직 중앙 정렬: (컨테이너 높이 - 한 줄 높이) / 2
           // 다중 줄 텍스트의 경우 ElementSprite에서 measureWrappedTextHeight 기반으로 보정
-          const lineHeight = fontSize * 1.2;
-          paddingTop = shape.y + (containerHeight - lineHeight) / 2;
+          paddingTop = shape.y + (containerHeight - lineHeightPx) / 2;
         }
         // baseline='top' → paddingTop = y (already)
 
@@ -444,6 +497,25 @@ export function specShapesToSkia(
           ? [shape.fontFamily, 'Inter', 'system-ui', 'sans-serif']
           : ['Inter', 'system-ui', 'sans-serif'];
 
+        // textDecoration → CanvasKit 비트마스크 변환
+        // underline=1, overline=2, lineThrough=4
+        let decoration: number | undefined;
+        if (shape.textDecoration === 'underline') {
+          decoration = 1;
+        } else if (shape.textDecoration === 'line-through') {
+          decoration = 4;
+        }
+
+        // textTransform → 텍스트 콘텐츠 변환
+        let textContent = shape.text;
+        if (shape.textTransform === 'uppercase') {
+          textContent = textContent.toUpperCase();
+        } else if (shape.textTransform === 'lowercase') {
+          textContent = textContent.toLowerCase();
+        } else if (shape.textTransform === 'capitalize') {
+          textContent = textContent.replace(/\b\w/g, c => c.toUpperCase());
+        }
+
         const node: SkiaNodeData = {
           type: 'text',
           x: 0,
@@ -452,12 +524,15 @@ export function specShapesToSkia(
           height: containerHeight,
           visible: true,
           text: {
-            content: shape.text,
+            content: textContent,
             fontFamilies,
             fontSize,
             fontWeight,
             color: fillColor,
             align: shape.align ?? 'left',
+            letterSpacing: shape.letterSpacing,
+            lineHeight: shape.lineHeight !== undefined ? lineHeightPx : undefined,
+            decoration,
             paddingLeft,
             paddingTop: Math.max(0, paddingTop),
             maxWidth,

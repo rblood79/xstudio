@@ -39,7 +39,6 @@ export function composeRGB(r: number, g: number, b: number): number {
 /**
  * 색상 밝기 조절 (factor 곱)
  *
- * @pixi/ui FancyButton 에서 hover/pressed 색상 계산에 사용하던 패턴.
  * factor < 1: 어둡게, factor > 1: 밝게
  *
  * @param color - 0xRRGGBB hex 색상

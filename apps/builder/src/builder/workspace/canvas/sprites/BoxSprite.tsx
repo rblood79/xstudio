@@ -25,7 +25,7 @@ import { useSkiaNode } from '../skia/useSkiaNode';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { isFillV2Enabled } from '../../../../utils/featureFlags';
 import { fillsToSkiaFillColor, fillsToSkiaFillStyle, cssBgImageToSkia } from '../../../panels/styles/utils/fillToSkia';
-import { getScrollState } from '../../../stores/scrollState';
+import { useElementScrollState } from '../../../stores/scrollState';
 
 
 // ============================================
@@ -49,6 +49,13 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
   const computedContainerSize = useContext(LayoutComputedSizeContext);
+
+  // W3-5: overflow:scroll/auto 요소의 스크롤 상태 구독
+  // useElementScrollState는 scrollMap 변경 시 리렌더를 트리거하여
+  // skiaNodeData useMemo가 최신 scrollOffset을 반영하도록 한다.
+  const overflow = style?.overflow;
+  const isScrollable = overflow === 'scroll' || overflow === 'auto';
+  const scrollState = useElementScrollState(isScrollable ? element.id : null);
 
   const { fill, borderRadius } = converted;
   const transform = useMemo(() => {
@@ -254,7 +261,8 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
         : {}),
       ...((style?.overflow === 'scroll' || style?.overflow === 'auto')
         ? (() => {
-            const scroll = getScrollState(element.id);
+            // W3-5: scrollState는 useElementScrollState hook으로 구독하여 갱신 시 리렌더됨
+            const scroll = scrollState;
             if (!scroll) return {};
             const result: Record<string, unknown> = {
               scrollOffset: { scrollTop: scroll.scrollTop, scrollLeft: scroll.scrollLeft },
@@ -315,7 +323,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
           ? (borderConfig?.style as 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset') : undefined,
       },
     };
-  }, [transform, fill, borderRadius, borderConfig, style, skiaEffects, fills]);
+  }, [transform, fill, borderRadius, borderConfig, style, skiaEffects, fills, scrollState]);
 
   useSkiaNode(element.id, skiaNodeData);
 

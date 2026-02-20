@@ -8,6 +8,16 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { fontFamily } from '../primitives/typography';
+
+/**
+ * GridList Item
+ */
+export interface GridListItem {
+  id: string;
+  label: string;
+  description?: string;
+}
 
 /**
  * GridList Props
@@ -17,6 +27,7 @@ export interface GridListProps {
   size?: 'sm' | 'md' | 'lg';
   selectionMode?: 'none' | 'single' | 'multiple';
   columns?: number;
+  items?: GridListItem[];
   style?: Record<string, string | number | undefined>;
 }
 
@@ -88,26 +99,108 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
   },
 
   render: {
-    shapes: (props, _variant, size, _state = 'default') => {
-      const columns = props.columns || 3;
-
-      const shapes: Shape[] = [
-        // 그리드 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'grid',
-            gridTemplateColumns: `repeat(${columns}, 1fr)`,
-            gap: size.gap,
-            padding: size.paddingY,
-          },
-        },
+    shapes: (props, variant, size, _state = 'default') => {
+      // 샘플 데이터 fallback — props가 없을 때 캔버스에 기본 그리드를 표시
+      const DEFAULT_ITEMS: GridListItem[] = [
+        { id: 'i1', label: 'Item 1', description: 'Description' },
+        { id: 'i2', label: 'Item 2', description: 'Description' },
+        { id: 'i3', label: 'Item 3', description: 'Description' },
+        { id: 'i4', label: 'Item 4', description: 'Description' },
       ];
+
+      const numCols   = props.columns ?? 2;
+      const items     = (props.items && props.items.length > 0) ? props.items : DEFAULT_ITEMS;
+      const gap       = size.gap as unknown as number ?? 12;
+      const paddingX  = size.paddingX as unknown as number ?? 12;
+      const paddingY  = size.paddingY as unknown as number ?? 12;
+      const fontSize  = size.fontSize as unknown as number ?? 14;
+      const ff        = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textColor = props.style?.color ?? variant.text;
+      const bgColor   = props.style?.backgroundColor ?? variant.background;
+      const borderColor = variant.border;
+
+      // 컨테이너 전체 너비 (style.width 우선, 없으면 기본값)
+      const totalWidth  = (props.style?.width as number) || 280;
+      // 셀 너비 계산: 패딩 + 각 셀 사이 gap을 제외한 나머지를 균등 배분
+      const cellWidth   = (totalWidth - paddingX * 2 - gap * (numCols - 1)) / numCols;
+      const cellHeight  = fontSize > 16 ? 80 : fontSize > 12 ? 70 : 60;
+
+      const numRows     = Math.ceil(items.length / numCols);
+      const totalHeight = paddingY * 2 + cellHeight * numRows + gap * (numRows - 1);
+
+      const shapes: Shape[] = [];
+
+      // 컨테이너 배경
+      shapes.push({
+        id: 'bg',
+        type: 'roundRect' as const,
+        x: 0,
+        y: 0,
+        width: totalWidth,
+        height: totalHeight,
+        radius: 8,
+        fill: bgColor,
+      });
+
+      // 테두리
+      if (borderColor) {
+        shapes.push({
+          type: 'border' as const,
+          target: 'bg',
+          borderWidth: 1,
+          color: borderColor,
+          radius: 8,
+        });
+      }
+
+      // 그리드 아이템
+      items.forEach((item, idx) => {
+        const col = idx % numCols;
+        const row = Math.floor(idx / numCols);
+        const cellX = paddingX + col * (cellWidth + gap);
+        const cellY = paddingY + row * (cellHeight + gap);
+
+        // 아이템 카드 배경
+        shapes.push({
+          type: 'roundRect' as const,
+          x: cellX,
+          y: cellY,
+          width: cellWidth,
+          height: cellHeight,
+          radius: 6,
+          fill: '{color.surface-container}' as TokenRef,
+        });
+
+        // 아이템 레이블
+        shapes.push({
+          type: 'text' as const,
+          x: cellX + 10,
+          y: cellY + cellHeight / 2 - (item.description ? fontSize * 0.6 : 0),
+          text: item.label,
+          fontSize,
+          fontFamily: ff,
+          fontWeight: 500,
+          fill: textColor,
+          baseline: 'middle' as const,
+          align: 'left' as const,
+        });
+
+        // 아이템 설명 (있을 경우)
+        if (item.description) {
+          shapes.push({
+            type: 'text' as const,
+            x: cellX + 10,
+            y: cellY + cellHeight / 2 + fontSize * 0.8,
+            text: item.description,
+            fontSize: Math.max(fontSize - 2, 10),
+            fontFamily: ff,
+            fontWeight: 400,
+            fill: '{color.on-surface-variant}' as TokenRef,
+            baseline: 'middle' as const,
+            align: 'left' as const,
+          });
+        }
+      });
 
       return shapes;
     },

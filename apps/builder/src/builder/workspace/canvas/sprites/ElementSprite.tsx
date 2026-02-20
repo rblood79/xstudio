@@ -206,7 +206,7 @@ const IMAGE_TAGS = new Set(['Image', 'Avatar', 'Logo', 'Icon', 'Thumbnail']);
 const UI_BUTTON_TAGS = new Set(['Button', 'SubmitButton']);
 
 const UI_CHECKBOX_GROUP_TAGS = new Set(['CheckboxGroup']);  // CheckboxGroup 컨테이너
-const UI_CHECKBOX_ITEM_TAGS = new Set(['Checkbox', 'CheckBox', 'Switch', 'Toggle']);  // Checkbox 개별 아이템
+const UI_CHECKBOX_ITEM_TAGS = new Set(['Checkbox', 'CheckBox']);  // Checkbox 개별 아이템 (Switch/Toggle은 UI_SWITCH_TAGS로 분리)
 const UI_RADIO_GROUP_TAGS = new Set(['RadioGroup']);  // RadioGroup 컨테이너
 const UI_RADIO_ITEM_TAGS = new Set(['Radio']);  // Radio 개별 아이템 (투명 hit area만)
 
@@ -214,8 +214,8 @@ const UI_RADIO_ITEM_TAGS = new Set(['Radio']);  // Radio 개별 아이템 (투�
  * UI 컴포넌트 태그들 (Phase 6)
  */
 const UI_SLIDER_TAGS = new Set(['Slider', 'RangeSlider']);
-const UI_INPUT_TAGS = new Set(['Input', 'TextField', 'TextInput', 'SearchField']);
-const UI_SELECT_TAGS = new Set(['Select', 'Dropdown', 'ComboBox']);
+const UI_INPUT_TAGS = new Set(['Input']);  // TextField/TextInput은 UI_TEXTFIELD_TAGS, SearchField는 UI_SEARCHFIELD_TAGS로 분리
+const UI_SELECT_TAGS = new Set(['Select', 'Dropdown']);  // ComboBox는 UI_COMBOBOX_TAGS로 분리
 const UI_PROGRESS_TAGS = new Set(['ProgressBar', 'Progress', 'LoadingBar']);
 const UI_SWITCHER_TAGS = new Set(['Switcher', 'SegmentedControl', 'TabBar']);
 const UI_SCROLLBOX_TAGS = new Set(['ScrollBox', 'ScrollContainer', 'ScrollView']);
@@ -283,7 +283,7 @@ const UI_DATERANGEPICKER_TAGS = new Set(['DateRangePicker']);
  * Phase 7 WebGL Migration 컴포넌트 태그들 - Form & Utility Components
  */
 const UI_TEXTFIELD_TAGS = new Set(['TextField', 'TextInput']);
-const UI_SWITCH_TAGS = new Set(['Switch']);
+const UI_SWITCH_TAGS = new Set(['Switch', 'Toggle']);
 const UI_TEXTAREA_TAGS = new Set(['TextArea', 'Textarea']);
 const UI_FORM_TAGS = new Set(['Form']);
 const UI_TOOLBAR_TAGS = new Set(['Toolbar']);
@@ -457,7 +457,6 @@ function getSpriteType(element: Element): SpriteType {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'Button': ButtonSpec, 'SubmitButton': ButtonSpec,
-  'FancyButton': ButtonSpec,
   'CheckboxGroup': CheckboxGroupSpec,
   'Checkbox': CheckboxSpec, 'CheckBox': CheckboxSpec,
   'Switch': SwitchSpec, 'Toggle': SwitchSpec,
@@ -964,124 +963,9 @@ export const ElementSprite = memo(function ElementSprite({
         error: 0xffffff,
       };
 
-      if (tag === 'Card') {
-        const cardTitle = String(props?.heading || props?.title || '');
-        const cardSubheading = String(props?.subheading || '');
-        const cardDescription = String(props?.description || props?.children || '');
-
-        if (cardTitle || cardSubheading || cardDescription) {
-          const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
-          const textColorHex = style?.color
-            ? cssColorToHex(style.color, defaultTextColor)
-            : defaultTextColor;
-          const tcR = ((textColorHex >> 16) & 0xff) / 255;
-          const tcG = ((textColorHex >> 8) & 0xff) / 255;
-          const tcB = (textColorHex & 0xff) / 255;
-          const textColor = Float32Array.of(tcR, tcG, tcB, 1);
-
-          const cardSize = String(props?.size || 'md');
-          const CARD_PADDING: Record<string, number> = { sm: 8, md: 12, lg: 16 };
-          const sizePresetPadding = CARD_PADDING[cardSize] ?? 12;
-          const padding = style?.padding !== undefined
-            ? (typeof style.padding === 'number' ? style.padding : parseInt(String(style.padding), 10) || 0)
-            : sizePresetPadding;
-          const fontFamilies = ['Pretendard', 'Inter', 'system-ui', 'sans-serif'];
-          const maxWidth = finalWidth - padding * 2;
-
-          const nodes: typeof textChildren = [];
-          let currentY = padding;
-
-          const fontFamilyStr = fontFamilies[0] ?? 'sans-serif';
-
-          if (cardTitle) {
-            const titleFontSize = 16;
-            const titleHeight = measureWrappedTextHeight(
-              cardTitle, titleFontSize, 600, fontFamilyStr, maxWidth,
-            );
-            nodes.push({
-              type: 'text' as const,
-              x: 0, y: 0,
-              width: finalWidth,
-              height: finalHeight,
-              visible: true,
-              text: {
-                content: cardTitle,
-                fontFamilies,
-                fontSize: titleFontSize,
-                fontWeight: 600,
-                color: textColor,
-                align: 'left' as const,
-                paddingLeft: padding,
-                paddingTop: currentY,
-                maxWidth,
-                autoCenter: false,
-              },
-            });
-            currentY += titleHeight;
-          }
-
-          if (cardSubheading) {
-            if (cardTitle) currentY += 2;
-            const subFontSize = 14;
-            const subHeight = measureWrappedTextHeight(
-              cardSubheading, subFontSize, 400, fontFamilyStr, maxWidth,
-            );
-            nodes.push({
-              type: 'text' as const,
-              x: 0, y: 0,
-              width: finalWidth,
-              height: finalHeight,
-              visible: true,
-              text: {
-                content: cardSubheading,
-                fontFamilies,
-                fontSize: subFontSize,
-                color: textColor,
-                align: 'left' as const,
-                paddingLeft: padding,
-                paddingTop: currentY,
-                maxWidth,
-                autoCenter: false,
-              },
-            });
-            currentY += subHeight;
-          }
-
-          if (cardTitle || cardSubheading) {
-            currentY += 8;
-          }
-
-          if (cardDescription) {
-            const descFontSize = 14;
-            const descHeight = measureWrappedTextHeight(
-              cardDescription, descFontSize, 400, fontFamilyStr, maxWidth,
-            );
-            nodes.push({
-              type: 'text' as const,
-              x: 0, y: 0,
-              width: finalWidth,
-              height: finalHeight,
-              visible: true,
-              text: {
-                content: cardDescription,
-                fontFamilies,
-                fontSize: descFontSize,
-                color: textColor,
-                align: 'left' as const,
-                paddingLeft: padding,
-                paddingTop: currentY,
-                maxWidth,
-                autoCenter: false,
-              },
-            });
-            currentY += descHeight;
-          }
-
-          cardCalculatedHeight = currentY + padding;
-          textChildren = nodes;
-        }
-      } else {
+      {
         // 🟢 Spec shapes 기반 렌더링
+        // Card는 복합 컴포넌트로 전환: 자식 Element(Heading, Description)가 별도 렌더링됨
         const spec = getSpecForTag(tag);
         if (spec) {
           // ⚡ 엔진 크기 확정 전에는 spec shapes 계산을 건너뛴다.
@@ -1147,9 +1031,13 @@ export const ElementSprite = memo(function ElementSprite({
               specNode.effects = [...(specNode.effects ?? []), { type: 'opacity' as const, value: opacityVal }];
             }
 
-            // QW-3: focusVisible 상태 outline (focus ring) 적용
+            // QW-3: focusVisible/focused 상태 outline (focus ring) 적용
+            // focused: spec.states.focused.outline 우선, 없으면 focusVisible로 fallback
+            // focusVisible: spec.states.focusVisible.outline 사용
             if ((componentState === 'focusVisible' || componentState === 'focused') && specNode.box) {
-              const focusState = spec.states?.focusVisible;
+              const focusState = componentState === 'focused'
+                ? (spec.states?.focused?.outline ? spec.states.focused : spec.states?.focusVisible)
+                : spec.states?.focusVisible;
               if (focusState?.outline) {
                 const parsed = parseOutlineShorthand(
                   focusState.outline as string,
@@ -1596,8 +1484,6 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
-          childElements={childElements}
-          renderChildElement={renderChildElement}
         />
       );
 
@@ -1607,8 +1493,6 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
-          childElements={childElements}
-          renderChildElement={renderChildElement}
         />
       );
 
@@ -2022,6 +1906,24 @@ export const ElementSprite = memo(function ElementSprite({
     }
   })();
 
+  // 🚀 Container children rendering for custom UI sprite types
+  // 'flex'/'grid'/'box' cases already render children internally in the switch above.
+  // 'toggleButtonGroup' renders modified children internally (size inheritance, margin offsets).
+  // Custom UI sprite types (card, panel, form, dialog, etc.) only provide Pixi hit areas
+  // and rely on this wrapper to render their container children via renderChildElement.
+  // childElements is only set for elements in CONTAINER_TAGS (from BuilderCanvas).
+  if (
+    childElements && childElements.length > 0 && renderChildElement &&
+    spriteType !== 'box' && spriteType !== 'flex' && spriteType !== 'grid' &&
+    spriteType !== 'toggleButtonGroup'
+  ) {
+    return (
+      <>
+        {content}
+        {childElements.map((childEl) => renderChildElement(childEl))}
+      </>
+    );
+  }
 
   return content;
 });

@@ -6,7 +6,7 @@
  * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
  * @since 2025-12-11 Phase 11 B2.4
- * @updated 2026-02-18 @pixi/ui FancyButton 의존성 제거 (Skia 렌더링 전환)
+ * @updated 2026-02-18 Skia 렌더링 전환 (히트 영역 전용으로 단순화)
  * @updated 2026-02-19 Wave 3: 엔진 계산 크기로 히트 영역 통합 (getButtonLayout 제거)
  */
 

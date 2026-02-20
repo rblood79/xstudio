@@ -26,6 +26,10 @@ export interface SelectProps {
   isDisabled?: boolean;
   isInvalid?: boolean;
   isRequired?: boolean;
+  /** 드롭다운 아이템 목록 */
+  items?: string[];
+  /** 선택된 아이템 인덱스 (하이라이트용) */
+  selectedIndex?: number;
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -232,6 +236,12 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
       // 드롭다운 패널 (열린 상태)
       if (props.isOpen) {
+        const dropdownItems = props.items ?? ['Option 1', 'Option 2', 'Option 3'];
+        const itemH = 36;
+        const dropdownPaddingY = 4;
+        const dropdownHeight = dropdownItems.length * itemH + dropdownPaddingY * 2;
+        const dropdownY = (props.label ? 20 : 0) + height + 4;
+
         shapes.push({
           type: 'shadow' as const,
           target: 'dropdown',
@@ -245,9 +255,9 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           id: 'dropdown',
           type: 'roundRect' as const,
           x: 0,
-          y: (props.label ? 20 : 0) + height + 4,
+          y: dropdownY,
           width,
-          height: 'auto',
+          height: dropdownHeight,
           radius: borderRadius,
           fill: '{color.surface-container}' as TokenRef,
         });
@@ -258,15 +268,61 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           color: '{color.outline-variant}' as TokenRef,
           radius: borderRadius,
         });
+
+        // 드롭다운 아이템 렌더링
+        const selectedIdx = props.selectedIndex
+          ?? (props.value != null
+              ? dropdownItems.indexOf(props.value)
+              : props.selectedText != null
+                ? dropdownItems.indexOf(props.selectedText)
+                : -1);
+
+        dropdownItems.forEach((item, i) => {
+          const itemY = dropdownY + dropdownPaddingY + i * itemH;
+          const isSelected = selectedIdx === i;
+
+          // 선택된 아이템 하이라이트 배경
+          if (isSelected) {
+            shapes.push({
+              type: 'roundRect' as const,
+              x: 4,
+              y: itemY + 2,
+              width: width - 8,
+              height: itemH - 4,
+              radius: borderRadius,
+              fill: '{color.primary-container}' as TokenRef,
+            });
+          }
+
+          // 아이템 텍스트
+          shapes.push({
+            type: 'text' as const,
+            x: paddingX,
+            y: itemY + itemH / 2,
+            text: String(item),
+            fontSize: fontSize as number,
+            fontFamily: ff,
+            fontWeight: isSelected ? 600 : 400,
+            fill: isSelected
+              ? ('{color.on-primary-container}' as TokenRef)
+              : ('{color.on-surface}' as TokenRef),
+            align: textAlign,
+            baseline: 'middle' as const,
+          });
+        });
       }
 
       // 설명 / 에러 메시지
       const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
       if (descText) {
+        const descY = props.isOpen
+          ? (props.label ? 20 : 0) + height + 4
+              + (props.items ?? ['Option 1', 'Option 2', 'Option 3']).length * 36 + 8 + 4
+          : (props.label ? 20 : 0) + height + 4;
         shapes.push({
           type: 'text' as const,
           x: 0,
-          y: (props.label ? 20 : 0) + height + 4,
+          y: descY,
           text: descText,
           fontSize: (fontSize as number) - 2,
           fontFamily: ff,

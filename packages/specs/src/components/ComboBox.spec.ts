@@ -26,6 +26,10 @@ export interface ComboBoxProps {
   isDisabled?: boolean;
   isInvalid?: boolean;
   isRequired?: boolean;
+  /** 드롭다운 아이템 목록 */
+  items?: string[];
+  /** 선택된 아이템 인덱스 (하이라이트용) */
+  selectedIndex?: number;
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -232,6 +236,20 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
 
       // 드롭다운 패널 (열린 상태)
       if (props.isOpen) {
+        // inputValue로 아이템 필터링 (입력값이 있으면 포함된 항목만 표시)
+        const allItems = props.items ?? ['Option 1', 'Option 2', 'Option 3'];
+        const filterText = props.inputValue?.toLowerCase() ?? '';
+        const dropdownItems = filterText
+          ? allItems.filter((item) => item.toLowerCase().includes(filterText))
+          : allItems;
+
+        const itemH = 36;
+        const dropdownPaddingY = 4;
+        const dropdownHeight = dropdownItems.length > 0
+          ? dropdownItems.length * itemH + dropdownPaddingY * 2
+          : itemH + dropdownPaddingY * 2;
+        const dropdownY = (props.label ? 20 : 0) + height + 4;
+
         shapes.push({
           type: 'shadow' as const,
           target: 'dropdown',
@@ -245,9 +263,9 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           id: 'dropdown',
           type: 'roundRect' as const,
           x: 0,
-          y: (props.label ? 20 : 0) + height + 4,
+          y: dropdownY,
           width,
-          height: 'auto',
+          height: dropdownHeight,
           radius: borderRadius,
           fill: '{color.surface-container}' as TokenRef,
         });
@@ -258,15 +276,83 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           color: '{color.outline-variant}' as TokenRef,
           radius: borderRadius,
         });
+
+        if (dropdownItems.length === 0) {
+          // 결과 없음 텍스트
+          shapes.push({
+            type: 'text' as const,
+            x: paddingX,
+            y: dropdownY + dropdownPaddingY + itemH / 2,
+            text: 'No results',
+            fontSize: fontSize as number,
+            fontFamily: ff,
+            fontWeight: 400,
+            fill: '{color.on-surface-variant}' as TokenRef,
+            align: 'left' as const,
+            baseline: 'middle' as const,
+          });
+        } else {
+          // 선택 인덱스 결정
+          const selectedIdx = props.selectedIndex
+            ?? (props.selectedText != null
+                ? allItems.indexOf(props.selectedText)
+                : -1);
+
+          dropdownItems.forEach((item, i) => {
+            const itemY = dropdownY + dropdownPaddingY + i * itemH;
+            const isSelected = selectedIdx >= 0
+              && allItems[selectedIdx] === item;
+
+            // 선택된 아이템 하이라이트 배경
+            if (isSelected) {
+              shapes.push({
+                type: 'roundRect' as const,
+                x: 4,
+                y: itemY + 2,
+                width: width - 8,
+                height: itemH - 4,
+                radius: borderRadius,
+                fill: '{color.primary-container}' as TokenRef,
+              });
+            }
+
+            // 아이템 텍스트
+            shapes.push({
+              type: 'text' as const,
+              x: paddingX,
+              y: itemY + itemH / 2,
+              text: String(item),
+              fontSize: fontSize as number,
+              fontFamily: ff,
+              fontWeight: isSelected ? 600 : 400,
+              fill: isSelected
+                ? ('{color.on-primary-container}' as TokenRef)
+                : ('{color.on-surface}' as TokenRef),
+              align: textAlign,
+              baseline: 'middle' as const,
+            });
+          });
+        }
       }
 
       // 설명 / 에러 메시지
       const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
       if (descText) {
+        const allItems = props.items ?? ['Option 1', 'Option 2', 'Option 3'];
+        const filterText = props.inputValue?.toLowerCase() ?? '';
+        const visibleCount = props.isOpen
+          ? (filterText
+              ? allItems.filter((item) => item.toLowerCase().includes(filterText)).length
+              : allItems.length)
+          : 0;
+        const descY = props.isOpen
+          ? (props.label ? 20 : 0) + height + 4
+              + Math.max(visibleCount, 1) * 36 + 8 + 4
+          : (props.label ? 20 : 0) + height + 4;
         shapes.push({
           type: 'text' as const,
           x: 0,
-          y: (props.label ? 20 : 0) + height + 4,
+          y: descY,
           text: descText,
           fontSize: (fontSize as number) - 2,
           fontFamily: ff,

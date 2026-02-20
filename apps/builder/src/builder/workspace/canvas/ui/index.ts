@@ -12,7 +12,6 @@
  * @updated 2025-12-13 Phase 6.2 - PixiInput 추가
  * @updated 2025-12-13 Phase 6.3 - PixiSelect 추가
  * @updated 2025-12-13 Phase 6.4 - PixiProgressBar 추가
- * @updated 2025-12-13 Phase 6.5 - PixiFancyButton 추가
  * @updated 2025-12-13 Phase 6.6 - PixiSwitcher 추가
  * @updated 2025-12-13 Phase 6.7 - PixiScrollBox 추가
  * @updated 2025-12-13 Phase 6.8 - PixiList 추가

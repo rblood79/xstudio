@@ -155,12 +155,15 @@ function segmentChildren(children: Element[]): Segment[] {
  * - 왼쪽에서 오른쪽으로 배치
  * - availableWidth 초과 시 다음 줄로 이동
  * - 각 줄 높이는 해당 줄 요소들의 최대 높이
+ *
+ * RC-3: cssCtx를 통해 em/rem/vh/vw 단위를 올바르게 해석
  */
 function layoutInlineRun(
   children: Element[],
   availableWidth: number,
   availableHeight: number,
   startY: number,
+  cssCtx: CSSValueContext = {},
 ): ComputedLayout[] {
   // --- Pass 1: 줄 분할 + 요소 크기 계산 ---
   type ItemInfo = {
@@ -179,8 +182,9 @@ function layoutInlineRun(
   for (const child of children) {
     const style = child.props?.style as Record<string, unknown> | undefined;
 
-    const w = resolveCSSLength(style?.width, availableWidth);
-    const h = resolveCSSLength(style?.height, availableHeight);
+    // RC-3: cssCtx 전달로 em/rem 단위 올바르게 해석
+    const w = resolveCSSLength(style?.width, availableWidth, cssCtx);
+    const h = resolveCSSLength(style?.height, availableHeight, cssCtx);
 
     const marginLeft = parseNumericStyle(style?.marginLeft) ?? parseNumericStyle(style?.margin) ?? 0;
     const marginRight = parseNumericStyle(style?.marginRight) ?? parseNumericStyle(style?.margin) ?? 0;
@@ -272,8 +276,10 @@ function layoutInlineRun(
  * - 'auto', 'fit-content', 'min-content', 'max-content': 0 (enrichWithIntrinsicSize가 이미 처리)
  * - sentinel 숫자(FIT_CONTENT=-2, MIN_CONTENT=-3, MAX_CONTENT=-4): 0으로 처리
  *   (layoutInlineRun에서 enriched 요소의 스타일을 읽으므로 sentinel이 그대로 전달될 수 있음)
+ *
+ * RC-3: cssCtx를 통해 em(parentSize), rem(rootFontSize), vh/vw 단위를 올바르게 해석
  */
-function resolveCSSLength(value: unknown, available: number): number {
+function resolveCSSLength(value: unknown, available: number, cssCtx: CSSValueContext = {}): number {
   if (typeof value === 'number') {
     // RC-6: sentinel 값 fallback — enrichment 실패 시 available 사용
     // fit-content/max-content → 사용 가능 공간 전체로 fallback
@@ -296,8 +302,8 @@ function resolveCSSLength(value: unknown, available: number): number {
       return parseFloat(trimmed);
     }
     // RC-6: resolveCSSSizeValue로 rem/em/vh/vw 등 CSS 단위 해석
-    const ctx: CSSValueContext = {};
-    const resolvedPx = resolveCSSSizeValue(trimmed, ctx);
+    // RC-3: cssCtx의 parentSize(em 기준), rootFontSize(rem 기준) 전달
+    const resolvedPx = resolveCSSSizeValue(trimmed, cssCtx);
     if (resolvedPx !== undefined && resolvedPx >= 0) return resolvedPx;
     // 단위 없는 숫자 문자열
     const n = parseFloat(trimmed);
@@ -373,7 +379,8 @@ export class DropflowBlockEngine implements LayoutEngine {
     }
 
     // inline-block이 있으면 세그먼트 분할 후 혼합 레이아웃
-    return this._mixedCalculate(parent, enriched, availableWidth, availableHeight, context);
+    // RC-3: parentComputed를 전달하여 em/rem 단위 해석에 사용
+    return this._mixedCalculate(parent, enriched, availableWidth, availableHeight, context, parentComputed);
   }
 
   /**
@@ -410,6 +417,8 @@ export class DropflowBlockEngine implements LayoutEngine {
    *
    * 연속된 inline-block 요소들은 "inline run"으로 묶여 가로 배치됨.
    * block 요소가 나타나면 inline run을 끊고 세로 쌓임으로 전환.
+   *
+   * RC-3: parentComputed를 받아 em/rem 단위 해석용 cssCtx를 구성
    */
   private _mixedCalculate(
     parent: Element,
@@ -417,6 +426,7 @@ export class DropflowBlockEngine implements LayoutEngine {
     availableWidth: number,
     availableHeight: number,
     context?: LayoutContext,
+    parentComputed?: ComputedStyle,
   ): ComputedLayout[] {
     // 1. 세그먼트 분할: 연속된 inline-block → 'inline' 세그먼트, block → 'block' 세그먼트
     const segments = segmentChildren(children);
@@ -429,6 +439,16 @@ export class DropflowBlockEngine implements LayoutEngine {
     const parentMarginTop = parseNumericStyle(parentStyle?.marginTop) ?? 0;
     currentY += parentMarginTop > 0 ? 0 : 0; // margin은 외부에서 처리
 
+    // RC-3: 부모 computedStyle 기반 CSS 단위 해석 컨텍스트 구성
+    // parentSize: em 단위 기준 (부모 font-size)
+    // rootFontSize: rem 단위 기준 (16px 고정)
+    const cssCtx: CSSValueContext = {
+      parentSize: parentComputed?.fontSize ?? 16,
+      rootFontSize: 16,
+      viewportWidth: context?.viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1920),
+      viewportHeight: context?.viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 1080),
+    };
+
     for (const segment of segments) {
       if (segment.type === 'inline') {
         // inline-block 가로 배치 (줄바꿈 포함)
@@ -437,6 +457,7 @@ export class DropflowBlockEngine implements LayoutEngine {
           availableWidth,
           availableHeight,
           currentY,
+          cssCtx,
         );
         results.push(...inlineResults);
         // 다음 세그먼트의 Y 시작점 = inline run의 최대 하단
