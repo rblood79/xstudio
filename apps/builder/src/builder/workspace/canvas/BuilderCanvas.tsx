@@ -658,11 +658,15 @@ const ElementsLayer = memo(function ElementsLayer({
         // Lazy initialization: 첫 자식 렌더 시 모든 자식의 레이아웃 일괄 계산
         if (!cachedLayoutMap) {
           const parentStyle = containerEl.props?.style as Record<string, unknown> | undefined;
-          cachedPadding = parsePadding(parentStyle);
+          cachedPadding = parsePadding(parentStyle, containerWidth);
           const parentDisplay = (parentStyle?.display as string | undefined)
             ?? (containerEl.tag === 'Section' ? 'block' : undefined);
           const avW = Math.max(0, containerWidth - cachedPadding.left - cachedPadding.right);
-          const avH = Math.max(0, containerHeight - cachedPadding.top - cachedPadding.bottom);
+          // M2: 부모가 height:auto이면 sentinel(-1) 전달하여 자식 % height가 auto로 처리되도록 함
+          const parentHasAutoHeight = !parentStyle?.height || parentStyle.height === 'auto';
+          const avH = parentHasAutoHeight
+            ? -1  // sentinel: height:auto → 엔진이 콘텐츠 기반 계산
+            : Math.max(0, containerHeight - cachedPadding.top - cachedPadding.bottom);
           // RC-7: calculateChildrenLayout 사용하여 blockification 적용
           const innerLayouts = calculateChildrenLayout(
             containerEl, containerChildren, avW, avH,
@@ -714,10 +718,9 @@ const ElementsLayer = memo(function ElementsLayer({
       const parentDisplay = rawParentDisplay ?? (parentElement.tag === 'Section' ? 'block' : undefined);
       // Body 이중 패딩 방지
       const isBodyParent = parentElement === bodyElement;
-      const parentPadding = parsePadding(parentStyle);
-      const parentBorderVal = isBodyParent ? parseBorder(parentStyle) : { top: 0, right: 0, bottom: 0, left: 0 };
-
       const parentContentWidth = parentComputedSize?.width ?? pageWidth;
+      const parentPadding = parsePadding(parentStyle, parentContentWidth);
+      const parentBorderVal = isBodyParent ? parseBorder(parentStyle) : { top: 0, right: 0, bottom: 0, left: 0 };
       // RC-2: height:auto 부모는 definite height를 전달하지 않음
       // → 레이아웃 엔진이 max-content 기반으로 자식 높이를 계산
       const parentHasAutoHeight = !parentStyle?.height || parentStyle.height === 'auto';
@@ -807,7 +810,7 @@ const ElementsLayer = memo(function ElementsLayer({
   // body의 border+padding 오프셋 계산 (자식 시작 위치)
   const bodyStyle = bodyElement?.props?.style as Record<string, unknown> | undefined;
   const bodyBorder = useMemo(() => parseBorder(bodyStyle), [bodyStyle]);
-  const bodyPadding = useMemo(() => parsePadding(bodyStyle), [bodyStyle]);
+  const bodyPadding = useMemo(() => parsePadding(bodyStyle, pageWidth), [bodyStyle, pageWidth]);
 
   // 자식 시작 위치 오프셋 (border + padding 안쪽)
   const contentOffsetX = bodyBorder.left + bodyPadding.left;

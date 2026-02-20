@@ -460,9 +460,10 @@ export class DropflowBlockEngine implements LayoutEngine {
           cssCtx,
         );
         results.push(...inlineResults);
-        // 다음 세그먼트의 Y 시작점 = inline run의 최대 하단
+        // H3: 다음 세그먼트의 Y 시작점 = inline run의 최대 하단 (margin 포함)
         for (const r of inlineResults) {
-          currentY = Math.max(currentY, r.y + r.height);
+          const marginBottom = r.margin?.bottom ?? 0;
+          currentY = Math.max(currentY, r.y + r.height + marginBottom);
         }
       } else {
         // block 요소 Dropflow 위임
@@ -478,9 +479,10 @@ export class DropflowBlockEngine implements LayoutEngine {
           r.y += currentY;
           results.push(r);
         }
-        // 다음 세그먼트의 Y 시작점
+        // H3: 다음 세그먼트의 Y 시작점 (margin bottom 포함)
         for (const r of blockResults) {
-          currentY = Math.max(currentY, r.y + r.height);
+          const marginBottom = r.margin?.bottom ?? 0;
+          currentY = Math.max(currentY, r.y + r.height + marginBottom);
         }
       }
     }

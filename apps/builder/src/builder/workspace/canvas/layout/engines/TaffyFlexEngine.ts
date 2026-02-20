@@ -375,8 +375,12 @@ export class TaffyFlexEngine implements LayoutEngine {
     });
 
     // ── 1차 pass: enrichment + Taffy 계산 ─────────────────────────────
-    const firstPassResult = this._runTaffyPass(
-      taffy, parent, children, availableWidth, availableHeight, parentComputed, childComputedStyles, cssCtx,
+    // M1: enrichedChildren을 먼저 계산하여 2차 pass 판단에 사용
+    const enrichedChildren = children.map((child, i) =>
+      enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputedStyles[i]),
+    );
+    const firstPassResult = this._runTaffyPassRaw(
+      taffy, parent, enrichedChildren, children, availableWidth, availableHeight, parentComputed, cssCtx,
     );
 
     // ── 2차 pass 필요성 판단 ──────────────────────────────────────────
@@ -400,8 +404,13 @@ export class TaffyFlexEngine implements LayoutEngine {
       const layout = firstPassResult.find(l => l.elementId === child.id);
       if (!layout) continue;
 
-      // enrichment 시 사용된 width와 Taffy가 계산한 실제 width 비교
-      if (Math.abs(layout.width - availableWidth) > WIDTH_TOLERANCE) {
+      // M1: enrichment 시 주입된 width와 Taffy 실제 width 비교
+      // 기존: availableWidth와 비교 → 명시적 width가 주입된 경우 잘못된 비교
+      const enrichedStyle = enrichedChildren[i].props?.style as Record<string, unknown> | undefined;
+      const enrichedWidth = typeof enrichedStyle?.width === 'number'
+        ? enrichedStyle.width
+        : availableWidth;
+      if (Math.abs(layout.width - enrichedWidth) > WIDTH_TOLERANCE) {
         needsSecondPass = true;
         break;
       }

@@ -3,8 +3,9 @@
  *
  * 입력 규약 (P0):
  * - width, height: px, %, vh, vw, em, rem, calc(), number, auto 지원
- * - margin, padding, border-width: px, number만 지원 (% 미지원)
- * - intrinsic sizing: fit-content, min-content, max-content 지원
+ * - margin, padding: px, number, % 지원 (% = 포함 블록 width 기준)
+ * - border-width: px, number, border shorthand("1px solid red") 지원
+ * - intrinsic sizing: fit-content, min-content, max-content 지원 (모든 요소)
  *
  * @since 2026-01-28 Phase 2 - 하이브리드 레이아웃 엔진
  * @updated 2026-01-28 Phase 6 - P2 기능 (vertical-align, line-height)
@@ -20,6 +21,7 @@ import {
   FIT_CONTENT as CSS_FIT_CONTENT,
   MIN_CONTENT as CSS_MIN_CONTENT,
   MAX_CONTENT as CSS_MAX_CONTENT,
+  parseBorderShorthand,
 } from './cssValueParser';
 import type { CSSValueContext, CSSVariableScope } from './cssValueParser';
 import type { ComputedStyle } from './cssResolver';
@@ -111,6 +113,12 @@ export function parseSize(
 ): number | undefined {
   if (value === undefined || value === 'auto') return undefined;
 
+  // C2: % 값인데 available이 음수(sentinel -1)이면 auto로 처리
+  // CSS 스펙: auto height 부모의 블록 컨텍스트에서 자식의 percentage height는 auto
+  if (typeof value === 'string' && value.endsWith('%') && available < 0) {
+    return undefined;
+  }
+
   const ctx: CSSValueContext = {
     containerSize: available,
     viewportWidth,
@@ -119,6 +127,20 @@ export function parseSize(
   };
 
   return resolveCSSSizeValue(value, ctx);
+}
+
+/**
+ * C3: % 값을 containerWidth 기준으로 해석
+ *
+ * 개별 margin/padding 속성의 % 값 해석용
+ * CSS 스펙: margin/padding의 % 값은 포함 블록의 inline-size(width) 기준
+ */
+function resolvePercentValue(value: unknown, containerWidth?: number): number | undefined {
+  if (typeof value !== 'string' || !value.endsWith('%')) return undefined;
+  if (containerWidth === undefined || containerWidth <= 0) return undefined;
+  const pct = parseFloat(value);
+  if (isNaN(pct)) return undefined;
+  return (pct / 100) * containerWidth;
 }
 
 /**
@@ -141,9 +163,12 @@ function parseShorthandValue(value: string): number | undefined {
  * "10px 20px 30px" → 상 10, 좌우 20, 하 30
  * "10px 20px 30px 40px" → 상 10, 우 20, 하 30, 좌 40
  *
+ * C3: % 단위 지원 - containerWidth가 제공되면 % 값을 해석
+ * CSS 스펙: padding/margin의 % 값은 포함 블록의 width 기준 (4면 모두)
+ *
  * 미지원 단위가 포함되면 해당 값은 0으로 처리
  */
-function parseShorthand(value: unknown): Margin {
+function parseShorthand(value: unknown, containerWidth?: number): Margin {
   const zero = { top: 0, right: 0, bottom: 0, left: 0 };
   if (typeof value === 'number') {
     return { top: value, right: value, bottom: value, left: value };
@@ -152,15 +177,19 @@ function parseShorthand(value: unknown): Margin {
 
   const tokens = value.split(/\s+/);
   const parts = tokens.map((token) => {
+    // px/number 먼저 시도
     const parsed = parseShorthandValue(token);
-    if (parsed === undefined) {
-      // 개발 모드에서만 경고 (디버깅 용이성, 중복 방지)
-      if (import.meta.env.DEV) {
-        warnOnce(`[parseShorthand] Unsupported token "${token}", fallback to 0`);
-      }
-      return 0;
+    if (parsed !== undefined) return parsed;
+    // C3: % 해석 시도 (containerWidth 기준)
+    if (token.endsWith('%') && containerWidth !== undefined && containerWidth > 0) {
+      const pct = parseFloat(token);
+      if (!isNaN(pct)) return (pct / 100) * containerWidth;
     }
-    return parsed;
+    // 개발 모드에서만 경고 (디버깅 용이성, 중복 방지)
+    if (import.meta.env.DEV) {
+      warnOnce(`[parseShorthand] Unsupported token "${token}", fallback to 0`);
+    }
+    return 0;
   });
 
   switch (parts.length) {
@@ -182,8 +211,11 @@ function parseShorthand(value: unknown): Margin {
  *
  * 개별 속성(marginTop 등)이 shorthand(margin)보다 우선합니다.
  * shorthand는 개별 속성이 없는 방향에만 적용됩니다.
+ *
+ * C3: containerWidth가 제공되면 % 값을 해석
+ * CSS 스펙: margin의 % 값은 포함 블록의 width 기준 (4면 모두)
  */
-export function parseMargin(style: Record<string, unknown> | undefined): Margin {
+export function parseMargin(style: Record<string, unknown> | undefined, containerWidth?: number): Margin {
   if (!style) {
     return { top: 0, right: 0, bottom: 0, left: 0 };
   }
@@ -191,57 +223,68 @@ export function parseMargin(style: Record<string, unknown> | undefined): Margin 
   // shorthand를 기본값으로 파싱
   const base =
     style.margin !== undefined
-      ? parseShorthand(style.margin)
+      ? parseShorthand(style.margin, containerWidth)
       : { top: 0, right: 0, bottom: 0, left: 0 };
 
-  // 개별 속성으로 override
+  // 개별 속성으로 override (% 해석 포함)
   return {
-    top: parseNumericValue(style.marginTop) ?? base.top,
-    right: parseNumericValue(style.marginRight) ?? base.right,
-    bottom: parseNumericValue(style.marginBottom) ?? base.bottom,
-    left: parseNumericValue(style.marginLeft) ?? base.left,
+    top: parseNumericValue(style.marginTop) ?? resolvePercentValue(style.marginTop, containerWidth) ?? base.top,
+    right: parseNumericValue(style.marginRight) ?? resolvePercentValue(style.marginRight, containerWidth) ?? base.right,
+    bottom: parseNumericValue(style.marginBottom) ?? resolvePercentValue(style.marginBottom, containerWidth) ?? base.bottom,
+    left: parseNumericValue(style.marginLeft) ?? resolvePercentValue(style.marginLeft, containerWidth) ?? base.left,
   };
 }
 
 /**
  * 스타일에서 패딩 파싱
+ *
+ * C3: containerWidth가 제공되면 % 값을 해석
+ * CSS 스펙: padding의 % 값은 포함 블록의 width 기준 (4면 모두)
  */
-export function parsePadding(style: Record<string, unknown> | undefined): Margin {
+export function parsePadding(style: Record<string, unknown> | undefined, containerWidth?: number): Margin {
   if (!style) {
     return { top: 0, right: 0, bottom: 0, left: 0 };
   }
 
   const base =
     style.padding !== undefined
-      ? parseShorthand(style.padding)
+      ? parseShorthand(style.padding, containerWidth)
       : { top: 0, right: 0, bottom: 0, left: 0 };
 
   return {
-    top: parseNumericValue(style.paddingTop) ?? base.top,
-    right: parseNumericValue(style.paddingRight) ?? base.right,
-    bottom: parseNumericValue(style.paddingBottom) ?? base.bottom,
-    left: parseNumericValue(style.paddingLeft) ?? base.left,
+    top: parseNumericValue(style.paddingTop) ?? resolvePercentValue(style.paddingTop, containerWidth) ?? base.top,
+    right: parseNumericValue(style.paddingRight) ?? resolvePercentValue(style.paddingRight, containerWidth) ?? base.right,
+    bottom: parseNumericValue(style.paddingBottom) ?? resolvePercentValue(style.paddingBottom, containerWidth) ?? base.bottom,
+    left: parseNumericValue(style.paddingLeft) ?? resolvePercentValue(style.paddingLeft, containerWidth) ?? base.left,
   };
 }
 
 /**
  * 스타일에서 보더 너비 파싱
  *
- * 주의: CSS shorthand `border: "1px solid red"`는 지원하지 않습니다.
- * 빌더는 개별 속성(borderTopWidth 등)으로 저장하는 것을 전제로 합니다.
- * borderWidth shorthand("1px" 또는 "1px 2px")는 지원합니다.
+ * H4: CSS border shorthand `border: "1px solid red"` 지원 추가
+ * 빌더의 개별 속성(borderTopWidth 등) 우선, borderWidth shorthand 차선,
+ * border shorthand("1px solid red")가 최종 폴백으로 적용됩니다.
  */
 export function parseBorder(style: Record<string, unknown> | undefined): Margin {
   if (!style) {
     return { top: 0, right: 0, bottom: 0, left: 0 };
   }
 
-  // borderWidth shorthand (숫자만, "1px solid red" 형태 미지원)
+  // H4: border shorthand 먼저 파싱 ("1px solid red" → width: 1)
+  let shorthandWidth = 0;
+  if (style.border !== undefined) {
+    const parsed = parseBorderShorthand(style.border);
+    if (parsed) shorthandWidth = parsed.width;
+  }
+
+  // borderWidth shorthand (숫자만)가 border shorthand보다 우선
   const base =
     style.borderWidth !== undefined
       ? parseShorthand(style.borderWidth)
-      : { top: 0, right: 0, bottom: 0, left: 0 };
+      : { top: shorthandWidth, right: shorthandWidth, bottom: shorthandWidth, left: shorthandWidth };
 
+  // 개별 속성으로 override
   return {
     top: parseNumericValue(style.borderTopWidth) ?? base.top,
     right: parseNumericValue(style.borderRightWidth) ?? base.right,
@@ -726,9 +769,10 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
   if (lineHeight !== undefined) {
     return Math.round(lineHeight);
   }
-  // CSS default line-height: normal ≈ 1.2
-  // PixiJS Text bounds도 유사한 비율 사용
-  return Math.round(fontSize * 1.2);
+  // H1: 캐싱된 font metrics 사용으로 정밀도 개선 (기존: fontSize * 1.2 고정 배율)
+  // measureFontMetrics()는 Canvas 2D TextMetrics 기반으로 정확한 ascent+descent를 반환
+  const fm = measureFontMetrics(specFontFamily.sans, fontSize, 400);
+  return Math.round(fm.fontHeight);
 }
 
 /**
@@ -913,8 +957,8 @@ export function parseBoxModel(
   const minHeight = parseSize(style?.minHeight, availableHeight, viewportWidth, viewportHeight);
   const maxHeight = parseSize(style?.maxHeight, availableHeight, viewportWidth, viewportHeight);
 
-  // padding 파싱
-  let padding = parsePadding(style);
+  // padding 파싱 (C3: availableWidth 전달로 % 값 해석)
+  let padding = parsePadding(style, availableWidth);
 
   // border 파싱
   let border = parseBorder(style);
@@ -1065,7 +1109,12 @@ export function enrichWithIntrinsicSize(
 
   const rawWidth = style?.width;
   const INTRINSIC_WIDTH_KEYWORDS = new Set(['fit-content', 'min-content', 'max-content', 'auto']);
-  const needsWidth = INLINE_BLOCK_TAGS.has(tag) && (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string));
+  // C1: 모든 요소에서 intrinsic width keyword(fit-content/min-content/max-content) 처리
+  // INLINE_BLOCK 태그의 width:auto 자동 주입은 기존 동작 유지
+  const hasExplicitIntrinsicWidthKeyword = typeof rawWidth === 'string' &&
+    rawWidth !== 'auto' && INTRINSIC_WIDTH_KEYWORDS.has(rawWidth);
+  const needsWidth = hasExplicitIntrinsicWidthKeyword ||
+    (INLINE_BLOCK_TAGS.has(tag) && (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string)));
 
   if (!needsHeight && !needsWidth) return element;
 
