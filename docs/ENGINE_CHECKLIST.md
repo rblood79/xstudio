@@ -602,7 +602,7 @@
 | **D** | **FancyButton 제거** — Button의 엄밀한 부분집합, gradient variant로 대체 | 코드 정리 | — | P2 |
 | **E** | **overflow: scroll/auto 완성** — 스크롤바 UI + wheel/touch 이벤트 (엔진 인프라 이미 존재) | **+1~2%** | **79~84%** | P2 |
 | **F** | **Overlay 개선** — arrow, backdrop 렌더링 | **+2~3%** | **~84%** | P3 |
-| **G** | **Color 그라디언트** — ColorArea/ColorWheel 2D/원형 그라디언트 | **+3~4%** | **~86%** | P3 |
+| **G** | **Color 그라디언트** — ColorArea/ColorWheel 2D/원형 그라디언트 (**Phase F 선행 필수**) | **+3~4%** | **~86%** | P3 |
 | **Z** | **애니메이션 인프라** — transition/keyframe 프레임 기반 (최후순위) | **+5~10%** | **~95%** | **P4 (최후)** |
 
 #### 추가 개선 방안: Quick Win (렌더링 정밀도)
@@ -883,7 +883,7 @@ export function applyStateToShapes(shapes: Shape[], state: ComponentState): Shap
 
 Phase A + Quick Win (의존성 반영):
   QW-1. border style 전달 (독립)                    +1.5%
-  A. 상태 표현 연결 (QW-2/3 선행조건)               +4%
+  A. 상태 표현 연결 (QW-2/3 선행조건)               +5~6% (중간값 5.0%)
   QW-2. disabled opacity (Phase A 이후)             +2.5%
   QW-3. focus ring (Phase A 이후)                   +3.5%
                                            소계 ≈ +11.5%
@@ -979,6 +979,9 @@ CSS Level 3 속성 지원(88%)과 별도로, **레이아웃 계산 파이프라�
 | **RC-5** | inline-run baseline ≈ middle 단순화 | `DropflowBlockEngine.ts:226-231` | MEDIUM | y-offset 누적, line break 불연속 |
 | **RC-6** | auto/fit-content 엔진별 분기 처리 | `DropflowBlockEngine.ts:262-268` | HIGH | enrichment 실패 시 width/height 0 붕괴 |
 | **RC-7** | blockification 경계 처리 불완전 | `index.ts:131-144, 193-221` | MEDIUM | display 전환 시 자식 shrink/stretch 불일치 |
+
+> ※ **권장 실행 순서**: 1단계 RC-3 → 2단계 RC-1+RC-2 → 3단계 RC-6+RC-4 → 4단계 RC-7 → RC-5
+> ※ RC-4는 RC-1 및 RC-6 완료를 전제로 하며, RC-7은 RC-1/RC-2 완료를 전제로 한다.
 
 ### 구조/레이아웃 차원 영향도
 

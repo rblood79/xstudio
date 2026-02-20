@@ -1,8 +1,9 @@
 # XStudio 통합 실행 가이드
 
-> **작성일**: 2026-02-19
+> **작성일**: 2026-02-19 | **수정일**: 2026-02-20
 > **목적**: 4개 핵심 문서의 미완료 항목을 단일 실행 로드맵으로 통합
 > **소스**: `ENGINE_CHECKLIST.md`, `COMPONENT_SPEC_ARCHITECTURE.md`, `WASM.md`, `AI.md`
+> **수정 이력**: 5개 전문 에이전트 팀 리뷰 결과 반영 (C4/H12/M10/L5건 수정)
 
 ---
 
@@ -25,12 +26,25 @@
 
 | 영역 | 완료 항목 | 소스 문서 |
 |------|----------|----------|
-| **Spec 시스템** | Phase 0~6 완료 (66개 컴포넌트 Spec, specShapeConverter, Skia 렌더링 파이프라인) | COMPONENT_SPEC |
-| **렌더링 엔진** | CanvasKit/Skia 메인 렌더러, 이중 Surface 캐싱, PixiJS 이벤트 전용 | WASM Phase 5-6 |
+| **Spec 시스템** | Phase 0 인프라 + Phase 6 Skia 파이프라인 완료 (62개 대상 컴포넌트, specShapeConverter, nodeRenderers). ※ Phase 2~4 개별 spec 파일 대부분 미작성 — COMPONENT_SPEC §5.3/§6.3/§7.3 참조 | COMPONENT_SPEC |
+| **렌더링 엔진** | CanvasKit/Skia 메인 렌더러, 이중 Surface 캐싱, PixiJS 이벤트 전용. ※ Phase 6 잔여 항목(샘플링 정책, 색공간 고정, 오버레이 텍스트 Paragraph 통일 등) 미완 — WASM.md §6.8 참조 | WASM Phase 5-6 |
 | **레이아웃 엔진** | Taffy WASM (Flex/Grid) + Dropflow Fork (Block), Yoga/@pixi/layout 제거 | WASM Phase 11 |
-| **AI Agent** | Phase A1~A4 완료 (Tool Calling, Agent Loop, 7개 도구, G.3 시각 피드백) | AI |
+| **AI Agent** | Phase A1~A4 완료 (Tool Calling, Agent Loop, 7개 도구) + G.3 시각 피드백 (Phase A5 선행 완료) | AI |
 
-### 1.2 현재 수치
+### 1.2 소스 문서 내부 불일치 (주의)
+
+> 아래 항목은 소스 문서 자체의 내부 불일치로, 본 문서의 수치 추적 시 주의가 필요하다.
+
+| 소스 문서 | 불일치 항목 | 상세 |
+|-----------|-----------|------|
+| `COMPONENT_SPEC` | 컴포넌트 수 | §1.3(62개 합산) vs §1.2(72개 목표) vs 부록 A(73개). 본 문서는 §9 Skia 전환 기준 **62개**를 사용 |
+| `COMPONENT_SPEC` | A등급 수량 | §9.8.6에서 "14개" → "12개"로 수정 완료 (2026-02-20). 실제 목록 12개와 일치 |
+| `ENGINE_CHECKLIST` | Phase A 영향도 | 로드맵 테이블(+5~6%) vs 예측 표(+4%). 본 문서는 로드맵 테이블 기준 **+5~6%** 사용 |
+
+### 1.3 현재 수치
+
+> ※ "컴포넌트 정합성 62%"의 산출 근거는 `ENGINE_CHECKLIST.md`의 5개 차원별 가중 평균이다.
+> COMPONENT_SPEC의 "62개 컴포넌트"와는 무관한 수치이다.
 
 | 지표 | 현재 | 목표 | 갭 |
 |------|------|------|-----|
@@ -56,9 +70,9 @@
 | QW-1 | border style 전달 (1줄 수정) | +1.5% | P1 | 없음 |
 | QW-2 | disabled opacity 일괄 적용 | +2.5% | P1 | Phase A |
 | QW-3 | focus ring 렌더링 | +3.5% | P1 | Phase A |
-| Phase A | 상태 표현 연결 (ElementSprite→ComponentState) | +4~6% | P1 | 없음 |
+| Phase A | 상태 표현 연결 (ElementSprite→ComponentState) | +5~6% | P1 | 없음 |
 | Phase B | 아이콘 폰트 도입 (Pencil 방식) | +5~6% | P1 | 없음 |
-| Phase C | 컬렉션 아이템 Shape 생성 | +6~8% | P2 | 없음 |
+| Phase C | 컬렉션 아이템 Shape 생성 + Phase 3 미완료 spec 전체 (Tabs, Breadcrumbs, Pagination 등 포함) | +6~8% | P2 | 없음 |
 | Phase D | FancyButton 제거 (코드 정리) | — | P2 | 없음 |
 | Phase E | overflow scroll/auto 완성 | +1~2% | P2 | 없음 |
 | Phase F | Overlay 개선 (arrow, backdrop) | +2~3% | P3 | 없음 |
@@ -66,7 +80,7 @@
 | M-2 | shadow spread radius | +2~3% | P2 | 없음 |
 | M-3 | image shape 렌더링 | +3~5% | P2 | 없음 |
 | M-4 | CSS variable 실시간 캐시 | +2~3% | P3 | 없음 |
-| M-5 | state 파라미터 일관성 (42개 spec) | +2% | P3 | Phase A 권장 |
+| M-5 | state 파라미터 일관성 (42개 spec) | +2% | P3 | Phase A 선행 필수 |
 | M-6 | partial border 지원 | +1% | P3 | 없음 |
 
 ### WS-2: 레이아웃 근본 원인 (ENGINE_CHECKLIST — RC)
@@ -83,6 +97,8 @@
 | RC-7 | blockification 경계 처리 불완전 | +1% | P1 | RC-1, RC-2 |
 | RC-5 | inline-run baseline 단순화 | +1% | P1 | RC-7 |
 
+> ※ RC 항목의 P0 배정은 ENGINE_CHECKLIST의 심각도 HIGH 분류와 레이아웃 근본 원인(Root Cause) 성격을 반영한 우선순위 승격이다. P0 항목이 Stage 1이 아닌 Stage 2부터 착수되는 이유는, WS-1 Quick Win 항목들의 비용 대비 효과가 높아 먼저 처리하는 전략적 선택에 의한 것이다.
+
 ### WS-3: WASM 성능 최적화 (WASM.md)
 
 > Phase 0-4 성능 경로 + Phase 6 이후 장기 최적화
@@ -93,10 +109,13 @@
 | W-0b | 기준선 데이터 수집 (4개 시나리오) | 보류 | P3 |
 | W-0c | CI/CD에 `wasm:build` 스텝 추가 | 미완료 | P2 |
 | W-1 | SpatialIndex 재연동 (라쏘 `query_rect`) | 미완료 (뷰포트 컬링은 CanvasKit 대체) | P2 |
-| W-4 | Web Worker 통합 (레이아웃 오프로드) | 미완료 | P3 |
-| W-LT1 | Skia 포크 + Worker 고도화 | 장기 | P4 |
-| W-LT2 | Rust 메모리 최적화 + WASM SIMD | 장기 | P4 |
-| W-LT3 | WebGPU 전환 | 장기 | P4 |
+| W-4 | Web Worker 통합 (레이아웃 오프로드) | 구현 완료 (layoutWorker, bridge.ts), 현 레이아웃 경로(TaffyFlex/Dropflow)와 미연결 — 재연동 필요 | P3 |
+| W-LT1 | Skia 포크 + 커스텀 빌드 (§7.1) | 장기 | P4 |
+| W-LT2 | 고급 멀티스레딩: SharedArrayBuffer/WASM Pthreads (§7.2) | 장기 | P4 |
+| W-LT3 | Rust 메모리 최적화 + WASM SIMD + 커스텀 할당기 (§7.3) | 장기 | P4 |
+| W-LT4 | 브라우저 컴포지터 통합 + Display P3 색상 정밀도 (§7.4) | 장기 | P4 |
+| W-LT5 | WebGPU 전환 (§7.5) | 장기 | P4 |
+| W-LT6 | 대규모 파일 지원: Incremental Loading, OPFS, Tiling (§7.6) | 장기 | P4 |
 
 ### WS-4: AI 확장 (AI.md)
 
@@ -104,10 +123,10 @@
 
 | ID | 설명 | 상태 | 의존성 |
 |----|------|------|--------|
-| AI-A5a | styleAdapter → CanvasKit 스키마 변환 | 차단됨 | RC-3 (단위 정규화) |
+| AI-A5a | styleAdapter → CanvasKit 스키마 변환 | 차단됨 | RC-3 (단위 정규화) + CanvasKit 스키마 전환 완료 |
 | AI-A5b | 스크린샷 기반 컨텍스트 (멀티모달) | 차단됨 | Groq Vision API 미지원 |
 | AI-A5c | get_style_guide, get/set_variables 도구 | 보류 | 컴포넌트 인스턴스 시스템 선행 |
-| AI-A5d | create/override_instance 도구 (G.1) | 보류 | 컴포넌트 인스턴스 시스템 선행 |
+| AI-A5d | create_component, create_instance, override_instance 도구 (G.1) | 보류 | 컴포넌트 인스턴스 시스템 선행 |
 
 ---
 
@@ -129,16 +148,19 @@
     │       └──→ [WS-2] RC-4 (2-pass)
     │
     └──→ [WS-4] AI-A5a (styleAdapter 변환) ← 크로스 워크스트림
+              ※ RC-3 + CanvasKit 스키마 전환 완료 필요
 
   [WS-1] Phase A (상태 표현 연결) ─── 독립 ★
     │
     ├──→ [WS-1] QW-2 (disabled opacity)
     ├──→ [WS-1] QW-3 (focus ring)
-    └──→ [WS-1] M-5 (state 일관성)
+    └──→ [WS-1] M-5 (state 일관성) ← 선행 필수
 
-  [WS-1] QW-1, Phase B~G, M-2~4, M-6 ─── 모두 독립
+  [WS-1] QW-1, Phase B~F, M-2~4, M-6 ─── 독립
+  [WS-1] Phase G ──→ Phase F (직렬, Phase F 선행 필수)
 
   [WS-3] W-0a ──→ W-0b ──→ W-1, W-4
+  [WS-3] W-0c ─── 독립 (CI/CD 인프라)
 
   [WS-4] AI-A5c, AI-A5d ──→ 컴포넌트 인스턴스 시스템 (외부 의존)
 ```
@@ -153,31 +175,33 @@
 ──────────────────────────────────────────────────────────
   Stage 1: 기초 + Quick Win                    ~ 1주
 ──────────────────────────────────────────────────────────
-  [WS-1] QW-1 (border style)          병렬 ─┐
-  [WS-1] Phase A (상태 표현 연결)      병렬 ─┤
-  [WS-1] M-3 (image shape)            병렬 ─┤
+  [WS-1] QW-1 (border style, P1)      병렬 ─┐
+  [WS-1] Phase A (상태 표현 연결, P1)  병렬 ─┤
+  [WS-1] M-3 (image shape, P2)        병렬 ─┤ ※ 독립+고효과로 앞당김
   [WS-1] Phase D (FancyButton 제거)   병렬 ─┘
 
 ──────────────────────────────────────────────────────────
   Stage 2: Phase A 후속 + RC 기초             ~ 2주
 ──────────────────────────────────────────────────────────
-  [WS-1] QW-2 (disabled opacity)      ← Phase A 의존
-  [WS-1] QW-3 (focus ring)            ← Phase A 의존
-  [WS-2] RC-3 (단위 정규화)            병렬 (최우선)
-  [WS-2] RC-1 + RC-2 (available space) ← RC-3 이후
+  ┌ 2a (1주차) ─────────────────────────────────────
+  │ [WS-1] QW-2 (disabled opacity)    ← Phase A 의존
+  │ [WS-1] QW-3 (focus ring)          ← Phase A 의존
+  │ [WS-2] RC-3 (단위 정규화)          병렬 (최우선)
+  └ 2b (2주차) ─────────────────────────────────────
+    [WS-2] RC-1 + RC-2 (available space) ← RC-3 이후
 
 ──────────────────────────────────────────────────────────
   Stage 3: RC 후속 + 기능 로드맵 시작         ~ 2주
 ──────────────────────────────────────────────────────────
   [WS-2] RC-6 (intrinsic 통합)        ← RC-3
-  [WS-2] RC-4 (2-pass 기준)           ← RC-1, RC-6
+  [WS-2] RC-4 (2-pass 기준)           ← RC-1(S2 완료), RC-6(S3 선행)
   [WS-1] Phase B (아이콘 폰트)         병렬
-  [WS-4] AI-A5a (styleAdapter 변환)   ← RC-3 해제
+  [WS-4] AI-A5a (styleAdapter 변환)   ← RC-3 + CanvasKit 스키마 전환
 
 ──────────────────────────────────────────────────────────
   Stage 4: 주요 기능 확장                     ~ 2주
 ──────────────────────────────────────────────────────────
-  [WS-1] Phase C (컬렉션 아이템)       병렬 ─┐
+  [WS-1] Phase C (컬렉션+미완료 spec)  병렬 ─┐
   [WS-1] Phase E (overflow scroll)    병렬 ─┤
   [WS-2] RC-7 (blockification)        ← RC-1,2
   [WS-2] RC-5 (inline baseline)       ← RC-7
@@ -188,17 +212,18 @@
 ──────────────────────────────────────────────────────────
   [WS-1] M-2 (shadow spread)          병렬 ─┐
   [WS-1] M-4 (CSS var 캐시)           병렬 ─┤
-  [WS-1] M-5 (state 일관성)           ← Phase A
+  [WS-1] M-5 (state 일관성)           ← Phase A (선행 필수)
   [WS-1] M-6 (partial border)         병렬 ─┤
-  [WS-1] Phase F + G (Overlay/Color)  병렬 ─┘
+  [WS-1] Phase F (Overlay 개선)       병렬 ─┘
+  [WS-1] Phase G (Color 그라디언트)   ← Phase F (직렬)
 
 ──────────────────────────────────────────────────────────
   Stage 6: 장기 과제 (최후순위)               별도 일정
 ──────────────────────────────────────────────────────────
   [WS-1] Phase Z (애니메이션 인프라)   새 인프라 필요
-  [WS-3] W-1 (SpatialIndex 재연동)    벤치마크 후
-  [WS-3] W-4 (Web Worker 통합)        벤치마크 후
-  [WS-3] W-LT1~3 (장기 최적화)        실측 데이터 기반
+  [WS-3] W-1 (SpatialIndex query_rect) 실측 병목 확인 후
+  [WS-3] W-4 (Web Worker 재연동)      현 경로와 연결 필요
+  [WS-3] W-LT1~6 (장기 최적화)        실측 데이터 기반
   [WS-4] AI-A5b~d (멀티모달/인스턴스)  외부 의존 해소 후
 ```
 
@@ -210,6 +235,8 @@
 
 **목표**: 독립 항목 병렬 실행으로 빠른 정합성 확보
 
+> ※ M-3(P2), Phase D(P2)는 의존성이 없고 비용 대비 효과가 높아 P1 항목과 함께 Stage 1에 배치
+
 | 항목 | 대상 파일 | 작업 내용 | 예상 |
 |------|----------|----------|------|
 | **QW-1** | `specShapeConverter.ts` (~265줄) | BorderShape.style → SkiaNodeData.box.strokeStyle 전달 (1줄) | 0.5일 |
@@ -217,7 +244,7 @@
 | **M-3** | `specShapeConverter.ts` (462-464) | case 'image' skip 제거 → getSkImage() + drawImageRect() | 1~2일 |
 | **Phase D** | `FancyButton.spec.ts`, `PixiFancyButton.tsx` | FancyButton 제거, Button gradient variant로 대체 | 0.5일 |
 
-**완료 기준**: QW-1 +1.5%, Phase A +4%, M-3 +3% = 누적 **~70.5%**
+**완료 기준**: QW-1 +1.5%, Phase A +5.0%, M-3 +4.0% = 누적 **~72.5%**
 
 ---
 
@@ -225,14 +252,18 @@
 
 **목표**: Phase A 의존 항목 해제 + 레이아웃 근본 원인 착수
 
+> ※ Stage 2는 내부적으로 2a(1주차)와 2b(2주차)로 분리된다.
+> - **2a**: QW-2/3 + RC-3 병렬 실행
+> - **2b**: RC-1/2 (RC-3 완료 이후 착수)
+
 | 항목 | 대상 파일 | 작업 내용 | 예상 |
 |------|----------|----------|------|
 | **QW-2** | `specShapeConverter.ts`, `ElementSprite.tsx` | state=disabled 시 saveLayer(opacity:0.38) | 1일 |
 | **QW-3** | `types.ts`, `specShapeConverter.ts`, `nodeRenderers.ts` | outline 필드 추가, 외곽 stroke 렌더링 | 1~2일 |
 | **RC-3** | `TaffyFlexEngine.ts` (205-216) | cssValueParser.resolveCSSSizeValue() 연결 | 1~2일 |
-| **RC-1+2** | `TaffyFlexEngine.ts` (434-439), `TaffyGridEngine.ts` (626-631), `BuilderCanvas.tsx` (720-725) | Definite→Indefinite 계약 수정 | 2~3일 |
+| **RC-1+2** | `TaffyFlexEngine.ts` (434-439), `TaffyGridEngine.ts` (626-631), `BuilderCanvas.tsx` (720-725) | Definite→Indefinite 계약 수정. ※ Taffy WASM 바이너리의 Definite space 전제와 충돌 시 Rust 측 수정 필요 가능 | 2~3일 |
 
-**완료 기준**: QW-2/3 +6%, RC-3 +2.5%, RC-1/2 +4% = 누적 **~83%**
+**완료 기준**: QW-2/3 +6%, RC-3 +2.5%, RC-1/2 +4% = 누적 **~85.0%**
 
 ---
 
@@ -243,11 +274,11 @@
 | 항목 | 대상 파일 | 작업 내용 | 예상 |
 |------|----------|----------|------|
 | **RC-6** | `DropflowBlockEngine.ts` (262-268) | auto/fit-content enrichment 실패 시 fallback | 1~2일 |
-| **RC-4** | `TaffyFlexEngine.ts` (352) | 2-pass 트리거 비교 기준 정확화 | 2~3일 |
+| **RC-4** | `TaffyFlexEngine.ts` (352) | 2-pass 트리거 비교 기준 정확화. ※ RC-1(Stage 2 완료), RC-6(Stage 3 선행) 양쪽 의존 | 2~3일 |
 | **Phase B** | Icon Font 번들, `specShapeConverter.ts` | Icon Font Node + CanvasKit Paragraph | 3~4일 |
-| **AI-A5a** | `styleAdapter.ts` | CSS 단위 → CanvasKit 스키마 변환 업데이트 (RC-3 해제) | 1~2일 |
+| **AI-A5a** | `styleAdapter.ts` | CSS 단위 → CanvasKit 스키마 변환 업데이트 (RC-3 해제 + fills/effects/stroke 구조화) | 1~2일 |
 
-**완료 기준**: RC +2.5%, Phase B +5%, AI-A5a 해제 = 누적 **~90.5%**
+**완료 기준**: RC +2.5%, Phase B +5.0%, AI-A5a 해제 = 누적 **~92.5%**
 
 ---
 
@@ -255,15 +286,17 @@
 
 **목표**: 컬렉션/스크롤 기능 + 나머지 RC 완료
 
+> ※ Phase C는 점진적 출시 권장: Table → ListBox → Menu → Tabs/Breadcrumbs/Pagination 순서
+
 | 항목 | 대상 파일 | 작업 내용 | 예상 |
 |------|----------|----------|------|
-| **Phase C** | `specShapeConverter.ts`, layout engines | Table/ListBox/Menu/Tree/Calendar 자식 렌더링 | 4~5일 |
+| **Phase C** | `specShapeConverter.ts`, layout engines | Table/ListBox/Menu/Tree/Calendar 자식 렌더링 + Phase 3 미완료 spec (Tabs, Breadcrumbs, Pagination 등) | 4~5일 |
 | **Phase E** | `BoxSprite.tsx`, `scrollState.ts` | 스크롤바 UI + wheel/touch 이벤트 | 3~4일 |
 | **RC-7** | `index.ts` (131-144, 193-221) | blockification 경계 display 전환 처리 | 1~2일 |
 | **RC-5** | `DropflowBlockEngine.ts` (226-231) | inline-run baseline y-offset 정밀화 | 1일 |
 | **W-0c** | CI/CD 설정 | `wasm:build` 빌드 스텝 추가 | 0.5일 |
 
-**완료 기준**: Phase C +7%, Phase E +1.5%, RC +2% = 누적 **~96%** (구조차원 97%)
+**완료 기준 (원시 합산)**: Phase C +7%, Phase E +1.5%, RC +2% = 원시 누적 ~103% → **보정 예상 ~93%**
 
 ---
 
@@ -271,15 +304,18 @@
 
 **목표**: 정밀도 개선 + Overlay/Color 완성
 
+> ※ M-4(CSS var 캐시)는 Builder 메인 프레임의 `:root`를 읽으므로, Preview iframe 내 CSS 변수와의 경계 처리를 고려해야 한다.
+
 | 항목 | 대상 파일 | 작업 내용 | 예상 |
 |------|----------|----------|------|
 | **M-2** | `specShapeConverter.ts` (382-383) | shadow spread → sigma 확장 워크어라운드 | 1~2일 |
-| **M-4** | `cssVariableReader.ts` (180-195, 216-220) | :root CSS var 메모리 캐시 + 테마 무효화 | 1~2일 |
+| **M-4** | `cssVariableReader.ts` (180-195, 216-220) | :root CSS var 메모리 캐시 + 테마 무효화. ※ Builder↔Preview iframe 경계 고려 | 1~2일 |
 | **M-5** | `stateEffect.ts` (신규) | 62개 spec 중 42개 _state 미사용 → applyStateEffect() | 2~3일 |
 | **M-6** | `specShapeConverter.ts` (251-292), `nodeRenderers.ts` (748-763) | BorderShape.sides 개별 Line 렌더링 | 1일 |
-| **Phase F+G** | Overlay specs, Color component specs | arrow/backdrop + 2D/원형 그라디언트 | 3~4일 |
+| **Phase F** | Overlay specs | arrow/backdrop 렌더링 | 2일 |
+| **Phase G** | Color component specs | 2D/원형 그라디언트 렌더링 (**Phase F 완료 후 직렬 착수**) | 2일 |
 
-**완료 기준**: M +3%, Phase F+G +4% = 누적 **~100%** (목표 93% 초과 달성)
+**완료 기준 (원시 합산)**: M +3%, Phase F +2.5%, Phase G +3.5% = 원시 누적 초과 → **보정 예상 ~96%** (목표 93% 초과 달성)
 
 ---
 
@@ -288,61 +324,77 @@
 | 항목 | 진입 기준 | 예상 |
 |------|----------|------|
 | **Phase Z** (애니메이션) | Stage 5 완료 + 새 인프라 설계 | 2주+ |
-| **W-0a/b** (벤치마크) | CanvasKit 안정화 후 시나리오 재설계 | 1주 |
-| **W-1** (SpatialIndex) | 벤치마크 기준선 확보 후 | 1~2주 |
-| **W-4** (Web Worker) | SpatialIndex 검증 후 | 2~3주 |
-| **W-LT1~3** (Skia 포크/SIMD/WebGPU) | Phase 6 + 실측 데이터 | 분기 단위 |
-| **AI-A5b** (멀티모달 컨텍스트) | Groq Vision API 또는 LLM 전환 | 외부 의존 |
-| **AI-A5c/d** (인스턴스 도구) | 컴포넌트 인스턴스 시스템 구축 후 | 시스템 의존 |
+| **W-0a/b** (벤치마크) | CanvasKit 안정화 후 시나리오 재설계. ※ Phase 5-6이 사전 기준선 없이 진행되었으므로 사후 검증 목적으로 절대 수치 측정 | 1주 |
+| **W-1** (SpatialIndex query_rect) | SelectionLayer.utils.ts O(n) 필터가 실측 병목으로 확인 시. ※ 뷰포트 컬링은 CanvasKit AABB로 대체 완료 — 라쏘 선택만 잔존 | 1~2주 |
+| **W-4** (Web Worker 재연동) | Phase 4 구현 완료(layoutWorker, bridge.ts) 상태. 현 레이아웃 경로(TaffyFlex/Dropflow)와 재연결 필요 | 2~3주 |
+| **W-LT1~6** (장기 최적화) | §7.1 Skia 포크, §7.2 멀티스레딩, §7.3 WASM SIMD, §7.4 Display P3, §7.5 WebGPU, §7.6 대규모 파일 지원 | 분기 단위 |
+| **AI-A5b** (멀티모달 컨텍스트) | Groq Vision API 또는 LLM 전환. 참조: AI.md §3.2, §7.5 | 외부 의존 |
+| **AI-A5c/d** (인스턴스 도구) | 컴포넌트 인스턴스 시스템 구축 후. AI-A5d는 create_component 포함 — AI.md §4.3 참조 | 시스템 의존 |
 
 ---
 
 ## 6. 누적 진행률 예측
 
+> **영향도 환산 규칙**: 범위값(예: +5~6%)은 중간값(5.5% → 반올림 5.0%)으로 환산한다.
+>
+> **감쇄 계수 적용**: 개별 항목의 영향도는 **독립 실행 시 추정치**이며, 선행 항목 완료 후에는
+> 중복 효과로 실제 개선폭이 축소된다. 특히 RC-1/2(+4%) ↔ Phase C(+7%),
+> Phase A(+5%) ↔ M-5(+2%)는 측정 차원이 겹치므로 ~15~25% 감쇄를 적용한다.
+
 ```
 현재 기준                                    62%
-│
+│                                  원시 누적   보정 예상
 ├─ Stage 1 (Quick Win + Phase A)
-│  ├─ QW-1  border style              +1.5%  → 63.5%
-│  ├─ Phase A  상태 표현 연결          +4.0%  → 67.5%
-│  └─ M-3  image shape                +3.0%  → 70.5%
+│  ├─ QW-1  border style              +1.5%
+│  ├─ Phase A  상태 표현 연결          +5.0%  (ENGINE_CHECKLIST +5~6% 중간값)
+│  └─ M-3  image shape                +4.0%  (ENGINE_CHECKLIST +3~5% 중간값)
+│                                    = 72.5%    ~71%
 │
 ├─ Stage 2 (Phase A 후속 + RC 기초)
-│  ├─ QW-2  disabled opacity          +2.5%  → 73.0%
-│  ├─ QW-3  focus ring                +3.5%  → 76.5%
-│  ├─ RC-3  단위 정규화               +2.5%  → 79.0%
-│  └─ RC-1/2  available space/height  +4.0%  → 83.0%
+│  ├─ QW-2  disabled opacity          +2.5%
+│  ├─ QW-3  focus ring                +3.5%
+│  ├─ RC-3  단위 정규화               +2.5%
+│  └─ RC-1/2  available space/height  +4.0%
+│                                    = 85.0%    ~82%
 │
 ├─ Stage 3 (RC 후속 + 기능 시작)
-│  ├─ RC-6  intrinsic 통합            +1.5%  → 84.5%
-│  ├─ RC-4  2-pass 기준               +1.0%  → 85.5%
-│  └─ Phase B  아이콘 폰트            +5.0%  → 90.5%
+│  ├─ RC-6  intrinsic 통합            +1.5%
+│  ├─ RC-4  2-pass 기준               +1.0%
+│  └─ Phase B  아이콘 폰트            +5.0%
+│                                    = 92.5%    ~89%
 │
 ├─ Stage 4 (주요 기능 확장)
-│  ├─ Phase C  컬렉션 아이템          +7.0%  → 97.5%
-│  ├─ Phase E  overflow scroll        +1.5%  → 99.0%
-│  └─ RC-7/5  blockification/baseline +2.0%  → 101.0% (cap→~96%)
+│  ├─ Phase C  컬렉션+미완료 spec     +7.0%
+│  ├─ Phase E  overflow scroll        +1.5%
+│  └─ RC-7/5  blockification/baseline +2.0%
+│                                   = 103.0%    ~93%  ← 목표 93% 달성 시점
 │
 ├─ Stage 5 (정밀도 마무리)
-│  ├─ M-2/4/5/6  정밀도 개선          +3.0%
-│  └─ Phase F+G  Overlay/Color        +4.0%
+│  ├─ M-2/4/5/6  정밀도 개선          +8.0%  (2.5+2.5+2.0+1.0)
+│  ├─ Phase F  Overlay 개선           +2.5%
+│  └─ Phase G  Color 그라디언트       +3.5%  (← Phase F 직렬)
+│                                   = 117.0%    ~96%
 │
 └─ Stage 6 (장기)
-   └─ Phase Z  애니메이션             +3.0%
+   └─ Phase Z  애니메이션             +5~10%  (별도 측정)
 
-═══════════════════════════════════════════
-최종 예상: ~93% (Stage 4 완료) → ~96% (Stage 5)
+═══════════════════════════════════════════════════════
+최종 보정 예상: ~93% (Stage 4 완료) → ~96% (Stage 5)
+※ 원시 합산이 100%를 초과하는 것은 영향도 중복에 의한 것이며,
+   보정 예상이 실제 달성치에 가까울 것으로 판단한다.
 ```
 
 ### 차원별 목표 달성 시점
 
-| 차원 | 현재 | Stage 2 | Stage 3 | Stage 5 |
-|------|------|---------|---------|---------|
-| 구조/레이아웃 | 85% | 93% | 96% | 97% |
-| 렌더링 정밀도 | 65% | 73% | 73% | 80% |
-| 시각 장식 | 50% | 50% | 80% | 80% |
-| 상태 표현 | 33% | 70% | 70% | 72% |
-| 색상/Variant | 80% | 80% | 80% | 85% |
+> ※ 아래 수치는 보정 예상 기준이다.
+
+| 차원 | 현재 | Stage 2 | Stage 3 | Stage 4 | Stage 5 |
+|------|------|---------|---------|---------|---------|
+| 구조/레이아웃 | 85% | 93% | 96% | 97% | 97% |
+| 렌더링 정밀도 | 65% | 73% | 73% | 78% | 80% |
+| 시각 장식 | 50% | 50% | 80% | 80% | 80% |
+| 상태 표현 | 33% | 70% | 70% | 70% | 72% |
+| 색상/Variant | 80% | 80% | 80% | 80% | 85% |
 
 ---
 
@@ -353,23 +405,29 @@
 | 리스크 | 영향 | 완화 |
 |--------|------|------|
 | RC-1/2 (AvailableSpace 수정)가 기존 레이아웃을 regression | 다수 컴포넌트 영향 | Stage 2에서 집중 회귀 테스트. 스냅샷 비교 도입 |
-| Phase C (컬렉션 아이템)의 범위가 예상보다 넓음 | 일정 지연 | Table→ListBox→Menu 순서로 점진적 출시 |
+| RC-1/2의 Taffy WASM 바이너리 계약 변경 | Definite space 전제와 충돌 시 Rust 측 수정 필요 → 일정 지연 | Taffy 소스 분석 선행. Rust 수정 필요 시 일정 버퍼 1주 추가 |
+| Phase C (컬렉션 아이템)의 범위가 예상보다 넓음 | 일정 지연 | Table→ListBox→Menu→Tabs/Breadcrumbs 순서로 점진적 출시 |
 | CanvasKit 메모리 누수 (`.delete()` 누락) | 장시간 사용 시 OOM | Disposable 패턴 래퍼 + Chrome DevTools 모니터링 |
+| Phase 0 벤치마크 미완료 상태에서 Phase 5-6 진행됨 | 성능 기준선 없이 비교 불가 | W-0a/b를 사후 검증 용도로 재설계. 이전/이후 비교 대신 절대 수치 측정 |
 
 ### 중간 리스크
 
 | 리스크 | 영향 | 완화 |
 |--------|------|------|
-| Groq 무료 tier 30 req/min 제한 | AI 응답 지연 | 429 지수 백오프 구현 완료. 배치 도구로 호출 수 최소화 |
-| Icon Font 번들 크기 (+200KB~) | 초기 로드 지연 | 서브셋 추출 + lazy loading |
+| Groq 무료 tier 30 req/min + 30K tokens/min 이중 제한 | AI 응답 지연. batch_design 대용량 작업 시 token/min 선 도달 가능 | 429 지수 백오프 구현 완료 (3회 재시도). 배치 도구로 호출 수 최소화 |
+| Icon Font 번들 크기 (+200KB~) + CanvasKit WASM 복합 영향 | 초기 로드 500KB 목표 위협 | 서브셋 추출 + lazy loading. 두 리소스의 통합 로딩 전략(Critical Path 우선순위) 수립 필요 |
 | RC-3 (단위 정규화) 범위 확대 | 파급 효과 | cssValueParser에 국한. 기존 parseFloat 경로를 fallback 유지 |
+| `specShapeConverter.ts` 핫스팟 | Stage 1~5 전 Stage에서 수정 → merge conflict 누적 | 기능별 모듈 분리 검토 (borderConverter, shadowConverter, stateEffectConverter) |
+| Builder↔Preview iframe 동기화 부정합 | RC-3 등 Builder 측 계산 변경 시 Preview CSS 엔진과 일시적 불일치 | Delta 동기화 로직에 단위 변환 결과 반영. 스냅샷 비교에 Preview 포함 |
 
 ### 크로스 워크스트림 차단 관계
 
 | 차단 항목 | 차단 받는 항목 | 해소 시점 |
 |-----------|--------------|----------|
 | RC-3 (WS-2) | AI-A5a (WS-4) | Stage 2 |
-| Phase A (WS-1) | QW-2, QW-3, M-5 (WS-1) | Stage 1 |
+| Phase A (WS-1) | QW-2, QW-3 (WS-1) | Stage 1 |
+| Phase A (WS-1) | M-5 (WS-1) — **선행 필수** | Stage 1 |
+| Phase F (WS-1) | Phase G (WS-1) — **직렬** | Stage 5 내부 |
 | 컴포넌트 인스턴스 시스템 (외부) | AI-A5c/d (WS-4) | Stage 6 |
 | Groq Vision API (외부) | AI-A5b (WS-4) | 미정 |
 
@@ -381,19 +439,25 @@
 
 | Stage | 항목 | 상세 문서 | 섹션 |
 |-------|------|----------|------|
-| 1 | QW-1, Phase A, M-3, Phase D | `ENGINE_CHECKLIST.md` | §Quick Win, §Phase A, §Medium |
+| 1 | QW-1, Phase A, M-3 | `ENGINE_CHECKLIST.md` | §Quick Win, §Phase A, §Medium |
+| 1 | Phase D | `ENGINE_CHECKLIST.md`, `COMPONENT_SPEC_ARCHITECTURE.md` | §Phase D, §Phase 1/4 (FancyButton 정의) |
 | 2 | QW-2/3 | `ENGINE_CHECKLIST.md` | §Quick Win |
 | 2 | RC-3, RC-1/2 | `ENGINE_CHECKLIST.md` | §Root Cause |
 | 3 | RC-6, RC-4 | `ENGINE_CHECKLIST.md` | §Root Cause |
 | 3 | Phase B | `ENGINE_CHECKLIST.md` | §Phase B |
-| 3 | AI-A5a | `AI.md` | §8 Phase A5 |
+| 3 | AI-A5a | `AI.md` | §6.6 (styleAdapter 현황), §8 Phase A5 |
 | 4 | Phase C, E | `ENGINE_CHECKLIST.md` | §Phase C, §Phase E |
 | 4 | RC-7, RC-5 | `ENGINE_CHECKLIST.md` | §Root Cause |
 | 4 | W-0c | `WASM.md` | §0.4 산출물 |
 | 5 | M-2~6, Phase F/G | `ENGINE_CHECKLIST.md` | §Medium, §Phase F/G |
 | 6 | Phase Z | `ENGINE_CHECKLIST.md` | §Phase Z |
-| 6 | W-0a/b, W-1, W-4 | `WASM.md` | §Phase 0-1, §Phase 4 |
-| 6 | W-LT1~3 | `WASM.md` | §장기 최적화 경로 |
-| 6 | AI-A5b~d | `AI.md` | §4.3 도구 정의, §8 Phase A5 |
-| — | Spec Shape 타입/렌더러 | `COMPONENT_SPEC_ARCHITECTURE.md` | §Phase 6 |
-| — | CanvasKit 렌더 파이프라인 | `WASM.md` | §Phase 5-6 |
+| 6 | W-0a/b | `WASM.md` | §Phase 0 (§0.2 벤치마크 기준선, §0.4 산출물) |
+| 6 | W-1 | `WASM.md` | §Phase 1 (§1.5 산출물: query_rect 재연동) |
+| 6 | W-4 | `WASM.md` | §Phase 4 (§4.1~4.7 Worker 아키텍처) |
+| 6 | W-LT1~6 | `WASM.md` | §7.1~7.6 장기 최적화 경로 |
+| 6 | AI-A5b | `AI.md` | §3.2 (Groq SDK 분석), §7.5 (영향 평가), §8 Phase A5 |
+| 6 | AI-A5c | `AI.md` | §4.3 도구 정의 (Phase 5+), §8 Phase A5 |
+| 6 | AI-A5d | `AI.md` | §4.3 도구 정의 (Phase 5+ G.1, create_component 포함) |
+| — | Spec Shape 타입/렌더러 | `COMPONENT_SPEC_ARCHITECTURE.md` | §Phase 6, §9.3 |
+| — | CanvasKit 렌더 파이프라인 | `WASM.md` | §Phase 5-6 (§6.8 잔여 체크리스트 포함) |
+| — | Phase 2~4 미작성 spec | `COMPONENT_SPEC_ARCHITECTURE.md` | §5.3, §6.3, §7.3 체크리스트 |
