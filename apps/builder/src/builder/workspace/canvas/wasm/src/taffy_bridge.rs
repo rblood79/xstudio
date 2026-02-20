@@ -635,9 +635,15 @@ impl TaffyLayoutEngine {
     /// Compute layout for the tree rooted at `handle`.
     pub fn compute_layout(&mut self, handle: usize, available_width: f32, available_height: f32) {
         if let Some(node_id) = self.resolve(handle) {
+            // RC-1: sentinel(-1) → MaxContent (height:auto 부모)
+            let height_space = if available_height < 0.0 {
+                AvailableSpace::MaxContent
+            } else {
+                AvailableSpace::Definite(available_height)
+            };
             let available = Size {
                 width: AvailableSpace::Definite(available_width),
-                height: AvailableSpace::Definite(available_height),
+                height: height_space,
             };
             self.tree
                 .compute_layout(node_id, available)

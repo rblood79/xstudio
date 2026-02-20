@@ -23,6 +23,8 @@ import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayou
 import { parseMargin, parsePadding, parseBorder } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
+import { resolveCSSSizeValue } from './cssValueParser';
+import type { CSSValueContext } from './cssValueParser';
 
 // ─── CSS 파싱 유틸리티 ────────────────────────────────────────────────
 
@@ -38,12 +40,23 @@ function dimStr(value: number | string | undefined): string | undefined {
   return value;
 }
 
-/** CSS prop → number | string 파서 */
-function parseCSSProp(value: unknown): number | string | undefined {
+/**
+ * RC-3: CSS prop → number | string 파서 (단위 정규화 적용)
+ *
+ * rem, em, vh, vw, calc() 등을 resolveCSSSizeValue()로 해석.
+ * % 값은 Taffy 네이티브 % 처리를 위해 문자열 그대로 반환.
+ */
+function parseCSSPropWithContext(
+  value: unknown,
+  ctx: CSSValueContext = {},
+): number | string | undefined {
   if (value === undefined || value === null || value === '' || value === 'auto') return undefined;
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
     if (value.endsWith('%')) return value;
+    if (value === 'fit-content' || value === 'min-content' || value === 'max-content') return undefined;
+    const px = resolveCSSSizeValue(value, ctx);
+    if (px !== undefined && px >= 0) return px;
     const num = parseFloat(value);
     if (!isNaN(num)) return num;
   }
@@ -312,6 +325,7 @@ export function elementToTaffyGridStyle(
   element: Element,
   _computedStyle?: ComputedStyle,
   templateAreas?: TemplateAreasMap,
+  ctx: CSSValueContext = {},
 ): TaffyStyle {
   const style = (element.props?.style || {}) as Record<string, unknown>;
   const result: TaffyStyle = {};
@@ -332,15 +346,15 @@ export function elementToTaffyGridStyle(
   }
 
   // --- Size ---
-  const widthStr = dimStr(parseCSSProp(style.width));
-  const heightStr = dimStr(parseCSSProp(style.height));
+  const widthStr = dimStr(parseCSSPropWithContext(style.width, ctx));
+  const heightStr = dimStr(parseCSSPropWithContext(style.height, ctx));
   if (widthStr) result.width = widthStr;
   if (heightStr) result.height = heightStr;
 
-  const minW = dimStr(parseCSSProp(style.minWidth));
-  const minH = dimStr(parseCSSProp(style.minHeight));
-  const maxW = dimStr(parseCSSProp(style.maxWidth));
-  const maxH = dimStr(parseCSSProp(style.maxHeight));
+  const minW = dimStr(parseCSSPropWithContext(style.minWidth, ctx));
+  const minH = dimStr(parseCSSPropWithContext(style.minHeight, ctx));
+  const maxW = dimStr(parseCSSPropWithContext(style.maxWidth, ctx));
+  const maxH = dimStr(parseCSSPropWithContext(style.maxHeight, ctx));
   if (minW) result.minWidth = minW;
   if (minH) result.minHeight = minH;
   if (maxW) result.maxWidth = maxW;
@@ -403,9 +417,9 @@ export function elementToTaffyGridStyle(
   }
 
   // --- Gap ---
-  const gap = parseCSSProp(style.gap);
-  const rowGap = parseCSSProp(style.rowGap);
-  const columnGap = parseCSSProp(style.columnGap);
+  const gap = parseCSSPropWithContext(style.gap, ctx);
+  const rowGap = parseCSSPropWithContext(style.rowGap, ctx);
+  const columnGap = parseCSSPropWithContext(style.columnGap, ctx);
   if (gap !== undefined) {
     const gapStr = dimStr(gap);
     if (gapStr) {
@@ -501,10 +515,10 @@ export function elementToTaffyGridStyle(
 
   // --- Inset ---
   if (style.position === 'absolute' || style.position === 'fixed') {
-    const top = parseCSSProp(style.top);
-    const left = parseCSSProp(style.left);
-    const right = parseCSSProp(style.right);
-    const bottom = parseCSSProp(style.bottom);
+    const top = parseCSSPropWithContext(style.top, ctx);
+    const left = parseCSSPropWithContext(style.left, ctx);
+    const right = parseCSSPropWithContext(style.right, ctx);
+    const bottom = parseCSSPropWithContext(style.bottom, ctx);
     if (top !== undefined) result.insetTop = dimStr(top);
     if (left !== undefined) result.insetLeft = dimStr(left);
     if (right !== undefined) result.insetRight = dimStr(right);
@@ -576,8 +590,14 @@ export class TaffyGridEngine implements LayoutEngine {
     const parentComputed = context?.parentComputedStyle
       ?? resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
 
+    // RC-3: CSS 단위 해석용 컨텍스트 구성
+    const cssCtx: CSSValueContext = {
+      viewportWidth: context?.viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1920),
+      viewportHeight: context?.viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 1080),
+    };
+
     try {
-      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight, parentComputed);
+      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight, parentComputed, cssCtx);
     } finally {
       // 매 계산 후 트리를 클리어하여 메모리 누적 방지
       try {
@@ -597,6 +617,7 @@ export class TaffyGridEngine implements LayoutEngine {
     availableWidth: number,
     availableHeight: number,
     parentComputed: ComputedStyle,
+    cssCtx: CSSValueContext = {},
   ): ComputedLayout[] {
     // grid-template-areas 파싱 (자식 gridArea 해석에 필요)
     const parentRawStyle = (parent.props?.style || {}) as Record<string, unknown>;
@@ -612,7 +633,7 @@ export class TaffyGridEngine implements LayoutEngine {
       const childRawStyle = child.props?.style as Record<string, unknown> | undefined;
       // 부모 computed style 기반으로 자식 CSS 상속 해석 (em 단위 등)
       const childComputed = resolveStyle(childRawStyle, parentComputed);
-      const taffyStyle = elementToTaffyGridStyle(child, childComputed, templateAreas);
+      const taffyStyle = elementToTaffyGridStyle(child, childComputed, templateAreas, cssCtx);
       // 자식 노드는 grid item이므로 display를 grid로 강제하지 않음
       // Taffy는 grid 컨테이너 내에서 아이템을 자동으로 처리함
       // grid item에서 display 속성은 아이템 자체의 inner display를 의미하므로 제거
@@ -623,21 +644,24 @@ export class TaffyGridEngine implements LayoutEngine {
     }
 
     // 2. 부모 노드 생성 (grid container 속성)
-    const parentStyle = elementToTaffyGridStyle(parent, parentComputed);
+    const parentStyle = elementToTaffyGridStyle(parent, parentComputed, undefined, cssCtx);
     // 부모의 display는 반드시 grid
     parentStyle.display = 'grid';
     // 부모의 width/height는 available space로 설정
     parentStyle.width = availableWidth;
-    parentStyle.height = availableHeight;
+    // RC-1: sentinel(-1) = height:auto → parentStyle.height 생략 → Taffy가 콘텐츠 기반 계산
+    if (availableHeight >= 0) {
+      parentStyle.height = availableHeight;
+    }
 
     // repeat(auto-fill/auto-fit) 전개를 위해 gap과 containerSize 기반으로 재파싱
-    const gapParsed = parseCSSProp(parentRawStyle.gap);
+    const gapParsed = parseCSSPropWithContext(parentRawStyle.gap, cssCtx);
     const gapPx = typeof gapParsed === 'number' ? gapParsed :
       (typeof gapParsed === 'string' ? parseFloat(gapParsed) || 0 : 0);
-    const colGapParsed = parseCSSProp(parentRawStyle.columnGap);
+    const colGapParsed = parseCSSPropWithContext(parentRawStyle.columnGap, cssCtx);
     const colGapPx = colGapParsed !== undefined ?
       (typeof colGapParsed === 'number' ? colGapParsed : parseFloat(String(colGapParsed)) || 0) : gapPx;
-    const rowGapParsed = parseCSSProp(parentRawStyle.rowGap);
+    const rowGapParsed = parseCSSPropWithContext(parentRawStyle.rowGap, cssCtx);
     const rowGapPx = rowGapParsed !== undefined ?
       (typeof rowGapParsed === 'number' ? rowGapParsed : parseFloat(String(rowGapParsed)) || 0) : gapPx;
 

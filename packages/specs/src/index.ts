@@ -288,8 +288,5 @@ export type { ListProps } from './components/List.spec';
 export { InputSpec } from './components/Input.spec';
 export type { InputProps } from './components/Input.spec';
 
-export { FancyButtonSpec } from './components/FancyButton.spec';
-export type { FancyButtonProps } from './components/FancyButton.spec';
-
 export { SwitcherSpec } from './components/Switcher.spec';
 export type { SwitcherProps } from './components/Switcher.spec';

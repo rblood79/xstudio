@@ -85,3 +85,6 @@ export {
   activeFillAtom,
   colorInputModeAtom,
 } from './fillAtoms';
+
+// Component State Preview atom (Phase A)
+export { previewComponentStateAtom } from './componentStateAtom';

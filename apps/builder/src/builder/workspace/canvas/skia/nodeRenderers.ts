@@ -107,6 +107,10 @@ export interface SkiaNodeData {
     strokeColor?: Float32Array;
     strokeWidth?: number;
     strokeStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset';
+    /** QW-3: CSS outline (focus ring — box 외부에 그려짐) */
+    outlineColor?: Float32Array;
+    outlineWidth?: number;
+    outlineOffset?: number;
   };
   /** Text 전용 */
   text?: {
@@ -759,6 +763,48 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
         renderInsetOutsetBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius, strokeStyle);
       } else {
         renderSolidBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius, strokeStyle);
+      }
+    }
+
+    // QW-3: CSS outline 렌더링 (focus ring — box 외부에 그려짐)
+    if (node.box.outlineColor && node.box.outlineWidth && node.box.outlineWidth > 0) {
+      const ow = node.box.outlineWidth;
+      const oo = node.box.outlineOffset ?? 0;
+      const expansion = oo + ow / 2;
+      const ox = -expansion;
+      const oy = -expansion;
+      const ow2 = node.width + expansion * 2;
+      const oh2 = node.height + expansion * 2;
+
+      const outlinePaint = scope.track(new ck.Paint());
+      outlinePaint.setAntiAlias(true);
+      outlinePaint.setStyle(ck.PaintStyle.Stroke);
+      outlinePaint.setStrokeWidth(ow);
+      outlinePaint.setColor(node.box.outlineColor);
+
+      const br = node.box.borderRadius;
+      const isArrayBr = Array.isArray(br);
+      const hasBr = isArrayBr ? br.some(r => r > 0) : br > 0;
+
+      if (hasBr) {
+        if (isArrayBr) {
+          const radii = br as [number, number, number, number];
+          const expanded: [number, number, number, number] = [
+            Math.max(0, radii[0] + oo),
+            Math.max(0, radii[1] + oo),
+            Math.max(0, radii[2] + oo),
+            Math.max(0, radii[3] + oo),
+          ];
+          const path = createRoundRectPath(ck, ox, oy, ow2, oh2, expanded);
+          canvas.drawPath(path, outlinePaint);
+          path.delete();
+        } else {
+          const expandedR = Math.max(0, (br as number) + oo);
+          const outlineRect = ck.LTRBRect(ox, oy, ox + ow2, oy + oh2);
+          canvas.drawRRect(ck.RRectXY(outlineRect, expandedR, expandedR), outlinePaint);
+        }
+      } else {
+        canvas.drawRect(ck.LTRBRect(ox, oy, ox + ow2, oy + oh2), outlinePaint);
       }
     }
   } finally {

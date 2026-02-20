@@ -16,6 +16,8 @@ import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayou
 import { parseMargin, parsePadding, parseBorder, enrichWithIntrinsicSize, INLINE_BLOCK_TAGS } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
+import { resolveCSSSizeValue } from './cssValueParser';
+import type { CSSValueContext } from './cssValueParser';
 
 // ─── Style conversion ────────────────────────────────────────────────
 
@@ -40,6 +42,7 @@ function dimStr(value: number | string | undefined): string | undefined {
 export function elementToTaffyStyle(
   element: Element,
   _computedStyle?: ComputedStyle,
+  ctx: CSSValueContext = {},
 ): TaffyStyle {
   const style = (element.props?.style || {}) as Record<string, unknown>;
   const result: TaffyStyle = {};
@@ -69,18 +72,18 @@ export function elementToTaffyStyle(
   // static / sticky / 미지정은 Taffy 기본값(relative)으로 처리되므로 별도 설정 불필요
 
   // Size
-  const widthVal = parseCSSProp(style.width);
-  const heightVal = parseCSSProp(style.height);
+  const widthVal = parseCSSPropWithContext(style.width, ctx);
+  const heightVal = parseCSSPropWithContext(style.height, ctx);
   const widthStr = dimStr(widthVal);
   const heightStr = dimStr(heightVal);
   if (widthStr) result.width = widthStr;
   if (heightStr) result.height = heightStr;
 
   // Min/Max size
-  const minW = dimStr(parseCSSProp(style.minWidth));
-  const minH = dimStr(parseCSSProp(style.minHeight));
-  const maxW = dimStr(parseCSSProp(style.maxWidth));
-  const maxH = dimStr(parseCSSProp(style.maxHeight));
+  const minW = dimStr(parseCSSPropWithContext(style.minWidth, ctx));
+  const minH = dimStr(parseCSSPropWithContext(style.minHeight, ctx));
+  const maxW = dimStr(parseCSSPropWithContext(style.maxWidth, ctx));
+  const maxH = dimStr(parseCSSPropWithContext(style.maxHeight, ctx));
   if (minW) result.minWidth = minW;
   if (minH) result.minHeight = minH;
   if (maxW) result.maxWidth = maxW;
@@ -130,7 +133,7 @@ export function elementToTaffyStyle(
   if (style.flexGrow !== undefined) result.flexGrow = Number(style.flexGrow);
   if (style.flexShrink !== undefined) result.flexShrink = Number(style.flexShrink);
   if (style.flexBasis !== undefined) {
-    const basis = parseCSSProp(style.flexBasis);
+    const basis = parseCSSPropWithContext(style.flexBasis, ctx);
     if (basis !== undefined) result.flexBasis = dimStr(basis) ?? 'auto';
   }
 
@@ -167,9 +170,9 @@ export function elementToTaffyStyle(
   if (border.left !== 0) result.borderLeft = `${border.left}px`;
 
   // Gap
-  const gap = parseCSSProp(style.gap);
-  const rowGap = parseCSSProp(style.rowGap);
-  const columnGap = parseCSSProp(style.columnGap);
+  const gap = parseCSSPropWithContext(style.gap, ctx);
+  const rowGap = parseCSSPropWithContext(style.rowGap, ctx);
+  const columnGap = parseCSSPropWithContext(style.columnGap, ctx);
   if (gap !== undefined) {
     const gapStr = dimStr(gap);
     if (gapStr) {
@@ -188,10 +191,10 @@ export function elementToTaffyStyle(
 
   // Inset (position offsets)
   if (style.position === 'absolute' || style.position === 'fixed') {
-    const top = parseCSSProp(style.top);
-    const left = parseCSSProp(style.left);
-    const right = parseCSSProp(style.right);
-    const bottom = parseCSSProp(style.bottom);
+    const top = parseCSSPropWithContext(style.top, ctx);
+    const left = parseCSSPropWithContext(style.left, ctx);
+    const right = parseCSSPropWithContext(style.right, ctx);
+    const bottom = parseCSSPropWithContext(style.bottom, ctx);
     if (top !== undefined) result.insetTop = dimStr(top);
     if (left !== undefined) result.insetLeft = dimStr(left);
     if (right !== undefined) result.insetRight = dimStr(right);
@@ -201,14 +204,27 @@ export function elementToTaffyStyle(
   return result;
 }
 
-/** 간단한 CSS prop → number | string 파서 */
-function parseCSSProp(value: unknown): number | string | undefined {
+/**
+ * RC-3: CSS prop → number | string 파서 (단위 정규화 적용)
+ *
+ * rem, em, vh, vw, calc() 등을 resolveCSSSizeValue()로 해석.
+ * % 값은 Taffy 네이티브 % 처리를 위해 문자열 그대로 반환.
+ */
+function parseCSSPropWithContext(
+  value: unknown,
+  ctx: CSSValueContext = {},
+): number | string | undefined {
   if (value === undefined || value === null || value === '' || value === 'auto') return undefined;
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
-    // % 값은 그대로
+    // % 값은 Taffy가 네이티브로 처리
     if (value.endsWith('%')) return value;
-    // px, rem 등은 숫자로
+    // intrinsic sizing 키워드는 Taffy에서 미지원 → undefined
+    if (value === 'fit-content' || value === 'min-content' || value === 'max-content') return undefined;
+    // resolveCSSSizeValue: rem, em, vh, vw, calc(), clamp(), min(), max() 해석
+    const px = resolveCSSSizeValue(value, ctx);
+    if (px !== undefined && px >= 0) return px;
+    // fallback: parseFloat (순수 숫자 문자열)
     const num = parseFloat(value);
     if (!isNaN(num)) return num;
   }
@@ -223,8 +239,8 @@ function parseCSSProp(value: unknown): number | string | undefined {
  *
  * @returns 픽셀 수치, 변환 불가 시 0
  */
-function resolvePxOffset(value: unknown): number {
-  const parsed = parseCSSProp(value);
+function resolvePxOffset(value: unknown, ctx: CSSValueContext = {}): number {
+  const parsed = parseCSSPropWithContext(value, ctx);
   if (typeof parsed === 'number') return parsed;
   // % 문자열 등 변환 불가한 경우 0 반환 (conservative)
   return 0;
@@ -290,8 +306,14 @@ export class TaffyFlexEngine implements LayoutEngine {
     const parentComputed = context?.parentComputedStyle
       ?? resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
 
+    // RC-3: CSS 단위 해석용 컨텍스트 구성
+    const cssCtx: CSSValueContext = {
+      viewportWidth: context?.viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1920),
+      viewportHeight: context?.viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 1080),
+    };
+
     try {
-      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight, parentComputed);
+      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight, parentComputed, cssCtx);
     } finally {
       // 매 계산 후 트리를 클리어하여 메모리 누적 방지
       // 추후 증분 업데이트가 필요하면 노드 캐시 도입
@@ -312,6 +334,7 @@ export class TaffyFlexEngine implements LayoutEngine {
     availableWidth: number,
     availableHeight: number,
     parentComputed: ComputedStyle,
+    cssCtx: CSSValueContext = {},
   ): ComputedLayout[] {
     // §6 P3: 2-pass 레이아웃
     // 1차 pass: 부모 availableWidth로 enrichment → Taffy 계산
@@ -327,7 +350,7 @@ export class TaffyFlexEngine implements LayoutEngine {
 
     // ── 1차 pass: enrichment + Taffy 계산 ─────────────────────────────
     const firstPassResult = this._runTaffyPass(
-      taffy, parent, children, availableWidth, availableHeight, parentComputed, childComputedStyles,
+      taffy, parent, children, availableWidth, availableHeight, parentComputed, childComputedStyles, cssCtx,
     );
 
     // ── 2차 pass 필요성 판단 ──────────────────────────────────────────
@@ -378,7 +401,7 @@ export class TaffyFlexEngine implements LayoutEngine {
     });
 
     return this._runTaffyPassRaw(
-      taffy, parent, secondPassChildren, children, availableWidth, availableHeight, parentComputed,
+      taffy, parent, secondPassChildren, children, availableWidth, availableHeight, parentComputed, cssCtx,
     );
   }
 
@@ -393,11 +416,12 @@ export class TaffyFlexEngine implements LayoutEngine {
     availableHeight: number,
     parentComputed: ComputedStyle,
     childComputedStyles: ComputedStyle[],
+    cssCtx: CSSValueContext = {},
   ): ComputedLayout[] {
     const enrichedChildren = children.map((child, i) =>
       enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputedStyles[i]),
     );
-    return this._runTaffyPassRaw(taffy, parent, enrichedChildren, children, availableWidth, availableHeight, parentComputed);
+    return this._runTaffyPassRaw(taffy, parent, enrichedChildren, children, availableWidth, availableHeight, parentComputed, cssCtx);
   }
 
   /**
@@ -414,6 +438,7 @@ export class TaffyFlexEngine implements LayoutEngine {
     availableWidth: number,
     availableHeight: number,
     parentComputed: ComputedStyle,
+    cssCtx: CSSValueContext = {},
   ): ComputedLayout[] {
     // 1. 자식 노드 생성
     const childHandles: TaffyNodeHandle[] = [];
@@ -424,19 +449,22 @@ export class TaffyFlexEngine implements LayoutEngine {
       const originalChild = originalChildren[i];
       const childRawStyle = enrichedChild.props?.style as Record<string, unknown> | undefined;
       const childComputed = resolveStyle(childRawStyle, parentComputed);
-      const taffyStyle = elementToTaffyStyle(enrichedChild, childComputed);
+      const taffyStyle = elementToTaffyStyle(enrichedChild, childComputed, cssCtx);
       const handle = taffy.createNode(taffyStyle);
       childHandles.push(handle);
       childMap.set(handle, originalChild);
     }
 
     // 2. 부모 노드 생성 (자식 포함)
-    const parentStyle = elementToTaffyStyle(parent, parentComputed);
+    const parentStyle = elementToTaffyStyle(parent, parentComputed, cssCtx);
     // 부모의 display는 반드시 flex
     parentStyle.display = 'flex';
     // 부모의 width/height는 available space로 설정
     parentStyle.width = availableWidth;
-    parentStyle.height = availableHeight;
+    // RC-1: sentinel(-1) = height:auto → parentStyle.height 생략 → Taffy가 콘텐츠 기반 계산
+    if (availableHeight >= 0) {
+      parentStyle.height = availableHeight;
+    }
     // 부모의 padding/border는 이미 availableWidth에서 제외되어 있으므로 0으로 리셋
     parentStyle.paddingTop = 0;
     parentStyle.paddingRight = 0;
@@ -479,15 +507,15 @@ export class TaffyFlexEngine implements LayoutEngine {
 
         // X축: left가 있으면 left 우선, 없으면 right의 반대 방향
         if (topVal !== undefined && topVal !== null && topVal !== 'auto') {
-          relativeOffsetY = resolvePxOffset(topVal);
+          relativeOffsetY = resolvePxOffset(topVal, cssCtx);
         } else if (bottomVal !== undefined && bottomVal !== null && bottomVal !== 'auto') {
-          relativeOffsetY = -resolvePxOffset(bottomVal);
+          relativeOffsetY = -resolvePxOffset(bottomVal, cssCtx);
         }
 
         if (leftVal !== undefined && leftVal !== null && leftVal !== 'auto') {
-          relativeOffsetX = resolvePxOffset(leftVal);
+          relativeOffsetX = resolvePxOffset(leftVal, cssCtx);
         } else if (rightVal !== undefined && rightVal !== null && rightVal !== 'auto') {
-          relativeOffsetX = -resolvePxOffset(rightVal);
+          relativeOffsetX = -resolvePxOffset(rightVal, cssCtx);
         }
       }
 

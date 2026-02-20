@@ -21,6 +21,8 @@ import type { SkiaNodeData } from '../skia/nodeRenderers';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { convertStyle, cssColorToHex, parseCSSSize, type CSSStyle } from './styleConverter';
 import { Graphics as PixiGraphics } from 'pixi.js';
+import { useAtomValue } from 'jotai';
+import { previewComponentStateAtom } from '../../../panels/styles/atoms/componentStateAtom';
 import { isFillV2Enabled } from '../../../../utils/featureFlags';
 import { fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
 import type { FillStyle } from '../skia/types';
@@ -28,7 +30,7 @@ import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
 import { specShapesToSkia } from '../skia/specShapeConverter';
-import type { ComponentSpec, Shape, TokenRef } from '@xstudio/specs';
+import type { ComponentSpec, ComponentState, Shape, TokenRef } from '@xstudio/specs';
 import { resolveToken } from '@xstudio/specs';
 import {
   ButtonSpec, BadgeSpec, CardSpec, DialogSpec, LinkSpec, PopoverSpec,
@@ -40,7 +42,7 @@ import {
   BreadcrumbsSpec, PaginationSpec, GridListSpec,
   DisclosureSpec, DisclosureGroupSpec, ToolbarSpec, ToastSpec,
   PanelSpec, GroupSpec, SlotSpec, SkeletonSpec, DropZoneSpec,
-  FileTriggerSpec, ScrollBoxSpec, MaskedFrameSpec, FancyButtonSpec,
+  FileTriggerSpec, ScrollBoxSpec, MaskedFrameSpec,
   InputSpec, ListSpec, SwitcherSpec,
   DatePickerSpec, DateRangePickerSpec, DateFieldSpec, TimeFieldSpec,
   CalendarSpec, ColorPickerSpec, ColorFieldSpec, ColorSliderSpec,
@@ -48,7 +50,7 @@ import {
 } from '@xstudio/specs';
 import {
   PixiButton,
-  PixiFancyButton,
+
   PixiCheckbox,
   PixiCheckboxGroup,
   PixiCheckboxItem,
@@ -202,7 +204,7 @@ const IMAGE_TAGS = new Set(['Image', 'Avatar', 'Logo', 'Icon', 'Thumbnail']);
  * UI 컴포넌트 태그들 (Phase 11 B2.4)
  */
 const UI_BUTTON_TAGS = new Set(['Button', 'SubmitButton']);
-const UI_FANCYBUTTON_TAGS = new Set(['FancyButton']);
+
 const UI_CHECKBOX_GROUP_TAGS = new Set(['CheckboxGroup']);  // CheckboxGroup 컨테이너
 const UI_CHECKBOX_ITEM_TAGS = new Set(['Checkbox', 'CheckBox', 'Switch', 'Toggle']);  // Checkbox 개별 아이템
 const UI_RADIO_GROUP_TAGS = new Set(['RadioGroup']);  // RadioGroup 컨테이너
@@ -302,17 +304,63 @@ const UI_SLOT_TAGS = new Set(['Slot']);
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
+// QW-3: Outline parsing helper for focus ring
+// ============================================
+
+/**
+ * CSS outline shorthand → Skia outline 속성 파싱
+ * "2px solid var(--primary)" → { width, color (Float32Array), offset }
+ */
+function parseOutlineShorthand(
+  outline: string,
+  outlineOffset?: string | number,
+): { width: number; color: Float32Array; offset: number } | null {
+  // "2px solid #6750A4" or "2px solid var(--primary)"
+  const parts = outline.trim().split(/\s+/);
+  if (parts.length < 2) return null;
+
+  const width = parseFloat(parts[0]);
+  if (isNaN(width) || width <= 0) return null;
+
+  // 색상: 마지막 파트 (style 토큰 "solid" 등 건너뛰기)
+  let colorStr = parts.length >= 3 ? parts.slice(2).join(' ') : parts[1];
+
+  // var(--xxx) → CSS custom property 해석 시도
+  const varMatch = colorStr.match(/^var\(\s*(--.+?)\s*\)$/);
+  if (varMatch) {
+    try {
+      const resolved = getComputedStyle(document.documentElement).getPropertyValue(varMatch[1]).trim();
+      if (resolved) colorStr = resolved;
+    } catch { /* ignore */ }
+    // 해석 실패 시 기본 primary 색상
+    if (colorStr.startsWith('var(')) colorStr = '#6750A4';
+  }
+
+  // hex → Float32Array RGBA
+  const hex = cssColorToHex(colorStr, 0x6750A4);
+  const r = ((hex >> 16) & 0xff) / 255;
+  const g = ((hex >> 8) & 0xff) / 255;
+  const b = (hex & 0xff) / 255;
+
+  const offset = typeof outlineOffset === 'number'
+    ? outlineOffset
+    : (typeof outlineOffset === 'string' ? parseFloat(outlineOffset) || 0 : 0);
+
+  return { width, color: Float32Array.of(r, g, b, 1), offset };
+}
+
+// ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'panel' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'panel' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
 
   // UI 컴포넌트 우선 체크 (Phase 11 B2.4 + Phase 6)
   if (UI_BUTTON_TAGS.has(tag)) return 'button';
-  if (UI_FANCYBUTTON_TAGS.has(tag)) return 'fancyButton';
+
   if (UI_CHECKBOX_GROUP_TAGS.has(tag)) return 'checkboxGroup';
   if (UI_CHECKBOX_ITEM_TAGS.has(tag)) return 'checkboxItem';
   if (UI_RADIO_GROUP_TAGS.has(tag)) return 'radioGroup';
@@ -409,7 +457,7 @@ function getSpriteType(element: Element): SpriteType {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'Button': ButtonSpec, 'SubmitButton': ButtonSpec,
-  'FancyButton': FancyButtonSpec,
+  'FancyButton': ButtonSpec,
   'CheckboxGroup': CheckboxGroupSpec,
   'Checkbox': CheckboxSpec, 'CheckBox': CheckboxSpec,
   'Switch': SwitchSpec, 'Toggle': SwitchSpec,
@@ -630,6 +678,9 @@ export const ElementSprite = memo(function ElementSprite({
   renderChildElement,
 }: ElementSpriteProps) {
   useExtend(PIXI_COMPONENTS);
+
+  // Phase A: 미리보기 컴포넌트 상태 구독
+  const previewState = useAtomValue(previewComponentStateAtom);
 
   // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
   // layout이 적용된 Container를 등록해야 SelectionBox 위치가 일치함
@@ -1059,11 +1110,18 @@ export const ElementSprite = memo(function ElementSprite({
               specProps = { ...specProps, _groupPosition: toggleGroupPosition };
             }
 
+            // 동적 컴포넌트 상태: preview > disabled prop > default
+            const componentState: ComponentState = (() => {
+              if (previewState && previewState !== 'default') return previewState;
+              if (specProps.isDisabled || specProps.disabled) return 'disabled';
+              return 'default';
+            })();
+
             const shapes = spec.render.shapes(
               specProps as Record<string, unknown>,
               variantSpec,
               sizeSpec,
-              'default',
+              componentState,
             );
 
             // Column layout: shapes를 세로 쌓기로 재배치
@@ -1082,6 +1140,28 @@ export const ElementSprite = memo(function ElementSprite({
             }
 
             const specNode = specShapesToSkia(shapes, 'light', finalWidth, specHeight);
+
+            // QW-2: disabled 상태 opacity 적용
+            if (componentState === 'disabled') {
+              const opacityVal = (spec.states?.disabled?.opacity as number | undefined) ?? 0.38;
+              specNode.effects = [...(specNode.effects ?? []), { type: 'opacity' as const, value: opacityVal }];
+            }
+
+            // QW-3: focusVisible 상태 outline (focus ring) 적용
+            if ((componentState === 'focusVisible' || componentState === 'focused') && specNode.box) {
+              const focusState = spec.states?.focusVisible;
+              if (focusState?.outline) {
+                const parsed = parseOutlineShorthand(
+                  focusState.outline as string,
+                  focusState.outlineOffset as string | number | undefined,
+                );
+                if (parsed) {
+                  specNode.box.outlineColor = parsed.color;
+                  specNode.box.outlineWidth = parsed.width;
+                  specNode.box.outlineOffset = parsed.offset;
+                }
+              }
+            }
 
             // 다중 줄 텍스트 paddingTop 보정: specShapesToSkia는 한 줄 lineHeight 기준으로
             // (height - lineHeight) / 2를 계산하지만, 다중 줄일 때는 wrappedHeight 기준으로 보정
@@ -1151,7 +1231,7 @@ export const ElementSprite = memo(function ElementSprite({
               : defaultFontSize;
 
             const CENTER_ALIGN_TAGS = new Set([
-              'Button', 'SubmitButton', 'FancyButton',
+              'Button', 'SubmitButton',
               'Badge', 'Tag', 'Chip',
               'ToggleButton',
             ]);
@@ -1299,15 +1379,6 @@ export const ElementSprite = memo(function ElementSprite({
     case 'button':
       return (
         <PixiButton
-          element={effectiveElement}
-          isSelected={isSelected}
-          onClick={onClick}
-        />
-      );
-
-    case 'fancyButton':
-      return (
-        <PixiFancyButton
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

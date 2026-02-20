@@ -23,7 +23,7 @@
  */
 
 export { PixiButton, type PixiButtonProps } from './PixiButton';
-export { PixiFancyButton, type PixiFancyButtonProps } from './PixiFancyButton';
+
 export { PixiCheckbox, type PixiCheckboxProps } from './PixiCheckbox';
 export { PixiCheckboxGroup, type PixiCheckboxGroupProps } from './PixiCheckboxGroup';
 export { PixiCheckboxItem, type PixiCheckboxItemProps } from './PixiCheckboxItem';

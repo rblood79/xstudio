@@ -166,10 +166,6 @@ export type { ColorSwatchPickerProps } from './ColorSwatchPicker.spec';
 export { ListSpec } from './List.spec';
 export type { ListProps } from './List.spec';
 
-// FancyButton
-export { FancyButtonSpec } from './FancyButton.spec';
-export type { FancyButtonProps } from './FancyButton.spec';
-
 // Switcher
 export { SwitcherSpec } from './Switcher.spec';
 export type { SwitcherProps } from './Switcher.spec';

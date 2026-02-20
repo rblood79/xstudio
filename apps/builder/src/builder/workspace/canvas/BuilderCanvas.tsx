@@ -716,13 +716,19 @@ const ElementsLayer = memo(function ElementsLayer({
       const parentBorderVal = isBodyParent ? parseBorder(parentStyle) : { top: 0, right: 0, bottom: 0, left: 0 };
 
       const parentContentWidth = parentComputedSize?.width ?? pageWidth;
-      const parentContentHeight = parentComputedSize?.height ?? pageHeight;
+      // RC-2: height:auto 부모는 definite height를 전달하지 않음
+      // → 레이아웃 엔진이 max-content 기반으로 자식 높이를 계산
+      const parentHasAutoHeight = !parentStyle?.height || parentStyle.height === 'auto';
+      const parentContentHeight = parentComputedSize?.height
+        ?? (parentHasAutoHeight ? undefined : pageHeight);
       const availableWidth = isBodyParent
         ? pageWidth - parentBorderVal.left - parentBorderVal.right - parentPadding.left - parentPadding.right
         : parentContentWidth - parentPadding.left - parentPadding.right;
       const availableHeight = isBodyParent
         ? pageHeight - parentBorderVal.top - parentBorderVal.bottom - parentPadding.top - parentPadding.bottom
-        : parentContentHeight - parentPadding.top - parentPadding.bottom;
+        : parentContentHeight !== undefined
+          ? parentContentHeight - parentPadding.top - parentPadding.bottom
+          : -1;  // RC-1 sentinel: height:auto → WASM이 MaxContent로 처리
 
       // Body 자식 위치: root container가 이미 offset 적용 → 0
       const paddingOffsetX = isBodyParent ? 0 : parentPadding.left;

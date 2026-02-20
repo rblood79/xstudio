@@ -9,6 +9,7 @@ import type { Shape, ColorValue } from '@xstudio/specs';
 import type { SkiaNodeData } from './nodeRenderers';
 import type { EffectStyle, FillStyle } from './types';
 import { resolveColor, resolveToken, hexStringToNumber } from '@xstudio/specs';
+import { getSkImage, loadSkImage } from './imageCache';
 
 // ========== Helpers ==========
 
@@ -64,6 +65,42 @@ function colorValueToFloat32(value: ColorValue, theme: 'light' | 'dark', alpha: 
 
 /** Transparent color */
 const TRANSPARENT = Float32Array.of(0, 0, 0, 0);
+
+/**
+ * object-fit 스타일에 따라 이미지 콘텐츠 영역을 계산한다.
+ * 반환값: 컨테이너 내부에서 이미지가 그려질 (x, y, w, h)
+ */
+function computeImageFit(
+  fit: 'contain' | 'cover' | 'fill' | 'none',
+  containerW: number,
+  containerH: number,
+  imgW: number,
+  imgH: number,
+): { x: number; y: number; w: number; h: number } {
+  if (fit === 'fill' || imgW === 0 || imgH === 0) {
+    return { x: 0, y: 0, w: containerW, h: containerH };
+  }
+  if (fit === 'none') {
+    // 원본 크기, 중앙 정렬
+    return {
+      x: (containerW - imgW) / 2,
+      y: (containerH - imgH) / 2,
+      w: imgW,
+      h: imgH,
+    };
+  }
+  const scaleX = containerW / imgW;
+  const scaleY = containerH / imgH;
+  const scale = fit === 'contain' ? Math.min(scaleX, scaleY) : Math.max(scaleX, scaleY);
+  const w = imgW * scale;
+  const h = imgH * scale;
+  return {
+    x: (containerW - w) / 2,
+    y: (containerH - h) / 2,
+    w,
+    h,
+  };
+}
 
 // ========== Main Converter ==========
 
@@ -261,9 +298,11 @@ export function specShapesToSkia(
           if (targetNode.box === bgBox && bgBox) {
             bgBox.strokeColor = strokeColor;
             bgBox.strokeWidth = shape.borderWidth;
+            bgBox.strokeStyle = shape.style ?? 'solid';
           } else if (targetNode.box) {
             targetNode.box.strokeColor = strokeColor;
             targetNode.box.strokeWidth = shape.borderWidth;
+            targetNode.box.strokeStyle = shape.style ?? 'solid';
           }
         } else {
           // No target found - render as standalone border box
@@ -285,6 +324,7 @@ export function specShapesToSkia(
               borderRadius: br,
               strokeColor: colorValueToFloat32(shape.color, theme),
               strokeWidth: shape.borderWidth,
+              strokeStyle: shape.style ?? 'solid',
             },
           });
         }
@@ -459,9 +499,49 @@ export function specShapesToSkia(
         break;
       }
 
-      case 'image':
-        // Skip - not supported in simple box rendering
+      case 'image': {
+        const imgX = shape.x ?? 0;
+        const imgY = shape.y ?? 0;
+        const imgW = shape.width === 'auto' ? containerWidth : (shape.width ?? containerWidth);
+        const imgH = shape.height === 'auto' ? containerHeight : (shape.height ?? containerHeight);
+        const imgRadius = resolveRadius(shape.radius, theme);
+
+        // 동기 캐시 조회 — 캐시 미스 시 비동기 로딩 트리거
+        const skImage = shape.src ? getSkImage(shape.src) : null;
+        if (shape.src && !skImage) {
+          loadSkImage(shape.src);
+        }
+
+        // 이미지 콘텐츠 영역 계산 (object-fit)
+        const fit = shape.fit ?? 'cover';
+        const intrinsicW = skImage ? skImage.width() : imgW;
+        const intrinsicH = skImage ? skImage.height() : imgH;
+        const content = computeImageFit(fit, imgW, imgH, intrinsicW, intrinsicH);
+
+        const imgNode: SkiaNodeData = {
+          type: 'image',
+          x: imgX,
+          y: imgY,
+          width: imgW,
+          height: imgH,
+          visible: true,
+          box: {
+            fillColor: TRANSPARENT,
+            borderRadius: imgRadius,
+          },
+          image: {
+            skImage,
+            contentX: content.x,
+            contentY: content.y,
+            contentWidth: content.w,
+            contentHeight: content.h,
+          },
+        };
+
+        children.push(imgNode);
+        lastNode = imgNode;
         break;
+      }
     }
   }
 }
