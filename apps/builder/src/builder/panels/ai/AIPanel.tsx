@@ -1,13 +1,15 @@
 /**
  * AIPanel - AI 어시스턴트 패널
  *
- * Tool Calling + Agent Loop 기반 AI 디자인 어시스턴트
+ * 멀티 프로바이더 Tool Calling + Agent Loop 기반 AI 디자인 어시스턴트
  * G.3 시각 피드백 연동 포함
+ * Pencil처럼 사용자가 API 키를 직접 입력하는 방식
  *
  * 통합된 컴포넌트:
  * - ChatContainer: 메인 채팅 컨테이너
  * - ChatMessage: 개별 메시지 표시
  * - ChatInput: 메시지 입력 필드
+ * - AISettings: 프로바이더/모델/API키 설정
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -15,13 +17,15 @@ import type { KeyboardEvent } from "react";
 import type { PanelProps } from "../core/types";
 import { PanelHeader } from "../../components";
 import { Button } from "@xstudio/shared/components";
-import { MessageCircle, Trash2, Bot } from "lucide-react";
+import { MessageCircle, Trash2, Bot, KeyRound } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useConversationStore } from "../../stores/conversation";
+import { useAISettingsStore } from "../../stores/aiSettings";
 import { useStore } from "../../stores";
 import { useAgentLoop } from "./hooks/useAgentLoop";
 import { ToolResultMessage } from "./components/ToolResultMessage";
 import { AgentControls } from "./components/AgentControls";
+import { AISettingsButton, AISettingsPanel } from "./components/AISettings";
 import type {
   BuilderContext,
   ChatMessage as ChatMessageType,
@@ -205,6 +209,30 @@ function ChatContainer({
 }
 
 /**
+ * NotConfiguredState - API 키 미설정 시 표시
+ */
+function NotConfiguredState() {
+  const { setShowSettings } = useAISettingsStore();
+
+  return (
+    <div className="ai-not-configured">
+      <KeyRound size={32} strokeWidth={1} />
+      <p>
+        AI 어시스턴트를 사용하려면<br />
+        API 키를 설정해주세요.
+      </p>
+      <button
+        className="ai-not-configured-action"
+        onClick={() => setShowSettings(true)}
+        type="button"
+      >
+        API 키 설정
+      </button>
+    </div>
+  );
+}
+
+/**
  * AIPanelContent - AI 패널 메인 로직
  */
 function AIPanelContent() {
@@ -215,6 +243,7 @@ function AIPanelContent() {
     currentTurn,
     runAgent,
     stopAgent,
+    hasAgent,
   } = useAgentLoop();
 
   const elements = useStore((state) => state.elements);
@@ -251,6 +280,7 @@ function AIPanelContent() {
         title="AI Assistant"
         actions={
           <>
+            <AISettingsButton />
             {isAgentRunning && (
               <AgentControls
                 currentTurn={currentTurn}
@@ -275,11 +305,16 @@ function AIPanelContent() {
           </>
         }
       />
-      <ChatContainer
-        messages={messages}
-        onSendMessage={runAgent}
-        isDisabled={isDisabled}
-      />
+      <AISettingsPanel />
+      {hasAgent ? (
+        <ChatContainer
+          messages={messages}
+          onSendMessage={runAgent}
+          isDisabled={isDisabled}
+        />
+      ) : (
+        <NotConfiguredState />
+      )}
     </div>
   );
 }

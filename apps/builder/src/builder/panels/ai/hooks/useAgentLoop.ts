@@ -2,15 +2,18 @@
  * useAgentLoop Hook
  *
  * Agent Loop를 제어하는 React Hook
- * GroqAgentService + conversation store + G.3 시각 피드백 연동
+ * 멀티 프로바이더 지원 (Anthropic, OpenAI, Groq, Google)
+ * aiSettings 스토어에서 프로바이더/모델/API키를 읽어 동적으로 생성
  */
 
-import { useMemo, useCallback, useRef } from 'react';
-import { createGroqAgentService, GroqAgentService } from '../../../../services/ai/GroqAgentService';
+import { useCallback, useRef } from 'react';
+import { createAgentProvider } from '../../../../services/ai/providerFactory';
 import { intentParser } from '../../../../services/ai/IntentParser';
 import { useConversationStore } from '../../../stores/conversation';
+import { useAISettingsStore } from '../../../stores/aiSettings';
 import { useStore } from '../../../stores';
 import { useAIVisualFeedbackStore } from '../../../stores/aiVisualFeedback';
+import type { AIAgentProvider } from '../../../../types/integrations/ai.types';
 import type { BuilderContext } from '../../../../types/integrations/chat.types';
 import type { ToolExecutionResult } from '../../../../types/integrations/ai.types';
 
@@ -32,13 +35,23 @@ export function useAgentLoop() {
     incrementTurn,
   } = useConversationStore();
 
-  const agentRef = useRef<GroqAgentService | null>(null);
+  const agentRef = useRef<AIAgentProvider | null>(null);
 
-  // Agent 인스턴스 (한 번만 생성)
-  const agent = useMemo(() => {
-    const service = createGroqAgentService();
-    agentRef.current = service;
-    return service;
+  /**
+   * 현재 설정에 맞는 Agent 인스턴스 생성
+   * 매 요청마다 최신 설정 반영
+   */
+  const getOrCreateAgent = useCallback((): AIAgentProvider | null => {
+    const { provider, modelId, getApiKey } = useAISettingsStore.getState();
+    const apiKey = getApiKey(provider);
+
+    if (!apiKey) return null;
+
+    // 기존 에이전트 중단
+    agentRef.current?.stop();
+    const agent = createAgentProvider(provider, apiKey, modelId);
+    agentRef.current = agent;
+    return agent;
   }, []);
 
   /**
@@ -55,6 +68,9 @@ export function useAgentLoop() {
 
     // 유저 메시지 추가
     addUserMessage(message);
+
+    // Agent 생성
+    const agent = getOrCreateAgent();
 
     // Agent 모드
     if (agent) {
@@ -151,7 +167,7 @@ export function useAgentLoop() {
       // Agent 없으면 바로 fallback
       runFallback(message, context);
     }
-  }, [agent, addUserMessage, addAssistantMessage, appendToLastMessage,
+  }, [getOrCreateAgent, addUserMessage, addAssistantMessage, appendToLastMessage,
       setStreamingStatus, setAgentRunning, addToolMessage,
       updateToolCallStatus, incrementTurn]);
 
@@ -183,6 +199,8 @@ export function useAgentLoop() {
     setStreamingStatus(false);
   }, [setAgentRunning, setStreamingStatus]);
 
+  const { isConfigured } = useAISettingsStore();
+
   return {
     messages,
     isStreaming,
@@ -192,6 +210,6 @@ export function useAgentLoop() {
     currentContext,
     runAgent,
     stopAgent,
-    hasAgent: !!agent,
+    hasAgent: isConfigured,
   };
 }

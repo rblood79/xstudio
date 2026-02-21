@@ -2,11 +2,11 @@
  * Groq Agent Service
  *
  * Tool Calling + Agent Loop 기반 AI 서비스
- * GroqService.ts의 JSON 텍스트 파싱 방식을 대체
+ * AIAgentProvider 인터페이스 구현 (멀티 프로바이더 지원)
  */
 
 import Groq from 'groq-sdk';
-import type { AgentEvent, ToolCall, ToolExecutor } from '../../types/integrations/ai.types';
+import type { AgentEvent, AIAgentProvider, ToolCall, ToolExecutor } from '../../types/integrations/ai.types';
 import type { ChatMessage, BuilderContext } from '../../types/integrations/chat.types';
 import { createToolRegistry, toolDefinitions } from './tools';
 import { buildSystemPrompt } from './systemPrompt';
@@ -17,16 +17,18 @@ const INITIAL_RETRY_DELAY_MS = 1000;
 
 type GroqMessage = Groq.Chat.Completions.ChatCompletionMessageParam;
 
-export class GroqAgentService {
+export class GroqAgentService implements AIAgentProvider {
   private client: Groq;
+  private modelId: string;
   private toolExecutors: Map<string, ToolExecutor>;
   private abortController: AbortController | null = null;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, modelId?: string) {
     this.client = new Groq({
       apiKey,
       dangerouslyAllowBrowser: true,
     });
+    this.modelId = modelId ?? 'llama-3.3-70b-versatile';
     this.toolExecutors = createToolRegistry();
   }
 
@@ -194,7 +196,7 @@ export class GroqAgentService {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
         return await this.client.chat.completions.create({
-          model: 'llama-3.3-70b-versatile',
+          model: this.modelId,
           messages,
           tools: toolDefinitions,
           tool_choice: 'auto',
@@ -285,7 +287,7 @@ export class GroqAgentService {
 }
 
 /**
- * 환경변수에서 GroqAgentService 인스턴스 생성
+ * 환경변수에서 GroqAgentService 인스턴스 생성 (레거시 호환)
  */
 export function createGroqAgentService(): GroqAgentService | null {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
