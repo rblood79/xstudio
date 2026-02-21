@@ -94,6 +94,23 @@ function xLayoutToComputedLayout(xl: XComputedLayout): ComputedLayout {
 // ---------------------------------------------------------------------------
 
 /**
+ * CSS/React Aria에서 vertical-align: middle이 기본인 태그.
+ * Button.css, ToggleButton.css 등에서 설정됨.
+ * 브라우저 UA stylesheet에서도 button/input 계열은 middle이 기본.
+ */
+const VERTICAL_ALIGN_MIDDLE_TAGS = new Set([
+  'button', 'submitbutton', 'fancybutton', 'togglebutton',
+  'checkbox', 'radio', 'switch', 'toggle',
+  'togglebuttongroup',
+  'badge', 'tag', 'chip',
+  'textfield', 'numberfield', 'searchfield',
+  'select', 'combobox',
+  'colorpicker',
+  'datepicker', 'daterangepicker',
+  'slider',
+]);
+
+/**
  * 요소가 inline-block으로 배치되어야 하는지 판별
  *
  * CSS 스펙에서 기본 display가 inline-block인 태그이면서
@@ -190,7 +207,11 @@ function layoutInlineRun(
     const marginRight = parseNumericStyle(style?.marginRight) ?? parseNumericStyle(style?.margin) ?? 0;
     const marginTop = parseNumericStyle(style?.marginTop) ?? parseNumericStyle(style?.margin) ?? 0;
     const marginBottom = parseNumericStyle(style?.marginBottom) ?? parseNumericStyle(style?.margin) ?? 0;
-    const verticalAlign = (style?.verticalAlign as string) ?? 'baseline';
+    // vertical-align: 인라인 스타일 우선, 없으면 태그 기본값 사용
+    // Button, Badge 등은 CSS(React Aria)에서 vertical-align: middle이 기본
+    const tag = (child.tag ?? '').toLowerCase();
+    const tagDefault = VERTICAL_ALIGN_MIDDLE_TAGS.has(tag) ? 'middle' : 'baseline';
+    const verticalAlign = (style?.verticalAlign as string) ?? tagDefault;
 
     const totalW = marginLeft + w + marginRight;
     const totalH = marginTop + h + marginBottom;

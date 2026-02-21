@@ -805,13 +805,11 @@ export function calculateContentHeight(element: Element, availableWidth?: number
     const hasInlinePadding = style?.padding !== undefined ||
       style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
 
-    // Badge 등은 고정 height 사용 (BADGE_FALLBACKS와 동기화)
-    // height는 border-box 기준 → content-box로 변환
-    // ⚠️ 인라인 padding이 있으면 스킵 — 사용자가 padding:0으로 축소할 수 있어야 함
+    // configHeight: border-box 기준 → content-box로 변환
     const configHeight = (sizeConfig as { height?: number }).height;
-    if (configHeight !== undefined && !hasInlinePadding) {
-      return Math.max(0, configHeight - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2);
-    }
+    const configContentHeight = (configHeight !== undefined && !hasInlinePadding)
+      ? Math.max(0, configHeight - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2)
+      : undefined;
 
     const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
     const resolvedLineHeight = parseLineHeight(style, fontSize);
@@ -823,6 +821,7 @@ export function calculateContentHeight(element: Element, availableWidth?: number
       : Math.max(0, MIN_BUTTON_HEIGHT - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2);
 
     // 텍스트 줄바꿈 높이 계산: availableWidth가 제공되면 줄바꿈 고려
+    // configHeight보다 먼저 체크하여 텍스트가 줄바꿈되면 더 큰 높이를 사용
     if (availableWidth !== undefined && availableWidth > 0) {
       const paddingX = parseNumericValue(style?.paddingLeft) ?? parseNumericValue(style?.padding) ?? sizeConfig.paddingLeft;
       const maxTextWidth = availableWidth - paddingX * 2;
@@ -832,10 +831,19 @@ export function calculateContentHeight(element: Element, availableWidth?: number
           const ws = (style?.whiteSpace as string) ?? 'normal';
           const measured = measureTextWithWhiteSpace(textContent, fontSize, specFontFamily.sans, 500, ws, maxTextWidth);
           if (measured.height > textHeight + 0.5) {
-            return Math.max(measured.height, minContentHeight);
+            const wrappedHeight = Math.max(measured.height, minContentHeight);
+            // 텍스트 줄바꿈 높이가 configHeight보다 크면 확장
+            return configContentHeight !== undefined
+              ? Math.max(wrappedHeight, configContentHeight)
+              : wrappedHeight;
           }
         }
       }
+    }
+
+    // 텍스트 줄바꿈 없음: configHeight가 있으면 고정 높이 사용
+    if (configContentHeight !== undefined) {
+      return configContentHeight;
     }
 
     return Math.max(textHeight, minContentHeight);
