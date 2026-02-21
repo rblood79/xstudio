@@ -106,12 +106,14 @@ export class Canvas2DTextMeasurer implements TextMeasurer {
  * layout engine의 baseline 계산에 사용됩니다.
  */
 export interface FontMetrics {
-  /** baseline에서 텍스트 상단까지의 거리 (양수, px) */
+  /** baseline에서 텍스트 상단까지의 거리 (양수, px) — actualBoundingBox 기반 */
   ascent: number;
-  /** baseline에서 텍스트 하단까지의 거리 (양수, px) */
+  /** baseline에서 텍스트 하단까지의 거리 (양수, px) — actualBoundingBox 기반 */
   descent: number;
-  /** ascent + descent (em-box 높이와 다름) */
+  /** ascent + descent — 글리프 경계박스 높이 (em-box 높이와 다름) */
   fontHeight: number;
+  /** CSS line-height: normal에 대응하는 폰트 내장 line-height (fontBoundingBox 기반) */
+  lineHeight: number;
 }
 
 /**
@@ -172,10 +174,18 @@ export function measureFontMetrics(
         typeof metrics.actualBoundingBoxAscent === 'number' &&
         typeof metrics.actualBoundingBoxDescent === 'number'
       ) {
+        // fontBoundingBox: 폰트 전체의 ascent/descent (CSS line-height: normal에 대응)
+        // actualBoundingBox: 현재 텍스트 글리프의 실제 경계 (baseline, 렌더링 용도)
+        const fontBBoxH = (typeof metrics.fontBoundingBoxAscent === 'number' &&
+          typeof metrics.fontBoundingBoxDescent === 'number')
+          ? metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent
+          : metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
         const result: FontMetrics = {
           ascent: metrics.actualBoundingBoxAscent,
           descent: metrics.actualBoundingBoxDescent,
           fontHeight: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
+          lineHeight: fontBBoxH,
         };
 
         // 캐시 저장 (상한 초과 시 전체 clear)
@@ -197,6 +207,7 @@ export function measureFontMetrics(
     ascent: fontSize * 0.8,
     descent: fontSize * 0.2,
     fontHeight: fontSize,
+    lineHeight: fontSize * 1.2,
   };
 
   // 근사값도 캐싱 (동일 환경에서 반복 계산 방지)
@@ -261,7 +272,9 @@ export function measureWrappedTextHeight(
   fontFamily: string,
   maxWidth: number,
 ): number {
-  const lineHeight = fontSize * 1.2;
+  // CSS line-height: normal에 대응하는 fontBoundingBox 기반 lineHeight 사용
+  const fm = measureFontMetrics(fontFamily, fontSize, fontWeight);
+  const lineHeight = fm.lineHeight;
   if (!text || maxWidth <= 0) return lineHeight;
 
   const ctx = getMeasureCtx();

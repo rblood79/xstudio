@@ -334,13 +334,15 @@ const BUTTON_SIZE_CONFIG: Record<string, {
   fontSize: number;
   borderWidth: number;
 }> = {
-  // @sync Button.spec.ts sizes + Button.css [data-size] padding 값과 일치해야 함
+  // @sync Button.css [data-size] padding 값과 일치해야 함
   // @sync Button.css base: border: 1px solid (all variants, all sizes)
-  xs: { height: 24, paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12, borderWidth: 1 },
-  sm: { height: 32, paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14, borderWidth: 1 },
-  md: { height: 40, paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16, borderWidth: 1 },
-  lg: { height: 48, paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18, borderWidth: 1 },
-  xl: { height: 56, paddingLeft: 40, paddingRight: 40, paddingY: 16, fontSize: 20, borderWidth: 1 },
+  // CSS Button은 명시적 height를 설정하지 않음 → line-height:normal + padding + border로 자동 결정
+  // height를 지정하면 CSS 렌더링과 불일치 (CSS는 fontBoundingBox 기반 line-height 사용)
+  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12, borderWidth: 1 },
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14, borderWidth: 1 },
+  md: { paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16, borderWidth: 1 },
+  lg: { paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18, borderWidth: 1 },
+  xl: { paddingLeft: 40, paddingRight: 40, paddingY: 16, fontSize: 20, borderWidth: 1 },
 };
 
 /** PixiButton MIN_BUTTON_HEIGHT과 동일 */
@@ -769,10 +771,11 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
   if (lineHeight !== undefined) {
     return Math.round(lineHeight);
   }
-  // H1: 캐싱된 font metrics 사용으로 정밀도 개선 (기존: fontSize * 1.2 고정 배율)
-  // measureFontMetrics()는 Canvas 2D TextMetrics 기반으로 정확한 ascent+descent를 반환
+  // CSS line-height: normal에 대응하는 fontBoundingBox 기반 lineHeight 사용
+  // - fontBoundingBox: 폰트 전체의 ascent+descent (CSS line-height: normal과 동일 기준)
+  // - actualBoundingBox: 특정 글리프의 높이 (CSS line-height보다 작아 부정확)
   const fm = measureFontMetrics(specFontFamily.sans, fontSize, 400);
-  return Math.round(fm.fontHeight);
+  return Math.round(fm.lineHeight);
 }
 
 /**
@@ -1150,6 +1153,13 @@ export function enrichWithIntrinsicSize(
   // padding과 border를 독립적으로 처리:
   // - CSS에 해당 속성이 없으면 → spec 기본값을 크기에 포함
   // - CSS에 해당 속성이 있으면 → 해당 부분 생략 (엔진이 CSS 값을 추가)
+  //
+  // 예외: INLINE_BLOCK_TAGS (button, badge 등)
+  //   layoutInlineRun()은 style.height를 완전한 border-box 크기로 직접 사용하며,
+  //   별도의 padding/border 추가 처리를 하지 않는다.
+  //   따라서 INLINE_BLOCK_TAGS는 항상 padding + border를 포함해야 한다.
+  //   block 경로에서는 treatAsBorderBox 변환이 이중 계산을 방지한다.
+  const isInlineBlockTag = INLINE_BLOCK_TAGS.has(tag);
   const hasCSSVerticalPadding = style?.padding !== undefined ||
     style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
   const hasCSSVerticalBorder = style?.borderWidth !== undefined ||
@@ -1164,10 +1174,10 @@ export function enrichWithIntrinsicSize(
   // Height 주입
   if (needsHeight && box.contentHeight > 0) {
     let injectHeight = box.contentHeight;
-    if (!hasCSSVerticalPadding) {
+    if (!hasCSSVerticalPadding || isInlineBlockTag) {
       injectHeight += box.padding.top + box.padding.bottom;
     }
-    if (!hasCSSVerticalBorder) {
+    if (!hasCSSVerticalBorder || isInlineBlockTag) {
       injectHeight += box.border.top + box.border.bottom;
     }
     injectedStyle.height = injectHeight;
@@ -1177,10 +1187,10 @@ export function enrichWithIntrinsicSize(
   const baseContentWidth = resolvedIntrinsicWidth ?? box.contentWidth;
   if (needsWidth && baseContentWidth > 0) {
     let injectWidth = baseContentWidth;
-    if (!hasCSSHorizontalPadding) {
+    if (!hasCSSHorizontalPadding || isInlineBlockTag) {
       injectWidth += box.padding.left + box.padding.right;
     }
-    if (!hasCSSHorizontalBorder) {
+    if (!hasCSSHorizontalBorder || isInlineBlockTag) {
       injectWidth += box.border.left + box.border.right;
     }
     injectedStyle.width = injectWidth;
@@ -1480,7 +1490,9 @@ export function measureTextWithWhiteSpace(
   whiteSpace: string,
   maxWidth: number,
 ): { width: number; height: number } {
-  const lineHeight = fontSize * 1.2;
+  // CSS line-height: normal에 대응하는 fontBoundingBox 기반 lineHeight 사용
+  const fm = measureFontMetrics(fontFamily, fontSize, fontWeight);
+  const lineHeight = fm.lineHeight;
 
   switch (whiteSpace) {
     case 'nowrap': {
