@@ -65,6 +65,8 @@ export interface LayoutContext {
   parentDisplay?: string;
   /** 부모의 computed style (CSS 상속 해석용) */
   parentComputedStyle?: ComputedStyle;
+  /** 요소의 자식 Element 배열을 반환하는 accessor (컨테이너 intrinsic size 계산용) */
+  getChildElements?: (elementId: string) => Element[];
 }
 
 /**

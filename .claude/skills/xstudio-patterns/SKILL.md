@@ -177,6 +177,87 @@ enrichWithIntrinsicSize(element, availableWidth, cssContext);
 // layout.height = calculateContentHeight(element, availableWidth);
 ```
 
+### 레이아웃 엔진 개선 이력 (2026-02-21)
+
+#### fontBoundingBox line-height 통일
+
+`measureWrappedTextHeight`, `measureTextWithWhiteSpace`, `estimateTextHeight` 모두 `measureFontMetrics().lineHeight` (Canvas 2D fontBoundingBox 기반) 사용.
+
+- 기존 `fontSize * 1.2` 근사값 제거
+- CSS `line-height: normal`과 동일한 결과 보장
+- 세 측정 함수 사이의 line-height 불일치로 인한 텍스트 클리핑/여백 버그 해결
+
+```typescript
+// ✅ fontBoundingBox 기반 lineHeight 사용
+const { lineHeight } = measureFontMetrics(fontSize, fontFamily);
+// lineHeight = fontBoundingBoxAscent + fontBoundingBoxDescent (Canvas 2D 실측)
+
+// ❌ 근사값 사용 — CSS normal line-height와 불일치
+const lineHeight = fontSize * 1.2;
+```
+
+#### INLINE_BLOCK_TAGS border-box 수정
+
+`enrichWithIntrinsicSize`가 `INLINE_BLOCK_TAGS`(button, badge, togglebutton, togglebuttongroup 등)에 항상 padding+border를 포함한 border-box 높이를 반환.
+
+- `layoutInlineRun`이 `style.height`를 border-box 값으로 직접 사용하는 구조이므로 content-box 변환 불필요
+- block 경로의 `treatAsBorderBox` 변환이 이중 계산을 방지
+- 이전에 INLINE_BLOCK_TAGS에서 padding이 누락되어 높이가 축소되던 버그 수정
+
+```typescript
+// ✅ INLINE_BLOCK_TAGS: enrichWithIntrinsicSize가 border-box 높이 반환
+// layoutInlineRun이 이 값을 그대로 style.height로 사용
+const height = contentHeight + paddingY * 2 + borderWidth * 2; // border-box
+
+// ❌ content-box 반환 후 layoutInlineRun이 재계산 → 이중 적용
+const height = contentHeight; // content-box만 반환
+// → layoutInlineRun에서 padding 재추가 → 실제 높이 = contentHeight + padding * 4
+```
+
+#### LayoutContext.getChildElements
+
+`LayoutContext`에 `getChildElements?: (elementId: string) => Element[]` 선택적 메서드 추가.
+
+- `BuilderCanvas.tsx`에서 `pageChildrenMap` 기반으로 context에 주입
+- `enrichWithIntrinsicSize`에서 자식 Element 목록을 직접 조회 가능
+- ToggleButtonGroup처럼 자식 수와 크기를 기반으로 intrinsic 너비/높이를 계산하는 컴포넌트에 필요
+
+```typescript
+// ✅ LayoutContext에 getChildElements 주입 (BuilderCanvas.tsx)
+const layoutContext: LayoutContext = {
+  // ...기존 필드...
+  getChildElements: (elementId) => pageChildrenMap.get(elementId) ?? [],
+};
+
+// ✅ enrichWithIntrinsicSize에서 자식 기반 너비 계산
+const children = context.getChildElements?.(element.id) ?? [];
+const childWidths = children.map((child) => calculateChildWidth(child));
+element.intrinsicWidth = childWidths.reduce((sum, w) => sum + w, 0);
+
+// ❌ 자식 정보 없이 고정 fallback → ToggleButtonGroup 너비 부정확
+element.intrinsicWidth = 100; // 실제 자식 크기와 무관한 값
+```
+
+#### border shorthand 레이아웃 지원
+
+`parseBorder()`가 `border: "1px solid red"` shorthand에서 `borderWidth`를 추출.
+
+- `parseBorderShorthand()` (`cssValueParser.ts`) 연동
+- `border` shorthand 사용 시 레이아웃 엔진이 borderWidth를 인식하지 못하던 문제 해결
+- `border-top`, `border-right` 등 개별 속성과 동일한 수준으로 지원
+
+```typescript
+// ✅ border shorthand 파싱 — parseBorder()가 shorthand 처리
+// style = { border: "2px solid blue" }
+const { borderWidth } = parseBorder(style);
+// borderWidth = 2 (parseBorderShorthand() 연동으로 추출)
+
+// ❌ shorthand 미지원 — borderWidth가 0으로 폴백
+// style = { border: "2px solid blue" }
+const borderWidth = style.borderWidth ?? 0;
+// → 0 반환 (border 속성 무시)
+```
+
 ### 컴포넌트 등급 현황 (Wave 4 완료, 2026-02-19)
 
 모든 Pixi 컴포넌트가 A 또는 B+ 등급으로 전환 완료됐습니다.

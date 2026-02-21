@@ -4,9 +4,10 @@
  * 투명 히트 영역(pixiGraphics) 기반 Tabs
  * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
  * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
+ * - CONTAINER_TAGS: 활성 Panel 자식을 내부에서 렌더링
  *
  * @since 2025-12-16 Phase 2 WebGL Migration
- * @updated 2026-02-20 A등급 패턴 재작성 (Skia 렌더링 전환)
+ * @updated 2026-02-21 컨테이너 패턴 적용 (활성 Panel 내부 렌더링)
  */
 
 import { useExtend } from '@pixi/react';
@@ -35,6 +36,8 @@ export interface PixiTabsProps {
   isSelected?: boolean;
   onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
+  childElements?: Element[];
+  renderChildElement?: (child: Element) => React.ReactNode;
 }
 
 // ============================================
@@ -48,12 +51,15 @@ export interface PixiTabsProps {
  * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
  * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
  * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ * - 컨테이너: 활성 Panel 자식을 renderChildElement로 내부 렌더링
  */
 export const PixiTabs = memo(function PixiTabs({
   element,
   //isSelected,
   onClick,
   //onChange,
+  childElements,
+  renderChildElement,
 }: PixiTabsProps) {
   useExtend(PIXI_COMPONENTS);
   const props = element.props as Record<string, unknown> | undefined;
@@ -116,6 +122,11 @@ export const PixiTabs = memo(function PixiTabs({
         cursor="default"
         onPointerDown={handleClick}
       />
+      {/* 활성 Panel 렌더링 (컨테이너 시스템) */}
+      {childElements && renderChildElement && childElements
+        .filter(c => c.tag === 'Panel')
+        .slice(0, 1)
+        .map(panel => renderChildElement(panel))}
     </pixiContainer>
   );
 });

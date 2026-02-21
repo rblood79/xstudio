@@ -385,10 +385,12 @@ export class DropflowBlockEngine implements LayoutEngine {
 
     // intrinsic size 주입 (height + inline-block width)
     // 각 자식의 computed style을 계산하여 enrichWithIntrinsicSize에 전달
+    const getChildElements = context?.getChildElements;
     const enriched = children.map(child => {
       const childRawStyle = child.props?.style as Record<string, unknown> | undefined;
       const childComputed = resolveStyle(childRawStyle, parentComputed);
-      return enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputed);
+      const childChildren = getChildElements?.(child.id);
+      return enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputed, childChildren, getChildElements);
     });
 
     // inline-block 태그 존재 여부 확인

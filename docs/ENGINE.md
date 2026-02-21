@@ -2,7 +2,7 @@
 
 - 상태: **Implemented**
 - 결정일: **2026-02-17**
-- 마지막 수정: **2026-02-17**
+- 마지막 수정: **2026-02-21**
 - 대상 코드: `apps/builder/src/builder/workspace/canvas/layout/`
 - 관련 경로:
   - `apps/builder/src/builder/workspace/canvas/layout/engines/`
@@ -250,3 +250,30 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 
 - **2026-02-17**: ADR 형식으로 재작성. 전략 D 단일 결론 확정, 전략 C는 Deprecated Baseline(Fallback 경로)으로 명시 분리. 전략 B vs D 차별화 근거 추가, Gate A/B 롤백 범위 명확화, 외부 참고 저장소 복원.
 - **2026-02-17**: Phase 9 완료 — 레거시 엔진(`BlockEngine`, `FlexEngine`, `GridEngine`) 삭제, Feature flag 제거, 디스패처 정리. 전략 D 목표 아키텍처 달성.
+- **2026-02-21**: Post-Implementation Notes 추가 — `LayoutContext.getChildElements` 확장, `enrichWithIntrinsicSize` 개선(childElements 파라미터, fontBoundingBox line-height 통일), 수정 파일 목록.
+
+---
+
+## 13) 구현 후 노트 (Post-Implementation Notes)
+
+### Post-Implementation Notes (2026-02-21)
+
+#### LayoutContext 확장
+- `getChildElements?: (elementId: string) => Element[]` — 컨테이너 컴포넌트의 자식 Element 접근
+- `BuilderCanvas.tsx`에서 `pageChildrenMap` 기반으로 주입
+- `enrichWithIntrinsicSize`에서 `calculateContentWidth/Height`에 자식 전달
+
+#### enrichWithIntrinsicSize 개선
+- INLINE_BLOCK_TAGS는 항상 padding+border를 border-box 크기에 포함 (layoutInlineRun 호환)
+- `childElements` 파라미터 추가: 자식 Element 기반 너비/높이 계산 (ToggleButtonGroup 등)
+- fontBoundingBox 기반 line-height 통일: `measureFontMetrics().lineHeight` 사용
+
+#### 수정된 파일
+| 파일 | 변경 |
+|------|------|
+| `LayoutEngine.ts` | `LayoutContext.getChildElements` 추가 |
+| `utils.ts` | `enrichWithIntrinsicSize` childElements, fontBoundingBox lineHeight, border shorthand |
+| `DropflowBlockEngine.ts` | enrichment 시 childElements 전달 |
+| `TaffyFlexEngine.ts` | enrichment 시 childElements 전달, context 파라미터 추가 |
+| `BuilderCanvas.tsx` | `getChildElements` context 주입 |
+| `textMeasure.ts` | `measureWrappedTextHeight` fontBoundingBox lineHeight |

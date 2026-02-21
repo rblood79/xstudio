@@ -1,9 +1,9 @@
 # XStudio 통합 실행 가이드
 
-> **작성일**: 2026-02-19 | **수정일**: 2026-02-20
+> **작성일**: 2026-02-19 | **수정일**: 2026-02-21
 > **목적**: 4개 핵심 문서의 미완료 항목을 단일 실행 로드맵으로 통합
 > **소스**: `ENGINE_CHECKLIST.md`, `COMPONENT_SPEC_ARCHITECTURE.md`, `WASM.md`, `AI.md`
-> **수정 이력**: 1차 리뷰 (C4/H12/M10/L5건) + 2차 리뷰 (C1/H1/M5/W6건) 반영 + 3차 팀 구성 상세화
+> **수정 이력**: 1차 리뷰 (C4/H12/M10/L5건) + 2차 리뷰 (C1/H1/M5/W6건) 반영 + 3차 팀 구성 상세화 + 4차 RC-4 해결/RC-5 부분 해결 반영 (2026-02-21)
 
 ---
 
@@ -105,11 +105,22 @@
 | RC-1 | AvailableSpace 항상 Definite 고정 수정 | +3~5% | P0 | RC-3 |
 | RC-2 | 부모 height 무조건 강제 주입 수정 | (RC-1 포함) | P0 | RC-1 통합 |
 | RC-6 | auto/fit-content 엔진별 분기 처리 | +1~2% | P0 | RC-3 |
-| RC-4 | 2-pass 트리거 비교 기준 부정확 | +1~2% | P0 | RC-1, RC-6 |
+| RC-4 | 2-pass 트리거 비교 기준 부정확 | +1~2% | P0 → **✅ 해결 (2026-02-21)** | RC-1, RC-6 |
 | RC-7 | blockification 경계 처리 불완전 | +1% | P1 | RC-1, RC-2 |
-| RC-5 | inline-run baseline 단순화 | +1% | P1 | RC-7 |
+| RC-5 | inline-run baseline 단순화 | +1% | P1 → **⚠️ 부분 해결 (2026-02-21)** | RC-7 |
 
 > ※ RC 항목의 P0 배정은 ENGINE_CHECKLIST의 심각도 HIGH 분류와 레이아웃 근본 원인(Root Cause) 성격을 반영한 우선순위 승격이다. P0 항목이 Stage 1이 아닌 Stage 2부터 착수되는 이유는, WS-1 Quick Win 항목들의 비용 대비 효과가 높아 먼저 처리하는 전략적 선택에 의한 것이다.
+
+#### 2026-02-21 레이아웃 엔진 부분 개선 사항
+
+> 아래 항목은 Stage 3 예정 작업 중 일부가 선행 적용된 결과이다. 관련 근본 원인 분석은 `docs/analysis/webgl-layout-root-cause-2026-02.md` 참조.
+
+| 항목 | 수정 내용 | 효과 |
+|------|----------|------|
+| **RC-4 완료** — Flex 2-pass 트리거 기준 | `TaffyFlexEngine.ts:352`에서 `availableWidth` 대신 `enrichedWidth` (자식별 1차 enrichment width)와 비교하도록 수정 | 불필요한 2-pass 제거 및 고정 폭 버튼 + 텍스트 줄바꿈 시 높이 재측정 정확도 향상 |
+| **RC-5 부분 해결** — Typography 정밀도 | `measureTextWithWhiteSpace` / `measureWrappedTextHeight`의 lineHeight를 `fontSize * 1.2` 상수에서 `fontBoundingBoxAscent + fontBoundingBoxDescent` 기반으로 통일 | 텍스트 높이 계산 정밀도 향상 (CSS Preview와의 줄 간격 오차 감소) |
+| **RC-5 부분 해결** — Box Model border 지원 | `enrichWithIntrinsicSize`에서 INLINE_BLOCK_TAGS에 해당하는 요소에 padding+border를 항상 포함하도록 수정 | border shorthand 레이아웃 지원 추가, inline-block 요소 intrinsic 크기 과소 계산 방지 |
+| **RC-5 부분 해결** — 컨테이너 정확도 | `LayoutContext.getChildElements` 추가로 컨테이너 컴포넌트(ToggleButtonGroup 등)에서 자식 요소 접근 가능 | 컨테이너 컴포넌트의 intrinsic 크기를 자식 수 기반으로 정확히 계산 |
 
 ### WS-3: WASM 성능 최적화 (WASM.md)
 
@@ -155,11 +166,11 @@
     │
     ├──→ [WS-2] RC-1 + RC-2 (available space)
     │       │
-    │       ├──→ [WS-2] RC-4 (2-pass)
-    │       └──→ [WS-2] RC-7 → RC-5 (blockification)
+    │       ├──→ [WS-2] RC-4 (2-pass) ✅ 해결 (2026-02-21)
+    │       └──→ [WS-2] RC-7 → RC-5 (blockification) ⚠️ 부분 해결
     │
     ├──→ [WS-2] RC-6 (intrinsic)
-    │       └──→ [WS-2] RC-4 (2-pass)
+    │       └──→ [WS-2] RC-4 (2-pass) ✅ 해결 (2026-02-21)
     │
     └──→ [WS-4] AI-A5a (styleAdapter 변환) ← 크로스 워크스트림
               ※ RC-3 + CanvasKit 스키마 전환 완료 필요
@@ -210,7 +221,7 @@
   Stage 3: RC 후속 + 기능 로드맵 시작         ~ 2주
 ──────────────────────────────────────────────────────────
   [WS-2] RC-6 (intrinsic 통합)        ← RC-3
-  [WS-2] RC-4 (2-pass 기준)           ← RC-1(S2 완료), RC-6(S3 선행)
+  [WS-2] RC-4 (2-pass 기준) ✅ 선행 완료 (2026-02-21)
   [WS-1] Phase B (아이콘 폰트)         병렬
   [WS-4] AI-A5a (styleAdapter 변환)   ← RC-3 + CanvasKit 스키마 전환
 
@@ -220,7 +231,7 @@
   [WS-1] Phase C (컬렉션+미완료 spec)  병렬 ─┐
   [WS-1] Phase E (overflow scroll)    병렬 ─┤
   [WS-2] RC-7 (blockification)        ← RC-1,2
-  [WS-2] RC-5 (inline baseline)       ← RC-7
+  [WS-2] RC-5 (inline baseline)       ← RC-7 ⚠️ 부분 선행 완료 (2026-02-21)
   [WS-3] W-0c (CI/CD wasm:build)     병렬 ─┘
 
 ──────────────────────────────────────────────────────────
@@ -292,11 +303,13 @@
 | 항목 | 대상 파일 | 작업 내용 | 예상 |
 |------|----------|----------|------|
 | **RC-6** | `DropflowBlockEngine.ts` (262-268) | auto/fit-content enrichment 실패 시 fallback | 1~2일 |
-| **RC-4** | `TaffyFlexEngine.ts` (352) | 2-pass 트리거 비교 기준 정확화. ※ **RC-6 완료 후 착수** (RC-1은 Stage 2 완료, RC-6은 Stage 3 선행) | 2~3일 |
+| **RC-4** ✅ 선행 완료 | `TaffyFlexEngine.ts` (352) | 2-pass 트리거를 `enrichedWidth` 기준으로 수정 완료 (2026-02-21). Stage 3에서 회귀 검증만 수행 | — |
 | **Phase B** | Icon Font 번들, `specShapeConverter.ts` | Icon Font Node + CanvasKit Paragraph | 3~4일 |
 | **AI-A5a** | `styleAdapter.ts` | CSS 단위 → CanvasKit 스키마 변환 업데이트 (RC-3 해제 + fills/effects/stroke 구조화) | 1~2일 |
 
-**완료 기준**: RC +3.0%, Phase B +5.0%, AI-A5a 해제 = 원시 누적 **~93.0%** / 보정 예상 **~89%**
+**완료 기준**: RC-6 +1.5%, Phase B +5.0%, AI-A5a 해제 = 원시 누적 **~91.5%** / 보정 예상 **~89%**
+
+> ※ RC-4 선행 완료로 2-pass 트리거 항목(+1.5%)은 Stage 3 기간 내 회귀 검증 완료 시 영향도에 반영된다.
 
 ---
 
@@ -311,7 +324,7 @@
 | **Phase C** | `specShapeConverter.ts`, layout engines | Table/Tree/Menu(Phase 3) + ListBox(Phase 2) + Calendar(Phase 4) 자식 렌더링 + Phase 3 미완료 spec (Tabs, Breadcrumbs, Pagination 등) | 4~5일 |
 | **Phase E** | `BoxSprite.tsx`, `scrollState.ts` | 스크롤바 UI + wheel/touch 이벤트 | 3~4일 |
 | **RC-7** | `apps/builder/src/builder/workspace/canvas/layout/engines/index.ts` (131-144, 193-221) | blockification 경계 display 전환 처리 | 1~2일 |
-| **RC-5** | `DropflowBlockEngine.ts` (226-231) | inline-run baseline y-offset 정밀화 (**RC-7 완료 후 착수**) | 1일 |
+| **RC-5** | `DropflowBlockEngine.ts` (226-231) | inline-run baseline y-offset 정밀화 (**RC-7 완료 후 착수**). ※ INLINE_BLOCK_TAGS border-box, fontBoundingBox lineHeight, getChildElements는 선행 완료 (2026-02-21) | 0.5~1일 (잔여) |
 | **W-0c** | CI/CD 설정 | `wasm:build` 빌드 스텝 추가 | 0.5일 |
 
 **완료 기준 (원시 합산)**: Phase C +7%, Phase E +1.5%, RC +2% = 원시 누적 ~103.5% → **보정 예상 ~93%**
@@ -377,14 +390,14 @@
 │
 ├─ Stage 3 (RC 후속 + 기능 시작)
 │  ├─ RC-6  intrinsic 통합            +1.5%
-│  ├─ RC-4  2-pass 기준               +1.5%  (중간값)
+│  ├─ RC-4  2-pass 기준 ✅ 선행 완료  +1.5%  (중간값, 회귀 검증으로 확정)
 │  └─ Phase B  아이콘 폰트            +5.0%  (하한값, 고영향 감쇄)
 │                                    = 93.0%    ~89%
 │
 ├─ Stage 4 (주요 기능 확장)
 │  ├─ Phase C  컬렉션+미완료 spec     +7.0%
 │  ├─ Phase E  overflow scroll        +1.5%
-│  └─ RC-7/5  blockification/baseline +2.0%
+│  └─ RC-7/5  blockification/baseline +2.0%  (RC-5 잔여 작업 포함)
 │                                   = 103.5%    ~93%  ← 목표 93% 달성 시점
 │
 ├─ Stage 5 (정밀도 마무리)
@@ -462,11 +475,11 @@
 | 1 | Phase D | `ENGINE_CHECKLIST.md`, `COMPONENT_SPEC_ARCHITECTURE.md` | `### Phase D 상세: FancyButton 제거`, `### 7.1 대상 컴포넌트 (16개)`의 #15 FancyButton |
 | 2 | QW-2/3 | `ENGINE_CHECKLIST.md` | `### Quick Win 상세: 렌더링 정밀도 개선` |
 | 2 | RC-3, RC-1/2 | `ENGINE_CHECKLIST.md` | `## 레이아웃 엔진 구조적 근본 원인 (7건, 전수 코드 검증 완료)`, `### 7건 근본 원인 목록` |
-| 3 | RC-6, RC-4 | `ENGINE_CHECKLIST.md` | `## 레이아웃 엔진 구조적 근본 원인 (7건, 전수 코드 검증 완료)`, `### 7건 근본 원인 목록` |
+| 3 | RC-6, RC-4 | `ENGINE_CHECKLIST.md`, `docs/analysis/webgl-layout-root-cause-2026-02.md` | `## 레이아웃 엔진 구조적 근본 원인 (7건, 전수 코드 검증 완료)`, `### 7건 근본 원인 목록`, `## 부분 해결 이력 (2026-02-21)` |
 | 3 | Phase B | `ENGINE_CHECKLIST.md` | `### Phase B 상세: 아이콘 폰트 도입 (Pencil 방식 참조)` |
 | 3 | AI-A5a | `AI.md` | `### 6.6 스타일 변환 레이어`, `## 8. 실행 로드맵`의 `Phase A5: 캔버스 통합` |
 | 4 | Phase C, E | `ENGINE_CHECKLIST.md` | `## 컴포넌트 수준 정합성 로드맵 (CSS 웹 ↔ 캔버스)`, `### 개선 로드맵` 표의 Phase C/E 행, `### Phase E 상세: overflow: scroll/auto 완성` |
-| 4 | RC-7, RC-5 | `ENGINE_CHECKLIST.md` | `## 레이아웃 엔진 구조적 근본 원인 (7건, 전수 코드 검증 완료)`, `### 7건 근본 원인 목록` |
+| 4 | RC-7, RC-5 | `ENGINE_CHECKLIST.md`, `docs/analysis/webgl-layout-root-cause-2026-02.md` | `## 레이아웃 엔진 구조적 근본 원인 (7건, 전수 코드 검증 완료)`, `### 7건 근본 원인 목록`, `## 부분 해결 이력 (2026-02-21)` |
 | 4 | W-0c | `WASM.md` | `### 0.4 Phase 0 산출물` |
 | 5 | M-2~6, Phase F/G | `ENGINE_CHECKLIST.md` | `### Medium 상세: 렌더링 인프라 확장`, `### 개선 로드맵` 표의 Phase F+G 행 |
 | 6 | Phase Z | `ENGINE_CHECKLIST.md` | `### 개선 로드맵` 표의 Phase Z 행, `### 권장 실행 순서 (v2 보정)` |
@@ -542,12 +555,12 @@
 **L1 (시니어)** 담당:
 - RC-3 (CSS 단위 정규화) — 최우선 착수
 - RC-1 + RC-2 (AvailableSpace 계약 수정) — Taffy WASM 바이너리 분석 포함
-- RC-4 (2-pass 트리거 기준) — RC-1, RC-6 완료 후
+- RC-4 (2-pass 트리거 기준) — ✅ 2026-02-21 선행 완료. Stage 3에서 회귀 검증
 
 **L2 (미드)** 담당:
 - RC-6 (auto/fit-content 엔진별 분기)
 - RC-7 (blockification 경계 처리)
-- RC-5 (inline-run baseline) — RC-7 완료 후
+- RC-5 (inline-run baseline) — RC-7 완료 후. ⚠️ INLINE_BLOCK_TAGS border-box, fontBoundingBox lineHeight, getChildElements는 2026-02-21 선행 완료
 
 > ※ L1은 Stage 2 완료 후 Team R 지원으로 전환 가능 (Phase C 컬렉션 레이아웃 지원)
 
@@ -806,10 +819,12 @@ Sprint: S3 (2주)
 | 태스크 | 담당 | 시작 조건 | 작업 일수 | 병렬 |
 |--------|------|----------|----------|------|
 | **RC-6** intrinsic 통합 | L2 | RC-3 완료 | 1~2일 | Yes |
-| **RC-4** 2-pass 기준 | L1 | RC-1(S2 완료) + RC-6(S3 선행) | 2~3일 | RC-6 후 |
+| **RC-4** 회귀 검증 ✅ 선행 완료 | L1 | — | 0.5일 (검증만) | Yes |
 | **Phase B** 아이콘 폰트 | R1 + R2 | 없음 | 3~4일 | Yes |
 | **AI-A5a** styleAdapter | A1 | RC-3 완료 | 1~2일 | Yes |
 | Disposable 패턴 래퍼 | W1 | 없음 | 1일 | Yes |
+
+> ※ RC-4는 2026-02-21 선행 완료. Stage 3에서 RC-6 완료 후 통합 회귀 검증(0.5일)만 수행.
 
 #### Phase B 상세 분해 (R1 주도, R2 지원)
 
@@ -859,7 +874,7 @@ AI-A5a: styleAdapter → CanvasKit 스키마 변환 (1~2일)
 | 기준 | 검증 방법 |
 |------|----------|
 | RC-6: auto/fit-content fallback 동작 | 5개 intrinsic 컴포넌트 레이아웃 비교 |
-| RC-4: 2-pass 트리거 정확도 | inline-block 혼합 레이아웃 스냅샷 |
+| RC-4: 2-pass 트리거 회귀 검증 통과 | inline-block 혼합 레이아웃 스냅샷 (enrichedWidth 기준 검증) |
 | Phase B: 아이콘 렌더링 동작 | Button/Menu/Tabs 아이콘 표시 스냅샷 |
 | Phase B: 번들 크기 | Icon Font ≤ 50KB (서브셋) |
 | AI-A5a: 스타일 변환 정상 | AI 패널 → 스타일 변경 → 캔버스 반영 E2E |
@@ -883,8 +898,10 @@ Sprint: S4 (2주)
 | **Phase C** 컬렉션+미완료 spec | R1 + L1(지원) | 없음 | 4~5일 | Yes |
 | **Phase E** overflow scroll | R2 | 없음 | 3~4일 | Yes |
 | **RC-7** blockification | L2 | RC-1/2 (S2 완료) | 1~2일 | Yes |
-| **RC-5** inline baseline | L2 | RC-7 완료 | 1일 | RC-7 후 |
+| **RC-5** inline baseline 잔여 | L2 | RC-7 완료 | 0.5~1일 | RC-7 후 |
 | **W-0c** CI/CD wasm:build | W1 | 없음 | 0.5일 | Yes |
+
+> ※ RC-5의 INLINE_BLOCK_TAGS border-box 수정, fontBoundingBox lineHeight 통일, LayoutContext.getChildElements 추가는 2026-02-21 선행 완료. Stage 4에서는 RC-7 완료 후 잔여 baseline/margin collapse 작업만 수행.
 
 #### Phase C 상세 분해 — 점진적 출시 (R1 주도)
 
@@ -964,7 +981,7 @@ W-0c: CI/CD wasm:build 스텝 추가 (0.5일)
 | Phase C: Tabs/Breadcrumbs/Pagination | 기본 상태 스냅샷 비교 |
 | Phase E: 스크롤 동작 | ListBox 20개 아이템 스크롤 수동 확인 |
 | RC-7: display 전환 경계 | block↔flex 혼합 레이아웃 스냅샷 |
-| RC-5: inline baseline 정렬 | 텍스트+인라인 요소 혼합 스냅샷 |
+| RC-5: inline baseline 정렬 (잔여) | 텍스트+인라인 요소 혼합 스냅샷 |
 | W-0c: CI에서 WASM 빌드 | deploy.yml 워크플로우 성공 |
 | **정합성 수치** | **보정 예상 ~93% 도달 (목표 달성)** |
 
@@ -1158,7 +1175,7 @@ Phase G: Color 그라디언트 렌더링 (2일) ─── R1
 |-------|----------|----------|
 | S1 → S2 | **G1: Quick Win 검증** | QW-1 머지 + Phase A PR 승인 + M-3 스냅샷 통과 + Phase D 코드 제거 확인 |
 | S2 → S3 | **G2: RC 기초 안정** | RC-3 단위 테스트 전수 통과 + RC-1/2 전 컴포넌트 회귀 0건 + 스냅샷 비교 인프라 가동 |
-| S3 → S4 | **G3: 기능 기초 완료** | Phase B 아이콘 렌더링 확인 + RC-4/6 머지 + AI-A5a 스타일 변환 E2E 통과 + 메모리 안정 확인 |
+| S3 → S4 | **G3: 기능 기초 완료** | Phase B 아이콘 렌더링 확인 + RC-4 회귀 검증 통과 + RC-6 머지 + AI-A5a 스타일 변환 E2E 통과 + 메모리 안정 확인 |
 | S4 → S5 | **G4: 목표 달성 확인** | 보정 예상 ≥ 93% + Phase C 점진 출시 완료 + RC 전건 머지 + CI WASM 빌드 성공 |
 | S5 완료 | **G5: 최종 정밀도** | 보정 예상 ≥ 95% + specShapeConverter 모듈 분리 완료 + Phase G 그라디언트 스냅샷 통과 |
 
@@ -1195,7 +1212,8 @@ Team R ████████████████████████�
 
 Team L          ████████████████████████████████████████
                 RC-3  RC-1/2   RC-6  RC-4   RC-7 RC-5  분리지원
-                      W1지원   조사   구현
+                      W1지원   조사   검증    잔여
+                              (RC-4 선행완료 2026-02-21)
 
 Team W     ░░░░░░░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░
            L지원 Rust분석  Disposable  W-0c    벤치마크조사
@@ -1214,7 +1232,7 @@ Team A  ░░░░░░░░░░░░░░░░████████
 |----------|------|--------|----------|
 | **M1** Stage 1 완료 | Week 1 | ~71% | 상태 표현 연결, Quick Win 적용 |
 | **M2** Stage 2 완료 | Week 3 | ~82% | 레이아웃 RC 기초 해결, 스냅샷 인프라 |
-| **M3** Stage 3 완료 | Week 5 | ~89% | 아이콘 렌더링, AI 스타일 변환 |
+| **M3** Stage 3 완료 | Week 5 | ~89% | 아이콘 렌더링, AI 스타일 변환, RC-4 회귀 검증 완료 |
 | **M4** Stage 4 완료 | Week 7 | **~93%** | **목표 달성**, 컬렉션 렌더링, CI WASM |
 | **M5** Stage 5 완료 | Week 9 | ~96% | 정밀도 마무리, 코드 정리 |
 
@@ -1241,6 +1259,7 @@ Team A  ░░░░░░░░░░░░░░░░████████
 ### 14.3 Team L 추가
 
 - [ ] `docs/ENGINE_CHECKLIST.md` 레이아웃 RC 7건 전수 읽기
+- [ ] `docs/analysis/webgl-layout-root-cause-2026-02.md` 읽기 (근본 원인 분석 + 2026-02-21 부분 해결 이력)
 - [ ] `canvas/layout/engines/TaffyFlexEngine.ts` 전체 통독
 - [ ] `canvas/layout/engines/DropflowBlockEngine.ts` 전체 통독
 - [ ] `canvas/layout/engines/cssValueParser.ts` 단위 변환 로직 분석

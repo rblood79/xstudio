@@ -36,7 +36,7 @@ import {
   ButtonSpec, BadgeSpec, CardSpec, DialogSpec, LinkSpec, PopoverSpec,
   SeparatorSpec, ToggleButtonSpec, ToggleButtonGroupSpec, TooltipSpec,
   TextFieldSpec, TextAreaSpec, NumberFieldSpec, SearchFieldSpec,
-  CheckboxSpec, CheckboxGroupSpec, RadioSpec, SwitchSpec, FormSpec,
+  CheckboxSpec, CheckboxGroupSpec, RadioSpec, RadioGroupSpec, SwitchSpec, FormSpec,
   SelectSpec, ComboBoxSpec, ListBoxSpec, SliderSpec, MeterSpec,
   ProgressBarSpec, TableSpec, TreeSpec, TabsSpec, MenuSpec,
   BreadcrumbsSpec, PaginationSpec, GridListSpec,
@@ -460,7 +460,7 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'CheckboxGroup': CheckboxGroupSpec,
   'Checkbox': CheckboxSpec, 'CheckBox': CheckboxSpec,
   'Switch': SwitchSpec, 'Toggle': SwitchSpec,
-  'RadioGroup': RadioSpec,
+  'RadioGroup': RadioGroupSpec,
   'Radio': RadioSpec,
   'Slider': SliderSpec, 'RangeSlider': SliderSpec,
   'Input': InputSpec, 'TextField': TextFieldSpec, 'TextInput': TextFieldSpec,
@@ -801,12 +801,31 @@ export const ElementSprite = memo(function ElementSprite({
     return resolvedElement;
   }, [resolvedElement, layoutPosition, computedContainerSize]);
 
-  const spriteType = getSpriteType(effectiveElement);
+  // Tabs: 실제 Tab children 레이블을 spec shapes에 전달
+  const effectiveElementWithTabs = useMemo(() => {
+    const tag = (effectiveElement.tag ?? '').toLowerCase();
+    if (tag === 'tabs' && childElements && childElements.length > 0) {
+      const tabChildren = childElements.filter(c => c.tag === 'Tab');
+      if (tabChildren.length > 0) {
+        const tabLabels = tabChildren.map(t => {
+          const p = t.props as Record<string, unknown> | undefined;
+          return String(p?.children || p?.label || p?.title || 'Tab');
+        });
+        return {
+          ...effectiveElement,
+          props: { ...effectiveElement.props, _tabLabels: tabLabels },
+        } as Element;
+      }
+    }
+    return effectiveElement;
+  }, [effectiveElement, childElements]);
+
+  const spriteType = getSpriteType(effectiveElementWithTabs);
 
   // Phase 5: Skia 렌더 데이터 등록 (모든 요소 타입 공통)
   // 🚀 rules-of-hooks: 조건부 early return 전에 모든 훅을 실행해야 함
-  const elementStyle = effectiveElement.props?.style;
-  const elementProps = effectiveElement.props;
+  const elementStyle = effectiveElementWithTabs.props?.style;
+  const elementProps = effectiveElementWithTabs.props;
   const computedW = computedContainerSize?.width;
   const computedH = computedContainerSize?.height;
 
@@ -856,7 +875,7 @@ export const ElementSprite = memo(function ElementSprite({
       outline: 0x79747e,
     };
 
-    const props = effectiveElement.props as Record<string, unknown> | undefined;
+    const props = elementProps as Record<string, unknown> | undefined;
     const variant = isUIComponent ? String(props?.variant || 'default') : '';
 
     let r: number, g: number, b: number;
@@ -873,7 +892,7 @@ export const ElementSprite = memo(function ElementSprite({
       g = ((fill.color >> 8) & 0xff) / 255;
       b = (fill.color & 0xff) / 255;
       // Fill V2: gradient/image fill이 있으면 shader가 alpha를 처리하므로 fillColor alpha=1
-      const hasFillV2NonColor = isFillV2Enabled() && effectiveElement.fills?.some(
+      const hasFillV2NonColor = isFillV2Enabled() && effectiveElementWithTabs.fills?.some(
         (f) => f.enabled && f.type !== 'color',
       );
       effectiveAlpha = (hasBgColor || hasFillV2NonColor) ? (fill.alpha || 1) : (isUIComponent ? fill.alpha : 0);
@@ -920,7 +939,7 @@ export const ElementSprite = memo(function ElementSprite({
       borderRadius: effectiveBorderRadius,
     };
 
-    const fills = effectiveElement.fills;
+    const fills = effectiveElementWithTabs.fills;
     if (isFillV2Enabled() && fills && fills.length > 0) {
       const fillV2Style = fillsToSkiaFillStyle(fills, finalWidth, finalHeight);
       if (fillV2Style && fillV2Style.type !== 'color') {
@@ -950,7 +969,7 @@ export const ElementSprite = memo(function ElementSprite({
     let cardCalculatedHeight: number | undefined;
 
     if (isUIComponent) {
-      const tag = effectiveElement.tag;
+      const tag = effectiveElementWithTabs.tag;
 
       const VARIANT_TEXT_COLORS: Record<string, number> = {
         default: 0x1d1b20,
@@ -1171,14 +1190,23 @@ export const ElementSprite = memo(function ElementSprite({
       children: textChildren,
       contentMinHeight,
     };
-  }, [effectiveElement, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition]);
+  }, [effectiveElementWithTabs, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로
   // ElementSprite의 이중 등록을 방지한다. (effects, blendMode, 올바른 fillColor 포함)
   // text 타입은 TextSprite가 자체적으로 텍스트 Skia 데이터를 등록하므로
   // ElementSprite에서 box 데이터로 덮어쓰지 않도록 방지한다.
   const hasOwnSprite = spriteType === 'box' || spriteType === 'text' || spriteType === 'flex' || spriteType === 'grid';
-  useSkiaNode(elementId, hasOwnSprite ? null : skiaNodeData);
+
+  // 렌더링 단계에서 skip될 요소는 Skia node도 등록하지 않음
+  // (Tab in Tabs, Breadcrumb in Breadcrumbs, display:contents)
+  // Panel-in-Tabs는 컨테이너 시스템으로 렌더링되므로 Skia 데이터 등록 필요
+  const isSkippedChild =
+    (element.tag === 'Tab' && parentElement?.tag === 'Tabs') ||
+    (element.tag === 'Breadcrumb' && parentElement?.tag === 'Breadcrumbs') ||
+    ((element.props?.style as Record<string, unknown> | undefined)?.display === 'contents');
+
+  useSkiaNode(elementId, (hasOwnSprite || isSkippedChild) ? null : skiaNodeData);
 
   // Phase 6: Interaction 속성 (컨테이너 히트 영역용)
   const containerIsPointerEventsNone = (elementStyle as CSSStyle | undefined)?.pointerEvents === 'none';
@@ -1224,20 +1252,13 @@ export const ElementSprite = memo(function ElementSprite({
   const isCheckboxInGroup = spriteType === 'checkboxItem' && parentElement?.tag === 'CheckboxGroup';
 
   // 🚀 Tabs 자식 요소 처리:
-  // - Tab 요소는 PixiTabs에서 직접 렌더링하므로 여기서 skip
-  // - Panel(TabPanel) 요소도 PixiTabs에서 렌더링하므로 skip
-  // - Panel의 자손 요소들은 ElementsLayer에서 렌더링됨 (layoutPosition 사용)
+  // - Tab 요소는 spec shapes가 렌더링하므로 여기서 skip
+  // - Panel은 컨테이너 시스템(createContainerChildRenderer)으로 렌더링
   const isTabsChild = parentElement?.tag === 'Tabs';
   const isTabElement = element.tag === 'Tab';
-  const isPanelInTabs = element.tag === 'Panel' && isTabsChild;
 
-  // Tab 요소는 PixiTabs에서 렌더링하므로 skip
+  // Tab 요소는 spec shapes가 렌더링하므로 skip
   if (isTabElement && isTabsChild) {
-    return null;
-  }
-
-  // Panel(TabPanel) 요소도 PixiTabs에서 렌더링하므로 skip
-  if (isPanelInTabs) {
     return null;
   }
 
@@ -1511,6 +1532,8 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+          childElements={childElements}
+          renderChildElement={renderChildElement}
         />
       );
 

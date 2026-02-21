@@ -1,6 +1,6 @@
 # CSS Level 3 엔진 정합성 체크리스트
 
-> **최종 갱신**: 2026-02-19
+> **최종 갱신**: 2026-02-21
 > **목적**: XStudio 레이아웃/렌더링 엔진의 CSS Level 3 속성 지원 현황 추적
 > **엔진**: TaffyFlexEngine (Taffy WASM) · TaffyGridEngine (Taffy WASM) · DropflowBlockEngine (Dropflow Fork JS)
 > **렌더러**: CanvasKit/Skia WASM
@@ -209,7 +209,7 @@
 | `border-style: dotted` | ✅ | `nodeRenderers.ts:449-486` | |
 | `border-style: double` | ✅ | `nodeRenderers.ts` renderDoubleBorder | 3등분 outer/inner 선, sw<3px 시 solid 폴백 |
 | `border-style: groove/ridge/inset/outset` | ✅ | `nodeRenderers.ts` renderGrooveRidge/InsetOutset | colord darken/lighten 명암 계산 |
-| `border` (shorthand) | ⚠️ | `cssValueParser.ts:499-535` | 파서 존재하나 레이아웃에서 미사용 |
+| `border` (shorthand) | ✅ | `utils.ts` parseBorder → parseBorderShorthand | `border: "1px solid red"` → borderWidth 추출; `cssValueParser.ts:499-535` 파서 연동 |
 
 ### 8.3 모서리
 
@@ -258,7 +258,7 @@
 | `font` (shorthand) | ✅ | `cssValueParser.ts` parseFontShorthand, `cssResolver.ts` | style/weight/size/line-height/family 분리, 개별 속성 우선 |
 | `font-variant` | ✅ | `cssResolver.ts`, `nodeRenderers.ts` | small-caps, oldstyle-nums 등 → CanvasKit fontFeatures |
 | `font-stretch` | ✅ | `cssResolver.ts`, `nodeRenderers.ts` | condensed~expanded → CanvasKit FontWidth 매핑 |
-| `line-height` | ✅ | `utils.ts:1019-1052`, `nodeRenderers.ts:537` | 배수, px, normal |
+| `line-height` | ✅ | `utils.ts:1019-1052`, `nodeRenderers.ts:537` | 배수, px, normal: fontBoundingBox 기반 (`measureFontMetrics().lineHeight`) |
 
 ---
 
@@ -424,7 +424,7 @@
 | 5 | Grid Layout Level 1 | 19 | 0 | 0 | 100% |
 | 6 | Positioning Level 3 | 5 | 2 | 0 | 86% |
 | 7 | Overflow Level 3 | 3 | 1 | 2 | 58% |
-| 8 | Backgrounds/Borders Level 3 | 19 | 1 | 1 | 95% |
+| 8 | Backgrounds/Borders Level 3 | 20 | 0 | 1 | 95% |
 | 9 | Color Level 4 | 10 | 0 | 0 | 100% |
 | 10 | Fonts Level 3 | 8 | 0 | 0 | 100% |
 | 11 | Text Level 3 | 12 | 1 | 0 | 96% |
@@ -435,7 +435,7 @@
 | 16 | Values/Units Level 3 | 12 | 0 | 0 | 100% |
 | 17 | Cascade Level 4 | 6 | 0 | 1 | 86% |
 | 18 | Logical Properties Level 1 | 7 | 0 | 0 | 100% |
-| | **합계** | **164** | **11** | **11** | **88%** |
+| | **합계** | **165** | **10** | **11** | **88%** |
 
 > **변경 내역 (2026-02-19 v1.1 갱신):**
 > - `matrix()` transform: ❌ → ✅ (`styleConverter.ts:661-673`)
@@ -452,6 +452,14 @@
 > - `saturate()` filter: ❌ → ✅ (`styleConverter.ts:825-839, 1004-1013`)
 > - `hue-rotate()` filter: ❌ → ✅ (`styleConverter.ts:847-878, 1015-1024`)
 > - 총 지원 속성: 118 → **122** (지원율: 68% → **72%**). ※ v1.3에서 집계 보정 완료
+>
+> **변경 내역 (2026-02-21 v1.3 갱신):**
+> - `border` (shorthand) 레이아웃 지원: ⚠️ → ✅ (`utils.ts:parseBorder()` → `parseBorderShorthand()` 연동)
+> - `line-height: normal` 정밀도 개선: `fontSize * 1.2` → `measureFontMetrics().lineHeight` (fontBoundingBox 기반)
+> - `enrichWithIntrinsicSize` INLINE_BLOCK_TAGS border-box 수정: padding+border 항상 포함 (layoutInlineRun 호환)
+> - `LayoutContext.getChildElements` 추가: 컨테이너 자식 Element 접근 (ToggleButtonGroup width/height 계산)
+> - `calculateContentWidth/Height` childElements 파라미터 추가: 자식 Element 기반 intrinsic size 계산
+> - 최종 갱신일: 2026-02-21
 
 ### P0 개선 대상 (캔버스 렌더링 정합성 핵심)
 
@@ -620,7 +628,7 @@
 
 | Phase | 작업 | 예상 향상 | 난이도 | 우선순위 |
 |-------|------|----------|--------|----------|
-| ~~**M-1**~~ | ~~multi-layer shadow~~ — **v2 코드 검증에서 이미 동작 확인**: `effects.ts`가 shadow 배열 전체를 순회하며 `saveLayer()` 호출. `parseAllBoxShadows()`가 다중 shadow 파싱. 잔존 이슈는 CSS 변수 fallback 완성도 → M-4에서 처리 | ~~+5~8%~~ → **+0% (제거)** | ✅ 완료 | — |
+| ~~**M-1**~~ | ~~multi-layer shadow~~ — **v2 코드 검증에서 이미 동작 확인**: `effects.ts:31` `for (const effect of effects)` 루프가 shadow 배열 전체를 순회하며 `saveLayer()` 호출. `styleConverter.ts:1040-1045` `parseAllBoxShadows()`가 콤마 구분 다중 shadow를 정확히 파싱. `specShapeConverter.ts:370-391`에서도 각 ShadowShape를 개별 effect로 추가. | ~~+5~8%~~ → **+0% (제거)** | ✅ 완료 | — |
 | **M-2** | **shadow spread radius** — `ShadowShape.spread` 렌더러 전달. CanvasKit 네이티브 미지원 → sigma 확장 워크어라운드 | **+2~3%** | 🟡 | P2 |
 | **M-3** | **image shape 렌더링** — `specShapeConverter` `case 'image'` skip → `getSkImage()` + `drawImageRect()` 구현. imageCache 재활용 | **+3~5%** | 🟡 | P2 |
 | **M-4** | **CSS variable 실시간 캐시** — `:root` 전체 `--*` 변수 메모리 캐시 + 테마 변경 시 무효화. hardcoded fallback 의존 탈피 | **+2~3%** | 🟡 | P3 |
@@ -1023,6 +1031,7 @@ CSS Level 3 속성 지원(88%)과 별도로, **레이아웃 계산 파이프라�
 | 2026-02-19 | 1.8 | **추가 개선 방안** 추가: Quick Win 3개 (border style 전달, disabled opacity, focus ring) + Medium 6개 (multi-shadow, shadow spread, image shape, CSS var 캐시, state 일관성, partial border). 목표 상향 80% → **92%**. 정합성 도달 예측 + 권장 실행 순서 추가 |
 | 2026-02-19 | **1.9** | **v2 코드 검증 기반 보정**: (1) M-1 multi-shadow 이미 동작 확인 → 제거 (2) QW-2/QW-3 → Phase A 선행 필수 발견 → 실행 순서 변경 (3) state 활용 spec 20/62개(32%) 정밀 측정 (4) 카테고리별·차원별 수치 보정 (5) Phase 의존성 그래프 추가. 목표 상향 92% → **93%** |
 | 2026-02-19 | **2.0** | **레이아웃 엔진 구조적 근본 원인 7건 추가** ([분석 문서](analysis/webgl-layout-root-cause-2026-02.md) 전수 코드 검증): RC-1~7 전항목 CONFIRMED. 불변식 위반 요약, 심각도·영향도 분류, 구조/레이아웃 차원 85%→93~97% 예측, RC 기반 실행 순서 추가 |
+| 2026-02-21 | **2.1** | **CSS 레이아웃 엔진 수정 반영**: `border` (shorthand) ⚠️→✅ (`utils.ts:parseBorder()` → `parseBorderShorthand()` 연동). `line-height: normal` 정밀도 개선 (fontBoundingBox 기반 `measureFontMetrics().lineHeight`). `enrichWithIntrinsicSize` INLINE_BLOCK_TAGS border-box 수정. `LayoutContext.getChildElements` 추가. `calculateContentWidth/Height` childElements 파라미터 추가. 총 ✅165, ⚠️10, ❌11 |
 
 ### v1 → v2 기준 변경 사유
 

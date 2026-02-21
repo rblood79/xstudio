@@ -95,16 +95,11 @@ function updateTextChildren(
 ): SkiaNodeData[] | undefined {
   return children?.map((child: SkiaNodeData) => {
     if (child.type === 'text' && child.text) {
-      // autoCenter: false → 수동 배치 텍스트 (Card 등 다중 텍스트)
-      // maxWidth만 업데이트하고 위치/크기는 유지
+      // autoCenter: false → 수동 배치 텍스트 (spec shapes 기반)
+      // specShapesToSkia가 paddingLeft/maxWidth를 이미 정확하게 계산했으므로
+      // 여기서 재계산하지 않는다. (Tabs 등 다중 텍스트에서 위치별 maxWidth가 훼손됨)
       if (child.text.autoCenter === false) {
-        return {
-          ...child,
-          text: {
-            ...child.text,
-            maxWidth: parentWidth - child.text.paddingLeft * 2,
-          },
-        };
+        return child;
       }
       const fontSize = child.text.fontSize || 14;
       const lineHeight = child.text.lineHeight || fontSize * 1.2; // I-L22: 실제값 우선

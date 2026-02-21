@@ -627,10 +627,12 @@ const ElementsLayer = memo(function ElementsLayer({
     'Disclosure', 'DisclosureGroup', 'Accordion',
     'ToggleButtonGroup',  // 🚀 Phase 7: flex container로 자식 ToggleButton 내부 렌더링
     'TagGroup', 'TagList',  // 🚀 웹 CSS 구조 동일: TagGroup (column) → Label + TagList (row wrap) → Tags
+    'CheckboxGroup', 'RadioGroup',  // 🚀 Form 그룹 컨테이너: 자식 Checkbox/Radio를 내부에서 렌더링
     'Popover', 'Tooltip', 'Menu',  // Overlay/Navigation 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
     'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',  // Date & Color 복합 컴포넌트
     'Toast', 'Toolbar',  // Form/Feedback/Action 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
     'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',  // Input 복합 컴포넌트
+    'Tabs',  // Tab bar(spec shapes) + active Panel(container) 렌더링
   ]), []);
 
   // Phase 11: 엔진이 계산한 레이아웃으로 직접 배치 (Yoga 제거)
@@ -657,7 +659,83 @@ const ElementsLayer = memo(function ElementsLayer({
       return (childEl: Element): React.ReactNode => {
         // Lazy initialization: 첫 자식 렌더 시 모든 자식의 레이아웃 일괄 계산
         if (!cachedLayoutMap) {
-          const parentStyle = containerEl.props?.style as Record<string, unknown> | undefined;
+          let parentStyle = containerEl.props?.style as Record<string, unknown> | undefined;
+          let effectiveContainerEl = containerEl;
+
+          // TagGroup/CheckboxGroup/RadioGroup: implicit flex layout 주입
+          // CSS에서 이 컴포넌트들은 display:flex, flex-direction:column이 기본값
+          const containerTag = (containerEl.tag ?? '').toLowerCase();
+
+          // TagGroup: implicit flex column (CSS 기본값 매칭)
+          // React-Aria TagGroup = flex column, Label + TagList 세로 배치
+          if (containerTag === 'taggroup') {
+            parentStyle = {
+              ...(parentStyle || {}),
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+            };
+            effectiveContainerEl = {
+              ...containerEl,
+              props: { ...containerEl.props, style: parentStyle },
+            };
+          }
+
+          // CheckboxGroup/RadioGroup: implicit flex layout + label 오프셋 주입
+          // Spec의 container shape가 y = fontSize + 8에 위치하므로
+          // 자식들도 동일한 오프셋을 적용하여 label 아래에 배치
+          if (containerTag === 'checkboxgroup' || containerTag === 'radiogroup') {
+            const containerProps = containerEl.props as Record<string, unknown> | undefined;
+            const sizeName = (containerProps?.size as string) ?? 'md';
+            const gap = sizeName === 'sm' ? 8 : sizeName === 'lg' ? 16 : 12;
+            // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
+            const labelFontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
+            const labelOffset = containerProps?.label ? labelFontSize + 8 : 0;
+            const orientation = containerProps?.orientation as string | undefined;
+
+            parentStyle = {
+              ...(parentStyle || {}),
+              display: 'flex',
+              flexDirection: orientation === 'horizontal' ? 'row' : 'column',
+              gap,
+              paddingTop: labelOffset,
+            };
+            effectiveContainerEl = {
+              ...containerEl,
+              props: { ...containerEl.props, style: parentStyle },
+            };
+          }
+
+          // Tabs: 탭 바 아래에 활성 Panel만 배치 (Tab 요소는 spec shapes가 렌더링)
+          // CSS 기준: Tabs(flex col) → TabList(height) + TabPanel(pad=16px → Panel)
+          let filteredContainerChildren = containerChildren;
+          if (containerTag === 'tabs') {
+            const tabsProps = containerEl.props as Record<string, unknown> | undefined;
+            const sizeName = (tabsProps?.size as string) ?? 'md';
+            // CSS 기준 탭 바 높이: sm=25, md=30, lg=35
+            const tabBarHeight = sizeName === 'sm' ? 25 : sizeName === 'lg' ? 35 : 30;
+            const tabPanelPadding = 16; // React-Aria TabPanel 기본 padding
+
+            // 활성 Panel만 필터 (Tab 요소는 spec shapes가 렌더링)
+            const panelChildren = containerChildren.filter(c => c.tag === 'Panel');
+            const activePanel = panelChildren[0]; // 기본: 첫 번째 Panel
+            filteredContainerChildren = activePanel ? [activePanel] : [];
+
+            parentStyle = {
+              ...(parentStyle || {}),
+              display: 'flex',
+              flexDirection: 'column',
+              paddingTop: tabBarHeight + tabPanelPadding,
+              paddingLeft: tabPanelPadding,
+              paddingRight: tabPanelPadding,
+              paddingBottom: tabPanelPadding,
+            };
+            effectiveContainerEl = {
+              ...containerEl,
+              props: { ...containerEl.props, style: parentStyle },
+            };
+          }
+
           cachedPadding = parsePadding(parentStyle, containerWidth);
           const parentDisplay = (parentStyle?.display as string | undefined)
             ?? (containerEl.tag === 'Section' ? 'block' : undefined);
@@ -669,8 +747,8 @@ const ElementsLayer = memo(function ElementsLayer({
             : Math.max(0, containerHeight - cachedPadding.top - cachedPadding.bottom);
           // RC-7: calculateChildrenLayout 사용하여 blockification 적용
           const innerLayouts = calculateChildrenLayout(
-            containerEl, containerChildren, avW, avH,
-            { bfcId: containerEl.id, parentDisplay }
+            effectiveContainerEl, filteredContainerChildren, avW, avH,
+            { bfcId: containerEl.id, parentDisplay, getChildElements: (id: string) => pageChildrenMap.get(id) ?? [] }
           );
           cachedLayoutMap = new Map(innerLayouts.map(l => [l.elementId, l]));
         }
@@ -742,7 +820,7 @@ const ElementsLayer = memo(function ElementsLayer({
       // RC-7: calculateChildrenLayout 사용하여 blockification + overflow scroll 처리
       const layouts = calculateChildrenLayout(
         parentElement, children, availableWidth, availableHeight,
-        { bfcId: parentElement.id, parentDisplay }
+        { bfcId: parentElement.id, parentDisplay, getChildElements: (id: string) => pageChildrenMap.get(id) ?? [] }
       );
 
       if (import.meta.env.DEV && layouts.length === 0 && children.length > 0) {

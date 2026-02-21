@@ -197,6 +197,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
       // 헤더 텍스트
       let xOffset = 0;
       columns.forEach((col) => {
+        const colWidth = col.width || 100;
         shapes.push({
           type: 'text' as const,
           x: xOffset + size.paddingX,
@@ -208,8 +209,9 @@ export const TableSpec: ComponentSpec<TableProps> = {
           fill: textColor,
           baseline: 'middle' as const,
           align: textAlign,
+          maxWidth: colWidth - size.paddingX * 2,
         });
-        xOffset += col.width || 100;
+        xOffset += colWidth;
       });
 
       // 헤더 하단 구분선
@@ -246,6 +248,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
         // 셀 텍스트
         let cellXOffset = 0;
         columns.forEach((col) => {
+          const colWidth = col.width || 100;
           const cellValue = String(row.cells[col.id] || '');
           shapes.push({
             type: 'text' as const,
@@ -260,8 +263,9 @@ export const TableSpec: ComponentSpec<TableProps> = {
               : textColor,
             baseline: 'middle' as const,
             align: textAlign,
+            maxWidth: colWidth - size.paddingX * 2,
           });
-          cellXOffset += col.width || 100;
+          cellXOffset += colWidth;
         });
 
         // 행 하단 구분선

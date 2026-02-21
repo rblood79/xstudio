@@ -367,4 +367,35 @@ const borderRadius = size.borderRadius; // [r,0,0,r] 대신 항상 r
 
 **필수 조건**: `specShapeConverter.ts`의 `resolveRadius()`가 `number | [number, number, number, number]` 양쪽 타입을 지원해야 함 (현재 지원 확인됨).
 
+## 개선 이력 (2026-02-21)
+
+### fontBoundingBox line-height 통일
+
+`measureWrappedTextHeight`, `measureTextWithWhiteSpace`, `estimateTextHeight` 세 함수 모두 `measureFontMetrics().lineHeight` 사용으로 통일.
+
+- **이전**: 일부 함수가 `fontSize * 1.2` 근사값 사용
+- **이후**: Canvas 2D `fontBoundingBoxAscent + fontBoundingBoxDescent` 기반 실측값
+- **효과**: CSS `line-height: normal`과 동일한 결과, 세 함수 간 불일치로 인한 텍스트 클리핑 버그 해결
+
+### INLINE_BLOCK_TAGS border-box 수정
+
+`enrichWithIntrinsicSize`가 `INLINE_BLOCK_TAGS`(button, badge, togglebutton, togglebuttongroup 등)에 항상 padding+border 포함 border-box 높이를 반환하도록 수정.
+
+- **이유**: `layoutInlineRun`이 `style.height`를 border-box 값으로 직접 사용
+- **효과**: block 경로의 `treatAsBorderBox` 변환이 이중 계산 방지, INLINE_BLOCK_TAGS 높이 축소 버그 해결
+
+### LayoutContext.getChildElements 추가
+
+`LayoutContext` 인터페이스에 `getChildElements?: (elementId: string) => Element[]` 선택적 메서드 추가.
+
+- **주입**: `BuilderCanvas.tsx`에서 `pageChildrenMap` 기반으로 context에 주입
+- **사용처**: `enrichWithIntrinsicSize`에서 ToggleButtonGroup 등 자식 수·크기 기반 intrinsic 너비/높이 계산
+
+### border shorthand 레이아웃 지원
+
+`parseBorder()`가 `border: "1px solid red"` shorthand에서 `borderWidth` 추출 지원.
+
+- **연동**: `parseBorderShorthand()` (`cssValueParser.ts`)
+- **효과**: `border` shorthand 사용 시 레이아웃 엔진이 borderWidth를 인식하지 못하던 문제 해결
+
 > **참고**: 레이아웃 엔진 상세 구현은 [ENGINE_UPGRADE.md](../../../../docs/ENGINE_UPGRADE.md) 참조.

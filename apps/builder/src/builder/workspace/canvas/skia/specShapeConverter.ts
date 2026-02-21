@@ -460,9 +460,15 @@ export function specShapesToSkia(
         // Calculate paddingTop based on baseline
         let paddingTop = shape.y;
         if (shape.baseline === 'middle') {
-          // 수직 중앙 정렬: (컨테이너 높이 - 한 줄 높이) / 2
-          // 다중 줄 텍스트의 경우 ElementSprite에서 measureWrappedTextHeight 기반으로 보정
-          paddingTop = shape.y + (containerHeight - lineHeightPx) / 2;
+          if (shape.y > 0) {
+            // shape.y > 0: y는 텍스트 수직 중앙이 위치해야 할 지점
+            // (Checkbox, Radio, Switch 등 인디케이터 중심에 텍스트 정렬)
+            paddingTop = Math.max(0, shape.y - lineHeightPx / 2);
+          } else {
+            // shape.y === 0: 컨테이너 전체를 기준으로 수직 중앙 정렬
+            // (Button, Input, Badge 등)
+            paddingTop = (containerHeight - lineHeightPx) / 2;
+          }
         }
         // baseline='top' → paddingTop = y (already)
 

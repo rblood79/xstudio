@@ -1,6 +1,6 @@
 # WebGL 레이아웃 엔진 근본 원인 재분석 (main 기준, 2026-02)
 
-> **최종 갱신**: 2026-02-19
+> **최종 갱신**: 2026-02-21
 > **검증 상태**: 7개 전항목 코드 검증 완료 ✅ (2026-02-19)
 > **관련 문서**: [ENGINE_CHECKLIST.md](../ENGINE_CHECKLIST.md) § 레이아웃 엔진 구조적 근본 원인
 
@@ -13,8 +13,8 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
 | 1 | Taffy 입력 공간을 항상 Definite로 고정 | ✅ CONFIRMED | `TaffyFlexEngine.ts:438-439`, `BuilderCanvas.tsx:720-725` |
 | 2 | Flex/Grid 부모 높이를 항상 강제 주입 | ✅ CONFIRMED | `TaffyFlexEngine.ts:434-439`, `TaffyGridEngine.ts:626-631` |
 | 3 | CSS 단위 해석이 px 중심으로 축소 | ✅ CONFIRMED | `TaffyFlexEngine.ts:205-216` (`parseCSSProp`), `cssValueParser.ts:295-359` (미사용) |
-| 4 | Flex 2-pass 재계산 트리거 비교 기준 부정확 | ✅ CONFIRMED | `TaffyFlexEngine.ts:352` |
-| 5 | Block 엔진 inline-run 구현이 CSS와 다름 | ✅ CONFIRMED | `DropflowBlockEngine.ts:157-250`, `226-231` |
+| 4 | Flex 2-pass 재계산 트리거 비교 기준 부정확 | ✅ CONFIRMED → ✅ 해결 (2026-02-21) | `TaffyFlexEngine.ts:352` |
+| 5 | Block 엔진 inline-run 구현이 CSS와 다름 | ✅ CONFIRMED → ⚠️ 부분 해결 (2026-02-21) | `DropflowBlockEngine.ts:157-250`, `226-231` |
 | 6 | `auto/fit-content` 처리 경로 엔진별 분기 | ✅ CONFIRMED | `DropflowBlockEngine.ts:262-268`, `cssValueParser.ts:306-324` |
 | 7 | blockification 경계에서 자식 배치 규칙 틀어짐 | ✅ CONFIRMED | `index.ts:131-144`, `193-221` |
 
@@ -147,38 +147,46 @@ function parseCSSProp(value: unknown): number | string | undefined {
 
 ## 4) Flex 2-pass 보정의 비교 기준 오류
 
-> **검증 결과: ✅ CONFIRMED**
-> - `TaffyFlexEngine.ts:352` — `layout.width`를 `availableWidth`(부모 너비)와 비교
-> - 올바른 비교 대상은 자식별 1차 enrichment 기준 너비
+> **검증 결과: ✅ CONFIRMED → ✅ 해결 (2026-02-21)**
+> - `TaffyFlexEngine.ts:352` — 수정 전: `layout.width`를 `availableWidth`(부모 너비)와 비교
+> - 수정 후: `enrichedWidth` (enrichment 시 주입된 width)와 비교하도록 변경
 
 ### 관찰
 - 2-pass 재계산 필요 여부를 판단할 때,
   `layout.width`를 "해당 자식의 1차 enrichment 기준"이 아닌 `availableWidth`(부모 너비)와 비교한다.
 
-### 영향
+### 영향 (수정 전)
 - row 컨테이너에서 자식의 실제 할당 너비가 부모 너비와 다른 것은 정상인데,
   이 조건 때문에 불필요한 2-pass가 자주 발생하거나,
   반대로 필요한 케이스에서 정확한 조건을 놓칠 수 있다.
 - 결과적으로 고정 폭 버튼 + 텍스트 줄바꿈 시 높이 재측정이 일관되지 않다.
 
-### 검증된 코드 경로
+### 수정 내용 (2026-02-21)
 
 ```typescript
-// TaffyFlexEngine.ts:352
+// 수정 전 (TaffyFlexEngine.ts:352)
 if (Math.abs(layout.width - availableWidth) > WIDTH_TOLERANCE) {
     needsSecondPass = true;  // ← availableWidth = 부모 전체 너비
     break;
 }
-// 올바른 비교: layout.width vs 해당 자식의 1차 enrichment 시 사용된 width
+
+// 수정 후: enrichedWidth (enrichment 시 주입된 자식별 width)와 비교
+if (Math.abs(layout.width - enrichedWidth) > WIDTH_TOLERANCE) {
+    needsSecondPass = true;
+    break;
+}
 ```
 
 ---
 
 ## 5) DropflowBlockEngine의 inline-run 단순화로 인한 스펙 편차
 
-> **검증 결과: ✅ CONFIRMED**
-> - `DropflowBlockEngine.ts:226-231` — baseline을 middle과 동일하게 처리
-> - `DropflowBlockEngine.ts:399-453` — segment 경계에서 margin collapse 없음
+> **검증 결과: ✅ CONFIRMED → ⚠️ 부분 해결 (2026-02-21)**
+> - `DropflowBlockEngine.ts:226-231` — baseline을 middle과 동일하게 처리 (미해결)
+> - `DropflowBlockEngine.ts:399-453` — segment 경계에서 margin collapse 없음 (미해결)
+> - `enrichWithIntrinsicSize` — INLINE_BLOCK_TAGS에 padding+border 항상 포함하도록 수정 (해결)
+> - `measureTextWithWhiteSpace` / `measureWrappedTextHeight` — lineHeight를 fontBoundingBox 기반으로 통일 (해결)
+> - `LayoutContext.getChildElements` 추가 — 컨테이너 자식 접근 가능 → ToggleButtonGroup 정확한 크기 계산 (해결)
 
 ### 관찰
 - inline-block 혼합 경로(`_mixedCalculate` + `layoutInlineRun`)는
@@ -194,7 +202,7 @@ if (Math.abs(layout.width - availableWidth) > WIDTH_TOLERANCE) {
 ### 검증된 코드 경로
 
 ```typescript
-// DropflowBlockEngine.ts:226-231 — baseline ≈ middle 단순화
+// DropflowBlockEngine.ts:226-231 — baseline ≈ middle 단순화 (미해결)
 switch (verticalAlign) {
   case 'baseline':
   default:
@@ -203,8 +211,24 @@ switch (verticalAlign) {
     break;
 }
 
-// DropflowBlockEngine.ts:399-453 — segment 경계에서 margin collapse 없음
+// DropflowBlockEngine.ts:399-453 — segment 경계에서 margin collapse 없음 (미해결)
 // inline→block 전환 시 CSS 규격의 margin collapse 미구현
+```
+
+### 부분 해결 내용 (2026-02-21)
+
+```typescript
+// enrichWithIntrinsicSize — INLINE_BLOCK_TAGS는 항상 padding+border 포함 (해결)
+// 이전: padding/border가 조건부로 포함되어 intrinsic 크기가 과소 계산되는 케이스 존재
+// 이후: INLINE_BLOCK_TAGS에 해당하는 모든 요소에 padding+border를 항상 포함
+
+// measureTextWithWhiteSpace / measureWrappedTextHeight — fontBoundingBox 기반 lineHeight 통일 (해결)
+// 이전: fontSize * 1.2 상수로 line-height 근사
+// 이후: fontBoundingBoxAscent + fontBoundingBoxDescent 기반으로 정밀 계산
+
+// LayoutContext.getChildElements 추가 (해결)
+// 컨테이너 컴포넌트(ToggleButtonGroup 등)에서 자식 요소에 접근 가능
+// → 자식 수 기반의 정확한 intrinsic 크기 계산 가능
 ```
 
 ---
@@ -317,7 +341,7 @@ if (isFlexOrGridContainer(display)) {
 | 2 | **부모 height 강제 주입 제거**: 실제 CSS 지정이 있을 때만 height 전달 | #2 | HIGH |
 | 3 | **스타일 정규화 통합**: `cssResolver + cssValueParser`를 Taffy 입력 변환의 단일 소스로 사용 | #3 | HIGH |
 | 4 | **intrinsic 정책 통합**: `auto/fit-content/min-content/max-content`를 엔진 공통 규칙으로 처리 | #6 | HIGH |
-| 5 | **2-pass 기준 교정**: 자식별 1차 입력폭 대비 실제폭 비교로 변경 | #4 | HIGH |
+| 5 | **2-pass 기준 교정**: 자식별 1차 입력폭 대비 실제폭 비교로 변경 ✅ 완료 | #4 | HIGH |
 | 6 | **blockification 경계 검증**: display 전환 시 자식 의도(display semantics) 보존 규칙 정의 | #7 | MEDIUM |
 | 7 | **inline formatting 고도화**: line box/baseline/white-space 규칙을 Dropflow 경로와 정합 | #5 | MEDIUM |
 
@@ -354,15 +378,15 @@ if (isFlexOrGridContainer(display)) {
 
 ## 수정 추적 (Remediation Tracker)
 
-> 최종 갱신: 2026-02-19
+> 최종 갱신: 2026-02-21
 
 | RC # | 근본 원인 | 수정 상태 | 권장 실행 순서 | 관련 파일 | 비고 |
 |------|-----------|----------|---------------|-----------|------|
 | RC-1 | AvailableSpace 항상 Definite | 📋 미착수 | 2단계 | `BuilderCanvas.tsx:720-725`, `TaffyFlexEngine.ts:438-439,453` | RC-2와 함께 수정 권장 |
 | RC-2 | 부모 height 강제 주입 | 📋 미착수 | 2단계 | `TaffyFlexEngine.ts:434-439`, `TaffyGridEngine.ts:626-631` | auto height 체크 조건문 추가 필요 |
 | RC-3 | CSS 단위 px 축소 | 📋 미착수 | **1단계** (최우선) | `TaffyFlexEngine.ts:205-216`, `cssValueParser.ts:295-359` | `resolveCSSSizeValue()` 연결만으로 해결 가능 |
-| RC-4 | 2-pass 재계산 기준 부정확 | 📋 미착수 | 3단계 | `TaffyFlexEngine.ts:352` | 자식별 1차 입력폭 대비 실제폭 비교로 변경 |
-| RC-5 | inline-run baseline 단순화 | 📋 미착수 | 4단계 | `DropflowBlockEngine.ts:157-250,226-231,399-453` | 장기 개선 |
+| RC-4 | 2-pass 재계산 기준 부정확 | ✅ 해결 (2026-02-21) | 3단계 | `TaffyFlexEngine.ts:352` | `enrichedWidth` 비교 기준으로 수정 완료 |
+| RC-5 | inline-run baseline 단순화 | ⚠️ 부분 해결 (2026-02-21) | 4단계 | `DropflowBlockEngine.ts:157-250,226-231,399-453` | INLINE_BLOCK_TAGS border-box, fontBoundingBox lineHeight, getChildElements 수정 완료. baseline/margin collapse 미해결 |
 | RC-6 | auto/fit-content 엔진별 분기 | 📋 미착수 | 3단계 | `DropflowBlockEngine.ts:262-268`, `cssValueParser.ts:306-324` | RC-4와 함께 수정 |
 | RC-7 | blockification 경계 | 📋 미착수 | 4단계 | `index.ts:131-144,193-221` | 장기 개선 |
 
@@ -391,3 +415,12 @@ if (isFlexOrGridContainer(display)) {
 3. 자식 텍스트 길이, `white-space`, 줄 수 변화 여부
 4. 부모/자식 `position`, `overflow`, `gap`, `margin/padding`
 5. 같은 트리를 iframe CSS Preview와 WebGL에서 캡처한 비교 이미지
+
+---
+
+## 부분 해결 이력 (2026-02-21)
+
+| # | 근본 원인 | 수정 항목 | 상태 |
+|---|-----------|----------|------|
+| 4 | Flex 2-pass 트리거 | enrichedWidth 비교 기준 수정 (`TaffyFlexEngine.ts`) | ✅ 해결 |
+| 5 | Block inline-run CSS 차이 | INLINE_BLOCK_TAGS border-box 수정, fontBoundingBox lineHeight 통일, LayoutContext.getChildElements 추가 | ⚠️ 부분 해결 |

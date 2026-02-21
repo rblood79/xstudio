@@ -339,7 +339,7 @@ export class TaffyFlexEngine implements LayoutEngine {
     };
 
     try {
-      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight, parentComputed, cssCtx);
+      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight, parentComputed, cssCtx, context);
     } finally {
       // 매 계산 후 트리를 클리어하여 메모리 누적 방지
       // 추후 증분 업데이트가 필요하면 노드 캐시 도입
@@ -361,6 +361,7 @@ export class TaffyFlexEngine implements LayoutEngine {
     availableHeight: number,
     parentComputed: ComputedStyle,
     cssCtx: CSSValueContext = {},
+    context?: LayoutContext,
   ): ComputedLayout[] {
     // §6 P3: 2-pass 레이아웃
     // 1차 pass: 부모 availableWidth로 enrichment → Taffy 계산
@@ -376,9 +377,11 @@ export class TaffyFlexEngine implements LayoutEngine {
 
     // ── 1차 pass: enrichment + Taffy 계산 ─────────────────────────────
     // M1: enrichedChildren을 먼저 계산하여 2차 pass 판단에 사용
-    const enrichedChildren = children.map((child, i) =>
-      enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputedStyles[i]),
-    );
+    const getChildElements = context?.getChildElements;
+    const enrichedChildren = children.map((child, i) => {
+      const childChildren = getChildElements?.(child.id);
+      return enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputedStyles[i], childChildren, getChildElements);
+    });
     const firstPassResult = this._runTaffyPassRaw(
       taffy, parent, enrichedChildren, children, availableWidth, availableHeight, parentComputed, cssCtx,
     );
@@ -435,7 +438,8 @@ export class TaffyFlexEngine implements LayoutEngine {
       const actualWidth = actualWidths.get(child.id);
       if (actualWidth === undefined) return child;
 
-      return enrichWithIntrinsicSize(child, actualWidth, availableHeight, childComputedStyles[i]);
+      const childChildren = getChildElements?.(child.id);
+      return enrichWithIntrinsicSize(child, actualWidth, availableHeight, childComputedStyles[i], childChildren, getChildElements);
     });
 
     return this._runTaffyPassRaw(

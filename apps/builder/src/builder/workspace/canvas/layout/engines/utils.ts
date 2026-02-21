@@ -583,7 +583,6 @@ const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
   input: 'sm',
   select: 'sm',
   a: 'sm',
-  label: 'sm',
   togglebutton: 'sm',
 };
 
@@ -596,7 +595,11 @@ const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
  *
  * @returns 콘텐츠 기반 너비
  */
-export function calculateContentWidth(element: Element): number {
+export function calculateContentWidth(
+  element: Element,
+  childElements?: Element[],
+  getChildElements?: (id: string) => Element[],
+): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
   const tag = (element.tag ?? '').toLowerCase();
 
@@ -619,6 +622,18 @@ export function calculateContentWidth(element: Element): number {
 
     // items 배열에서 레이블 추출
     const items = Array.isArray(props?.items) ? props.items as unknown[] : [];
+
+    // items prop이 없으면 child elements에서 레이블 추출
+    if (items.length === 0 && childElements && childElements.length > 0) {
+      for (const child of childElements) {
+        const childProps = child.props as Record<string, unknown> | undefined;
+        const label = String(childProps?.children ?? childProps?.text ?? childProps?.label ?? '');
+        if (label) {
+          items.push(label);
+        }
+      }
+    }
+
     if (items.length > 0) {
       const buttonWidths = items.map((item) => {
         const label = typeof item === 'string'
@@ -634,11 +649,46 @@ export function calculateContentWidth(element: Element): number {
       // vertical: 가장 넓은 버튼
       return Math.max(...buttonWidths);
     }
-    // items 없으면 기본값 (자식 Element로 렌더링되는 경우)
+    // items도 children도 없으면 기본값
     return DEFAULT_WIDTH;
   }
 
-  // 2. 텍스트 콘텐츠 기반 너비 측정 (Canvas 2D measureText 사용)
+  // 2. Flex 컨테이너: childElements 기반 재귀 너비 계산 (텍스트 추출보다 먼저 처리)
+  // TagGroup(flex column, fit-content), TagList(flex row) 등 컨테이너 컴포넌트의
+  // intrinsic width를 자식 요소들의 실제 border-box 너비에서 산출
+  // ⚠️ 반드시 extractTextContent보다 먼저 와야 함:
+  //    TagGroup.props.label = "Tag Group"이 텍스트로 추출되면 ~63px이 반환되어
+  //    자식 기반 너비(~132px)에 도달하지 못함
+  if (childElements && childElements.length > 0) {
+    const display = style?.display;
+    if (display === 'flex' || display === 'inline-flex') {
+      const flexDir = (style?.flexDirection as string) || 'row';
+      const gap = parseNumericValue(style?.gap) ?? 0;
+      const isRow = flexDir === 'row' || flexDir === 'row-reverse';
+
+      const childWidths = childElements.map(child => {
+        const childStyle = child.props?.style as Record<string, unknown> | undefined;
+        const explicitW = parseNumericValue(childStyle?.width);
+        if (explicitW !== undefined) return explicitW;
+        // content-box 너비
+        const grandChildren = getChildElements?.(child.id);
+        const contentW = calculateContentWidth(child, grandChildren, getChildElements);
+        // border-box 산출: enrichWithIntrinsicSize와 동일하게 padding + border 추가
+        // (Tag, Badge 등 INLINE_BLOCK_TAGS의 spec padding/border가 포함되어야 함)
+        const childBox = parseBoxModel(child, 0, -1);
+        return contentW + childBox.padding.left + childBox.padding.right
+          + childBox.border.left + childBox.border.right;
+      });
+
+      if (isRow) {
+        return childWidths.reduce((sum, w) => sum + w, 0)
+          + gap * Math.max(0, childElements.length - 1);
+      }
+      return Math.max(...childWidths, 0);
+    }
+  }
+
+  // 3. 텍스트 콘텐츠 기반 너비 측정 (Canvas 2D measureText 사용)
   const text = extractTextContent(element.props as Record<string, unknown>);
 
   // 🚀 Checkbox/Radio/Switch: flexDirection에 따른 너비 계산
@@ -654,9 +704,11 @@ export function calculateContentWidth(element: Element): number {
     const sizeName = (props?.size as string) ?? 'md';
     const indicatorSize = inlineFormIndicator[sizeName] ?? 20;
     const gap = sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8;
-    const fontSize = sizeName === 'sm' ? 12 : sizeName === 'lg' ? 16 : 14;
+    // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
+    const fontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
     const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
-    const textWidth = labelText ? calculateTextWidth(labelText, fontSize, 0) : 0;
+    // Canvas 2D measureText와 CanvasKit paragraph API 간 폰트 측정 오차 보정 (+2px)
+    const textWidth = labelText ? Math.ceil(calculateTextWidth(labelText, fontSize, 0)) + 2 : 0;
     const flexDir = style?.flexDirection as string | undefined;
     const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
     if (isColumn) {
@@ -673,7 +725,7 @@ export function calculateContentWidth(element: Element): number {
     // 버튼, 인풋 등은 size prop에 따라 fontSize 결정
     // padding/border는 parseBoxModel에서 처리 → 여기서는 텍스트 너비만 반환
     // (inline padding 변경 시 이중 계산 방지)
-    const isFormElement = ['button', 'input', 'select', 'a', 'label'].includes(tag);
+    const isFormElement = ['button', 'input', 'select', 'a'].includes(tag);
     const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[tag];
     if (isFormElement || inlineUIConfig) {
       const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? 'sm';
@@ -700,11 +752,11 @@ export function calculateContentWidth(element: Element): number {
     return calculateTextWidth(text, fontSize, 0);
   }
 
-  // 3. 태그별 기본 너비 사용
+  // 4. 태그별 기본 너비 사용
   const defaultWidth = DEFAULT_ELEMENT_WIDTHS[tag];
   if (defaultWidth !== undefined) return defaultWidth;
 
-  // 4. 알 수 없는 태그는 기본값 사용
+  // 5. 알 수 없는 태그는 기본값 사용
   return DEFAULT_WIDTH;
 }
 
@@ -785,12 +837,31 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
  * @param availableWidth - 사용 가능한 너비 (Card 등 텍스트 wrap 높이 계산용)
  * @returns 콘텐츠 기반 높이 (자식이 없으면 태그별 기본 높이)
  */
-export function calculateContentHeight(element: Element, availableWidth?: number): number {
+export function calculateContentHeight(
+  element: Element,
+  availableWidth?: number,
+  childElements?: Element[],
+  getChildElements?: (id: string) => Element[],
+): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
 
   // 1. 명시적 height가 있으면 사용
   const explicitHeight = parseNumericValue(style?.height);
   if (explicitHeight !== undefined) return explicitHeight;
+
+  // 1.5. ToggleButtonGroup: 자식 ToggleButton의 border-box 높이 기반 계산
+  // ToggleButtonGroup 자체는 padding/border 없는 flex 컨테이너이므로
+  // content-box height = 자식 ToggleButton의 border-box height
+  const tag0 = (element.tag ?? '').toLowerCase();
+  if (tag0 === 'togglebuttongroup') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const sizeConfig = TOGGLEBUTTON_SIZE_CONFIG[sizeName] ?? TOGGLEBUTTON_SIZE_CONFIG['md'];
+    const fontSize = sizeConfig.fontSize;
+    const fm = measureFontMetrics(specFontFamily.sans, fontSize, 400);
+    // ToggleButton border-box height = fontBoundingBox lineHeight + paddingY*2 + borderWidth*2
+    return fm.lineHeight + sizeConfig.paddingY * 2 + sizeConfig.borderWidth * 2;
+  }
 
   // 2. Self-rendering 요소는 size prop에 따라 높이 결정
   // contentHeight는 content-box 높이(텍스트 영역)만 반환해야 함
@@ -916,25 +987,119 @@ export function calculateContentHeight(element: Element, availableWidth?: number
       // Column: 높이 = indicator + gap + text line-height
       const indicatorH = INLINE_FORM_INDICATOR_HEIGHTS[tag]?.[sizeName] ?? 20;
       const gap = sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8;
-      const fs = sizeName === 'sm' ? 12 : sizeName === 'lg' ? 16 : 14;
+      // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
+      const fs = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
       return indicatorH + gap + Math.round(fs * 1.4);
     }
     // Row: spec 높이
     return inlineFormHeightConfig[sizeName] ?? 24;
   }
 
-  // 4. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용
+  // 4. Panel: spec shapes 기반 컴포넌트 — 자식 요소 없이 자체 렌더링
+  // CSS Preview 기준 높이 추정 (title section + content section + border)
+  // ⚠️ childElements 블록 밖에 배치: Panel은 element tree에 자식이 없음
+  if (tag === 'panel') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const hasTitle = !!props?.title;
+    const sizeName = (props?.size as string) ?? 'md';
+    const PANEL_HEIGHTS: Record<string, { withTitle: number; noTitle: number }> = {
+      sm: { withTitle: 80, noTitle: 44 },
+      md: { withTitle: 104, noTitle: 64 },
+      lg: { withTitle: 130, noTitle: 80 },
+    };
+    const heights = PANEL_HEIGHTS[sizeName] ?? PANEL_HEIGHTS.md;
+    return hasTitle ? heights.withTitle : heights.noTitle;
+  }
+
+  // 4.5. 컨테이너 컴포넌트: childElements 기반 높이 계산 (lineHeight보다 먼저 처리)
+  // CheckboxGroup, RadioGroup 등 자식 요소를 포함하는 컨테이너의 intrinsic height 산출
+  // ⚠️ lineHeight 체크보다 먼저 와야 함: 컨테이너의 높이는 자식 기반으로 산출해야 함
+  if (childElements && childElements.length > 0) {
+    // CheckboxGroup: 그룹 라벨 + 자식 Checkbox 세로 합산
+    if (tag === 'checkboxgroup' || tag === 'radiogroup') {
+      const props = element.props as Record<string, unknown> | undefined;
+      const sizeName = (props?.size as string) ?? 'md';
+      const gap = sizeName === 'sm' ? 8 : sizeName === 'lg' ? 16 : 12;
+
+      let totalHeight = 0;
+      // 그룹 라벨
+      if (props?.label) {
+        // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
+        const labelFontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
+        totalHeight += estimateTextHeight(labelFontSize) + 8; // label + spacing
+      }
+      // 자식 Checkbox/Radio 항목
+      for (let i = 0; i < childElements.length; i++) {
+        const grandChildren = getChildElements?.(childElements[i].id);
+        totalHeight += calculateContentHeight(childElements[i], availableWidth, grandChildren, getChildElements);
+        if (i < childElements.length - 1) totalHeight += gap;
+      }
+      return totalHeight;
+    }
+
+    // Tabs: 탭 바 높이 + TabPanel 패딩 + 활성 Panel 높이
+    // CSS Preview 기준: Tabs(flex col) → TabList(30px) + TabPanel(pad=16px → Panel)
+    if (tag === 'tabs') {
+      const props = element.props as Record<string, unknown> | undefined;
+      const sizeName = (props?.size as string) ?? 'md';
+      // CSS 기준 탭 바 높이: sm=25, md=30, lg=35
+      const tabBarHeight = sizeName === 'sm' ? 25 : sizeName === 'lg' ? 35 : 30;
+      const tabPanelPadding = 16; // React-Aria TabPanel 기본 padding
+
+      // 활성 Panel의 높이 계산
+      const panelChildren = childElements.filter(c => c.tag === 'Panel');
+      const activePanel = panelChildren[0]; // 기본: 첫 번째 Panel
+      if (activePanel) {
+        const panelGrandChildren = getChildElements?.(activePanel.id);
+        const panelHeight = calculateContentHeight(
+          activePanel, availableWidth,
+          panelGrandChildren, getChildElements
+        );
+        const panelBox = parseBoxModel(activePanel, 0, -1);
+        const panelBorderBox = panelHeight
+          + panelBox.padding.top + panelBox.padding.bottom
+          + panelBox.border.top + panelBox.border.bottom;
+        return tabBarHeight + tabPanelPadding * 2 + panelBorderBox;
+      }
+      return tabBarHeight;
+    }
+
+    // 일반 flex 컨테이너: flexDirection에 따라 자식 높이 합산/max
+    const display = style?.display;
+    if (display === 'flex' || display === 'inline-flex') {
+      const flexDir = (style?.flexDirection as string) || 'row';
+      const gap = parseNumericValue(style?.gap) ?? 0;
+      const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+
+      const childHeights = childElements.map(child => {
+        const grandChildren = getChildElements?.(child.id);
+        const contentH = calculateContentHeight(child, availableWidth, grandChildren, getChildElements);
+        // border-box 높이: padding + border 추가
+        const childBox = parseBoxModel(child, 0, -1);
+        return contentH + childBox.padding.top + childBox.padding.bottom
+          + childBox.border.top + childBox.border.bottom;
+      });
+
+      if (isColumn) {
+        return childHeights.reduce((sum, h) => sum + h, 0)
+          + gap * Math.max(0, childElements.length - 1);
+      }
+      return Math.max(...childHeights, 0);
+    }
+  }
+
+  // 5. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용
   const fontSize = parseNumericValue(style?.fontSize);
   const resolvedLineHeight = parseLineHeight(style, fontSize);
   if (resolvedLineHeight !== undefined) {
     return Math.round(resolvedLineHeight);
   }
 
-  // 5. 태그별 기본 높이 사용
+  // 6. 태그별 기본 높이 사용
   const defaultHeight = DEFAULT_ELEMENT_HEIGHTS[tag];
   if (defaultHeight !== undefined) return defaultHeight;
 
-  // 6. 알 수 없는 태그는 기본값 사용
+  // 7. 알 수 없는 태그는 기본값 사용
   return DEFAULT_HEIGHT;
 }
 
@@ -1110,6 +1275,8 @@ export function enrichWithIntrinsicSize(
   availableWidth: number,
   availableHeight: number,
   _computedStyle?: ComputedStyle,
+  childElements?: Element[],
+  getChildElements?: (id: string) => Element[],
 ): Element {
   const style = element.props?.style as Record<string, unknown> | undefined;
   const tag = (element.tag ?? '').toLowerCase();
@@ -1172,8 +1339,12 @@ export function enrichWithIntrinsicSize(
   const injectedStyle: Record<string, unknown> = { ...style };
 
   // Height 주입
-  if (needsHeight && box.contentHeight > 0) {
-    let injectHeight = box.contentHeight;
+  // childElements가 있으면 재계산 (CheckboxGroup 등 자식 기반 높이 필요)
+  const childResolvedHeight = (childElements && childElements.length > 0)
+    ? calculateContentHeight(element, availableWidth, childElements, getChildElements)
+    : box.contentHeight;
+  if (needsHeight && childResolvedHeight > 0) {
+    let injectHeight = childResolvedHeight;
     if (!hasCSSVerticalPadding || isInlineBlockTag) {
       injectHeight += box.padding.top + box.padding.bottom;
     }
@@ -1184,7 +1355,11 @@ export function enrichWithIntrinsicSize(
   }
 
   // Width 주입 (inline-block 태그의 fit-content / min-content / max-content 에뮬레이션)
-  const baseContentWidth = resolvedIntrinsicWidth ?? box.contentWidth;
+  // childElements가 있으면 재계산 (ToggleButtonGroup 등 자식이 Element로 저장된 경우)
+  const childResolvedWidth = (childElements && childElements.length > 0)
+    ? calculateContentWidth(element, childElements, getChildElements)
+    : box.contentWidth;
+  const baseContentWidth = resolvedIntrinsicWidth ?? childResolvedWidth;
   if (needsWidth && baseContentWidth > 0) {
     let injectWidth = baseContentWidth;
     if (!hasCSSHorizontalPadding || isInlineBlockTag) {

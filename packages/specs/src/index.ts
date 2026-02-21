@@ -168,6 +168,9 @@ export type { CheckboxGroupProps } from './components/CheckboxGroup.spec';
 export { RadioSpec, RADIO_SELECTED_COLORS, RADIO_DIMENSIONS } from './components/Radio.spec';
 export type { RadioProps } from './components/Radio.spec';
 
+export { RadioGroupSpec } from './components/RadioGroup.spec';
+export type { RadioGroupProps } from './components/RadioGroup.spec';
+
 export { SwitchSpec, SWITCH_SELECTED_TRACK_COLORS, SWITCH_DIMENSIONS } from './components/Switch.spec';
 export type { SwitchProps } from './components/Switch.spec';
 

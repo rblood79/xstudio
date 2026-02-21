@@ -154,7 +154,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
         // 헤더 텍스트 (월/년)
         {
           type: 'text' as const,
-          x: calendarWidth / 2,
+          x: paddingX + cellSize,
           y: navRowY + headerHeight / 2,
           text: 'January 2024',
           fontSize,
@@ -163,6 +163,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           fill: variant.text,
           align: 'center' as const,
           baseline: 'middle' as const,
+          maxWidth: calendarWidth - (paddingX + cellSize) * 2,
         },
         // 네비게이션: 다음 화살표
         {
@@ -179,10 +180,10 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       // 요일 헤더 (Sun ~ Sat)
       const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
       for (let col = 0; col < 7; col++) {
-        const cx = paddingX + col * (cellSize + gap) + cellSize / 2;
+        const cellLeft = paddingX + col * (cellSize + gap);
         shapes.push({
           type: 'text' as const,
-          x: cx,
+          x: cellLeft,
           y: weekdayY + cellSize / 2,
           text: weekdays[col],
           fontSize: fontSize - 2,
@@ -191,6 +192,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           fill: '{color.on-surface-variant}' as TokenRef,
           align: 'center' as const,
           baseline: 'middle' as const,
+          maxWidth: cellSize,
         });
       }
 
@@ -199,7 +201,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
         const idx = day - 1 + dayOffset;
         const row = Math.floor(idx / 7);
         const col = idx % 7;
-        const cx = paddingX + col * (cellSize + gap) + cellSize / 2;
+        const cellLeft = paddingX + col * (cellSize + gap);
+        const cx = cellLeft + cellSize / 2;
         const cy = gridStartY + row * (cellSize + gap) + cellSize / 2;
 
         // today 강조 배경
@@ -215,7 +218,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
 
         shapes.push({
           type: 'text' as const,
-          x: cx,
+          x: cellLeft,
           y: cy,
           text: String(day),
           fontSize,
@@ -224,6 +227,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           fill: day === today ? ('{color.on-primary}' as TokenRef) : variant.text,
           align: 'center' as const,
           baseline: 'middle' as const,
+          maxWidth: cellSize,
         });
       }
 
