@@ -1,8 +1,9 @@
 /**
- * DesignKitPanel - 디자인 킷 브라우저 패널
+ * DesignKitPanel - 디자인 킷 브라우저 + 커스텀 컴포넌트 등록 패널
  *
  * G.4 Design Kit System의 UI 진입점.
  * 킷 목록 브라우저, 킷 미리보기, 적용/내보내기 기능 제공.
+ * G.1 커스텀 컴포넌트 등록/관리 기능 포함.
  *
  * Gateway 패턴: isActive 체크 후 Content 렌더링.
  *
@@ -19,6 +20,7 @@ import { useStore } from '../../stores';
 import { KitBrowser } from './components/KitBrowser';
 import { KitPreview } from './components/KitPreview';
 import { KitComponentList } from './components/KitComponentList';
+import { CustomComponentSection } from './components/CustomComponentSection';
 import type { MasterComponentSummary } from '../../../types/builder/component.types';
 import './DesignKitPanel.css';
 
@@ -52,7 +54,12 @@ function DesignKitPanelContent() {
   const childrenMap = useStore((s) => s.childrenMap);
   const componentIndex = useStore((s) => s.componentIndex);
   const currentPageId = useStore((s) => s.currentPageId);
+  const selectedElementId = useStore((s) => s.selectedElementId);
+  const elementsMap = useStore((s) => s.elementsMap);
   const createInstance = useStore((s) => s.createInstance);
+  const registerAsMaster = useStore((s) => s.registerAsMaster);
+  const unregisterMaster = useStore((s) => s.unregisterMaster);
+  const detachInstance = useStore((s) => s.detachInstance);
 
   const [selectedKitId, setSelectedKitId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +91,20 @@ function DesignKitPanelContent() {
     return masters;
   }, [componentIndex, childrenMap]);
 
+  // G.1: 선택된 요소 정보
+  const selectedElement = useMemo(() => {
+    if (!selectedElementId) return null;
+    return elementsMap.get(selectedElementId) ?? null;
+  }, [selectedElementId, elementsMap]);
+
+  const canRegisterAsMaster = useMemo(() => {
+    if (!selectedElement) return false;
+    if (selectedElement.componentRole === 'master') return false;
+    if (selectedElement.componentRole === 'instance') return false;
+    if (selectedElement.tag === 'body') return false;
+    return true;
+  }, [selectedElement]);
+
   // G.1: 인스턴스 생성 핸들러
   const handleCreateInstance = useCallback(
     (masterId: string) => {
@@ -97,6 +118,29 @@ function DesignKitPanelContent() {
     },
     [currentPageId, childrenMap, createInstance],
   );
+
+  // G.1: 컴포넌트 등록 핸들러
+  const handleRegisterAsMaster = useCallback(
+    (componentName: string) => {
+      if (!selectedElementId) return;
+      registerAsMaster(selectedElementId, componentName);
+    },
+    [selectedElementId, registerAsMaster],
+  );
+
+  // G.1: 컴포넌트 등록 해제 핸들러
+  const handleUnregisterMaster = useCallback(
+    (masterId: string) => {
+      unregisterMaster(masterId);
+    },
+    [unregisterMaster],
+  );
+
+  // G.1: 인스턴스 분리 핸들러
+  const handleDetachInstance = useCallback(() => {
+    if (!selectedElementId) return;
+    detachInstance(selectedElementId);
+  }, [selectedElementId, detachInstance]);
 
   // JSON 파일 import
   const handleImport = useCallback(() => {
@@ -200,6 +244,17 @@ function DesignKitPanelContent() {
           </div>
         )}
 
+        {/* G.1: 커스텀 컴포넌트 등록/관리 섹션 */}
+        <CustomComponentSection
+          selectedElement={selectedElement}
+          canRegister={canRegisterAsMaster}
+          masterSummaries={masterSummaries}
+          onRegister={handleRegisterAsMaster}
+          onUnregister={handleUnregisterMaster}
+          onCreateInstance={handleCreateInstance}
+          onDetachInstance={handleDetachInstance}
+        />
+
         {/* 로드된 Kit 미리보기 + 적용 버튼 */}
         {loadedKit && (
           <KitPreview
@@ -218,7 +273,7 @@ function DesignKitPanelContent() {
           onSelectKit={handleSelectKit}
         />
 
-        {/* G.1: 적용된 킷의 마스터 컴포넌트 목록 */}
+        {/* G.1: 적용된 킷의 마스터 컴포넌트 목록 (kit-imported only) */}
         {appliedKitIds.length > 0 && masterSummaries.length > 0 && (
           <KitComponentList
             masters={masterSummaries}

@@ -28,7 +28,12 @@ import {
   type BatchPropsUpdate,
 } from "./utils/elementUpdate";
 import { ElementUtils } from "../../utils/element/elementUtils";
-import { createInstance as createInstanceAction } from "./utils/instanceActions";
+import {
+  createInstance as createInstanceAction,
+  registerAsMaster as registerAsMasterAction,
+  unregisterMaster as unregisterMasterAction,
+  detachInstance as detachInstanceAction,
+} from "./utils/instanceActions";
 import { elementsApi } from "../../services/api";
 import { longTaskMonitor } from "../../utils/longTaskMonitor";
 import { scheduleCancelableBackgroundTask } from "../utils/scheduleTask";
@@ -132,8 +137,11 @@ export interface ElementsState {
   // 🚀 WebGL computed layout 동기화
   updateSelectedElementLayout: (elementId: string, layout: ComputedLayout) => void;
 
-  // G.1: Instance 생성 액션
+  // G.1: Component-Instance 액션
   createInstance: (masterId: string, parentId: string, pageId: string) => Element | null;
+  registerAsMaster: (elementId: string, componentName: string) => Element | null;
+  unregisterMaster: (masterId: string) => { previousMaster: Element; detachedInstances: Element[] } | null;
+  detachInstance: (instanceId: string) => { previousState: Element } | null;
 }
 
 export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
@@ -691,9 +699,21 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     }));
   },
 
-  // G.1: Instance 생성 액션
+  // G.1: Component-Instance 액션
   createInstance: (masterId: string, parentId: string, pageId: string) => {
     return createInstanceAction(get, set, masterId, parentId, pageId);
+  },
+
+  registerAsMaster: (elementId: string, componentName: string) => {
+    return registerAsMasterAction(get, set, elementId, componentName);
+  },
+
+  unregisterMaster: (masterId: string) => {
+    return unregisterMasterAction(get, set, masterId);
+  },
+
+  detachInstance: (instanceId: string) => {
+    return detachInstanceAction(get, set, instanceId);
   },
   };
 };
