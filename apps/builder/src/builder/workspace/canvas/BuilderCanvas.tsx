@@ -633,6 +633,17 @@ const ElementsLayer = memo(function ElementsLayer({
     'Toast', 'Toolbar',  // Form/Feedback/Action 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
     'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',  // Input 복합 컴포넌트
     'Tabs',  // Tab bar(spec shapes) + active Panel(container) 렌더링
+    'Breadcrumbs',  // Breadcrumb 자식 텍스트를 spec shapes에 주입하여 렌더링
+    'ComboBox', 'Select',  // Label 선택 가능하도록 컨테이너 처리 (TagGroup 패턴)
+    'SelectTrigger',  // Select 트리거 내부 자식 (SelectValue + SelectIcon) 렌더링
+    'ComboBoxWrapper',  // ComboBox 입력 컨테이너 내부 자식 (ComboBoxInput + ComboBoxTrigger) 렌더링
+  ]), []);
+
+  // Spec shapes 전용 컴포넌트: 모든 시각 요소를 spec shapes로 렌더링하므로
+  // 자식 요소(dropdown items 등)를 별도 sprite로 렌더링하면 label 영역을 덮는 문제 발생
+  // → 자식 재귀 렌더링 차단
+  const SPEC_SHAPES_ONLY_TAGS = useMemo(() => new Set([
+    'ListBox', 'GridList',
   ]), []);
 
   // Phase 11: 엔진이 계산한 레이아웃으로 직접 배치 (Yoga 제거)
@@ -706,9 +717,15 @@ const ElementsLayer = memo(function ElementsLayer({
             };
           }
 
+          // Breadcrumbs: 모든 Breadcrumb 아이템은 spec shapes가 렌더링
+          // 자식 레이아웃 계산 불필요 (childElements는 텍스트 추출용으로만 전달)
+          let filteredContainerChildren = containerChildren;
+          if (containerTag === 'breadcrumbs') {
+            filteredContainerChildren = [];
+          }
+
           // Tabs: 탭 바 아래에 활성 Panel만 배치 (Tab 요소는 spec shapes가 렌더링)
           // CSS 기준: Tabs(flex col) → TabList(height) + TabPanel(pad=16px → Panel)
-          let filteredContainerChildren = containerChildren;
           if (containerTag === 'tabs') {
             const tabsProps = containerEl.props as Record<string, unknown> | undefined;
             const sizeName = (tabsProps?.size as string) ?? 'md';
@@ -736,6 +753,83 @@ const ElementsLayer = memo(function ElementsLayer({
             };
           }
 
+          // ComboBox/Select: Label + trigger/wrapper만 컨테이너 자식으로 렌더링
+          // ComboBoxItem/SelectItem은 데이터 아이템 → spec shapes 드롭다운에서 처리
+          if (containerTag === 'combobox' || containerTag === 'select') {
+            filteredContainerChildren = containerChildren.filter(c =>
+              c.tag === 'Label' || c.tag === 'SelectTrigger' || c.tag === 'ComboBoxWrapper'
+            );
+
+            parentStyle = {
+              ...(parentStyle || {}),
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,  // spec의 labelGap = 8에 매칭
+            };
+            effectiveContainerEl = {
+              ...containerEl,
+              props: { ...containerEl.props, style: parentStyle },
+            };
+          }
+
+          // SelectTrigger: spec shapes 트리거 영역과 일치하는 히트 영역 크기
+          // Select md: triggerHeight = fontSize(14) + paddingY(8)*2 + 4 = 34
+          if (containerTag === 'selecttrigger') {
+            parentStyle = {
+              ...(parentStyle || {}),
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              height: 34,
+              paddingLeft: 14,
+              paddingRight: 14,
+            };
+            effectiveContainerEl = {
+              ...containerEl,
+              props: { ...containerEl.props, style: parentStyle },
+            };
+            // 자식 implicit styles 주입 (레이아웃 계산 전, DB 요소에 없을 수 있음)
+            filteredContainerChildren = filteredContainerChildren.map(child => {
+              const cs = (child.props?.style || {}) as Record<string, unknown>;
+              if (child.tag === 'SelectValue') {
+                return { ...child, props: { ...child.props, style: { ...cs, flex: cs.flex ?? 1 } } } as Element;
+              }
+              if (child.tag === 'SelectIcon') {
+                return { ...child, props: { ...child.props, style: { ...cs, width: cs.width ?? 18, height: cs.height ?? 18, flexShrink: cs.flexShrink ?? 0 } } } as Element;
+              }
+              return child;
+            });
+          }
+
+          // ComboBoxWrapper: spec shapes 입력 영역과 일치하는 히트 영역 크기
+          // ComboBox md: inputHeight = fontSize(14) + paddingY(8)*2 = 30
+          if (containerTag === 'comboboxwrapper') {
+            parentStyle = {
+              ...(parentStyle || {}),
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              height: 30,
+              paddingLeft: 14,
+              paddingRight: 14,
+            };
+            effectiveContainerEl = {
+              ...containerEl,
+              props: { ...containerEl.props, style: parentStyle },
+            };
+            // 자식 implicit styles 주입 (레이아웃 계산 전, DB 요소에 없을 수 있음)
+            filteredContainerChildren = filteredContainerChildren.map(child => {
+              const cs = (child.props?.style || {}) as Record<string, unknown>;
+              if (child.tag === 'ComboBoxInput') {
+                return { ...child, props: { ...child.props, style: { ...cs, flex: cs.flex ?? 1 } } } as Element;
+              }
+              if (child.tag === 'ComboBoxTrigger') {
+                return { ...child, props: { ...child.props, style: { ...cs, width: cs.width ?? 18, height: cs.height ?? 18, flexShrink: cs.flexShrink ?? 0 } } } as Element;
+              }
+              return child;
+            });
+          }
+
           cachedPadding = parsePadding(parentStyle, containerWidth);
           const parentDisplay = (parentStyle?.display as string | undefined)
             ?? (containerEl.tag === 'Section' ? 'block' : undefined);
@@ -756,29 +850,82 @@ const ElementsLayer = memo(function ElementsLayer({
         const layout = cachedLayoutMap.get(childEl.id);
         if (!layout) return null;
 
-        const childStyle = childEl.props?.style as Record<string, unknown> | undefined;
-        const isContainerType = isContainerTagForLayout(childEl.tag, childStyle);
-        const childElements = isContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
+        // Card: props panel에서 변경된 heading/description을 자식 요소에 주입
+        // CardEditor가 Card.props.heading/description을 업데이트하지만
+        // WebGL TextSprite는 Heading.props.children을 읽으므로 동기화 필요
+        let effectiveChildEl = childEl;
+        const containerTag = (containerEl.tag ?? '');
+        if (containerTag === 'Card') {
+          const cardProps = containerEl.props as Record<string, unknown> | undefined;
+          if (childEl.tag === 'Heading') {
+            const headingText = cardProps?.heading ?? cardProps?.title;
+            if (headingText != null) {
+              effectiveChildEl = {
+                ...childEl,
+                props: { ...childEl.props, children: String(headingText) },
+              };
+            }
+          } else if (childEl.tag === 'Description') {
+            const descText = cardProps?.description;
+            if (descText != null) {
+              effectiveChildEl = {
+                ...childEl,
+                props: { ...childEl.props, children: String(descText) },
+              };
+            }
+          }
+        }
+
+        // Select/ComboBox 구조적 자식: spec shapes가 시각 렌더링 담당
+        // BoxSprite가 기본 흰색 불투명 배경으로 spec shapes를 가리므로 투명 처리
+        // children/text도 비워서 spec shapes 텍스트와 이중 렌더링 방지
+        // implicit styles도 주입하여 DB에 없는 경우에도 올바른 크기 보장
+        if (effectiveChildEl.tag === 'SelectTrigger' || effectiveChildEl.tag === 'SelectValue'
+          || effectiveChildEl.tag === 'SelectIcon' || effectiveChildEl.tag === 'ComboBoxWrapper'
+          || effectiveChildEl.tag === 'ComboBoxInput' || effectiveChildEl.tag === 'ComboBoxTrigger') {
+          const existingStyle = (effectiveChildEl.props?.style || {}) as Record<string, unknown>;
+          const existingProps = (effectiveChildEl.props || {}) as Record<string, unknown>;
+          const tag = effectiveChildEl.tag;
+          // 아이콘/트리거 버튼: 크기 보장, value/input: flex 보장
+          const implicitStyle: Record<string, unknown> =
+            (tag === 'SelectIcon' || tag === 'ComboBoxTrigger')
+              ? { width: 18, height: 18, flexShrink: 0 }
+              : (tag === 'SelectValue' || tag === 'ComboBoxInput')
+                ? { flex: 1 }
+                : {};
+          effectiveChildEl = {
+            ...effectiveChildEl,
+            props: {
+              ...existingProps,
+              children: '',  // spec shapes가 텍스트 렌더링 담당
+              style: { ...implicitStyle, ...existingStyle, backgroundColor: 'transparent' },
+            },
+          };
+        }
+
+        const childStyle = effectiveChildEl.props?.style as Record<string, unknown> | undefined;
+        const isContainerType = isContainerTagForLayout(effectiveChildEl.tag, childStyle);
+        const childElements = isContainerType ? (pageChildrenMap.get(effectiveChildEl.id) ?? []) : [];
 
         return (
           <DirectContainer
-            key={childEl.id}
-            elementId={childEl.id}
+            key={effectiveChildEl.id}
+            elementId={effectiveChildEl.id}
             x={layout.x + cachedPadding.left}
             y={layout.y + cachedPadding.top}
             width={layout.width}
             height={layout.height}
           >
             <ElementSprite
-              element={childEl}
+              element={effectiveChildEl}
               onClick={onClick}
               onDoubleClick={onDoubleClick}
               childElements={isContainerType ? childElements : undefined}
               renderChildElement={isContainerType && childElements.length > 0
-                ? createContainerChildRenderer(childEl, layout.width, layout.height)
+                ? createContainerChildRenderer(effectiveChildEl, layout.width, layout.height)
                 : undefined}
             />
-            {!isContainerType && renderTree(childEl.id, { width: layout.width, height: layout.height })}
+            {!isContainerType && !SPEC_SHAPES_ONLY_TAGS.has(effectiveChildEl.tag) && renderTree(effectiveChildEl.id, { width: layout.width, height: layout.height })}
           </DirectContainer>
         );
       };
@@ -862,7 +1009,7 @@ const ElementsLayer = memo(function ElementsLayer({
                     ? createContainerChildRenderer(child, layout.width, layout.height)
                     : undefined}
                 />
-                {!isContainerType && renderTreeFn(child.id, { width: layout.width, height: layout.height })}
+                {!isContainerType && !SPEC_SHAPES_ONLY_TAGS.has(child.tag) && renderTreeFn(child.id, { width: layout.width, height: layout.height })}
               </DirectContainer>
             );
           })}
@@ -883,7 +1030,7 @@ const ElementsLayer = memo(function ElementsLayer({
 
     return renderTree(bodyElement?.id ?? null);
     // wasmLayoutReady: WASM 로드 완료 시 calculateChildrenLayout()이 Taffy를 사용하므로 재계산 필요
-  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, CONTAINER_TAGS, wasmLayoutReady]);
+  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, CONTAINER_TAGS, SPEC_SHAPES_ONLY_TAGS, wasmLayoutReady]);
 
   // body의 border+padding 오프셋 계산 (자식 시작 위치)
   const bodyStyle = bodyElement?.props?.style as Record<string, unknown> | undefined;

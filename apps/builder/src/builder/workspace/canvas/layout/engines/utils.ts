@@ -692,18 +692,26 @@ export function calculateContentWidth(
   const text = extractTextContent(element.props as Record<string, unknown>);
 
   // 🚀 Checkbox/Radio/Switch: flexDirection에 따른 너비 계산
+  // Switch/Toggle의 indicatorWidth는 Switch.spec.ts의 trackWidth 기준 (36/44/52)
   const INLINE_FORM_INDICATOR_WIDTHS: Record<string, Record<string, number>> = {
     checkbox: { sm: 16, md: 20, lg: 24 },
     radio: { sm: 16, md: 20, lg: 24 },
-    switch: { sm: 26, md: 34, lg: 42 },
-    toggle: { sm: 26, md: 34, lg: 42 },
+    switch: { sm: 36, md: 44, lg: 52 },
+    toggle: { sm: 36, md: 44, lg: 52 },
+  };
+  // Switch/Toggle gap은 Switch.spec.ts sizes 기준 (8/10/12)
+  const INLINE_FORM_GAPS: Record<string, Record<string, number>> = {
+    checkbox: { sm: 6, md: 8, lg: 10 },
+    radio: { sm: 6, md: 8, lg: 10 },
+    switch: { sm: 8, md: 10, lg: 12 },
+    toggle: { sm: 8, md: 10, lg: 12 },
   };
   const inlineFormIndicator = INLINE_FORM_INDICATOR_WIDTHS[tag];
   if (inlineFormIndicator) {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? 'md';
     const indicatorSize = inlineFormIndicator[sizeName] ?? 20;
-    const gap = sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8;
+    const gap = INLINE_FORM_GAPS[tag]?.[sizeName] ?? (sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8);
     // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
     const fontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
     const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
@@ -748,8 +756,9 @@ export function calculateContentWidth(
     }
 
     // 일반 요소
+    // Canvas 2D measureText와 CanvasKit paragraph API 간 폰트 측정 오차 보정 (+2px)
     const fontSize = parseNumericValue(style?.fontSize) ?? 14;
-    return calculateTextWidth(text, fontSize, 0);
+    return Math.ceil(calculateTextWidth(text, fontSize, 0)) + 2;
   }
 
   // 4. 태그별 기본 너비 사용
@@ -845,6 +854,9 @@ export function calculateContentHeight(
 ): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
 
+  // 0. display: none → 레이아웃에서 제외, 높이 0
+  if (style?.display === 'none') return 0;
+
   // 1. 명시적 height가 있으면 사용
   const explicitHeight = parseNumericValue(style?.height);
   if (explicitHeight !== undefined) return explicitHeight;
@@ -923,10 +935,26 @@ export function calculateContentHeight(
     return Math.max(textHeight, minContentHeight);
   }
 
-  // 3. Card 컴포넌트: 텍스트 콘텐츠 기반 높이 계산
+  // 3. Card 컴포넌트: 자식 기반 or 텍스트 콘텐츠 기반 높이 계산
   // 🚀 Card는 style.padding이 있으므로 BlockEngine이 padding을 별도로 추가함
   // contentHeight는 content-box 높이만 반환 (padding 제외)
   if (tag === 'card') {
+    // childElements가 있으면 자식 기반 높이 계산 (display:flex column)
+    // Card factory가 Heading + Description 자식을 생성하므로 이 경로가 우선
+    if (childElements && childElements.length > 0) {
+      const gap = parseNumericValue(style?.gap) ?? 8;
+      let totalHeight = 0;
+      for (let i = 0; i < childElements.length; i++) {
+        const grandChildren = getChildElements?.(childElements[i].id);
+        totalHeight += calculateContentHeight(
+          childElements[i], availableWidth, grandChildren, getChildElements
+        );
+        if (i < childElements.length - 1) totalHeight += gap;
+      }
+      return Math.max(totalHeight, 36);
+    }
+
+    // fallback: props 기반 (자식 없는 Card)
     const props = element.props as Record<string, unknown> | undefined;
     const size = (props?.size as string) ?? 'md';
     const cardConfig = CARD_SIZE_CONFIG[size] ?? CARD_SIZE_CONFIG.md;
@@ -964,6 +992,33 @@ export function calculateContentHeight(
     return Math.max(h, 36);
   }
 
+  // 3.6. ComboBox/Select: CSS 측정 기반 높이 (label + input/trigger)
+  // CSS: Label(fontSize*1.5 ceil) + gap(8) + input/trigger
+  // ComboBox input: fontSize + paddingY*2 (md: 14+16=30)
+  // Select trigger: fontSize + paddingY*2 + 4 (md: 14+16+4=34, 버튼이 input보다 4px 높음)
+  const COMBOBOX_INPUT_HEIGHTS: Record<string, number> = {
+    sm: 20, md: 30, lg: 40,
+  };
+  const SELECT_TRIGGER_HEIGHTS: Record<string, number> = {
+    sm: 24, md: 34, lg: 44,
+  };
+  const LABEL_OFFSETS: Record<string, number> = {
+    sm: 26, md: 29, lg: 32,
+  };
+  if (tag === 'combobox' || tag === 'select' || tag === 'dropdown') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const isSelect = tag === 'select';
+    const bodyHeight = isSelect
+      ? (SELECT_TRIGGER_HEIGHTS[sizeName] ?? 34)
+      : (COMBOBOX_INPUT_HEIGHTS[sizeName] ?? 30);
+    const hasLabel = !!(props?.label);
+    if (hasLabel) {
+      return (LABEL_OFFSETS[sizeName] ?? 29) + bodyHeight;
+    }
+    return bodyHeight;
+  }
+
   // 3.5. Checkbox/Radio/Switch/Toggle: flexDirection에 따른 높이 계산
   const INLINE_FORM_HEIGHTS: Record<string, Record<string, number>> = {
     checkbox: { sm: 20, md: 24, lg: 28 },
@@ -986,7 +1041,11 @@ export function calculateContentHeight(
     if (isColumn) {
       // Column: 높이 = indicator + gap + text line-height
       const indicatorH = INLINE_FORM_INDICATOR_HEIGHTS[tag]?.[sizeName] ?? 20;
-      const gap = sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8;
+      // Switch/Toggle gap은 spec 기준 (8/10/12), Checkbox/Radio는 (6/8/10)
+      const isSwitch = tag === 'switch' || tag === 'toggle';
+      const gap = isSwitch
+        ? (sizeName === 'sm' ? 8 : sizeName === 'lg' ? 12 : 10)
+        : (sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8);
       // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
       const fs = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
       return indicatorH + gap + Math.round(fs * 1.4);
@@ -1009,6 +1068,16 @@ export function calculateContentHeight(
     };
     const heights = PANEL_HEIGHTS[sizeName] ?? PANEL_HEIGHTS.md;
     return hasTitle ? heights.withTitle : heights.noTitle;
+  }
+
+  // 4.2. Breadcrumbs: display:flex, align-items:center — 높이 = lineHeight
+  // CSS에 명시적 height 없음, 텍스트 line-height로 결정
+  // sm: text-xs(12px) * ~1.33 ≈ 16px, md/lg: text-base(16px) * 1.5 = 24px
+  if (tag === 'breadcrumbs') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const BREADCRUMBS_HEIGHTS: Record<string, number> = { sm: 16, md: 24, lg: 24 };
+    return BREADCRUMBS_HEIGHTS[sizeName] ?? 24;
   }
 
   // 4.5. 컨테이너 컴포넌트: childElements 기반 높이 계산 (lineHeight보다 먼저 처리)
@@ -1071,7 +1140,13 @@ export function calculateContentHeight(
       const gap = parseNumericValue(style?.gap) ?? 0;
       const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
 
-      const childHeights = childElements.map(child => {
+      // display: none 자식은 레이아웃에서 제외 (높이 0, gap 미적용)
+      const visibleChildren = childElements.filter(child => {
+        const childStyle = child.props?.style as Record<string, unknown> | undefined;
+        return childStyle?.display !== 'none';
+      });
+
+      const childHeights = visibleChildren.map(child => {
         const grandChildren = getChildElements?.(child.id);
         const contentH = calculateContentHeight(child, availableWidth, grandChildren, getChildElements);
         // border-box 높이: padding + border 추가
@@ -1082,7 +1157,7 @@ export function calculateContentHeight(
 
       if (isColumn) {
         return childHeights.reduce((sum, h) => sum + h, 0)
-          + gap * Math.max(0, childElements.length - 1);
+          + gap * Math.max(0, visibleChildren.length - 1);
       }
       return Math.max(...childHeights, 0);
     }
@@ -1315,7 +1390,11 @@ export function enrichWithIntrinsicSize(
   }
 
   // contentHeight <= 0이면 컨테이너 요소 (div, section 등) — 스킵
-  if (box.contentHeight <= 0 && !needsWidth) return element;
+  // 단, ComboBox/Select 등 spec shapes 기반 입력 컴포넌트는 예외:
+  // flex container 스타일(flexDirection: column)로 parseBoxModel이 contentHeight=0을 반환하지만,
+  // calculateContentHeight에서 spec size 기반 높이를 산출하므로 height 주입이 필요함
+  const SPEC_SHAPES_INPUT_TAGS = new Set(['combobox', 'select', 'dropdown', 'breadcrumbs']);
+  if (box.contentHeight <= 0 && !needsWidth && !SPEC_SHAPES_INPUT_TAGS.has(tag)) return element;
 
   // padding과 border를 독립적으로 처리:
   // - CSS에 해당 속성이 없으면 → spec 기본값을 크기에 포함
@@ -1345,10 +1424,19 @@ export function enrichWithIntrinsicSize(
     : box.contentHeight;
   if (needsHeight && childResolvedHeight > 0) {
     let injectHeight = childResolvedHeight;
-    if (!hasCSSVerticalPadding || isInlineBlockTag) {
+    // parseBoxModel의 treatAsBorderBox 로직과 일치시켜야 함:
+    // Card/Box/Section은 height를 border-box로 해석하므로 padding+border 포함 필요
+    const isSectionLike = tag === 'section';
+    const isCardLike = tag === 'card' || tag === 'box';
+    const isTreatedAsBorderBox = (isSectionLike || isCardLike)
+      && style?.boxSizing !== 'content-box';
+    // ComboBox/Select: calculateContentHeight가 전체 시각적 높이(label+input/trigger)를 반환
+    // spec shapes가 내부 padding 없이 렌더링하므로 추가 padding/border 불필요
+    const isSpecShapesInput = SPEC_SHAPES_INPUT_TAGS.has(tag);
+    if (!isSpecShapesInput && (isTreatedAsBorderBox || !hasCSSVerticalPadding || isInlineBlockTag)) {
       injectHeight += box.padding.top + box.padding.bottom;
     }
-    if (!hasCSSVerticalBorder || isInlineBlockTag) {
+    if (!isSpecShapesInput && (isTreatedAsBorderBox || !hasCSSVerticalBorder || isInlineBlockTag)) {
       injectHeight += box.border.top + box.border.bottom;
     }
     injectedStyle.height = injectHeight;

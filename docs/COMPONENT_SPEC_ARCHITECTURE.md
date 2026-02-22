@@ -1,7 +1,7 @@
 # Component Spec Architecture - 상세 설계 문서
 
-> **작성일**: 2026-01-27
-> **상태**: Phase 6 Skia Spec 렌더링 구현 완료
+> **작성일**: 2026-01-27 | **수정일**: 2026-02-22
+> **상태**: Phase 6 Skia Spec 렌더링 구현 완료 | Slider Complex Component 전환 완료
 > **목표**: Builder(CanvasKit/Skia)와 Publish(React)의 100% 시각적 일치
 
 ---
@@ -3035,6 +3035,23 @@ if (treatAsBorderBox) {
 }
 ```
 
+**v3.9 추가 — Card/Box/Section border-box 처리**:
+컨테이너 요소(`Card`, `Box`, `Section`)도 `treatAsBorderBox` 대상으로 추가되었습니다.
+이들 요소는 `enrichWithIntrinsicSize()`에서 `padding + border`를 포함한 높이를 주입하므로,
+`parseBoxModel()`이 명시적 `width`/`height`를 border-box로 취급해야 BlockEngine 이중 계산을 방지합니다.
+
+```typescript
+// utils.ts enrichWithIntrinsicSize() — Card/Box/Section border-box 주입
+const isTreatedAsBorderBox = ['card', 'box', 'section'].includes(tag);
+if (isTreatedAsBorderBox && intrinsicHeight !== undefined) {
+  // padding + border 포함한 높이를 엔진에 content 크기로 전달
+  const padBorderV = padding.top + padding.bottom + border.top + border.bottom;
+  intrinsicHeight = Math.max(0, intrinsicHeight - padBorderV);
+}
+```
+
+> **관련**: §9.10.4 border-box 정합성, §4.7.4.2 BlockEngine border-box 크기 계산
+
 #### 4.7.4.6 calculateContentWidth 순수 텍스트 너비 반환 (v1.12)
 
 폼 요소(`button`, `input`, `select`, `a`, `label`)에 대해 `calculateContentWidth()`는
@@ -3180,10 +3197,10 @@ export function smoothRoundRect(
 | 6 | CheckboxGroup | ✅ 정상 | 높음 |
 | 7 | Radio | ⚠️ 부분 | 중간 |
 | 8 | Switch | ✅ 정상 | 중간 |
-| 9 | Select | ⚠️ 부분 | 높음 |
+| 9 | Select | ✅ 정상 | 높음 |
 | 10 | ComboBox | ✅ 정상 | 높음 |
 | 11 | ListBox | ✅ 정상 | 높음 |
-| 12 | Slider | ✅ 정상 | 높음 |
+| 12 | Slider | ✅ 완전 지원 (Complex Component 전환 완료) | 높음 |
 | 13 | Meter | ⚠️ 부분 | 중간 |
 | 14 | ProgressBar | ⚠️ 부분 | 중간 |
 | 15 | Form | ⚠️ 부분 | 낮음 |
@@ -3378,7 +3395,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 - [ ] Select.spec.ts
 - [ ] ComboBox.spec.ts
 - [ ] ListBox.spec.ts
-- [ ] Slider.spec.ts
+- [x] Slider.spec.ts ← Complex Component 전환 + TokenRef offsetY 버그 수정 (2026-02-22)
 - [ ] Meter.spec.ts
 - [ ] ProgressBar.spec.ts
 - [ ] Form.spec.ts
@@ -3395,9 +3412,9 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 |---|----------|----------|--------|
 | 1 | Table | ✅ 정상 | 매우 높음 |
 | 2 | Tree | ✅ 정상 | 높음 |
-| 3 | Tabs | ⚠️ 부분 | 높음 |
+| 3 | Tabs | ✅ 완전 지원 (컨테이너 패턴) | 높음 |
 | 4 | Menu | ⚠️ 부분 | 높음 |
-| 5 | Breadcrumbs | ⚠️ 부분 | 중간 |
+| 5 | Breadcrumbs | ✅ 정상 (CONTAINER_TAGS 전환) | 중간 |
 | 6 | Pagination | ⚠️ 부분 | 중간 |
 | 7 | TagGroup | ✅ 정상 (CONTAINER_TAGS 전환) | 중간 |
 | 8 | GridList | ✅ 정상 | 높음 |
@@ -3606,7 +3623,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
 - [ ] Tree.spec.ts
 - [ ] Tabs.spec.ts
 - [ ] Menu.spec.ts
-- [ ] Breadcrumbs.spec.ts
+- [x] Breadcrumbs.spec.ts (CONTAINER_TAGS 전환 완료)
 - [ ] Pagination.spec.ts
 - [x] TagGroup.spec.ts (CONTAINER_TAGS 전환 완료)
 - [ ] GridList.spec.ts
@@ -4239,6 +4256,7 @@ Body의 `display: 'block'` → DropflowBlockEngine 경로에서의 폼 컨트롤
 |------|------|
 | `engines/utils.ts` | `enrichWithIntrinsicSize()`: leaf UI 컴포넌트 intrinsic 크기 주입 (Taffy Flex/Dropflow Block 공용) |
 | `engines/utils.ts` | `calculateContentHeight`/`Width`: INLINE_FORM 테이블 기반 크기 계산 |
+| `engines/utils.ts` | `INLINE_FORM_INDICATOR_WIDTHS` switch/toggle 값 수정 (26/34/42 → 36/44/52) + `INLINE_FORM_GAPS` 테이블 신규 추가 (v3.10) |
 
 ### 9.4 flexDirection:column 지원
 
@@ -4629,6 +4647,8 @@ PixiJS Canvas (z-index: 4)        ← 이벤트 전용 (alpha=0, 보이지 않�
 | **Disclosure** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
 | **DisclosureGroup** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
 | **Accordion** | (= DisclosureGroup) | ❌ | ❌ | ✅ | ⚠️ DisclosureGroup 별칭 |
+| **Tabs** | ✅ | ✅ | ✅ | ✅ | ✅ 완전 지원 (컨테이너 패턴) |
+| **Breadcrumbs** | nav | flex | `_crumbs` 주입 (자식 텍스트 배열) | `filteredContainerChildren = []` | ✅ 정상 (CONTAINER_TAGS 전환) |
 | **Box** | (= Card 별칭) | ❌ | ❌ | ✅ | ⚠️ Card Factory 재사용 |
 
 > **Note**: Drill-Down 자체는 CONTAINER_TAGS 등록만으로 작동한다 (`enterEditingContext` + `createContainerChildRenderer`).
@@ -4657,6 +4677,12 @@ PixiJS Canvas (z-index: 4)        ← 이벤트 전용 (alpha=0, 보이지 않�
 - [ ] **5. Renderer 등록**: `packages/shared/src/renderers/`에서 children 렌더링 지원
 - [ ] **6. Spec 등록 (leaf일 경우)**: `TAG_SPEC_MAP`에 매핑 (컨테이너는 등록하지 않음)
 - [ ] **7. Drill-Down 테스트**: 클릭→컨테이너 선택, 더블클릭→자식 선택, Escape→상위 복귀
+
+**전환 완료 컴포넌트 (CONTAINER_TAGS 등록 완료):**
+
+- [x] **TagGroup** — 3-level 계층 (TagGroup > Label + TagList > Tag×N), TaffyFlexEngine
+- [x] **Tabs** — 컨테이너 패턴, Panel 필터링, paddingTop=tabBar+padding
+- [x] **Breadcrumbs** — nav/flex, `_crumbs` 주입 (자식 텍스트 배열), `filteredContainerChildren = []`
 
 **구조 동일성 원칙:**
 
@@ -4733,7 +4759,7 @@ Skia가 시각 렌더링을 담당하지만, 불필요한 PixiJS 드로잉이 �
 | PixiMenu | 333 | 4 | 4 | items + separators |
 | PixiTabs | 376 | 3 | 3 | tab bar + content |
 | PixiSearchField | 227 | 3 | 3 | input + icon |
-| PixiBreadcrumbs | 215 | 2 | 3 | items + separators |
+| PixiBreadcrumbs | 215 | 2 | 3 | items + separators ← **Skia spec shapes 전환 완료, 더 이상 사용 안 함** |
 | PixiPagination | 245 | 7 | 1 | 페이지 버튼 |
 | PixiMeter | 281 | 2 | 2 | track + fill |
 | PixiLink | 184 | 0 | 1 | 텍스트만 (TextStyle) |
@@ -4793,6 +4819,405 @@ export const PixiXXX = memo(function PixiXXX({ element, onClick }: Props) {
   );
 });
 ```
+
+## 9.9 Tabs 컨테이너 렌더링 아키텍처
+
+### 9.9.1 CSS Preview 구조 (정상 참조)
+
+```
+Tabs (348×166) display:flex flex-direction:column
+├── TabList (348×30) flex row, border-bottom: 1px solid
+│   ├── Tab "Tab 1" (66×29) pad=4px 16px
+│   └── Tab "Tab 2" (68×29) pad=4px 16px
+└── TabPanel (348×136) pad=16px
+    └── Panel (316×104) flex column, border: 1px solid
+```
+
+### 9.9.2 WebGL Canvas 렌더링 구조
+
+```
+Tabs → ElementSprite (spec shapes: tab bar + indicator + 구분선)
+├── Tab texts → spec shapes (Skia 렌더링)
+├── Selection indicator → spec shapes (line, strokeWidth=3)
+└── Panel → 컨테이너 시스템 (DirectContainer 배치)
+    └── Panel spec shapes (배경 + 테두리 + 타이틀)
+```
+
+### 9.9.3 높이 계산 흐름
+
+1. `enrichWithIntrinsicSize` → `calculateContentHeight(Tabs)`
+2. Tabs: `tabBarHeight(30) + tabPanelPadding*2(32) + panelBorderBox`
+3. Panel 재귀: `PANEL_HEIGHTS.md.withTitle = 104`
+4. Total: `30 + 32 + 104 = 166px` (CSS와 일치)
+
+### 9.9.4 핵심 패턴
+
+- **effectiveElementWithTabs**: Tab 자식에서 `_tabLabels` 추출 → spec shapes에 동적 레이블
+- **Panel 높이 케이스 위치**: `childElements` 블록 **밖** (Panel은 element tree에 자식 없음)
+- **TokenRef fontSize**: `typeof === 'number'` 체크 후 height 기반 fallback 매핑
+- **CONTAINER_TAGS 필터링**: `containerChildren.filter(c => c.tag === 'Panel')` → 활성 Panel만
+- **BuilderCanvas paddingTop**: `tabBarHeight + tabPanelPadding` → Panel을 탭 바 아래 배치
+
+---
+
+## 9.10 Card 컨테이너 렌더링 아키텍처
+
+### 9.10.1 Card element tree 구조
+
+Card는 `display:flex`, `flexDirection:column` 컨테이너로, 자식 요소를 순서대로 배치합니다.
+CSS Preview와 캔버스 렌더링이 동일한 element tree를 공유합니다.
+
+```
+Card (display:flex, flexDirection:column, padding:16px, gap:8px)
+├── Heading  ("Card Title", fontSize:16, fontWeight:600)
+└── Description  ("Card description text", fontSize:14)
+```
+
+- **Heading**: `TEXT_TAGS`에 포함된 태그로, TextSprite를 통해 Skia 텍스트 렌더링
+- **Description**: v3.9 패치에서 `TEXT_TAGS`에 추가되어 TextSprite 렌더링 활성화
+- **gap**: 자식 요소 사이의 수직 간격 (`gap:8px` 기본값)
+- **padding**: Card 자체 내부 여백 (`padding:16px` 기본값)
+
+### 9.10.2 TEXT_TAGS 확장 — Description 태그 추가
+
+**배경**: Description 태그가 `TEXT_TAGS` 목록에 누락되어 있어 TextSprite 렌더링이 활성화되지 않고
+plain container로 처리되었습니다.
+
+**해결**: `TEXT_TAGS` 상수에 `'description'` 태그를 추가하여 Heading, Paragraph 등과 동일하게
+TextSprite 렌더링 파이프라인을 거치도록 합니다.
+
+```typescript
+// engines/utils.ts 또는 canvas/constants.ts
+export const TEXT_TAGS = new Set([
+  'heading', 'paragraph', 'label', 'span', 'text',
+  'description', // v3.9 추가 — Card 내 텍스트 자식 렌더링
+]);
+```
+
+> **관련**: §9.3.1 nodeRenderers.ts TextShape 렌더링, §4.5 CanvasKit/Skia 렌더링 패턴
+
+### 9.10.3 높이 계산 흐름
+
+Card의 intrinsic 높이는 `enrichWithIntrinsicSize()` → `calculateContentHeight(Card)`를 통해 결정됩니다.
+
+1. `enrichWithIntrinsicSize(Card)` 호출
+2. `childElements`가 존재하면 자식 기준 계산 우선:
+   - `Heading.intrinsicHeight + gap + Description.intrinsicHeight`
+3. `childElements`가 없으면 스펙 기본값(`CARD_DEFAULT_HEIGHT`) 사용
+4. 결과에 `padding.top + padding.bottom` 합산 → 엔진에 border-box 크기 전달
+
+```
+calculateContentHeight(Card)
+  └── childElements 우선 탐색
+      ├── Heading.intrinsicHeight  (텍스트 측정 기반)
+      ├── gap (8px)
+      └── Description.intrinsicHeight (텍스트 측정 기반)
+```
+
+### 9.10.4 border-box 정합성 — enrichWithIntrinsicSize
+
+Card, Box, Section은 `enrichWithIntrinsicSize()`에서 `padding + border`를 포함한 높이를 주입합니다.
+이 값을 BlockEngine이 `content-box + padding + border`로 다시 합산하면 이중 계산이 발생하므로,
+`parseBoxModel()`의 `isTreatedAsBorderBox` 체크를 통해 차감 처리합니다.
+
+| 컴포넌트 | enrichWithIntrinsicSize 주입 | parseBoxModel treatAsBorderBox |
+|----------|------------------------------|--------------------------------|
+| Button, Input, Select | padding+border 포함 intrinsic | `isFormElement` 조건 |
+| Card, Box, Section | padding+border 포함 intrinsic | `isTreatedAsBorderBox` 조건 (v3.9) |
+
+> **관련**: §4.7.4.5 parseBoxModel border-box 변환, §4.7.4.2 BlockEngine border-box 크기 계산
+
+### 9.10.5 Card props→children 텍스트 동기화 패턴 (v3.11)
+
+**배경**: `CardEditor`는 Card element의 `props.heading`, `props.title`, `props.description`을 업데이트합니다.
+그러나 WebGL의 `TextSprite`는 자식 Heading/Description element의 `props.children`을 읽으므로,
+Card.props 변경이 자식 요소에 자동으로 전파되지 않아 Properties Panel에서 텍스트를 변경해도
+캔버스에 반영되지 않는 버그가 발생했습니다.
+
+**해결 — BuilderCanvas.tsx `createContainerChildRenderer`**
+
+Card 자식을 렌더링할 때 Card element의 props를 자식의 `props.children`에 주입합니다.
+이 패턴은 Tabs의 `_tabLabels` 동적 주입과 동일합니다.
+
+```typescript
+// BuilderCanvas.tsx — createContainerChildRenderer 내부
+// Card props → 자식 Heading/Description 주입
+if (containerTag === 'card' || containerTag === 'Card') {
+  const cardProps = containerElement.props;
+  if (childElement.tag === 'Heading' || childElement.tag === 'heading') {
+    effectiveChild = {
+      ...childElement,
+      props: {
+        ...childElement.props,
+        // heading 우선, 없으면 title 폴백
+        children: cardProps.heading ?? cardProps.title ?? childElement.props.children,
+      },
+    };
+  } else if (childElement.tag === 'Description' || childElement.tag === 'description') {
+    effectiveChild = {
+      ...childElement,
+      props: {
+        ...childElement.props,
+        children: cardProps.description ?? childElement.props.children,
+      },
+    };
+  }
+}
+```
+
+**해결 — LayoutRenderers.tsx CSS Preview 동기화**
+
+CSS Preview Card 렌더러에도 `heading`, `subheading`, `footer` props를 자식에 전달하여
+CSS Preview와 WebGL Canvas 간 텍스트 소스를 일치시킵니다.
+
+```typescript
+// packages/shared/src/renderers/LayoutRenderers.tsx — Card 렌더러
+// heading/subheading/footer props를 자식 렌더러에 전달
+<CardRenderer
+  heading={element.props.heading ?? element.props.title}
+  subheading={element.props.subheading}
+  footer={element.props.footer}
+  description={element.props.description}
+  {...restProps}
+/>
+```
+
+**우선순위 규칙**
+
+| 자식 태그 | 주입 소스 | 우선순위 |
+|-----------|----------|---------|
+| Heading | `card.props.heading ?? card.props.title` | `heading` 있으면 `title` 미사용 |
+| Description | `card.props.description` | — |
+| (SubHeading) | `card.props.subheading` | — |
+
+> **관련**: §9.9.4 핵심 패턴 (Tabs `_tabLabels` 주입), §9.10.1 Card element tree 구조
+
+---
+
+## 9.11 TagGroup label 두 줄 렌더링 버그 수정 (2026-02-22)
+
+### 9.11.1 현상 및 근본 원인
+
+WebGL Canvas에서 TagGroup 컴포넌트의 label("Tag Group")이 두 줄로 렌더링되는 버그가 발생했다.
+근본 원인은 두 가지다.
+
+**원인 1 — Spec shapes 중복 렌더링**
+
+`TagGroupSpec.render.shapes`가 label 텍스트를 fontSize 12px로 직접 렌더링하면서,
+동시에 자식 Label 엘리먼트도 fontSize 14px로 독립적으로 렌더링하여
+두 개의 텍스트가 겹쳐 두 줄처럼 표시되었다.
+
+```
+렌더링 결과 (수정 전):
+┌──────────────────────────┐
+│ Tag Group  ← spec shapes (fontSize:12)
+│ Tag Group  ← 자식 Label element (fontSize:14)
+│ [Tag 1] [Tag 2]
+└──────────────────────────┘
+```
+
+**원인 2 — Canvas 2D → CanvasKit 폭 측정 오차**
+
+`calculateContentWidth`의 일반 텍스트 경로에서 Canvas 2D `measureText` 결과(65px)를 보정 없이
+그대로 사용했다. CanvasKit paragraph API는 동일 텍스트를 렌더링할 때 더 넓은 폭을 필요로 하여
+폭이 부족한 경우 텍스트가 자동 wrapping되었다.
+
+INLINE_FORM 경로(line 718-719)에는 이미 `Math.ceil() + 2` 보정이 존재했으나,
+일반 텍스트 경로(line 759-760)에는 동일 보정이 누락되어 있었다.
+
+### 9.11.2 수정 내용
+
+**수정 파일 1 — `packages/specs/src/components/TagGroup.spec.ts`**
+
+`render.shapes`에서 label 텍스트 shape을 제거한다.
+label 렌더링은 자식 Label 엘리먼트 단독 담당으로 일원화한다.
+
+```typescript
+// TagGroup.spec.ts — render.shapes (수정 전)
+shapes: (props, size) => [
+  // ... 배경, 테두리 shape ...
+  {
+    type: 'text',
+    content: props.label ?? 'Tag Group',
+    fontSize: 12,
+    // ...
+  },
+  // ... TagList, Tag shape ...
+]
+
+// TagGroup.spec.ts — render.shapes (수정 후)
+shapes: (props, size) => [
+  // ... 배경, 테두리 shape만 유지 ...
+  // label 텍스트 shape 제거 — 자식 Label element가 렌더링 담당
+  // ... TagList, Tag shape ...
+]
+```
+
+**수정 파일 2 — `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`**
+
+일반 텍스트 경로에 Canvas 2D→CanvasKit 폭 측정 보정을 추가한다.
+INLINE_FORM 경로(line 718-719)와 동일한 `Math.ceil() + 2` 패턴을 적용한다.
+
+```typescript
+// engines/utils.ts — calculateContentWidth (수정 전, line 759-760)
+const textWidth = calculateTextWidth(text, fontSize, fontWeight, fontFamily);
+return textWidth;
+
+// engines/utils.ts — calculateContentWidth (수정 후, line 759-760)
+const textWidth = calculateTextWidth(text, fontSize, fontWeight, fontFamily);
+return Math.ceil(textWidth) + 2;  // Canvas 2D → CanvasKit 폭 측정 보정
+```
+
+### 9.11.3 Spec shapes label 중복 렌더링 제거 원칙
+
+컴포넌트 spec에서 자식 엘리먼트와 spec shapes 간 텍스트 렌더링이 겹치지 않도록
+아래 원칙을 준수한다.
+
+| 렌더링 담당 | 적용 조건 | 예시 |
+|------------|----------|------|
+| **자식 엘리먼트** | Label, Heading, Description 등 독립 element tree 노드 | TagGroup > Label, Card > Heading |
+| **spec shapes** | 자식 element가 없는 내부 장식 텍스트 | Tab 레이블(Tabs), 버튼 내 텍스트(Button) |
+
+> spec shapes와 자식 element가 동일 텍스트를 이중 렌더링하면 Canvas에서 두 줄/겹침으로 표시된다.
+> 자식 element가 담당하는 경우 spec shapes에서 해당 텍스트 shape을 제거한다.
+
+### 9.11.4 Canvas 2D → CanvasKit 폭 보정 패턴
+
+`calculateContentWidth`에서 Canvas 2D `measureText`와 CanvasKit paragraph 간 측정값 차이를 보정한다.
+
+```typescript
+// engines/utils.ts — 공통 보정 패턴
+// INLINE_FORM 경로 (line 718-719) 및 일반 텍스트 경로 (line 759-760) 동일 적용
+return Math.ceil(calculateTextWidth(text, fontSize, fontWeight, fontFamily)) + 2;
+//     ^^^^^^^^^^                                                              ^^^
+//     소수점 올림 (픽셀 단위 정수화)                                          CanvasKit 여유 마진
+```
+
+- `Math.ceil()`: Canvas 2D `measureText`가 반환하는 소수점 너비를 픽셀 단위로 올림
+- `+ 2`: CanvasKit paragraph API의 자체 padding/렌더링 여유 폭 확보
+
+---
+
+## 9.12 Slider Complex Component 전환 (2026-02-22)
+
+### 9.12.1 전환 배경 및 목표
+
+Slider는 단순 컴포넌트(단일 element)에서 **Complex Component**(DOM 구조를 그대로 반영하는 계층적 element tree)로 전환되었다. 이 전환으로 layer tree가 실제 DOM 구조와 1:1로 일치하게 되었으며, Select/ComboBox 등 기존 Complex Component 패턴을 동일하게 따른다.
+
+### 9.12.2 DOM 구조 (element tree)
+
+```
+Slider (display:flex, flexDirection:column)
+├── Label            (텍스트 — 레이블)
+├── SliderOutput     (텍스트 — 현재 값 표시)
+└── SliderTrack      (track 배경 + fill)
+    └── SliderThumb  (드래그 핸들)
+```
+
+이 구조는 React-Aria의 `<Slider>` DOM 구조와 동일하다.
+
+### 9.12.3 복합 컴포넌트 전환 절차
+
+Slider를 Complex Component로 전환할 때 수정한 파일과 역할은 다음과 같다.
+
+| 파일 | 역할 |
+|------|------|
+| `FormComponents.ts` | `createSliderDefinition()` 팩토리 추가 — 4개 자식 element 재귀 생성 |
+| `ComponentFactory.ts` | Slider creator 등록 — `TAG_CREATOR_MAP`에 항목 추가 |
+| `useElementCreator.ts` | `complexComponents` 배열에 `'Slider'` 추가 — 삽입 시 복합 구조 생성 경로로 분기 |
+| `ElementSprite.tsx` | `_hasLabelChild` 체크에 `'Slider'` 추가 — spec shapes의 label/output 중복 렌더링 방지 |
+| `Slider.spec.ts` | `_hasLabelChild` 플래그 처리 추가 — 자식 element가 담당할 때 shapes 스킵 |
+
+> 동일 패턴 참조: Select, ComboBox — `useElementCreator.ts`의 `complexComponents` 배열과 `_hasLabelChild` 플래그 사용이 동일하다.
+
+### 9.12.4 `_hasLabelChild` 패턴 (Select / ComboBox / Slider 공통)
+
+복합 컴포넌트로 전환된 컴포넌트는 자식 Label/Output element가 텍스트 렌더링을 직접 담당한다. 이때 spec의 `render.shapes`에서 label/output 텍스트 shape를 그대로 출력하면 이중 렌더링이 발생한다.
+
+`_hasLabelChild` 플래그는 이를 방지하기 위한 패턴이다.
+
+```typescript
+// ElementSprite.tsx — _hasLabelChild 체크 (Slider 포함)
+const isComplexWithLabel =
+  ['Select', 'ComboBox', 'Slider'].includes(element.tag) &&
+  childElements.some(c => c.tag === 'Label' || c.tag === 'SliderOutput');
+
+// shapes 호출 시 플래그 전달
+const shapes = spec.render.shapes(props, variant, size, state, {
+  _hasLabelChild: isComplexWithLabel,
+});
+
+// Slider.spec.ts — shapes 내부에서 플래그로 스킵
+shapes: (props, variant, size, state, flags) => {
+  const shapes: Shape[] = [];
+
+  // label/output 텍스트: 자식 element가 렌더링 담당이면 스킵
+  if (!flags?._hasLabelChild) {
+    shapes.push({ type: 'text', /* label ... */ });
+    shapes.push({ type: 'text', /* output value ... */ });
+  }
+
+  // track, thumb shapes는 항상 출력
+  shapes.push({ type: 'roundRect', /* track ... */ });
+  shapes.push({ type: 'circle',    /* thumb ... */ });
+
+  return shapes;
+},
+```
+
+> **적용 컴포넌트**: Select, ComboBox, Slider — 세 컴포넌트 모두 동일 패턴. 새로운 Complex Component 전환 시에도 동일하게 적용한다.
+
+### 9.12.5 TokenRef offsetY 버그 — `resolveToken()` 필수 원칙
+
+**증상**: track과 thumb이 렌더링되지 않는 현상.
+
+**원인**: `SizeSpec.fontSize`는 `TokenRef` 타입(`'{typography.text-sm}'`)이다. 이를 숫자 연산(`+`)에 직접 사용하면 문자열 연결이 발생하여 `offsetY`가 `NaN`이 된다.
+
+```typescript
+// 잘못된 코드 (NaN 발생)
+const offsetY = (height - size.fontSize) / 2;
+//                       ^^^^^^^^^^^^^^^^
+//                       문자열 연결 → NaN → track/thumb y 좌표 NaN
+
+// 올바른 코드 — resolveToken()으로 숫자 변환 후 연산
+import { resolveToken } from '../renderers/utils/tokenResolver';
+
+const fontSizePx = typeof size.fontSize === 'number'
+  ? size.fontSize
+  : resolveToken(size.fontSize) as number;
+
+const offsetY = (height - fontSizePx) / 2;
+```
+
+> **CRITICAL 규칙**: spec `shapes()` 함수 내에서 `SizeSpec.fontSize`, `SizeSpec.borderRadius` 등 `TokenRef` 타입 필드를 숫자 연산에 사용할 때는 반드시 `resolveToken()`을 통해 숫자로 변환한다. `typeof === 'number'` 체크로 이미 숫자인 경우를 처리하고, 문자열인 경우 `resolveToken()` 호출이 필수이다.
+
+### 9.12.6 SliderOutput 텍스트 위치 수정
+
+**증상**: SliderOutput 텍스트가 컨테이너 바깥(오른쪽 화면 밖)에 렌더링되는 현상.
+
+**원인**: `x: width`로 설정하면 텍스트 시작점이 컨테이너 오른쪽 끝에 위치한다.
+
+```typescript
+// 잘못된 코드
+{ type: 'text', x: width, text: String(props.value ?? 0), align: 'right' }
+
+// 올바른 코드 — x:0 + maxWidth로 컨테이너 내 우측 정렬
+{ type: 'text', x: 0, maxWidth: width, text: String(props.value ?? 0), align: 'right' }
+```
+
+`x: 0`에서 시작하되 `maxWidth: width`를 설정하면, CanvasKit ParagraphBuilder가 컨테이너 너비 내에서 `align: 'right'`를 올바르게 적용한다.
+
+### 9.12.7 Slider DIMENSIONS 스펙
+
+M3 디자인 토큰 기반의 치수:
+
+| size | trackHeight | thumbSize |
+|------|-------------|-----------|
+| sm   | 4px         | 14px      |
+| md   | 6px         | 18px      |
+| lg   | 8px         | 22px      |
+
+CSS 파일에서 `.sm`, `.primary` 클래스 selector 방식에서 `[data-size="sm"]`, `[data-variant="primary"]` data-attribute selector로 전환하여 React-Aria의 data-attribute 상태 관리와 일치시켰다.
 
 ---
 
@@ -5499,3 +5924,10 @@ Spec 수정 → pnpm --filter @xstudio/specs build → dist/ 갱신 → Builder 
 | 2026-02-19 | 3.5 | **§9.8.6 Pixi UI 컴포넌트 Skia 전환 현황**: 62개 전수 조사 — A등급(투명 히트영역, 전환 완료) 12개, B등급(WebGL 드로잉 잔존, 전환 필요) 47개, C등급(Dead Code) 1개. A등급 목표 패턴(PixiButton 참조) 문서화. B등급 47개 재작성 로드맵 |
 | 2026-02-19 | 3.7 | **문서 품질 검토 21건 수정**: (1) **CRITICAL** — §10.4/10.5 하위 10개 소섹션 번호 `9.x.x`→`10.x.x` 수정, 변경 이력 v3.0-3.6 시간순 정렬, 성공 기준 컴포넌트 수 72→73, Token Resolver `shadows.dark/light`→단일 `shadows` 객체, (2) **레거시 축소** — PixiRenderer 코드 블록 ~330줄→~30줄 핵심 인터페이스만 유지, parseCSSSize 레거시 패턴 ~55줄→폐기 요약 10줄, Phase 1-4 테스트 코드를 CanvasKit 기반으로 교체, waitForPixiRender→waitForCanvasKitRender, (3) **불일치 수정** — Shape→API 테이블 "현재 PixiJS"→"레거시 PixiJS"로 헤더 수정, 삭제된 eventBridge.ts/dirtyRectTracker.ts 디렉토리 구조에서 정리, roundRect per-corner radius TODO 추가, (4) **누락 보완** — Taffy(Flex/Grid) vs Dropflow(Block/Inline) 역할 분담 테이블 추가, GradientShape→SkiaNodeData 매핑 테이블 추가, __canvasKitReady 플래그 설정 위치 설명 추가, §4.7.4 관련 파일 정리 블록 추가, (5) **구조 개선** — §9.4 flexDirection에 레이아웃 아키텍처 교차 참조 추가, CSS 단위 파싱 관련 파일 3종 정리 블록으로 혼동 방지, §10.4.1 다이어그램 PIXI→CanvasKit/Skia Renderer 수정 |
 | 2026-02-19 | 3.6 | **웹 컴포넌트 전수 교차 대조**: (1) `packages/shared/src/components/` 60개 vs 설계 문서 대조 — 58/60 정상 등록(96.7%), (2) **Autocomplete 누락 발견** — SearchField+Menu 복합 컴포넌트, Pixi 파일·TAG_SPEC_MAP 모두 미등록. Phase 2 §5.1에 16번째 컴포넌트로 추가, 부록 A에 #73으로 추가, §9.8.6에 미구현 섹션 추가, (3) Breadcrumb.tsx는 Breadcrumbs 하위 아이템 컴포넌트로 독립 등록 불필요 확인, (4) 부록 A 전체 컴포넌트 수 72→73개로 갱신 |
+| 2026-02-21 | 3.8 | **§9.9 Tabs 컨테이너 렌더링 정합성**: (1) `Tabs.spec.ts` — fontSize TokenRef → 숫자 변환, CSS 기준 사이즈(sm=25/md=30/lg=35), `_tabLabels` prop, 콘텐츠 기반 탭 너비 추정, (2) `engines/utils.ts` — Tabs 전용 `calculateContentHeight` (tabBar + tabPanelPadding + Panel), Panel 케이스를 childElements 블록 밖으로 이동, (3) `BuilderCanvas.tsx` — CONTAINER_TAGS에 'Tabs' 추가, Tabs 컨테이너 핸들러 (Panel 필터링, paddingTop=tabBar+padding), (4) `ui/PixiTabs.tsx` — childElements/renderChildElement props로 활성 Panel 내부 렌더링, (5) `sprites/ElementSprite.tsx` — effectiveElementWithTabs 전파 (skiaNodeData useMemo 전체), Panel-in-Tabs skip 제거. §9.9 섹션 신규 작성 — CSS Preview 구조, WebGL Canvas 렌더링 구조, 높이 계산 흐름, 핵심 패턴 4가지 |
+| 2026-02-21 | 3.9 | **§9.10 Card 컨테이너 렌더링 아키텍처 + border-box 정합성**: (1) **Card Description TextSprite 전환** — `TEXT_TAGS`에 `'description'` 추가, Description 태그가 TextSprite 렌더링 파이프라인을 거치도록 활성화 (engines/utils.ts 또는 canvas/constants.ts), (2) **Card childElements 높이 계산** — `calculateContentHeight(Card)`에서 `childElements` 우선 탐색, `Heading.intrinsicHeight + gap + Description.intrinsicHeight` 합산 → 자식이 없으면 스펙 기본값 사용 (engines/utils.ts), (3) **Card/Box/Section enrichWithIntrinsicSize border-box 정합성** — `isTreatedAsBorderBox` 체크 추가, `enrichWithIntrinsicSize()`에서 padding+border 포함 높이 주입 시 `parseBoxModel()`에서 이중 계산 방지 (engines/utils.ts), (4) §9.10 Card 컨테이너 렌더링 아키텍처 섹션 신규 작성 — element tree 구조, TEXT_TAGS 확장, 높이 계산 흐름, border-box 정합성 테이블, (5) §4.7.4.5 Card/Box/Section border-box 처리 보완 설명 추가 |
+| 2026-02-21 | 3.10 | **Switch/Toggle label 줄바꿈 정합성 수정**: (1) `INLINE_FORM_INDICATOR_WIDTHS` switch/toggle 값이 spec trackWidth보다 10px 작아 WebGL Canvas에서 label 줄바꿈 발생 — 26/34/42 → 36/44/52 (sm/md/lg) 수정 (engines/utils.ts), (2) `INLINE_FORM_GAPS` 테이블 신규 추가 — switch/toggle: 8/10/12, checkbox/radio: 6/8/10 (sm/md/lg) (engines/utils.ts), (3) `calculateContentHeight` column 방향 gap 계산을 `INLINE_FORM_GAPS` 기준으로 통일 (engines/utils.ts). §9.3.4 INLINE_FORM dimensions 수정 사실 기록 |
+| 2026-02-21 | 3.11 | **§9.10.5 Card props→children 텍스트 동기화 패턴 추가**: Properties Panel에서 Card Title/Description 변경이 WebGL Canvas에 미반영되는 버그 문서화 및 해결 패턴 기술. 근본 원인: `CardEditor`가 `Card.props.heading/description` 업데이트 → WebGL `TextSprite`는 자식 `Heading.props.children` 참조 → 동기화 부재. 해결: `BuilderCanvas.tsx` `createContainerChildRenderer`에서 cardProps 주입 (Tabs `_tabLabels` 패턴 동일), `LayoutRenderers.tsx` CSS Preview Card 렌더러에 `heading`/`subheading`/`footer` props 추가. 우선순위 규칙 테이블 및 코드 예시 포함 |
+| 2026-02-22 | 3.12 | **§9.11 TagGroup label 두 줄 렌더링 버그 수정**: (1) `TagGroup.spec.ts` — `render.shapes`에서 label 텍스트 shape 제거. 자식 Label 엘리먼트가 렌더링 담당이므로 spec shapes(fontSize:12)와 Label element(fontSize:14)의 이중 렌더링으로 인한 두 줄 표시 현상 제거. (2) `engines/utils.ts` line 759-760 — `calculateContentWidth` 일반 텍스트 경로에 Canvas 2D→CanvasKit 폭 측정 보정(`Math.ceil() + 2`) 추가. INLINE_FORM 경로(line 718-719)와 동일 패턴. §9.11.3 spec shapes label 중복 렌더링 제거 원칙, §9.11.4 Canvas 2D→CanvasKit 폭 보정 패턴 문서화 |
+| 2026-02-22 | 3.13 | **§9.12 Slider Complex Component 전환**: (1) **Slider → Complex Component 전환** — `useElementCreator.ts` complexComponents 배열에 'Slider' 추가, `ComponentFactory.ts` Slider creator 등록, `FormComponents.ts` `createSliderDefinition()` 팩토리 추가. DOM 구조: `Slider > Label + SliderOutput + SliderTrack > SliderThumb`, (2) **TokenRef offsetY NaN 버그 수정** — `Slider.spec.ts` `size.fontSize`(TokenRef 문자열)를 숫자 연산에 직접 사용하여 NaN 발생. `resolveToken()` 호출로 해결. CRITICAL 규칙 추가: spec `shapes()` 내 TokenRef 필드는 숫자 연산 전 `resolveToken()` 필수, (3) **SliderOutput 위치 수정** — `x: width` → `x: 0` + `maxWidth: width`로 컨테이너 내 우측 정렬, (4) **`_hasLabelChild` 패턴 문서화** — Select/ComboBox/Slider 공통 패턴, 자식 element 담당 텍스트를 spec shapes에서 스킵하는 메커니즘, (5) **Slider.css data-attribute 전환** — `.sm`/`.primary` class selector → `[data-size="sm"]`/`[data-variant="primary"]` data-attribute selector, SLIDER_DIMENSIONS spec 정확히 반영 (sm=4/14, md=6/18, lg=8/22), M3 토큰 사용, (6) **unified.types.ts** — Slider 기본 props 수정 (value=50, width=200, height=45, showValue=true, maxWidth=300). §5.1 Slider 상태 "✅ 완전 지원 (Complex Component 전환 완료)"로 갱신. §5.3 Slider.spec.ts 체크리스트 완료 표기 |
+| 2026-02-23 | 3.14 | **§9.x Breadcrumbs CONTAINER_TAGS 전환 + Skia 렌더링**: (1) **Breadcrumbs.spec.ts** — `resolveToken` 기반 fontSize 해석, 기본 구분자 `›`, CSS 일치 sizes height (sm:16, md:24, lg:24), (2) **ElementSprite.tsx** — `_crumbs` prop 주입 (자식 Breadcrumb 텍스트 배열 → spec shapes), (3) **BuilderCanvas.tsx** — `CONTAINER_TAGS`에 `'Breadcrumbs'` 추가, `filteredContainerChildren = []` (spec shapes가 크럼 텍스트 직접 렌더링), (4) **utils.ts** — `calculateContentHeight` Breadcrumbs 핸들러 (sm:16, md:24, lg:24), `SPEC_SHAPES_INPUT_TAGS`에 `'breadcrumbs'` 추가, (5) **PixiBreadcrumbs** — Skia spec shapes 전환 완료로 더 이상 사용하지 않음. §6.1 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", §6.3 체크리스트 완료 표기, §9.8.4 테이블에 Breadcrumbs 행 추가, §9.8.5 전환 완료 목록에 Breadcrumbs 추가 |

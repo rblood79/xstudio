@@ -37,7 +37,7 @@ import {
   SeparatorSpec, ToggleButtonSpec, ToggleButtonGroupSpec, TooltipSpec,
   TextFieldSpec, TextAreaSpec, NumberFieldSpec, SearchFieldSpec,
   CheckboxSpec, CheckboxGroupSpec, RadioSpec, RadioGroupSpec, SwitchSpec, FormSpec,
-  SelectSpec, ComboBoxSpec, ListBoxSpec, SliderSpec, MeterSpec,
+  SelectSpec, ComboBoxSpec, ListBoxSpec, SliderSpec, SLIDER_DIMENSIONS, MeterSpec,
   ProgressBarSpec, TableSpec, TreeSpec, TabsSpec, MenuSpec,
   BreadcrumbsSpec, PaginationSpec, GridListSpec,
   DisclosureSpec, DisclosureGroupSpec, ToolbarSpec, ToastSpec,
@@ -184,6 +184,7 @@ export interface ElementSpriteProps {
 const TEXT_TAGS = new Set([
   'Text',
   'Heading',
+  'Description',
   'Label',
   'Paragraph',
   'Link',
@@ -801,7 +802,7 @@ export const ElementSprite = memo(function ElementSprite({
     return resolvedElement;
   }, [resolvedElement, layoutPosition, computedContainerSize]);
 
-  // Tabs: 실제 Tab children 레이블을 spec shapes에 전달
+  // Tabs/Breadcrumbs: 실제 자식 레이블을 spec shapes에 전달
   const effectiveElementWithTabs = useMemo(() => {
     const tag = (effectiveElement.tag ?? '').toLowerCase();
     if (tag === 'tabs' && childElements && childElements.length > 0) {
@@ -814,6 +815,20 @@ export const ElementSprite = memo(function ElementSprite({
         return {
           ...effectiveElement,
           props: { ...effectiveElement.props, _tabLabels: tabLabels },
+        } as Element;
+      }
+    }
+    // Breadcrumbs: 자식 Breadcrumb 텍스트를 _crumbs로 주입
+    if (tag === 'breadcrumbs' && childElements && childElements.length > 0) {
+      const crumbChildren = childElements.filter(c => c.tag === 'Breadcrumb');
+      if (crumbChildren.length > 0) {
+        const crumbs = crumbChildren.map(c => {
+          const p = c.props as Record<string, unknown> | undefined;
+          return String(p?.children || p?.label || p?.title || 'Page');
+        });
+        return {
+          ...effectiveElement,
+          props: { ...effectiveElement.props, _crumbs: crumbs },
         } as Element;
       }
     }
@@ -837,6 +852,9 @@ export const ElementSprite = memo(function ElementSprite({
 
     if (!style && !isUIComponent) return null;
 
+    // display: none → 레이아웃에서 제외, 렌더링 스킵
+    if (style?.display === 'none') return null;
+
     const { transform, fill, stroke, borderRadius: convertedBorderRadius } = convertStyle(style);
     const br = typeof convertedBorderRadius === 'number'
       ? convertedBorderRadius
@@ -846,10 +864,21 @@ export const ElementSprite = memo(function ElementSprite({
     // transform.width/height에 들어올 수 있으므로 음수일 때 0으로 클램프
     const rawFallbackW = transform.width;
     const rawFallbackH = transform.height;
-    const finalWidth = (computedW != null && computedW > 0) ? computedW : (rawFallbackW > 0 ? rawFallbackW : 0);
-    const finalHeight = (computedH != null && computedH > 0) ? computedH : (rawFallbackH > 0 ? rawFallbackH : 0);
+    // computedW != null → 레이아웃 엔진이 크기를 확정함 (0이어도 의도적)
+    // computedW == null → 엔진 미확정, CSS fallback 사용
+    const finalWidth = computedW != null ? (computedW > 0 ? computedW : 0) : (rawFallbackW > 0 ? rawFallbackW : 0);
+    const finalHeight = computedH != null ? (computedH > 0 ? computedH : 0) : (rawFallbackH > 0 ? rawFallbackH : 0);
 
     const hasBgColor = style?.backgroundColor !== undefined && style?.backgroundColor !== null && style?.backgroundColor !== '';
+
+    // 복합 form 컴포넌트: CSS 컨테이너가 transparent → WebGL 컨테이너도 transparent
+    const tag = effectiveElementWithTabs.tag;
+    const TRANSPARENT_CONTAINER_TAGS = new Set([
+      'TextField', 'NumberField', 'SearchField',
+      'ComboBox', 'Select', 'Dropdown',
+      'Slider', 'RangeSlider',
+    ]);
+    const isTransparentContainer = isUIComponent && TRANSPARENT_CONTAINER_TAGS.has(tag);
 
     const VARIANT_BG_COLORS: Record<string, number> = {
       default: 0xece6f0,
@@ -882,11 +911,17 @@ export const ElementSprite = memo(function ElementSprite({
     let effectiveAlpha: number;
 
     if (isUIComponent && !hasBgColor) {
-      const bgColor = VARIANT_BG_COLORS[variant] ?? 0xece6f0;
-      r = ((bgColor >> 16) & 0xff) / 255;
-      g = ((bgColor >> 8) & 0xff) / 255;
-      b = (bgColor & 0xff) / 255;
-      effectiveAlpha = VARIANT_BG_ALPHA[variant] ?? 1;
+      if (isTransparentContainer) {
+        // 복합 form 컴포넌트: spec shapes가 내부 배경 렌더링 → 컨테이너는 투명
+        r = 1; g = 1; b = 1;
+        effectiveAlpha = 0;
+      } else {
+        const bgColor = VARIANT_BG_COLORS[variant] ?? 0xece6f0;
+        r = ((bgColor >> 16) & 0xff) / 255;
+        g = ((bgColor >> 8) & 0xff) / 255;
+        b = (bgColor & 0xff) / 255;
+        effectiveAlpha = VARIANT_BG_ALPHA[variant] ?? 1;
+      }
     } else {
       r = ((fill.color >> 16) & 0xff) / 255;
       g = ((fill.color >> 8) & 0xff) / 255;
@@ -895,7 +930,7 @@ export const ElementSprite = memo(function ElementSprite({
       const hasFillV2NonColor = isFillV2Enabled() && effectiveElementWithTabs.fills?.some(
         (f) => f.enabled && f.type !== 'color',
       );
-      effectiveAlpha = (hasBgColor || hasFillV2NonColor) ? (fill.alpha || 1) : (isUIComponent ? fill.alpha : 0);
+      effectiveAlpha = (hasBgColor || hasFillV2NonColor) ? (fill.alpha ?? 1) : (isUIComponent ? fill.alpha : 0);
     }
 
     const hasBorderRadiusSet = style?.borderRadius !== undefined && style?.borderRadius !== null && style?.borderRadius !== '';
@@ -953,7 +988,7 @@ export const ElementSprite = memo(function ElementSprite({
       const sb = (stroke.color & 0xff) / 255;
       boxData.strokeColor = Float32Array.of(sr, sg, sb, stroke.alpha);
       boxData.strokeWidth = stroke.width;
-    } else if (isUIComponent && !hasBgColor) {
+    } else if (isUIComponent && !hasBgColor && !isTransparentContainer) {
       const borderColor = VARIANT_BORDER_COLORS[variant];
       if (borderColor !== undefined) {
         const sr = ((borderColor >> 16) & 0xff) / 255;
@@ -969,8 +1004,6 @@ export const ElementSprite = memo(function ElementSprite({
     let cardCalculatedHeight: number | undefined;
 
     if (isUIComponent) {
-      const tag = effectiveElementWithTabs.tag;
-
       const VARIANT_TEXT_COLORS: Record<string, number> = {
         default: 0x1d1b20,
         primary: 0xffffff,
@@ -986,7 +1019,10 @@ export const ElementSprite = memo(function ElementSprite({
         // 🟢 Spec shapes 기반 렌더링
         // Card는 복합 컴포넌트로 전환: 자식 Element(Heading, Description)가 별도 렌더링됨
         const spec = getSpecForTag(tag);
-        if (spec) {
+        // 복합 컴포넌트 자식(backgroundColor: 'transparent')은 부모 spec shapes가 시각 렌더링 담당
+        // 자식이 자체 spec shapes를 그리면 이중 렌더링 / 색상 불일치 발생
+        const skipChildSpecShapes = (props?.style as Record<string, unknown>)?.backgroundColor === 'transparent';
+        if (spec && !skipChildSpecShapes) {
           // ⚡ 엔진 크기 확정 전에는 spec shapes 계산을 건너뛴다.
           // computedW가 null인 상태에서 CSS 기본값으로 shapes를 계산하면
           // 엔진 완료 후 다른 크기로 재계산되어 시각적 깜빡임이 발생한다.
@@ -1011,6 +1047,51 @@ export const ElementSprite = memo(function ElementSprite({
             let specProps: Record<string, unknown> = props || {};
             if (toggleGroupPosition) {
               specProps = { ...specProps, _groupPosition: toggleGroupPosition };
+            }
+
+            // ComboBox/Select: spec shapes가 props.style.width로 입력 영역 너비 결정
+            // 기본값 200px → 실제 레이아웃 width로 교체하여 CSS 정합성 확보
+            if (['ComboBox', 'Select', 'Dropdown'].includes(tag) && finalWidth > 0) {
+              const existingStyle = (specProps.style || {}) as Record<string, unknown>;
+              if (!existingStyle.width) {
+                specProps = {
+                  ...specProps,
+                  style: { ...existingStyle, width: finalWidth },
+                };
+              }
+            }
+
+            // Slider: spec shapes에 실제 width 주입 + specHeight 보정
+            // track/thumb가 label 아래에 위치하므로 전체 높이 필요
+            if (['Slider', 'RangeSlider'].includes(tag)) {
+              const existingStyle = (specProps.style || {}) as Record<string, unknown>;
+              if (finalWidth > 0 && !existingStyle.width) {
+                specProps = {
+                  ...specProps,
+                  style: { ...existingStyle, width: finalWidth },
+                };
+              }
+              // Slider specHeight 보정: label + gap + thumbSize
+              const sliderDims = SLIDER_DIMENSIONS[size] || SLIDER_DIMENSIONS['md'];
+              const hasLabel = specProps.label || specProps.showValue;
+              if (hasLabel) {
+                const fSize = resolveToken(sizeSpec.fontSize as TokenRef);
+                const fontSize = typeof fSize === 'number' ? fSize : 14;
+                const gap = sizeSpec.gap ?? 10;
+                const totalH = Math.ceil(fontSize * 1.2) + gap + sliderDims.thumbSize;
+                if (totalH > specHeight) specHeight = totalH;
+              } else {
+                if (sliderDims.thumbSize > specHeight) specHeight = sliderDims.thumbSize;
+              }
+            }
+
+            // ComboBox/Select: Label child가 있으면 spec shapes에서 label text 스킵
+            // (Label child의 TextSprite가 시각적 렌더링 담당)
+            if (['ComboBox', 'Select', 'Dropdown', 'Slider', 'RangeSlider', 'TextField', 'NumberField', 'SearchField'].includes(tag) && childElements) {
+              const hasLabelChild = childElements.some(c => c.tag === 'Label');
+              if (hasLabelChild) {
+                specProps = { ...specProps, _hasLabelChild: true };
+              }
             }
 
             // 동적 컴포넌트 상태: preview > disabled prop > default
@@ -1104,8 +1185,9 @@ export const ElementSprite = memo(function ElementSprite({
             textChildren = [specNode];
           }
           }
-        } else {
+        } else if (!skipChildSpecShapes) {
           // Fallback: Spec이 없는 컴포넌트 - 기존 텍스트 렌더링
+          // skipChildSpecShapes인 경우 부모 spec shapes가 텍스트도 렌더링하므로 스킵
           const textContent = String(
             props?.children
             || props?.text
@@ -1371,6 +1453,7 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+          onDoubleClick={onDoubleClick}
           onChange={onChange ? (id, value) => onChange(id, value) : undefined}
         />
       );
@@ -1562,6 +1645,7 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+          onDoubleClick={onDoubleClick}
           onChange={onChange ? (id, value) => onChange(id, value) : undefined}
         />
       );

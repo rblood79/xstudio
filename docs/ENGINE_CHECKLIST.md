@@ -1,6 +1,6 @@
 # CSS Level 3 엔진 정합성 체크리스트
 
-> **최종 갱신**: 2026-02-21
+> **최종 갱신**: 2026-02-22
 > **목적**: XStudio 레이아웃/렌더링 엔진의 CSS Level 3 속성 지원 현황 추적
 > **엔진**: TaffyFlexEngine (Taffy WASM) · TaffyGridEngine (Taffy WASM) · DropflowBlockEngine (Dropflow Fork JS)
 > **렌더러**: CanvasKit/Skia WASM
@@ -460,6 +460,30 @@
 > - `LayoutContext.getChildElements` 추가: 컨테이너 자식 Element 접근 (ToggleButtonGroup width/height 계산)
 > - `calculateContentWidth/Height` childElements 파라미터 추가: 자식 Element 기반 intrinsic size 계산
 > - 최종 갱신일: 2026-02-21
+>
+> **변경 내역 (2026-02-21 v1.4 갱신 — Switch/Toggle label 줄바꿈 수정):**
+> - `INLINE_FORM_INDICATOR_WIDTHS` switch/toggle 값 수정: 26/34/42 → 36/44/52 (spec trackWidth 기준 동기화)
+> - `INLINE_FORM_GAPS` 테이블 신규 추가: switch/toggle은 8/10/12, checkbox/radio는 6/8/10 (sm/md/lg)
+> - `calculateContentHeight` column 방향 switch/toggle gap을 `INLINE_FORM_GAPS` 기준으로 수정
+> - 수정 파일: `engines/utils.ts`
+>
+> **변경 내역 (2026-02-21 v1.5 갱신 — Card props→children 텍스트 동기화 수정):**
+> - **문제**: Properties Panel에서 Card의 Title/Description 텍스트 변경 시 WebGL Canvas에 미반영
+> - **근본 원인**: `CardEditor`가 `Card.props.heading/description`을 업데이트하지만 WebGL `TextSprite`는 자식 `Heading.props.children`을 읽음 — Card.props → 자식 요소 props 동기화 부재
+> - **해결 1**: `BuilderCanvas.tsx` `createContainerChildRenderer` — Card 자식 렌더링 시 `Card.props.heading/title/description`을 자식 Heading/Description 요소의 `props.children`에 주입 (Tabs `_tabLabels` 패턴과 동일)
+> - **해결 2**: `packages/shared/src/renderers/LayoutRenderers.tsx` — CSS Preview Card 렌더러에 누락된 `heading`, `subheading`, `footer` props 전달 추가 → CSS Preview와 WebGL 간 heading 소스 일치
+> - **우선순위 주입**: `cardProps.heading ?? cardProps.title` → Heading child, `cardProps.description` → Description child
+> - 수정 파일: `BuilderCanvas.tsx`, `packages/shared/src/renderers/LayoutRenderers.tsx`
+>
+> **변경 내역 (2026-02-22 v1.6 갱신 — Slider Complex Component 전환 + 렌더링 버그 수정):**
+> - Slider: Complex Component 등록 완료 (`complexComponents`, `ComponentFactory`, `FormComponents.createSliderDefinition()`)
+> - Slider: DOM 구조 확정 — `Slider > Label + SliderOutput + SliderTrack > SliderThumb`
+> - Slider: `Slider.css` class selector → data-attribute selector 전환 완료, spec dimensions 정확히 반영
+> - Slider: `Slider.spec.ts` TokenRef (`'{typography.text-sm}'`) → `resolveToken()` 변환 완료 (NaN → track/thumb 미렌더링 수정)
+> - Slider: `ElementSprite.tsx` specHeight 보정 로직 추가 (`SLIDER_DIMENSIONS` 기반: label + gap + thumbSize)
+> - Slider: `_hasLabelChild` 체크에 Slider 추가하여 label 중복 렌더링 방지
+> - Slider: `SliderOutput` 위치 수정 — `x: width` → `x: 0 + maxWidth: width` (컨테이너 내 우측 정렬 패턴)
+> - 수정 파일: `Slider.spec.ts`, `useElementCreator.ts`, `ComponentFactory.ts`, `FormComponents.ts`, `Slider.css`, `ElementSprite.tsx`
 
 ### P0 개선 대상 (캔버스 렌더링 정합성 핵심)
 
@@ -579,7 +603,7 @@
 | Layout | 7 | 70% | **69%** | -1 | chevron 아이콘, expand | — |
 | Navigation | 3 | 65% | **66%** | +1 | — | border-style 렌더링 확인 |
 | Misc | 5 | 56% | **57%** | +1 | scrollbar UI | scroll clipping 인프라 확인 |
-| Data Display | 8 | 49% | **52%** | +3 | 컬렉션 아이템 미생성 | Card elevated multi-shadow 확인 |
+| Data Display | 8 | 49% | **52%** | +3 | 컬렉션 아이템 미생성 | Card elevated multi-shadow 확인; Card 컨테이너 렌더링 + Description TextSprite + border-box 정합성 (2026-02-21) |
 | Overlay | 5 | 49% | **51%** | +2 | arrow, backdrop | Dialog/Popover shadow multi-layer 확인 |
 | Date/Time | 5 | 45% | **44%** | -1 | 날짜 셀 미렌더링 | — |
 | Color | 7 | 41% | **40%** | -1 | 2D/원형 그라디언트 미지원 | — |
@@ -1032,6 +1056,13 @@ CSS Level 3 속성 지원(88%)과 별도로, **레이아웃 계산 파이프라�
 | 2026-02-19 | **1.9** | **v2 코드 검증 기반 보정**: (1) M-1 multi-shadow 이미 동작 확인 → 제거 (2) QW-2/QW-3 → Phase A 선행 필수 발견 → 실행 순서 변경 (3) state 활용 spec 20/62개(32%) 정밀 측정 (4) 카테고리별·차원별 수치 보정 (5) Phase 의존성 그래프 추가. 목표 상향 92% → **93%** |
 | 2026-02-19 | **2.0** | **레이아웃 엔진 구조적 근본 원인 7건 추가** ([분석 문서](analysis/webgl-layout-root-cause-2026-02.md) 전수 코드 검증): RC-1~7 전항목 CONFIRMED. 불변식 위반 요약, 심각도·영향도 분류, 구조/레이아웃 차원 85%→93~97% 예측, RC 기반 실행 순서 추가 |
 | 2026-02-21 | **2.1** | **CSS 레이아웃 엔진 수정 반영**: `border` (shorthand) ⚠️→✅ (`utils.ts:parseBorder()` → `parseBorderShorthand()` 연동). `line-height: normal` 정밀도 개선 (fontBoundingBox 기반 `measureFontMetrics().lineHeight`). `enrichWithIntrinsicSize` INLINE_BLOCK_TAGS border-box 수정. `LayoutContext.getChildElements` 추가. `calculateContentWidth/Height` childElements 파라미터 추가. 총 ✅165, ⚠️10, ❌11 |
+| 2026-02-21 | **2.2** | **Tabs 컨테이너 렌더링 완성**: CONTAINER_TAGS 등록 + 활성 Panel 필터링. Panel `calculateContentHeight` 케이스를 childElements 블록 밖으로 이동. `Tabs.spec.ts` fontSize TokenRef → 숫자 변환 (NaN 방지). Tabs 높이 공식 확정: tabBarHeight(sm=25/md=30/lg=35) + tabPanelPadding×2(32) + panelBorderBox. `effectiveElementWithTabs`: `_tabLabels` 동적 주입으로 spec shapes 탭 레이블 렌더링. 수정 파일 5개 (Tabs.spec.ts, utils.ts, BuilderCanvas.tsx, PixiTabs.tsx, ElementSprite.tsx) |
+| 2026-02-21 | **2.3** | **Card 컨테이너 렌더링 완성**: (1) RC-6 연계 — `enrichWithIntrinsicSize`에서 treatAsBorderBox 대상(Card/Box/Section)에 padding+border 포함 높이 주입하여 border-box 정합성 확보. (2) Description `TEXT_TAGS` 추가로 TextSprite 렌더링 활성화. (3) PixiCard: Heading(TextSprite) + Description(TextSprite), childElements 높이 계산 반영. Data Display 카테고리 Card 보정 근거 갱신 |
+| 2026-02-21 | **2.4** | **Switch/Toggle label 줄바꿈 버그 수정**: (1) `INLINE_FORM_INDICATOR_WIDTHS`의 switch/toggle 값이 spec trackWidth보다 10px 작아 라벨이 불필요하게 줄바꿈되는 현상 수정 — 26/34/42 → 36/44/52 (sm/md/lg). (2) `INLINE_FORM_GAPS` 테이블 신규 추가 — switch/toggle: 8/10/12, checkbox/radio: 6/8/10 (sm/md/lg). (3) `calculateContentHeight` column 방향 gap 계산을 `INLINE_FORM_GAPS` 기준으로 통일. 수정 파일: `engines/utils.ts` |
+| 2026-02-21 | **2.5** | **Card 텍스트 변경 미반영 버그 수정**: Properties Panel에서 Card Title/Description 변경 시 WebGL Canvas 미반영 문제 해결. 근본 원인: `CardEditor`가 `Card.props.heading/description` 업데이트 → WebGL `TextSprite`는 자식 `Heading.props.children` 참조 → Card.props→자식 동기화 부재. `BuilderCanvas.tsx` `createContainerChildRenderer`에서 `cardProps.heading ?? cardProps.title` → Heading child, `cardProps.description` → Description child 주입 (Tabs `_tabLabels` 패턴 동일). `LayoutRenderers.tsx` CSS Preview Card 렌더러에 `heading`/`subheading`/`footer` props 전달 추가로 CSS Preview↔WebGL heading 소스 일치. 수정 파일 2개: `BuilderCanvas.tsx`, `LayoutRenderers.tsx` |
+| 2026-02-22 | **2.6** | **TagGroup label 두 줄 렌더링 버그 수정**: (1) `TagGroup.spec.ts` — `render.shapes`에서 label 텍스트 shape 제거. label은 자식 Label 엘리먼트(fontSize:14)가 렌더링하므로 spec shapes(fontSize:12) 중복 렌더가 두 줄처럼 보이는 현상 제거. (2) `engines/utils.ts` line 759-760 — `calculateContentWidth` 일반 텍스트 경로에 Canvas 2D→CanvasKit 폭 측정 보정 추가: `Math.ceil(calculateTextWidth(...)) + 2`. INLINE_FORM 경로(line 718-719)에만 존재하던 보정을 일반 텍스트 경로에도 동일 패턴으로 적용. CanvasKit paragraph API가 Canvas 2D `measureText` 결과(65px)보다 더 넓은 폭을 요구하여 텍스트가 wrapping되던 근본 원인 해결. |
+| 2026-02-22 | **2.7** | **Slider Complex Component 전환 + 렌더링 버그 수정**: (1) `Slider.spec.ts` — `render.shapes`에서 `size.fontSize`를 TokenRef 문자열(`'{typography.text-sm}'`)로 숫자 연산에 직접 사용하던 버그 수정 → `resolveToken()` 적용 (NaN → track/thumb 미렌더링 현상 해결). (2) Slider를 Complex Component로 전환: `useElementCreator.ts` complexComponents에 'Slider' 추가, `ComponentFactory.ts` Slider creator 등록, `FormComponents.ts` `createSliderDefinition()` 팩토리 추가. DOM 구조: `Slider > Label + SliderOutput + SliderTrack > SliderThumb`. (3) `Slider.css` class selector → data-attribute selector 전환, spec dimensions 정확히 반영. (4) `ElementSprite.tsx` — `SLIDER_DIMENSIONS` 기반 specHeight 보정 로직 추가 (label + gap + thumbSize), `_hasLabelChild` 체크에 Slider 추가하여 중복 렌더링 방지. (5) `SliderOutput` 위치 수정: `x: width` → `x: 0 + maxWidth: width`로 컨테이너 내 우측 정렬 패턴 적용. 수정 파일: `Slider.spec.ts`, `useElementCreator.ts`, `ComponentFactory.ts`, `FormComponents.ts`, `Slider.css`, `ElementSprite.tsx` |
+| 2026-02-23 | **2.8** | **Breadcrumbs CONTAINER_TAGS 전환**: (1) `calculateContentHeight` — Breadcrumbs 높이 핸들러 추가 (sm:16, md:24, lg:24). (2) `enrichWithIntrinsicSize` — `SPEC_SHAPES_INPUT_TAGS`에 'breadcrumbs' 추가 (early return 방지). (3) `Breadcrumbs.spec.ts` — `resolveToken` 기반 fontSize 해석 적용, sizes height CSS 값과 일치하도록 보정 (32→24). (4) `ElementSprite.tsx` — `_crumbs` prop 주입 패턴 추가 (자식 Breadcrumb 텍스트 배열). (5) `BuilderCanvas.tsx` — `CONTAINER_TAGS`에 'Breadcrumbs' 추가. |
 
 ### v1 → v2 기준 변경 사유
 
@@ -1043,3 +1074,70 @@ v1.0(2026-02-18)에서 v2.0(2026-02-19)으로의 수치 변동은 **측정 기�
 | 컴포넌트 정합성 | Spec 파일 존재 기준 | **state 활용 + 렌더 경로 비교** (CSS Preview ↔ Canvas 시각 비교 기반) | 62 Spec 중 state 활용 20개(32%) 정밀 측정 |
 | Quick Win 분류 | 독립 실행 가정 | **의존성 그래프 기반** (QW-2/QW-3은 Phase A 선행 필수 발견) | 실행 순서 보정 |
 | M-1 multi-shadow | ❌ 미지원 | **이미 동작 확인 → 항목 제거** | 코드 검증으로 오보 정정 |
+
+---
+
+## 구현 학습 사례 (Lessons Learned)
+
+> 컴포넌트 구현 및 버그 수정 과정에서 발견된 반복 패턴과 주의사항.
+> 동일한 실수를 방지하기 위한 팀 공유용 참조 문서.
+
+### LS-1: spec shapes 내 TokenRef 숫자 연산 주의
+
+**발견 시점**: 2026-02-22 (Slider.spec.ts TokenRef offsetY 버그)
+
+**현상**: `size.fontSize` 등 spec shapes 내 수치 필드에 TokenRef 문자열(`'{typography.text-sm}'`)이 직접 할당되어 있을 때, 이를 숫자 연산(`+ offsetY` 등)에 그대로 사용하면 NaN이 발생하여 track/thumb 등 shape가 미렌더링됨.
+
+**원인**: spec의 `size` 객체는 디자인 토큰 참조값을 그대로 포함할 수 있으며, 숫자가 필요한 위치에서 `resolveToken()` 없이 사용하면 문자열 연산이 됨.
+
+**올바른 패턴**:
+```typescript
+// 잘못된 패턴 — size.fontSize가 TokenRef 문자열일 경우 NaN
+const offsetY = size.fontSize + 4;
+
+// 올바른 패턴 — resolveToken()으로 실제 숫자값 획득 후 연산
+const fontSize = resolveToken(size.fontSize, tokens);
+const offsetY = fontSize + 4;
+```
+
+**적용 범위**: spec shapes 내에서 `size.*`, `props.*` 등 외부 주입값을 숫자 연산에 사용하는 모든 경우.
+
+---
+
+### LS-2: 우측 정렬 텍스트 배치 패턴
+
+**발견 시점**: 2026-02-22 (Slider SliderOutput 위치 수정)
+
+**현상**: 컨테이너 우측 끝에 텍스트를 정렬하기 위해 `x: containerWidth`를 사용하면, 텍스트 width만큼 컨테이너 바깥으로 넘쳐 클리핑되거나 레이아웃이 깨짐.
+
+**원인**: `x: containerWidth`는 텍스트의 left edge를 컨테이너 right edge에 맞추므로, 텍스트 전체가 컨테이너 밖으로 배치됨.
+
+**올바른 패턴**:
+```typescript
+// 잘못된 패턴 — 텍스트가 컨테이너 밖으로 overflow
+{ x: containerWidth, textAlign: 'right' }
+
+// 올바른 패턴 — x: 0 + maxWidth로 컨테이너 내 우측 정렬
+{ x: 0, maxWidth: containerWidth, textAlign: 'right' }
+```
+
+**적용 범위**: SliderOutput 값 표시, Badge count, 기타 컨테이너 우측 끝 정렬이 필요한 모든 텍스트 shape.
+
+---
+
+### LS-3: Complex Component 전환 체크리스트
+
+**발견 시점**: 2026-02-22 (Slider Complex Component 전환)
+
+**배경**: 단순 spec 렌더 컴포넌트를 React-Aria 기반 Complex Component로 전환할 때 누락 없이 처리해야 하는 등록 포인트 목록.
+
+| 순서 | 파일 | 작업 내용 |
+|------|------|----------|
+| 1 | `useElementCreator.ts` | `complexComponents` 배열에 컴포넌트 태그 추가 |
+| 2 | `ComponentFactory.ts` | creator 함수 등록 |
+| 3 | `FormComponents.ts` (또는 해당 카테고리 파일) | `create<Name>Definition()` 팩토리 함수 추가 |
+| 4 | `<Name>.css` | class selector → data-attribute selector 전환 |
+| 5 | `ElementSprite.tsx` | specHeight 보정 로직 + `_hasLabelChild` 체크 추가 |
+| 6 | spec 파일 | DOM 구조(부모 > 자식) 확정 후 shapes 검증 |
+
+**주의**: `_hasLabelChild` 체크를 누락하면 spec shapes의 label 텍스트와 자식 Label 엘리먼트의 TextSprite가 동시에 렌더링되어 두 줄처럼 보이는 중복 렌더링 현상이 발생함 (TagGroup 버그와 동일한 패턴).
