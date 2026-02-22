@@ -100,8 +100,8 @@
       color: var(--on-surface);
       margin: 0 -1px;
       z-index: 1;
-      font-size: var(--text-sm);
-      padding: var(--spacing) var(--spacing-md);
+      font-size: var(--text-base);
+      padding: var(--spacing-sm) 14px;
       outline: none;
       width: 120px;
       flex: 1;
@@ -264,8 +264,8 @@
     --nf-btn-size: var(--text-sm);
     --nf-btn-width: 32px;
     --nf-btn-padding: var(--spacing);
-    --nf-input-padding: var(--spacing) var(--spacing-md);
-    --nf-input-size: var(--text-sm);
+    --nf-input-padding: var(--spacing-sm) 14px;
+    --nf-input-size: var(--text-base);
     --nf-input-width: 120px;
     --nf-hint-size: var(--text-xs);
   }
@@ -287,8 +287,8 @@
     --nf-btn-size: var(--text-sm);
     --nf-btn-width: 32px;
     --nf-btn-padding: var(--spacing);
-    --nf-input-padding: var(--spacing) var(--spacing-md);
-    --nf-input-size: var(--text-sm);
+    --nf-input-padding: var(--spacing-sm) 14px;
+    --nf-input-size: var(--text-base);
     --nf-input-width: 120px;
     --nf-hint-size: var(--text-xs);
   }

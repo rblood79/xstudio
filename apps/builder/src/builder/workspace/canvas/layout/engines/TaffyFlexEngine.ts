@@ -130,7 +130,44 @@ export function elementToTaffyStyle(
     result.alignContent = style.alignContent as TaffyStyle['alignContent'];
   }
 
-  // Flex item properties
+  // Flex shorthand: flex: <grow> [<shrink>] [<basis>]
+  // 개별 속성(flexGrow, flexShrink, flexBasis)이 이미 설정되어 있으면 shorthand보다 우선합니다.
+  if (style.flex !== undefined && style.flex !== null) {
+    const flexVal = style.flex;
+    if (typeof flexVal === 'number') {
+      // flex: 1 → flexGrow: 1, flexShrink: 1, flexBasis: 0%
+      if (style.flexGrow === undefined) result.flexGrow = flexVal;
+      if (style.flexShrink === undefined) result.flexShrink = 1;
+      if (style.flexBasis === undefined) result.flexBasis = '0%';
+    } else if (typeof flexVal === 'string') {
+      const parts = String(flexVal).trim().split(/\s+/);
+      if (parts.length === 1) {
+        const n = Number(parts[0]);
+        if (!isNaN(n)) {
+          if (style.flexGrow === undefined) result.flexGrow = n;
+          if (style.flexShrink === undefined) result.flexShrink = 1;
+          if (style.flexBasis === undefined) result.flexBasis = '0%';
+        } else if (parts[0] === 'auto') {
+          if (style.flexGrow === undefined) result.flexGrow = 1;
+          if (style.flexShrink === undefined) result.flexShrink = 1;
+        } else if (parts[0] === 'none') {
+          if (style.flexGrow === undefined) result.flexGrow = 0;
+          if (style.flexShrink === undefined) result.flexShrink = 0;
+        }
+      } else if (parts.length >= 2) {
+        if (style.flexGrow === undefined) result.flexGrow = Number(parts[0]) || 0;
+        if (style.flexShrink === undefined) result.flexShrink = Number(parts[1]) || 0;
+        if (parts[2] && style.flexBasis === undefined) {
+          const basisVal = parseCSSPropWithContext(parts[2], ctx);
+          if (basisVal !== undefined) result.flexBasis = dimStr(basisVal) ?? 'auto';
+        } else if (!parts[2] && style.flexBasis === undefined) {
+          result.flexBasis = '0%';
+        }
+      }
+    }
+  }
+
+  // Flex item properties (개별 속성은 shorthand 결과를 덮어씀)
   if (style.flexGrow !== undefined) result.flexGrow = Number(style.flexGrow);
   if (style.flexShrink !== undefined) result.flexShrink = Number(style.flexShrink);
   if (style.flexBasis !== undefined) {

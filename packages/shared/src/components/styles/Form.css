@@ -4,13 +4,13 @@
     display: flex;
     flex-direction: column;
     align-items: start;
-    gap: 8px;
+    gap: 16px;
   }
-  
+
   .react-aria-Form [role=alert] {
     border: 2px solid var(--invalid-color);
     background: var(--overlay-background);
-    border-radius: 6px;
+    border-radius: var(--radius-lg);
     padding: 12px;
     max-width: 250px;
     outline: none;

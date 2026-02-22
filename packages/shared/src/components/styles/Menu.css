@@ -29,7 +29,7 @@
     outline: none;
     cursor: default;
     color: var(--on-surface);
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     position: relative;
     display: grid;
     grid-template-areas:
@@ -402,10 +402,10 @@
     .react-aria-MenuItem {
       margin: var(--spacing);
       padding: var(--spacing) var(--spacing-md);
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
 
       [slot="label"] {
-        font-size: var(--text-sm);
+        font-size: var(--text-base);
       }
 
       [slot="description"],

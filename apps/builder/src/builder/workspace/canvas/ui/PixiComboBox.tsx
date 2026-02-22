@@ -34,6 +34,7 @@ export interface PixiComboBoxProps {
   element: Element;
   isSelected?: boolean;
   onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
+  onDoubleClick?: (elementId: string) => void;
   onChange?: (elementId: string, value: string) => void;
 }
 
@@ -52,6 +53,7 @@ export const PixiComboBox = memo(function PixiComboBox({
   element,
   //isSelected,
   onClick,
+  onDoubleClick,
   onChange,
 }: PixiComboBoxProps) {
   useExtend(PIXI_COMPONENTS);
@@ -67,6 +69,9 @@ export const PixiComboBox = memo(function PixiComboBox({
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
 
+  // 더블클릭 감지용 타임스탬프
+  const lastPointerDownRef = useRef(0);
+
   // 투명 히트 영역
   const drawHitArea = useCallback(
     (g: PixiGraphicsClass) => {
@@ -77,10 +82,14 @@ export const PixiComboBox = memo(function PixiComboBox({
     [hitWidth, hitHeight]
   );
 
-  // 클릭 핸들러 (modifier 키 전달)
+  // 클릭 핸들러 (modifier 키 + 더블클릭 감지)
   const handleClick = useCallback(
     (e: unknown) => {
       if (isDisabled) return;
+
+      const now = Date.now();
+      const isDouble = Boolean(onDoubleClick) && now - lastPointerDownRef.current < 300;
+      lastPointerDownRef.current = now;
 
       const pixiEvent = e as {
         metaKey?: boolean;
@@ -97,11 +106,14 @@ export const PixiComboBox = memo(function PixiComboBox({
         pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
       onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
-      // onChange는 실제 값 변경 시 호출 (빌더에서는 선택 이벤트 전달)
       const currentValue = String(props?.value ?? '');
       onChange?.(element.id, currentValue);
+
+      if (isDouble) {
+        onDoubleClick?.(element.id);
+      }
     },
-    [element.id, onClick, onChange, isDisabled, props?.value]
+    [element.id, onClick, onDoubleClick, onChange, isDisabled, props?.value]
   );
 
   return (

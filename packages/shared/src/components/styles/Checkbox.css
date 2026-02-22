@@ -12,8 +12,8 @@
     /* This is needed so the HiddenInput is positioned correctly */
     position: relative;
     align-items: center;
-    gap: var(--gap);
-    font-size: var(--text-sm);
+    gap: var(--spacing-sm);
+    font-size: var(--text-base);
     color: var(--text-color);
     forced-color-adjust: none;
     padding: var(--spacing) 0;
@@ -22,7 +22,7 @@
       width: var(--text-lg);
       height: var(--text-lg);
       border: 2px solid var(--border-color);
-      border-radius: var(--border-radius);
+      border-radius: var(--radius-sm);
       transition: all 0.2s ease;
       display: flex;
       align-items: center;

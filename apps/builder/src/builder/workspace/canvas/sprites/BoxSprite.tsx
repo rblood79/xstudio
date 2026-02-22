@@ -342,6 +342,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
           x={textX}
           y={textY}
           anchor={{ x: 0.5, y: style?.verticalAlign === 'top' ? 0 : style?.verticalAlign === 'bottom' ? 1 : 0.5 }}
+          eventMode="none"
         />
       )}
     </pixiContainer>

@@ -40,38 +40,38 @@
   .react-aria-Separator.horizontal.sm,
   .react-aria-Separator[aria-orientation='horizontal'].sm {
     height: 1px;
-    margin: var(--spacing-2) 0;
+    margin: var(--spacing-xs) 0;
   }
 
   .react-aria-Separator.horizontal.md,
   .react-aria-Separator[aria-orientation='horizontal'].md {
     height: 1px;
-    margin: var(--spacing-4) 0;
+    margin: var(--spacing-sm) 0;
   }
 
   .react-aria-Separator.horizontal.lg,
   .react-aria-Separator[aria-orientation='horizontal'].lg {
     height: 2px;
-    margin: var(--spacing-6) 0;
+    margin: var(--spacing-lg) 0;
   }
 
   /* Size variants - Vertical */
   .react-aria-Separator.vertical.sm,
   .react-aria-Separator[aria-orientation='vertical'].sm {
     width: 1px;
-    margin: 0 var(--spacing-2);
+    margin: 0 var(--spacing-xs);
   }
 
   .react-aria-Separator.vertical.md,
   .react-aria-Separator[aria-orientation='vertical'].md {
     width: 1px;
-    margin: 0 var(--spacing-4);
+    margin: 0 var(--spacing-sm);
   }
 
   .react-aria-Separator.vertical.lg,
   .react-aria-Separator[aria-orientation='vertical'].lg {
     width: 2px;
-    margin: 0 var(--spacing-6);
+    margin: 0 var(--spacing-lg);
   }
 
   /* Dashed variant */

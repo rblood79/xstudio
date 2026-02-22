@@ -8,8 +8,8 @@
     /* This is needed so the HiddenInput is positioned correctly */
     position: relative;
     align-items: center;
-    gap: var(--gap);
-    font-size: var(--text-sm);
+    gap: 10px;
+    font-size: var(--text-base);
     color: var(--on-surface);
     forced-color-adjust: none;
     padding: var(--spacing) 0;

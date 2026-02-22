@@ -348,21 +348,26 @@ export const TextSprite = memo(function TextSprite({
         {...(!isPointerEventsNone && { onPointerDown: handlePointerDown })}
       />
 
-      {/* Text with ref for decoration measurement */}
+      {/* Text with ref for decoration measurement
+           eventMode="none": hit testing에서 제외 — pixiText의 containsPoint가
+           hitTestRecursive에서 빈 배열 []을 반환하여 아래 Graphics 테스트를 차단하는 문제 방지 */}
       <pixiText
         ref={textRefCallback}
         text={textContent}
         style={pixiTextStyle}
         x={padding.left}
         y={padding.top}
+        eventMode="none"
       />
 
-      {/* P7.7: Text decoration lines (underline, line-through, overline) */}
+      {/* P7.7: Text decoration lines (underline, line-through, overline)
+           eventMode="none": 위와 동일한 이유 */}
       {hasDecoration && (
         <pixiGraphics
           draw={drawTextDecoration}
           x={padding.left}
           y={padding.top}
+          eventMode="none"
         />
       )}
     </pixiContainer>

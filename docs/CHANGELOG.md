@@ -5,6 +5,144 @@ All notable changes to XStudio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Slider Complex Component + WebGL Fix] - 2026-02-22
+
+### Bug Fixes
+- **Slider.spec.ts**: TokenRef offsetY 계산 버그 수정 - `size.fontSize`가 문자열인데 숫자 연산에 사용되어 NaN 발생, `resolveToken()`으로 해결
+- **Slider.spec.ts**: SliderOutput 텍스트 위치 수정 - `x: width` → `x: 0` + `maxWidth: width`로 컨테이너 내 우측 정렬
+- **Slider.css**: class selector → data-attribute selector 전환 (`[data-size]`, `[data-variant]`)
+- **unified.types.ts**: Slider 기본 props 수정 (value=50, width=200, height=45, showValue=true)
+
+### Features
+- **Slider → Complex Component 전환**: layer tree가 DOM 구조와 일치하도록 변경
+  - `FormComponents.ts`: `createSliderDefinition()` 팩토리 추가
+  - DOM 구조: `Slider > Label + SliderOutput + SliderTrack > SliderThumb`
+  - `ComponentFactory.ts`: Slider creator 등록
+  - `useElementCreator.ts`: complexComponents에 Slider 추가
+  - `ElementSprite.tsx`: `_hasLabelChild` 체크에 Slider 추가
+  - `Slider.spec.ts`: `_hasLabelChild` 플래그로 label/output 중복 렌더링 방지
+
+### Changed Files (7)
+- `packages/specs/src/components/Slider.spec.ts`
+- `packages/shared/src/components/styles/Slider.css`
+- `apps/builder/src/types/builder/unified.types.ts`
+- `apps/builder/src/builder/factories/definitions/FormComponents.ts`
+- `apps/builder/src/builder/factories/ComponentFactory.ts`
+- `apps/builder/src/builder/hooks/useElementCreator.ts`
+- `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx`
+
+---
+
+## [2026-02-22]
+
+### Fixed - TaffyFlexEngine: CSS `flex` shorthand 파싱 추가
+
+#### 증상
+CSS `flex` shorthand 속성(`flex: 1`, `flex: auto`, `flex: none`, `flex: 1 1 0%`)이 TaffyFlexEngine에서 파싱되지 않음. SelectValue의 `flex: 1`이 무시되어 레이아웃 크기가 0으로 계산됨.
+
+#### 원인
+`elementToTaffyStyle()`이 `flexGrow`, `flexShrink`, `flexBasis` 개별 속성만 처리하고, `flex` shorthand를 파싱하는 로직이 없었음.
+
+#### 수정 내용
+
+**`elementToTaffyStyle()`에 flex shorthand 파싱 로직 추가**
+
+| 입력 | 변환 결과 |
+|------|----------|
+| `flex: <number>` | `flexGrow: n, flexShrink: 1, flexBasis: 0%` |
+| `flex: "auto"` | `flexGrow: 1, flexShrink: 1` (basis: auto) |
+| `flex: "none"` | `flexGrow: 0, flexShrink: 0` |
+| `flex: "<grow> <shrink> [<basis>]"` | 각 값을 분리 파싱 |
+
+- 개별 속성(`flexGrow`, `flexShrink`, `flexBasis`)이 명시되어 있으면 shorthand보다 우선 적용
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/src/builder/workspace/canvas/layout/engines/TaffyFlexEngine.ts` | `elementToTaffyStyle()`에 flex shorthand 파싱 로직 추가 |
+
+#### 영향 범위
+flex shorthand를 사용하는 모든 요소의 레이아웃이 올바르게 계산됨.
+
+---
+
+### Fixed - Select/ComboBox 자식 요소 implicit styles 주입
+
+#### 증상
+SelectValue 영역이 100×100, SelectIcon 영역이 100×100으로 렌더링됨.
+
+#### 원인
+
+- **원인 1**: DB에 저장된 기존 요소에 `width`, `height`, `flex` 속성이 없을 수 있음
+- **원인 2**: `calculateChildrenLayout` 호출 시 원본 DB 스타일이 사용되어 레이아웃 계산이 부정확
+- **원인 3**: LayoutComputedSizeContext가 null이면 BoxSprite가 convertStyle 기본값 100×100으로 fallback
+
+#### 수정 내용
+
+두 단계에서 implicit styles 주입:
+
+**1. 레이아웃 계산 전** (`containerTag === 'selecttrigger'`/`'comboboxwrapper'` 블록)
+- SelectValue/ComboBoxInput: `flex: 1` 보장 (`??` 연산자로 DB 값 우선)
+- SelectIcon/ComboBoxTrigger: `width: 18, height: 18, flexShrink: 0` 보장
+
+**2. 렌더링 시** (투명 배경 override 블록)
+- tag별 implicitStyle 객체를 spread하여 DB에 없는 속성 보장
+- `{ ...implicitStyle, ...existingStyle, backgroundColor: 'transparent' }` 순서로 합성
+
+**배치 결과 (SelectTrigger 내부)**:
+- SelectValue: flexGrow=1, width = containerWidth - 28 - 18 (나머지 공간)
+- SelectIcon: width=18, height=18, center x = containerWidth - 23 (spec shapes chevron과 일치)
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | 레이아웃 계산 전 + 렌더링 시 implicit styles 주입 |
+
+---
+
+### Fixed - Select/ComboBox CSS Preview ↔ Spec Shapes 정합성 수정
+
+#### 증상
+CSS Preview와 Spec Shapes 간에 gap, padding, 아이콘 크기가 일치하지 않음.
+
+#### 수정 내용
+
+| 속성 | CSS 변경 전 | CSS 변경 후 | Spec 값 |
+|------|-----------|-----------|---------|
+| Gap (Label↔Trigger) | `--spacing-xs` (4px) | `--spacing-sm` (8px) | labelGap = 8px |
+| Trigger/Input padding | `--spacing` `--spacing-md` (4px 12px) | `--spacing-sm` 14px (8px 14px) | paddingY=8, paddingX=14 |
+| Chevron/Button size | 24px | 18px | iconSize = 18px |
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `packages/shared/src/components/styles/Select.css` | gap, padding, 아이콘 크기를 Spec 값과 일치 |
+| `packages/shared/src/components/styles/ComboBox.css` | gap, padding, 아이콘 크기를 Spec 값과 일치 |
+
+---
+
+### Fixed - Select/ComboBox 구조적 자식 투명 배경 처리
+
+#### 증상
+SelectTrigger, SelectValue, SelectIcon 등의 BoxSprite가 기본 흰색 불투명 배경(0xffffff, alpha=1)으로 spec shapes를 가림.
+
+#### 수정 내용
+
+- **BuilderCanvas.tsx** `renderChild`에서 구조적 자식 태그별로 `backgroundColor: 'transparent'` + `children: ''` 주입
+- **SelectionComponents.ts** factory 정의에도 `backgroundColor: 'transparent'` 추가
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | 구조적 자식 태그별 `backgroundColor: 'transparent'` + `children: ''` 주입 |
+| `apps/builder/src/builder/factories/definitions/SelectionComponents.ts` | factory 정의에 `backgroundColor: 'transparent'` 추가 |
+
+---
+
 ## [Unreleased]
 
 

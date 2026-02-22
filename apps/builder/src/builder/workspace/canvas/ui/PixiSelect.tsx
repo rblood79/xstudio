@@ -1,61 +1,42 @@
 /**
- * Pixi Select
+ * PixiSelect
  *
- * 투명 히트 영역(pixiGraphics) 기반 Select
- * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
- * - convertToSelectStyle()로 크기 계산 (Skia 렌더링에 필요)
+ * 투명 히트 영역 기반 Select (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  *
  * @since 2025-12-13 Phase 6.3
- * @updated 2026-02-18 @pixi/ui Select 의존성 제거 (Skia 렌더링 전환)
+ * @updated 2026-02-22 A등급 패턴으로 재작성 (LayoutComputedSizeContext 사용)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo } from 'react';
-import { Graphics as PixiGraphics } from 'pixi.js';
-import type { Element } from '../../../../types/core/store.types';
-import type { CSSStyle } from '../sprites/styleConverter';
-
-// Spec Migration
+import { memo, useCallback, useRef, useContext } from 'react';
 import {
-  SelectSpec,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // ============================================
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface PixiSelectProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
+  onDoubleClick?: (elementId: string) => void;
   onChange?: (elementId: string, value: string) => void;
-}
-
-// ============================================
-// Style Conversion
-// ============================================
-
-interface SelectLayoutStyle {
-  width: number;
-  height: number;
-}
-
-/**
- * CSS 스타일을 Select 레이아웃 스타일로 변환
- */
-function convertToSelectStyle(style: CSSStyle | undefined, size: string): SelectLayoutStyle {
-  const sizeSpec = SelectSpec.sizes[size] || SelectSpec.sizes[SelectSpec.defaultSize];
-  const specPreset = getSpecSizePreset(sizeSpec, 'light');
-
-  // 높이 계산: fontSize + paddingY * 2 + border (대략적 추정)
-  const defaultHeight = specPreset.fontSize + specPreset.paddingY * 2 + 8;
-
-  return {
-    width: typeof style?.width === 'number' ? style.width : 200,
-    height: typeof style?.height === 'number' ? style.height : defaultHeight,
-  };
 }
 
 // ============================================
@@ -65,50 +46,87 @@ function convertToSelectStyle(style: CSSStyle | undefined, size: string): Select
 /**
  * PixiSelect
  *
- * 투명 히트 영역만 제공 (Skia가 시각적 렌더링 담당)
- *
- * @example
- * <PixiSelect
- *   element={selectElement}
- *   onChange={(id, value) => handleValueChange(id, value)}
- * />
+ * 투명 히트 영역 기반 Select (Skia 렌더링)
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
 export const PixiSelect = memo(function PixiSelect({
   element,
   onClick,
+  onDoubleClick,
+  onChange,
 }: PixiSelectProps) {
   useExtend(PIXI_COMPONENTS);
-
-  const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // size prop 추출 (기본값: 'md')
-  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // Select 스타일 계산 (Skia 렌더링에 필요)
-  const layoutStyle = useMemo(() => convertToSelectStyle(style, size), [style, size]);
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 이벤트 핸들러
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
-  }, [element.id, onClick]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
+
+  // 더블클릭 감지용 타임스탬프
+  const lastPointerDownRef = useRef(0);
 
   // 투명 히트 영역
   const drawHitArea = useCallback(
-    (g: PixiGraphics) => {
+    (g: PixiGraphicsClass) => {
       g.clear();
-      g.rect(0, 0, layoutStyle.width, layoutStyle.height);
-      g.fill({ color: 0xffffff, alpha: 0.001 });
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [layoutStyle.width, layoutStyle.height]
+    [hitWidth, hitHeight]
+  );
+
+  // 클릭 핸들러 (modifier 키 + 더블클릭 감지)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
+
+      const now = Date.now();
+      const isDouble = Boolean(onDoubleClick) && now - lastPointerDownRef.current < 300;
+      lastPointerDownRef.current = now;
+
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
+
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+      const currentValue = String(props?.value ?? '');
+      onChange?.(element.id, currentValue);
+
+      if (isDouble) {
+        onDoubleClick?.(element.id);
+      }
+    },
+    [element.id, onClick, onDoubleClick, onChange, isDisabled, props?.value]
   );
 
   return (
-    <pixiContainer>
+    <pixiContainer
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
+    >
+      {/* 투명 히트 영역 — Skia가 시각적 렌더링 담당 */}
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handleClick}
       />
     </pixiContainer>

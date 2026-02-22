@@ -1,5 +1,5 @@
 import { useEffect, memo, useCallback, useMemo } from "react";
-import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput, Database, List, LayoutList } from 'lucide-react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput, Database, List, LayoutList, Parentheses } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
@@ -81,6 +81,14 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
 
   const handleAutoFocusChange = useCallback((checked: boolean) => {
     onUpdate({ ...currentProps, autoFocus: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleVariantChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, variant: value });
+  }, [currentProps, onUpdate]);
+
+  const handleSizeChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, size: value });
   }, [currentProps, onUpdate]);
 
   const handleMenuTriggerChange = useCallback((value: string) => {
@@ -181,6 +189,37 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
       </PropertySection>
     ),
     [customId, elementId]
+  );
+
+  const designSection = useMemo(
+    () => (
+      <PropertySection title="Design">
+        <PropertySelect
+          label={PROPERTY_LABELS.VARIANT}
+          value={String(currentProps.variant || "default")}
+          onChange={handleVariantChange}
+          options={[
+            { value: "default", label: PROPERTY_LABELS.VARIANT_DEFAULT },
+            { value: "primary", label: PROPERTY_LABELS.VARIANT_PRIMARY },
+            { value: "error", label: "Error" },
+          ]}
+          icon={Parentheses}
+        />
+
+        <PropertySelect
+          label={PROPERTY_LABELS.SIZE}
+          value={String(currentProps.size || "md")}
+          onChange={handleSizeChange}
+          options={[
+            { value: "sm", label: PROPERTY_LABELS.SIZE_SM },
+            { value: "md", label: PROPERTY_LABELS.SIZE_MD },
+            { value: "lg", label: PROPERTY_LABELS.SIZE_LG },
+          ]}
+          icon={Parentheses}
+        />
+      </PropertySection>
+    ),
+    [currentProps.variant, currentProps.size, handleVariantChange, handleSizeChange]
   );
 
   const contentSection = useMemo(
@@ -528,6 +567,7 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
   return (
     <>
       {basicSection}
+      {designSection}
       {contentSection}
       {dataBindingSection}
       {stateSection}

@@ -818,16 +818,20 @@ export function createDefaultComboBoxProps(): ComboBoxElementProps {
 export function createDefaultSliderProps(): SliderElementProps {
   return {
     label: "Slider",
-    value: 0,
+    value: 50,
     minValue: 0,
     maxValue: 100,
     step: 1,
     isDisabled: false,
     orientation: "horizontal",
+    showValue: true,
     // CSS base: display:grid; max-width:300px
+    // Spec md: label(14*1.2≈17) + gap(10) + thumbSize(18) = 45
     style: {
       display: 'grid',
-      maxWidth: '300px',
+      width: 200,
+      height: 45,
+      maxWidth: 300,
     },
   };
 }

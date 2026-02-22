@@ -32,6 +32,8 @@ export interface ComboBoxProps {
   selectedIndex?: number;
   children?: string;
   style?: Record<string, string | number | undefined>;
+  /** ElementSprite에서 주입: Label child 존재 시 spec shapes에서 label 렌더링 스킵 */
+  _hasLabelChild?: boolean;
 }
 
 /**
@@ -119,7 +121,6 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
   render: {
     shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 200;
-      const height = size.height;
       const chevronSize = size.iconSize ?? 18;
 
       const styleBr = props.style?.borderRadius;
@@ -143,7 +144,19 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : defaultBw;
 
-      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+      // size.fontSize는 TokenRef 문자열('{typography.text-md}')일 수 있으므로
+      // 산술 연산 전 안전하게 숫자로 변환 (specShapesToSkia의 resolveNum이 최종 해석)
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const fontSize = typeof rawFontSize === 'number' ? rawFontSize : 14;
+
+      // CSS 정합성: React-Aria ComboBox 실제 렌더링 기준
+      // .react-aria-Label: fontSize=14, lineHeight=1.5 → height=21
+      // gap: 8px (flex gap)
+      // input: height = fontSize + paddingY*2 = 30px (md 기준)
+      const labelLineHeight = Math.ceil(fontSize * 1.5);
+      const labelGap = 8;
+      const labelOffset = labelLineHeight + labelGap; // 29px for md
+      const inputHeight = fontSize + (size.paddingY as number) * 2; // 30px for md
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight = fwRaw != null
@@ -164,14 +177,15 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
 
       const shapes: Shape[] = [];
 
-      // 라벨
-      if (props.label) {
+      // 라벨 — Label child가 있으면 스킵 (TextSprite가 렌더링)
+      // Label child가 없으면 (기존 요소 호환) spec shapes에서 직접 렌더링
+      if (props.label && !props._hasLabelChild) {
         shapes.push({
           type: 'text' as const,
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: (fontSize as number) - 2,
+          fontSize,
           fontFamily: ff,
           fontWeight,
           fill: textColor,
@@ -180,14 +194,15 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         });
       }
 
-      // 입력 영역 배경
+      // 입력 영역 배경 — CSS 정합: y=labelOffset(29), height=inputHeight(30)
+      const inputY = props.label ? labelOffset : 0;
       shapes.push({
         id: 'input',
         type: 'roundRect' as const,
         x: 0,
-        y: props.label ? 20 : 0,
+        y: inputY,
         width,
-        height,
+        height: inputHeight,
         radius: borderRadius,
         fill: bgColor,
       });
@@ -209,7 +224,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         shapes.push({
           type: 'text' as const,
           x: paddingX,
-          y: (props.label ? 20 : 0) + height / 2,
+          y: inputY + inputHeight / 2,
           text: displayText,
           fontSize: fontSize as number,
           fontFamily: ff,
@@ -223,7 +238,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
 
       // 쉐브론 아이콘 (Lucide chevron-down SVG 경로)
       const chevX = width - paddingX - chevronSize / 2;
-      const chevY = (props.label ? 20 : 0) + height / 2;
+      const chevY = inputY + inputHeight / 2;
       shapes.push({
         type: 'icon_font' as const,
         iconName: 'chevron-down',
@@ -248,7 +263,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         const dropdownHeight = dropdownItems.length > 0
           ? dropdownItems.length * itemH + dropdownPaddingY * 2
           : itemH + dropdownPaddingY * 2;
-        const dropdownY = (props.label ? 20 : 0) + height + 4;
+        const dropdownY = inputY + inputHeight + 4;
 
         shapes.push({
           type: 'shadow' as const,
@@ -346,9 +361,9 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               : allItems.length)
           : 0;
         const descY = props.isOpen
-          ? (props.label ? 20 : 0) + height + 4
+          ? inputY + inputHeight + 4
               + Math.max(visibleCount, 1) * 36 + 8 + 4
-          : (props.label ? 20 : 0) + height + 4;
+          : inputY + inputHeight + 4;
         shapes.push({
           type: 'text' as const,
           x: 0,

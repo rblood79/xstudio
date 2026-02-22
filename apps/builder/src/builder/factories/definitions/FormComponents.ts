@@ -3,9 +3,13 @@ import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
 
 /**
- * TextField 컴포넌트 정의
- * TextField는 단순 컴포넌트로, Label/Input/Description/FieldError를 내부적으로 렌더링합니다.
- * 따라서 children 없이 TextField 하나만 생성합니다.
+ * TextField 복합 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * TextField (parent, tag="TextField", display flex column)
+ *   ├─ Label (tag="Label", children="Text Field")
+ *   ├─ Input (tag="Input", type="text")
+ *   └─ FieldError (tag="FieldError")
  */
 export function createTextFieldDefinition(
   context: ComponentCreationContext
@@ -33,12 +37,58 @@ export function createTextFieldDefinition(
         isRequired: false,
         isDisabled: false,
         isReadOnly: false,
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          width: 240,
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
-    children: [], // TextField는 children이 없는 단순 컴포넌트
+    children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Text Field",
+          style: {
+            fontSize: 14,
+            fontWeight: 500,
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "Input",
+        props: {
+          type: "text",
+          placeholder: "Enter text...",
+          style: {
+            width: '100%',
+            height: 40,
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "FieldError",
+        props: {
+          children: "",
+          style: {
+            fontSize: 12,
+            display: 'none',
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
   };
 }
 
@@ -415,6 +465,112 @@ export function createSearchFieldDefinition(
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 3,
+      },
+    ],
+  };
+}
+
+/**
+ * Slider 복합 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * Slider (parent, tag="Slider", display grid)
+ *   ├─ Label (tag="Label", grid-area: label)
+ *   ├─ SliderOutput (tag="SliderOutput", grid-area: output)
+ *   └─ SliderTrack (tag="SliderTrack", grid-area: track, position relative)
+ *        └─ SliderThumb (tag="SliderThumb", border-radius 50%)
+ */
+export function createSliderDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Slider",
+    parent: {
+      tag: "Slider",
+      props: {
+        label: "Slider",
+        value: 50,
+        minValue: 0,
+        maxValue: 100,
+        step: 1,
+        isDisabled: false,
+        orientation: "horizontal",
+        showValue: true,
+        style: {
+          display: 'grid',
+          width: 200,
+          height: 45,
+          maxWidth: 300,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Slider",
+          style: {
+            fontSize: 14,
+            fontWeight: 500,
+            width: 'fit-content',
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "SliderOutput",
+        props: {
+          children: "50",
+          style: {
+            fontSize: 14,
+            width: 'fit-content',
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "SliderTrack",
+        props: {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            width: '100%',
+            height: 24,
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+        children: [
+          {
+            tag: "SliderThumb",
+            props: {
+              style: {
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                backgroundColor: 'transparent',
+              },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+        ],
       },
     ],
   };

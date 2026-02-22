@@ -20,8 +20,8 @@
     }
 
     .react-aria-DateInput {
-      padding: 4px 2.5rem 4px 8px;
-      font-size: var(--text-sm);
+      padding: 8px 2.5rem 8px 14px;
+      font-size: var(--text-base);
     }
 
     .react-aria-FieldError {
@@ -150,31 +150,31 @@
 
   .react-aria-DatePicker {
     /* 기본 size 변수 (md) */
-    --dp-input-padding: 4px 2.5rem 4px 8px;
-    --dp-input-size: var(--text-sm);
+    --dp-input-padding: 8px 2.5rem 8px 14px;
+    --dp-input-size: var(--text-base);
     --dp-btn-width: var(--text-xl);
     --dp-btn-height: var(--text-xl);
     --dp-btn-margin: calc(var(--text-2xl) * -1);
-    --dp-hint-size: 12px;
+    --dp-hint-size: var(--text-xs);
   }
 
   /* Size별 CSS 변수만 오버라이드 */
   .react-aria-DatePicker.sm {
-    --dp-input-padding: 2px 2rem 2px 6px;
-    --dp-input-size: var(--text-xs);
+    --dp-input-padding: 4px 2rem 4px 10px;
+    --dp-input-size: var(--text-sm);
     --dp-btn-width: var(--text-base);
     --dp-btn-height: var(--text-base);
     --dp-btn-margin: calc(var(--text-xl) * -1);
-    --dp-hint-size: var(--text-2xs);
+    --dp-hint-size: var(--text-xs);
   }
 
   .react-aria-DatePicker.md {
-    --dp-input-padding: 4px 2.5rem 4px 8px;
-    --dp-input-size: var(--text-sm);
+    --dp-input-padding: 8px 2.5rem 8px 14px;
+    --dp-input-size: var(--text-base);
     --dp-btn-width: var(--text-xl);
     --dp-btn-height: var(--text-xl);
     --dp-btn-margin: calc(var(--text-2xl) * -1);
-    --dp-hint-size: 12px;
+    --dp-hint-size: var(--text-xs);
   }
 
   .react-aria-DatePicker.lg {

@@ -231,7 +231,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 // 복합 컴포넌트인지 확인
                 const complexComponents = [
                     'TextField', 'ToggleButtonGroup', 'CheckboxGroup', 'RadioGroup',
-                    'Select', 'ComboBox', 'Tabs', 'Tree', 'TagGroup', 'ListBox', 'GridList', 'Table',
+                    'Select', 'ComboBox', 'Slider', 'Tabs', 'Tree', 'TagGroup', 'ListBox', 'GridList', 'Table',
                     'Card',
                     'Menu', 'Disclosure', 'DisclosureGroup',
                     'Dialog', 'Popover', 'Tooltip',

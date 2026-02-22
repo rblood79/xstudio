@@ -51,6 +51,7 @@ function resolveRadius(
 
 /** ColorValue → Float32Array color for Skia */
 function colorValueToFloat32(value: ColorValue, theme: 'light' | 'dark', alpha: number = 1): Float32Array {
+  if (value === 'transparent') return TRANSPARENT;
   const resolved = resolveColor(value, theme);
   let hex: number;
   if (typeof resolved === 'string') {

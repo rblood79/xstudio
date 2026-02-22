@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * TextField Props
@@ -41,39 +42,39 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
+      background: '{color.surface-container}' as TokenRef,
+      backgroundHover: '{color.surface-container-high}' as TokenRef,
+      backgroundPressed: '{color.surface-container-high}' as TokenRef,
       text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      border: '{color.outline-variant}' as TokenRef,
       borderHover: '{color.primary}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
+      background: '{color.surface-container}' as TokenRef,
+      backgroundHover: '{color.surface-container-high}' as TokenRef,
+      backgroundPressed: '{color.surface-container-high}' as TokenRef,
       text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      border: '{color.outline-variant}' as TokenRef,
       borderHover: '{color.primary}' as TokenRef,
     },
     secondary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
+      background: '{color.surface-container}' as TokenRef,
+      backgroundHover: '{color.surface-container-high}' as TokenRef,
+      backgroundPressed: '{color.surface-container-high}' as TokenRef,
       text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      border: '{color.outline-variant}' as TokenRef,
       borderHover: '{color.secondary}' as TokenRef,
     },
     tertiary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
+      background: '{color.surface-container}' as TokenRef,
+      backgroundHover: '{color.surface-container-high}' as TokenRef,
+      backgroundPressed: '{color.surface-container-high}' as TokenRef,
       text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      border: '{color.outline-variant}' as TokenRef,
       borderHover: '{color.tertiary}' as TokenRef,
     },
     error: {
-      background: '{color.surface}' as TokenRef,
+      background: '{color.surface-container}' as TokenRef,
       backgroundHover: '{color.error-container}' as TokenRef,
       backgroundPressed: '{color.error-container}' as TokenRef,
       text: '{color.on-surface}' as TokenRef,
@@ -81,9 +82,9 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       borderHover: '{color.error-hover}' as TokenRef,
     },
     success: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
+      background: '{color.surface-container}' as TokenRef,
+      backgroundHover: '{color.surface-container-high}' as TokenRef,
+      backgroundPressed: '{color.surface-container-high}' as TokenRef,
       text: '{color.on-surface}' as TokenRef,
       border: '{color.primary}' as TokenRef,
       borderHover: '{color.primary-hover}' as TokenRef,
@@ -157,7 +158,14 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : defaultBw;
 
-      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+      // fontSize: TokenRef 문자열일 수 있으므로 resolveToken으로 숫자 변환
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight = fwRaw != null
@@ -177,15 +185,22 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         : size.paddingX;
 
       const shapes: Shape[] = [];
+      const hasLabelChild = !!(props as Record<string, unknown>)._hasLabelChild;
 
-      // 라벨
-      if (props.label) {
+      // 라벨 (Label 자식이 있으면 자식 TextSprite가 렌더링하므로 스킵)
+      const labelFontSize = fontSize - 2;
+      const descFontSize = labelFontSize - 2;
+      const labelHeight = Math.ceil(labelFontSize * 1.2);
+      const labelGap = size.gap ?? 6;
+      const labelOffset = props.label ? labelHeight + labelGap : 0;
+
+      if (!hasLabelChild && props.label) {
         shapes.push({
           type: 'text' as const,
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: (fontSize as number) - 2,
+          fontSize: labelFontSize,
           fontFamily: ff,
           fontWeight,
           fill: textColor,
@@ -199,7 +214,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         id: 'bg',
         type: 'roundRect' as const,
         x: 0,
-        y: props.label ? 20 : 0,
+        y: labelOffset,
         width,
         height,
         radius: borderRadius,
@@ -223,9 +238,9 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         shapes.push({
           type: 'text' as const,
           x: paddingX,
-          y: (props.label ? 20 : 0) + height / 2,
+          y: labelOffset + height / 2,
           text: displayText,
-          fontSize: fontSize as number,
+          fontSize,
           fontFamily: ff,
           fill: props.value ? textColor : ('{color.on-surface-variant}' as TokenRef),
           align: textAlign,
@@ -239,9 +254,9 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         shapes.push({
           type: 'text' as const,
           x: 0,
-          y: (props.label ? 20 : 0) + height + 4,
+          y: labelOffset + height + 4,
           text: descText,
-          fontSize: (fontSize as number) - 2,
+          fontSize: descFontSize,
           fontFamily: ff,
           fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
           align: textAlign,

@@ -32,6 +32,8 @@ export interface SelectProps {
   selectedIndex?: number;
   children?: string;
   style?: Record<string, string | number | undefined>;
+  /** ElementSprite에서 주입: Label child 존재 시 spec shapes에서 label 렌더링 스킵 */
+  _hasLabelChild?: boolean;
 }
 
 /**
@@ -119,7 +121,6 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
   render: {
     shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 200;
-      const height = size.height;
       const chevronSize = size.iconSize ?? 18;
 
       const styleBr = props.style?.borderRadius;
@@ -143,7 +144,19 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : defaultBw;
 
-      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+      // size.fontSize는 TokenRef 문자열('{typography.text-md}')일 수 있으므로
+      // 산술 연산 전 안전하게 숫자로 변환 (specShapesToSkia의 resolveNum이 최종 해석)
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const fontSize = typeof rawFontSize === 'number' ? rawFontSize : 14;
+
+      // CSS 정합성: React-Aria Select 실제 렌더링 기준
+      // .react-aria-Label: fontSize=14, lineHeight=1.5 → height=21
+      // gap: 8px (flex gap)
+      // button: height = fontSize + paddingY*2 + 4 = 34px (md 기준, Select 버튼은 input보다 4px 높음)
+      const labelLineHeight = Math.ceil(fontSize * 1.5);
+      const labelGap = 8;
+      const labelOffset = labelLineHeight + labelGap; // 29px for md
+      const triggerHeight = fontSize + (size.paddingY as number) * 2 + 4; // 34px for md
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight = fwRaw != null
@@ -164,14 +177,15 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
       const shapes: Shape[] = [];
 
-      // 라벨
-      if (props.label) {
+      // 라벨 — Label child가 있으면 스킵 (TextSprite가 렌더링)
+      // Label child가 없으면 (기존 요소 호환) spec shapes에서 직접 렌더링
+      if (props.label && !props._hasLabelChild) {
         shapes.push({
           type: 'text' as const,
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: (fontSize as number) - 2,
+          fontSize,
           fontFamily: ff,
           fontWeight,
           fill: textColor,
@@ -180,14 +194,15 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         });
       }
 
-      // 트리거 배경
+      // 트리거 배경 — CSS 정합: y=labelOffset(29), height=triggerHeight(34)
+      const triggerY = props.label ? labelOffset : 0;
       shapes.push({
         id: 'trigger',
         type: 'roundRect' as const,
         x: 0,
-        y: props.label ? 20 : 0,
+        y: triggerY,
         width,
-        height,
+        height: triggerHeight,
         radius: borderRadius,
         fill: bgColor,
       });
@@ -209,7 +224,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         shapes.push({
           type: 'text' as const,
           x: paddingX,
-          y: (props.label ? 20 : 0) + height / 2,
+          y: triggerY + triggerHeight / 2,
           text: displayText,
           fontSize: fontSize as number,
           fontFamily: ff,
@@ -221,9 +236,9 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         });
       }
 
-      // 쉐브론 아이콘 (Lucide chevron-down SVG 경로)
+      // 쉐브론 아이콘
       const chevX = width - paddingX - chevronSize / 2;
-      const chevY = (props.label ? 20 : 0) + height / 2;
+      const chevY = triggerY + triggerHeight / 2;
       shapes.push({
         type: 'icon_font' as const,
         iconName: 'chevron-down',
@@ -240,7 +255,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         const itemH = 36;
         const dropdownPaddingY = 4;
         const dropdownHeight = dropdownItems.length * itemH + dropdownPaddingY * 2;
-        const dropdownY = (props.label ? 20 : 0) + height + 4;
+        const dropdownY = triggerY + triggerHeight + 4;
 
         shapes.push({
           type: 'shadow' as const,
@@ -316,9 +331,9 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
       if (descText) {
         const descY = props.isOpen
-          ? (props.label ? 20 : 0) + height + 4
+          ? triggerY + triggerHeight + 4
               + (props.items ?? ['Option 1', 'Option 2', 'Option 3']).length * 36 + 8 + 4
-          : (props.label ? 20 : 0) + height + 4;
+          : triggerY + triggerHeight + 4;
         shapes.push({
           type: 'text' as const,
           x: 0,

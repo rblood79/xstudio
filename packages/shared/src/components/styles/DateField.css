@@ -25,7 +25,7 @@
     /* ===== DateInput Container ===== */
     .react-aria-DateInput {
       display: inline-flex;
-      padding: var(--spacing) var(--spacing-md);
+      padding: var(--spacing-sm) 14px;
       border: 1px solid var(--outline-variant);
       border-radius: var(--border-radius);
       background: var(--surface-container);
@@ -34,7 +34,7 @@
       min-width: 150px;
       white-space: nowrap;
       forced-color-adjust: none;
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
       transition: all 200ms ease;
 
       /* Focus State */
@@ -231,10 +231,10 @@
   .react-aria-DateField {
     /* 기본 size 변수 (md) */
     --df-label-size: var(--text-sm);
-    --df-input-padding: var(--spacing) var(--spacing-md);
-    --df-input-size: var(--text-sm);
+    --df-input-padding: var(--spacing-sm) 14px;
+    --df-input-size: var(--text-base);
     --df-input-min-width: 150px;
-    --df-segment-size: var(--text-sm);
+    --df-segment-size: var(--text-base);
     --df-hint-size: var(--text-xs);
   }
 
@@ -250,10 +250,10 @@
 
   .react-aria-DateField.md {
     --df-label-size: var(--text-sm);
-    --df-input-padding: var(--spacing) var(--spacing-md);
-    --df-input-size: var(--text-sm);
+    --df-input-padding: var(--spacing-sm) 14px;
+    --df-input-size: var(--text-base);
     --df-input-min-width: 150px;
-    --df-segment-size: var(--text-sm);
+    --df-segment-size: var(--text-base);
     --df-hint-size: var(--text-xs);
   }
 

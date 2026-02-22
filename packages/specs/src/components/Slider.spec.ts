@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
 import { resolveStateColors } from '../utils/stateEffect';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * Slider Props
@@ -153,9 +154,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
       const shapes: Shape[] = [];
+      const hasLabelChild = !!(props as Record<string, unknown>)._hasLabelChild;
 
-      // 라벨 + 값 행
-      if (props.label || props.showValue) {
+      // 라벨 + 값 행 (Label 자식이 있으면 자식 TextSprite가 렌더링하므로 스킵)
+      if (!hasLabelChild && (props.label || props.showValue)) {
         if (props.label) {
           shapes.push({
             type: 'text' as const,
@@ -173,7 +175,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         if (props.showValue) {
           shapes.push({
             type: 'text' as const,
-            x: width,
+            x: 0,
             y: 0,
             text: String(value),
             fontSize: fontSize as unknown as number,
@@ -181,12 +183,20 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             fill: textColor,
             align: 'right' as const,
             baseline: 'top' as const,
+            maxWidth: width,
           });
         }
       }
 
+      // fontSize가 TokenRef 문자열일 수 있으므로 resolveToken으로 숫자 변환
+      const resolvedFontSize = typeof size.fontSize === 'number'
+        ? size.fontSize
+        : (typeof size.fontSize === 'string' && size.fontSize.startsWith('{')
+            ? resolveToken(size.fontSize as TokenRef)
+            : 14);
+      const numericFontSize = typeof resolvedFontSize === 'number' ? resolvedFontSize : 14;
       const offsetY = (props.label || props.showValue)
-        ? (size.fontSize as unknown as number) + gap
+        ? numericFontSize + gap
         : 0;
 
       // 트랙 배경

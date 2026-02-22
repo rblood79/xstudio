@@ -110,34 +110,18 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       const shapes: Shape[] = [];
       const tagFontSize = size.fontSize as unknown as number || 14;
       const tagGap = size.gap || 4;
-      let currentY = 0;
+      const currentY = 0;
 
       // ── CSS 구조: TagGroup (column) ──
-      // ├── Label
+      // ├── Label       ← 자식 Label 요소가 렌더링 (spec shapes에서 제외)
       // └── TagList (row flex-wrap)
       //     ├── Tag
       //     └── Tag
+      //
+      // Label은 자식 요소(child Label element)로 렌더링되므로
+      // spec shapes에서 중복 렌더링하지 않음 (두 줄 렌더링 방지)
 
-      // 1) Label 텍스트 (CSS: .react-aria-TagGroup > Label)
-      const label = props.label;
-      if (label) {
-        const labelFontSize = tagFontSize > 2 ? tagFontSize - 2 : 12;
-        shapes.push({
-          type: 'text' as const,
-          x: 0,
-          y: currentY,
-          text: label,
-          fontSize: labelFontSize,
-          fontFamily: fontFamily.sans,
-          fontWeight: 500,
-          fill: variant.text,
-          align: 'left' as const,
-          baseline: 'top' as const,
-        });
-        currentY += labelFontSize + 4; // gap: 2px + 여유
-      }
-
-      // 2) TagList 영역: Tag chips (CSS: .react-aria-TagList > .react-aria-Tag)
+      // TagList 영역: Tag chips (CSS: .react-aria-TagList > .react-aria-Tag)
       const tagItems = props._tagItems;
       if (tagItems && tagItems.length > 0) {
         const tagPaddingX = size.paddingX || 8;

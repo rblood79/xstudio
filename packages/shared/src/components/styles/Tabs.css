@@ -80,7 +80,7 @@
   .react-aria-Tab {
     position: relative;
     padding: var(--spacing) var(--spacing-lg);
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     font-weight: 500;
     cursor: pointer;
     outline: none;
@@ -296,7 +296,7 @@
   .react-aria-TabList.md {
     .react-aria-Tab {
       padding: var(--spacing) var(--spacing-lg);
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
 
       &[data-orientation="horizontal"]::before {
         height: 3px;

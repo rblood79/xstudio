@@ -16,12 +16,12 @@
     padding: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     outline: none;
     border-radius: var(--radius-sm);
     appearance: none;
     vertical-align: middle;
-    font-size: 1rem;
+    font-size: var(--text-sm);
     color: var(--on-surface);
   }
 
@@ -41,10 +41,10 @@
   .color-picker-popover {
     .react-aria-Dialog {
       outline: none;
-      padding: 15px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       min-width: 192px;
       max-height: inherit;
       box-sizing: border-box;
@@ -173,8 +173,8 @@
 
   /* ===== Medium Size (Default) ===== */
   .react-aria-ColorPicker.md {
-    font-size: 1rem;
-    gap: 8px;
+    font-size: var(--text-sm);
+    gap: 10px;
 
     .color-picker-button {
       width: 32px;
@@ -182,8 +182,8 @@
     }
 
     .color-picker-popover .react-aria-Dialog {
-      padding: 15px;
-      gap: 8px;
+      padding: 14px;
+      gap: 10px;
       min-width: 192px;
     }
   }

@@ -4,7 +4,7 @@
 
   .react-aria-ColorArea {
     width: 100%;
-    height: 192px;
+    height: 180px;
     border-radius: var(--radius-md);
     flex-shrink: 0;
     contain: layout style;

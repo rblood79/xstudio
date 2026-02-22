@@ -1,9 +1,9 @@
 # XStudio 통합 실행 가이드
 
-> **작성일**: 2026-02-19 | **수정일**: 2026-02-21
+> **작성일**: 2026-02-19 | **수정일**: 2026-02-22
 > **목적**: 4개 핵심 문서의 미완료 항목을 단일 실행 로드맵으로 통합
 > **소스**: `ENGINE_CHECKLIST.md`, `COMPONENT_SPEC_ARCHITECTURE.md`, `WASM.md`, `AI.md`
-> **수정 이력**: 1차 리뷰 (C4/H12/M10/L5건) + 2차 리뷰 (C1/H1/M5/W6건) 반영 + 3차 팀 구성 상세화 + 4차 RC-4 해결/RC-5 부분 해결 반영 (2026-02-21)
+> **수정 이력**: 1차 리뷰 (C4/H12/M10/L5건) + 2차 리뷰 (C1/H1/M5/W6건) 반영 + 3차 팀 구성 상세화 + 4차 RC-4 해결/RC-5 부분 해결 반영 (2026-02-21) + 5차 Tabs 컨테이너 렌더링 완성 반영 (2026-02-21) + 6차 Card 컨테이너 렌더링 완성 반영 (2026-02-21) + 7차 Card props→children 텍스트 동기화 버그 수정 반영 (2026-02-21) + 8차 TagGroup label 두 줄 렌더링 버그 수정 반영 (2026-02-22) + 9차 Slider Complex Component 전환 + TokenRef offsetY 버그 학습 사례 반영 (2026-02-22)
 
 ---
 
@@ -121,6 +121,7 @@
 | **RC-5 부분 해결** — Typography 정밀도 | `measureTextWithWhiteSpace` / `measureWrappedTextHeight`의 lineHeight를 `fontSize * 1.2` 상수에서 `fontBoundingBoxAscent + fontBoundingBoxDescent` 기반으로 통일 | 텍스트 높이 계산 정밀도 향상 (CSS Preview와의 줄 간격 오차 감소) |
 | **RC-5 부분 해결** — Box Model border 지원 | `enrichWithIntrinsicSize`에서 INLINE_BLOCK_TAGS에 해당하는 요소에 padding+border를 항상 포함하도록 수정 | border shorthand 레이아웃 지원 추가, inline-block 요소 intrinsic 크기 과소 계산 방지 |
 | **RC-5 부분 해결** — 컨테이너 정확도 | `LayoutContext.getChildElements` 추가로 컨테이너 컴포넌트(ToggleButtonGroup 등)에서 자식 요소 접근 가능 | 컨테이너 컴포넌트의 intrinsic 크기를 자식 수 기반으로 정확히 계산 |
+| **RC-6 연계** — Card/Box/Section border-box 정합성 | `enrichWithIntrinsicSize`에서 treatAsBorderBox 대상 요소에 padding+border 포함 높이 주입. Description `TEXT_TAGS` 추가로 TextSprite 렌더링 활성화 | Card 컨테이너 렌더링 정확도 향상. Heading + Description 다중 TextSprite 지원 |
 
 ### WS-3: WASM 성능 최적화 (WASM.md)
 
@@ -938,7 +939,8 @@ Phase C: 컬렉션 아이템 Shape 생성 (4~5일)
 └─ C-6: Tabs/Breadcrumbs/Pagination (1일) ─── R1
      파일: 각 .spec.ts + specShapeConverter.ts
      작업: Phase 3 미완료 spec 마무리
-     검증: 각 컴포넌트 기본 상태 스냅샷
+     ※ Tabs 컨테이너 렌더링: 2026-02-21 선행 완료 (5개 파일 수정)
+     검증: 각 컴포넌트 기본 상태 스냅샷 (Breadcrumbs/Pagination 잔여)
 ```
 
 #### Phase E 상세 (R2)
@@ -978,12 +980,86 @@ W-0c: CI/CD wasm:build 스텝 추가 (0.5일)
 | 기준 | 검증 방법 |
 |------|----------|
 | Phase C: Table/ListBox/Menu 렌더링 | 각 컴포넌트 스냅샷 비교 통과 |
-| Phase C: Tabs/Breadcrumbs/Pagination | 기본 상태 스냅샷 비교 |
+| Phase C: Tabs 컨테이너 렌더링 ✅ 완료 (2026-02-21) | CONTAINER_TAGS 등록 + 활성 Panel 필터링 + 높이 공식 확정 |
+| Phase C: Card 컨테이너 렌더링 ✅ 완료 (2026-02-21) | Description TextSprite 전환 + border-box 정합성 수정 + childElements 높이 계산 |
+| Phase C: Switch/Toggle label 줄바꿈 ✅ 완료 (2026-02-21) | `INLINE_FORM_INDICATOR_WIDTHS` 수정 (26/34/42 → 36/44/52) + `INLINE_FORM_GAPS` 신규 추가 |
+| **Card 텍스트 동기화** ✅ 완료 (2026-02-21) | `BuilderCanvas.tsx` cardProps 주입 + `LayoutRenderers.tsx` CSS Preview props 전달 — Properties Panel 텍스트 변경 WebGL Canvas 반영 |
+| **TagGroup label 두 줄 렌더링** ✅ 완료 (2026-02-22) | `TagGroup.spec.ts` render.shapes label shape 제거 + `engines/utils.ts` 일반 텍스트 경로 Canvas 2D→CanvasKit 폭 보정(`Math.ceil() + 2`) 추가 |
 | Phase E: 스크롤 동작 | ListBox 20개 아이템 스크롤 수동 확인 |
 | RC-7: display 전환 경계 | block↔flex 혼합 레이아웃 스냅샷 |
 | RC-5: inline baseline 정렬 (잔여) | 텍스트+인라인 요소 혼합 스냅샷 |
 | W-0c: CI에서 WASM 빌드 | deploy.yml 워크플로우 성공 |
 | **정합성 수치** | **보정 예상 ~93% 도달 (목표 달성)** |
+
+#### Tabs 컨테이너 렌더링 (2026-02-21)
+
+> Stage 4 Phase C-6의 Tabs 관련 작업이 선행 완료되었다. 아래는 근본 원인 분석 및 해결 이력이다.
+
+| 항목 | 내용 |
+|------|------|
+| **문제** | WebGL Canvas에서 Tabs의 Panel 미표시 + 높이 불일치 (98px vs 166px) |
+| **원인 1** | Tabs가 CONTAINER_TAGS에 미등록 → Panel 컨테이너 렌더링 안됨 |
+| **원인 2** | `Tabs.spec.ts`의 fontSize가 TokenRef 문자열 → NaN → tab 너비 계산 실패 |
+| **원인 3** | Panel 높이 케이스가 childElements 블록 안에 있어 도달 불가 |
+| **해결** | 5개 파일 수정 (Tabs.spec.ts, utils.ts, BuilderCanvas.tsx, PixiTabs.tsx, ElementSprite.tsx) |
+| **높이 공식** | tabBarHeight(sm=25/md=30/lg=35) + tabPanelPadding×2(32) + panelBorderBox |
+| **추가 구현** | `effectiveElementWithTabs`: `_tabLabels` 동적 주입으로 spec shapes 탭 레이블 렌더링 |
+
+#### Card 컨테이너 렌더링 (2026-02-21)
+
+> Stage 4 Phase C 관련 Card 렌더링 정합성 작업이 선행 완료되었다. 아래는 근본 원인 분석 및 해결 이력이다.
+
+| 항목 | 내용 |
+|------|------|
+| **문제** | Card의 Description이 TextSprite로 렌더링되지 않고, border-box 정합성 오류로 높이 계산 불일치 |
+| **원인 1** | Description 태그가 `TEXT_TAGS`에 미등록 → TextSprite 렌더링 경로에 도달 불가 |
+| **원인 2** | `enrichWithIntrinsicSize`에서 Card/Box/Section 등 treatAsBorderBox 대상 요소에 padding+border가 높이에 미포함 → 실제보다 작은 intrinsic 높이 계산 |
+| **원인 3** | childElements 높이 계산 로직이 Description TextSprite를 포함하지 않아 Card 전체 높이 오차 발생 |
+| **해결** | `TEXT_TAGS`에 Description 태그 추가, `enrichWithIntrinsicSize` border-box 수정, PixiCard childElements 높이 계산 반영 |
+| **RC-6 연계** | `enrichWithIntrinsicSize` 수정은 RC-6(auto/fit-content 엔진별 분기 처리)의 border-box 정합성 하위 항목으로 분류 |
+| **렌더링 결과** | PixiCard: Heading(TextSprite) + Description(TextSprite) 이중 텍스트 렌더링 정상 동작 |
+
+#### Card props→children 텍스트 동기화 수정 (2026-02-21)
+
+> Properties Panel에서 Card Title/Description 텍스트 변경이 WebGL Canvas에 미반영되는 버그가 수정되었다. 아래는 근본 원인 분석 및 해결 이력이다.
+
+| 항목 | 내용 |
+|------|------|
+| **문제** | Properties Panel에서 Card Title/Description 변경 시 WebGL Canvas에 미반영. CSS Preview는 정상 표시 |
+| **원인** | `CardEditor`가 `Card.props.heading/description`을 업데이트하지만, WebGL `TextSprite`는 자식 `Heading.props.children`을 읽음 — Card.props → 자식 요소 props 동기화 경로 부재 |
+| **해결 1 — BuilderCanvas.tsx** | `createContainerChildRenderer`에서 Card 자식 렌더링 시 `cardProps.heading ?? cardProps.title` → Heading child `props.children` 주입, `cardProps.description` → Description child `props.children` 주입 (Tabs `_tabLabels` 패턴과 동일) |
+| **해결 2 — LayoutRenderers.tsx** | CSS Preview Card 렌더러에 누락된 `heading`, `subheading`, `footer` props 전달 추가 — CSS Preview↔WebGL 텍스트 소스 일치 |
+| **우선순위** | `card.props.heading` 있으면 `card.props.title` 미사용. `card.props.heading ?? card.props.title` 순서로 Heading에 주입 |
+| **수정 파일** | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`, `packages/shared/src/renderers/LayoutRenderers.tsx` |
+| **참조 패턴** | §9.9.4 Tabs `_tabLabels` 동적 주입 (동일 구조), `COMPONENT_SPEC_ARCHITECTURE.md` §9.10.5 |
+
+#### Switch/Toggle label 줄바꿈 정합성 수정 (2026-02-21)
+
+> Stage 4 Phase C 관련 Switch/Toggle 렌더링 정합성 작업이 선행 완료되었다. 아래는 근본 원인 분석 및 해결 이력이다.
+
+| 항목 | 내용 |
+|------|------|
+| **문제** | WebGL Canvas에서 Switch/Toggle의 label이 불필요하게 줄바꿈되어 컴포넌트 높이 오계산 |
+| **원인** | `INLINE_FORM_INDICATOR_WIDTHS`의 switch/toggle 값(26/34/42)이 spec trackWidth보다 10px 작아, 레이아웃 엔진이 실제보다 좁은 indicator 너비를 기준으로 label 영역 계산 → 줄바꿈 발생 |
+| **해결 1** | `INLINE_FORM_INDICATOR_WIDTHS` switch/toggle 값 수정: 26/34/42 → 36/44/52 (sm/md/lg, spec trackWidth 기준 동기화) |
+| **해결 2** | `INLINE_FORM_GAPS` 테이블 신규 추가 — switch/toggle: 8/10/12, checkbox/radio: 6/8/10 (sm/md/lg) |
+| **해결 3** | `calculateContentHeight` column 방향 gap 계산을 `INLINE_FORM_GAPS` 기준으로 통일 |
+| **수정 파일** | `engines/utils.ts` |
+| **영향 범위** | Switch, Toggle 전 사이즈(sm/md/lg) WebGL Canvas 렌더링 정합성 개선 |
+
+#### TagGroup label 두 줄 렌더링 버그 수정 (2026-02-22)
+
+> Stage 4 Phase C 관련 TagGroup 렌더링 정합성 작업이 선행 완료되었다. 아래는 근본 원인 분석 및 해결 이력이다.
+
+| 항목 | 내용 |
+|------|------|
+| **문제** | WebGL Canvas에서 TagGroup 컴포넌트의 label("Tag Group")이 두 줄로 렌더링됨 |
+| **원인 1** | `TagGroupSpec.render.shapes`에서 label 텍스트를 fontSize 12px로 렌더링하는 동시에, 자식 Label 엘리먼트가 fontSize 14px로 별도 렌더링 → 두 텍스트가 겹쳐 두 줄처럼 표시 |
+| **원인 2** | `calculateContentWidth`의 일반 텍스트 경로에서 Canvas 2D `measureText` 결과(65px)를 보정 없이 사용. CanvasKit paragraph API가 더 넓은 폭을 요구하여 텍스트 wrapping 발생. INLINE_FORM 경로(line 718-719)에는 `Math.ceil() + 2` 보정이 존재했으나 일반 텍스트 경로(line 759-760)에 누락 |
+| **해결 1 — TagGroup.spec.ts** | `render.shapes`에서 label 텍스트 shape 제거. label 렌더링을 자식 Label 엘리먼트 단독으로 일원화 |
+| **해결 2 — engines/utils.ts** | 일반 텍스트 경로(line 759-760)에 `Math.ceil(calculateTextWidth(...)) + 2` 보정 추가. INLINE_FORM 경로와 동일 패턴 적용 |
+| **수정 파일** | `packages/specs/src/components/TagGroup.spec.ts`, `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` |
+| **참조 패턴** | §9.11.3 spec shapes label 중복 렌더링 제거 원칙, §9.11.4 Canvas 2D→CanvasKit 폭 보정 패턴 (`COMPONENT_SPEC_ARCHITECTURE.md`) |
 
 ---
 
@@ -1281,3 +1357,178 @@ Team A  ░░░░░░░░░░░░░░░░████████
 - [ ] `services/ai/styleAdapter.ts` 현재 변환 로직 분석
 - [ ] `services/ai/tools/*.ts` 7개 도구 구현 확인
 - [ ] `builder/panels/ai/hooks/useAgentLoop.ts` React 통합 분석
+
+---
+
+## 15. 구현 패턴 참조 — Complex Component 전환 절차
+
+### 15.1 Simple → Complex Component 전환 절차
+
+컴포넌트를 단일 element에서 DOM 계층 구조를 가진 Complex Component로 전환할 때 수정해야 하는 파일과 순서는 다음과 같다. Slider 전환이 참조 구현이다.
+
+```
+전환 순서:
+1. FormComponents.ts     → createXxxDefinition() 팩토리 정의
+2. ComponentFactory.ts   → TAG_CREATOR_MAP에 creator 등록
+3. useElementCreator.ts  → complexComponents 배열에 태그명 추가
+4. ElementSprite.tsx     → _hasLabelChild 체크에 태그명 추가
+5. Xxx.spec.ts           → _hasLabelChild 플래그 처리 추가
+```
+
+#### 15.1.1 FormComponents.ts — 정의 팩토리
+
+```typescript
+// apps/builder/src/builder/factories/definitions/FormComponents.ts
+
+export function createSliderDefinition(
+  id: string,
+  parentId: string,
+  props: SliderProps,
+): ComponentDefinition {
+  return {
+    tag: 'Slider',
+    id,
+    parentId,
+    props,
+    children: [
+      {
+        tag: 'Label',
+        props: { children: props.label ?? 'Label' },
+      },
+      {
+        tag: 'SliderOutput',
+        props: { children: String(props.value ?? 50) },
+      },
+      {
+        tag: 'SliderTrack',
+        props: {},
+        children: [
+          {
+            tag: 'SliderThumb',
+            props: {},
+          },
+        ],
+      },
+    ],
+  };
+}
+```
+
+#### 15.1.2 ComponentFactory.ts — creator 등록
+
+```typescript
+// apps/builder/src/builder/factories/ComponentFactory.ts
+
+const TAG_CREATOR_MAP: Record<string, CreatorFn> = {
+  // ... 기존 항목
+  Slider: (id, parentId, props) => createSliderDefinition(id, parentId, props),
+};
+```
+
+#### 15.1.3 useElementCreator.ts — complexComponents 분기
+
+```typescript
+// apps/builder/src/builder/hooks/useElementCreator.ts
+
+const complexComponents = [
+  'Select', 'ComboBox', 'Slider',  // ← Slider 추가
+  // ... 기타 Complex Component
+];
+
+function createElement(tag: string, parentId: string) {
+  if (complexComponents.includes(tag)) {
+    // ComponentFactory를 통해 계층 구조 생성
+    return ComponentFactory.create(tag, parentId);
+  }
+  // 단순 element 생성
+  return createSimpleElement(tag, parentId);
+}
+```
+
+#### 15.1.4 ElementSprite.tsx — _hasLabelChild 체크 추가
+
+```typescript
+// apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx
+
+const COMPLEX_WITH_LABEL_TAGS = ['Select', 'ComboBox', 'Slider'];
+
+const hasLabelChild =
+  COMPLEX_WITH_LABEL_TAGS.includes(element.tag) &&
+  childElements.some(
+    c => c.tag === 'Label' || c.tag === 'SliderOutput',
+  );
+
+// spec shapes 호출 시 플래그 전달
+const shapes = spec.render.shapes(props, variant, size, state, {
+  _hasLabelChild: hasLabelChild,
+});
+```
+
+---
+
+### 15.2 학습 사례 — TokenRef 숫자 연산 버그 (Slider.spec.ts)
+
+> **발생일**: 2026-02-22 | **영향**: track/thumb 미렌더링 (NaN 좌표)
+
+#### 증상
+
+`Slider.spec.ts`에서 track과 thumb이 캔버스에 렌더링되지 않았다.
+
+#### 근본 원인
+
+`SizeSpec.fontSize`의 타입은 `TokenRef`(`string`)다. 이를 숫자 덧셈 연산에 직접 사용하면 JavaScript의 묵시적 타입 변환으로 문자열 연결이 발생하고, 결과가 `NaN`이 된다.
+
+```typescript
+// SizeSpec 타입 정의
+interface SizeSpec {
+  fontSize: TokenRef;  // 예: '{typography.text-sm}'
+  // ...
+}
+
+// 잘못된 코드 — 문자열 연결 발생
+const offsetY = (height - size.fontSize) / 2;
+// height=45, size.fontSize='{typography.text-sm}'
+// 45 - '{typography.text-sm}' → NaN
+// NaN / 2 → NaN
+// → y: NaN → CanvasKit이 좌표를 처리 못해 미렌더링
+```
+
+#### 해결
+
+`resolveToken()`으로 TokenRef를 숫자로 변환한 뒤 연산한다.
+
+```typescript
+import { resolveToken } from '../renderers/utils/tokenResolver';
+
+const fontSizePx = typeof size.fontSize === 'number'
+  ? size.fontSize
+  : resolveToken(size.fontSize) as number;
+
+const offsetY = (height - fontSizePx) / 2;
+```
+
+#### CRITICAL 규칙
+
+> spec `shapes()` 함수 내에서 `TokenRef` 타입 필드(`fontSize`, `borderRadius` 등)를 숫자 연산에 사용할 때는 반드시 `resolveToken()`을 통해 숫자로 변환한다.
+>
+> 적용 대상: `SizeSpec.fontSize`, `SizeSpec.borderRadius`, 커스텀 TokenRef 필드 전부
+>
+> 패턴:
+> ```typescript
+> const value = typeof tokenRefField === 'number'
+>   ? tokenRefField
+>   : resolveToken(tokenRefField) as number;
+> ```
+
+#### 동일 패턴이 필요한 기존 스펙 파일 확인 방법
+
+```bash
+# spec 파일에서 size.fontSize를 직접 사용하는 위치 검색
+grep -rn "size\.fontSize" packages/specs/src/components/
+grep -rn "size\.borderRadius" packages/specs/src/components/
+
+# 숫자 연산에 직접 사용하는 패턴 (위험한 패턴)
+grep -rn "height.*size\.fontSize\|size\.fontSize.*height" packages/specs/src/components/
+```
+
+> **참조**: `COMPONENT_SPEC_ARCHITECTURE.md` §9.12.5, §3.5.1 Token Resolver

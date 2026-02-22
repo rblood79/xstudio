@@ -20,6 +20,7 @@ import {
   createToolbarDefinition,
   createNumberFieldDefinition,
   createSearchFieldDefinition,
+  createSliderDefinition,
 } from "./definitions/FormComponents";
 import {
   createSelectDefinition,
@@ -91,6 +92,7 @@ export class ComponentFactory {
     RadioGroup: ComponentFactory.createRadioGroup,
     Select: ComponentFactory.createSelect,
     ComboBox: ComponentFactory.createComboBox,
+    Slider: ComponentFactory.createSlider,
     Card: ComponentFactory.createCard,
     Tabs: ComponentFactory.createTabs,
     Tree: ComponentFactory.createTree,
@@ -262,6 +264,12 @@ export class ComponentFactory {
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createComboBoxDefinition, context);
+  }
+
+  private static async createSlider(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createSliderDefinition, context);
   }
 
   private static async createCard(

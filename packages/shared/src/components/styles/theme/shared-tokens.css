@@ -361,7 +361,7 @@
     --shadow-400: 0 8px 16px -4px rgba(0, 0, 0, 0.12);
 
     /* Legacy base styles (from original theme.css) */
-    --border-radius: var(--radius-sm);
+    --border-radius: var(--radius-md);
     --gap: var(--spacing);
   }
 }

@@ -1,3 +1,16 @@
 @layer components {
-  
+
+  .react-aria-DisclosureGroup {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--text-base);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+
+    /* Disabled state */
+    &[data-disabled] {
+      opacity: 0.38;
+      pointer-events: none;
+    }
+  }
 }

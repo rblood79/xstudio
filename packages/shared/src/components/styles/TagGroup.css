@@ -4,7 +4,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    font-size: small;
+    font-size: var(--text-sm);
     color: var(--text-color);
   }
   
@@ -133,21 +133,21 @@
   /* Small size - controlled by TagGroup */
   .react-aria-TagGroup[data-tag-size="sm"] .react-aria-Tag {
     padding: var(--spacing-2xs) var(--spacing-sm);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     border-radius: var(--radius-sm);
   }
 
   /* Medium size - controlled by TagGroup (default) */
   .react-aria-TagGroup[data-tag-size="md"] .react-aria-Tag {
     padding: var(--spacing-xs) var(--spacing-md);
-    font-size: var(--text-base);
+    font-size: var(--text-sm);
     border-radius: var(--radius-md);
   }
 
   /* Large size - controlled by TagGroup */
   .react-aria-TagGroup[data-tag-size="lg"] .react-aria-Tag {
     padding: var(--spacing-sm) var(--spacing-lg);
-    font-size: var(--text-lg);
+    font-size: var(--text-base);
     border-radius: var(--radius-lg);
   }
 
