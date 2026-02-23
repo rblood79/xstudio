@@ -1148,7 +1148,26 @@ export function calculateContentHeight(
       const childHeights = visibleChildren.map(child => {
         const grandChildren = getChildElements?.(child.id);
         const contentH = calculateContentHeight(child, availableWidth, grandChildren, getChildElements);
-        // border-box 높이: padding + border 추가
+        // 자식에 explicit height가 있고 border-box로 처리되는 경우,
+        // calculateContentHeight가 반환한 값이 이미 border-box 높이이므로
+        // padding+border를 추가하면 이중 계산됨
+        const childStyle = child.props?.style as Record<string, unknown> | undefined;
+        const childTag = (child.tag ?? '').toLowerCase();
+        const childExplicitH = parseNumericValue(childStyle?.height);
+        const childIsFormEl = ['button', 'input', 'select'].includes(childTag);
+        const childBoxSizing = childStyle?.boxSizing as string | undefined;
+        const childIsSectionLike = childTag === 'section';
+        const childIsCardLike = childTag === 'card' || childTag === 'box';
+        const childIsBorderBox = childBoxSizing === 'border-box' ||
+          (childIsFormEl && childExplicitH !== undefined) ||
+          ((childIsSectionLike || childIsCardLike) &&
+            childBoxSizing !== 'content-box' && childExplicitH !== undefined);
+
+        if (childExplicitH !== undefined && childIsBorderBox) {
+          // border-box: explicit height가 이미 padding+border 포함
+          return childExplicitH;
+        }
+        // content-box: padding + border 추가
         const childBox = parseBoxModel(child, 0, -1);
         return contentH + childBox.padding.top + childBox.padding.bottom
           + childBox.border.top + childBox.border.bottom;

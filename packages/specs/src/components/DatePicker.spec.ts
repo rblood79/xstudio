@@ -196,6 +196,9 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
         },
       ];
 
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // Calendar overlay (열린 상태)
       if (props.isOpen) {
         const calendarWidth = width;

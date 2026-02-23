@@ -177,6 +177,9 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
         },
       ];
 
+      const hasChildren = !!(_props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 요일 헤더 (Sun ~ Sat)
       const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
       for (let col = 0; col < 7; col++) {

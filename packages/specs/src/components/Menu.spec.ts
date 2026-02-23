@@ -145,6 +145,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       }
       totalHeight += paddingY;
 
+      const hasChildren = !!(_props as Record<string, unknown>)._hasChildren;
       const shapes: Shape[] = [
         // 그림자
         {
@@ -176,9 +177,11 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
           color: variant.border || ('{color.outline-variant}' as TokenRef),
           radius: borderRadius as unknown as number,
         },
-        // 메뉴 아이템
-        ...itemShapes,
       ];
+      if (hasChildren) return shapes;
+
+      // 메뉴 아이템 (standalone 전용)
+      shapes.push(...itemShapes);
 
       return shapes;
     },

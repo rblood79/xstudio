@@ -631,7 +631,7 @@ const ElementsLayer = memo(function ElementsLayer({
     'Popover', 'Tooltip', 'Menu',  // Overlay/Navigation 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
     'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',  // Date & Color 복합 컴포넌트
     'Toast', 'Toolbar',  // Form/Feedback/Action 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
-    'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',  // Input 복합 컴포넌트
+    'TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',  // Input 복합 컴포넌트
     'Tabs',  // Tab bar(spec shapes) + active Panel(container) 렌더링
     'Breadcrumbs',  // Breadcrumb 자식 텍스트를 spec shapes에 주입하여 렌더링
     'ComboBox', 'Select',  // Label 선택 가능하도록 컨테이너 처리 (TagGroup 패턴)
@@ -716,6 +716,9 @@ const ElementsLayer = memo(function ElementsLayer({
               props: { ...containerEl.props, style: parentStyle },
             };
           }
+
+          // TextField: Element 자체 style(display:flex, flexDirection:column)을 사용
+          // 스타일 패널에서 layout 변경 가능 (block, flex row/column 등)
 
           // Breadcrumbs: 모든 Breadcrumb 아이템은 spec shapes가 렌더링
           // 자식 레이아웃 계산 불필요 (childElements는 텍스트 추출용으로만 전달)
@@ -873,6 +876,58 @@ const ElementsLayer = memo(function ElementsLayer({
                 props: { ...childEl.props, children: String(descText) },
               };
             }
+          }
+        }
+
+        // Input Field 계열: props.label → Label.children 동기화
+        // Editor가 parent.props.label을 업데이트하지만
+        // WebGL TextSprite는 Label.props.children을 읽으므로 동기화 필요
+        if (['TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField'].includes(containerTag)) {
+          const fieldProps = containerEl.props as Record<string, unknown> | undefined;
+          if (childEl.tag === 'Label') {
+            const labelText = fieldProps?.label;
+            if (labelText != null) {
+              effectiveChildEl = {
+                ...childEl,
+                props: { ...childEl.props, children: String(labelText) },
+              };
+            }
+          }
+        }
+
+        // Overlay 계열: props.heading/description → Heading/Description.children 동기화
+        if (['Dialog', 'Popover', 'Tooltip', 'Toast'].includes(containerTag)) {
+          const overlayProps = containerEl.props as Record<string, unknown> | undefined;
+          if (childEl.tag === 'Heading') {
+            const headingText = overlayProps?.heading ?? overlayProps?.title;
+            if (headingText != null) {
+              effectiveChildEl = {
+                ...childEl,
+                props: { ...childEl.props, children: String(headingText) },
+              };
+            }
+          } else if (childEl.tag === 'Description') {
+            const descText = overlayProps?.description ?? overlayProps?.message;
+            if (descText != null) {
+              effectiveChildEl = {
+                ...childEl,
+                props: { ...childEl.props, children: String(descText) },
+              };
+            }
+          }
+        }
+
+        // Input Field 계열의 Input 자식: Input 자체가 배경/테두리/텍스트를 모두 렌더링
+        // factory 기본값이 backgroundColor:'transparent'이므로 제거하여 InputSpec 기본 배경 사용
+        if (effectiveChildEl.tag === 'Input' &&
+            ['TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField'].includes(containerTag)) {
+          const existingStyle = (effectiveChildEl.props?.style || {}) as Record<string, unknown>;
+          if (existingStyle.backgroundColor === 'transparent') {
+            const { backgroundColor: _, ...restStyle } = existingStyle;
+            effectiveChildEl = {
+              ...effectiveChildEl,
+              props: { ...effectiveChildEl.props, style: restStyle },
+            };
           }
         }
 

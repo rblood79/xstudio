@@ -137,6 +137,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
         ? (typeof stylePy === 'number' ? stylePy : parseFloat(String(stylePy)) || 0)
         : size.paddingY;
 
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       const shapes: Shape[] = [
         // 배경
         {
@@ -157,6 +158,11 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
           color: borderColor,
           radius: borderRadius as unknown as number,
         },
+      ];
+      if (hasChildren) return shapes;
+
+      // 헤더 + 콘텐츠 (standalone 전용)
+      shapes.push(
         // 헤더 (클릭 영역)
         {
           type: 'container' as const,
@@ -202,7 +208,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
             gap: size.gap,
           },
         },
-      ];
+      );
 
       return shapes;
     },

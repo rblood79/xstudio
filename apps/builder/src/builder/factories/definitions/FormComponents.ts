@@ -40,6 +40,7 @@ export function createTextFieldDefinition(
         style: {
           display: 'flex',
           flexDirection: 'column',
+          gap: 6,
           width: 240,
         },
       } as ComponentElementProps,
@@ -53,6 +54,7 @@ export function createTextFieldDefinition(
         props: {
           children: "Text Field",
           style: {
+            width: 'fit-content',
             fontSize: 14,
             fontWeight: 500,
             backgroundColor: 'transparent',

@@ -219,6 +219,40 @@ export function calculateChildrenLayout(
     });
 
     results = engine.calculate(parent, blockifiedChildren, availableWidth, availableHeight, enrichedContext);
+
+    // Dropflow 폴백 시 flex 레이아웃 수동 적용
+    // Taffy WASM이 로드되지 않으면 DropflowBlockEngine이 사용되며,
+    // 이 엔진은 block 레이아웃만 지원하여 flex-direction, gap을 무시함.
+    // 엔진 결과를 후처리하여 flex 배치를 보정.
+    if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
+      const flexDir = (style?.flexDirection as string) ?? 'row';
+      const isRow = flexDir === 'row' || flexDir === 'row-reverse';
+      const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+
+      const gapRaw = style?.gap;
+      const rowGapRaw = style?.rowGap ?? gapRaw;
+      const colGapRaw = style?.columnGap ?? gapRaw;
+      const gapVal = isColumn
+        ? (typeof rowGapRaw === 'number' ? rowGapRaw : parseFloat(String(rowGapRaw)) || 0)
+        : (typeof colGapRaw === 'number' ? colGapRaw : parseFloat(String(colGapRaw)) || 0);
+
+      if (isRow) {
+        // Dropflow는 세로(block) 배치 → 가로(row) 배치로 전환
+        let xOffset = 0;
+        for (let i = 0; i < results.length; i++) {
+          if (i > 0) xOffset += gapVal;
+          results[i] = { ...results[i], x: xOffset, y: 0 };
+          xOffset += results[i].width;
+        }
+      } else if (isColumn && gapVal > 0 && results.length > 1) {
+        // column: Dropflow 세로 배치는 올바르지만 gap 미지원 → gap만 추가
+        let accumulated = 0;
+        for (let i = 0; i < results.length; i++) {
+          if (i > 0) accumulated += gapVal;
+          results[i] = { ...results[i], y: results[i].y + accumulated };
+        }
+      }
+    }
   } else {
     results = engine.calculate(parent, children, availableWidth, availableHeight, enrichedContext);
   }

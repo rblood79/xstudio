@@ -96,6 +96,9 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
     shapes: (props, variant, size, _state = 'default') => {
       const shapes: Shape[] = [];
 
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 사용자 스타일 우선
       const textColor = props.style?.color ?? variant.text;
       const fontSize = props.style?.fontSize ?? size.fontSize;

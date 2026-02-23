@@ -109,6 +109,8 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
 
   render: {
     shapes: (props, variant, size, state = 'default') => {
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+
       const message = props.message || props.children || 'Notification';
 
       // 사용자 스타일 우선, 없으면 spec 기본값
@@ -182,20 +184,22 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
           height: size.height,
           fill: variant.border || ('{color.primary}' as TokenRef),
         },
-        // 메시지 텍스트
-        {
-          type: 'text' as const,
-          x: paddingX + (size.iconSize || 20) + (size.gap || 10),
-          y: size.height / 2,
-          text: message,
-          fontSize: fontSize as unknown as number,
-          fontFamily: ff,
-          fontWeight: fw,
-          fill: textColor,
-          baseline: 'middle' as const,
-          align: textAlign,
-        },
       ];
+      if (hasChildren) return shapes;
+
+      // 메시지 텍스트 (standalone 전용)
+      shapes.push({
+        type: 'text' as const,
+        x: paddingX + (size.iconSize || 20) + (size.gap || 10),
+        y: size.height / 2,
+        text: message,
+        fontSize: fontSize as unknown as number,
+        fontFamily: ff,
+        fontWeight: fw,
+        fill: textColor,
+        baseline: 'middle' as const,
+        align: textAlign,
+      });
 
       return shapes;
     },

@@ -89,7 +89,9 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   states: {},
 
   render: {
-    shapes: (_props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+
       const borderRadius = size.borderRadius;
 
       const shapes: Shape[] = [
@@ -125,22 +127,24 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
           radius: borderRadius as unknown as number,
           fill: resolveStateColors(variant, state).background,
         },
-        // 콘텐츠 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'flex',
-            flexDirection: 'column',
-            gap: size.gap,
-            padding: size.paddingY,
-          },
-        },
       ];
+      if (hasChildren) return shapes;
+
+      // 콘텐츠 컨테이너 (standalone 전용)
+      shapes.push({
+        type: 'container' as const,
+        x: 0,
+        y: 0,
+        width: 'auto',
+        height: 'auto',
+        children: [],
+        layout: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: size.gap,
+          padding: size.paddingY,
+        },
+      });
 
       return shapes;
     },

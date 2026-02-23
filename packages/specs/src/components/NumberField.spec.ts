@@ -154,6 +154,9 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
                       ?? variant.text;
 
       const shapes: Shape[] = [];
+      const hasChildren = !!(props as Record<string, unknown>)._hasLabelChild
+                       || !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
 
       // 라벨
       if (props.label) {

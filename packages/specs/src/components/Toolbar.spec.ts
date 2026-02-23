@@ -104,6 +104,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
       const borderColor = props.style?.borderColor
                         ?? (variant.border || ('{color.outline-variant}' as TokenRef));
 
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       const shapes: Shape[] = [
         // 배경
         {
@@ -124,23 +125,25 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
           color: borderColor,
           radius: borderRadius as unknown as number,
         },
-        // 도구 아이템 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'flex',
-            flexDirection: isVertical ? 'column' : 'row',
-            alignItems: 'center',
-            gap: size.gap,
-            padding: [size.paddingY, size.paddingX, size.paddingY, size.paddingX],
-          },
-        },
       ];
+      if (hasChildren) return shapes;
+
+      // 도구 아이템 컨테이너 (standalone 전용)
+      shapes.push({
+        type: 'container' as const,
+        x: 0,
+        y: 0,
+        width: 'auto',
+        height: 'auto',
+        children: [],
+        layout: {
+          display: 'flex',
+          flexDirection: isVertical ? 'column' : 'row',
+          alignItems: 'center',
+          gap: size.gap,
+          padding: [size.paddingY, size.paddingX, size.paddingY, size.paddingX],
+        },
+      });
 
       return shapes;
     },

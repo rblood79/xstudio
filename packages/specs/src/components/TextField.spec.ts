@@ -185,16 +185,22 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         : size.paddingX;
 
       const shapes: Shape[] = [];
-      const hasLabelChild = !!(props as Record<string, unknown>)._hasLabelChild;
+      // CONTAINER_TAGS에 등록된 경우 자식 Element가 시각 렌더링 담당
+      // (Label→라벨텍스트, Input→배경/테두리/placeholder, FieldError→에러텍스트)
+      // TextField 자체에는 배경/테두리가 없으므로 Card와 동일한 패턴:
+      // spec = 자신의 시각 요소만, 자식 = 자식의 시각 요소
+      const hasChildren = !!(props as Record<string, unknown>)._hasLabelChild
+                       || !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
 
-      // 라벨 (Label 자식이 있으면 자식 TextSprite가 렌더링하므로 스킵)
+      // fallback: 자식이 없는 레거시 데이터 → 전체 렌더링
       const labelFontSize = fontSize - 2;
       const descFontSize = labelFontSize - 2;
       const labelHeight = Math.ceil(labelFontSize * 1.2);
       const labelGap = size.gap ?? 6;
       const labelOffset = props.label ? labelHeight + labelGap : 0;
 
-      if (!hasLabelChild && props.label) {
+      if (props.label) {
         shapes.push({
           type: 'text' as const,
           x: 0,
@@ -249,19 +255,21 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       }
 
       // 설명 / 에러 메시지
-      const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
-      if (descText) {
-        shapes.push({
-          type: 'text' as const,
-          x: 0,
-          y: labelOffset + height + 4,
-          text: descText,
-          fontSize: descFontSize,
-          fontFamily: ff,
-          fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
-          align: textAlign,
-          baseline: 'top' as const,
-        });
+      {
+        const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
+        if (descText) {
+          shapes.push({
+            type: 'text' as const,
+            x: 0,
+            y: labelOffset + height + 4,
+            text: descText,
+            fontSize: descFontSize,
+            fontFamily: ff,
+            fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
+            align: textAlign,
+            baseline: 'top' as const,
+          });
+        }
       }
 
       return shapes;

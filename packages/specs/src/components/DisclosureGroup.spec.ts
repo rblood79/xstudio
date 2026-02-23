@@ -90,6 +90,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
     shapes: (_props, variant, size, state = 'default') => {
       const borderRadius = size.borderRadius;
 
+      const hasChildren = !!(_props as Record<string, unknown>)._hasChildren;
       const shapes: Shape[] = [
         // 배경
         {
@@ -110,20 +111,22 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
           color: variant.border || ('{color.outline-variant}' as TokenRef),
           radius: borderRadius as unknown as number,
         },
-        // 디스클로저 아이템 컨테이너 (divider로 구분됨)
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'flex',
-            flexDirection: 'column',
-          },
-        },
       ];
+      if (hasChildren) return shapes;
+
+      // 디스클로저 아이템 컨테이너 (standalone 전용)
+      shapes.push({
+        type: 'container' as const,
+        x: 0,
+        y: 0,
+        width: 'auto',
+        height: 'auto',
+        children: [],
+        layout: {
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      });
 
       return shapes;
     },

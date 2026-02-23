@@ -372,6 +372,9 @@ if (containerTag === 'Card') {
 | `Tabs`   | `_tabLabels` | `Tab`        | `_tabLabels`  |
 | `Card`   | `heading` 또는 `title` | `Heading`    | `children`    |
 | `Card`   | `description`           | `Description`| `children`    |
+| Input Fields (`TextField`, `NumberField`, `SearchField`, `DateField`, `TimeField`, `ColorField`) | `label` | `Label` | `children` |
+| Overlay (`Dialog`, `Popover`, `Tooltip`, `Toast`) | `heading` 또는 `title` | `Heading` | `children` |
+| Overlay (`Dialog`, `Popover`, `Tooltip`, `Toast`) | `description` 또는 `message` | `Description` | `children` |
 
 **새 컨테이너 컴포넌트에 이 패턴을 적용할 때 체크리스트**:
 1. Editor가 업데이트하는 부모 props 키 확인
@@ -380,6 +383,192 @@ if (containerTag === 'Card') {
 4. fallback: 부모 props 값이 `null`/`undefined`이면 자식 초기값 유지
 
 상세 내용: [pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md#container-props-주입-패턴-container_props_injection)
+
+### 자식 조합 패턴 (Child Composition Pattern) (2026-02-24)
+
+Figma, Pencil App, HTML+CSS DOM 구조와 일치하도록 컴포넌트를 자식 조합형으로 전환하는 패턴입니다.
+Spec shapes는 배경/테두리/그림자만 담당하고, 자식 Element가 콘텐츠(Label, Input, Description 등)를 렌더링합니다.
+
+#### 핵심 구조
+
+```
+Parent Component (spec shapes: 배경/테두리만)
+├── Label (자식 Element → TextSprite 렌더링)
+├── Input / Content (자식 Element)
+└── Description / Footer (자식 Element)
+```
+
+#### CHILD_COMPOSITION_TAGS (`ElementSprite.tsx`)
+
+자식이 있을 때 `_hasChildren: true` flag를 spec props에 주입하는 통합 Set:
+
+```typescript
+const CHILD_COMPOSITION_TAGS = new Set([
+  // Input Fields
+  'TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',
+  // Overlay
+  'Dialog', 'Popover', 'Tooltip', 'Toast',
+  // Navigation
+  'Menu', 'Disclosure', 'DisclosureGroup', 'Toolbar',
+  // Groups
+  'CheckboxGroup', 'RadioGroup',
+  // Date & Color
+  'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
+]);
+
+if (CHILD_COMPOSITION_TAGS.has(tag) && childElements && childElements.length > 0) {
+  specProps = { ...specProps, _hasChildren: true };
+}
+```
+
+#### Spec shapes() 패턴 — 3가지 카테고리
+
+| 카테고리 | TRANSPARENT | `_hasChildren` 시 반환 | 예시 |
+|---------|-------------|---------------------|------|
+| Input Fields | ✅ (TRANSPARENT_CONTAINER_TAGS) | bg + border shapes만 | TextField, NumberField, SearchField 등 |
+| Overlay / Navigation | ❌ | bg + shadow + border shapes 유지 | Dialog, Popover, Menu, Toolbar 등 |
+| Groups (transparent) | ✅ | 빈 배열 `[]` | CheckboxGroup, RadioGroup |
+| Date & Color Composites | ❌ | bg shapes 유지, 복합 콘텐츠 스킵 | DatePicker, Calendar, ColorPicker 등 |
+
+**TRANSPARENT 컨테이너 패턴** (Input Fields):
+```typescript
+// ✅ bg/border 이후 _hasChildren 체크
+const shapes: Shape[] = [
+  { id: 'bg', type: 'roundRect', ... },  // 배경
+  { type: 'border', target: 'bg', ... }, // 테두리
+];
+const hasChildren = !!(props as Record<string, unknown>)._hasLabelChild
+                 || !!(props as Record<string, unknown>)._hasChildren;
+if (hasChildren) return shapes; // bg+border만 반환
+
+// 아래부터 standalone 전용 텍스트/콘텐츠 shapes
+shapes.push({ type: 'text', ... });
+return shapes;
+```
+
+**NON-TRANSPARENT 컨테이너 패턴** (Overlay/Navigation):
+```typescript
+// ✅ shadow + bg + border 이후 _hasChildren 체크
+const shapes: Shape[] = [
+  { type: 'shadow', target: 'bg', ... },  // 그림자
+  { id: 'bg', type: 'roundRect', ... },   // 배경
+  { type: 'border', target: 'bg', ... },  // 테두리
+];
+if (hasChildren) return shapes; // shell만 반환
+
+// 아래부터 standalone 전용 container/text shapes
+shapes.push({ type: 'container', ... });
+return shapes;
+```
+
+**❌ 잘못된 패턴** — 배경 shapes 없이 빈 배열 반환:
+```typescript
+// ❌ NON-TRANSPARENT 컴포넌트가 빈 배열 반환 → 배경 미렌더링
+const shapes: Shape[] = [];
+if (hasChildren) return shapes; // 배경도 없음!
+```
+
+#### Container Props 주입 확장 (`BuilderCanvas.tsx`)
+
+```typescript
+// Input Field 계열: props.label → Label.children
+if (['TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField'].includes(containerTag)) {
+  if (childEl.tag === 'Label') {
+    const labelText = fieldProps?.label;
+    if (labelText != null) {
+      effectiveChildEl = { ...childEl, props: { ...childEl.props, children: String(labelText) } };
+    }
+  }
+}
+
+// Overlay 계열: props.heading/description → Heading/Description.children
+if (['Dialog', 'Popover', 'Tooltip', 'Toast'].includes(containerTag)) {
+  if (childEl.tag === 'Heading') {
+    const headingText = overlayProps?.heading ?? overlayProps?.title;
+    // ... 주입
+  } else if (childEl.tag === 'Description') {
+    const descText = overlayProps?.description ?? overlayProps?.message;
+    // ... 주입
+  }
+}
+```
+
+확장된 주입 규칙 테이블:
+
+| 컨테이너 | 부모 props 키 | 대상 자식 tag | 주입 대상 prop |
+|----------|--------------|--------------|---------------|
+| `Tabs` | `_tabLabels` | `Tab` | `_tabLabels` |
+| `Card` | `heading` 또는 `title` | `Heading` | `children` |
+| `Card` | `description` | `Description` | `children` |
+| Input Fields (6종) | `label` | `Label` | `children` |
+| Overlay (4종) | `heading` 또는 `title` | `Heading` | `children` |
+| Overlay (4종) | `description` 또는 `message` | `Description` | `children` |
+
+#### border-box 높이 계산 수정 (`engines/utils.ts`)
+
+`calculateContentHeight` flex column 분기에서 border-box 이중 계산 방지:
+
+```typescript
+// ✅ 자식의 explicit height가 border-box이면 padding+border 미추가
+const childIsBorderBox = childBoxSizing === 'border-box' ||
+  (childIsFormEl && childExplicitH !== undefined);
+
+if (childExplicitH !== undefined && childIsBorderBox) {
+  return childExplicitH; // border-box: explicit height가 이미 padding+border 포함
+}
+// content-box: padding + border 추가
+return contentH + childBox.padding.top + childBox.padding.bottom
+  + childBox.border.top + childBox.border.bottom;
+```
+
+#### Dropflow fallback flex 처리 (`engines/index.ts`)
+
+Taffy WASM 미로드 시 Dropflow 결과를 flex row/column + gap으로 후처리:
+
+```typescript
+// ✅ Dropflow fallback: flex-direction + gap 수동 처리
+if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
+  if (isRow) {
+    let xOffset = 0;
+    for (let i = 0; i < results.length; i++) {
+      if (i > 0) xOffset += gapVal;
+      results[i] = { ...results[i], x: xOffset, y: 0 };
+      xOffset += results[i].width;
+    }
+  } else if (isColumn && gapVal > 0) {
+    // column gap 처리...
+  }
+}
+```
+
+#### 하위호환
+
+`_hasChildren`가 `false`이면 (구 데이터, 자식 없음) → spec shapes 전체 렌더링. 신규 데이터 (factory 자식 생성) → `_hasChildren: true` → 자식이 렌더링.
+
+#### 신규 컴포넌트 등록 체크리스트
+
+1. **Spec 파일** (`packages/specs/src/components/XXX.spec.ts`):
+   - shapes() 내 배경/테두리/그림자 shapes를 먼저 정의
+   - `_hasChildren` 체크 → 배경 shapes만 반환 (TRANSPARENT) 또는 shell shapes만 반환 (NON-TRANSPARENT)
+   - standalone 텍스트/콘텐츠 shapes는 체크 이후에 추가
+
+2. **ElementSprite.tsx**:
+   - `CHILD_COMPOSITION_TAGS` Set에 태그 추가
+   - 배경/테두리를 spec이 담당하면 `TRANSPARENT_CONTAINER_TAGS`에도 추가
+
+3. **BuilderCanvas.tsx**:
+   - `CONTAINER_TAGS`에 태그 추가 (이미 등록되어 있지 않은 경우)
+   - `createContainerChildRenderer` 내 props sync 분기 추가 (label, heading, description 등)
+
+4. **Factory 정의** (`apps/builder/src/builder/factories/definitions/`):
+   - ComponentDefinition에 자식 Element 정의 (Label, Input, Description 등)
+
+5. **검증**:
+   - `pnpm build` (specs 빌드)
+   - `pnpm type-check` 통과
+   - Canvas에서 드래그 앤 드롭 → 배경 + 자식 정상 렌더링
+   - Layer 트리에서 자식 선택 → 스타일 편집 → Canvas 반영
+   - 구 데이터 (자식 없음) → standalone 렌더링 유지
 
 ### Canvas 2D ↔ CanvasKit 폭 측정 오차 보정 (CRITICAL)
 
@@ -693,6 +882,19 @@ WebGL Canvas에서 TagGroup의 label("Tag Group")이 두 줄로 렌더링되던 
 - `ElementSprite.tsx`의 `_hasLabelChild` 체크에 `'Slider'` 포함
 - `Slider.css`는 class selector 대신 `[data-size="sm"]`, `[data-variant="primary"]` data-attribute selector 사용
 - SLIDER_DIMENSIONS 기준: `{ sm: { trackHeight: 4, thumbSize: 14 }, md: { trackHeight: 6, thumbSize: 18 }, lg: { trackHeight: 8, thumbSize: 22 } }`
+
+### CHILD_COMPOSITION_TAGS 컴포넌트 목록
+
+자식 조합 패턴을 사용하는 컴포넌트입니다.
+`ElementSprite.tsx`의 `CHILD_COMPOSITION_TAGS` Set에 등록하고, spec shapes는 배경/테두리만 담당합니다.
+
+| 카테고리 | 컴포넌트 | TRANSPARENT | spec 반환 (hasChildren) |
+|---------|---------|-------------|----------------------|
+| Input Fields | TextField, NumberField, SearchField, DateField, TimeField, ColorField | ✅ | bg + border |
+| Overlay | Dialog, Popover, Tooltip, Toast | ❌ | shadow + bg + border |
+| Navigation | Menu, Disclosure, DisclosureGroup, Toolbar | ❌ | bg + border |
+| Groups | CheckboxGroup, RadioGroup | ✅ | `[]` (빈 배열) |
+| Date & Color | DatePicker, DateRangePicker, Calendar, ColorPicker | ❌ | bg shapes 유지 |
 
 ### CONTAINER_TAGS 컴포넌트 목록
 

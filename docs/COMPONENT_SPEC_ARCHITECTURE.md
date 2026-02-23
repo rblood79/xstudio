@@ -1,7 +1,7 @@
 # Component Spec Architecture - 상세 설계 문서
 
-> **작성일**: 2026-01-27 | **수정일**: 2026-02-22
-> **상태**: Phase 6 Skia Spec 렌더링 구현 완료 | Slider Complex Component 전환 완료
+> **작성일**: 2026-01-27 | **수정일**: 2026-02-24
+> **상태**: Phase 6 Skia Spec 렌더링 구현 완료 | Slider Complex Component 전환 완료 | Child Composition Pattern 전환 완료
 > **목표**: Builder(CanvasKit/Skia)와 Publish(React)의 100% 시각적 일치
 
 ---
@@ -5221,6 +5221,221 @@ CSS 파일에서 `.sm`, `.primary` 클래스 selector 방식에서 `[data-size="
 
 ---
 
+## 9.13 자식 조합 패턴 전체 전환 (Child Composition Pattern) (2026-02-24)
+
+### 9.13.1 전환 배경 및 목표
+
+기존: 각 컴포넌트 spec의 `shapes()`가 배경 + 콘텐츠(텍스트, 아이콘 등) 전체를 렌더링
+문제: Figma/Pencil App/HTML+CSS DOM 구조와 불일치, Layer 트리에서 자식 개별 선택/편집 불가
+해결: spec shapes는 배경/테두리/그림자만 담당, 자식 Element가 콘텐츠 렌더링
+
+```
+전환 전:
+TextField.spec.ts shapes() → [bg, border, label텍스트, input텍스트, placeholder]
+→ 모든 시각 요소가 하나의 shapes 배열
+
+전환 후:
+TextField.spec.ts shapes(_hasChildren=true) → [bg, border]  (shell만)
+├── Label Element → TextSprite 렌더링
+├── Input Element → TextSprite 렌더링
+└── FieldError Element → TextSprite 렌더링
+```
+
+### 9.13.2 인프라 변경
+
+#### CHILD_COMPOSITION_TAGS (`ElementSprite.tsx`)
+
+자식이 있을 때 `_hasChildren: true`를 spec props에 주입하는 통합 Set.
+기존 TextField-only 분기를 20개 컴포넌트 통합 Set으로 확장.
+
+```typescript
+const CHILD_COMPOSITION_TAGS = new Set([
+  'TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',
+  'Dialog', 'Popover', 'Tooltip', 'Toast',
+  'Menu', 'Disclosure', 'DisclosureGroup', 'Toolbar',
+  'CheckboxGroup', 'RadioGroup',
+  'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
+]);
+
+if (CHILD_COMPOSITION_TAGS.has(tag) && childElements && childElements.length > 0) {
+  specProps = { ...specProps, _hasChildren: true };
+}
+
+// _hasLabelChild는 Select/ComboBox/Slider 유지 (부분 스킵 패턴)
+if (['ComboBox', 'Select', 'Dropdown', 'Slider', 'RangeSlider'].includes(tag) && childElements) {
+  const hasLabelChild = childElements.some(c => c.tag === 'Label');
+  if (hasLabelChild) {
+    specProps = { ...specProps, _hasLabelChild: true };
+  }
+}
+```
+
+#### TRANSPARENT_CONTAINER_TAGS 확장 (`ElementSprite.tsx`)
+
+배경/테두리를 spec shapes가 담당하므로 PixiJS container가 투명해야 하는 컴포넌트:
+
+```typescript
+const TRANSPARENT_CONTAINER_TAGS = new Set([
+  'TextField', 'NumberField', 'SearchField',
+  'DateField', 'TimeField', 'ColorField',
+  'ComboBox', 'Select', 'Dropdown',
+  'Slider', 'RangeSlider',
+  'CheckboxGroup', 'RadioGroup',
+]);
+```
+
+#### BuilderCanvas.tsx props sync 확장
+
+Input Field 6종과 Overlay 4종에 Container Props 주입 패턴 확장:
+
+| 컨테이너 카테고리 | 부모 props 키 | 대상 자식 tag | 주입 대상 prop |
+|-----------------|--------------|--------------|---------------|
+| Input Fields (6종) | `label` | `Label` | `children` |
+| Overlay (4종) | `heading` / `title` | `Heading` | `children` |
+| Overlay (4종) | `description` / `message` | `Description` | `children` |
+
+### 9.13.3 Spec shapes() 3가지 카테고리
+
+#### 카테고리 A: TRANSPARENT 컨테이너 (Input Fields)
+
+`_hasChildren` 시 bg + border shapes만 반환. 자식이 모든 콘텐츠 렌더링.
+
+적용: TextField, NumberField, SearchField, DateField, TimeField, ColorField
+
+```typescript
+const shapes: Shape[] = [
+  { id: 'bg', type: 'roundRect', ... },
+  { type: 'border', target: 'bg', ... },
+];
+const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+if (hasChildren) return shapes;
+// standalone 전용 텍스트 shapes...
+```
+
+#### 카테고리 B: NON-TRANSPARENT 컨테이너 (Overlay, Navigation)
+
+`_hasChildren` 시 shadow + bg + border (shell) 유지. 자식이 내부 콘텐츠 렌더링.
+
+적용:
+- Dialog: backdrop + shadow + bg roundRect
+- Popover: shadow + bg + border
+- Tooltip: bg roundRect
+- Toast: shadow + bg + border + 좌측 액센트 바
+- Menu: shadow + bg + border
+- Disclosure, DisclosureGroup, Toolbar: bg + border
+
+```typescript
+const shapes: Shape[] = [
+  { type: 'shadow', ... },
+  { id: 'bg', type: 'roundRect', ... },
+  { type: 'border', ... },
+];
+if (hasChildren) return shapes; // shell 유지
+// standalone 전용 container/text shapes...
+```
+
+#### 카테고리 C: TRANSPARENT Groups
+
+`_hasChildren` 시 빈 배열 반환. 자식이 모든 렌더링 담당.
+
+적용: CheckboxGroup, RadioGroup
+
+#### 카테고리 D: Date & Color Composites
+
+배경 shapes 유지 후 `_hasChildren` 체크. 복합 콘텐츠(캘린더 그리드, 컬러 영역) 스킵.
+
+적용: DatePicker, DateRangePicker, Calendar, ColorPicker
+
+### 9.13.4 border-box 높이 이중 계산 수정
+
+`calculateContentHeight` flex column 분기에서 자식의 explicit height가 border-box인 경우 padding+border 미추가.
+
+근본 원인: Input(height:40, border-box)에 padding(8)+border(2)를 추가로 더해 enrichedHeight가 70 (기대값: 60).
+
+```typescript
+const childIsBorderBox = childBoxSizing === 'border-box' ||
+  (childIsFormEl && childExplicitH !== undefined);
+
+if (childExplicitH !== undefined && childIsBorderBox) {
+  return childExplicitH; // border-box: padding+border 포함
+}
+return contentH + childBox.padding.top + childBox.padding.bottom
+  + childBox.border.top + childBox.border.bottom;
+```
+
+### 9.13.5 Dropflow fallback flex 처리
+
+Taffy WASM 미로드 시 DropflowBlockEngine 결과를 flex row/column + gap으로 후처리:
+
+```typescript
+if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
+  const flexDir = (style?.flexDirection as string) ?? 'row';
+  const isRow = flexDir === 'row' || flexDir === 'row-reverse';
+  const gapVal = parseFloat(String(style?.gap)) || 0;
+  
+  if (isRow) {
+    let xOffset = 0;
+    for (let i = 0; i < results.length; i++) {
+      if (i > 0) xOffset += gapVal;
+      results[i] = { ...results[i], x: xOffset, y: 0 };
+      xOffset += results[i].width;
+    }
+  }
+}
+```
+
+### 9.13.6 하위호환
+
+| 데이터 상태 | `_hasChildren` | 동작 |
+|-----------|---------------|------|
+| 구 데이터 (자식 없음) | `false` | spec shapes 전체 렌더링 (기존 동작) |
+| 새 데이터 (factory 자식 생성) | `true` | 자식이 콘텐츠 렌더링, spec은 shell만 |
+
+### 9.13.7 전환 대상 컴포넌트 전체 목록 (20개)
+
+| # | 컴포넌트 | 카테고리 | TRANSPARENT | hasChildren 반환 |
+|---|---------|---------|-------------|-----------------|
+| 1 | TextField | Input Field | ✅ | bg + border |
+| 2 | NumberField | Input Field | ✅ | bg + border |
+| 3 | SearchField | Input Field | ✅ | bg + border |
+| 4 | DateField | Input Field | ✅ | bg + border |
+| 5 | TimeField | Input Field | ✅ | bg + border |
+| 6 | ColorField | Input Field | ✅ | bg + border |
+| 7 | Dialog | Overlay | ❌ | backdrop + shadow + bg |
+| 8 | Popover | Overlay | ❌ | shadow + bg + border |
+| 9 | Tooltip | Overlay | ❌ | bg |
+| 10 | Toast | Overlay | ❌ | shadow + bg + border + accent |
+| 11 | Menu | Navigation | ❌ | shadow + bg + border |
+| 12 | Disclosure | Navigation | ❌ | bg + border |
+| 13 | DisclosureGroup | Navigation | ❌ | bg + border |
+| 14 | Toolbar | Navigation | ❌ | bg + border |
+| 15 | CheckboxGroup | Groups | ✅ | `[]` |
+| 16 | RadioGroup | Groups | ✅ | `[]` |
+| 17 | DatePicker | Date & Color | ❌ | trigger bg shapes |
+| 18 | DateRangePicker | Date & Color | ❌ | trigger bg shapes |
+| 19 | Calendar | Date & Color | ❌ | bg + header shapes |
+| 20 | ColorPicker | Date & Color | ❌ | shadow + bg + border |
+
+### 9.13.8 핵심 파일
+
+| 파일 | 역할 |
+|-----|------|
+| `ElementSprite.tsx` L1090 | CHILD_COMPOSITION_TAGS Set + _hasChildren flag 전파 |
+| `ElementSprite.tsx` L876 | TRANSPARENT_CONTAINER_TAGS |
+| `BuilderCanvas.tsx` L625 | CONTAINER_TAGS |
+| `BuilderCanvas.tsx` L661-963 | createContainerChildRenderer (layout 주입, props sync, transparent) |
+| `engines/utils.ts` L1148 | flex column border-box 높이 이중 계산 수정 |
+| `engines/index.ts` L227 | Dropflow fallback flex row/column + gap 처리 |
+| `packages/specs/src/components/*.spec.ts` | 20개 spec의 shapes() 함수 수정 |
+
+### 9.13.9 신규 컴포넌트 등록 체크리스트
+
+1. **Spec 파일**: shapes()에 `_hasChildren` 체크 추가, 배경 shapes를 체크 이전에 정의
+2. **ElementSprite.tsx**: `CHILD_COMPOSITION_TAGS`에 태그 추가, 필요시 `TRANSPARENT_CONTAINER_TAGS`에도 추가
+3. **BuilderCanvas.tsx**: `CONTAINER_TAGS`에 태그 추가 (미등록 시), props sync 분기 추가
+4. **Factory 정의**: 자식 Element 정의 (Label, Input, Description 등)
+5. **검증**: `pnpm build` + `pnpm type-check` + Canvas 시각 확인 + Layer 트리 자식 선택 확인
+
 ## 10. 기술 명세
 
 ### 10.1 패키지 의존성
@@ -5931,3 +6146,4 @@ Spec 수정 → pnpm --filter @xstudio/specs build → dist/ 갱신 → Builder 
 | 2026-02-22 | 3.12 | **§9.11 TagGroup label 두 줄 렌더링 버그 수정**: (1) `TagGroup.spec.ts` — `render.shapes`에서 label 텍스트 shape 제거. 자식 Label 엘리먼트가 렌더링 담당이므로 spec shapes(fontSize:12)와 Label element(fontSize:14)의 이중 렌더링으로 인한 두 줄 표시 현상 제거. (2) `engines/utils.ts` line 759-760 — `calculateContentWidth` 일반 텍스트 경로에 Canvas 2D→CanvasKit 폭 측정 보정(`Math.ceil() + 2`) 추가. INLINE_FORM 경로(line 718-719)와 동일 패턴. §9.11.3 spec shapes label 중복 렌더링 제거 원칙, §9.11.4 Canvas 2D→CanvasKit 폭 보정 패턴 문서화 |
 | 2026-02-22 | 3.13 | **§9.12 Slider Complex Component 전환**: (1) **Slider → Complex Component 전환** — `useElementCreator.ts` complexComponents 배열에 'Slider' 추가, `ComponentFactory.ts` Slider creator 등록, `FormComponents.ts` `createSliderDefinition()` 팩토리 추가. DOM 구조: `Slider > Label + SliderOutput + SliderTrack > SliderThumb`, (2) **TokenRef offsetY NaN 버그 수정** — `Slider.spec.ts` `size.fontSize`(TokenRef 문자열)를 숫자 연산에 직접 사용하여 NaN 발생. `resolveToken()` 호출로 해결. CRITICAL 규칙 추가: spec `shapes()` 내 TokenRef 필드는 숫자 연산 전 `resolveToken()` 필수, (3) **SliderOutput 위치 수정** — `x: width` → `x: 0` + `maxWidth: width`로 컨테이너 내 우측 정렬, (4) **`_hasLabelChild` 패턴 문서화** — Select/ComboBox/Slider 공통 패턴, 자식 element 담당 텍스트를 spec shapes에서 스킵하는 메커니즘, (5) **Slider.css data-attribute 전환** — `.sm`/`.primary` class selector → `[data-size="sm"]`/`[data-variant="primary"]` data-attribute selector, SLIDER_DIMENSIONS spec 정확히 반영 (sm=4/14, md=6/18, lg=8/22), M3 토큰 사용, (6) **unified.types.ts** — Slider 기본 props 수정 (value=50, width=200, height=45, showValue=true, maxWidth=300). §5.1 Slider 상태 "✅ 완전 지원 (Complex Component 전환 완료)"로 갱신. §5.3 Slider.spec.ts 체크리스트 완료 표기 |
 | 2026-02-23 | 3.14 | **§9.x Breadcrumbs CONTAINER_TAGS 전환 + Skia 렌더링**: (1) **Breadcrumbs.spec.ts** — `resolveToken` 기반 fontSize 해석, 기본 구분자 `›`, CSS 일치 sizes height (sm:16, md:24, lg:24), (2) **ElementSprite.tsx** — `_crumbs` prop 주입 (자식 Breadcrumb 텍스트 배열 → spec shapes), (3) **BuilderCanvas.tsx** — `CONTAINER_TAGS`에 `'Breadcrumbs'` 추가, `filteredContainerChildren = []` (spec shapes가 크럼 텍스트 직접 렌더링), (4) **utils.ts** — `calculateContentHeight` Breadcrumbs 핸들러 (sm:16, md:24, lg:24), `SPEC_SHAPES_INPUT_TAGS`에 `'breadcrumbs'` 추가, (5) **PixiBreadcrumbs** — Skia spec shapes 전환 완료로 더 이상 사용하지 않음. §6.1 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", §6.3 체크리스트 완료 표기, §9.8.4 테이블에 Breadcrumbs 행 추가, §9.8.5 전환 완료 목록에 Breadcrumbs 추가 |
+| 2026-02-24 | 3.15 | **§9.13 자식 조합 패턴(Child Composition Pattern) 전체 전환**: (1) **CHILD_COMPOSITION_TAGS 통합 Set** — ElementSprite.tsx에 20개 컴포넌트 등록 (Input Fields 6종, Overlay 4종, Navigation 4종, Groups 2종, Date&Color 4종), `_hasChildren: true` flag 주입으로 spec shapes 조건부 렌더링 (2) **TRANSPARENT_CONTAINER_TAGS 확장** — DateField, TimeField, ColorField, CheckboxGroup, RadioGroup 추가, (3) **Input Field 5종 spec 전환** — NumberField, SearchField, DateField, TimeField, ColorField shapes()에 `_hasChildren` → bg/border만 반환, (4) **Overlay 4종 spec 전환** — Dialog(backdrop+shadow+bg), Popover(shadow+bg+border), Tooltip(bg), Toast(shadow+bg+border+accent bar) 유지, 콘텐츠 스킵, (5) **Navigation 4종 spec 전환** — Menu(shadow+bg+border), Disclosure(bg+border), DisclosureGroup(bg+border), Toolbar(bg+border) 유지, 콘텐츠 스킵, (6) **Groups 2종** — CheckboxGroup, RadioGroup 빈 배열 반환 (transparent container), (7) **Date&Color 4종** — DatePicker, DateRangePicker, Calendar, ColorPicker 배경 shapes 유지 후 복합 콘텐츠 스킵, (8) **BuilderCanvas.tsx props sync 확장** — Input Fields 6종(label→Label), Overlay 4종(heading→Heading, description→Description), (9) **border-box 높이 이중 계산 수정** — calculateContentHeight flex column에서 form element border-box explicit height 감지, padding+border 미추가 (engines/utils.ts), (10) **Dropflow fallback flex 처리** — Taffy WASM 미로드 시 flex-direction row/column + gap 수동 후처리 (engines/index.ts) |

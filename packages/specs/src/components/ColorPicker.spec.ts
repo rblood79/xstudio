@@ -174,6 +174,9 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
         },
       ];
 
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // Color area (2D gradient)
       shapes.push({
         type: 'gradient' as const,

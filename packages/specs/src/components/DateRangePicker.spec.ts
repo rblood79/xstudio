@@ -202,6 +202,9 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
         },
       ];
 
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // Dual calendar overlay (열린 상태)
       if (props.isOpen) {
         const calendarY = height + (size.gap ?? 8);

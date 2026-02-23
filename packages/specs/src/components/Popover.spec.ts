@@ -99,6 +99,8 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
 
   render: {
     shapes: (props, variant, size, state = 'default') => {
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+
       const borderRadius = size.borderRadius;
 
       const shapes: Shape[] = [
@@ -132,22 +134,24 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
           color: variant.border ?? '{color.outline-variant}' as TokenRef,
           radius: borderRadius as unknown as number,
         },
-        // 콘텐츠 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'flex',
-            flexDirection: 'column',
-            gap: size.gap,
-            padding: size.paddingY,
-          },
-        },
       ];
+      if (hasChildren) return shapes;
+
+      // 콘텐츠 컨테이너 (standalone 전용)
+      shapes.push({
+        type: 'container' as const,
+        x: 0,
+        y: 0,
+        width: 'auto',
+        height: 'auto',
+        children: [],
+        layout: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: size.gap,
+          padding: size.paddingY,
+        },
+      });
 
       // Phase F: Arrow indicator (placement 기반 V자 2-line 화살표)
       // showArrow가 명시적으로 true일 때만 렌더링

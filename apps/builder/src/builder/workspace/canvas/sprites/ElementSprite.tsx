@@ -875,8 +875,10 @@ export const ElementSprite = memo(function ElementSprite({
     const tag = effectiveElementWithTabs.tag;
     const TRANSPARENT_CONTAINER_TAGS = new Set([
       'TextField', 'NumberField', 'SearchField',
+      'DateField', 'TimeField', 'ColorField',
       'ComboBox', 'Select', 'Dropdown',
       'Slider', 'RangeSlider',
+      'CheckboxGroup', 'RadioGroup',
     ]);
     const isTransparentContainer = isUIComponent && TRANSPARENT_CONTAINER_TAGS.has(tag);
 
@@ -1085,9 +1087,28 @@ export const ElementSprite = memo(function ElementSprite({
               }
             }
 
-            // ComboBox/Select: Label child가 있으면 spec shapes에서 label text 스킵
-            // (Label child의 TextSprite가 시각적 렌더링 담당)
-            if (['ComboBox', 'Select', 'Dropdown', 'Slider', 'RangeSlider', 'TextField', 'NumberField', 'SearchField'].includes(tag) && childElements) {
+            // 자식 조합 패턴: 자식 Element가 있으면 spec shapes에서 자체 렌더링 스킵
+            // Figma/HTML 구조와 일치: spec은 배경/테두리만, 자식이 콘텐츠 담당
+            const CHILD_COMPOSITION_TAGS = new Set([
+              // Input Fields
+              'TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',
+              // Overlay
+              'Dialog', 'Popover', 'Tooltip', 'Toast',
+              // Navigation
+              'Menu', 'Disclosure', 'DisclosureGroup', 'Toolbar',
+              // Groups
+              'CheckboxGroup', 'RadioGroup',
+              // Date & Color
+              'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
+            ]);
+
+            if (CHILD_COMPOSITION_TAGS.has(tag) && childElements && childElements.length > 0) {
+              specProps = { ...specProps, _hasChildren: true };
+            }
+
+            // ComboBox/Select/Slider: Label child가 있으면 spec shapes에서 label text만 스킵
+            // (부분 패턴 — trigger/track 등은 여전히 spec shapes 담당)
+            if (['ComboBox', 'Select', 'Dropdown', 'Slider', 'RangeSlider'].includes(tag) && childElements) {
               const hasLabelChild = childElements.some(c => c.tag === 'Label');
               if (hasLabelChild) {
                 specProps = { ...specProps, _hasLabelChild: true };
@@ -1272,7 +1293,7 @@ export const ElementSprite = memo(function ElementSprite({
       children: textChildren,
       contentMinHeight,
     };
-  }, [effectiveElementWithTabs, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition]);
+  }, [effectiveElementWithTabs, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition, childElements]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로
   // ElementSprite의 이중 등록을 방지한다. (effects, blendMode, 올바른 fillColor 포함)

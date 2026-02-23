@@ -97,6 +97,8 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
 
   render: {
     shapes: (props, variant, size, state = 'default') => {
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+
       const sizeName = props.size ?? 'md';
       const maxWidth = TOOLTIP_MAX_WIDTH[sizeName] ?? 150;
 
@@ -136,21 +138,23 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
           radius: borderRadius as unknown as number,
           fill: bgColor,
         },
-        // 텍스트
-        {
-          type: 'text' as const,
-          x: paddingX,
-          y: 0,
-          text: props.children || props.text || '',
-          fontSize: fontSize as unknown as number,
-          fontFamily: ff,
-          fontWeight: fw,
-          fill: textColor,
-          align: textAlign,
-          baseline: 'top' as const,
-          maxWidth,
-        },
       ];
+      if (hasChildren) return shapes;
+
+      // 텍스트 (standalone 전용)
+      shapes.push({
+        type: 'text' as const,
+        x: paddingX,
+        y: 0,
+        text: props.children || props.text || '',
+        fontSize: fontSize as unknown as number,
+        fontFamily: ff,
+        fontWeight: fw,
+        fill: textColor,
+        align: textAlign,
+        baseline: 'top' as const,
+        maxWidth,
+      });
 
       // Phase F: Arrow indicator (placement 기반)
       // showArrow가 명시적으로 true일 때만 렌더링
