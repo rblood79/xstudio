@@ -32,6 +32,49 @@ export function createSelectDefinition(
     },
     children: [
       {
+        tag: "Label",
+        props: {
+          children: "Select",
+          style: { fontSize: 14, fontWeight: 500, width: 'fit-content' },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "SelectTrigger",
+        props: {
+          style: {
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            width: '100%',
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+        children: [
+          {
+            tag: "SelectValue",
+            props: {
+              children: "Choose an option...",
+              style: { flex: 1, fontSize: 14, backgroundColor: 'transparent' },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "SelectIcon",
+            props: {
+              children: "",
+              style: { width: 18, height: 18, flexShrink: 0, backgroundColor: 'transparent' },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
+      },
+      {
         tag: "SelectItem",
         props: {
           label: "Option 1",
@@ -39,7 +82,7 @@ export function createSelectDefinition(
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
-        order_num: 1,
+        order_num: 2,
       },
     ],
   };
@@ -77,6 +120,50 @@ export function createComboBoxDefinition(
     },
     children: [
       {
+        tag: "Label",
+        props: {
+          children: "Combo Box",
+          style: { fontSize: 14, fontWeight: 500, width: 'fit-content' },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "ComboBoxWrapper",
+        props: {
+          style: {
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            width: '100%',
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+        children: [
+          {
+            tag: "ComboBoxInput",
+            props: {
+              children: "",
+              placeholder: "Type or select...",
+              style: { flex: 1, fontSize: 14, backgroundColor: 'transparent' },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "ComboBoxTrigger",
+            props: {
+              children: "",
+              style: { width: 18, height: 18, flexShrink: 0, backgroundColor: 'transparent' },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
+      },
+      {
         tag: "ComboBoxItem",
         props: {
           label: "Option 1",
@@ -84,7 +171,7 @@ export function createComboBoxDefinition(
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
-        order_num: 1,
+        order_num: 2,
       },
     ],
   };

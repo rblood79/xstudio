@@ -1,25 +1,19 @@
 /**
  * Pixi List
  *
- * 🚀 Phase 6.8: @pixi/ui List 래퍼
- *
- * @pixi/ui의 List 컴포넌트를 xstudio Element 시스템과 통합
- * 수직/수평 리스트 레이아웃을 제공합니다.
+ * 투명 히트 영역 전용 컴포넌트
+ * Skia가 모든 시각적 렌더링을 담당하므로 @pixi/ui List는 불필요.
+ * 이벤트 히트 영역만 제공합니다.
  *
  * @since 2025-12-13 Phase 6.8
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useApplication } from '@pixi/react';
-import { List } from '@pixi/ui';
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { memo, useCallback, useMemo } from 'react';
+import { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex } from '../sprites/styleConverter';
-import { drawBox } from '../utils';
-
 // ============================================
 // Types
 // ============================================
@@ -37,47 +31,8 @@ interface ListItem {
 }
 
 // ============================================
-// Style Conversion
+// Helper Functions
 // ============================================
-
-interface ListLayoutStyle {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  backgroundColor: number;
-  itemBackgroundColor: number;
-  itemHoverColor: number;
-  textColor: number;
-  fontSize: number;
-  fontFamily: string;
-  borderRadius: number;
-  itemHeight: number;
-  gap: number;
-  padding: number;
-}
-
-/**
- * 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
- */
-function convertToListStyle(style: CSSStyle | undefined): ListLayoutStyle {
-  return {
-    x: typeof style?.left === 'number' ? style.left : 0,
-    y: typeof style?.top === 'number' ? style.top : 0,
-    width: typeof style?.width === 'number' ? style.width : 200,
-    height: typeof style?.height === 'number' ? style.height : 250,
-    backgroundColor: cssColorToHex(style?.backgroundColor, 0xffffff),
-    itemBackgroundColor: 0xf3f4f6,
-    itemHoverColor: 0xe5e7eb,
-    textColor: cssColorToHex(style?.color, 0x374151),
-    fontSize: typeof style?.fontSize === 'number' ? style.fontSize : 14,
-    fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    borderRadius: typeof style?.borderRadius === 'number' ? style.borderRadius : 8,
-    itemHeight: 40,
-    gap: typeof style?.gap === 'number' ? style.gap : 4,
-    padding: typeof style?.padding === 'number' ? style.padding : 8,
-  };
-}
 
 function parseListItems(props: Record<string, unknown> | undefined): ListItem[] {
   if (!props) return [];
@@ -109,117 +64,14 @@ function parseListItems(props: Record<string, unknown> | undefined): ListItem[] 
 }
 
 // ============================================
-// Graphics Creation
-// ============================================
-
-/**
- * 리스트 아이템 뷰 생성
- * 🚀 Border-Box v2: drawBox 유틸리티 사용
- */
-function createListItemView(
-  width: number,
-  height: number,
-  label: string,
-  style: ListLayoutStyle
-): Container {
-  const container = new Container();
-
-  // 배경 - Border-Box v2: drawBox 유틸리티 사용
-  const bg = new Graphics();
-  drawBox(bg, {
-    width,
-    height,
-    backgroundColor: style.itemBackgroundColor,
-    backgroundAlpha: 1,
-    borderRadius: 4,
-  });
-  container.addChild(bg);
-
-  // 텍스트
-  const textStyle = new TextStyle({
-    fontSize: style.fontSize,
-    fontFamily: style.fontFamily,
-    fill: style.textColor,
-  });
-  const text = new Text({ text: label, style: textStyle });
-  text.x = 12;
-  text.y = (height - text.height) / 2;
-  container.addChild(text);
-
-  // 인터랙션 설정
-  container.eventMode = 'static';
-  container.cursor = 'pointer';
-
-  // 호버 효과 - Border-Box v2: drawBox 유틸리티 사용
-  container.on('pointerover', () => {
-    drawBox(bg, {
-      width,
-      height,
-      backgroundColor: style.itemHoverColor,
-      backgroundAlpha: 1,
-      borderRadius: 4,
-    });
-  });
-
-  container.on('pointerout', () => {
-    drawBox(bg, {
-      width,
-      height,
-      backgroundColor: style.itemBackgroundColor,
-      backgroundAlpha: 1,
-      borderRadius: 4,
-    });
-  });
-
-  return container;
-}
-
-/**
- * 리스트 배경 생성
- * 🚀 Border-Box v2: drawBox 유틸리티 사용
- */
-function createListBackground(
-  width: number,
-  height: number,
-  color: number,
-  borderRadius: number
-): Graphics {
-  const g = new Graphics();
-
-  // Border-Box v2: drawBox 유틸리티 사용
-  drawBox(g, {
-    width,
-    height,
-    backgroundColor: color,
-    backgroundAlpha: 1,
-    borderRadius,
-    border: {
-      width: 1,
-      color: 0xe5e7eb,
-      alpha: 1,
-      style: 'solid',
-      radius: borderRadius,
-    },
-  });
-
-  return g;
-}
-
-// ============================================
 // Component
 // ============================================
 
 /**
  * PixiList
  *
- * @pixi/ui의 List를 사용하여 리스트 렌더링
- *
- * @example
- * <PixiList
- *   element={listElement}
- *   onClick={(id) => handleClick(id)}
- *   onItemClick={(id, index) => handleItemClick(id, index)}
- * />
+ * 투명 히트 영역만 제공하는 리스트 컴포넌트
+ * 시각적 렌더링은 Skia가 담당
  */
 export const PixiList = memo(function PixiList({
   element,
@@ -227,15 +79,13 @@ export const PixiList = memo(function PixiList({
   onItemClick,
 }: PixiListProps) {
   useExtend(PIXI_COMPONENTS);
-  const { app } = useApplication();
-  const containerRef = useRef<Container | null>(null);
-  const listRef = useRef<List | null>(null);
 
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // List 스타일
-  const layoutStyle = useMemo(() => convertToListStyle(style), [style]);
+  // 크기 계산
+  const width = typeof style?.width === 'number' ? style.width : 200;
+  const height = typeof style?.height === 'number' ? style.height : 250;
 
   // 아이템들
   const items = useMemo(() => parseListItems(props), [props]);
@@ -258,122 +108,55 @@ export const PixiList = memo(function PixiList({
     [element.id, onItemClick]
   );
 
-  // List 생성 및 관리
-  useEffect(() => {
-    if (!app?.stage) return;
+  // 투명 히트 영역 그리기
+  const drawHitArea = useCallback((g: PixiGraphics) => {
+    g.clear();
+    g.rect(0, 0, width, height);
+    g.fill({ color: 0xffffff, alpha: 0.001 });
+  }, [width, height]);
 
-    // 컨테이너 생성
-    const container = new Container();
-    container.x = layoutStyle.x;
-    container.y = layoutStyle.y;
-    container.eventMode = 'static';
-    container.cursor = 'pointer';
-    container.on('pointerdown', handleClick);
+  // 아이템 크기
+  const padding = typeof style?.padding === 'number' ? style.padding : 8;
+  const gap = typeof style?.gap === 'number' ? style.gap : 4;
+  const itemHeight = 40;
 
-    // 배경
-    const bg = createListBackground(
-      layoutStyle.width,
-      layoutStyle.height,
-      layoutStyle.backgroundColor,
-      layoutStyle.borderRadius
-    );
-    container.addChild(bg);
+  const itemWidth = isHorizontal
+    ? (width - padding * 2 - gap * (items.length - 1)) / items.length
+    : width - padding * 2;
 
-    // 아이템 너비/높이 계산
-    const itemWidth = isHorizontal
-      ? (layoutStyle.width - layoutStyle.padding * 2 - layoutStyle.gap * (items.length - 1)) / items.length
-      : layoutStyle.width - layoutStyle.padding * 2;
-    const itemHeight = layoutStyle.itemHeight;
+  const drawItemHitArea = useCallback((g: PixiGraphics) => {
+    g.clear();
+    g.rect(0, 0, itemWidth, itemHeight);
+    g.fill({ color: 0xffffff, alpha: 0.001 });
+  }, [itemWidth]);
 
-    // 아이템 뷰 생성
-    const itemViews = items.map((item, index) => {
-      const view = createListItemView(itemWidth, itemHeight, item.label, layoutStyle);
-      view.on('pointerdown', (e) => {
-        e.stopPropagation();
-        handleItemClick(index);
-      });
-      return view;
-    });
+  return (
+    <pixiContainer>
+      {/* 컨테이너 히트 영역 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        x={0}
+        y={0}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={handleClick}
+      />
 
-    // @pixi/ui List 생성
-    const list = new List({
-      elementsMargin: layoutStyle.gap,
-      type: isHorizontal ? 'horizontal' : 'vertical',
-      children: itemViews,
-    });
-
-    // 위치 설정
-    list.x = layoutStyle.padding;
-    list.y = layoutStyle.padding;
-
-    // 컨테이너에 추가
-    container.addChild(list);
-
-    // Stage에 추가
-    app.stage.addChild(container);
-
-    containerRef.current = container;
-    listRef.current = list;
-
-    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
-    return () => {
-      // 이벤트 연결 해제
-      try {
-        container.off('pointerdown', handleClick);
-      } catch {
-        // ignore
-      }
-
-      // itemViews 이벤트 해제 및 내부 Graphics destroy
-      try {
-        itemViews.forEach((view) => {
-          view.off('pointerdown');
-          view.off('pointerover');
-          view.off('pointerout');
-          // view 내부 children (bg Graphics, Text) destroy
-          view.children.forEach((child) => {
-            if ('destroy' in child && typeof child.destroy === 'function') {
-              child.destroy(true);
-            }
-          });
-        });
-      } catch {
-        // CanvasTextSystem race condition - 무시
-      }
-
-      // Stage에서 제거
-      try {
-        app.stage.removeChild(container);
-      } catch {
-        // ignore
-      }
-
-      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
-      try {
-        bg.destroy(true);
-      } catch {
-        // ignore
-      }
-
-      // List 및 Container destroy
-      try {
-        if (!list.destroyed) {
-          list.destroy({ children: true });
-        }
-        if (!container.destroyed) {
-          container.destroy({ children: true });
-        }
-      } catch {
-        // ignore
-      }
-
-      containerRef.current = null;
-      listRef.current = null;
-    };
-  }, [app, layoutStyle, items, isHorizontal, handleClick, handleItemClick]);
-
-  // @pixi/ui는 imperative이므로 JSX 반환 없음
-  return null;
+      {/* 아이템별 히트 영역 */}
+      {items.map((item, index) => (
+        <pixiGraphics
+          key={item.value ?? index}
+          draw={drawItemHitArea}
+          eventMode="static"
+          cursor="pointer"
+          onPointerDown={(e: { stopPropagation: () => void }) => {
+            e.stopPropagation();
+            handleItemClick(index);
+          }}
+        />
+      ))}
+    </pixiContainer>
+  );
 });
 
 export default PixiList;

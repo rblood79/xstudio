@@ -2,10 +2,20 @@
   "name": "@xstudio/config",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "exports": {
     "./tsconfig/base": "./tsconfig/base.json",
     "./tsconfig/react-app": "./tsconfig/react-app.json",
     "./tsconfig/library": "./tsconfig/library.json",
-    "./eslint": "./eslint/base.js"
+    "./eslint": "./eslint/base.js",
+    "./eslint/base": "./eslint/base.js",
+    "./eslint/react": "./eslint/react.js"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.5.0",
+    "typescript-eslint": "^8.50.0"
   }
 }

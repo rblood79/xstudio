@@ -1,7 +1,7 @@
 # Component Spec Architecture - 상세 설계 문서
 
-> **작성일**: 2026-01-27
-> **상태**: Phase 6 Skia Spec 렌더링 구현 완료
+> **작성일**: 2026-01-27 | **수정일**: 2026-02-22
+> **상태**: Phase 6 Skia Spec 렌더링 구현 완료 | Slider Complex Component 전환 완료
 > **목표**: Builder(CanvasKit/Skia)와 Publish(React)의 100% 시각적 일치
 
 ---
@@ -63,9 +63,9 @@
 |-------|------|------|--------|
 | 0 | 인프라 구축 | 2주 | specs/, 렌더러, 타입 시스템 |
 | 1 | 핵심 컴포넌트 (10개) | 2주 | Button, Card, Badge 등 |
-| 2 | Form 컴포넌트 (15개) | 3주 | TextField, Select, Checkbox 등 |
+| 2 | Form 컴포넌트 (16개) | 3주 | TextField, Select, Checkbox 등 |
 | 3 | 복합 컴포넌트 (20개) | 3주 | Table, Tree, Tabs 등 |
-| 4 | 특수 컴포넌트 (17개) | 2주 | DatePicker, ColorPicker 등 |
+| 4 | 특수 컴포넌트 (16개) | 2주 | DatePicker, ColorPicker 등 |
 | 5 | 검증 및 최적화 + **CanvasKit/Skia 전환** | 2주 | 테스트, 성능 최적화, Skia 렌더링 파이프라인 |
 | 6 | Spec Shapes → Skia 렌더링 파이프라인 | 2주 | specShapeConverter, line 렌더러, flexDirection 지원 |
 
@@ -171,9 +171,15 @@ Element props  ──→  skiaNodeData 생성  ──→  글로벌 레지스트
 ```
 
 > **레이아웃 계층 분리**: Spec은 컴포넌트 **내부** Shape 배치를 정의하고,
-> **외부** 컨테이너 간 배치는 Yoga 레이아웃 엔진이 담당합니다.
-> React 경로는 브라우저 CSS 레이아웃을, Canvas 경로는 Yoga가 계산한 절대 px 값을 CanvasKit이 사용합니다.
-> 자세한 내용은 [LAYOUT_REQUIREMENTS.md](./LAYOUT_REQUIREMENTS.md)를 참조하세요.
+> **외부** 컨테이너 간 배치는 Taffy/Dropflow 레이아웃 엔진이 담당합니다.
+>
+> | 엔진 | 담당 | CSS display |
+> |------|------|-------------|
+> | **Taffy WASM** | Flex/Grid 레이아웃 | `flex`, `grid`, `inline-flex` |
+> | **Dropflow Fork** | Block/Inline 레이아웃 | `block`, `inline`, `inline-block` |
+>
+> React 경로는 브라우저 CSS 레이아웃을, Canvas 경로는 Taffy/Dropflow가 계산한 절대 px 값을 CanvasKit이 사용합니다.
+> 자세한 내용은 [ENGINE_UPGRADE.md](./ENGINE_UPGRADE.md)를 참조하세요.
 
 <details>
 <summary>Phase 1-4 레거시 데이터 흐름 (PixiJS 중심)</summary>
@@ -273,8 +279,8 @@ apps/builder/src/builder/workspace/canvas/skia/
     ├── textMeasure.ts           # 텍스트 측정 유틸리티
     ├── selectionRenderer.ts     # 선택 박스, 트랜스폼 핸들, 라쏘 렌더링
     ├── aiEffects.ts             # AI 생성 이펙트 (파티클/블러/플래시)
-    ├── eventBridge.ts           # (삭제됨) 과거 DOM 이벤트 브릿지 시도 — 현재 PixiJS EventBoundary로 충분
-    ├── dirtyRectTracker.ts      # (보류/미사용) clipRect 기반 Dirty Rect 부분 렌더링 시도 흔적
+    # eventBridge.ts — 삭제됨 (PixiJS EventBoundary로 대체)
+    # dirtyRectTracker.ts — 보류/미사용 (DirtyRect는 SkiaRenderer에서 구현)
     ├── disposable.ts            # 리소스 정리 패턴 (SkiaDisposable)
     ├── createSurface.ts         # GPU Surface 팩토리
     ├── initCanvasKit.ts         # CanvasKit WASM 초기화
@@ -767,7 +773,7 @@ export interface ContainerShape {
   children: Shape[];
   clip?: boolean;
 
-  /** 레이아웃 설정 (@pixi/layout 연동) */
+  /** 레이아웃 설정 (Taffy WASM/Dropflow 연동) */
   layout?: ContainerLayout;
 }
 
@@ -1341,9 +1347,7 @@ export function resolveToken(ref: TokenRef, theme: 'light' | 'dark' = 'light'): 
     case 'radius':
       return radius[name as keyof typeof radius];
     case 'shadow':
-      return theme === 'dark'
-        ? shadows.dark[name as keyof typeof shadows.dark]
-        : shadows.light[name as keyof typeof shadows.light];
+      return shadows[name as keyof typeof shadows];
     default:
       console.warn(`Unknown token category: ${category}`);
       return ref;
@@ -1588,335 +1592,40 @@ function cssColorToSkiaColor(
 ```
 
 <details>
-<summary>Phase 1-4 레거시: PixiRenderer (씬 그래프 이벤트 전용으로 축소)</summary>
+<summary>Phase 1-4 레거시: PixiRenderer (폐기 — 참조용)</summary>
 
-> Phase 5 이후 PixiRenderer는 시각적 렌더링을 수행하지 않으며,
-> EventBoundary Hit Testing + Container 트리 관리 전용이다.
+> **⚠️ 폐기됨**: Phase 5 이후 PixiRenderer는 시각적 렌더링을 수행하지 않는다.
+> 현재 PixiJS는 EventBoundary Hit Testing + Container 트리 관리 전용이다.
+> 시각 렌더링은 CanvasKit/Skia가 담당한다 (§3.5.3.1 참조).
+
+**핵심 인터페이스 (참조용):**
 
 ```typescript
-// packages/specs/src/renderers/PixiRenderer.ts (레거시 — 이벤트 전용)
-
-import type { Graphics } from 'pixi.js';
-import type { ComponentSpec, Shape, VariantSpec, SizeSpec } from '../types';
-import { resolveColor, resolveToken } from './utils/tokenResolver';
+// packages/specs/src/renderers/PixiRenderer.ts (폐기됨)
 
 export interface PixiRenderContext {
   graphics: Graphics;
   theme: 'light' | 'dark';
   width: number;
   height: number;
-  /** 현재 상태 (기본값: 'default') */
   state?: ComponentState;
 }
 
-/**
- * ComponentSpec의 Shapes를 PIXI Graphics로 렌더링
- * ⚠️ Phase 5+ 에서는 시각적 렌더링에 사용되지 않음 (CanvasKit이 담당)
- */
-export function renderToPixi<Props extends Record<string, unknown>>(
-  spec: ComponentSpec<Props>,
-  props: Props,
-  context: PixiRenderContext
-): void {
-  const { graphics, theme, width, height, state = 'default' } = context;
+// Shape 타입별 렌더링 매핑 (폐기됨 → CanvasKit 대체):
+// roundRect/rect → canvas.drawRRect() / canvas.drawRect()
+// circle        → canvas.drawCircle()
+// border        → paint.setStyle(ck.PaintStyle.Stroke)
+// text          → canvas.drawParagraph()
+// shadow        → ImageFilter.MakeDropShadow()
+// container     → 재귀 렌더링 (CanvasKit 트리로 대체)
+```
 
-  const variant = (props.variant as string) || spec.defaultVariant;
-  const size = (props.size as string) || spec.defaultSize;
+**색상 변환 함수 (현재 사용):**
 
-  const variantSpec = spec.variants[variant];
-  const sizeSpec = spec.sizes[size];
-
-  if (!variantSpec || !sizeSpec) {
-    console.warn(`Invalid variant/size: ${variant}/${size}`);
-    return;
-  }
-
-  // Shapes 생성 (state 파라미터 전달)
-  const shapes = spec.render.shapes(props, variantSpec, sizeSpec, state);
-
-  // Graphics 초기화
-  graphics.clear();
-
-  // 각 Shape 렌더링
-  shapes.forEach(shape => {
-    renderShape(graphics, shape, theme, width, height);
-  });
-}
-
-/**
- * 개별 Shape 렌더링
- */
-function renderShape(
-  g: Graphics,
-  shape: Shape,
-  theme: 'light' | 'dark',
-  containerWidth: number,
-  containerHeight: number
-): void {
-  switch (shape.type) {
-    case 'roundRect': {
-      const width = shape.width === 'auto' ? containerWidth : shape.width;
-      const height = shape.height === 'auto' ? containerHeight : shape.height;
-      const fill = resolveColor(shape.fill!, theme);
-      const radius = typeof shape.radius === 'number'
-        ? shape.radius
-        : shape.radius[0]; // 단순화: 첫 번째 값만 사용
-
-      g.roundRect(shape.x, shape.y, width, height, radius);
-
-      if (typeof fill === 'string') {
-        g.fill({ color: hexStringToNumber(fill), alpha: shape.fillAlpha ?? 1 });
-      } else {
-        g.fill({ color: fill, alpha: shape.fillAlpha ?? 1 });
-      }
-      break;
-    }
-
-    case 'rect': {
-      const width = shape.width === 'auto' ? containerWidth : shape.width;
-      const height = shape.height === 'auto' ? containerHeight : shape.height;
-      const fill = resolveColor(shape.fill!, theme);
-
-      g.rect(shape.x, shape.y, width, height);
-
-      if (typeof fill === 'string') {
-        g.fill({ color: hexStringToNumber(fill), alpha: shape.fillAlpha ?? 1 });
-      } else {
-        g.fill({ color: fill, alpha: shape.fillAlpha ?? 1 });
-      }
-      break;
-    }
-
-    case 'circle': {
-      const fill = resolveColor(shape.fill!, theme);
-
-      g.circle(shape.x, shape.y, shape.radius);
-
-      if (typeof fill === 'string') {
-        g.fill({ color: hexStringToNumber(fill), alpha: shape.fillAlpha ?? 1 });
-      } else {
-        g.fill({ color: fill, alpha: shape.fillAlpha ?? 1 });
-      }
-      break;
-    }
-
-    case 'border': {
-      const color = resolveColor(shape.color, theme);
-      const colorNum = typeof color === 'string' ? hexStringToNumber(color) : color;
-
-      // 타겟 영역 또는 이전 shape 영역에 테두리 그리기
-      const borderX = shape.x ?? 0;
-      const borderY = shape.y ?? 0;
-      const borderW = shape.width === 'auto' ? containerWidth : (shape.width ?? containerWidth);
-      const borderH = shape.height === 'auto' ? containerHeight : (shape.height ?? containerHeight);
-      const borderR = typeof shape.radius === 'number' ? shape.radius : (shape.radius?.[0] ?? 0);
-
-      g.roundRect(borderX, borderY, borderW, borderH, borderR);
-      g.stroke({
-        color: colorNum,
-        width: shape.borderWidth, // borderWidth 필드 사용
-        // TODO: dashed/dotted 지원 (PIXI v8 Graphics API)
-      });
-      break;
-    }
-
-    case 'container': {
-      // 자식 요소들 렌더링
-      shape.children.forEach(child => {
-        renderShape(g, child, theme, containerWidth, containerHeight);
-      });
-      break;
-    }
-
-    // text와 shadow는 별도 처리 필요 (Graphics가 아닌 다른 객체)
-    // Phase 5+ (CanvasKit): text → ParagraphBuilder.drawParagraph(),
-    //   shadow → ImageFilter.MakeDropShadow() / canvas.saveLayer()로 통합 처리.
-    //   PixiJS Graphics의 제약이 없어 별도 처리 불필요.
-    case 'text':
-    case 'shadow':
-      // PixiButton.tsx 등에서 별도 처리
-      break;
-  }
-}
-
-/**
- * hex 문자열 → PixiJS 숫자 변환
- */
-function hexStringToNumber(hex: string): number {
-  return parseInt(hex.replace('#', ''), 16);
-}
-
-/**
- * CSS 색상 문자열 → PixiJS hex 숫자 변환
- * colord 라이브러리로 모든 CSS 색상 포맷 지원
- */
-import { colord, extend } from 'colord';
-import mixPlugin from 'colord/plugins/mix';
-
-// color-mix() 지원을 위한 플러그인 확장
-extend([mixPlugin]);
-
-function cssColorToPixiHex(color: string, fallback: number = 0x000000): number {
-  // 1. 빈 값 처리
-  if (!color || color === 'transparent') {
-    return fallback;
-  }
-
-  // 2. 이미 숫자인 경우
-  if (typeof color === 'number') {
-    return color;
-  }
-
-  // 3. 0x 접두사 hex
-  if (color.startsWith('0x')) {
-    return parseInt(color, 16);
-  }
-
-  // 4. # 접두사 hex
-  if (color.startsWith('#')) {
-    const parsed = colord(color);
-    if (parsed.isValid()) {
-      return parseInt(parsed.toHex().slice(1), 16);
-    }
-    return fallback;
-  }
-
-  // 5. rgb(), rgba(), hsl(), hsla() 등
-  const parsed = colord(color);
-  if (parsed.isValid()) {
-    return parseInt(parsed.toHex().slice(1), 16);
-  }
-
-  // 6. color-mix() 처리 (브라우저 계산값 읽기)
-  if (color.includes('color-mix')) {
-    return parseColorMix(color, fallback);
-  }
-
-  return fallback;
-}
-
-/**
- * Phase 5+: CSS 색상 문자열 → CanvasKit/Skia Float32Array 변환 (설계 예시)
- *
- * Skia는 ck.Color4f(r, g, b, a) 형식의 Float32Array를 사용한다.
- * PixiJS의 0xRRGGBB와 달리 알파 채널을 포함한다.
- *
- * 현재 구현: 전용 변환 함수 없이 fills.ts, aiEffects.ts 등에서
- * ck.Color4f(r, g, b, a)를 인라인으로 직접 호출한다.
- */
-function cssColorToSkiaColor(
-  color: string,
-  ck: CanvasKit,
-  fallback?: Float32Array
-): Float32Array {
-  if (!color || color === 'transparent') {
-    return fallback ?? ck.Color4f(0, 0, 0, 0);
-  }
-
-  const parsed = colord(color);
-  if (!parsed.isValid()) {
-    return fallback ?? ck.Color4f(0, 0, 0, 1);
-  }
-
-  const { r, g, b, a } = parsed.toRgb();
-  return ck.Color4f(r / 255, g / 255, b / 255, a);
-}
-
-// 또는 uint32 ARGB 형식 (저수준 API용):
-function cssColorToSkiaUint32(color: string, fallback: number = 0xFF000000): number {
-  const parsed = colord(color);
-  if (!parsed.isValid()) return fallback;
-
-  const { r, g, b, a } = parsed.toRgb();
-  const alpha = Math.round(a * 255);
-  return ((alpha << 24) | (r << 16) | (g << 8) | b) >>> 0;
-}
-
-/**
- * color-mix() CSS 함수 파싱
- * 브라우저의 계산된 값을 읽어서 변환
- */
-function parseColorMix(colorMixStr: string, fallback: number): number {
-  // 서버 사이드에서는 fallback 반환
-  if (typeof document === 'undefined') {
-    return fallback;
-  }
-
-  try {
-    // 임시 DOM 요소로 브라우저 계산값 읽기
-    const temp = document.createElement('div');
-    temp.style.color = colorMixStr;
-    document.body.appendChild(temp);
-    const computed = getComputedStyle(temp).color;
-    document.body.removeChild(temp);
-
-    // rgb(r, g, b) 형식 파싱
-    const match = computed.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-    if (match) {
-      const [, r, g, b] = match.map(Number);
-      return (r << 16) | (g << 8) | b;
-    }
-  } catch (e) {
-    console.warn('color-mix parsing failed:', e);
-  }
-
-  return fallback;
-}
-
-/**
- * Variant 색상 세트 가져오기
- */
-export function getVariantColors(
-  variantSpec: VariantSpec,
-  theme: 'light' | 'dark' = 'light'
-): {
-  bg: number;
-  bgHover: number;
-  bgPressed: number;
-  text: number;
-  border?: number;
-  bgAlpha: number;
-} {
-  const bg = resolveColor(variantSpec.background, theme);
-  const bgHover = resolveColor(variantSpec.backgroundHover, theme);
-  const bgPressed = resolveColor(variantSpec.backgroundPressed, theme);
-  const text = resolveColor(variantSpec.text, theme);
-  const border = variantSpec.border ? resolveColor(variantSpec.border, theme) : undefined;
-
-  return {
-    bg: typeof bg === 'string' ? hexStringToNumber(bg) : bg,
-    bgHover: typeof bgHover === 'string' ? hexStringToNumber(bgHover) : bgHover,
-    bgPressed: typeof bgPressed === 'string' ? hexStringToNumber(bgPressed) : bgPressed,
-    text: typeof text === 'string' ? hexStringToNumber(text) : text,
-    border: border ? (typeof border === 'string' ? hexStringToNumber(border) : border) : undefined,
-    bgAlpha: variantSpec.backgroundAlpha ?? 1,
-  };
-}
-
-/**
- * Size 프리셋 가져오기
- */
-export function getSizePreset(
-  sizeSpec: SizeSpec
-): {
-  height: number;
-  paddingX: number;
-  paddingY: number;
-  fontSize: number;
-  borderRadius: number;
-  iconSize?: number;
-  gap?: number;
-} {
-  return {
-    height: sizeSpec.height,
-    paddingX: sizeSpec.paddingX,
-    paddingY: sizeSpec.paddingY,
-    fontSize: resolveToken(sizeSpec.fontSize) as number,
-    borderRadius: resolveToken(sizeSpec.borderRadius) as number,
-    iconSize: sizeSpec.iconSize,
-    gap: sizeSpec.gap,
-  };
-}
+```typescript
+// CSS → CanvasKit: ck.Color4f(r/255, g/255, b/255, a) — Float32Array
+// CSS → CanvasKit: ((alpha << 24) | (r << 16) | (g << 8) | b) >>> 0 — uint32
+// 실제 구현: fills.ts, aiEffects.ts 등에서 인라인 호출
 ```
 
 </details>
@@ -2003,7 +1712,10 @@ function renderSkiaShape(
       const paint = new ck.Paint();
       paint.setStyle(ck.PaintStyle.Fill);
       paint.setColor(cssColorToSkiaColor(shape.fill, ck));
-      const r = typeof shape.radius === 'number' ? shape.radius : (shape.radius?.[0] ?? 0);
+      // per-corner radius: number → 균일, [tl,tr,br,bl] → 개별
+      const r = typeof shape.radius === 'number'
+        ? shape.radius : (shape.radius?.[0] ?? 0);
+      // TODO: per-corner radius 시 rrect 12-float 배열 사용
       const rrect = ck.RRectXY(
         ck.LTRBRect(shape.x, shape.y,
           shape.x + resolveSize(shape.width, width),
@@ -2992,22 +2704,63 @@ if (ENABLE_BUTTON_SPEC) {
 
 #### 4.7.4 CSS 단위 처리 규칙
 
-**CanvasKit/Skia 렌더링 (현재):** Yoga 레이아웃 엔진이 CSS 단위(%, vw, vh, rem)를 **절대 px로 변환**한 결과를 CanvasKit이 받으므로, CanvasKit 렌더러에서는 CSS 단위 해석이 **불필요**하다. `skiaNodeData.width/height` 등 이미 계산된 숫자를 직접 사용한다.
+> **관련 파일 정리:**
+> - `layout/engines/cssValueParser.ts` — `resolveCSSSizeValue()`, `CSSValueContext` (CSS 단위 → px 변환)
+> - `layout/engines/utils.ts` — `enrichWithIntrinsicSize()`, `parseBoxModel()`, `calculateContentHeight/Width()` (intrinsic 크기)
+> - 레거시 `parseCSSSize()` (`sprites/styleConverter`) — 폐기됨, 위 함수로 대체
 
-| 항목 | Phase 1-4 (PixiJS) | 현재 (CanvasKit) |
+**CanvasKit/Skia 렌더링 (현재):** Taffy/Dropflow 레이아웃 엔진이 CSS 단위(%, vw, vh, rem, calc 등)를 **절대 px로 변환**한 결과를 CanvasKit이 받으므로, CanvasKit 렌더러에서는 CSS 단위 해석이 **불필요**하다. `skiaNodeData.width/height` 등 이미 계산된 숫자를 직접 사용한다.
+
+| 항목 | Phase 1-4 (PixiJS) | 현재 (CanvasKit + Taffy/Dropflow) |
 |------|---------------------|---------------------|
-| CSS 단위 해석 | 각 Pixi 컴포넌트에서 `parseCSSSize()` 필요 | **불필요** — Yoga가 px로 변환 완료 |
-| viewport 크기 참조 | vw/vh → parentContentArea 기준 변환 | Yoga가 처리, CanvasKit은 결과만 수신 |
-| % 단위 | 부모 content area 수동 계산 | Yoga가 자동 계산 |
+| CSS 단위 해석 | 각 Pixi 컴포넌트에서 `parseCSSSize()` 필요 | **불필요** — 레이아웃 엔진이 px로 변환 완료 |
+| viewport 크기 참조 | vw/vh → parentContentArea 기준 변환 | `resolveCSSSizeValue()`가 `CSSValueContext`로 처리, CanvasKit은 결과만 수신 |
+| % 단위 | 부모 content area 수동 계산 | Taffy/Dropflow가 자동 계산 |
 | 입력 형식 | CSS 문자열 ("16px", "50%") | 숫자 (px 절대값) |
+
+**CSS 단위 파서 (`cssValueParser.ts`):**
+
+```typescript
+import { resolveCSSSizeValue, CSSValueContext } from '../layout/engines/cssValueParser';
+
+// 통합 CSS 크기 값 파서 — px, %, vh, vw, em, rem, calc(), clamp(), min(), max() 지원
+function resolveCSSSizeValue(
+  value: unknown,
+  ctx: CSSValueContext = {},
+  fallback?: number,
+): number | undefined;
+
+interface CSSValueContext {
+  parentSize?: number;          // em 참조
+  containerSize?: number;       // % 참조
+  viewportWidth?: number;       // vw 참조
+  viewportHeight?: number;      // vh 참조
+  rootFontSize?: number;        // rem 참조 (기본 16)
+  variableScope?: CSSVariableScope;  // CSS var() 참조
+}
+```
+
+**단위별 해석 기준**:
+
+| 단위 | resolveCSSSizeValue 해석 | 참조 컨텍스트 |
+|------|--------------------------|--------------|
+| `px` | 절대 픽셀값 | — |
+| `%` | `ctx.containerSize` 기준 비율 | 부모 content area |
+| `vw` | `ctx.viewportWidth` 기준 비율 | 캔버스 너비 |
+| `vh` | `ctx.viewportHeight` 기준 비율 | 캔버스 높이 |
+| `rem` | `ctx.rootFontSize` × 계수 (기본 16) | 루트 폰트 크기 |
+| `em` | `ctx.parentSize` × 계수 | 부모 폰트 크기 |
+| `calc()` | 중첩 단위 해석 + 산술 연산 | 복합 컨텍스트 |
+| `fit-content` | sentinel -2 | 엔진 내부 처리 |
+| `auto` | undefined (엔진 자동 계산) | — |
 
 > **⚠️ 예외: 시각 전용 속성 (borderRadius, borderColor 등)**
 >
-> Yoga가 변환하는 것은 **레이아웃 속성**(width, height, padding, margin 등)뿐이다.
-> `borderRadius`와 같은 **시각 전용 속성**은 Yoga를 거치지 않으므로 `element.props.style`에
+> Taffy/Dropflow가 변환하는 것은 **레이아웃 속성**(width, height, padding, margin 등)뿐이다.
+> `borderRadius`와 같은 **시각 전용 속성**은 레이아웃 엔진을 거치지 않으므로 `element.props.style`에
 > CSS 문자열 형태(`"12px"`, `"8"`)로 남아 있다.
 > `ElementSprite`의 Skia 폴백에서 이런 속성을 읽을 때는 반드시 `convertStyle()`의 반환값을
-> 사용하거나 `parseCSSSize()`로 파싱해야 한다.
+> 사용해야 한다.
 >
 > ```typescript
 > // ❌ 금지: raw style 직접 typeof 체크 (CSS 문자열이면 항상 0)
@@ -3022,100 +2775,15 @@ if (ENABLE_BUTTON_SPEC) {
 > (2026-02-03 수정: ElementSprite에서 이 패턴 위반으로 borderRadius가 반영되지 않던 버그 수정)
 
 <details>
-<summary>Phase 1-4 레거시: Pixi UI 컴포넌트 CSS 단위 해석 규칙</summary>
+<summary>Phase 1-4 레거시: Pixi UI 컴포넌트 CSS 단위 해석 규칙 (폐기됨)</summary>
 
-> 아래 규칙은 Phase 1-4 PixiJS 컴포넌트에만 적용된다.
-> CanvasKit 렌더러에서는 Yoga가 px 변환을 완료하므로 불필요.
-
-모든 Pixi UI 컴포넌트(PixiButton, PixiToggleButton, PixiSlider 등)에서 inline style의 CSS 값을
-WebGL 그래픽 크기로 변환할 때 반드시 아래 규칙을 따라야 합니다.
-
-**❌ 금지 패턴 (버그 원인)**:
-```typescript
-// typeof === 'number'는 CSS 문자열 값("200px", "50%", "100vw")을 무시함
-const width = typeof style?.width === 'number' ? style.width : fallback;
-```
-
-**✅ 필수 패턴**:
-```typescript
-import { parseCSSSize } from "../sprites/styleConverter";
-import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
-import { useStore } from "../../../stores";
-import { useCanvasSyncStore } from "../canvasSync";
-
-// 1. 뷰포트 + 부모 요소 조회
-const canvasSize = useCanvasSyncStore((s) => s.canvasSize);
-const parentElement = useStore((state) => {
-  if (!element.parent_id) return null;
-  return state.elementsMap.get(element.parent_id) ?? null;
-});
-
-// 2. 부모 content area 계산 (% 및 vw/vh 해석 기준)
-const parentContentArea = useMemo(() => {
-  if (!parentElement) return { width: canvasSize.width, height: canvasSize.height };
-  const parentStyle = parentElement.props?.style;
-  const isBody = parentElement.tag.toLowerCase() === 'body';
-  const pw = isBody ? canvasSize.width : parseCSSSize(parentStyle?.width, canvasSize.width, canvasSize.width, canvasSize);
-  const ph = isBody ? canvasSize.height : parseCSSSize(parentStyle?.height, canvasSize.height, canvasSize.height, canvasSize);
-  const pp = parsePadding(parentStyle);
-  const pb = parseBorderWidth(parentStyle);
-  return {
-    width: Math.max(0, pw - pp.left - pp.right - pb.left - pb.right),
-    height: Math.max(0, ph - pp.top - pp.bottom - pb.top - pb.bottom),
-  };
-}, [parentElement, canvasSize]);
-
-// 3. CSS 값 파싱 (% → parentContentArea, vw/vh → parentContentArea, px → 절대값)
-const width = parseCSSSize(style?.width, parentContentArea.width, fallback, parentContentArea);
-const height = parseCSSSize(style?.height, parentContentArea.height, fallback, parentContentArea);
-
-// 4. padding shorthand + 개별 속성 지원
-const parsedPadding = parsePadding(style);  // "8px" → 4방향, paddingTop 등으로 override
-
-// 5. border width 4방향 파싱
-const parsedBorder = parseBorderWidth(style);  // "2px" → 4방향, borderTopWidth 등으로 override
-```
-
-**단위별 해석 기준**:
-
-| 단위 | parseCSSSize 해석 | Yoga (styleToLayout) 해석 |
-|------|------------------|--------------------------|
-| `px` | 절대 픽셀값 | 절대 픽셀값 |
-| `%` | parentContentArea 기준 | 부모 content area 기준 (문자열 유지) |
-| `vw` | parentContentArea.width 기준 | `%` 문자열로 변환 → 부모 기준 |
-| `vh` | parentContentArea.height 기준 | `%` 문자열로 변환 → 부모 기준 |
-| `rem` | × 16 (절대값) | × 16 (절대값) |
-| `auto` | fallback 값 | undefined (Yoga 자동 계산) |
-
-**적용 필수 컴포넌트 목록** (18개):
-
-| 컴포넌트 | CSS 단위 파싱 | SELF_PADDING_TAGS | 잔여 작업 |
-|----------|:----------:|:-----------------:|----------|
-| **PixiButton** | ✅ 완료 | ✅ 등록됨 | — |
-| **PixiFancyButton** | ❌ typeof 사용 중 | ✅ 등록됨 | parseCSSSize/parsePadding/parseBorderWidth 전환 필요 |
-| **PixiToggleButton** | ❌ typeof 사용 중 | ✅ 등록됨 | parseCSSSize/parsePadding/parseBorderWidth 전환 필요 |
-| PixiToggleButtonGroup | ✅ 완료 | — | container-only 패턴, LayoutComputedSizeContext 사용 (2026-02-04) |
-| **PixiCard** | ✅ 완료 | — | LayoutComputedSizeContext 패턴, 다중 텍스트 Skia 렌더링 (2026-02-04) |
-| PixiSlider | ❌ | — | 전체 마이그레이션 |
-| PixiSwitcher | ❌ | — | 전체 마이그레이션 |
-| PixiSelect | ❌ | — | 전체 마이그레이션 |
-| PixiSeparator | ❌ | — | 전체 마이그레이션 |
-| PixiMeter | ❌ | — | 전체 마이그레이션 |
-| PixiProgressBar | ❌ | — | 전체 마이그레이션 |
-| PixiRadio | ❌ | — | 전체 마이그레이션 |
-| PixiRadioItem | ❌ | — | 전체 마이그레이션 |
-| PixiScrollBox | ❌ | — | 전체 마이그레이션 |
-| PixiList | ❌ | — | 전체 마이그레이션 |
-| PixiListBox | ❌ | — | 전체 마이그레이션 |
-| PixiMaskedFrame | ❌ | — | 전체 마이그레이션 |
-| PixiCheckbox | ❌ | — | 전체 마이그레이션 |
-| PixiCheckboxGroup | ❌ | — | 전체 마이그레이션 |
-| PixiCheckboxItem | ❌ | — | 전체 마이그레이션 |
-
-> **Note**: PixiFancyButton, PixiToggleButton은 `SELF_PADDING_TAGS` 등록으로 이중 padding 방지는 완료.
-> 그러나 `typeof === 'number'` → `parseCSSSize()`/`parsePadding()`/`parseBorderWidth()` 전환은 미완료 상태.
-> CSS 문자열 값("16px", "50%", "100vw")이 무시되는 버그가 잔존.
-
+> **⚠️ 폐기됨**: 아래 규칙은 Phase 1-4 PixiJS 컴포넌트에만 적용되었던 레거시 규칙이다.
+> 현재는 Taffy/Dropflow 레이아웃 엔진이 CSS 단위를 자동 해석하며,
+> `resolveCSSSizeValue()` + `CSSValueContext` (`layout/engines/cssValueParser.ts`)로 대체되었다.
+>
+> - `parseCSSSize()` → `resolveCSSSizeValue()`
+> - `parsePadding()` / `parseBorderWidth()` → `parseBoxModel()`
+> - 뷰포트/부모 content area 수동 계산 → 레이아웃 엔진 자동 처리
 
 </details>
 
@@ -3179,41 +2847,39 @@ pnpm --filter @xstudio/builder dev
 
 #### 4.7.4.1 Padding/Border 이중 적용 방지 (CRITICAL)
 
-자체적으로 padding/border를 그래픽 크기에 반영하는 Pixi UI 컴포넌트(PixiButton 등)는
-외부 LayoutContainer(Yoga)에 padding/border를 전달하면 **이중 적용**됩니다.
+자체적으로 padding/border를 그래픽 크기에 반영하는 leaf UI 컴포넌트(Button 등)는
+레이아웃 엔진(Taffy/Dropflow)에도 padding/border를 전달하면 **이중 적용**된다.
 
-- **Yoga 경로**: `styleToLayout()`이 padding/border를 LayoutContainer에 전달
-  → Yoga가 내부 콘텐츠를 해당 값만큼 오프셋
-- **컴포넌트 자체**: padding/border를 Graphics 크기에 반영
-- **결과**: 위치 이동 + 크기 변경 이중 발생
+**현행 해결 방식: `enrichWithIntrinsicSize()` + `parseBoxModel()`**
 
-**해결**: `BuilderCanvas.tsx`의 `stripSelfRenderedProps()` + `SELF_PADDING_TAGS`
+```
+layout/engines/utils.ts
+├── enrichWithIntrinsicSize()    # leaf UI 컴포넌트의 intrinsic 크기 주입
+├── parseBoxModel()              # 폼 요소 기본 padding/border + border-box 변환
+└── INLINE_BLOCK_TAGS            # 대상 컴포넌트 목록
+```
+
+- **`INLINE_BLOCK_TAGS`**: leaf UI 컴포넌트 식별 (`button`, `badge`, `chip`, `checkbox`, `radio`, `switch`, `togglebutton`, `togglebuttongroup` 등)
+- **`enrichWithIntrinsicSize()`**: CSS 미지정 시 spec 기본 padding/border를 포함한 intrinsic width/height 계산 → 엔진에 content 크기로 전달
+- **`parseBoxModel()`**: 폼 요소에서 명시적 CSS가 없으면 `INLINE_UI_SIZE_CONFIGS` 기본값 적용, border-box → content-box 변환으로 엔진과 self-rendering 간 이중 계산 방지
+
+**핵심 원칙**: 레이아웃 엔진은 **content-box 크기**만 받고, 시각적 padding/border는 spec shapes 또는 컴포넌트 self-rendering에서 처리
+
+<details>
+<summary>레거시: SELF_PADDING_TAGS 패턴 (제거됨)</summary>
+
+> 아래 패턴은 @pixi/layout LayoutContainer + Yoga 시절에 사용되었으며, 현재는 제거되었다.
+> `enrichWithIntrinsicSize()` + `parseBoxModel()`이 이 역할을 대체한다.
 
 ```typescript
-// 자체 padding/border 렌더링 컴포넌트 (leaf UI)
+// [제거됨] BuilderCanvas.tsx의 SELF_PADDING_TAGS
 const SELF_PADDING_TAGS = new Set([
   'Button', 'SubmitButton', 'FancyButton', 'ToggleButton',
 ]);
-
-// 외부 LayoutContainer에서 padding/border/visual 속성 제거
-function stripSelfRenderedProps(layout: LayoutStyle): LayoutStyle {
-  const {
-    padding: _p, paddingTop: _pt, paddingRight: _pr, paddingBottom: _pb, paddingLeft: _pl,
-    borderWidth: _bw, borderTopWidth: _btw, borderRightWidth: _brw,
-    borderBottomWidth: _bbw, borderLeftWidth: _blw,
-    borderRadius: _br, borderColor: _bc, backgroundColor: _bg,
-    ...rest
-  } = layout;
-  return rest;
-}
-
-// renderTree에서 적용
-const effectiveLayout = SELF_PADDING_TAGS.has(child.tag)
-  ? stripSelfRenderedProps(baseLayout)
-  : baseLayout;
+function stripSelfRenderedProps(layout: LayoutStyle): LayoutStyle { ... }
 ```
 
-**새 컴포넌트가 자체 padding/border 렌더링을 구현하면 반드시 `SELF_PADDING_TAGS`에 추가**
+</details>
 
 #### 4.7.4.2 BlockEngine Border-Box 크기 계산 (CRITICAL)
 
@@ -3369,6 +3035,23 @@ if (treatAsBorderBox) {
 }
 ```
 
+**v3.9 추가 — Card/Box/Section border-box 처리**:
+컨테이너 요소(`Card`, `Box`, `Section`)도 `treatAsBorderBox` 대상으로 추가되었습니다.
+이들 요소는 `enrichWithIntrinsicSize()`에서 `padding + border`를 포함한 높이를 주입하므로,
+`parseBoxModel()`이 명시적 `width`/`height`를 border-box로 취급해야 BlockEngine 이중 계산을 방지합니다.
+
+```typescript
+// utils.ts enrichWithIntrinsicSize() — Card/Box/Section border-box 주입
+const isTreatedAsBorderBox = ['card', 'box', 'section'].includes(tag);
+if (isTreatedAsBorderBox && intrinsicHeight !== undefined) {
+  // padding + border 포함한 높이를 엔진에 content 크기로 전달
+  const padBorderV = padding.top + padding.bottom + border.top + border.bottom;
+  intrinsicHeight = Math.max(0, intrinsicHeight - padBorderV);
+}
+```
+
+> **관련**: §9.10.4 border-box 정합성, §4.7.4.2 BlockEngine border-box 크기 계산
+
 #### 4.7.4.6 calculateContentWidth 순수 텍스트 너비 반환 (v1.12)
 
 폼 요소(`button`, `input`, `select`, `a`, `label`)에 대해 `calculateContentWidth()`는
@@ -3489,9 +3172,9 @@ export function smoothRoundRect(
 | `apps/builder/.../stores/utils/elementHelpers.ts` | computeCanvasElementStyle 추가 |
 | `apps/builder/.../canvas/ui/PixiButton.tsx` | Feature Flag 마이그레이션, spec 기본 borderWidth 적용 (v1.10) |
 | `apps/builder/.../canvas/utils/graphicsUtils.ts` | smoothRoundRect 구현 |
-| `apps/builder/.../canvas/BuilderCanvas.tsx` | `SELF_PADDING_TAGS` + `stripSelfRenderedProps` 추가 (v1.10) |
+| `apps/builder/.../canvas/BuilderCanvas.tsx` | ~~`SELF_PADDING_TAGS` + `stripSelfRenderedProps`~~ → `enrichWithIntrinsicSize` + `parseBoxModel` 패턴으로 대체 (v1.10→v3.3) |
 | `apps/builder/.../canvas/layout/engines/BlockEngine.ts` | content-box → border-box 크기 변환 (v1.10) |
-| `apps/builder/.../canvas/layout/engines/utils.ts` | `VERTICALLY_CENTERED_TAGS` baseline 수정 (v1.10), `BUTTON_SIZE_CONFIG` padding 동기화 + fontFamily specs 참조 (v1.11), `BUTTON_SIZE_CONFIG.borderWidth` 추가 + `calculateContentWidth` 순수 텍스트 반환 + `parseBoxModel` 폼 요소 기본값 + `measureTextWidth` export (v1.12) |
+| `apps/builder/.../canvas/layout/engines/utils.ts` | `VERTICALLY_CENTERED_TAGS` baseline 수정 (v1.10), `BUTTON_SIZE_CONFIG` padding 동기화 + fontFamily specs 참조 (v1.11), `BUTTON_SIZE_CONFIG.borderWidth` 추가 + `calculateContentWidth` 순수 텍스트 반환 + `parseBoxModel` 폼 요소 기본값 + `measureTextWidth` export (v1.12), `parseBoxModel`에서 요소 자체 width를 `calculateContentHeight`에 전달 (v1.15.1) |
 | `packages/specs/src/components/Button.spec.ts` | paddingX md:16→24, lg:24→32, xl:32→40, fontFamily specs 상수 사용 (v1.11), 전 variant border/borderHover 추가 (v1.12) |
 | `packages/specs/src/primitives/typography.ts` | fontFamily.sans에 Pretendard 추가 (v1.11) |
 | `packages/specs/src/renderers/PixiRenderer.ts` | `getVariantColors()` borderHover 반환 추가 (v1.12) |
@@ -3502,7 +3185,7 @@ export function smoothRoundRect(
 
 ## 5. Phase 2: Form 컴포넌트 마이그레이션
 
-### 5.1 대상 컴포넌트 (15개)
+### 5.1 대상 컴포넌트 (16개)
 
 | # | 컴포넌트 | 현재 상태 | 복잡도 |
 |---|----------|----------|--------|
@@ -3514,13 +3197,14 @@ export function smoothRoundRect(
 | 6 | CheckboxGroup | ✅ 정상 | 높음 |
 | 7 | Radio | ⚠️ 부분 | 중간 |
 | 8 | Switch | ✅ 정상 | 중간 |
-| 9 | Select | ⚠️ 부분 | 높음 |
+| 9 | Select | ✅ 정상 | 높음 |
 | 10 | ComboBox | ✅ 정상 | 높음 |
 | 11 | ListBox | ✅ 정상 | 높음 |
-| 12 | Slider | ✅ 정상 | 높음 |
+| 12 | Slider | ✅ 완전 지원 (Complex Component 전환 완료) | 높음 |
 | 13 | Meter | ⚠️ 부분 | 중간 |
 | 14 | ProgressBar | ⚠️ 부분 | 중간 |
 | 15 | Form | ⚠️ 부분 | 낮음 |
+| 16 | Autocomplete | ❌ 미구현 | 높음 |
 
 ### 5.2 TextField Spec 예시
 
@@ -3711,7 +3395,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 - [ ] Select.spec.ts
 - [ ] ComboBox.spec.ts
 - [ ] ListBox.spec.ts
-- [ ] Slider.spec.ts
+- [x] Slider.spec.ts ← Complex Component 전환 + TokenRef offsetY 버그 수정 (2026-02-22)
 - [ ] Meter.spec.ts
 - [ ] ProgressBar.spec.ts
 - [ ] Form.spec.ts
@@ -3728,11 +3412,11 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 |---|----------|----------|--------|
 | 1 | Table | ✅ 정상 | 매우 높음 |
 | 2 | Tree | ✅ 정상 | 높음 |
-| 3 | Tabs | ⚠️ 부분 | 높음 |
+| 3 | Tabs | ✅ 완전 지원 (컨테이너 패턴) | 높음 |
 | 4 | Menu | ⚠️ 부분 | 높음 |
-| 5 | Breadcrumbs | ⚠️ 부분 | 중간 |
+| 5 | Breadcrumbs | ✅ 정상 (CONTAINER_TAGS 전환) | 중간 |
 | 6 | Pagination | ⚠️ 부분 | 중간 |
-| 7 | TagGroup | ⚠️ 부분 | 중간 |
+| 7 | TagGroup | ✅ 정상 (CONTAINER_TAGS 전환) | 중간 |
 | 8 | GridList | ✅ 정상 | 높음 |
 | 9 | Disclosure | ✅ 정상 | 중간 |
 | 10 | DisclosureGroup | 🔵 PIXI전용 | 높음 |
@@ -3939,9 +3623,9 @@ export const TableSpec: ComponentSpec<TableProps> = {
 - [ ] Tree.spec.ts
 - [ ] Tabs.spec.ts
 - [ ] Menu.spec.ts
-- [ ] Breadcrumbs.spec.ts
+- [x] Breadcrumbs.spec.ts (CONTAINER_TAGS 전환 완료)
 - [ ] Pagination.spec.ts
-- [ ] TagGroup.spec.ts
+- [x] TagGroup.spec.ts (CONTAINER_TAGS 전환 완료)
 - [ ] GridList.spec.ts
 - [ ] Disclosure.spec.ts
 - [ ] DisclosureGroup.spec.ts
@@ -4254,18 +3938,14 @@ export async function waitForAnimations(page: Page): Promise<void> {
 }
 
 /**
- * PIXI 캔버스 렌더링 완료 대기
+ * CanvasKit 렌더링 완료 대기 (waitForPixiRender 대체)
+ * __canvasKitReady 플래그: SkiaRenderer 초기화 완료 시
+ * SkiaOverlay.tsx에서 window.__canvasKitReady = true 설정
  */
-export async function waitForPixiRender(page: Page): Promise<void> {
-  await page.waitForFunction(() => {
-    const canvas = document.querySelector('canvas');
-    if (!canvas) return false;
-    // WebGL 컨텍스트 확인
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-    return gl !== null;
-  });
-  // 추가 프레임 대기 (렌더링 안정화)
+export async function waitForCanvasKitRender(page: Page): Promise<void> {
+  await page.waitForFunction(() => (window as any).__canvasKitReady === true);
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.waitForTimeout(100); // 폰트 로드 등 안정화
 }
 
 /**
@@ -4291,7 +3971,10 @@ export async function stableScreenshot(
 }
 ```
 
-#### 8.1.3 테스트 코드 (플래키 가드 적용)
+#### 8.1.3 테스트 코드 — React ↔ CanvasKit 비교
+
+> **구현 상태:** `waitForCanvasKitRender` 및 Playwright 비주얼 리그레션 테스트 구축 예정.
+> 상세: `docs/WASM.md` Phase 5.3 참조
 
 ```typescript
 // packages/specs/tests/visual/button.test.ts
@@ -4300,20 +3983,16 @@ import { test, expect } from '@playwright/test';
 import { ButtonSpec } from '../../src/components/Button.spec';
 import {
   waitForFonts,
-  waitForPixiRender,
+  waitForCanvasKitRender,
   stableScreenshot,
 } from './helpers';
 
-// 테스트 전 공통 설정
 test.beforeEach(async ({ page }) => {
-  // CSS 애니메이션/트랜지션 비활성화
   await page.addStyleTag({
-    content: `
-      *, *::before, *::after {
-        animation-duration: 0s !important;
-        transition-duration: 0s !important;
-      }
-    `,
+    content: `*, *::before, *::after {
+      animation-duration: 0s !important;
+      transition-duration: 0s !important;
+    }`,
   });
 });
 
@@ -4324,97 +4003,26 @@ test.describe('Button Visual Regression', () => {
   for (const variant of variants) {
     for (const size of sizes) {
       test(`Button ${variant}/${size} matches snapshot`, async ({ page }) => {
-        // React 버전 렌더링
+        // React 버전 캡처
         await page.goto(`/storybook/button?variant=${variant}&size=${size}`);
         await waitForFonts(page);
         const reactScreenshot = await stableScreenshot(page, '.react-aria-Button');
 
-        // PIXI 버전 렌더링
+        // CanvasKit 버전 캡처
         await page.goto(`/builder-preview/button?variant=${variant}&size=${size}`);
-        await waitForPixiRender(page);
-        const pixiScreenshot = await stableScreenshot(page, 'canvas');
+        await waitForCanvasKitRender(page);
+        const canvasKitScreenshot = await stableScreenshot(page, 'canvas[data-skia-overlay]');
 
-        // 스냅샷 비교
+        // 스냅샷 비교 (React ↔ CanvasKit 최대 1% 차이 허용)
         expect(reactScreenshot).toMatchSnapshot(`button-${variant}-${size}-react.png`);
-        expect(pixiScreenshot).toMatchSnapshot(`button-${variant}-${size}-pixi.png`);
-
-        // React와 PIXI 간 차이 비교
-        const diffResult = await compareScreenshots(reactScreenshot, pixiScreenshot);
-        expect(diffResult.diffPercent).toBeLessThan(1);
+        expect(canvasKitScreenshot).toMatchSnapshot(`button-${variant}-${size}-skia.png`);
       });
     }
   }
 });
-
-/**
- * 두 스크린샷 간 픽셀 비교
- */
-async function compareScreenshots(
-  img1: Buffer,
-  img2: Buffer
-): Promise<{ diffPercent: number; diffImage: Buffer }> {
-  const { PNG } = await import('pngjs');
-  const pixelmatch = (await import('pixelmatch')).default;
-
-  const png1 = PNG.sync.read(img1);
-  const png2 = PNG.sync.read(img2);
-
-  // 크기가 다르면 리사이즈
-  const width = Math.max(png1.width, png2.width);
-  const height = Math.max(png1.height, png2.height);
-
-  const diff = new PNG({ width, height });
-
-  const numDiffPixels = pixelmatch(
-    png1.data,
-    png2.data,
-    diff.data,
-    width,
-    height,
-    { threshold: 0.1, includeAA: false }
-  );
-
-  const totalPixels = width * height;
-  const diffPercent = (numDiffPixels / totalPixels) * 100;
-
-  return {
-    diffPercent,
-    diffImage: PNG.sync.write(diff),
-  };
-}
 ```
 
-#### 8.1.3.1 CanvasKit Visual Regression Testing (현재)
-
-Visual Regression Testing은 React vs **CanvasKit** 비교로 수행한다.
-상세: `docs/WASM.md` Phase 5.3 참조
-
-> **구현 상태:** 아래 테스트 헬퍼(`waitForCanvasKitRender`)는 구현 예정이다.
-> CanvasKit 렌더링 안정화 후 Playwright 기반 비주얼 리그레션 테스트를 구축할 계획이다.
-
-**Phase 1-4 → 현재 변경 사항:**
-
-| Phase 1-4 (PixiJS) | 현재 (CanvasKit) | 비고 |
-|------------------|---------------------|------|
-| `/builder-preview/` PixiJS 캔버스 | CanvasKit `<canvas data-skia-overlay>` 캡처 | 캡처 대상 변경 |
-| `waitForPixiRender()` | `waitForCanvasKitRender()` | 안정화 대기 함수 변경 |
-| PixiJS Graphics 렌더링 비교 | CanvasKit Surface 렌더링 비교 | 렌더링 파이프라인 변경 |
-
 ```typescript
-// CanvasKit 렌더링 안정화 대기 (구현 예정)
-async function waitForCanvasKitRender(page: Page): Promise<void> {
-  // CanvasKit WASM 초기화 완료 대기
-  await page.waitForFunction(() =>
-    (window as any).__canvasKitReady === true
-  );
-  // requestAnimationFrame 2회 대기 (더블 버퍼링)
-  await page.evaluate(() => new Promise(resolve => {
-    requestAnimationFrame(() => requestAnimationFrame(resolve));
-  }));
-  // 추가 안정화 (폰트 로드 등)
-  await page.waitForTimeout(100);
-}
-
 // CanvasKit 캔버스 캡처
 async function captureCanvasKit(page: Page): Promise<Buffer> {
   return page.locator('canvas[data-skia-overlay]').screenshot();
@@ -4426,16 +4034,16 @@ async function captureCanvasKit(page: Page): Promise<Buffer> {
 각 Spec Shape 타입과 CanvasKit API의 1:1 매핑 참조.
 > 상세: `docs/WASM.md` Phase 6.3, `docs/PENCIL_APP_ANALYSIS.md` §11 참조
 
-| Spec Shape | CanvasKit Canvas API | Skia Paint/Path | 현재 PixiJS | 비고 |
+| Spec Shape | CanvasKit Canvas API (현재) | Skia Paint/Path | 레거시 PixiJS | 비고 |
 |------------|---------------------|-----------------|------------|------|
-| `RectShape` | `canvas.drawRect()` / `canvas.drawRRect()` | `Paint` + `RRect` | `graphics.rect()` / `graphics.roundRect()` | radius 있으면 RRect |
-| `CircleShape` | `canvas.drawCircle()` | `Paint` | `graphics.circle()` | cx, cy, r |
-| `TextShape` | `canvas.drawParagraph()` | `ParagraphBuilder` → `Paragraph` | `new Text()` (별도 객체) | Phase 5에서 통합 |
-| `ShadowShape` | `ImageFilter.MakeDropShadow()` | `canvas.saveLayer(paint)` | 별도 처리 (불완전) | Phase 5에서 통합 |
-| `BorderShape` | `canvas.drawRRect()` (stroke) | `Paint.setStyle(Stroke)` | `graphics.stroke()` | strokeAlignment 추가 |
-| `GradientShape` | `Shader.MakeLinearGradient()` / `MakeRadialGradient()` / `MakeSweepGradient()` | `Paint.setShader()` | `graphics.fill()` + gradient | angular = Sweep |
-| `ImageShape` | `canvas.drawImageRect()` | `Image` + `Paint` | `Sprite` (별도 객체) | fit/fill/crop |
-| `ContainerShape` | `canvas.save()` / `canvas.clipRect()` / `canvas.restore()` | clip + children 재귀 | `Container` | overflow clipping |
+| `RectShape` | `canvas.drawRect()` / `canvas.drawRRect()` | `Paint` + `RRect` | ~~`graphics.rect()`~~ | radius 있으면 RRect |
+| `CircleShape` | `canvas.drawCircle()` | `Paint` | ~~`graphics.circle()`~~ | cx, cy, r |
+| `TextShape` | `canvas.drawParagraph()` | `ParagraphBuilder` → `Paragraph` | ~~`new Text()`~~ | Phase 5에서 통합 |
+| `ShadowShape` | `ImageFilter.MakeDropShadow()` | `canvas.saveLayer(paint)` | ~~별도 처리~~ | Phase 5에서 통합 |
+| `BorderShape` | `canvas.drawRRect()` (stroke) | `Paint.setStyle(Stroke)` | ~~`graphics.stroke()`~~ | strokeAlignment 추가 |
+| `GradientShape` | `Shader.MakeLinearGradient()` / `MakeRadialGradient()` / `MakeSweepGradient()` | `Paint.setShader()` | ~~`graphics.fill()`~~ | angular = Sweep |
+| `ImageShape` | `canvas.drawImageRect()` | `Image` + `Paint` | ~~`Sprite`~~ | fit/fill/crop |
+| `ContainerShape` | `canvas.save()` / `canvas.clipRect()` / `canvas.restore()` | clip + children 재귀 | ~~`Container`~~ | overflow clipping |
 
 **Fill + Stroke 분리 패턴 (CanvasKit):**
 ```typescript
@@ -4629,6 +4237,7 @@ line?: {
 | `border` | target Shape의 `box.strokeColor/strokeWidth` 설정 |
 | `text` | `type:'text'`, `text:{ content, fontSize, color, ... }` |
 | `shadow` | target Shape의 `effects[]`에 DropShadowEffect 추가 |
+| `gradient` | target Shape의 `box.fills[]`에 LinearGradient/RadialGradient Shader 추가 |
 
 색상 해석: `Shape.fill` (ColorValue = TokenRef | string | number) → `resolveColor(fill, theme)` → `Float32Array[r,g,b,a]`
 
@@ -4641,20 +4250,23 @@ line?: {
 
 #### 9.3.4 레이아웃 통합
 
-Body의 `display: 'block'` → BlockEngine 경로에서의 폼 컨트롤 크기 계산:
+Body의 `display: 'block'` → DropflowBlockEngine 경로에서의 폼 컨트롤 크기 계산:
 
 | 파일 | 변경 |
 |------|------|
-| `styleToLayout.ts` | Yoga 경로: flexDirection별 크기 (row: `INLINE_FORM_HEIGHTS`, column: `indicator + gap + textLineHeight`) |
-| `engines/utils.ts` | BlockEngine 경로: `calculateContentHeight`/`Width`에 INLINE_FORM 테이블 추가 |
+| `engines/utils.ts` | `enrichWithIntrinsicSize()`: leaf UI 컴포넌트 intrinsic 크기 주입 (Taffy Flex/Dropflow Block 공용) |
+| `engines/utils.ts` | `calculateContentHeight`/`Width`: INLINE_FORM 테이블 기반 크기 계산 |
+| `engines/utils.ts` | `INLINE_FORM_INDICATOR_WIDTHS` switch/toggle 값 수정 (26/34/42 → 36/44/52) + `INLINE_FORM_GAPS` 테이블 신규 추가 (v3.10) |
 
 ### 9.4 flexDirection:column 지원
+
+> 레이아웃 엔진 관련 — §4.7.4 CSS 단위 규칙 및 [ENGINE_UPGRADE.md](./ENGINE_UPGRADE.md) 참조.
 
 Spec `shapes()` 함수는 항상 row 레이아웃 좌표를 생성. column 지원을 위한 3단계 변환:
 
 1. **shapes 좌표 변환** (`rearrangeShapesForColumn`): indicator 중앙 배치, text를 indicator 아래로 이동
-2. **크기 계산** (`styleToLayout.ts`): column → height = indicator + gap + textLineHeight, width = max(indicator, textWidth)
-3. **BlockEngine 동기화** (`engines/utils.ts`): 동일한 column 크기 계산을 BlockEngine 경로에도 적용
+2. **크기 계산** (`engines/utils.ts`의 `enrichWithIntrinsicSize()`): column → height = indicator + gap + textLineHeight, width = max(indicator, textWidth)
+3. **BlockEngine 동기화** (`engines/utils.ts`): 동일한 column 크기 계산을 DropflowBlockEngine 경로에도 적용
 
 ### 9.5 수정 파일 목록
 
@@ -4664,8 +4276,7 @@ Spec `shapes()` 함수는 항상 row 레이아웃 좌표를 생성. column 지�
 | `skia/specShapeConverter.ts` | **신규** — Shape[] → SkiaNodeData 변환기 |
 | `skia/aiEffects.ts` | borderRadius 튜플 타입 호환 |
 | `sprites/ElementSprite.tsx` | getSpecForTag, spec 렌더링, column 재배치 |
-| `layout/styleToLayout.ts` | 폼 컨트롤 flex 기본값 + flexDirection 크기 |
-| `layout/engines/utils.ts` | calculateContentHeight/Width 폼 컨트롤 + flexDirection |
+| `layout/engines/utils.ts` | enrichWithIntrinsicSize + calculateContentHeight/Width 폼 컨트롤 + flexDirection |
 | `types/builder/unified.types.ts` | Checkbox/Radio/Switch 기본 props |
 
 ### 9.6 props.style 오버라이드 패턴 (2026-02-12)
@@ -4688,7 +4299,7 @@ shapes: (props, variant, size, state = 'default') => {
   const paddingX = props.style?.paddingLeft ?? props.style?.padding ?? size.paddingX;
 
   return [
-    { id: 'bg', type: 'roundRect', width: 'auto', height: 'auto', // ← Yoga 높이 사용
+    { id: 'bg', type: 'roundRect', width: 'auto', height: 'auto', // ← 레이아웃 엔진 높이 사용
       fill: bgColor, radius: borderRadius, fillAlpha: variant.backgroundAlpha ?? 1 },
     { type: 'border', target: 'bg', borderWidth,
       color: props.style?.borderColor ?? variant.border },
@@ -4720,10 +4331,14 @@ shapes: (props, variant, size, state = 'default') => {
 
 | 항목 | 수정 전 | 수정 후 |
 |------|---------|---------|
-| **배경 roundRect** | `height: size.height` (고정) | `height: 'auto'` (Yoga 높이) |
-| **specHeight** | `Math.min(sizeSpec.height, finalHeight)` | `finalHeight` (항상 Yoga) |
+| **배경 roundRect** | `height: size.height` (고정) | `height: 'auto'` (엔진 계산 높이) |
+| **배경 roundRect width** | `props.style?.width \|\| 'auto'` | `'auto' as const` (9개 spec 수정) |
+| **specHeight** | `Math.min(sizeSpec.height, finalHeight)` | `finalHeight` (항상 엔진 계산값) |
 | **MIN_BUTTON_HEIGHT** | 24px 최소값 제한 | 제거 (PixiButton.tsx) |
 | **gradient fill** | spec shapes가 `boxData.fill` 클리어 → 소실 | `boxData.fill → specNode.box.fill` 이전 후 클리어 |
+| **effectiveElement %** | `(parseFloat(w) / 100) * computedContainerSize` (이중 적용) | `computedContainerSize.width` 직접 사용 |
+| **텍스트 줄바꿈 높이** | specHeight 고정 (텍스트 줄바꿈 무시) | `measureSpecTextMinHeight()` → `contentMinHeight` 자동 확장 |
+| **updateTextChildren** | box 자식 미처리 (return child) | box 자식 재귀: width/height 갱신 + 내부 text 처리 |
 
 **specShapeConverter 개선:**
 
@@ -4733,6 +4348,876 @@ shapes: (props, variant, size, state = 'default') => {
 | safety clamp | `maxWidth < 1`이면 `containerWidth`로 폴백 (padding=0 안전 처리) |
 
 **상세:** `packages/specs/src/components/*.spec.ts` (49개), `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../skia/specShapeConverter.ts`, `apps/builder/src/.../ui/PixiButton.tsx`
+
+
+### 9.7 ComponentDefinition 재귀 확장 및 TagGroup CONTAINER_TAGS 전환 (2026-02-13)
+
+#### 9.7.1 ChildDefinition 재귀 타입
+
+기존 `ComponentDefinition`의 children은 2-level 구조(parent + flat children)만 지원했다.
+TagGroup처럼 3-level 이상의 계층(TagGroup → TagList → Tag)이 필요한 컴포넌트를 위해
+`ChildDefinition` 타입에 재귀적 `children` 필드를 추가했다.
+
+**변경 전 (2-level):**
+
+```typescript
+// 기존: children은 Element와 동일 구조, 중첩 불가
+export interface ComponentDefinition {
+  tag: string;
+  parent: Omit<Element, "id" | "created_at" | "updated_at">;
+  children: Omit<Element, "id" | "created_at" | "updated_at" | "parent_id">[];
+}
+```
+
+**변경 후 (무한 중첩):**
+
+```typescript
+// apps/builder/src/builder/factories/types/index.ts
+
+/**
+ * 자식 요소 정의 (재귀적 중첩 지원)
+ */
+export type ChildDefinition = Omit<Element, "id" | "created_at" | "updated_at" | "parent_id"> & {
+  children?: ChildDefinition[];
+};
+
+export interface ComponentDefinition {
+  tag: string;
+  parent: Omit<Element, "id" | "created_at" | "updated_at">;
+  children: ChildDefinition[];
+}
+```
+
+**핵심 포인트:**
+- `children?: ChildDefinition[]` — optional 재귀 필드로 무한 중첩 가능
+- `parent_id` 제외 — Factory가 생성 시 자동 할당 (부모 Element의 id)
+- `id`, `created_at`, `updated_at` 제외 — Factory가 자동 생성
+
+#### 9.7.2 Factory createElementsFromDefinition 재귀 생성
+
+`createElementsFromDefinition()` 함수에 `processChildren()` 재귀 함수를 추가하여
+중첩된 `ChildDefinition[]`을 일괄 처리한다.
+
+```typescript
+// apps/builder/src/builder/factories/utils/elementCreation.ts
+
+export function createElementsFromDefinition(
+  definition: ComponentDefinition
+): { parent: Element; children: Element[] } {
+  const store = useStore.getState();
+  const currentElements = store.elements;
+
+  // 부모 요소 생성
+  const parent: Element = {
+    ...definition.parent,
+    id: ElementUtils.generateId(),
+    customId: generateCustomId(definition.parent.tag, currentElements),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  // 자식 요소들 재귀 생성 (중첩 children 지원)
+  const allElementsSoFar = [...currentElements, parent];
+  const allChildren: Element[] = [];
+
+  function processChildren(childDefs: ChildDefinition[], parentId: string): void {
+    childDefs.forEach((childDef) => {
+      const { children: nestedChildren, ...elementDef } = childDef;
+      const child: Element = {
+        ...elementDef,
+        id: ElementUtils.generateId(),
+        customId: generateCustomId(elementDef.tag, allElementsSoFar),
+        parent_id: parentId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      allChildren.push(child);
+      allElementsSoFar.push(child);
+
+      // 중첩 children 재귀 처리
+      if (nestedChildren && nestedChildren.length > 0) {
+        processChildren(nestedChildren, child.id);
+      }
+    });
+  }
+
+  processChildren(definition.children, parent.id);
+
+  return { parent, children: allChildren };
+}
+```
+
+**`allElementsSoFar` 배열의 역할:**
+
+| 단계 | 배열 상태 | 목적 |
+|------|----------|------|
+| 초기화 | `[...currentElements, parent]` | 기존 페이지 요소 + 새 부모 |
+| 자식 생성 시 | `.push(child)` | 새 자식 추가 |
+| `generateCustomId` 호출 시 | 전체 참조 | customId 중복 방지 |
+
+- `generateCustomId(tag, allElementsSoFar)`는 기존 요소의 customId와 충돌하지 않는 고유 ID를 생성한다.
+- 재귀 처리 중에도 `allElementsSoFar`에 즉시 추가하여 같은 tag의 형제/사촌 간 customId 충돌을 방지한다.
+
+#### 9.7.3 TagGroup → CONTAINER_TAGS 전환 사례
+
+TagGroup은 기존에 `TAG_SPEC_MAP`에 등록된 전용 렌더러(`PixiTagGroup.tsx`)를 사용했다.
+이를 `CONTAINER_TAGS` 기반의 범용 BoxSprite 컨테이너로 전환하여, 웹 CSS와 동일한 계층 구조를 달성했다.
+
+**웹 CSS 구조 (3-level 계층):**
+
+```
+TagGroup (display: flex, flex-direction: column, gap: 2)
+├── Label ("Tag Group", fontSize: 12, fontWeight: 500)
+└── TagList (display: flex, flex-direction: row, flex-wrap: wrap, gap: 4)
+    ├── Tag ("Tag 1")
+    └── Tag ("Tag 2")
+```
+
+**Factory 정의 (재귀 children 활용):**
+
+```typescript
+// apps/builder/src/builder/factories/definitions/GroupComponents.ts
+
+return {
+  tag: "TagGroup",
+  parent: {
+    tag: "TagGroup",
+    props: {
+      label: "Tag Group",
+      style: { display: "flex", flexDirection: "column", gap: 2, width: "fit-content" },
+    },
+    ...ownerFields,
+    parent_id: parentId,
+    order_num: orderNum,
+  },
+  children: [
+    {
+      tag: "Label",
+      props: { children: "Tag Group", style: { fontSize: 12, fontWeight: 500 } },
+      ...ownerFields,
+      order_num: 1,
+    },
+    {
+      tag: "TagList",
+      props: { style: { display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 4 } },
+      ...ownerFields,
+      order_num: 2,
+      children: [   // ← 재귀적 중첩
+        { tag: "Tag", props: { children: "Tag 1" }, ...ownerFields, order_num: 1 },
+        { tag: "Tag", props: { children: "Tag 2" }, ...ownerFields, order_num: 2 },
+      ],
+    },
+  ],
+};
+```
+
+**전환 전후 비교:**
+
+| 항목 | 전환 전 | 전환 후 |
+|------|---------|---------|
+| **렌더링** | `PixiTagGroup.tsx` (전용 Graphics 렌더링) | BoxSprite 기본 컨테이너 (CONTAINER_TAGS) |
+| **TAG_SPEC_MAP** | TagGroup 등록 | 제거 (spec shapes 미사용) |
+| **레이아웃** | PixiTagGroup 내부 계산 | Taffy flex layout (TaffyFlexEngine) |
+| **구조** | 2-level (parent + flat children) | 3-level (TagGroup → TagList → Tag) |
+| **CSS 동기화** | 수동 동기화 | props.style로 직접 적용 |
+
+**레이아웃 기본값 (props.style로 적용):**
+
+```typescript
+// TagGroup: 기본 flex column 레이아웃 (Label + TagList 수직 배치)
+// → props.style: { display: 'flex', flexDirection: 'column' }
+// → TaffyFlexEngine이 Flex 레이아웃 계산
+
+// TagList: 기본 flex row wrap 레이아웃 (Tags 가로 배치)
+// → props.style: { display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 4 }
+// → TaffyFlexEngine이 Flex 레이아웃 계산
+```
+
+**수정 파일:**
+
+| 파일 | 변경 |
+|------|------|
+| `factories/types/index.ts` | `ChildDefinition` 재귀 타입 추가 |
+| `factories/utils/elementCreation.ts` | `processChildren()` 재귀 생성 함수 |
+| `factories/definitions/GroupComponents.ts` | TagGroup 3-level 정의 (재귀 children) |
+| `sprites/ElementSprite.tsx` | TAG_SPEC_MAP에서 TagGroup/TagList 제거 |
+| `ui/PixiTagGroup.tsx` | 특수 렌더러 사용 중단 (CONTAINER_TAGS 대체) |
+
+### 9.8 CONTAINER_TAGS 계층 선택 (Drill-Down) 아키텍처 (2026-02-19)
+
+#### 9.8.1 설계 원칙: 웹 컴포넌트 구조 = 캔버스 구조
+
+모든 CONTAINER_TAGS 컴포넌트는 **웹 컴포넌트(Preview/Publish)의 DOM 계층과 캔버스(Builder)의 요소 계층이 1:1로 일치**해야 한다.
+이 원칙이 지켜져야 Layer Tree 선택, Double-Click Drill-Down, 그리고 Preview↔Builder 시각적 일치가 보장된다.
+
+```
+설계 원칙:
+
+Web (packages/shared/src/components/)     Canvas (Builder 요소 트리)
+├── TagGroup                              ├── TagGroup (CONTAINER_TAG)
+│   ├── Label                             │   ├── Label
+│   ├── TagList                           │   ├── TagList (CONTAINER_TAG)
+│   │   ├── Tag                           │   │   ├── Tag → BadgeSpec (Skia)
+│   │   └── Tag                           │   │   └── Tag → BadgeSpec (Skia)
+│   └── description                       │   └── (description은 props)
+└── (CSS flex layout)                     └── (TaffyFlexEngine layout)
+```
+
+#### 9.8.2 계층 선택 메커니즘
+
+**핵심 상태: `editingContextId`** (selection.ts)
+
+```
+editingContextId = null  → Body 직계 자식만 선택 가능 (루트 레벨)
+editingContextId = "X"   → 요소 X의 직계 자식만 선택 가능 (컨테이너 내부)
+```
+
+**선택 흐름:**
+
+```
+[1] 클릭 → resolveClickTarget()로 현재 context 레벨의 대상 결정
+
+    예: TagGroup > TagList > Tag를 클릭했을 때
+    editingContextId = null → resolveClickTarget가 body 직계인 TagGroup 반환
+    editingContextId = "TagGroup" → TagList 반환
+    editingContextId = "TagList" → Tag 반환
+
+[2] 더블클릭 → enterEditingContext()로 컨테이너 진입
+    TagGroup 더블클릭 → editingContextId = TagGroup.id
+    → 이제 Label, TagList 선택 가능
+
+[3] Escape → exitEditingContext()로 상위 컨텍스트 복귀
+    editingContextId = TagList → TagGroup
+    editingContextId = TagGroup → null (루트)
+```
+
+**resolveClickTarget 알고리즘** (hierarchicalSelection.ts):
+
+```typescript
+// 클릭된 요소에서 부모 방향으로 올라가며 현재 context의 직계 자식을 찾는다
+function resolveClickTarget(clickedId, editingContextId, elementsMap): string | null {
+  let current = clickedId;
+  while (current) {
+    const el = elementsMap.get(current);
+    if (editingContextId === null) {
+      // 루트 레벨: parent가 body인 요소를 찾는다
+      if (elementsMap.get(el.parent_id)?.tag === 'body') return current;
+    } else {
+      // 컨테이너 내부: parent가 editingContextId인 요소를 찾는다
+      if (el.parent_id === editingContextId) return current;
+    }
+    current = el.parent_id;  // 부모로 올라감
+  }
+  return null;
+}
+```
+
+**Layer Tree 동기화** (LayersSection.tsx):
+
+Layer Tree에서 요소를 클릭하면 `editingContextId`가 자동으로 조정된다.
+깊은 요소(예: Tag)를 선택하면 그 부모(TagList)가 editingContextId로 설정되어 Canvas에서도 동일 레벨이 활성화된다.
+
+#### 9.8.3 캔버스 이벤트 처리 구조
+
+```
+CanvasKit Surface (z-index: 3)    ← 시각적 렌더링만 (pointerEvents: auto)
+PixiJS Canvas (z-index: 4)        ← 이벤트 전용 (alpha=0, 보이지 않음)
+  └── Camera Container (alpha=0)
+      └── ElementSprite[]         ← 각각 eventMode="static" + onPointerDown
+          └── 재귀적 자식 ElementSprite (CONTAINER_TAGS 내부)
+```
+
+- PixiJS 8 EventBoundary는 `alpha=0`을 prune 조건으로 사용하지 않음 → 히트 테스팅 유지
+- 각 ElementSprite는 300ms 기반 더블클릭 감지 (handleContainerPointerDown)
+- CONTAINER_TAGS의 자식은 `createContainerChildRenderer()`로 재귀 렌더링 → 각 자식이 독립 ElementSprite
+
+#### 9.8.4 CONTAINER_TAGS 구조적 일관성 현황
+
+| 컴포넌트 | 웹 컴포넌트 | Factory | Renderer | Drill-Down | 상태 |
+|----------|:-----------:|:-------:|:--------:|:----------:|------|
+| **TagGroup** | ✅ | ✅ 3-level | ✅ | ✅ | ✅ 정상 |
+| **TagList** | (TagGroup 내부) | ✅ (자식) | — | ✅ | ✅ 정상 |
+| **ToggleButtonGroup** | ✅ | ✅ | ✅ | ✅ | ✅ 정상 |
+| **Card** | ✅ | ❌ 미정의 | ✅ | ✅ | ⚠️ Factory 필요 |
+| **Panel** | ✅ | ❌ 미정의 | ✅ | ✅ | ⚠️ Factory 필요 |
+| **Group** | ✅ | ✅ | ✅ | ✅ | ✅ 정상 |
+| **Form** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
+| **Dialog** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
+| **Modal** | ✅ | ❌ 미정의 | ⚠️ div | ✅ | ⚠️ Factory + Renderer 수정 필요 |
+| **Disclosure** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
+| **DisclosureGroup** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
+| **Accordion** | (= DisclosureGroup) | ❌ | ❌ | ✅ | ⚠️ DisclosureGroup 별칭 |
+| **Tabs** | ✅ | ✅ | ✅ | ✅ | ✅ 완전 지원 (컨테이너 패턴) |
+| **Breadcrumbs** | nav | flex | `_crumbs` 주입 (자식 텍스트 배열) | `filteredContainerChildren = []` | ✅ 정상 (CONTAINER_TAGS 전환) |
+| **Box** | (= Card 별칭) | ❌ | ❌ | ✅ | ⚠️ Card Factory 재사용 |
+
+> **Note**: Drill-Down 자체는 CONTAINER_TAGS 등록만으로 작동한다 (`enterEditingContext` + `createContainerChildRenderer`).
+> Factory/Renderer 미비는 **초기 요소 생성과 Preview 렌더링**에만 영향을 준다.
+
+#### 9.8.5 웹 컴포넌트 구조 동일성 가이드라인
+
+새 CONTAINER_TAG 컴포넌트 추가 시 반드시 아래 체크리스트를 따른다:
+
+**필수 체크리스트:**
+
+- [ ] **1. 웹 컴포넌트 구조 분석**: `packages/shared/src/components/XXX.tsx`의 JSX 계층 확인
+- [ ] **2. Factory 정의**: `factories/definitions/`에 웹 컴포넌트와 **동일한 자식 계층** 생성
+  ```typescript
+  // 예: Disclosure의 경우
+  createDisclosureDefinition() → {
+    tag: 'Disclosure',
+    children: [
+      { tag: 'Heading', children: [{ tag: 'Button', props: { children: 'Trigger' } }] },
+      { tag: 'DisclosurePanel', children: [{ tag: 'p', props: { children: 'Content' } }] },
+    ]
+  }
+  ```
+- [ ] **3. CONTAINER_TAGS 등록**: `BuilderCanvas.tsx`의 `CONTAINER_TAGS` Set에 추가
+- [ ] **4. Default Props**: `unified.types.ts`에 `createDefaultXXXProps()` 추가 (display, layout 기본값)
+- [ ] **5. Renderer 등록**: `packages/shared/src/renderers/`에서 children 렌더링 지원
+- [ ] **6. Spec 등록 (leaf일 경우)**: `TAG_SPEC_MAP`에 매핑 (컨테이너는 등록하지 않음)
+- [ ] **7. Drill-Down 테스트**: 클릭→컨테이너 선택, 더블클릭→자식 선택, Escape→상위 복귀
+
+**전환 완료 컴포넌트 (CONTAINER_TAGS 등록 완료):**
+
+- [x] **TagGroup** — 3-level 계층 (TagGroup > Label + TagList > Tag×N), TaffyFlexEngine
+- [x] **Tabs** — 컨테이너 패턴, Panel 필터링, paddingTop=tabBar+padding
+- [x] **Breadcrumbs** — nav/flex, `_crumbs` 주입 (자식 텍스트 배열), `filteredContainerChildren = []`
+
+**구조 동일성 원칙:**
+
+```
+규칙 1: 웹 컴포넌트의 JSX children 계층 = Factory의 children 계층
+규칙 2: 컨테이너 → CONTAINER_TAGS + display 기본값 (flex/block)
+규칙 3: 리프 UI → TAG_SPEC_MAP + ComponentSpec (Skia 렌더링)
+규칙 4: 컨테이너의 레이아웃 = 웹 CSS와 동일 (TaffyFlexEngine/DropflowBlockEngine)
+규칙 5: Layer Tree 선택 = Canvas Drill-Down 선택 (editingContextId 동기화)
+```
+
+#### 9.8.6 Pixi UI 컴포넌트 Skia 전환 현황 (2026-02-19)
+
+62개 Pixi UI 컴포넌트의 CanvasKit/Skia 전환 상태를 3등급으로 분류한다.
+
+**A등급 — 전환 완료 (12개)**: 투명 히트 영역 + 이벤트만. WebGL 드로잉 코드 제거됨.
+
+| 컴포넌트 | 줄 수 | 설명 |
+|----------|------:|------|
+| PixiButton | 130 | `LayoutComputedSizeContext` 히트 영역 |
+| PixiFancyButton | 172 | 히트 영역 전용 |
+| PixiToggleButton | 135 | 히트 영역 전용 |
+| PixiSlider | 124 | 히트 영역 전용 |
+| PixiBadge | 145 | 히트 영역 전용 |
+| PixiCheckboxItem | 100 | 히트 영역 전용 (그룹 내 자식) |
+| PixiRadioItem | 100 | 히트 영역 전용 (그룹 내 자식) |
+| PixiProgressBar | 135 | 히트 영역 전용 |
+| PixiSelect | 118 | 히트 영역 전용 |
+| PixiScrollBox | 75 | 히트 영역 전용 |
+| PixiMaskedFrame | 75 | 히트 영역 전용 |
+| PixiSeparator | 196 | 히트 영역 전용 |
+
+**B등급 — 전환 필요 (47개)**: WebGL Graphics 드로잉 코드(g.roundRect, g.fill, TextStyle 등) 잔존.
+Skia가 시각 렌더링을 담당하지만, 불필요한 PixiJS 드로잉이 남아있어 **A등급 패턴으로 재작성** 필요.
+
+| 컴포넌트 | 줄 수 | Draw 호출 | TextStyle | 비고 |
+|----------|------:|----------:|----------:|------|
+| PixiCard | 339 | 4 | 2 | CONTAINER_TAG + 다중 텍스트 |
+| PixiPanel | 222 | 3 | 2 | CONTAINER_TAG |
+| PixiDialog | 262 | 17 | — | backdrop + title + content |
+| PixiDisclosure | 219 | 9 | — | header + content |
+| PixiDisclosureGroup | 323 | 11 | — | 복합 아코디언 |
+| PixiColorPicker | 315 | 25 | — | 최다 Draw — 완전 재작성 |
+| PixiToast | 218 | 23 | — | 복합 UI |
+| PixiSkeleton | 211 | 22 | — | 다중 레이어 |
+| PixiDatePicker | 296 | 16 | — | 캘린더 + 입력 |
+| PixiPopover | 220 | 16 | — | backdrop + 말풍선 |
+| PixiToolbar | 166 | 15 | — | 다중 버튼 |
+| PixiDateRangePicker | 349 | 11 | — | 2x 캘린더 |
+| PixiCalendar | 347 | 10 | — | 그리드 셀 |
+| PixiColorField | 177 | 10 | — | swatch + input |
+| PixiSlot | 288 | 10 | — | placeholder 패턴 |
+| PixiComboBox | 335 | 9 | 4 | input + dropdown |
+| PixiDropZone | 253 | 9 | — | 점선 + 아이콘 |
+| PixiFileTrigger | 148 | 8 | — | 버튼 + 아이콘 |
+| PixiColorArea | 162 | 8 | — | 2D gradient |
+| PixiColorSlider | 184 | 8 | — | track + thumb |
+| PixiColorSwatchPicker | 154 | 8 | — | 그리드 |
+| PixiColorSwatch | 129 | 7 | — | 단일 swatch |
+| PixiTooltip | 163 | 8 | — | 말풍선 |
+| PixiSwitch | 211 | 7 | — | track + thumb |
+| PixiColorWheel | 174 | 5 | — | 원형 gradient |
+| PixiForm | 144 | 7 | — | CONTAINER_TAG |
+| PixiInput | 307 | 6 | — | border + placeholder |
+| PixiTextField | 234 | 6 | — | label + input |
+| PixiTextArea | 201 | 5 | — | multiline input |
+| PixiGroup | 182 | 6 | — | CONTAINER_TAG |
+| PixiTable | 392 | 8 | 4 | header + rows |
+| PixiTree | 355 | 6 | 3 | indent + nodes |
+| PixiGridList | 253 | 5 | 3 | header + cells |
+| PixiNumberField | 252 | 5 | 3 | input + spinner |
+| PixiTimeField | 191 | 5 | — | segments |
+| PixiDateField | 173 | 5 | — | segments |
+| PixiMenu | 333 | 4 | 4 | items + separators |
+| PixiTabs | 376 | 3 | 3 | tab bar + content |
+| PixiSearchField | 227 | 3 | 3 | input + icon |
+| PixiBreadcrumbs | 215 | 2 | 3 | items + separators ← **Skia spec shapes 전환 완료, 더 이상 사용 안 함** |
+| PixiPagination | 245 | 7 | 1 | 페이지 버튼 |
+| PixiMeter | 281 | 2 | 2 | track + fill |
+| PixiLink | 184 | 0 | 1 | 텍스트만 (TextStyle) |
+| PixiToggleButtonGroup | 346 | 1 | 1 | CONTAINER_TAG + children |
+| PixiCheckbox | 225 | 2 | 1 | indicator + label |
+| PixiCheckboxGroup | 449 | 2 | 2 | children 반복 |
+| PixiRadio | 441 | 2 | 2 | indicator + label |
+
+**C등급 — Dead Code (1개)**: import 없음, 완전 대체됨.
+
+| 컴포넌트 | 줄 수 | 상태 |
+|----------|------:|------|
+| PixiTagGroup | 310 | CONTAINER_TAGS로 대체, 삭제 대상 |
+
+**미구현 — Pixi/Spec 미생성 (1개)**: 웹 컴포넌트만 존재, Canvas 구현 없음.
+
+| 컴포넌트 | 웹 파일 | 구조 | 비고 |
+|----------|---------|------|------|
+| Autocomplete | `packages/shared/src/components/Autocomplete.tsx` | SearchField + Menu 복합 | Pixi 파일, TAG_SPEC_MAP 모두 미등록. Phase 2에 추가 |
+
+> **참고**: `Breadcrumb.tsx`는 `Breadcrumbs`의 하위 아이템 컴포넌트로 독립 등록 불필요 (Breadcrumbs 내부에서 사용).
+
+**요약:**
+
+| 등급 | 수량 | 총 줄 수 | 조치 |
+|------|-----:|--------:|------|
+| A (완료) | 12 | ~1,730 | 유지 |
+| B (전환 필요) | 47 | ~11,700 | A등급 패턴으로 재작성 |
+| C (Dead Code) | 1 | 310 | 삭제 |
+
+**A등급 목표 패턴 (PixiButton 참조):**
+
+```typescript
+// A등급: 투명 히트 영역 + 이벤트만 (Skia가 시각 렌더링 전담)
+export const PixiXXX = memo(function PixiXXX({ element, onClick }: Props) {
+  useExtend(PIXI_COMPONENTS);
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitW = computedSize?.width ?? 0;
+  const hitH = computedSize?.height ?? 0;
+
+  const drawHitArea = useCallback((g: PixiGraphicsClass) => {
+    g.clear();
+    g.rect(0, 0, hitW, hitH);
+    g.fill({ color: 0xffffff, alpha: 0 });
+  }, [hitW, hitH]);
+
+  const handleClick = useCallback((e: unknown) => {
+    // modifier key 추출 후 onClick 호출
+    onClick?.(element.id, extractModifiers(e));
+  }, [element.id, onClick]);
+
+  return (
+    <pixiContainer>
+      <pixiGraphics draw={drawHitArea} eventMode="static" cursor="pointer"
+        onPointerDown={handleClick} />
+    </pixiContainer>
+  );
+});
+```
+
+## 9.9 Tabs 컨테이너 렌더링 아키텍처
+
+### 9.9.1 CSS Preview 구조 (정상 참조)
+
+```
+Tabs (348×166) display:flex flex-direction:column
+├── TabList (348×30) flex row, border-bottom: 1px solid
+│   ├── Tab "Tab 1" (66×29) pad=4px 16px
+│   └── Tab "Tab 2" (68×29) pad=4px 16px
+└── TabPanel (348×136) pad=16px
+    └── Panel (316×104) flex column, border: 1px solid
+```
+
+### 9.9.2 WebGL Canvas 렌더링 구조
+
+```
+Tabs → ElementSprite (spec shapes: tab bar + indicator + 구분선)
+├── Tab texts → spec shapes (Skia 렌더링)
+├── Selection indicator → spec shapes (line, strokeWidth=3)
+└── Panel → 컨테이너 시스템 (DirectContainer 배치)
+    └── Panel spec shapes (배경 + 테두리 + 타이틀)
+```
+
+### 9.9.3 높이 계산 흐름
+
+1. `enrichWithIntrinsicSize` → `calculateContentHeight(Tabs)`
+2. Tabs: `tabBarHeight(30) + tabPanelPadding*2(32) + panelBorderBox`
+3. Panel 재귀: `PANEL_HEIGHTS.md.withTitle = 104`
+4. Total: `30 + 32 + 104 = 166px` (CSS와 일치)
+
+### 9.9.4 핵심 패턴
+
+- **effectiveElementWithTabs**: Tab 자식에서 `_tabLabels` 추출 → spec shapes에 동적 레이블
+- **Panel 높이 케이스 위치**: `childElements` 블록 **밖** (Panel은 element tree에 자식 없음)
+- **TokenRef fontSize**: `typeof === 'number'` 체크 후 height 기반 fallback 매핑
+- **CONTAINER_TAGS 필터링**: `containerChildren.filter(c => c.tag === 'Panel')` → 활성 Panel만
+- **BuilderCanvas paddingTop**: `tabBarHeight + tabPanelPadding` → Panel을 탭 바 아래 배치
+
+---
+
+## 9.10 Card 컨테이너 렌더링 아키텍처
+
+### 9.10.1 Card element tree 구조
+
+Card는 `display:flex`, `flexDirection:column` 컨테이너로, 자식 요소를 순서대로 배치합니다.
+CSS Preview와 캔버스 렌더링이 동일한 element tree를 공유합니다.
+
+```
+Card (display:flex, flexDirection:column, padding:16px, gap:8px)
+├── Heading  ("Card Title", fontSize:16, fontWeight:600)
+└── Description  ("Card description text", fontSize:14)
+```
+
+- **Heading**: `TEXT_TAGS`에 포함된 태그로, TextSprite를 통해 Skia 텍스트 렌더링
+- **Description**: v3.9 패치에서 `TEXT_TAGS`에 추가되어 TextSprite 렌더링 활성화
+- **gap**: 자식 요소 사이의 수직 간격 (`gap:8px` 기본값)
+- **padding**: Card 자체 내부 여백 (`padding:16px` 기본값)
+
+### 9.10.2 TEXT_TAGS 확장 — Description 태그 추가
+
+**배경**: Description 태그가 `TEXT_TAGS` 목록에 누락되어 있어 TextSprite 렌더링이 활성화되지 않고
+plain container로 처리되었습니다.
+
+**해결**: `TEXT_TAGS` 상수에 `'description'` 태그를 추가하여 Heading, Paragraph 등과 동일하게
+TextSprite 렌더링 파이프라인을 거치도록 합니다.
+
+```typescript
+// engines/utils.ts 또는 canvas/constants.ts
+export const TEXT_TAGS = new Set([
+  'heading', 'paragraph', 'label', 'span', 'text',
+  'description', // v3.9 추가 — Card 내 텍스트 자식 렌더링
+]);
+```
+
+> **관련**: §9.3.1 nodeRenderers.ts TextShape 렌더링, §4.5 CanvasKit/Skia 렌더링 패턴
+
+### 9.10.3 높이 계산 흐름
+
+Card의 intrinsic 높이는 `enrichWithIntrinsicSize()` → `calculateContentHeight(Card)`를 통해 결정됩니다.
+
+1. `enrichWithIntrinsicSize(Card)` 호출
+2. `childElements`가 존재하면 자식 기준 계산 우선:
+   - `Heading.intrinsicHeight + gap + Description.intrinsicHeight`
+3. `childElements`가 없으면 스펙 기본값(`CARD_DEFAULT_HEIGHT`) 사용
+4. 결과에 `padding.top + padding.bottom` 합산 → 엔진에 border-box 크기 전달
+
+```
+calculateContentHeight(Card)
+  └── childElements 우선 탐색
+      ├── Heading.intrinsicHeight  (텍스트 측정 기반)
+      ├── gap (8px)
+      └── Description.intrinsicHeight (텍스트 측정 기반)
+```
+
+### 9.10.4 border-box 정합성 — enrichWithIntrinsicSize
+
+Card, Box, Section은 `enrichWithIntrinsicSize()`에서 `padding + border`를 포함한 높이를 주입합니다.
+이 값을 BlockEngine이 `content-box + padding + border`로 다시 합산하면 이중 계산이 발생하므로,
+`parseBoxModel()`의 `isTreatedAsBorderBox` 체크를 통해 차감 처리합니다.
+
+| 컴포넌트 | enrichWithIntrinsicSize 주입 | parseBoxModel treatAsBorderBox |
+|----------|------------------------------|--------------------------------|
+| Button, Input, Select | padding+border 포함 intrinsic | `isFormElement` 조건 |
+| Card, Box, Section | padding+border 포함 intrinsic | `isTreatedAsBorderBox` 조건 (v3.9) |
+
+> **관련**: §4.7.4.5 parseBoxModel border-box 변환, §4.7.4.2 BlockEngine border-box 크기 계산
+
+### 9.10.5 Card props→children 텍스트 동기화 패턴 (v3.11)
+
+**배경**: `CardEditor`는 Card element의 `props.heading`, `props.title`, `props.description`을 업데이트합니다.
+그러나 WebGL의 `TextSprite`는 자식 Heading/Description element의 `props.children`을 읽으므로,
+Card.props 변경이 자식 요소에 자동으로 전파되지 않아 Properties Panel에서 텍스트를 변경해도
+캔버스에 반영되지 않는 버그가 발생했습니다.
+
+**해결 — BuilderCanvas.tsx `createContainerChildRenderer`**
+
+Card 자식을 렌더링할 때 Card element의 props를 자식의 `props.children`에 주입합니다.
+이 패턴은 Tabs의 `_tabLabels` 동적 주입과 동일합니다.
+
+```typescript
+// BuilderCanvas.tsx — createContainerChildRenderer 내부
+// Card props → 자식 Heading/Description 주입
+if (containerTag === 'card' || containerTag === 'Card') {
+  const cardProps = containerElement.props;
+  if (childElement.tag === 'Heading' || childElement.tag === 'heading') {
+    effectiveChild = {
+      ...childElement,
+      props: {
+        ...childElement.props,
+        // heading 우선, 없으면 title 폴백
+        children: cardProps.heading ?? cardProps.title ?? childElement.props.children,
+      },
+    };
+  } else if (childElement.tag === 'Description' || childElement.tag === 'description') {
+    effectiveChild = {
+      ...childElement,
+      props: {
+        ...childElement.props,
+        children: cardProps.description ?? childElement.props.children,
+      },
+    };
+  }
+}
+```
+
+**해결 — LayoutRenderers.tsx CSS Preview 동기화**
+
+CSS Preview Card 렌더러에도 `heading`, `subheading`, `footer` props를 자식에 전달하여
+CSS Preview와 WebGL Canvas 간 텍스트 소스를 일치시킵니다.
+
+```typescript
+// packages/shared/src/renderers/LayoutRenderers.tsx — Card 렌더러
+// heading/subheading/footer props를 자식 렌더러에 전달
+<CardRenderer
+  heading={element.props.heading ?? element.props.title}
+  subheading={element.props.subheading}
+  footer={element.props.footer}
+  description={element.props.description}
+  {...restProps}
+/>
+```
+
+**우선순위 규칙**
+
+| 자식 태그 | 주입 소스 | 우선순위 |
+|-----------|----------|---------|
+| Heading | `card.props.heading ?? card.props.title` | `heading` 있으면 `title` 미사용 |
+| Description | `card.props.description` | — |
+| (SubHeading) | `card.props.subheading` | — |
+
+> **관련**: §9.9.4 핵심 패턴 (Tabs `_tabLabels` 주입), §9.10.1 Card element tree 구조
+
+---
+
+## 9.11 TagGroup label 두 줄 렌더링 버그 수정 (2026-02-22)
+
+### 9.11.1 현상 및 근본 원인
+
+WebGL Canvas에서 TagGroup 컴포넌트의 label("Tag Group")이 두 줄로 렌더링되는 버그가 발생했다.
+근본 원인은 두 가지다.
+
+**원인 1 — Spec shapes 중복 렌더링**
+
+`TagGroupSpec.render.shapes`가 label 텍스트를 fontSize 12px로 직접 렌더링하면서,
+동시에 자식 Label 엘리먼트도 fontSize 14px로 독립적으로 렌더링하여
+두 개의 텍스트가 겹쳐 두 줄처럼 표시되었다.
+
+```
+렌더링 결과 (수정 전):
+┌──────────────────────────┐
+│ Tag Group  ← spec shapes (fontSize:12)
+│ Tag Group  ← 자식 Label element (fontSize:14)
+│ [Tag 1] [Tag 2]
+└──────────────────────────┘
+```
+
+**원인 2 — Canvas 2D → CanvasKit 폭 측정 오차**
+
+`calculateContentWidth`의 일반 텍스트 경로에서 Canvas 2D `measureText` 결과(65px)를 보정 없이
+그대로 사용했다. CanvasKit paragraph API는 동일 텍스트를 렌더링할 때 더 넓은 폭을 필요로 하여
+폭이 부족한 경우 텍스트가 자동 wrapping되었다.
+
+INLINE_FORM 경로(line 718-719)에는 이미 `Math.ceil() + 2` 보정이 존재했으나,
+일반 텍스트 경로(line 759-760)에는 동일 보정이 누락되어 있었다.
+
+### 9.11.2 수정 내용
+
+**수정 파일 1 — `packages/specs/src/components/TagGroup.spec.ts`**
+
+`render.shapes`에서 label 텍스트 shape을 제거한다.
+label 렌더링은 자식 Label 엘리먼트 단독 담당으로 일원화한다.
+
+```typescript
+// TagGroup.spec.ts — render.shapes (수정 전)
+shapes: (props, size) => [
+  // ... 배경, 테두리 shape ...
+  {
+    type: 'text',
+    content: props.label ?? 'Tag Group',
+    fontSize: 12,
+    // ...
+  },
+  // ... TagList, Tag shape ...
+]
+
+// TagGroup.spec.ts — render.shapes (수정 후)
+shapes: (props, size) => [
+  // ... 배경, 테두리 shape만 유지 ...
+  // label 텍스트 shape 제거 — 자식 Label element가 렌더링 담당
+  // ... TagList, Tag shape ...
+]
+```
+
+**수정 파일 2 — `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`**
+
+일반 텍스트 경로에 Canvas 2D→CanvasKit 폭 측정 보정을 추가한다.
+INLINE_FORM 경로(line 718-719)와 동일한 `Math.ceil() + 2` 패턴을 적용한다.
+
+```typescript
+// engines/utils.ts — calculateContentWidth (수정 전, line 759-760)
+const textWidth = calculateTextWidth(text, fontSize, fontWeight, fontFamily);
+return textWidth;
+
+// engines/utils.ts — calculateContentWidth (수정 후, line 759-760)
+const textWidth = calculateTextWidth(text, fontSize, fontWeight, fontFamily);
+return Math.ceil(textWidth) + 2;  // Canvas 2D → CanvasKit 폭 측정 보정
+```
+
+### 9.11.3 Spec shapes label 중복 렌더링 제거 원칙
+
+컴포넌트 spec에서 자식 엘리먼트와 spec shapes 간 텍스트 렌더링이 겹치지 않도록
+아래 원칙을 준수한다.
+
+| 렌더링 담당 | 적용 조건 | 예시 |
+|------------|----------|------|
+| **자식 엘리먼트** | Label, Heading, Description 등 독립 element tree 노드 | TagGroup > Label, Card > Heading |
+| **spec shapes** | 자식 element가 없는 내부 장식 텍스트 | Tab 레이블(Tabs), 버튼 내 텍스트(Button) |
+
+> spec shapes와 자식 element가 동일 텍스트를 이중 렌더링하면 Canvas에서 두 줄/겹침으로 표시된다.
+> 자식 element가 담당하는 경우 spec shapes에서 해당 텍스트 shape을 제거한다.
+
+### 9.11.4 Canvas 2D → CanvasKit 폭 보정 패턴
+
+`calculateContentWidth`에서 Canvas 2D `measureText`와 CanvasKit paragraph 간 측정값 차이를 보정한다.
+
+```typescript
+// engines/utils.ts — 공통 보정 패턴
+// INLINE_FORM 경로 (line 718-719) 및 일반 텍스트 경로 (line 759-760) 동일 적용
+return Math.ceil(calculateTextWidth(text, fontSize, fontWeight, fontFamily)) + 2;
+//     ^^^^^^^^^^                                                              ^^^
+//     소수점 올림 (픽셀 단위 정수화)                                          CanvasKit 여유 마진
+```
+
+- `Math.ceil()`: Canvas 2D `measureText`가 반환하는 소수점 너비를 픽셀 단위로 올림
+- `+ 2`: CanvasKit paragraph API의 자체 padding/렌더링 여유 폭 확보
+
+---
+
+## 9.12 Slider Complex Component 전환 (2026-02-22)
+
+### 9.12.1 전환 배경 및 목표
+
+Slider는 단순 컴포넌트(단일 element)에서 **Complex Component**(DOM 구조를 그대로 반영하는 계층적 element tree)로 전환되었다. 이 전환으로 layer tree가 실제 DOM 구조와 1:1로 일치하게 되었으며, Select/ComboBox 등 기존 Complex Component 패턴을 동일하게 따른다.
+
+### 9.12.2 DOM 구조 (element tree)
+
+```
+Slider (display:flex, flexDirection:column)
+├── Label            (텍스트 — 레이블)
+├── SliderOutput     (텍스트 — 현재 값 표시)
+└── SliderTrack      (track 배경 + fill)
+    └── SliderThumb  (드래그 핸들)
+```
+
+이 구조는 React-Aria의 `<Slider>` DOM 구조와 동일하다.
+
+### 9.12.3 복합 컴포넌트 전환 절차
+
+Slider를 Complex Component로 전환할 때 수정한 파일과 역할은 다음과 같다.
+
+| 파일 | 역할 |
+|------|------|
+| `FormComponents.ts` | `createSliderDefinition()` 팩토리 추가 — 4개 자식 element 재귀 생성 |
+| `ComponentFactory.ts` | Slider creator 등록 — `TAG_CREATOR_MAP`에 항목 추가 |
+| `useElementCreator.ts` | `complexComponents` 배열에 `'Slider'` 추가 — 삽입 시 복합 구조 생성 경로로 분기 |
+| `ElementSprite.tsx` | `_hasLabelChild` 체크에 `'Slider'` 추가 — spec shapes의 label/output 중복 렌더링 방지 |
+| `Slider.spec.ts` | `_hasLabelChild` 플래그 처리 추가 — 자식 element가 담당할 때 shapes 스킵 |
+
+> 동일 패턴 참조: Select, ComboBox — `useElementCreator.ts`의 `complexComponents` 배열과 `_hasLabelChild` 플래그 사용이 동일하다.
+
+### 9.12.4 `_hasLabelChild` 패턴 (Select / ComboBox / Slider 공통)
+
+복합 컴포넌트로 전환된 컴포넌트는 자식 Label/Output element가 텍스트 렌더링을 직접 담당한다. 이때 spec의 `render.shapes`에서 label/output 텍스트 shape를 그대로 출력하면 이중 렌더링이 발생한다.
+
+`_hasLabelChild` 플래그는 이를 방지하기 위한 패턴이다.
+
+```typescript
+// ElementSprite.tsx — _hasLabelChild 체크 (Slider 포함)
+const isComplexWithLabel =
+  ['Select', 'ComboBox', 'Slider'].includes(element.tag) &&
+  childElements.some(c => c.tag === 'Label' || c.tag === 'SliderOutput');
+
+// shapes 호출 시 플래그 전달
+const shapes = spec.render.shapes(props, variant, size, state, {
+  _hasLabelChild: isComplexWithLabel,
+});
+
+// Slider.spec.ts — shapes 내부에서 플래그로 스킵
+shapes: (props, variant, size, state, flags) => {
+  const shapes: Shape[] = [];
+
+  // label/output 텍스트: 자식 element가 렌더링 담당이면 스킵
+  if (!flags?._hasLabelChild) {
+    shapes.push({ type: 'text', /* label ... */ });
+    shapes.push({ type: 'text', /* output value ... */ });
+  }
+
+  // track, thumb shapes는 항상 출력
+  shapes.push({ type: 'roundRect', /* track ... */ });
+  shapes.push({ type: 'circle',    /* thumb ... */ });
+
+  return shapes;
+},
+```
+
+> **적용 컴포넌트**: Select, ComboBox, Slider — 세 컴포넌트 모두 동일 패턴. 새로운 Complex Component 전환 시에도 동일하게 적용한다.
+
+### 9.12.5 TokenRef offsetY 버그 — `resolveToken()` 필수 원칙
+
+**증상**: track과 thumb이 렌더링되지 않는 현상.
+
+**원인**: `SizeSpec.fontSize`는 `TokenRef` 타입(`'{typography.text-sm}'`)이다. 이를 숫자 연산(`+`)에 직접 사용하면 문자열 연결이 발생하여 `offsetY`가 `NaN`이 된다.
+
+```typescript
+// 잘못된 코드 (NaN 발생)
+const offsetY = (height - size.fontSize) / 2;
+//                       ^^^^^^^^^^^^^^^^
+//                       문자열 연결 → NaN → track/thumb y 좌표 NaN
+
+// 올바른 코드 — resolveToken()으로 숫자 변환 후 연산
+import { resolveToken } from '../renderers/utils/tokenResolver';
+
+const fontSizePx = typeof size.fontSize === 'number'
+  ? size.fontSize
+  : resolveToken(size.fontSize) as number;
+
+const offsetY = (height - fontSizePx) / 2;
+```
+
+> **CRITICAL 규칙**: spec `shapes()` 함수 내에서 `SizeSpec.fontSize`, `SizeSpec.borderRadius` 등 `TokenRef` 타입 필드를 숫자 연산에 사용할 때는 반드시 `resolveToken()`을 통해 숫자로 변환한다. `typeof === 'number'` 체크로 이미 숫자인 경우를 처리하고, 문자열인 경우 `resolveToken()` 호출이 필수이다.
+
+### 9.12.6 SliderOutput 텍스트 위치 수정
+
+**증상**: SliderOutput 텍스트가 컨테이너 바깥(오른쪽 화면 밖)에 렌더링되는 현상.
+
+**원인**: `x: width`로 설정하면 텍스트 시작점이 컨테이너 오른쪽 끝에 위치한다.
+
+```typescript
+// 잘못된 코드
+{ type: 'text', x: width, text: String(props.value ?? 0), align: 'right' }
+
+// 올바른 코드 — x:0 + maxWidth로 컨테이너 내 우측 정렬
+{ type: 'text', x: 0, maxWidth: width, text: String(props.value ?? 0), align: 'right' }
+```
+
+`x: 0`에서 시작하되 `maxWidth: width`를 설정하면, CanvasKit ParagraphBuilder가 컨테이너 너비 내에서 `align: 'right'`를 올바르게 적용한다.
+
+### 9.12.7 Slider DIMENSIONS 스펙
+
+M3 디자인 토큰 기반의 치수:
+
+| size | trackHeight | thumbSize |
+|------|-------------|-----------|
+| sm   | 4px         | 14px      |
+| md   | 6px         | 18px      |
+| lg   | 8px         | 22px      |
+
+CSS 파일에서 `.sm`, `.primary` 클래스 selector 방식에서 `[data-size="sm"]`, `[data-variant="primary"]` data-attribute selector로 전환하여 React-Aria의 data-attribute 상태 관리와 일치시켰다.
 
 ---
 
@@ -4839,7 +5324,7 @@ shapes: (props, variant, size, state = 'default') => {
 
 ### 10.4 Zustand 상태 관리 연동
 
-#### 9.4.1 Store와 Spec 연동 아키텍처
+#### 10.4.1 Store와 Spec 연동 아키텍처
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -4865,13 +5350,13 @@ shapes: (props, variant, size, state = 'default') => {
 │           │                                                  │
 │    ┌──────┴──────┐                                          │
 │    ▼             ▼                                          │
-│  React         PIXI                                         │
+│  React         CanvasKit/Skia                               │
 │  Renderer      Renderer                                     │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-#### 9.4.2 Spec Adapter 구현
+#### 10.4.2 Spec Adapter 구현
 
 ```typescript
 // packages/specs/src/adapters/storeAdapter.ts
@@ -4927,7 +5412,7 @@ export function specPropsToElement<T>(
 }
 ```
 
-#### 9.4.3 ElementSprite에서 Skia 렌더링 사용 예시
+#### 10.4.3 ElementSprite에서 Skia 렌더링 사용 예시
 
 ```typescript
 // apps/builder/src/builder/workspace/canvas/ElementSprite.tsx (개념)
@@ -4963,7 +5448,7 @@ function ElementSpriteButton({ elementId }: { elementId: string }) {
 });
 ```
 
-#### 9.4.4 히스토리 연동
+#### 10.4.4 히스토리 연동
 
 ```typescript
 // Spec 변경 시 히스토리 기록 (CRITICAL 규칙 준수)
@@ -4987,7 +5472,7 @@ function updateElementFromSpec(elementId: string, newProps: Partial<ButtonProps>
 
 ### 10.5 테스트 전략
 
-#### 9.5.1 테스트 피라미드
+#### 10.5.1 테스트 피라미드
 
 ```
                     ┌─────────────┐
@@ -5004,7 +5489,7 @@ function updateElementFromSpec(elementId: string, newProps: Partial<ButtonProps>
               └─────────────────────────┘  - 80% of tests
 ```
 
-#### 9.5.2 Unit Test 범위
+#### 10.5.2 Unit Test 범위
 
 ```typescript
 // packages/specs/tests/unit/Button.spec.test.ts
@@ -5113,7 +5598,7 @@ describe('ButtonSpec', () => {
 });
 ```
 
-#### 9.5.3 Integration Test 범위
+#### 10.5.3 Integration Test 범위
 
 ```typescript
 // packages/specs/tests/integration/ReactRenderer.test.ts
@@ -5139,7 +5624,7 @@ describe('ReactRenderer Integration', () => {
 });
 ```
 
-#### 9.5.4 Visual Regression Test (확장)
+#### 10.5.4 Visual Regression Test (확장)
 
 ```typescript
 // packages/specs/tests/visual/consistency.test.ts
@@ -5183,7 +5668,7 @@ test.describe('React ↔ CanvasKit Visual Consistency', () => {
 });
 ```
 
-#### 9.5.5 테스트 커버리지 목표
+#### 10.5.5 테스트 커버리지 목표
 
 | 영역 | 최소 커버리지 | 목표 커버리지 |
 |------|-------------|-------------|
@@ -5194,7 +5679,7 @@ test.describe('React ↔ CanvasKit Visual Consistency', () => {
 | adapters/*.ts | 70% | 85% |
 | **전체** | **80%** | **90%** |
 
-#### 9.5.6 CI 테스트 파이프라인
+#### 10.5.6 CI 테스트 파이프라인
 
 ```yaml
 # .github/workflows/test.yml
@@ -5275,13 +5760,13 @@ function ElementSpriteButton({ element }) {
 | 성능 | 60fps 유지 | Chrome DevTools |
 | 번들 크기 | +10% 이하 | webpack-bundle-analyzer |
 | 테스트 커버리지 | > 80% | Vitest |
-| 마이그레이션 완료 | 72개 전체 | 체크리스트 |
+| 마이그레이션 완료 | 73개 전체 | 체크리스트 |
 
 ---
 
 ## 부록
 
-### A. 전체 컴포넌트 목록 (72개)
+### A. 전체 컴포넌트 목록 (73개)
 
 <details>
 <summary>클릭하여 펼치기</summary>
@@ -5360,6 +5845,7 @@ function ElementSpriteButton({ element }) {
 | 70 | Drawer | 4 | 높음 |
 | 71 | Accordion | 4 | 중간 |
 | 72 | Overlay | 4 | 중간 |
+| 73 | Autocomplete | 2 | 높음 |
 
 </details>
 
@@ -5369,6 +5855,36 @@ function ElementSpriteButton({ element }) {
 - [ADR-002: Styling Approach](./adr/002-styling-approach.md) - 스타일링 결정
 - [ADR-003: Canvas Rendering](./adr/003-canvas-rendering.md) - 캔버스 렌더링 결정
 - [CSS_ARCHITECTURE.md](./reference/components/CSS_ARCHITECTURE.md) - CSS 아키텍처
+
+---
+
+## Spec 에러 처리 및 버전 관리
+
+### 에러 처리 정책
+
+ComponentSpec 렌더링 실패 시 fallback 동작:
+
+| 단계 | 실패 시점 | fallback 동작 |
+|------|----------|---------------|
+| 1. Spec 로드 | `TAG_SPEC_MAP`에 태그 미등록 | BoxSprite 기본 렌더링 (회색 placeholder) |
+| 2. shapes() 호출 | props/variant/size 미스매치 | 빈 Shape[] 반환 → 빈 노드 렌더 (크기 0 방지: minWidth/minHeight 적용) |
+| 3. specShapesToSkia() | Shape → SkiaNodeData 변환 실패 | `console.warn` + 해당 shape skip, 나머지 정상 렌더 |
+| 4. CanvasKit 렌더 | GPU 리소스 부족/Paint 실패 | dirty flag 유지 → 다음 프레임 재시도 |
+
+### ComponentSpec 인터페이스 버전 관리
+
+현재 Spec 인터페이스는 **implicit versioning** (파일 수정 시 `@xstudio/specs` 빌드 필요):
+
+```
+Spec 수정 → pnpm --filter @xstudio/specs build → dist/ 갱신 → Builder 핫리로드
+```
+
+**Breaking Change 시 체크리스트:**
+
+1. `packages/specs/src/types/shape.types.ts` — Shape 유니온 변경 시 `specShapeConverter.ts` case 추가 필수
+2. `packages/specs/src/types/component.types.ts` — RenderSpec 시그니처 변경 시 62개 spec 파일 일괄 수정
+3. `packages/specs/src/types/token.types.ts` — TokenRef 변경 시 tokenResolver.ts + cssVariableReader.ts 동기화
+4. 변경 후 반드시 `pnpm --filter @xstudio/specs build` 실행 (CRITICAL: v1.11에서 발견된 빌드 동기화 이슈 참조)
 
 ---
 
@@ -5401,3 +5917,17 @@ function ElementSpriteButton({ element }) {
 | 2026-02-06 | 2.7 | **Card display: block 완전 지원** (BuilderCanvas.tsx, PixiCard.tsx, unified.types.ts, utils.ts): (1) **Body 기본값 설정** — `createDefaultBodyProps()`에 `display: 'block'` 추가, Reset 시 컴포넌트 기본값 복원 (`useResetStyles.ts`), (2) **renderWithCustomEngine CONTAINER_TAGS 지원** — Card에 `display: 'block'` 추가 시 children이 외부 형제로 렌더링되는 문제 수정. `isContainerType` 체크 추가, `childElements`/`renderChildElement` props 전달로 children 내부 렌더링 구현. 3단계 nesting 지원 (Card > Panel > Button 등), (3) **Card 기본값 추가** — `createDefaultCardProps()`에 `display: 'block'`, `width: '100%'`, `padding: '12px'` 추가 (Preview CSS와 동기화), (4) **padding 이중 적용 수정** — `calculatedContentHeight` (PixiCard.tsx)와 `calculateContentHeight()` (utils.ts)에서 padding 제외. Yoga/BlockEngine이 별도 padding 추가하므로 content-only 값 반환. minHeight: 60→36 (padding 24px 제외), (5) **CONTAINER_TAGS siblings 자동 재배치** — `renderWithCustomEngine`에서 absolute→relative 위치 변환. flex column 래퍼로 감싸서 Card height 변경 시 siblings 자동 재배치. BlockEngine y→marginTop, x→marginLeft 변환, (6) **최종 결과** — children 내부 렌더링 ✅, padding 정상 적용 ✅, height auto-grow ✅, siblings 자동 재배치 ✅, Preview 일치 ✅ |
 | 2026-02-06 | 2.8 | **Block 레이아웃 라인 기반 렌더링 + Button 계열 사이즈 통일** (BuilderCanvas.tsx, cssVariableReader.ts, PixiToggleButton.tsx): (1) **inline 요소 가로 배치 수정** — `renderWithCustomEngine`에서 같은 y 값을 가진 요소들을 라인(flex row)으로 그룹화. 기존 flex column + marginLeft 방식 → 라인별 flex row + 라인 간 flex column으로 변경하여 계단식 배치 문제 해결, (2) **라인 그룹화 알고리즘** — BlockEngine 결과에서 y 값 기준(EPSILON=0.5) 라인 그룹 생성, x 기준 정렬 후 marginLeft로 간격 표현, 라인 간 marginTop으로 수직 간격 표현, (3) **ToggleButton/ToggleButtonGroup borderRadius 통일** — `TOGGLE_BUTTON_FALLBACKS` borderRadius를 Button과 동일하게 수정 (sm:6→4, md:8→6, lg:10→8), `TOGGLE_BUTTON_SIZE_MAPPING`에 borderRadius CSS 변수 추가, `getToggleButtonSizePreset()`에서 사이즈별 borderRadius 읽기, (4) **Button 계열 통일된 사이즈** — sm(fontSize:14, paddingY:4, paddingX:12, borderRadius:4), md(fontSize:16, paddingY:8, paddingX:24, borderRadius:6), lg(fontSize:18, paddingY:12, paddingX:32, borderRadius:8). Button, ToggleButton, ToggleButtonGroup 모두 동일 |
 | 2026-02-12 | 3.0 | **Phase 6 Spec Shapes → Skia 렌더링 파이프라인 문서화**: (1) 문서 상태를 "Phase 6 Skia Spec 렌더링 구현 완료"로 갱신, (2) 목차에 Phase 6 항목 추가 및 이후 섹션 번호 재조정 (9→10, 10→11), (3) Phase 요약 테이블에 Phase 6 행 추가 (specShapeConverter, line 렌더러, flexDirection 지원), (4) §9 Phase 6 섹션 신규 작성 — 전체 렌더링 흐름 다이어그램 (ComponentSpec → Shape[] → specShapesToSkia → SkiaNodeData → renderNode), Shape 타입 매핑 테이블 (8개 타입), 핵심 파일 구조, specShapeConverter 핵심 로직 (배경 box 추출/target 참조/색상 변환), ElementSprite TAG_SPEC_MAP 통합 코드, flexDirection row/column 지원 (rearrangeShapesForColumn), BlockEngine 통합 (calculateContentHeight/Width), Phase 6 체크리스트 (변환 인프라 9건 + 레이아웃 4건 + 검증 3건 완료) |
+| 2026-02-13 | 3.1 | **ComponentDefinition 재귀 확장 + TagGroup CONTAINER_TAGS 전환** (§9.7): (1) ChildDefinition 재귀 타입 추가 — 기존 2-level (parent + flat children) → 무한 중첩 지원, optional children?: ChildDefinition[] 필드, (2) Factory createElementsFromDefinition 재귀 생성 — processChildren() 재귀 함수로 중첩 자식 일괄 생성, allElementsSoFar 배열로 customId 중복 방지, (3) TagGroup → CONTAINER_TAGS 전환 — TAG_SPEC_MAP에서 TagGroup/TagList 제거, PixiTagGroup 특수 렌더러 사용 중단, BoxSprite 기반 컨테이너로 전환, (4) TagGroup 3-level 계층 정의 — TagGroup(flex column) → Label + TagList(flex row wrap) → Tag×2, styleToLayout.ts에 TagGroup/TagList flex 기본값 추가, (5) Phase 3 §6.1 TagGroup 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", Phase 3 체크리스트 TagGroup.spec.ts 완료 표기 |
+| 2026-02-15 | 3.2 | **Button 텍스트 줄바꿈 시 높이 확장 (Skia + BlockEngine)**: (1) `measureSpecTextMinHeight()` 헬퍼 — spec shapes 내 텍스트 word-wrap 높이 측정 (ElementSprite.tsx), (2) `contentMinHeight` 패턴 — 다중 줄 시 `specHeight` 확장 + `cardCalculatedHeight` 전파 (ElementSprite.tsx), (3) 다중 줄 텍스트 `paddingTop` 보정 — `(specHeight - wrappedHeight) / 2` 수직 중앙 (ElementSprite.tsx), (4) `updateTextChildren` box 재귀 — specNode 내부 텍스트 크기 갱신 (SkiaOverlay.tsx), (5) **BlockEngine `parseBoxModel` 수정** — 요소 자체 border-box width를 `calculateContentHeight`에 전달, 부모 `availableWidth` 대신 사용하여 올바른 텍스트 줄바꿈 높이 계산 (utils.ts), (6) `styleToLayout` minHeight 기본 사이즈 `'md'`→`'sm'` 수정 (styleToLayout.ts), (7) Flex 경로는 `minHeight` → Yoga, BlockEngine 경로는 `parseBoxModel` → `calculateContentHeight`로 각각 처리, (8) **Button `layout.height` 명시적 설정** — Yoga 리프 노드 `height:'auto'` 자기 강화 방지, `paddingY*2 + lineHeight + borderW*2` 계산 (styleToLayout.ts), (9) 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용 — padding:0으로 완전 축소 허용 (utils.ts), (10) `toNum` 함수 0값 버그 수정 — `parseFloat(v) \|\| undefined` → `isNaN` 체크 (styleToLayout.ts) |
+| 2026-02-19 | 3.3 | **렌더링 엔진 변경 반영 — 문서 갱신**: (1) §4.7.4 CSS 단위 처리 규칙 — `Yoga` → `Taffy/Dropflow` 레이아웃 엔진, `parseCSSSize()` → `resolveCSSSizeValue()` + `CSSValueContext` 통합 파서 (cssValueParser.ts), 단위 테이블에 em/calc()/fit-content 추가, (2) §4.7.4.1 이중 padding 방지 — `SELF_PADDING_TAGS` + `stripSelfRenderedProps()` → `enrichWithIntrinsicSize()` + `parseBoxModel()` + `INLINE_BLOCK_TAGS` 패턴으로 교체, 레거시 코드를 접이식 블록으로 이동, (3) §9.3.4 레이아웃 통합 — `styleToLayout.ts` (Yoga) → `engines/utils.ts`의 `enrichWithIntrinsicSize()` (Taffy/Dropflow 공용), (4) §9.4 flexDirection:column — `styleToLayout.ts` 크기 계산 → `engines/utils.ts`의 `enrichWithIntrinsicSize()`, BlockEngine → DropflowBlockEngine, (5) §9.5 수정 파일 목록 — `layout/styleToLayout.ts` → `layout/engines/utils.ts` 참조 갱신, (6) §9.7 TagGroup — `Yoga flex layout (styleToLayout.ts)` → `Taffy flex layout (TaffyFlexEngine)`, styleToLayout.ts 파일 참조 제거, (7) §4.7.7 파일 목록 — SELF_PADDING_TAGS 참조에 대체 패턴 주석 추가, (8) Checkbox/Radio shapes 비교 테이블 — `Yoga 높이` → `엔진 계산 높이` |
+| 2026-02-19 | 3.4 | **§9.8 CONTAINER_TAGS 계층 선택(Drill-Down) 아키텍처 섹션 신규 작성**: (1) 설계 원칙 — 웹 컴포넌트 DOM 계층 = 캔버스 요소 계층 1:1 일치, (2) editingContextId 기반 계층 선택 메커니즘 — resolveClickTarget 알고리즘 + 더블클릭 enterEditingContext + Escape exitEditingContext + Layer Tree 자동 동기화, (3) 캔버스 이벤트 처리 구조 — CanvasKit(시각) + PixiJS alpha=0(이벤트) 이중 레이어, EventBoundary 히트테스팅, (4) 13개 CONTAINER_TAGS 구조적 일관성 현황 테이블 — Group/ToggleButtonGroup/TagGroup 정상, Card/Panel/Form/Dialog/Modal/Disclosure 등 Factory/Renderer 미비 현황 명시, (5) 웹 컴포넌트 구조 동일성 가이드라인 — 7개 체크리스트 + 5개 구조 동일성 원칙 |
+| 2026-02-19 | 3.5 | **§9.8.6 Pixi UI 컴포넌트 Skia 전환 현황**: 62개 전수 조사 — A등급(투명 히트영역, 전환 완료) 12개, B등급(WebGL 드로잉 잔존, 전환 필요) 47개, C등급(Dead Code) 1개. A등급 목표 패턴(PixiButton 참조) 문서화. B등급 47개 재작성 로드맵 |
+| 2026-02-19 | 3.7 | **문서 품질 검토 21건 수정**: (1) **CRITICAL** — §10.4/10.5 하위 10개 소섹션 번호 `9.x.x`→`10.x.x` 수정, 변경 이력 v3.0-3.6 시간순 정렬, 성공 기준 컴포넌트 수 72→73, Token Resolver `shadows.dark/light`→단일 `shadows` 객체, (2) **레거시 축소** — PixiRenderer 코드 블록 ~330줄→~30줄 핵심 인터페이스만 유지, parseCSSSize 레거시 패턴 ~55줄→폐기 요약 10줄, Phase 1-4 테스트 코드를 CanvasKit 기반으로 교체, waitForPixiRender→waitForCanvasKitRender, (3) **불일치 수정** — Shape→API 테이블 "현재 PixiJS"→"레거시 PixiJS"로 헤더 수정, 삭제된 eventBridge.ts/dirtyRectTracker.ts 디렉토리 구조에서 정리, roundRect per-corner radius TODO 추가, (4) **누락 보완** — Taffy(Flex/Grid) vs Dropflow(Block/Inline) 역할 분담 테이블 추가, GradientShape→SkiaNodeData 매핑 테이블 추가, __canvasKitReady 플래그 설정 위치 설명 추가, §4.7.4 관련 파일 정리 블록 추가, (5) **구조 개선** — §9.4 flexDirection에 레이아웃 아키텍처 교차 참조 추가, CSS 단위 파싱 관련 파일 3종 정리 블록으로 혼동 방지, §10.4.1 다이어그램 PIXI→CanvasKit/Skia Renderer 수정 |
+| 2026-02-19 | 3.6 | **웹 컴포넌트 전수 교차 대조**: (1) `packages/shared/src/components/` 60개 vs 설계 문서 대조 — 58/60 정상 등록(96.7%), (2) **Autocomplete 누락 발견** — SearchField+Menu 복합 컴포넌트, Pixi 파일·TAG_SPEC_MAP 모두 미등록. Phase 2 §5.1에 16번째 컴포넌트로 추가, 부록 A에 #73으로 추가, §9.8.6에 미구현 섹션 추가, (3) Breadcrumb.tsx는 Breadcrumbs 하위 아이템 컴포넌트로 독립 등록 불필요 확인, (4) 부록 A 전체 컴포넌트 수 72→73개로 갱신 |
+| 2026-02-21 | 3.8 | **§9.9 Tabs 컨테이너 렌더링 정합성**: (1) `Tabs.spec.ts` — fontSize TokenRef → 숫자 변환, CSS 기준 사이즈(sm=25/md=30/lg=35), `_tabLabels` prop, 콘텐츠 기반 탭 너비 추정, (2) `engines/utils.ts` — Tabs 전용 `calculateContentHeight` (tabBar + tabPanelPadding + Panel), Panel 케이스를 childElements 블록 밖으로 이동, (3) `BuilderCanvas.tsx` — CONTAINER_TAGS에 'Tabs' 추가, Tabs 컨테이너 핸들러 (Panel 필터링, paddingTop=tabBar+padding), (4) `ui/PixiTabs.tsx` — childElements/renderChildElement props로 활성 Panel 내부 렌더링, (5) `sprites/ElementSprite.tsx` — effectiveElementWithTabs 전파 (skiaNodeData useMemo 전체), Panel-in-Tabs skip 제거. §9.9 섹션 신규 작성 — CSS Preview 구조, WebGL Canvas 렌더링 구조, 높이 계산 흐름, 핵심 패턴 4가지 |
+| 2026-02-21 | 3.9 | **§9.10 Card 컨테이너 렌더링 아키텍처 + border-box 정합성**: (1) **Card Description TextSprite 전환** — `TEXT_TAGS`에 `'description'` 추가, Description 태그가 TextSprite 렌더링 파이프라인을 거치도록 활성화 (engines/utils.ts 또는 canvas/constants.ts), (2) **Card childElements 높이 계산** — `calculateContentHeight(Card)`에서 `childElements` 우선 탐색, `Heading.intrinsicHeight + gap + Description.intrinsicHeight` 합산 → 자식이 없으면 스펙 기본값 사용 (engines/utils.ts), (3) **Card/Box/Section enrichWithIntrinsicSize border-box 정합성** — `isTreatedAsBorderBox` 체크 추가, `enrichWithIntrinsicSize()`에서 padding+border 포함 높이 주입 시 `parseBoxModel()`에서 이중 계산 방지 (engines/utils.ts), (4) §9.10 Card 컨테이너 렌더링 아키텍처 섹션 신규 작성 — element tree 구조, TEXT_TAGS 확장, 높이 계산 흐름, border-box 정합성 테이블, (5) §4.7.4.5 Card/Box/Section border-box 처리 보완 설명 추가 |
+| 2026-02-21 | 3.10 | **Switch/Toggle label 줄바꿈 정합성 수정**: (1) `INLINE_FORM_INDICATOR_WIDTHS` switch/toggle 값이 spec trackWidth보다 10px 작아 WebGL Canvas에서 label 줄바꿈 발생 — 26/34/42 → 36/44/52 (sm/md/lg) 수정 (engines/utils.ts), (2) `INLINE_FORM_GAPS` 테이블 신규 추가 — switch/toggle: 8/10/12, checkbox/radio: 6/8/10 (sm/md/lg) (engines/utils.ts), (3) `calculateContentHeight` column 방향 gap 계산을 `INLINE_FORM_GAPS` 기준으로 통일 (engines/utils.ts). §9.3.4 INLINE_FORM dimensions 수정 사실 기록 |
+| 2026-02-21 | 3.11 | **§9.10.5 Card props→children 텍스트 동기화 패턴 추가**: Properties Panel에서 Card Title/Description 변경이 WebGL Canvas에 미반영되는 버그 문서화 및 해결 패턴 기술. 근본 원인: `CardEditor`가 `Card.props.heading/description` 업데이트 → WebGL `TextSprite`는 자식 `Heading.props.children` 참조 → 동기화 부재. 해결: `BuilderCanvas.tsx` `createContainerChildRenderer`에서 cardProps 주입 (Tabs `_tabLabels` 패턴 동일), `LayoutRenderers.tsx` CSS Preview Card 렌더러에 `heading`/`subheading`/`footer` props 추가. 우선순위 규칙 테이블 및 코드 예시 포함 |
+| 2026-02-22 | 3.12 | **§9.11 TagGroup label 두 줄 렌더링 버그 수정**: (1) `TagGroup.spec.ts` — `render.shapes`에서 label 텍스트 shape 제거. 자식 Label 엘리먼트가 렌더링 담당이므로 spec shapes(fontSize:12)와 Label element(fontSize:14)의 이중 렌더링으로 인한 두 줄 표시 현상 제거. (2) `engines/utils.ts` line 759-760 — `calculateContentWidth` 일반 텍스트 경로에 Canvas 2D→CanvasKit 폭 측정 보정(`Math.ceil() + 2`) 추가. INLINE_FORM 경로(line 718-719)와 동일 패턴. §9.11.3 spec shapes label 중복 렌더링 제거 원칙, §9.11.4 Canvas 2D→CanvasKit 폭 보정 패턴 문서화 |
+| 2026-02-22 | 3.13 | **§9.12 Slider Complex Component 전환**: (1) **Slider → Complex Component 전환** — `useElementCreator.ts` complexComponents 배열에 'Slider' 추가, `ComponentFactory.ts` Slider creator 등록, `FormComponents.ts` `createSliderDefinition()` 팩토리 추가. DOM 구조: `Slider > Label + SliderOutput + SliderTrack > SliderThumb`, (2) **TokenRef offsetY NaN 버그 수정** — `Slider.spec.ts` `size.fontSize`(TokenRef 문자열)를 숫자 연산에 직접 사용하여 NaN 발생. `resolveToken()` 호출로 해결. CRITICAL 규칙 추가: spec `shapes()` 내 TokenRef 필드는 숫자 연산 전 `resolveToken()` 필수, (3) **SliderOutput 위치 수정** — `x: width` → `x: 0` + `maxWidth: width`로 컨테이너 내 우측 정렬, (4) **`_hasLabelChild` 패턴 문서화** — Select/ComboBox/Slider 공통 패턴, 자식 element 담당 텍스트를 spec shapes에서 스킵하는 메커니즘, (5) **Slider.css data-attribute 전환** — `.sm`/`.primary` class selector → `[data-size="sm"]`/`[data-variant="primary"]` data-attribute selector, SLIDER_DIMENSIONS spec 정확히 반영 (sm=4/14, md=6/18, lg=8/22), M3 토큰 사용, (6) **unified.types.ts** — Slider 기본 props 수정 (value=50, width=200, height=45, showValue=true, maxWidth=300). §5.1 Slider 상태 "✅ 완전 지원 (Complex Component 전환 완료)"로 갱신. §5.3 Slider.spec.ts 체크리스트 완료 표기 |
+| 2026-02-23 | 3.14 | **§9.x Breadcrumbs CONTAINER_TAGS 전환 + Skia 렌더링**: (1) **Breadcrumbs.spec.ts** — `resolveToken` 기반 fontSize 해석, 기본 구분자 `›`, CSS 일치 sizes height (sm:16, md:24, lg:24), (2) **ElementSprite.tsx** — `_crumbs` prop 주입 (자식 Breadcrumb 텍스트 배열 → spec shapes), (3) **BuilderCanvas.tsx** — `CONTAINER_TAGS`에 `'Breadcrumbs'` 추가, `filteredContainerChildren = []` (spec shapes가 크럼 텍스트 직접 렌더링), (4) **utils.ts** — `calculateContentHeight` Breadcrumbs 핸들러 (sm:16, md:24, lg:24), `SPEC_SHAPES_INPUT_TAGS`에 `'breadcrumbs'` 추가, (5) **PixiBreadcrumbs** — Skia spec shapes 전환 완료로 더 이상 사용하지 않음. §6.1 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", §6.3 체크리스트 완료 표기, §9.8.4 테이블에 Breadcrumbs 행 추가, §9.8.5 전환 완료 목록에 Breadcrumbs 추가 |

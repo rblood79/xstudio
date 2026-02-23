@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * List Props
@@ -95,11 +96,12 @@ export const ListSpec: ComponentSpec<ListProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
-      const width = (props.style?.width as number) || 'auto';
+    shapes: (props, variant, size, state = 'default') => {
+      // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
+      const width = 'auto' as const;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
 
       const styleBr = props.style?.borderRadius;
       const borderRadius = styleBr != null

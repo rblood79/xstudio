@@ -12,13 +12,16 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCallback, useMemo, useRef, memo } from 'react';
+import { useCallback, useMemo, useRef, useContext, memo } from 'react';
 import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, applyTextTransform, buildSkiaEffects, type CSSStyle } from './styleConverter';
+import { convertStyle, applyTextTransform, buildSkiaEffects, parseCSSSize, type CSSStyle } from './styleConverter';
+import { colord } from 'colord';
+import { parseZIndex, createsStackingContext } from '../layout/engines/cssStackingContext';
 import { parsePadding } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 
 // ============================================
@@ -80,7 +83,30 @@ export const TextSprite = memo(function TextSprite({
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
-  const { transform, fill, text: textStyle, borderRadius } = converted;
+  const { fill, text: textStyle, borderRadius } = converted;
+  const computedContainerSize = useContext(LayoutComputedSizeContext);
+
+  // BoxSprite 패턴: Yoga 계산 크기를 우선 사용 (기본값 100×100 대신)
+  const transform = useMemo(() => {
+    if (!computedContainerSize) return converted.transform;
+
+    const styleWidth = style?.width;
+    const styleHeight = style?.height;
+    const usesLayoutWidth = styleWidth === undefined || styleWidth === 'auto' ||
+      styleWidth === 'fit-content' || styleWidth === 'min-content' || styleWidth === 'max-content' ||
+      (typeof styleWidth === 'string' && styleWidth.endsWith('%'));
+    const usesLayoutHeight = styleHeight === undefined || styleHeight === 'auto' ||
+      styleHeight === 'fit-content' || styleHeight === 'min-content' || styleHeight === 'max-content' ||
+      (typeof styleHeight === 'string' && styleHeight.endsWith('%'));
+
+    if (!usesLayoutWidth && !usesLayoutHeight) return converted.transform;
+
+    return {
+      ...converted.transform,
+      width: usesLayoutWidth ? computedContainerSize.width : converted.transform.width,
+      height: usesLayoutHeight ? computedContainerSize.height : converted.transform.height,
+    };
+  }, [computedContainerSize, converted.transform, style?.width, style?.height]);
 
   // Border-Box v2: parseBorderConfig로 border 정보 추출
   const borderConfig = useMemo(() => parseBorderConfig(style), [style]);
@@ -168,20 +194,24 @@ export const TextSprite = memo(function TextSprite({
   const effectiveBorderRadius = typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0;
   const drawBackground = useCallback(
     (g: PixiGraphics) => {
-      // Only draw if there's a background color, border, or borderRadius
-      if ((!style?.backgroundColor || style.backgroundColor === 'transparent') && !borderConfig && !effectiveBorderRadius) {
-        g.clear();
-        return;
-      }
+      const hasBg = style?.backgroundColor && style.backgroundColor !== 'transparent';
+      const hasVisual = hasBg || borderConfig || effectiveBorderRadius;
 
-      drawBox(g, {
-        width: transform.width,
-        height: transform.height,
-        backgroundColor: fill.color,
-        backgroundAlpha: fill.alpha,
-        borderRadius: effectiveBorderRadius,
-        border: borderConfig,
-      });
+      if (hasVisual) {
+        drawBox(g, {
+          width: transform.width,
+          height: transform.height,
+          backgroundColor: fill.color,
+          backgroundAlpha: fill.alpha,
+          borderRadius: effectiveBorderRadius,
+          border: borderConfig,
+        });
+      } else {
+        // 배경이 없어도 투명 히트 영역을 그려서 클릭 선택이 가능하도록 함
+        g.clear();
+        g.rect(0, 0, transform.width, transform.height);
+        g.fill({ color: 0xffffff, alpha: 0.001 });
+      }
     },
     [style, transform, fill, effectiveBorderRadius, borderConfig]
   );
@@ -223,6 +253,10 @@ export const TextSprite = memo(function TextSprite({
     textRef.current = text;
   }, []);
 
+  // Phase 6: Interaction 속성
+  const isPointerEventsNone = style?.pointerEvents === 'none';
+  const pixiCursor = style?.cursor ?? 'default';
+
   // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
   const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
 
@@ -239,15 +273,20 @@ export const TextSprite = memo(function TextSprite({
     // CSS fontStyle → numeric (0=upright, 1=italic, 2=oblique)
     const numericFontStyle = textStyle.fontStyle === 'italic' ? 1 : textStyle.fontStyle === 'oblique' ? 2 : 0;
 
+    const zIndex = parseZIndex(style?.zIndex);
+    const isStackingCtx = createsStackingContext(style as Record<string, unknown>);
+
     return {
       type: 'text' as const,
       x: transform.x,
       y: transform.y,
       width: transform.width,
       height: transform.height,
-      visible: style?.display !== 'none' && style?.visibility !== 'hidden',
+      visible: style?.display !== 'none' && style?.visibility !== 'hidden' && style?.visibility !== 'collapse',
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
       ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
+      ...(zIndex !== undefined ? { zIndex } : {}),
+      ...(isStackingCtx ? { isStackingContext: true } : {}),
       text: {
         content: textContent,
         fontFamilies: [textStyle.fontFamily.split(',')[0].trim()],
@@ -264,13 +303,35 @@ export const TextSprite = memo(function TextSprite({
           decoration: (textDecoration.underline ? 1 : 0)
             | (textDecoration.overline ? 2 : 0)
             | (textDecoration.lineThrough ? 4 : 0),
+          // text-decoration-style (C-5)
+          ...(style?.textDecorationStyle ? { decorationStyle: style.textDecorationStyle as 'solid' | 'dashed' | 'dotted' | 'double' | 'wavy' } : {}),
+          // text-decoration-color (C-6): colord로 파싱 후 Float32Array로 변환
+          ...(style?.textDecorationColor ? (() => {
+            const parsed = colord(style.textDecorationColor);
+            if (!parsed.isValid()) return {};
+            const rgba = parsed.toRgb();
+            return { decorationColor: Float32Array.of(rgba.r / 255, rgba.g / 255, rgba.b / 255, rgba.a) };
+          })() : {}),
         } : {}),
         paddingLeft: padding.left,
         paddingTop: padding.top,
         maxWidth: transform.width - padding.left - padding.right,
+        ...(style?.verticalAlign ? { verticalAlign: style.verticalAlign as 'top' | 'middle' | 'bottom' | 'baseline' } : {}),
+        ...(style?.whiteSpace ? { whiteSpace: style.whiteSpace as 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line' } : {}),
+        ...(style?.wordBreak ? { wordBreak: style.wordBreak as 'normal' | 'break-all' | 'keep-all' } : {}),
+        ...(style?.overflowWrap ? { overflowWrap: style.overflowWrap as 'normal' | 'break-word' | 'anywhere' } : {}),
+        ...(style?.wordSpacing != null ? { wordSpacing: parseCSSSize(style.wordSpacing, undefined, 0) } : {}),
+        // text-overflow: ellipsis (C-1): overflow:hidden + white-space:nowrap 조합에서 동작
+        ...(style?.textOverflow ? { textOverflow: style.textOverflow as 'ellipsis' | 'clip' } : {}),
+        // text-indent: 첫 줄 들여쓰기 (C-3)
+        ...(style?.textIndent != null ? { textIndent: parseCSSSize(style.textIndent, undefined, 0) } : {}),
+        // font-variant: OpenType feature (예: small-caps)
+        ...(style?.fontVariant && style.fontVariant !== 'normal' ? { fontVariant: style.fontVariant } : {}),
+        // font-stretch: CanvasKit FontWidth (예: condensed, 75%)
+        ...(style?.fontStretch && style.fontStretch !== 'normal' ? { fontStretch: style.fontStretch } : {}),
       },
     };
-  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration]);
+  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, style?.verticalAlign, style?.whiteSpace, style?.wordBreak, style?.overflowWrap, style?.wordSpacing, style?.textOverflow, style?.textDecorationStyle, style?.textDecorationColor, style?.textIndent, style?.fontVariant, style?.fontStretch]);
 
   useSkiaNode(element.id, skiaNodeData);
 
@@ -282,26 +343,31 @@ export const TextSprite = memo(function TextSprite({
       {/* Background - clickable */}
       <pixiGraphics
         draw={drawBackground}
-        eventMode="static"
-        cursor="text"
-        onPointerDown={handlePointerDown}
+        eventMode={isPointerEventsNone ? 'none' : 'static'}
+        cursor={pixiCursor}
+        {...(!isPointerEventsNone && { onPointerDown: handlePointerDown })}
       />
 
-      {/* Text with ref for decoration measurement */}
+      {/* Text with ref for decoration measurement
+           eventMode="none": hit testing에서 제외 — pixiText의 containsPoint가
+           hitTestRecursive에서 빈 배열 []을 반환하여 아래 Graphics 테스트를 차단하는 문제 방지 */}
       <pixiText
         ref={textRefCallback}
         text={textContent}
         style={pixiTextStyle}
         x={padding.left}
         y={padding.top}
+        eventMode="none"
       />
 
-      {/* P7.7: Text decoration lines (underline, line-through, overline) */}
+      {/* P7.7: Text decoration lines (underline, line-through, overline)
+           eventMode="none": 위와 동일한 이유 */}
       {hasDecoration && (
         <pixiGraphics
           draw={drawTextDecoration}
           x={padding.left}
           y={padding.top}
+          eventMode="none"
         />
       )}
     </pixiContainer>

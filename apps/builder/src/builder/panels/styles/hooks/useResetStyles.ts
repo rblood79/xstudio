@@ -32,12 +32,20 @@ export function useResetStyles() {
     const tag = element.tag;
     const defaultProps = getDefaultProps(tag);
     const defaultStyle = (defaultProps?.style || {}) as Record<string, string>;
+    const currentStyle = ((element.props?.style as Record<string, string>) || {});
 
-    // 기본값이 있으면 복원, 없으면 삭제
+    // 실제로 변경이 필요한 속성만 포함 (dirty check)
     const resetObj: Record<string, string> = {};
     properties.forEach((prop) => {
-      resetObj[prop] = defaultStyle[prop] ?? '';
+      const resetValue = defaultStyle[prop] ?? '';
+      const currentValue = currentStyle[prop] ?? '';
+      if (currentValue !== resetValue) {
+        resetObj[prop] = resetValue;
+      }
     });
+
+    // 변경할 속성이 없으면 히스토리 기록 없이 조기 반환
+    if (Object.keys(resetObj).length === 0) return;
 
     state.updateSelectedStyles(resetObj);
   }, []);

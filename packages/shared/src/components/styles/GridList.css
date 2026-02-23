@@ -344,9 +344,9 @@
     --gl-list-gap: var(--spacing-2xs);
     --gl-item-padding: var(--spacing) var(--spacing-md);
     --gl-item-min-height: 40px;
-    --gl-item-font-size: var(--text-sm);
+    --gl-item-font-size: var(--text-base);
     --gl-btn-padding: var(--spacing) var(--spacing-md);
-    --gl-btn-font-size: var(--text-sm);
+    --gl-btn-font-size: var(--text-base);
     --gl-drag-width: 15px;
   }
 
@@ -367,9 +367,9 @@
     --gl-list-gap: var(--spacing-2xs);
     --gl-item-padding: var(--spacing) var(--spacing-md);
     --gl-item-min-height: 40px;
-    --gl-item-font-size: var(--text-sm);
+    --gl-item-font-size: var(--text-base);
     --gl-btn-padding: var(--spacing) var(--spacing-md);
-    --gl-btn-font-size: var(--text-sm);
+    --gl-btn-font-size: var(--text-base);
     --gl-drag-width: 15px;
   }
 

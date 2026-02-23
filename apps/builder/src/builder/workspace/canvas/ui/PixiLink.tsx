@@ -1,182 +1,103 @@
 /**
  * Pixi Link
  *
- * 🚀 Phase 2: Link WebGL 컴포넌트 (Pattern A)
+ * 투명 히트 영역(pixiGraphics) 기반 Link
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * 클릭 가능한 텍스트 링크 컴포넌트
- * - variant (default, primary, secondary) 지원
- * - size (sm, md, lg) 지원
- * - hover 시 밑줄 표시
- *
- * @since 2025-12-16 Phase 2 WebGL Migration
+ * @updated 2026-02-20 A등급 패턴 재작성 (시각 드로잉 제거, Skia 렌더링 전환)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useState } from "react";
-import { TextStyle, CanvasTextMetrics, Graphics as PixiGraphics } from "pixi.js";
+import { memo, useCallback, useContext } from "react";
+import { Graphics as PixiGraphicsClass } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
-import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex } from "../sprites/styleConverter";
-
-// 🚀 Spec Migration
-import {
-  LinkSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // ============================================
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface PixiLinkProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
-}
-
-interface LinkElementProps {
-  children?: string;
-  text?: string;
-  href?: string;
-  variant?: "default" | "primary" | "secondary";
-  size?: "sm" | "md" | "lg";
-  isDisabled?: boolean;
-  style?: CSSStyle;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
 }
 
 // ============================================
 // Component
 // ============================================
 
+/**
+ * PixiLink
+ *
+ * 투명 히트 영역 기반 Link (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ */
 export const PixiLink = memo(function PixiLink({
   element,
+  //isSelected,
   onClick,
 }: PixiLinkProps) {
   useExtend(PIXI_COMPONENTS);
-  const style = element.props?.style as CSSStyle | undefined;
-  const props = element.props as LinkElementProps | undefined;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // 상태
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 링크 텍스트
-  const linkText = useMemo(() => {
-    return String(props?.children || props?.text || "Link");
-  }, [props?.children, props?.text]);
-
-  // variant, size
-  const variant = useMemo(() => String(props?.variant || "primary"), [props?.variant]);
-  const size = useMemo(() => String(props?.size || "md"), [props?.size]);
   const isDisabled = Boolean(props?.isDisabled);
 
-  // 🚀 CSS에서 프리셋 읽기 (Spec Migration)
-  const sizePreset = useMemo(() => {
-    const sizeSpec = LinkSpec.sizes[size] || LinkSpec.sizes[LinkSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
-
-  // 🚀 variant에 따른 테마 색상 (Spec Migration)
-  const variantColors = useMemo(() => {
-    const variantSpec = LinkSpec.variants[variant] || LinkSpec.variants[LinkSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
-
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    color: variantColors.bg,
-    hoverColor: variantColors.bg,
-    pressedColor: variantColors.bg,
-  }), [variantColors]);
-
-  // 현재 색상 계산
-  const currentColor = useMemo(() => {
-    if (isDisabled) return 0x9ca3af;
-    if (isPressed) return colorPreset.pressedColor;
-    if (isHovered) return colorPreset.hoverColor;
-    if (style?.color) {
-      return cssColorToHex(style.color, colorPreset.color);
-    }
-    return colorPreset.color;
-  }, [isDisabled, isPressed, isHovered, style, colorPreset]);
-
-  // 텍스트 스타일
-  const textStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: "Pretendard, sans-serif",
-        fontSize: sizePreset.fontSize,
-        fill: currentColor,
-        fontWeight: "500",
-      }),
-    [sizePreset, currentColor]
-  );
-
-  // 텍스트 크기 계산
-  const textSize = useMemo(() => {
-    const metrics = CanvasTextMetrics.measureText(linkText, textStyle);
-    return {
-      width: metrics.width,
-      height: metrics.height,
-    };
-  }, [linkText, textStyle]);
-
-  // 밑줄 그리기
-  const drawUnderline = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-      if (isHovered && !isDisabled) {
-        g.setStrokeStyle({
-          width: 2,
-          color: currentColor,
-        });
-        g.moveTo(0, textSize.height + 2);
-        g.lineTo(textSize.width, textSize.height + 2);
-        g.stroke();
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [isHovered, isDisabled, currentColor, textSize.width, textSize.height]
+    [hitWidth, hitHeight]
   );
 
-  // 이벤트 핸들러
-  const handlePointerEnter = useCallback(() => {
-    if (!isDisabled) setIsHovered(true);
-  }, [isDisabled]);
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-  const handlePointerLeave = useCallback(() => {
-    setIsHovered(false);
-    setIsPressed(false);
-  }, []);
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-  const handlePointerDown = useCallback(() => {
-    if (!isDisabled) setIsPressed(true);
-  }, [isDisabled]);
+      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-  const handlePointerUp = useCallback(() => {
-    setIsPressed(false);
-    if (!isDisabled) {
-      onClick?.(element.id);
-    }
-  }, [isDisabled, element.id, onClick]);
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+    },
+    [element.id, onClick, isDisabled]
+  );
 
   return (
     <pixiContainer>
-      {/* 링크 텍스트 */}
-      <pixiText
-        text={linkText}
-        style={textStyle}
+      <pixiGraphics
+        draw={drawHitArea}
         eventMode="static"
-        cursor={isDisabled ? "not-allowed" : "pointer"}
-        onPointerEnter={handlePointerEnter}
-        onPointerLeave={handlePointerLeave}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
+        cursor="default"
+        onPointerDown={handleClick}
       />
-
-      {/* hover 시 밑줄 */}
-      <pixiGraphics draw={drawUnderline} />
     </pixiContainer>
   );
 });

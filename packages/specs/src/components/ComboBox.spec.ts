@@ -26,8 +26,14 @@ export interface ComboBoxProps {
   isDisabled?: boolean;
   isInvalid?: boolean;
   isRequired?: boolean;
+  /** 드롭다운 아이템 목록 */
+  items?: string[];
+  /** 선택된 아이템 인덱스 (하이라이트용) */
+  selectedIndex?: number;
   children?: string;
   style?: Record<string, string | number | undefined>;
+  /** ElementSprite에서 주입: Label child 존재 시 spec shapes에서 label 렌더링 스킵 */
+  _hasLabelChild?: boolean;
 }
 
 /**
@@ -115,7 +121,6 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
   render: {
     shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 200;
-      const height = size.height;
       const chevronSize = size.iconSize ?? 18;
 
       const styleBr = props.style?.borderRadius;
@@ -139,7 +144,19 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : defaultBw;
 
-      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+      // size.fontSize는 TokenRef 문자열('{typography.text-md}')일 수 있으므로
+      // 산술 연산 전 안전하게 숫자로 변환 (specShapesToSkia의 resolveNum이 최종 해석)
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const fontSize = typeof rawFontSize === 'number' ? rawFontSize : 14;
+
+      // CSS 정합성: React-Aria ComboBox 실제 렌더링 기준
+      // .react-aria-Label: fontSize=14, lineHeight=1.5 → height=21
+      // gap: 8px (flex gap)
+      // input: height = fontSize + paddingY*2 = 30px (md 기준)
+      const labelLineHeight = Math.ceil(fontSize * 1.5);
+      const labelGap = 8;
+      const labelOffset = labelLineHeight + labelGap; // 29px for md
+      const inputHeight = fontSize + (size.paddingY as number) * 2; // 30px for md
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight = fwRaw != null
@@ -160,14 +177,15 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
 
       const shapes: Shape[] = [];
 
-      // 라벨
-      if (props.label) {
+      // 라벨 — Label child가 있으면 스킵 (TextSprite가 렌더링)
+      // Label child가 없으면 (기존 요소 호환) spec shapes에서 직접 렌더링
+      if (props.label && !props._hasLabelChild) {
         shapes.push({
           type: 'text' as const,
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: (fontSize as number) - 2,
+          fontSize,
           fontFamily: ff,
           fontWeight,
           fill: textColor,
@@ -176,14 +194,15 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         });
       }
 
-      // 입력 영역 배경
+      // 입력 영역 배경 — CSS 정합: y=labelOffset(29), height=inputHeight(30)
+      const inputY = props.label ? labelOffset : 0;
       shapes.push({
         id: 'input',
         type: 'roundRect' as const,
         x: 0,
-        y: props.label ? 20 : 0,
+        y: inputY,
         width,
-        height,
+        height: inputHeight,
         radius: borderRadius,
         fill: bgColor,
       });
@@ -205,7 +224,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         shapes.push({
           type: 'text' as const,
           x: paddingX,
-          y: (props.label ? 20 : 0) + height / 2,
+          y: inputY + inputHeight / 2,
           text: displayText,
           fontSize: fontSize as number,
           fontFamily: ff,
@@ -217,31 +236,35 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         });
       }
 
-      // 쉐브론 아이콘
+      // 쉐브론 아이콘 (Lucide chevron-down SVG 경로)
       const chevX = width - paddingX - chevronSize / 2;
-      const chevY = (props.label ? 20 : 0) + height / 2;
-      const chevHalf = chevronSize / 4;
+      const chevY = inputY + inputHeight / 2;
       shapes.push({
-        type: 'line' as const,
-        x1: chevX - chevHalf,
-        y1: chevY - chevHalf / 2,
-        x2: chevX,
-        y2: chevY + chevHalf / 2,
-        stroke: '{color.on-surface-variant}' as TokenRef,
-        strokeWidth: 2,
-      });
-      shapes.push({
-        type: 'line' as const,
-        x1: chevX,
-        y1: chevY + chevHalf / 2,
-        x2: chevX + chevHalf,
-        y2: chevY - chevHalf / 2,
-        stroke: '{color.on-surface-variant}' as TokenRef,
+        type: 'icon_font' as const,
+        iconName: 'chevron-down',
+        x: chevX,
+        y: chevY,
+        fontSize: chevronSize,
+        fill: '{color.on-surface-variant}' as TokenRef,
         strokeWidth: 2,
       });
 
       // 드롭다운 패널 (열린 상태)
       if (props.isOpen) {
+        // inputValue로 아이템 필터링 (입력값이 있으면 포함된 항목만 표시)
+        const allItems = props.items ?? ['Option 1', 'Option 2', 'Option 3'];
+        const filterText = props.inputValue?.toLowerCase() ?? '';
+        const dropdownItems = filterText
+          ? allItems.filter((item) => item.toLowerCase().includes(filterText))
+          : allItems;
+
+        const itemH = 36;
+        const dropdownPaddingY = 4;
+        const dropdownHeight = dropdownItems.length > 0
+          ? dropdownItems.length * itemH + dropdownPaddingY * 2
+          : itemH + dropdownPaddingY * 2;
+        const dropdownY = inputY + inputHeight + 4;
+
         shapes.push({
           type: 'shadow' as const,
           target: 'dropdown',
@@ -255,9 +278,9 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           id: 'dropdown',
           type: 'roundRect' as const,
           x: 0,
-          y: (props.label ? 20 : 0) + height + 4,
+          y: dropdownY,
           width,
-          height: 'auto',
+          height: dropdownHeight,
           radius: borderRadius,
           fill: '{color.surface-container}' as TokenRef,
         });
@@ -268,15 +291,83 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           color: '{color.outline-variant}' as TokenRef,
           radius: borderRadius,
         });
+
+        if (dropdownItems.length === 0) {
+          // 결과 없음 텍스트
+          shapes.push({
+            type: 'text' as const,
+            x: paddingX,
+            y: dropdownY + dropdownPaddingY + itemH / 2,
+            text: 'No results',
+            fontSize: fontSize as number,
+            fontFamily: ff,
+            fontWeight: 400,
+            fill: '{color.on-surface-variant}' as TokenRef,
+            align: 'left' as const,
+            baseline: 'middle' as const,
+          });
+        } else {
+          // 선택 인덱스 결정
+          const selectedIdx = props.selectedIndex
+            ?? (props.selectedText != null
+                ? allItems.indexOf(props.selectedText)
+                : -1);
+
+          dropdownItems.forEach((item, i) => {
+            const itemY = dropdownY + dropdownPaddingY + i * itemH;
+            const isSelected = selectedIdx >= 0
+              && allItems[selectedIdx] === item;
+
+            // 선택된 아이템 하이라이트 배경
+            if (isSelected) {
+              shapes.push({
+                type: 'roundRect' as const,
+                x: 4,
+                y: itemY + 2,
+                width: width - 8,
+                height: itemH - 4,
+                radius: borderRadius,
+                fill: '{color.primary-container}' as TokenRef,
+              });
+            }
+
+            // 아이템 텍스트
+            shapes.push({
+              type: 'text' as const,
+              x: paddingX,
+              y: itemY + itemH / 2,
+              text: String(item),
+              fontSize: fontSize as number,
+              fontFamily: ff,
+              fontWeight: isSelected ? 600 : 400,
+              fill: isSelected
+                ? ('{color.on-primary-container}' as TokenRef)
+                : ('{color.on-surface}' as TokenRef),
+              align: textAlign,
+              baseline: 'middle' as const,
+            });
+          });
+        }
       }
 
       // 설명 / 에러 메시지
       const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
       if (descText) {
+        const allItems = props.items ?? ['Option 1', 'Option 2', 'Option 3'];
+        const filterText = props.inputValue?.toLowerCase() ?? '';
+        const visibleCount = props.isOpen
+          ? (filterText
+              ? allItems.filter((item) => item.toLowerCase().includes(filterText)).length
+              : allItems.length)
+          : 0;
+        const descY = props.isOpen
+          ? inputY + inputHeight + 4
+              + Math.max(visibleCount, 1) * 36 + 8 + 4
+          : inputY + inputHeight + 4;
         shapes.push({
           type: 'text' as const,
           x: 0,
-          y: (props.label ? 20 : 0) + height + 4,
+          y: descY,
           text: descText,
           fontSize: (fontSize as number) - 2,
           fontFamily: ff,

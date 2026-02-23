@@ -7,6 +7,7 @@
  */
 
 import type { Element } from '../../../../../types/core/store.types';
+import type { ComputedStyle } from './cssResolver';
 
 /**
  * 계산된 레이아웃 결과
@@ -33,6 +34,17 @@ export interface ComputedLayout {
     /** collapse된 하단 마진 */
     collapsedBottom?: number;
   };
+  /**
+   * W3-5: 자식 콘텐츠의 전체 크기 (overflow:scroll/auto의 maxScroll 계산용)
+   *
+   * 부모 요소에 대한 자식들의 총 콘텐츠 영역 크기.
+   * containerSize - contentSize = maxScroll.
+   * 이 값이 undefined이면 스크롤 불필요.
+   */
+  contentSize?: {
+    contentWidth: number;
+    contentHeight: number;
+  };
 }
 
 /**
@@ -51,6 +63,10 @@ export interface LayoutContext {
   viewportHeight?: number;
   /** 부모 요소의 display 값 (CSS blockification 계산용) */
   parentDisplay?: string;
+  /** 부모의 computed style (CSS 상속 해석용) */
+  parentComputedStyle?: ComputedStyle;
+  /** 요소의 자식 Element 배열을 반환하는 accessor (컨테이너 intrinsic size 계산용) */
+  getChildElements?: (elementId: string) => Element[];
 }
 
 /**

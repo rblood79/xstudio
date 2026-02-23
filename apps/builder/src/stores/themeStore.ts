@@ -20,6 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ThemeService } from '../services/theme/ThemeService';
 import { TokenService } from '../services/theme/TokenService';
 import { tokensToCSS, formatCSSVars } from '../utils/theme/tokenToCss';
+import { invalidateCSSVariableCache } from '../builder/workspace/canvas/utils/cssVariableReader';
 import type {
   DesignTheme,
   DesignToken,
@@ -592,6 +593,8 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
           }
 
           styleTag.textContent = cssText;
+          // M-4: CSS 변수 캐시 무효화 — DOM에 새 값이 주입되었으므로
+          invalidateCSSVariableCache();
         } catch (err) {
           console.error('[UnifiedThemeStore] injectThemeCSS failed:', err);
         }

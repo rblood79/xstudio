@@ -128,11 +128,15 @@ export function applyFill(
       // (ck.Shader.MakeImageShader는 존재하지 않음)
       const skImage = fill.image as { makeShaderOptions?: (...args: unknown[]) => unknown } | null;
       if (skImage && typeof skImage.makeShaderOptions === 'function') {
+        // tileModeX/Y 분리 지원 (background-repeat: repeat-x/y)
+        // 하위 호환: 구형 tileMode 필드가 있으면 fallback으로 사용
+        const tmX = fill.tileModeX ?? fill.tileMode ?? ck.TileMode.Decal;
+        const tmY = fill.tileModeY ?? fill.tileMode ?? ck.TileMode.Decal;
         const shader = (skImage as {
           makeShaderOptions(tx: unknown, ty: unknown, fm: unknown, mm: unknown, lm?: unknown): unknown;
         }).makeShaderOptions(
-          fill.tileMode,
-          fill.tileMode,
+          tmX,
+          tmY,
           fill.sampling, // FilterMode
           ck.MipmapMode.None,
           fill.matrix,

@@ -98,23 +98,49 @@ export const ColorWheelSpec: ComponentSpec<ColorWheelProps> = {
       const thumbSize = size.iconSize ?? 18;
       const hue = props.hue ?? 0;
 
-      // Thumb 위치 (원주 위)
+      // Thumb 위치 (원주 위, 0° = 12시 방향 기준)
       const thumbAngle = (hue * Math.PI) / 180;
       const thumbRadius = (outerRadius + innerRadius) / 2;
       const thumbX = outerRadius + Math.cos(thumbAngle - Math.PI / 2) * thumbRadius;
       const thumbY = outerRadius + Math.sin(thumbAngle - Math.PI / 2) * thumbRadius;
 
+      // Hue conic gradient stops (0°-360° 전체 색상환)
+      // specShapeConverter의 conic 처리: -90° 보정 → 0°=12시 방향
+      const hueStops: Array<{ offset: number; color: string }> = [
+        { offset: 0,      color: '#FF0000' }, // 0°   빨강
+        { offset: 1/12,   color: '#FF8000' }, // 30°  주황
+        { offset: 2/12,   color: '#FFFF00' }, // 60°  노랑
+        { offset: 3/12,   color: '#80FF00' }, // 90°  연두
+        { offset: 4/12,   color: '#00FF00' }, // 120° 초록
+        { offset: 5/12,   color: '#00FF80' }, // 150° 청록
+        { offset: 6/12,   color: '#00FFFF' }, // 180° 시안
+        { offset: 7/12,   color: '#0080FF' }, // 210° 하늘
+        { offset: 8/12,   color: '#0000FF' }, // 240° 파랑
+        { offset: 9/12,   color: '#8000FF' }, // 270° 보라
+        { offset: 10/12,  color: '#FF00FF' }, // 300° 자홍
+        { offset: 11/12,  color: '#FF0080' }, // 330° 핑크
+        { offset: 1,      color: '#FF0000' }, // 360° 빨강 (닫힘)
+      ];
+
+      const diameter = outerRadius * 2;
+
       const shapes: Shape[] = [
-        // 외곽 원 (hue gradient - 실제 렌더러에서 원형 gradient로 표현)
+        // Hue gradient ring - conic gradient + borderRadius로 원형 클리핑
         {
           id: 'wheel',
-          type: 'circle' as const,
-          x: outerRadius,
-          y: outerRadius,
+          type: 'gradient' as const,
+          x: 0,
+          y: 0,
+          width: diameter,
+          height: diameter,
           radius: outerRadius,
-          fill: '{color.surface-container}' as TokenRef,
+          gradient: {
+            type: 'conic',
+            angle: 0, // specShapeConverter에서 -90° 보정 처리
+            stops: hueStops,
+          },
         },
-        // 내부 원 (빈 공간)
+        // 내부 원 (흰색/배경색으로 도넛 중앙 채우기)
         {
           type: 'circle' as const,
           x: outerRadius,

@@ -5,7 +5,7 @@ import { iconProps } from "../../utils/ui/uiConstants";
 import { MessageService } from "../../utils/messaging";
 import { useVisibleOverlays } from "./hooks/useVisibleOverlays";
 import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverlays";
-import { useOverlayRAF, isOnlyBodySelected, type OverlayUpdateResult } from "./hooks/useOverlayRAF";
+import { useOverlayRAF, type OverlayUpdateResult } from "./hooks/useOverlayRAF";
 import { useOverlayDebug } from "./OverlayDebug";
 import { BorderRadiusHandles } from "./components/BorderRadiusHandles";
 
@@ -165,35 +165,23 @@ export default function SelectionOverlay() {
     [selectedElementId] // 🚀 Performance: elementsMap 의존성 제거 - getState()로 조회
   );
 
-  // 🚀 Phase 7.2: Body element 조기 종료 체크
-  const isBodyOnlySelected = useMemo(() => {
-    if (selectedElementIds.length === 0) return false;
-    const elementsMap = useStore.getState().elementsMap;
-    return isOnlyBodySelected(selectedElementIds, elementsMap);
-  }, [selectedElementIds]);
-
   // 🚀 Phase 7.1: 멀티 오버레이 스케줄 래퍼 (즉시 실행 옵션)
   const scheduleMultiOverlayUpdate = useCallback(
     (immediate = false) => {
-      // 🚀 Phase 7.2: Body만 선택된 경우 오버레이 계산 스킵
-      if (isBodyOnlySelected) {
-        setMultiOverlays(new Map());
-        return;
-      }
       if (selectedElementIds.length === 0) {
         setMultiOverlays(new Map());
         return;
       }
       scheduleOverlayUpdate(selectedElementIds, immediate);
     },
-    [selectedElementIds, isBodyOnlySelected, scheduleOverlayUpdate]
+    [selectedElementIds, scheduleOverlayUpdate]
   );
 
   // 🚀 Phase 7.1: 쓰로틀된 스케줄 (스크롤/리사이즈용)
   const scheduleMultiOverlayThrottled = useCallback(() => {
-    if (isBodyOnlySelected || selectedElementIds.length === 0) return;
+    if (selectedElementIds.length === 0) return;
     scheduleThrottled(selectedElementIds);
-  }, [selectedElementIds, isBodyOnlySelected, scheduleThrottled]);
+  }, [selectedElementIds, scheduleThrottled]);
 
   // ⭐ Convert multiOverlays to VisibleOverlayData format for virtual scrolling
   const overlaysForVirtualScrolling = useMemo((): VisibleOverlayData[] => {

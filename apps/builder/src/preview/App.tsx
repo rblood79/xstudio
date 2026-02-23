@@ -310,9 +310,50 @@ function CanvasContent() {
       ? children.map((child) => renderElementInternalRef.current(child, child.id))
       : el.props?.children;
 
+    // 커스텀 태그 → HTML 요소 매핑 (복합 컴포넌트 자식 태그용)
+    const resolveHtmlTag = (tag: string, props?: Record<string, unknown>): string => {
+      switch (tag) {
+        case 'Heading': {
+          const level = Number(props?.level) || 3;
+          return `h${Math.min(Math.max(level, 1), 6)}`;
+        }
+        case 'Description': return 'p';
+        // Overlay 복합 컴포넌트
+        case 'DialogFooter': return 'footer';
+        case 'Toast': return 'div';
+        case 'Popover': return 'div';
+        // Navigation 복합 컴포넌트
+        case 'Disclosure': return 'div';
+        case 'DisclosureGroup': return 'div';
+        case 'DisclosureHeader': return 'button';
+        case 'DisclosureContent': return 'div';
+        // Form 복합 컴포넌트
+        case 'FormField': return 'div';
+        // Collection 자식 태그
+        case 'Tab': return 'button';
+        case 'TagList': return 'div';
+        case 'SelectItem': return 'div';
+        case 'ComboBoxItem': return 'div';
+        // Calendar 자식 태그
+        case 'CalendarHeader': return 'div';
+        case 'CalendarGrid': return 'div';
+        // Date/Time 자식 태그
+        case 'DateSegment':
+        case 'TimeSegment': return 'span';
+        // Color 복합 컴포넌트 (rendererMap 미등록)
+        case 'ColorPicker': return 'div';
+        case 'ColorField': return 'div';
+        // Color 자식 태그
+        case 'ColorSwatch': return 'div';
+        case 'ColorArea': return 'div';
+        case 'ColorSlider': return 'div';
+        default: return tag.toLowerCase();
+      }
+    };
+
     // HTML 요소로 렌더링
     return React.createElement(
-      el.tag.toLowerCase(),
+      resolveHtmlTag(el.tag, el.props),
       cleanProps,
       content
     );

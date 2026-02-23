@@ -127,7 +127,7 @@ export const ImageFillEditor = memo(function ImageFillEditor({
             className="image-fill-editor__image"
             src={fill.url}
             alt="Fill preview"
-            style={{ objectFit: fill.mode === 'stretch' ? 'fill' : fill.mode }}
+            style={{ objectFit: fill.mode === 'stretch' ? 'fill' : fill.mode === 'fit' ? 'contain' : 'cover' }}
           />
         ) : (
           <div className="image-fill-editor__placeholder">

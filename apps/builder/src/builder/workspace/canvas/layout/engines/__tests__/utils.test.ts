@@ -18,6 +18,9 @@ import {
   calculateBaseline,
   calculateContentHeight,
   resetWarnedTokens,
+  getButtonSizeConfig,
+  enrichWithIntrinsicSize,
+  INLINE_BLOCK_TAGS,
 } from '../utils';
 import type { Element } from '../../../../../../types/core/store.types';
 
@@ -195,14 +198,28 @@ describe('parseSize', () => {
     expect(parseSize(undefined, 400)).toBeUndefined();
   });
 
-  it('rem, em은 undefined 반환 (미지원)', () => {
-    expect(parseSize('10rem', 400)).toBeUndefined();
-    expect(parseSize('10em', 400)).toBeUndefined();
+  it('rem은 기본 rootFontSize(16px) 기준으로 계산', () => {
+    // parseSize()는 resolveCSSSizeValue()에 위임하며,
+    // rootFontSize를 전달하지 않으므로 기본값 16px 사용
+    // 10rem = 10 * 16 = 160
+    expect(parseSize('10rem', 400)).toBe(160);
   });
 
-  it('viewport 크기 미제공 시 vh/vw는 undefined', () => {
-    expect(parseSize('50vh', 400)).toBeUndefined();
-    expect(parseSize('50vw', 400)).toBeUndefined();
+  it('em은 기본 parentSize(16px) 기준으로 계산', () => {
+    // parseSize()는 CSSValueContext에 parentSize를 전달하지 않으므로
+    // em도 기본값 16px 기준으로 계산
+    // 10em = 10 * 16 = 160
+    expect(parseSize('10em', 400)).toBe(160);
+  });
+
+  it('viewport 크기 미제공 시 vh/vw는 기본값(1920x1080) 기준으로 계산', () => {
+    // parseSize()는 viewportWidth/viewportHeight를 전달하지 않으면
+    // resolveCSSSizeValue() 내부 기본값 DEFAULT_VIEWPORT_HEIGHT=1080,
+    // DEFAULT_VIEWPORT_WIDTH=1920을 사용한다.
+    // 50vh = 50 * 1080 / 100 = 540
+    expect(parseSize('50vh', 400)).toBe(540);
+    // 50vw = 50 * 1920 / 100 = 960
+    expect(parseSize('50vw', 400)).toBe(960);
   });
 });
 
@@ -303,12 +320,14 @@ describe('parseLineHeight', () => {
 });
 
 describe('calculateBaseline', () => {
-  it('일반 요소는 하단 근처에 baseline', () => {
+  it('일반 요소는 폰트 메트릭 기반 ascent가 baseline', () => {
     const element = createElement({ height: 100 });
     const baseline = calculateBaseline(element, 100);
 
-    // 기본적으로 높이의 약 80% 지점
-    expect(baseline).toBe(80);
+    // Wave 3: measureFontMetrics() 기반 정밀 계산
+    // 테스트 환경(jsdom)에서는 Canvas 2D 미지원 → fontSize * 0.8 근사값
+    // 기본 fontSize=16, ascent=12.8
+    expect(baseline).toBe(12.8);
   });
 
   it('overflow: hidden이면 하단이 baseline', () => {
@@ -444,5 +463,142 @@ describe('resetWarnedTokens', () => {
     // 이 테스트는 경고가 1회만 출력되는지 직접 검증하기 어려움
     // resetWarnedTokens가 에러 없이 실행되는지만 확인
     expect(() => resetWarnedTokens()).not.toThrow();
+  });
+});
+
+// §6 P1 회귀 테스트
+describe('getButtonSizeConfig (§6 P1 단일 소스)', () => {
+  it('button → BUTTON_SIZE_CONFIG sm 기본값', () => {
+    const config = getButtonSizeConfig('button');
+    expect(config).not.toBeNull();
+    expect(config!.paddingY).toBe(4);
+    expect(config!.paddingX).toBe(12);
+    expect(config!.fontSize).toBe(14);
+    expect(config!.borderWidth).toBe(1);
+  });
+
+  it('button md 크기', () => {
+    const config = getButtonSizeConfig('button', 'md');
+    expect(config).not.toBeNull();
+    expect(config!.paddingY).toBe(8);
+    expect(config!.paddingX).toBe(24);
+    expect(config!.fontSize).toBe(16);
+  });
+
+  it('submitbutton → button과 동일 config 사용', () => {
+    const btn = getButtonSizeConfig('button', 'sm');
+    const submit = getButtonSizeConfig('submitbutton', 'sm');
+    expect(submit).toEqual(btn);
+  });
+
+  it('fancybutton → button과 동일 config 사용', () => {
+    const btn = getButtonSizeConfig('button', 'lg');
+    const fancy = getButtonSizeConfig('fancybutton', 'lg');
+    expect(fancy).toEqual(btn);
+  });
+
+  it('togglebutton → TOGGLEBUTTON_SIZE_CONFIG md 기본값', () => {
+    const config = getButtonSizeConfig('togglebutton');
+    expect(config).not.toBeNull();
+    expect(config!.paddingY).toBe(8);
+    expect(config!.paddingX).toBe(24);
+    expect(config!.fontSize).toBe(16);
+  });
+
+  it('div → null (비 버튼 태그)', () => {
+    expect(getButtonSizeConfig('div')).toBeNull();
+  });
+
+  it('대소문자 무관', () => {
+    const lower = getButtonSizeConfig('button', 'sm');
+    const upper = getButtonSizeConfig('Button', 'sm');
+    expect(upper).toEqual(lower);
+  });
+});
+
+describe('INLINE_BLOCK_TAGS', () => {
+  it('submitbutton, fancybutton 포함', () => {
+    expect(INLINE_BLOCK_TAGS.has('submitbutton')).toBe(true);
+    expect(INLINE_BLOCK_TAGS.has('fancybutton')).toBe(true);
+  });
+
+  it('div, section 미포함', () => {
+    expect(INLINE_BLOCK_TAGS.has('div')).toBe(false);
+    expect(INLINE_BLOCK_TAGS.has('section')).toBe(false);
+  });
+});
+
+describe('enrichWithIntrinsicSize (§6 P1)', () => {
+  function createTagElement(tag: string, style?: Record<string, unknown>, props?: Record<string, unknown>): Element {
+    return {
+      id: 'test-' + tag,
+      tag,
+      props: { ...(props ?? {}), style: style ?? {} },
+      children: [],
+    } as unknown as Element;
+  }
+
+  // 테스트 환경에 Canvas API가 없으므로, fontSize를 명시하여 Canvas 폴백 경로 사용.
+  // enrichWithIntrinsicSize → parseBoxModel → calculateContentHeight에서
+  // BUTTON_SIZE_CONFIG 기반 텍스트 높이(fontSize * 1.2)를 반환하면 height가 주입됨.
+
+  it('button (height auto, 명시적 fontSize) → height 주입', () => {
+    const el = createTagElement('button', { fontSize: 14 }, { children: 'Click me', size: 'sm' });
+    const enriched = enrichWithIntrinsicSize(el, 400, 800);
+    const enrichedStyle = (enriched.props as Record<string, unknown>).style as Record<string, unknown>;
+    // height는 contentHeight + padding + border로 주입됨
+    expect(enrichedStyle.height).toBeGreaterThan(0);
+  });
+
+  it('submitbutton (height auto) → height 주입', () => {
+    const el = createTagElement('submitbutton', { fontSize: 14 }, { children: 'Submit', size: 'sm' });
+    const enriched = enrichWithIntrinsicSize(el, 400, 800);
+    const enrichedStyle = (enriched.props as Record<string, unknown>).style as Record<string, unknown>;
+    expect(enrichedStyle.height).toBeGreaterThan(0);
+  });
+
+  it('fancybutton (height auto) → height 주입', () => {
+    const el = createTagElement('fancybutton', { fontSize: 16 }, { children: 'Fancy', size: 'md' });
+    const enriched = enrichWithIntrinsicSize(el, 400, 800);
+    const enrichedStyle = (enriched.props as Record<string, unknown>).style as Record<string, unknown>;
+    expect(enrichedStyle.height).toBeGreaterThan(0);
+  });
+
+  it('togglebutton (height auto) → height 주입', () => {
+    const el = createTagElement('togglebutton', { fontSize: 16 }, { children: 'Toggle', size: 'md' });
+    const enriched = enrichWithIntrinsicSize(el, 400, 800);
+    const enrichedStyle = (enriched.props as Record<string, unknown>).style as Record<string, unknown>;
+    expect(enrichedStyle.height).toBeGreaterThan(0);
+  });
+
+  it('button (명시적 height) → 주입 스킵', () => {
+    const el = createTagElement('button', { height: 50, width: 100 }, { children: 'Click' });
+    const enriched = enrichWithIntrinsicSize(el, 400, 800);
+    const enrichedStyle = (enriched.props as Record<string, unknown>).style as Record<string, unknown>;
+    expect(enrichedStyle.height).toBe(50);
+  });
+
+  it('badge (height/width auto) → width + height 주입', () => {
+    const el = createTagElement('badge', { fontSize: 16 }, { children: 'New', size: 'md' });
+    const enriched = enrichWithIntrinsicSize(el, 400, 800);
+    const enrichedStyle = (enriched.props as Record<string, unknown>).style as Record<string, unknown>;
+    expect(enrichedStyle.height).toBeGreaterThan(0);
+    expect(enrichedStyle.width).toBeGreaterThan(0);
+  });
+
+  it('div (height auto) → 변경 없음 (컨테이너)', () => {
+    const el = createTagElement('div', {});
+    const enriched = enrichWithIntrinsicSize(el, 400, 800);
+    expect(enriched).toBe(el); // 동일 참조 유지
+  });
+
+  it('button/submitbutton/fancybutton이 동일한 sm height 반환', () => {
+    const makeBtn = (tag: string) =>
+      createTagElement(tag, { fontSize: 14 }, { children: 'Test', size: 'sm' });
+    const btnH = ((enrichWithIntrinsicSize(makeBtn('button'), 400, 800).props as Record<string, unknown>).style as Record<string, unknown>).height;
+    const subH = ((enrichWithIntrinsicSize(makeBtn('submitbutton'), 400, 800).props as Record<string, unknown>).style as Record<string, unknown>).height;
+    const fncH = ((enrichWithIntrinsicSize(makeBtn('fancybutton'), 400, 800).props as Record<string, unknown>).style as Record<string, unknown>).height;
+    expect(subH).toBe(btnH);
+    expect(fncH).toBe(btnH);
   });
 });

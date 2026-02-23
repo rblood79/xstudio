@@ -21,12 +21,19 @@ export interface ComponentCreationContext {
 }
 
 /**
+ * 자식 요소 정의 (재귀적 중첩 지원)
+ */
+export type ChildDefinition = Omit<Element, "id" | "created_at" | "updated_at" | "parent_id"> & {
+  children?: ChildDefinition[];
+};
+
+/**
  * 컴포넌트 정의 타입
  */
 export interface ComponentDefinition {
   tag: string;
   parent: Omit<Element, "id" | "created_at" | "updated_at">;
-  children: Array<Omit<Element, "id" | "created_at" | "updated_at" | "parent_id">>;
+  children: ChildDefinition[];
 }
 
 /**

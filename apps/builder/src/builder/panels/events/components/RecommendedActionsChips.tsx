@@ -23,8 +23,8 @@ import {
 } from 'lucide-react';
 import { getRecommendedActions } from '../data/actionMetadata';
 import type { BlockEventAction } from '../types/eventBlockTypes';
-import type { ActionType } from '../types/eventTypes';
-import { ACTION_TYPE_LABELS } from '../types/eventTypes';
+import type { ActionType as LocalActionType } from '../types/eventTypes';
+import { ACTION_TYPE_LABELS } from '@/types/events/events.types';
 
 // ============================================================================
 // Props
@@ -38,7 +38,7 @@ interface RecommendedActionsChipsProps {
   /** 이미 추가된 액션 목록 */
   existingActions: BlockEventAction[];
   /** 액션 추가 핸들러 */
-  onAddAction: (actionType: ActionType) => void;
+  onAddAction: (actionType: LocalActionType) => void;
 }
 
 // ============================================================================
@@ -50,7 +50,7 @@ interface RecommendedActionsChipsProps {
  * ActionBlock의 ACTION_ICONS와 동일한 구조
  */
 const ACTION_CHIP_ICONS: Partial<
-  Record<ActionType, React.ComponentType<{ size?: number }>>
+  Record<LocalActionType, React.ComponentType<{ size?: number }>>
 > = {
   navigate: Navigation,
   scrollTo: ArrowDown,
@@ -104,11 +104,11 @@ export function RecommendedActionsChips({
     });
 
     // 마지막 기존 액션 기반 추천 (있는 경우)
-    let chainRecommendations: ActionType[] = [];
+    let chainRecommendations: LocalActionType[] = [];
     if (existingActions.length > 0) {
       const lastAction = existingActions[existingActions.length - 1];
       chainRecommendations = getRecommendedActions({
-        previousAction: lastAction.type,
+        previousAction: lastAction.type as LocalActionType,
       });
     }
 
@@ -121,7 +121,7 @@ export function RecommendedActionsChips({
     }
 
     // 이미 존재하는 액션 타입 제외
-    const existingTypes = new Set(existingActions.map((a) => a.type));
+    const existingTypes = new Set<string>(existingActions.map((a) => a.type));
     const filtered = merged.filter((type) => !existingTypes.has(type));
 
     // 최대 3개로 제한
@@ -137,7 +137,7 @@ export function RecommendedActionsChips({
     <div className="recommended-actions-chips">
       {chips.map((actionType) => {
         const Icon = ACTION_CHIP_ICONS[actionType] || Code;
-        const label = ACTION_TYPE_LABELS[actionType] || actionType;
+        const label = (ACTION_TYPE_LABELS as Record<string, string | undefined>)[actionType] || actionType;
         return (
           <button
             key={actionType}

@@ -11,8 +11,16 @@
  */
 
 import { cssColorToPixiHex } from '../../../../utils/color';
-import { colord } from 'colord';
-import type { EffectStyle, DropShadowEffect } from '../skia/types';
+import { colord, extend } from 'colord';
+import lchPlugin from 'colord/plugins/lch';
+import labPlugin from 'colord/plugins/lab';
+
+import type { EffectStyle, DropShadowEffect, ColorMatrixEffect } from '../skia/types';
+import { resolveCSSSizeValue } from '../layout/engines/cssValueParser';
+import type { CSSValueContext } from '../layout/engines/cssValueParser';
+import { resolveCurrentColor, preprocessStyle } from '../layout/engines/cssResolver';
+
+extend([lchPlugin, labPlugin]);
 
 // ============================================
 // Types
@@ -38,6 +46,8 @@ export interface CSSStyle {
   fontWeight?: string | number;
   fontFamily?: string;
   fontStyle?: string; // P7.2: italic, oblique
+  fontVariant?: string;
+  fontStretch?: string;
   textAlign?: string;
   lineHeight?: number | string; // P7.4: 줄 간격
   letterSpacing?: number | string; // P7.3: 자간
@@ -54,12 +64,37 @@ export interface CSSStyle {
   filter?: string;
   backdropFilter?: string;
   mixBlendMode?: string;
+  // Text overflow & wrapping
+  textOverflow?: string; // C-1: ellipsis, clip
+  wordSpacing?: number | string; // C-2: word spacing
+  textIndent?: number | string; // C-3: first-line indent
+  whiteSpace?: string;
+  wordBreak?: string;
+  overflowWrap?: string; // C-4: break-word, anywhere
+  // Text decoration extended
+  textDecorationStyle?: string; // C-5: solid, dashed, dotted, wavy, double
+  textDecorationColor?: string; // C-6: decoration color
   // Layout properties
   display?: string;
   flexDirection?: string;
   gap?: number | string;
   // Visibility
   visibility?: 'visible' | 'hidden' | 'collapse';
+  // CSS Transform
+  transform?: string;
+  transformOrigin?: string;
+  // Stacking
+  zIndex?: number | string;
+  // Interaction
+  cursor?: string;
+  pointerEvents?: string;
+  // Background image positioning (Phase 4)
+  backgroundImage?: string;
+  backgroundSize?: string;
+  backgroundPosition?: string;
+  backgroundRepeat?: string;
+  // CSS clip-path
+  clipPath?: string;
 }
 
 export interface PixiTransform {
@@ -100,37 +135,394 @@ export interface PixiTextStyle {
 // Color Conversion
 // ============================================
 
+// -----------------------------------------------
+// CSS Color Level 4: oklch / lab / lch / color()
+// -----------------------------------------------
+
+function gammaEncode(linear: number): number {
+  if (linear <= 0.0031308) return 12.92 * linear;
+  return 1.055 * Math.pow(linear, 1 / 2.4) - 0.055;
+}
+
+function clampByte(v: number): number {
+  return Math.max(0, Math.min(255, Math.round(v)));
+}
+
+function rgbToHexStr(r: number, g: number, b: number, alpha?: number): string {
+  const hex = `#${clampByte(r).toString(16).padStart(2, '0')}${clampByte(g).toString(16).padStart(2, '0')}${clampByte(b).toString(16).padStart(2, '0')}`;
+  if (alpha !== undefined && alpha < 1) {
+    return hex + clampByte(alpha * 255).toString(16).padStart(2, '0');
+  }
+  return hex;
+}
+
+function oklchToHex(L: number, C: number, H: number, alpha?: number): string {
+  const hRad = H * (Math.PI / 180);
+  const a = C * Math.cos(hRad);
+  const b = C * Math.sin(hRad);
+
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+
+  const l = l_ * l_ * l_;
+  const m = m_ * m_ * m_;
+  const s = s_ * s_ * s_;
+
+  const linR = +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  const linG = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+  const linB = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+  return rgbToHexStr(
+    gammaEncode(linR) * 255,
+    gammaEncode(linG) * 255,
+    gammaEncode(linB) * 255,
+    alpha,
+  );
+}
+
+function labToHex(L: number, a: number, b: number, alpha?: number): string {
+  const input = alpha !== undefined
+    ? { l: L, a, b, alpha }
+    : { l: L, a, b };
+  const c = colord(input);
+  if (!c.isValid()) return '#000000';
+  const rgb = c.toRgb();
+  return rgbToHexStr(rgb.r, rgb.g, rgb.b, alpha);
+}
+
+function lchToHex(L: number, C: number, H: number, alpha?: number): string {
+  const input = alpha !== undefined
+    ? { l: L, c: C, h: H, alpha }
+    : { l: L, c: C, h: H };
+  const c = colord(input);
+  if (!c.isValid()) return '#000000';
+  const rgb = c.toRgb();
+  return rgbToHexStr(rgb.r, rgb.g, rgb.b, alpha);
+}
+
+function colorFuncToHex(colorspace: string, r: number, g: number, b: number, alpha?: number): string {
+  const cs = colorspace.toLowerCase();
+
+  if (cs === 'srgb') {
+    return rgbToHexStr(r * 255, g * 255, b * 255, alpha);
+  }
+
+  if (cs === 'display-p3') {
+    // display-p3 → linear-sRGB (Bradford-adapted D65 → D65, IEC 61966-2-1)
+    const linR = 0.4865709 * r + 0.2656677 * g + 0.1982173 * b;
+    const linG = 0.2289746 * r + 0.6917385 * g + 0.0792869 * b;
+    const linB = 0.0000000 * r + 0.0451134 * g + 1.0439444 * b;
+    return rgbToHexStr(
+      gammaEncode(linR) * 255,
+      gammaEncode(linG) * 255,
+      gammaEncode(linB) * 255,
+      alpha,
+    );
+  }
+
+  // 미지원 색공간: sRGB 폴백
+  return rgbToHexStr(r * 255, g * 255, b * 255, alpha);
+}
+
+/**
+ * CSS Color Level 4 함수 인자 문자열에서 숫자 배열과 alpha를 파싱한다.
+ *
+ * "0.7 0.15 180 / 0.5" → { values: [0.7, 0.15, 180], alpha: 0.5 }
+ * "50% 0.15 180"        → { values: [0.5, 0.15, 180], alpha: undefined }
+ *
+ * percentIndices: 해당 인덱스의 값이 %일 경우 적용할 변환 함수 (기본: /100)
+ */
+function parseColorFuncArgs(
+  inner: string,
+  percentScales: number[],
+): { values: number[]; alpha: number | undefined } {
+  const slashIdx = inner.lastIndexOf('/');
+  let valuesPart = inner;
+  let alpha: number | undefined;
+
+  if (slashIdx !== -1) {
+    valuesPart = inner.slice(0, slashIdx).trim();
+    const alphaPart = inner.slice(slashIdx + 1).trim();
+    if (alphaPart.endsWith('%')) {
+      alpha = parseFloat(alphaPart) / 100;
+    } else {
+      alpha = parseFloat(alphaPart);
+    }
+    if (isNaN(alpha)) alpha = undefined;
+  }
+
+  const tokens = valuesPart.trim().split(/[\s,]+/).filter(Boolean);
+  const values = tokens.map((token, i) => {
+    if (token.endsWith('%')) {
+      const scale = percentScales[i] ?? 1;
+      return (parseFloat(token) / 100) * scale;
+    }
+    return parseFloat(token);
+  });
+
+  return { values, alpha };
+}
+
+function parseOklch(color: string): string | null {
+  const inner = color.slice(6, -1).trim();
+  // oklch: L(0-1 or 0-100%), C(0-0.4 or 0-100%), H(0-360)
+  const { values, alpha } = parseColorFuncArgs(inner, [1, 0.4, 360]);
+  if (values.length < 3 || values.some(isNaN)) return null;
+  return oklchToHex(values[0], values[1], values[2], alpha);
+}
+
+function parseLab(color: string): string | null {
+  const inner = color.slice(4, -1).trim();
+  // lab: L(0-100), a(-125..125), b(-125..125)
+  const { values, alpha } = parseColorFuncArgs(inner, [100, 125, 125]);
+  if (values.length < 3 || values.some(isNaN)) return null;
+  return labToHex(values[0], values[1], values[2], alpha);
+}
+
+function parseLch(color: string): string | null {
+  const inner = color.slice(4, -1).trim();
+  // lch: L(0-100), C(0-150), H(0-360)
+  const { values, alpha } = parseColorFuncArgs(inner, [100, 150, 360]);
+  if (values.length < 3 || values.some(isNaN)) return null;
+  return lchToHex(values[0], values[1], values[2], alpha);
+}
+
+function parseColorFunc(color: string): string | null {
+  const inner = color.slice(6, -1).trim();
+  const spaceEnd = inner.search(/\s/);
+  if (spaceEnd === -1) return null;
+  const colorspace = inner.slice(0, spaceEnd);
+  const rest = inner.slice(spaceEnd + 1).trim();
+  const { values, alpha } = parseColorFuncArgs(rest, [1, 1, 1]);
+  if (values.length < 3 || values.some(isNaN)) return null;
+  return colorFuncToHex(colorspace, values[0], values[1], values[2], alpha);
+}
+
+const COLOR_MIX_MAX_DEPTH = 5;
+
+/**
+ * color-mix() 내부 인자 문자열에서 색상과 퍼센트를 분리한다.
+ *
+ * "red 70%"  → { color: "red", pct: 70 }
+ * "#ff0000"  → { color: "#ff0000", pct: null }
+ */
+function parseColorMixArg(arg: string): { color: string; pct: number | null } {
+  const trimmed = arg.trim();
+  const pctMatch = trimmed.match(/(\s+(\d+(?:\.\d+)?)%)\s*$/);
+  if (pctMatch) {
+    const pct = parseFloat(pctMatch[2]);
+    const color = trimmed.slice(0, trimmed.length - pctMatch[1].length).trim();
+    return { color, pct };
+  }
+  return { color: trimmed, pct: null };
+}
+
+/**
+ * color-mix() 함수 내부 문자열을 최상위 쉼표 기준으로 분리한다.
+ * 중첩 괄호 내부의 쉼표는 무시한다.
+ */
+function splitColorMixArgs(inner: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i];
+    if (ch === '(') {
+      depth++;
+    } else if (ch === ')') {
+      depth--;
+    } else if (ch === ',' && depth === 0) {
+      parts.push(inner.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  parts.push(inner.slice(start).trim());
+  return parts;
+}
+
+/**
+ * CSS color-mix() 함수를 해석하여 hex 색상 문자열을 반환한다.
+ *
+ * 지원 색 공간: srgb (oklch, hsl 등은 srgb 폴백)
+ * 미지정 퍼센트: 50%/50% 기본값 또는 (100% - 명시된 쪽) 자동 계산
+ * 재귀 지원: 최대 COLOR_MIX_MAX_DEPTH depth까지 중첩 color-mix() 처리
+ *
+ * @param value - "color-mix(in srgb, red 70%, blue)" 형식의 전체 문자열
+ * @param depth - 재귀 깊이 (내부 전용)
+ * @returns hex 색상 문자열 또는 null (파싱 실패 시)
+ */
+export function resolveColorMix(value: string, depth = 0): string | null {
+  if (depth >= COLOR_MIX_MAX_DEPTH) return null;
+
+  const trimmed = value.trim();
+  if (!trimmed.toLowerCase().startsWith('color-mix(')) return null;
+
+  const innerStart = trimmed.indexOf('(');
+  const innerEnd = trimmed.lastIndexOf(')');
+  if (innerStart === -1 || innerEnd === -1 || innerEnd <= innerStart) return null;
+
+  const inner = trimmed.slice(innerStart + 1, innerEnd);
+  const parts = splitColorMixArgs(inner);
+
+  if (parts.length < 3) return null;
+
+  const arg1 = parseColorMixArg(parts[1]);
+  const arg2 = parseColorMixArg(parts[2]);
+
+  let p1: number;
+  let p2: number;
+
+  if (arg1.pct !== null && arg2.pct !== null) {
+    p1 = arg1.pct / 100;
+    p2 = arg2.pct / 100;
+  } else if (arg1.pct !== null) {
+    p1 = arg1.pct / 100;
+    p2 = 1 - p1;
+  } else if (arg2.pct !== null) {
+    p2 = arg2.pct / 100;
+    p1 = 1 - p2;
+  } else {
+    p1 = 0.5;
+    p2 = 0.5;
+  }
+
+  const resolveArg = (raw: string): string => {
+    if (raw.toLowerCase().startsWith('color-mix(')) {
+      return resolveColorMix(raw, depth + 1) ?? raw;
+    }
+    return raw;
+  };
+
+  const color1Str = resolveArg(arg1.color);
+  const color2Str = resolveArg(arg2.color);
+
+  const c1 = colord(color1Str);
+  const c2 = colord(color2Str);
+
+  if (!c1.isValid() || !c2.isValid()) return null;
+
+  const r1 = c1.toRgb();
+  const r2 = c2.toRgb();
+
+  const mixed = colord({
+    r: Math.round(r1.r * p1 + r2.r * p2),
+    g: Math.round(r1.g * p1 + r2.g * p2),
+    b: Math.round(r1.b * p1 + r2.b * p2),
+    a: r1.a * p1 + r2.a * p2,
+  });
+
+  return mixed.toHex();
+}
+
 /**
  * CSS 색상을 PixiJS 숫자로 변환
  *
  * 🚀 Phase 22: colord 기반으로 리팩토링
  * - 모든 CSS 색상 형식 지원 (hex, rgb, hsl, named colors 등)
+ * 🚀 Phase 5: currentColor 키워드 지원
+ * - currentColor가 전달되면 resolvedColor(현재 요소의 color 값)로 대체
+ * color-mix() 함수는 resolveColorMix()로 먼저 해석한다.
  *
  * @example
  * cssColorToHex('#3b82f6') // 0x3b82f6
  * cssColorToHex('rgb(59, 130, 246)') // 0x3b82f6
  * cssColorToHex('blue') // 0x0000ff
  * cssColorToHex('hsl(217, 91%, 60%)') // 0x3b82f6
+ * cssColorToHex('currentColor', 0x000000, '#3b82f6') // 0x3b82f6
+ * cssColorToHex('color-mix(in srgb, red 70%, blue)') // ~0xb30000
  */
-export function cssColorToHex(color: string | undefined, fallback = 0x000000): number {
-  return cssColorToPixiHex(color, fallback);
+export function cssColorToHex(
+  color: string | undefined,
+  fallback = 0x000000,
+  resolvedColor?: string,
+): number {
+  if (!color) return fallback;
+  const effective = resolvedColor
+    ? String(resolveCurrentColor(color, resolvedColor))
+    : color;
+
+  const lower = effective.toLowerCase();
+
+  if (lower.startsWith('oklch(')) {
+    const hex = parseOklch(effective);
+    if (hex) return cssColorToPixiHex(hex, fallback);
+    return fallback;
+  }
+  if (lower.startsWith('lab(')) {
+    const hex = parseLab(effective);
+    if (hex) return cssColorToPixiHex(hex, fallback);
+    return fallback;
+  }
+  if (lower.startsWith('lch(')) {
+    const hex = parseLch(effective);
+    if (hex) return cssColorToPixiHex(hex, fallback);
+    return fallback;
+  }
+  if (lower.startsWith('color(')) {
+    const hex = parseColorFunc(effective);
+    if (hex) return cssColorToPixiHex(hex, fallback);
+    return fallback;
+  }
+  if (lower.startsWith('color-mix(')) {
+    const resolved = resolveColorMix(effective);
+    if (resolved) return cssColorToPixiHex(resolved, fallback);
+  }
+  return cssColorToPixiHex(effective, fallback);
 }
 
 /**
  * CSS 색상에서 알파 값 추출
  *
  * colord를 사용하여 rgba/hsla/oklch/#rrggbbaa 등 모든 CSS 색상 형식을 지원한다 (I-L17).
+ * 🚀 Phase 5: currentColor 키워드 지원
+ * color-mix() 함수는 resolveColorMix()로 먼저 해석한다.
  */
-export function cssColorToAlpha(color: string | undefined): number {
+export function cssColorToAlpha(color: string | undefined, resolvedColor?: string): number {
   if (!color) return 1;
-  if (color.toLowerCase() === 'transparent') return 0;
+  const effective = resolvedColor
+    ? String(resolveCurrentColor(color, resolvedColor))
+    : color;
+  if (effective.toLowerCase() === 'transparent') return 0;
 
-  const parsed = colord(color);
+  const lower = effective.toLowerCase();
+
+  if (
+    lower.startsWith('oklch(') ||
+    lower.startsWith('lab(') ||
+    lower.startsWith('lch(') ||
+    lower.startsWith('color(')
+  ) {
+    return extractLevel4Alpha(effective);
+  }
+
+  const target = lower.startsWith('color-mix(')
+    ? (resolveColorMix(effective) ?? effective)
+    : effective;
+
+  const parsed = colord(target);
   if (parsed.isValid()) {
     return parsed.toRgb().a ?? 1;
   }
 
   return 1;
+}
+
+function extractLevel4Alpha(color: string): number {
+  const parenStart = color.indexOf('(');
+  const parenEnd = color.lastIndexOf(')');
+  if (parenStart === -1 || parenEnd === -1) return 1;
+  const inner = color.slice(parenStart + 1, parenEnd);
+  const slashIdx = inner.lastIndexOf('/');
+  if (slashIdx === -1) return 1;
+  const alphaPart = inner.slice(slashIdx + 1).trim();
+  if (alphaPart.endsWith('%')) {
+    const v = parseFloat(alphaPart) / 100;
+    return isNaN(v) ? 1 : Math.max(0, Math.min(1, v));
+  }
+  const v = parseFloat(alphaPart);
+  return isNaN(v) ? 1 : Math.max(0, Math.min(1, v));
 }
 
 // ============================================
@@ -140,12 +532,16 @@ export function cssColorToAlpha(color: string | undefined): number {
 /**
  * CSS 크기 값을 숫자로 변환
  *
+ * 내부적으로 resolveCSSSizeValue()에 위임하여 일관된 단위 해석을 제공한다.
+ * calc(), em, rem 등 확장 단위를 지원한다.
+ *
  * @example
  * parseCSSSize('100px') // 100
  * parseCSSSize('50%', 800) // 400
  * parseCSSSize(200) // 200
  * parseCSSSize('100vh', undefined, 0, { width: 1920, height: 1080 }) // 1080
  * parseCSSSize('50vw', undefined, 0, { width: 1920, height: 1080 }) // 960
+ * parseCSSSize('calc(100% - 20px)', 800) // 780
  */
 export function parseCSSSize(
   value: string | number | undefined,
@@ -154,50 +550,15 @@ export function parseCSSSize(
   viewport?: { width: number; height: number }
 ): number {
   if (value === undefined || value === null) return fallback;
-  if (typeof value === 'number') return value;
 
-  // Pixel value
-  if (value.endsWith('px')) {
-    return parseFloat(value);
-  }
+  const ctx: CSSValueContext = {
+    parentSize,
+    containerSize: parentSize,
+    viewportWidth: viewport?.width,
+    viewportHeight: viewport?.height,
+  };
 
-  // rem 단위 (기본 16px 기준)
-  if (value.endsWith('rem')) {
-    return parseFloat(value) * 16;
-  }
-
-  // vh 단위 (viewport height 기준)
-  if (value.endsWith('vh')) {
-    const vh = viewport?.height ?? 1080;
-    return (parseFloat(value) / 100) * vh;
-  }
-
-  // vw 단위 (viewport width 기준)
-  if (value.endsWith('vw')) {
-    const vw = viewport?.width ?? 1920;
-    return (parseFloat(value) / 100) * vw;
-  }
-
-  // em 단위 (parentSize가 있으면 사용, 없으면 16px)
-  // Note: 'rem' check must come before 'em' check (rem endsWith em)
-  if (value.endsWith('em')) {
-    const base = parentSize !== undefined ? parentSize : 16;
-    return parseFloat(value) * base;
-  }
-
-  // Percentage
-  if (value.endsWith('%') && parentSize !== undefined) {
-    return (parseFloat(value) / 100) * parentSize;
-  }
-
-  // Auto or other
-  if (value === 'auto') {
-    return fallback;
-  }
-
-  // Try parsing as number
-  const parsed = parseFloat(value);
-  return isNaN(parsed) ? fallback : parsed;
+  return resolveCSSSizeValue(value, ctx, fallback) ?? fallback;
 }
 
 // ============================================
@@ -222,28 +583,34 @@ export function convertToTransform(style: CSSStyle | undefined): PixiTransform {
 
 /**
  * CSS 스타일을 PixiJS Fill 스타일로 변환
+ *
+ * @param style - CSS 스타일 객체
+ * @param resolvedColor - currentColor 해석을 위한 현재 요소의 color 값
  */
-export function convertToFillStyle(style: CSSStyle | undefined): PixiFillStyle {
-  const color = cssColorToHex(style?.backgroundColor, 0xffffff);
+export function convertToFillStyle(style: CSSStyle | undefined, resolvedColor?: string): PixiFillStyle {
+  const color = cssColorToHex(style?.backgroundColor, 0xffffff, resolvedColor);
   const alpha = style?.opacity !== undefined
     ? parseCSSSize(style.opacity, undefined, 1)
-    : cssColorToAlpha(style?.backgroundColor);
+    : cssColorToAlpha(style?.backgroundColor, resolvedColor);
 
   return { color, alpha };
 }
 
 /**
  * CSS 스타일을 PixiJS Stroke 스타일로 변환
+ *
+ * @param style - CSS 스타일 객체
+ * @param resolvedColor - currentColor 해석을 위한 현재 요소의 color 값
  */
-export function convertToStrokeStyle(style: CSSStyle | undefined): PixiStrokeStyle | null {
+export function convertToStrokeStyle(style: CSSStyle | undefined, resolvedColor?: string): PixiStrokeStyle | null {
   if (!style?.borderWidth && !style?.borderColor) {
     return null;
   }
 
   return {
     width: parseCSSSize(style.borderWidth, undefined, 1),
-    color: cssColorToHex(style.borderColor, 0x000000),
-    alpha: cssColorToAlpha(style.borderColor),
+    color: cssColorToHex(style.borderColor, 0x000000, resolvedColor),
+    alpha: cssColorToAlpha(style.borderColor, resolvedColor),
   };
 }
 
@@ -331,6 +698,179 @@ export function calculateTextY(
   }
 }
 
+// ============================================
+// CSS clip-path 파싱
+// ============================================
+
+export type ClipPathShape =
+  | { type: 'inset'; top: number; right: number; bottom: number; left: number; borderRadius: number }
+  | { type: 'circle'; radius: number; cx: number; cy: number }
+  | { type: 'ellipse'; rx: number; ry: number; cx: number; cy: number }
+  | { type: 'polygon'; points: Array<{ x: number; y: number }> };
+
+/**
+ * CSS clip-path 값을 파싱하여 ClipPathShape로 변환
+ *
+ * 지원 도형:
+ * - inset(top right bottom left round <radius>)
+ * - circle(<radius> at <cx> <cy>)
+ * - ellipse(<rx> <ry> at <cx> <cy>)
+ * - polygon(<x1> <y1>, <x2> <y2>, ...)
+ *
+ * @param value - CSS clip-path 속성 값 (함수 문자열)
+ * @param width - 요소 너비 (% 값 해석용)
+ * @param height - 요소 높이 (% 값 해석용)
+ */
+export function parseClipPath(
+  value: string,
+  width: number,
+  height: number,
+): ClipPathShape | null {
+  if (!value || value === 'none') return null;
+
+  const trimmed = value.trim();
+
+  const insetMatch = trimmed.match(/^inset\(([^)]*)\)$/i);
+  if (insetMatch) {
+    return parseInset(insetMatch[1].trim(), width, height);
+  }
+
+  const circleMatch = trimmed.match(/^circle\(([^)]*)\)$/i);
+  if (circleMatch) {
+    return parseCircle(circleMatch[1].trim(), width, height);
+  }
+
+  const ellipseMatch = trimmed.match(/^ellipse\(([^)]*)\)$/i);
+  if (ellipseMatch) {
+    return parseEllipse(ellipseMatch[1].trim(), width, height);
+  }
+
+  const polygonMatch = trimmed.match(/^polygon\(([^)]*)\)$/i);
+  if (polygonMatch) {
+    return parsePolygon(polygonMatch[1].trim(), width, height);
+  }
+
+  return null;
+}
+
+function resolveClipLength(raw: string, base: number): number {
+  const trimmed = raw.trim();
+  if (trimmed.endsWith('%')) {
+    return (parseFloat(trimmed) / 100) * base;
+  }
+  return parseCSSSize(trimmed, base, 0);
+}
+
+function resolveClipPosition(raw: string, width: number, height: number): [number, number] {
+  const keyword = raw.trim().toLowerCase();
+  if (keyword === 'center') return [width / 2, height / 2];
+  if (keyword === 'top') return [width / 2, 0];
+  if (keyword === 'bottom') return [width / 2, height];
+  if (keyword === 'left') return [0, height / 2];
+  if (keyword === 'right') return [width, height / 2];
+
+  const parts = raw.trim().split(/\s+/);
+  const cx = resolveClipAxisValue(parts[0] ?? '50%', width, 'x', width, height);
+  const cy = parts[1]
+    ? resolveClipAxisValue(parts[1], height, 'y', width, height)
+    : height / 2;
+  return [cx, cy];
+}
+
+function resolveClipAxisValue(
+  raw: string,
+  base: number,
+  _axis: 'x' | 'y',
+  width: number,
+  height: number,
+): number {
+  const keyword = raw.trim().toLowerCase();
+  if (keyword === 'center') return base / 2;
+  if (keyword === 'left') return 0;
+  if (keyword === 'right') return width;
+  if (keyword === 'top') return 0;
+  if (keyword === 'bottom') return height;
+  return resolveClipLength(raw, base);
+}
+
+function parseInset(args: string, width: number, height: number): ClipPathShape | null {
+  // 분리: round 키워드 앞/뒤
+  const roundIdx = args.toLowerCase().indexOf('round');
+  let sidesPart = roundIdx >= 0 ? args.slice(0, roundIdx).trim() : args;
+  const roundPart = roundIdx >= 0 ? args.slice(roundIdx + 5).trim() : '';
+
+  const sides = sidesPart.split(/\s+/).filter(Boolean);
+  if (sides.length === 0) return null;
+
+  let top = 0, right = 0, bottom = 0, left = 0;
+  if (sides.length === 1) {
+    top = right = bottom = left = resolveClipLength(sides[0], Math.min(width, height));
+  } else if (sides.length === 2) {
+    top = bottom = resolveClipLength(sides[0], height);
+    right = left = resolveClipLength(sides[1], width);
+  } else if (sides.length === 3) {
+    top = resolveClipLength(sides[0], height);
+    right = left = resolveClipLength(sides[1], width);
+    bottom = resolveClipLength(sides[2], height);
+  } else {
+    top = resolveClipLength(sides[0], height);
+    right = resolveClipLength(sides[1], width);
+    bottom = resolveClipLength(sides[2], height);
+    left = resolveClipLength(sides[3], width);
+  }
+
+  const borderRadius = roundPart
+    ? resolveClipLength(roundPart.split(/\s+/)[0], Math.min(width, height))
+    : 0;
+
+  return { type: 'inset', top, right, bottom, left, borderRadius };
+}
+
+function parseCircle(args: string, width: number, height: number): ClipPathShape | null {
+  const atIdx = args.toLowerCase().indexOf(' at ');
+  const radiusPart = atIdx >= 0 ? args.slice(0, atIdx).trim() : args.trim();
+  const centerPart = atIdx >= 0 ? args.slice(atIdx + 4).trim() : 'center';
+
+  const base = Math.sqrt((width * width + height * height) / 2);
+  const radius = radiusPart === 'closest-side' || radiusPart === 'farthest-side' || !radiusPart
+    ? Math.min(width, height) / 2
+    : resolveClipLength(radiusPart, base);
+
+  const [cx, cy] = resolveClipPosition(centerPart, width, height);
+
+  return { type: 'circle', radius, cx, cy };
+}
+
+function parseEllipse(args: string, width: number, height: number): ClipPathShape | null {
+  const atIdx = args.toLowerCase().indexOf(' at ');
+  const radiiPart = atIdx >= 0 ? args.slice(0, atIdx).trim() : args.trim();
+  const centerPart = atIdx >= 0 ? args.slice(atIdx + 4).trim() : 'center';
+
+  const radii = radiiPart.split(/\s+/).filter(Boolean);
+  const rx = radii[0] ? resolveClipLength(radii[0], width) : width / 2;
+  const ry = radii[1] ? resolveClipLength(radii[1], height) : height / 2;
+
+  const [cx, cy] = resolveClipPosition(centerPart, width, height);
+
+  return { type: 'ellipse', rx, ry, cx, cy };
+}
+
+function parsePolygon(args: string, width: number, height: number): ClipPathShape | null {
+  // 'evenodd' 또는 'nonzero' fill rule 접두어 제거
+  const cleaned = args.replace(/^(evenodd|nonzero)\s*,?\s*/i, '');
+  const pointPairs = cleaned.split(',').map(s => s.trim()).filter(Boolean);
+
+  const points = pointPairs.map(pair => {
+    const coords = pair.split(/\s+/).filter(Boolean);
+    const x = coords[0] ? resolveClipLength(coords[0], width) : 0;
+    const y = coords[1] ? resolveClipLength(coords[1], height) : 0;
+    return { x, y };
+  });
+
+  if (points.length < 3) return null;
+  return { type: 'polygon', points };
+}
+
 /**
  * CSS borderRadius를 PixiJS 반경 배열로 변환
  *
@@ -382,16 +922,34 @@ export interface ConvertedStyle {
 
 /**
  * CSS 스타일을 모든 PixiJS 스타일로 변환
+ *
+ * Phase 5: currentColor + initial/unset/revert 지원
+ * - style.color를 resolvedColor로 사용하여 색상 속성의 currentColor를 해석한다.
+ * - initial/unset/revert 키워드는 preprocessStyle()에서 전처리된다.
+ *
+ * @param style - CSS 스타일 객체
+ * @param computedColor - 상위 resolved color (cssResolver.resolveStyle()의 결과)
+ *                        전달하지 않으면 style.color 값을 사용한다.
  */
-export function convertStyle(style: CSSStyle | undefined): ConvertedStyle {
+export function convertStyle(style: CSSStyle | undefined, computedColor?: string): ConvertedStyle {
   const transform = convertToTransform(style);
+
+  // currentColor 해석을 위한 color 값 결정
+  // computedColor가 전달된 경우: 상위 cascade에서 이미 계산된 값 사용
+  // 그렇지 않은 경우: 현재 style의 color 값 사용 (fallback: #000000)
+  const resolvedColor = computedColor ?? style?.color ?? '#000000';
+
+  // 비상속 속성의 cascade 키워드(initial, unset, revert) 및 currentColor 전처리
+  const processedStyle = style
+    ? (preprocessStyle(style as Record<string, unknown>, resolvedColor) as CSSStyle)
+    : style;
 
   return {
     transform,
-    fill: convertToFillStyle(style),
-    stroke: convertToStrokeStyle(style),
-    text: convertToTextStyle(style, transform.width),
-    borderRadius: convertBorderRadius(style?.borderRadius),
+    fill: convertToFillStyle(processedStyle, resolvedColor),
+    stroke: convertToStrokeStyle(processedStyle, resolvedColor),
+    text: convertToTextStyle(processedStyle, transform.width),
+    borderRadius: convertBorderRadius(processedStyle?.borderRadius),
   };
 }
 
@@ -402,6 +960,8 @@ export function convertStyle(style: CSSStyle | undefined): ConvertedStyle {
 interface SkiaEffectsResult {
   effects?: EffectStyle[];
   blendMode?: string;
+  /** CSS transform → CanvasKit 3x3 matrix (Float32Array(9)) */
+  transform?: Float32Array;
 }
 
 /**
@@ -411,6 +971,10 @@ interface SkiaEffectsResult {
  * - opacity → OpacityEffect
  * - boxShadow → DropShadowEffect
  * - filter: blur() → LayerBlurEffect
+ * - filter: brightness() → ColorMatrixEffect
+ * - filter: contrast() → ColorMatrixEffect
+ * - filter: saturate() → ColorMatrixEffect
+ * - filter: hue-rotate() → ColorMatrixEffect
  * - backdropFilter: blur() → BackgroundBlurEffect
  * - mixBlendMode → blendMode string
  */
@@ -427,19 +991,19 @@ export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult
     }
   }
 
-  // 2. boxShadow → DropShadowEffect
+  // 2. boxShadow → DropShadowEffect (다중 shadow 지원)
   if (style.boxShadow && style.boxShadow !== 'none') {
-    const shadow = parseFirstBoxShadow(style.boxShadow);
-    if (shadow) {
+    const shadows = parseAllBoxShadows(style.boxShadow);
+    for (const shadow of shadows) {
       effects.push(shadow);
     }
   }
 
-  // 3. filter: blur(Xpx) → LayerBlurEffect
+  // 3. filter → LayerBlurEffect + ColorMatrixEffect
   if (style.filter) {
-    const blurMatch = style.filter.match(/blur\((\d+(?:\.\d+)?)(px)?\)/);
-    if (blurMatch) {
-      effects.push({ type: 'layer-blur', sigma: parseFloat(blurMatch[1]) });
+    const filterEffects = parseCSSFilter(style.filter);
+    for (const fe of filterEffects) {
+      effects.push(fe);
     }
   }
 
@@ -451,24 +1015,45 @@ export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult
     }
   }
 
+  // 5. CSS transform → CanvasKit 3x3 matrix
+  let transformMatrix: Float32Array | undefined;
+  if (style.transform && style.transform !== 'none') {
+    // width/height는 transform-origin의 % 해석에 필요 — SkiaEffectsResult에서는
+    // 호출측에서 별도 width/height 전달이 필요하나, 현재 buildSkiaEffects()는
+    // style만 받으므로 transform-origin의 % 및 키워드는 0 기반으로 처리한다.
+    // 실제 origin 적용은 BoxSprite 등에서 width/height를 알고 있는 시점에서 수행.
+    transformMatrix = parseTransform(style.transform) ?? undefined;
+  }
+
   return {
     effects: effects.length > 0 ? effects : undefined,
     blendMode: style.mixBlendMode || undefined,
+    transform: transformMatrix,
   };
 }
 
 /**
- * CSS boxShadow의 첫 번째 shadow를 파싱하여 DropShadowEffect로 변환
+ * 다중 CSS boxShadow를 파싱하여 DropShadowEffect 배열로 변환
+ *
+ * 쉼표로 분리하되, 괄호 내부의 쉼표(rgb() 등)는 무시한다.
+ */
+function parseAllBoxShadows(raw: string): DropShadowEffect[] {
+  const parts = raw.split(/,(?![^(]*\))/);
+  return parts
+    .map(s => parseOneShadow(s.trim()))
+    .filter((s): s is DropShadowEffect => s !== null);
+}
+
+/**
+ * 단일 CSS boxShadow 값을 파싱하여 DropShadowEffect로 변환
  *
  * 지원 포맷: [inset] offsetX offsetY [blurRadius [spreadRadius]] [color]
  */
-function parseFirstBoxShadow(raw: string): DropShadowEffect | null {
-  // 콤마 분리 시 괄호 안의 콤마는 제외
-  const first = raw.split(/,(?![^(]*\))/)[0].trim();
-  if (!first || first === 'none') return null;
+function parseOneShadow(raw: string): DropShadowEffect | null {
+  if (!raw || raw === 'none') return null;
 
-  const inner = /\binset\b/.test(first);
-  let cleaned = first.replace(/\binset\b/, '').trim();
+  const inner = /\binset\b/.test(raw);
+  let cleaned = raw.replace(/\binset\b/, '').trim();
 
   // 색상 추출 (rgb/rgba/hsl/hsla/#hex)
   let colorStr = 'rgba(0,0,0,1)';
@@ -515,6 +1100,687 @@ function parseFirstBoxShadow(raw: string): DropShadowEffect | null {
     color,
     inner,
   };
+}
+
+// ============================================
+// CSS Transform → CanvasKit 3x3 Matrix
+// ============================================
+
+/**
+ * 3x3 행렬 곱셈 (row-major, CanvasKit 규격)
+ *
+ * CanvasKit 3x3 layout:
+ * [scaleX, skewX,  transX]   [0, 1, 2]
+ * [skewY,  scaleY, transY] = [3, 4, 5]
+ * [persp0, persp1, persp2]   [6, 7, 8]
+ */
+function multiply3x3(a: Float32Array, b: Float32Array): Float32Array {
+  return Float32Array.of(
+    a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
+    a[0] * b[1] + a[1] * b[4] + a[2] * b[7],
+    a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
+    a[3] * b[0] + a[4] * b[3] + a[5] * b[6],
+    a[3] * b[1] + a[4] * b[4] + a[5] * b[7],
+    a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
+    a[6] * b[0] + a[7] * b[3] + a[8] * b[6],
+    a[6] * b[1] + a[7] * b[4] + a[8] * b[7],
+    a[6] * b[2] + a[7] * b[5] + a[8] * b[8],
+  );
+}
+
+/** 단위 행렬 (3x3 identity) */
+function identity3x3(): Float32Array {
+  return Float32Array.of(1, 0, 0, 0, 1, 0, 0, 0, 1);
+}
+
+/** 이동 행렬 */
+function translateMatrix(tx: number, ty: number): Float32Array {
+  return Float32Array.of(1, 0, tx, 0, 1, ty, 0, 0, 1);
+}
+
+/** 회전 행렬 (라디안) */
+function rotateMatrix(radians: number): Float32Array {
+  const c = Math.cos(radians);
+  const s = Math.sin(radians);
+  return Float32Array.of(c, -s, 0, s, c, 0, 0, 0, 1);
+}
+
+/** 스케일 행렬 */
+function scaleMatrix(sx: number, sy: number): Float32Array {
+  return Float32Array.of(sx, 0, 0, 0, sy, 0, 0, 0, 1);
+}
+
+/** skew 행렬 (라디안) */
+function skewMatrix(ax: number, ay: number): Float32Array {
+  return Float32Array.of(1, Math.tan(ax), 0, Math.tan(ay), 1, 0, 0, 0, 1);
+}
+
+/** 각도 문자열을 라디안으로 변환 */
+function parseAngle(value: string): number {
+  const trimmed = value.trim();
+  if (trimmed.endsWith('rad')) return parseFloat(trimmed);
+  if (trimmed.endsWith('turn')) return parseFloat(trimmed) * Math.PI * 2;
+  if (trimmed.endsWith('grad')) return parseFloat(trimmed) * (Math.PI / 200);
+  // deg (기본)
+  return parseFloat(trimmed) * (Math.PI / 180);
+}
+
+/**
+ * CSS transform 문자열을 CanvasKit 3x3 matrix로 변환
+ *
+ * 지원 함수: translate, translateX, translateY, rotate, scale, scaleX, scaleY,
+ *           skew, skewX, skewY, matrix
+ *
+ * 여러 함수를 순서대로 왼쪽에서 오른쪽으로 합성한다.
+ */
+export function parseTransform(value: string): Float32Array | null {
+  if (!value || value === 'none') return null;
+
+  // 각 transform 함수를 추출: functionName(args)
+  const funcRegex = /(\w+)\(([^)]*)\)/g;
+  let result = identity3x3();
+  let matched = false;
+  let match: RegExpExecArray | null;
+
+  while ((match = funcRegex.exec(value)) !== null) {
+    const fn = match[1];
+    const args = match[2].split(/[\s,]+/).map(s => s.trim()).filter(Boolean);
+    let mat: Float32Array | null = null;
+
+    switch (fn) {
+      case 'translate': {
+        const tx = parseCSSSize(args[0], undefined, 0);
+        const ty = args[1] ? parseCSSSize(args[1], undefined, 0) : 0;
+        mat = translateMatrix(tx, ty);
+        break;
+      }
+      case 'translateX': {
+        mat = translateMatrix(parseCSSSize(args[0], undefined, 0), 0);
+        break;
+      }
+      case 'translateY': {
+        mat = translateMatrix(0, parseCSSSize(args[0], undefined, 0));
+        break;
+      }
+      case 'rotate': {
+        mat = rotateMatrix(parseAngle(args[0]));
+        break;
+      }
+      case 'scale': {
+        const sx = parseFloat(args[0]);
+        const sy = args[1] ? parseFloat(args[1]) : sx;
+        if (!isNaN(sx) && !isNaN(sy)) mat = scaleMatrix(sx, sy);
+        break;
+      }
+      case 'scaleX': {
+        const sx = parseFloat(args[0]);
+        if (!isNaN(sx)) mat = scaleMatrix(sx, 1);
+        break;
+      }
+      case 'scaleY': {
+        const sy = parseFloat(args[0]);
+        if (!isNaN(sy)) mat = scaleMatrix(1, sy);
+        break;
+      }
+      case 'skew': {
+        const ax = parseAngle(args[0]);
+        const ay = args[1] ? parseAngle(args[1]) : 0;
+        mat = skewMatrix(ax, ay);
+        break;
+      }
+      case 'skewX': {
+        mat = skewMatrix(parseAngle(args[0]), 0);
+        break;
+      }
+      case 'skewY': {
+        mat = skewMatrix(0, parseAngle(args[0]));
+        break;
+      }
+      case 'matrix': {
+        // CSS matrix(a, b, c, d, e, f) → CanvasKit row-major 3x3
+        // CSS 행렬:        CanvasKit 배열:
+        // | a  c  e |      [a, c, e,
+        // | b  d  f |  →    b, d, f,
+        // | 0  0  1 |       0, 0, 1]
+        if (args.length === 6) {
+          const [a, b, c, d, e, f] = args.map(Number);
+          if ([a, b, c, d, e, f].every(n => isFinite(n))) {
+            mat = Float32Array.of(a, c, e, b, d, f, 0, 0, 1);
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    if (mat) {
+      result = multiply3x3(result, mat);
+      matched = true;
+    }
+  }
+
+  return matched ? result : null;
+}
+
+/**
+ * CSS transform-origin 값을 [ox, oy] 좌표로 변환
+ *
+ * 지원 키워드: left, center, right, top, bottom
+ * 지원 단위: px, %, 숫자
+ *
+ * 기본값: center center → (width/2, height/2)
+ */
+export function parseTransformOrigin(
+  value: string | undefined,
+  width: number,
+  height: number,
+): [number, number] {
+  if (!value) return [width / 2, height / 2];
+
+  const parts = value.trim().split(/\s+/);
+  const resolveX = (v: string): number => {
+    switch (v) {
+      case 'left': return 0;
+      case 'center': return width / 2;
+      case 'right': return width;
+      default:
+        if (v.endsWith('%')) return (parseFloat(v) / 100) * width;
+        return parseCSSSize(v, width, width / 2);
+    }
+  };
+  const resolveY = (v: string): number => {
+    switch (v) {
+      case 'top': return 0;
+      case 'center': return height / 2;
+      case 'bottom': return height;
+      default:
+        if (v.endsWith('%')) return (parseFloat(v) / 100) * height;
+        return parseCSSSize(v, height, height / 2);
+    }
+  };
+
+  const ox = resolveX(parts[0]);
+  const oy = parts[1] ? resolveY(parts[1]) : height / 2;
+
+  return [ox, oy];
+}
+
+/**
+ * transform-origin을 적용한 최종 3x3 matrix 생성
+ *
+ * 원리: translate(ox, oy) × matrix × translate(-ox, -oy)
+ * → origin으로 이동 후 변환 적용, 다시 원위치
+ */
+export function applyTransformOrigin(
+  matrix: Float32Array,
+  ox: number,
+  oy: number,
+): Float32Array {
+  const pre = translateMatrix(ox, oy);
+  const post = translateMatrix(-ox, -oy);
+  return multiply3x3(multiply3x3(pre, matrix), post);
+}
+
+// ============================================
+// CSS Filter → EffectStyle 변환
+// ============================================
+
+/** 4x5 identity color matrix */
+function identityColorMatrix(): Float32Array {
+  // prettier-ignore
+  return Float32Array.of(
+    1, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0,
+  );
+}
+
+/**
+ * 두 4x5 색상 행렬을 합성한다 (a * b).
+ *
+ * 4x5 행렬은 4x4 선형 부분 + 4x1 오프셋 열로 구성된다.
+ * result[i,j] = sum(a[i,k] * b[k,j]) (k=0..3)   — 선형 부분
+ * result[i,4] = sum(a[i,k] * b[k,4]) + a[i,4]    — 오프셋 열
+ */
+function multiplyColorMatrix(a: Float32Array, b: Float32Array): Float32Array {
+  const r = new Float32Array(20);
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 5; col++) {
+      let sum = 0;
+      for (let k = 0; k < 4; k++) {
+        sum += a[row * 5 + k] * b[k * 5 + col];
+      }
+      // 오프셋 열(col=4)에 자기 오프셋 추가
+      if (col === 4) {
+        sum += a[row * 5 + 4];
+      }
+      r[row * 5 + col] = sum;
+    }
+  }
+  return r;
+}
+
+/**
+ * brightness(val) → 4x5 색상 행렬
+ *
+ * RGB 채널에 val을 곱한다. Alpha는 변경 없음.
+ */
+function brightnessMatrix(val: number): Float32Array {
+  // prettier-ignore
+  return Float32Array.of(
+    val, 0,   0,   0, 0,
+    0,   val, 0,   0, 0,
+    0,   0,   val, 0, 0,
+    0,   0,   0,   1, 0,
+  );
+}
+
+/**
+ * contrast(val) → 4x5 색상 행렬
+ *
+ * 대각선에 val, 오프셋에 0.5 * (1 - val) 을 적용한다.
+ * (CanvasKit의 ColorFilter.MakeMatrix는 오프셋을 0-1 범위로 해석)
+ */
+function contrastMatrix(val: number): Float32Array {
+  const offset = 0.5 * (1 - val);
+  // prettier-ignore
+  return Float32Array.of(
+    val, 0,   0,   0, offset,
+    0,   val, 0,   0, offset,
+    0,   0,   val, 0, offset,
+    0,   0,   0,   1, 0,
+  );
+}
+
+/**
+ * saturate(val) → 4x5 색상 행렬
+ *
+ * SVG/CSS 사양(feColorMatrix type="saturate")을 따른다.
+ * https://www.w3.org/TR/filter-effects-1/#feColorMatrixElement
+ */
+function saturateMatrix(val: number): Float32Array {
+  const s = val;
+  // ITU-R BT.709 luminance coefficients
+  const rL = 0.2126;
+  const gL = 0.7152;
+  const bL = 0.0722;
+
+  // prettier-ignore
+  return Float32Array.of(
+    rL * (1 - s) + s,   gL * (1 - s),       bL * (1 - s),       0, 0,
+    rL * (1 - s),       gL * (1 - s) + s,   bL * (1 - s),       0, 0,
+    rL * (1 - s),       gL * (1 - s),       bL * (1 - s) + s,   0, 0,
+    0,                  0,                  0,                  1, 0,
+  );
+}
+
+/**
+ * hue-rotate(deg) → 4x5 색상 행렬
+ *
+ * SVG/CSS 사양(feColorMatrix type="hueRotate")을 따른다.
+ * https://www.w3.org/TR/filter-effects-1/#feColorMatrixElement
+ */
+function hueRotateMatrix(degrees: number): Float32Array {
+  const rad = degrees * (Math.PI / 180);
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+
+  // ITU-R BT.709 luminance coefficients
+  const rL = 0.2126;
+  const gL = 0.7152;
+  const bL = 0.0722;
+
+  // 사양에 따른 3x3 RGB 회전 행렬
+  const m00 = rL + cos * (1 - rL) + sin * (-rL);
+  const m01 = gL + cos * (-gL) + sin * (-gL);
+  const m02 = bL + cos * (-bL) + sin * (1 - bL);
+  const m10 = rL + cos * (-rL) + sin * 0.143;
+  const m11 = gL + cos * (1 - gL) + sin * 0.140;
+  const m12 = bL + cos * (-bL) + sin * (-0.283);
+  const m20 = rL + cos * (-rL) + sin * (-(1 - rL));
+  const m21 = gL + cos * (-gL) + sin * gL;
+  const m22 = bL + cos * (1 - bL) + sin * bL;
+
+  // prettier-ignore
+  return Float32Array.of(
+    m00, m01, m02, 0, 0,
+    m10, m11, m12, 0, 0,
+    m20, m21, m22, 0, 0,
+    0,   0,   0,   1, 0,
+  );
+}
+
+/**
+ * grayscale(amount) → 4x5 색상 행렬
+ *
+ * SVG Filter Effects Level 1 사양의 grayscale 행렬을 따른다.
+ * amount=0: 원본, amount=1: 완전 회색조.
+ * https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent
+ */
+function grayscaleMatrix(amount: number): Float32Array {
+  // amount=0 → 원본(항등), amount=1 → 완전 회색조
+  // s: 원본 유지 비율. s=1이면 saturate(1)과 동일 (원본), s=0이면 모든 채널이 휘도값으로 수렴
+  const s = Math.max(0, Math.min(1, 1 - amount));
+  // ITU-R BT.709 luminance coefficients
+  const rL = 0.2126;
+  const gL = 0.7152;
+  const bL = 0.0722;
+
+  // SVG spec: grayscale(amount) = saturate(1 - amount)
+  // prettier-ignore
+  return Float32Array.of(
+    rL + (1 - rL) * s,  gL - gL * s,         bL - bL * s,         0, 0,
+    rL - rL * s,         gL + (1 - gL) * s,  bL - bL * s,         0, 0,
+    rL - rL * s,         gL - gL * s,         bL + (1 - bL) * s,  0, 0,
+    0,                   0,                   0,                   1, 0,
+  );
+}
+
+/**
+ * invert(amount) → 4x5 색상 행렬
+ *
+ * 각 RGB 채널을 (1 - 2*amount)로 스케일하고 amount 오프셋을 더한다.
+ * amount=0: 원본, amount=1: 완전 반전.
+ */
+function invertMatrix(amount: number): Float32Array {
+  const a = Math.max(0, Math.min(1, amount));
+  // amount=0 → scale=1, offset=0 (원본)
+  // amount=1 → scale=-1, offset=1 (완전 반전: R' = -R + 1)
+  const scale = 1 - 2 * a;
+  const offset = a;
+
+  // prettier-ignore
+  return Float32Array.of(
+    scale, 0,     0,     0, offset,
+    0,     scale, 0,     0, offset,
+    0,     0,     scale, 0, offset,
+    0,     0,     0,     1, 0,
+  );
+}
+
+/**
+ * sepia(amount) → 4x5 색상 행렬
+ *
+ * SVG Filter Effects Level 1 사양의 sepia 행렬을 따른다.
+ * amount=0: 원본, amount=1: 완전 세피아.
+ * https://www.w3.org/TR/filter-effects-1/#sepiaEquivalent
+ */
+function sepiaMatrix(amount: number): Float32Array {
+  // s: 원본 유지 비율. s=1이면 항등(원본), s=0이면 완전 세피아
+  const s = Math.max(0, Math.min(1, 1 - amount));
+
+  // prettier-ignore
+  return Float32Array.of(
+    0.393 + 0.607 * s,  0.769 - 0.769 * s,  0.189 - 0.189 * s,  0, 0,
+    0.349 - 0.349 * s,  0.686 + 0.314 * s,  0.168 - 0.168 * s,  0, 0,
+    0.272 - 0.272 * s,  0.534 - 0.534 * s,  0.131 + 0.869 * s,  0, 0,
+    0,                  0,                  0,                   1, 0,
+  );
+}
+
+/**
+ * CSS filter: drop-shadow() 인자를 파싱하여 DropShadowEffect로 변환한다.
+ *
+ * 포맷: "offsetX offsetY [blurRadius [spread]] [color]"
+ * - spread는 CSS filter drop-shadow에서 무시된다 (box-shadow와 다름).
+ * - color는 colord로 파싱하여 Float32Array로 변환한다.
+ *
+ * @param arg - drop-shadow() 괄호 안쪽 문자열
+ * @returns DropShadowEffect 또는 null
+ */
+function parseDropShadowFilterArgs(arg: string): DropShadowEffect | null {
+  if (!arg) return null;
+
+  let cleaned = arg.trim();
+
+  // 색상 추출 (rgb/rgba/hsl/hsla/#hex) — box-shadow 파서와 동일한 패턴
+  let colorStr = 'rgba(0,0,0,1)';
+  const colorPatterns = [
+    /rgba?\([^)]+\)/,
+    /hsla?\([^)]+\)/,
+    /#[0-9a-fA-F]{3,8}/,
+  ];
+  for (const pattern of colorPatterns) {
+    const match = cleaned.match(pattern);
+    if (match) {
+      colorStr = match[0];
+      cleaned = cleaned.replace(match[0], '').trim();
+      break;
+    }
+  }
+
+  // 숫자값 추출: offsetX offsetY [blurRadius [spread]]
+  const nums = cleaned.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+  if (nums.length < 2) return null;
+
+  const dx = nums[0];
+  const dy = nums[1];
+  const blurRadius = nums[2] ?? 0;
+  // CSS blur-radius → Skia sigma (sigma ≈ blurRadius / 2)
+  const sigma = blurRadius / 2;
+  // nums[3]은 spread — filter drop-shadow에서는 무시
+
+  // 색상 → Float32Array (box-shadow 파서와 동일한 변환)
+  const hex = cssColorToHex(colorStr, 0x000000);
+  const alpha = cssColorToAlpha(colorStr);
+  const color = Float32Array.of(
+    ((hex >> 16) & 0xff) / 255,
+    ((hex >> 8) & 0xff) / 255,
+    (hex & 0xff) / 255,
+    alpha,
+  );
+
+  return {
+    type: 'drop-shadow',
+    dx,
+    dy,
+    sigmaX: sigma,
+    sigmaY: sigma,
+    color,
+    inner: false, // CSS filter drop-shadow는 항상 외부 그림자
+  };
+}
+
+/**
+ * CSS filter 문자열에서 모든 필터 함수를 파싱하여 EffectStyle 배열로 변환한다.
+ *
+ * 지원 함수:
+ * - blur(Xpx) → LayerBlurEffect
+ * - brightness(X) → ColorMatrixEffect
+ * - contrast(X) → ColorMatrixEffect
+ * - saturate(X) → ColorMatrixEffect
+ * - hue-rotate(Xdeg) → ColorMatrixEffect
+ * - grayscale(X) → ColorMatrixEffect
+ * - invert(X) → ColorMatrixEffect
+ * - sepia(X) → ColorMatrixEffect
+ * - drop-shadow(offsetX offsetY blur color) → DropShadowEffect
+ *
+ * 여러 color matrix 함수가 있으면 하나의 합성 행렬로 병합하여
+ * 단일 ColorMatrixEffect로 출력한다 (GPU pass 최소화).
+ */
+function parseCSSFilter(filter: string): EffectStyle[] {
+  const results: EffectStyle[] = [];
+
+  // 각 필터 함수 추출
+  const funcRegex = /([\w-]+)\(([^)]*)\)/g;
+  let composedMatrix: Float32Array | null = null;
+  let funcMatch: RegExpExecArray | null;
+
+  while ((funcMatch = funcRegex.exec(filter)) !== null) {
+    const fn = funcMatch[1];
+    const arg = funcMatch[2].trim();
+
+    switch (fn) {
+      case 'blur': {
+        const sigma = parseFloat(arg);
+        if (!isNaN(sigma) && sigma > 0) {
+          results.push({ type: 'layer-blur', sigma });
+        }
+        break;
+      }
+
+      case 'brightness': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          const mat = brightnessMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'contrast': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          const mat = contrastMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'saturate': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          const mat = saturateMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'hue-rotate': {
+        const degrees = parseFilterAngleArg(arg);
+        if (degrees !== null) {
+          const mat = hueRotateMatrix(degrees);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'grayscale': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          // 클램핑은 grayscaleMatrix 내부에서 처리
+          const mat = grayscaleMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'invert': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          // 클램핑은 invertMatrix 내부에서 처리
+          const mat = invertMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'sepia': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          // 클램핑은 sepiaMatrix 내부에서 처리
+          const mat = sepiaMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'drop-shadow': {
+        // arg: "4px 4px 10px rgba(0,0,0,0.5)" 형식
+        const shadow = parseDropShadowFilterArgs(arg);
+        if (shadow) {
+          results.push(shadow);
+        }
+        break;
+      }
+
+      default:
+        // 지원하지 않는 필터 함수는 무시
+        break;
+    }
+  }
+
+  // 합성된 color matrix가 있으면 단일 이펙트로 추가
+  if (composedMatrix) {
+    // identity인지 확인 — identity이면 GPU pass 불필요
+    const identity = identityColorMatrix();
+    let isIdentity = true;
+    for (let i = 0; i < 20; i++) {
+      if (Math.abs(composedMatrix[i] - identity[i]) > 1e-6) {
+        isIdentity = false;
+        break;
+      }
+    }
+    if (!isIdentity) {
+      results.push({ type: 'color-matrix', matrix: composedMatrix });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * CSS filter 함수의 숫자/퍼센트 인자를 파싱한다.
+ *
+ * - "1.5" → 1.5
+ * - "150%" → 1.5
+ * - 파싱 실패 시 null 반환
+ */
+function parseFilterNumericArg(arg: string, _defaultValue: number): number | null {
+  if (!arg) return null;
+  const trimmed = arg.trim();
+  if (trimmed.endsWith('%')) {
+    const num = parseFloat(trimmed);
+    return isNaN(num) ? null : num / 100;
+  }
+  const num = parseFloat(trimmed);
+  return isNaN(num) ? null : num;
+}
+
+/**
+ * CSS filter 함수의 각도 인자를 도(degree) 단위로 파싱한다.
+ *
+ * - "90deg" → 90
+ * - "1.57rad" → ~90
+ * - "0.25turn" → 90
+ * - "100grad" → 90
+ * - "90" → 90 (deg 기본값)
+ */
+function parseFilterAngleArg(arg: string): number | null {
+  if (!arg) return null;
+  const trimmed = arg.trim();
+
+  if (trimmed.endsWith('rad')) {
+    const rad = parseFloat(trimmed);
+    return isNaN(rad) ? null : rad * (180 / Math.PI);
+  }
+  if (trimmed.endsWith('turn')) {
+    const turn = parseFloat(trimmed);
+    return isNaN(turn) ? null : turn * 360;
+  }
+  if (trimmed.endsWith('grad')) {
+    const grad = parseFloat(trimmed);
+    return isNaN(grad) ? null : grad * (180 / 200);
+  }
+  // deg (기본값)
+  const deg = parseFloat(trimmed);
+  return isNaN(deg) ? null : deg;
 }
 
 export default convertStyle;

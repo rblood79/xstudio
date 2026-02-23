@@ -12,7 +12,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useMemo, useContext } from 'react';
+import { memo, useMemo, useContext, useCallback, useRef } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
 // import { registerElement, unregisterElement } from '../elementRegistry';
@@ -20,6 +20,9 @@ import { useSkiaNode } from '../skia/useSkiaNode';
 import type { SkiaNodeData } from '../skia/nodeRenderers';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { convertStyle, cssColorToHex, parseCSSSize, type CSSStyle } from './styleConverter';
+import { Graphics as PixiGraphics } from 'pixi.js';
+import { useAtomValue } from 'jotai';
+import { previewComponentStateAtom } from '../../../panels/styles/atoms/componentStateAtom';
 import { isFillV2Enabled } from '../../../../utils/featureFlags';
 import { fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
 import type { FillStyle } from '../skia/types';
@@ -27,18 +30,19 @@ import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
 import { specShapesToSkia } from '../skia/specShapeConverter';
-import type { ComponentSpec, Shape } from '@xstudio/specs';
+import type { ComponentSpec, ComponentState, Shape, TokenRef } from '@xstudio/specs';
+import { resolveToken } from '@xstudio/specs';
 import {
   ButtonSpec, BadgeSpec, CardSpec, DialogSpec, LinkSpec, PopoverSpec,
   SeparatorSpec, ToggleButtonSpec, ToggleButtonGroupSpec, TooltipSpec,
   TextFieldSpec, TextAreaSpec, NumberFieldSpec, SearchFieldSpec,
-  CheckboxSpec, CheckboxGroupSpec, RadioSpec, SwitchSpec, FormSpec,
-  SelectSpec, ComboBoxSpec, ListBoxSpec, SliderSpec, MeterSpec,
+  CheckboxSpec, CheckboxGroupSpec, RadioSpec, RadioGroupSpec, SwitchSpec, FormSpec,
+  SelectSpec, ComboBoxSpec, ListBoxSpec, SliderSpec, SLIDER_DIMENSIONS, MeterSpec,
   ProgressBarSpec, TableSpec, TreeSpec, TabsSpec, MenuSpec,
-  BreadcrumbsSpec, PaginationSpec, TagGroupSpec, GridListSpec,
+  BreadcrumbsSpec, PaginationSpec, GridListSpec,
   DisclosureSpec, DisclosureGroupSpec, ToolbarSpec, ToastSpec,
   PanelSpec, GroupSpec, SlotSpec, SkeletonSpec, DropZoneSpec,
-  FileTriggerSpec, ScrollBoxSpec, MaskedFrameSpec, FancyButtonSpec,
+  FileTriggerSpec, ScrollBoxSpec, MaskedFrameSpec,
   InputSpec, ListSpec, SwitcherSpec,
   DatePickerSpec, DateRangePickerSpec, DateFieldSpec, TimeFieldSpec,
   CalendarSpec, ColorPickerSpec, ColorFieldSpec, ColorSliderSpec,
@@ -46,7 +50,7 @@ import {
 } from '@xstudio/specs';
 import {
   PixiButton,
-  PixiFancyButton,
+
   PixiCheckbox,
   PixiCheckboxGroup,
   PixiCheckboxItem,
@@ -79,7 +83,6 @@ import {
   PixiComboBox,
   // Phase 4 WebGL Migration Components
   PixiGridList,
-  PixiTagGroup,
   PixiTree,
   PixiTable,
   // Phase 5 WebGL Migration Components
@@ -160,8 +163,6 @@ export interface ClickModifiers {
 
 export interface ElementSpriteProps {
   element: Element;
-  /** @deprecated 더 이상 사용하지 않음. 각 ElementSprite가 자체적으로 선택 상태를 구독합니다. */
-  isSelected?: boolean;
   /** 레이아웃 계산된 위치 (있으면 style보다 우선) */
   layoutPosition?: LayoutPosition;
   onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
@@ -183,6 +184,7 @@ export interface ElementSpriteProps {
 const TEXT_TAGS = new Set([
   'Text',
   'Heading',
+  'Description',
   'Label',
   'Paragraph',
   'Link',
@@ -203,9 +205,9 @@ const IMAGE_TAGS = new Set(['Image', 'Avatar', 'Logo', 'Icon', 'Thumbnail']);
  * UI 컴포넌트 태그들 (Phase 11 B2.4)
  */
 const UI_BUTTON_TAGS = new Set(['Button', 'SubmitButton']);
-const UI_FANCYBUTTON_TAGS = new Set(['FancyButton']);
+
 const UI_CHECKBOX_GROUP_TAGS = new Set(['CheckboxGroup']);  // CheckboxGroup 컨테이너
-const UI_CHECKBOX_ITEM_TAGS = new Set(['Checkbox', 'CheckBox', 'Switch', 'Toggle']);  // Checkbox 개별 아이템
+const UI_CHECKBOX_ITEM_TAGS = new Set(['Checkbox', 'CheckBox']);  // Checkbox 개별 아이템 (Switch/Toggle은 UI_SWITCH_TAGS로 분리)
 const UI_RADIO_GROUP_TAGS = new Set(['RadioGroup']);  // RadioGroup 컨테이너
 const UI_RADIO_ITEM_TAGS = new Set(['Radio']);  // Radio 개별 아이템 (투명 hit area만)
 
@@ -213,8 +215,8 @@ const UI_RADIO_ITEM_TAGS = new Set(['Radio']);  // Radio 개별 아이템 (투�
  * UI 컴포넌트 태그들 (Phase 6)
  */
 const UI_SLIDER_TAGS = new Set(['Slider', 'RangeSlider']);
-const UI_INPUT_TAGS = new Set(['Input', 'TextField', 'TextInput', 'SearchField']);
-const UI_SELECT_TAGS = new Set(['Select', 'Dropdown', 'ComboBox']);
+const UI_INPUT_TAGS = new Set(['Input']);  // TextField/TextInput은 UI_TEXTFIELD_TAGS, SearchField는 UI_SEARCHFIELD_TAGS로 분리
+const UI_SELECT_TAGS = new Set(['Select', 'Dropdown']);  // ComboBox는 UI_COMBOBOX_TAGS로 분리
 const UI_PROGRESS_TAGS = new Set(['ProgressBar', 'Progress', 'LoadingBar']);
 const UI_SWITCHER_TAGS = new Set(['Switcher', 'SegmentedControl', 'TabBar']);
 const UI_SCROLLBOX_TAGS = new Set(['ScrollBox', 'ScrollContainer', 'ScrollView']);
@@ -252,7 +254,6 @@ const UI_COMBOBOX_TAGS = new Set(['ComboBox']);
  * Phase 4 WebGL Migration 컴포넌트 태그들
  */
 const UI_GRIDLIST_TAGS = new Set(['GridList']);
-const UI_TAGGROUP_TAGS = new Set(['TagGroup', 'TagList']);
 const UI_TREE_TAGS = new Set(['Tree', 'TreeView']);
 const UI_TABLE_TAGS = new Set(['Table', 'DataTable', 'DataGrid']);
 
@@ -283,7 +284,7 @@ const UI_DATERANGEPICKER_TAGS = new Set(['DateRangePicker']);
  * Phase 7 WebGL Migration 컴포넌트 태그들 - Form & Utility Components
  */
 const UI_TEXTFIELD_TAGS = new Set(['TextField', 'TextInput']);
-const UI_SWITCH_TAGS = new Set(['Switch']);
+const UI_SWITCH_TAGS = new Set(['Switch', 'Toggle']);
 const UI_TEXTAREA_TAGS = new Set(['TextArea', 'Textarea']);
 const UI_FORM_TAGS = new Set(['Form']);
 const UI_TOOLBAR_TAGS = new Set(['Toolbar']);
@@ -304,17 +305,63 @@ const UI_SLOT_TAGS = new Set(['Slot']);
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
+// QW-3: Outline parsing helper for focus ring
+// ============================================
+
+/**
+ * CSS outline shorthand → Skia outline 속성 파싱
+ * "2px solid var(--primary)" → { width, color (Float32Array), offset }
+ */
+function parseOutlineShorthand(
+  outline: string,
+  outlineOffset?: string | number,
+): { width: number; color: Float32Array; offset: number } | null {
+  // "2px solid #6750A4" or "2px solid var(--primary)"
+  const parts = outline.trim().split(/\s+/);
+  if (parts.length < 2) return null;
+
+  const width = parseFloat(parts[0]);
+  if (isNaN(width) || width <= 0) return null;
+
+  // 색상: 마지막 파트 (style 토큰 "solid" 등 건너뛰기)
+  let colorStr = parts.length >= 3 ? parts.slice(2).join(' ') : parts[1];
+
+  // var(--xxx) → CSS custom property 해석 시도
+  const varMatch = colorStr.match(/^var\(\s*(--.+?)\s*\)$/);
+  if (varMatch) {
+    try {
+      const resolved = getComputedStyle(document.documentElement).getPropertyValue(varMatch[1]).trim();
+      if (resolved) colorStr = resolved;
+    } catch { /* ignore */ }
+    // 해석 실패 시 기본 primary 색상
+    if (colorStr.startsWith('var(')) colorStr = '#6750A4';
+  }
+
+  // hex → Float32Array RGBA
+  const hex = cssColorToHex(colorStr, 0x6750A4);
+  const r = ((hex >> 16) & 0xff) / 255;
+  const g = ((hex >> 8) & 0xff) / 255;
+  const b = (hex & 0xff) / 255;
+
+  const offset = typeof outlineOffset === 'number'
+    ? outlineOffset
+    : (typeof outlineOffset === 'string' ? parseFloat(outlineOffset) || 0 : 0);
+
+  return { width, color: Float32Array.of(r, g, b, 1), offset };
+}
+
+// ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'panel' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'panel' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
 
   // UI 컴포넌트 우선 체크 (Phase 11 B2.4 + Phase 6)
   if (UI_BUTTON_TAGS.has(tag)) return 'button';
-  if (UI_FANCYBUTTON_TAGS.has(tag)) return 'fancyButton';
+
   if (UI_CHECKBOX_GROUP_TAGS.has(tag)) return 'checkboxGroup';
   if (UI_CHECKBOX_ITEM_TAGS.has(tag)) return 'checkboxItem';
   if (UI_RADIO_GROUP_TAGS.has(tag)) return 'radioGroup';
@@ -351,7 +398,6 @@ function getSpriteType(element: Element): SpriteType {
 
   // Phase 4 WebGL Migration 컴포넌트
   if (UI_GRIDLIST_TAGS.has(tag)) return 'gridList';
-  if (UI_TAGGROUP_TAGS.has(tag)) return 'tagGroup';
   if (UI_TREE_TAGS.has(tag)) return 'tree';
   if (UI_TABLE_TAGS.has(tag)) return 'table';
 
@@ -412,11 +458,10 @@ function getSpriteType(element: Element): SpriteType {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'Button': ButtonSpec, 'SubmitButton': ButtonSpec,
-  'FancyButton': FancyButtonSpec,
   'CheckboxGroup': CheckboxGroupSpec,
   'Checkbox': CheckboxSpec, 'CheckBox': CheckboxSpec,
   'Switch': SwitchSpec, 'Toggle': SwitchSpec,
-  'RadioGroup': RadioSpec,
+  'RadioGroup': RadioGroupSpec,
   'Radio': RadioSpec,
   'Slider': SliderSpec, 'RangeSlider': SliderSpec,
   'Input': InputSpec, 'TextField': TextFieldSpec, 'TextInput': TextFieldSpec,
@@ -441,7 +486,6 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'Tabs': TabsSpec, 'TabList': TabsSpec,
   'NumberField': NumberFieldSpec,
   'GridList': GridListSpec,
-  'TagGroup': TagGroupSpec, 'TagList': TagGroupSpec,
   'Tree': TreeSpec, 'TreeView': TreeSpec,
   'Table': TableSpec, 'DataTable': TableSpec, 'DataGrid': TableSpec,
   'Disclosure': DisclosureSpec,
@@ -479,11 +523,72 @@ function getSpecForTag(tag: string): ComponentSpec<any> | null {
 }
 
 /**
+ * Spec shapes 내 텍스트가 word-wrap될 때 필요한 최소 높이를 계산한다.
+ * 텍스트가 한 줄에 들어가면 undefined 반환 (auto-height 불필요).
+ */
+function measureSpecTextMinHeight(
+  shapes: Shape[],
+  containerWidth: number,
+  sizeSpec: Record<string, unknown>,
+): number | undefined {
+  const paddingY = (sizeSpec.paddingY as number) ?? 8;
+
+  for (const shape of shapes) {
+    if (shape.type !== 'text' || !shape.text) continue;
+
+    // fontSize: TokenRef일 수 있으므로 resolveToken으로 해석
+    let fontSize = 14;
+    if (shape.fontSize !== undefined) {
+      if (typeof shape.fontSize === 'number') {
+        fontSize = shape.fontSize;
+      } else if (typeof (shape.fontSize as unknown) === 'string' && (shape.fontSize as unknown as string).startsWith('{')) {
+        const resolved = resolveToken(shape.fontSize as unknown as TokenRef);
+        fontSize = typeof resolved === 'number' ? resolved : parseFloat(String(resolved)) || 14;
+      }
+    }
+
+    const fontWeight = typeof shape.fontWeight === 'number' ? shape.fontWeight : 500;
+    const fontFamily = shape.fontFamily || 'Pretendard';
+
+    // maxWidth 계산: specShapesToSkia와 동일한 로직
+    let maxWidth = shape.maxWidth ?? containerWidth;
+    if (shape.x > 0 && shape.maxWidth == null) {
+      if (shape.align === 'center') {
+        maxWidth = containerWidth - shape.x * 2;
+      } else {
+        maxWidth = containerWidth - shape.x;
+      }
+      if (maxWidth < 1) maxWidth = containerWidth;
+    }
+
+    const lineHeight = fontSize * 1.2;
+    const wrappedHeight = measureWrappedTextHeight(
+      shape.text, fontSize, fontWeight, fontFamily, maxWidth,
+    );
+
+    // 한 줄이면 auto-height 불필요
+    if (wrappedHeight <= lineHeight + 0.5) return undefined;
+
+    // 다중 줄: paddingY * 2 + wrappedHeight
+    return paddingY * 2 + wrappedHeight;
+  }
+
+  return undefined;
+}
+
+/**
  * Column layout: shapes 위치를 세로 쌓기로 재배치
  *
  * Spec shapes는 항상 row 레이아웃(가로 배치)으로 생성됨.
  * flexDirection: column일 때 indicator 그룹을 상단 중앙에,
  * 텍스트를 그 아래에 배치하도록 좌표를 변환한다.
+ *
+ * 수정 이력 (W4-9):
+ * Radio circle shape column 변환 수정.
+ * 기존: 모든 circle에 `x = centerX + shape.radius` 적용 →
+ *   outer/inner circle의 radius가 달라 center X가 불일치 (dot이 ring 중심에서 이탈).
+ * 수정: indicator 블록의 center X = `centerX + boxSize / 2`를 고정하여
+ *   모든 circle(ring, dot)이 동일한 center X를 공유하도록 변경.
  */
 function rearrangeShapesForColumn(
   shapes: Shape[],
@@ -506,7 +611,11 @@ function rearrangeShapesForColumn(
   }
   if (boxSize === 0) return;
 
+  // indicator 블록 top-left X (box 전체를 수평 중앙 배치)
   const centerX = Math.round((containerWidth - boxSize) / 2);
+  // indicator 블록 center X: circle의 center 좌표로 사용 (모든 circle 공통)
+  // 수정(W4-9): 각 circle의 radius가 달라도 indicator 중앙(centerX + boxSize/2)에 고정
+  const indicatorCenterX = centerX + boxSize / 2;
 
   for (const shape of shapes) {
     switch (shape.type) {
@@ -517,7 +626,11 @@ function rearrangeShapesForColumn(
         }
         break;
       case 'circle':
-        shape.x += centerX;
+        // specShapeConverter가 center → top-left 변환(x - radius)을 수행하므로
+        // shape.x에는 center X를 유지해야 한다.
+        // ring(outer)과 dot(inner) 모두 indicator 블록의 중앙 X를 공유한다.
+        shape.x = indicatorCenterX;
+        shape.y = boxSize / 2;
         break;
       case 'line':
         shape.x1 += centerX;
@@ -557,7 +670,6 @@ function rearrangeShapesForColumn(
  */
 export const ElementSprite = memo(function ElementSprite({
   element,
-  isSelected: isSelectedProp, // @deprecated - fallback용으로만 사용
   layoutPosition,
   onClick,
   onDoubleClick,
@@ -566,6 +678,9 @@ export const ElementSprite = memo(function ElementSprite({
   renderChildElement,
 }: ElementSpriteProps) {
   useExtend(PIXI_COMPONENTS);
+
+  // Phase A: 미리보기 컴포넌트 상태 구독
+  const previewState = useAtomValue(previewComponentStateAtom);
 
   // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
   // layout이 적용된 Container를 등록해야 SelectionBox 위치가 일치함
@@ -578,7 +693,7 @@ export const ElementSprite = memo(function ElementSprite({
   // 🚀 O(1) 최적화: Set.has() 사용 (includes() 대신)
   const isSelected = useStore((state) =>
     state.selectedElementIdsSet.has(elementId)
-  ) ?? isSelectedProp ?? false;
+  ) ?? false;
 
   // 부모 요소 확인 (CheckboxGroup 자식 여부 판단용)
   // 🚀 최적화: elements 배열 대신 elementsMap 사용 (O(1) 조회)
@@ -635,7 +750,7 @@ export const ElementSprite = memo(function ElementSprite({
   // G.1/G.2: Instance resolution + Variable resolution
   const resolvedElement = useResolvedElement(element);
 
-  // 🚀 LayoutContainer의 Yoga 계산된 pixel 크기 수신
+  // 🚀 레이아웃 엔진(Taffy/Dropflow)이 계산한 pixel 크기 수신
   // 퍼센트 기반 width/height를 실제 pixel 값으로 해석하는 데 사용
   const computedContainerSize = useContext(LayoutComputedSizeContext);
 
@@ -657,10 +772,11 @@ export const ElementSprite = memo(function ElementSprite({
       };
     }
 
-    // 🚀 퍼센트 기반 width/height를 Yoga 계산 결과로 해석
-    // LayoutContainer가 Yoga를 통해 계산한 실제 pixel 크기를 사용하여
-    // '100%' 같은 퍼센트 값을 실제 pixel 값으로 변환
-    // (parseCSSSize는 parentSize 없이는 %를 해석할 수 없음)
+    // 🚀 퍼센트 기반 width/height를 엔진 계산 결과로 해석
+    // DirectContainer가 Taffy/Dropflow를 통해 계산한 실제 pixel 크기를 직접 사용
+    // computedContainerSize는 엔진이 '%' 값을 부모 기준으로 이미 resolve한 결과이므로
+    // 퍼센트를 다시 적용하면 이중 적용됨 (예: 50% → 엔진 200px → 50%*200=100 ❌)
+    // → 엔진 계산 결과를 그대로 pixel 값으로 사용
     if (computedContainerSize) {
       const currentStyle = (resolvedElement.props?.style || {}) as Record<string, unknown>;
       const w = currentStyle.width;
@@ -675,8 +791,8 @@ export const ElementSprite = memo(function ElementSprite({
             ...resolvedElement.props,
             style: {
               ...currentStyle,
-              ...(hasPercentWidth ? { width: (parseFloat(w as string) / 100) * computedContainerSize.width } : {}),
-              ...(hasPercentHeight ? { height: (parseFloat(h as string) / 100) * computedContainerSize.height } : {}),
+              ...(hasPercentWidth ? { width: computedContainerSize.width } : {}),
+              ...(hasPercentHeight ? { height: computedContainerSize.height } : {}),
             },
           },
         };
@@ -686,12 +802,45 @@ export const ElementSprite = memo(function ElementSprite({
     return resolvedElement;
   }, [resolvedElement, layoutPosition, computedContainerSize]);
 
-  const spriteType = getSpriteType(effectiveElement);
+  // Tabs/Breadcrumbs: 실제 자식 레이블을 spec shapes에 전달
+  const effectiveElementWithTabs = useMemo(() => {
+    const tag = (effectiveElement.tag ?? '').toLowerCase();
+    if (tag === 'tabs' && childElements && childElements.length > 0) {
+      const tabChildren = childElements.filter(c => c.tag === 'Tab');
+      if (tabChildren.length > 0) {
+        const tabLabels = tabChildren.map(t => {
+          const p = t.props as Record<string, unknown> | undefined;
+          return String(p?.children || p?.label || p?.title || 'Tab');
+        });
+        return {
+          ...effectiveElement,
+          props: { ...effectiveElement.props, _tabLabels: tabLabels },
+        } as Element;
+      }
+    }
+    // Breadcrumbs: 자식 Breadcrumb 텍스트를 _crumbs로 주입
+    if (tag === 'breadcrumbs' && childElements && childElements.length > 0) {
+      const crumbChildren = childElements.filter(c => c.tag === 'Breadcrumb');
+      if (crumbChildren.length > 0) {
+        const crumbs = crumbChildren.map(c => {
+          const p = c.props as Record<string, unknown> | undefined;
+          return String(p?.children || p?.label || p?.title || 'Page');
+        });
+        return {
+          ...effectiveElement,
+          props: { ...effectiveElement.props, _crumbs: crumbs },
+        } as Element;
+      }
+    }
+    return effectiveElement;
+  }, [effectiveElement, childElements]);
+
+  const spriteType = getSpriteType(effectiveElementWithTabs);
 
   // Phase 5: Skia 렌더 데이터 등록 (모든 요소 타입 공통)
   // 🚀 rules-of-hooks: 조건부 early return 전에 모든 훅을 실행해야 함
-  const elementStyle = effectiveElement.props?.style;
-  const elementProps = effectiveElement.props;
+  const elementStyle = effectiveElementWithTabs.props?.style;
+  const elementProps = effectiveElementWithTabs.props;
   const computedW = computedContainerSize?.width;
   const computedH = computedContainerSize?.height;
 
@@ -703,15 +852,33 @@ export const ElementSprite = memo(function ElementSprite({
 
     if (!style && !isUIComponent) return null;
 
+    // display: none → 레이아웃에서 제외, 렌더링 스킵
+    if (style?.display === 'none') return null;
+
     const { transform, fill, stroke, borderRadius: convertedBorderRadius } = convertStyle(style);
     const br = typeof convertedBorderRadius === 'number'
       ? convertedBorderRadius
       : convertedBorderRadius?.[0] ?? 0;
 
-    const finalWidth = (computedW != null && computedW > 0) ? computedW : transform.width;
-    const finalHeight = (computedH != null && computedH > 0) ? computedH : transform.height;
+    // FIT_CONTENT(-2), MIN_CONTENT(-3), MAX_CONTENT(-4) sentinel 값이
+    // transform.width/height에 들어올 수 있으므로 음수일 때 0으로 클램프
+    const rawFallbackW = transform.width;
+    const rawFallbackH = transform.height;
+    // computedW != null → 레이아웃 엔진이 크기를 확정함 (0이어도 의도적)
+    // computedW == null → 엔진 미확정, CSS fallback 사용
+    const finalWidth = computedW != null ? (computedW > 0 ? computedW : 0) : (rawFallbackW > 0 ? rawFallbackW : 0);
+    const finalHeight = computedH != null ? (computedH > 0 ? computedH : 0) : (rawFallbackH > 0 ? rawFallbackH : 0);
 
     const hasBgColor = style?.backgroundColor !== undefined && style?.backgroundColor !== null && style?.backgroundColor !== '';
+
+    // 복합 form 컴포넌트: CSS 컨테이너가 transparent → WebGL 컨테이너도 transparent
+    const tag = effectiveElementWithTabs.tag;
+    const TRANSPARENT_CONTAINER_TAGS = new Set([
+      'TextField', 'NumberField', 'SearchField',
+      'ComboBox', 'Select', 'Dropdown',
+      'Slider', 'RangeSlider',
+    ]);
+    const isTransparentContainer = isUIComponent && TRANSPARENT_CONTAINER_TAGS.has(tag);
 
     const VARIANT_BG_COLORS: Record<string, number> = {
       default: 0xece6f0,
@@ -737,27 +904,33 @@ export const ElementSprite = memo(function ElementSprite({
       outline: 0x79747e,
     };
 
-    const props = effectiveElement.props as Record<string, unknown> | undefined;
+    const props = elementProps as Record<string, unknown> | undefined;
     const variant = isUIComponent ? String(props?.variant || 'default') : '';
 
     let r: number, g: number, b: number;
     let effectiveAlpha: number;
 
     if (isUIComponent && !hasBgColor) {
-      const bgColor = VARIANT_BG_COLORS[variant] ?? 0xece6f0;
-      r = ((bgColor >> 16) & 0xff) / 255;
-      g = ((bgColor >> 8) & 0xff) / 255;
-      b = (bgColor & 0xff) / 255;
-      effectiveAlpha = VARIANT_BG_ALPHA[variant] ?? 1;
+      if (isTransparentContainer) {
+        // 복합 form 컴포넌트: spec shapes가 내부 배경 렌더링 → 컨테이너는 투명
+        r = 1; g = 1; b = 1;
+        effectiveAlpha = 0;
+      } else {
+        const bgColor = VARIANT_BG_COLORS[variant] ?? 0xece6f0;
+        r = ((bgColor >> 16) & 0xff) / 255;
+        g = ((bgColor >> 8) & 0xff) / 255;
+        b = (bgColor & 0xff) / 255;
+        effectiveAlpha = VARIANT_BG_ALPHA[variant] ?? 1;
+      }
     } else {
       r = ((fill.color >> 16) & 0xff) / 255;
       g = ((fill.color >> 8) & 0xff) / 255;
       b = (fill.color & 0xff) / 255;
       // Fill V2: gradient/image fill이 있으면 shader가 alpha를 처리하므로 fillColor alpha=1
-      const hasFillV2NonColor = isFillV2Enabled() && effectiveElement.fills?.some(
-        (f: { enabled?: boolean; type: number }) => f.enabled && f.type !== 0, // 0 = FillType.Color
+      const hasFillV2NonColor = isFillV2Enabled() && effectiveElementWithTabs.fills?.some(
+        (f) => f.enabled && f.type !== 'color',
       );
-      effectiveAlpha = (hasBgColor || hasFillV2NonColor) ? (fill.alpha || 1) : (isUIComponent ? fill.alpha : 0);
+      effectiveAlpha = (hasBgColor || hasFillV2NonColor) ? (fill.alpha ?? 1) : (isUIComponent ? fill.alpha : 0);
     }
 
     const hasBorderRadiusSet = style?.borderRadius !== undefined && style?.borderRadius !== null && style?.borderRadius !== '';
@@ -801,7 +974,7 @@ export const ElementSprite = memo(function ElementSprite({
       borderRadius: effectiveBorderRadius,
     };
 
-    const fills = effectiveElement.fills;
+    const fills = effectiveElementWithTabs.fills;
     if (isFillV2Enabled() && fills && fills.length > 0) {
       const fillV2Style = fillsToSkiaFillStyle(fills, finalWidth, finalHeight);
       if (fillV2Style && fillV2Style.type !== 'color') {
@@ -815,7 +988,7 @@ export const ElementSprite = memo(function ElementSprite({
       const sb = (stroke.color & 0xff) / 255;
       boxData.strokeColor = Float32Array.of(sr, sg, sb, stroke.alpha);
       boxData.strokeWidth = stroke.width;
-    } else if (isUIComponent && !hasBgColor) {
+    } else if (isUIComponent && !hasBgColor && !isTransparentContainer) {
       const borderColor = VARIANT_BORDER_COLORS[variant];
       if (borderColor !== undefined) {
         const sr = ((borderColor >> 16) & 0xff) / 255;
@@ -831,8 +1004,6 @@ export const ElementSprite = memo(function ElementSprite({
     let cardCalculatedHeight: number | undefined;
 
     if (isUIComponent) {
-      const tag = effectiveElement.tag;
-
       const VARIANT_TEXT_COLORS: Record<string, number> = {
         default: 0x1d1b20,
         primary: 0xffffff,
@@ -844,132 +1015,20 @@ export const ElementSprite = memo(function ElementSprite({
         error: 0xffffff,
       };
 
-      if (tag === 'Card') {
-        const cardTitle = String(props?.heading || props?.title || '');
-        const cardSubheading = String(props?.subheading || '');
-        const cardDescription = String(props?.description || props?.children || '');
-
-        if (cardTitle || cardSubheading || cardDescription) {
-          const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
-          const textColorHex = style?.color
-            ? cssColorToHex(style.color, defaultTextColor)
-            : defaultTextColor;
-          const tcR = ((textColorHex >> 16) & 0xff) / 255;
-          const tcG = ((textColorHex >> 8) & 0xff) / 255;
-          const tcB = (textColorHex & 0xff) / 255;
-          const textColor = Float32Array.of(tcR, tcG, tcB, 1);
-
-          const cardSize = String(props?.size || 'md');
-          const CARD_PADDING: Record<string, number> = { sm: 8, md: 12, lg: 16 };
-          const sizePresetPadding = CARD_PADDING[cardSize] ?? 12;
-          const padding = style?.padding !== undefined
-            ? (typeof style.padding === 'number' ? style.padding : parseInt(String(style.padding), 10) || 0)
-            : sizePresetPadding;
-          const fontFamilies = ['Pretendard', 'Inter', 'system-ui', 'sans-serif'];
-          const maxWidth = finalWidth - padding * 2;
-
-          const nodes: typeof textChildren = [];
-          let currentY = padding;
-
-          const fontFamilyStr = fontFamilies[0] ?? 'sans-serif';
-
-          if (cardTitle) {
-            const titleFontSize = 16;
-            const titleHeight = measureWrappedTextHeight(
-              cardTitle, titleFontSize, 600, fontFamilyStr, maxWidth,
-            );
-            nodes.push({
-              type: 'text' as const,
-              x: 0, y: 0,
-              width: finalWidth,
-              height: finalHeight,
-              visible: true,
-              text: {
-                content: cardTitle,
-                fontFamilies,
-                fontSize: titleFontSize,
-                fontWeight: 600,
-                color: textColor,
-                align: 'left' as const,
-                paddingLeft: padding,
-                paddingTop: currentY,
-                maxWidth,
-                autoCenter: false,
-              },
-            });
-            currentY += titleHeight;
-          }
-
-          if (cardSubheading) {
-            if (cardTitle) currentY += 2;
-            const subFontSize = 14;
-            const subHeight = measureWrappedTextHeight(
-              cardSubheading, subFontSize, 400, fontFamilyStr, maxWidth,
-            );
-            nodes.push({
-              type: 'text' as const,
-              x: 0, y: 0,
-              width: finalWidth,
-              height: finalHeight,
-              visible: true,
-              text: {
-                content: cardSubheading,
-                fontFamilies,
-                fontSize: subFontSize,
-                color: textColor,
-                align: 'left' as const,
-                paddingLeft: padding,
-                paddingTop: currentY,
-                maxWidth,
-                autoCenter: false,
-              },
-            });
-            currentY += subHeight;
-          }
-
-          if (cardTitle || cardSubheading) {
-            currentY += 8;
-          }
-
-          if (cardDescription) {
-            const descFontSize = 14;
-            const descHeight = measureWrappedTextHeight(
-              cardDescription, descFontSize, 400, fontFamilyStr, maxWidth,
-            );
-            nodes.push({
-              type: 'text' as const,
-              x: 0, y: 0,
-              width: finalWidth,
-              height: finalHeight,
-              visible: true,
-              text: {
-                content: cardDescription,
-                fontFamilies,
-                fontSize: descFontSize,
-                color: textColor,
-                align: 'left' as const,
-                paddingLeft: padding,
-                paddingTop: currentY,
-                maxWidth,
-                autoCenter: false,
-              },
-            });
-            currentY += descHeight;
-          }
-
-          cardCalculatedHeight = currentY + padding;
-          textChildren = nodes;
-        }
-      } else {
+      {
         // 🟢 Spec shapes 기반 렌더링
+        // Card는 복합 컴포넌트로 전환: 자식 Element(Heading, Description)가 별도 렌더링됨
         const spec = getSpecForTag(tag);
-        if (spec) {
-          // ⚡ Yoga 크기 확정 전에는 spec shapes 계산을 건너뛴다.
+        // 복합 컴포넌트 자식(backgroundColor: 'transparent')은 부모 spec shapes가 시각 렌더링 담당
+        // 자식이 자체 spec shapes를 그리면 이중 렌더링 / 색상 불일치 발생
+        const skipChildSpecShapes = (props?.style as Record<string, unknown>)?.backgroundColor === 'transparent';
+        if (spec && !skipChildSpecShapes) {
+          // ⚡ 엔진 크기 확정 전에는 spec shapes 계산을 건너뛴다.
           // computedW가 null인 상태에서 CSS 기본값으로 shapes를 계산하면
-          // Yoga 완료 후 다른 크기로 재계산되어 시각적 깜빡임이 발생한다.
-          // Yoga는 같은 프레임의 prerender에서 실행되므로 1프레임 내에 확정된다.
+          // 엔진 완료 후 다른 크기로 재계산되어 시각적 깜빡임이 발생한다.
+          // 엔진은 같은 프레임의 prerender에서 실행되므로 1프레임 내에 확정된다.
           if (computedW == null && finalWidth <= 0) {
-            // Yoga 미확정 + CSS 크기도 없음 → 렌더링 보류
+            // 엔진 미확정 + CSS 크기도 없음 → 렌더링 보류
           } else {
           const variantSpec = spec.variants[variant] || spec.variants[spec.defaultVariant];
           const sizeSpec = spec.sizes[size] || spec.sizes[spec.defaultSize];
@@ -978,16 +1037,75 @@ export const ElementSprite = memo(function ElementSprite({
             const flexDir = (elementStyle.flexDirection as string) || '';
             const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
 
-            // 실제 레이아웃 높이 사용: Yoga가 padding/content 포함하여 계산한 높이
+            // 실제 레이아웃 높이 사용: 레이아웃 엔진이 padding/content 포함하여 계산한 높이
             // → baseline='middle' 텍스트가 CSS와 동일하게 중앙 배치됨
             // → 사용자의 paddingTop/paddingBottom 변경이 자동 반영됨
-            const specHeight = finalHeight;
+            let specHeight = finalHeight;
+
+            // 🚀 ToggleButton: 그룹 내 위치 정보를 props에 주입하여 spec shapes에서 border-radius 분기 가능
+            // 🚀 TagGroup: 자식 Tag 텍스트를 주입하여 spec shapes에서 label + tag chips 렌더링
+            let specProps: Record<string, unknown> = props || {};
+            if (toggleGroupPosition) {
+              specProps = { ...specProps, _groupPosition: toggleGroupPosition };
+            }
+
+            // ComboBox/Select: spec shapes가 props.style.width로 입력 영역 너비 결정
+            // 기본값 200px → 실제 레이아웃 width로 교체하여 CSS 정합성 확보
+            if (['ComboBox', 'Select', 'Dropdown'].includes(tag) && finalWidth > 0) {
+              const existingStyle = (specProps.style || {}) as Record<string, unknown>;
+              if (!existingStyle.width) {
+                specProps = {
+                  ...specProps,
+                  style: { ...existingStyle, width: finalWidth },
+                };
+              }
+            }
+
+            // Slider: spec shapes에 실제 width 주입 + specHeight 보정
+            // track/thumb가 label 아래에 위치하므로 전체 높이 필요
+            if (['Slider', 'RangeSlider'].includes(tag)) {
+              const existingStyle = (specProps.style || {}) as Record<string, unknown>;
+              if (finalWidth > 0 && !existingStyle.width) {
+                specProps = {
+                  ...specProps,
+                  style: { ...existingStyle, width: finalWidth },
+                };
+              }
+              // Slider specHeight 보정: label + gap + thumbSize
+              const sliderDims = SLIDER_DIMENSIONS[size] || SLIDER_DIMENSIONS['md'];
+              const hasLabel = specProps.label || specProps.showValue;
+              if (hasLabel) {
+                const fSize = resolveToken(sizeSpec.fontSize as TokenRef);
+                const fontSize = typeof fSize === 'number' ? fSize : 14;
+                const gap = sizeSpec.gap ?? 10;
+                const totalH = Math.ceil(fontSize * 1.2) + gap + sliderDims.thumbSize;
+                if (totalH > specHeight) specHeight = totalH;
+              } else {
+                if (sliderDims.thumbSize > specHeight) specHeight = sliderDims.thumbSize;
+              }
+            }
+
+            // ComboBox/Select: Label child가 있으면 spec shapes에서 label text 스킵
+            // (Label child의 TextSprite가 시각적 렌더링 담당)
+            if (['ComboBox', 'Select', 'Dropdown', 'Slider', 'RangeSlider', 'TextField', 'NumberField', 'SearchField'].includes(tag) && childElements) {
+              const hasLabelChild = childElements.some(c => c.tag === 'Label');
+              if (hasLabelChild) {
+                specProps = { ...specProps, _hasLabelChild: true };
+              }
+            }
+
+            // 동적 컴포넌트 상태: preview > disabled prop > default
+            const componentState: ComponentState = (() => {
+              if (previewState && previewState !== 'default') return previewState;
+              if (specProps.isDisabled || specProps.disabled) return 'disabled';
+              return 'default';
+            })();
 
             const shapes = spec.render.shapes(
-              (props || {}) as Record<string, unknown>,
+              specProps as Record<string, unknown>,
               variantSpec,
               sizeSpec,
-              'default',
+              componentState,
             );
 
             // Column layout: shapes를 세로 쌓기로 재배치
@@ -995,7 +1113,61 @@ export const ElementSprite = memo(function ElementSprite({
               rearrangeShapesForColumn(shapes, finalWidth, sizeSpec.gap ?? 8);
             }
 
+            // 텍스트 줄바꿈 시 높이 자동 확장: 명시적 height가 없을 때만
+            const hasExplicitHeight = style?.height !== undefined && style?.height !== 'auto';
+            if (!hasExplicitHeight && finalWidth > 0) {
+              const textMinHeight = measureSpecTextMinHeight(shapes, finalWidth, sizeSpec);
+              if (textMinHeight !== undefined && textMinHeight > specHeight) {
+                specHeight = textMinHeight;
+                cardCalculatedHeight = textMinHeight;
+              }
+            }
+
             const specNode = specShapesToSkia(shapes, 'light', finalWidth, specHeight);
+
+            // QW-2: disabled 상태 opacity 적용
+            if (componentState === 'disabled') {
+              const opacityVal = (spec.states?.disabled?.opacity as number | undefined) ?? 0.38;
+              specNode.effects = [...(specNode.effects ?? []), { type: 'opacity' as const, value: opacityVal }];
+            }
+
+            // QW-3: focusVisible/focused 상태 outline (focus ring) 적용
+            // focused: spec.states.focused.outline 우선, 없으면 focusVisible로 fallback
+            // focusVisible: spec.states.focusVisible.outline 사용
+            if ((componentState === 'focusVisible' || componentState === 'focused') && specNode.box) {
+              const focusState = componentState === 'focused'
+                ? (spec.states?.focused?.outline ? spec.states.focused : spec.states?.focusVisible)
+                : spec.states?.focusVisible;
+              if (focusState?.outline) {
+                const parsed = parseOutlineShorthand(
+                  focusState.outline as string,
+                  focusState.outlineOffset as string | number | undefined,
+                );
+                if (parsed) {
+                  specNode.box.outlineColor = parsed.color;
+                  specNode.box.outlineWidth = parsed.width;
+                  specNode.box.outlineOffset = parsed.offset;
+                }
+              }
+            }
+
+            // 다중 줄 텍스트 paddingTop 보정: specShapesToSkia는 한 줄 lineHeight 기준으로
+            // (height - lineHeight) / 2를 계산하지만, 다중 줄일 때는 wrappedHeight 기준으로 보정
+            // 명시적 height(예: 100px)에서도 보정이 필요하므로 cardCalculatedHeight 조건 제거
+            if (specNode.children) {
+              for (const child of specNode.children) {
+                if (child.type === 'text' && child.text) {
+                  const wrappedH = measureWrappedTextHeight(
+                    child.text.content, child.text.fontSize, child.text.fontWeight || 500,
+                    child.text.fontFamilies[0] || 'Pretendard', child.text.maxWidth,
+                  );
+                  const lineHeight = child.text.fontSize * 1.2;
+                  if (wrappedH > lineHeight + 0.5) {
+                    child.text.paddingTop = Math.max(0, (specHeight - wrappedH) / 2);
+                  }
+                }
+              }
+            }
 
             // Gradient fill을 specNode 배경으로 이전 (fills v2)
             if (boxData.fill && specNode.box) {
@@ -1013,8 +1185,9 @@ export const ElementSprite = memo(function ElementSprite({
             textChildren = [specNode];
           }
           }
-        } else {
+        } else if (!skipChildSpecShapes) {
           // Fallback: Spec이 없는 컴포넌트 - 기존 텍스트 렌더링
+          // skipChildSpecShapes인 경우 부모 spec shapes가 텍스트도 렌더링하므로 스킵
           const textContent = String(
             props?.children
             || props?.text
@@ -1047,7 +1220,7 @@ export const ElementSprite = memo(function ElementSprite({
               : defaultFontSize;
 
             const CENTER_ALIGN_TAGS = new Set([
-              'Button', 'SubmitButton', 'FancyButton',
+              'Button', 'SubmitButton',
               'Badge', 'Tag', 'Chip',
               'ToggleButton',
             ]);
@@ -1099,31 +1272,81 @@ export const ElementSprite = memo(function ElementSprite({
       children: textChildren,
       contentMinHeight,
     };
-  }, [effectiveElement, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition]);
+  }, [effectiveElementWithTabs, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로
   // ElementSprite의 이중 등록을 방지한다. (effects, blendMode, 올바른 fillColor 포함)
-  const hasBoxSprite = spriteType === 'box' || spriteType === 'flex' || spriteType === 'grid';
-  useSkiaNode(elementId, hasBoxSprite ? null : skiaNodeData);
+  // text 타입은 TextSprite가 자체적으로 텍스트 Skia 데이터를 등록하므로
+  // ElementSprite에서 box 데이터로 덮어쓰지 않도록 방지한다.
+  const hasOwnSprite = spriteType === 'box' || spriteType === 'text' || spriteType === 'flex' || spriteType === 'grid';
+
+  // 렌더링 단계에서 skip될 요소는 Skia node도 등록하지 않음
+  // (Tab in Tabs, Breadcrumb in Breadcrumbs, display:contents)
+  // Panel-in-Tabs는 컨테이너 시스템으로 렌더링되므로 Skia 데이터 등록 필요
+  const isSkippedChild =
+    (element.tag === 'Tab' && parentElement?.tag === 'Tabs') ||
+    (element.tag === 'Breadcrumb' && parentElement?.tag === 'Breadcrumbs') ||
+    ((element.props?.style as Record<string, unknown> | undefined)?.display === 'contents');
+
+  useSkiaNode(elementId, (hasOwnSprite || isSkippedChild) ? null : skiaNodeData);
+
+  // Phase 6: Interaction 속성 (컨테이너 히트 영역용)
+  const containerIsPointerEventsNone = (elementStyle as CSSStyle | undefined)?.pointerEvents === 'none';
+  const containerPixiCursor = (elementStyle as CSSStyle | undefined)?.cursor ?? 'default';
+
+  // 🚀 Non-layout 컨테이너 히트 영역: 엔진 계산된 전체 크기(padding 포함)를 커버
+  // layout prop 없이 렌더링하므로 엔진 padding에 의한 offset 없이 컨테이너 원점(0,0)에 배치됨
+  const drawContainerHitRect = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      const w = computedW ?? 0;
+      const h = computedH ?? 0;
+      if (w <= 0 || h <= 0) return;
+      g.rect(0, 0, w, h);
+      g.fill({ color: 0xffffff, alpha: 0.001 });
+    },
+    [computedW, computedH],
+  );
+
+  const lastContainerPointerDownRef = useRef(0);
+  const handleContainerPointerDown = useCallback((e: unknown) => {
+    const now = Date.now();
+    const isDoubleClick = now - lastContainerPointerDownRef.current < 300;
+    lastContainerPointerDownRef.current = now;
+
+    const pixiEvent = e as {
+      metaKey?: boolean;
+      shiftKey?: boolean;
+      ctrlKey?: boolean;
+      nativeEvent?: MouseEvent | PointerEvent;
+    };
+    const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+    const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+    const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+    onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+
+    if (isDoubleClick) {
+      onDoubleClick?.(element.id);
+    }
+  }, [element.id, onClick, onDoubleClick]);
 
   // CheckboxGroup의 자식 Checkbox인지 확인
   const isCheckboxInGroup = spriteType === 'checkboxItem' && parentElement?.tag === 'CheckboxGroup';
 
   // 🚀 Tabs 자식 요소 처리:
-  // - Tab 요소는 PixiTabs에서 직접 렌더링하므로 여기서 skip
-  // - Panel(TabPanel) 요소도 PixiTabs에서 렌더링하므로 skip
-  // - Panel의 자손 요소들은 ElementsLayer에서 렌더링됨 (layoutPosition 사용)
+  // - Tab 요소는 spec shapes가 렌더링하므로 여기서 skip
+  // - Panel은 컨테이너 시스템(createContainerChildRenderer)으로 렌더링
   const isTabsChild = parentElement?.tag === 'Tabs';
   const isTabElement = element.tag === 'Tab';
-  const isPanelInTabs = element.tag === 'Panel' && isTabsChild;
 
-  // Tab 요소는 PixiTabs에서 렌더링하므로 skip
+  // Tab 요소는 spec shapes가 렌더링하므로 skip
   if (isTabElement && isTabsChild) {
     return null;
   }
 
-  // Panel(TabPanel) 요소도 PixiTabs에서 렌더링하므로 skip
-  if (isPanelInTabs) {
+  // display:contents 요소는 자체 박스를 생성하지 않음 — 렌더링 스킵
+  const elementDisplay = (element.props?.style as Record<string, unknown> | undefined)?.display;
+  if (elementDisplay === 'contents') {
     return null;
   }
 
@@ -1147,15 +1370,6 @@ export const ElementSprite = memo(function ElementSprite({
     case 'button':
       return (
         <PixiButton
-          element={effectiveElement}
-          isSelected={isSelected}
-          onClick={onClick}
-        />
-      );
-
-    case 'fancyButton':
-      return (
-        <PixiFancyButton
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
@@ -1239,6 +1453,7 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+          onDoubleClick={onDoubleClick}
           onChange={onChange ? (id, value) => onChange(id, value) : undefined}
         />
       );
@@ -1373,8 +1588,6 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
-          childElements={childElements}
-          renderChildElement={renderChildElement}
         />
       );
 
@@ -1384,8 +1597,6 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
-          childElements={childElements}
-          renderChildElement={renderChildElement}
         />
       );
 
@@ -1404,6 +1615,8 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+          childElements={childElements}
+          renderChildElement={renderChildElement}
         />
       );
 
@@ -1432,6 +1645,7 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+          onDoubleClick={onDoubleClick}
           onChange={onChange ? (id, value) => onChange(id, value) : undefined}
         />
       );
@@ -1440,16 +1654,6 @@ export const ElementSprite = memo(function ElementSprite({
     case 'gridList':
       return (
         <PixiGridList
-          element={effectiveElement}
-          isSelected={isSelected}
-          onClick={onClick}
-          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
-        />
-      );
-
-    case 'tagGroup':
-      return (
-        <PixiTagGroup
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
@@ -1750,20 +1954,27 @@ export const ElementSprite = memo(function ElementSprite({
 
     // 레이아웃 컨테이너 (Phase 11 B2.5)
     // Flex/Grid 컨테이너도 BoxSprite로 렌더링 (배경/테두리 표시)
-    // 실제 레이아웃 계산은 BuilderCanvas에서 @pixi/layout으로 처리
+    // 실제 레이아웃 계산은 BuilderCanvas의 renderWithCustomEngine()에서 Taffy/Dropflow로 처리
     case 'flex':
     case 'grid':
       if (childElements && childElements.length > 0 && renderChildElement) {
         return (
           <>
-            <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0 }}>
-              <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />
+            {/* Non-layout 히트 영역: 컨테이너 원점(0,0)에 전체 레이아웃 크기(padding 포함) 커버 */}
+            <pixiGraphics
+              draw={drawContainerHitRect}
+              eventMode={containerIsPointerEventsNone ? 'none' : 'static'}
+              cursor={containerPixiCursor}
+              {...(!containerIsPointerEventsNone && { onPointerDown: handleContainerPointerDown })}
+            />
+            <pixiContainer x={0} y={0}>
+              <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />
             </pixiContainer>
             {childElements.map((childEl) => renderChildElement(childEl))}
           </>
         );
       }
-      return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />;
+      return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />;
 
     // 기본 타입
     case 'text':
@@ -1784,17 +1995,42 @@ export const ElementSprite = memo(function ElementSprite({
       if (childElements && childElements.length > 0 && renderChildElement) {
         return (
           <>
-            <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0 }}>
-              <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />
+            {/* 히트 영역: 컨테이너 원점(0,0)에 전체 크기 커버 */}
+            <pixiGraphics
+              draw={drawContainerHitRect}
+              eventMode={containerIsPointerEventsNone ? 'none' : 'static'}
+              cursor={containerPixiCursor}
+              {...(!containerIsPointerEventsNone && { onPointerDown: handleContainerPointerDown })}
+            />
+            <pixiContainer x={0} y={0}>
+              <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />
             </pixiContainer>
             {childElements.map((childEl) => renderChildElement(childEl))}
           </>
         );
       }
-      return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />;
+      return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />;
     }
   })();
 
+  // 🚀 Container children rendering for custom UI sprite types
+  // 'flex'/'grid'/'box' cases already render children internally in the switch above.
+  // 'toggleButtonGroup' renders modified children internally (size inheritance, margin offsets).
+  // Custom UI sprite types (card, panel, form, dialog, etc.) only provide Pixi hit areas
+  // and rely on this wrapper to render their container children via renderChildElement.
+  // childElements is only set for elements in CONTAINER_TAGS (from BuilderCanvas).
+  if (
+    childElements && childElements.length > 0 && renderChildElement &&
+    spriteType !== 'box' && spriteType !== 'flex' && spriteType !== 'grid' &&
+    spriteType !== 'toggleButtonGroup'
+  ) {
+    return (
+      <>
+        {content}
+        {childElements.map((childEl) => renderChildElement(childEl))}
+      </>
+    );
+  }
 
   return content;
 });

@@ -35,6 +35,7 @@ import {
   AppearanceSection,
   TypographySection,
   ModifiedStylesSection,
+  ComponentStateSection,
 } from "./sections";
 import { useSectionCollapse } from "./hooks/useSectionCollapse";
 import { useStyleActions } from "./hooks/useStyleActions";
@@ -43,6 +44,7 @@ import { useZustandJotaiBridge } from "./hooks/useZustandJotaiBridge";
 import { useAtomValue } from "jotai";
 import {
   hasSelectedElementAtom,
+  selectedElementAtom,
   selectedStyleAtom,
   modifiedCountAtom,
   isCopyDisabledAtom,
@@ -95,8 +97,12 @@ const ModifiedSectionsWrapper = memo(function ModifiedSectionsWrapper() {
  * - Jotai atom 기반 섹션들만 포함
  */
 const AllSections = memo(function AllSections() {
+  const selectedElement = useAtomValue(selectedElementAtom);
+  const hasSpec = selectedElement?.type != null && selectedElement.type !== '';
+
   return (
     <>
+      <ComponentStateSection hasSpec={hasSpec} />
       <TransformSection />
       <LayoutSection />
       <AppearanceSection />

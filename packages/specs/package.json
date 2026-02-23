@@ -47,6 +47,8 @@
     "colord": "^2.9.3"
   },
   "devDependencies": {
+    "@xstudio/config": "workspace:*",
+    "eslint": "^9.39.2",
     "@types/node": "^20.0.0",
     "typescript": "^5.3.0",
     "tsup": "^8.0.0",

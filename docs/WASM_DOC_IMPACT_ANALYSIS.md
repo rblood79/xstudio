@@ -1,7 +1,7 @@
 # WASM.md 실행 시 문서 영향 분석 및 Pencil 아키텍처 패턴 적용 계획
 
 > 작성일: 2026-01-31
-> 최종 수정: 2026-02-05 (Round 5: Pencil 방식 2-pass 렌더러 완전 교체 + 줌/팬 성능 핫픽스, 관련 문서 정합 업데이트)
+> 최종 수정: 2026-02-18 (Phase 11 반영: Yoga/@pixi/layout 제거, Taffy+Dropflow+Skia 기준 정합 업데이트)
 > 대상: `docs/LAYOUT_REQUIREMENTS.md`, `docs/COMPONENT_SPEC_ARCHITECTURE.md`, `docs/AI.md`
 > 기준: `docs/WASM.md` Phase 5-6, `docs/PENCIL_APP_ANALYSIS.md` §11–§26
 > 참고: `docs/AI.md` (AI 기능 업그레이드 설계)
@@ -43,7 +43,7 @@ Part III — 감사
 
 ```
 현재(전환 완료):
-  렌더링: Yoga 계산 → renderSkia() → CanvasKit Surface 렌더링
+  렌더링: (Dropflow/Taffy 레이아웃 계산 결과) → renderSkia() → CanvasKit Surface 렌더링
           PixiJS는 씬 그래프 + 이벤트(EventBoundary) 전용으로 축소
   성능 가속: Rust WASM (SpatialIndex O(k) 컬링, Block/Grid 레이아웃 가속, Web Worker 비동기)
 ```
@@ -67,8 +67,8 @@ Part III — 감사
 
 | 섹션 | 라인 범위 | 이유 |
 |------|---------|------|
-| §1 CSS vs Yoga 동작 차이 분석 | 46–363 | CSS 명세 분석, 렌더러 독립적 |
-| §3.1–3.4 BlockEngine/GridEngine/FlexEngine | 401–940 | Yoga 레이아웃 계산 로직, Phase 5에서도 유지 |
+| §1 CSS vs 레이아웃 엔진 동작 차이 분석 | 46–363 | CSS 명세 분석, 렌더러 독립적 |
+| §3.1–3.4 DropflowBlock/TaffyGrid/TaffyFlex | 401–940 | 현재 레이아웃 엔진 로직, 렌더러 독립적 |
 | §3.6–3.8 마진 병합/BFC/인라인 | 1024–1358 | 레이아웃 규칙, 렌더러 무관 |
 | §8.1–8.4 기존 이슈 (Phase 9–12) | 1681–2183 | 이미 해결된 PixiJS 이슈, 이력 보존 |
 
@@ -76,10 +76,10 @@ Part III — 감사
 
 | # | 섹션 | 라인 범위 | 현재 내용 | 변경 내용 | 우선순위 |
 |---|------|---------|----------|----------|---------|
-| L1 | §3.5 엔진 디스패처 | 941–1023 | `shouldDelegateToPixiLayout()` 가정 | Phase 5+ 렌더 단계 변경 주석 추가 ("Yoga 계산 유지, 렌더만 CanvasKit") | 중간 |
-| L2 | §4.1–4.3 BuilderCanvas 통합 | 1363–1530 | PixiJS `LayoutContainer` + `ElementSprite` 렌더 파이프라인 | Phase 5+ CanvasKit 렌더 파이프라인 섹션 추가 (Yoga → renderSkia() → Surface) | **높음** |
+| L1 | §3.5 엔진 디스패처 | 941–1023 | `selectEngine()` 기준 전환 전 설명 | Phase 11 기준으로 엔진 선택/렌더 분리 주석 보강 | 중간 |
+| L2 | §4.1–4.3 BuilderCanvas 통합 | 1363–1530 | `LayoutContainer` 기반 전환 전 설명 | `DirectContainer` + SkiaOverlay 렌더 파이프라인 섹션 추가 (엔진 결과 → renderSkia() → Surface) | **높음** |
 | L3 | §5.1–5.3 검증 방법 | 1535–1638 | 레이아웃 단위 테스트만 | §5.4 추가: CanvasKit 렌더링 정확성 검증 (border-radius, 텍스트, 그래디언트) | ✅ 완료 |
-| L4 | §7 참조 문서 | 1659–1678 | PixiJS/Yoga 참조만 | CanvasKit/Skia 공식 문서 + Pencil renderSkia() 참조 추가 | ✅ 완료 |
+| L4 | §7 참조 문서 | 1659–1678 | PixiJS/Yoga 중심 참조 | CanvasKit/Skia + Taffy/Dropflow + Pencil renderSkia() 참조 추가 | ✅ 완료 |
 | L5 | §9 변경 이력 | 2185–2217 | Phase 1.27까지 | Phase 5 CanvasKit 통합 항목 추가 | ✅ 완료 |
 
 **요약:** 5건 수정 — ✅ 전체 완료 (높음 1, 중간 2, 낮음 2). 레이아웃 엔진 핵심 로직(§1, §3.1–3.4)은 변경 불필요.
@@ -115,7 +115,7 @@ Part III — 감사
 | C13 | PixiButton 예시 | 2401–2471 | Graphics로 버튼 그리기 | Phase 5+ renderSkia() 패턴으로 대체 예시 | **높음** |
 | C14 | Performance Optimization | 3889–3919 | 변형 색상 캐싱 | 이중 Surface 2-pass(컨텐츠 캐시 + present blit + 오버레이 분리) 전략 추가 | **높음** |
 | C15 | Visual Regression Testing | 3666–3887 | React vs PixiJS 비교 | React vs CanvasKit 비교로 업데이트 + waitForCanvasKitRender() | **높음** |
-| C16 | CSS vs WebGL 규칙 | 2540–2586 | CSS 단위 해석 경고 | CanvasKit은 Yoga 계산 결과(px)만 사용, CSS 미적용 명시 | 중간 |
+| C16 | CSS vs WebGL 규칙 | 2540–2586 | CSS 단위 해석 경고 | CanvasKit은 Taffy/Dropflow 계산 결과(px)만 사용, CSS 미적용 명시 | 중간 |
 | C17 | Phase 0 Checklist | 1902–1915 | 기본 설정 항목 | CanvasKit WASM 설정 + CanvasKitRenderer 구현 항목 추가 | **높음** |
 | C18 | Component Migration Mapping | 신규 | 없음 | Spec Shape ↔ CanvasKit API 매핑 테이블 (rect→drawRRect, text→drawParagraph 등) | 중간 |
 

@@ -1,9 +1,9 @@
 # Pencil vs xstudio 렌더링 성능 비교 분석
 
 > 분석일: 2026-01-29
-> 최종 수정: 2026-02-05 (Pencil 방식 2-pass + 멀티페이지 동시 렌더링)
+> 최종 수정: 2026-02-14 (Workflow 오버레이 + Color Picker V2 + MeshGradient/LayerBlur 완성 + Grid Skia 전환 + fit-content 네이티브)
 > Pencil: v1.1.10 (Electron + CanvasKit/Skia WASM + PixiJS v8)
-> xstudio: PixiJS v8.14.3 + @pixi/react v8.0.5
+> xstudio: PixiJS v8.14.3 + @pixi/react v8.0.5 + @xstudio/specs (Spec Shape 시스템)
 >
 > **주의:** Pencil 기능 중 "✅ (추정)"으로 표기된 항목은 바이너리 분석에서 확인된 것이 아니라 코드 패턴 기반 추정이다. 이에 따라 커버리지 계산(55% → 95%)의 분모가 추정치를 포함하고 있으므로, 실제 커버리지는 표기된 수치와 다를 수 있다.
 
@@ -13,20 +13,21 @@
 
 | 항목 | Pencil | xstudio |
 |------|--------|---------|
-| **메인 렌더러** | **CanvasKit/Skia WASM** (pencil.wasm, 7.8MB) — 모든 디자인 노드의 벡터/텍스트/이미지/이펙트 렌더링 | **CanvasKit/Skia WASM** (canvaskit-wasm) — 디자인 노드 + AI 이펙트 + Selection 오버레이 렌더링 ✅ (2026-02-01 전환) |
+| **메인 렌더러** | **CanvasKit/Skia WASM** (pencil.wasm, 7.8MB) — 모든 디자인 노드의 벡터/텍스트/이미지/이펙트 렌더링 | **CanvasKit/Skia WASM** (canvaskit-wasm) — 디자인 노드 + AI 이펙트 + Selection + Workflow + Grid 오버레이 렌더링 ✅ (2026-02-01 전환, 2026-02-12 Grid/Workflow 확장) |
 | 씬 그래프/이벤트 | PixiJS v8 — 씬 트리 관리 + EventBoundary (Hit Testing) 전용, 디자인 노드 렌더링에 불참여 | PixiJS v8.14.3 — 씬 그래프 + EventBoundary (Hit Testing) 전용, Camera 하위 `alpha=0`으로 시각적 렌더링 비활성화 |
 | GPU Surface | CanvasKit MakeWebGLCanvasSurface → GrDirectContext → MakeOnScreenGLSurface (폴백: MakeSWCanvasSurface) | CanvasKit MakeWebGLCanvasSurface (`createGPUSurface`) — on-screen surface (폴백: SW). PixiJS는 별도 WebGL 컨텍스트(이벤트 전용) |
 | React 바인딩 | @pixi/react v8 | @pixi/react v8.0.5 |
-| 레이아웃 | @pixi/layout (Yoga WASM) | @pixi/layout v3.2.0 (Yoga WASM) |
-| WASM 모듈 | **CanvasKit (Skia) WASM** (7.8MB) — 메인 렌더 엔진 + Yoga | **CanvasKit WASM** (메인 렌더러) + **Rust WASM** (SpatialIndex + Layout 가속, 70KB) + Yoga WASM ✅ (2026-02-02) |
+| 레이아웃 | @pixi/layout (Yoga WASM) | **Taffy WASM** (Flex/Grid) + **Dropflow Fork** (Block) — Phase 11에서 @pixi/layout 제거 |
+| WASM 모듈 | **CanvasKit (Skia) WASM** (7.8MB) — 메인 렌더 엔진 + Yoga | **CanvasKit WASM** (메인 렌더러) + **Taffy WASM** (Flex/Grid) + **Rust WASM** (SpatialIndex, 70KB) ✅ (2026-02-18) |
+| **컴포넌트 렌더링** | 6개 노드 클래스 (Frame/Group/Shape/Text/Sticky/IconFont) + `renderSkia()` | **@xstudio/specs** — 60개+ ComponentSpec → Shape[] → `specShapeConverter.ts` → SkiaNodeData ✅ (2026-02-12) |
 | 번들 크기 | index.js 5.7MB + WASM 7.8MB = ~13.5MB | 측정 필요 |
 | 플랫폼 | Electron (GPU 직접 접근) | 웹 브라우저 (WebGL 제약) |
 
 > **중요 정정사항:** 초기 분석에서 "PixiJS가 메인 렌더러"로 기술했으나, 심층 역공학 결과 **CanvasKit/Skia WASM이 메인 렌더러**이며 PixiJS는 씬 그래프 관리와 이벤트 처리만 담당하는 것으로 확인됨. 모든 씬 노드가 `renderSkia(renderer, canvas, cullingBounds)` 메서드를 구현하여 CanvasKit Canvas API를 직접 호출한다.
 >
-> **xstudio 진행 상황 (2026-02-05):** xstudio도 Pencil의 “컨텐츠 캐시 + present(blit) + 오버레이 분리” 모델로 전환 완료.
+> **xstudio 진행 상황 (2026-02-14):** xstudio도 Pencil의 "컨텐츠 캐시 + present(blit) + 오버레이 분리" 모델로 전환 완료.
 > - **컨텐츠 패스:** contentSurface에 디자인 노드만 렌더 → `contentSnapshot` 캐시
-> - **present 패스:** mainSurface에 snapshot blit(카메라 델타는 아핀 변환) + Selection/AI/PageTitle 오버레이 덧그리기
+> - **present 패스:** mainSurface에 snapshot blit(카메라 델타는 아핀 변환) + Selection/AI/PageTitle/Workflow/Grid 오버레이 덧그리기
 > - **contentSurface 백엔드 정합:** `mainSurface.makeSurface()`로 offscreen surface를 생성하여 메인과 동일 백엔드(GPU/SW) 사용
 > - **줌 스냅샷 보간:** zoomRatio != 1이면 `drawImageCubic` 우선 적용(미지원 환경 `drawImage` 폴백)
 > - **텍스트 Paragraph LRU 캐시:** (내용+스타일+maxWidth) 키로 `Paragraph` 캐시(최대 500), 폰트 교체/페이지 전환/HMR에서 무효화
@@ -34,6 +35,17 @@
 > - 트리/Selection 바운드맵은 registryVersion 캐시로 GC/CPU 압력 최소화
 > - clipRect 기반 Dirty Rect 경로는 잔상/미반영 버그 위험으로 제거(보류)
 > - Dev 관측: `GPUDebugOverlay`로 `RAF FPS`와 `Present/s`, `Content/s`, `Registry/s`, `Idle%`를 분리 관측
+>
+> **추가 구현 (2026-02-05 → 2026-02-14):**
+> - **MeshGradient Fill 완전 구현:** SkSL RuntimeEffect 기반 4코너 bilinear interpolation (2026-02-11)
+> - **LayerBlur 이펙트 구현:** `ImageFilter.MakeBlur` saveLayer 기반 (effects.ts)
+> - **Grid 렌더링 Skia 전환:** PixiJS Graphics → CanvasKit 마이그레이션 (`gridRenderer.ts`, 174줄) (2026-02-12)
+> - **Snap to Grid:** 시각적 그리드 정렬 (2026-02-12)
+> - **Workflow 오버레이 시스템:** 페이지 간 엣지 Bezier 렌더링 + 미니맵 + 히트 테스트 (1,384줄) (2026-02-06~12)
+> - **Color Picker V2:** 3-tab (Color|Gradient|Image) + EyeDropper + BlendMode 선택기 (Phase 1-3 완료) (2026-02-08~10)
+> - **fit-content 네이티브:** BlockEngine `FIT_CONTENT = -2` sentinel + WASM 직렬화 (2026-02-13)
+> - **Spec Shape 통합:** @xstudio/specs Shape[] → SkiaNodeData 변환 (`specShapeConverter.ts`) (2026-02-12)
+> - **ToggleButtonGroup:** border-radius 4-tuple 처리 + _groupPosition props (2026-02-13)
 >
 > **멀티페이지 동시 렌더링 (2026-02-05):** Pencil의 Frame 방식과 동일하게 모든 페이지를 캔버스에 동시 렌더링.
 > - **씬 그래프:** Camera 하위에 `PageContainer` memo 컴포넌트로 페이지별 독립 컨테이너 (x/y 수동 배치, Yoga 외부)
@@ -81,8 +93,11 @@
 | LOD (Level of Detail) | ✅ (추정) | ❌ | ❌ | 줌 레벨별 디테일 조절 |
 | 블렌드 모드 | ✅ 18종 (l1e 함수 매핑) | ✅ 18종 (`blendModes.ts`) | - | CanvasKit BlendMode 매핑 |
 | 커스텀 셰이더 | ✅ (GLSL+WebGPU) | ❌ | ❌ | 특수 효과 GPU 가속 |
-| **6종 Fill 시스템** | ✅ Shader 기반 | ✅ 6종 (`fills.ts`) | - | Color/Linear/Radial/Angular/MeshGradient/Image |
-| **이펙트 파이프라인** | ✅ beginRenderEffects | ✅ saveLayer 기반 (`effects.ts`) | - | Opacity/BackgroundBlur/DropShadow 등 |
+| **6종 Fill 시스템** | ✅ Shader 기반 | ✅ 6종 (`fills.ts`) — **MeshGradient SkSL 완전 구현** ✅ (2026-02-11) | - | Color/Linear/Radial/Angular/**MeshGradient**/Image — Mesh는 SkSL RuntimeEffect 4코너 bilinear interpolation |
+| **이펙트 파이프라인** | ✅ beginRenderEffects (5종) | ✅ saveLayer 기반 (`effects.ts`) — **5종 전체 구현** ✅ (2026-02-14) | - | Opacity/BackgroundBlur/**LayerBlur**/DropShadow Outer/Inner |
+| **Grid 렌더링** | ✅ CanvasKit 기반 | ✅ `gridRenderer.ts` (174줄) — PixiJS Graphics → **Skia 전환** ✅ (2026-02-12) | - | 줌 레벨별 간격 조정 + Snap to Grid + Major/Minor 그리드 |
+| **Workflow 오버레이** | ❌ (해당 없음) | ✅ Bezier 엣지 + 미니맵 + 히트테스트 (1,384줄) ✅ (2026-02-06) | - | xstudio 고유: 페이지 간 네비게이션 시각화 |
+| **Spec Shape 렌더링** | ❌ (노드 클래스 기반) | ✅ `specShapeConverter.ts` — ComponentSpec Shape[] → SkiaNodeData ✅ (2026-02-12) | - | 60개+ 컴포넌트 스펙, 2-pass 처리 (shadow/border forward ref) |
 
 #### Frame 렌더링 규칙 (Pencil 기준)
 
@@ -111,7 +126,8 @@ Pencil의 캔버스에 그려지는 Frame은 `FrameNode(jx)`가 직접 렌더링
 |------------|--------|---------|----------|------|
 | Flexbox (Yoga WASM) | ✅ | ✅ | - | 동일 — ✅ 유지 |
 | Grid 레이아웃 | ✅ (추정) | ✅ 커스텀 엔진 | 📋 Phase 2 | xstudio GridEngine 120줄 — ⬆️ Phase 2에서 WASM 가속 |
-| Block 레이아웃 | ✅ (추정) | ✅ 커스텀 엔진 | 📋 Phase 2 | xstudio BlockEngine 671줄 — ⬆️ Phase 2에서 WASM 가속 |
+| Block 레이아웃 | ✅ (추정) | ✅ 커스텀 엔진 + **fit-content 네이티브** | 📋 Phase 2 | xstudio BlockEngine 671줄 — `FIT_CONTENT = -2` sentinel + WASM 직렬화 ✅ (2026-02-13) |
+| **fit-content (CSS intrinsic)** | ✅ FitContent(2) enum | ✅ `FIT_CONTENT = -2` + `flexGrow:0, flexShrink:0` (Flex) | - | Block: sentinel 값 + contentWidth 기반. Flex: Yoga 워크어라운드 ✅ (2026-02-13) |
 | WASM 연산 가속 | ✅ pencil.wasm | ❌ | 📋 Phase 2 | 레이아웃 배치 계산 |
 | 레이아웃 캐싱 | ✅ | 🔶 layoutBoundsRegistry | - | xstudio: JS Map 캐시 |
 
@@ -187,12 +203,14 @@ Pencil 렌더링 최적화 전체: 100%
 │   └── CanvasKit/Skia: 디자인 노드 + AI 이펙트 + Selection 오버레이 렌더링 ✅ (2026-02-01)
 ├── WASM 구현 완료:     ~15% (SpatialIndex, 레이아웃 가속, Worker) ✅ (2026-02-02)
 ├── Pencil 렌더링 최적화: ~8% (2-pass 컨텐츠 캐시 + present blit + 오버레이 분리 + camera-only + cleanup render) ✅ (2026-02-05)
-├── 추가 개선 필요:    ~7% (아틀라싱, LOD, RenderTexture)
-└── Pencil 고유 영역:  ~5% (커스텀 셰이더, 전체 노드 renderSkia 메서드)
+├── Fill/Effect 완성:   ~4% (MeshGradient SkSL + LayerBlur + Grid Skia 전환) ✅ (2026-02-14)
+├── 추가 개선 필요:    ~3% (아틀라싱, LOD, RenderTexture)
+└── Pencil 고유 영역:  ~5% (커스텀 셰이더, OffscreenCanvas Worker)
+    └── xstudio 고유:  +5% (Workflow 오버레이, Color Picker V2, Spec Shape 시스템 — Pencil에 없는 기능)
 ```
 
-**WASM 계획 + Pencil 렌더링 최적화 완료 시 Pencil 대비 약 83% 수준의 렌더링 최적화를 달성.**
-나머지 12%는 아래 추가 개선 항목으로 보완 가능.
+**WASM 계획 + Pencil 렌더링 최적화 + Fill/Effect 완성으로 Pencil 대비 약 87% 수준의 렌더링 최적화를 달성.**
+나머지 8%는 아래 추가 개선 항목으로 보완 가능. xstudio 고유 기능(Workflow, Color Picker V2, Spec Shape)은 Pencil에 없는 부가 가치.
 
 > **⚠️ 전환 영향:** "xstudio 이미 구현 60%" 중 일부는 PixiJS 한정 구현(🔄 대체 필요)이다.
 > Phase 5-6 CanvasKit 전환 시 이 항목들은 CanvasKit API로 **재구현**해야 하며,
@@ -447,6 +465,16 @@ class VRAMBudgetManager {
 ├── camera-only 아핀 blit + padding(512px) + cleanup render
 ├── Pixi 가시성 처리 O(1) — Camera 루트 alpha=0
 └── 트리/Selection 바운드맵 registryVersion 캐시
+
+✅ 완료 (2026-02-05 → 2026-02-14):
+├── MeshGradient Fill — SkSL RuntimeEffect 4코너 bilinear interpolation (2026-02-11)
+├── LayerBlur 이펙트 — ImageFilter.MakeBlur saveLayer 기반 (2026-02-14)
+├── Grid 렌더링 — PixiJS Graphics → Skia 전환 (gridRenderer.ts) (2026-02-12)
+├── Workflow 오버레이 — 엣지 Bezier + 미니맵 + 히트테스트 (2026-02-06)
+├── Color Picker V2 — 3-tab Phase 1-3 완료 (2026-02-08~10)
+├── Spec Shape 통합 — @xstudio/specs → SkiaNodeData 변환 (2026-02-12)
+├── fit-content 네이티브 — BlockEngine + Flex 워크어라운드 (2026-02-13)
+└── ToggleButtonGroup — border-radius 4-tuple + _groupPosition (2026-02-13)
 │
 즉시 적용 가능 (WASM 불필요, JS만으로 구현):
 ├── 4.3 LOD 스위칭 — useLOD 훅 추가, ElementSprite에 분기
@@ -472,15 +500,18 @@ WASM 계획 완료 후:
 | + WASM Phase 4 (Worker) | +5% | 75% |
 | + ~~4.1 Dirty Rect 렌더링~~ | ~~+8%~~ | ~~83%~~ |
 | **✅ Pencil 렌더링 최적화 (2026-02-05)** | **+8%** | **83%** |
-| + 4.2 텍스처 아틀라싱 | +5% | 88% |
-| + 4.3 LOD 스위칭 | +4% | 92% |
-| + 4.4 RenderTexture 풀링 | +3% | 95% |
+| **✅ Fill/Effect 완성 (2026-02-14)** | **+4%** | **87%** |
+| + 4.2 텍스처 아틀라싱 | +3% | 90% |
+| + 4.3 LOD 스위칭 | +3% | 93% |
+| + 4.4 RenderTexture 풀링 | +2% | 95% |
 | Pencil 고유 영역 (7.8MB WASM) | 5% | - |
 
-> **결론:** WASM 계획 + Pencil 렌더링 최적화(2-pass 컨텐츠 캐시 + camera-only + 오버레이 분리) 적용으로 **약 83%** 달성.
+> **결론 (2026-02-14 업데이트):** WASM 계획 + Pencil 렌더링 최적화 + Fill/Effect 완성으로 **약 87%** 달성.
+> 2026-02-05 대비 추가된 항목: MeshGradient SkSL 완전 구현, LayerBlur 이펙트, Grid Skia 전환.
 > 추가 개선 3항목(아틀라싱, LOD, RenderTexture 풀링) 적용 시 **약 95%**까지 도달 가능.
 > 나머지 5%는 Pencil의 7.8MB 전용 WASM 모듈(벡터 래스터라이즈, 기하 연산)에 해당하며,
 > 이는 xstudio의 디자인 빌더 특성상 필수적이지 않을 수 있다.
+> xstudio 고유 기능(Workflow 오버레이, Color Picker V2, Spec Shape 시스템)은 Pencil에 없는 부가 가치를 제공한다.
 
 ---
 
@@ -837,15 +868,15 @@ const DEFAULT_CSS_VALUES = {
 | 카테고리 | Pencil | xstudio |
 |----------|--------|---------|
 | **위치/크기** | `x`, `y`, `width`, `height`, `rotation` | `width`, `height`, `top`, `left` |
-| **채우기** | `fill` (단일/변수), `fills[]` (다중 Image/Gradient) | `backgroundColor` (단일) |
+| **채우기** | `fill` (단일/변수), `fills[]` (다중 Image/Gradient) | ✅ **Color Picker V2** — 3-tab (Color\|Gradient\|Image) + 6종 Fill (`fills.ts`) + EyeDropper + BlendMode 선택기 ✅ (2026-02-08~10) |
 | **선** | `stroke.align/thickness/fill` | `borderWidth/Color/Style/Radius` |
-| **효과** | `effect` (shadow inner/outer, blur, spread) | 없음 |
-| **모서리** | `cornerRadius` (단일 또는 4개 배열, 변수 참조) | `borderRadius` (단일 CSS 값) |
+| **효과** | `effect` (shadow inner/outer, blur, spread) | ✅ 5종 (Opacity/BackgroundBlur/LayerBlur/DropShadow Outer/Inner) (`effects.ts`) ✅ (2026-02-14) |
+| **모서리** | `cornerRadius` (단일 또는 4개 배열, 변수 참조) | ✅ `borderRadius` 단일 + **4-tuple `[tl, tr, br, bl]`** (ToggleButtonGroup `_groupPosition`) ✅ (2026-02-13) |
 | **레이아웃** | `layout` (none/vertical/horizontal), `gap` | `display`, `flexDirection`, `flexWrap`, `gap`, padding/margin 개별 4방향 |
 | **텍스트** | `fontSize/Family/Weight`, `lineHeight`, `textGrowth` | 11개 (fontFamily ~ verticalAlign) |
 | **사이징** | `"fill_container"`, 고정 px값 | `"100%"`, `"fit-content"`, `"auto"`, CSS 단위 |
-| **이미지 필** | `fills[].type:Image, url, mode` | 없음 (별도 컴포넌트로 처리) |
-| **그라디언트** | `fills[].type:Linear/Radial/AngularGradient` | 없음 |
+| **이미지 필** | `fills[].type:Image, url, mode` | ✅ Color Picker V2 Image 탭 + `fills.ts` ImageFill `makeShaderOptions` ✅ (2026-02-08) |
+| **그라디언트** | `fills[].type:Linear/Radial/AngularGradient` | ✅ Color Picker V2 Gradient 탭 — Linear/Radial/Angular + **MeshGradient SkSL** 지원 ✅ (2026-02-09~11) |
 
 **Pencil 다중 Fill 구조:**
 ```json
@@ -992,10 +1023,12 @@ export const transformValuesAtom = selectAtom(
 │  ✅ Gateway 패턴으로 비활성 섹션 훅 실행 방지                        │
 │  ❌ 디자인 변수/토큰 시스템 없음                                     │
 │  ❌ Light/Dark 테마 시스템 없음                                      │
-│  ❌ 다중 Fill/Gradient/Effect 없음                                   │
+│  ✅ 다중 Fill/Gradient/Effect — Color Picker V2 (Phase 1-3) ✅ (2026-02-08~10) │
 │  ❌ 컴포넌트-인스턴스 오버라이드 시스템 없음                          │
-│  ❌ cornerRadius 개별 모서리 제어 없음                                │
+│  ✅ cornerRadius 4-tuple [tl,tr,br,bl] (ToggleButtonGroup) ✅ (2026-02-13) │
 │  ❌ rotation 속성 없음                                               │
+│  ✅ Workflow 오버레이 (Pencil에 없는 고유 기능) ✅ (2026-02-06)       │
+│  ✅ @xstudio/specs 컴포넌트 렌더링 시스템 (60개+) ✅ (2026-02-12)    │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1278,8 +1311,8 @@ Pencil은 Claude AI를 에디터에 직접 통합하여 디자인-코드 변환�
 
 | 환경 | 사용 가능 모델 | 기본 모델 |
 |------|--------------|----------|
-| **Electron** (데스크톱) | Sonnet 4.5, Haiku 4.5, Opus 4.5 | Opus 4.5 |
-| **Cursor** (IDE 통합) | Sonnet 4.5, Haiku 4.5, Composer | Composer |
+| **Electron** (데스크톱) | Sonnet, Haiku, Opus | Opus |
+| **Cursor** (IDE 통합) | Sonnet, Haiku, Composer | Composer |
 | **기타** (웹) | — | — |
 
 **통신 방식:**
@@ -1289,16 +1322,16 @@ submitPrompt(prompt, model) {
   this.ipc.notify("submit-prompt", { prompt, model });
 }
 
-// 모델 선택
+// 모델 선택 — 최신 Claude 모델을 자동 사용
 getAvailableModels() {
   if (mR === "Electron") {
     return {
       models: [
-        { label: "Sonnet 4.5", id: "claude-4.5-sonnet" },
-        { label: "Haiku 4.5", id: "claude-4.5-haiku" },
-        { label: "Opus 4.5", id: "claude-4.5-opus" }
+        { label: "Sonnet", id: "claude-sonnet-latest" },
+        { label: "Haiku", id: "claude-haiku-latest" },
+        { label: "Opus", id: "claude-opus-latest" }
       ],
-      defaultModel: { label: "Opus 4.5", id: "claude-4.5-opus" }
+      defaultModel: { label: "Opus", id: "claude-opus-latest" }
     };
   }
 }
@@ -1681,7 +1714,7 @@ z_ (Base Node)
 | **노드 클래스** | 6개 구체 클래스, 단일 Base | PixiJS Container 기반 확장 |
 | **다형성** | ShapeNode 1개 클래스 = 5종 도형 | 각 도형별 별도 컴포넌트 |
 | **타입 판별** | `this.type` 문자열 판별자 | React 컴포넌트 타입 |
-| **레이아웃** | Yoga WASM (Flexbox) + Auto Layout | @pixi/layout (Yoga WASM) + 커스텀 Grid/Block |
+| **레이아웃** | Yoga WASM (Flexbox) + Auto Layout | Taffy WASM (Flex/Grid) + Dropflow Fork (Block) — Phase 11에서 @pixi/layout 제거 |
 | **사이징** | Fixed / FitContent / FillContainer | 유사 (확인 필요) |
 | **컴포넌트 시스템** | prototype + overriddenProperties Set | Zustand store 기반 |
 | **슬롯** | FrameNode 전용 Slot 시스템 | (미확인) |
@@ -1880,6 +1913,13 @@ Cmd+S → saveDocument() → FileManager.export()
 | A-10 | 페이지 타이틀 렌더링 (활성/비활성 색상) | `selectionRenderer.ts` renderPageTitle | ✅ (2026-02-05) |
 | A-11 | 페이지 드래그 재배치 | `usePageDrag.ts` (RAF 스로틀 + DOM 좌표계) | ✅ (2026-02-05) |
 | A-12 | 페이지 단위 뷰포트 컬링 | `BuilderCanvas.tsx` visiblePageIds + `useViewportCulling.ts` | ✅ (2026-02-05) |
+| A-13 | Grid 렌더링 Skia 전환 | `gridRenderer.ts` (174줄) — PixiJS Graphics → CanvasKit | ✅ (2026-02-12) |
+| A-14 | Snap to Grid | `SkiaOverlay.tsx` + grid 상태 연동 | ✅ (2026-02-12) |
+| A-15 | Workflow 오버레이 (xstudio 고유) | `workflowRenderer.ts` + `workflowMinimap.ts` + `workflowHitTest.ts` (1,384줄) | ✅ (2026-02-06) |
+| A-16 | Spec Shape → Skia 변환 (xstudio 고유) | `specShapeConverter.ts` — @xstudio/specs 60개+ 컴포넌트 | ✅ (2026-02-12) |
+| A-17 | Hover Highlight 오버레이 (Pencil 방식) | `hoverRenderer.ts` renderHoverHighlight + `SkiaOverlay.tsx` | ✅ (2026-02-14) |
+| A-18 | editingContext 경계 오버레이 (점선) | `hoverRenderer.ts` renderEditingContextBorder + `SkiaOverlay.tsx` | ✅ (2026-02-14) |
+| A-19 | Element Hover Interaction (AABB 히트 테스트) | `useElementHoverInteraction.ts` (window pointermove + RAF) | ✅ (2026-02-14) |
 
 ### 11.2 렌더링 파이프라인 (노드별 renderSkia)
 
@@ -1905,7 +1945,7 @@ Cmd+S → saveDocument() → FileManager.export()
 | C-3 | RadialGradient | `MakeRadialGradient` | `MakeTwoPointConicalGradient` | ✅ |
 | C-4 | AngularGradient | `MakeSweepGradient` | `MakeSweepGradient` | ✅ |
 | C-5 | ImageFill | `makeShaderOptions` | `makeShaderOptions` | ✅ |
-| C-6 | **MeshGradient** | `drawPatch()` Coons 패치 | 구조 정의만, 렌더링 미구현 | ❌ |
+| C-6 | **MeshGradient** | `drawPatch()` Coons 패치 | ✅ **SkSL RuntimeEffect 기반 4코너 bilinear interpolation** — 2×2 그리드(4색), uniforms 18 floats `[uTL(4), uTR(4), uBL(4), uBR(4), uSize(2)]` | ✅ (2026-02-11) |
 
 ### 11.4 이펙트 (saveLayer 기반)
 
@@ -1915,7 +1955,7 @@ Cmd+S → saveDocument() → FileManager.export()
 | D-2 | BackgroundBlur | `MakeBlur(sigma, sigma)` | `ImageFilter.MakeBlur` | ✅ |
 | D-3 | DropShadow (Outer) | `MakeDropShadow` | `MakeDropShadow` | ✅ |
 | D-4 | DropShadow (Inner) | `MakeDropShadowOnly` | `MakeDropShadowOnly` | ✅ |
-| D-5 | **LayerBlur** | `saveLayer + MakeBlur` (대상 레이어 자체) | 미구현 | ❌ |
+| D-5 | **LayerBlur** | `saveLayer + MakeBlur` (대상 레이어 자체) | ✅ `case 'layer-blur': ImageFilter.MakeBlur(sigma, sigma)` — BackgroundBlur와 동일 구조, 대상 레이어 자체에 적용 | ✅ (2026-02-14) |
 
 ### 11.5 블렌드 모드 (18종)
 
@@ -1952,6 +1992,9 @@ Cmd+S → saveDocument() → FileManager.export()
 | H-5 | Camera 하위 숨김: `alpha=0` (renderable=false 금지) | SkiaOverlay.tsx renderFrame | ✅ |
 | H-6 | 페이지 타이틀 (활성: #3B82F6, 비활성: #64748b) | `selectionRenderer.ts` renderPageTitle (isActive) | ✅ (2026-02-05) |
 | H-7 | 치수 레이블 (width × height, 파란 배경 흰 텍스트) | `selectionRenderer.ts` renderDimensionLabels | ✅ |
+| H-8 | Hover Highlight (blue-500, alpha 0.5, 실선 2/zoom, 그룹 내부 점선 1/zoom) | `hoverRenderer.ts` renderHoverHighlight(dashed) | ✅ (2026-02-14) |
+| H-9 | editingContext 경계 (gray-400, alpha 0.3, dash [6/zoom, 4/zoom]) | `hoverRenderer.ts` renderEditingContextBorder | ✅ (2026-02-14) |
+| H-10 | Body 요소 Selection bounds 폴백 (`pageFrames`) | `buildSelectionRenderData` pageFrames 파라미터 | ✅ (2026-02-14) |
 
 ### 11.9 AI 시각 피드백
 
@@ -1964,8 +2007,8 @@ Cmd+S → saveDocument() → FileManager.export()
 
 | # | 항목 | 중요도 | 비고 |
 |---|------|--------|------|
-| 1 | **MeshGradient Fill** | 중간 | `fills.ts:96-106` 구조만 정의. Coons 패치 또는 SkSL RuntimeEffect 필요 |
-| 2 | **LayerBlur 이펙트** | 중간 | BackgroundBlur와 유사하나 대상 레이어 자체에 블러 적용. effects.ts에 case 추가 필요 |
+| ~~1~~ | ~~**MeshGradient Fill**~~ | ~~중간~~ | ✅ **구현 완료** (2026-02-11) — SkSL RuntimeEffect 4코너 bilinear interpolation |
+| ~~2~~ | ~~**LayerBlur 이펙트**~~ | ~~중간~~ | ✅ **구현 완료** (2026-02-14) — `ImageFilter.MakeBlur` saveLayer 기반 |
 | 3 | **Hybrid 모드** | 낮음 | 텍스트 렌더링 겹침으로 비활성화 중 (`SkiaOverlay.tsx:239-242`) |
 | 4 | **Stroke Alignment** (Inside/Outside) | 낮음 | Path.makeStroked + PathOp 필요. 현재 Center만 지원 |
 | 5 | **Polygon/Donut/Sector 도형** | 낮음 | 고급 벡터 도형. nodeRenderers.ts 확장 필요 |
@@ -1973,20 +2016,534 @@ Cmd+S → saveDocument() → FileManager.export()
 ### 11.11 전환 완성도
 
 ```
-Pencil 렌더링 아키텍처 전환: 100% 완료
+Pencil 렌더링 아키텍처 전환: 100% 완료 (2026-02-14 업데이트)
 
-✅ 완전 구현 (43/43 항목):
+✅ 완전 구현 (51/51 항목, +8 since 2026-02-05):
 ├── 아키텍처: CanvasKit 메인 렌더러 + PixiJS 이벤트 전용
 ├── 렌더 루프: 이중 Surface + 프레임 분류 (idle/present/camera-only/content/full) + padding 기반 camera-only blit + cleanup render (2026-02-05)
-├── 노드 렌더링: Box/Text/Image/Container + AABB 컬링 + 좌표계 정합성 수정
-├── Fill: 6/6종 (Color, Linear, Radial, Angular, Image, MeshGradient)
-├── 이펙트: 4/4종 (Opacity, BackgroundBlur, LayerBlur, DropShadow Outer/Inner)
+├── 노드 렌더링: Box/Text/Image/Container/Line + AABB 컬링 + 좌표계 정합성 수정
+├── Fill: 6/6종 (Color, Linear, Radial, Angular, Image, **MeshGradient SkSL ✅ 2026-02-11**)
+├── 이펙트: 5/5종 (Opacity, BackgroundBlur, **LayerBlur ✅ 2026-02-14**, DropShadow Outer/Inner)
 ├── 블렌드 모드: 18종 전체
-├── Selection: 선택 박스 + 핸들 + 라쏘 + 치수 레이블 + 페이지 타이틀 (Skia 렌더링)
+├── Selection: 선택 박스 + 핸들 + 라쏘 + 치수 레이블 + 페이지 타이틀 + **Hover Highlight + editingContext 경계** (Skia 렌더링)
 ├── AI: Generating + Flash 애니메이션
 ├── Export: PNG/JPEG/WEBP + DPR 스케일
 ├── 유틸리티: 초기화, Surface, Disposable, Font, 텍스트 측정
 ├── 변수 Resolve: $-- 참조 → Float32Array 색상 변환 (G.2 완성)
 ├── 디자인 킷: 내장 킷 JSON + 브라우저 패널 + 시각 피드백 (G.4 완성)
-└── 멀티페이지: 동시 렌더링 + 페이지 타이틀 + 드래그 재배치 + 뷰포트 컬링 (2026-02-05)
+├── 멀티페이지: 동시 렌더링 + 페이지 타이틀 + 드래그 재배치 + 뷰포트 컬링 (2026-02-05)
+│
+│   ── 2026-02-05 이후 추가 구현 ──
+├── Grid 렌더링: **PixiJS Graphics → Skia 전환** (`gridRenderer.ts`, 174줄) ✅ (2026-02-12)
+├── Snap to Grid: 시각적 그리드 정렬 ✅ (2026-02-12)
+├── Workflow 오버레이: 엣지 Bezier + 미니맵 + 히트테스트 (1,384줄) ✅ (2026-02-06)
+├── Color Picker V2: 3-tab (Color|Gradient|Image) + EyeDropper + BlendMode (Phase 1-3) ✅ (2026-02-08~10)
+├── Spec Shape 통합: @xstudio/specs → SkiaNodeData 변환 (specShapeConverter.ts) ✅ (2026-02-12)
+├── fit-content 네이티브: BlockEngine FIT_CONTENT sentinel + WASM 직렬화 ✅ (2026-02-13)
+├── ToggleButtonGroup: border-radius 4-tuple + _groupPosition props ✅ (2026-02-13)
+├── Color 정규화: CSS 색상 파싱 유틸리티 (hex/rgb/rgba/hsl/hsla/named) ✅ (2026-02-13)
+├── Hover Highlight: **blue-500 Stroke 오버레이** (`hoverRenderer.ts`) ✅ (2026-02-14)
+├── editingContext 경계: **gray-400 점선 오버레이** (`hoverRenderer.ts`) ✅ (2026-02-14)
+├── Element Hover Interaction: window pointermove + RAF + AABB 히트 테스트 (`useElementHoverInteraction.ts`) ✅ (2026-02-14)
+└── 캔버스 커서 통일: 모든 요소 `cursor="default"` (Pencil 방식) ✅ (2026-02-14)
 ```
+
+---
+
+## 12. 2026-02-05 이후 주요 변경사항 (2026-02-05 → 2026-02-14)
+
+> 이 섹션은 §11까지의 기준(2026-02-05) 이후 발생한 주요 구현/변경사항을 기록한다.
+> 총 66개 커밋, ~2,000줄 신규 코드.
+
+### 12.1 MeshGradient Fill 완전 구현 ✅ (2026-02-11)
+
+**이전 상태:** `fills.ts:96-106` 구조만 정의, 렌더링 미구현 (§11.3 C-6 ❌)
+**현재 상태:** SkSL RuntimeEffect 기반 완전 구현
+
+**구현 방식:**
+```glsl
+// SkSL shader — 4코너 bilinear interpolation
+uniform half4 uTL, uTR, uBL, uBR;  // 4코너 색상 (각 4 floats)
+uniform float2 uSize;                // 캔버스 크기
+
+half4 main(float2 coord) {
+    float2 uv = coord / uSize;
+    half4 top = mix(uTL, uTR, half(uv.x));
+    half4 bottom = mix(uBL, uBR, half(uv.x));
+    return mix(top, bottom, half(uv.y));
+}
+```
+
+- 2×2 그리드 (4색) 지원
+- Uniforms: 18 floats `[uTL(4), uTR(4), uBL(4), uBR(4), uSize(2)]`
+- `effect.makeShader(uniforms)` → `paint.setShader()`
+- **Pencil 대비:** Pencil은 `drawPatch()` Coons 패치 기반이나, xstudio는 SkSL 셰이더로 더 유연한 확장 가능
+
+**파일:** `apps/builder/src/builder/workspace/canvas/skia/fills.ts` (148-188줄)
+
+---
+
+### 12.2 LayerBlur 이펙트 구현 ✅ (2026-02-14)
+
+**이전 상태:** 미구현 (§11.4 D-5 ❌)
+**현재 상태:** `ImageFilter.MakeBlur` saveLayer 기반 구현
+
+```typescript
+case 'layer-blur':
+    const sigmaLB = (effect.radius ?? 0) / 2;
+    const blurFilter = ck.ImageFilter.MakeBlur(sigmaLB, sigmaLB, ck.TileMode.Clamp, null);
+    const blurPaint = new ck.Paint();
+    blurPaint.setImageFilter(blurFilter);
+    canvas.saveLayer(blurPaint);
+    blurPaint.delete();
+    blurFilter.delete();
+    break;
+```
+
+- BackgroundBlur와 동일 구조이나 대상 레이어 자체에 적용
+- SkiaDisposable 패턴 준수 (Paint/Filter delete)
+
+**파일:** `apps/builder/src/builder/workspace/canvas/skia/effects.ts` (57-71줄)
+
+---
+
+### 12.3 Grid 렌더링 Skia 전환 ✅ (2026-02-12)
+
+**이전 상태:** PixiJS Graphics 기반 GridLayer
+**현재 상태:** CanvasKit 기반 `gridRenderer.ts` (174줄, 신규 파일)
+
+**구현 세부:**
+- 씬 좌표계 렌더링 (선 두께 `1/zoom` 보정)
+- 줌 레벨별 그리드 간격 동적 조정 (`calculateGridInterval()`: baseSize의 1/4 ~ 4배)
+- 3단계 그리드: Minor(slate-200) / Major(slate-400) / Snap(blue-500)
+- `screenOverlayNode`에서 카메라 변환 적용 후 렌더링
+
+**Snap to Grid (함께 구현):**
+- 시각적 그리드 정렬 기능
+- `showGrid`, `gridSize` 상태 기반 토글
+
+**파일:** `apps/builder/src/builder/workspace/canvas/skia/gridRenderer.ts`
+
+---
+
+### 12.4 Workflow 오버레이 시스템 ✅ (2026-02-06~12)
+
+**이전 상태:** 미구현 (xstudio 고유 기능, Pencil에 해당 없음)
+**현재 상태:** 5개 파일, 총 1,790줄
+
+| 파일 | 줄수 | 역할 |
+|------|------|------|
+| `workflowRenderer.ts` | 735 | 엣지 Bezier 곡선 + 레이아웃 그룹 렌더링 |
+| `workflowMinimap.ts` | 411 | 전체 레이아웃 축소 미니맵 |
+| `workflowEdges.ts` | 342 | 엣지/DataSource/LayoutGroup 계산 |
+| `workflowHitTest.ts` | 238 | Bezier 경로 히트테스트 (포인트-곡선 거리) |
+| `workflowGraphUtils.ts` | 64 | 연결 관계 수집 (1-hop/2-hop) |
+
+**주요 기능:**
+- 페이지 간 네비게이션 엣지 시각화 (Bezier 곡선)
+- Straight edge / Bezier 전환 (`workflowStraightEdges` 플래그)
+- Hover/Focus 하이라이트 (`WorkflowHighlightState`)
+- 미니맵: 캔버스 대비 10% 비율, 1.5초 fade, Inspector 패널 너비 반영
+- 엣지 히트테스트: `buildEdgeGeometryCache()` + `isPointNearBezier()`
+- SkiaOverlay.tsx에 `workflowEdgesRef`, `dataSourceEdgesRef`, `layoutGroupsRef` 캐시 통합
+
+---
+
+### 12.5 Color Picker V2 (Phase 1-3) ✅ (2026-02-08~10)
+
+**이전 상태:** `backgroundColor` 단일 색상 입력만 지원
+**현재 상태:** 3-tab 풀 Color Picker 구현 완료
+
+| Phase | 내용 | 커밋 |
+|-------|------|------|
+| Phase 1 | Background section + Fill 시스템 | `cc5ec34a` (2026-02-08) |
+| Phase 2 | Gradient Editor (Linear/Radial/Angular) | `2c0b2166` (2026-02-09) |
+| Phase 3 | EyeDropper + BlendMode 선택기 | `2067f337` (2026-02-10) |
+
+**UI 구조:**
+```
+Color Picker Popover
+├── Tab 1: Color (단색)
+│   ├── Color Area (HSB)
+│   ├── Hue Slider
+│   ├── Alpha Slider
+│   └── Hex/RGB 입력
+├── Tab 2: Gradient
+│   ├── Type 선택 (Linear/Radial/Angular/Mesh)
+│   ├── Color Stops 편집 (드래그/추가/삭제)
+│   ├── ScrubInput (각도/위치)
+│   └── Stop 리스트
+└── Tab 3: Image
+    └── Image Fill 설정
+```
+
+**추가 기능:**
+- EyeDropper API 통합 (`window.EyeDropper`)
+- BlendMode 선택기 (18종, `blendModes.ts` 연동)
+- Popover 위치 점프 방지 (`2990b80e`)
+- Fill V2 환경변수 활성화 (`VITE_ENABLE_FILL_V2=true`)
+
+---
+
+### 12.6 @xstudio/specs Spec Shape 통합 ✅ (2026-02-12)
+
+**이전 상태:** Spec 시스템은 존재했으나 Skia 렌더링과 미연결
+**현재 상태:** `specShapeConverter.ts`가 ComponentSpec → SkiaNodeData 변환
+
+**아키텍처:**
+```
+@xstudio/specs ComponentSpec
+    │
+    ▼ spec.render.shapes(props, variant, size, state)
+Shape[] (추상 도형 배열)
+    │
+    ▼ specShapesToSkia(shapes, theme, width, height)
+SkiaNodeData (Skia 렌더 가능 데이터)
+    │
+    ▼ renderNode(canvas, skiaNode, fontMgr)
+CanvasKit 캔버스 출력
+```
+
+**Shape 타입 (12종):**
+```
+rect, roundRect, circle, text, shadow, border,
+container, gradient, image, line, ...
+```
+
+**2-pass 처리:**
+1. 첫 번째 패스: shadow/border의 forward reference 수집
+2. 두 번째 패스: 실제 SkiaNodeData 생성
+
+**Spec 컴포넌트 목록 (60개+):**
+- Phase 1: Button, Badge, Card, Link, Dialog, ToggleButton, ToggleButtonGroup, Tooltip
+- Phase 2: TextField, Checkbox, Radio, Switch, Select, Slider, Meter
+- Phase 3: Table, Tree, Tabs, Menu, TagGroup, Breadcrumbs, Toast
+- Phase 4: DatePicker, Calendar, ColorPicker, ColorSlider
+
+---
+
+### 12.7 fit-content 네이티브 구현 ✅ (2026-02-13)
+
+**이전 상태:** CSS `fit-content`는 Flex 워크어라운드만 존재
+**현재 상태:** Block/Flex 양쪽 네이티브 지원
+
+**Block 엔진:**
+```typescript
+const FIT_CONTENT = -2;  // sentinel 값 (AUTO = -1 패턴 확장)
+
+// BlockEngine.calculate() 내부
+if (layout.width === FIT_CONTENT) {
+    const contentWidth = calculateContentWidth(children);
+    layout.width = contentWidth + paddingLeft + paddingRight;
+}
+```
+
+**Flex 엔진 (Yoga 워크어라운드):**
+```typescript
+if (isFitContentWidth) {
+    layout.flexGrow = 0;
+    layout.flexShrink = 0;
+    // alignSelf 제거 (부모 align-items 존중)
+}
+```
+
+**ToggleButtonGroup 전용 분기:**
+```typescript
+// props.items 폭 합산으로 contentWidth 계산
+calculateContentWidth(children) {
+    return children.reduce((sum, child) => sum + child.computedWidth + gap, 0);
+}
+```
+
+**WASM 직렬화:** `wasmBlockLayout`에 `FIT_CONTENT = -2` sentinel 전달
+
+---
+
+### 12.8 ToggleButtonGroup 스타일링 완성 ✅ (2026-02-13)
+
+**변경사항 3건:**
+
+1. **border-radius 그룹 위치 처리:**
+   - `_groupPosition` props: `first | middle | last | only`
+   - per-corner border-radius 4-tuple `[tl, tr, br, bl]` 계산
+   - first: `[radius, 0, 0, radius]`, last: `[0, radius, radius, 0]` 등
+
+2. **alignSelf 강제 설정 제거:**
+   - fit-content 처리 시 `alignSelf: 'flex-start'` 제거
+   - 부모의 `align-items` 정상 적용
+
+3. **Factory 정의 style 동기화:**
+   - `GroupComponents.ts` factory 정의에 CSS 기본값 추가
+   - `unified.types.ts`의 `getDefaultProps()`와 일치
+
+---
+
+### 12.9 Color 정규화 유틸리티 ✅ (2026-02-13)
+
+**파일:** 색상 파싱/정규화 유틸리티 추가
+
+**지원 형식:**
+- `#RGB`, `#RRGGBB`, `#RRGGBBAA`
+- `rgb(r, g, b)`, `rgba(r, g, b, a)`
+- `hsl(h, s%, l%)`, `hsla(h, s%, l%, a)`
+- CSS Named Colors (140개)
+
+**용도:** Fill 시스템에서 다양한 CSS 색상 형식을 CanvasKit `Color4f` (Float32Array [r, g, b, a])로 통일 변환
+
+---
+
+### 12.10 Skia 파일 라인수 변화 (2026-02-05 → 2026-02-14)
+
+| 파일 | 2026-02-05 | 2026-02-14 | 변화 |
+|------|-----------|-----------|------|
+| SkiaRenderer.ts | 657 | 657 | ±0 (안정화) |
+| SkiaOverlay.tsx | ~815 | 1,215 | **+400** (Workflow) |
+| fills.ts | ~150 | 190 | **+40** (MeshGradient) |
+| effects.ts | ~100 | 115 | **+15** (LayerBlur) |
+| nodeRenderers.ts | ~540 | 590 | **+50** (Spec/Line) |
+| blendModes.ts | 62 | 62 | ±0 |
+| selectionRenderer.ts | ~374 | 424 | **+50** (PageTitle) |
+| aiEffects.ts | 252 | 252 | ±0 |
+| export.ts | 137 | 137 | ±0 |
+| **gridRenderer.ts** | **0 (신규)** | **174** | **+174** |
+| **workflowRenderer.ts** | **0 (신규)** | **735** | **+735** |
+| **workflowMinimap.ts** | **0 (신규)** | **411** | **+411** |
+| **workflowHitTest.ts** | **0 (신규)** | **238** | **+238** |
+| **workflowEdges.ts** | **0 (신규)** | **342** | **+342** |
+| **workflowGraphUtils.ts** | **0 (신규)** | **64** | **+64** |
+| **전체 (27개 파일)** | **~4,100** | **~6,145** | **+2,045 (+50%)** |
+
+---
+
+### 12.11 Pencil 대비 현황 종합 (2026-02-14)
+
+```
+Pencil 렌더링 기능 매칭 상태:
+│
+│  ✅ 동등 또는 우세:
+├── CanvasKit/Skia 메인 렌더러 + PixiJS 이벤트 전용    ← Pencil과 동일 아키텍처
+├── 이중 Surface 캐싱 + 프레임 분류                     ← Pencil과 동일
+├── 6종 Fill (MeshGradient 완성 포함)                   ← Pencil 동등
+├── 5종 Effect (LayerBlur 완성 포함)                    ← Pencil 동등
+├── 18종 BlendMode                                     ← Pencil 동등
+├── Selection/AI/Grid/Export 오버레이                   ← Pencil 동등
+├── Yoga Flexbox + Block/Grid 커스텀 레이아웃            ← Pencil보다 CSS 호환성 우세
+├── fit-content 네이티브 (Block + Flex)                  ← Pencil FitContent 동등
+├── 멀티페이지 동시 렌더링 + 뷰포트 컬링                 ← Pencil 동등
+├── @xstudio/specs 60개+ 컴포넌트 Skia 렌더             ← xstudio 고유 (Pencil에 없음)
+├── Workflow 오버레이 + 미니맵                           ← xstudio 고유 (Pencil에 없음)
+├── Color Picker V2 (3-tab + Gradient + EyeDropper)     ← xstudio 고유 UI
+│
+│  🔶 부분 구현:
+├── Stroke Alignment (Center만, Inside/Outside 미구현)
+├── 벡터 도형 (Box/Text/Image/Line만, Polygon/Donut 미구현)
+│
+│  ❌ 미구현 (Pencil 고유):
+├── Dirty Rect 부분 렌더링 (의도적 보류)
+│   └─ 변경된 영역(Dirty Rect)만 clipRect로 부분 재렌더하여 GPU 부하를 줄이는 기법.
+│      xstudio에서는 팬/줌/스냅샷/padding과 결합 시 잔상·미반영 버그 위험이 커서
+│      2-pass 컨텐츠 캐시(present) 모델로 대체하고 의도적으로 보류 (§4.1 참조).
+│
+├── 커스텀 GLSL/WebGPU 셰이더
+│   └─ Pencil은 `pencil.wasm` 내부에 GLSL 프래그먼트 셰이더와 WebGPU compute 셰이더를
+│      직접 컴파일·실행하여 노이즈 텍스처, 글리치 이펙트, 입자 시뮬레이션 등
+│      CanvasKit 내장 API로 표현 불가능한 특수 GPU 효과를 구현한다.
+│      xstudio는 현재 CanvasKit 내장 API(Paint, Shader, ImageFilter) + SkSL RuntimeEffect
+│      (MeshGradient에 사용)만 활용하며, 임의 GLSL/WebGPU 셰이더 파이프라인은 없다.
+│      필요 시 SkSL RuntimeEffect 확장으로 대부분 커버 가능하나,
+│      WebGPU compute(병렬 물리 연산 등)는 별도 인프라가 필요하다.
+│
+├── OffscreenCanvas Worker 렌더링
+│   └─ Pencil은 `webworkerAll.js`(183KB)에서 `canvas.transferControlToOffscreen()`으로
+│      CanvasKit 렌더링 자체를 Web Worker로 이전하여 메인 스레드를 완전히 해방한다.
+│      이미지 디코딩, 텍스처 업로드, 복잡한 이펙트 합성 등 GPU 바운드 작업이
+│      메인 스레드의 UI 응답성에 영향을 주지 않는다.
+│      xstudio는 모든 CanvasKit 렌더링이 메인 스레드 RAF 콜백에서 동기 실행되므로,
+│      대규모 씬(5,000+ 요소)에서 렌더 프레임 > 16ms 시 UI jank가 발생할 수 있다.
+│      도입 시 DOM 이벤트를 메인→Worker로 postMessage 전달하는 브리지가 필요하며,
+│      PixiJS v8의 OffscreenCanvas 호환성 검증도 선행되어야 한다.
+│
+├── 텍스처 아틀라싱
+│   └─ 다수의 개별 이미지/아이콘 텍스처를 하나의 큰 GPU 텍스처(아틀라스, 보통 2048×2048)에
+│      합쳐서 업로드하는 기법. GPU는 텍스처 바인딩 전환(draw call)이 비싼 연산이므로,
+│      100개 이미지를 개별 텍스처로 그리면 100 draw call이 발생하지만
+│      아틀라스 1장이면 1-2 draw call로 줄어든다 (98% 감소).
+│      Pencil은 내부적으로 아틀라스 패킹(RectanglePacker)을 사용하며,
+│      xstudio는 각 이미지가 별도 SkImage로 GPU에 올라가므로
+│      이미지가 많은 페이지에서 GPU 상태 전환 오버헤드가 선형 증가한다.
+│      구현 시 동적 아틀라스 패킹 + LRU eviction + SkImage.makeShader 영역 매핑 필요.
+│
+├── LOD (Level of Detail) 스위칭
+│   └─ 줌 레벨에 따라 렌더링 디테일을 동적으로 조절하는 기법.
+│      예: 줌 50% 이하에서 그림자 비활성화, 25% 이하에서 이미지를 단색 플레이스홀더로 대체,
+│      10% 이하에서 텍스트 렌더링 스킵 (ParagraphBuilder 호출 절약).
+│      Pencil은 줌아웃 시 저해상도 래스터 캐시로 전환하는 것으로 추정된다.
+│      xstudio는 현재 모든 줌 레벨에서 동일한 풀 디테일로 렌더하므로,
+│      줌아웃 상태에서 불필요한 GPU/CPU 비용이 발생한다.
+│      도입 시 줌아웃 렌더링 비용 60-80% 감소 예상. useLOD 훅 + ElementSprite 분기로
+│      JS만으로 구현 가능 (WASM 불필요, §4.3 참조).
+│
+└── RenderTexture 풀링
+    └─ 오프스크린 렌더 타깃(RenderTexture)을 매번 생성·파괴하지 않고
+       크기별 풀에 캐싱하여 재사용하는 기법.
+       GPU 메모리 할당(glTexImage2D)은 비용이 높은 연산이며,
+       빈번한 생성·파괴는 GPU 메모리 단편화와 GC 부하를 유발한다.
+       Pencil은 RenderTexture 재사용 패턴이 존재하며,
+       xstudio의 contentSurface snapshot 캐시는 단일 Surface만 관리한다.
+       이펙트 합성(blur, shadow 등)에서 임시 Surface가 필요할 때마다
+       새로 할당하는 현재 패턴을 풀링으로 전환하면
+       GPU 메모리 할당 빈도가 줄고 프레임 타임 안정성이 개선된다.
+       구현 시 크기를 256px 단위로 반올림하여 재사용 적중률을 극대화한다 (§4.4 참조).
+```
+
+---
+
+### 12.12 Hover Highlight + editingContext 오버레이 (2026-02-14)
+
+**이전 상태:** 요소 호버 시각 피드백 없음, editingContext 경계 표시 없음, body 선택 시 Selection bounds 미표시
+**현재 상태:** 3개 기능 구현 완료 (Pencil 동등)
+
+#### 12.12.1 Hover Highlight 렌더링
+
+`hoverRenderer.ts`의 `renderHoverHighlight()` 함수로 마우스 호버 요소의 테두리를 렌더링한다.
+
+| 항목 | 값 |
+|------|-----|
+| **색상** | blue-500 (`#3b82f6`) |
+| **투명도** | alpha 0.5 |
+| **스타일** | `PaintStyle.Stroke` |
+| **선 두께** | 리프 직접 호버: `2 / zoom` (실선 2px), 그룹 내부 리프: `1 / zoom` (점선 1px) |
+| **좌표계** | 씬-로컬 (카메라 변환 내부) |
+
+```typescript
+// hoverRenderer.ts — 핵심 로직
+const sw = 1 / zoom;
+const paint = scope.track(new ck.Paint());
+paint.setStyle(ck.PaintStyle.Stroke);
+paint.setStrokeWidth(sw);
+paint.setColor(ck.Color4f(HOVER_R, HOVER_G, HOVER_B, HOVER_ALPHA));
+canvas.drawRect(ck.LTRBRect(x, y, x + w, y + h), paint);
+```
+
+#### 12.12.2 editingContext 경계 렌더링
+
+`hoverRenderer.ts`의 `renderEditingContextBorder()` 함수로 진입한 컨테이너의 경계를 점선으로 표시한다.
+
+| 항목 | 값 |
+|------|-----|
+| **색상** | gray-400 (`#9ca3af`) |
+| **투명도** | alpha 0.3 |
+| **스타일** | `PaintStyle.Stroke` + 점선 |
+| **점선 패턴** | `[6/zoom, 4/zoom]` (dash on/off) |
+| **선 두께** | `1 / zoom` (화면상 항상 1px) |
+
+```typescript
+// hoverRenderer.ts — 점선 효과
+const dashEffect = ck.PathEffect.MakeDash([6 / zoom, 4 / zoom]);
+paint.setPathEffect(dashEffect);
+canvas.drawRect(rect, paint);
+dashEffect.delete();
+```
+
+- `SkiaOverlay.tsx`에서 `editingContextId` 변경 시 `overlayVersion++`로 Skia 리페인트 트리거
+- 렌더 순서: editingContext border → hover highlight → selection (z-order)
+
+#### 12.12.3 Element Hover Interaction 훅 — Deep Hover (Pencil 패턴)
+
+`useElementHoverInteraction.ts` — Pencil의 `SelectionManager.hoveredNode` 패턴으로 **그룹 호버 시 내부 모든 리프 노드를 동시 하이라이트**.
+
+**아키텍처:**
+```
+window pointermove
+    ↓ RAF 스로틀 (프레임당 1회)
+스크린 → 씬-로컬 좌표 변환
+    ↓
+Context 레벨 히트 테스트 (editingContext 직계 자식 또는 body 직계 자식)
+    ↓ 역순 = z-order 높은 것 우선
+히트 대상 결정 (contextHitId)
+    ↓
+collectLeafDescendants(): 모든 리프 자손 재귀 수집
+  - childrenMap 없으면 리프 → [자신]
+  - childrenMap 있으면 재귀 → 모든 리프 concat
+    ↓
+hoveredLeafIds[] 전체를 Skia에서 동시 렌더링
+```
+
+**Pencil 동작 비교:**
+
+| 항목 | Pencil | xstudio |
+|------|--------|---------|
+| 리프 호버 | 해당 노드 1개 하이라이트 | 동일 |
+| 그룹 호버 | 내부 모든 리프 노드 동시 하이라이트 | 동일 (`collectLeafDescendants`) |
+| 히트 테스트 | `findNodeAtPosition` (깊이 우선) | context 레벨 flat + 리프 수집 |
+| 상태 | `hoveredNode: Node` | `hoveredElementId` + `hoveredLeafIds[]` |
+
+**설계 포인트:**
+- **그룹 전체 리프 렌더링**: context 레벨에서 컨테이너 히트 → `collectLeafDescendants`로 모든 리프 자손 수집 → `hoveredLeafIds[]`에 저장 → Skia에서 전부 렌더
+- **변경 감지 최적화**: `hoveredElementId`(context 레벨)만 비교하여 배열 비교 불필요
+- **ref 기반 상태 관리**: React `useState` 대신 `useRef`로 호버 상태 보관 → 리렌더 없이 60fps 갱신
+- **subpixel jitter 방지**: `clientX/Y` 동일하면 스킵
+- **캔버스 밖 자동 해제**: 마우스가 캔버스 영역을 벗어나면 `hoveredElementId = null`, `hoveredLeafIds = []`
+- **treeBoundsMap 공유**: SkiaOverlay의 Skia 트리 바운드맵을 ref로 공유하여 동일 좌표 소스 보장
+- **treeBoundsMap 상시 빌드**: `needsSelectionBoundsMap = true`로 변경 — 선택된 요소가 없어도 호버용 bounds를 항상 빌드
+- **성능**: `collectLeafDescendants`는 히트 대상 변경 시에만 실행 (마우스가 같은 요소 위면 스킵)
+
+#### 12.12.4 Selection 오버레이 변경
+
+`buildSelectionRenderData`에 `pageFrames` 파라미터 추가:
+
+- Body 요소가 `treeBoundsMap`에 없을 때 `pageFrames`에서 bounds 계산 (폴백)
+- `isOnlyBodySelected` 스킵 로직 제거 → body도 Selection 오버레이 표시
+- 페이지 프레임의 `(x, y, width, height)`를 직접 사용하여 body bounds 구성
+
+#### 12.12.5 SkiaOverlay 렌더 파이프라인 순서 (업데이트)
+
+```
+renderer.setOverlayNode renderSkia():
+    1. AI 이펙트 (Generating + Flash)
+    2. 페이지 타이틀
+    3. Workflow 오버레이 (엣지 + 미니맵)
+    4. editingContext 경계 (점선)
+    5. Hover Highlight (파란 스트로크)      ← Handles 아래에 렌더링
+    6. Selection Box (파란 테두리)
+    7. TransformHandle (흰색 fill → 호버 선 덮음)
+    8. 치수 레이블
+    9. 라쏘
+   10. 미니맵 (최상위, 스크린 고정)
+```
+
+> **순서 변경 이유:** 호버가 Selection/Handles 위에 렌더링되면 코너 핸들(흰색 fill) 내부에 호버 선이 보이는 문제 발생. 호버를 Selection/Handles 아래로 이동하여 핸들이 호버 선을 덮도록 변경.
+
+**파일:**
+- `apps/builder/src/builder/workspace/canvas/skia/hoverRenderer.ts` (107줄, 신규)
+- `apps/builder/src/builder/workspace/canvas/hooks/useElementHoverInteraction.ts` (145줄, 신규)
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` (변경)
+
+#### 12.12.6 캔버스 커서 통일 (Pencil 방식)
+
+Pencil의 `StateManager.handlePointerMove`는 항상 `setCursor("default")`를 호출한다. 요소 종류에 따라 커서를 바꾸지 않고 기본 화살표 커서를 사용한다.
+
+**변경 전:**
+
+| 컴포넌트 | 커서 |
+|----------|------|
+| TextSprite | `text` (I-beam) |
+| BoxSprite | `pointer` (손가락) |
+| ImageSprite | `pointer` |
+| ElementSprite (컨테이너) | `pointer` |
+| UI 컴포넌트 55개 | `pointer` / `text` / `crosshair` / 조건식 |
+
+**변경 후:** 모든 요소 → `cursor="default"` (화살표)
+
+**유지:**
+- Hand Tool: `grab` / `grabbing` (패닝)
+- TransformHandle: `nwse-resize` / `nesw-resize` / `ns-resize` / `ew-resize` (리사이즈)
+- Shift 키: `crosshair` (Lasso 모드)
+- ClickableBackground: `default`
+
+**파일 (59개):**
+- `sprites/TextSprite.tsx` — `text` → `default`
+- `sprites/BoxSprite.tsx` — `pointer` → `default`
+- `sprites/ImageSprite.tsx` — `pointer` → `default` (2곳)
+- `sprites/ElementSprite.tsx` — `pointer` → `default` (2곳)
+- `ui/Pixi*.tsx` 55개 — `pointer`/`text`/`crosshair`/조건식 → `default`

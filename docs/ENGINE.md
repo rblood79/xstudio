@@ -1,0 +1,279 @@
+# ADR: 캔버스 레이아웃 엔진 전환 (전략 D)
+
+- 상태: **Implemented**
+- 결정일: **2026-02-17**
+- 마지막 수정: **2026-02-21**
+- 대상 코드: `apps/builder/src/builder/workspace/canvas/layout/`
+- 관련 경로:
+  - `apps/builder/src/builder/workspace/canvas/layout/engines/`
+  - `apps/builder/src/builder/workspace/canvas/wasm/`
+  - `apps/builder/src/builder/workspace/canvas/sprites/`
+
+---
+
+## 1) 배경 (Context)
+
+현재 레이아웃 시스템은 `@pixi/layout(Yoga)` + 커스텀 `BlockEngine/GridEngine` + Rust WASM 가속의 혼합 구조다. 이 구조는 기능/좌표/이벤트/파서가 분산되어 아래 문제가 누적되었다.
+
+| 문제 | 영향 | 원인 |
+|---|---|---|
+| 엔진 다중화(Flex/Block/Grid 분리) | 좌표 오차, 디버깅 비용 증가 | 엔진별 모델/규칙 차이 |
+| `@pixi/layout`/`@pixi/ui` 결합도 | 교체 비용 증가, 이벤트 충돌 위험 | 렌더/레이아웃/이벤트 경계 불명확 |
+| CSS 값 파싱 경로 분산 | 동일 입력의 해석 불일치 | 파서 중복(`parseSize`, `parseCSSValue`, `parseCSSSize`) |
+| Block/Inline 표현력 한계 | 복합 텍스트/인라인 흐름 부족 | 현재 BlockEngine의 기능 갭 |
+
+---
+
+## 2) 의사결정 기준 (Decision Drivers)
+
+1. CSS 커버리지 확대 (특히 Block/Inline/Float, Grid)
+2. 엔진 경계 단순화와 유지보수성
+3. 기존 Rust WASM 인프라 재사용 가능성
+4. 성능 회귀 최소화와 단계적 롤아웃 가능성
+5. 실패 시 빠른 롤백 경로 보유
+
+---
+
+## 3) 검토 대안 (Options)
+
+### 전략 A: Taffy 단일 엔진 (Flex+Grid+Block 전면 통합)
+- 장점: 엔진 수 최소화
+- 단점: Inline Formatting Context 공백이 커서 웹 빌더 요구 대응이 어려움
+- 판단: **기각**
+
+### 전략 B: Taffy(Flex+Grid) + Dropflow(Block) 듀얼
+- 장점: 기능 커버리지 최대
+- 단점: HarfBuzz WASM 직접 번들링(+200-400KB) + 통합 복잡도/기간 증가
+- 판단: **조건부 가능, 우선순위 하향** → 전략 D가 HarfBuzz 번들 문제를 해결하여 상위 호환
+
+### 전략 C: Taffy(Flex+Grid) + 기존 커스텀 Block 유지
+- 장점: 단기 리스크 최소
+- 단점: Inline/Float/혼합 흐름 갭이 구조적으로 잔존
+- 판단: **비최종안(명시 분리, 백업안)**
+
+### 전략 D: Taffy(Flex+Grid) + Dropflow Fork(Block+Inline) + CanvasKit 텍스트 어댑터
+- 장점: Block/Inline/Float/줄바꿈 요구를 실질적으로 충족
+- 단점: Fork 유지보수 + 어댑터 PoC 리스크
+- 판단: **최종 채택**
+
+---
+
+## 4) 최종 결정 (Decision)
+
+**전략 D를 채택한다.**
+
+### 4.1 목표 아키텍처
+
+- `display: flex | inline-flex` → **Taffy WASM**
+- `display: grid | inline-grid` → **Taffy WASM**
+- `display: block | inline | inline-block | flow-root` → **Dropflow Fork**
+- 텍스트 shaping/metrics → **CanvasKit Paragraph/SkFont 기반 어댑터**
+- 렌더링 파이프라인 → 기존 CanvasKit/Skia 유지
+
+```typescript
+// engines/index.ts (실제 구현)
+// WASM 미로드 시 DropflowBlockEngine으로 안전 폴백
+import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
+
+const dropflowBlockEngine = new DropflowBlockEngine();
+const taffyFlexEngine = new TaffyFlexEngine();
+const taffyGridEngine = new TaffyGridEngine();
+
+export function selectEngine(display: string | undefined): LayoutEngine {
+  const wasmReady = isRustWasmReady();
+  switch (display) {
+    case 'flex':
+    case 'inline-flex':
+      return wasmReady ? taffyFlexEngine : dropflowBlockEngine;
+    case 'grid':
+    case 'inline-grid':
+      return wasmReady ? taffyGridEngine : dropflowBlockEngine;
+    case 'block':
+    case 'inline-block':
+    case 'flow-root':
+    case 'inline':
+      return dropflowBlockEngine;
+    case undefined:
+    default:
+      return dropflowBlockEngine;
+  }
+}
+```
+
+### 4.2 결정 근거 요약
+
+1. Taffy 단독으로는 Inline Formatting Context 요구를 충족하지 못한다 ([taffy#627](https://github.com/DioxusLabs/taffy/issues/627): 메인테이너가 "inline/flow layout은 Taffy 외부에서 구현" 명시).
+2. Dropflow Fork는 Block/Inline/Float/Line box 영역의 기능 공백을 메운다.
+3. HarfBuzz 직접 의존은 CanvasKit 어댑터로 치환하여 중복 번들 리스크를 줄인다. **이것이 전략 B 대비 전략 D의 핵심 차별점이다** — 전략 B는 HarfBuzz WASM을 직접 번들링(+200-400KB)해야 하지만, 전략 D는 이미 로드된 CanvasKit의 Paragraph/SkFont API를 어댑터로 활용하여 추가 번들 비용 없이 동일한 텍스트 shaping을 확보한다.
+4. 현 코드베이스의 WASM 빌드 인프라(`wasm-pack`, Cargo) 재사용이 가능하다.
+
+---
+
+## 5) 전략 C 명시 분리 (Deprecated Baseline)
+
+> 이 섹션은 **폐기된 최종안이 아니라, 롤백 가능한 백업 기준선**을 문서화한다.
+
+### 5.1 전략 C 정의
+- Taffy로 Flex/Grid만 교체
+- 기존 BlockEngine 유지
+
+### 5.2 전략 C를 최종안으로 채택하지 않는 이유
+- Inline/Float/혼합 콘텐츠/익명 박스 처리 공백이 장기적으로 남는다.
+- 요구사항 대비 "기능 부채 고정화" 위험이 높다.
+
+### 5.3 전략 C의 현재 역할
+- Phase Gate 실패 시 즉시 되돌릴 수 있는 **Fallback 경로**
+- 일정 보호를 위한 비상 플랜
+
+---
+
+## 6) 결과 영향 (Consequences)
+
+### 긍정 효과
+- Block/Inline/Float/줄바꿈을 포함한 CSS2 normal flow 대응력 향상
+- 기존 커스텀 Block 보수 비용 축소(중장기)
+- 엔진 책임 분리가 명확해져 디버깅 경계가 뚜렷해짐
+
+### 부정/비용
+- Dropflow Fork 유지보수 책임 발생
+- CanvasKit shaper 어댑터 구현 난이도 존재
+- 초기 통합 단계에서 회귀 테스트 범위 확대 필요
+
+---
+
+## 7) 구현 계획 (Plan)
+
+### Phase 0 (2주): `@pixi/ui` 로직 추출
+- `borderUtils`, 색상 수학 로직을 순수 함수로 분리
+- 텍스트 측정 경로를 CanvasKit 중심으로 정리
+- UI 컴포넌트 교체를 위한 최소 인터페이스 확정
+
+### Phase 1 (1주): Dropflow Fork Layer A 도입
+- Block/Box/Image 레이어 포크
+- XStudio 타입/스타일 시스템에 맞는 어댑터 작성
+
+### Phase 2 (2주): CanvasKit Shaper PoC (핵심 게이트)
+- `shapePart` 대체 경로 검증
+- line metrics, bidi, fallback font 동작 검증
+
+### Phase 3 (2주): BlockEngine → Dropflow Fork 교체
+- 디스패처 반영
+- min/max, fit-content 등 누락 기능 보완
+- 기존 Block 테스트 + 회귀 케이스 이관
+
+### Phase 4 (2-3주): Taffy WASM 바인딩
+- `apps/builder/src/builder/workspace/canvas/wasm/Cargo.toml` 확장
+- `taffy_bridge.rs` 작성
+- TS 래퍼/타입/배치 API 구성
+
+### Phase 5 (1-2주): Flex Yoga → Taffy 전환
+- `styleToLayout.ts` 변환 경로 교체
+- 기능 플래그 기반 단계적 전환
+
+### Phase 6 (1-2주): Grid → Taffy Grid 통합
+- 커스텀 GridEngine 의존 축소
+- 핵심 Grid 케이스 회귀 검증
+
+### Phase 7 (1주): @pixi/layout → 커스텀 엔진 독립화
+- `@pixi/layout` Yoga 위임 경로 축소
+- 커스텀 엔진이 모든 display 모드를 직접 처리하도록 전환
+
+### Phase 8 (1주): 통합 테스트 및 안정화
+- `WASM_FLAGS.LAYOUT_ENGINE` 활성화 검증
+- `resolveLayoutSize()` 퍼센트 값 해석 수정
+- Flex parent passthrough (center/alignment) 수정
+- 기능 회귀 테스트
+
+### Phase 9 (1주): 레거시 엔진 삭제 + 디스패처 정리 ← 완료 (2026-02-17)
+- **Phase 9A**: 레거시 엔진 삭제 (`BlockEngine.ts` 952줄, `FlexEngine.ts` 65줄, `GridEngine.ts` 563줄)
+- **Phase 9B**: Feature flag 제거 (`taffyFlex`, `taffyGrid`, `dropflowBlock`)
+- **Phase 9C**: `engines/index.ts` 디스패처 정리 (`shouldDelegateToPixiLayout` 제거, 직접 라우팅)
+- **Phase 9D**: `TaffyFlexEngine` / `TaffyGridEngine` / `DropflowBlockEngine` 리뷰 이슈 수정
+
+---
+
+## 8) 게이트 및 롤백 (Risk / Rollback)
+
+### Gate A (Phase 2 종료 시점)
+- 조건: CanvasKit Shaper PoC 성공
+- 실패 시: **전략 C로 롤백**. Phase 0~1 작업물(Dropflow Fork 어댑터, `@pixi/ui` 추출)은 feature branch에 보존하되, 메인 레이아웃 경로는 기존 BlockEngine으로 복귀한다. Phase 0의 `@pixi/ui` 순수 함수 추출은 전략 C에서도 유효하므로 머지 가능.
+
+### Gate B (Phase 5 종료 시점)
+- 조건: Flex 회귀 테스트 통과 + 성능 허용 범위 내
+- 실패 시: **전략 D-partial** 상태로 운용 — Flex는 Yoga(@pixi/layout) 유지, Block/Inline만 Dropflow Fork 적용. 이 혼합 상태는 현재 하이브리드 구조(Yoga + 커스텀 Block)와 엔진 경계가 동일하므로 안정적 운용이 가능하다. Taffy Flex 전환은 별도 일정으로 재시도.
+
+### Gate C (Phase 9 종료 시점) — 통과
+- 조건: 레거시 엔진 삭제 완료, 번들 크기 절감 (~1,580줄 코드 삭제)
+- 결과: **조건 충족. Gate C 통과.**
+  - `BlockEngine.ts`(952줄), `FlexEngine.ts`(65줄), `GridEngine.ts`(563줄) 삭제 완료
+  - WASM 미로드 시 `DropflowBlockEngine` 폴백으로 안전성 확보 (플래그 기반 안정 경로)
+
+---
+
+## 9) 성공 기준 (Success Metrics)
+
+1. 핵심 레이아웃 회귀 테스트(기준 케이스) 100% 통과
+2. Inline/Float/혼합 콘텐츠 렌더링 정확도 확보
+3. 기존 대비 치명적 인터랙션 버그(클릭/호버 오작동) 감소
+4. 성능 회귀가 합의한 임계치 이내 유지
+
+---
+
+## 10) 범위 외 (Non-goals)
+
+- 본 ADR은 디자인 시스템 컴포넌트 시각 리디자인을 다루지 않는다.
+- 본 ADR은 CanvasKit 자체 교체/렌더러 아키텍처 재정의를 다루지 않는다.
+
+---
+
+## 11) 관련 문서
+
+### 내부 문서
+- [WASM 아키텍처](./WASM.md)
+- [CSS 레이아웃 엔진 설계문서](./ENGINE_UPGRADE.md)
+- [ADR-003: Canvas 렌더링](./adr/003-canvas-rendering.md)
+
+### 외부 참고 저장소
+
+| 저장소 | 용도 | 링크 |
+|--------|------|------|
+| DioxusLabs/taffy | Flex + Grid + Block WASM 엔진 | https://github.com/DioxusLabs/taffy |
+| chearon/dropflow | CSS2 Block/Inline 엔진 (Fork 원본) | https://github.com/chearon/dropflow |
+| Taffy PR #394 | 공식 WASM 바인딩 (Draft) | https://github.com/DioxusLabs/taffy/pull/394 |
+| Taffy Issue #627 | Inline/Flow layout 지원 논의 | https://github.com/DioxusLabs/taffy/issues/627 |
+| DioxusLabs/blitz | Taffy + Parley 통합 사례 | https://github.com/DioxusLabs/blitz |
+| kane50613/takumi | Taffy WASM 통합 사례 | https://github.com/kane50613/takumi |
+
+---
+
+## 12) 변경 이력
+
+- **2026-02-17**: ADR 형식으로 재작성. 전략 D 단일 결론 확정, 전략 C는 Deprecated Baseline(Fallback 경로)으로 명시 분리. 전략 B vs D 차별화 근거 추가, Gate A/B 롤백 범위 명확화, 외부 참고 저장소 복원.
+- **2026-02-17**: Phase 9 완료 — 레거시 엔진(`BlockEngine`, `FlexEngine`, `GridEngine`) 삭제, Feature flag 제거, 디스패처 정리. 전략 D 목표 아키텍처 달성.
+- **2026-02-21**: Post-Implementation Notes 추가 — `LayoutContext.getChildElements` 확장, `enrichWithIntrinsicSize` 개선(childElements 파라미터, fontBoundingBox line-height 통일), 수정 파일 목록.
+
+---
+
+## 13) 구현 후 노트 (Post-Implementation Notes)
+
+### Post-Implementation Notes (2026-02-21)
+
+#### LayoutContext 확장
+- `getChildElements?: (elementId: string) => Element[]` — 컨테이너 컴포넌트의 자식 Element 접근
+- `BuilderCanvas.tsx`에서 `pageChildrenMap` 기반으로 주입
+- `enrichWithIntrinsicSize`에서 `calculateContentWidth/Height`에 자식 전달
+
+#### enrichWithIntrinsicSize 개선
+- INLINE_BLOCK_TAGS는 항상 padding+border를 border-box 크기에 포함 (layoutInlineRun 호환)
+- `childElements` 파라미터 추가: 자식 Element 기반 너비/높이 계산 (ToggleButtonGroup 등)
+- fontBoundingBox 기반 line-height 통일: `measureFontMetrics().lineHeight` 사용
+
+#### 수정된 파일
+| 파일 | 변경 |
+|------|------|
+| `LayoutEngine.ts` | `LayoutContext.getChildElements` 추가 |
+| `utils.ts` | `enrichWithIntrinsicSize` childElements, fontBoundingBox lineHeight, border shorthand |
+| `DropflowBlockEngine.ts` | enrichment 시 childElements 전달 |
+| `TaffyFlexEngine.ts` | enrichment 시 childElements 전달, context 파라미터 추가 |
+| `BuilderCanvas.tsx` | `getChildElements` context 주입 |
+| `textMeasure.ts` | `measureWrappedTextHeight` fontBoundingBox lineHeight |

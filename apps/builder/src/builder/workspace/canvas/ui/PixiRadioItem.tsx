@@ -90,7 +90,7 @@ export const PixiRadioItem = memo(function PixiRadioItem({
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handlePointerDown}
       />
     </pixiContainer>

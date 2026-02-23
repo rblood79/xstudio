@@ -402,6 +402,17 @@ export { useToastStore, globalToast } from "./toast";
 export type { Toast, ToastType, ToastAction } from "./toast";
 
 // ============================================
+// W3-5: Canvas Scroll State (overflow:scroll/auto)
+// ============================================
+export {
+  useScrollState,
+  useElementScrollState,
+  getScrollState,
+  isScrollable,
+} from "./scrollState";
+export type { ElementScrollState } from "./scrollState";
+
+// ============================================
 // Canvas Store (뷰포트/편집 상태)
 // ============================================
 export {

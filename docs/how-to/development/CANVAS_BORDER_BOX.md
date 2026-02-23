@@ -616,7 +616,7 @@ export function calculateAutoSize(options: AutoSizeOptions): { width: number; he
 |------|---------|------|
 | 신규 | 5 | `borderUtils.ts`, `graphicsUtils.ts`, `textMeasure.ts`, `PixiCheckboxGroup.tsx`, `PixiCheckboxItem.tsx` |
 | 수정 | 14 | sprites(4), ui(8), LayoutEngine(1), BuilderCanvas(1) |
-| 이동 | 0 | ❌ 파일 이동 없음 (호환성) |
+| 이동 | 0 | 파일 이동 없음 (호환성) |
 | 테스트 | 3 | 각 유틸리티 테스트 파일 |
 
 ### 2025-12-16 신규 추가 파일
@@ -652,9 +652,27 @@ export function drawBox(g: PixiGraphics, options: DrawBoxOptions): void {
 
 | 항목 | v1 | v2 |
 |------|----|----|
-| Yoga `setBorder()` | 사용 | ❌ 사용 안함 |
-| 파일 이동 | sprites → utils | ❌ 이동 없음 |
+| Yoga `setBorder()` | 사용 | 사용 안함 |
+| 파일 이동 | sprites → utils | 이동 없음 |
 | Import 변경 | 20개+ | 12개 |
 | borderRadius 처리 | 미고려 | `getSafeBorderRadius()` |
 | 테스트 | 미포함 | Unit test 필수 |
 | 롤백 계획 | 없음 | Feature flag |
+
+---
+
+## 2026-02-21 개선
+
+### INLINE_BLOCK_TAGS border-box 처리 변경
+
+**기존**: CSS에 border/padding이 있으면 해당 부분 생략 (엔진이 추가한다고 가정)
+**변경**: INLINE_BLOCK_TAGS(button, badge, togglebutton, togglebuttongroup 등)는 항상 padding+border 포함
+
+**이유**: `layoutInlineRun`이 `style.height`를 완전한 border-box 크기로 직접 사용하며, 별도의 padding/border 추가 처리를 하지 않음. block 경로에서는 `treatAsBorderBox` 변환이 이중 계산을 방지.
+
+### parseBorder() 개선
+
+**기존**: `borderWidth` shorthand만 파싱
+**변경**: `border` shorthand("1px solid red") → `parseBorderShorthand()` 호출하여 borderWidth 추출 지원
+
+**코드 경로**: `utils.ts:parseBorder()` → `cssValueParser.ts:parseBorderShorthand()`

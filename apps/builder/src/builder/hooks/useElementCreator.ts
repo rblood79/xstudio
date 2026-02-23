@@ -231,7 +231,16 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 // 복합 컴포넌트인지 확인
                 const complexComponents = [
                     'TextField', 'ToggleButtonGroup', 'CheckboxGroup', 'RadioGroup',
-                    'Select', 'ComboBox', 'Tabs', 'Tree', 'TagGroup', 'ListBox', 'GridList', 'Table'
+                    'Select', 'ComboBox', 'Slider', 'Tabs', 'Tree', 'TagGroup', 'ListBox', 'GridList', 'Table',
+                    'Card',
+                    'Menu', 'Disclosure', 'DisclosureGroup',
+                    'Dialog', 'Popover', 'Tooltip',
+                    // ⭐ Form/Feedback/Action 복합 컴포넌트
+                    'Form', 'Toast', 'Toolbar',
+                    // ⭐ Date & Color 복합 컴포넌트
+                    'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
+                    // ⭐ Input 복합 컴포넌트
+                    'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',
                 ];
 
                 const operation = async () => {

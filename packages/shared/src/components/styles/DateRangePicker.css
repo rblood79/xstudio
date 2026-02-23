@@ -22,9 +22,9 @@
       box-sizing: border-box;
       overflow: auto;
       position: relative;
-      padding: 4px 4px 4px 8px;
+      padding: 8px 8px 8px 14px;
       border: 1px solid var(--outline-variant);
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-md);
       background: var(--surface-container);
       white-space: nowrap;
 
@@ -50,7 +50,7 @@
       padding: unset;
       border: unset;
       outline: unset;
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
       &[data-focus-within] {
         outline: 0px solid transparent;
       }
@@ -197,8 +197,8 @@
   .react-aria-DateRangePicker {
     /* 기본 size 변수 (md) */
     --drp-group-min-width: 220px;
-    --drp-group-padding: 4px 4px 4px 8px;
-    --drp-input-size: var(--text-sm);
+    --drp-group-padding: 8px 8px 8px 14px;
+    --drp-input-size: var(--text-base);
     --drp-end-margin: 2rem;
     --drp-btn-width: var(--text-xl);
     --drp-btn-height: var(--text-xl);
@@ -209,19 +209,19 @@
   /* Size별 CSS 변수만 오버라이드 */
   .react-aria-DateRangePicker.sm {
     --drp-group-min-width: 180px;
-    --drp-group-padding: 2px 2px 2px 6px;
-    --drp-input-size: var(--text-xs);
+    --drp-group-padding: 4px 4px 4px 10px;
+    --drp-input-size: var(--text-sm);
     --drp-end-margin: 1.5rem;
     --drp-btn-width: var(--text-base);
     --drp-btn-height: var(--text-base);
     --drp-btn-margin: calc(var(--text-xl) * -1);
-    --drp-hint-size: var(--text-2xs);
+    --drp-hint-size: var(--text-xs);
   }
 
   .react-aria-DateRangePicker.md {
     --drp-group-min-width: 220px;
-    --drp-group-padding: 4px 4px 4px 8px;
-    --drp-input-size: var(--text-sm);
+    --drp-group-padding: 8px 8px 8px 14px;
+    --drp-input-size: var(--text-base);
     --drp-end-margin: 2rem;
     --drp-btn-width: var(--text-xl);
     --drp-btn-height: var(--text-xl);

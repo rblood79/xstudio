@@ -70,7 +70,12 @@ export interface AngularGradientFill {
 export interface ImageFill {
   type: 'image';
   image: unknown; // CanvasKit.Image
-  tileMode: unknown; // CanvasKit.TileMode
+  /** X축 TileMode (repeat-x 등 축별 분리 지원) */
+  tileModeX: unknown; // CanvasKit.TileMode
+  /** Y축 TileMode */
+  tileModeY: unknown; // CanvasKit.TileMode
+  /** @deprecated tileModeX/Y로 대체됨. 하위 호환성 유지용 */
+  tileMode?: unknown; // CanvasKit.TileMode
   sampling: unknown; // CanvasKit.FilterMode
   matrix?: Float32Array;
 }
@@ -119,6 +124,8 @@ export interface DropShadowEffect {
   sigmaY: number;
   color: Float32Array; // CanvasKit Color4f
   inner: boolean;
+  /** CSS box-shadow spread (px). CanvasKit에서는 dilate filter로 근사. */
+  spread?: number;
 }
 
 export interface LayerBlurEffect {
@@ -127,11 +134,30 @@ export interface LayerBlurEffect {
   sigma: number;
 }
 
+/**
+ * CSS filter 함수(brightness, contrast, saturate, hue-rotate)를
+ * CanvasKit ColorFilter.MakeMatrix()용 4x5 색상 행렬로 변환한 이펙트.
+ *
+ * 행렬 레이아웃 (row-major, 20개 요소):
+ * | R' |   | m0  m1  m2  m3  m4  |   | R |
+ * | G' | = | m5  m6  m7  m8  m9  | x | G |
+ * | B' |   | m10 m11 m12 m13 m14 |   | B |
+ * | A' |   | m15 m16 m17 m18 m19 |   | A |
+ *                                     | 1 |
+ *
+ * m4, m9, m14, m19 는 오프셋 열 (0-255 범위 / 255 정규화)
+ */
+export interface ColorMatrixEffect {
+  type: 'color-matrix';
+  matrix: Float32Array; // 4x5 = 20개 요소
+}
+
 export type EffectStyle =
   | OpacityEffect
   | BackgroundBlurEffect
   | DropShadowEffect
-  | LayerBlurEffect;
+  | LayerBlurEffect
+  | ColorMatrixEffect;
 
 // ============================================
 // AI Visual Feedback Types (G.3)

@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * ListBox Props
@@ -19,6 +20,12 @@ export interface ListBoxProps {
   label?: string;
   isDisabled?: boolean;
   selectionMode?: 'single' | 'multiple';
+  /** 아이템 목록 (우선순위: items > children 개행 분리) */
+  items?: string[];
+  /** 선택된 아이템 인덱스 (단일 선택용 하이라이트) */
+  selectedIndex?: number;
+  /** 선택된 아이템 인덱스 목록 (다중 선택용 하이라이트) */
+  selectedIndices?: number[];
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -92,11 +99,11 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 200;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
 
       const styleBr = props.style?.borderRadius;
       const borderRadius = styleBr != null
@@ -158,25 +165,81 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         });
       }
 
-      // 리스트 아이템 컨테이너
-      const stylePad = props.style?.padding;
-      const padding = stylePad != null
-        ? (typeof stylePad === 'number' ? stylePad : parseFloat(String(stylePad)) || 0)
-        : size.paddingY;
-      shapes.push({
-        type: 'container' as const,
-        x: 0,
-        y: props.label ? 20 : 0,
-        width,
-        height: 'auto',
-        children: [],
-        layout: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: size.gap,
-          padding,
-        },
-      });
+      // 리스트 아이템 생성
+      const items: string[] = props.items
+        ?? (props.children
+            ? props.children.split('\n').filter(Boolean)
+            : ['Item 1', 'Item 2', 'Item 3']);
+
+      const itemH = (fontSize as unknown as number) > 16
+        ? 40
+        : (fontSize as unknown as number) > 12
+          ? 36
+          : 32;
+      const paddingY = size.paddingY as unknown as number || 8;
+      const gap = size.gap as unknown as number || 4;
+      const paddingX = size.paddingX as unknown as number || 12;
+      const baseY = props.label ? 20 : 0;
+      let itemY = baseY + paddingY;
+
+      // 선택 상태 계산
+      const selectedSet = new Set<number>(
+        props.selectedIndices
+          ?? (props.selectedIndex != null ? [props.selectedIndex] : [0]),
+      );
+
+      for (let i = 0; i < items.length; i++) {
+        const isSelected = selectedSet.has(i);
+
+        // 아이템 배경 (선택/hover 상태 표시)
+        shapes.push({
+          type: 'roundRect' as const,
+          x: 4,
+          y: itemY + 2,
+          width: width - 8,
+          height: itemH - 4,
+          radius: borderRadius as unknown as number,
+          fill: isSelected
+            ? variant.backgroundHover
+            : bgColor,
+        });
+
+        // 선택 표시 아이콘 (다중 선택 모드)
+        if (props.selectionMode === 'multiple') {
+          shapes.push({
+            type: 'icon_font' as const,
+            iconName: isSelected ? 'check-square' : 'square',
+            x: paddingX + 6,
+            y: itemY + itemH / 2,
+            fontSize: fontSize as unknown as number,
+            fill: isSelected
+              ? ('{color.primary}' as TokenRef)
+              : ('{color.on-surface-variant}' as TokenRef),
+            strokeWidth: 2,
+          });
+        }
+
+        // 아이템 텍스트
+        const textX = props.selectionMode === 'multiple'
+          ? paddingX + (fontSize as unknown as number) + 10
+          : paddingX;
+        shapes.push({
+          type: 'text' as const,
+          x: textX,
+          y: itemY + itemH / 2,
+          text: items[i],
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: isSelected ? 600 : 400,
+          fill: isSelected
+            ? ('{color.on-surface}' as TokenRef)
+            : textColor,
+          align: textAlign,
+          baseline: 'middle' as const,
+        });
+
+        itemY += itemH + gap;
+      }
 
       return shapes;
     },

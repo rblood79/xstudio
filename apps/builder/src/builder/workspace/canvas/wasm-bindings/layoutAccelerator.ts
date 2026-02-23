@@ -31,6 +31,9 @@ export const VALIGN = {
 /** Sentinel for "auto" value */
 export const AUTO = -1;
 
+/** Sentinel for "fit-content" value (must match Rust FIT_CONTENT) */
+export const FIT_CONTENT = -2;
+
 // ── Block Layout ──
 
 export interface BlockLayoutInput {

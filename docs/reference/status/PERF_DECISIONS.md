@@ -1,6 +1,8 @@
+> **성능 문서 네비게이션**: [인덱스](./PERFORMANCE_INDEX.md) | [태스크](./PERFORMANCE_TASKS.md) | [계획](./PERFORMANCE_PLAN.md) | [Phase 1-4](./PERF_PHASE_1_4.md) | [Phase 5-8](./PERF_PHASE_5_8.md) | [결정사항](./PERF_DECISIONS.md) | [아이디어](./PERF_IDEAS.md) | [보충](./PERF_SUPPLEMENT.md)
+
 # 결정 사항 (오픈 질문 해결)
 
-> **관련 문서**: [06-implementation.md](./06-implementation.md) | [README.md](./README.md) > **최종 수정**: 2025-12-10
+> **최종 수정**: 2025-12-10
 
 본 문서는 성능 최적화 계획 수립 과정에서 제기된 오픈 질문들에 대한 명확한 결정 사항을 기록합니다.
 

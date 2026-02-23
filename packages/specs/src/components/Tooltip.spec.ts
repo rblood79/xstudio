@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Tooltip Props
@@ -95,7 +96,7 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       const sizeName = props.size ?? 'md';
       const maxWidth = TOOLTIP_MAX_WIDTH[sizeName] ?? 150;
 
@@ -105,7 +106,7 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
         ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
         : size.borderRadius;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
       const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
@@ -150,6 +151,46 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
           maxWidth,
         },
       ];
+
+      // Phase F: Arrow indicator (placement 기반)
+      // showArrow가 명시적으로 true일 때만 렌더링
+      // 삼각형 Path가 없으므로 2개 Line으로 V자 화살표 근사
+      if (props.showArrow === true) {
+        const arrowSize = 6;
+        const placement = props.placement ?? 'top';
+        // height=0은 auto 크기를 의미하므로, 렌더링 시점 컨테이너 높이를 알 수 없음
+        // 대표적인 툴팁 높이(24px)를 fallback으로 사용하여 bottom/top placement 구분
+        const approxHeight = 24;
+        const centerX = maxWidth / 2;
+
+        if (placement === 'top') {
+          // tooltip이 위에 위치 → arrow는 아래 가장자리
+          shapes.push(
+            { type: 'line' as const, x1: centerX - arrowSize, y1: approxHeight, x2: centerX, y2: approxHeight + arrowSize, stroke: bgColor, strokeWidth: 2 },
+            { type: 'line' as const, x1: centerX + arrowSize, y1: approxHeight, x2: centerX, y2: approxHeight + arrowSize, stroke: bgColor, strokeWidth: 2 },
+          );
+        } else if (placement === 'bottom') {
+          // tooltip이 아래에 위치 → arrow는 위 가장자리
+          shapes.push(
+            { type: 'line' as const, x1: centerX - arrowSize, y1: 0, x2: centerX, y2: -arrowSize, stroke: bgColor, strokeWidth: 2 },
+            { type: 'line' as const, x1: centerX + arrowSize, y1: 0, x2: centerX, y2: -arrowSize, stroke: bgColor, strokeWidth: 2 },
+          );
+        } else if (placement === 'right') {
+          // tooltip이 오른쪽에 위치 → arrow는 왼쪽 가장자리
+          const midY = approxHeight / 2;
+          shapes.push(
+            { type: 'line' as const, x1: 0, y1: midY - arrowSize, x2: -arrowSize, y2: midY, stroke: bgColor, strokeWidth: 2 },
+            { type: 'line' as const, x1: 0, y1: midY + arrowSize, x2: -arrowSize, y2: midY, stroke: bgColor, strokeWidth: 2 },
+          );
+        } else {
+          // placement === 'left': tooltip이 왼쪽에 위치 → arrow는 오른쪽 가장자리
+          const midY = approxHeight / 2;
+          shapes.push(
+            { type: 'line' as const, x1: maxWidth, y1: midY - arrowSize, x2: maxWidth + arrowSize, y2: midY, stroke: bgColor, strokeWidth: 2 },
+            { type: 'line' as const, x1: maxWidth, y1: midY + arrowSize, x2: maxWidth + arrowSize, y2: midY, stroke: bgColor, strokeWidth: 2 },
+          );
+        }
+      }
 
       return shapes;
     },

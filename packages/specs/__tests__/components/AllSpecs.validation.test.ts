@@ -69,7 +69,6 @@ import { ColorSwatchSpec } from '../../src/components/ColorSwatch.spec';
 import { ColorSwatchPickerSpec } from '../../src/components/ColorSwatchPicker.spec';
 import { ListSpec } from '../../src/components/List.spec';
 import { InputSpec } from '../../src/components/Input.spec';
-import { FancyButtonSpec } from '../../src/components/FancyButton.spec';
 import { SwitcherSpec } from '../../src/components/Switcher.spec';
 
 type SpecEntry = [string, ComponentSpec<Record<string, unknown>>];
@@ -140,7 +139,6 @@ const allSpecs: SpecEntry[] = [
   ['ColorSwatchPicker', cast(ColorSwatchPickerSpec)],
   ['List', cast(ListSpec)],
   ['Input', cast(InputSpec)],
-  ['FancyButton', cast(FancyButtonSpec)],
   ['Switcher', cast(SwitcherSpec)],
 ];
 

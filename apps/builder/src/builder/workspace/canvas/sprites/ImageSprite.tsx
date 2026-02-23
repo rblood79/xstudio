@@ -221,6 +221,10 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
     };
   }, [src]);
 
+  // Phase 6: Interaction 속성
+  const isPointerEventsNone = style?.pointerEvents === 'none';
+  const pixiCursor = style?.cursor ?? 'default';
+
   // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
   const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
 
@@ -232,7 +236,7 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
       y: transform.y,
       width: transform.width,
       height: transform.height,
-      visible: style?.display !== 'none' && style?.visibility !== 'hidden',
+      visible: style?.display !== 'none' && style?.visibility !== 'hidden' && style?.visibility !== 'collapse',
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
       ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       image: {
@@ -261,18 +265,18 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
             y={contentBounds.y}
             width={contentBounds.width}
             height={contentBounds.height}
-            eventMode="static"
-            cursor="pointer"
-            onPointerDown={handleClick}
+            eventMode={isPointerEventsNone ? 'none' : 'static'}
+            cursor={pixiCursor}
+            {...(!isPointerEventsNone && { onPointerDown: handleClick })}
           />
           <pixiGraphics draw={drawOverlay} />
         </>
       ) : (
         <pixiGraphics
           draw={drawPlaceholder}
-          eventMode="static"
-          cursor="pointer"
-          onPointerDown={handleClick}
+          eventMode={isPointerEventsNone ? 'none' : 'static'}
+          cursor={pixiCursor}
+          {...(!isPointerEventsNone && { onPointerDown: handleClick })}
         />
       )}
 

@@ -15,8 +15,7 @@ import type { SelectedElement } from "../../inspector/types";
 import type { ActionType, EventType as RegistryEventType } from "@/types/events/events.types";
 import { ACTION_TYPE_LABELS, REGISTRY_ACTION_CATEGORIES } from "@/types/events/events.types";
 import { getRecommendedActions } from "./data/actionMetadata";
-import type { EventHandler } from "./types/eventTypes";
-import type { EventType } from "@/types/events/events.types";
+import type { EventHandler, EventType } from "./types/eventTypes";
 import type {
   BlockEventAction,
   ConditionGroup,
@@ -185,7 +184,7 @@ function ActionPickerOverlay({ branch, onSelect, onClose, eventType, componentTy
   // 추천 액션 Set (배지 표시용)
   const recommendedActionSet = useMemo(() => {
     const recommended = getRecommendedActions({ eventType, componentType });
-    return new Set(recommended);
+    return new Set<string>(recommended);
   }, [eventType, componentType]);
 
   // 검색 필터링된 목록

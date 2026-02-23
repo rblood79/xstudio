@@ -15,12 +15,12 @@
     color: var(--on-surface);
 
     .react-aria-Input {
-      padding: 0.286rem;
+      padding: 6px 10px;
       margin: 0;
       border: 1px solid var(--outline-variant);
       border-radius: var(--radius-sm);
       background: var(--surface-container);
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
       color: var(--on-surface);
       width: 100%;
       max-width: 12ch;
@@ -123,8 +123,8 @@
 
   .react-aria-ColorField {
     /* 기본 size 변수 (md) */
-    --cf-input-padding: 0.286rem;
-    --cf-input-size: var(--text-sm);
+    --cf-input-padding: 6px 10px;
+    --cf-input-size: var(--text-base);
     --cf-input-max-width: 12ch;
     --cf-hint-size: 12px;
   }
@@ -138,8 +138,8 @@
   }
 
   .react-aria-ColorField.md {
-    --cf-input-padding: 0.286rem;
-    --cf-input-size: var(--text-sm);
+    --cf-input-padding: 6px 10px;
+    --cf-input-size: var(--text-base);
     --cf-input-max-width: 12ch;
     --cf-hint-size: 12px;
   }

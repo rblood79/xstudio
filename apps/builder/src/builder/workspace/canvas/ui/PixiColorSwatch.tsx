@@ -1,129 +1,121 @@
 /**
- * PixiColorSwatch - WebGL Color Swatch Component
+ * PixiColorSwatch
  *
- * Phase 6: Date/Color Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Simple color display
+ * 투명 히트 영역(pixiGraphics) 기반 ColorSwatch
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getColorSwatchSizePreset(): width, height, borderRadius
- * - getColorSwatchColorPreset(): borderColor, selectedBorderColor
+ * @updated 2026-02-20 A등급 패턴 전환 (시각적 드로잉 제거, 투명 히트 영역)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useRef, useContext } from 'react';
 import {
-  ColorSwatchSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiColorSwatchProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
-/**
- * Parse color string to hex number
- * @param color - CSS color string (hex or rgb)
- * @param fallback - Fallback hex color value
- */
-function parseColor(color: string | undefined, fallback: number): number {
-  if (!color) return fallback;
-
-  if (color.startsWith('#')) {
-    return parseInt(color.slice(1), 16);
-  }
-  if (color.startsWith('rgb')) {
-    const match = color.match(/\d+/g);
-    if (match && match.length >= 3) {
-      const [r, g, b] = match.map(Number);
-      return (r << 16) | (g << 8) | b;
-    }
-  }
-  return fallback;
-}
+// ============================================
+// Component
+// ============================================
 
 /**
- * PixiColorSwatch - Simple color display swatch
+ * PixiColorSwatch
+ *
+ * 투명 히트 영역 기반 ColorSwatch (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  */
-export function PixiColorSwatch({
+export const PixiColorSwatch = memo(function PixiColorSwatch({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
 }: PixiColorSwatchProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const color = props.color as string | undefined;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  const sizePreset = useMemo(() => {
-    const sizeSpec = ColorSwatchSpec.sizes[size] || ColorSwatchSpec.sizes[ColorSwatchSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  const variantColors = useMemo(() => {
-    const variantSpec = ColorSwatchSpec.variants[variant] || ColorSwatchSpec.variants[ColorSwatchSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    borderColor: 0xd1d5db,
-    selectedBorderColor: variantColors.bg,
-    checkerColor: 0xe5e7eb,
-  }), [variantColors]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // Parse color value (fallback to theme color)
-  const fillColor = useMemo(() => parseColor(color, variantColors.bg), [color, variantColors]);
-
-  // Draw swatch
-  const drawSwatch = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Checker background for transparency
-      const checkerSize = 4;
-      for (let x = 0; x < sizePreset.width; x += checkerSize * 2) {
-        for (let y = 0; y < sizePreset.height; y += checkerSize * 2) {
-          g.rect(x, y, checkerSize, checkerSize);
-          g.rect(x + checkerSize, y + checkerSize, checkerSize, checkerSize);
-        }
-      }
-      g.fill({ color: colorPreset.checkerColor });
-
-      // Color fill
-      g.roundRect(0, 0, sizePreset.width, sizePreset.height, sizePreset.borderRadius);
-      g.fill({ color: fillColor });
-
-      // Border
-      g.roundRect(0, 0, sizePreset.width, sizePreset.height, sizePreset.borderRadius);
-      g.stroke({
-        color: isSelected ? colorPreset.selectedBorderColor : colorPreset.borderColor,
-        width: sizePreset.borderWidth,
-      });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, sizePreset.width + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.selectedBorderColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [sizePreset, colorPreset, fillColor, isSelected]
+    [hitWidth, hitHeight]
+  );
+
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
+
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
+
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+    },
+    [element.id, onClick, isDisabled]
   );
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="pointer"
-      onPointerTap={() => onClick?.(element.id)}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      <pixiGraphics draw={drawSwatch} />
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiColorSwatch;

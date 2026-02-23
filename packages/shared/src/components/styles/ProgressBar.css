@@ -10,7 +10,7 @@
                          "bar bar";
     grid-template-columns: 1fr auto;
     gap: var(--spacing-xs);
-    width: 250px;
+    width: 240px;
     color: var(--on-surface);
 
     .value {
@@ -23,7 +23,7 @@
       grid-area: bar;
       box-shadow: var(--inset-shadow-xs);
       forced-color-adjust: none;
-      height: 10px;
+      height: 6px;
       border-radius: var(--radius-sm);
       overflow: hidden;
       will-change: transform;
@@ -87,15 +87,15 @@
 
   /* Medium size (default) */
   .react-aria-ProgressBar.md {
-    width: 250px;
+    width: 240px;
 
     .bar {
-      height: 10px;
-      border-radius: var(--radius-md);
+      height: 6px;
+      border-radius: var(--radius-sm);
     }
 
     .value {
-      font-size: var(--text-base);
+      font-size: var(--text-sm);
     }
   }
 

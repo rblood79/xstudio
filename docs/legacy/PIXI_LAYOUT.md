@@ -1,3 +1,7 @@
+> **⚠️ DEPRECATED (2026-02-19)**: 이 문서는 `@pixi/layout`(Yoga) 시절 기준으로 작성되었습니다.
+> Phase 11에서 `@pixi/layout`, `yoga-layout` 완전 제거됨. 현재: Taffy WASM(Flex/Grid) + Dropflow Fork(Block) + DirectContainer(x/y 직접 배치).
+> 최신 아키텍처: [`docs/WASM.md`](../WASM.md), [`docs/ENGINE.md`](../ENGINE.md), [`docs/adr/003-canvas-rendering.md`](../adr/003-canvas-rendering.md)
+
 # LayoutEngine → @pixi/layout 마이그레이션
 
 > 목표: LayoutEngine.ts (1,804줄) 완전 삭제, @pixi/layout 선언적 flexbox 전환

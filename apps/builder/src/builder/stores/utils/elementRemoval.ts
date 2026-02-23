@@ -384,6 +384,10 @@ export const createRemoveElementAction =
     );
     const hasSelectedIdsChanged = filteredSelectedIds.length !== currentState.selectedElementIds.length;
 
+    // editingContext가 삭제 대상에 포함된 경우 리셋
+    const isEditingContextRemoved = currentState.editingContextId != null &&
+      removeSet.has(currentState.editingContextId);
+
     // 🚀 Skia 레지스트리에서 삭제된 요소들 즉시 제거
     // React useEffect cleanup은 비동기로 지연될 수 있어 잔상이 남는 문제 발생
     // Store 업데이트 전에 먼저 Skia 레지스트리를 정리하여 다음 렌더 프레임에서
@@ -401,6 +405,9 @@ export const createRemoveElementAction =
       ...(hasSelectedIdsChanged && {
         selectedElementIds: filteredSelectedIds,
         selectedElementIdsSet: new Set(filteredSelectedIds),
+      }),
+      ...(isEditingContextRemoved && {
+        editingContextId: null,
       }),
     });
 

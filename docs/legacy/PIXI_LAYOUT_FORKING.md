@@ -1,3 +1,7 @@
+> **⚠️ DEPRECATED (2026-02-19)**: 이 문서는 `@pixi/layout` 포크 검토 기준으로 작성되었습니다.
+> Phase 11에서 `@pixi/layout` 완전 제거됨. Pixi Layout 포크 대신 Taffy WASM + Dropflow Fork 채택.
+> 최신 아키텍처: [`docs/WASM.md`](../WASM.md), [`docs/ENGINE.md`](../ENGINE.md)
+
 # Pixi Layout 포크 검토 가이드
 
 이 문서는 WebGL 캔버스에서 HTML과 유사한 레이아웃(`display: block/inline/flex/grid` 등)을 구현할 때,

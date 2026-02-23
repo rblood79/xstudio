@@ -373,7 +373,7 @@
     --lb-header-padding: 0 var(--spacing-md);
     --lb-item-padding: var(--spacing) var(--spacing-md);
     --lb-item-min-height: 20px;
-    --lb-item-size: var(--text-sm);
+    --lb-item-size: var(--text-base);
     --lb-desc-size: var(--text-xs);
   }
 
@@ -396,7 +396,7 @@
     --lb-header-padding: 0 var(--spacing-md);
     --lb-item-padding: var(--spacing) var(--spacing-md);
     --lb-item-min-height: 20px;
-    --lb-item-size: var(--text-sm);
+    --lb-item-size: var(--text-base);
     --lb-desc-size: var(--text-xs);
   }
 

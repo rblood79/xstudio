@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Dialog Props
@@ -88,10 +89,20 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   states: {},
 
   render: {
-    shapes: (_props, variant, size, _state = 'default') => {
+    shapes: (_props, variant, size, state = 'default') => {
       const borderRadius = size.borderRadius;
 
       const shapes: Shape[] = [
+        // Phase F: Backdrop (반투명 배경 오버레이)
+        {
+          type: 'rect' as const,
+          x: -9999,
+          y: -9999,
+          width: 99999,
+          height: 99999,
+          fill: 'rgba(0, 0, 0, 0.5)' as unknown as TokenRef,
+          fillAlpha: 0.5,
+        },
         // Shadow
         {
           type: 'shadow' as const,
@@ -112,7 +123,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
           width: 'auto',
           height: 'auto',
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: resolveStateColors(variant, state).background,
         },
         // 콘텐츠 컨테이너
         {

@@ -1,200 +1,98 @@
 /**
  * Pixi Separator
  *
- * 🚀 Phase 2: Separator WebGL 컴포넌트 (Pattern A)
+ * 투명 히트 영역(pixiGraphics) 기반 Separator
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - Separator는 인터랙션 없음 — eventMode="none"
  *
- * 가로/세로 구분선 컴포넌트
- * - variant (default, primary, secondary, surface) 지원
- * - size (sm, md, lg) 지원
- * - orientation (horizontal, vertical) 지원
- * - lineStyle (solid, dashed, dotted) 지원
- *
- * @since 2025-12-16 Phase 2 WebGL Migration
+ * @updated 2026-02-20 A등급 패턴 재작성 (시각 드로잉 제거, Skia 렌더링 전환)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo } from "react";
-import { Graphics as PixiGraphics } from "pixi.js";
+import { memo, useCallback, useContext } from "react";
+import { Graphics as PixiGraphicsClass } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
-import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex } from "../sprites/styleConverter";
-import { toLayoutSize } from "../layout/styleToLayout";
-
-// 🚀 Spec Migration
-import {
-  SeparatorSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // ============================================
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface PixiSeparatorProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
-}
-
-interface SeparatorElementProps {
-  variant?: "default" | "primary" | "secondary" | "surface";
-  size?: "sm" | "md" | "lg";
-  orientation?: "horizontal" | "vertical";
-  lineStyle?: "solid" | "dashed" | "dotted";
-  style?: CSSStyle;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
 }
 
 // ============================================
 // Component
 // ============================================
 
+/**
+ * PixiSeparator
+ *
+ * 투명 히트 영역 기반 Separator (Skia 렌더링)
+ * - 인터랙션 없음 (eventMode="none")
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ */
 export const PixiSeparator = memo(function PixiSeparator({
   element,
+  //isSelected,
   onClick,
 }: PixiSeparatorProps) {
   useExtend(PIXI_COMPONENTS);
-  const style = element.props?.style as CSSStyle | undefined;
-  const props = element.props as SeparatorElementProps | undefined;
 
-  // variant, size, orientation
-  const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
-  const size = useMemo(() => String(props?.size || "md"), [props?.size]);
-  const orientation = useMemo(
-    () => String(props?.orientation || "horizontal"),
-    [props?.orientation]
-  );
-  const lineStyle = useMemo(
-    () => String(props?.lineStyle || "solid"),
-    [props?.lineStyle]
-  );
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 CSS에서 프리셋 읽기 (Spec Migration)
-  const sizePreset = useMemo(() => {
-    const sizeSpec = SeparatorSpec.sizes[size] || SeparatorSpec.sizes[SeparatorSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
-
-  const colorPreset = useMemo(() => {
-    const variantSpec = SeparatorSpec.variants[variant] || SeparatorSpec.variants[SeparatorSpec.defaultVariant];
-    const specColors = getSpecVariantColors(variantSpec, 'light');
-    return {
-      color: specColors.border ?? specColors.bg,
-    };
-  }, [variant]);
-
-  // 색상 (inline style 오버라이드 지원)
-  const lineColor = useMemo(() => {
-    if (style?.backgroundColor) {
-      return cssColorToHex(style.backgroundColor, colorPreset.color);
-    }
-    if (style?.borderColor) {
-      return cssColorToHex(style.borderColor, colorPreset.color);
-    }
-    return colorPreset.color;
-  }, [style, colorPreset]);
-
-  // 크기 계산
-  // 🚀 Phase 8: layout prop에 style 값 직접 전달 (% 단위 지원)
-  const fallbackWidth = 200;
-  const fallbackHeight = 100;
-
-  // Graphics 그리기용 픽셀 값 (fallback 사용)
-  const separatorSize = useMemo(() => {
-    if (orientation === "vertical") {
-      const height = typeof style?.height === 'number' ? style.height : fallbackHeight;
-      return {
-        width: sizePreset.thickness,
-        height,
-      };
-    }
-    // horizontal
-    const width = typeof style?.width === 'number' ? style.width : fallbackWidth;
-    return {
-      width,
-      height: sizePreset.thickness,
-    };
-  }, [orientation, style, sizePreset.thickness]);
-
-  // 🚀 Phase 8: layout prop에 style 값 직접 전달 (% 단위 지원)
-  const containerLayout = useMemo(() => ({
-    width: orientation === "horizontal" ? toLayoutSize(style?.width, fallbackWidth) : sizePreset.thickness,
-    height: orientation === "vertical" ? toLayoutSize(style?.height, fallbackHeight) : sizePreset.thickness,
-  }), [orientation, style?.width, style?.height, sizePreset.thickness]);
-
-  // 구분선 그리기
-  const drawSeparator = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // 대시 패턴 설정
-      let dashArray: number[] = [];
-      if (lineStyle === "dashed") {
-        dashArray = [6, 4];
-      } else if (lineStyle === "dotted") {
-        dashArray = [2, 2];
-      }
-
-      if (lineStyle === "solid") {
-        // 실선
-        if (orientation === "vertical") {
-          g.rect(0, 0, separatorSize.width, separatorSize.height);
-        } else {
-          g.rect(0, 0, separatorSize.width, separatorSize.height);
-        }
-        g.fill({ color: lineColor });
-      } else {
-        // 대시 또는 점선
-        g.setStrokeStyle({
-          width: sizePreset.thickness,
-          color: lineColor,
-        });
-
-        if (orientation === "vertical") {
-          // 세로 대시 라인 그리기
-          let y = 0;
-          let dashIndex = 0;
-          while (y < separatorSize.height) {
-            const dashLen = dashArray[dashIndex % dashArray.length];
-            if (dashIndex % 2 === 0) {
-              g.moveTo(sizePreset.thickness / 2, y);
-              g.lineTo(sizePreset.thickness / 2, Math.min(y + dashLen, separatorSize.height));
-            }
-            y += dashLen;
-            dashIndex++;
-          }
-        } else {
-          // 가로 대시 라인 그리기
-          let x = 0;
-          let dashIndex = 0;
-          while (x < separatorSize.width) {
-            const dashLen = dashArray[dashIndex % dashArray.length];
-            if (dashIndex % 2 === 0) {
-              g.moveTo(x, sizePreset.thickness / 2);
-              g.lineTo(Math.min(x + dashLen, separatorSize.width), sizePreset.thickness / 2);
-            }
-            x += dashLen;
-            dashIndex++;
-          }
-        }
-        g.stroke();
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [orientation, separatorSize.width, separatorSize.height, lineColor, lineStyle, sizePreset.thickness]
+    [hitWidth, hitHeight]
   );
 
-  // 클릭 핸들러
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
-  }, [element.id, onClick]);
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
+
+      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+    },
+    [element.id, onClick]
+  );
 
   return (
-    <pixiContainer layout={containerLayout}>
+    <pixiContainer>
+      {/* Separator는 인터랙션 없음 (eventMode="none") — 선택만 가능하도록 히트 영역 제공 */}
       <pixiGraphics
-        draw={drawSeparator}
-        eventMode="static"
-        cursor="pointer"
+        draw={drawHitArea}
+        eventMode="none"
+        cursor="default"
         onPointerDown={handleClick}
       />
     </pixiContainer>

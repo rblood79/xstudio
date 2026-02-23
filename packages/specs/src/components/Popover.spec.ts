@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * Popover Props
@@ -97,7 +98,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
   states: {},
 
   render: {
-    shapes: (_props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, state = 'default') => {
       const borderRadius = size.borderRadius;
 
       const shapes: Shape[] = [
@@ -121,7 +122,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
           width: 'auto',
           height: 'auto',
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: resolveStateColors(variant, state).background,
         },
         // 테두리
         {
@@ -147,6 +148,45 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
           },
         },
       ];
+
+      // Phase F: Arrow indicator (placement 기반 V자 2-line 화살표)
+      // showArrow가 명시적으로 true일 때만 렌더링
+      if (props.showArrow === true) {
+        const arrowSize = 8;
+        const bgFill = resolveStateColors(variant, state).background;
+        const placement = props.placement ?? 'bottom';
+
+        // placement에 따라 중심 기준 arrow 좌표 계산 (컨테이너 중앙 기준)
+        // 컨테이너 너비/높이를 모르므로 고정 중심점 사용 (런타임에서 오버라이드 가능)
+        const cx = 80; // 고정 중심 X (대부분 popover 기준)
+        const cy = 80; // 고정 중심 Y
+
+        if (placement === 'bottom') {
+          // popover가 아래에 위치 → arrow는 위쪽 (y=0 근처)
+          shapes.push(
+            { type: 'line' as const, x1: cx - arrowSize, y1: 0, x2: cx, y2: -arrowSize, stroke: bgFill, strokeWidth: 2 },
+            { type: 'line' as const, x1: cx + arrowSize, y1: 0, x2: cx, y2: -arrowSize, stroke: bgFill, strokeWidth: 2 },
+          );
+        } else if (placement === 'top') {
+          // popover가 위에 위치 → arrow는 아래쪽
+          shapes.push(
+            { type: 'line' as const, x1: cx - arrowSize, y1: cy, x2: cx, y2: cy + arrowSize, stroke: bgFill, strokeWidth: 2 },
+            { type: 'line' as const, x1: cx + arrowSize, y1: cy, x2: cx, y2: cy + arrowSize, stroke: bgFill, strokeWidth: 2 },
+          );
+        } else if (placement === 'right') {
+          // popover가 오른쪽에 위치 → arrow는 왼쪽
+          shapes.push(
+            { type: 'line' as const, x1: 0, y1: cy - arrowSize, x2: -arrowSize, y2: cy, stroke: bgFill, strokeWidth: 2 },
+            { type: 'line' as const, x1: 0, y1: cy + arrowSize, x2: -arrowSize, y2: cy, stroke: bgFill, strokeWidth: 2 },
+          );
+        } else {
+          // placement === 'left': popover가 왼쪽에 위치 → arrow는 오른쪽
+          shapes.push(
+            { type: 'line' as const, x1: cx, y1: cy - arrowSize, x2: cx + arrowSize, y2: cy, stroke: bgFill, strokeWidth: 2 },
+            { type: 'line' as const, x1: cx, y1: cy + arrowSize, x2: cx + arrowSize, y2: cy, stroke: bgFill, strokeWidth: 2 },
+          );
+        }
+      }
 
       return shapes;
     },

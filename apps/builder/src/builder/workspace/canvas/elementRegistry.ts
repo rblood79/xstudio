@@ -1,19 +1,20 @@
 /**
  * Element Registry
  *
- * 🚀 Phase 1: @pixi/layout 마이그레이션 준비
+ * Element Bounds Registry (DirectContainer 배치 지원)
  *
  * PixiJS Container 참조를 저장하여 getBounds() 호출을 가능하게 합니다.
  * layoutResult.positions 대신 실제 DisplayObject의 bounds를 사용할 수 있습니다.
  *
  * @since 2025-01-06 Phase 1 ElementRegistry
+ * @updated 2026-02-18 Phase 11 - DirectContainer 전환 완료
  */
 
 import { Container, Bounds } from 'pixi.js';
 
 import { notifyLayoutChange } from './skia/useSkiaNode';
 
-// Phase 1: SpatialIndex 동기화 (lazy import, 호출 빈도가 높으므로 캐싱)
+// SpatialIndex 동기화 (lazy import, 호출 빈도가 높으므로 캐싱)
 let _spatialModule: typeof import('./wasm-bindings/spatialIndex') | null = null;
 async function getSpatialModule() {
   if (!_spatialModule) {
@@ -85,12 +86,12 @@ export function updateElementBounds(id: string, bounds: ElementBounds): void {
 
   layoutBoundsRegistry.set(id, bounds);
 
-  // Phase 6: Yoga 레이아웃 재계산 후 Skia 렌더 루프에 알림
-  // LayoutContainer의 RAF 콜백에서 호출되므로, registryVersion 증가로
+  // Phase 6+: 레이아웃 엔진(Taffy/Dropflow) 재계산 후 Skia 렌더 루프에 알림
+  // DirectContainer의 레이아웃 콜백에서 호출되므로, registryVersion 증가로
   // 다음 프레임에서 container.width가 반영된 Skia 트리가 재구축된다.
   notifyLayoutChange();
 
-  // Phase 1: SpatialIndex 동기화 (스크린 좌표 저장)
+  // SpatialIndex 동기화 (스크린 좌표 저장)
   // getBounds()는 스크린 좌표(pan/zoom 포함)를 반환한다.
   // pan 시 stale될 수 있으므로, useViewportCulling에서 getBounds() 폴백으로 보완한다.
   if (_spatialModule) {
@@ -107,7 +108,7 @@ export function unregisterElement(id: string): void {
   elementRegistry.delete(id);
   layoutBoundsRegistry.delete(id);
 
-  // Phase 1: SpatialIndex 동기화
+  // SpatialIndex 동기화
   if (_spatialModule) {
     _spatialModule.removeElement(id);
   }
@@ -189,7 +190,7 @@ export function clearRegistry(): void {
   elementRegistry.clear();
   layoutBoundsRegistry.clear();
 
-  // Phase 1: SpatialIndex 초기화
+  // SpatialIndex 초기화
   if (_spatialModule) {
     _spatialModule.clearAll();
   }

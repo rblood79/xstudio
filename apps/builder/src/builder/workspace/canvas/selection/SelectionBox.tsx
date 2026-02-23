@@ -206,15 +206,6 @@ export const SelectionBox = memo(
     [onMoveStart]
   );
 
-  // 이동 영역 호버
-  const handleMovePointerOver = useCallback(() => {
-    onCursorChange?.('move');
-  }, [onCursorChange]);
-
-  const handleMovePointerOut = useCallback(() => {
-    onCursorChange?.('default');
-  }, [onCursorChange]);
-
   return (
     <pixiContainer ref={containerRef} x={x} y={y}>
       {/* 이동 영역 (배경) - enableMoveArea가 false면 클릭 투과 */}
@@ -223,10 +214,7 @@ export const SelectionBox = memo(
           ref={moveAreaGraphicsRef}
           draw={drawMoveArea}
           eventMode="static"
-          cursor="move"
           onPointerDown={handleMovePointerDown}
-          onPointerOver={handleMovePointerOver}
-          onPointerOut={handleMovePointerOut}
         />
       )}
 

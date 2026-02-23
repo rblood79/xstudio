@@ -2,16 +2,9 @@
  * @pixi/react JSX 타입 확장
  *
  * PixiJS 컴포넌트들의 JSX IntrinsicElements 타입을 선언합니다.
- * @pixi/layout의 onLayout 콜백도 포함합니다.
  */
 
-import type { LayoutOptions } from '@pixi/layout';
 import type { FederatedPointerEvent, Graphics, TextStyle } from 'pixi.js';
-
-// @pixi/layout onLayout 콜백 타입
-interface LayoutCallback {
-  computedLayout?: { width?: number; height?: number };
-}
 
 // 공통 이벤트 핸들러
 interface PixiEventHandlers {
@@ -43,8 +36,6 @@ interface PixiBaseProps {
 interface PixiContainerProps extends PixiBaseProps, PixiEventHandlers {
   width?: number;
   height?: number;
-  layout?: Omit<LayoutOptions, 'target'> | boolean | null;
-  onLayout?: (layout: LayoutCallback) => void;
   label?: string;
   interactiveChildren?: boolean;
   children?: React.ReactNode;
@@ -53,7 +44,6 @@ interface PixiContainerProps extends PixiBaseProps, PixiEventHandlers {
 // 그래픽스 props
 interface PixiGraphicsProps extends PixiBaseProps, PixiEventHandlers {
   draw?: (g: Graphics) => void;
-  layout?: Omit<LayoutOptions, 'target'> | boolean | null;
 }
 
 // 텍스트 props
@@ -61,7 +51,6 @@ interface PixiTextProps extends PixiBaseProps, PixiEventHandlers {
   text?: string;
   style?: Partial<TextStyle>;
   anchor?: number | { x: number; y: number };
-  layout?: Omit<LayoutOptions, 'target'> | boolean | null;
 }
 
 // 스프라이트 props

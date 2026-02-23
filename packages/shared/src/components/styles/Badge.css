@@ -61,24 +61,24 @@
 
   /* ===== Small Size (Default) ===== */
   .react-aria-Badge[data-size="sm"] {
-    font-size: var(--text-sm);
-    padding: 2px var(--spacing-md);
+    font-size: var(--text-xs);
+    padding: 2px 6px;
     min-width: 20px;
     height: 20px;
   }
 
   /* ===== Medium Size ===== */
   .react-aria-Badge[data-size="md"] {
-    font-size: var(--text-base);
-    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--text-sm);
+    padding: 2px var(--spacing-sm);
     min-width: 24px;
     height: 24px;
   }
 
   /* ===== Large Size ===== */
   .react-aria-Badge[data-size="lg"] {
-    font-size: var(--text-lg);
-    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--text-base);
+    padding: 4px 10px;
     min-width: 28px;
     height: 28px;
   }

@@ -3,21 +3,21 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     background-color: var(--surface-container);
     border: 1px solid var(--border-color);
   }
 
   .panel-title {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
     font-weight: var(--font-weight-semibold);
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     color: var(--text-color);
     border-bottom: 1px solid var(--border-color);
   }
 
   .panel-content {
-    padding: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
     flex: 1;
     min-height: 64px;
   }

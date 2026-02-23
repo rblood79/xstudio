@@ -1,4 +1,17 @@
+/**
+ * Material Design 3 Slider Styles
+ *
+ * M3 Variants: default, primary, secondary, tertiary, error, surface
+ * Sizes: sm, md, lg
+ *
+ * Spec dimensions (SLIDER_DIMENSIONS):
+ *   sm: trackHeight=4, thumbSize=14
+ *   md: trackHeight=6, thumbSize=18
+ *   lg: trackHeight=8, thumbSize=22
+ */
+
 @layer components {
+  /* ========== Base Slider Styles ========== */
   .react-aria-Slider {
     display: grid;
     grid-template-areas:
@@ -6,18 +19,24 @@
       "track track";
     grid-template-columns: 1fr auto;
     max-width: 300px;
-    color: var(--text-color);
+    color: var(--on-surface);
+    gap: var(--spacing-sm);
 
+    /* ===== Label Styles ===== */
     .react-aria-Label {
       grid-area: label;
       text-align: left;
+      font-size: var(--text-sm);
+      font-weight: 500;
     }
 
+    /* ===== Output Styles ===== */
     .react-aria-SliderOutput {
       grid-area: output;
       font-size: var(--text-sm);
     }
 
+    /* ===== Track Styles ===== */
     .react-aria-SliderTrack {
       grid-area: track;
       position: relative;
@@ -27,38 +46,41 @@
         content: "";
         display: block;
         position: absolute;
-        background: var(--border-color);
+        background: var(--surface-container-high);
+        border-radius: var(--radius-full, 9999px);
       }
     }
 
+    /* ===== Thumb Styles ===== */
     .react-aria-SliderThumb {
-      width: var(--text-lg);
-      height: var(--text-lg);
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       background: var(--primary);
       border: 2px solid var(--surface);
       forced-color-adjust: none;
+      cursor: grab;
 
       &[data-dragging] {
         background: var(--primary-pressed);
         outline: 2px solid var(--primary);
+        cursor: grabbing;
       }
 
       &[data-focus-visible] {
         outline: 2px solid var(--primary);
+        outline-offset: 2px;
       }
     }
 
+    /* ===== Horizontal Orientation ===== */
     &[data-orientation="horizontal"] {
-      flex-direction: column;
-      width: 300px;
-
       .react-aria-SliderTrack {
-        height: 30px;
+        height: 24px;
         width: 100%;
 
         &:before {
-          height: 2px;
+          height: 6px;
           width: 100%;
           top: 50%;
           transform: translateY(-50%);
@@ -70,6 +92,7 @@
       }
     }
 
+    /* ===== Vertical Orientation ===== */
     &[data-orientation="vertical"] {
       height: 150px;
       display: block;
@@ -80,11 +103,11 @@
       }
 
       .react-aria-SliderTrack {
-        width: 30px;
+        width: 24px;
         height: 100%;
 
         &:before {
-          width: 2px;
+          width: 6px;
           height: 100%;
           left: 50%;
           transform: translateX(-50%);
@@ -96,25 +119,68 @@
       }
     }
 
+    /* ===== Disabled State ===== */
     &[data-disabled] {
+      opacity: 0.38;
+      cursor: not-allowed;
+
       .react-aria-SliderTrack:before {
-        background: var(--border-color-disabled);
+        background: var(--on-surface-variant);
       }
 
       .react-aria-SliderThumb {
-        background: var(--border-color-disabled);
+        background: var(--on-surface-variant);
+        cursor: not-allowed;
       }
     }
   }
 
-  /* Small size */
-  .react-aria-Slider.sm {
+  /* ========== Size Variants ========== */
+
+  /* Small size: trackHeight=4, thumbSize=14 */
+  .react-aria-Slider[data-size="sm"] {
+    &[data-orientation="horizontal"] {
+      .react-aria-SliderTrack {
+        height: 20px;
+
+        &:before {
+          height: 4px;
+        }
+      }
+    }
+
+    &[data-orientation="vertical"] {
+      .react-aria-SliderTrack {
+        width: 20px;
+
+        &:before {
+          width: 4px;
+        }
+      }
+    }
+
+    .react-aria-Label {
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-SliderOutput {
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-SliderThumb {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  /* Medium size (default): trackHeight=6, thumbSize=18 */
+  .react-aria-Slider[data-size="md"] {
     &[data-orientation="horizontal"] {
       .react-aria-SliderTrack {
         height: 24px;
 
         &:before {
-          height: 1px;
+          height: 6px;
         }
       }
     }
@@ -124,75 +190,65 @@
         width: 24px;
 
         &:before {
-          width: 1px;
+          width: 6px;
         }
       }
     }
 
+    .react-aria-Label {
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-SliderOutput {
+      font-size: var(--text-sm);
+    }
+
     .react-aria-SliderThumb {
-      width: var(--text-xl);
-      height: var(--text-xl);
+      width: 18px;
+      height: 18px;
     }
   }
 
-  /* Medium size (default) */
-  .react-aria-Slider.md {
+  /* Large size: trackHeight=8, thumbSize=22 */
+  .react-aria-Slider[data-size="lg"] {
     &[data-orientation="horizontal"] {
       .react-aria-SliderTrack {
-        height: 30px;
+        height: 28px;
 
         &:before {
-          height: 2px;
+          height: 8px;
         }
       }
     }
 
     &[data-orientation="vertical"] {
       .react-aria-SliderTrack {
-        width: 30px;
+        width: 28px;
 
         &:before {
-          width: 2px;
+          width: 8px;
         }
       }
+    }
+
+    .react-aria-Label {
+      font-size: var(--text-base);
+    }
+
+    .react-aria-SliderOutput {
+      font-size: var(--text-base);
     }
 
     .react-aria-SliderThumb {
-      width: var(--text-2xl);
-      height: var(--text-2xl);
+      width: 22px;
+      height: 22px;
     }
   }
 
-  /* Large size */
-  .react-aria-Slider.lg {
-    &[data-orientation="horizontal"] {
-      .react-aria-SliderTrack {
-        height: 36px;
+  /* ========== M3 Color Variants ========== */
 
-        &:before {
-          height: 3px;
-        }
-      }
-    }
-
-    &[data-orientation="vertical"] {
-      .react-aria-SliderTrack {
-        width: 36px;
-
-        &:before {
-          width: 3px;
-        }
-      }
-    }
-
-    .react-aria-SliderThumb {
-      width: var(--text-3xl);
-      height: var(--text-3xl);
-    }
-  }
-
-  /* ===== M3 Primary Variant ===== */
-  .react-aria-Slider.primary {
+  /* Default variant (same as primary) */
+  .react-aria-Slider[data-variant="default"] {
     .react-aria-SliderThumb {
       background: var(--primary);
 
@@ -206,13 +262,28 @@
     }
   }
 
-  /* ===== M3 Secondary Variant ===== */
-  .react-aria-Slider.secondary {
+  /* Primary variant */
+  .react-aria-Slider[data-variant="primary"] {
+    .react-aria-SliderThumb {
+      background: var(--primary);
+
+      &[data-dragging] {
+        background: var(--primary-pressed);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--primary);
+      }
+    }
+  }
+
+  /* Secondary variant */
+  .react-aria-Slider[data-variant="secondary"] {
     .react-aria-SliderThumb {
       background: var(--secondary);
 
       &[data-dragging] {
-        background: var(--secondary-pressed);
+        background: color-mix(in srgb, var(--secondary) 88%, black);
       }
 
       &[data-focus-visible] {
@@ -221,13 +292,13 @@
     }
   }
 
-  /* ===== M3 Tertiary Variant ===== */
-  .react-aria-Slider.tertiary {
+  /* Tertiary variant */
+  .react-aria-Slider[data-variant="tertiary"] {
     .react-aria-SliderThumb {
       background: var(--tertiary);
 
       &[data-dragging] {
-        background: var(--tertiary-pressed);
+        background: color-mix(in srgb, var(--tertiary) 88%, black);
       }
 
       &[data-focus-visible] {
@@ -236,13 +307,13 @@
     }
   }
 
-  /* ===== M3 Error Variant ===== */
-  .react-aria-Slider.error {
+  /* Error variant */
+  .react-aria-Slider[data-variant="error"] {
     .react-aria-SliderThumb {
       background: var(--error);
 
       &[data-dragging] {
-        background: var(--error-pressed);
+        background: color-mix(in srgb, var(--error) 88%, black);
       }
 
       &[data-focus-visible] {
@@ -251,8 +322,8 @@
     }
   }
 
-  /* ===== M3 Surface Variant ===== */
-  .react-aria-Slider.surface {
+  /* Surface variant */
+  .react-aria-Slider[data-variant="surface"] {
     .react-aria-SliderThumb {
       background: var(--surface-container-highest);
 

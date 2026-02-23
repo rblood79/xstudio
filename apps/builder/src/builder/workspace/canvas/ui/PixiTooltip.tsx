@@ -1,163 +1,90 @@
 /**
- * PixiTooltip - WebGL Tooltip Component
+ * PixiTooltip
  *
- * Phase 5: Overlay & Special Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Builder preview representation
+ * 투명 히트 영역 기반 Tooltip (Skia 렌더링)
+ * - Tooltip은 비인터랙티브: eventMode="none"
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
  *
- * NOTE: In builder mode, tooltips are shown as static elements for editing.
- * Actual hover behavior works in iframe Preview.
- *
- * CSS 동기화:
- * - getTooltipSizePreset(): fontSize, paddingX, paddingY, maxWidth
- * - getTooltipColorPreset(): backgroundColor, textColor, arrowColor
+ * @updated 2026-02-20 A등급 패턴으로 재작성 (Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
-
-// 🚀 Spec Migration
+import { memo, useCallback, useContext } from 'react';
 import {
-  TooltipSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiTooltipProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiTooltip - Static tooltip preview for builder
+ * PixiTooltip
+ *
+ * 비인터랙티브 투명 히트 영역 기반 Tooltip (Skia 렌더링)
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ * - Tooltip은 hover로 표시되므로 이벤트 전달 안 함 (eventMode="none")
  */
-export function PixiTooltip({
+export const PixiTooltip = memo(function PixiTooltip({
   element,
-  isSelected = false,
-  onClick,
+  //isSelected,
+  //onClick,
 }: PixiTooltipProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const placement = (props.placement as string) || 'top';
-  const content = (props.content as string) || (props.children as string) || 'Tooltip';
 
-  // Get presets from CSS (Spec Migration)
-  const sizePreset = useMemo(() => {
-    const sizeSpec = TooltipSpec.sizes[size] || TooltipSpec.sizes[TooltipSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  const colorPreset = useMemo(() => {
-    const variantSpec = TooltipSpec.variants[variant] || TooltipSpec.variants[TooltipSpec.defaultVariant];
-    const specColors = getSpecVariantColors(variantSpec, 'light');
-    return {
-      backgroundColor: specColors.bg,
-      textColor: specColors.text,
-      arrowColor: specColors.bg,
-    };
-  }, [variant]);
-
-  // 🚀 variant에 따른 테마 색상 (selection용, Spec Migration)
-  const variantColors = useMemo(() => {
-    const variantSpec = TooltipSpec.variants[variant] || TooltipSpec.variants[TooltipSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
-
-  // Calculate dimensions based on content
-  const textWidth = Math.min(content.length * sizePreset.fontSize * 0.6, sizePreset.maxWidth - sizePreset.paddingX * 2);
-  const containerWidth = textWidth + sizePreset.paddingX * 2;
-  const containerHeight = sizePreset.fontSize + sizePreset.paddingY * 2;
-  const arrowSize = 6;
-
-  // Draw tooltip background with arrow
-  const drawTooltip = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역 (비인터랙티브 — 이벤트 통과)
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Main tooltip body
-      g.roundRect(0, 0, containerWidth, containerHeight, sizePreset.borderRadius);
-      g.fill({ color: colorPreset.backgroundColor });
-
-      // Draw arrow based on placement
-      const arrowX = containerWidth / 2;
-      switch (placement) {
-        case 'top':
-          // Arrow pointing down (tooltip above trigger)
-          g.moveTo(arrowX - arrowSize, containerHeight);
-          g.lineTo(arrowX, containerHeight + arrowSize);
-          g.lineTo(arrowX + arrowSize, containerHeight);
-          g.closePath();
-          g.fill({ color: colorPreset.arrowColor });
-          break;
-        case 'bottom':
-          // Arrow pointing up (tooltip below trigger)
-          g.moveTo(arrowX - arrowSize, 0);
-          g.lineTo(arrowX, -arrowSize);
-          g.lineTo(arrowX + arrowSize, 0);
-          g.closePath();
-          g.fill({ color: colorPreset.arrowColor });
-          break;
-        case 'left':
-          // Arrow pointing right (tooltip left of trigger)
-          g.moveTo(containerWidth, containerHeight / 2 - arrowSize);
-          g.lineTo(containerWidth + arrowSize, containerHeight / 2);
-          g.lineTo(containerWidth, containerHeight / 2 + arrowSize);
-          g.closePath();
-          g.fill({ color: colorPreset.arrowColor });
-          break;
-        case 'right':
-          // Arrow pointing left (tooltip right of trigger)
-          g.moveTo(0, containerHeight / 2 - arrowSize);
-          g.lineTo(-arrowSize, containerHeight / 2);
-          g.lineTo(0, containerHeight / 2 + arrowSize);
-          g.closePath();
-          g.fill({ color: colorPreset.arrowColor });
-          break;
-      }
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, containerWidth + 4, containerHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: variantColors.bg, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [containerWidth, containerHeight, sizePreset, colorPreset, placement, isSelected, arrowSize, variantColors.bg]
+    [hitWidth, hitHeight]
   );
 
-  // Text style
-  const textStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.fontSize,
-      fill: colorPreset.textColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      wordWrap: true,
-      wordWrapWidth: sizePreset.maxWidth - sizePreset.paddingX * 2,
-    }),
-    [sizePreset, colorPreset]
-  );
-
+  // Tooltip은 비인터랙티브이므로 eventMode="none" 사용
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="pointer"
-      onPointerTap={() => onClick?.(element.id)}
+      ref={(_c: PixiContainer | null) => {
+        // DirectContainer가 위치 처리
+      }}
     >
-      {/* Tooltip background with arrow */}
-      <pixiGraphics draw={drawTooltip} />
-
-      {/* Tooltip text */}
-      <pixiText
-        text={content}
-        style={textStyle}
-        x={sizePreset.paddingX}
-        y={sizePreset.paddingY}
+      {/* 비인터랙티브 히트 영역 — Skia가 시각적 렌더링 담당 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="none"
       />
     </pixiContainer>
   );
-}
+});
+
+export default PixiTooltip;

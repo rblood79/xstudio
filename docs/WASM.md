@@ -1,44 +1,14 @@
 # xstudio WASM 렌더링 아키텍처 전환 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-02-05 (Pencil 방식 2-pass: 컨텐츠 캐시 + present(blit) + 오버레이 분리 + padding 기반 camera-only + cleanup render)
+> 최종 수정: 2026-02-18 (Phase 11 반영: Yoga/@pixi/layout 제거, Taffy+Dropflow 레이아웃 엔진 정합화)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
-> 현재 스택: CanvasKit/Skia WASM + PixiJS v8.14.3 (이벤트 전용) + Yoga WASM v3.2.1 + Rust WASM (성능 가속) + Zustand
+> 현재 스택: CanvasKit/Skia WASM + PixiJS v8.14.3 (씬 그래프/이벤트) + Taffy WASM(Flex/Grid) + Dropflow Fork(Block) + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
 
 ---
 
-## ⚠️ 아키텍처 정정 (2026-01-30)
-
-초기 분석에서 "PixiJS가 메인 렌더러, pencil.wasm이 보조 최적화"로 기술하여,
-본 문서가 **PixiJS를 메인 렌더러로 유지하면서 보조 WASM 모듈만 추가하는 계획**으로 수립되었다.
-
-그러나 `renderSkia()` 메서드 역공학 결과, 실제 Pencil 아키텍처는:
-
-| 계층 | 역할 | 기술 |
-|------|------|------|
-| **메인 렌더러** | 모든 디자인 노드의 벡터/텍스트/이미지/이펙트 렌더링 | **CanvasKit/Skia WASM** (7.8MB) |
-| 씬 그래프/이벤트 | 씬 트리 관리 + EventBoundary (Hit Testing) 전용 | PixiJS v8 |
-| 레이아웃 | Flexbox 계산 | Yoga WASM |
-
-```
-Pencil 실제 구조:                    현재 xstudio:
-┌──────────────────────┐             ┌──────────────────────┐
-│ CanvasKit/Skia WASM  │ ← 메인      │ PixiJS v8 (WebGL)    │ ← 메인 (렌더링+씬+이벤트)
-│ (renderSkia 파이프라인)│             │                      │
-├──────────────────────┤             ├──────────────────────┤
-│ PixiJS v8            │ ← 보조      │ Yoga WASM            │ ← 레이아웃만
-│ (씬 그래프 + 이벤트)   │             │                      │
-├──────────────────────┤             └──────────────────────┘
-│ Yoga WASM            │ ← 레이아웃
-└──────────────────────┘
-```
-
-**본 문서의 최종 목표:** Pencil §11 아키텍처를 xstudio에 적용하여, **CanvasKit/Skia WASM을 메인 렌더러로 도입**하고 PixiJS는 씬 그래프/이벤트 레이어로 전환한다.
-
-- **Phase 0–4** (기존): 현재 PixiJS 아키텍처 위에서의 점진적 WASM 최적화 (Spatial Index, Layout 가속, Worker). CanvasKit 전환 전에도 독립적으로 유효하다.
-- **Phase 5** (신규): CanvasKit/Skia WASM 메인 렌더러 도입 — Pencil의 renderSkia 패턴 적용
-- **Phase 6** (신규): 고급 렌더링 기능 — 이중 Surface 캐싱(컨텐츠 캐시 + 오버레이 분리), padding 기반 camera-only blit, cleanup render
+> 초기 분석 정정 이력은 [부록 A: 아키텍처 정정 이력](#부록-a-아키텍처-정정-이력) 참조
 
 ---
 
@@ -85,7 +55,7 @@ Pencil 실제 구조:                    현재 xstudio:
 | **메모리 관리** | CanvasKit 객체 수동 `.delete()` 필요 (GC 아님) | 높음 | Disposable 패턴 래퍼 도입 |
 | **학습 곡선** | Skia Canvas API 학습 필요 | 중간 | Google CanvasKit 공식 문서 + Pencil 코드 참조 |
 | **이중 렌더러 복잡도** | PixiJS 씬 + CanvasKit 렌더 동기화 | 높음 | Feature Flag로 점진적 전환 |
-| **PixiJS 생태계** | @pixi/react, @pixi/layout 등 활용도 감소 | 낮음 | 씬 그래프/이벤트 레이어로 유지 |
+| **PixiJS 생태계** | @pixi/layout 제거 등 기존 Pixi 확장 의존성 축소 | 낮음 | 씬 그래프/이벤트 레이어로 유지 |
 | **WebGL 컨텍스트 충돌** | hybrid 모드에서 PixiJS + CanvasKit 동시 WebGL 컨텍스트 (~16개 제한) | 중간 | §5.7.1 캔버스 오버레이 + 이벤트 포워딩 전략 |
 
 ### 종합 평가
@@ -125,7 +95,7 @@ Pencil 실제 구조:                    현재 xstudio:
 | **3단계** | Rust 메모리 최적화 + WASM SIMD + 커스텀 할당기 | Figma + Adobe | Post-Phase 6 (§장기 최적화) |
 | **4단계** | WebGPU 전환 (Compute shaders, 차세대 GPU API) | Figma (2025~) | §장기 최적화 7.5 |
 
-> **현재 WASM.md 커버리지:** 1단계(Phase 5-6)는 완전히 설계됨.
+> **현재 WASM.md 커버리지:** 1단계(Phase 5-6)는 구현/검증 완료 상태다.
 > 2-4단계는 Phase 6 완료 후 실측 데이터에 기반하여 착수 여부를 판단한다.
 
 ---
@@ -136,7 +106,9 @@ Pencil 실제 구조:                    현재 xstudio:
 
 | 모듈 | 용도 | 초기화 위치 |
 |------|------|------------|
-| yoga-layout v3.2.1 | Flexbox 레이아웃 계산 | `layout/initYoga.ts` (92줄) |
+| CanvasKit (`canvaskit-wasm`) | 디자인 노드/오버레이 렌더링 | `skia/initCanvasKit.ts` |
+| Rust WASM (`xstudio_wasm`) | Taffy 레이아웃(Flex/Grid) 가속 | `wasm-bindings/rustWasm.ts`, `wasm-bindings/taffyLayout.ts` |
+| SpatialIndex WASM | 뷰포트 컬링/히트테스트 가속(옵션) | `wasm-bindings/spatialIndex.ts` (현재 기본 비활성화 — Phase 5 CanvasKit 내부 AABB 컬링이 뷰포트 컬링 대체. 라쏘 선택 `query_rect` 재연동만 잔존 과제) |
 
 ### 기존 캐싱 메커니즘
 
@@ -266,9 +238,9 @@ interface WasmBenchmark {
   cullingFilterAvgMs: number;       // useViewportCulling 필터 소요 시간
 
   // 레이아웃 관련
-  blockLayoutAvgMs: number;         // BlockEngine.calculate() 소요 시간
-  gridLayoutAvgMs: number;          // GridEngine.calculate() 소요 시간
-  marginCollapseAvgMs: number;      // collapseMargins() 호출 빈도 및 시간
+  blockLayoutAvgMs: number;         // DropflowBlockEngine.calculate() 소요 시간
+  gridLayoutAvgMs: number;          // TaffyGridEngine.calculate() 소요 시간
+  marginCollapseAvgMs: number;      // Dropflow margin collapse 구간 호출 빈도 및 시간
 
   // 텍스트 관련
   textMeasureAvgMs: number;         // TextSprite getBounds() 소요 시간
@@ -309,16 +281,16 @@ performance.measure('bounds-lookup', 'bounds-lookup-start', 'bounds-lookup-end')
 
 ### 0.3 Feature Flag 인프라
 
-> **Update (2026-02-02):** 환경변수 기반 Feature Flag가 모두 제거되고 하드코딩됨.
+> **Update (2026-02-18):** 환경변수 기반 Feature Flag가 제거되고 하드코딩 상태로 운영된다.
 > `VITE_WASM_SPATIAL`, `VITE_WASM_LAYOUT`, `VITE_WASM_LAYOUT_WORKER`, `VITE_RENDER_MODE`, `VITE_SKIA_DUAL_SURFACE` 환경변수 삭제.
 
 ```typescript
 // wasm-bindings/featureFlags.ts (하드코딩)
 
 export const WASM_FLAGS = {
-  SPATIAL_INDEX: true,
+  SPATIAL_INDEX: false,
   LAYOUT_ENGINE: true,
-  LAYOUT_WORKER: true,
+  LAYOUT_WORKER: false,
   CANVASKIT_RENDERER: true,
   DUAL_SURFACE_CACHE: true,
 } as const;
@@ -332,9 +304,9 @@ export function getRenderMode(): RenderMode { return 'skia'; }
 - [x] Rust + wasm-pack 프로젝트 초기화 _(rustc 1.93.0, wasm-pack 0.14.0)_
 - [x] Vite WASM 플러그인 설정 _(vite-plugin-wasm 3.5.0)_
 - [x] 빌드 파이프라인 검증 (dev + production) _(pkg/xstudio_wasm_bg.wasm 70KB)_
-- [ ] 벤치마크 유틸리티 작성
-- [ ] 기준선 데이터 수집 (4개 시나리오)
-- [x] Feature Flag 인프라 구축 _(featureFlags.ts, .env)_
+- [ ] ~~벤치마크 유틸리티 작성~~ — **보류**: CanvasKit Phase 5 도입 후 렌더링 파이프라인이 변경되어 기존 벤치마크 시나리오 재설계 필요. 현재 성능 측정은 Chrome DevTools Performance 탭 + console.time 기반으로 수행 중
+- [ ] ~~기준선 데이터 수집 (4개 시나리오)~~ — **보류**: 벤치마크 유틸리티 보류와 동일 사유
+- [x] Feature Flag 인프라 구축 _(featureFlags.ts, 하드코딩 플래그)_
 - [ ] CI/CD에 `wasm:build` 스텝 추가
 
 ---
@@ -786,10 +758,10 @@ function findElementsInLasso(
   if (WASM_FLAGS.SPATIAL_INDEX) {
     // SpatialIndex: O(k) — AABB 교차 검증 포함
     // ※ bounds 소스 기준:
-    //   - SpatialIndex: layoutBoundsRegistry 기준 (Yoga 레이아웃 엔진이 계산한 resolved px 값).
+    //   - SpatialIndex: layoutBoundsRegistry 기준 (Taffy/Dropflow 엔진이 계산한 resolved px 값).
     //   - JS 폴백: calculateBounds(style) — raw style 값 기반 계산.
     //   → **layoutBoundsRegistry가 정답(ground truth)이다.**
-    //     Yoga가 계산한 레이아웃 결과가 실제 렌더링 위치이므로, SpatialIndex의 결과가 정확하다.
+    //     엔진이 계산한 레이아웃 결과가 실제 렌더링 위치이므로, SpatialIndex의 결과가 정확하다.
     //     JS 폴백은 상대값(%, auto 등)을 해석하지 못해 미세한 차이가 발생할 수 있다.
     //     Feature Flag 전환 시 선택 결과가 달라질 수 있으므로, Phase 1 검증에서 확인한다.
     return queryRect(
@@ -851,11 +823,11 @@ export function unregisterElement(id: string): void {
 - [x] `idMapper.ts` 구현 (string ↔ u32 양방향 매핑)
 - [x] `spatialIndex.ts` TypeScript 바인딩
 - [x] `elementRegistry.ts` 수정 (SpatialIndex 동기화 + RAF 타이밍 대책)
-- [x] `useViewportCulling.ts` 수정 (SpatialIndex 쿼리)
-- [x] `SelectionLayer.utils.ts` 수정 (라쏘 선택에 SpatialIndex `query_rect` 적용)
+- [x] `useViewportCulling.ts` 실시간 `getBounds()` 기반 경로로 전환 (SpatialIndex query 경로 제거)
+- [ ] `SelectionLayer.utils.ts` SpatialIndex `query_rect` 재연동 (현재는 O(n) 필터)
 - [ ] 단위 테스트: Rust `wasm-pack test` (삽입, 삭제, 쿼리, query_rect, 엣지 케이스)
 - [ ] 통합 테스트: 1,000개 요소 뷰포트 쿼리 벤치마크
-- [x] ~~Feature Flag (`VITE_WASM_SPATIAL`)로 A/B 비교~~ → 환경변수 제거, 무조건 활성화
+- [x] ~~Feature Flag (`VITE_WASM_SPATIAL`)로 A/B 비교~~ → 환경변수 제거, 하드코딩 플래그(`WASM_FLAGS.SPATIAL_INDEX`)로 전환
 - [x] 페이지별 SpatialIndex 범위 관리 (페이지 전환 시 clearAll + 현재 페이지 batch_upsert)
 - [ ] 배치 인덱스 리빌드 최적화 (suspendIndexRebuild/resumeAndRebuildIndexes 패턴)
 
@@ -871,11 +843,15 @@ export function unregisterElement(id: string): void {
 
 ---
 
-## Phase 2: Layout Engine 배치 가속
+## Phase 2: Layout Engine 배치 가속 (레거시 PoC)
 
-> 목표: BlockEngine, GridEngine의 **전체 레이아웃 루프**를 WASM으로 이전
+> 목표(당시 PoC): BlockEngine, GridEngine의 **전체 레이아웃 루프**를 WASM으로 이전
 > 원칙: 개별 함수(collapseMargins, createsBFC)의 WASM 위임은 하지 않는다.
 >        JS→WASM 경계 넘기는 배치 단위(1회/레이아웃)로만 수행한다.
+>
+> ⚠️ **현행 런타임 주의 (2026-02-18):** Phase 11에서 `BlockEngine.ts`/`GridEngine.ts`는 제거되었다.
+> 현재 레이아웃은 `DropflowBlockEngine` + `TaffyFlexEngine` + `TaffyGridEngine`이 담당하며,
+> 본 섹션은 레거시 실험 기록으로 유지한다.
 
 ### 2.1 문제 정의
 
@@ -1498,13 +1474,15 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 }
 ```
 
-### 2.5 Phase 2 산출물
+### 2.5 Phase 2 산출물 (레거시 기록)
+
+> 현재 코드 기준으로 `layoutAccelerator.ts` API는 남아 있으나, BuilderCanvas의 기본 레이아웃 실행 경로에는 직접 연결되어 있지 않다.
 
 - [x] `block_layout.rs` 구현 (전체 레이아웃 루프, margin collapse 내장)
 - [x] `grid_layout.rs` 구현 (트랙 파싱, 셀 위치 계산)
 - [x] `layoutAccelerator.ts` TypeScript 바인딩 (배치 API만 노출)
-- [x] `BlockEngine.ts` — `calculate()` 진입점에 WASM 배치 위임 추가
-- [x] `GridEngine.ts` — `calculate()` 진입점에 WASM 배치 위임 추가
+- [~] `BlockEngine.ts` — `calculate()` 진입점 통합 기록 (Phase 11 이후 파일 제거)
+- [~] `GridEngine.ts` — `calculate()` 진입점 통합 기록 (Phase 11 이후 파일 제거)
 - [x] 데이터 마샬링 헬퍼 (`serialize/deserialize`) 구현
 - [x] 최소 요소 수 임계값 결정 _(children > 10 기준, BlockEngine.ts:137)_
 - [ ] 단위 테스트: margin collapse, LineBox, BFC 엣지 케이스
@@ -1531,6 +1509,130 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 
 > **주의:** `collapseMargins()` 같은 단일 호출(~0.005ms)의 개별 WASM 위임은
 > 경계 넘기 오버헤드(~0.1μs)가 연산 비용과 비슷하여 이점이 없다.
+
+
+### 2.7 JS 측 레이아웃 파이프라인 개선 (styleToLayout + Factory)
+
+> **배경:** Phase 2의 WASM Layout Engine은 `styleToLayout.ts`가 변환한 Taffy/Dropflow 레이아웃 입력에 의존한다.
+> 아래 개선 사항은 WASM 배치 전 **JS 전처리 단계**의 정확도를 높이며,
+> 복합 컴포넌트 생성 시 **요소 트리 구성**의 정확성을 보장한다.
+
+#### 2.7.1 Factory 재귀 생성 (ChildDefinition 재귀 타입)
+
+3-level 이상의 중첩 컴포넌트(예: TagGroup → TagList → Tag)를 지원하기 위해
+Factory 시스템이 **재귀적 요소 생성**을 지원한다.
+
+**핵심 타입 (`factories/types/index.ts`):**
+```typescript
+/**
+ * 자식 요소 정의 (재귀적 중첩 지원)
+ */
+export type ChildDefinition = Omit<Element, "id" | "created_at" | "updated_at" | "parent_id"> & {
+  children?: ChildDefinition[];   // ← 재귀: 자식이 다시 자식을 가질 수 있음
+};
+```
+
+**재귀 순회 (`factories/utils/elementCreation.ts`):**
+```typescript
+// allElementsSoFar 배열로 customId 중복 방지
+const allElementsSoFar = [...currentElements, parent];
+const allChildren: Element[] = [];
+
+function processChildren(childDefs: ChildDefinition[], parentId: string): void {
+  childDefs.forEach((childDef) => {
+    const { children: nestedChildren, ...elementDef } = childDef;
+    const child: Element = {
+      ...elementDef,
+      id: ElementUtils.generateId(),
+      customId: generateCustomId(elementDef.tag, allElementsSoFar),
+      parent_id: parentId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    allChildren.push(child);
+    allElementsSoFar.push(child);  // ← 중복 customId 방지
+
+    // 중첩 children 재귀 처리
+    if (nestedChildren && nestedChildren.length > 0) {
+      processChildren(nestedChildren, child.id);
+    }
+  });
+}
+```
+
+| 항목 | 설명 |
+|------|------|
+| 재귀 타입 | `ChildDefinition.children?: ChildDefinition[]` — 깊이 제한 없음 |
+| customId 중복 방지 | `allElementsSoFar` 배열에 생성된 요소를 즉시 추가하여 `generateCustomId()`가 중복 회피 |
+| 실행 순서 | DFS(깊이 우선) — 부모 먼저 생성 후 자식 재귀 진입 |
+| Layout 영향 | 재귀 생성된 요소 트리가 `selectEngine()` 기반 레이아웃 계산의 입력이 됨 |
+
+#### 2.7.2 텍스트 태그 높이 자동 계산 (styleToLayout.ts)
+
+`label`, `text`, `heading`, `paragraph` 등 **순수 텍스트 태그**는 별도 `measureFunc` 없이도
+컨테이너 내에서 올바른 높이를 차지하도록 `styleToLayout()`에서 **자동 계산**한다.
+
+**대상 태그 (`styleToLayout.ts:350`):**
+```typescript
+const TEXT_LAYOUT_TAGS = new Set(['label', 'text', 'heading', 'paragraph']);
+```
+
+**size prop → typography 토큰 매핑:**
+
+| size prop | fontSize (px) |
+|-----------|---------------|
+| `xs` | 12 |
+| `sm` | 14 (기본값) |
+| `md` | 16 |
+| `lg` | 18 |
+| `xl` | 20 |
+
+**높이 계산 공식:**
+```
+height = Math.ceil(fontSize × 1.4)
+```
+
+> `1.4`는 CSS `line-height: 1.4`에 해당하며, 엔진이 텍스트 노드의 내재 높이를 직접 측정하지 않는 상황을
+> measureFunc 설정 없이 해결한다. Button sizes 패턴(`size → font-size: var(--text-{size})`)과
+> 동일한 토큰 매핑을 텍스트 태그에 적용한다.
+
+**적용 조건:**
+- `TEXT_LAYOUT_TAGS`에 해당하는 태그
+- `height`가 CSS에서 명시적으로 설정되지 않은 경우(`height === undefined`)
+- 명시적 `style.fontSize`가 있으면 size prop 매핑 대신 해당 값 사용
+
+#### 2.7.3 TagGroup/TagList styleToLayout 기본값
+
+ToggleButtonGroup(§2.7 상단)과 동일한 패턴으로, **TagGroup/TagList** 컴포넌트에
+레이아웃 엔진 기본값을 설정한다.
+
+**TagGroup** (`styleToLayout.ts:332-337`):
+```typescript
+// TagGroup: Label + TagList 수직 배치
+if (isTagGroup) {
+  if (!style.display) layout.display = 'flex';
+  if (!style.flexDirection) layout.flexDirection = 'column';
+}
+```
+
+**TagList** (`styleToLayout.ts:339-345`):
+```typescript
+// TagList: Tags 가로 배치 + 줄바꿈
+if (isTagList) {
+  if (!style.display) layout.display = 'flex';
+  if (!style.flexDirection) layout.flexDirection = 'row';
+  if (!style.flexWrap) layout.flexWrap = 'wrap';
+}
+```
+
+| 컴포넌트 | display | flexDirection | flexWrap | 설명 |
+|----------|---------|---------------|----------|------|
+| TagGroup | `flex` | `column` | — | Label과 TagList를 수직으로 쌓음 |
+| TagList | `flex` | `row` | `wrap` | Tag 아이템을 가로 배치, 넘치면 줄바꿈 |
+| ToggleButtonGroup | `flex` | orientation 기반 | — | 기존 구현 (§2.4 참조) |
+
+> **참고:** 사용자가 CSS에서 `display`, `flexDirection`, `flexWrap`을 명시적으로 설정하면
+> 기본값은 무시된다 (조건부 적용 패턴).
 
 ---
 
@@ -2144,22 +2246,19 @@ export class SkiaRenderer {
 매 프레임 (requestAnimationFrame) — PixiJS Ticker priority 순:
 1. syncPixiVisibility (HIGH=25) — Camera 자식 alpha=0 설정
 2. Application.render() (LOW=-25)
-   └→ prerender → @pixi/layout → Yoga calculateLayout()
+   └→ DirectContainer props(x/y/width/height) 반영
    └→ render → worldTransform 갱신
 3. ★ renderFrame (UTILITY=-50) — buildSkiaTreeHierarchical + SkiaRenderer.render(registryVersion, camera, overlayVersion)
 ```
 
 > **Note (2026-02-02):** renderFrame은 Application.render() **이후**에 실행하여
-> Yoga 레이아웃 완료 후의 최신 worldTransform을 보장. 이전에는 NORMAL(0)에서
+> Taffy/Dropflow 레이아웃 결과가 반영된 최신 worldTransform을 보장. 이전에는 NORMAL(0)에서
 > 실행되어 display 전환 시 stale 좌표로 인한 1-프레임 플리커 발생.
 
-> **Note (2026-02-05):** LayoutContainer의 'layout' 이벤트 핸들러에서 `notifyLayoutChange()` 무조건 호출.
-> `@pixi/layout updateLayout()`에서 `emit('layout')`이 `_onUpdate()`보다 먼저 호출되어,
-> `getBounds()`가 stale worldTransform을 읽음 → `updateElementBounds` epsilon check 통과
-> → `notifyLayoutChange()` 미호출. 이 문제는 부모의 flex 속성(alignItems, justifyContent 등)
-> 변경 시 자식 위치가 시각적으로 갱신되지 않는 버그를 유발함.
-> `hasNewLayout()` true일 때만 이벤트가 발생하므로 무조건 호출이 안전하며,
-> renderFrame(priority -50)은 render 이후 실행되어 worldTransform이 이미 정확함.
+> **Note (2026-02-18):** `DirectContainer` 경로에서 `notifyLayoutChange()`는
+> (1) props 변경 시 `useEffect`, (2) 최초 마운트 후 `requestAnimationFrame` 경로에서 호출된다.
+> `@pixi/layout` 레이아웃 이벤트 의존성이 제거되어 stale layout 이벤트 순서 문제를 피하고,
+> renderFrame(priority -50)은 render 이후 실행되어 최신 worldTransform을 사용한다.
 
 **이중 Surface 프레임 분류 (Phase 6):**
 ```
@@ -2438,8 +2537,8 @@ Step 5: PixiJS 자체 렌더링 비활성화
 >   return result;
 > }
 > ```
-> 이 측정 결과를 Yoga 레이아웃의 `measureFunc`에 연결하여
-> **렌더링과 측정이 동일 엔진(CanvasKit)**을 사용하도록 보장한다.
+> 이 측정 결과를 `CanvasKitTextMeasurer`로 등록(`setTextMeasurer`)하여
+> **레이아웃 텍스트 측정과 렌더링이 동일 엔진(CanvasKit)**을 사용하도록 보장한다.
 
 렌더링 모드는 Skia로 하드코딩되어 있다 (환경변수 제거됨):
 ```typescript
@@ -2462,7 +2561,7 @@ export function getRenderMode(): 'skia' { return 'skia'; }
 | `apps/builder/src/builder/workspace/canvas/skia/effects.ts` | 이펙트 파이프라인 (saveLayer 기반) | ✅ 구현 |
 | `apps/builder/src/builder/workspace/canvas/skia/types.ts` | SkiaRenderable 인터페이스 | ✅ 구현 |
 | `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 | ✅ 구현 |
-| `apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 (Yoga measureFunc 연결) | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 유틸리티 | ✅ 구현 |
 | `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts` | Box/Text/Image/Container 노드 렌더링 + AABB 컬링 | ✅ 구현 |
 | `apps/builder/src/builder/workspace/canvas/skia/eventBridge.ts` | DOM 이벤트 브리징 (CanvasKit 캔버스 → PixiJS 캔버스) | ❌ 삭제됨 (불필요) |
 | BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
@@ -2621,7 +2720,7 @@ Pencil의 핵심 최적화: contentSurface + mainSurface 분리.
 > - **컨텐츠 패스(contentSurface):** 디자인 노드만 렌더링하여 `contentSnapshot` 캐시 생성
 > - **표시 패스(mainSurface):** snapshot blit(카메라 델타는 아핀 변환) 후 Selection/AI/PageTitle 오버레이를 덧그리기
 > - `classifyFrame()`으로 idle/present/camera-only/content/full 분류 후 최소 작업만 수행.
-> renderFrame은 UTILITY priority (-50)로 실행하여 Application.render() (LOW=-25) 이후 Yoga 계산 완료된 worldTransform 보장.
+> renderFrame은 UTILITY priority (-50)로 실행하여 Application.render() (LOW=-25) 이후 최신 worldTransform을 보장.
 >
 > **“핵심 구조” 관점에서는 Pencil과 동일한 방식(컨텐츠 캐시 + present 단계에서 blit + 오버레이 별도 렌더)으로 변경됨**
 > - 컨텐츠 캐시: `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:215` (contentSurface에 렌더 → `contentSnapshot` 생성)
@@ -2969,37 +3068,41 @@ export function exportToImage(
 ```typescript
 // wasm-bindings/init.ts
 
-import { initSpatialWasm } from './spatialIndex';
-import { initLayoutWasm } from './layoutAccelerator';
-import { initCanvasKit } from '../skia/initCanvasKit';
 let wasmReady = false;
 
 export async function initAllWasm(): Promise<void> {
   if (wasmReady) return;
 
   try {
+    const { WASM_FLAGS } = await import('./featureFlags');
     const tasks: Promise<void>[] = [];
 
-    // Phase 1-2: Rust WASM 모듈 (SpatialIndex, Layout Engine)
-    const { initRustWasm } = await import('./rustWasm');
-    tasks.push(initRustWasm().then(async () => {
-      const { initSpatialIndex } = await import('./spatialIndex');
-      initSpatialIndex();
-    }));
+    if (WASM_FLAGS.SPATIAL_INDEX || WASM_FLAGS.LAYOUT_ENGINE) {
+      const { initRustWasm, isRustWasmReady } = await import('./rustWasm');
+      tasks.push(
+        initRustWasm().then(async () => {
+          if (isRustWasmReady() && WASM_FLAGS.SPATIAL_INDEX) {
+            const { initSpatialIndex } = await import('./spatialIndex');
+            initSpatialIndex();
+          }
+        }),
+      );
+    }
 
-    // Phase 5: CanvasKit/Skia WASM (메인 렌더러)
-    const { initCanvasKit } = await import('../skia/initCanvasKit');
-    tasks.push(initCanvasKit().then(() => {}));
+    if (WASM_FLAGS.CANVASKIT_RENDERER) {
+      const { initCanvasKit } = await import('../skia/initCanvasKit');
+      tasks.push(initCanvasKit().then(() => {}));
+    }
 
     await Promise.all(tasks);
     wasmReady = true;
 
-    // Phase 4: Layout Worker
-    try {
-      const { initLayoutWorker } = await import('../wasm-worker');
-      await initLayoutWorker();
-    } catch (err) {
-      console.warn('[WASM] Layout Worker 초기화 실패, 메인 스레드 폴백:', err);
+    if (WASM_FLAGS.LAYOUT_WORKER) {
+      const { isRustWasmReady } = await import('./rustWasm');
+      if (isRustWasmReady()) {
+        const { initLayoutWorker } = await import('../wasm-worker');
+        await initLayoutWorker();
+      }
     }
   } catch (error) {
     console.error('[WASM] 초기화 실패, JS 폴백 사용:', error);
@@ -3007,27 +3110,21 @@ export async function initAllWasm(): Promise<void> {
 }
 ```
 
-> **Note (2026-02-02):** Feature Flag 조건문이 모두 제거됨. 모든 WASM 모듈이 무조건 초기화.
-> `WASM_FLAGS`는 전부 `true` 하드코딩, 환경변수 5개 삭제됨. §0.3 참조.
+> **Note (2026-02-18):** 현재 Feature Flag 조건문은 유지된다.
+> 기본값은 `SPATIAL_INDEX=false`, `LAYOUT_ENGINE=true`, `LAYOUT_WORKER=false`, `CANVASKIT_RENDERER=true`, `DUAL_SURFACE_CACHE=true`다.
 
 **앱 진입점에서 호출:**
 
-> **⚠️ Yoga 초기화 주의:** 현재 `initYoga.ts`는 `@pixi/layout`의 `getYoga()` 확인,
-> `window.__XSTUDIO_YOGA_INSTANCE__` 글로벌 캐시, Promise 중복 방지 등 3단계 가드를 갖추고 있다.
-> `LayoutSystem`이 내부적으로 `loadYoga()`를 호출하므로, 여기서 `initYoga()`를 직접 호출하면
-> **중복 초기화 충돌**이 발생할 수 있다. 기존 `initYoga.ts`의 가드 로직을 활용하여 안전하게 통합한다.
+> **현재 호출 경로:** `SkiaOverlay` 활성화 시 `initAllWasm()`을 호출한다.
+> 별도 `initYoga()` 초기화 경로는 Phase 11에서 제거되었다.
 
 ```typescript
 // BuilderCanvas.tsx 또는 Workspace.tsx
 
 import { initAllWasm } from '../wasm-bindings/init';
-import { initYoga, isYogaInitialized } from '../canvas/layout/initYoga';
 
 useEffect(() => {
-  // initYoga()는 내부적으로 중복 초기화를 방지한다 (3단계 가드).
-  // LayoutSystem이 이미 Yoga를 초기화했으면 즉시 반환.
-  // initAllWasm()은 커스텀 WASM 모듈(SpatialIndex, Layout, CanvasKit)만 초기화.
-  Promise.all([initYoga(), initAllWasm()]);
+  void initAllWasm();
 }, []);
 ```
 
@@ -3109,7 +3206,7 @@ Phase 0: 환경 구축 및 벤치마크 기준선 ✅ (2026-02-02 구현 완료)
   └─ Rust 1.93.0 + wasm-pack 0.14.0 설정
   └─ Vite WASM 플러그인 (vite-plugin-wasm 3.5.0)
   └─ WASM 빌드 완료 (xstudio_wasm_bg.wasm 70KB)
-  └─ Feature Flag 인프라 (featureFlags.ts + .env)
+  └─ Feature Flag 인프라 (featureFlags.ts 하드코딩, 환경변수 분기 제거)
   └─ 벤치마크 유틸리티 (미완)
   └─ 실측 기준선 수집 (미완)
       │
@@ -3117,17 +3214,17 @@ Phase 1: Spatial Index ✅ (2026-02-02 구현 완료)
   └─ spatial_index.rs (i64 키 인코딩, AABB 교차 검증 포함)
   └─ idMapper.ts (string ↔ u32 양방향 매핑, tryGetNumericId 안전 조회)
   └─ elementRegistry.ts — SpatialIndex 동기화 추가
-  └─ useViewportCulling.ts — query_viewport로 대체
-  └─ SelectionLayer.utils.ts — query_rect로 라쏘 선택 O(n) → O(k)
+  └─ useViewportCulling.ts — 실시간 getBounds 기반 경로로 전환 (query_viewport 미사용)
+  └─ SelectionLayer.utils.ts — 현재 O(n) 필터 (query_rect 재연동 대기)
   └─ ~~BoundsCache~~ 제거 (기존 layoutBoundsRegistry로 충분)
       │
-Phase 2: Layout Engine 배치 가속 ✅ (2026-02-02 구현 완료)
+Phase 2: Layout Engine 배치 가속 ✅ (2026-02-02 PoC 완료, 현재 기본 경로 미사용)
   └─ block_layout.rs — 정규화된 블록 배치 (수직 스태킹 + margin collapse + BFC 경계)
   └─ grid_layout.rs — 트랙 파싱(auto 포함) + 셀 위치 계산
   └─ JS 전처리 책임: out-of-flow 분리, inline-block LineBox 그룹화, blockification, BFC 판별
   └─ WASM calculate()는 전처리된 데이터만 수신 (경계 넘기 1회)
-  └─ 데이터 마샬링 헬퍼 (serialize/deserialize, 19 fields/child for block)
-  └─ 최소 요소 수 임계값: children > 10 (BlockEngine.ts:137)
+  └─ 데이터 마샬링 헬퍼 (serialize/deserialize)
+  └─ Phase 11 이후 기본 레이아웃은 TaffyFlex/TaffyGrid/Dropflow 경로로 전환
       │
 Phase 3: 제거됨
   └─ 텍스트 데코레이션, CSS 파싱은 WASM 부적합
@@ -3194,7 +3291,7 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
 | 지표 | 목표 | 검증 시점 |
 |------|------|----------|
 | Viewport Culling | O(n) → O(k) | Phase 1 완료 후 |
-| 라쏘 선택 | O(n) → O(k) (query_rect) | Phase 1 완료 후 |
+| 라쏘 선택 | O(n) (현재) → O(k) (SpatialIndex 재연동 시) | Phase 1 후속 |
 | 레이아웃 재계산 | 실측 기준선 대비 개선 | Phase 2 완료 후 |
 | 메인 스레드 부하 | UI jank 제거 | Phase 4 완료 후 |
 | Phase 1-4 WASM 바이너리 | < 60KB (gzip) | Phase 4 완료 후 |
@@ -3215,31 +3312,20 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
 
 ### Q1: SpatialIndex 결과를 O(k)로 활용하기 위해 id → element 맵을 별도 유지할 계획인가?
 
-`query_viewport`와 `query_rect`는 string ID 배열을 반환한다.
-별도 맵은 불필요하며, Zustand store의 기존 `elementsMap` (O(1) 인덱스)을 `useStore.getState().elementsMap`으로 조회한다.
+현재 기본 경로에서 `useViewportCulling`은 SpatialIndex 쿼리를 사용하지 않는다.
+`getElementContainer(id)?.getBounds()` 기반의 실시간 스크린 좌표 AABB 판별을 사용하며,
+부모 가시성 캐시를 함께 적용해 overflow-visible 케이스를 보호한다.
 
-**useViewportCulling에서의 O(k) 수집 경로:**
-```typescript
-const visibleIds = queryVisibleElements(...);                  // O(k) — SpatialIndex 반환
-const elementsMap = useStore.getState().elementsMap;            // 구독이 아닌 getState() 직접 조회
-const visibleElements = visibleIds
-  .map(id => elementsMap.get(id))                              // O(1) × k = O(k)
-  .filter((el): el is Element => el !== undefined);
-```
-`getState()` 경로를 사용하는 이유: `useViewportCulling`은 `useMemo` 내부에서 실행되므로
-`elementsMap`을 React 구독 대상으로 추가하면 불필요한 리렌더가 발생한다.
-`getState()`는 스냅샷 조회만 수행하여 리렌더 의존성을 추가하지 않는다.
-
-라쏘 선택의 경우 `queryRect`가 직접 ID 배열을 반환하므로 element 순회 자체가 불필요하다.
+SpatialIndex(`query_viewport`, `query_rect`)는 바인딩/API는 준비되어 있으나,
+뷰포트 컬링/라쏘 선택의 기본 경로에는 아직 재연동되지 않았다.
 
 ### Q2: Grid 템플릿 파싱 지원 범위
 
-현재 Phase 2 범위:
-- **지원:** `fr`, `px`, `%`, 숫자 리터럴, `auto`
-- **미지원:** `minmax()`, `repeat()`, `fit-content()`, `min-content`, `max-content`
+현재 런타임(`TaffyGridEngine`) 범위:
+- **지원:** `fr`, `px`, `%`, `auto`, `repeat()`, `minmax()`, `auto-fill/auto-fit`, auto-placement
+- **미지원:** `subgrid`, named grid lines
 
-`minmax()`/`repeat()`은 xstudio의 GridEngine.ts에서도 미지원이므로 WASM 포팅 범위에서 제외한다.
-향후 GridEngine.ts에 해당 기능이 추가되면 `grid_layout.rs`도 함께 확장한다.
+따라서 Grid 기능 기준선은 `grid_layout.rs` PoC가 아니라 `TaffyGridEngine` + `taffyLayout.ts` 구현을 기준으로 본다.
 
 ### Q3: Worker 결과 전달 방식
 
@@ -3261,10 +3347,9 @@ self.postMessage({ layouts: result }, { transfer: [result.buffer] }); // 복사�
 
 ### Q5: useViewportCulling에서 elementsMap 접근 경로
 
-`useStore.getState().elementsMap`으로 직접 조회한다 (구독이 아닌 스냅샷).
-`useMemo` 내부에서 실행되므로 `useStore(state => state.elementsMap)` 구독을 사용하면
-elementsMap 변경 시 불필요한 리렌더가 발생한다. `getState()`는 리렌더 의존성을 추가하지 않으므로
-기존 `useMemo` 의존성(zoom, panOffset)만으로 재계산 타이밍을 제어할 수 있다.
+현재 `useViewportCulling`은 `elementsMap` 매핑 경로를 사용하지 않는다.
+요소별 `getBounds()`를 직접 읽어 가시성을 판정하며, SpatialIndex 재연동 시에만
+ID→Element 매핑(`elementsMap`) 경로가 다시 필요해진다.
 
 ---
 
@@ -3276,7 +3361,7 @@ elementsMap 변경 시 불필요한 리렌더가 발생한다. `getState()`는 �
 | 기능 | 중요도 | 현재 상태 | 필요한 조치 |
 |------|--------|----------|------------|
 | 컴포넌트/인스턴스 시스템 | 높음 | 미구현 | 별도 ADR 필요 — 마스터 컴포넌트 ↔ 인스턴스 동기화 |
-| Constraint 시스템 | 중간 | Yoga Flexbox만 | Layout 확장 검토 — absolute+constraint 혼합 |
+| Constraint 시스템 | 중간 | Taffy Flex/Grid + Dropflow Block (Constraint 자체는 미구현) | Layout 확장 검토 — absolute+constraint 혼합 |
 | Auto Layout 고급 기능 | 중간 | 기본 Flexbox | min/max, wrap 등 고급 레이아웃 |
 | 실시간 협업 (CRDT) | 후순위 | 미구현 | 별도 아키텍처 설계 — Yjs/Automerge 등 |
 | 프로토타이핑/인터랙션 | 후순위 | 미구현 | 별도 런타임 엔진 필요 |
@@ -3320,3 +3405,43 @@ elementsMap 변경 시 불필요한 리렌더가 발생한다. `getState()`는 �
 
 > **주의:** 블로그 URL은 시간에 따라 변경될 수 있다. 제목으로 검색하면 최신 URL을 확인할 수 있다.
 > Figma의 내부 구현 상세 일부는 비공개이며, 공개 발표/블로그에서 추론한 내용을 포함한다.
+
+---
+
+## 부록 A: 아키텍처 정정 이력
+
+> 이 섹션은 초기 분석의 오류 수정 이력을 기록합니다. 현재 아키텍처는 문서 상단 메타데이터의 "현재 스택" 참조.
+
+### 정정 (2026-01-30, 2026-02-18 업데이트)
+
+초기 분석에서 "PixiJS가 메인 렌더러, pencil.wasm이 보조 최적화"로 기술하여,
+본 문서가 **PixiJS를 메인 렌더러로 유지하면서 보조 WASM 모듈만 추가하는 계획**으로 수립되었다.
+
+그러나 `renderSkia()` 메서드 역공학 결과, 실제 Pencil 아키텍처는:
+
+| 계층 | 역할 | 기술 |
+|------|------|------|
+| **메인 렌더러** | 모든 디자인 노드의 벡터/텍스트/이미지/이펙트 렌더링 | **CanvasKit/Skia WASM** (7.8MB) |
+| 씬 그래프/이벤트 | 씬 트리 관리 + EventBoundary (Hit Testing) 전용 | PixiJS v8 |
+| 레이아웃 | Flexbox 계산 | Yoga WASM |
+
+```
+Pencil 실제 구조:                    현재 xstudio (Phase 11):
+┌──────────────────────┐             ┌──────────────────────┐
+│ CanvasKit/Skia WASM  │ ← 메인      │ CanvasKit/Skia WASM  │ ← 메인 (렌더링)
+│ (renderSkia 파이프라인)│             │ (renderSkia 파이프라인)│
+├──────────────────────┤             ├──────────────────────┤
+│ PixiJS v8            │ ← 보조      │ PixiJS v8            │ ← 보조 (씬 그래프 + 이벤트)
+│ (씬 그래프 + 이벤트)   │             │                      │
+├──────────────────────┤             ├──────────────────────┤
+│ Yoga WASM            │ ← 레이아웃  │ Dropflow + Taffy WASM│ ← 레이아웃
+└──────────────────────┘             └──────────────────────┘
+```
+
+**현재 상태:** Pencil §11 아키텍처를 xstudio에 적용하여, **CanvasKit/Skia WASM 메인 렌더러 전환이 완료**되었고 PixiJS는 씬 그래프/이벤트 레이어로 축소되었다.
+
+- **Phase 0–4** (기존): PixiJS 중심 아키텍처 시점의 점진적 WASM 최적화 (Spatial Index, Layout 가속, Worker). CanvasKit 전환 전에도 독립적으로 유효하다.
+- **Phase 5** (신규): CanvasKit/Skia WASM 메인 렌더러 도입 — Pencil의 renderSkia 패턴 적용
+- **Phase 6** (신규): 고급 렌더링 기능 — 이중 Surface 캐싱(컨텐츠 캐시 + 오버레이 분리), padding 기반 camera-only blit, cleanup render
+- **현재 런타임 기준 보정:** 레이아웃 실행 경로는 `selectEngine()` → `TaffyFlexEngine`/`TaffyGridEngine`/`DropflowBlockEngine`이며,
+  `layoutAccelerator.ts` + `wasm-worker` 기반 Block/Grid 배치 가속은 레거시 PoC 경로(기본 비활성/미연결)로 분류한다.

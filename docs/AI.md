@@ -191,8 +191,8 @@ executeIntent() — 단일 요소 생성/수정/삭제
 
 | 환경 | 사용 가능 모델 | 기본 모델 |
 |------|--------------|----------|
-| Electron (데스크톱) | Sonnet 4.5, Haiku 4.5, Opus 4.5 | Opus 4.5 |
-| Cursor (IDE 통합) | Sonnet 4.5, Haiku 4.5, Composer | Composer |
+| Electron (데스크톱) | Sonnet, Haiku, Opus | Opus |
+| Cursor (IDE 통합) | Sonnet, Haiku, Composer | Composer |
 
 ---
 
@@ -1164,10 +1164,10 @@ Phase A4: 고급 기능 ✅ (2026-02-06 완료)
   └── Rate limit 대응 (429 지수 백오프, 3회 재시도)
 
 Phase A5: 캔버스 통합 (Phase 5-6 이후)
-  └── ✅ AI 생성 시각 피드백 (CanvasKit renderGeneratingEffects — G.3 완료)
-  └── styleAdapter.ts → CanvasKit 스키마 변환 업데이트 (미착수)
-  └── 스크린샷 기반 컨텍스트 (멀티모달 LLM 전환 시, 미착수)
-  └── get_style_guide, get_variables, set_variables 도구 (미착수)
+  └── ✅ AI 생성 시각 피드백 (CanvasKit renderGeneratingEffects — G.3 완료, 2026-02-02)
+  └── ⏸ styleAdapter.ts → CanvasKit 스키마 변환 업데이트 (차단됨: ENGINE_CHECKLIST RC-3 단위 정규화 선행 필요)
+  └── ⏸ 스크린샷 기반 컨텍스트 (차단됨: 멀티모달 LLM 전환 — Groq Vision API 미지원 대기)
+  └── 📋 get_style_guide, get_variables, set_variables 도구 (보류: 컴포넌트 인스턴스 시스템 Phase 5+ 선행 필요)
 
 ═══════════════════════════════════════════════════════════════
   렌더링 전환 (AI와 독립) — docs/WASM.md 참조
@@ -1210,7 +1210,24 @@ Phase 0: 벤치마크 → Phase 5: CanvasKit → Phase 6: 고급 렌더링
 
 ---
 
-## 10. 참고 자료
+## 10. AI 도구 API 레퍼런스
+
+> 도구 정의: `services/ai/tools/definitions.ts`
+> 도구 레지스트리: `services/ai/tools/index.ts`
+
+| 도구 | 파일 | 주요 파라미터 | Phase |
+|------|------|--------------|-------|
+| `create_element` | `tools/createElement.ts` | tag, parentId, props, styles | A2 |
+| `update_element` | `tools/updateElement.ts` | elementId, props?, styles? | A2 |
+| `delete_element` | `tools/deleteElement.ts` | elementId (body 보호) | A2 |
+| `get_editor_state` | `tools/getEditorState.ts` | — (트리 구조 + childrenMap) | A2 |
+| `get_selection` | `tools/getSelection.ts` | — (elementsMap 기반) | A2 |
+| `search_elements` | `tools/searchElements.ts` | tag?, propName?, propValue?, styleProp? | A4 |
+| `batch_design` | `tools/batchDesign.ts` | operations[] (최대 20개, 실패 시 중단) | A4 |
+
+---
+
+## 11. 참고 자료
 
 - Pencil AI 분석: `docs/PENCIL_APP_ANALYSIS.md` §20, §24.11
 - 렌더링 전환 계획: `docs/WASM.md` Phase 5-6

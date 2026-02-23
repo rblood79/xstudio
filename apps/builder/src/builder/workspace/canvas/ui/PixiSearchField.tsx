@@ -1,252 +1,105 @@
 /**
  * Pixi SearchField
  *
- * 🚀 Phase 3: SearchField WebGL 컴포넌트 (Pattern A)
+ * 투명 히트 영역(pixiGraphics) 기반 SearchField
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * 검색 입력 필드 with clear 버튼
- * - variant (default, primary, secondary, tertiary, error, filled) 지원
- * - size (sm, md, lg) 지원
- * - clear 버튼 (값이 있을 때만 표시)
- *
- * @since 2025-12-16 Phase 3 WebGL Migration
+ * @updated 2026-02-20 A등급 패턴 재작성 (시각 드로잉 제거, Skia 렌더링 전환)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useState } from "react";
-import { Graphics as PixiGraphics, TextStyle } from "pixi.js";
+import { memo, useCallback, useContext } from "react";
+import { Graphics as PixiGraphicsClass } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
-import type { CSSStyle } from "../sprites/styleConverter";
-
-// 🚀 Spec Migration
-import { resolveTokenColor } from '../hooks/useSpecRenderer';
-import {
-  SearchFieldSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
-import type { TokenRef } from '@xstudio/specs';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // ============================================
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface PixiSearchFieldProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
-}
-
-interface SearchFieldElementProps {
-  variant?: "default" | "primary" | "secondary" | "tertiary" | "error" | "filled";
-  size?: "sm" | "md" | "lg";
-  value?: string;
-  label?: string;
-  placeholder?: string;
-  isDisabled?: boolean;
-  style?: CSSStyle;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
+  onChange?: (elementId: string, value: unknown) => void;
 }
 
 // ============================================
 // Component
 // ============================================
 
+/**
+ * PixiSearchField
+ *
+ * 투명 히트 영역 기반 SearchField (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ * - onChange: Skia/Preview에서 처리, Pixi에서는 클릭만 전달
+ */
 export const PixiSearchField = memo(function PixiSearchField({
   element,
+  //isSelected,
   onClick,
 }: PixiSearchFieldProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props as SearchFieldElementProps | undefined;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // variant, size
-  const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
-  const size = useMemo(() => String(props?.size || "md"), [props?.size]);
-  const label = useMemo(() => String(props?.label || ""), [props?.label]);
-  const value = useMemo(() => String(props?.value || ""), [props?.value]);
-  const placeholder = useMemo(() => String(props?.placeholder || "Search..."), [props?.placeholder]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
+
   const isDisabled = Boolean(props?.isDisabled);
-  const hasValue = value.length > 0;
 
-  // 🚀 CSS / Spec에서 프리셋 읽기
-  const sizePreset = useMemo(() => {
-    const sizeSpec = SearchFieldSpec.sizes[size] || SearchFieldSpec.sizes[SearchFieldSpec.defaultSize];
-    const specPreset = getSpecSizePreset(sizeSpec, 'light');
-    return {
-      ...specPreset,
-      paddingY: specPreset.paddingY,
-      paddingX: specPreset.paddingX,
-      inputWidth: 240,
-      labelFontSize: specPreset.fontSize - 2,
-      clearButtonSize: specPreset.height * 0.5,
-    };
-  }, [size]);
-
-  const colorPreset = useMemo(() => {
-    const variantSpec = SearchFieldSpec.variants[variant] || SearchFieldSpec.variants[SearchFieldSpec.defaultVariant];
-    const vc = getSpecVariantColors(variantSpec, 'light');
-    return {
-      backgroundColor: vc.bg,
-      textColor: vc.text,
-      borderColor: vc.border ?? 0x79747e,
-      placeholderColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
-      labelColor: vc.text,
-      clearButtonBgColor: resolveTokenColor('{color.surface-container}' as TokenRef, 'light'),
-      clearButtonHoverBgColor: resolveTokenColor('{color.surface-container-high}' as TokenRef, 'light'),
-    };
-  }, [variant]);
-
-  // hover 상태 관리
-  const [isClearHovered, setIsClearHovered] = useState(false);
-
-  // 전체 너비/높이 계산
-  const inputHeight = sizePreset.paddingY * 2 + sizePreset.fontSize;
-
-  // Input 영역 그리기
-  const drawInput = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-      g.roundRect(0, 0, sizePreset.inputWidth, inputHeight, sizePreset.borderRadius);
-      g.fill({ color: colorPreset.backgroundColor });
-      g.setStrokeStyle({ width: 1, color: colorPreset.borderColor });
-      g.stroke();
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [colorPreset, sizePreset, inputHeight]
+    [hitWidth, hitHeight]
   );
 
-  // Clear 버튼 그리기
-  const drawClearButton = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-      if (!hasValue) return;
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      const btnSize = sizePreset.clearButtonSize;
-      const bgColor = isClearHovered
-        ? colorPreset.clearButtonHoverBgColor
-        : colorPreset.clearButtonBgColor;
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      // 원형 배경
-      g.circle(btnSize / 2, btnSize / 2, btnSize / 2);
-      g.fill({ color: bgColor });
+      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-      // X 표시
-      const crossPadding = btnSize * 0.3;
-      g.setStrokeStyle({ width: 2, color: colorPreset.textColor });
-      g.moveTo(crossPadding, crossPadding);
-      g.lineTo(btnSize - crossPadding, btnSize - crossPadding);
-      g.moveTo(btnSize - crossPadding, crossPadding);
-      g.lineTo(crossPadding, btnSize - crossPadding);
-      g.stroke();
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [hasValue, isClearHovered, colorPreset, sizePreset.clearButtonSize]
+    [element.id, onClick, isDisabled]
   );
-
-  // 텍스트 스타일
-  const labelTextStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: "Pretendard, sans-serif",
-        fontSize: sizePreset.labelFontSize,
-        fill: colorPreset.labelColor,
-        fontWeight: "500",
-      }),
-    [sizePreset.labelFontSize, colorPreset.labelColor]
-  );
-
-  const valueTextStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: "Pretendard, sans-serif",
-        fontSize: sizePreset.fontSize,
-        fill: isDisabled ? 0x9ca3af : hasValue ? colorPreset.textColor : colorPreset.placeholderColor,
-        fontWeight: "400",
-      }),
-    [sizePreset.fontSize, isDisabled, hasValue, colorPreset.textColor, colorPreset.placeholderColor]
-  );
-
-  // 클릭 핸들러
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
-  }, [onClick, element.id]);
-
-  // 🚀 Phase 12: 루트 레이아웃
-  const rootLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    gap: 4,
-  }), []);
-
-  // 🚀 Phase 12: Input 레이아웃
-  const inputLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    width: sizePreset.inputWidth,
-    height: inputHeight,
-    paddingLeft: sizePreset.paddingX,
-    paddingRight: sizePreset.paddingX,
-    gap: 4,
-    position: 'relative' as const,
-  }), [sizePreset.inputWidth, inputHeight, sizePreset.paddingX]);
-
-  // 🚀 Phase 12: 검색 아이콘 스타일
-  const iconTextStyle = useMemo(() => new TextStyle({
-    fontFamily: "Pretendard, sans-serif",
-    fontSize: sizePreset.fontSize - 2,
-    fill: colorPreset.placeholderColor,
-  }), [sizePreset.fontSize, colorPreset.placeholderColor]);
-
-  // 🚀 Phase 12: Clear 버튼 레이아웃
-  const clearButtonLayout = useMemo(() => ({
-    position: 'absolute' as const,
-    right: sizePreset.paddingX,
-    top: (inputHeight - sizePreset.clearButtonSize) / 2,
-  }), [sizePreset.paddingX, inputHeight, sizePreset.clearButtonSize]);
 
   return (
-    <pixiContainer layout={rootLayout}>
-      {/* 라벨 */}
-      {label && (
-        <pixiText text={label} style={labelTextStyle} layout={{ isLeaf: true }} />
-      )}
-
-      {/* SearchField 그룹 */}
-      <pixiContainer layout={inputLayout}>
-        {/* Input 배경 - position: absolute */}
-        <pixiGraphics
-          draw={drawInput}
-          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-          eventMode="static"
-          cursor="text"
-          onPointerDown={handleClick}
-        />
-
-        {/* 검색 아이콘 */}
-        <pixiText
-          text="🔍"
-          style={iconTextStyle}
-          layout={{ isLeaf: true }}
-        />
-
-        {/* 값 또는 placeholder */}
-        <pixiText
-          text={hasValue ? value : placeholder}
-          style={valueTextStyle}
-          layout={{ isLeaf: true, flexGrow: 1 }}
-        />
-
-        {/* Clear 버튼 */}
-        {hasValue && (
-          <pixiGraphics
-            draw={drawClearButton}
-            layout={clearButtonLayout}
-            eventMode="static"
-            cursor="pointer"
-            onPointerEnter={() => setIsClearHovered(true)}
-            onPointerLeave={() => setIsClearHovered(false)}
-            onPointerDown={handleClick}
-          />
-        )}
-      </pixiContainer>
+    <pixiContainer>
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
 });

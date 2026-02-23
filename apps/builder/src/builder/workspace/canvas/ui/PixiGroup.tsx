@@ -1,182 +1,125 @@
 /**
- * PixiGroup - WebGL Group Container Component
+ * Pixi Group
  *
- * Phase 8: Notification & Color Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Generic grouping container
+ * 투명 히트 영역(pixiGraphics) 기반 Group 컨테이너
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
+ * - 컨테이너 컴포넌트: eventMode="passive"
  *
- * CSS 동기화:
- * - getGroupSizePreset(): padding, gap, borderRadius, labelFontSize
- * - getGroupColorPreset(): borderColor, labelTextColor
+ * @since Phase 8
+ * @updated 2026-02-20 A등급 패턴 재작성 (Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
-
-// 🚀 Spec Migration
+import { memo, useCallback, useContext, useRef } from 'react';
 import {
-  GroupSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiGroupProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiGroup - Generic grouping container with dashed border
+ * PixiGroup
+ *
+ * 투명 히트 영역 기반 Group 컨테이너 (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ * - eventMode: "passive" — 컨테이너이므로 자식 이벤트 통과
  */
-export function PixiGroup({
+export const PixiGroup = memo(function PixiGroup({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
+  //onChange,
 }: PixiGroupProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const label = (props.label as string) || (props['data-group-label'] as string) || '';
-  const isDisabled = (props.isDisabled as boolean) || false;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // Get presets from CSS (Spec Migration)
-  const sizePreset = useMemo(() => {
-    const sizeSpec = GroupSpec.sizes[size] || GroupSpec.sizes[GroupSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 variant에 따른 테마 색상 (Spec Migration)
-  const variantColors = useMemo(() => {
-    const variantSpec = GroupSpec.variants[variant] || GroupSpec.variants[GroupSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  // State (클릭 무시 판단용)
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    borderColor: 0xd1d5db,
-    focusBorderColor: variantColors.bg,
-    labelTextColor: variantColors.text,
-    labelBackgroundColor: 0xffffff,
-    disabledOpacity: 0.5,
-  }), [variantColors]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // Calculate dimensions
-  const groupWidth = (props.width as number) || 200;
-  const groupHeight = (props.height as number) || 120;
-
-  // Draw group container with dashed border
-  const drawContainer = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      // Dashed border
-      const dashLength = 6;
-      const gapLength = 4;
-
-      // Top edge
-      let x = 0;
-      while (x < groupWidth) {
-        const endX = Math.min(x + dashLength, groupWidth);
-        g.moveTo(x, 0);
-        g.lineTo(endX, 0);
-        x += dashLength + gapLength;
-      }
-
-      // Right edge
-      let y = 0;
-      while (y < groupHeight) {
-        const endY = Math.min(y + dashLength, groupHeight);
-        g.moveTo(groupWidth, y);
-        g.lineTo(groupWidth, endY);
-        y += dashLength + gapLength;
-      }
-
-      // Bottom edge
-      x = groupWidth;
-      while (x > 0) {
-        const endX = Math.max(x - dashLength, 0);
-        g.moveTo(x, groupHeight);
-        g.lineTo(endX, groupHeight);
-        x -= dashLength + gapLength;
-      }
-
-      // Left edge
-      y = groupHeight;
-      while (y > 0) {
-        const endY = Math.max(y - dashLength, 0);
-        g.moveTo(0, y);
-        g.lineTo(0, endY);
-        y -= dashLength + gapLength;
-      }
-
-      const borderColor = isSelected ? colorPreset.focusBorderColor : colorPreset.borderColor;
-      g.stroke({ color: borderColor, width: 1, alpha: isDisabled ? colorPreset.disabledOpacity : 1 });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, groupWidth + 4, groupHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [groupWidth, groupHeight, sizePreset, colorPreset, isSelected, isDisabled]
+    [hitWidth, hitHeight]
   );
 
-  // Draw label badge
-  const drawLabelBadge = useCallback(
-    (g: PixiGraphics, labelWidth: number) => {
-      g.clear();
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-      // Badge background
-      const badgeWidth = labelWidth + sizePreset.labelPadding * 2;
-      const badgeHeight = sizePreset.labelFontSize + sizePreset.labelPadding;
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-      g.roundRect(0, 0, badgeWidth, badgeHeight, 4);
-      g.fill({ color: colorPreset.labelBackgroundColor });
-      g.stroke({ color: colorPreset.borderColor, width: 0.5 });
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
     },
-    [sizePreset, colorPreset]
+    [element.id, onClick, isDisabled]
   );
-
-  // Label style
-  const labelStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: sizePreset.labelFontSize,
-      fill: colorPreset.labelTextColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-    }),
-    [sizePreset, colorPreset]
-  );
-
-  // Estimate label width
-  const estimatedLabelWidth = label.length * sizePreset.labelFontSize * 0.6;
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="pointer"
-      onPointerTap={() => onClick?.(element.id)}
-      alpha={isDisabled ? colorPreset.disabledOpacity : 1}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Group container */}
-      <pixiGraphics draw={drawContainer} />
-
-      {/* Label badge */}
-      {label && (
-        <pixiContainer x={0} y={-sizePreset.labelFontSize - sizePreset.labelPadding - 4}>
-          <pixiGraphics draw={(g) => drawLabelBadge(g, estimatedLabelWidth)} />
-          <pixiText
-            text={label}
-            style={labelStyle}
-            x={sizePreset.labelPadding}
-            y={sizePreset.labelPadding / 2}
-          />
-        </pixiContainer>
-      )}
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 / passive: 컨테이너 자식 이벤트 통과 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="passive"
+        cursor="default"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiGroup;

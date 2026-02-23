@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * DisclosureGroup Props
@@ -86,7 +87,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
   },
 
   render: {
-    shapes: (_props, variant, size, _state = 'default') => {
+    shapes: (_props, variant, size, state = 'default') => {
       const borderRadius = size.borderRadius;
 
       const shapes: Shape[] = [
@@ -99,7 +100,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
           width: 'auto',
           height: 'auto',
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: resolveStateColors(variant, state).background,
         },
         // 테두리
         {

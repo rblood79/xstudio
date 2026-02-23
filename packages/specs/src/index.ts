@@ -29,6 +29,7 @@ export type {
   GradientShape,
   ImageShape,
   LineShape,
+  IconFontShape,
   ColorValue,
   // Token Types
   TokenRef,
@@ -50,6 +51,13 @@ export type {
 } from './types';
 
 export { isValidTokenRef } from './types';
+
+// ─── Icons ──────────────────────────────────────────────────────────────────
+export { LUCIDE_ICONS, getIconData } from './icons/lucideIcons';
+export type { LucideIconData } from './icons/lucideIcons';
+
+// ─── Utils ──────────────────────────────────────────────────────────────────
+export { resolveStateColors } from './utils/stateEffect';
 
 // ─── Primitives ──────────────────────────────────────────────────────────────
 export {
@@ -159,6 +167,9 @@ export type { CheckboxGroupProps } from './components/CheckboxGroup.spec';
 
 export { RadioSpec, RADIO_SELECTED_COLORS, RADIO_DIMENSIONS } from './components/Radio.spec';
 export type { RadioProps } from './components/Radio.spec';
+
+export { RadioGroupSpec } from './components/RadioGroup.spec';
+export type { RadioGroupProps } from './components/RadioGroup.spec';
 
 export { SwitchSpec, SWITCH_SELECTED_TRACK_COLORS, SWITCH_DIMENSIONS } from './components/Switch.spec';
 export type { SwitchProps } from './components/Switch.spec';
@@ -287,9 +298,6 @@ export type { ListProps } from './components/List.spec';
 
 export { InputSpec } from './components/Input.spec';
 export type { InputProps } from './components/Input.spec';
-
-export { FancyButtonSpec } from './components/FancyButton.spec';
-export type { FancyButtonProps } from './components/FancyButton.spec';
 
 export { SwitcherSpec } from './components/Switcher.spec';
 export type { SwitcherProps } from './components/Switcher.spec';

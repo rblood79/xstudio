@@ -167,7 +167,9 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
 
   render: {
     shapes: (props, variant, size, state = 'default') => {
-      const width = (props.style?.width as number) || 'auto';
+      // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
+      // props.style.width를 직접 사용하면 bgBox 추출이 실패하고 렌더링이 깨짐
+      const width = 'auto' as const;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;

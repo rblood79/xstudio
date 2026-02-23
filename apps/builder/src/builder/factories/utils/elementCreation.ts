@@ -1,13 +1,14 @@
 import { Element } from "../../../types/core/store.types";
 import { ElementUtils } from "../../../utils/element/elementUtils";
 import { useStore } from "../../stores";
-import { ComponentDefinition } from "../types";
+import { ComponentDefinition, ChildDefinition } from "../types";
 import { generateCustomId } from "../../utils/idGeneration";
 import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "../../stores/utils/elementSanitizer";
 
 /**
  * 컴포넌트 정의로부터 실제 Element 데이터 생성
+ * 재귀적 중첩 children 지원 (TagGroup → TagList → Tag 등 3레벨 이상)
  */
 export function createElementsFromDefinition(
   definition: ComponentDefinition
@@ -25,24 +26,34 @@ export function createElementsFromDefinition(
     updated_at: new Date().toISOString(),
   };
 
-  // 자식 요소들 생성
-  const allElementsSoFar = [...currentElements, parent]; // 부모를 포함한 임시 배열
-  const children: Element[] = definition.children.map((childDef, index) => {
-    const child: Element = {
-      ...childDef,
-      id: ElementUtils.generateId(),
-      customId: generateCustomId(childDef.tag, allElementsSoFar),
-      parent_id: parent.id,
-      order_num: index + 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    // 다음 자식 생성 시 이미 생성된 자식도 고려
-    allElementsSoFar.push(child);
-    return child;
-  });
+  // 자식 요소들 재귀 생성 (중첩 children 지원)
+  const allElementsSoFar = [...currentElements, parent];
+  const allChildren: Element[] = [];
 
-  return { parent, children };
+  function processChildren(childDefs: ChildDefinition[], parentId: string): void {
+    childDefs.forEach((childDef) => {
+      const { children: nestedChildren, ...elementDef } = childDef;
+      const child: Element = {
+        ...elementDef,
+        id: ElementUtils.generateId(),
+        customId: generateCustomId(elementDef.tag, allElementsSoFar),
+        parent_id: parentId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      allChildren.push(child);
+      allElementsSoFar.push(child);
+
+      // 중첩 children 재귀 처리
+      if (nestedChildren && nestedChildren.length > 0) {
+        processChildren(nestedChildren, child.id);
+      }
+    });
+  }
+
+  processChildren(definition.children, parent.id);
+
+  return { parent, children: allChildren };
 }
 
 /**

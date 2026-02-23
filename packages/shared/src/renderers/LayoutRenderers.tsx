@@ -184,8 +184,11 @@ export const renderCard = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
+      heading={typeof element.props.heading === 'string' ? element.props.heading : undefined}
+      subheading={typeof element.props.subheading === 'string' ? element.props.subheading : undefined}
       title={typeof element.props.title === 'string' ? element.props.title : undefined}
       description={String(element.props.description || "")}
+      footer={typeof element.props.footer === 'string' ? element.props.footer : undefined}
       variant={
         (element.props.variant as "default" | "elevated" | "outlined") ||
         "default"

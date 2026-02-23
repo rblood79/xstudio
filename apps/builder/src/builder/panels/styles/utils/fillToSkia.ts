@@ -143,6 +143,125 @@ function angularGradientFillItemToSkia(
   };
 }
 
+// ============================================
+// CSS background-* 파싱 헬퍼
+// ============================================
+
+/**
+ * CSS background-repeat 값을 CanvasKit TileMode로 변환
+ *
+ * repeat       → Repeat / Repeat
+ * no-repeat    → Decal / Decal
+ * repeat-x     → Repeat / Decal
+ * repeat-y     → Decal / Repeat
+ * space/round  → Repeat (근사치)
+ */
+function parseBgRepeat(
+  repeat: string | undefined,
+  ck: ReturnType<typeof getCanvasKit>,
+): { x: unknown; y: unknown } {
+  switch ((repeat ?? 'repeat').trim()) {
+    case 'no-repeat':
+      return { x: ck.TileMode.Decal, y: ck.TileMode.Decal };
+    case 'repeat-x':
+      return { x: ck.TileMode.Repeat, y: ck.TileMode.Decal };
+    case 'repeat-y':
+      return { x: ck.TileMode.Decal, y: ck.TileMode.Repeat };
+    case 'repeat':
+    case 'space':
+    case 'round':
+    default:
+      return { x: ck.TileMode.Repeat, y: ck.TileMode.Repeat };
+  }
+}
+
+/**
+ * CSS background-size 값을 [targetWidth, targetHeight]로 변환
+ *
+ * cover   → 짧은 축 기준 스케일 (잘림 허용)
+ * contain → 긴 축 기준 스케일 (전체 표시)
+ * auto    → 이미지 원본 크기
+ * px/% 값 → 지정 크기
+ */
+function parseBgSize(
+  size: string | undefined,
+  containerW: number,
+  containerH: number,
+  imgW: number,
+  imgH: number,
+): [number, number] {
+  const s = (size ?? 'auto').trim();
+
+  if (s === 'cover') {
+    const scale = Math.max(containerW / imgW, containerH / imgH);
+    return [imgW * scale, imgH * scale];
+  }
+  if (s === 'contain') {
+    const scale = Math.min(containerW / imgW, containerH / imgH);
+    return [imgW * scale, imgH * scale];
+  }
+  if (s === 'auto') {
+    return [imgW, imgH];
+  }
+
+  // "100%" / "100px" / "100px 50%" 형식 파싱
+  const parts = s.split(/\s+/);
+  const resolveOne = (v: string, containerSize: number, naturalSize: number): number => {
+    if (v === 'auto') return naturalSize;
+    if (v.endsWith('%')) return (parseFloat(v) / 100) * containerSize;
+    return parseFloat(v) || naturalSize;
+  };
+
+  const tw = resolveOne(parts[0], containerW, imgW);
+  const th = parts[1] ? resolveOne(parts[1], containerH, imgH) : (imgH * (tw / imgW));
+  return [tw, th];
+}
+
+/**
+ * CSS background-position 값을 [offsetX, offsetY]로 변환
+ *
+ * 키워드: center / top / right / bottom / left
+ * 단위: px / %
+ *
+ * offsetX/Y는 targetWidth/Height 기준의 이미지 좌상단 좌표
+ */
+function parseBgPosition(
+  pos: string | undefined,
+  containerW: number,
+  containerH: number,
+  targetW: number,
+  targetH: number,
+): [number, number] {
+  const p = (pos ?? 'center').trim();
+
+  // 단일 키워드 처리
+  if (p === 'center') return [(containerW - targetW) / 2, (containerH - targetH) / 2];
+  if (p === 'top') return [(containerW - targetW) / 2, 0];
+  if (p === 'bottom') return [(containerW - targetW) / 2, containerH - targetH];
+  if (p === 'left') return [0, (containerH - targetH) / 2];
+  if (p === 'right') return [containerW - targetW, (containerH - targetH) / 2];
+
+  const parts = p.split(/\s+/);
+  const resolveX = (v: string): number => {
+    if (v === 'center') return (containerW - targetW) / 2;
+    if (v === 'left') return 0;
+    if (v === 'right') return containerW - targetW;
+    if (v.endsWith('%')) return ((parseFloat(v) / 100) * (containerW - targetW));
+    return parseFloat(v) || 0;
+  };
+  const resolveY = (v: string): number => {
+    if (v === 'center') return (containerH - targetH) / 2;
+    if (v === 'top') return 0;
+    if (v === 'bottom') return containerH - targetH;
+    if (v.endsWith('%')) return ((parseFloat(v) / 100) * (containerH - targetH));
+    return parseFloat(v) || 0;
+  };
+
+  const ox = resolveX(parts[0]);
+  const oy = parts[1] ? resolveY(parts[1]) : (containerH - targetH) / 2;
+  return [ox, oy];
+}
+
 /**
  * ImageFillItem → Skia ImageFill 변환
  * Phase 4: imageCache에서 동기 조회 (캐시 미스 시 비동기 로딩 트리거)
@@ -193,7 +312,72 @@ function imageFillItemToSkia(
   return {
     type: 'image',
     image: skImage,
+    tileModeX: ck.TileMode.Clamp,
+    tileModeY: ck.TileMode.Clamp,
     tileMode: ck.TileMode.Clamp,
+    sampling: ck.FilterMode.Linear,
+    matrix,
+  };
+}
+
+/**
+ * CSS background-image url() + background-size/position/repeat → Skia ImageFill 변환
+ *
+ * CSS style 속성의 background-image/size/position/repeat를 파싱하여
+ * 적절한 matrix와 TileMode를 계산한다.
+ *
+ * @param url        - 이미지 URL (url() 제거 후 순수 URL)
+ * @param width      - 컨테이너 너비 (px)
+ * @param height     - 컨테이너 높이 (px)
+ * @param bgSize     - CSS background-size 값 (cover/contain/auto/px/%)
+ * @param bgPosition - CSS background-position 값 (center/top/50%/10px 등)
+ * @param bgRepeat   - CSS background-repeat 값 (repeat/no-repeat/repeat-x/repeat-y)
+ */
+export function cssBgImageToSkia(
+  url: string,
+  width: number,
+  height: number,
+  bgSize?: string,
+  bgPosition?: string,
+  bgRepeat?: string,
+): ImageFill | null {
+  if (!url || !isCanvasKitInitialized()) return null;
+
+  const skImage = getSkImage(url);
+  if (!skImage) {
+    loadSkImage(url);
+    return null;
+  }
+
+  const ck = getCanvasKit();
+  const imgW = skImage.width();
+  const imgH = skImage.height();
+
+  // 1. background-size → 렌더 크기 계산
+  const [targetW, targetH] = parseBgSize(bgSize, width, height, imgW, imgH);
+
+  // 2. background-position → 이미지 좌상단 오프셋
+  const [offsetX, offsetY] = parseBgPosition(bgPosition, width, height, targetW, targetH);
+
+  // 3. 매트릭스 조합: scale → translate
+  //    CanvasKit 3x3 row-major: [scaleX, skewX, transX, skewY, scaleY, transY, 0, 0, 1]
+  const scaleX = targetW / imgW;
+  const scaleY = targetH / imgH;
+  const matrix = Float32Array.of(
+    scaleX, 0,      offsetX,
+    0,      scaleY, offsetY,
+    0,      0,      1,
+  );
+
+  // 4. background-repeat → TileMode
+  const tileMode = parseBgRepeat(bgRepeat, ck);
+
+  return {
+    type: 'image',
+    image: skImage,
+    tileModeX: tileMode.x,
+    tileModeY: tileMode.y,
+    tileMode: tileMode.x, // 하위 호환 fallback
     sampling: ck.FilterMode.Linear,
     matrix,
   };

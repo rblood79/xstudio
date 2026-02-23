@@ -28,6 +28,7 @@ export type {
   GradientShape,
   ImageShape,
   LineShape,
+  IconFontShape,
   ColorValue,
 } from './shape.types';
 

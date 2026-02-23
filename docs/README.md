@@ -12,10 +12,33 @@ docs/
 ├── how-to/          # 문제 해결 단계별 가이드
 ├── reference/       # API, 스키마, 상태 참조
 ├── explanation/     # 아키텍처, 개념 설명
-├── archive/         # 완료된 과거 문서
+├── plans/           # 기능 구현 계획
+├── legacy/          # 완료/폐기된 과거 문서
 ├── CHANGELOG.md     # 변경 이력
 └── README.md        # 문서 인덱스
 ```
+
+---
+
+## 설계 문서 (Design Documents)
+
+> 핵심 아키텍처 및 기능 설계 문서입니다.
+
+- [AI 기능 설계](./AI.md) - AI Agent Loop + Tool Calling 설계
+- [WASM 렌더링 아키텍처](./WASM.md) - CanvasKit/Skia WASM 전환 계획
+- [컴포넌트 스펙 아키텍처](./COMPONENT_SPEC_ARCHITECTURE.md) - 단일 소스 컴포넌트 스펙
+- [레이아웃 엔진 전환 ADR](./ENGINE.md) - Taffy WASM + Dropflow Fork 전략
+- [CSS 레이아웃 엔진 설계](./ENGINE_UPGRADE.md) - 상세 설계 및 구현 현황
+- [CSS 속성 지원 체크리스트](./ENGINE_CHECKLIST.md) - CSS 속성별 지원 상태
+- [컬러 피커 + Fill 시스템](./COLOR_PICKER.md) - Color/Gradient/EyeDropper/BlendMode
+- [Pencil 앱 분석](./PENCIL_APP_ANALYSIS.md) - Pencil Desktop 아키텍처 분석
+- [Agent Teams 매뉴얼](./AGENTS_TEAMS.md) - Claude Code 에이전트 협업
+
+### ADR (Architecture Decision Records)
+- [ADR-001: 상태 관리](./adr/001-state-management.md) - Zustand 채택
+- [ADR-002: 스타일링](./adr/002-styling-approach.md) - ITCSS + tailwind-variants
+- [ADR-003: Canvas 렌더링](./adr/003-canvas-rendering.md) - CanvasKit/Skia + Taffy/Dropflow
+- [ADR-004: Preview 격리](./adr/004-preview-isolation.md) - iframe + postMessage
 
 ---
 
@@ -41,12 +64,8 @@ docs/
 - [M3 마이그레이션 체크리스트](./how-to/migration/M3_CHECKLIST.md)
 - [React Aria 마이그레이션](./how-to/migration/REACT_ARIA.md)
 - [WebGL 마이그레이션](./how-to/migration/WEBGL.md)
-- [ESM Import 마이그레이션](./how-to/migration/ESM_IMPORTS.md)
-- [Dataset 이름 변경](./how-to/migration/DATASET_RENAME.md)
 
 ### Troubleshooting (문제 해결)
-- [TypeScript 에러 해결](./how-to/troubleshooting/TYPESCRIPT_ERRORS.md)
-- [빌드 에러 해결](./how-to/troubleshooting/BUILD_ERRORS.md)
 - [Rate Limit 해결](./how-to/troubleshooting/RATE_LIMIT.md)
 
 ### Development (개발)
@@ -55,16 +74,13 @@ docs/
 - [PGlite 퀵스타트](./how-to/development/PGLITE_QUICK_START.md)
 - [PGlite 구현](./how-to/development/PGLITE_IMPLEMENTATION.md)
 - [PGlite 검증](./how-to/development/PGLITE_VALIDATION.md)
-- [Inspector 테스트](./how-to/development/INSPECTOR_TESTING.md)
 - [Canvas Border Box 구현](./how-to/development/CANVAS_BORDER_BOX.md)
 - [Skeleton 시스템 구현](./how-to/development/SKELETON_SYSTEM.md)
-- [PIXI 리팩토링](./how-to/development/PIXI_REFACTORING.md)
 - [P7 구현 계획](./how-to/development/P7_IMPLEMENTATION.md)
 - [패널 최적화](./how-to/development/PANEL_OPTIMIZATION.md)
 - [성능 구현 가이드](./how-to/development/PERFORMANCE_IMPLEMENTATION.md)
 - [Long Task 최적화](./how-to/development/LONG_TASK_OPTIMIZATION.md)
 - [벤치마크 템플릿](./how-to/development/BENCHMARK_TEMPLATE.md)
-- [src 구조 개선](./how-to/development/SRC_STRUCTURE.md)
 - [컴포넌트 통합](./how-to/development/COMPONENT_CONSOLIDATION.md)
 
 ---
@@ -86,12 +102,14 @@ docs/
 ### Structure (구조)
 - [Hooks 구조](./reference/STRUCTURE_HOOKS.md) - Builder hooks 구조 및 사용 패턴
 - [Store 구조](./reference/STRUCTURE_STORE.md) - Zustand store 구조 및 슬라이스 패턴
+- [Monorepo 구조](./reference/MONOREPO.md) - 모노레포 패키지 구조
+- [Multi-Page 렌더링](./reference/MULTIPAGE.md) - 다중 페이지 캔버스 렌더링
+- [Workflow 설계](./reference/WORKFLOW.md) - Workflow 시스템
 
 ### Components (컴포넌트)
 - [패널 시스템](./reference/components/PANEL_SYSTEM.md)
 - [CSS 아키텍처](./reference/components/CSS_ARCHITECTURE.md)
 - [React Aria 통합](./reference/components/REACT_ARIA.md)
-- [PIXI WebGL 통합](./reference/components/PIXI_WEBGL.md)
 - [Transformer 보안](./reference/components/TRANSFORMER_SECURITY.md)
 - [Custom ID 패턴](./reference/components/CUSTOM_ID_PATTERN.md)
 - [Data Panel](./reference/components/DATA_PANEL.md)
@@ -99,26 +117,24 @@ docs/
 - [Inspector 리팩토링](./reference/components/INSPECTOR_REFACTORING.md)
 - [Collection 데이터 바인딩](./reference/components/COLLECTION_DATA_BINDING.md)
 - [Layout Presets](./reference/components/LAYOUT_PRESETS.md)
-- [저장 모드](./reference/components/SAVE_MODE.md)
-- [실시간 저장](./reference/components/REALTIME_SAVE.md)
+- [Layout Slots](./reference/components/LAYOUT_SLOTS.md)
 - [SaveService](./reference/components/SAVESERVICE.md)
 - [Canvas Interactions](./reference/components/CANVAS_INTERACTIONS.md)
 - [Canvas Isolation](./reference/components/CANVAS_ISOLATION.md)
+- [Canvas Scrollbar](./reference/components/CANVAS_SCROLLBAR.md)
 - [DataTable Presets](./reference/components/DATATABLE_PRESETS.md)
 - [중첩 라우팅](./reference/components/NESTED_ROUTES.md)
-- [Preview Checkbox](./reference/components/PREVIEW_CHECKBOX.md)
-- [Preview 상태 리셋](./reference/components/PREVIEW_STATE_RESET.md)
-- [실시간 저장 버그 수정](./reference/components/REALTIME_SAVE_FIX.md)
 - [ToggleButtonGroup](./reference/components/TOGGLEBUTTONGROUP.md)
 - [Workflow 동기화](./reference/components/WORKFLOW_SYNC.md)
 - [Border Radius Handles](./reference/components/BORDER_RADIUS_HANDLES.md)
 - [Drag & Drop Layer](./reference/components/DRAG_DROP_LAYER.md)
 - [페이지 네비게이션](./reference/components/PAGE_NAVIGATION.md)
+- [키보드 단축키](./reference/components/KEYBOARD_SHORTCUTS.md)
+- [Panel Modal](./reference/components/PANEL_MODAL.md)
 - [Events Panel](./reference/components/EVENTS_PANEL.md)
 - [Properties Panel](./reference/components/PROPERTIES_PANEL.md)
 - [Monitor Panel](./reference/components/MONITOR_PANEL.md)
 - [Multi Select](./reference/components/MULTI_SELECT.md)
-- [Layout Slots](./reference/components/LAYOUT_SLOTS.md)
 - [Project File Web](./reference/components/PROJECT_FILE_WEB.md)
 
 ### Status (상태)
@@ -129,10 +145,7 @@ docs/
 - [M3 Phase 0 완료](./reference/status/M3_PHASE_0.md)
 - [M3 인덱스](./reference/status/M3_INDEX.md)
 - [M3 브라우저 호환성](./reference/status/M3_BROWSER.md)
-- [TypeScript 에러 목록](./reference/status/TYPESCRIPT_ERRORS.md)
 - [React Aria 1.13 업데이트](./reference/status/REACT_ARIA_1.13.md)
-- [성능 벤치마크](./reference/status/PERFORMANCE_BENCHMARK.md)
-- [성능 리포트](./reference/status/PERFORMANCE_REPORT.md)
 - [성능 인덱스](./reference/status/PERFORMANCE_INDEX.md)
 - [성능 태스크](./reference/status/PERFORMANCE_TASKS.md)
 - [성능 Phase 1-4](./reference/status/PERF_PHASE_1_4.md)
@@ -140,9 +153,9 @@ docs/
 - [성능 보충](./reference/status/PERF_SUPPLEMENT.md)
 - [성능 결정사항](./reference/status/PERF_DECISIONS.md)
 - [성능 아이디어](./reference/status/PERF_IDEAS.md)
+- [성능 최적화 계획](./reference/status/PERFORMANCE_PLAN.md)
 - [Canvas Resize 최적화](./reference/status/CANVAS_RESIZE.md)
 - [WebGL Canvas 최종](./reference/status/WEBGL_CANVAS_FINAL.md)
-- [성능 최적화 계획](./reference/status/PERFORMANCE_PLAN.md)
 - [DB 호환성](./reference/status/DB_COMPATIBILITY.md)
 - [스타일 시스템](./reference/status/STYLE_SYSTEM.md)
 
@@ -169,18 +182,34 @@ docs/
 - [React Spectrum 비교](./explanation/research/REACT_SPECTRUM_COMPARISON.md)
 - [스타일 파싱 최적화](./explanation/research/STYLE_PARSING.md)
 - [Visual Builder 데이터](./explanation/research/VISUAL_BUILDER_DATA.md)
-- [리디자인 계획](./explanation/research/REDESIGN_PLAN.md)
 - [Claude Code UI 영감](./explanation/research/CLAUDECODE_UI.md)
 - [PGlite vs SQLite](./explanation/research/PGLITE_VS_SQLITE.md)
 - [Photoshop 벤치마크](./explanation/research/PHOTOSHOP_BENCHMARK.md)
 
+### Pencil 분석
+- [Pencil vs XStudio 렌더링](./PENCIL_VS_XSTUDIO_RENDERING.md)
+- [Pencil vs XStudio UI/UX](./PENCIL_VS_XSTUDIO_UI_UX.md)
+- [WASM 문서 영향 분석](./WASM_DOC_IMPACT_ANALYSIS.md)
+- [Pencil 역공학 추출물](./pencil-extracted/) - Pencil Desktop 소스 분석
+
 ---
 
-## Archive (아카이브)
+## Plans (계획)
 
-완료된 리팩토링 문서 및 과거 문서가 보관되어 있습니다.
+> 기능 구현 계획 문서입니다.
 
-- [archive/](./archive/) - 완료된 과거 문서
+- [Events Panel 계획](./plans/EVENTS_PANEL.md)
+- [폰트 시스템 계획](./plans/FONTS.md)
+- [프로젝트 내보내기 계획](./plans/PROJECT_EXPORT.md)
+- [Sitemap 레이아웃 계획](./plans/SITEMAP_LAYOUT_PLAN.md)
+
+---
+
+## Legacy (레거시)
+
+완료된 리팩토링 문서 및 폐기된 문서가 보관되어 있습니다.
+
+- [legacy/](./legacy/) - 과거 문서 (역사적 참조 목적)
 
 ---
 

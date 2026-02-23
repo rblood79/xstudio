@@ -13,6 +13,7 @@ import { useLayoutEffect } from 'react';
 import { useSetAtom } from 'jotai';
 import { useStore } from '../../../stores';
 import { selectedElementAtom } from '../atoms/styleAtoms';
+import { previewComponentStateAtom } from '../atoms/componentStateAtom';
 import type { FillItem } from '../../../../types/builder/fill.types';
 import { ensureFills } from '../utils/fillMigration';
 // Local interface for style panel's selected element (different from inspector's SelectedElement)
@@ -41,6 +42,8 @@ interface StylePanelSelectedElement {
  */
 export function useZustandJotaiBridge(): void {
   const setSelectedElement = useSetAtom(selectedElementAtom);
+  // 요소 선택 변경 시 컴포넌트 상태 미리보기를 초기화하는 setter
+  const setPreviewComponentState = useSetAtom(previewComponentStateAtom);
 
   // Zustand store 구독 - 선택된 요소 변경 시 Jotai atom 업데이트
   // useLayoutEffect: paint 전에 초기값을 설정하여 첫 프레임 깜빡임 방지
@@ -59,11 +62,17 @@ export function useZustandJotaiBridge(): void {
       ) {
         const element = buildSelectedElement(state);
         setSelectedElement(element as unknown as Parameters<typeof setSelectedElement>[0]);
+
+        // 선택된 요소가 바뀌면 컴포넌트 상태 미리보기를 default(null)로 리셋
+        // → 이전 요소의 hover/pressed 상태가 다음 요소에 남아있지 않도록 방지
+        if (state.selectedElementId !== prevState.selectedElementId) {
+          setPreviewComponentState(null);
+        }
       }
     });
 
     return unsubscribe;
-  }, [setSelectedElement]);
+  }, [setSelectedElement, setPreviewComponentState]);
 }
 
 /**

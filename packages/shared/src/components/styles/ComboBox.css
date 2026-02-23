@@ -12,7 +12,7 @@
   .react-aria-ComboBox {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
+    gap: var(--spacing-sm);
     color: var(--on-surface);
 
     /* ===== Label Styles ===== */
@@ -33,14 +33,14 @@
     /* ===== Input Styles ===== */
     .react-aria-Input {
       flex: 1;
-      padding: var(--spacing) var(--spacing-md);
-      padding-right: calc(var(--spacing-2xl) + var(--spacing));
+      padding: var(--spacing-sm) 14px;
+      padding-right: 30px;
       margin: 0;
       border: 1px solid var(--outline-variant);
       border-radius: var(--border-radius);
       background: var(--surface-container);
       color: var(--on-surface);
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
       outline: none;
       transition: all 200ms ease;
       forced-color-adjust: none;
@@ -85,9 +85,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      height: 24px;
-      margin-left: calc(var(--spacing-2xl) * -1);
+      width: 18px;
+      height: 18px;
+      margin-left: -26px;
       margin-right: var(--spacing);
       border-radius: var(--radius-xs);
       background: var(--surface-container-high);
@@ -304,11 +304,11 @@
   .react-aria-ComboBox {
     /* 기본 size 변수 (md) */
     --combo-label-size: var(--text-sm);
-    --combo-input-padding: var(--spacing) var(--spacing-md);
-    --combo-input-padding-right: calc(var(--spacing-2xl) + var(--spacing));
-    --combo-input-font-size: var(--text-sm);
-    --combo-btn-size: 24px;
-    --combo-btn-margin-left: calc(var(--spacing-2xl) * -1);
+    --combo-input-padding: var(--spacing-sm) 14px;
+    --combo-input-padding-right: 30px;
+    --combo-input-font-size: var(--text-base);
+    --combo-btn-size: 18px;
+    --combo-btn-margin-left: -26px;
     --combo-btn-margin-right: var(--spacing);
     --combo-hint-size: var(--text-xs);
   }
@@ -327,11 +327,11 @@
 
   .react-aria-ComboBox.md {
     --combo-label-size: var(--text-sm);
-    --combo-input-padding: var(--spacing) var(--spacing-md);
-    --combo-input-padding-right: calc(var(--spacing-2xl) + var(--spacing));
-    --combo-input-font-size: var(--text-sm);
-    --combo-btn-size: 24px;
-    --combo-btn-margin-left: calc(var(--spacing-2xl) * -1);
+    --combo-input-padding: var(--spacing-sm) 14px;
+    --combo-input-padding-right: 30px;
+    --combo-input-font-size: var(--text-base);
+    --combo-btn-size: 18px;
+    --combo-btn-margin-left: -26px;
     --combo-btn-margin-right: var(--spacing);
     --combo-hint-size: var(--text-xs);
   }
@@ -384,8 +384,8 @@
 
   .react-aria-Popover[data-trigger="ComboBox"].md {
     .react-aria-ListBox .react-aria-ListBoxItem {
-      padding: var(--spacing) var(--spacing-md);
-      font-size: var(--text-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      font-size: var(--text-base);
     }
   }
 

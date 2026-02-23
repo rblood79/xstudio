@@ -9,9 +9,9 @@
     display: flex;
     position: relative;
     align-items: center;
-    gap: var(--gap);
-    font-size: var(--text-sm);
-    line-height: var(--text-sm--line-height);
+    gap: var(--spacing-sm);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
     color: var(--on-surface);
     forced-color-adjust: none;
     padding: var(--spacing) 0;

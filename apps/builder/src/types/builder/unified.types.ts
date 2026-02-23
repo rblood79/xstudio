@@ -662,6 +662,7 @@ export function createDefaultButtonProps(): ButtonElementProps {
     // CSS base rule: border: 1px solid var(--outline-variant)
     // 스타일 패널에서 borderWidth 값 정상 표시를 위해 기본값 설정
     style: {
+      width: 'fit-content',
       borderWidth: '1px',
     },
   };
@@ -676,6 +677,11 @@ export function createDefaultLinkProps(): LinkElementProps {
     isDisabled: false,
     isExternal: false,
     showExternalIcon: true,
+    // CSS base: display:inline-flex; align-items:center; gap:var(--spacing)
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+    },
   };
 }
 
@@ -724,6 +730,14 @@ export function createDefaultToggleButtonProps(): ToggleButtonElementProps {
     size: "sm",
     isSelected: false,
     isDisabled: false,
+    // CSS base: display:flex; border:1px solid var(--outline-variant); width:fit-content
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 'fit-content',
+      borderWidth: '1px',
+    },
   };
 }
 
@@ -738,6 +752,8 @@ export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementP
     style: {
       display: 'flex',
       flexDirection: 'row',
+      alignItems: 'center',
+      width: 'fit-content',
     },
   };
 }
@@ -747,6 +763,14 @@ export function createDefaultCheckboxGroupProps(): CheckboxGroupElementProps {
     value: [],
     isDisabled: false,
     orientation: "horizontal",
+    // CSS base: display:flex; flex-direction:column; gap:var(--gap)
+    // orientation=horizontal → flex-direction:row; align-items:center
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
   };
 }
 
@@ -755,12 +779,26 @@ export function createDefaultRadioGroupProps(): RadioGroupElementProps {
     value: "",
     isDisabled: false,
     orientation: "horizontal",
+    // CSS base: display:flex; flex-direction:column; gap:var(--gap)
+    // orientation=horizontal → flex-direction:row; align-items:center
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
   };
 }
 
 export function createDefaultSelectProps(): SelectElementProps {
   return {
     isDisabled: false,
+    // CSS base: display:flex; flex-direction:column; gap:var(--spacing-xs)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
+    },
   };
 }
 
@@ -768,18 +806,33 @@ export function createDefaultComboBoxProps(): ComboBoxElementProps {
   return {
     isDisabled: false,
     allowsCustomValue: false,
+    // CSS base: display:flex; flex-direction:column; gap:var(--spacing-xs)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
+    },
   };
 }
 
 export function createDefaultSliderProps(): SliderElementProps {
   return {
     label: "Slider",
-    value: 0,
+    value: 50,
     minValue: 0,
     maxValue: 100,
     step: 1,
     isDisabled: false,
     orientation: "horizontal",
+    showValue: true,
+    // CSS base: display:grid; max-width:300px
+    // Spec md: label(14*1.2≈17) + gap(10) + thumbSize(18) = 45
+    style: {
+      display: 'grid',
+      width: 200,
+      height: 45,
+      maxWidth: 300,
+    },
   };
 }
 
@@ -794,6 +847,13 @@ export function createDefaultTailSwatchProps(): TailSwatchElementProps {
 export function createDefaultTabsProps(): TabsElementProps {
   return {
     orientation: "horizontal",
+    // CSS base: display:flex; width:100%
+    // orientation=horizontal → flex-direction:column (TabList 위 + TabPanel 아래)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
   };
 }
 
@@ -806,6 +866,12 @@ export function createDefaultTabProps(): TabElementProps {
 export function createDefaultPanelProps(): PanelElementProps {
   return {
     variant: "default",
+    // CSS base: display:flex; flex-direction:column; width:100%
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
   };
 }
 
@@ -814,6 +880,12 @@ export function createDefaultTreeProps(): TreeElementProps {
     items: [],
     selectedKeys: [],
     isDisabled: false,
+    // CSS base: display:flex; flex-direction:column; gap:var(--spacing-2xs); width:100%
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
   };
 }
 
@@ -945,10 +1017,14 @@ export function createDefaultCardProps(): CardElementProps {
     orientation: "vertical",
     title: "Title",
     description: "Description",
+    // CSS base: display:block; border:1px solid var(--outline-variant); width:100%; padding:12px
+    // variant=elevated → border:0 + shadow
+    // variant=outlined → border-width:2px
     style: {
       display: 'block',
       width: '100%',
       padding: '12px',  // var(--spacing-md) = 12px
+      borderWidth: '1px',
     },
   };
 }
@@ -960,6 +1036,19 @@ export function createDefaultBadgeProps(): BadgeElementProps {
     size: "sm",
     isDot: false,
     isPulsing: false,
+    // CSS base: display:inline-flex; align-items:center; justify-content:center
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  };
+}
+
+export function createDefaultLabelProps(): BaseElementProps {
+  return {
+    children: 'Tag Group',
+    style: { fontSize: 14, fontWeight: 500, width: 'fit-content' },
   };
 }
 
@@ -969,6 +1058,13 @@ export function createDefaultTagGroupProps(): TagGroupElementProps {
     selectedKeys: [],
     isDisabled: false,
     allowsRemoving: false,
+    style: { display: 'flex', flexDirection: 'column', gap: 2, width: 'fit-content' },
+  };
+}
+
+export function createDefaultTagListProps(): BaseElementProps {
+  return {
+    style: { display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   };
 }
 
@@ -984,6 +1080,12 @@ export function createDefaultListBoxProps(): ListBoxElementProps {
     selectedKeys: [],
     isDisabled: false,
     selectionMode: "single",
+    // CSS base: display:flex; flex-direction:column; width:100%
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
   };
 }
 
@@ -1007,6 +1109,12 @@ export function createDefaultGridListProps(): GridListElementProps {
     selectedKeys: [],
     isDisabled: false,
     selectionMode: "single",
+    // CSS base: display:flex; flex-direction:column; width:100%
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
   };
 }
 
@@ -1054,6 +1162,239 @@ export function createDefaultSlotProps(): SlotElementProps {
   };
 }
 
+// === 전용 타입 없는 컴포넌트 기본 props (BaseElementProps) ===
+
+export function createDefaultToolbarProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-wrap:wrap; gap:5px; width:fit-content
+    // orientation=horizontal → flex-direction:row
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 5,
+      width: 'fit-content',
+    },
+  };
+}
+
+export function createDefaultBreadcrumbsProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; align-items:center (implicit row)
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+  };
+}
+
+export function createDefaultSeparatorProps(): BaseElementProps {
+  return {
+    // CSS base: width:100%; height:1px (horizontal)
+    // orientation=vertical → height:100%; width:1px
+    style: {
+      width: '100%',
+      height: '1px',
+    },
+  };
+}
+
+export function createDefaultDisclosureProps(): BaseElementProps {
+  return {
+    // CSS base: width:100%
+    style: {
+      width: '100%',
+    },
+  };
+}
+
+export function createDefaultDisclosureGroupProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; width:100%
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
+  };
+}
+
+export function createDefaultDialogProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; max-height:inherit
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultFormProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; gap:var(--spacing-md)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+    },
+  };
+}
+
+export function createDefaultMenuProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; outline:none
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultNumberFieldProps(): BaseElementProps {
+  return {
+    // CSS base: display:grid; Group 내부에 border:1px solid var(--outline-variant)
+    style: {
+      display: 'grid',
+    },
+  };
+}
+
+export function createDefaultSearchFieldProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; Group border:1px solid var(--outline-variant)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultProgressBarProps(): BaseElementProps {
+  return {
+    // CSS base: display:grid; gap:4px; width:100%
+    style: {
+      display: 'grid',
+      width: '100%',
+    },
+  };
+}
+
+export function createDefaultMeterProps(): BaseElementProps {
+  return {
+    // CSS base: display:grid; gap:4px; width:100%
+    style: {
+      display: 'grid',
+      width: '100%',
+    },
+  };
+}
+
+export function createDefaultDateFieldProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; Group border:1px
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultTimeFieldProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; Group border:1px
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultColorFieldProps(): BaseElementProps {
+  return {
+    // CSS base: Group border:1px solid var(--outline-variant)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultColorPickerProps(): BaseElementProps {
+  return {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+    },
+  };
+}
+
+export function createDefaultColorSwatchProps(): BaseElementProps {
+  return {
+    // CSS base: display:inline-block; border:1px solid var(--outline-variant); border-radius:var(--radius-sm)
+    style: {
+      display: 'inline-block',
+      borderWidth: '1px',
+    },
+  };
+}
+
+export function createDefaultDropZoneProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; border:2px dashed var(--outline-variant)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: '2px',
+    },
+  };
+}
+
+export function createDefaultFileTriggerProps(): BaseElementProps {
+  return {
+    style: {
+      display: 'inline-flex',
+    },
+  };
+}
+
+export function createDefaultTooltipProps(): BaseElementProps {
+  return {
+    style: {},
+  };
+}
+
+export function createDefaultPopoverProps(): BaseElementProps {
+  return {
+    // CSS base: border:1px solid var(--outline-variant)
+    style: {
+      borderWidth: '1px',
+    },
+  };
+}
+
+export function createDefaultModalProps(): BaseElementProps {
+  return {
+    // CSS base: border:1px solid var(--outline-variant)
+    style: {
+      borderWidth: '1px',
+    },
+  };
+}
+
+export function createDefaultGroupProps(): BaseElementProps {
+  return {
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+  };
+}
+
 // === 통합된 기본 props 생성 함수 ===
 export function getDefaultProps(tag: string): ComponentElementProps {
   const defaultPropsMap: Record<string, () => ComponentElementProps> = {
@@ -1082,10 +1423,15 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     TableHeader: createDefaultTableHeaderProps,
     TableBody: createDefaultTableBodyProps,
     Column: createDefaultColumnProps,
+    ColumnGroup: createDefaultColumnGroupProps,
     Row: createDefaultRowProps,
     Cell: createDefaultCellProps,
     Card: createDefaultCardProps,
+    Badge: createDefaultBadgeProps,
+    Link: createDefaultLinkProps,
+    Label: createDefaultLabelProps,
     TagGroup: createDefaultTagGroupProps,
+    TagList: createDefaultTagListProps,
     Tag: createDefaultTagProps,
     ListBox: createDefaultListBoxProps,
     ListBoxItem: createDefaultListBoxItemProps,
@@ -1098,6 +1444,30 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Nav: createDefaultNavProps,
     Slot: createDefaultSlotProps,
     body: createDefaultBodyProps,
+    // 신규 등록 — CSS 기본 스타일 매칭
+    Toolbar: createDefaultToolbarProps,
+    Breadcrumbs: createDefaultBreadcrumbsProps,
+    Separator: createDefaultSeparatorProps,
+    Disclosure: createDefaultDisclosureProps,
+    DisclosureGroup: createDefaultDisclosureGroupProps,
+    Dialog: createDefaultDialogProps,
+    Form: createDefaultFormProps,
+    Menu: createDefaultMenuProps,
+    NumberField: createDefaultNumberFieldProps,
+    SearchField: createDefaultSearchFieldProps,
+    ProgressBar: createDefaultProgressBarProps,
+    Meter: createDefaultMeterProps,
+    DateField: createDefaultDateFieldProps,
+    TimeField: createDefaultTimeFieldProps,
+    ColorField: createDefaultColorFieldProps,
+    ColorPicker: createDefaultColorPickerProps,
+    ColorSwatch: createDefaultColorSwatchProps,
+    DropZone: createDefaultDropZoneProps,
+    FileTrigger: createDefaultFileTriggerProps,
+    Tooltip: createDefaultTooltipProps,
+    Popover: createDefaultPopoverProps,
+    Modal: createDefaultModalProps,
+    Group: createDefaultGroupProps,
   };
 
   const createProps = defaultPropsMap[tag];

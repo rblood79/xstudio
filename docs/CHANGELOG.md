@@ -5,7 +5,609 @@ All notable changes to XStudio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Slider Complex Component + WebGL Fix] - 2026-02-22
+
+### Bug Fixes
+- **Slider.spec.ts**: TokenRef offsetY 계산 버그 수정 - `size.fontSize`가 문자열인데 숫자 연산에 사용되어 NaN 발생, `resolveToken()`으로 해결
+- **Slider.spec.ts**: SliderOutput 텍스트 위치 수정 - `x: width` → `x: 0` + `maxWidth: width`로 컨테이너 내 우측 정렬
+- **Slider.css**: class selector → data-attribute selector 전환 (`[data-size]`, `[data-variant]`)
+- **unified.types.ts**: Slider 기본 props 수정 (value=50, width=200, height=45, showValue=true)
+
+### Features
+- **Slider → Complex Component 전환**: layer tree가 DOM 구조와 일치하도록 변경
+  - `FormComponents.ts`: `createSliderDefinition()` 팩토리 추가
+  - DOM 구조: `Slider > Label + SliderOutput + SliderTrack > SliderThumb`
+  - `ComponentFactory.ts`: Slider creator 등록
+  - `useElementCreator.ts`: complexComponents에 Slider 추가
+  - `ElementSprite.tsx`: `_hasLabelChild` 체크에 Slider 추가
+  - `Slider.spec.ts`: `_hasLabelChild` 플래그로 label/output 중복 렌더링 방지
+
+### Changed Files (7)
+- `packages/specs/src/components/Slider.spec.ts`
+- `packages/shared/src/components/styles/Slider.css`
+- `apps/builder/src/types/builder/unified.types.ts`
+- `apps/builder/src/builder/factories/definitions/FormComponents.ts`
+- `apps/builder/src/builder/factories/ComponentFactory.ts`
+- `apps/builder/src/builder/hooks/useElementCreator.ts`
+- `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx`
+
+---
+
+## [2026-02-22]
+
+### Fixed - TaffyFlexEngine: CSS `flex` shorthand 파싱 추가
+
+#### 증상
+CSS `flex` shorthand 속성(`flex: 1`, `flex: auto`, `flex: none`, `flex: 1 1 0%`)이 TaffyFlexEngine에서 파싱되지 않음. SelectValue의 `flex: 1`이 무시되어 레이아웃 크기가 0으로 계산됨.
+
+#### 원인
+`elementToTaffyStyle()`이 `flexGrow`, `flexShrink`, `flexBasis` 개별 속성만 처리하고, `flex` shorthand를 파싱하는 로직이 없었음.
+
+#### 수정 내용
+
+**`elementToTaffyStyle()`에 flex shorthand 파싱 로직 추가**
+
+| 입력 | 변환 결과 |
+|------|----------|
+| `flex: <number>` | `flexGrow: n, flexShrink: 1, flexBasis: 0%` |
+| `flex: "auto"` | `flexGrow: 1, flexShrink: 1` (basis: auto) |
+| `flex: "none"` | `flexGrow: 0, flexShrink: 0` |
+| `flex: "<grow> <shrink> [<basis>]"` | 각 값을 분리 파싱 |
+
+- 개별 속성(`flexGrow`, `flexShrink`, `flexBasis`)이 명시되어 있으면 shorthand보다 우선 적용
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/src/builder/workspace/canvas/layout/engines/TaffyFlexEngine.ts` | `elementToTaffyStyle()`에 flex shorthand 파싱 로직 추가 |
+
+#### 영향 범위
+flex shorthand를 사용하는 모든 요소의 레이아웃이 올바르게 계산됨.
+
+---
+
+### Fixed - Select/ComboBox 자식 요소 implicit styles 주입
+
+#### 증상
+SelectValue 영역이 100×100, SelectIcon 영역이 100×100으로 렌더링됨.
+
+#### 원인
+
+- **원인 1**: DB에 저장된 기존 요소에 `width`, `height`, `flex` 속성이 없을 수 있음
+- **원인 2**: `calculateChildrenLayout` 호출 시 원본 DB 스타일이 사용되어 레이아웃 계산이 부정확
+- **원인 3**: LayoutComputedSizeContext가 null이면 BoxSprite가 convertStyle 기본값 100×100으로 fallback
+
+#### 수정 내용
+
+두 단계에서 implicit styles 주입:
+
+**1. 레이아웃 계산 전** (`containerTag === 'selecttrigger'`/`'comboboxwrapper'` 블록)
+- SelectValue/ComboBoxInput: `flex: 1` 보장 (`??` 연산자로 DB 값 우선)
+- SelectIcon/ComboBoxTrigger: `width: 18, height: 18, flexShrink: 0` 보장
+
+**2. 렌더링 시** (투명 배경 override 블록)
+- tag별 implicitStyle 객체를 spread하여 DB에 없는 속성 보장
+- `{ ...implicitStyle, ...existingStyle, backgroundColor: 'transparent' }` 순서로 합성
+
+**배치 결과 (SelectTrigger 내부)**:
+- SelectValue: flexGrow=1, width = containerWidth - 28 - 18 (나머지 공간)
+- SelectIcon: width=18, height=18, center x = containerWidth - 23 (spec shapes chevron과 일치)
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | 레이아웃 계산 전 + 렌더링 시 implicit styles 주입 |
+
+---
+
+### Fixed - Select/ComboBox CSS Preview ↔ Spec Shapes 정합성 수정
+
+#### 증상
+CSS Preview와 Spec Shapes 간에 gap, padding, 아이콘 크기가 일치하지 않음.
+
+#### 수정 내용
+
+| 속성 | CSS 변경 전 | CSS 변경 후 | Spec 값 |
+|------|-----------|-----------|---------|
+| Gap (Label↔Trigger) | `--spacing-xs` (4px) | `--spacing-sm` (8px) | labelGap = 8px |
+| Trigger/Input padding | `--spacing` `--spacing-md` (4px 12px) | `--spacing-sm` 14px (8px 14px) | paddingY=8, paddingX=14 |
+| Chevron/Button size | 24px | 18px | iconSize = 18px |
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `packages/shared/src/components/styles/Select.css` | gap, padding, 아이콘 크기를 Spec 값과 일치 |
+| `packages/shared/src/components/styles/ComboBox.css` | gap, padding, 아이콘 크기를 Spec 값과 일치 |
+
+---
+
+### Fixed - Select/ComboBox 구조적 자식 투명 배경 처리
+
+#### 증상
+SelectTrigger, SelectValue, SelectIcon 등의 BoxSprite가 기본 흰색 불투명 배경(0xffffff, alpha=1)으로 spec shapes를 가림.
+
+#### 수정 내용
+
+- **BuilderCanvas.tsx** `renderChild`에서 구조적 자식 태그별로 `backgroundColor: 'transparent'` + `children: ''` 주입
+- **SelectionComponents.ts** factory 정의에도 `backgroundColor: 'transparent'` 추가
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | 구조적 자식 태그별 `backgroundColor: 'transparent'` + `children: ''` 주입 |
+| `apps/builder/src/builder/factories/definitions/SelectionComponents.ts` | factory 정의에 `backgroundColor: 'transparent'` 추가 |
+
+---
+
 ## [Unreleased]
+
+
+### Added
+
+- **계층적 선택 모델 (Pencil/Figma 스타일)**: 캔버스 클릭 시 현재 깊이 레벨 요소만 선택. 더블클릭으로 컨테이너 진입, Escape로 위로 복귀. `editingContextId` 상태 및 `resolveClickTarget` 유틸리티 구현 (`stores/selection.ts`, `utils/hierarchicalSelection.ts`)
+- **Deep Hover 하이라이트 (Pencil 패턴)**: 그룹/컨테이너 호버 시 내부 모든 리프 노드를 동시 하이라이트. context 레벨 히트 테스트 → `collectLeafDescendants` 재귀 수집 → 전체 리프 렌더링. 리프 직접 호버는 실선 2px, 그룹 내부 리프는 점선 1px. 선택된 요소 위에서도 호버 표시. `hoverRenderer.ts` Skia 렌더러 (blue-500, alpha 0.5). 진입한 컨테이너 경계 점선 표시 (gray-400)
+- **캔버스 커서 통일 (Pencil 방식)**: 모든 캔버스 요소의 마우스 커서를 `default`로 통일. TextSprite(`text`→`default`), BoxSprite/ImageSprite/ElementSprite(`pointer`→`default`), UI 컴포넌트 55개(`pointer`/`text`/`crosshair`/조건식→`default`). Hand Tool의 `grab`/`grabbing` 및 리사이즈 핸들 커서는 유지
+- **Body 요소 선택**: 캔버스 빈 영역 클릭 또는 배경 클릭으로 body 선택 가능. `buildSelectionRenderData`에 pageFrames 기반 body bounds 폴백 추가. `isOnlyBodySelected` 오버레이 스킵 로직 제거
+
+### Changed
+
+- **레이어 트리 직접 선택**: 레이어 트리에서 깊은 요소 선택 시 `editingContext` 자동 조정 (`resolveEditingContextForTreeSelection`)
+- **Escape 키 우선순위**: editingContext 복귀 → 선택 해제 순서로 변경
+- **더블클릭 동작**: 컨테이너 요소는 `enterEditingContext`, 텍스트 요소는 기존 `startEdit` 유지
+- **editingContext 복귀 (Pencil 방식)**: 빈 영역 클릭 시 `exitEditingContext` 호출. context 외부 요소 클릭 시에도 한 단계 위로 복귀. Escape 키 + 빈 영역 클릭 + 외부 요소 클릭 3가지 경로 지원
+- **호버 렌더 순서 변경**: Hover → Selection Box → Transform Handles 순서로 변경. 코너 핸들의 흰색 fill이 호버 선을 덮어 핸들 내부에 선이 나타나는 문제 해결
+
+### Fixed
+
+- **Body 선택 불가**: `resolveClickTarget`이 body에 대해 null 반환하던 문제 (`parent_id: null`). `handleElementClick`에 body 특수 처리 추가
+- **Body 오버레이 미표시**: `isOnlyBodySelected` 체크가 body 선택 시 오버레이 렌더링을 스킵하던 문제 해결
+- **Body Skia 선택 박스**: body가 `treeBoundsMap`에 없어 선택 박스가 렌더링되지 않던 문제. `pageFrames` 기반 폴백 추가
+- **멀티페이지 호버 불가**: 아무 요소도 선택되지 않은 상태에서 `treeBoundsMap`이 빈 Map으로 설정되어 호버 히트 테스트가 작동하지 않던 문제. `needsSelectionBoundsMap`을 항상 true로 변경하여 호버용 bounds를 상시 빌드 (`SkiaOverlay.tsx`)
+- **더블클릭 그룹 진입 불가**: BoxSprite와 ElementSprite 컨테이너 히트 영역에 더블클릭 감지가 없어 `enterEditingContext`가 호출되지 않던 문제. `lastPointerDownRef` 기반 300ms 더블클릭 감지 추가 (`BoxSprite.tsx`, `ElementSprite.tsx`)
+
+---
+
+### Fixed - Button padding:0 시 높이 미변경 (2026-02-15)
+
+#### 증상
+- Button에 `paddingTop: 0`, `paddingBottom: 0`을 설정해도 높이가 변하지 않음
+
+#### 원인
+
+**1. Flex 경로 — Button 높이 미결정**
+- Button은 Yoga 리프 노드(자식 없음)이고, `stripSelfRenderedProps`로 padding/border가 제거됨
+- `height: 'auto'`만 설정되어 Yoga가 높이를 0으로 계산 → 이전 프레임의 시각적 크기(100px)가 자기 강화적으로 유지
+
+**2. BlockEngine 경로 — `MIN_BUTTON_HEIGHT` 제약**
+- `MIN_BUTTON_HEIGHT = 24`에서 `sizeConfig.paddingY`(기본값 4)로 content-box 변환
+- 인라인 padding=0이 반영되지 않아 항상 최소 높이 강제
+
+**3. `toNum` 함수 — 문자열 '0' 무시**
+- `parseFloat('0') || undefined` → `0 || undefined` → `undefined`
+
+#### 수정 내용
+
+**1. `styleToLayout`에서 Button `layout.height` 명시적 설정**
+- `height: 'auto'` 대신 `paddingY * 2 + lineHeight + borderW * 2`로 계산
+- 인라인 padding=0이면 `0 + lineHeight + 2` = 텍스트 높이 + 테두리만큼 축소
+- `toNum` 함수를 `isNaN(parseFloat(v))` 체크로 수정하여 문자열 '0' 정상 처리
+
+**2. BlockEngine `calculateContentHeight`에서 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용**
+- 사용자가 인라인 padding을 설정한 경우 `minContentHeight = 0` (padding:0으로 완전 축소 허용)
+- 인라인 padding 미설정 시 기존 동작 유지 (`MIN_BUTTON_HEIGHT` 기반 최소 높이)
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/.../layout/styleToLayout.ts` | Button `layout.height` 명시적 계산 + `toNum` 0값 버그 수정 |
+| `apps/builder/.../layout/engines/utils.ts` | 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용 |
+
+---
+
+### Fixed - Spec 컴포넌트 텍스트 줄바꿈 시 Skia 높이 자동 확장 (2026-02-15)
+
+#### 증상
+- Button에 고정 `width` 설정 후 긴 텍스트 입력 시, CSS에서는 height가 동적으로 증가하지만 Skia 캔버스에서는 높이가 변하지 않음
+- 텍스트가 잘리거나 배경 밖으로 넘침
+
+#### 원인
+- Button은 `SELF_PADDING_TAGS`로 padding이 Yoga에서 제거되고, Yoga에 텍스트 measure 함수가 없어 auto height를 계산할 수 없음
+- `specShapesToSkia`는 Yoga가 결정한 고정 높이를 받아 배경과 텍스트를 그리므로, 텍스트가 줄바꿈되어도 높이가 확장되지 않음
+
+#### 수정 내용
+
+**1. `measureSpecTextMinHeight()` 헬퍼 추가 (ElementSprite.tsx)**
+- spec shapes 내 텍스트의 word-wrap 높이를 Canvas 2D API로 측정
+- TokenRef fontSize 해석, maxWidth 계산 (specShapesToSkia와 동일 로직)
+- 한 줄이면 `undefined` 반환, 다중 줄이면 `paddingY * 2 + wrappedHeight` 반환
+
+**2. contentMinHeight 계산 (ElementSprite.tsx)**
+- `specShapesToSkia` 호출 전에 `measureSpecTextMinHeight`로 다중 줄 높이 측정
+- 명시적 height가 없을 때만 (`hasExplicitHeight` 체크)
+- `specHeight`와 `cardCalculatedHeight` 갱신 → `contentMinHeight`로 전파
+
+**3. 다중 줄 텍스트 paddingTop 보정 (ElementSprite.tsx)**
+- `specShapesToSkia`는 한 줄 lineHeight 기준으로 수직 중앙 계산
+- 다중 줄일 때 `(specHeight - wrappedHeight) / 2`로 보정
+
+**4. `updateTextChildren` box 재귀 (SkiaOverlay.tsx)**
+- box 타입 자식 노드도 재귀적으로 width/height 갱신 + 내부 text 처리
+- `contentMinHeight`로 높이 증가 시 specNode 내부 텍스트도 올바른 크기로 갱신
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/.../sprites/ElementSprite.tsx` | `measureSpecTextMinHeight()` + contentMinHeight 계산 + paddingTop 보정 |
+| `apps/builder/.../skia/SkiaOverlay.tsx` | `updateTextChildren`에 box 자식 재귀 추가 |
+
+#### 영향 범위
+- Button, SubmitButton, FancyButton, ToggleButton (SELF_PADDING_TAGS)
+- Badge, Tag, Chip 등 spec shapes 기반 모든 컴포넌트
+
+---
+
+### Fixed - BlockEngine 경로에서 Button 텍스트 줄바꿈 시 세로 겹침 (2026-02-15)
+
+#### 증상
+- 부모가 implicit block(display 미지정)일 때, Button(width:80px) 텍스트 2줄 + 다음 Button(width:100%)이 세로로 겹침
+- 첫 번째 Button의 Skia 렌더링은 정상(높이 확장)이나 Yoga 레이아웃 영역이 확장되지 않아 아래 요소가 겹침
+- 부모가 `display:flex, flex-direction:column`일 때는 정상 (Flex 경로 사용)
+
+#### 원인
+- **BlockEngine 경로의 `parseBoxModel`이 부모 `availableWidth`를 전달**: Button(width:80px)인데 `calculateContentHeight(element, 400)`처럼 부모 너비(400px)를 전달하여, 텍스트 줄바꿈이 발생하지 않는 것으로 계산 → 높이 미확장
+- **`styleToLayout`의 `minHeight`는 BlockEngine 경로에서 미사용**: BlockEngine은 `parseBoxModel` → `calculateContentHeight`로 높이를 직접 계산하며, `styleToLayout`의 결과는 width/height에 사용하지 않음
+
+#### 수정 내용
+
+**1. `parseBoxModel`에서 요소 자체 width 전달 (engines/utils.ts)**
+- border-box 변환 전 `originalBorderBoxWidth`를 저장
+- `calculateContentHeight(element, elementAvailableWidth)`에 요소 자체 width 우선 전달
+- Button(width:80px) → `calculateContentHeight(element, 80)` → `maxTextWidth = 80 - 24 = 56` → 올바른 줄바꿈
+
+**2. `styleToLayout` minHeight 기본 사이즈 수정**
+- Button 기본 사이즈를 `'md'` → `'sm'`으로 수정 (실제 기본값과 일치)
+- ToggleButton은 기존 `'md'` 유지
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/.../layout/engines/utils.ts` | `parseBoxModel`에서 `originalBorderBoxWidth` → `calculateContentHeight`에 전달 |
+| `apps/builder/.../layout/styleToLayout.ts` | minHeight 기본 사이즈 `'md'` → `'sm'` 수정 |
+
+#### 두 렌더링 경로 차이
+
+| 경로 | 부모 조건 | 높이 결정 방식 | 텍스트 줄바꿈 반영 |
+|------|----------|---------------|------------------|
+| **Flex 경로** | `display:flex` 명시적 | `styleToLayout` → `minHeight` → Yoga | `styleToLayout`에서 계산 |
+| **BlockEngine 경로** | display 미지정 (implicit block) | `parseBoxModel` → `calculateContentHeight` | `parseBoxModel`에서 요소 자체 width로 계산 |
+
+---
+
+### Fixed - Button/UI 컴포넌트 width 설정 시 배경 렌더링 실패 (2026-02-14)
+
+#### 증상
+- Button에 `width: 200px` 또는 `width: 50%` 설정 시 Skia 배경(background, border, borderRadius)이 렌더링되지 않음
+- Selection 영역은 정상이나 시각적 배경이 사라짐
+- 동일 문제가 Section, ToggleButton, Card, Form, List, FancyButton, ScrollBox, MaskedFrame에도 존재
+
+#### 원인
+
+**1. Spec shapes의 배경 roundRect `width`에 `props.style?.width` 사용**
+- 9개 spec 파일에서 배경 roundRect의 width를 `(props.style?.width as number) || 'auto'`로 설정
+- 사용자가 `width: 200px`를 설정하면 `shape.width = 200` (숫자)이 됨
+- `specShapesToSkia`의 bgBox 추출 조건은 `shape.width === 'auto' && shape.height === 'auto'`
+- 숫자 width → bgBox 미추출 → 배경이 children으로 들어감 → 투명 outer box만 표시
+
+**2. effectiveElement에서 퍼센트 값 이중 적용 (ElementSprite.tsx)**
+- `computedContainerSize`는 Yoga가 이미 `%`를 resolve한 pixel 값
+- 기존 코드: `(parseFloat('50%') / 100) * computedContainerSize.width` → 50% × 200px = 100px (이중 적용)
+- 수정: `computedContainerSize.width` 직접 사용
+
+**3. `@xstudio/specs` dist 미빌드**
+- 소스 파일 수정 후 `pnpm build` 미실행 → Builder가 구 dist/ 참조
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `packages/specs/src/components/Button.spec.ts` | 배경 roundRect `width: 'auto' as const` |
+| `packages/specs/src/components/Section.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/ToggleButton.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/Card.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/Form.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/List.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/FancyButton.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/ScrollBox.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/MaskedFrame.spec.ts` | 동일 패턴 수정 |
+| `apps/builder/.../sprites/ElementSprite.tsx` | 퍼센트 값 이중 적용 수정 |
+| `apps/builder/.../ui/PixiButton.tsx` | `isWidthAuto`/`isHeightAuto` minRequiredWidth 비교 제거 |
+
+---
+
+### Feature - TagGroup 컨테이너 구조 전환 (2026-02-13)
+
+#### 개요
+TagGroup과 TagList를 CONTAINER_TAGS로 전환하여 웹 CSS와 동일한 3-level 계층 구조를 구현. ComponentDefinition 타입을 재귀적 ChildDefinition으로 확장하고, Factory에서 재귀 생성을 지원. 텍스트 태그의 높이 자동 계산 및 TextSprite 클릭 선택 관련 수정 포함.
+
+#### 변경 내용
+
+**1. TagGroup/TagList → CONTAINER_TAGS 전환**
+- TagGroup과 TagList를 CONTAINER_TAGS로 등록하여 웹 CSS와 동일한 3-level 계층 구조 구현
+- 구조: `TagGroup → Label + TagList → Tag[]`
+- 기존 flat 렌더링에서 실제 DOM 구조와 일치하는 중첩 컨테이너 방식으로 전환
+
+**2. ComponentDefinition 재귀적 ChildDefinition 타입 확장**
+- 기존 2-level 구조(parent + flat children)에서 무한 중첩 children 지원으로 확장
+- `ChildDefinition` 타입에 재귀적 `children` 필드 추가
+- 복합 컴포넌트의 깊은 계층 구조를 선언적으로 정의 가능
+
+**3. Factory 재귀 생성 (`createElementsFromDefinition`)**
+- `processChildren()` 재귀 함수 도입으로 중첩 자식 요소 일괄 생성
+- ChildDefinition의 재귀적 children 구조를 순회하며 각 레벨의 요소를 생성
+- 기존 단일 레벨 자식 생성 로직을 재귀 패턴으로 일반화
+
+**4. styleToLayout 텍스트 높이 자동 계산**
+- `TEXT_LAYOUT_TAGS` (label, text, heading, paragraph)에 대해 size prop 기반 높이 자동 설정
+- typography 토큰 매핑: `xs:12, sm:14, md:16, lg:18, xl:20`
+- lineHeight 계산: fontSize × 1.4 패턴으로 height 자동 설정
+- Button sizes 패턴과 동일한 `size prop → 토큰 → lineHeight` 변환 경로
+
+**5. TextSprite 투명 히트 영역**
+- backgroundColor가 없는 텍스트 요소에도 `alpha: 0.001` 사각형 추가
+- 투명 배경 텍스트도 클릭으로 선택 가능하도록 수정
+
+**6. ElementSprite useSkiaNode text spriteType 추가**
+- `hasOwnSprite` 조건에 text spriteType 추가
+- TextSprite가 자체적으로 Skia 데이터를 등록하므로 ElementSprite에서 이중 등록 방지
+
+**7. isYogaSizedContainer 확장**
+- TagGroup/TagList를 ToggleButtonGroup과 동일한 Yoga 크기 결정 패턴에 추가
+- Yoga 레이아웃 엔진이 컨테이너 크기를 자식 기반으로 자동 계산
+
+---
+
+### Bugfix - ToggleButtonGroup alignSelf 강제 설정으로 부모 align-items 무시 (2026-02-13)
+
+#### 이슈
+
+ToggleButtonGroup을 `display: flex; justify-content: center; align-items: center` 부모 안에 배치해도 수직 가운데 정렬이 되지 않음. `align-items: flex-start` 상태처럼 상단에 고정됨.
+
+#### 근본 원인
+
+`styleToLayout.ts`에서 ToggleButtonGroup의 `width: fit-content` Yoga 워크어라운드 처리 시 `alignSelf: 'flex-start'`를 강제 설정하고 있었음. CSS에서 `width: fit-content`와 `align-self`는 독립적 속성이지만, 코드에서는 fit-content 처리를 위해 `alignSelf`를 같이 설정하여 부모의 `align-items` 값이 무시됨.
+
+```typescript
+// ❌ 변경 전: alignSelf 강제 설정 → 부모 align-items 무시
+if (width === undefined && !isFitContentWidth) {
+  layout.flexGrow = 0;
+  layout.flexShrink = 0;
+  if (layout.alignSelf === undefined) layout.alignSelf = 'flex-start'; // ← 문제
+}
+if (isFitContentWidth) {
+  if (layout.alignSelf === undefined) layout.alignSelf = 'flex-start'; // ← 문제
+}
+
+// ✅ 변경 후: alignSelf 제거 → 부모 align-items 정상 적용
+if (width === undefined && !isFitContentWidth) {
+  layout.flexGrow = 0;
+  layout.flexShrink = 0;
+  // alignSelf 미설정 → 부모의 align-items가 교차축 정렬 결정
+}
+```
+
+#### 동일 패턴 조사
+
+| 위치 | alignSelf: flex-start 사용 | 수정 필요 |
+|------|---------------------------|----------|
+| `styleToLayout.ts` ToggleButtonGroup | 사용자 CSS 스타일 변환에서 강제 설정 | **수정 완료** |
+| `Pixi*.tsx` (10개: Popover, Disclosure, Menu, Tabs 등) | 내부 Pixi 렌더링 컴포넌트 자체 레이아웃용 | 사용자 CSS와 무관, 수정 불필요 |
+| `styleToLayout.ts` Checkbox/Radio/Switch | alignSelf 미사용 | 해당 없음 |
+| `styleToLayout.ts` Badge/Tag/Chip | alignSelf 미사용 | 해당 없음 |
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `layout/styleToLayout.ts` | ToggleButtonGroup fit-content 워크어라운드에서 `alignSelf: 'flex-start'` 2줄 제거 |
+
+---
+
+### Bugfix - ToggleButton spec border-radius 그룹 위치 기반 처리 (2026-02-13)
+
+#### 이슈
+
+ToggleButtonGroup 내부 ToggleButton의 border-radius가 CSS에서는 그룹 내 위치(first/middle/last)에 따라 모서리별로 다르게 적용되지만, Spec 기반 Skia 렌더링에서는 동일한 단일 borderRadius 값으로 렌더링됨.
+
+**CSS 규칙** (ToggleButtonGroup.css):
+- horizontal first: `border-top-right-radius: 0; border-bottom-right-radius: 0`
+- horizontal last: `border-top-left-radius: 0; border-bottom-left-radius: 0`
+- horizontal middle: 모든 모서리 `0`
+- vertical first: `border-bottom-left-radius: 0; border-bottom-right-radius: 0`
+- vertical last: `border-top-left-radius: 0; border-top-right-radius: 0`
+- vertical middle: 모든 모서리 `0`
+
+#### 수정 내용
+
+**1. `ToggleButton.spec.ts` — `_groupPosition` props + border-radius 분기**
+- `ToggleButtonProps` 인터페이스에 `_groupPosition` 추가 (orientation, isFirst, isLast, isOnly)
+- `shapes()` 함수에서 그룹 위치에 따른 per-corner border-radius 계산:
+  - `[tl, tr, br, bl]` 4-tuple 반환 (`specShapeConverter.ts`의 `resolveRadius()` 가 지원)
+
+```typescript
+// horizontal: first → [r,0,0,r], last → [0,r,r,0], middle → [0,0,0,0]
+// vertical: first → [r,r,0,0], last → [0,0,r,r], middle → [0,0,0,0]
+```
+
+**2. `ElementSprite.tsx` — `_groupPosition` 주입**
+- `toggleGroupPosition` 객체를 `_groupPosition` key로 spec shapes props에 주입
+- 기존 `PixiToggleButton.tsx`의 border-radius 처리와 동일한 결과
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `packages/specs/src/components/ToggleButton.spec.ts` | `_groupPosition` props, shapes() border-radius 분기 |
+| `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` | `toggleGroupPosition` → `_groupPosition` 주입 |
+
+---
+
+### Bugfix - Factory 정의 style 기본값 누락 (2026-02-13)
+
+#### 근본 원인
+
+복합 컴포넌트(children 포함)는 `ComponentFactory` → `GroupComponents.ts`의 factory 정의로 생성됨.
+단순 컴포넌트는 `useElementCreator` → `getDefaultProps(tag)` (unified.types.ts)로 생성됨.
+**factory 정의의 `props`에 `style` 필드가 누락**되어 생성 시점에 CSS 기본값(display, flexDirection 등)이 적용되지 않음. 리셋 버튼은 `getDefaultProps()`를 사용하므로 리셋 후에만 기본값이 복원됨.
+
+#### 수정 내용
+
+**1. `GroupComponents.ts` — factory 정의에 style 추가**
+
+| 컴포넌트 | 추가된 style |
+|---------|------------|
+| ToggleButtonGroup (parent) | `{ display: 'flex', flexDirection: 'row', alignItems: 'center', width: 'fit-content' }` |
+| Checkbox (CheckboxGroup 자식) | `{ display: 'flex', flexDirection: 'row', alignItems: 'center' }` |
+| Radio (RadioGroup 자식) | `{ display: 'flex', flexDirection: 'row', alignItems: 'center' }` |
+
+**2. `unified.types.ts` — getDefaultProps 기본값 동기화**
+
+| 함수 | 추가된 속성 |
+|-----|-----------|
+| `createDefaultToggleButtonGroupProps` | `alignItems: 'center'`, `width: 'fit-content'` |
+
+#### 전수 조사 결과
+
+| 경로 | style 있음 (unified.types) | factory 정의 | 상태 |
+|------|--------------------------|-------------|------|
+| Button | `{ borderWidth: '1px' }` | 단순 컴포넌트 (factory 미사용) | 문제 없음 |
+| Switch | `{ display: 'flex', ... }` | 단순 컴포넌트 (factory 미사용) | 문제 없음 |
+| Card | `{ display: 'block', ... }` | 단순 컴포넌트 (factory 미사용) | 문제 없음 |
+| ToggleButtonGroup | `{ display: 'flex', ... }` | factory 사용 | **수정 완료** |
+| Checkbox (in CheckboxGroup) | `{ display: 'flex', ... }` | factory 자식 | **수정 완료** |
+| Radio (in RadioGroup) | `{ display: 'flex', ... }` | factory 자식 | **수정 완료** |
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `factories/definitions/GroupComponents.ts` | ToggleButtonGroup, Checkbox×2, Radio×2에 style 추가 |
+| `types/builder/unified.types.ts` | `createDefaultToggleButtonGroupProps`에 alignItems, width 추가 |
+
+---
+
+### Bugfix - ToggleButtonGroup 스타일 패널 display 기본값 + Selection 영역 (2026-02-13)
+
+#### 이슈 1: 스타일 패널 display 기본값 오류
+
+**문제**: ToggleButtonGroup 선택 시 스타일 패널에서 `display: block`으로 표시됨 (실제는 `display: flex`).
+`styleAtoms.ts`의 displayAtom이 `element.style.display ?? element.computedStyle.display ?? 'block'` 폴백을 사용하여, 인라인 스타일/computedStyle에 display가 없는 컴포넌트는 항상 'block' 표시.
+
+**수정**: `getLayoutDefault()` 4단계 우선순위 헬퍼 도입:
+1. inline style → 2. computed style → 3. `DEFAULT_CSS_VALUES[tag]` → 4. global default
+
+```typescript
+// styleAtoms.ts
+const DEFAULT_CSS_VALUES = {
+  ToggleButtonGroup: { width: 'fit-content', display: 'flex', flexDirection: 'row', alignItems: 'center' },
+  // ...
+};
+
+function getLayoutDefault(element, prop, globalDefault): string {
+  // inline → computed → tag default → global default
+}
+```
+
+**영향 atoms**: `displayAtom`, `flexDirectionAtom`, `layoutValuesAtom`, `flexDirectionKeysAtom`, `flexAlignmentKeysAtom`
+
+#### 이슈 2: Selection 영역이 실제 크기보다 작음
+
+**문제**: ToggleButtonGroup(CONTAINER_TAGS + inline-block)의 selection bounds가 80px(DEFAULT_WIDTH 폴백)로 계산됨.
+원인: BlockEngine → `calculateContentWidth()` → ToggleButtonGroup에 텍스트/명시적 width 없음 → DEFAULT_WIDTH=80px 폴백.
+
+**수정 1 — `engines/utils.ts` calculateContentWidth()**:
+ToggleButtonGroup 전용 분기 추가. `props.items`에서 자식 버튼 텍스트 폭 합산.
+
+**수정 2 — `BuilderCanvas.tsx` containerLayout**:
+ToggleButtonGroup의 containerLayout width를 `'auto'`로 오버라이드. Yoga가 자식 크기 기반 자동 계산.
+
+```typescript
+const toggleGroupWidthOverride = isToggleButtonGroup
+  ? { width: 'auto', flexGrow: 0, flexShrink: 0 }
+  : { width: layout.width };
+```
+
+#### 동일 패턴 분석
+
+| 조건 | 결과 |
+|------|------|
+| CONTAINER_TAGS ∩ DEFAULT_INLINE_BLOCK_TAGS | **ToggleButtonGroup만** 해당 |
+| 다른 CONTAINER_TAGS (Card, Panel 등) | block → width = availableWidth → 문제 없음 |
+| 다른 inline-block (Toolbar 등) | CONTAINER_TAGS 아님 → containerLayout 미사용 → 영향 없음 |
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `panels/styles/atoms/styleAtoms.ts` | `getLayoutDefault()` 헬퍼, DEFAULT_CSS_VALUES 확장, 5개 atom 수정 |
+| `layout/engines/utils.ts` | `calculateContentWidth()`에 ToggleButtonGroup 분기 추가 |
+| `workspace/canvas/BuilderCanvas.tsx` | containerLayout width override for ToggleButtonGroup |
+
+---
+
+### Feature - `width: fit-content` 네이티브 구현 (2026-02-13)
+
+#### 개요
+CSS intrinsic sizing `width: fit-content`를 BlockEngine + WASM 하이브리드 레이아웃 엔진에 네이티브 구현. 기존 Yoga 워크어라운드(flexGrow:0 + flexShrink:0)를 보완하여 Block 레이아웃 경로에서도 fit-content가 정확히 동작.
+
+#### 구현 방식
+`FIT_CONTENT = -2` sentinel 값을 도입하여 기존 `AUTO = -1` 패턴과 동일한 방식으로 JS ↔ WASM 직렬화. FIELD_COUNT(19) 변경 없이 width 필드에 sentinel을 전달.
+
+```
+width 값 해석:
+  -1 (AUTO)         → Block: 부모 너비 채움 / Inline-block: contentWidth
+  -2 (FIT_CONTENT)  → Block: contentWidth 사용 (inline-block과 동일)
+  0 이상             → 명시적 px 값
+```
+
+#### 변경 내용
+
+**1. utils.ts — FIT_CONTENT 상수 + parseSize/parseBoxModel**
+- `FIT_CONTENT = -2` 상수 export
+- `parseSize()`: `'fit-content'` 문자열 감지 → `FIT_CONTENT` 반환
+- `parseBoxModel()`: `FIT_CONTENT` 값은 border-box 변환 건너뜀
+
+**2. layoutAccelerator.ts — WASM 바인딩 상수**
+- `FIT_CONTENT = -2` export 추가
+
+**3. BlockEngine.ts — JS/WASM 양쪽 경로**
+- JS 경로: `boxModel.width === FIT_CONTENT`일 때 `contentWidth` 사용
+- WASM 경로: `FIT_CONTENT` sentinel을 WASM에 전달
+
+**4. block_layout.rs — Rust WASM**
+- `FIT_CONTENT` 상수 추가, block/inline-block 양쪽 width 로직 수정
+- 6개 Rust 테스트 추가
+
+**5. styleToLayout.ts — Flex/Yoga 경로 일반화**
+- 모든 요소에 대해 fit-content Yoga 워크어라운드 적용 (`flexGrow:0, flexShrink:0`)
+- ToggleButtonGroup CSS 기본값(`width: fit-content`) 유지
+
+**6. TransformSection.tsx — StylesPanel UI**
+- Width/Height units에 `fit-content` 옵션 추가 (`reset` 아래)
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `layout/engines/utils.ts` | `FIT_CONTENT` 상수, `parseSize`/`parseBoxModel` 수정 |
+| `wasm-bindings/layoutAccelerator.ts` | `FIT_CONTENT` 상수 export |
+| `layout/engines/BlockEngine.ts` | JS/WASM 경로 fit-content 처리 |
+| `wasm/src/block_layout.rs` | Rust fit-content 로직 + 6 테스트 |
+| `layout/styleToLayout.ts` | Yoga 워크어라운드 일반화 |
+| `panels/styles/sections/TransformSection.tsx` | Width/Height units에 fit-content 추가 |
+
+---
 
 ### Feature - Spec Shapes 기반 Skia UI 컴포넌트 렌더링 (2026-02-12)
 

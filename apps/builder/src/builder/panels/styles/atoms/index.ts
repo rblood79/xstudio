@@ -12,6 +12,7 @@ export {
   selectedElementAtom,
   inlineStyleAtom,
   computedStyleAtom,
+  syntheticComputedStyleAtom,
 
   // Helper functions
   getStyleValueFromAtoms,
@@ -84,3 +85,6 @@ export {
   activeFillAtom,
   colorInputModeAtom,
 } from './fillAtoms';
+
+// Component State Preview atom (Phase A)
+export { previewComponentStateAtom } from './componentStateAtom';

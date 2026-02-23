@@ -6,7 +6,15 @@
 
 > **Superseded By:** Pencil 방식 CanvasKit/Skia 2-pass 렌더러(컨텐츠 캐시 + present(blit) + 오버레이 분리).
 > PixiJS는 렌더링이 아니라 **씬 그래프/히트테스트(EventBoundary)/이벤트** 전용 레이어로 유지.
-> 상세: `docs/WASM.md`, `docs/PENCIL_VS_XSTUDIO_RENDERING.md`
+>
+> **후속 문서:**
+> - [`docs/WASM.md`](../WASM.md) — CanvasKit/Skia WASM 렌더링 아키텍처 (현행 기준 문서)
+> - [`docs/PENCIL_VS_XSTUDIO_RENDERING.md`](../PENCIL_VS_XSTUDIO_RENDERING.md) — 렌더링 비교 분석
+> - [`docs/ENGINE.md`](../ENGINE.md) — Taffy+Dropflow 레이아웃 엔진 전략
+> - [`docs/ENGINE_CHECKLIST.md`](../ENGINE_CHECKLIST.md) — CSS Level 3 지원 현황
+>
+> **참고:** 본 ADR의 Updates 섹션(2026-02-01~02-18, 30+ 항목)은 전환 과정의 상세 이력입니다.
+> 현행 아키텍처는 `docs/WASM.md`를 기준으로 참조하세요.
 
 ## Context
 
@@ -18,7 +26,9 @@ XStudio Builder는 시각적 캔버스 에디터가 필요합니다:
 
 ## Decision
 
-**PixiJS 8 + @pixi/layout + @pixi/react**를 캔버스 렌더링에 사용합니다.
+**PixiJS 8 + @pixi/react**를 캔버스 이벤트 레이어에 사용합니다.
+
+> **Note (2026-02-18):** Phase 10-11에서 `@pixi/layout`(Yoga), `@pixi/ui` 의존성 완전 제거됨. DirectContainer(x/y 직접 배치) 패턴으로 전환.
 
 ## Alternatives Considered
 
@@ -33,38 +43,32 @@ XStudio Builder는 시각적 캔버스 에디터가 필요합니다:
 ## Rationale
 
 1. **WebGL 성능**: GPU 가속으로 수천 개 요소도 60fps
-2. **@pixi/layout**: Yoga 기반 Flexbox 레이아웃
-3. **@pixi/react**: React 선언적 문법 유지
+2. **@pixi/react**: React 선언적 문법 유지 (DirectContainer x/y 직접 배치)
 4. **생태계**: 필터, 마스킹, 텍스처 등 풍부한 기능
 
 ## Key Constraints
 
-### @pixi/layout 규칙
+### DirectContainer 배치 규칙 (Phase 11+)
 ```typescript
-// ❌ x/y props 금지
-<Container x={100} y={50} />
+// ✅ 엔진 계산 결과로 x/y 직접 배치
+<DirectContainer elementId={id} x={layout.x} y={layout.y}
+  width={layout.width} height={layout.height}>
+  {children}
+</DirectContainer>
 
-// ✅ style 기반 레이아웃
-<Container style={{ marginLeft: 100, marginTop: 50 }} />
-
-// ✅ Text는 isLeaf 필수
-<Text text="Hello" isLeaf />
-
-// ✅ @pixi/layout 최우선 import
-import '@pixi/layout';
-import { Container, Text } from '@pixi/react';
+// ✅ alpha=0 이벤트 전용 레이어 — 시각 렌더링은 Skia가 담당
+// ✅ @pixi/layout, yoga-layout 의존성 없음
 ```
 
 ## Consequences
 
 ### Positive
 - 대규모 프로젝트에서도 부드러운 인터랙션
-- Yoga 레이아웃으로 CSS-like 레이아웃
 - React 패턴과 자연스러운 통합
+- 엔진 계산 결과 직접 사용으로 이중 계산 제거 (Phase 11)
 
 ### Negative
 - 접근성 직접 구현 필요
-- @pixi/layout 규칙 학습 필요
 - 디버깅이 DOM보다 어려움
 
 ## Update: CanvasKit/Skia WASM 이중 렌더러 (2026-02-01)
@@ -276,7 +280,7 @@ Pencil 앱 대비 팬/줌 끊김 원인 5가지를 분석·수정:
 
 **상세:** `apps/builder/src/.../viewport/useViewportControl.ts`
 
-### 6. Camera-Only Blit (Pencil 방식: padding + cleanup) — ✅ 활성화 (2026-02-05)
+### 6. Camera-Only Blit (Pencil 방식: padding + cleanup) — 활성화 (2026-02-05)
 
 Pencil 모델대로 "컨텐츠는 캐시 스냅샷, 카메라만 바뀌면 blit만"을 활성화했다.
 핵심은 **contentSurface를 뷰포트보다 크게 생성(padding 512px)** 하여 팬/줌 중 가장자리 클리핑을 막는 것.
@@ -294,7 +298,7 @@ Pencil 모델대로 "컨텐츠는 캐시 스냅샷, 카메라만 바뀌면 blit�
 
 Pencil 앱 분석(`docs/PENCIL_APP_ANALYSIS.md` 섹션 16-19)에서 확인된 미적용 렌더링 기법을 도입:
 
-### 1. Cleanup Render (200ms 디바운스) — ✅ 활성화
+### 1. Cleanup Render (200ms 디바운스) — 활성화
 
 Pencil의 `debouncedMoveEnd(200ms) → invalidateContent()` 패턴. Camera-only blit과 함께 사용하여 가장자리 아티팩트를 해소하는 역할.
 
@@ -556,23 +560,255 @@ Inspector에서 설정한 인라인 스타일이 WebGL(Skia) 렌더링에 정확
 
 **상세:** `packages/specs/src/components/*.spec.ts` (49개), `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../skia/specShapeConverter.ts`, `apps/builder/src/.../ui/PixiButton.tsx`
 
+## Update: TagGroup 컨테이너 구조 전환 & TextSprite 히트 영역 (2026-02-13)
+
+### 1. TagGroup/TagList → CONTAINER_TAGS 전환
+
+TagGroup과 TagList를 `TAG_SPEC_MAP` 기반 개별 렌더링에서 **BoxSprite 기반 컨테이너 렌더링**으로 전환:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **렌더링 방식** | `TAG_SPEC_MAP`에서 개별 Spec 렌더링 | `CONTAINER_TAGS`에 추가하여 BoxSprite 기반 컨테이너 |
+| **isYogaSizedContainer** | TagGroup/TagList 미포함 | TagGroup/TagList 추가 (ToggleButtonGroup과 동일 패턴) |
+| **PixiTagGroup** | 특수 렌더링 코드 존재 | 제거 |
+
+**근거:** TagGroup/TagList는 자식 요소를 Yoga 레이아웃으로 배치하는 컨테이너 역할이므로, 개별 도형 렌더링보다 BoxSprite 컨테이너가 적합.
+
+### 2. ElementSprite useSkiaNode 이중 등록 방지
+
+`useSkiaNode` 훅에서 Skia 데이터 이중 등록을 방지하는 로직 개선:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **변수명** | `hasBoxSprite` | `hasOwnSprite` (의미 명확화) |
+| **spriteType 체크** | BoxSprite만 체크 | `text` spriteType 추가 |
+| **문제** | style이 있는 텍스트 요소(예: fontSize/fontWeight가 설정된 Label)에서 ElementSprite가 box 데이터를 등록하여 TextSprite의 텍스트 데이터를 덮어씌움 | TextSprite가 자체적으로 Skia 데이터를 등록하므로 ElementSprite에서 덮어쓰기 방지 |
+
+**영향:** Label, Text, Heading, Paragraph 등 텍스트 요소에 인라인 스타일(fontSize, fontWeight 등)이 설정된 경우, Skia 렌더링에서 텍스트가 사라지거나 단순 박스로 대체되는 버그가 해결됨.
+
+### 3. TextSprite 투명 히트 영역
+
+backgroundColor가 없는 텍스트 요소에서도 PixiJS EventBoundary 클릭 감지가 가능하도록 투명 히트 영역 추가:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **backgroundColor 없는 경우** | `g.clear()` 실행 → 히트 영역 0 | `alpha:0.001` 투명 사각형 렌더링 → 클릭 감지 가능 |
+| **사용자 경험** | 배경색 없는 텍스트를 캔버스에서 클릭/선택 불가 | 텍스트 영역 어디서든 클릭/선택 가능 |
+
+**원리:** PixiJS EventBoundary는 `alpha > 0`인 렌더된 영역에서만 히트 테스트를 수행. `alpha:0.001`은 시각적으로 투명하지만 이벤트 감지는 활성화됨 (`renderable=false`는 이벤트까지 비활성화하므로 사용 금지 — ADR-003 기존 규칙 참조).
+
+### 4. styleToLayout 텍스트 태그 높이 자동계산
+
+Yoga `measureFunc` 없이도 컨테이너 내에서 텍스트 요소의 높이를 올바르게 인식하도록 자동계산 로직 추가:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **텍스트 높이** | 미지정 → Yoga가 0으로 처리 | `Math.ceil(fontSize * 1.4)` 자동계산 |
+| **대상 태그** | 없음 | `TEXT_LAYOUT_TAGS` 집합: label, text, heading, paragraph |
+| **size prop 해석** | 미지원 | typography 토큰 매핑 (xs:12, sm:14, md:16, lg:18, xl:20) |
+
+**계산 공식:** `height = Math.ceil(fontSize * 1.4)`
+- `fontSize`: `style.fontSize` > `size` prop 토큰 매핑 > 기본값 16px
+- `1.4`: CSS `line-height: 1.4` 근사값 (텍스트 baseline + descender 포함)
+
+**상세:** `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../sprites/TextSprite.tsx`, `apps/builder/src/.../canvas/styleToLayout.ts`
+
+## Update: 컨테이너 히트 영역 Non-Layout 패턴 (2026-02-14)
+
+### 문제
+
+CSS padding이 설정된 컨테이너 요소(TagGroup, TagList, Card, Box 등)를 캔버스에서 클릭해도 선택되지 않는 버그.
+
+**근본 원인: Yoga 3의 absolute positioning과 padding의 상호작용**
+
+@pixi/layout은 Yoga 3 (`yoga-layout ^3.2.1`)을 레이아웃 엔진으로 사용한다. Yoga 3에는 `AbsolutePositionWithoutInsetsExcludesPadding` errata 플래그가 있으며, @pixi/layout (`^3.2.0`)은 Yoga errata를 별도로 구성하지 않고 기본값을 사용한다.
+
+이 기본 동작에서, `position: 'absolute'`이고 `left`/`top` inset이 명시된 자식 노드는 **부모의 content 영역 원점**(paddingLeft, paddingTop)을 기준으로 배치된다:
+
+```
+Container (padding: 16px)
+┌──────────────────────────┐  ← 컨테이너 border-box 원점 (0, 0)
+│  padding (16px)           │
+│  ┌────────────────────┐  │  ← content 영역 원점 (16, 16)
+│  │ absolute 자식       │  │  ← left:0, top:0 → (16, 16)에 배치됨
+│  │ (BoxSprite 히트영역) │  │
+│  └────────────────────┘  │
+│                          │
+└──────────────────────────┘
+```
+
+**시각적 렌더링(Skia)** 은 컨테이너의 전체 border-box 영역(padding 포함)을 올바르게 렌더링한다. 하지만 **인터랙티브 히트 영역(PixiJS)** 의 BoxSprite는 `layout={{ position: 'absolute', left: 0, top: 0 }}`으로 배치되어 있어, Yoga가 이를 content 영역 원점으로 오프셋한다. 결과적으로 padding 영역에 히트 영역이 존재하지 않아 클릭이 불가능하다.
+
+### 해결: Non-Layout `<pixiGraphics>` 히트 영역
+
+`layout` prop이 없는 `<pixiGraphics>`를 컨테이너의 **첫 번째 자식**으로 삽입한다:
+
+```tsx
+// ElementSprite.tsx — 컨테이너 렌더링 (box, flex, grid spriteType)
+<>
+  {/* Non-layout 히트 영역: layout prop 없음 → Yoga가 무시 → 컨테이너 원점(0,0)에 배치 */}
+  <pixiGraphics
+    draw={drawContainerHitRect}
+    eventMode="static"
+    cursor="pointer"
+    onPointerDown={handleContainerPointerDown}
+  />
+  {/* BoxSprite: absolute 배치 (기존) — padding 오프셋 영향받지만 시각적 역할만 */}
+  <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0, right: 0, bottom: 0 }}>
+    <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />
+  </pixiContainer>
+  {/* 자식 요소들 */}
+  {childElements.map((childEl) => renderChildElement(childEl))}
+</>
+```
+
+**핵심 메커니즘:**
+
+| 항목 | BoxSprite (기존, absolute) | pixiGraphics (신규, non-layout) |
+|------|---------------------------|-------------------------------|
+| **layout prop** | `{ position: 'absolute', left: 0, top: 0 }` | 없음 |
+| **Yoga 참여** | 참여 — padding에 의한 오프셋 발생 | 무시 — Yoga 레이아웃 트리에 포함되지 않음 |
+| **배치 위치** | content 영역 원점 (paddingLeft, paddingTop) | 컨테이너 원점 (0, 0) |
+| **크기** | content 영역 (padding 제외) | `LayoutComputedSizeContext`의 border-box 크기 (padding 포함) |
+| **역할** | 배경/테두리 시각 렌더링 + Skia 데이터 등록 | 이벤트 히트 영역 전용 |
+| **이벤트 처리** | `eventMode="static"` (BoxSprite 자체) | `eventMode="static"` + `onPointerDown` |
+
+**`drawContainerHitRect` 구현:**
+
+```typescript
+const drawContainerHitRect = useCallback(
+  (g: PixiGraphics) => {
+    g.clear();
+    const w = computedW ?? 0;  // LayoutComputedSizeContext에서 Yoga border-box 크기
+    const h = computedH ?? 0;
+    if (w <= 0 || h <= 0) return;
+    g.rect(0, 0, w, h);
+    g.fill({ color: 0xffffff, alpha: 0.001 });
+  },
+  [computedW, computedH],
+);
+```
+
+### 적용 대상
+
+이 패턴은 **자식 요소를 가진 모든 컨테이너 타입**에 적용된다:
+
+| spriteType | 적용 조건 |
+|-----------|----------|
+| `box` | `childElements.length > 0` |
+| `flex` | `childElements.length > 0` |
+| `grid` | `childElements.length > 0` |
+
+대상 태그 (`CONTAINER_TAGS`): Card, Box, Panel, Form, Group, Dialog, Modal, Disclosure, DisclosureGroup, Accordion, ToggleButtonGroup, TagGroup, TagList
+
+> **Note:** 자식이 없는 컨테이너는 BoxSprite 단독으로 렌더링되며, BoxSprite 자체의 히트 영역이 충분하므로 non-layout 패턴이 불필요하다.
+
+### 관련 규칙
+
+- **[pixi-hitarea-absolute](/.claude/skills/xstudio-patterns/rules/pixi-hitarea-absolute.md)** — 히트 영역 배치 패턴 (이 Update로 "Non-layout 히트 영역" 섹션 추가)
+
+**상세:** `apps/builder/src/.../sprites/ElementSprite.tsx` (drawContainerHitRect, handleContainerPointerDown)
+
+## Update: 레이아웃 엔진 마이그레이션 완료 — 전략 D Phase 9 (2026-02-17)
+
+ENGINE.md 전략 D의 최종 단계인 Phase 9를 완료하여, 레거시 레이아웃 엔진을 모두 삭제하고 새 엔진 아키텍처로 완전 전환:
+
+### 1. 레거시 엔진 삭제 (Phase 9A)
+
+| 삭제 대상 | 라인 수 | 대체 엔진 |
+|-----------|---------|-----------|
+| `BlockEngine.ts` | 952줄 | `DropflowBlockEngine` |
+| `FlexEngine.ts` | 65줄 | `TaffyFlexEngine` (Taffy WASM) |
+| `GridEngine.ts` | 563줄 | `TaffyGridEngine` (Taffy WASM) |
+
+### 2. 현재 엔진 아키텍처
+
+| display 값 | 엔진 | 기술 |
+|------------|------|------|
+| `flex`, `inline-flex` | `TaffyFlexEngine` | Taffy WASM |
+| `grid`, `inline-grid` | `TaffyGridEngine` | Taffy WASM |
+| `block`, `inline-block`, `flow-root`, `inline` | `DropflowBlockEngine` | Dropflow Fork (JS) |
+
+**WASM 폴백:** `WASM_FLAGS.LAYOUT_ENGINE`이 `true`여야 `initRustWasm()`이 호출됨. WASM 미로드 시 모든 display 모드가 `DropflowBlockEngine`으로 안전 폴백.
+
+### 3. 디스패처 정리 (Phase 9C)
+
+- `engines/index.ts`에서 `shouldDelegateToPixiLayout` 제거
+- Feature flag 분기 (`isTaffyFlexEnabled`, `isTaffyGridEnabled`, `isDropflowBlockEnabled`) 제거
+- `selectEngine()` 직접 라우팅으로 단순화
+- 싱글톤 엔진 인스턴스 (매 호출마다 new 생성 → 싱글톤)
+
+### 4. 주요 수정 사항
+
+| 수정 | 원인 | 해결 |
+|------|------|------|
+| `WASM_FLAGS.LAYOUT_ENGINE` 활성화 | `false`일 때 Taffy 엔진 비활성화 | `true`로 변경 |
+| `resolveLayoutSize()` 추가 | `width:'100%'` 문자열이 0으로 평가 | `%` 문자열을 부모 크기 기준으로 해석 |
+| Flex parent passthrough | wrapper가 `alignItems:flex-start` 강제 | 부모 flex 속성을 Yoga wrapper에 전달 |
+
+### 5. 기술 스택 변경
+
+| 항목 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| **Layout Engine** | 하이브리드 (BlockEngine, FlexEngine, GridEngine) + Feature flags | Taffy WASM (Flex/Grid) + Dropflow Fork (Block) — 직접 라우팅 |
+| **Feature flags** | `taffyFlex`, `taffyGrid`, `dropflowBlock` | 제거 (항상 활성) |
+| **코드 라인** | ~1,580줄 레거시 코드 | 삭제 완료 |
+
+**상세:** `docs/ENGINE.md`, `apps/builder/src/.../layout/engines/index.ts`
+
+## Update: @pixi/layout + @pixi/ui 완전 제거 — Phase 10-11 (2026-02-18)
+
+### Phase 10: @pixi/ui 제거 (완료)
+
+11개 UI 컴포넌트 파일에서 `@pixi/ui` 의존성 제거. 순수 PixiJS Container + Graphics(alpha=0.001) 히트 영역으로 대체.
+
+### Phase 11: @pixi/layout (Yoga) 제거 (완료)
+
+**이중 계산 문제 해결:**
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **레이아웃 경로** | Engine → ComputedLayout → marginTop/marginLeft 변환 → Yoga 재계산 | Engine → ComputedLayout → x/y 직접 배치 |
+| **LayoutContainer** | Yoga layout={} prop 기반 | DirectContainer x/y/width/height props |
+| **UI 컴포넌트 (42개)** | layout={} prop + Yoga 연동 | layout prop 완전 제거 |
+| **패키지** | `@pixi/layout ^3.2.0`, `yoga-layout ^3.2.1` | 제거됨 |
+
+**수정 범위 (49개 파일):**
+- `BuilderCanvas.tsx` — DirectContainer + renderWithCustomEngine 리팩터
+- `sprites/ElementSprite.tsx` — layout prop → x/y
+- `ui/` 하위 42개 파일 — layout prop 제거
+- `pixiSetup.ts` — LayoutContainer/LayoutText 제거
+- `pixi-jsx.d.ts`, `types/pixi-react.d.ts` — 타입 정리
+- `package.json` — @pixi/layout, yoga-layout 제거
+
+**핵심 원리:** PixiJS는 alpha=0 이벤트 전용 레이어이므로, 엔진 계산 결과의 근사치가 히트 테스트에 충분. Skia가 정확한 시각적 렌더링 담당.
+
+### 현재 기술 스택
+
+| 항목 | 상태 |
+|------|------|
+| **CanvasKit/Skia WASM** | 메인 렌더러 (디자인 노드 + AI 이펙트 + Selection 오버레이) |
+| **PixiJS 8 + @pixi/react** | 이벤트 전용 레이어 (alpha=0, DirectContainer 직접 배치) |
+| **Taffy WASM** | Flex/Grid 레이아웃 엔진 |
+| **Dropflow Fork** | Block 레이아웃 엔진 |
+| ~~@pixi/layout~~ | **제거됨** (Phase 11) |
+| ~~@pixi/ui~~ | **제거됨** (Phase 10) |
+| ~~yoga-layout~~ | **제거됨** (Phase 11) |
+
 ## Implementation
 
 ```typescript
-import '@pixi/layout';
-import { Stage, Container, Text } from '@pixi/react';
+// Phase 11+: @pixi/layout 없이 DirectContainer로 직접 배치
+import { Application, extend } from '@pixi/react';
 
-function BuilderCanvas() {
-  return (
-    <Stage>
-      <Container style={{ display: 'flex', flexDirection: 'column' }}>
-        <Container style={{ flex: 1 }}>
-          <Text text="Content" isLeaf />
-        </Container>
-      </Container>
-    </Stage>
-  );
-}
+// DirectContainer: 엔진 계산 결과를 직접 사용
+<DirectContainer
+  elementId={child.id}
+  x={layout.x} y={layout.y}
+  width={layout.width} height={layout.height}
+>
+  <ElementSprite element={child} ... />
+</DirectContainer>
 ```
 
 ## References

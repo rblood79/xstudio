@@ -1,25 +1,14 @@
 /**
  * PixiJS Setup
  *
- * @pixi/react와 @pixi/layout 컴포넌트 카탈로그를 정의합니다.
+ * @pixi/react 컴포넌트 카탈로그를 정의합니다.
  *
  * 컴포넌트 등록 전략:
  * 1. 모듈 로드 시점에 extend() 호출 - 렌더링 전 등록 보장
  * 2. 컴포넌트 내에서 useExtend() 훅 - 추가 안전장치
  *
- * @example
- * // 컴포넌트 파일에서
- * import { useExtend } from '@pixi/react';
- * import { PIXI_COMPONENTS } from './pixiSetup';
- *
- * function MyComponent() {
- *   useExtend(PIXI_COMPONENTS); // 추가 안전장치 (이미 등록됨)
- *   return <pixiContainer>...</pixiContainer>;
- * }
- *
  * @since 2025-12-12
- * @updated 2025-12-13 P4: useExtend 훅 도입
- * @updated 2025-12-17 모듈 로드 시점 extend() 추가 + 클래스 이름 등록
+ * @updated 2026-02-17 Phase 11: @pixi/layout 제거 — 순수 PixiJS 이벤트 레이어
  */
 
 import {
@@ -30,11 +19,6 @@ import {
   AbstractRenderer,
   TextureSource,
 } from 'pixi.js';
-import {
-  LayoutContainer,
-  LayoutText,
-} from '@pixi/layout/components';
-import { FancyButton } from '@pixi/ui';
 import { extend } from '@pixi/react';
 
 // ============================================
@@ -140,8 +124,6 @@ export function getDynamicResolution(
   const isLowEnd = isLowEndDevice();
 
   // Skia 모드: PixiJS는 이벤트 처리 전용 (alpha=0, 시각적 렌더링 없음)
-  // 인터랙션 중 해상도 하향은 불필요하고, 오히려 PixiJS 캔버스 리사이즈 →
-  // @pixi/layout 재계산 → React 리렌더를 유발하여 끊김의 원인이 됨.
   // 항상 고정 해상도를 사용한다.
   const baseResolution = isLowEnd
     ? Math.min(devicePixelRatio, 1.5)
@@ -159,6 +141,60 @@ export function getDynamicResolution(
 
 // 모듈 로드 시점에 전역 설정 적용
 initPixiSettings();
+
+// ============================================
+// 🔍 히트 영역 디버그 시각화
+// ============================================
+
+/**
+ * VITE_ENABLE_HITAREA_MODE=true 시 투명 히트 영역을 빨간색으로 시각화
+ *
+ * 전략:
+ * 1. rect() 패치 → 마지막 rect 넓이 추적
+ * 2. fill() 패치 → alpha ≤ 0.001 + 넓이 < 임계값 → 빨간색 (히트 영역)
+ *    - ClickableBackground(10000×10000) 등 거대 배경은 자동 제외
+ * 3. Camera alpha=1 + PixiJS 캔버스 CSS opacity → Skia 위에 오버레이
+ *
+ * 부모 체인(isInsideCamera) 불필요 → draw 시점 타이밍 문제 없음
+ */
+if (import.meta.env.VITE_ENABLE_HITAREA_MODE === 'true') {
+  // rect() 패치: 마지막 rect 넓이를 Graphics 인스턴스에 기록
+  const MAX_HIT_AREA = 2_000_000; // 2M px² 이상은 배경으로 간주
+  const originalRect = PixiGraphics.prototype.rect;
+  PixiGraphics.prototype.rect = function (
+    x: number, y: number, w: number, h: number
+  ) {
+    (this as unknown as Record<string, number>).__lastRectArea = Math.abs(w * h);
+    return originalRect.call(this, x, y, w, h);
+  };
+
+  // fill() 패치: 투명 히트 영역 → 빨간색
+  const originalFill = PixiGraphics.prototype.fill;
+  PixiGraphics.prototype.fill = function (
+    ...args: Parameters<typeof originalFill>
+  ) {
+    const style = args[0];
+    if (
+      style &&
+      typeof style === 'object' &&
+      'alpha' in style &&
+      typeof (style as unknown as Record<string, unknown>).alpha === 'number' &&
+      ((style as unknown as Record<string, unknown>).alpha as number) <= 0.001
+    ) {
+      const area = (this as unknown as Record<string, number>).__lastRectArea ?? 0;
+      if (area > 0 && area < MAX_HIT_AREA) {
+        return originalFill.call(this, {
+          ...(style as unknown as Record<string, unknown>),
+          color: 0xff0000,
+          alpha: 0.8,
+        } as unknown as Parameters<typeof originalFill>[0]);
+      }
+    }
+    return originalFill.apply(this, args);
+  };
+
+  console.info('[HitArea Debug] 히트 영역 시각화 활성화 (빨간색, 배경 제외)');
+}
 
 /**
  * PixiJS 컴포넌트 카탈로그
@@ -182,11 +218,6 @@ export const PIXI_COMPONENTS = {
   Graphics: PixiGraphics,
   Sprite: PixiSprite,
   Text: PixiText,
-  // @pixi/layout 컴포넌트
-  LayoutContainer,
-  LayoutText,
-  // @pixi/ui 컴포넌트
-  FancyButton,
 };
 
 // 모듈 로드 시점에 즉시 등록 (컴포넌트 렌더링 전에 보장)

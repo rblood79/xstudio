@@ -35,12 +35,12 @@
   /* ========== Base Tooltip Styles ========== */
   .react-aria-Tooltip {
     box-shadow: 0 2px 8px color-mix(in srgb, var(--on-surface) 12%, transparent);
-    border-radius: var(--radius-xs);
+    border-radius: var(--radius-sm);
     background: var(--inverse-surface);
     color: var(--inverse-on-surface);
     forced-color-adjust: none;
     outline: none;
-    padding: var(--spacing-xs) var(--spacing);
+    padding: 6px 10px;
     max-width: 150px;
     font-size: var(--text-xs);
     /* fixes FF gap */
@@ -176,14 +176,14 @@
 
   /* ===== Small Size ===== */
   .react-aria-Tooltip.sm {
-    padding: var(--spacing-2xs) var(--spacing-xs);
+    padding: 4px 8px;
     max-width: 120px;
-    font-size: 10px;
+    font-size: var(--text-xs);
   }
 
   /* ===== Medium Size (Default) ===== */
   .react-aria-Tooltip.md {
-    padding: var(--spacing-xs) var(--spacing);
+    padding: 6px 10px;
     max-width: 150px;
     font-size: var(--text-xs);
   }

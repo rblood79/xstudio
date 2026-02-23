@@ -11,7 +11,7 @@
   /* ========== Base Dialog Styles ========== */
   .react-aria-Dialog {
     outline: none;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-xl);
     max-height: inherit;
     box-sizing: border-box;
     overflow: auto;
@@ -86,7 +86,7 @@
 
   /* ===== Medium Size (Default) ===== */
   .react-aria-Dialog.md {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-xl);
     border-radius: var(--radius-xl);
 
     .react-aria-Heading[slot='title'] {

@@ -78,6 +78,81 @@ export function createTabsDefinition(
 }
 
 /**
+ * Card 컴포넌트 정의
+ *
+ * Card를 복합 컴포넌트로 생성하여 title(Heading)과 description(p)을
+ * 별도 Element로 관리합니다.
+ * → 더블클릭으로 자식 선택, 레이어 트리에서 계층 구조 확인 가능
+ */
+export function createCardDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Card",
+    parent: {
+      tag: "Card",
+      props: {
+        variant: "default",
+        size: "md",
+        orientation: "vertical",
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+          padding: "16px",
+          borderWidth: "1px",
+          gap: "8px",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Heading",
+        props: {
+          children: "Card Title",
+          level: 3,
+          style: {
+            display: "block",
+            fontSize: "16px",
+            fontWeight: "600",
+            lineHeight: "1.4",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "Description",
+        props: {
+          children: "Card description text goes here.",
+          style: {
+            display: "block",
+            fontSize: "14px",
+            fontWeight: "400",
+            lineHeight: "1.5",
+            color: "var(--on-surface-variant)",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+/**
  * Tree 컴포넌트 정의
  */
 export function createTreeDefinition(

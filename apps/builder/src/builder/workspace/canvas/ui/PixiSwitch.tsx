@@ -1,228 +1,107 @@
 /**
- * PixiSwitch - WebGL Switch/Toggle Component
+ * Pixi Switch
  *
- * Phase 7: Form & Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Track + Thumb + Label
+ * 투명 히트 영역(pixiGraphics) 기반 Switch
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getSwitchSizePreset(): trackWidth, trackHeight, thumbSize
- * - getSwitchColorPreset(): trackColor, trackSelectedColor, thumbColor
+ * @updated 2026-02-20 A등급 패턴 재작성 (시각 드로잉 제거, Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
+import { memo, useCallback, useContext } from 'react';
+import { Graphics as PixiGraphicsClass } from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
-// 🚀 Spec Migration
-import { resolveTokenColor, getLabelStylePreset } from '../hooks/useSpecRenderer';
-import {
-  SwitchSpec,
-  SWITCH_SELECTED_TRACK_COLORS,
-  SWITCH_DIMENSIONS,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+// ============================================
+// Types
+// ============================================
+
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
 
 export interface PixiSwitchProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiSwitch - Toggle switch with optional label
+ * PixiSwitch
+ *
+ * 투명 히트 영역 기반 Switch (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ * - onChange: Skia/Preview에서 처리, Pixi에서는 클릭만 전달
  */
-export function PixiSwitch({
+export const PixiSwitch = memo(function PixiSwitch({
   element,
-  isSelected = false,
+  //isSelected,
   onClick,
 }: PixiSwitchProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const label = (props.label as string) || (props.children as string) || '';
-  const isChecked = (props.isSelected as boolean) || (props.checked as boolean) || false;
-  const isDisabled = (props.isDisabled as boolean) || false;
+  const props = element.props as Record<string, unknown> | undefined;
 
-  // Get presets from CSS / Spec
-  const sizePreset = useMemo(() => {
-    const dims = SWITCH_DIMENSIONS[size] ?? SWITCH_DIMENSIONS.md;
-    const sizeSpec = SwitchSpec.sizes[size] || SwitchSpec.sizes[SwitchSpec.defaultSize];
-    const specPreset = getSpecSizePreset(sizeSpec, 'light');
-    return {
-      ...dims,
-      borderRadius: dims.trackHeight / 2,
-      gap: specPreset.gap ?? 10,
-      fontSize: specPreset.fontSize,
-    };
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(() => {
-    const variantSpec = SwitchSpec.variants[variant] || SwitchSpec.variants[SwitchSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
+  const isDisabled = Boolean(props?.isDisabled);
 
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => {
-    const selectedTrackColor = resolveTokenColor(
-      SWITCH_SELECTED_TRACK_COLORS[variant] ?? SWITCH_SELECTED_TRACK_COLORS.default,
-      'light',
-    );
-    return {
-      trackColor: variantColors.bg,
-      trackSelectedColor: selectedTrackColor,
-      thumbColor: 0xffffff,
-      thumbBorderColor: 0x00000020,
-      disabledTrackColor: 0xe5e7eb,
-      disabledThumbColor: 0x9ca3af,
-      focusRingColor: selectedTrackColor,
-    };
-  }, [variant, variantColors]);
-  // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
-  const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
-
-  // Calculate thumb position
-  const thumbX = isChecked
-    ? sizePreset.trackWidth - sizePreset.thumbSize - sizePreset.thumbOffset
-    : sizePreset.thumbOffset;
-  const thumbY = (sizePreset.trackHeight - sizePreset.thumbSize) / 2;
-
-  // Draw track
-  const drawTrack = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-
-      // Track background
-      const trackColor = isDisabled
-        ? colorPreset.disabledTrackColor
-        : isChecked
-          ? colorPreset.trackSelectedColor
-          : colorPreset.trackColor;
-      g.roundRect(0, 0, sizePreset.trackWidth, sizePreset.trackHeight, sizePreset.borderRadius);
-      g.fill({ color: trackColor });
-
-      // Selection indicator
-      if (isSelected) {
-        g.roundRect(-2, -2, sizePreset.trackWidth + 4, sizePreset.trackHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusRingColor, width: 2 });
-      }
-    },
-    [sizePreset, colorPreset, isChecked, isDisabled, isSelected]
-  );
-
-  // Draw thumb
-  const drawThumb = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-
-      // Thumb circle
-      const thumbColor = isDisabled ? colorPreset.disabledThumbColor : colorPreset.thumbColor;
-      const thumbRadius = sizePreset.thumbSize / 2;
-      g.circle(thumbRadius, thumbRadius, thumbRadius);
-      g.fill({ color: thumbColor });
-
-      // Thumb border (subtle shadow effect)
-      if (!isDisabled) {
-        g.circle(thumbRadius, thumbRadius, thumbRadius);
-        g.stroke({ color: colorPreset.thumbBorderColor, width: 0.5 });
-      }
-    },
-    [sizePreset, colorPreset, isDisabled]
-  );
-
-  // Label style
-  // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
-  const labelStyle = useMemo<Partial<TextStyle>>(
-    () => ({
-      fontSize: labelPreset.fontSize,
-      fill: isDisabled ? colorPreset.disabledThumbColor : labelPreset.color,
-      fontFamily: labelPreset.fontFamily,
-    }),
-    [labelPreset, colorPreset, isDisabled]
-  );
-
-  // 🚀 Phase 19: 전체 크기 계산 (hitArea용)
-  const totalWidth = label
-    ? sizePreset.trackWidth + sizePreset.gap + label.length * labelPreset.fontSize * 0.6
-    : sizePreset.trackWidth;
-  const totalHeight = sizePreset.trackHeight;
-
-  // 🚀 Phase 19: 투명 히트 영역
+  // 투명 히트 영역
   const drawHitArea = useCallback(
-    (g: PixiGraphics) => {
+    (g: PixiGraphicsClass) => {
       g.clear();
-      g.rect(0, 0, totalWidth, totalHeight);
+      g.rect(0, 0, hitWidth, hitHeight);
       g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [totalWidth, totalHeight]
+    [hitWidth, hitHeight]
   );
 
-  // 클릭 핸들러
-  const handleClick = useCallback(() => {
-    if (!isDisabled) {
-      onClick?.(element.id);
-    }
-  }, [element.id, onClick, isDisabled]);
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (isDisabled) return;
 
-  // 🚀 Phase 12: 루트 컨테이너 레이아웃
-  const rootLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: sizePreset.gap,
-    position: 'relative' as const,
-  }), [sizePreset.gap]);
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-  // 🚀 Phase 12: 트랙 컨테이너 레이아웃 (thumb 배치용)
-  const trackLayout = useMemo(() => ({
-    width: sizePreset.trackWidth,
-    height: sizePreset.trackHeight,
-    position: 'relative' as const,
-  }), [sizePreset.trackWidth, sizePreset.trackHeight]);
+      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-  // 🚀 Phase 12: Thumb 레이아웃 (position: absolute)
-  const thumbLayout = useMemo(() => ({
-    position: 'absolute' as const,
-    left: thumbX,
-    top: thumbY,
-  }), [thumbX, thumbY]);
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+    },
+    [element.id, onClick, isDisabled]
+  );
 
   return (
-    <pixiContainer layout={rootLayout}>
-      {/* Track + Thumb 컨테이너 */}
-      <pixiContainer layout={trackLayout}>
-        {/* Track - position: absolute */}
-        <pixiGraphics
-          draw={drawTrack}
-          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        />
-
-        {/* Thumb - position: absolute */}
-        <pixiGraphics draw={drawThumb} layout={thumbLayout} />
-      </pixiContainer>
-
-      {/* Label */}
-      {label && (
-        <pixiText
-          text={label}
-          style={labelStyle}
-          layout={{ isLeaf: true }}
-        />
-      )}
-
-      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - position: absolute */}
+    <pixiContainer>
       <pixiGraphics
         draw={drawHitArea}
-        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         eventMode="static"
-        cursor={isDisabled ? 'not-allowed' : 'pointer'}
+        cursor="default"
         onPointerDown={handleClick}
       />
     </pixiContainer>
   );
-}
+});
+
+export default PixiSwitch;

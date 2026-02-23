@@ -1,13 +1,13 @@
 /**
  * CanvasKit 이펙트 파이프라인
  *
- * saveLayer 기반으로 Opacity, Background Blur, Drop Shadow를 적용한다.
+ * saveLayer 기반으로 Opacity, Background Blur, Drop Shadow, Color Matrix를 적용한다.
  * Pencil §10.9.5 패턴을 따른다.
  *
  * @see docs/WASM.md §5.6 이펙트 파이프라인
  */
 
-import type { CanvasKit, Canvas } from 'canvaskit-wasm';
+import type { CanvasKit, Canvas, ImageFilter } from 'canvaskit-wasm';
 import type { EffectStyle } from './types';
 import { SkiaDisposable } from './disposable';
 
@@ -75,6 +75,15 @@ export function beginRenderEffects(
           // MakeDropShadowOnly는 소스를 제거하므로 inner shadow에서
           // 콘텐츠가 사라지는 버그 발생 (I-CR1).
           // saveLayer 경계가 외부 그림자를 자연스럽게 클리핑한다.
+
+          // M-2: spread → dilate/erode filter 체인으로 근사
+          let inputFilter: ImageFilter | null = null;
+          if (effect.spread && effect.spread !== 0) {
+            inputFilter = effect.spread > 0
+              ? scope.track(ck.ImageFilter.MakeDilate(effect.spread, effect.spread, null))
+              : scope.track(ck.ImageFilter.MakeErode(-effect.spread, -effect.spread, null));
+          }
+
           const filter = scope.track(
             ck.ImageFilter.MakeDropShadow(
               effect.dx,
@@ -82,11 +91,24 @@ export function beginRenderEffects(
               effect.sigmaX,
               effect.sigmaY,
               effect.color,
-              null,
+              inputFilter,
             ),
           );
           const paint = scope.track(new ck.Paint());
           paint.setImageFilter(filter);
+          canvas.saveLayer(paint);
+          layerCount++;
+          break;
+        }
+
+        case 'color-matrix': {
+          // CSS filter(brightness, contrast, saturate, hue-rotate)에서
+          // 합성된 4x5 색상 행렬을 CanvasKit ColorFilter로 적용한다.
+          const colorFilter = scope.track(
+            ck.ColorFilter.MakeMatrix(effect.matrix),
+          );
+          const paint = scope.track(new ck.Paint());
+          paint.setColorFilter(colorFilter);
           canvas.saveLayer(paint);
           layerCount++;
           break;

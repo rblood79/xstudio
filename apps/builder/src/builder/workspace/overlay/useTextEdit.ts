@@ -39,7 +39,7 @@ export interface LayoutPosition {
 export interface UseTextEditReturn {
   /** 편집 상태 */
   editState: TextEditState | null;
-  /** 편집 시작 (layoutPosition: Yoga 레이아웃 계산된 위치) */
+  /** 편집 시작 (layoutPosition: 레이아웃 엔진이 계산한 위치) */
   startEdit: (elementId: string, layoutPosition?: LayoutPosition) => void;
   /** 텍스트 변경 */
   updateText: (elementId: string, newValue: string) => void;
@@ -135,7 +135,7 @@ export function useTextEdit(): UseTextEditReturn {
   const [editState, setEditState] = useState<TextEditState | null>(null);
 
   // 편집 시작
-  // 🚀 Phase 19: layoutPosition 파라미터 추가 - Yoga 레이아웃 위치 사용
+  // 🚀 Phase 19: layoutPosition 파라미터 추가 - 레이아웃 엔진 계산 위치 사용
   const startEdit = useCallback(
     (elementId: string, layoutPosition?: LayoutPosition) => {
       const element = elements.find((el) => el.id === elementId);
@@ -149,7 +149,7 @@ export function useTextEdit(): UseTextEditReturn {
 
       const text = extractText(element);
 
-      // 🚀 Phase 19: layoutPosition이 있으면 우선 사용 (Yoga 레이아웃 결과)
+      // 🚀 Phase 19: layoutPosition이 있으면 우선 사용 (레이아웃 엔진 결과)
       // 없으면 element의 style.left/top에서 추출 (fallback)
       const position = layoutPosition
         ? { x: layoutPosition.x, y: layoutPosition.y }

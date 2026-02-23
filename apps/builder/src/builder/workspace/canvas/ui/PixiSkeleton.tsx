@@ -1,26 +1,27 @@
 /**
- * PixiSkeleton - WebGL Skeleton Loading Component
+ * Pixi Skeleton
  *
- * Phase 7: Form & Utility Components
- * Pattern: Pattern A (JSX + Graphics.draw) - Loading placeholder
+ * 비인터랙티브 Skeleton 로딩 컴포넌트
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 히트 영역 없음 (eventMode="none")
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
- * CSS 동기화:
- * - getSkeletonSizePreset(): height, borderRadius, avatarSize
- * - getSkeletonColorPreset(): baseColor, shimmerColor
+ * @since Phase 7
+ * @updated 2026-02-20 A등급 패턴 재작성 (Skia 렌더링 전환)
  */
 
-import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Graphics as PixiGraphics } from 'pixi.js';
-import type { Element } from '@/types/core/store.types';
-
-// 🚀 Spec Migration
+import { memo, useCallback, useContext, useRef } from 'react';
 import {
-  SkeletonSpec,
-  getVariantColors as getSpecVariantColors,
-  getSizePreset as getSpecSizePreset,
-} from '@xstudio/specs';
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+} from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
+
+// ============================================
+// Types
+// ============================================
 
 export interface PixiSkeletonProps {
   element: Element;
@@ -29,183 +30,58 @@ export interface PixiSkeletonProps {
   onChange?: (elementId: string, value: unknown) => void;
 }
 
+// ============================================
+// Component
+// ============================================
+
 /**
- * PixiSkeleton - Loading placeholder skeleton
+ * PixiSkeleton
+ *
+ * 비인터랙티브 Skeleton (Skia 렌더링)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: Skia specShapeConverter에서 렌더링 (이 컴포넌트에서 처리하지 않음)
+ * - eventMode: "none" — 비인터랙티브, 이벤트 무시
  */
-export function PixiSkeleton({
+export const PixiSkeleton = memo(function PixiSkeleton({
   element,
-  isSelected = false,
-  onClick,
+  //isSelected,
+  //onClick,
+  //onChange,
 }: PixiSkeletonProps) {
   useExtend(PIXI_COMPONENTS);
-  const props = element.props || {};
-  const variant = (props.variant as string) || 'default';
-  const size = (props.size as string) || 'md';
-  const skeletonVariant = (props.skeletonVariant as string) || 'text'; // text, avatar, card, list
 
-  // Get presets from CSS (Spec Migration)
-  const sizePreset = useMemo(() => {
-    const sizeSpec = SkeletonSpec.sizes[size] || SkeletonSpec.sizes[SkeletonSpec.defaultSize];
-    return getSpecSizePreset(sizeSpec, 'light');
-  }, [size]);
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? 0;
+  const hitHeight = computedSize?.height ?? 0;
 
-  const colorPreset = useMemo(() => {
-    const variantSpec = SkeletonSpec.variants[variant] || SkeletonSpec.variants[SkeletonSpec.defaultVariant];
-    const specColors = getSpecVariantColors(variantSpec, 'light');
-    return {
-      baseColor: specColors.bg,
-      shimmerColor: specColors.bgHover,
-    };
-  }, [variant]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
 
-  // 🚀 variant에 따른 테마 색상 (Spec Migration)
-  const variantColors = useMemo(() => {
-    const variantSpec = SkeletonSpec.variants[variant] || SkeletonSpec.variants[SkeletonSpec.defaultVariant];
-    return getSpecVariantColors(variantSpec, 'light');
-  }, [variant]);
-
-  // Calculate dimensions based on variant
-  const getSkeletonDimensions = () => {
-    switch (skeletonVariant) {
-      case 'avatar':
-        return {
-          width: sizePreset.avatarSize,
-          height: sizePreset.avatarSize,
-          isCircle: true,
-        };
-      case 'card':
-        return {
-          width: (props.width as number) || 240,
-          height: (props.height as number) || 120,
-          isCircle: false,
-        };
-      case 'list':
-        return {
-          width: (props.width as number) || 280,
-          height: sizePreset.lineHeight * 3 + sizePreset.lineGap * 2,
-          isCircle: false,
-        };
-      case 'text':
-      default:
-        return {
-          width: (props.width as number) || 200,
-          height: sizePreset.height,
-          isCircle: false,
-        };
-    }
-  };
-
-  const dimensions = getSkeletonDimensions();
-
-  // Draw skeleton based on variant
-  const drawSkeleton = useCallback(
-    (g: PixiGraphics) => {
+  // 투명 히트 영역 (이벤트 없음, 크기 참조용)
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
       g.clear();
-
-      switch (skeletonVariant) {
-        case 'avatar':
-          // Circle avatar
-          g.circle(dimensions.width / 2, dimensions.height / 2, dimensions.width / 2);
-          g.fill({ color: colorPreset.baseColor });
-          break;
-
-        case 'card': {
-          // Card skeleton with image placeholder and text lines
-          g.roundRect(0, 0, dimensions.width, dimensions.height, sizePreset.borderRadius);
-          g.fill({ color: colorPreset.baseColor });
-
-          // Image area (top half)
-          const imageHeight = dimensions.height * 0.5;
-          g.roundRect(0, 0, dimensions.width, imageHeight, sizePreset.borderRadius);
-          g.fill({ color: colorPreset.shimmerColor });
-
-          // Text lines (bottom half)
-          const textStartY = imageHeight + sizePreset.lineGap;
-          const textPadding = 12;
-
-          // Title line
-          g.roundRect(textPadding, textStartY, dimensions.width * 0.7, sizePreset.lineHeight, 4);
-          g.fill({ color: colorPreset.shimmerColor });
-
-          // Description line
-          g.roundRect(textPadding, textStartY + sizePreset.lineHeight + sizePreset.lineGap / 2, dimensions.width * 0.5, sizePreset.lineHeight * 0.8, 4);
-          g.fill({ color: colorPreset.shimmerColor });
-          break;
-        }
-
-        case 'list':
-          // List with avatar and text lines
-          for (let i = 0; i < 3; i++) {
-            const rowY = i * (sizePreset.avatarSize + sizePreset.lineGap);
-
-            // Avatar placeholder
-            g.circle(sizePreset.avatarSize / 2, rowY + sizePreset.avatarSize / 2, sizePreset.avatarSize / 2);
-            g.fill({ color: colorPreset.baseColor });
-
-            // Text lines
-            const textX = sizePreset.avatarSize + sizePreset.lineGap;
-            g.roundRect(textX, rowY + 4, dimensions.width * 0.5, sizePreset.lineHeight, 4);
-            g.fill({ color: colorPreset.baseColor });
-
-            g.roundRect(textX, rowY + sizePreset.lineHeight + 8, dimensions.width * 0.3, sizePreset.lineHeight * 0.8, 4);
-            g.fill({ color: colorPreset.shimmerColor });
-          }
-          break;
-
-        case 'text':
-        default:
-          // Simple text line
-          g.roundRect(0, 0, dimensions.width, dimensions.height, sizePreset.borderRadius);
-          g.fill({ color: colorPreset.baseColor });
-          break;
-      }
-
-      // Selection indicator
-      if (isSelected) {
-        if (dimensions.isCircle) {
-          g.circle(dimensions.width / 2, dimensions.height / 2, dimensions.width / 2 + 4);
-          g.stroke({ color: variantColors.bg, width: 2 });
-        } else {
-          g.roundRect(-2, -2, dimensions.width + 4, dimensions.height + 4, sizePreset.borderRadius + 2);
-          g.stroke({ color: variantColors.bg, width: 2 });
-        }
-      }
+      g.rect(0, 0, hitWidth, hitHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [dimensions, sizePreset, colorPreset, skeletonVariant, isSelected, variantColors.bg]
-  );
-
-  // Draw shimmer effect overlay (static representation)
-  const drawShimmer = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-
-      // Draw a subtle gradient overlay to indicate shimmer
-      const shimmerWidth = dimensions.width * 0.3;
-
-      if (skeletonVariant === 'avatar') {
-        // Circular shimmer for avatar
-        g.arc(dimensions.width / 2, dimensions.height / 2, dimensions.width / 2, -0.5, 0.5);
-        g.fill({ color: colorPreset.shimmerColor, alpha: 0.5 });
-      } else if (skeletonVariant !== 'list') {
-        // Rectangular shimmer highlight
-        g.roundRect(dimensions.width * 0.3, 0, shimmerWidth, dimensions.height, sizePreset.borderRadius);
-        g.fill({ color: colorPreset.shimmerColor, alpha: 0.5 });
-      }
-    },
-    [dimensions, sizePreset, colorPreset, skeletonVariant]
+    [hitWidth, hitHeight]
   );
 
   return (
     <pixiContainer
-      eventMode="static"
-      cursor="pointer"
-      onPointerTap={() => onClick?.(element.id)}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      {/* Skeleton base */}
-      <pixiGraphics draw={drawSkeleton} />
-
-      {/* Shimmer effect */}
-      <pixiGraphics draw={drawShimmer} />
+      {/* 비인터랙티브 영역 - Skia가 시각적 렌더링 담당 / eventMode="none"으로 이벤트 무시 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="none"
+      />
     </pixiContainer>
   );
-}
+});
+
+export default PixiSkeleton;

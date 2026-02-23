@@ -25,7 +25,7 @@
     /* ===== TimeInput Container ===== */
     .react-aria-TimeInput {
       display: inline-flex;
-      padding: var(--spacing) var(--spacing-md);
+      padding: var(--spacing-sm) 14px;
       border: 1px solid var(--outline-variant);
       border-radius: var(--border-radius);
       background: var(--surface-container);
@@ -34,7 +34,7 @@
       min-width: 150px;
       white-space: nowrap;
       forced-color-adjust: none;
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
       transition: all 200ms ease;
 
       /* Focus State */
@@ -231,10 +231,10 @@
   .react-aria-TimeField {
     /* 기본 size 변수 (md) */
     --tf-label-size: var(--text-sm);
-    --tf-input-padding: var(--spacing) var(--spacing-md);
-    --tf-input-size: var(--text-sm);
+    --tf-input-padding: var(--spacing-sm) 14px;
+    --tf-input-size: var(--text-base);
     --tf-input-min-width: 150px;
-    --tf-segment-size: var(--text-sm);
+    --tf-segment-size: var(--text-base);
     --tf-hint-size: var(--text-xs);
   }
 
@@ -250,10 +250,10 @@
 
   .react-aria-TimeField.md {
     --tf-label-size: var(--text-sm);
-    --tf-input-padding: var(--spacing) var(--spacing-md);
-    --tf-input-size: var(--text-sm);
+    --tf-input-padding: var(--spacing-sm) 14px;
+    --tf-input-size: var(--text-base);
     --tf-input-min-width: 150px;
-    --tf-segment-size: var(--text-sm);
+    --tf-segment-size: var(--text-base);
     --tf-hint-size: var(--text-xs);
   }
 

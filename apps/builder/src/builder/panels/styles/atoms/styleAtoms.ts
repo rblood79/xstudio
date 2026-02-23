@@ -11,6 +11,10 @@
 import { atom } from 'jotai';
 import { selectAtom } from 'jotai/utils';
 import type { SelectedElement } from '../../../inspector/types';
+import {
+  computeSyntheticStyle,
+} from '../../../../services/computedStyleService';
+import type { SyntheticComputedStyle } from '../../../../services/computedStyleService';
 
 // ============================================
 // Base Atoms
@@ -38,6 +42,16 @@ export const computedStyleAtom = atom((get) => {
   return element?.computedStyle ?? null;
 });
 
+/**
+ * 합성 computedStyle atom (파생)
+ * WebGL/Skia 환경에서 DOM 없이 size/variant prop으로 계산된 CSS 값
+ * inline > computedStyle > syntheticStyle > default 우선순위에서 3순위
+ */
+export const syntheticComputedStyleAtom = atom((get) => {
+  const element = get(selectedElementAtom);
+  return computeSyntheticStyle(element);
+});
+
 // ============================================
 // Style Value Helper
 // ============================================
@@ -48,20 +62,27 @@ const INLINE_ONLY_PROPERTIES = new Set([
 ]);
 
 /**
- * 스타일 값 추출 (inline > computed > default)
+ * 스타일 값 추출 (inline > computed > synthetic > default)
+ *
+ * @param inlineStyle - 사용자가 직접 설정한 인라인 스타일
+ * @param computedStyle - 브라우저/Preview iframe에서 계산된 스타일
+ * @param syntheticStyle - size/variant prop 기반 합성 계산 스타일 (WebGL/Skia 전용)
+ * @param property - 조회할 CSS 속성 키
+ * @param defaultValue - 모든 소스에 값이 없을 때의 기본값
  */
 export function getStyleValueFromAtoms(
   inlineStyle: React.CSSProperties | null,
   computedStyle: Partial<React.CSSProperties> | null | undefined,
+  syntheticStyle: SyntheticComputedStyle | null | undefined,
   property: keyof React.CSSProperties,
   defaultValue: string
 ): string {
-  // Priority 1: Inline style
+  // Priority 1: Inline style (사용자 직접 설정)
   if (inlineStyle && inlineStyle[property] !== undefined) {
     return String(inlineStyle[property]);
   }
 
-  // Priority 2: Computed style (skip for inline-only properties)
+  // Priority 2: Computed style from preview iframe (skip for inline-only properties)
   if (
     !INLINE_ONLY_PROPERTIES.has(property as string) &&
     computedStyle &&
@@ -70,7 +91,15 @@ export function getStyleValueFromAtoms(
     return String(computedStyle[property]);
   }
 
-  // Priority 3: Default value
+  // Priority 3: Synthetic computed style (size/variant preset 기반)
+  if (syntheticStyle) {
+    const syntheticValue = syntheticStyle[property as keyof SyntheticComputedStyle];
+    if (syntheticValue !== undefined) {
+      return syntheticValue;
+    }
+  }
+
+  // Priority 4: Default value
   return defaultValue;
 }
 
@@ -85,7 +114,7 @@ export function getStyleValueFromAtoms(
  * 참고: 대부분의 컴포넌트는 fit-content 또는 auto를 사용
  * 명시적 크기가 있는 컴포넌트만 여기에 정의
  */
-const DEFAULT_CSS_VALUES: Record<string, { width?: string; height?: string }> = {
+const DEFAULT_CSS_VALUES: Record<string, { width?: string; height?: string; display?: string; flexDirection?: string; alignItems?: string; gap?: number | string; flexWrap?: string }> = {
   // === 컨테이너 (width: 100%) ===
   Card: { width: '100%' },
   Box: { width: '100%' },
@@ -120,13 +149,14 @@ const DEFAULT_CSS_VALUES: Record<string, { width?: string; height?: string }> = 
 
   // === 토글 버튼 ===
   ToggleButton: { width: 'fit-content' },
-  ToggleButtonGroup: { width: 'fit-content' },
+  ToggleButtonGroup: { width: 'fit-content', display: 'flex', flexDirection: 'row', alignItems: 'center' },
 
   // === 리스트/그리드 ===
   ListBox: { width: 'fit-content' },
   GridList: { width: 'fit-content' },
   Menu: { width: 'fit-content' },
-  TagGroup: { width: 'fit-content' },
+  TagGroup: { width: 'fit-content', display: 'flex', flexDirection: 'column', gap: 2 },
+  TagList: { display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
 
   // === 네비게이션 ===
   Link: { width: 'fit-content' },
@@ -251,22 +281,46 @@ export const transformValuesAtom = selectAtom(
 );
 
 // ============================================
+// Layout Default Helper
+// ============================================
+
+/**
+ * 레이아웃 속성의 태그별 기본값 조회
+ * inline style → computed style → 태그별 CSS 기본값 → 글로벌 기본값
+ */
+function getLayoutDefault(
+  element: SelectedElement | null,
+  prop: 'display' | 'flexDirection' | 'alignItems',
+  globalDefault: string,
+): string {
+  const inline = element?.style?.[prop];
+  if (inline !== undefined && inline !== null && inline !== '') return String(inline);
+
+  const computed = element?.computedStyle?.[prop];
+  if (computed !== undefined && computed !== null && computed !== '') return String(computed);
+
+  const tag = element?.type;
+  if (tag) {
+    const tagDefault = DEFAULT_CSS_VALUES[tag]?.[prop];
+    if (tagDefault) return tagDefault;
+  }
+
+  return globalDefault;
+}
+
+// ============================================
 // Layout Section Atoms (15개 속성)
 // ============================================
 
 export const displayAtom = selectAtom(
   selectedElementAtom,
-  (element) => {
-    const inline = element?.style?.display;
-    const computed = element?.computedStyle?.display;
-    return String(inline ?? computed ?? 'block');
-  },
+  (element) => getLayoutDefault(element, 'display', 'block'),
   (a, b) => a === b
 );
 
 export const flexDirectionAtom = selectAtom(
   selectedElementAtom,
-  (element) => String(element?.style?.flexDirection ?? element?.computedStyle?.flexDirection ?? 'row'),
+  (element) => getLayoutDefault(element, 'flexDirection', 'row'),
   (a, b) => a === b
 );
 
@@ -303,25 +357,57 @@ export const paddingAtom = selectAtom(
 
 export const paddingTopAtom = selectAtom(
   selectedElementAtom,
-  (element) => String(element?.style?.paddingTop ?? element?.computedStyle?.paddingTop ?? '0px'),
+  (element) => {
+    const inline = element?.style?.paddingTop;
+    if (inline !== undefined && inline !== null && inline !== '') return String(inline);
+    const computed = element?.computedStyle?.paddingTop;
+    if (computed !== undefined && computed !== null && computed !== '') return String(computed);
+    const synthetic = computeSyntheticStyle(element);
+    if (synthetic.paddingTop) return synthetic.paddingTop;
+    return '0px';
+  },
   (a, b) => a === b
 );
 
 export const paddingRightAtom = selectAtom(
   selectedElementAtom,
-  (element) => String(element?.style?.paddingRight ?? element?.computedStyle?.paddingRight ?? '0px'),
+  (element) => {
+    const inline = element?.style?.paddingRight;
+    if (inline !== undefined && inline !== null && inline !== '') return String(inline);
+    const computed = element?.computedStyle?.paddingRight;
+    if (computed !== undefined && computed !== null && computed !== '') return String(computed);
+    const synthetic = computeSyntheticStyle(element);
+    if (synthetic.paddingRight) return synthetic.paddingRight;
+    return '0px';
+  },
   (a, b) => a === b
 );
 
 export const paddingBottomAtom = selectAtom(
   selectedElementAtom,
-  (element) => String(element?.style?.paddingBottom ?? element?.computedStyle?.paddingBottom ?? '0px'),
+  (element) => {
+    const inline = element?.style?.paddingBottom;
+    if (inline !== undefined && inline !== null && inline !== '') return String(inline);
+    const computed = element?.computedStyle?.paddingBottom;
+    if (computed !== undefined && computed !== null && computed !== '') return String(computed);
+    const synthetic = computeSyntheticStyle(element);
+    if (synthetic.paddingBottom) return synthetic.paddingBottom;
+    return '0px';
+  },
   (a, b) => a === b
 );
 
 export const paddingLeftAtom = selectAtom(
   selectedElementAtom,
-  (element) => String(element?.style?.paddingLeft ?? element?.computedStyle?.paddingLeft ?? '0px'),
+  (element) => {
+    const inline = element?.style?.paddingLeft;
+    if (inline !== undefined && inline !== null && inline !== '') return String(inline);
+    const computed = element?.computedStyle?.paddingLeft;
+    if (computed !== undefined && computed !== null && computed !== '') return String(computed);
+    const synthetic = computeSyntheticStyle(element);
+    if (synthetic.paddingLeft) return synthetic.paddingLeft;
+    return '0px';
+  },
   (a, b) => a === b
 );
 
@@ -367,19 +453,20 @@ export const layoutValuesAtom = selectAtom(
 
     const style = element.style ?? {};
     const computed = element.computedStyle ?? {};
+    const synthetic = computeSyntheticStyle(element);
 
     return {
-      display: String(style.display ?? computed.display ?? 'block'),
-      flexDirection: String(style.flexDirection ?? computed.flexDirection ?? 'row'),
-      alignItems: String(style.alignItems ?? computed.alignItems ?? ''),
+      display: getLayoutDefault(element, 'display', 'block'),
+      flexDirection: getLayoutDefault(element, 'flexDirection', 'row'),
+      alignItems: getLayoutDefault(element, 'alignItems', ''),
       justifyContent: String(style.justifyContent ?? computed.justifyContent ?? ''),
       gap: String(style.gap ?? computed.gap ?? '0px'),
       flexWrap: String(style.flexWrap ?? computed.flexWrap ?? 'nowrap'),
       padding: String(style.padding ?? computed.padding ?? '0px'),
-      paddingTop: String(style.paddingTop ?? computed.paddingTop ?? '0px'),
-      paddingRight: String(style.paddingRight ?? computed.paddingRight ?? '0px'),
-      paddingBottom: String(style.paddingBottom ?? computed.paddingBottom ?? '0px'),
-      paddingLeft: String(style.paddingLeft ?? computed.paddingLeft ?? '0px'),
+      paddingTop: String(style.paddingTop ?? computed.paddingTop ?? synthetic.paddingTop ?? '0px'),
+      paddingRight: String(style.paddingRight ?? computed.paddingRight ?? synthetic.paddingRight ?? '0px'),
+      paddingBottom: String(style.paddingBottom ?? computed.paddingBottom ?? synthetic.paddingBottom ?? '0px'),
+      paddingLeft: String(style.paddingLeft ?? computed.paddingLeft ?? synthetic.paddingLeft ?? '0px'),
       margin: String(style.margin ?? computed.margin ?? '0px'),
       marginTop: String(style.marginTop ?? computed.marginTop ?? '0px'),
       marginRight: String(style.marginRight ?? computed.marginRight ?? '0px'),
@@ -435,7 +522,15 @@ export const borderWidthAtom = selectAtom(
 
 export const borderRadiusAtom = selectAtom(
   selectedElementAtom,
-  (element) => String(element?.style?.borderRadius ?? element?.computedStyle?.borderRadius ?? '0px'),
+  (element) => {
+    const inline = element?.style?.borderRadius;
+    if (inline !== undefined && inline !== null && inline !== '') return String(inline);
+    const computed = element?.computedStyle?.borderRadius;
+    if (computed !== undefined && computed !== null && computed !== '') return String(computed);
+    const synthetic = computeSyntheticStyle(element);
+    if (synthetic.borderRadius) return synthetic.borderRadius;
+    return '0px';
+  },
   (a, b) => a === b
 );
 
@@ -456,12 +551,13 @@ export const appearanceValuesAtom = selectAtom(
 
     const style = element.style ?? {};
     const computed = element.computedStyle ?? {};
+    const synthetic = computeSyntheticStyle(element);
 
     return {
       backgroundColor: String(style.backgroundColor ?? computed.backgroundColor ?? '#FFFFFF'),
       borderColor: String(style.borderColor ?? computed.borderColor ?? '#000000'),
       borderWidth: String(style.borderWidth ?? computed.borderWidth ?? '0px'),
-      borderRadius: String(style.borderRadius ?? computed.borderRadius ?? '0px'),
+      borderRadius: String(style.borderRadius ?? computed.borderRadius ?? synthetic.borderRadius ?? '0px'),
       borderStyle: String(style.borderStyle ?? computed.borderStyle ?? 'solid'),
     };
   },
@@ -490,7 +586,15 @@ export const fontFamilyAtom = selectAtom(
 
 export const fontSizeAtom = selectAtom(
   selectedElementAtom,
-  (element) => String(element?.style?.fontSize ?? element?.computedStyle?.fontSize ?? '16px'),
+  (element) => {
+    const inline = element?.style?.fontSize;
+    if (inline !== undefined && inline !== null && inline !== '') return String(inline);
+    const computed = element?.computedStyle?.fontSize;
+    if (computed !== undefined && computed !== null && computed !== '') return String(computed);
+    const synthetic = computeSyntheticStyle(element);
+    if (synthetic.fontSize) return synthetic.fontSize;
+    return '16px';
+  },
   (a, b) => a === b
 );
 
@@ -559,13 +663,14 @@ export const typographyValuesAtom = selectAtom(
 
     const style = element.style ?? {};
     const computed = element.computedStyle ?? {};
+    const synthetic = computeSyntheticStyle(element);
 
     return {
       fontFamily: String(style.fontFamily ?? computed.fontFamily ?? 'Arial'),
-      fontSize: String(style.fontSize ?? computed.fontSize ?? '16px'),
+      fontSize: String(style.fontSize ?? computed.fontSize ?? synthetic.fontSize ?? '16px'),
       fontWeight: String(style.fontWeight ?? computed.fontWeight ?? 'normal'),
       fontStyle: String(style.fontStyle ?? computed.fontStyle ?? 'normal'),
-      lineHeight: String(style.lineHeight ?? computed.lineHeight ?? 'normal'),
+      lineHeight: String(style.lineHeight ?? computed.lineHeight ?? synthetic.lineHeight ?? 'normal'),
       letterSpacing: String(style.letterSpacing ?? computed.letterSpacing ?? 'normal'),
       color: String(style.color ?? computed.color ?? '#000000'),
       textAlign: String(style.textAlign ?? computed.textAlign ?? 'left'),
@@ -606,10 +711,8 @@ export const flexDirectionKeysAtom = selectAtom(
   (element): string[] => {
     if (!element) return ['block'];
 
-    const style = element.style ?? {};
-    const computed = element.computedStyle ?? {};
-    const display = String(style.display ?? computed.display ?? 'block');
-    const flexDirection = String(style.flexDirection ?? computed.flexDirection ?? 'row');
+    const display = getLayoutDefault(element, 'display', 'block');
+    const flexDirection = getLayoutDefault(element, 'flexDirection', 'row');
 
     if (display !== 'flex') return ['block'];
     if (flexDirection === 'column') return ['column'];
@@ -626,15 +729,13 @@ export const flexAlignmentKeysAtom = selectAtom(
   (element): string[] => {
     if (!element) return [];
 
-    const style = element.style ?? {};
-    const computed = element.computedStyle ?? {};
-    const display = String(style.display ?? computed.display ?? 'block');
+    const display = getLayoutDefault(element, 'display', 'block');
 
     if (display !== 'flex') return [];
 
-    const alignItems = String(style.alignItems ?? computed.alignItems ?? '');
-    const justifyContent = String(style.justifyContent ?? computed.justifyContent ?? '');
-    const flexDirection = String(style.flexDirection ?? computed.flexDirection ?? 'row');
+    const alignItems = getLayoutDefault(element, 'alignItems', '');
+    const justifyContent = String((element?.style ?? {}).justifyContent ?? (element?.computedStyle ?? {}).justifyContent ?? '');
+    const flexDirection = getLayoutDefault(element, 'flexDirection', 'row');
 
     // Map CSS values to grid position labels
     // verticalMap: CSS value → Top/Center/Bottom (세로 위치)

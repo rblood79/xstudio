@@ -1,56 +1,68 @@
 {
-    // ==== Copilot 기본 ====
-    // 대부분의 코드 파일에서만 Copilot 활성화 (문서/플레인텍스트는 방해↓)
-    "github.copilot.enable": {
-      "*": true,
-      "plaintext": false,
-      "markdown": false
-    },
-    // 인라인 제안 켜기
-    "editor.inlineSuggest.enabled": true,
-  
-    // ==== 타입스크립트 & 포맷팅 ====
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "typescript.preferences.importModuleSpecifier": "non-relative",
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit"
-    },
-  
-    // ==== ESLint ====
-    "eslint.experimental.useFlatConfig": true,
-    "eslint.validate": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
-  
-    // ==== Tailwind v4 ====
-    // className 정렬/병합 시 가독성 향상 (tailwind-merge와 혼선 없게 저장 시 자동 정렬만)
-    "tailwindCSS.classAttributes": ["class", "className", "tw"],
-    "tailwindCSS.emmetCompletions": true,
-    "editor.quickSuggestions": {
-      "strings": true // className 문자열 내부 제안
-    },
-  
-    // ==== Storybook ====
-    // 스토리 파일에서 JSX/TSX 인사이트를 강하게
-    "files.associations": {
-      "*.stories.ts": "typescriptreact",
-      "*.stories.tsx": "typescriptreact"
-    },
-  
-    // ==== 테스트 ====
-    // Vitest/Playwright 러너 통합 감지
-    "testing.automaticallyOpenPeekView": "never",
-    // Vitest 확장: workspace 파일만 사용, 추가 config 검색 비활성화
-    "vitest.workspaceConfig": "./vitest.workspace.ts",
-    "vitest.disableWorkspaceWarning": true,
-  
-    // ==== 기타 편의 ====
-    "files.eol": "\n",
-    "files.insertFinalNewline": true,
-    "editor.tabSize": 2,
-    "editor.stickyScroll.enabled": true,
+  // ==== Copilot 기본 ====
+  // 대부분의 코드 파일에서만 Copilot 활성화 (문서/플레인텍스트는 방해↓)
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": false,
+    "markdown": false
+  },
+  // 인라인 제안 켜기
+  "editor.inlineSuggest.enabled": true,
 
-    // ==== 패키지 관리자 ====
-    "npm.packageManager": "pnpm"
-  }
-  
+  // ==== 타입스크립트 & 포맷팅 ====
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // ==== ESLint ====
+  "eslint.useFlatConfig": true,
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "javascriptreact",
+    "typescriptreact"
+  ],
+  "eslint.workingDirectories": [
+    { "pattern": "apps/*" },
+    { "pattern": "packages/*" }
+  ],
+
+  // ==== Tailwind v4 ====
+  // className 정렬/병합 시 가독성 향상 (tailwind-merge와 혼선 없게 저장 시 자동 정렬만)
+  "tailwindCSS.classAttributes": ["class", "className", "tw"],
+  "tailwindCSS.emmetCompletions": true,
+  "editor.quickSuggestions": {
+    "strings": true // className 문자열 내부 제안
+  },
+
+  // ==== Storybook ====
+  // 스토리 파일에서 JSX/TSX 인사이트를 강하게
+  "files.associations": {
+    "*.stories.ts": "typescriptreact",
+    "*.stories.tsx": "typescriptreact"
+  },
+
+  // ==== 테스트 ====
+  // Vitest/Playwright 러너 통합 감지
+  "testing.automaticallyOpenPeekView": "never",
+  // Vitest 확장: workspace 파일만 사용, 추가 config 검색 비활성화
+  "vitest.workspaceConfig": "./vitest.workspace.ts",
+  "vitest.disableWorkspaceWarning": true,
+
+  // ==== 기타 편의 ====
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "editor.tabSize": 2,
+  "editor.stickyScroll.enabled": true,
+
+  // ==== 패키지 관리자 ====
+  "npm.packageManager": "pnpm",
+
+  // ==== YAML ====
+  // pnpm-lock.yaml이 큰 경우 문서 심볼 제한 증가
+  "yaml.maxItemsComputed": 10000
+}

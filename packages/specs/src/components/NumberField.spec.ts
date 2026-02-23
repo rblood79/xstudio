@@ -209,7 +209,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       // 감소 아이콘 (-)
       shapes.push({
         type: 'text' as const,
-        x: stepperWidth / 2,
+        x: 0,
         y: (props.label ? 20 : 0) + height / 2,
         text: '\u2212',
         fontSize: fontSize as number,
@@ -218,6 +218,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         fill: textColor,
         align: 'center' as const,
         baseline: 'middle' as const,
+        maxWidth: stepperWidth,
       });
 
       // 증가 버튼 (+)
@@ -235,7 +236,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       // 증가 아이콘 (+)
       shapes.push({
         type: 'text' as const,
-        x: width - stepperWidth / 2,
+        x: width - stepperWidth,
         y: (props.label ? 20 : 0) + height / 2,
         text: '+',
         fontSize: fontSize as number,
@@ -244,12 +245,13 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         fill: textColor,
         align: 'center' as const,
         baseline: 'middle' as const,
+        maxWidth: stepperWidth,
       });
 
       // 숫자 값
       shapes.push({
         type: 'text' as const,
-        x: width / 2,
+        x: stepperWidth,
         y: (props.label ? 20 : 0) + height / 2,
         text: String(props.value ?? 0),
         fontSize: fontSize as number,
@@ -257,6 +259,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         fill: textColor,
         align: 'center' as const,
         baseline: 'middle' as const,
+        maxWidth: width - stepperWidth * 2,
       });
 
       // 에러 메시지

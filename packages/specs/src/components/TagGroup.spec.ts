@@ -8,6 +8,8 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { fontFamily } from '../primitives/typography';
+import { resolveStateColors } from '../utils/stateEffect';
 
 /**
  * TagGroup Props
@@ -18,6 +20,8 @@ export interface TagGroupProps {
   selectionMode?: 'none' | 'single' | 'multiple';
   label?: string;
   style?: Record<string, string | number | undefined>;
+  /** ElementSprite에서 주입: 자식 Tag 텍스트 배열 (Skia 렌더링용) */
+  _tagItems?: { text: string }[];
 }
 
 /**
@@ -102,25 +106,74 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   },
 
   render: {
-    shapes: (_props, _variant, size, _state = 'default') => {
-      const shapes: Shape[] = [
-        // 태그 그룹 컨테이너 (wrapping flex row)
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: size.gap,
-          },
-        },
-      ];
+    shapes: (props, variant, size, state = 'default') => {
+      const shapes: Shape[] = [];
+      const tagFontSize = size.fontSize as unknown as number || 14;
+      const tagGap = size.gap || 4;
+      const currentY = 0;
+
+      // ── CSS 구조: TagGroup (column) ──
+      // ├── Label       ← 자식 Label 요소가 렌더링 (spec shapes에서 제외)
+      // └── TagList (row flex-wrap)
+      //     ├── Tag
+      //     └── Tag
+      //
+      // Label은 자식 요소(child Label element)로 렌더링되므로
+      // spec shapes에서 중복 렌더링하지 않음 (두 줄 렌더링 방지)
+
+      // TagList 영역: Tag chips (CSS: .react-aria-TagList > .react-aria-Tag)
+      const tagItems = props._tagItems;
+      if (tagItems && tagItems.length > 0) {
+        const tagPaddingX = size.paddingX || 8;
+        const tagPaddingY = size.paddingY || 2;
+        const tagHeight = tagFontSize + tagPaddingY * 2;
+        const borderRadius = size.borderRadius as unknown as number || 4;
+        let tagX = 0;
+
+        for (const item of tagItems) {
+          // 태그 칩 너비 추정
+          const charWidth = tagFontSize * 0.55;
+          const textWidth = item.text.length * charWidth;
+          const chipWidth = textWidth + tagPaddingX * 2;
+
+          // Tag 배경 (roundRect)
+          shapes.push({
+            id: `tag-bg-${tagX}-${currentY}`,
+            type: 'roundRect' as const,
+            x: tagX,
+            y: currentY,
+            width: chipWidth,
+            height: tagHeight,
+            radius: borderRadius,
+            fill: resolveStateColors(variant, state).background,
+          });
+
+          // Tag 테두리
+          shapes.push({
+            type: 'border' as const,
+            target: `tag-bg-${tagX}-${currentY}`,
+            borderWidth: 1,
+            color: variant.border || variant.text,
+            radius: borderRadius,
+          });
+
+          // Tag 텍스트
+          shapes.push({
+            type: 'text' as const,
+            x: tagX + tagPaddingX,
+            y: currentY + tagPaddingY,
+            text: item.text,
+            fontSize: tagFontSize,
+            fontFamily: fontFamily.sans,
+            fontWeight: 400,
+            fill: variant.text,
+            align: 'left' as const,
+            baseline: 'top' as const,
+          });
+
+          tagX += chipWidth + tagGap;
+        }
+      }
 
       return shapes;
     },

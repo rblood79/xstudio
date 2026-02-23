@@ -17,6 +17,8 @@ import type { Container } from 'pixi.js';
 import { type ViewportState, type ViewportController, getViewportController } from './ViewportController';
 import { useCanvasSyncStore } from '../canvasSync';
 import { useKeyboardShortcutsRegistry } from '@/builder/hooks';
+import { useScrollState, isScrollable } from '../../../stores/scrollState';
+import { useStore } from '../../../stores';
 
 // ============================================
 // Types
@@ -271,6 +273,21 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         // 일반 휠 = 팬 (Figma/Photoshop 스타일)
         e.preventDefault();
         e.stopPropagation();
+
+        // Phase E: 선택된 스크롤 가능 요소에 wheel 라우팅
+        const storeState = useStore.getState();
+        const selectedIds = storeState.selectedElementIds;
+        if (selectedIds.length === 1) {
+          const selectedId = selectedIds[0];
+          const el = storeState.elementsMap.get(selectedId);
+          const overflow = (el?.props?.style as Record<string, unknown> | undefined)?.overflow;
+          if ((overflow === 'scroll' || overflow === 'auto') && isScrollable(selectedId)) {
+            const deltaX = e.shiftKey ? e.deltaY : e.deltaX;
+            const deltaY = e.shiftKey ? 0 : e.deltaY;
+            useScrollState.getState().scrollBy(selectedId, deltaX, deltaY);
+            return;
+          }
+        }
 
         // Shift + wheel = 좌우 팬, 일반 wheel = 상하 팬
         const rawDeltaX = e.shiftKey ? e.deltaY : e.deltaX;

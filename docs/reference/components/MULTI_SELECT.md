@@ -1,6 +1,6 @@
 # Multi-Element Selection: Future Improvements
 
-**Last Updated**: 2026-02-06
+**Last Updated**: 2026-02-14
 **Current Status**: ✅ **ALL PHASES COMPLETE** - Phase 2 (Multi-Element Editing) + Phase 3 (Keyboard Shortcuts + Selection Filters) + Phase 4 (Grouping & Organization) + Phase 5 (Alignment & Distribution) + Phase 6 (Copy/Paste/Duplicate) + Phase 7 (History Integration) + Phase 8 (Performance Optimization) + Phase 9 (Advanced Features)
 
 This document outlines potential improvements and enhancements for the multi-element selection feature.
@@ -2084,6 +2084,192 @@ Smart selections automatically tracked in selection memory for quick restore.
 
 ---
 
+## 계층적 선택 모델 통합
+
+> **추가일**: 2026-02-14
+> **관련 파일**: `stores/selection.ts`, `utils/hierarchicalSelection.ts`, `panels/nodes/LayersSection.tsx`, `workspace/canvas/BuilderCanvas.tsx`
+
+다중 선택(Multi-Select) 시스템은 계층적 선택 모델(Hierarchical Selection Model)과 긴밀하게 통합된다. Pencil/Figma 스타일의 컨테이너 진입 패턴을 따르며, 모든 선택 동작은 현재 editingContext 범위 내에서만 수행된다.
+
+### 1. editingContextId 상태
+
+`editingContextId`는 현재 사용자가 "진입한" 컨테이너를 나타내는 상태로, 선택 가능한 요소의 범위를 결정한다.
+
+| 값 | 의미 | 선택 가능 범위 |
+|----|------|---------------|
+| `null` | 루트 레벨 | body의 직계 자식만 선택 가능 |
+| `string` (요소 ID) | 해당 컨테이너 내부 | 컨테이너의 직계 자식만 선택 가능 |
+
+**상태 정의** (`src/builder/stores/selection.ts`):
+
+```typescript
+export interface SelectionState {
+  // ...기존 선택 상태...
+
+  // 계층적 선택 상태
+  /** 현재 진입한 컨테이너 ID. null = body 직계 자식 레벨 (루트) */
+  editingContextId: string | null;
+
+  // 계층적 선택 액션
+  setEditingContext: (contextId: string | null) => void;
+  enterEditingContext: (elementId: string) => void;
+  exitEditingContext: () => void;
+}
+```
+
+**핵심 동작**:
+- `setEditingContext(contextId)`: editingContext를 직접 설정하고, 기존 선택을 **모두 초기화**한다.
+- `enterEditingContext(elementId)`: 자식이 있는 컨테이너에 한 단계 진입한다. 기존 선택을 초기화한다.
+- `exitEditingContext()`: 한 단계 위로 복귀하고, 빠져나온 컨테이너를 선택 상태로 설정한다.
+
+### 2. resolveClickTarget
+
+캔버스에서 클릭이 발생하면 PixiJS EventBoundary가 가장 깊은(leaf) 요소를 감지한다. 그러나 사용자가 실제로 선택해야 하는 요소는 **현재 editingContext의 직계 자식**이다. `resolveClickTarget`은 이 변환을 수행한다.
+
+**위치**: `src/builder/utils/hierarchicalSelection.ts`
+
+```typescript
+export function resolveClickTarget(
+  clickedElementId: string,
+  editingContextId: string | null,
+  elementsMap: Map<string, MinimalElement>,
+): string | null {
+  let current: string | undefined = clickedElementId;
+
+  while (current) {
+    const element = elementsMap.get(current);
+    if (!element) return null;
+
+    if (editingContextId === null) {
+      // 루트 레벨: parent가 body인 요소를 찾는다
+      const parentId = element.parent_id;
+      if (!parentId) return null;
+      const parentElement = elementsMap.get(parentId);
+      if (parentElement?.tag === 'body') return current;
+    } else {
+      // 특정 컨테이너 내부: parent_id가 editingContextId인 요소를 찾는다
+      if (element.parent_id === editingContextId) return current;
+    }
+
+    current = element.parent_id ?? undefined;
+  }
+
+  return null;
+}
+```
+
+**알고리즘 흐름**:
+1. 클릭된 요소(가장 깊은 leaf)에서 시작
+2. parent chain을 따라 올라감
+3. `editingContextId === null`이면 parent가 `body`인 요소를 찾음
+4. `editingContextId !== null`이면 `parent_id === editingContextId`인 요소를 찾음
+5. 찾은 요소의 ID를 반환 (선택 대상)
+6. 찾지 못하면 `null` 반환 (context에 속하지 않는 클릭)
+
+**모든 선택 동작에서 사용**: 단일 클릭(선택), Cmd/Ctrl+Click(다중 선택), 더블클릭(컨테이너 진입) 모두 `resolveClickTarget`을 거쳐 대상을 결정한다.
+
+### 3. 다중 선택과 계층적 모델의 상호작용
+
+계층적 선택 모델은 다중 선택(Multi-Select)과 자연스럽게 통합된다. `resolveClickTarget`이 모든 선택 동작의 진입점이므로, 다중 선택 시에도 동일한 깊이 레벨에서만 요소가 선택된다.
+
+**Cmd/Ctrl+Click (다중 선택)**:
+- 사용자가 Cmd+Click으로 요소를 추가 선택할 때, 클릭된 요소는 먼저 `resolveClickTarget`을 통해 해석된다.
+- 해석된 대상(resolvedTarget)은 항상 현재 editingContext의 직계 자식이므로, 서로 다른 깊이의 요소가 동시에 선택되는 상황이 원천적으로 방지된다.
+
+```
+예시: body > Card > Button 구조
+- editingContextId = null (루트 레벨)
+- Card 내부의 Button을 클릭 → resolveClickTarget이 Card를 반환
+- 따라서 Card만 선택됨 (Button 직접 선택 불가)
+```
+
+**컨테이너 진입 시 선택 초기화**:
+- `enterEditingContext(elementId)`를 호출하면 `selectedElementIds`와 `selectedElementIdsSet`이 빈 배열/Set으로 초기화된다.
+- 이전 레벨에서의 다중 선택 상태가 새로운 컨텍스트로 이월되지 않는다.
+
+```typescript
+// stores/selection.ts
+enterEditingContext: (elementId) => {
+  const { childrenMap } = get();
+  const children = childrenMap.get(elementId);
+  if (!children || children.length === 0) return;
+  set({
+    editingContextId: elementId,
+    selectedElementIds: [],          // 선택 초기화
+    selectedElementIdsSet: new Set<string>(),
+    selectionBounds: null,
+  });
+},
+```
+
+**exitEditingContext 동작**:
+- 한 단계 위로 복귀할 때, 빠져나온 컨테이너가 자동으로 선택된다.
+- 부모의 부모가 `body`이면 editingContext는 `null`(루트)로 설정된다.
+
+### 4. 레이어 트리 통합
+
+레이어 트리(Layers Panel)에서 요소를 직접 클릭하면 캔버스 클릭과 동일한 계층적 모델을 따라야 한다. 그러나 레이어 트리에서는 어떤 깊이의 요소든 직접 선택할 수 있으므로, editingContext를 해당 요소의 깊이에 맞게 **자동 조정**해야 한다.
+
+**`resolveEditingContextForTreeSelection`** (`src/builder/utils/hierarchicalSelection.ts`):
+
+```typescript
+export function resolveEditingContextForTreeSelection(
+  selectedElementId: string,
+  elementsMap: Map<string, MinimalElement>,
+): string | null {
+  const element = elementsMap.get(selectedElementId);
+  if (!element) return null;
+
+  const parentId = element.parent_id;
+  if (!parentId) return null;
+
+  const parentElement = elementsMap.get(parentId);
+  if (parentElement?.tag === 'body') return null;  // body 직계 자식 → 루트 레벨
+
+  return parentId;  // 부모 컨테이너를 editingContext로 설정
+}
+```
+
+**레이어 트리에서의 사용** (`src/builder/panels/nodes/LayersSection.tsx`):
+
+```typescript
+const handleItemClick = useCallback(
+  (element: { id: string }) => {
+    const state = useStore.getState();
+    const newContextId = resolveEditingContextForTreeSelection(
+      element.id,
+      state.elementsMap,
+    );
+    if (newContextId !== state.editingContextId) {
+      state.setEditingContext(newContextId);
+    }
+    setSelectedElement(element.id);
+  },
+  [setSelectedElement],
+);
+```
+
+**동작 예시**:
+
+| 선택 대상 | 요소의 부모 | 부모의 tag | 결과 editingContextId |
+|-----------|------------|-----------|----------------------|
+| `Card` | `body` | `body` | `null` (루트) |
+| `Button` | `Card` | `Card` | `Card`의 ID |
+| `Icon` | `Button` | `Button` | `Button`의 ID |
+
+이를 통해 레이어 트리에서 깊은 요소를 직접 선택하더라도, 캔버스의 editingContext가 자동으로 해당 깊이로 조정되어 후속 캔버스 클릭이 올바른 레벨에서 동작한다.
+
+### 관련 파일 요약
+
+| 파일 | 역할 |
+|------|------|
+| `src/builder/stores/selection.ts` | editingContextId 상태 및 enter/exit/set 액션 정의 |
+| `src/builder/utils/hierarchicalSelection.ts` | `resolveClickTarget`, `resolveEditingContextForTreeSelection`, `getAncestorChain`, `hasEditableChildren` 순수 함수 |
+| `src/builder/workspace/canvas/BuilderCanvas.tsx` | 캔버스 클릭/더블클릭 시 `resolveClickTarget` 호출, `enterEditingContext` 트리거 |
+| `src/builder/panels/nodes/LayersSection.tsx` | 레이어 트리 선택 시 `resolveEditingContextForTreeSelection`으로 context 자동 조정 |
+
+---
+
 ## 🏆 Final Summary
 
 ### ✅ Complete Feature List (15/15)
@@ -2112,6 +2298,7 @@ Smart selections automatically tracked in selection memory for quick restore.
 - **Architecture**: `docs/CSS_ARCHITECTURE.md`
 - **Store Pattern**: `src/builder/stores/README.md`
 - **Keyboard Shortcuts**: `src/builder/hooks/useKeyboardShortcutsRegistry.ts`
+- **Canvas Interactions**: `docs/reference/components/CANVAS_INTERACTIONS.md`
 
 ---
 
@@ -2126,5 +2313,5 @@ Smart selections automatically tracked in selection memory for quick restore.
 
 ---
 
-**Last Updated**: 2025-11-16
+**Last Updated**: 2026-02-14
 **Next Review**: After Phase 2 completion

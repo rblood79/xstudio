@@ -63,6 +63,12 @@ export function createToggleButtonGroupDefinition(
         orientation: "horizontal",
         selectionMode: "single",
         value: [],
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          width: "fit-content",
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -133,6 +139,11 @@ export function createCheckboxGroupDefinition(
           children: "Option 1",
           isSelected: false,
           isDisabled: false,
+          style: {
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -143,6 +154,11 @@ export function createCheckboxGroupDefinition(
           children: "Option 2",
           isSelected: false,
           isDisabled: false,
+          style: {
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
@@ -186,6 +202,11 @@ export function createRadioGroupDefinition(
           children: "Option 1",
           value: "option1",
           isDisabled: false,
+          style: {
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -196,6 +217,11 @@ export function createRadioGroupDefinition(
           children: "Option 2",
           value: "option2",
           isDisabled: false,
+          style: {
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
@@ -219,6 +245,7 @@ export function createTagGroupDefinition(
     ? { page_id: null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null };
 
+  // 웹 CSS 구조: TagGroup (column) → Label + TagList (row wrap) → Tags
   return {
     tag: "TagGroup",
     parent: {
@@ -227,6 +254,7 @@ export function createTagGroupDefinition(
         label: "Tag Group",
         allowsRemoving: false,
         selectionMode: "multiple",
+        style: { display: "flex", flexDirection: "column", gap: 2, width: "fit-content" },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -234,22 +262,41 @@ export function createTagGroupDefinition(
     },
     children: [
       {
-        tag: "Tag",
+        tag: "Label",
         props: {
-          children: "Tag 1",
-          isDisabled: false,
+          children: "Tag Group",
+          style: { fontSize: 14, fontWeight: 500, width: 'fit-content' },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
       },
       {
-        tag: "Tag",
+        tag: "TagList",
         props: {
-          children: "Tag 2",
-          isDisabled: false,
+          style: { display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 4 },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
+        children: [
+          {
+            tag: "Tag",
+            props: {
+              children: "Tag 1",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Tag 2",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 2,
+          },
+        ],
       },
     ],
   };

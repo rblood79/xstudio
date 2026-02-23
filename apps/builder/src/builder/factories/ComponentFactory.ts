@@ -13,7 +13,15 @@ import { saveElementsInBackground } from "./utils/dbPersistence";
 import { ElementUtils } from "../../utils/element/elementUtils";
 
 // 컴포넌트 정의 임포트
-import { createTextFieldDefinition } from "./definitions/FormComponents";
+import {
+  createTextFieldDefinition,
+  createFormDefinition,
+  createToastDefinition,
+  createToolbarDefinition,
+  createNumberFieldDefinition,
+  createSearchFieldDefinition,
+  createSliderDefinition,
+} from "./definitions/FormComponents";
 import {
   createSelectDefinition,
   createComboBoxDefinition,
@@ -29,9 +37,20 @@ import {
   createBreadcrumbsDefinition,
 } from "./definitions/GroupComponents";
 import {
+  createCardDefinition,
   createTabsDefinition,
   createTreeDefinition,
 } from "./definitions/LayoutComponents";
+import {
+  createDialogDefinition,
+  createPopoverDefinition,
+  createTooltipDefinition,
+} from "./definitions/OverlayComponents";
+import {
+  createMenuDefinition,
+  createDisclosureDefinition,
+  createDisclosureGroupDefinition,
+} from "./definitions/NavigationComponents";
 import {
   createTable,
   createColumnGroup,
@@ -40,6 +59,15 @@ import {
   createDataTableDefinition,
   createSlotDefinition,
 } from "./definitions/DataComponents";
+import {
+  createDatePickerDefinition,
+  createDateRangePickerDefinition,
+  createCalendarDefinition,
+  createColorPickerDefinition,
+  createDateFieldDefinition,
+  createTimeFieldDefinition,
+  createColorFieldDefinition,
+} from "./definitions/DateColorComponents";
 
 /**
  * 통합 컴포넌트 팩토리
@@ -52,12 +80,20 @@ export class ComponentFactory {
    */
   private static creators: Record<string, ComponentCreator> = {
     TextField: ComponentFactory.createTextField,
+    // ⭐ Form Components
+    Form: ComponentFactory.createForm,
+    Toast: ComponentFactory.createToast,
+    Toolbar: ComponentFactory.createToolbar,
+    NumberField: ComponentFactory.createNumberField,
+    SearchField: ComponentFactory.createSearchField,
     Group: ComponentFactory.createGroup,
     ToggleButtonGroup: ComponentFactory.createToggleButtonGroup,
     CheckboxGroup: ComponentFactory.createCheckboxGroup,
     RadioGroup: ComponentFactory.createRadioGroup,
     Select: ComponentFactory.createSelect,
     ComboBox: ComponentFactory.createComboBox,
+    Slider: ComponentFactory.createSlider,
+    Card: ComponentFactory.createCard,
     Tabs: ComponentFactory.createTabs,
     Tree: ComponentFactory.createTree,
     TagGroup: ComponentFactory.createTagGroup,
@@ -65,9 +101,25 @@ export class ComponentFactory {
     ListBox: ComponentFactory.createListBox,
     GridList: ComponentFactory.createGridList,
     Table: ComponentFactory.createTable,
+    // ⭐ Navigation Components
+    Menu: ComponentFactory.createMenu,
+    Disclosure: ComponentFactory.createDisclosure,
+    DisclosureGroup: ComponentFactory.createDisclosureGroup,
+    // ⭐ Overlay Components
+    Dialog: ComponentFactory.createDialog,
+    Popover: ComponentFactory.createPopover,
+    Tooltip: ComponentFactory.createTooltip,
     // ⭐ Data Components
     DataTable: ComponentFactory.createDataTable,
     Slot: ComponentFactory.createSlot,
+    // ⭐ Date & Color Components
+    DatePicker: ComponentFactory.createDatePicker,
+    DateRangePicker: ComponentFactory.createDateRangePicker,
+    Calendar: ComponentFactory.createCalendar,
+    ColorPicker: ComponentFactory.createColorPicker,
+    DateField: ComponentFactory.createDateField,
+    TimeField: ComponentFactory.createTimeField,
+    ColorField: ComponentFactory.createColorField,
   };
 
   /**
@@ -146,6 +198,38 @@ export class ComponentFactory {
     return this.createComponent(createTextFieldDefinition, context);
   }
 
+  // ==================== Form Components ====================
+
+  private static async createForm(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createFormDefinition, context);
+  }
+
+  private static async createToast(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createToastDefinition, context);
+  }
+
+  private static async createToolbar(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createToolbarDefinition, context);
+  }
+
+  private static async createNumberField(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createNumberFieldDefinition, context);
+  }
+
+  private static async createSearchField(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createSearchFieldDefinition, context);
+  }
+
   private static async createGroup(
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
@@ -180,6 +264,18 @@ export class ComponentFactory {
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createComboBoxDefinition, context);
+  }
+
+  private static async createSlider(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createSliderDefinition, context);
+  }
+
+  private static async createCard(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createCardDefinition, context);
   }
 
   private static async createTabs(
@@ -218,6 +314,46 @@ export class ComponentFactory {
     return this.createComponent(createGridListDefinition, context);
   }
 
+  // ==================== Navigation Components ====================
+
+  private static async createMenu(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createMenuDefinition, context);
+  }
+
+  private static async createDisclosure(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createDisclosureDefinition, context);
+  }
+
+  private static async createDisclosureGroup(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createDisclosureGroupDefinition, context);
+  }
+
+  // ==================== Overlay Components ====================
+
+  private static async createDialog(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createDialogDefinition, context);
+  }
+
+  private static async createPopover(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createPopoverDefinition, context);
+  }
+
+  private static async createTooltip(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createTooltipDefinition, context);
+  }
+
   // ==================== Data Components ====================
 
   /**
@@ -237,6 +373,52 @@ export class ComponentFactory {
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createSlotDefinition, context);
   }
+
+  // ==================== Date & Color Components ====================
+
+  private static async createDatePicker(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createDatePickerDefinition, context);
+  }
+
+  private static async createDateRangePicker(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createDateRangePickerDefinition, context);
+  }
+
+  private static async createCalendar(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createCalendarDefinition, context);
+  }
+
+  private static async createColorPicker(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createColorPickerDefinition, context);
+  }
+
+  private static async createDateField(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createDateFieldDefinition, context);
+  }
+
+  private static async createTimeField(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createTimeFieldDefinition, context);
+  }
+
+  private static async createColorField(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createColorFieldDefinition, context);
+  }
+
+  // ==================== Table Components ====================
 
   /**
    * Table 컴포넌트 (특수 처리)

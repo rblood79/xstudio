@@ -97,6 +97,24 @@ const fontSize = props.style?.fontSize ?? size.fontSize;
 - `specHeight = finalHeight` — ElementSprite에서 항상 Yoga 계산 높이 사용
 - gradient fill 이전: `boxData.fill → specNode.box.fill` (spec shapes가 외부 fill 클리어 방지)
 
+**v1.14 변경사항:**
+- **배경 roundRect `width: 'auto' as const`** — `props.style?.width` 사용 금지 (9개 spec 수정)
+- `specShapesToSkia` bgBox 추출 조건: `shape.width === 'auto' && shape.height === 'auto'`
+- `props.style?.width`가 숫자일 경우 bgBox 미추출 → 배경 미렌더링 버그
+- ElementSprite 퍼센트 width 이중 적용 수정: `computedContainerSize.width` 직접 사용
+
+**v1.15 변경사항:**
+- **텍스트 줄바꿈 시 Skia 높이 자동 확장** — `measureSpecTextMinHeight()` 헬퍼 추가
+- `specHeight`를 `let`으로 변경, 다중 줄 텍스트일 때 `paddingY * 2 + wrappedHeight`로 확장
+- `cardCalculatedHeight` → `contentMinHeight` 패턴으로 `buildSkiaTreeHierarchical`에서 높이 반영
+- 다중 줄 텍스트 `paddingTop` 보정: `(specHeight - wrappedHeight) / 2` 수직 중앙
+- `updateTextChildren` box 자식 재귀 추가 (SkiaOverlay.tsx)
+- **BlockEngine 경로 텍스트 줄바꿈 높이** — `parseBoxModel`에서 요소 자체 width를 `calculateContentHeight`에 전달
+- ~~`styleToLayout` minHeight 기본 사이즈 수정~~ — **삭제됨** (W3-6). `enrichWithIntrinsicSize()`에 통합
+- **Button 높이 명시적 설정** — `enrichWithIntrinsicSize()`에서 `getButtonSizeConfig()` 기반 계산 (engines/utils.ts)
+- **인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용** — padding:0으로 완전 축소 허용
+- **`toNum` 함수 0값 버그 수정** — `parseFloat(v) || undefined` → `isNaN(parseFloat(v))` 체크
+
 ## 참조
 
 - `docs/COMPONENT_SPEC_ARCHITECTURE.md` - 전체 설계 문서 (§4.7.4.4~4.7.4.8)

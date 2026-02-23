@@ -15,7 +15,7 @@
     border-radius: var(--radius-md);
     background: var(--surface-container);
     color: var(--on-surface);
-    padding: var(--spacing-sm);
+    padding: var(--spacing-md);
 
     /* Trigger button */
     .react-aria-Button[slot=trigger] {
@@ -220,7 +220,7 @@
 
   /* ===== Medium Size (Default) ===== */
   .react-aria-Disclosure.md {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-md);
 
     .react-aria-Button[slot=trigger] {
       gap: var(--spacing-sm);

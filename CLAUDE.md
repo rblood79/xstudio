@@ -46,8 +46,8 @@ xstudio/
 ### Canvas 렌더링
 - **CanvasKit/Skia WASM**: 메인 렌더러 (디자인 노드 + AI 이펙트 + Selection 오버레이)
 - **PixiJS 8**: 씬 그래프 + EventBoundary 이벤트 처리 전용 (Camera 하위 alpha=0)
-- **@pixi/layout**: Yoga Flexbox 레이아웃
-- **규칙**: x/y props 금지, style 기반 레이아웃
+- **DirectContainer**: 엔진 계산 결과(x/y/w/h)를 직접 배치 (@pixi/layout 제거됨)
+- **레이아웃 엔진**: Taffy WASM (Flex/Grid) + Dropflow Fork (Block)
 
 ### 상태 관리
 - **Zustand**: 슬라이스 패턴
@@ -59,9 +59,9 @@ xstudio/
 | 영역 | 기술 |
 |------|------|
 | UI | React 19, React-Aria Components |
-| State | Zustand, TanStack Query |
+| State | Zustand (메인), Jotai (스타일 패널), TanStack Query |
 | Styling | Tailwind CSS v4, tailwind-variants |
-| Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용), @pixi/layout, @pixi/react |
+| Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용), @pixi/react |
 | AI | Groq SDK (llama-3.3-70b-versatile), Tool Calling + Agent Loop |
 | Backend | Supabase (Auth, Database, RLS) |
 | Build | Vite, TypeScript 5, pnpm |
@@ -83,7 +83,7 @@ xstudio/
 ### CRITICAL 규칙 요약
 1. **인라인 Tailwind 금지** → tv() + CSS 파일
 2. **any 타입 금지** → 명시적 타입
-3. **PIXI x/y props 금지** → style 기반
+3. **DirectContainer 패턴** → 엔진 결과 x/y 직접 배치
 4. **postMessage origin 검증** → 보안
 5. **히스토리 기록 필수** → Undo/Redo
 6. **O(1) 검색** → elementsMap 사용
@@ -117,6 +117,8 @@ pnpm storybook
 ## 참조 문서
 
 - [AI Feature Design](docs/AI.md)
+- [WASM Architecture](docs/WASM.md)
+- [Component Spec](docs/COMPONENT_SPEC_ARCHITECTURE.md)
 - [CSS Architecture](docs/reference/components/CSS_ARCHITECTURE.md)
 - [Skill Rules](.claude/skills/xstudio-patterns/SKILL.md)
 - [ADR: State Management](docs/adr/001-state-management.md)

@@ -24,6 +24,9 @@ const VALIGN_BOTTOM: u8 = 3;
 /// Sentinel for "auto" (no explicit value)
 const AUTO: f32 = -1.0;
 
+/// Sentinel for "fit-content" (use content intrinsic size)
+const FIT_CONTENT: f32 = -2.0;
+
 /// CSS margin collapse (CSS 2.1 §8.3.1)
 #[inline]
 fn collapse_margins(a: f32, b: f32) -> f32 {
@@ -132,12 +135,13 @@ pub fn block_layout(
 
         if display == DISPLAY_INLINE_BLOCK {
             // Inline-block: accumulate into line box
+            // fit-content behaves same as auto for inline-block (use content size)
             let child_content_w = clamp_size(
-                if width_val != AUTO { width_val } else { content_w },
+                if width_val != AUTO && width_val != FIT_CONTENT { width_val } else { content_w },
                 min_w, max_w,
             );
             let child_content_h = clamp_size(
-                if height_val != AUTO { height_val } else { content_h },
+                if height_val != AUTO && height_val != FIT_CONTENT { height_val } else { content_h },
                 min_h, max_h,
             );
             let child_w = child_content_w + pad_border_h;
@@ -219,25 +223,30 @@ pub fn block_layout(
             current_y += collapsed_margin_top;
 
             // Block width
+            // fit-content: use content intrinsic width (shrink-to-fit)
             let child_content_w = clamp_size(
-                if width_val != AUTO {
-                    width_val
+                if width_val == FIT_CONTENT {
+                    content_w                               // fit-content: content size
+                } else if width_val != AUTO {
+                    width_val                               // explicit px
                 } else {
-                    available_width - m_left - m_right
+                    available_width - m_left - m_right      // auto: stretch to parent
                 },
                 min_w, max_w,
             );
             let child_content_h = clamp_size(
-                if height_val != AUTO { height_val } else { content_h },
+                if height_val != AUTO && height_val != FIT_CONTENT { height_val } else { content_h },
                 min_h, max_h,
             );
 
             // Auto-width already includes padding+border conceptually
-            // Explicit width needs padding+border added
-            let child_w = if width_val != AUTO {
-                child_content_w + pad_border_h
+            // Explicit width / fit-content needs padding+border added
+            let child_w = if width_val == FIT_CONTENT {
+                child_content_w + pad_border_h              // fit-content: content + padding + border
+            } else if width_val != AUTO {
+                child_content_w + pad_border_h              // explicit px
             } else {
-                child_content_w
+                child_content_w                             // auto (margin-box already at available)
             };
             let child_h = child_content_h + pad_border_v;
 
@@ -524,5 +533,93 @@ mod tests {
         assert_eq!(wasm_collapse_margins(20.0, 30.0), 30.0);
         assert_eq!(wasm_collapse_margins(-10.0, -20.0), -20.0);
         assert_eq!(wasm_collapse_margins(20.0, -10.0), 10.0);
+    }
+
+    #[test]
+    fn test_fit_content_block_width() {
+        // Block with fit-content width should use contentWidth, not stretch
+        let mut data = Vec::new();
+        let mut child = make_block(FIT_CONTENT, AUTO, 0.0, 0.0);
+        child[14] = 120.0; // content_w = 120
+        data.extend(child);
+
+        let result = block_layout(&data, 400.0, 800.0, false, false, 0.0);
+        // fit-content: width = contentWidth(120) + padBorderH(0) = 120 (not 400)
+        assert_eq!(result[2], 120.0);
+    }
+
+    #[test]
+    fn test_fit_content_block_with_padding() {
+        // Block with fit-content width + padding/border
+        let mut data = Vec::new();
+        let mut child = make_block(FIT_CONTENT, AUTO, 0.0, 0.0);
+        child[9] = 20.0;  // pad_border_h = 20
+        child[14] = 100.0; // content_w = 100
+        data.extend(child);
+
+        let result = block_layout(&data, 400.0, 800.0, false, false, 0.0);
+        // fit-content: width = contentWidth(100) + padBorderH(20) = 120
+        assert_eq!(result[2], 120.0);
+    }
+
+    #[test]
+    fn test_fit_content_block_clamped_by_max() {
+        // fit-content width should respect max-width
+        let mut data = Vec::new();
+        let mut child = make_block(FIT_CONTENT, AUTO, 0.0, 0.0);
+        child[11] = 80.0;  // max_w = 80
+        child[14] = 200.0; // content_w = 200 (exceeds max)
+        data.extend(child);
+
+        let result = block_layout(&data, 400.0, 800.0, false, false, 0.0);
+        // clamp(200, AUTO, 80) = 80, then + padBorderH(0) = 80
+        assert_eq!(result[2], 80.0);
+    }
+
+    #[test]
+    fn test_fit_content_block_clamped_by_min() {
+        // fit-content width should respect min-width
+        let mut data = Vec::new();
+        let mut child = make_block(FIT_CONTENT, AUTO, 0.0, 0.0);
+        child[10] = 150.0; // min_w = 150
+        child[14] = 50.0;  // content_w = 50 (below min)
+        data.extend(child);
+
+        let result = block_layout(&data, 400.0, 800.0, false, false, 0.0);
+        // clamp(50, 150, AUTO) = 150, then + padBorderH(0) = 150
+        assert_eq!(result[2], 150.0);
+    }
+
+    #[test]
+    fn test_fit_content_inline_block() {
+        // Inline-block with fit-content should use contentWidth (same as auto)
+        let mut data = Vec::new();
+        let mut child = make_inline_block(FIT_CONTENT, 30.0, VALIGN_BASELINE);
+        child[14] = 80.0; // content_w = 80
+        data.extend(child);
+
+        let result = block_layout(&data, 400.0, 400.0, false, false, 0.0);
+        // fit-content inline-block: width = contentWidth(80)
+        assert_eq!(result[2], 80.0);
+    }
+
+    #[test]
+    fn test_fit_content_vertical_stacking() {
+        // Two blocks: auto then fit-content, should stack vertically
+        let mut data = Vec::new();
+        data.extend(make_block(AUTO, 50.0, 0.0, 10.0));
+        let mut fit_child = make_block(FIT_CONTENT, 60.0, 20.0, 0.0);
+        fit_child[14] = 150.0; // content_w = 150
+        data.extend(fit_child);
+
+        let result = block_layout(&data, 400.0, 800.0, false, false, 0.0);
+        // child 0: y=0, w=400 (auto stretch), h=50
+        assert_eq!(result[0], 0.0);  // x
+        assert_eq!(result[1], 0.0);  // y
+        assert_eq!(result[2], 400.0); // w (auto)
+        assert_eq!(result[3], 50.0);  // h
+        // child 1: y = 50 + max(10,20) = 70, w=150 (fit-content)
+        assert_eq!(result[5], 70.0);  // y (after margin collapse)
+        assert_eq!(result[6], 150.0); // w (fit-content = contentWidth)
     }
 }

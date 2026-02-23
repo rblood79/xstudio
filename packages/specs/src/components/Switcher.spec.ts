@@ -173,7 +173,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
 
         shapes.push({
           type: 'text' as const,
-          x: size.paddingX + index * itemWidth + itemWidth / 2,
+          x: size.paddingX + index * itemWidth,
           y: height / 2,
           text: label,
           fontSize: fontSize as unknown as number,
@@ -182,6 +182,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
           fill: textColor,
           align: textAlign,
           baseline: 'middle' as const,
+          maxWidth: itemWidth,
         });
       });
 

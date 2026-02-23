@@ -90,7 +90,8 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
         : size.borderRadius;
 
       const maskShape = props.maskShape || 'roundRect';
-      const width = (props.style?.width as number) || 'auto';
+      // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
+      const width = 'auto' as const;
       const height = size.height;
 
       const shapes: Shape[] = [];

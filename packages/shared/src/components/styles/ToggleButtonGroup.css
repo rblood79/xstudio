@@ -6,7 +6,7 @@
     &:focus-within {
       outline: 2px solid var(--focus-ring-color);
       outline-offset: 2px;
-      border-radius: var(--border-radius);
+      border-radius: var(--radius-lg);
     }
 
     > button {
@@ -147,12 +147,12 @@
       margin-inline-start: -1px;
 
       &:first-child {
-        border-radius: var(--border-radius) 0 0 var(--border-radius);
+        border-radius: var(--radius-lg) 0 0 var(--radius-lg);
         margin-inline-start: 0;
       }
 
       &:last-child {
-        border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
       }
     }
   }
@@ -166,12 +166,12 @@
       width: 100%;
 
       &:first-child {
-        border-radius: var(--border-radius) var(--border-radius) 0 0;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
         margin-block-start: 0;
       }
 
       &:last-child {
-        border-radius: 0 0 var(--border-radius) var(--border-radius);
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
       }
     }
   }

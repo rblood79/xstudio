@@ -26,6 +26,7 @@ export interface WorkflowPageInput {
   id: string;
   title: string;
   slug: string;
+  layout_id?: string | null;
 }
 
 /** 입력 요소 최소 인터페이스 */
@@ -353,7 +354,7 @@ export function computeLayoutGroups(
   const groupMap = new Map<string, string[]>();
 
   for (const page of pages) {
-    const layoutId = (page as Record<string, unknown>).layout_id as string | undefined | null;
+    const layoutId = page.layout_id;
     if (!layoutId) continue;
 
     const existing = groupMap.get(layoutId);

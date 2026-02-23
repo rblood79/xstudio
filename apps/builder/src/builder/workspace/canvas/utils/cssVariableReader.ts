@@ -75,14 +75,63 @@ export interface M3ButtonColors {
 }
 
 // ============================================
-// CSS Variable Reading
+// CSS Variable Reading + M-4 Cache
 // ============================================
 
 /**
- * CSS 변수 값을 읽어옴
+ * M-4: CSS 변수 메모리 캐시
+ *
+ * getComputedStyle()은 매 호출마다 레이아웃 스타일 재계산을 트리거할 수 있다.
+ * 동일 프레임/렌더 사이클 내에서 같은 변수를 반복 조회하는 비용을 제거한다.
+ * 테마 전환 시 invalidateCSSVariableCache()로 무효화한다.
  */
-function getCSSVariable(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const cssVarCache = new Map<string, string>();
+
+/**
+ * M-4: CSS 변수 캐시 무효화
+ *
+ * 테마 전환, 페이지 전환, 또는 Preview iframe 교체 시 호출한다.
+ * Builder↔Preview iframe 경계에서는 각각의 :root가 다르므로,
+ * 테마 관련 이벤트 발생 시 반드시 호출해야 한다.
+ */
+export function invalidateCSSVariableCache(): void {
+  cssVarCache.clear();
+}
+
+/**
+ * CSS 변수 값을 읽어옴 (M-4: 캐시 적용)
+ *
+ * document.documentElement (`:root`)에서 computed style을 읽어
+ * CSS custom property 값을 반환한다.
+ * 동일 변수는 캐시에서 O(1)로 반환한다.
+ *
+ * @param name - CSS 변수 이름 (예: '--primary', '--spacing-md')
+ * @returns 변수 값 문자열 (존재하지 않으면 빈 문자열)
+ */
+export function getCSSVariable(name: string): string {
+  const cached = cssVarCache.get(name);
+  if (cached !== undefined) return cached;
+
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  cssVarCache.set(name, value);
+  return value;
+}
+
+/**
+ * W3-7: DOM에서 CSS 변수를 조회하는 fallback 함수 (M-4: 캐시 적용)
+ *
+ * resolveVar()에서 CSSVariableScope.variables에 없는 변수를
+ * document.documentElement의 computed style에서 조회한다.
+ *
+ * 이 함수는 브라우저 환경에서만 동작하며,
+ * SSR이나 테스트 환경에서는 빈 문자열을 반환한다.
+ *
+ * @param varName - CSS 변수 이름 (예: '--primary')
+ * @returns 변수 값 문자열, 없으면 빈 문자열
+ */
+export function resolveVariableFromDOM(varName: string): string {
+  if (typeof document === 'undefined') return '';
+  return getCSSVariable(varName);
 }
 
 /**

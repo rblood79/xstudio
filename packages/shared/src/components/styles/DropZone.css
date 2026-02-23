@@ -102,12 +102,12 @@
 }
 
 .react-aria-DropZone [slot="label"] {
-  font-size: var(--text-md, 14px);
+  font-size: var(--text-base);
   font-weight: 500;
   color: var(--on-surface, #1d1b20);
 }
 
 .react-aria-DropZone [slot="description"] {
-  font-size: var(--text-sm, 12px);
+  font-size: var(--text-sm);
   color: var(--on-surface-variant, #49454f);
 }

@@ -22,6 +22,13 @@ export interface ToggleButtonProps {
   isSelected?: boolean;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
+  /** 그룹 내 위치 정보 (ToggleButtonGroup 자식일 때 주입) */
+  _groupPosition?: {
+    orientation: 'horizontal' | 'vertical';
+    isFirst: boolean;
+    isLast: boolean;
+    isOnly: boolean;
+  };
 }
 
 /** isSelected 시 variant별 반전 색상 */
@@ -139,9 +146,27 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
+      const baseBorderRadius = styleBr != null
         ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
         : size.borderRadius;
+
+      // 🚀 CSS 규칙: ToggleButtonGroup 내 위치에 따른 모서리별 border-radius
+      // horizontal: first → [r,0,0,r], last → [0,r,r,0], middle → [0,0,0,0]
+      // vertical:   first → [r,r,0,0], last → [0,0,r,r], middle → [0,0,0,0]
+      const gp = props._groupPosition;
+      let borderRadius: number | [number, number, number, number] = baseBorderRadius as number;
+      if (gp && !gp.isOnly) {
+        const r = baseBorderRadius as number;
+        if (gp.orientation === 'horizontal') {
+          if (gp.isFirst) borderRadius = [r, 0, 0, r];
+          else if (gp.isLast) borderRadius = [0, r, r, 0];
+          else borderRadius = [0, 0, 0, 0];
+        } else {
+          if (gp.isFirst) borderRadius = [r, r, 0, 0];
+          else if (gp.isLast) borderRadius = [0, 0, r, r];
+          else borderRadius = [0, 0, 0, 0];
+        }
+      }
 
       const styleBw = props.style?.borderWidth;
       const borderWidth = styleBw != null
@@ -180,9 +205,9 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
           type: 'roundRect' as const,
           x: 0,
           y: 0,
-          width: (props.style?.width as number) || 'auto',
+          width: 'auto' as const,
           height: 'auto' as unknown as number,
-          radius: borderRadius as unknown as number,
+          radius: borderRadius as number | [number, number, number, number],
           fill: bgColor,
         },
       ];
@@ -194,7 +219,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
           target: 'bg',
           borderWidth,
           color: borderColor,
-          radius: borderRadius as unknown as number,
+          radius: borderRadius as number | [number, number, number, number],
         });
       }
 
