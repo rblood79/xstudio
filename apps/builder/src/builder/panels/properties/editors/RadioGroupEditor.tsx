@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, memo, useCallback } from "react";
-import { Tag, SquarePlus, Trash, FileText, PointerOff, AlertTriangle, CheckSquare, PenOff, CheckCheck, Binary, Ratio, Layout, Ruler, Type, Hash, FormInput } from 'lucide-react';
+import { Tag, SquarePlus, Trash, FileText, PointerOff, AlertTriangle, CheckSquare, PenOff, CheckCheck, Binary, Ratio, Layout, Ruler, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
@@ -85,18 +85,6 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
 
   const handleNameChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, name: value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaLabelChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-label": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaLabelledbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaDescribedbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
   }, [currentProps, onUpdate]);
 
   const updateCustomId = useCallback((newCustomId: string) => {
@@ -350,42 +338,6 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
     [currentProps.name, handleNameChange]
   );
 
-  const accessibilitySection = useMemo(
-    () => (
-      <PropertySection title="Accessibility">
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABEL}
-          value={String(currentProps['aria-label'] || '')}
-          onChange={handleAriaLabelChange}
-          icon={Type}
-          placeholder="Radio group label for screen readers"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-          value={String(currentProps['aria-labelledby'] || '')}
-          onChange={handleAriaLabelledbyChange}
-          icon={Hash}
-          placeholder="label-element-id"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-          value={String(currentProps['aria-describedby'] || '')}
-          onChange={handleAriaDescribedbyChange}
-          icon={Hash}
-          placeholder="description-element-id"
-        />
-      </PropertySection>
-    ),
-    [
-      currentProps,
-      handleAriaLabelChange,
-      handleAriaLabelledbyChange,
-      handleAriaDescribedbyChange,
-    ]
-  );
-
   const handleAddRadio = useCallback(async () => {
     try {
       const newRadio = {
@@ -531,7 +483,6 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
       {stateSection}
       {behaviorSection}
       {formIntegrationSection}
-      {accessibilitySection}
       {radioManagementSection}
     </>
   );

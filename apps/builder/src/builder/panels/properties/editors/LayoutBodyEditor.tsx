@@ -12,10 +12,9 @@
  */
 
 import { memo, useCallback, useMemo } from "react";
-import { Type, Layout, Hash } from "lucide-react";
+import { Layout } from "lucide-react";
 import { PropertyCustomId, PropertyInput, PropertySection } from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
-import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { LayoutPresetSelector } from "./LayoutPresetSelector";
 import { LayoutSlugEditor } from "./LayoutSlugEditor";
@@ -39,20 +38,6 @@ export const LayoutBodyEditor = memo(
     const handleClassNameChange = useCallback(
       (value: string) => {
         onUpdate({ ...currentProps, className: value || undefined });
-      },
-      [currentProps, onUpdate]
-    );
-
-    const handleAriaLabelChange = useCallback(
-      (value: string) => {
-        onUpdate({ ...currentProps, "aria-label": value || undefined });
-      },
-      [currentProps, onUpdate]
-    );
-
-    const handleAriaLabelledbyChange = useCallback(
-      (value: string) => {
-        onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
       },
       [currentProps, onUpdate]
     );
@@ -87,24 +72,6 @@ export const LayoutBodyEditor = memo(
             onChange={handleClassNameChange}
             placeholder="layout-container"
             icon={Layout}
-          />
-        </PropertySection>
-
-        {/* Accessibility Section */}
-        <PropertySection title="Accessibility">
-          <PropertyInput
-            label={PROPERTY_LABELS.ARIA_LABEL}
-            value={String(currentProps["aria-label"] || "")}
-            onChange={handleAriaLabelChange}
-            icon={Type}
-            placeholder="Layout content area"
-          />
-          <PropertyInput
-            label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-            value={String(currentProps["aria-labelledby"] || "")}
-            onChange={handleAriaLabelledbyChange}
-            icon={Hash}
-            placeholder="ID of labeling element"
           />
         </PropertySection>
       </>

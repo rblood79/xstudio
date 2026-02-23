@@ -832,9 +832,8 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
   if (lineHeight !== undefined) {
     return Math.round(lineHeight);
   }
-  // CSS line-height: normal에 대응하는 fontBoundingBox 기반 lineHeight 사용
-  // - fontBoundingBox: 폰트 전체의 ascent+descent (CSS line-height: normal과 동일 기준)
-  // - actualBoundingBox: 특정 글리프의 높이 (CSS line-height보다 작아 부정확)
+  // CSS line-height: normal 근사값 (fontBoundingBox 기반)
+  // Button 등 UI 컴포넌트는 line-height: normal이 적용됨
   const fm = measureFontMetrics(specFontFamily.sans, fontSize, 400);
   return Math.round(fm.lineHeight);
 }
@@ -870,9 +869,9 @@ export function calculateContentHeight(
     const sizeName = (props?.size as string) ?? 'md';
     const sizeConfig = TOGGLEBUTTON_SIZE_CONFIG[sizeName] ?? TOGGLEBUTTON_SIZE_CONFIG['md'];
     const fontSize = sizeConfig.fontSize;
-    const fm = measureFontMetrics(specFontFamily.sans, fontSize, 400);
-    // ToggleButton border-box height = fontBoundingBox lineHeight + paddingY*2 + borderWidth*2
-    return fm.lineHeight + sizeConfig.paddingY * 2 + sizeConfig.borderWidth * 2;
+    // CSS line-height: 1.5 (Tailwind 기본) 기반 텍스트 높이 + padding + border
+    const textHeight = estimateTextHeight(fontSize);
+    return textHeight + sizeConfig.paddingY * 2 + sizeConfig.borderWidth * 2;
   }
 
   // 2. Self-rendering 요소는 size prop에 따라 높이 결정
@@ -1174,8 +1173,12 @@ export function calculateContentHeight(
   const defaultHeight = DEFAULT_ELEMENT_HEIGHTS[tag];
   if (defaultHeight !== undefined) return defaultHeight;
 
-  // 7. 알 수 없는 태그는 기본값 사용
-  return DEFAULT_HEIGHT;
+  // 7. Text/Heading 등 XStudio 커스텀 태그: CSS line-height: 1.5 상속
+  // Preview iframe의 :root { line-height: 1.5 } (Tailwind CSS v4 기본)이
+  // Text 컴포넌트에 상속되므로 fontSize * 1.5를 명시적으로 전달
+  // (Button 등 UI 컴포넌트는 line-height: normal → step 2에서 fontBoundingBox 기반 처리)
+  const fs = fontSize ?? 16;
+  return estimateTextHeight(fs, fs * 1.5);
 }
 
 /**
@@ -1440,6 +1443,7 @@ export function enrichWithIntrinsicSize(
       injectHeight += box.border.top + box.border.bottom;
     }
     injectedStyle.height = injectHeight;
+    // TODO: 디버그 로그 (확인 후 제거)
   }
 
   // Width 주입 (inline-block 태그의 fit-content / min-content / max-content 에뮬레이션)
@@ -1753,7 +1757,7 @@ export function measureTextWithWhiteSpace(
   whiteSpace: string,
   maxWidth: number,
 ): { width: number; height: number } {
-  // CSS line-height: normal에 대응하는 fontBoundingBox 기반 lineHeight 사용
+  // CSS line-height: normal 근사값 (fontBoundingBox 기반)
   const fm = measureFontMetrics(fontFamily, fontSize, fontWeight);
   const lineHeight = fm.lineHeight;
 

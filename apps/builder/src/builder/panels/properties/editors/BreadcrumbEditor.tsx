@@ -91,50 +91,6 @@ export const BreadcrumbEditor = memo(function BreadcrumbEditor({ elementId, curr
                     icon={CheckCircle}
                 />
             </PropertySection>
-
-            {/* Accessibility Section */}
-            <PropertySection title="Accessibility">
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value || undefined)}
-                    icon={Type}
-                    placeholder="Breadcrumb item label for screen readers"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-                    value={String(currentProps['aria-labelledby'] || '')}
-                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
-                    icon={Hash}
-                    placeholder="label-element-id"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-                    value={String(currentProps['aria-describedby'] || '')}
-                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
-                    icon={Hash}
-                    placeholder="description-element-id"
-                />
-
-                <PropertySelect
-                    label={PROPERTY_LABELS.ARIA_CURRENT}
-                    value={String(currentProps['aria-current'] || '')}
-                    onChange={(value) => updateProp('aria-current', value || undefined)}
-                    options={[
-                        { value: '', label: PROPERTY_LABELS.ARIA_CURRENT_NONE },
-                        { value: 'page', label: PROPERTY_LABELS.ARIA_CURRENT_PAGE },
-                        { value: 'step', label: PROPERTY_LABELS.ARIA_CURRENT_STEP },
-                        { value: 'location', label: PROPERTY_LABELS.ARIA_CURRENT_LOCATION },
-                        { value: 'date', label: PROPERTY_LABELS.ARIA_CURRENT_DATE },
-                        { value: 'time', label: PROPERTY_LABELS.ARIA_CURRENT_TIME },
-                        { value: 'true', label: PROPERTY_LABELS.ARIA_CURRENT_TRUE }
-                    ]}
-                    icon={CheckCircle}
-                />
-            </PropertySection>
         </>
     );
 });

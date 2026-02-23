@@ -2187,7 +2187,7 @@ renderSkia(canvas: Canvas, cullingBounds: DOMRect): void {
 | 노드 타입 | CanvasKit API | 현재 xstudio 대응 | 구현 상태 |
 |----------|---------------|-------------------|----------|
 | BoxSprite | `canvas.drawRRect()`, `canvas.drawPath()` | PixiJS Graphics | ✅ 구현 완료 |
-| TextSprite | `ParagraphBuilder` → `canvas.drawParagraph()` | PixiJS Text | ✅ 구현 완료 |
+| TextSprite | `renderBox()` (배경/테두리) + `ParagraphBuilder` → `canvas.drawParagraph()` (텍스트) | PixiJS Text | ✅ 구현 완료 |
 | ImageSprite | `canvas.drawImageRect()` | PixiJS Sprite | ✅ 구현 완료 |
 | 컨테이너 | 자식 재귀 renderSkia() | PixiJS Container | ✅ 구현 완료 |
 | UI 컴포넌트 (Button 등) | Box + Text children | PixiJS FancyButton 등 | ✅ 구현 완료 |
@@ -2212,6 +2212,12 @@ renderSkia(canvas: Canvas, cullingBounds: DOMRect): void {
 >
 > **UI 컴포넌트 borderRadius 파싱** (2026-02-03 수정):
 > `ElementSprite`의 Skia 폴백에서 `borderRadius`는 `convertStyle()`의 반환값을 사용하여 파싱한다.
+>
+> **TextSprite CSS 정합성: background/border + line-height** (2026-02-23 수정):
+> `TextSprite`의 `skiaNodeData`에 `box` 데이터(fillColor, strokeColor, borderRadius) 추가.
+> `nodeRenderers.ts`의 `case 'text'`에서 `renderBox()` → `renderText()` 순서로 호출하여
+> CSS와 동일하게 background/border를 렌더링. `convertToTextStyle()`에서 `style.lineHeight`
+> 미지정 시 Tailwind CSS v4 기본 `line-height: 1.5` 적용 (`leading = (1.5 - 1) * fontSize`).
 > `style.borderRadius`는 UI 패널에서 문자열(`"12px"`)로 저장되므로, `typeof === 'number'` 직접 체크 시
 > 항상 `0`이 되는 버그가 있었다. `convertStyle()` → `convertBorderRadius()` → `parseCSSSize()`
 > 경로를 통해 올바르게 숫자로 변환된 값을 사용해야 한다.

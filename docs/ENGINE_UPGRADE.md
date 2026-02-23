@@ -3839,7 +3839,7 @@ if (flexDirection === 'column') {
 - `utils.ts`: `BUTTON_SIZE_CONFIG`에서 `height` 필드 제거, `paddingY` 추가 (ButtonSpec.paddingY와 동기화)
 - `utils.ts`: `calculateTextWidth()`에서 `Math.ceil` → `Math.round` (±0.5px 오차로 축소)
 - `utils.ts`: `calculateContentHeight()`에서 버튼 높이를 PixiButton과 동일 공식으로 계산
-- `utils.ts`: `estimateTextHeight()` 헬퍼 추가 (`fontSize * 1.2`, CSS default line-height와 동일)
+- `utils.ts`: `estimateTextHeight()` 헬퍼 추가 (기본: `measureFontMetrics().lineHeight` = CSS `line-height: normal` 대응, Text/Heading에는 `fontSize * 1.5` 명시 전달 = Tailwind CSS v4 `:root { line-height: 1.5 }` 대응)
 
 ```typescript
 // BUTTON_SIZE_CONFIG - height 제거, paddingY 추가, borderWidth 추가 (v1.12)
@@ -3854,8 +3854,15 @@ return Math.round(textWidth + padding);
 // calculateContentHeight - 순수 텍스트 높이만 반환 (v1.29)
 // padding/border는 BlockEngine이 parseBoxModel 결과로 합산하므로 여기서 포함하면 이중 계산
 function estimateTextHeight(fontSize: number, lineHeight?: number): number {
-  return lineHeight ?? Math.round(fontSize * 1.2);
+  if (lineHeight !== undefined) return Math.round(lineHeight);
+  // CSS line-height: normal → fontBoundingBox 기반
+  const fm = measureFontMetrics(specFontFamily.sans, fontSize, 400);
+  return Math.round(fm.lineHeight);
 }
+// Text/Heading (step 7): CSS line-height: 1.5 상속 → 명시 전달
+return estimateTextHeight(fs, fs * 1.5);
+// Button (step 2): CSS line-height: normal → fontBoundingBox 기본값
+return estimateTextHeight(fontSize); // lineHeight 미전달
 
 // MIN_BUTTON_HEIGHT는 border-box 기준 → content-box 최소값으로 변환
 // minContentHeight = max(0, MIN_BUTTON_HEIGHT - paddingY*2 - borderWidth*2)
@@ -3914,6 +3921,7 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 | 2026-02-18 | 1.42 | Phase 11 엔진 전환 완료 및 문서 현행화: (1) 레거시 엔진 삭제 (BlockEngine.ts, FlexEngine.ts, GridEngine.ts), (2) Taffy WASM 기반 TaffyFlexEngine(flex/inline-flex) + TaffyGridEngine(grid/inline-grid) 도입, (3) Dropflow Fork JS 기반 DropflowBlockEngine(block/inline-block/inline/flow-root) 도입, (4) enrichWithIntrinsicSize()로 Yoga measureFunc 대체, (5) cssValueParser.ts의 resolveCSSSizeValue() 통합 CSS 값 파서 도입, (6) cssResolver.ts CSS 캐스케이드 + 상속 도입, (7) 문서 §4-§9 전면 현행화: LayoutContainer→DirectContainer, Yoga→Taffy/Dropflow, @pixi/layout 참조 제거/레거시 표시, §6 파일 구조 갱신, §7 참조 문서에 Taffy/Dropflow 추가 |
 | 2026-02-19 | 1.43 | Wave 3-6 실행 계획 수립: (1) 코드 기반 완료 현황 전수 검증 — cssValueParser/cssResolver/cssStackingContext/TaffyFlexEngine 2-pass/DropflowBlockEngine/gradient/transform/shadow 모두 구현 완료 확인, styleToLayout.ts 호출부 0건(dead code) 확인, (2) §8.2에 Wave 3-6 예상 일치율 추가 (97%→98%+), (3) §8.5 Wave 3-6 실행 계획 신규 — 완료 현황 체크표 + Wave별 태스크 + 팀 구성(은서/하은/시연/다인/혜린) + 의존성 그래프 + 8주 실행 타임라인 |
 | 2026-02-19 | 1.44 | Wave 3-6 재검증 및 실행: (1) W3-1~W3-4 코드 검증 결과 이미 완료 확인 — baseline은 FontMetrics ascent 기반(height*0.8 아님), clamp()/min()/max() 구현됨, matrix() transform 구현됨, brightness/contrast/saturate/hue-rotate 구현됨, (2) W4-1~W4-8 전체 A~B+ 등급 확인 — SELF_PADDING_TAGS 이미 제거, LayoutComputedSizeContext 통합, (3) W4-2 Card = B등급 판정(높이 measureWrappedTextHeight 자체 계산), (4) W3-6 styleToLayout.ts dead code 삭제 + 스킬 규칙 파일 참조 정리(4개), (5) W3-4b grayscale/invert/sepia 필터 구현(SVG Filter Effects spec 준수), (6) 실행 계획 재수립 — 8주→4주 단축, 잔여 14건, Phase A(병렬 즉시)+Phase B(순차) 2단계 구성 |
+| 2026-02-23 | 1.45 | TextSprite CSS-Skia 정합성 개선 3건: (1) TextSprite background/border 렌더링 — skiaNodeData에 box 데이터(fillColor, strokeColor, borderRadius) 추가, nodeRenderers.ts case 'text'에서 renderBox()→renderText() 순서로 CSS와 동일한 배경/테두리 렌더링, (2) line-height 이중 전략 — Text/Heading은 CSS line-height: 1.5(Tailwind v4 :root 상속)이므로 fontSize*1.5 명시 전달, Button/ToggleButton은 CSS line-height: normal이므로 measureFontMetrics().lineHeight(fontBoundingBox) 사용, (3) convertToTextStyle() line-height 기본값 — style.lineHeight 미지정 시 leading=(1.5-1)*fontSize로 CanvasKit heightMultiplier=1.5 적용, TextSprite 전용 |
 
 ---
 

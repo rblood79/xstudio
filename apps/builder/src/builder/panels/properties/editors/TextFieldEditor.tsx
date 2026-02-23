@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo } from "react";
 import {
     Tag, Binary, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
-    SpellCheck2, Hash, Focus, Type, Keyboard, Shield
+    SpellCheck2, Hash, Focus, Keyboard, Shield
 } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -90,18 +90,6 @@ export const TextFieldEditor = memo(function TextFieldEditor({ elementId, curren
 
   const handleFormChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, form: value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaLabelChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-label": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaLabelledbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaDescribedbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
   }, [currentProps, onUpdate]);
 
   // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
@@ -366,42 +354,6 @@ export const TextFieldEditor = memo(function TextFieldEditor({ elementId, curren
     ]
   );
 
-  const accessibilitySection = useMemo(
-    () => (
-      <PropertySection title="Accessibility">
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABEL}
-          value={String(currentProps['aria-label'] || '')}
-          onChange={handleAriaLabelChange}
-          icon={Type}
-          placeholder="Field label for screen readers"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-          value={String(currentProps['aria-labelledby'] || '')}
-          onChange={handleAriaLabelledbyChange}
-          icon={Hash}
-          placeholder="label-element-id"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-          value={String(currentProps['aria-describedby'] || '')}
-          onChange={handleAriaDescribedbyChange}
-          icon={Hash}
-          placeholder="description-element-id"
-        />
-      </PropertySection>
-    ),
-    [
-      currentProps,
-      handleAriaLabelChange,
-      handleAriaLabelledbyChange,
-      handleAriaDescribedbyChange,
-    ]
-  );
-
   return (
     <>
       {basicSection}
@@ -410,7 +362,6 @@ export const TextFieldEditor = memo(function TextFieldEditor({ elementId, curren
       {validationSection}
       {behaviorSection}
       {formIntegrationSection}
-      {accessibilitySection}
     </>
   );
 }, (prevProps, nextProps) => {

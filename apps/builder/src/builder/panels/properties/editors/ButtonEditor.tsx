@@ -106,18 +106,6 @@ export const ButtonEditor = memo(function ButtonEditor({
     onUpdate({ ...currentProps, formTarget: value });
   }, [currentProps, onUpdate]);
 
-  const handleAriaLabelChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-label": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaLabelledbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaDescribedbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
-  }, [currentProps, onUpdate]);
-
   // ⭐ 최적화: 조건부 렌더링을 위한 값들을 useMemo로 캐싱
   const showLinkSection = useMemo(
     () => typeof currentProps.href === "string" && currentProps.href,
@@ -393,42 +381,6 @@ export const ButtonEditor = memo(function ButtonEditor({
     ]
   );
 
-  const accessibilitySection = useMemo(
-    () => (
-      <PropertySection title="Accessibility">
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABEL}
-          value={String(currentProps["aria-label"] || "")}
-          onChange={handleAriaLabelChange}
-          icon={Type}
-          placeholder="Button label for screen readers"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-          value={String(currentProps["aria-labelledby"] || "")}
-          onChange={handleAriaLabelledbyChange}
-          icon={Hash}
-          placeholder="label-element-id"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-          value={String(currentProps["aria-describedby"] || "")}
-          onChange={handleAriaDescribedbyChange}
-          icon={Hash}
-          placeholder="description-element-id"
-        />
-      </PropertySection>
-    ),
-    [
-      currentProps,
-      handleAriaLabelChange,
-      handleAriaLabelledbyChange,
-      handleAriaDescribedbyChange,
-    ]
-  );
-
   return (
     <>
       {basicSection}
@@ -437,7 +389,6 @@ export const ButtonEditor = memo(function ButtonEditor({
       {behaviorSection}
       {linkSection}
       {formSection}
-      {accessibilitySection}
     </>
   );
 });

@@ -515,23 +515,61 @@ const INLINE_FORM_GAPS = {
 
 상세 내용: [pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md#inline_form_indicator_widths--spec-trackwidth와-반드시-일치-critical), [spec-shape-rendering](rules/spec-shape-rendering.md#specshapeconverter-maxwidth-자동-축소와-레이아웃-너비-정합성-critical)
 
-### 레이아웃 엔진 개선 이력 (2026-02-21)
+### 레이아웃 엔진 개선 이력 (2026-02-23)
 
-#### fontBoundingBox line-height 통일
+#### line-height 이중 전략: normal vs 1.5 (2026-02-23)
 
-`measureWrappedTextHeight`, `measureTextWithWhiteSpace`, `estimateTextHeight` 모두 `measureFontMetrics().lineHeight` (Canvas 2D fontBoundingBox 기반) 사용.
+CSS Preview에서 컴포넌트별로 적용되는 `line-height`가 다르므로, 레이아웃 높이 계산도 이를 구분해야 합니다.
 
-- 기존 `fontSize * 1.2` 근사값 제거
-- CSS `line-height: normal`과 동일한 결과 보장
-- 세 측정 함수 사이의 line-height 불일치로 인한 텍스트 클리핑/여백 버그 해결
+| 컴포넌트 | CSS line-height | 계산 방식 | 적용 위치 |
+|---------|----------------|----------|----------|
+| **Text, Heading, Description 등** | `1.5` (`:root` 상속, Tailwind CSS v4 기본) | `fontSize * 1.5` 명시 전달 | `calculateContentHeight` step 7 |
+| **Button, ToggleButton 등 UI** | `normal` (폰트 메트릭 기반) | `measureFontMetrics().lineHeight` (fontBoundingBox) | `estimateTextHeight()` 기본값 |
 
 ```typescript
-// ✅ fontBoundingBox 기반 lineHeight 사용
-const { lineHeight } = measureFontMetrics(fontSize, fontFamily);
-// lineHeight = fontBoundingBoxAscent + fontBoundingBoxDescent (Canvas 2D 실측)
+// ✅ Text/Heading: CSS line-height: 1.5 상속 → 명시적 전달
+const fs = fontSize ?? 16;
+return estimateTextHeight(fs, fs * 1.5); // 16px → 24px
 
-// ❌ 근사값 사용 — CSS normal line-height와 불일치
-const lineHeight = fontSize * 1.2;
+// ✅ Button: CSS line-height: normal → fontBoundingBox 기반
+return estimateTextHeight(fontSize); // lineHeight 미전달 → measureFontMetrics 사용
+
+// ❌ 모든 컴포넌트에 동일한 배율 사용 — Button/Text 높이 불일치
+return Math.round(fontSize * 1.5); // Button sm: 31px (CSS 26px과 불일치)
+return Math.round(fontSize * 1.2); // Text: 19px (CSS 24px과 불일치)
+```
+
+**Skia 텍스트 렌더링 (styleConverter.ts)**: `convertToTextStyle()`에서 `style.lineHeight` 미지정 시 `leading = (1.5 - 1) * fontSize` 기본값 적용. TextSprite 전용이므로 Text/Heading에만 영향.
+
+#### TextSprite CSS 정합성: background/border + line-height (2026-02-23)
+
+TextSprite의 Skia 렌더링에서 CSS와의 정합성을 확보하기 위한 두 가지 수정:
+
+1. **background/border 렌더링**: `skiaNodeData`에 `box` 데이터(fillColor, strokeColor, borderRadius) 추가. `nodeRenderers.ts`의 `case 'text'`에서 `renderBox()` → `renderText()` 순서로 호출하여 배경 위에 텍스트 렌더링.
+
+2. **line-height 기본값**: `convertToTextStyle()`에서 CSS `line-height` 미지정 시 Tailwind CSS v4 기본 `1.5` 배율 적용 (`leading = (1.5 - 1) * fontSize`). CanvasKit `heightMultiplier = 1.5`로 CSS와 동일한 텍스트 줄 간격 보장.
+
+```typescript
+// ✅ TextSprite: box + text 데이터 모두 포함 (CSS 정합성)
+return {
+  type: 'text',
+  box: { fillColor, strokeColor, borderRadius }, // background/border
+  text: { content, fontSize, lineHeight, ... },   // 텍스트
+};
+
+// ✅ nodeRenderers.ts case 'text': 배경 먼저 → 텍스트 위에
+case 'text':
+  if (node.box) renderBox(ck, canvas, node); // 배경/테두리
+  if (fontMgr) renderText(ck, canvas, node, fontMgr); // 텍스트
+  break;
+
+// ✅ convertToTextStyle: line-height 미지정 시 CSS 기본값 1.5 적용
+let leading: number;
+if (style?.lineHeight) {
+  // 명시적 lineHeight 파싱
+} else {
+  leading = (1.5 - 1) * fontSize; // Tailwind CSS v4 :root 상속
+}
 ```
 
 #### INLINE_BLOCK_TAGS border-box 수정

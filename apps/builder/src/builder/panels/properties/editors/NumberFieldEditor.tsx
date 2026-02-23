@@ -276,50 +276,6 @@ export const NumberFieldEditor = memo(function NumberFieldEditor({ elementId, cu
                     placeholder="form-id"
                 />
             </PropertySection>
-
-            {/* Accessibility Section */}
-            <PropertySection title="Accessibility">
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value || undefined)}
-                    icon={Type}
-                    placeholder="Number field label for screen readers"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-                    value={String(currentProps['aria-labelledby'] || '')}
-                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
-                    icon={Hash}
-                    placeholder="label-element-id"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-                    value={String(currentProps['aria-describedby'] || '')}
-                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
-                    icon={Hash}
-                    placeholder="description-element-id"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.INCREMENT_ARIA_LABEL}
-                    value={String(currentProps.incrementAriaLabel || '')}
-                    onChange={(value) => updateProp('incrementAriaLabel', value || undefined)}
-                    icon={ArrowUp}
-                    placeholder="Increment"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.DECREMENT_ARIA_LABEL}
-                    value={String(currentProps.decrementAriaLabel || '')}
-                    onChange={(value) => updateProp('decrementAriaLabel', value || undefined)}
-                    icon={ArrowDown}
-                    placeholder="Decrement"
-                />
-            </PropertySection>
         </>
     );
 });

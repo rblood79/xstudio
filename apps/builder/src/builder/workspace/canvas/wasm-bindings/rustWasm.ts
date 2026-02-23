@@ -6,7 +6,7 @@
  *
  * 초기화 순서:
  * 1. JS glue 코드 import (class/function export)
- * 2. mod.default() 호출 → .wasm 바이너리 fetch + WebAssembly.instantiate
+ * 2. import 시 __wbindgen_start()로 자동 초기화
  * 3. 유효성 검증 (TaffyLayoutEngine 존재 확인)
  * 4. DEV 모드에서 ping/pong 파이프라인 테스트
  *
@@ -24,11 +24,8 @@ export async function initRustWasm(): Promise<void> {
   try {
     // wasm-pack --target bundler 출력을 Vite가 처리하도록 직접 경로 사용
     // vite-plugin-wasm이 .wasm 바이너리 서빙을 담당
+    // import 시 __wbindgen_start()가 자동 호출되어 WASM 바이너리가 초기화된다
     const mod = await import('./pkg/xstudio_wasm');
-
-    // wasm-pack bundler 출력의 default export = __wbg_init()
-    // 이 호출이 실제 .wasm 바이너리를 fetch + WebAssembly.instantiate 한다
-    await mod.default();
 
     // 모듈 유효성 검증: WASM 바이너리가 완전히 초기화되었는지 확인
     if (!mod || typeof mod.TaffyLayoutEngine !== 'function') {

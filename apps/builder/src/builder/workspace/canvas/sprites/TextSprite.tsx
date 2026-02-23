@@ -276,6 +276,31 @@ export const TextSprite = memo(function TextSprite({
     const zIndex = parseZIndex(style?.zIndex);
     const isStackingCtx = createsStackingContext(style as Record<string, unknown>);
 
+    // Box 데이터: background/border를 Skia에서도 렌더링 (CSS 정합성)
+    const bgR = ((fill.color >> 16) & 0xff) / 255;
+    const bgG = ((fill.color >> 8) & 0xff) / 255;
+    const bgB = (fill.color & 0xff) / 255;
+    const fillColor = Float32Array.of(bgR, bgG, bgB, fill.alpha);
+    const br = borderRadius ?? 0;
+
+    const boxData: Record<string, unknown> = {
+      fillColor,
+      borderRadius: br,
+    };
+    if (borderConfig) {
+      const sc = borderConfig.color ?? 0x000000;
+      boxData.strokeColor = Float32Array.of(
+        ((sc >> 16) & 0xff) / 255,
+        ((sc >> 8) & 0xff) / 255,
+        (sc & 0xff) / 255,
+        borderConfig.alpha ?? 1,
+      );
+      boxData.strokeWidth = borderConfig.width;
+      if (borderConfig.style !== 'solid' && borderConfig.style !== 'none') {
+        boxData.strokeStyle = borderConfig.style;
+      }
+    }
+
     return {
       type: 'text' as const,
       x: transform.x,
@@ -287,6 +312,7 @@ export const TextSprite = memo(function TextSprite({
       ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       ...(zIndex !== undefined ? { zIndex } : {}),
       ...(isStackingCtx ? { isStackingContext: true } : {}),
+      box: boxData,
       text: {
         content: textContent,
         fontFamilies: [textStyle.fontFamily.split(',')[0].trim()],
@@ -331,7 +357,7 @@ export const TextSprite = memo(function TextSprite({
         ...(style?.fontStretch && style.fontStretch !== 'normal' ? { fontStretch: style.fontStretch } : {}),
       },
     };
-  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, style?.verticalAlign, style?.whiteSpace, style?.wordBreak, style?.overflowWrap, style?.wordSpacing, style?.textOverflow, style?.textDecorationStyle, style?.textDecorationColor, style?.textIndent, style?.fontVariant, style?.fontStretch]);
+  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, fill, borderRadius, borderConfig, style?.verticalAlign, style?.whiteSpace, style?.wordBreak, style?.overflowWrap, style?.wordSpacing, style?.textOverflow, style?.textDecorationStyle, style?.textDecorationColor, style?.textIndent, style?.fontVariant, style?.fontStretch]);
 
   useSkiaNode(element.id, skiaNodeData);
 

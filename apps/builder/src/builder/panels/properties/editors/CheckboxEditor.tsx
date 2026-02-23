@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo } from "react";
-import { Tag, CheckSquare, PointerOff, PenOff, Minus, Layout, PencilRuler, Focus, Hash, Type, AlertCircle, FileText } from 'lucide-react';
+import { Tag, CheckSquare, PointerOff, PenOff, Minus, Layout, PencilRuler, Focus, Hash, AlertCircle, FileText } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -71,18 +71,6 @@ export const CheckboxEditor = memo(function CheckboxEditor({ elementId, currentP
 
   const handleFormChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, form: value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaLabelChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-label": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaLabelledbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaDescribedbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
   }, [currentProps, onUpdate]);
 
   const updateCustomId = useCallback((newCustomId: string) => {
@@ -277,42 +265,6 @@ export const CheckboxEditor = memo(function CheckboxEditor({ elementId, currentP
     ]
   );
 
-  const accessibilitySection = useMemo(
-    () => (
-      <PropertySection title="Accessibility">
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABEL}
-          value={String(currentProps['aria-label'] || '')}
-          onChange={handleAriaLabelChange}
-          icon={Type}
-          placeholder="Checkbox label for screen readers"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-          value={String(currentProps['aria-labelledby'] || '')}
-          onChange={handleAriaLabelledbyChange}
-          icon={Hash}
-          placeholder="label-element-id"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-          value={String(currentProps['aria-describedby'] || '')}
-          onChange={handleAriaDescribedbyChange}
-          icon={Hash}
-          placeholder="description-element-id"
-        />
-      </PropertySection>
-    ),
-    [
-      currentProps,
-      handleAriaLabelChange,
-      handleAriaLabelledbyChange,
-      handleAriaDescribedbyChange,
-    ]
-  );
-
   return (
     <>
       {basicSection}
@@ -321,7 +273,6 @@ export const CheckboxEditor = memo(function CheckboxEditor({ elementId, currentP
       {stateSection}
       {behaviorSection}
       {formIntegrationSection}
-      {accessibilitySection}
     </>
   );
 }, (prevProps, nextProps) => {

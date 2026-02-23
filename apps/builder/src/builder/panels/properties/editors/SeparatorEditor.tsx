@@ -80,18 +80,6 @@ export const SeparatorEditor = memo(function SeparatorEditor({ elementId, curren
                     icon={Minus}
                 />
             </PropertySection>
-
-            {/* Accessibility Section */}
-            <PropertySection title="Accessibility">
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value || undefined)}
-                    icon={Type}
-                    placeholder="Section divider (optional)"
-                />
-            </PropertySection>
         </>
     );
 });

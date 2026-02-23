@@ -103,34 +103,6 @@ export const RadioEditor = memo(function RadioEditor({ elementId, currentProps, 
                 />
             </PropertySection>
 
-            {/* Accessibility Section */}
-            <PropertySection title="Accessibility">
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value || undefined)}
-                    icon={Type}
-                    placeholder="Radio option label for screen readers"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-                    value={String(currentProps['aria-labelledby'] || '')}
-                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
-                    icon={Hash}
-                    placeholder="label-element-id"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-                    value={String(currentProps['aria-describedby'] || '')}
-                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
-                    icon={Hash}
-                    placeholder="description-element-id"
-                />
-            </PropertySection>
-
             {isChildOfRadioGroup && (
                 <p style={{ fontSize: '12px', color: 'var(--text-color-secondary)', marginTop: '8px' }}>
                     💡 Variant and size are controlled by the parent RadioGroup

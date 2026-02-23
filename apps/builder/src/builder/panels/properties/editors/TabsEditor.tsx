@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect, useCallback, memo } from "react";
-import { AppWindow, Plus, Ratio, PointerOff, Type, Hash, MousePointer2 } from "lucide-react";
+import { AppWindow, Plus, Ratio, PointerOff, MousePointer2 } from "lucide-react";
 import {
-  PropertyInput,
   PropertySelect,
   PropertySwitch,
   PropertyCustomId,
@@ -137,27 +136,6 @@ export const TabsEditor = memo(
       [currentProps, onUpdate]
     );
 
-    const handleAriaLabelChange = useCallback(
-      (value: string) => {
-        onUpdate({ ...currentProps, "aria-label": value || undefined });
-      },
-      [currentProps, onUpdate]
-    );
-
-    const handleAriaLabelledbyChange = useCallback(
-      (value: string) => {
-        onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
-      },
-      [currentProps, onUpdate]
-    );
-
-    const handleAriaDescribedbyChange = useCallback(
-      (value: string) => {
-        onUpdate({ ...currentProps, "aria-describedby": value || undefined });
-      },
-      [currentProps, onUpdate]
-    );
-
     // 실제 Tab 자식 요소들을 찾기 (useMemo로 최적화)
     const tabChildren = useMemo(() => {
       return storeElements
@@ -276,42 +254,6 @@ export const TabsEditor = memo(
       [currentProps.orientation, currentProps.showIndicator, handleOrientationChange, handleShowIndicatorChange]
     );
 
-    const accessibilitySection = useMemo(
-      () => (
-        <PropertySection title="Accessibility">
-          <PropertyInput
-            label={PROPERTY_LABELS.ARIA_LABEL}
-            value={String(currentProps["aria-label"] || "")}
-            onChange={handleAriaLabelChange}
-            icon={Type}
-            placeholder="Tabs label for screen readers"
-          />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-            value={String(currentProps["aria-labelledby"] || "")}
-            onChange={handleAriaLabelledbyChange}
-            icon={Hash}
-            placeholder="label-element-id"
-          />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-            value={String(currentProps["aria-describedby"] || "")}
-            onChange={handleAriaDescribedbyChange}
-            icon={Hash}
-            placeholder="description-element-id"
-          />
-        </PropertySection>
-      ),
-      [
-        currentProps,
-        handleAriaLabelChange,
-        handleAriaLabelledbyChange,
-        handleAriaDescribedbyChange,
-      ]
-    );
-
     const tabManagementSection = useMemo(
       () => (
         <PropertySection title={PROPERTY_LABELS.TAB_MANAGEMENT}>
@@ -350,7 +292,6 @@ export const TabsEditor = memo(
         {stateSection}
         {behaviorSection}
         {designSection}
-        {accessibilitySection}
         {tabManagementSection}
       </>
     );

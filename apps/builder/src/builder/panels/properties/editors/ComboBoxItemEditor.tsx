@@ -126,34 +126,6 @@ export const ComboBoxItemEditor = memo(function ComboBoxItemEditor({ elementId, 
                     💡 "Create" 옵션 구현 시 사용 (검색 결과 없을 때 새 항목 생성)
                 </p>
             </PropertySection>
-
-            {/* Accessibility Section */}
-            <PropertySection title="Accessibility">
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABEL}
-                    value={String(localProps['aria-label'] || '')}
-                    onChange={(value) => handlePropertyChange('aria-label', value || undefined)}
-                    icon={Type}
-                    placeholder="ComboBox item label for screen readers"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-                    value={String(localProps['aria-labelledby'] || '')}
-                    onChange={(value) => handlePropertyChange('aria-labelledby', value || undefined)}
-                    icon={Hash}
-                    placeholder="label-element-id"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-                    value={String(localProps['aria-describedby'] || '')}
-                    onChange={(value) => handlePropertyChange('aria-describedby', value || undefined)}
-                    icon={Hash}
-                    placeholder="description-element-id"
-                />
-            </PropertySection>
         </>
     );
 });

@@ -112,34 +112,6 @@ export const SelectItemEditor = memo(function SelectItemEditor({ elementId, curr
                     icon={PointerOff}
                 />
             </PropertySection>
-
-            {/* Accessibility Section */}
-            <PropertySection title="Accessibility">
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABEL}
-                    value={String(localProps['aria-label'] || '')}
-                    onChange={(value) => handlePropertyChange('aria-label', value || undefined)}
-                    icon={Type}
-                    placeholder="Select item label for screen readers"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-                    value={String(localProps['aria-labelledby'] || '')}
-                    onChange={(value) => handlePropertyChange('aria-labelledby', value || undefined)}
-                    icon={Hash}
-                    placeholder="label-element-id"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-                    value={String(localProps['aria-describedby'] || '')}
-                    onChange={(value) => handlePropertyChange('aria-describedby', value || undefined)}
-                    icon={Hash}
-                    placeholder="description-element-id"
-                />
-            </PropertySection>
         </>
     );
 });

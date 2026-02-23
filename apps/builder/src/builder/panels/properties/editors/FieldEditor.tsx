@@ -116,39 +116,6 @@ export const FieldEditor = memo(function FieldEditor({
           icon={Type}
         />
       </PropertySection>
-
-      {/* Accessibility Section */}
-      <PropertySection title="Accessibility">
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABEL}
-          value={String(currentProps["aria-label"] || "")}
-          onChange={(value) =>
-            updateProps({ "aria-label": value || undefined })
-          }
-          icon={Type}
-          placeholder="Field label for screen readers"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-          value={String(currentProps["aria-labelledby"] || "")}
-          onChange={(value) =>
-            updateProps({ "aria-labelledby": value || undefined })
-          }
-          icon={Hash}
-          placeholder="label-element-id"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-          value={String(currentProps["aria-describedby"] || "")}
-          onChange={(value) =>
-            updateProps({ "aria-describedby": value || undefined })
-          }
-          icon={Hash}
-          placeholder="description-element-id"
-        />
-      </PropertySection>
     </>
   );
 });

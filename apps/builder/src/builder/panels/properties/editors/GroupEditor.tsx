@@ -8,7 +8,7 @@ import { memo, useMemo } from "react";
  * @see https://react-spectrum.adobe.com/react-aria/Group.html
  */
 
-import { Type, Info, Lock, Eye, AlertCircle, Hash } from "lucide-react";
+import { Type, Info, Lock, Eye, AlertCircle } from "lucide-react";
 import { PropertyInput, PropertyCustomId, PropertySwitch, PropertySelect, PropertySection } from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
@@ -92,24 +92,6 @@ export const GroupEditor = memo(function GroupEditor({ elementId, currentProps, 
         />
       </PropertySection>
 
-      {/* Accessibility */}
-      <PropertySection title="Accessibility">
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABEL}
-          value={String(currentProps["aria-label"] || "")}
-          onChange={(value) => updateProp("aria-label", value || undefined)}
-          icon={Type}
-          placeholder="Descriptive label for screen readers"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-          value={String(currentProps["aria-labelledby"] || "")}
-          onChange={(value) => updateProp("aria-labelledby", value || undefined)}
-          icon={Hash}
-          placeholder="ID of labeling element"
-        />
-      </PropertySection>
     </>
   );
 });

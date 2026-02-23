@@ -627,7 +627,8 @@ export function convertToTextStyle(
   // P7.4: lineHeight → leading 변환
   // CSS lineHeight가 배수(1.5)이면 (배수 - 1) * fontSize
   // 픽셀 값이면 fontSize를 뺌
-  let leading = 0;
+  // 미지정 시 Tailwind CSS v4 기본 :root { line-height: 1.5 } 적용
+  let leading: number;
   if (style?.lineHeight) {
     const lh = parseCSSSize(style.lineHeight, undefined, 0);
     if (typeof style.lineHeight === 'number' && lh < 10) {
@@ -637,6 +638,9 @@ export function convertToTextStyle(
       // 픽셀 값
       leading = Math.max(0, lh - fontSize);
     }
+  } else {
+    // CSS 기본 line-height: 1.5 (Tailwind CSS v4 :root 상속)
+    leading = (1.5 - 1) * fontSize;
   }
 
   return {

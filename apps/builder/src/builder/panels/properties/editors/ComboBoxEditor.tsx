@@ -1,5 +1,5 @@
 import { useEffect, memo, useCallback, useMemo } from "react";
-import { Tag, SquarePlus, PointerOff, AlertTriangle, FileText, Trash, Binary, CheckSquare, PenOff, Focus, Type, Hash, FormInput, Menu, Database, Parentheses } from 'lucide-react';
+import { Tag, SquarePlus, PointerOff, AlertTriangle, FileText, Trash, Binary, CheckSquare, PenOff, Focus, FormInput, Menu, Database, Parentheses } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
@@ -98,18 +98,6 @@ export const ComboBoxEditor = memo(function ComboBoxEditor({ elementId, currentP
 
   const handleValidationBehaviorChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, validationBehavior: value });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaLabelChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-label": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaLabelledbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaDescribedbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
   }, [currentProps, onUpdate]);
 
   const handleDefaultSelectedKeyChange = useCallback((value: string) => {
@@ -395,42 +383,6 @@ export const ComboBoxEditor = memo(function ComboBoxEditor({ elementId, currentP
     ]
   );
 
-  const accessibilitySection = useMemo(
-    () => (
-      <PropertySection title="Accessibility">
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABEL}
-          value={String(currentProps['aria-label'] || '')}
-          onChange={handleAriaLabelChange}
-          icon={Type}
-          placeholder="ComboBox label for screen readers"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-          value={String(currentProps['aria-labelledby'] || '')}
-          onChange={handleAriaLabelledbyChange}
-          icon={Hash}
-          placeholder="label-element-id"
-        />
-
-        <PropertyInput
-          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-          value={String(currentProps['aria-describedby'] || '')}
-          onChange={handleAriaDescribedbyChange}
-          icon={Hash}
-          placeholder="description-element-id"
-        />
-      </PropertySection>
-    ),
-    [
-      currentProps,
-      handleAriaLabelChange,
-      handleAriaLabelledbyChange,
-      handleAriaDescribedbyChange,
-    ]
-  );
-
   const dataBindingSection = useMemo(
     () => (
       <PropertySection title="Data Binding" icon={Database}>
@@ -551,7 +503,6 @@ export const ComboBoxEditor = memo(function ComboBoxEditor({ elementId, currentP
       {stateSection}
       {behaviorSection}
       {formIntegrationSection}
-      {accessibilitySection}
       {itemManagementSection}
     </>
   );

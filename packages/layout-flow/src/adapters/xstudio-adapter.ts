@@ -490,7 +490,21 @@ export function buildBoxTree(
   _availableWidth: number,
   _availableHeight: number,
 ): Layout {
-  const parentStyle = elementStyleToDropflowStyle(parent);
+  const rawParentStyle = elementStyleToDropflowStyle(parent);
+  // 부모의 padding/border는 이미 availableWidth에서 제외되어 있으므로 0으로 리셋
+  // (BuilderCanvas의 ElementsLayer가 padding/border offset을 직접 적용)
+  // TaffyFlexEngine과 동일한 패턴
+  const parentStyle = new Style({
+    ...rawParentStyle,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    borderTopWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderLeftWidth: 0,
+  });
   const parentIsBfcRoot = styleCreatesBfc(parentStyle) || true; // 루트는 항상 BFC
 
   // 유효한 자식만 필터링 (display:none 제외)

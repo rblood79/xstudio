@@ -336,6 +336,8 @@ function renderNodeInternal(
       renderBox(ck, canvas, node);
       break;
     case 'text':
+      // 배경/테두리를 텍스트 아래에 먼저 렌더링 (CSS 정합성)
+      if (node.box) renderBox(ck, canvas, node);
       if (fontMgr) renderText(ck, canvas, node, fontMgr);
       break;
     case 'image':

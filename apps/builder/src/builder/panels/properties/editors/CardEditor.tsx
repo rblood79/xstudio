@@ -81,14 +81,6 @@ export const CardEditor = memo(function CardEditor({ elementId, currentProps, on
     onUpdate({ ...currentProps, isDisabled: checked });
   }, [currentProps, onUpdate]);
 
-  const handleAriaLabelChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-label": value || undefined });
-  }, [currentProps, onUpdate]);
-
-  const handleAriaDescribedbyChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
-  }, [currentProps, onUpdate]);
-
   // ⭐ 최적화: 조건부 렌더링을 위한 값들을 useMemo로 캐싱
   const showAssetSrc = useMemo(
     () => Boolean(currentProps.asset),
@@ -370,31 +362,6 @@ export const CardEditor = memo(function CardEditor({ elementId, currentProps, on
     ]
   );
 
-  const accessibilitySection = useMemo(
-    () => (
-      <PropertySection title="Accessibility">
-        <PropertyInput
-          label="ARIA Label"
-          value={String(currentProps['aria-label'] || '')}
-          onChange={handleAriaLabelChange}
-          placeholder="Describe the card"
-        />
-
-        <PropertyInput
-          label="ARIA Described By"
-          value={String(currentProps['aria-describedby'] || '')}
-          onChange={handleAriaDescribedbyChange}
-          placeholder="description-id"
-        />
-      </PropertySection>
-    ),
-    [
-      currentProps,
-      handleAriaLabelChange,
-      handleAriaDescribedbyChange,
-    ]
-  );
-
   return (
     <>
       {basicSection}
@@ -403,7 +370,6 @@ export const CardEditor = memo(function CardEditor({ elementId, currentProps, on
       {assetSection}
       {interactionsSection}
       {statesSection}
-      {accessibilitySection}
     </>
   );
 }, (prevProps, nextProps) => {
