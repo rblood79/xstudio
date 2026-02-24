@@ -177,9 +177,10 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
           : ('{color.on-surface-variant}' as TokenRef),
       });
 
-      // 라벨 텍스트
+      // 라벨 텍스트 — Label child가 있으면 스킵 (TextSprite가 렌더링)
+      const hasLabelChild = !!(props as Record<string, unknown>)._hasLabelChild;
       const labelText = props.children || props.label;
-      if (labelText) {
+      if (!hasLabelChild && labelText) {
         const textColor = props.style?.color ?? variant.text;
         const fontSize = props.style?.fontSize ?? size.fontSize;
         const ff = (props.style?.fontFamily as string) || fontFamily.sans;

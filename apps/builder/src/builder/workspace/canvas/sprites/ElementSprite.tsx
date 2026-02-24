@@ -1112,9 +1112,9 @@ export const ElementSprite = memo(function ElementSprite({
               specProps = { ...specProps, _hasChildren: true };
             }
 
-            // ComboBox/Select/Slider: Label child가 있으면 spec shapes에서 label text만 스킵
-            // (부분 패턴 — trigger/track 등은 여전히 spec shapes 담당)
-            if (['ComboBox', 'Select', 'Dropdown', 'Slider', 'RangeSlider'].includes(tag) && childElements) {
+            // ComboBox/Select/Slider/Checkbox/Radio/Switch: Label child가 있으면 spec shapes에서 label text만 스킵
+            // (부분 패턴 — trigger/track/indicator 등은 여전히 spec shapes 담당)
+            if (['ComboBox', 'Select', 'Dropdown', 'Slider', 'RangeSlider', 'Checkbox', 'Radio', 'Switch'].includes(tag) && childElements) {
               const hasLabelChild = childElements.some(c => c.tag === 'Label');
               if (hasLabelChild) {
                 specProps = { ...specProps, _hasLabelChild: true };

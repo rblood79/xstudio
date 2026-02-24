@@ -628,6 +628,7 @@ const ElementsLayer = memo(function ElementsLayer({
     'ToggleButtonGroup',  // 🚀 Phase 7: flex container로 자식 ToggleButton 내부 렌더링
     'TagGroup', 'TagList',  // 🚀 웹 CSS 구조 동일: TagGroup (column) → Label + TagList (row wrap) → Tags
     'CheckboxGroup', 'RadioGroup',  // 🚀 Form 그룹 컨테이너: 자식 Checkbox/Radio를 내부에서 렌더링
+    'Checkbox', 'Radio', 'Switch',  // Inline Form: indicator는 spec shapes, Label 자식이 텍스트 렌더링
     'Popover', 'Tooltip', 'Menu',  // Overlay/Navigation 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
     'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',  // Date & Color 복합 컴포넌트
     'Toast', 'Toolbar',  // Form/Feedback/Action 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
@@ -888,6 +889,20 @@ const ElementsLayer = memo(function ElementsLayer({
           const fieldProps = containerEl.props as Record<string, unknown> | undefined;
           if (childEl.tag === 'Label') {
             const labelText = fieldProps?.label;
+            if (labelText != null) {
+              effectiveChildEl = {
+                ...childEl,
+                props: { ...childEl.props, children: String(labelText) },
+              };
+            }
+          }
+        }
+
+        // Inline Form 계열: props.children/label → Label.children 동기화
+        if (['Checkbox', 'Radio', 'Switch'].includes(containerTag)) {
+          const formProps = containerEl.props as Record<string, unknown> | undefined;
+          if (childEl.tag === 'Label') {
+            const labelText = formProps?.children ?? formProps?.label;
             if (labelText != null) {
               effectiveChildEl = {
                 ...childEl,

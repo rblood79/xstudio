@@ -35,6 +35,9 @@ import {
   createSwitcherDefinition,
   createCheckboxGroupDefinition,
   createRadioGroupDefinition,
+  createCheckboxDefinition,
+  createRadioDefinition,
+  createSwitchDefinition,
   createTagGroupDefinition,
   createBreadcrumbsDefinition,
 } from "./definitions/GroupComponents";
@@ -94,6 +97,9 @@ export class ComponentFactory {
     Switcher: ComponentFactory.createSwitcher,
     CheckboxGroup: ComponentFactory.createCheckboxGroup,
     RadioGroup: ComponentFactory.createRadioGroup,
+    Checkbox: ComponentFactory.createCheckbox,
+    Radio: ComponentFactory.createRadio,
+    Switch: ComponentFactory.createSwitch,
     Select: ComponentFactory.createSelect,
     ComboBox: ComponentFactory.createComboBox,
     Slider: ComponentFactory.createSlider,
@@ -268,6 +274,24 @@ export class ComponentFactory {
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createRadioGroupDefinition, context);
+  }
+
+  private static async createCheckbox(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createCheckboxDefinition, context);
+  }
+
+  private static async createRadio(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createRadioDefinition, context);
+  }
+
+  private static async createSwitch(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createSwitchDefinition, context);
   }
 
   private static async createSelect(

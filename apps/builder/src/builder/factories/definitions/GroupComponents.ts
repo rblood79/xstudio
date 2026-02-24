@@ -435,3 +435,164 @@ export function createBreadcrumbsDefinition(
     ],
   };
 }
+
+/**
+ * Checkbox 복합 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * Checkbox (parent, tag="Checkbox", flex row, alignItems center)
+ *   └─ Label (tag="Label", children="Checkbox")
+ */
+export function createCheckboxDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Checkbox",
+    parent: {
+      tag: "Checkbox",
+      props: {
+        children: "Checkbox",
+        isSelected: false,
+        isDisabled: false,
+        isIndeterminate: false,
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Checkbox",
+          style: {
+            fontSize: 14,
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+    ],
+  };
+}
+
+/**
+ * Radio 복합 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * Radio (parent, tag="Radio", flex row, alignItems center)
+ *   └─ Label (tag="Label", children="Radio")
+ */
+export function createRadioDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Radio",
+    parent: {
+      tag: "Radio",
+      props: {
+        children: "Radio",
+        value: "radio",
+        isSelected: false,
+        isDisabled: false,
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Radio",
+          style: {
+            fontSize: 14,
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+    ],
+  };
+}
+
+/**
+ * Switch 복합 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * Switch (parent, tag="Switch", flex row, alignItems center)
+ *   └─ Label (tag="Label", children="Switch")
+ */
+export function createSwitchDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Switch",
+    parent: {
+      tag: "Switch",
+      props: {
+        children: "Switch",
+        isSelected: false,
+        isDisabled: false,
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Switch",
+          style: {
+            fontSize: 14,
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+    ],
+  };
+}
