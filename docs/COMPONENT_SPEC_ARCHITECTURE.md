@@ -5352,6 +5352,7 @@ function isContainerTagForLayout(tag: string, style?: Record<string, unknown>): 
 const TRANSPARENT_CONTAINER_TAGS = new Set([
   'TextField', 'NumberField', 'SearchField',
   'DateField', 'TimeField', 'ColorField',
+  'TextArea', 'Textarea',
   'ComboBox', 'Select', 'Dropdown',
   'Slider', 'RangeSlider',
   'CheckboxGroup', 'RadioGroup',
@@ -5468,7 +5469,6 @@ if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
 ### 9.13.7 `_hasChildren` 지원 컴포넌트 현황 (49개)
 
 Opt-out 전환 후, 62개 spec 중 49개가 `_hasChildren`를 지원한다.
-나머지 13개는 제외 대상(CHILD_COMPOSITION_EXCLUDE_TAGS 5개) 또는 비 spec 태그이다.
 
 | 단계 | 컴포넌트 수 | 대표 컴포넌트 |
 |------|-----------|-------------|
@@ -5477,7 +5477,18 @@ Opt-out 전환 후, 62개 spec 중 49개가 `_hasChildren`를 지원한다.
 | Phase 1: 신규 7개 (Leaf, Visual) | 7 | Button, Badge, ToggleButton, Slot, Panel, ProgressBar, Meter |
 | **합계** | **49** | |
 
-> 제외: Tabs, Breadcrumbs, TagGroup (synthetic prop), Table, Tree (다단계 중첩)
+**전수 검증 결과 (33개 COMPLEX_COMPONENT_TAGS 전체)**:
+
+| 분류 | 개수 | 컴포넌트 | 동작 |
+|------|------|---------|------|
+| Complex Component (`_hasChildren` 항상 true) | 33 | TextField, Select, Slider, Card 등 | 자식 삭제 시에도 standalone 렌더링으로 복귀하지 않음 |
+| Non-complex (`_hasChildren` 자식 있을 때만 true) | 13 | Button, Badge, ToggleButton, Slot, Panel, ProgressBar, Meter, DropZone, FileTrigger, ScrollBox, MaskedFrame, Section, Group | standalone 복귀가 의도된 동작 |
+| `CHILD_COMPOSITION_EXCLUDE_TAGS` (`_hasChildren` 주입 차단) | 4 | Tabs, Tree, Table, TagGroup | COMPLEX_COMPONENT_TAGS 포함이지만 Factory 경로 분기용으로만 사용, `_hasChildren` 주입은 EXCLUDE 가드로 차단 |
+| `CHILD_COMPOSITION_EXCLUDE_TAGS` (synthetic prop, _hasChildren 주입 차단) | 1 | Breadcrumbs | `_crumbs` synthetic prop 메커니즘 사용 |
+
+> **주의**: COMPLEX_COMPONENT_TAGS에는 `Tabs`, `Tree`, `TagGroup`, `Table`이 포함되어 있으나,
+> `ElementSprite.tsx`의 `CHILD_COMPOSITION_EXCLUDE_TAGS` 가드에 의해 `_hasChildren` 주입이 차단된다.
+> 따라서 이 4개는 Factory 경로 분기(`useElementCreator.ts`)에서만 COMPLEX_COMPONENT_TAGS를 참조한다.
 
 ### 9.13.8 핵심 파일
 

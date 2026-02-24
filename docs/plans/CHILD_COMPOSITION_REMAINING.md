@@ -40,17 +40,21 @@ spec shapes로 직접 그리는 대신, 자식 Element가 해당 콘텐츠를 �
 Opt-out 모델은 이 문제를 역전한다: **기본적으로 모든 컴포넌트는 자식 조합 패턴을 지원**하며,
 명시적으로 제외된 컴포넌트만 기존 방식을 유지한다.
 
-### _hasChildren 주입 로직 — 2단계 판단
+### _hasChildren 주입 로직 — 3단계 판단
 
-`ElementSprite.tsx`의 `_hasChildren` 주입은 두 상수를 순서대로 적용한다.
+`ElementSprite.tsx`의 `_hasChildren` 주입은 세 단계를 순서대로 거친다.
 
 ```
 1단계: CHILD_COMPOSITION_EXCLUDE_TAGS (5개 블랙리스트)
-   → 포함되면 _hasChildren 주입 자체를 건너뜀
+   → 포함되면 _hasChildren 주입 자체를 건너뜀 (이하 단계 미실행)
 
-2단계: COMPLEX_COMPONENT_TAGS (40+개 공유 상수)
+2단계: COMPLEX_COMPONENT_TAGS (전체 40개, EXCLUDE 제외 순수 complex 36개)
    → 포함되면 자식 유무와 관계없이 항상 _hasChildren=true
-   → 미포함이면 childElements.length > 0일 때만 _hasChildren=true
+   → (Factory가 자식을 생성하는 컴포넌트. 자식 0개인 비정상 상태에서도 standalone 복귀 방지)
+
+3단계: childElements.length > 0 (일반 컨테이너)
+   → COMPLEX에 미포함이고 실제 자식이 있으면 _hasChildren=true
+   → (Button, Section 등 non-complex 컴포넌트의 일반적인 경로)
 ```
 
 ```typescript
@@ -85,7 +89,7 @@ const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
 ]);
 ```
 
-### COMPLEX_COMPONENT_TAGS (40+개) — 공유 상수
+### COMPLEX_COMPONENT_TAGS (전체 40개) — 공유 상수
 
 `factories/constants.ts`에 정의. `ElementSprite.tsx`와 `useElementCreator.ts` 두 곳에서 공유한다.
 
@@ -133,6 +137,11 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
 **공유 상수 도입 이유**: 이전에는 `useElementCreator.ts`가 자체 로컬 배열로 complex component를
 판별했다. 두 파일이 독립적으로 목록을 관리하면 한쪽만 갱신되는 누락 버그가 발생하므로,
 `factories/constants.ts`에 단일 진실 공급원(Single Source of Truth)을 두고 두 파일이 import한다.
+
+**개수 해설**:
+- 전체 40개 = 순수 complex 36개 + EXCLUDE_TAGS와 중복 4개(Tabs, Tree, TagGroup, Table)
+- 중복 4개는 `ElementSprite.tsx`에서 1단계 EXCLUDE 가드에 의해 _hasChildren 주입이 차단되므로, 실제로 `_hasChildren=true`를 주입받는 complex는 36개다.
+- 중복 4개가 COMPLEX에 포함된 이유는 `useElementCreator.ts`의 Factory 경로 분기에서도 동일 상수를 사용하기 때문이다.
 
 ### NON_CONTAINER_TAGS (~21개)
 
@@ -215,9 +224,61 @@ if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
 | 파일 | 역할 |
 |------|------|
 | `apps/builder/src/builder/factories/constants.ts` | `COMPLEX_COMPONENT_TAGS` 공유 상수 정의 |
-| `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` | `_hasChildren` 주입 로직 (2단계 판단) |
+| `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` | `_hasChildren` 주입 로직 (3단계 판단) |
 | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | `NON_CONTAINER_TAGS` 정의, `isContainerTagForLayout()` |
 | `apps/builder/src/builder/hooks/useElementCreator.ts` | Factory 경로 분기 (`COMPLEX_COMPONENT_TAGS` 사용) |
+
+---
+
+## 전수 검증 결과
+
+전환 완료 후 전체 컴포넌트에 대해 `_hasChildren` 주입 동작을 검증했다.
+
+### COMPLEX_COMPONENT_TAGS 검증 (36개 순수 complex)
+
+EXCLUDE_TAGS와 중복되지 않는 36개 전원에 대해 spec 내 `_hasChildren` 체크 구현을 확인했다.
+모두 자식 0개 상태에서도 `_hasChildren=true`가 주입되어 standalone 렌더링으로 복귀하지 않는다.
+
+| 카테고리 | 태그 | 개수 |
+|---------|------|------|
+| Form Input | TextField, TextArea, NumberField, SearchField, DateField, TimeField, ColorField | 7 |
+| Selection | Select, ComboBox, ListBox, GridList, List | 5 |
+| Control | Checkbox, Radio, Switch, Slider, ToggleButtonGroup, Switcher | 6 |
+| Group | CheckboxGroup, RadioGroup | 2 |
+| Layout | Card | 1 |
+| Navigation | Menu, Disclosure, DisclosureGroup, Pagination | 4 |
+| Overlay | Dialog, Popover, Tooltip | 3 |
+| Feedback | Form, Toast, Toolbar | 3 |
+| Date & Color | DatePicker, DateRangePicker, Calendar, ColorPicker, ColorSwatchPicker | 5 |
+| **합계** | | **36** |
+
+### Non-complex 컴포넌트 검증 (13개) — standalone 복귀 정상 동작
+
+이 13개는 `COMPLEX_COMPONENT_TAGS`에 포함되지 않으며, 자식이 없으면 standalone spec 렌더링으로 복귀한다.
+이는 의도된 동작이다 — Factory가 자식을 생성하지 않는 컴포넌트이므로, 자식 없는 상태가 정상이다.
+
+| 컴포넌트 | Factory 생성 여부 | standalone 복귀 이유 |
+|---------|----------------|---------------------|
+| **Button** | 미생성 | 자체 레이블을 spec shapes로 렌더링 (의도됨) |
+| **Badge** | 미생성 | 자체 레이블을 spec shapes로 렌더링 (의도됨) |
+| **ToggleButton** | 미생성 | 자체 레이블을 spec shapes로 렌더링 (의도됨) |
+| **Panel** | 미생성 | 콘텐츠 없는 빈 컨테이너로 렌더링 (의도됨) |
+| **ProgressBar** | 미생성 | 자체 레이블+트랙을 spec shapes로 렌더링 (의도됨) |
+| **Meter** | 미생성 | 자체 레이블+트랙을 spec shapes로 렌더링 (의도됨) |
+| **DropZone** | 미생성 | 자체 배경+점선 테두리를 spec shapes로 렌더링 (의도됨) |
+| **FileTrigger** | 미생성 | 자체 배경+테두리를 spec shapes로 렌더링 (의도됨) |
+| **ScrollBox** | 미생성 | 자체 배경+스크롤바를 spec shapes로 렌더링 (의도됨) |
+| **MaskedFrame** | 미생성 | 자체 마스크+테두리를 spec shapes로 렌더링 (의도됨) |
+| **Section** | 미생성 | 자체 배경+테두리를 spec shapes로 렌더링 (의도됨) |
+| **Slot** | Factory 있음 | placeholder spec 렌더링 복귀가 적절 |
+| **Group** | Factory 있음 | 빈 컨테이너 spec 렌더링 복귀가 적절 |
+
+> **주의: Non-complex 컴포넌트를 COMPLEX_COMPONENT_TAGS에 추가하지 말 것.**
+>
+> 이 13개를 COMPLEX에 추가하면 자식이 0개인 정상 상태에서도 `_hasChildren=true`가 주입된다.
+> Button을 예로 들면, 자식 없는 단독 Button이 레이블 텍스트를 spec으로 그리지 못하게 되어
+> 빈 버튼만 렌더링된다. Non-complex 컴포넌트는 자식이 있을 때만 자식 조합 패턴으로
+> 전환되는 것이 올바른 동작이며, 3단계(childElements.length > 0)로 자연스럽게 처리된다.
 
 ---
 
@@ -491,7 +552,7 @@ shapes(props, variantSpec, sizeSpec, state) {
 | `c7a215c6` | E-2: List, ListBox, GridList, Pagination, ColorSwatchPicker |
 | `1f49424a` | E-3: Group, Section, ScrollBox, DropZone, FileTrigger, MaskedFrame |
 | `0cd704f2` | 패턴 통합: `_hasLabelChild` 전면 제거 → `_hasChildren` 단일화 (15 specs + Card + ElementSprite) |
-| 미커밋 | Phase 1: 7 specs (`_hasChildren`) + ElementSprite.tsx (`CHILD_COMPOSITION_EXCLUDE_TAGS` opt-out 전환 + `COMPLEX_COMPONENT_TAGS` 2단계 주입) + BuilderCanvas.tsx (`NON_CONTAINER_TAGS` opt-out 전환) + `factories/constants.ts` (`COMPLEX_COMPONENT_TAGS` 공유 상수 신규) + `useElementCreator.ts` (로컬 배열 → 공유 상수 교체) |
+| 미커밋 | Phase 1: 7 specs (`_hasChildren`) + ElementSprite.tsx (`CHILD_COMPOSITION_EXCLUDE_TAGS` opt-out 전환 + `COMPLEX_COMPONENT_TAGS` 3단계 주입) + BuilderCanvas.tsx (`NON_CONTAINER_TAGS` opt-out 전환) + `factories/constants.ts` (`COMPLEX_COMPONENT_TAGS` 공유 상수 신규) + `useElementCreator.ts` (로컬 배열 → 공유 상수 교체) |
 
 ---
 

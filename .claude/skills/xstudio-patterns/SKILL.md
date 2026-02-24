@@ -398,19 +398,19 @@ Parent Component (spec shapes: 배경/테두리만)
 └── Description / Footer (자식 Element)
 ```
 
-#### `_hasChildren` 주입 방식: Opt-out (블랙리스트) + Complex 보장
+#### `_hasChildren` 주입 방식: 3단계 판단 로직
 
-`ElementSprite.tsx`에서 `_hasChildren: true` flag를 spec props에 주입하는 방식입니다.
-두 가지 조건 중 하나라도 만족하면 `_hasChildren: true`가 주입됩니다.
+`ElementSprite.tsx`에서 `_hasChildren: true` flag를 spec props에 주입합니다.
+아래 3단계를 순서대로 평가하며, **1단계에서 제외되면 2·3단계는 실행되지 않습니다**.
 
-**조건 1 — Complex component**: `COMPLEX_COMPONENT_TAGS`에 등록된 태그는 자식 유무와 관계없이 **항상** `_hasChildren: true`를 주입합니다. 자식을 모두 삭제해도 standalone spec 렌더링(label+input 통합 shapes)으로 되돌아가지 않습니다.
+**1단계 — Opt-out 가드 (CHILD_COMPOSITION_EXCLUDE_TAGS)**: 이 Set에 포함된 태그는 주입 자체를 건너뜁니다. synthetic prop 메커니즘(`_crumbs`, `_tabLabels` 등)을 별도로 사용하거나 다단계 중첩이 필요한 컴포넌트가 여기에 속합니다.
 
-**조건 2 — 자식이 실제로 존재**: `COMPLEX_COMPONENT_TAGS`에 없는 일반 컴포넌트(Button 등)는 자식 Element가 실제로 있을 때만 `_hasChildren: true`를 주입합니다.
+**2단계 — Complex component 보장 (COMPLEX_COMPONENT_TAGS)**: 1단계를 통과한 태그 중 `COMPLEX_COMPONENT_TAGS`에 등록된 태그는 자식 유무와 관계없이 **항상** `_hasChildren: true`를 주입합니다. 자식을 모두 삭제해도 standalone spec 렌더링(label+input 통합 shapes)으로 되돌아가지 않습니다.
 
-**예외(opt-out)**: `CHILD_COMPOSITION_EXCLUDE_TAGS`에 등록된 태그는 위 두 조건 이전에 평가되어 주입 자체를 건너뜁니다.
+**3단계 — 자식 존재 여부**: 1·2단계 모두 해당하지 않는 일반 컴포넌트(Button, Badge 등)는 자식 Element가 실제로 있을 때만 `_hasChildren: true`를 주입합니다. **자식이 없으면 standalone spec shapes가 렌더링되는 것이 의도된 동작입니다.**
 
 ```typescript
-// ElementSprite.tsx — COMPLEX_COMPONENT_TAGS 기반 조건 (2026-02-24 수정)
+// ElementSprite.tsx — 3단계 판단 로직 (2026-02-24 수정)
 import { COMPLEX_COMPONENT_TAGS } from '../../../factories/constants';
 
 const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
@@ -421,9 +421,10 @@ const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
   'Tree',        // 다단계 중첩 구조 (별도 작업)
 ]);
 
+// 1단계: CHILD_COMPOSITION_EXCLUDE_TAGS → 포함되면 주입 스킵
 if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
-  // Complex component: 자식 유무와 관계없이 항상 _hasChildren=true
-  // Non-complex (Button 등): 자식이 실제로 있을 때만 _hasChildren=true
+  // 2단계: COMPLEX_COMPONENT_TAGS → 포함되면 항상 true
+  // 3단계: childElements.length > 0 → 있으면 true (Non-complex의 standalone 복귀는 의도된 동작)
   if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
     specProps = { ...specProps, _hasChildren: true };
   }
@@ -438,6 +439,28 @@ if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
 - **다단계 중첩 구조** (Table, Tree): 자식 렌더링이 복잡하여 별도 구현 필요
 
 > `CHILD_COMPOSITION_EXCLUDE_TAGS` 소속 태그 중 일부(Tabs, Tree, TagGroup, Table)는 `COMPLEX_COMPONENT_TAGS`에도 포함됩니다. `CHILD_COMPOSITION_EXCLUDE_TAGS` 가드가 먼저 평가되므로 `COMPLEX_COMPONENT_TAGS` 체크는 안전하게 차단됩니다.
+
+#### Non-complex 컴포넌트: standalone 복귀는 의도된 동작
+
+아래 컴포넌트들은 `COMPLEX_COMPONENT_TAGS`에 포함되지 않으며, 자식 Element가 없을 때 standalone spec shapes로 렌더링하는 것이 **설계상 올바른 동작**입니다. 이 컴포넌트들을 `COMPLEX_COMPONENT_TAGS`에 추가하면 안 됩니다.
+
+| 컴포넌트 | 이유 |
+|---------|------|
+| `Button` | 자식 없이 단독으로 standalone 텍스트 렌더링 가능 |
+| `Badge` | 자식 없이 단독으로 standalone 텍스트 렌더링 가능 |
+| `ToggleButton` | 자식 없이 단독으로 standalone 텍스트 렌더링 가능 |
+| `Slot` | 단일 플레이스홀더 요소 |
+| `Panel` | Tabs 내부 전용, 자체 렌더링 없음 |
+| `ProgressBar` | 자식 없이 label+track standalone 렌더링 가능 |
+| `Meter` | 자식 없이 label+bar standalone 렌더링 가능 |
+| `DropZone` | 자식 없이 standalone 렌더링 가능 |
+| `FileTrigger` | 자식 없이 standalone 렌더링 가능 |
+| `ScrollBox` | 단순 스크롤 컨테이너 |
+| `MaskedFrame` | 단순 마스크 컨테이너 |
+| `Section` | 단순 레이아웃 컨테이너 |
+| `Group` | 단순 그룹 컨테이너 |
+
+> **주의**: 위 컴포넌트들도 spec 파일에서 `_hasChildren`을 체크합니다. 이는 미래에 자식을 추가했을 때 동작하도록 설계된 것이며, 현재 자식이 없는 상태에서 standalone 렌더링이 정상입니다.
 
 #### Spec shapes() 패턴 — 3가지 카테고리
 
@@ -573,6 +596,7 @@ if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
    - factory가 자식 Element를 생성하는 복합 컴포넌트라면 반드시 이 Set에 추가
    - 등록하지 않으면 자식 삭제 시 `_hasChildren=false`가 되어 standalone spec shapes가 재활성화됨
    - `CHILD_COMPOSITION_EXCLUDE_TAGS` 소속 태그(Tabs, TagGroup 등)도 `useElementCreator.ts`의 Factory 경로 분기용으로 등록
+   - **주의**: Button, Badge, ProgressBar 등 Non-complex 컴포넌트(자식 없이도 standalone 렌더링이 정상인 컴포넌트)는 이 Set에 추가하면 안 됩니다. 추가하면 자식 삭제 후에도 빈 shell만 남아 standalone 렌더링으로 복귀할 수 없게 됩니다.
 
 3. **ElementSprite.tsx**:
    - `COMPLEX_COMPONENT_TAGS`에 등록하면 `_hasChildren` 주입은 자동으로 보장됨 — 추가 작업 불필요
