@@ -620,37 +620,22 @@ const ElementsLayer = memo(function ElementsLayer({
     return ids;
   }, [visibleElements, elementById]);
 
-  // 🚀 Phase 10: Container 타입 컴포넌트 - children을 내부에서 렌더링
-  // Card, Panel 등은 children을 배경 안에 포함해야 함
-  const CONTAINER_TAGS = useMemo(() => new Set([
-    'Card', 'Box', 'Panel', 'Form', 'Group', 'Dialog', 'Modal',
-    'Disclosure', 'DisclosureGroup', 'Accordion',
-    'ToggleButtonGroup',  // 🚀 Phase 7: flex container로 자식 ToggleButton 내부 렌더링
-    'TagGroup', 'TagList',  // 🚀 웹 CSS 구조 동일: TagGroup (column) → Label + TagList (row wrap) → Tags
-    'CheckboxGroup', 'RadioGroup',  // 🚀 Form 그룹 컨테이너: 자식 Checkbox/Radio를 내부에서 렌더링
-    'Checkbox', 'Radio', 'Switch',  // Inline Form: indicator는 spec shapes, Label 자식이 텍스트 렌더링
-    'Popover', 'Tooltip', 'Menu',  // Overlay/Navigation 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
-    'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',  // Date & Color 복합 컴포넌트
-    'Toast', 'Toolbar',  // Form/Feedback/Action 복합 컴포넌트 — 자식 노드를 내부에서 렌더링
-    'TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',  // Input 복합 컴포넌트
-    'TextArea',  // TextArea 복합 컴포넌트 (Label + Input + FieldError)
-    'Switcher',  // Switcher 복합 컴포넌트 (ToggleButton × N)
-    'Tabs',  // Tab bar(spec shapes) + active Panel(container) 렌더링
-    'Breadcrumbs',  // Breadcrumb 자식 텍스트를 spec shapes에 주입하여 렌더링
-    'ComboBox', 'Select',  // Label 선택 가능하도록 컨테이너 처리 (TagGroup 패턴)
-    'SelectTrigger',  // Select 트리거 내부 자식 (SelectValue + SelectIcon) 렌더링
-    'ComboBoxWrapper',  // ComboBox 입력 컨테이너 내부 자식 (ComboBoxInput + ComboBoxTrigger) 렌더링
-    'ListBox', 'GridList',  // E-2: 반복 아이템 컨테이너 (ListBoxItem/GridListItem 자식 렌더링)
-    'List',  // E-2: ListItem 자식 렌더링
-    'Pagination',  // E-2: Button 자식 렌더링
-    'ColorSwatchPicker',  // E-2: ColorSwatch 자식 렌더링
-    'Section', 'ScrollBox', 'DropZone', 'FileTrigger', 'MaskedFrame',  // E-3: 컨테이너 컴포넌트
+  // Opt-out: 자식을 내부에 렌더링하지 않는 태그 (나머지는 모두 컨테이너)
+  const NON_CONTAINER_TAGS = useMemo(() => new Set([
+    // TEXT_TAGS: TextSprite 렌더링, 컨테이너 불가
+    'Text', 'Heading', 'Description', 'Label', 'Paragraph',
+    'Link', 'Strong', 'Em', 'Code', 'Pre', 'Blockquote',
+    'ListItem', 'ListBoxItem', 'GridListItem',
+    // Void/Visual: 자식 없는 단일 요소
+    'Input', 'Separator', 'Skeleton',
+    // Color Sub-component: 부모 ColorPicker의 내부 요소
+    'ColorSwatch', 'ColorWheel', 'ColorArea', 'ColorSlider',
   ]), []);
 
   // Spec shapes 전용 컴포넌트: 모든 시각 요소를 spec shapes로 렌더링하므로
   // 자식 요소(dropdown items 등)를 별도 sprite로 렌더링하면 label 영역을 덮는 문제 발생
   // → 자식 재귀 렌더링 차단
-  // E-2 전환 완료: ListBox/GridList → CONTAINER_TAGS로 이동
+  // E-2 전환 완료: ListBox/GridList → NON_CONTAINER_TAGS 제외 (컨테이너로 처리)
   const SPEC_SHAPES_ONLY_TAGS = useMemo(() => new Set<string>([
   ]), []);
 
@@ -661,7 +646,7 @@ const ElementsLayer = memo(function ElementsLayer({
       if (tag === 'Section') {
         return style?.display === 'flex' || style?.flexDirection !== undefined;
       }
-      return CONTAINER_TAGS.has(tag);
+      return !NON_CONTAINER_TAGS.has(tag);
     }
 
     // Container 자식 렌더러 생성 (재귀적)
@@ -1107,7 +1092,7 @@ const ElementsLayer = memo(function ElementsLayer({
 
     return renderTree(bodyElement?.id ?? null);
     // wasmLayoutReady: WASM 로드 완료 시 calculateChildrenLayout()이 Taffy를 사용하므로 재계산 필요
-  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, CONTAINER_TAGS, SPEC_SHAPES_ONLY_TAGS, wasmLayoutReady]);
+  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, NON_CONTAINER_TAGS, SPEC_SHAPES_ONLY_TAGS, wasmLayoutReady]);
 
   // body의 border+padding 오프셋 계산 (자식 시작 위치)
   const bodyStyle = bodyElement?.props?.style as Record<string, unknown> | undefined;

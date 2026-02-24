@@ -147,6 +147,10 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
         },
       ];
 
+      // Child Composition: 자식 Element가 있으면 shell만 반환
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 타이틀이 있는 경우
       if (title) {
         const textColor = props.style?.color ?? variant.text;

@@ -137,6 +137,10 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
           fill: bgColor,
         });
 
+        // Child Composition: 자식 Element가 있으면 shell만 반환
+        const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+        if (hasChildren) return shapes;
+
         const text = props.children || props.text;
         if (text) {
           // 사용자 스타일 padding 우선, 없으면 spec 기본값

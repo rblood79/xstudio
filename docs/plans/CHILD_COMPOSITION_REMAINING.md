@@ -1,159 +1,504 @@
-# Child Composition Pattern — 미적용 컴포넌트 분류 (38개)
+# Child Composition Pattern — 전환 완료 보고서
 
 > **작성일**: 2026-02-24
-> **상태**: E-1 ✅ 완료, C ✅ 완료, E-2 진행 중
+> **상태**: 전환 완료 (Table, Tree 2개 보류)
 > **관련**: `docs/COMPONENT_SPEC_ARCHITECTURE.md` §9.13
 
 ---
 
 ## 배경
 
-자식 조합 패턴(Child Composition Pattern) 전환 작업에서 20개 컴포넌트가 전환 완료되었다.
-전체 61개 spec 중 23개에 `_hasChildren` / `_hasLabelChild` 패턴이 적용되어 있으며,
-나머지 38개는 미적용 상태이다. 이 문서는 38개 컴포넌트의 전환 필요성을 분류한다.
+자식 조합 패턴(Child Composition Pattern)은 UI 컴포넌트 spec이 자체 콘텐츠(레이블, 텍스트)를
+spec shapes로 직접 그리는 대신, 자식 Element가 해당 콘텐츠를 담당하게 하는 패턴이다.
+이를 통해 Figma/HTML 구조와 일치하는 컴포넌트 트리를 구성하고,
+자식 텍스트의 독립적인 스타일 편집을 가능하게 한다.
+
+이 보고서는 전체 **62개 spec**에 대한 분류 및 전환 완료 현황을 기록한다.
+
+| 구분 | 개수 | 설명 |
+|------|------|------|
+| `_hasChildren` 적용 | **49개** | 기존 42 + 신규 7 (Button, Badge, ToggleButton, Slot, Panel, ProgressBar, Meter) |
+| 전환 불필요 (NON_CONTAINER_TAGS) | **~21개** | TEXT_TAGS 14 + Void/Visual 3 + Color Sub-component 4 |
+| 합성 prop 유지 (EXCLUDE_TAGS) | **3개** | Tabs, Breadcrumbs, TagGroup |
+| 보류 (EXCLUDE_TAGS) | **2개** | Table, Tree (다단계 중첩) |
+
+> 주의: 62개는 spec 파일 기준이며, NON_CONTAINER_TAGS에 포함된 일부 태그(Text, Heading 등)는
+> 별도 spec 파일 없이 TextSprite로 처리된다.
+
+**패턴 통합**: `_hasLabelChild` 플래그 완전 제거 → `_hasChildren` 단일 메커니즘으로 통합 완료 (`0cd704f2`).
+
+---
+
+## 아키텍처: Opt-Out (블랙리스트) 모델
+
+### 배경 — Opt-In에서 Opt-Out으로
+
+초기 구현은 `CHILD_COMPOSITION_TAGS`(42개 화이트리스트)로 허용 태그를 명시적으로 관리했다.
+새 컴포넌트를 추가할 때마다 두 곳(spec + `CHILD_COMPOSITION_TAGS`)을 동시에 갱신해야 했고,
+누락 시 자식이 있음에도 spec shapes가 레이블을 덮어 그리는 버그가 발생했다.
+
+Opt-out 모델은 이 문제를 역전한다: **기본적으로 모든 컴포넌트는 자식 조합 패턴을 지원**하며,
+명시적으로 제외된 컴포넌트만 기존 방식을 유지한다.
+
+### _hasChildren 주입 로직 — 2단계 판단
+
+`ElementSprite.tsx`의 `_hasChildren` 주입은 두 상수를 순서대로 적용한다.
+
+```
+1단계: CHILD_COMPOSITION_EXCLUDE_TAGS (5개 블랙리스트)
+   → 포함되면 _hasChildren 주입 자체를 건너뜀
+
+2단계: COMPLEX_COMPONENT_TAGS (40+개 공유 상수)
+   → 포함되면 자식 유무와 관계없이 항상 _hasChildren=true
+   → 미포함이면 childElements.length > 0일 때만 _hasChildren=true
+```
+
+```typescript
+// apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx
+
+if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
+  // Complex component: 자식 유무와 관계없이 항상 _hasChildren=true
+  // (자식 삭제 시 standalone 렌더링 복귀 방지)
+  // Non-complex (Button 등): 자식이 실제로 있을 때만 _hasChildren=true
+  if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
+    specProps = { ...specProps, _hasChildren: true };
+  }
+}
+```
+
+이 설계의 핵심: **Complex component는 자식이 0개여도 `_hasChildren=true`를 유지**한다.
+TextField 등은 Factory가 자식(Input, Label)을 생성하도록 설계되어 있으므로,
+모든 자식이 삭제된 비정상 상태에서도 spec이 standalone 렌더링으로 되돌아가면 안 된다.
+
+### CHILD_COMPOSITION_EXCLUDE_TAGS (5개)
+
+`ElementSprite.tsx`에 정의. 이 태그들은 `_hasChildren` 주입에서 제외된다.
+
+```typescript
+// apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx
+const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
+  'Tabs',        // _tabLabels synthetic prop — 자식 Tab 레이블을 데이터로 주입
+  'Breadcrumbs', // _crumbs synthetic prop — 자식 Breadcrumb 텍스트를 데이터로 주입
+  'TagGroup',    // _tagItems synthetic prop — 자체 BoxSprite 메커니즘
+  'Table',       // 3단계 중첩 (별도 작업)
+  'Tree',        // 다단계 중첩 (별도 작업)
+]);
+```
+
+### COMPLEX_COMPONENT_TAGS (40+개) — 공유 상수
+
+`factories/constants.ts`에 정의. `ElementSprite.tsx`와 `useElementCreator.ts` 두 곳에서 공유한다.
+
+```typescript
+// apps/builder/src/builder/factories/constants.ts
+
+/**
+ * Factory가 자식 Element를 생성하는 컴포넌트 태그.
+ * 이 태그들은 자식 유무와 관계없이 항상 _hasChildren=true로 처리되어
+ * 자식 삭제 시에도 standalone spec 렌더링으로 돌아가지 않음.
+ *
+ * 사용처:
+ * - useElementCreator.ts: Factory 경로 분기
+ * - ElementSprite.tsx: _hasChildren prop 주입
+ */
+export const COMPLEX_COMPONENT_TAGS = new Set([
+  // Form Input
+  'TextField', 'TextArea', 'NumberField', 'SearchField',
+  'DateField', 'TimeField', 'ColorField',
+  // Selection
+  'Select', 'ComboBox', 'ListBox', 'GridList', 'List',
+  // Control
+  'Checkbox', 'Radio', 'Switch', 'Slider',
+  'ToggleButtonGroup', 'Switcher',
+  // Group
+  'CheckboxGroup', 'RadioGroup',
+  // Layout
+  'Card',
+  // Navigation
+  'Menu', 'Disclosure', 'DisclosureGroup', 'Pagination',
+  // Overlay
+  'Dialog', 'Popover', 'Tooltip',
+  // Feedback
+  'Form', 'Toast', 'Toolbar',
+  // Date & Color
+  'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
+  'ColorSwatchPicker',
+  // CHILD_COMPOSITION_EXCLUDE_TAGS 태그 (synthetic prop 메커니즘 사용)
+  // ElementSprite에서 EXCLUDE 가드에 의해 _hasChildren 주입 차단되므로 안전.
+  // useElementCreator의 Factory 경로 분기용.
+  'Tabs', 'Tree', 'TagGroup', 'Table',
+]);
+```
+
+**공유 상수 도입 이유**: 이전에는 `useElementCreator.ts`가 자체 로컬 배열로 complex component를
+판별했다. 두 파일이 독립적으로 목록을 관리하면 한쪽만 갱신되는 누락 버그가 발생하므로,
+`factories/constants.ts`에 단일 진실 공급원(Single Source of Truth)을 두고 두 파일이 import한다.
+
+### NON_CONTAINER_TAGS (~21개)
+
+`BuilderCanvas.tsx`에 정의. 이 태그들은 자식을 내부에 렌더링하지 않는 컴포넌트로,
+`childElements`가 전달되지 않아 `_hasChildren`이 주입될 기회 자체가 없다.
+
+```typescript
+// apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx
+const NON_CONTAINER_TAGS = useMemo(() => new Set([
+  // TEXT_TAGS: TextSprite 렌더링, 컨테이너 불가
+  'Text', 'Heading', 'Description', 'Label', 'Paragraph',
+  'Link', 'Strong', 'Em', 'Code', 'Pre', 'Blockquote',
+  'ListItem', 'ListBoxItem', 'GridListItem',
+  // Void/Visual: 자식 없는 단일 요소
+  'Input', 'Separator', 'Skeleton',
+  // Color Sub-component: 부모 ColorPicker의 내부 요소
+  'ColorSwatch', 'ColorWheel', 'ColorArea', 'ColorSlider',
+]), []);
+```
+
+### isContainerTagForLayout() 동작
+
+```typescript
+function isContainerTagForLayout(tag: string, style?: Record<string, unknown>): boolean {
+  if (tag === 'Section') {
+    // Section은 flex 레이아웃일 때만 컨테이너로 동작
+    return style?.display === 'flex' || style?.flexDirection !== undefined;
+  }
+  // Opt-out: NON_CONTAINER_TAGS에 없으면 기본적으로 컨테이너
+  return !NON_CONTAINER_TAGS.has(tag);
+}
+```
+
+---
+
+## 버그 수정: 자식 삭제 시 standalone 렌더링 복귀 버그
+
+### 문제
+
+TextField 등 complex component에서 모든 자식 Element를 삭제하면,
+`childElements.length === 0`이 되어 `_hasChildren`이 주입되지 않았다.
+결과적으로 spec이 내부적으로 레이블/텍스트를 직접 그리는 standalone 렌더링으로 되돌아갔다.
+
+### 원인
+
+`ElementSprite.tsx`의 기존 주입 로직:
+
+```typescript
+// 수정 전
+if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag) && childElements && childElements.length > 0) {
+  specProps = { ...specProps, _hasChildren: true };
+}
+```
+
+자식이 모두 삭제된 complex component는 조건 `childElements.length > 0`을 충족하지 못해
+`_hasChildren`이 주입되지 않는다. Complex component는 Factory가 자식을 생성하도록
+설계된 컴포넌트이므로, 자식이 없는 상태는 비정상이며 이때도 spec은 자체 렌더링을 해서는 안 된다.
+
+### 수정
+
+`COMPLEX_COMPONENT_TAGS` 공유 상수를 도입하고, 이 태그에 해당하는 컴포넌트는
+자식 유무와 관계없이 항상 `_hasChildren=true`를 주입한다.
+
+```typescript
+// 수정 후
+if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
+  if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
+    specProps = { ...specProps, _hasChildren: true };
+  }
+}
+```
+
+동시에 `useElementCreator.ts`의 로컬 `complexComponents` 배열을 `COMPLEX_COMPONENT_TAGS`
+공유 상수로 교체하여, 두 파일이 동일한 목록을 참조하도록 통합했다.
+
+---
+
+## 핵심 인프라 파일
+
+| 파일 | 역할 |
+|------|------|
+| `apps/builder/src/builder/factories/constants.ts` | `COMPLEX_COMPONENT_TAGS` 공유 상수 정의 |
+| `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` | `_hasChildren` 주입 로직 (2단계 판단) |
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | `NON_CONTAINER_TAGS` 정의, `isContainerTagForLayout()` |
+| `apps/builder/src/builder/hooks/useElementCreator.ts` | Factory 경로 분기 (`COMPLEX_COMPONENT_TAGS` 사용) |
 
 ---
 
 ## 분류 기준
 
-| 분류 | 설명 | 전환 필요 |
-|------|------|----------|
-| A. 이미 다른 메커니즘으로 처리 | CONTAINER_TAGS + 자체 주입 패턴 사용 | ❌ |
-| B. Leaf 컴포넌트 | 자식 없는 단일 요소, 자체 텍스트 렌더링 | ❌ |
-| C. Inline Form | indicator + label 구조, `_hasLabelChild` 등록 가능 | ⚠️ 검토 |
-| D. Sub-component | 다른 컴포넌트의 자식 요소 | ❌ |
-| E. 잠재적 전환 대상 | 자식 구조 가능성 있음, 개별 검토 필요 | ⚠️ 검토 |
+| 분류 | 설명 | 상태 |
+|------|------|------|
+| A. 자체 메커니즘 | 합성 prop 주입 (`_tabLabels`/`_crumbs`) 또는 자체 렌더링 | Card 통합, 3개 유지 |
+| B. NON_CONTAINER_TAGS | 텍스트/void/color sub 요소 — 컨테이너 불가 | 전환 불필요 |
+| C. Inline Form | indicator + label 구조 | 완료 |
+| D. Sub-component | 다른 컴포넌트의 자식 요소, NON_CONTAINER_TAGS에서 관리 | 전환 불필요 |
+| E. 신규 전환 대상 | 이번 작업에서 `_hasChildren` 추가 | 15개 완료, Table/Tree 보류 |
+| F. 기존 적용 완료 | 이전 작업에서 이미 `_hasChildren` 적용 | 기 적용 |
 
 ---
 
-## A. 이미 다른 메커니즘으로 처리 (4개) — 전환 불필요
+## A. 자체 메커니즘 (4개) — Card 통합, 3개 유지
 
-CONTAINER_TAGS에 등록되어 자체 자식 렌더링 메커니즘이 존재한다.
-`_hasChildren` spec 패턴과는 다른 방식으로 동일한 목표를 달성하고 있다.
-
-| 컴포넌트 | 현재 메커니즘 | 비고 |
-|---------|-------------|------|
-| **Card** | CONTAINER_TAGS + Heading/Description 자식 주입 | `createContainerChildRenderer`에서 heading→Heading, description→Description props sync |
-| **Tabs** | CONTAINER_TAGS + `_tabLabels` 주입 | Tab bar는 spec shapes, Panel은 container child rendering |
-| **Breadcrumbs** | CONTAINER_TAGS + `_crumbs` 배열 주입 | 자식 Breadcrumb 텍스트를 spec shapes가 직접 렌더링 |
-| **TagGroup** | CONTAINER_TAGS + Label/TagList 자식 배치 | BoxSprite 기반 컨테이너, spec shapes는 배경만 |
+| 컴포넌트 | 메커니즘 | 상태 |
+|---------|---------|------|
+| **Card** | `_hasChildren` → bg+shadow+border 유지, container 스킵 | `_hasChildren` 통합 (`0cd704f2`) |
+| **Tabs** | `_tabLabels` 합성 prop 주입 → spec shapes가 탭 바 렌더링 | `CHILD_COMPOSITION_EXCLUDE_TAGS` 유지 |
+| **Breadcrumbs** | `_crumbs` 합성 prop 주입 → spec shapes가 크럼 렌더링 | `CHILD_COMPOSITION_EXCLUDE_TAGS` 유지 |
+| **TagGroup** | `_tagItems` 자체 메커니즘 (BoxSprite) | `CHILD_COMPOSITION_EXCLUDE_TAGS` 유지 |
 
 ---
 
-## B. Leaf 컴포넌트 (10개) — 전환 불필요
+## B. NON_CONTAINER_TAGS (~21개) — 전환 불필요
 
-자식 Element가 없는 단일 렌더링 요소. 자체 텍스트/시각 요소를 spec shapes로 완결한다.
-DOM 구조상 자식 분리가 불필요하거나 의미가 없다.
+### B-1. TEXT_TAGS (14개)
+
+컨테이너로 동작하지 않으며 TextSprite로 직접 렌더링된다. 별도 spec 파일 없음.
+
+| 태그 | 비고 |
+|------|------|
+| **Text** | 일반 텍스트 노드 |
+| **Heading** | 제목 텍스트 |
+| **Description** | 설명 텍스트 |
+| **Label** | 라벨 텍스트 |
+| **Paragraph** | 단락 텍스트 |
+| **Link** | 인라인 링크 (TextSprite 처리) |
+| **Strong** | 굵은 텍스트 |
+| **Em** | 기울임 텍스트 |
+| **Code** | 코드 텍스트 |
+| **Pre** | 서식 있는 텍스트 |
+| **Blockquote** | 인용 텍스트 |
+| **ListItem** | 리스트 항목 |
+| **ListBoxItem** | ListBox 항목 |
+| **GridListItem** | GridList 항목 |
+
+### B-2. Void / Visual (3개)
+
+자식이 없는 단일 요소. spec shapes로 자체 렌더링.
 
 | 컴포넌트 | 이유 |
 |---------|------|
-| **Button** | 단일 텍스트 + 배경. 자식 분리 불필요 |
-| **Badge** | 단일 텍스트 + 배경. 라벨만 표시 |
-| **Link** | 단일 텍스트. 인라인 요소 |
-| **ToggleButton** | Button과 동일 구조, 토글 상태만 추가 |
-| **Input** | TextField의 자식 요소. 자체가 leaf |
-| **Separator** | 텍스트 없음. 선 하나만 렌더링 |
-| **Skeleton** | placeholder 시각 요소. 텍스트 없음 |
-| **Slot** | 구조적 플레이스홀더. 시각 요소 없음 |
-| **ProgressBar** | 시각 인디케이터. 텍스트 없음 (라벨은 외부) |
-| **Meter** | 시각 인디케이터. ProgressBar와 유사 |
+| **Input** | TextField 자식 요소, 자체가 leaf |
+| **Separator** | 선 하나만 렌더링 |
+| **Skeleton** | 플레이스홀더 시각 요소 |
 
----
+### B-3. Color Sub-component (4개)
 
-## C. Inline Form 컴포넌트 (3개) — ✅ 완료
+부모 ColorPicker의 내부 구성 요소. 독립 컨테이너로 동작하지 않음.
 
-`_hasChildren` 패턴 적용. indicator는 spec shapes 유지, label만 자식 Element로 분리.
-(원래 `_hasLabelChild`로 구현 → `_hasChildren` 단일 패턴으로 통합 완료)
-
-| 컴포넌트 | 적용 패턴 | 커밋 |
-|---------|----------|------|
-| **Checkbox** | `_hasChildren` → label text 스킵, indicator 유지 | `dfae0947` |
-| **Radio** | 동일 | `dfae0947` |
-| **Switch** | `_hasChildren` → label text 스킵, track+thumb 유지 | `dfae0947` |
-
-**구현 세부**: Factory에 Label 자식 정의 추가, CONTAINER_TAGS 등록, props sync (children/label → Label.children).
-**패턴 통합**: `_hasLabelChild` 플래그 완전 제거 → `_hasChildren` CHILD_COMPOSITION_TAGS 단일 메커니즘으로 통합.
-
----
-
-## D. Sub-component (5개) — 전환 불필요
-
-다른 복합 컴포넌트의 자식 요소로 사용되며, 독립적으로 자식 조합 패턴이 필요하지 않다.
-
-| 컴포넌트 | 부모 컴포넌트 | 비고 |
-|---------|-------------|------|
+| 컴포넌트 | 부모 | 비고 |
+|---------|------|------|
 | **ColorArea** | ColorPicker | 2D 그래디언트 영역 |
 | **ColorSlider** | ColorPicker | 색상 슬라이더 |
 | **ColorSwatch** | ColorSwatchPicker | 단일 색상 칩 |
 | **ColorWheel** | ColorPicker | 색상 휠 |
-| **Panel** | Tabs, Disclosure | 콘텐츠 패널 영역 |
 
 ---
 
-## E. 잠재적 전환 대상 (16개) — 개별 검토 필요
+## C. Inline Form 컴포넌트 (3개) — 완료
 
-자식 구조를 가질 수 있으며, 전환 시 Layer 트리 편집성이 향상될 수 있다.
-우선순위와 복잡도를 기준으로 3단계로 분류한다.
+`_hasChildren` 패턴 적용. indicator는 spec shapes 유지, label만 자식 Element로 분리.
 
-### E-1. 높은 우선순위 (4개) — ✅ 완료
-
-| 컴포넌트 | 적용 패턴 | 커밋 |
-|---------|----------|------|
-| **TextArea** | TRANSPARENT — Label + Input(h:80) + FieldError | `ea23d5fa` |
-| **Form** | NON-TRANSPARENT — bg+border 유지, Heading + Description 자식 추가 | `ea23d5fa` |
-| **ToggleButtonGroup** | NON-TRANSPARENT — bg+border 유지, container shape 스킵 | `ea23d5fa` |
-| **Switcher** | NON-TRANSPARENT — track+border+active indicator 유지, tab text 스킵 | `ea23d5fa` |
-
-### E-2. 중간 우선순위 (6개) — 5개 ✅ 완료, 1개 보류
-
-| 컴포넌트 | 적용 패턴 | 상태 |
-|---------|----------|------|
-| **List** | NON-TRANSPARENT — bg+container 유지, ListItem(TEXT_TAGS) 자식 | ✅ 완료 |
-| **ListBox** | NON-TRANSPARENT — bg+border 유지, ListBoxItem(TEXT_TAGS 추가) 자식 | ✅ 완료 |
-| **GridList** | NON-TRANSPARENT — bg+border 유지, GridListItem(TEXT_TAGS 추가) 자식 | ✅ 완료 |
-| **Pagination** | NON-TRANSPARENT — container 유지, Button 자식 | ✅ 완료 |
-| **ColorSwatchPicker** | NON-TRANSPARENT — bg 유지, ColorSwatch(spec 있음) 자식 | ✅ 완료 |
-| **Table** | 3단계 중첩 + 특수 렌더 파이프라인, 별도 작업 필요 | ⏳ 보류 |
-
-**구현 세부**: ListBoxItem/GridListItem → TEXT_TAGS 추가로 텍스트 렌더링.
-SPEC_SHAPES_ONLY_TAGS에서 ListBox/GridList 제거 → CONTAINER_TAGS로 이동.
-
-### E-3. 낮은 우선순위 (6개) — ✅ 완료
-
-| 컴포넌트 | 적용 패턴 | 상태 |
-|---------|----------|------|
-| **Group** | TRANSPARENT — `_hasChildren → return []` | ✅ 완료 |
-| **Section** | NON-TRANSPARENT — bg + border 유지, container 스킵 | ✅ 완료 |
-| **ScrollBox** | NON-TRANSPARENT — bg + border + scrollbar 유지, clip container 스킵 | ✅ 완료 |
-| **DropZone** | NON-TRANSPARENT — bg + dashed border 유지, text 스킵 | ✅ 완료 |
-| **FileTrigger** | NON-TRANSPARENT — bg + border 유지, text 스킵 | ✅ 완료 |
-| **MaskedFrame** | NON-TRANSPARENT — mask + border 유지, clip container 스킵 | ✅ 완료 |
+| 컴포넌트 | spec 유지 shapes | 스킵 | 커밋 |
+|---------|-----------------|------|------|
+| **Checkbox** | box + checkmark + indeterminate | label text | `dfae0947` → `0cd704f2` |
+| **Radio** | ring + dot | label text | `dfae0947` → `0cd704f2` |
+| **Switch** | track + thumb | label text | `dfae0947` → `0cd704f2` |
 
 ---
 
-## 요약
+## D. Sub-component (Panel 재분류)
 
-| 분류 | 개수 | 전환 필요 |
-|------|------|----------|
-| A. 이미 다른 메커니즘 | 4 | ❌ |
-| B. Leaf 컴포넌트 | 10 | ❌ |
-| C. Inline Form | 3 | ✅ 완료 |
-| D. Sub-component | 5 | ❌ |
-| E-1. 높은 우선순위 | 4 | ✅ 완료 |
-| E-2. 중간 우선순위 | 6 | ✅ 5개 완료, Table 보류 |
-| E-3. 낮은 우선순위 | 6 | ✅ 완료 |
-| **합계** | **38** | |
+> `0cd704f2` 이전 분류에서 Panel은 D. Sub-component에 포함됐으나,
+> Phase 1에서 `_hasChildren`을 추가하여 컨테이너로 전환됐다 (아래 Phase 1 섹션 참조).
 
-**전환 불필요**: 19개 (A+B+D)
-**전환 완료**: 18개 (E-1: 4개 + C: 3개 + E-2: 5개 + E-3: 6개)
-**보류**: 1개 (Table — 3단계 중첩 별도 작업)
+기존 Sub-component 분류는 B-3. Color Sub-component로 통합됨.
 
 ---
 
-## 다음 단계
+## E. 신규 전환 대상 (17개) — 15개 완료, 2개 보류
 
-1. ~~**E-1 (4개)** 즉시 전환~~ ✅ `ea23d5fa`
-2. ~~**C (3개)** `_hasLabelChild` 패턴 적용~~ ✅ `dfae0947`
-3. ~~**E-2 (5개)** 반복 아이템 패턴 전환~~ ✅ List, ListBox, GridList, Pagination, ColorSwatchPicker
-4. **Table** 별도 작업 — 3단계 중첩(Table→TableRow→TableCell) + 특수 PixiTable 렌더 파이프라인
-5. ~~**E-3 (6개)** 컨테이너 컴포넌트 전환~~ ✅ Group, Section, ScrollBox, DropZone, FileTrigger, MaskedFrame
+### E-1. 높은 우선순위 (4개) — 완료
+
+| 컴포넌트 | 패턴 | spec 유지 shapes | 커밋 |
+|---------|------|-----------------|------|
+| **TextArea** | TRANSPARENT → `return []` | (없음, 자식 전담) | `ea23d5fa` |
+| **Form** | NON-TRANSPARENT | bg + border | `ea23d5fa` |
+| **ToggleButtonGroup** | NON-TRANSPARENT | bg + border | `ea23d5fa` |
+| **Switcher** | NON-TRANSPARENT | track + border + active indicator | `ea23d5fa` |
+
+### E-2. 중간 우선순위 (7개) — 5개 완료, 2개 보류
+
+| 컴포넌트 | 패턴 | spec 유지 shapes | 상태 |
+|---------|------|-----------------|------|
+| **List** | NON-TRANSPARENT | bg + container | `c7a215c6` |
+| **ListBox** | NON-TRANSPARENT | bg + border | `c7a215c6` |
+| **GridList** | NON-TRANSPARENT | bg + border | `c7a215c6` |
+| **Pagination** | NON-TRANSPARENT | container | `c7a215c6` |
+| **ColorSwatchPicker** | NON-TRANSPARENT | bg | `c7a215c6` |
+| **Table** | 3단계 중첩 + PixiTable 파이프라인 | — | 보류 (`CHILD_COMPOSITION_EXCLUDE_TAGS`) |
+| **Tree** | 다단계 중첩 (TreeItem 재귀) | — | 보류 (`CHILD_COMPOSITION_EXCLUDE_TAGS`) |
+
+### E-3. 낮은 우선순위 (6개) — 완료
+
+| 컴포넌트 | 패턴 | spec 유지 shapes | 커밋 |
+|---------|------|-----------------|------|
+| **Group** | TRANSPARENT → `return []` | (없음) | `1f49424a` |
+| **Section** | NON-TRANSPARENT | bg + border | `1f49424a` |
+| **ScrollBox** | NON-TRANSPARENT | bg + border + scrollbar | `1f49424a` |
+| **DropZone** | NON-TRANSPARENT | bg + dashed border | `1f49424a` |
+| **FileTrigger** | NON-TRANSPARENT | bg + border | `1f49424a` |
+| **MaskedFrame** | NON-TRANSPARENT | mask + border | `1f49424a` |
+
+---
+
+## F. 기존 적용 완료 (23개)
+
+이전 작업에서 이미 `_hasChildren` 패턴이 적용됐던 컴포넌트.
+`0cd704f2`에서 `_hasLabelChild` → `_hasChildren` 통합 정리 포함.
+
+### F-1. Complex Containers (8개)
+
+| 컴포넌트 | 패턴 |
+|---------|------|
+| **Dialog** | NON-TRANSPARENT |
+| **Menu** | NON-TRANSPARENT |
+| **Popover** | NON-TRANSPARENT |
+| **Tooltip** | NON-TRANSPARENT |
+| **Toast** | NON-TRANSPARENT |
+| **Toolbar** | NON-TRANSPARENT |
+| **Disclosure** | NON-TRANSPARENT |
+| **DisclosureGroup** | NON-TRANSPARENT |
+
+### F-2. Form Groups (2개)
+
+| 컴포넌트 | 패턴 |
+|---------|------|
+| **CheckboxGroup** | NON-TRANSPARENT |
+| **RadioGroup** | NON-TRANSPARENT |
+
+### F-3. Pickers / Calendar (4개)
+
+| 컴포넌트 | 패턴 |
+|---------|------|
+| **ColorPicker** | NON-TRANSPARENT |
+| **DatePicker** | NON-TRANSPARENT |
+| **DateRangePicker** | NON-TRANSPARENT |
+| **Calendar** | NON-TRANSPARENT |
+
+### F-4. Complex Inputs (3개) — `0cd704f2`에서 통합 정리
+
+| 컴포넌트 | 변경 내용 |
+|---------|----------|
+| **ComboBox** | `_hasLabelChild` → `_hasChildren` (interface + 체크) |
+| **Select** | `_hasLabelChild` → `_hasChildren` (interface + 체크) |
+| **Slider** | `_hasLabelChild` → `_hasChildren` |
+
+### F-5. Input Fields (6개) — `0cd704f2`에서 통합 정리
+
+| 컴포넌트 | 변경 내용 |
+|---------|----------|
+| **TextField** | dual-check `_hasLabelChild \|\| _hasChildren` → 단일 `_hasChildren` |
+| **NumberField** | 동일 |
+| **SearchField** | 동일 |
+| **DateField** | 동일 |
+| **TimeField** | 동일 |
+| **ColorField** | 동일 |
+
+---
+
+## 신규: Phase 1 — Spec `_hasChildren` 추가 (7개)
+
+`0cd704f2` 이전까지 B. Leaf 컴포넌트로 분류됐던 컴포넌트들.
+미커밋 변경사항으로, opt-out 아키텍처 전환과 함께 `_hasChildren` 지원이 추가됐다.
+
+### 전환 배경
+
+Opt-out 모델에서는 이들 컴포넌트에 자식이 붙으면 자동으로 `_hasChildren: true`가 주입된다.
+그러나 spec의 `shapes()` 함수가 이 prop을 인식하지 못하면 여전히 내부 텍스트를 그린다.
+따라서 spec 측에도 `_hasChildren` 체크를 추가하여 텍스트 shapes를 조건부로 제거해야 한다.
+
+### 적용 컴포넌트
+
+| 컴포넌트 | spec 유지 shapes | 스킵 shapes | 이전 분류 |
+|---------|-----------------|------------|----------|
+| **Button** | bg + border | label text | B. Leaf |
+| **Badge** | bg + border | label text | B. Leaf |
+| **ToggleButton** | bg + border | label text | B. Leaf |
+| **Slot** | placeholder border | placeholder text | B. Leaf |
+| **Panel** | bg + border | — (content 전담) | D. Sub-component |
+| **ProgressBar** | track + fill | label text | B. Leaf |
+| **Meter** | track + fill + segments | label text | B. Leaf |
+
+### spec 변경 패턴
+
+모든 7개 spec에 동일한 패턴 적용:
+
+```typescript
+// 예시: Button.spec.ts
+shapes(props, variantSpec, sizeSpec, state) {
+  const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+  // ...
+  if (!hasChildren) {
+    result.push({
+      type: 'text',
+      text: String(props.children || props.label || 'Button'),
+      // ...
+    });
+  }
+  return result;
+}
+```
+
+---
+
+## 패턴 통합: `_hasLabelChild` → `_hasChildren` 단일화
+
+커밋 `0cd704f2`에서 `_hasLabelChild` 플래그를 전면 제거하고 `_hasChildren` 단일 패턴으로 통합.
+
+| 변경 대상 | 변경 내용 | 파일 수 |
+|----------|----------|--------|
+| Inline Form specs | `_hasLabelChild` → `_hasChildren` | 3 (Checkbox, Radio, Switch) |
+| Complex Input specs | interface + 체크 변경 | 2 (ComboBox, Select) |
+| Slider spec | `_hasLabelChild` → `_hasChildren` | 1 |
+| Input Field specs | dual-check `_hasLabelChild \|\| _hasChildren` → 단일 `_hasChildren` | 7 |
+| Card spec | `_hasChildren` 체크 신규 추가 | 1 |
+| ElementSprite.tsx | `CHILD_COMPOSITION_TAGS` 9개 추가 + `_hasLabelChild` 주입 코드 삭제 | 1 |
+| **합계** | | **15 specs + 1 인프라** |
+
+---
+
+## 최종 요약
+
+| 분류 | 개수 | 상태 |
+|------|------|------|
+| A. 자체 메커니즘 | 4 | Card 통합, Tabs/Breadcrumbs/TagGroup은 `CHILD_COMPOSITION_EXCLUDE_TAGS` 유지 |
+| B. NON_CONTAINER_TAGS | ~21 | TEXT_TAGS 14 + Void/Visual 3 + Color Sub 4 — 전환 불필요 |
+| C. Inline Form | 3 | 완료 |
+| E. 신규 전환 대상 | 17 | 15개 완료, Table/Tree 보류 |
+| F. 기존 적용 완료 | 23 | 기 적용 (`0cd704f2`에서 통합 정리) |
+| Phase 1 신규 | 7 | Button, Badge, ToggleButton, Slot, Panel, ProgressBar, Meter — 미커밋 |
+
+**`_hasChildren` 적용 완료**: 49개 (기존 42 + 신규 7)
+**전환 불필요 (NON_CONTAINER_TAGS)**: ~21개
+**합성 prop 주입 유지 (EXCLUDE_TAGS)**: 3개 (Tabs, Breadcrumbs, TagGroup)
+**보류 (EXCLUDE_TAGS)**: 2개 (Table, Tree — 다단계 중첩 별도 작업)
+
+---
+
+## 커밋 이력
+
+| 커밋 | 내용 |
+|------|------|
+| `ea23d5fa` | E-1: TextArea, Form, ToggleButtonGroup, Switcher |
+| `dfae0947` | C: Checkbox, Radio, Switch (`_hasLabelChild` 초기 구현) |
+| `c7a215c6` | E-2: List, ListBox, GridList, Pagination, ColorSwatchPicker |
+| `1f49424a` | E-3: Group, Section, ScrollBox, DropZone, FileTrigger, MaskedFrame |
+| `0cd704f2` | 패턴 통합: `_hasLabelChild` 전면 제거 → `_hasChildren` 단일화 (15 specs + Card + ElementSprite) |
+| 미커밋 | Phase 1: 7 specs (`_hasChildren`) + ElementSprite.tsx (`CHILD_COMPOSITION_EXCLUDE_TAGS` opt-out 전환 + `COMPLEX_COMPONENT_TAGS` 2단계 주입) + BuilderCanvas.tsx (`NON_CONTAINER_TAGS` opt-out 전환) + `factories/constants.ts` (`COMPLEX_COMPONENT_TAGS` 공유 상수 신규) + `useElementCreator.ts` (로컬 배열 → 공유 상수 교체) |
+
+---
+
+## 잔여 작업
+
+1. **Table** — `CHILD_COMPOSITION_EXCLUDE_TAGS`에서 제외 후 `_hasChildren` 체크 추가 필요.
+   3단계 중첩(Table → TableRow → TableCell) + PixiTable 특수 렌더 파이프라인으로 별도 설계 필요.
+
+2. **Tree** — `CHILD_COMPOSITION_EXCLUDE_TAGS`에서 제외 후 `_hasChildren` 체크 추가 필요.
+   다단계 중첩(Tree → TreeItem 재귀) + expand/collapse 상태 관리로 `_hasChildren` 미적용 상태.

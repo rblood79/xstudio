@@ -14,6 +14,7 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useMemo, useContext, useCallback, useRef } from 'react';
 import type { Element } from '../../../../types/core/store.types';
+import { COMPLEX_COMPONENT_TAGS } from '../../../factories/constants';
 // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
 // import { registerElement, unregisterElement } from '../elementRegistry';
 import { useSkiaNode } from '../skia/useSkiaNode';
@@ -1090,38 +1091,24 @@ export const ElementSprite = memo(function ElementSprite({
               }
             }
 
-            // 자식 조합 패턴: 자식 Element가 있으면 spec shapes에서 자체 렌더링 스킵
+            // 자식 조합 패턴 (opt-out): 자식 Element가 있으면 spec shapes에서 자체 렌더링 스킵
             // Figma/HTML 구조와 일치: spec은 배경/테두리만, 자식이 콘텐츠 담당
-            const CHILD_COMPOSITION_TAGS = new Set([
-              // Input Fields
-              'TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',
-              'TextArea', 'Textarea',
-              // Overlay
-              'Dialog', 'Popover', 'Tooltip', 'Toast',
-              // Navigation
-              'Menu', 'Disclosure', 'DisclosureGroup', 'Toolbar',
-              // Groups
-              'CheckboxGroup', 'RadioGroup', 'ToggleButtonGroup',
-              // Switcher
-              'Switcher',
-              // Form
-              'Form',
-              // Date & Color
-              'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
-              // E-2: 반복 아이템 컴포넌트
-              'ListBox', 'GridList', 'List', 'Pagination', 'ColorSwatchPicker',
-              // E-3: 컨테이너 컴포넌트
-              'Group', 'Section', 'ScrollBox', 'DropZone', 'FileTrigger', 'MaskedFrame',
-              // Inline Form: indicator/track은 spec shapes 유지, label만 자식 Element
-              'Checkbox', 'Radio', 'Switch',
-              'ComboBox', 'Select', 'Dropdown',
-              'Slider', 'RangeSlider',
-              // A-group 통합: Card (Form과 동일 구조)
-              'Card',
+            // Opt-out: 자체 synthetic prop 메커니즘 또는 복잡한 다단계 중첩으로 _hasChildren 주입 제외
+            const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
+              'Tabs',        // _tabLabels synthetic prop
+              'Breadcrumbs', // _crumbs synthetic prop
+              'TagGroup',    // _tagItems synthetic prop
+              'Table',       // 3단계 중첩 (별도 작업)
+              'Tree',        // 다단계 중첩 (별도 작업)
             ]);
 
-            if (CHILD_COMPOSITION_TAGS.has(tag) && childElements && childElements.length > 0) {
-              specProps = { ...specProps, _hasChildren: true };
+            if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
+              // Complex component: 자식 유무와 관계없이 항상 _hasChildren=true
+              // (자식 삭제 시 standalone 렌더링 복귀 방지)
+              // Non-complex (Button 등): 자식이 실제로 있을 때만 _hasChildren=true
+              if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
+                specProps = { ...specProps, _hasChildren: true };
+              }
             }
 
             // _hasLabelChild 패턴 제거 완료: CHILD_COMPOSITION_TAGS로 통합됨

@@ -196,7 +196,7 @@ const SPEC_SHAPES_INPUT_TAGS = new Set(['combobox', 'select', 'dropdown', 'bread
 
 ### Tabs 컨테이너 높이 계산
 
-Tabs는 CONTAINER_TAGS에 포함되며, 활성 Panel을 내부에 렌더링하는 복합 컴포넌트입니다.
+Tabs는 컨테이너로 처리되며 (`NON_CONTAINER_TAGS` 미포함), 활성 Panel을 내부에 렌더링하는 복합 컴포넌트입니다.
 `calculateContentHeight`에서 Tabs 전용 높이 케이스는 childElements 블록 **밖**에 배치합니다.
 Panel은 element tree에 자식이 없기 때문에, childElements 블록 안에서는 높이를 계산할 수 없습니다.
 
@@ -398,28 +398,46 @@ Parent Component (spec shapes: 배경/테두리만)
 └── Description / Footer (자식 Element)
 ```
 
-#### CHILD_COMPOSITION_TAGS (`ElementSprite.tsx`)
+#### `_hasChildren` 주입 방식: Opt-out (블랙리스트) + Complex 보장
 
-자식이 있을 때 `_hasChildren: true` flag를 spec props에 주입하는 통합 Set:
+`ElementSprite.tsx`에서 `_hasChildren: true` flag를 spec props에 주입하는 방식입니다.
+두 가지 조건 중 하나라도 만족하면 `_hasChildren: true`가 주입됩니다.
+
+**조건 1 — Complex component**: `COMPLEX_COMPONENT_TAGS`에 등록된 태그는 자식 유무와 관계없이 **항상** `_hasChildren: true`를 주입합니다. 자식을 모두 삭제해도 standalone spec 렌더링(label+input 통합 shapes)으로 되돌아가지 않습니다.
+
+**조건 2 — 자식이 실제로 존재**: `COMPLEX_COMPONENT_TAGS`에 없는 일반 컴포넌트(Button 등)는 자식 Element가 실제로 있을 때만 `_hasChildren: true`를 주입합니다.
+
+**예외(opt-out)**: `CHILD_COMPOSITION_EXCLUDE_TAGS`에 등록된 태그는 위 두 조건 이전에 평가되어 주입 자체를 건너뜁니다.
 
 ```typescript
-const CHILD_COMPOSITION_TAGS = new Set([
-  // Input Fields
-  'TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',
-  // Overlay
-  'Dialog', 'Popover', 'Tooltip', 'Toast',
-  // Navigation
-  'Menu', 'Disclosure', 'DisclosureGroup', 'Toolbar',
-  // Groups
-  'CheckboxGroup', 'RadioGroup',
-  // Date & Color
-  'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
+// ElementSprite.tsx — COMPLEX_COMPONENT_TAGS 기반 조건 (2026-02-24 수정)
+import { COMPLEX_COMPONENT_TAGS } from '../../../factories/constants';
+
+const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
+  'Tabs',        // _tabLabels synthetic prop 사용 (별도 메커니즘)
+  'Breadcrumbs', // _crumbs synthetic prop 사용 (별도 메커니즘)
+  'TagGroup',    // _tagItems synthetic prop 사용 (별도 메커니즘)
+  'Table',       // 다단계 중첩 구조 (별도 작업)
+  'Tree',        // 다단계 중첩 구조 (별도 작업)
 ]);
 
-if (CHILD_COMPOSITION_TAGS.has(tag) && childElements && childElements.length > 0) {
-  specProps = { ...specProps, _hasChildren: true };
+if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
+  // Complex component: 자식 유무와 관계없이 항상 _hasChildren=true
+  // Non-complex (Button 등): 자식이 실제로 있을 때만 _hasChildren=true
+  if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
+    specProps = { ...specProps, _hasChildren: true };
+  }
 }
 ```
+
+**수정 전(버그)**: `childElements.length > 0`만 체크 → TextField의 자식을 모두 삭제하면 `_hasChildren=false` → standalone label+input spec shapes 재활성화.
+**수정 후**: `COMPLEX_COMPONENT_TAGS.has(tag)` 우선 체크 → complex component는 자식 없어도 항상 `_hasChildren=true` → 빈 shell 유지.
+
+**`CHILD_COMPOSITION_EXCLUDE_TAGS`에 등록되는 이유**:
+- **synthetic prop 사용 컴포넌트** (Tabs, Breadcrumbs, TagGroup): 자체 prop 주입 메커니즘이 별도로 있어 `_hasChildren` 방식이 필요 없음
+- **다단계 중첩 구조** (Table, Tree): 자식 렌더링이 복잡하여 별도 구현 필요
+
+> `CHILD_COMPOSITION_EXCLUDE_TAGS` 소속 태그 중 일부(Tabs, Tree, TagGroup, Table)는 `COMPLEX_COMPONENT_TAGS`에도 포함됩니다. `CHILD_COMPOSITION_EXCLUDE_TAGS` 가드가 먼저 평가되므로 `COMPLEX_COMPONENT_TAGS` 체크는 안전하게 차단됩니다.
 
 #### Spec shapes() 패턴 — 3가지 카테고리
 
@@ -437,8 +455,7 @@ const shapes: Shape[] = [
   { id: 'bg', type: 'roundRect', ... },  // 배경
   { type: 'border', target: 'bg', ... }, // 테두리
 ];
-const hasChildren = !!(props as Record<string, unknown>)._hasLabelChild
-                 || !!(props as Record<string, unknown>)._hasChildren;
+const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 if (hasChildren) return shapes; // bg+border만 반환
 
 // 아래부터 standalone 전용 텍스트/콘텐츠 shapes
@@ -552,23 +569,32 @@ if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
    - `_hasChildren` 체크 → 배경 shapes만 반환 (TRANSPARENT) 또는 shell shapes만 반환 (NON-TRANSPARENT)
    - standalone 텍스트/콘텐츠 shapes는 체크 이후에 추가
 
-2. **ElementSprite.tsx**:
-   - `CHILD_COMPOSITION_TAGS` Set에 태그 추가
+2. **`COMPLEX_COMPONENT_TAGS` 등록** (`apps/builder/src/builder/factories/constants.ts`):
+   - factory가 자식 Element를 생성하는 복합 컴포넌트라면 반드시 이 Set에 추가
+   - 등록하지 않으면 자식 삭제 시 `_hasChildren=false`가 되어 standalone spec shapes가 재활성화됨
+   - `CHILD_COMPOSITION_EXCLUDE_TAGS` 소속 태그(Tabs, TagGroup 등)도 `useElementCreator.ts`의 Factory 경로 분기용으로 등록
+
+3. **ElementSprite.tsx**:
+   - `COMPLEX_COMPONENT_TAGS`에 등록하면 `_hasChildren` 주입은 자동으로 보장됨 — 추가 작업 불필요
+   - 단, synthetic prop 메커니즘을 별도로 사용하거나 다단계 중첩 구조라면 `CHILD_COMPOSITION_EXCLUDE_TAGS`에 추가
    - 배경/테두리를 spec이 담당하면 `TRANSPARENT_CONTAINER_TAGS`에도 추가
 
-3. **BuilderCanvas.tsx**:
-   - `CONTAINER_TAGS`에 태그 추가 (이미 등록되어 있지 않은 경우)
+4. **BuilderCanvas.tsx**:
+   - 기본적으로 모든 컴포넌트가 컨테이너로 처리됨 — 추가 작업 불필요
+   - 단, TEXT_TAGS / void 요소 / Color Sub 컴포넌트처럼 자식 내부 렌더링이 불필요하면 `NON_CONTAINER_TAGS`에 추가
    - `createContainerChildRenderer` 내 props sync 분기 추가 (label, heading, description 등)
 
-4. **Factory 정의** (`apps/builder/src/builder/factories/definitions/`):
+5. **Factory 정의** (`apps/builder/src/builder/factories/definitions/`):
    - ComponentDefinition에 자식 Element 정의 (Label, Input, Description 등)
+   - `ComponentFactory.ts`에 creator 등록
 
-5. **검증**:
+6. **검증**:
    - `pnpm build` (specs 빌드)
    - `pnpm type-check` 통과
    - Canvas에서 드래그 앤 드롭 → 배경 + 자식 정상 렌더링
    - Layer 트리에서 자식 선택 → 스타일 편집 → Canvas 반영
    - 구 데이터 (자식 없음) → standalone 렌더링 유지
+   - **자식을 모두 삭제해도 빈 shell 유지** (standalone spec shapes로 되돌아가지 않음)
 
 ### Canvas 2D ↔ CanvasKit 폭 측정 오차 보정 (CRITICAL)
 
@@ -866,10 +892,46 @@ WebGL Canvas에서 TagGroup의 label("Tag Group")이 두 줄로 렌더링되던 
 > C등급 (자체 렌더링 + 수동 배치)은 Wave 4에서 전부 제거됐습니다.
 > `SELF_PADDING_TAGS`, `renderWithPixiLayout()` 등 구 패턴도 삭제 완료.
 
-### Complex Component 목록
+### Complex Component 목록 및 `COMPLEX_COMPONENT_TAGS` 공유 상수
 
 자식 DOM 구조를 factory로 생성하는 복합 컴포넌트입니다.
-`useElementCreator.ts`의 `complexComponents` 배열에 등록하고, `ComponentFactory.ts`에 creator를 등록합니다.
+
+**`COMPLEX_COMPONENT_TAGS`** (`apps/builder/src/builder/factories/constants.ts`): 두 곳에서 공유하는 Set 상수입니다.
+
+- **`useElementCreator.ts`**: `COMPLEX_COMPONENT_TAGS.has(tag)`로 Factory 경로 분기 — 복합 컴포넌트면 `ComponentFactory.createComplexComponent()` 호출
+- **`ElementSprite.tsx`**: `COMPLEX_COMPONENT_TAGS.has(tag)`로 `_hasChildren=true` 강제 주입 — 자식 삭제 후에도 standalone spec shapes로 되돌아가지 않도록 보장
+
+```typescript
+// apps/builder/src/builder/factories/constants.ts
+export const COMPLEX_COMPONENT_TAGS = new Set([
+  // Form Input
+  'TextField', 'TextArea', 'NumberField', 'SearchField',
+  'DateField', 'TimeField', 'ColorField',
+  // Selection
+  'Select', 'ComboBox', 'ListBox', 'GridList', 'List',
+  // Control
+  'Checkbox', 'Radio', 'Switch', 'Slider',
+  'ToggleButtonGroup', 'Switcher',
+  // Group
+  'CheckboxGroup', 'RadioGroup',
+  // Layout
+  'Card',
+  // Navigation
+  'Menu', 'Disclosure', 'DisclosureGroup', 'Pagination',
+  // Overlay
+  'Dialog', 'Popover', 'Tooltip',
+  // Feedback
+  'Form', 'Toast', 'Toolbar',
+  // Date & Color
+  'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker', 'ColorSwatchPicker',
+  // CHILD_COMPOSITION_EXCLUDE_TAGS 소속 (synthetic prop 메커니즘 사용)
+  // ElementSprite에서 EXCLUDE 가드가 먼저 평가되므로 _hasChildren 주입 차단 — 안전
+  // useElementCreator의 Factory 경로 분기 목적으로만 등록
+  'Tabs', 'Tree', 'TagGroup', 'Table',
+]);
+```
+
+**버그 수정 맥락 (2026-02-24)**: 이전에는 `useElementCreator.ts`에 로컬 `complexComponents` 배열이 있었고, `ElementSprite.tsx`는 `childElements.length > 0`만 체크했습니다. TextField 등에서 자식을 모두 삭제하면 `_hasChildren=false`가 되어 standalone label+input spec shapes가 재활성화되는 버그가 있었습니다. `COMPLEX_COMPONENT_TAGS` 공유 상수 도입으로 두 파일이 동일한 목록을 참조하고, `ElementSprite.tsx`는 complex component에 항상 `_hasChildren=true`를 주입하여 버그를 수정했습니다.
 
 | 컴포넌트 | DOM 구조 | factory 정의 파일 |
 |----------|---------|-----------------|
@@ -883,24 +945,42 @@ WebGL Canvas에서 TagGroup의 label("Tag Group")이 두 줄로 렌더링되던 
 - `Slider.css`는 class selector 대신 `[data-size="sm"]`, `[data-variant="primary"]` data-attribute selector 사용
 - SLIDER_DIMENSIONS 기준: `{ sm: { trackHeight: 4, thumbSize: 14 }, md: { trackHeight: 6, thumbSize: 18 }, lg: { trackHeight: 8, thumbSize: 22 } }`
 
-### CHILD_COMPOSITION_TAGS 컴포넌트 목록
+### `_hasChildren` 주입 제외 대상: `CHILD_COMPOSITION_EXCLUDE_TAGS`
 
-자식 조합 패턴을 사용하는 컴포넌트입니다.
-`ElementSprite.tsx`의 `CHILD_COMPOSITION_TAGS` Set에 등록하고, spec shapes는 배경/테두리만 담당합니다.
+자식 조합 패턴에서 `_hasChildren` 주입을 건너뛰는 예외 컴포넌트 목록입니다.
+`ElementSprite.tsx`의 `CHILD_COMPOSITION_EXCLUDE_TAGS` Set에 등록됩니다.
 
-| 카테고리 | 컴포넌트 | TRANSPARENT | spec 반환 (hasChildren) |
-|---------|---------|-------------|----------------------|
-| Input Fields | TextField, NumberField, SearchField, DateField, TimeField, ColorField | ✅ | bg + border |
-| Overlay | Dialog, Popover, Tooltip, Toast | ❌ | shadow + bg + border |
-| Navigation | Menu, Disclosure, DisclosureGroup, Toolbar | ❌ | bg + border |
-| Groups | CheckboxGroup, RadioGroup | ✅ | `[]` (빈 배열) |
-| Date & Color | DatePicker, DateRangePicker, Calendar, ColorPicker | ❌ | bg shapes 유지 |
+**기본 원칙**: 모든 컴포넌트에 자식이 있으면(또는 `COMPLEX_COMPONENT_TAGS`에 속하면) `_hasChildren: true`가 주입됩니다.
+아래 컴포넌트만 예외적으로 주입을 건너뜁니다.
 
-### CONTAINER_TAGS 컴포넌트 목록
+| 컴포넌트 | 제외 이유 | 대체 메커니즘 |
+|---------|---------|-------------|
+| `Tabs` | `_tabLabels` synthetic prop 사용 | `effectiveElementWithTabs`로 탭 레이블 주입 |
+| `Breadcrumbs` | `_crumbs` synthetic prop 사용 | 자식 Breadcrumb 텍스트 수집 → `_crumbs` 배열 주입 |
+| `TagGroup` | `_tagItems` synthetic prop 사용 | 자식 Tag 정보 수집 → `_tagItems` 배열 주입 |
+| `Table` | 다단계 중첩 구조 | 별도 구현 예정 |
+| `Tree` | 다단계 중첩 구조 | 별도 구현 예정 |
 
-레이아웃 엔진이 내부 자식 배치를 담당하는 컨테이너 태그 목록입니다.
-이 태그들은 `enrichWithIntrinsicSize` 흐름에서 자식 렌더링 경로를 별도 처리합니다.
+**새 컴포넌트를 `CHILD_COMPOSITION_EXCLUDE_TAGS`에 추가하는 경우**:
+- synthetic prop 메커니즘(`_crumbs`, `_tabLabels` 등)을 별도로 사용하는 경우
+- 자식 조합이 아닌 복잡한 다단계 중첩이 필요한 경우
 
+### 자식 내부 렌더링 제외 대상: `NON_CONTAINER_TAGS`
+
+`BuilderCanvas.tsx`에서 자식 Element를 내부에 렌더링하지 않는 태그 목록입니다.
+**기본 원칙**: 모든 컴포넌트가 컨테이너로 처리됩니다. 아래 카테고리만 제외됩니다.
+
+| 카테고리 | 설명 | 예시 |
+|---------|------|------|
+| TEXT_TAGS | TextSprite로 렌더링, 자식 배치 불가 | `Text`, `Heading`, `Description`, `Label`, `Paragraph`, `Link`, `Strong`, `Em`, `Code`, `Pre`, `Blockquote` |
+| Void 요소 | 자식이 없는 단일 요소 | `Input`, `Textarea`, `Hr`, `Br`, `Img` 등 |
+| Color Sub 컴포넌트 | 상위 컨테이너가 렌더링 담당 | `ColorSwatch`, `ColorThumb`, `ColorSlider` 등 |
+
+**이전 컨테이너 태그 목록 (구 opt-in 방식)**:
+구 아키텍처에서는 `CONTAINER_TAGS`(화이트리스트)에 등록된 컴포넌트만 자식을 내부에 렌더링했습니다.
+현재는 opt-out 방식으로 전환되어, `NON_CONTAINER_TAGS`에 없으면 자동으로 컨테이너로 처리됩니다.
+
+특별 처리가 필요한 컨테이너:
 - **Tabs**: Tab bar(spec shapes) + 활성 Panel(container) 렌더링
   - Tab 요소는 spec shapes가 렌더링 (`isSkippedChild` 처리)
   - Panel 요소는 컨테이너 시스템으로 내부 렌더링
@@ -911,12 +991,12 @@ WebGL Canvas에서 TagGroup의 label("Tag Group")이 두 줄로 렌더링되던 
   - 자식 Heading/Description은 TEXT_TAGS 경로 → TextSprite 렌더링
   - Card spec shapes는 배경/테두리/그림자만 담당 (텍스트 미포함)
 - **TagGroup**: Label + TagList를 column 방향으로 배치하는 컨테이너
-  - CONTAINER_TAGS로 등록 — spec shapes 렌더링 없이 자식 Element를 직접 배치
+  - spec shapes 렌더링 없이 자식 Element를 직접 배치
   - Label은 자식 Element(TEXT_TAGS 경로 → TextSprite)가 렌더링 — spec shapes에서 중복 렌더링 금지
   - TagGroup.spec.ts의 shapes()는 배경/테두리 등 시각 컨테이너 요소만 반환 (label 텍스트 미포함)
   - isYogaSizedContainer로 분류: Yoga가 Label + TagList 높이 합산으로 컨테이너 크기 자동 결정
 - **Breadcrumbs**: `filteredContainerChildren = []` — 자식 Breadcrumb 텍스트를 `_crumbs` 배열로 주입하여 spec shapes에서 렌더링
-  - CONTAINER_TAGS로 등록 — 자식 Breadcrumb 요소를 element tree에서 직접 배치하지 않음
+  - 자식 Breadcrumb 요소를 element tree에서 직접 배치하지 않음
   - `ElementSprite.tsx`에서 `tag === 'breadcrumbs'` 분기: 자식 중 `tag === 'Breadcrumb'`인 요소의 `props.children` 수집 → `_crumbs` prop 주입
   - `Breadcrumbs.spec.ts`의 shapes()가 `_crumbs` 배열 기반으로 구분자 포함 텍스트 shape 렌더링
   - SPEC_SHAPES_INPUT_TAGS에 `'breadcrumbs'` 포함 → `enrichWithIntrinsicSize`의 contentHeight ≤ 0 early return 우회

@@ -2,6 +2,7 @@ import { useCallback, useRef, useEffect } from 'react';
 import { Element, ComponentElementProps } from '../../types/builder/unified.types';
 import { HierarchyManager } from '../utils/HierarchyManager';
 import { ComponentFactory } from '../factories/ComponentFactory';
+import { COMPLEX_COMPONENT_TAGS } from '../factories/constants';
 import { useErrorHandler, type ErrorInfo } from './useErrorHandler';
 import { generateCustomId } from '../utils/idGeneration';
 import {
@@ -228,26 +229,10 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                     timestamp: new Date()
                 });
 
-                // 복합 컴포넌트인지 확인
-                const complexComponents = [
-                    'TextField', 'TextArea', 'ToggleButtonGroup', 'Switcher', 'CheckboxGroup', 'RadioGroup',
-                    'Checkbox', 'Radio', 'Switch',
-                    'Select', 'ComboBox', 'Slider', 'Tabs', 'Tree', 'TagGroup', 'ListBox', 'GridList', 'Table',
-                    'Card',
-                    'Menu', 'Disclosure', 'DisclosureGroup',
-                    'Dialog', 'Popover', 'Tooltip',
-                    // ⭐ Form/Feedback/Action 복합 컴포넌트
-                    'Form', 'Toast', 'Toolbar',
-                    // ⭐ Date & Color 복합 컴포넌트
-                    'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
-                    // ⭐ Input 복합 컴포넌트
-                    'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',
-                    // ⭐ E-2: 반복 아이템 복합 컴포넌트
-                    'List', 'Pagination', 'ColorSwatchPicker',
-                ];
+                // 복합 컴포넌트인지 확인 (공유 상수 사용)
 
                 const operation = async () => {
-                    if (complexComponents.includes(tag)) {
+                    if (COMPLEX_COMPONENT_TAGS.has(tag)) {
                         console.log(`🏗️ 복합 컴포넌트 생성 시작: ${tag}`, layoutId ? `(Layout: ${layoutId})` : '');
                         // ComponentFactory를 사용하여 복합 컴포넌트 생성
                         const result = await ComponentFactory.createComplexComponent(

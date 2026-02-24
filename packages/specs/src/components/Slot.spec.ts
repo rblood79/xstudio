@@ -127,20 +127,25 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
           style: 'dashed',
           radius: borderRadius as unknown as number,
         },
-        // 플레이스홀더 텍스트
-        {
-          type: 'text' as const,
-          x: paddingX,
-          y: 0,
-          text: label,
-          fontSize: fontSize as unknown as number,
-          fontFamily: ff,
-          fontWeight: fw,
-          fill: textColor,
-          align: textAlign,
-          baseline: 'middle' as const,
-        },
       ];
+
+      // Child Composition: 자식 Element가 있으면 shell만 반환
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
+      // 플레이스홀더 텍스트
+      shapes.push({
+        type: 'text' as const,
+        x: paddingX,
+        y: 0,
+        text: label,
+        fontSize: fontSize as unknown as number,
+        fontFamily: ff,
+        fontWeight: fw,
+        fill: textColor,
+        align: textAlign,
+        baseline: 'middle' as const,
+      });
 
       return shapes;
     },

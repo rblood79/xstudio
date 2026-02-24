@@ -4624,12 +4624,12 @@ CanvasKit Surface (z-index: 3)    ← 시각적 렌더링만 (pointerEvents: aut
 PixiJS Canvas (z-index: 4)        ← 이벤트 전용 (alpha=0, 보이지 않음)
   └── Camera Container (alpha=0)
       └── ElementSprite[]         ← 각각 eventMode="static" + onPointerDown
-          └── 재귀적 자식 ElementSprite (CONTAINER_TAGS 내부)
+          └── 재귀적 자식 ElementSprite (컨테이너 내부)
 ```
 
 - PixiJS 8 EventBoundary는 `alpha=0`을 prune 조건으로 사용하지 않음 → 히트 테스팅 유지
 - 각 ElementSprite는 300ms 기반 더블클릭 감지 (handleContainerPointerDown)
-- CONTAINER_TAGS의 자식은 `createContainerChildRenderer()`로 재귀 렌더링 → 각 자식이 독립 ElementSprite
+- 컨테이너(`NON_CONTAINER_TAGS` 미포함, §9.13 opt-out 참조)의 자식은 `createContainerChildRenderer()`로 재귀 렌더링 → 각 자식이 독립 ElementSprite
 
 #### 9.8.4 CONTAINER_TAGS 구조적 일관성 현황
 
@@ -4672,7 +4672,7 @@ PixiJS Canvas (z-index: 4)        ← 이벤트 전용 (alpha=0, 보이지 않�
     ]
   }
   ```
-- [ ] **3. CONTAINER_TAGS 등록**: `BuilderCanvas.tsx`의 `CONTAINER_TAGS` Set에 추가
+- [ ] **3. 컨테이너 확인**: `BuilderCanvas.tsx`의 `NON_CONTAINER_TAGS`에 포함되지 않는지 확인 (§9.13 opt-out 전환)
 - [ ] **4. Default Props**: `unified.types.ts`에 `createDefaultXXXProps()` 추가 (display, layout 기본값)
 - [ ] **5. Renderer 등록**: `packages/shared/src/renderers/`에서 children 렌더링 지원
 - [ ] **6. Spec 등록 (leaf일 경우)**: `TAG_SPEC_MAP`에 매핑 (컨테이너는 등록하지 않음)
@@ -4688,7 +4688,7 @@ PixiJS Canvas (z-index: 4)        ← 이벤트 전용 (alpha=0, 보이지 않�
 
 ```
 규칙 1: 웹 컴포넌트의 JSX children 계층 = Factory의 children 계층
-규칙 2: 컨테이너 → CONTAINER_TAGS + display 기본값 (flex/block)
+규칙 2: 컨테이너 → NON_CONTAINER_TAGS 미포함 + display 기본값 (flex/block) (§9.13 opt-out 전환)
 규칙 3: 리프 UI → TAG_SPEC_MAP + ComponentSpec (Skia 렌더링)
 규칙 4: 컨테이너의 레이아웃 = 웹 CSS와 동일 (TaffyFlexEngine/DropflowBlockEngine)
 규칙 5: Layer Tree 선택 = Canvas Drill-Down 선택 (editingContextId 동기화)
@@ -5243,30 +5243,104 @@ TextField.spec.ts shapes(_hasChildren=true) → [bg, border]  (shell만)
 
 ### 9.13.2 인프라 변경
 
-#### CHILD_COMPOSITION_TAGS (`ElementSprite.tsx`)
+#### Opt-Out 아키텍처: CHILD_COMPOSITION_EXCLUDE_TAGS (`ElementSprite.tsx`)
 
-자식이 있을 때 `_hasChildren: true`를 spec props에 주입하는 통합 Set.
-기존 TextField-only 분기를 20개 컴포넌트 통합 Set으로 확장.
+기존 화이트리스트(`CHILD_COMPOSITION_TAGS`, 42개)에서 **블랙리스트(`CHILD_COMPOSITION_EXCLUDE_TAGS`, 5개)로 전환**.
+자식이 있으면 **기본적으로** `_hasChildren: true`를 주입하고, 제외 태그만 스킵한다.
 
 ```typescript
-const CHILD_COMPOSITION_TAGS = new Set([
-  'TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',
-  'Dialog', 'Popover', 'Tooltip', 'Toast',
-  'Menu', 'Disclosure', 'DisclosureGroup', 'Toolbar',
-  'CheckboxGroup', 'RadioGroup',
-  'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
+// 자체 synthetic prop 메커니즘 또는 복잡한 다단계 중첩으로 제외
+const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
+  'Tabs',        // _tabLabels synthetic prop
+  'Breadcrumbs', // _crumbs synthetic prop
+  'TagGroup',    // _tagItems synthetic prop
+  'Table',       // 3단계 중첩 (별도 작업)
+  'Tree',        // 다단계 중첩 (별도 작업)
 ]);
 
-if (CHILD_COMPOSITION_TAGS.has(tag) && childElements && childElements.length > 0) {
-  specProps = { ...specProps, _hasChildren: true };
-}
-
-// _hasLabelChild는 Select/ComboBox/Slider 유지 (부분 스킵 패턴)
-if (['ComboBox', 'Select', 'Dropdown', 'Slider', 'RangeSlider'].includes(tag) && childElements) {
-  const hasLabelChild = childElements.some(c => c.tag === 'Label');
-  if (hasLabelChild) {
-    specProps = { ...specProps, _hasLabelChild: true };
+if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
+  // Complex component: 자식 유무와 관계없이 항상 _hasChildren=true
+  // (자식 삭제 시 standalone 렌더링 복귀 방지)
+  // Non-complex (Button 등): 자식이 실제로 있을 때만 _hasChildren=true
+  if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
+    specProps = { ...specProps, _hasChildren: true };
   }
+}
+```
+
+> **전환 이유**: 노코드 빌더에서 사용자가 제공 컴포넌트만으로 모든 요구를 충족할 수 없으므로,
+> 모든 컴포넌트가 기본적으로 자식 조합을 허용해야 한다. 화이트리스트(opt-in)는 신규 컴포넌트마다
+> 3중 수동 등록(CHILD_COMPOSITION_TAGS + CONTAINER_TAGS + spec 수정)을 요구하여 자유 조합을 차단했다.
+
+
+#### 공유 상수: COMPLEX_COMPONENT_TAGS (`factories/constants.ts`)
+
+Factory가 자식 Element를 생성하는 컴포넌트 태그를 **공유 상수**로 분리한다.
+이 Set에 포함된 태그는 자식 유무와 관계없이 **항상 `_hasChildren: true`**를 받는다.
+
+```typescript
+// apps/builder/src/builder/factories/constants.ts
+export const COMPLEX_COMPONENT_TAGS = new Set([
+  // Form Input
+  'TextField', 'TextArea', 'NumberField', 'SearchField',
+  'DateField', 'TimeField', 'ColorField',
+  // Selection
+  'Select', 'ComboBox', 'ListBox', 'GridList', 'List',
+  // Control
+  'Checkbox', 'Radio', 'Switch', 'Slider',
+  'ToggleButtonGroup', 'Switcher',
+  // Group
+  'CheckboxGroup', 'RadioGroup',
+  // Layout
+  'Card',
+  // Navigation
+  'Menu', 'Disclosure', 'DisclosureGroup', 'Pagination',
+  // Overlay
+  'Dialog', 'Popover', 'Tooltip',
+  // Feedback
+  'Form', 'Toast', 'Toolbar',
+  // Date & Color
+  'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
+  'ColorSwatchPicker',
+  // CHILD_COMPOSITION_EXCLUDE_TAGS 태그 (Factory 경로 분기용)
+  'Tabs', 'Tree', 'TagGroup', 'Table',
+]);
+```
+
+**동작 규칙**:
+
+| 컴포넌트 유형 | `_hasChildren` 조건 | 예시 |
+|-------------|-------------------|------|
+| Complex Component | 항상 `true` (자식 삭제해도 유지) | TextField, Select, Slider |
+| Non-complex Component | 자식이 실제로 있을 때만 `true` | Button, Badge |
+
+> **도입 이유**: TextField 등에서 모든 자식을 삭제했을 때 `_hasChildren`이 `false`가 되어
+> standalone 렌더링(label+input 일체형)이 재활성화되는 버그 수정.
+> 근본 원인: `_hasChildren`이 런타임 `childElements.length > 0`에만 의존했던 설계.
+> `COMPLEX_COMPONENT_TAGS.has(tag)` 조건을 선행 검사함으로써 해결.
+
+#### Opt-Out 아키텍처: NON_CONTAINER_TAGS (`BuilderCanvas.tsx`)
+
+기존 화이트리스트(`CONTAINER_TAGS`, 49개)에서 **블랙리스트(`NON_CONTAINER_TAGS`, ~21개)로 전환**.
+대부분의 컴포넌트가 기본적으로 컨테이너로 작동하고, 자식을 내부에 렌더링할 수 없는 태그만 제외한다.
+
+```typescript
+const NON_CONTAINER_TAGS = useMemo(() => new Set([
+  // TEXT_TAGS: TextSprite 렌더링, 컨테이너 불가
+  'Text', 'Heading', 'Description', 'Label', 'Paragraph',
+  'Link', 'Strong', 'Em', 'Code', 'Pre', 'Blockquote',
+  'ListItem', 'ListBoxItem', 'GridListItem',
+  // Void/Visual: 자식 없는 단일 요소
+  'Input', 'Separator', 'Skeleton',
+  // Color Sub-component: 부모 ColorPicker의 내부 요소
+  'ColorSwatch', 'ColorWheel', 'ColorArea', 'ColorSlider',
+]), []);
+
+function isContainerTagForLayout(tag: string, style?: Record<string, unknown>): boolean {
+  if (tag === 'Section') {
+    return style?.display === 'flex' || style?.flexDirection !== undefined;
+  }
+  return !NON_CONTAINER_TAGS.has(tag);  // 블랙리스트 반전
 }
 ```
 
@@ -5391,49 +5465,44 @@ if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
 | 구 데이터 (자식 없음) | `false` | spec shapes 전체 렌더링 (기존 동작) |
 | 새 데이터 (factory 자식 생성) | `true` | 자식이 콘텐츠 렌더링, spec은 shell만 |
 
-### 9.13.7 전환 대상 컴포넌트 전체 목록 (20개)
+### 9.13.7 `_hasChildren` 지원 컴포넌트 현황 (49개)
 
-| # | 컴포넌트 | 카테고리 | TRANSPARENT | hasChildren 반환 |
-|---|---------|---------|-------------|-----------------|
-| 1 | TextField | Input Field | ✅ | bg + border |
-| 2 | NumberField | Input Field | ✅ | bg + border |
-| 3 | SearchField | Input Field | ✅ | bg + border |
-| 4 | DateField | Input Field | ✅ | bg + border |
-| 5 | TimeField | Input Field | ✅ | bg + border |
-| 6 | ColorField | Input Field | ✅ | bg + border |
-| 7 | Dialog | Overlay | ❌ | backdrop + shadow + bg |
-| 8 | Popover | Overlay | ❌ | shadow + bg + border |
-| 9 | Tooltip | Overlay | ❌ | bg |
-| 10 | Toast | Overlay | ❌ | shadow + bg + border + accent |
-| 11 | Menu | Navigation | ❌ | shadow + bg + border |
-| 12 | Disclosure | Navigation | ❌ | bg + border |
-| 13 | DisclosureGroup | Navigation | ❌ | bg + border |
-| 14 | Toolbar | Navigation | ❌ | bg + border |
-| 15 | CheckboxGroup | Groups | ✅ | `[]` |
-| 16 | RadioGroup | Groups | ✅ | `[]` |
-| 17 | DatePicker | Date & Color | ❌ | trigger bg shapes |
-| 18 | DateRangePicker | Date & Color | ❌ | trigger bg shapes |
-| 19 | Calendar | Date & Color | ❌ | bg + header shapes |
-| 20 | ColorPicker | Date & Color | ❌ | shadow + bg + border |
+Opt-out 전환 후, 62개 spec 중 49개가 `_hasChildren`를 지원한다.
+나머지 13개는 제외 대상(CHILD_COMPOSITION_EXCLUDE_TAGS 5개) 또는 비 spec 태그이다.
+
+| 단계 | 컴포넌트 수 | 대표 컴포넌트 |
+|------|-----------|-------------|
+| E-1: 초기 20개 (Input, Overlay, Navigation, Groups, Date/Color) | 20 | TextField, Dialog, Menu, CheckboxGroup |
+| E-2: 확장 22개 (Container, Selection, Composite) | 22 | Card, Select, ComboBox, Slider, Switch |
+| Phase 1: 신규 7개 (Leaf, Visual) | 7 | Button, Badge, ToggleButton, Slot, Panel, ProgressBar, Meter |
+| **합계** | **49** | |
+
+> 제외: Tabs, Breadcrumbs, TagGroup (synthetic prop), Table, Tree (다단계 중첩)
 
 ### 9.13.8 핵심 파일
 
 | 파일 | 역할 |
 |-----|------|
-| `ElementSprite.tsx` L1090 | CHILD_COMPOSITION_TAGS Set + _hasChildren flag 전파 |
-| `ElementSprite.tsx` L876 | TRANSPARENT_CONTAINER_TAGS |
-| `BuilderCanvas.tsx` L625 | CONTAINER_TAGS |
+| `factories/constants.ts` | `COMPLEX_COMPONENT_TAGS` Set (40+개) — complex component 태그 공유 상수 |
+| `ElementSprite.tsx` L1105 | `CHILD_COMPOSITION_EXCLUDE_TAGS` (5개 블랙리스트) + `COMPLEX_COMPONENT_TAGS` + `_hasChildren` flag 전파 |
+| `ElementSprite.tsx` L876 | `TRANSPARENT_CONTAINER_TAGS` |
+| `BuilderCanvas.tsx` L625 | `NON_CONTAINER_TAGS` (~21개 블랙리스트) + `isContainerTagForLayout()` |
 | `BuilderCanvas.tsx` L661-963 | createContainerChildRenderer (layout 주입, props sync, transparent) |
 | `engines/utils.ts` L1148 | flex column border-box 높이 이중 계산 수정 |
 | `engines/index.ts` L227 | Dropflow fallback flex row/column + gap 처리 |
-| `packages/specs/src/components/*.spec.ts` | 20개 spec의 shapes() 함수 수정 |
+| `packages/specs/src/components/*.spec.ts` | 49개 spec의 shapes() 함수 `_hasChildren` 지원 |
 
-### 9.13.9 신규 컴포넌트 등록 체크리스트
+### 9.13.9 신규 컴포넌트 등록 체크리스트 (Opt-Out)
 
-1. **Spec 파일**: shapes()에 `_hasChildren` 체크 추가, 배경 shapes를 체크 이전에 정의
-2. **ElementSprite.tsx**: `CHILD_COMPOSITION_TAGS`에 태그 추가, 필요시 `TRANSPARENT_CONTAINER_TAGS`에도 추가
-3. **BuilderCanvas.tsx**: `CONTAINER_TAGS`에 태그 추가 (미등록 시), props sync 분기 추가
+대부분의 컴포넌트는 **등록 없이** 자동으로 자식 조합을 지원한다.
+아래는 특수한 경우에만 필요한 체크리스트:
+
+1. **Spec 파일**: shapes()에 `_hasChildren` 체크 추가 (bg/border shapes 이후 `if (hasChildren) return shapes;`)
+2. **ElementSprite.tsx**: 자체 synthetic prop이나 다단계 중첩이 필요하면 `CHILD_COMPOSITION_EXCLUDE_TAGS`에 추가
+3. **BuilderCanvas.tsx**: 컨테이너가 아닌 경우(텍스트, void 요소) `NON_CONTAINER_TAGS`에 추가. 필요시 props sync 분기 추가
 4. **Factory 정의**: 자식 Element 정의 (Label, Input, Description 등)
+   - **Factory 복합 컴포넌트인 경우**: `factories/constants.ts`의 `COMPLEX_COMPONENT_TAGS`에도 추가
+     (자식 삭제 시 standalone 렌더링 복귀 방지)
 5. **검증**: `pnpm build` + `pnpm type-check` + Canvas 시각 확인 + Layer 트리 자식 선택 확인
 
 ## 10. 기술 명세
@@ -6147,3 +6216,5 @@ Spec 수정 → pnpm --filter @xstudio/specs build → dist/ 갱신 → Builder 
 | 2026-02-22 | 3.13 | **§9.12 Slider Complex Component 전환**: (1) **Slider → Complex Component 전환** — `useElementCreator.ts` complexComponents 배열에 'Slider' 추가, `ComponentFactory.ts` Slider creator 등록, `FormComponents.ts` `createSliderDefinition()` 팩토리 추가. DOM 구조: `Slider > Label + SliderOutput + SliderTrack > SliderThumb`, (2) **TokenRef offsetY NaN 버그 수정** — `Slider.spec.ts` `size.fontSize`(TokenRef 문자열)를 숫자 연산에 직접 사용하여 NaN 발생. `resolveToken()` 호출로 해결. CRITICAL 규칙 추가: spec `shapes()` 내 TokenRef 필드는 숫자 연산 전 `resolveToken()` 필수, (3) **SliderOutput 위치 수정** — `x: width` → `x: 0` + `maxWidth: width`로 컨테이너 내 우측 정렬, (4) **`_hasLabelChild` 패턴 문서화** — Select/ComboBox/Slider 공통 패턴, 자식 element 담당 텍스트를 spec shapes에서 스킵하는 메커니즘, (5) **Slider.css data-attribute 전환** — `.sm`/`.primary` class selector → `[data-size="sm"]`/`[data-variant="primary"]` data-attribute selector, SLIDER_DIMENSIONS spec 정확히 반영 (sm=4/14, md=6/18, lg=8/22), M3 토큰 사용, (6) **unified.types.ts** — Slider 기본 props 수정 (value=50, width=200, height=45, showValue=true, maxWidth=300). §5.1 Slider 상태 "✅ 완전 지원 (Complex Component 전환 완료)"로 갱신. §5.3 Slider.spec.ts 체크리스트 완료 표기 |
 | 2026-02-23 | 3.14 | **§9.x Breadcrumbs CONTAINER_TAGS 전환 + Skia 렌더링**: (1) **Breadcrumbs.spec.ts** — `resolveToken` 기반 fontSize 해석, 기본 구분자 `›`, CSS 일치 sizes height (sm:16, md:24, lg:24), (2) **ElementSprite.tsx** — `_crumbs` prop 주입 (자식 Breadcrumb 텍스트 배열 → spec shapes), (3) **BuilderCanvas.tsx** — `CONTAINER_TAGS`에 `'Breadcrumbs'` 추가, `filteredContainerChildren = []` (spec shapes가 크럼 텍스트 직접 렌더링), (4) **utils.ts** — `calculateContentHeight` Breadcrumbs 핸들러 (sm:16, md:24, lg:24), `SPEC_SHAPES_INPUT_TAGS`에 `'breadcrumbs'` 추가, (5) **PixiBreadcrumbs** — Skia spec shapes 전환 완료로 더 이상 사용하지 않음. §6.1 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", §6.3 체크리스트 완료 표기, §9.8.4 테이블에 Breadcrumbs 행 추가, §9.8.5 전환 완료 목록에 Breadcrumbs 추가 |
 | 2026-02-24 | 3.15 | **§9.13 자식 조합 패턴(Child Composition Pattern) 전체 전환**: (1) **CHILD_COMPOSITION_TAGS 통합 Set** — ElementSprite.tsx에 20개 컴포넌트 등록 (Input Fields 6종, Overlay 4종, Navigation 4종, Groups 2종, Date&Color 4종), `_hasChildren: true` flag 주입으로 spec shapes 조건부 렌더링 (2) **TRANSPARENT_CONTAINER_TAGS 확장** — DateField, TimeField, ColorField, CheckboxGroup, RadioGroup 추가, (3) **Input Field 5종 spec 전환** — NumberField, SearchField, DateField, TimeField, ColorField shapes()에 `_hasChildren` → bg/border만 반환, (4) **Overlay 4종 spec 전환** — Dialog(backdrop+shadow+bg), Popover(shadow+bg+border), Tooltip(bg), Toast(shadow+bg+border+accent bar) 유지, 콘텐츠 스킵, (5) **Navigation 4종 spec 전환** — Menu(shadow+bg+border), Disclosure(bg+border), DisclosureGroup(bg+border), Toolbar(bg+border) 유지, 콘텐츠 스킵, (6) **Groups 2종** — CheckboxGroup, RadioGroup 빈 배열 반환 (transparent container), (7) **Date&Color 4종** — DatePicker, DateRangePicker, Calendar, ColorPicker 배경 shapes 유지 후 복합 콘텐츠 스킵, (8) **BuilderCanvas.tsx props sync 확장** — Input Fields 6종(label→Label), Overlay 4종(heading→Heading, description→Description), (9) **border-box 높이 이중 계산 수정** — calculateContentHeight flex column에서 form element border-box explicit height 감지, padding+border 미추가 (engines/utils.ts), (10) **Dropflow fallback flex 처리** — Taffy WASM 미로드 시 flex-direction row/column + gap 수동 후처리 (engines/index.ts) |
+| 2026-02-24 | 3.16 | **§9.13 Opt-In → Opt-Out 아키텍처 전환**: (1) **CHILD_COMPOSITION_TAGS(42개 화이트리스트) → CHILD_COMPOSITION_EXCLUDE_TAGS(5개 블랙리스트)** — 모든 컴포넌트가 기본적으로 자식 조합 허용, Tabs/Breadcrumbs/TagGroup(synthetic prop)/Table/Tree(다단계 중첩)만 제외 (ElementSprite.tsx), (2) **CONTAINER_TAGS(49개 화이트리스트) → NON_CONTAINER_TAGS(~21개 블랙리스트)** — TEXT_TAGS 14개 + Void/Visual 3개 + Color Sub-component 4개만 비컨테이너, 나머지 모두 컨테이너 (BuilderCanvas.tsx), (3) **isContainerTagForLayout() 반전** — `CONTAINER_TAGS.has(tag)` → `!NON_CONTAINER_TAGS.has(tag)`, Section 조건부 로직 유지, (4) **7개 신규 spec `_hasChildren` 추가** — Button, Badge, ToggleButton, Slot, Panel, ProgressBar, Meter (packages/specs/src/components/), (5) **`_hasChildren` 지원 spec 총 49개** (E-1: 20개 + E-2: 22개 + Phase 1: 7개), (6) **전환 동기** — 노코드 빌더에서 DOM+CSS 자유 조합 지원, 3중 수동 등록(CHILD_COMPOSITION_TAGS + CONTAINER_TAGS + spec) 제거, (7) **§9.8.5 체크리스트 업데이트** — `CONTAINER_TAGS 등록` → `NON_CONTAINER_TAGS 미포함 확인`, 규칙 2 NON_CONTAINER_TAGS 반영, (8) **문서 동기화** — SKILL.md opt-out 패턴 반영, CHILD_COMPOSITION_REMAINING.md 완료 보고서 갱신 |
+| 2026-02-24 | 3.17 | **COMPLEX_COMPONENT_TAGS 공유 상수 도입 + `_hasChildren` 자식 삭제 버그 수정**: (1) **`factories/constants.ts` 신규** — `COMPLEX_COMPONENT_TAGS` Set(40+개 태그) 공유 상수 파일 생성, `useElementCreator.ts`/`ElementSprite.tsx`에서 import, (2) **`ElementSprite.tsx` L1105 조건 수정** — 기존 `!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag) && childElements && childElements.length > 0` → `!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)` 내에서 `COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)`, (3) **`useElementCreator.ts` 로컬 배열 → 공유 상수 전환** — 로컬 `complexComponents` 배열 제거, `COMPLEX_COMPONENT_TAGS` import 후 `includes()` → `has()` 교체, (4) **버그 수정** — TextField 등 complex component에서 모든 자식을 삭제했을 때 `_hasChildren`이 `false`가 되어 standalone 렌더링(label+input 일체형)이 재활성화되는 현상 수정. 근본 원인: `_hasChildren`이 런타임 `childElements.length > 0`에만 의존하는 설계 |

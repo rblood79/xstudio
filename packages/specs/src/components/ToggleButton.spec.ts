@@ -223,6 +223,10 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
         });
       }
 
+      // Child Composition: 자식 Element가 있으면 shell만 반환
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 텍스트
       const text = props.children || props.text || props.label;
       if (text) {
