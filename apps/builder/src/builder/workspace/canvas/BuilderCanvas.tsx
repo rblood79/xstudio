@@ -640,13 +640,17 @@ const ElementsLayer = memo(function ElementsLayer({
     'ComboBox', 'Select',  // Label 선택 가능하도록 컨테이너 처리 (TagGroup 패턴)
     'SelectTrigger',  // Select 트리거 내부 자식 (SelectValue + SelectIcon) 렌더링
     'ComboBoxWrapper',  // ComboBox 입력 컨테이너 내부 자식 (ComboBoxInput + ComboBoxTrigger) 렌더링
+    'ListBox', 'GridList',  // E-2: 반복 아이템 컨테이너 (ListBoxItem/GridListItem 자식 렌더링)
+    'List',  // E-2: ListItem 자식 렌더링
+    'Pagination',  // E-2: Button 자식 렌더링
+    'ColorSwatchPicker',  // E-2: ColorSwatch 자식 렌더링
   ]), []);
 
   // Spec shapes 전용 컴포넌트: 모든 시각 요소를 spec shapes로 렌더링하므로
   // 자식 요소(dropdown items 등)를 별도 sprite로 렌더링하면 label 영역을 덮는 문제 발생
   // → 자식 재귀 렌더링 차단
-  const SPEC_SHAPES_ONLY_TAGS = useMemo(() => new Set([
-    'ListBox', 'GridList',
+  // E-2 전환 완료: ListBox/GridList → CONTAINER_TAGS로 이동
+  const SPEC_SHAPES_ONLY_TAGS = useMemo(() => new Set<string>([
   ]), []);
 
   // Phase 11: 엔진이 계산한 레이아웃으로 직접 배치 (Yoga 제거)

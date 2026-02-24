@@ -165,6 +165,10 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         });
       }
 
+      // Child Composition: 자식 Element가 있으면 spec shapes에서 아이템 렌더링 스킵
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 리스트 아이템 생성
       const items: string[] = props.items
         ?? (props.children

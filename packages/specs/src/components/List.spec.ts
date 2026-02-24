@@ -151,6 +151,10 @@ export const ListSpec: ComponentSpec<ListProps> = {
         },
       ];
 
+      // Child Composition: 자식 Element가 있으면 spec shapes에서 아이템 렌더링 스킵
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 샘플 리스트 아이템 텍스트
       const items = props.items ?? [
         { label: 'Item 1' },

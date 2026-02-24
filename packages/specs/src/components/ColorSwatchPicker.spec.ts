@@ -123,22 +123,27 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
           radius: borderRadius as unknown as number,
           fill: bgColor,
         },
-        // 그리드 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'grid',
-            gridTemplateColumns: `repeat(${columns}, ${swatchSize}px)`,
-            gap: size.gap,
-            padding,
-          },
-        },
       ];
+
+      // Child Composition: 자식 Element가 있으면 그리드 컨테이너 스킵
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
+      // 그리드 컨테이너
+      shapes.push({
+        type: 'container' as const,
+        x: 0,
+        y: 0,
+        width: 'auto',
+        height: 'auto',
+        children: [],
+        layout: {
+          display: 'grid',
+          gridTemplateColumns: `repeat(${columns}, ${swatchSize}px)`,
+          gap: size.gap,
+          padding,
+        },
+      });
 
       return shapes;
     },

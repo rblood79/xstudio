@@ -124,6 +124,10 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
         },
       });
 
+      // Child Composition: 자식 Element가 있으면 spec shapes에서 버튼 렌더링 스킵
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 이전 버튼
       shapes.push({
         type: 'roundRect' as const,

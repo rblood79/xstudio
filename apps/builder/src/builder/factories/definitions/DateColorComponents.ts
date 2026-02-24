@@ -537,3 +537,60 @@ export function createColorPickerDefinition(
     ],
   };
 }
+
+/**
+ * ColorSwatchPicker 컴포넌트 정의
+ *
+ * CSS DOM 구조 대응:
+ *   ColorSwatchPicker (parent, tag="ColorSwatchPicker", flex wrap)
+ *     ├─ ColorSwatch (#FF0000)
+ *     ├─ ColorSwatch (#00FF00)
+ *     ├─ ColorSwatch (#0000FF)
+ *     ├─ ColorSwatch (#FFFF00)
+ *     ├─ ColorSwatch (#FF00FF)
+ *     └─ ColorSwatch (#00FFFF)
+ */
+export function createColorSwatchPickerDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null as null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null as null };
+
+  const defaultColors = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
+
+  return {
+    tag: "ColorSwatchPicker",
+    parent: {
+      tag: "ColorSwatchPicker",
+      props: {
+        columns: 6,
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: 6,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: defaultColors.map((color, index) => ({
+      tag: "ColorSwatch",
+      props: {
+        color,
+        style: {
+          width: 28,
+          height: 28,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      order_num: index + 1,
+    })),
+  };
+}

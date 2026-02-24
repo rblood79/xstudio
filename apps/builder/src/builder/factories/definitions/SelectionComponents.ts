@@ -208,12 +208,32 @@ export function createListBoxDefinition(
       {
         tag: "ListBoxItem",
         props: {
-          label: "Item 1",
+          children: "Item 1",
           value: "item1",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
+      },
+      {
+        tag: "ListBoxItem",
+        props: {
+          children: "Item 2",
+          value: "item2",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+      {
+        tag: "ListBoxItem",
+        props: {
+          children: "Item 3",
+          value: "item3",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
       },
     ],
   };
@@ -249,12 +269,103 @@ export function createGridListDefinition(
       {
         tag: "GridListItem",
         props: {
-          label: "Item 1",
+          children: "Item 1",
           value: "item1",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
+      },
+      {
+        tag: "GridListItem",
+        props: {
+          children: "Item 2",
+          value: "item2",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+      {
+        tag: "GridListItem",
+        props: {
+          children: "Item 3",
+          value: "item3",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
+      },
+      {
+        tag: "GridListItem",
+        props: {
+          children: "Item 4",
+          value: "item4",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 4,
+      },
+    ],
+  };
+}
+
+/**
+ * List 컴포넌트 정의
+ */
+export function createListDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "List",
+    parent: {
+      tag: "List",
+      props: {
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "ListItem",
+        props: {
+          children: "Item 1",
+          style: { fontSize: 14 },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "ListItem",
+        props: {
+          children: "Item 2",
+          style: { fontSize: 14 },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+      {
+        tag: "ListItem",
+        props: {
+          children: "Item 3",
+          style: { fontSize: 14 },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
       },
     ],
   };

@@ -1,7 +1,7 @@
 # Child Composition Pattern — 미적용 컴포넌트 분류 (38개)
 
 > **작성일**: 2026-02-24
-> **상태**: 분류 완료, 전환 미착수
+> **상태**: E-1 ✅ 완료, C ✅ 완료, E-2 진행 중
 > **관련**: `docs/COMPONENT_SPEC_ARCHITECTURE.md` §9.13
 
 ---
@@ -60,19 +60,17 @@ DOM 구조상 자식 분리가 불필요하거나 의미가 없다.
 
 ---
 
-## C. Inline Form 컴포넌트 (3개) — 검토 필요
+## C. Inline Form 컴포넌트 (3개) — ✅ 완료
 
-indicator + label 구조를 가지며, `_hasLabelChild` 패턴으로 부분 스킵이 가능하다.
-현재 Select/ComboBox/Slider에만 적용된 `_hasLabelChild`를 확장할 수 있다.
+`_hasLabelChild` 패턴 적용 완료. indicator는 spec shapes 유지, label만 자식 Element로 분리.
 
-| 컴포넌트 | 현재 상태 | 전환 시 구조 | 우선순위 |
-|---------|----------|------------|---------|
-| **Checkbox** | spec shapes가 indicator + label 전체 렌더링 | Checkbox > CheckIndicator + Label | 낮음 — 단순 구조, 현재 동작 안정 |
-| **Radio** | 동일 | Radio > RadioIndicator + Label | 낮음 |
-| **Switch** | 동일 (track + thumb + label) | Switch > SwitchTrack + Label | 낮음 |
+| 컴포넌트 | 적용 패턴 | 커밋 |
+|---------|----------|------|
+| **Checkbox** | `_hasLabelChild` → label text 스킵, indicator 유지 | `dfae0947` |
+| **Radio** | 동일 | `dfae0947` |
+| **Switch** | `_hasLabelChild` → label text 스킵, track+thumb 유지 | `dfae0947` |
 
-**판단**: Checkbox/Radio/Switch는 indicator가 spec shapes로 그려지는 것이 자연스럽다.
-Label만 분리하면 `_hasLabelChild` 패턴 적용 가능하나, 현재 안정적으로 동작하므로 우선순위 낮음.
+**구현 세부**: Factory에 Label 자식 정의 추가, CONTAINER_TAGS 등록, props sync (children/label → Label.children).
 
 ---
 
@@ -95,29 +93,28 @@ Label만 분리하면 `_hasLabelChild` 패턴 적용 가능하나, 현재 안정
 자식 구조를 가질 수 있으며, 전환 시 Layer 트리 편집성이 향상될 수 있다.
 우선순위와 복잡도를 기준으로 3단계로 분류한다.
 
-### E-1. 높은 우선순위 (4개)
+### E-1. 높은 우선순위 (4개) — ✅ 완료
 
-구조가 명확하고 기존 패턴과 유사하여 즉시 전환 가능.
+| 컴포넌트 | 적용 패턴 | 커밋 |
+|---------|----------|------|
+| **TextArea** | TRANSPARENT — Label + Input(h:80) + FieldError | `ea23d5fa` |
+| **Form** | NON-TRANSPARENT — bg+border 유지, Heading + Description 자식 추가 | `ea23d5fa` |
+| **ToggleButtonGroup** | NON-TRANSPARENT — bg+border 유지, container shape 스킵 | `ea23d5fa` |
+| **Switcher** | NON-TRANSPARENT — track+border+active indicator 유지, tab text 스킵 | `ea23d5fa` |
 
-| 컴포넌트 | 예상 자식 구조 | 유사 패턴 |
-|---------|-------------|----------|
-| **TextArea** | Label + TextArea + FieldError | TextField와 동일 |
-| **Form** | Label + FieldGroup(자식 필드들) | 컨테이너, Dialog와 유사 |
-| **ToggleButtonGroup** | ToggleButton × N | CheckboxGroup/RadioGroup과 동일 |
-| **Switcher** | ToggleButton × N (탭형 전환) | ToggleButtonGroup과 유사 |
+### E-2. 중간 우선순위 (6개) — 5개 ✅ 완료, 1개 보류
 
-### E-2. 중간 우선순위 (6개)
+| 컴포넌트 | 적용 패턴 | 상태 |
+|---------|----------|------|
+| **List** | NON-TRANSPARENT — bg+container 유지, ListItem(TEXT_TAGS) 자식 | ✅ 완료 |
+| **ListBox** | NON-TRANSPARENT — bg+border 유지, ListBoxItem(TEXT_TAGS 추가) 자식 | ✅ 완료 |
+| **GridList** | NON-TRANSPARENT — bg+border 유지, GridListItem(TEXT_TAGS 추가) 자식 | ✅ 완료 |
+| **Pagination** | NON-TRANSPARENT — container 유지, Button 자식 | ✅ 완료 |
+| **ColorSwatchPicker** | NON-TRANSPARENT — bg 유지, ColorSwatch(spec 있음) 자식 | ✅ 완료 |
+| **Table** | 3단계 중첩 + 특수 렌더 파이프라인, 별도 작업 필요 | ⏳ 보류 |
 
-자식 구조가 존재하나 반복 아이템 렌더링이 필요하여 추가 설계가 필요.
-
-| 컴포넌트 | 예상 자식 구조 | 복잡도 | 비고 |
-|---------|-------------|-------|------|
-| **Table** | TableHeader + TableBody > TableRow > TableCell | 높음 | 3단계 중첩, 행/열 반복 |
-| **List** | ListItem × N | 중간 | 동적 아이템 수 |
-| **ListBox** | ListBoxItem × N | 중간 | 선택 상태 관리 |
-| **GridList** | GridListItem × N | 중간 | 그리드 배치 |
-| **Pagination** | PageButton × N + Prev/Next | 중간 | 동적 페이지 수 |
-| **ColorSwatchPicker** | ColorSwatch × N | 낮음 | 단순 그리드 |
+**구현 세부**: ListBoxItem/GridListItem → TEXT_TAGS 추가로 텍스트 렌더링.
+SPEC_SHAPES_ONLY_TAGS에서 ListBox/GridList 제거 → CONTAINER_TAGS로 이동.
 
 ### E-3. 낮은 우선순위 (6개)
 
@@ -140,22 +137,24 @@ Label만 분리하면 `_hasLabelChild` 패턴 적용 가능하나, 현재 안정
 |------|------|----------|
 | A. 이미 다른 메커니즘 | 4 | ❌ |
 | B. Leaf 컴포넌트 | 10 | ❌ |
-| C. Inline Form | 3 | ⚠️ 낮음 |
+| C. Inline Form | 3 | ✅ 완료 |
 | D. Sub-component | 5 | ❌ |
-| E-1. 높은 우선순위 | 4 | ✅ 즉시 가능 |
-| E-2. 중간 우선순위 | 6 | ⚠️ 추가 설계 |
+| E-1. 높은 우선순위 | 4 | ✅ 완료 |
+| E-2. 중간 우선순위 | 6 | ✅ 5개 완료, Table 보류 |
 | E-3. 낮은 우선순위 | 6 | ⚠️ 효과 제한적 |
 | **합계** | **38** | |
 
 **전환 불필요**: 19개 (A+B+D)
-**검토 필요**: 19개 (C+E)
-**즉시 전환 가능**: 4개 (E-1: TextArea, Form, ToggleButtonGroup, Switcher)
+**전환 완료**: 12개 (E-1: 4개 + C: 3개 + E-2: 5개)
+**보류**: 1개 (Table — 3단계 중첩 별도 작업)
+**검토 필요**: 6개 (E-3)
 
 ---
 
 ## 다음 단계
 
-1. **E-1 (4개)** 즉시 전환 — TextArea, Form, ToggleButtonGroup, Switcher
-2. **C (3개)** `_hasLabelChild` 패턴 적용 검토 — Checkbox, Radio, Switch
-3. **E-2 (6개)** 반복 아이템 패턴 설계 후 전환
-4. **E-3 (6개)** 필요 시 전환
+1. ~~**E-1 (4개)** 즉시 전환~~ ✅ `ea23d5fa`
+2. ~~**C (3개)** `_hasLabelChild` 패턴 적용~~ ✅ `dfae0947`
+3. ~~**E-2 (5개)** 반복 아이템 패턴 전환~~ ✅ List, ListBox, GridList, Pagination, ColorSwatchPicker
+4. **Table** 별도 작업 — 3단계 중첩(Table→TableRow→TableCell) + 특수 PixiTable 렌더 파이프라인
+5. **E-3 (6개)** 필요 시 전환

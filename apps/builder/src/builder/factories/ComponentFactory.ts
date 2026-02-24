@@ -28,6 +28,7 @@ import {
   createComboBoxDefinition,
   createListBoxDefinition,
   createGridListDefinition,
+  createListDefinition,
 } from "./definitions/SelectionComponents";
 import {
   createGroupDefinition,
@@ -53,6 +54,7 @@ import {
 } from "./definitions/OverlayComponents";
 import {
   createMenuDefinition,
+  createPaginationDefinition,
   createDisclosureDefinition,
   createDisclosureGroupDefinition,
 } from "./definitions/NavigationComponents";
@@ -72,6 +74,7 @@ import {
   createDateFieldDefinition,
   createTimeFieldDefinition,
   createColorFieldDefinition,
+  createColorSwatchPickerDefinition,
 } from "./definitions/DateColorComponents";
 
 /**
@@ -110,9 +113,11 @@ export class ComponentFactory {
     Breadcrumbs: ComponentFactory.createBreadcrumbs,
     ListBox: ComponentFactory.createListBox,
     GridList: ComponentFactory.createGridList,
+    List: ComponentFactory.createList,
     Table: ComponentFactory.createTable,
     // ⭐ Navigation Components
     Menu: ComponentFactory.createMenu,
+    Pagination: ComponentFactory.createPagination,
     Disclosure: ComponentFactory.createDisclosure,
     DisclosureGroup: ComponentFactory.createDisclosureGroup,
     // ⭐ Overlay Components
@@ -130,6 +135,7 @@ export class ComponentFactory {
     DateField: ComponentFactory.createDateField,
     TimeField: ComponentFactory.createTimeField,
     ColorField: ComponentFactory.createColorField,
+    ColorSwatchPicker: ComponentFactory.createColorSwatchPicker,
   };
 
   /**
@@ -354,12 +360,24 @@ export class ComponentFactory {
     return this.createComponent(createGridListDefinition, context);
   }
 
+  private static async createList(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createListDefinition, context);
+  }
+
   // ==================== Navigation Components ====================
 
   private static async createMenu(
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createMenuDefinition, context);
+  }
+
+  private static async createPagination(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createPaginationDefinition, context);
   }
 
   private static async createDisclosure(
@@ -456,6 +474,12 @@ export class ComponentFactory {
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createColorFieldDefinition, context);
+  }
+
+  private static async createColorSwatchPicker(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createColorSwatchPickerDefinition, context);
   }
 
   // ==================== Table Components ====================

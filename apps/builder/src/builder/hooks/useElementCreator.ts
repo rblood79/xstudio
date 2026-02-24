@@ -242,6 +242,8 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                     'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
                     // ⭐ Input 복합 컴포넌트
                     'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',
+                    // ⭐ E-2: 반복 아이템 복합 컴포넌트
+                    'List', 'Pagination', 'ColorSwatchPicker',
                 ];
 
                 const operation = async () => {

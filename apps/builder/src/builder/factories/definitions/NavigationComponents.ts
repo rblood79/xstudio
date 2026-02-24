@@ -68,6 +68,101 @@ export function createMenuDefinition(
 }
 
 /**
+ * Pagination 컴포넌트 정의
+ *
+ * CSS DOM 구조 대응:
+ *   Pagination (parent, tag="Pagination", flex row)
+ *     ├─ Button ("←", Prev)
+ *     ├─ Button ("1")
+ *     ├─ Button ("2")
+ *     ├─ Button ("3")
+ *     └─ Button ("→", Next)
+ */
+export function createPaginationDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Pagination",
+    parent: {
+      tag: "Pagination",
+      props: {
+        totalPages: 5,
+        currentPage: 1,
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Button",
+        props: {
+          children: "←",
+          variant: "outline",
+          size: "sm",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "Button",
+        props: {
+          children: "1",
+          variant: "default",
+          size: "sm",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+      {
+        tag: "Button",
+        props: {
+          children: "2",
+          variant: "outline",
+          size: "sm",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
+      },
+      {
+        tag: "Button",
+        props: {
+          children: "3",
+          variant: "outline",
+          size: "sm",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 4,
+      },
+      {
+        tag: "Button",
+        props: {
+          children: "→",
+          variant: "outline",
+          size: "sm",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 5,
+      },
+    ],
+  };
+}
+
+/**
  * Disclosure 컴포넌트 정의
  *
  * CSS DOM 구조 대응:

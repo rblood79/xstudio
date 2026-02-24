@@ -194,6 +194,8 @@ const TEXT_TAGS = new Set([
   'Pre',
   'Blockquote',
   'ListItem',
+  'ListBoxItem',
+  'GridListItem',
 ]);
 
 /**
@@ -1106,6 +1108,8 @@ export const ElementSprite = memo(function ElementSprite({
               'Form',
               // Date & Color
               'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
+              // E-2: 반복 아이템 컴포넌트
+              'ListBox', 'GridList', 'List', 'Pagination', 'ColorSwatchPicker',
             ]);
 
             if (CHILD_COMPOSITION_TAGS.has(tag) && childElements && childElements.length > 0) {

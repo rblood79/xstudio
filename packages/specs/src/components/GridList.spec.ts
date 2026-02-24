@@ -153,6 +153,10 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
         });
       }
 
+      // Child Composition: 자식 Element가 있으면 spec shapes에서 아이템 렌더링 스킵
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 그리드 아이템
       items.forEach((item, idx) => {
         const col = idx % numCols;
