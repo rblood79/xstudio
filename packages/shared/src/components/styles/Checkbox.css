@@ -106,31 +106,31 @@
   /* ========== M3 Color Variants ========== */
   /* variant는 이미 CSS 변수로 정의되어 있어 추가 통합 필요 없음 */
 
-  .react-aria-Checkbox.primary {
+  .react-aria-Checkbox[data-variant="primary"] {
     --selected-color: var(--primary);
     --selected-color-pressed: var(--primary-pressed);
     --checkmark-color: var(--on-primary);
   }
 
-  .react-aria-Checkbox.secondary {
+  .react-aria-Checkbox[data-variant="secondary"] {
     --selected-color: var(--secondary);
     --selected-color-pressed: var(--secondary-pressed);
     --checkmark-color: var(--on-secondary);
   }
 
-  .react-aria-Checkbox.tertiary {
+  .react-aria-Checkbox[data-variant="tertiary"] {
     --selected-color: var(--tertiary);
     --selected-color-pressed: var(--tertiary-pressed);
     --checkmark-color: var(--on-tertiary);
   }
 
-  .react-aria-Checkbox.error {
+  .react-aria-Checkbox[data-variant="error"] {
     --selected-color: var(--error);
     --selected-color-pressed: var(--error-pressed);
     --checkmark-color: var(--on-error);
   }
 
-  .react-aria-Checkbox.surface {
+  .react-aria-Checkbox[data-variant="surface"] {
     --selected-color: var(--surface-container-highest);
     --selected-color-pressed: color-mix(in srgb, var(--surface-container-highest) 88%, black);
     --checkmark-color: var(--on-surface);
@@ -138,11 +138,11 @@
 
   /* ===== Invalid+Variant Combination ===== */
   /* Invalid state overrides all variants with error color */
-  .react-aria-Checkbox.primary[data-invalid],
-  .react-aria-Checkbox.secondary[data-invalid],
-  .react-aria-Checkbox.tertiary[data-invalid],
-  .react-aria-Checkbox.error[data-invalid],
-  .react-aria-Checkbox.surface[data-invalid] {
+  .react-aria-Checkbox[data-variant="primary"][data-invalid],
+  .react-aria-Checkbox[data-variant="secondary"][data-invalid],
+  .react-aria-Checkbox[data-variant="tertiary"][data-invalid],
+  .react-aria-Checkbox[data-variant="error"][data-invalid],
+  .react-aria-Checkbox[data-variant="surface"][data-invalid] {
     .checkbox {
       --selected-color: var(--error);
       --selected-color-pressed: var(--error-pressed);
@@ -176,25 +176,25 @@
   }
 
   /* Size별 CSS 변수만 오버라이드 */
-  .react-aria-Checkbox.sm {
+  .react-aria-Checkbox[data-size="sm"] {
     --cb-font-size: var(--text-sm);
     --cb-box-size: var(--text-lg);
   }
 
-  .react-aria-Checkbox.md {
+  .react-aria-Checkbox[data-size="md"] {
     --cb-font-size: var(--text-base);
     --cb-box-size: var(--text-xl);
   }
 
-  .react-aria-Checkbox.lg {
+  .react-aria-Checkbox[data-size="lg"] {
     --cb-font-size: var(--text-lg);
     --cb-box-size: var(--text-2xl);
   }
 
   /* 모든 size에 공통 적용되는 스타일 */
-  .react-aria-Checkbox.sm,
-  .react-aria-Checkbox.md,
-  .react-aria-Checkbox.lg {
+  .react-aria-Checkbox[data-size="sm"],
+  .react-aria-Checkbox[data-size="md"],
+  .react-aria-Checkbox[data-size="lg"] {
     font-size: var(--cb-font-size);
 
     .checkbox {

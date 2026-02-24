@@ -1151,7 +1151,16 @@ export function createDefaultSectionProps(): SectionElementProps {
 }
 
 export function createDefaultNavProps(): NavElementProps {
-  return {};
+  return {
+    // CSS base: display:flex; flex-direction:row; align-items:center; width:100%
+    // nav 태그는 링크 목록을 수평으로 배열하는 탐색 영역
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+    },
+  };
 }
 
 export function createDefaultSlotProps(): SlotElementProps {

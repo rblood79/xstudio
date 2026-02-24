@@ -301,3 +301,6 @@ export type { InputProps } from './components/Input.spec';
 
 export { SwitcherSpec } from './components/Switcher.spec';
 export type { SwitcherProps } from './components/Switcher.spec';
+
+export { NavSpec } from './components/Nav.spec';
+export type { NavProps } from './components/Nav.spec';

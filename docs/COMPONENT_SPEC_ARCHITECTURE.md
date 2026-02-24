@@ -5167,29 +5167,44 @@ shapes: (props, variant, size, state, flags) => {
 
 > **적용 컴포넌트**: Select, ComboBox, Slider — 세 컴포넌트 모두 동일 패턴. 새로운 Complex Component 전환 시에도 동일하게 적용한다.
 
-### 9.12.5 TokenRef offsetY 버그 — `resolveToken()` 필수 원칙
+### 9.12.5 TokenRef 산술 연산 버그 — `resolveToken()` 필수 원칙
 
-**증상**: track과 thumb이 렌더링되지 않는 현상.
+**증상**: 렌더링이 실패하거나 요소의 y 좌표가 `NaN`이 되어 화면에 표시되지 않음.
 
-**원인**: `SizeSpec.fontSize`는 `TokenRef` 타입(`'{typography.text-sm}'`)이다. 이를 숫자 연산(`+`)에 직접 사용하면 문자열 연결이 발생하여 `offsetY`가 `NaN`이 된다.
+**원인**: `SizeSpec.fontSize`는 `TokenRef` 타입(`'{typography.text-md}'`)이다. 이를 숫자 연산(`-`, `+`, `/`)에 직접 사용하면 문자열 연결 또는 `NaN`이 발생한다. `as unknown as number` 타입 캐스팅은 TypeScript 컴파일러를 속일 뿐, 실제 런타임 값은 여전히 문자열이다.
+
+**영향 범위 (2026-02-25 기준 수정 완료)**: 19개 이상 spec 파일
+
+Calendar, CheckboxGroup, ColorField, DateField, DatePicker, DateRangePicker, Disclosure, Form, GridList, List, ListBox, Meter, NumberField, Panel, ProgressBar, RadioGroup, SearchField, TagGroup, TextArea, TimeField, Tree
 
 ```typescript
-// 잘못된 코드 (NaN 발생)
+// 잘못된 코드 패턴 1 — 직접 산술 연산 (NaN 발생)
 const offsetY = (height - size.fontSize) / 2;
 //                       ^^^^^^^^^^^^^^^^
-//                       문자열 연결 → NaN → track/thumb y 좌표 NaN
+//                       TokenRef 문자열 → NaN
 
-// 올바른 코드 — resolveToken()으로 숫자 변환 후 연산
+// 잘못된 코드 패턴 2 — as unknown as number 캐스팅 (컴파일만 통과, 런타임 NaN)
+const fontSize = size.fontSize as unknown as number;
+const labelFontSize = fontSize - 2; // NaN
+
+// 올바른 코드 — resolveToken()으로 TokenRef → 숫자 변환
 import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { TokenRef } from '../types';
 
-const fontSizePx = typeof size.fontSize === 'number'
-  ? size.fontSize
-  : resolveToken(size.fontSize) as number;
+const rawFontSize = props.style?.fontSize ?? size.fontSize;
+const resolvedFs = typeof rawFontSize === 'number'
+  ? rawFontSize
+  : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      ? resolveToken(rawFontSize as TokenRef)
+      : rawFontSize);
+const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16; // fallback 16px
 
-const offsetY = (height - fontSizePx) / 2;
+// 이후 산술 연산 안전
+const labelFontSize = fontSize - 2;
+const offsetY = (height - fontSize) / 2;
 ```
 
-> **CRITICAL 규칙**: spec `shapes()` 함수 내에서 `SizeSpec.fontSize`, `SizeSpec.borderRadius` 등 `TokenRef` 타입 필드를 숫자 연산에 사용할 때는 반드시 `resolveToken()`을 통해 숫자로 변환한다. `typeof === 'number'` 체크로 이미 숫자인 경우를 처리하고, 문자열인 경우 `resolveToken()` 호출이 필수이다.
+> **CRITICAL 규칙**: spec `shapes()` 함수 내에서 `SizeSpec.fontSize`, `SizeSpec.borderRadius` 등 `TokenRef` 타입 필드를 숫자 연산에 사용할 때는 반드시 `resolveToken()`을 통해 숫자로 변환한다. `as unknown as number` 캐스팅은 런타임 NaN을 방지하지 못한다. `typeof === 'number'` 체크로 이미 숫자인 경우를 처리하고, `{`로 시작하는 문자열인 경우 `resolveToken()` 호출이 필수이다.
 
 ### 9.12.6 SliderOutput 텍스트 위치 수정
 
@@ -5218,6 +5233,72 @@ M3 디자인 토큰 기반의 치수:
 | lg   | 8px         | 22px      |
 
 CSS 파일에서 `.sm`, `.primary` 클래스 selector 방식에서 `[data-size="sm"]`, `[data-variant="primary"]` data-attribute selector로 전환하여 React-Aria의 data-attribute 상태 관리와 일치시켰다.
+
+
+### 9.12.8 label 렌더링 — labelOffset 패턴
+
+SearchField, NumberField 등 라벨이 있는 입력 컴포넌트에서 label 텍스트 shape을 추가하고, 이후 입력 필드 배경의 y 좌표를 `labelOffset`만큼 아래로 보정하는 패턴이다.
+
+**배경**: label이 있을 때는 입력 필드 위에 label 텍스트가 표시되어야 하므로, 배경 roundRect와 내부 요소들의 y 좌표를 label 높이 + gap 만큼 내려야 한다.
+
+```typescript
+// fontSize resolveToken으로 얻은 후
+const labelFontSize = fontSize - 2;
+const labelHeight = Math.ceil(labelFontSize * 1.2);  // 줄 높이
+const labelGap = size.gap ?? 8;
+const labelOffset = props.label ? labelHeight + labelGap : 0;
+
+if (props.label) {
+  shapes.push({
+    type: 'text' as const,
+    x: 0,
+    y: 0,  // label은 항상 y:0에서 시작
+    text: props.label,
+    fontSize: labelFontSize,
+    // ...
+  });
+}
+
+// 이후 모든 shapes에 labelOffset 적용
+shapes.push({
+  id: 'bg',
+  type: 'roundRect' as const,
+  x: 0,
+  y: labelOffset,  // label이 있으면 아래로 이동
+  width,
+  height,
+  // ...
+});
+```
+
+> **주의**: `props.label ? 20 : 0` 같은 하드코딩된 오프셋은 size별 폰트 크기 변화를 반영하지 못한다. 반드시 `resolveToken()`으로 얻은 fontSize 기반으로 `labelOffset`을 계산해야 한다.
+
+### 9.12.9 `rearrangeShapesForColumn` 가드 — `SPEC_RENDERS_ALL_TAGS_SET`
+
+`rearrangeShapesForColumn()`은 `flexDirection: 'column'`인 컴포넌트의 shapes를 세로 배치로 재정렬하는 함수다. 그런데 일부 컴포넌트는 spec `shapes()` 자체가 내부 레이아웃을 포함하므로 재정렬 시 좌표가 덮어써지는 문제가 있다.
+
+**문제 발생 시나리오**:
+
+1. SearchField, NumberField 같은 컴포넌트는 shapes() 내에서 직접 label → bg → 아이콘 순서로 y 좌표를 지정한다.
+2. 이들이 column 방향 flex 컨테이너 안에 있으면 `rearrangeShapesForColumn()`이 호출된다.
+3. 함수가 shapes를 재배치하면 spec이 직접 계산한 labelOffset 등이 무시된다.
+
+**해결**: `ElementSprite.tsx`에 `SPEC_RENDERS_ALL_TAGS_SET` 가드를 추가하여 이 컴포넌트들은 재배치를 스킵한다.
+
+```typescript
+// ElementSprite.tsx — rearrangeShapesForColumn 호출부
+const SPEC_RENDERS_ALL_TAGS_SET = new Set([
+  'TextField', 'NumberField', 'SearchField',
+  'DateField', 'TimeField', 'ColorField', 'TextArea',
+  'Slider', 'RangeSlider',
+]);
+if (isColumn && !SPEC_RENDERS_ALL_TAGS_SET.has(tag)) {
+  rearrangeShapesForColumn(shapes, finalWidth, sizeSpec.gap ?? 8);
+}
+```
+
+> **원칙**: spec `shapes()` 내에서 여러 row를 직접 y 좌표로 배치하는 컴포넌트는 `SPEC_RENDERS_ALL_TAGS_SET`에 등록해야 한다. 단순한 단일 row indicator + label 구조(Checkbox, Radio, Switch 등)는 등록 불필요.
+
 
 ---
 
@@ -6229,3 +6310,5 @@ Spec 수정 → pnpm --filter @xstudio/specs build → dist/ 갱신 → Builder 
 | 2026-02-24 | 3.15 | **§9.13 자식 조합 패턴(Child Composition Pattern) 전체 전환**: (1) **CHILD_COMPOSITION_TAGS 통합 Set** — ElementSprite.tsx에 20개 컴포넌트 등록 (Input Fields 6종, Overlay 4종, Navigation 4종, Groups 2종, Date&Color 4종), `_hasChildren: true` flag 주입으로 spec shapes 조건부 렌더링 (2) **TRANSPARENT_CONTAINER_TAGS 확장** — DateField, TimeField, ColorField, CheckboxGroup, RadioGroup 추가, (3) **Input Field 5종 spec 전환** — NumberField, SearchField, DateField, TimeField, ColorField shapes()에 `_hasChildren` → bg/border만 반환, (4) **Overlay 4종 spec 전환** — Dialog(backdrop+shadow+bg), Popover(shadow+bg+border), Tooltip(bg), Toast(shadow+bg+border+accent bar) 유지, 콘텐츠 스킵, (5) **Navigation 4종 spec 전환** — Menu(shadow+bg+border), Disclosure(bg+border), DisclosureGroup(bg+border), Toolbar(bg+border) 유지, 콘텐츠 스킵, (6) **Groups 2종** — CheckboxGroup, RadioGroup 빈 배열 반환 (transparent container), (7) **Date&Color 4종** — DatePicker, DateRangePicker, Calendar, ColorPicker 배경 shapes 유지 후 복합 콘텐츠 스킵, (8) **BuilderCanvas.tsx props sync 확장** — Input Fields 6종(label→Label), Overlay 4종(heading→Heading, description→Description), (9) **border-box 높이 이중 계산 수정** — calculateContentHeight flex column에서 form element border-box explicit height 감지, padding+border 미추가 (engines/utils.ts), (10) **Dropflow fallback flex 처리** — Taffy WASM 미로드 시 flex-direction row/column + gap 수동 후처리 (engines/index.ts) |
 | 2026-02-24 | 3.16 | **§9.13 Opt-In → Opt-Out 아키텍처 전환**: (1) **CHILD_COMPOSITION_TAGS(42개 화이트리스트) → CHILD_COMPOSITION_EXCLUDE_TAGS(5개 블랙리스트)** — 모든 컴포넌트가 기본적으로 자식 조합 허용, Tabs/Breadcrumbs/TagGroup(synthetic prop)/Table/Tree(다단계 중첩)만 제외 (ElementSprite.tsx), (2) **CONTAINER_TAGS(49개 화이트리스트) → NON_CONTAINER_TAGS(~21개 블랙리스트)** — TEXT_TAGS 14개 + Void/Visual 3개 + Color Sub-component 4개만 비컨테이너, 나머지 모두 컨테이너 (BuilderCanvas.tsx), (3) **isContainerTagForLayout() 반전** — `CONTAINER_TAGS.has(tag)` → `!NON_CONTAINER_TAGS.has(tag)`, Section 조건부 로직 유지, (4) **7개 신규 spec `_hasChildren` 추가** — Button, Badge, ToggleButton, Slot, Panel, ProgressBar, Meter (packages/specs/src/components/), (5) **`_hasChildren` 지원 spec 총 49개** (E-1: 20개 + E-2: 22개 + Phase 1: 7개), (6) **전환 동기** — 노코드 빌더에서 DOM+CSS 자유 조합 지원, 3중 수동 등록(CHILD_COMPOSITION_TAGS + CONTAINER_TAGS + spec) 제거, (7) **§9.8.5 체크리스트 업데이트** — `CONTAINER_TAGS 등록` → `NON_CONTAINER_TAGS 미포함 확인`, 규칙 2 NON_CONTAINER_TAGS 반영, (8) **문서 동기화** — SKILL.md opt-out 패턴 반영, CHILD_COMPOSITION_REMAINING.md 완료 보고서 갱신 |
 | 2026-02-24 | 3.17 | **COMPLEX_COMPONENT_TAGS 공유 상수 도입 + `_hasChildren` 자식 삭제 버그 수정**: (1) **`factories/constants.ts` 신규** — `COMPLEX_COMPONENT_TAGS` Set(40+개 태그) 공유 상수 파일 생성, `useElementCreator.ts`/`ElementSprite.tsx`에서 import, (2) **`ElementSprite.tsx` L1105 조건 수정** — 기존 `!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag) && childElements && childElements.length > 0` → `!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)` 내에서 `COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)`, (3) **`useElementCreator.ts` 로컬 배열 → 공유 상수 전환** — 로컬 `complexComponents` 배열 제거, `COMPLEX_COMPONENT_TAGS` import 후 `includes()` → `has()` 교체, (4) **버그 수정** — TextField 등 complex component에서 모든 자식을 삭제했을 때 `_hasChildren`이 `false`가 되어 standalone 렌더링(label+input 일체형)이 재활성화되는 현상 수정. 근본 원인: `_hasChildren`이 런타임 `childElements.length > 0`에만 의존하는 설계 |
+| 2026-02-25 | 3.18 | **TokenRef fontSize 산술 연산 버그 전수 수정 + label 렌더링 패턴 추가**: (1) **§9.12.5 확장** — `as unknown as number` 캐스팅이 런타임 NaN을 방지하지 못함을 명시, 영향 범위 19개 이상 spec 파일(Calendar, CheckboxGroup, ColorField, DateField, DatePicker, DateRangePicker, Disclosure, Form, GridList, List, ListBox, Meter, NumberField, Panel, ProgressBar, RadioGroup, SearchField, TagGroup, TextArea, TimeField, Tree) 문서화, 올바른 패턴(rawFontSize → resolvedFs → fallback 16px) 코드 예시 갱신, (2) **§9.12.8 신규 — labelOffset 패턴** — SearchField/NumberField label 렌더링 추가: `resolveToken()` 기반 fontSize → labelFontSize(-2) → labelHeight(\*1.2) → labelOffset 계산, props.label 조건부 text shape 추가 및 이후 모든 shapes에 y+labelOffset 적용, 하드코딩 오프셋(`props.label ? 20 : 0`) 금지 원칙 |
+| 2026-02-25 | 3.19 | **`rearrangeShapesForColumn` + `SPEC_RENDERS_ALL_TAGS_SET` 가드 + `_hasChildren` 패턴 복원**: (1) **§9.12.9 신규** — `SPEC_RENDERS_ALL_TAGS_SET` 가드 문서화: spec shapes()가 자체 y 좌표 레이아웃을 포함하는 컴포넌트(TextField/NumberField/SearchField/DateField/TimeField/ColorField/TextArea/Slider/RangeSlider)는 `rearrangeShapesForColumn` 재배치 스킵, ElementSprite.tsx 코드 예시 추가, (2) **`_hasChildren` 패턴 복원 이력** — 에이전트가 무단 삭제한 `_hasChildren` 체크를 13개 파일에서 복원(7개 git checkout 원복, 6개 수동 복원), 컨테이너 컴포넌트(Button, Badge, ToggleButton, Slot, Panel, ProgressBar, Meter, DropZone, FileTrigger, ScrollBox, MaskedFrame, Section, Group) spec에서 `_hasChildren` 체크는 자동 코드 편집 도구가 임의로 제거해서는 안 되는 핵심 로직임을 명시 |

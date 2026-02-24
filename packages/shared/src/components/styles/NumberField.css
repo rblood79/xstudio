@@ -162,35 +162,35 @@
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
-  .react-aria-NumberField.primary {
+  .react-aria-NumberField[data-variant="primary"] {
     --nf-accent: var(--primary);
     --nf-accent-container: var(--primary-container);
     --nf-on-accent-container: var(--on-primary-container);
   }
 
-  .react-aria-NumberField.secondary {
+  .react-aria-NumberField[data-variant="secondary"] {
     --nf-accent: var(--secondary);
     --nf-accent-container: var(--secondary-container);
     --nf-on-accent-container: var(--on-secondary-container);
   }
 
-  .react-aria-NumberField.tertiary {
+  .react-aria-NumberField[data-variant="tertiary"] {
     --nf-accent: var(--tertiary);
     --nf-accent-container: var(--tertiary-container);
     --nf-on-accent-container: var(--on-tertiary-container);
   }
 
-  .react-aria-NumberField.error {
+  .react-aria-NumberField[data-variant="error"] {
     --nf-accent: var(--error);
     --nf-accent-container: var(--error-container);
     --nf-on-accent-container: var(--on-error-container);
   }
 
   /* 모든 color variant에 공통 적용되는 스타일 */
-  .react-aria-NumberField.primary,
-  .react-aria-NumberField.secondary,
-  .react-aria-NumberField.tertiary,
-  .react-aria-NumberField.error {
+  .react-aria-NumberField[data-variant="primary"],
+  .react-aria-NumberField[data-variant="secondary"],
+  .react-aria-NumberField[data-variant="tertiary"],
+  .react-aria-NumberField[data-variant="error"] {
     .react-aria-Label {
       color: var(--nf-accent);
     }
@@ -223,7 +223,7 @@
   }
 
   /* ===== M3 Filled Variant ===== */
-  .react-aria-NumberField.filled {
+  .react-aria-NumberField[data-variant="filled"] {
     .react-aria-Group {
       border-radius: var(--border-radius) var(--border-radius) 0 0;
 
@@ -271,7 +271,7 @@
   }
 
   /* Size별 CSS 변수만 오버라이드 */
-  .react-aria-NumberField.sm {
+  .react-aria-NumberField[data-size="sm"] {
     --nf-label-size: var(--text-xs);
     --nf-btn-size: var(--text-xs);
     --nf-btn-width: 28px;
@@ -282,7 +282,7 @@
     --nf-hint-size: 10px;
   }
 
-  .react-aria-NumberField.md {
+  .react-aria-NumberField[data-size="md"] {
     --nf-label-size: var(--text-sm);
     --nf-btn-size: var(--text-sm);
     --nf-btn-width: 32px;
@@ -293,7 +293,7 @@
     --nf-hint-size: var(--text-xs);
   }
 
-  .react-aria-NumberField.lg {
+  .react-aria-NumberField[data-size="lg"] {
     --nf-label-size: var(--text-base);
     --nf-btn-size: var(--text-base);
     --nf-btn-width: 40px;
@@ -305,9 +305,9 @@
   }
 
   /* 모든 size에 공통 적용되는 스타일 */
-  .react-aria-NumberField.sm,
-  .react-aria-NumberField.md,
-  .react-aria-NumberField.lg {
+  .react-aria-NumberField[data-size="sm"],
+  .react-aria-NumberField[data-size="md"],
+  .react-aria-NumberField[data-size="lg"] {
     .react-aria-Label {
       font-size: var(--nf-label-size);
     }
@@ -332,10 +332,10 @@
 
   /* ========== Invalid State Override ========== */
   /* Invalid state overrides all color variants */
-  .react-aria-NumberField.primary[data-invalid],
-  .react-aria-NumberField.secondary[data-invalid],
-  .react-aria-NumberField.tertiary[data-invalid],
-  .react-aria-NumberField.filled[data-invalid] {
+  .react-aria-NumberField[data-variant="primary"][data-invalid],
+  .react-aria-NumberField[data-variant="secondary"][data-invalid],
+  .react-aria-NumberField[data-variant="tertiary"][data-invalid],
+  .react-aria-NumberField[data-variant="filled"][data-invalid] {
     .react-aria-Group {
       outline-color: var(--error);
     }

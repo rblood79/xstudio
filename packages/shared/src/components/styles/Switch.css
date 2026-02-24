@@ -80,7 +80,7 @@
   }
 
   /* ===== M3 Primary Variant ===== */
-  .react-aria-Switch.primary {
+  .react-aria-Switch[data-variant="primary"] {
     &[data-selected] {
       .indicator {
         border-color: var(--primary);
@@ -99,7 +99,7 @@
   }
 
   /* ===== M3 Secondary Variant ===== */
-  .react-aria-Switch.secondary {
+  .react-aria-Switch[data-variant="secondary"] {
     &[data-selected] {
       .indicator {
         border-color: var(--secondary);
@@ -118,7 +118,7 @@
   }
 
   /* ===== M3 Tertiary Variant ===== */
-  .react-aria-Switch.tertiary {
+  .react-aria-Switch[data-variant="tertiary"] {
     &[data-selected] {
       .indicator {
         border-color: var(--tertiary);
@@ -137,7 +137,7 @@
   }
 
   /* ===== M3 Error Variant ===== */
-  .react-aria-Switch.error {
+  .react-aria-Switch[data-variant="error"] {
     &[data-selected] {
       .indicator {
         border-color: var(--error);
@@ -156,7 +156,7 @@
   }
 
   /* ===== M3 Surface Variant ===== */
-  .react-aria-Switch.surface {
+  .react-aria-Switch[data-variant="surface"] {
     &[data-selected] {
       .indicator {
         border-color: var(--surface-container-highest);
@@ -175,7 +175,7 @@
   }
 
   /* Small size */
-  .react-aria-Switch.sm {
+  .react-aria-Switch[data-size="sm"] {
     font-size: var(--text-sm);
 
     .indicator {
@@ -193,7 +193,7 @@
   }
 
   /* Medium size (default) */
-  .react-aria-Switch.md {
+  .react-aria-Switch[data-size="md"] {
     font-size: var(--text-base);
 
     .indicator {
@@ -211,7 +211,7 @@
   }
 
   /* Large size */
-  .react-aria-Switch.lg {
+  .react-aria-Switch[data-size="lg"] {
     font-size: var(--text-lg);
 
     .indicator {

@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * TextArea Props
@@ -112,8 +113,14 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
     shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 240;
       const rows = props.rows || 3;
-      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
-      const lineHeight = (fontSize as number) * 1.5;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+      const lineHeight = fontSize * 1.5;
       const height = Math.max(size.height, rows * lineHeight + size.paddingY * 2);
 
       const styleBr = props.style?.borderRadius;
@@ -155,13 +162,6 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
         : size.paddingX;
 
       const shapes: Shape[] = [];
-
-      // CONTAINER_TAGS에 등록된 경우 자식 Element가 시각 렌더링 담당
-      // (Label→라벨텍스트, Input→배경/테두리/placeholder, FieldError→에러텍스트)
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
-
-      // fallback: 자식이 없는 레거시 데이터 → 전체 렌더링
       // 라벨
       if (props.label) {
         shapes.push({
@@ -169,7 +169,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: (fontSize as number) - 2,
+          fontSize: fontSize - 2,
           fontFamily: ff,
           fontWeight,
           fill: textColor,
@@ -209,7 +209,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
           x: paddingX,
           y: (props.label ? 20 : 0) + size.paddingY,
           text: displayText,
-          fontSize: fontSize as number,
+          fontSize,
           fontFamily: ff,
           fill: props.value ? textColor : ('{color.on-surface-variant}' as TokenRef),
           align: textAlign,
@@ -227,7 +227,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
           x: 0,
           y: (props.label ? 20 : 0) + height + 4,
           text: descText,
-          fontSize: (fontSize as number) - 2,
+          fontSize: fontSize - 2,
           fontFamily: ff,
           fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
           align: textAlign,

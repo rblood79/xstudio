@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * ColorField Props
@@ -129,7 +130,13 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : 1;
 
-      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight = fwRaw != null
@@ -169,9 +176,6 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
           radius: borderRadius,
         },
       ];
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
-
       // Color swatch (왼쪽)
       const swatchX = paddingX;
       const swatchY = (height - swatchSize) / 2;
@@ -202,7 +206,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
         x: swatchX + swatchSize + (size.gap ?? 8),
         y: 0,
         text: hexValue.toUpperCase(),
-        fontSize: fontSize as number,
+        fontSize,
         fontFamily: ff,
         fontWeight,
         fill: textColor,

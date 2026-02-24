@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useCallback } from "react";
 import {
     Tag, Search, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
     SpellCheck2, Focus, Hash, Type, Keyboard, Shield
@@ -7,6 +7,7 @@ import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , Prope
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
+import { useSyncChildProp } from '../../../hooks/useSyncChildProp';
 
 export const SearchFieldEditor = memo(function SearchFieldEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Get customId from element in store
@@ -23,6 +24,24 @@ export const SearchFieldEditor = memo(function SearchFieldEditor({ elementId, cu
         };
         onUpdate(updatedProps);
     };
+
+    const { buildChildUpdates } = useSyncChildProp(elementId);
+
+    const handleLabelChange = useCallback((value: string) => {
+        const updatedProps = { ...currentProps, label: value };
+        const childUpdates = buildChildUpdates([
+            { childTag: 'Label', propKey: 'children', value },
+        ]);
+        useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+    }, [currentProps, buildChildUpdates]);
+
+    const handlePlaceholderChange = useCallback((value: string) => {
+        const updatedProps = { ...currentProps, placeholder: value };
+        const childUpdates = buildChildUpdates([
+            { childTag: 'Input', propKey: 'placeholder', value },
+        ]);
+        useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+    }, [currentProps, buildChildUpdates]);
 
     const updateCustomId = (newCustomId: string) => {
         // Update customId in store (not in props)
@@ -51,7 +70,7 @@ export const SearchFieldEditor = memo(function SearchFieldEditor({ elementId, cu
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
-                    onChange={(value) => updateProp('label', value)}
+                    onChange={handleLabelChange}
                     icon={Tag}
                 />
 
@@ -65,7 +84,7 @@ export const SearchFieldEditor = memo(function SearchFieldEditor({ elementId, cu
                 <PropertyInput
                     label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
-                    onChange={(value) => updateProp('placeholder', value)}
+                    onChange={handlePlaceholderChange}
                     icon={SpellCheck2}
                     placeholder="Search..."
                 />

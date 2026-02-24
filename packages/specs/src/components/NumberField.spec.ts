@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * NumberField Props
@@ -139,7 +140,13 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : defaultBw;
 
-      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight = fwRaw != null
@@ -154,17 +161,20 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
                       ?? variant.text;
 
       const shapes: Shape[] = [];
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
 
       // 라벨
+      const labelFontSize = fontSize - 2;
+      const labelHeight = Math.ceil(labelFontSize * 1.2);
+      const labelGap = size.gap ?? 6;
+      const labelOffset = props.label ? labelHeight + labelGap : 0;
+
       if (props.label) {
         shapes.push({
           type: 'text' as const,
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: (fontSize as number) - 2,
+          fontSize: labelFontSize,
           fontFamily: ff,
           fontWeight,
           fill: textColor,
@@ -178,7 +188,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         id: 'bg',
         type: 'roundRect' as const,
         x: 0,
-        y: props.label ? 20 : 0,
+        y: labelOffset,
         width,
         height,
         radius: borderRadius,
@@ -201,7 +211,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         id: 'decrement',
         type: 'roundRect' as const,
         x: 0,
-        y: props.label ? 20 : 0,
+        y: labelOffset,
         width: stepperWidth,
         height,
         radius: [borderRadius, 0, 0, borderRadius],
@@ -212,9 +222,9 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       shapes.push({
         type: 'text' as const,
         x: 0,
-        y: (props.label ? 20 : 0) + height / 2,
+        y: (labelOffset) + height / 2,
         text: '\u2212',
-        fontSize: fontSize as number,
+        fontSize,
         fontFamily: ff,
         fontWeight,
         fill: textColor,
@@ -228,7 +238,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         id: 'increment',
         type: 'roundRect' as const,
         x: width - stepperWidth,
-        y: props.label ? 20 : 0,
+        y: labelOffset,
         width: stepperWidth,
         height,
         radius: [0, borderRadius, borderRadius, 0],
@@ -239,9 +249,9 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       shapes.push({
         type: 'text' as const,
         x: width - stepperWidth,
-        y: (props.label ? 20 : 0) + height / 2,
+        y: (labelOffset) + height / 2,
         text: '+',
-        fontSize: fontSize as number,
+        fontSize,
         fontFamily: ff,
         fontWeight,
         fill: textColor,
@@ -254,9 +264,9 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       shapes.push({
         type: 'text' as const,
         x: stepperWidth,
-        y: (props.label ? 20 : 0) + height / 2,
+        y: (labelOffset) + height / 2,
         text: String(props.value ?? 0),
-        fontSize: fontSize as number,
+        fontSize,
         fontFamily: ff,
         fill: textColor,
         align: 'center' as const,
@@ -270,9 +280,9 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         shapes.push({
           type: 'text' as const,
           x: 0,
-          y: (props.label ? 20 : 0) + height + 4,
+          y: (labelOffset) + height + 4,
           text: descText,
-          fontSize: (fontSize as number) - 2,
+          fontSize: fontSize - 2,
           fontFamily: ff,
           fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
           align: textAlign,

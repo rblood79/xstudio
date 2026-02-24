@@ -443,6 +443,7 @@ export function createNumberFieldDefinition(
     parent: {
       tag: "NumberField",
       props: {
+        label: "Number",
         defaultValue: 0,
         minValue: 0,
         maxValue: 100,
@@ -540,6 +541,8 @@ export function createSearchFieldDefinition(
     parent: {
       tag: "SearchField",
       props: {
+        label: "Search",
+        placeholder: "Search...",
         isDisabled: false,
         style: {
           display: "flex",

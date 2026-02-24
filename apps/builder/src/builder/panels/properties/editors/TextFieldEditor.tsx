@@ -7,6 +7,7 @@ import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , Prope
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
+import { useSyncChildProp } from '../../../hooks/useSyncChildProp';
 
 export const TextFieldEditor = memo(function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
   // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
@@ -16,17 +17,28 @@ export const TextFieldEditor = memo(function TextFieldEditor({ elementId, curren
   }, [elementId]);
 
   // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
+
+  const { buildChildUpdates } = useSyncChildProp(elementId);
+
   const handleLabelChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, label: value });
-  }, [currentProps, onUpdate]);
+    const updatedProps = { ...currentProps, label: value };
+    const childUpdates = buildChildUpdates([
+      { childTag: 'Label', propKey: 'children', value },
+    ]);
+    useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+  }, [currentProps, buildChildUpdates]);
 
   const handleValueChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, value: value });
   }, [currentProps, onUpdate]);
 
   const handlePlaceholderChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, placeholder: value });
-  }, [currentProps, onUpdate]);
+    const updatedProps = { ...currentProps, placeholder: value };
+    const childUpdates = buildChildUpdates([
+      { childTag: 'Input', propKey: 'placeholder', value },
+    ]);
+    useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+  }, [currentProps, buildChildUpdates]);
 
   const handleDescriptionChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, description: value });

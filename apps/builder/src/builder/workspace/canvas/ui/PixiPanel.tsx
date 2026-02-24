@@ -118,10 +118,10 @@ export const PixiPanel = memo(function PixiPanel({
         containerRef.current = c;
       }}
     >
-      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 / passive: 컨테이너 자식 이벤트 통과 */}
+      {/* 투명 히트 영역 - Skia가 시각적 렌더링 담당 / static: 히트테스트 포함하여 클릭 이벤트 수신 */}
       <pixiGraphics
         draw={drawHitArea}
-        eventMode="passive"
+        eventMode="static"
         cursor="default"
         onPointerDown={handleClick}
       />

@@ -6,6 +6,8 @@ import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 import { useCollectionItemManager } from '@/builder/hooks';
+import { useSyncChildProp } from '../../../hooks/useSyncChildProp';
+import { useSyncGrandchildProp } from '../../../hooks/useSyncGrandchildProp';
 import { supabase } from '../../../../env/supabase.client';
 
 export const SelectEditor = memo(function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
@@ -38,10 +40,17 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
     deselectItem();
   }, [elementId, deselectItem]);
 
+  const { buildChildUpdates } = useSyncChildProp(elementId);
+  const { buildGrandchildUpdates } = useSyncGrandchildProp(elementId);
+
   // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
   const handleLabelChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, label: value || undefined });
-  }, [currentProps, onUpdate]);
+    const updatedProps = { ...currentProps, label: value || undefined };
+    const childUpdates = buildChildUpdates([
+      { childTag: 'Label', propKey: 'children', value },
+    ]);
+    useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+  }, [currentProps, buildChildUpdates]);
 
   const handleDescriptionChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, description: value || undefined });
@@ -52,8 +61,12 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
   }, [currentProps, onUpdate]);
 
   const handlePlaceholderChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, placeholder: value || undefined });
-  }, [currentProps, onUpdate]);
+    const updatedProps = { ...currentProps, placeholder: value || undefined };
+    const childUpdates = buildGrandchildUpdates([
+      { parentTag: 'SelectTrigger', childTag: 'SelectValue', propKey: 'children', value },
+    ]);
+    useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+  }, [currentProps, buildGrandchildUpdates]);
 
   const handleSelectedValueChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, selectedValue: value || undefined });

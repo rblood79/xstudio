@@ -641,6 +641,14 @@ const ElementsLayer = memo(function ElementsLayer({
 
   // Phase 11: 엔진이 계산한 레이아웃으로 직접 배치 (Yoga 제거)
   const renderedTree = useMemo(() => {
+    // Spec shapes가 전체 시각적 요소(label + input + buttons)를 렌더링하는 컴포넌트
+    // 자식(Label, Input, Button)을 렌더링하면 이중 렌더링이 발생하므로 억제
+    const SPEC_RENDERS_ALL_TAGS = new Set([
+      'textfield', 'numberfield', 'searchfield',
+      'datefield', 'timefield', 'colorfield', 'textarea',
+      'slider', 'rangeslider',
+    ]);
+
     // Container 태그 판별 (children을 내부에서 렌더링하는 컴포넌트)
     function isContainerTagForLayout(tag: string, style?: Record<string, unknown>): boolean {
       if (tag === 'Section') {
@@ -655,10 +663,11 @@ const ElementsLayer = memo(function ElementsLayer({
       containerEl: Element,
       containerWidth: number,
       containerHeight: number,
+      overrideChildren?: Element[],
     ): (childEl: Element) => React.ReactNode {
       let cachedLayoutMap: Map<string, ComputedLayout> | null = null;
       let cachedPadding = { top: 0, right: 0, bottom: 0, left: 0 };
-      const containerChildren = pageChildrenMap.get(containerEl.id) ?? [];
+      const containerChildren = overrideChildren ?? (pageChildrenMap.get(containerEl.id) ?? []);
 
       return (childEl: Element): React.ReactNode => {
         // Lazy initialization: 첫 자식 렌더 시 모든 자식의 레이아웃 일괄 계산
@@ -710,13 +719,15 @@ const ElementsLayer = memo(function ElementsLayer({
             };
           }
 
-          // TextField: Element 자체 style(display:flex, flexDirection:column)을 사용
-          // 스타일 패널에서 layout 변경 가능 (block, flex row/column 등)
+          // Spec shapes가 전체 시각적 요소(label + input + buttons)를 렌더링하는 컴포넌트:
+          // 자식(Label, Input, Button)을 렌더링하면 이중 렌더링이 발생하므로 억제.
+          // childElements는 ElementSprite에 텍스트 추출용으로만 전달됨.
+          // (SPEC_RENDERS_ALL_TAGS는 모듈 레벨 상수 참조)
 
           // Breadcrumbs: 모든 Breadcrumb 아이템은 spec shapes가 렌더링
           // 자식 레이아웃 계산 불필요 (childElements는 텍스트 추출용으로만 전달)
           let filteredContainerChildren = containerChildren;
-          if (containerTag === 'breadcrumbs') {
+          if (containerTag === 'breadcrumbs' || SPEC_RENDERS_ALL_TAGS.has(containerTag)) {
             filteredContainerChildren = [];
           }
 
@@ -967,7 +978,37 @@ const ElementsLayer = memo(function ElementsLayer({
 
         const childStyle = effectiveChildEl.props?.style as Record<string, unknown> | undefined;
         const isContainerType = isContainerTagForLayout(effectiveChildEl.tag, childStyle);
-        const childElements = isContainerType ? (pageChildrenMap.get(effectiveChildEl.id) ?? []) : [];
+        // SPEC_RENDERS_ALL_TAGS 컴포넌트: spec shapes가 전체 렌더링 담당
+        // childElements를 빈 배열로 전달하여 _hasChildren=false → spec이 텍스트 렌더링
+        const childTagLower = (effectiveChildEl.tag ?? '').toLowerCase();
+        const childElements = isContainerType
+          ? (SPEC_RENDERS_ALL_TAGS.has(childTagLower) ? [] : (pageChildrenMap.get(effectiveChildEl.id) ?? []))
+          : [];
+
+        // Radio/Checkbox/Switch: props.children 텍스트가 있지만 Label 자식이 없는 경우
+        // 가상 Label 자식을 주입하여 WebGL에서 텍스트 렌더링 (RadioGroup/CheckboxGroup 내부)
+        let effectiveChildElements = childElements;
+        if (isContainerType && childElements.length === 0
+            && ['Radio', 'Checkbox', 'Switch', 'Toggle'].includes(effectiveChildEl.tag)) {
+          const childrenText = (effectiveChildEl.props as Record<string, unknown> | undefined)?.children;
+          if (typeof childrenText === 'string' && childrenText.trim()) {
+            const syntheticLabel = {
+              id: `${effectiveChildEl.id}__synlabel`,
+              tag: 'Label',
+              props: {
+                children: childrenText,
+                style: { fontSize: 14, backgroundColor: 'transparent' },
+              },
+              parent_id: effectiveChildEl.id,
+              page_id: effectiveChildEl.page_id,
+              project_id: effectiveChildEl.project_id,
+              order_num: 1,
+            } as Element;
+            effectiveChildElements = [syntheticLabel];
+          }
+        }
+
+        const hasOverrideChildren = effectiveChildElements !== childElements;
 
         return (
           <DirectContainer
@@ -982,9 +1023,12 @@ const ElementsLayer = memo(function ElementsLayer({
               element={effectiveChildEl}
               onClick={onClick}
               onDoubleClick={onDoubleClick}
-              childElements={isContainerType ? childElements : undefined}
-              renderChildElement={isContainerType && childElements.length > 0
-                ? createContainerChildRenderer(effectiveChildEl, layout.width, layout.height)
+              childElements={isContainerType ? effectiveChildElements : undefined}
+              renderChildElement={isContainerType && effectiveChildElements.length > 0
+                ? createContainerChildRenderer(
+                    effectiveChildEl, layout.width, layout.height,
+                    hasOverrideChildren ? effectiveChildElements : undefined,
+                  )
                 : undefined}
             />
             {!isContainerType && !SPEC_SHAPES_ONLY_TAGS.has(effectiveChildEl.tag) && renderTree(effectiveChildEl.id, { width: layout.width, height: layout.height })}
@@ -1051,7 +1095,12 @@ const ElementsLayer = memo(function ElementsLayer({
 
             const childStyle = child.props?.style as Record<string, unknown> | undefined;
             const isContainerType = isContainerTagForLayout(child.tag, childStyle);
-            const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
+            // SPEC_RENDERS_ALL_TAGS: spec shapes가 전체 렌더링 → childElements 비워서
+            // _hasChildren=false → spec이 라벨/값 텍스트 렌더링
+            const childTagLwr = (child.tag ?? '').toLowerCase();
+            const childElements = isContainerType
+              ? (SPEC_RENDERS_ALL_TAGS.has(childTagLwr) ? [] : (pageChildrenMap.get(child.id) ?? []))
+              : [];
 
             return (
               <DirectContainer

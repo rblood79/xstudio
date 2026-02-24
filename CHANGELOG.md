@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored - Child Composition Pattern: Property Editor 리팩터링 (2026-02-25)
+
+#### 개요
+Property Editor에서 부모-자식 props 동기화 로직을 커스텀 훅으로 추출하고,
+히스토리를 단일 batch 엔트리로 통합하여 Undo/Redo 원자성을 확보했습니다.
+
+#### 신규 파일
+- `builder/hooks/useSyncChildProp.ts` — 직계 자식 동기화 BatchPropsUpdate 빌더 훅
+- `builder/hooks/useSyncGrandchildProp.ts` — 손자 동기화 훅 (Select, ComboBox 전용)
+
+#### 수정 파일 (12개)
+- `builder/stores/inspectorActions.ts` — `updateSelectedPropertiesWithChildren` 메서드 추가
+- `builder/hooks/index.ts` — barrel export 추가
+- 10개 에디터: TextFieldEditor, NumberFieldEditor, SearchFieldEditor, CheckboxEditor,
+  RadioEditor, SwitchEditor, SelectEditor, ComboBoxEditor, CardEditor, SliderEditor
+
+#### 변경 내용
+- **DRY**: 10개 파일의 중복 syncChildProp 코드(각 8~26줄) → 2개 훅으로 통합
+- **히스토리 단일화**: 부모+자식 변경이 1개 batch 히스토리로 기록, Ctrl+Z 1회로 동시 원복
+- **API**: `updateSelectedPropertiesWithChildren(parentProps, childUpdates)` — `batchUpdateElementProps` 기반
+
+#### 마이그레이션
+- Before: `onUpdate(props)` + `syncChildProp('Label', 'children', value)` (2개 히스토리)
+- After: `updateSelectedPropertiesWithChildren(props, buildChildUpdates([...]))` (1개 히스토리)
+
+---
+
 ### Fixed - Dynamic Flex Property Changes Not Reflected Without Refresh (2026-02-05)
 
 #### Body 요소의 justify-content/align-items 동적 변경 시 Skia 캔버스 미갱신 수정

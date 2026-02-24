@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
 import { resolveStateColors } from '../utils/stateEffect';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * Calendar Props
@@ -103,7 +104,13 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       const gap = size.gap as unknown as number || 6;
       const paddingX = size.paddingX as unknown as number || 12;
       const paddingY = size.paddingY as unknown as number || 12;
-      const fontSize = size.fontSize as unknown as number || 14;
+      const rawFontSize = size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 14;
       const calendarWidth = cellSize * 7 + gap * 6 + paddingX * 2;
       const ff = fontFamily.sans;
 

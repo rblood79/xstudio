@@ -330,7 +330,8 @@ export const renderCheckbox = (
         }
       }}
     >
-      {typeof element.props.children === "string"
+      {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
+      {typeof element.props.children === "string" && !children.some(c => c.tag === 'Label')
         ? element.props.children
         : null}
       {children.map((child) => renderElement(child, child.id))}
@@ -448,7 +449,8 @@ export const renderRadio = (
         style={element.props.style}
         className={element.props.className}
       >
-        {typeof element.props.children === "string"
+        {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
+        {typeof element.props.children === "string" && !children.some(c => c.tag === 'Label')
           ? element.props.children
           : null}
         {children.map((child) => renderElement(child, child.id))}
@@ -471,7 +473,8 @@ export const renderRadio = (
           style={element.props.style}
           className={element.props.className}
         >
-          {typeof element.props.children === "string"
+          {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
+          {typeof element.props.children === "string" && !children.some(c => c.tag === 'Label')
             ? element.props.children
             : null}
           {children.map((child) => renderElement(child, child.id))}

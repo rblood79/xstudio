@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
 import { resolveStateColors } from '../utils/stateEffect';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * Panel Props
@@ -154,7 +155,13 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
       // 타이틀이 있는 경우
       if (title) {
         const textColor = props.style?.color ?? variant.text;
-        const fontSize = props.style?.fontSize ?? size.fontSize;
+        const rawFontSize = props.style?.fontSize ?? size.fontSize;
+        const resolvedFs = typeof rawFontSize === 'number'
+          ? rawFontSize
+          : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+              ? resolveToken(rawFontSize as TokenRef)
+              : rawFontSize);
+        const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
         const fwRaw = props.style?.fontWeight;
         const fw = fwRaw != null
           ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 600)
@@ -167,7 +174,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
           x: paddingX,
           y: paddingY,
           text: title,
-          fontSize: fontSize as unknown as number,
+          fontSize,
           fontFamily: ff,
           fontWeight: fw,
           fill: textColor,
@@ -178,9 +185,9 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
         shapes.push({
           type: 'line' as const,
           x1: 0,
-          y1: paddingY * 2 + (size.fontSize as unknown as number),
+          y1: paddingY * 2 + fontSize,
           x2: 'auto' as unknown as number,
-          y2: paddingY * 2 + (size.fontSize as unknown as number),
+          y2: paddingY * 2 + fontSize,
           stroke: borderColor,
           strokeWidth: 1,
         });

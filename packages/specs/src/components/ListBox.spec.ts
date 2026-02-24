@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
 import { resolveStateColors } from '../utils/stateEffect';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * ListBox Props
@@ -111,7 +112,13 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         : size.borderRadius;
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
       const fw = fwRaw != null
         ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
@@ -128,7 +135,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: (fontSize as unknown as number) - 2,
+          fontSize: fontSize - 2,
           fontFamily: ff,
           fontWeight: fw,
           fill: textColor,
@@ -175,9 +182,9 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             ? props.children.split('\n').filter(Boolean)
             : ['Item 1', 'Item 2', 'Item 3']);
 
-      const itemH = (fontSize as unknown as number) > 16
+      const itemH = fontSize > 16
         ? 40
-        : (fontSize as unknown as number) > 12
+        : fontSize > 12
           ? 36
           : 32;
       const paddingY = size.paddingY as unknown as number || 8;
@@ -215,7 +222,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             iconName: isSelected ? 'check-square' : 'square',
             x: paddingX + 6,
             y: itemY + itemH / 2,
-            fontSize: fontSize as unknown as number,
+            fontSize,
             fill: isSelected
               ? ('{color.primary}' as TokenRef)
               : ('{color.on-surface-variant}' as TokenRef),
@@ -225,14 +232,14 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
 
         // 아이템 텍스트
         const textX = props.selectionMode === 'multiple'
-          ? paddingX + (fontSize as unknown as number) + 10
+          ? paddingX + fontSize + 10
           : paddingX;
         shapes.push({
           type: 'text' as const,
           x: textX,
           y: itemY + itemH / 2,
           text: items[i],
-          fontSize: fontSize as unknown as number,
+          fontSize,
           fontFamily: ff,
           fontWeight: isSelected ? 600 : 400,
           fill: isSelected

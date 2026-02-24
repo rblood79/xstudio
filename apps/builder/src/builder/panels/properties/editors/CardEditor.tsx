@@ -4,6 +4,7 @@ import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, Proper
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
+import { useSyncChildProp } from '../../../hooks/useSyncChildProp';
 
 export const CardEditor = memo(function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
   // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
@@ -12,10 +13,16 @@ export const CardEditor = memo(function CardEditor({ elementId, currentProps, on
     return element?.customId || "";
   }, [elementId]);
 
+  const { buildChildUpdates } = useSyncChildProp(elementId);
+
   // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
   const handleHeadingChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, heading: value });
-  }, [currentProps, onUpdate]);
+    const updatedProps = { ...currentProps, heading: value };
+    const childUpdates = buildChildUpdates([
+      { childTag: 'Heading', propKey: 'children', value },
+    ]);
+    useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+  }, [currentProps, buildChildUpdates]);
 
   const handleSubheadingChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, subheading: value });
@@ -26,8 +33,12 @@ export const CardEditor = memo(function CardEditor({ elementId, currentProps, on
   }, [currentProps, onUpdate]);
 
   const handleDescriptionChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, description: value });
-  }, [currentProps, onUpdate]);
+    const updatedProps = { ...currentProps, description: value };
+    const childUpdates = buildChildUpdates([
+      { childTag: 'Description', propKey: 'children', value },
+    ]);
+    useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+  }, [currentProps, buildChildUpdates]);
 
   const handleFooterChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, footer: value });

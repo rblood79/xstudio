@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * GridList Item
@@ -113,7 +114,13 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       const gap       = size.gap as unknown as number ?? 12;
       const paddingX  = size.paddingX as unknown as number ?? 12;
       const paddingY  = size.paddingY as unknown as number ?? 12;
-      const fontSize  = size.fontSize as unknown as number ?? 14;
+      const rawFontSize = size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize  = typeof resolvedFs === 'number' ? resolvedFs : 14;
       const ff        = (props.style?.fontFamily as string) || fontFamily.sans;
       const textColor = props.style?.color ?? variant.text;
       const bgColor   = props.style?.backgroundColor ?? variant.background;

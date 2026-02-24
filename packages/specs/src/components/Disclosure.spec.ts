@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
 import { resolveStateColors } from '../utils/stateEffect';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * Disclosure Props
@@ -119,7 +120,13 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
                         ?? (variant.border || ('{color.outline-variant}' as TokenRef));
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
       const fw = fwRaw != null
         ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
@@ -177,7 +184,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
               x: paddingX,
               y: size.height / 2,
               text: title,
-              fontSize: fontSize as unknown as number,
+              fontSize,
               fontFamily: ff,
               fontWeight: fw,
               fill: textColor,

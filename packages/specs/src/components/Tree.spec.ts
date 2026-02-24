@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
 import { resolveStateColors } from '../utils/stateEffect';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * Tree Props
@@ -110,6 +111,15 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
       ];
 
       const paddingY = size.paddingY as unknown as number || 8;
+
+      const rawFontSize = size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 14;
+
       const totalHeight = paddingY * 2 + treeItems.length * itemHeight;
 
       const shapes: Shape[] = [
@@ -158,7 +168,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
           x: x + 12,
           y: y + itemHeight / 2,
           text: item.label,
-          fontSize: size.fontSize as unknown as number,
+          fontSize,
           fontFamily: ff,
           fontWeight: item.level === 0 ? 600 : 400,
           fill: variant.text,

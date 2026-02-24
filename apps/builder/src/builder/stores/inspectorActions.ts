@@ -20,6 +20,7 @@ import { fillsToCssBackground } from "../panels/styles/utils/fillMigration";
 import { saveService } from "../../services/save";
 import { historyManager } from "./history";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";
+import type { BatchPropsUpdate } from "./utils/elementUpdate";
 
 // ============================================
 // Types
@@ -36,6 +37,11 @@ export interface InspectorActionsState {
   updateSelectedStylePreview: (property: string, value: string) => void;
   updateSelectedProperty: (key: string, value: unknown) => void;
   updateSelectedProperties: (properties: Record<string, unknown>) => void;
+  /** 부모+자식 props를 단일 batch 히스토리로 atomic 업데이트 (Child Composition Pattern) */
+  updateSelectedPropertiesWithChildren: (
+    properties: Record<string, unknown>,
+    childUpdates: BatchPropsUpdate[]
+  ) => void;
   updateSelectedCustomId: (customId: string) => void;
   updateSelectedDataBinding: (dataBinding: DataBinding | undefined) => void;
   updateSelectedEvents: (events: EventHandler[]) => void;
@@ -63,6 +69,7 @@ interface RequiredState {
   updateElement: (elementId: string, updates: Partial<Element>) => Promise<void>;
   _rebuildIndexes: () => void;
   _cancelHydrateSelectedProps: () => void;
+  batchUpdateElementProps: (updates: BatchPropsUpdate[]) => Promise<void>;
 }
 
 type CombinedState = InspectorActionsState & RequiredState;
@@ -351,6 +358,23 @@ export const createInspectorActionsSlice: StateCreator<
       if (!element) return;
 
       updateAndSave(element.id, properties);
+    },
+
+    updateSelectedPropertiesWithChildren: (properties, childUpdates) => {
+      const element = getSelectedElement();
+      if (!element) return;
+
+      // Race condition 방지: 선택된 요소의 hydration 취소
+      get()._cancelHydrateSelectedProps();
+
+      // 부모 + 자식을 단일 batch로 구성
+      const batch: BatchPropsUpdate[] = [
+        { elementId: element.id, props: properties as ComponentElementProps },
+        ...childUpdates,
+      ];
+
+      // batchUpdateElementProps → 단일 set() + batch 히스토리 + IndexedDB 저장
+      get().batchUpdateElementProps(batch);
     },
 
     // ============================================

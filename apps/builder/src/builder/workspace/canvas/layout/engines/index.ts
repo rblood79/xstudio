@@ -59,6 +59,30 @@ export {
 // W3-7: CSS var() DOM fallback 헬퍼
 export { createVariableScopeWithDOMFallback } from './cssValueParser';
 
+// ─── Phantom indicator: DOM에만 존재하는 indicator 레이아웃 공간 계산 ──
+// Switch/Checkbox/Radio: Preview DOM은 [indicator + label] 구조이지만
+// WebGL element tree에는 label 자식만 존재.
+// Spec shapes(Skia)가 indicator를 시각적으로 그리지만 레이아웃 트리에는
+// 반영되지 않아 label이 x=0에 배치되어 겹침.
+// 반환값 = indicatorWidth + gap (CSS gap이 element style에 없으므로 포함)
+
+const PHANTOM_INDICATOR_WIDTHS: Record<string, Record<string, number>> = {
+  switch:   { sm: 46, md: 54, lg: 62 },  // trackWidth(36/44/52) + gap(10)
+  toggle:   { sm: 46, md: 54, lg: 62 },
+  checkbox: { sm: 24, md: 28, lg: 32 },  // boxSize(16/20/24) + gap(8)
+  radio:    { sm: 24, md: 28, lg: 32 },  // outerSize(16/20/24) + gap(8)
+};
+
+function getPhantomIndicatorWidth(
+  tag: string,
+  props: Record<string, unknown> | undefined,
+): number {
+  const config = PHANTOM_INDICATOR_WIDTHS[tag];
+  if (!config) return 0;
+  const size = (props?.size as string) ?? 'md';
+  return config[size] ?? config.md;
+}
+
 // 싱글톤 엔진 인스턴스
 const dropflowBlockEngine = new DropflowBlockEngine();
 const taffyFlexEngine = new TaffyFlexEngine();
@@ -239,6 +263,17 @@ export function calculateChildrenLayout(
       if (isRow) {
         // Dropflow는 세로(block) 배치 → 가로(row) 배치로 전환
         let xOffset = 0;
+
+        // Phantom indicator offset: Switch/Checkbox/Radio의 indicator는
+        // DOM에만 존재하고 WebGL element tree에는 없음.
+        // Spec shapes(Skia)가 indicator를 x=0에 그리므로
+        // 자식 요소를 indicator 너비 + gap만큼 오른쪽으로 오프셋.
+        const parentTag = (parent.tag ?? '').toLowerCase();
+        const indicatorOffset = getPhantomIndicatorWidth(parentTag, parent.props);
+        if (indicatorOffset > 0) {
+          xOffset = indicatorOffset;
+        }
+
         for (let i = 0; i < results.length; i++) {
           if (i > 0) xOffset += gapVal;
           results[i] = { ...results[i], x: xOffset, y: 0 };

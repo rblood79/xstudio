@@ -22,6 +22,8 @@ export { dataQueryKeys, useDataPanelQuery } from './useDataQueries';
 export { useElementCreator } from './useElementCreator';
 export { usePageLoader, useAdjacentPagePreload } from './usePageLoader';
 export { usePageManager } from './usePageManager';
+export { useSyncChildProp } from './useSyncChildProp';
+export { useSyncGrandchildProp } from './useSyncGrandchildProp';
 
 // Component & Layout (Phase 2 승격)
 export { useComponentMeta } from './useComponentMeta';

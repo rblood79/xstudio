@@ -949,6 +949,63 @@ set((state) => ({
 
 ---
 
+## Child Composition Pattern 동기화
+
+### 배경
+
+Complex 컴포넌트(TextField, Checkbox, Select 등)는 자식 Element(Label, Input 등)가 실제 렌더링을 담당합니다.
+Property Editor에서 부모의 `label`/`placeholder` 등을 변경할 때, 자식 Element의 props도 동기화해야 WebGL 캔버스에 반영됩니다.
+
+### 사용법
+
+#### 직계 자식 동기화 — `useSyncChildProp`
+
+```typescript
+import { useSyncChildProp } from '../../../hooks/useSyncChildProp';
+
+const { buildChildUpdates } = useSyncChildProp(elementId);
+
+const handleLabelChange = useCallback((value: string) => {
+  const updatedProps = { ...currentProps, label: value };
+  const childUpdates = buildChildUpdates([
+    { childTag: 'Label', propKey: 'children', value },
+  ]);
+  useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+}, [currentProps, buildChildUpdates]);
+```
+
+#### 손자 동기화 — `useSyncGrandchildProp`
+
+Select, ComboBox 등 2단계 자식 구조에서 사용:
+
+```typescript
+import { useSyncGrandchildProp } from '../../../hooks/useSyncGrandchildProp';
+
+const { buildGrandchildUpdates } = useSyncGrandchildProp(elementId);
+
+const handlePlaceholderChange = useCallback((value: string) => {
+  const updatedProps = { ...currentProps, placeholder: value };
+  const childUpdates = buildGrandchildUpdates([
+    { parentTag: 'SelectTrigger', childTag: 'SelectValue', propKey: 'children', value },
+  ]);
+  useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+}, [currentProps, buildGrandchildUpdates]);
+```
+
+### Store 메서드
+
+`updateSelectedPropertiesWithChildren(properties, childUpdates)`:
+- `_cancelHydrateSelectedProps()` 호출 (race condition 방지)
+- 부모 + 자식을 단일 `batchUpdateElementProps` batch로 처리
+- 단일 batch 히스토리 엔트리 → Undo 1회로 부모+자식 동시 원복
+
+### 규칙
+
+- 자식 동기화가 필요한 핸들러만 `updateSelectedPropertiesWithChildren` 사용
+- 자식 동기화가 불필요한 핸들러 (isRequired, isDisabled 등)는 기존 `onUpdate` 유지
+
+---
+
 ## 📚 참고 문서
 
 - [React 19 use() hook](https://react.dev/reference/react/use)
@@ -963,6 +1020,7 @@ set((state) => ({
 
 | 날짜 | 버전 | 변경 사항 |
 |------|------|----------|
+| 2026-02-25 | 5.0 | Child Composition Pattern 동기화 섹션 추가 |
 | 2025-11-21 | 4.0 | **Phase 1 완료**, 벤치마크 결과 추가, Phase 2-4 불필요 판정 |
 | 2025-01-21 | 3.0 | 최종 검증 결과 반영, 실행 계획 최적화 |
 | 2025-01-20 | 2.0 | 2차 검증 결과 반영, 참조 비교 방식 추가 |

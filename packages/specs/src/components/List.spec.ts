@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
 import { resolveStateColors } from '../utils/stateEffect';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * List Props
@@ -109,7 +110,13 @@ export const ListSpec: ComponentSpec<ListProps> = {
         : size.borderRadius;
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
       const fw = fwRaw != null
         ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
@@ -165,9 +172,9 @@ export const ListSpec: ComponentSpec<ListProps> = {
         shapes.push({
           type: 'text' as const,
           x: size.paddingX,
-          y: size.paddingY + index * ((size.fontSize as unknown as number) + (size.gap ?? 4) + size.paddingY),
+          y: size.paddingY + index * (fontSize + (size.gap ?? 4) + size.paddingY),
           text: item.label,
-          fontSize: fontSize as unknown as number,
+          fontSize,
           fontFamily: ff,
           fontWeight: fw,
           fill: textColor,

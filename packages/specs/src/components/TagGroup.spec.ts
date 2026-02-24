@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
 import { resolveStateColors } from '../utils/stateEffect';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * TagGroup Props
@@ -108,7 +109,13 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   render: {
     shapes: (props, variant, size, state = 'default') => {
       const shapes: Shape[] = [];
-      const tagFontSize = size.fontSize as unknown as number || 14;
+      const rawTagFontSize = size.fontSize;
+      const resolvedTagFs = typeof rawTagFontSize === 'number'
+        ? rawTagFontSize
+        : (typeof rawTagFontSize === 'string' && rawTagFontSize.startsWith('{')
+            ? resolveToken(rawTagFontSize as TokenRef)
+            : rawTagFontSize);
+      const tagFontSize = typeof resolvedTagFs === 'number' ? resolvedTagFs : 14;
       const tagGap = size.gap || 4;
       const currentY = 0;
 

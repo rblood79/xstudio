@@ -42,7 +42,7 @@ import {
   ProgressBarSpec, TableSpec, TreeSpec, TabsSpec, MenuSpec,
   BreadcrumbsSpec, PaginationSpec, GridListSpec,
   DisclosureSpec, DisclosureGroupSpec, ToolbarSpec, ToastSpec,
-  PanelSpec, GroupSpec, SlotSpec, SkeletonSpec, DropZoneSpec,
+  NavSpec, PanelSpec, GroupSpec, SlotSpec, SkeletonSpec, DropZoneSpec,
   FileTriggerSpec, ScrollBoxSpec, MaskedFrameSpec,
   InputSpec, ListSpec, SwitcherSpec,
   DatePickerSpec, DateRangePickerSpec, DateFieldSpec, TimeFieldSpec,
@@ -484,6 +484,7 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'Link': LinkSpec, 'Anchor': LinkSpec, 'A': LinkSpec,
   'Breadcrumbs': BreadcrumbsSpec,
   'Card': CardSpec, 'Box': CardSpec,
+  'Nav': NavSpec, 'Navigation': NavSpec,
   'Panel': PanelSpec,
   'Menu': MenuSpec, 'ContextMenu': MenuSpec, 'DropdownMenu': MenuSpec,
   'Tabs': TabsSpec, 'TabList': TabsSpec,
@@ -883,6 +884,7 @@ export const ElementSprite = memo(function ElementSprite({
       'ComboBox', 'Select', 'Dropdown',
       'Slider', 'RangeSlider',
       'CheckboxGroup', 'RadioGroup',
+      'Switch', 'Toggle',
     ]);
     const isTransparentContainer = isUIComponent && TRANSPARENT_CONTAINER_TAGS.has(tag);
 
@@ -1103,10 +1105,10 @@ export const ElementSprite = memo(function ElementSprite({
             ]);
 
             if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
-              // Complex component: 자식 유무와 관계없이 항상 _hasChildren=true
-              // (자식 삭제 시 standalone 렌더링 복귀 방지)
-              // Non-complex (Button 등): 자식이 실제로 있을 때만 _hasChildren=true
-              if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
+              // _hasChildren: 실제 자식 Element가 콘텐츠를 렌더링할 때만 true
+              // SPEC_RENDERS_ALL_TAGS로 자식이 억제되면 childElements=[] → false
+              // → spec이 전체 렌더링 담당 (Slider 라벨/값 텍스트 등)
+              if (childElements && childElements.length > 0) {
                 specProps = { ...specProps, _hasChildren: true };
               }
             }
@@ -1121,6 +1123,20 @@ export const ElementSprite = memo(function ElementSprite({
               return 'default';
             })();
 
+            // Inject computed dimensions so spec shapes use actual layout size
+            // ?? ensures explicit style values take priority; only fills in when absent
+            if (finalWidth > 0 || finalHeight > 0) {
+              const existingStyle = (specProps.style || {}) as Record<string, unknown>;
+              specProps = {
+                ...specProps,
+                style: {
+                  ...existingStyle,
+                  width: existingStyle.width ?? (finalWidth > 0 ? finalWidth : undefined),
+                  height: existingStyle.height ?? (finalHeight > 0 ? finalHeight : undefined),
+                },
+              };
+            }
+
             const shapes = spec.render.shapes(
               specProps as Record<string, unknown>,
               variantSpec,
@@ -1129,7 +1145,13 @@ export const ElementSprite = memo(function ElementSprite({
             );
 
             // Column layout: shapes를 세로 쌓기로 재배치
-            if (isColumn) {
+            // SPEC_RENDERS_ALL_TAGS 컴포넌트는 spec shapes가 자체 레이아웃을 포함하므로 재배치 스킵
+            const SPEC_RENDERS_ALL_TAGS_SET = new Set([
+              'TextField', 'NumberField', 'SearchField',
+              'DateField', 'TimeField', 'ColorField', 'TextArea',
+              'Slider', 'RangeSlider',
+            ]);
+            if (isColumn && !SPEC_RENDERS_ALL_TAGS_SET.has(tag)) {
               rearrangeShapesForColumn(shapes, finalWidth, sizeSpec.gap ?? 8);
             }
 

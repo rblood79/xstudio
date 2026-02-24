@@ -563,3 +563,73 @@ shapes(props, variantSpec, sizeSpec, state) {
 
 2. **Tree** — `CHILD_COMPOSITION_EXCLUDE_TAGS`에서 제외 후 `_hasChildren` 체크 추가 필요.
    다단계 중첩(Tree → TreeItem 재귀) + expand/collapse 상태 관리로 `_hasChildren` 미적용 상태.
+
+---
+
+## Phase 3: Property Editor 리팩터링 완료 (2026-02-25)
+
+> **완료일**: 2026-02-25
+> **범위**: Child Composition Pattern을 Property Editor 레이어까지 확장
+> **관련 커밋**: `e9316b5b`, `15810c83`
+
+### 개요
+
+Child Composition Pattern의 spec/canvas 계층 전환에 이어,
+Property Editor에서 발생하던 부모-자식 props 이중 히스토리 문제를 해결했다.
+인라인 `syncChildProp` 코드를 커스텀 훅으로 추출하고,
+store 메서드를 통해 부모+자식 변경을 단일 batch 히스토리로 통합했다.
+
+### 신규 파일
+
+| 파일 | 역할 |
+|------|------|
+| `apps/builder/src/builder/hooks/useSyncChildProp.ts` | 직계 자식 동기화 — `BatchPropsUpdate[]` 빌더 훅 |
+| `apps/builder/src/builder/hooks/useSyncGrandchildProp.ts` | 손자 동기화 훅 (Select, ComboBox 전용) |
+
+### store 메서드 추가
+
+`apps/builder/src/builder/stores/inspectorActions.ts`에 `updateSelectedPropertiesWithChildren` 메서드 추가.
+
+```typescript
+// Before: 2회 호출 → 2개 히스토리 엔트리
+onUpdate(parentProps);
+syncChildProp('Label', 'children', value);
+
+// After: 1회 호출 → 1개 batch 히스토리 엔트리
+updateSelectedPropertiesWithChildren(parentProps, buildChildUpdates([
+  { tag: 'Label', prop: 'children', value },
+]));
+```
+
+`batchUpdateElementProps` 기반으로 구현되어, 부모 요소와 지정된 자식 요소들의 prop 변경이
+하나의 히스토리 트랜잭션으로 묶인다. Ctrl+Z 1회로 부모+자식이 동시에 원복된다.
+
+### 적용된 에디터 (10개)
+
+| 에디터 | 동기화 대상 자식 |
+|--------|----------------|
+| TextFieldEditor | Label(children), Input(placeholder, isDisabled, isRequired) |
+| NumberFieldEditor | Label(children), Input(placeholder, isDisabled, isRequired) |
+| SearchFieldEditor | Label(children), Input(placeholder, isDisabled, isRequired) |
+| CheckboxEditor | Label(children), Checkbox(isDisabled, isRequired) |
+| RadioEditor | Label(children), Radio(isDisabled) |
+| SwitchEditor | Label(children), Switch(isDisabled) |
+| SelectEditor | Label(children), Select(isDisabled, isRequired) — 손자 동기화 포함 |
+| ComboBoxEditor | Label(children), ComboBox(isDisabled, isRequired) — 손자 동기화 포함 |
+| CardEditor | 자식 컨테이너 레이아웃 동기화 |
+| SliderEditor | Label(children), Slider(isDisabled, step, minValue, maxValue) |
+
+### DRY 개선 효과
+
+| 지표 | 이전 | 이후 |
+|------|------|------|
+| 중복 syncChildProp 코드 | 10개 파일 × 8~26줄 | 2개 훅으로 통합 |
+| 히스토리 엔트리 수 (prop 변경 1회) | 2개 (부모 + 자식 별개) | 1개 (batch) |
+| Undo 횟수 (변경 원복) | 2회 | 1회 |
+
+### 히스토리 단일화 원칙
+
+Child Composition Pattern에서 부모 컴포넌트와 자식 컴포넌트는 의미적으로 하나의 단위다.
+TextField의 `label` prop 변경은 Label 자식의 `children`과 항상 함께 변경되어야 하며,
+이 두 변경을 별개의 히스토리 엔트리로 기록하면 Undo 시 UI가 불일치 상태에 빠진다.
+`updateSelectedPropertiesWithChildren`은 이 원자성(atomicity)을 store 레벨에서 보장한다.

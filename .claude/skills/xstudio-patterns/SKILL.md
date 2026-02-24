@@ -508,6 +508,78 @@ const shapes: Shape[] = [];
 if (hasChildren) return shapes; // 배경도 없음!
 ```
 
+#### Standalone shapes에서의 label 렌더링 패턴
+
+`_hasChildren: false`일 때(standalone 모드) spec shapes에서 label을 직접 렌더링하는 표준 패턴입니다.
+label이 있으면 y=0에 배치하고, 이후 모든 shapes는 `labelOffset`만큼 y를 이동시킵니다.
+
+```typescript
+import { resolveToken } from '../renderers/utils/tokenResolver';
+
+// shapes 함수 내부 — resolveToken으로 fontSize 해결 후 label 계산
+const rawFontSize = props.style?.fontSize ?? size.fontSize;
+const resolvedFs = typeof rawFontSize === 'number'
+  ? rawFontSize
+  : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      ? resolveToken(rawFontSize as TokenRef)
+      : rawFontSize);
+const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+
+// ✅ label 높이 및 offset 계산
+const labelFontSize = fontSize - 2;
+const labelHeight = Math.ceil(labelFontSize * 1.2);
+const labelGap = size.gap ?? 8;
+const labelOffset = props.label ? labelHeight + labelGap : 0;
+
+// ✅ label shape — 항상 y=0에 배치
+if (props.label) {
+  shapes.push({
+    type: 'text' as const,
+    x: 0,
+    y: 0,
+    text: props.label,
+    fontSize: labelFontSize,
+    fontFamily: ff,
+    fontWeight,
+    fill: variant.text,
+    align: textAlign,
+    baseline: 'top' as const,
+  });
+}
+
+// ✅ 이후 모든 shapes는 y에 labelOffset 추가
+shapes.push({
+  id: 'bg',
+  type: 'roundRect' as const,
+  x: 0,
+  y: labelOffset,  // label이 없으면 0, 있으면 labelHeight + labelGap
+  width,
+  height,
+  ...
+});
+
+// ✅ 내부 콘텐츠도 labelOffset 기준으로 배치
+shapes.push({
+  type: 'text' as const,
+  x: paddingX,
+  y: labelOffset + height / 2,  // 입력 필드 세로 중앙
+  ...
+});
+
+// ❌ labelOffset 미적용 — label과 입력 필드가 겹침
+shapes.push({
+  id: 'bg',
+  type: 'roundRect' as const,
+  x: 0,
+  y: 0,  // label 아래로 내려가지 않음
+  ...
+});
+```
+
+**적용 컴포넌트**: `NumberField.spec.ts`, `SearchField.spec.ts` 등 label prop을 직접 standalone shapes에서 렌더링하는 모든 Input Field 계열.
+
+**주의**: `_hasChildren: true`이면 이 패턴은 실행되지 않습니다. `_hasChildren` 체크 이후의 standalone 전용 경로에 배치해야 합니다.
+
 #### Container Props 주입 확장 (`BuilderCanvas.tsx`)
 
 ```typescript
@@ -620,6 +692,92 @@ if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
    - 구 데이터 (자식 없음) → standalone 렌더링 유지
    - **자식을 모두 삭제해도 빈 shell 유지** (standalone spec shapes로 되돌아가지 않음)
 
+
+#### Property Editor 자식 동기화 패턴 (2026-02-25)
+
+**왜 필요한가**: 부모 컴포넌트의 spec shapes()는 `_hasChildren: true`일 때 빈 배열(또는 shell만)을 반환합니다. 실제 label, placeholder 등의 텍스트 렌더링은 자식 Element(Label, Input 등)가 담당합니다. 따라서 Properties Panel에서 부모 prop을 변경할 때, 부모 Element의 props 업데이트만으로는 Canvas에 텍스트가 반영되지 않습니다. **자식 Element의 대응 prop도 함께 업데이트해야** 합니다.
+
+**`useSyncChildProp` 훅** (`apps/builder/src/builder/hooks/useSyncChildProp.ts`):
+
+```typescript
+interface ChildPropSync {
+  childTag: string;  // 자식 Element의 tag (예: 'Label', 'Input')
+  propKey: string;   // 자식 Element에서 업데이트할 prop 키
+  value: string;     // 적용할 값
+}
+
+export function useSyncChildProp(elementId: string) {
+  const buildChildUpdates = useCallback(
+    (syncs: ChildPropSync[]): BatchPropsUpdate[] => {
+      // childrenMap O(1) 탐색으로 직계 자식의 props 업데이트 목록 생성
+    },
+    [elementId],
+  );
+  return { buildChildUpdates };
+}
+```
+
+**`useSyncGrandchildProp` 훅** (`apps/builder/src/builder/hooks/useSyncGrandchildProp.ts`):
+
+Select, ComboBox처럼 직계 자식이 아닌 손자(grandchild)에 prop을 동기화해야 하는 경우에 사용합니다.
+2단계 childrenMap 탐색을 수행합니다.
+
+```typescript
+// Select: SelectTrigger → SelectValue.children
+// ComboBox: ComboBoxWrapper → ComboBoxInput.placeholder
+export function useSyncGrandchildProp(elementId: string) {
+  const buildGrandchildUpdates = useCallback(
+    (syncs: GrandchildPropSync[]): BatchPropsUpdate[] => { ... },
+    [elementId],
+  );
+  return { buildGrandchildUpdates };
+}
+```
+
+**`updateSelectedPropertiesWithChildren` store 메서드** (`inspectorActions.ts`):
+
+부모 props와 자식 props를 **단일 batch 히스토리 엔트리**로 원자적으로 업데이트합니다.
+
+```typescript
+// ✅ 부모 + 자식을 atomic batch로 업데이트 — Undo 1회로 전체 원복
+const handleLabelChange = useCallback((value: string) => {
+  const updatedProps = { ...currentProps, label: value };
+  const childUpdates = buildChildUpdates([
+    { childTag: 'Label', propKey: 'children', value },
+  ]);
+  useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+}, [currentProps, buildChildUpdates]);
+
+// ❌ 구 패턴 — 2회 호출로 히스토리 엔트리 2개 생성 (Undo 2회 필요)
+onUpdate({ label: value });
+syncChildProp('Label', 'children', value);
+```
+
+**CRITICAL**: 새로운 Complex 컴포넌트의 Property Editor를 만들 때는 반드시 `useSyncChildProp` 훅을 사용하여 자식 동기화를 구현할 것. 인라인 syncChildProp 코드 작성 금지.
+
+#### 에디터별 자식 동기화 매핑
+
+| 에디터 | 부모 prop | 자식 Tag | 자식 propKey | 패턴 |
+|--------|----------|----------|-------------|------|
+| `TextFieldEditor` | `label` | `Label` | `children` | child |
+| `TextFieldEditor` | `placeholder` | `Input` | `placeholder` | child |
+| `NumberFieldEditor` | `label` | `Label` | `children` | child |
+| `NumberFieldEditor` | `placeholder` | `Input` | `placeholder` | child |
+| `SearchFieldEditor` | `label` | `Label` | `children` | child |
+| `SearchFieldEditor` | `placeholder` | `Input` | `placeholder` | child |
+| `CheckboxEditor` | `children` | `Label` | `children` | child |
+| `RadioEditor` | `children` | `Label` | `children` | child |
+| `SwitchEditor` | `children` | `Label` | `children` | child |
+| `CardEditor` | `heading` | `Heading` | `children` | child |
+| `CardEditor` | `description` | `Description` | `children` | child |
+| `SliderEditor` | `label` | `Label` | `children` | child |
+| `SelectEditor` | `label` | `Label` | `children` | child |
+| `SelectEditor` | `placeholder` | `SelectTrigger` → `SelectValue` | `children` | grandchild |
+| `ComboBoxEditor` | `label` | `Label` | `children` | child |
+| `ComboBoxEditor` | `placeholder` | `ComboBoxWrapper` → `ComboBoxInput` | `placeholder` | grandchild |
+
+상세 내용: [domain-history-integration](rules/domain-history-integration.md#child-composition-pattern-batch-히스토리)
+
 ### Canvas 2D ↔ CanvasKit 폭 측정 오차 보정 (CRITICAL)
 
 `calculateContentWidth`(utils.ts)는 Canvas 2D `measureText` API로 텍스트 폭을 측정합니다.
@@ -651,7 +809,44 @@ const textWidth = calculateTextWidth(text, fontSize, fontFamily);
 ### TokenRef fontSize 해석 (Spec Shapes)
 
 spec의 `size.fontSize`가 TokenRef 문자열(`'{typography.text-md}'`)로 지정될 수 있습니다.
-이를 `as unknown as number`로 캐스팅하면 NaN이 발생하므로, 반드시 숫자 여부를 확인한 후 height 기반 fallback으로 변환해야 합니다.
+이를 `as unknown as number`로 캐스팅하면 NaN이 발생하므로 반드시 안전한 변환 패턴을 사용해야 합니다.
+두 가지 패턴이 존재하며, **spec shapes 내부에서는 `resolveToken()` 직접 호출 패턴을 사용합니다**.
+
+#### 패턴 A: `resolveToken()` 직접 호출 (Spec shapes 내부 — 권장)
+
+spec shapes 함수 내에서 `props.style?.fontSize` 또는 `size.fontSize`를 처리할 때 사용합니다.
+`resolveToken()`은 TokenRef 문자열을 실제 숫자값으로 변환합니다.
+
+```typescript
+import { resolveToken } from '../renderers/utils/tokenResolver';
+
+// ✅ Correct: resolveToken()으로 TokenRef 해결 (NumberField.spec.ts, SearchField.spec.ts 패턴)
+const rawFontSize = props.style?.fontSize ?? size.fontSize;
+const resolvedFs = typeof rawFontSize === 'number'
+  ? rawFontSize
+  : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      ? resolveToken(rawFontSize as TokenRef)
+      : rawFontSize);
+const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+
+// ❌ Incorrect: as unknown as number 캐스팅 (NaN 발생)
+const fontSize = size.fontSize as unknown as number;
+
+// ❌ Incorrect: TokenRef 문자열로 산술 연산 (NaN)
+const labelFontSize = (size.fontSize as unknown as number) - 2;
+// → '{typography.text-md}' - 2 = NaN → 텍스트 shape y 좌표 NaN → 렌더링 실패
+```
+
+**로직 흐름**:
+1. `props.style?.fontSize`가 있으면 우선 사용 (인라인 스타일 오버라이드)
+2. 없으면 `size.fontSize` 사용
+3. 숫자이면 그대로 사용
+4. `{...}` 형식의 TokenRef 문자열이면 `resolveToken()`으로 실제 값 추출
+5. 변환 결과가 숫자가 아니면 기본값 `16` 사용
+
+#### 패턴 B: height 기반 매핑 fallback (외부 유틸리티 코드)
+
+spec 외부(레이아웃 엔진 등)에서 TokenRef를 받을 수 없는 경우, size 이름 기반으로 매핑합니다.
 
 ```typescript
 // ✅ TokenRef 여부 확인 후 height 매핑으로 fallback
@@ -660,11 +855,6 @@ const fontSize =
   typeof rawFontSize === 'number'
     ? rawFontSize
     : ({ sm: 12, md: 14, lg: 16 }[size] ?? 14); // height 기반 매핑
-
-// ❌ as unknown as number 캐스팅 — TokenRef 문자열이 NaN으로 변환됨
-const fontSize = spec.size?.fontSize as unknown as number;
-// → Number('{typography.text-md}') === NaN
-// → 텍스트 렌더링 실패 또는 0px 높이
 ```
 
 | size | fallback fontSize |
@@ -1024,6 +1214,106 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
   - `ElementSprite.tsx`에서 `tag === 'breadcrumbs'` 분기: 자식 중 `tag === 'Breadcrumb'`인 요소의 `props.children` 수집 → `_crumbs` prop 주입
   - `Breadcrumbs.spec.ts`의 shapes()가 `_crumbs` 배열 기반으로 구분자 포함 텍스트 shape 렌더링
   - SPEC_SHAPES_INPUT_TAGS에 `'breadcrumbs'` 포함 → `enrichWithIntrinsicSize`의 contentHeight ≤ 0 early return 우회
+
+### rearrangeShapesForColumn 가드: SPEC_RENDERS_ALL_TAGS_SET (2026-02-25)
+
+`ElementSprite.tsx`에서 spec shapes를 column 방향으로 재배치하는 `rearrangeShapesForColumn()` 호출 시,
+일부 컴포넌트는 이 재배치를 건너뛰어야 합니다.
+
+**왜 필요한가**: `rearrangeShapesForColumn()`은 shapes의 y 좌표를 위에서부터 순서대로 쌓이도록 재배치합니다.
+그런데 `NumberField`, `SearchField` 등은 spec shapes 내부에서 이미 `labelOffset`을 통해 세로 레이아웃을
+직접 계산합니다. 이 컴포넌트들에 `rearrangeShapesForColumn()`을 적용하면 좌표가 이중으로 변환되어 렌더링이 깨집니다.
+
+```typescript
+// ElementSprite.tsx — spec shapes 호출 후 column 재배치 로직
+
+// SPEC_RENDERS_ALL_TAGS_SET: spec shapes가 자체 세로 레이아웃을 포함하는 컴포넌트
+// 이 컴포넌트들은 rearrangeShapesForColumn 재배치를 스킵
+const SPEC_RENDERS_ALL_TAGS_SET = new Set([
+  'TextField', 'NumberField', 'SearchField',
+  'DateField', 'TimeField', 'ColorField', 'TextArea',
+  'Slider', 'RangeSlider',
+]);
+
+// ✅ SPEC_RENDERS_ALL_TAGS_SET 가드 적용
+if (isColumn && !SPEC_RENDERS_ALL_TAGS_SET.has(tag)) {
+  rearrangeShapesForColumn(shapes, finalWidth, sizeSpec.gap ?? 8);
+}
+
+// ❌ 가드 없이 모든 컴포넌트에 rearrangeShapesForColumn 적용
+if (isColumn) {
+  rearrangeShapesForColumn(shapes, finalWidth, sizeSpec.gap ?? 8);
+}
+// → NumberField: spec이 이미 y=labelOffset으로 배치한 shapes를
+//   rearrangeShapesForColumn이 다시 y=0 기준으로 재배치
+//   → label과 입력 필드가 겹치거나 잘못된 위치에 렌더링
+```
+
+**등록 기준**: 다음 조건 중 하나라도 해당하면 `SPEC_RENDERS_ALL_TAGS_SET`에 추가:
+- spec shapes 내부에서 `labelOffset`을 계산하여 y 좌표를 직접 배치하는 컴포넌트
+- spec shapes 내부에서 복수의 서브 컴포넌트(label + input + button 등)를 세로로 직접 배치하는 컴포넌트
+
+**연관 Set 비교**:
+
+| Set 이름 | 위치 | 목적 |
+|---------|------|------|
+| `SPEC_RENDERS_ALL_TAGS_SET` | `ElementSprite.tsx` (로컬) | `rearrangeShapesForColumn` 재배치 스킵 |
+| `SPEC_RENDERS_ALL_TAGS` | `BuilderCanvas.tsx` (로컬) | 자식 이중 렌더링 억제 (자식 sprite 렌더링 건너뜀) |
+| `SPEC_SHAPES_INPUT_TAGS` | `engines/utils.ts` | `enrichWithIntrinsicSize`의 contentHeight ≤ 0 early return 우회 |
+
+> 세 Set은 비슷한 컴포넌트 목록을 가지지만 목적이 다릅니다. 새 컴포넌트 추가 시 세 곳 모두 확인해야 합니다.
+
+## 서브에이전트 위임 가이드라인
+
+Spec 파일 일괄 수정 등 병렬 에이전트(Task tool)에 작업을 위임할 때, 아래 규칙을 프롬프트에 **반드시** 포함하세요.
+
+### 수정 금지 패턴 (Protected Patterns)
+
+서브에이전트 프롬프트에 다음을 명시:
+
+```
+⚠️ 수정 금지 패턴 — 아래 코드는 절대 변경/삭제/이동하지 마세요:
+
+1. _hasChildren 패턴: 아래 코드 블록을 삭제, 이동, 조건 변경하지 마세요.
+   const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+   if (hasChildren) return shapes;
+
+2. COMPLEX_COMPONENT_TAGS / CHILD_COMPOSITION_EXCLUDE_TAGS 관련 로직
+
+3. ElementSprite.tsx의 _hasChildren 주입 로직 (3단계 평가)
+
+4. rearrangeShapesForColumn / SPEC_RENDERS_ALL_TAGS_SET 가드 로직
+
+요청된 수정 범위만 정확히 수행하고, 그 외 로직은 건드리지 마세요.
+```
+
+### 위임 프롬프트 템플릿
+
+```markdown
+## 작업 범위
+[구체적 수정 내용만 기술]
+
+## 수정 대상 파일
+[파일 목록]
+
+## 수정 패턴
+[Before → After 예시 코드]
+
+## ⚠️ 수정 금지
+- `_hasChildren` 체크 코드 (삭제/이동/변경 금지)
+- `COMPLEX_COMPONENT_TAGS` 관련 로직
+- shapes 함수의 early return 구조
+- 요청 범위 외 리팩토링
+```
+
+### 위임 시 체크리스트
+
+| 항목 | 설명 |
+|------|------|
+| 범위 한정 | "fontSize만 수정", "import만 추가" 등 명시적 범위 |
+| 금지 패턴 포함 | 위 수정 금지 패턴을 프롬프트에 복사 |
+| Before/After 예시 | 정확한 변경 패턴을 코드로 제시 |
+| 검증 지시 | `npx tsc --noEmit` 타입 체크 수행 지시 |
 
 ## 사용법
 

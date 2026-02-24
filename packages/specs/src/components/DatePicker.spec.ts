@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * DatePicker Props
@@ -142,7 +143,13 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : 1;
 
-      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight = fwRaw != null
@@ -187,7 +194,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
           x: paddingX,
           y: 0,
           text: props.value || props.placeholder || 'Select date',
-          fontSize: fontSize as number,
+          fontSize,
           fontFamily: ff,
           fontWeight,
           fill: textColor,

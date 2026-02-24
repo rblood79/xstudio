@@ -20,6 +20,38 @@ import type { ComputedStyle } from './cssResolver';
 import { resolveCSSSizeValue, FIT_CONTENT, MIN_CONTENT, MAX_CONTENT } from './cssValueParser';
 import type { CSSValueContext } from './cssValueParser';
 
+// ─── Phantom indicator: DOM에만 존재하는 indicator 레이아웃 공간 ────────
+// Switch/Checkbox/Radio: Preview DOM은 [indicator + label] 구조이지만
+// WebGL element tree에는 label 자식만 존재한다.
+// Spec shapes(Skia)가 indicator를 시각적으로 그리지만 Taffy 레이아웃 트리에는
+// 반영되지 않아 label이 x=0에 배치되어 겹치는 문제를 해결한다.
+// width = indicatorWidth + gap (CSS gap이 element style에 없으므로 포함)
+
+interface IndicatorSpace { width: number; height: number }
+
+const INDICATOR_CONFIGS: Record<string, {
+  widths: Record<string, number>;
+  heights: Record<string, number>;
+  gap: number;
+}> = {
+  switch:   { widths: { sm: 36, md: 44, lg: 52 }, heights: { sm: 20, md: 24, lg: 28 }, gap: 10 },
+  toggle:   { widths: { sm: 36, md: 44, lg: 52 }, heights: { sm: 20, md: 24, lg: 28 }, gap: 10 },
+  checkbox: { widths: { sm: 16, md: 20, lg: 24 }, heights: { sm: 16, md: 20, lg: 24 }, gap: 8 },
+  radio:    { widths: { sm: 16, md: 20, lg: 24 }, heights: { sm: 16, md: 20, lg: 24 }, gap: 8 },
+};
+
+function getIndicatorSpace(
+  tag: string,
+  props: Record<string, unknown> | undefined,
+): IndicatorSpace | null {
+  const config = INDICATOR_CONFIGS[tag];
+  if (!config) return null;
+  const size = (props?.size as string) ?? 'md';
+  const w = config.widths[size] ?? config.widths.md;
+  const h = config.heights[size] ?? config.heights.md;
+  return { width: w + config.gap, height: h };
+}
+
 // ─── Style conversion ────────────────────────────────────────────────
 
 /**
@@ -553,6 +585,30 @@ export class TaffyFlexEngine implements LayoutEngine {
     parentStyle.borderRight = 0;
     parentStyle.borderBottom = 0;
     parentStyle.borderLeft = 0;
+
+    // ── Phantom indicator: DOM에만 존재하는 indicator 요소의 레이아웃 공간 확보 ──
+    // Switch/Checkbox/Radio: Preview DOM은 indicator + label 구조이지만
+    // WebGL에서는 label 자식만 존재. Spec shapes(Skia)가 indicator를 그리지만
+    // 레이아웃 트리에는 없으므로 phantom 노드로 공간을 예약한다.
+    // childMap에 등록하지 않으므로 결과 수집(line 566)에서 자동 스킵된다.
+    const parentTag = (parent.tag ?? '').toLowerCase();
+    const isRowLayout = !parentStyle.flexDirection
+      || parentStyle.flexDirection === 'row'
+      || parentStyle.flexDirection === 'row-reverse';
+
+    if (isRowLayout) {
+      const indicatorSpace = getIndicatorSpace(parentTag, parent.props as Record<string, unknown> | undefined);
+      if (indicatorSpace) {
+        const phantomStyle: TaffyStyle = {
+          display: 'flex',
+          width: `${indicatorSpace.width}px`,
+          height: `${indicatorSpace.height}px`,
+          flexShrink: 0,
+        };
+        const phantomHandle = taffy.createNode(phantomStyle);
+        childHandles.unshift(phantomHandle);
+      }
+    }
 
     const rootHandle = taffy.createNodeWithChildren(parentStyle, childHandles);
 

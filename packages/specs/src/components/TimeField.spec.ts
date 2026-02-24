@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * TimeField Props
@@ -127,7 +128,13 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : 1;
 
-      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight = fwRaw != null
@@ -167,9 +174,6 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
           radius: borderRadius,
         },
       ];
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
-
       // 시간 세그먼트 텍스트 (HH : MM : SS)
       const value = props.value || '09:30:00';
       const parts = value.split(':');
@@ -180,7 +184,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
         x: paddingX,
         y: 0,
         text: displayText,
-        fontSize: fontSize as number,
+        fontSize,
         fontFamily: ff,
         fontWeight,
         fill: textColor,

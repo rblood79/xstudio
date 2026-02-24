@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useCallback } from "react";
 import {
     Tag, Hash, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
     SpellCheck2, ArrowUp, ArrowDown, Move, Focus, Type, DollarSign, MousePointerClick, Globe, Hash as HashIcon
@@ -7,6 +7,7 @@ import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , Prope
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
+import { useSyncChildProp } from '../../../hooks/useSyncChildProp';
 
 export const NumberFieldEditor = memo(function NumberFieldEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Get customId from element in store
@@ -23,6 +24,24 @@ export const NumberFieldEditor = memo(function NumberFieldEditor({ elementId, cu
         };
         onUpdate(updatedProps);
     };
+
+    const { buildChildUpdates } = useSyncChildProp(elementId);
+
+    const handleLabelChange = useCallback((value: string) => {
+        const updatedProps = { ...currentProps, label: value };
+        const childUpdates = buildChildUpdates([
+            { childTag: 'Label', propKey: 'children', value },
+        ]);
+        useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+    }, [currentProps, buildChildUpdates]);
+
+    const handlePlaceholderChange = useCallback((value: string) => {
+        const updatedProps = { ...currentProps, placeholder: value };
+        const childUpdates = buildChildUpdates([
+            { childTag: 'Input', propKey: 'placeholder', value },
+        ]);
+        useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+    }, [currentProps, buildChildUpdates]);
 
     // formatOptions 업데이트 헬퍼
     const updateFormatOption = (key: string, value: unknown) => {
@@ -54,7 +73,7 @@ export const NumberFieldEditor = memo(function NumberFieldEditor({ elementId, cu
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
-                    onChange={(value) => updateProp('label', value)}
+                    onChange={handleLabelChange}
                     icon={Tag}
                 />
 
@@ -68,7 +87,7 @@ export const NumberFieldEditor = memo(function NumberFieldEditor({ elementId, cu
                 <PropertyInput
                     label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
-                    onChange={(value) => updateProp('placeholder', value)}
+                    onChange={handlePlaceholderChange}
                     icon={SpellCheck2}
                     placeholder="Enter number..."
                 />

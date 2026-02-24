@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * SearchField Props
@@ -124,7 +125,18 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
         : 1;
 
-      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+
+      const fwRaw = props.style?.fontWeight;
+      const fontWeight = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
+        : 500;
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
@@ -139,15 +151,34 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         : size.paddingX;
 
       const shapes: Shape[] = [];
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
+
+      // 라벨
+      const labelFontSize = fontSize - 2;
+      const labelHeight = Math.ceil(labelFontSize * 1.2);
+      const labelGap = size.gap ?? 8;
+      const labelOffset = props.label ? labelHeight + labelGap : 0;
+
+      if (props.label) {
+        shapes.push({
+          type: 'text' as const,
+          x: 0,
+          y: 0,
+          text: props.label,
+          fontSize: labelFontSize,
+          fontFamily: ff,
+          fontWeight,
+          fill: variant.text,
+          align: textAlign,
+          baseline: 'top' as const,
+        });
+      }
 
       // 배경
       shapes.push({
         id: 'bg',
         type: 'roundRect' as const,
         x: 0,
-        y: 0,
+        y: labelOffset,
         width,
         height,
         radius: borderRadius,
@@ -167,7 +198,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
 
       // 검색 아이콘 (원 + 선으로 표현)
       const iconX = paddingX + iconSize / 2;
-      const iconY = height / 2;
+      const iconY = labelOffset + height / 2;
       shapes.push({
         type: 'circle' as const,
         x: iconX - 2,
@@ -191,9 +222,9 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       shapes.push({
         type: 'text' as const,
         x: paddingX + iconSize + (size.gap ?? 8),
-        y: height / 2,
+        y: labelOffset + height / 2,
         text: displayText,
-        fontSize: fontSize as number,
+        fontSize,
         fontFamily: ff,
         fill: textColor,
         align: textAlign,
@@ -206,14 +237,14 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
           id: 'clear',
           type: 'circle' as const,
           x: width - paddingX - iconSize / 2,
-          y: height / 2,
+          y: labelOffset + height / 2,
           radius: iconSize / 2.5,
           fill: '{color.on-surface-variant}' as TokenRef,
           fillAlpha: 0.15,
         });
         // X 마크
         const cx = width - paddingX - iconSize / 2;
-        const cy = height / 2;
+        const cy = labelOffset + height / 2;
         const cs = iconSize / 5;
         shapes.push({
           type: 'line' as const,

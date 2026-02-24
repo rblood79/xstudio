@@ -94,6 +94,87 @@ const batchUpdate = (updates: ElementUpdate[]) => {
 };
 ```
 
+## Child Composition Pattern batch 히스토리
+
+Property Editor에서 부모 Element와 자식 Element를 동시에 업데이트할 때, 두 변경사항을 **단일 batch 히스토리 엔트리**로 기록해야 합니다. 별도 엔트리로 기록하면 Undo 시 부모와 자식이 따로 원복되어 불일치 상태가 발생합니다.
+
+### `updateSelectedPropertiesWithChildren` 동작 원리
+
+`inspectorActions.ts`의 `updateSelectedPropertiesWithChildren`은 `batchUpdateElementProps`를 통해 부모+자식을 단일 `set()` 호출로 처리합니다.
+
+```typescript
+// inspectorActions.ts
+updateSelectedPropertiesWithChildren: (properties, childUpdates) => {
+  // 1. 진행 중인 hydration 취소 (race condition 방지)
+  get()._cancelHydrateSelectedProps();
+
+  // 2. 부모 + 자식 업데이트를 단일 batch로 구성
+  const batch = [
+    { elementId: element.id, props: properties },
+    ...childUpdates,  // BatchPropsUpdate[]
+  ];
+
+  // 3. 단일 set() + batch 히스토리 엔트리 + IndexedDB 기록
+  get().batchUpdateElementProps(batch);
+},
+```
+
+### `_cancelHydrateSelectedProps` 호출이 필수인 이유
+
+Properties Panel은 선택된 Element의 props를 비동기로 로드(`_hydrateSelectedProps`)합니다.
+`updateSelectedPropertiesWithChildren` 호출 시점에 hydration이 진행 중이면, 완료 후 로드된 구 데이터가 방금 업데이트한 값을 덮어씁니다.
+`_cancelHydrateSelectedProps()`를 먼저 호출하여 이 race condition을 방지합니다.
+
+```typescript
+// ✅ hydration 취소 → 업데이트 → 히스토리 기록 순서 보장
+get()._cancelHydrateSelectedProps();
+get().batchUpdateElementProps(batch);
+
+// ❌ hydration 미취소 — 비동기 hydration 완료 시 업데이트 값 덮어쓰기
+get().batchUpdateElementProps(batch);
+// → 수백 ms 후 hydration 완료 → batch 업데이트 결과 손실
+```
+
+### batch 히스토리 Undo/Redo
+
+`batchUpdateElementProps`가 기록하는 `type: 'batch'` 히스토리 엔트리는 `historyActions.ts`에서 완전히 처리됩니다.
+
+```typescript
+// historyActions.ts — batch 엔트리 Undo
+case 'batch':
+  // batch에 포함된 모든 Element를 이전 상태로 한 번에 복원
+  // 부모 Element와 자식 Element가 동시에 원복 → 일관성 유지
+  restoreBatchElements(entry.data.prevElements);
+  break;
+```
+
+**결과**: Undo 1회로 부모 prop 변경 + 자식 prop 변경이 동시에 원복됩니다.
+
+### Incorrect
+
+```typescript
+// ❌ 구 패턴 — 부모와 자식을 별도 호출로 업데이트
+// 히스토리 엔트리 2개 생성 → Undo 2회 필요
+onUpdate({ label: value });              // 히스토리 엔트리 1
+syncChildProp('Label', 'children', value); // 히스토리 엔트리 2
+```
+
+### Correct
+
+```typescript
+// ✅ useSyncChildProp 훅 + updateSelectedPropertiesWithChildren
+// 단일 batch 히스토리 엔트리 → Undo 1회로 전체 원복
+const { buildChildUpdates } = useSyncChildProp(elementId);
+
+const handleLabelChange = useCallback((value: string) => {
+  const updatedProps = { ...currentProps, label: value };
+  const childUpdates = buildChildUpdates([
+    { childTag: 'Label', propKey: 'children', value },
+  ]);
+  useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+}, [currentProps, buildChildUpdates]);
+```
+
 ## Undo/Redo 구현
 
 ```typescript
@@ -115,6 +196,10 @@ export const createUndoAction = (set, get) => async () => {
       // 제거된 요소 복원
       addElementToState(entry.data.element);
       break;
+    case 'batch':
+      // batch에 포함된 모든 Element를 이전 상태로 복원
+      restoreBatchElements(entry.data.prevElements);
+      break;
   }
 };
 ```
@@ -124,3 +209,6 @@ export const createUndoAction = (set, get) => async () => {
 - `apps/builder/src/builder/stores/history.ts` - HistoryManager
 - `apps/builder/src/builder/stores/history/historyActions.ts` - Undo/Redo 액션
 - `apps/builder/src/builder/stores/utils/elementUpdate.ts` - 히스토리 통합 예시
+- `apps/builder/src/builder/stores/inspectorActions.ts` - `updateSelectedPropertiesWithChildren`
+- `apps/builder/src/builder/hooks/useSyncChildProp.ts` - 직계 자식 prop 동기화 훅
+- `apps/builder/src/builder/hooks/useSyncGrandchildProp.ts` - 손자 prop 동기화 훅

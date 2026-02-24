@@ -1,40 +1,52 @@
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { Tag, PointerOff, CheckCheck, PenOff, Binary, Focus, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
+import { useSyncChildProp } from '../../../hooks/useSyncChildProp';
 
 export const RadioEditor = memo(function RadioEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    // Get element from store
-    const element = useStore((state) => state.elementsMap.get(elementId));
-
     // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
     const customId = useMemo(() => {
+        const element = useStore.getState().elementsMap.get(elementId);
         return element?.customId || "";
-    }, [element?.customId]);
+    }, [elementId]);
 
-    // Check if this Radio is a child of RadioGroup
-    const parentElement = useStore((state) =>
-        state.elements.find((el) => el.id === element?.parent_id)
-    );
-    const isChildOfRadioGroup = parentElement?.tag === 'RadioGroup';
+    // ⭐ 최적화: elementsMap O(1) 탐색으로 parent 조회 (elements.find() 배열 순회 제거)
+    const isChildOfRadioGroup = useMemo(() => {
+        const element = useStore.getState().elementsMap.get(elementId);
+        if (!element?.parent_id) return false;
+        const parentElement = useStore.getState().elementsMap.get(element.parent_id);
+        return parentElement?.tag === 'RadioGroup';
+    }, [elementId]);
 
-    const updateProp = (key: string, value: unknown) => {
+    // ⭐ 자식 Label 동기화: Child Composition Pattern - useSyncChildProp 훅 사용
+    const { buildChildUpdates } = useSyncChildProp(elementId);
+
+    const handleChildrenChange = useCallback((value: string) => {
+        const updatedProps = { ...currentProps, children: value };
+        const childUpdates = buildChildUpdates([
+            { childTag: 'Label', propKey: 'children', value },
+        ]);
+        useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+    }, [currentProps, buildChildUpdates]);
+
+    const updateProp = useCallback((key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);
-    };
+    }, [currentProps, onUpdate]);
 
-    const updateCustomId = (newCustomId: string) => {
+    const updateCustomId = useCallback((newCustomId: string) => {
         // Update customId in store (not in props)
         const updateElement = useStore.getState().updateElement;
         if (updateElement && elementId) {
             updateElement(elementId, { customId: newCustomId });
         }
-    };
+    }, [elementId]);
 
     return (
         <>
@@ -55,7 +67,7 @@ export const RadioEditor = memo(function RadioEditor({ elementId, currentProps, 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.children || '')}
-                    onChange={(value) => updateProp('children', value)}
+                    onChange={handleChildrenChange}
                     icon={Tag}
                 />
 

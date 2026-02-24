@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * Form Props
@@ -101,7 +102,13 @@ export const FormSpec: ComponentSpec<FormProps> = {
         : size.borderRadius;
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
       const fw = fwRaw != null
         ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 600)
@@ -151,7 +158,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
           x: size.paddingX,
           y: size.paddingY,
           text: props.title,
-          fontSize: (fontSize as unknown as number) + 4,
+          fontSize: fontSize + 4,
           fontFamily: ff,
           fontWeight: fw,
           fill: textColor,
@@ -165,9 +172,9 @@ export const FormSpec: ComponentSpec<FormProps> = {
         shapes.push({
           type: 'text' as const,
           x: size.paddingX,
-          y: size.paddingY + (props.title ? (fontSize as unknown as number) + 12 : 0),
+          y: size.paddingY + (props.title ? fontSize + 12 : 0),
           text: props.description,
-          fontSize: (fontSize as unknown as number) - 2,
+          fontSize: fontSize - 2,
           fontFamily: ff,
           fill: '{color.on-surface-variant}' as TokenRef,
           align: textAlign,

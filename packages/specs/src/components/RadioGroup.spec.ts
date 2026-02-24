@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * RadioGroup Props
@@ -96,12 +97,15 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
     shapes: (props, variant, size, _state = 'default') => {
       const shapes: Shape[] = [];
 
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
-
       // 사용자 스타일 우선
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
       const fw = fwRaw != null
         ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
@@ -109,14 +113,14 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
 
-      // 그룹 라벨
+      // 그룹 라벨 — 자식 유무와 무관하게 항상 자체 렌더링
       if (props.label) {
         shapes.push({
           type: 'text' as const,
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: fontSize as unknown as number,
+          fontSize,
           fontFamily: ff,
           fontWeight: fw,
           fill: textColor,
@@ -125,11 +129,31 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
         });
       }
 
+      // 설명 / 에러 메시지 — 자식 유무와 무관하게 항상 자체 렌더링
+      const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
+      if (descText) {
+        shapes.push({
+          type: 'text' as const,
+          x: 0,
+          y: 0,
+          text: descText,
+          fontSize: fontSize - 2,
+          fontFamily: ff,
+          fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
+          align: textAlign,
+          baseline: 'top' as const,
+        });
+      }
+
+      // 자식이 있으면 자식 컨테이너는 생략 (자식이 직접 렌더링)
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 라디오 자식 컨테이너
       shapes.push({
         type: 'container' as const,
         x: 0,
-        y: props.label ? (size.fontSize as unknown as number) + 8 : 0,
+        y: props.label ? fontSize + 8 : 0,
         width: 'auto',
         height: 'auto',
         children: [],
@@ -139,22 +163,6 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
           gap: size.gap,
         },
       });
-
-      // 설명 / 에러 메시지
-      const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
-      if (descText) {
-        shapes.push({
-          type: 'text' as const,
-          x: 0,
-          y: 0,
-          text: descText,
-          fontSize: (size.fontSize as unknown as number) - 2,
-          fontFamily: ff,
-          fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
-          align: textAlign,
-          baseline: 'top' as const,
-        });
-      }
 
       return shapes;
     },

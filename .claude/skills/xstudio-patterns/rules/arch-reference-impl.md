@@ -33,6 +33,14 @@ tags: [architecture, reference, patterns]
 | React-Aria 컴포넌트 | `builder/components/dialog/AddPageDialog.tsx` | Modal + Form 조합 |
 | 복합 컴포넌트 | `builder/panels/properties/PropertiesPanel.tsx` | 다중 섹션 구성 |
 
+## Property Editor 패턴
+
+| 패턴 | 참조 파일 | 설명 |
+|------|----------|------|
+| Property Editor 자식 동기화 | `builder/hooks/useSyncChildProp.ts` | `buildChildUpdates()` → `updateSelectedPropertiesWithChildren()` |
+| Property Editor 손자 동기화 | `builder/hooks/useSyncGrandchildProp.ts` | Select/ComboBox 2단계 탐색 |
+| Batch History 통합 | `builder/stores/inspectorActions.ts` | 부모+자식 단일 batch 히스토리 |
+
 ## Canvas/PIXI/Skia 패턴
 
 | 패턴 | 참조 파일 | 설명 |

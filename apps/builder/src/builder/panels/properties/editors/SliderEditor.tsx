@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
     Type, Layout, NotebookTabs, Ruler, Ratio,
     ArrowDown, ArrowUp, Move, Hash, FileText, Tag, PointerOff, Globe, DollarSign
@@ -7,6 +7,7 @@ import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , Prope
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
+import { useSyncChildProp } from '../../../hooks/useSyncChildProp';
 
 export const SliderEditor = memo(function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Get customId from element in store
@@ -16,13 +17,19 @@ export const SliderEditor = memo(function SliderEditor({ elementId, currentProps
     return element?.customId || "";
   }, [elementId]);
 
-    const updateProp = (key: string, value: unknown) => {
-        const updatedProps = {
-            ...currentProps,
-            [key]: value
-        };
-        onUpdate(updatedProps);
-    };
+    const { buildChildUpdates } = useSyncChildProp(elementId);
+
+    const updateProp = useCallback((key: string, value: unknown) => {
+        onUpdate({ ...currentProps, [key]: value });
+    }, [currentProps, onUpdate]);
+
+    const handleLabelChange = useCallback((value: string) => {
+        const updatedProps = { ...currentProps, label: value };
+        const childUpdates = buildChildUpdates([
+            { childTag: 'Label', propKey: 'children', value },
+        ]);
+        useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+    }, [currentProps, buildChildUpdates]);
 
     const updateCustomId = (newCustomId: string) => {
         // Update customId in store (not in props)
@@ -57,7 +64,7 @@ export const SliderEditor = memo(function SliderEditor({ elementId, currentProps
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
-                    onChange={(value) => updateProp('label', value)}
+                    onChange={handleLabelChange}
                     icon={Type}
                 />
 

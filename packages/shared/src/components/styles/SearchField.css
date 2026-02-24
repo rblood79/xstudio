@@ -162,28 +162,28 @@
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
-  .react-aria-SearchField.primary {
+  .react-aria-SearchField[data-variant="primary"] {
     --sf-accent: var(--primary);
     --sf-accent-container: var(--primary-container);
     --sf-on-accent-container: var(--on-primary-container);
     --sf-on-accent: var(--on-primary);
   }
 
-  .react-aria-SearchField.secondary {
+  .react-aria-SearchField[data-variant="secondary"] {
     --sf-accent: var(--secondary);
     --sf-accent-container: var(--secondary-container);
     --sf-on-accent-container: var(--on-secondary-container);
     --sf-on-accent: var(--on-secondary);
   }
 
-  .react-aria-SearchField.tertiary {
+  .react-aria-SearchField[data-variant="tertiary"] {
     --sf-accent: var(--tertiary);
     --sf-accent-container: var(--tertiary-container);
     --sf-on-accent-container: var(--on-tertiary-container);
     --sf-on-accent: var(--on-tertiary);
   }
 
-  .react-aria-SearchField.error {
+  .react-aria-SearchField[data-variant="error"] {
     --sf-accent: var(--error);
     --sf-accent-container: var(--error-container);
     --sf-on-accent-container: var(--on-error-container);
@@ -191,10 +191,10 @@
   }
 
   /* 모든 color variant에 공통 적용되는 스타일 */
-  .react-aria-SearchField.primary,
-  .react-aria-SearchField.secondary,
-  .react-aria-SearchField.tertiary,
-  .react-aria-SearchField.error {
+  .react-aria-SearchField[data-variant="primary"],
+  .react-aria-SearchField[data-variant="secondary"],
+  .react-aria-SearchField[data-variant="tertiary"],
+  .react-aria-SearchField[data-variant="error"] {
     .react-aria-Label {
       color: var(--sf-accent);
     }
@@ -227,7 +227,7 @@
   }
 
   /* ===== M3 Filled Variant ===== */
-  .react-aria-SearchField.filled {
+  .react-aria-SearchField[data-variant="filled"] {
     .react-aria-Input {
       background: var(--surface-container-highest);
       border-color: transparent;
@@ -268,7 +268,7 @@
   }
 
   /* Size별 CSS 변수만 오버라이드 */
-  .react-aria-SearchField.sm {
+  .react-aria-SearchField[data-size="sm"] {
     --sf-label-size: var(--text-xs);
     --sf-input-padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-sm) var(--spacing);
     --sf-input-size: var(--text-xs);
@@ -280,7 +280,7 @@
     --sf-hint-size: 10px;
   }
 
-  .react-aria-SearchField.md {
+  .react-aria-SearchField[data-size="md"] {
     --sf-label-size: var(--text-sm);
     --sf-input-padding: var(--spacing-sm) var(--spacing-xl) var(--spacing-sm) 14px;
     --sf-input-size: var(--text-base);
@@ -292,7 +292,7 @@
     --sf-hint-size: var(--text-xs);
   }
 
-  .react-aria-SearchField.lg {
+  .react-aria-SearchField[data-size="lg"] {
     --sf-label-size: var(--text-base);
     --sf-input-padding: var(--spacing-md) var(--spacing-2xl) var(--spacing-md) var(--spacing-lg);
     --sf-input-size: var(--text-base);
@@ -305,9 +305,9 @@
   }
 
   /* 모든 size에 공통 적용되는 스타일 */
-  .react-aria-SearchField.sm,
-  .react-aria-SearchField.md,
-  .react-aria-SearchField.lg {
+  .react-aria-SearchField[data-size="sm"],
+  .react-aria-SearchField[data-size="md"],
+  .react-aria-SearchField[data-size="lg"] {
     .react-aria-Label {
       font-size: var(--sf-label-size);
     }
@@ -333,10 +333,10 @@
 
   /* ========== Invalid State Override ========== */
   /* Invalid state overrides all color variants */
-  .react-aria-SearchField.primary[data-invalid],
-  .react-aria-SearchField.secondary[data-invalid],
-  .react-aria-SearchField.tertiary[data-invalid],
-  .react-aria-SearchField.filled[data-invalid] {
+  .react-aria-SearchField[data-variant="primary"][data-invalid],
+  .react-aria-SearchField[data-variant="secondary"][data-invalid],
+  .react-aria-SearchField[data-variant="tertiary"][data-invalid],
+  .react-aria-SearchField[data-variant="filled"][data-invalid] {
     .react-aria-Input {
       border-color: var(--error);
 

@@ -658,6 +658,19 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
   {
+    type: "Nav",
+    label: "Nav",
+    category: "Layout",
+    icon: "🧭",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "NavEditor",
+      dataBindingType: null,
+      // nav 태그: 내비게이션 링크 컨테이너 (접근성 landmark)
+      supportedEvents: ["onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur"],
+    },
+  },
+  {
     type: "Slot",
     label: "Slot",
     category: "Layout",
