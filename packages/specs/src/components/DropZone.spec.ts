@@ -152,20 +152,25 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
           style: 'dashed',
           radius: borderRadius as unknown as number,
         },
-        // 라벨 텍스트
-        {
-          type: 'text' as const,
-          x: paddingX,
-          y: 0,
-          text: label,
-          fontSize: fontSize as unknown as number,
-          fontFamily: ff,
-          fontWeight: fw,
-          fill: textColor,
-          align: textAlign,
-          baseline: 'middle' as const,
-        },
       ];
+
+      // Child Composition: 자식 Element가 있으면 bg + border만 반환 (text 스킵)
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
+      // 라벨 텍스트
+      shapes.push({
+        type: 'text' as const,
+        x: paddingX,
+        y: 0,
+        text: label,
+        fontSize: fontSize as unknown as number,
+        fontFamily: ff,
+        fontWeight: fw,
+        fill: textColor,
+        align: textAlign,
+        baseline: 'middle' as const,
+      });
 
       return shapes;
     },

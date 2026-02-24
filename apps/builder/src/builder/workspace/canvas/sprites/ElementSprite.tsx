@@ -1110,6 +1110,8 @@ export const ElementSprite = memo(function ElementSprite({
               'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
               // E-2: 반복 아이템 컴포넌트
               'ListBox', 'GridList', 'List', 'Pagination', 'ColorSwatchPicker',
+              // E-3: 컨테이너 컴포넌트
+              'Group', 'Section', 'ScrollBox', 'DropZone', 'FileTrigger', 'MaskedFrame',
             ]);
 
             if (CHILD_COMPOSITION_TAGS.has(tag) && childElements && childElements.length > 0) {

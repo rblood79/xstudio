@@ -120,21 +120,6 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
           color: borderColor,
           radius: borderRadius as unknown as number,
         },
-        // 스크롤 콘텐츠 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width,
-          height,
-          children: [],
-          clip: true,
-          layout: {
-            display: 'flex',
-            flexDirection: 'column',
-            padding: size.paddingY,
-          },
-        },
         // 세로 스크롤바 트랙
         {
           type: 'roundRect' as const,
@@ -147,6 +132,26 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
           fillAlpha: 0.3,
         },
       ];
+
+      // Child Composition: 자식 Element가 있으면 bg + border + scrollbar만 반환
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
+      // 스크롤 콘텐츠 컨테이너
+      shapes.push({
+        type: 'container' as const,
+        x: 0,
+        y: 0,
+        width,
+        height,
+        children: [],
+        clip: true,
+        layout: {
+          display: 'flex',
+          flexDirection: 'column',
+          padding: size.paddingY,
+        },
+      });
 
       return shapes;
     },

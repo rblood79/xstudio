@@ -150,6 +150,10 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
         });
       }
 
+      // Child Composition: 자식 Element가 있으면 mask + border만 반환
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 콘텐츠 컨테이너 (클리핑 적용)
       shapes.push({
         type: 'container' as const,

@@ -116,18 +116,16 @@ DOM 구조상 자식 분리가 불필요하거나 의미가 없다.
 **구현 세부**: ListBoxItem/GridListItem → TEXT_TAGS 추가로 텍스트 렌더링.
 SPEC_SHAPES_ONLY_TAGS에서 ListBox/GridList 제거 → CONTAINER_TAGS로 이동.
 
-### E-3. 낮은 우선순위 (6개)
+### E-3. 낮은 우선순위 (6개) — ✅ 완료
 
-컨테이너 역할이 주이며 자체 시각 요소가 적어 전환 효과가 제한적.
-
-| 컴포넌트 | 이유 |
-|---------|------|
-| **Group** | 범용 컨테이너, 배경/테두리만. 자식은 임의 요소 |
-| **Section** | 구조적 컨테이너. Group과 유사 |
-| **ScrollBox** | 스크롤 영역 컨테이너. 시각 요소 최소 |
-| **DropZone** | 드래그 앤 드롭 타겟. 상태 기반 시각 변경 |
-| **FileTrigger** | 파일 선택 트리거 버튼. Button과 유사 |
-| **MaskedFrame** | 마스킹 컨테이너. 시각 프레임만 |
+| 컴포넌트 | 적용 패턴 | 상태 |
+|---------|----------|------|
+| **Group** | TRANSPARENT — `_hasChildren → return []` | ✅ 완료 |
+| **Section** | NON-TRANSPARENT — bg + border 유지, container 스킵 | ✅ 완료 |
+| **ScrollBox** | NON-TRANSPARENT — bg + border + scrollbar 유지, clip container 스킵 | ✅ 완료 |
+| **DropZone** | NON-TRANSPARENT — bg + dashed border 유지, text 스킵 | ✅ 완료 |
+| **FileTrigger** | NON-TRANSPARENT — bg + border 유지, text 스킵 | ✅ 완료 |
+| **MaskedFrame** | NON-TRANSPARENT — mask + border 유지, clip container 스킵 | ✅ 완료 |
 
 ---
 
@@ -141,13 +139,12 @@ SPEC_SHAPES_ONLY_TAGS에서 ListBox/GridList 제거 → CONTAINER_TAGS로 이동
 | D. Sub-component | 5 | ❌ |
 | E-1. 높은 우선순위 | 4 | ✅ 완료 |
 | E-2. 중간 우선순위 | 6 | ✅ 5개 완료, Table 보류 |
-| E-3. 낮은 우선순위 | 6 | ⚠️ 효과 제한적 |
+| E-3. 낮은 우선순위 | 6 | ✅ 완료 |
 | **합계** | **38** | |
 
 **전환 불필요**: 19개 (A+B+D)
-**전환 완료**: 12개 (E-1: 4개 + C: 3개 + E-2: 5개)
+**전환 완료**: 18개 (E-1: 4개 + C: 3개 + E-2: 5개 + E-3: 6개)
 **보류**: 1개 (Table — 3단계 중첩 별도 작업)
-**검토 필요**: 6개 (E-3)
 
 ---
 
@@ -157,4 +154,4 @@ SPEC_SHAPES_ONLY_TAGS에서 ListBox/GridList 제거 → CONTAINER_TAGS로 이동
 2. ~~**C (3개)** `_hasLabelChild` 패턴 적용~~ ✅ `dfae0947`
 3. ~~**E-2 (5개)** 반복 아이템 패턴 전환~~ ✅ List, ListBox, GridList, Pagination, ColorSwatchPicker
 4. **Table** 별도 작업 — 3단계 중첩(Table→TableRow→TableCell) + 특수 PixiTable 렌더 파이프라인
-5. **E-3 (6개)** 필요 시 전환
+5. ~~**E-3 (6개)** 컨테이너 컴포넌트 전환~~ ✅ Group, Section, ScrollBox, DropZone, FileTrigger, MaskedFrame

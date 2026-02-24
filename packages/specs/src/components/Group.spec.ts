@@ -84,6 +84,10 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
     shapes: (props, _variant, size, _state = 'default') => {
       const isVertical = props.orientation !== 'horizontal';
 
+      // Child Composition: 자식 Element가 있으면 spec shapes 스킵 (TRANSPARENT)
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return [];
+
       const shapes: Shape[] = [
         // 그룹 컨테이너
         {

@@ -144,6 +144,10 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
         },
       ];
 
+      // Child Composition: 자식 Element가 있으면 bg + border만 반환 (text 스킵)
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 텍스트
       const text = props.children || props.text || props.label || 'Choose file';
 

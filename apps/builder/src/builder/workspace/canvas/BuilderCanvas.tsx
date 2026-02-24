@@ -644,6 +644,7 @@ const ElementsLayer = memo(function ElementsLayer({
     'List',  // E-2: ListItem 자식 렌더링
     'Pagination',  // E-2: Button 자식 렌더링
     'ColorSwatchPicker',  // E-2: ColorSwatch 자식 렌더링
+    'Section', 'ScrollBox', 'DropZone', 'FileTrigger', 'MaskedFrame',  // E-3: 컨테이너 컴포넌트
   ]), []);
 
   // Spec shapes 전용 컴포넌트: 모든 시각 요소를 spec shapes로 렌더링하므로
