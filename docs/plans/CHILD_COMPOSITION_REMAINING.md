@@ -633,3 +633,141 @@ Child Composition Pattern에서 부모 컴포넌트와 자식 컴포넌트는 �
 TextField의 `label` prop 변경은 Label 자식의 `children`과 항상 함께 변경되어야 하며,
 이 두 변경을 별개의 히스토리 엔트리로 기록하면 Undo 시 UI가 불일치 상태에 빠진다.
 `updateSelectedPropertiesWithChildren`은 이 원자성(atomicity)을 store 레벨에서 보장한다.
+
+---
+
+## Phase 4: WebGL Spec 패턴 일관성 감사 (2026-02-25)
+
+> **작성일**: 2026-02-25
+> **상태**: 감사 완료 — 21개 파일 수정 필요
+> **범위**: 63개 전체 spec 파일의 fontSize TokenRef 해결 패턴 + label 오프셋 일관성 검사
+
+### 배경
+
+`size.fontSize`는 `'{typography.text-md}'` 형식의 TokenRef 문자열이다.
+`as unknown as number` 캐스팅은 TypeScript 컴파일러만 만족시키고, 런타임에서는 문자열이 그대로 통과한다.
+이 값으로 산술 연산(`fontSize - 2`)을 수행하면 NaN이 발생하여 Canvas 텍스트가 렌더링되지 않는다.
+
+올바른 패턴은 `resolveToken()`을 사용하여 TokenRef → 숫자 변환 후 산술 연산을 수행하는 것이다.
+
+### 감사 결과 요약
+
+| 구분 | 개수 | 설명 |
+|------|------|------|
+| ✅ 정상 | **38개** | resolveToken 적용 완료 또는 fontSize 미사용 |
+| ❌ 수정 필요 | **17개** | `as unknown as number` 캐스팅, resolveToken 미사용 |
+| ⚠️ 주의 필요 | **4개** | 부분 적용, 하드코딩 오프셋, 혼합 패턴 |
+
+### ❌ 수정 필요 — fontSize `as unknown as number` 캐스팅 (17개)
+
+| # | 파일 | 줄 | 문제 |
+|---|------|-----|------|
+| 1 | `Badge.spec.ts` | 167 | resolveToken 미사용, `fontSize as unknown as number` |
+| 2 | `Button.spec.ts` | 255 | resolveToken 미사용, `fontSize as unknown as number` |
+| 3 | `Checkbox.spec.ts` | 240 | resolveToken 미사용, `fontSize as unknown as number` |
+| 4 | `Radio.spec.ts` | 204 | resolveToken 미사용, `fontSize as unknown as number` |
+| 5 | `Switch.spec.ts` | 194 | resolveToken 미사용, `fontSize as unknown as number` |
+| 6 | `ColorPicker.spec.ts` | 259 | resolveToken 미사용, `fontSize as unknown as number` |
+| 7 | `DropZone.spec.ts` | 167 | resolveToken 미사용, `fontSize as unknown as number` |
+| 8 | `FileTrigger.spec.ts` | 175 | resolveToken 미사용, `fontSize as unknown as number` |
+| 9 | `Input.spec.ts` | 130 | `size.fontSize as unknown as number` 직접 대입 |
+| 10 | `Link.spec.ts` | 127 | resolveToken 미사용, `fontSize as unknown as number` |
+| 11 | `Menu.spec.ts` | 135 | `size.fontSize as unknown as number` 인라인 캐스팅 |
+| 12 | `Pagination.spec.ts` | 165 | resolveToken 미사용, `fontSize as unknown as number` |
+| 13 | `Slot.spec.ts` | 142 | resolveToken 미사용, `fontSize as unknown as number` |
+| 14 | `Switcher.spec.ts` | 184 | resolveToken 미사용, `fontSize as unknown as number` |
+| 15 | `Table.spec.ts` | 206, 258 | 다중 캐스팅 (헤더 셀 + 데이터 셀) |
+| 16 | `Toast.spec.ts` | 196 | resolveToken 미사용, `fontSize as unknown as number` |
+| 17 | `ToggleButton.spec.ts` | 253 | resolveToken 미사용, `fontSize as unknown as number` |
+
+### ⚠️ 주의 필요 (4개)
+
+| # | 파일 | 문제 |
+|---|------|------|
+| 1 | `ComboBox.spec.ts` | resolveToken 없이 `typeof === 'number' ? : 14` fallback → 토큰 값 미반영 |
+| 2 | `Select.spec.ts` | 동일 패턴 — resolveToken 없이 하드코딩 fallback=14 |
+| 3 | `Slider.spec.ts` | 혼합 — label/showValue 텍스트는 `as unknown as number`, offsetY만 resolveToken 사용 |
+| 4 | `Tabs.spec.ts` | `size.height` 기반 fontSize 하드코딩 (`height === 25 ? 12 : height === 35 ? 16 : 14`) |
+
+### ⚠️ label 오프셋 하드코딩 (2개)
+
+| # | 파일 | 줄 | 현재 코드 | 올바른 패턴 |
+|---|------|-----|----------|-----------|
+| 1 | `TextArea.spec.ts` | 186, 210, 228 | `props.label ? 20 : 0` | `labelOffset` 동적 계산 |
+| 2 | `ListBox.spec.ts` | 152 | `props.label ? 20 : 0` | `labelOffset` 동적 계산 |
+
+### 수정 패턴
+
+모든 대상 파일에 동일한 3단계 수정을 적용한다:
+
+**Step 1 — import 추가**
+```typescript
+import { resolveToken } from '../renderers/utils/tokenResolver';
+```
+
+**Step 2 — shapes 함수 상단 fontSize 해결 블록 교체**
+```typescript
+// ❌ Before (잘못된 패턴들)
+const fontSize = props.style?.fontSize ?? size.fontSize;                    // 미해결
+const fontSize = typeof rawFontSize === 'number' ? rawFontSize : 14;       // 부분 해결
+fontSize: size.fontSize as unknown as number,                               // 인라인 캐스팅
+
+// ✅ After (올바른 3단계 패턴)
+const rawFontSize = props.style?.fontSize ?? size.fontSize;
+const resolvedFs = typeof rawFontSize === 'number'
+  ? rawFontSize
+  : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      ? resolveToken(rawFontSize as TokenRef)
+      : rawFontSize);
+const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+```
+
+**Step 3 — shape 객체 필드에서 캐스팅 제거**
+```typescript
+// ❌ Before
+fontSize: fontSize as unknown as number,
+
+// ✅ After
+fontSize,  // 이미 number 타입
+```
+
+**label 오프셋 수정 패턴**
+```typescript
+// ❌ Before — 하드코딩
+y: props.label ? 20 : 0,
+
+// ✅ After — 동적 계산
+const labelFontSize = fontSize - 2;
+const labelHeight = Math.ceil(labelFontSize * 1.2);
+const labelGap = size.gap ?? 8;
+const labelOffset = props.label ? labelHeight + labelGap : 0;
+// ...
+y: labelOffset,
+```
+
+### 에이전트 위임 시 주의사항
+
+이전 세션에서 병렬 에이전트에 fontSize 수정을 위임했을 때, 에이전트들이 `_hasChildren` 패턴을
+무단으로 삭제하는 사고가 발생했다. 이 작업을 에이전트에 위임할 때는 반드시 다음을 프롬프트에 포함:
+
+```
+⚠️ 수정 금지 패턴 — 아래 코드는 절대 변경/삭제/이동하지 마세요:
+
+1. _hasChildren 패턴:
+   const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+   if (hasChildren) return shapes;
+
+2. shapes 함수의 early return 구조
+3. 요청 범위 외 리팩토링
+```
+
+상세 가이드: `SKILL.md` > "서브에이전트 위임 가이드라인" 참조
+
+### 완료 기준
+
+- [ ] 17개 ❌ 파일에 resolveToken 3단계 패턴 적용
+- [ ] 4개 ⚠️ 파일 수정 (ComboBox, Select, Slider, Tabs)
+- [ ] 2개 label 오프셋 하드코딩 수정 (TextArea, ListBox)
+- [ ] `npx tsc --noEmit` 타입 체크 통과
+- [ ] `pnpm build` (specs 빌드) 성공
+- [ ] Canvas에서 각 컴포넌트 텍스트 렌더링 정상 확인
