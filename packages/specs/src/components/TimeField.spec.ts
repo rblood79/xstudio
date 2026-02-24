@@ -167,8 +167,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
           radius: borderRadius,
         },
       ];
-      const hasChildren = !!(props as Record<string, unknown>)._hasLabelChild
-                       || !!(props as Record<string, unknown>)._hasChildren;
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return shapes;
 
       // 시간 세그먼트 텍스트 (HH : MM : SS)

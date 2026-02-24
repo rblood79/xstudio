@@ -158,8 +158,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
 
       // CONTAINER_TAGS에 등록된 경우 자식 Element가 시각 렌더링 담당
       // (Label→라벨텍스트, Input→배경/테두리/placeholder, FieldError→에러텍스트)
-      const hasChildren = !!(props as Record<string, unknown>)._hasLabelChild
-                       || !!(props as Record<string, unknown>)._hasChildren;
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return shapes;
 
       // fallback: 자식이 없는 레거시 데이터 → 전체 렌더링

@@ -1112,20 +1112,20 @@ export const ElementSprite = memo(function ElementSprite({
               'ListBox', 'GridList', 'List', 'Pagination', 'ColorSwatchPicker',
               // E-3: 컨테이너 컴포넌트
               'Group', 'Section', 'ScrollBox', 'DropZone', 'FileTrigger', 'MaskedFrame',
+              // Inline Form: indicator/track은 spec shapes 유지, label만 자식 Element
+              'Checkbox', 'Radio', 'Switch',
+              'ComboBox', 'Select', 'Dropdown',
+              'Slider', 'RangeSlider',
+              // A-group 통합: Card (Form과 동일 구조)
+              'Card',
             ]);
 
             if (CHILD_COMPOSITION_TAGS.has(tag) && childElements && childElements.length > 0) {
               specProps = { ...specProps, _hasChildren: true };
             }
 
-            // ComboBox/Select/Slider/Checkbox/Radio/Switch: Label child가 있으면 spec shapes에서 label text만 스킵
-            // (부분 패턴 — trigger/track/indicator 등은 여전히 spec shapes 담당)
-            if (['ComboBox', 'Select', 'Dropdown', 'Slider', 'RangeSlider', 'Checkbox', 'Radio', 'Switch'].includes(tag) && childElements) {
-              const hasLabelChild = childElements.some(c => c.tag === 'Label');
-              if (hasLabelChild) {
-                specProps = { ...specProps, _hasLabelChild: true };
-              }
-            }
+            // _hasLabelChild 패턴 제거 완료: CHILD_COMPOSITION_TAGS로 통합됨
+            // Checkbox/Radio/Switch/ComboBox/Select/Slider → _hasChildren 단일 패턴
 
             // 동적 컴포넌트 상태: preview > disabled prop > default
             const componentState: ComponentState = (() => {

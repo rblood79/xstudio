@@ -32,8 +32,8 @@ export interface SelectProps {
   selectedIndex?: number;
   children?: string;
   style?: Record<string, string | number | undefined>;
-  /** ElementSprite에서 주입: Label child 존재 시 spec shapes에서 label 렌더링 스킵 */
-  _hasLabelChild?: boolean;
+  /** ElementSprite에서 주입: 자식 Element 존재 시 spec shapes에서 label 렌더링 스킵 */
+  _hasChildren?: boolean;
 }
 
 /**
@@ -177,9 +177,9 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
       const shapes: Shape[] = [];
 
-      // 라벨 — Label child가 있으면 스킵 (TextSprite가 렌더링)
-      // Label child가 없으면 (기존 요소 호환) spec shapes에서 직접 렌더링
-      if (props.label && !props._hasLabelChild) {
+      // 라벨 — 자식 Element가 있으면 스킵 (TextSprite가 렌더링)
+      // 자식이 없으면 (기존 요소 호환) spec shapes에서 직접 렌더링
+      if (props.label && !props._hasChildren) {
         shapes.push({
           type: 'text' as const,
           x: 0,

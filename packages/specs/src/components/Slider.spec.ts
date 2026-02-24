@@ -154,9 +154,9 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
       const shapes: Shape[] = [];
-      const hasLabelChild = !!(props as Record<string, unknown>)._hasLabelChild;
+      const hasLabelChild = !!(props as Record<string, unknown>)._hasChildren;
 
-      // 라벨 + 값 행 (Label 자식이 있으면 자식 TextSprite가 렌더링하므로 스킵)
+      // 라벨 + 값 행 (자식 Element가 있으면 자식 TextSprite가 렌더링하므로 스킵)
       if (!hasLabelChild && (props.label || props.showValue)) {
         if (props.label) {
           shapes.push({

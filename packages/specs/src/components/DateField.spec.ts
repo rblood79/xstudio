@@ -166,8 +166,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
           radius: borderRadius,
         },
       ];
-      const hasChildren = !!(props as Record<string, unknown>)._hasLabelChild
-                       || !!(props as Record<string, unknown>)._hasChildren;
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return shapes;
 
       // 날짜 세그먼트 텍스트 (YYYY / MM / DD)

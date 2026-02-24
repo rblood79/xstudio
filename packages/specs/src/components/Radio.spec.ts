@@ -187,8 +187,8 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
         });
       }
 
-      // 라벨 텍스트 — Label child가 있으면 스킵 (TextSprite가 렌더링)
-      const hasLabelChild = !!(props as Record<string, unknown>)._hasLabelChild;
+      // 라벨 텍스트 — 자식 Element가 있으면 스킵 (TextSprite가 렌더링)
+      const hasLabelChild = !!(props as Record<string, unknown>)._hasChildren;
       const labelText = props.children || props.label || props.text;
       if (!hasLabelChild && labelText) {
         const textColor = props.style?.color ?? variant.text;

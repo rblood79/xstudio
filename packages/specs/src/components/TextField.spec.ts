@@ -189,8 +189,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       // (Label→라벨텍스트, Input→배경/테두리/placeholder, FieldError→에러텍스트)
       // TextField 자체에는 배경/테두리가 없으므로 Card와 동일한 패턴:
       // spec = 자신의 시각 요소만, 자식 = 자식의 시각 요소
-      const hasChildren = !!(props as Record<string, unknown>)._hasLabelChild
-                       || !!(props as Record<string, unknown>)._hasChildren;
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return shapes;
 
       // fallback: 자식이 없는 레거시 데이터 → 전체 렌더링

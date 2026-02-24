@@ -62,15 +62,17 @@ DOM 구조상 자식 분리가 불필요하거나 의미가 없다.
 
 ## C. Inline Form 컴포넌트 (3개) — ✅ 완료
 
-`_hasLabelChild` 패턴 적용 완료. indicator는 spec shapes 유지, label만 자식 Element로 분리.
+`_hasChildren` 패턴 적용. indicator는 spec shapes 유지, label만 자식 Element로 분리.
+(원래 `_hasLabelChild`로 구현 → `_hasChildren` 단일 패턴으로 통합 완료)
 
 | 컴포넌트 | 적용 패턴 | 커밋 |
 |---------|----------|------|
-| **Checkbox** | `_hasLabelChild` → label text 스킵, indicator 유지 | `dfae0947` |
+| **Checkbox** | `_hasChildren` → label text 스킵, indicator 유지 | `dfae0947` |
 | **Radio** | 동일 | `dfae0947` |
-| **Switch** | `_hasLabelChild` → label text 스킵, track+thumb 유지 | `dfae0947` |
+| **Switch** | `_hasChildren` → label text 스킵, track+thumb 유지 | `dfae0947` |
 
 **구현 세부**: Factory에 Label 자식 정의 추가, CONTAINER_TAGS 등록, props sync (children/label → Label.children).
+**패턴 통합**: `_hasLabelChild` 플래그 완전 제거 → `_hasChildren` CHILD_COMPOSITION_TAGS 단일 메커니즘으로 통합.
 
 ---
 

@@ -200,6 +200,10 @@ export const CardSpec: ComponentSpec<CardProps> = {
         });
       }
 
+      // Child Composition: 자식 Element가 있으면 bg + border만 반환 (container 스킵)
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 콘텐츠 컨테이너
       const stylePad = props.style?.padding;
       const padding = stylePad != null
