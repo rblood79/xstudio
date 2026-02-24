@@ -139,6 +139,11 @@ export const FormSpec: ComponentSpec<FormProps> = {
         });
       }
 
+      // 자식 Element가 콘텐츠 렌더링 담당 (Heading, Description, FormField 등)
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
+      // fallback: 자식이 없는 레거시 데이터 → 전체 렌더링
       // 타이틀
       if (props.title) {
         shapes.push({

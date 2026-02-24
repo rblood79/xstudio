@@ -95,10 +95,104 @@ export function createTextFieldDefinition(
 }
 
 /**
+ * TextArea 복합 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * TextArea (parent, tag="TextArea", display flex column)
+ *   ├─ Label (tag="Label", children="Text Area")
+ *   ├─ Input (tag="Input", height: 80, multiline)
+ *   └─ FieldError (tag="FieldError")
+ */
+export function createTextAreaDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "TextArea",
+    parent: {
+      tag: "TextArea",
+      props: {
+        label: "Text Area",
+        description: "",
+        errorMessage: "",
+        placeholder: "Enter text...",
+        value: "",
+        rows: 3,
+        isRequired: false,
+        isDisabled: false,
+        isReadOnly: false,
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          width: 240,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Text Area",
+          style: {
+            width: 'fit-content',
+            fontSize: 14,
+            fontWeight: 500,
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "Input",
+        props: {
+          type: "text",
+          placeholder: "Enter text...",
+          style: {
+            width: '100%',
+            height: 80,
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "FieldError",
+        props: {
+          children: "",
+          style: {
+            fontSize: 12,
+            display: 'none',
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+/**
  * Form 컴포넌트 정의 (복합 컴포넌트)
  *
  * CSS DOM 구조:
  * Form (parent, tag="Form")
+ *   ├─ Heading (tag="Heading", children="Form Title")
+ *   ├─ Description (tag="Description", children="")
  *   ├─ FormField (tag="FormField", flex column, gap 4px)
  *   │  ├─ Label (tag="Label", children="Field Label")
  *   │  └─ TextField (tag="TextField", placeholder "Enter value...")
@@ -138,6 +232,34 @@ export function createFormDefinition(
       order_num: orderNum,
     },
     children: [
+      {
+        tag: "Heading",
+        props: {
+          children: "Form Title",
+          level: 3,
+          style: {
+            display: "block",
+            fontSize: "18px",
+            fontWeight: "600",
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "Description",
+        props: {
+          children: "",
+          style: {
+            display: "block",
+            fontSize: "14px",
+            backgroundColor: 'transparent',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0.5,
+      },
       {
         tag: "FormField",
         props: {

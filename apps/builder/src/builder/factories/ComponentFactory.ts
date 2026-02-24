@@ -15,6 +15,7 @@ import { ElementUtils } from "../../utils/element/elementUtils";
 // 컴포넌트 정의 임포트
 import {
   createTextFieldDefinition,
+  createTextAreaDefinition,
   createFormDefinition,
   createToastDefinition,
   createToolbarDefinition,
@@ -31,6 +32,7 @@ import {
 import {
   createGroupDefinition,
   createToggleButtonGroupDefinition,
+  createSwitcherDefinition,
   createCheckboxGroupDefinition,
   createRadioGroupDefinition,
   createTagGroupDefinition,
@@ -80,6 +82,7 @@ export class ComponentFactory {
    */
   private static creators: Record<string, ComponentCreator> = {
     TextField: ComponentFactory.createTextField,
+    TextArea: ComponentFactory.createTextArea,
     // ⭐ Form Components
     Form: ComponentFactory.createForm,
     Toast: ComponentFactory.createToast,
@@ -88,6 +91,7 @@ export class ComponentFactory {
     SearchField: ComponentFactory.createSearchField,
     Group: ComponentFactory.createGroup,
     ToggleButtonGroup: ComponentFactory.createToggleButtonGroup,
+    Switcher: ComponentFactory.createSwitcher,
     CheckboxGroup: ComponentFactory.createCheckboxGroup,
     RadioGroup: ComponentFactory.createRadioGroup,
     Select: ComponentFactory.createSelect,
@@ -198,6 +202,12 @@ export class ComponentFactory {
     return this.createComponent(createTextFieldDefinition, context);
   }
 
+  private static async createTextArea(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createTextAreaDefinition, context);
+  }
+
   // ==================== Form Components ====================
 
   private static async createForm(
@@ -240,6 +250,12 @@ export class ComponentFactory {
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createToggleButtonGroupDefinition, context);
+  }
+
+  private static async createSwitcher(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createSwitcherDefinition, context);
   }
 
   private static async createCheckboxGroup(

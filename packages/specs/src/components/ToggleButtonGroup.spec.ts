@@ -136,21 +136,27 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
           color: borderColor,
           radius: borderRadius as unknown as number,
         },
-        // 자식 ToggleButton 컨테이너
-        {
-          type: 'container' as const,
-          x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [], // 자식은 렌더러에서 주입
-          layout: {
-            display: 'flex',
-            flexDirection: props.orientation === 'vertical' ? 'column' : 'row',
-            gap: size.gap,
-          },
-        },
       ];
+
+      // 자식 Element가 ToggleButton 렌더링 담당
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
+      // fallback: 자식이 없는 레거시 데이터 → 전체 렌더링
+      // 자식 ToggleButton 컨테이너
+      shapes.push({
+        type: 'container' as const,
+        x: 0,
+        y: 0,
+        width: 'auto',
+        height: 'auto',
+        children: [], // 자식은 렌더러에서 주입
+        layout: {
+          display: 'flex',
+          flexDirection: props.orientation === 'vertical' ? 'column' : 'row',
+          gap: size.gap,
+        },
+      });
 
       return shapes;
     },

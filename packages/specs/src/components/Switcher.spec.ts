@@ -158,6 +158,11 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'center';
 
+      // 자식 Element가 탭 텍스트 렌더링 담당
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
+      // fallback: 자식이 없는 레거시 데이터 → 전체 렌더링
       // 탭 텍스트
       items.forEach((item, index) => {
         const label = typeof item === 'string' ? item : item.label;

@@ -876,6 +876,7 @@ export const ElementSprite = memo(function ElementSprite({
     const TRANSPARENT_CONTAINER_TAGS = new Set([
       'TextField', 'NumberField', 'SearchField',
       'DateField', 'TimeField', 'ColorField',
+      'TextArea', 'Textarea',
       'ComboBox', 'Select', 'Dropdown',
       'Slider', 'RangeSlider',
       'CheckboxGroup', 'RadioGroup',
@@ -1092,12 +1093,17 @@ export const ElementSprite = memo(function ElementSprite({
             const CHILD_COMPOSITION_TAGS = new Set([
               // Input Fields
               'TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField',
+              'TextArea', 'Textarea',
               // Overlay
               'Dialog', 'Popover', 'Tooltip', 'Toast',
               // Navigation
               'Menu', 'Disclosure', 'DisclosureGroup', 'Toolbar',
               // Groups
-              'CheckboxGroup', 'RadioGroup',
+              'CheckboxGroup', 'RadioGroup', 'ToggleButtonGroup',
+              // Switcher
+              'Switcher',
+              // Form
+              'Form',
               // Date & Color
               'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker',
             ]);

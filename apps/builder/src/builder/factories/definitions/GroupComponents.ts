@@ -104,6 +104,81 @@ export function createToggleButtonGroupDefinition(
 }
 
 /**
+ * Switcher 컴포넌트 정의 (탭형 전환)
+ *
+ * CSS DOM 구조:
+ * Switcher (parent, tag="Switcher", flex row)
+ *   ├─ ToggleButton (tag="ToggleButton", children="Tab 1", transparent bg)
+ *   └─ ToggleButton (tag="ToggleButton", children="Tab 2", transparent bg)
+ */
+export function createSwitcherDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Switcher",
+    parent: {
+      tag: "Switcher",
+      props: {
+        items: ["Tab 1", "Tab 2"],
+        activeIndex: 0,
+        isDisabled: false,
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          width: 240,
+          height: 40,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "ToggleButton",
+        props: {
+          children: "Tab 1",
+          isSelected: true,
+          isDisabled: false,
+          style: {
+            flex: 1,
+            backgroundColor: 'transparent',
+            textAlign: 'center',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "ToggleButton",
+        props: {
+          children: "Tab 2",
+          isSelected: false,
+          isDisabled: false,
+          style: {
+            flex: 1,
+            backgroundColor: 'transparent',
+            textAlign: 'center',
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+/**
  * CheckboxGroup 컴포넌트 정의
  */
 export function createCheckboxGroupDefinition(
