@@ -639,7 +639,7 @@ TextField의 `label` prop 변경은 Label 자식의 `children`과 항상 함께 
 ## Phase 4: WebGL Spec 패턴 일관성 감사 (2026-02-25)
 
 > **작성일**: 2026-02-25
-> **상태**: 감사 완료 — 21개 파일 수정 필요
+> **상태**: 코드 수정 완료 — Canvas 수동 확인 필요
 > **범위**: 63개 전체 spec 파일의 fontSize TokenRef 해결 패턴 + label 오프셋 일관성 검사
 
 ### 배경
@@ -765,11 +765,11 @@ y: labelOffset,
 
 ### 완료 기준
 
-- [ ] 17개 ❌ 파일에 resolveToken 3단계 패턴 적용
-- [ ] 4개 ⚠️ 파일 수정 (ComboBox, Select, Slider, Tabs)
-- [ ] 2개 label 오프셋 하드코딩 수정 (TextArea, ListBox)
-- [ ] `npx tsc --noEmit` 타입 체크 통과
-- [ ] `pnpm build` (specs 빌드) 성공
+- [x] 17개 ❌ 파일에 resolveToken 3단계 패턴 적용
+- [x] 4개 ⚠️ 파일 수정 (ComboBox, Select, Slider, Tabs)
+- [x] 2개 label 오프셋 하드코딩 수정 (TextArea, ListBox)
+- [x] `npx tsc --noEmit` 타입 체크 통과
+- [x] `pnpm build` (specs 빌드) 성공
 - [ ] Canvas에서 각 컴포넌트 텍스트 렌더링 정상 확인
 
 ---
@@ -777,7 +777,7 @@ y: labelOffset,
 ## Phase 5: `_hasChildren` 적용 검증 감사 (2026-02-25)
 
 > **작성일**: 2026-02-25
-> **상태**: 감사 완료 — 인프라 1개 + spec 6개 수정 필요, 패턴 통일 6개 권고
+> **상태**: 코드 수정 완료 — Canvas 수동 확인 필요
 > **범위**: 인프라 파일 4개 + spec 파일 49개 전수 검증
 > **Phase 4와의 관계**: 별개 문제 (원인·수정 대상·영향 파일 모두 다름, 독립 수정 가능)
 
@@ -878,10 +878,10 @@ if (hasChildren) return shapes;
 
 ### 완료 기준
 
-- [ ] ElementSprite.tsx에 `COMPLEX_COMPONENT_TAGS` 체크 추가
-- [ ] 6개 spec에 `_hasChildren` 패턴 추가 (TextArea, NumberField, SearchField, DateField, TimeField, ColorField)
-- [ ] (P2) 4개 spec 변수명 통일: `hasLabelChild` → `hasChildren`
-- [ ] (P2) 2개 spec 직접 참조 → 변수화 (Select, ComboBox)
-- [ ] `npx tsc --noEmit` 타입 체크 통과
+- [x] ElementSprite.tsx에 `COMPLEX_COMPONENT_TAGS` 체크 추가
+- [x] 6개 spec에 `_hasChildren` 패턴 추가 (TextArea, NumberField, SearchField, DateField, TimeField, ColorField)
+- [x] (P2) 4개 spec 변수명 통일: `hasLabelChild` → `hasChildren`
+- [x] (P2) 2개 spec 직접 참조 → 변수화 (Select, ComboBox)
+- [x] `npx tsc --noEmit` 타입 체크 통과
 - [ ] Canvas에서 자식 있는 상태의 이중 렌더링 해소 확인
 - [ ] Canvas에서 COMPLEX 컴포넌트 자식 삭제 시 standalone 미복귀 확인

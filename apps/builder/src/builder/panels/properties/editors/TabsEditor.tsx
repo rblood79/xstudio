@@ -136,22 +136,38 @@ export const TabsEditor = memo(
       [currentProps, onUpdate]
     );
 
-    // 실제 Tab 자식 요소들을 찾기 (useMemo로 최적화)
+    // 실제 Tab 자식 요소들을 찾기 (Dual Lookup: 직속 → TabList 내부)
     const tabChildren = useMemo(() => {
-      return storeElements
+      // 1단계: 직속 자식에서 Tab 검색 (기존 flat 구조)
+      const directTabs = storeElements
         .filter((child) => child.parent_id === elementId && child.tag === "Tab")
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      if (directTabs.length > 0) return directTabs;
+
+      // 2단계: TabList 아래에서 Tab 검색 (새 구조)
+      const tabListEl = storeElements.find(
+        (child) => child.parent_id === elementId && child.tag === "TabList"
+      );
+      if (tabListEl) {
+        return storeElements
+          .filter((child) => child.parent_id === tabListEl.id && child.tag === "Tab")
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      }
+      return [];
     }, [storeElements, elementId]);
 
-    // ⭐ 최적화: defaultSelectedKey 옵션 생성
+    // ⭐ 최적화: defaultSelectedKey 옵션 생성 (tabId prop 기준)
     const defaultTabOptions = useMemo(() => {
-      return tabChildren.map((tab) => ({
-        id: tab.id,
-        value: tab.id,
-        label: ("title" in tab.props
-          ? tab.props.title
-          : "Untitled Tab") as string,
-      }));
+      return tabChildren.map((tab) => {
+        const tabKey = (tab.props.tabId as string) || tab.id;
+        return {
+          id: tabKey,
+          value: tabKey,
+          label: ("title" in tab.props
+            ? tab.props.title
+            : "Untitled Tab") as string,
+        };
+      });
     }, [tabChildren]);
 
     // 새 탭 추가 함수 정의
@@ -320,13 +336,24 @@ async function createNewTab(
   // UUID 기반 tabId 사용 (안전하고 중복 없음)
   const tabId = ElementUtils.generateId();
 
-  // 현재 Tabs의 모든 자식 요소들(Tab + Panel)의 order_num 중 최대값 구하기
   const { elements } = useStore.getState();
-  const allTabsChildren = elements.filter((el) => el.parent_id === elementId);
-  const maxOrderNum = Math.max(
-    0,
-    ...allTabsChildren.map((el) => el.order_num || 0)
+
+  // Dual Lookup: TabList/TabPanels 래퍼가 있으면 그 안에 추가
+  const tabListEl = elements.find(
+    (el) => el.parent_id === elementId && el.tag === "TabList"
   );
+  const tabPanelsEl = elements.find(
+    (el) => el.parent_id === elementId && el.tag === "TabPanels"
+  );
+
+  const tabParentId = tabListEl?.id || elementId;
+  const panelParentId = tabPanelsEl?.id || elementId;
+
+  // 부모별 자식의 max order_num 계산
+  const tabSiblings = elements.filter((el) => el.parent_id === tabParentId);
+  const panelSiblings = elements.filter((el) => el.parent_id === panelParentId);
+  const maxTabOrder = Math.max(0, ...tabSiblings.map((el) => el.order_num || 0));
+  const maxPanelOrder = Math.max(0, ...panelSiblings.map((el) => el.order_num || 0));
 
   // 새로운 Tab 요소 생성
   const newTabElement = {
@@ -342,8 +369,8 @@ async function createNewTab(
       className: "",
       tabId: tabId,
     },
-    parent_id: elementId,
-    order_num: maxOrderNum + 1, // 다음 순서로 배치
+    parent_id: tabParentId,
+    order_num: maxTabOrder + 1,
   };
 
   // 새로운 Panel 요소 생성
@@ -360,8 +387,8 @@ async function createNewTab(
       className: "",
       tabId: tabId,
     },
-    parent_id: elementId,
-    order_num: maxOrderNum + 2, // Tab 다음 순서로 배치
+    parent_id: panelParentId,
+    order_num: maxPanelOrder + 1,
   };
 
   try {
@@ -375,7 +402,7 @@ async function createNewTab(
     const updatedProps = {
       ...currentProps,
       defaultSelectedKey: (tabChildren.length === 0
-        ? newTabElement.id
+        ? tabId
         : currentProps.defaultSelectedKey) as string | undefined,
     };
 

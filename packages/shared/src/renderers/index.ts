@@ -45,6 +45,8 @@ export const rendererMap: Record<
 
   // Layout 컴포넌트
   Tabs: LayoutRenderers.renderTabs,
+  TabList: LayoutRenderers.renderTabList,
+  TabPanels: LayoutRenderers.renderTabPanels,
   Panel: LayoutRenderers.renderPanel,
   Card: LayoutRenderers.renderCard,
   Button: LayoutRenderers.renderButton,

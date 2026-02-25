@@ -756,9 +756,14 @@ export function calculateContentWidth(
     }
 
     // 일반 요소
-    // Canvas 2D measureText와 CanvasKit paragraph API 간 폰트 측정 오차 보정 (+2px)
+    // Canvas 2D measureText와 CanvasKit paragraph API 간 폰트 측정 오차 보정 (+4px)
     const fontSize = parseNumericValue(style?.fontSize) ?? 14;
-    return Math.ceil(calculateTextWidth(text, fontSize, 0)) + 2;
+    const fontFamily = (style?.fontFamily as string) ?? specFontFamily.sans;
+    const fontWeight = style?.fontWeight ?? 400;
+    const letterSpacing = parseNumericValue(style?.letterSpacing) ?? 0;
+    const baseWidth = measureTextWidth(text, fontSize, fontFamily, fontWeight as number | string);
+    const totalWidth = baseWidth + (letterSpacing * Math.max(0, text.length - 1));
+    return Math.ceil(totalWidth) + 4;
   }
 
   // 4. 태그별 기본 너비 사용
@@ -967,8 +972,7 @@ export function calculateContentHeight(
     const wrapWidth = cardWidth - cardPad * 2;
     const fontFamily = specFontFamily.sans;
 
-    const cardTitle = String(props?.heading || props?.title || '');
-    const subheading = props?.subheading ? String(props.subheading) : '';
+    const cardTitle = String(props?.title || '');
     const description = String(props?.description || props?.children || '');
 
     let h = 0; // content-box height (padding 제외)
@@ -976,11 +980,7 @@ export function calculateContentHeight(
     if (cardTitle) {
       h += measureWrappedTextHeight(cardTitle, 16, 600, fontFamily, wrapWidth);
     }
-    if (subheading) {
-      if (cardTitle) h += 2; // header gap
-      h += measureWrappedTextHeight(subheading, 14, 400, fontFamily, wrapWidth);
-    }
-    if (cardTitle || subheading) {
+    if (cardTitle) {
       h += 8; // marginBottom between header and content
     }
     if (description) {
@@ -1114,8 +1114,14 @@ export function calculateContentHeight(
       const tabBarHeight = sizeName === 'sm' ? 25 : sizeName === 'lg' ? 35 : 30;
       const tabPanelPadding = 16; // React-Aria TabPanel 기본 padding
 
-      // 활성 Panel의 높이 계산
-      const panelChildren = childElements.filter(c => c.tag === 'Panel');
+      // 활성 Panel의 높이 계산 (Dual Lookup: 직속 → TabPanels 내부)
+      let panelChildren = childElements.filter(c => c.tag === 'Panel');
+      if (panelChildren.length === 0) {
+        const tabPanelsEl = childElements.find(c => c.tag === 'TabPanels');
+        if (tabPanelsEl && getChildElements) {
+          panelChildren = getChildElements(tabPanelsEl.id).filter(c => c.tag === 'Panel');
+        }
+      }
       const activePanel = panelChildren[0]; // 기본: 첫 번째 Panel
       if (activePanel) {
         const panelGrandChildren = getChildElements?.(activePanel.id);

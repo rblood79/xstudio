@@ -740,8 +740,15 @@ const ElementsLayer = memo(function ElementsLayer({
             const tabBarHeight = sizeName === 'sm' ? 25 : sizeName === 'lg' ? 35 : 30;
             const tabPanelPadding = 16; // React-Aria TabPanel 기본 padding
 
-            // 활성 Panel만 필터 (Tab 요소는 spec shapes가 렌더링)
-            const panelChildren = containerChildren.filter(c => c.tag === 'Panel');
+            // Dual Lookup: 직속 Panel 또는 TabPanels 내부 Panel
+            let panelChildren = containerChildren.filter(c => c.tag === 'Panel');
+            if (panelChildren.length === 0) {
+              const tabPanelsEl = containerChildren.find(c => c.tag === 'TabPanels');
+              if (tabPanelsEl) {
+                panelChildren = (pageChildrenMap.get(tabPanelsEl.id) ?? [])
+                  .filter(c => c.tag === 'Panel');
+              }
+            }
             const activePanel = panelChildren[0]; // 기본: 첫 번째 Panel
             filteredContainerChildren = activePanel ? [activePanel] : [];
 
@@ -857,15 +864,15 @@ const ElementsLayer = memo(function ElementsLayer({
         const layout = cachedLayoutMap.get(childEl.id);
         if (!layout) return null;
 
-        // Card: props panel에서 변경된 heading/description을 자식 요소에 주입
-        // CardEditor가 Card.props.heading/description을 업데이트하지만
+        // Card: props panel에서 변경된 title/description을 자식 요소에 주입
+        // CardEditor가 Card.props.title/description을 업데이트하지만
         // WebGL TextSprite는 Heading.props.children을 읽으므로 동기화 필요
         let effectiveChildEl = childEl;
         const containerTag = (containerEl.tag ?? '');
         if (containerTag === 'Card') {
           const cardProps = containerEl.props as Record<string, unknown> | undefined;
           if (childEl.tag === 'Heading') {
-            const headingText = cardProps?.heading ?? cardProps?.title;
+            const headingText = cardProps?.title;
             if (headingText != null) {
               effectiveChildEl = {
                 ...childEl,
@@ -1098,9 +1105,33 @@ const ElementsLayer = memo(function ElementsLayer({
             // SPEC_RENDERS_ALL_TAGS: spec shapes가 전체 렌더링 → childElements 비워서
             // _hasChildren=false → spec이 라벨/값 텍스트 렌더링
             const childTagLwr = (child.tag ?? '').toLowerCase();
-            const childElements = isContainerType
+            let childElements = isContainerType
               ? (SPEC_RENDERS_ALL_TAGS.has(childTagLwr) ? [] : (pageChildrenMap.get(child.id) ?? []))
               : [];
+
+            // Tabs: childElements에 원본(TabList/TabPanels) + activePanel 병합
+            // - TabList → _tabLabels synthetic prop 계산용 (Tab 정보)
+            // - activePanel → renderChildElement가 실제 렌더링 (layout 있음)
+            // - TabPanels → renderChildElement에서 layout 없어 null (무해)
+            let tabsRenderChildren: Element[] | undefined;
+            if (child.tag === 'Tabs' && isContainerType) {
+              let panelChildren = childElements.filter(c => c.tag === 'Panel');
+              if (panelChildren.length === 0) {
+                const tabPanelsEl = childElements.find(c => c.tag === 'TabPanels');
+                if (tabPanelsEl) {
+                  panelChildren = (pageChildrenMap.get(tabPanelsEl.id) ?? [])
+                    .filter(c => c.tag === 'Panel');
+                }
+              }
+              const activePanel = panelChildren[0];
+              tabsRenderChildren = activePanel ? [activePanel] : [];
+              // childElements에 activePanel 추가 (renderChildElement 호출 대상에 포함)
+              if (activePanel && !childElements.some(c => c.id === activePanel.id)) {
+                childElements = [...childElements, activePanel];
+              }
+            }
+
+            const renderChildren = tabsRenderChildren ?? childElements;
 
             return (
               <DirectContainer
@@ -1116,8 +1147,8 @@ const ElementsLayer = memo(function ElementsLayer({
                   onClick={onClick}
                   onDoubleClick={onDoubleClick}
                   childElements={isContainerType ? childElements : undefined}
-                  renderChildElement={isContainerType && childElements.length > 0
-                    ? createContainerChildRenderer(child, layout.width, layout.height)
+                  renderChildElement={isContainerType && renderChildren.length > 0
+                    ? createContainerChildRenderer(child, layout.width, layout.height, renderChildren)
                     : undefined}
                 />
                 {!isContainerType && !SPEC_SHAPES_ONLY_TAGS.has(child.tag) && renderTreeFn(child.id, { width: layout.width, height: layout.height })}

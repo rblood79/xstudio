@@ -16,21 +16,13 @@ export const CardEditor = memo(function CardEditor({ elementId, currentProps, on
   const { buildChildUpdates } = useSyncChildProp(elementId);
 
   // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
-  const handleHeadingChange = useCallback((value: string) => {
-    const updatedProps = { ...currentProps, heading: value };
+  const handleTitleChange = useCallback((value: string) => {
+    const updatedProps = { ...currentProps, title: value };
     const childUpdates = buildChildUpdates([
       { childTag: 'Heading', propKey: 'children', value },
     ]);
     useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
   }, [currentProps, buildChildUpdates]);
-
-  const handleSubheadingChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, subheading: value });
-  }, [currentProps, onUpdate]);
-
-  const handleTitleChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, title: value });
-  }, [currentProps, onUpdate]);
 
   const handleDescriptionChange = useCallback((value: string) => {
     const updatedProps = { ...currentProps, description: value };
@@ -132,22 +124,6 @@ export const CardEditor = memo(function CardEditor({ elementId, currentProps, on
     () => (
       <PropertySection title="Content">
         <PropertyInput
-          label="Heading"
-          value={String(currentProps.heading || '')}
-          onChange={handleHeadingChange}
-          icon={Type}
-          placeholder="Main heading"
-        />
-
-        <PropertyInput
-          label="Subheading"
-          value={String(currentProps.subheading || '')}
-          onChange={handleSubheadingChange}
-          icon={FileText}
-          placeholder="Subheading text"
-        />
-
-        <PropertyInput
           label={PROPERTY_LABELS.TITLE}
           value={String(currentProps.title || '')}
           onChange={handleTitleChange}
@@ -174,13 +150,9 @@ export const CardEditor = memo(function CardEditor({ elementId, currentProps, on
       </PropertySection>
     ),
     [
-      currentProps.heading,
-      currentProps.subheading,
       currentProps.title,
       currentProps.description,
       currentProps.footer,
-      handleHeadingChange,
-      handleSubheadingChange,
       handleTitleChange,
       handleDescriptionChange,
       handleFooterChange,

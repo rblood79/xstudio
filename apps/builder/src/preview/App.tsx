@@ -329,8 +329,12 @@ function CanvasContent() {
         case 'DisclosureContent': return 'div';
         // Form 복합 컴포넌트
         case 'FormField': return 'div';
+        case 'Group': return 'div';
+        case 'FieldError': return 'span';
         // Collection 자식 태그
         case 'Tab': return 'button';
+        case 'TabList': return 'div';
+        case 'TabPanels': return 'div';
         case 'TagList': return 'div';
         case 'SelectItem': return 'div';
         case 'ComboBoxItem': return 'div';

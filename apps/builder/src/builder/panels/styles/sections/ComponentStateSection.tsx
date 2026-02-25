@@ -8,8 +8,9 @@
  */
 
 import { memo, useCallback } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { previewComponentStateAtom } from '../atoms/componentStateAtom';
+import { selectedElementAtom } from '../atoms/styleAtoms';
 import { PropertySelect } from '../../../components';
 import { Activity } from 'lucide-react';
 import type { ComponentState } from '@xstudio/specs';
@@ -30,16 +31,19 @@ export const ComponentStateSection = memo(function ComponentStateSection({
   hasSpec,
 }: ComponentStateSectionProps) {
   const [previewState, setPreviewState] = useAtom(previewComponentStateAtom);
+  const selectedElement = useAtomValue(selectedElementAtom);
 
   const handleChange = useCallback(
     (value: string) => {
       if (!value || value === 'default') {
         setPreviewState(null);
       } else {
-        setPreviewState(value as ComponentState);
+        const elementId = selectedElement?.id;
+        if (!elementId) return;
+        setPreviewState({ elementId, state: value as ComponentState });
       }
     },
-    [setPreviewState],
+    [setPreviewState, selectedElement],
   );
 
   if (!hasSpec) return null;
@@ -49,7 +53,7 @@ export const ComponentStateSection = memo(function ComponentStateSection({
       <PropertySelect
         label="State"
         icon={Activity}
-        value={previewState ?? 'default'}
+        value={previewState?.elementId === selectedElement?.id ? (previewState?.state ?? 'default') : 'default'}
         onChange={handleChange}
         options={STATE_OPTIONS}
       />

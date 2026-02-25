@@ -22,7 +22,8 @@ import type { SkiaNodeData } from '../skia/nodeRenderers';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { convertStyle, cssColorToHex, parseCSSSize, type CSSStyle } from './styleConverter';
 import { Graphics as PixiGraphics } from 'pixi.js';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { selectAtom } from 'jotai/utils';
 import { previewComponentStateAtom } from '../../../panels/styles/atoms/componentStateAtom';
 import { isFillV2Enabled } from '../../../../utils/featureFlags';
 import { fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
@@ -122,6 +123,7 @@ import {
   PixiPanel,
 } from '../ui';
 import { useStore } from '../../../stores';
+import { shallow } from 'zustand/shallow';
 import { useResolvedElement } from './useResolvedElement';
 import { isFlexContainer, isGridContainer } from '../layout';
 import { measureWrappedTextHeight } from '../utils/textMeasure';
@@ -441,15 +443,15 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_GROUP_TAGS.has(tag)) return 'group';
   if (UI_SLOT_TAGS.has(tag)) return 'slot';
 
+  // TEXT/IMAGE: leaf 요소이므로 display 값과 무관하게 항상 전용 Sprite 사용
+  if (TEXT_TAGS.has(tag)) return 'text';
+  if (IMAGE_TAGS.has(tag)) return 'image';
+
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
   // (레이아웃 계산은 별도로 처리)
   if (isFlexContainer(element)) return 'flex';
   if (isGridContainer(element)) return 'grid';
-
-  // 기본 타입
-  if (TEXT_TAGS.has(tag)) return 'text';
-  if (IMAGE_TAGS.has(tag)) return 'image';
 
   return 'box';
 }
@@ -683,8 +685,16 @@ export const ElementSprite = memo(function ElementSprite({
 }: ElementSpriteProps) {
   useExtend(PIXI_COMPONENTS);
 
-  // Phase A: 미리보기 컴포넌트 상태 구독
-  const previewState = useAtomValue(previewComponentStateAtom);
+  // Phase A: 미리보기 컴포넌트 상태 구독 (selectAtom으로 자신의 elementId만 구독 → O(1) 리렌더)
+  const myPreviewStateAtom = useMemo(
+    () => selectAtom(
+      previewComponentStateAtom,
+      (s) => (s?.elementId === element.id ? s.state : null),
+    ),
+    [element.id],
+  );
+  const previewState = useAtomValue(myPreviewStateAtom);
+  const setPreviewState = useSetAtom(previewComponentStateAtom);
 
   // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
   // layout이 적용된 Container를 등록해야 SelectionBox 위치가 일치함
@@ -807,37 +817,56 @@ export const ElementSprite = memo(function ElementSprite({
   }, [resolvedElement, layoutPosition, computedContainerSize]);
 
   // Tabs/Breadcrumbs: 실제 자식 레이블을 spec shapes에 전달
-  const effectiveElementWithTabs = useMemo(() => {
-    const tag = (effectiveElement.tag ?? '').toLowerCase();
-    if (tag === 'tabs' && childElements && childElements.length > 0) {
-      const tabChildren = childElements.filter(c => c.tag === 'Tab');
-      if (tabChildren.length > 0) {
-        const tabLabels = tabChildren.map(t => {
-          const p = t.props as Record<string, unknown> | undefined;
-          return String(p?.children || p?.label || p?.title || 'Tab');
-        });
-        return {
-          ...effectiveElement,
-          props: { ...effectiveElement.props, _tabLabels: tabLabels },
-        } as Element;
-      }
-    }
-    // Breadcrumbs: 자식 Breadcrumb 텍스트를 _crumbs로 주입
-    if (tag === 'breadcrumbs' && childElements && childElements.length > 0) {
-      const crumbChildren = childElements.filter(c => c.tag === 'Breadcrumb');
-      if (crumbChildren.length > 0) {
-        const crumbs = crumbChildren.map(c => {
-          const p = c.props as Record<string, unknown> | undefined;
+  // 문제: childrenMap은 props 변경 시 갱신되지 않아 stale Element 참조
+  // 해결: childrenMap(구조/ID) + elementsMap(최신 props) 조합
+  // useRef 캐싱: useSyncExternalStore가 요구하는 참조 안정성 보장
+  const syntheticLabelsRef = useRef<string[] | null>(null);
+  const syntheticChildLabels = useStore(
+    useCallback((state) => {
+      let next: string[] | null = null;
+      if (element.tag === 'Tabs') {
+        const children = state.childrenMap.get(element.id) ?? [];
+        let tabChildren = children.filter(c => c.tag === 'Tab');
+        if (tabChildren.length === 0) {
+          const tabList = children.find(c => c.tag === 'TabList');
+          if (tabList) {
+            tabChildren = (state.childrenMap.get(tabList.id) ?? []).filter(c => c.tag === 'Tab');
+          }
+        }
+        next = tabChildren
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+          .map(t => {
+            const fresh = state.elementsMap.get(t.id) ?? t;
+            const p = fresh.props as Record<string, unknown> | undefined;
+            return String(p?.children || p?.label || p?.title || 'Tab');
+          });
+      } else if (element.tag === 'Breadcrumbs') {
+        const children = state.childrenMap.get(element.id) ?? [];
+        const crumbChildren = children.filter(c => c.tag === 'Breadcrumb');
+        next = crumbChildren.map(c => {
+          const fresh = state.elementsMap.get(c.id) ?? c;
+          const p = fresh.props as Record<string, unknown> | undefined;
           return String(p?.children || p?.label || p?.title || 'Page');
         });
-        return {
-          ...effectiveElement,
-          props: { ...effectiveElement.props, _crumbs: crumbs },
-        } as Element;
       }
+      if (shallow(syntheticLabelsRef.current, next)) {
+        return syntheticLabelsRef.current;
+      }
+      syntheticLabelsRef.current = next;
+      return next;
+    }, [element.id, element.tag])
+  );
+  const effectiveElementWithTabs = useMemo(() => {
+    if (syntheticChildLabels && syntheticChildLabels.length > 0) {
+      const tag = (effectiveElement.tag ?? '').toLowerCase();
+      const propKey = tag === 'tabs' ? '_tabLabels' : '_crumbs';
+      return {
+        ...effectiveElement,
+        props: { ...effectiveElement.props, [propKey]: syntheticChildLabels },
+      } as Element;
     }
     return effectiveElement;
-  }, [effectiveElement, childElements]);
+  }, [effectiveElement, syntheticChildLabels]);
 
   const spriteType = getSpriteType(effectiveElementWithTabs);
 
@@ -1117,6 +1146,7 @@ export const ElementSprite = memo(function ElementSprite({
             // Checkbox/Radio/Switch/ComboBox/Select/Slider → _hasChildren 단일 패턴
 
             // 동적 컴포넌트 상태: preview > disabled prop > default
+            // selectAtom으로 자신의 elementId만 구독 → previewState는 이미 필터됨
             const componentState: ComponentState = (() => {
               if (previewState && previewState !== 'default') return previewState;
               if (specProps.isDisabled || specProps.disabled) return 'disabled';
@@ -1367,10 +1397,28 @@ export const ElementSprite = memo(function ElementSprite({
     const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
     onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
 
+    // 포인터 누름 상태로 즉시 전환 (선택/드래그 핸들링과 별개로 상태만 기록)
+    setPreviewState({ elementId: element.id, state: 'pressed' });
+
     if (isDoubleClick) {
       onDoubleClick?.(element.id);
     }
-  }, [element.id, onClick, onDoubleClick]);
+  }, [element.id, onClick, onDoubleClick, setPreviewState]);
+
+  // Phase A: 포인터 진입 — hover 상태로 전환
+  const handlePointerOver = useCallback(() => {
+    setPreviewState({ elementId: element.id, state: 'hover' });
+  }, [element.id, setPreviewState]);
+
+  // Phase A: 포인터 버튼 해제 — 여전히 hover 위에 있으므로 hover로 복귀
+  const handlePointerUp = useCallback(() => {
+    setPreviewState({ elementId: element.id, state: 'hover' });
+  }, [element.id, setPreviewState]);
+
+  // Phase A: 포인터 이탈 — 상태 초기화 (pointerleave: 자식으로의 이동 시 버블링 없음)
+  const handlePointerLeave = useCallback(() => {
+    setPreviewState(null);
+  }, [setPreviewState]);
 
   // CheckboxGroup의 자식 Checkbox인지 확인
   const isCheckboxInGroup = spriteType === 'checkboxItem' && parentElement?.tag === 'CheckboxGroup';
@@ -2007,7 +2055,12 @@ export const ElementSprite = memo(function ElementSprite({
               draw={drawContainerHitRect}
               eventMode={containerIsPointerEventsNone ? 'none' : 'static'}
               cursor={containerPixiCursor}
-              {...(!containerIsPointerEventsNone && { onPointerDown: handleContainerPointerDown })}
+              {...(!containerIsPointerEventsNone && {
+                onPointerDown: handleContainerPointerDown,
+                onPointerOver: handlePointerOver,
+                onPointerUp: handlePointerUp,
+                onPointerLeave: handlePointerLeave,
+              })}
             />
             <pixiContainer x={0} y={0}>
               <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />
@@ -2042,7 +2095,12 @@ export const ElementSprite = memo(function ElementSprite({
               draw={drawContainerHitRect}
               eventMode={containerIsPointerEventsNone ? 'none' : 'static'}
               cursor={containerPixiCursor}
-              {...(!containerIsPointerEventsNone && { onPointerDown: handleContainerPointerDown })}
+              {...(!containerIsPointerEventsNone && {
+                onPointerDown: handleContainerPointerDown,
+                onPointerOver: handlePointerOver,
+                onPointerUp: handlePointerUp,
+                onPointerLeave: handlePointerLeave,
+              })}
             />
             <pixiContainer x={0} y={0}>
               <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />

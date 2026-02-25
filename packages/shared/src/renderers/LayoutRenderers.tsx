@@ -49,13 +49,39 @@ export const renderTabs = (
     "name" in (dataBinding as object) &&
     !("type" in (dataBinding as object));
 
-  const tabChildren = elements
+  // 1단계: 직속 자식에서 Tab 검색 (기존 구조 호환)
+  let tabChildren = elements
     .filter((child) => child.parent_id === element.id && child.tag === "Tab")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  const panelChildren = elements
+  // 2단계: TabList 아래에서 Tab 검색 (새 구조)
+  if (tabChildren.length === 0) {
+    const tabListElement = elements.find(
+      (child) => child.parent_id === element.id && child.tag === "TabList"
+    );
+    if (tabListElement) {
+      tabChildren = elements
+        .filter((child) => child.parent_id === tabListElement.id && child.tag === "Tab")
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    }
+  }
+
+  // 1단계: 직속 자식에서 Panel 검색 (기존 구조 호환)
+  let panelChildren = elements
     .filter((child) => child.parent_id === element.id && child.tag === "Panel")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  // 2단계: TabPanels 아래에서 Panel 검색 (새 구조)
+  if (panelChildren.length === 0) {
+    const tabPanelsElement = elements.find(
+      (child) => child.parent_id === element.id && child.tag === "TabPanels"
+    );
+    if (tabPanelsElement) {
+      panelChildren = elements
+        .filter((child) => child.parent_id === tabPanelsElement.id && child.tag === "Panel")
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    }
+  }
 
   return (
     <Tabs
@@ -80,11 +106,15 @@ export const renderTabs = (
       }}
     >
       <TabList showIndicator={Boolean(element.props.showIndicator)}>
-        {tabChildren.map((tab) => (
-          <Tab key={tab.id} id={tab.id}>
-            {typeof tab.props.title === 'string' ? tab.props.title : String(tab.props.title || '')}
-          </Tab>
-        ))}
+        {tabChildren.map((tab) => {
+          // tabId prop을 React Aria key로 사용 (defaultSelectedKey와 매칭)
+          const tabKey = (tab.props.tabId as string) || tab.id;
+          return (
+            <Tab key={tab.id} id={tabKey}>
+              {typeof tab.props.title === 'string' ? tab.props.title : String(tab.props.title || '')}
+            </Tab>
+          );
+        })}
       </TabList>
 
       {tabChildren.map((tab) => {
@@ -100,8 +130,10 @@ export const renderTabs = (
           return null;
         }
 
+        // tabId prop을 React Aria key로 사용 (Tab id와 매칭)
+        const tabKey = (tab.props.tabId as string) || tab.id;
         return (
-          <TabPanel key={correspondingPanel.id} id={tab.id}>
+          <TabPanel key={correspondingPanel.id} id={tabKey}>
             <Panel
               key={correspondingPanel.id}
               data-element-id={correspondingPanel.id}
@@ -127,6 +159,28 @@ export const renderTabs = (
       })}
     </Tabs>
   );
+};
+
+/**
+ * TabList 렌더링
+ * TabList는 부모 Tabs 렌더러가 직접 처리하므로 null 반환
+ */
+export const renderTabList = (
+  _element: PreviewElement,
+  _context: RenderContext
+): React.ReactNode => {
+  return null;
+};
+
+/**
+ * TabPanels 렌더링
+ * TabPanels는 부모 Tabs 렌더러가 직접 처리하므로 null 반환
+ */
+export const renderTabPanels = (
+  _element: PreviewElement,
+  _context: RenderContext
+): React.ReactNode => {
+  return null;
 };
 
 /**

@@ -21,6 +21,10 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[domain-layout-resolution](rules/domain-layout-resolution.md)** - Page/Layout 합성 규칙
 - **[domain-delta-messaging](rules/domain-delta-messaging.md)** - Delta 메시징 패턴
 - **[domain-component-lifecycle](rules/domain-component-lifecycle.md)** - 컴포넌트 생명주기
+- **[domain-structure-change-audit](rules/domain-structure-change-audit.md)** - Element 트리 구조 변경 시 소비자 감사 필수
+
+#### Zustand (zustand-*) - 상태 관리
+- **[zustand-childrenmap-staleness](rules/zustand-childrenmap-staleness.md)** - childrenMap은 props 변경 시 갱신 안 됨 → elementsMap 최신 조회, useRef 캐싱 필수
 
 #### Validation (validation-*) - 입력 검증/에러 처리
 - **[validation-input-boundary](rules/validation-input-boundary.md)** - 경계 입력 검증 (Zod)
@@ -47,6 +51,8 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[spec-build-sync](rules/spec-build-sync.md)** - @xstudio/specs 빌드 동기화 필수
 - **[spec-value-sync](rules/spec-value-sync.md)** - Spec ↔ Builder ↔ CSS 값 동기화
 - **CRITICAL**: Spec shapes 내 숫자 연산에 TokenRef 값을 직접 사용 금지 → `resolveToken()` 변환 필수 (TokenRef 문자열을 수 연산에 사용하면 NaN 좌표 → 렌더링 실패)
+- **CRITICAL**: Spec shapes() 내 `_hasChildren` 체크 패턴 필수 → `const hasChildren = !!(props as Record<string, unknown>)._hasChildren; if (hasChildren) return shapes;` (배경/테두리 shapes 정의 직후, standalone 콘텐츠 shapes 직전에 배치)
+- **CRITICAL**: 복합 컴포넌트(factory가 자식 Element를 생성하는 경우)는 반드시 `COMPLEX_COMPONENT_TAGS`에 등록 → 미등록 시 자식 삭제 후 standalone spec shapes 재활성화 버그 발생
 
 ### HIGH (강력 권장)
 
@@ -663,6 +669,8 @@ if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
    - shapes() 내 배경/테두리/그림자 shapes를 먼저 정의
    - `_hasChildren` 체크 → 배경 shapes만 반환 (TRANSPARENT) 또는 shell shapes만 반환 (NON-TRANSPARENT)
    - standalone 텍스트/콘텐츠 shapes는 체크 이후에 추가
+   - **CRITICAL**: `size.fontSize` 또는 `props.style?.fontSize`를 숫자 연산에 사용하기 전 반드시 `resolveToken()` 패턴 적용 (`as unknown as number` 캐스팅 금지 → NaN 발생)
+   - label이 있는 standalone shapes는 반드시 `labelOffset` 계산 후 y 좌표 오프셋 적용
 
 2. **`COMPLEX_COMPONENT_TAGS` 등록** (`apps/builder/src/builder/factories/constants.ts`):
    - factory가 자식 Element를 생성하는 복합 컴포넌트라면 반드시 이 Set에 추가
@@ -674,23 +682,28 @@ if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
    - `COMPLEX_COMPONENT_TAGS`에 등록하면 `_hasChildren` 주입은 자동으로 보장됨 — 추가 작업 불필요
    - 단, synthetic prop 메커니즘을 별도로 사용하거나 다단계 중첩 구조라면 `CHILD_COMPOSITION_EXCLUDE_TAGS`에 추가
    - 배경/테두리를 spec이 담당하면 `TRANSPARENT_CONTAINER_TAGS`에도 추가
+   - spec shapes가 `labelOffset` 기반으로 세로 레이아웃을 자체 계산하면 `SPEC_RENDERS_ALL_TAGS_SET`에도 추가 (`rearrangeShapesForColumn` 이중 변환 방지)
 
 4. **BuilderCanvas.tsx**:
    - 기본적으로 모든 컴포넌트가 컨테이너로 처리됨 — 추가 작업 불필요
    - 단, TEXT_TAGS / void 요소 / Color Sub 컴포넌트처럼 자식 내부 렌더링이 불필요하면 `NON_CONTAINER_TAGS`에 추가
    - `createContainerChildRenderer` 내 props sync 분기 추가 (label, heading, description 등)
 
-5. **Factory 정의** (`apps/builder/src/builder/factories/definitions/`):
+5. **레이아웃 엔진** (`apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`):
+   - spec shapes 기반의 자체 높이를 가진 컴포넌트는 `SPEC_SHAPES_INPUT_TAGS`에 추가 (`enrichWithIntrinsicSize`의 contentHeight ≤ 0 early return 우회)
+
+6. **Factory 정의** (`apps/builder/src/builder/factories/definitions/`):
    - ComponentDefinition에 자식 Element 정의 (Label, Input, Description 등)
    - `ComponentFactory.ts`에 creator 등록
 
-6. **검증**:
+7. **검증**:
    - `pnpm build` (specs 빌드)
    - `pnpm type-check` 통과
    - Canvas에서 드래그 앤 드롭 → 배경 + 자식 정상 렌더링
    - Layer 트리에서 자식 선택 → 스타일 편집 → Canvas 반영
    - 구 데이터 (자식 없음) → standalone 렌더링 유지
    - **자식을 모두 삭제해도 빈 shell 유지** (standalone spec shapes로 되돌아가지 않음)
+   - fontSize가 TokenRef인 경우 NaN 없이 정상 렌더링 확인
 
 
 #### Property Editor 자식 동기화 패턴 (2026-02-25)

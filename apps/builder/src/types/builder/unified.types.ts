@@ -434,8 +434,6 @@ export interface CardElementProps extends BaseElementProps {
   orientation?: "horizontal" | "vertical";
   title?: string;
   description?: string;
-  heading?: string;
-  subheading?: string;
   footer?: string;
   isSelectable?: boolean;
   isSelected?: boolean;
@@ -860,6 +858,18 @@ export function createDefaultTabsProps(): TabsElementProps {
 export function createDefaultTabProps(): TabElementProps {
   return {
     isDisabled: false,
+  };
+}
+
+export function createDefaultTabListProps(): BaseElementProps {
+  return {
+    style: { display: 'flex', flexDirection: 'row' },
+  };
+}
+
+export function createDefaultTabPanelsProps(): BaseElementProps {
+  return {
+    style: { display: 'flex', flexDirection: 'column' },
   };
 }
 
@@ -1421,6 +1431,8 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     TailSwatch: createDefaultTailSwatchProps,
     Tabs: createDefaultTabsProps,
     Tab: createDefaultTabProps,
+    TabList: createDefaultTabListProps,
+    TabPanels: createDefaultTabPanelsProps,
     Panel: createDefaultPanelProps,
     Tree: createDefaultTreeProps,
     TreeItem: createDefaultTreeItemProps,

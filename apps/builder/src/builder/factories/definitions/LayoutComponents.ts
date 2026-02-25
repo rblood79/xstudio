@@ -36,42 +36,68 @@ export function createTabsDefinition(
     },
     children: [
       {
-        tag: "Tab",
+        tag: "TabList",
         props: {
-          title: "Tab 1",
-          tabId: tab1Id,
+          style: {
+            display: "flex",
+            flexDirection: "row",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
+        children: [
+          {
+            tag: "Tab",
+            props: {
+              title: "Tab 1",
+              tabId: tab1Id,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "Tab",
+            props: {
+              title: "Tab 2",
+              tabId: tab2Id,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 2,
+          },
+        ],
       },
       {
-        tag: "Panel",
+        tag: "TabPanels",
         props: {
-          title: "Panel 1",
-          variant: "tab",
-          tabId: tab1Id,
+          style: {
+            display: "flex",
+            flexDirection: "column",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
-      },
-      {
-        tag: "Tab",
-        props: {
-          title: "Tab 2",
-          tabId: tab2Id,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 3,
-      },
-      {
-        tag: "Panel",
-        props: {
-          title: "Panel 2",
-          variant: "tab",
-          tabId: tab2Id,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 4,
+        children: [
+          {
+            tag: "Panel",
+            props: {
+              title: "Panel 1",
+              variant: "tab",
+              tabId: tab1Id,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "Panel",
+            props: {
+              title: "Panel 2",
+              variant: "tab",
+              tabId: tab2Id,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 2,
+          },
+        ],
       },
     ],
   };

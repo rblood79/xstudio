@@ -5,6 +5,7 @@ import { ComponentCreationContext, ComponentCreationResult } from "../types";
 import {
   createDefaultTableProps,
   createDefaultTableHeaderProps,
+  createDefaultTableBodyProps,
   createDefaultColumnGroupProps,
 } from "../../../types/builder/unified.types";
 import { addElementsToStore } from "../utils/elementCreation";
@@ -60,7 +61,20 @@ export async function createTable(
     updated_at: new Date().toISOString(),
   };
 
-  const children: Element[] = [tableHeader];
+  // TableBody 생성
+  const tableBody: Element = {
+    id: ElementUtils.generateId(),
+    customId: generateCustomId("TableBody", [...elements, parent, tableHeader]),
+    tag: "TableBody",
+    props: createDefaultTableBodyProps() as ComponentElementProps,
+    parent_id: parent.id,
+    ...ownerFields,
+    order_num: 2,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const children: Element[] = [tableHeader, tableBody];
 
   // 스토어에 추가
   addElementsToStore(parent, children);

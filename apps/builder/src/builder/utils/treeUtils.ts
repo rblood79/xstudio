@@ -124,12 +124,29 @@ export function buildTreeFromElements(
 }
 
 /**
- * Tabs 하위의 Tab과 Panel을 tabId 기준으로 쌍으로 그룹화
+ * Tabs 하위 요소들을 구조에 맞게 정렬
+ *
+ * 두 가지 구조 지원:
+ * 1. 새 구조 (Phase 0): Tabs > [TabList > [Tab, Tab], Panel, Panel]
+ *    → TabList, Panel 순서로 order_num 정렬
+ * 2. 기존 flat 구조: Tabs > [Tab, Tab, Panel, Panel]
+ *    → Tab-Panel 쌍으로 tabId 기준 그룹화
  *
  * @param items - Tabs의 자식 요소들
- * @returns 정렬된 요소 배열 (Tab → Panel 순서)
+ * @returns 정렬된 요소 배열
  */
 function sortTabsChildren(items: Element[]): Element[] {
+  // 새 구조 감지: TabList 자식이 있으면 Phase 0 이후 구조
+  const hasTabList = items.some((item) => item.tag === 'TabList');
+
+  if (hasTabList) {
+    // 새 구조: order_num 기준 정렬 (TabList, Panel 모두 포함)
+    return [...items].sort(
+      (a, b) => (a.order_num || 0) - (b.order_num || 0)
+    );
+  }
+
+  // 기존 flat 구조: Tab-Panel 쌍으로 그룹화
   const tabs = items
     .filter((item) => item.tag === 'Tab')
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -144,7 +161,6 @@ function sortTabsChildren(items: Element[]): Element[] {
   tabs.forEach((tab) => {
     pairedItems.push(tab);
 
-    // Tab의 tabId와 일치하는 Panel 찾기
     const tabProps = tab.props as ElementProps;
     const tabId = tabProps?.tabId;
 
@@ -159,7 +175,6 @@ function sortTabsChildren(items: Element[]): Element[] {
         usedPanelIds.add(matchingPanel.id);
       }
     } else {
-      // tabId가 없는 경우 fallback: order_num 기반 매칭 (레거시)
       console.warn('⚠️ Tab에 tabId가 없음, order_num 기반 fallback 사용:', tab.id);
       const fallbackPanel = panels.find(
         (panel) =>
@@ -174,7 +189,6 @@ function sortTabsChildren(items: Element[]): Element[] {
     }
   });
 
-  // 매칭되지 않은 Panel들 추가 (orphaned panels)
   panels.forEach((panel) => {
     if (!usedPanelIds.has(panel.id)) {
       console.warn('⚠️ 매칭되지 않은 Panel:', panel.id);

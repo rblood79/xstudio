@@ -108,6 +108,33 @@ export const TextSprite = memo(function TextSprite({
     };
   }, [computedContainerSize, converted.transform, style?.width, style?.height]);
 
+  // display: flex일 때 flex 속성 → 텍스트 정렬 매핑
+  // Text는 leaf 요소이므로 justify-content/align-items를 텍스트 수평/수직 정렬로 변환
+  const flexAlignment = useMemo(() => {
+    if (style?.display !== 'flex') return null;
+
+    const dir = (style?.flexDirection as string) ?? 'row';
+    const isRow = dir === 'row' || dir === 'row-reverse';
+    const jc = (style?.justifyContent as string) ?? 'flex-start';
+    const ai = (style?.alignItems as string) ?? 'stretch';
+
+    const toHAlign = (v: string): 'left' | 'center' | 'right' => {
+      if (v === 'center') return 'center';
+      if (v === 'flex-end' || v === 'end') return 'right';
+      return 'left';
+    };
+
+    const toVAlign = (v: string): 'top' | 'middle' | 'bottom' => {
+      if (v === 'center') return 'middle';
+      if (v === 'flex-end' || v === 'end') return 'bottom';
+      return 'top';
+    };
+
+    return isRow
+      ? { textAlign: toHAlign(jc), verticalAlign: toVAlign(ai) }
+      : { textAlign: toHAlign(ai), verticalAlign: toVAlign(jc) };
+  }, [style?.display, style?.flexDirection, style?.justifyContent, style?.alignItems]);
+
   // Border-Box v2: parseBorderConfig로 border 정보 추출
   const borderConfig = useMemo(() => parseBorderConfig(style), [style]);
 
@@ -138,13 +165,13 @@ export const TextSprite = memo(function TextSprite({
         fontWeight: textStyle.fontWeight as 'normal' | 'bold',
         fontStyle: textStyle.fontStyle, // P7.2: italic, oblique
         fill: textStyle.fill,
-        align: textStyle.align,
+        align: flexAlignment?.textAlign ?? textStyle.align,
         letterSpacing: textStyle.letterSpacing, // P7.3
         leading: textStyle.leading, // P7.4: line height
         wordWrap: textStyle.wordWrap,
-        wordWrapWidth: textStyle.wordWrapWidth || transform.width,
+        wordWrapWidth: transform.width,
       }),
-    [textStyle, transform.width]
+    [textStyle, transform.width, flexAlignment]
   );
 
   // P7.7: Draw text decoration lines
@@ -320,7 +347,7 @@ export const TextSprite = memo(function TextSprite({
         fontWeight: numericFontWeight,
         fontStyle: numericFontStyle,
         color: Float32Array.of(r, g, b, 1),
-        align: textStyle.align,
+        align: flexAlignment?.textAlign ?? textStyle.align,
         letterSpacing: textStyle.letterSpacing,
         // leading > 0이면 명시적 lineHeight 설정 (leading=0이면 폰트 기본값 사용)
         ...(textStyle.leading > 0 ? { lineHeight: textStyle.leading + textStyle.fontSize } : {}),
@@ -342,7 +369,9 @@ export const TextSprite = memo(function TextSprite({
         paddingLeft: padding.left,
         paddingTop: padding.top,
         maxWidth: transform.width - padding.left - padding.right,
-        ...(style?.verticalAlign ? { verticalAlign: style.verticalAlign as 'top' | 'middle' | 'bottom' | 'baseline' } : {}),
+        ...(flexAlignment?.verticalAlign
+          ? { verticalAlign: flexAlignment.verticalAlign }
+          : style?.verticalAlign ? { verticalAlign: style.verticalAlign as 'top' | 'middle' | 'bottom' | 'baseline' } : {}),
         ...(style?.whiteSpace ? { whiteSpace: style.whiteSpace as 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line' } : {}),
         ...(style?.wordBreak ? { wordBreak: style.wordBreak as 'normal' | 'break-all' | 'keep-all' } : {}),
         ...(style?.overflowWrap ? { overflowWrap: style.overflowWrap as 'normal' | 'break-word' | 'anywhere' } : {}),
@@ -357,7 +386,7 @@ export const TextSprite = memo(function TextSprite({
         ...(style?.fontStretch && style.fontStretch !== 'normal' ? { fontStretch: style.fontStretch } : {}),
       },
     };
-  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, fill, borderRadius, borderConfig, style?.verticalAlign, style?.whiteSpace, style?.wordBreak, style?.overflowWrap, style?.wordSpacing, style?.textOverflow, style?.textDecorationStyle, style?.textDecorationColor, style?.textIndent, style?.fontVariant, style?.fontStretch]);
+  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, fill, borderRadius, borderConfig, flexAlignment, style?.verticalAlign, style?.whiteSpace, style?.wordBreak, style?.overflowWrap, style?.wordSpacing, style?.textOverflow, style?.textDecorationStyle, style?.textDecorationColor, style?.textIndent, style?.fontVariant, style?.fontStretch]);
 
   useSkiaNode(element.id, skiaNodeData);
 

@@ -421,11 +421,13 @@ export function createToastDefinition(
  * NumberField 복합 컴포넌트 정의
  *
  * CSS DOM 구조:
- * NumberField (parent, tag="NumberField")
+ * NumberField (parent, tag="NumberField", display flex column)
  *   ├─ Label (tag="Label", children="Number")
- *   ├─ Input (tag="Input", type="number")
- *   ├─ Button (tag="Button", children="+", slot="increment")
- *   └─ Button (tag="Button", children="−", slot="decrement")
+ *   ├─ Group (tag="Group", display flex row)
+ *   │    ├─ Button (tag="Button", children="−", slot="decrement")
+ *   │    ├─ Input (tag="Input", type="number")
+ *   │    └─ Button (tag="Button", children="+", slot="increment")
+ *   └─ FieldError (tag="FieldError")
  */
 export function createNumberFieldDefinition(
   context: ComponentCreationContext
@@ -451,9 +453,8 @@ export function createNumberFieldDefinition(
         isDisabled: false,
         style: {
           display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: "4px",
+          flexDirection: "column",
+          gap: 6,
         },
       } as ComponentElementProps,
       ...ownerFields,
@@ -475,42 +476,69 @@ export function createNumberFieldDefinition(
         order_num: 1,
       },
       {
-        tag: "Button",
+        tag: "Group",
         props: {
-          children: "−",
-          slot: "decrement",
-          variant: "default",
-          size: "sm",
-          isDisabled: false,
+          style: {
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
+        children: [
+          {
+            tag: "Button",
+            props: {
+              children: "−",
+              slot: "decrement",
+              variant: "default",
+              size: "sm",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "Input",
+            props: {
+              type: "number",
+              placeholder: "0",
+              style: {
+                display: "block",
+                width: "60px",
+                textAlign: "center",
+              },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 2,
+          },
+          {
+            tag: "Button",
+            props: {
+              children: "+",
+              slot: "increment",
+              variant: "default",
+              size: "sm",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 3,
+          },
+        ],
       },
       {
-        tag: "Input",
+        tag: "FieldError",
         props: {
-          type: "number",
-          placeholder: "0",
+          children: "",
           style: {
-            display: "block",
-            width: "60px",
-            textAlign: "center",
+            fontSize: 12,
+            display: "none",
+            backgroundColor: "transparent",
           },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 3,
-      },
-      {
-        tag: "Button",
-        props: {
-          children: "+",
-          slot: "increment",
-          variant: "default",
-          size: "sm",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 4,
       },
     ],
   };
