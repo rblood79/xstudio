@@ -1008,7 +1008,7 @@ const ElementsLayer = memo(function ElementsLayer({
               },
               parent_id: effectiveChildEl.id,
               page_id: effectiveChildEl.page_id,
-              project_id: effectiveChildEl.project_id,
+              project_id: (effectiveChildEl as any).project_id,
               order_num: 1,
             } as Element;
             effectiveChildElements = [syntheticLabel];

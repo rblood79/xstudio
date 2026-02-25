@@ -310,7 +310,13 @@ export const TextSprite = memo(function TextSprite({
     const fillColor = Float32Array.of(bgR, bgG, bgB, fill.alpha);
     const br = borderRadius ?? 0;
 
-    const boxData: Record<string, unknown> = {
+    const boxData: {
+      fillColor: Float32Array;
+      borderRadius: number | [number, number, number, number];
+      strokeColor?: Float32Array;
+      strokeWidth?: number;
+      strokeStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset';
+    } = {
       fillColor,
       borderRadius: br,
     };
@@ -324,7 +330,7 @@ export const TextSprite = memo(function TextSprite({
       );
       boxData.strokeWidth = borderConfig.width;
       if (borderConfig.style !== 'solid' && borderConfig.style !== 'none') {
-        boxData.strokeStyle = borderConfig.style;
+        boxData.strokeStyle = borderConfig.style as 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset';
       }
     }
 

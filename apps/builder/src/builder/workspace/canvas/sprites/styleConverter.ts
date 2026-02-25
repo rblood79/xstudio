@@ -77,6 +77,8 @@ export interface CSSStyle {
   // Layout properties
   display?: string;
   flexDirection?: string;
+  justifyContent?: string;
+  alignItems?: string;
   gap?: number | string;
   // Visibility
   visibility?: 'visible' | 'hidden' | 'collapse';
