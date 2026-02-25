@@ -14,7 +14,7 @@ import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine
 import { TaffyLayout } from '../../wasm-bindings/taffyLayout';
 import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayout';
 import { DropflowBlockEngine } from './DropflowBlockEngine';
-import { parseMargin, parsePadding, parseBorder, enrichWithIntrinsicSize, INLINE_BLOCK_TAGS } from './utils';
+import { parseMargin, parsePadding, parseBorder, enrichWithIntrinsicSize, INLINE_BLOCK_TAGS, TEXT_LEAF_TAGS } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 import { resolveCSSSizeValue, FIT_CONTENT, MIN_CONTENT, MAX_CONTENT } from './cssValueParser';
@@ -107,6 +107,7 @@ export function elementToTaffyStyle(
   // Size
   const widthVal = parseCSSPropWithContext(style.width, ctx);
   const heightVal = parseCSSPropWithContext(style.height, ctx);
+
   const widthStr = dimStr(widthVal);
   const heightStr = dimStr(heightVal);
   if (widthStr) result.width = widthStr;
@@ -456,14 +457,14 @@ export class TaffyFlexEngine implements LayoutEngine {
     );
 
     // ── 2차 pass 필요성 판단 ──────────────────────────────────────────
-    // inline-block 자식 중 height가 주입되고 실제 width가 enrichment width와 다른 경우
+    // inline-block 또는 text leaf 자식 중 height가 주입되고 실제 width가 enrichment width와 다른 경우
     let needsSecondPass = false;
     const WIDTH_TOLERANCE = 2; // 2px 이내 차이는 무시
 
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
       const tag = (child.tag ?? '').toLowerCase();
-      if (!INLINE_BLOCK_TAGS.has(tag)) continue;
+      if (!INLINE_BLOCK_TAGS.has(tag) && !TEXT_LEAF_TAGS.has(tag)) continue;
 
       const childStyle = child.props?.style as Record<string, unknown> | undefined;
       const rawHeight = childStyle?.height;
@@ -502,7 +503,7 @@ export class TaffyFlexEngine implements LayoutEngine {
 
     const secondPassChildren = children.map((child, i) => {
       const tag = (child.tag ?? '').toLowerCase();
-      if (!INLINE_BLOCK_TAGS.has(tag)) return child;
+      if (!INLINE_BLOCK_TAGS.has(tag) && !TEXT_LEAF_TAGS.has(tag)) return child;
 
       const actualWidth = actualWidths.get(child.id);
       if (actualWidth === undefined) return child;

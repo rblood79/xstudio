@@ -49,6 +49,9 @@ import {
   DatePickerSpec, DateRangePickerSpec, DateFieldSpec, TimeFieldSpec,
   CalendarSpec, ColorPickerSpec, ColorFieldSpec, ColorSliderSpec,
   ColorAreaSpec, ColorWheelSpec, ColorSwatchSpec, ColorSwatchPickerSpec,
+  LabelSpec, FieldErrorSpec, DescriptionSpec,
+  SliderTrackSpec, SliderThumbSpec, SliderOutputSpec,
+  DateSegmentSpec,
 } from '@xstudio/specs';
 import {
   PixiButton,
@@ -521,6 +524,15 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'ColorSwatchPicker': ColorSwatchPickerSpec,
   'Group': GroupSpec,
   'Slot': SlotSpec,
+  // child specs (compound 컴포넌트 하위 요소)
+  'Label': LabelSpec,
+  'FieldError': FieldErrorSpec,
+  'Description': DescriptionSpec,
+  'SliderTrack': SliderTrackSpec,
+  'SliderThumb': SliderThumbSpec,
+  'SliderOutput': SliderOutputSpec,
+  'DateSegment': DateSegmentSpec,
+  'TimeSegment': DateSegmentSpec,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1056,9 +1068,9 @@ export const ElementSprite = memo(function ElementSprite({
         // 🟢 Spec shapes 기반 렌더링
         // Card는 복합 컴포넌트로 전환: 자식 Element(Heading, Description)가 별도 렌더링됨
         const spec = getSpecForTag(tag);
-        // 복합 컴포넌트 자식(backgroundColor: 'transparent')은 부모 spec shapes가 시각 렌더링 담당
-        // 자식이 자체 spec shapes를 그리면 이중 렌더링 / 색상 불일치 발생
-        const skipChildSpecShapes = (props?.style as Record<string, unknown>)?.backgroundColor === 'transparent';
+        // compositional 전환 완료: 모든 요소가 자신의 spec을 독립 렌더링
+        // backgroundColor: 'transparent'는 단순 투명 배경일 뿐, spec 렌더링 스킵 조건이 아님
+        const skipChildSpecShapes = false;
         if (spec && !skipChildSpecShapes) {
           // ⚡ 엔진 크기 확정 전에는 spec shapes 계산을 건너뛴다.
           // computedW가 null인 상태에서 CSS 기본값으로 shapes를 계산하면
@@ -1134,10 +1146,10 @@ export const ElementSprite = memo(function ElementSprite({
             ]);
 
             if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
-              // Complex component: 자식 유무와 관계없이 항상 _hasChildren=true
-              // (자식 삭제 시 standalone 렌더링 복귀 방지)
-              // Non-complex (Button 등): 자식이 실제로 있을 때만 _hasChildren=true
-              if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
+              // 실제 자식 유무 기반: 자식이 있으면 _hasChildren=true → spec은 shell만 반환
+              // 자식이 모두 삭제되면 _hasChildren=false → spec이 standalone 모드로 복귀하여 자체 콘텐츠 렌더링
+              // 이전: COMPLEX_COMPONENT_TAGS는 항상 true → 삭제 후에도 shell만 남는 버그
+              if (childElements && childElements.length > 0) {
                 specProps = { ...specProps, _hasChildren: true };
               }
             }
@@ -1175,13 +1187,7 @@ export const ElementSprite = memo(function ElementSprite({
             );
 
             // Column layout: shapes를 세로 쌓기로 재배치
-            // SPEC_RENDERS_ALL_TAGS 컴포넌트는 spec shapes가 자체 레이아웃을 포함하므로 재배치 스킵
-            const SPEC_RENDERS_ALL_TAGS_SET = new Set([
-              'TextField', 'NumberField', 'SearchField',
-              'DateField', 'TimeField', 'ColorField', 'TextArea',
-              'Slider', 'RangeSlider',
-            ]);
-            if (isColumn && !SPEC_RENDERS_ALL_TAGS_SET.has(tag)) {
+            if (isColumn) {
               rearrangeShapesForColumn(shapes, finalWidth, sizeSpec.gap ?? 8);
             }
 

@@ -257,3 +257,31 @@ export type { ScrollBoxProps } from './ScrollBox.spec';
 // MaskedFrame
 export { MaskedFrameSpec } from './MaskedFrame.spec';
 export type { MaskedFrameProps } from './MaskedFrame.spec';
+
+// Label
+export { LabelSpec } from './Label.spec';
+export type { LabelProps } from './Label.spec';
+
+// FieldError
+export { FieldErrorSpec } from './FieldError.spec';
+export type { FieldErrorProps } from './FieldError.spec';
+
+// Description
+export { DescriptionSpec } from './Description.spec';
+export type { DescriptionProps } from './Description.spec';
+
+// SliderTrack
+export { SliderTrackSpec, SLIDER_TRACK_DIMENSIONS } from './SliderTrack.spec';
+export type { SliderTrackProps } from './SliderTrack.spec';
+
+// SliderThumb
+export { SliderThumbSpec, SLIDER_THUMB_SIZES } from './SliderThumb.spec';
+export type { SliderThumbProps } from './SliderThumb.spec';
+
+// SliderOutput
+export { SliderOutputSpec } from './SliderOutput.spec';
+export type { SliderOutputProps } from './SliderOutput.spec';
+
+// DateSegment (DateField, TimeField 공용)
+export { DateSegmentSpec } from './DateSegment.spec';
+export type { DateSegmentProps, DateSegmentType } from './DateSegment.spec';

@@ -729,7 +729,7 @@ ENGINE.md 전략 D의 최종 단계인 Phase 9를 완료하여, 레거시 레이
 | `grid`, `inline-grid` | `TaffyGridEngine` | Taffy WASM |
 | `block`, `inline-block`, `flow-root`, `inline` | `DropflowBlockEngine` | Dropflow Fork (JS) |
 
-**WASM 폴백:** `WASM_FLAGS.LAYOUT_ENGINE`이 `true`여야 `initRustWasm()`이 호출됨. WASM 미로드 시 모든 display 모드가 `DropflowBlockEngine`으로 안전 폴백.
+**WASM 초기화:** `WASM_FLAGS.LAYOUT_ENGINE`이 `true`여야 `initRustWasm()`이 호출됨. `initRustWasm()`은 `import()` 후 **반드시 default export(`__wbg_init`)를 명시적으로 호출**하여 내부 wasm 바인딩을 초기화한다 (wasm-pack `--target bundler` 필수 요건). WASM 미로드 시 모든 display 모드가 `DropflowBlockEngine`으로 안전 폴백.
 
 ### 3. 디스패처 정리 (Phase 9C)
 

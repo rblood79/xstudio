@@ -1,7 +1,7 @@
 # React Aria Components - WebGL 마이그레이션 대응 전략
 
 > **작성일**: 2026-02-25 (검증 완료: 2026-02-25)
-> **최종 업데이트**: 2026-02-25 — Phase 0 + Phase 1 구현 완료
+> **최종 업데이트**: 2026-02-25 — Phase 0 + Phase 1 구현 완료, **Compositional Architecture 전환 완료**
 > **목적**: React Aria Components DOM 구조 분석 및 XStudio WebGL 컴포넌트 마이그레이션 전략
 > **범위**: 71개 Spec 컴포넌트 vs React Aria Components 50개 공식 DOM 구조
 
@@ -65,7 +65,7 @@ XStudio는 React Aria Components를 WebGL로 마이그레이션하면서 **삼�
 | Skia 파이프라인 | ✅ 완성 | ComponentState → shapes() → SkiaNodeData → renderFrame() |
 | Canvas 이벤트 연결 | ✅ **완료 (Phase 1)** | selectAtom + pointerover/down/up/leave 핸들러 연결 |
 | Overlay 레이어 | ❌ 미완성 | spec.overlay 정의됨, Canvas에서 미사용 |
-| 합성 아키텍처 | ✅ 대부분 정상 | Hybrid 패턴 정착 (Factory + rendererMap) |
+| 합성 아키텍처 | ✅ **Compositional 전환 완료** | Monolithic Spec → Child Spec 독립 렌더링 (7개 child spec 추가) |
 | Factory 구조 정합성 | ✅ **완료 (Phase 0)** | Tabs(TabList), Table(TableBody), NumberField(Group) 래퍼 추가 |
 
 ### 1.3 Skia 렌더링 파이프라인
@@ -1287,6 +1287,21 @@ shapes(props, variant, size, componentState) → specShapesToSkia() → renderFr
 **효과**: state 완전 활용 19개 + 간접 활용 17개 = **36개 컴포넌트**에서 Canvas hover/pressed 피드백 즉시 작동.
 
 **후속 작업**: `_state` 무시 26개 컴포넌트에 shapes() state 분기 점진적 추가 필요.
+
+
+### 5.X Phase 0.5: Compositional Architecture 전환 (2026-02-25 완료)
+
+Phase 0~1 진행 중 발견된 **Monolithic Spec 버그**를 근본적으로 해결했습니다.
+
+**문제**: `SPEC_RENDERS_ALL_TAGS`가 9개 compound 컴포넌트의 `childElements=[]` 강제 → 자식이 Ghost Element로 존재 → 삭제해도 시각적 변화 없음
+
+**해결**:
+- `SPEC_RENDERS_ALL_TAGS` 완전 제거
+- 7개 child spec 추가 (Label, FieldError, Description, SliderTrack, SliderThumb, SliderOutput, DateSegment)
+- 자식 Element가 독립 spec으로 렌더링
+- `elementRemoval.ts` atomic state update
+
+**검증**: TextField, SearchField, NumberField, Slider, DateField, TimeField — 독립 렌더링 + child 삭제 시 사라짐 확인
 
 ### Phase 2: Overlay 레이어 시스템 (3-4주)
 

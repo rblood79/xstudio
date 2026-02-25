@@ -1025,16 +1025,16 @@ export function createDefaultCardProps(): CardElementProps {
     variant: "default",
     size: "md",
     orientation: "vertical",
-    title: "Title",
-    description: "Description",
-    // CSS base: display:block; border:1px solid var(--outline-variant); width:100%; padding:12px
-    // variant=elevated → border:0 + shadow
-    // variant=outlined → border-width:2px
+    title: "Card Title",
+    description: "Card description text goes here.",
+    // Factory(LayoutComponents.ts)와 동일한 기본값
+    // Card → CardHeader → Heading / CardContent → Description 구조
     style: {
-      display: 'block',
-      width: '100%',
-      padding: '12px',  // var(--spacing-md) = 12px
+      display: 'flex',
+      flexDirection: 'column',
+      padding: '16px',  // var(--spacing-lg) = 16px
       borderWidth: '1px',
+      gap: '8px',
     },
   };
 }

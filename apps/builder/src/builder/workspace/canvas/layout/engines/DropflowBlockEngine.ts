@@ -26,7 +26,7 @@ import type {
   XComputedLayout,
   XLayoutContext,
 } from '@xstudio/layout-flow';
-import { enrichWithIntrinsicSize, INLINE_BLOCK_TAGS, calculateBaseline } from './utils';
+import { enrichWithIntrinsicSize, INLINE_BLOCK_TAGS, calculateBaseline, parsePadding, parseBorder } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 import {
@@ -393,17 +393,38 @@ export class DropflowBlockEngine implements LayoutEngine {
       return enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputed, childChildren, getChildElements);
     });
 
+    // border-box % 폭 변환: Web preview는 * { box-sizing: border-box } 전역 적용.
+    // Dropflow는 content-box이므로 % width에 padding+border가 추가되어 부모를 초과함.
+    // 해결: % width를 border-box 기준 pixel content width로 변환.
+    const boxSizeConverted = enriched.map(child => {
+      const style = child.props?.style as Record<string, unknown> | undefined;
+      const rawW = style?.width;
+      if (typeof rawW !== 'string' || !rawW.endsWith('%')) return child;
+      const pct = parseFloat(rawW);
+      if (isNaN(pct)) return child;
+      const pad = parsePadding(style, availableWidth);
+      const bdr = parseBorder(style);
+      const padBorderH = pad.left + pad.right + bdr.left + bdr.right;
+      if (padBorderH === 0) return child; // padding/border 없으면 변환 불필요
+      const resolved = (pct / 100) * availableWidth;
+      const contentW = Math.max(0, resolved - padBorderH);
+      return {
+        ...child,
+        props: { ...child.props, style: { ...style, width: contentW } },
+      } as Element;
+    });
+
     // inline-block 태그 존재 여부 확인
-    const hasInlineBlock = enriched.some(child => isInlineBlockElement(child));
+    const hasInlineBlock = boxSizeConverted.some(child => isInlineBlockElement(child));
 
     // inline-block이 없으면 전통적인 Dropflow 경로
     if (!hasInlineBlock) {
-      return this._dropflowCalculate(parent, enriched, availableWidth, availableHeight, context);
+      return this._dropflowCalculate(parent, boxSizeConverted, availableWidth, availableHeight, context);
     }
 
     // inline-block이 있으면 세그먼트 분할 후 혼합 레이아웃
     // RC-3: parentComputed를 전달하여 em/rem 단위 해석에 사용
-    return this._mixedCalculate(parent, enriched, availableWidth, availableHeight, context, parentComputed);
+    return this._mixedCalculate(parent, boxSizeConverted, availableWidth, availableHeight, context, parentComputed);
   }
 
   /**

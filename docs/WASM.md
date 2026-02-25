@@ -207,6 +207,25 @@ lto = true
 > - `--target web`: 직접 `<script type="module">`에서 사용. Vite 번들러와 경로/로딩 충돌 잦음.
 > - `--target bundler` (권장): ES module 출력 → Vite가 import 경로를 자동 해석. `.wasm` 파일도 Vite 에셋 파이프라인으로 처리.
 > - `--target nodejs`: 브라우저 사용 불가.
+>
+> **CRITICAL — bundler 타겟 초기화 규칙:**
+> `--target bundler` 출력은 `import()`만으로 내부 `wasm` 바인딩이 초기화되지 않는다.
+> **반드시 default export(`__wbg_init`)를 명시적으로 호출**하여 `.wasm` 바이너리를
+> fetch → `WebAssembly.instantiateStreaming` → `__wbg_finalize_init` 순서로 초기화해야 한다.
+> 이 단계를 생략하면 glue 코드 내부의 `wasm` 전역 변수가 `undefined`로 남아 모든 WASM 함수 호출이 실패한다.
+>
+> ```typescript
+> // ✅ 올바른 초기화 (rustWasm.ts)
+> const mod = await import('./pkg/xstudio_wasm');
+> if (typeof mod.default === 'function') {
+>   await mod.default(); // __wbg_init() → wasm 바인딩 초기화
+> }
+> mod.ping(); // 이제 정상 동작
+>
+> // ❌ 잘못된 초기화 — import만으로는 wasm 바인딩 미초기화
+> const mod = await import('./pkg/xstudio_wasm');
+> mod.ping(); // TypeError: Cannot read properties of undefined
+> ```
 
 ```typescript
 import wasm from 'vite-plugin-wasm';

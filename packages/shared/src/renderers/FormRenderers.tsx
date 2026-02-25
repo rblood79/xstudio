@@ -247,7 +247,11 @@ export const renderDescription = (
       style={element.props.style}
       className={element.props.className}
     >
-      {typeof element.props.text === "string" ? element.props.text : null}
+      {typeof element.props.text === "string"
+        ? element.props.text
+        : typeof element.props.children === "string"
+          ? element.props.children
+          : null}
       {children.map((child) => renderElement(child, child.id))}
     </Description>
   );

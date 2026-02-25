@@ -1,7 +1,7 @@
 # Component Spec Architecture - 상세 설계 문서
 
-> **작성일**: 2026-01-27 | **수정일**: 2026-02-24
-> **상태**: Phase 6 Skia Spec 렌더링 구현 완료 | Slider Complex Component 전환 완료 | Child Composition Pattern 전환 완료
+> **작성일**: 2026-01-27 | **수정일**: 2026-02-25
+> **상태**: Phase 6 Skia Spec 렌더링 구현 완료 | **Compositional Architecture 전환 완료** (2026-02-25) — SPEC_RENDERS_ALL_TAGS 폐기, 7개 Child Spec 추가
 > **목표**: Builder(CanvasKit/Skia)와 Publish(React)의 100% 시각적 일치
 
 ---
@@ -19,6 +19,7 @@
 9. [Phase 6: Spec Shapes → Skia 렌더링 파이프라인](#9-phase-6-spec-shapes--skia-렌더링-파이프라인)
 10. [기술 명세](#10-기술-명세)
 11. [마이그레이션 전략](#11-마이그레이션-전략)
+12. [Compositional Architecture 전환](#12-compositional-architecture-전환)
 
 ---
 
@@ -3035,22 +3036,21 @@ if (treatAsBorderBox) {
 }
 ```
 
-**v3.9 추가 — Card/Box/Section border-box 처리**:
-컨테이너 요소(`Card`, `Box`, `Section`)도 `treatAsBorderBox` 대상으로 추가되었습니다.
-이들 요소는 `enrichWithIntrinsicSize()`에서 `padding + border`를 포함한 높이를 주입하므로,
-`parseBoxModel()`이 명시적 `width`/`height`를 border-box로 취급해야 BlockEngine 이중 계산을 방지합니다.
+**v3.9 추가 → v3.12 수정 — Card/Box/Section padding 처리**:
+컨테이너 요소(`Card`, `Box`, `Section`)도 `parseBoxModel()`에서 `treatAsBorderBox` 대상입니다.
+단, `enrichWithIntrinsicSize()`에서는 CSS에 padding/border가 명시된 경우 **content-box 높이만 주입**합니다.
+레이아웃 엔진(Dropflow/Taffy)이 CSS padding/border를 자체 추가하므로, enrichment에서 중복 추가하면 이중 계산이 발생합니다.
 
 ```typescript
-// utils.ts enrichWithIntrinsicSize() — Card/Box/Section border-box 주입
-const isTreatedAsBorderBox = ['card', 'box', 'section'].includes(tag);
-if (isTreatedAsBorderBox && intrinsicHeight !== undefined) {
-  // padding + border 포함한 높이를 엔진에 content 크기로 전달
-  const padBorderV = padding.top + padding.bottom + border.top + border.bottom;
-  intrinsicHeight = Math.max(0, intrinsicHeight - padBorderV);
+// utils.ts enrichWithIntrinsicSize() — CSS padding 유무에 따른 조건부 추가
+// CSS에 padding이 없으면 spec 기본값 포함, 있으면 엔진에 위임
+if (!isSpecShapesInput && (!hasCSSVerticalPadding || isInlineBlockTag)) {
+  injectHeight += box.padding.top + box.padding.bottom;
 }
+// INLINE_BLOCK_TAGS만 항상 border-box (layoutInlineRun이 직접 사용)
 ```
 
-> **관련**: §9.10.4 border-box 정합성, §4.7.4.2 BlockEngine border-box 크기 계산
+> **관련**: §9.10.4 padding 주입 규칙, §4.7.4.2 BlockEngine border-box 크기 계산
 
 #### 4.7.4.6 calculateContentWidth 순수 텍스트 너비 반환 (v1.12)
 
@@ -4914,16 +4914,17 @@ calculateContentHeight(Card)
       └── Description.intrinsicHeight (텍스트 측정 기반)
 ```
 
-### 9.10.4 border-box 정합성 — enrichWithIntrinsicSize
+### 9.10.4 padding/border 주입 규칙 — enrichWithIntrinsicSize (v3.12 수정)
 
-Card, Box, Section은 `enrichWithIntrinsicSize()`에서 `padding + border`를 포함한 높이를 주입합니다.
-이 값을 BlockEngine이 `content-box + padding + border`로 다시 합산하면 이중 계산이 발생하므로,
-`parseBoxModel()`의 `isTreatedAsBorderBox` 체크를 통해 차감 처리합니다.
+`enrichWithIntrinsicSize()`의 padding/border 추가 여부는 **CSS 속성 존재 여부**와 **태그 유형**으로 결정합니다.
 
-| 컴포넌트 | enrichWithIntrinsicSize 주입 | parseBoxModel treatAsBorderBox |
-|----------|------------------------------|--------------------------------|
-| Button, Input, Select | padding+border 포함 intrinsic | `isFormElement` 조건 |
-| Card, Box, Section | padding+border 포함 intrinsic | `isTreatedAsBorderBox` 조건 (v3.9) |
+| 조건 | padding/border 추가 | 이유 |
+|------|---------------------|------|
+| CSS에 padding/border 없음 | O (spec 기본값 포함) | 레이아웃 엔진이 추가할 값 없음 |
+| CSS에 padding/border 있음 | X (엔진에 위임) | Dropflow/Taffy가 CSS 값을 자체 추가 |
+| INLINE_BLOCK_TAGS | O (항상 포함) | layoutInlineRun이 border-box로 직접 사용 |
+
+> **v3.9→v3.12 변경**: 기존 `isTreatedAsBorderBox` 조건이 Card/Box/Section에 CSS padding이 있어도 강제 추가 → Dropflow/Taffy가 또 추가 → 이중 계산. 조건 제거하여 CSS padding 존재 시 엔진에 위임.
 
 > **관련**: §4.7.4.5 parseBoxModel border-box 변환, §4.7.4.2 BlockEngine border-box 크기 계산
 
@@ -6312,3 +6313,83 @@ Spec 수정 → pnpm --filter @xstudio/specs build → dist/ 갱신 → Builder 
 | 2026-02-24 | 3.17 | **COMPLEX_COMPONENT_TAGS 공유 상수 도입 + `_hasChildren` 자식 삭제 버그 수정**: (1) **`factories/constants.ts` 신규** — `COMPLEX_COMPONENT_TAGS` Set(40+개 태그) 공유 상수 파일 생성, `useElementCreator.ts`/`ElementSprite.tsx`에서 import, (2) **`ElementSprite.tsx` L1105 조건 수정** — 기존 `!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag) && childElements && childElements.length > 0` → `!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)` 내에서 `COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)`, (3) **`useElementCreator.ts` 로컬 배열 → 공유 상수 전환** — 로컬 `complexComponents` 배열 제거, `COMPLEX_COMPONENT_TAGS` import 후 `includes()` → `has()` 교체, (4) **버그 수정** — TextField 등 complex component에서 모든 자식을 삭제했을 때 `_hasChildren`이 `false`가 되어 standalone 렌더링(label+input 일체형)이 재활성화되는 현상 수정. 근본 원인: `_hasChildren`이 런타임 `childElements.length > 0`에만 의존하는 설계 |
 | 2026-02-25 | 3.18 | **TokenRef fontSize 산술 연산 버그 전수 수정 + label 렌더링 패턴 추가**: (1) **§9.12.5 확장** — `as unknown as number` 캐스팅이 런타임 NaN을 방지하지 못함을 명시, 영향 범위 19개 이상 spec 파일(Calendar, CheckboxGroup, ColorField, DateField, DatePicker, DateRangePicker, Disclosure, Form, GridList, List, ListBox, Meter, NumberField, Panel, ProgressBar, RadioGroup, SearchField, TagGroup, TextArea, TimeField, Tree) 문서화, 올바른 패턴(rawFontSize → resolvedFs → fallback 16px) 코드 예시 갱신, (2) **§9.12.8 신규 — labelOffset 패턴** — SearchField/NumberField label 렌더링 추가: `resolveToken()` 기반 fontSize → labelFontSize(-2) → labelHeight(\*1.2) → labelOffset 계산, props.label 조건부 text shape 추가 및 이후 모든 shapes에 y+labelOffset 적용, 하드코딩 오프셋(`props.label ? 20 : 0`) 금지 원칙 |
 | 2026-02-25 | 3.19 | **`rearrangeShapesForColumn` + `SPEC_RENDERS_ALL_TAGS_SET` 가드 + `_hasChildren` 패턴 복원**: (1) **§9.12.9 신규** — `SPEC_RENDERS_ALL_TAGS_SET` 가드 문서화: spec shapes()가 자체 y 좌표 레이아웃을 포함하는 컴포넌트(TextField/NumberField/SearchField/DateField/TimeField/ColorField/TextArea/Slider/RangeSlider)는 `rearrangeShapesForColumn` 재배치 스킵, ElementSprite.tsx 코드 예시 추가, (2) **`_hasChildren` 패턴 복원 이력** — 에이전트가 무단 삭제한 `_hasChildren` 체크를 13개 파일에서 복원(7개 git checkout 원복, 6개 수동 복원), 컨테이너 컴포넌트(Button, Badge, ToggleButton, Slot, Panel, ProgressBar, Meter, DropZone, FileTrigger, ScrollBox, MaskedFrame, Section, Group) spec에서 `_hasChildren` 체크는 자동 코드 편집 도구가 임의로 제거해서는 안 되는 핵심 로직임을 명시 |
+| 2026-02-25 | 3.20 | **Card bottom padding 이중 적용 수정 + Description 줄바꿈 높이**: (1) **`enrichWithIntrinsicSize` `isTreatedAsBorderBox` 제거** — Card/Box/Section에 CSS padding이 있으면 enrichment에서 padding 추가 제외, 레이아웃 엔진(Dropflow/Taffy)에 위임. 기존: `isTreatedAsBorderBox` 플래그가 `hasCSSVerticalPadding`을 override → border-box 높이 주입 → 엔진이 또 padding 추가 → 이중 적용. 수정: `(!hasCSSVerticalPadding \|\| isInlineBlockTag)` 조건만 사용 (engines/utils.ts), (2) **TaffyFlexEngine border-box→content-box 변환 제거** — enriched height가 content-box이므로 불필요한 padding/border 차감 제거 (TaffyFlexEngine.ts), (3) **TEXT_LEAF_TAGS 텍스트 줄바꿈 높이 측정** — Description/Heading/Label 등 리프 텍스트의 줄바꿈 시 선택 영역 높이가 1줄 고정이던 문제 수정, `measureWrappedTextHeight` 기반 step 4.9 추가 (engines/utils.ts), (4) **Card children availableWidth 보정** — `calculateContentHeight` Card 자식 루프에서 Card padding을 차감한 `childAvailableWidth` 사용 (engines/utils.ts), (5) **LayoutRenderers.tsx Card 중복 렌더링 수정** — Heading/Description 자식을 children에서 필터링 (title/description props로 이미 렌더링됨), (6) **§9.10.4 문서 갱신** — border-box 정합성 → padding/border 주입 규칙으로 재작성, v3.12 수정 반영, §4.7.4.5 갱신 |
+
+---
+
+## 12. Compositional Architecture 전환 (2026-02-25)
+
+### 12.1 Monolithic → Compositional 전환 배경
+
+#### 이전 문제 (Monolithic Spec)
+
+```
+TextField (parent)
+├── spec shapes가 모든 것을 직접 렌더링:
+│   ├── Label 텍스트
+│   ├── Input 배경/테두리/placeholder
+│   └── FieldError 텍스트
+├── Factory가 자식 Element(Label, Input, FieldError) 생성
+│   └── BUT: SPEC_RENDERS_ALL_TAGS가 childElements=[] 강제
+│       → 자식 Element는 store/layer tree에만 존재 (Ghost Elements)
+└── 결과: 자식 삭제해도 parent spec이 모든 것을 렌더링 → 시각적 변화 없음
+```
+
+이 문제는 9개 compound 컴포넌트에서 동일하게 발생:
+- TextField, NumberField, SearchField, TextArea
+- DateField, TimeField, ColorField
+- Slider, RangeSlider
+
+#### 해결: Compositional Architecture
+
+```
+TextField (parent) — spec shapes: 배경/테두리만
+├── Label (child Element) — LabelSpec으로 독립 렌더링
+├── Input (child Element) — InputSpec으로 독립 렌더링
+└── FieldError (child Element) — FieldErrorSpec으로 독립 렌더링
+
+→ 자식 삭제 시 해당 영역이 캔버스에서 즉시 사라짐 ✅
+```
+
+### 12.2 주요 변경사항
+
+| 항목 | 이전 | 이후 |
+|------|------|------|
+| `SPEC_RENDERS_ALL_TAGS` | 9개 태그 강제 `childElements=[]` | **완전 제거** |
+| `skipChildSpecShapes` | `backgroundColor === 'transparent'` 시 차단 | **항상 false** (비활성) |
+| `_hasChildren` 판단 | `COMPLEX_COMPONENT_TAGS` 기반 (항상 true) | 실제 `childElements.length > 0` |
+| 자식 Element 배경 | `backgroundColor: 'transparent'` 강제 | 제거 — 자체 spec 렌더링 |
+| `elementRemoval.ts` | 2-phase 상태 업데이트 | **Atomic 단일 `set()`** |
+
+### 12.3 신규 Child Spec (7개)
+
+| Spec | 파일 | 역할 |
+|------|------|------|
+| LabelSpec | `Label.spec.ts` | 라벨 텍스트 (sm:12, md:14, lg:16) |
+| FieldErrorSpec | `FieldError.spec.ts` | 에러 텍스트 (`'{color.error}'`) |
+| DescriptionSpec | `Description.spec.ts` | 설명 텍스트 (`'{color.on-surface-variant}'`) |
+| SliderTrackSpec | `SliderTrack.spec.ts` | 트랙 바 + fill |
+| SliderThumbSpec | `SliderThumb.spec.ts` | 원형 thumb (primary 색상) |
+| SliderOutputSpec | `SliderOutput.spec.ts` | 값 텍스트 표시 |
+| DateSegmentSpec | `DateSegment.spec.ts` | 날짜/시간 세그먼트 박스 (TimeSegment 공용) |
+
+### 12.4 영향받은 파일
+
+| 파일 | 변경 |
+|------|------|
+| `BuilderCanvas.tsx` | `SPEC_RENDERS_ALL_TAGS` 완전 제거, `NON_CONTAINER_TAGS` 확장 |
+| `ElementSprite.tsx` | `TAG_SPEC_MAP` 7개 추가, `skipChildSpecShapes=false`, `_hasChildren` 로직 간소화 |
+| `elementRemoval.ts` | Atomic state update (단일 `set()` 호출) |
+| `FormComponents.ts` | 13개 자식 Element에서 `backgroundColor: 'transparent'` 제거 |
+| `specs/src/index.ts` | 7개 신규 Spec export 추가 |
+
+### 12.5 검증 결과 (브라우저 전수조사)
+
+| 컴포넌트 | 렌더링 | Child 삭제 |
+|---------|--------|-----------|
+| TextField | ✅ Label + Input 독립 | ✅ 삭제 시 사라짐 |
+| SearchField | ✅ Label + Input 독립 | — |
+| NumberField | ✅ Label + [-]/0/[+] 독립 | — |
+| Slider | ✅ Label + Track + Thumb 독립 | — |
+| DateField | ✅ Label + Input 독립 | — |
+| TimeField | ✅ Label + Input 독립 | — |

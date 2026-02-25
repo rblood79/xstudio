@@ -225,13 +225,49 @@ export const renderCard = (
   element: PreviewElement,
   context: RenderContext
 ): React.ReactNode => {
-  const { elements, renderElement, eventEngine, projectId } = context;
+  const { elements, renderElement } = context;
 
-  const children = elements
+  const allChildren = elements
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+  // 새 구조 감지: CardHeader/CardContent 자식이 있는지 확인
+  const hasStructuralChildren = allChildren.some(
+    (c) => c.tag === 'CardHeader' || c.tag === 'CardContent'
+  );
+
   const eventHandlers = context.services?.createEventHandlerMap?.(element, context) ?? {};
+
+  if (hasStructuralChildren) {
+    // 새 구조: title/description은 children(CardHeader/CardContent)에서 처리
+    return (
+      <Card
+        key={element.id}
+        id={element.customId}
+        data-element-id={element.id}
+        variant={
+          (element.props.variant as "default" | "elevated" | "outlined") ||
+          "default"
+        }
+        size={(element.props.size as "sm" | "md" | "lg" | undefined) || "md"}
+        isQuiet={Boolean(element.props.isQuiet)}
+        isSelected={Boolean(element.props.isSelected)}
+        isDisabled={Boolean(element.props.isDisabled)}
+        isFocused={Boolean(element.props.isFocused)}
+        structuralChildren={true}
+        style={element.props.style}
+        className={element.props.className}
+        onClick={eventHandlers.onClick as unknown as () => void}
+      >
+        {allChildren.map((child) => renderElement(child, child.id))}
+      </Card>
+    );
+  }
+
+  // 이전 구조: Heading/Description은 title/description props로 처리
+  const children = allChildren.filter(
+    (child) => child.tag !== 'Heading' && child.tag !== 'Description'
+  );
 
   return (
     <Card
@@ -241,7 +277,7 @@ export const renderCard = (
       heading={typeof element.props.heading === 'string' ? element.props.heading : undefined}
       subheading={typeof element.props.subheading === 'string' ? element.props.subheading : undefined}
       title={typeof element.props.title === 'string' ? element.props.title : undefined}
-      description={String(element.props.description || "")}
+      description={element.props.description ? String(element.props.description) : undefined}
       footer={typeof element.props.footer === 'string' ? element.props.footer : undefined}
       variant={
         (element.props.variant as "default" | "elevated" | "outlined") ||
@@ -261,6 +297,81 @@ export const renderCard = (
         : null}
       {children.map((child) => renderElement(child, child.id))}
     </Card>
+  );
+};
+
+/**
+ * CardHeader 렌더링
+ * Card 새 구조에서 header 영역을 담당하는 투명 컨테이너
+ */
+export const renderCardHeader = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((c) => c.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <div
+      key={element.id}
+      data-element-id={element.id}
+      className="card-header"
+      style={element.props?.style as React.CSSProperties}
+    >
+      {children.map((child) => renderElement(child, child.id))}
+    </div>
+  );
+};
+
+/**
+ * CardContent 렌더링
+ * Card 새 구조에서 content 영역을 담당하는 투명 컨테이너
+ *
+ * Description 자식은 React Aria slot="description" 컨텍스트가 없으므로
+ * plain <div class="card-description"> 으로 직접 렌더링
+ */
+export const renderCardContent = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((c) => c.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <div
+      key={element.id}
+      data-element-id={element.id}
+      className="card-content"
+      style={element.props?.style as React.CSSProperties}
+    >
+      {children.map((child) => {
+        // Description: React Aria slot 컨텍스트 없이 직접 렌더링
+        if (child.tag === 'Description') {
+          const text = typeof child.props?.children === 'string'
+            ? child.props.children
+            : typeof child.props?.text === 'string'
+              ? child.props.text
+              : null;
+          return (
+            <div
+              key={child.id}
+              data-element-id={child.id}
+              className="card-description"
+              style={child.props?.style as React.CSSProperties}
+            >
+              {text}
+            </div>
+          );
+        }
+        return renderElement(child, child.id);
+      })}
+    </div>
   );
 };
 

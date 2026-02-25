@@ -7,6 +7,11 @@ import { getDB } from "../../../lib/db";
 import { getElementById } from "./elementHelpers";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
+import {
+  rebuildPageIndex,
+  rebuildComponentIndex,
+  rebuildVariableUsageIndex,
+} from "./elementIndexer";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
 import { isWebGLCanvas, isCanvasCompareMode } from "../../../utils/featureFlags";
 // 🚀 Skia 레지스트리 동기화 — React useEffect cleanup 지연 문제 해결
@@ -396,8 +401,32 @@ export const createRemoveElementAction =
       unregisterSkiaNode(id);
     }
 
+    // 🔧 CRITICAL: 원자적 상태 업데이트 — elements + 모든 인덱스를 단일 set()으로 병합
+    // 이전: set({ elements }) → _rebuildIndexes() (2단계 분리)
+    // 문제: async 함수 내부(await 이후)이므로 React 자동 배치 미보장
+    //       중간 상태에서 stale 인덱스(elementsMap/childrenMap/pageIndex)로 렌더링 발생
+    // 수정: 인덱스를 미리 계산하여 단일 set()으로 원자적 업데이트
+    const newElementsMap = new Map<string, Element>();
+    const newChildrenMap = new Map<string, Element[]>();
+    filteredElements.forEach((el) => {
+      newElementsMap.set(el.id, el);
+      const parentId = el.parent_id || 'root';
+      if (!newChildrenMap.has(parentId)) {
+        newChildrenMap.set(parentId, []);
+      }
+      newChildrenMap.get(parentId)!.push(el);
+    });
+    const newPageIndex = rebuildPageIndex(filteredElements, newElementsMap);
+    const newComponentIndex = rebuildComponentIndex(filteredElements);
+    const newVariableUsageIndex = rebuildVariableUsageIndex(filteredElements);
+
     set({
       elements: filteredElements,
+      elementsMap: newElementsMap,
+      childrenMap: newChildrenMap,
+      pageIndex: newPageIndex,
+      componentIndex: newComponentIndex,
+      variableUsageIndex: newVariableUsageIndex,
       ...(isSelectedRemoved && {
         selectedElementId: null,
         selectedElementProps: {},
@@ -423,9 +452,6 @@ export const createRemoveElementAction =
         "*"
       );
     }
-
-    // 🔧 CRITICAL: elementsMap 재구축 (요소 삭제 후 캐시 업데이트)
-    get()._rebuildIndexes();
 
     // order_num 재정렬 (삭제 후) - 컬렉션 아이템 삭제의 경우 Undo 후에만 재정렬
     const currentPageId = get().currentPageId;

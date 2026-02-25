@@ -57,6 +57,10 @@ export interface CardProps {
   isLoading?: boolean;
   /** Skeleton layout variant */
   skeletonLayout?: 'default' | 'gallery' | 'horizontal';
+
+  // Structural children mode
+  /** 구조적 자식(CardHeader/CardContent)을 사용하는 모드 — 내부 card-header/card-content 래핑을 건너뜀 */
+  structuralChildren?: boolean;
 }
 
 // Asset Icon Component
@@ -102,6 +106,7 @@ export function Card({
   role,
   isLoading = false,
   skeletonLayout,
+  structuralChildren = false,
   ...props
 }: CardProps) {
   // Determine skeleton variant based on orientation or explicit layout
@@ -186,8 +191,8 @@ export function Card({
         </div>
       )}
 
-      {/* Header Section */}
-      {(heading || subheading || title) && (
+      {/* Header Section — structuralChildren 모드에서는 CardHeader가 직접 렌더링 */}
+      {!structuralChildren && (heading || subheading || title) && (
         <div className="card-header">
           {heading && <div className="card-heading">{heading}</div>}
           {subheading && <div className="card-subheading">{subheading}</div>}
@@ -198,11 +203,15 @@ export function Card({
         </div>
       )}
 
-      {/* Content Section */}
-      <div className="card-content">
-        {description && <div className="card-description">{description}</div>}
-        {children}
-      </div>
+      {/* Content Section — structuralChildren 모드에서는 children을 직접 렌더링 */}
+      {structuralChildren ? (
+        children
+      ) : (
+        <div className="card-content">
+          {description && <div className="card-description">{description}</div>}
+          {children}
+        </div>
+      )}
 
       {/* Footer Section */}
       {footer && (

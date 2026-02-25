@@ -57,7 +57,6 @@ export function createTextFieldDefinition(
             width: 'fit-content',
             fontSize: 14,
             fontWeight: 500,
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -71,7 +70,6 @@ export function createTextFieldDefinition(
           style: {
             width: '100%',
             height: 40,
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -84,7 +82,6 @@ export function createTextFieldDefinition(
           style: {
             fontSize: 12,
             display: 'none',
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -149,7 +146,6 @@ export function createTextAreaDefinition(
             width: 'fit-content',
             fontSize: 14,
             fontWeight: 500,
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -163,7 +159,6 @@ export function createTextAreaDefinition(
           style: {
             width: '100%',
             height: 80,
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -176,7 +171,6 @@ export function createTextAreaDefinition(
           style: {
             fontSize: 12,
             display: 'none',
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -241,7 +235,6 @@ export function createFormDefinition(
             display: "block",
             fontSize: "18px",
             fontWeight: "600",
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -254,7 +247,6 @@ export function createFormDefinition(
           style: {
             display: "block",
             fontSize: "14px",
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -534,7 +526,6 @@ export function createNumberFieldDefinition(
           style: {
             fontSize: 12,
             display: "none",
-            backgroundColor: "transparent",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -679,7 +670,6 @@ export function createSliderDefinition(
             fontSize: 14,
             fontWeight: 500,
             width: 'fit-content',
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -692,7 +682,6 @@ export function createSliderDefinition(
           style: {
             fontSize: 14,
             width: 'fit-content',
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -706,7 +695,6 @@ export function createSliderDefinition(
             alignItems: 'center',
             width: '100%',
             height: 24,
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -719,7 +707,6 @@ export function createSliderDefinition(
                 width: 18,
                 height: 18,
                 borderRadius: '50%',
-                backgroundColor: 'transparent',
               },
             } as ComponentElementProps,
             ...ownerFields,

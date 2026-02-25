@@ -130,10 +130,11 @@ export function createCardDefinition(
         variant: "default",
         size: "md",
         orientation: "vertical",
+        title: "Card Title",
+        description: "Card description text goes here.",
         style: {
           display: "flex",
           flexDirection: "column",
-          width: "100%",
           padding: "16px",
           borderWidth: "1px",
           gap: "8px",
@@ -145,34 +146,68 @@ export function createCardDefinition(
     },
     children: [
       {
-        tag: "Heading",
+        tag: "CardHeader",
         props: {
-          children: "Card Title",
-          level: 3,
           style: {
-            display: "block",
-            fontSize: "16px",
-            fontWeight: "600",
-            lineHeight: "1.4",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: "8px",
+            width: "100%",
           },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
+        children: [
+          {
+            tag: "Heading",
+            props: {
+              children: "Card Title",
+              level: 3,
+              className: "card-title",
+              style: {
+                display: "block",
+                fontSize: "16px",
+                fontWeight: "600",
+                lineHeight: "1.4",
+                margin: "0",
+                flex: 1,
+              },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
       {
-        tag: "Description",
+        tag: "CardContent",
         props: {
-          children: "Card description text goes here.",
           style: {
-            display: "block",
-            fontSize: "14px",
-            fontWeight: "400",
-            lineHeight: "1.5",
-            color: "var(--on-surface-variant)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            width: "100%",
           },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
+        children: [
+          {
+            tag: "Description",
+            props: {
+              children: "Card description text goes here.",
+              style: {
+                display: "block",
+                fontSize: "14px",
+                fontWeight: "400",
+                lineHeight: "1.5",
+                color: "#49454f",
+              },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
     ],
   };

@@ -476,8 +476,12 @@ const DirectContainer = memo(function DirectContainer({
   }, [elementId]);
 
   // LayoutComputedSizeContext (엔진 결과에서 직접 설정)
+  // DirectContainer는 항상 layout engine 계산 후 생성되므로,
+  // 0도 유효한 결과 (예: FieldError 에러 없을 때 height=0).
+  // null로 반환하면 ElementSprite가 convertToTransform fallback(100x100)을 사용하므로
+  // 엔진 결과를 항상 전달하여 정확한 크기를 보장한다.
   const computedSize = useMemo(() =>
-    width > 0 && height > 0 ? { width, height } : null,
+    ({ width: Math.max(width, 0), height: Math.max(height, 0) }),
     [width, height]
   );
 
@@ -630,6 +634,8 @@ const ElementsLayer = memo(function ElementsLayer({
     'Input', 'Separator', 'Skeleton',
     // Color Sub-component: 부모 ColorPicker의 내부 요소
     'ColorSwatch', 'ColorWheel', 'ColorArea', 'ColorSlider',
+    // Field sub-components: leaf 요소 (자식 없음)
+    'FieldError', 'DateSegment', 'TimeSegment', 'SliderOutput', 'SliderThumb',
   ]), []);
 
   // Spec shapes 전용 컴포넌트: 모든 시각 요소를 spec shapes로 렌더링하므로
@@ -641,14 +647,6 @@ const ElementsLayer = memo(function ElementsLayer({
 
   // Phase 11: 엔진이 계산한 레이아웃으로 직접 배치 (Yoga 제거)
   const renderedTree = useMemo(() => {
-    // Spec shapes가 전체 시각적 요소(label + input + buttons)를 렌더링하는 컴포넌트
-    // 자식(Label, Input, Button)을 렌더링하면 이중 렌더링이 발생하므로 억제
-    const SPEC_RENDERS_ALL_TAGS = new Set([
-      'textfield', 'numberfield', 'searchfield',
-      'datefield', 'timefield', 'colorfield', 'textarea',
-      'slider', 'rangeslider',
-    ]);
-
     // Container 태그 판별 (children을 내부에서 렌더링하는 컴포넌트)
     function isContainerTagForLayout(tag: string, style?: Record<string, unknown>): boolean {
       if (tag === 'Section') {
@@ -719,15 +717,10 @@ const ElementsLayer = memo(function ElementsLayer({
             };
           }
 
-          // Spec shapes가 전체 시각적 요소(label + input + buttons)를 렌더링하는 컴포넌트:
-          // 자식(Label, Input, Button)을 렌더링하면 이중 렌더링이 발생하므로 억제.
-          // childElements는 ElementSprite에 텍스트 추출용으로만 전달됨.
-          // (SPEC_RENDERS_ALL_TAGS는 모듈 레벨 상수 참조)
-
           // Breadcrumbs: 모든 Breadcrumb 아이템은 spec shapes가 렌더링
           // 자식 레이아웃 계산 불필요 (childElements는 텍스트 추출용으로만 전달)
           let filteredContainerChildren = containerChildren;
-          if (containerTag === 'breadcrumbs' || SPEC_RENDERS_ALL_TAGS.has(containerTag)) {
+          if (containerTag === 'breadcrumbs') {
             filteredContainerChildren = [];
           }
 
@@ -844,6 +837,51 @@ const ElementsLayer = memo(function ElementsLayer({
             });
           }
 
+          // Card: CardHeader/CardContent 자식에 implicit width: 100% 주입
+          // CSS에서 flex column 자식은 align-items:stretch로 부모 너비를 채우지만,
+          // DB 요소에 명시적 width가 없으면 enrichWithIntrinsicSize가 주입하지 않음
+          if (containerTag === 'card') {
+            filteredContainerChildren = filteredContainerChildren.map(child => {
+              if (child.tag === 'CardHeader' || child.tag === 'CardContent') {
+                const cs = (child.props?.style || {}) as Record<string, unknown>;
+                if (!cs.width) {
+                  return { ...child, props: { ...child.props, style: { ...cs, width: '100%' } } } as Element;
+                }
+              }
+              return child;
+            });
+          }
+
+          // CardHeader(flex row): Heading 자식에 implicit flex:1 주입
+          // Taffy는 텍스트 content width를 모르므로 flex item이 0 width가 됨
+          // flex:1로 남은 공간을 채우도록 설정
+          if (containerTag === 'cardheader') {
+            filteredContainerChildren = filteredContainerChildren.map(child => {
+              if (child.tag === 'Heading') {
+                const cs = (child.props?.style || {}) as Record<string, unknown>;
+                if (cs.flex === undefined && cs.flexGrow === undefined && !cs.width) {
+                  return { ...child, props: { ...child.props, style: { ...cs, flex: 1 } } } as Element;
+                }
+              }
+              return child;
+            });
+          }
+
+          // CardContent(flex column): Description 자식에 implicit width:100% 주입
+          // flex column의 align-items:stretch가 기본이지만,
+          // enrichWithIntrinsicSize가 width를 주입하지 않는 text leaf에 대비
+          if (containerTag === 'cardcontent') {
+            filteredContainerChildren = filteredContainerChildren.map(child => {
+              if (child.tag === 'Description') {
+                const cs = (child.props?.style || {}) as Record<string, unknown>;
+                if (!cs.width && cs.flex === undefined) {
+                  return { ...child, props: { ...child.props, style: { ...cs, width: '100%' } } } as Element;
+                }
+              }
+              return child;
+            });
+          }
+
           cachedPadding = parsePadding(parentStyle, containerWidth);
           const parentDisplay = (parentStyle?.display as string | undefined)
             ?? (containerEl.tag === 'Section' ? 'block' : undefined);
@@ -869,6 +907,7 @@ const ElementsLayer = memo(function ElementsLayer({
         // WebGL TextSprite는 Heading.props.children을 읽으므로 동기화 필요
         let effectiveChildEl = childEl;
         const containerTag = (containerEl.tag ?? '');
+        // 하위 호환: flat 구조 (Card → Heading/Description 직접 자식)
         if (containerTag === 'Card') {
           const cardProps = containerEl.props as Record<string, unknown> | undefined;
           if (childEl.tag === 'Heading') {
@@ -880,6 +919,36 @@ const ElementsLayer = memo(function ElementsLayer({
               };
             }
           } else if (childEl.tag === 'Description') {
+            const descText = cardProps?.description;
+            if (descText != null) {
+              effectiveChildEl = {
+                ...childEl,
+                props: { ...childEl.props, children: String(descText) },
+              };
+            }
+          }
+        }
+
+        // 새 구조: Card → CardHeader → Heading / Card → CardContent → Description
+        // CardHeader/CardContent는 투명 래퍼이므로 조부모(Card)에서 props를 읽어 주입
+        if (containerTag === 'CardHeader') {
+          const cardElement = elementById.get(containerEl.parent_id ?? '');
+          if (cardElement && childEl.tag === 'Heading') {
+            const cardProps = cardElement.props as Record<string, unknown> | undefined;
+            const headingText = cardProps?.heading ?? cardProps?.title;
+            if (headingText != null) {
+              effectiveChildEl = {
+                ...childEl,
+                props: { ...childEl.props, children: String(headingText) },
+              };
+            }
+          }
+        }
+
+        if (containerTag === 'CardContent') {
+          const cardElement = elementById.get(containerEl.parent_id ?? '');
+          if (cardElement && childEl.tag === 'Description') {
+            const cardProps = cardElement.props as Record<string, unknown> | undefined;
             const descText = cardProps?.description;
             if (descText != null) {
               effectiveChildEl = {
@@ -985,11 +1054,8 @@ const ElementsLayer = memo(function ElementsLayer({
 
         const childStyle = effectiveChildEl.props?.style as Record<string, unknown> | undefined;
         const isContainerType = isContainerTagForLayout(effectiveChildEl.tag, childStyle);
-        // SPEC_RENDERS_ALL_TAGS 컴포넌트: spec shapes가 전체 렌더링 담당
-        // childElements를 빈 배열로 전달하여 _hasChildren=false → spec이 텍스트 렌더링
-        const childTagLower = (effectiveChildEl.tag ?? '').toLowerCase();
         const childElements = isContainerType
-          ? (SPEC_RENDERS_ALL_TAGS.has(childTagLower) ? [] : (pageChildrenMap.get(effectiveChildEl.id) ?? []))
+          ? (pageChildrenMap.get(effectiveChildEl.id) ?? [])
           : [];
 
         // Radio/Checkbox/Switch: props.children 텍스트가 있지만 Label 자식이 없는 경우
@@ -1008,7 +1074,7 @@ const ElementsLayer = memo(function ElementsLayer({
               },
               parent_id: effectiveChildEl.id,
               page_id: effectiveChildEl.page_id,
-              project_id: (effectiveChildEl as any).project_id,
+              project_id: effectiveChildEl.project_id,
               order_num: 1,
             } as Element;
             effectiveChildElements = [syntheticLabel];
@@ -1102,11 +1168,8 @@ const ElementsLayer = memo(function ElementsLayer({
 
             const childStyle = child.props?.style as Record<string, unknown> | undefined;
             const isContainerType = isContainerTagForLayout(child.tag, childStyle);
-            // SPEC_RENDERS_ALL_TAGS: spec shapes가 전체 렌더링 → childElements 비워서
-            // _hasChildren=false → spec이 라벨/값 텍스트 렌더링
-            const childTagLwr = (child.tag ?? '').toLowerCase();
             let childElements = isContainerType
-              ? (SPEC_RENDERS_ALL_TAGS.has(childTagLwr) ? [] : (pageChildrenMap.get(child.id) ?? []))
+              ? (pageChildrenMap.get(child.id) ?? [])
               : [];
 
             // Tabs: childElements에 원본(TabList/TabPanels) + activePanel 병합

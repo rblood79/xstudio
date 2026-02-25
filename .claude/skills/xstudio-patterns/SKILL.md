@@ -44,6 +44,21 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md)** - 하이브리드 레이아웃 엔진 display 선택
 - **[pixi-container-hit-rect](rules/pixi-container-hit-rect.md)** - Non-layout 컨테이너 히트 영역 (padding offset 보정)
 
+#### WASM (wasm-*)
+- **CRITICAL**: wasm-pack `--target bundler` 출력은 `import()`만으로 내부 `wasm` 바인딩이 초기화되지 않음 → **반드시 default export(`__wbg_init`)를 명시적으로 호출** 필수. 미호출 시 glue 코드의 `wasm` 전역 변수가 `undefined`로 남아 모든 WASM 함수 호출 실패 (`TypeError: Cannot read properties of undefined`)
+  ```typescript
+  // ✅ 올바른 초기화 패턴 (rustWasm.ts)
+  const mod = await import('./pkg/xstudio_wasm');
+  if (typeof mod.default === 'function') {
+    await mod.default(); // __wbg_init() → fetch .wasm → instantiate → finalize
+  }
+  // 이후 mod.ping(), mod.TaffyLayoutEngine 등 사용 가능
+
+  // ❌ import만으로는 wasm 바인딩 미초기화
+  const mod = await import('./pkg/xstudio_wasm');
+  mod.ping(); // TypeError — wasm 전역 변수가 undefined
+  ```
+
 #### Security (postmessage-*)
 - **[postmessage-origin-verify](rules/postmessage-origin-verify.md)** - origin 검증 필수
 
@@ -52,7 +67,8 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[spec-value-sync](rules/spec-value-sync.md)** - Spec ↔ Builder ↔ CSS 값 동기화
 - **CRITICAL**: Spec shapes 내 숫자 연산에 TokenRef 값을 직접 사용 금지 → `resolveToken()` 변환 필수 (TokenRef 문자열을 수 연산에 사용하면 NaN 좌표 → 렌더링 실패)
 - **CRITICAL**: Spec shapes() 내 `_hasChildren` 체크 패턴 필수 → `const hasChildren = !!(props as Record<string, unknown>)._hasChildren; if (hasChildren) return shapes;` (배경/테두리 shapes 정의 직후, standalone 콘텐츠 shapes 직전에 배치)
-- **CRITICAL**: 복합 컴포넌트(factory가 자식 Element를 생성하는 경우)는 반드시 `COMPLEX_COMPONENT_TAGS`에 등록 → 미등록 시 자식 삭제 후 standalone spec shapes 재활성화 버그 발생
+- **CRITICAL**: Child Spec 추가 시 반드시 `packages/specs/src/index.ts` (빌드 엔트리) + `packages/specs/src/components/index.ts` 양쪽에 export 추가 후 `pnpm build:specs` 실행 필수
+- **CRITICAL**: 자식 Element가 독립 렌더링하려면 `ElementSprite.tsx`의 `TAG_SPEC_MAP`에 해당 태그의 Spec을 등록해야 함
 
 ### HIGH (강력 권장)
 
@@ -155,6 +171,20 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 컴포넌트 내부 Sprite가 엔진이 계산한 border-box 크기를 읽어야 할 때 사용합니다.
 퍼센트(`%`) 크기나 자동 크기(`auto`, `fit-content`) 요소의 최종 픽셀 크기를 엔진에서 전파합니다.
 
+**CRITICAL**: DirectContainer는 엔진 결과를 **항상** computedSize로 전달합니다 (0도 유효한 값).
+null로 반환하면 ElementSprite가 `convertToTransform` fallback(width=100, height=100)을 사용하여 잘못된 크기로 렌더링됩니다.
+
+```typescript
+// ✅ DirectContainer: 엔진 결과 항상 전달 (0도 유효)
+const computedSize = useMemo(() =>
+  ({ width: Math.max(width, 0), height: Math.max(height, 0) }),
+  [width, height]
+);
+
+// ❌ width > 0 && height > 0 일 때만 전달 → height=0이면 null → 100px fallback
+const computedSize = width > 0 && height > 0 ? { width, height } : null;
+```
+
 ```typescript
 // ✅ LayoutComputedSizeContext로 엔진 계산 크기 읽기
 const computedSize = useContext(LayoutComputedSizeContext);
@@ -184,21 +214,75 @@ enrichWithIntrinsicSize(element, availableWidth, cssContext);
 // layout.height = calculateContentHeight(element, availableWidth);
 ```
 
-#### SPEC_SHAPES_INPUT_TAGS — contentHeight ≤ 0 early return 우회
+#### contentHeight ≤ 0 early return 우회 조건
 
 `enrichWithIntrinsicSize` 내부에서 `contentHeight ≤ 0`이면 early return하여 intrinsicHeight 주입을 건너뜁니다.
-spec shapes로 자체 렌더링하는 입력 계열 컴포넌트(폼 위젯, Breadcrumbs 등)는 이 검사를 우회해야 합니다.
+다음 두 경우에 이 검사를 우회합니다:
+
+1. **SPEC_SHAPES_INPUT_TAGS**: spec shapes로 자체 렌더링하는 입력 계열 컴포넌트
+2. **childElements가 있는 컨테이너**: CardHeader/CardContent 등 자체 텍스트는 없지만 자식 높이 합산이 필요한 래퍼
 
 ```typescript
-// ✅ SPEC_SHAPES_INPUT_TAGS — contentHeight ≤ 0 early return 우회
-const SPEC_SHAPES_INPUT_TAGS = new Set(['combobox', 'select', 'dropdown', 'breadcrumbs']);
-// → spec shapes가 자체 높이를 결정하므로 content 텍스트 높이 검사 불필요
+// ✅ early return 조건 (3가지 우회)
+if (box.contentHeight <= 0 && !needsWidth
+  && !SPEC_SHAPES_INPUT_TAGS.has(tag)
+  && !(childElements && childElements.length > 0))  // 자식 있는 컨테이너 우회
+  return element;
 
-// ❌ SPEC_SHAPES_INPUT_TAGS 미포함 — contentHeight = 0 → early return → intrinsicHeight 미주입
-// → 엔진이 높이를 0으로 결정 → Breadcrumbs 미표시
+// ❌ childElements 체크 없이 early return → CardHeader/CardContent height=0
+// → DirectContainer computedSize=null → convertToTransform fallback 100×100
 ```
 
 새로운 spec shapes 기반 컴포넌트를 추가할 때 `SPEC_SHAPES_INPUT_TAGS`에 태그를 등록해야 합니다.
+자식 Element가 있는 투명 컨테이너는 별도 등록 없이 `childElements` 체크로 자동 우회됩니다.
+
+### Card Nested Tree 레이아웃 (2026-02-26)
+
+Card는 복합 트리 구조(Card → CardHeader → Heading, Card → CardContent → Description)를 사용합니다.
+CardHeader/CardContent는 투명 래퍼로 자체 텍스트가 없으므로 특별한 레이아웃 처리가 필요합니다.
+
+#### 3-layer default system (Factory / Engine / CSS)
+| 계층 | 파일 | 역할 |
+|------|------|------|
+| Factory | `LayoutComponents.ts` | DB 생성 시 기본 style 설정 |
+| Engine implicit | `BuilderCanvas.tsx createContainerChildRenderer` | 기존 DB 요소에 누락된 style 주입 |
+| CSS | `Card.css` | Preview iframe 렌더링 |
+
+#### implicit style injection (BuilderCanvas.tsx)
+```typescript
+// Card → CardHeader/CardContent: width 확보
+if (containerTag === 'card') { /* width: '100%' 주입 */ }
+// CardHeader → Heading: flex row에서 width 확보
+if (containerTag === 'cardheader') { /* flex: 1 주입 */ }
+// CardContent → Description: flex column에서 width 확보
+if (containerTag === 'cardcontent') { /* width: '100%' 주입 */ }
+```
+
+#### calculateContentHeight 컨테이너 브랜치 구조
+
+`childElements`가 있는 컨테이너의 높이 계산 분기:
+
+1. **전용 브랜치** (태그별): CardHeader/CardContent, Card, CheckboxGroup/RadioGroup, Tabs, ComboBox/Select 등
+2. **일반 flex 브랜치**: `display:flex/inline-flex` → flexDirection별 column=합산+gap, row=max
+3. **일반 block 브랜치**: `display:block` 또는 미지정 → 자식 높이 세로 합산 (gap 없음)
+
+모든 브랜치 공통: 자식 border-box 높이 = content-box(calculateContentHeight) + padding + border.
+Button 등 padding이 있는 자식의 높이를 정확히 반영하려면 반드시 border-box로 계산해야 합니다.
+
+```typescript
+// ✅ 일반 block 컨테이너: Menu(→MenuItem), Disclosure(→Header+Content) 등
+// display:flex가 아닌 모든 컨테이너가 이 경로를 통과
+const blockChildHeights = visibleBlockChildren.map(child => {
+  const contentH = calculateContentHeight(child, ...);
+  const childBox = parseBoxModel(child, 0, -1);
+  return contentH + childBox.padding.top + childBox.padding.bottom
+    + childBox.border.top + childBox.border.bottom;
+});
+return blockChildHeights.reduce((sum, h) => sum + h, 0);
+
+// ❌ block 컨테이너에 childElements 합산 핸들러 누락
+// → 자식이 있어도 calculateContentHeight가 텍스트 높이 fallback(~24px) 반환
+```
 
 ### Tabs 컨테이너 높이 계산
 
@@ -269,62 +353,55 @@ const TEXT_TAGS = new Set([
 // Description 엘리먼트가 빈 박스로만 렌더링됨
 ```
 
-#### `calculateContentHeight` — Card childElements 우선 처리 (`utils.ts:929-943`)
+#### `calculateContentHeight` — Card Nested Tree 높이 계산
 
-Card factory는 Heading과 Description을 자식 Element로 생성합니다.
-`props.title` / `props.description`만 참조하면 빈 문자열로 폴백되어 높이가 0이 됩니다.
-childElements가 존재하는 경우 flex column 방식으로 높이를 합산해야 합니다.
-
-```typescript
-// ✅ childElements가 있으면 flex column 높이 합산
-if (tag === 'Card' && childElements && childElements.length > 0) {
-  const headingEl = childElements.find((el) => el.tag === 'Heading');
-  const descriptionEl = childElements.find((el) => el.tag === 'Description');
-  const gap = 4; // Card 내부 기본 gap
-
-  const headingHeight = headingEl
-    ? calculateContentHeight(headingEl, availableWidth, context)
-    : 0;
-  const descriptionHeight = descriptionEl
-    ? calculateContentHeight(descriptionEl, availableWidth, context)
-    : 0;
-
-  return headingHeight + gap + descriptionHeight;
-}
-
-// ✅ fallback: childElements 없는 Card — props 기반 높이 계산
-// (props.title / props.description 문자열로 직접 측정)
-
-// ❌ props.title / props.description만 참조
-// Card factory가 자식 Element로 생성하면 props 값이 빈 문자열 → 높이 0
-const titleHeight = measureTextHeight(props.title ?? '', ...);
-```
-
-#### `enrichWithIntrinsicSize` — border-box 정합성 (`utils.ts:1363-1375`)
-
-`parseBoxModel`은 Card / Box / Section에 대해 `treatAsBorderBox: true`로 처리합니다.
-`enrichWithIntrinsicSize`가 content-box 높이만 주입하면, `parseBoxModel`이 padding과 border를 다시 빼서
-최종 높이가 의도보다 작아집니다.
-Card / Box / Section에 한해 padding + border를 포함한 border-box 높이를 주입해야 합니다.
+Card는 3단계 트리 구조로 높이를 재귀 계산합니다:
+1. **Card**: childElements(CardHeader, CardContent) 기반 flex column 높이 합산
+2. **CardHeader/CardContent**: childElements(Heading/Description/Button 등) 기반 높이 계산 — `flexDirection`에 따라 column=합산, row=max
+3. **Heading/Description**: TEXT_LEAF_TAGS로 lineHeight 기반 텍스트 높이
 
 ```typescript
-// ✅ Card/Box/Section: enrichWithIntrinsicSize가 border-box 높이 반환
-// parseBoxModel의 treatAsBorderBox와 정합성 유지
-const BORDER_BOX_TAGS = new Set(['Card', 'Box', 'Section']);
-
-if (BORDER_BOX_TAGS.has(tag)) {
-  element.intrinsicHeight = contentHeight + paddingY * 2 + borderWidth * 2; // border-box
-} else {
-  element.intrinsicHeight = contentHeight; // content-box (기본 경로)
+// ✅ CardHeader/CardContent: flexDirection에 따라 column=합산+gap, row=max
+// 자식의 border-box 높이 사용 (content-box + padding + border)
+if (tag === 'cardheader' || tag === 'cardcontent') {
+  const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+  const childHeights = childElements.map(child => {
+    const contentH = calculateContentHeight(child, ...);
+    const childBox = parseBoxModel(child, 0, -1);
+    return contentH + childBox.padding.top + childBox.padding.bottom
+      + childBox.border.top + childBox.border.bottom;
+  });
+  return isColumn
+    ? childHeights.reduce((sum, h) => sum + h, 0) + gap * (n - 1)  // column: 합산
+    : Math.max(...childHeights, 0);  // row: max
 }
 
-// ❌ Card에도 content-box 높이만 반환
-// → parseBoxModel이 padding+border를 다시 빼 → 높이 부족
-// 수정 전: Card 높이 51px / 수정 후: 85px (CSS Preview 88px 대비 3px 차이)
-element.intrinsicHeight = contentHeight;
+// ❌ 항상 합산(column 가정) — row 변경 시 높이 초과
+// ❌ content-box만 합산 — Button의 padding+border 누락
 ```
 
-> **참고**: 수정 후 Card 높이 51px → 85px로 개선. CSS Preview 기준 88px와 3px 차이는 폰트 측정 오차 범위 내.
+#### `enrichWithIntrinsicSize` — padding/border 주입 규칙 (`utils.ts`)
+
+`enrichWithIntrinsicSize`는 **content-box 높이**를 기본으로 주입합니다.
+padding/border 추가 여부는 **CSS에 해당 속성이 정의되어 있는지**와 **태그 유형**으로 결정합니다.
+
+```typescript
+// ✅ CSS에 padding이 없으면 spec 기본값을 포함 (레이아웃 엔진이 추가하지 않으므로)
+// ✅ INLINE_BLOCK_TAGS는 항상 padding+border 포함 (layoutInlineRun이 border-box로 직접 사용)
+if (!isSpecShapesInput && (!hasCSSVerticalPadding || isInlineBlockTag)) {
+  injectHeight += box.padding.top + box.padding.bottom;
+}
+if (!isSpecShapesInput && (!hasCSSVerticalBorder || isInlineBlockTag)) {
+  injectHeight += box.border.top + box.border.bottom;
+}
+
+// ❌ isTreatedAsBorderBox로 Card/Box/Section에 항상 padding 추가 (제거됨)
+// → Dropflow/Taffy가 CSS padding을 또 추가 → 이중 계산
+// const isTreatedAsBorderBox = (isCardLike || isSectionLike) && boxSizing !== 'content-box';
+// if (isTreatedAsBorderBox || !hasCSSVerticalPadding || isInlineBlockTag) { ... }
+```
+
+> **핵심 원칙**: CSS에 padding/border가 있으면 레이아웃 엔진(Dropflow/Taffy)이 처리. enrichment에서 중복 추가 금지.
 
 ### Container Props 주입 패턴 (CONTAINER_PROPS_INJECTION)
 
@@ -404,20 +481,45 @@ Parent Component (spec shapes: 배경/테두리만)
 └── Description / Footer (자식 Element)
 ```
 
-#### `_hasChildren` 주입 방식: 3단계 판단 로직
+#### Child Spec 등록 (2026-02-25 Compositional 전환)
+
+Compositional 전환으로 7개의 독립 child spec이 생성되었습니다:
+
+| Child Spec | 파일 | 용도 | 사용 parent |
+|-----------|------|------|-------------|
+| `LabelSpec` | `Label.spec.ts` | 라벨 텍스트 | TextField, NumberField, SearchField, DateField, TimeField, Slider |
+| `FieldErrorSpec` | `FieldError.spec.ts` | 에러 메시지 | TextField, NumberField, SearchField, DateField |
+| `DescriptionSpec` | `Description.spec.ts` | 설명 텍스트 | Card, Dialog, Popover |
+| `SliderTrackSpec` | `SliderTrack.spec.ts` | 트랙 바 + fill | Slider, RangeSlider |
+| `SliderThumbSpec` | `SliderThumb.spec.ts` | 원형 thumb | Slider, RangeSlider |
+| `SliderOutputSpec` | `SliderOutput.spec.ts` | 값 텍스트 표시 | Slider, RangeSlider |
+| `DateSegmentSpec` | `DateSegment.spec.ts` | 날짜/시간 세그먼트 | DateField, TimeField |
+
+**TAG_SPEC_MAP 등록** (`ElementSprite.tsx`):
+```typescript
+'Label': LabelSpec,
+'FieldError': FieldErrorSpec,
+'Description': DescriptionSpec,
+'SliderTrack': SliderTrackSpec,
+'SliderThumb': SliderThumbSpec,
+'SliderOutput': SliderOutputSpec,
+'DateSegment': DateSegmentSpec,
+'TimeSegment': DateSegmentSpec,  // DateSegmentSpec 재사용
+```
+
+**SPEC_RENDERS_ALL_TAGS 폐기**: 이전에 9개 compound 컴포넌트의 `childElements=[]`를 강제하던 `SPEC_RENDERS_ALL_TAGS` Set은 **완전 제거**되었습니다. 모든 자식 Element가 정상적으로 canvas에서 렌더링됩니다.
+
+#### `_hasChildren` 주입 방식: 2단계 판단 로직 (2026-02-25 Compositional 전환)
 
 `ElementSprite.tsx`에서 `_hasChildren: true` flag를 spec props에 주입합니다.
-아래 3단계를 순서대로 평가하며, **1단계에서 제외되면 2·3단계는 실행되지 않습니다**.
+아래 2단계를 순서대로 평가하며, **1단계에서 제외되면 2단계는 실행되지 않습니다**.
 
 **1단계 — Opt-out 가드 (CHILD_COMPOSITION_EXCLUDE_TAGS)**: 이 Set에 포함된 태그는 주입 자체를 건너뜁니다. synthetic prop 메커니즘(`_crumbs`, `_tabLabels` 등)을 별도로 사용하거나 다단계 중첩이 필요한 컴포넌트가 여기에 속합니다.
 
-**2단계 — Complex component 보장 (COMPLEX_COMPONENT_TAGS)**: 1단계를 통과한 태그 중 `COMPLEX_COMPONENT_TAGS`에 등록된 태그는 자식 유무와 관계없이 **항상** `_hasChildren: true`를 주입합니다. 자식을 모두 삭제해도 standalone spec 렌더링(label+input 통합 shapes)으로 되돌아가지 않습니다.
-
-**3단계 — 자식 존재 여부**: 1·2단계 모두 해당하지 않는 일반 컴포넌트(Button, Badge 등)는 자식 Element가 실제로 있을 때만 `_hasChildren: true`를 주입합니다. **자식이 없으면 standalone spec shapes가 렌더링되는 것이 의도된 동작입니다.**
+**2단계 — 자식 존재 여부**: 1단계를 통과한 모든 컴포넌트는 자식 Element가 실제로 있을 때만 `_hasChildren: true`를 주입합니다. Compositional 전환으로 자식 Element가 독립 spec으로 렌더링하므로, `COMPLEX_COMPONENT_TAGS` 기반 강제 주입은 불필요해졌습니다.
 
 ```typescript
-// ElementSprite.tsx — 3단계 판단 로직 (2026-02-24 수정)
-import { COMPLEX_COMPONENT_TAGS } from '../../../factories/constants';
+// ElementSprite.tsx — 2단계 판단 로직 (2026-02-25 Compositional 전환)
 
 const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
   'Tabs',        // _tabLabels synthetic prop 사용 (별도 메커니즘)
@@ -429,26 +531,23 @@ const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
 
 // 1단계: CHILD_COMPOSITION_EXCLUDE_TAGS → 포함되면 주입 스킵
 if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
-  // 2단계: COMPLEX_COMPONENT_TAGS → 포함되면 항상 true
-  // 3단계: childElements.length > 0 → 있으면 true (Non-complex의 standalone 복귀는 의도된 동작)
-  if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
+  // 2단계: 실제 자식 존재 여부로만 판단
+  if (childElements && childElements.length > 0) {
     specProps = { ...specProps, _hasChildren: true };
   }
 }
 ```
 
-**수정 전(버그)**: `childElements.length > 0`만 체크 → TextField의 자식을 모두 삭제하면 `_hasChildren=false` → standalone label+input spec shapes 재활성화.
-**수정 후**: `COMPLEX_COMPONENT_TAGS.has(tag)` 우선 체크 → complex component는 자식 없어도 항상 `_hasChildren=true` → 빈 shell 유지.
+**Compositional 전환 이전(버그)**: `COMPLEX_COMPONENT_TAGS.has(tag)` → 항상 _hasChildren=true → parent monolithic spec이 모든 것을 렌더링, 자식은 ghost element.
+**Compositional 전환 이후**: 자식 Element가 독립 spec(LabelSpec, FieldErrorSpec 등)으로 렌더링하므로, _hasChildren는 실제 childElements.length > 0으로만 판단.
 
 **`CHILD_COMPOSITION_EXCLUDE_TAGS`에 등록되는 이유**:
 - **synthetic prop 사용 컴포넌트** (Tabs, Breadcrumbs, TagGroup): 자체 prop 주입 메커니즘이 별도로 있어 `_hasChildren` 방식이 필요 없음
 - **다단계 중첩 구조** (Table, Tree): 자식 렌더링이 복잡하여 별도 구현 필요
 
-> `CHILD_COMPOSITION_EXCLUDE_TAGS` 소속 태그 중 일부(Tabs, Tree, TagGroup, Table)는 `COMPLEX_COMPONENT_TAGS`에도 포함됩니다. `CHILD_COMPOSITION_EXCLUDE_TAGS` 가드가 먼저 평가되므로 `COMPLEX_COMPONENT_TAGS` 체크는 안전하게 차단됩니다.
-
 #### Non-complex 컴포넌트: standalone 복귀는 의도된 동작
 
-아래 컴포넌트들은 `COMPLEX_COMPONENT_TAGS`에 포함되지 않으며, 자식 Element가 없을 때 standalone spec shapes로 렌더링하는 것이 **설계상 올바른 동작**입니다. 이 컴포넌트들을 `COMPLEX_COMPONENT_TAGS`에 추가하면 안 됩니다.
+아래 컴포넌트들은 자식 Element가 없을 때 standalone spec shapes로 렌더링하는 것이 **설계상 올바른 동작**입니다.
 
 | 컴포넌트 | 이유 |
 |---------|------|
@@ -641,7 +740,7 @@ return contentH + childBox.padding.top + childBox.padding.bottom
 
 #### Dropflow fallback flex 처리 (`engines/index.ts`)
 
-Taffy WASM 미로드 시 Dropflow 결과를 flex row/column + gap으로 후처리:
+Taffy WASM 초기화 실패 시 (`isRustWasmReady() === false`) Dropflow 결과를 flex row/column + gap으로 후처리 (안전 폴백):
 
 ```typescript
 // ✅ Dropflow fallback: flex-direction + gap 수동 처리
@@ -673,14 +772,13 @@ if (!(engine instanceof TaffyFlexEngine) && results.length > 0) {
    - label이 있는 standalone shapes는 반드시 `labelOffset` 계산 후 y 좌표 오프셋 적용
 
 2. **`COMPLEX_COMPONENT_TAGS` 등록** (`apps/builder/src/builder/factories/constants.ts`):
-   - factory가 자식 Element를 생성하는 복합 컴포넌트라면 반드시 이 Set에 추가
-   - 등록하지 않으면 자식 삭제 시 `_hasChildren=false`가 되어 standalone spec shapes가 재활성화됨
-   - `CHILD_COMPOSITION_EXCLUDE_TAGS` 소속 태그(Tabs, TagGroup 등)도 `useElementCreator.ts`의 Factory 경로 분기용으로 등록
-   - **주의**: Button, Badge, ProgressBar 등 Non-complex 컴포넌트(자식 없이도 standalone 렌더링이 정상인 컴포넌트)는 이 Set에 추가하면 안 됩니다. 추가하면 자식 삭제 후에도 빈 shell만 남아 standalone 렌더링으로 복귀할 수 없게 됩니다.
+   - factory가 자식 Element를 생성하는 복합 컴포넌트라면 Factory 경로 분기 목적으로 이 Set에 추가 (`useElementCreator.ts`가 참조)
+   - **Compositional 전환 이후**: `_hasChildren` 주입은 실제 childElements.length > 0으로만 결정되므로, 이 Set 등록이 `_hasChildren`에 영향을 주지 않음
+   - `CHILD_COMPOSITION_EXCLUDE_TAGS` 소속 태그(Tabs, TagGroup 등)도 Factory 경로 분기용으로 등록
 
 3. **ElementSprite.tsx**:
-   - `COMPLEX_COMPONENT_TAGS`에 등록하면 `_hasChildren` 주입은 자동으로 보장됨 — 추가 작업 불필요
-   - 단, synthetic prop 메커니즘을 별도로 사용하거나 다단계 중첩 구조라면 `CHILD_COMPOSITION_EXCLUDE_TAGS`에 추가
+   - Child Spec을 독립 렌더링하려면 `TAG_SPEC_MAP`에 해당 태그의 Spec 클래스 등록 (필수)
+   - synthetic prop 메커니즘을 별도로 사용하거나 다단계 중첩 구조라면 `CHILD_COMPOSITION_EXCLUDE_TAGS`에 추가
    - 배경/테두리를 spec이 담당하면 `TRANSPARENT_CONTAINER_TAGS`에도 추가
    - spec shapes가 `labelOffset` 기반으로 세로 레이아웃을 자체 계산하면 `SPEC_RENDERS_ALL_TAGS_SET`에도 추가 (`rearrangeShapesForColumn` 이중 변환 방지)
 
@@ -1019,7 +1117,7 @@ if (style?.lineHeight) {
 `enrichWithIntrinsicSize`가 `INLINE_BLOCK_TAGS`(button, badge, togglebutton, togglebuttongroup 등)에 항상 padding+border를 포함한 border-box 높이를 반환.
 
 - `layoutInlineRun`이 `style.height`를 border-box 값으로 직접 사용하는 구조이므로 content-box 변환 불필요
-- block 경로의 `treatAsBorderBox` 변환이 이중 계산을 방지
+- `isInlineBlockTag` 플래그로 CSS padding 존재 여부와 무관하게 항상 padding+border 포함
 - 이전에 INLINE_BLOCK_TAGS에서 padding이 누락되어 높이가 축소되던 버그 수정
 
 ```typescript
@@ -1291,11 +1389,13 @@ Spec 파일 일괄 수정 등 병렬 에이전트(Task tool)에 작업을 위임
    const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
    if (hasChildren) return shapes;
 
-2. COMPLEX_COMPONENT_TAGS / CHILD_COMPOSITION_EXCLUDE_TAGS 관련 로직
+2. CHILD_COMPOSITION_EXCLUDE_TAGS 관련 로직
 
-3. ElementSprite.tsx의 _hasChildren 주입 로직 (3단계 평가)
+3. ElementSprite.tsx의 _hasChildren 주입 로직 (2단계 평가)
 
 4. rearrangeShapesForColumn / SPEC_RENDERS_ALL_TAGS_SET 가드 로직
+
+5. TAG_SPEC_MAP 등록 로직 (child spec 렌더링 경로)
 
 요청된 수정 범위만 정확히 수행하고, 그 외 로직은 건드리지 마세요.
 ```

@@ -304,3 +304,25 @@ export type { SwitcherProps } from './components/Switcher.spec';
 
 export { NavSpec } from './components/Nav.spec';
 export type { NavProps } from './components/Nav.spec';
+
+// ─── Phase 5: Child Composition Specs (Compositional 전환) ─────────────────
+export { LabelSpec } from './components/Label.spec';
+export type { LabelProps } from './components/Label.spec';
+
+export { FieldErrorSpec } from './components/FieldError.spec';
+export type { FieldErrorProps } from './components/FieldError.spec';
+
+export { DescriptionSpec } from './components/Description.spec';
+export type { DescriptionProps } from './components/Description.spec';
+
+export { SliderTrackSpec, SLIDER_TRACK_DIMENSIONS } from './components/SliderTrack.spec';
+export type { SliderTrackProps } from './components/SliderTrack.spec';
+
+export { SliderThumbSpec, SLIDER_THUMB_SIZES } from './components/SliderThumb.spec';
+export type { SliderThumbProps } from './components/SliderThumb.spec';
+
+export { SliderOutputSpec } from './components/SliderOutput.spec';
+export type { SliderOutputProps } from './components/SliderOutput.spec';
+
+export { DateSegmentSpec } from './components/DateSegment.spec';
+export type { DateSegmentProps, DateSegmentType } from './components/DateSegment.spec';

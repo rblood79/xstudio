@@ -939,6 +939,57 @@ export function calculateContentHeight(
     return Math.max(textHeight, minContentHeight);
   }
 
+  // 3. CardHeader/CardContent: 투명 컨테이너 — 자식 높이 합산/max
+  // Card의 새 트리 구조(Card → CardHeader → Heading, Card → CardContent → Description)에서
+  // 각 래퍼가 자신의 자식 높이를 올바르게 반환해야 Card 전체 높이 계산이 정확해짐
+  // flexDirection에 따라: column → 합산+gap, row → max (일반 flex 컨테이너와 동일)
+  if (tag === 'cardheader' || tag === 'cardcontent') {
+    if (childElements && childElements.length > 0) {
+      const gapValue = parseNumericValue(style?.gap) ?? 8;
+      const flexDir = (style?.flexDirection as string) || 'column';
+      const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+
+      const childHeights = childElements.map(child => {
+        const grandChildren = getChildElements?.(child.id);
+        const contentH = calculateContentHeight(
+          child, availableWidth, grandChildren, getChildElements
+        );
+        // 자식의 border-box 높이 계산: content-box + padding + border
+        // Button 등 자식이 auto height일 때 padding/border를 포함해야 정확한 합산
+        // (일반 flex 컨테이너 브랜치와 동일 패턴)
+        const childStyle = child.props?.style as Record<string, unknown> | undefined;
+        const childTag = (child.tag ?? '').toLowerCase();
+        const childExplicitH = parseNumericValue(childStyle?.height);
+        const childIsFormEl = ['button', 'input', 'select'].includes(childTag);
+        const childBoxSizing = childStyle?.boxSizing as string | undefined;
+        const childIsSectionLike = childTag === 'section';
+        const childIsCardLike = childTag === 'card' || childTag === 'box';
+        const childIsBorderBox = childBoxSizing === 'border-box' ||
+          (childIsFormEl && childExplicitH !== undefined) ||
+          ((childIsSectionLike || childIsCardLike) &&
+            childBoxSizing !== 'content-box' && childExplicitH !== undefined);
+
+        if (childExplicitH !== undefined && childIsBorderBox) {
+          return childExplicitH;
+        }
+        const childBox = parseBoxModel(child, 0, -1);
+        return contentH + childBox.padding.top + childBox.padding.bottom
+          + childBox.border.top + childBox.border.bottom;
+      });
+
+      if (isColumn) {
+        return Math.max(
+          childHeights.reduce((sum, h) => sum + h, 0)
+            + gapValue * Math.max(0, childHeights.length - 1),
+          0,
+        );
+      }
+      // row: 높이 = 가장 큰 자식의 높이
+      return Math.max(...childHeights, 0);
+    }
+    return 0;
+  }
+
   // 3. Card 컴포넌트: 자식 기반 or 텍스트 콘텐츠 기반 높이 계산
   // 🚀 Card는 style.padding이 있으므로 BlockEngine이 padding을 별도로 추가함
   // contentHeight는 content-box 높이만 반환 (padding 제외)
@@ -947,11 +998,16 @@ export function calculateContentHeight(
     // Card factory가 Heading + Description 자식을 생성하므로 이 경로가 우선
     if (childElements && childElements.length > 0) {
       const gap = parseNumericValue(style?.gap) ?? 8;
+      // Card padding을 빼서 자식의 실제 텍스트 줄바꿈 너비 계산
+      const cardPad = parsePadding(style, availableWidth);
+      const childAvailableWidth = availableWidth != null
+        ? availableWidth - cardPad.left - cardPad.right
+        : availableWidth;
       let totalHeight = 0;
       for (let i = 0; i < childElements.length; i++) {
         const grandChildren = getChildElements?.(childElements[i].id);
         totalHeight += calculateContentHeight(
-          childElements[i], availableWidth, grandChildren, getChildElements
+          childElements[i], childAvailableWidth, grandChildren, getChildElements
         );
         if (i < childElements.length - 1) totalHeight += gap;
       }
@@ -1185,6 +1241,66 @@ export function calculateContentHeight(
       }
       return Math.max(...childHeights, 0);
     }
+
+    // 일반 block/기타 컨테이너: block flow에서 자식 높이 세로 합산
+    // display:flex가 아닌 컨테이너(display:block, 미지정 등)도
+    // 자식이 있으면 자식 높이를 합산해야 정확한 높이 반환
+    // (Menu → MenuItem, Disclosure → DisclosureHeader/Content 등)
+    const visibleBlockChildren = childElements.filter(child => {
+      const cs = child.props?.style as Record<string, unknown> | undefined;
+      return cs?.display !== 'none';
+    });
+
+    if (visibleBlockChildren.length > 0) {
+      const blockChildHeights = visibleBlockChildren.map(child => {
+        const grandChildren = getChildElements?.(child.id);
+        const contentH = calculateContentHeight(child, availableWidth, grandChildren, getChildElements);
+        const childStyle = child.props?.style as Record<string, unknown> | undefined;
+        const childTag = (child.tag ?? '').toLowerCase();
+        const childExplicitH = parseNumericValue(childStyle?.height);
+        const childIsFormEl = ['button', 'input', 'select'].includes(childTag);
+        const childBoxSizing = childStyle?.boxSizing as string | undefined;
+        const childIsSectionLike = childTag === 'section';
+        const childIsCardLike = childTag === 'card' || childTag === 'box';
+        const childIsBorderBox = childBoxSizing === 'border-box' ||
+          (childIsFormEl && childExplicitH !== undefined) ||
+          ((childIsSectionLike || childIsCardLike) &&
+            childBoxSizing !== 'content-box' && childExplicitH !== undefined);
+
+        if (childExplicitH !== undefined && childIsBorderBox) {
+          return childExplicitH;
+        }
+        const childBox = parseBoxModel(child, 0, -1);
+        return contentH + childBox.padding.top + childBox.padding.bottom
+          + childBox.border.top + childBox.border.bottom;
+      });
+
+      // Block flow: 세로 합산 (gap 없음, margin collapse는 미지원)
+      return blockChildHeights.reduce((sum, h) => sum + h, 0);
+    }
+  }
+
+  // 4.9. Leaf text elements: 텍스트 줄바꿈 시 높이 자동 확장
+  // TEXT_LEAF_TAGS 요소는 텍스트만 포함하는 리프 노드이므로
+  // availableWidth가 있으면 줄바꿈을 고려한 실제 높이를 반환
+  if (TEXT_LEAF_TAGS.has(tag) && availableWidth != null && availableWidth > 0) {
+    const props = element.props as Record<string, unknown> | undefined;
+    const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
+    if (textContent) {
+      const fs0 = parseNumericValue(style?.fontSize) ?? 16;
+      const fw0 = parseNumericValue(style?.fontWeight) ?? 400;
+      const ff0 = (style?.fontFamily as string) ?? specFontFamily.sans;
+      const pad = parsePadding(style, availableWidth);
+      const maxTextWidth = availableWidth - pad.left - pad.right;
+      if (maxTextWidth > 0) {
+        const wrappedHeight = measureWrappedTextHeight(textContent, fs0, fw0, ff0, maxTextWidth);
+        const resolvedLH = parseLineHeight(style, fs0);
+        const singleLineH = resolvedLH ?? estimateTextHeight(fs0);
+        if (wrappedHeight > singleLineH + 0.5) {
+          return wrappedHeight;
+        }
+      }
+    }
   }
 
   // 5. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용
@@ -1360,6 +1476,14 @@ export const INLINE_BLOCK_TAGS = new Set([
 ]);
 
 /**
+ * 텍스트만 포함하는 리프 태그 — 줄바꿈 시 높이가 width에 따라 동적으로 변함
+ * enrichWithIntrinsicSize 2-pass에서 width 변경 시 높이 재계산 대상
+ */
+export const TEXT_LEAF_TAGS = new Set([
+  'text', 'heading', 'description', 'label', 'paragraph',
+]);
+
+/**
  * 리프 UI 컴포넌트에 intrinsic size(width/height)를 주입
  *
  * 레이아웃 엔진(Dropflow/Taffy)은 자식이 없는 블록의 height를 0으로 collapse하고,
@@ -1421,8 +1545,11 @@ export function enrichWithIntrinsicSize(
   // 단, ComboBox/Select 등 spec shapes 기반 입력 컴포넌트는 예외:
   // flex container 스타일(flexDirection: column)로 parseBoxModel이 contentHeight=0을 반환하지만,
   // calculateContentHeight에서 spec size 기반 높이를 산출하므로 height 주입이 필요함
+  // 또한, childElements가 있는 컨테이너(CardHeader/CardContent 등)도 예외:
+  // 자체 텍스트는 없지만 자식 요소의 높이를 합산해야 하므로 calculateContentHeight가 필요함
   const SPEC_SHAPES_INPUT_TAGS = new Set(['combobox', 'select', 'dropdown', 'breadcrumbs']);
-  if (box.contentHeight <= 0 && !needsWidth && !SPEC_SHAPES_INPUT_TAGS.has(tag)) return element;
+  if (box.contentHeight <= 0 && !needsWidth && !SPEC_SHAPES_INPUT_TAGS.has(tag)
+    && !(childElements && childElements.length > 0)) return element;
 
   // padding과 border를 독립적으로 처리:
   // - CSS에 해당 속성이 없으면 → spec 기본값을 크기에 포함
@@ -1452,19 +1579,17 @@ export function enrichWithIntrinsicSize(
     : box.contentHeight;
   if (needsHeight && childResolvedHeight > 0) {
     let injectHeight = childResolvedHeight;
-    // parseBoxModel의 treatAsBorderBox 로직과 일치시켜야 함:
-    // Card/Box/Section은 height를 border-box로 해석하므로 padding+border 포함 필요
-    const isSectionLike = tag === 'section';
-    const isCardLike = tag === 'card' || tag === 'box';
-    const isTreatedAsBorderBox = (isSectionLike || isCardLike)
-      && style?.boxSizing !== 'content-box';
     // ComboBox/Select: calculateContentHeight가 전체 시각적 높이(label+input/trigger)를 반환
     // spec shapes가 내부 padding 없이 렌더링하므로 추가 padding/border 불필요
     const isSpecShapesInput = SPEC_SHAPES_INPUT_TAGS.has(tag);
-    if (!isSpecShapesInput && (isTreatedAsBorderBox || !hasCSSVerticalPadding || isInlineBlockTag)) {
+    // padding/border 추가 조건:
+    // - CSS에 해당 속성이 없으면 spec 기본값을 포함 (엔진이 추가하지 않으므로)
+    // - inline-block 태그는 layoutInlineRun이 height를 border-box로 직접 사용하므로 항상 포함
+    // Note: Card/Box/Section은 CSS에 padding이 있으면 레이아웃 엔진이 추가하므로 여기서 제외
+    if (!isSpecShapesInput && (!hasCSSVerticalPadding || isInlineBlockTag)) {
       injectHeight += box.padding.top + box.padding.bottom;
     }
-    if (!isSpecShapesInput && (isTreatedAsBorderBox || !hasCSSVerticalBorder || isInlineBlockTag)) {
+    if (!isSpecShapesInput && (!hasCSSVerticalBorder || isInlineBlockTag)) {
       injectHeight += box.border.top + box.border.bottom;
     }
     injectedStyle.height = injectHeight;

@@ -4,7 +4,6 @@ import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, Proper
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
-import { useSyncChildProp } from '../../../hooks/useSyncChildProp';
 
 export const CardEditor = memo(function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
   // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
@@ -13,24 +12,58 @@ export const CardEditor = memo(function CardEditor({ elementId, currentProps, on
     return element?.customId || "";
   }, [elementId]);
 
-  const { buildChildUpdates } = useSyncChildProp(elementId);
+  // 새 구조 (Card → CardHeader → Heading, Card → CardContent → Description)에서
+  // 2-depth 탐색으로 Heading/Description 자식을 찾는 헬퍼
+  const buildDeepChildUpdates = useCallback((
+    syncs: Array<{ wrapperTag: string; childTag: string; propKey: string; value: string }>
+  ) => {
+    const { childrenMap } = useStore.getState();
+    const directChildren = childrenMap.get(elementId) ?? [];
+    const updates: Array<{ elementId: string; props: Record<string, unknown> }> = [];
+
+    for (const sync of syncs) {
+      // 1단계: 직계 자식에서 래퍼(CardHeader/CardContent) 탐색
+      const wrapperEl = directChildren.find(c => c.tag === sync.wrapperTag);
+      if (wrapperEl) {
+        // 2단계: 래퍼의 자식에서 대상 태그 탐색
+        const wrapperChildren = childrenMap.get(wrapperEl.id) ?? [];
+        const targetEl = wrapperChildren.find(c => c.tag === sync.childTag);
+        if (targetEl) {
+          updates.push({
+            elementId: targetEl.id,
+            props: { ...targetEl.props, [sync.propKey]: sync.value },
+          });
+        }
+      } else {
+        // 하위 호환: 직계 자식에 바로 Heading/Description이 있는 경우 (flat 구조)
+        const directEl = directChildren.find(c => c.tag === sync.childTag);
+        if (directEl) {
+          updates.push({
+            elementId: directEl.id,
+            props: { ...directEl.props, [sync.propKey]: sync.value },
+          });
+        }
+      }
+    }
+    return updates;
+  }, [elementId]);
 
   // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
   const handleTitleChange = useCallback((value: string) => {
     const updatedProps = { ...currentProps, title: value };
-    const childUpdates = buildChildUpdates([
-      { childTag: 'Heading', propKey: 'children', value },
+    const childUpdates = buildDeepChildUpdates([
+      { wrapperTag: 'CardHeader', childTag: 'Heading', propKey: 'children', value },
     ]);
     useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
-  }, [currentProps, buildChildUpdates]);
+  }, [currentProps, buildDeepChildUpdates]);
 
   const handleDescriptionChange = useCallback((value: string) => {
     const updatedProps = { ...currentProps, description: value };
-    const childUpdates = buildChildUpdates([
-      { childTag: 'Description', propKey: 'children', value },
+    const childUpdates = buildDeepChildUpdates([
+      { wrapperTag: 'CardContent', childTag: 'Description', propKey: 'children', value },
     ]);
     useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
-  }, [currentProps, buildChildUpdates]);
+  }, [currentProps, buildDeepChildUpdates]);
 
   const handleFooterChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, footer: value });
