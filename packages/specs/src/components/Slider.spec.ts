@@ -146,25 +146,33 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       // 사용자 스타일 우선
       const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = props.style?.fontSize ?? size.fontSize;
       const fwRaw = props.style?.fontWeight;
       const fw = fwRaw != null
         ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
         : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
+      // fontSize가 TokenRef 문자열일 수 있으므로 resolveToken으로 숫자 변환
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFontSize = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : 14);
+      const numericFontSize = typeof resolvedFontSize === 'number' ? resolvedFontSize : 14;
+
       const shapes: Shape[] = [];
-      const hasLabelChild = !!(props as Record<string, unknown>)._hasChildren;
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
       // 라벨 + 값 행 (자식 Element가 있으면 자식 TextSprite가 렌더링하므로 스킵)
-      if (!hasLabelChild && (props.label || props.showValue)) {
+      if (!hasChildren && (props.label || props.showValue)) {
         if (props.label) {
           shapes.push({
             type: 'text' as const,
             x: 0,
             y: 0,
             text: props.label,
-            fontSize: fontSize as unknown as number,
+            fontSize: numericFontSize,
             fontFamily: ff,
             fontWeight: fw,
             fill: textColor,
@@ -178,7 +186,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             x: 0,
             y: 0,
             text: String(value),
-            fontSize: fontSize as unknown as number,
+            fontSize: numericFontSize,
             fontFamily: ff,
             fill: textColor,
             align: 'right' as const,
@@ -188,13 +196,6 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         }
       }
 
-      // fontSize가 TokenRef 문자열일 수 있으므로 resolveToken으로 숫자 변환
-      const resolvedFontSize = typeof size.fontSize === 'number'
-        ? size.fontSize
-        : (typeof size.fontSize === 'string' && size.fontSize.startsWith('{')
-            ? resolveToken(size.fontSize as TokenRef)
-            : 14);
-      const numericFontSize = typeof resolvedFontSize === 'number' ? resolvedFontSize : 14;
       const offsetY = (props.label || props.showValue)
         ? numericFontSize + gap
         : 0;

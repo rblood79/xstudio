@@ -1105,10 +1105,10 @@ export const ElementSprite = memo(function ElementSprite({
             ]);
 
             if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
-              // _hasChildren: 실제 자식 Element가 콘텐츠를 렌더링할 때만 true
-              // SPEC_RENDERS_ALL_TAGS로 자식이 억제되면 childElements=[] → false
-              // → spec이 전체 렌더링 담당 (Slider 라벨/값 텍스트 등)
-              if (childElements && childElements.length > 0) {
+              // Complex component: 자식 유무와 관계없이 항상 _hasChildren=true
+              // (자식 삭제 시 standalone 렌더링 복귀 방지)
+              // Non-complex (Button 등): 자식이 실제로 있을 때만 _hasChildren=true
+              if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
                 specProps = { ...specProps, _hasChildren: true };
               }
             }

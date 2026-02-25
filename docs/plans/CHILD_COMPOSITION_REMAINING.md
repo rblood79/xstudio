@@ -771,3 +771,117 @@ y: labelOffset,
 - [ ] `npx tsc --noEmit` 타입 체크 통과
 - [ ] `pnpm build` (specs 빌드) 성공
 - [ ] Canvas에서 각 컴포넌트 텍스트 렌더링 정상 확인
+
+---
+
+## Phase 5: `_hasChildren` 적용 검증 감사 (2026-02-25)
+
+> **작성일**: 2026-02-25
+> **상태**: 감사 완료 — 인프라 1개 + spec 6개 수정 필요, 패턴 통일 6개 권고
+> **범위**: 인프라 파일 4개 + spec 파일 49개 전수 검증
+> **Phase 4와의 관계**: 별개 문제 (원인·수정 대상·영향 파일 모두 다름, 독립 수정 가능)
+
+### 배경
+
+문서에 기술된 `_hasChildren` 3단계 주입 로직과 49개 spec 적용 현황이
+실제 코드와 일치하는지 전수 검증을 수행했다.
+
+### 감사 결과 요약
+
+| 구분 | 대상 | 결과 |
+|------|------|------|
+| 인프라 — `factories/constants.ts` | COMPLEX_COMPONENT_TAGS 40개 | ✅ 일치 |
+| 인프라 — `BuilderCanvas.tsx` | NON_CONTAINER_TAGS 21개 | ✅ 일치 |
+| 인프라 — `useElementCreator.ts` | 공유 상수 import | ✅ 일치 |
+| 인프라 — `ElementSprite.tsx` | 3단계 주입 로직 | ❌ 불일치 |
+| Spec — COMPLEX (36개) | `_hasChildren` 체크 | ❌ 6개 누락 |
+| Spec — Non-complex (13개) | `_hasChildren` 체크 | ✅ 전원 적용 |
+| Spec — 패턴 일관성 | 변수명·참조 방식 통일 | ⚠️ 6개 비표준 |
+
+### ❌ P1: ElementSprite.tsx — 3단계 주입 로직 미구현
+
+**문서 기술 (의도된 로직):**
+```typescript
+if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
+  if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
+    specProps = { ...specProps, _hasChildren: true };
+  }
+}
+```
+
+**실제 코드:**
+```typescript
+if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
+  if (childElements && childElements.length > 0) {  // ← COMPLEX 체크 누락
+    specProps = { ...specProps, _hasChildren: true };
+  }
+}
+```
+
+**영향**: COMPLEX 컴포넌트(TextField 등)에서 모든 자식을 삭제하면
+`_hasChildren`이 주입되지 않아 standalone 렌더링으로 복귀하는 버그 잔존.
+
+**수정**: `COMPLEX_COMPONENT_TAGS` import 후 조건에 추가.
+
+### ❌ P1: Spec 파일 6개 — `_hasChildren` 패턴 누락
+
+모두 COMPLEX_COMPONENT_TAGS에 포함된 Input Field 계열이며,
+spec의 `shapes()` 함수에 `_hasChildren` 체크 코드가 없다.
+
+| # | 파일 | 비고 |
+|---|------|------|
+| 1 | `TextArea.spec.ts` | TextField과 유사 구조, 패턴 누락 |
+| 2 | `NumberField.spec.ts` | 동일 |
+| 3 | `SearchField.spec.ts` | 동일 |
+| 4 | `DateField.spec.ts` | 동일 |
+| 5 | `TimeField.spec.ts` | 동일 |
+| 6 | `ColorField.spec.ts` | 동일 |
+
+**증상**: 자식 Element가 라벨을 담당하는데도 spec이 라벨을 직접 그려 이중 렌더링 발생.
+
+**수정 패턴** (TextField.spec.ts 기존 패턴과 동일):
+```typescript
+const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+if (hasChildren) return shapes;
+```
+
+### ⚠️ P2: Spec 패턴 비표준 — 변수명·참조 방식 불일치 (6개)
+
+기능상 정상이나 코드 일관성 개선 권고.
+
+**구패턴 변수명 `hasLabelChild` (4개):**
+
+| # | 파일 | 현재 코드 | 권고 |
+|---|------|----------|------|
+| 1 | `Checkbox.spec.ts` | `const hasLabelChild = !!(props as Record<string, unknown>)._hasChildren;` | `hasChildren`으로 변수명 통일 |
+| 2 | `Radio.spec.ts` | 동일 | 동일 |
+| 3 | `Switch.spec.ts` | 동일 | 동일 |
+| 4 | `Slider.spec.ts` | 동일 | 동일 |
+
+**직접 prop 참조 (2개):**
+
+| # | 파일 | 현재 코드 | 권고 |
+|---|------|----------|------|
+| 1 | `Select.spec.ts` | `if (props.label && !props._hasChildren)` | `const hasChildren = !!()` 변수화 |
+| 2 | `ComboBox.spec.ts` | 동일 | 동일 |
+
+### Phase 4와의 관계
+
+| | Phase 5 (`_hasChildren` 누락) | Phase 4 (fontSize TokenRef) |
+|---|---|---|
+| **원인** | spec에 `_hasChildren` 체크 코드 부재 | `resolveToken()` 미사용, `as unknown as number` 캐스팅 |
+| **증상** | 자식 있어도 spec이 라벨 직접 렌더링 (이중) | 산술 연산 NaN → 텍스트 미표시 |
+| **수정** | `hasChildren` 체크 + 조건부 shapes 스킵 | `resolveToken()` 3단계 패턴 |
+| **파일 겹침** | 없음 (6개 vs 17+4개, 대상 파일 상이) | — |
+
+두 Phase는 독립적이며 수정 순서에 의존성이 없다.
+
+### 완료 기준
+
+- [ ] ElementSprite.tsx에 `COMPLEX_COMPONENT_TAGS` 체크 추가
+- [ ] 6개 spec에 `_hasChildren` 패턴 추가 (TextArea, NumberField, SearchField, DateField, TimeField, ColorField)
+- [ ] (P2) 4개 spec 변수명 통일: `hasLabelChild` → `hasChildren`
+- [ ] (P2) 2개 spec 직접 참조 → 변수화 (Select, ComboBox)
+- [ ] `npx tsc --noEmit` 타입 체크 통과
+- [ ] Canvas에서 자식 있는 상태의 이중 렌더링 해소 확인
+- [ ] Canvas에서 COMPLEX 컴포넌트 자식 삭제 시 standalone 미복귀 확인

@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * DropZone Props
@@ -121,7 +122,13 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
         : size.paddingX;
 
       // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
-      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
       const fw = fwRaw != null
         ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
@@ -164,7 +171,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
         x: paddingX,
         y: 0,
         text: label,
-        fontSize: fontSize as unknown as number,
+        fontSize: fontSize,
         fontFamily: ff,
         fontWeight: fw,
         fill: textColor,

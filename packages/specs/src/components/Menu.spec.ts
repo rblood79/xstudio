@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
 import { resolveStateColors } from '../utils/stateEffect';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * Menu Props
@@ -101,6 +102,14 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       const width = 180;
       const ff = fontFamily.sans;
 
+      const rawFontSize = size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+
       // Phase C: 기본 메뉴 아이템
       const menuItems = ['Edit', 'Copy', 'Paste', '---', 'Delete'];
       const itemHeight = 36;
@@ -132,7 +141,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
           x: size.paddingX,
           y: itemY + itemHeight / 2,
           text: item,
-          fontSize: size.fontSize as unknown as number,
+          fontSize,
           fontFamily: ff,
           fontWeight: 400,
           fill: variant.text,

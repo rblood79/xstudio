@@ -126,6 +126,11 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
 
+      const labelFontSize = fontSize - 2;
+      const labelHeight = Math.ceil(labelFontSize * 1.2);
+      const labelGap = size.gap ?? 8;
+      const labelOffset = props.label ? labelHeight + labelGap : 0;
+
       const shapes: Shape[] = [];
 
       // 라벨
@@ -149,7 +154,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         id: 'bg',
         type: 'roundRect' as const,
         x: 0,
-        y: props.label ? 20 : 0,
+        y: labelOffset,
         width,
         height: 'auto',
         radius: borderRadius as unknown as number,
@@ -190,7 +195,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       const paddingY = size.paddingY as unknown as number || 8;
       const gap = size.gap as unknown as number || 4;
       const paddingX = size.paddingX as unknown as number || 12;
-      const baseY = props.label ? 20 : 0;
+      const baseY = labelOffset;
       let itemY = baseY + paddingY;
 
       // 선택 상태 계산

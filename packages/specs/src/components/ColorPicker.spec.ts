@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * ColorPicker Props
@@ -129,7 +130,13 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
         : 1;
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
       const fw = fwRaw != null
         ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
@@ -256,7 +263,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
         x: size.paddingX,
         y: alphaSliderY + sliderHeight + (size.gap ?? 10),
         text: hexValue.toUpperCase(),
-        fontSize: fontSize as unknown as number,
+        fontSize: fontSize,
         fontFamily: ff,
         fontWeight: fw,
         fill: textColor,

@@ -176,6 +176,9 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
           radius: borderRadius,
         },
       ];
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // Color swatch (왼쪽)
       const swatchX = paddingX;
       const swatchY = (height - swatchSize) / 2;

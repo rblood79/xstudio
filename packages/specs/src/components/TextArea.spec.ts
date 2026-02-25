@@ -162,6 +162,15 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
         : size.paddingX;
 
       const shapes: Shape[] = [];
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
+      // label offset 동적 계산 (fontSize 기반)
+      const labelFontSize = fontSize - 2;
+      const labelHeight = Math.ceil(labelFontSize * 1.2);
+      const labelGap = size.gap ?? 8;
+      const labelOffset = props.label ? labelHeight + labelGap : 0;
+
       // 라벨
       if (props.label) {
         shapes.push({
@@ -169,7 +178,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: fontSize - 2,
+          fontSize: labelFontSize,
           fontFamily: ff,
           fontWeight,
           fill: textColor,
@@ -183,7 +192,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
         id: 'bg',
         type: 'roundRect' as const,
         x: 0,
-        y: props.label ? 20 : 0,
+        y: labelOffset,
         width,
         height,
         radius: borderRadius,
@@ -207,7 +216,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
         shapes.push({
           type: 'text' as const,
           x: paddingX,
-          y: (props.label ? 20 : 0) + size.paddingY,
+          y: labelOffset + size.paddingY,
           text: displayText,
           fontSize,
           fontFamily: ff,
@@ -225,7 +234,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
         shapes.push({
           type: 'text' as const,
           x: 0,
-          y: (props.label ? 20 : 0) + height + 4,
+          y: labelOffset + height + 4,
           text: descText,
           fontSize: fontSize - 2,
           fontFamily: ff,

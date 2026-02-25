@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * ComboBox Props
@@ -145,9 +146,14 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         : defaultBw;
 
       // size.fontSize는 TokenRef 문자열('{typography.text-md}')일 수 있으므로
-      // 산술 연산 전 안전하게 숫자로 변환 (specShapesToSkia의 resolveNum이 최종 해석)
+      // resolveToken으로 숫자 변환 후 산술 연산에 사용
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const fontSize = typeof rawFontSize === 'number' ? rawFontSize : 14;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 14;
 
       // CSS 정합성: React-Aria ComboBox 실제 렌더링 기준
       // .react-aria-Label: fontSize=14, lineHeight=1.5 → height=21
@@ -176,10 +182,11 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         : size.paddingX;
 
       const shapes: Shape[] = [];
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
       // 라벨 — 자식 Element가 있으면 스킵 (TextSprite가 렌더링)
       // 자식이 없으면 (기존 요소 호환) spec shapes에서 직접 렌더링
-      if (props.label && !props._hasChildren) {
+      if (props.label && !hasChildren) {
         shapes.push({
           type: 'text' as const,
           x: 0,
@@ -226,7 +233,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           x: paddingX,
           y: inputY + inputHeight / 2,
           text: displayText,
-          fontSize: fontSize as number,
+          fontSize,
           fontFamily: ff,
           fill: props.inputValue
             ? textColor
@@ -299,7 +306,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             x: paddingX,
             y: dropdownY + dropdownPaddingY + itemH / 2,
             text: 'No results',
-            fontSize: fontSize as number,
+            fontSize,
             fontFamily: ff,
             fontWeight: 400,
             fill: '{color.on-surface-variant}' as TokenRef,
@@ -337,7 +344,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
               x: paddingX,
               y: itemY + itemH / 2,
               text: String(item),
-              fontSize: fontSize as number,
+              fontSize,
               fontFamily: ff,
               fontWeight: isSelected ? 600 : 400,
               fill: isSelected
@@ -369,7 +376,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           x: 0,
           y: descY,
           text: descText,
-          fontSize: (fontSize as number) - 2,
+          fontSize: fontSize - 2,
           fontFamily: ff,
           fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
           align: textAlign,

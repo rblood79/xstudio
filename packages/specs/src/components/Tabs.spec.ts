@@ -13,6 +13,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * Tabs Props
@@ -115,12 +116,13 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
                         ?? (variant.border || ('{color.outline-variant}' as TokenRef));
 
       const ff = fontFamily.sans;
-      // fontSize가 TokenRef 문자열일 수 있으므로 숫자로 변환
-      // sm=12, md=14, lg=16 (typography.text-sm/md/lg 기본값)
-      const rawFontSize = size.fontSize;
-      const fontSize = typeof rawFontSize === 'number'
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
         ? rawFontSize
-        : (size.height === 25 ? 12 : size.height === 35 ? 16 : 14);
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 14;
 
       // 실제 Tab children 레이블 (컨테이너 시스템에서 주입) or 기본값
       const tabLabels = (props._tabLabels && props._tabLabels.length > 0)

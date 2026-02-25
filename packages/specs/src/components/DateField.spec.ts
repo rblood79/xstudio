@@ -173,6 +173,9 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
           radius: borderRadius,
         },
       ];
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
+
       // 날짜 세그먼트 텍스트 (YYYY / MM / DD)
       const value = props.value || '2024-01-15';
       const parts = value.split('-');

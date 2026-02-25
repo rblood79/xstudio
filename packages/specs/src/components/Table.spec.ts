@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * Table Column
@@ -142,7 +143,13 @@ export const TableSpec: ComponentSpec<TableProps> = {
         : size.borderRadius;
 
       const textColor = props.style?.color ?? variant.text;
-      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs = typeof rawFontSize === 'number'
+        ? rawFontSize
+        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize);
+      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
       const headerFw = fwRaw != null
         ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 600)
@@ -203,7 +210,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
           x: xOffset + size.paddingX,
           y: size.height / 2,
           text: col.label,
-          fontSize: fontSize as unknown as number,
+          fontSize: fontSize,
           fontFamily: ff,
           fontWeight: headerFw,
           fill: textColor,
@@ -255,7 +262,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
             x: cellXOffset + size.paddingX,
             y: yOffset + size.height / 2,
             text: cellValue,
-            fontSize: fontSize as unknown as number,
+            fontSize: fontSize,
             fontFamily: ff,
             fontWeight: cellFw,
             fill: row.isSelected

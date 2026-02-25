@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
 import { fontFamily } from '../primitives/typography';
+import { resolveToken } from '../renderers/utils/tokenResolver';
 
 /**
  * Checkbox Props
@@ -224,11 +225,17 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       }
 
       // 라벨 텍스트 — 자식 Element가 있으면 스킵 (TextSprite가 렌더링)
-      const hasLabelChild = !!(props as Record<string, unknown>)._hasChildren;
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       const labelText = props.children || props.label || props.text;
-      if (!hasLabelChild && labelText) {
+      if (!hasChildren && labelText) {
         const textColor = props.style?.color ?? variant.text;
-        const fontSize = props.style?.fontSize ?? size.fontSize;
+        const rawFontSize = props.style?.fontSize ?? size.fontSize;
+        const resolvedFs = typeof rawFontSize === 'number'
+          ? rawFontSize
+          : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+              ? resolveToken(rawFontSize as TokenRef)
+              : rawFontSize);
+        const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
         const ff = (props.style?.fontFamily as string) || fontFamily.sans;
         const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
 
@@ -237,7 +244,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
           x: boxSize + gap,
           y: boxSize / 2,
           text: labelText,
-          fontSize: fontSize as unknown as number,
+          fontSize,
           fontFamily: ff,
           fill: textColor,
           align: textAlign,

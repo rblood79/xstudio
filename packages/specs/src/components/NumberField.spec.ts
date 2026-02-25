@@ -161,6 +161,8 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
                       ?? variant.text;
 
       const shapes: Shape[] = [];
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return shapes;
 
       // 라벨
       const labelFontSize = fontSize - 2;
