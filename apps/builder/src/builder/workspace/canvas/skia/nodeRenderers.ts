@@ -1312,7 +1312,7 @@ function renderText(
         color: node.text.color,
         letterSpacing: node.text.letterSpacing ?? 0,
         wordSpacing: node.text.wordSpacing ?? 0,
-        ...(heightMultiplierOpt !== undefined ? { heightMultiplier: heightMultiplierOpt } : {}),
+        ...(heightMultiplierOpt !== undefined ? { heightMultiplier: heightMultiplierOpt, halfLeading: true } : {}),
         ...(fontFeatureTags.length > 0 ? { fontFeatures: fontFeatureTags } : {}),
         // textDecoration: CanvasKit TextDecoration 비트마스크
         ...(node.text.decoration ? {

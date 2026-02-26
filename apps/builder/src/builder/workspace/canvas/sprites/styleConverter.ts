@@ -631,8 +631,14 @@ export function convertToTextStyle(
   let leading: number;
   if (style?.lineHeight) {
     const lh = parseCSSSize(style.lineHeight, undefined, 0);
-    if (typeof style.lineHeight === 'number' && lh < 10) {
-      // 배수 값 (예: 1.5)
+    // 배수 값 판별: 숫자 타입이거나 단위 없는 숫자 문자열 (예: "1.4", "1.5")
+    // CSS line-height: 숫자만 있으면 배수, px/em 등 단위가 있으면 절대값
+    const isMultiplier = lh < 10 && (
+      typeof style.lineHeight === 'number' ||
+      (typeof style.lineHeight === 'string' && /^\d*\.?\d+$/.test(style.lineHeight.trim()))
+    );
+    if (isMultiplier) {
+      // 배수 값 (예: 1.4, 1.5)
       leading = (lh - 1) * fontSize;
     } else {
       // 픽셀 값

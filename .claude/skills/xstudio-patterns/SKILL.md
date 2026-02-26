@@ -403,6 +403,69 @@ if (!isSpecShapesInput && (!hasCSSVerticalBorder || isInlineBlockTag)) {
 
 > **핵심 원칙**: CSS에 padding/border가 있으면 레이아웃 엔진(Dropflow/Taffy)이 처리. enrichment에서 중복 추가 금지.
 
+### TextSprite 렌더링 패턴 (2026-02-26)
+
+TextSprite는 Text, Heading, Description, Label, Paragraph, Link 등 **TEXT_TAGS에 포함된 모든 텍스트 요소**의 Canvas 렌더링을 담당합니다.
+
+#### CSS half-leading 재현 (`nodeRenderers.ts`)
+
+CSS `line-height`는 extra leading을 텍스트 **상하 균등 분배** (half-leading)하여 세로 중앙 정렬합니다.
+CanvasKit의 `heightMultiplier`는 기본적으로 extra leading을 **하단에만** 추가하므로, 반드시 `halfLeading: true`를 함께 설정해야 합니다.
+
+```typescript
+// ✅ halfLeading: true → CSS line-height와 동일한 상하 균등 분배
+{ heightMultiplier: heightMultiplierOpt, halfLeading: true }
+
+// ❌ halfLeading 없음 → extra leading이 하단에만 추가, 텍스트가 위로 치우침
+{ heightMultiplier: heightMultiplierOpt }
+```
+
+#### 문자열 lineHeight 배수 값 파싱 (`styleConverter.ts`)
+
+CSS `line-height`는 단위 없는 숫자일 때 배수 값입니다 (예: `"1.4"` = fontSize의 1.4배).
+`convertToTextStyle()`에서 문자열 배수 값을 픽셀 값으로 오인하면 `leading = 0`이 되어 halfLeading이 적용되지 않습니다.
+
+```typescript
+// ✅ 문자열 배수 값도 올바르게 판별 ("1.4", "1.5" 등)
+const isMultiplier = lh < 10 && (
+  typeof style.lineHeight === 'number' ||
+  (typeof style.lineHeight === 'string' && /^\d*\.?\d+$/.test(style.lineHeight.trim()))
+);
+if (isMultiplier) {
+  leading = (lh - 1) * fontSize;  // 배수: (1.4 - 1) * 16 = 6.4
+}
+
+// ❌ typeof === 'number' 만 체크 → 문자열 "1.4"가 픽셀로 처리
+// leading = max(0, 1.4 - 16) = 0 → lineHeight 미전달 → halfLeading 미적용
+```
+
+**영향 범위**: 이 설정은 `renderText()` 함수에 위치하며, TextSprite 경로와 Spec shapes 텍스트 경로 **모두**에 적용됩니다:
+- TextSprite → `useSkiaNode` → `renderText()` (Text, Heading, Description 등)
+- Spec shapes → `specShapeConverter` → `renderText()` (Button, Badge, Input 등)
+
+#### Text 요소의 display:flex 처리 (`ElementSprite.tsx`, `TextSprite.tsx`)
+
+Text는 leaf 요소이므로 `display: flex`를 적용해도 항상 **TextSprite**로 렌더링해야 합니다.
+`getSpriteType()`에서 TEXT_TAGS/IMAGE_TAGS 체크는 flex/grid 체크보다 **위에** 배치합니다.
+
+```typescript
+// ✅ TEXT/IMAGE 우선 → leaf 요소는 display 값과 무관하게 전용 Sprite
+if (TEXT_TAGS.has(tag)) return 'text';
+if (IMAGE_TAGS.has(tag)) return 'image';
+if (isFlexContainer(element)) return 'flex';  // 컨테이너만 도달
+
+// ❌ flex/grid 먼저 → Text+display:flex가 BoxSprite로 렌더링, 텍스트 사라짐
+if (isFlexContainer(element)) return 'flex';
+if (TEXT_TAGS.has(tag)) return 'text';
+```
+
+Text에 flex 속성(justify-content, align-items)이 있으면 TextSprite의 `flexAlignment` memo에서 텍스트 수평/수직 정렬로 매핑합니다.
+
+#### width:fit-content 텍스트 측정 (`utils.ts`, `TextSprite.tsx`)
+
+- `calculateContentWidth()`: 실제 fontFamily, fontWeight, letterSpacing을 사용하여 측정 (기본값 사용 금지)
+- TextSprite `wordWrapWidth`: 항상 `transform.width` 사용 (FIT_CONTENT sentinel `-2`가 누출되지 않도록)
+
 ### Container Props 주입 패턴 (CONTAINER_PROPS_INJECTION)
 
 복합 컨테이너 컴포넌트에서 **부모 element의 props 값을 자식 Element의 `props.children`에 주입**하는 패턴입니다.
@@ -422,11 +485,11 @@ if (containerTag === 'Tabs') {
   };
 }
 
-// ✅ Card: heading/description → Heading/Description 자식에 주입 (2026-02-21 추가)
+// ✅ Card: title/description → Heading/Description 자식에 주입 (2026-02-26 heading 제거)
 if (containerTag === 'Card') {
   const cardProps = containerElement.props;
   if (childEl.tag === 'Heading') {
-    const headingText = cardProps?.heading ?? cardProps?.title;
+    const headingText = cardProps?.title;
     if (headingText != null) {
       effectiveChildEl = {
         ...childEl,
@@ -453,7 +516,7 @@ if (containerTag === 'Card') {
 | 컨테이너 | 부모 props 키 | 대상 자식 tag | 주입 대상 prop |
 |----------|--------------|--------------|---------------|
 | `Tabs`   | `_tabLabels` | `Tab`        | `_tabLabels`  |
-| `Card`   | `heading` 또는 `title` | `Heading`    | `children`    |
+| `Card`   | `title` | `Heading`    | `children`    |
 | `Card`   | `description`           | `Description`| `children`    |
 | Input Fields (`TextField`, `NumberField`, `SearchField`, `DateField`, `TimeField`, `ColorField`) | `label` | `Label` | `children` |
 | Overlay (`Dialog`, `Popover`, `Tooltip`, `Toast`) | `heading` 또는 `title` | `Heading` | `children` |
@@ -1054,6 +1117,38 @@ const INLINE_FORM_GAPS = {
 4. spec shapes의 텍스트 `x` 좌표(`indicatorWidth + gap`)와 합산값이 일치하는지 검증
 
 상세 내용: [pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md#inline_form_indicator_widths--spec-trackwidth와-반드시-일치-critical), [spec-shape-rendering](rules/spec-shape-rendering.md#specshapeconverter-maxwidth-자동-축소와-레이아웃-너비-정합성-critical)
+
+### Phantom Indicator + Compositional Architecture 너비 정합성 (CRITICAL, 2026-02-26)
+
+Checkbox/Radio/Switch의 indicator는 element tree에 존재하지 않지만 spec shapes(Skia)가 시각적으로 그립니다. Compositional Architecture 전환 후 Label이 독립 Element로 분리되면서 `calculateContentWidth`에 **두 가지 누락**이 발생했습니다.
+
+**문제 A — 부모 intrinsic width에 phantom indicator 누락**:
+`calculateContentWidth` Section 2(Flex 컨테이너 + childElements 경로)가 자식 width 합산 시 phantom indicator 공간을 누락. Checkbox의 fit-content 너비가 Label 텍스트만큼만 잡혀, TaffyFlexEngine에서 phantom indicator(28px)를 차감하면 Label 공간이 부족.
+
+**문제 B — TEXT_LEAF_TAGS flex 자식 width 미주입**:
+`enrichWithIntrinsicSize`가 `INLINE_BLOCK_TAGS`에만 intrinsic width를 주입. Label은 `TEXT_LEAF_TAGS`에만 속해 Flex 자식일 때 Taffy가 content size=0 → width=0 배정.
+
+**해결**:
+
+```typescript
+// ✅ Section 2: phantom indicator 공간을 flex 자식 합산에 반영
+const phantomW = getPhantomIndicatorSpace(); // indicatorSize + gap (checkbox: 20+8=28)
+if (isRow) {
+  return childWidths.reduce((sum, w) => sum + w, 0)
+    + gap * Math.max(0, childElements.length - 1)
+    + phantomW; // ← 추가
+}
+
+// ✅ enrichWithIntrinsicSize: isFlexChild 플래그로 TEXT_LEAF_TAGS도 width 주입
+const needsWidth = hasExplicitIntrinsicWidthKeyword ||
+  (INLINE_BLOCK_TAGS.has(tag) && (!rawWidth || ...)) ||
+  (isFlexChild && TEXT_LEAF_TAGS.has(tag) && (!rawWidth || ...)); // ← 추가
+
+// ❌ Section 2에서 phantom 누락 → Checkbox width = Label만 → 텍스트 잘림
+// ❌ TEXT_LEAF_TAGS width 미주입 → Taffy flex에서 Label width=0 → 세로 한 글자씩
+```
+
+**영향 범위**: Checkbox, Radio, Switch, Toggle — Compositional Architecture(Label 자식 Element)와 legacy(props.children) 모두 정상 동작. Block layout(Dropflow)은 `isFlexChild` 기본값 `false`로 영향 없음.
 
 ### 레이아웃 엔진 개선 이력 (2026-02-23)
 

@@ -1303,6 +1303,11 @@ Phase 0~1 진행 중 발견된 **Monolithic Spec 버그**를 근본적으로 해
 
 **검증**: TextField, SearchField, NumberField, Slider, DateField, TimeField — 독립 렌더링 + child 삭제 시 사라짐 확인
 
+**후속 수정 (2026-02-26)**: Phantom indicator 레이아웃 정합성
+- `calculateContentWidth` Section 2(Flex + childElements 경로)에 phantom indicator 공간 반영 → Checkbox/Radio/Switch 부모의 fit-content 너비 정확도 개선
+- `enrichWithIntrinsicSize`에 `isFlexChild` 플래그 추가 → TEXT_LEAF_TAGS(Label, Description 등)가 Flex 자식일 때 intrinsic width 주입 (Block layout 영향 없음)
+- 영향: Compositional Architecture 전환 후 Label 자식의 세로 출력 버그 해결
+
 ### Phase 2: Overlay 레이어 시스템 (3-4주)
 
 **목표**: Canvas에서 Popover/Modal/Tooltip 별도 레이어로 렌더링

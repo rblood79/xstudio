@@ -653,6 +653,34 @@ export function calculateContentWidth(
     return DEFAULT_WIDTH;
   }
 
+  // ── Phantom indicator 크기 상수 (Section 2, 3 공용) ──
+  // Checkbox/Radio/Switch/Toggle: element tree에 없지만 Skia spec shapes가 그리는
+  // indicator의 레이아웃 공간. childElements 기반 너비 계산(Section 2)과
+  // 텍스트 기반 너비 계산(Section 3) 모두에서 동일하게 반영해야 함.
+  const INLINE_FORM_INDICATOR_WIDTHS: Record<string, Record<string, number>> = {
+    checkbox: { sm: 16, md: 20, lg: 24 },
+    radio: { sm: 16, md: 20, lg: 24 },
+    switch: { sm: 36, md: 44, lg: 52 },
+    toggle: { sm: 36, md: 44, lg: 52 },
+  };
+  const INLINE_FORM_GAPS: Record<string, Record<string, number>> = {
+    checkbox: { sm: 6, md: 8, lg: 10 },
+    radio: { sm: 6, md: 8, lg: 10 },
+    switch: { sm: 8, md: 10, lg: 12 },
+    toggle: { sm: 8, md: 10, lg: 12 },
+  };
+
+  /** phantom indicator의 width + gap 반환 (해당 태그가 아니면 0) */
+  function getPhantomIndicatorSpace(): number {
+    const config = INLINE_FORM_INDICATOR_WIDTHS[tag];
+    if (!config) return 0;
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const indicatorSize = config[sizeName] ?? config.md;
+    const gap = INLINE_FORM_GAPS[tag]?.[sizeName] ?? 8;
+    return indicatorSize + gap;
+  }
+
   // 2. Flex 컨테이너: childElements 기반 재귀 너비 계산 (텍스트 추출보다 먼저 처리)
   // TagGroup(flex column, fit-content), TagList(flex row) 등 컨테이너 컴포넌트의
   // intrinsic width를 자식 요소들의 실제 border-box 너비에서 산출
@@ -680,38 +708,29 @@ export function calculateContentWidth(
           + childBox.border.left + childBox.border.right;
       });
 
+      // Phantom indicator: Checkbox/Radio/Switch의 indicator는 element tree에 없지만
+      // spec shapes(Skia)가 시각적으로 그리므로 width 계산에 반영
+      const phantomW = getPhantomIndicatorSpace();
+
       if (isRow) {
         return childWidths.reduce((sum, w) => sum + w, 0)
-          + gap * Math.max(0, childElements.length - 1);
+          + gap * Math.max(0, childElements.length - 1)
+          + phantomW;
       }
-      return Math.max(...childWidths, 0);
+      return Math.max(...childWidths, phantomW, 0);
     }
   }
 
   // 3. 텍스트 콘텐츠 기반 너비 측정 (Canvas 2D measureText 사용)
+  // childElements가 없는 legacy Checkbox/Radio/Switch 요소의 fallback 경로
   const text = extractTextContent(element.props as Record<string, unknown>);
 
-  // 🚀 Checkbox/Radio/Switch: flexDirection에 따른 너비 계산
-  // Switch/Toggle의 indicatorWidth는 Switch.spec.ts의 trackWidth 기준 (36/44/52)
-  const INLINE_FORM_INDICATOR_WIDTHS: Record<string, Record<string, number>> = {
-    checkbox: { sm: 16, md: 20, lg: 24 },
-    radio: { sm: 16, md: 20, lg: 24 },
-    switch: { sm: 36, md: 44, lg: 52 },
-    toggle: { sm: 36, md: 44, lg: 52 },
-  };
-  // Switch/Toggle gap은 Switch.spec.ts sizes 기준 (8/10/12)
-  const INLINE_FORM_GAPS: Record<string, Record<string, number>> = {
-    checkbox: { sm: 6, md: 8, lg: 10 },
-    radio: { sm: 6, md: 8, lg: 10 },
-    switch: { sm: 8, md: 10, lg: 12 },
-    toggle: { sm: 8, md: 10, lg: 12 },
-  };
   const inlineFormIndicator = INLINE_FORM_INDICATOR_WIDTHS[tag];
   if (inlineFormIndicator) {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? 'md';
     const indicatorSize = inlineFormIndicator[sizeName] ?? 20;
-    const gap = INLINE_FORM_GAPS[tag]?.[sizeName] ?? (sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8);
+    const indicatorGap = INLINE_FORM_GAPS[tag]?.[sizeName] ?? (sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8);
     // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
     const fontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
     const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
@@ -724,7 +743,7 @@ export function calculateContentWidth(
       return Math.max(indicatorSize, textWidth);
     }
     // Row: 너비 = indicator + gap + text
-    return indicatorSize + gap + textWidth;
+    return indicatorSize + indicatorGap + textWidth;
   }
 
   if (text) {
@@ -1252,6 +1271,25 @@ export function calculateContentHeight(
     });
 
     if (visibleBlockChildren.length > 0) {
+      // Group: 자식이 원래 캔버스 좌표(left/top)를 유지하므로
+      // block flow 합산이 아닌 bounding box 기반 높이 계산
+      if (tag === 'group') {
+        let minTop = Infinity;
+        let maxBottom = 0;
+        for (const child of visibleBlockChildren) {
+          const childStyle = child.props?.style as Record<string, unknown> | undefined;
+          const childTop = parseNumericValue(childStyle?.top) ?? 0;
+          const grandChildren = getChildElements?.(child.id);
+          const contentH = calculateContentHeight(child, availableWidth, grandChildren, getChildElements);
+          const childBox = parseBoxModel(child, 0, -1);
+          const borderBoxH = contentH + childBox.padding.top + childBox.padding.bottom
+            + childBox.border.top + childBox.border.bottom;
+          minTop = Math.min(minTop, childTop);
+          maxBottom = Math.max(maxBottom, childTop + borderBoxH);
+        }
+        return minTop === Infinity ? 0 : maxBottom - minTop;
+      }
+
       const blockChildHeights = visibleBlockChildren.map(child => {
         const grandChildren = getChildElements?.(child.id);
         const contentH = calculateContentHeight(child, availableWidth, grandChildren, getChildElements);
@@ -1504,6 +1542,7 @@ export function enrichWithIntrinsicSize(
   _computedStyle?: ComputedStyle,
   childElements?: Element[],
   getChildElements?: (id: string) => Element[],
+  isFlexChild?: boolean,
 ): Element {
   const style = element.props?.style as Record<string, unknown> | undefined;
   const tag = (element.tag ?? '').toLowerCase();
@@ -1518,8 +1557,12 @@ export function enrichWithIntrinsicSize(
   // INLINE_BLOCK 태그의 width:auto 자동 주입은 기존 동작 유지
   const hasExplicitIntrinsicWidthKeyword = typeof rawWidth === 'string' &&
     rawWidth !== 'auto' && INTRINSIC_WIDTH_KEYWORDS.has(rawWidth);
+  // Flex 자식인 TEXT_LEAF_TAGS(Label, Description 등)도 intrinsic width 필요:
+  // Block layout에서는 자동 stretch되지만, Flex layout에서는 Taffy가 content size를
+  // 알 수 없어 width=0으로 처리함 (Checkbox/Radio/Switch 내부 Label 세로 출력 버그)
   const needsWidth = hasExplicitIntrinsicWidthKeyword ||
-    (INLINE_BLOCK_TAGS.has(tag) && (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string)));
+    (INLINE_BLOCK_TAGS.has(tag) && (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string))) ||
+    (isFlexChild && TEXT_LEAF_TAGS.has(tag) && (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string)));
 
   if (!needsHeight && !needsWidth) return element;
 

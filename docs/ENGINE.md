@@ -277,3 +277,21 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 | `TaffyFlexEngine.ts` | enrichment 시 childElements 전달, context 파라미터 추가 |
 | `BuilderCanvas.tsx` | `getChildElements` context 주입 |
 | `textMeasure.ts` | `measureWrappedTextHeight` fontBoundingBox lineHeight |
+
+#### CanvasKit halfLeading 보정 (2026-02-26)
+
+CSS `line-height`는 extra leading을 텍스트 상하 균등 분배(half-leading)하여 세로 중앙 정렬합니다.
+CanvasKit의 `heightMultiplier`는 기본적으로 extra leading을 하단에만 추가하므로
+`halfLeading: true` 옵션을 명시하여 CSS와 동일한 렌더링을 보장합니다.
+
+| 파일 | 변경 |
+|------|------|
+| `nodeRenderers.ts` | ParagraphStyle textStyle에 `halfLeading: true` 추가 |
+| `styleConverter.ts` | `convertToTextStyle()` lineHeight 배수 판별: 문자열 `"1.4"` 등도 배수로 인식 |
+
+이 수정은 `renderText()` 함수에 위치하여 TextSprite 경로(Text, Heading, Description 등)와
+Spec shapes 텍스트 경로(Button, Badge, Input 등) 양쪽에 모두 적용됩니다.
+
+**주의**: CSS `line-height`는 단위 없는 숫자(`"1.4"`)일 때 배수, `px`/`em` 단위가 있으면 절대값입니다.
+`convertToTextStyle()`에서 `typeof === 'number'`만 체크하면 문자열 배수 값이 픽셀로 오인되어
+`leading = 0` → `heightMultiplier = 0` → halfLeading 미적용됩니다.

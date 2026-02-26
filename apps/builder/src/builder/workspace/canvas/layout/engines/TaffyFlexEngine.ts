@@ -450,7 +450,7 @@ export class TaffyFlexEngine implements LayoutEngine {
     const getChildElements = context?.getChildElements;
     const enrichedChildren = children.map((child, i) => {
       const childChildren = getChildElements?.(child.id);
-      return enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputedStyles[i], childChildren, getChildElements);
+      return enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputedStyles[i], childChildren, getChildElements, true);
     });
     const firstPassResult = this._runTaffyPassRaw(
       taffy, parent, enrichedChildren, children, availableWidth, availableHeight, parentComputed, cssCtx,
@@ -509,7 +509,7 @@ export class TaffyFlexEngine implements LayoutEngine {
       if (actualWidth === undefined) return child;
 
       const childChildren = getChildElements?.(child.id);
-      return enrichWithIntrinsicSize(child, actualWidth, availableHeight, childComputedStyles[i], childChildren, getChildElements);
+      return enrichWithIntrinsicSize(child, actualWidth, availableHeight, childComputedStyles[i], childChildren, getChildElements, true);
     });
 
     return this._runTaffyPassRaw(
@@ -531,7 +531,7 @@ export class TaffyFlexEngine implements LayoutEngine {
     cssCtx: CSSValueContext = {},
   ): ComputedLayout[] {
     const enrichedChildren = children.map((child, i) =>
-      enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputedStyles[i]),
+      enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputedStyles[i], undefined, undefined, true),
     );
     return this._runTaffyPassRaw(taffy, parent, enrichedChildren, children, availableWidth, availableHeight, parentComputed, cssCtx);
   }

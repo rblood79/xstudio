@@ -14,7 +14,6 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useMemo, useContext, useCallback, useRef } from 'react';
 import type { Element } from '../../../../types/core/store.types';
-import { COMPLEX_COMPONENT_TAGS } from '../../../factories/constants';
 // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
 // import { registerElement, unregisterElement } from '../elementRegistry';
 import { useSkiaNode } from '../skia/useSkiaNode';
