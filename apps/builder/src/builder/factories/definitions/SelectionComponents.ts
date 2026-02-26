@@ -25,6 +25,11 @@ export function createSelectDefinition(
         label: "Select",
         placeholder: "Choose an option...",
         selectedKey: undefined,
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,

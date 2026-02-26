@@ -893,9 +893,10 @@ const DEFAULT_ELEMENT_HEIGHTS: Record<string, number> = {
   select: 36,
   textarea: 80,
   // 텍스트 계열
+  // label: Tailwind CSS v4 line-height:1.5 적용 → step 7에서 동적 계산 (fontSize*1.5)
+  // DEFAULT_ELEMENT_HEIGHTS에 두면 20으로 고정되어 실제 CSS 높이(21@14px)와 불일치
   p: 24,
   span: 20,
-  label: 20,
   h1: 40,
   h2: 36,
   h3: 32,
@@ -1164,29 +1165,97 @@ export function calculateContentHeight(
     return Math.max(h, 36);
   }
 
-  // 3.6. ComboBox/Select: CSS 측정 기반 높이 (label + input/trigger)
-  // CSS: Label(fontSize*1.5 ceil) + gap(8) + input/trigger
-  // ComboBox input: fontSize + paddingY*2 (md: 14+16=30)
-  // Select trigger: fontSize + paddingY*2 + 4 (md: 14+16+4=34, 버튼이 input보다 4px 높음)
+  // 3.6. ComboBox/Select: 자식 기반 동적 높이 계산 (Card 패턴)
+  // Select: 실제 visible 자식들의 높이 합산 + gap (flexDirection:column)
+  // ComboBox: Label + gap + input (spec shapes 기반)
   const COMBOBOX_INPUT_HEIGHTS: Record<string, number> = {
     sm: 20, md: 30, lg: 40,
   };
-  const SELECT_TRIGGER_HEIGHTS: Record<string, number> = {
-    sm: 24, md: 34, lg: 44,
-  };
-  const LABEL_OFFSETS: Record<string, number> = {
-    sm: 26, md: 29, lg: 32,
-  };
+  // SelectItem 등 드롭다운 전용 자식은 collapsed 상태에서 비표시
+  const SELECT_HIDDEN_CHILDREN = new Set(['SelectItem', 'ComboBoxItem', 'ListBoxItem']);
   if (tag === 'combobox' || tag === 'select' || tag === 'dropdown') {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? 'md';
     const isSelect = tag === 'select';
-    const bodyHeight = isSelect
-      ? (SELECT_TRIGGER_HEIGHTS[sizeName] ?? 34)
-      : (COMBOBOX_INPUT_HEIGHTS[sizeName] ?? 30);
+
+    // gap: 스타일에서 동적으로 읽기 (미설정 시 기본 8)
+    const gapRaw = style?.gap;
+    const gapParsed = typeof gapRaw === 'number' ? gapRaw : parseFloat(String(gapRaw ?? ''));
+    const gap = isNaN(gapParsed) ? 8 : gapParsed;
+
+    // Select: 실제 visible 자식 요소 순회 (Card와 동일 패턴)
+    // label prop이 없으면 Label 자식 제외 (web preview 동작과 일치)
+    if (isSelect && childElements) {
+      const hasLabel = !!(props?.label);
+      const visibleChildren = childElements.filter(c =>
+        !SELECT_HIDDEN_CHILDREN.has(c.tag ?? '') && (c.tag !== 'Label' || hasLabel)
+      );
+      let totalH = 0;
+      let visibleCount = 0;
+
+      for (const child of visibleChildren) {
+        const childTag = (child.tag ?? '').toLowerCase();
+        const childStyle = (child.props?.style || {}) as Record<string, unknown>;
+        let childH = 0;
+
+        if (child.tag === 'SelectTrigger') {
+          // SelectTrigger: 자식 높이(row max) + padding
+          const triggerChildren = getChildElements?.(child.id);
+          let triggerContentH = 0;
+          if (triggerChildren && triggerChildren.length > 0) {
+            for (const tc of triggerChildren) {
+              const tcStyle = (tc.props?.style || {}) as Record<string, unknown>;
+              const tcH = typeof tcStyle.height === 'number'
+                ? tcStyle.height
+                : Math.ceil((parseFloat(String(tcStyle.fontSize ?? 14)) || 14) * 1.5);
+              if (tcH > triggerContentH) triggerContentH = tcH;
+            }
+          } else {
+            triggerContentH = Math.ceil(14 * 1.5);
+          }
+          // Trigger padding (store 값 또는 spec 기본값)
+          const hasTriggerPadding = childStyle.padding !== undefined
+            || childStyle.paddingTop !== undefined || childStyle.paddingBottom !== undefined;
+          if (hasTriggerPadding) {
+            const triggerPad = parsePadding(childStyle);
+            childH = triggerContentH + triggerPad.top + triggerPad.bottom;
+          } else {
+            const specPadY: Record<string, number> = { sm: 8, md: 16, lg: 24 };
+            childH = triggerContentH + (specPadY[sizeName] ?? 16);
+          }
+        } else if (childTag === 'label' || childTag === 'description' || childTag === 'fielderror') {
+          // 텍스트 자식: fontSize * lineHeight
+          const fontSize = parseFloat(String(childStyle.fontSize ?? 14)) || 14;
+          childH = Math.ceil(fontSize * 1.5);
+        } else {
+          // 기타 자식: explicit height 또는 텍스트 기반
+          childH = typeof childStyle.height === 'number'
+            ? childStyle.height
+            : Math.ceil((parseFloat(String(childStyle.fontSize ?? 14)) || 14) * 1.5);
+        }
+
+        if (childH > 0) {
+          totalH += childH;
+          visibleCount++;
+        }
+      }
+
+      // gap 추가 (visible 자식 사이)
+      if (visibleCount > 1) {
+        totalH += gap * (visibleCount - 1);
+      }
+      return totalH;
+    }
+
+    // ComboBox/Dropdown: 기존 spec shapes 기반 계산
+    const bodyHeight = COMBOBOX_INPUT_HEIGHTS[sizeName] ?? 30;
     const hasLabel = !!(props?.label);
     if (hasLabel) {
-      return (LABEL_OFFSETS[sizeName] ?? 29) + bodyHeight;
+      const labelChild = childElements?.find(c => c.tag === 'Label');
+      const labelStyle = (labelChild?.props?.style || {}) as Record<string, unknown>;
+      const labelFontSize = parseFloat(String(labelStyle.fontSize ?? 14)) || 14;
+      const labelHeight = Math.ceil(labelFontSize * 1.5);
+      return labelHeight + gap + bodyHeight;
     }
     return bodyHeight;
   }
@@ -1483,8 +1552,11 @@ export function parseBoxModel(
   let border = parseBorder(style);
 
   // Self-rendering 요소: inline style이 없으면 size config 기본값 적용
+  // Select는 Compositional Architecture (Card와 동일) — BUTTON_SIZE_CONFIG 미적용
+  // Select 컨테이너는 web CSS에서 padding:0 + display:flex 구조이며,
+  // 내부 SelectTrigger가 자체 padding을 처리
   const tag = (element.tag ?? '').toLowerCase();
-  const isFormElement = ['button', 'input', 'select'].includes(tag);
+  const isFormElement = ['button', 'input'].includes(tag);
   const inlineUISizeConfig = INLINE_UI_SIZE_CONFIGS[tag];
   const hasSizeConfig = isFormElement || !!inlineUISizeConfig;
 
@@ -1676,15 +1748,18 @@ export function enrichWithIntrinsicSize(
   // calculateContentHeight에서 spec size 기반 높이를 산출하므로 height 주입이 필요함
   // 또한, childElements가 있는 컨테이너(CardHeader/CardContent 등)도 예외:
   // 자체 텍스트는 없지만 자식 요소의 높이를 합산해야 하므로 calculateContentHeight가 필요함
-  const SPEC_SHAPES_INPUT_TAGS = new Set(['combobox', 'select', 'dropdown', 'breadcrumbs']);
+  // Select: Compositional Architecture — Card와 동일하게 자식 기반 높이 + padding 경로
+  const SPEC_SHAPES_INPUT_TAGS = new Set(['combobox', 'dropdown', 'breadcrumbs']);
   if (box.contentHeight <= 0 && !needsWidth && !SPEC_SHAPES_INPUT_TAGS.has(tag)
-    && !(childElements && childElements.length > 0)) return element;
+    && !(childElements && childElements.length > 0)) {
+    return element;
+  }
 
   // 항상 border-box 값을 주입:
   // 웹 CSS의 * { box-sizing: border-box } 동작과 일치
   // content 크기 + padding + border = border-box 크기
   // Dropflow: border-box 네이티브 지원 (adapter에서 boxSizing: 'border-box' 고정)
-  // Taffy: applyCommonTaffyStyle()에서 border-box → content-box 변환
+  // Taffy 0.9: style.size를 border-box로 처리 → 변환 불필요
 
   const injectedStyle: Record<string, unknown> = { ...style };
 
@@ -1703,21 +1778,6 @@ export function enrichWithIntrinsicSize(
       injectHeight += box.border.top + box.border.bottom;
     }
     injectedStyle.height = injectHeight;
-    // TODO: 디버그 로그 (확인 후 제거)
-    if (tag === 'selecttrigger') {
-      console.log('[enrichWithIntrinsicSize] SelectTrigger:', {
-        childResolvedHeight,
-        padTop: box.padding.top,
-        padBot: box.padding.bottom,
-        injectHeight,
-        isSpecShapesInput,
-        needsHeight,
-        childElements: childElements?.map(c => c.tag),
-        stylePadTop: style?.paddingTop,
-        stylePadBot: style?.paddingBottom,
-        styleDisplay: style?.display,
-      });
-    }
   }
 
   // Width 주입 (inline-block 태그의 fit-content / min-content / max-content 에뮬레이션)
@@ -2204,18 +2264,10 @@ export function applyCommonTaffyStyle(
   if (border.bottom !== 0) result.borderBottom = border.bottom;
   if (border.left !== 0) result.borderLeft = border.left;
 
-  // CSS box-sizing: border-box → Taffy content-box 변환
-  // XStudio는 웹 CSS의 * { box-sizing: border-box } 동작을 따름
-  // width/height 값은 border-box (padding + border 포함)이므로
-  // Taffy의 content-box에 맞게 padding + border를 차감
-  const hInset = padding.left + padding.right + border.left + border.right;
-  const vInset = padding.top + padding.bottom + border.top + border.bottom;
-  if (typeof result.width === 'number' && hInset > 0) {
-    result.width = Math.max(0, result.width - hInset);
-  }
-  if (typeof result.height === 'number' && vInset > 0) {
-    result.height = Math.max(0, result.height - vInset);
-  }
+  // Taffy 0.9는 style.size를 border-box로 처리합니다.
+  // XStudio의 * { box-sizing: border-box } 값을 그대로 전달하면
+  // Taffy가 내부적으로 content = size - padding - border를 계산합니다.
+  // layout.size도 border-box를 반환하므로 추가 변환 불필요.
 
   // Gap — parseCSSPropWithContext 결과 직접 전달 (number 또는 % 문자열)
   const gap = parseCSSPropWithContext(style.gap, ctx);

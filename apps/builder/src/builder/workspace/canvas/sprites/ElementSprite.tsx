@@ -2093,9 +2093,25 @@ export const ElementSprite = memo(function ElementSprite({
       );
 
     // Select child composition: 투명 히트 영역 (Skia spec shapes가 시각 렌더링)
-    // SelectTrigger는 컨테이너 (SelectValue/SelectIcon 자식) → 래퍼가 children 렌더링
-    // SelectValue/SelectIcon은 leaf → children 없음
+    // SelectTrigger: 컨테이너 — 자식(SelectValue, SelectIcon) DirectContainer 렌더링
+    // SelectValue/SelectIcon: leaf → children 없음
     case 'selectChild':
+      if (childElements && childElements.length > 0 && renderChildElement) {
+        return (
+          <>
+            <pixiGraphics
+              draw={drawContainerHitRect}
+              eventMode="static"
+              cursor="pointer"
+              onPointerDown={handleContainerPointerDown}
+              onPointerOver={handlePointerOver}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerLeave}
+            />
+            {childElements.map((childEl) => renderChildElement(childEl))}
+          </>
+        );
+      }
       return (
         <pixiGraphics
           draw={drawContainerHitRect}

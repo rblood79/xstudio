@@ -765,26 +765,45 @@ const ElementsLayer = memo(function ElementsLayer({
           // ComboBox/Select: Label + trigger/wrapper만 컨테이너 자식으로 렌더링
           // ComboBoxItem/SelectItem은 데이터 아이템 → spec shapes 드롭다운에서 처리
           if (containerTag === 'combobox' || containerTag === 'select') {
+            // label prop이 없으면 Label 자식 제외 (web preview 동작과 일치)
+            const containerProps = containerEl.props as Record<string, unknown> | undefined;
+            const hasLabel = !!(containerProps?.label);
             filteredContainerChildren = containerChildren.filter(c =>
-              c.tag === 'Label' || c.tag === 'SelectTrigger' || c.tag === 'ComboBoxWrapper'
+              (c.tag === 'Label' ? hasLabel : false) || c.tag === 'SelectTrigger' || c.tag === 'ComboBoxWrapper'
             );
 
-            // SelectTrigger: padding을 여기서 주입해야 Select 레이아웃 엔진이 높이 계산에 반영
+            // SelectTrigger: display/flexDirection + padding 주입 → enrichWithIntrinsicSize가
+            // calculateContentHeight에서 올바른 flexDirection(row)으로 높이 계산
             // (containerTag === 'selecttrigger' 블록은 SelectTrigger 내부 자식 레이아웃용)
             if (containerTag === 'select') {
               filteredContainerChildren = filteredContainerChildren.map(child => {
                 if (child.tag === 'SelectTrigger') {
                   const cs = (child.props?.style || {}) as Record<string, unknown>;
+                  const triggerProps = child.props as Record<string, unknown> | undefined;
+                  const sizeName = (triggerProps?.size as string) ?? 'md';
+                  // SelectTrigger spec sizes: sm(paddingX:10,paddingY:4) md(14,8) lg(16,12)
+                  const TRIGGER_PAD: Record<string, { x: number; y: number }> = {
+                    sm: { x: 10, y: 4 }, md: { x: 14, y: 8 }, lg: { x: 16, y: 12 },
+                  };
+                  const specPad = TRIGGER_PAD[sizeName] ?? TRIGGER_PAD.md;
+                  // 사용자가 padding을 설정했으면 (shorthand 또는 개별) parsePadding으로 해석
+                  // 미설정 시 spec 기본값 사용
+                  const hasUserPadding = cs.padding !== undefined
+                    || cs.paddingTop !== undefined || cs.paddingBottom !== undefined
+                    || cs.paddingLeft !== undefined || cs.paddingRight !== undefined;
+                  const userPad = hasUserPadding ? parsePadding(cs) : null;
                   return {
                     ...child,
                     props: {
                       ...child.props,
                       style: {
                         ...cs,
-                        paddingLeft: cs.paddingLeft ?? 14,
-                        paddingRight: cs.paddingRight ?? 14,
-                        paddingTop: cs.paddingTop ?? 10,
-                        paddingBottom: cs.paddingBottom ?? 10,
+                        display: cs.display ?? 'flex',
+                        flexDirection: cs.flexDirection ?? 'row',
+                        paddingLeft: userPad ? userPad.left : specPad.x,
+                        paddingRight: userPad ? userPad.right : specPad.x,
+                        paddingTop: userPad ? userPad.top : specPad.y,
+                        paddingBottom: userPad ? userPad.bottom : specPad.y,
                       },
                     },
                   } as Element;
@@ -795,9 +814,9 @@ const ElementsLayer = memo(function ElementsLayer({
 
             parentStyle = {
               ...(parentStyle || {}),
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,  // spec의 labelGap = 8에 매칭
+              display: (parentStyle as Record<string, unknown>)?.display ?? 'flex',
+              flexDirection: (parentStyle as Record<string, unknown>)?.flexDirection ?? 'column',
+              gap: (parentStyle as Record<string, unknown>)?.gap ?? 8,
             };
             effectiveContainerEl = {
               ...containerEl,
@@ -805,18 +824,30 @@ const ElementsLayer = memo(function ElementsLayer({
             };
           }
 
-          // SelectTrigger: Compositional Architecture — 레이아웃이 spec shapes와 일치하도록
-          // padding으로 자연스럽게 높이 결정: paddingY(10) + content(~18) + paddingY(10) ≈ 34~38
+          // SelectTrigger: Compositional Architecture — spec size 기반 padding으로 자식 레이아웃
           if (containerTag === 'selecttrigger') {
+            const triggerProps = containerEl.props as Record<string, unknown> | undefined;
+            const sizeName = (triggerProps?.size as string) ?? 'md';
+            // SelectTrigger spec sizes: sm(paddingX:10,paddingY:4) md(14,8) lg(16,12)
+            const TRIGGER_PAD: Record<string, { x: number; y: number }> = {
+              sm: { x: 10, y: 4 }, md: { x: 14, y: 8 }, lg: { x: 16, y: 12 },
+            };
+            const specPad = TRIGGER_PAD[sizeName] ?? TRIGGER_PAD.md;
+            // 사용자가 padding을 설정했으면 (shorthand 또는 개별) parsePadding으로 해석
+            const ps = (parentStyle || {}) as Record<string, unknown>;
+            const hasUserPadding = ps.padding !== undefined
+              || ps.paddingTop !== undefined || ps.paddingBottom !== undefined
+              || ps.paddingLeft !== undefined || ps.paddingRight !== undefined;
+            const userPad = hasUserPadding ? parsePadding(ps) : null;
             parentStyle = {
               ...(parentStyle || {}),
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
-              paddingLeft: 14,
-              paddingRight: 14,
-              paddingTop: 10,
-              paddingBottom: 10,
+              paddingLeft: userPad ? userPad.left : specPad.x,
+              paddingRight: userPad ? userPad.right : specPad.x,
+              paddingTop: userPad ? userPad.top : specPad.y,
+              paddingBottom: userPad ? userPad.bottom : specPad.y,
             };
             effectiveContainerEl = {
               ...containerEl,
@@ -928,27 +959,6 @@ const ElementsLayer = memo(function ElementsLayer({
             effectiveContainerEl, filteredContainerChildren, avW, avH,
             { bfcId: containerEl.id, parentDisplay, getChildElements: (id: string) => pageChildrenMap.get(id) ?? [] }
           );
-          // TODO: 디버그 로그 (확인 후 제거)
-          if (containerTag === 'select') {
-            const triggerLayout = innerLayouts.find(l => {
-              const el = filteredContainerChildren.find(c => c.id === l.elementId);
-              return el?.tag === 'SelectTrigger';
-            });
-            if (triggerLayout) {
-              const triggerEl = filteredContainerChildren.find(c => c.tag === 'SelectTrigger');
-              const triggerStyle = triggerEl?.props?.style as Record<string, unknown> | undefined;
-              console.log('[Select layout] SelectTrigger result:', {
-                layoutH: triggerLayout.height,
-                layoutW: triggerLayout.width,
-                layoutY: triggerLayout.y,
-                injectedPadTop: triggerStyle?.paddingTop,
-                injectedPadBot: triggerStyle?.paddingBottom,
-                triggerDisplay: triggerStyle?.display,
-                avW, avH,
-                childCount: filteredContainerChildren.length,
-              });
-            }
-          }
           cachedLayoutMap = new Map(innerLayouts.map(l => [l.elementId, l]));
         }
 
