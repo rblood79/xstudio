@@ -27,6 +27,7 @@ import type { CSSValueContext, CSSVariableScope } from './cssValueParser';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 import type { LayoutContext } from './LayoutEngine';
+import { applyTextTransform } from '../../sprites/styleConverter';
 
 // ─── Phantom Indicator 설정 (단일 소스) ─────────────────────────────────
 // Switch/Checkbox/Radio: Preview DOM에는 [indicator + label] 구조이지만
@@ -533,6 +534,7 @@ export function measureTextWidth(
     fontStyle?: number | string;
     fontStretch?: string;
     fontVariant?: string;
+    lineHeight?: number;
   },
 ): number {
   if (!text) return 0;
@@ -646,6 +648,7 @@ export function calculateContentWidth(
   element: Element,
   childElements?: Element[],
   getChildElements?: (id: string) => Element[],
+  computedStyle?: ComputedStyle,
 ): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
   const tag = (element.tag ?? '').toLowerCase();
@@ -801,24 +804,58 @@ export function calculateContentWidth(
       return textWidth;
     }
 
-    // 일반 요소
-    // Canvas 2D 사용 시 CanvasKit paragraph API와의 폰트 측정 오차 보정 (+4px)
-    // CanvasKit 측정기 사용 시 보정 불필요
-    const fontSize = parseNumericValue(style?.fontSize) ?? 14;
-    const fontFamily = (style?.fontFamily as string) ?? specFontFamily.sans;
-    const fontWeight = style?.fontWeight ?? 400;
-    const letterSpacing = parseNumericValue(style?.letterSpacing) ?? 0;
-    const wordSpacing = parseNumericValue(style?.wordSpacing) ?? 0;
-    const baseWidth = measureTextWidth(text, fontSize, fontFamily, fontWeight as number | string, {
+    // 일반 요소: computedStyle 기준으로 font 속성을 해소
+    // raw style에 fontSize가 없으면 CSS 상속 기본값(16px)을 사용해야 렌더러와 일치
+    const fontSize = parseNumericValue(style?.fontSize)
+      ?? computedStyle?.fontSize
+      ?? 16; // CSS initial value (ROOT_COMPUTED_STYLE.fontSize)
+    const fontFamily = (style?.fontFamily as string)
+      ?? computedStyle?.fontFamily
+      ?? specFontFamily.sans;
+    const fontWeight = style?.fontWeight
+      ?? computedStyle?.fontWeight
+      ?? 400;
+    const letterSpacing = parseNumericValue(style?.letterSpacing)
+      ?? computedStyle?.letterSpacing
+      ?? 0;
+    const wordSpacing = parseNumericValue(style?.wordSpacing)
+      ?? computedStyle?.wordSpacing
+      ?? 0;
+
+    // textTransform 적용: 렌더러(TextSprite.tsx)는 applyTextTransform() 후 텍스트를 그림
+    // 측정도 동일한 변환 후 텍스트로 수행해야 폭이 일치
+    const textTransform = (style?.textTransform as string | undefined)
+      ?? computedStyle?.textTransform;
+    const measuredText = applyTextTransform(text, textTransform);
+
+    // lineHeight 계산: styleConverter.ts convertToTextStyle()와 동일 로직
+    // 렌더러(nodeRenderers.ts)의 ParagraphStyle.heightMultiplier와 일치시키기 위해 필수
+    const rawLineHeight = style?.lineHeight ?? computedStyle?.lineHeight;
+    let lineHeight: number | undefined;
+    if (rawLineHeight != null) {
+      const lh = parseNumericValue(rawLineHeight);
+      if (lh != null) {
+        const isMultiplier = lh < 10 && (
+          typeof rawLineHeight === 'number' ||
+          (typeof rawLineHeight === 'string' && /^\d*\.?\d+$/.test(String(rawLineHeight).trim()))
+        );
+        lineHeight = isMultiplier ? lh * fontSize : lh;
+      }
+    } else {
+      // Tailwind CSS v4 기본 line-height: 1.5
+      lineHeight = 1.5 * fontSize;
+    }
+
+    const baseWidth = measureTextWidth(measuredText, fontSize, fontFamily, fontWeight as number | string, {
       letterSpacing,
       wordSpacing,
-      fontStyle: style?.fontStyle as number | string | undefined,
-      fontStretch: style?.fontStretch as string | undefined,
-      fontVariant: style?.fontVariant as string | undefined,
+      fontStyle: (style?.fontStyle ?? computedStyle?.fontStyle) as number | string | undefined,
+      fontStretch: (style?.fontStretch ?? computedStyle?.fontStretch) as string | undefined,
+      fontVariant: (style?.fontVariant ?? computedStyle?.fontVariant) as string | undefined,
+      lineHeight,
     });
-    // CanvasKit 측정기: 모든 스타일이 ParagraphStyle에 포함됨 → 보정 불필요
-    // Canvas 2D 측정기: measureWidth 내부에서 letterSpacing/wordSpacing 수동 가산
-    // → 여기서 추가 가산 불필요 (이중 가산 방지)
+    // CanvasKit: ParagraphStyle이 렌더러와 일치하므로 보정 불필요, Math.ceil만으로 충분
+    // Canvas 2D: CanvasKit 렌더링과의 엔진 간 오차 보정 (+4px)
     const generalCompensation = isCanvasKitMeasurer() ? 0 : 4;
     return Math.ceil(baseWidth) + generalCompensation;
   }
@@ -1361,9 +1398,10 @@ export function calculateContentHeight(
       const pad = parsePadding(style, availableWidth);
       const maxTextWidth = availableWidth - pad.left - pad.right;
       if (maxTextWidth > 0) {
-        const wrappedHeight = measureWrappedTextHeight(textContent, fs0, fw0, ff0, maxTextWidth);
-        const resolvedLH = parseLineHeight(style, fs0);
-        const singleLineH = resolvedLH ?? estimateTextHeight(fs0);
+        // Tailwind CSS v4 기본 line-height: 1.5 → fontSize * 1.5
+        const resolvedLH = parseLineHeight(style, fs0) ?? (fs0 * 1.5);
+        const wrappedHeight = measureWrappedTextHeight(textContent, fs0, fw0, ff0, maxTextWidth, resolvedLH);
+        const singleLineH = resolvedLH;
         if (wrappedHeight > singleLineH + 0.5) {
           return wrappedHeight;
         }
@@ -1625,24 +1663,11 @@ export function enrichWithIntrinsicSize(
   if (box.contentHeight <= 0 && !needsWidth && !SPEC_SHAPES_INPUT_TAGS.has(tag)
     && !(childElements && childElements.length > 0)) return element;
 
-  // padding과 border를 독립적으로 처리:
-  // - CSS에 해당 속성이 없으면 → spec 기본값을 크기에 포함
-  // - CSS에 해당 속성이 있으면 → 해당 부분 생략 (엔진이 CSS 값을 추가)
-  //
-  // 예외: INLINE_BLOCK_TAGS (button, badge 등)
-  //   layoutInlineRun()은 style.height를 완전한 border-box 크기로 직접 사용하며,
-  //   별도의 padding/border 추가 처리를 하지 않는다.
-  //   따라서 INLINE_BLOCK_TAGS는 항상 padding + border를 포함해야 한다.
-  //   block 경로에서는 treatAsBorderBox 변환이 이중 계산을 방지한다.
-  const isInlineBlockTag = INLINE_BLOCK_TAGS.has(tag);
-  const hasCSSVerticalPadding = style?.padding !== undefined ||
-    style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
-  const hasCSSVerticalBorder = style?.borderWidth !== undefined ||
-    style?.borderTopWidth !== undefined || style?.borderBottomWidth !== undefined;
-  const hasCSSHorizontalPadding = style?.padding !== undefined ||
-    style?.paddingLeft !== undefined || style?.paddingRight !== undefined;
-  const hasCSSHorizontalBorder = style?.borderWidth !== undefined ||
-    style?.borderLeftWidth !== undefined || style?.borderRightWidth !== undefined;
+  // 항상 border-box 값을 주입:
+  // 웹 CSS의 * { box-sizing: border-box } 동작과 일치
+  // content 크기 + padding + border = border-box 크기
+  // Dropflow: border-box 네이티브 지원 (adapter에서 boxSizing: 'border-box' 고정)
+  // Taffy: applyCommonTaffyStyle()에서 border-box → content-box 변환
 
   const injectedStyle: Record<string, unknown> = { ...style };
 
@@ -1656,14 +1681,8 @@ export function enrichWithIntrinsicSize(
     // ComboBox/Select: calculateContentHeight가 전체 시각적 높이(label+input/trigger)를 반환
     // spec shapes가 내부 padding 없이 렌더링하므로 추가 padding/border 불필요
     const isSpecShapesInput = SPEC_SHAPES_INPUT_TAGS.has(tag);
-    // padding/border 추가 조건:
-    // - CSS에 해당 속성이 없으면 spec 기본값을 포함 (엔진이 추가하지 않으므로)
-    // - inline-block 태그는 layoutInlineRun이 height를 border-box로 직접 사용하므로 항상 포함
-    // Note: Card/Box/Section은 CSS에 padding이 있으면 레이아웃 엔진이 추가하므로 여기서 제외
-    if (!isSpecShapesInput && (!hasCSSVerticalPadding || isInlineBlockTag)) {
+    if (!isSpecShapesInput) {
       injectHeight += box.padding.top + box.padding.bottom;
-    }
-    if (!isSpecShapesInput && (!hasCSSVerticalBorder || isInlineBlockTag)) {
       injectHeight += box.border.top + box.border.bottom;
     }
     injectedStyle.height = injectHeight;
@@ -1673,17 +1692,13 @@ export function enrichWithIntrinsicSize(
   // Width 주입 (inline-block 태그의 fit-content / min-content / max-content 에뮬레이션)
   // childElements가 있으면 재계산 (ToggleButtonGroup 등 자식이 Element로 저장된 경우)
   const childResolvedWidth = (childElements && childElements.length > 0)
-    ? calculateContentWidth(element, childElements, getChildElements)
+    ? calculateContentWidth(element, childElements, getChildElements, _computedStyle)
     : box.contentWidth;
   const baseContentWidth = resolvedIntrinsicWidth ?? childResolvedWidth;
   if (needsWidth && baseContentWidth > 0) {
     let injectWidth = baseContentWidth;
-    if (!hasCSSHorizontalPadding || isInlineBlockTag) {
-      injectWidth += box.padding.left + box.padding.right;
-    }
-    if (!hasCSSHorizontalBorder || isInlineBlockTag) {
-      injectWidth += box.border.left + box.border.right;
-    }
+    injectWidth += box.padding.left + box.padding.right;
+    injectWidth += box.border.left + box.border.right;
     injectedStyle.width = injectWidth;
   }
 
@@ -2157,6 +2172,19 @@ export function applyCommonTaffyStyle(
   if (border.right !== 0) result.borderRight = border.right;
   if (border.bottom !== 0) result.borderBottom = border.bottom;
   if (border.left !== 0) result.borderLeft = border.left;
+
+  // CSS box-sizing: border-box → Taffy content-box 변환
+  // XStudio는 웹 CSS의 * { box-sizing: border-box } 동작을 따름
+  // width/height 값은 border-box (padding + border 포함)이므로
+  // Taffy의 content-box에 맞게 padding + border를 차감
+  const hInset = padding.left + padding.right + border.left + border.right;
+  const vInset = padding.top + padding.bottom + border.top + border.bottom;
+  if (typeof result.width === 'number' && hInset > 0) {
+    result.width = Math.max(0, result.width - hInset);
+  }
+  if (typeof result.height === 'number' && vInset > 0) {
+    result.height = Math.max(0, result.height - vInset);
+  }
 
   // Gap — parseCSSPropWithContext 결과 직접 전달 (number 또는 % 문자열)
   const gap = parseCSSPropWithContext(style.gap, ctx);

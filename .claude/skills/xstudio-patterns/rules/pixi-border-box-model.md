@@ -62,3 +62,34 @@ const minRequiredHeight = borderWidth + paddingTop + textHeight + paddingBottom 
 - `src/builder/workspace/canvas/ui/PixiButton.tsx` - 참조 구현
 - `src/builder/workspace/canvas/ui/PixiToggleButton.tsx` - 수정 예시
 - `src/builder/workspace/canvas/utils/cssVariableReader.ts` - 크기 프리셋
+- `src/builder/workspace/canvas/layout/engines/utils.ts` - enrichWithIntrinsicSize, applyCommonTaffyStyle
+- `packages/layout-flow/src/adapters/xstudio-adapter.ts` - Dropflow boxSizing: 'border-box'
+
+## 레이아웃 엔진 box-sizing 아키텍처 (2026-02-26)
+
+레이아웃 엔진 수준에서 웹 CSS `* { box-sizing: border-box }` 동작과 일치하도록 구현됨:
+
+### enrichWithIntrinsicSize → 항상 border-box
+
+`enrichWithIntrinsicSize()`는 리프 컴포넌트(Button, Badge, Text 등)에 **항상 border-box 값**(content + padding + border)을 주입합니다.
+
+```typescript
+// ✅ 항상 border-box (조건 분기 없음)
+let injectWidth = baseContentWidth;
+injectWidth += box.padding.left + box.padding.right;
+injectWidth += box.border.left + box.border.right;
+injectedStyle.width = injectWidth;
+```
+
+### 엔진별 box-sizing 처리
+
+| 엔진 | box-sizing | 변환 위치 |
+|------|-----------|----------|
+| Dropflow | border-box (네이티브) | `xstudio-adapter.ts`: `boxSizing: 'border-box'` 고정 |
+| Taffy | content-box → border-box 변환 | `applyCommonTaffyStyle()`: width/height에서 padding+border 차감 |
+
+### 주의사항
+
+- `enrichWithIntrinsicSize`에서 `boxSizing: 'content-box'` 를 주입하지 마세요 — Dropflow가 무시합니다
+- Taffy `applyCommonTaffyStyle()`의 border-box → content-box 변환은 numeric width/height에만 적용됩니다 (percentage, auto, fit-content 등은 변환하지 않음)
+- `parseBoxModel()`의 `treatAsBorderBox` 로직은 별개입니다 (content size 계산용)

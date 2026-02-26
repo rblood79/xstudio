@@ -338,11 +338,13 @@ export function measureWrappedTextHeight(
   fontWeight: number | string,
   fontFamily: string,
   maxWidth: number,
+  lineHeight?: number,
 ): number {
   const result = getTextMeasurer().measureWrapped(text, {
     fontSize,
     fontFamily,
     fontWeight,
+    lineHeight,
   }, maxWidth);
   return result.height;
 }

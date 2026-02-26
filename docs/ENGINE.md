@@ -251,6 +251,7 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 - **2026-02-17**: ADR 형식으로 재작성. 전략 D 단일 결론 확정, 전략 C는 Deprecated Baseline(Fallback 경로)으로 명시 분리. 전략 B vs D 차별화 근거 추가, Gate A/B 롤백 범위 명확화, 외부 참고 저장소 복원.
 - **2026-02-17**: Phase 9 완료 — 레거시 엔진(`BlockEngine`, `FlexEngine`, `GridEngine`) 삭제, Feature flag 제거, 디스패처 정리. 전략 D 목표 아키텍처 달성.
 - **2026-02-21**: Post-Implementation Notes 추가 — `LayoutContext.getChildElements` 확장, `enrichWithIntrinsicSize` 개선(childElements 파라미터, fontBoundingBox line-height 통일), 수정 파일 목록.
+- **2026-02-26**: Phase 4-1C box-sizing 근본 수정 기록 추가 — `enrichWithIntrinsicSize()` border-box 통일, `applyCommonTaffyStyle()` content-box 변환.
 
 ---
 
@@ -295,3 +296,20 @@ Spec shapes 텍스트 경로(Button, Badge, Input 등) 양쪽에 모두 적용�
 **주의**: CSS `line-height`는 단위 없는 숫자(`"1.4"`)일 때 배수, `px`/`em` 단위가 있으면 절대값입니다.
 `convertToTextStyle()`에서 `typeof === 'number'`만 체크하면 문자열 배수 값이 픽셀로 오인되어
 `leading = 0` → `heightMultiplier = 0` → halfLeading 미적용됩니다.
+
+#### box-sizing 근본 수정 — enrichWithIntrinsicSize (2026-02-26)
+
+웹 CSS `* { box-sizing: border-box }` 동작과 일치하도록 레이아웃 엔진의 크기 주입 방식을 통일.
+
+**문제**: `enrichWithIntrinsicSize()`가 CSS padding 유무에 따라 content-box/border-box를 혼합 주입.
+Dropflow adapter는 `boxSizing: 'border-box'` 고정이므로, content-box 값이 들어오면 padding이 이중 차감됨.
+
+**수정**:
+
+| 파일 | 변경 |
+|------|------|
+| `engines/utils.ts` | `enrichWithIntrinsicSize()` — 항상 border-box 값 주입 (조건부 분기 제거) |
+| `engines/utils.ts` | `applyCommonTaffyStyle()` — border-box → content-box 변환 추가 (Taffy 호환) |
+
+- Dropflow: 변경 없음 (`boxSizing: 'border-box'` 네이티브 지원)
+- Taffy: `applyCommonTaffyStyle()`에서 numeric width/height에서 padding+border 차감

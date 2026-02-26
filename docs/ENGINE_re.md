@@ -169,6 +169,8 @@ if (boxSizing === 'border-box' && widthStr?.endsWith('%')) {
 
 **수정 방안**: `xstudio-adapter.ts`에서 `boxSizing: 'border-box'` 전달 → 래퍼의 수동 변환 코드 제거.
 
+> **부분 해소 (Phase 4-1C, 2026-02-26)**: `enrichWithIntrinsicSize()`가 항상 border-box 값(content + padding + border)을 주입하도록 변경. `applyCommonTaffyStyle()`에서 border-box → content-box 변환을 수행하여 Taffy 호환. `DropflowBlockEngine._dropflowCalculate()` 내 `boxSizeConverted` 우회 코드는 enrichment 경로와 독립적이므로 잔존.
+
 ---
 
 ### 2.2 HIGH
@@ -449,7 +451,7 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 | 3-1 | `applyCommonTaffyStyle()` 헬퍼: Box model + Size + Gap + Inset 통합 | ~160줄 | 쉬움 |
 | 3-2 | `resolveParentContext()` 헬퍼: CSS 상속 체인 + CSSValueContext 생성 | ~36줄 | 쉬움 |
 | 3-3 | Phantom Indicator 설정을 단일 소스로 통합 | ~50줄 | 쉬움 |
-| 3-4 | `xstudio-adapter.ts`에 `boxSizing: 'border-box'` 전달 → 수동 변환 제거 | ~20줄 | 쉬움 |
+| 3-4 | ~~`xstudio-adapter.ts`에 `boxSizing: 'border-box'` 전달 → 수동 변환 제거~~ **(부분 해소: Phase 4-1C에서 enrichment 경로 border-box 통일)** | ~20줄 | 부분 완료 |
 | 3-5 | `createsBFC()`에서 Dropflow `styleCreatesBfc()` import 사용 | ~15줄 | 쉬움 (단, 패키지 API export 수정 필요) |
 | 3-6 | ~~Shorthand 왕복 변환 제거 + `dimStr()` 삭제~~ **(완료)** | ~40줄 | 완료 |
 
@@ -935,6 +937,42 @@ Phase 4-1이 "배관 연결"(measureTextWidth → getTextMeasurer() 경유)만 �
 - calculateTextWidth의 Math.round에 의한 소수점 절사
 - estimateTextHeight의 Math.round + fontWeight 하드코딩
 - calculateContentHeight의 fontWeight 하드코딩 (500)
+
+---
+
+### Phase 4-1C: box-sizing 근본 수정 (2026-02-26)
+
+`enrichWithIntrinsicSize()`가 content-box/border-box를 조건부로 혼합 주입하던 문제를 근본적으로 해소합니다. 웹 CSS의 `* { box-sizing: border-box }` 관행과 일치하도록 enrichment 경로를 통일합니다.
+
+**문제**: `enrichWithIntrinsicSize()`가 조건부로 content-box/border-box를 혼합 주입.
+CSS에 padding이 있으면 content-box (padding 미포함), 없으면 spec default padding 포함.
+Dropflow adapter는 `boxSizing: 'border-box'` 고정이므로 content-box 값을 border-box로 해석 → padding 이중 차감.
+
+**현상**: Text 컴포넌트(`width: fit-content`, `padding: 10`)에서 content width=27이 그대로 주입 → Dropflow가 27을 border-box로 해석 → content=27-10-10=7 → padding 적용 불가.
+
+**수정:**
+
+1. `enrichWithIntrinsicSize()` — 항상 border-box 값 주입:
+   - 조건부 `hasCSSVerticalPadding`/`hasCSSHorizontalPadding`/`isInlineBlockTag` 분기 제거
+   - content + padding + border = border-box 크기를 항상 주입
+   - 임시 `boxSizing: 'content-box'` 주입 제거
+
+2. `applyCommonTaffyStyle()` — border-box → content-box 변환 추가:
+   - Taffy는 content-box를 사용하므로 numeric width/height에서 padding+border 차감
+   - `Math.max(0, width - hInset)` / `Math.max(0, height - vInset)`
+
+3. Dropflow adapter — 변경 없음 (이미 `boxSizing: 'border-box'` 고정)
+
+**수정 파일:**
+
+| 파일 | 변경 |
+|------|------|
+| `engines/utils.ts` | `enrichWithIntrinsicSize()` 조건부 로직 제거 → 항상 border-box 값 주입 |
+| `engines/utils.ts` | `applyCommonTaffyStyle()` border-box → content-box 변환 추가 |
+
+**해소된 ENGINE_re.md 항목:**
+- §2.1.3 box-sizing 수동 변환 (Dropflow) → enrichment 경로에서 근본 해소
+- §3-4 `xstudio-adapter.ts`에 `boxSizing: 'border-box'` 전달 → enrichment가 이미 border-box 값을 주입하므로 별도 전달 불필요
 
 ---
 
