@@ -117,6 +117,11 @@ export function createComboBoxDefinition(
         inputValue: "",
         allowsCustomValue: true,
         selectedKey: undefined,
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,

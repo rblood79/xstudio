@@ -772,45 +772,44 @@ const ElementsLayer = memo(function ElementsLayer({
               (c.tag === 'Label' ? hasLabel : false) || c.tag === 'SelectTrigger' || c.tag === 'ComboBoxWrapper'
             );
 
-            // SelectTrigger: display/flexDirection + padding 주입 → enrichWithIntrinsicSize가
+            // SelectTrigger/ComboBoxWrapper: display/flexDirection + padding 주입 → enrichWithIntrinsicSize가
             // calculateContentHeight에서 올바른 flexDirection(row)으로 높이 계산
-            // (containerTag === 'selecttrigger' 블록은 SelectTrigger 내부 자식 레이아웃용)
-            if (containerTag === 'select') {
-              filteredContainerChildren = filteredContainerChildren.map(child => {
-                if (child.tag === 'SelectTrigger') {
-                  const cs = (child.props?.style || {}) as Record<string, unknown>;
-                  const triggerProps = child.props as Record<string, unknown> | undefined;
-                  const sizeName = (triggerProps?.size as string) ?? 'md';
-                  // SelectTrigger spec sizes: sm(paddingX:10,paddingY:4) md(14,8) lg(16,12)
-                  const TRIGGER_PAD: Record<string, { x: number; y: number }> = {
-                    sm: { x: 10, y: 4 }, md: { x: 14, y: 8 }, lg: { x: 16, y: 12 },
-                  };
-                  const specPad = TRIGGER_PAD[sizeName] ?? TRIGGER_PAD.md;
-                  // 사용자가 padding을 설정했으면 (shorthand 또는 개별) parsePadding으로 해석
-                  // 미설정 시 spec 기본값 사용
-                  const hasUserPadding = cs.padding !== undefined
-                    || cs.paddingTop !== undefined || cs.paddingBottom !== undefined
-                    || cs.paddingLeft !== undefined || cs.paddingRight !== undefined;
-                  const userPad = hasUserPadding ? parsePadding(cs) : null;
-                  return {
-                    ...child,
-                    props: {
-                      ...child.props,
-                      style: {
-                        ...cs,
-                        display: cs.display ?? 'flex',
-                        flexDirection: cs.flexDirection ?? 'row',
-                        paddingLeft: userPad ? userPad.left : specPad.x,
-                        paddingRight: userPad ? userPad.right : specPad.x,
-                        paddingTop: userPad ? userPad.top : specPad.y,
-                        paddingBottom: userPad ? userPad.bottom : specPad.y,
-                      },
+            // (containerTag === 'selecttrigger'/'comboboxwrapper' 블록은 내부 자식 레이아웃용)
+            const wrapperChildTag = containerTag === 'select' ? 'SelectTrigger' : 'ComboBoxWrapper';
+            // ComboBox/Select 공통 spec sizes: sm(paddingX:10,paddingY:4) md(14,8) lg(16,12)
+            const WRAPPER_PAD: Record<string, { x: number; y: number }> = {
+              sm: { x: 10, y: 4 }, md: { x: 14, y: 8 }, lg: { x: 16, y: 12 },
+            };
+            filteredContainerChildren = filteredContainerChildren.map(child => {
+              if (child.tag === wrapperChildTag) {
+                const cs = (child.props?.style || {}) as Record<string, unknown>;
+                const wrapperProps = child.props as Record<string, unknown> | undefined;
+                const sizeName = (wrapperProps?.size as string) ?? 'md';
+                const specPad = WRAPPER_PAD[sizeName] ?? WRAPPER_PAD.md;
+                // 사용자가 padding을 설정했으면 (shorthand 또는 개별) parsePadding으로 해석
+                // 미설정 시 spec 기본값 사용
+                const hasUserPadding = cs.padding !== undefined
+                  || cs.paddingTop !== undefined || cs.paddingBottom !== undefined
+                  || cs.paddingLeft !== undefined || cs.paddingRight !== undefined;
+                const userPad = hasUserPadding ? parsePadding(cs) : null;
+                return {
+                  ...child,
+                  props: {
+                    ...child.props,
+                    style: {
+                      ...cs,
+                      display: cs.display ?? 'flex',
+                      flexDirection: cs.flexDirection ?? 'row',
+                      paddingLeft: userPad ? userPad.left : specPad.x,
+                      paddingRight: userPad ? userPad.right : specPad.x,
+                      paddingTop: userPad ? userPad.top : specPad.y,
+                      paddingBottom: userPad ? userPad.bottom : specPad.y,
                     },
-                  } as Element;
-                }
-                return child;
-              });
-            }
+                  },
+                } as Element;
+              }
+              return child;
+            });
 
             parentStyle = {
               ...(parentStyle || {}),
@@ -866,17 +865,30 @@ const ElementsLayer = memo(function ElementsLayer({
             });
           }
 
-          // ComboBoxWrapper: spec shapes 입력 영역과 일치하는 히트 영역 크기
-          // ComboBox md: inputHeight = fontSize(14) + paddingY(8)*2 = 30
+          // ComboBoxWrapper: Compositional Architecture — spec size 기반 padding으로 자식 레이아웃
           if (containerTag === 'comboboxwrapper') {
+            const wrapperProps = containerEl.props as Record<string, unknown> | undefined;
+            const sizeName = (wrapperProps?.size as string) ?? 'md';
+            // ComboBox spec sizes: sm(paddingX:10,paddingY:4) md(14,8) lg(16,12)
+            const COMBO_WRAP_PAD: Record<string, { x: number; y: number }> = {
+              sm: { x: 10, y: 4 }, md: { x: 14, y: 8 }, lg: { x: 16, y: 12 },
+            };
+            const specPad = COMBO_WRAP_PAD[sizeName] ?? COMBO_WRAP_PAD.md;
+            // 사용자가 padding을 설정했으면 parsePadding으로 해석
+            const ps = (parentStyle || {}) as Record<string, unknown>;
+            const hasUserPadding = ps.padding !== undefined
+              || ps.paddingTop !== undefined || ps.paddingBottom !== undefined
+              || ps.paddingLeft !== undefined || ps.paddingRight !== undefined;
+            const userPad = hasUserPadding ? parsePadding(ps) : null;
             parentStyle = {
               ...(parentStyle || {}),
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
-              height: 30,
-              paddingLeft: 14,
-              paddingRight: 14,
+              paddingLeft: userPad ? userPad.left : specPad.x,
+              paddingRight: userPad ? userPad.right : specPad.x,
+              paddingTop: userPad ? userPad.top : specPad.y,
+              paddingBottom: userPad ? userPad.bottom : specPad.y,
             };
             effectiveContainerEl = {
               ...containerEl,
@@ -1088,27 +1100,19 @@ const ElementsLayer = memo(function ElementsLayer({
           }
         }
 
-        // ComboBox 구조적 자식: spec shapes가 시각 렌더링 담당 (ComboBox는 아직 Monolithic)
-        // Select 자식(SelectTrigger/SelectValue/SelectIcon)은 Compositional — 자체 spec으로 렌더링
+        // ComboBox 자식(ComboBoxWrapper/ComboBoxInput/ComboBoxTrigger)은 Compositional — 자체 spec으로 렌더링
+        // Select 자식(SelectTrigger/SelectValue/SelectIcon)과 동일 패턴
+        // factory backgroundColor:'transparent' 방어: 존재하면 제거하여 spec variant 배경 사용
         if (effectiveChildEl.tag === 'ComboBoxWrapper'
           || effectiveChildEl.tag === 'ComboBoxInput' || effectiveChildEl.tag === 'ComboBoxTrigger') {
           const existingStyle = (effectiveChildEl.props?.style || {}) as Record<string, unknown>;
-          const existingProps = (effectiveChildEl.props || {}) as Record<string, unknown>;
-          const tag = effectiveChildEl.tag;
-          const implicitStyle: Record<string, unknown> =
-            (tag === 'ComboBoxTrigger')
-              ? { width: 18, height: 18, flexShrink: 0 }
-              : (tag === 'ComboBoxInput')
-                ? { flex: 1 }
-                : {};
-          effectiveChildEl = {
-            ...effectiveChildEl,
-            props: {
-              ...existingProps,
-              children: '',
-              style: { ...implicitStyle, ...existingStyle, backgroundColor: 'transparent' },
-            },
-          };
+          if (existingStyle.backgroundColor === 'transparent') {
+            const { backgroundColor: _, ...restStyle } = existingStyle;
+            effectiveChildEl = {
+              ...effectiveChildEl,
+              props: { ...effectiveChildEl.props, style: restStyle },
+            };
+          }
         }
 
         const childStyle = effectiveChildEl.props?.style as Record<string, unknown> | undefined;

@@ -129,8 +129,11 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
         : size.borderRadius as unknown as number;
 
-      const bgColor = props.style?.backgroundColor
-                    ?? (state === 'hover' ? variant.backgroundHover
+      // backgroundColor: 'transparent'는 factory 기본값 → spec variant 사용
+      const userBg = props.style?.backgroundColor;
+      const bgColor = (userBg != null && userBg !== 'transparent')
+                    ? userBg
+                    : (state === 'hover' ? variant.backgroundHover
                     : state === 'pressed' ? variant.backgroundPressed
                     : variant.background);
 
@@ -182,81 +185,85 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
         : size.paddingX;
 
       const shapes: Shape[] = [];
+      // Compositional Architecture: 자식 Element가 있으면
+      // Label, ComboBoxWrapper(ComboBoxInput, ComboBoxTrigger)가 각자 spec으로 렌더링
+      // ComboBox 자체에서는 드롭다운 패널만 담당
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-
-      // 라벨 — 자식 Element가 있으면 스킵 (TextSprite가 렌더링)
-      // 자식이 없으면 (기존 요소 호환) spec shapes에서 직접 렌더링
-      if (props.label && !hasChildren) {
-        shapes.push({
-          type: 'text' as const,
-          x: 0,
-          y: 0,
-          text: props.label,
-          fontSize,
-          fontFamily: ff,
-          fontWeight,
-          fill: textColor,
-          align: textAlign,
-          baseline: 'top' as const,
-        });
-      }
-
-      // 입력 영역 배경 — CSS 정합: y=labelOffset(29), height=inputHeight(30)
       const inputY = props.label ? labelOffset : 0;
-      shapes.push({
-        id: 'input',
-        type: 'roundRect' as const,
-        x: 0,
-        y: inputY,
-        width,
-        height: inputHeight,
-        radius: borderRadius,
-        fill: bgColor,
-      });
 
-      // 테두리
-      if (borderColor) {
+      if (!hasChildren) {
+        // fallback: 자식이 없는 레거시 데이터 → 전체 렌더링
+        if (props.label) {
+          shapes.push({
+            type: 'text' as const,
+            x: 0,
+            y: 0,
+            text: props.label,
+            fontSize,
+            fontFamily: ff,
+            fontWeight,
+            fill: textColor,
+            align: textAlign,
+            baseline: 'top' as const,
+          });
+        }
+
+        // 입력 영역 배경 — CSS 정합: y=labelOffset(29), height=inputHeight(30)
         shapes.push({
-          type: 'border' as const,
-          target: 'input',
-          borderWidth,
-          color: props.isInvalid ? ('{color.error}' as TokenRef) : borderColor,
+          id: 'input',
+          type: 'roundRect' as const,
+          x: 0,
+          y: inputY,
+          width,
+          height: inputHeight,
           radius: borderRadius,
+          fill: bgColor,
         });
-      }
 
-      // 입력 텍스트
-      const displayText = props.inputValue || props.placeholder || '';
-      if (displayText) {
+        // 테두리
+        if (borderColor) {
+          shapes.push({
+            type: 'border' as const,
+            target: 'input',
+            borderWidth,
+            color: props.isInvalid ? ('{color.error}' as TokenRef) : borderColor,
+            radius: borderRadius,
+          });
+        }
+
+        // 입력 텍스트
+        const displayText = props.inputValue || props.placeholder || '';
+        if (displayText) {
+          shapes.push({
+            type: 'text' as const,
+            x: paddingX,
+            y: inputY + inputHeight / 2,
+            text: displayText,
+            fontSize,
+            fontFamily: ff,
+            fill: props.inputValue
+              ? textColor
+              : ('{color.on-surface-variant}' as TokenRef),
+            align: textAlign,
+            baseline: 'middle' as const,
+          });
+        }
+
+        // 쉐브론 아이콘 (Lucide chevron-down SVG 경로)
+        const chevX = width - paddingX - chevronSize / 2;
+        const chevY = inputY + inputHeight / 2;
         shapes.push({
-          type: 'text' as const,
-          x: paddingX,
-          y: inputY + inputHeight / 2,
-          text: displayText,
-          fontSize,
-          fontFamily: ff,
-          fill: props.inputValue
-            ? textColor
-            : ('{color.on-surface-variant}' as TokenRef),
-          align: textAlign,
-          baseline: 'middle' as const,
+          type: 'icon_font' as const,
+          iconName: 'chevron-down',
+          x: chevX,
+          y: chevY,
+          fontSize: chevronSize,
+          fill: '{color.on-surface-variant}' as TokenRef,
+          strokeWidth: 2,
         });
       }
 
-      // 쉐브론 아이콘 (Lucide chevron-down SVG 경로)
-      const chevX = width - paddingX - chevronSize / 2;
-      const chevY = inputY + inputHeight / 2;
-      shapes.push({
-        type: 'icon_font' as const,
-        iconName: 'chevron-down',
-        x: chevX,
-        y: chevY,
-        fontSize: chevronSize,
-        fill: '{color.on-surface-variant}' as TokenRef,
-        strokeWidth: 2,
-      });
-
-      // 드롭다운 패널 (열린 상태)
+      // 드롭다운 패널 (열린 상태) — hasChildren 여부와 무관하게 렌더링
       if (props.isOpen) {
         // inputValue로 아이템 필터링 (입력값이 있으면 포함된 항목만 표시)
         const allItems = props.items ?? ['Option 1', 'Option 2', 'Option 3'];

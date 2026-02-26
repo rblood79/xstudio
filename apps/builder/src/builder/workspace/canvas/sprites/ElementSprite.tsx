@@ -314,7 +314,10 @@ const UI_SLOT_TAGS = new Set(['Slot']);
 /**
  * Select child composition 태그들
  */
-const UI_SELECT_CHILD_TAGS = new Set(['SelectTrigger', 'SelectValue', 'SelectIcon']);
+const UI_SELECT_CHILD_TAGS = new Set([
+  'SelectTrigger', 'SelectValue', 'SelectIcon',
+  'ComboBoxWrapper', 'ComboBoxInput', 'ComboBoxTrigger',
+]);
 
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
@@ -545,6 +548,9 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'SelectTrigger': SelectTriggerSpec,
   'SelectValue': SelectValueSpec,
   'SelectIcon': SelectIconSpec,
+  'ComboBoxWrapper': SelectTriggerSpec,
+  'ComboBoxInput': SelectValueSpec,
+  'ComboBoxTrigger': SelectIconSpec,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1166,8 +1166,8 @@ export function calculateContentHeight(
   }
 
   // 3.6. ComboBox/Select: 자식 기반 동적 높이 계산 (Card 패턴)
-  // Select: 실제 visible 자식들의 높이 합산 + gap (flexDirection:column)
-  // ComboBox: Label + gap + input (spec shapes 기반)
+  // Select/ComboBox: 실제 visible 자식들의 높이 합산 + gap (flexDirection:column)
+  // Dropdown: 레거시 spec shapes 기반 계산
   const COMBOBOX_INPUT_HEIGHTS: Record<string, number> = {
     sm: 20, md: 30, lg: 40,
   };
@@ -1176,17 +1176,19 @@ export function calculateContentHeight(
   if (tag === 'combobox' || tag === 'select' || tag === 'dropdown') {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? 'md';
-    const isSelect = tag === 'select';
+    const isCompositional = tag === 'select' || tag === 'combobox';
 
     // gap: 스타일에서 동적으로 읽기 (미설정 시 기본 8)
     const gapRaw = style?.gap;
     const gapParsed = typeof gapRaw === 'number' ? gapRaw : parseFloat(String(gapRaw ?? ''));
     const gap = isNaN(gapParsed) ? 8 : gapParsed;
 
-    // Select: 실제 visible 자식 요소 순회 (Card와 동일 패턴)
+    // Select/ComboBox: 실제 visible 자식 요소 순회 (Card와 동일 패턴)
     // label prop이 없으면 Label 자식 제외 (web preview 동작과 일치)
-    if (isSelect && childElements) {
+    if (isCompositional && childElements) {
       const hasLabel = !!(props?.label);
+      // wrapper tag: Select → SelectTrigger, ComboBox → ComboBoxWrapper
+      const wrapperTag = tag === 'select' ? 'SelectTrigger' : 'ComboBoxWrapper';
       const visibleChildren = childElements.filter(c =>
         !SELECT_HIDDEN_CHILDREN.has(c.tag ?? '') && (c.tag !== 'Label' || hasLabel)
       );
@@ -1198,30 +1200,30 @@ export function calculateContentHeight(
         const childStyle = (child.props?.style || {}) as Record<string, unknown>;
         let childH = 0;
 
-        if (child.tag === 'SelectTrigger') {
-          // SelectTrigger: 자식 높이(row max) + padding
-          const triggerChildren = getChildElements?.(child.id);
-          let triggerContentH = 0;
-          if (triggerChildren && triggerChildren.length > 0) {
-            for (const tc of triggerChildren) {
-              const tcStyle = (tc.props?.style || {}) as Record<string, unknown>;
-              const tcH = typeof tcStyle.height === 'number'
-                ? tcStyle.height
-                : Math.ceil((parseFloat(String(tcStyle.fontSize ?? 14)) || 14) * 1.5);
-              if (tcH > triggerContentH) triggerContentH = tcH;
+        if (child.tag === wrapperTag) {
+          // SelectTrigger/ComboBoxWrapper: 자식 높이(row max) + padding
+          const wrapperChildren = getChildElements?.(child.id);
+          let wrapperContentH = 0;
+          if (wrapperChildren && wrapperChildren.length > 0) {
+            for (const wc of wrapperChildren) {
+              const wcStyle = (wc.props?.style || {}) as Record<string, unknown>;
+              const wcH = typeof wcStyle.height === 'number'
+                ? wcStyle.height
+                : Math.ceil((parseFloat(String(wcStyle.fontSize ?? 14)) || 14) * 1.5);
+              if (wcH > wrapperContentH) wrapperContentH = wcH;
             }
           } else {
-            triggerContentH = Math.ceil(14 * 1.5);
+            wrapperContentH = Math.ceil(14 * 1.5);
           }
-          // Trigger padding (store 값 또는 spec 기본값)
-          const hasTriggerPadding = childStyle.padding !== undefined
+          // Wrapper padding (store 값 또는 spec 기본값)
+          const hasWrapperPadding = childStyle.padding !== undefined
             || childStyle.paddingTop !== undefined || childStyle.paddingBottom !== undefined;
-          if (hasTriggerPadding) {
-            const triggerPad = parsePadding(childStyle);
-            childH = triggerContentH + triggerPad.top + triggerPad.bottom;
+          if (hasWrapperPadding) {
+            const wrapperPad = parsePadding(childStyle);
+            childH = wrapperContentH + wrapperPad.top + wrapperPad.bottom;
           } else {
             const specPadY: Record<string, number> = { sm: 8, md: 16, lg: 24 };
-            childH = triggerContentH + (specPadY[sizeName] ?? 16);
+            childH = wrapperContentH + (specPadY[sizeName] ?? 16);
           }
         } else if (childTag === 'label' || childTag === 'description' || childTag === 'fielderror') {
           // 텍스트 자식: fontSize * lineHeight
@@ -1247,7 +1249,7 @@ export function calculateContentHeight(
       return totalH;
     }
 
-    // ComboBox/Dropdown: 기존 spec shapes 기반 계산
+    // Dropdown: 레거시 spec shapes 기반 계산
     const bodyHeight = COMBOBOX_INPUT_HEIGHTS[sizeName] ?? 30;
     const hasLabel = !!(props?.label);
     if (hasLabel) {
@@ -1749,7 +1751,7 @@ export function enrichWithIntrinsicSize(
   // 또한, childElements가 있는 컨테이너(CardHeader/CardContent 등)도 예외:
   // 자체 텍스트는 없지만 자식 요소의 높이를 합산해야 하므로 calculateContentHeight가 필요함
   // Select: Compositional Architecture — Card와 동일하게 자식 기반 높이 + padding 경로
-  const SPEC_SHAPES_INPUT_TAGS = new Set(['combobox', 'dropdown', 'breadcrumbs']);
+  const SPEC_SHAPES_INPUT_TAGS = new Set(['dropdown', 'breadcrumbs']);
   if (box.contentHeight <= 0 && !needsWidth && !SPEC_SHAPES_INPUT_TAGS.has(tag)
     && !(childElements && childElements.length > 0)) {
     return element;
