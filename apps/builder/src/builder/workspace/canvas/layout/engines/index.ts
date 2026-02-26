@@ -29,6 +29,7 @@ import { isTaffyGridAvailable } from './TaffyGridEngine';
 import { TaffyGridEngine } from './TaffyGridEngine';
 import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
 import { useScrollState } from '../../../../stores/scrollState';
+import { getPhantomIndicatorWidth } from './utils';
 
 // Re-export types
 export type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
