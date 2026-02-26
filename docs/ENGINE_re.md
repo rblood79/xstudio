@@ -465,13 +465,43 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 | 4-4 | ~~TaffyGridEngine에 `enrichWithIntrinsicSize()` 호출 추가~~ **(완료)** | 잠재 버그 수정 | 완료 |
 | 4-5 | ~~`xHeight` 근사 개선 — `getGlyphBounds('x')` 기반~~ **(완료)** | 텍스트 baseline 정확도 향상 | 완료 |
 
-### Phase 5: 장기 — 근본 아키텍처
+### Phase 5: 장기 — 근본 아키텍처 (보류, 2026-02-26 결정)
 
-| # | 작업 | 효과 | 난이도 |
-|---|------|------|--------|
-| 5-1 | WASM measure function 콜백 구현 → 2-pass layout 제거 | 성능 + 정확도 대폭 향상 | 매우 높음 |
-| 5-2 | Taffy 네이티브 intrinsic sizing 활용 → `enrichWithIntrinsicSize()` 축소 | ~134줄의 pre-enrichment 로직이 measure function 콜백으로 재구조화 + 2-pass 루프 (~57줄) 제거 | 높음 |
-| 5-3 | Dropflow `styleCreatesBfc()` export + Shorthand 파서 공유 패키지로 이동 | 크로스 패키지 중복 해소 | 높음 (패키지 public API 변경 수반). `@xstudio/shared`는 UI 컴포넌트 패키지이므로 별도 `@xstudio/css-utils` 신설 또는 `@xstudio/layout-flow` barrel export 확장 검토 |
+> **상태: 보류** — 상세 설계 완료, 구현 보류. 아래 비용-이득 분석 참조.
+
+| # | 작업 | 효과 | 난이도 | 상태 |
+|---|------|------|--------|------|
+| 5-1 | WASM measure function 콜백 구현 → 2-pass layout 제거 | 성능 + 정확도 향상 | 매우 높음 | 보류 |
+| 5-2 | Taffy 네이티브 intrinsic sizing 활용 → `enrichWithIntrinsicSize()` 축소 | pre-enrichment 재구조화 | 높음 (5-1 의존) | 보류 |
+| 5-3 | Dropflow `styleCreatesBfc()` export + Shorthand 파서 공유 패키지로 이동 | 크로스 패키지 중복 해소 | 높음 | 보류 |
+
+##### 보류 사유: 비용-이득 분석 (2026-02-26)
+
+**정량 비교:**
+
+| 항목 | 5-1 (Measure Callback) | 5-2 (Intrinsic Sizing) | 5-3 (CSS 파서 공유) |
+|------|:---:|:---:|:---:|
+| 제거 코드 | ~93줄 (2-pass) | ~134줄 (enrichment) | ~220줄 (중복 파서) |
+| 신규 코드 | ~175줄 (Rust 130 + TS 45) | ~30줄 | ~패키지 구조 + ~50줄 |
+| **순 감소** | **약 80줄 증가** | **~104줄 감소** | **~170줄 감소** |
+
+**Phase 1~4까지의 성과**: ~810줄 감소 + 정확도 향상 + 구조적 개선 달성. 엔진 코드 대비 약 30% 감소 목표의 대부분 달성.
+
+**5-1/5-2 보류 근거:**
+- **코드 순감소 거의 없음**: 2-pass + enrichment 제거(~227줄)하지만 Rust measure 인프라 + breakpoints 로직(~205줄)이 대체. `calculateContentWidth()` 188줄, `calculateContentHeight()` 475줄의 비즈니스 로직은 그대로 유지.
+- **성능 이득 미미**: 2-pass tree rebuild 제거 시 레이아웃 1회당 ~0.5-1ms 절감 (100노드 기준). 현재 전체 프레임 16ms 내에서 체감 불가, 60fps 유지 중.
+- **정확도**: 현재 2-pass + enrichment로 실용적 정확도 확보. Flex row `flex-grow` 자식의 텍스트 줄바꿈 edge case만 개선.
+- **위험**: Rust FFI 경계에 새 API 3개 추가 → WASM 빌드 영향, 모든 리프 노드 경로 변경 → 회귀 범위 광범위. `TaffyTree<()>` → `TaffyTree<MeasureData>` 제네릭 변경은 Rust 측 전면 수정.
+- **유지보수 부담 증가**: Rust↔TS 양쪽에 measure data 동기화 로직 추가 → 디버깅 복잡도 상승.
+
+**5-3 보류 근거:**
+- 단독 가치는 있으나 (중복 ~220줄 제거 + layout-flow calc()/var() 지원), 패키지 구조 변경(신규 패키지 생성, 의존성 추가)의 부담이 현 시점에서 우선순위 낮음.
+- `@xstudio/layout-flow`에 첫 런타임 의존성 추가되는 트레이드오프.
+
+**재검토 트리거:**
+- 캔버스 노드 수 500+ 이상에서 2-pass가 프레임 드롭 원인으로 측정될 때 → 5-1/5-2 재개
+- CSS `calc()`/`var()`가 Block 레이아웃에서 필요해질 때 → 5-3 재개
+- Taffy 메이저 버전 업그레이드(0.10+) 시 API 변경에 맞춰 → 5-1/5-2 함께 진행
 
 #### Phase 5-1 상세: WASM Measure Function Callback
 
