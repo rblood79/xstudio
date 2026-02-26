@@ -107,8 +107,12 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
         ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
         : size.borderRadius as unknown as number;
 
-      const bgColor = props.style?.backgroundColor
-                    ?? (state === 'hover' ? variant.backgroundHover
+      // backgroundColor: 'transparent'는 factory 기본값 → spec variant 사용
+      // 사용자가 명시적으로 색상을 설정한 경우에만 inline style 우선
+      const userBg = props.style?.backgroundColor;
+      const bgColor = (userBg != null && userBg !== 'transparent')
+                    ? userBg
+                    : (state === 'hover' ? variant.backgroundHover
                     : state === 'pressed' ? variant.backgroundPressed
                     : variant.background);
 

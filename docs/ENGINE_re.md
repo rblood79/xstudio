@@ -1171,3 +1171,38 @@ Taffy 0.9 style.size = border-box
   → layout.size = border-box (padding+border 포함)
   → applyCommonTaffyStyle: 변환 불필요 (XStudio box-sizing:border-box 그대로 전달)
 ```
+
+---
+
+## Phase 4-6B: Select Spec Shapes 배경색 수정 (2026-02-27)
+
+> **근본 원인**: Compositional Architecture 전환 시 Factory 기본값과 Spec 토큰이 불일치하여
+> spec shapes의 배경 렌더링이 실패.
+
+### 수정 항목
+
+| # | 파일 | 변경 | 원인 |
+|---|------|------|------|
+| 1 | `SelectTrigger.spec.ts` | `'transparent'` 방어 처리 추가 | Factory `backgroundColor:'transparent'`가 `??`를 통과 못 함 → variant.background 무시 |
+| 2 | `SelectIcon.spec.ts` | 배경 `roundRect` shape 추가 | CSS `.select-chevron { background }` 에 대응하는 spec shape 누락 |
+| 3 | `SelectIcon.spec.ts` | 토큰 `'{color.accent-container}'` → `'{color.surface-container-high}'` | 미정의 토큰 → resolveToken() undefined → 검은색(0,0,0) |
+| 4 | `SelectionComponents.ts` | `backgroundColor:'transparent'` 제거 (5곳) | SelectTrigger, SelectValue, SelectIcon, ComboBoxWrapper |
+
+### 미정의 토큰 → 검은색 렌더링 경로
+
+```
+'{color.accent-container}' (미정의)
+  → resolveToken() → lightColors['accent-container'] → undefined
+  → colorValueToFloat32(undefined) → hex = undefined
+  → undefined >> 16 = 0, undefined >> 8 = 0, undefined & 0xff = 0
+  → r=0, g=0, b=0, a=1 → 검은색
+```
+
+### CSS 변수 → Spec 토큰 매핑 (Select)
+
+| CSS 변수 | variant | Spec 토큰 |
+|----------|---------|-----------|
+| `--select-accent-container` | default | `'{color.surface-container-high}'` |
+| `--select-on-accent-container` | default | `'{color.on-surface}'` |
+| `--select-accent-container` | primary | `'{color.primary-container}'` |
+| `--select-on-accent-container` | primary | `'{color.on-primary-container}'` |

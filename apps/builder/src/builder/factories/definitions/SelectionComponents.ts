@@ -53,7 +53,6 @@ export function createSelectDefinition(
             flexDirection: 'row',
             alignItems: 'center',
             width: '100%',
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -63,7 +62,7 @@ export function createSelectDefinition(
             tag: "SelectValue",
             props: {
               children: "Choose an option...",
-              style: { flex: 1, fontSize: 14, backgroundColor: 'transparent' },
+              style: { flex: 1, fontSize: 14 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -72,7 +71,7 @@ export function createSelectDefinition(
             tag: "SelectIcon",
             props: {
               children: "",
-              style: { width: 18, height: 18, flexShrink: 0, backgroundColor: 'transparent' },
+              style: { width: 18, height: 18, flexShrink: 0 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -141,7 +140,6 @@ export function createComboBoxDefinition(
             flexDirection: 'row',
             alignItems: 'center',
             width: '100%',
-            backgroundColor: 'transparent',
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -152,7 +150,7 @@ export function createComboBoxDefinition(
             props: {
               children: "",
               placeholder: "Type or select...",
-              style: { flex: 1, fontSize: 14, backgroundColor: 'transparent' },
+              style: { flex: 1, fontSize: 14 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 0,
@@ -161,7 +159,7 @@ export function createComboBoxDefinition(
             tag: "ComboBoxTrigger",
             props: {
               children: "",
-              style: { width: 18, height: 18, flexShrink: 0, backgroundColor: 'transparent' },
+              style: { width: 18, height: 18, flexShrink: 0 },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,

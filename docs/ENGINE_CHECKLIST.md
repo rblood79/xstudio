@@ -1191,3 +1191,21 @@ const pad = hasUserValue ? parsePadding(style) : null; // ✅ 통합 파싱
 | `style.size` | **border-box** (padding+border 포함) |
 | `layout.size` | **border-box** 반환 |
 | `applyCommonTaffyStyle` | 변환 불필요 — XStudio `box-sizing:border-box` 그대로 전달 |
+
+### Spec Shapes 배경색 검증
+
+| # | 체크 항목 | 위험 |
+|---|----------|------|
+| 1 | Factory에 `backgroundColor: 'transparent'` 없는지 | spec variant override → 배경 투명화 |
+| 2 | Spec shapes에서 `'transparent'` 방어 처리 | 기존 DB 요소 호환 필수 |
+| 3 | 토큰 이름이 colors.ts에 정의되어 있는지 | 미정의 → silent 검은색 렌더링 |
+| 4 | CSS `background` 있는 컴포넌트에 spec `roundRect` shape 포함 | 배경 누락 |
+| 5 | CSS 변수 → Spec 토큰 매핑 검증 (variant별) | 색상 불일치 |
+
+```typescript
+// Spec shapes 배경색 방어 패턴
+const userBg = props.style?.backgroundColor;
+const bgColor = (userBg != null && userBg !== 'transparent')
+              ? userBg
+              : variant.background;  // spec variant 사용
+```

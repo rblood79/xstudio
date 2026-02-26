@@ -376,6 +376,60 @@ return estimateTextHeight(fs, fs * 1.5);
 DEFAULT_ELEMENT_HEIGHTS['label'] = 20;  // 실제 CSS: 21
 ```
 
+#### Spec Shapes 배경색 규칙 (CRITICAL)
+
+Compositional Architecture에서 spec shapes가 배경/보더를 렌더링합니다.
+Factory 기본값과 토큰 정의가 spec 렌더링을 방해하지 않도록 주의해야 합니다.
+
+**규칙 1: Factory에 `backgroundColor: 'transparent'` 금지**
+
+```typescript
+// ❌ factory에서 transparent 주입 → spec variant.background를 override
+{ tag: "SelectTrigger", props: { style: { backgroundColor: 'transparent' } } }
+
+// ✅ backgroundColor 미설정 → spec variant가 배경 렌더링
+{ tag: "SelectTrigger", props: { style: { display: 'flex', width: '100%' } } }
+```
+
+**원인**: spec shapes의 `props.style?.backgroundColor ?? variant.background` 에서
+`'transparent'`는 nullish가 아니므로 `??`가 variant로 폴스루하지 않음.
+
+**규칙 2: Spec에서 'transparent' 방어 패턴 필수**
+
+기존 DB 요소에 `backgroundColor: 'transparent'`가 있을 수 있으므로 방어 처리 필수.
+
+```typescript
+// ✅ 'transparent'를 미설정으로 처리
+const userBg = props.style?.backgroundColor;
+const bgColor = (userBg != null && userBg !== 'transparent')
+              ? userBg : variant.background;
+
+// ❌ nullish coalescing만 사용 → 'transparent'가 variant를 override
+const bgColor = props.style?.backgroundColor ?? variant.background;
+```
+
+**규칙 3: 토큰 이름은 colors.ts 정의와 1:1 매칭 필수**
+
+미정의 토큰은 `resolveToken()` → `undefined` → `colorValueToFloat32()` → **검은색(0,0,0,1)** silent 렌더링.
+
+```typescript
+// ✅ colors.ts에 정의된 토큰 사용
+background: '{color.surface-container-high}' as TokenRef,
+
+// ❌ 존재하지 않는 토큰 → undefined → 검은색
+background: '{color.accent-container}' as TokenRef,  // colors.ts에 미정의!
+```
+
+**규칙 4: CSS 배경이 있는 컴포넌트는 spec shapes에 배경 shape 필수**
+
+```typescript
+// ✅ CSS에 background가 있으면 spec에도 배경 roundRect 추가
+const shapes: Shape[] = [
+  { id: 'icon-bg', type: 'roundRect', x: 0, y: 0, width, height, fill: bgColor },
+  { type: 'icon_font', iconName: 'chevron-down', ... },
+];
+```
+
 ### Breadcrumbs 컴포넌트 높이 계산 (2026-02-23)
 
 Breadcrumbs는 `display: flex; align-items: center`로 렌더링되며, 높이는 lineHeight와 동일합니다.

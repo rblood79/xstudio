@@ -26,10 +26,11 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
 
   variants: {
     default: {
-      background: '{color.transparent}' as TokenRef,
-      backgroundHover: '{color.transparent}' as TokenRef,
-      backgroundPressed: '{color.transparent}' as TokenRef,
-      text: '{color.on-surface-variant}' as TokenRef,
+      // CSS: --select-accent-container: var(--surface-container-high); --select-on-accent-container: var(--on-surface);
+      background: '{color.surface-container-high}' as TokenRef,
+      backgroundHover: '{color.surface-container-high}' as TokenRef,
+      backgroundPressed: '{color.surface-container-high}' as TokenRef,
+      text: '{color.on-surface}' as TokenRef,
     },
   },
 
@@ -86,9 +87,27 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
         : undefined;
       const effectiveSize = (typeof resolvedFs === 'number' ? resolvedFs : undefined) ?? iconSize;
 
+      // 배경색: 사용자 설정 우선, 'transparent'는 미설정으로 처리
+      const userBg = props.style?.backgroundColor;
+      const bgColor = (userBg != null && userBg !== 'transparent')
+                    ? userBg
+                    : variant.background;
+
       const fill = props.style?.color ?? variant.text;
 
+      const borderRadius = size.borderRadius as unknown as number;
+
       const shapes: Shape[] = [
+        {
+          id: 'icon-bg',
+          type: 'roundRect' as const,
+          x: 0,
+          y: 0,
+          width: effectiveSize,
+          height: effectiveSize,
+          radius: borderRadius,
+          fill: bgColor,
+        },
         {
           type: 'icon_font' as const,
           iconName: 'chevron-down',
