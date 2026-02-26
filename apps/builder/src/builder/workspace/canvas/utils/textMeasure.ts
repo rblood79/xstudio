@@ -30,6 +30,12 @@ export interface TextMeasureStyle {
   fontFamily: string;
   fontWeight?: number | string;
   lineHeight?: number;
+  // 렌더러 ParagraphStyle 정합성을 위한 확장 속성
+  letterSpacing?: number;
+  wordSpacing?: number;
+  fontStyle?: number | string;  // 0|'normal'=upright, 1|'italic', 2|'oblique'
+  fontStretch?: string;         // 'normal', 'condensed', 'expanded' 등
+  fontVariant?: string;         // 'normal', 'small-caps' 등
 }
 
 /**
@@ -75,23 +81,71 @@ export class Canvas2DTextMeasurer implements TextMeasurer {
     if (!ctx) {
       return text.length * (style.fontSize * 0.5);
     }
-    ctx.font = `${style.fontWeight ?? 400} ${style.fontSize}px ${style.fontFamily}`;
-    return ctx.measureText(text).width;
+    // fontStyle(italic/oblique)을 ctx.font 문자열에 포함
+    const fontStyleStr = (style.fontStyle === 1 || style.fontStyle === 'italic')
+      ? 'italic '
+      : (style.fontStyle === 2 || style.fontStyle === 'oblique')
+        ? 'oblique '
+        : '';
+    ctx.font = `${fontStyleStr}${style.fontWeight ?? 400} ${style.fontSize}px ${style.fontFamily}`;
+    let width = ctx.measureText(text).width;
+    // letterSpacing: 각 문자 사이 간격 수동 가산
+    if (style.letterSpacing && style.letterSpacing !== 0) {
+      width += style.letterSpacing * Math.max(0, text.length - 1);
+    }
+    // wordSpacing: 공백 문자 수만큼 추가 간격 가산
+    if (style.wordSpacing && style.wordSpacing !== 0) {
+      const spaceCount = (text.match(/ /g) ?? []).length;
+      width += style.wordSpacing * spaceCount;
+    }
+    return width;
   }
 
   measureWrapped(text: string, style: TextMeasureStyle, maxWidth: number): TextMeasureResult {
-    const lineHeight = style.lineHeight ?? style.fontSize * 1.2;
+    // measureWrappedTextHeight()를 경유하지 않고 직접 Canvas 2D word-wrap 로직 인라인
+    // (measureWrappedTextHeight → getTextMeasurer().measureWrapped 경유 시 무한 재귀 발생)
+    const fm = measureFontMetrics(style.fontFamily, style.fontSize, style.fontWeight ?? 400);
+    const lineHeight = style.lineHeight ?? fm.lineHeight;
     if (!text || maxWidth <= 0) {
       return { width: 0, height: lineHeight };
     }
-    const height = measureWrappedTextHeight(
-      text,
-      style.fontSize,
-      style.fontWeight ?? 400,
-      style.fontFamily,
-      maxWidth,
-    );
-    return { width: maxWidth, height };
+
+    const ctx = getMeasureCtx();
+    if (!ctx) {
+      return { width: maxWidth, height: lineHeight };
+    }
+
+    const fontStyleStr = (style.fontStyle === 1 || style.fontStyle === 'italic')
+      ? 'italic '
+      : (style.fontStyle === 2 || style.fontStyle === 'oblique')
+        ? 'oblique '
+        : '';
+    ctx.font = `${fontStyleStr}${style.fontWeight ?? 400} ${style.fontSize}px ${style.fontFamily}`;
+
+    const words = text.split(/(\s+)/); // 공백 포함 분리
+    let lineCount = 1;
+    let currentLineWidth = 0;
+
+    for (const word of words) {
+      let wordWidth = ctx.measureText(word).width;
+      // letterSpacing 가산
+      if (style.letterSpacing && style.letterSpacing !== 0) {
+        wordWidth += style.letterSpacing * Math.max(0, word.length - 1);
+      }
+      // wordSpacing 가산 (공백 토큰에 적용)
+      if (style.wordSpacing && style.wordSpacing !== 0 && /^\s+$/.test(word)) {
+        const spaceCount = (word.match(/ /g) ?? []).length;
+        wordWidth += style.wordSpacing * spaceCount;
+      }
+      if (currentLineWidth + wordWidth > maxWidth && currentLineWidth > 0) {
+        lineCount++;
+        currentLineWidth = wordWidth;
+      } else {
+        currentLineWidth += wordWidth;
+      }
+    }
+
+    return { width: maxWidth, height: lineCount * lineHeight };
   }
 }
 
@@ -266,7 +320,10 @@ export function setTextMeasurer(measurer: TextMeasurer): void {
 }
 
 /**
- * Canvas 2D API로 텍스트의 word-wrap 높이를 측정한다.
+ * 텍스트의 word-wrap 높이를 측정한다.
+ *
+ * TextMeasurer 경유 래퍼 — CanvasKit 초기화 후에는 Paragraph API 기반으로 동작.
+ * 기존 export 시그니처 유지 (하위 호환).
  *
  * @param text - 측정할 텍스트
  * @param fontSize - 폰트 크기 (px)
@@ -282,29 +339,10 @@ export function measureWrappedTextHeight(
   fontFamily: string,
   maxWidth: number,
 ): number {
-  // CSS line-height: normal에 대응하는 fontBoundingBox 기반 lineHeight 사용
-  const fm = measureFontMetrics(fontFamily, fontSize, fontWeight);
-  const lineHeight = fm.lineHeight;
-  if (!text || maxWidth <= 0) return lineHeight;
-
-  const ctx = getMeasureCtx();
-  if (!ctx) return lineHeight; // fallback
-
-  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-
-  const words = text.split(/(\s+)/); // 공백 포함 분리
-  let lineCount = 1;
-  let currentLineWidth = 0;
-
-  for (const word of words) {
-    const wordWidth = ctx.measureText(word).width;
-    if (currentLineWidth + wordWidth > maxWidth && currentLineWidth > 0) {
-      lineCount++;
-      currentLineWidth = wordWidth;
-    } else {
-      currentLineWidth += wordWidth;
-    }
-  }
-
-  return lineCount * lineHeight;
+  const result = getTextMeasurer().measureWrapped(text, {
+    fontSize,
+    fontFamily,
+    fontWeight,
+  }, maxWidth);
+  return result.height;
 }

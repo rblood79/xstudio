@@ -10,6 +10,34 @@
 import type { TextMeasurer, TextMeasureStyle, TextMeasureResult } from './textMeasure';
 import { getCanvasKit, isCanvasKitInitialized } from '../skia/initCanvasKit';
 import { skiaFontManager } from '../skia/fontManager';
+import { resolveFontVariantFeatures, resolveFontStretchWidth } from '../layout/engines/cssResolver';
+
+// ============================================
+// CanvasKit enum 매핑 헬퍼
+// ============================================
+
+/** fontStyle → CanvasKit FontSlant enum */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function resolveSlant(ck: any, fs?: number | string): unknown {
+  if (fs === 1 || fs === 'italic') return ck.FontSlant.Italic;
+  if (fs === 2 || fs === 'oblique') return ck.FontSlant.Oblique;
+  return ck.FontSlant.Upright;
+}
+
+/** fontStretch → CanvasKit FontWidth enum */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function resolveWidth(ck: any, stretch?: string): unknown {
+  if (!stretch || stretch === 'normal') return ck.FontWidth.Normal;
+  const idx = resolveFontStretchWidth(stretch);
+  const entries = [
+    ck.FontWidth.UltraCondensed, ck.FontWidth.ExtraCondensed,
+    ck.FontWidth.Condensed, ck.FontWidth.SemiCondensed,
+    ck.FontWidth.Normal, ck.FontWidth.SemiExpanded,
+    ck.FontWidth.Expanded, ck.FontWidth.ExtraExpanded,
+    ck.FontWidth.UltraExpanded,
+  ];
+  return entries[idx - 1] ?? ck.FontWidth.Normal;
+}
 
 /**
  * CanvasKit Paragraph API 기반 텍스트 측정기
@@ -25,6 +53,8 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     const fontMgr = skiaFontManager.getFontMgr();
     if (!ck || !fontMgr) return text.length * (style.fontSize * 0.5);
 
+    // nodeRenderers.ts의 renderText()와 동일한 textStyle 구성
+    const fontFeatures = style.fontVariant ? resolveFontVariantFeatures(style.fontVariant) : [];
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
         fontSize: style.fontSize,
@@ -33,14 +63,19 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
           weight: typeof style.fontWeight === 'number'
             ? { value: style.fontWeight }
             : { value: 400 },
+          slant: resolveSlant(ck, style.fontStyle),
+          width: resolveWidth(ck, style.fontStretch),
         },
+        letterSpacing: style.letterSpacing ?? 0,
+        wordSpacing: style.wordSpacing ?? 0,
+        ...(fontFeatures.length > 0 ? { fontFeatures } : {}),
       },
     });
 
     const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
     builder.addText(text);
     const paragraph = builder.build();
-    // Layout with infinite width to get single-line measurement
+    // 단일 라인 측정: 무한 너비로 layout
     paragraph.layout(1e6);
     const width = paragraph.getMaxIntrinsicWidth();
 
@@ -68,6 +103,8 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
       return { width: maxWidth, height: lineHeight };
     }
 
+    // measureWidth와 동일한 textStyle + halfLeading (CSS line-height 상하 균등 분배)
+    const fontFeatures = style.fontVariant ? resolveFontVariantFeatures(style.fontVariant) : [];
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
         fontSize: style.fontSize,
@@ -76,8 +113,14 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
           weight: typeof style.fontWeight === 'number'
             ? { value: style.fontWeight }
             : { value: 400 },
+          slant: resolveSlant(ck, style.fontStyle),
+          width: resolveWidth(ck, style.fontStretch),
         },
+        letterSpacing: style.letterSpacing ?? 0,
+        wordSpacing: style.wordSpacing ?? 0,
         heightMultiplier: style.lineHeight ? style.lineHeight / style.fontSize : 1.2,
+        halfLeading: true,
+        ...(fontFeatures.length > 0 ? { fontFeatures } : {}),
       },
     });
 

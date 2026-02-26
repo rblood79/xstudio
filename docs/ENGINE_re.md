@@ -136,6 +136,18 @@ return paragraph.getHeight();
 
 **수정 방안**: `utils.ts`의 텍스트 측정이 `TextMeasurer` 인터페이스를 경유하도록 변경. CanvasKit 초기화 전 Canvas 2D fallback, 초기화 후 CanvasKit ParagraphBuilder 사용.
 
+> **Phase 4-1 (2026-02-26)**: `measureTextWidth()`가 `getTextMeasurer()` 경유하도록 변경 완료. `isCanvasKitMeasurer()` 조건부 보정(+2/+4px → 0) 완료.
+>
+> **Phase 4-1B (2026-02-26)**: Phase 4-1의 미완료 잔여분 수정:
+> - `TextMeasureStyle` 인터페이스를 렌더러 ParagraphStyle과 동일하게 확장 (letterSpacing, wordSpacing, fontStyle, fontStretch, fontVariant 추가)
+> - `CanvasKitTextMeasurer`의 ParagraphStyle을 `nodeRenderers.ts` renderText()와 완전 일치하도록 완성 (slant, width, fontFeatures, halfLeading 추가)
+> - `Canvas2DTextMeasurer`에 letterSpacing/wordSpacing 수동 가산, fontStyle(italic/oblique) 반영
+> - `measureWrappedTextHeight()`를 TextMeasurer 경유 래퍼로 변경 (§2.2.3 해소)
+> - `calculateTextWidth()`의 `Math.round` 제거 → float 정밀도 유지
+> - `estimateTextHeight()`의 `Math.round` 제거 + fontFamily/fontWeight 파라미터화
+> - `calculateContentHeight()` 내 fontWeight 하드코딩(500) → 실제 style 값 사용
+> - `measureTextWidth()` 시그니처 확장 (5번째 optional `extra` 파라미터)
+
 ---
 
 #### 2.1.3 `box-sizing` 수동 변환 (Dropflow)
@@ -188,12 +200,16 @@ if (boxSizing === 'border-box' && widthStr?.endsWith('%')) {
 - **영향**: CanvasKit의 ICU 기반 Unicode line-breaking과 결과 불일치
 - **수정 방안**: 2.1.2의 TextMeasurer 전략 패턴 완성으로 해소.
 
+> **해결 (Phase 4-1B, 2026-02-26)**: `measureWrappedTextHeight()`가 `getTextMeasurer().measureWrapped()` 경유로 변경됨. CanvasKit 로드 후에는 `paragraph.layout(maxWidth)` + `paragraph.getHeight()`로 ICU 기반 줄바꿈 + 정확한 높이를 산출. Canvas 2D 폴백은 `Canvas2DTextMeasurer.measureWrapped()` 내부에서 기존 word-wrap 시뮬레이션 유지.
+
 #### 2.2.4 `+2px`/`+4px` 매직 넘버 보정
 
 - **위치**: `engines/utils.ts` — `calculateContentWidth()` 내부 (~line 738: Checkbox/Radio/Switch 레이블 +2px, ~line 785: 일반 텍스트 +4px). `enrichWithIntrinsicSize()`가 이 함수를 간접 호출.
 - **현상**: Canvas 2D와 CanvasKit 간 측정 불일치를 매직 넘버로 수동 보정
 - **영향**: 폰트/사이즈에 따라 보정값이 부적절할 수 있음
 - **수정 방안**: 동일 엔진(CanvasKit) 사용 시 자연스럽게 해소.
+
+> **부분 해소 (Phase 4-1B, 2026-02-26)**: CanvasKit 측정기가 렌더러와 동일한 ParagraphStyle을 사용하게 되어, CanvasKit 경로에서는 보정 불필요(0). Canvas 2D 경로의 +4px 보정은 폴백용으로 유지. `calculateTextWidth()`의 `Math.round` 제거로 소수점 절사 오차도 해소.
 
 #### 2.2.5 `createsBFC()` Dropflow 중복
 
@@ -218,6 +234,8 @@ if (boxSizing === 'border-box' && widthStr?.endsWith('%')) {
 - **현상**: `setTextMeasurer(new CanvasKitTextMeasurer())` 호출되지만 `getTextMeasurer()` 소비자가 0곳.
 - **영향**: Phase 0 마이그레이션 미완성
 - **수정 방안**: 2.1.2에서 통합 해결.
+
+> **해결 (Phase 4-1B, 2026-02-26)**: `measureTextWidth()` + `measureWrappedTextHeight()` 모두 `getTextMeasurer()` 경유. `TextMeasureStyle` 인터페이스 확장으로 전략 패턴이 실질적으로 동작.
 
 #### 2.3.3 `resolveCSSLength()` vs Dropflow `parseCSSSize()` 중복
 
@@ -439,7 +457,7 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 
 | # | 작업 | 절감 | 난이도 |
 |---|------|------|--------|
-| 4-1 | `TextMeasurer` 전략 패턴 완성 → Canvas 2D / CanvasKit 자동 전환 | 매직 넘버 제거 + 정확도 향상 | 중간 |
+| 4-1 | ~~TextMeasurer 전략 패턴 완성~~ **(완료: Phase 4-1 + 4-1B)** | 매직 넘버 제거 + 정확도 향상 + ParagraphStyle 완전 정합 | 완료 |
 | 4-2 | `BaseTaffyEngine` 추상 클래스 도입 → 인스턴스 관리 / 결과 수집 / 부모 설정 공통화 | ~145줄 | 중간 |
 | 4-3 | Rust 브릿지에 `GridTemplateComponent::Repeat` 지원 → TS repeat() 파싱 제거 | ~135줄 | 높음 |
 | 4-4 | TaffyGridEngine에 `enrichWithIntrinsicSize()` 호출 추가 (검증 후) | 잠재 버그 수정 | 중간 |
@@ -462,9 +480,35 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 | Phase 1 | ~50줄 + dead file 1개 | 리스크 없는 즉시 실행 (xHeight는 Phase 4로 이동) |
 | Phase 2 | ~30줄 + 버그 2건 수정 | 기능 정상화 |
 | Phase 3 | ~320줄 | 중복 코드 대폭 축소 |
-| Phase 4 | ~280줄 + 정확도 향상 | 구조적 개선 |
+| Phase 4 | ~280줄 + 정확도 향상 | 구조적 개선 (4-1은 완료) |
 | Phase 5 | ~130줄 + 성능 향상 | 근본 아키텍처 변경 |
 | **합계** | **~810줄** | 현재 엔진 코드 대비 약 30% 감소 예상 |
+
+---
+
+### Phase 4-1B: TextMeasurer 스타일 정합성 완성 (2026-02-26)
+
+Phase 4-1이 "배관 연결"(measureTextWidth → getTextMeasurer() 경유)만 완료한 반면,
+4-1B는 배관을 통해 흐르는 데이터(스타일 속성)의 완전성을 보장합니다.
+
+**수정 파일:**
+| 파일 | 주요 변경 |
+|------|----------|
+| `utils/textMeasure.ts` | TextMeasureStyle 인터페이스 확장, Canvas2DTextMeasurer 스타일 반영, measureWrappedTextHeight → TextMeasurer 경유 |
+| `utils/canvaskitTextMeasurer.ts` | ParagraphStyle을 렌더러(nodeRenderers.ts)와 완전 일치 (slant, width, letterSpacing, wordSpacing, fontFeatures, halfLeading) |
+| `engines/utils.ts` | measureTextWidth 시그니처 확장, Math.round 제거(width+height), calculateContentWidth/Height 스타일 전달 완성, fontWeight 하드코딩 제거 |
+
+**해소된 ENGINE_re.md 항목:**
+- §2.1.2 Canvas 2D 텍스트 측정 → 완전 해결
+- §2.2.3 수동 줄바꿈 시뮬레이션 → 완전 해결
+- §2.2.4 +2px/+4px 매직 넘버 → CanvasKit 경로 해소 (Canvas 2D 폴백 유지)
+- §2.3.2 TextMeasurer 전략 패턴 무효화 → 완전 해결
+
+**신규 발견 및 해결:**
+- CanvasKitTextMeasurer ParagraphStyle 불완전성 (letterSpacing/slant/width/fontFeatures 누락)
+- calculateTextWidth의 Math.round에 의한 소수점 절사
+- estimateTextHeight의 Math.round + fontWeight 하드코딩
+- calculateContentHeight의 fontWeight 하드코딩 (500)
 
 ---
 

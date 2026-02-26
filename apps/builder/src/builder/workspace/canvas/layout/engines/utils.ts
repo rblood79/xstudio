@@ -520,12 +520,20 @@ export function getButtonSizeConfig(
  * @param fontSize - 폰트 크기 (기본 14px)
  * @param fontFamily - 폰트 패밀리 (기본 Pretendard)
  * @param fontWeight - 폰트 두께 (기본 400)
+ * @param extra - 렌더러 ParagraphStyle 정합성을 위한 추가 스타일 (기존 호출자 하위 호환)
  */
 export function measureTextWidth(
   text: string,
   fontSize: number = 14,
   fontFamily: string = specFontFamily.sans,
   fontWeight: number | string = 400,
+  extra?: {
+    letterSpacing?: number;
+    wordSpacing?: number;
+    fontStyle?: number | string;
+    fontStretch?: string;
+    fontVariant?: string;
+  },
 ): number {
   if (!text) return 0;
 
@@ -533,6 +541,7 @@ export function measureTextWidth(
     fontSize,
     fontFamily,
     fontWeight,
+    ...extra,
   });
 }
 
@@ -603,10 +612,9 @@ function calculateTextWidth(text: string, fontSize: number = 14, padding: number
   if (!text) return 0;
 
   const textWidth = measureTextWidth(text, fontSize);
-  // 🚀 Phase 12 Fix: Math.ceil → Math.round
-  // Math.ceil은 항상 +1px 올림되어 inline-block 버튼 간 ~1px 가로 여백 발생
-  // Math.round로 변경하여 CSS와 동일한 정합성 확보
-  return Math.round(textWidth + padding);
+  // float 정밀도 유지: Skia paragraph.layout(maxWidth)와 getMaxIntrinsicWidth() 간
+  // 정확한 일치를 보장하여 마지막 글자 줄바꿈 방지
+  return textWidth + padding;
 }
 
 /** 컴포넌트별 기본 size prop 값 */
@@ -800,10 +808,19 @@ export function calculateContentWidth(
     const fontFamily = (style?.fontFamily as string) ?? specFontFamily.sans;
     const fontWeight = style?.fontWeight ?? 400;
     const letterSpacing = parseNumericValue(style?.letterSpacing) ?? 0;
-    const baseWidth = measureTextWidth(text, fontSize, fontFamily, fontWeight as number | string);
-    const totalWidth = baseWidth + (letterSpacing * Math.max(0, text.length - 1));
+    const wordSpacing = parseNumericValue(style?.wordSpacing) ?? 0;
+    const baseWidth = measureTextWidth(text, fontSize, fontFamily, fontWeight as number | string, {
+      letterSpacing,
+      wordSpacing,
+      fontStyle: style?.fontStyle as number | string | undefined,
+      fontStretch: style?.fontStretch as string | undefined,
+      fontVariant: style?.fontVariant as string | undefined,
+    });
+    // CanvasKit 측정기: 모든 스타일이 ParagraphStyle에 포함됨 → 보정 불필요
+    // Canvas 2D 측정기: measureWidth 내부에서 letterSpacing/wordSpacing 수동 가산
+    // → 여기서 추가 가산 불필요 (이중 가산 방지)
     const generalCompensation = isCanvasKitMeasurer() ? 0 : 4;
-    return Math.ceil(totalWidth) + generalCompensation;
+    return Math.ceil(baseWidth) + generalCompensation;
   }
 
   // 4. 태그별 기본 너비 사용
@@ -870,17 +887,25 @@ const DEFAULT_HEIGHT = 36;
  * CSS/PixiJS의 텍스트 높이와 동일하게 fontSize * lineHeight 비율로 추정.
  *
  * @param fontSize - 폰트 크기 (px)
+ * @param lineHeight - 명시적 line-height (px); undefined이면 fontBoundingBox 기반 측정
+ * @param fontFamily - 폰트 패밀리 (기본 Pretendard)
+ * @param fontWeight - 폰트 두께 (기본 400)
  * @returns 추정 텍스트 높이
  */
-function estimateTextHeight(fontSize: number, lineHeight?: number): number {
-  // 명시적 lineHeight가 있으면 그 값 사용
+function estimateTextHeight(
+  fontSize: number,
+  lineHeight?: number,
+  fontFamily: string = specFontFamily.sans,
+  fontWeight: number | string = 400,
+): number {
+  // 명시적 lineHeight가 있으면 float 그대로 반환 (Math.round 제거)
   if (lineHeight !== undefined) {
-    return Math.round(lineHeight);
+    return lineHeight;
   }
   // CSS line-height: normal 근사값 (fontBoundingBox 기반)
   // Button 등 UI 컴포넌트는 line-height: normal이 적용됨
-  const fm = measureFontMetrics(specFontFamily.sans, fontSize, 400);
-  return Math.round(fm.lineHeight);
+  const fm = measureFontMetrics(fontFamily, fontSize, fontWeight);
+  return fm.lineHeight;
 }
 
 /**
@@ -959,7 +984,8 @@ export function calculateContentHeight(
         const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
         if (textContent) {
           const ws = (style?.whiteSpace as string) ?? 'normal';
-          const measured = measureTextWithWhiteSpace(textContent, fontSize, specFontFamily.sans, 500, ws, maxTextWidth);
+          const fw = parseNumericValue(style?.fontWeight) ?? 500;
+          const measured = measureTextWithWhiteSpace(textContent, fontSize, specFontFamily.sans, fw, ws, maxTextWidth);
           if (measured.height > textHeight + 0.5) {
             const wrappedHeight = Math.max(measured.height, minContentHeight);
             // 텍스트 줄바꿈 높이가 configHeight보다 크면 확장
@@ -1349,7 +1375,8 @@ export function calculateContentHeight(
   const fontSize = parseNumericValue(style?.fontSize);
   const resolvedLineHeight = parseLineHeight(style, fontSize);
   if (resolvedLineHeight !== undefined) {
-    return Math.round(resolvedLineHeight);
+    // float 정밀도 유지: Math.round 제거 → 소수점 절사로 인한 줄바꿈 방지
+    return resolvedLineHeight;
   }
 
   // 6. 태그별 기본 높이 사용

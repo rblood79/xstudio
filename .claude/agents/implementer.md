@@ -1,5 +1,5 @@
 ---
-name: 지수
+name: implementer
 description: |
   Use this agent when you need to implement new features, create components, write business logic, or integrate APIs. Examples:
 

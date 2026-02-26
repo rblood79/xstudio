@@ -1151,6 +1151,36 @@ const needsWidth = hasExplicitIntrinsicWidthKeyword ||
 
 **영향 범위**: Checkbox, Radio, Switch, Toggle — Compositional Architecture(Label 자식 Element)와 legacy(props.children) 모두 정상 동작. Block layout(Dropflow)은 `isFlexChild` 기본값 `false`로 영향 없음.
 
+### TextMeasurer 스타일 정합성 (CRITICAL, 2026-02-26)
+
+**문제**: 레이아웃 측정용 Paragraph와 Skia 렌더링용 Paragraph의 ParagraphStyle이 불일치하면
+fit-content 텍스트에서 마지막 글자 줄바꿈 + height 초과 렌더링 발생.
+
+**원칙**: `CanvasKitTextMeasurer`의 ParagraphStyle은 `nodeRenderers.ts` renderText()와
+**동일한 속성**을 사용해야 함.
+
+**정합 대상 속성 (폭에 영향):**
+- fontSize, fontFamilies, fontWeight
+- fontStyle (slant: italic/oblique)
+- fontStretch (width: condensed/expanded)
+- letterSpacing, wordSpacing
+- fontVariant → fontFeatures (small-caps 등)
+
+**정합 대상 속성 (높이에 영향):**
+- 위 속성 전부 (줄바꿈 위치 변경 → 줄 수 변경)
+- heightMultiplier + halfLeading: true
+
+**3곳 동시 유지:**
+1. `canvaskitTextMeasurer.ts` — 측정용 ParagraphStyle
+2. `nodeRenderers.ts` renderText() — 렌더링용 ParagraphStyle
+3. `TextMeasureStyle` 인터페이스 — 두 ParagraphStyle에 전달할 스타일 필드
+
+**금지:**
+- `calculateTextWidth()`에서 `Math.round`/`Math.ceil` 사용 금지 — float 정밀도 유지 필수
+- `estimateTextHeight()`에서 `Math.round` 사용 금지 — 동일 이유
+- `calculateContentHeight()`에서 fontWeight 하드코딩 금지 — 실제 element style 사용
+- `measureTextWidth()` 호출 시 letterSpacing 수동 가산 금지 — 측정기 내부에서 처리
+
 ### 레이아웃 엔진 개선 이력 (2026-02-23)
 
 #### line-height 이중 전략: normal vs 1.5 (2026-02-23)
