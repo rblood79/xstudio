@@ -326,3 +326,12 @@ export type { SliderOutputProps } from './components/SliderOutput.spec';
 
 export { DateSegmentSpec } from './components/DateSegment.spec';
 export type { DateSegmentProps, DateSegmentType } from './components/DateSegment.spec';
+
+export { SelectTriggerSpec } from './components/SelectTrigger.spec';
+export type { SelectTriggerProps } from './components/SelectTrigger.spec';
+
+export { SelectValueSpec } from './components/SelectValue.spec';
+export type { SelectValueProps } from './components/SelectValue.spec';
+
+export { SelectIconSpec } from './components/SelectIcon.spec';
+export type { SelectIconProps } from './components/SelectIcon.spec';

@@ -252,6 +252,7 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 - **2026-02-17**: Phase 9 완료 — 레거시 엔진(`BlockEngine`, `FlexEngine`, `GridEngine`) 삭제, Feature flag 제거, 디스패처 정리. 전략 D 목표 아키텍처 달성.
 - **2026-02-21**: Post-Implementation Notes 추가 — `LayoutContext.getChildElements` 확장, `enrichWithIntrinsicSize` 개선(childElements 파라미터, fontBoundingBox line-height 통일), 수정 파일 목록.
 - **2026-02-26**: Phase 4-1C box-sizing 근본 수정 기록 추가 — `enrichWithIntrinsicSize()` border-box 통일, `applyCommonTaffyStyle()` content-box 변환.
+- **2026-02-26**: fontSize CSS 상속 일관성 수정 기록 추가 — `calculateContentHeight()` computedStyle 파라미터 추가, min/max-content 하드코딩 제거.
 
 ---
 
@@ -313,3 +314,19 @@ Dropflow adapter는 `boxSizing: 'border-box'` 고정이므로, content-box 값�
 
 - Dropflow: 변경 없음 (`boxSizing: 'border-box'` 네이티브 지원)
 - Taffy: `applyCommonTaffyStyle()`에서 numeric width/height에서 padding+border 차감
+
+#### fontSize CSS 상속 일관성 — calculateContentHeight (2026-02-26)
+
+`calculateContentWidth()`에서 적용된 CSS 상속 fontSize 패턴을 `calculateContentHeight()`와 `enrichWithIntrinsicSize()` min/max-content 경로에도 통일.
+
+**문제**: width 측정은 `computedStyle?.fontSize ?? 16`을 사용하지만, height 측정은 `?? 16` 하드코딩,
+min/max-content는 `14` 하드코딩. 부모에 fontSize: 20 설정 시 width/height 측정 불일치.
+
+**수정**:
+
+| 파일 | 변경 |
+|------|------|
+| `engines/utils.ts` | `calculateContentHeight()` — `computedStyle?: ComputedStyle` 5번째 파라미터 추가 |
+| `engines/utils.ts` | TEXT_LEAF_TAGS fontSize/fontWeight/fontFamily에 computedStyle fallback |
+| `engines/utils.ts` | `enrichWithIntrinsicSize()` min/max-content fontSize `14` → `computedStyle ?? 16` |
+| `engines/utils.ts` | `enrichWithIntrinsicSize()` → `calculateContentHeight()` 호출 시 computedStyle 전달 |

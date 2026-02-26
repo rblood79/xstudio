@@ -928,6 +928,27 @@ const ElementsLayer = memo(function ElementsLayer({
             effectiveContainerEl, filteredContainerChildren, avW, avH,
             { bfcId: containerEl.id, parentDisplay, getChildElements: (id: string) => pageChildrenMap.get(id) ?? [] }
           );
+          // TODO: 디버그 로그 (확인 후 제거)
+          if (containerTag === 'select') {
+            const triggerLayout = innerLayouts.find(l => {
+              const el = filteredContainerChildren.find(c => c.id === l.elementId);
+              return el?.tag === 'SelectTrigger';
+            });
+            if (triggerLayout) {
+              const triggerEl = filteredContainerChildren.find(c => c.tag === 'SelectTrigger');
+              const triggerStyle = triggerEl?.props?.style as Record<string, unknown> | undefined;
+              console.log('[Select layout] SelectTrigger result:', {
+                layoutH: triggerLayout.height,
+                layoutW: triggerLayout.width,
+                layoutY: triggerLayout.y,
+                injectedPadTop: triggerStyle?.paddingTop,
+                injectedPadBot: triggerStyle?.paddingBottom,
+                triggerDisplay: triggerStyle?.display,
+                avW, avH,
+                childCount: filteredContainerChildren.length,
+              });
+            }
+          }
           cachedLayoutMap = new Map(innerLayouts.map(l => [l.elementId, l]));
         }
 

@@ -1055,11 +1055,12 @@ export function calculateContentHeight(
     return Math.max(textHeight, minContentHeight);
   }
 
-  // 3. CardHeader/CardContent: 투명 컨테이너 — 자식 높이 합산/max
+  // 3. CardHeader/CardContent/SelectTrigger: 투명 컨테이너 — 자식 높이 합산/max
   // Card의 새 트리 구조(Card → CardHeader → Heading, Card → CardContent → Description)에서
   // 각 래퍼가 자신의 자식 높이를 올바르게 반환해야 Card 전체 높이 계산이 정확해짐
+  // SelectTrigger: Compositional Architecture — flex row 자식(SelectValue, SelectIcon) max 높이
   // flexDirection에 따라: column → 합산+gap, row → max (일반 flex 컨테이너와 동일)
-  if (tag === 'cardheader' || tag === 'cardcontent') {
+  if (tag === 'cardheader' || tag === 'cardcontent' || tag === 'selecttrigger') {
     if (childElements && childElements.length > 0) {
       const gapValue = parseNumericValue(style?.gap) ?? 8;
       const flexDir = (style?.flexDirection as string) || 'column';
@@ -1703,6 +1704,20 @@ export function enrichWithIntrinsicSize(
     }
     injectedStyle.height = injectHeight;
     // TODO: 디버그 로그 (확인 후 제거)
+    if (tag === 'selecttrigger') {
+      console.log('[enrichWithIntrinsicSize] SelectTrigger:', {
+        childResolvedHeight,
+        padTop: box.padding.top,
+        padBot: box.padding.bottom,
+        injectHeight,
+        isSpecShapesInput,
+        needsHeight,
+        childElements: childElements?.map(c => c.tag),
+        stylePadTop: style?.paddingTop,
+        stylePadBot: style?.paddingBottom,
+        styleDisplay: style?.display,
+      });
+    }
   }
 
   // Width 주입 (inline-block 태그의 fit-content / min-content / max-content 에뮬레이션)
