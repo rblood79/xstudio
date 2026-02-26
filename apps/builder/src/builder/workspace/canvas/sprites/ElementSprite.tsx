@@ -51,6 +51,7 @@ import {
   LabelSpec, FieldErrorSpec, DescriptionSpec,
   SliderTrackSpec, SliderThumbSpec, SliderOutputSpec,
   DateSegmentSpec,
+  SelectTriggerSpec, SelectValueSpec, SelectIconSpec,
 } from '@xstudio/specs';
 import {
   PixiButton,
@@ -129,6 +130,7 @@ import { shallow } from 'zustand/shallow';
 import { useResolvedElement } from './useResolvedElement';
 import { isFlexContainer, isGridContainer } from '../layout';
 import { measureWrappedTextHeight } from '../utils/textMeasure';
+import { PHANTOM_INDICATOR_CONFIGS } from '../layout/engines/utils';
 
 // ============================================
 // Constants
@@ -309,6 +311,11 @@ const UI_COLORSWATCHPICKER_TAGS = new Set(['ColorSwatchPicker']);
 const UI_GROUP_TAGS = new Set(['Group']);
 const UI_SLOT_TAGS = new Set(['Slot']);
 
+/**
+ * Select child composition 태그들
+ */
+const UI_SELECT_CHILD_TAGS = new Set(['SelectTrigger', 'SelectValue', 'SelectIcon']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
@@ -361,7 +368,7 @@ function parseOutlineShorthand(
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'panel' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'panel' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot' | 'selectChild';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -444,6 +451,9 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_COLORSWATCHPICKER_TAGS.has(tag)) return 'colorSwatchPicker';
   if (UI_GROUP_TAGS.has(tag)) return 'group';
   if (UI_SLOT_TAGS.has(tag)) return 'slot';
+
+  // Select child composition 컴포넌트
+  if (UI_SELECT_CHILD_TAGS.has(tag)) return 'selectChild';
 
   // TEXT/IMAGE: leaf 요소이므로 display 값과 무관하게 항상 전용 Sprite 사용
   if (TEXT_TAGS.has(tag)) return 'text';
@@ -532,6 +542,9 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'SliderOutput': SliderOutputSpec,
   'DateSegment': DateSegmentSpec,
   'TimeSegment': DateSegmentSpec,
+  'SelectTrigger': SelectTriggerSpec,
+  'SelectValue': SelectValueSpec,
+  'SelectIcon': SelectIconSpec,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1201,6 +1214,38 @@ export const ElementSprite = memo(function ElementSprite({
             }
 
             const specNode = specShapesToSkia(shapes, 'light', finalWidth, specHeight);
+
+            // Phantom indicator 레이아웃 보정: Switch/Checkbox/Radio의 indicator는
+            // spec shapes가 border-box 원점(0,0)에 그리지만, CSS 레이아웃 속성
+            // (padding, align-items)을 반영하지 못함.
+            // 1) padding: specNode를 content area로 오프셋
+            // 2) align-items: center → indicator를 container 내 세로 중앙 정렬
+            const tagLower = tag.toLowerCase();
+            const indicatorConfig = PHANTOM_INDICATOR_CONFIGS[tagLower];
+            if (indicatorConfig && style) {
+              const padFallback = style.padding !== undefined ? parseCSSSize(style.padding) : 0;
+              const padTop = style.paddingTop !== undefined ? parseCSSSize(style.paddingTop) : padFallback;
+              const padBottom = style.paddingBottom !== undefined ? parseCSSSize(style.paddingBottom) : padFallback;
+              const padLeft = style.paddingLeft !== undefined ? parseCSSSize(style.paddingLeft) : padFallback;
+
+              // content area 높이 = border-box - padding (align-items 계산 기준)
+              const contentH = specHeight - padTop - padBottom;
+
+              // align-items 세로 정렬: content area 내에서 indicator 위치 결정
+              const s = (size as 'sm' | 'md' | 'lg') || 'md';
+              const indicatorH = indicatorConfig.heights[s] ?? indicatorConfig.heights.md;
+              const alignItems = style.alignItems as string | undefined;
+              let alignOffsetY = 0;
+              if (alignItems === 'center' && contentH > indicatorH) {
+                alignOffsetY = (contentH - indicatorH) / 2;
+              } else if (alignItems === 'flex-end' && contentH > indicatorH) {
+                alignOffsetY = contentH - indicatorH;
+              }
+
+              // padding + align-items 합산 오프셋
+              specNode.x = (specNode.x ?? 0) + padLeft;
+              specNode.y = (specNode.y ?? 0) + padTop + alignOffsetY;
+            }
 
             // QW-2: disabled 상태 opacity 적용
             if (componentState === 'disabled') {
@@ -2044,6 +2089,22 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+        />
+      );
+
+    // Select child composition: 투명 히트 영역 (Skia spec shapes가 시각 렌더링)
+    // SelectTrigger는 컨테이너 (SelectValue/SelectIcon 자식) → 래퍼가 children 렌더링
+    // SelectValue/SelectIcon은 leaf → children 없음
+    case 'selectChild':
+      return (
+        <pixiGraphics
+          draw={drawContainerHitRect}
+          eventMode="static"
+          cursor="pointer"
+          onPointerDown={handleContainerPointerDown}
+          onPointerOver={handlePointerOver}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerLeave}
         />
       );
 

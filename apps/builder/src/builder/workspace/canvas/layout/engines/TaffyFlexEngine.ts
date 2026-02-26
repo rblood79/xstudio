@@ -418,9 +418,14 @@ export class TaffyFlexEngine extends BaseTaffyEngine {
       const parentSize = (parentProps?.size as string) ?? 'md';
       const indicatorSpace = getPhantomIndicatorSpace(parentTag, parentSize);
       if (indicatorSpace) {
+        // CSS gap이 설정되면 Taffy가 gap을 적용하므로 phantom width에서 specGap 제거
+        // gap 미설정 시 specGap이 포함된 width로 기존 동작 유지
+        const parentStyle2 = parent.props?.style as Record<string, unknown> | undefined;
+        const hasCSSGap = parentStyle2?.gap !== undefined || parentStyle2?.columnGap !== undefined;
+        const phantomW = hasCSSGap ? indicatorSpace.width - (indicatorSpace.gap ?? 0) : indicatorSpace.width;
         const phantomStyle: TaffyStyle = {
           display: 'flex',
-          width: `${indicatorSpace.width}px`,
+          width: `${phantomW}px`,
           height: `${indicatorSpace.height}px`,
           flexShrink: 0,
         };

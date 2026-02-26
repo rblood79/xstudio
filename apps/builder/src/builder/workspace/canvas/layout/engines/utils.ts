@@ -52,13 +52,13 @@ export const PHANTOM_INDICATOR_CONFIGS: Record<string, PhantomIndicatorConfig> =
     widths:     { sm: 16, md: 20, lg: 24 },
     heights:    { sm: 16, md: 20, lg: 24 },
     gaps:       { sm: 6,  md: 8,  lg: 10 },
-    rowHeights: { sm: 20, md: 24, lg: 28 },
+    rowHeights: { sm: 20, md: 24, lg: 28 },  // spec.sizes.height (전체 행 높이)
   },
   radio: {
     widths:     { sm: 16, md: 20, lg: 24 },
     heights:    { sm: 16, md: 20, lg: 24 },
     gaps:       { sm: 6,  md: 8,  lg: 10 },
-    rowHeights: { sm: 20, md: 24, lg: 28 },
+    rowHeights: { sm: 20, md: 24, lg: 28 },  // spec.sizes.height (전체 행 높이)
   },
 };
 
@@ -66,14 +66,14 @@ export const PHANTOM_INDICATOR_CONFIGS: Record<string, PhantomIndicatorConfig> =
 export function getPhantomIndicatorSpace(
   tag: string,
   size?: string,
-): { width: number; height: number } | null {
+): { width: number; height: number; gap: number } | null {
   const config = PHANTOM_INDICATOR_CONFIGS[tag];
   if (!config) return null;
   const s = (size ?? 'md') as 'sm' | 'md' | 'lg';
   const w = config.widths[s] ?? config.widths.md;
   const h = config.heights[s] ?? config.heights.md;
   const gap = config.gaps[s] ?? config.gaps.md;
-  return { width: w + gap, height: h };
+  return { width: w + gap, height: h, gap };
 }
 
 /** Phantom indicator의 width + gap (number, 폴백 0) */
@@ -706,7 +706,8 @@ export function calculateContentWidth(
   // Phantom indicator space (모듈 스코프 PHANTOM_INDICATOR_CONFIGS 사용)
   const _phantomProps = element.props as Record<string, unknown> | undefined;
   const _phantomSize = (_phantomProps?.size as string) ?? 'md';
-  const phantomW = getPhantomIndicatorWidth(tag, _phantomSize);
+  const phantomSpace = getPhantomIndicatorSpace(tag, _phantomSize);
+  const phantomW = phantomSpace?.width ?? 0;
 
   // 2. Flex 컨테이너: childElements 기반 재귀 너비 계산 (텍스트 추출보다 먼저 처리)
   // TagGroup(flex column, fit-content), TagList(flex row) 등 컨테이너 컴포넌트의
@@ -737,12 +738,18 @@ export function calculateContentWidth(
 
       // Phantom indicator: Checkbox/Radio/Switch의 indicator는 element tree에 없지만
       // spec shapes(Skia)가 시각적으로 그리므로 width 계산에 반영
-      // (phantomW는 함수 상단에서 모듈 스코프 PHANTOM_INDICATOR_CONFIGS 기반으로 계산됨)
+      // CSS gap이 설정되면 specGap을 제거하고 CSS gap으로 대체
+      const hasCSSGapW = style?.gap !== undefined || style?.columnGap !== undefined;
+      const effectivePhantomW = (hasCSSGapW && phantomW > 0)
+        ? phantomW - (phantomSpace?.gap ?? 0)
+        : phantomW;
 
       if (isRow) {
+        // phantomW > 0이면 phantom도 flex child로 간주 → gap 횟수에 포함
+        const gapCount = childElements.length - 1 + (effectivePhantomW > 0 ? 1 : 0);
         return childWidths.reduce((sum, w) => sum + w, 0)
-          + gap * Math.max(0, childElements.length - 1)
-          + phantomW;
+          + gap * Math.max(0, gapCount)
+          + effectivePhantomW;
       }
       return Math.max(...childWidths, phantomW, 0);
     }
@@ -758,7 +765,12 @@ export function calculateContentWidth(
     const sizeName = (props?.size as string) ?? 'md';
     const s = sizeName as 'sm' | 'md' | 'lg';
     const indicatorSize = indicatorConfig.widths[s] ?? indicatorConfig.widths.md;
-    const indicatorGap = indicatorConfig.gaps[s] ?? indicatorConfig.gaps.md;
+    const specIndicatorGap = indicatorConfig.gaps[s] ?? indicatorConfig.gaps.md;
+    // CSS gap이 설정되면 specGap 대신 CSS gap 사용
+    const hasCSSGapSec3 = style?.gap !== undefined || style?.columnGap !== undefined;
+    const indicatorGap = hasCSSGapSec3
+      ? (parseNumericValue(style?.gap ?? style?.columnGap) ?? specIndicatorGap)
+      : specIndicatorGap;
     // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
     const fontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
     const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
@@ -957,6 +969,7 @@ export function calculateContentHeight(
   availableWidth?: number,
   childElements?: Element[],
   getChildElements?: (id: string) => Element[],
+  computedStyle?: ComputedStyle,
 ): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
 
@@ -1188,7 +1201,10 @@ export function calculateContentHeight(
     const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
     if (isColumn) {
       const indicatorH = heightIndicatorConfig.heights[s] ?? heightIndicatorConfig.heights.md;
-      const gap = heightIndicatorConfig.gaps[s] ?? heightIndicatorConfig.gaps.md;
+      const specGap = heightIndicatorConfig.gaps[s] ?? heightIndicatorConfig.gaps.md;
+      // CSS gap이 설정되면 specGap 대신 CSS gap 사용
+      const hasCSSGapH = style?.gap !== undefined || style?.rowGap !== undefined;
+      const gap = hasCSSGapH ? (parseNumericValue(style?.gap ?? style?.rowGap) ?? specGap) : specGap;
       const fs = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
       return indicatorH + gap + Math.round(fs * 1.4);
     }
@@ -1392,9 +1408,9 @@ export function calculateContentHeight(
     const props = element.props as Record<string, unknown> | undefined;
     const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
     if (textContent) {
-      const fs0 = parseNumericValue(style?.fontSize) ?? 16;
-      const fw0 = parseNumericValue(style?.fontWeight) ?? 400;
-      const ff0 = (style?.fontFamily as string) ?? specFontFamily.sans;
+      const fs0 = parseNumericValue(style?.fontSize) ?? computedStyle?.fontSize ?? 16;
+      const fw0 = parseNumericValue(style?.fontWeight) ?? computedStyle?.fontWeight ?? 400;
+      const ff0 = (style?.fontFamily as string) ?? computedStyle?.fontFamily ?? specFontFamily.sans;
       const pad = parsePadding(style, availableWidth);
       const maxTextWidth = availableWidth - pad.left - pad.right;
       if (maxTextWidth > 0) {
@@ -1410,7 +1426,7 @@ export function calculateContentHeight(
   }
 
   // 5. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용
-  const fontSize = parseNumericValue(style?.fontSize);
+  const fontSize = parseNumericValue(style?.fontSize) ?? computedStyle?.fontSize;
   const resolvedLineHeight = parseLineHeight(style, fontSize);
   if (resolvedLineHeight !== undefined) {
     // float 정밀도 유지: Math.round 제거 → 소수점 절사로 인한 줄바꿈 방지
@@ -1646,7 +1662,7 @@ export function enrichWithIntrinsicSize(
     );
     if (textContent) {
       const styleRecord = style as Record<string, unknown> | undefined;
-      const fontSize = typeof styleRecord?.fontSize === 'number' ? styleRecord.fontSize : 14;
+      const fontSize = typeof styleRecord?.fontSize === 'number' ? styleRecord.fontSize : (_computedStyle?.fontSize ?? 16);
       resolvedIntrinsicWidth = rawWidth === 'min-content'
         ? calculateMinContentWidth(textContent, fontSize)
         : calculateMaxContentWidth(textContent, fontSize);
@@ -1674,7 +1690,7 @@ export function enrichWithIntrinsicSize(
   // Height 주입
   // childElements가 있으면 재계산 (CheckboxGroup 등 자식 기반 높이 필요)
   const childResolvedHeight = (childElements && childElements.length > 0)
-    ? calculateContentHeight(element, availableWidth, childElements, getChildElements)
+    ? calculateContentHeight(element, availableWidth, childElements, getChildElements, _computedStyle)
     : box.contentHeight;
   if (needsHeight && childResolvedHeight > 0) {
     let injectHeight = childResolvedHeight;

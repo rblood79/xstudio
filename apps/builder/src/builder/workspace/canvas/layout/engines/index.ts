@@ -29,7 +29,7 @@ import { isTaffyGridAvailable } from './TaffyGridEngine';
 import { TaffyGridEngine } from './TaffyGridEngine';
 import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
 import { useScrollState } from '../../../../stores/scrollState';
-import { getPhantomIndicatorWidth } from './utils';
+import { getPhantomIndicatorWidth, getPhantomIndicatorSpace } from './utils';
 
 // Re-export types
 export type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
@@ -245,13 +245,21 @@ export function calculateChildrenLayout(
         // Phantom indicator offset: Switch/Checkbox/Radio의 indicator는
         // DOM에만 존재하고 WebGL element tree에는 없음.
         // Spec shapes(Skia)가 indicator를 x=0에 그리므로
-        // 자식 요소를 indicator 너비 + gap만큼 오른쪽으로 오프셋.
+        // 자식 요소를 indicator 너비만큼 오른쪽으로 오프셋.
+        // CSS gap이 설정되면 specGap을 제거 (Dropflow가 gapVal로 처리)
         const parentTag = (parent.tag ?? '').toLowerCase();
         const parentProps = parent.props as Record<string, unknown> | undefined;
         const parentSize = (parentProps?.size as string) ?? 'md';
         const indicatorOffset = getPhantomIndicatorWidth(parentTag, parentSize);
         if (indicatorOffset > 0) {
-          xOffset = indicatorOffset;
+          // CSS gap이 설정되었으면 specGap 제거 (gapVal이 대신 적용됨)
+          const hasCSSGap = style?.gap !== undefined || style?.columnGap !== undefined;
+          if (hasCSSGap) {
+            const indicatorSpace = getPhantomIndicatorSpace(parentTag, parentSize);
+            xOffset = indicatorOffset - (indicatorSpace?.gap ?? 0) + gapVal;
+          } else {
+            xOffset = indicatorOffset;
+          }
         }
 
         for (let i = 0; i < results.length; i++) {

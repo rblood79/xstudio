@@ -636,6 +636,8 @@ const ElementsLayer = memo(function ElementsLayer({
     'ColorSwatch', 'ColorWheel', 'ColorArea', 'ColorSlider',
     // Field sub-components: leaf 요소 (자식 없음)
     'FieldError', 'DateSegment', 'TimeSegment', 'SliderOutput', 'SliderThumb',
+    // Select sub-components: leaf 요소
+    'SelectValue', 'SelectIcon',
   ]), []);
 
   // Spec shapes 전용 컴포넌트: 모든 시각 요소를 spec shapes로 렌더링하므로
@@ -767,6 +769,30 @@ const ElementsLayer = memo(function ElementsLayer({
               c.tag === 'Label' || c.tag === 'SelectTrigger' || c.tag === 'ComboBoxWrapper'
             );
 
+            // SelectTrigger: padding을 여기서 주입해야 Select 레이아웃 엔진이 높이 계산에 반영
+            // (containerTag === 'selecttrigger' 블록은 SelectTrigger 내부 자식 레이아웃용)
+            if (containerTag === 'select') {
+              filteredContainerChildren = filteredContainerChildren.map(child => {
+                if (child.tag === 'SelectTrigger') {
+                  const cs = (child.props?.style || {}) as Record<string, unknown>;
+                  return {
+                    ...child,
+                    props: {
+                      ...child.props,
+                      style: {
+                        ...cs,
+                        paddingLeft: cs.paddingLeft ?? 14,
+                        paddingRight: cs.paddingRight ?? 14,
+                        paddingTop: cs.paddingTop ?? 10,
+                        paddingBottom: cs.paddingBottom ?? 10,
+                      },
+                    },
+                  } as Element;
+                }
+                return child;
+              });
+            }
+
             parentStyle = {
               ...(parentStyle || {}),
               display: 'flex',
@@ -779,17 +805,18 @@ const ElementsLayer = memo(function ElementsLayer({
             };
           }
 
-          // SelectTrigger: spec shapes 트리거 영역과 일치하는 히트 영역 크기
-          // Select md: triggerHeight = fontSize(14) + paddingY(8)*2 + 4 = 34
+          // SelectTrigger: Compositional Architecture — 레이아웃이 spec shapes와 일치하도록
+          // padding으로 자연스럽게 높이 결정: paddingY(10) + content(~18) + paddingY(10) ≈ 34~38
           if (containerTag === 'selecttrigger') {
             parentStyle = {
               ...(parentStyle || {}),
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
-              height: 34,
               paddingLeft: 14,
               paddingRight: 14,
+              paddingTop: 10,
+              paddingBottom: 10,
             };
             effectiveContainerEl = {
               ...containerEl,
@@ -888,7 +915,12 @@ const ElementsLayer = memo(function ElementsLayer({
           const avW = Math.max(0, containerWidth - cachedPadding.left - cachedPadding.right);
           // M2: 부모가 height:auto이면 sentinel(-1) 전달하여 자식 % height가 auto로 처리되도록 함
           const parentHasAutoHeight = !parentStyle?.height || parentStyle.height === 'auto';
-          const avH = parentHasAutoHeight
+          // Phantom indicator 태그(Switch/Checkbox/Radio): height:auto이지만 엔진이 계산한
+          // containerHeight를 Taffy에 전달해야 align-items: center가 작동함.
+          // enrichWithIntrinsicSize가 rowHeight를 주입하지만 store 원본에는 반영 안 됨.
+          const PHANTOM_TAGS = new Set(['switch', 'checkbox', 'radio']);
+          const useComputedHeight = parentHasAutoHeight && PHANTOM_TAGS.has(containerTag) && containerHeight > 0;
+          const avH = (parentHasAutoHeight && !useComputedHeight)
             ? -1  // sentinel: height:auto → 엔진이 콘텐츠 기반 계산
             : Math.max(0, containerHeight - cachedPadding.top - cachedPadding.bottom);
           // RC-7: calculateChildrenLayout 사용하여 blockification 적용
@@ -1025,28 +1057,24 @@ const ElementsLayer = memo(function ElementsLayer({
           }
         }
 
-        // Select/ComboBox 구조적 자식: spec shapes가 시각 렌더링 담당
-        // BoxSprite가 기본 흰색 불투명 배경으로 spec shapes를 가리므로 투명 처리
-        // children/text도 비워서 spec shapes 텍스트와 이중 렌더링 방지
-        // implicit styles도 주입하여 DB에 없는 경우에도 올바른 크기 보장
-        if (effectiveChildEl.tag === 'SelectTrigger' || effectiveChildEl.tag === 'SelectValue'
-          || effectiveChildEl.tag === 'SelectIcon' || effectiveChildEl.tag === 'ComboBoxWrapper'
+        // ComboBox 구조적 자식: spec shapes가 시각 렌더링 담당 (ComboBox는 아직 Monolithic)
+        // Select 자식(SelectTrigger/SelectValue/SelectIcon)은 Compositional — 자체 spec으로 렌더링
+        if (effectiveChildEl.tag === 'ComboBoxWrapper'
           || effectiveChildEl.tag === 'ComboBoxInput' || effectiveChildEl.tag === 'ComboBoxTrigger') {
           const existingStyle = (effectiveChildEl.props?.style || {}) as Record<string, unknown>;
           const existingProps = (effectiveChildEl.props || {}) as Record<string, unknown>;
           const tag = effectiveChildEl.tag;
-          // 아이콘/트리거 버튼: 크기 보장, value/input: flex 보장
           const implicitStyle: Record<string, unknown> =
-            (tag === 'SelectIcon' || tag === 'ComboBoxTrigger')
+            (tag === 'ComboBoxTrigger')
               ? { width: 18, height: 18, flexShrink: 0 }
-              : (tag === 'SelectValue' || tag === 'ComboBoxInput')
+              : (tag === 'ComboBoxInput')
                 ? { flex: 1 }
                 : {};
           effectiveChildEl = {
             ...effectiveChildEl,
             props: {
               ...existingProps,
-              children: '',  // spec shapes가 텍스트 렌더링 담당
+              children: '',
               style: { ...implicitStyle, ...existingStyle, backgroundColor: 'transparent' },
             },
           };
