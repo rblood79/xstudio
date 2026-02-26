@@ -308,6 +308,74 @@ const tabsHeight = TAB_BAR_HEIGHT + TAB_PANEL_PADDING * 2 + panelBorderBoxHeight
 | md   | 30px        |
 | lg   | 35px        |
 
+### Compositional Component 레이아웃 패턴 (CRITICAL)
+
+Monolithic(Spec Shapes 기반) → Compositional(Card 패턴) 아키텍처 전환 시 반드시 준수해야 하는 체크리스트입니다.
+Select, ComboBox 등 복합 컴포넌트를 자식 Element 트리 구조로 전환할 때 적용합니다.
+
+#### 전환 체크리스트
+
+| # | 항목 | 검증 |
+|---|------|------|
+| 1 | **isFormElement 제외** | `parseBoxModel`의 `isFormElement` 배열에서 제거. Compositional container는 BUTTON_SIZE_CONFIG padding/border를 사용하지 않음 |
+| 2 | **SPEC_SHAPES_INPUT_TAGS 제외** | `enrichWithIntrinsicSize`의 SPEC_SHAPES_INPUT_TAGS에서 제거. 자식 기반 높이 + CSS padding 경로 사용 |
+| 3 | **Factory 기본 스타일** | Factory 정의에 web CSS와 동일한 display/flexDirection/gap 설정 |
+| 4 | **BuilderCanvas implicit style** | `createContainerChildRenderer`에서 `??` 패턴으로 기본값 주입 (사용자 값 우선) |
+| 5 | **calculateContentHeight 브랜치** | 전용 높이 계산 브랜치에서 실제 visible 자식 순회 (Card 패턴) |
+| 6 | **자식 필터링** | web preview 비표시 조건(label prop 삭제 등)과 canvas 필터링 일치 |
+| 7 | **DEFAULT_ELEMENT_HEIGHTS 동적화** | 하드코딩 높이 대신 `fontSize * lineHeight` 동적 계산 사용 |
+
+#### Monolithic vs Compositional 구분
+
+```typescript
+// ✅ Compositional (Card 패턴) — 자식 Element가 store에 존재
+// Select, Card, Tabs 등
+// - isFormElement: 제외
+// - SPEC_SHAPES_INPUT_TAGS: 제외
+// - enrichment: CSS padding 경로 (padding 추가)
+// - calculateContentHeight: 자식 순회 합산
+
+// ❌ Monolithic (Spec Shapes 기반) — spec shapes가 전체 렌더링
+// ComboBox, Dropdown, Breadcrumbs 등
+// - SPEC_SHAPES_INPUT_TAGS: 포함
+// - enrichment: spec shapes 경로 (padding 미추가, 전체 시각적 높이 반환)
+```
+
+#### CSS 값 일관성 규칙
+
+```typescript
+// ✅ 0 값이 유효한 CSS 속성 파싱
+const gapParsed = typeof gapRaw === 'number' ? gapRaw : parseFloat(String(gapRaw ?? ''));
+const gap = isNaN(gapParsed) ? defaultGap : gapParsed;  // 0은 유효
+
+// ❌ falsy 체크로 0이 기본값으로 대체
+const gap = parseFloat(gapRaw) || 8;  // gap:0 → 8 (버그!)
+
+// ✅ shorthand + longhand 통합 파싱
+const hasUserPadding = cs.padding !== undefined
+  || cs.paddingTop !== undefined || cs.paddingBottom !== undefined
+  || cs.paddingLeft !== undefined || cs.paddingRight !== undefined;
+const pad = hasUserPadding ? parsePadding(cs) : null;
+
+// ❌ longhand만 체크 (shorthand padding 무시)
+const padTop = cs.paddingTop ?? specDefault;
+```
+
+#### DEFAULT_ELEMENT_HEIGHTS 주의사항
+
+`DEFAULT_ELEMENT_HEIGHTS`의 하드코딩 값은 Tailwind CSS v4 `line-height: 1.5`와 불일치할 수 있습니다.
+TEXT_LEAF_TAGS (label, description 등)는 step 7의 동적 계산(`fontSize * 1.5`)을 사용해야 합니다.
+
+```typescript
+// ✅ 동적 계산 (step 7) — DEFAULT_ELEMENT_HEIGHTS에서 제외
+// label: fontSize 14 → 14 * 1.5 = 21
+const fs = fontSize ?? 16;
+return estimateTextHeight(fs, fs * 1.5);
+
+// ❌ 하드코딩 (step 6) — Tailwind line-height:1.5와 불일치
+DEFAULT_ELEMENT_HEIGHTS['label'] = 20;  // 실제 CSS: 21
+```
+
 ### Breadcrumbs 컴포넌트 높이 계산 (2026-02-23)
 
 Breadcrumbs는 `display: flex; align-items: center`로 렌더링되며, 높이는 lineHeight와 동일합니다.

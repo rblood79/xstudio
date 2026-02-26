@@ -1128,3 +1128,46 @@ pnpm build
 > **라인 번호 참조에 대한 안내**: 이 문서의 위치 정보는 **심볼명(함수/상수/struct명) + 파일명**을 기준으로 기재하고, 라인 번호는 `~line N` 형태로 보조 참고용으로만 포함됨. 코드 변경에 따라 라인 번호는 밀릴 수 있으므로, 검색 시 심볼명을 사용할 것.
 >
 > **외부 의존 버전 참조에 대한 안내**: `canvaskit-wasm@0.40.0` 등 외부 패키지의 타입 정의에 대한 근거는 해당 버전 기준이며, 패키지 업그레이드 시 재검증 필요. `FontMetrics` 인터페이스 변경 여부는 `canvaskit-wasm` 릴리즈 노트 참조.
+
+---
+
+## Phase 4-6: Select Compositional Architecture 레이아웃 수정 (2026-02-26)
+
+> **근본 원인**: Select를 Monolithic(Spec Shapes) → Compositional(Card 패턴) 아키텍처로 전환 시,
+> 레이아웃 파이프라인의 여러 단계에서 Monolithic 가정이 잔존하여 높이/패딩 계산 오류 발생.
+
+### 수정 항목
+
+| # | 파일 | 변경 | 원인 |
+|---|------|------|------|
+| 1 | `utils.ts` `applyCommonTaffyStyle` | padding/border 차감 제거 | Taffy 0.9는 `style.size`를 border-box로 처리. content-box 변환은 이중 차감 |
+| 2 | `BuilderCanvas.tsx` SelectTrigger padding | `parsePadding()` 통합 파싱 | CSS shorthand(`padding:"10px"`) 미감지. `cs.paddingTop ?? default` 패턴은 longhand만 체크 |
+| 3 | `SelectionComponents.ts` Factory | `display:flex, flexDirection:column, gap:8` 추가 | Web CSS와 Factory 기본값 불일치 |
+| 4 | `utils.ts` `calculateContentHeight` Select | 동적 자식 순회 (Card 패턴) | 하드코딩 LABEL_OFFSETS/SELECT_TRIGGER_HEIGHTS → 실제 자식 높이 합산 |
+| 5 | `utils.ts` gap 파싱 | `isNaN(parsed) ? 8 : parsed` | `parseFloat("0") \|\| 8 = 8` falsy 트랩 |
+| 6 | `utils.ts` `SPEC_SHAPES_INPUT_TAGS` | `'select'` 제거 | Compositional component는 enrichment padding 경로 사용 |
+| 7 | `BuilderCanvas.tsx` Label 필터링 | `hasLabel` 조건부 필터 | Web preview는 `label` prop 없으면 Label 비렌더, canvas 미일치 |
+| 8 | `utils.ts` `parseBoxModel` | `isFormElement`에서 `'select'` 제거 | Compositional container ≠ form element. BUTTON_SIZE_CONFIG 패딩(10px) 부적절 적용 |
+| 9 | `utils.ts` `DEFAULT_ELEMENT_HEIGHTS` | `'label'` 제거 | 하드코딩 20px ≠ Tailwind v4 `line-height:1.5`(21px@14px). 동적 `fontSize*1.5` 사용 |
+
+### 아키텍처 교훈
+
+**Compositional 전환 시 필수 검증 지점**:
+
+1. **parseBoxModel 분류**: `isFormElement` / `INLINE_UI_SIZE_CONFIGS` — container는 제외
+2. **SPEC_SHAPES_INPUT_TAGS**: Compositional은 제외 (padding을 enrichment가 추가)
+3. **calculateContentHeight**: 자식 순회 패턴 (childElements 활용, Card 패턴 참조)
+4. **BuilderCanvas implicit style**: `??` 패턴으로 사용자 값 우선
+5. **Factory 기본값**: Web CSS와 1:1 동기화
+6. **자식 가시성**: Web preview 조건과 canvas 필터링 일치
+7. **DEFAULT_ELEMENT_HEIGHTS**: TEXT_LEAF_TAGS는 동적 계산 사용
+8. **CSS 값 파싱**: `0` 값 falsy 트랩 방지, shorthand+longhand 통합 파싱
+
+### Taffy 0.9 Box Model 확정
+
+```
+Taffy 0.9 style.size = border-box
+  → Taffy 내부: content = size - padding - border
+  → layout.size = border-box (padding+border 포함)
+  → applyCommonTaffyStyle: 변환 불필요 (XStudio box-sizing:border-box 그대로 전달)
+```

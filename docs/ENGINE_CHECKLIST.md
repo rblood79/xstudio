@@ -1141,3 +1141,53 @@ const offsetY = fontSize + 4;
 | 6 | spec 파일 | DOM 구조(부모 > 자식) 확정 후 shapes 검증 |
 
 **주의**: `_hasLabelChild` 체크를 누락하면 spec shapes의 label 텍스트와 자식 Label 엘리먼트의 TextSprite가 동시에 렌더링되어 두 줄처럼 보이는 중복 렌더링 현상이 발생함 (TagGroup 버그와 동일한 패턴).
+
+---
+
+## Compositional Architecture 전환 체크리스트
+
+> Monolithic(Spec Shapes 기반) → Compositional(Card 패턴) 전환 시 레이아웃 파이프라인 검증 항목.
+> Select 전환에서 발견된 9건의 버그를 기반으로 작성.
+
+### 레이아웃 파이프라인 검증
+
+```
+[parseBoxModel] → [enrichWithIntrinsicSize] → [calculateContentHeight] → [Taffy/Dropflow] → [BuilderCanvas]
+     ↑                    ↑                           ↑                                            ↑
+  isFormElement     SPEC_SHAPES_INPUT_TAGS        자식 순회 브랜치                          implicit style 주입
+  제외 필요          제외 필요                     Card 패턴 참조                            ?? 패턴 사용
+```
+
+### 필수 체크 항목
+
+| 단계 | 파일 | 체크 포인트 |
+|------|------|-------------|
+| 1. 분류 | `utils.ts` `parseBoxModel` | `isFormElement` 배열에서 제거 (container ≠ form element) |
+| 2. Enrichment | `utils.ts` `enrichWithIntrinsicSize` | `SPEC_SHAPES_INPUT_TAGS`에서 제거 (CSS padding 경로 사용) |
+| 3. 높이 계산 | `utils.ts` `calculateContentHeight` | 전용 브랜치 추가 — 실제 visible 자식 순회 (Card 패턴) |
+| 4. 자식 필터링 | `BuilderCanvas.tsx` | Web preview 비표시 조건 일치 (label prop, hidden items 등) |
+| 5. Style 주입 | `BuilderCanvas.tsx` | `??` 패턴으로 기본값 주입 (사용자 CSS 값 우선) |
+| 6. Factory | `*Components.ts` | Web CSS와 동일한 display/flexDirection/gap 설정 |
+| 7. 높이 상수 | `utils.ts` `DEFAULT_ELEMENT_HEIGHTS` | TEXT_LEAF_TAGS는 제거 → 동적 계산 (fontSize * lineHeight) |
+
+### CSS 값 파싱 주의사항
+
+```typescript
+// gap/padding 등 0이 유효한 CSS 속성:
+const parsed = typeof raw === 'number' ? raw : parseFloat(String(raw ?? ''));
+const value = isNaN(parsed) ? defaultValue : parsed;  // ✅ 0은 유효
+
+// shorthand + longhand 통합 감지:
+const hasUserValue = style.padding !== undefined      // shorthand
+  || style.paddingTop !== undefined                    // longhand
+  || style.paddingBottom !== undefined;
+const pad = hasUserValue ? parsePadding(style) : null; // ✅ 통합 파싱
+```
+
+### Taffy 0.9 Box Model
+
+| 속성 | 의미 |
+|------|------|
+| `style.size` | **border-box** (padding+border 포함) |
+| `layout.size` | **border-box** 반환 |
+| `applyCommonTaffyStyle` | 변환 불필요 — XStudio `box-sizing:border-box` 그대로 전달 |
