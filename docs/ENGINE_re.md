@@ -176,7 +176,7 @@ if (boxSizing === 'border-box' && widthStr?.endsWith('%')) {
 - **현상**: `const xHeight = Math.round(ascender * 0.52)` — 주석에 "CanvasKit에서 직접 제공하지 않으므로"라고 되어 있으며, **현재 설치된 `canvaskit-wasm@0.40.0`의 `FontMetrics` 인터페이스에는 실제로 `xHeight` 필드가 미노출**임. `FontMetrics`에는 `ascent`, `descent`, `leading`, `bounds`만 정의되어 있음 (검증: `canvaskit-wasm` 패키지의 `types/index.d.ts` 내 `export interface FontMetrics` 참조. 버전 업그레이드 시 재확인 필요).
 - **영향**: 폰트마다 xHeight 비율이 다름 (Pretendard ~0.52, Times New Roman ~0.45) → 부정확
 - **수정 방안**: `SkFont.getMetrics().xHeight` 직접 교체는 **현재 버전에서 불가**. 대안:
-  1. **glyph bounds 기반 측정**: `SkFont.getGlyphBounds()`로 'x' 글리프의 바운딩 박스 높이를 측정하여 정확한 xHeight 획득
+  1. **glyph bounds 기반 측정**: `SkFont.getGlyphBounds()`로 'x' 글리프의 바운딩 박스 높이를 측정하여 정확한 xHeight 획득 (단, `canvaskit-shaper.ts`의 duck-typed `CKFont` 인터페이스에 `getGlyphBounds` 시그니처 추가 필요)
   2. **canvaskit-wasm 업그레이드**: 향후 버전에서 `FontMetrics.xHeight` 노출 시 직접 사용
   3. **현 근사 유지**: 정확도 요구가 낮은 경우 `ascender * 0.52` 유지 (현재 테스트 통과 중)
   > **검증 기준**: xHeight 변경 시 `packages/layout-flow/src/adapters/__tests__/canvaskit-shaper.test.ts:275-284` 테스트 + 빌더 캔버스 텍스트 baseline 스냅샷 확인 필수.
@@ -190,7 +190,7 @@ if (boxSizing === 'border-box' && widthStr?.endsWith('%')) {
 
 #### 2.2.4 `+2px`/`+4px` 매직 넘버 보정
 
-- **위치**: `engines/utils.ts` — `enrichWithIntrinsicSize()` 내부, Checkbox/Radio/Switch 레이블 너비 및 일반 텍스트 너비 계산 시
+- **위치**: `engines/utils.ts` — `calculateContentWidth()` 내부 (~line 738: Checkbox/Radio/Switch 레이블 +2px, ~line 785: 일반 텍스트 +4px). `enrichWithIntrinsicSize()`가 이 함수를 간접 호출.
 - **현상**: Canvas 2D와 CanvasKit 간 측정 불일치를 매직 넘버로 수동 보정
 - **영향**: 폰트/사이즈에 따라 보정값이 부적절할 수 있음
 - **수정 방안**: 동일 엔진(CanvasKit) 사용 시 자연스럽게 해소.
@@ -452,8 +452,8 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 | # | 작업 | 효과 | 난이도 |
 |---|------|------|--------|
 | 5-1 | WASM measure function 콜백 구현 → 2-pass layout 제거 | 성능 + 정확도 대폭 향상 | 매우 높음 |
-| 5-2 | Taffy 네이티브 intrinsic sizing 활용 → `enrichWithIntrinsicSize()` 축소 | ~130줄 제거 | 높음 |
-| 5-3 | Dropflow `styleCreatesBfc()` export + Shorthand 파서 `@xstudio/shared`로 이동 | 크로스 패키지 중복 해소 | 높음 (패키지 public API 변경 수반) |
+| 5-2 | Taffy 네이티브 intrinsic sizing 활용 → `enrichWithIntrinsicSize()` 축소 | ~134줄의 pre-enrichment 로직이 measure function 콜백으로 재구조화 + 2-pass 루프 (~57줄) 제거 | 높음 |
+| 5-3 | Dropflow `styleCreatesBfc()` export + Shorthand 파서 공유 패키지로 이동 | 크로스 패키지 중복 해소 | 높음 (패키지 public API 변경 수반). `@xstudio/shared`는 UI 컴포넌트 패키지이므로 별도 `@xstudio/css-utils` 신설 또는 `@xstudio/layout-flow` barrel export 확장 검토 |
 
 ---
 
