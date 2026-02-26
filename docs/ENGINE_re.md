@@ -451,17 +451,17 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 | 3-3 | Phantom Indicator 설정을 단일 소스로 통합 | ~50줄 | 쉬움 |
 | 3-4 | `xstudio-adapter.ts`에 `boxSizing: 'border-box'` 전달 → 수동 변환 제거 | ~20줄 | 쉬움 |
 | 3-5 | `createsBFC()`에서 Dropflow `styleCreatesBfc()` import 사용 | ~15줄 | 쉬움 (단, 패키지 API export 수정 필요) |
-| 3-6 | Shorthand 왕복 변환 제거 (CSS 값 직접 전달) | ~40줄 | 중간 |
+| 3-6 | ~~Shorthand 왕복 변환 제거 + `dimStr()` 삭제~~ **(완료)** | ~40줄 | 완료 |
 
 ### Phase 4: 중기 — 아키텍처 개선
 
 | # | 작업 | 절감 | 난이도 |
 |---|------|------|--------|
 | 4-1 | ~~TextMeasurer 전략 패턴 완성~~ **(완료: Phase 4-1 + 4-1B)** | 매직 넘버 제거 + 정확도 향상 + ParagraphStyle 완전 정합 | 완료 |
-| 4-2 | `BaseTaffyEngine` 추상 클래스 도입 → 인스턴스 관리 / 결과 수집 / 부모 설정 공통화 | ~145줄 | 중간 |
-| 4-3 | Rust 브릿지에 `GridTemplateComponent::Repeat` 지원 → TS repeat() 파싱 제거 | ~135줄 | 높음 |
-| 4-4 | TaffyGridEngine에 `enrichWithIntrinsicSize()` 호출 추가 (검증 후) | 잠재 버그 수정 | 중간 |
-| 4-5 | `xHeight` 근사 개선 — glyph bounds 기반 측정 또는 canvaskit-wasm 업그레이드 후 교체 (`@xstudio/layout-flow` 패키지 내부) | 텍스트 baseline 정확도 향상 | 중간 (측정 방식 재설계 + `canvaskit-shaper.test.ts` 갱신 필요) |
+| 4-2 | ~~`BaseTaffyEngine` 추상 클래스 도입~~ **(완료)** | ~145줄 | 완료 |
+| 4-3 | ~~Rust 브릿지에 `GridTemplateComponent::Repeat` 지원~~ **(완료)** | ~110줄 TS 코드 제거 | 완료 |
+| 4-4 | ~~TaffyGridEngine에 `enrichWithIntrinsicSize()` 호출 추가~~ **(완료)** | 잠재 버그 수정 | 완료 |
+| 4-5 | ~~`xHeight` 근사 개선 — `getGlyphBounds('x')` 기반~~ **(완료)** | 텍스트 baseline 정확도 향상 | 완료 |
 
 ### Phase 5: 장기 — 근본 아키텍처
 
@@ -470,6 +470,432 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 | 5-1 | WASM measure function 콜백 구현 → 2-pass layout 제거 | 성능 + 정확도 대폭 향상 | 매우 높음 |
 | 5-2 | Taffy 네이티브 intrinsic sizing 활용 → `enrichWithIntrinsicSize()` 축소 | ~134줄의 pre-enrichment 로직이 measure function 콜백으로 재구조화 + 2-pass 루프 (~57줄) 제거 | 높음 |
 | 5-3 | Dropflow `styleCreatesBfc()` export + Shorthand 파서 공유 패키지로 이동 | 크로스 패키지 중복 해소 | 높음 (패키지 public API 변경 수반). `@xstudio/shared`는 UI 컴포넌트 패키지이므로 별도 `@xstudio/css-utils` 신설 또는 `@xstudio/layout-flow` barrel export 확장 검토 |
+
+#### Phase 5-1 상세: WASM Measure Function Callback
+
+**목표**: Taffy의 `compute_layout_with_measure()` API를 활용하여 리프 노드의 intrinsic size를 Taffy 내부에서 동적으로 결정. 현재의 "pre-enrichment → compute → (조건부 2nd pass)" 패턴을 제거.
+
+##### 현재 구조 (문제점)
+
+```
+JS: enrichWithIntrinsicSize(child, availableWidth)   ← 사전 계산 (정확한 width 모름)
+JS: normalizeStyle({ ...style, width: enrichedW, height: enrichedH })
+JS→WASM: createNode(styleJSON)                       ← 고정 width/height로 노드 생성
+WASM: TaffyTree<()>.compute_layout()                 ← measure function = Size::ZERO
+WASM→JS: getLayoutsBatch() → Float32Array
+JS: 할당 width ≠ enriched width?                     ← 2-pass 필요 여부 판단
+  → clear() → re-enrich → 재계산                    ← 전체 트리 재구축 오버헤드
+```
+
+- `TaffyTree<()>`: NodeContext가 unit 타입 → measure function 항상 `Size::ZERO`
+- `compute_layout()`: 내부적으로 `compute_layout_with_measure(node, available, |_,_,_,_,_| Size::ZERO)` 호출
+- 리프 노드 크기는 JS에서 주입한 `style.width/height` 고정값에만 의존
+- Flex row에서 `flex-grow/shrink`로 자식 width 변경 시 텍스트 줄바꿈 높이 부정확 → 2-pass 필요
+
+##### Taffy 0.9.2 MeasureFunc API
+
+```rust
+// taffy::tree::TaffyTree<NodeContext>
+pub fn compute_layout_with_measure<MeasureFunction>(
+    &mut self,
+    node_id: NodeId,
+    available_space: Size<AvailableSpace>,
+    measure_function: MeasureFunction,
+) -> Result<(), TaffyError>
+where
+    MeasureFunction: FnMut(
+        Size<Option<f32>>,           // known_dimensions (Some = 고정, None = 측정 필요)
+        Size<AvailableSpace>,        // available_space (Definite/MinContent/MaxContent)
+        NodeId,                      // node_id
+        Option<&mut NodeContext>,    // node_context (리프 노드에 연결된 데이터)
+        &Style,                      // style
+    ) -> Size<f32>,
+```
+
+- **리프 노드(자식 0개)에서만 호출** (`taffy_tree.rs:384-394`)
+- Taffy 내부에서 `known_dimensions`와 `available_space`를 정확하게 제공
+- `NodeContext`는 `TaffyTree` 제네릭 파라미터로 임의 데이터 첨부 가능
+
+##### 설계 방안 비교
+
+| 방안 | 설명 | FFI 왕복 | 성능 | 복잡도 |
+|------|------|---------|------|--------|
+| **A: JS Function 콜백** | `js_sys::Function`으로 JS measure 함수를 Rust에 전달, 매 리프 노드마다 Rust→JS→Rust 왕복 | 리프 수 × 2~3회 | **나쁨** (호출당 ~1-5μs, 100회 = 100-500μs) | 높음 |
+| **B: Pre-registered NodeContext** (권장) | `TaffyTree<MeasureData>` + `new_leaf_with_context()`. JS에서 intrinsic size를 Rust NodeContext에 사전 등록, Rust measure function이 context에서 반환 | **0회** | **최적** | 중간 |
+| **C: SharedArrayBuffer** | 공유 메모리로 measure 결과 교환 | 0회 | 좋음 | 매우 높음 (COOP/COEP 헤더 필요) |
+
+**방안 B 채택 근거**: FFI 콜백 오버헤드 제로, wasm-bindgen Closure 메모리 관리 불필요, 현재 enrichment 패턴과 구조적으로 유사하여 점진적 전환 가능.
+
+##### 방안 B 구현 설계
+
+**Phase 5-1a: Rust 측 변경** (`taffy_bridge.rs`)
+
+```rust
+// 1. NodeContext 타입 정의
+#[derive(Clone, Default)]
+struct MeasureData {
+    width: f32,             // intrinsic content width (border-box)
+    height: f32,            // intrinsic content height (border-box)
+    // 텍스트 줄바꿈용: (available_width, resulting_height) 엔트리
+    // Rust 측에서 available_space에 가장 가까운 엔트리로 보간
+    text_breakpoints: Option<Vec<(f32, f32)>>,
+}
+
+// 2. TaffyTree 제네릭 변경
+pub struct TaffyLayoutEngine {
+    tree: TaffyTree<MeasureData>,    // () → MeasureData
+    nodes: Vec<Option<NodeId>>,
+    free_list: Vec<usize>,
+}
+
+// 3. Measure function (Rust 내부, FFI 왕복 없음)
+fn measure_from_context(
+    known_dimensions: Size<Option<f32>>,
+    available_space: Size<AvailableSpace>,
+    _node_id: NodeId,
+    context: Option<&mut MeasureData>,
+    _style: &Style,
+) -> Size<f32> {
+    let Some(data) = context else { return Size::ZERO };
+
+    let width = known_dimensions.width.unwrap_or(data.width);
+    let height = known_dimensions.height.unwrap_or_else(|| {
+        // 텍스트 줄바꿈: available_width에 따른 height 보간
+        if let (Some(breakpoints), AvailableSpace::Definite(avail_w)) =
+            (&data.text_breakpoints, available_space.width)
+        {
+            interpolate_text_height(breakpoints, avail_w)
+        } else {
+            data.height
+        }
+    });
+
+    Size { width, height }
+}
+
+// 4. 텍스트 높이 보간 (available_width → height)
+fn interpolate_text_height(breakpoints: &[(f32, f32)], available_width: f32) -> f32 {
+    // breakpoints는 (width, height) 쌍으로 width 내림차순 정렬
+    // available_width 이하인 가장 가까운 엔트리의 height 반환
+    for &(w, h) in breakpoints {
+        if available_width >= w { return h; }
+    }
+    breakpoints.last().map(|&(_, h)| h).unwrap_or(0.0)
+}
+
+// 5. 새 API 메서드들
+#[wasm_bindgen]
+impl TaffyLayoutEngine {
+    /// 리프 노드 생성 + intrinsic size context 등록
+    pub fn create_leaf_with_measure(
+        &mut self, style_json: &str,
+        intrinsic_w: f32, intrinsic_h: f32,
+    ) -> usize { ... }
+
+    /// 기존 노드의 measure data 갱신 (2-pass 대체)
+    pub fn set_measure_data(
+        &mut self, handle: usize,
+        intrinsic_w: f32, intrinsic_h: f32,
+    ) { ... }
+
+    /// 텍스트 줄바꿈 breakpoints 등록
+    /// breakpoints_flat: [w1, h1, w2, h2, ...] flat Float32Array
+    pub fn set_text_breakpoints(
+        &mut self, handle: usize,
+        breakpoints_flat: &[f32],
+    ) { ... }
+
+    /// compute_layout → compute_layout_with_measure로 변경
+    pub fn compute_layout(
+        &mut self, handle: usize,
+        available_width: f32, available_height: f32,
+    ) { ... } // 내부: self.tree.compute_layout_with_measure(node, avail, measure_from_context)
+}
+```
+
+**Phase 5-1b: TS 측 변경** (`taffyLayout.ts` + `BaseTaffyEngine.ts`)
+
+```typescript
+// taffyLayout.ts — 새 메서드 래핑
+class TaffyLayout {
+  createLeafWithMeasure(styleJSON: string, w: number, h: number): number { ... }
+  setMeasureData(handle: number, w: number, h: number): void { ... }
+  setTextBreakpoints(handle: number, breakpoints: Float32Array): void { ... }
+}
+
+// BaseTaffyEngine.ts — computeWithTaffy에서 사용
+// 기존: taffy.createNode(styleJSON) + enrichedStyle에 width/height 주입
+// 변경: taffy.createLeafWithMeasure(styleJSON, intrinsicW, intrinsicH)
+//       (width/height를 style이 아닌 context로 전달)
+```
+
+**Phase 5-1c: 2-pass 제거** (`TaffyFlexEngine.ts`)
+
+```
+현재 2-pass:
+  1차: enrichment → createNode(styleJSON with injected w/h) → compute
+  2차: clear() → re-enrich(actualWidth) → 재구축 → 재계산
+
+변경 후 (breakpoints 방식):
+  JS: calculateTextBreakpoints(child, [availW, availW*0.75, availW*0.5, ...])
+  JS→WASM: setTextBreakpoints(handle, breakpoints)
+  WASM: compute_layout_with_measure → measure_from_context가 정확한 height 반환
+  → 2-pass 불필요
+```
+
+또는 (2-pass 간소화 방식):
+```
+  1차: createLeafWithMeasure(style, w, h) → compute
+  JS: 할당 width 확인 → setMeasureData(handle, actualW, newH) → 재계산
+  → tree clear/rebuild 없이 context만 갱신
+```
+
+##### 텍스트 Breakpoints 전략
+
+텍스트 줄바꿈이 필요한 요소(`TEXT_LEAF_TAGS`, `INLINE_BLOCK_TAGS`의 텍스트 기반)에 대해:
+
+1. JS에서 3~5개 breakpoint width를 생성: `[availW, availW*0.75, availW*0.5, availW*0.25, minContentW]`
+2. 각 width에 대해 `measureWrappedTextHeight()` 호출 → `(width, height)` 쌍
+3. `setTextBreakpoints(handle, flatArray)` 로 Rust에 등록
+4. Taffy measure function이 `available_space.width`에 가장 가까운 height 반환
+
+**성능**: breakpoint 수 × 텍스트 측정 비용. 리프 노드 50개 × 5 breakpoints = 250회 측정. 현재 2-pass(100회 + 100회 = 200회)와 유사하지만 WASM tree rebuild 비용 제거.
+
+##### 영향 범위
+
+| 파일 | 변경 내용 | 추정 라인 |
+|------|----------|----------|
+| `taffy_bridge.rs` | `TaffyTree<MeasureData>`, measure function, 새 API 3개 | +80~100줄 |
+| `taffyLayout.ts` | 새 메서드 래핑 3개 | +30줄 |
+| `BaseTaffyEngine.ts` | `createLeafWithMeasure` 호출 경로 | +15줄 |
+| `TaffyFlexEngine.ts` | 2-pass 로직 제거 → breakpoints 등록 | -93줄, +30줄 |
+| `TaffyGridEngine.ts` | `createLeafWithMeasure` 사용 | +5줄 |
+| `utils.ts` | `enrichWithIntrinsicSize()` → `calculateMeasureData()` 리네임/리팩터 | ±0 (로직 유지, 호출 방식만 변경) |
+
+##### 검증 계획
+
+1. Rust 유닛 테스트: `measure_from_context`, `interpolate_text_height`, `create_leaf_with_measure` API
+2. TS 유닛 테스트: `TaffyFlexEngine` 2-pass 시나리오가 1-pass로 동일 결과
+3. 통합 검증: Flex row + `flex-grow` Button 텍스트 줄바꿈 높이 정확성
+4. 성능 벤치마크: 100노드 트리 레이아웃 시간 비교
+
+##### 위험 요소
+
+- **Taffy measure 호출 횟수**: Taffy는 min-content/max-content/실제 크기에 대해 measure를 최대 3회 호출할 수 있음. breakpoints가 충분하지 않으면 부정확한 보간 가능.
+- **하위 호환**: `create_node()` API는 유지하되 내부에서 `MeasureData::default()` 사용. 기존 코드 점진적 전환 가능.
+- **Rust 빌드 시간**: `TaffyTree<MeasureData>` 제네릭 변경으로 monomorphization 코드 증가 가능 (미미).
+
+---
+
+#### Phase 5-2 상세: Taffy 네이티브 Intrinsic Sizing
+
+**목표**: 5-1의 NodeContext 기반 measure function을 활용하여 `enrichWithIntrinsicSize()` 호출 패턴을 정리. 측정 비즈니스 로직은 유지하되, 호출 위치와 데이터 흐름을 변경.
+
+**의존**: Phase 5-1 완료 필수 (NodeContext + `compute_layout_with_measure` 인프라)
+
+##### 현재 `enrichWithIntrinsicSize()` 분석
+
+- **위치**: `engines/utils.ts:1569-1702` (134줄)
+- **역할**: Taffy 계산 **전에** Element의 `style.width/height`에 intrinsic size를 숫자로 주입
+- **주입 조건**:
+  - height: `rawHeight`가 없거나 `auto`/`fit-content`/`min-content`/`max-content`
+  - width: `INLINE_BLOCK_TAGS` 또는 intrinsic 키워드 또는 Flex 자식 `TEXT_LEAF_TAGS`
+- **의존 함수**: `calculateContentWidth()` (188줄), `calculateContentHeight()` (475줄), `parseBoxModel()` (123줄)
+
+##### 요소 타입별 측정 분류
+
+| 카테고리 | 태그 | 측정 방식 | measure callback 적합성 |
+|----------|------|----------|----------------------|
+| Button 계열 | button, submitbutton, fancybutton, togglebutton | sizeConfig + 텍스트 측정 | ✅ 적합 (단순 w/h) |
+| Badge 계열 | badge, tag, chip | sizeConfig 고정 높이 | ✅ 적합 (고정값) |
+| Inline Form | checkbox, radio, switch | PHANTOM_INDICATOR_CONFIGS | ⚠️ phantom 노드는 별도 유지 |
+| TEXT_LEAF_TAGS | text, heading, description, label, paragraph | 텍스트 줄바꿈 | ✅ 적합 (breakpoints 활용) |
+| Spec Shapes | combobox, select, dropdown, breadcrumbs | 하드코딩 높이 | ✅ 적합 (고정값) |
+| 컨테이너 | card, cardheader, cardcontent | 자식 재귀 합산 | ❌ Taffy가 자체 처리 (자식이 Taffy 노드이면) |
+| Group 계열 | checkboxgroup, radiogroup, tabs | 자식 재귀 + 추가 요소 | ⚠️ 부분 적합 |
+
+##### 변경 설계
+
+```
+[Before]
+enrichWithIntrinsicSize(child, availWidth)
+  → calculateContentWidth(child)     → inject style.width
+  → calculateContentHeight(child, w) → inject style.height
+  → createNode(JSON.stringify(enrichedStyle))
+
+[After]
+calculateMeasureData(child, availWidth)
+  → calculateContentWidth(child)     → intrinsicW
+  → calculateContentHeight(child, w) → intrinsicH
+  → calculateTextBreakpoints(child)  → breakpoints (텍스트 요소만)
+  → createLeafWithMeasure(styleJSON, intrinsicW, intrinsicH)
+  → setTextBreakpoints(handle, breakpoints)    (텍스트 요소만)
+```
+
+**핵심 차이**: `style.width/height`를 오염시키지 않고, 별도 채널(NodeContext)로 intrinsic size 전달. CSS width/height가 명시된 요소는 Taffy가 style에서 직접 사용하고, 명시되지 않은 리프 노드만 measure function에서 context 값 반환.
+
+##### 삭제 대상 코드
+
+| 코드 | 줄 수 | 이유 |
+|------|------|------|
+| `enrichWithIntrinsicSize()` 함수 본체 | 134줄 | `calculateMeasureData()`로 대체 |
+| `TaffyFlexEngine` 2-pass 로직 | 93줄 | breakpoints 또는 context 갱신으로 대체 |
+| `TaffyFlexEngine._runTaffyPassRaw()` 중 tree rebuild | ~30줄 | context 갱신만으로 재계산 가능 |
+
+##### 유지 대상 코드 (비즈니스 로직)
+
+| 코드 | 줄 수 | 이유 |
+|------|------|------|
+| `calculateContentWidth()` | 188줄 | 측정 비즈니스 로직 자체는 변하지 않음 |
+| `calculateContentHeight()` | 475줄 | 동일 |
+| `parseBoxModel()` | 123줄 | 동일 |
+| size config 상수들 | ~180줄 | 동일 |
+| phantom indicator 관련 | ~55줄 | Taffy에 phantom 노드 삽입 패턴 유지 |
+
+##### Phantom Indicator 처리
+
+Phantom indicator(Switch/Checkbox/Radio의 DOM-only indicator)는 element tree에 없으므로 measure callback 대상이 아닙니다. 현재 `_runTaffyPassRaw()`에서 phantom 노드를 `childHandles.unshift()`하는 패턴은 **유지**해야 합니다.
+
+```typescript
+// 현재 코드 유지 (TaffyFlexEngine._runTaffyPassRaw 내)
+if (phantomConfig) {
+  const phantomStyle = { width: phantomW, height: phantomH, flexShrink: 0 };
+  const phantomHandle = taffy.createNode(JSON.stringify(phantomStyle));
+  childHandles.unshift(phantomHandle);
+}
+```
+
+##### 위험 요소
+
+- **컨테이너 자식 재귀**: `calculateContentHeight()`의 Card/CardHeader/Tabs 등 자식 재귀 합산은 자식이 Taffy 노드로 표현되지 않은 경우에만 필요. 자식이 Taffy 서브트리에 포함되면 Taffy가 자동 계산하므로 해당 분기 제거 가능 (단, 점진적 전환 필요).
+- **`style.width/height` 비오염**: 기존에는 enrichment가 style 객체를 직접 변경했으므로 다른 소비자(CSS resolver 등)가 주입된 값을 볼 수 있었음. NodeContext 방식은 style을 깨끗하게 유지하므로 사이드 이펙트 감소.
+
+---
+
+#### Phase 5-3 상세: CSS 파서 공유 패키지
+
+**목표**: 4개 위치에 분산된 CSS 값 파싱 코드를 `@xstudio/css-parser` 패키지로 통합하여 중복 ~220줄 제거.
+
+##### 현재 CSS 파싱 코드 분포
+
+| 패키지/파일 | 파서 함수 | 지원 범위 | 줄 수 |
+|------------|----------|----------|------|
+| **builder `cssValueParser.ts`** | `resolveCSSSizeValue()`, `resolveCalc()`, `resolveVar()`, `parseBorderShorthand()`, `parseFontShorthand()` | 완전: px/em/rem/vh/vw/vmin/vmax/%/in/cm/mm/ch/ex, calc(), clamp(), min(), max(), var(), env() | 1007줄 |
+| **builder `utils.ts`** | `parseNumericValue()`, `parseShorthand()`, `resolvePercentValue()` | px/number만 (자체 구현, cssValueParser 미사용) | ~70줄 |
+| **builder `paddingUtils.ts`** | `parsePaddingShorthand()`, `parseBorderWidthShorthand()` | 1/2/3/4값 shorthand (styleConverter 경유) | ~30줄 |
+| **layout-flow `xstudio-adapter.ts`** | `parseCSSSize()`, `parseCSSMargin()`, `parseCSSPadding()`, `parseCSSNumber()`, `parseMarginShorthand()`, `styleCreatesBfc()` | px/%/vh/vw만, **calc() 미지원** | ~120줄 |
+
+##### 중복 매핑
+
+| 기능 | cssValueParser | utils.ts | paddingUtils | xstudio-adapter |
+|------|:-:|:-:|:-:|:-:|
+| 단위 파싱 (px/number) | ✅ 완전 | ✅ 자체 | (위임) | ✅ 자체 |
+| % 해석 | ✅ 내부 | ✅ 자체 | (위임) | ✅ Percentage 객체 |
+| calc() | ✅ 재귀 하강 | (위임) | — | ❌ 미지원 |
+| var() | ✅ DOM fallback | (위임) | — | — |
+| 1/2/3/4값 shorthand | — | ✅ 자체 | ✅ **중복** | ✅ **중복** |
+| border shorthand | ✅ | (사용) | ✅ **중복** | — |
+| BFC 판별 | — | — | — | ✅ 고유 |
+
+##### 공유 패키지 설계: `@xstudio/css-parser`
+
+**패키지 특성**: 순수 함수, 외부 런타임 의존 없음, 브라우저/Node 양쪽 호환
+
+```
+packages/css-parser/
+├── package.json          # name: "@xstudio/css-parser"
+├── tsconfig.json
+└── src/
+    ├── index.ts          # barrel export
+    ├── size.ts           # resolveCSSSizeValue, resolveCalc, resolveClamp, resolveCSSMin, resolveCSSMax
+    ├── var.ts            # resolveVar, createVariableScopeWithDOMFallback
+    ├── shorthand.ts      # parseBoxShorthand (통합 1/2/3/4값), parseBorderShorthand, parseFontShorthand
+    ├── units.ts          # resolveUnitValue, parseNumericValue (통합)
+    └── types.ts          # CSSValueContext, CSSVariableScope, ParsedBorder, ParsedFont, 센티넬 상수
+```
+
+##### Tier별 이동 계획
+
+**Tier 1 (필수, 5-3a)**: 핵심 파서 통합
+- `resolveCSSSizeValue()` + 내부 의존 함수 (`resolveCalc`, `resolveClamp`, `resolveCSSMin`, `resolveCSSMax`, `resolveUnitValue`)
+- `parseBoxShorthand(value): { top, right, bottom, left }` — 3곳의 1/2/3/4값 shorthand 통합
+- 타입 + 센티넬 상수: `CSSValueContext`, `FIT_CONTENT`, `MIN_CONTENT`, `MAX_CONTENT`
+- `parseNumericValue()` — `utils.ts`와 `xstudio-adapter.ts`의 px/number 파서 통합
+
+**Tier 2 (권장, 5-3b)**: Shorthand 파서
+- `parseBorderShorthand()` — `cssValueParser.ts`에서 이동
+- `parseFontShorthand()` — `cssValueParser.ts`에서 이동
+
+**Tier 3 (선택적, 5-3c)**: CSS 사양 상수
+- `INHERITABLE_PROPERTIES`, `CSS_INITIAL_VALUES` — `cssResolver.ts`에서 이동
+- `resolveCurrentColor()` — 공유 가치가 있으면
+
+##### `xstudio-adapter.ts` 전환 설계
+
+현재 `layout-flow` 패키지의 자체 파서(`parseCSSSize`, `parseCSSMargin` 등)는 **`Percentage` 객체** (`{ value: number, unit: '%' }`)를 반환하는데, `resolveCSSSizeValue()`는 **px 숫자**를 반환합니다.
+
+**해결 방안**: `@xstudio/css-parser`에 두 가지 모드 제공
+
+```typescript
+// 기본: px 숫자 반환 (builder 용)
+resolveCSSSizeValue(value, context): number | null
+
+// 원시 모드: 단위 정보 보존 (layout-flow 용)
+parseCSSSizeRaw(value): { value: number, unit: string } | null
+// 예: "50%" → { value: 50, unit: '%' }, "10px" → { value: 10, unit: 'px' }
+```
+
+`xstudio-adapter.ts`는 `parseCSSSizeRaw()`를 사용하여 Dropflow의 `Percentage` 타입으로 변환:
+
+```typescript
+import { parseCSSSizeRaw } from '@xstudio/css-parser';
+
+function parseCSSMarginValue(value: string | number): number | Percentage | 'auto' {
+  if (value === 'auto') return 'auto';
+  const parsed = parseCSSSizeRaw(String(value));
+  if (!parsed) return 0;
+  if (parsed.unit === '%') return new Percentage(parsed.value);
+  return parsed.value; // px
+}
+```
+
+##### 의존성 그래프 변경
+
+```
+[Before]
+@xstudio/layout-flow  (의존 0개, 자체 CSS 파서)
+@xstudio/builder      (cssValueParser.ts 내장)
+
+[After]
+@xstudio/css-parser    ← 새 패키지 (순수 함수, 의존 0개)
+  ↑                ↑
+  │                │
+@xstudio/layout-flow   @xstudio/builder
+  (자체 파서 제거)        (cssValueParser.ts → re-export)
+```
+
+##### 제거 가능 코드량
+
+| 파일 | 제거 대상 | 줄 수 |
+|------|----------|------|
+| `xstudio-adapter.ts` | `parseCSSSize()`, `parseCSSMargin()`, `parseCSSPadding()`, `parseCSSNumber()`, `parseMarginShorthand()`, `parseCSSConstraint()` | ~120줄 |
+| `utils.ts` | `parseNumericValue()`, `parseShorthand()`, `resolvePercentValue()` | ~70줄 |
+| `paddingUtils.ts` | `parsePaddingShorthand()`, `parseBorderWidthShorthand()` | ~30줄 |
+| **합계** | | **~220줄** |
+
+##### 주의사항
+
+1. **`@xstudio/layout-flow` 첫 runtime dependency**: 현재 외부 의존 0개. `@xstudio/css-parser` 추가 시 첫 번째 런타임 의존. 트레이드오프: 중복 제거 vs 의존성 추가. `css-parser`가 순수 함수 패키지이므로 리스크 낮음.
+2. **`resolveVar()` DOM 접근**: `document.documentElement` 접근이 있으며, SSR 환경 가드(`typeof document === 'undefined'`)가 이미 존재. 공유 패키지로 이동해도 동일 가드 유지.
+3. **`cssValueParser.ts` 잔여 코드**: `resolveVar()`, `resolveEnv()` 등 `CSSVariableScope` 의존 코드는 빌더 전용 DOM 접근이 포함되어 있어 공유 패키지 이동 시 환경 분리 검토 필요.
+4. **테스트 전략**: `@xstudio/css-parser`에 독립 테스트 스위트 신설. 기존 `cssValueParser.ts` 테스트가 없으므로 이동 시 함께 작성.
+
+##### 검증 계획
+
+1. `@xstudio/css-parser` 독립 유닛 테스트: 모든 CSS 단위, calc(), var(), shorthand 파싱
+2. `@xstudio/layout-flow` 기존 테스트 통과 확인 (canvaskit-shaper 26개)
+3. 빌더 type-check + 전체 테스트 스위트
+4. `xstudio-adapter.ts`에서 `parseCSSSize("50%")` → Percentage 변환 정합성
 
 ---
 
@@ -480,9 +906,9 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 | Phase 1 | ~50줄 + dead file 1개 | 리스크 없는 즉시 실행 (xHeight는 Phase 4로 이동) |
 | Phase 2 | ~30줄 + 버그 2건 수정 | 기능 정상화 |
 | Phase 3 | ~320줄 | 중복 코드 대폭 축소 |
-| Phase 4 | ~280줄 + 정확도 향상 | 구조적 개선 (4-1은 완료) |
-| Phase 5 | ~130줄 + 성능 향상 | 근본 아키텍처 변경 |
-| **합계** | **~810줄** | 현재 엔진 코드 대비 약 30% 감소 예상 |
+| Phase 4 | ~280줄 + 정확도 향상 | 구조적 개선 **(전 항목 완료)** |
+| Phase 5 | ~220줄 (5-3 중복 제거) + 2-pass 제거 (5-1/5-2) + 성능 향상 | 근본 아키텍처 변경 |
+| **합계** | **~860줄** | 현재 엔진 코드 대비 약 30% 감소 예상 |
 
 ---
 
