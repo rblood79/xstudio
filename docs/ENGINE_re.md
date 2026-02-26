@@ -1206,3 +1206,49 @@ Taffy 0.9 style.size = border-box
 | `--select-on-accent-container` | default | `'{color.on-surface}'` |
 | `--select-accent-container` | primary | `'{color.primary-container}'` |
 | `--select-on-accent-container` | primary | `'{color.on-primary-container}'` |
+
+---
+
+## Phase 4-6C: ComboBox Compositional Architecture 전환 (2026-02-27)
+
+### 근본 원인
+ComboBox가 Monolithic 모드에서 Compositional 모드로 전환되었으나, 레이아웃/렌더링 파이프라인의 여러 지점에서 등록이 누락되어 색상/보더 미렌더링 및 높이 계산 오류 발생.
+
+### 수정 항목
+
+| # | 파일 | 수정 내용 |
+|---|------|-----------|
+| 1 | `ComboBox.spec.ts` | `_hasChildren` 게이팅 추가 — Compositional 모드에서 label/input/border/text/chevron 스킵, dropdown만 렌더링. Select.spec.ts와 동일 패턴 |
+| 2 | `ComboBox.spec.ts` | `'transparent'` 방어 패턴 추가 (`userBg !== 'transparent'`) |
+| 3 | `SelectionComponents.ts` | ComboBox Factory parent에 `style: { display: 'flex', flexDirection: 'column', gap: 8 }` 추가 |
+| 4 | `utils.ts` | `SPEC_SHAPES_INPUT_TAGS`에서 `'combobox'` 제거 |
+| 5 | `utils.ts` | `calculateContentHeight`: `isSelect` → `isCompositional` (select+combobox 공통), `wrapperTag` 변수로 SelectTrigger/ComboBoxWrapper 자동 매핑 |
+| 6 | `BuilderCanvas.tsx` | Select/ComboBox padding 주입 통합 — `wrapperChildTag` 변수로 분기 제거 |
+| 7 | `BuilderCanvas.tsx` | ComboBoxWrapper 컨테이너: 하드코딩 `height:30` 제거 → `??` 패턴 spec 기반 padding |
+| 8 | `BuilderCanvas.tsx` | Monolithic 처리 블록(`backgroundColor:'transparent'` + `children:''` 강제) → `'transparent'` 방어만 유지 |
+| 9 | `ElementSprite.tsx` | `TAG_SPEC_MAP`: ComboBoxWrapper→SelectTriggerSpec, ComboBoxInput→SelectValueSpec, ComboBoxTrigger→SelectIconSpec (재사용) |
+| 10 | `ElementSprite.tsx` | **CRITICAL** `UI_SELECT_CHILD_TAGS`에 ComboBoxWrapper/ComboBoxInput/ComboBoxTrigger 추가 |
+
+### CRITICAL: UI_SELECT_CHILD_TAGS 등록 누락 버그
+
+```
+미등록 시 렌더링 경로:
+  getSpriteType('ComboBoxWrapper') → 'flex' (일반 컨테이너)
+  → isUIComponent = false (box/text/image/flex/grid 제외)
+  → spec shapes 렌더링 스킵
+  → 색상/보더 미렌더링
+
+등록 후 정상 경로:
+  getSpriteType('ComboBoxWrapper') → 'selectChild'
+  → isUIComponent = true
+  → SelectTriggerSpec.render.shapes() 실행
+  → roundRect 배경 + border 정상 렌더링
+```
+
+### Spec 재사용 패턴
+
+| ComboBox 자식 | 재사용 Spec | 렌더링 |
+|---------------|-------------|--------|
+| ComboBoxWrapper | SelectTriggerSpec | roundRect bg + border |
+| ComboBoxInput | SelectValueSpec | text (placeholder/value) |
+| ComboBoxTrigger | SelectIconSpec | chevron icon + bg |

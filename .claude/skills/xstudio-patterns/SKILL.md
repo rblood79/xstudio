@@ -324,21 +324,122 @@ Select, ComboBox 등 복합 컴포넌트를 자식 Element 트리 구조로 전�
 | 5 | **calculateContentHeight 브랜치** | 전용 높이 계산 브랜치에서 실제 visible 자식 순회 (Card 패턴) |
 | 6 | **자식 필터링** | web preview 비표시 조건(label prop 삭제 등)과 canvas 필터링 일치 |
 | 7 | **DEFAULT_ELEMENT_HEIGHTS 동적화** | 하드코딩 높이 대신 `fontSize * lineHeight` 동적 계산 사용 |
+| 8 | **UI_SELECT_CHILD_TAGS 등록** (CRITICAL) | 자식 Element(`ComboBoxWrapper`, `ComboBoxInput`, `ComboBoxTrigger` 등)를 `UI_SELECT_CHILD_TAGS`에 등록. 미등록 시 `getSpriteType()` → 'flex'/'box' → `isUIComponent=false` → spec shapes 스킵 → 색상/보더 미렌더링 |
+| 9 | **TAG_SPEC_MAP 등록** | `ElementSprite.tsx`의 `TAG_SPEC_MAP`에 자식 태그 → Spec 클래스 매핑. 기존 Spec 재사용 가능 (아래 참조) |
 
 #### Monolithic vs Compositional 구분
 
 ```typescript
 // ✅ Compositional (Card 패턴) — 자식 Element가 store에 존재
-// Select, Card, Tabs 등
+// Select, ComboBox, Card, Tabs 등
 // - isFormElement: 제외
 // - SPEC_SHAPES_INPUT_TAGS: 제외
 // - enrichment: CSS padding 경로 (padding 추가)
 // - calculateContentHeight: 자식 순회 합산
 
 // ❌ Monolithic (Spec Shapes 기반) — spec shapes가 전체 렌더링
-// ComboBox, Dropdown, Breadcrumbs 등
+// Dropdown, Breadcrumbs 등
 // - SPEC_SHAPES_INPUT_TAGS: 포함
 // - enrichment: spec shapes 경로 (padding 미추가, 전체 시각적 높이 반환)
+```
+
+#### ComboBox Compositional 전환 패턴 (2026-02-27)
+
+ComboBox는 Select와 동일한 시각적 구조를 가지므로 **기존 Select Spec을 재사용**합니다.
+
+**자식 Element - Spec 재사용 매핑**
+
+| ComboBox 자식 태그 | 재사용 Spec | 이유 |
+|---|---|---|
+| `ComboBoxWrapper` | `SelectTriggerSpec` | 동일한 roundRect 배경 + 보더 구조 |
+| `ComboBoxInput` | `SelectValueSpec` | 동일한 텍스트 렌더링 |
+| `ComboBoxTrigger` | `SelectIconSpec` | 동일한 chevron 아이콘 + 배경 |
+
+```typescript
+// ElementSprite.tsx — TAG_SPEC_MAP 등록
+const TAG_SPEC_MAP: Record<string, SpecClass> = {
+  // Select 자식
+  'SelectTrigger': SelectTriggerSpec,
+  'SelectValue': SelectValueSpec,
+  'SelectIcon': SelectIconSpec,
+  // ComboBox 자식 — Select Spec 재사용
+  'ComboBoxWrapper': SelectTriggerSpec,
+  'ComboBoxInput': SelectValueSpec,
+  'ComboBoxTrigger': SelectIconSpec,
+};
+```
+
+**UI_SELECT_CHILD_TAGS 등록 (CRITICAL)**
+
+`getSpriteType()`은 이 Set에 포함된 태그를 `'selectChild'`로 분류합니다.
+`spriteType === 'selectChild'`일 때만 `isUIComponent = true` → spec shapes 렌더링 경로 진입.
+
+```typescript
+// ElementSprite.tsx (또는 constants.ts)
+const UI_SELECT_CHILD_TAGS = new Set([
+  // Select 자식 (기존)
+  'SelectTrigger', 'SelectValue', 'SelectIcon',
+  // ComboBox 자식 (신규 등록 필수)
+  'ComboBoxWrapper', 'ComboBoxInput', 'ComboBoxTrigger',
+]);
+```
+
+**BuilderCanvas ComboBoxWrapper padding 주입**
+
+Select 패턴과 동일하게 `createContainerChildRenderer`에서 `ComboBoxWrapper`의 내부 자식(`ComboBoxInput`, `ComboBoxTrigger`)에 padding을 주입합니다.
+
+```typescript
+// BuilderCanvas.tsx — createContainerChildRenderer
+if (tag === 'ComboBoxWrapper' || tag === 'SelectTrigger') {
+  injected.paddingLeft  = cs.paddingLeft  ?? specDefault;
+  injected.paddingRight = cs.paddingRight ?? specDefault;
+}
+```
+
+**calculateContentHeight isCompositional 플래그**
+
+동적 자식 순회 시 `isCompositional` 플래그로 ComboBox를 Compositional 경로로 분기합니다.
+
+```typescript
+// calculateContentHeight 내부
+const isCompositional =
+  tag === 'combobox' || tag === 'select' || tag === 'card' || /* ... */;
+
+if (isCompositional) {
+  // 실제 childElements를 순회하여 높이 합산
+  return childElements.reduce((sum, child) => sum + getChildHeight(child), 0)
+    + gap * Math.max(childElements.length - 1, 0);
+}
+```
+
+**ComboBox.spec.ts 방어 패턴**
+
+`_hasChildren` 게이팅으로 자식이 있을 때는 배경 shapes만 렌더링합니다.
+`'transparent'` 방어 패턴은 `SelectTriggerSpec`과 동일하게 적용합니다.
+
+```typescript
+// ComboBox.spec.ts
+shapes(props, variant) {
+  const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+  const userBg = props.style?.backgroundColor;
+  // 'transparent' 방어: DB에 저장된 기존 값이 spec variant를 덮어쓰지 않도록
+  const bgColor = (userBg != null && userBg !== 'transparent')
+                ? userBg : variant.background;
+
+  const backgroundShapes: Shape[] = [
+    { id: 'bg', type: 'roundRect', fill: bgColor, ... },
+  ];
+
+  // 자식이 있으면 배경만 렌더링 (자식 Spec이 나머지 처리)
+  if (hasChildren) return backgroundShapes;
+
+  // Monolithic 폴백: 자식 없을 때 전체 렌더링
+  return [
+    ...backgroundShapes,
+    { id: 'input', ... },
+    { id: 'trigger', ... },
+  ];
+},
 ```
 
 #### CSS 값 일관성 규칙

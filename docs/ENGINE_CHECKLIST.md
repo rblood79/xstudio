@@ -1169,6 +1169,8 @@ const offsetY = fontSize + 4;
 | 5. Style 주입 | `BuilderCanvas.tsx` | `??` 패턴으로 기본값 주입 (사용자 CSS 값 우선) |
 | 6. Factory | `*Components.ts` | Web CSS와 동일한 display/flexDirection/gap 설정 |
 | 7. 높이 상수 | `utils.ts` `DEFAULT_ELEMENT_HEIGHTS` | TEXT_LEAF_TAGS는 제거 → 동적 계산 (fontSize * lineHeight) |
+| 8. SpriteType | `ElementSprite.tsx` `UI_SELECT_CHILD_TAGS` | 자식 태그 등록 → `'selectChild'` → `isUIComponent=true` → spec shapes 렌더링 |
+| 9. TAG_SPEC_MAP | `ElementSprite.tsx` `TAG_SPEC_MAP` | 자식 태그 → Spec 매핑 등록 (기존 Spec 재사용 가능) |
 
 ### CSS 값 파싱 주의사항
 
