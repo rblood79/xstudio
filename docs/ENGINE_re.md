@@ -464,6 +464,7 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 | 4-3 | ~~Rust 브릿지에 `GridTemplateComponent::Repeat` 지원~~ **(완료)** | ~110줄 TS 코드 제거 | 완료 |
 | 4-4 | ~~TaffyGridEngine에 `enrichWithIntrinsicSize()` 호출 추가~~ **(완료)** | 잠재 버그 수정 | 완료 |
 | 4-5 | ~~`xHeight` 근사 개선 — `getGlyphBounds('x')` 기반~~ **(완료)** | 텍스트 baseline 정확도 향상 | 완료 |
+| 4-6 | ~~Phantom Indicator CSS 레이아웃 보정~~ **(완료)** | padding/align-items/gap 렌더링 정확도 향상 | 완료 |
 
 ### Phase 5: 장기 — 근본 아키텍처 (보류, 2026-02-26 결정)
 
@@ -738,13 +739,13 @@ class TaffyLayout {
 
 | 카테고리 | 태그 | 측정 방식 | measure callback 적합성 |
 |----------|------|----------|----------------------|
-| Button 계열 | button, submitbutton, fancybutton, togglebutton | sizeConfig + 텍스트 측정 | ✅ 적합 (단순 w/h) |
-| Badge 계열 | badge, tag, chip | sizeConfig 고정 높이 | ✅ 적합 (고정값) |
-| Inline Form | checkbox, radio, switch | PHANTOM_INDICATOR_CONFIGS | ⚠️ phantom 노드는 별도 유지 |
-| TEXT_LEAF_TAGS | text, heading, description, label, paragraph | 텍스트 줄바꿈 | ✅ 적합 (breakpoints 활용) |
-| Spec Shapes | combobox, select, dropdown, breadcrumbs | 하드코딩 높이 | ✅ 적합 (고정값) |
-| 컨테이너 | card, cardheader, cardcontent | 자식 재귀 합산 | ❌ Taffy가 자체 처리 (자식이 Taffy 노드이면) |
-| Group 계열 | checkboxgroup, radiogroup, tabs | 자식 재귀 + 추가 요소 | ⚠️ 부분 적합 |
+| Button 계열 | button, submitbutton, fancybutton, togglebutton | sizeConfig + 텍스트 측정 | 적합 (단순 w/h) |
+| Badge 계열 | badge, tag, chip | sizeConfig 고정 높이 | 적합 (고정값) |
+| Inline Form | checkbox, radio, switch | PHANTOM_INDICATOR_CONFIGS | phantom 노드는 별도 유지 |
+| TEXT_LEAF_TAGS | text, heading, description, label, paragraph | 텍스트 줄바꿈 | 적합 (breakpoints 활용) |
+| Spec Shapes | combobox, select, dropdown, breadcrumbs | 하드코딩 높이 | 적합 (고정값) |
+| 컨테이너 | card, cardheader, cardcontent | 자식 재귀 합산 | Taffy가 자체 처리 (자식이 Taffy 노드이면) |
+| Group 계열 | checkboxgroup, radiogroup, tabs | 자식 재귀 + 추가 요소 | 부분 적합 |
 
 ##### 변경 설계
 
@@ -821,13 +822,13 @@ if (phantomConfig) {
 
 | 기능 | cssValueParser | utils.ts | paddingUtils | xstudio-adapter |
 |------|:-:|:-:|:-:|:-:|
-| 단위 파싱 (px/number) | ✅ 완전 | ✅ 자체 | (위임) | ✅ 자체 |
-| % 해석 | ✅ 내부 | ✅ 자체 | (위임) | ✅ Percentage 객체 |
-| calc() | ✅ 재귀 하강 | (위임) | — | ❌ 미지원 |
-| var() | ✅ DOM fallback | (위임) | — | — |
-| 1/2/3/4값 shorthand | — | ✅ 자체 | ✅ **중복** | ✅ **중복** |
-| border shorthand | ✅ | (사용) | ✅ **중복** | — |
-| BFC 판별 | — | — | — | ✅ 고유 |
+| 단위 파싱 (px/number) | 완전 | 자체 | (위임) | 자체 |
+| % 해석 | 내부 | 자체 | (위임) | Percentage 객체 |
+| calc() | 재귀 하강 | (위임) | — | 미지원 |
+| var() | DOM fallback | (위임) | — | — |
+| 1/2/3/4값 shorthand | — | 자체 | **중복** | **중복** |
+| border shorthand | 있음 | (사용) | **중복** | — |
+| BFC 판별 | — | — | — | 고유 |
 
 ##### 공유 패키지 설계: `@xstudio/css-parser`
 
@@ -927,7 +928,6 @@ function parseCSSMarginValue(value: string | number): number | Percentage | 'aut
 1. `@xstudio/css-parser` 독립 유닛 테스트: 모든 CSS 단위, calc(), var(), shorthand 파싱
 2. `@xstudio/layout-flow` 기존 테스트 통과 확인 (canvaskit-shaper 26개)
 3. 빌더 type-check + 전체 테스트 스위트
-4. `xstudio-adapter.ts`에서 `parseCSSSize("50%")` → Percentage 변환 정합성
 
 ---
 
@@ -1000,9 +1000,101 @@ Dropflow adapter는 `boxSizing: 'border-box'` 고정이므로 content-box 값을
 | `engines/utils.ts` | `enrichWithIntrinsicSize()` 조건부 로직 제거 → 항상 border-box 값 주입 |
 | `engines/utils.ts` | `applyCommonTaffyStyle()` border-box → content-box 변환 추가 |
 
+**추가 수정: fontSize 기본값 일관성 통일**
+
+`calculateContentWidth()`에서 수정된 fontSize CSS 상속 패턴을 나머지 측정 경로에도 일관 적용:
+
+| 위치 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| `calculateContentHeight()` 시그니처 | 4개 파라미터 | `computedStyle?: ComputedStyle` 5번째 파라미터 추가 |
+| `calculateContentHeight()` TEXT_LEAF_TAGS (line ~1395) | `?? 16` | `?? computedStyle?.fontSize ?? 16` |
+| `calculateContentHeight()` fontWeight/fontFamily | `?? 400` / `?? specFontFamily.sans` | `?? computedStyle?.fontWeight ?? 400` / `?? computedStyle?.fontFamily ?? specFontFamily.sans` |
+| `calculateContentHeight()` lineHeight fallback (line ~1414) | `parseNumericValue(style?.fontSize)` | `parseNumericValue(style?.fontSize) ?? computedStyle?.fontSize` |
+| `enrichWithIntrinsicSize()` min/max-content (line ~1649) | `14` | `_computedStyle?.fontSize ?? 16` |
+| `enrichWithIntrinsicSize()` → `calculateContentHeight()` 호출 | computedStyle 미전달 | `_computedStyle` 전달 |
+
+이로써 width 측정(`calculateContentWidth`)과 height 측정(`calculateContentHeight`) 양쪽 모두 CSS 상속 fontSize를 동일하게 반영합니다.
+
 **해소된 ENGINE_re.md 항목:**
 - §2.1.3 box-sizing 수동 변환 (Dropflow) → enrichment 경로에서 근본 해소
 - §3-4 `xstudio-adapter.ts`에 `boxSizing: 'border-box'` 전달 → enrichment가 이미 border-box 값을 주입하므로 별도 전달 불필요
+
+---
+
+### Phase 4-6: Phantom Indicator CSS 레이아웃 보정 (2026-02-26)
+
+Switch/Checkbox/Radio의 phantom indicator가 CSS 레이아웃 속성(padding, align-items, gap)을 무시하던 문제를 수정합니다. Phantom indicator는 Element 트리에 존재하지 않고 spec shapes로만 렌더링되기 때문에, Taffy가 계산한 레이아웃 결과를 화면에 그대로 적용하면 CSS 레이아웃 속성의 효과가 반영되지 않았습니다.
+
+#### 문제 상세
+
+**padding 미반영**: Taffy는 padding을 레이아웃 계산에 반영하지만, phantom indicator 자체는 border-box 원점 `(0, 0)`에 고정 배치됩니다. Label 요소는 content area로 이동하므로, 두 요소 사이에 위치 어긋남이 발생합니다.
+
+**align-items: center 무효**: `height: auto` 컨테이너에서 `BuilderCanvas`가 Taffy에 sentinel 값(-1)을 전달하면 Taffy는 콘텐츠 기반 높이를 결정합니다. 이 경우 컨테이너 높이 = 콘텐츠 높이가 되어 `align-items`가 세로 정렬에 효과를 발휘하지 못합니다.
+
+**gap 이중 적용**: Phantom indicator의 너비(`phantomWidth`)는 indicator 크기 + `specGap`을 포함하여 계산됩니다. CSS `gap`을 동시에 설정하면 Taffy가 CSS gap을 별도로 추가하여 간격이 이중으로 적용됩니다.
+
+**Label align-items 미작동**: `height: auto` 컨테이너에 sentinel(-1)이 전달되면 Taffy 내부에서 콘텐츠 기반 높이를 결정하므로 `align-items`가 동작하지 않습니다.
+
+#### 수정 원칙
+
+| 상황 | 동작 |
+|------|------|
+| CSS `gap` 미설정 | `specGap`으로 기존 동작 유지 |
+| CSS `gap` 설정 | `phantomWidth`에서 `specGap` 제거, CSS gap이 간격 담당 |
+| `align-items` 계산 | content area 기준 (border-box - padding) |
+| `height: auto` + PHANTOM_TAGS | `containerHeight`를 Taffy에 전달하여 align-items 활성화 |
+
+#### 수정 파일 (5개)
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `sprites/ElementSprite.tsx` | specNode 렌더링 시 padding 오프셋 + align-items 오프셋 적용 |
+| `engines/TaffyFlexEngine.ts` | CSS gap 설정 시 `phantomWidth`에서 `specGap` 제거 |
+| `engines/index.ts` | Dropflow fallback 경로에 CSS gap 반영 |
+| `engines/utils.ts` | `calculateContentWidth/Height` CSS gap 대체 처리, `getPhantomIndicatorSpace`에 `gap` 필드 추가 |
+| `BuilderCanvas.tsx` | `PHANTOM_TAGS`의 `height: auto` 컨테이너에 `containerHeight` 전달 |
+
+#### 핵심 변경 로직
+
+**ElementSprite.tsx — padding + align-items 오프셋**
+
+```typescript
+// specNode 배치 시 padding을 반영한 오프셋 계산
+const paddingLeft = parsePx(style.paddingLeft) ?? 0;
+const paddingTop  = parsePx(style.paddingTop)  ?? 0;
+
+// align-items: center 오프셋 (content area 기준)
+const contentH    = containerH - paddingTop - (parsePx(style.paddingBottom) ?? 0);
+const alignOffset = alignItems === 'center' ? (contentH - specH) / 2 : 0;
+
+// indicator는 content area 원점에서 시작
+x = paddingLeft;
+y = paddingTop + alignOffset;
+```
+
+**TaffyFlexEngine.ts — CSS gap 시 specGap 제거**
+
+```typescript
+// CSS gap이 설정된 경우 phantomWidth에서 specGap을 차감
+const cssGap = parsePx(style.gap ?? style.columnGap) ?? 0;
+const phantomWidth = cssGap > 0
+  ? phantomConfig.width - phantomConfig.specGap  // CSS gap이 간격 담당
+  : phantomConfig.width;                          // 기존: specGap 포함
+```
+
+**BuilderCanvas.tsx — PHANTOM_TAGS height:auto에 containerHeight 전달**
+
+```typescript
+// height: auto 컨테이너라도 PHANTOM_TAGS는 실제 컨테이너 높이를 Taffy에 전달
+// → Taffy가 align-items 계산에 사용할 수 있는 definite height 확보
+const taffyHeight = (isPhantomTag && containerH > 0)
+  ? containerH   // 실제 높이 전달
+  : -1;          // sentinel (콘텐츠 기반 결정)
+```
+
+#### 해소된 ENGINE_re.md 항목
+
+- §3.2.4 Phantom Indicator 설정 이중 정의 → `getPhantomIndicatorSpace`에 `gap` 필드 추가로 CSS gap/specGap 분기를 단일 진입점에서 처리
 
 ---
 
