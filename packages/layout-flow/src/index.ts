@@ -151,6 +151,7 @@ export {
   elementStyleToDropflowStyle,
   buildBoxTree,
   boxAreaToComputedLayout,
+  styleCreatesBfc,
 } from './adapters/xstudio-adapter.js';
 
 export type {

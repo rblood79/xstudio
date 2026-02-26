@@ -17,178 +17,39 @@
  */
 
 import type { Element } from '../../../../../types/core/store.types';
-import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
+import type { ComputedLayout, LayoutContext } from './LayoutEngine';
 import { TaffyLayout } from '../../wasm-bindings/taffyLayout';
 import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayout';
-import { DropflowBlockEngine } from './DropflowBlockEngine';
-import { parseMargin, parsePadding, parseBorder } from './utils';
-import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
+import { BaseTaffyEngine } from './BaseTaffyEngine';
+import { parseMargin, enrichWithIntrinsicSize, parseCSSPropWithContext, applyCommonTaffyStyle } from './utils';
+import { resolveStyle } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
-import { resolveCSSSizeValue } from './cssValueParser';
 import type { CSSValueContext } from './cssValueParser';
 
 // ─── CSS 파싱 유틸리티 ────────────────────────────────────────────────
 
 /**
- * CSS 값을 Taffy 차원 문자열로 변환
- * - number → "Npx"
- * - string (%, px 등) → 그대로 전달
- * - undefined | null | 'auto' → undefined
- */
-function dimStr(value: number | string | undefined): string | undefined {
-  if (value === undefined || value === null || value === '' || value === 'auto') return undefined;
-  if (typeof value === 'number') return `${value}px`;
-  return value;
-}
-
-/**
- * RC-3: CSS prop → number | string 파서 (단위 정규화 적용)
+ * CSS grid-template 문자열을 트랙 토큰 배열로 파싱
  *
- * rem, em, vh, vw, calc() 등을 resolveCSSSizeValue()로 해석.
- * % 값은 Taffy 네이티브 % 처리를 위해 문자열 그대로 반환.
- */
-function parseCSSPropWithContext(
-  value: unknown,
-  ctx: CSSValueContext = {},
-): number | string | undefined {
-  if (value === undefined || value === null || value === '' || value === 'auto') return undefined;
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    if (value.endsWith('%')) return value;
-    if (value === 'fit-content' || value === 'min-content' || value === 'max-content') return undefined;
-    const px = resolveCSSSizeValue(value, ctx);
-    if (px !== undefined && px >= 0) return px;
-    const num = parseFloat(value);
-    if (!isNaN(num)) return num;
-  }
-  return undefined;
-}
-
-/**
- * CSS grid-template 문자열을 트랙 배열로 파싱
+ * Phase 4-3: repeat() 전개는 Rust 브릿지(GridTemplateComponent::Repeat)에서 처리.
+ * TS는 최상위 토큰 분리만 수행하며, repeat() 토큰은 그대로 전달.
  *
  * 예) "1fr 1fr 1fr" → ["1fr", "1fr", "1fr"]
  *     "200px auto 1fr" → ["200px", "auto", "1fr"]
- *     "repeat(3, 1fr)" → ["1fr", "1fr", "1fr"]
+ *     "repeat(3, 1fr)" → ["repeat(3, 1fr)"]
  *     "minmax(100px, 1fr) 200px" → ["minmax(100px, 1fr)", "200px"]
- *
- * repeat() 함수는 중첩 괄호를 고려하지 않는 단순 파서입니다.
+ *     "repeat(auto-fill, minmax(200px, 1fr)) 100px" → ["repeat(auto-fill, minmax(200px, 1fr))", "100px"]
  */
-function parseGridTemplateToTrackArray(
-  template: string | undefined,
-  containerSize?: number,
-  gap?: number,
-): string[] {
+function parseGridTemplate(template: string | undefined): string[] {
   if (!template || template.trim() === '') return [];
 
-  const result: string[] = [];
-  // 최상위 토큰 분리 (중첩 괄호 고려)
-  const tokens = tokenizeGridTemplate(template.trim());
-
-  for (const token of tokens) {
-    const t = token.trim();
-    if (!t) continue;
-
-    if (t.startsWith('repeat(')) {
-      const expanded = expandRepeatToken(t, containerSize ?? 0, gap ?? 0);
-      for (const e of expanded) {
-        result.push(e);
-      }
-    } else {
-      result.push(t);
-    }
-  }
-
-  return result;
-}
-
-/**
- * 단일 repeat() 토큰을 전개합니다.
- *
- * 지원:
- * - repeat(3, 1fr) -> ["1fr", "1fr", "1fr"]
- * - repeat(2, 100px 200px) -> ["100px", "200px", "100px", "200px"]
- * - repeat(auto-fill, minmax(200px, 1fr)) -> containerSize 기반 동적 트랙 수
- * - repeat(auto-fit, ...) -> auto-fill과 동일 (빈 트랙 축소는 Taffy가 처리)
- */
-function expandRepeatToken(
-  expr: string,
-  containerSize: number,
-  gap: number,
-): string[] {
-  // "repeat(" ... ")" -> 내부 추출
-  const inner = expr.slice(expr.indexOf('(') + 1, expr.lastIndexOf(')'));
-
-  // 첫 번째 콤마 위치 (괄호 내 콤마 무시)
-  let depth = 0;
-  let firstComma = -1;
-  for (let i = 0; i < inner.length; i++) {
-    if (inner[i] === '(') depth++;
-    else if (inner[i] === ')') depth--;
-    else if (inner[i] === ',' && depth === 0) {
-      firstComma = i;
-      break;
-    }
-  }
-
-  if (firstComma === -1) return [expr]; // 파싱 실패 -> 원본 반환
-
-  const countStr = inner.slice(0, firstComma).trim();
-  const trackListStr = inner.slice(firstComma + 1).trim();
-  const patternTokens = tokenizeGridTemplate(trackListStr);
-
-  let repeatCount: number;
-  if (countStr === 'auto-fill' || countStr === 'auto-fit') {
-    // 패턴 당 최소 크기 합산
-    let patternMinSize = 0;
-    for (const token of patternTokens) {
-      if (token.startsWith('minmax(')) {
-        const minInner = token.slice(7, token.lastIndexOf(')'));
-        const minPart = minInner.split(',')[0]?.trim() ?? '0';
-        if (minPart.endsWith('px')) {
-          patternMinSize += parseFloat(minPart) || 0;
-        }
-      } else if (token.endsWith('px')) {
-        patternMinSize += parseFloat(token) || 0;
-      }
-      // fr, auto 등은 최소 크기 0
-    }
-
-    if (patternMinSize <= 0) {
-      repeatCount = 1;
-    } else {
-      // 패턴 내부 토큰 간 gap 포함한 1회 반복 크기
-      const patternTotalSize = patternMinSize + gap * (patternTokens.length - 1);
-      // 반복 간 gap 포함: (containerSize + gap) / (patternTotalSize + gap)
-      repeatCount = Math.max(1, Math.floor(
-        (containerSize + gap) / (patternTotalSize + gap)
-      ));
-    }
-  } else {
-    repeatCount = parseInt(countStr, 10) || 1;
-  }
-
-  const tracks: string[] = [];
-  for (let i = 0; i < repeatCount; i++) {
-    for (const token of patternTokens) {
-      tracks.push(token);
-    }
-  }
-
-  return tracks;
-}
-
-/**
- * grid-template 문자열을 토큰 배열로 분리합니다.
- * minmax(100px, 1fr) 같은 함수 표현식은 하나의 토큰으로 처리합니다.
- */
-function tokenizeGridTemplate(template: string): string[] {
   const tokens: string[] = [];
   let current = '';
   let depth = 0;
+  const s = template.trim();
 
-  for (let i = 0; i < template.length; i++) {
-    const ch = template[i];
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
     if (ch === '(') {
       depth++;
       current += ch;
@@ -196,17 +57,16 @@ function tokenizeGridTemplate(template: string): string[] {
       depth--;
       current += ch;
     } else if (ch === ' ' && depth === 0) {
-      if (current.trim()) {
-        tokens.push(current.trim());
-        current = '';
-      }
+      const t = current.trim();
+      if (t) tokens.push(t);
+      current = '';
     } else {
       current += ch;
     }
   }
-  if (current.trim()) {
-    tokens.push(current.trim());
-  }
+  const last = current.trim();
+  if (last) tokens.push(last);
+
   return tokens;
 }
 
@@ -346,20 +206,8 @@ export function elementToTaffyGridStyle(
     result.position = 'absolute';
   }
 
-  // --- Size ---
-  const widthStr = dimStr(parseCSSPropWithContext(style.width, ctx));
-  const heightStr = dimStr(parseCSSPropWithContext(style.height, ctx));
-  if (widthStr) result.width = widthStr;
-  if (heightStr) result.height = heightStr;
-
-  const minW = dimStr(parseCSSPropWithContext(style.minWidth, ctx));
-  const minH = dimStr(parseCSSPropWithContext(style.minHeight, ctx));
-  const maxW = dimStr(parseCSSPropWithContext(style.maxWidth, ctx));
-  const maxH = dimStr(parseCSSPropWithContext(style.maxHeight, ctx));
-  if (minW) result.minWidth = minW;
-  if (minH) result.minHeight = minH;
-  if (maxW) result.maxWidth = maxW;
-  if (maxH) result.maxHeight = maxH;
+  // Size + Min/Max + Padding + Border + Gap (공통 헬퍼)
+  applyCommonTaffyStyle(result, style, ctx);
 
   // --- Grid container: 트랙 정의 ---
   const gridTemplateColumns = style.gridTemplateColumns as string | undefined;
@@ -367,10 +215,10 @@ export function elementToTaffyGridStyle(
   const gridAutoColumns = style.gridAutoColumns as string | undefined;
   const gridAutoRows = style.gridAutoRows as string | undefined;
 
-  const colTracks = parseGridTemplateToTrackArray(gridTemplateColumns);
-  const rowTracks = parseGridTemplateToTrackArray(gridTemplateRows);
-  const autoColTracks = parseGridTemplateToTrackArray(gridAutoColumns);
-  const autoRowTracks = parseGridTemplateToTrackArray(gridAutoRows);
+  const colTracks = parseGridTemplate(gridTemplateColumns);
+  const rowTracks = parseGridTemplate(gridTemplateRows);
+  const autoColTracks = parseGridTemplate(gridAutoColumns);
+  const autoRowTracks = parseGridTemplate(gridAutoRows);
 
   if (colTracks.length > 0) result.gridTemplateColumns = colTracks;
   if (rowTracks.length > 0) result.gridTemplateRows = rowTracks;
@@ -415,26 +263,6 @@ export function elementToTaffyGridStyle(
   }
   if (resolvedAlignContent) {
     result.alignContent = resolvedAlignContent as TaffyStyle['alignContent'];
-  }
-
-  // --- Gap ---
-  const gap = parseCSSPropWithContext(style.gap, ctx);
-  const rowGap = parseCSSPropWithContext(style.rowGap, ctx);
-  const columnGap = parseCSSPropWithContext(style.columnGap, ctx);
-  if (gap !== undefined) {
-    const gapStr = dimStr(gap);
-    if (gapStr) {
-      result.rowGap = gapStr;
-      result.columnGap = gapStr;
-    }
-  }
-  if (rowGap !== undefined) {
-    const rg = dimStr(rowGap);
-    if (rg) result.rowGap = rg;
-  }
-  if (columnGap !== undefined) {
-    const cg = dimStr(columnGap);
-    if (cg) result.columnGap = cg;
   }
 
   // --- Grid item: gridArea (숫자 기반 shorthand + 이름 기반 영역) ---
@@ -493,26 +321,12 @@ export function elementToTaffyGridStyle(
     result.justifySelf = style.justifySelf as TaffyStyle['justifySelf'];
   }
 
-  // --- Margin ---
+  // --- Margin --- (Grid는 margin:auto 미지원, applyCommonTaffyStyle에 미포함)
   const margin = parseMargin(style);
-  if (margin.top !== 0) result.marginTop = `${margin.top}px`;
-  if (margin.right !== 0) result.marginRight = `${margin.right}px`;
-  if (margin.bottom !== 0) result.marginBottom = `${margin.bottom}px`;
-  if (margin.left !== 0) result.marginLeft = `${margin.left}px`;
-
-  // --- Padding ---
-  const padding = parsePadding(style);
-  if (padding.top !== 0) result.paddingTop = `${padding.top}px`;
-  if (padding.right !== 0) result.paddingRight = `${padding.right}px`;
-  if (padding.bottom !== 0) result.paddingBottom = `${padding.bottom}px`;
-  if (padding.left !== 0) result.paddingLeft = `${padding.left}px`;
-
-  // --- Border ---
-  const border = parseBorder(style);
-  if (border.top !== 0) result.borderTop = `${border.top}px`;
-  if (border.right !== 0) result.borderRight = `${border.right}px`;
-  if (border.bottom !== 0) result.borderBottom = `${border.bottom}px`;
-  if (border.left !== 0) result.borderLeft = `${border.left}px`;
+  if (margin.top !== 0) result.marginTop = margin.top;
+  if (margin.right !== 0) result.marginRight = margin.right;
+  if (margin.bottom !== 0) result.marginBottom = margin.bottom;
+  if (margin.left !== 0) result.marginLeft = margin.left;
 
   // --- Inset ---
   if (style.position === 'absolute' || style.position === 'fixed') {
@@ -520,10 +334,10 @@ export function elementToTaffyGridStyle(
     const left = parseCSSPropWithContext(style.left, ctx);
     const right = parseCSSPropWithContext(style.right, ctx);
     const bottom = parseCSSPropWithContext(style.bottom, ctx);
-    if (top !== undefined) result.insetTop = dimStr(top);
-    if (left !== undefined) result.insetLeft = dimStr(left);
-    if (right !== undefined) result.insetRight = dimStr(right);
-    if (bottom !== undefined) result.insetBottom = dimStr(bottom);
+    if (top !== undefined) result.insetTop = top;
+    if (left !== undefined) result.insetLeft = left;
+    if (right !== undefined) result.insetRight = right;
+    if (bottom !== undefined) result.insetBottom = bottom;
   }
 
   return result;
@@ -531,12 +345,8 @@ export function elementToTaffyGridStyle(
 
 // ─── TaffyGridEngine ──────────────────────────────────────────────────
 
-/** Taffy Grid 미가용 시 Dropflow Block 엔진으로 폴백 */
-const dropflowGridFallback = new DropflowBlockEngine();
-
-/** 싱글톤 TaffyLayout 인스턴스 (TaffyFlexEngine과 공유하지 않고 독립 관리) */
-let taffyGridInstance: TaffyLayout | null = null;
-let taffyGridInitFailed = false;
+/** 싱글톤 인스턴스 (모듈 스코프에서 관리) */
+let gridEngineInstance: TaffyGridEngine | null = null;
 
 /**
  * Taffy Grid WASM 엔진 가용 여부
@@ -544,97 +354,26 @@ let taffyGridInitFailed = false;
  * selectEngine()에서 조기 라우팅 판단에 사용.
  */
 export function isTaffyGridAvailable(): boolean {
-  return !taffyGridInitFailed;
-}
-
-function getTaffyGridLayout(): TaffyLayout | null {
-  if (taffyGridInitFailed) return null;
-  if (!taffyGridInstance) {
-    try {
-      taffyGridInstance = new TaffyLayout();
-    } catch (err) {
-      taffyGridInitFailed = true;
-      if (import.meta.env.DEV) {
-        console.warn('[TaffyGridEngine] TaffyLayout creation failed:', err);
-      }
-      return null;
-    }
-  }
-  if (!taffyGridInstance.isAvailable()) {
-    taffyGridInitFailed = true;
-    return null;
-  }
-  return taffyGridInstance;
+  if (!gridEngineInstance) return true; // 아직 생성 전이면 사용 가능으로 간주
+  return gridEngineInstance.isAvailable();
 }
 
 /**
  * Taffy 기반 CSS Grid 레이아웃 엔진
  *
- * 기존 GridEngine의 커스텀 JS 구현 대신 Taffy WASM의 네이티브 Grid 지원을 사용합니다.
- * Taffy 0.9의 CSS Grid 기능(features = ["grid"])을 활용합니다.
- *
- * shouldDelegate = false이므로 BuilderCanvas에서 calculate()를 직접 호출합니다.
+ * Taffy WASM의 네이티브 Grid 지원을 사용합니다.
+ * BaseTaffyEngine의 인스턴스 관리, calculate() 스켈레톤, 결과 수집을 상속합니다.
  */
-export class TaffyGridEngine implements LayoutEngine {
+export class TaffyGridEngine extends BaseTaffyEngine {
   readonly displayTypes = ['grid', 'inline-grid'];
+  protected readonly engineName = 'TaffyGridEngine';
 
-  /**
-   * Taffy 엔진은 자체적으로 레이아웃을 계산하므로 위임하지 않음
-   */
-  readonly shouldDelegate = false;
-
-  calculate(
-    parent: Element,
-    children: Element[],
-    availableWidth: number,
-    availableHeight: number,
-    context?: LayoutContext,
-  ): ComputedLayout[] {
-    // 빈 children은 WASM 호출 없이 즉시 반환
-    if (children.length === 0) {
-      return [];
-    }
-
-    const taffy = getTaffyGridLayout();
-
-    // Taffy WASM이 아직 로드되지 않았으면 Dropflow Block 엔진으로 위임
-    if (!taffy) {
-      return dropflowGridFallback.calculate(parent, children, availableWidth, availableHeight, context);
-    }
-
-    // ── CSS 상속 체인 구성 ──────────────────────────────────────────
-    // 부모의 computed style 결정:
-    //   - context에 parentComputedStyle이 있으면 사용 (상위 엔진에서 전파됨)
-    //   - 없으면 부모 요소 style을 ROOT_COMPUTED_STYLE 기반으로 직접 해석
-    const parentRawStyle = parent.props?.style as Record<string, unknown> | undefined;
-    const parentComputed = context?.parentComputedStyle
-      ?? resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
-
-    // RC-3: CSS 단위 해석용 컨텍스트 구성
-    // parentSize: 부모의 computedStyle.fontSize를 em 단위 기준으로 전달
-    // rootFontSize: rem 단위 기준 (16px 고정 — 루트 font-size 기본값)
-    const cssCtx: CSSValueContext = {
-      viewportWidth: context?.viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1920),
-      viewportHeight: context?.viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 1080),
-      parentSize: parentComputed.fontSize,
-      rootFontSize: 16,
-    };
-
-    try {
-      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight, parentComputed, cssCtx);
-    } finally {
-      // 매 계산 후 트리를 클리어하여 메모리 누적 방지
-      try {
-        taffy.clear();
-      } catch (cleanupError) {
-        if (import.meta.env.DEV) {
-          console.warn('[TaffyGridEngine] cleanup error:', cleanupError);
-        }
-      }
-    }
+  constructor() {
+    super();
+    gridEngineInstance = this;
   }
 
-  private computeWithTaffy(
+  protected computeWithTaffy(
     taffy: TaffyLayout,
     parent: Element,
     children: Element[],
@@ -642,6 +381,7 @@ export class TaffyGridEngine implements LayoutEngine {
     availableHeight: number,
     parentComputed: ComputedStyle,
     cssCtx: CSSValueContext = {},
+    context?: LayoutContext,
   ): ComputedLayout[] {
     // grid-template-areas 파싱 (자식 gridArea 해석에 필요)
     const parentRawStyle = (parent.props?.style || {}) as Record<string, unknown>;
@@ -652,12 +392,16 @@ export class TaffyGridEngine implements LayoutEngine {
     // 1. 자식 노드 생성 (grid item 속성 포함)
     const childHandles: TaffyNodeHandle[] = [];
     const childMap = new Map<TaffyNodeHandle, Element>();
+    const getChildElements = context?.getChildElements;
 
     for (const child of children) {
       const childRawStyle = child.props?.style as Record<string, unknown> | undefined;
       // 부모 computed style 기반으로 자식 CSS 상속 해석 (em 단위 등)
       const childComputed = resolveStyle(childRawStyle, parentComputed);
-      const taffyStyle = elementToTaffyGridStyle(child, childComputed, templateAreas, cssCtx);
+      // Phase 4-4: Grid item에도 intrinsic size 주입 (Button 등 높이 collapse 방지)
+      const childChildren = getChildElements?.(child.id);
+      const enrichedChild = enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputed, childChildren, getChildElements, true);
+      const taffyStyle = elementToTaffyGridStyle(enrichedChild, childComputed, templateAreas, cssCtx);
       // 자식 노드는 grid item이므로 display를 grid로 강제하지 않음
       // Taffy는 grid 컨테이너 내에서 아이템을 자동으로 처리함
       // grid item에서 display 속성은 아이템 자체의 inner display를 의미하므로 제거
@@ -669,79 +413,17 @@ export class TaffyGridEngine implements LayoutEngine {
 
     // 2. 부모 노드 생성 (grid container 속성)
     const parentStyle = elementToTaffyGridStyle(parent, parentComputed, undefined, cssCtx);
-    // 부모의 display는 반드시 grid
     parentStyle.display = 'grid';
-    // 부모의 width/height는 available space로 설정
-    parentStyle.width = availableWidth;
-    // RC-1: sentinel(-1) = height:auto → parentStyle.height 생략 → Taffy가 콘텐츠 기반 계산
-    if (availableHeight >= 0) {
-      parentStyle.height = availableHeight;
-    }
+    this.setupParentDimensions(parentStyle, availableWidth, availableHeight);
 
-    // repeat(auto-fill/auto-fit) 전개를 위해 gap과 containerSize 기반으로 재파싱
-    const gapParsed = parseCSSPropWithContext(parentRawStyle.gap, cssCtx);
-    const gapPx = typeof gapParsed === 'number' ? gapParsed :
-      (typeof gapParsed === 'string' ? parseFloat(gapParsed) || 0 : 0);
-    const colGapParsed = parseCSSPropWithContext(parentRawStyle.columnGap, cssCtx);
-    const colGapPx = colGapParsed !== undefined ?
-      (typeof colGapParsed === 'number' ? colGapParsed : parseFloat(String(colGapParsed)) || 0) : gapPx;
-    const rowGapParsed = parseCSSPropWithContext(parentRawStyle.rowGap, cssCtx);
-    const rowGapPx = rowGapParsed !== undefined ?
-      (typeof rowGapParsed === 'number' ? rowGapParsed : parseFloat(String(rowGapParsed)) || 0) : gapPx;
-
-    const colTracksWithSize = parseGridTemplateToTrackArray(
-      parentRawStyle.gridTemplateColumns as string | undefined,
-      availableWidth,
-      colGapPx,
-    );
-    const rowTracksWithSize = parseGridTemplateToTrackArray(
-      parentRawStyle.gridTemplateRows as string | undefined,
-      availableHeight,
-      rowGapPx,
-    );
-    if (colTracksWithSize.length > 0) parentStyle.gridTemplateColumns = colTracksWithSize;
-    if (rowTracksWithSize.length > 0) parentStyle.gridTemplateRows = rowTracksWithSize;
-    // 부모의 padding/border는 이미 availableWidth에서 제외되어 있으므로 0으로 리셋
-    parentStyle.paddingTop = 0;
-    parentStyle.paddingRight = 0;
-    parentStyle.paddingBottom = 0;
-    parentStyle.paddingLeft = 0;
-    parentStyle.borderTop = 0;
-    parentStyle.borderRight = 0;
-    parentStyle.borderBottom = 0;
-    parentStyle.borderLeft = 0;
-
+    // Phase 4-3: repeat(auto-fill/auto-fit) 전개는 Rust 브릿지에서 처리
+    // Taffy가 네이티브로 auto-fill/auto-fit repeat count를 계산
     const rootHandle = taffy.createNodeWithChildren(parentStyle, childHandles);
 
     // 3. 레이아웃 계산
     taffy.computeLayout(rootHandle, availableWidth, availableHeight);
 
-    // 4. 결과 수집 (배치 API 사용)
-    const layoutMap = taffy.getLayoutsBatch(childHandles);
-    const results: ComputedLayout[] = [];
-
-    for (const handle of childHandles) {
-      const child = childMap.get(handle);
-      const layout = layoutMap.get(handle);
-      if (!child || !layout) continue;
-
-      const margin = parseMargin(child.props?.style as Record<string, unknown> | undefined);
-
-      results.push({
-        elementId: child.id,
-        x: layout.x,
-        y: layout.y,
-        width: layout.width,
-        height: layout.height,
-        margin: {
-          top: margin.top,
-          right: margin.right,
-          bottom: margin.bottom,
-          left: margin.left,
-        },
-      });
-    }
-
-    return results;
+    // 4. 결과 수집
+    return this.collectResults(taffy, childHandles, childMap);
   }
 }

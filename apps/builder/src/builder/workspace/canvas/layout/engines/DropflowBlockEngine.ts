@@ -20,6 +20,7 @@ import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine
 import {
   calculateBlockLayout,
   elementStyleToDropflowStyle,
+  styleCreatesBfc,
 } from '@xstudio/layout-flow';
 import type {
   XElement,
@@ -100,7 +101,7 @@ function xLayoutToComputedLayout(xl: XComputedLayout): ComputedLayout {
  */
 const VERTICAL_ALIGN_MIDDLE_TAGS = new Set([
   'button', 'submitbutton', 'fancybutton', 'togglebutton',
-  'checkbox', 'radio', 'switch', 'toggle',
+  'checkbox', 'radio', 'switch',
   'togglebuttongroup',
   'badge', 'tag', 'chip',
   'textfield', 'numberfield', 'searchfield',
@@ -393,38 +394,20 @@ export class DropflowBlockEngine implements LayoutEngine {
       return enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputed, childChildren, getChildElements);
     });
 
-    // border-box % 폭 변환: Web preview는 * { box-sizing: border-box } 전역 적용.
-    // Dropflow는 content-box이므로 % width에 padding+border가 추가되어 부모를 초과함.
-    // 해결: % width를 border-box 기준 pixel content width로 변환.
-    const boxSizeConverted = enriched.map(child => {
-      const style = child.props?.style as Record<string, unknown> | undefined;
-      const rawW = style?.width;
-      if (typeof rawW !== 'string' || !rawW.endsWith('%')) return child;
-      const pct = parseFloat(rawW);
-      if (isNaN(pct)) return child;
-      const pad = parsePadding(style, availableWidth);
-      const bdr = parseBorder(style);
-      const padBorderH = pad.left + pad.right + bdr.left + bdr.right;
-      if (padBorderH === 0) return child; // padding/border 없으면 변환 불필요
-      const resolved = (pct / 100) * availableWidth;
-      const contentW = Math.max(0, resolved - padBorderH);
-      return {
-        ...child,
-        props: { ...child.props, style: { ...style, width: contentW } },
-      } as Element;
-    });
+    // border-box 변환은 Dropflow Style.getInlineSize()가 네이티브로 처리
+    // (xstudio-adapter.ts에서 boxSizing: 'border-box' 전달)
 
     // inline-block 태그 존재 여부 확인
-    const hasInlineBlock = boxSizeConverted.some(child => isInlineBlockElement(child));
+    const hasInlineBlock = enriched.some(child => isInlineBlockElement(child));
 
     // inline-block이 없으면 전통적인 Dropflow 경로
     if (!hasInlineBlock) {
-      return this._dropflowCalculate(parent, boxSizeConverted, availableWidth, availableHeight, context);
+      return this._dropflowCalculate(parent, enriched, availableWidth, availableHeight, context);
     }
 
     // inline-block이 있으면 세그먼트 분할 후 혼합 레이아웃
     // RC-3: parentComputed를 전달하여 em/rem 단위 해석에 사용
-    return this._mixedCalculate(parent, boxSizeConverted, availableWidth, availableHeight, context, parentComputed);
+    return this._mixedCalculate(parent, enriched, availableWidth, availableHeight, context, parentComputed);
   }
 
   /**
@@ -541,39 +524,21 @@ export class DropflowBlockEngine implements LayoutEngine {
    * 기존 BlockEngine.createsBFC()와 동일한 조건을 사용합니다.
    */
   createsBFC(element: Element): boolean {
+    // Dropflow의 styleCreatesBfc()로 5개 핵심 조건 판별
     const xElement = elementToXElement(element);
     const style = elementStyleToDropflowStyle(xElement);
+    if (styleCreatesBfc(style)) return true;
 
-    // display.inner === 'flow-root'
-    if (style.display.inner === 'flow-root') return true;
-
-    // display.outer === 'inline' (inline-block)
-    if (style.display.outer === 'inline') return true;
-
-    // overflow 기반 BFC (Dropflow Style은 'visible' | 'hidden'만 지원)
-    if (style.overflow === 'hidden') return true;
-
-    // float 기반 BFC
-    if (style.float !== 'none') return true;
-
-    // position 기반 BFC (absolute, fixed 모두 BFC 생성)
-    if (style.position === 'absolute') return true;
-
-    // display: flex / grid (Dropflow는 block으로 폴백하지만 BFC 생성 여부는 올바르게 판별)
+    // Dropflow가 직접 인식하지 못하는 추가 조건 (raw CSS 검사)
     const raw = element.props?.style as Record<string, unknown> | undefined;
     const display = raw?.display as string | undefined;
-    if (
-      display === 'flex' ||
-      display === 'inline-flex' ||
-      display === 'grid' ||
-      display === 'inline-grid'
-    ) {
+    if (display === 'flex' || display === 'inline-flex' ||
+        display === 'grid' || display === 'inline-grid') {
       return true;
     }
-
-    // position: fixed도 BFC 생성 (Dropflow Style에서 absolute로 변환되므로 raw에서 별도 확인)
-    const position = raw?.position as string | undefined;
-    if (position === 'fixed') return true;
+    // position: fixed → Dropflow는 absolute로 변환하므로 위 styleCreatesBfc에서 이미 true
+    // 하지만 raw에서 명시적으로도 확인 (방어적)
+    if (raw?.position === 'fixed') return true;
 
     return false;
   }

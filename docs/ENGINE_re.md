@@ -364,18 +364,17 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 
 ## 5. 발견된 버그
 
-### 5.1 [HIGH — 확정 버그] Rust 브릿지에 `order` 필드 누락 — flex order 미작동
+### 5.1 [HIGH] flex `order` 미작동 — Taffy 0.9.2에 `order` 필드 없음
 
 - **소실 경로**:
   1. `TaffyFlexEngine.ts` `elementToTaffyStyle()` — `result.order`를 설정
   2. `taffyLayout.ts` `normalizeStyle()` — order를 JSON에 포함하여 WASM 호출
   3. `taffy_bridge.rs` `struct StyleInput` — `order` 필드 **누락** → serde가 무시
-- **현상**: TypeScript에서 `result.order`를 설정하고 JSON으로 직렬화하지만, Rust `StyleInput` struct에 `order` 필드가 없어 역직렬화 시 무시됨 (`#[serde(deny_unknown_fields)]`가 아니므로 에러 없이 소실).
+- **현상**: TypeScript에서 `result.order`를 설정하고 JSON으로 직렬화하지만, Rust `StyleInput` struct에 `order` 필드가 없어 역직렬화 시 무시됨.
+- **근본 원인**: **Taffy 0.9.2의 `Style` struct에 `order` 필드 자체가 존재하지 않음.** Rust 브릿지에 필드를 추가해도 `style.order = o`가 컴파일 에러. CSS `order`는 Taffy가 미지원하는 속성.
 - **영향**: CSS `order` 속성이 레이아웃에 전혀 반영되지 않음
 - **재현**: `order: 1` 이상의 값을 가진 flex item이 DOM 순서 그대로 배치됨
-- **수정**:
-  1. `StyleInput`에 `order: Option<i32>` 추가
-  2. `convert_style()`에 `if let Some(o) = input.order { style.order = o; }` 추가
+- **수정 방안**: Rust 브릿지 수정으로는 해결 불가. TS 레이어에서 children을 `order` 값 기준으로 정렬한 뒤 Taffy에 전달하는 방식으로 우회 구현 필요.
 
 ### 5.2 [HIGH — 확정 버그] `margin:auto`가 Taffy에 전달되지 않음
 
@@ -410,7 +409,7 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 
 | # | 작업 | 영향 | 난이도 |
 |---|------|------|--------|
-| 2-1 | Rust `StyleInput`에 `order: Option<i32>` 추가 + 테스트 | flex order 기능 활성화 | 쉬움 |
+| 2-1 | TS 레이어에서 children을 order 기준 정렬 후 Taffy에 전달 (Taffy 0.9.2에 order 필드 없음) | flex order 기능 활성화 | 중간 |
 | 2-2 | `margin:auto` → Taffy에 `"auto"` 문자열 전달 + 테스트 | flexbox margin:auto 활성화 | 쉬움 |
 | 2-3 | `position:relative` inset을 Taffy에 위임 | ~30줄 제거 + % offset 지원 | 중간 (**별도 PR, 회귀 테스트 필수**) |
 
@@ -418,8 +417,7 @@ WASM 경계 제약, 렌더링 파이프라인 분리, 아키텍처적 필요에 
 
 | 버그 | 추가/갱신 대상 테스트 파일 | 테스트 내용 |
 |------|--------------------------|-------------|
-| 2-1 order | `wasm/src/taffy_bridge.rs` — `#[test]` 추가 | `StyleInput`에 `order: 2` 전달 → `convert_style()` 결과의 `style.order == 2` 확인 |
-| 2-1 order | `engines/__tests__/` — 신규 `TaffyFlexEngine.test.ts` | `order: 1, 2, 3` flex items → 결과 배열의 x/y 좌표가 order 순서로 배치되는지 확인 |
+| 2-1 order | `engines/__tests__/TaffyFlexEngine.test.ts` | TS 레이어 children 정렬 로직: `order: 1, 2, 3` flex items → 정렬된 순서로 Taffy에 전달되는지 확인 |
 | 2-2 margin:auto | `engines/__tests__/` — 신규 `TaffyFlexEngine.test.ts` | `elementToTaffyStyle()` 호출 시 margin `'auto'` 값이 `StyleInput.marginTop = "auto"`로 전달되는지 확인 |
 | 2-2 margin:auto | `wasm/src/taffy_bridge.rs` — `#[test]` 추가 | `marginTop: "auto"` 전달 → `style.margin.top == LengthPercentageAuto::auto()` 확인 |
 | 2-3 relative inset | `engines/__tests__/` — 신규 테스트 파일 권장 | `position: relative; top: 10px; left: 20px` → 결과 좌표에 오프셋 반영 확인. `position: relative; top: 50%` → % 오프셋 정상 처리 확인 |

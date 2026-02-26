@@ -10,61 +10,58 @@
  */
 
 import type { Element } from '../../../../../types/core/store.types';
-import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
+import type { ComputedLayout, LayoutContext } from './LayoutEngine';
 import { TaffyLayout } from '../../wasm-bindings/taffyLayout';
 import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayout';
-import { DropflowBlockEngine } from './DropflowBlockEngine';
-import { parseMargin, parsePadding, parseBorder, enrichWithIntrinsicSize, INLINE_BLOCK_TAGS, TEXT_LEAF_TAGS } from './utils';
-import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
+import { BaseTaffyEngine } from './BaseTaffyEngine';
+import { parseMargin, enrichWithIntrinsicSize, INLINE_BLOCK_TAGS, TEXT_LEAF_TAGS, parseCSSPropWithContext, applyCommonTaffyStyle, getPhantomIndicatorSpace } from './utils';
+import { resolveStyle } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
-import { resolveCSSSizeValue, FIT_CONTENT, MIN_CONTENT, MAX_CONTENT } from './cssValueParser';
+import { FIT_CONTENT, MIN_CONTENT, MAX_CONTENT } from './cssValueParser';
 import type { CSSValueContext } from './cssValueParser';
 
-// ─── Phantom indicator: DOM에만 존재하는 indicator 레이아웃 공간 ────────
-// Switch/Checkbox/Radio: Preview DOM은 [indicator + label] 구조이지만
-// WebGL element tree에는 label 자식만 존재한다.
-// Spec shapes(Skia)가 indicator를 시각적으로 그리지만 Taffy 레이아웃 트리에는
-// 반영되지 않아 label이 x=0에 배치되어 겹치는 문제를 해결한다.
-// width = indicatorWidth + gap (CSS gap이 element style에 없으므로 포함)
+// ─── margin:auto 판별 ────────────────────────────────────────────────
 
-interface IndicatorSpace { width: number; height: number }
+/**
+ * margin shorthand/개별 속성에서 'auto' 값인 방향을 판별.
+ *
+ * parseMargin()은 숫자 전용(Margin = {top: number, ...})이므로 'auto'를 표현 불가.
+ * Taffy의 margin:auto 네이티브 지원을 활용하기 위해 원본 값을 직접 검사한다.
+ */
+function resolveMarginAutoSides(
+  style: Record<string, unknown> | undefined,
+): { top: boolean; right: boolean; bottom: boolean; left: boolean } {
+  const result = { top: false, right: false, bottom: false, left: false };
+  if (!style) return result;
 
-const INDICATOR_CONFIGS: Record<string, {
-  widths: Record<string, number>;
-  heights: Record<string, number>;
-  gap: number;
-}> = {
-  switch:   { widths: { sm: 36, md: 44, lg: 52 }, heights: { sm: 20, md: 24, lg: 28 }, gap: 10 },
-  toggle:   { widths: { sm: 36, md: 44, lg: 52 }, heights: { sm: 20, md: 24, lg: 28 }, gap: 10 },
-  checkbox: { widths: { sm: 16, md: 20, lg: 24 }, heights: { sm: 16, md: 20, lg: 24 }, gap: 8 },
-  radio:    { widths: { sm: 16, md: 20, lg: 24 }, heights: { sm: 16, md: 20, lg: 24 }, gap: 8 },
-};
+  // shorthand에서 auto 판별
+  if (typeof style.margin === 'string') {
+    const tokens = style.margin.trim().split(/\s+/);
+    const sides = (() => {
+      switch (tokens.length) {
+        case 1: return { top: tokens[0], right: tokens[0], bottom: tokens[0], left: tokens[0] };
+        case 2: return { top: tokens[0], right: tokens[1], bottom: tokens[0], left: tokens[1] };
+        case 3: return { top: tokens[0], right: tokens[1], bottom: tokens[2], left: tokens[1] };
+        case 4: return { top: tokens[0], right: tokens[1], bottom: tokens[2], left: tokens[3] };
+        default: return { top: '', right: '', bottom: '', left: '' };
+      }
+    })();
+    result.top = sides.top === 'auto';
+    result.right = sides.right === 'auto';
+    result.bottom = sides.bottom === 'auto';
+    result.left = sides.left === 'auto';
+  }
 
-function getIndicatorSpace(
-  tag: string,
-  props: Record<string, unknown> | undefined,
-): IndicatorSpace | null {
-  const config = INDICATOR_CONFIGS[tag];
-  if (!config) return null;
-  const size = (props?.size as string) ?? 'md';
-  const w = config.widths[size] ?? config.widths.md;
-  const h = config.heights[size] ?? config.heights.md;
-  return { width: w + config.gap, height: h };
+  // 개별 속성이 shorthand를 override (CSS 우선순위)
+  if (style.marginTop !== undefined) result.top = style.marginTop === 'auto';
+  if (style.marginRight !== undefined) result.right = style.marginRight === 'auto';
+  if (style.marginBottom !== undefined) result.bottom = style.marginBottom === 'auto';
+  if (style.marginLeft !== undefined) result.left = style.marginLeft === 'auto';
+
+  return result;
 }
 
 // ─── Style conversion ────────────────────────────────────────────────
-
-/**
- * CSS 값을 Taffy style 문자열로 변환
- * - number → "Npx"
- * - string (%, px 등) → 그대로 전달
- * - undefined → 생략
- */
-function dimStr(value: number | string | undefined): string | undefined {
-  if (value === undefined || value === null || value === '' || value === 'auto') return undefined;
-  if (typeof value === 'number') return `${value}px`;
-  return value;
-}
 
 /**
  * Element의 style을 TaffyStyle로 변환
@@ -99,29 +96,13 @@ export function elementToTaffyStyle(
     result.position = 'absolute';
   } else if (style.position === 'relative') {
     result.position = 'relative';
-    // relative offset(top/left/right/bottom)은 Taffy가 직접 지원하지 않으므로
-    // 레이아웃 계산 결과에 가산하는 방식으로 처리 (computeWithTaffy에서 적용)
+    // Taffy 0.9는 Position::Relative에서 inset을 네이티브로 처리한다.
+    // inset은 아래 "Inset (position offsets)" 블록에서 전달됨.
   }
   // static / sticky / 미지정은 Taffy 기본값(relative)으로 처리되므로 별도 설정 불필요
 
-  // Size
-  const widthVal = parseCSSPropWithContext(style.width, ctx);
-  const heightVal = parseCSSPropWithContext(style.height, ctx);
-
-  const widthStr = dimStr(widthVal);
-  const heightStr = dimStr(heightVal);
-  if (widthStr) result.width = widthStr;
-  if (heightStr) result.height = heightStr;
-
-  // Min/Max size
-  const minW = dimStr(parseCSSPropWithContext(style.minWidth, ctx));
-  const minH = dimStr(parseCSSPropWithContext(style.minHeight, ctx));
-  const maxW = dimStr(parseCSSPropWithContext(style.maxWidth, ctx));
-  const maxH = dimStr(parseCSSPropWithContext(style.maxHeight, ctx));
-  if (minW) result.minWidth = minW;
-  if (minH) result.minHeight = minH;
-  if (maxW) result.maxWidth = maxW;
-  if (maxH) result.maxHeight = maxH;
+  // Size + Min/Max + Padding + Border + Gap (공통 헬퍼)
+  applyCommonTaffyStyle(result, style, ctx);
 
   // flex-flow shorthand 파싱: "flex-direction flex-wrap" 복합 값
   // 개별 속성(flexDirection, flexWrap)이 이미 설정되어 있으면 shorthand보다 우선합니다.
@@ -192,7 +173,7 @@ export function elementToTaffyStyle(
         if (style.flexShrink === undefined) result.flexShrink = Number(parts[1]) || 0;
         if (parts[2] && style.flexBasis === undefined) {
           const basisVal = parseCSSPropWithContext(parts[2], ctx);
-          if (basisVal !== undefined) result.flexBasis = dimStr(basisVal) ?? 'auto';
+          if (basisVal !== undefined) result.flexBasis = basisVal;
         } else if (!parts[2] && style.flexBasis === undefined) {
           result.flexBasis = '0%';
         }
@@ -205,7 +186,7 @@ export function elementToTaffyStyle(
   if (style.flexShrink !== undefined) result.flexShrink = Number(style.flexShrink);
   if (style.flexBasis !== undefined) {
     const basis = parseCSSPropWithContext(style.flexBasis, ctx);
-    if (basis !== undefined) result.flexBasis = dimStr(basis) ?? 'auto';
+    if (basis !== undefined) result.flexBasis = basis;
   }
 
   // Align self
@@ -219,211 +200,63 @@ export function elementToTaffyStyle(
     result.order = order;
   }
 
-  // Margin
+  // Margin — margin:auto는 parseMargin()이 숫자 전용이므로 원본 값을 직접 검사
+  // 숫자를 직접 전달 (normalizeStyle.dimToString이 JSON 직렬화 시 "Npx"로 변환)
   const margin = parseMargin(style);
-  if (margin.top !== 0) result.marginTop = `${margin.top}px`;
-  if (margin.right !== 0) result.marginRight = `${margin.right}px`;
-  if (margin.bottom !== 0) result.marginBottom = `${margin.bottom}px`;
-  if (margin.left !== 0) result.marginLeft = `${margin.left}px`;
-
-  // Padding
-  const padding = parsePadding(style);
-  if (padding.top !== 0) result.paddingTop = `${padding.top}px`;
-  if (padding.right !== 0) result.paddingRight = `${padding.right}px`;
-  if (padding.bottom !== 0) result.paddingBottom = `${padding.bottom}px`;
-  if (padding.left !== 0) result.paddingLeft = `${padding.left}px`;
-
-  // Border
-  const border = parseBorder(style);
-  if (border.top !== 0) result.borderTop = `${border.top}px`;
-  if (border.right !== 0) result.borderRight = `${border.right}px`;
-  if (border.bottom !== 0) result.borderBottom = `${border.bottom}px`;
-  if (border.left !== 0) result.borderLeft = `${border.left}px`;
-
-  // Gap
-  const gap = parseCSSPropWithContext(style.gap, ctx);
-  const rowGap = parseCSSPropWithContext(style.rowGap, ctx);
-  const columnGap = parseCSSPropWithContext(style.columnGap, ctx);
-  if (gap !== undefined) {
-    const gapStr = dimStr(gap);
-    if (gapStr) {
-      result.rowGap = gapStr;
-      result.columnGap = gapStr;
-    }
-  }
-  if (rowGap !== undefined) {
-    const rg = dimStr(rowGap);
-    if (rg) result.rowGap = rg;
-  }
-  if (columnGap !== undefined) {
-    const cg = dimStr(columnGap);
-    if (cg) result.columnGap = cg;
-  }
+  const marginAuto = resolveMarginAutoSides(style);
+  result.marginTop = marginAuto.top ? 'auto' : (margin.top !== 0 ? margin.top : undefined);
+  result.marginRight = marginAuto.right ? 'auto' : (margin.right !== 0 ? margin.right : undefined);
+  result.marginBottom = marginAuto.bottom ? 'auto' : (margin.bottom !== 0 ? margin.bottom : undefined);
+  result.marginLeft = marginAuto.left ? 'auto' : (margin.left !== 0 ? margin.left : undefined);
 
   // Inset (position offsets)
-  if (style.position === 'absolute' || style.position === 'fixed') {
+  // Taffy 0.9는 Position::Relative와 Position::Absolute 모두에서
+  // inset(top/right/bottom/left)을 네이티브로 처리하여 layout.location에 반영한다.
+  if (style.position === 'absolute' || style.position === 'fixed' || style.position === 'relative') {
     const top = parseCSSPropWithContext(style.top, ctx);
     const left = parseCSSPropWithContext(style.left, ctx);
     const right = parseCSSPropWithContext(style.right, ctx);
     const bottom = parseCSSPropWithContext(style.bottom, ctx);
-    if (top !== undefined) result.insetTop = dimStr(top);
-    if (left !== undefined) result.insetLeft = dimStr(left);
-    if (right !== undefined) result.insetRight = dimStr(right);
-    if (bottom !== undefined) result.insetBottom = dimStr(bottom);
+    if (top !== undefined) result.insetTop = top;
+    if (left !== undefined) result.insetLeft = left;
+    if (right !== undefined) result.insetRight = right;
+    if (bottom !== undefined) result.insetBottom = bottom;
   }
 
   return result;
 }
 
-/**
- * RC-3: CSS prop → number | string 파서 (단위 정규화 적용)
- *
- * rem, em, vh, vw, calc() 등을 resolveCSSSizeValue()로 해석.
- * % 값은 Taffy 네이티브 % 처리를 위해 문자열 그대로 반환.
- */
-function parseCSSPropWithContext(
-  value: unknown,
-  ctx: CSSValueContext = {},
-): number | string | undefined {
-  if (value === undefined || value === null || value === '' || value === 'auto') return undefined;
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    // % 값은 Taffy가 네이티브로 처리
-    if (value.endsWith('%')) return value;
-    // intrinsic sizing 키워드는 Taffy에서 미지원 → undefined
-    if (value === 'fit-content' || value === 'min-content' || value === 'max-content') return undefined;
-    // resolveCSSSizeValue: rem, em, vh, vw, calc(), clamp(), min(), max() 해석
-    const px = resolveCSSSizeValue(value, ctx);
-    if (px !== undefined && px >= 0) return px;
-    // fallback: parseFloat (순수 숫자 문자열)
-    const num = parseFloat(value);
-    if (!isNaN(num)) return num;
-  }
-  return undefined;
-}
-
-/**
- * CSS 오프셋 값(top/left/right/bottom)을 픽셀 숫자로 변환
- *
- * % 값은 현재 컨텍스트 없이는 계산 불가하므로 0으로 처리.
- * relative 오프셋 계산 전용으로 사용합니다.
- *
- * @returns 픽셀 수치, 변환 불가 시 0
- */
-function resolvePxOffset(value: unknown, ctx: CSSValueContext = {}): number {
-  const parsed = parseCSSPropWithContext(value, ctx);
-  if (typeof parsed === 'number') return parsed;
-  // % 문자열 등 변환 불가한 경우 0 반환 (conservative)
-  return 0;
-}
-
 // ─── TaffyFlexEngine ─────────────────────────────────────────────────
 
-/** Taffy 미가용 시 Dropflow Block 엔진으로 폴백 */
-const dropflowFallback = new DropflowBlockEngine();
-
-/** 싱글톤 TaffyLayout 인스턴스 */
-let taffyInstance: TaffyLayout | null = null;
-let taffyInitFailed = false;
+/** 싱글톤 인스턴스 (모듈 스코프에서 관리) */
+let flexEngineInstance: TaffyFlexEngine | null = null;
 
 /**
- * Taffy WASM 엔진 가용 여부
+ * Taffy Flex WASM 엔진 가용 여부
  *
  * selectEngine()에서 조기 라우팅 판단에 사용.
- * taffyInitFailed가 true면 이미 초기화 실패 확정 → Dropflow로 직접 라우팅.
  */
 export function isTaffyFlexAvailable(): boolean {
-  return !taffyInitFailed;
-}
-
-function getTaffyLayout(): TaffyLayout | null {
-  if (taffyInitFailed) return null;
-  if (!taffyInstance) {
-    try {
-      taffyInstance = new TaffyLayout();
-    } catch (err) {
-      taffyInitFailed = true;
-      if (import.meta.env.DEV) {
-        console.warn('[TaffyFlexEngine] TaffyLayout creation failed:', err);
-      }
-      return null;
-    }
-  }
-  if (!taffyInstance.isAvailable()) {
-    taffyInitFailed = true;
-    return null;
-  }
-  return taffyInstance;
+  if (!flexEngineInstance) return true; // 아직 생성 전이면 사용 가능으로 간주
+  return flexEngineInstance.isAvailable();
 }
 
 /**
  * Taffy 기반 Flexbox 레이아웃 엔진
  *
  * Yoga 위임 대신 Taffy WASM으로 Flexbox 레이아웃을 직접 계산합니다.
- * shouldDelegate = false이므로 BuilderCanvas에서 calculate()를 직접 호출합니다.
+ * BaseTaffyEngine의 인스턴스 관리, calculate() 스켈레톤, 결과 수집을 상속합니다.
  */
-export class TaffyFlexEngine implements LayoutEngine {
+export class TaffyFlexEngine extends BaseTaffyEngine {
   readonly displayTypes = ['flex', 'inline-flex'];
+  protected readonly engineName = 'TaffyFlexEngine';
 
-  /**
-   * Taffy 엔진은 자체적으로 레이아웃을 계산하므로 위임하지 않음
-   */
-  readonly shouldDelegate = false;
-
-  calculate(
-    parent: Element,
-    children: Element[],
-    availableWidth: number,
-    availableHeight: number,
-    context?: LayoutContext,
-  ): ComputedLayout[] {
-    // 빈 children은 WASM 호출 없이 즉시 반환
-    if (children.length === 0) {
-      return [];
-    }
-
-    const taffy = getTaffyLayout();
-
-    // Taffy WASM이 아직 로드되지 않았으면 Dropflow Block 엔진으로 위임
-    // 빈 배열 반환 시 flex 자식이 모두 레이아웃을 잃으므로 반드시 폴백 필요
-    if (!taffy) {
-      return dropflowFallback.calculate(parent, children, availableWidth, availableHeight, context);
-    }
-
-    // ── CSS 상속 체인 구성 ──────────────────────────────────────────
-    // 부모의 computed style 결정:
-    //   - context에 parentComputedStyle이 있으면 사용 (상위 엔진에서 전파됨)
-    //   - 없으면 부모 요소 style을 ROOT_COMPUTED_STYLE 기반으로 직접 해석
-    const parentRawStyle = parent.props?.style as Record<string, unknown> | undefined;
-    const parentComputed = context?.parentComputedStyle
-      ?? resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
-
-    // RC-3: CSS 단위 해석용 컨텍스트 구성
-    // parentSize: 부모의 computedStyle.fontSize를 em 단위 기준으로 전달
-    // rootFontSize: rem 단위 기준 (16px 고정 — 루트 font-size 기본값)
-    const cssCtx: CSSValueContext = {
-      viewportWidth: context?.viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1920),
-      viewportHeight: context?.viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 1080),
-      parentSize: parentComputed.fontSize,
-      rootFontSize: 16,
-    };
-
-    try {
-      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight, parentComputed, cssCtx, context);
-    } finally {
-      // 매 계산 후 트리를 클리어하여 메모리 누적 방지
-      // 추후 증분 업데이트가 필요하면 노드 캐시 도입
-      try {
-        taffy.clear();
-      } catch (cleanupError) {
-        if (import.meta.env.DEV) {
-          console.warn('[TaffyFlexEngine] cleanup error:', cleanupError);
-        }
-      }
-    }
+  constructor() {
+    super();
+    flexEngineInstance = this;
   }
 
-  private computeWithTaffy(
+  protected computeWithTaffy(
     taffy: TaffyLayout,
     parent: Element,
     children: Element[],
@@ -518,25 +351,6 @@ export class TaffyFlexEngine implements LayoutEngine {
   }
 
   /**
-   * Taffy 1-pass: enrich + 노드 생성 + 계산 + 결과 수집
-   */
-  private _runTaffyPass(
-    taffy: TaffyLayout,
-    parent: Element,
-    children: Element[],
-    availableWidth: number,
-    availableHeight: number,
-    parentComputed: ComputedStyle,
-    childComputedStyles: ComputedStyle[],
-    cssCtx: CSSValueContext = {},
-  ): ComputedLayout[] {
-    const enrichedChildren = children.map((child, i) =>
-      enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputedStyles[i], undefined, undefined, true),
-    );
-    return this._runTaffyPassRaw(taffy, parent, enrichedChildren, children, availableWidth, availableHeight, parentComputed, cssCtx);
-  }
-
-  /**
    * Taffy pass 공통 로직: 노드 생성 → 계산 → 결과 수집
    *
    * @param enrichedChildren - enrichment 적용된 자식 (Taffy 스타일 변환용)
@@ -552,13 +366,30 @@ export class TaffyFlexEngine implements LayoutEngine {
     parentComputed: ComputedStyle,
     cssCtx: CSSValueContext = {},
   ): ComputedLayout[] {
+    // CSS order: Taffy 0.9.2는 Style.order를 미지원하므로 TS 레이어에서 재정렬
+    // stable sort로 같은 order 값의 요소는 원래 DOM 순서를 유지 (CSS spec)
+    const getOrder = (el: Element): number => {
+      const s = el.props?.style as Record<string, unknown> | undefined;
+      const o = parseInt(String(s?.order ?? '0'), 10);
+      return isNaN(o) ? 0 : o;
+    };
+    const needsSort = originalChildren.some(c => getOrder(c) !== 0);
+    let sortedEnriched = enrichedChildren;
+    let sortedOriginal = originalChildren;
+    if (needsSort) {
+      const indices = enrichedChildren.map((_, i) => i);
+      indices.sort((a, b) => getOrder(originalChildren[a]) - getOrder(originalChildren[b]));
+      sortedEnriched = indices.map(i => enrichedChildren[i]);
+      sortedOriginal = indices.map(i => originalChildren[i]);
+    }
+
     // 1. 자식 노드 생성
     const childHandles: TaffyNodeHandle[] = [];
     const childMap = new Map<TaffyNodeHandle, Element>();
 
-    for (let i = 0; i < enrichedChildren.length; i++) {
-      const enrichedChild = enrichedChildren[i];
-      const originalChild = originalChildren[i];
+    for (let i = 0; i < sortedEnriched.length; i++) {
+      const enrichedChild = sortedEnriched[i];
+      const originalChild = sortedOriginal[i];
       const childRawStyle = enrichedChild.props?.style as Record<string, unknown> | undefined;
       const childComputed = resolveStyle(childRawStyle, parentComputed);
       const taffyStyle = elementToTaffyStyle(enrichedChild, childComputed, cssCtx);
@@ -569,36 +400,23 @@ export class TaffyFlexEngine implements LayoutEngine {
 
     // 2. 부모 노드 생성 (자식 포함)
     const parentStyle = elementToTaffyStyle(parent, parentComputed, cssCtx);
-    // 부모의 display는 반드시 flex
     parentStyle.display = 'flex';
-    // 부모의 width/height는 available space로 설정
-    parentStyle.width = availableWidth;
-    // RC-1: sentinel(-1) = height:auto → parentStyle.height 생략 → Taffy가 콘텐츠 기반 계산
-    if (availableHeight >= 0) {
-      parentStyle.height = availableHeight;
-    }
-    // 부모의 padding/border는 이미 availableWidth에서 제외되어 있으므로 0으로 리셋
-    parentStyle.paddingTop = 0;
-    parentStyle.paddingRight = 0;
-    parentStyle.paddingBottom = 0;
-    parentStyle.paddingLeft = 0;
-    parentStyle.borderTop = 0;
-    parentStyle.borderRight = 0;
-    parentStyle.borderBottom = 0;
-    parentStyle.borderLeft = 0;
+    this.setupParentDimensions(parentStyle, availableWidth, availableHeight);
 
     // ── Phantom indicator: DOM에만 존재하는 indicator 요소의 레이아웃 공간 확보 ──
     // Switch/Checkbox/Radio: Preview DOM은 indicator + label 구조이지만
     // WebGL에서는 label 자식만 존재. Spec shapes(Skia)가 indicator를 그리지만
     // 레이아웃 트리에는 없으므로 phantom 노드로 공간을 예약한다.
-    // childMap에 등록하지 않으므로 결과 수집(line 566)에서 자동 스킵된다.
+    // childMap에 등록하지 않으므로 collectResults()에서 자동 스킵된다.
     const parentTag = (parent.tag ?? '').toLowerCase();
     const isRowLayout = !parentStyle.flexDirection
       || parentStyle.flexDirection === 'row'
       || parentStyle.flexDirection === 'row-reverse';
 
     if (isRowLayout) {
-      const indicatorSpace = getIndicatorSpace(parentTag, parent.props as Record<string, unknown> | undefined);
+      const parentProps = parent.props as Record<string, unknown> | undefined;
+      const parentSize = (parentProps?.size as string) ?? 'md';
+      const indicatorSpace = getPhantomIndicatorSpace(parentTag, parentSize);
       if (indicatorSpace) {
         const phantomStyle: TaffyStyle = {
           display: 'flex',
@@ -616,60 +434,7 @@ export class TaffyFlexEngine implements LayoutEngine {
     // 3. 레이아웃 계산
     taffy.computeLayout(rootHandle, availableWidth, availableHeight);
 
-    // 4. 결과 수집 (배치 API 사용)
-    const layoutMap = taffy.getLayoutsBatch(childHandles);
-    const results: ComputedLayout[] = [];
-
-    for (const handle of childHandles) {
-      const child = childMap.get(handle);
-      const layout = layoutMap.get(handle);
-      if (!child || !layout) continue;
-
-      const childStyle = child.props?.style as Record<string, unknown> | undefined;
-      const margin = parseMargin(childStyle);
-
-      // position:relative 오프셋 처리
-      // Taffy는 relative offset을 직접 지원하지 않으므로,
-      // Taffy가 계산한 정적 위치에 top/left/right/bottom을 수동으로 가산합니다.
-      // CSS 명세에 따라: left/right 중 left가 우선, top/bottom 중 top이 우선
-      let relativeOffsetX = 0;
-      let relativeOffsetY = 0;
-
-      if (childStyle?.position === 'relative') {
-        const topVal = childStyle.top;
-        const leftVal = childStyle.left;
-        const rightVal = childStyle.right;
-        const bottomVal = childStyle.bottom;
-
-        // X축: left가 있으면 left 우선, 없으면 right의 반대 방향
-        if (topVal !== undefined && topVal !== null && topVal !== 'auto') {
-          relativeOffsetY = resolvePxOffset(topVal, cssCtx);
-        } else if (bottomVal !== undefined && bottomVal !== null && bottomVal !== 'auto') {
-          relativeOffsetY = -resolvePxOffset(bottomVal, cssCtx);
-        }
-
-        if (leftVal !== undefined && leftVal !== null && leftVal !== 'auto') {
-          relativeOffsetX = resolvePxOffset(leftVal, cssCtx);
-        } else if (rightVal !== undefined && rightVal !== null && rightVal !== 'auto') {
-          relativeOffsetX = -resolvePxOffset(rightVal, cssCtx);
-        }
-      }
-
-      results.push({
-        elementId: child.id,
-        x: layout.x + relativeOffsetX,
-        y: layout.y + relativeOffsetY,
-        width: layout.width,
-        height: layout.height,
-        margin: {
-          top: margin.top,
-          right: margin.right,
-          bottom: margin.bottom,
-          left: margin.left,
-        },
-      });
-    }
-
-    return results;
+    // 4. 결과 수집
+    return this.collectResults(taffy, childHandles, childMap);
   }
 }

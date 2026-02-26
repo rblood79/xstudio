@@ -236,10 +236,20 @@ let _activeMeasurer: TextMeasurer = new Canvas2DTextMeasurer();
 /**
  * 활성 텍스트 측정기 가져오기
  *
- * CanvasKit Paragraph API로 교체 시 setTextMeasurer()로 교체.
+ * CanvasKit 초기화 전: Canvas2DTextMeasurer (기본값)
+ * CanvasKit 초기화 후: setTextMeasurer()로 CanvasKitTextMeasurer 교체
  */
 export function getTextMeasurer(): TextMeasurer {
   return _activeMeasurer;
+}
+
+/**
+ * 현재 활성 측정기가 CanvasKit 기반인지 확인
+ *
+ * CanvasKit 측정기 사용 시 Canvas 2D ↔ CanvasKit 오차 보정(+2/+4px)이 불필요합니다.
+ */
+export function isCanvasKitMeasurer(): boolean {
+  return !(_activeMeasurer instanceof Canvas2DTextMeasurer);
 }
 
 /**

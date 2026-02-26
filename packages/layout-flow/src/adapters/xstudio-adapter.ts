@@ -101,8 +101,9 @@ export function elementStyleToDropflowStyle(
     // Display
     display: parseDisplay(raw.display as string | undefined),
 
-    // Box sizing
-    // boxSizing은 Dropflow Style에 없음 → width/height 변환 시 처리
+    // Box sizing — Web preview는 전역 * { box-sizing: border-box } 적용
+    // Dropflow Style.getInlineSize()/getBlockSize()가 border-box 보정을 네이티브로 수행
+    boxSizing: 'border-box',
 
     // Margin (number | Percentage | 'auto')
     // 개별 margin 속성이 있으면 우선 사용, 없으면 shorthand에서 해당 방향 값 추출
@@ -456,7 +457,7 @@ function createBlockContainerOfInlines(
  * - float !== 'none'
  * - position === 'absolute'
  */
-function styleCreatesBfc(style: Style): boolean {
+export function styleCreatesBfc(style: Style): boolean {
   if (style.display.inner === 'flow-root') return true;
   if (style.display.outer === 'inline') return true;  // inline-block
   if (style.overflow === 'hidden') return true;

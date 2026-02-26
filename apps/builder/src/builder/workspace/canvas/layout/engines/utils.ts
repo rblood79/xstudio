@@ -14,7 +14,7 @@
 import type { Margin, BoxModel, VerticalAlign } from './types';
 import type { Element } from '../../../../../types/core/store.types';
 import { fontFamily as specFontFamily } from '@xstudio/specs';
-import { measureWrappedTextHeight, measureFontMetrics } from '../../utils/textMeasure';
+import { measureWrappedTextHeight, measureFontMetrics, getTextMeasurer, isCanvasKitMeasurer } from '../../utils/textMeasure';
 import type { FontMetrics } from '../../utils/textMeasure';
 import {
   resolveCSSSizeValue,
@@ -24,7 +24,65 @@ import {
   parseBorderShorthand,
 } from './cssValueParser';
 import type { CSSValueContext, CSSVariableScope } from './cssValueParser';
+import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
+import type { LayoutContext } from './LayoutEngine';
+
+// ─── Phantom Indicator 설정 (단일 소스) ─────────────────────────────────
+// Switch/Checkbox/Radio: Preview DOM에는 [indicator + label] 구조이지만
+// WebGL element tree에는 label 자식만 존재.
+// 값의 원천: packages/specs/src/components/{Switch,Checkbox,Radio}.spec.ts
+
+interface PhantomIndicatorConfig {
+  widths:     { sm: number; md: number; lg: number };
+  heights:    { sm: number; md: number; lg: number };
+  gaps:       { sm: number; md: number; lg: number };
+  rowHeights: { sm: number; md: number; lg: number };
+}
+
+export const PHANTOM_INDICATOR_CONFIGS: Record<string, PhantomIndicatorConfig> = {
+  switch: {
+    widths:     { sm: 36, md: 44, lg: 52 },
+    heights:    { sm: 20, md: 24, lg: 28 },
+    gaps:       { sm: 8,  md: 10, lg: 12 },
+    rowHeights: { sm: 20, md: 24, lg: 28 },
+  },
+  checkbox: {
+    widths:     { sm: 16, md: 20, lg: 24 },
+    heights:    { sm: 16, md: 20, lg: 24 },
+    gaps:       { sm: 6,  md: 8,  lg: 10 },
+    rowHeights: { sm: 20, md: 24, lg: 28 },
+  },
+  radio: {
+    widths:     { sm: 16, md: 20, lg: 24 },
+    heights:    { sm: 16, md: 20, lg: 24 },
+    gaps:       { sm: 6,  md: 8,  lg: 10 },
+    rowHeights: { sm: 20, md: 24, lg: 28 },
+  },
+};
+
+/** Phantom indicator의 width + gap (Row용). 해당 태그가 아니면 null */
+export function getPhantomIndicatorSpace(
+  tag: string,
+  size?: string,
+): { width: number; height: number } | null {
+  const config = PHANTOM_INDICATOR_CONFIGS[tag];
+  if (!config) return null;
+  const s = (size ?? 'md') as 'sm' | 'md' | 'lg';
+  const w = config.widths[s] ?? config.widths.md;
+  const h = config.heights[s] ?? config.heights.md;
+  const gap = config.gaps[s] ?? config.gaps.md;
+  return { width: w + gap, height: h };
+}
+
+/** Phantom indicator의 width + gap (number, 폴백 0) */
+export function getPhantomIndicatorWidth(
+  tag: string,
+  size?: string,
+): number {
+  const space = getPhantomIndicatorSpace(tag, size);
+  return space?.width ?? 0;
+}
 
 /**
  * 중복 경고 방지용 Set
@@ -452,31 +510,16 @@ export function getButtonSizeConfig(
 }
 
 /**
- * Canvas 2D 텍스트 측정용 컨텍스트 (싱글톤)
+ * 활성 TextMeasurer를 사용하여 텍스트 너비 측정
  *
- * PixiButton의 measureTextSize()와 동일한 결과를 위해
- * Canvas 2D measureText() 사용
- */
-let measureCanvas: HTMLCanvasElement | null = null;
-let measureContext: CanvasRenderingContext2D | null = null;
-
-function getMeasureContext(): CanvasRenderingContext2D | null {
-  if (!measureContext) {
-    if (typeof document === 'undefined') return null;
-    measureCanvas = document.createElement('canvas');
-    measureContext = measureCanvas.getContext('2d');
-  }
-  return measureContext;
-}
-
-/**
- * Canvas 2D를 사용하여 텍스트 너비 측정
- *
- * PixiButton의 measureTextSize()와 동일한 결과를 반환
+ * Phase 4-1: getTextMeasurer() 전략 패턴 적용
+ * - CanvasKit 초기화 후: CanvasKit Paragraph API (HarfBuzz 정확도)
+ * - CanvasKit 미로드 시: Canvas 2D API (기존 동작)
  *
  * @param text - 측정할 텍스트
  * @param fontSize - 폰트 크기 (기본 14px)
  * @param fontFamily - 폰트 패밀리 (기본 Pretendard)
+ * @param fontWeight - 폰트 두께 (기본 400)
  */
 export function measureTextWidth(
   text: string,
@@ -486,15 +529,11 @@ export function measureTextWidth(
 ): number {
   if (!text) return 0;
 
-  const ctx = getMeasureContext();
-  if (!ctx) {
-    // Canvas 미지원 환경: 추정값 사용
-    return text.length * (fontSize * 0.5);
-  }
-
-  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-  const metrics = ctx.measureText(text);
-  return metrics.width;
+  return getTextMeasurer().measureWidth(text, {
+    fontSize,
+    fontFamily,
+    fontWeight,
+  });
 }
 
 /**
@@ -653,33 +692,10 @@ export function calculateContentWidth(
     return DEFAULT_WIDTH;
   }
 
-  // ── Phantom indicator 크기 상수 (Section 2, 3 공용) ──
-  // Checkbox/Radio/Switch/Toggle: element tree에 없지만 Skia spec shapes가 그리는
-  // indicator의 레이아웃 공간. childElements 기반 너비 계산(Section 2)과
-  // 텍스트 기반 너비 계산(Section 3) 모두에서 동일하게 반영해야 함.
-  const INLINE_FORM_INDICATOR_WIDTHS: Record<string, Record<string, number>> = {
-    checkbox: { sm: 16, md: 20, lg: 24 },
-    radio: { sm: 16, md: 20, lg: 24 },
-    switch: { sm: 36, md: 44, lg: 52 },
-    toggle: { sm: 36, md: 44, lg: 52 },
-  };
-  const INLINE_FORM_GAPS: Record<string, Record<string, number>> = {
-    checkbox: { sm: 6, md: 8, lg: 10 },
-    radio: { sm: 6, md: 8, lg: 10 },
-    switch: { sm: 8, md: 10, lg: 12 },
-    toggle: { sm: 8, md: 10, lg: 12 },
-  };
-
-  /** phantom indicator의 width + gap 반환 (해당 태그가 아니면 0) */
-  function getPhantomIndicatorSpace(): number {
-    const config = INLINE_FORM_INDICATOR_WIDTHS[tag];
-    if (!config) return 0;
-    const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
-    const indicatorSize = config[sizeName] ?? config.md;
-    const gap = INLINE_FORM_GAPS[tag]?.[sizeName] ?? 8;
-    return indicatorSize + gap;
-  }
+  // Phantom indicator space (모듈 스코프 PHANTOM_INDICATOR_CONFIGS 사용)
+  const _phantomProps = element.props as Record<string, unknown> | undefined;
+  const _phantomSize = (_phantomProps?.size as string) ?? 'md';
+  const phantomW = getPhantomIndicatorWidth(tag, _phantomSize);
 
   // 2. Flex 컨테이너: childElements 기반 재귀 너비 계산 (텍스트 추출보다 먼저 처리)
   // TagGroup(flex column, fit-content), TagList(flex row) 등 컨테이너 컴포넌트의
@@ -710,7 +726,7 @@ export function calculateContentWidth(
 
       // Phantom indicator: Checkbox/Radio/Switch의 indicator는 element tree에 없지만
       // spec shapes(Skia)가 시각적으로 그리므로 width 계산에 반영
-      const phantomW = getPhantomIndicatorSpace();
+      // (phantomW는 함수 상단에서 모듈 스코프 PHANTOM_INDICATOR_CONFIGS 기반으로 계산됨)
 
       if (isRow) {
         return childWidths.reduce((sum, w) => sum + w, 0)
@@ -725,17 +741,20 @@ export function calculateContentWidth(
   // childElements가 없는 legacy Checkbox/Radio/Switch 요소의 fallback 경로
   const text = extractTextContent(element.props as Record<string, unknown>);
 
-  const inlineFormIndicator = INLINE_FORM_INDICATOR_WIDTHS[tag];
-  if (inlineFormIndicator) {
+  const indicatorConfig = PHANTOM_INDICATOR_CONFIGS[tag];
+  if (indicatorConfig) {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? 'md';
-    const indicatorSize = inlineFormIndicator[sizeName] ?? 20;
-    const indicatorGap = INLINE_FORM_GAPS[tag]?.[sizeName] ?? (sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8);
+    const s = sizeName as 'sm' | 'md' | 'lg';
+    const indicatorSize = indicatorConfig.widths[s] ?? indicatorConfig.widths.md;
+    const indicatorGap = indicatorConfig.gaps[s] ?? indicatorConfig.gaps.md;
     // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
     const fontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
     const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
-    // Canvas 2D measureText와 CanvasKit paragraph API 간 폰트 측정 오차 보정 (+2px)
-    const textWidth = labelText ? Math.ceil(calculateTextWidth(labelText, fontSize, 0)) + 2 : 0;
+    // Canvas 2D 사용 시 CanvasKit paragraph API와의 폰트 측정 오차 보정 (+2px)
+    // CanvasKit 측정기 사용 시 보정 불필요 (동일 렌더러로 측정)
+    const canvas2dCompensation = isCanvasKitMeasurer() ? 0 : 2;
+    const textWidth = labelText ? Math.ceil(calculateTextWidth(labelText, fontSize, 0)) + canvas2dCompensation : 0;
     const flexDir = style?.flexDirection as string | undefined;
     const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
     if (isColumn) {
@@ -775,14 +794,16 @@ export function calculateContentWidth(
     }
 
     // 일반 요소
-    // Canvas 2D measureText와 CanvasKit paragraph API 간 폰트 측정 오차 보정 (+4px)
+    // Canvas 2D 사용 시 CanvasKit paragraph API와의 폰트 측정 오차 보정 (+4px)
+    // CanvasKit 측정기 사용 시 보정 불필요
     const fontSize = parseNumericValue(style?.fontSize) ?? 14;
     const fontFamily = (style?.fontFamily as string) ?? specFontFamily.sans;
     const fontWeight = style?.fontWeight ?? 400;
     const letterSpacing = parseNumericValue(style?.letterSpacing) ?? 0;
     const baseWidth = measureTextWidth(text, fontSize, fontFamily, fontWeight as number | string);
     const totalWidth = baseWidth + (letterSpacing * Math.max(0, text.length - 1));
-    return Math.ceil(totalWidth) + 4;
+    const generalCompensation = isCanvasKitMeasurer() ? 0 : 4;
+    return Math.ceil(totalWidth) + generalCompensation;
   }
 
   // 4. 태그별 기본 너비 사용
@@ -1093,39 +1114,22 @@ export function calculateContentHeight(
     return bodyHeight;
   }
 
-  // 3.5. Checkbox/Radio/Switch/Toggle: flexDirection에 따른 높이 계산
-  const INLINE_FORM_HEIGHTS: Record<string, Record<string, number>> = {
-    checkbox: { sm: 20, md: 24, lg: 28 },
-    radio: { sm: 20, md: 24, lg: 28 },
-    switch: { sm: 20, md: 24, lg: 28 },
-    toggle: { sm: 20, md: 24, lg: 28 },
-  };
-  const INLINE_FORM_INDICATOR_HEIGHTS: Record<string, Record<string, number>> = {
-    checkbox: { sm: 16, md: 20, lg: 24 },
-    radio: { sm: 16, md: 20, lg: 24 },
-    switch: { sm: 20, md: 24, lg: 28 },
-    toggle: { sm: 20, md: 24, lg: 28 },
-  };
-  const inlineFormHeightConfig = INLINE_FORM_HEIGHTS[tag];
-  if (inlineFormHeightConfig) {
+  // 3.5. Checkbox/Radio/Switch: flexDirection에 따른 높이 계산
+  // (PHANTOM_INDICATOR_CONFIGS 단일 소스 사용)
+  const heightIndicatorConfig = PHANTOM_INDICATOR_CONFIGS[tag];
+  if (heightIndicatorConfig) {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? 'md';
+    const s = sizeName as 'sm' | 'md' | 'lg';
     const flexDir = style?.flexDirection as string | undefined;
     const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
     if (isColumn) {
-      // Column: 높이 = indicator + gap + text line-height
-      const indicatorH = INLINE_FORM_INDICATOR_HEIGHTS[tag]?.[sizeName] ?? 20;
-      // Switch/Toggle gap은 spec 기준 (8/10/12), Checkbox/Radio는 (6/8/10)
-      const isSwitch = tag === 'switch' || tag === 'toggle';
-      const gap = isSwitch
-        ? (sizeName === 'sm' ? 8 : sizeName === 'lg' ? 12 : 10)
-        : (sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8);
-      // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
+      const indicatorH = heightIndicatorConfig.heights[s] ?? heightIndicatorConfig.heights.md;
+      const gap = heightIndicatorConfig.gaps[s] ?? heightIndicatorConfig.gaps.md;
       const fs = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
       return indicatorH + gap + Math.round(fs * 1.4);
     }
-    // Row: spec 높이
-    return inlineFormHeightConfig[sizeName] ?? 24;
+    return heightIndicatorConfig.rowHeights[s] ?? heightIndicatorConfig.rowHeights.md;
   }
 
   // 4. Panel: spec shapes 기반 컴포넌트 — 자식 요소 없이 자체 렌더링
@@ -1509,7 +1513,7 @@ export function parseBoxModel(
 export const INLINE_BLOCK_TAGS = new Set([
   'button', 'submitbutton', 'fancybutton', 'togglebutton',
   'badge', 'tag', 'chip',
-  'checkbox', 'radio', 'switch', 'toggle',
+  'checkbox', 'radio', 'switch',
   'togglebuttongroup',
 ]);
 
@@ -2050,4 +2054,115 @@ export function calculateMaxContentWidth(
   if (!text) return 0;
 
   return Math.ceil(measureTextWidth(text, fontSize, fontFamily, fontWeight));
+}
+
+// ─── Taffy 엔진 공용 유틸리티 ─────────────────────────────────────────
+
+/**
+ * RC-3: CSS prop → number | string 파서 (단위 정규화 적용)
+ *
+ * rem, em, vh, vw, calc() 등을 resolveCSSSizeValue()로 해석.
+ * % 값은 Taffy 네이티브 % 처리를 위해 문자열 그대로 반환.
+ *
+ * TaffyFlexEngine, TaffyGridEngine 공용
+ */
+export function parseCSSPropWithContext(
+  value: unknown,
+  ctx: CSSValueContext = {},
+): number | string | undefined {
+  if (value === undefined || value === null || value === '' || value === 'auto') return undefined;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    // % 값은 Taffy가 네이티브로 처리
+    if (value.endsWith('%')) return value;
+    // intrinsic sizing 키워드는 Taffy에서 미지원 → undefined
+    if (value === 'fit-content' || value === 'min-content' || value === 'max-content') return undefined;
+    // resolveCSSSizeValue: rem, em, vh, vw, calc(), clamp(), min(), max() 해석
+    const px = resolveCSSSizeValue(value, ctx);
+    if (px !== undefined && px >= 0) return px;
+    // fallback: parseFloat (순수 숫자 문자열)
+    const num = parseFloat(value);
+    if (!isNaN(num)) return num;
+  }
+  return undefined;
+}
+
+/**
+ * Taffy 공통 스타일 적용: Size + Min/Max + Padding + Border + Gap
+ *
+ * TaffyFlexEngine과 TaffyGridEngine 양쪽에서 동일한 Box model + Gap 변환을
+ * 중복 없이 적용하기 위한 헬퍼.
+ *
+ * Position, Margin(auto), Inset은 엔진별 차이가 있으므로 포함하지 않음.
+ */
+export function applyCommonTaffyStyle(
+  result: Record<string, unknown>,
+  style: Record<string, unknown>,
+  ctx: CSSValueContext,
+): void {
+  // Size — parseCSSPropWithContext가 number|string|undefined 반환
+  // normalizeStyle.dimToString()이 JSON 직렬화 시 number → "Npx" 변환
+  const widthVal = parseCSSPropWithContext(style.width, ctx);
+  const heightVal = parseCSSPropWithContext(style.height, ctx);
+  if (widthVal !== undefined) result.width = widthVal;
+  if (heightVal !== undefined) result.height = heightVal;
+
+  // Min/Max size
+  const minW = parseCSSPropWithContext(style.minWidth, ctx);
+  const minH = parseCSSPropWithContext(style.minHeight, ctx);
+  const maxW = parseCSSPropWithContext(style.maxWidth, ctx);
+  const maxH = parseCSSPropWithContext(style.maxHeight, ctx);
+  if (minW !== undefined) result.minWidth = minW;
+  if (minH !== undefined) result.minHeight = minH;
+  if (maxW !== undefined) result.maxWidth = maxW;
+  if (maxH !== undefined) result.maxHeight = maxH;
+
+  // Padding — 숫자 직접 전달
+  const padding = parsePadding(style);
+  if (padding.top !== 0) result.paddingTop = padding.top;
+  if (padding.right !== 0) result.paddingRight = padding.right;
+  if (padding.bottom !== 0) result.paddingBottom = padding.bottom;
+  if (padding.left !== 0) result.paddingLeft = padding.left;
+
+  // Border — 숫자 직접 전달
+  const border = parseBorder(style);
+  if (border.top !== 0) result.borderTop = border.top;
+  if (border.right !== 0) result.borderRight = border.right;
+  if (border.bottom !== 0) result.borderBottom = border.bottom;
+  if (border.left !== 0) result.borderLeft = border.left;
+
+  // Gap — parseCSSPropWithContext 결과 직접 전달 (number 또는 % 문자열)
+  const gap = parseCSSPropWithContext(style.gap, ctx);
+  const rowGap = parseCSSPropWithContext(style.rowGap, ctx);
+  const columnGap = parseCSSPropWithContext(style.columnGap, ctx);
+  if (gap !== undefined) {
+    result.rowGap = gap;
+    result.columnGap = gap;
+  }
+  if (rowGap !== undefined) result.rowGap = rowGap;
+  if (columnGap !== undefined) result.columnGap = columnGap;
+}
+
+/**
+ * Taffy 엔진 공통 CSS 컨텍스트 구성
+ *
+ * 부모 요소의 computed style과 CSS 단위 해석용 컨텍스트를 생성.
+ * TaffyFlexEngine.calculate()와 TaffyGridEngine.calculate()에서 동일.
+ */
+export function resolveParentContext(
+  parent: Element,
+  context?: LayoutContext,
+): { parentComputed: ComputedStyle; cssCtx: CSSValueContext } {
+  const parentRawStyle = parent.props?.style as Record<string, unknown> | undefined;
+  const parentComputed = context?.parentComputedStyle
+    ?? resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
+
+  const cssCtx: CSSValueContext = {
+    viewportWidth: context?.viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1920),
+    viewportHeight: context?.viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 1080),
+    parentSize: parentComputed.fontSize,
+    rootFontSize: 16,
+  };
+
+  return { parentComputed, cssCtx };
 }

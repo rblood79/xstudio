@@ -10,7 +10,7 @@
 
 use serde::Deserialize;
 use taffy::prelude::*;
-use taffy::style::Overflow;
+use taffy::style::{GridTemplateRepetition, Overflow};
 use wasm_bindgen::prelude::*;
 
 // ─── Style JSON schema ───────────────────────────────────────────────
@@ -153,10 +153,91 @@ fn parse_lp(s: &str) -> LengthPercentage {
     }
 }
 
-/// Parse a track sizing function for grid templates.
-/// Returns a `GridTemplateComponent` wrapping a `TrackSizingFunction`.
+/// Parse a grid template token into a `GridTemplateComponent`.
+///
+/// Supports:
+/// - Single track values: "1fr", "100px", "auto", "minmax(100px, 1fr)"
+/// - `repeat(N, ...)`: fixed count repeat (e.g., "repeat(3, 1fr)")
+/// - `repeat(auto-fill, ...)` / `repeat(auto-fit, ...)`: auto-repeating tracks
+///
+/// Phase 4-3: repeat() 지원 추가 → TS 측 repeat 전개 제거
 fn parse_track_as_template(s: &str) -> GridTemplateComponent<String> {
+    let s = s.trim();
+    if s.starts_with("repeat(") && s.ends_with(')') {
+        let inner = &s[7..s.len() - 1];
+        // Find first comma at depth 0 (skip commas inside nested parentheses)
+        let mut depth = 0u32;
+        let mut first_comma = None;
+        for (i, ch) in inner.char_indices() {
+            match ch {
+                '(' => depth += 1,
+                ')' => depth = depth.saturating_sub(1),
+                ',' if depth == 0 => {
+                    first_comma = Some(i);
+                    break;
+                }
+                _ => {}
+            }
+        }
+        if let Some(comma_idx) = first_comma {
+            let count_str = inner[..comma_idx].trim();
+            let tracks_str = inner[comma_idx + 1..].trim();
+
+            // Parse repeat count
+            let count = match count_str {
+                "auto-fill" => RepetitionCount::AutoFill,
+                "auto-fit" => RepetitionCount::AutoFit,
+                _ => count_str
+                    .parse::<u16>()
+                    .map(RepetitionCount::Count)
+                    .unwrap_or(RepetitionCount::Count(1)),
+            };
+
+            // Parse track list (space-separated, respecting nested parens)
+            let tracks = tokenize_grid_tracks(tracks_str)
+                .iter()
+                .map(|t| parse_track_sizing(t))
+                .collect::<Vec<_>>();
+
+            let line_names = vec![vec![]; tracks.len() + 1];
+
+            return GridTemplateComponent::Repeat(GridTemplateRepetition {
+                count,
+                tracks,
+                line_names,
+            });
+        }
+    }
     GridTemplateComponent::Single(parse_track_sizing(s))
+}
+
+/// Tokenize a space-separated grid track list, respecting nested parentheses.
+///
+/// e.g., "minmax(100px, 1fr) 200px" → ["minmax(100px, 1fr)", "200px"]
+fn tokenize_grid_tracks(s: &str) -> Vec<&str> {
+    let mut tokens = Vec::new();
+    let mut depth = 0u32;
+    let mut start = 0;
+    let s = s.trim();
+    for (i, ch) in s.char_indices() {
+        match ch {
+            '(' => depth += 1,
+            ')' => depth = depth.saturating_sub(1),
+            ' ' | '\t' if depth == 0 => {
+                let token = s[start..i].trim();
+                if !token.is_empty() {
+                    tokens.push(token);
+                }
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    let last = s[start..].trim();
+    if !last.is_empty() {
+        tokens.push(last);
+    }
+    tokens
 }
 
 /// Parse a track sizing function string (e.g., "1fr", "100px", "auto", "minmax(100px, 1fr)").
@@ -825,5 +906,79 @@ mod tests {
         let h2 = engine.create_node(r#"{"width":"300px"}"#);
         assert_eq!(h2, 0);
         assert_eq!(engine.node_count(), 2);
+    }
+
+    #[test]
+    fn test_margin_auto_centering() {
+        let mut engine = TaffyLayoutEngine::new();
+
+        let child = engine.create_node(
+            r#"{"width":"100px","height":"50px","marginLeft":"auto","marginRight":"auto"}"#,
+        );
+        let root = engine.create_node_with_children(
+            r#"{"display":"flex","flexDirection":"row","width":"400px","height":"100px"}"#,
+            &[child],
+        );
+        engine.compute_layout(root, 400.0, 100.0);
+
+        let layout: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child)).unwrap();
+
+        // margin:auto centers → x = (400 - 100) / 2 = 150
+        assert_eq!(layout["x"], 150.0, "margin:auto should center the item");
+        assert_eq!(layout["width"], 100.0);
+    }
+
+    #[test]
+    fn test_grid_repeat_fixed() {
+        // repeat(3, 1fr) → 3 equal columns
+        let mut engine = TaffyLayoutEngine::new();
+
+        let c1 = engine.create_node(r#"{"height":"50px"}"#);
+        let c2 = engine.create_node(r#"{"height":"50px"}"#);
+        let c3 = engine.create_node(r#"{"height":"50px"}"#);
+
+        let root = engine.create_node_with_children(
+            r#"{"display":"grid","gridTemplateColumns":["repeat(3, 1fr)"],"width":"300px","height":"50px"}"#,
+            &[c1, c2, c3],
+        );
+
+        engine.compute_layout(root, 300.0, 50.0);
+
+        let l1: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c1)).unwrap();
+        let l2: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c2)).unwrap();
+        let l3: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c3)).unwrap();
+
+        assert_eq!(l1["width"], 100.0, "repeat(3, 1fr): each col = 300/3 = 100");
+        assert_eq!(l1["x"], 0.0);
+        assert_eq!(l2["x"], 100.0);
+        assert_eq!(l3["x"], 200.0);
+    }
+
+    #[test]
+    fn test_grid_repeat_minmax() {
+        // repeat(2, minmax(50px, 1fr)) → 2 columns with minmax
+        let mut engine = TaffyLayoutEngine::new();
+
+        let c1 = engine.create_node(r#"{"height":"40px"}"#);
+        let c2 = engine.create_node(r#"{"height":"40px"}"#);
+
+        let root = engine.create_node_with_children(
+            r#"{"display":"grid","gridTemplateColumns":["repeat(2, minmax(50px, 1fr))"],"width":"200px","height":"40px"}"#,
+            &[c1, c2],
+        );
+
+        engine.compute_layout(root, 200.0, 40.0);
+
+        let l1: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c1)).unwrap();
+        let l2: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c2)).unwrap();
+
+        assert_eq!(l1["width"], 100.0, "repeat(2, minmax(50px, 1fr)): 200/2 = 100");
+        assert_eq!(l2["x"], 100.0);
     }
 }

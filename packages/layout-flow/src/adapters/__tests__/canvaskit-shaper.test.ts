@@ -100,6 +100,19 @@ function createMockCanvasKit(charWidth: number = 500): CanvasKitMinimal {
       }
       return widths;
     }
+    getGlyphBounds(ids: Uint16Array | number[]) {
+      // 4 values per glyph: [left, top, right, bottom]
+      // Skia 좌표: top은 음수 (baseline 위), xHeight = -top = 500
+      const arr = ids instanceof Uint16Array ? ids : new Uint16Array(ids);
+      const result = new Float32Array(arr.length * 4);
+      for (let i = 0; i < arr.length; i++) {
+        result[i * 4 + 0] = 0;     // left
+        result[i * 4 + 1] = -500;  // top (baseline 위)
+        result[i * 4 + 2] = 400;   // right
+        result[i * 4 + 3] = 0;     // bottom (baseline)
+      }
+      return result;
+    }
     delete() { /* no-op */ }
   }
 

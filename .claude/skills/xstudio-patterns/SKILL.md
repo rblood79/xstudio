@@ -1085,30 +1085,31 @@ if (tag === 'breadcrumbs' && childElements?.length > 0) {
 
 ### INLINE_FORM dimensions는 반드시 Spec과 일치 (CRITICAL, 2026-02-21)
 
-Switch/Toggle 등 인라인 폼 컴포넌트의 레이아웃 크기 테이블은 해당 컴포넌트 spec 파일의 실제 치수와 **반드시 일치**해야 합니다.
+Checkbox/Radio/Switch 인라인 폼 컴포넌트의 레이아웃 크기 테이블은 해당 컴포넌트 spec 파일의 실제 치수와 **반드시 일치**해야 합니다.
+
+> **Note**: `toggle` 태그는 spec/factory/types 어디에도 정의되지 않은 dead code였으므로 2026-02-26에 레이아웃 엔진 전체에서 제거됨. ToggleButton(tag: `togglebutton`)은 버튼이므로 phantom indicator 불필요. ToggleButtonGroup의 `indicator` prop은 CSS SelectionIndicator(absolute 배치)로 레이아웃 무관.
 
 **핵심 규칙**: `INLINE_FORM_INDICATOR_WIDTHS`(indicator/track 너비)와 `INLINE_FORM_GAPS`(라벨 간격)가 spec과 다르면 `specShapeConverter`의 `maxWidth` 자동 축소 로직(`shape.x > 0`일 때 `containerWidth - shape.x`)에 의해 텍스트 영역이 줄어들어 **라벨이 불필요하게 줄바꿈**됩니다.
 
 ```typescript
-// engines/utils.ts — 현행 올바른 값
+// engines/utils.ts — 현행 올바른 값 (2026-02-26: toggle 제거)
 const INLINE_FORM_INDICATOR_WIDTHS = {
   checkbox: { sm: 16, md: 20, lg: 24 },  // Checkbox.spec.ts indicatorSize
   radio:    { sm: 16, md: 20, lg: 24 },  // Radio.spec.ts indicatorSize
-  switch:   { sm: 36, md: 44, lg: 52 },  // Switch.spec.ts trackWidth ← 수정됨 (구: 26/34/42)
-  toggle:   { sm: 36, md: 44, lg: 52 },  // Toggle.spec.ts trackWidth  ← 수정됨 (구: 26/34/42)
+  switch:   { sm: 36, md: 44, lg: 52 },  // Switch.spec.ts trackWidth
 };
 
 const INLINE_FORM_GAPS = {
   checkbox: { sm: 6, md: 8,  lg: 10 },
   radio:    { sm: 6, md: 8,  lg: 10 },
   switch:   { sm: 8, md: 10, lg: 12 },   // Switch.spec.ts gap (checkbox보다 2px 큼)
-  toggle:   { sm: 8, md: 10, lg: 12 },   // Toggle.spec.ts gap
 };
 ```
 
 **수정 이력**:
-- switch/toggle `INLINE_FORM_INDICATOR_WIDTHS`: `{ sm: 26, md: 34, lg: 42 }` → `{ sm: 36, md: 44, lg: 52 }` (spec trackWidth보다 10px 작았던 값 정정)
+- switch `INLINE_FORM_INDICATOR_WIDTHS`: `{ sm: 26, md: 34, lg: 42 }` → `{ sm: 36, md: 44, lg: 52 }` (spec trackWidth보다 10px 작았던 값 정정)
 - `INLINE_FORM_GAPS` 테이블 신규 추가: 이전에는 크기(sm/md/lg) 기반 고정값만 사용
+- `toggle` dead code 제거 (2026-02-26): 레이아웃 엔진 4개 파일에서 삭제
 
 **새 인라인 폼 컴포넌트 추가 시 체크리스트**:
 1. 해당 컴포넌트 spec 파일에서 `trackWidth` / `indicatorSize` / `gap` 값 확인
@@ -1269,12 +1270,12 @@ const borderWidth = style.borderWidth ?? 0;
 // → 0 반환 (border 속성 무시)
 ```
 
-#### Switch/Toggle 라벨 줄바꿈 수정 (2026-02-21)
+#### Switch 라벨 줄바꿈 수정 (2026-02-21)
 
-`INLINE_FORM_INDICATOR_WIDTHS`의 switch/toggle 값이 spec `trackWidth`보다 10px 작아 WebGL Canvas에서 라벨이 줄바꿈되던 버그 수정.
+`INLINE_FORM_INDICATOR_WIDTHS`의 switch 값이 spec `trackWidth`보다 10px 작아 WebGL Canvas에서 라벨이 줄바꿈되던 버그 수정.
 
-- `INLINE_FORM_INDICATOR_WIDTHS` switch/toggle: 26/34/42 → 36/44/52 (spec trackWidth 일치)
-- `INLINE_FORM_GAPS` 테이블 신규 추가: switch/toggle 8/10/12, checkbox/radio 6/8/10
+- `INLINE_FORM_INDICATOR_WIDTHS` switch: 26/34/42 → 36/44/52 (spec trackWidth 일치)
+- `INLINE_FORM_GAPS` 테이블 신규 추가: switch 8/10/12, checkbox/radio 6/8/10
 - column 방향 gap도 `INLINE_FORM_GAPS` 테이블로 컴포넌트별 분리
 - 근본 원인: 레이아웃 너비가 10px 작으면 `specShapeConverter`의 `shape.x > 0` maxWidth 자동 축소로 텍스트 영역이 추가 손실됨
 

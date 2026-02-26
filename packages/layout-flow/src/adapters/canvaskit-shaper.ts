@@ -56,6 +56,8 @@ interface CKFont {
   getMetrics(): CKFontMetrics;
   getGlyphIDs(text: string): Uint16Array;
   getGlyphWidths(glyphIds: Uint16Array): Float32Array;
+  /** 글리프별 바운딩 박스 반환. Float32Array [left, top, right, bottom] × N */
+  getGlyphBounds(glyphIds: Uint16Array | number[], paint?: unknown | null, output?: Float32Array): Float32Array;
   delete(): void;
 }
 
@@ -309,11 +311,22 @@ export class CanvasKitShaper implements TextShaper {
     const descender = -(metrics.descent ?? 0);
     const lineGap = metrics.leading ?? 0;
 
-    // xHeight 근사: 'x' 글리프 advance를 측정
-    // 더 정확한 방법은 'x' 글리프의 바운딩 박스 높이이지만,
-    // CanvasKit에서 직접 제공하지 않으므로 ascender의 비율로 근사한다.
-    // 일반적으로 xHeight ≈ ascender * 0.48 ~ 0.53
-    const xHeight = Math.round(ascender * 0.52);
+    // xHeight: 'x' 글리프의 바운딩 박스 높이로 정확하게 측정
+    // Skia 좌표계: y-down이므로 baseline 위는 음수, xHeight = -top
+    let xHeight: number;
+    try {
+      const xGlyphIds = font.getGlyphIDs('x');
+      if (xGlyphIds.length > 0 && xGlyphIds[0] !== 0) {
+        const bounds = font.getGlyphBounds(xGlyphIds);
+        // bounds: [left, top, right, bottom] — top은 baseline 위이므로 음수
+        xHeight = Math.round(-bounds[1]);
+      } else {
+        // 'x' 글리프가 없는 폰트 (CJK 전용 등): ascender 비율 근사
+        xHeight = Math.round(ascender * 0.52);
+      }
+    } catch {
+      xHeight = Math.round(ascender * 0.52);
+    }
 
     return { ascender, descender, lineGap, xHeight };
   }
