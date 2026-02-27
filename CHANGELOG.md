@@ -7,6 +7,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - Phase 2 라이브러리 업데이트 (2026-02-27)
+
+#### 개요
+Phase 1에 이어 중간 위험도 마이너 업데이트 대상 라이브러리 9개를 업데이트했습니다.
+
+#### 업데이트된 패키지 (9개)
+
+| 패키지 | 이전 | 이후 | 사용처 |
+|--------|------|------|--------|
+| @storybook/addon-onboarding | 10.1.10 | 10.2.13 | builder |
+| @storybook/react | 10.1.10 | 10.2.13 | builder |
+| @storybook/react-vite | 10.1.10 | 10.2.13 | builder |
+| eslint-plugin-storybook | 10.1.10 | 10.2.13 | builder |
+| storybook | 10.1.10 | 10.2.13 | builder |
+| @tailwindcss/postcss | 4.1.18 | 4.2.1 | builder |
+| tailwindcss | 4.1.18 | 4.2.1 | builder |
+| zod | 4.2.1 | 4.3.6 | builder, shared |
+| @supabase/supabase-js | 2.89.0 | 2.98.0 | builder |
+
+#### 주요 변경 사항
+
+- **Storybook 10.2**: Viewport/Zoom UI 리뉴얼, CSF Factories 확장, ESLint 10 호환성 추가. Breaking change 없음
+- **Tailwind CSS 4.2**: 새 색상 팔레트 4개(mauve, olive, mist, taupe), Logical property 유틸리티 추가. `start-*`/`end-*` deprecated (프로젝트 미사용)
+- **Zod 4.3**: `.pick()`/`.omit()` + `.refine()` 조합 시 에러 throw 정책 변경 (프로젝트 미사용 패턴), `z.fromJSONSchema()`, `z.xor()` 등 신규 API 추가
+- **Supabase 2.98**: `from()` 타입 안전성 강화, orphaned navigator lock 복구, Auth signOut 시 로컬 스토리지 정리 개선
+
+#### 검증 결과
+
+- `pnpm build-storybook` — 성공
+- `pnpm -F @xstudio/shared type-check` — 성공
+- `vite build` — 성공
+
+### Changed - Phase 1 라이브러리 업데이트 (2026-02-27)
+
+#### 개요
+저위험 패치/마이너 업데이트 대상 라이브러리 35개를 업데이트했습니다.
+
+#### 업데이트된 패키지 (35개)
+
+| 패키지 | 이전 | 이후 | 사용처 |
+|--------|------|------|--------|
+| @playwright/test | 1.58.0 | 1.58.2 | @xstudio/specs |
+| @react-aria/focus | 3.21.3 | 3.21.4 | builder, shared |
+| @react-aria/i18n | 3.12.14 | 3.12.15 | builder |
+| @react-aria/utils | 3.32.0 | 3.33.0 | builder, shared |
+| @internationalized/date | 3.10.1 | 3.11.0 | builder, shared |
+| @tanstack/react-query | 5.90.12 | 5.90.21 | builder |
+| @tanstack/react-query-devtools | 5.91.1 | 5.91.3 | builder |
+| @tanstack/react-virtual | 3.13.13 | 3.13.19 | builder, shared |
+| @types/lodash | 4.17.21 | 4.17.24 | builder |
+| @types/react | 19.2.7 | 19.2.14 | builder, publish, shared |
+| @vitejs/plugin-react-swc | 4.2.2 | 4.2.3 | builder, publish |
+| @vitest/browser | 4.0.16 | 4.0.18 | builder |
+| @vitest/coverage-v8 | 4.0.16 | 4.0.18 | builder |
+| @vitest/ui | 4.0.16 | 4.0.18 | builder |
+| autoprefixer | 10.4.23 | 10.4.27 | builder |
+| lodash | 4.17.21 | 4.17.23 | builder |
+| react | 19.2.3 | 19.2.4 | builder, publish |
+| react-dom | 19.2.3 | 19.2.4 | builder, publish |
+| react-aria-components | 1.14.0 | 1.15.1 | builder, publish, shared |
+| react-stately | 3.43.0 | 3.44.0 | builder, shared |
+| react-router | 7.11.0 | 7.13.1 | builder |
+| react-router-dom | 7.11.0 | 7.13.1 | builder |
+| vite | 7.3.0 | 7.3.1 | builder, publish |
+| vitest | 4.0.16 | 4.0.18 | builder |
+| zustand | 5.0.9 | 5.0.11 | builder |
+| jotai | 2.16.0 | 2.18.0 | builder |
+| pixi.js | 8.14.3 | 8.16.0 | builder |
+| puppeteer | 24.34.0 | 24.37.5 | builder |
+| tailwind-merge | 3.4.0 | 3.5.0 | builder, shared |
+| lucide-react | 0.562.0 | 0.575.0 | builder, shared |
+| @types/three | 0.182.0 | 0.183.1 | builder |
+| three | 0.182.0 | 0.183.1 | builder |
+| eslint-plugin-react-refresh | 0.4.26 | 0.5.2 | config |
+| typescript-eslint | 8.50.1 | 8.56.1 | config |
+
+#### pixi.js 업데이트 보완 조치
+- **문제**: specs 패키지의 peerDependency가 `^8.0.0`으로 넓어 pixi.js 버전이 이중 resolve되어 Bounds 타입 충돌 발생
+- **해결**: `packages/specs/package.json`의 pixi.js peerDependency를 `^8.16.0`으로 범위 조정하여 단일 버전 resolve 유도
+- **결과**: pnpm override 없이 pixi.js 8.16.0 단일 버전 사용, elementRegistry.ts Bounds 에러 해소
+
+#### 검증 결과
+- type-check: 통과 (전체 패키지)
+- build: @xstudio/builder 실패 (기존 이슈 — Element.project_id, TaffyStyle, CSSStyle, canvaskit, rustWasm 등)
+- build: @xstudio/publish, @xstudio/specs 성공
+
+---
+
 ### Refactored - Child Composition Pattern: Property Editor 리팩터링 (2026-02-25)
 
 #### 개요
