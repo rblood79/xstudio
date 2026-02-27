@@ -292,11 +292,12 @@ export function SmokeCanvas({
     mediaQuery.addEventListener("change", handleThemeChange);
 
     // 애니메이션
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
     let animationFrameId: number;
 
     const animate = () => {
-      const elapsed = clock.getElapsedTime();
+      timer.update();
+      const elapsed = timer.getElapsed();
 
       // 모핑 진행도
       const morphSpeed =

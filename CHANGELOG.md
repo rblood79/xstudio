@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - Phase 3 라이브러리 업데이트 (2026-02-27)
+
+#### 개요
+메이저 업데이트 대상 라이브러리 7개를 업데이트했습니다 (ESLint 10, Vitest 4 specs, @types/node 25는 별도 검토 필요로 제외).
+
+#### 업데이트된 패키지 (7개)
+
+| 패키지 | 이전 | 이후 | 사용처 | 비고 |
+|--------|------|------|--------|------|
+| @chromatic-com/storybook | 4.1.3 | 5.0.1 | builder | 메이저, Storybook 10.1+ 필수 (충족) |
+| globals | 16.5.0 | 17.3.0 | config | 메이저, audioWorklet 분리 (미사용) |
+| immer | 10.2.0 | 11.1.4 | builder (catalog) | 메이저, 코드에서 미사용 (Zustand peerDep만) |
+| cross-env | 7.0.3 | 10.1.0 | publish (catalog) | 메이저, ESM-only (CLI 도구, 영향 없음) |
+| pixelmatch | 5.3.0 | 7.1.0 | specs | 메이저, 코드에서 미사용 (향후 VRT용) |
+| @playwright/mcp | 0.0.53 | 0.0.68 | root | pre-1.0, CLI 플래그 변경 |
+| @material/material-color-utilities | 0.3.0 | 0.4.0 | builder | minor, 생성자 API 호환 유지 확인 |
+
+#### 주요 변경 사항
+
+- **@chromatic-com/storybook 5.0**: Storybook 10.1+ peer dependency 필수화. 이미 10.2.13 사용 중이므로 영향 없음
+- **globals 17.0**: `audioWorklet` 환경이 `globals.browser`에서 분리. 프로젝트 미사용
+- **immer 11.0**: loose iteration 기본값 변경, 패치 생성 방식 변경. 프로젝트에서 `produce()` 미사용 (Phase 1에서 제거 완료)
+- **cross-env 10.0**: ESM-only 전환. CLI 도구로만 사용하므로 코드 변경 불필요
+- **pixelmatch 7.0**: ESM-only, 반투명 픽셀 블렌딩 변경. 코드에서 import하지 않아 영향 없음
+- **@playwright/mcp 0.0.68**: 기본 incognito 동작, CLI 플래그 이름 변경 (`--session` → `-s=` 등)
+- **material-color-utilities 0.4**: `SpecVersion`, `DynamicScheme.from()` 도입. 기존 생성자 `new SchemeTonalSpot(hct, isDark, contrastLevel)` 호환 유지 확인. `DEFAULT_SPEC_VERSION = "2021"`이므로 `contrastLevel < 0`도 정상 동작
+
+#### 미포함 (별도 검토 필요)
+
+| 패키지 | 현재 | 최신 | 사유 |
+|--------|------|------|------|
+| eslint + @eslint/js | 9.39.2 | 10.0.2 | 커스텀 규칙 API 변경, 플러그인 호환성 검증 필요 |
+| vitest (specs) | 1.6.1 | 4.0.18 | 3개 메이저 점프, config/mock/snapshot 전면 수정 필요 |
+| @types/node | 24.10.4 | 25.3.2 | Node.js 25 (non-LTS) 대상, 런타임 불일치 비권장 |
+
+#### 검증 결과
+
+- `vite build` — 성공
+- `build-storybook` — 성공
+- 생성자 API 타입 호환성 — 확인 완료
+
 ### Changed - Phase 2 라이브러리 업데이트 (2026-02-27)
 
 #### 개요
@@ -87,6 +128,13 @@ Phase 1에 이어 중간 위험도 마이너 업데이트 대상 라이브러리
 - **문제**: specs 패키지의 peerDependency가 `^8.0.0`으로 넓어 pixi.js 버전이 이중 resolve되어 Bounds 타입 충돌 발생
 - **해결**: `packages/specs/package.json`의 pixi.js peerDependency를 `^8.16.0`으로 범위 조정하여 단일 버전 resolve 유도
 - **결과**: pnpm override 없이 pixi.js 8.16.0 단일 버전 사용, elementRegistry.ts Bounds 에러 해소
+
+#### three.js r183 마이그레이션
+- **문제**: `THREE.Clock`이 r183에서 deprecated, 콘솔 경고 발생
+- **해결**: 6개 Particle Canvas 파일에서 `THREE.Clock` → `THREE.Timer`로 마이그레이션
+  - `ParticleCanvas.tsx`, `SmokeCanvas.tsx`, `CurlNoiseCanvas.tsx`
+  - `CodeParticleCanvas.tsx`, `MatrixRainCanvas.tsx`, `MondrianArtCanvas.tsx`
+- **변경 내용**: `new THREE.Clock()` → `new THREE.Timer()`, 매 프레임 `timer.update()` 호출 추가, `getElapsedTime()` → `getElapsed()`
 
 #### 검증 결과
 - type-check: 통과 (전체 패키지)

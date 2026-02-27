@@ -257,13 +257,14 @@ export function ParticleCanvas({
     composer.addPass(outputPass);
 
     // 애니메이션 루프
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
     let animationFrameId: number;
 
     const vortexFadeMultiplier = tweaks.vortexFadeMultiplier ?? 135;
 
     const animate = () => {
-      const delta = clock.getDelta();
+      timer.update();
+      const delta = timer.getDelta();
       material.uniforms.time.value += delta;
 
       // 모핑 진행도

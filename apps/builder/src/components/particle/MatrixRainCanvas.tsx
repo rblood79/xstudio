@@ -625,7 +625,7 @@ export function MatrixRainCanvas({
     composer.addPass(new OutputPass());
 
     // ========== Animation ==========
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
     let animationFrameId: number;
 
     // 문자 변경 타이머
@@ -659,8 +659,9 @@ export function MatrixRainCanvas({
     window.addEventListener("mouseleave", handleMouseLeave);
 
     const animate = () => {
-      const delta = clock.getDelta();
-      const time = clock.getElapsedTime();
+      timer.update();
+      const delta = timer.getDelta();
+      const time = timer.getElapsed();
       material.uniforms.time.value = time;
 
       // 마우스 위치 lerp 적용 (부드러운 추적)

@@ -665,7 +665,7 @@ export function MondrianArtCanvas({
     scene.add(points);
 
     // ==================== 애니메이션 ====================
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
     let animationFrameId: number;
     let lastRegenerateTime = 0;
     let morphProgress = 1.0;
@@ -675,7 +675,8 @@ export function MondrianArtCanvas({
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      const time = clock.getElapsedTime();
+      timer.update();
+      const time = timer.getElapsed();
       const elapsedMs = time * 1000;
       material.uniforms.time.value = time;
 

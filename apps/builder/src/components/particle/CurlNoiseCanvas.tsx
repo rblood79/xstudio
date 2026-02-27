@@ -441,11 +441,12 @@ export function CurlNoiseCanvas({
     composer.addPass(outputPass);
 
     // 애니메이션
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
     let animationFrameId: number;
 
     const animate = () => {
-      const delta = clock.getDelta();
+      timer.update();
+      const delta = timer.getDelta();
       material.uniforms.time.value += delta;
 
       // 모핑

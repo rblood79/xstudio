@@ -27,7 +27,7 @@
     "postinstall": "pnpm run prepare:wasm"
   },
   "devDependencies": {
-    "@playwright/mcp": "^0.0.53",
+    "@playwright/mcp": "^0.0.68",
     "@playwright/test": "^1.58.2",
     "playwright": "^1.58.2",
     "tsx": "^4.21.0",
