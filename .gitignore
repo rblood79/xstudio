@@ -68,7 +68,10 @@ apps/builder/public/wasm/
 
 # Rust WASM build artifacts
 apps/builder/src/builder/workspace/canvas/wasm/target/
-apps/builder/src/builder/workspace/canvas/wasm-bindings/pkg/
+# WASM pkg: ignore runtime files, keep type declarations for CI tsc
+apps/builder/src/builder/workspace/canvas/wasm-bindings/pkg/*
+!apps/builder/src/builder/workspace/canvas/wasm-bindings/pkg/package.json
+!apps/builder/src/builder/workspace/canvas/wasm-bindings/pkg/*.d.ts
 
 # TypeScript compiled output (tsc -b) alongside source files
 apps/builder/src/**/*.js

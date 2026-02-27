@@ -1,0 +1,36 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const block_layout: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number];
+export const wasm_collapse_margins: (a: number, b: number) => number;
+export const __wbg_spatialindex_free: (a: number, b: number) => void;
+export const calculate_cell_positions: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number];
+export const parse_tracks: (a: number, b: number, c: number, d: number) => [number, number];
+export const spatialindex_batch_upsert: (a: number, b: number, c: number) => void;
+export const spatialindex_clear: (a: number) => void;
+export const spatialindex_count: (a: number) => number;
+export const spatialindex_new: (a: number) => number;
+export const spatialindex_query_point: (a: number, b: number, c: number) => [number, number];
+export const spatialindex_query_rect: (a: number, b: number, c: number, d: number, e: number) => [number, number];
+export const spatialindex_query_viewport: (a: number, b: number, c: number, d: number, e: number) => [number, number];
+export const spatialindex_remove: (a: number, b: number) => void;
+export const spatialindex_upsert: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+export const add: (a: number, b: number) => number;
+export const ping: () => [number, number];
+export const __wbg_taffylayoutengine_free: (a: number, b: number) => void;
+export const taffylayoutengine_clear: (a: number) => void;
+export const taffylayoutengine_compute_layout: (a: number, b: number, c: number, d: number) => void;
+export const taffylayoutengine_create_node: (a: number, b: number, c: number) => number;
+export const taffylayoutengine_create_node_with_children: (a: number, b: number, c: number, d: number, e: number) => number;
+export const taffylayoutengine_get_layout: (a: number, b: number) => [number, number];
+export const taffylayoutengine_get_layouts_batch: (a: number, b: number, c: number) => [number, number];
+export const taffylayoutengine_new: () => number;
+export const taffylayoutengine_node_count: (a: number) => number;
+export const taffylayoutengine_remove_node: (a: number, b: number) => void;
+export const taffylayoutengine_set_children: (a: number, b: number, c: number, d: number) => void;
+export const taffylayoutengine_update_style: (a: number, b: number, c: number, d: number) => void;
+export const __wbindgen_externrefs: WebAssembly.Table;
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __wbindgen_free: (a: number, b: number, c: number) => void;
+export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __wbindgen_start: () => void;

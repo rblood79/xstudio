@@ -1,0 +1,8 @@
+# WASM build artifacts (runtime files) — built by wasm-pack
+*.wasm
+*.js
+
+# Keep type declarations and package.json for TypeScript resolution in CI
+!.gitignore
+!package.json
+!*.d.ts
