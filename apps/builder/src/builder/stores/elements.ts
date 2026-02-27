@@ -14,7 +14,7 @@ import {
   computeCanvasElementStyle,
 } from "./utils/elementHelpers";
 import { createUndoAction, createRedoAction, createGoToHistoryIndexAction } from "./history/historyActions";
-import { createRemoveElementAction } from "./utils/elementRemoval";
+import { createRemoveElementAction, createRemoveElementsAction } from "./utils/elementRemoval";
 import {
   createAddElementAction,
   createAddComplexElementAction,
@@ -110,12 +110,14 @@ export interface ElementsState {
   redo: () => Promise<void>;
   goToHistoryIndex: (targetIndex: number) => Promise<void>;
   removeElement: (elementId: string) => Promise<void>;
+  removeElements: (elementIds: string[]) => Promise<void>;
   removeTabPair: (elementId: string) => void;
   addComplexElement: (
     parentElement: Element,
     childElements: Element[]
   ) => Promise<void>;
   updateElementOrder: (elementId: string, orderNum: number) => void;
+  batchUpdateElementOrders: (updates: Array<{ id: string; order_num: number }>) => void;
 
   // 다중 선택 관련 액션
   toggleElementInSelection: (elementId: string) => void;
@@ -142,8 +144,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   const redo = createRedoAction(set, get);
   const goToHistoryIndex = createGoToHistoryIndexAction(set, get);
 
-  // removeElement 함수 생성
+  // removeElement / removeElements 함수 생성
   const removeElement = createRemoveElementAction(set, get);
+  const removeElements = createRemoveElementsAction(set, get);
 
   // addElement/addComplexElement 함수 생성
   const addElement = createAddElementAction(set, get);
@@ -339,8 +342,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // ⚡ setTimeout(50) → queueMicrotask: 초기 로드와 reorder 사이의 타이밍 갭 제거
     // 50ms 지연은 불필요한 재렌더링과 Skia 캐시 무효화를 유발함
     queueMicrotask(() => {
-      const { updateElementOrder } = get();
-      reorderElements(migratedElements, pageId, updateElementOrder);
+      const { elements: latestElements, batchUpdateElementOrders } = get();
+      reorderElements(latestElements, pageId, batchUpdateElementOrders);
     });
   },
 
@@ -486,6 +489,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   goToHistoryIndex,
 
   removeElement,
+  removeElements,
 
   // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)
   removeTabPair: (elementId) => {
@@ -513,11 +517,24 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)
   updateElementOrder: (elementId, orderNum) => {
     const { elements } = get();
-    // 불변 업데이트: 새 배열 생성
     const updatedElements = elements.map((el) =>
       el.id === elementId ? { ...el, order_num: orderNum } : el
     );
     set({ elements: updatedElements });
+    get()._rebuildIndexes();
+  },
+
+  // 배치 order_num 업데이트 (단일 set() + _rebuildIndexes())
+  batchUpdateElementOrders: (updates) => {
+    if (updates.length === 0) return;
+    const { elements } = get();
+    const updateMap = new Map(updates.map(u => [u.id, u.order_num]));
+    const updatedElements = elements.map((el) => {
+      const newOrder = updateMap.get(el.id);
+      return newOrder !== undefined ? { ...el, order_num: newOrder } : el;
+    });
+    set({ elements: updatedElements });
+    get()._rebuildIndexes();
   },
 
   // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)

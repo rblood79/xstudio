@@ -204,11 +204,34 @@ export const createUndoAction = (set, get) => async () => {
 };
 ```
 
+## 배치 삭제 히스토리 패턴
+
+`removeElements(ids[])` 배치 삭제 시 **단일 `remove` 히스토리 entry**로 기록합니다.
+첫 번째 루트 요소를 `elementId` + `element`로, 나머지 모든 요소(다른 루트 + 자식)를 `childElements`로 저장합니다.
+기존 `"remove"` 타입의 Undo/Redo 핸들러와 완전히 호환됩니다.
+
+```typescript
+// ✅ 배치 삭제 히스토리 — 단일 entry
+historyManager.addEntry({
+  type: "remove",
+  elementId: rootElements[0].id,
+  data: {
+    element: rootElements[0],
+    childElements: allElements.filter(el => el.id !== rootElements[0].id),
+  },
+});
+// → Undo 1회로 모든 요소 동시 복원
+
+// ❌ 순차 삭제 히스토리 — N개 entry
+// → Undo N회 필요 (하나씩 복원)
+```
+
 ## 참조 파일
 
 - `apps/builder/src/builder/stores/history.ts` - HistoryManager
 - `apps/builder/src/builder/stores/history/historyActions.ts` - Undo/Redo 액션
 - `apps/builder/src/builder/stores/utils/elementUpdate.ts` - 히스토리 통합 예시
+- `apps/builder/src/builder/stores/utils/elementRemoval.ts` - 삭제 히스토리 (단일/배치)
 - `apps/builder/src/builder/stores/inspectorActions.ts` - `updateSelectedPropertiesWithChildren`
 - `apps/builder/src/builder/hooks/useSyncChildProp.ts` - 직계 자식 prop 동기화 훅
 - `apps/builder/src/builder/hooks/useSyncGrandchildProp.ts` - 손자 prop 동기화 훅

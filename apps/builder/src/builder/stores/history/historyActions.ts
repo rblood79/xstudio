@@ -725,12 +725,12 @@ export const createUndoAction =
       console.log("✅ Undo 완료");
 
       // Undo 완료 후 order_num 재정렬 (충돌 해결)
-      const { elements, updateElementOrder } = get();
       if (currentPageId) {
         setTimeout(() => {
-          reorderElements(elements, currentPageId, updateElementOrder);
+          const { elements: latestElements, batchUpdateElementOrders } = get();
+          reorderElements(latestElements, currentPageId, batchUpdateElementOrders);
           console.log("📊 Undo 후 order_num 재정렬 완료");
-        }, 100); // 다른 업데이트 완료 후 실행
+        }, 100);
       }
     } catch (error) {
       console.error("Undo 시 오류:", error);
@@ -1333,13 +1333,13 @@ export const createRedoAction =
       console.log("✅ Redo 완료");
 
       // Redo 완료 후 order_num 재정렬 (충돌 해결)
-      const { elements, updateElementOrder } = get();
       const pageId = state.currentPageId;
       if (pageId) {
         setTimeout(() => {
-          reorderElements(elements, pageId, updateElementOrder);
+          const { elements: latestElements, batchUpdateElementOrders } = get();
+          reorderElements(latestElements, pageId, batchUpdateElementOrders);
           console.log("📊 Redo 후 order_num 재정렬 완료");
-        }, 100); // 다른 업데이트 완료 후 실행
+        }, 100);
       }
     } catch (error) {
       console.error("Redo 시 오류:", error);
@@ -1434,10 +1434,10 @@ export const createGoToHistoryIndexAction =
       console.log("✅ GoToHistoryIndex 완료");
 
       // order_num 재정렬
-      const { elements, updateElementOrder } = get();
       if (currentPageId) {
         setTimeout(() => {
-          reorderElements(elements, currentPageId, updateElementOrder);
+          const { elements: latestElements, batchUpdateElementOrders } = get();
+          reorderElements(latestElements, currentPageId, batchUpdateElementOrders);
         }, 100);
       }
     } catch (error) {

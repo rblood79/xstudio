@@ -229,7 +229,7 @@ export function useGlobalKeyboardShortcuts() {
    * Canvas Delete - 선택된 요소들 삭제
    */
   const handleCanvasDelete = useCallback(async () => {
-    const { selectedElementIds, elementsMap, removeElement, setSelectedElement } = useStore.getState();
+    const { selectedElementIds, elementsMap, removeElements, setSelectedElement } = useStore.getState();
 
     if (selectedElementIds.length === 0) {
       console.log('[Keyboard] Delete: No elements selected');
@@ -252,10 +252,8 @@ export function useGlobalKeyboardShortcuts() {
     // 선택 해제 먼저
     setSelectedElement(null);
 
-    // 요소들 삭제
-    for (const id of deletableIds) {
-      await removeElement(id);
-    }
+    // 배치 삭제: 단일 set()으로 모든 요소 동시 제거
+    await removeElements(deletableIds);
   }, []);
 
   /**

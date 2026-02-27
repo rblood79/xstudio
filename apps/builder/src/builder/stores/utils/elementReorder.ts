@@ -24,22 +24,20 @@ function getTextContent(props: ComponentElementProps | Record<string, unknown>):
 }
 
 /**
- * order_num 재정렬 유틸리티 함수
+ * order_num 재정렬 업데이트 계산 (순수 함수 — side effect 없음)
  *
- * 페이지의 모든 요소를 부모별로 그룹화하여 order_num을 재정렬합니다.
+ * 페이지의 모든 요소를 부모별로 그룹화하여 올바른 order_num을 계산합니다.
+ * 변경이 필요한 요소들만 { id, order_num } 배열로 반환합니다.
+ *
  * 특별 정렬 로직:
  * - Tabs: Tab-Panel 쌍을 tabId 기반으로 정렬
  * - Collection 컴포넌트: 아이템을 order_num, 텍스트 순으로 정렬
  * - TableHeader: ColumnGroup을 order_num, label 순으로 정렬
- *
- * 🎯 성능 참고: 내부적으로 pageId로 filter하므로, 호출자는 전체 elements를 전달해도 됨.
- * 향후 최적화 시 호출자가 getPageElements(pageId)로 페이지 요소만 전달하는 것이 더 효율적.
  */
-export const reorderElements = async (
+export function computeReorderUpdates(
   elements: Element[],
-  pageId: string,
-  updateElementOrder: (elementId: string, orderNum: number) => void
-): Promise<void> => {
+  pageId: string
+): Array<{ id: string; order_num: number }> {
   // 페이지별, 부모별로 그룹화
   const groups = elements
     .filter((el) => el.page_id === pageId)
@@ -73,29 +71,6 @@ export const reorderElements = async (
     const isToggleButtonChildren = parentTag === "ToggleButtonGroup";
     const isTableHeaderChildren = parentTag === "TableHeader";
 
-    // 디버깅: 특별 정렬 대상 컴포넌트 확인
-    if (
-      isTabsChildren ||
-      isListBoxChildren ||
-      isGridListChildren ||
-      isMenuChildren ||
-      isComboBoxChildren ||
-      isSelectChildren ||
-      isTreeChildren ||
-      isToggleButtonChildren ||
-      isTableHeaderChildren
-    ) {
-      console.log(`🔍 컬렉션 컴포넌트 그룹 분석:`, {
-        parentKey,
-        parentElement: parentElement
-          ? { id: parentElement.id, tag: parentElement.tag }
-          : null,
-        parentTag,
-        childrenCount: children.length,
-        childTags: children.map((el) => el.tag),
-      });
-    }
-
     if (isTabsChildren) {
       // Tabs 하위의 Tab과 Panel을 tabId 기반으로 쌍을 맞춰서 정렬
       const tabs = children
@@ -103,7 +78,6 @@ export const reorderElements = async (
         .sort((a, b) => {
           const orderDiff = (a.order_num || 0) - (b.order_num || 0);
           if (orderDiff === 0) {
-            // order_num이 같을 경우, title로 추가 정렬 (Tab 1 < Tab 2 < Tab 3)
             const titleA = getPropValue(a.props, 'title');
             const titleB = getPropValue(b.props, 'title');
             return titleA.localeCompare(titleB);
@@ -116,7 +90,6 @@ export const reorderElements = async (
         .sort((a, b) => {
           const orderDiff = (a.order_num || 0) - (b.order_num || 0);
           if (orderDiff === 0) {
-            // order_num이 같을 경우, title로 추가 정렬
             const titleA = getPropValue(a.props, 'title');
             const titleB = getPropValue(b.props, 'title');
             return titleA.localeCompare(titleB);
@@ -129,15 +102,12 @@ export const reorderElements = async (
 
       tabs.forEach((tab) => {
         sorted.push(tab);
-
-        // Tab의 tabId와 일치하는 Panel 찾기
         const tabId = getPropValue(tab.props, 'tabId');
         if (tabId) {
           const matchingPanel = panels.find((panel) => {
             const panelTabId = getPropValue(panel.props, 'tabId');
             return panelTabId === tabId && !usedPanelIds.has(panel.id);
           });
-
           if (matchingPanel) {
             sorted.push(matchingPanel);
             usedPanelIds.add(matchingPanel.id);
@@ -151,57 +121,19 @@ export const reorderElements = async (
           sorted.push(panel);
         }
       });
-
-      console.log(
-        `📋 Tabs 하위 요소 재정렬: ${tabs.length}개 Tab, ${panels.length}개 Panel`
-      );
-      console.log("📋 Tab 정렬 순서:");
-      tabs.forEach((tab, index) => {
-        const title = getPropValue(tab.props, 'title');
-        const tabId = getPropValue(tab.props, 'tabId');
-        console.log(
-          `  ${index + 1}. ${title} (order: ${tab.order_num}, tabId: ${tabId.slice(0, 8)}...)`
-        );
-      });
-      console.log("📋 최종 정렬된 순서:");
-      sorted.forEach((el, index) => {
-        const title = getPropValue(el.props, 'title');
-        console.log(
-          `  ${index + 1}. ${el.tag}: ${title} (new order: ${index + 1})`
-        );
-      });
     } else if (isTableHeaderChildren) {
-      // TableHeader 하위의 ColumnGroup들 정렬
-      console.log(
-        `📊 ${parentTag} 하위 ColumnGroup 재정렬: ${children.length}개 그룹`
-      );
-
-      sorted = children.sort((a, b) => {
+      sorted = [...children].sort((a, b) => {
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);
         if (orderDiff === 0) {
-          // order_num이 같을 경우, label로 추가 정렬
           const labelA = getPropValue(a.props, 'label');
           const labelB = getPropValue(b.props, 'label');
           const comparison = labelA.localeCompare(labelB);
-
           if (comparison === 0) {
-            // label도 같으면 ID로 정렬 (안정적인 순서 보장)
             return a.id.localeCompare(b.id);
           }
           return comparison;
         }
         return orderDiff;
-      });
-
-      console.log(`📊 ${parentTag} 정렬된 ColumnGroup 순서:`);
-      sorted.forEach((group, index) => {
-        const label = getPropValue(group.props, 'label') || "Untitled";
-        const span = getPropValue(group.props, 'span') || "1";
-        console.log(
-          `  ${index + 1}. ColumnGroup: ${label} (span: ${span}, order: ${
-            group.order_num
-          } → ${index + 1})`
-        );
       });
     } else if (
       isListBoxChildren ||
@@ -212,43 +144,24 @@ export const reorderElements = async (
       isTreeChildren ||
       isToggleButtonChildren
     ) {
-      // 컬렉션 컴포넌트들의 아이템 정렬 (ToggleButton 포함)
-      console.log(
-        `📋 ${parentTag} 하위 요소 재정렬: ${children.length}개 아이템`
-      );
-
-      sorted = children.sort((a, b) => {
+      sorted = [...children].sort((a, b) => {
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);
         if (orderDiff === 0) {
-          // order_num이 같을 경우, children 텍스트나 title, label로 추가 정렬
           const textA = getTextContent(a.props);
           const textB = getTextContent(b.props);
           const comparison = textA.localeCompare(textB);
-
           if (comparison === 0) {
-            // 텍스트도 같으면 ID로 정렬 (안정적인 순서 보장)
             return a.id.localeCompare(b.id);
           }
           return comparison;
         }
         return orderDiff;
       });
-
-      console.log(`📋 ${parentTag} 정렬된 순서:`);
-      sorted.forEach((item, index) => {
-        const text = getTextContent(item.props) || "Untitled";
-        console.log(
-          `  ${index + 1}. ${item.tag}: ${text} (order: ${item.order_num} → ${
-            index + 1
-          })`
-        );
-      });
     } else {
-      // 일반적인 정렬 (기존 로직)
-      sorted = children.sort((a, b) => {
+      // 일반적인 정렬
+      sorted = [...children].sort((a, b) => {
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);
         if (orderDiff === 0) {
-          // order_num이 같을 경우 ID로 정렬 (안정적인 순서 보장)
           return a.id.localeCompare(b.id);
         }
         return orderDiff;
@@ -260,68 +173,53 @@ export const reorderElements = async (
       const newOrderNum = index;
       if (child.order_num !== newOrderNum) {
         updates.push({ id: child.id, order_num: newOrderNum });
-        // 메모리에서도 업데이트 (스토어를 통해)
-        updateElementOrder(child.id, newOrderNum);
       }
     });
   });
 
-  // 데이터베이스 일괄 업데이트
-  if (updates.length > 0) {
-    try {
-      // 각 요소를 개별적으로 업데이트 (일괄 업데이트 대신)
-      const updatePromises = updates.map((update) =>
-        supabase
-          .from("elements")
-          .update({ order_num: update.order_num })
-          .eq("id", update.id)
+  return updates;
+}
+
+/**
+ * order_num 재정렬 실행 함수
+ *
+ * computeReorderUpdates()로 계산된 업데이트를 batch로 적용합니다.
+ * - 메모리: batchUpdateElementOrders() 단일 set() 호출
+ * - DB: Supabase 일괄 업데이트 (백그라운드)
+ */
+export const reorderElements = async (
+  elements: Element[],
+  pageId: string,
+  batchUpdateElementOrders: (updates: Array<{ id: string; order_num: number }>) => void
+): Promise<void> => {
+  const updates = computeReorderUpdates(elements, pageId);
+
+  if (updates.length === 0) return;
+
+  // 1. 메모리 일괄 업데이트 (단일 set())
+  batchUpdateElementOrders(updates);
+
+  console.log(`📊 order_num 재정렬 완료: ${updates.length}개 요소`);
+
+  // 2. 데이터베이스 일괄 업데이트 (백그라운드)
+  try {
+    const updatePromises = updates.map((update) =>
+      supabase
+        .from("elements")
+        .update({ order_num: update.order_num })
+        .eq("id", update.id)
+    );
+
+    const results = await Promise.all(updatePromises);
+
+    const errors = results.filter((result) => result.error);
+    if (errors.length > 0) {
+      console.error(
+        "order_num 재정렬 DB 실패:",
+        errors.map((e) => e.error)
       );
-
-      const results = await Promise.all(updatePromises);
-
-      // 오류 확인
-      const errors = results.filter((result) => result.error);
-      if (errors.length > 0) {
-        console.error(
-          "order_num 재정렬 실패:",
-          errors.map((e) => e.error)
-        );
-      } else {
-        console.log(`📊 order_num 재정렬 완료: ${updates.length}개 요소`);
-
-        // 컬렉션 아이템 재정렬 결과 디버깅
-        const collectionItems = elements.filter(
-          (el) =>
-            el.page_id === pageId &&
-            (el.tag === "Tab" ||
-              el.tag === "Panel" ||
-              el.tag === "ListBoxItem" ||
-              el.tag === "GridListItem" ||
-              el.tag === "MenuItem" ||
-              el.tag === "ComboBoxItem" ||
-              el.tag === "SelectItem" ||
-              el.tag === "TreeItem" ||
-              el.tag === "ToggleButton")
-        );
-
-        if (collectionItems.length > 0) {
-          console.log("🏷️ 재정렬 후 컬렉션 아이템 상태:");
-          collectionItems
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-            .forEach((el) => {
-              const text = getTextContent(el.props) || "Untitled";
-              const extraInfo =
-                el.tag === "Tab" || el.tag === "Panel"
-                  ? `, tabId: ${getPropValue(el.props, 'tabId')}`
-                  : "";
-              console.log(
-                `  ${el.tag}: ${text} (order: ${el.order_num}${extraInfo})`
-              );
-            });
-        }
-      }
-    } catch (error) {
-      console.error("order_num 재정렬 중 오류:", error);
     }
+  } catch (error) {
+    console.error("order_num 재정렬 중 오류:", error);
   }
 };

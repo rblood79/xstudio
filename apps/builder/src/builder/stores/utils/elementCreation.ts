@@ -78,22 +78,20 @@ export const createAddElementAction =
     const currentPageId = get().currentPageId;
     // Page 요소인 경우
     if (currentPageId && elementToAdd.page_id === currentPageId) {
-      setTimeout(() => {
-        const { elements, updateElementOrder } = get();
-        reorderElements(elements, currentPageId, updateElementOrder);
-      }, 50); // 상태 업데이트 후 재정렬 (지연 시간 단축)
+      queueMicrotask(() => {
+        const { elements, batchUpdateElementOrders } = get();
+        reorderElements(elements, currentPageId, batchUpdateElementOrders);
+      });
     }
     // Layout 요소인 경우 - layout_id로 재정렬
     else if (elementToAdd.layout_id) {
-      setTimeout(() => {
-        const { elements, updateElementOrder } = get();
-        // Layout 요소들만 필터링하여 재정렬
+      queueMicrotask(() => {
+        const { elements, batchUpdateElementOrders } = get();
         const layoutElements = elements.filter(el => el.layout_id === elementToAdd.layout_id);
         if (layoutElements.length > 0) {
-          // reorderElements는 pageId를 사용하지만, layout_id로 대체하여 호출
-          reorderElements(elements, elementToAdd.layout_id!, updateElementOrder);
+          reorderElements(elements, elementToAdd.layout_id!, batchUpdateElementOrders);
         }
-      }, 50);
+      });
     }
   };
 

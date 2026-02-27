@@ -10,6 +10,7 @@ import { getStoreState } from '../../../builder/stores';
 import { getDefaultProps } from '../../../types/builder/unified.types';
 import { adaptPropsForElement } from '../styleAdapter';
 import { useAIVisualFeedbackStore } from '../../../builder/stores/aiVisualFeedback';
+import { HierarchyManager } from '../../../builder/utils/HierarchyManager';
 
 export const createElementTool: ToolExecutor = {
   name: 'create_element',
@@ -56,7 +57,7 @@ export const createElementTool: ToolExecutor = {
         props: finalProps,
         parent_id: parentId,
         page_id: currentPageId || 'default',
-        order_num: elements.length,
+        order_num: HierarchyManager.calculateNextOrderNum(parentId, elements),
         dataBinding: undefined,
       } as Element;
 

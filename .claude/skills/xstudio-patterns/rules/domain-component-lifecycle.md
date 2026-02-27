@@ -244,62 +244,82 @@ const moveElement = (elementId: string, newParentId: string, newOrder: number) =
 
 ## 3. 삭제 (Delete)
 
+삭제는 3개 레이어로 구성됩니다:
+
+1. **collectElementsToRemove()** — 단일 요소의 연관 요소 수집 (자식, Table Column/Cell, Tab/Panel)
+2. **executeRemoval()** — 공통 실행 (DB + History + Skia + 원자적 set() + postMessage + 재정렬)
+3. **createRemoveElementAction / createRemoveElementsAction** — 단일/배치 진입점
+
 ```typescript
-// ✅ 재귀 삭제 (자식 포함)
-const removeElement = (elementId: string) => {
-  const element = getElementById(elementsMap, elementId);
-  if (!element) return;
+// ✅ 단일 요소 삭제
+await removeElement(elementId);
 
-  // 1. 모든 자손 ID 수집
-  const descendantIds = collectDescendantIds(elementId, childrenMap);
-  const allIdsToRemove = [elementId, ...descendantIds];
+// ✅ 배치 삭제 (다중 요소 동시 제거) — 단일 set()으로 원자적 처리
+// 키보드 Delete 키 등 여러 요소를 한번에 삭제할 때 사용
+await removeElements([id1, id2, id3]);
 
-  // 2. History 기록 (복구용 데이터 포함)
-  const elementsToRemove = allIdsToRemove.map(id => elementsMap.get(id)!);
-  historyManager.addEntry({
-    type: 'remove',
-    elementId,
-    elementIds: allIdsToRemove,
-    data: { elements: elementsToRemove },
-  });
+// ❌ 순차 삭제 — 각 호출마다 set() → 렌더 발생 → 요소가 하나씩 사라짐
+for (const id of ids) { await removeElement(id); }
+```
 
-  // 3. Store 업데이트
-  set({ elements: elements.filter(el => !allIdsToRemove.includes(el.id)) });
-  get()._rebuildIndexes();
+### 배치 삭제 아키텍처 (removeElements)
 
-  // 4. 선택 상태 정리 (selectedElementIds/Set 포함 필수)
-  const removeSet = new Set(allIdsToRemove);
-  const filteredSelectedIds = currentState.selectedElementIds.filter(
-    (id: string) => !removeSet.has(id)
-  );
-  set({
-    selectedElementId: null,
-    selectedElementProps: {},
-    selectedElementIds: filteredSelectedIds,
-    selectedElementIdsSet: new Set(filteredSelectedIds),
-  });
-
-  // 5. DB 삭제 (백그라운드)
-  deleteElementsFromDB(allIdsToRemove);
-
-  // 6. Preview 동기화
-  deltaMessenger.sendElementRemoved(elementId, descendantIds);
-};
-
-// ✅ 자손 ID 수집 (재귀)
-function collectDescendantIds(
-  parentId: string,
-  childrenMap: Map<string, Element[]>
-): string[] {
-  const children = childrenMap.get(parentId) ?? [];
-  const ids: string[] = [];
-
-  for (const child of children) {
-    ids.push(child.id);
-    ids.push(...collectDescendantIds(child.id, childrenMap));
+```typescript
+// elementRemoval.ts — 배치 삭제 흐름
+export const createRemoveElementsAction = (set, get) => async (elementIds: string[]) => {
+  // 1. 각 요소에 대해 연관 요소 수집 (자식, Table/Tab 연관)
+  for (const id of elementIds) {
+    const result = collectElementsToRemove(id, elements, elementsMap);
+    // 결과를 allElementsMap에 병합 (중복 자동 제거)
   }
 
-  return ids;
+  // 2. executeRemoval — 단일 실행
+  await executeRemoval(set, get, rootElements, allUniqueElements);
+  // → DB 1회 + History 1건 + Skia 정리 + 단일 set() + postMessage
+};
+```
+
+### collectElementsToRemove 헬퍼
+
+단일 elementId로부터 삭제해야 할 모든 연관 요소를 수집합니다:
+
+```typescript
+function collectElementsToRemove(elementId, elements, elementsMap) {
+  // 1. 자식 요소 재귀 수집
+  // 2. Table Column → 연관 Cell 수집
+  // 3. Table Cell → 연관 Column + 다른 Cell 수집
+  // 4. Tab/Panel → 연결된 Panel/Tab 수집 (tabId 또는 order_num 기반)
+  // 5. 중복 제거
+  return { rootElement, allElements };
+}
+```
+
+### executeRemoval 공통 실행
+
+```typescript
+async function executeRemoval(set, get, rootElements, allUniqueElements) {
+  // 1. IndexedDB 배치 삭제
+  await db.elements.deleteMany(elementIdsToRemove);
+
+  // 2. History 기록 (첫 루트를 대표, 나머지는 childElements)
+  historyManager.addEntry({
+    type: 'remove',
+    elementId: rootElements[0].id,
+    data: { element: rootElements[0], childElements: rest },
+  });
+
+  // 3. Skia 레지스트리 즉시 정리 (React useEffect cleanup 지연 우회)
+  for (const id of elementIdsToRemove) unregisterSkiaNode(id);
+
+  // 4. 원자적 상태 업데이트 — 단일 set()
+  set({
+    elements, elementsMap, childrenMap,
+    pageIndex, componentIndex, variableUsageIndex,
+    // + 선택 상태 정리 + editingContext 리셋
+  });
+
+  // 5. postMessage (Preview 동기화)
+  // 6. order_num 재정렬 (컬렉션 아이템 제외)
 }
 ```
 
@@ -310,4 +330,5 @@ function collectDescendantIds(
 - `apps/builder/src/builder/factories/utils/elementCreation.ts` - 재귀 생성 유틸리티
 - `apps/builder/src/builder/factories/definitions/GroupComponents.ts` - TagGroup 3-level 정의
 - `apps/builder/src/builder/stores/utils/elementCreation.ts` - Store 액션
-- `apps/builder/src/builder/stores/utils/elementRemoval.ts` - 삭제 액션
+- `apps/builder/src/builder/stores/utils/elementRemoval.ts` - 삭제 액션 (collectElementsToRemove, executeRemoval, removeElement, removeElements)
+- `apps/builder/src/builder/hooks/useGlobalKeyboardShortcuts.ts` - 키보드 Delete → removeElements 배치 호출

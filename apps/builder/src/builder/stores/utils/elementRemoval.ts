@@ -20,463 +20,321 @@ import { unregisterSkiaNode } from "../../workspace/canvas/skia/useSkiaNode";
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
 
+const COLLECTION_ITEM_TAGS = new Set([
+  "Tab", "Panel", "ListBoxItem", "GridListItem",
+  "MenuItem", "ComboBoxItem", "SelectItem", "TreeItem", "ToggleButton",
+]);
+
 /**
- * RemoveElement 액션 생성 팩토리
+ * 단일 요소에 대해 삭제해야 할 모든 연관 요소를 수집하는 헬퍼
+ * (자식, Table Column/Cell, Tab/Panel 연결 등)
  *
- * Zustand의 set/get 함수를 받아서 removeElement 액션 함수를 생성합니다.
- *
- * 특별 처리 사항:
- * - 자식 요소들을 재귀적으로 삭제
- * - Table Column 삭제 시: 연관된 모든 Cell들도 함께 삭제
- * - Table Cell 삭제 시: 해당 Column과 같은 순서의 다른 Cell들도 함께 삭제
- * - Tab/Panel 삭제 시: tabId로 연결된 쌍을 함께 삭제
- * - 컬렉션 아이템 삭제 후 order_num 재정렬 (단, Undo 후에만)
- *
- * @param set - Zustand의 setState 함수
- * @param get - Zustand의 getState 함수
- * @returns removeElement 액션 함수
+ * @returns 중복 제거된 삭제 대상 요소 배열 (루트 요소 포함)
+ *          또는 삭제 불가(Body, 미존재)인 경우 null
+ */
+function collectElementsToRemove(
+  elementId: string,
+  elements: Element[],
+  elementsMap: Map<string, Element>,
+): { rootElement: Element; allElements: Element[] } | null {
+  const element = getElementById(elementsMap, elementId);
+  if (!element) return null;
+  if (element.tag.toLowerCase() === 'body') return null;
+
+  // 자식 요소들 찾기 (재귀적으로)
+  const findChildren = (parentId: string): Element[] => {
+    const children = elements.filter((el) => el.parent_id === parentId);
+    const allChildren: Element[] = [...children];
+    children.forEach((child) => {
+      allChildren.push(...findChildren(child.id));
+    });
+    return allChildren;
+  };
+
+  let childElements = findChildren(elementId);
+
+  // Table Column 삭제 시 특별 처리: 연관된 Cell들도 함께 삭제
+  if (element.tag === "Column") {
+    const tableElement = elements.find((el) => {
+      const tableHeader = elements.find(
+        (header) => header.id === element.parent_id
+      );
+      return (
+        tableHeader && el.id === tableHeader.parent_id && el.tag === "Table"
+      );
+    });
+
+    if (tableElement) {
+      const tableBody = elements.find(
+        (el) => el.parent_id === tableElement.id && el.tag === "TableBody"
+      );
+      if (tableBody) {
+        const rows = elements.filter(
+          (el) => el.parent_id === tableBody.id && el.tag === "Row"
+        );
+        const cellsToRemove = rows.flatMap((row) =>
+          elements.filter(
+            (cell) =>
+              cell.parent_id === row.id &&
+              cell.tag === "Cell" &&
+              cell.order_num === element.order_num
+          )
+        );
+        childElements = [...childElements, ...cellsToRemove];
+      }
+    }
+  }
+
+  // Table Cell 삭제 시 특별 처리: 대응하는 Column도 함께 삭제
+  if (element.tag === "Cell") {
+    const row = elements.find((el) => el.id === element.parent_id);
+    if (row && row.tag === "Row") {
+      const tableBody = elements.find((el) => el.id === row.parent_id);
+      if (tableBody && tableBody.tag === "TableBody") {
+        const tableElement = elements.find(
+          (el) => el.id === tableBody.parent_id && el.tag === "Table"
+        );
+        if (tableElement) {
+          const tableHeader = elements.find(
+            (el) =>
+              el.parent_id === tableElement.id && el.tag === "TableHeader"
+          );
+          if (tableHeader) {
+            const columnToRemove = elements.find(
+              (col) =>
+                col.parent_id === tableHeader.id &&
+                col.tag === "Column" &&
+                col.order_num === element.order_num
+            );
+            if (columnToRemove) {
+              const allRows = elements.filter(
+                (el) => el.parent_id === tableBody.id && el.tag === "Row"
+              );
+              const otherCellsToRemove = allRows.flatMap((r) =>
+                elements.filter(
+                  (cell) =>
+                    cell.parent_id === r.id &&
+                    cell.tag === "Cell" &&
+                    cell.order_num === element.order_num &&
+                    cell.id !== element.id
+                )
+              );
+              childElements = [
+                ...childElements,
+                columnToRemove,
+                ...otherCellsToRemove,
+              ];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Tab 또는 Panel 삭제 시 특별 처리: 연결된 Panel 또는 Tab도 함께 삭제
+  if (element.tag === "Tab" || element.tag === "Panel") {
+    const tabId = (element.props as { tabId?: string }).tabId;
+    const parentElement = elements.find((el) => el.id === element.parent_id);
+
+    if (parentElement && parentElement.tag === "Tabs") {
+      let relatedElement: Element | undefined;
+
+      if (tabId) {
+        relatedElement = elements.find(
+          (el) =>
+            el.parent_id === parentElement.id &&
+            el.tag !== element.tag &&
+            (el.props as { tabId?: string }).tabId === tabId
+        );
+      }
+
+      // fallback: order_num 기반
+      if (!relatedElement) {
+        relatedElement = elements.find(
+          (el) =>
+            el.parent_id === parentElement.id &&
+            el.tag !== element.tag &&
+            Math.abs((el.order_num || 0) - (element.order_num || 0)) === 1
+        );
+      }
+
+      if (relatedElement) {
+        childElements = [...childElements, relatedElement];
+      }
+    }
+  }
+
+  const allElementsToRemove = [element, ...childElements];
+
+  // 중복 제거
+  const seen = new Set<string>();
+  const uniqueElements = allElementsToRemove.filter((el) => {
+    if (seen.has(el.id)) return false;
+    seen.add(el.id);
+    return true;
+  });
+
+  return { rootElement: element, allElements: uniqueElements };
+}
+
+/**
+ * 공통 삭제 실행 로직: DB 삭제 + 히스토리 기록 + Skia 정리 + 원자적 set() + postMessage + 재정렬
+ */
+async function executeRemoval(
+  set: SetState,
+  get: GetState,
+  rootElements: Element[],
+  allUniqueElements: Element[],
+) {
+  const elementIdsToRemove = allUniqueElements.map((el) => el.id);
+
+  console.log(`🗑️ 배치 삭제: ${rootElements.length}개 루트, 총 ${allUniqueElements.length}개 요소`);
+
+  // IndexedDB 삭제
+  try {
+    const db = await getDB();
+    await db.elements.deleteMany(elementIdsToRemove);
+  } catch (error) {
+    console.error("❌ [IndexedDB] 요소 삭제 중 오류:", error);
+  }
+
+  const currentState = get();
+
+  // 히스토리: 첫 번째 루트를 대표 elementId로, 나머지 모두를 childElements로 기록
+  if (currentState.currentPageId) {
+    historyManager.addEntry({
+      type: "remove",
+      elementId: rootElements[0].id,
+      data: {
+        element: { ...rootElements[0] },
+        childElements: allUniqueElements
+          .filter((el) => el.id !== rootElements[0].id)
+          .map((child) => ({ ...child })),
+      },
+    });
+  }
+
+  // 요소 필터링
+  const removeSet = new Set(elementIdsToRemove);
+  const filteredElements = currentState.elements.filter(
+    (el) => !removeSet.has(el.id)
+  );
+
+  // 선택 상태 정리
+  const isSelectedRemoved = removeSet.has(currentState.selectedElementId || "");
+  const filteredSelectedIds = currentState.selectedElementIds.filter(
+    (id: string) => !removeSet.has(id)
+  );
+  const hasSelectedIdsChanged = filteredSelectedIds.length !== currentState.selectedElementIds.length;
+  const isEditingContextRemoved = currentState.editingContextId != null &&
+    removeSet.has(currentState.editingContextId);
+
+  // Skia 레지스트리 즉시 정리
+  for (const id of elementIdsToRemove) {
+    unregisterSkiaNode(id);
+  }
+
+  // 원자적 상태 업데이트: elements + 모든 인덱스를 단일 set()으로
+  const newElementsMap = new Map<string, Element>();
+  const newChildrenMap = new Map<string, Element[]>();
+  filteredElements.forEach((el) => {
+    newElementsMap.set(el.id, el);
+    const parentId = el.parent_id || 'root';
+    if (!newChildrenMap.has(parentId)) {
+      newChildrenMap.set(parentId, []);
+    }
+    newChildrenMap.get(parentId)!.push(el);
+  });
+
+  set({
+    elements: filteredElements,
+    elementsMap: newElementsMap,
+    childrenMap: newChildrenMap,
+    pageIndex: rebuildPageIndex(filteredElements, newElementsMap),
+    componentIndex: rebuildComponentIndex(filteredElements),
+    variableUsageIndex: rebuildVariableUsageIndex(filteredElements),
+    ...(isSelectedRemoved && {
+      selectedElementId: null,
+      selectedElementProps: {},
+    }),
+    ...(hasSelectedIdsChanged && {
+      selectedElementIds: filteredSelectedIds,
+      selectedElementIdsSet: new Set(filteredSelectedIds),
+    }),
+    ...(isEditingContextRemoved && {
+      editingContextId: null,
+    }),
+  });
+
+  // postMessage
+  const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
+  if (!isWebGLOnly && typeof window !== "undefined" && window.parent) {
+    window.parent.postMessage(
+      { type: "ELEMENT_REMOVED", payload: { elementId: elementIdsToRemove } },
+      "*"
+    );
+  }
+
+  // order_num 재정렬
+  const currentPageId = get().currentPageId;
+  if (currentPageId) {
+    const hasCollectionItem = rootElements.some((el) => COLLECTION_ITEM_TAGS.has(el.tag));
+    if (!hasCollectionItem) {
+      setTimeout(() => {
+        const { elements, batchUpdateElementOrders } = get();
+        reorderElements(elements, currentPageId, batchUpdateElementOrders);
+      }, 100);
+    }
+  }
+}
+
+/**
+ * RemoveElement 액션 생성 팩토리 (단일 요소 삭제)
  */
 export const createRemoveElementAction =
   (set: SetState, get: GetState) => async (elementId: string) => {
-    console.log("🗑️ removeElement 시작:", { elementId });
     const state = get();
-    // produce 외부에서는 elementsMap 사용 가능
-    const element = getElementById(state.elementsMap, elementId);
-    if (!element) {
-      // 이미 삭제된 요소에 대한 중복 호출은 조용히 무시 (Redo 후 자주 발생)
+    const result = collectElementsToRemove(elementId, state.elements, state.elementsMap);
+    if (!result) {
       if (import.meta.env.DEV) {
-        console.debug("⚠️ removeElement: 요소를 찾을 수 없음 (이미 삭제됨)", { elementId });
+        console.debug("⚠️ removeElement: 삭제 불가 (미존재 또는 Body)", { elementId });
       }
       return;
     }
+    await executeRemoval(set, get, [result.rootElement], result.allElements);
+  };
 
-    // Body 요소는 직접 삭제 불가 (페이지 삭제 시에만 함께 삭제)
-    if (element.tag.toLowerCase() === 'body') {
-      console.log("⚠️ removeElement: Body 요소는 삭제할 수 없습니다", { elementId });
-      return;
+/**
+ * RemoveElements 배치 삭제 액션 생성 팩토리 (다중 요소 동시 삭제)
+ * 모든 요소를 단일 set()으로 제거하여 화면에서 동시에 사라짐
+ */
+export const createRemoveElementsAction =
+  (set: SetState, get: GetState) => async (elementIds: string[]) => {
+    if (elementIds.length === 0) return;
+
+    // 단일 요소면 기존 경로 사용
+    if (elementIds.length === 1) {
+      const removeElement = createRemoveElementAction(set, get);
+      return removeElement(elementIds[0]);
     }
-    console.log("🔍 삭제할 요소:", {
-      id: element.id,
-      tag: element.tag,
-      props: element.props,
-    });
 
-    // 자식 요소들 찾기 (재귀적으로)
-    const findChildren = (parentId: string): Element[] => {
-      const children = state.elements.filter((el) => el.parent_id === parentId);
-      const allChildren: Element[] = [...children];
+    const state = get();
+    const rootElements: Element[] = [];
+    const allElementsMap = new Map<string, Element>();
 
-      // 각 자식의 자식들도 재귀적으로 찾기
-      children.forEach((child) => {
-        allChildren.push(...findChildren(child.id));
-      });
+    // 각 요소에 대해 삭제 대상 수집
+    for (const id of elementIds) {
+      const result = collectElementsToRemove(id, state.elements, state.elementsMap);
+      if (!result) continue;
 
-      return allChildren;
-    };
-
-    let childElements = findChildren(elementId);
-
-    // Table Column 삭제 시 특별 처리: 연관된 Cell들도 함께 삭제
-    if (element.tag === "Column") {
-      const tableElement = state.elements.find((el) => {
-        const tableHeader = state.elements.find(
-          (header) => header.id === element.parent_id
-        );
-        return (
-          tableHeader && el.id === tableHeader.parent_id && el.tag === "Table"
-        );
-      });
-
-      if (tableElement) {
-        // 같은 Table의 TableBody에서 해당 순서의 Cell들 찾기
-        const tableBody = state.elements.find(
-          (el) => el.parent_id === tableElement.id && el.tag === "TableBody"
-        );
-        if (tableBody) {
-          const rows = state.elements.filter(
-            (el) => el.parent_id === tableBody.id && el.tag === "Row"
-          );
-          const cellsToRemove = rows.flatMap((row) =>
-            state.elements.filter(
-              (cell) =>
-                cell.parent_id === row.id &&
-                cell.tag === "Cell" &&
-                cell.order_num === element.order_num
-            )
-          );
-
-          childElements = [...childElements, ...cellsToRemove];
-          console.log(
-            `🔗 Column 삭제로 인한 연관 Cell 삭제: ${cellsToRemove.length}개`,
-            {
-              columnOrder: element.order_num,
-              cellIds: cellsToRemove.map((c) => c.id),
-            }
-          );
-        }
+      rootElements.push(result.rootElement);
+      for (const el of result.allElements) {
+        allElementsMap.set(el.id, el);
       }
     }
 
-    // Table Cell 삭제 시 특별 처리: 대응하는 Column도 함께 삭제
-    if (element.tag === "Cell") {
-      const row = state.elements.find((el) => el.id === element.parent_id);
-      if (row && row.tag === "Row") {
-        const tableBody = state.elements.find((el) => el.id === row.parent_id);
-        if (tableBody && tableBody.tag === "TableBody") {
-          const tableElement = state.elements.find(
-            (el) => el.id === tableBody.parent_id && el.tag === "Table"
-          );
-          if (tableElement) {
-            // 같은 Table의 TableHeader에서 해당 순서의 Column 찾기
-            const tableHeader = state.elements.find(
-              (el) =>
-                el.parent_id === tableElement.id && el.tag === "TableHeader"
-            );
-            if (tableHeader) {
-              const columnToRemove = state.elements.find(
-                (col) =>
-                  col.parent_id === tableHeader.id &&
-                  col.tag === "Column" &&
-                  col.order_num === element.order_num
-              );
+    if (rootElements.length === 0) return;
 
-              if (columnToRemove) {
-                // 같은 order_num을 가진 다른 Row들의 Cell들도 함께 삭제
-                const allRows = state.elements.filter(
-                  (el) => el.parent_id === tableBody.id && el.tag === "Row"
-                );
-                const otherCellsToRemove = allRows.flatMap((r) =>
-                  state.elements.filter(
-                    (cell) =>
-                      cell.parent_id === r.id &&
-                      cell.tag === "Cell" &&
-                      cell.order_num === element.order_num &&
-                      cell.id !== element.id // 현재 삭제되는 Cell 제외
-                  )
-                );
-
-                childElements = [
-                  ...childElements,
-                  columnToRemove,
-                  ...otherCellsToRemove,
-                ];
-                console.log(
-                  `🔗 Cell 삭제로 인한 연관 Column 및 다른 Cell 삭제: Column 1개, Cell ${otherCellsToRemove.length}개`,
-                  {
-                    cellOrder: element.order_num,
-                    columnId: columnToRemove.id,
-                    otherCellIds: otherCellsToRemove.map((c) => c.id),
-                  }
-                );
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Tab 또는 Panel 삭제 시 특별 처리: 연결된 Panel 또는 Tab도 함께 삭제
-    if (element.tag === "Tab" || element.tag === "Panel") {
-      const tabId = (element.props as { tabId?: string }).tabId;
-
-      console.log(
-        `🔍 ${element.tag} 삭제 중 - tabId:`,
-        tabId,
-        "element.props:",
-        element.props
-      );
-
-      if (tabId) {
-        // Tab을 삭제할 때는 연결된 Panel을 찾아서 삭제
-        // Panel을 삭제할 때는 연결된 Tab을 찾아서 삭제
-        const parentElement = state.elements.find(
-          (el) => el.id === element.parent_id
-        );
-
-        console.log(`🔍 부모 요소:`, parentElement?.tag, parentElement?.id);
-
-        if (parentElement && parentElement.tag === "Tabs") {
-          // 같은 부모 아래의 모든 Tab/Panel 요소들 확인
-          const siblingElements = state.elements.filter(
-            (el) => el.parent_id === parentElement.id
-          );
-          console.log(
-            `🔍 형제 요소들:`,
-            siblingElements.map((el) => ({
-              id: el.id,
-              tag: el.tag,
-              tabId: (el.props as { tabId?: string }).tabId,
-            }))
-          );
-
-          const relatedElement = state.elements.find(
-            (el) =>
-              el.parent_id === parentElement.id &&
-              el.tag !== element.tag && // 다른 타입(Tab <-> Panel)
-              (el.props as { tabId?: string }).tabId === tabId // 같은 tabId를 가진 요소
-          );
-
-          console.log(
-            `🔍 연관 요소 찾기 결과:`,
-            relatedElement
-              ? {
-                  id: relatedElement.id,
-                  tag: relatedElement.tag,
-                  tabId: (relatedElement.props as { tabId?: string }).tabId,
-                }
-              : "null"
-          );
-
-          if (relatedElement) {
-            childElements = [...childElements, relatedElement];
-            console.log(
-              `🔗 ${element.tag} 삭제로 인한 연관 ${relatedElement.tag} 삭제:`,
-              {
-                tabId,
-                deletedElementId: element.id,
-                relatedElementId: relatedElement.id,
-              }
-            );
-          } else {
-            // tabId가 없는 경우 order_num을 기반으로 연관 요소 찾기 (fallback)
-            console.log(
-              `⚠️ tabId 기반 연관 요소를 찾을 수 없음. order_num 기반으로 fallback 시도`
-            );
-
-            const fallbackRelatedElement = state.elements.find(
-              (el) =>
-                el.parent_id === parentElement.id &&
-                el.tag !== element.tag && // 다른 타입(Tab <-> Panel)
-                Math.abs((el.order_num || 0) - (element.order_num || 0)) === 1 // 인접한 order_num
-            );
-
-            if (fallbackRelatedElement) {
-              childElements = [...childElements, fallbackRelatedElement];
-              console.log(
-                `🔗 ${element.tag} 삭제로 인한 연관 ${fallbackRelatedElement.tag} 삭제 (order_num 기반):`,
-                {
-                  deletedElementOrder: element.order_num,
-                  relatedElementOrder: fallbackRelatedElement.order_num,
-                  deletedElementId: element.id,
-                  relatedElementId: fallbackRelatedElement.id,
-                }
-              );
-            }
-          }
-        }
-      } else {
-        // tabId가 없는 경우 order_num을 기반으로 연관 요소 찾기
-        console.log(
-          `⚠️ ${element.tag}에 tabId가 없음. order_num 기반으로 연관 요소 찾기 시도`
-        );
-
-        const parentElement = state.elements.find(
-          (el) => el.id === element.parent_id
-        );
-
-        if (parentElement && parentElement.tag === "Tabs") {
-          const relatedElement = state.elements.find(
-            (el) =>
-              el.parent_id === parentElement.id &&
-              el.tag !== element.tag && // 다른 타입(Tab <-> Panel)
-              Math.abs((el.order_num || 0) - (element.order_num || 0)) === 1 // 인접한 order_num
-          );
-
-          if (relatedElement) {
-            childElements = [...childElements, relatedElement];
-            console.log(
-              `🔗 ${element.tag} 삭제로 인한 연관 ${relatedElement.tag} 삭제 (order_num 기반, tabId 없음):`,
-              {
-                deletedElementOrder: element.order_num,
-                relatedElementOrder: relatedElement.order_num,
-                deletedElementId: element.id,
-                relatedElementId: relatedElement.id,
-              }
-            );
-          }
-        }
-      }
-    }
-
-    const allElementsToRemove = [element, ...childElements];
-
-    // 중복 제거 (같은 요소가 여러 번 포함될 수 있음)
-    const uniqueElementsToRemove = allElementsToRemove.filter(
-      (item, index, arr) => arr.findIndex((el) => el.id === item.id) === index
-    );
-    const elementIdsToRemove = uniqueElementsToRemove.map((el) => el.id);
-
-    console.log(
-      `🗑️ 요소 삭제: ${elementId}와 연관 요소 ${
-        uniqueElementsToRemove.length - 1
-      }개`,
-      {
-        parent: element.tag,
-        relatedElements: uniqueElementsToRemove
-          .slice(1)
-          .map((child) => ({ id: child.id, tag: child.tag })),
-      }
-    );
-
-    try {
-      // IndexedDB에서 모든 요소 삭제 (빠름! 1-5ms × N)
-      const db = await getDB();
-      await db.elements.deleteMany(elementIdsToRemove);
-      console.log("✅ [IndexedDB] 요소 삭제 완료:", elementIdsToRemove);
-    } catch (error) {
-      console.error("❌ [IndexedDB] 요소 삭제 중 오류:", error);
-      // IndexedDB 삭제 실패해도 메모리에서는 삭제 진행
-    }
-
-    // 🚀 Phase 1: Immer → 함수형 업데이트
-    const currentState = get();
-
-    // 히스토리 추가 (부모 요소와 모든 자식 요소들 정보 저장)
-    if (currentState.currentPageId) {
-      historyManager.addEntry({
-        type: "remove",
-        elementId: elementId,
-        data: {
-          element: { ...element },
-          childElements: uniqueElementsToRemove
-            .slice(1)
-            .map((child) => ({ ...child })), // 첫 번째는 부모 요소이므로 제외
-        },
-      });
-    }
-
-    // 삭제 전 요소 개수 확인
-    const beforeCount = currentState.elements.length;
-    console.log("🔢 삭제 전 요소 개수:", beforeCount);
-    console.log("🗑️ 삭제할 요소 ID들:", elementIdsToRemove);
-
-    // Tab/Panel 삭제 시 추가 디버깅 정보
-    elementIdsToRemove.forEach((id) => {
-      const el = currentState.elements.find((e) => e.id === id);
-      if (el && (el.tag === "Tab" || el.tag === "Panel")) {
-        console.log(`🏷️ 삭제될 ${el.tag}:`, {
-          id: el.id,
-          tag: el.tag,
-          tabId: (el.props as { tabId?: string }).tabId,
-          title: (el.props as { title?: string }).title,
-          order_num: el.order_num,
-        });
-      }
-    });
-
-    // 모든 요소 제거 (불변 업데이트)
-    const filteredElements = currentState.elements.filter(
-      (el) => !elementIdsToRemove.includes(el.id)
-    );
-
-    // 삭제 후 요소 개수 확인
-    const afterCount = filteredElements.length;
-    console.log(
-      "🔢 삭제 후 요소 개수:",
-      afterCount,
-      "(삭제된 개수:",
-      beforeCount - afterCount,
-      ")"
-    );
-
-    // 선택된 요소가 제거된 경우 선택 해제
-    const isSelectedRemoved = elementIdsToRemove.includes(currentState.selectedElementId || "");
-
-    // selectedElementIds에서 삭제된 요소 필터링
-    const removeSet = new Set(elementIdsToRemove);
-    const filteredSelectedIds = currentState.selectedElementIds.filter(
-      (id: string) => !removeSet.has(id)
-    );
-    const hasSelectedIdsChanged = filteredSelectedIds.length !== currentState.selectedElementIds.length;
-
-    // editingContext가 삭제 대상에 포함된 경우 리셋
-    const isEditingContextRemoved = currentState.editingContextId != null &&
-      removeSet.has(currentState.editingContextId);
-
-    // 🚀 Skia 레지스트리에서 삭제된 요소들 즉시 제거
-    // React useEffect cleanup은 비동기로 지연될 수 있어 잔상이 남는 문제 발생
-    // Store 업데이트 전에 먼저 Skia 레지스트리를 정리하여 다음 렌더 프레임에서
-    // 삭제된 요소가 화면에 남아있지 않도록 함
-    for (const id of elementIdsToRemove) {
-      unregisterSkiaNode(id);
-    }
-
-    // 🔧 CRITICAL: 원자적 상태 업데이트 — elements + 모든 인덱스를 단일 set()으로 병합
-    // 이전: set({ elements }) → _rebuildIndexes() (2단계 분리)
-    // 문제: async 함수 내부(await 이후)이므로 React 자동 배치 미보장
-    //       중간 상태에서 stale 인덱스(elementsMap/childrenMap/pageIndex)로 렌더링 발생
-    // 수정: 인덱스를 미리 계산하여 단일 set()으로 원자적 업데이트
-    const newElementsMap = new Map<string, Element>();
-    const newChildrenMap = new Map<string, Element[]>();
-    filteredElements.forEach((el) => {
-      newElementsMap.set(el.id, el);
-      const parentId = el.parent_id || 'root';
-      if (!newChildrenMap.has(parentId)) {
-        newChildrenMap.set(parentId, []);
-      }
-      newChildrenMap.get(parentId)!.push(el);
-    });
-    const newPageIndex = rebuildPageIndex(filteredElements, newElementsMap);
-    const newComponentIndex = rebuildComponentIndex(filteredElements);
-    const newVariableUsageIndex = rebuildVariableUsageIndex(filteredElements);
-
-    set({
-      elements: filteredElements,
-      elementsMap: newElementsMap,
-      childrenMap: newChildrenMap,
-      pageIndex: newPageIndex,
-      componentIndex: newComponentIndex,
-      variableUsageIndex: newVariableUsageIndex,
-      ...(isSelectedRemoved && {
-        selectedElementId: null,
-        selectedElementProps: {},
-      }),
-      ...(hasSelectedIdsChanged && {
-        selectedElementIds: filteredSelectedIds,
-        selectedElementIdsSet: new Set(filteredSelectedIds),
-      }),
-      ...(isEditingContextRemoved && {
-        editingContextId: null,
-      }),
-    });
-
-    // postMessage로 iframe에 전달
-    // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 스킵
-    const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
-    if (!isWebGLOnly && typeof window !== "undefined" && window.parent) {
-      window.parent.postMessage(
-        {
-          type: "ELEMENT_REMOVED",
-          payload: { elementId: elementIdsToRemove },
-        },
-        "*"
-      );
-    }
-
-    // order_num 재정렬 (삭제 후) - 컬렉션 아이템 삭제의 경우 Undo 후에만 재정렬
-    const currentPageId = get().currentPageId;
-    if (currentPageId) {
-      // 컬렉션 컴포넌트의 아이템들 확인
-      const isCollectionItem =
-        element.tag === "Tab" ||
-        element.tag === "Panel" ||
-        element.tag === "ListBoxItem" ||
-        element.tag === "GridListItem" ||
-        element.tag === "MenuItem" ||
-        element.tag === "ComboBoxItem" ||
-        element.tag === "SelectItem" ||
-        element.tag === "TreeItem" ||
-        element.tag === "ToggleButton";
-
-      if (isCollectionItem) {
-        console.log(`⏸️ ${element.tag} 삭제 - Undo 후까지 재정렬 지연`);
-        // 컬렉션 아이템 삭제 시에는 즉시 재정렬하지 않음 (Undo 후에만 재정렬)
-        // 이렇게 하면 삭제 → Undo 과정에서 순서 변경이 한 번만 보임
-      } else {
-        setTimeout(() => {
-          const { elements, updateElementOrder } = get();
-          reorderElements(elements, currentPageId, updateElementOrder);
-        }, 100); // 일반 요소는 기존처럼 재정렬
-      }
-    }
+    const allUniqueElements = Array.from(allElementsMap.values());
+    await executeRemoval(set, get, rootElements, allUniqueElements);
   };

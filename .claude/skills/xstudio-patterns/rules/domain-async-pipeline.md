@@ -100,8 +100,47 @@ historyManager.addEntry({
 await db.elements.insert(sanitizeElement(element));
 ```
 
+## 배치 삭제 파이프라인 (removeElements)
+
+다중 요소 동시 삭제 시 `removeElements(ids[])`를 사용합니다.
+순차 `for...await removeElement(id)` 호출은 **금지** — 각 호출마다 set() → 렌더 발생으로 요소가 하나씩 사라짐.
+
+```typescript
+// ✅ 배치 삭제 — 단일 파이프라인 실행
+await removeElements(deletableIds);
+// → collectElementsToRemove() × N → 병합 → executeRemoval() 1회
+//   1. IndexedDB deleteMany (1회)
+//   2. History addEntry (1건)
+//   3. Skia unregisterSkiaNode (즉시)
+//   4. set() (1회, 원자적)
+//   5. postMessage (1회)
+
+// ❌ 순차 삭제 — N번 파이프라인 실행
+for (const id of ids) { await removeElement(id); }
+```
+
+## order_num 재정렬 파이프라인
+
+`reorderElements()`는 `computeReorderUpdates()` 순수 함수 + `batchUpdateElementOrders()` 단일 set() 패턴입니다.
+
+```typescript
+// ✅ 비동기 콜백에서 항상 get()으로 최신 상태 참조
+queueMicrotask(() => {
+  const { elements, batchUpdateElementOrders } = get();
+  reorderElements(elements, pageId, batchUpdateElementOrders);
+});
+
+// ❌ 외부에서 캡처한 stale 상태 사용 — 비동기 실행 시 이미 변경됨
+const { elements } = get();
+setTimeout(() => {
+  reorderElements(elements, pageId, ...); // stale!
+}, 100);
+```
+
 ## 참조 파일
 
 - `apps/builder/src/builder/stores/utils/elementCreation.ts` - 추가 파이프라인
 - `apps/builder/src/builder/stores/utils/elementUpdate.ts` - 업데이트 파이프라인
+- `apps/builder/src/builder/stores/utils/elementRemoval.ts` - 삭제 파이프라인 (단일/배치)
+- `apps/builder/src/builder/stores/utils/elementReorder.ts` - order_num 재정렬 (순수 함수 + batch)
 - `apps/builder/src/builder/utils/canvasDeltaMessenger.ts` - Delta 동기화

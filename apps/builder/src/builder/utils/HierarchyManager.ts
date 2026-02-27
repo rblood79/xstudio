@@ -188,11 +188,8 @@ export class HierarchyManager {
      */
     static calculateNextOrderNum(parentId: string | null, elements: Element[]): number {
         const siblings = elements.filter(el => el.parent_id === parentId);
-        const nextOrderNum = siblings.length > 0
-            ? Math.max(...siblings.map(el => el.order_num || 0)) + 1
-            : 1;
-
-        return nextOrderNum;
+        if (siblings.length === 0) return 0;
+        return Math.max(...siblings.map(el => el.order_num || 0)) + 1;
     }
 
     /**

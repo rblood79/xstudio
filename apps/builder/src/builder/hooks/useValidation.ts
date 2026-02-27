@@ -74,8 +74,6 @@ export const useValidation = (): UseValidationReturn => {
 
         // 🚀 Phase 17.1: 중복 발견 시 자동 수정
         if (pagesWithDuplicates.size > 0) {
-            const { updateElementOrder } = useStore.getState();
-
             pagesWithDuplicates.forEach((pageId) => {
                 // 이미 수정한 페이지는 스킵
                 if (fixedPagesRef.current.has(pageId)) return;
@@ -85,8 +83,9 @@ export const useValidation = (): UseValidationReturn => {
 
                 // 비동기로 재정렬 실행 (상태 업데이트 완료 후)
                 setTimeout(async () => {
+                    const { elements: latestElements, batchUpdateElementOrders } = useStore.getState();
                     console.log(`🔧 Auto-fixing order_num for page: ${pageId}`);
-                    await reorderElements(elements, pageId, updateElementOrder);
+                    await reorderElements(latestElements, pageId, batchUpdateElementOrders);
                     console.log(`✅ order_num auto-fix completed for page: ${pageId}`);
                 }, 0);
             });
