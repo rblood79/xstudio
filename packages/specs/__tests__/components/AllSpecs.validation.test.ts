@@ -202,7 +202,7 @@ describe.each(allSpecs)('%s Spec 공통 검증', (name, spec) => {
     const defaultVariant = spec.variants[spec.defaultVariant];
     const defaultSize = spec.sizes[spec.defaultSize];
     const shapes = spec.render.shapes({}, defaultVariant, defaultSize, 'default');
-    const validTypes = ['rect', 'roundRect', 'circle', 'text', 'shadow', 'border', 'container', 'gradient', 'image', 'line'];
+    const validTypes = ['rect', 'roundRect', 'circle', 'text', 'shadow', 'border', 'container', 'gradient', 'image', 'line', 'icon_font'];
     for (const shape of shapes) {
       expect(validTypes).toContain(shape.type);
     }

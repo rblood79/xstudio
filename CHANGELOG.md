@@ -34,19 +34,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **@playwright/mcp 0.0.68**: 기본 incognito 동작, CLI 플래그 이름 변경 (`--session` → `-s=` 등)
 - **material-color-utilities 0.4**: `SpecVersion`, `DynamicScheme.from()` 도입. 기존 생성자 `new SchemeTonalSpot(hct, isDark, contrastLevel)` 호환 유지 확인. `DEFAULT_SPEC_VERSION = "2021"`이므로 `contrastLevel < 0`도 정상 동작
 
+### Changed - Vitest 마이그레이션 (2026-02-27)
+
+#### 개요
+`@xstudio/specs` 패키지의 Vitest를 1.6.1 → 4.0.18로 업그레이드했습니다 (3개 메이저 버전 점프).
+
+#### 업데이트된 패키지
+
+| 패키지 | 이전 | 이후 | 사용처 |
+|--------|------|------|--------|
+| vitest | 1.6.1 | 4.0.18 | specs |
+| @vitest/coverage-v8 | 1.6.1 | 4.0.18 | specs |
+
+#### 주요 변경 사항
+
+- `vitest.config.ts` — 기존 설정 호환, 수정 불필요
+- `vi.doMock`, `vi.spyOn`, `vi.fn` — 정상 동작 확인
+- 스냅샷 형식 (`// Vitest Snapshot v1`) — 호환 유지, 재생성 불필요
+- `AllSpecs.validation.test.ts` — `validTypes` 배열에 `icon_font` 추가 (기존 누락 수정)
+
+#### 검증 결과
+
+- 전체 테스트 1013/1013 통과
+- 스냅샷 테스트 정상 통과
+
 #### 미포함 (별도 검토 필요)
 
 | 패키지 | 현재 | 최신 | 사유 |
 |--------|------|------|------|
 | eslint + @eslint/js | 9.39.2 | 10.0.2 | 커스텀 규칙 API 변경, 플러그인 호환성 검증 필요 |
-| vitest (specs) | 1.6.1 | 4.0.18 | 3개 메이저 점프, config/mock/snapshot 전면 수정 필요 |
 | @types/node | 24.10.4 | 25.3.2 | Node.js 25 (non-LTS) 대상, 런타임 불일치 비권장 |
 
-#### 검증 결과
+#### 검증 결과 (Phase 3 종합)
 
 - `vite build` — 성공
 - `build-storybook` — 성공
 - 생성자 API 타입 호환성 — 확인 완료
+- specs 테스트 1013/1013 — 통과
 
 ### Changed - Phase 2 라이브러리 업데이트 (2026-02-27)
 
