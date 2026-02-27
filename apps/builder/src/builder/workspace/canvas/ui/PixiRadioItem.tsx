@@ -34,7 +34,6 @@ export interface PixiRadioItemProps {
 // Constants (PixiRadio.tsx와 동기화)
 // ============================================
 
-const DEFAULT_RADIO_SIZE = 20;
 const LABEL_GAP = 8;
 
 // ============================================

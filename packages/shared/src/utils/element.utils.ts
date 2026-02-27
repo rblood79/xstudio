@@ -121,8 +121,6 @@ export function extractTextContent(element: Element): string {
 // Page Utilities
 // ============================================
 
-import type { Page } from '../types/element.types';
-
 /**
  * 페이지의 요소들 필터링
  */

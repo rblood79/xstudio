@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo } from "react";
 import {
     Type, Layout, NotebookTabs, Ruler, Ratio,
-    ArrowDown, ArrowUp, Move, Hash, FileText, Tag, PointerOff, Globe, DollarSign
+    ArrowDown, ArrowUp, Move, FileText, Tag, PointerOff, Globe, DollarSign
 } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';

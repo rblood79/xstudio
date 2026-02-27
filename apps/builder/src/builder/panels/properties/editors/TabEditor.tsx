@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { AppWindow, Type, Menu, PointerOff, Hash } from "lucide-react";
+import { AppWindow, Type, Menu, PointerOff } from "lucide-react";
 import {
   PropertyInput,
   PropertySelect,

@@ -34,7 +34,6 @@ export interface PixiCheckboxItemProps {
 // Constants (PixiCheckboxGroup.tsx와 동기화)
 // ============================================
 
-const DEFAULT_CHECKBOX_SIZE = 20;
 const LABEL_GAP = 8;
 
 // ============================================

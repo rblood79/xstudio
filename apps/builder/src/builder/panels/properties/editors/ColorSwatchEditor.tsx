@@ -1,8 +1,7 @@
 import { memo, useMemo } from "react";
-import { Palette, Type, Hash } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import { PropertyCustomId, PropertySection, PropertyInput, PropertySelect } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export const ColorSwatchEditor = memo(function ColorSwatchEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

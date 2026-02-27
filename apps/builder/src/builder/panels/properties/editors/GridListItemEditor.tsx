@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Tag, Binary, PointerOff, FileText, Type, Hash } from 'lucide-react';
+import { Tag, Binary, PointerOff, FileText } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

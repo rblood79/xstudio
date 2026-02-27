@@ -386,7 +386,7 @@ export const TextSprite = memo(function TextSprite({
         ...(style?.fontStretch && style.fontStretch !== 'normal' ? { fontStretch: style.fontStretch } : {}),
       },
     };
-  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, fill, borderRadius, borderConfig, flexAlignment, style?.verticalAlign, style?.whiteSpace, style?.wordBreak, style?.overflowWrap, style?.wordSpacing, style?.textOverflow, style?.textDecorationStyle, style?.textDecorationColor, style?.textIndent, style?.fontVariant, style?.fontStretch]);
+  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, fill, borderRadius, borderConfig, flexAlignment, style]);
 
   useSkiaNode(element.id, skiaNodeData);
 

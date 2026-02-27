@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { CalendarDays, PointerOff, PenOff, Type, Hash } from 'lucide-react';
+import { CalendarDays, PointerOff, PenOff } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, PropertySection } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

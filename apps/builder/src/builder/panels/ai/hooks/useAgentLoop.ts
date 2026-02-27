@@ -42,6 +42,24 @@ export function useAgentLoop() {
   }, []);
 
   /**
+   * IntentParser fallback
+   */
+  const runFallback = useCallback((message: string, context: BuilderContext) => {
+    const intent = intentParser.parse(message, context);
+
+    if (intent) {
+      addAssistantMessage(
+        intent.description || '요청을 처리했습니다.',
+        intent,
+      );
+    } else {
+      addAssistantMessage(
+        '죄송합니다. 요청을 이해하지 못했습니다. 다시 시도해주세요.',
+      );
+    }
+  }, [addAssistantMessage]);
+
+  /**
    * Agent Loop 실행
    */
   const runAgent = useCallback(async (message: string) => {
@@ -153,25 +171,7 @@ export function useAgentLoop() {
     }
   }, [agent, addUserMessage, addAssistantMessage, appendToLastMessage,
       setStreamingStatus, setAgentRunning, addToolMessage,
-      updateToolCallStatus, incrementTurn]);
-
-  /**
-   * IntentParser fallback
-   */
-  const runFallback = useCallback((message: string, context: BuilderContext) => {
-    const intent = intentParser.parse(message, context);
-
-    if (intent) {
-      addAssistantMessage(
-        intent.description || '요청을 처리했습니다.',
-        intent,
-      );
-    } else {
-      addAssistantMessage(
-        '죄송합니다. 요청을 이해하지 못했습니다. 다시 시도해주세요.',
-      );
-    }
-  }, [addAssistantMessage]);
+      updateToolCallStatus, incrementTurn, runFallback]);
 
   /**
    * Agent 중단

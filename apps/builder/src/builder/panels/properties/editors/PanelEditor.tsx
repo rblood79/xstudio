@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Type, Layout, ToggleLeft, X, Hash } from "lucide-react";
+import { Type, Layout, ToggleLeft, X } from "lucide-react";
 import {
   PropertyInput,
   PropertySelect,

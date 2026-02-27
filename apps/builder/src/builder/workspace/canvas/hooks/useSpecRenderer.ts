@@ -14,7 +14,7 @@ import {
   resolveColor,
   hexStringToNumber,
 } from '@xstudio/specs';
-import type { ComponentSpec, VariantSpec, SizeSpec, TokenRef } from '@xstudio/specs';
+import type { ComponentSpec, TokenRef } from '@xstudio/specs';
 
 // ============================================
 // Types

@@ -8,7 +8,7 @@ import {
 } from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
-import { Tag, Type, Eye, EyeOff, Hash, Tags } from "lucide-react";
+import { Tag, Type, Eye, EyeOff, Tags } from "lucide-react";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 
 interface FieldElementProps {

@@ -247,7 +247,7 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
         contentHeight: contentBounds.height,
       },
     };
-  }, [transform, contentBounds, skImage, skiaEffects]);
+  }, [transform, contentBounds, skImage, skiaEffects, style?.display, style?.visibility]);
 
   useSkiaNode(element.id, skiaNodeData);
 

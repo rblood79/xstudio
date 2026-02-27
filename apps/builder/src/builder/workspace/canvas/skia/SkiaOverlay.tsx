@@ -951,7 +951,6 @@ export function SkiaOverlay({
 
       // selection, workflow 오버레이 또는 호버 히트 테스트 시 boundsMap 필요
       // 호버는 항상 활성이므로 treeBoundsMap을 항상 빌드 (캐시됨)
-      const selectedIds = useStore.getState().selectedElementIds;
       const needsSelectionBoundsMap = true;
       const selectionBuildStart = process.env.NODE_ENV === 'development' && needsSelectionBoundsMap
         ? performance.now()
@@ -1256,7 +1255,7 @@ export function SkiaOverlay({
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [ready, isActive, app, containerEl, backgroundColor]);
+  }, [ready, isActive, app, containerEl, backgroundColor, dragStateRef]);
 
   // 🆕 Multi-page: 모든 페이지가 동시 마운트되므로 페이지 전환 시
   // 레지스트리/캐시 초기화 불필요. 선택 하이라이트 갱신만 수행.

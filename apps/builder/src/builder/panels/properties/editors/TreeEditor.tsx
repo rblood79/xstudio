@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, memo } from "react";
-import { FolderTree, Workflow, Plus, Tag, FileText, PointerOff, Focus, SquareX, Type, Hash, Database } from 'lucide-react';
+import { FolderTree, Workflow, Plus, Tag, FileText, PointerOff, Focus, SquareX, Database } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

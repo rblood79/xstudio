@@ -189,7 +189,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
     // CSS background-image: url(...) → Skia ImageFill (Phase 4)
     // Fill V2가 없고 style.backgroundImage가 url() 형식일 때 처리
     // gradientFill이 이미 있으면 우선순위상 스킵
-    let cssBgImageFill = gradientFill ? undefined
+    const cssBgImageFill = gradientFill ? undefined
       : (() => {
           const bgImg = style?.backgroundImage;
           if (!bgImg || !bgImg.startsWith('url(')) return undefined;

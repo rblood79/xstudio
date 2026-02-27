@@ -44,7 +44,7 @@ export interface PixiSkeletonProps {
  * - eventMode: "none" — 비인터랙티브, 이벤트 무시
  */
 export const PixiSkeleton = memo(function PixiSkeleton({
-  element,
+  element: _element,
   //isSelected,
   //onClick,
   //onChange,

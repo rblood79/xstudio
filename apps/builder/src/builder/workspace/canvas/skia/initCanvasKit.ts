@@ -77,7 +77,8 @@ export async function initCanvasKit(): Promise<CanvasKit> {
     throw new Error(
       `CanvasKit 초기화 실패. canvaskit.wasm 파일이 존재하는지 확인하세요.\n` +
       `pnpm run prepare:wasm 또는 pnpm install을 실행하세요.\n` +
-      `원인: ${error instanceof Error ? error.message : String(error)}`
+      `원인: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
     );
   }
 }

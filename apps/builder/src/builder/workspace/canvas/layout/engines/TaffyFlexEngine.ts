@@ -228,17 +228,15 @@ export function elementToTaffyStyle(
 
 // ─── TaffyFlexEngine ─────────────────────────────────────────────────
 
-/** 싱글톤 인스턴스 (모듈 스코프에서 관리) */
-let flexEngineInstance: TaffyFlexEngine | null = null;
-
 /**
  * Taffy Flex WASM 엔진 가용 여부
  *
  * selectEngine()에서 조기 라우팅 판단에 사용.
  */
 export function isTaffyFlexAvailable(): boolean {
-  if (!flexEngineInstance) return true; // 아직 생성 전이면 사용 가능으로 간주
-  return flexEngineInstance.isAvailable();
+  const instance = TaffyFlexEngine.instance;
+  if (!instance) return true; // 아직 생성 전이면 사용 가능으로 간주
+  return instance.isAvailable();
 }
 
 /**
@@ -248,12 +246,14 @@ export function isTaffyFlexAvailable(): boolean {
  * BaseTaffyEngine의 인스턴스 관리, calculate() 스켈레톤, 결과 수집을 상속합니다.
  */
 export class TaffyFlexEngine extends BaseTaffyEngine {
+  static instance: TaffyFlexEngine | null = null;
+
   readonly displayTypes = ['flex', 'inline-flex'];
   protected readonly engineName = 'TaffyFlexEngine';
 
   constructor() {
     super();
-    flexEngineInstance = this;
+    TaffyFlexEngine.instance = this;
   }
 
   protected computeWithTaffy(

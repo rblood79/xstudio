@@ -91,7 +91,7 @@ const DEFAULT_SCROLL_STATE: ElementScrollState = {
 // Store
 // ============================================
 
-export const useScrollState = create<ScrollStateStore>((set, get) => ({
+export const useScrollState = create<ScrollStateStore>((set, _get) => ({
   scrollMap: new Map(),
 
   setScroll: (elementId, scrollTop, scrollLeft) => {

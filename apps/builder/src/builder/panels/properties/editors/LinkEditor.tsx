@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Type, Link as LinkIcon, ExternalLink, Parentheses, PointerOff, Eye, Hash } from 'lucide-react';
+import { Type, Link as LinkIcon, ExternalLink, Parentheses, PointerOff, Eye } from 'lucide-react';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../../components';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

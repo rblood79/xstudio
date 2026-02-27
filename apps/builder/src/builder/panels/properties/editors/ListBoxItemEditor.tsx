@@ -6,8 +6,6 @@ import {
   SquarePlus,
   Database,
   FileText,
-  Type,
-  Hash,
 } from "lucide-react";
 import {
   PropertyInput,

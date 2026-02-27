@@ -128,8 +128,6 @@ export const MAX_CONTENT = CSS_MAX_CONTENT;
 
 /** 허용되는 단위 패턴 */
 const PX_NUMBER_PATTERN = /^-?\d+(\.\d+)?(px)?$/;
-const PERCENT_PATTERN = /^-?\d+(\.\d+)?%$/;
-const VIEWPORT_PATTERN = /^-?\d+(\.\d+)?(vh|vw)$/;
 
 /**
  * 숫자 값 파싱 (px, number만 허용)
@@ -927,9 +925,6 @@ const DEFAULT_ELEMENT_HEIGHTS: Record<string, number> = {
   th: 36,
 };
 
-/** 기본 높이 (알 수 없는 태그) */
-const DEFAULT_HEIGHT = 36;
-
 /**
  * 텍스트 높이 추정
  *
@@ -1198,7 +1193,7 @@ export function calculateContentHeight(
       for (const child of visibleChildren) {
         const childTag = (child.tag ?? '').toLowerCase();
         const childStyle = (child.props?.style || {}) as Record<string, unknown>;
-        let childH = 0;
+        let childH: number;
 
         if (child.tag === wrapperTag) {
           // SelectTrigger/ComboBoxWrapper: 자식 높이(row max) + padding

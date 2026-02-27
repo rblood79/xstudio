@@ -100,8 +100,8 @@ export class DarkModeService {
     const isBorder = tokenName.includes('border');
     const isPrimary = tokenName.includes('primary');
 
-    let newL = l;
-    let newS = s;
+    let newL: number;
+    let newS: number;
 
     // 1. 배경색 변환 (밝은 색 → 어두운 색)
     if (isBackground) {

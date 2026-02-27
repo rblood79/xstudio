@@ -74,7 +74,10 @@ export const FillLayerRow = memo(function FillLayerRow({
   const displayLabel = isImage ? 'Image' : gradientLabel;
   const opacityPercent = Math.round(fill.opacity * 100);
 
-  const gradientStops = isGradient ? (fill as { stops: GradientStop[] }).stops : [];
+  const gradientStops = useMemo(
+    () => (isGradient ? (fill as { stops: GradientStop[] }).stops : []),
+    [isGradient, fill],
+  );
   const swatchGradientCss = useMemo(
     () => (isGradient ? buildSwatchGradient(gradientStops) : ''),
     [isGradient, gradientStops],

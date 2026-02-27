@@ -1172,12 +1172,9 @@ function renderText(
     ? 100000
     : node.text.maxWidth;
 
-  // wordBreak/overflowWrap: break-all 또는 break-word/anywhere일 때 단어 중간 줄바꿈 허용
+  // wordBreak/overflowWrap: 캐시 key에 포함 (CanvasKit API 지원 시 break 동작에 사용 예정)
   const wordBreak = node.text.wordBreak ?? 'normal';
   const overflowWrap = node.text.overflowWrap ?? 'normal';
-  const allowBreakAll = wordBreak === 'break-all'
-    || overflowWrap === 'break-word'
-    || overflowWrap === 'anywhere';
 
   // key는 텍스트 shaping/layout에 영향을 주는 값만 포함한다.
   const color = node.text.color;

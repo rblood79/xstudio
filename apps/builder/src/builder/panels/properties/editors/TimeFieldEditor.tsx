@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Clock, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Globe, Focus, FileText, Type, Hash, FormInput } from 'lucide-react';
+import { Clock, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Globe, Focus, FileText, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

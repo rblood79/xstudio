@@ -92,7 +92,7 @@ function SortableFillRow({
  */
 const FillSectionContent = memo(function FillSectionContent() {
   const { fills } = useFillValuesJotai();
-  const { removeFill, reorderFill, toggleFill, updateFill, updateFillPreview, updateFillPreviewThrottled, changeFillType } =
+  const { removeFill, reorderFill, toggleFill, updateFill, updateFillPreviewThrottled, changeFillType } =
     useFillActions();
 
   const sensors = useSensors(
@@ -201,7 +201,6 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
     reorderFill,
     toggleFill,
     updateFill,
-    updateFillPreview,
     updateFillPreviewThrottled,
     changeFillType,
   } = useFillActions();

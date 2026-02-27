@@ -70,11 +70,11 @@ export const useAsyncState = create<AsyncState>((set) => ({
    */
   reset: (key: string) =>
     set((state) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       const { [key]: _removed1, ...restLoading } = state.loading;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       const { [key]: _removed2, ...restErrors } = state.errors;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       const { [key]: _removed3, ...restProgress } = state.progress;
 
       return {

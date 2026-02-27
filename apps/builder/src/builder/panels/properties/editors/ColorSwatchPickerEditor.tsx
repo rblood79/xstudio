@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Palette, PointerOff, Type, Hash, LayoutGrid } from 'lucide-react';
+import { Palette, PointerOff, LayoutGrid } from 'lucide-react';
 import { PropertySwitch, PropertySelect, PropertyCustomId, PropertySection, PropertyInput } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

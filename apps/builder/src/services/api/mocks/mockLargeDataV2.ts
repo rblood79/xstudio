@@ -1250,7 +1250,7 @@ const generateCmsMockData = (
       console.error("스택 트레이스:", error.stack);
     }
 
-    throw new Error(`Mock 데이터 생성 중 오류 발생: ${error}`);
+    throw new Error(`Mock 데이터 생성 중 오류 발생: ${error}`, { cause: error });
   }
 };
 

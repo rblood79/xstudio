@@ -34,8 +34,8 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
     if (!url) return;
 
     // URL 파싱하여 baseUrl과 path 분리
-    let baseUrl = "";
-    let path = "";
+    let baseUrl: string;
+    let path: string;
     try {
       const parsedUrl = new URL(url);
       baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;

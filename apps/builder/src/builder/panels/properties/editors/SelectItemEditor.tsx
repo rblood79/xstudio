@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, memo, useMemo } from "react";
-import { Tag, Binary, FileText, PointerOff, Type, Hash } from 'lucide-react';
+import { Tag, Binary, FileText, PointerOff } from 'lucide-react';
 import { PropertyInput } from '../../../components';
 import { PropertySwitch } from '../../../components';
 import { PropertyCustomId , PropertySection} from '../../../components';

@@ -200,7 +200,6 @@ export const PixiListBox = memo(function PixiListBox({
   // 아이템별 히트 영역 그리기
   const itemHeight = 36;
   const containerPadding = 8;
-  const gap = 4;
 
   const drawItemHitArea = useCallback(
     (g: PixiGraphics) => {

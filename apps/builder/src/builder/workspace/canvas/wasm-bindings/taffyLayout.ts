@@ -178,11 +178,10 @@ export type TaffyNodeHandle = number;
 // ─── WASM engine interface ───────────────────────────────────────────
 
 /**
- * TypeScript interface matching the wasm-bindgen generated class.
+ * TypeScript interface matching the wasm-bindgen generated class instance.
  * This avoids `any` by explicitly typing the WASM module shape.
  */
 interface WasmTaffyLayoutEngine {
-  new (): WasmTaffyLayoutEngine;
   create_node(style_json: string): number;
   create_node_with_children(style_json: string, children_handles: Uint32Array): number;
   update_style(handle: number, style_json: string): void;

@@ -142,10 +142,9 @@ export function drawTextToCanvas(text: string, ctx: CanvasRenderingContext2D) {
   const maxWidth = CANVAS_WIDTH * 0.85;
   ctx.font = `bold ${BASE_FONT_SIZE}px sans-serif`;
 
-  let fontSize = BASE_FONT_SIZE;
   const textWidth = ctx.measureText(text).width;
   if (textWidth > maxWidth) {
-    fontSize = Math.floor((BASE_FONT_SIZE * maxWidth) / textWidth);
+    const fontSize = Math.floor((BASE_FONT_SIZE * maxWidth) / textWidth);
     ctx.font = `bold ${fontSize}px sans-serif`;
   }
 

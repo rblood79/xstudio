@@ -1,7 +1,7 @@
 import { memo, useMemo, useCallback } from "react";
 import {
     Tag, Search, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
-    SpellCheck2, Focus, Hash, Type, Keyboard, Shield
+    SpellCheck2, Focus, Hash, Keyboard, Shield
 } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';

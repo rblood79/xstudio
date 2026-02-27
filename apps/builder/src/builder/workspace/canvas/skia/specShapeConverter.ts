@@ -474,7 +474,7 @@ export function specShapesToSkia(
         // baseline='top' → paddingTop = y (already)
 
         // Calculate paddingLeft based on align
-        let paddingLeft = shape.x;
+        const paddingLeft = shape.x;
         let maxWidth = shape.maxWidth ?? containerWidth;
 
         // Auto-reduce maxWidth when text has padding offset (shape.x > 0) and no explicit maxWidth

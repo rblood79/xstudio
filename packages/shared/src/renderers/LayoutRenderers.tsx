@@ -382,7 +382,7 @@ export const renderButton = (
   element: PreviewElement,
   context: RenderContext
 ): React.ReactNode => {
-  const { elements, renderElement, eventEngine, projectId } = context;
+  const { elements, renderElement } = context;
 
   const children = elements
     .filter((child) => child.parent_id === element.id)
@@ -493,7 +493,7 @@ export const renderTooltip = (
  */
 export const renderProgressBar = (
   element: PreviewElement,
-  _context: RenderContext // eslint-disable-line @typescript-eslint/no-unused-vars
+  _context: RenderContext  
 ): React.ReactNode => {
   return (
     <ProgressBar
@@ -530,7 +530,7 @@ export const renderProgressBar = (
  */
 export const renderMeter = (
   element: PreviewElement,
-  _context: RenderContext // eslint-disable-line @typescript-eslint/no-unused-vars
+  _context: RenderContext  
 ): React.ReactNode => {
   return (
     <Meter
@@ -566,7 +566,7 @@ export const renderMeter = (
  */
 export const renderSeparator = (
   element: PreviewElement,
-  _context: RenderContext // eslint-disable-line @typescript-eslint/no-unused-vars
+  _context: RenderContext  
 ): React.ReactNode => {
   return (
     <Separator
@@ -626,7 +626,7 @@ export const renderModal = (
   element: PreviewElement,
   context: RenderContext
 ): React.ReactNode => {
-  const { elements, renderElement, eventEngine, projectId } = context;
+  const { elements, renderElement } = context;
   const eventHandlers = context.services?.createEventHandlerMap?.(element, context) ?? {};
 
   const children = elements
@@ -668,7 +668,7 @@ export const renderBreadcrumbs = (
   element: PreviewElement,
   context: RenderContext
 ): React.ReactNode => {
-  const { elements, renderElement, eventEngine, projectId } = context;
+  const { elements, renderElement } = context;
   const eventHandlers = context.services?.createEventHandlerMap?.(element, context) ?? {};
 
   // PropertyDataBinding 형식 감지
@@ -707,7 +707,7 @@ export const renderBreadcrumbs = (
  */
 export const renderBreadcrumb = (
   element: PreviewElement,
-  _context: RenderContext // eslint-disable-line @typescript-eslint/no-unused-vars
+  _context: RenderContext  
 ): React.ReactNode => {
   return (
     <Breadcrumb
@@ -728,7 +728,7 @@ export const renderLink = (
   element: PreviewElement,
   context: RenderContext
 ): React.ReactNode => {
-  const { elements, renderElement, eventEngine, projectId } = context;
+  const { elements, renderElement } = context;
 
   const children = elements
     .filter((child) => child.parent_id === element.id)

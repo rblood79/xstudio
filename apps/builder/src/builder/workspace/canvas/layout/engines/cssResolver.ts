@@ -318,7 +318,7 @@ const INHERIT_SENTINEL = Symbol('inherit');
 function resolveCascadeKeyword(
   prop: string,
   value: unknown,
-  parentValue: unknown,
+  _parentValue: unknown,
 ): unknown | typeof INHERIT_SENTINEL {
   if (typeof value !== 'string') return value;
 

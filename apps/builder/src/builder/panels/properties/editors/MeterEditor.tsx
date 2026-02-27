@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Tag, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Type, Hash, Globe, DollarSign } from 'lucide-react';
+import { Tag, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Globe, DollarSign } from 'lucide-react';
 import { PropertySwitch , PropertySection} from '../../../components';
 import { PropertyInput, PropertyCustomId, PropertySelect } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';

@@ -781,14 +781,17 @@ export const ElementSprite = memo(function ElementSprite({
     return (state.childrenMap.get(parent.id) || []).length;
   });
 
-  const toggleGroupPosition = isToggleInGroup && togglePositionIndex !== -1
-    ? {
-        orientation: toggleGroupOrientation,
-        isFirst: togglePositionIndex === 0,
-        isLast: togglePositionIndex === toggleSiblingCount - 1,
-        isOnly: toggleSiblingCount === 1,
-      }
-    : null;
+  const toggleGroupPosition = useMemo(
+    () => isToggleInGroup && togglePositionIndex !== -1
+      ? {
+          orientation: toggleGroupOrientation,
+          isFirst: togglePositionIndex === 0,
+          isLast: togglePositionIndex === toggleSiblingCount - 1,
+          isOnly: toggleSiblingCount === 1,
+        }
+      : null,
+    [isToggleInGroup, togglePositionIndex, toggleGroupOrientation, toggleSiblingCount],
+  );
 
   // layoutPosition이 있으면 style을 오버라이드한 새 element 생성
   // G.1/G.2: Instance resolution + Variable resolution
@@ -1400,7 +1403,7 @@ export const ElementSprite = memo(function ElementSprite({
       children: textChildren,
       contentMinHeight,
     };
-  }, [effectiveElementWithTabs, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition, childElements]);
+  }, [effectiveElementWithTabs, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition, childElements, previewState]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로
   // ElementSprite의 이중 등록을 방지한다. (effects, blendMode, 올바른 fillColor 포함)

@@ -1,5 +1,5 @@
 import { useState, useMemo, memo } from "react";
-import { SquarePlus, PointerOff, Tag, Type, Hash } from 'lucide-react';
+import { SquarePlus, PointerOff, Tag } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';

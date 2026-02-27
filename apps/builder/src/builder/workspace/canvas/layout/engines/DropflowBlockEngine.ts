@@ -27,7 +27,7 @@ import type {
   XComputedLayout,
   XLayoutContext,
 } from '@xstudio/layout-flow';
-import { enrichWithIntrinsicSize, INLINE_BLOCK_TAGS, calculateBaseline, parsePadding, parseBorder } from './utils';
+import { enrichWithIntrinsicSize, INLINE_BLOCK_TAGS, calculateBaseline } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 import {

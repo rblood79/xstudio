@@ -25,7 +25,7 @@ import {
   findInvalidParentIds,
   findDuplicateSlugs,
 } from '../schemas/project.schema';
-import { migrateProject, CURRENT_VERSION as MIGRATION_VERSION } from './migration.utils';
+import { migrateProject } from './migration.utils';
 import { buildCustomFontFaceCss, type CustomFontAsset } from './font.utils';
 
 // ============================================

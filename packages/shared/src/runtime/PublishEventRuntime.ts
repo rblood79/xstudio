@@ -182,7 +182,7 @@ export class PublishEventRuntime {
    * 이벤트 핸들러 생성
    */
   private createHandler(event: ElementEvent): EventHandler {
-    return async (domEvent?: Event) => {
+    return async (_domEvent?: Event) => {
       const key = event.type;
 
       // Rate Limiting 체크

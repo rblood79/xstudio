@@ -345,17 +345,15 @@ export function elementToTaffyGridStyle(
 
 // ─── TaffyGridEngine ──────────────────────────────────────────────────
 
-/** 싱글톤 인스턴스 (모듈 스코프에서 관리) */
-let gridEngineInstance: TaffyGridEngine | null = null;
-
 /**
  * Taffy Grid WASM 엔진 가용 여부
  *
  * selectEngine()에서 조기 라우팅 판단에 사용.
  */
 export function isTaffyGridAvailable(): boolean {
-  if (!gridEngineInstance) return true; // 아직 생성 전이면 사용 가능으로 간주
-  return gridEngineInstance.isAvailable();
+  const instance = TaffyGridEngine.instance;
+  if (!instance) return true; // 아직 생성 전이면 사용 가능으로 간주
+  return instance.isAvailable();
 }
 
 /**
@@ -365,12 +363,14 @@ export function isTaffyGridAvailable(): boolean {
  * BaseTaffyEngine의 인스턴스 관리, calculate() 스켈레톤, 결과 수집을 상속합니다.
  */
 export class TaffyGridEngine extends BaseTaffyEngine {
+  static instance: TaffyGridEngine | null = null;
+
   readonly displayTypes = ['grid', 'inline-grid'];
   protected readonly engineName = 'TaffyGridEngine';
 
   constructor() {
     super();
-    gridEngineInstance = this;
+    TaffyGridEngine.instance = this;
   }
 
   protected computeWithTaffy(

@@ -100,7 +100,7 @@ function evaluateCondition(
     const leftValue = getValueFromOperand(cond.left, context);
     const rightValue = cond.right ? getValueFromOperand(cond.right, context) : undefined;
 
-    let result = false;
+    let result: boolean;
     switch (cond.operator) {
       case 'equals':
         result = leftValue === rightValue;

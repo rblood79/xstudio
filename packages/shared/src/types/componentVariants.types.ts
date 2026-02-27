@@ -487,7 +487,7 @@ export function normalizeSize(size: 'small' | 'medium' | 'large' | ComponentSize
  * @param componentType - Component type name
  * @returns Default variant for that component
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export function getDefaultVariant(_componentType: string): M3Variant {
   // Most components default to 'primary'
   // Override for specific components if needed
@@ -499,7 +499,7 @@ export function getDefaultVariant(_componentType: string): M3Variant {
  * @param componentType - Component type name
  * @returns Default size for that component
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export function getDefaultSize(_componentType: string): ComponentSizeSubset {
   // All components default to 'md'
   return 'md';

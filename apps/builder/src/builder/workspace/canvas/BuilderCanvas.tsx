@@ -521,7 +521,7 @@ const ElementsLayer = memo(function ElementsLayer({
   onClick,
   onDoubleClick,
   pagePositionVersion = 0,
-  wasmLayoutReady = false,
+  wasmLayoutReady: _wasmLayoutReady = false,
 }: {
   pageElements: Element[];
   bodyElement: Element | null;
@@ -1297,8 +1297,7 @@ const ElementsLayer = memo(function ElementsLayer({
     }
 
     return renderTree(bodyElement?.id ?? null);
-    // wasmLayoutReady: WASM 로드 완료 시 calculateChildrenLayout()이 Taffy를 사용하므로 재계산 필요
-  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, NON_CONTAINER_TAGS, SPEC_SHAPES_ONLY_TAGS, wasmLayoutReady]);
+  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, NON_CONTAINER_TAGS, SPEC_SHAPES_ONLY_TAGS]);
 
   // body의 border+padding 오프셋 계산 (자식 시작 위치)
   const bodyStyle = bodyElement?.props?.style as Record<string, unknown> | undefined;
@@ -1396,7 +1395,6 @@ export function BuilderCanvas({
   const setCurrentPageId = useStore((state) => state.setCurrentPageId);
 
   // Settings state (SettingsPanel 연동)
-  const showGrid = useStore((state) => state.showGrid);
   const snapToGrid = useStore((state) => state.snapToGrid);
   const gridSize = useStore((state) => state.gridSize);
 

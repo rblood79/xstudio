@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, memo } from "react";
-import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff, Layout, Ruler, Hash, FormInput } from 'lucide-react';
+import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff, Layout, Ruler, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';

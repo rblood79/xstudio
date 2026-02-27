@@ -107,7 +107,7 @@ export const SelectionLayer = memo(function SelectionLayer({
   pageWidth = 1920,
   pageHeight = 1080,
   pagePositions,
-  pagePositionsVersion = 0,
+  pagePositionsVersion: _pagePositionsVersion = 0,
   zoom = 1,
   panOffset = { x: 0, y: 0 },
   onResizeStart,
@@ -123,21 +123,6 @@ export const SelectionLayer = memo(function SelectionLayer({
   // 개선: selectedElementIds + 선택된 요소의 스타일 변경만 구독
   const selectedElementIds = useStore((state) => state.selectedElementIds);
   const currentPageId = useStore((state) => state.currentPageId);
-
-  // 🚀 선택된 요소의 스타일 변경 감지용 시그니처
-  // 선택된 요소의 style이 변경되면 bounds 재계산 트리거
-  const selectedStyleSignature = useStore((state) => {
-    if (state.selectedElementIds.length === 0) return '';
-    const parts: string[] = [];
-    for (const id of state.selectedElementIds) {
-      const el = state.elementsMap.get(id);
-      if (el) {
-        const style = el.props?.style as Record<string, unknown> | undefined;
-        parts.push(JSON.stringify(style ?? {}));
-      }
-    }
-    return parts.join('|');
-  });
 
   // 🚀 최적화: elementsMap은 구독하지 않고 getState()로 읽음
   const getElementsMap = useCallback(() => useStore.getState().elementsMap, []);
@@ -234,9 +219,7 @@ export const SelectionLayer = memo(function SelectionLayer({
     pageHeight,
     zoom,
     panOffset,
-    selectedStyleSignature,
     pagePositions,
-    pagePositionsVersion,
   ]);
 
   // 🚀 Phase 2: 선택 변경 시 bounds 계산

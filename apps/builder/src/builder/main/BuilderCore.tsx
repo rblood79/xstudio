@@ -169,11 +169,11 @@ export const BuilderCore: React.FC = () => {
   });
 
   // Dev 모드에서 복구 통계 로깅 (필요 시 구현)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const _recoveryStatsForDebug = recoveryStats;
 
   // Dev 모드에서 페이지 로더 통계 로깅 (필요 시 구현)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const _pageLoaderStatsForDebug = pageLoaderStats;
 
   // Local 상태

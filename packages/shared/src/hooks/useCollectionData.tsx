@@ -223,10 +223,16 @@ export function useCollectionData({
     : undefined;
 
   // DataTable 목록 조회
-  const dataTables = dataTableService?.getDataTables() ?? [];
+  const dataTables = useMemo(
+    () => dataTableService?.getDataTables() ?? [],
+    [dataTableService],
+  );
 
   // API Endpoint 목록 조회
-  const apiEndpoints = apiEndpointService?.getApiEndpoints() ?? [];
+  const apiEndpoints = useMemo(
+    () => apiEndpointService?.getApiEndpoints() ?? [],
+    [apiEndpointService],
+  );
 
   // DataTable consumer 등록/해제
   useEffect(() => {

@@ -63,7 +63,7 @@ export class GroqService implements AIProvider {
       return completion.choices[0]?.message?.content || '';
     } catch (error) {
       console.error('Groq API error:', error);
-      throw new Error(`Groq API 요청 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      throw new Error(`Groq API 요청 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, { cause: error });
     }
   }
 
@@ -94,7 +94,7 @@ export class GroqService implements AIProvider {
       }
     } catch (error) {
       console.error('Groq streaming error:', error);
-      throw new Error(`Groq 스트리밍 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      throw new Error(`Groq 스트리밍 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, { cause: error });
     }
   }
 

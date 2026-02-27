@@ -15,7 +15,7 @@ import { colord, extend } from 'colord';
 import lchPlugin from 'colord/plugins/lch';
 import labPlugin from 'colord/plugins/lab';
 
-import type { EffectStyle, DropShadowEffect, ColorMatrixEffect } from '../skia/types';
+import type { EffectStyle, DropShadowEffect } from '../skia/types';
 import { resolveCSSSizeValue } from '../layout/engines/cssValueParser';
 import type { CSSValueContext } from '../layout/engines/cssValueParser';
 import { resolveCurrentColor, preprocessStyle } from '../layout/engines/cssResolver';
@@ -806,13 +806,13 @@ function resolveClipAxisValue(
 function parseInset(args: string, width: number, height: number): ClipPathShape | null {
   // 분리: round 키워드 앞/뒤
   const roundIdx = args.toLowerCase().indexOf('round');
-  let sidesPart = roundIdx >= 0 ? args.slice(0, roundIdx).trim() : args;
+  const sidesPart = roundIdx >= 0 ? args.slice(0, roundIdx).trim() : args;
   const roundPart = roundIdx >= 0 ? args.slice(roundIdx + 5).trim() : '';
 
   const sides = sidesPart.split(/\s+/).filter(Boolean);
   if (sides.length === 0) return null;
 
-  let top = 0, right = 0, bottom = 0, left = 0;
+  let top: number, right: number, bottom: number, left: number;
   if (sides.length === 1) {
     top = right = bottom = left = resolveClipLength(sides[0], Math.min(width, height));
   } else if (sides.length === 2) {

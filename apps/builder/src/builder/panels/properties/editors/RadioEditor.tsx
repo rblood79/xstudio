@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo } from "react";
-import { Tag, PointerOff, CheckCheck, PenOff, Binary, Focus, Type, Hash } from 'lucide-react';
+import { Tag, PointerOff, CheckCheck, PenOff, Binary, Focus } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

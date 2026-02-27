@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, memo } from "react";
-import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler, Hash, FormInput, CheckSquare, Database, Search } from 'lucide-react';
+import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler, FormInput, CheckSquare, Database, Search } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';

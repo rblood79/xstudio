@@ -93,12 +93,6 @@ export const PixiSwitcher = memo(function PixiSwitcher({
   const width = typeof style?.width === 'number' ? style.width : 240;
   const height = typeof style?.height === 'number' ? style.height : 40;
 
-  // 활성 인덱스
-  const activeIndex = useMemo(() => {
-    const idx = Number(props?.activeIndex ?? props?.value ?? 0);
-    return Math.max(0, Math.min(items.length - 1, idx));
-  }, [props?.activeIndex, props?.value, items.length]);
-
   // 이벤트 핸들러
   const handleChange = useCallback(
     (newIndex: number) => {

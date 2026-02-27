@@ -271,7 +271,7 @@ export class EventEngine {
 
             return func(safeContext);
         } catch (error) {
-            throw new Error(`Custom function execution failed: ${error}`);
+            throw new Error(`Custom function execution failed: ${error}`, { cause: error });
         }
     }
 

@@ -50,7 +50,7 @@ export interface PixiTooltipProps {
  * - Tooltip은 hover로 표시되므로 이벤트 전달 안 함 (eventMode="none")
  */
 export const PixiTooltip = memo(function PixiTooltip({
-  element,
+  element: _element,
   //isSelected,
   //onClick,
 }: PixiTooltipProps) {

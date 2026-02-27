@@ -25,7 +25,6 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type {
   ListBoxVariant,
-  ComponentSize,
   ComponentSizeSubset,
   DataBinding,
   ColumnMapping,
