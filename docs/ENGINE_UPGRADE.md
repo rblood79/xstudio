@@ -81,7 +81,7 @@
 | 계층 | 원인 | 영향 범위 | 해결 상태 |
 |------|------|----------|-----------|
 | ~~**L1: Yoga 한계**~~ | ~~Yoga가 CSS 스펙의 일부만 구현~~ | ~~Block, Grid 전체~~ | ✅ **해결됨** — Taffy WASM(Flex/Grid) + Dropflow Fork(Block) |
-| **L1': Taffy/Dropflow 제한** | Dropflow IFC는 DOM 텍스트 노드 필요. XStudio prop 기반 컴포넌트와 직접 호환 불가 | Block 레이아웃의 inline-block 처리 | DropflowBlockEngine에서 inline-block 에뮬레이션(layoutInlineRun)으로 우회 중 |
+| **L1': Taffy/Dropflow 제한** | Dropflow IFC는 DOM 텍스트 노드 필요. XStudio prop 기반 컴포넌트와 직접 호환 불가 | Block 레이아웃의 inline-block 처리, inline 텍스트 흐름 | DropflowBlockEngine에서 inline-block 에뮬레이션(layoutInlineRun)으로 우회 중. Inline 텍스트 흐름은 CanvasKit ParagraphBuilder(`pushStyle`/`pop`) 기반 설계 수립 (§5.4.1.4) |
 | **L2: CSS 값 파서 부족** | ~~`calc()`, `em`, `min-content/max-content`, `border` shorthand 미파싱~~ → 대부분 해결 | 모든 엔진 공통 | ✅ Phase 1 완료 — `resolveCSSSizeValue()` 통합. 잔여: `clamp()`, `env()` |
 | **L3: 렌더링 피처 잔여 갭** | `overflow: scroll/auto`, 고급 `filter` 함수, 일부 `transform` 함수(`matrix()`) | 시각 효과 | 부분 완료 — ✅ transform(translate/rotate/scale/skew), 다중 box-shadow, overflow:hidden clip, gradient 완료 |
 | ~~**L4: CSS 값 파서 파편화**~~ | ~~3개 독립 파서가 각각 다른 단위를 지원~~ | ~~모든 엔진 공통~~ | ✅ **해결됨** — `cssValueParser.ts`의 `resolveCSSSizeValue()`로 통합 |
@@ -145,7 +145,7 @@ TaffyFlexEngine/TaffyGridEngine(Taffy WASM) + DropflowBlockEngine(Dropflow Fork)
 |-------------|--------------|---------------|----------|
 | `block` | 전체 너비, 수직 쌓임, margin collapse | DropflowBlockEngine ✅ | ✅ |
 | `inline-block` | inline + block 혼합, 가로 배치 | DropflowBlockEngine (에뮬레이션) ✅ | ✅ |
-| `inline` | 텍스트처럼 흐름 | DropflowBlockEngine (기본) ⚠️ | ⚠️ 기본 지원 |
+| `inline` | 텍스트처럼 흐름 | DropflowBlockEngine (기본) ⚠️ → CanvasKit Paragraph 기반 설계 수립 (§5.4.1.4) | ⚠️ 기본 지원. Phase A(block 텍스트 높이)/B(합성 Paragraph)/C(span 히트테스팅) 단계적 개선 계획 |
 | `flex` | Flexbox 레이아웃 | TaffyFlexEngine ✅ | ✅ |
 | `grid` | 2D 그리드 레이아웃 | TaffyGridEngine ✅ | ✅ |
 | `none` | 렌더링 안함 | 지원 | ✅ |
@@ -1494,6 +1494,161 @@ CSS에서는 텍스트 노드와 inline-block이 같은 줄에 혼합 배치될 
 - 텍스트 노드를 inline-block처럼 LineBox에 참여시킴
 
 **파일:** `DropflowBlockEngine.ts` — `layoutInlineRun()`에서 `type: 'text' | 'element'` 구분 처리
+
+##### 5.4.1.1 TEXT_TAGS 분석: TextSprite 공유 패턴과 레이아웃 차이
+
+TEXT_TAGS에 속하는 14개 태그는 모두 동일한 `TextSprite` 컴포넌트로 렌더링되지만, 레이아웃과 데이터 흐름에서 3단계 차이가 존재한다.
+
+**TEXT_TAGS 전체 목록 (ElementSprite.tsx:191-206):**
+Text, Heading, Description, Label, Paragraph, Link, Strong, Em, Code, Pre, Blockquote, ListItem, ListBoxItem, GridListItem
+
+**차이 1: TEXT_LEAF_TAGS — 줄바꿈 높이 동적 계산 (5개만)**
+
+`utils.ts:1680`에서 리프 텍스트로 정의된 5개만 `measureWrappedTextHeight()`를 통해 줄바꿈 시 높이가 동적으로 확장된다.
+
+| 구분 | 태그 | 줄바꿈 높이 | intrinsic width |
+|------|------|:-----------:|:---------------:|
+| TEXT_LEAF_TAGS | Text, Heading, Description, Label, Paragraph | O | O |
+| 비리프 9개 | Link, Strong, Em, Code, Pre, Blockquote, ListItem, ListBoxItem, GridListItem | **X** (1줄 고정) | **X** |
+
+비리프 태그는 `calculateContentHeight()`에서 step 4.9를 건너뛰어 항상 `fontSize * 1.5` (1줄) 높이로 고정된다.
+children이 순수 텍스트가 아닌 복합 노드일 수 있기 때문에 텍스트만 측정하면 부정확하다는 판단.
+
+**차이 2: BuilderCanvas 부모 동기화 (3개만)**
+
+BuilderCanvas.tsx에서 부모 컴포넌트의 props를 자식 텍스트 요소의 `children`으로 자동 동기화:
+
+| 태그 | 동기화 | 예시 |
+|------|--------|------|
+| Heading | 부모(Card/Dialog/Form)의 `title`/`heading` → children | Card.title → Heading.children |
+| Description | 부모의 `description`/`message` → children | Dialog.description → Description.children |
+| Label | 부모(TextField/Checkbox 등)의 `label` → children | TextField.label → Label.children |
+
+추가 암시적 스타일 주입: Heading in CardHeader → `flex: 1`, Description in CardContent → `width: 100%`.
+
+**차이 3: Preview HTML 매핑 (14개 모두 다름)**
+
+| 태그 | HTML | 태그 | HTML |
+|------|------|------|------|
+| Text | `<span>` | Strong | `<strong>` |
+| Heading | `<h1>`~`<h6>` (level) | Em | `<em>` |
+| Description | `<p>` | Code | `<code>` |
+| Label | `<label>` | Pre | `<pre>` |
+| Paragraph | `<p>` | Blockquote | `<blockquote>` |
+| Link | `<a>` | ListItem | `<li>` |
+| | | ListBoxItem/GridListItem | `<div>` (aria) |
+
+##### 5.4.1.2 HTML/CSS 정합성 갭 분석
+
+**문제 A: Block 텍스트 요소의 줄바꿈 높이 미지원**
+
+CSS에서 block-level 텍스트 요소(`<pre>`, `<blockquote>`, `<li>`)는 텍스트가 길면 자동으로 높이가 확장된다.
+현재 이 5개 태그(Pre, Blockquote, ListItem, ListBoxItem, GridListItem)는 TEXT_LEAF_TAGS에 포함되지 않아 1줄 고정 높이로 렌더링된다.
+
+```
+CSS:     <blockquote>긴 텍스트...</blockquote>  → 자동 확장 (3줄 = 72px)
+XStudio: Blockquote "긴 텍스트..."              → 1줄 고정 (24px), 텍스트 넘침
+```
+
+현재 Factory 정의에서 이 5개 태그의 children은 순수 문자열(`"Item 1"` 등)이므로 TEXT_LEAF_TAGS 확장이 안전하다.
+
+**문제 B: Inline 텍스트 흐름 미지원 (L1' 제한)**
+
+CSS inline 요소(`<strong>`, `<em>`, `<a>`, `<code>`)는 부모 block 안에서 텍스트처럼 흐른다.
+XStudio에서는 각각 독립 Box(TextSprite)로 렌더링되어 inline flow가 없다.
+
+```html
+<!-- CSS: 하나의 텍스트 흐름 -->
+<p>이것은 <strong>굵은</strong> 텍스트와 <a>링크</a>입니다</p>
+
+<!-- XStudio: 각각 독립 Box -->
+[Text "이것은"] [Strong "굵은"] [Text "텍스트와"] [Link "링크"] [Text "입니다"]
+```
+
+이 문제의 근본 원인은 L1'(Dropflow IFC = DOM TextNode 기반)과 XStudio의 Element:Sprite 1:1 매핑 아키텍처이다.
+
+##### 5.4.1.3 엔진 스택 Inline Flow 지원 현황
+
+3개 엔진이 각각 inline 관련 기능을 개별적으로 지원하지만, XStudio 아키텍처와의 연결이 안 되어 있다:
+
+| 엔진 | 제공 기능 | XStudio 활용 | 병목 |
+|------|----------|:------------:|------|
+| **Dropflow Fork** | IFC (Inline Formatting Context) | ❌ | DOM TextNode 필요, XStudio Element 기반과 호환 불가 |
+| **Taffy WASM** | Flex/Grid item 배치 | ✅ | inline 텍스트 흐름 개념 자체 없음 |
+| **CanvasKit Paragraph** | `pushStyle`/`pop` rich text + `layout()` + `getHeight()` | ❌ 미활용 | 렌더링만 가능 → **레이아웃도 가능** |
+
+현재 nodeRenderers.ts의 텍스트 렌더링:
+```typescript
+// 현재: 단일 스타일, 단일 텍스트
+const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+builder.addText(processedText);  // pushStyle/pop 미사용
+```
+
+CanvasKit ParagraphBuilder는 이미 rich text를 지원한다:
+```typescript
+// 가능: 다중 스타일 spans
+const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+builder.pushStyle(new ck.TextStyle({ fontWeight: 700 }));
+builder.addText("굵은 ");
+builder.pop();
+builder.pushStyle(new ck.TextStyle({ color: ck.BLUE }));
+builder.addText("링크");
+builder.pop();
+const paragraph = builder.build();
+paragraph.layout(maxWidth);   // 자동 줄바꿈 + inline flow
+paragraph.getHeight();        // 전체 높이 반환
+```
+
+##### 5.4.1.4 설계: CanvasKit Paragraph 기반 Inline Flow
+
+**핵심 아이디어:** inline 텍스트 자식을 가진 block 요소에서만 Dropflow/Taffy를 우회하고, CanvasKit ParagraphBuilder가 레이아웃+렌더링을 모두 담당한다.
+
+**우회 범위 (최소):**
+
+```
+Section (display: block)
+├── Heading          ← Dropflow block 레이아웃 (기존 그대로)
+├── Paragraph        ← CanvasKit Paragraph 위임 (inline 자식 있음)
+│   ├── Text "일반 "       ← inline span
+│   ├── Strong "굵은 "     ← inline span (bold)
+│   └── Link "링크"        ← inline span (color)
+├── Image            ← Dropflow block 레이아웃 (기존 그대로)
+└── Div (flex)       ← Taffy Flex 레이아웃 (기존 그대로)
+```
+
+| 상황 | 레이아웃 엔진 | 변경 여부 |
+|------|-------------|:---------:|
+| block 자식만 있는 컨테이너 | Dropflow | 없음 |
+| flex 컨테이너 | Taffy WASM | 없음 |
+| grid 컨테이너 | Taffy WASM | 없음 |
+| inline-block 혼합 | Dropflow `layoutInlineRun` | 없음 |
+| **block 요소 + inline 텍스트 자식** | ~~Dropflow~~ → **CanvasKit Paragraph** | **우회** |
+
+Dropflow가 해당 block 요소의 **위치(x, y)와 너비**를 계산하고, 내부 **inline 자식 배치 + 높이 계산**만 CanvasKit에 위임하는 구조.
+
+**필요한 변경:**
+
+| 영역 | 변경 내용 | 난이도 |
+|------|----------|:------:|
+| SkiaNodeData 타입 | `text.spans: { content, style }[]` 배열 추가 | 낮음 |
+| nodeRenderers.ts | `pushStyle`/`pop` 루프로 변경 | 낮음 |
+| enrichWithIntrinsicSize | CanvasKit `Paragraph.layout()` → `getHeight()` 활용 | 중간 |
+| **ElementSprite** | N개 inline Element → 1개 합성 Paragraph 렌더링 (1:1 매핑 변경) | **높음** |
+| **히트 테스팅** | `getRectsForRange()` / `getGlyphPositionAtCoordinate()`로 span 역매핑 | **높음** |
+| 선택/편집 UX | inline span 개별 선택, 스타일 패널 연동 | **높음** |
+| History/Undo | Element 단위 히스토리 유지 (구조 변경 없음) | 중간 |
+
+**단계적 구현 계획:**
+
+| Phase | 범위 | 난이도 | 설명 |
+|:-----:|------|:------:|------|
+| **A** | TEXT_LEAF_TAGS 확장 (block 텍스트 5개 추가) | 매우 낮음 | Pre, Blockquote, ListItem, ListBoxItem, GridListItem → 줄바꿈 높이 계산 |
+| **B** | inline 자식 → 합성 Paragraph 렌더링 (읽기 전용) | 중간 | 렌더링만, 클릭은 부모 Element 단위 |
+| **C** | span 단위 히트 테스팅 + 편집 UX | 높음 | Element:Sprite 1:1 매핑 변경, 개별 span 선택/편집 |
+
+Phase A는 `utils.ts` 1줄 수정으로 즉시 적용 가능하며, 5개 block 텍스트 태그의 CSS 정합성을 개선한다.
+Phase B는 CanvasKit API 활용으로 inline 텍스트의 시각적 정합성을 확보하되, 편집 UX는 부모 단위로 유지한다.
+Phase C는 아키텍처 변경이 필요하며 별도 ADR(Architecture Decision Record)로 설계해야 한다.
 
 #### 5.4.2 폰트 메트릭 기반 Baseline 계산
 
@@ -3924,6 +4079,7 @@ return estimateTextHeight(fontSize); // lineHeight 미전달
 | 2026-02-23 | 1.45 | TextSprite CSS-Skia 정합성 개선 3건: (1) TextSprite background/border 렌더링 — skiaNodeData에 box 데이터(fillColor, strokeColor, borderRadius) 추가, nodeRenderers.ts case 'text'에서 renderBox()→renderText() 순서로 CSS와 동일한 배경/테두리 렌더링, (2) line-height 이중 전략 — Text/Heading은 CSS line-height: 1.5(Tailwind v4 :root 상속)이므로 fontSize*1.5 명시 전달, Button/ToggleButton은 CSS line-height: normal이므로 measureFontMetrics().lineHeight(fontBoundingBox) 사용, (3) convertToTextStyle() line-height 기본값 — style.lineHeight 미지정 시 leading=(1.5-1)*fontSize로 CanvasKit heightMultiplier=1.5 적용, TextSprite 전용 |
 | 2026-02-26 | 1.46 | Card Nested Tree 레이아웃 수정 4건: (1) `enrichWithIntrinsicSize` early return에 `childElements` 체크 추가 — CardHeader/CardContent 등 자체 텍스트 없지만 자식 높이 합산 필요한 컨테이너의 height 주입 보장, (2) DirectContainer `computedSize`를 항상 전달(0도 유효) — 기존 `width>0 && height>0` 조건이 height=0일 때 null 반환하여 convertToTransform fallback 100×100 발생하던 문제 근본 차단, (3) `calculateContentHeight` cardheader/cardcontent 브랜치에 flexDirection 분기(column=합산+gap, row=max) 및 자식 border-box 높이(padding+border 포함) 계산 추가, (4) BuilderCanvas implicit style injection — Card→CardHeader/CardContent에 width:100%, CardHeader→Heading에 flex:1, CardContent→Description에 width:100% |
 | 2026-02-26 | 1.47 | Block 컨테이너 높이 계산 일반화: `calculateContentHeight`에 일반 block 컨테이너 핸들러 추가 — display:flex가 아닌 block/미지정 display 컨테이너도 자식이 있으면 border-box 높이 세로 합산. 영향: Menu(→MenuItem×3), Disclosure(→Header+Content), DisclosureGroup(→Disclosure×N), Group(동적 자식) 등 display:block 복합 컴포넌트의 높이가 단일 텍스트 라인(~24px)이 아닌 실제 자식 합산값으로 정확히 산출됨 |
+| 2026-02-27 | 1.48 | Inline 텍스트 흐름 분석/설계 (§5.4.1.1-§5.4.1.4): (1) TEXT_TAGS 14개 태그의 TextSprite 공유 패턴 분석 — 레이아웃(TEXT_LEAF_TAGS 5개만 줄바꿈 높이), BuilderCanvas 동기화(3개만), Preview HTML 매핑(14개 모두 다름) 3단계 차이 문서화, (2) HTML/CSS 정합성 갭 분석 — 문제A: block 텍스트 5개(Pre/Blockquote/ListItem/ListBoxItem/GridListItem) 줄바꿈 높이 미지원, 문제B: inline 4개(Link/Strong/Em/Code) 텍스트 흐름 미지원, (3) 엔진 스택 Inline Flow 지원 현황 — Dropflow IFC(DOM TextNode 필요→호환불가), Taffy(inline 개념 없음), CanvasKit ParagraphBuilder(`pushStyle`/`pop` rich text + `layout()`/`getHeight()` 레이아웃 가능하나 미활용), (4) CanvasKit Paragraph 기반 설계 — inline 텍스트 자식 block에서만 Dropflow/Taffy 우회, 3단계 구현 계획(Phase A: TEXT_LEAF_TAGS 확장/매우 낮음, Phase B: 합성 Paragraph 렌더링/중간, Phase C: span 히트테스팅+편집/높음), (5) L1' 제한사항 테이블 및 display:inline 지원 상태 현행화 |
 
 ---
 

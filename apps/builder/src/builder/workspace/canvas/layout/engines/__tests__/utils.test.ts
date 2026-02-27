@@ -471,7 +471,7 @@ describe('getButtonSizeConfig (§6 P1 단일 소스)', () => {
   it('button → BUTTON_SIZE_CONFIG sm 기본값', () => {
     const config = getButtonSizeConfig('button');
     expect(config).not.toBeNull();
-    expect(config!.paddingY).toBe(4);
+    expect(config!.paddingY).toBe(8);
     expect(config!.paddingX).toBe(12);
     expect(config!.fontSize).toBe(14);
     expect(config!.borderWidth).toBe(1);
@@ -480,8 +480,8 @@ describe('getButtonSizeConfig (§6 P1 단일 소스)', () => {
   it('button md 크기', () => {
     const config = getButtonSizeConfig('button', 'md');
     expect(config).not.toBeNull();
-    expect(config!.paddingY).toBe(8);
-    expect(config!.paddingX).toBe(24);
+    expect(config!.paddingY).toBe(12);
+    expect(config!.paddingX).toBe(16);
     expect(config!.fontSize).toBe(16);
   });
 
@@ -500,8 +500,8 @@ describe('getButtonSizeConfig (§6 P1 단일 소스)', () => {
   it('togglebutton → TOGGLEBUTTON_SIZE_CONFIG md 기본값', () => {
     const config = getButtonSizeConfig('togglebutton');
     expect(config).not.toBeNull();
-    expect(config!.paddingY).toBe(8);
-    expect(config!.paddingX).toBe(24);
+    expect(config!.paddingY).toBe(12);
+    expect(config!.paddingX).toBe(16);
     expect(config!.fontSize).toBe(16);
   });
 

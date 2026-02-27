@@ -102,7 +102,7 @@ export function elementToTaffyStyle(
   // static / sticky / 미지정은 Taffy 기본값(relative)으로 처리되므로 별도 설정 불필요
 
   // Size + Min/Max + Padding + Border + Gap (공통 헬퍼)
-  applyCommonTaffyStyle(result, style, ctx);
+  applyCommonTaffyStyle(result as Record<string, unknown>, style, ctx);
 
   // flex-flow shorthand 파싱: "flex-direction flex-wrap" 복합 값
   // 개별 속성(flexDirection, flexWrap)이 이미 설정되어 있으면 shorthand보다 우선합니다.

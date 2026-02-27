@@ -509,7 +509,7 @@ describe('getSizePreset', () => {
     const preset = getSizePreset(ButtonSpec.sizes['sm'], 'light');
     expect(preset.height).toBe(32);
     expect(preset.paddingX).toBe(12);
-    expect(preset.paddingY).toBe(4);
+    expect(preset.paddingY).toBe(8);
     expect(preset.fontSize).toBe(14);
     expect(preset.borderRadius).toBe(4);
     expect(preset.iconSize).toBe(14);

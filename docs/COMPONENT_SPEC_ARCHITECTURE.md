@@ -1,6 +1,6 @@
 # Component Spec Architecture - 상세 설계 문서
 
-> **작성일**: 2026-01-27 | **수정일**: 2026-02-25
+> **작성일**: 2026-01-27 | **수정일**: 2026-02-27
 > **상태**: Phase 6 Skia Spec 렌더링 구현 완료 | **Compositional Architecture 전환 완료** (2026-02-25) — SPEC_RENDERS_ALL_TAGS 폐기, 7개 Child Spec 추가
 > **목표**: Builder(CanvasKit/Skia)와 Publish(React)의 100% 시각적 일치
 
@@ -53,7 +53,7 @@
 기대효과:
 - 시각적 일치율: 95-98%
 - 단일 소스 = 완벽한 동기화
-- 72개 컴포넌트 × 1파일 = 72개 파일
+- 73개 컴포넌트 × 1파일 = 73개 파일
 - 새 variant 추가 시 1곳만 수정
 - CanvasKit Surface 렌더링으로 고품질 벡터/텍스트 출력
 ```
@@ -112,7 +112,7 @@ PixiJS는 씬 그래프 관리 + 이벤트(EventBoundary) 전용으로 축소되
 │  ├── components/           # 컴포넌트 스펙                   │
 │  │   ├── Button.spec.ts                                      │
 │  │   ├── TextField.spec.ts                                   │
-│  │   └── ... (72개)                                          │
+│  │   └── ... (73개)                                          │
 │  │                                                           │
 │  ├── renderers/            # 렌더러                          │
 │  │   ├── ReactRenderer.ts  # Spec → React Props              │
@@ -258,6 +258,15 @@ packages/
     │   │   ├── CSSGenerator.ts      # Spec → CSS 파일 (React/Publish 전용)
     │   │   └── utils/
     │   │       └── tokenResolver.ts # 토큰 → 실제 값 (색상, 크기, 그림자 등)
+    │   │
+    │   ├── adapters/
+    │   │   └── index.ts             # 어댑터 (placeholder)
+    │   │
+    │   ├── icons/
+    │   │   └── lucideIcons.ts       # 아이콘 SVG 경로 데이터 레지스트리
+    │   │
+    │   ├── utils/
+    │   │   └── stateEffect.ts       # 상태 이펙트 유틸리티
     │   │
     │   └── components/
     │       └── (Phase 1에서 추가)
@@ -556,7 +565,8 @@ export type Shape =
   | (ContainerShape & ShapeBase)
   | (GradientShape & ShapeBase)
   | (ImageShape & ShapeBase)
-  | (LineShape & ShapeBase);
+  | (LineShape & ShapeBase)
+  | (IconFontShape & ShapeBase);
 
 /**
  * 사각형
@@ -633,27 +643,6 @@ export interface TextShape {
 
   /** 줄 수 제한 (multiline 텍스트) */
   maxLines?: number;
-
-  // CanvasKit ParagraphBuilder 속성 (skia/nodeRenderers.ts renderText에서 사용):
-  /** 서브픽셀 텍스트 렌더링 */
-  subpixel?: boolean;
-  /** 폰트 힌팅 */
-  hinting?: 'none' | 'slight' | 'normal' | 'full';
-  /** 커닝 활성화 */
-  kerning?: boolean;
-  /** Strut 스타일 — 줄 높이 강제 */
-  strutStyle?: {
-    fontFamilies?: string[];
-    fontSize?: number;
-    height?: number;         // lineHeight multiplier
-    leading?: number;
-    forceHeight?: boolean;   // true: 모든 줄에 strut 강제 적용
-  };
-  // CanvasKit 매핑:
-  //   ParagraphBuilder.Make(paraStyle, fontMgr)
-  //   paraStyle.setTextStyle({ subpixel, hinting })
-  //   TextStyle.setFontFeatures([{ name: 'kern', value: 1 }])
-  //   paraStyle.setStrutStyle(strutStyle)
 }
 
 /**
@@ -694,20 +683,6 @@ export interface ShadowShape {
 
   /** 내부 그림자 여부 */
   inset?: boolean;
-
-  // CanvasKit 이펙트 (saveLayer 기반) — 구현: skia/effects.ts
-  // 타입: skia/types.ts의 EffectStyle (OpacityEffect | BackgroundBlurEffect | DropShadowEffect)
-  /** 이펙트 타입 */
-  effectType?: 'shadow' | 'blur' | 'background-blur' | 'glow';
-  /** 배경 블러 반경 — ImageFilter.MakeBlur() */
-  backgroundBlur?: number;
-  /** 불투명도 이펙트 — Paint.setAlphaf() */
-  opacity?: number;
-  // CanvasKit API 매핑:
-  //   shadow → ImageFilter.MakeDropShadow(offsetX, offsetY, sigmaX, sigmaY, color)
-  //   blur → ImageFilter.MakeBlur(sigmaX, sigmaY, TileMode)
-  //   background-blur → canvas.saveLayer() + ImageFilter.MakeBlur()
-  //   glow → ImageFilter.MakeDropShadow(0, 0, blur, blur, color)
 }
 
 /**
@@ -748,18 +723,6 @@ export interface BorderShape {
     bottom?: boolean;
     left?: boolean;
   };
-
-  // Skia Stroke 속성 (Skia Paint 기반):
-  /** Stroke 정렬 (Skia Paint stroke) */
-  strokeAlignment?: 'inside' | 'center' | 'outside';
-  /** 선 끝 모양 (Skia Paint::Cap) */
-  lineCap?: 'butt' | 'round' | 'square';
-  /** 선 꺾임 모양 (Skia Paint::Join) */
-  lineJoin?: 'bevel' | 'miter' | 'round';
-  /** Miter join 제한값 */
-  miterLimit?: number;
-  /** 대시 패턴 (Skia DashPathEffect) — [dashLen, gapLen, ...] */
-  dashPattern?: number[];
 }
 
 /**
@@ -782,13 +745,13 @@ export interface ContainerShape {
  * 컨테이너 레이아웃 설정
  */
 export interface ContainerLayout {
-  /** 레이아웃 타입 (하이브리드 엔진: block/inline-block→BlockEngine, flex→FlexEngine, grid→GridEngine) */
-  display?: 'flex' | 'block' | 'inline-block' | 'grid' | 'flow-root' | 'none';
+  /** 레이아웃 타입 (하이브리드 엔진: block→BlockEngine, flex→FlexEngine, grid→GridEngine) */
+  display?: 'flex' | 'block' | 'grid' | 'none';
 
   /** 포지션 타입 */
-  position?: 'relative' | 'absolute' | 'fixed';
+  position?: 'relative' | 'absolute';
 
-  /** absolute/fixed 포지션일 때 위치 */
+  /** absolute 포지션일 때 위치 */
   top?: number;
   right?: number;
   bottom?: number;
@@ -796,23 +759,6 @@ export interface ContainerLayout {
 
   /** z-index (레이어 순서) */
   zIndex?: number;
-
-  // ─── Box Model (Phase 11) ───
-  boxSizing?: 'content-box' | 'border-box';
-  minWidth?: number;
-  maxWidth?: number;
-  minHeight?: number;
-  maxHeight?: number;
-
-  // ─── Overflow / BFC ───
-  overflow?: 'visible' | 'hidden' | 'scroll' | 'auto';
-  overflowX?: 'visible' | 'hidden' | 'scroll' | 'auto';
-  overflowY?: 'visible' | 'hidden' | 'scroll' | 'auto';
-
-  // ─── Typography / Inline ───
-  lineHeight?: number | string;
-  verticalAlign?: 'baseline' | 'top' | 'middle' | 'bottom';
-  visibility?: 'visible' | 'hidden';
 
   // ─── Flex 레이아웃 ───
   flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
@@ -906,6 +852,30 @@ export interface LineShape {
   stroke: ColorValue;
   strokeWidth: number;
   strokeDasharray?: number[];
+}
+
+/**
+ * 아이콘 (SVG 경로 기반)
+ *
+ * Lucide 등 아이콘 라이브러리의 SVG 경로 데이터를 사용하여
+ * CanvasKit Path로 렌더링. 원본 viewBox는 24x24 기준.
+ */
+export interface IconFontShape {
+  type: 'icon_font';
+  /** 아이콘 이름 (lucideIcons 레지스트리에서 조회) */
+  iconName: string;
+  /** 아이콘 라이브러리 (기본: 'lucide') */
+  iconFontFamily?: string;
+  /** 아이콘 중심 X 좌표 */
+  x: number;
+  /** 아이콘 중심 Y 좌표 */
+  y: number;
+  /** 렌더링 크기 (px, 기본: 16) */
+  fontSize?: number;
+  /** 선 두께 (기본: 2) — Lucide 기본 strokeWidth */
+  strokeWidth?: number;
+  /** 채우기 색상 (stroke 색상으로 사용) */
+  fill?: ColorValue;
 }
 
 /**
@@ -4200,9 +4170,9 @@ Phase 5까지 CanvasKit/Skia 이중 렌더러 인프라가 완성되었지만, C
 
 ```
 ComponentSpec.render.shapes(props, variant, size, state)
-  → Shape[] (roundRect, rect, circle, line, border, text, shadow, ...)
+  → Shape[] (roundRect, rect, circle, line, border, text, shadow, icon_font, ...)
     → specShapesToSkia() 변환기
-      → SkiaNodeData { type:'box'|'line'|'text'|'container', children: [...] }
+      → SkiaNodeData { type:'box'|'line'|'text'|'container'|'icon_path', children: [...] }
         → nodeRenderers.ts renderNode()
           → CanvasKit Canvas API 호출
 ```
@@ -4215,7 +4185,7 @@ ComponentSpec.render.shapes(props, variant, size, state)
 
 ```typescript
 // SkiaNodeData.type 확장
-type: 'box' | 'text' | 'image' | 'container' | 'line'
+type: 'box' | 'text' | 'image' | 'container' | 'line' | 'icon_path' | 'partial_border'
 
 // line 전용 데이터
 line?: {
@@ -4238,6 +4208,7 @@ line?: {
 | `text` | `type:'text'`, `text:{ content, fontSize, color, ... }` |
 | `shadow` | target Shape의 `effects[]`에 DropShadowEffect 추가 |
 | `gradient` | target Shape의 `box.fills[]`에 LinearGradient/RadialGradient Shader 추가 |
+| `icon_font` | `type:'icon_path'`, `getIconData()`로 SVG 경로 조회 → CanvasKit Path 렌더링 |
 
 색상 해석: `Shape.fill` (ColorValue = TokenRef | string | number) → `resolveColor(fill, theme)` → `Float32Array[r,g,b,a]`
 
@@ -4638,7 +4609,7 @@ PixiJS Canvas (z-index: 4)        ← 이벤트 전용 (alpha=0, 보이지 않�
 | **TagGroup** | ✅ | ✅ 3-level | ✅ | ✅ | ✅ 정상 |
 | **TagList** | (TagGroup 내부) | ✅ (자식) | — | ✅ | ✅ 정상 |
 | **ToggleButtonGroup** | ✅ | ✅ | ✅ | ✅ | ✅ 정상 |
-| **Card** | ✅ | ❌ 미정의 | ✅ | ✅ | ⚠️ Factory 필요 |
+| **Card** | ✅ | ✅ 정의됨 | ✅ | ✅ | ✅ 정상 |
 | **Panel** | ✅ | ❌ 미정의 | ✅ | ✅ | ⚠️ Factory 필요 |
 | **Group** | ✅ | ✅ | ✅ | ✅ | ✅ 정상 |
 | **Form** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
@@ -5131,42 +5102,44 @@ Slider를 Complex Component로 전환할 때 수정한 파일과 역할은 다�
 
 > 동일 패턴 참조: Select, ComboBox — `useElementCreator.ts`의 `complexComponents` 배열과 `_hasLabelChild` 플래그 사용이 동일하다.
 
-### 9.12.4 `_hasLabelChild` 패턴 (Select / ComboBox / Slider 공통)
+### 9.12.4 `_hasChildren` 통합 패턴 (Select / ComboBox / Slider 공통)
+
+> **변경 이력**: 기존 `_hasLabelChild` 플래그는 `_hasChildren` 단일 패턴으로 통합되어 **제거됨** (2026-02 Compositional Architecture 전환).
 
 복합 컴포넌트로 전환된 컴포넌트는 자식 Label/Output element가 텍스트 렌더링을 직접 담당한다. 이때 spec의 `render.shapes`에서 label/output 텍스트 shape를 그대로 출력하면 이중 렌더링이 발생한다.
 
-`_hasLabelChild` 플래그는 이를 방지하기 위한 패턴이다.
+현재는 `_hasChildren` 플래그 하나로 모든 컴포넌트의 이중 렌더링을 방지한다. 자식 element가 존재하면 `_hasChildren: true`가 주입되고, spec shapes는 배경/테두리(shell)만 반환한다.
 
 ```typescript
-// ElementSprite.tsx — _hasLabelChild 체크 (Slider 포함)
-const isComplexWithLabel =
-  ['Select', 'ComboBox', 'Slider'].includes(element.tag) &&
-  childElements.some(c => c.tag === 'Label' || c.tag === 'SliderOutput');
+// ElementSprite.tsx — _hasChildren 단일 패턴 (모든 컴포넌트 통합)
+if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
+  // 실제 자식 유무 기반: 자식이 있으면 _hasChildren=true → spec은 shell만 반환
+  // 자식이 모두 삭제되면 _hasChildren=false → spec이 standalone 모드로 복귀
+  if (childElements && childElements.length > 0) {
+    specProps = { ...specProps, _hasChildren: true };
+  }
+}
 
-// shapes 호출 시 플래그 전달
-const shapes = spec.render.shapes(props, variant, size, state, {
-  _hasLabelChild: isComplexWithLabel,
-});
-
-// Slider.spec.ts — shapes 내부에서 플래그로 스킵
-shapes: (props, variant, size, state, flags) => {
+// Slider.spec.ts — shapes 내부에서 _hasChildren로 스킵
+shapes: (props, variant, size, state) => {
   const shapes: Shape[] = [];
+  const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+
+  // track, thumb shapes는 항상 출력 (배경/구조)
+  shapes.push({ type: 'roundRect', /* track ... */ });
+  shapes.push({ type: 'circle',    /* thumb ... */ });
 
   // label/output 텍스트: 자식 element가 렌더링 담당이면 스킵
-  if (!flags?._hasLabelChild) {
+  if (!hasChildren) {
     shapes.push({ type: 'text', /* label ... */ });
     shapes.push({ type: 'text', /* output value ... */ });
   }
-
-  // track, thumb shapes는 항상 출력
-  shapes.push({ type: 'roundRect', /* track ... */ });
-  shapes.push({ type: 'circle',    /* thumb ... */ });
 
   return shapes;
 },
 ```
 
-> **적용 컴포넌트**: Select, ComboBox, Slider — 세 컴포넌트 모두 동일 패턴. 새로운 Complex Component 전환 시에도 동일하게 적용한다.
+> **적용 범위**: Select, ComboBox, Slider 포함 모든 컴포넌트에 동일하게 적용. §9.13 Compositional Architecture 참조.
 
 ### 9.12.5 TokenRef 산술 연산 버그 — `resolveToken()` 필수 원칙
 
@@ -5274,31 +5247,24 @@ shapes.push({
 
 > **주의**: `props.label ? 20 : 0` 같은 하드코딩된 오프셋은 size별 폰트 크기 변화를 반영하지 못한다. 반드시 `resolveToken()`으로 얻은 fontSize 기반으로 `labelOffset`을 계산해야 한다.
 
-### 9.12.9 `rearrangeShapesForColumn` 가드 — `SPEC_RENDERS_ALL_TAGS_SET`
+### 9.12.9 `rearrangeShapesForColumn` — 가드 제거됨
 
-`rearrangeShapesForColumn()`은 `flexDirection: 'column'`인 컴포넌트의 shapes를 세로 배치로 재정렬하는 함수다. 그런데 일부 컴포넌트는 spec `shapes()` 자체가 내부 레이아웃을 포함하므로 재정렬 시 좌표가 덮어써지는 문제가 있다.
+> **변경 이력**: `SPEC_RENDERS_ALL_TAGS_SET` 가드는 Compositional Architecture 전환 시 **제거됨** (2026-02). `_hasChildren` 패턴 통합으로 불필요해짐.
 
-**문제 발생 시나리오**:
+`rearrangeShapesForColumn()`은 `flexDirection: 'column'`인 컴포넌트의 shapes를 세로 배치로 재정렬하는 함수다.
 
-1. SearchField, NumberField 같은 컴포넌트는 shapes() 내에서 직접 label → bg → 아이콘 순서로 y 좌표를 지정한다.
-2. 이들이 column 방향 flex 컨테이너 안에 있으면 `rearrangeShapesForColumn()`이 호출된다.
-3. 함수가 shapes를 재배치하면 spec이 직접 계산한 labelOffset 등이 무시된다.
+**이전 문제**: SearchField, NumberField 등의 spec `shapes()`가 label → bg → 아이콘 순서로 직접 y 좌표를 지정하는데, `rearrangeShapesForColumn()`이 이를 덮어쓰는 문제가 있었다. 이전에는 `SPEC_RENDERS_ALL_TAGS_SET` 가드로 특정 태그를 재배치에서 제외했다.
 
-**해결**: `ElementSprite.tsx`에 `SPEC_RENDERS_ALL_TAGS_SET` 가드를 추가하여 이 컴포넌트들은 재배치를 스킵한다.
+**현재**: `_hasChildren` 패턴으로 전환되면서, 자식이 있는 컴포넌트는 spec shapes가 shell만 반환하므로 좌표 충돌이 발생하지 않는다. 따라서 가드 없이 모든 column 컴포넌트에 `rearrangeShapesForColumn`을 적용한다.
 
 ```typescript
-// ElementSprite.tsx — rearrangeShapesForColumn 호출부
-const SPEC_RENDERS_ALL_TAGS_SET = new Set([
-  'TextField', 'NumberField', 'SearchField',
-  'DateField', 'TimeField', 'ColorField', 'TextArea',
-  'Slider', 'RangeSlider',
-]);
-if (isColumn && !SPEC_RENDERS_ALL_TAGS_SET.has(tag)) {
+// ElementSprite.tsx — rearrangeShapesForColumn 호출부 (현재)
+if (isColumn) {
   rearrangeShapesForColumn(shapes, finalWidth, sizeSpec.gap ?? 8);
 }
 ```
 
-> **원칙**: spec `shapes()` 내에서 여러 row를 직접 y 좌표로 배치하는 컴포넌트는 `SPEC_RENDERS_ALL_TAGS_SET`에 등록해야 한다. 단순한 단일 row indicator + label 구조(Checkbox, Radio, Switch 등)는 등록 불필요.
+> **원칙**: spec `shapes()`에서 `_hasChildren`일 때 shell만 반환하면 좌표 충돌이 발생하지 않으므로, 별도 가드가 불필요하다. standalone 모드(자식 없음)에서만 내부 레이아웃을 직접 배치한다.
 
 
 ---
@@ -5341,10 +5307,9 @@ const CHILD_COMPOSITION_EXCLUDE_TAGS = new Set([
 ]);
 
 if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
-  // Complex component: 자식 유무와 관계없이 항상 _hasChildren=true
-  // (자식 삭제 시 standalone 렌더링 복귀 방지)
-  // Non-complex (Button 등): 자식이 실제로 있을 때만 _hasChildren=true
-  if (COMPLEX_COMPONENT_TAGS.has(tag) || (childElements && childElements.length > 0)) {
+  // 실제 자식 유무 기반: 자식이 있으면 _hasChildren=true → spec은 shell만 반환
+  // 자식이 모두 삭제되면 _hasChildren=false → spec이 standalone 모드로 복귀하여 자체 콘텐츠 렌더링
+  if (childElements && childElements.length > 0) {
     specProps = { ...specProps, _hasChildren: true };
   }
 }
@@ -5358,7 +5323,9 @@ if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
 #### 공유 상수: COMPLEX_COMPONENT_TAGS (`factories/constants.ts`)
 
 Factory가 자식 Element를 생성하는 컴포넌트 태그를 **공유 상수**로 분리한다.
-이 Set에 포함된 태그는 자식 유무와 관계없이 **항상 `_hasChildren: true`**를 받는다.
+이 Set은 `useElementCreator.ts`에서 Factory 경로 분기에 사용된다.
+
+> **변경 이력**: 이전에는 `ElementSprite.tsx`에서 `COMPLEX_COMPONENT_TAGS.has(tag)` 선행 검사로 항상 `_hasChildren: true`를 주입했으나, 자식 삭제 후에도 shell만 남는 버그로 인해 제거됨. 현재는 실제 `childElements.length > 0` 조건만 사용.
 
 ```typescript
 // apps/builder/src/builder/factories/constants.ts
@@ -5389,17 +5356,15 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
 ]);
 ```
 
-**동작 규칙**:
+**동작 규칙 (현재)**:
 
 | 컴포넌트 유형 | `_hasChildren` 조건 | 예시 |
 |-------------|-------------------|------|
-| Complex Component | 항상 `true` (자식 삭제해도 유지) | TextField, Select, Slider |
-| Non-complex Component | 자식이 실제로 있을 때만 `true` | Button, Badge |
+| 모든 컴포넌트 (EXCLUDE 제외) | 자식이 실제로 있을 때만 `true` | TextField, Select, Button, Badge |
+| CHILD_COMPOSITION_EXCLUDE_TAGS | `_hasChildren` 주입 차단 | Tabs, Tree, TagGroup, Table, Breadcrumbs |
 
-> **도입 이유**: TextField 등에서 모든 자식을 삭제했을 때 `_hasChildren`이 `false`가 되어
-> standalone 렌더링(label+input 일체형)이 재활성화되는 버그 수정.
-> 근본 원인: `_hasChildren`이 런타임 `childElements.length > 0`에만 의존했던 설계.
-> `COMPLEX_COMPONENT_TAGS.has(tag)` 조건을 선행 검사함으로써 해결.
+> **현재 설계**: 모든 컴포넌트에 동일한 조건 (`childElements.length > 0`)을 적용.
+> 자식 삭제 시 `_hasChildren`이 `false`가 되어 standalone 렌더링으로 복귀하는 것이 **의도된 동작**.
 
 #### Opt-Out 아키텍처: NON_CONTAINER_TAGS (`BuilderCanvas.tsx`)
 
@@ -5563,8 +5528,7 @@ Opt-out 전환 후, 62개 spec 중 49개가 `_hasChildren`를 지원한다.
 
 | 분류 | 개수 | 컴포넌트 | 동작 |
 |------|------|---------|------|
-| Complex Component (`_hasChildren` 항상 true) | 33 | TextField, Select, Slider, Card 등 | 자식 삭제 시에도 standalone 렌더링으로 복귀하지 않음 |
-| Non-complex (`_hasChildren` 자식 있을 때만 true) | 13 | Button, Badge, ToggleButton, Slot, Panel, ProgressBar, Meter, DropZone, FileTrigger, ScrollBox, MaskedFrame, Section, Group | standalone 복귀가 의도된 동작 |
+| 일반 컴포넌트 (`_hasChildren` 자식 유무 기반) | 46 | TextField, Select, Slider, Card, Button, Badge 등 | 자식 있으면 shell, 없으면 standalone |
 | `CHILD_COMPOSITION_EXCLUDE_TAGS` (`_hasChildren` 주입 차단) | 4 | Tabs, Tree, Table, TagGroup | COMPLEX_COMPONENT_TAGS 포함이지만 Factory 경로 분기용으로만 사용, `_hasChildren` 주입은 EXCLUDE 가드로 차단 |
 | `CHILD_COMPOSITION_EXCLUDE_TAGS` (synthetic prop, _hasChildren 주입 차단) | 1 | Breadcrumbs | `_crumbs` synthetic prop 메커니즘 사용 |
 
@@ -5576,8 +5540,8 @@ Opt-out 전환 후, 62개 spec 중 49개가 `_hasChildren`를 지원한다.
 
 | 파일 | 역할 |
 |-----|------|
-| `factories/constants.ts` | `COMPLEX_COMPONENT_TAGS` Set (40+개) — complex component 태그 공유 상수 |
-| `ElementSprite.tsx` L1105 | `CHILD_COMPOSITION_EXCLUDE_TAGS` (5개 블랙리스트) + `COMPLEX_COMPONENT_TAGS` + `_hasChildren` flag 전파 |
+| `factories/constants.ts` | `COMPLEX_COMPONENT_TAGS` Set (40개) — Factory 경로 분기용 공유 상수 |
+| `ElementSprite.tsx` L1161 | `CHILD_COMPOSITION_EXCLUDE_TAGS` (5개 블랙리스트) + `_hasChildren` flag 전파 (자식 유무 기반) |
 | `ElementSprite.tsx` L876 | `TRANSPARENT_CONTAINER_TAGS` |
 | `BuilderCanvas.tsx` L625 | `NON_CONTAINER_TAGS` (~21개 블랙리스트) + `isContainerTagForLayout()` |
 | `BuilderCanvas.tsx` L661-963 | createContainerChildRenderer (layout 주입, props sync, transparent) |
@@ -5642,11 +5606,12 @@ Opt-out 전환 후, 62개 spec 중 49개가 `_hasChildren`를 지원한다.
     "typescript": "^5.3.0",
     "tsup": "^8.0.0",
     "tsx": "^4.7.0",
-    "vitest": "^1.0.0",
-    "@vitest/coverage-v8": "^1.0.0",
-    "@playwright/test": "^1.40.0",
-    "pixelmatch": "^5.3.0",
-    "pngjs": "^7.0.0"
+    "vitest": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@playwright/test": "^1.58.2",
+    "pixelmatch": "^7.1.0",
+    "pngjs": "^7.0.0",
+    "eslint": "^10.0.2"
   }
 }
 ```

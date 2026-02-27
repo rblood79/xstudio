@@ -116,7 +116,7 @@
   .react-aria-ToggleButtonGroup[data-togglebutton-size="sm"]
     .react-aria-ToggleButton {
     font-size: var(--text-sm);
-    padding: var(--spacing) var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
   }
 
   /* Medium (default) */
@@ -124,7 +124,7 @@
   .react-aria-ToggleButtonGroup[data-togglebutton-size="md"]
     .react-aria-ToggleButton {
     font-size: var(--text-base);
-    padding: var(--spacing-sm) var(--spacing-xl);
+    padding: var(--spacing-md) var(--spacing-lg);
   }
 
   /* Large */
@@ -132,6 +132,6 @@
   .react-aria-ToggleButtonGroup[data-togglebutton-size="lg"]
     .react-aria-ToggleButton {
     font-size: var(--text-lg);
-    padding: var(--spacing-md) var(--spacing-2xl);
+    padding: var(--spacing-lg) var(--spacing-xl);
   }
 }

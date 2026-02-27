@@ -75,7 +75,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
 
   render: {
     shapes: (props, variant, size) => {
-      const text = props.children ?? props.placeholder ?? '';
+      const text = props.children || props.placeholder || '';
       if (!text) return [];
 
       const rawFontSize = props.style?.fontSize ?? size.fontSize;

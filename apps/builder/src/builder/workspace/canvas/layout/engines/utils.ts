@@ -13,7 +13,7 @@
 
 import type { Margin, BoxModel, VerticalAlign } from './types';
 import type { Element } from '../../../../../types/core/store.types';
-import { fontFamily as specFontFamily } from '@xstudio/specs';
+import { fontFamily as specFontFamily, InputSpec, resolveToken } from '@xstudio/specs';
 import { measureWrappedTextHeight, measureFontMetrics, getTextMeasurer, isCanvasKitMeasurer } from '../../utils/textMeasure';
 import type { FontMetrics } from '../../utils/textMeasure';
 import {
@@ -395,11 +395,11 @@ const BUTTON_SIZE_CONFIG: Record<string, {
   // @sync Button.css base: border: 1px solid (all variants, all sizes)
   // CSS Button은 명시적 height를 설정하지 않음 → line-height:normal + padding + border로 자동 결정
   // height를 지정하면 CSS 렌더링과 불일치 (CSS는 fontBoundingBox 기반 line-height 사용)
-  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12, borderWidth: 1 },
-  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14, borderWidth: 1 },
-  md: { paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16, borderWidth: 1 },
-  lg: { paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18, borderWidth: 1 },
-  xl: { paddingLeft: 40, paddingRight: 40, paddingY: 16, fontSize: 20, borderWidth: 1 },
+  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 4, fontSize: 12, borderWidth: 1 },
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 8, fontSize: 14, borderWidth: 1 },
+  md: { paddingLeft: 16, paddingRight: 16, paddingY: 12, fontSize: 16, borderWidth: 1 },
+  lg: { paddingLeft: 24, paddingRight: 24, paddingY: 16, fontSize: 18, borderWidth: 1 },
+  xl: { paddingLeft: 32, paddingRight: 32, paddingY: 24, fontSize: 20, borderWidth: 1 },
 };
 
 /** PixiButton MIN_BUTTON_HEIGHT과 동일 */
@@ -442,9 +442,9 @@ const TOGGLEBUTTON_SIZE_CONFIG: Record<string, {
   borderWidth: number;
 }> = {
   // @sync ToggleButton.css [data-size] padding 값과 일치해야 함
-  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14, borderWidth: 1 },   // --spacing-md = 12px
-  md: { paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16, borderWidth: 1 },   // --spacing-xl = 24px
-  lg: { paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18, borderWidth: 1 },  // --spacing-2xl = 32px
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 8, fontSize: 14, borderWidth: 1 },   // --spacing-md = 12px
+  md: { paddingLeft: 16, paddingRight: 16, paddingY: 12, fontSize: 16, borderWidth: 1 },  // --spacing-lg = 16px
+  lg: { paddingLeft: 24, paddingRight: 24, paddingY: 16, fontSize: 18, borderWidth: 1 },  // --spacing-xl = 24px
 };
 
 /**
@@ -887,7 +887,7 @@ export function calculateContentWidth(
 const DEFAULT_ELEMENT_HEIGHTS: Record<string, number> = {
   // 버튼/인풋 계열
   button: 36,
-  input: 36,
+  // input: InputSpec.sizes 기반 동적 계산 (step 2.5)
   select: 36,
   textarea: 80,
   // 텍스트 계열
@@ -1051,6 +1051,23 @@ export function calculateContentHeight(
     return Math.max(textHeight, minContentHeight);
   }
 
+  // 2.5. Input: fontSize 기반 동적 높이 계산 (Text 컴포넌트와 동일 패턴)
+  // InputSpec.sizes에서 fontSize를 읽고, line-height: 1.5 기준으로 텍스트 높이 반환
+  if (tag === 'input') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const sizeConfig = InputSpec.sizes[sizeName] ?? InputSpec.sizes.md;
+    const rawFontSize = sizeConfig.fontSize;
+    const specFontSize = typeof rawFontSize === 'number'
+      ? rawFontSize
+      : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+        ? (resolveToken(rawFontSize as Parameters<typeof resolveToken>[0]) as number)
+        : 16);
+    const fontSize = parseNumericValue(style?.fontSize) ?? specFontSize;
+    const resolvedLineHeight = parseLineHeight(style, fontSize);
+    return estimateTextHeight(fontSize, resolvedLineHeight);
+  }
+
   // 3. CardHeader/CardContent/SelectTrigger: 투명 컨테이너 — 자식 높이 합산/max
   // Card의 새 트리 구조(Card → CardHeader → Heading, Card → CardContent → Description)에서
   // 각 래퍼가 자신의 자식 높이를 올바르게 반환해야 Card 전체 높이 계산이 정확해짐
@@ -1160,7 +1177,81 @@ export function calculateContentHeight(
     return Math.max(h, 36);
   }
 
-  // 3.6. ComboBox/Select: 자식 기반 동적 높이 계산 (Card 패턴)
+  // 3.5. Calendar Compositional Architecture: Card 패턴과 동일
+  // Calendar → CalendarHeader + CalendarGrid 자식 높이 합산
+  if (tag === 'calendar') {
+    if (childElements && childElements.length > 0) {
+      const gap = parseNumericValue(style?.gap) ?? 6;
+      const calPad = parsePadding(style, availableWidth);
+      const childAvailableWidth = availableWidth != null
+        ? availableWidth - calPad.left - calPad.right
+        : availableWidth;
+      let totalHeight = 0;
+      for (let i = 0; i < childElements.length; i++) {
+        totalHeight += calculateContentHeight(
+          childElements[i], childAvailableWidth, undefined, getChildElements
+        );
+        if (i < childElements.length - 1) totalHeight += gap;
+      }
+      return Math.max(totalHeight, 0);
+    }
+    return 0;
+  }
+
+  // CalendarHeader: intrinsic height = fontSize + 8
+  if (tag === 'calendarheader') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const headerFontSizes: Record<string, number> = { sm: 12, md: 14, lg: 16 };
+    return (headerFontSizes[sizeName] ?? 14) + 8;
+  }
+
+  // CalendarGrid: intrinsic height = weekdayRow + dateRows
+  if (tag === 'calendargrid') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const gridDims: Record<string, { iconSize: number; gap: number }> = {
+      sm: { iconSize: 24, gap: 4 }, md: { iconSize: 28, gap: 6 }, lg: { iconSize: 32, gap: 8 },
+    };
+    const d = gridDims[sizeName] ?? gridDims.md;
+    const cellSize = d.iconSize + 4;
+    const gp = d.gap;
+    const now = new Date();
+    const dayOffset = (props?.dayOffset as number) ?? new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+    const totalDays = (props?.totalDays as number) ?? new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const totalRows = Math.ceil((totalDays + dayOffset) / 7);
+    return cellSize + totalRows * (cellSize + gp) - gp;
+  }
+
+  // 3.6a. DatePicker: 자식 기반 동적 높이 계산 (Card/Calendar 패턴)
+  if (tag === 'datepicker') {
+    if (childElements && childElements.length > 0) {
+      const gap = parseNumericValue(style?.gap) ?? 8;
+      const dpPad = parsePadding(style, availableWidth);
+      const childAvailableWidth = availableWidth != null
+        ? availableWidth - dpPad.left - dpPad.right
+        : availableWidth;
+      let totalHeight = 0;
+      for (let i = 0; i < childElements.length; i++) {
+        totalHeight += calculateContentHeight(
+          childElements[i], childAvailableWidth, undefined, getChildElements
+        );
+        if (i < childElements.length - 1) totalHeight += gap;
+      }
+      return Math.max(totalHeight, 0);
+    }
+    return 0;
+  }
+
+  // 3.6b. DateField: intrinsic height from size (sm:32, md:40, lg:48)
+  if (tag === 'datefield') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const dfHeights: Record<string, number> = { sm: 32, md: 40, lg: 48 };
+    return dfHeights[sizeName] ?? 40;
+  }
+
+  // 3.6c. ComboBox/Select: 자식 기반 동적 높이 계산 (Card 패턴)
   // Select/ComboBox: 실제 visible 자식들의 높이 합산 + gap (flexDirection:column)
   // Dropdown: 레거시 spec shapes 기반 계산
   const COMBOBOX_INPUT_HEIGHTS: Record<string, number> = {
@@ -1173,10 +1264,12 @@ export function calculateContentHeight(
     const sizeName = (props?.size as string) ?? 'md';
     const isCompositional = tag === 'select' || tag === 'combobox';
 
-    // gap: 스타일에서 동적으로 읽기 (미설정 시 기본 8)
+    // gap: display:flex일 때만 적용 (CSS gap은 block에서 미적용)
+    const displayVal = style?.display;
+    const isFlex = displayVal === 'flex' || displayVal === 'inline-flex';
     const gapRaw = style?.gap;
     const gapParsed = typeof gapRaw === 'number' ? gapRaw : parseFloat(String(gapRaw ?? ''));
-    const gap = isNaN(gapParsed) ? 8 : gapParsed;
+    const gap = isFlex ? (isNaN(gapParsed) ? 8 : gapParsed) : 0;
 
     // Select/ComboBox: 실제 visible 자식 요소 순회 (Card와 동일 패턴)
     // label prop이 없으면 Label 자식 제외 (web preview 동작과 일치)
@@ -1221,9 +1314,14 @@ export function calculateContentHeight(
             childH = wrapperContentH + (specPadY[sizeName] ?? 16);
           }
         } else if (childTag === 'label' || childTag === 'description' || childTag === 'fielderror') {
-          // 텍스트 자식: fontSize * lineHeight
-          const fontSize = parseFloat(String(childStyle.fontSize ?? 14)) || 14;
-          childH = Math.ceil(fontSize * 1.5);
+          // 텍스트 자식: explicit height 우선, 없으면 fontSize * lineHeight
+          const explicitH = parseNumericValue(childStyle.height);
+          if (explicitH != null && explicitH > 0) {
+            childH = explicitH;
+          } else {
+            const fontSize = parseFloat(String(childStyle.fontSize ?? 14)) || 14;
+            childH = Math.ceil(fontSize * 1.5);
+          }
         } else {
           // 기타 자식: explicit height 또는 텍스트 기반
           childH = typeof childStyle.height === 'number'
@@ -1603,9 +1701,11 @@ export function parseBoxModel(
   // border-box로 해석해야 Web 모드와 동일하게 총 크기(패딩 포함)가 유지된다.
   const isSectionElement = tag === 'section';
   const isCardLikeElement = tag === 'card' || tag === 'box';
+  const isCalendarElement = tag === 'calendar';
+  const isDatePickerElement = tag === 'datepicker';
   const treatAsBorderBox = boxSizing === 'border-box' ||
     (isFormElement && (width !== undefined || height !== undefined)) ||
-    ((isSectionElement || isCardLikeElement) &&
+    ((isSectionElement || isCardLikeElement || isCalendarElement || isDatePickerElement) &&
       boxSizing !== 'content-box' &&
       (width !== undefined || height !== undefined));
 

@@ -68,6 +68,9 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+/** 기본 폰트 패밀리 — body 상속, 스타일 패널 폴백 등에서 참조 */
+export const DEFAULT_FONT_FAMILY = 'Pretendard';
+
 export const DEFAULT_FONT_OPTIONS = [
   { value: 'reset', label: 'Reset' },
   { value: 'Pretendard', label: 'Pretendard' },

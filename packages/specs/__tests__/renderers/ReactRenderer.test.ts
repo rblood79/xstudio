@@ -72,7 +72,7 @@ describe('generateSizeVariables', () => {
     const vars = generateSizeVariables(ButtonSpec.sizes['sm']);
     expect(vars['--spec-height']).toBe('32px');
     expect(vars['--spec-padding-x']).toBe('12px');
-    expect(vars['--spec-padding-y']).toBe('4px');
+    expect(vars['--spec-padding-y']).toBe('8px');
     expect(vars['--spec-font-size']).toBe('var(--text-sm)');
     expect(vars['--spec-border-radius']).toBe('var(--radius-sm)');
   });

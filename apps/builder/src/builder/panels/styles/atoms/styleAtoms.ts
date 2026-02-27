@@ -15,6 +15,7 @@ import {
   computeSyntheticStyle,
 } from '../../../../services/computedStyleService';
 import type { SyntheticComputedStyle } from '../../../../services/computedStyleService';
+import { DEFAULT_FONT_FAMILY } from '../../../fonts/customFonts';
 
 // ============================================
 // Base Atoms
@@ -580,7 +581,7 @@ export const appearanceValuesAtom = selectAtom(
 
 export const fontFamilyAtom = selectAtom(
   selectedElementAtom,
-  (element) => String(element?.style?.fontFamily ?? element?.computedStyle?.fontFamily ?? 'Arial'),
+  (element) => String(element?.style?.fontFamily ?? element?.computedStyle?.fontFamily ?? DEFAULT_FONT_FAMILY),
   (a, b) => a === b
 );
 
@@ -666,7 +667,7 @@ export const typographyValuesAtom = selectAtom(
     const synthetic = computeSyntheticStyle(element);
 
     return {
-      fontFamily: String(style.fontFamily ?? computed.fontFamily ?? 'Arial'),
+      fontFamily: String(style.fontFamily ?? computed.fontFamily ?? DEFAULT_FONT_FAMILY),
       fontSize: String(style.fontSize ?? computed.fontSize ?? synthetic.fontSize ?? '16px'),
       fontWeight: String(style.fontWeight ?? computed.fontWeight ?? 'normal'),
       fontStyle: String(style.fontStyle ?? computed.fontStyle ?? 'normal'),

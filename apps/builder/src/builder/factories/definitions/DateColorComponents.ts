@@ -3,12 +3,14 @@ import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
 
 /**
- * DatePicker 복합 컴포넌트 정의
+ * DatePicker 복합 컴포넌트 정의 (Compositional Architecture)
  *
- * CSS DOM 구조와 동일:
- *   DatePicker (parent)
- *     ├─ DateField  (tag="DateField", display:block)
- *     └─ Calendar   (tag="Calendar",  display:block)
+ * ComboBox 패턴: DatePicker는 투명 컨테이너, 자식이 개별 렌더링
+ *   DatePicker (parent, flex column, gap:8px, width:284px)
+ *     ├─ DateField       (trigger, width:100%)
+ *     └─ Calendar        (flex column, padding:12px, width:100%)
+ *         ├─ CalendarHeader  (nav: ← 월/년 →)
+ *         └─ CalendarGrid    (요일 + 날짜 셀)
  */
 export function createDatePickerDefinition(
   context: ComponentCreationContext
@@ -22,6 +24,17 @@ export function createDatePickerDefinition(
     ? { page_id: null as null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null as null };
 
+  // Calendar 현재 월 데이터
+  const now = new Date();
+  const calYear = now.getFullYear();
+  const calMonth = now.getMonth();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const calTotalDays = new Date(calYear, calMonth + 1, 0).getDate();
+  const monthText = new Intl.DateTimeFormat(
+    (typeof navigator !== 'undefined' && navigator.language) || 'ko-KR',
+    { year: 'numeric', month: 'long' }
+  ).format(now);
+
   return {
     tag: "DatePicker",
     parent: {
@@ -33,6 +46,7 @@ export function createDatePickerDefinition(
           display: "flex",
           flexDirection: "column",
           gap: "8px",
+          width: "284px", // Calendar intrinsic width (cellSize*7 + gap*6 + padding*2)
         },
       } as ComponentElementProps,
       ...ownerFields,
@@ -46,6 +60,7 @@ export function createDatePickerDefinition(
           placeholder: "YYYY-MM-DD",
           style: {
             display: "block",
+            width: "100%",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -57,11 +72,48 @@ export function createDatePickerDefinition(
           isDisabled: false,
           isReadOnly: false,
           style: {
-            display: "block",
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+            padding: "12px",
+            width: "100%",
           },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
+        children: [
+          {
+            tag: "CalendarHeader",
+            props: {
+              variant: "default",
+              size: "md",
+              children: monthText,
+              style: {
+                display: "block",
+                width: "100%",
+              },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "CalendarGrid",
+            props: {
+              variant: "default",
+              size: "md",
+              defaultToday: true,
+              dayOffset: firstDay,
+              totalDays: calTotalDays,
+              todayDate: now.getDate(),
+              style: {
+                display: "block",
+                width: "100%",
+              },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 2,
+          },
+        ],
       },
     ],
   };
@@ -152,8 +204,8 @@ export function createDateRangePickerDefinition(
  *     ├─ CalendarHeader (tag="CalendarHeader", children="February 2026")
  *     └─ CalendarGrid  (tag="CalendarGrid",  display:grid)
  *
- * CalendarHeader / CalendarGrid 는 TAG_SPEC_MAP 미등록 태그이므로
- * 일반 Element로 렌더링됩니다. Spec 렌더링이 필요한 경우 별도 등록 필요.
+ * CalendarHeader / CalendarGrid 는 TAG_SPEC_MAP에 등록된 Spec 컴포넌트
+ * (Compositional Architecture — 각 자식이 자체 spec shapes를 렌더링)
  */
 export function createCalendarDefinition(
   context: ComponentCreationContext
@@ -167,6 +219,13 @@ export function createCalendarDefinition(
     ? { page_id: null as null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null as null };
 
+  // Calendar intrinsic width: cellSize*7 + gap*6 + paddingX*2 (md: 32*7+6*6+12*2 = 284)
+  const now = new Date();
+  const calYear = now.getFullYear();
+  const calMonth = now.getMonth();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const calTotalDays = new Date(calYear, calMonth + 1, 0).getDate();
+
   return {
     tag: "Calendar",
     parent: {
@@ -177,7 +236,10 @@ export function createCalendarDefinition(
         style: {
           display: "flex",
           flexDirection: "column",
-          gap: "8px",
+          gap: "6px",
+          padding: "12px",
+          width: "284px", // intrinsic: cellSize*7 + gap*6 + paddingX*2
+          // height 미지정 → calculateContentHeight 자동 계산 (Card 패턴)
         },
       } as ComponentElementProps,
       ...ownerFields,
@@ -188,7 +250,14 @@ export function createCalendarDefinition(
       {
         tag: "CalendarHeader",
         props: {
-          children: "February 2026",
+          variant: "default",
+          size: "md",
+          children: new Intl.DateTimeFormat(navigator.language || 'ko-KR', { year: 'numeric', month: 'long' }).format(now),
+          style: {
+            display: "block",
+            width: "100%",
+            // height 미지정 → calculateContentHeight 자동 계산
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -196,8 +265,16 @@ export function createCalendarDefinition(
       {
         tag: "CalendarGrid",
         props: {
+          variant: "default",
+          size: "md",
+          defaultToday: true,
+          dayOffset: firstDay,
+          totalDays: calTotalDays,
+          todayDate: now.getDate(),
           style: {
-            display: "grid",
+            display: "block",
+            width: "100%",
+            // height 미지정 → calculateContentHeight 자동 계산
           },
         } as ComponentElementProps,
         ...ownerFields,

@@ -23,7 +23,7 @@ exports[`generateCSS > 스냅샷 일치 1`] = `
 
     /* Default size */
     height: 32px;
-    padding: 4px 12px;
+    padding: 8px 12px;
     font-size: var(--text-sm);
     border-radius: var(--radius-sm);
   }
@@ -157,7 +157,7 @@ exports[`generateCSS > 스냅샷 일치 1`] = `
 
   .react-aria-Button[data-size="xs"] {
     height: 24px;
-    padding: 2px 8px;
+    padding: 4px 8px;
     font-size: var(--text-xs);
     border-radius: var(--radius-sm);
     gap: 4px;
@@ -165,7 +165,7 @@ exports[`generateCSS > 스냅샷 일치 1`] = `
 
   .react-aria-Button[data-size="sm"] {
     height: 32px;
-    padding: 4px 12px;
+    padding: 8px 12px;
     font-size: var(--text-sm);
     border-radius: var(--radius-sm);
     gap: 6px;
@@ -173,7 +173,7 @@ exports[`generateCSS > 스냅샷 일치 1`] = `
 
   .react-aria-Button[data-size="md"] {
     height: 40px;
-    padding: 8px 24px;
+    padding: 12px 16px;
     font-size: var(--text-md);
     border-radius: var(--radius-md);
     gap: 8px;
@@ -181,7 +181,7 @@ exports[`generateCSS > 스냅샷 일치 1`] = `
 
   .react-aria-Button[data-size="lg"] {
     height: 48px;
-    padding: 12px 32px;
+    padding: 16px 24px;
     font-size: var(--text-lg);
     border-radius: var(--radius-lg);
     gap: 10px;
@@ -189,7 +189,7 @@ exports[`generateCSS > 스냅샷 일치 1`] = `
 
   .react-aria-Button[data-size="xl"] {
     height: 56px;
-    padding: 16px 40px;
+    padding: 24px 32px;
     font-size: var(--text-xl);
     border-radius: var(--radius-lg);
     gap: 12px;

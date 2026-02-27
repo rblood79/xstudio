@@ -46,7 +46,8 @@ import {
   FileTriggerSpec, ScrollBoxSpec, MaskedFrameSpec,
   InputSpec, ListSpec, SwitcherSpec,
   DatePickerSpec, DateRangePickerSpec, DateFieldSpec, TimeFieldSpec,
-  CalendarSpec, ColorPickerSpec, ColorFieldSpec, ColorSliderSpec,
+  CalendarSpec, CalendarHeaderSpec, CalendarGridSpec,
+  ColorPickerSpec, ColorFieldSpec, ColorSliderSpec,
   ColorAreaSpec, ColorWheelSpec, ColorSwatchSpec, ColorSwatchPickerSpec,
   LabelSpec, FieldErrorSpec, DescriptionSpec,
   SliderTrackSpec, SliderThumbSpec, SliderOutputSpec,
@@ -283,7 +284,7 @@ const UI_COLORSLIDER_TAGS = new Set(['ColorSlider']);
 const UI_TIMEFIELD_TAGS = new Set(['TimeField']);
 const UI_DATEFIELD_TAGS = new Set(['DateField']);
 const UI_COLORAREA_TAGS = new Set(['ColorArea']);
-const UI_CALENDAR_TAGS = new Set(['Calendar', 'RangeCalendar']);
+const UI_CALENDAR_TAGS = new Set(['Calendar', 'RangeCalendar', 'CalendarHeader', 'CalendarGrid']);
 const UI_COLORWHEEL_TAGS = new Set(['ColorWheel']);
 const UI_DATEPICKER_TAGS = new Set(['DatePicker']);
 const UI_COLORPICKER_TAGS = new Set(['ColorPicker']);
@@ -520,6 +521,8 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'DateField': DateFieldSpec,
   'ColorArea': ColorAreaSpec,
   'Calendar': CalendarSpec, 'RangeCalendar': CalendarSpec,
+  'CalendarHeader': CalendarHeaderSpec,
+  'CalendarGrid': CalendarGridSpec,
   'ColorWheel': ColorWheelSpec,
   'DatePicker': DatePickerSpec,
   'ColorPicker': ColorPickerSpec,
@@ -944,6 +947,7 @@ export const ElementSprite = memo(function ElementSprite({
       'DateField', 'TimeField', 'ColorField',
       'TextArea', 'Textarea',
       'ComboBox', 'Select', 'Dropdown',
+      'DatePicker',
       'Slider', 'RangeSlider',
       'CheckboxGroup', 'RadioGroup',
       'Switch', 'Toggle',
@@ -1206,7 +1210,6 @@ export const ElementSprite = memo(function ElementSprite({
               sizeSpec,
               componentState,
             );
-
             // Column layout: shapes를 세로 쌓기로 재배치
             if (isColumn) {
               rearrangeShapesForColumn(shapes, finalWidth, sizeSpec.gap ?? 8);
@@ -1478,6 +1481,17 @@ export const ElementSprite = memo(function ElementSprite({
   const handlePointerLeave = useCallback(() => {
     setPreviewState(null);
   }, [setPreviewState]);
+
+  // SelectChild leaf: hover를 부모 wrapper(SelectTrigger/ComboBoxWrapper)로 전파
+  // leaf(SelectValue, SelectIcon, ComboBoxInput, ComboBoxTrigger)가 자신의 ID로 hover를 설정하면
+  // 부모 wrapper의 hover가 풀려 배경 overlay가 사라지는 문제 방지
+  const handleSelectChildLeafPointerOver = useCallback(() => {
+    if (parentElement) {
+      setPreviewState({ elementId: parentElement.id, state: 'hover' });
+    } else {
+      setPreviewState({ elementId: element.id, state: 'hover' });
+    }
+  }, [element.id, parentElement, setPreviewState]);
 
   // CheckboxGroup의 자식 Checkbox인지 확인
   const isCheckboxInGroup = spriteType === 'checkboxItem' && parentElement?.tag === 'CheckboxGroup';
@@ -2111,7 +2125,7 @@ export const ElementSprite = memo(function ElementSprite({
             <pixiGraphics
               draw={drawContainerHitRect}
               eventMode="static"
-              cursor="pointer"
+              cursor={containerPixiCursor}
               onPointerDown={handleContainerPointerDown}
               onPointerOver={handlePointerOver}
               onPointerUp={handlePointerUp}
@@ -2121,14 +2135,15 @@ export const ElementSprite = memo(function ElementSprite({
           </>
         );
       }
+      // Leaf selectChild: hover를 부모 wrapper로 전파 (overlay 유지)
       return (
         <pixiGraphics
           draw={drawContainerHitRect}
           eventMode="static"
-          cursor="pointer"
+          cursor={containerPixiCursor}
           onPointerDown={handleContainerPointerDown}
-          onPointerOver={handlePointerOver}
-          onPointerUp={handlePointerUp}
+          onPointerOver={handleSelectChildLeafPointerOver}
+          onPointerUp={handleSelectChildLeafPointerOver}
           onPointerLeave={handlePointerLeave}
         />
       );

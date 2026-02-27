@@ -19,6 +19,18 @@ export const CalendarEditor = memo(function CalendarEditor({ elementId, currentP
             [key]: value
         };
         onUpdate(updatedProps);
+
+        // CalendarGrid 자식에 defaultToday 전파
+        if (key === 'defaultToday') {
+            const state = useStore.getState();
+            const children = state.childrenMap.get(elementId) ?? [];
+            const gridChild = children.find((c: { tag: string }) => c.tag === 'CalendarGrid');
+            if (gridChild) {
+                state.updateElement(gridChild.id, {
+                    props: { ...gridChild.props, defaultToday: value },
+                });
+            }
+        }
     };
 
     const updateCustomId = (newCustomId: string) => {

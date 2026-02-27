@@ -122,7 +122,10 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
 
   render: {
     shapes: (props, variant, size, state = 'default') => {
-      const width = (props.style?.width as number) || 220;
+      const rawWidth = props.style?.width;
+      const width = typeof rawWidth === 'number'
+        ? rawWidth
+        : (typeof rawWidth === 'string' ? parseFloat(rawWidth) || 220 : 220);
       const height = size.height;
 
       const styleBr = props.style?.borderRadius;
@@ -203,8 +206,9 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
         },
       ];
 
+      // Compositional Architecture: 자식이 있으면 부모는 투명 컨테이너 (ComboBox 패턴)
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
+      if (hasChildren) return [];
 
       // Calendar overlay (열린 상태)
       if (props.isOpen) {

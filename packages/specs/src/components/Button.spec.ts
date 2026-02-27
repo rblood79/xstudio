@@ -104,7 +104,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     xs: {
       height: 24,
       paddingX: 8,
-      paddingY: 2,
+      paddingY: 4,
       fontSize: '{typography.text-xs}' as TokenRef,
       borderRadius: '{radius.sm}' as TokenRef,
       iconSize: 12,
@@ -113,7 +113,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     sm: {
       height: 32,
       paddingX: 12,
-      paddingY: 4,
+      paddingY: 8,
       fontSize: '{typography.text-sm}' as TokenRef,
       borderRadius: '{radius.sm}' as TokenRef,
       iconSize: 14,
@@ -121,8 +121,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     md: {
       height: 40,
-      paddingX: 24,
-      paddingY: 8,
+      paddingX: 16,
+      paddingY: 12,
       fontSize: '{typography.text-md}' as TokenRef,
       borderRadius: '{radius.md}' as TokenRef,
       iconSize: 16,
@@ -130,8 +130,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     lg: {
       height: 48,
-      paddingX: 32,
-      paddingY: 12,
+      paddingX: 24,
+      paddingY: 16,
       fontSize: '{typography.text-lg}' as TokenRef,
       borderRadius: '{radius.lg}' as TokenRef,
       iconSize: 20,
@@ -139,8 +139,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     xl: {
       height: 56,
-      paddingX: 40,
-      paddingY: 16,
+      paddingX: 32,
+      paddingY: 24,
       fontSize: '{typography.text-xl}' as TokenRef,
       borderRadius: '{radius.lg}' as TokenRef,
       iconSize: 24,

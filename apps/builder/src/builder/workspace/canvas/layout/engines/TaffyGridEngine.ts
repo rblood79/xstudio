@@ -207,7 +207,7 @@ export function elementToTaffyGridStyle(
   }
 
   // Size + Min/Max + Padding + Border + Gap (공통 헬퍼)
-  applyCommonTaffyStyle(result, style, ctx);
+  applyCommonTaffyStyle(result as Record<string, unknown>, style, ctx);
 
   // --- Grid container: 트랙 정의 ---
   const gridTemplateColumns = style.gridTemplateColumns as string | undefined;

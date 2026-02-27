@@ -638,6 +638,10 @@ const ElementsLayer = memo(function ElementsLayer({
     'FieldError', 'DateSegment', 'TimeSegment', 'SliderOutput', 'SliderThumb',
     // Select sub-components: leaf 요소
     'SelectValue', 'SelectIcon',
+    // ComboBox sub-components: leaf 요소
+    'ComboBoxInput', 'ComboBoxTrigger',
+    // Calendar sub-components: leaf 요소
+    'CalendarHeader', 'CalendarGrid',
   ]), []);
 
   // Spec shapes 전용 컴포넌트: 모든 시각 요소를 spec shapes로 렌더링하므로
@@ -898,7 +902,11 @@ const ElementsLayer = memo(function ElementsLayer({
             filteredContainerChildren = filteredContainerChildren.map(child => {
               const cs = (child.props?.style || {}) as Record<string, unknown>;
               if (child.tag === 'ComboBoxInput') {
-                return { ...child, props: { ...child.props, style: { ...cs, flex: cs.flex ?? 1 } } } as Element;
+                // 부모 ComboBox의 placeholder를 ComboBoxInput에 동기화
+                const comboBoxEl = elementById.get(containerEl.parent_id ?? '');
+                const comboBoxProps = comboBoxEl?.props as Record<string, unknown> | undefined;
+                const placeholder = comboBoxProps?.placeholder ?? child.props?.placeholder;
+                return { ...child, props: { ...child.props, placeholder, style: { ...cs, flex: cs.flex ?? 1 } } } as Element;
               }
               if (child.tag === 'ComboBoxTrigger') {
                 return { ...child, props: { ...child.props, style: { ...cs, width: cs.width ?? 18, height: cs.height ?? 18, flexShrink: cs.flexShrink ?? 0 } } } as Element;
@@ -1137,7 +1145,6 @@ const ElementsLayer = memo(function ElementsLayer({
               },
               parent_id: effectiveChildEl.id,
               page_id: effectiveChildEl.page_id,
-              project_id: effectiveChildEl.project_id,
               order_num: 1,
             } as Element;
             effectiveChildElements = [syntheticLabel];
@@ -1343,6 +1350,14 @@ export function BuilderCanvas({
   const [appReady, setAppReady] = useState(false);
   // 🚀 Phase 9: Rust WASM 로드 완료 상태 (Taffy/Grid 엔진 활성화 시점에 레이아웃 재계산 트리거)
   const [wasmLayoutReady, setWasmLayoutReady] = useState(() => isRustWasmReady());
+  // 폰트 로딩 완료 후 레이아웃 재계산 트리거
+  // measureFontMetrics 캐시가 폰트 로드 전 폴백 메트릭으로 오염되는 것을 방지
+  const [, setFontsReadyTick] = useState(0);
+  useEffect(() => {
+    const handler = () => setFontsReadyTick(t => t + 1);
+    window.addEventListener('xstudio:fonts-ready', handler);
+    return () => window.removeEventListener('xstudio:fonts-ready', handler);
+  }, []);
   // Phase 5: PixiJS app 인스턴스 (SkiaOverlay에 전달)
   const [pixiApp, setPixiApp] = useState<PixiApplication | null>(null);
 

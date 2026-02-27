@@ -77,6 +77,15 @@ export interface CSSStyle {
   // Layout properties
   display?: string;
   flexDirection?: string;
+  flexWrap?: string;
+  flexGrow?: number | string;
+  flexShrink?: number | string;
+  flexBasis?: string;
+  justifyContent?: string;
+  alignItems?: string;
+  alignContent?: string;
+  alignSelf?: string;
+  justifySelf?: string;
   gap?: number | string;
   // Visibility
   visibility?: 'visible' | 'hidden' | 'collapse';
@@ -588,10 +597,13 @@ export function convertToTransform(style: CSSStyle | undefined): PixiTransform {
  * @param resolvedColor - currentColor 해석을 위한 현재 요소의 color 값
  */
 export function convertToFillStyle(style: CSSStyle | undefined, resolvedColor?: string): PixiFillStyle {
-  const color = cssColorToHex(style?.backgroundColor, 0xffffff, resolvedColor);
+  const bg = style?.backgroundColor ?? (style as Record<string, unknown> | undefined)?.background as string | undefined;
+  const color = cssColorToHex(bg, 0xffffff, resolvedColor);
   const alpha = style?.opacity !== undefined
     ? parseCSSSize(style.opacity, undefined, 1)
-    : cssColorToAlpha(style?.backgroundColor, resolvedColor);
+    : bg
+      ? cssColorToAlpha(bg, resolvedColor)
+      : 0;
 
   return { color, alpha };
 }

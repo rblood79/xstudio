@@ -23,6 +23,7 @@ interface PropertyUnitInputProps {
   }>;
   className?: string;
   units?: string[];
+  defaultUnit?: string;
   allowKeywords?: boolean;
   min?: number;
   max?: number;
@@ -66,6 +67,7 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
   icon: Icon,
   className,
   units = DEFAULT_UNITS,
+  defaultUnit = "",
   allowKeywords = true,
   min = 0,
   max = 9999,
@@ -73,7 +75,7 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
   // useMemo로 value prop에서 파생값 계산 (useLayoutEffect + setState 대체)
   const parsed = useMemo(() => parseUnitValue(value), [value]);
   const numericValue = parsed.numericValue;
-  const unit = parsed.unit;
+  const unit = parsed.unit || (parsed.numericValue !== null ? defaultUnit : parsed.unit);
   const isKeyword = parsed.numericValue === null;
   const [inputValue, setInputValue] = useState(
     parsed.numericValue !== null ? String(parsed.numericValue) : parsed.unit

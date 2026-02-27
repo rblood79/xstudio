@@ -18,6 +18,7 @@
  */
 
 import { parseFontShorthand } from './cssValueParser';
+import { DEFAULT_FONT_FAMILY } from '../../../../fonts/customFonts';
 
 // ============================================
 // 상속 가능 속성 목록
@@ -251,7 +252,7 @@ export interface ComputedStyle {
 export const ROOT_COMPUTED_STYLE: ComputedStyle = {
   color: '#000000',
   fontSize: 16,
-  fontFamily: 'Pretendard, sans-serif',
+  fontFamily: `${DEFAULT_FONT_FAMILY}, sans-serif`,
   fontWeight: 400,
   fontStyle: 'normal',
   fontVariant: 'normal',

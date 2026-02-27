@@ -55,10 +55,12 @@ export function useZustandJotaiBridge(): void {
 
     // Zustand 구독
     const unsubscribe = useStore.subscribe((state, prevState) => {
-      // selectedElementId 또는 selectedElementProps 변경 시에만 업데이트
+      // selectedElementId, selectedElementProps, 또는 elementsMap 변경 시 업데이트
+      // elementsMap: 부모 체인의 스타일 변경 시 상속값 재계산 필요
       if (
         state.selectedElementId !== prevState.selectedElementId ||
-        state.selectedElementProps !== prevState.selectedElementProps
+        state.selectedElementProps !== prevState.selectedElementProps ||
+        state.elementsMap !== prevState.elementsMap
       ) {
         const element = buildSelectedElement(state);
         setSelectedElement(element as unknown as Parameters<typeof setSelectedElement>[0]);
@@ -73,6 +75,42 @@ export function useZustandJotaiBridge(): void {
 
     return unsubscribe;
   }, [setSelectedElement, setPreviewComponentState]);
+}
+
+/** CSS 상속 가능 속성 — 스타일 패널에서 부모 체인 탐색 대상 */
+const STYLE_PANEL_INHERITABLE = new Set([
+  'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
+  'lineHeight', 'letterSpacing', 'color', 'textAlign', 'textTransform',
+]);
+
+/**
+ * 부모 체인을 탐색하여 CSS 상속 속성의 resolved 값을 반환
+ */
+function resolveInheritedStyle(
+  element: { parent_id?: string | null },
+  elementsMap: Map<string, { parent_id?: string | null; props: Record<string, unknown> }>,
+): Record<string, unknown> {
+  const inherited: Record<string, unknown> = {};
+  const remaining = new Set(STYLE_PANEL_INHERITABLE);
+
+  let currentId = element.parent_id;
+  while (currentId && remaining.size > 0) {
+    const parent = elementsMap.get(currentId);
+    if (!parent) break;
+
+    const parentStyle = (parent.props?.style ?? {}) as Record<string, unknown>;
+    for (const prop of [...remaining]) {
+      const val = parentStyle[prop];
+      if (val !== undefined && val !== null && val !== '') {
+        inherited[prop] = val;
+        remaining.delete(prop);
+      }
+    }
+
+    currentId = parent.parent_id;
+  }
+
+  return inherited;
 }
 
 /**
@@ -102,11 +140,15 @@ function buildSelectedElement(
     style.backgroundColor as string | undefined,
   );
 
+  // CSS 상속 속성 해결: 부모 체인 탐색 → computedStyle에 병합
+  const inheritedStyle = resolveInheritedStyle(element, elementsMap);
+  const explicitComputed = effectiveProps?.computedStyle as Record<string, unknown> | undefined;
+
   return {
     id: element.id,
     type: element.tag,
     style,
-    computedStyle: effectiveProps?.computedStyle as Record<string, unknown> | undefined,
+    computedStyle: { ...inheritedStyle, ...(explicitComputed ?? {}) },
     computedLayout: effectiveProps?.computedLayout as { width?: number; height?: number } | undefined,
     className: (effectiveProps?.className as string) ?? '',
     fills,

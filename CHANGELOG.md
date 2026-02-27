@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 폰트 메트릭 캐싱 및 CSS 상속 (2026-02-27)
+
+#### 1px 높이 차이 수정 (Web 34px vs WebGL 35px)
+- **원인**: `measureFontMetrics()`가 Pretendard 로드 전 시스템 폴백 폰트(sans-serif)의 fontBoundingBox(17px)를 캐시 → Pretendard(16px)와 1px 차이
+- **수정** (`textMeasure.ts`): `document.fonts.ready` 이후에만 메트릭 캐시 저장, 로드 완료 시 캐시 클리어 + `xstudio:fonts-ready` 이벤트 발행
+- **수정** (`BuilderCanvas.tsx`): `xstudio:fonts-ready` 이벤트 수신 시 레이아웃 재계산 트리거
+
+#### 스타일 패널 CSS 상속 속성 해결
+- **문제**: 자식 요소(Button 등)에 fontFamily 미지정 시 스타일 패널에 "reset" 표시 (부모의 상속값 미반영)
+- **수정** (`useZustandJotaiBridge.ts`): `resolveInheritedStyle()` — 부모 체인 탐색으로 9개 CSS 상속 속성(fontFamily, fontSize, fontWeight 등) 해결 → `computedStyle`에 병합
+- **수정**: Zustand 구독 조건에 `elementsMap` 추가 (부모 스타일 변경 시 상속값 재계산)
+
+#### DEFAULT_FONT_FAMILY 상수 통일
+- `customFonts.ts`에 `DEFAULT_FONT_FAMILY = 'Pretendard'` 상수 정의
+- 4곳 하드코딩 제거: `unified.types.ts`, `styleAtoms.ts`, `cssResolver.ts`의 `ROOT_COMPUTED_STYLE`
+- Body 기본 props에 `fontFamily: DEFAULT_FONT_FAMILY` 추가 (CSS 상속 기반)
+
+### Docs - COMPONENT_SPEC_ARCHITECTURE.md 전체 검증 및 수정 (2026-02-27)
+
+4개 병렬 에이전트로 전체 문서(6400+ lines)를 코드와 대조 검증, 14건 불일치 수정:
+
+- §1.3, §2.1: 컴포넌트 수 72 → 73 (실제 spec 파일 수 반영)
+- §3.2: 디렉토리 구조에 adapters, icons, utils 누락 추가
+- §3.3.2: Shape union에 `icon_font` 타입 추가 + `IconFontShape` 인터페이스 문서화
+- §3.3.2: TextShape/ShadowShape/BorderShape에서 코드 미구현 속성 제거 (과대 문서화 해소)
+- §3.3.2: ContainerLayout에서 미구현 속성 제거 (`inline-block`, `flow-root`, `fixed`, box-model, overflow, typography)
+- §9.2-9.3: Shape 변환 테이블에 `icon_font → icon_path` 매핑 추가
+- §9.3.1: SkiaNodeData.type에 `icon_path`, `partial_border` 추가
+- §9.8.4: Card Factory 상태 "❌ 미정의" → "✅ 정의됨" (LayoutComponents.ts 반영)
+- §9.13.8: COMPLEX_COMPONENT_TAGS 수 38 → 40 (실제 코드 반영)
+- §10.1: 패키지 버전 업데이트 (vitest 1→4, pixelmatch 5→7, @playwright/test 1.40→1.58, eslint 10 추가)
+
 ### Changed - 추가 라이브러리 업데이트 (2026-02-27)
 
 | 패키지 | 이전 | 이후 | 사용처 |

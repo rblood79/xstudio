@@ -128,15 +128,18 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       const totalRows = Math.ceil((totalDays + dayOffset) / 7);
       const totalHeight = gridStartY + totalRows * (cellSize + gap) - gap + paddingY;
 
+      // Compositional Architecture: 자식이 있으면 shell(bg+border)만 반환
+      const hasChildren = !!(_props as Record<string, unknown>)._hasChildren;
+
       const shapes: Shape[] = [
-        // 배경
+        // 배경 — Card 패턴: hasChildren 시 'auto'(element bounds), standalone 시 계산값
         {
           id: 'bg',
           type: 'roundRect' as const,
           x: 0,
           y: 0,
-          width: calendarWidth,
-          height: totalHeight,
+          width: hasChildren ? 'auto' as unknown as number : calendarWidth,
+          height: hasChildren ? 'auto' as unknown as number : totalHeight,
           radius: borderRadius as unknown as number,
           fill: resolveStateColors(variant, state).background,
         },
@@ -148,6 +151,12 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           color: variant.border ?? ('{color.outline-variant}' as TokenRef),
           radius: borderRadius as unknown as number,
         },
+      ];
+
+      if (hasChildren) return shapes;
+
+      // Standalone mode: nav + month text 추가
+      shapes.push(
         // 네비게이션: 이전 화살표
         {
           type: 'icon_font' as const,
@@ -163,7 +172,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           type: 'text' as const,
           x: paddingX + cellSize,
           y: navRowY + headerHeight / 2,
-          text: 'January 2024',
+          text: '2024년 1월',
           fontSize,
           fontFamily: ff,
           fontWeight: 600,
@@ -182,10 +191,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           fill: variant.text,
           strokeWidth: 2,
         },
-      ];
-
-      const hasChildren = !!(_props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
+      );
 
       // 요일 헤더 (Sun ~ Sat)
       const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];

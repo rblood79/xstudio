@@ -258,7 +258,15 @@ export const createInspectorActionsSlice: StateCreator<
       if (value === "" || value === null || value === undefined) {
         delete currentStyle[property];
       } else {
-        currentStyle[property] = value;
+        // Canvas spec shapes는 fontSize/fontWeight 등을 숫자로 기대
+        // '10px' → 10, '14' → 14 등 순수 숫자 CSS 속성은 숫자로 변환
+        const NUMERIC_STYLE_PROPS = new Set(['fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'opacity']);
+        if (NUMERIC_STYLE_PROPS.has(property)) {
+          const num = parseFloat(value);
+          (currentStyle as Record<string, unknown>)[property] = !isNaN(num) ? num : value;
+        } else {
+          currentStyle[property] = value;
+        }
       }
 
       updateAndSave(
@@ -286,7 +294,13 @@ export const createInspectorActionsSlice: StateCreator<
       if (value === "" || value === null || value === undefined) {
         delete currentStyle[property];
       } else {
-        currentStyle[property] = value;
+        const NUMERIC_STYLE_PROPS = new Set(['fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'opacity']);
+        if (NUMERIC_STYLE_PROPS.has(property)) {
+          const num = parseFloat(value);
+          (currentStyle as Record<string, unknown>)[property] = !isNaN(num) ? num : value;
+        } else {
+          currentStyle[property] = value;
+        }
       }
 
       const newProps = { ...element.props, style: currentStyle };

@@ -52,8 +52,8 @@ describe('generateCSS', () => {
       expect(css).toContain('height: 32px');
     });
 
-    it('default size padding: 4px 12px', () => {
-      expect(css).toContain('padding: 4px 12px');
+    it('default size padding: 8px 12px', () => {
+      expect(css).toContain('padding: 8px 12px');
     });
   });
 

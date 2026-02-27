@@ -143,7 +143,8 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         label="Font Size"
         className="font-size"
         value={styleValues.fontSize}
-        units={['reset', 'px', 'pt']}
+        units={['reset', 'px']}
+        defaultUnit="px"
         onChange={(value) => updateStyleImmediate('fontSize', value)}
         onDrag={(value) => updateStylePreview('fontSize', value)}
         min={8}

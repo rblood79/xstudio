@@ -183,6 +183,22 @@ const _fontMetricsCache = new Map<string, FontMetrics>();
 const MAX_FONT_METRICS_CACHE_SIZE = 256;
 
 /**
+ * 폰트 로딩 완료 여부
+ *
+ * document.fonts.ready 이전에 측정된 메트릭은 시스템 폴백 폰트 기준이므로
+ * 캐시하면 안 됨. 폰트 로드 완료 후 캐시를 클리어하고 이후 측정부터 캐싱.
+ */
+let _fontsReady = false;
+if (typeof document !== 'undefined' && document.fonts) {
+  document.fonts.ready.then(() => {
+    _fontsReady = true;
+    _fontMetricsCache.clear();
+    // 폰트 로드 완료 후 레이아웃 재계산 트리거
+    window.dispatchEvent(new CustomEvent('xstudio:fonts-ready'));
+  });
+}
+
+/**
  * 텍스트 측정에 사용하는 표본 문자열
  *
  * 대소문자 + descender 문자(g, j, p, q, y)를 포함하여
@@ -242,11 +258,13 @@ export function measureFontMetrics(
           lineHeight: fontBBoxH,
         };
 
-        // 캐시 저장 (상한 초과 시 전체 clear)
-        if (_fontMetricsCache.size >= MAX_FONT_METRICS_CACHE_SIZE) {
-          _fontMetricsCache.clear();
+        // 폰트 로딩 완료 후에만 캐시 (미로딩 시 폴백 폰트 메트릭이 캐시되는 것 방지)
+        if (_fontsReady) {
+          if (_fontMetricsCache.size >= MAX_FONT_METRICS_CACHE_SIZE) {
+            _fontMetricsCache.clear();
+          }
+          _fontMetricsCache.set(cacheKey, result);
         }
-        _fontMetricsCache.set(cacheKey, result);
 
         return result;
       }
@@ -264,11 +282,13 @@ export function measureFontMetrics(
     lineHeight: fontSize * 1.2,
   };
 
-  // 근사값도 캐싱 (동일 환경에서 반복 계산 방지)
-  if (_fontMetricsCache.size >= MAX_FONT_METRICS_CACHE_SIZE) {
-    _fontMetricsCache.clear();
+  // 폰트 로딩 완료 후에만 캐시
+  if (_fontsReady) {
+    if (_fontMetricsCache.size >= MAX_FONT_METRICS_CACHE_SIZE) {
+      _fontMetricsCache.clear();
+    }
+    _fontMetricsCache.set(cacheKey, fallback);
   }
-  _fontMetricsCache.set(cacheKey, fallback);
 
   return fallback;
 }

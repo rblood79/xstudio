@@ -272,6 +272,12 @@ export type { TimeFieldProps } from './components/TimeField.spec';
 export { CalendarSpec } from './components/Calendar.spec';
 export type { CalendarProps } from './components/Calendar.spec';
 
+export { CalendarHeaderSpec } from './components/CalendarHeader.spec';
+export type { CalendarHeaderProps } from './components/CalendarHeader.spec';
+
+export { CalendarGridSpec } from './components/CalendarGrid.spec';
+export type { CalendarGridProps } from './components/CalendarGrid.spec';
+
 export { ColorPickerSpec } from './components/ColorPicker.spec';
 export type { ColorPickerProps } from './components/ColorPicker.spec';
 

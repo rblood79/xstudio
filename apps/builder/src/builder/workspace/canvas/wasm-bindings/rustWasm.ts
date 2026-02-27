@@ -30,7 +30,7 @@ export async function initRustWasm(): Promise<void> {
     // default export(__wbg_init)를 명시적으로 호출하여 .wasm 바이너리를
     // fetch → instantiate → __wbg_finalize_init 순서로 초기화해야 함
     if (typeof mod.default === 'function') {
-      await mod.default();
+      await (mod.default as unknown as () => Promise<void>)();
     }
 
     // 모듈 유효성 검증: WASM 바이너리가 완전히 초기화되었는지 확인

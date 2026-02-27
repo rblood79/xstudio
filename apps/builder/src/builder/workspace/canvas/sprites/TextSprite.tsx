@@ -21,6 +21,7 @@ import { parseZIndex, createsStackingContext } from '../layout/engines/cssStacki
 import { parsePadding } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
+import type { SkiaNodeData } from '../skia/nodeRenderers';
 import { LayoutComputedSizeContext } from '../layoutContext';
 
 
@@ -310,7 +311,13 @@ export const TextSprite = memo(function TextSprite({
     const fillColor = Float32Array.of(bgR, bgG, bgB, fill.alpha);
     const br = borderRadius ?? 0;
 
-    const boxData: Record<string, unknown> = {
+    const boxData: {
+      fillColor: Float32Array;
+      borderRadius: number | [number, number, number, number];
+      strokeColor?: Float32Array;
+      strokeWidth?: number;
+      strokeStyle?: string;
+    } = {
       fillColor,
       borderRadius: br,
     };
@@ -388,7 +395,7 @@ export const TextSprite = memo(function TextSprite({
     };
   }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, fill, borderRadius, borderConfig, flexAlignment, style]);
 
-  useSkiaNode(element.id, skiaNodeData);
+  useSkiaNode(element.id, skiaNodeData as SkiaNodeData);
 
   return (
     <pixiContainer

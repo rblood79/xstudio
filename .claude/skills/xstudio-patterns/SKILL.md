@@ -384,6 +384,42 @@ const UI_SELECT_CHILD_TAGS = new Set([
 ]);
 ```
 
+**selectChild 호버 전파 패턴 (2026-02-27)**
+
+Leaf selectChild 요소(SelectValue, SelectIcon, ComboBoxInput, ComboBoxTrigger)는
+자신의 ID 대신 **부모 wrapper(SelectTrigger/ComboBoxWrapper)의 ID**로 hover state를 설정합니다.
+이렇게 하지 않으면 leaf 영역 hover 시 부모 wrapper의 hover overlay(spec shapes hover variant)가 사라집니다.
+
+```typescript
+// ElementSprite.tsx — selectChild leaf 전용 hover 핸들러
+const handleSelectChildLeafPointerOver = useCallback(() => {
+  if (parentElement) {
+    setPreviewState({ elementId: parentElement.id, state: 'hover' });
+  } else {
+    setPreviewState({ elementId: element.id, state: 'hover' });
+  }
+}, [element.id, parentElement, setPreviewState]);
+
+// selectChild leaf case에서 사용
+case 'selectChild':
+  // container (with children) → handlePointerOver (자신의 ID 사용)
+  // leaf (no children) → handleSelectChildLeafPointerOver (부모 ID 사용)
+```
+
+**selectChild cursor 동적 설정 (2026-02-27)**
+
+selectChild 케이스의 하드코딩 `cursor="pointer"`가 제거되고,
+`containerPixiCursor` (element의 CSS cursor 속성 또는 `'default'`)를 사용합니다.
+flex/grid 케이스와 동일한 패턴입니다.
+
+```typescript
+// ✅ CSS cursor 속성 반영 (ComboBox: spec에서 cursor='text' 정의)
+cursor={containerPixiCursor}
+
+// ❌ 하드코딩 (모든 selectChild에 pointer — ComboBox input에 부적절)
+cursor="pointer"
+```
+
 **BuilderCanvas ComboBoxWrapper padding 주입**
 
 Select 패턴과 동일하게 `createContainerChildRenderer`에서 `ComboBoxWrapper`의 내부 자식(`ComboBoxInput`, `ComboBoxTrigger`)에 padding을 주입합니다.
@@ -625,6 +661,36 @@ if (!isSpecShapesInput && (!hasCSSVerticalBorder || isInlineBlockTag)) {
 ```
 
 > **핵심 원칙**: CSS에 padding/border가 있으면 레이아웃 엔진(Dropflow/Taffy)이 처리. enrichment에서 중복 추가 금지.
+
+### convertToFillStyle 기본 배경 투명 패턴 (2026-02-27)
+
+CSS 기본 동작(`background: transparent`)과 일치하도록, `backgroundColor`와 `background` 둘 다 미설정이면
+`convertToFillStyle()`은 alpha `0`을 반환합니다.
+
+```typescript
+// styleConverter.ts — convertToFillStyle
+export function convertToFillStyle(style: CSSStyle | undefined, resolvedColor?: string): PixiFillStyle {
+  const bg = style?.backgroundColor ?? (style as Record<string, unknown> | undefined)?.background as string | undefined;
+  const color = cssColorToHex(bg, 0xffffff, resolvedColor);
+  const alpha = style?.opacity !== undefined
+    ? parseCSSSize(style.opacity, undefined, 1)
+    : bg
+      ? cssColorToAlpha(bg, resolvedColor)
+      : 0;  // ← background 미설정 = transparent (alpha 0)
+
+  return { color, alpha };
+}
+
+// ✅ background 미설정 → alpha 0 (CSS 기본 background: transparent)
+// ✅ background shorthand도 인식 (style.background)
+// ✅ backgroundColor 우선, fallback으로 background shorthand
+
+// ❌ 이전: background 미설정 → alpha 1 (불투명 흰색)
+// → CardHeader/CardContent 등 투명 래퍼가 흰색 배경으로 렌더링
+```
+
+**영향 범위**: `BoxSprite`, `TextSprite`(renderBox 경로) 등 `convertToFillStyle`을 사용하는 모든 렌더러.
+배경을 원하는 요소는 반드시 `backgroundColor` 또는 `background`를 명시적으로 설정해야 합니다.
 
 ### TextSprite 렌더링 패턴 (2026-02-26)
 

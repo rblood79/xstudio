@@ -2,6 +2,7 @@
 import React from "react";
 import { ElementEvent } from "../events/events.types";
 import { TokenValue, DesignToken } from "../theme";
+import { DEFAULT_FONT_FAMILY } from "../../builder/fonts/customFonts";
 
 // === 기본 타입 정의 ===
 
@@ -661,6 +662,7 @@ export function createDefaultButtonProps(): ButtonElementProps {
     // 스타일 패널에서 borderWidth 값 정상 표시를 위해 기본값 설정
     style: {
       width: 'fit-content',
+      fontSize: 14,
       borderWidth: '1px',
     },
   };
@@ -912,6 +914,14 @@ export function createDefaultCalendarProps(): CalendarElementProps {
   };
 }
 
+export function createDefaultCalendarHeaderProps(): BaseElementProps {
+  return {};
+}
+
+export function createDefaultCalendarGridProps(): BaseElementProps {
+  return {};
+}
+
 export function createDefaultDatePickerProps(): DatePickerElementProps {
   return {
     isDisabled: false,
@@ -1148,6 +1158,7 @@ export function createDefaultBodyProps(): DivElementProps {
   return {
     style: {
       display: 'block',
+      fontFamily: DEFAULT_FONT_FAMILY,
     },
   };
 }
@@ -1437,6 +1448,8 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Tree: createDefaultTreeProps,
     TreeItem: createDefaultTreeItemProps,
     Calendar: createDefaultCalendarProps,
+    CalendarHeader: createDefaultCalendarHeaderProps,
+    CalendarGrid: createDefaultCalendarGridProps,
     DatePicker: createDefaultDatePickerProps,
     DateRangePicker: createDefaultDateRangePickerProps,
     Switch: createDefaultSwitchProps,

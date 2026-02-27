@@ -18,7 +18,7 @@ import { resolveFontVariantFeatures, resolveFontStretchWidth } from '../layout/e
 
 /** fontStyle → CanvasKit FontSlant enum */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function resolveSlant(ck: any, fs?: number | string): unknown {
+function resolveSlant(ck: any, fs?: number | string): any {
   if (fs === 1 || fs === 'italic') return ck.FontSlant.Italic;
   if (fs === 2 || fs === 'oblique') return ck.FontSlant.Oblique;
   return ck.FontSlant.Upright;
@@ -26,11 +26,11 @@ function resolveSlant(ck: any, fs?: number | string): unknown {
 
 /** fontWeight → CanvasKit FontWeight enum (nodeRenderers.ts와 동일) */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function resolveWeight(ck: any, fw?: number | string): unknown {
+function resolveWeight(ck: any, fw?: number | string): any {
   // CSS fontWeight 키워드 → 숫자: 'normal'→400, 'bold'→700
   const namedWeights: Record<string, number> = { normal: 400, bold: 700 };
   const w = typeof fw === 'number' ? fw : (namedWeights[String(fw).toLowerCase()] ?? (parseInt(String(fw), 10) || 400));
-  const map: Record<number, unknown> = {
+  const map: Record<number, any> = {
     100: ck.FontWeight.Thin,
     200: ck.FontWeight.ExtraLight,
     300: ck.FontWeight.Light,
@@ -55,7 +55,7 @@ function resolveFontFamily(family: string): string {
 
 /** fontStretch → CanvasKit FontWidth enum */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function resolveWidth(ck: any, stretch?: string): unknown {
+function resolveWidth(ck: any, stretch?: string): any {
   if (!stretch || stretch === 'normal') return ck.FontWidth.Normal;
   const idx = resolveFontStretchWidth(stretch);
   const entries = [
