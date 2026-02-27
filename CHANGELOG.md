@@ -7,10 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - 추가 라이브러리 업데이트 (2026-02-27)
+
+| 패키지 | 이전 | 이후 | 사용처 |
+|--------|------|------|--------|
+| lucide-react | 0.562.0 | 0.575.0 | builder, shared |
+| three | 0.182.0 | 0.183.1 | builder |
+| @types/three | 0.182.0 | 0.183.1 | builder |
+| eslint-plugin-react-refresh | 0.4.26 | 0.5.2 | config |
+
+### Changed - ESLint 10 업그레이드 (2026-02-27)
+
+#### 업데이트된 패키지
+
+| 패키지 | 이전 | 이후 | 사용처 |
+|--------|------|------|--------|
+| eslint | 9.39.2 | 10.0.2 | builder, publish, shared, specs |
+| @eslint/js | 9.39.2 | 10.0.1 | config |
+
+#### 주요 변경 사항
+
+- `@eslint/js` 10 recommended에 새 규칙 2개 추가:
+  - `no-useless-assignment` — 사용되지 않는 할당 감지 (builder 12건)
+  - `preserve-caught-error` — catch 에러 원인 체인 보존 강제 (builder 5건)
+- Flat Config 이미 사용 중이므로 설정 파일 변경 불필요
+- 커스텀 규칙 5개 모두 호환 확인 (표준 API만 사용)
+- `typescript-eslint` 8.56.1, `eslint-plugin-react-refresh` 0.4.26 — 호환 확인
+- `eslint-plugin-react-hooks` 7.0.1 — peer에 ESLint 10 미포함이나 Flat Config 방식으로 정상 동작
+
+#### 검증 결과
+
+- `pnpm -F @xstudio/builder lint` — 동작 확인 (새 규칙 17건은 기존 코드 품질 이슈)
+- `pnpm -F @xstudio/specs lint` — 통과
+- `pnpm -F @xstudio/shared lint` — 동작 확인 (기존 에러만)
+
 ### Changed - Phase 3 라이브러리 업데이트 (2026-02-27)
 
 #### 개요
-메이저 업데이트 대상 라이브러리 7개를 업데이트했습니다 (ESLint 10, Vitest 4 specs, @types/node 25는 별도 검토 필요로 제외).
+메이저 업데이트 대상 라이브러리 7개를 업데이트했습니다 (@types/node 25는 별도 검토 필요로 제외, ESLint 10과 Vitest 4는 별도 항목으로 완료).
 
 #### 업데이트된 패키지 (7개)
 
@@ -62,7 +96,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | 패키지 | 현재 | 최신 | 사유 |
 |--------|------|------|------|
-| eslint + @eslint/js | 9.39.2 | 10.0.2 | 커스텀 규칙 API 변경, 플러그인 호환성 검증 필요 |
 | @types/node | 24.10.4 | 25.3.2 | Node.js 25 (non-LTS) 대상, 런타임 불일치 비권장 |
 
 #### 검증 결과 (Phase 3 종합)

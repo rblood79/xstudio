@@ -63,7 +63,7 @@
     "@tanstack/react-virtual": "^3.13.19",
     "@types/node": "catalog:",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.562.0",
+    "lucide-react": "^0.575.0",
     "react-aria-components": "catalog:",
     "react-stately": "^3.44.0",
     "tailwind-merge": "^3.5.0"
@@ -72,7 +72,7 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@xstudio/config": "workspace:*",
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.2",
     "typescript": "catalog:",
     "zod": "^4.3.6"
   }
