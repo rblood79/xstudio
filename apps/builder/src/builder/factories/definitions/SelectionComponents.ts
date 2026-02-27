@@ -187,9 +187,13 @@ export function createComboBoxDefinition(
 
 /**
  * ListBox 컴포넌트 정의
+ *
+ * @param context - 컴포넌트 생성 컨텍스트
+ * @param dataTableName - 자동 생성된 DataTable 이름 (있으면 dataBinding 설정)
  */
 export function createListBoxDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
+  dataTableName?: string
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -200,14 +204,24 @@ export function createListBoxDefinition(
     ? { page_id: null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null };
 
+  // DataTable 바인딩이 있으면 dataBinding props에 추가
+  const listBoxProps: Record<string, unknown> = {
+    orientation: "vertical",
+    selectionMode: "single",
+  };
+
+  if (dataTableName) {
+    listBoxProps.dataBinding = {
+      source: "dataTable",
+      name: dataTableName,
+    };
+  }
+
   return {
     tag: "ListBox",
     parent: {
       tag: "ListBox",
-      props: {
-        orientation: "vertical",
-        selectionMode: "single",
-      } as ComponentElementProps,
+      props: listBoxProps as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
@@ -222,26 +236,6 @@ export function createListBoxDefinition(
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
-      },
-      {
-        tag: "ListBoxItem",
-        props: {
-          children: "Item 2",
-          value: "item2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 2,
-      },
-      {
-        tag: "ListBoxItem",
-        props: {
-          children: "Item 3",
-          value: "item3",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 3,
       },
     ],
   };

@@ -11,6 +11,8 @@ import {
 } from "./utils/elementCreation";
 import { saveElementsInBackground } from "./utils/dbPersistence";
 import { ElementUtils } from "../../utils/element/elementUtils";
+import { useDataStore } from "../stores/data";
+import type { DataField } from "../../types/builder/data.types";
 
 // 컴포넌트 정의 임포트
 import {
@@ -348,10 +350,73 @@ export class ComponentFactory {
     return this.createComponent(createBreadcrumbsDefinition, context);
   }
 
+  /**
+   * ListBox 컴포넌트 생성 (DataTable 자동 생성 포함)
+   *
+   * ListBox 추가 시 dataset 패널에 DataTable을 자동 등록하고
+   * ListBox의 dataBinding을 자동 설정하여 child item에 데이터가 연결됨
+   */
   private static async createListBox(
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    return this.createComponent(createListBoxDefinition, context);
+    // 1. DataTable 자동 생성
+    const dataTableName = await this.createAutoDataTable();
+
+    // 2. ListBox 생성 (dataTableName 전달)
+    const definitionCreator = (ctx: ComponentCreationContext): ComponentDefinition =>
+      createListBoxDefinition(ctx, dataTableName);
+
+    return this.createComponent(definitionCreator, context);
+  }
+
+  /**
+   * ListBox용 DataTable 자동 생성
+   * 기본 샘플 데이터와 스키마를 포함한 DataTable을 data store에 등록
+   */
+  private static async createAutoDataTable(): Promise<string> {
+    const dataStore = useDataStore.getState();
+    const projectId = dataStore.currentProjectId || 'local';
+
+    // 고유 이름 생성 (기존 DataTable과 충돌 방지)
+    const existingNames = new Set(
+      Array.from(dataStore.dataTables.keys())
+    );
+    let tableName = 'ListBoxData';
+    let counter = 1;
+    while (existingNames.has(tableName)) {
+      tableName = `ListBoxData_${counter++}`;
+    }
+
+    // 기본 스키마 + 샘플 데이터 생성
+    const schema: DataField[] = [
+      { key: 'id', type: 'number', label: 'ID' },
+      { key: 'label', type: 'string', label: 'Label' },
+      { key: 'value', type: 'string', label: 'Value' },
+      { key: 'description', type: 'string', label: 'Description' },
+    ];
+
+    const mockData = [
+      { id: 1, label: 'Item 1', value: 'item1', description: 'First item' },
+      { id: 2, label: 'Item 2', value: 'item2', description: 'Second item' },
+      { id: 3, label: 'Item 3', value: 'item3', description: 'Third item' },
+      { id: 4, label: 'Item 4', value: 'item4', description: 'Fourth item' },
+      { id: 5, label: 'Item 5', value: 'item5', description: 'Fifth item' },
+    ];
+
+    try {
+      await dataStore.createDataTable({
+        name: tableName,
+        project_id: projectId,
+        schema,
+        mockData,
+        useMockData: true,
+      });
+      console.log(`✅ [ListBox] DataTable "${tableName}" 자동 생성 완료`);
+    } catch (error) {
+      console.warn(`⚠️ [ListBox] DataTable 자동 생성 실패:`, error);
+    }
+
+    return tableName;
   }
 
   private static async createGridList(
