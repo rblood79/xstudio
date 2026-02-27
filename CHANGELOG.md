@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Calendar/DatePicker Compositional Architecture (2026-02-27)
+
+#### Calendar Compositional 전환
+- Calendar spec: `_hasChildren=true` → bg shapes만 반환, standalone 콘텐츠 스킵
+- CalendarHeader spec: 독립 렌더링 (prev/next nav + month text)
+- CalendarGrid spec: 독립 렌더링 (weekday labels + date cells)
+- TAG_SPEC_MAP에 CalendarHeaderSpec, CalendarGridSpec 등록
+- Factory: Calendar에 nested CalendarHeader/CalendarGrid children 추가
+
+#### DatePicker Compositional 전환 (ComboBox 패턴)
+- DatePicker spec: `_hasChildren=true` → `return []` (투명 컨테이너)
+- DateField: trigger 영역 독립 렌더링 (bg + border + date text)
+- Calendar: Compositional sub-children (CalendarHeader + CalendarGrid)
+- Factory: Card 패턴 (`width:284px`, flex column, `gap:8px`)
+- `calculateContentHeight`: datepicker (자식 합산 + gap), datefield (sm=32, md=40, lg=48)
+- `treatAsBorderBox`: `isDatePickerElement` 추가
+- TRANSPARENT_CONTAINER_TAGS에 'DatePicker' 추가
+- DatePicker.spec.ts: width CSS 문자열 parseFloat 수정
+
+### Fixed - 빌드 에러 17건 수정 (0 에러) (2026-02-27)
+
+- **styleConverter.ts**: CSSStyle 인터페이스에 flexbox 속성 9개 추가 (flexWrap, justifyContent, alignItems 등)
+- **AutocompleteEditor.tsx**: lucide-react `Type` 아이콘 import 추가
+- **TaffyFlexEngine.ts / TaffyGridEngine.ts**: `applyCommonTaffyStyle` 호출 시 `result as Record<string, unknown>` 캐스트
+- **canvaskitTextMeasurer.ts**: resolveSlant/resolveWeight/resolveWidth 반환 타입 `unknown` → `any`
+- **rustWasm.ts**: `mod.default` double cast (`as unknown as () => Promise<void>`)
+- **BuilderCanvas.tsx**: synthetic label 생성 시 존재하지 않는 `project_id` 필드 제거
+- **TextSprite.tsx**: `boxData` 명시적 타입 + `skiaNodeData as SkiaNodeData` 캐스트
+
 ### Fixed - 폰트 메트릭 캐싱 및 CSS 상속 (2026-02-27)
 
 #### 1px 높이 차이 수정 (Web 34px vs WebGL 35px)

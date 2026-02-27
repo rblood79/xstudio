@@ -478,6 +478,62 @@ shapes(props, variant) {
 },
 ```
 
+#### Calendar Compositional 전환 패턴 (2026-02-27)
+
+Calendar는 Compositional Architecture로 전환되어 CalendarHeader + CalendarGrid 자식을 가집니다.
+
+**자식 Element 구조**
+
+| Calendar 자식 태그 | 용도 | 독립 Spec |
+|---|---|---|
+| `CalendarHeader` | nav (prev/next 화살표 + month text) | CalendarHeaderSpec |
+| `CalendarGrid` | weekday labels + date cells | CalendarGridSpec |
+
+**Calendar.spec.ts 동작**:
+- `_hasChildren=true` → bg shapes만 반환 (standalone 날짜 그리드 shapes 스킵)
+- `_hasChildren=false` → 전체 렌더링 (monolithic 폴백)
+
+#### DatePicker Compositional 전환 패턴 (2026-02-27)
+
+DatePicker는 ComboBox 패턴을 따라 **투명 컨테이너**로 전환됩니다.
+
+**자식 Element 구조**
+
+```
+DatePicker (투명 컨테이너, shapes 없음)
+├── DateField (trigger: bg + border + date text)
+└── Calendar (Compositional)
+    ├── CalendarHeader
+    └── CalendarGrid
+```
+
+**DatePicker.spec.ts 동작**:
+- `_hasChildren=true` → `return []` (빈 배열, ComboBox 동일 패턴)
+- TRANSPARENT_CONTAINER_TAGS에 'DatePicker' 추가
+
+**Factory (DateColorComponents.ts)**:
+- DatePicker 부모: `flex column, gap:8px, width:284px` (Calendar intrinsic width)
+- DateField 자식: `display:block, width:100%`
+- Calendar 자식: nested children (CalendarHeader + CalendarGrid)
+- `ChildDefinition` 재귀적 `children?: ChildDefinition[]` 활용
+
+**calculateContentHeight (utils.ts)**:
+- `datepicker`: Card 패턴 (자식 높이 합산 + gap)
+- `datefield`: intrinsic height (sm=32, md=40, lg=48)
+- `treatAsBorderBox`: `isDatePickerElement` 추가
+
+**width parseFloat 수정 (DatePicker.spec.ts)**:
+```typescript
+// ✅ CSS 문자열 width도 올바르게 파싱
+const rawWidth = props.style?.width;
+const width = typeof rawWidth === 'number'
+  ? rawWidth
+  : (typeof rawWidth === 'string' ? parseFloat(rawWidth) || 220 : 220);
+
+// ❌ 문자열 width → NaN 또는 0
+const width = (props.style?.width as number) || 220;
+```
+
 #### CSS 값 일관성 규칙
 
 ```typescript
@@ -846,6 +902,8 @@ Compositional 전환으로 7개의 독립 child spec이 생성되었습니다:
 | `SliderThumbSpec` | `SliderThumb.spec.ts` | 원형 thumb | Slider, RangeSlider |
 | `SliderOutputSpec` | `SliderOutput.spec.ts` | 값 텍스트 표시 | Slider, RangeSlider |
 | `DateSegmentSpec` | `DateSegment.spec.ts` | 날짜/시간 세그먼트 | DateField, TimeField |
+| `CalendarHeaderSpec` | `CalendarHeader.spec.ts` | 캘린더 nav (prev/next + month) | Calendar |
+| `CalendarGridSpec` | `CalendarGrid.spec.ts` | 캘린더 날짜 그리드 | Calendar |
 
 **TAG_SPEC_MAP 등록** (`ElementSprite.tsx`):
 ```typescript
@@ -857,6 +915,8 @@ Compositional 전환으로 7개의 독립 child spec이 생성되었습니다:
 'SliderOutput': SliderOutputSpec,
 'DateSegment': DateSegmentSpec,
 'TimeSegment': DateSegmentSpec,  // DateSegmentSpec 재사용
+'CalendarHeader': CalendarHeaderSpec,
+'CalendarGrid': CalendarGridSpec,
 ```
 
 **SPEC_RENDERS_ALL_TAGS 폐기**: 이전에 9개 compound 컴포넌트의 `childElements=[]`를 강제하던 `SPEC_RENDERS_ALL_TAGS` Set은 **완전 제거**되었습니다. 모든 자식 Element가 정상적으로 canvas에서 렌더링됩니다.
@@ -926,7 +986,8 @@ if (!CHILD_COMPOSITION_EXCLUDE_TAGS.has(tag)) {
 | Input Fields | ✅ (TRANSPARENT_CONTAINER_TAGS) | bg + border shapes만 | TextField, NumberField, SearchField 등 |
 | Overlay / Navigation | ❌ | bg + shadow + border shapes 유지 | Dialog, Popover, Menu, Toolbar 등 |
 | Groups (transparent) | ✅ | 빈 배열 `[]` | CheckboxGroup, RadioGroup |
-| Date & Color Composites | ❌ | bg shapes 유지, 복합 콘텐츠 스킵 | DatePicker, Calendar, ColorPicker 등 |
+| Date Composites (Compositional) | DatePicker: ✅, Calendar: ❌ | DatePicker: `[]` (빈 배열), Calendar: bg shapes만 | DatePicker, Calendar |
+| Color Composites | ❌ | bg shapes 유지, 복합 콘텐츠 스킵 | ColorPicker 등 |
 
 **TRANSPARENT 컨테이너 패턴** (Input Fields):
 ```typescript
