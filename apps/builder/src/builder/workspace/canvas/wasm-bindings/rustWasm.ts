@@ -24,7 +24,7 @@ export async function initRustWasm(): Promise<void> {
   try {
     // wasm-pack --target bundler 출력을 Vite가 처리하도록 직접 경로 사용
     // vite-plugin-wasm이 .wasm 바이너리 서빙을 담당
-    const mod = await import('./pkg/xstudio_wasm');
+    const mod = await import(/* @vite-ignore */ './pkg/xstudio_wasm');
 
     // wasm-pack bundler 타겟은 import만으로 내부 wasm 바인딩이 초기화되지 않음
     // default export(__wbg_init)를 명시적으로 호출하여 .wasm 바이너리를
