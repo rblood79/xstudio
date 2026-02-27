@@ -541,6 +541,12 @@ export const borderStyleAtom = selectAtom(
   (a, b) => a === b
 );
 
+export const boxShadowAtom = selectAtom(
+  selectedElementAtom,
+  (element) => String(element?.style?.boxShadow ?? element?.computedStyle?.boxShadow ?? 'none'),
+  (a, b) => a === b
+);
+
 /**
  * Appearance 섹션 전체 값 (그룹 atom)
  * 🚀 selectAtom으로 equality 체크 추가 - 불필요한 리렌더링 방지
@@ -560,6 +566,7 @@ export const appearanceValuesAtom = selectAtom(
       borderWidth: String(style.borderWidth ?? computed.borderWidth ?? '0px'),
       borderRadius: String(style.borderRadius ?? computed.borderRadius ?? synthetic.borderRadius ?? '0px'),
       borderStyle: String(style.borderStyle ?? computed.borderStyle ?? 'solid'),
+      boxShadow: String(style.boxShadow ?? computed.boxShadow ?? 'none'),
     };
   },
   (a, b) => {
@@ -570,7 +577,8 @@ export const appearanceValuesAtom = selectAtom(
       a.borderColor === b.borderColor &&
       a.borderWidth === b.borderWidth &&
       a.borderRadius === b.borderRadius &&
-      a.borderStyle === b.borderStyle
+      a.borderStyle === b.borderStyle &&
+      a.boxShadow === b.boxShadow
     );
   }
 );

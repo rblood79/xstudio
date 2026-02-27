@@ -226,12 +226,34 @@ historyManager.addEntry({
 // → Undo N회 필요 (하나씩 복원)
 ```
 
+## Undo/Redo 후 order_num 재정렬
+
+Undo/Redo 완료 후 `reorderElements()`를 호출하여 order_num 충돌을 해결합니다.
+**CRITICAL**: `setTimeout` 안에서 `get()`으로 최신 상태를 참조해야 합니다 (stale closure 방지).
+
+```typescript
+// ✅ setTimeout 안에서 get()으로 최신 상태 참조
+if (currentPageId) {
+  setTimeout(() => {
+    const { elements: latestElements, batchUpdateElementOrders } = get();
+    reorderElements(latestElements, currentPageId, batchUpdateElementOrders);
+  }, 100);
+}
+
+// ❌ setTimeout 밖에서 캡처한 elements 사용 (stale closure)
+const { elements } = get();
+setTimeout(() => {
+  reorderElements(elements, pageId, ...); // 100ms 후 stale!
+}, 100);
+```
+
 ## 참조 파일
 
 - `apps/builder/src/builder/stores/history.ts` - HistoryManager
-- `apps/builder/src/builder/stores/history/historyActions.ts` - Undo/Redo 액션
+- `apps/builder/src/builder/stores/history/historyActions.ts` - Undo/Redo 액션 (batchUpdateElementOrders 사용)
 - `apps/builder/src/builder/stores/utils/elementUpdate.ts` - 히스토리 통합 예시
 - `apps/builder/src/builder/stores/utils/elementRemoval.ts` - 삭제 히스토리 (단일/배치)
+- `apps/builder/src/builder/stores/utils/elementReorder.ts` - order_num 재정렬 (computeReorderUpdates + reorderElements)
 - `apps/builder/src/builder/stores/inspectorActions.ts` - `updateSelectedPropertiesWithChildren`
 - `apps/builder/src/builder/hooks/useSyncChildProp.ts` - 직계 자식 prop 동기화 훅
 - `apps/builder/src/builder/hooks/useSyncGrandchildProp.ts` - 손자 prop 동기화 훅

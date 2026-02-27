@@ -17,6 +17,7 @@ export interface AppearanceStyleValues {
   borderWidth: string;
   borderRadius: string;
   borderStyle: string;
+  boxShadow: string;
 }
 
 /**

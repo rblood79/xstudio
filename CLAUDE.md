@@ -96,6 +96,13 @@ xstudio/
 3. History Record (즉시)
 4. DB Persist (백그라운드)
 5. Preview Sync (백그라운드)
+6. Order Rebalance (백그라운드) - batchUpdateElementOrders 단일 set()
+```
+
+### Stale Closure 방지
+```
+setTimeout/queueMicrotask 안에서 반드시 get()으로 최신 상태 참조
+외부 캡처된 elements/updateElementOrder 사용 금지
 ```
 
 ## 명령어

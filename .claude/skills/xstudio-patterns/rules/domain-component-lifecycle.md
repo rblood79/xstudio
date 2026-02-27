@@ -319,8 +319,30 @@ async function executeRemoval(set, get, rootElements, allUniqueElements) {
   });
 
   // 5. postMessage (Preview 동기화)
-  // 6. order_num 재정렬 (컬렉션 아이템 제외)
+  // 6. order_num 재정렬 (batchUpdateElementOrders 사용, 컬렉션 아이템 제외)
+  setTimeout(() => {
+    const { elements, batchUpdateElementOrders } = get();
+    reorderElements(elements, currentPageId, batchUpdateElementOrders);
+  }, 100);
 }
+```
+
+## order_num 재정렬
+
+삭제/Undo/Redo 후 `reorderElements()`로 order_num을 재정렬합니다.
+
+```typescript
+import { reorderElements } from '@/builder/stores/utils/elementReorder';
+
+// ✅ batchUpdateElementOrders 사용 (단일 set() + _rebuildIndexes())
+// 비동기 콜백 안에서 get()으로 최신 상태 참조 (stale closure 방지)
+setTimeout(() => {
+  const { elements, batchUpdateElementOrders } = get();
+  reorderElements(elements, pageId, batchUpdateElementOrders);
+}, 100);
+
+// ❌ 구 패턴: updateElementOrder N회 호출 (N×set())
+// ❌ 구 패턴: setTimeout 밖에서 elements 캡처 (stale closure)
 ```
 
 ## 참조 파일
@@ -331,4 +353,5 @@ async function executeRemoval(set, get, rootElements, allUniqueElements) {
 - `apps/builder/src/builder/factories/definitions/GroupComponents.ts` - TagGroup 3-level 정의
 - `apps/builder/src/builder/stores/utils/elementCreation.ts` - Store 액션
 - `apps/builder/src/builder/stores/utils/elementRemoval.ts` - 삭제 액션 (collectElementsToRemove, executeRemoval, removeElement, removeElements)
+- `apps/builder/src/builder/stores/utils/elementReorder.ts` - order_num 재정렬 (computeReorderUpdates + reorderElements)
 - `apps/builder/src/builder/hooks/useGlobalKeyboardShortcuts.ts` - 키보드 Delete → removeElements 배치 호출

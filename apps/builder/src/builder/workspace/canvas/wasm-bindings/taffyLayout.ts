@@ -189,7 +189,10 @@ interface WasmTaffyLayoutEngine {
   compute_layout(handle: number, available_width: number, available_height: number): void;
   get_layout(handle: number): string;
   get_layouts_batch(handles: Uint32Array): Float32Array;
+  build_tree_batch(nodes_json: string): Uint32Array;
+  build_tree_batch_binary(data: Uint8Array): Uint32Array;
   remove_node(handle: number): void;
+  mark_dirty(handle: number): void;
   clear(): void;
   node_count(): number;
   free(): void;
@@ -335,6 +338,18 @@ export class TaffyLayout {
     return this.engine.create_node(json);
   }
 
+  /**
+   * Create a leaf node with a pre-serialized JSON string.
+   *
+   * normalizeStyle()을 거치지 않고 WASM engine에 직접 전달한다.
+   * taffyStyleToRecord()로 이미 정규화된 Record를 JSON.stringify한 결과를 받는다.
+   * PersistentTaffyTree에서 이중 변환을 방지하기 위해 사용한다.
+   */
+  createNodeRaw(styleJson: string): TaffyNodeHandle {
+    if (!this.engine) throw new Error('TaffyLayout: WASM engine not initialized');
+    return this.engine.create_node(styleJson);
+  }
+
   /** Create a node with children. Returns a node handle. */
   createNodeWithChildren(style: TaffyStyle, children: TaffyNodeHandle[]): TaffyNodeHandle {
     if (!this.engine) throw new Error('TaffyLayout: WASM engine not initialized');
@@ -348,6 +363,18 @@ export class TaffyLayout {
     if (!this.engine) throw new Error('TaffyLayout: WASM engine not initialized');
     const json = JSON.stringify(normalizeStyle(style));
     this.engine.update_style(handle, json);
+  }
+
+  /**
+   * Update style with a pre-serialized JSON string.
+   *
+   * normalizeStyle()을 거치지 않고 WASM engine에 직접 전달한다.
+   * taffyStyleToRecord()로 이미 정규화된 Record를 JSON.stringify한 결과를 받는다.
+   * 이중 변환(normalizeStyle → normalizeStyle)을 방지하기 위해 사용한다.
+   */
+  updateStyleRaw(handle: TaffyNodeHandle, styleJson: string): void {
+    if (!this.engine) throw new Error('TaffyLayout: WASM engine not initialized');
+    this.engine.update_style(handle, styleJson);
   }
 
   /** Set children for a node (replaces existing children). */
@@ -394,10 +421,62 @@ export class TaffyLayout {
     return result;
   }
 
+  /**
+   * Batch-build an entire node tree from a JSON array.
+   *
+   * Each entry is { style, children } where children are indices into the
+   * same array (post-order: leaves first, root last).
+   *
+   * Returns an array of Taffy node handles in the same order as the input.
+   * Throws if the WASM call fails (parse error, child index OOB, etc.).
+   */
+  buildTreeBatch(nodesJson: string): number[] {
+    if (!this.engine) throw new Error('TaffyLayout: WASM engine not initialized');
+    const raw = this.engine.build_tree_batch(nodesJson);
+    return Array.from(raw);
+  }
+
+  /**
+   * Binary protocol을 통해 전체 트리를 일괄 구축.
+   *
+   * encodeBatchBinary()로 생성된 Uint8Array를 받아 WASM에 직접 전달한다.
+   * JSON 직렬화/역직렬화를 건너뛰어 초기 빌드 성능을 개선한다.
+   *
+   * @returns 각 노드의 Taffy handle 배열 (입력 순서와 1:1 대응)
+   * @throws WASM 호출 실패 시 Error
+   */
+  buildTreeBatchBinary(data: Uint8Array): number[] {
+    if (!this.engine) throw new Error('TaffyLayout: WASM engine not initialized');
+    const raw = this.engine.build_tree_batch_binary(data);
+    return Array.from(raw);
+  }
+
+  /**
+   * WASM 엔진이 binary protocol (build_tree_batch_binary)을 지원하는지 확인.
+   *
+   * Feature flag 없이 런타임에 WASM 메서드 존재 여부로 감지한다.
+   */
+  hasBinaryProtocol(): boolean {
+    if (!this.engine) return false;
+    return typeof this.engine.build_tree_batch_binary === 'function';
+  }
+
   /** Remove a node from the tree and free its handle. */
   removeNode(handle: TaffyNodeHandle): void {
     if (!this.engine) throw new Error('TaffyLayout: WASM engine not initialized');
     this.engine.remove_node(handle);
+  }
+
+  /**
+   * Mark a node as dirty for the next compute_layout() call.
+   *
+   * Taffy propagates dirty flags up to ancestors automatically.
+   * Note: updateStyle() and setChildren() call mark_dirty() internally,
+   * so this is only needed for explicit cache invalidation.
+   */
+  markDirty(handle: TaffyNodeHandle): void {
+    if (!this.engine) throw new Error('TaffyLayout: WASM engine not initialized');
+    this.engine.mark_dirty(handle);
   }
 
   /** Clear the entire tree and reset all handles. */

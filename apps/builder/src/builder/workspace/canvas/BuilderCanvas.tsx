@@ -40,10 +40,15 @@ import { TextEditOverlay, useTextEdit } from "../overlay";
 // 사용자 컨텐츠 레이아웃은 Taffy/Dropflow 엔진이 처리
 import {
   calculateChildrenLayout,
+  calculateFullTreeLayout,
+  resetPersistentTree,
+  publishLayoutMap,
   parsePadding,
   parseBorder,
   type ComputedLayout,
 } from "./layout";
+import { applyImplicitStyles } from "./layout/engines/implicitStyles";
+import { isFullTreeLayoutEnabled } from "../../../utils/featureFlags";
 import { getElementBoundsSimple, getElementContainer, registerElement, unregisterElement, updateElementBounds } from "./elementRegistry";
 import { notifyLayoutChange } from "./skia/useSkiaNode";
 import { LayoutComputedSizeContext } from "./layoutContext";
@@ -661,6 +666,32 @@ const ElementsLayer = memo(function ElementsLayer({
       return !NON_CONTAINER_TAGS.has(tag);
     }
 
+    // ADR-005 Phase 1: Full-Tree Layout pre-computation
+    let fullTreeLayoutMap: Map<string, ComputedLayout> | null = null;
+    if (isFullTreeLayoutEnabled() && bodyElement) {
+      const childrenIdMap = new Map<string, string[]>();
+      for (const [key, elems] of pageChildrenMap) {
+        if (key != null) {
+          childrenIdMap.set(key, elems.map(e => e.id));
+        }
+      }
+      const bodyStyle = bodyElement.props?.style as Record<string, unknown> | undefined;
+      const bodyBorderVal = parseBorder(bodyStyle);
+      const bodyPaddingVal = parsePadding(bodyStyle, pageWidth);
+      const avW = pageWidth - bodyBorderVal.left - bodyBorderVal.right - bodyPaddingVal.left - bodyPaddingVal.right;
+      const avH = pageHeight - bodyBorderVal.top - bodyBorderVal.bottom - bodyPaddingVal.top - bodyPaddingVal.bottom;
+      fullTreeLayoutMap = calculateFullTreeLayout(
+        bodyElement.id, elementById, childrenIdMap,
+        avW, avH,
+        (id: string) => pageChildrenMap.get(id) ?? [],
+      );
+      // Phase 3: SkiaOverlay에서 접근할 수 있도록 공유
+      publishLayoutMap(fullTreeLayoutMap);
+      if (import.meta.env.DEV && !fullTreeLayoutMap) {
+        console.warn('[Phase1] Full-tree layout failed, falling back to per-level');
+      }
+    }
+
     // Container 자식 렌더러 생성 (재귀적)
     // 컨테이너 내부의 자식들을 엔진으로 레이아웃 계산 후 DirectContainer로 배치
     function createContainerChildRenderer(
@@ -676,310 +707,45 @@ const ElementsLayer = memo(function ElementsLayer({
       return (childEl: Element): React.ReactNode => {
         // Lazy initialization: 첫 자식 렌더 시 모든 자식의 레이아웃 일괄 계산
         if (!cachedLayoutMap) {
-          let parentStyle = containerEl.props?.style as Record<string, unknown> | undefined;
-          let effectiveContainerEl = containerEl;
-
-          // TagGroup/CheckboxGroup/RadioGroup: implicit flex layout 주입
-          // CSS에서 이 컴포넌트들은 display:flex, flex-direction:column이 기본값
+          // Implicit style injection (공유 모듈)
           const containerTag = (containerEl.tag ?? '').toLowerCase();
-
-          // TagGroup: implicit flex column (CSS 기본값 매칭)
-          // React-Aria TagGroup = flex column, Label + TagList 세로 배치
-          if (containerTag === 'taggroup') {
-            parentStyle = {
-              ...(parentStyle || {}),
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 4,
-            };
-            effectiveContainerEl = {
-              ...containerEl,
-              props: { ...containerEl.props, style: parentStyle },
-            };
-          }
-
-          // CheckboxGroup/RadioGroup: implicit flex layout + label 오프셋 주입
-          // Spec의 container shape가 y = fontSize + 8에 위치하므로
-          // 자식들도 동일한 오프셋을 적용하여 label 아래에 배치
-          if (containerTag === 'checkboxgroup' || containerTag === 'radiogroup') {
-            const containerProps = containerEl.props as Record<string, unknown> | undefined;
-            const sizeName = (containerProps?.size as string) ?? 'md';
-            const gap = sizeName === 'sm' ? 8 : sizeName === 'lg' ? 16 : 12;
-            // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
-            const labelFontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
-            const labelOffset = containerProps?.label ? labelFontSize + 8 : 0;
-            const orientation = containerProps?.orientation as string | undefined;
-
-            parentStyle = {
-              ...(parentStyle || {}),
-              display: 'flex',
-              flexDirection: orientation === 'horizontal' ? 'row' : 'column',
-              gap,
-              paddingTop: labelOffset,
-            };
-            effectiveContainerEl = {
-              ...containerEl,
-              props: { ...containerEl.props, style: parentStyle },
-            };
-          }
-
-          // Breadcrumbs: 모든 Breadcrumb 아이템은 spec shapes가 렌더링
-          // 자식 레이아웃 계산 불필요 (childElements는 텍스트 추출용으로만 전달)
-          let filteredContainerChildren = containerChildren;
-          if (containerTag === 'breadcrumbs') {
-            filteredContainerChildren = [];
-          }
-
-          // Tabs: 탭 바 아래에 활성 Panel만 배치 (Tab 요소는 spec shapes가 렌더링)
-          // CSS 기준: Tabs(flex col) → TabList(height) + TabPanel(pad=16px → Panel)
-          if (containerTag === 'tabs') {
-            const tabsProps = containerEl.props as Record<string, unknown> | undefined;
-            const sizeName = (tabsProps?.size as string) ?? 'md';
-            // CSS 기준 탭 바 높이: sm=25, md=30, lg=35
-            const tabBarHeight = sizeName === 'sm' ? 25 : sizeName === 'lg' ? 35 : 30;
-            const tabPanelPadding = 16; // React-Aria TabPanel 기본 padding
-
-            // Dual Lookup: 직속 Panel 또는 TabPanels 내부 Panel
-            let panelChildren = containerChildren.filter(c => c.tag === 'Panel');
-            if (panelChildren.length === 0) {
-              const tabPanelsEl = containerChildren.find(c => c.tag === 'TabPanels');
-              if (tabPanelsEl) {
-                panelChildren = (pageChildrenMap.get(tabPanelsEl.id) ?? [])
-                  .filter(c => c.tag === 'Panel');
-              }
-            }
-            const activePanel = panelChildren[0]; // 기본: 첫 번째 Panel
-            filteredContainerChildren = activePanel ? [activePanel] : [];
-
-            parentStyle = {
-              ...(parentStyle || {}),
-              display: 'flex',
-              flexDirection: 'column',
-              paddingTop: tabBarHeight + tabPanelPadding,
-              paddingLeft: tabPanelPadding,
-              paddingRight: tabPanelPadding,
-              paddingBottom: tabPanelPadding,
-            };
-            effectiveContainerEl = {
-              ...containerEl,
-              props: { ...containerEl.props, style: parentStyle },
-            };
-          }
-
-          // ComboBox/Select: Label + trigger/wrapper만 컨테이너 자식으로 렌더링
-          // ComboBoxItem/SelectItem은 데이터 아이템 → spec shapes 드롭다운에서 처리
-          if (containerTag === 'combobox' || containerTag === 'select') {
-            // label prop이 없으면 Label 자식 제외 (web preview 동작과 일치)
-            const containerProps = containerEl.props as Record<string, unknown> | undefined;
-            const hasLabel = !!(containerProps?.label);
-            filteredContainerChildren = containerChildren.filter(c =>
-              (c.tag === 'Label' ? hasLabel : false) || c.tag === 'SelectTrigger' || c.tag === 'ComboBoxWrapper'
-            );
-
-            // SelectTrigger/ComboBoxWrapper: display/flexDirection + padding 주입 → enrichWithIntrinsicSize가
-            // calculateContentHeight에서 올바른 flexDirection(row)으로 높이 계산
-            // (containerTag === 'selecttrigger'/'comboboxwrapper' 블록은 내부 자식 레이아웃용)
-            const wrapperChildTag = containerTag === 'select' ? 'SelectTrigger' : 'ComboBoxWrapper';
-            // ComboBox/Select 공통 spec sizes: sm(paddingX:10,paddingY:4) md(14,8) lg(16,12)
-            const WRAPPER_PAD: Record<string, { x: number; y: number }> = {
-              sm: { x: 10, y: 4 }, md: { x: 14, y: 8 }, lg: { x: 16, y: 12 },
-            };
-            filteredContainerChildren = filteredContainerChildren.map(child => {
-              if (child.tag === wrapperChildTag) {
-                const cs = (child.props?.style || {}) as Record<string, unknown>;
-                const wrapperProps = child.props as Record<string, unknown> | undefined;
-                const sizeName = (wrapperProps?.size as string) ?? 'md';
-                const specPad = WRAPPER_PAD[sizeName] ?? WRAPPER_PAD.md;
-                // 사용자가 padding을 설정했으면 (shorthand 또는 개별) parsePadding으로 해석
-                // 미설정 시 spec 기본값 사용
-                const hasUserPadding = cs.padding !== undefined
-                  || cs.paddingTop !== undefined || cs.paddingBottom !== undefined
-                  || cs.paddingLeft !== undefined || cs.paddingRight !== undefined;
-                const userPad = hasUserPadding ? parsePadding(cs) : null;
-                return {
-                  ...child,
-                  props: {
-                    ...child.props,
-                    style: {
-                      ...cs,
-                      display: cs.display ?? 'flex',
-                      flexDirection: cs.flexDirection ?? 'row',
-                      paddingLeft: userPad ? userPad.left : specPad.x,
-                      paddingRight: userPad ? userPad.right : specPad.x,
-                      paddingTop: userPad ? userPad.top : specPad.y,
-                      paddingBottom: userPad ? userPad.bottom : specPad.y,
-                    },
-                  },
-                } as Element;
-              }
-              return child;
-            });
-
-            parentStyle = {
-              ...(parentStyle || {}),
-              display: (parentStyle as Record<string, unknown>)?.display ?? 'flex',
-              flexDirection: (parentStyle as Record<string, unknown>)?.flexDirection ?? 'column',
-              gap: (parentStyle as Record<string, unknown>)?.gap ?? 8,
-            };
-            effectiveContainerEl = {
-              ...containerEl,
-              props: { ...containerEl.props, style: parentStyle },
-            };
-          }
-
-          // SelectTrigger: Compositional Architecture — spec size 기반 padding으로 자식 레이아웃
-          if (containerTag === 'selecttrigger') {
-            const triggerProps = containerEl.props as Record<string, unknown> | undefined;
-            const sizeName = (triggerProps?.size as string) ?? 'md';
-            // SelectTrigger spec sizes: sm(paddingX:10,paddingY:4) md(14,8) lg(16,12)
-            const TRIGGER_PAD: Record<string, { x: number; y: number }> = {
-              sm: { x: 10, y: 4 }, md: { x: 14, y: 8 }, lg: { x: 16, y: 12 },
-            };
-            const specPad = TRIGGER_PAD[sizeName] ?? TRIGGER_PAD.md;
-            // 사용자가 padding을 설정했으면 (shorthand 또는 개별) parsePadding으로 해석
-            const ps = (parentStyle || {}) as Record<string, unknown>;
-            const hasUserPadding = ps.padding !== undefined
-              || ps.paddingTop !== undefined || ps.paddingBottom !== undefined
-              || ps.paddingLeft !== undefined || ps.paddingRight !== undefined;
-            const userPad = hasUserPadding ? parsePadding(ps) : null;
-            parentStyle = {
-              ...(parentStyle || {}),
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingLeft: userPad ? userPad.left : specPad.x,
-              paddingRight: userPad ? userPad.right : specPad.x,
-              paddingTop: userPad ? userPad.top : specPad.y,
-              paddingBottom: userPad ? userPad.bottom : specPad.y,
-            };
-            effectiveContainerEl = {
-              ...containerEl,
-              props: { ...containerEl.props, style: parentStyle },
-            };
-            // 자식 implicit styles 주입 (레이아웃 계산 전, DB 요소에 없을 수 있음)
-            filteredContainerChildren = filteredContainerChildren.map(child => {
-              const cs = (child.props?.style || {}) as Record<string, unknown>;
-              if (child.tag === 'SelectValue') {
-                return { ...child, props: { ...child.props, style: { ...cs, flex: cs.flex ?? 1 } } } as Element;
-              }
-              if (child.tag === 'SelectIcon') {
-                return { ...child, props: { ...child.props, style: { ...cs, width: cs.width ?? 18, height: cs.height ?? 18, flexShrink: cs.flexShrink ?? 0 } } } as Element;
-              }
-              return child;
-            });
-          }
-
-          // ComboBoxWrapper: Compositional Architecture — spec size 기반 padding으로 자식 레이아웃
-          if (containerTag === 'comboboxwrapper') {
-            const wrapperProps = containerEl.props as Record<string, unknown> | undefined;
-            const sizeName = (wrapperProps?.size as string) ?? 'md';
-            // ComboBox spec sizes: sm(paddingX:10,paddingY:4) md(14,8) lg(16,12)
-            const COMBO_WRAP_PAD: Record<string, { x: number; y: number }> = {
-              sm: { x: 10, y: 4 }, md: { x: 14, y: 8 }, lg: { x: 16, y: 12 },
-            };
-            const specPad = COMBO_WRAP_PAD[sizeName] ?? COMBO_WRAP_PAD.md;
-            // 사용자가 padding을 설정했으면 parsePadding으로 해석
-            const ps = (parentStyle || {}) as Record<string, unknown>;
-            const hasUserPadding = ps.padding !== undefined
-              || ps.paddingTop !== undefined || ps.paddingBottom !== undefined
-              || ps.paddingLeft !== undefined || ps.paddingRight !== undefined;
-            const userPad = hasUserPadding ? parsePadding(ps) : null;
-            parentStyle = {
-              ...(parentStyle || {}),
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingLeft: userPad ? userPad.left : specPad.x,
-              paddingRight: userPad ? userPad.right : specPad.x,
-              paddingTop: userPad ? userPad.top : specPad.y,
-              paddingBottom: userPad ? userPad.bottom : specPad.y,
-            };
-            effectiveContainerEl = {
-              ...containerEl,
-              props: { ...containerEl.props, style: parentStyle },
-            };
-            // 자식 implicit styles 주입 (레이아웃 계산 전, DB 요소에 없을 수 있음)
-            filteredContainerChildren = filteredContainerChildren.map(child => {
-              const cs = (child.props?.style || {}) as Record<string, unknown>;
-              if (child.tag === 'ComboBoxInput') {
-                // 부모 ComboBox의 placeholder를 ComboBoxInput에 동기화
-                const comboBoxEl = elementById.get(containerEl.parent_id ?? '');
-                const comboBoxProps = comboBoxEl?.props as Record<string, unknown> | undefined;
-                const placeholder = comboBoxProps?.placeholder ?? child.props?.placeholder;
-                return { ...child, props: { ...child.props, placeholder, style: { ...cs, flex: cs.flex ?? 1 } } } as Element;
-              }
-              if (child.tag === 'ComboBoxTrigger') {
-                return { ...child, props: { ...child.props, style: { ...cs, width: cs.width ?? 18, height: cs.height ?? 18, flexShrink: cs.flexShrink ?? 0 } } } as Element;
-              }
-              return child;
-            });
-          }
-
-          // Card: CardHeader/CardContent 자식에 implicit width: 100% 주입
-          // CSS에서 flex column 자식은 align-items:stretch로 부모 너비를 채우지만,
-          // DB 요소에 명시적 width가 없으면 enrichWithIntrinsicSize가 주입하지 않음
-          if (containerTag === 'card') {
-            filteredContainerChildren = filteredContainerChildren.map(child => {
-              if (child.tag === 'CardHeader' || child.tag === 'CardContent') {
-                const cs = (child.props?.style || {}) as Record<string, unknown>;
-                if (!cs.width) {
-                  return { ...child, props: { ...child.props, style: { ...cs, width: '100%' } } } as Element;
-                }
-              }
-              return child;
-            });
-          }
-
-          // CardHeader(flex row): Heading 자식에 implicit flex:1 주입
-          // Taffy는 텍스트 content width를 모르므로 flex item이 0 width가 됨
-          // flex:1로 남은 공간을 채우도록 설정
-          if (containerTag === 'cardheader') {
-            filteredContainerChildren = filteredContainerChildren.map(child => {
-              if (child.tag === 'Heading') {
-                const cs = (child.props?.style || {}) as Record<string, unknown>;
-                if (cs.flex === undefined && cs.flexGrow === undefined && !cs.width) {
-                  return { ...child, props: { ...child.props, style: { ...cs, flex: 1 } } } as Element;
-                }
-              }
-              return child;
-            });
-          }
-
-          // CardContent(flex column): Description 자식에 implicit width:100% 주입
-          // flex column의 align-items:stretch가 기본이지만,
-          // enrichWithIntrinsicSize가 width를 주입하지 않는 text leaf에 대비
-          if (containerTag === 'cardcontent') {
-            filteredContainerChildren = filteredContainerChildren.map(child => {
-              if (child.tag === 'Description') {
-                const cs = (child.props?.style || {}) as Record<string, unknown>;
-                if (!cs.width && cs.flex === undefined) {
-                  return { ...child, props: { ...child.props, style: { ...cs, width: '100%' } } } as Element;
-                }
-              }
-              return child;
-            });
-          }
+          const { effectiveParent, filteredChildren: implicitChildren } = applyImplicitStyles(
+            containerEl,
+            containerChildren,
+            (id: string) => pageChildrenMap.get(id) ?? [],
+            elementById,
+          );
+          let effectiveContainerEl = effectiveParent;
+          let parentStyle = effectiveContainerEl.props?.style as Record<string, unknown> | undefined;
+          let filteredContainerChildren = implicitChildren;
 
           cachedPadding = parsePadding(parentStyle, containerWidth);
-          const parentDisplay = (parentStyle?.display as string | undefined)
-            ?? (containerEl.tag === 'Section' ? 'block' : undefined);
-          const avW = Math.max(0, containerWidth - cachedPadding.left - cachedPadding.right);
-          // M2: 부모가 height:auto이면 sentinel(-1) 전달하여 자식 % height가 auto로 처리되도록 함
-          const parentHasAutoHeight = !parentStyle?.height || parentStyle.height === 'auto';
-          // Phantom indicator 태그(Switch/Checkbox/Radio): height:auto이지만 엔진이 계산한
-          // containerHeight를 Taffy에 전달해야 align-items: center가 작동함.
-          // enrichWithIntrinsicSize가 rowHeight를 주입하지만 store 원본에는 반영 안 됨.
-          const PHANTOM_TAGS = new Set(['switch', 'checkbox', 'radio']);
-          const useComputedHeight = parentHasAutoHeight && PHANTOM_TAGS.has(containerTag) && containerHeight > 0;
-          const avH = (parentHasAutoHeight && !useComputedHeight)
-            ? -1  // sentinel: height:auto → 엔진이 콘텐츠 기반 계산
-            : Math.max(0, containerHeight - cachedPadding.top - cachedPadding.bottom);
-          // RC-7: calculateChildrenLayout 사용하여 blockification 적용
-          const innerLayouts = calculateChildrenLayout(
-            effectiveContainerEl, filteredContainerChildren, avW, avH,
-            { bfcId: containerEl.id, parentDisplay, getChildElements: (id: string) => pageChildrenMap.get(id) ?? [] }
-          );
-          cachedLayoutMap = new Map(innerLayouts.map(l => [l.elementId, l]));
+
+          if (fullTreeLayoutMap) {
+            // ADR-005 Phase 1: Full-Tree Layout — 전체 맵에서 O(1) 조회
+            cachedLayoutMap = fullTreeLayoutMap;
+          } else {
+            // Per-level 폴백: 엔진으로 레이아웃 일괄 계산
+            const parentDisplay = (parentStyle?.display as string | undefined)
+              ?? (containerEl.tag === 'Section' ? 'block' : undefined);
+            const avW = Math.max(0, containerWidth - cachedPadding.left - cachedPadding.right);
+            // M2: 부모가 height:auto이면 sentinel(-1) 전달하여 자식 % height가 auto로 처리되도록 함
+            const parentHasAutoHeight = !parentStyle?.height || parentStyle.height === 'auto';
+            // Phantom indicator 태그(Switch/Checkbox/Radio): height:auto이지만 엔진이 계산한
+            // containerHeight를 Taffy에 전달해야 align-items: center가 작동함.
+            // enrichWithIntrinsicSize가 rowHeight를 주입하지만 store 원본에는 반영 안 됨.
+            const PHANTOM_TAGS = new Set(['switch', 'checkbox', 'radio']);
+            const useComputedHeight = parentHasAutoHeight && PHANTOM_TAGS.has(containerTag) && containerHeight > 0;
+            const avH = (parentHasAutoHeight && !useComputedHeight)
+              ? -1  // sentinel: height:auto → 엔진이 콘텐츠 기반 계산
+              : Math.max(0, containerHeight - cachedPadding.top - cachedPadding.bottom);
+            // RC-7: calculateChildrenLayout 사용하여 blockification 적용
+            const innerLayouts = calculateChildrenLayout(
+              effectiveContainerEl, filteredContainerChildren, avW, avH,
+              { bfcId: containerEl.id, parentDisplay, getChildElements: (id: string) => pageChildrenMap.get(id) ?? [] }
+            );
+            cachedLayoutMap = new Map(innerLayouts.map(l => [l.elementId, l]));
+          }
         }
 
         const layout = cachedLayoutMap.get(childEl.id);
@@ -1213,20 +979,27 @@ const ElementsLayer = memo(function ElementsLayer({
       const paddingOffsetX = isBodyParent ? 0 : parentPadding.left;
       const paddingOffsetY = isBodyParent ? 0 : parentPadding.top;
 
-      // RC-7: calculateChildrenLayout 사용하여 blockification + overflow scroll 처리
-      const layouts = calculateChildrenLayout(
-        parentElement, children, availableWidth, availableHeight,
-        { bfcId: parentElement.id, parentDisplay, getChildElements: (id: string) => pageChildrenMap.get(id) ?? [] }
-      );
+      let layoutMap: Map<string, ComputedLayout>;
 
-      if (import.meta.env.DEV && layouts.length === 0 && children.length > 0) {
-        console.warn('[renderWithCustomEngine] Empty layout result!',
-          { parentTag: parentElement.tag, parentDisplay, childCount: children.length });
+      if (fullTreeLayoutMap) {
+        // ADR-005 Phase 1: Full-Tree Layout — 전체 맵에서 O(1) 조회
+        layoutMap = fullTreeLayoutMap;
+      } else {
+        // Per-level 폴백: 엔진으로 레이아웃 계산
+        const layouts = calculateChildrenLayout(
+          parentElement, children, availableWidth, availableHeight,
+          { bfcId: parentElement.id, parentDisplay, getChildElements: (id: string) => pageChildrenMap.get(id) ?? [] }
+        );
+
+        if (import.meta.env.DEV && layouts.length === 0 && children.length > 0) {
+          console.warn('[renderWithCustomEngine] Empty layout result!',
+            { parentTag: parentElement.tag, parentDisplay, childCount: children.length });
+        }
+
+        layoutMap = new Map<string, ComputedLayout>(
+          layouts.map((l) => [l.elementId, l])
+        );
       }
-
-      const layoutMap = new Map<string, ComputedLayout>(
-        layouts.map((l) => [l.elementId, l])
-      );
 
       // 엔진 결과의 x/y로 직접 배치 (Yoga 불필요)
       return (
@@ -1408,6 +1181,11 @@ export function BuilderCanvas({
   const batchUpdateElements = useStore((state) => state.batchUpdateElements);
   const currentPageId = useStore((state) => state.currentPageId);
   const setCurrentPageId = useStore((state) => state.setCurrentPageId);
+
+  // Phase 2: 페이지 전환 시 persistent Taffy tree 리셋
+  useEffect(() => {
+    resetPersistentTree();
+  }, [currentPageId]);
 
   // Settings state (SettingsPanel 연동)
   const snapToGrid = useStore((state) => state.snapToGrid);

@@ -90,6 +90,15 @@ struct StyleInput {
     aspect_ratio: Option<f32>,
 }
 
+/// Input for batch tree building: style + child indices in topological order.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BatchNodeInput {
+    style: StyleInput,
+    /// Child node indices within the batch array (topological order: leaves first).
+    children: Vec<usize>,
+}
+
 // ─── Value parsers ───────────────────────────────────────────────────
 
 /// Parse a CSS-like dimension string into a Taffy `Dimension`.
@@ -161,7 +170,7 @@ fn parse_lp(s: &str) -> LengthPercentage {
 /// - `repeat(auto-fill, ...)` / `repeat(auto-fit, ...)`: auto-repeating tracks
 ///
 /// Phase 4-3: repeat() 지원 추가 → TS 측 repeat 전개 제거
-fn parse_track_as_template(s: &str) -> GridTemplateComponent<String> {
+pub(crate) fn parse_track_as_template(s: &str) -> GridTemplateComponent<String> {
     let s = s.trim();
     if s.starts_with("repeat(") && s.ends_with(')') {
         let inner = &s[7..s.len() - 1];
@@ -241,7 +250,7 @@ fn tokenize_grid_tracks(s: &str) -> Vec<&str> {
 }
 
 /// Parse a track sizing function string (e.g., "1fr", "100px", "auto", "minmax(100px, 1fr)").
-fn parse_track_sizing(s: &str) -> TrackSizingFunction {
+pub(crate) fn parse_track_sizing(s: &str) -> TrackSizingFunction {
     let s = s.trim();
     if s.starts_with("minmax(") && s.ends_with(')') {
         let inner = &s[7..s.len() - 1];
@@ -776,6 +785,121 @@ impl TaffyLayoutEngine {
         }
     }
 
+    /// Build an entire tree in a single WASM call.
+    ///
+    /// Input: JSON array of nodes in topological order (leaves first, root last).
+    /// Returns: handle for each node (1:1 correspondence with input indices).
+    ///
+    /// Compared to individual create_node() calls:
+    /// - WASM boundary crossings: N → 1
+    /// - JSON parsing: N → 1 (single serde_json::from_str)
+    /// - Vec allocation: N → 1 (pre-allocated capacity)
+    ///
+    /// Error policy: returns Result::Err on parse failure, child index out of range,
+    /// or Taffy node creation failure. No silent drops (filter_map) or panics (unwrap).
+    pub fn build_tree_batch(&mut self, nodes_json: &str) -> Result<Box<[usize]>, JsValue> {
+        let nodes: Vec<BatchNodeInput> = serde_json::from_str(nodes_json)
+            .map_err(|e| JsValue::from_str(&format!("build_tree_batch: parse error: {e}")))?;
+
+        let mut handles: Vec<usize> = Vec::with_capacity(nodes.len());
+
+        for (i, node) in nodes.iter().enumerate() {
+            let style = convert_style(&node.style);
+
+            if node.children.is_empty() {
+                let node_id = self
+                    .tree
+                    .new_leaf(style)
+                    .map_err(|e| JsValue::from_str(&format!("node[{i}]: taffy error: {e:?}")))?;
+                handles.push(self.alloc_handle(node_id));
+            } else {
+                let mut child_ids: Vec<NodeId> = Vec::with_capacity(node.children.len());
+                for &idx in &node.children {
+                    let handle = handles.get(idx).copied().ok_or_else(|| {
+                        JsValue::from_str(&format!(
+                            "node[{i}]: child index {idx} out of range (only {i} nodes built so far)"
+                        ))
+                    })?;
+                    let node_id = self.resolve(handle).ok_or_else(|| {
+                        JsValue::from_str(&format!(
+                            "node[{i}]: child index {idx} resolved to invalid handle {handle}"
+                        ))
+                    })?;
+                    child_ids.push(node_id);
+                }
+                let node_id = self
+                    .tree
+                    .new_with_children(style, &child_ids)
+                    .map_err(|e| JsValue::from_str(&format!("node[{i}]: taffy error: {e:?}")))?;
+                handles.push(self.alloc_handle(node_id));
+            }
+        }
+
+        Ok(handles.into_boxed_slice())
+    }
+
+    /// Build an entire tree from a binary-encoded buffer in a single WASM call.
+    ///
+    /// Replaces `build_tree_batch()` with zero JSON parsing:
+    /// - TypeScript encodes styles as TypedArray via `encodeBatchBinary()`
+    /// - Rust decodes directly to `taffy::Style` (no StyleInput/convert_style)
+    /// - Grid track arrays are passed as JSON sideband within the binary buffer
+    ///
+    /// Returns: handle for each node (1:1 correspondence with input).
+    pub fn build_tree_batch_binary(&mut self, data: &[u8]) -> Result<Box<[usize]>, JsValue> {
+        use crate::binary_protocol::decode_batch_binary;
+
+        let nodes = decode_batch_binary(data)
+            .map_err(|e| JsValue::from_str(&format!("build_tree_batch_binary: {e}")))?;
+
+        let mut handles: Vec<usize> = Vec::with_capacity(nodes.len());
+
+        for (i, node) in nodes.into_iter().enumerate() {
+            if node.children.is_empty() {
+                let node_id = self
+                    .tree
+                    .new_leaf(node.style)
+                    .map_err(|e| JsValue::from_str(&format!("node[{i}]: taffy error: {e:?}")))?;
+                handles.push(self.alloc_handle(node_id));
+            } else {
+                let mut child_ids: Vec<NodeId> = Vec::with_capacity(node.children.len());
+                for &idx in &node.children {
+                    let handle = handles.get(idx).copied().ok_or_else(|| {
+                        JsValue::from_str(&format!(
+                            "node[{i}]: child index {idx} out of range (only {i} nodes built so far)"
+                        ))
+                    })?;
+                    let node_id = self.resolve(handle).ok_or_else(|| {
+                        JsValue::from_str(&format!(
+                            "node[{i}]: child index {idx} resolved to invalid handle {handle}"
+                        ))
+                    })?;
+                    child_ids.push(node_id);
+                }
+                let node_id = self
+                    .tree
+                    .new_with_children(node.style, &child_ids)
+                    .map_err(|e| JsValue::from_str(&format!("node[{i}]: taffy error: {e:?}")))?;
+                handles.push(self.alloc_handle(node_id));
+            }
+        }
+
+        Ok(handles.into_boxed_slice())
+    }
+
+    /// Mark a node as dirty so the next compute_layout() recalculates it.
+    ///
+    /// Taffy propagates dirty flags up to ancestors automatically,
+    /// so only the directly changed node needs to be marked.
+    ///
+    /// Note: set_style() and set_children() call mark_dirty() internally,
+    /// so this method is only needed for explicit cache invalidation.
+    pub fn mark_dirty(&mut self, handle: usize) {
+        if let Some(node_id) = self.resolve(handle) {
+            let _ = self.tree.mark_dirty(node_id);
+        }
+    }
+
     /// Clear the entire tree and reset all handles.
     pub fn clear(&mut self) {
         self.tree.clear();
@@ -909,6 +1033,72 @@ mod tests {
     }
 
     #[test]
+    fn test_mark_dirty_incremental() {
+        let mut engine = TaffyLayoutEngine::new();
+
+        let child = engine.create_node(r#"{"width":"100px","height":"50px"}"#);
+        let root = engine.create_node_with_children(
+            r#"{"display":"flex","flexDirection":"column","width":"400px","height":"400px"}"#,
+            &[child],
+        );
+
+        // Initial layout
+        engine.compute_layout(root, 400.0, 400.0);
+        let layout1: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child)).unwrap();
+        assert_eq!(layout1["width"], 100.0);
+
+        // Update child style (doubles width)
+        engine.update_style(child, r#"{"width":"200px","height":"50px"}"#);
+        // update_style calls mark_dirty internally
+
+        // Recompute — Taffy should only recalculate dirty subtree
+        engine.compute_layout(root, 400.0, 400.0);
+        let layout2: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child)).unwrap();
+        assert_eq!(layout2["width"], 200.0, "width should update after mark_dirty + recompute");
+
+        // Explicit mark_dirty (no style change, just cache invalidation)
+        engine.mark_dirty(child);
+        engine.compute_layout(root, 400.0, 400.0);
+        let layout3: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(child)).unwrap();
+        assert_eq!(layout3["width"], 200.0, "should remain 200 after explicit mark_dirty");
+    }
+
+    #[test]
+    fn test_mark_dirty_add_remove_child() {
+        let mut engine = TaffyLayoutEngine::new();
+
+        let c1 = engine.create_node(r#"{"width":"100px","height":"50px"}"#);
+        let root = engine.create_node_with_children(
+            r#"{"display":"flex","flexDirection":"column","width":"400px"}"#,
+            &[c1],
+        );
+        engine.compute_layout(root, 400.0, -1.0);
+
+        // Add a second child
+        let c2 = engine.create_node(r#"{"width":"100px","height":"30px"}"#);
+        engine.set_children(root, &[c1, c2]);
+        // set_children calls mark_dirty internally
+
+        engine.compute_layout(root, 400.0, -1.0);
+        let layout_c2: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c2)).unwrap();
+        assert_eq!(layout_c2["y"], 50.0, "c2 should be below c1 (y=50)");
+        assert_eq!(layout_c2["height"], 30.0);
+
+        // Remove c1
+        engine.set_children(root, &[c2]);
+        engine.remove_node(c1);
+        engine.compute_layout(root, 400.0, -1.0);
+        let layout_c2_after: serde_json::Value =
+            serde_json::from_str(&engine.get_layout(c2)).unwrap();
+        assert_eq!(layout_c2_after["y"], 0.0, "c2 should be at top after c1 removed");
+        assert_eq!(engine.node_count(), 2); // root + c2
+    }
+
+    #[test]
     fn test_margin_auto_centering() {
         let mut engine = TaffyLayoutEngine::new();
 
@@ -980,5 +1170,138 @@ mod tests {
 
         assert_eq!(l1["width"], 100.0, "repeat(2, minmax(50px, 1fr)): 200/2 = 100");
         assert_eq!(l2["x"], 100.0);
+    }
+
+    #[test]
+    fn test_build_tree_batch_flex_column() {
+        // Topological order: leaves first (index 0, 1), root last (index 2).
+        // Root references children by their indices within the batch array.
+        let mut engine = TaffyLayoutEngine::new();
+
+        let nodes_json = r#"[
+            {"style":{"width":"100px","height":"40px"},"children":[]},
+            {"style":{"width":"100px","height":"60px"},"children":[]},
+            {"style":{"display":"flex","flexDirection":"column","width":"100px","height":"200px"},"children":[0,1]}
+        ]"#;
+
+        let handles = engine.build_tree_batch(nodes_json).expect("build_tree_batch should succeed");
+        assert_eq!(handles.len(), 3);
+
+        let root_handle = handles[2];
+        engine.compute_layout(root_handle, 100.0, 200.0);
+
+        let l0: serde_json::Value = serde_json::from_str(&engine.get_layout(handles[0])).unwrap();
+        let l1: serde_json::Value = serde_json::from_str(&engine.get_layout(handles[1])).unwrap();
+
+        // child 0: x=0, y=0, w=100, h=40
+        assert_eq!(l0["x"], 0.0);
+        assert_eq!(l0["y"], 0.0);
+        assert_eq!(l0["width"], 100.0);
+        assert_eq!(l0["height"], 40.0);
+
+        // child 1: x=0, y=40, w=100, h=60
+        assert_eq!(l1["x"], 0.0);
+        assert_eq!(l1["y"], 40.0);
+        assert_eq!(l1["width"], 100.0);
+        assert_eq!(l1["height"], 60.0);
+    }
+
+    // JsValue::from_str panics on non-wasm32 targets (unimplemented!).
+    // Gate the Err-path tests to wasm32 where JsValue is fully functional.
+    #[cfg(target_arch = "wasm32")]
+    #[test]
+    fn test_build_tree_batch_parse_error() {
+        let mut engine = TaffyLayoutEngine::new();
+
+        let result = engine.build_tree_batch("not valid json");
+        assert!(result.is_err(), "invalid JSON should return Err");
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    #[test]
+    fn test_build_tree_batch_child_index_out_of_range() {
+        let mut engine = TaffyLayoutEngine::new();
+
+        // node[1] references index 5, which does not exist yet.
+        let nodes_json = r#"[
+            {"style":{"width":"50px","height":"50px"},"children":[]},
+            {"style":{"display":"flex"},"children":[5]}
+        ]"#;
+
+        let result = engine.build_tree_batch(nodes_json);
+        assert!(result.is_err(), "out-of-range child index should return Err");
+    }
+
+    #[test]
+    fn test_build_tree_batch_handle_reuse_after_remove() {
+        // Verify that handles produced by build_tree_batch participate
+        // correctly in the free_list reuse mechanism.
+        let mut engine = TaffyLayoutEngine::new();
+
+        let nodes_json = r#"[
+            {"style":{"width":"80px","height":"80px"},"children":[]}
+        ]"#;
+        let handles = engine.build_tree_batch(nodes_json).expect("should succeed");
+        let h0 = handles[0];
+
+        // Remove the node — its handle slot should go back to free_list.
+        engine.remove_node(h0);
+        assert_eq!(engine.node_count(), 0);
+
+        // Next allocation should reuse the freed slot.
+        let h1 = engine.create_node(r#"{"width":"20px"}"#);
+        assert_eq!(h1, h0, "freed handle should be reused by subsequent allocation");
+        assert_eq!(engine.node_count(), 1);
+    }
+
+    #[test]
+    fn test_build_tree_batch_binary_vs_json() {
+        use crate::binary_protocol::encode::{NodeEncoder, build_taff};
+
+        // Build same 3-node tree (parent + 2 children) via JSON and binary,
+        // then compare layout results.
+        let mut json_engine = TaffyLayoutEngine::new();
+        let json_nodes = r#"[
+            {"style":{"width":"100px","height":"50px"},"children":[]},
+            {"style":{"width":"200px","height":"50px"},"children":[]},
+            {"style":{"display":"flex","flexDirection":"row","width":"400px","height":"100px"},"children":[0,1]}
+        ]"#;
+        let json_handles = json_engine.build_tree_batch(json_nodes).expect("json batch");
+        json_engine.compute_layout(json_handles[2], 400.0, 100.0);
+        let json_layouts = json_engine.get_layouts_batch(&json_handles);
+
+        // Binary batch: same tree
+        let mut bin_engine = TaffyLayoutEngine::new();
+        let bin_data = build_taff(&[
+            NodeEncoder::new()
+                .width(1, 100.0)   // width: 100px
+                .height(1, 50.0)   // height: 50px
+                .build(),
+            NodeEncoder::new()
+                .width(1, 200.0)   // width: 200px
+                .height(1, 50.0)   // height: 50px
+                .build(),
+            NodeEncoder::new()
+                .display(0)            // display: flex
+                .flex_direction(0)     // flexDirection: row
+                .width(1, 400.0)       // width: 400px
+                .height(1, 100.0)      // height: 100px
+                .children(&[0, 1])
+                .build(),
+        ]);
+        let bin_handles = bin_engine.build_tree_batch_binary(&bin_data).expect("binary batch");
+        bin_engine.compute_layout(bin_handles[2], 400.0, 100.0);
+        let bin_layouts = bin_engine.get_layouts_batch(&bin_handles);
+
+        // Compare layouts: both should produce identical results
+        assert_eq!(json_layouts.len(), bin_layouts.len());
+        for i in 0..json_layouts.len() {
+            let j = json_layouts[i];
+            let b = bin_layouts[i];
+            assert!(
+                (j - b).abs() < 0.001,
+                "layout mismatch at index {i}: json={j}, binary={b}"
+            );
+        }
     }
 }

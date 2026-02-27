@@ -18,7 +18,9 @@ import {
   SquareRoundCorner,
   SquareDashedBottom,
   EllipsisVertical,
+  Eclipse,
 } from 'lucide-react';
+import { shadows } from '@xstudio/specs';
 import { useStyleActions } from '../hooks/useStyleActions';
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
 import { useAppearanceValuesJotai } from '../hooks/useAppearanceValuesJotai';
@@ -29,6 +31,27 @@ import { useStore } from '../../../stores';
 const LazyFillBackgroundInline = lazy(() =>
   import('./FillSection').then((m) => ({ default: m.FillBackgroundInline }))
 );
+
+/** Shadow 프리셋 옵션 */
+const SHADOW_PRESET_OPTIONS = [
+  { value: 'reset', label: 'Reset' },
+  { value: 'none', label: 'none' },
+  { value: 'sm', label: 'sm' },
+  { value: 'md', label: 'md' },
+  { value: 'lg', label: 'lg' },
+  { value: 'xl', label: 'xl' },
+  { value: 'inset', label: 'inset' },
+];
+
+/** CSS box-shadow 값 → 프리셋 키 역매핑 */
+const cssToPresetMap = new Map(
+  Object.entries(shadows).map(([key, val]) => [val, key])
+);
+
+function boxShadowToPresetKey(cssValue: string): string {
+  if (!cssValue || cssValue === 'none') return 'none';
+  return cssToPresetMap.get(cssValue) ?? cssValue;
+}
 
 /**
  * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
@@ -134,6 +157,25 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           </Button>
         </div>
       </div>
+
+      {/* Box Shadow */}
+      <div className="style-shadow">
+        <PropertySelect
+          icon={Eclipse}
+          label="Box Shadow"
+          className="box-shadow"
+          value={boxShadowToPresetKey(styleValues.boxShadow)}
+          options={SHADOW_PRESET_OPTIONS}
+          onChange={(value) => {
+            if (value === '' || value === 'none') {
+              updateStyle('boxShadow', 'none');
+            } else {
+              const cssValue = shadows[value as keyof typeof shadows];
+              updateStyle('boxShadow', cssValue ?? value);
+            }
+          }}
+        />
+      </div>
     </>
   );
 });
@@ -148,7 +190,7 @@ export const AppearanceSection = memo(function AppearanceSection() {
   const resetStyles = useResetStyles();
 
   const handleReset = () => {
-    resetStyles(['backgroundColor', 'borderColor', 'borderWidth', 'borderRadius', 'borderStyle']);
+    resetStyles(['backgroundColor', 'borderColor', 'borderWidth', 'borderRadius', 'borderStyle', 'boxShadow']);
     // V2: fills 배열도 초기화
     if (isFillV2Enabled()) {
       useStore.getState().updateSelectedFills([]);

@@ -28,6 +28,7 @@ import { registerImageLoadCallback } from './imageCache';
 import { useAIVisualFeedbackStore } from '../../../stores/aiVisualFeedback';
 import { renderGrid } from './gridRenderer';
 import { buildNodeBoundsMap, renderGeneratingEffects, renderFlashes } from './aiEffects';
+import type { AIEffectNodeBounds } from './types';
 import { renderSelectionBox, renderTransformHandles, renderDimensionLabels, renderLasso, renderPageTitle } from './selectionRenderer';
 import type { LassoRenderData } from './selectionRenderer';
 import { computeWorkflowEdges, computeDataSourceEdges, computeLayoutGroups, type WorkflowEdge, type DataSourceEdge, type LayoutGroup } from './workflowEdges';
@@ -46,6 +47,9 @@ import { calculateCombinedBounds } from '../selection/types';
 import type { BoundingBox, DragState } from '../selection/types';
 import { watchContextLoss } from './createSurface';
 import { flushWasmMetrics, recordWasmMetric } from '../utils/gpuProfilerCore';
+import { isFullTreeLayoutEnabled } from '../../../../utils/featureFlags';
+import { getSharedLayoutMap, getSharedLayoutVersion } from '../layout/engines/fullTreeLayout';
+import { getCachedCommandStream, invalidateCommandStreamCache, executeRenderCommands, buildAIBoundsFromStream } from './renderCommands';
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -922,49 +926,146 @@ export function SkiaOverlay({
       // pagePositionsVersion 변경 후 과도기 프레임: 캐시 무효화하여 stale 트리 방지
       if (_pagePosStaleFrames > 0) {
         _cachedTree = null;
+        invalidateCommandStreamCache();
         _pagePosStaleFrames--;
         renderer.invalidateContent();
-      }
-
-      // 계층적 Skia 트리 재구성 (매 프레임)
-      // rootNode의 renderSkia() 클로저가 현재 카메라 좌표를 캡처하므로
-      // 매 프레임 갱신이 필수. idle 프레임에서는 렌더링이 스킵되므로
-      // 이 갱신 비용(~0ms, 트리 캐시 HIT)만 발생한다.
-      const treeBuildStart = process.env.NODE_ENV === 'development'
-        ? performance.now()
-        : 0;
-      const tree = cameraContainer
-        ? buildSkiaTreeHierarchical(cameraContainer, registryVersion, cameraX, cameraY, cameraZoom, pagePosVersion)
-        : null;
-      if (process.env.NODE_ENV === 'development') {
-        recordWasmMetric('skiaTreeBuildTime', performance.now() - treeBuildStart);
-      }
-      if (!tree) {
-        renderer.clearFrame();
-        renderer.invalidateContent();
-        return;
       }
 
       const fontMgr = skiaFontManager.getFamilies().length > 0
         ? skiaFontManager.getFontMgr()
         : undefined;
 
-      // selection, workflow 오버레이 또는 호버 히트 테스트 시 boundsMap 필요
-      // 호버는 항상 활성이므로 treeBoundsMap을 항상 빌드 (캐시됨)
-      const needsSelectionBoundsMap = true;
-      const selectionBuildStart = process.env.NODE_ENV === 'development' && needsSelectionBoundsMap
-        ? performance.now()
-        : 0;
-      const treeBoundsMap = needsSelectionBoundsMap
-        ? getCachedTreeBoundsMap(tree, registryVersion, pagePosVersion)
-        : emptyTreeBoundsMapRef.current;
-      // Phase 4: treeBoundsMapRef 갱신 (호버 히트 테스트에서 사용)
-      treeBoundsMapRef.current = treeBoundsMap;
+      // ── Phase 3: Command Stream vs Tree 분기 ──────────────────────────
+      const sharedLayoutMap = getSharedLayoutMap();
+      const useCommandStream = isFullTreeLayoutEnabled() && sharedLayoutMap !== null;
+
+      let treeBoundsMap: Map<string, BoundingBox>;
+      let nodeBoundsMap: Map<string, AIEffectNodeBounds> | null = null;
+      const currentAiState = useAIVisualFeedbackStore.getState();
+      const hasAIEffects =
+        currentAiState.generatingNodes.size > 0 || currentAiState.flashAnimations.size > 0;
+
+      if (useCommandStream) {
+        // Phase 3 경로: elementsMap + childrenMap + layoutMap → RenderCommand[]
+        const treeBuildStart = process.env.NODE_ENV === 'development'
+          ? performance.now()
+          : 0;
+
+        const storeState = useStore.getState();
+        const pagePositions = storeState.pagePositions;
+        const layoutVersion = getSharedLayoutVersion();
+
+        // rootElementIds: 각 페이지의 body element ID
+        // bodyPagePositions: bodyId → pagePosition (pagePositions는 pageId 키)
+        const rootElementIds: string[] = [];
+        const bodyPagePositions: Record<string, { x: number; y: number }> = {};
+        for (const page of storeState.pages) {
+          const pageElements = storeState.getPageElements(page.id);
+          for (const el of pageElements) {
+            if (el.tag.toLowerCase() === 'body') {
+              rootElementIds.push(el.id);
+              const pos = pagePositions[page.id];
+              if (pos) bodyPagePositions[el.id] = pos;
+              break;
+            }
+          }
+        }
+
+        const stream = getCachedCommandStream(
+          rootElementIds,
+          storeState.childrenMap,
+          sharedLayoutMap,
+          bodyPagePositions,
+          registryVersion,
+          pagePosVersion,
+          layoutVersion,
+        );
+
+        if (process.env.NODE_ENV === 'development') {
+          recordWasmMetric('skiaTreeBuildTime', performance.now() - treeBuildStart);
+        }
+
+        treeBoundsMap = stream.boundsMap;
+        treeBoundsMapRef.current = treeBoundsMap;
+
+        if (treeBoundsMap.size === 0) {
+          renderer.clearFrame();
+          renderer.invalidateContent();
+          return;
+        }
+
+        // Selection 빌드 (boundsMap에서 0ms)
+        const selectionBuildStart = process.env.NODE_ENV === 'development'
+          ? performance.now()
+          : 0;
+        // treeBoundsMap은 이미 절대좌표이므로 selection 빌드에 직접 사용
+        if (process.env.NODE_ENV === 'development') {
+          recordWasmMetric('selectionBuildTime', performance.now() - selectionBuildStart);
+        }
+
+        // AI 이펙트 바운드 (stream.boundsMap에서 필터링)
+        if (hasAIEffects) {
+          const aiBuildStart = process.env.NODE_ENV === 'development'
+            ? performance.now()
+            : 0;
+          const targetIds = new Set<string>();
+          for (const id of currentAiState.generatingNodes.keys()) targetIds.add(id);
+          for (const id of currentAiState.flashAnimations.keys()) targetIds.add(id);
+          nodeBoundsMap = buildAIBoundsFromStream(stream.boundsMap, targetIds);
+          if (process.env.NODE_ENV === 'development') {
+            recordWasmMetric('aiBoundsBuildTime', performance.now() - aiBuildStart);
+          }
+        }
+
+        renderer.setContentNode({
+          renderSkia(canvas, bounds) {
+            executeRenderCommands(ck, canvas, stream.commands, bounds, fontMgr);
+          },
+        });
+      } else {
+        // 기존 경로: PixiJS 씬 그래프 DFS → 계층적 Skia 트리
+        const treeBuildStart = process.env.NODE_ENV === 'development'
+          ? performance.now()
+          : 0;
+        const tree = cameraContainer
+          ? buildSkiaTreeHierarchical(cameraContainer, registryVersion, cameraX, cameraY, cameraZoom, pagePosVersion)
+          : null;
+        if (process.env.NODE_ENV === 'development') {
+          recordWasmMetric('skiaTreeBuildTime', performance.now() - treeBuildStart);
+        }
+        if (!tree) {
+          renderer.clearFrame();
+          renderer.invalidateContent();
+          return;
+        }
+
+        const selectionBuildStart = process.env.NODE_ENV === 'development'
+          ? performance.now()
+          : 0;
+        treeBoundsMap = getCachedTreeBoundsMap(tree, registryVersion, pagePosVersion);
+        treeBoundsMapRef.current = treeBoundsMap;
+        if (process.env.NODE_ENV === 'development') {
+          recordWasmMetric('selectionBuildTime', performance.now() - selectionBuildStart);
+        }
+
+        if (hasAIEffects) {
+          const aiBuildStart = process.env.NODE_ENV === 'development'
+            ? performance.now()
+            : 0;
+          nodeBoundsMap = buildNodeBoundsMap(tree, currentAiState);
+          if (process.env.NODE_ENV === 'development') {
+            recordWasmMetric('aiBoundsBuildTime', performance.now() - aiBuildStart);
+          }
+        }
+
+        renderer.setContentNode({
+          renderSkia(canvas, bounds) {
+            renderNode(ck, canvas, tree, bounds, fontMgr);
+          },
+        });
+      }
 
       const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef, pageFramesRef.current);
-      if (process.env.NODE_ENV === 'development' && needsSelectionBoundsMap) {
-        recordWasmMetric('selectionBuildTime', performance.now() - selectionBuildStart);
-      }
 
       // Phase 3: 히트테스트 캐시를 renderFrame 상위 레벨에서 빌드 (overlay renderSkia 콜백 이전)
       if (showWorkflowOverlay) {
@@ -994,25 +1095,6 @@ export function SkiaOverlay({
           edgeGeometryCacheKeyRef.current = '';
         }
       }
-
-      const currentAiState = useAIVisualFeedbackStore.getState();
-      const hasAIEffects =
-        currentAiState.generatingNodes.size > 0 || currentAiState.flashAnimations.size > 0;
-      const aiBuildStart = process.env.NODE_ENV === 'development' && hasAIEffects
-        ? performance.now()
-        : 0;
-      const nodeBoundsMap = hasAIEffects
-        ? buildNodeBoundsMap(tree, currentAiState)
-        : null;
-      if (process.env.NODE_ENV === 'development' && hasAIEffects) {
-        recordWasmMetric('aiBoundsBuildTime', performance.now() - aiBuildStart);
-      }
-
-      renderer.setContentNode({
-        renderSkia(canvas, bounds) {
-          renderNode(ck, canvas, tree, bounds, fontMgr);
-        },
-      });
 
       renderer.setOverlayNode({
         renderSkia(canvas) {

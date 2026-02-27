@@ -60,8 +60,17 @@ const element: Element = {
   parent_id: bodyElement?.id ?? null,  // Body 아래에 배치
   page_id: pageId,
   layout_id: null,  // page_id와 상호 배타적
-  order_num: calculateNextOrderNum(bodyElement?.id, elements),
+  order_num: calculateNextOrderNum(bodyElement?.id, elements), // 0-based (빈 부모 → 0)
 };
+
+// ✅ order_num 재정렬 (배치 업데이트)
+import { reorderElements } from '@/builder/stores/utils/elementReorder';
+
+// 비동기 콜백에서 반드시 get()으로 최신 상태 참조 (stale closure 방지)
+queueMicrotask(() => {
+  const { elements, batchUpdateElementOrders } = get();
+  reorderElements(elements, pageId, batchUpdateElementOrders);
+});
 
 // ✅ Leaf 요소는 항상 말단
 const LEAF_TAGS = ['Text', 'Image', 'Icon', 'Separator'];
@@ -82,4 +91,5 @@ interface Element {
 
 - `apps/builder/src/types/builder/unified.types.ts` - Element 타입 정의
 - `apps/builder/src/builder/stores/utils/elementHelpers.ts` - findBodyByContext
-- `apps/builder/src/builder/utils/HierarchyManager.ts` - 계층 관리
+- `apps/builder/src/builder/utils/HierarchyManager.ts` - 계층 관리 (calculateNextOrderNum: 0-based)
+- `apps/builder/src/builder/stores/utils/elementReorder.ts` - order_num 재정렬 (computeReorderUpdates + batchUpdateElementOrders)

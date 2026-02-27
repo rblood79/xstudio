@@ -231,7 +231,7 @@ export interface SkiaNodeData {
 /**
  * CSS stacking order에 따른 자식 정렬 (안정 정렬)
  */
-function sortByStackingOrder(children: SkiaNodeData[]): SkiaNodeData[] {
+export function sortByStackingOrder(children: SkiaNodeData[]): SkiaNodeData[] {
   const indexed = children.map((child, i) => ({ child, originalIndex: i }));
   indexed.sort((a, b) => {
     const zA = a.child.zIndex ?? 0;
@@ -489,7 +489,7 @@ function createRoundRectPath(
  * ClipPathShape → CanvasKit Path 변환
  * 반환된 Path는 호출측에서 delete() 해야 한다.
  */
-function buildClipPath(
+export function buildClipPath(
   ck: CanvasKit,
   shape: ClipPathShape,
   width: number,
@@ -753,7 +753,7 @@ function renderInsetOutsetBorder(
 }
 
 /** Box 노드 렌더링 */
-function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   if (!node.box) return;
 
   const scope = new SkiaDisposable();
@@ -866,7 +866,7 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
 }
 
 /** Line 노드 렌더링 */
-function renderLine(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderLine(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   if (!node.line) return;
   const paint = new ck.Paint();
   paint.setAntiAlias(true);
@@ -906,7 +906,7 @@ function renderLine(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
  *   bottom-right corner → right 변 끝 + bottom 변 끝
  *   bottom-left  corner → bottom 변 시작 + left 변 시작
  */
-function renderPartialBorder(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderPartialBorder(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   if (!node.partialBorder) return;
   const { sides, strokeColor, strokeWidth, strokeDasharray, borderRadius } = node.partialBorder;
   const w = node.width;
@@ -1038,7 +1038,7 @@ function renderPartialBorder(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData):
 }
 
 /** Icon Path 노드 렌더링 (SVG 경로 기반 아이콘) */
-function renderIconPath(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderIconPath(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   if (!node.iconPath) return;
   const { paths, circles, cx, cy, size, strokeColor, strokeWidth } = node.iconPath;
 
@@ -1082,7 +1082,7 @@ function renderIconPath(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void
  * Phase E: 스크롤바 UI 렌더링
  * clip 영역 내에서 scroll offset 미적용 상태로 그린다.
  */
-function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   if (!node.scrollbar) return;
 
   const TRACK_WIDTH = 8;
@@ -1146,7 +1146,7 @@ function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): voi
 }
 
 /** Text 노드 렌더링 */
-function renderText(
+export function renderText(
   ck: CanvasKit,
   canvas: Canvas,
   node: SkiaNodeData,
@@ -1362,7 +1362,7 @@ function renderText(
  * 이미지가 없는 경우(로딩 중) box.fillColor로 placeholder를 그린다.
  * box.borderRadius가 있으면 클리핑을 적용하여 원형/둥근 이미지를 지원한다.
  */
-function renderImage(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderImage(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   const scope = new SkiaDisposable();
   try {
     // borderRadius 클리핑 적용 (원형 아바타 등)

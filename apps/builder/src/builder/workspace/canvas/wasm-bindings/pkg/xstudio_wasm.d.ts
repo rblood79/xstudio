@@ -64,6 +64,32 @@ export class TaffyLayoutEngine {
     free(): void;
     [Symbol.dispose](): void;
     /**
+     * Build an entire tree in a single WASM call.
+     *
+     * Input: JSON array of nodes in topological order (leaves first, root last).
+     * Returns: handle for each node (1:1 correspondence with input indices).
+     *
+     * Compared to individual create_node() calls:
+     * - WASM boundary crossings: N → 1
+     * - JSON parsing: N → 1 (single serde_json::from_str)
+     * - Vec allocation: N → 1 (pre-allocated capacity)
+     *
+     * Error policy: returns Result::Err on parse failure, child index out of range,
+     * or Taffy node creation failure. No silent drops (filter_map) or panics (unwrap).
+     */
+    build_tree_batch(nodes_json: string): Uint32Array;
+    /**
+     * Build an entire tree from a binary-encoded buffer in a single WASM call.
+     *
+     * Replaces `build_tree_batch()` with zero JSON parsing:
+     * - TypeScript encodes styles as TypedArray via `encodeBatchBinary()`
+     * - Rust decodes directly to `taffy::Style` (no StyleInput/convert_style)
+     * - Grid track arrays are passed as JSON sideband within the binary buffer
+     *
+     * Returns: handle for each node (1:1 correspondence with input).
+     */
+    build_tree_batch_binary(data: Uint8Array): Uint32Array;
+    /**
      * Clear the entire tree and reset all handles.
      */
     clear(): void;
@@ -88,6 +114,16 @@ export class TaffyLayoutEngine {
      * Returns [x0, y0, w0, h0, x1, y1, w1, h1, ...].
      */
     get_layouts_batch(handles: Uint32Array): Float32Array;
+    /**
+     * Mark a node as dirty so the next compute_layout() recalculates it.
+     *
+     * Taffy propagates dirty flags up to ancestors automatically,
+     * so only the directly changed node needs to be marked.
+     *
+     * Note: set_style() and set_children() call mark_dirty() internally,
+     * so this method is only needed for explicit cache invalidation.
+     */
+    mark_dirty(handle: number): void;
     /**
      * Create a new Taffy layout engine instance.
      */

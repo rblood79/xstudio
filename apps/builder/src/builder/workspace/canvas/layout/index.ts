@@ -63,4 +63,11 @@ export {
   // W3-7: CSS var() DOM fallback
   type CSSVariableScope,
   createVariableScopeWithDOMFallback,
+  // ADR-005 Phase 2: Persistent Taffy Tree + Incremental Layout
+  calculateFullTreeLayout,
+  resetPersistentTree,
+  // ADR-005 Phase 3: Flat Render Command Stream — 공유 Layout Map
+  publishLayoutMap,
+  getSharedLayoutMap,
+  getSharedLayoutVersion,
 } from './engines';

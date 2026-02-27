@@ -6,7 +6,7 @@
  * Phase 9 엔진 구성:
  * - flex/inline-flex  → TaffyFlexEngine (Taffy WASM)
  * - grid/inline-grid  → TaffyGridEngine (Taffy WASM)
- * - block/inline 등   → DropflowBlockEngine (기본)
+ * - block/inline 등   → TaffyBlockEngine (Taffy WASM, feature flag) | DropflowBlockEngine (폴백)
  *
  * WASM 미로드 시 DropflowBlockEngine으로 폴백.
  *
@@ -27,7 +27,9 @@ import { DropflowBlockEngine } from './DropflowBlockEngine';
 import { TaffyFlexEngine, isTaffyFlexAvailable } from './TaffyFlexEngine';
 import { isTaffyGridAvailable } from './TaffyGridEngine';
 import { TaffyGridEngine } from './TaffyGridEngine';
+import { TaffyBlockEngine, isTaffyBlockAvailable } from './TaffyBlockEngine';
 import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
+import { isTaffyBlockEnabled } from '../../../../../utils/featureFlags';
 import { useScrollState } from '../../../../stores/scrollState';
 import { getPhantomIndicatorWidth, getPhantomIndicatorSpace } from './utils';
 
@@ -61,10 +63,17 @@ export {
 // W3-7: CSS var() DOM fallback 헬퍼
 export { createVariableScopeWithDOMFallback } from './cssValueParser';
 
+// ADR-005 Phase 2: Persistent Taffy Tree + Incremental Layout
+export { calculateFullTreeLayout, resetPersistentTree } from './fullTreeLayout';
+
+// ADR-005 Phase 3: Flat Render Command Stream — 공유 Layout Map
+export { publishLayoutMap, getSharedLayoutMap, getSharedLayoutVersion } from './fullTreeLayout';
+
 // 싱글톤 엔진 인스턴스
 const dropflowBlockEngine = new DropflowBlockEngine();
 const taffyFlexEngine = new TaffyFlexEngine();
 const taffyGridEngine = new TaffyGridEngine();
+const taffyBlockEngine = new TaffyBlockEngine();
 
 /**
  * 요소가 새로운 BFC(Block Formatting Context)를 생성하는지 확인
@@ -103,13 +112,20 @@ export function selectEngine(display: string | undefined): LayoutEngine {
     case 'inline-block':
     case 'flow-root':
     case 'inline':
-      return dropflowBlockEngine;
+      // ADR-005 Foundation: Taffy Block 엔진 (feature flag로 병행 운영)
+      return (isTaffyBlockEnabled() && wasmReady && isTaffyBlockAvailable())
+        ? taffyBlockEngine
+        : dropflowBlockEngine;
 
     case undefined:
-      return dropflowBlockEngine;
+      return (isTaffyBlockEnabled() && wasmReady && isTaffyBlockAvailable())
+        ? taffyBlockEngine
+        : dropflowBlockEngine;
 
     default:
-      return dropflowBlockEngine;
+      return (isTaffyBlockEnabled() && wasmReady && isTaffyBlockAvailable())
+        ? taffyBlockEngine
+        : dropflowBlockEngine;
   }
 }
 

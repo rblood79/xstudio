@@ -59,6 +59,12 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
   mod.ping(); // TypeError — wasm 전역 변수가 undefined
   ```
 
+#### Order Num (order_num 재정렬)
+- **CRITICAL**: order_num 재정렬 시 `batchUpdateElementOrders()` 사용 필수 (단일 set() + _rebuildIndexes()). 구 패턴 `updateElementOrder` N회 호출 금지
+- **CRITICAL**: setTimeout/queueMicrotask 안에서 반드시 `get()`으로 최신 `elements` 참조 (stale closure 방지). 외부 캡처 금지
+- **CRITICAL**: `calculateNextOrderNum` — 0-based (빈 부모 → 0). AI 도구 `createElement.ts`에서 `elements.length` 사용 금지
+- 참조: `elementReorder.ts`의 `computeReorderUpdates()` (순수 함수) + `reorderElements()` (실행)
+
 #### Security (postmessage-*)
 - **[postmessage-origin-verify](rules/postmessage-origin-verify.md)** - origin 검증 필수
 

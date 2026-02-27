@@ -71,6 +71,16 @@ const children = useStore(state => state.childrenMap.get(parentId) ?? []);
 // 요소 변경 후 인덱스 재구성 필수
 set({ elements: newElements });
 get()._rebuildIndexes();  // elementsMap, childrenMap, pageIndex 갱신
+
+// ✅ updateElementOrder — 내부에서 _rebuildIndexes() 자동 호출
+updateElementOrder(elementId, newOrderNum);
+
+// ✅ batchUpdateElementOrders — 단일 set() + _rebuildIndexes()
+// N개 요소의 order_num을 한번에 업데이트 (N×set() 방지)
+batchUpdateElementOrders([
+  { id: 'el-1', order_num: 0 },
+  { id: 'el-2', order_num: 1 },
+]);
 ```
 
 ## 선택 상태 동기화
