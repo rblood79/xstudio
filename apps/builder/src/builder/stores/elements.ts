@@ -160,17 +160,13 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   const batchUpdateElementProps = createBatchUpdateElementPropsAction(set, get);
   const batchUpdateElements = createBatchUpdateElementsAction(set, get);
 
-  // 인덱스 재구축 함수 (Phase 2: 페이지 인덱스 포함)
-  const _rebuildIndexes = () => {
-    const { elements } = get();
+  // 인덱스 재구축 순수 함수 (Fix 3: atomic update 지원)
+  const buildIndexes = (elements: Element[]) => {
     const elementsMap = new Map<string, Element>();
     const childrenMap = new Map<string, Element[]>();
 
     elements.forEach((el) => {
-      // elementsMap: id -> Element
       elementsMap.set(el.id, el);
-
-      // childrenMap: parent_id -> Element[]
       const parentId = el.parent_id || 'root';
       if (!childrenMap.has(parentId)) {
         childrenMap.set(parentId, []);
@@ -178,13 +174,17 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       childrenMap.get(parentId)!.push(el);
     });
 
-    // 🆕 Phase 2: 페이지 인덱스 재구축
     const pageIndex = rebuildPageIndex(elements, elementsMap);
-    // G.1/G.2: Component + Variable 인덱스 재구축
     const componentIndex = rebuildComponentIndex(elements);
     const variableUsageIndex = rebuildVariableUsageIndex(elements);
 
-    set({ elementsMap, childrenMap, pageIndex, componentIndex, variableUsageIndex });
+    return { elementsMap, childrenMap, pageIndex, componentIndex, variableUsageIndex };
+  };
+
+  // 인덱스 재구축 함수 (Phase 2: 페이지 인덱스 포함)
+  const _rebuildIndexes = () => {
+    const { elements } = get();
+    set(buildIndexes(elements));
   };
 
   // 🆕 Phase 2: O(1) 페이지 요소 조회 함수

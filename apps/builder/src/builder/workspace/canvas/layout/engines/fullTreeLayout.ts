@@ -15,10 +15,10 @@ import type { TaffyStyle } from '../../wasm-bindings/taffyLayout';
 import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
 import { PersistentTaffyTree } from './persistentTaffyTree';
 import type { PersistentBatchNode } from './persistentTaffyTree';
-import { enrichWithIntrinsicSize, applyCommonTaffyStyle, parseMargin, INLINE_BLOCK_TAGS } from './utils';
+import { enrichWithIntrinsicSize, applyCommonTaffyStyle, parseMargin, parsePadding, parseBorder } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
-import { toTaffyDisplay } from './taffyDisplayAdapter';
+import { toTaffyDisplay, blockifyDisplay, getElementDisplay, needsBlockChildFullWidth } from './taffyDisplayAdapter';
 import { elementToTaffyBlockStyle } from './TaffyBlockEngine';
 import { elementToTaffyStyle } from './TaffyFlexEngine';
 import { applyImplicitStyles } from './implicitStyles';
@@ -71,33 +71,17 @@ export function getSharedLayoutVersion(): number {
   return _sharedLayoutVersion;
 }
 
-// ─── CSS Blockification ───────────────────────────────────────────────
+// ─── 공유 Filtered Children Map (Fix 1: 트리 소스 일원화) ────────────
+let _sharedFilteredChildrenMap: Map<string, string[]> | null = null;
 
-/**
- * CSS Display Level 3 Blockification 규칙 (로컬 복사본).
- *
- * index.ts와 동일한 로직이나, 순환 참조를 피하기 위해 여기에 직접 정의한다.
- * (fullTreeLayout.ts → index.ts → fullTreeLayout.ts 순환 방지)
- *
- * - 'inline'        → 'block'
- * - 'inline-block'  → 'block'
- * - 'inline-flex'   → 'flex'
- * - 'inline-grid'   → 'grid'
- * - 그 외           → 변경 없음
- */
-function blockifyDisplay(display: string): string {
-  switch (display) {
-    case 'inline':
-      return 'block';
-    case 'inline-block':
-      return 'block';
-    case 'inline-flex':
-      return 'flex';
-    case 'inline-grid':
-      return 'grid';
-    default:
-      return display;
-  }
+/** filteredChildIdsMap을 SkiaOverlay 커맨드 스트림에서 접근 가능하도록 공유 */
+export function publishFilteredChildrenMap(map: Map<string, string[]> | null): void {
+  _sharedFilteredChildrenMap = map;
+}
+
+/** 공유된 filteredChildIdsMap 조회 */
+export function getSharedFilteredChildrenMap(): Map<string, string[]> | null {
+  return _sharedFilteredChildrenMap;
 }
 
 // ─── 내부 유틸리티 ───────────────────────────────────────────────────
@@ -197,30 +181,6 @@ function taffyStyleToRecord(style: TaffyStyle): Record<string, unknown> {
 }
 
 /**
- * Element의 CSS display 값을 읽어 반환.
- *
- * XStudio 컨벤션:
- * - 명시적 display가 있으면 그대로 반환
- * - INLINE_BLOCK_TAGS(Button, Badge 등)는 기본 'inline-block'
- * - 그 외는 기본 'block'
- *
- * TaffyBlockEngine.computeWithTaffy와 동일한 규칙을 적용하여
- * toTaffyDisplay가 inline-block 자식을 가진 부모를 flex row wrap으로 변환할 수 있게 한다.
- */
-function getElementDisplay(element: Element): string {
-  const style = (element.props?.style ?? {}) as Record<string, unknown>;
-  if (typeof style.display === 'string' && style.display.length > 0) {
-    return style.display;
-  }
-  // Button, Badge 등 inline-block 기본 태그
-  const tag = (element.tag ?? '').toLowerCase();
-  if (INLINE_BLOCK_TAGS.has(tag)) {
-    return 'inline-block';
-  }
-  return 'block';
-}
-
-/**
  * Element와 display 정보로 TaffyStyle을 계산 후 Record로 변환.
  *
  * display 타입에 따라 적절한 변환 함수를 선택한다:
@@ -279,9 +239,61 @@ function buildNodeStyle(
   }
 
   // block / inline-block / inline / flow-root / 기타 → TaffyBlockEngine 경로
+  // taffyDisplayAdapter가 모든 block layout 시뮬레이션 규칙을 TaffyDisplayConfig에 포함하고,
+  // elementToTaffyBlockStyle이 모든 필드를 패스스루하므로 수동 주입 불필요.
   const taffyConfig = toTaffyDisplay(display, childDisplays);
   const taffyStyle: TaffyStyle = elementToTaffyBlockStyle(element, taffyConfig);
   return taffyStyleToRecord(taffyStyle);
+}
+
+// ─── Fix 6: 자식 available size 추정 ────────────────────────────────
+
+/**
+ * 현재 요소의 명시적 크기 + padding/border를 고려하여
+ * 자식에게 전달할 available width/height를 추정한다.
+ */
+function estimateChildAvailableSize(
+  style: Record<string, unknown> | undefined,
+  parentAvailWidth: number,
+  parentAvailHeight: number,
+): { width: number; height: number } {
+  if (!style) return { width: parentAvailWidth, height: parentAvailHeight };
+
+  // 명시적 width 해석
+  let contentWidth = parentAvailWidth;
+  const rawW = style.width;
+  if (rawW != null) {
+    const strW = String(rawW);
+    if (strW.endsWith('%')) {
+      const pct = parseFloat(strW);
+      if (!isNaN(pct)) contentWidth = parentAvailWidth * pct / 100;
+    } else if (strW !== 'auto') {
+      const px = parseFloat(strW);
+      if (!isNaN(px)) contentWidth = px;
+    }
+  }
+
+  // 명시적 height 해석
+  let contentHeight = parentAvailHeight;
+  const rawH = style.height;
+  if (rawH != null) {
+    const strH = String(rawH);
+    if (strH.endsWith('%')) {
+      const pct = parseFloat(strH);
+      if (!isNaN(pct)) contentHeight = parentAvailHeight * pct / 100;
+    } else if (strH !== 'auto') {
+      const px = parseFloat(strH);
+      if (!isNaN(px)) contentHeight = px;
+    }
+  }
+
+  // padding + border 차감 → content area
+  const pad = parsePadding(style, contentWidth);
+  const brd = parseBorder(style);
+  contentWidth = Math.max(0, contentWidth - pad.left - pad.right - brd.left - brd.right);
+  contentHeight = Math.max(0, contentHeight - pad.top - pad.bottom - brd.top - brd.bottom);
+
+  return { width: contentWidth, height: contentHeight };
 }
 
 // ─── DFS post-order 순회 ─────────────────────────────────────────────
@@ -377,13 +389,15 @@ function traversePostOrder(
   });
 
   // 3. 자식 먼저 재귀 (post-order)
+  // Fix 6: 현재 요소의 content area 크기를 자식의 availableWidth/Height로 전달
+  const childAvail = estimateChildAvailableSize(elementStyle, availableWidth, availableHeight);
   for (const childId of childIds) {
     traversePostOrder(
       childId,
       elementsMap,
       childrenMap,
-      availableWidth,
-      availableHeight,
+      childAvail.width,
+      childAvail.height,
       getChildElements,
       computedStyle,
       effectiveDisplay,   // 현재 요소의 display를 자식의 parentDisplay로 전달
@@ -408,6 +422,22 @@ function traversePostOrder(
 
   // 5. 현재 노드의 TaffyStyle 계산 → Record 변환
   const styleRecord = buildNodeStyle(enriched, computedStyle, childDisplays);
+
+  // 5.5. block→flex-row-wrap 변환 시 block-level 자식에 width:100% 주입
+  // CSS block container 내 block-level 자식은 자동으로 부모 폭 100%이지만
+  // Taffy flex-row-wrap 시뮬레이션에서는 명시적 설정 필요 (taffyDisplayAdapter 규칙)
+  if (styleRecord.display === 'flex' && styleRecord.flexWrap === 'wrap') {
+    for (let ci = 0; ci < childIds.length; ci++) {
+      const childEl = elementsMap.get(childIds[ci]);
+      const childStyle = (childEl?.props?.style ?? {}) as Record<string, unknown>;
+      if (needsBlockChildFullWidth(childDisplays[ci], childStyle.width)) {
+        const childBatchIdx = indexMap.get(childIds[ci]);
+        if (childBatchIdx !== undefined) {
+          batch[childBatchIdx].style.width = '100%';
+        }
+      }
+    }
+  }
 
   // 6. 자식 batch 인덱스 목록 구성 (filteredChildren 기반)
   const childIndices: number[] = [];
@@ -561,6 +591,9 @@ export function calculateFullTreeLayout(
     );
   }
 
+  // Fix 1: 트리 소스 일원화 — filteredChildIdsMap 공유
+  publishFilteredChildrenMap(filteredChildIdsMap);
+
   // ── Step 3: 초기 빌드 또는 증분 갱신 ──────────────────────────────
   try {
     if (!persistentTree.isInitialized) {
@@ -648,5 +681,5 @@ export function calculateFullTreeLayout(
     resetPersistentTree();
     return null;
   }
-  // Phase 2: finally { taffy.clear() } 제거 — persistent tree 유지
+  // Phase 1: finally { taffy.clear() } 제거 — persistent tree 유지
 }

@@ -144,9 +144,8 @@ export class PersistentTaffyTree {
 
       // childrenHashMap: filteredChildIds 기준 (implicit style 적용 후 실제 자식)
       const childIds = filteredChildIds.get(node.elementId);
-      if (childIds !== undefined && childIds.length > 0) {
-        this.childrenHashMap.set(node.elementId, childIds.join(','));
-      }
+      const childHash = (childIds && childIds.length > 0) ? childIds.join(',') : '';
+      this.childrenHashMap.set(node.elementId, childHash);
     }
 
     // post-order에서 루트는 항상 배열의 마지막 항목

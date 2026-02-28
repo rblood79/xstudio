@@ -7,6 +7,11 @@ import { getElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
 import { getDB } from "../../../lib/db";
 import { globalToast } from "../toast";
+import {
+  rebuildPageIndex,
+  rebuildComponentIndex,
+  rebuildVariableUsageIndex,
+} from "./elementIndexer";
 
 // ============================================
 // Types for Batch Operations
@@ -415,9 +420,29 @@ export const createBatchUpdateElementsAction =
         })()
       : state.selectedElementProps;
 
+    // Fix 3: 단일 atomic set() — elements + indexes 동시 갱신 (transient 불일치 방지)
+    const elementsMap = new Map<string, Element>();
+    const childrenMap = new Map<string, Element[]>();
+    updatedElements.forEach((el) => {
+      elementsMap.set(el.id, el);
+      const parentId = el.parent_id || 'root';
+      if (!childrenMap.has(parentId)) {
+        childrenMap.set(parentId, []);
+      }
+      childrenMap.get(parentId)!.push(el);
+    });
+    const pageIndex = rebuildPageIndex(updatedElements, elementsMap);
+    const componentIndex = rebuildComponentIndex(updatedElements);
+    const variableUsageIndex = rebuildVariableUsageIndex(updatedElements);
+
     set({
       elements: updatedElements,
       selectedElementProps: selectedProps,
+      elementsMap,
+      childrenMap,
+      pageIndex,
+      componentIndex,
+      variableUsageIndex,
     });
 
     // 2. 단일 히스토리 엔트리 추가 (batch 타입)
@@ -435,9 +460,6 @@ export const createBatchUpdateElementsAction =
         },
       });
     }
-
-    // 3. 단일 인덱스 재구축
-    get()._rebuildIndexes();
 
     // 4. IndexedDB 병렬 저장
     try {

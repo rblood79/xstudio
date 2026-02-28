@@ -656,6 +656,33 @@ const ElementsLayer = memo(function ElementsLayer({
   const SPEC_SHAPES_ONLY_TAGS = useMemo(() => new Set<string>([
   ]), []);
 
+  // ADR-005 Phase 1: Full-Tree Layout pre-computation (side effect 격리)
+  const fullTreeLayoutMap = useMemo(() => {
+    if (!isFullTreeLayoutEnabled() || !bodyElement || !_wasmLayoutReady) return null;
+    const childrenIdMap = new Map<string, string[]>();
+    for (const [key, elems] of pageChildrenMap) {
+      if (key != null) {
+        childrenIdMap.set(key, elems.map(e => e.id));
+      }
+    }
+    const bodyStyle = bodyElement.props?.style as Record<string, unknown> | undefined;
+    const bodyBorderVal = parseBorder(bodyStyle);
+    const bodyPaddingVal = parsePadding(bodyStyle, pageWidth);
+    const avW = pageWidth - bodyBorderVal.left - bodyBorderVal.right - bodyPaddingVal.left - bodyPaddingVal.right;
+    const avH = pageHeight - bodyBorderVal.top - bodyBorderVal.bottom - bodyPaddingVal.top - bodyPaddingVal.bottom;
+    const result = calculateFullTreeLayout(
+      bodyElement.id, elementById, childrenIdMap,
+      avW, avH,
+      (id: string) => pageChildrenMap.get(id) ?? [],
+    );
+    // Phase 3: SkiaOverlay에서 접근할 수 있도록 공유
+    publishLayoutMap(result);
+    if (import.meta.env.DEV && !result) {
+      console.warn('[Phase1] Full-tree layout failed, falling back to per-level');
+    }
+    return result;
+  }, [bodyElement, elementById, pageChildrenMap, pageWidth, pageHeight, _wasmLayoutReady]);
+
   // Phase 11: 엔진이 계산한 레이아웃으로 직접 배치 (Yoga 제거)
   const renderedTree = useMemo(() => {
     // Container 태그 판별 (children을 내부에서 렌더링하는 컴포넌트)
@@ -664,32 +691,6 @@ const ElementsLayer = memo(function ElementsLayer({
         return style?.display === 'flex' || style?.flexDirection !== undefined;
       }
       return !NON_CONTAINER_TAGS.has(tag);
-    }
-
-    // ADR-005 Phase 1: Full-Tree Layout pre-computation
-    let fullTreeLayoutMap: Map<string, ComputedLayout> | null = null;
-    if (isFullTreeLayoutEnabled() && bodyElement) {
-      const childrenIdMap = new Map<string, string[]>();
-      for (const [key, elems] of pageChildrenMap) {
-        if (key != null) {
-          childrenIdMap.set(key, elems.map(e => e.id));
-        }
-      }
-      const bodyStyle = bodyElement.props?.style as Record<string, unknown> | undefined;
-      const bodyBorderVal = parseBorder(bodyStyle);
-      const bodyPaddingVal = parsePadding(bodyStyle, pageWidth);
-      const avW = pageWidth - bodyBorderVal.left - bodyBorderVal.right - bodyPaddingVal.left - bodyPaddingVal.right;
-      const avH = pageHeight - bodyBorderVal.top - bodyBorderVal.bottom - bodyPaddingVal.top - bodyPaddingVal.bottom;
-      fullTreeLayoutMap = calculateFullTreeLayout(
-        bodyElement.id, elementById, childrenIdMap,
-        avW, avH,
-        (id: string) => pageChildrenMap.get(id) ?? [],
-      );
-      // Phase 3: SkiaOverlay에서 접근할 수 있도록 공유
-      publishLayoutMap(fullTreeLayoutMap);
-      if (import.meta.env.DEV && !fullTreeLayoutMap) {
-        console.warn('[Phase1] Full-tree layout failed, falling back to per-level');
-      }
     }
 
     // Container 자식 렌더러 생성 (재귀적)
@@ -1077,7 +1078,7 @@ const ElementsLayer = memo(function ElementsLayer({
     }
 
     return renderTree(bodyElement?.id ?? null);
-  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, NON_CONTAINER_TAGS, SPEC_SHAPES_ONLY_TAGS]);
+  }, [fullTreeLayoutMap, pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, NON_CONTAINER_TAGS, SPEC_SHAPES_ONLY_TAGS]);
 
   // body의 border+padding 오프셋 계산 (자식 시작 위치)
   const bodyStyle = bodyElement?.props?.style as Record<string, unknown> | undefined;

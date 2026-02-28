@@ -48,7 +48,7 @@ import type { BoundingBox, DragState } from '../selection/types';
 import { watchContextLoss } from './createSurface';
 import { flushWasmMetrics, recordWasmMetric } from '../utils/gpuProfilerCore';
 import { isFullTreeLayoutEnabled } from '../../../../utils/featureFlags';
-import { getSharedLayoutMap, getSharedLayoutVersion } from '../layout/engines/fullTreeLayout';
+import { getSharedLayoutMap, getSharedLayoutVersion, getSharedFilteredChildrenMap } from '../layout/engines/fullTreeLayout';
 import { getCachedCommandStream, invalidateCommandStreamCache, executeRenderCommands, buildAIBoundsFromStream } from './renderCommands';
 
 interface SkiaOverlayProps {
@@ -971,9 +971,26 @@ export function SkiaOverlay({
           }
         }
 
+        // Fix 1: filteredChildrenMap 사용 (layoutMap과 동일 트리 소스)
+        const filteredChildIds = getSharedFilteredChildrenMap();
+        let commandChildrenMap: Map<string, Element[]>;
+        if (filteredChildIds) {
+          commandChildrenMap = new Map();
+          for (const [parentId, childIds] of filteredChildIds) {
+            const children: Element[] = [];
+            for (const cid of childIds) {
+              const el = storeState.elementsMap.get(cid);
+              if (el) children.push(el);
+            }
+            commandChildrenMap.set(parentId, children);
+          }
+        } else {
+          commandChildrenMap = storeState.childrenMap;
+        }
+
         const stream = getCachedCommandStream(
           rootElementIds,
-          storeState.childrenMap,
+          commandChildrenMap,
           sharedLayoutMap,
           bodyPagePositions,
           registryVersion,

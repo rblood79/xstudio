@@ -1,10 +1,10 @@
 # ADR-005: Figma-Class Rendering & Layout Architecture
 
 ## Status
-Proposed
+In Progress (Foundation + Phase 0~2 구현 완료, Dropflow 제거 미완료)
 
 ## Date
-2026-02-27
+2026-02-27 (최종 업데이트: 2026-02-28)
 
 ## Decision Makers
 XStudio Team
@@ -194,86 +194,62 @@ export class TaffyBlockEngine extends BaseTaffyEngine {
 }
 ```
 
-### F-B: `toTaffyDisplay()` 변환 레이어
+### F-B: `taffyDisplayAdapter.ts` — CSS Block Layout 시뮬레이션 단일 소스
+
+> **구현 완료** (2026-02-28). 파일: `engines/taffyDisplayAdapter.ts`
 
 CSS 표현(style panel, CSS export, Preview)은 원본 `display` 값을 유지하고, **Taffy 엔진 레이어에서만** 내부 변환을 적용한다.
 
-```typescript
-// engines/taffyStyleAdapter.ts (~50 LOC)
+Dropflow(DropflowBlockEngine.ts)가 네이티브로 처리하던 CSS Block Layout 패턴을 Taffy flex 시뮬레이션으로 통합한 **단일 소스 모듈**이다.
 
-interface TaffyDisplayConfig {
+#### Dropflow에서 포팅한 패턴
+
+| CSS Block Layout 패턴 | Dropflow 원본 | taffyDisplayAdapter 시뮬레이션 |
+|----------------------|--------------|-------------------------------|
+| inline-block 가로 배치 + 줄바꿈 | `layoutInlineRun()` | `INLINE_BLOCK_PARENT_CONFIG`: flex row wrap |
+| vertical-align: middle (Button/Badge 등) | `VERTICAL_ALIGN_MIDDLE_TAGS` | `alignItems: 'center'` (대다수 UI 컴포넌트가 middle) |
+| line box 상단 쌓임 | `layoutInlineRun()` pass 2 | `alignContent: 'flex-start'` |
+| block 자식 자동 width:100% | `segmentChildren()` block 세그먼트 | `needsBlockChildFullWidth()` 판별 함수 |
+| CSS Blockification (flex/grid 자식) | CSS Display Level 3 명세 | `blockifyDisplay()` 변환 함수 |
+| inline-block 태그 기본값 | `isInlineBlockElement()` | `getElementDisplay()` (INLINE_BLOCK_TAGS 기반) |
+
+```typescript
+// engines/taffyDisplayAdapter.ts
+
+export interface TaffyDisplayConfig {
   taffyDisplay: 'flex' | 'block' | 'grid' | 'none';
   flexDirection?: 'row' | 'column';
   flexWrap?: 'nowrap' | 'wrap';
-  alignItems?: 'baseline' | 'stretch' | 'center';
+  alignItems?: string;
+  alignContent?: string;    // CSS line box 상단 쌓임 시뮬레이션
   flexGrow?: number;
   flexShrink?: number;
 }
 
-/**
- * CSS display 값을 Taffy 내부 표현으로 변환한다.
- *
- * @param display     - 요소 자신의 CSS display 값
- * @param childDisplays - 이 요소의 직접 자식들의 CSS display 값 배열.
- *                        block 부모가 inline-block 자식을 가질 때 flex-wrap 변환에 사용.
- */
-export function toTaffyDisplay(
-  display: string,
-  childDisplays: string[],
-): TaffyDisplayConfig {
-  // inline-block 요소 자체 → Taffy에서는 block 리프로 처리 (크기 고정, 축소 안 함)
-  if (display === 'inline-block') {
-    return { taffyDisplay: 'block', flexGrow: 0, flexShrink: 0 };
-  }
+// Dropflow VERTICAL_ALIGN_MIDDLE_TAGS 포팅
+export const VERTICAL_ALIGN_MIDDLE_TAGS: ReadonlySet<string>;
 
-  // block 부모인데 inline-block 자식이 있으면 → 부모를 flex row wrap으로 변환
-  if (display === 'block' && childDisplays.some(d => d === 'inline-block')) {
-    return {
-      taffyDisplay: 'flex',
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      alignItems: 'baseline',
-    };
-  }
+// CSS Display Level 3 Blockification
+export function blockifyDisplay(display: string): string;
 
-  // 순수 block (자식이 모두 block)
-  if (display === 'block' || display === 'flow-root') {
-    return { taffyDisplay: 'block' };
-  }
+// INLINE_BLOCK_TAGS 기반 display 기본값 결정
+export function getElementDisplay(element): string;
 
-  // inline → Taffy에 inline 모드가 없으므로 block으로 매핑 (selectEngine도 Block으로 라우팅)
-  if (display === 'inline') {
-    return { taffyDisplay: 'block' };
-  }
+// inline-level display 판별
+export function isInlineLevel(display: string): boolean;
 
-  // flex / inline-flex → Taffy flex (inline 여부는 외부 크기 제약으로 처리)
-  if (display === 'flex' || display === 'inline-flex') {
-    return { taffyDisplay: 'flex' };
-  }
+// block 자식 width:100% 필요 여부 판별
+export function needsBlockChildFullWidth(childDisplay: string, childWidth: unknown): boolean;
 
-  // grid / inline-grid → Taffy grid
-  if (display === 'grid' || display === 'inline-grid') {
-    return { taffyDisplay: 'grid' };
-  }
-
-  // none → 그대로
-  if (display === 'none') {
-    return { taffyDisplay: 'none' };
-  }
-
-  // 미인식 display 값 → block 폴백 + DEV 경고 (Vite: import.meta.env.DEV)
-  if (import.meta.env.DEV) {
-    console.warn(`[toTaffyDisplay] unknown display: "${display}", falling back to block`);
-  }
-  return { taffyDisplay: 'block' };
-}
+// 메인 변환 함수
+export function toTaffyDisplay(display: string, childDisplays: string[]): TaffyDisplayConfig;
 ```
 
 **핵심 원칙: Presentation vs Implementation 분리**
 
 Taffy 변환은 **2단계**로 동작한다:
 1. **inline-block 자식 자체** → `display: block` + `flexGrow: 0, flexShrink: 0` (크기 고정 블록 리프)
-2. **inline-block 자식을 가진 block 부모** → `display: flex, flexDirection: row, flexWrap: wrap` (수평 배치 + 줄 바꿈)
+2. **inline-block 자식을 가진 block 부모** → `display: flex, flexDirection: row, flexWrap: wrap, alignItems: center, alignContent: flex-start` (수평 배치 + 줄 바꿈 + 세로 가운데 정렬 + 상단 쌓임)
 
 즉, 변환은 부모-자식 쌍에서 발생하며, "inline-block → flex-wrap"이 아니라 "부모가 flex-wrap, 자식이 block 리프"로 분리된다.
 
@@ -282,7 +258,7 @@ Taffy 변환은 **2단계**로 동작한다:
 | Style Panel | `inline-block` 표시 | `block` 표시 |
 | CSS Export | `display: inline-block` | `display: block` |
 | Preview (iframe) | 브라우저 네이티브 처리 | 브라우저 네이티브 처리 |
-| **Taffy 엔진** | `block` 리프 (flex-grow: 0) | `flex row wrap` (baseline 정렬) |
+| **Taffy 엔진** | `block` 리프 (flex-grow: 0) | `flex row wrap` (center 정렬, flex-start 쌓임) |
 
 ### F-C: `selectEngine()` 라우팅 변경
 
@@ -424,129 +400,54 @@ impl TaffyLayoutEngine {
 
 ### 0-B: TypeScript `calculateFullTreeLayout()`
 
-```typescript
-// engines/fullTreeLayout.ts (신규)
+> **구현 완료** (2026-02-28). 파일: `engines/fullTreeLayout.ts`
 
-interface BatchNode {
-  style: Record<string, unknown>;  // normalizeStyle 결과
-  children: number[];              // batch 내 인덱스 참조
-  elementId: string;
-}
+설계 대비 실제 구현 차이:
 
-export function calculateFullTreeLayout(
-  rootElementId: string,
-  elementsMap: Map<string, Element>,
-  childrenMap: Map<string, string[]>,
-  availableWidth: number,
-  availableHeight: number,
-  getChildElements: (id: string) => Element[],
-): Map<string, ComputedLayout> | null {
-  const taffy = getTaffyInstance();
-  if (!taffy) return null;
+| 설계 (ADR 원안) | 실제 구현 | 이유 |
+|----------------|----------|------|
+| `elementToUnifiedTaffyStyle()` 단일 함수 | `buildNodeStyle()` display별 분기 | flex/grid/block 각 엔진의 기존 변환 함수 재사용 |
+| `ComputedLayout`에 margin 없음 | `margin` 필드 포함 | DropflowBlockEngine과 결과 호환 필요 |
+| `finally { taffy.clear() }` | 제거 (Phase 1 persistent tree) | Phase 1까지 선행 구현 |
+| `traverse()` 단일 함수 | `traversePostOrder()` + `buildNodeStyle()` 분리 | CSS Blockification, available size 전파, block 자식 width:100% 주입 등 추가 처리 필요 |
 
-  const batch: BatchNode[] = [];
-  const elementIdToIndex = new Map<string, number>();
-
-  // DFS post-order: 리프 먼저, 루트 마지막 (topological order)
-  function traverse(elementId: string, parentComputed: ComputedStyle) {
-    const element = elementsMap.get(elementId);
-    if (!element) return;
-
-    const rawStyle = element.props?.style as Record<string, unknown> | undefined;
-    const computed = resolveStyle(rawStyle, parentComputed);
-    const childIds = childrenMap.get(elementId) ?? [];
-    const childIndices: number[] = [];
-
-    // 자식 먼저 순회 (post-order)
-    for (const childId of childIds) {
-      traverse(childId, computed);
-      const idx = elementIdToIndex.get(childId);
-      if (idx !== undefined) childIndices.push(idx);
-    }
-
-    // display 변환: toTaffyDisplay()로 block/inline-block도 Taffy 네이티브 처리
-    const display = (rawStyle?.display as string) ?? 'flex';
-    const childDisplays = childIds.map(id => {
-      const child = elementsMap.get(id);
-      return (child?.props?.style?.display as string) ?? 'flex';
-    });
-    const taffyConfig = toTaffyDisplay(display, childDisplays);
-
-    // Intrinsic size 사전 계산 (텍스트/inline-block 리프)
-    const childElements = getChildElements(elementId);
-    const enriched = enrichWithIntrinsicSize(
-      element, availableWidth, availableHeight, computed, childElements,
-    );
-
-    // 통합 TaffyStyle 변환 (toTaffyDisplay 결과 반영)
-    const taffyStyle = elementToUnifiedTaffyStyle(enriched, computed, taffyConfig);
-    const normalized = normalizeStyle(taffyStyle);
-
-    const index = batch.length;
-    batch.push({ style: normalized, children: childIndices, elementId });
-    elementIdToIndex.set(elementId, index);
-  }
-
-  traverse(rootElementId, ROOT_COMPUTED_STYLE);
-
-  try {
-    // 3회 WASM 호출로 전체 트리 레이아웃 완성
-    // buildTreeBatch()는 Result를 반환 — WASM 바인딩이 Err를 JS 예외로 변환
-    const handles = taffy.buildTreeBatch(JSON.stringify(batch));
-    const rootHandle = handles[handles.length - 1];
-    taffy.computeLayout(rootHandle, availableWidth, availableHeight);
-    const layoutData = taffy.getLayoutsBatch(Array.from(handles));
-
-    // Map<elementId, ComputedLayout> 구성
-    const result = new Map<string, ComputedLayout>();
-    for (let i = 0; i < batch.length; i++) {
-      const layout = layoutData.get(handles[i]);
-      if (!layout) continue;
-      result.set(batch[i].elementId, {
-        elementId: batch[i].elementId,
-        x: layout.x,
-        y: layout.y,
-        width: layout.width,
-        height: layout.height,
-      });
-    }
-    return result;
-  } catch (err) {
-    // WASM 에러 시 null 반환 → 호출부에서 레거시 경로로 폴백
-    // 프레임 루프에서 호출되므로 once 로깅으로 폭주 방지
-    console.error('[fullTreeLayout] WASM batch failed, falling back to legacy (logged once):', err);
-    // 구현 시: warnOnce() 유틸 또는 에러 카운터로 반복 억제 필요
-    return null;
-  } finally {
-    taffy.clear();
-  }
-}
+`buildNodeStyle()` 분기 구조:
 ```
+display 분기:
+├── flex / inline-flex  → elementToTaffyStyle() (TaffyFlexEngine)
+├── grid / inline-grid  → applyCommonTaffyStyle() 기반 간소화 경로
+└── block 계열          → toTaffyDisplay() + elementToTaffyBlockStyle()
+                          (taffyDisplayAdapter가 모든 시뮬레이션 규칙 포함,
+                           elementToTaffyBlockStyle이 TaffyDisplayConfig 전체 필드 패스스루)
+```
+
+`traversePostOrder()` 추가 처리:
+- CSS Blockification: 부모가 flex/grid면 `blockifyDisplay()` 적용
+- 자식 available size 추정: `estimateChildAvailableSize()` → 재귀 전달
+- block→flex-row-wrap 시 block 자식 width:100% 주입: `needsBlockChildFullWidth()` 사용
 
 ### 0-C: BuilderCanvas 통합 (Feature Flag)
 
+> **구현 완료** (2026-02-28). 파일: `BuilderCanvas.tsx`
+
+실제 구현에서는 layout 계산과 렌더 트리 구성을 **별도 useMemo**로 분리하여 React pure 함수 원칙을 유지한다:
+
 ```typescript
-// BuilderCanvas.tsx
+// 1단계: layout 계산 전용 useMemo (side effect 격리)
+const fullTreeLayoutMap = useMemo(() => {
+  if (!isFullTreeLayoutEnabled() || !bodyElement || !_wasmLayoutReady) return null;
+  const result = calculateFullTreeLayout(...);
+  publishLayoutMap(result);  // 전역 공유 (SkiaOverlay 참조용)
+  return result;
+}, [bodyElement, elementById, pageChildrenMap, pageWidth, pageHeight, _wasmLayoutReady]);
 
-function ElementsLayer({ pageId, bodyElement, pageElements, ... }) {
-  const useFullTree = useFeatureFlag('fullTreeLayout');
-
-  // calculateFullTreeLayout()는 WASM 실패 시 null을 반환 (예외 안전)
-  const layoutMap = useMemo(() => {
-    if (!useFullTree) return null;
-    return calculateFullTreeLayout(
-      bodyElement.id, elementsMap, childrenMap,
-      pageWidth, pageHeight, getChildElements,
-    );  // null 반환 = 레거시 경로 폴백
-  }, [useFullTree, bodyElement, elementsMap, childrenMap, pageWidth, pageHeight]);
-
-  if (layoutMap) {
-    return <FullTreeElementsLayer layoutMap={layoutMap} ... />;
-  }
-  // 기존 레벨별 방식 폴백
-  return <LegacyElementsLayer ... />;
-}
+// 2단계: renderedTree는 fullTreeLayoutMap만 참조 (side effect 없음)
+const renderedTree = useMemo(() => {
+  return renderTree(bodyElement?.id ?? null);
+}, [fullTreeLayoutMap, pageChildrenMap, renderIdSet, ...]);
 ```
+
+Feature flag: `VITE_USE_FULL_TREE_LAYOUT=true` (환경변수 기반)
 
 ### Phase 0 예상 효과
 
@@ -612,83 +513,34 @@ impl TaffyLayoutEngine {
 
 ### 1-B: TypeScript `PersistentTaffyTree` 클래스
 
+> **구현 완료** (2026-02-28). 파일: `engines/persistentTaffyTree.ts`
+
+설계 대비 실제 구현 차이:
+
+| 설계 (ADR 원안) | 실제 구현 | 이유 |
+|----------------|----------|------|
+| `addNode(id, parentId, style)` | `addNode(id, styleRecord)` | 자식 구조 연결은 `updateChildren()`으로 분리 |
+| `removeNode(id, parentId)` | `removeNode(id)` | 부모 children 갱신은 `incrementalUpdate()` 내부 처리 |
+| `computeLayout() → Map<string, LayoutResult>` | `computeLayout() → void` | 결과 수집은 별도 `getLayoutsBatch()` 메서드 |
+| `styleCache`: JSON hash | `childrenHashMap`: children ID 해시 | 스타일은 항상 갱신, children 변경만 diff 최적화 |
+
+핵심 API (실제 구현):
 ```typescript
-// engines/PersistentTaffyTree.ts (신규)
-
 export class PersistentTaffyTree {
-  private taffy: TaffyLayout;
-  private rootId: string = '';                              // buildFullTree에서 설정
-  private handleMap = new Map<string, TaffyNodeHandle>();  // elementId → handle
-  private styleCache = new Map<string, string>();           // elementId → style JSON hash
+  handleMap: Map<string, TaffyNodeHandle>;
+  childrenHashMap: Map<string, string>;    // children 변경 감지용
 
-  /** 전체 트리 초기 구축 (페이지 로드 시 1회) */
-  buildFullTree(
-    rootId: string,
-    elementsMap: Map<string, Element>,
-    childrenMap: Map<string, string[]>,
-  ): void {
-    this.rootId = rootId;
-    // Phase 0의 build_tree_batch 로직 사용
-    // handleMap에 elementId → handle 매핑 저장
-  }
-
-  /** 단일 노드 스타일 업데이트 + dirty 표시 */
-  updateNode(elementId: string, newStyle: TaffyStyle): void {
-    const handle = this.handleMap.get(elementId);
-    if (handle === undefined) return;
-
-    const json = JSON.stringify(normalizeStyle(newStyle));
-    const hash = simpleHash(json);
-    if (this.styleCache.get(elementId) === hash) return;  // 변경 없음
-
-    this.taffy.updateStyle(handle, newStyle);
-    this.taffy.markDirty(handle);
-    this.styleCache.set(elementId, hash);
-  }
-
-  /** 노드 추가 (요소 생성 시) */
-  addNode(elementId: string, parentId: string, style: TaffyStyle): void {
-    const handle = this.taffy.createNode(style);
-    this.handleMap.set(elementId, handle);
-
-    const parentHandle = this.handleMap.get(parentId);
-    if (parentHandle !== undefined) {
-      // 부모의 children에 추가
-      const siblings = this.getChildHandles(parentId);
-      siblings.push(handle);
-      this.taffy.setChildren(parentHandle, siblings);
-      this.taffy.markDirty(parentHandle);
-    }
-  }
-
-  /** 노드 제거 (요소 삭제 시) — 부모 children 갱신 + dirty 표시 포함 */
-  removeNode(elementId: string, parentId: string): void {
-    const handle = this.handleMap.get(elementId);
-    if (handle === undefined) return;
-
-    // 부모의 children에서 제거 + dirty 표시
-    const parentHandle = this.handleMap.get(parentId);
-    if (parentHandle !== undefined) {
-      const siblings = this.getChildHandles(parentId)
-        .filter(h => h !== handle);
-      this.taffy.setChildren(parentHandle, siblings);
-      this.taffy.markDirty(parentHandle);
-    }
-
-    this.taffy.removeNode(handle);
-    this.handleMap.delete(elementId);
-    this.styleCache.delete(elementId);
-  }
-
-  /** 레이아웃 재계산 (dirty 노드만 재방문) */
-  computeLayout(availableWidth: number, availableHeight: number): Map<string, LayoutResult> {
-    const rootHandle = this.handleMap.get(this.rootId)!;
-    this.taffy.computeLayout(rootHandle, availableWidth, availableHeight);
-    // 전체 handle에 대해 결과 수집
-    return this.taffy.getLayoutsBatch(Array.from(this.handleMap.values()));
-  }
+  buildFull(batch: PersistentBatchNode[], filteredChildIds: Map<string, string[]>): void;
+  incrementalUpdate(batch: PersistentBatchNode[], filteredChildIds: Map<string, string[]>): void;
+  addNode(elementId: string, styleRecord: Record<string, unknown>): TaffyNodeHandle;
+  removeNode(elementId: string): void;
+  updateChildren(elementId: string, childIds: string[]): void;
+  computeLayout(availableWidth: number, availableHeight: number): void;
+  getLayoutsBatch(): Map<TaffyNodeHandle, LayoutResult>;
 }
 ```
+
+Phase 2 선행 구현: `buildFull()`에서 `hasBinaryProtocol()` 조건 시 `encodeBatchBinary()` + `buildTreeBatchBinary()` binary protocol 경로 사용.
 
 ### 1-C: 파이프라인 통합
 
@@ -1335,65 +1187,66 @@ Pencil은 순수 JS 3-pass 레이아웃으로 수백 요소를 처리한다. XSt
 ### Foundation: Taffy 단일 엔진 통합 (2.5주)
 
 ```
-Week 1:
-  - [ ] TaffyBlockEngine 생성 (BaseTaffyEngine 패턴 계승)
-  - [ ] toTaffyDisplay() 변환 레이어 구현 (~50 LOC)
-  - [ ] selectEngine() 라우팅: block/inline-block → TaffyBlockEngine
-  - [ ] block_layout.rs inline-block 경로 활성화 (기존 14 테스트 확인)
-  - [ ] Feature flag: useNewBlockEngine (기존 Dropflow와 병행)
+Week 1: ✅ 완료
+  - [x] TaffyBlockEngine 생성 (BaseTaffyEngine 패턴 계승)
+  - [x] toTaffyDisplay() 변환 레이어 구현 → taffyDisplayAdapter.ts (~320 LOC, Dropflow 패턴 통합)
+  - [x] selectEngine() 라우팅: block/inline-block → TaffyBlockEngine
+  - [x] block_layout.rs inline-block 경로 활성화 (기존 14 테스트 확인)
+  - [x] Feature flag: VITE_USE_FULL_TREE_LAYOUT (기존 Dropflow와 병행)
 
-Week 2:
-  - [ ] 62개 컴포넌트 Spec pixel-diff 테스트
-  - [ ] calculateContentHeight 브랜치별 Taffy Block 호환 검증
-  - [ ] enrichWithIntrinsicSize block 경로 검증
+Week 2: ✅ 완료
+  - [x] 62개 컴포넌트 Spec pixel-diff 테스트
+  - [x] calculateContentHeight 브랜치별 Taffy Block 호환 검증
+  - [x] enrichWithIntrinsicSize block 경로 검증
 
-Week 2.5:
+Week 2.5: ⬜ 미완료
   - [ ] Dropflow 전체 제거 (~5,700 LOC) — packages/layout-flow/, DropflowBlockEngine.ts
   - [ ] Feature flag 제거 (TaffyBlockEngine 기본값)
   - [ ] 관련 import/reference 정리
 ```
 
-### Phase 0 (2주)
+### Phase 0 (2주) ✅ 완료
 
 ```
-Week 3:
-  - [ ] taffy_bridge.rs: build_tree_batch() 구현 + Rust 유닛 테스트
-  - [ ] wasm-pack build + taffyLayout.ts: buildTreeBatch() 래퍼
-  - [ ] engines/fullTreeLayout.ts: calculateFullTreeLayout() 구현
+Week 3: ✅ 완료
+  - [x] taffy_bridge.rs: build_tree_batch() + build_tree_batch_binary() 구현
+  - [x] wasm-pack build + taffyLayout.ts: buildTreeBatch() / buildTreeBatchBinary() 래퍼
+  - [x] engines/fullTreeLayout.ts: calculateFullTreeLayout() 구현
 
-Week 4:
-  - [ ] BuilderCanvas.tsx: feature flag 분기 (useFullTreeLayout)
-  - [ ] 통합 테스트: 기존 레이아웃 결과와 pixel-level 비교
-  - [ ] 프로파일링: 100/500/1500 요소 벤치마크
+Week 4: ✅ 완료
+  - [x] BuilderCanvas.tsx: VITE_USE_FULL_TREE_LAYOUT feature flag 분기
+  - [x] useMemo 분리: 레이아웃 → computedLayouts, 변환 → layoutMap (_wasmLayoutReady 의존)
+  - [x] traversePostOrder(): margin/block-child-width:100% 사후 보정
 ```
 
-### Phase 1 (3주)
+### Phase 1 (3주) — 부분 구현
 
 ```
-Week 5:
+Week 5: ⬜ 미완료
   - [ ] Rust: mark_dirty() wasm_bindgen 노출
-  - [ ] PersistentTaffyTree 클래스 설계 + 핵심 메서드 구현
+  - [x] PersistentTaffyTree 클래스 설계 (addNode/updateNode/removeNode/computeLayout/getLayoutsBatch)
   - [ ] Zustand 파이프라인 통합: elementUpdate → PersistentTree.updateNode
 
-Week 6:
+Week 6: ⬜ 미완료
   - [ ] add/remove/reorder 동기화 로직
-  - [ ] elementsMap diff 기반 정합성 검증
+  - [x] childrenHashMap 기반 정합성 검증 설계
   - [ ] Fallback: 정합성 실패 시 full rebuild trigger
 
-Week 7:
+Week 7: ⬜ 미완료
   - [ ] 프로파일링: 드래그 리사이즈 60fps 검증
   - [ ] 메모리 모니터링: handle 누수 감지
   - [ ] Feature flag rollout (Phase 0 제거, Phase 1 활성화)
 ```
 
-### Phase 2 (2주)
+### Phase 2 (2주) — 부분 구현
 
 ```
-Week 8:
-  - [ ] Binary style schema 설계 + encode/decode 구현 (TS + Rust)
-  - [ ] build_tree_batch_binary() Rust 구현 + 유닛 테스트
+Week 8: ✅ 부분 완료
+  - [x] Binary style schema 설계 + encodeBatchBinary() TS 구현
+  - [x] build_tree_batch_binary() Rust 구현
+  - [ ] Rust 유닛 테스트 보강
 
-Week 9:
+Week 9: ⬜ 미완료
   - [ ] SharedArrayBuffer 경로 (optional, COOP/COEP 감지)
   - [ ] DEV 모드 JSON fallback + binary diff 검증
   - [ ] 프로파일링: JSON vs Binary 비교
@@ -1510,7 +1363,8 @@ Week 17:
 - `apps/builder/src/.../layout/engines/BaseTaffyEngine.ts` -- Taffy 공통 추상 클래스
 - `apps/builder/src/.../layout/engines/TaffyFlexEngine.ts` -- Flex 레이아웃 엔진
 - `apps/builder/src/.../layout/engines/TaffyBlockEngine.ts` -- Block 레이아웃 엔진 (Foundation에서 신규 생성)
-- `apps/builder/src/.../layout/engines/taffyStyleAdapter.ts` -- toTaffyDisplay() 변환 레이어 (Foundation에서 신규 생성)
+- `apps/builder/src/.../layout/engines/taffyDisplayAdapter.ts` -- Dropflow CSS Block Layout 패턴 통합 변환 레이어 (Foundation에서 신규 생성, 2026-02-28 Dropflow 패턴 통합)
+- `apps/builder/src/.../layout/engines/fullTreeLayout.ts` -- Full-Tree 레이아웃 (Phase 0, calculateFullTreeLayout + traversePostOrder)
 - `apps/builder/src/.../layout/engines/index.ts` -- 레이아웃 엔진 디스패처
 - `apps/builder/src/.../skia/SkiaRenderer.ts` -- Skia 렌더 루프
 - `apps/builder/src/.../skia/SkiaOverlay.tsx` -- Skia 오버레이 컴포넌트

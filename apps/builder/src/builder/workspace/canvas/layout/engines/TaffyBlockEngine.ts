@@ -24,7 +24,7 @@ import {
 import { resolveStyle } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 import type { CSSValueContext } from './cssValueParser';
-import { toTaffyDisplay } from './taffyDisplayAdapter';
+import { toTaffyDisplay, getElementDisplay } from './taffyDisplayAdapter';
 import type { TaffyDisplayConfig } from './taffyDisplayAdapter';
 
 // ─── margin:auto 판별 ────────────────────────────────────────────────
@@ -94,9 +94,15 @@ export function elementToTaffyBlockStyle(
   // Display — taffyDisplayAdapter 결과 적용
   result.display = taffyConfig.taffyDisplay;
 
+  // TaffyDisplayConfig 전체 필드 패스스루
   // inline-block 리프: flexGrow/flexShrink 고정 (크기 고정 아이템)
   if (taffyConfig.flexGrow !== undefined) result.flexGrow = taffyConfig.flexGrow;
   if (taffyConfig.flexShrink !== undefined) result.flexShrink = taffyConfig.flexShrink;
+  // inline-block 부모 (flex row wrap 시뮬레이션): flexDirection/flexWrap/alignItems/alignContent
+  if (taffyConfig.flexDirection) result.flexDirection = taffyConfig.flexDirection;
+  if (taffyConfig.flexWrap) result.flexWrap = taffyConfig.flexWrap;
+  if (taffyConfig.alignItems) result.alignItems = taffyConfig.alignItems;
+  if (taffyConfig.alignContent) result.alignContent = taffyConfig.alignContent as TaffyStyle['alignContent'];
 
   // Position
   if (style.position === 'absolute' || style.position === 'fixed') {
@@ -216,10 +222,7 @@ export class TaffyBlockEngine extends BaseTaffyEngine {
 
     // ── 3. 자식 display 목록 수집 (부모 toTaffyDisplay 판단용) ──────────
     // inline-block 자식이 하나라도 있으면 부모를 flex row wrap으로 변환
-    const childDisplayValues = enrichedChildren.map(child => {
-      const s = child.props?.style as Record<string, unknown> | undefined;
-      return (s?.display as string | undefined) ?? 'block';
-    });
+    const childDisplayValues = enrichedChildren.map(child => getElementDisplay(child));
 
     // ── 4. 자식 노드 생성 ───────────────────────────────────────────────
     const childHandles: TaffyNodeHandle[] = [];
@@ -228,8 +231,7 @@ export class TaffyBlockEngine extends BaseTaffyEngine {
     for (let i = 0; i < enrichedChildren.length; i++) {
       const enrichedChild = enrichedChildren[i];
       const originalChild = children[i];
-      const childRawStyle = enrichedChild.props?.style as Record<string, unknown> | undefined;
-      const childDisplay = (childRawStyle?.display as string | undefined) ?? 'block';
+      const childDisplay = getElementDisplay(enrichedChild);
 
       // 자식 자신의 display를 변환 (inline-block 리프 → block + flexGrow:0)
       const childTaffyConfig = toTaffyDisplay(childDisplay, []);
@@ -242,7 +244,7 @@ export class TaffyBlockEngine extends BaseTaffyEngine {
 
     // ── 5. 부모 display 변환 (자식 display 목록 기반) ───────────────────
     const parentRawStyle = (parent.props?.style || {}) as Record<string, unknown>;
-    const parentDisplay = (parentRawStyle.display as string | undefined) ?? 'block';
+    const parentDisplay = getElementDisplay(parent);
     const parentTaffyConfig = toTaffyDisplay(parentDisplay, childDisplayValues);
 
     // ── 6. 부모 노드 생성 ───────────────────────────────────────────────
