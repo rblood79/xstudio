@@ -15,7 +15,7 @@ import type { TaffyStyle } from '../../wasm-bindings/taffyLayout';
 import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
 import { PersistentTaffyTree } from './persistentTaffyTree';
 import type { PersistentBatchNode } from './persistentTaffyTree';
-import { enrichWithIntrinsicSize, applyCommonTaffyStyle, parseMargin, parsePadding, parseBorder } from './utils';
+import { enrichWithIntrinsicSize, applyCommonTaffyStyle, applyFlexItemProperties, parseMargin, parsePadding, parseBorder, calculateContentHeight, parseBoxModel, parseCSSPropWithContext } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 import { toTaffyDisplay, blockifyDisplay, getElementDisplay, needsBlockChildFullWidth } from './taffyDisplayAdapter';
@@ -192,6 +192,7 @@ function buildNodeStyle(
   element: Element,
   computedStyle: ComputedStyle,
   childDisplays: string[],
+  parentDisplay: string,
 ): Record<string, unknown> {
   const display = getElementDisplay(element);
   const normalized = display.trim().toLowerCase();
@@ -229,11 +230,33 @@ function buildNodeStyle(
     if (style.alignSelf) partial.alignSelf = style.alignSelf;
     if (style.justifySelf) partial.justifySelf = style.justifySelf;
 
+    // Position + Inset
+    if (style.position === 'absolute' || style.position === 'fixed') {
+      partial.position = 'absolute';
+    } else if (style.position === 'relative') {
+      partial.position = 'relative';
+    }
+    if (style.position === 'absolute' || style.position === 'fixed' || style.position === 'relative') {
+      const top = parseCSSPropWithContext(style.top, {});
+      const left = parseCSSPropWithContext(style.left, {});
+      const right = parseCSSPropWithContext(style.right, {});
+      const bottom = parseCSSPropWithContext(style.bottom, {});
+      if (top !== undefined) partial.insetTop = top;
+      if (left !== undefined) partial.insetLeft = left;
+      if (right !== undefined) partial.insetRight = right;
+      if (bottom !== undefined) partial.insetBottom = bottom;
+    }
+
     const margin = parseMargin(style);
     if (margin.top !== 0) partial.marginTop = margin.top;
     if (margin.right !== 0) partial.marginRight = margin.right;
     if (margin.bottom !== 0) partial.marginBottom = margin.bottom;
     if (margin.left !== 0) partial.marginLeft = margin.left;
+
+    // CSS: grid 요소가 flex/grid 부모의 자식이면 flex item 속성도 적용
+    if (FLEX_GRID_DISPLAYS.has(parentDisplay)) {
+      applyFlexItemProperties(partial, style);
+    }
 
     return partial;
   }
@@ -243,7 +266,16 @@ function buildNodeStyle(
   // elementToTaffyBlockStyle이 모든 필드를 패스스루하므로 수동 주입 불필요.
   const taffyConfig = toTaffyDisplay(display, childDisplays);
   const taffyStyle: TaffyStyle = elementToTaffyBlockStyle(element, taffyConfig);
-  return taffyStyleToRecord(taffyStyle);
+  const record = taffyStyleToRecord(taffyStyle);
+
+  // CSS: block 요소가 flex/grid 부모의 자식이면 flex item 속성 적용
+  // 자식의 display는 내부 formatting context만 결정, flex item 참여는 부모 display로 결정
+  if (FLEX_GRID_DISPLAYS.has(parentDisplay)) {
+    const style = (element.props?.style ?? {}) as Record<string, unknown>;
+    applyFlexItemProperties(record, style);
+  }
+
+  return record;
 }
 
 // ─── Fix 6: 자식 available size 추정 ────────────────────────────────
@@ -406,22 +438,56 @@ function traversePostOrder(
     );
   }
 
-  // 4. enrichWithIntrinsicSize: 텍스트/인라인 요소에 intrinsic 크기 주입
-  // GAP 2: isFlexChild 파라미터 전달
+  // 4. enrichWithIntrinsicSize: intrinsic 크기 주입
+  // CSS height:auto 일반 규칙:
+  //   A. 컨테이너 (Taffy 자식 있음) → Taffy가 자식 border-box + padding + border로 자동 계산
+  //   B. 리프 (Taffy 자식 없음) → intrinsic height 주입 (텍스트 측정 / spec shapes)
   const isFlexChild = parentDisplay === 'flex' || parentDisplay === 'inline-flex';
   const childElements = getChildElements(elementId);
-  const enriched = enrichWithIntrinsicSize(
-    element,
-    availableWidth,
-    availableHeight,
-    computedStyle,
-    childElements,
-    getChildElements,
-    isFlexChild,
+  const hasTaffyChildren = childIds.length > 0;
+
+  // 모든 노드에 대해 전체 enrichment 수행 (width 등 유지)
+  let enriched: Element = enrichWithIntrinsicSize(
+    element, availableWidth, availableHeight,
+    computedStyle, childElements, getChildElements, isFlexChild,
   );
 
+  if (hasTaffyChildren) {
+    // A. 컨테이너: CSS height:auto → enrichment가 주입한 height를 제거
+    // 사용자가 명시한 CSS height는 보존, enrichment가 추가한 height만 제거
+    // → Taffy가 자식 border-box + padding + border로 height를 자동 계산
+    const originalHeight = elementStyle.height;
+    if (!originalHeight || originalHeight === 'auto') {
+      const enrichedStyle = (enriched.props?.style ?? {}) as Record<string, unknown>;
+      if (enrichedStyle.height !== undefined && enrichedStyle.height !== originalHeight) {
+        const { height: _, ...restStyle } = enrichedStyle;
+        enriched = { ...enriched, props: { ...enriched.props, style: restStyle } };
+      }
+    }
+  } else {
+    // B. 리프: enrichWithIntrinsicSize의 early return guard로 height 미주입된 경우 보완
+    // Panel 등 spec shapes 컴포넌트는 CSS height 없고 element children도 없지만
+    // 시각적 콘텐츠가 있어 intrinsic height가 필요하다.
+    const enrichedStyle = (enriched.props?.style ?? {}) as Record<string, unknown>;
+    if (!enrichedStyle.height && (!elementStyle.height || elementStyle.height === 'auto')) {
+      const intrinsicHeight = calculateContentHeight(
+        element, availableWidth, childElements, getChildElements, computedStyle,
+      );
+      if (intrinsicHeight > 0) {
+        const box = parseBoxModel(element, availableWidth, availableHeight);
+        const borderBoxHeight = intrinsicHeight
+          + box.padding.top + box.padding.bottom
+          + box.border.top + box.border.bottom;
+        enriched = {
+          ...enriched,
+          props: { ...enriched.props, style: { ...enrichedStyle, height: borderBoxHeight } },
+        };
+      }
+    }
+  }
+
   // 5. 현재 노드의 TaffyStyle 계산 → Record 변환
-  const styleRecord = buildNodeStyle(enriched, computedStyle, childDisplays);
+  const styleRecord = buildNodeStyle(enriched, computedStyle, childDisplays, parentDisplay);
 
   // 5.5. block→flex-row-wrap 변환 시 block-level 자식에 width:100% 주입
   // CSS block container 내 block-level 자식은 자동으로 부모 폭 100%이지만

@@ -44,10 +44,12 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 
 - **Box Model**: `boxSizing`, `minWidth`, `maxWidth`, `minHeight`, `maxHeight`
 - **Intrinsic Sizing**: `width: fit-content` (FIT_CONTENT sentinel, Block/Flex 양쪽 지원)
-- **Overflow/BFC**: `overflow`, `overflowX`, `overflowY`
+- **Overflow/BFC**: `overflow`, `overflowX`, `overflowY` (applyCommonTaffyStyle에서 Taffy 전달)
 - **Typography**: `lineHeight`, `verticalAlign`
 - **Visibility**: `visibility: hidden` (공간 유지, 렌더링 안 함)
 - **Grid 자식**: `alignSelf`, `justifySelf`
+- **Aspect Ratio**: `aspectRatio` (applyCommonTaffyStyle에서 Taffy 전달)
+- **Flex Item**: `flex`, `flexGrow`, `flexShrink`, `flexBasis`, `order` (applyFlexItemProperties — 부모가 flex/grid일 때 모든 자식에 적용)
 
 ### fit-content 처리 규칙
 
@@ -88,9 +90,52 @@ if (width === undefined && !isFitContentWidth) {
 }
 ```
 
-### flex shorthand 파싱 (2026-02-22 추가)
+### CSS Display Level 3: 자식 display vs flex/grid item (2026-03-01 추가, CRITICAL)
 
-TaffyFlexEngine의 `elementToTaffyStyle()`에서 CSS `flex` shorthand를 `flexGrow`, `flexShrink`, `flexBasis`로 분해합니다.
+**CSS 원칙**: flex/grid 부모의 모든 자식은 자신의 display와 무관하게 flex/grid item으로 참여한다. 자식의 display는 **내부** formatting context만 결정하고, flex item 속성(`flex`, `flexGrow`, `flexShrink`, `flexBasis`, `order`)은 별도로 적용된다.
+
+`fullTreeLayout.ts`의 `buildNodeStyle()`은 `parentDisplay` 파라미터로 부모의 display를 받아, 부모가 flex/grid이면 block/grid 경로 자식에게도 flex item 속성을 주입한다.
+
+```typescript
+// fullTreeLayout.ts — buildNodeStyle()
+// block 경로에서도 부모가 flex/grid이면 flex item 속성 적용
+const record = taffyStyleToRecord(taffyStyle);
+if (FLEX_GRID_DISPLAYS.has(parentDisplay)) {
+  applyFlexItemProperties(record, style);  // utils.ts 공유 함수
+}
+
+// ❌ block 자식이라고 flex item 속성 무시 → flex:1이 적용 안 됨
+// 예: SelectTrigger(flex) → SelectValue(block, flex:1) → width=0
+```
+
+**`applyFlexItemProperties()` (utils.ts)**: flex shorthand 파싱 공유 함수.
+- TaffyFlexEngine, fullTreeLayout block 경로, grid 경로에서 모두 사용
+- taffyConfig 우선: shorthand가 이미 설정된 값을 덮어쓰지 않음
+- 개별 속성(flexGrow 등)은 shorthand/taffyConfig 모두를 덮어씀 (CSS cascade)
+
+### CSS height:auto 처리 (2026-03-01 추가)
+
+`fullTreeLayout.ts`에서 컨테이너와 리프의 높이를 다르게 처리합니다:
+
+```typescript
+// 컨테이너 (hasTaffyChildren): enrichment가 주입한 height를 제거 → Taffy가 자식 기반 auto 계산
+if (hasTaffyChildren && (!originalHeight || originalHeight === 'auto')) {
+  // enrichedStyle에서 height만 제거, width 등은 유지
+  const { height: _, ...restStyle } = enrichedStyle;
+}
+
+// 리프 (!hasTaffyChildren): calculateContentHeight로 intrinsic height 보완
+if (!enrichedStyle.height && (!elementStyle.height || elementStyle.height === 'auto')) {
+  const intrinsicHeight = calculateContentHeight(element, ...);
+  // border-box 높이로 변환하여 주입
+}
+```
+
+**핵심**: `hasTaffyChildren`은 `childIds.length > 0`으로 판단. 컨테이너는 Taffy가 자식 기반으로 높이를 자동 계산하므로 enrichment 높이를 제거해야 한다.
+
+### flex shorthand 파싱 (2026-02-22 추가, 2026-03-01 일반화)
+
+`applyFlexItemProperties()` (utils.ts) 공유 함수에서 CSS `flex` shorthand를 `flexGrow`, `flexShrink`, `flexBasis`로 분해합니다. TaffyFlexEngine과 fullTreeLayout 양쪽에서 사용됩니다.
 
 | flex 값 | flexGrow | flexShrink | flexBasis |
 |---------|----------|------------|-----------|
@@ -745,13 +790,31 @@ WebGL Canvas에서 TagGroup의 label("Tag Group")이 두 줄로 렌더링되던 
 - **수정 파일 2**: `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` (line 759-760) — 일반 텍스트 경로에 `Math.ceil(calculateTextWidth(...)) + 2` 보정 추가.
 - **교훈**: Canvas 2D measureText ↔ CanvasKit paragraph API 간 폭 오차 보정은 모든 텍스트 측정 경로에 일관 적용 필요. 자식 Element가 렌더링하는 텍스트를 spec shapes에 중복 정의하지 말 것.
 
-### flex shorthand 파싱 추가 (2026-02-22)
+### flex shorthand 파싱 추가 (2026-02-22) + flex item 일반화 (2026-03-01)
 
-`TaffyFlexEngine.elementToTaffyStyle()`에 CSS `flex` shorthand 파싱 지원 추가.
+CSS `flex` shorthand 파싱을 `applyFlexItemProperties()` (utils.ts) 공유 함수로 추출.
 
-- **이전**: `flex` shorthand 미지원 → DB에 `flex: 1`만 저장된 요소의 `flexGrow`가 0으로 계산
-- **이후**: `flex` shorthand를 `flexGrow`/`flexShrink`/`flexBasis`로 분해. 개별 속성이 명시된 경우 shorthand보다 우선 적용
-- **효과**: SelectValue(`flex: 1`)가 SelectTrigger 내에서 올바르게 남은 공간을 채움
+- **이전 (2026-02-22)**: `flex` shorthand 미지원 → DB에 `flex: 1`만 저장된 요소의 `flexGrow`가 0으로 계산
+- **중간**: TaffyFlexEngine.elementToTaffyStyle()에만 shorthand 파싱 추가
+- **이후 (2026-03-01)**: `applyFlexItemProperties()` 공유 함수로 추출. block/grid 자식도 flex 부모 안에서 flex item 속성 적용
+- **근본 원인**: `elementToTaffyBlockStyle`은 flex item 속성을 파싱하지 않음. CSS Display Level 3에 따르면 부모 display가 자식의 item 참여를 결정
+- **효과**: SelectValue(block, flex:1)가 SelectTrigger(flex) 내에서 올바르게 남은 공간을 채움
+
+### overflow/aspectRatio Taffy 전달 추가 (2026-03-01)
+
+`applyCommonTaffyStyle()` (utils.ts)에 overflow/overflowX/overflowY 및 aspectRatio 추가.
+
+- **이전**: overflow는 BFC baseline 계산에만 사용, Taffy에 미전달. aspectRatio 미지원
+- **이후**: 모든 레이아웃 경로(flex/grid/block)에서 Taffy에 직접 전달
+- **효과**: overflow:hidden 컨테이너의 내용 클리핑, aspectRatio 기반 크기 계산 정상 동작
+
+### Grid 경로 position/inset 추가 (2026-03-01)
+
+`fullTreeLayout.ts` Grid 경로에 position(absolute/relative) 및 inset(top/right/bottom/left) 처리 추가.
+
+- **이전**: Grid 경로는 position/inset 미처리 → absolute 자식이 정상 배치 안 됨
+- **이후**: flex/block 경로와 동일하게 position + inset 속성 Taffy 전달
+- **효과**: Grid 컨테이너 내 absolute positioned 자식 정상 배치
 
 ### Slider Complex Component 전환 및 specHeight 보정 (2026-02-22)
 

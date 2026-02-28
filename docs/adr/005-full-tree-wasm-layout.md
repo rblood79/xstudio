@@ -1,10 +1,10 @@
 # ADR-005: Figma-Class Rendering & Layout Architecture
 
 ## Status
-In Progress (Foundation + Phase 0~2 구현 완료, Dropflow 제거 미완료)
+In Progress (Foundation + Phase 0~2 구현 완료, CSS 일반 규칙 적용 완료, Dropflow 제거 미완료)
 
 ## Date
-2026-02-27 (최종 업데이트: 2026-02-28)
+2026-02-27 (최종 업데이트: 2026-03-01)
 
 ## Decision Makers
 XStudio Team
@@ -468,6 +468,134 @@ Feature flag: `VITE_USE_FULL_TREE_LAYOUT=true` (환경변수 기반)
 | calculateContentHeight 30 브랜치 | 높음 | Taffy 네이티브 크기 계산으로 단계적 대체 |
 | JSON 배치 크기 (1,500 노드) | 중간 | 프로파일링 후 Phase 2에서 Binary Protocol 전환 |
 | Feature flag 병행 운영 복잡도 | 낮음 | 페이지 단위 전환, 기존 API 변경 없음 |
+
+### Phase 0 업데이트 (2026-03-01): CSS 일반 규칙 적용
+
+Phase 0 구현 이후 `fullTreeLayout.ts`에서 식별된 세 가지 CSS 규칙 위반을 수정하고 일반화하였다.
+
+#### P0-U1: CSS `height: auto` 네이티브 계산
+
+**문제**: `enrichWithIntrinsicSize`가 컨테이너 노드에도 계산된 높이를 주입하여 Taffy의 auto 크기 계산을 방해했다. 결과적으로 자식이 있는 컨테이너(예: Tabs)가 예상보다 큰 높이를 반환했다(228px vs. 레거시 기대값 166px).
+
+**근본 원인**: enrichment 로직이 `height: auto` 의미를 위반한다. CSS 명세 상 `height: auto`인 컨테이너는 자식의 높이 합산으로 계산되어야 하며, Taffy는 이를 내부에서 정확히 처리한다. 외부에서 높이를 주입하면 Taffy의 계산 결과가 override된다.
+
+**결정**: `hasTaffyChildren` 단일 조건으로 컨테이너/리프를 분기한다.
+
+```typescript
+// engines/fullTreeLayout.ts — enrichWithIntrinsicSize 호출 시
+const hasTaffyChildren = (childrenMap.get(element.id) ?? []).length > 0;
+
+if (hasTaffyChildren) {
+  // 컨테이너: height 주입 금지 — Taffy가 자식 합산으로 auto 계산
+  enrichedStyle = { ...style };  // height 필드 미포함
+} else {
+  // 리프: 기존 enrichment + calculateContentHeight 보완
+  enrichedStyle = enrichWithIntrinsicSize(element, style, availableSize);
+}
+```
+
+**결과**: 모든 컨테이너 요소가 자식 높이를 Taffy 네이티브로 계산하여 CSS 명세에 부합한다. 기존 리프(text, heading 등) 동작은 변경 없다.
+
+#### P0-U2: Flex Item 속성 일반화
+
+**문제**: `display: block` 요소가 `display: flex` 부모 안에 배치될 때 `flex: 1`, `flexGrow`, `flexBasis` 등의 flex item 속성이 무시되었다.
+
+**근본 원인**: `elementToTaffyBlockStyle()`이 CSS flex shorthand를 파싱하지 않았다. CSS 명세(CSS Flexbox Level 1)에 따르면 flex/grid 컨테이너의 **모든 직계 자식**은 자신의 `display` 값과 무관하게 flex/grid item으로 동작하며 flex item 속성을 적용받아야 한다.
+
+**결정**: `applyFlexItemProperties()` 공유 유틸을 추출하고, `buildNodeStyle()`에 `parentDisplay` 컨텍스트를 전달하여 부모가 flex/grid일 때 block 자식에도 flex item 속성을 적용한다.
+
+```typescript
+// engines/fullTreeLayout.ts
+
+function applyFlexItemProperties(
+  style: TaffyStyle,
+  element: Element,
+  parentDisplay: string,
+): TaffyStyle {
+  // CSS 명세: flex/grid 컨테이너의 모든 직계 자식은 flex/grid item
+  if (parentDisplay !== 'flex' && parentDisplay !== 'inline-flex'
+      && parentDisplay !== 'grid' && parentDisplay !== 'inline-grid') {
+    return style;
+  }
+
+  const raw = element.props?.style ?? {};
+
+  // flex shorthand 파싱: "1", "1 1 auto", "0 0 200px" 등
+  const flex = raw.flex;
+  if (typeof flex === 'string' || typeof flex === 'number') {
+    const parts = String(flex).trim().split(/\s+/);
+    const grow = parseFloat(parts[0]);
+    if (!isNaN(grow)) style = { ...style, flexGrow: grow };
+    if (parts[1]) {
+      const shrink = parseFloat(parts[1]);
+      if (!isNaN(shrink)) style = { ...style, flexShrink: shrink };
+    }
+    if (parts[2]) {
+      style = { ...style, flexBasis: parseDimension(parts[2]) };
+    }
+  }
+
+  // 개별 속성 (shorthand보다 우선순위 낮음, 미지정 시에만 적용)
+  if (raw.flexGrow != null) style = { ...style, flexGrow: Number(raw.flexGrow) };
+  if (raw.flexShrink != null) style = { ...style, flexShrink: Number(raw.flexShrink) };
+  if (raw.flexBasis != null) style = { ...style, flexBasis: parseDimension(raw.flexBasis) };
+  if (raw.alignSelf != null) style = { ...style, alignSelf: raw.alignSelf };
+
+  return style;
+}
+
+// buildNodeStyle() 내부에서 parentDisplay 전달
+function buildNodeStyle(
+  element: Element,
+  availableSize: AvailableSize,
+  parentDisplay: string,   // ← 신규 파라미터
+): TaffyStyle {
+  const baseStyle = /* 기존 display 분기 */;
+  return applyFlexItemProperties(baseStyle, element, parentDisplay);
+}
+```
+
+**결과**: block/inline-block 요소가 flex 컨테이너 안에서 `flex: 1`로 남은 공간을 채우는 패턴이 정확히 동작한다.
+
+#### P0-U3: 누락 속성 보완
+
+**문제**: `applyCommonTaffyStyle()`과 Grid 경로에서 일부 CSS 속성이 Taffy에 전달되지 않았다.
+
+**결정**: 다음 속성을 추가 매핑한다.
+
+| 속성 | 추가 위치 | 이유 |
+|------|---------|------|
+| `overflow`, `overflowX`, `overflowY` | `applyCommonTaffyStyle` | Taffy scroll container 크기 계산에 필요 |
+| `aspectRatio` | `applyCommonTaffyStyle` | 이미지/비디오 요소 크기 계산 |
+| `position`, `inset` (top/right/bottom/left) | Grid 경로 | 절대 배치 자식이 Grid 안에서 동작하지 않던 버그 수정 |
+
+```typescript
+// engines/fullTreeLayout.ts — applyCommonTaffyStyle 추가 부분
+
+// overflow
+const overflow = style.overflow ?? style.overflowX ?? 'visible';
+const overflowY = style.overflowY ?? overflow;
+taffyStyle.overflow = { x: toTaffyOverflow(overflow), y: toTaffyOverflow(overflowY) };
+
+// aspectRatio
+if (style.aspectRatio != null) {
+  const ratio = parseAspectRatio(style.aspectRatio);  // "16 / 9" → 1.777...
+  if (ratio > 0) taffyStyle.aspectRatio = ratio;
+}
+
+// Grid 경로: position + inset
+if (parentDisplay === 'grid' || parentDisplay === 'inline-grid') {
+  if (style.position === 'absolute') {
+    taffyStyle.position = 'absolute';
+    taffyStyle.inset = {
+      top: parseDimension(style.top),
+      right: parseDimension(style.right),
+      bottom: parseDimension(style.bottom),
+      left: parseDimension(style.left),
+    };
+  }
+}
+```
 
 ---
 
@@ -1217,6 +1345,13 @@ Week 4: ✅ 완료
   - [x] BuilderCanvas.tsx: VITE_USE_FULL_TREE_LAYOUT feature flag 분기
   - [x] useMemo 분리: 레이아웃 → computedLayouts, 변환 → layoutMap (_wasmLayoutReady 의존)
   - [x] traversePostOrder(): margin/block-child-width:100% 사후 보정
+
+Week 4 추가 (2026-03-01): ✅ 완료
+  - [x] enrichWithIntrinsicSize: hasTaffyChildren 조건 분기 — 컨테이너 height 주입 제거
+  - [x] applyFlexItemProperties(): flex shorthand 파싱 공유 유틸 추출
+  - [x] buildNodeStyle(): parentDisplay 파라미터 추가 — block 자식 flex item 속성 적용
+  - [x] applyCommonTaffyStyle(): overflow/overflowX/overflowY, aspectRatio 추가
+  - [x] Grid 경로: position + inset 누락 속성 수정
 ```
 
 ### Phase 1 (3주) — 부분 구현
@@ -1382,4 +1517,3 @@ Week 17:
 - [Spineless Traversal (PLDI 2025)](https://dl.acm.org/doi/10.1145/3656463) -- Priority-queue 기반 dirty 노드 처리
 - [RBush](https://github.com/mourner/rbush) -- JavaScript R-tree (참고)
 - [Skia Graphite](https://skia.org/docs/dev/design/graphite/) -- WebGPU 백엔드
-- [Vello](https://github.com/linebender/vello) -- GPU compute-centric 렌더러

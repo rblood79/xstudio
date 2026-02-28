@@ -167,7 +167,13 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
   const pixiCursor = style?.cursor ?? 'default';
 
   // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
-  const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
+  const skiaEffects = useMemo(() => {
+    const result = buildSkiaEffects(style);
+    if (import.meta.env.DEV && result.effects?.length) {
+      console.log(`[BoxSprite] ${element.id} effects:`, result.effects.map(e => e.type), 'boxShadow:', style?.boxShadow);
+    }
+    return result;
+  }, [style, element.id]);
 
   // Phase 5: Skia 렌더 데이터 부착
   // Fill V2: element.fills → fillsToSkiaFillColor 우선 사용

@@ -1,6 +1,6 @@
 # CSS Level 3 엔진 정합성 체크리스트
 
-> **최종 갱신**: 2026-02-22
+> **최종 갱신**: 2026-03-01
 > **목적**: XStudio 레이아웃/렌더링 엔진의 CSS Level 3 속성 지원 현황 추적
 > **엔진**: TaffyFlexEngine (Taffy WASM) · TaffyGridEngine (Taffy WASM) · DropflowBlockEngine (Dropflow Fork JS)
 > **렌더러**: CanvasKit/Skia WASM
@@ -79,6 +79,7 @@
 | `fit-content` | ⚠️ | `styleToLayout.ts:297-313`, `cssValueParser.ts:192` | 태그별 픽셀 계산 워크어라운드 — Taffy 네이티브 `fit-content` 미전달 |
 | `min-content` | ⚠️ | `cssValueParser.ts:193`, `utils.ts:1206-1227` | 텍스트 측정만 구현, 레이아웃 엔진에 직접 전달 안됨 |
 | `max-content` | ⚠️ | `cssValueParser.ts:194`, `utils.ts:1241-1249` | 텍스트 측정만 구현, 레이아웃 엔진에 직접 전달 안됨 |
+| `aspect-ratio` | ✅ | `engines/utils.ts` `applyCommonTaffyStyle()` | Flex/Grid/Block 3경로 모두 지원 |
 
 ---
 
@@ -102,7 +103,7 @@
 
 | 속성 | 상태 | 구현 파일 | 비고 |
 |------|------|-----------|------|
-| `flex` (shorthand) | ✅ | `styleToLayout.ts:238-269` | none, auto, 숫자, 3값 형식 |
+| `flex` (shorthand) | ✅ | `styleToLayout.ts:238-269`, `engines/utils.ts applyFlexItemProperties()` | none, auto, 숫자, 3값 형식 — block/grid 자식에서도 `applyFlexItemProperties()`로 flexGrow/flexShrink/flexBasis 분해 적용 |
 | `flex-grow` | ✅ | `TaffyFlexEngine.ts:106` | |
 | `flex-shrink` | ✅ | `TaffyFlexEngine.ts:107` | |
 | `flex-basis` | ✅ | `TaffyFlexEngine.ts:108-111` | |
@@ -175,7 +176,7 @@
 | `overflow: scroll` | ❌ | — | 스크롤바 UI 미구현 |
 | `overflow: auto` | ❌ | — | |
 | `overflow: clip` | ✅ | `BoxSprite.tsx`, `DropflowBlockEngine.ts` | hidden과 동일한 clipRect, BFC 생성 |
-| `overflow-x` / `overflow-y` | ⚠️ | `utils.ts:1088-1097` | BFC baseline 계산에만 사용 |
+| `overflow-x` / `overflow-y` | ✅ | `engines/utils.ts` `applyCommonTaffyStyle()` | Flex/Grid/Block 3경로 모두 지원 |
 
 ---
 
@@ -419,11 +420,11 @@
 |---|----------------|-----|-----|-----|--------|
 | 1 | Display Level 3 | 9 | 2 | 0 | 82% |
 | 2 | Box Model Level 3 | 13 | 1 | 0 | 96% |
-| 3 | Box Sizing Level 3 | 1 | 3 | 0 | 63% |
+| 3 | Box Sizing Level 3 | 2 | 3 | 0 | 40% |
 | 4 | Flexbox Level 1 | 14 | 0 | 0 | 100% |
 | 5 | Grid Layout Level 1 | 19 | 0 | 0 | 100% |
 | 6 | Positioning Level 3 | 5 | 2 | 0 | 86% |
-| 7 | Overflow Level 3 | 3 | 1 | 2 | 58% |
+| 7 | Overflow Level 3 | 4 | 0 | 2 | 67% |
 | 8 | Backgrounds/Borders Level 3 | 20 | 0 | 1 | 95% |
 | 9 | Color Level 4 | 10 | 0 | 0 | 100% |
 | 10 | Fonts Level 3 | 8 | 0 | 0 | 100% |
@@ -435,7 +436,7 @@
 | 16 | Values/Units Level 3 | 12 | 0 | 0 | 100% |
 | 17 | Cascade Level 4 | 6 | 0 | 1 | 86% |
 | 18 | Logical Properties Level 1 | 7 | 0 | 0 | 100% |
-| | **합계** | **165** | **10** | **11** | **88%** |
+| | **합계** | **167** | **9** | **11** | **88%** |
 
 > **변경 내역 (2026-02-19 v1.1 갱신):**
 > - `matrix()` transform: ❌ → ✅ (`styleConverter.ts:661-673`)
@@ -546,7 +547,7 @@
 |---|------|-----------|--------|
 | 11 | `text-overflow: ellipsis` (P0) | `nodeRenderers.ts`, Skia text | 🟡 |
 | 12 | `text-decoration-style` | `nodeRenderers.ts` | 🟡 |
-| 13 | `text-decoration-color` | `nodeRenderers.ts` | 🟢 |
+| 13 | `text-decoration-color` | `nodeRenderers.ts` | 🟡 |
 | 14 | `text-indent` | `cssResolver.ts`, `nodeRenderers.ts` | 🟡 |
 
 ### Phase 4: Background Properties (3개)
@@ -1063,6 +1064,7 @@ CSS Level 3 속성 지원(88%)과 별도로, **레이아웃 계산 파이프라�
 | 2026-02-22 | **2.6** | **TagGroup label 두 줄 렌더링 버그 수정**: (1) `TagGroup.spec.ts` — `render.shapes`에서 label 텍스트 shape 제거. label은 자식 Label 엘리먼트(fontSize:14)가 렌더링하므로 spec shapes(fontSize:12) 중복 렌더가 두 줄처럼 보이는 현상 제거. (2) `engines/utils.ts` line 759-760 — `calculateContentWidth` 일반 텍스트 경로에 Canvas 2D→CanvasKit 폭 측정 보정 추가: `Math.ceil(calculateTextWidth(...)) + 2`. INLINE_FORM 경로(line 718-719)에만 존재하던 보정을 일반 텍스트 경로에도 동일 패턴으로 적용. CanvasKit paragraph API가 Canvas 2D `measureText` 결과(65px)보다 더 넓은 폭을 요구하여 텍스트가 wrapping되던 근본 원인 해결. |
 | 2026-02-22 | **2.7** | **Slider Complex Component 전환 + 렌더링 버그 수정**: (1) `Slider.spec.ts` — `render.shapes`에서 `size.fontSize`를 TokenRef 문자열(`'{typography.text-sm}'`)로 숫자 연산에 직접 사용하던 버그 수정 → `resolveToken()` 적용 (NaN → track/thumb 미렌더링 현상 해결). (2) Slider를 Complex Component로 전환: `useElementCreator.ts` complexComponents에 'Slider' 추가, `ComponentFactory.ts` Slider creator 등록, `FormComponents.ts` `createSliderDefinition()` 팩토리 추가. DOM 구조: `Slider > Label + SliderOutput + SliderTrack > SliderThumb`. (3) `Slider.css` class selector → data-attribute selector 전환, spec dimensions 정확히 반영. (4) `ElementSprite.tsx` — `SLIDER_DIMENSIONS` 기반 specHeight 보정 로직 추가 (label + gap + thumbSize), `_hasLabelChild` 체크에 Slider 추가하여 중복 렌더링 방지. (5) `SliderOutput` 위치 수정: `x: width` → `x: 0 + maxWidth: width`로 컨테이너 내 우측 정렬 패턴 적용. 수정 파일: `Slider.spec.ts`, `useElementCreator.ts`, `ComponentFactory.ts`, `FormComponents.ts`, `Slider.css`, `ElementSprite.tsx` |
 | 2026-02-23 | **2.8** | **Breadcrumbs CONTAINER_TAGS 전환**: (1) `calculateContentHeight` — Breadcrumbs 높이 핸들러 추가 (sm:16, md:24, lg:24). (2) `enrichWithIntrinsicSize` — `SPEC_SHAPES_INPUT_TAGS`에 'breadcrumbs' 추가 (early return 방지). (3) `Breadcrumbs.spec.ts` — `resolveToken` 기반 fontSize 해석 적용, sizes height CSS 값과 일치하도록 보정 (32→24). (4) `ElementSprite.tsx` — `_crumbs` prop 주입 패턴 추가 (자식 Breadcrumb 텍스트 배열). (5) `BuilderCanvas.tsx` — `CONTAINER_TAGS`에 'Breadcrumbs' 추가. |
+| 2026-03-01 | **2.9** | **fullTreeLayout.ts 속성 커버리지 확장**: (1) `aspect-ratio` ❌→✅ — `applyCommonTaffyStyle()`에 추가, Flex/Grid/Block 3경로 모두 지원. (2) `overflow-x/overflow-y` ⚠️→✅ — `applyCommonTaffyStyle()`에 추가, BFC 계산 전용에서 3경로 공통 지원으로 승격. (3) `flex` shorthand — block/grid 경로에서도 `applyFlexItemProperties()`로 flexGrow/flexShrink/flexBasis 분해 적용 (`buildNodeStyle()` `parentDisplay` 파라미터 추가). (4) `height: auto` 컨테이너 enrichment — Taffy 자동 계산 허용 (enrichment height 제거). 수정 파일: `engines/fullTreeLayout.ts`, `engines/utils.ts`. 총 ✅167, ⚠️9, ❌11 |
 
 ### v1 → v2 기준 변경 사유
 

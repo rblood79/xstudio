@@ -27,6 +27,10 @@ export function beginRenderEffects(
   let layerCount = 0;
   const scope = new SkiaDisposable();
 
+  if (import.meta.env.DEV && effects.length > 0) {
+    console.log('[Skia Effects] beginRenderEffects:', effects.map(e => e.type));
+  }
+
   try {
     for (const effect of effects) {
       switch (effect.type) {

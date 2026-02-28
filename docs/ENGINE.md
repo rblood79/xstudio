@@ -2,7 +2,7 @@
 
 - 상태: **Implemented**
 - 결정일: **2026-02-17**
-- 마지막 수정: **2026-02-21**
+- 마지막 수정: **2026-03-01**
 - 대상 코드: `apps/builder/src/builder/workspace/canvas/layout/`
 - 관련 경로:
   - `apps/builder/src/builder/workspace/canvas/layout/engines/`
@@ -253,6 +253,7 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 - **2026-02-21**: Post-Implementation Notes 추가 — `LayoutContext.getChildElements` 확장, `enrichWithIntrinsicSize` 개선(childElements 파라미터, fontBoundingBox line-height 통일), 수정 파일 목록.
 - **2026-02-26**: Phase 4-1C box-sizing 근본 수정 기록 추가 — `enrichWithIntrinsicSize()` border-box 통일, `applyCommonTaffyStyle()` content-box 변환.
 - **2026-02-26**: fontSize CSS 상속 일관성 수정 기록 추가 — `calculateContentHeight()` computedStyle 파라미터 추가, min/max-content 하드코딩 제거.
+- **2026-03-01**: fullTreeLayout.ts 속성 커버리지 확장 기록 추가 — `applyFlexItemProperties()` 공유 유틸 추가, `applyCommonTaffyStyle()` overflow/aspectRatio 지원 추가, block/grid 경로 flex 부모 자식 처리 개선, CSS `height: auto` 컨테이너 enrichment 제거.
 
 ---
 
@@ -330,3 +331,56 @@ min/max-content는 `14` 하드코딩. 부모에 fontSize: 20 설정 시 width/he
 | `engines/utils.ts` | TEXT_LEAF_TAGS fontSize/fontWeight/fontFamily에 computedStyle fallback |
 | `engines/utils.ts` | `enrichWithIntrinsicSize()` min/max-content fontSize `14` → `computedStyle ?? 16` |
 | `engines/utils.ts` | `enrichWithIntrinsicSize()` → `calculateContentHeight()` 호출 시 computedStyle 전달 |
+
+### Post-Implementation Notes (2026-03-01)
+
+#### fullTreeLayout.ts 속성 커버리지 확장
+
+`buildNodeStyle()` 함수와 `applyCommonTaffyStyle()` 공유 유틸의 CSS 속성 지원 범위를 확장했다.
+
+**배경**: 기존에 `flex` shorthand 분해(`applyFlexItemProperties`)가 flex 경로에서만 동작하고 block/grid 자식에서는 무시되었으며, `overflow-x/overflow-y`와 `aspect-ratio`는 Taffy 전달 경로가 없었다.
+
+**변경 1 — `applyFlexItemProperties()` 공유 유틸**
+
+| 항목 | 내용 |
+|------|------|
+| 위치 | `engines/utils.ts` |
+| 역할 | `flex` shorthand → `flexGrow` / `flexShrink` / `flexBasis` 분해 |
+| 적용 경로 | flex 경로(기존) + **block/grid 경로(신규)** — `buildNodeStyle(parentDisplay)` 파라미터로 분기 |
+
+```typescript
+// fullTreeLayout.ts — buildNodeStyle() 시그니처 변경
+function buildNodeStyle(element: Element, parentDisplay?: string): TaffyStyle {
+  const style = applyCommonTaffyStyle(element);
+  // block/grid 자식이어도 flex 부모 아래라면 flex item 속성 적용
+  if (parentDisplay === 'flex' || parentDisplay === 'inline-flex') {
+    applyFlexItemProperties(style, element.style);
+  }
+  return style;
+}
+```
+
+**변경 2 — `applyCommonTaffyStyle()` overflow/aspectRatio 추가**
+
+| CSS 속성 | 이전 | 이후 |
+|----------|------|------|
+| `overflow` | Flex/Grid 경로에만 전달 | Flex/Grid/Block 3경로 공통 전달 |
+| `overflow-x` | BFC baseline 계산에만 사용 | Taffy `overflowX` 필드로 전달 |
+| `overflow-y` | BFC baseline 계산에만 사용 | Taffy `overflowY` 필드로 전달 |
+| `aspect-ratio` | 미지원 | `applyCommonTaffyStyle()` 내에서 `aspectRatio` 필드로 전달 |
+
+**변경 3 — CSS `height: auto` 컨테이너 enrichment 제거**
+
+| 항목 | 내용 |
+|------|------|
+| 문제 | `enrichWithIntrinsicSize()`가 `height: auto` 컨테이너에 계산 높이를 주입 → Taffy 자동 계산 억제 |
+| 수정 | `height === 'auto'`이거나 미지정인 경우 enrichment height 주입 스킵 — Taffy가 자식 기반으로 자동 계산 |
+| 영향 | `height: auto` 컨테이너의 실제 콘텐츠 높이가 레이아웃 결과에 정확히 반영됨 |
+
+#### 수정된 파일
+
+| 파일 | 변경 |
+|------|------|
+| `engines/fullTreeLayout.ts` | `buildNodeStyle(parentDisplay)` 파라미터 추가, block/grid 경로에 `applyFlexItemProperties()` 호출 |
+| `engines/utils.ts` | `applyFlexItemProperties()` 공유 유틸 추출, `applyCommonTaffyStyle()`에 `overflow`/`overflowX`/`overflowY`/`aspectRatio` 추가 |
+| `engines/utils.ts` | `enrichWithIntrinsicSize()` — `height: auto` 컨테이너 enrichment height 제거 |

@@ -2376,6 +2376,87 @@ export function applyCommonTaffyStyle(
   }
   if (rowGap !== undefined) result.rowGap = rowGap;
   if (columnGap !== undefined) result.columnGap = columnGap;
+
+  // Overflow — Taffy가 scroll/hidden 컨테이너의 크기 계산에 사용
+  if (style.overflow) {
+    result.overflowX = style.overflow;
+    result.overflowY = style.overflow;
+  }
+  if (style.overflowX) result.overflowX = style.overflowX;
+  if (style.overflowY) result.overflowY = style.overflowY;
+
+  // Aspect ratio
+  if (style.aspectRatio !== undefined) result.aspectRatio = style.aspectRatio;
+}
+
+/**
+ * CSS flex item 속성을 Taffy 스타일에 적용.
+ *
+ * CSS 명세: flex/grid 부모의 모든 자식은 자신의 display와 무관하게
+ * flex/grid item으로 참여한다. 자식의 display는 내부 formatting context만 결정.
+ *
+ * TaffyFlexEngine.elementToTaffyStyle()의 flex item 파싱 로직(L147-201)과
+ * 동일한 규칙을 적용하여, block/grid 경로에서도 재사용 가능하게 한다.
+ *
+ * @param result - 스타일 결과 객체 (in-place 수정)
+ * @param style  - 요소의 원본 CSS 스타일
+ * @param ctx    - CSS 값 파싱 컨텍스트
+ */
+export function applyFlexItemProperties(
+  result: Record<string, unknown>,
+  style: Record<string, unknown>,
+  ctx: CSSValueContext = {},
+): void {
+  // flex shorthand → flexGrow/flexShrink/flexBasis 분해
+  // result에 이미 값이 있으면(taffyConfig 패스스루 등) shorthand로 덮어쓰지 않음
+  if (style.flex !== undefined && style.flex !== null) {
+    const flexVal = style.flex;
+    if (typeof flexVal === 'number') {
+      // flex: 1 → flexGrow: 1, flexShrink: 1, flexBasis: 0%
+      if (style.flexGrow === undefined && result.flexGrow === undefined) result.flexGrow = flexVal;
+      if (style.flexShrink === undefined && result.flexShrink === undefined) result.flexShrink = 1;
+      if (style.flexBasis === undefined && result.flexBasis === undefined) result.flexBasis = '0%';
+    } else if (typeof flexVal === 'string') {
+      const parts = String(flexVal).trim().split(/\s+/);
+      if (parts.length === 1) {
+        const n = Number(parts[0]);
+        if (!isNaN(n)) {
+          if (style.flexGrow === undefined && result.flexGrow === undefined) result.flexGrow = n;
+          if (style.flexShrink === undefined && result.flexShrink === undefined) result.flexShrink = 1;
+          if (style.flexBasis === undefined && result.flexBasis === undefined) result.flexBasis = '0%';
+        } else if (parts[0] === 'auto') {
+          if (style.flexGrow === undefined && result.flexGrow === undefined) result.flexGrow = 1;
+          if (style.flexShrink === undefined && result.flexShrink === undefined) result.flexShrink = 1;
+        } else if (parts[0] === 'none') {
+          if (style.flexGrow === undefined && result.flexGrow === undefined) result.flexGrow = 0;
+          if (style.flexShrink === undefined && result.flexShrink === undefined) result.flexShrink = 0;
+        }
+      } else if (parts.length >= 2) {
+        if (style.flexGrow === undefined && result.flexGrow === undefined) result.flexGrow = Number(parts[0]) || 0;
+        if (style.flexShrink === undefined && result.flexShrink === undefined) result.flexShrink = Number(parts[1]) || 0;
+        if (parts[2] && style.flexBasis === undefined && result.flexBasis === undefined) {
+          const basisVal = parseCSSPropWithContext(parts[2], ctx);
+          if (basisVal !== undefined) result.flexBasis = basisVal;
+        } else if (!parts[2] && style.flexBasis === undefined && result.flexBasis === undefined) {
+          result.flexBasis = '0%';
+        }
+      }
+    }
+  }
+
+  // 개별 속성은 shorthand/taffyConfig 모두를 덮어씀 (CSS 우선순위)
+  if (style.flexGrow !== undefined) result.flexGrow = Number(style.flexGrow);
+  if (style.flexShrink !== undefined) result.flexShrink = Number(style.flexShrink);
+  if (style.flexBasis !== undefined) {
+    const basis = parseCSSPropWithContext(style.flexBasis, ctx);
+    if (basis !== undefined) result.flexBasis = basis;
+  }
+
+  // order (flex/grid item 공통)
+  if (style.order !== undefined) {
+    const order = parseInt(String(style.order), 10);
+    if (!isNaN(order) && order !== 0) result.order = order;
+  }
 }
 
 /**
