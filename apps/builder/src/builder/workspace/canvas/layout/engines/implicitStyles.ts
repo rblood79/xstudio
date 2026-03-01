@@ -11,7 +11,7 @@
  */
 
 import type { Element } from '../../../../../types/core/store.types';
-import { parsePadding } from './utils';
+import { parsePadding, PHANTOM_INDICATOR_CONFIGS } from './utils';
 
 // ─── 인터페이스 ──────────────────────────────────────────────────────
 
@@ -297,16 +297,19 @@ export function applyImplicitStyles(
     });
   }
 
-  // ── Checkbox / Radio — indicator 공간 확보 ─────────────────────────
+  // ── Checkbox / Radio / Switch — indicator 공간 확보 ────────────────
   // Indicator는 spec shapes로 렌더링 (Taffy 트리 밖).
-  // Label 자식에 marginLeft = indicatorBox + gap을 주입하여 indicator와 겹치지 않도록 한다.
+  // Label 자식에 marginLeft = indicatorWidth + gap을 주입하여 indicator와 겹치지 않도록 한다.
   // gap은 사용자가 스타일 패널에서 변경 가능 → parentStyle.gap 우선 사용.
-  if (containerTag === 'checkbox' || containerTag === 'radio') {
+  if (containerTag === 'checkbox' || containerTag === 'radio' || containerTag === 'switch') {
     const sizeName = (containerProps?.size as string) ?? 'md';
-    const indicator = INDICATOR_SIZES[sizeName] ?? INDICATOR_SIZES.md;
+    const s = sizeName as 'sm' | 'md' | 'lg';
+    const phantomConfig = PHANTOM_INDICATOR_CONFIGS[containerTag];
+    const indicatorWidth = phantomConfig?.widths[s] ?? INDICATOR_SIZES[sizeName]?.box ?? 20;
+    const defaultGap = phantomConfig?.gaps[s] ?? INDICATOR_SIZES[sizeName]?.gap ?? 8;
     const parsedGap = parseFloat(String(parentStyle.gap ?? ''));
-    const userGap = !isNaN(parsedGap) ? parsedGap : indicator.gap;
-    const indicatorOffset = indicator.box + userGap;
+    const userGap = !isNaN(parsedGap) ? parsedGap : defaultGap;
+    const indicatorOffset = indicatorWidth + userGap;
 
     filteredChildren = filteredChildren.map(child => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
@@ -328,14 +331,17 @@ export function applyImplicitStyles(
     if (filteredChildren.length === 0) {
       const labelText = containerProps?.children ?? containerProps?.label;
       if (typeof labelText === 'string' && labelText.trim().length > 0) {
-        // Checkbox/Radio: indicator 공간만큼 marginLeft 주입 (gap은 사용자 값 우선)
-        const isIndicatorTag = containerTag === 'checkbox' || containerTag === 'radio';
+        // Checkbox/Radio/Switch: indicator 공간만큼 marginLeft 주입 (gap은 사용자 값 우선)
+        const isIndicatorTag = containerTag === 'checkbox' || containerTag === 'radio' || containerTag === 'switch';
         let synLabelMargin = 0;
         if (isIndicatorTag) {
-          const ind = INDICATOR_SIZES[(containerProps?.size as string) ?? 'md'] ?? INDICATOR_SIZES.md;
+          const sn = ((containerProps?.size as string) ?? 'md') as 'sm' | 'md' | 'lg';
+          const pc = PHANTOM_INDICATOR_CONFIGS[containerTag];
+          const indWidth = pc?.widths[sn] ?? INDICATOR_SIZES[sn]?.box ?? 20;
+          const indGap = pc?.gaps[sn] ?? INDICATOR_SIZES[sn]?.gap ?? 8;
           const pg = parseFloat(String(parentStyle.gap ?? ''));
-          const gap = !isNaN(pg) ? pg : ind.gap;
-          synLabelMargin = ind.box + gap;
+          const gap = !isNaN(pg) ? pg : indGap;
+          synLabelMargin = indWidth + gap;
         }
 
         const syntheticLabel: Element = {

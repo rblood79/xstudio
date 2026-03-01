@@ -15,7 +15,7 @@ import type { TaffyStyle } from '../../wasm-bindings/taffyLayout';
 import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
 import { PersistentTaffyTree } from './persistentTaffyTree';
 import type { PersistentBatchNode } from './persistentTaffyTree';
-import { enrichWithIntrinsicSize, applyCommonTaffyStyle, applyFlexItemProperties, parseMargin, parsePadding, parseBorder, calculateContentHeight, parseBoxModel, parseCSSPropWithContext, measureTextWidth } from './utils';
+import { enrichWithIntrinsicSize, applyCommonTaffyStyle, applyFlexItemProperties, parseMargin, parsePadding, parseBorder, calculateContentHeight, parseBoxModel, parseCSSPropWithContext, calculateMinContentWidth } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 import { toTaffyDisplay, blockifyDisplay, getElementDisplay, needsBlockChildFullWidth } from './taffyDisplayAdapter';
@@ -638,11 +638,11 @@ function traversePostOrder(
   }
 
   // 4.8. CSS min-width:auto 에뮬레이션 (flex/grid 자식 리프 노드)
-  // CSS spec: flex/grid item의 기본 min-width는 auto = min-content.
+  // CSS Flexbox §4.5: flex/grid item의 기본 min-width는 auto = min-content.
+  // min-content = 가장 긴 줄바꿈 불가 단어의 폭 (Dropflow getIfcContribution 방식 차용).
   // Taffy는 텍스트 측정이 불가하여 min-content를 0으로 처리한다.
-  // 텍스트 콘텐츠가 있는 리프 노드에 measured minWidth를 주입하여
+  // 텍스트 콘텐츠가 있는 리프 노드에 calculated min-content를 주입하여
   // shrink-wrap 환경(alignItems:center 등)에서 텍스트 축소를 방지한다.
-  // (예: SelectValue "Choose an option..." → flex:1, flexBasis:0% → 0폭 방지)
   if (FLEX_GRID_DISPLAYS.has(parentDisplay) && !hasTaffyChildren) {
     const enrichedStyle = (enriched.props?.style ?? {}) as Record<string, unknown>;
     if (!enrichedStyle.width && !enrichedStyle.minWidth) {
@@ -654,11 +654,11 @@ function traversePostOrder(
         const fontSize = parseFloat(String(
           enrichedStyle.fontSize ?? computedStyle?.fontSize ?? 14
         )) || 14;
-        const textMinW = measureTextWidth(textContent, fontSize);
-        if (textMinW > 0) {
+        const minContentW = calculateMinContentWidth(textContent, fontSize);
+        if (minContentW > 0) {
           const box = parseBoxModel(rawElement, availableWidth, availableHeight);
           const borderBoxMinW = Math.ceil(
-            textMinW
+            minContentW
             + box.padding.left + box.padding.right
             + box.border.left + box.border.right
           );
