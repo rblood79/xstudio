@@ -655,4 +655,3 @@ fit-content 텍스트에서 마지막 글자 줄바꿈 + height 초과 렌더링
 - `estimateTextHeight()`에서 `Math.round` 사용 금지 — 동일 이유
 - `calculateContentHeight()`에서 fontWeight 하드코딩 금지 — 실제 element style 사용
 - `measureTextWidth()` 호출 시 letterSpacing 수동 가산 금지 — 측정기 내부에서 처리
-
