@@ -67,7 +67,7 @@ function parseBoolean(value: string | undefined, defaultValue: boolean): boolean
  * ```
  */
 export function isWebGLCanvas(): boolean {
-  return parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, false);
+  return parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, true);
 }
 
 /**
@@ -178,7 +178,7 @@ export function isFillV2Enabled(): boolean {
  */
 export function getFeatureFlags(): FeatureFlags {
   return {
-    useWebGLCanvas: parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, false),
+    useWebGLCanvas: parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, true),
     enableDebugLogs: parseBoolean(import.meta.env.VITE_ENABLE_DEBUG_LOGS, false),
     canvasCompareMode: parseBoolean(import.meta.env.VITE_CANVAS_COMPARE_MODE, false),
     wasmSpatialIndex: true,
