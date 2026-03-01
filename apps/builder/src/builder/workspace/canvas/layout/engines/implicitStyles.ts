@@ -31,6 +31,13 @@ const SPEC_PADDING: Record<string, { x: number; y: number }> = {
   lg: { x: 16, y: 12 },
 };
 
+/** SelectTrigger/ComboBoxWrapper spec gap (SelectValue ↔ SelectIcon 간격) */
+const SPEC_TRIGGER_GAP: Record<string, number> = {
+  sm: 4,
+  md: 6,
+  lg: 8,
+};
+
 /** Checkbox/Radio indicator 크기 (spec shapes 렌더링, Taffy 트리 밖) */
 const INDICATOR_SIZES: Record<string, { box: number; gap: number }> = {
   sm: { box: 16, gap: 6 },
@@ -180,13 +187,14 @@ export function applyImplicitStyles(
       (c.tag === 'Label' ? hasLabel : false) || c.tag === 'SelectTrigger' || c.tag === 'ComboBoxWrapper'
     );
 
-    // SelectTrigger/ComboBoxWrapper에 padding 주입
+    // SelectTrigger/ComboBoxWrapper에 padding + gap 주입
     const wrapperChildTag = containerTag === 'select' ? 'SelectTrigger' : 'ComboBoxWrapper';
     filteredChildren = filteredChildren.map(child => {
       if (child.tag === wrapperChildTag) {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         const wrapperProps = child.props as Record<string, unknown> | undefined;
         const sizeName = (wrapperProps?.size as string) ?? 'md';
+        const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
         return {
           ...child,
           props: {
@@ -195,6 +203,7 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? 'flex',
               flexDirection: cs.flexDirection ?? 'row',
+              gap: cs.gap ?? specGap,
               ...withSpecPadding(cs, sizeName),
             },
           },
@@ -214,11 +223,13 @@ export function applyImplicitStyles(
   // ── SelectTrigger ──────────────────────────────────────────────────
   if (containerTag === 'selecttrigger') {
     const sizeName = (containerProps?.size as string) ?? 'md';
+    const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
     effectiveParent = withParentStyle(containerEl, withSpecPadding({
       ...parentStyle,
       display: 'flex',
       flexDirection: 'row',
       alignItems: 'center',
+      gap: parentStyle.gap ?? specGap,
     }, sizeName));
 
     filteredChildren = filteredChildren.map(child => {
@@ -236,11 +247,13 @@ export function applyImplicitStyles(
   // ── ComboBoxWrapper ────────────────────────────────────────────────
   if (containerTag === 'comboboxwrapper') {
     const sizeName = (containerProps?.size as string) ?? 'md';
+    const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
     effectiveParent = withParentStyle(containerEl, withSpecPadding({
       ...parentStyle,
       display: 'flex',
       flexDirection: 'row',
       alignItems: 'center',
+      gap: parentStyle.gap ?? specGap,
     }, sizeName));
 
     filteredChildren = filteredChildren.map(child => {

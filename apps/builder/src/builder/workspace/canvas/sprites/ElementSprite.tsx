@@ -822,27 +822,28 @@ export const ElementSprite = memo(function ElementSprite({
       };
     }
 
-    // 🚀 퍼센트 기반 width/height를 엔진 계산 결과로 해석
+    // 🚀 CSS 키워드(%, fit-content 등)를 엔진 계산 결과 pixel 값으로 해석
     // DirectContainer가 Taffy/Dropflow를 통해 계산한 실제 pixel 크기를 직접 사용
-    // computedContainerSize는 엔진이 '%' 값을 부모 기준으로 이미 resolve한 결과이므로
-    // 퍼센트를 다시 적용하면 이중 적용됨 (예: 50% → 엔진 200px → 50%*200=100 ❌)
-    // → 엔진 계산 결과를 그대로 pixel 값으로 사용
+    // computedContainerSize는 엔진이 키워드 값을 이미 resolve한 결과이므로
+    // 키워드를 다시 적용하면 spec shapes가 문자열을 받아 렌더링 실패
+    // (예: 'fit-content' → spec이 숫자 width 기대 → 배경/보더 미렌더링)
     if (computedContainerSize) {
       const currentStyle = (resolvedElement.props?.style || {}) as Record<string, unknown>;
       const w = currentStyle.width;
       const h = currentStyle.height;
-      const hasPercentWidth = typeof w === 'string' && w.endsWith('%');
-      const hasPercentHeight = typeof h === 'string' && h.endsWith('%');
+      const INTRINSIC_KEYWORDS = ['fit-content', 'min-content', 'max-content'];
+      const needsResolveWidth = typeof w === 'string' && (w.endsWith('%') || INTRINSIC_KEYWORDS.includes(w));
+      const needsResolveHeight = typeof h === 'string' && (h.endsWith('%') || INTRINSIC_KEYWORDS.includes(h));
 
-      if (hasPercentWidth || hasPercentHeight) {
+      if (needsResolveWidth || needsResolveHeight) {
         return {
           ...resolvedElement,
           props: {
             ...resolvedElement.props,
             style: {
               ...currentStyle,
-              ...(hasPercentWidth ? { width: computedContainerSize.width } : {}),
-              ...(hasPercentHeight ? { height: computedContainerSize.height } : {}),
+              ...(needsResolveWidth ? { width: computedContainerSize.width } : {}),
+              ...(needsResolveHeight ? { height: computedContainerSize.height } : {}),
             },
           },
         };

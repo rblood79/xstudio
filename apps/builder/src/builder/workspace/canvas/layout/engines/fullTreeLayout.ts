@@ -15,7 +15,7 @@ import type { TaffyStyle } from '../../wasm-bindings/taffyLayout';
 import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
 import { PersistentTaffyTree } from './persistentTaffyTree';
 import type { PersistentBatchNode } from './persistentTaffyTree';
-import { enrichWithIntrinsicSize, applyCommonTaffyStyle, applyFlexItemProperties, parseMargin, parsePadding, parseBorder, calculateContentHeight, parseBoxModel, parseCSSPropWithContext, calculateMinContentWidth } from './utils';
+import { enrichWithIntrinsicSize, applyCommonTaffyStyle, applyFlexItemProperties, parseMargin, parsePadding, parseBorder, calculateContentHeight, parseBoxModel, parseCSSPropWithContext, measureTextWidth } from './utils';
 import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 import { toTaffyDisplay, blockifyDisplay, getElementDisplay, needsBlockChildFullWidth } from './taffyDisplayAdapter';
@@ -592,15 +592,17 @@ function traversePostOrder(
   //   A. 컨테이너 (Taffy 자식 있음) → Taffy가 자식 border-box + padding + border로 자동 계산
   //   B. 리프 (Taffy 자식 없음) → intrinsic height 주입 (텍스트 측정 / spec shapes)
   const isFlexChild = parentDisplay === 'flex' || parentDisplay === 'inline-flex';
-  const childElements = getChildElements(elementId);
   // hasTaffyChildren: 실제 Taffy 노드로 처리된 자식이 있는지 확인
   // synthetic children도 이제 indexMap에 포함되므로 정상적으로 true 반환
   const hasTaffyChildren = childIds.some(id => indexMap.has(id));
 
-  // 모든 노드에 대해 전체 enrichment 수행 (width 등 유지)
+  // enrichment에 implicit-styled 자식 사용:
+  // applyImplicitStyles가 주입한 padding/gap이 calculateContentWidth에 반영되어야
+  // fit-content/min-content 계산 시 정확한 border-box 크기를 산출한다.
+  // (원본 childElements는 spec padding/gap 미포함 → 크기 과소 산출)
   let enriched: Element = enrichWithIntrinsicSize(
     element, availableWidth, availableHeight,
-    computedStyle, childElements, getChildElements, isFlexChild,
+    computedStyle, filteredChildren, getChildElements, isFlexChild,
   );
 
   if (hasTaffyChildren) {
@@ -615,6 +617,7 @@ function traversePostOrder(
         enriched = { ...enriched, props: { ...enriched.props, style: restStyle } };
       }
     }
+
   } else {
     // B. 리프: enrichWithIntrinsicSize의 early return guard로 height 미주입된 경우 보완
     // Panel 등 spec shapes 컴포넌트는 CSS height 없고 element children도 없지만
@@ -639,9 +642,9 @@ function traversePostOrder(
 
   // 4.8. CSS min-width:auto 에뮬레이션 (flex/grid 자식 리프 노드)
   // CSS Flexbox §4.5: flex/grid item의 기본 min-width는 auto = min-content.
-  // min-content = 가장 긴 줄바꿈 불가 단어의 폭 (Dropflow getIfcContribution 방식 차용).
   // Taffy는 텍스트 측정이 불가하여 min-content를 0으로 처리한다.
-  // 텍스트 콘텐츠가 있는 리프 노드에 calculated min-content를 주입하여
+  // 캔버스의 non-TEXT_LEAF 노드는 단일 행 렌더링(줄바꿈 없음)이므로
+  // max-content(전체 텍스트 폭)를 minWidth로 주입하여
   // shrink-wrap 환경(alignItems:center 등)에서 텍스트 축소를 방지한다.
   if (FLEX_GRID_DISPLAYS.has(parentDisplay) && !hasTaffyChildren) {
     const enrichedStyle = (enriched.props?.style ?? {}) as Record<string, unknown>;
@@ -654,11 +657,11 @@ function traversePostOrder(
         const fontSize = parseFloat(String(
           enrichedStyle.fontSize ?? computedStyle?.fontSize ?? 14
         )) || 14;
-        const minContentW = calculateMinContentWidth(textContent, fontSize);
-        if (minContentW > 0) {
+        const maxContentW = measureTextWidth(textContent, fontSize);
+        if (maxContentW > 0) {
           const box = parseBoxModel(rawElement, availableWidth, availableHeight);
           const borderBoxMinW = Math.ceil(
-            minContentW
+            maxContentW
             + box.padding.left + box.padding.right
             + box.border.left + box.border.right
           );
