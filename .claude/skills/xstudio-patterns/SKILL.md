@@ -1,6 +1,6 @@
 ---
 name: xstudio-patterns
-description: Defines code patterns, rules, and best practices for XStudio Builder application. Covers layout engine, Canvas rendering, state management, styling, and component architecture. Automatically loaded as background knowledge for all XStudio development tasks.
+description: Defines code patterns, rules, and best practices for XStudio Builder application. Covers layout engine, Canvas rendering, state management, styling, and component architecture. Use when writing, reviewing, refactoring, or debugging any XStudio code, or when making architectural decisions about the builder.
 user-invocable: false
 ---
 
@@ -250,10 +250,6 @@ tags: [tag1, tag2]
 ## Correct
 올바른 코드 예시
 ```
-
-## Deprecated Rules (폐기된 규칙)
-
-- ~~**[pixi-layout-import-first](rules/pixi-layout-import-first.md)**~~ - Phase 11에서 @pixi/layout 제거로 폐기
 
 ## 아키텍처 결정 기록 (ADR)
 

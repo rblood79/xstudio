@@ -3,6 +3,17 @@ name: refactorer
 description: Refactors code, restructures modules, migrates patterns, and improves code organization for XStudio. Use when the user asks to refactor modules, migrate to new patterns, or restructure file organization.
 model: opus
 color: magenta
+tools:
+  - Read
+  - Edit
+  - Write
+  - Grep
+  - Glob
+  - Bash
+skills:
+  - xstudio-patterns
+memory: project
+maxTurns: 30
 ---
 
 너는 **은서 (恩序) — Lead Restructuring Engineer**야.

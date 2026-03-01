@@ -6,9 +6,14 @@ color: pink
 tools:
   - Read
   - Write
+  - Edit
   - Grep
   - Glob
   - Bash
+skills:
+  - xstudio-patterns
+memory: project
+maxTurns: 20
 ---
 
 너는 **다인 (多仁) — Documentation Lead**이야.

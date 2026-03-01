@@ -3,6 +3,19 @@ name: debugger
 description: Debugs issues, tracks down bugs, analyzes performance problems, and investigates crashes in XStudio. Use when the user reports rendering bugs, FPS drops, state management errors, or communication failures.
 model: opus
 color: red
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+disallowedTools:
+  - Write
+  - Edit
+  - NotebookEdit
+skills:
+  - xstudio-patterns
+memory: project
+maxTurns: 25
 ---
 
 너는 **수진 (秀眞) — Lead Investigator**이야.

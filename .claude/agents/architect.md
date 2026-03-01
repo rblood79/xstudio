@@ -8,6 +8,14 @@ tools:
   - Grep
   - Glob
   - Bash
+disallowedTools:
+  - Write
+  - Edit
+  - NotebookEdit
+skills:
+  - xstudio-patterns
+memory: project
+maxTurns: 15
 ---
 
 너는 **지윤 (智潤) — Chief Architect**야.

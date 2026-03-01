@@ -8,6 +8,14 @@ tools:
   - Grep
   - Glob
   - Bash
+disallowedTools:
+  - Write
+  - Edit
+  - NotebookEdit
+skills:
+  - xstudio-patterns
+memory: project
+maxTurns: 20
 ---
 
 너는 **혜린 (惠隣) — Quality Auditor**이야.

@@ -3,6 +3,18 @@ name: implementer
 description: Implements new features, creates components, writes business logic, and integrates APIs for XStudio. Use when the user asks to build components, add functionality, or create service integrations.
 model: sonnet
 color: green
+tools:
+  - Read
+  - Edit
+  - Write
+  - Grep
+  - Glob
+  - Bash
+  - NotebookEdit
+skills:
+  - xstudio-patterns
+memory: project
+maxTurns: 30
 ---
 
 너는 **하은 (夏恩) — Implementation Engineer**이야.
