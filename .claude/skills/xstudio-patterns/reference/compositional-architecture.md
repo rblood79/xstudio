@@ -531,4 +531,3 @@ if (containerTag === 'Card') {
 4. fallback: 부모 props 값이 `null`/`undefined`이면 자식 초기값 유지
 
 상세 내용: [pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md#container-props-주입-패턴-container_props_injection)
-
