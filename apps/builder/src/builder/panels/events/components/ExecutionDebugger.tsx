@@ -6,6 +6,16 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "react-aria-components";
+import {
+  Crosshair,
+  Zap,
+  HelpCircle,
+  XCircle,
+  FileText,
+  ChevronRight,
+  ChevronDown,
+} from 'lucide-react';
+import { iconEditProps } from '../../../../utils/ui/uiConstants';
 import type { ExecutionLogger, LogEntry, LogLevel } from "../execution/executionLogger";
 
 export interface ExecutionDebuggerProps {
@@ -79,18 +89,19 @@ export function ExecutionDebugger({
     }
   };
 
-  const getTypeIcon = (type: string): string => {
+  const TypeIcon = ({ type }: { type: string }) => {
+    const props = { size: iconEditProps.size, className: "log-icon" };
     switch (type) {
       case "handler":
-        return "🎯";
+        return <Crosshair {...props} />;
       case "action":
-        return "⚡";
+        return <Zap {...props} />;
       case "condition":
-        return "❓";
+        return <HelpCircle {...props} />;
       case "error":
-        return "❌";
+        return <XCircle {...props} />;
       default:
-        return "📝";
+        return <FileText {...props} />;
     }
   };
 
@@ -102,7 +113,8 @@ export function ExecutionDebugger({
             className="react-aria-Button sm"
             onPress={() => setIsCollapsed(!isCollapsed)}
           >
-            {isCollapsed ? "▶" : "▼"} Execution Debugger
+            {isCollapsed ? <ChevronRight size={iconEditProps.size} /> : <ChevronDown size={iconEditProps.size} />}
+            {' '}Execution Debugger
           </Button>
           <span className="log-count">({filteredLogs.length} logs)</span>
         </div>
@@ -182,7 +194,7 @@ export function ExecutionDebugger({
               filteredLogs.map((log) => (
                 <div key={log.id} className={`log-entry log-${log.level}`}>
                   <div className="log-header">
-                    <span className="log-icon">{getTypeIcon(log.type)}</span>
+                    <TypeIcon type={log.type} />
                     <span className={`log-level ${getLevelColor(log.level)}`}>
                       [{log.level.toUpperCase()}]
                     </span>

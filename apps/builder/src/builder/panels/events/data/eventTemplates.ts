@@ -1,3 +1,26 @@
+import {
+  CheckCircle,
+  Send,
+  RefreshCw,
+  Save,
+  ArrowRight,
+  ArrowDown,
+  ArrowLeft,
+  ExternalLink,
+  Eye,
+  X,
+  Bell,
+  ClipboardCopy,
+  Download,
+  Search,
+  Check,
+  Trash,
+  FileText,
+  Navigation,
+  Palette,
+  Database,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { EventHandler, EventType, ActionType } from "../types";
 
 /**
@@ -8,7 +31,7 @@ export interface EventTemplate {
   name: string;
   description: string;
   category: TemplateCategory;
-  icon: string;
+  icon: LucideIcon;
   events: EventHandler[];
   tags: string[];
   usageCount?: number;
@@ -20,7 +43,7 @@ export type TemplateCategory = "form" | "navigation" | "ui" | "data";
 export interface TemplateCategoryInfo {
   id: TemplateCategory;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   description: string;
 }
 
@@ -31,25 +54,25 @@ export const TEMPLATE_CATEGORIES: Record<TemplateCategory, TemplateCategoryInfo>
   form: {
     id: "form",
     label: "Form Actions",
-    icon: "📝",
+    icon: FileText,
     description: "Form validation, submission, and data handling"
   },
   navigation: {
     id: "navigation",
     label: "Navigation",
-    icon: "🧭",
+    icon: Navigation,
     description: "Page navigation and scrolling"
   },
   ui: {
     id: "ui",
     label: "UI Controls",
-    icon: "🎨",
+    icon: Palette,
     description: "Modals, toasts, and visibility toggles"
   },
   data: {
     id: "data",
     label: "Data Operations",
-    icon: "💾",
+    icon: Database,
     description: "API calls, data fetching, and state management"
   }
 };
@@ -62,7 +85,7 @@ function createTemplate(
   name: string,
   description: string,
   category: TemplateCategory,
-  icon: string,
+  icon: LucideIcon,
   events: Array<{ type: EventType; actions: Array<{ type: ActionType; config: Record<string, unknown> }> }>,
   tags: string[],
   componentTypes?: string[],
@@ -98,7 +121,7 @@ export const FORM_TEMPLATES: EventTemplate[] = [
     "Form Validation",
     "Validate form inputs and show error messages",
     "form",
-    "✅",
+    CheckCircle,
     [
       {
         type: "onSubmit",
@@ -118,7 +141,7 @@ export const FORM_TEMPLATES: EventTemplate[] = [
     "Submit to API",
     "Validate and submit form data to API endpoint",
     "form",
-    "📤",
+    Send,
     [
       {
         type: "onSubmit",
@@ -146,7 +169,7 @@ export const FORM_TEMPLATES: EventTemplate[] = [
     "Reset Form",
     "Clear all form fields and reset to initial values",
     "form",
-    "🔄",
+    RefreshCw,
     [
       {
         type: "onClick",
@@ -166,7 +189,7 @@ export const FORM_TEMPLATES: EventTemplate[] = [
     "Auto-save Form",
     "Automatically save form data on input change",
     "form",
-    "💾",
+    Save,
     [
       {
         type: "onChange",
@@ -198,7 +221,7 @@ export const NAVIGATION_TEMPLATES: EventTemplate[] = [
     "Navigate to Page",
     "Navigate to another page on click",
     "navigation",
-    "➡️",
+    ArrowRight,
     [
       {
         type: "onClick",
@@ -217,7 +240,7 @@ export const NAVIGATION_TEMPLATES: EventTemplate[] = [
     "Scroll to Section",
     "Smooth scroll to a specific section",
     "navigation",
-    "⬇️",
+    ArrowDown,
     [
       {
         type: "onClick",
@@ -236,7 +259,7 @@ export const NAVIGATION_TEMPLATES: EventTemplate[] = [
     "Back Button",
     "Navigate to previous page",
     "navigation",
-    "⬅️",
+    ArrowLeft,
     [
       {
         type: "onClick",
@@ -255,7 +278,7 @@ export const NAVIGATION_TEMPLATES: EventTemplate[] = [
     "Open External Link",
     "Open external URL in new tab",
     "navigation",
-    "🔗",
+    ExternalLink,
     [
       {
         type: "onClick",
@@ -279,7 +302,7 @@ export const UI_TEMPLATES: EventTemplate[] = [
     "Open Modal",
     "Show modal dialog on click",
     "ui",
-    "📱",
+    Eye,
     [
       {
         type: "onClick",
@@ -298,7 +321,7 @@ export const UI_TEMPLATES: EventTemplate[] = [
     "Close Modal",
     "Close modal dialog",
     "ui",
-    "❌",
+    X,
     [
       {
         type: "onClick",
@@ -317,7 +340,7 @@ export const UI_TEMPLATES: EventTemplate[] = [
     "Show Toast",
     "Display toast notification message",
     "ui",
-    "🔔",
+    Bell,
     [
       {
         type: "onClick",
@@ -336,7 +359,7 @@ export const UI_TEMPLATES: EventTemplate[] = [
     "Toggle Element",
     "Show/hide element on click",
     "ui",
-    "👁️",
+    Eye,
     [
       {
         type: "onClick",
@@ -355,7 +378,7 @@ export const UI_TEMPLATES: EventTemplate[] = [
     "Copy to Clipboard",
     "Copy text to clipboard and show confirmation",
     "ui",
-    "📋",
+    ClipboardCopy,
     [
       {
         type: "onClick",
@@ -380,7 +403,7 @@ export const DATA_TEMPLATES: EventTemplate[] = [
     "Fetch Data on Load",
     "Load data from API when component mounts",
     "data",
-    "📥",
+    Download,
     [
       {
         type: "onLoad",
@@ -406,7 +429,7 @@ export const DATA_TEMPLATES: EventTemplate[] = [
     "Refresh Data",
     "Reload data from API on click",
     "data",
-    "🔄",
+    RefreshCw,
     [
       {
         type: "onClick",
@@ -433,7 +456,7 @@ export const DATA_TEMPLATES: EventTemplate[] = [
     "Filter Data",
     "Filter collection based on input",
     "data",
-    "🔍",
+    Search,
     [
       {
         type: "onChange",
@@ -453,7 +476,7 @@ export const DATA_TEMPLATES: EventTemplate[] = [
     "Handle Selection",
     "Execute action when item is selected",
     "data",
-    "✓",
+    Check,
     [
       {
         type: "onSelectionChange",
@@ -473,7 +496,7 @@ export const DATA_TEMPLATES: EventTemplate[] = [
     "Delete with Confirmation",
     "Show confirmation modal before deleting",
     "data",
-    "🗑️",
+    Trash,
     [
       {
         type: "onClick",

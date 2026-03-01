@@ -64,7 +64,7 @@ export function TemplateSuggestionSection({
             type="button"
             onClick={() => onApplyTemplate(template)}
           >
-            <span className="template-icon">{template.icon}</span>
+            <span className="template-icon"><template.icon size={14} /></span>
             <div className="template-info">
               <span className="template-name">{template.name}</span>
               <span className="template-desc">

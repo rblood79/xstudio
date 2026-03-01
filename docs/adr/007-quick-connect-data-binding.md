@@ -82,9 +82,9 @@ React Aria의 표준 슬롯: `slot="label"`, `slot="description"`, `slot="select
 
 | 파일 | 제거할 기본 아이템 | 유지할 구조 |
 |------|-------------------|------------|
-| `apps/builder/src/builder/factories/definitions/SelectionComponents.ts` | ListBoxItem×3, SelectItem×3, ComboBoxItem×3, GridListItem×3 | Select/ComboBox 구조적 자식 (Label, Trigger 등) |
+| `apps/builder/src/builder/factories/definitions/SelectionComponents.ts` | ListBoxItem×3, SelectItem×1, ComboBoxItem×1, GridListItem×4 | Select/ComboBox 구조적 자식 (Label, Trigger 등) |
 | `apps/builder/src/builder/factories/definitions/NavigationComponents.ts` | MenuItem×3 | — |
-| `apps/builder/src/builder/factories/definitions/TableComponents.ts` | Column×3, Row×3, Cell×9 | TableHeader + TableBody (빈 구조) |
+| `apps/builder/src/builder/factories/definitions/TableComponents.ts` | _(이미 빈 구조 — 변경 불필요)_ | TableHeader + TableBody (빈 구조) |
 
 ### 변경 결과
 
@@ -122,10 +122,10 @@ renderEmptyState={() => (
 | **Select** | DataTable + dataBinding | Dynamic Collections |
 | **ComboBox** | DataTable + dataBinding | Dynamic Collections |
 | **Menu** | DataTable + dataBinding | Dynamic Collections |
-| **Table** | DataTable + dataBinding + **Column 자동 생성** | Column 정의 필수 |
+| **Table** | DataTable + dataBinding (기존 `ADD_COLUMN_ELEMENTS` 파이프라인이 Column 자동 생성) | Column 정의 필수 |
 
 - ListBox/GridList: `item.name || item.title || item.label` 자동 매핑 (이미 구현됨)
-- Table: React Aria가 Column 정의를 요구하므로 schema 기반 Column 자동 생성 필수
+- Table: 기존 런타임 파이프라인(`Table.tsx detectColumnsFromData → TableRenderer.tsx onColumnsDetected → postMessage("ADD_COLUMN_ELEMENTS") → useIframeMessenger.ts`)이 dataBinding 설정 후 Column을 자동 생성하므로 별도 훅 불필요
 
 ### 생성할 파일
 
@@ -136,8 +136,7 @@ interface UseQuickConnectOptions {
   elementId: string;
   componentTag: string;
   currentDataBinding?: DataBindingValue | null;
-  onDataBindingChange: (binding: DataBindingValue | null) => void;
-  onConnected?: (schema: DataField[], tableName: string) => void;
+  onDataBindingChange: (binding: DataBindingValue | null) => void | Promise<void>;
 }
 
 interface UseQuickConnectResult {
@@ -150,21 +149,14 @@ interface UseQuickConnectResult {
 로직:
 1. `useDataStore.getState()`에서 `createDataTable`, `currentProjectId`, `dataTables` 접근
 2. 이름 고유성: `dataTables.has(name)` → suffix 추가 (`Users_2`)
-3. `createDataTable()` 호출 → `onDataBindingChange()` → `onConnected?.()` (Table Column용)
+3. `createDataTable()` 호출 → `await onDataBindingChange()` (Table은 기존 `ADD_COLUMN_ELEMENTS` 파이프라인이 자동 처리)
 
-#### `apps/builder/src/builder/hooks/useAutoGenerateColumns.ts`
+#### ~~`apps/builder/src/builder/hooks/useAutoGenerateColumns.ts`~~ (삭제됨)
 
-Table 전용. Column 자동 생성만 담당.
-
-```typescript
-interface UseAutoGenerateColumnsOptions {
-  elementId: string;
-}
-
-interface UseAutoGenerateColumnsResult {
-  generateColumnsFromSchema: (schema: DataField[]) => Promise<void>;
-}
-```
+> **기각 사유**: 기존 런타임에 `ADD_COLUMN_ELEMENTS` 파이프라인이 이미 완전 구현되어 있음.
+> `Table.tsx detectColumnsFromData()` → `TableRenderer.tsx onColumnsDetected` → `postMessage("ADD_COLUMN_ELEMENTS")` → `useIframeMessenger.ts` Store/DB 반영.
+> 중복 방지도 양쪽(`columnCreationRequestedRef` Set + `existingIds` Set)에서 이중 처리됨.
+> 별도 훅을 추가하면 기존 파이프라인과 경합/이중 생성 위험이 있으므로 기존 경로를 그대로 활용한다.
 
 #### `apps/builder/src/builder/components/property/QuickConnectButton.tsx` + `.css`
 
@@ -178,16 +170,18 @@ React-Aria `DialogTrigger` + `Popover` 기반 UI.
       └── 카테고리별 Preset 목록 (PRESET_CATEGORIES 5개)
 ```
 
-재실행 처리: `isConnected=true` → 기존 DataTable 유지, 새 DataTable 생성 + 바인딩 교체
+재실행 처리: `isConnected=true` → 기존 DataTable 유지, 새 DataTable 생성 + 바인딩 교체.
+Table 재실행 시 Column 처리: 기존 Column Elements **전체 교체** (replace). 스키마가 변경될 수 있으므로 merge/append 대신 clean replace를 기본 전략으로 한다. 기존 Column이 존재하면 사용자에게 "기존 컬럼을 새 스키마로 교체합니다" 확인 다이얼로그를 표시하고, 승인 시 `TableHeader` 하위 Column Elements를 삭제 후 `ADD_COLUMN_ELEMENTS` 파이프라인이 새 Column을 자동 생성한다.
 
 ### 수정할 파일
 
 | 파일 | 변경 내용 |
 |------|---------|
-| `hooks/index.ts` | `useQuickConnect`, `useAutoGenerateColumns` export |
+| `hooks/index.ts` | `useQuickConnect` export |
 | `components/property/index.ts` | `QuickConnectButton` export |
+| `components/index.ts` | `QuickConnectButton` re-export 추가 (에디터들이 `'../../../components'` 루트 barrel을 통해 import하는 패턴 유지) |
 | `ListBoxEditor.tsx` | `inferFieldType` + `handleAutoGenerateFields` 제거, Quick Connect 추가 |
-| `TableEditor.tsx` | `useQuickConnect` + `useAutoGenerateColumns` + QuickConnectButton |
+| `TableEditor.tsx` | `useQuickConnect` + QuickConnectButton (Column은 기존 `ADD_COLUMN_ELEMENTS` 파이프라인 활용) |
 | `GridListEditor.tsx` | `useQuickConnect` + QuickConnectButton |
 | `SelectEditor.tsx` | `useQuickConnect` + QuickConnectButton |
 | `ComboBoxEditor.tsx` | `useQuickConnect` + QuickConnectButton |
@@ -214,14 +208,14 @@ const { quickConnect, isConnected, isConnecting } = useQuickConnect({
 </PropertySection>
 ```
 
-### Table (Column 생성 포함)
+### Table (기존 ADD_COLUMN_ELEMENTS 파이프라인 활용)
 ```tsx
-const { generateColumnsFromSchema } = useAutoGenerateColumns({ elementId });
 const { quickConnect, isConnected, isConnecting } = useQuickConnect({
   elementId, componentTag: 'Table',
   currentDataBinding, onDataBindingChange: handleDataBindingChange,
-  onConnected: (schema) => generateColumnsFromSchema(schema),
 });
+// dataBinding 설정 후 Preview의 TableRenderer가 데이터를 감지하면
+// ADD_COLUMN_ELEMENTS postMessage → useIframeMessenger가 Column 자동 생성
 ```
 
 ---
@@ -233,8 +227,8 @@ Quick Connect 클릭 → Preset 선택
   ↓
 useQuickConnect:
   1. DataTable 생성 (Data Store — IndexedDB)
-  2. dataBinding 설정 (Element Store — props)
-  3. onConnected 콜백 (Table만 — Column 생성)
+  2. await dataBinding 설정 (Element Store — props)
+  3. (Table) Preview 렌더 → 기존 ADD_COLUMN_ELEMENTS 파이프라인이 Column 자동 생성
   ↓
 컴포넌트 렌더링:
   useCollectionData(dataBinding) → items prop → React Aria Dynamic Collections
@@ -259,21 +253,23 @@ useQuickConnect:
 | **Undo/Redo** | Column 생성만 히스토리 (DataTable은 Data Store 독립) |
 | **기존 수동 경로** | PropertyDataBinding + "바인딩 제거" 버튼 유지 |
 | **Spec shapes 빈 상태** | 구현 전 6개 컴포넌트 placeholder 렌더링 검증 필수 |
+| **PixiListBox/PixiList fallback** | 구 패턴 컴포넌트(`PixiListBox`, `PixiList`)는 자식이 없으면 하드코딩 기본값(Item 1~3/1~5)을 강제 주입함. Factory 아이템 제거 시 캔버스에 여전히 기본값이 표시되어 Preview와 불일치 발생. **구현 시 fallback 로직을 `dataBinding` 유무로 분기하거나 제거 필요.** (PixiSelect/PixiGridList은 A등급 패턴으로 리팩토링 완료, 영향 없음) |
+| **Quick Connect 실패 롤백** | `createDataTable` 성공 후 `onDataBindingChange` 실패 시 orphan DataTable 발생 가능. 실패 시 `deleteDataTable` 롤백 또는 orphan 마킹 정책 필요 |
 
 ---
 
 ## 구현 순서
 
 1. Spec shapes 빈 상태 검증 (6개 컴포넌트)
-2. Factory 변경: 기본 아이템 제거
-3. renderEmptyState 추가 (6개 공유 컴포넌트)
-4. useQuickConnect 훅 생성
-5. useAutoGenerateColumns 훅 생성 (Table 전용)
+2. PixiListBox/PixiList fallback 분기 처리 (dataBinding 유무 기반, 또는 fallback 제거)
+3. Factory 변경: 기본 아이템 제거
+4. renderEmptyState 추가 (6개 공유 컴포넌트)
+5. useQuickConnect 훅 생성
 6. QuickConnectButton 컴포넌트 + CSS 생성
 7. ListBoxEditor 리팩토링 + Quick Connect 통합
-8. TableEditor 통합 (Column 자동 생성)
+8. TableEditor 통합 (기존 `ADD_COLUMN_ELEMENTS` 파이프라인 활용, 재실행 시 Column replace 로직)
 9. GridListEditor, SelectEditor, ComboBoxEditor, MenuEditor 통합
-10. export index 파일 업데이트
+10. export index 파일 업데이트 (`hooks/index.ts` + `components/property/index.ts` + `components/index.ts`)
 11. 타입 체크 (`cd apps/builder && pnpm exec tsc --noEmit`)
 
 ---
@@ -290,6 +286,9 @@ useQuickConnect:
    - 컴포넌트 삭제 → DataTable 유지 (데이터 독립성)
    - 동일 Preset 2회 → 이름 고유성 확인 (`Users`, `Users_2`)
    - Quick Connect 재실행 → 바인딩 교체 정상 동작
+   - Table 재실행 → 기존 Column 교체 확인 다이얼로그 + 새 Column 정상 생성
+   - PixiListBox 빈 상태 → 캔버스에 하드코딩 기본값 미표시 확인 (Preview와 일치)
+   - Quick Connect 실패 시 → orphan DataTable 미발생 (롤백 확인)
 
 ---
 

@@ -4,6 +4,8 @@
  * - React Aria 이벤트 포함
  */
 
+import type { LucideIcon } from 'lucide-react';
+
 /**
  * 지원되는 이벤트 타입
  */
@@ -379,7 +381,7 @@ export interface SetVariableConfig {
 export interface EventCategory {
   id: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   events: EventType[];
   description?: string;
 }
@@ -402,7 +404,7 @@ export interface EventMetadata {
 export interface ActionMetadata {
   label: string;
   description: string;
-  icon?: string;
+  icon?: LucideIcon;
   category: "navigation" | "state" | "api" | "ui" | "form" | "utility";
   configFields: ActionConfigField[];
 }

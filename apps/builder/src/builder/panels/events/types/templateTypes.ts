@@ -2,6 +2,16 @@
  * 이벤트 템플릿 타입
  */
 
+import type { LucideIcon } from 'lucide-react';
+import {
+  FileText,
+  Navigation,
+  Database,
+  Sparkles,
+  Bell,
+  CheckCircle,
+  Settings,
+} from 'lucide-react';
 import type { EventType, EventAction } from "./eventTypes";
 
 /**
@@ -17,7 +27,7 @@ export interface EventTemplate {
   tags: string[];
   preview?: string;
   usageCount?: number;
-  icon?: string;
+  icon?: LucideIcon;
 }
 
 /**
@@ -38,7 +48,7 @@ export type TemplateCategory =
 export interface TemplateCategoryMeta {
   id: TemplateCategory;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   description: string;
 }
 
@@ -72,43 +82,43 @@ export const TEMPLATE_CATEGORIES: TemplateCategoryMeta[] = [
   {
     id: "form",
     label: "Form",
-    icon: "📝",
+    icon: FileText,
     description: "폼 제출, 검증, 리셋 관련 템플릿"
   },
   {
     id: "navigation",
     label: "Navigation",
-    icon: "🔗",
+    icon: Navigation,
     description: "페이지 이동, 스크롤 관련 템플릿"
   },
   {
     id: "data",
     label: "Data",
-    icon: "💾",
+    icon: Database,
     description: "API 호출, 상태 관리 관련 템플릿"
   },
   {
     id: "animation",
     label: "Animation",
-    icon: "✨",
+    icon: Sparkles,
     description: "애니메이션, 전환 효과 관련 템플릿"
   },
   {
     id: "notification",
     label: "Notification",
-    icon: "💬",
+    icon: Bell,
     description: "토스트, 모달 알림 관련 템플릿"
   },
   {
     id: "validation",
     label: "Validation",
-    icon: "✓",
+    icon: CheckCircle,
     description: "폼 검증, 데이터 확인 관련 템플릿"
   },
   {
     id: "custom",
     label: "Custom",
-    icon: "⚙️",
+    icon: Settings,
     description: "사용자 정의 커스텀 템플릿"
   }
 ];

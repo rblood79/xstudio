@@ -2,6 +2,13 @@
  * 이벤트 카테고리 및 메타데이터
  */
 
+import {
+  Mouse,
+  FileText,
+  Keyboard,
+  Component,
+  Zap,
+} from 'lucide-react';
 import type { EventCategory, EventMetadata, EventType } from "../types";
 
 /**
@@ -11,7 +18,7 @@ export const EVENT_CATEGORIES: Record<string, EventCategory> = {
   mouse: {
     id: "mouse",
     label: "Mouse Events",
-    icon: "🖱️",
+    icon: Mouse,
     events: [
       "onClick",
       "onDoubleClick",
@@ -25,28 +32,28 @@ export const EVENT_CATEGORIES: Record<string, EventCategory> = {
   form: {
     id: "form",
     label: "Form Events",
-    icon: "📝",
+    icon: FileText,
     events: ["onChange", "onInput", "onSubmit", "onFocus", "onBlur"],
     description: "폼 입력 및 제출 이벤트"
   },
   keyboard: {
     id: "keyboard",
     label: "Keyboard Events",
-    icon: "⌨️",
+    icon: Keyboard,
     events: ["onKeyDown", "onKeyUp", "onKeyPress"],
     description: "키보드 입력 이벤트"
   },
   reactAria: {
     id: "reactAria",
     label: "React Aria Events",
-    icon: "⚛️",
+    icon: Component,
     events: ["onPress", "onSelectionChange", "onAction", "onOpenChange"],
     description: "React Aria 컴포넌트 전용 이벤트"
   },
   other: {
     id: "other",
     label: "Other Events",
-    icon: "⚡",
+    icon: Zap,
     events: ["onScroll", "onResize", "onLoad"],
     description: "기타 이벤트"
   }
