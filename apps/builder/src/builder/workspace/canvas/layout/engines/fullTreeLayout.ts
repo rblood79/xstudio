@@ -86,6 +86,65 @@ export function getSharedFilteredChildrenMap(): Map<string, string[]> | null {
 
 // ─── 내부 유틸리티 ───────────────────────────────────────────────────
 
+// ─── Implicit Style 패치 ──────────────────────────────────────────────
+
+/** CSS dimension 속성 (number → "${v}px" 변환) */
+const IMPLICIT_DIM_PROPS = new Set([
+  'marginLeft', 'marginRight', 'marginTop', 'marginBottom',
+  'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom',
+  'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
+  'gap', 'rowGap', 'columnGap', 'flexBasis',
+]);
+
+/**
+ * applyImplicitStyles가 변경한 CSS 속성을 batch record에 패치.
+ *
+ * DFS post-order에서 자식은 부모보다 먼저 처리되므로,
+ * 부모의 applyImplicitStyles 결과가 자식 batch 엔트리에 반영되지 않는다.
+ * 변경된 속성만 찾아 taffyStyleToRecord 형식으로 패치한다.
+ */
+function patchBatchStyleFromImplicit(
+  batchStyle: Record<string, unknown>,
+  origStyle: Record<string, unknown>,
+  modStyle: Record<string, unknown>,
+): void {
+  for (const key of Object.keys(modStyle)) {
+    if (modStyle[key] === origStyle[key]) continue;
+    const val = modStyle[key];
+    if (val === undefined) continue;
+
+    // flex shorthand → flexGrow/flexShrink/flexBasis 분해
+    if (key === 'flex') {
+      const n = Number(val);
+      if (!isNaN(n)) {
+        batchStyle.flexGrow = n;
+        batchStyle.flexShrink = 1;
+        batchStyle.flexBasis = '0%';
+      }
+      continue;
+    }
+
+    // dimension 속성: number → "Npx", string → 그대로
+    if (IMPLICIT_DIM_PROPS.has(key)) {
+      batchStyle[key] = typeof val === 'number' ? `${val}px` : val;
+      continue;
+    }
+
+    // numeric 속성
+    if (key === 'flexGrow' || key === 'flexShrink' || key === 'order') {
+      batchStyle[key] = Number(val);
+      continue;
+    }
+
+    // string 속성 (display, flexDirection, alignItems 등)
+    if (typeof val === 'string') {
+      batchStyle[key] = val;
+    }
+  }
+}
+
+// ─── TaffyStyle → Record 변환 ────────────────────────────────────────
+
 /**
  * TaffyStyle 객체를 JSON 직렬화 가능한 Record로 변환.
  *
@@ -455,6 +514,26 @@ function traversePostOrder(
     const synthRecord = buildNodeStyle(synthEnriched, synthComputed, [], effectiveDisplay);
     batch.push({ style: synthRecord, children: [], elementId: synthChild.id });
     indexMap.set(synthChild.id, batch.length - 1);
+  }
+
+  // 3.6. Implicit child style overrides → batch 반영
+  // DFS post-order에서 자식은 부모보다 먼저 처리되어 원본 스타일로 batch에 등록됨.
+  // applyImplicitStyles가 실제 자식(DB 요소)의 스타일을 변경한 경우
+  // (e.g., Checkbox→Label marginLeft, SelectTrigger→SelectValue flex:1),
+  // 이미 생성된 batch 엔트리에 변경사항을 패치한다.
+  for (const filteredChild of filteredChildren) {
+    const batchIdx = indexMap.get(filteredChild.id);
+    if (batchIdx === undefined) continue;
+
+    const originalEl = elementsMap.get(filteredChild.id);
+    if (!originalEl) continue;
+
+    // props.style 참조 비교 — 동일하면 applyImplicitStyles가 수정하지 않은 것
+    if (filteredChild.props?.style === originalEl.props?.style) continue;
+
+    const origStyle = (originalEl.props?.style ?? {}) as Record<string, unknown>;
+    const modStyle = (filteredChild.props?.style ?? {}) as Record<string, unknown>;
+    patchBatchStyleFromImplicit(batch[batchIdx].style, origStyle, modStyle);
   }
 
   // 4. enrichWithIntrinsicSize: intrinsic 크기 주입

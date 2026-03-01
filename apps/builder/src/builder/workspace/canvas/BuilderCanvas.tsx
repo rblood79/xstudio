@@ -903,12 +903,30 @@ const ElementsLayer = memo(function ElementsLayer({
             && ['Radio', 'Checkbox', 'Switch', 'Toggle'].includes(effectiveChildEl.tag)) {
           const childrenText = (effectiveChildEl.props as Record<string, unknown> | undefined)?.children;
           if (typeof childrenText === 'string' && childrenText.trim()) {
+            // Checkbox/Radio: indicator box + gap만큼 marginLeft 주입 (gap은 사용자 값 우선)
+            const isIndicatorTag = effectiveChildEl.tag === 'Checkbox' || effectiveChildEl.tag === 'Radio';
+            let indicatorOffset = 0;
+            if (isIndicatorTag) {
+              const elProps = effectiveChildEl.props as Record<string, unknown>;
+              const indBoxes: Record<string, number> = { sm: 16, md: 20, lg: 24 };
+              const indGaps: Record<string, number> = { sm: 6, md: 8, lg: 10 };
+              const sz = (elProps?.size as string) ?? 'md';
+              const box = indBoxes[sz] ?? 20;
+              const elStyle = (elProps?.style as Record<string, unknown>) ?? {};
+              const parsedGap = parseFloat(String(elStyle.gap ?? ''));
+              const gap = !isNaN(parsedGap) ? parsedGap : (indGaps[sz] ?? 8);
+              indicatorOffset = box + gap;
+            }
             const syntheticLabel = {
               id: `${effectiveChildEl.id}__synlabel`,
               tag: 'Label',
               props: {
                 children: childrenText,
-                style: { fontSize: 14, backgroundColor: 'transparent' },
+                style: {
+                  fontSize: 14,
+                  backgroundColor: 'transparent',
+                  ...(indicatorOffset ? { marginLeft: indicatorOffset } : {}),
+                },
               },
               parent_id: effectiveChildEl.id,
               page_id: effectiveChildEl.page_id,

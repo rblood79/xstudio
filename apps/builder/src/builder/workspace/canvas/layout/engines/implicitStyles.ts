@@ -299,15 +299,27 @@ export function applyImplicitStyles(
 
   // ── Checkbox / Radio — indicator 공간 확보 ─────────────────────────
   // Indicator는 spec shapes로 렌더링 (Taffy 트리 밖).
-  // Label 자식이 indicator와 겹치지 않도록 paddingLeft 주입.
+  // Label 자식에 marginLeft = indicatorBox + gap을 주입하여 indicator와 겹치지 않도록 한다.
+  // gap은 사용자가 스타일 패널에서 변경 가능 → parentStyle.gap 우선 사용.
   if (containerTag === 'checkbox' || containerTag === 'radio') {
     const sizeName = (containerProps?.size as string) ?? 'md';
     const indicator = INDICATOR_SIZES[sizeName] ?? INDICATOR_SIZES.md;
-    const indicatorOffset = indicator.box + indicator.gap;
-    const curStyle = (effectiveParent.props?.style || {}) as Record<string, unknown>;
-    effectiveParent = withParentStyle(effectiveParent, {
-      ...curStyle,
-      paddingLeft: (curStyle.paddingLeft as number | undefined) ?? indicatorOffset,
+    const parsedGap = parseFloat(String(parentStyle.gap ?? ''));
+    const userGap = !isNaN(parsedGap) ? parsedGap : indicator.gap;
+    const indicatorOffset = indicator.box + userGap;
+
+    filteredChildren = filteredChildren.map(child => {
+      const cs = (child.props?.style || {}) as Record<string, unknown>;
+      return {
+        ...child,
+        props: {
+          ...child.props,
+          style: {
+            ...cs,
+            marginLeft: (cs.marginLeft as number | undefined) ?? indicatorOffset,
+          },
+        },
+      } as Element;
     });
   }
 
@@ -316,6 +328,16 @@ export function applyImplicitStyles(
     if (filteredChildren.length === 0) {
       const labelText = containerProps?.children ?? containerProps?.label;
       if (typeof labelText === 'string' && labelText.trim().length > 0) {
+        // Checkbox/Radio: indicator 공간만큼 marginLeft 주입 (gap은 사용자 값 우선)
+        const isIndicatorTag = containerTag === 'checkbox' || containerTag === 'radio';
+        let synLabelMargin = 0;
+        if (isIndicatorTag) {
+          const ind = INDICATOR_SIZES[(containerProps?.size as string) ?? 'md'] ?? INDICATOR_SIZES.md;
+          const pg = parseFloat(String(parentStyle.gap ?? ''));
+          const gap = !isNaN(pg) ? pg : ind.gap;
+          synLabelMargin = ind.box + gap;
+        }
+
         const syntheticLabel: Element = {
           id: `${containerEl.id}__synlabel`,
           tag: 'Label',
@@ -324,6 +346,7 @@ export function applyImplicitStyles(
             style: {
               fontSize: 14,
               backgroundColor: 'transparent',
+              ...(synLabelMargin > 0 ? { marginLeft: synLabelMargin } : {}),
             },
           },
           parent_id: containerEl.id,
