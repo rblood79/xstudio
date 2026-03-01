@@ -29,6 +29,9 @@ export function createTabsDefinition(
       props: {
         defaultSelectedKey: tab1Id,
         orientation: "horizontal",
+        style: {
+          width: "100%",
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -135,6 +138,7 @@ export function createCardDefinition(
         style: {
           display: "flex",
           flexDirection: "column",
+          width: "100%",
           padding: "16px",
           borderWidth: "1px",
           gap: "8px",

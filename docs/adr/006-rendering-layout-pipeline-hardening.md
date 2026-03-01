@@ -176,18 +176,43 @@ if (sanitizeStats.count > 0 && import.meta.env.DEV) {
 
 **현상**: `resetPersistentTree()` 호출 시 `_sharedLayoutMap`이 초기화되지 않아, SkiaOverlay가 stale 레이아웃 데이터를 읽을 수 있음.
 
-**수정 방안**:
+**수정 방안**: `resetPersistentTree()` (라인 51-64)에 `_perPageLayoutMaps` 정리 추가.
+
+현재 코드:
 ```typescript
-export function resetPersistentTree(): void {
-  persistentTree?.reset();
-  persistentTree = null;
-  // stale 레이아웃 데이터 방지
-  publishLayoutMap(null);
+export function resetPersistentTree(pageId?: string): void {
+  if (pageId) {
+    const tree = persistentTrees.get(pageId);
+    if (tree) { tree.reset(); persistentTrees.delete(pageId); }
+  } else {
+    for (const tree of persistentTrees.values()) { tree.reset(); }
+    persistentTrees.clear();
+  }
+}
+```
+
+수정:
+```typescript
+export function resetPersistentTree(pageId?: string): void {
+  if (pageId) {
+    const tree = persistentTrees.get(pageId);
+    if (tree) { tree.reset(); persistentTrees.delete(pageId); }
+    // stale 레이아웃 제거
+    publishLayoutMap(null, pageId);
+  } else {
+    for (const tree of persistentTrees.values()) { tree.reset(); }
+    persistentTrees.clear();
+    // 모든 페이지의 stale 레이아웃 제거
+    for (const key of [..._perPageLayoutMaps.keys()]) {
+      publishLayoutMap(null, key);
+    }
+  }
 }
 ```
 
 **검증**:
 - `resetPersistentTree()` 호출 후 `getSharedLayoutMap()` === null
+- 페이지별 `resetPersistentTree(pageId)` 시 해당 페이지만 정리 확인
 - SkiaOverlay가 null 수신 시 렌더링 스킵 확인
 
 ---
@@ -642,27 +667,36 @@ const handleNavigateMessage = async (event: MessageEvent) => {
 
 **현상**: `INLINE_BLOCK_PARENT_CONFIG`에 `alignItems: 'center'` 하드코딩. `vertical-align: top/baseline` 요소에서 잘못된 정렬.
 
-**수정 방안**:
-```typescript
-// 자식 요소들의 vertical-align을 분석하여 가장 적합한 alignItems 결정
-function resolveInlineBlockAlignItems(
-  childDisplays: string[],
-  childElements: Element[],
-): string {
-  // 다수결 또는 첫 번째 비-auto 값 기준
-  const verticalAligns = childElements
-    .map(el => (el.props?.style as Record<string, unknown>)?.verticalAlign)
-    .filter(Boolean);
+**수정 방안**: `INLINE_BLOCK_PARENT_CONFIG`의 `alignItems: 'center'` 하드코딩 → 자식 `vertical-align` 분석 기반 동적 결정.
 
-  if (verticalAligns.includes('top')) return 'flex-start';
-  if (verticalAligns.includes('bottom')) return 'flex-end';
-  return 'center'; // 기본값 유지
+```typescript
+function resolveInlineBlockAlignItems(childElements: Element[]): string {
+  // vertical-align 값별 Flex 매핑
+  const map: Record<string, string> = {
+    top: 'flex-start',
+    middle: 'center',
+    bottom: 'flex-end',
+    baseline: 'baseline',
+  };
+
+  const aligns = childElements.map(el => {
+    const va = ((el.props?.style as Record<string, unknown>)?.verticalAlign as string) ?? 'baseline';
+    return va;
+  });
+
+  // 첫 번째 non-baseline 값을 사용 (과반수 투표 대신 단순 전략)
+  const nonBaseline = aligns.find(a => a !== 'baseline');
+  if (!nonBaseline) return 'baseline';  // 모두 baseline → Flex baseline 정렬
+  return map[nonBaseline] ?? 'center';
 }
 ```
 
+`INLINE_BLOCK_PARENT_CONFIG` 사용 시 `alignItems`를 `resolveInlineBlockAlignItems()` 반환값으로 오버라이드.
+
 **검증**:
-- `vertical-align: top` inline-block이 상단 정렬 확인
-- 기본 center 정렬 유지 확인
+- `vertical-align: top` 요소가 상단 정렬 확인
+- `vertical-align: baseline` 요소가 기준선 정렬 확인
+- 기존 `vertical-align` 미지정 시 baseline 기본 동작 유지 확인
 
 ---
 
@@ -671,31 +705,138 @@ function resolveInlineBlockAlignItems(
 > 목표: 5,000 요소에서 60fps 달성
 > 예상 소요: 2~4주 (ADR-005 Phase 3~5와 연계)
 
-### P3-1. fullTreeLayoutMap useMemo 의존성 최적화
+### P3-1. Dirty Tracking + useMemo 의존성 최적화 (핵심, ~97% DFS 비용 감소)
 
-**파일**: `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` (라인 658-682)
+**문제**: `elementById`(= `elementsMap`) 변경 → `fullTreeLayoutMap` useMemo 전체 재계산 → `traversePostOrder` O(N) DFS. 색상만 변경해도 5,000노드 전체 순회.
 
-**현상**: `elementById`(= store의 `elementsMap`)가 의존성에 포함. 어떤 요소 변경이든 새 Map 인스턴스 생성 → 전체 DFS 재실행.
+#### Step 1: Store에 변경 추적 메커니즘 추가
 
-**수정 방안** (설계 수준):
+**파일**: `apps/builder/src/builder/stores/elements.ts`
+
+인터페이스에 추가:
+```typescript
+/** 레이아웃 영향 속성 변경 시 증가하는 카운터 */
+layoutVersion: number;
+/** 레이아웃 영향 변경이 있었던 요소 ID Set (매 layoutVersion 갱신 시 리셋) */
+dirtyElementIds: Set<string>;
+/** dirty 소비 후 리셋 */
+clearDirtyElementIds: () => void;
 ```
-방안 A: Dirty Tracking
-- store에 `dirtyElementIds: Set<string>` 추가
-- fullTreeLayout이 dirty 요소의 서브트리만 재계산
-- PersistentTaffyTree의 incrementalUpdate가 이미 dirty 스킵을 지원하므로
-  JS 측 DFS만 서브트리로 제한하면 됨
 
-방안 B: Version Counter
-- `elementsVersion: number` 카운터 도입
-- useMemo 의존성을 Map 참조 대신 version으로 변경
-- 레이아웃 무관 변경(색상, 텍스트 내용)은 version 미증가
+레이아웃 영향 속성 판별:
+```typescript
+const LAYOUT_AFFECTING_PROPS = new Set([
+  'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
+  'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+  'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+  'display', 'flexDirection', 'flexWrap', 'flexGrow', 'flexShrink', 'flexBasis',
+  'alignItems', 'alignSelf', 'justifyContent', 'gap', 'rowGap', 'columnGap',
+  'gridTemplateColumns', 'gridTemplateRows', 'gridColumn', 'gridRow',
+  'position', 'top', 'right', 'bottom', 'left', 'order',
+  'border', 'borderWidth', 'borderTop', 'borderRight', 'borderBottom', 'borderLeft',
+  'overflow', 'aspectRatio',
+]);
+
+function isLayoutAffecting(changedProps: Record<string, unknown>): boolean {
+  return Object.keys(changedProps).some(k => LAYOUT_AFFECTING_PROPS.has(k));
+}
 ```
+
+요소 변경 액션(`updateElementProps`, `updateElementStyle` 등) 내부:
+```typescript
+set(state => ({
+  ...updates,
+  layoutVersion: isLayoutChange ? state.layoutVersion + 1 : state.layoutVersion,
+  dirtyElementIds: isLayoutChange
+    ? new Set([...state.dirtyElementIds, elementId])
+    : state.dirtyElementIds,
+}));
+```
+
+#### Step 2: BuilderCanvas useMemo 의존성 분리
+
+**파일**: `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` (라인 657-682)
+
+현재 의존성: `[bodyElement, elementById, pageChildrenMap, pageWidth, pageHeight, _wasmLayoutReady]`
+
+변경:
+```typescript
+const layoutVersion = useStore(s => s.layoutVersion);
+const dirtyElementIds = useStore(s => s.dirtyElementIds);
+
+const fullTreeLayoutMap = useMemo(() => {
+  if (!bodyElement || !_wasmLayoutReady) return null;
+  // ... (기존 코드)
+  const result = calculateFullTreeLayout(
+    bodyElement.id, elementById, childrenIdMap,
+    avW, avH,
+    (id: string) => pageChildrenMap.get(id) ?? [],
+    dirtyElementIds,  // ← 새 파라미터
+  );
+  // dirty 소비 후 리셋
+  if (dirtyElementIds.size > 0) {
+    useStore.getState().clearDirtyElementIds();
+  }
+  publishLayoutMap(result, bodyElement.page_id);
+  return result;
+}, [bodyElement, layoutVersion, pageWidth, pageHeight, _wasmLayoutReady]);
+//   ↑ elementById/pageChildrenMap 제거, layoutVersion으로 대체
+```
+
+핵심: `elementById` 참조 변경이 아니라 `layoutVersion` 카운터로 트리거. 비레이아웃 변경(color 등)은 `layoutVersion` 불변 → useMemo 스킵.
+
+#### Step 3: calculateFullTreeLayout에 dirty path 추가
+
+**파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts`
+
+시그니처 변경:
+```typescript
+export function calculateFullTreeLayout(
+  rootElementId: string,
+  elementsMap: Map<string, Element>,
+  childrenMap: Map<string, string[]>,
+  availableWidth: number,
+  availableHeight: number,
+  getChildElements: (id: string) => Element[],
+  dirtyElementIds?: Set<string>,  // ← 새 파라미터
+): Map<string, ComputedLayout> | null {
+```
+
+DFS 분기:
+```typescript
+if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
+  // Incremental path: dirty 노드 + 조상만 재순회
+  const dirtyAncestors = collectDirtyAncestors(dirtyElementIds, elementsMap);
+  traversePostOrderDirty(
+    rootElementId, elementsMap, childrenMap,
+    availableWidth, availableHeight, getChildElements,
+    ROOT_COMPUTED_STYLE, 'block', batch, indexMap,
+    visiting, 0, dirtyAncestors,
+  );
+} else {
+  // Full path: 초기 빌드 또는 구조 변경
+  traversePostOrder(
+    rootElementId, elementsMap, childrenMap,
+    availableWidth, availableHeight, getChildElements,
+    ROOT_COMPUTED_STYLE, 'block', batch, indexMap,
+    visiting, 0,
+  );
+}
+```
+
+`traversePostOrderDirty`: dirty 집합에 포함되지 않은 서브트리는 `indexMap.has()` 가드로 스킵. 변경된 노드와 그 조상 경로만 `buildNodeStyle()` + `taffyStyleToRecord()` 호출.
+
+`collectDirtyAncestors`: dirty 요소에서 root까지의 경로를 수집 (parent_id 체인 순회).
+
+**예상 효과**: 5,000 노드 중 1개 변경 시 DFS 8~15ms → 0.1~0.5ms
 
 **ADR-005 연계**: Phase 1 (Persistent Tree + Incremental Layout)의 JS 측 최적화에 해당.
 
 **검증**:
 - 색상 변경 시 DFS 미실행 확인 (console.time 프로파일링)
-- 크기/위치 변경 시에만 DFS 실행 확인
+- 크기/위치 변경 시에만 dirty subtree DFS 실행 확인
+- 구조 변경(요소 추가/삭제) 시 full DFS 폴백 확인
+- `clearDirtyElementIds()` 후 다음 비레이아웃 변경에서 useMemo 스킵 확인
 
 ---
 
@@ -703,21 +844,67 @@ function resolveInlineBlockAlignItems(
 
 **파일**: `apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts` (라인 242-264)
 
-**현상**: 카메라 팬/줌마다 모든 요소에 O(N) `container.getBounds()` 호출. 5,000 요소 시 프레임 예산 초과.
+**현상**: 카메라 팬/줌마다 모든 요소에 O(N) `elements.filter()` + `container.getBounds()` 호출. 5,000 요소 시 프레임 예산 초과.
 
-**수정 방안** (설계 수준):
+#### Step 1: R-tree 라이브러리 도입
+
+`package.json`에 `rbush` 추가 (번들 ~6KB gzipped).
+
+#### Step 2: 레이아웃 결과 기반 R-tree 구축
+
+```typescript
+// 신규 파일 또는 useViewportCulling.ts 내부
+import RBush from 'rbush';
+
+interface LayoutItem {
+  minX: number; minY: number;
+  maxX: number; maxY: number;
+  elementId: string;
+}
+
+const tree = new RBush<LayoutItem>();
+
+// publishLayoutMap 호출 후 (layoutVersion 변경 시):
+function rebuildSpatialIndex(layoutMap: Map<string, ComputedLayout>): void {
+  const items: LayoutItem[] = [];
+  for (const [id, layout] of layoutMap) {
+    items.push({
+      minX: layout.x,
+      minY: layout.y,
+      maxX: layout.x + layout.width,
+      maxY: layout.y + layout.height,
+      elementId: id,
+    });
+  }
+  tree.clear();
+  tree.load(items);  // bulk insert O(N log N)
+}
 ```
-1. R-tree 라이브러리 도입 (rbush 또는 flatbush)
-2. 레이아웃 변경 시 R-tree 갱신 (publishLayoutMap 후)
-3. viewport query: O(log N + K) (K = 가시 요소 수)
-4. getBounds() 호출 제거 → R-tree의 AABB 직접 사용
+
+#### Step 3: Viewport query O(log N + K)
+
+```typescript
+function queryVisibleElements(viewport: ViewportBounds): string[] {
+  const results = tree.search({
+    minX: viewport.left,
+    minY: viewport.top,
+    maxX: viewport.right,
+    maxY: viewport.bottom,
+  });
+  return results.map(r => r.elementId);
+}
 ```
+
+`container.getBounds()` 호출 제거 → R-tree AABB 직접 사용.
 
 **ADR-005 연계**: Phase 4 (Element-Level Viewport Culling).
+
+**예상 효과**: 5,000 요소 카메라 팬 시 2~5ms → <0.5ms
 
 **검증**:
 - 5,000 요소 시 viewport culling 시간 < 1ms 목표
 - 카메라 팬 시 프레임 드롭 없음
+- R-tree 갱신은 layoutVersion 변경 시에만 발생 (매 프레임 아님)
 
 ---
 
@@ -727,24 +914,46 @@ function resolveInlineBlockAlignItems(
 
 **현상**: 매 증분 갱신 시 모든 노드에 `JSON.stringify(styleRecord)` + 문자열 비교. 5,000 노드 × 20+ 필드 = 상당한 CPU 비용.
 
-**수정 방안** (설계 수준):
-```
-방안 A: 구조적 해시 (MurmurHash3)
-- styleRecord → 32bit 해시
-- 비교: 숫자 비교 O(1)
-- 충돌 확률 극히 낮음 (2^32 공간)
+#### 방안: Version Counter (P3-1 연계, 권장)
 
-방안 B: Version Counter (P3-1과 연계)
-- store에서 스타일 변경 시 해당 요소의 styleVersion++
-- PersistentTaffyTree가 version 비교로 변경 감지
-- JSON.stringify 완전 제거
+P3-1에서 `layoutVersion`과 `dirtyElementIds`가 도입되면, PersistentTaffyTree의 해시 비교 자체가 대폭 축소됨:
+- dirty 노드만 `updateNodeStyle()` 호출 → JSON.stringify 횟수 감소
+- 비dirty 노드는 아예 호출하지 않음
+
+#### 독립 최적화 (P3-1 없이도 적용 가능)
+
+`styleHashMap`을 `Map<string, number>` (version counter)로 교체:
+
+```typescript
+// PersistentTaffyTree 내부
+private styleVersionMap = new Map<string, number>();
+
+updateNodeStyle(
+  elementId: string,
+  styleRecord: Record<string, unknown>,
+  styleVersion: number,  // ← Store에서 요소 스타일 변경 시 증가
+): boolean {
+  const handle = this.handleMap.get(elementId);
+  if (handle === undefined) return false;
+
+  // version 비교 O(1) — JSON.stringify 제거
+  if (this.styleVersionMap.get(elementId) === styleVersion) return false;
+
+  const json = JSON.stringify(styleRecord);  // 변경 확정 시에만 직렬화
+  this.taffy.updateStyleRaw(handle, json);
+  this.styleVersionMap.set(elementId, styleVersion);
+  return true;
+}
 ```
 
 **ADR-005 연계**: Phase 2 (Binary Protocol)의 전단계 최적화.
 
+**예상 효과**: 5,000 노드 증분 갱신 3~5ms → <0.5ms (dirty 노드만 stringify)
+
 **검증**:
 - 5,000 노드 증분 갱신 시간: 현재 ~8ms → 목표 < 2ms
-- 레이아웃 정확도 동일 (해시 충돌로 인한 스타일 누락 없음)
+- 레이아웃 정확도 동일 (version 기반이므로 충돌 불가)
+- `styleVersion` 불변 시 `JSON.stringify` 호출 없음 확인 (console.count)
 
 ---
 
@@ -779,9 +988,9 @@ P2 (중기, 3~5일) ← P1 완료 후
 └── P2-3. inline-block alignItems (P1-1 이후 권장)
 
 P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
-├── P3-1. useMemo 의존성 최적화 (dirty tracking 설계)
-├── P3-2. Viewport Culling R-tree (P3-1과 독립)
-└── P3-3. JSON.stringify 해시 대체 (P3-1과 연계 가능)
+├── P3-1. Dirty Tracking + useMemo 최적화 ← 핵심, P3-2/P3-3의 전제
+├── P3-2. Viewport Culling R-tree (P3-1 완료 후)
+└── P3-3. JSON.stringify 해시 대체 (P3-1과 연계)
 ```
 
 ---
