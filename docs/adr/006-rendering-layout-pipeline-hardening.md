@@ -55,6 +55,29 @@ ADR-005 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 - **P2-2 (HIGH)**: origin+type만으로 검증하는 `isValidBootstrapMessage`에 `expectedNonce` 파라미터 추가. 빌더가 iframe 생성 시 `crypto.randomUUID()`를 srcdoc에 주입하고, Preview `sendReady()`가 nonce를 포함하여 전송. 빌더 측에서 nonce 일치 여부로 실제 preview iframe 식별. same-origin 다른 윈도우의 선행 PREVIEW_READY가 정식 초기화를 오염시키는 문제 해소. 소비자 레벨 ready-state 중복 가드 제거 (nonce 갱신으로 이전 iframe 자동 무효화).
 - **P2-2 (MEDIUM)**: 테스트 항목 #3이 "6개 핸들러 모두 event.source/event.origin 검증"으로 되어 있었으나, 부트스트랩 메시지는 source 대신 nonce 검증. 2단계 검증(부트스트랩=nonce, 일반=source+origin)을 반영하여 테스트 항목 분리.
 
+### 3차 검토 피드백 반영 (2026-03-02 11차)
+
+- **Finding 1 (MEDIUM)**: `markDirtyWithDescendants()` 호출 예시에 `isLayoutChange` 가드 누락 → 비레이아웃 변경(color 등)도 DFS를 유발하는 것처럼 읽히는 모순 수정. `if (isLayoutChange) { ... }` 블록으로 감싸고, 비레이아웃 변경은 dirty/layoutVersion 미변경임을 주석 명시
+- **Finding 2 (LOW)**: DFS 분기 코멘트 "dirty 노드 + 조상만 재순회" → "dirty(변경 노드 + 상속 속성 변경 시 자손) + 조상 경로만 재순회"로 수정. descendant invalidation 설계와 일치
+
+### 2차 검토 피드백 반영 (2026-03-02 10차)
+
+- **Finding 1 (MEDIUM)**: `markDirtyWithDescendants`의 `childrenMap` 타입을 `Map<string, string[]>` → `ChildElementMap` (`Map<string, Element[]>`)로 수정. Store의 `childrenMap`이 `Element[]` 타입이므로 `child.id` 접근으로 변경. `ChildElementMap`/`ChildIdMap` 타입 별칭 추가하여 Store 계층 vs 레이아웃 엔진 계층 명확 구분
+- **Finding 2 (MEDIUM)**: dirty 경로 헬퍼 명칭 통일 — `collectDirtyPaths` (라인 1001) → `collectDirtyAncestors`로 변경 (라인 945와 일치)
+- **Finding 3 (LOW)**: INHERITED_LAYOUT_PROPS CRITICAL 설명에서 `color` 혼동 해소 — `color`는 CSS 상속 속성이지만 `NON_LAYOUT_PROPS`에 포함되어 DFS 미트리거임을 명시적 주석 추가
+- **Idea 1**: `ChildElementMap`/`ChildIdMap` 타입 별칭 추가 (Store vs Layout Engine 타입 구분)
+- **Idea 2**: 자동화 테스트 #5 추가 — `markDirtyWithDescendants` 속성별 개별 검증 (fontSize, lineHeight, whiteSpace, fontFamily, color 비전파 확인)
+
+### 검토 피드백 반영 (2026-03-02 9차)
+
+- **Finding 1 (HIGH)**: IframeMessenger "어디서도 import되지 않는 코드" 표현을 정밀화. `services/messaging.ts`의 `MessagingService`가 import/생성하지만 `MessagingService` 자체가 활성 코드에서 import되지 않아 "실행 경로 미연결"로 수정 (3곳: 6차 이력, isValidBootstrapMessage JSDoc, IframeMessenger 참고 섹션)
+- **Finding 2 (HIGH)**: P3-1 dirty 전략에 **descendant invalidation 규칙 추가**. `INHERITED_LAYOUT_PROPS` Set + `markDirtyWithDescendants()` 함수 명시. 부모의 font*/텍스트 상속 속성 변경 시 모든 자손을 dirty에 추가하여 intrinsic size 재계산 보장
+- **Finding 3 (MEDIUM)**: `textTransform`을 `NON_LAYOUT_PROPS`에서 **제거**. 대소문자 변환이 텍스트 폭/줄바꿈에 영향 → 레이아웃 트리거로 처리
+- **Finding 4 (LOW)**: Negative 섹션의 P3-3 "해시 충돌 가능성" → "store의 `styleVersion` 증가 누락 시 스타일 갱신 스킵 위험 (DEV 검증 가드로 감지)"으로 수정
+- **Open Question 1**: `services/messaging.ts` 정리 시점 → Open Questions 섹션에 기록
+- **Open Question 2**: P3-1 descendant invalidation 트리거 범위 → Open Questions 섹션에 기록 (container query 포함 여부)
+- **Open Question 3**: P2-2 nonce 위협 범위를 "same-origin 우발 메시지 차단"으로 한정, 설계 근거 섹션에 명시
+
 ### 코드 대조 검증 및 재설계 반영 (2026-03-02 7차)
 
 - **P0-2 (CRITICAL)**: 결과 수집 루프 라인 번호 정정: `791-815` → `903-926` (코드 추가로 밀림)
@@ -74,7 +97,7 @@ ADR-005 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 
 ### 적용 범위 및 용어 정합성 검증 반영 (2026-03-01 6차)
 
-- **P2-2 (MEDIUM)**: IframeMessenger(utils/dom/iframeMessenger.ts)가 어디서도 import되지 않는 미사용 레거시 코드임을 확인. "3개 핸들러" → "2개 활성 핸들러"(useIframeMessenger, useDeltaMessenger)로 수정. IframeMessenger 관련 nonce 적용 코드·검증 항목 제거, 레거시 정리 권장으로 대체.
+- **P2-2 (MEDIUM)**: IframeMessenger(utils/dom/iframeMessenger.ts)는 `services/messaging.ts`의 `MessagingService`가 import/생성하지만, `MessagingService` 자체가 활성 코드에서 import되지 않아 실행 경로에 연결되지 않음(모든 활성 코드는 `utils/messaging`의 `MessageService`를 사용). "3개 핸들러" → "2개 활성 핸들러"(useIframeMessenger, useDeltaMessenger)로 수정. IframeMessenger 관련 nonce 적용 코드·검증 항목 제거, 레거시 정리 권장으로 대체.
 - **P2-2 (LOW)**: Risks 섹션의 `BOOTSTRAP_MESSAGE_TYPES 갱신 필요` 문구를 nonce 기반 설계에 맞게 갱신 (시그니처 변경·레거시 정리로 교체).
 - **P2-2 (LOW)**: `generatePreviewSrcdoc`/`generateDevSrcdoc`/`generateProdSrcdoc` 시그니처 변경(`bootstrapNonce` 파라미터 추가)을 설계 근거에 명시. 현재 코드 시그니처가 단일 인자이므로 구현 누락 방지.
 
@@ -577,8 +600,10 @@ import { MessageService } from './messaging';
  *   1) useIframeMessenger — iframeReadyState + 초기 데이터 전송
  *   2) useDeltaMessenger  — isReadyRef + canvasDeltaMessenger 참조
  *
- * 참고: IframeMessenger(utils/dom/iframeMessenger.ts)는 싱글톤이 생성되나
- * 어디서도 import되지 않는 미사용 레거시 코드. nonce 적용 대상이 아님.
+ * 참고: IframeMessenger(utils/dom/iframeMessenger.ts)는 services/messaging.ts의
+ * MessagingService가 import/생성하지만, MessagingService 자체가 활성 코드에서
+ * import되지 않아 실행 경로에 연결되지 않음 (모든 활성 코드는 utils/messaging의
+ * MessageService를 사용). nonce 적용 대상이 아님.
  * 별도 정리(삭제 또는 리팩토링)를 권장.
  *
  * source 체크 대신 nonce를 사용하는 이유:
@@ -659,9 +684,11 @@ const handleNavigateMessage = async (event: MessageEvent) => {
 ```
 
 **IframeMessenger(utils/dom/iframeMessenger.ts) 참고**:
-- 싱글톤(`export const iframeMessenger`)이 모듈 로드 시 생성되나, **어디서도 import되지 않는 미사용 레거시 코드**.
+- `services/messaging.ts`의 `MessagingService`가 import/생성(`new IframeMessenger()`)하지만, `MessagingService` 자체가 활성 코드에서 import되지 않아 **실행 경로에 연결되지 않음** (모든 활성 코드는 `utils/messaging`의 `MessageService`를 사용).
 - `initMessageListener()`가 자동 실행되어 `window.addEventListener('message', ...)`를 등록하지만, 활성 소비자가 없으므로 nonce 적용 대상이 아님.
-- 정리 권장: `MessagingService`(services/messaging.ts)와 함께 삭제 또는 활성 경로로 리팩토링.
+- 정리 권장: `MessagingService`(services/messaging.ts)와 `IframeMessenger`(utils/dom/iframeMessenger.ts)를 함께 삭제 또는 활성 경로로 리팩토링. 향후 재활성화 계획 여부에 따라 결정.
+
+**위협 범위**: nonce 모델은 **same-origin 우발 메시지 차단**(다른 탭/윈도우의 선행 PREVIEW_READY가 정식 초기화를 오염시키는 문제)을 주 목적으로 한다. 동일 출처 XSS를 통한 의도적 nonce 탈취는 별도 XSS 방어 레이어(CSP, 입력 새니타이즈 등)에서 통제하며, 이 ADR의 범위 밖이다.
 
 **설계 근거**:
 - **nonce 기반 출처 보증**: `isValidBootstrapMessage`에 `expectedNonce` 파라미터로 실제 preview iframe 식별. source 체크의 race condition 문제(contentWindow 교체 타이밍)를 nonce로 우회. same-origin 다른 윈도우는 nonce를 모르므로 가짜 PREVIEW_READY 자체가 차단됨
@@ -793,7 +820,7 @@ const NON_LAYOUT_PROPS = new Set([
   'animation', 'animationName', 'animationDuration',
   // 텍스트 장식 (크기 비영향)
   'textDecoration', 'textDecorationColor', 'textDecorationStyle',
-  'textTransform',  // 대소문자 변환은 폭 변경 가능하나 극히 드묾 — 필요 시 제거
+  // 주의: textTransform은 대소문자 변환으로 텍스트 폭/줄바꿈에 영향 → 제외 (레이아웃 트리거로 처리)
   // z-index (페인트 순서만)
   'zIndex',
   // 기타 시각적
@@ -907,7 +934,7 @@ export function calculateFullTreeLayout(
 DFS 분기:
 ```typescript
 if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
-  // Incremental path: dirty 노드 + 조상만 재순회
+  // Incremental path: dirty(변경 노드 + 상속 속성 변경 시 자손) + 조상 경로만 재순회
   const dirtyAncestors = collectDirtyAncestors(dirtyElementIds, elementsMap);
   traversePostOrderDirty(
     rootElementId, elementsMap, childrenMap,
@@ -926,9 +953,90 @@ if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
 }
 ```
 
-`traversePostOrderDirty`: dirty 집합에 포함되지 않은 서브트리는 `indexMap.has()` 가드로 스킵. 변경된 노드와 그 조상 경로만 `buildNodeStyle()` + `taffyStyleToRecord()` 호출.
+`traversePostOrderDirty`: dirty 집합에 포함되지 않은 서브트리는 `indexMap.has()` 가드로 스킵. 변경된 노드와 그 **조상 + 자손** 경로를 `buildNodeStyle()` + `taffyStyleToRecord()` 호출.
 
 `collectDirtyAncestors`: dirty 요소에서 root까지의 경로를 수집 (parent_id 체인 순회).
+
+**상속 영향 속성 변경 시 descendant invalidation 규칙**:
+
+> **CRITICAL**: CSS에서 `font*`, `lineHeight`, `letterSpacing`, `wordSpacing`, `textAlign`, `direction`, `whiteSpace`, `wordBreak` 등은 자식에게 상속되어 intrinsic size에 영향을 줄 수 있다. 부모의 이러한 속성 변경이 dirty tracking에서 해당 부모만 dirty로 마킹하면, 자식의 텍스트 측정값이 stale → 레이아웃 불일치 발생. (참고: `color`는 CSS 상속 속성이지만 레이아웃 크기에 무관하므로 `NON_LAYOUT_PROPS`에 포함되어 DFS 자체를 트리거하지 않음 — 여기에는 포함하지 않음.)
+
+```typescript
+/**
+ * 상속 속성 변경 시 자손까지 dirty 전파가 필요한 속성.
+ * 이 속성이 변경되면 해당 요소의 모든 자손을 dirtyElementIds에 추가.
+ */
+const INHERITED_LAYOUT_PROPS = new Set([
+  'fontSize', 'fontFamily', 'fontWeight', 'fontStyle',
+  'lineHeight', 'letterSpacing', 'wordSpacing',
+  'whiteSpace', 'wordBreak', 'overflowWrap',
+  'textAlign', 'direction', 'writingMode',
+]);
+
+/**
+ * 타입 별칭: Store와 레이아웃 엔진의 childrenMap 형태 구분
+ *   - ChildElementMap: Store 계층 (Map<string, Element[]>) — 요소 객체 참조
+ *   - ChildIdMap: 레이아웃 엔진 계층 (Map<string, string[]>) — ID 문자열
+ * markDirtyWithDescendants는 Store 계층에서 호출되므로 ChildElementMap 사용.
+ */
+type ChildElementMap = Map<string, Element[]>;
+type ChildIdMap = Map<string, string[]>;
+
+function markDirtyWithDescendants(
+  elementId: string,
+  changedProps: Record<string, unknown>,
+  childrenMap: ChildElementMap,
+  dirtySet: Set<string>,
+): void {
+  dirtySet.add(elementId);
+
+  // 상속 속성이 변경된 경우 → 모든 자손도 dirty
+  const hasInheritedChange = Object.keys(changedProps)
+    .some(k => INHERITED_LAYOUT_PROPS.has(k));
+
+  if (hasInheritedChange) {
+    const queue = [elementId];
+    while (queue.length > 0) {
+      const parentId = queue.pop()!;
+      const children = childrenMap.get(parentId) ?? [];
+      for (const child of children) {
+        dirtySet.add(child.id);
+        queue.push(child.id);
+      }
+    }
+  }
+}
+```
+
+Store의 요소 변경 액션에서 `markDirtyWithDescendants()` 사용:
+```typescript
+// updateElementStyle 등 내부:
+const isLayoutChange = isLayoutAffecting(changedStyleProps);
+
+if (isLayoutChange) {
+  const dirtyIds = new Set(state.dirtyElementIds);
+  markDirtyWithDescendants(elementId, changedStyleProps, state.childrenMap, dirtyIds);
+  set({ dirtyElementIds: dirtyIds, layoutVersion: state.layoutVersion + 1 });
+}
+// 비레이아웃 변경(color, opacity 등)은 dirtyElementIds/layoutVersion 미변경 → DFS 미트리거
+```
+
+`traversePostOrderDirty` 분기 갱신:
+```typescript
+if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
+  // dirty 노드 = 변경된 요소 + 조상 + 상속 속성 변경 시 자손
+  const dirtyPaths = collectDirtyAncestors(dirtyElementIds, elementsMap);
+  // dirtyPaths = dirty 노드 + 조상 경로 (자손은 이미 dirtyElementIds에 포함)
+  traversePostOrderDirty(..., dirtyPaths);
+} else {
+  traversePostOrder(...);  // Full path
+}
+```
+
+**참고**: `INHERITED_LAYOUT_PROPS`와 `NON_LAYOUT_PROPS`의 관계:
+- `NON_LAYOUT_PROPS`에 포함된 `color`는 레이아웃 비영향 → DFS 자체가 스킵됨
+- `INHERITED_LAYOUT_PROPS`는 **DFS가 트리거된 후** dirty 범위를 확장하는 용도
+- 두 Set의 교집합은 없어야 함 (교집합 존재 시 DFS가 트리거되지 않아 자손 전파도 안 됨)
 
 **예상 효과**: 5,000 노드 중 1개 변경 시 DFS 8~15ms → 0.1~0.5ms
 
@@ -1271,6 +1379,13 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
    - 부트스트랩(PREVIEW_READY): nonce 일치 시 2개 활성 핸들러(useIframeMessenger, useDeltaMessenger) 모두 통과, nonce 불일치 시 모두 거부 (source 검증 대신 nonce 사용)
    - 일반 메시지: 6개 핸들러에서 `event.source`/`event.origin` 이중 검증 (특히 `BuilderCore.tsx` 2곳 + `useWebVitals.ts`)
 4. `fullTreeLayout` order 테스트: `order` 속성이 있는 flex 자식의 `sortedChildIds` 순서 + batch children 인덱스 순서 검증 (TS 레벨 sort, WASM bridge 무관)
+5. `markDirtyWithDescendants` 상속 속성 테스트 (속성별 개별 검증):
+   - `fontSize` 변경 → 자손 텍스트 노드 dirty 전파 확인
+   - `lineHeight` 변경 → 자손 높이 재계산 확인
+   - `whiteSpace` 변경 (`normal` → `nowrap`) → 자손 줄바꿈 재측정 확인
+   - `fontFamily` 변경 → 자손 글리프 폭 재측정 확인
+   - `color` 변경 → dirty 전파 **미발생** 확인 (NON_LAYOUT_PROPS이므로 DFS 미트리거)
+   - 상속 + 비상속 동시 변경 (예: `fontSize` + `backgroundColor`) → 자손 전파 O, DFS 트리거 O
 
 ### P3 성능 검증
 
@@ -1292,7 +1407,7 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 ### Negative
 - P0~P2: 추가 코드량 적음 (~100줄), 유지보수 비용 미미
 - P3: 아키텍처 변경 필요 (dirty tracking, SpatialIndex 좌표계 전환), 복잡도 증가
-- P3-3 해시 대체: 충돌 가능성 (극히 낮지만 존재)
+- P3-3 version counter 대체: store의 `styleVersion` 증가 누락 시 스타일 갱신이 스킵될 위험 (DEV 검증 가드로 감지)
 
 ### Risks & Mitigations
 
@@ -1302,16 +1417,24 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 | P1-2 (WASM 백오프) | 15초 타임아웃 적절성 | **없음** — 폴링 방식만 변경 | 실환경 검증 필요 |
 | P2-2 (메시지 검증) | nonce 복잡도 증가, 시그니처 변경 | **없음** — 메시지 필터링만 | 레거시 정리 시점 결정 필요 |
 | P2-3 (inline-block) | vertical-align 동적 결정 | **없음** — 미명시 시 기존 `center` 유지 | 하위 호환성 보장 (`explicitAligns.length === 0` → `'center'`) |
-| P3-1 (dirty tracking) | 블랙리스트 오분류 | **블랙리스트 방식으로 근본 차단** — 미등록 속성은 자동 layout 트리거 | DEV 검증 가드: full DFS 결과 교차 비교 |
+| P3-1 (dirty tracking) | 블랙리스트 오분류 + 상속 속성 자손 전파 | **블랙리스트 방식으로 근본 차단** + `INHERITED_LAYOUT_PROPS` 변경 시 descendant invalidation | DEV 검증 가드: full DFS 결과 교차 비교 |
 | P3-2 (SpatialIndex) | 가시성 판단 오류 | **없음** — 레이아웃 계산에 무관, 가시성만 영향 | Feature flag 즉시 롤백 + DEV 교차 검증 |
 | P3-3 (해시 대체) | version counter 불일치 | **없음** — version 증가 시 반드시 stringify 실행 | DEV 가드: version 스킵 시 JSON 교차 비교 |
 
 **레이아웃 안전성 종합**:
 - **P0~P1**: 방어 코드 추가 + 버그 수정. 기존 레이아웃에 영향 없음
 - **P2-3**: 하위 호환성 보장 — `vertical-align` 미명시 시 기존 `center` 유지
-- **P3-1**: 화이트리스트 → **블랙리스트 전환**으로 속성 누락 위험 근본 제거. DEV 모드 교차 검증으로 오분류 즉시 감지
+- **P3-1**: 화이트리스트 → **블랙리스트 전환**으로 속성 누락 위험 근본 제거. **상속 속성(font\*, lineHeight 등) 변경 시 자손까지 dirty 전파** (`INHERITED_LAYOUT_PROPS` + `markDirtyWithDescendants()`). DEV 모드 교차 검증으로 오분류 즉시 감지
 - **P3-2**: 레이아웃 계산 무관 (가시성만). Feature flag으로 즉시 롤백 가능
 - **P3-3**: version counter는 store의 `layoutVersion`과 연동. 변경 시 반드시 stringify 실행
+
+---
+
+## Open Questions
+
+1. **`services/messaging.ts` 정리 시점**: `MessagingService`는 `IframeMessenger`를 import/생성하지만 활성 코드에서 import되지 않아 실행 경로 미연결 상태. 향후 재활성화 계획이 있는지, 아니면 레거시 정리 대상인지 확인 필요.
+2. **P3-1 descendant invalidation 범위**: `INHERITED_LAYOUT_PROPS`(font\*, lineHeight 등) 외에 CSS container query 영향 속성(`containerType`, `containIntrinsicSize` 등)까지 포함할지 합의 필요. 현재 프로젝트에서 container query 미사용 시 font/text 관련 속성만으로 충분.
+3. **P2-2 nonce 보안 기대치**: "same-origin 우발 메시지 차단"으로 한정하여 문서에 명시 완료 (설계 근거 섹션). 동일 출처 XSS는 별도 CSP/입력 새니타이즈에서 통제.
 
 ---
 

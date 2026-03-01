@@ -267,19 +267,164 @@ useQuickConnect:
 
 ---
 
-## 구현 순서
+## 구현 계획
 
-1. Spec shapes 빈 상태 검증 (6개 컴포넌트)
-2. PixiListBox/PixiList fallback 분기 처리 (dataBinding 유무 기반, 또는 fallback 제거)
-3. Factory 변경: 기본 아이템 제거
-4. Empty state 추가: `renderEmptyState` prop (ListBox, GridList, Select, ComboBox, Menu) + Table은 `rows.length === 0` 분기 placeholder `<tr>` 렌더링
-5. useQuickConnect 훅 생성
-6. QuickConnectButton 컴포넌트 + CSS 생성
-7. ListBoxEditor 리팩토링 + Quick Connect 통합
-8. TableEditor 통합 (기존 `ADD_COLUMN_ELEMENTS` 파이프라인 활용, 재실행 시 Column + ColumnGroup replace 로직)
-9. GridListEditor, SelectEditor, ComboBoxEditor, MenuEditor 통합
-10. export index 파일 업데이트 (`hooks/index.ts` + `components/property/index.ts` + `components/index.ts`)
-11. 타입 체크 (`cd apps/builder && pnpm exec tsc --noEmit`)
+총: 수정 18파일 + 신규 3파일 = 21파일
+
+```
+Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
+ (검증)    (기반)    (핵심)    (통합)    (마무리)
+```
+
+Phase 3-A (hook)와 3-B (UI)는 병렬 가능. Phase 4-A → 4-B → 4-C 순차.
+
+---
+
+### Phase 1: 검증 및 준비
+
+#### 1-A. Spec shapes 빈 상태 분석 — 수정 불필요
+
+Factory 아이템 제거 시 `_hasChildren=false` → spec이 자체 placeholder 렌더링:
+- ListBox.spec: `['Item 1','Item 2','Item 3']` 자체 렌더링
+- GridList.spec: `DEFAULT_ITEMS` 4개
+- Menu.spec: `['Edit','Copy','Paste','---','Delete']`
+- Select/ComboBox: Label+Trigger 구조적 자식이 남아 `_hasChildren=true` 유지
+- Table: `CHILD_COMPOSITION_EXCLUDE_TAGS`에 포함, `DEFAULT_COLUMNS/ROWS` 하드코딩
+
+Canvas에서 "비어 보이는" 현상 없음. Spec 수정 불필요.
+
+#### 1-B. PixiListBox/PixiList fallback 분기 처리
+
+| 파일 | 수정 위치 | 변경 |
+|------|----------|------|
+| `apps/builder/src/builder/workspace/canvas/ui/PixiListBox.tsx` | L114~118 (fallback 반환부) | `element.props?.dataBinding` 존재 시 빈 배열 `[]` 반환, 없으면 기존 하드코딩 유지 |
+| `apps/builder/src/builder/workspace/canvas/ui/PixiList.tsx` | L56~63 (`parseListItems` fallback) | `props?.dataBinding` 존재 시 빈 배열 반환 |
+
+---
+
+### Phase 2: Factory 및 Empty State
+
+#### 2-A. Factory 기본 아이템 제거
+
+**`apps/builder/src/builder/factories/definitions/SelectionComponents.ts`**:
+| 라인 | 대상 | 변경 후 |
+|------|------|--------|
+| L80~89 | SelectItem ×1 | children = [Label, SelectTrigger] |
+| L172~181 | ComboBoxItem ×1 | children = [Label, ComboBoxWrapper] |
+| L213~244 | ListBoxItem ×3 | children = [] |
+| L274~315 | GridListItem ×4 | children = [] |
+
+**`apps/builder/src/builder/factories/definitions/NavigationComponents.ts`**:
+| 라인 | 대상 | 변경 후 |
+|------|------|--------|
+| L41~66 | MenuItem ×3 | children = [] |
+
+#### 2-B. 공유 컴포넌트 Empty State 추가
+
+| 파일 (`packages/shared/src/components/`) | 적용 방식 | 주요 수정 위치 |
+|---|---|---|
+| `ListBox.tsx` | `<AriaListBox renderEmptyState={...}>` | L554~558 등 모든 AriaListBox 호출부 |
+| `GridList.tsx` | `<AriaGridList renderEmptyState={...}>` | L289~293 등 |
+| `Select.tsx` | 내부 `<ListBox renderEmptyState={...}>` | L321~327 (popup ListBox) |
+| `ComboBox.tsx` | 내부 `<ListBox renderEmptyState={...}>` | L155, 253, 309, 392 등 |
+| `Menu.tsx` | `<Menu renderEmptyState={...}>` | L403 등 모든 Menu 호출부 |
+| `Table.tsx` | `<tbody>` 내 `rows.length === 0` 분기 placeholder `<tr>` | L1359 (rowVirtualizer.map 앞) |
+
+Empty state 메시지: `"데이터를 연결하세요"` (`.collection-empty-state` 클래스)
+
+---
+
+### Phase 3: Core Hook 및 UI
+
+#### 3-A. useQuickConnect 훅 — 신규 생성
+
+**`apps/builder/src/builder/hooks/useQuickConnect.ts`**
+
+핵심 로직:
+1. `useDataStore.getState()`로 stale closure 방지
+2. 이름 고유성: `name.trim().toLowerCase()` 기준 중복 검사 → suffix
+3. `createDataTable()` → `await onDataBindingChange(newBinding)`
+4. 실패 시 롤백: `onDataBindingChange(prevBinding)` → `deleteDataTable(id)` (UUID)
+5. preset이 null이면 빈 테이블 생성
+
+재사용할 기존 코드:
+- `useDataStore`: `stores/data.ts` — `createDataTable`, `deleteDataTable`, `dataTables`, `currentProjectId`
+- `DataTableCreate` 타입: `types/builder/data.types.ts` L82~86
+- `DataTablePreset` / `PRESET_CATEGORIES`: `panels/datatable/presets/index.ts`
+
+#### 3-B. QuickConnectButton — 신규 생성 (2파일)
+
+**`apps/builder/src/builder/components/property/QuickConnectButton.tsx`** + **`.css`**
+
+UI 구조 (`ActionTypePicker` 패턴 참조):
+```
+DialogTrigger
+  ├── Button "[Zap] Quick Connect"
+  └── Popover (280px, @xstudio/shared/components/Popover)
+      ├── 검색 input
+      └── ListBox
+          ├── "빈 테이블" 옵션
+          ├── 구분선
+          └── PRESET_CATEGORIES 5개 × DATATABLE_PRESETS
+```
+
+CSS: `@layer components { }` + BEM-like + M3 변수
+
+---
+
+### Phase 4: 에디터 통합
+
+#### 4-A. ListBoxEditor 리팩토링
+
+**`apps/builder/src/builder/panels/properties/editors/ListBoxEditor.tsx`**
+
+제거:
+- `inferFieldType` (L108~125), `handleAutoGenerateFields` (L128~223)
+- `existingFields`, `templateItem`, `getChildElements` 관련 코드
+- Auto-Generate 버튼 UI (L609~649)
+- `handleDataBindingChange`의 Field 삭제 confirm 로직 (L278~293) → 단순화
+
+추가: `useQuickConnect` 훅 + `<QuickConnectButton>` (PropertyDataBinding 위에)
+
+#### 4-B. TableEditor 통합 (Column replace 포함)
+
+**`apps/builder/src/builder/panels/properties/editors/TableEditor.tsx`**
+
+추가:
+- `useQuickConnect` 훅 호출
+- `handleQuickConnect` 래퍼: 기존 Column+ColumnGroup 있으면 confirm → `removeElements(ids)` → `quickConnect(preset)` → `ADD_COLUMN_ELEMENTS` 파이프라인 자동 트리거
+- `<QuickConnectButton onQuickConnect={handleQuickConnect}>` (Data Binding 섹션 L306~313)
+
+재사용: `removeElements` (`elements.ts` L113), `columnCreationRequestedRef` 자동 초기화 (수동 reset 불필요)
+
+#### 4-C. 나머지 4개 에디터 — 동일 패턴
+
+| 파일 | componentTag | Data Binding 섹션 |
+|------|-------------|-----------------|
+| `GridListEditor.tsx` | `'GridList'` | L213~220 |
+| `SelectEditor.tsx` | `'Select'` | L421~432 (useMemo) |
+| `ComboBoxEditor.tsx` | `'ComboBox'` | L399~410 (useMemo) |
+| `MenuEditor.tsx` | `'Menu'` | L70~77 |
+
+각 에디터에 추가: import + `useQuickConnect` 훅 + `<QuickConnectButton>` (PropertyDataBinding 위)
+
+---
+
+### Phase 5: 마무리
+
+#### 5-A. Barrel Export 업데이트
+
+| 파일 | 추가 내용 |
+|------|----------|
+| `hooks/index.ts` | `export { useQuickConnect } from './useQuickConnect'` (Data Management 카테고리 L19 부근) |
+| `components/property/index.ts` | `export { QuickConnectButton } from './QuickConnectButton'` (L12 이후) |
+| `components/index.ts` | `QuickConnectButton` re-export 추가 (L23 PropertyDataBinding 다음) |
+
+#### 5-B. 타입 체크
+
+```bash
+cd apps/builder && pnpm exec tsc --noEmit
+```
 
 ---
 
