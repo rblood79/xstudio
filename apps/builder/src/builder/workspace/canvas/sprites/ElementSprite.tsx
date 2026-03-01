@@ -1550,8 +1550,20 @@ export const ElementSprite = memo(function ElementSprite({
       );
 
     case 'checkboxItem':
-      // CheckboxGroup의 자식이면 투명 hit area만 렌더링
+      // CheckboxGroup의 자식이면 투명 hit area + children 렌더링
       if (isCheckboxInGroup) {
+        if (childElements && childElements.length > 0 && renderChildElement) {
+          return (
+            <>
+              <PixiCheckboxItem
+                element={effectiveElement}
+                isSelected={isSelected}
+                onClick={onClick}
+              />
+              {childElements.map((childEl) => renderChildElement(childEl))}
+            </>
+          );
+        }
         return (
           <PixiCheckboxItem
             element={effectiveElement}
@@ -1581,6 +1593,18 @@ export const ElementSprite = memo(function ElementSprite({
       );
 
     case 'radioItem':
+      if (childElements && childElements.length > 0 && renderChildElement) {
+        return (
+          <>
+            <PixiRadioItem
+              element={effectiveElement}
+              isSelected={isSelected}
+              onClick={onClick}
+            />
+            {childElements.map((childEl) => renderChildElement(childEl))}
+          </>
+        );
+      }
       return (
         <PixiRadioItem
           element={effectiveElement}

@@ -222,6 +222,17 @@ export function createCheckboxGroupDefinition(
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
+        children: [
+          {
+            tag: "Label",
+            props: {
+              children: "Option 1",
+              style: { fontSize: 14, backgroundColor: 'transparent' },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
       {
         tag: "Checkbox",
@@ -237,6 +248,17 @@ export function createCheckboxGroupDefinition(
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
+        children: [
+          {
+            tag: "Label",
+            props: {
+              children: "Option 2",
+              style: { fontSize: 14, backgroundColor: 'transparent' },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
     ],
   };
@@ -285,6 +307,17 @@ export function createRadioGroupDefinition(
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
+        children: [
+          {
+            tag: "Label",
+            props: {
+              children: "Option 1",
+              style: { fontSize: 14, backgroundColor: 'transparent' },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
       {
         tag: "Radio",
@@ -300,6 +333,17 @@ export function createRadioGroupDefinition(
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
+        children: [
+          {
+            tag: "Label",
+            props: {
+              children: "Option 2",
+              style: { fontSize: 14, backgroundColor: 'transparent' },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
     ],
   };

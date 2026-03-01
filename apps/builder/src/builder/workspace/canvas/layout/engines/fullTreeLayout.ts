@@ -438,13 +438,34 @@ function traversePostOrder(
     );
   }
 
+  // 3.5. Synthetic children (e.g., `xxx__synlabel` from applyImplicitStyles) 처리
+  // elementsMap에 없는 자식(Radio/Checkbox/Switch/Toggle의 합성 Label)을
+  // leaf 노드로 Taffy 트리에 추가하여 레이아웃을 계산받게 한다.
+  // 이를 통해 BuilderCanvas의 renderChildElement가 fullTreeLayoutMap에서 레이아웃을 조회 가능.
+  for (const synthChild of filteredChildren) {
+    if (elementsMap.has(synthChild.id) || indexMap.has(synthChild.id)) continue;
+
+    const synthStyle = (synthChild.props?.style ?? {}) as Record<string, unknown>;
+    const synthComputed = resolveStyle(synthStyle, computedStyle);
+    const isSynthFlexChild = FLEX_GRID_DISPLAYS.has(effectiveDisplay);
+    const synthEnriched = enrichWithIntrinsicSize(
+      synthChild, childAvail.width, childAvail.height,
+      synthComputed, [], getChildElements, isSynthFlexChild,
+    );
+    const synthRecord = buildNodeStyle(synthEnriched, synthComputed, [], effectiveDisplay);
+    batch.push({ style: synthRecord, children: [], elementId: synthChild.id });
+    indexMap.set(synthChild.id, batch.length - 1);
+  }
+
   // 4. enrichWithIntrinsicSize: intrinsic 크기 주입
   // CSS height:auto 일반 규칙:
   //   A. 컨테이너 (Taffy 자식 있음) → Taffy가 자식 border-box + padding + border로 자동 계산
   //   B. 리프 (Taffy 자식 없음) → intrinsic height 주입 (텍스트 측정 / spec shapes)
   const isFlexChild = parentDisplay === 'flex' || parentDisplay === 'inline-flex';
   const childElements = getChildElements(elementId);
-  const hasTaffyChildren = childIds.length > 0;
+  // hasTaffyChildren: 실제 Taffy 노드로 처리된 자식이 있는지 확인
+  // synthetic children도 이제 indexMap에 포함되므로 정상적으로 true 반환
+  const hasTaffyChildren = childIds.some(id => indexMap.has(id));
 
   // 모든 노드에 대해 전체 enrichment 수행 (width 등 유지)
   let enriched: Element = enrichWithIntrinsicSize(

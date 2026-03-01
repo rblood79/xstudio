@@ -31,6 +31,13 @@ const SPEC_PADDING: Record<string, { x: number; y: number }> = {
   lg: { x: 16, y: 12 },
 };
 
+/** Checkbox/Radio indicator 크기 (spec shapes 렌더링, Taffy 트리 밖) */
+const INDICATOR_SIZES: Record<string, { box: number; gap: number }> = {
+  sm: { box: 16, gap: 6 },
+  md: { box: 20, gap: 8 },
+  lg: { box: 24, gap: 10 },
+};
+
 /** Synthetic Label을 생성하는 태그 */
 const SYNTHETIC_LABEL_TAGS = new Set(['radio', 'checkbox', 'switch', 'toggle']);
 
@@ -287,6 +294,20 @@ export function applyImplicitStyles(
         }
       }
       return child;
+    });
+  }
+
+  // ── Checkbox / Radio — indicator 공간 확보 ─────────────────────────
+  // Indicator는 spec shapes로 렌더링 (Taffy 트리 밖).
+  // Label 자식이 indicator와 겹치지 않도록 paddingLeft 주입.
+  if (containerTag === 'checkbox' || containerTag === 'radio') {
+    const sizeName = (containerProps?.size as string) ?? 'md';
+    const indicator = INDICATOR_SIZES[sizeName] ?? INDICATOR_SIZES.md;
+    const indicatorOffset = indicator.box + indicator.gap;
+    const curStyle = (effectiveParent.props?.style || {}) as Record<string, unknown>;
+    effectiveParent = withParentStyle(effectiveParent, {
+      ...curStyle,
+      paddingLeft: (curStyle.paddingLeft as number | undefined) ?? indicatorOffset,
     });
   }
 

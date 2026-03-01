@@ -88,6 +88,15 @@ export function beginRenderEffects(
               : scope.track(ck.ImageFilter.MakeErode(-effect.spread, -effect.spread, null));
           }
 
+          if (import.meta.env.DEV) {
+            console.log('[Skia Effects] MakeDropShadow params:', {
+              dx: effect.dx, dy: effect.dy,
+              sigmaX: effect.sigmaX, sigmaY: effect.sigmaY,
+              color: Array.from(effect.color),
+              inner: effect.inner, spread: effect.spread,
+            });
+          }
+
           const filter = scope.track(
             ck.ImageFilter.MakeDropShadow(
               effect.dx,
