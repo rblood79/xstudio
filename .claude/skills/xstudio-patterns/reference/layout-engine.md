@@ -203,6 +203,70 @@ Select, ComboBox 등 복합 컴포넌트를 자식 Element 트리 구조로 전�
 // - enrichment: spec shapes 경로 (padding 미추가, 전체 시각적 높이 반환)
 ```
 
+### Full-Tree WASM Layout 좌표계 규칙 (2026-03-01)
+
+fullTreeLayout 모드에서 Taffy WASM은 전체 트리를 한 번에 계산합니다. 이때 `layout.location`(x/y)은 **부모의 content-box 원점** 기준이며, 부모의 padding+border가 이미 반영된 좌표입니다.
+
+#### Taffy layout.location 좌표 원칙
+
+```
+┌─── Parent border-box ─────────────────┐
+│ border                                │
+│  ┌─── Parent padding ──────────────┐  │
+│  │ padding                         │  │
+│  │  ┌─── Child (0,0) ───────────┐  │  │
+│  │  │ layout.location = (0,0)   │  │  │
+│  │  └───────────────────────────┘  │  │
+│  └─────────────────────────────────┘  │
+└───────────────────────────────────────┘
+
+Taffy layout.location은 부모 content-box 기준.
+→ 부모 padding=20이면, child의 실제 화면 좌표 = parent.x + 20 + child.location.x
+→ Taffy가 이미 padding offset을 좌표에 반영하므로 수동 추가는 이중 적용.
+```
+
+#### BuilderCanvas padding offset — 3개 위치 영점 처리
+
+per-level 엔진(TaffyFlex/DropflowBlock)은 `setupParentDimensions()`에서 부모 padding을 0으로 리셋하고, BuilderCanvas가 수동으로 padding offset을 추가합니다. fullTreeLayout은 실제 padding을 유지하므로 수동 offset이 **이중 적용**됩니다.
+
+| 위치 | 변수명 | per-level 엔진 | fullTreeLayout |
+|------|--------|---------------|----------------|
+| 1. Body 레벨 (ElementsLayer) | `contentOffsetX/Y` | `bodyBorder + bodyPadding` | **0** |
+| 2. 비-body 부모 (renderWithCustomEngine) | `paddingOffsetX/Y` | `parentPadding.left/top` | **0** |
+| 3. 중첩 컨테이너 (createContainerChildRenderer) | `cachedPadding` | `parsePadding(parentStyle)` | **{0,0,0,0}** |
+
+```typescript
+// ✅ fullTreeLayout: 모든 padding offset = 0 (Taffy가 좌표에 포함)
+const contentOffsetX = fullTreeLayoutMap ? 0 : bodyBorder.left + bodyPadding.left;
+const paddingOffsetX = (isBodyParent || fullTreeLayoutMap) ? 0 : parentPadding.left;
+// cachedPadding: fullTreeLayout 분기에서 기본값 {0,0,0,0} 유지
+
+// ❌ fullTreeLayout에서도 수동 offset 추가 → padding 이중 적용
+// body padding=20 → child가 40px 떨어져 렌더링, hitarea 불일치
+```
+
+#### DFS post-order implicit style batch patching (step 3.6)
+
+fullTreeLayout의 `traversePostOrder`는 자식을 **먼저** 처리하고 부모를 나중에 처리합니다.
+부모의 `applyImplicitStyles`가 자식 스타일을 수정(marginLeft, flex:1 등)해도, 자식의 Taffy batch entry는 이미 생성된 후입니다.
+
+**해결**: step 3.5(synthetic label) 직후 step 3.6에서 `patchBatchStyleFromImplicit()`로 이미 생성된 batch entry를 패치합니다.
+
+```typescript
+// step 3.6: applyImplicitStyles가 수정한 실제 자식의 batch entry 패치
+for (const filteredChild of filteredChildren) {
+  const batchIdx = indexMap.get(filteredChild.id);
+  if (batchIdx === undefined) continue;
+  const originalEl = elementsMap.get(filteredChild.id);
+  if (!originalEl) continue;
+  // 원본과 수정본의 style 참조가 동일하면 변경 없음 → 스킵
+  if (filteredChild.props?.style === originalEl.props?.style) continue;
+  patchBatchStyleFromImplicit(batch[batchIdx].style, origStyle, modStyle);
+}
+```
+
+**영향 범위**: Checkbox/Radio → Label(marginLeft), Card → CardHeader/CardContent(width:'100%'), CardHeader → Heading(flex:1) 등 모든 implicit style injection이 fullTreeLayout에서 정확히 반영됩니다.
+
 ### 레이아웃 엔진 개선 이력 (2026-02-23)
 
 #### line-height 이중 전략: normal vs 1.5 (2026-02-23)

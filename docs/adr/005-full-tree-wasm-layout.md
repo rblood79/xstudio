@@ -4,7 +4,7 @@
 In Progress (Foundation 완료 + Phase 0~2 구현 완료, CSS 일반 규칙 적용 완료, Dropflow 제거 완료)
 
 ## Date
-2026-02-27 (최종 업데이트: 2026-03-01)
+2026-02-27 (최종 업데이트: 2026-03-02)
 
 ## Decision Makers
 XStudio Team
@@ -596,6 +596,96 @@ if (parentDisplay === 'grid' || parentDisplay === 'inline-grid') {
   }
 }
 ```
+
+#### P0-U4: Padding 이중 적용 수정 (2026-03-02)
+
+**문제**: fullTreeLayout 활성 시 부모 요소에 padding을 설정하면 자식의 hit area(선택 영역)가 시각적 렌더링 위치보다 padding만큼 더 이동하여 불일치가 발생했다.
+
+**근본 원인**: Taffy WASM의 `layout.location`은 부모의 **border-box** 기준 좌표를 반환한다. 즉, 자식의 `location.x`에 부모의 `padding + border` 오프셋이 이미 포함되어 있다. 그러나 BuilderCanvas의 세 곳에서 이 오프셋을 수동으로 추가하여 이중 적용되었다.
+
+| 위치 | per-level 엔진 | fullTreeLayout |
+|------|---------------|---------------|
+| `contentOffsetX/Y` (body) | border + padding | **0** (Taffy가 이미 포함) |
+| `paddingOffsetX/Y` (renderWithCustomEngine) | padding | **0** |
+| `cachedPadding` (createContainerChildRenderer) | padding | **0** |
+
+**per-level 엔진과의 차이**: per-level 엔진은 `setupParentDimensions()`로 부모 Taffy 노드의 padding/border를 0으로 리셋한다. 따라서 Taffy가 반환하는 자식 위치에 padding이 포함되지 않으며, BuilderCanvas에서 수동 오프셋이 필요하다.
+
+**결정**: `fullTreeLayoutMap` 존재 여부로 분기하여, fullTreeLayout 활성 시 모든 수동 padding/border 오프셋을 0으로 설정한다.
+
+```typescript
+// BuilderCanvas.tsx — body 자식 위치 오프셋
+const contentOffsetX = fullTreeLayoutMap ? 0 : bodyBorder.left + bodyPadding.left;
+const contentOffsetY = fullTreeLayoutMap ? 0 : bodyBorder.top + bodyPadding.top;
+
+// renderWithCustomEngine — 비-body 부모 자식 위치
+const paddingOffsetX = (isBodyParent || fullTreeLayoutMap) ? 0 : parentPadding.left;
+
+// createContainerChildRenderer — 중첩 컨테이너 자식 위치
+if (fullTreeLayoutMap) {
+  cachedLayoutMap = fullTreeLayoutMap;
+  // cachedPadding = {0,0,0,0} (기본값 유지)
+} else {
+  cachedPadding = parsePadding(parentStyle, containerWidth);
+}
+```
+
+**핵심 원칙**: Taffy `layout.location` = 부모 border-box 기준 좌표 (padding + border 포함). fullTreeLayout은 Taffy의 좌표를 그대로 사용하고, per-level은 수동 오프셋으로 보정한다.
+
+#### P0-U5: Implicit Child Style Override 패치 (2026-03-02)
+
+**문제**: `applyImplicitStyles()`가 실제 자식 요소의 스타일을 변경(예: Checkbox→Label에 marginLeft 주입, CardHeader→Heading에 flex:1 주입)하더라도, fullTreeLayout DFS post-order에서 자식이 부모보다 먼저 처리되므로 수정된 스타일이 Taffy batch에 반영되지 않았다.
+
+**근본 원인**: DFS post-order 순서:
+1. Label 처리 → 원본 스타일로 batch 엔트리 생성 (marginLeft 없음)
+2. Checkbox 처리 → `applyImplicitStyles()` → Label에 marginLeft 주입
+3. 그러나 Label의 batch 엔트리는 이미 생성됨
+
+**결정**: step 3.5 (synthetic children) 이후에 step 3.6을 추가하여, `applyImplicitStyles`가 수정한 실제 자식의 스타일 변경사항을 `patchBatchStyleFromImplicit()`로 batch 엔트리에 패치한다.
+
+```typescript
+// fullTreeLayout.ts — step 3.6
+for (const filteredChild of filteredChildren) {
+  const batchIdx = indexMap.get(filteredChild.id);
+  if (batchIdx === undefined) continue;
+  const originalEl = elementsMap.get(filteredChild.id);
+  if (!originalEl) continue;
+  // props.style 참조 비교 — 동일하면 applyImplicitStyles가 수정하지 않은 것
+  if (filteredChild.props?.style === originalEl.props?.style) continue;
+  patchBatchStyleFromImplicit(batch[batchIdx].style, origStyle, modStyle);
+}
+```
+
+`patchBatchStyleFromImplicit`은 변경된 CSS 속성을 `taffyStyleToRecord` 형식으로 변환하여 patch한다:
+- dimension 속성 (`marginLeft`, `width` 등): `number → "${v}px"`, `string → 그대로`
+- `flex` shorthand: `flexGrow/flexShrink/flexBasis` 분해
+- numeric 속성 (`flexGrow`, `flexShrink`, `order`): `Number(val)`
+
+#### P0-U6: CheckboxGroup/RadioGroup Compositional Architecture (2026-03-02)
+
+**변경**: CheckboxGroup/RadioGroup을 Compositional Architecture로 전환.
+
+**트리 구조**:
+```
+CheckboxGroup (flex column, gap) → Checkbox (flex row, gap:8) → Label
+RadioGroup (flex column, gap) → Radio (flex row, gap:8) → Label
+```
+
+**Checkbox/Radio indicator 공간 확보**:
+- Indicator는 spec shapes로 렌더링 (Taffy 트리 밖)
+- Label 자식에 `marginLeft = indicatorBox + gap`을 주입하여 겹침 방지
+- `gap`은 사용자 스타일 패널 값 우선 (`parseFloat(parentStyle.gap)`)
+- `paddingLeft` 방식은 fullTreeLayout Taffy + BuilderCanvas cachedPadding 이중 적용 문제로 사용 불가
+
+**INDICATOR_SIZES** (spec shapes 기준):
+
+| size | box | gap | indicatorOffset |
+|------|-----|-----|----------------|
+| sm | 16px | 6px | 22px |
+| md | 20px | 8px | 28px |
+| lg | 24px | 10px | 34px |
+
+**Synthetic Label**: 기존 DB 요소(Label 자식 없음)를 위해 `applyImplicitStyles`에서 합성 Label을 생성하고, fullTreeLayout step 3.5에서 Taffy leaf 노드로 추가.
 
 ---
 

@@ -718,10 +718,17 @@ const ElementsLayer = memo(function ElementsLayer({
           let parentStyle = effectiveContainerEl.props?.style as Record<string, unknown> | undefined;
           let filteredContainerChildren = implicitChildren;
 
-          cachedPadding = parsePadding(parentStyle, containerWidth);
-
           // ADR-005: Full-Tree Layout — 전체 맵에서 O(1) 조회
-          cachedLayoutMap = fullTreeLayoutMap ?? new Map();
+          if (fullTreeLayoutMap) {
+            cachedLayoutMap = fullTreeLayoutMap;
+            // fullTreeLayout: Taffy가 부모 padding/border를 자식 location에 이미 포함.
+            // cachedPadding을 추가하면 이중 적용됨 → 0으로 유지.
+          } else {
+            // per-level 폴백: setupParentDimensions()가 padding=0 리셋하므로
+            // BuilderCanvas에서 cachedPadding 수동 오프셋 필요.
+            cachedPadding = parsePadding(parentStyle, containerWidth);
+            cachedLayoutMap = new Map();
+          }
         }
 
         const layout = cachedLayoutMap.get(childEl.id);
@@ -969,9 +976,10 @@ const ElementsLayer = memo(function ElementsLayer({
           ? parentContentHeight - parentPadding.top - parentPadding.bottom
           : -1;  // RC-1 sentinel: height:auto → WASM이 MaxContent로 처리
 
-      // Body 자식 위치: root container가 이미 offset 적용 → 0
-      const paddingOffsetX = isBodyParent ? 0 : parentPadding.left;
-      const paddingOffsetY = isBodyParent ? 0 : parentPadding.top;
+      // fullTreeLayout: Taffy가 부모 padding/border를 자식 location에 이미 포함 → offset 불필요.
+      // per-level 폴백: setupParentDimensions()가 padding=0 리셋하므로 수동 offset 필요.
+      const paddingOffsetX = (isBodyParent || fullTreeLayoutMap) ? 0 : parentPadding.left;
+      const paddingOffsetY = (isBodyParent || fullTreeLayoutMap) ? 0 : parentPadding.top;
 
       // ADR-005: Full-Tree Layout — 전체 맵에서 O(1) 조회
       const layoutMap: Map<string, ComputedLayout> = fullTreeLayoutMap ?? new Map();
@@ -1060,8 +1068,10 @@ const ElementsLayer = memo(function ElementsLayer({
   const bodyPadding = useMemo(() => parsePadding(bodyStyle, pageWidth), [bodyStyle, pageWidth]);
 
   // 자식 시작 위치 오프셋 (border + padding 안쪽)
-  const contentOffsetX = bodyBorder.left + bodyPadding.left;
-  const contentOffsetY = bodyBorder.top + bodyPadding.top;
+  // fullTreeLayout: Taffy가 부모 padding+border를 자식 location에 이미 포함 → 0.
+  // per-level 폴백: setupParentDimensions()가 padding=0 리셋하므로 수동 offset 필요.
+  const contentOffsetX = fullTreeLayoutMap ? 0 : bodyBorder.left + bodyPadding.left;
+  const contentOffsetY = fullTreeLayoutMap ? 0 : bodyBorder.top + bodyPadding.top;
 
   return (
     <pixiContainer

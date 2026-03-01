@@ -1,5 +1,53 @@
 # Compositional Architecture Patterns
 
+#### CheckboxGroup/RadioGroup Compositional 전환 패턴 (2026-03-02)
+
+CheckboxGroup/RadioGroup은 Card/Select와 동일한 Compositional 패턴을 적용합니다.
+
+**트리 구조**:
+```
+CheckboxGroup (flex column, gap:12) → Checkbox (flex row, gap:8) → Label
+RadioGroup (flex column, gap:12) → Radio (flex row, gap:8) → Label
+```
+
+**Checkbox/Radio indicator 공간 확보 — marginLeft 방식**:
+
+Indicator는 spec shapes(Taffy 트리 밖)로 렌더링됩니다. Label 자식에 `marginLeft`를 주입하여 indicator와 겹치지 않도록 합니다.
+
+```typescript
+// implicitStyles.ts — Checkbox/Radio 섹션
+const parsedGap = parseFloat(String(parentStyle.gap ?? ''));
+const userGap = !isNaN(parsedGap) ? parsedGap : indicator.gap;
+const indicatorOffset = indicator.box + userGap;
+
+// Label 자식에 marginLeft 주입 (사용자 값 우선)
+filteredChildren = filteredChildren.map(child => ({
+  ...child,
+  props: { ...child.props, style: { ...cs, marginLeft: cs.marginLeft ?? indicatorOffset } },
+}));
+```
+
+**CRITICAL — paddingLeft가 아닌 marginLeft을 사용하는 이유**:
+
+| 방식 | fullTreeLayout | per-level | 결론 |
+|------|---------------|-----------|------|
+| 부모 `paddingLeft` | Taffy width 팽창 + BuilderCanvas cachedPadding 이중 적용 | 정상 | ❌ |
+| 자식 `marginLeft` | Taffy가 단일 경로로 위치/크기 계산 | 정상 | ✅ |
+
+**INDICATOR_SIZES** (spec shapes 기준):
+
+| size | box | gap | indicatorOffset |
+|------|-----|-----|----------------|
+| sm | 16px | 6px | 22px |
+| md | 20px | 8px | 28px |
+| lg | 24px | 10px | 34px |
+
+**gap 반응성**: `parentStyle.gap`을 `parseFloat()`로 파싱하여 사용자 스타일 패널 변경이 실시간 반영됩니다. 스타일 패널은 값을 `string`으로 저장하므로 `typeof === 'number'` 체크 대신 `parseFloat()` 필수.
+
+**Synthetic Label**: 기존 DB 요소(Label 자식 없음)를 위해 `applyImplicitStyles`에서 합성 Label 생성 + fullTreeLayout step 3.5에서 Taffy leaf 노드로 추가하여 하위 호환성 보장.
+
+---
+
 #### ComboBox Compositional 전환 패턴 (2026-02-27)
 
 ComboBox는 Select와 동일한 시각적 구조를 가지므로 **기존 Select Spec을 재사용**합니다.
