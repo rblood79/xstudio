@@ -185,16 +185,16 @@ export const BuilderCore: React.FC = () => {
         return new Set<Key>([savedBreakpoint]);
       } catch (error) {
         console.warn("Failed to parse saved breakpoint:", error);
-        return new Set<Key>(["screen"]);
+        return new Set<Key>(["desktop"]);
       }
     }
-    return new Set<Key>(["screen"]);
+    return new Set<Key>(["desktop"]);
   });
 
   const [breakpoints] = useState<Breakpoint[]>([
-    { id: "screen", label: "Screen", max_width: "100%", max_height: "100%" },
-    { id: "desktop", label: "Desktop", max_width: 1280, max_height: 1080 },
-    { id: "tablet", label: "Tablet", max_width: 1024, max_height: 800 },
+    { id: "desktop", label: "Desktop", max_width: 1920, max_height: 1080 },
+    { id: "laptop", label: "Laptop", max_width: 1440, max_height: 900 },
+    { id: "tablet", label: "Tablet", max_width: 768, max_height: 1024 },
     { id: "mobile", label: "Mobile", max_width: 390, max_height: 844 },
   ]);
 

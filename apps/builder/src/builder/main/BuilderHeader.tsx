@@ -6,9 +6,9 @@ import {
   Redo,
   Play,
   Monitor,
+  Laptop,
   Tablet,
   Smartphone,
-  Asterisk,
   Activity,
   GitBranch,
   Settings,
@@ -113,15 +113,15 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
         >
           {breakpoints.map((bp) => (
             <ToggleButton id={bp.id} key={bp.id} aria-label={bp.label}>
-              {bp.id === "screen" && (
-                <Asterisk
+              {bp.id === "desktop" && (
+                <Monitor
                   color={iconProps.color}
                   strokeWidth={iconProps.strokeWidth}
                   size={iconProps.size}
                 />
               )}
-              {bp.id === "desktop" && (
-                <Monitor
+              {bp.id === "laptop" && (
+                <Laptop
                   color={iconProps.color}
                   strokeWidth={iconProps.strokeWidth}
                   size={iconProps.size}

@@ -748,6 +748,27 @@ export function calculateFullTreeLayout(
 
   if (batch.length === 0) return null;
 
+  // ── Step 1.5: Body(root) 요소에 breakpoint 페이지 크기 명시 ─────────
+  // CSS height:auto → block 요소는 콘텐츠 높이에 맞춤 (body 높이 = 24px 문제)
+  // 빌더 특수 케이스: body 크기 = breakpoint 토글 크기
+  // → 자식의 width/height:100%가 페이지 크기 기준으로 계산되도록 보장
+  //
+  // NOTE: availableWidth/Height는 content-box (pageWidth - padding - border)
+  //       Taffy style.size = border-box → padding/border 포함한 전체 페이지 크기 필요
+  const rootIdx = indexMap.get(rootElementId);
+  if (rootIdx !== undefined) {
+    const rootEl = elementsMap.get(rootElementId);
+    if (rootEl && rootEl.tag.toLowerCase() === 'body') {
+      const rootStyle = (rootEl.props?.style ?? {}) as Record<string, unknown>;
+      const bp = parsePadding(rootStyle, availableWidth);
+      const bb = parseBorder(rootStyle);
+      const pageW = availableWidth + bp.left + bp.right + bb.left + bb.right;
+      const pageH = availableHeight + bp.top + bp.bottom + bb.top + bb.bottom;
+      batch[rootIdx].style.width = `${pageW}px`;
+      batch[rootIdx].style.height = `${pageH}px`;
+    }
+  }
+
   // ── Step 2: filteredChildIds 맵 구성 (batch 인덱스 → elementId 변환) ──
   const filteredChildIdsMap = new Map<string, string[]>();
   for (const node of batch) {
