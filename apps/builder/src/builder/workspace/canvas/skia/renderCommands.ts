@@ -206,7 +206,13 @@ export function buildRenderCommandStream(
     const offsetX = pagePos?.x ?? 0;
     const offsetY = pagePos?.y ?? 0;
 
-    visitElement(bodyId, offsetX, offsetY, commands, boundsMap, childrenMap, layoutMap);
+    if (process.env.NODE_ENV === 'development') {
+      const hasLayout = layoutMap.has(bodyId);
+      const childCount = childrenMap.get(bodyId)?.length ?? 0;
+      console.log(`[buildRenderCommandStream] body=${bodyId.slice(0,8)}, pos=(${offsetX},${offsetY}), hasLayout=${hasLayout}, children=${childCount}, hasPagePos=${!!pagePos}`);
+    }
+
+    visitElement(bodyId, offsetX, offsetY, commands, boundsMap, childrenMap, layoutMap, offsetX, offsetY);
   }
 
   return { commands, boundsMap };
@@ -214,6 +220,9 @@ export function buildRenderCommandStream(
 
 /**
  * DFS pre-order 순회: 단일 element를 커맨드 스트림으로 변환.
+ *
+ * @param cmdOffsetX - 커맨드의 x에 추가할 오프셋 (페이지 오프셋용, 루트 호출에만 전달)
+ * @param cmdOffsetY - 커맨드의 y에 추가할 오프셋 (페이지 오프셋용, 루트 호출에만 전달)
  */
 function visitElement(
   elementId: string,
@@ -223,6 +232,8 @@ function visitElement(
   boundsMap: Map<string, BoundingBox>,
   childrenMap: Map<string, Element[]>,
   layoutMap: Map<string, ComputedLayout>,
+  cmdOffsetX: number = 0,
+  cmdOffsetY: number = 0,
 ): void {
   const skiaData = getSkiaNode(elementId);
   if (!skiaData) return;
@@ -249,10 +260,12 @@ function visitElement(
   boundsMap.set(elementId, { x: absX, y: absY, width, height });
 
   // ELEMENT_BEGIN
+  // cmdOffsetX/Y: 페이지 오프셋 (루트 body 호출 시에만 non-zero)
+  // canvas.translate()에 페이지 위치가 반영되어야 다중 페이지가 올바른 위치에 렌더링됨
   commands.push({
     type: CMD_ELEMENT_BEGIN,
-    x: relX,
-    y: relY,
+    x: relX + cmdOffsetX,
+    y: relY + cmdOffsetY,
     width,
     height,
     elementId,

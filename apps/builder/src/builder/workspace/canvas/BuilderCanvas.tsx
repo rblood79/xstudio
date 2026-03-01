@@ -40,7 +40,6 @@ import { TextEditOverlay, useTextEdit } from "../overlay";
 // 사용자 컨텐츠 레이아웃은 Taffy WASM 단일 엔진이 처리 (ADR-005)
 import {
   calculateFullTreeLayout,
-  resetPersistentTree,
   publishLayoutMap,
   parsePadding,
   parseBorder,
@@ -674,7 +673,8 @@ const ElementsLayer = memo(function ElementsLayer({
       (id: string) => pageChildrenMap.get(id) ?? [],
     );
     // Phase 3: SkiaOverlay에서 접근할 수 있도록 공유
-    publishLayoutMap(result);
+    // Multi-page: 페이지별 저장 (bodyElement.page_id로 구분)
+    publishLayoutMap(result, bodyElement.page_id);
     if (import.meta.env.DEV && !result) {
       console.warn('[Phase1] Full-tree layout failed, falling back to per-level');
     }
@@ -1166,11 +1166,6 @@ export function BuilderCanvas({
   const batchUpdateElements = useStore((state) => state.batchUpdateElements);
   const currentPageId = useStore((state) => state.currentPageId);
   const setCurrentPageId = useStore((state) => state.setCurrentPageId);
-
-  // Phase 2: 페이지 전환 시 persistent Taffy tree 리셋
-  useEffect(() => {
-    resetPersistentTree();
-  }, [currentPageId]);
 
   // Settings state (SettingsPanel 연동)
   const snapToGrid = useStore((state) => state.snapToGrid);

@@ -29,41 +29,75 @@ import { useScrollState } from '../../../../stores/scrollState';
 /** flex/grid container 판별 집합 (CSS Blockification 적용 기준) */
 const FLEX_GRID_DISPLAYS = new Set(['flex', 'inline-flex', 'grid', 'inline-grid']);
 
-// ─── 모듈 싱글톤 (PersistentTaffyTree) ──────────────────────────────
+// ─── 페이지별 PersistentTaffyTree ──────────────────────────────────
 
 /**
- * Persistent Taffy 트리 싱글톤.
+ * 페이지별 Persistent Taffy 트리 맵.
  *
- * Phase 2: clear() 없이 WASM 트리를 유지하며,
- * 변경된 노드만 updateStyle / setChildren으로 증분 갱신한다.
+ * 멀티페이지 캔버스에서 각 페이지의 ElementsLayer가 독립적으로
+ * calculateFullTreeLayout()을 호출하므로, 싱글톤 트리는
+ * 마지막 페이지의 rootHandle만 남아 다른 페이지 레이아웃이 깨진다.
+ *
+ * pageId별로 별도의 PersistentTaffyTree를 유지하여 해결한다.
  */
-let persistentTree: PersistentTaffyTree | null = null;
+const persistentTrees = new Map<string, PersistentTaffyTree>();
 
 /**
  * Persistent 트리 리셋.
  *
- * 페이지 전환 등 전체 트리 재구축이 필요한 경우 호출한다.
- * 다음 calculateFullTreeLayout() 호출에서 초기 빌드(Path A)가 수행된다.
+ * 전체 트리 재구축이 필요한 경우 호출한다.
+ * 특정 pageId를 전달하면 해당 페이지만, 생략하면 모든 페이지를 리셋한다.
  */
-export function resetPersistentTree(): void {
-  persistentTree?.reset();
-  persistentTree = null;
+export function resetPersistentTree(pageId?: string): void {
+  if (pageId) {
+    const tree = persistentTrees.get(pageId);
+    if (tree) {
+      tree.reset();
+      persistentTrees.delete(pageId);
+    }
+  } else {
+    for (const tree of persistentTrees.values()) {
+      tree.reset();
+    }
+    persistentTrees.clear();
+  }
 }
 
 // ─── 공유 Layout Map (Phase 3: SkiaOverlay에서 접근) ────────────────
+// Multi-page: 페이지별 저장 → 머지 읽기 패턴
+// 각 페이지의 ElementsLayer가 독립적으로 publish 호출.
+// 싱글톤이면 마지막 페이지 데이터만 남아 다른 페이지 렌더링 실패.
 
-let _sharedLayoutMap: Map<string, ComputedLayout> | null = null;
+const _perPageLayoutMaps = new Map<string, Map<string, ComputedLayout>>();
 let _sharedLayoutVersion = 0;
+let _mergedLayoutMap: Map<string, ComputedLayout> | null = null;
+let _mergedLayoutVersion = -1;
 
-/** fullTreeLayoutMap을 SkiaOverlay에서 접근 가능하도록 공유한다. */
-export function publishLayoutMap(map: Map<string, ComputedLayout> | null): void {
-  _sharedLayoutMap = map;
+/** fullTreeLayoutMap을 페이지 단위로 공유한다. */
+export function publishLayoutMap(map: Map<string, ComputedLayout> | null, pageId?: string): void {
+  const key = pageId ?? '__default__';
+  if (map) {
+    _perPageLayoutMaps.set(key, map);
+  } else {
+    _perPageLayoutMaps.delete(key);
+  }
   _sharedLayoutVersion++;
+  if (import.meta.env.DEV) {
+    console.log(`[publishLayoutMap] pageId=${key}, entries=${map?.size ?? 0}, totalPages=${_perPageLayoutMaps.size}, version=${_sharedLayoutVersion}`);
+  }
 }
 
-/** 공유된 fullTreeLayoutMap 조회 */
+/** 공유된 fullTreeLayoutMap 조회 (모든 페이지 머지, 버전 캐시) */
 export function getSharedLayoutMap(): Map<string, ComputedLayout> | null {
-  return _sharedLayoutMap;
+  if (_perPageLayoutMaps.size === 0) return null;
+  if (_mergedLayoutVersion === _sharedLayoutVersion) return _mergedLayoutMap;
+  const merged = new Map<string, ComputedLayout>();
+  for (const pageMap of _perPageLayoutMaps.values()) {
+    for (const [k, v] of pageMap) merged.set(k, v);
+  }
+  _mergedLayoutMap = merged;
+  _mergedLayoutVersion = _sharedLayoutVersion;
+  return merged;
 }
 
 /** 공유 Layout Map 변경 버전 */
@@ -72,16 +106,35 @@ export function getSharedLayoutVersion(): number {
 }
 
 // ─── 공유 Filtered Children Map (Fix 1: 트리 소스 일원화) ────────────
-let _sharedFilteredChildrenMap: Map<string, string[]> | null = null;
+// Multi-page: 동일 페이지별 저장 패턴
 
-/** filteredChildIdsMap을 SkiaOverlay 커맨드 스트림에서 접근 가능하도록 공유 */
-export function publishFilteredChildrenMap(map: Map<string, string[]> | null): void {
-  _sharedFilteredChildrenMap = map;
+const _perPageFilteredMaps = new Map<string, Map<string, string[]>>();
+let _filteredVersion = 0;
+let _mergedFilteredMap: Map<string, string[]> | null = null;
+let _mergedFilteredVersion = -1;
+
+/** filteredChildIdsMap을 페이지 단위로 공유 */
+export function publishFilteredChildrenMap(map: Map<string, string[]> | null, pageId?: string): void {
+  const key = pageId ?? '__default__';
+  if (map) {
+    _perPageFilteredMaps.set(key, map);
+  } else {
+    _perPageFilteredMaps.delete(key);
+  }
+  _filteredVersion++;
 }
 
-/** 공유된 filteredChildIdsMap 조회 */
+/** 공유된 filteredChildIdsMap 조회 (모든 페이지 머지, 버전 캐시) */
 export function getSharedFilteredChildrenMap(): Map<string, string[]> | null {
-  return _sharedFilteredChildrenMap;
+  if (_perPageFilteredMaps.size === 0) return null;
+  if (_mergedFilteredVersion === _filteredVersion) return _mergedFilteredMap;
+  const merged = new Map<string, string[]>();
+  for (const pageMap of _perPageFilteredMaps.values()) {
+    for (const [k, v] of pageMap) merged.set(k, v);
+  }
+  _mergedFilteredMap = merged;
+  _mergedFilteredVersion = _filteredVersion;
+  return merged;
 }
 
 // ─── 내부 유틸리티 ───────────────────────────────────────────────────
@@ -720,13 +773,21 @@ export function calculateFullTreeLayout(
   // WASM 가용성 확인
   if (!isRustWasmReady()) return null;
 
+  // 루트 요소 존재 확인
+  const rootEl = elementsMap.get(rootElementId);
+  if (!rootEl) return null;
+
+  // 페이지별 persistent tree 조회/생성
+  const pageId = rootEl.page_id ?? '__default__';
+  let persistentTree = persistentTrees.get(pageId);
   if (!persistentTree) {
     persistentTree = new PersistentTaffyTree();
+    persistentTrees.set(pageId, persistentTree);
+    if (import.meta.env.DEV) {
+      console.log(`[fullTreeLayout] New PersistentTree for page=${pageId}, root=${rootElementId}, total trees=${persistentTrees.size}`);
+    }
   }
   if (!persistentTree.isAvailable) return null;
-
-  // 루트 요소 존재 확인
-  if (!elementsMap.has(rootElementId)) return null;
 
   // ── Step 1: DFS post-order 순회 → 배치 배열 구성 ──────────────────
   //    (항상 수행 — implicit style, enrichment, CSS resolve 필요)
@@ -779,7 +840,9 @@ export function calculateFullTreeLayout(
   }
 
   // Fix 1: 트리 소스 일원화 — filteredChildIdsMap 공유
-  publishFilteredChildrenMap(filteredChildIdsMap);
+  // Multi-page: rootElement의 page_id로 페이지별 저장
+  const rootPageId = elementsMap.get(rootElementId)?.page_id;
+  publishFilteredChildrenMap(filteredChildIdsMap, rootPageId ?? undefined);
 
   // ── Step 3: 초기 빌드 또는 증분 갱신 ──────────────────────────────
   try {
@@ -864,8 +927,8 @@ export function calculateFullTreeLayout(
     if (import.meta.env.DEV) {
       console.error('[fullTreeLayout] WASM failed:', err);
     }
-    // 에러 시 persistent tree 리셋 → 다음 프레임에 초기 빌드(Path A) 재시도
-    resetPersistentTree();
+    // 에러 시 해당 페이지의 persistent tree만 리셋 → 다음 프레임에 초기 빌드(Path A) 재시도
+    resetPersistentTree(pageId);
     return null;
   }
   // Phase 1: finally { taffy.clear() } 제거 — persistent tree 유지
