@@ -1,34 +1,6 @@
 ---
-name: 수진
-description: |
-  Use this agent when you need to debug issues, track down bugs, analyze performance problems, or investigate crashes. Examples:
-
-  <example>
-  Context: User reports a bug
-  user: "Canvas에서 요소가 렌더링되지 않아"
-  assistant: "I'll use the debugger agent to investigate the rendering issue."
-  <commentary>
-  Bug investigation requires systematic root cause analysis with Opus reasoning.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User reports performance degradation
-  user: "Canvas FPS가 30 이하로 떨어져"
-  assistant: "I'll use the debugger agent to profile and analyze the performance bottleneck."
-  <commentary>
-  Performance debugging requires deep analysis of rendering pipeline and state updates.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User encounters a crash or error
-  user: "이 에러가 왜 발생하는지 모르겠어"
-  assistant: "I'll use the debugger agent to trace the error's root cause."
-  <commentary>
-  Error tracing needs systematic investigation across multiple layers.
-  </commentary>
-  </example>
+name: debugger
+description: Debugs issues, tracks down bugs, analyzes performance problems, and investigates crashes in XStudio. Use when the user reports rendering bugs, FPS drops, state management errors, or communication failures.
 model: opus
 color: red
 ---

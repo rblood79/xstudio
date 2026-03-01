@@ -1,34 +1,6 @@
 ---
-name: 은서
-description: |
-  Use this agent when you need to refactor code, restructure modules, migrate patterns, or improve code organization. Examples:
-
-  <example>
-  Context: User wants to refactor a module
-  user: "이 모듈을 리팩토링해줘"
-  assistant: "I'll use the refactorer agent to analyze and restructure the module."
-  <commentary>
-  Refactoring requires deep understanding of dependencies and impact analysis.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User wants to migrate to a new pattern
-  user: "이 컴포넌트들을 새 패턴으로 전환해줘"
-  assistant: "I'll use the refactorer agent to plan and execute the pattern migration."
-  <commentary>
-  Pattern migration across multiple files needs careful impact analysis.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User wants to restructure file organization
-  user: "폴더 구조를 재구성하고 싶어"
-  assistant: "I'll use the refactorer agent to restructure the codebase."
-  <commentary>
-  File restructuring affects imports, indexes, and must maintain all invariants.
-  </commentary>
-  </example>
+name: refactorer
+description: Refactors code, restructures modules, migrates patterns, and improves code organization for XStudio. Use when the user asks to refactor modules, migrate to new patterns, or restructure file organization.
 model: opus
 color: magenta
 ---

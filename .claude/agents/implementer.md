@@ -1,34 +1,6 @@
 ---
 name: implementer
-description: |
-  Use this agent when you need to implement new features, create components, write business logic, or integrate APIs. Examples:
-
-  <example>
-  Context: User wants a new feature implemented
-  user: "새 컴포넌트를 만들어줘"
-  assistant: "I'll use the implementer agent to build the component."
-  <commentary>
-  Feature implementation is a standard coding task suited for Sonnet.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User wants to add functionality
-  user: "드래그 앤 드롭 기능을 추가해줘"
-  assistant: "I'll use the implementer agent to implement the drag and drop feature."
-  <commentary>
-  Feature addition following established patterns.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User wants API integration
-  user: "Supabase에서 데이터를 가져오는 서비스를 만들어줘"
-  assistant: "I'll use the implementer agent to create the data service."
-  <commentary>
-  Service implementation following existing Supabase patterns.
-  </commentary>
-  </example>
+description: Implements new features, creates components, writes business logic, and integrates APIs for XStudio. Use when the user asks to build components, add functionality, or create service integrations.
 model: sonnet
 color: green
 ---
