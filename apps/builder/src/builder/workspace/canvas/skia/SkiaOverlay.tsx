@@ -47,7 +47,6 @@ import { calculateCombinedBounds } from '../selection/types';
 import type { BoundingBox, DragState } from '../selection/types';
 import { watchContextLoss } from './createSurface';
 import { flushWasmMetrics, recordWasmMetric } from '../utils/gpuProfilerCore';
-import { isFullTreeLayoutEnabled } from '../../../../utils/featureFlags';
 import { getSharedLayoutMap, getSharedLayoutVersion, getSharedFilteredChildrenMap } from '../layout/engines/fullTreeLayout';
 import { getCachedCommandStream, invalidateCommandStreamCache, executeRenderCommands, buildAIBoundsFromStream } from './renderCommands';
 
@@ -675,16 +674,8 @@ export function SkiaOverlay({
 
       if (cancelled) return;
 
-      // CanvasKit + 폰트 준비 완료 → layout-flow TextShaper + TextMeasurer 초기화
+      // CanvasKit + 폰트 준비 완료 → TextMeasurer 초기화
       if (skiaFontManager.getFamilies().length > 0) {
-        try {
-          const { initCanvasKitShaper } = await import(
-            '../layout/canvaskit-shaper'
-          );
-          initCanvasKitShaper();
-        } catch (e) {
-          console.warn('[SkiaOverlay] CanvasKit Shaper 초기화 실패:', e);
-        }
         try {
           const { CanvasKitTextMeasurer } = await import(
             '../utils/canvaskitTextMeasurer'
@@ -937,7 +928,7 @@ export function SkiaOverlay({
 
       // ── Phase 3: Command Stream vs Tree 분기 ──────────────────────────
       const sharedLayoutMap = getSharedLayoutMap();
-      const useCommandStream = isFullTreeLayoutEnabled() && sharedLayoutMap !== null;
+      const useCommandStream = sharedLayoutMap !== null;
 
       let treeBoundsMap: Map<string, BoundingBox>;
       let nodeBoundsMap: Map<string, AIEffectNodeBounds> | null = null;

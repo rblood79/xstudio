@@ -1,7 +1,7 @@
 # ADR-005: Figma-Class Rendering & Layout Architecture
 
 ## Status
-In Progress (Foundation + Phase 0~2 구현 완료, CSS 일반 규칙 적용 완료, Dropflow 제거 미완료)
+In Progress (Foundation 완료 + Phase 0~2 구현 완료, CSS 일반 규칙 적용 완료, Dropflow 제거 완료)
 
 ## Date
 2026-02-27 (최종 업데이트: 2026-03-01)
@@ -1327,10 +1327,10 @@ Week 2: ✅ 완료
   - [x] calculateContentHeight 브랜치별 Taffy Block 호환 검증
   - [x] enrichWithIntrinsicSize block 경로 검증
 
-Week 2.5: ⬜ 미완료
-  - [ ] Dropflow 전체 제거 (~5,700 LOC) — packages/layout-flow/, DropflowBlockEngine.ts
-  - [ ] Feature flag 제거 (TaffyBlockEngine 기본값)
-  - [ ] 관련 import/reference 정리
+Week 2.5: ✅ 완료 (2026-03-01)
+  - [x] Dropflow 전체 제거 (~5,700 LOC) — packages/layout-flow/, DropflowBlockEngine.ts
+  - [x] Feature flag 제거 (VITE_USE_TAFFY_BLOCK, VITE_USE_FULL_TREE_LAYOUT)
+  - [x] 관련 import/reference 정리 (canvaskit-shaper.ts, per-level 폴백 경로)
 ```
 
 ### Phase 0 (2주) ✅ 완료

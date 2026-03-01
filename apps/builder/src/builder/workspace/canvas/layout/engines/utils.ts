@@ -1751,7 +1751,7 @@ export function parseBoxModel(
 }
 
 // ---------------------------------------------------------------------------
-// Intrinsic Size 주입 (§6 P1: DropflowBlockEngine + TaffyFlexEngine 공유)
+// Intrinsic Size 주입 (§6 P1: Taffy 엔진 공유)
 // ---------------------------------------------------------------------------
 
 /**

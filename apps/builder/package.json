@@ -35,7 +35,6 @@
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.19",
     "@types/three": "^0.183.1",
-    "@xstudio/layout-flow": "workspace:*",
     "@xstudio/publish": "workspace:*",
     "@xstudio/shared": "workspace:*",
     "@xstudio/specs": "workspace:*",

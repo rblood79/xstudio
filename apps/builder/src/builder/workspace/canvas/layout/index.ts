@@ -1,13 +1,10 @@
 /**
  * Layout Module
  *
- * 엔진 라우팅:
- * - flex/inline-flex  → TaffyFlexEngine (Taffy WASM)
- * - grid/inline-grid  → TaffyGridEngine (Taffy WASM)
- * - block/inline 등   → DropflowBlockEngine
+ * ADR-005: Taffy WASM 단일 엔진 (fullTreeLayout)
  *
  * @since 2025-12-11 Phase 11 B2
- * @updated 2026-02-17 Phase 9A - 레거시 엔진 삭제, 디스패처 단순화
+ * @updated 2026-03-01 ADR-005 Foundation 완료 - Dropflow 제거, 단일 엔진 전환
  */
 
 // Grid Layout (Custom)
@@ -30,13 +27,8 @@ export {
   type GridLayoutProps,
 } from './GridLayout.utils';
 
-// 엔진 디스패처 + 유틸리티 re-export
+// 엔진 유틸리티 re-export
 export {
-  // 엔진 선택 및 계산
-  selectEngine,
-  calculateChildrenLayout,
-  // BFC 확인
-  createsBFC,
   // 유틸리티
   parseMargin,
   parsePadding,

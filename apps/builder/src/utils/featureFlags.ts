@@ -32,10 +32,6 @@ export interface FeatureFlags {
   renderMode: RenderMode;
   /** Fill V2: 다중 Fill 레이어 + 색상 모드 전환 (Color Picker Phase 1) */
   fillV2: boolean;
-  /** Taffy Block 엔진 활성화 (ADR-005 Foundation) */
-  taffyBlock: boolean;
-  /** Full-Tree WASM Layout 활성화 (ADR-005 Phase 0) */
-  fullTreeLayout: boolean;
 }
 
 // ============================================
@@ -169,40 +165,6 @@ export function isFillV2Enabled(): boolean {
   return parseBoolean(import.meta.env.VITE_FEATURE_FILL_V2, false);
 }
 
-// ============================================
-// Taffy Block Engine Feature Flag (ADR-005 Foundation)
-// ============================================
-
-/**
- * Taffy Block 엔진 활성화 여부 (ADR-005 Foundation)
- *
- * display:block / inline-block / inline / flow-root 레이아웃을
- * Dropflow 대신 Taffy WASM으로 계산합니다.
- *
- * @returns true if Taffy Block engine should be used
- */
-export function isTaffyBlockEnabled(): boolean {
-  return parseBoolean(import.meta.env.VITE_USE_TAFFY_BLOCK, false);
-}
-
-// ============================================
-// Full-Tree WASM Layout Feature Flag (ADR-005 Phase 0)
-// ============================================
-
-/**
- * Full-Tree WASM Layout 활성화 여부 (ADR-005 Phase 0)
- *
- * 레벨별 독립 Taffy 호출 대신 단일 build_tree_batch() → compute_layout()
- * → get_layouts_batch() 호출로 전체 트리 레이아웃을 계산합니다.
- *
- * DEV 모드에서 활성화하면 기존 per-level 결과와 비교 로깅을 수행합니다.
- *
- * @returns true if full-tree WASM layout should be used
- */
-export function isFullTreeLayoutEnabled(): boolean {
-  return parseBoolean(import.meta.env.VITE_USE_FULL_TREE_LAYOUT, false);
-}
-
 /**
  * 모든 Feature Flags 조회
  *
@@ -223,8 +185,6 @@ export function getFeatureFlags(): FeatureFlags {
     wasmLayoutEngine: true,
     renderMode: 'skia' as RenderMode,
     fillV2: parseBoolean(import.meta.env.VITE_FEATURE_FILL_V2, false),
-    taffyBlock: parseBoolean(import.meta.env.VITE_USE_TAFFY_BLOCK, false),
-    fullTreeLayout: parseBoolean(import.meta.env.VITE_USE_FULL_TREE_LAYOUT, false),
   };
 }
 

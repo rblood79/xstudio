@@ -14,13 +14,9 @@ import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
 import { TaffyLayout } from '../../wasm-bindings/taffyLayout';
 import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayout';
-import { DropflowBlockEngine } from './DropflowBlockEngine';
 import { parseMargin, resolveParentContext } from './utils';
 import type { ComputedStyle } from './cssResolver';
 import type { CSSValueContext } from './cssValueParser';
-
-/** Dropflow 폴백 엔진 (Taffy 미가용 시 공용) */
-const dropflowFallback = new DropflowBlockEngine();
 
 /**
  * Taffy WASM 엔진 공통 추상 클래스
@@ -80,7 +76,7 @@ export abstract class BaseTaffyEngine implements LayoutEngine {
 
     const taffy = this.getTaffy();
     if (!taffy) {
-      return dropflowFallback.calculate(parent, children, availableWidth, availableHeight, context);
+      return [];
     }
 
     const { parentComputed, cssCtx } = resolveParentContext(parent, context);

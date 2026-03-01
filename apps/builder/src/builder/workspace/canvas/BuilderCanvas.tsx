@@ -37,9 +37,8 @@ import {
 import { ViewportControlBridge } from "./viewport";
 import { BodyLayer } from "./layers";
 import { TextEditOverlay, useTextEdit } from "../overlay";
-// 사용자 컨텐츠 레이아웃은 Taffy/Dropflow 엔진이 처리
+// 사용자 컨텐츠 레이아웃은 Taffy WASM 단일 엔진이 처리 (ADR-005)
 import {
-  calculateChildrenLayout,
   calculateFullTreeLayout,
   resetPersistentTree,
   publishLayoutMap,
@@ -48,7 +47,6 @@ import {
   type ComputedLayout,
 } from "./layout";
 import { applyImplicitStyles } from "./layout/engines/implicitStyles";
-import { isFullTreeLayoutEnabled } from "../../../utils/featureFlags";
 import { getElementBoundsSimple, getElementContainer, registerElement, unregisterElement, updateElementBounds } from "./elementRegistry";
 import { notifyLayoutChange } from "./skia/useSkiaNode";
 import { LayoutComputedSizeContext } from "./layoutContext";
@@ -658,7 +656,7 @@ const ElementsLayer = memo(function ElementsLayer({
 
   // ADR-005 Phase 1: Full-Tree Layout pre-computation (side effect 격리)
   const fullTreeLayoutMap = useMemo(() => {
-    if (!isFullTreeLayoutEnabled() || !bodyElement || !_wasmLayoutReady) return null;
+    if (!bodyElement || !_wasmLayoutReady) return null;
     const childrenIdMap = new Map<string, string[]>();
     for (const [key, elems] of pageChildrenMap) {
       if (key != null) {
@@ -722,31 +720,8 @@ const ElementsLayer = memo(function ElementsLayer({
 
           cachedPadding = parsePadding(parentStyle, containerWidth);
 
-          if (fullTreeLayoutMap) {
-            // ADR-005 Phase 1: Full-Tree Layout — 전체 맵에서 O(1) 조회
-            cachedLayoutMap = fullTreeLayoutMap;
-          } else {
-            // Per-level 폴백: 엔진으로 레이아웃 일괄 계산
-            const parentDisplay = (parentStyle?.display as string | undefined)
-              ?? (containerEl.tag === 'Section' ? 'block' : undefined);
-            const avW = Math.max(0, containerWidth - cachedPadding.left - cachedPadding.right);
-            // M2: 부모가 height:auto이면 sentinel(-1) 전달하여 자식 % height가 auto로 처리되도록 함
-            const parentHasAutoHeight = !parentStyle?.height || parentStyle.height === 'auto';
-            // Phantom indicator 태그(Switch/Checkbox/Radio): height:auto이지만 엔진이 계산한
-            // containerHeight를 Taffy에 전달해야 align-items: center가 작동함.
-            // enrichWithIntrinsicSize가 rowHeight를 주입하지만 store 원본에는 반영 안 됨.
-            const PHANTOM_TAGS = new Set(['switch', 'checkbox', 'radio']);
-            const useComputedHeight = parentHasAutoHeight && PHANTOM_TAGS.has(containerTag) && containerHeight > 0;
-            const avH = (parentHasAutoHeight && !useComputedHeight)
-              ? -1  // sentinel: height:auto → 엔진이 콘텐츠 기반 계산
-              : Math.max(0, containerHeight - cachedPadding.top - cachedPadding.bottom);
-            // RC-7: calculateChildrenLayout 사용하여 blockification 적용
-            const innerLayouts = calculateChildrenLayout(
-              effectiveContainerEl, filteredContainerChildren, avW, avH,
-              { bfcId: containerEl.id, parentDisplay, getChildElements: (id: string) => pageChildrenMap.get(id) ?? [] }
-            );
-            cachedLayoutMap = new Map(innerLayouts.map(l => [l.elementId, l]));
-          }
+          // ADR-005: Full-Tree Layout — 전체 맵에서 O(1) 조회
+          cachedLayoutMap = fullTreeLayoutMap ?? new Map();
         }
 
         const layout = cachedLayoutMap.get(childEl.id);
@@ -998,27 +973,8 @@ const ElementsLayer = memo(function ElementsLayer({
       const paddingOffsetX = isBodyParent ? 0 : parentPadding.left;
       const paddingOffsetY = isBodyParent ? 0 : parentPadding.top;
 
-      let layoutMap: Map<string, ComputedLayout>;
-
-      if (fullTreeLayoutMap) {
-        // ADR-005 Phase 1: Full-Tree Layout — 전체 맵에서 O(1) 조회
-        layoutMap = fullTreeLayoutMap;
-      } else {
-        // Per-level 폴백: 엔진으로 레이아웃 계산
-        const layouts = calculateChildrenLayout(
-          parentElement, children, availableWidth, availableHeight,
-          { bfcId: parentElement.id, parentDisplay, getChildElements: (id: string) => pageChildrenMap.get(id) ?? [] }
-        );
-
-        if (import.meta.env.DEV && layouts.length === 0 && children.length > 0) {
-          console.warn('[renderWithCustomEngine] Empty layout result!',
-            { parentTag: parentElement.tag, parentDisplay, childCount: children.length });
-        }
-
-        layoutMap = new Map<string, ComputedLayout>(
-          layouts.map((l) => [l.elementId, l])
-        );
-      }
+      // ADR-005: Full-Tree Layout — 전체 맵에서 O(1) 조회
+      const layoutMap: Map<string, ComputedLayout> = fullTreeLayoutMap ?? new Map();
 
       // 엔진 결과의 x/y로 직접 배치 (Yoga 불필요)
       return (
