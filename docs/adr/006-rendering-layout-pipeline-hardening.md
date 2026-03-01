@@ -55,6 +55,23 @@ ADR-005 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 - **P2-2 (HIGH)**: origin+type만으로 검증하는 `isValidBootstrapMessage`에 `expectedNonce` 파라미터 추가. 빌더가 iframe 생성 시 `crypto.randomUUID()`를 srcdoc에 주입하고, Preview `sendReady()`가 nonce를 포함하여 전송. 빌더 측에서 nonce 일치 여부로 실제 preview iframe 식별. same-origin 다른 윈도우의 선행 PREVIEW_READY가 정식 초기화를 오염시키는 문제 해소. 소비자 레벨 ready-state 중복 가드 제거 (nonce 갱신으로 이전 iframe 자동 무효화).
 - **P2-2 (MEDIUM)**: 테스트 항목 #3이 "6개 핸들러 모두 event.source/event.origin 검증"으로 되어 있었으나, 부트스트랩 메시지는 source 대신 nonce 검증. 2단계 검증(부트스트랩=nonce, 일반=source+origin)을 반영하여 테스트 항목 분리.
 
+### 코드 대조 검증 및 재설계 반영 (2026-03-02 7차)
+
+- **P0-2 (CRITICAL)**: 결과 수집 루프 라인 번호 정정: `791-815` → `903-926` (코드 추가로 밀림)
+- **P0-4 (CRITICAL)**: traversePostOrder 라인 번호 정정: `412-625` → `463-712`, indexMap.set `624` → `712`
+- **P1-1 (CRITICAL)**: childIds 라인 정정: `444` → `495`, 순회 `485` → `536`, childIndices `609-615` → `697-703`
+- **P2-1 (MEDIUM)**: `textMeasure.ts` 정확한 경로 `canvas/utils/textMeasure.ts` (라인 183) 보완. `computedStyleService.ts` (라인 61, `MAX_CACHE_SIZE = 200`) 추가 발견 및 반영
+- **P3-2 (HIGH)**: rbush R-tree 설계를 **씬 좌표 기반 기존 Rust WASM SpatialIndex 재활용**으로 전면 재설계. stale 좌표 근본 원인(스크린 좌표 저장) 분석 후, 씬(월드) 좌표 전환으로 pan/zoom 시 갱신 불필요 달성. P3-1 의존성 제거(독립 실행 가능). rbush 외부 의존성 제거(번들 추가 0KB)
+
+### 레이아웃 안전성 보완 (2026-03-02 8차)
+
+- **P1-1 (LOW)**: `hasOrder === false` 시 `sortedChildIds === childIds` 참조 동일성 명시. DEV 모드 order 적용 console.info 추가. 기존 레이아웃 100% 동일 보장 문서화
+- **P2-3 (MEDIUM)**: `vertical-align` 미명시 시 기존 `center` 유지하는 하위 호환성 보장으로 변경. 기존: `baseline` 기본값 → 수정: `explicitAligns.length === 0` → `'center'` 반환
+- **P3-1 (CRITICAL)**: `LAYOUT_AFFECTING_PROPS` 화이트리스트 → **`NON_LAYOUT_PROPS` 블랙리스트 전환**. 미등록 속성은 자동으로 레이아웃 트리거 → 사일런트 미갱신 버그 근본 차단. `fontSize`/`lineHeight`/`fontFamily`/`letterSpacing`/`whiteSpace`/`wordBreak`/`boxSizing`/`textContent`/`label`/`placeholder` 등이 자동 커버됨. DEV 모드 full DFS 교차 검증 가드 추가
+- **P3-2 (LOW)**: DEV 모드 SpatialIndex vs getBounds() 교차 검증 (1% 샘플링) 추가. 레이아웃 계산에 무관함 명시
+- **P3-3 (LOW)**: DEV 모드 version 스킵 시 JSON 교차 비교 가드 추가
+- **Risks 섹션**: 항목별 "레이아웃 영향" 열 추가하여 모든 항목이 기존 레이아웃을 보존함을 명시
+
 ### 적용 범위 및 용어 정합성 검증 반영 (2026-03-01 6차)
 
 - **P2-2 (MEDIUM)**: IframeMessenger(utils/dom/iframeMessenger.ts)가 어디서도 import되지 않는 미사용 레거시 코드임을 확인. "3개 핸들러" → "2개 활성 핸들러"(useIframeMessenger, useDeltaMessenger)로 수정. IframeMessenger 관련 nonce 적용 코드·검증 항목 제거, 레거시 정리 권장으로 대체.
@@ -128,13 +145,13 @@ ADR-005 Foundation 완료로 레이아웃 엔진이 단일 Taffy WASM 경로로 
 
 ### P0-2. NaN/Infinity 레이아웃 결과 가드
 
-**파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (라인 791-815)
+**파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (라인 903-926)
 
 **현상**: WASM `computeLayout()` 결과에 NaN/Infinity 검사 없음. 잘못된 입력(0 나누기, NaN 크기)이 Taffy를 거쳐 CanvasKit/Skia에 전파되면 렌더링 이상 또는 크래시 발생.
 
 **수정 방안**:
 ```typescript
-// fullTreeLayout.ts 결과 수집 루프 (라인 791-815)에 가드 추가
+// fullTreeLayout.ts 결과 수집 루프 (라인 903-926)에 가드 추가
 const sanitizeStats = { count: 0 };
 function sanitizeLayoutValue(v: number, fallback: number = 0): number {
   if (Number.isFinite(v)) return v;
@@ -219,7 +236,7 @@ export function resetPersistentTree(pageId?: string): void {
 
 ### P0-4. DFS 재귀 depth guard 추가
 
-**파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (라인 412-625)
+**파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (라인 463-712)
 
 **현상**: `traversePostOrder`에 depth 제한 없음. 순환 참조 데이터나 극단적 깊이(>100)에서 스택 오버플로우 발생 가능.
 
@@ -266,7 +283,7 @@ function traversePostOrder(
     traversePostOrder(childId, ..., visiting, depth + 1);
   }
   visiting.delete(elementId);
-  // indexMap.set(elementId, ...) 는 기존 라인 624에서 처리
+  // indexMap.set(elementId, ...) 는 기존 라인 712에서 처리
 }
 ```
 
@@ -284,7 +301,7 @@ function traversePostOrder(
 
 ### P1-1. CSS `order` 속성 — fullTreeLayout TS 레벨 sort 추가
 
-**파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (traversePostOrder, 라인 444 부근)
+**파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (traversePostOrder, 라인 495 부근)
 
 **현상**: JS 레이어는 `order`를 인식하고 JSON에 포함하지만, **Taffy 0.9.2의 `Style` struct에 `order` 필드 자체가 존재하지 않음** (Rust 소스 확인 완료: `taffy-0.9.2/src/style/mod.rs`). 따라서 Rust bridge 수정으로는 해결 불가.
 
@@ -295,16 +312,22 @@ function traversePostOrder(
 **수정 방안**: `traversePostOrder` 내부에서 `TaffyFlexEngine`과 동일한 패턴의 stable sort 적용.
 
 ```typescript
-// traversePostOrder 내부, childIds 순회 전 (라인 485 부근)
-// 주의: childIds는 const 선언(라인 444)이므로 새 배열로 교체
+// traversePostOrder 내부, childIds 순회 전 (라인 536 부근)
+// 주의: childIds는 const 선언(라인 495)이므로 새 배열로 교체
 const getOrder = (id: string): number => {
   const s = (elementsMap.get(id)?.props?.style ?? {}) as Record<string, unknown>;
   const o = parseInt(String(s.order ?? '0'), 10);
   return isNaN(o) ? 0 : o;
 };
-const sortedChildIds = childIds.some(id => getOrder(id) !== 0)
+const hasOrder = childIds.some(id => getOrder(id) !== 0);
+const sortedChildIds = hasOrder
   ? [...childIds].sort((a, b) => getOrder(a) - getOrder(b))  // stable sort (CSS spec)
-  : childIds;  // order 미사용 시 복사 비용 회피
+  : childIds;  // order 미사용 시 복사 비용 회피 → 기존 동작 100% 동일
+
+// DEV 모드: order 적용 시 경고 로그 (기존 레이아웃 변경 사전 인지용)
+if (hasOrder && import.meta.env.DEV) {
+  console.info(`[fullTreeLayout] CSS order applied for children of ${elementId}`);
+}
 
 // 이후 재귀 및 childIndices 구성에서 sortedChildIds 사용
 for (const childId of sortedChildIds) {
@@ -312,14 +335,19 @@ for (const childId of sortedChildIds) {
 }
 ```
 
-> **참고**: Taffy에 전달하는 children 배열의 순서도 sort 결과를 반영해야 한다. `batch[parentIdx].children`에 들어가는 인덱스 순서가 Taffy의 레이아웃 계산에서 자식 배치 순서를 결정하므로, `childIndices` 구성(라인 609-615)도 `sortedChildIds` 기준으로 변경해야 한다.
+> **참고**: Taffy에 전달하는 children 배열의 순서도 sort 결과를 반영해야 한다. `batch[parentIdx].children`에 들어가는 인덱스 순서가 Taffy의 레이아웃 계산에서 자식 배치 순서를 결정하므로, `childIndices` 구성(라인 697-703)도 `sortedChildIds` 기준으로 변경해야 한다.
 
 **장기 로드맵**: Taffy 업스트림에서 CSS `order` 지원 시 Rust bridge에 필드 추가 + TS sort 제거.
 
+**레이아웃 안전성**:
+- `order` 속성을 사용하지 않는 요소(기본값 0)는 `hasOrder === false` → `sortedChildIds === childIds` (참조 동일) → **기존 동작과 100% 동일, 복사조차 발생하지 않음**
+- `order` 속성을 사용하는 요소만 정렬이 적용되며, 이는 기존에 무시되던 버그의 수정임
+
 **검증**:
 - `order: 2` 설정된 flex 아이템이 올바른 위치에 렌더링
-- `order: 0` (기본값) 요소들은 DOM 순서 유지 확인
+- `order: 0` (기본값) 요소들은 DOM 순서 유지 확인 (sortedChildIds === childIds 참조 동일성 확인)
 - `pnpm exec tsc --noEmit` → 타입체크 통과
+- DEV 모드에서 order 적용 시 console.info 출력 → 기존 레이아웃 변경 사전 인지 가능
 
 ---
 
@@ -457,8 +485,9 @@ const MAX_PARAGRAPH_CACHE_SIZE = (() => {
 ```
 
 **관련 캐시도 동일 패턴 적용 검토**:
-- `textMeasure.ts`: `MAX_FONT_METRICS_CACHE_SIZE = 256`
-- `imageCache.ts`: `MAX_CACHE_SIZE = 100`
+- `canvas/utils/textMeasure.ts` (라인 183): `MAX_FONT_METRICS_CACHE_SIZE = 256` — 폰트 메트릭 캐시, 상한 초과 시 전체 clear
+- `skia/imageCache.ts` (라인 48): `MAX_CACHE_SIZE = 100` — CanvasKit 이미지 캐시, LRU 퇴거 + refCount 기반 GPU 메모리 관리
+- `services/computedStyleService.ts` (라인 61): `MAX_CACHE_SIZE = 200` — 합성 CSS 스타일 캐시, 상한 초과 시 전체 clear
 
 **검증**:
 - 환경변수 설정 시 해당 크기 적용 확인
@@ -667,7 +696,7 @@ const handleNavigateMessage = async (event: MessageEvent) => {
 
 **현상**: `INLINE_BLOCK_PARENT_CONFIG`에 `alignItems: 'center'` 하드코딩. `vertical-align: top/baseline` 요소에서 잘못된 정렬.
 
-**수정 방안**: `INLINE_BLOCK_PARENT_CONFIG`의 `alignItems: 'center'` 하드코딩 → 자식 `vertical-align` 분석 기반 동적 결정.
+**수정 방안**: `INLINE_BLOCK_PARENT_CONFIG`의 `alignItems: 'center'` 하드코딩 → 자식 `vertical-align` 분석 기반 동적 결정. **단, 하위 호환성을 위해 `vertical-align` 명시가 없는 기존 데이터는 현재 동작(`center`)을 그대로 유지**.
 
 ```typescript
 function resolveInlineBlockAlignItems(childElements: Element[]): string {
@@ -679,24 +708,30 @@ function resolveInlineBlockAlignItems(childElements: Element[]): string {
     baseline: 'baseline',
   };
 
-  const aligns = childElements.map(el => {
-    const va = ((el.props?.style as Record<string, unknown>)?.verticalAlign as string) ?? 'baseline';
-    return va;
-  });
+  // vertical-align이 명시적으로 설정된 자식만 수집
+  const explicitAligns = childElements
+    .map(el => (el.props?.style as Record<string, unknown>)?.verticalAlign as string | undefined)
+    .filter((va): va is string => va !== undefined && va !== '');
 
-  // 첫 번째 non-baseline 값을 사용 (과반수 투표 대신 단순 전략)
-  const nonBaseline = aligns.find(a => a !== 'baseline');
-  if (!nonBaseline) return 'baseline';  // 모두 baseline → Flex baseline 정렬
-  return map[nonBaseline] ?? 'center';
+  // 하위 호환성: vertical-align을 명시한 자식이 하나도 없으면 기존 'center' 유지
+  if (explicitAligns.length === 0) return 'center';
+
+  // 첫 번째 명시적 vertical-align 값 사용
+  return map[explicitAligns[0]] ?? 'center';
 }
 ```
 
 `INLINE_BLOCK_PARENT_CONFIG` 사용 시 `alignItems`를 `resolveInlineBlockAlignItems()` 반환값으로 오버라이드.
 
+**레이아웃 안전성**:
+- **`vertical-align` 미설정 (기존 데이터)**: `explicitAligns.length === 0` → `'center'` 반환 → **기존 레이아웃 100% 동일**
+- **`vertical-align` 명시 (새 데이터)**: 해당 값에 맞는 정렬 적용 → 의도된 동작
+
 **검증**:
 - `vertical-align: top` 요소가 상단 정렬 확인
-- `vertical-align: baseline` 요소가 기준선 정렬 확인
-- 기존 `vertical-align` 미지정 시 baseline 기본 동작 유지 확인
+- `vertical-align: baseline` 명시 시 기준선 정렬 확인
+- **`vertical-align` 미지정 시 기존 center 정렬 유지 확인** (회귀 테스트 핵심)
+- 기존 프로젝트 데이터 로드 후 inline-block 영역 레이아웃 비교 (적용 전후 diff 없음)
 
 ---
 
@@ -723,27 +758,62 @@ dirtyElementIds: Set<string>;
 clearDirtyElementIds: () => void;
 ```
 
-레이아웃 영향 속성 판별:
+레이아웃 영향 속성 판별 — **블랙리스트(비레이아웃) 방식**:
+
+> **CRITICAL**: 화이트리스트(레이아웃 속성 열거) 방식은 누락 시 **사일런트 레이아웃 미갱신 버그**를 유발한다 (예: `fontSize` 변경 → `layoutVersion` 불변 → useMemo 스킵 → 레이아웃 미갱신, 새로고침 시에만 정상). 블랙리스트 방식은 **비레이아웃 속성**만 열거하므로, 미등록 속성은 안전하게 레이아웃 트리거로 처리된다. 오탐(불필요한 DFS)은 성능 손해일 뿐이지만, 미탐(누락)은 레이아웃 버그이므로 안전한 방향을 택한다.
+
 ```typescript
-const LAYOUT_AFFECTING_PROPS = new Set([
-  'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
-  'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
-  'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
-  'display', 'flexDirection', 'flexWrap', 'flexGrow', 'flexShrink', 'flexBasis',
-  'alignItems', 'alignSelf', 'justifyContent', 'gap', 'rowGap', 'columnGap',
-  'gridTemplateColumns', 'gridTemplateRows', 'gridColumn', 'gridRow',
-  'position', 'top', 'right', 'bottom', 'left', 'order',
-  'border', 'borderWidth', 'borderTop', 'borderRight', 'borderBottom', 'borderLeft',
-  'overflow', 'aspectRatio',
+/**
+ * 레이아웃에 영향을 주지 않는 순수 시각적 속성만 열거 (블랙리스트).
+ * 이 Set에 포함되지 않은 속성은 모두 레이아웃 영향으로 간주하여
+ * layoutVersion을 증가시킨다.
+ *
+ * 오탐(불필요한 DFS 트리거)은 성능 비용만 발생.
+ * 미탐(레이아웃 속성 누락)은 사일런트 렌더링 버그 유발.
+ * → 안전한 방향: 블랙리스트
+ */
+const NON_LAYOUT_PROPS = new Set([
+  // 색상/배경
+  'color', 'backgroundColor', 'background', 'backgroundImage',
+  'backgroundSize', 'backgroundPosition', 'backgroundRepeat',
+  // 투명도/가시성 (layout에 영향 없음)
+  'opacity', 'visibility',
+  // 그림자/효과
+  'boxShadow', 'textShadow', 'filter', 'backdropFilter',
+  // 테두리 색상/스타일 (너비는 제외 — 레이아웃 영향)
+  'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
+  'borderStyle', 'borderTopStyle', 'borderRightStyle', 'borderBottomStyle', 'borderLeftStyle',
+  'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius',
+  'borderBottomLeftRadius', 'borderBottomRightRadius',
+  'outlineColor', 'outlineStyle',
+  // 커서/포인터
+  'cursor', 'pointerEvents', 'userSelect',
+  // 트랜지션/애니메이션 (레이아웃 비영향)
+  'transition', 'transitionProperty', 'transitionDuration',
+  'animation', 'animationName', 'animationDuration',
+  // 텍스트 장식 (크기 비영향)
+  'textDecoration', 'textDecorationColor', 'textDecorationStyle',
+  'textTransform',  // 대소문자 변환은 폭 변경 가능하나 극히 드묾 — 필요 시 제거
+  // z-index (페인트 순서만)
+  'zIndex',
+  // 기타 시각적
+  'objectFit', 'objectPosition', 'mixBlendMode',
+  'clipPath', 'mask', 'maskImage',
+  'transformOrigin',  // transform 자체는 레이아웃 비영향이나 Taffy 미지원
 ]);
 
 function isLayoutAffecting(changedProps: Record<string, unknown>): boolean {
-  return Object.keys(changedProps).some(k => LAYOUT_AFFECTING_PROPS.has(k));
+  // 블랙리스트에 없는 속성이 하나라도 있으면 레이아웃 영향
+  return Object.keys(changedProps).some(k => !NON_LAYOUT_PROPS.has(k));
 }
 ```
 
+> **참고**: 이 방식에서 `fontSize`, `lineHeight`, `fontFamily`, `letterSpacing`, `whiteSpace`, `wordBreak`, `boxSizing`, `textContent`, `label`, `placeholder` 등 텍스트/폰트/컨텐츠 관련 속성은 `NON_LAYOUT_PROPS`에 미포함이므로 자동으로 레이아웃 트리거가 된다. 화이트리스트 방식에서 이들을 누락했을 때의 사일런트 버그 위험이 근본적으로 제거된다.
+
 요소 변경 액션(`updateElementProps`, `updateElementStyle` 등) 내부:
 ```typescript
+const isLayoutChange = isLayoutAffecting(changedStyleProps);
+
 set(state => ({
   ...updates,
   layoutVersion: isLayoutChange ? state.layoutVersion + 1 : state.layoutVersion,
@@ -752,6 +822,38 @@ set(state => ({
     : state.dirtyElementIds,
 }));
 ```
+
+**구조 변경은 항상 layout-affecting** (요소 추가/삭제/이동):
+```typescript
+// addElement, removeElement, reparentElement 등:
+// isLayoutAffecting 체크 없이 무조건 layoutVersion++ 및 dirtyElementIds 추가
+set(state => ({
+  ...updates,
+  layoutVersion: state.layoutVersion + 1,
+  dirtyElementIds: new Set([...state.dirtyElementIds, ...affectedElementIds]),
+}));
+```
+
+**DEV 모드 안전 가드** — 블랙리스트 누락 감지:
+```typescript
+// DEV 모드에서 useMemo 스킵 시 결과 검증 (P3-1 초기 배포 기간에만 활성)
+if (import.meta.env.DEV && !isLayoutChange) {
+  // 비레이아웃 변경이라 판단했지만, 이전 레이아웃 결과와 현재를 비교
+  // 불일치 시 NON_LAYOUT_PROPS 누락 경고
+  queueMicrotask(() => {
+    const currentMap = getSharedLayoutMap(pageId);
+    const freshMap = calculateFullTreeLayout(/* ... full DFS ... */);
+    if (freshMap && currentMap && !layoutMapsEqual(currentMap, freshMap)) {
+      console.error(
+        `[dirty-tracking] Layout mismatch detected after non-layout change!`,
+        `Changed props: ${Object.keys(changedStyleProps).join(', ')}`,
+        `These props may need to be removed from NON_LAYOUT_PROPS.`
+      );
+    }
+  });
+}
+```
+> 이 검증은 DEV 모드 + 비레이아웃 변경 시에만 실행되므로 프로덕션 성능에 영향 없음. 블랙리스트에 잘못 포함된 레이아웃 속성이 있으면 즉시 console.error로 감지됨.
 
 #### Step 2: BuilderCanvas useMemo 의존성 분리
 
@@ -832,79 +934,170 @@ if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
 
 **ADR-005 연계**: Phase 1 (Persistent Tree + Incremental Layout)의 JS 측 최적화에 해당.
 
+**레이아웃 안전성**:
+- **블랙리스트 방식**: `NON_LAYOUT_PROPS`에 미등록된 속성은 모두 레이아웃 트리거 → 누락으로 인한 사일런트 버그 불가능
+- **DEV 검증 가드**: 비레이아웃 판정 시 full DFS 결과와 비교 → 블랙리스트 오분류 즉시 감지
+- **구조 변경 무조건 트리거**: 요소 추가/삭제/이동은 `isLayoutAffecting` 체크 없이 `layoutVersion++`
+
 **검증**:
 - 색상 변경 시 DFS 미실행 확인 (console.time 프로파일링)
 - 크기/위치 변경 시에만 dirty subtree DFS 실행 확인
+- **fontSize/lineHeight/fontFamily 변경 시 DFS 실행 확인** (NON_LAYOUT_PROPS 미포함 → 자동 트리거)
+- **textContent/label/placeholder 변경 시 DFS 실행 확인** (intrinsic size 변경 반영)
 - 구조 변경(요소 추가/삭제) 시 full DFS 폴백 확인
 - `clearDirtyElementIds()` 후 다음 비레이아웃 변경에서 useMemo 스킵 확인
+- **DEV 모드: 비레이아웃 변경 후 `Layout mismatch detected` 에러 미출력 확인** (블랙리스트 정합성)
+- 회귀 테스트: 기존 프로젝트 데이터 로드 → 요소별 속성 변경 시나리오 전수 검증
 
 ---
 
-### P3-2. Viewport Culling R-tree 전환
+### P3-2. Viewport Culling: 씬 좌표 기반 Spatial Index 전환
 
-**파일**: `apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts` (라인 242-264)
+**파일**:
+- `apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts` (라인 180-277)
+- `apps/builder/src/builder/workspace/canvas/skia/renderCommands.ts` (라인 195-213)
+- `apps/builder/src/builder/workspace/canvas/elementRegistry.ts` (라인 94-99)
+- `apps/builder/src/builder/workspace/canvas/wasm-bindings/featureFlags.ts`
+- `apps/builder/src/builder/workspace/canvas/wasm-bindings/spatialIndex.ts`
 
-**현상**: 카메라 팬/줌마다 모든 요소에 O(N) `elements.filter()` + `container.getBounds()` 호출. 5,000 요소 시 프레임 예산 초과.
+**현상**: 카메라 팬/줌마다 모든 요소에 O(N) `elements.filter()` + `container.getBounds()` 호출 (useViewportCulling.ts 라인 242). 5,000 요소 시 프레임당 ~5ms 소비로 16ms 예산의 31% 점유.
 
-#### Step 1: R-tree 라이브러리 도입
+**기존 SpatialIndex 비활성화 원인 분석**: `elementRegistry.updateElementBounds()`에서 **스크린 좌표**를 SpatialIndex에 저장했으나, 스크린 좌표는 pan/zoom마다 변하므로 카메라 이동 시 SpatialIndex의 좌표가 stale → 잘못된 culling 결과. 이로 인해 `SPATIAL_INDEX: false`로 비활성화됨.
 
-`package.json`에 `rbush` 추가 (번들 ~6KB gzipped).
+**재설계 핵심**: 좌표계를 **씬(월드) 좌표**로 전환. 요소의 씬 좌표는 카메라 변환과 독립이므로, pan/zoom 시 SpatialIndex 갱신 자체가 불필요. 대신 뷰포트의 씬 좌표 범위만 역 카메라 변환으로 재계산 (O(1)).
 
-#### Step 2: 레이아웃 결과 기반 R-tree 구축
+**라이브러리**: rbush 도입 대신 **기존 Rust WASM SpatialIndex** 재활용. Grid-cell 기반(256px)으로 R-tree와 유사한 O(K) 쿼리 성능. 번들 추가 0KB.
+
+> **카메라 변환 시 SpatialIndex 갱신이 불필요한 이유**: 씬 좌표에서 요소 위치는 카메라와 무관한 절대값. pan/zoom은 "어디를 보는가"를 바꿀 뿐 "요소가 어디에 있는가"를 바꾸지 않는다. 따라서 카메라 변경 시에는 뷰포트의 씬 좌표 범위만 O(1)로 재계산하고, SpatialIndex에 그대로 쿼리하면 된다.
+
+#### Step 1: renderCommands boundsMap → SpatialIndex 씬 좌표 동기화
+
+`buildRenderCommandStream()` (renderCommands.ts)은 DFS로 모든 요소의 **씬 좌표 AABB**를 `boundsMap`에 이미 계산한다 (parentAbsX + relX 누적). 이 시점에서 SpatialIndex에 bulk 업데이트.
 
 ```typescript
-// 신규 파일 또는 useViewportCulling.ts 내부
-import RBush from 'rbush';
+// renderCommands.ts — buildRenderCommandStream() 끝부분에 추가
+function syncSpatialIndex(boundsMap: Map<string, BoundingBox>): void {
+  if (!getSpatialIndex()) return;
 
-interface LayoutItem {
-  minX: number; minY: number;
-  maxX: number; maxY: number;
-  elementId: string;
-}
-
-const tree = new RBush<LayoutItem>();
-
-// publishLayoutMap 호출 후 (layoutVersion 변경 시):
-function rebuildSpatialIndex(layoutMap: Map<string, ComputedLayout>): void {
-  const items: LayoutItem[] = [];
-  for (const [id, layout] of layoutMap) {
-    items.push({
-      minX: layout.x,
-      minY: layout.y,
-      maxX: layout.x + layout.width,
-      maxY: layout.y + layout.height,
-      elementId: id,
-    });
+  const items: Array<{ id: string; x: number; y: number; w: number; h: number }> = [];
+  for (const [id, bounds] of boundsMap) {
+    if (bounds.width > 0 && bounds.height > 0) {
+      items.push({ id, x: bounds.x, y: bounds.y, w: bounds.width, h: bounds.height });
+    }
   }
-  tree.clear();
-  tree.load(items);  // bulk insert O(N log N)
+
+  spatialClearAll();
+  spatialBatchUpdate(items);  // clear + bulk insert
 }
 ```
 
-#### Step 3: Viewport query O(log N + K)
+**갱신 타이밍**: `buildRenderCommandStream()`은 `getCachedCommandStream()`이 캐시 미스할 때만 호출 (registryVersion, pagePosVersion, layoutVersion 3중 키):
+- **pan/zoom만**: 캐시 히트 → SpatialIndex 갱신 없음 (핵심 이점)
+- **레이아웃 변경**: 캐시 미스 → 전체 rebuild → SpatialIndex 갱신 (필요한 경우에만)
+- **P3-1 dirty tracking 적용 후**: 비레이아웃 변경(색상 등)도 캐시 히트 → 갱신 빈도 더 감소
+
+**비용**: 5,000 요소 × 5 floats = 100KB Float32Array → Rust HashMap 연산 ~0.5ms.
+
+#### Step 2: useViewportCulling 씬 좌표 쿼리 전환
 
 ```typescript
-function queryVisibleElements(viewport: ViewportBounds): string[] {
-  const results = tree.search({
-    minX: viewport.left,
-    minY: viewport.top,
-    maxX: viewport.right,
-    maxY: viewport.bottom,
-  });
-  return results.map(r => r.elementId);
+// useViewportCulling.ts — 뷰포트를 씬 좌표로 역변환
+export function calculateViewportBoundsScene(
+  screenWidth: number,
+  screenHeight: number,
+  zoom: number,
+  panOffset: { x: number; y: number },
+  margin: number = VIEWPORT_MARGIN,
+): ViewportBounds {
+  const sceneMargin = margin / zoom;
+  const left = (-panOffset.x) / zoom - sceneMargin;
+  const top = (-panOffset.y) / zoom - sceneMargin;
+  const right = (-panOffset.x + screenWidth) / zoom + sceneMargin;
+  const bottom = (-panOffset.y + screenHeight) / zoom + sceneMargin;
+  return { left, top, right, bottom, width: right - left, height: bottom - top };
 }
 ```
 
-`container.getBounds()` 호출 제거 → R-tree AABB 직접 사용.
+```typescript
+// useViewportCulling — useMemo 내부: 2-path 전략
+const spatialIndex = getSpatialIndex();
+if (spatialIndex && spatialIndex.count() > 0) {
+  // Fast path: WASM SpatialIndex 씬 좌표 쿼리
+  const sv = calculateViewportBoundsScene(screenWidth, screenHeight, zoom, panOffset);
+  const visibleIds = new Set(queryVisibleElements(sv.left, sv.top, sv.right, sv.bottom));
+
+  // overflow:visible 부모 포함 (기존 로직 유지)
+  const visibleElements = elements.filter(el =>
+    visibleIds.has(el.id) || isAncestorVisible(el.parent_id, visibleIds, elements)
+  );
+  // ...
+} else {
+  // Fallback: 기존 getBounds() O(N) 방식 (SpatialIndex 미초기화 시)
+  // ...기존 로직 그대로 유지...
+}
+```
+
+#### Step 3: Feature Flag 활성화 + stale 경로 정리
+
+```typescript
+// featureFlags.ts
+SPATIAL_INDEX: true,  // false → true 전환
+```
+
+`elementRegistry.ts`의 `updateElementBounds()` (라인 94-99)에서 SpatialIndex 동기화 제거. 스크린 좌표 기반 업데이트가 stale 문제의 근본 원인이었으므로, 씬 좌표 기반 renderCommands 경로로 완전 대체.
+
+```typescript
+// elementRegistry.ts — updateElementBounds()
+// 아래 블록 제거:
+// if (_spatialModule) {
+//   _spatialModule.updateElement(id, bounds.x, bounds.y, bounds.width, bounds.height);
+// }
+```
+
+#### Step 4 (선택): 페이지별 SpatialIndex 분리
+
+현재 SpatialIndex는 글로벌 싱글턴이나, Multi-page에서 페이지별 분리하면 쿼리 시 다른 페이지의 요소가 후보에서 제외되어 효율 향상. 이 최적화는 선택적이며, 10+ 페이지 시나리오에서만 유의미.
+
+**P3-1 의존 관계**: P3-2는 P3-1과 **독립 실행 가능**. P3-1 없이도 pan/zoom 시 O(K) 쿼리 이점을 얻으며, P3-1 적용 시 `buildRenderCommandStream` 캐시 히트율이 높아져 SpatialIndex 갱신 빈도가 추가 감소.
 
 **ADR-005 연계**: Phase 4 (Element-Level Viewport Culling).
 
-**예상 효과**: 5,000 요소 카메라 팬 시 2~5ms → <0.5ms
+**예상 효과**:
+
+| 시나리오 | 현재 | 재설계 | 개선 |
+|----------|------|--------|------|
+| 5,000 요소 pan | ~5ms | ~0.1ms | 50x |
+| 5,000 요소 zoom | ~5ms | ~0.1ms | 50x |
+| 레이아웃 변경 | ~5ms | ~0.6ms (rebuild + query) | 8x |
+
+**레이아웃 안전성**:
+- **레이아웃 계산 자체에 무관**: SpatialIndex는 가시성 판단에만 사용되며, `calculateFullTreeLayout()`이나 Taffy WASM 계산에 일절 관여하지 않음 → 레이아웃 오류 가능성 0
+- **최악 시나리오**: SpatialIndex 쿼리 오류 → 요소가 안 보이거나 불필요하게 보임 (시각적 깜빡임, 레이아웃 자체는 정상)
+- **즉시 롤백**: `SPATIAL_INDEX: false` 전환만으로 기존 getBounds() O(N) 방식으로 완전 복원
+
+**DEV 모드 교차 검증** (초기 배포 기간):
+```typescript
+// DEV 모드: SpatialIndex 결과와 getBounds() 결과 비교
+if (import.meta.env.DEV && spatialResult && Math.random() < 0.01) {
+  // 1% 확률로 샘플링하여 O(N) 폴백과 결과 비교
+  const fallbackResult = elements.filter(el => /* getBounds 경로 */);
+  const spatialIds = new Set(spatialResult.map(e => e.id));
+  const fallbackIds = new Set(fallbackResult.map(e => e.id));
+  const missing = fallbackResult.filter(e => !spatialIds.has(e.id));
+  if (missing.length > 0) {
+    console.warn(`[viewport-culling] SpatialIndex missed ${missing.length} visible elements`);
+  }
+}
+```
 
 **검증**:
-- 5,000 요소 시 viewport culling 시간 < 1ms 목표
-- 카메라 팬 시 프레임 드롭 없음
-- R-tree 갱신은 layoutVersion 변경 시에만 발생 (매 프레임 아님)
+- 5,000 요소 시 viewport culling 시간 < 0.5ms 목표 (console.time 측정)
+- 카메라 팬 30초간 프레임 드롭 없음 (60fps 유지)
+- SpatialIndex 미초기화 상태에서 getBounds() 폴백 정상 동작
+- 레이아웃 변경 후 SpatialIndex 갱신 → 다음 쿼리 결과 정확성 확인
+- overflow:visible 자식이 부모 범위 밖에서도 렌더링되는지 확인
+- Feature flag `SPATIAL_INDEX: false`로 전환 시 기존 동작 완전 복원 확인
+- **DEV 모드: SpatialIndex vs getBounds() 교차 검증에서 누락 0건 확인**
 
 ---
 
@@ -950,10 +1143,31 @@ updateNodeStyle(
 
 **예상 효과**: 5,000 노드 증분 갱신 3~5ms → <0.5ms (dirty 노드만 stringify)
 
+**레이아웃 안전성**:
+- version counter가 증가하면 **반드시** `JSON.stringify` + `updateStyleRaw()` 실행 → 스타일 누락 불가능
+- version counter가 불변이면 스타일이 실제로 동일한 것이므로 스킵이 정확
+- `styleVersion`은 store의 `layoutVersion`과 연동 — dirty tracking의 블랙리스트 방식과 동일한 안전성 보장
+
+**DEV 모드 안전 가드**:
+```typescript
+// DEV 모드: version 스킵 시 JSON 비교로 정합성 확인 (초기 배포 기간)
+if (import.meta.env.DEV && this.styleVersionMap.get(elementId) === styleVersion) {
+  const currentJson = JSON.stringify(styleRecord);
+  const prevJson = this._debugPrevJsonMap?.get(elementId);
+  if (prevJson && currentJson !== prevJson) {
+    console.error(
+      `[PersistentTaffyTree] Version unchanged but style differs for ${elementId}!`,
+      `This indicates a styleVersion increment bug in the store.`
+    );
+  }
+}
+```
+
 **검증**:
 - 5,000 노드 증분 갱신 시간: 현재 ~8ms → 목표 < 2ms
 - 레이아웃 정확도 동일 (version 기반이므로 충돌 불가)
 - `styleVersion` 불변 시 `JSON.stringify` 호출 없음 확인 (console.count)
+- **DEV 모드: version 스킵 시 `Version unchanged but style differs` 에러 미출력 확인**
 
 ---
 
@@ -988,8 +1202,8 @@ P2 (중기, 3~5일) ← P1 완료 후
 └── P2-3. inline-block alignItems (P1-1 이후 권장)
 
 P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
-├── P3-1. Dirty Tracking + useMemo 최적화 ← 핵심, P3-2/P3-3의 전제
-├── P3-2. Viewport Culling R-tree (P3-1 완료 후)
+├── P3-1. Dirty Tracking + useMemo 최적화 ← 핵심, P3-3의 전제
+├── P3-2. Viewport Culling: 씬 좌표 SpatialIndex (독립 실행 가능, P3-1과 병렬)
 └── P3-3. JSON.stringify 해시 대체 (P3-1과 연계)
 ```
 
@@ -1026,8 +1240,9 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 | JS DFS (dirty subtree) | 1~3ms | P3-1: dirty tracking |
 | 해시 비교 (version) | < 0.5ms | P3-3: version counter |
 | WASM computeLayout | 1~3ms | dirty subtree만 |
-| Skia Command Stream | 2~4ms | viewport culling |
-| Skia Render | 3~5ms | viewport culling |
+| Viewport Culling | < 0.5ms | P3-2: 씬 좌표 SpatialIndex (기존 ~5ms) |
+| Skia Command Stream | 2~4ms | viewport culling 연계 |
+| Skia Render | 3~5ms | viewport culling 연계 |
 | **합계** | **~8ms** | **50% 예산 이내** |
 
 ---
@@ -1076,15 +1291,27 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 
 ### Negative
 - P0~P2: 추가 코드량 적음 (~100줄), 유지보수 비용 미미
-- P3: 아키텍처 변경 필요 (dirty tracking, R-tree), 복잡도 증가
+- P3: 아키텍처 변경 필요 (dirty tracking, SpatialIndex 좌표계 전환), 복잡도 증가
 - P3-3 해시 대체: 충돌 가능성 (극히 낮지만 존재)
 
-### Risks
-- P1-1 (CSS order): Taffy 0.9.2 미지원으로 TS sort 유지 필요, 업스트림 변경 시 마이그레이션 비용
-- P1-2 (WASM 백오프): 15초 타임아웃이 극단적 느린 환경에서도 적절한지 실환경 검증 필요
-- P2-2 (메시지 검증): nonce 기반 부트스트랩/일반 분리로 복잡도 증가. srcdoc nonce 주입 + 3개 함수 시그니처 변경(generatePreviewSrcdoc/generateDevSrcdoc/generateProdSrcdoc) 필요. 미사용 레거시(IframeMessenger, MessagingService) 정리 시점 결정 필요
-- P3-1 (dirty tracking): store 슬라이스 구조 변경 필요, 영향 범위 넓음
-- P3-2 (R-tree): 외부 라이브러리 의존성 추가
+### Risks & Mitigations
+
+| 항목 | 위험 | 레이아웃 영향 | 완화 방안 |
+|------|------|-------------|-----------|
+| P1-1 (CSS order) | Taffy 0.9.2 미지원으로 TS sort 유지 | **없음** — `order` 미사용 시 `sortedChildIds === childIds` (참조 동일) | DEV 로그로 order 적용 사전 인지 |
+| P1-2 (WASM 백오프) | 15초 타임아웃 적절성 | **없음** — 폴링 방식만 변경 | 실환경 검증 필요 |
+| P2-2 (메시지 검증) | nonce 복잡도 증가, 시그니처 변경 | **없음** — 메시지 필터링만 | 레거시 정리 시점 결정 필요 |
+| P2-3 (inline-block) | vertical-align 동적 결정 | **없음** — 미명시 시 기존 `center` 유지 | 하위 호환성 보장 (`explicitAligns.length === 0` → `'center'`) |
+| P3-1 (dirty tracking) | 블랙리스트 오분류 | **블랙리스트 방식으로 근본 차단** — 미등록 속성은 자동 layout 트리거 | DEV 검증 가드: full DFS 결과 교차 비교 |
+| P3-2 (SpatialIndex) | 가시성 판단 오류 | **없음** — 레이아웃 계산에 무관, 가시성만 영향 | Feature flag 즉시 롤백 + DEV 교차 검증 |
+| P3-3 (해시 대체) | version counter 불일치 | **없음** — version 증가 시 반드시 stringify 실행 | DEV 가드: version 스킵 시 JSON 교차 비교 |
+
+**레이아웃 안전성 종합**:
+- **P0~P1**: 방어 코드 추가 + 버그 수정. 기존 레이아웃에 영향 없음
+- **P2-3**: 하위 호환성 보장 — `vertical-align` 미명시 시 기존 `center` 유지
+- **P3-1**: 화이트리스트 → **블랙리스트 전환**으로 속성 누락 위험 근본 제거. DEV 모드 교차 검증으로 오분류 즉시 감지
+- **P3-2**: 레이아웃 계산 무관 (가시성만). Feature flag으로 즉시 롤백 가능
+- **P3-3**: version counter는 store의 `layoutVersion`과 연동. 변경 시 반드시 stringify 실행
 
 ---
 
@@ -1094,4 +1321,3 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 - [ADR-003: Canvas Rendering](./003-canvas-rendering.md)
 - [ADR-001: State Management](./001-state-management.md)
 - [Taffy 0.9 Documentation](https://github.com/DioxusLabs/taffy)
-- [RBush R-tree](https://github.com/mourner/rbush)

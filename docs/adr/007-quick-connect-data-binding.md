@@ -4,7 +4,7 @@
 Proposed
 
 ## Date
-2026-03-02
+2026-03-02 (effective date — 검토 완료 기준)
 
 ## Decision Makers
 XStudio Team
@@ -107,7 +107,16 @@ renderEmptyState={() => (
 )}
 ```
 
-수정 대상: `packages/shared/src/components/` 내 ListBox.tsx, GridList.tsx, Select.tsx, ComboBox.tsx, Menu.tsx, Table.tsx
+수정 대상 (`packages/shared/src/components/`):
+
+| 컴포넌트 | 적용 포인트 | 비고 |
+|----------|-----------|------|
+| `ListBox.tsx` | `<ListBox renderEmptyState={...}>` | React Aria 기본 지원 (`renderEmptyState` prop) |
+| `GridList.tsx` | `<GridList renderEmptyState={...}>` | React Aria 기본 지원 |
+| `Select.tsx` | `<ListBox>` 내부 (Select의 popup) | Select 자체가 아닌 내부 ListBox에 적용 |
+| `ComboBox.tsx` | `<ListBox>` 내부 (ComboBox의 popup) | ComboBox 자체가 아닌 내부 ListBox에 적용 |
+| `Menu.tsx` | `<Menu renderEmptyState={...}>` | React Aria 기본 지원 |
+| `Table.tsx` | `<tbody>` 내부 행 0개 분기에서 placeholder `<tr>` 렌더링 | 커스텀 TanStack 가상화 구조이므로 React Aria `renderEmptyState` 미사용. `rows.length === 0` 조건에서 colspan 전체 placeholder row 표시 |
 
 ---
 
@@ -148,7 +157,7 @@ interface UseQuickConnectResult {
 
 로직:
 1. `useDataStore.getState()`에서 `createDataTable`, `currentProjectId`, `dataTables` 접근
-2. 이름 고유성: `dataTables.has(name)` → suffix 추가 (`Users_2`)
+2. 이름 고유성: `name.trim().toLowerCase()` 기준으로 `dataTables` 내 중복 검사 → 충돌 시 suffix 추가 (`Users_2`)
 3. `createDataTable()` 호출 → `await onDataBindingChange()` (Table은 기존 `ADD_COLUMN_ELEMENTS` 파이프라인이 자동 처리)
 
 #### ~~`apps/builder/src/builder/hooks/useAutoGenerateColumns.ts`~~ (삭제됨)
@@ -171,7 +180,7 @@ React-Aria `DialogTrigger` + `Popover` 기반 UI.
 ```
 
 재실행 처리: `isConnected=true` → 기존 DataTable 유지, 새 DataTable 생성 + 바인딩 교체.
-Table 재실행 시 Column 처리: 기존 Column Elements **전체 교체** (replace). 스키마가 변경될 수 있으므로 merge/append 대신 clean replace를 기본 전략으로 한다. 기존 Column이 존재하면 사용자에게 "기존 컬럼을 새 스키마로 교체합니다" 확인 다이얼로그를 표시하고, 승인 시 `TableHeader` 하위 Column Elements를 삭제 후 `ADD_COLUMN_ELEMENTS` 파이프라인이 새 Column을 자동 생성한다.
+Table 재실행 시 Column 처리: 기존 Column Elements **전체 교체** (replace). 스키마가 변경될 수 있으므로 merge/append 대신 clean replace를 기본 전략으로 한다. 기존 Column이 존재하면 사용자에게 "기존 컬럼을 새 스키마로 교체합니다" 확인 다이얼로그를 표시하고, 승인 시 `TableHeader` 하위 **Column + ColumnGroup Elements를 함께 삭제**한 뒤 `ADD_COLUMN_ELEMENTS` 파이프라인이 새 Column을 자동 생성한다. (기본 정책: ColumnGroup 초기화)
 
 ### 수정할 파일
 
@@ -246,15 +255,15 @@ useQuickConnect:
 
 | 항목 | 대응 |
 |------|------|
-| **이름 고유성** | `dataTables.has(name)` + suffix (`Users_2`) |
+| **이름 고유성** | `name.trim().toLowerCase()` 기준으로 `dataTables` 내 중복 검사 → 충돌 시 suffix 추가 (`Users_2`). `Users` vs `users` 충돌 방지 |
 | **currentProjectId null** | console.error + 조용히 실패 |
 | **Stale Closure** | async 내 `useDataStore.getState()` 사용 |
 | **Quick Connect 재실행** | 기존 DataTable 유지 + 새 DataTable 생성 + 바인딩 교체 |
-| **Undo/Redo** | Column 생성만 히스토리 (DataTable은 Data Store 독립) |
+| **Undo/Redo** | 현재 `ADD_COLUMN_ELEMENTS` 경로는 `useStore.setState()` 직접 반영이므로 히스토리 스택을 타지 않음. DataTable도 Data Store 독립. Quick Connect 전체가 Undo 대상 밖이며, 되돌리기는 수동 바인딩 해제 + Column 삭제로 대응. 향후 히스토리 통합 시 `ADD_COLUMN_ELEMENTS` 핸들러에 `recordHistory()` 추가 필요 |
 | **기존 수동 경로** | PropertyDataBinding + "바인딩 제거" 버튼 유지 |
 | **Spec shapes 빈 상태** | 구현 전 6개 컴포넌트 placeholder 렌더링 검증 필수 |
 | **PixiListBox/PixiList fallback** | 구 패턴 컴포넌트(`PixiListBox`, `PixiList`)는 자식이 없으면 하드코딩 기본값(Item 1~3/1~5)을 강제 주입함. Factory 아이템 제거 시 캔버스에 여전히 기본값이 표시되어 Preview와 불일치 발생. **구현 시 fallback 로직을 `dataBinding` 유무로 분기하거나 제거 필요.** (PixiSelect/PixiGridList은 A등급 패턴으로 리팩토링 완료, 영향 없음) |
-| **Quick Connect 실패 롤백** | `createDataTable` 성공 후 `onDataBindingChange` 실패 시 orphan DataTable 발생 가능. 실패 시 `deleteDataTable` 롤백 또는 orphan 마킹 정책 필요 |
+| **Quick Connect 실패 롤백** | `createDataTable` 호출 전 `prevBinding`을 보존한다. `createDataTable` 성공 후 `onDataBindingChange` 실패 시 catch 블록에서 **(1) `onDataBindingChange(prevBinding)`으로 기존 바인딩 복구 시도** 후 **(2) `deleteDataTable(id)`로 생성된 DataTable 삭제**를 수행한다. 두 단계 중 하나라도 실패하면 console.error 로깅 후 조용히 실패 (사용자는 Dataset 패널에서 수동 복구 가능) |
 
 ---
 
@@ -263,11 +272,11 @@ useQuickConnect:
 1. Spec shapes 빈 상태 검증 (6개 컴포넌트)
 2. PixiListBox/PixiList fallback 분기 처리 (dataBinding 유무 기반, 또는 fallback 제거)
 3. Factory 변경: 기본 아이템 제거
-4. renderEmptyState 추가 (6개 공유 컴포넌트)
+4. Empty state 추가: `renderEmptyState` prop (ListBox, GridList, Select, ComboBox, Menu) + Table은 `rows.length === 0` 분기 placeholder `<tr>` 렌더링
 5. useQuickConnect 훅 생성
 6. QuickConnectButton 컴포넌트 + CSS 생성
 7. ListBoxEditor 리팩토링 + Quick Connect 통합
-8. TableEditor 통합 (기존 `ADD_COLUMN_ELEMENTS` 파이프라인 활용, 재실행 시 Column replace 로직)
+8. TableEditor 통합 (기존 `ADD_COLUMN_ELEMENTS` 파이프라인 활용, 재실행 시 Column + ColumnGroup replace 로직)
 9. GridListEditor, SelectEditor, ComboBoxEditor, MenuEditor 통합
 10. export index 파일 업데이트 (`hooks/index.ts` + `components/property/index.ts` + `components/index.ts`)
 11. 타입 체크 (`cd apps/builder && pnpm exec tsc --noEmit`)
@@ -286,9 +295,9 @@ useQuickConnect:
    - 컴포넌트 삭제 → DataTable 유지 (데이터 독립성)
    - 동일 Preset 2회 → 이름 고유성 확인 (`Users`, `Users_2`)
    - Quick Connect 재실행 → 바인딩 교체 정상 동작
-   - Table 재실행 → 기존 Column 교체 확인 다이얼로그 + 새 Column 정상 생성
+   - Table 재실행 → 기존 Column + ColumnGroup 교체 확인 다이얼로그 + 새 Column 정상 생성
    - PixiListBox 빈 상태 → 캔버스에 하드코딩 기본값 미표시 확인 (Preview와 일치)
-   - Quick Connect 실패 시 → orphan DataTable 미발생 (롤백 확인)
+   - Quick Connect 실패 시 → dataBinding 이전 값 복구 + orphan DataTable 미발생 (롤백 확인)
 
 ---
 
