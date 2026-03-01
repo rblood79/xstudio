@@ -8,10 +8,6 @@ tools:
   - Grep
   - Glob
   - Bash
-disallowedTools:
-  - Write
-  - Edit
-  - NotebookEdit
 skills:
   - xstudio-patterns
 memory: project
