@@ -267,6 +267,69 @@ for (const filteredChild of filteredChildren) {
 
 **영향 범위**: Checkbox/Radio → Label(marginLeft), Card → CardHeader/CardContent(width:'100%'), CardHeader → Heading(flex:1) 등 모든 implicit style injection이 fullTreeLayout에서 정확히 반영됩니다.
 
+### enrichWithIntrinsicSize에 implicit-styled 자식 전달 (2026-03-02)
+
+`enrichWithIntrinsicSize`가 `calculateContentWidth`를 호출할 때, 원본 자식(`getChildElements`)이 아닌 **implicit-styled 자식(`filteredChildren`)**을 전달해야 합니다.
+
+`applyImplicitStyles`가 SelectTrigger/ComboBoxWrapper에 주입하는 spec padding/gap이 `calculateContentWidth`에 반영되지 않으면, `fit-content`/`min-content` 계산 시 크기가 과소 산출됩니다.
+
+```typescript
+// ✅ filteredChildren 사용 — implicit styles(padding/gap) 포함된 정확한 크기 계산
+let enriched = enrichWithIntrinsicSize(
+    element, availableWidth, availableHeight,
+    computedStyle, filteredChildren, getChildElements, isFlexChild,
+);
+// SelectTrigger: 14(padL) + 130(text) + 6(gap) + 18(icon) + 14(padR) = 182px ✓
+
+// ❌ getChildElements(elementId) — 원본 자식(spec padding/gap 없음) → 과소 산출
+let enriched = enrichWithIntrinsicSize(
+    element, availableWidth, availableHeight,
+    computedStyle, getChildElements(elementId), getChildElements, isFlexChild,
+);
+// SelectTrigger: 130(text) + 18(icon) = 148px ✗ (34px 부족 → SelectIcon 잘림)
+```
+
+### ElementSprite CSS keyword → pixel 해석 (2026-03-02)
+
+ElementSprite의 `effectiveElement` 계산에서 CSS intrinsic keyword(`fit-content`/`min-content`/`max-content`)도 `%`와 동일하게 `computedContainerSize` pixel 값으로 교체해야 합니다.
+
+미처리 시 CSS keyword 문자열이 spec shapes에 전달되어, `existingStyle.width ?? finalWidth`의 `??` 연산자가 truthy 문자열을 우선하여 `finalWidth`가 무시됩니다. 결과: 배경/보더 미렌더링.
+
+```typescript
+// ✅ % + intrinsic keywords 모두 pixel로 교체
+const INTRINSIC_KEYWORDS = ['fit-content', 'min-content', 'max-content'];
+const needsResolveWidth = typeof w === 'string' && (w.endsWith('%') || INTRINSIC_KEYWORDS.includes(w));
+const needsResolveHeight = typeof h === 'string' && (h.endsWith('%') || INTRINSIC_KEYWORDS.includes(h));
+
+// ❌ % 만 처리 — fit-content 등이 문자열로 spec shapes에 전달
+const hasPercentWidth = typeof w === 'string' && w.endsWith('%');
+// → width: 'fit-content' → spec shapes 배경/보더 미렌더링
+```
+
+### CSS min-width:auto 에뮬레이션 — step 4.8 (2026-03-02)
+
+CSS Flexbox §4.5: flex/grid item의 기본 min-width는 `auto` = content-based minimum.
+Taffy WASM은 텍스트 측정이 불가하여 min-content를 0으로 처리합니다.
+
+step 4.8은 텍스트 콘텐츠가 있는 **리프 노드**에 `measureTextWidth`(max-content) 기반 `minWidth`를 주입하여 shrink-wrap 환경에서 텍스트 축소를 방지합니다.
+
+```typescript
+// ✅ step 4.8: flex/grid 자식 리프 노드에 max-content minWidth 주입
+if (FLEX_GRID_DISPLAYS.has(parentDisplay) && !hasTaffyChildren) {
+    // 캔버스 non-TEXT_LEAF 노드는 단일 행 렌더링 (줄바꿈 없음)
+    // → max-content(전체 텍스트 폭) = 올바른 최소 폭
+    const maxContentW = measureTextWidth(textContent, fontSize);
+    enriched.style.minWidth = maxContentW + padding + border;
+}
+
+// ❌ min-content(최장 단어 폭) 사용 — 캔버스 단일 행 렌더링과 불일치
+// "Choose an option..." → min-content ≈ 50px (단어 "option...") → 너무 좁음
+const minContentW = calculateMinContentWidth(textContent, fontSize);
+```
+
+**적용 범위**: TEXT_LEAF_TAGS는 `enrichWithIntrinsicSize`에서 별도 처리되므로 step 4.8 대상 아님.
+Card/Tabs: Factory에 `width: '100%'` 설정하여 flex center에서 전체 폭 유지.
+
 ### 레이아웃 엔진 개선 이력 (2026-02-23)
 
 #### line-height 이중 전략: normal vs 1.5 (2026-02-23)

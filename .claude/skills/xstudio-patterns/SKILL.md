@@ -156,7 +156,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 아래 reference 파일들은 필요 시 참조하세요. 각 파일은 특정 도메인의 상세 구현 패턴을 포함합니다.
 
 ### Layout Engine
-**[reference/layout-engine.md](reference/layout-engine.md)** — 엔진 선택, DirectContainer 패턴, LayoutComputedSizeContext, enrichWithIntrinsicSize, Card Nested Tree 레이아웃, Tabs 높이 계산, Compositional Component 전환 체크리스트, 레이아웃 엔진 개선 이력
+**[reference/layout-engine.md](reference/layout-engine.md)** — 엔진 선택, DirectContainer 패턴, LayoutComputedSizeContext, enrichWithIntrinsicSize, Card Nested Tree 레이아웃, Tabs 높이 계산, Compositional Component 전환 체크리스트, enrichment filteredChildren 패턴, ElementSprite CSS keyword→pixel 해석, CSS min-width:auto 에뮬레이션(step 4.8), 레이아웃 엔진 개선 이력
 
 ### Compositional Architecture
 **[reference/compositional-architecture.md](reference/compositional-architecture.md)** — ComboBox/Calendar/DatePicker Compositional 전환 패턴, CSS 값 일관성, Spec Shapes 배경색 규칙, Breadcrumbs/Card 높이 계산, convertToFillStyle, TextSprite 렌더링, Container Props 주입
