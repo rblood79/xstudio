@@ -1,34 +1,6 @@
 ---
-name: 시연
-description: |
-  Use this agent when you need to write tests, create Storybook stories, or set up test infrastructure. Examples:
-
-  <example>
-  Context: User wants tests for a component
-  user: "이 컴포넌트에 대한 테스트를 작성해줘"
-  assistant: "I'll use the tester agent to write tests for the component."
-  <commentary>
-  Test writing is a standard task suited for Sonnet.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User wants Storybook stories
-  user: "이 컴포넌트의 Storybook story를 만들어줘"
-  assistant: "I'll use the tester agent to create Storybook stories."
-  <commentary>
-  Storybook story creation following project conventions.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User wants E2E tests
-  user: "이 기능에 대한 Playwright 테스트를 작성해줘"
-  assistant: "I'll use the tester agent to write Playwright E2E tests."
-  <commentary>
-  E2E test writing following existing Playwright patterns.
-  </commentary>
-  </example>
+name: tester
+description: Writes unit tests (Vitest), component tests (React Testing Library), Storybook stories, and E2E tests (Playwright) for XStudio. Use when the user asks for tests, stories, or test infrastructure setup.
 model: sonnet
 color: cyan
 ---
