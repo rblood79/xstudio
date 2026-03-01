@@ -82,9 +82,6 @@ export function publishLayoutMap(map: Map<string, ComputedLayout> | null, pageId
     _perPageLayoutMaps.delete(key);
   }
   _sharedLayoutVersion++;
-  if (import.meta.env.DEV) {
-    console.log(`[publishLayoutMap] pageId=${key}, entries=${map?.size ?? 0}, totalPages=${_perPageLayoutMaps.size}, version=${_sharedLayoutVersion}`);
-  }
 }
 
 /** 공유된 fullTreeLayoutMap 조회 (모든 페이지 머지, 버전 캐시) */
@@ -783,9 +780,6 @@ export function calculateFullTreeLayout(
   if (!persistentTree) {
     persistentTree = new PersistentTaffyTree();
     persistentTrees.set(pageId, persistentTree);
-    if (import.meta.env.DEV) {
-      console.log(`[fullTreeLayout] New PersistentTree for page=${pageId}, root=${rootElementId}, total trees=${persistentTrees.size}`);
-    }
   }
   if (!persistentTree.isAvailable) return null;
 
@@ -849,10 +843,6 @@ export function calculateFullTreeLayout(
     if (!persistentTree.isInitialized) {
       // Path A: 초기 빌드 (buildTreeBatch 1회 WASM 호출)
       persistentTree.buildFull(rootElementId, batch, filteredChildIdsMap);
-
-      if (import.meta.env.DEV) {
-        console.log(`[fullTreeLayout] Initial build: ${batch.length} nodes`);
-      }
     } else {
       // Path B: 증분 갱신 (변경된 노드만 WASM 호출)
       const stats = incrementalUpdate(persistentTree, batch, filteredChildIdsMap);

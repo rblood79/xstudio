@@ -271,13 +271,14 @@ export const transformValuesAtom = selectAtom(
       height: getTransformValue(element.type, element.style?.height, 'height'),
       top: String(element.style?.top ?? 'auto'),
       left: String(element.style?.left ?? 'auto'),
+      isBody: element.type?.toLowerCase() === 'body',
     };
     return result;
   },
   (a, b) => {
     if (a === null && b === null) return true;
     if (a === null || b === null) return false;
-    return a.width === b.width && a.height === b.height && a.top === b.top && a.left === b.left;
+    return a.width === b.width && a.height === b.height && a.top === b.top && a.left === b.left && a.isBody === b.isBody;
   }
 );
 

@@ -206,12 +206,6 @@ export function buildRenderCommandStream(
     const offsetX = pagePos?.x ?? 0;
     const offsetY = pagePos?.y ?? 0;
 
-    if (process.env.NODE_ENV === 'development') {
-      const hasLayout = layoutMap.has(bodyId);
-      const childCount = childrenMap.get(bodyId)?.length ?? 0;
-      console.log(`[buildRenderCommandStream] body=${bodyId.slice(0,8)}, pos=(${offsetX},${offsetY}), hasLayout=${hasLayout}, children=${childCount}, hasPagePos=${!!pagePos}`);
-    }
-
     visitElement(bodyId, offsetX, offsetY, commands, boundsMap, childrenMap, layoutMap, offsetX, offsetY);
   }
 

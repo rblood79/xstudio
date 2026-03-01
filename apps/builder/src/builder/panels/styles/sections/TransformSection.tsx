@@ -26,6 +26,7 @@ import {
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
 import { useTransformValuesJotai } from '../hooks/useTransformValuesJotai';
 import { useResetStyles } from '../hooks/useResetStyles';
+import { useCanvasSyncStore } from '../../../workspace/canvas/canvasSync';
 
 /**
  * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
@@ -37,8 +38,17 @@ const TransformSectionContent = memo(function TransformSectionContent() {
   const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useTransformValuesJotai();
+  // Body 요소: breakpoint 크기 표시 (canvasSize 구독으로 토글 변경 즉시 반영)
+  const canvasSize = useCanvasSyncStore(state => state.canvasSize);
 
   if (!styleValues) return null;
+
+  const displayWidth = styleValues.isBody && styleValues.width === 'auto'
+    ? String(canvasSize.width)
+    : styleValues.width;
+  const displayHeight = styleValues.isBody && styleValues.height === 'auto'
+    ? String(canvasSize.height)
+    : styleValues.height;
 
   return (
     <>
@@ -46,7 +56,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         icon={RulerDimensionLine}
         label="Width"
         className="width"
-        value={styleValues.width}
+        value={displayWidth}
         units={['reset', 'fit-content', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('width', value)}
         onDrag={(value) => updateStylePreview('width', value)}
@@ -57,7 +67,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         icon={RulerDimensionLine}
         label="Height"
         className="height"
-        value={styleValues.height}
+        value={displayHeight}
         units={['reset', 'fit-content', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('height', value)}
         onDrag={(value) => updateStylePreview('height', value)}
