@@ -578,6 +578,10 @@ function measureSpecTextMinHeight(
 
   const paddingY = (sizeSpec.paddingY as number) ?? 8;
 
+  // CSS border-box 보정: border shape에서 borderWidth 추출
+  const borderShape = shapes.find(s => s.type === 'border');
+  const bgBorderWidth = borderShape ? ((borderShape as Record<string, unknown>).borderWidth as number) ?? 0 : 0;
+
   for (const shape of shapes) {
     if (shape.type !== 'text' || !shape.text) continue;
 
@@ -595,13 +599,14 @@ function measureSpecTextMinHeight(
     const fontWeight = typeof shape.fontWeight === 'number' ? shape.fontWeight : 500;
     const fontFamily = shape.fontFamily || 'Pretendard';
 
-    // maxWidth 계산: specShapesToSkia와 동일한 로직
+    // maxWidth 계산: specShapesToSkia와 동일한 로직 + border-box 보정
     let maxWidth = shape.maxWidth ?? containerWidth;
     if (shape.x > 0 && shape.maxWidth == null) {
+      const effectiveX = shape.x + bgBorderWidth;
       if (shape.align === 'center') {
-        maxWidth = containerWidth - shape.x * 2;
+        maxWidth = containerWidth - effectiveX * 2;
       } else {
-        maxWidth = containerWidth - shape.x;
+        maxWidth = containerWidth - effectiveX;
       }
       if (maxWidth < 1) maxWidth = containerWidth;
     }

@@ -148,6 +148,21 @@ export function specShapesToSkia(
     processShape(shape);
   }
 
+  // ===== Post-process: border-box 보정 =====
+  // CSS border-box 모델에서 border는 padding 바깥에 위치하므로
+  // 텍스트 콘텐츠 영역은 containerWidth에서 border*2를 추가로 제외해야 한다.
+  // Pass 2에서 bgBox.strokeWidth가 확정된 후 text children을 일괄 보정.
+  const bgBorderWidth = bgBox?.strokeWidth ?? 0;
+  if (bgBorderWidth > 0) {
+    for (const child of children) {
+      if (child.type === 'text' && child.text) {
+        child.text.paddingLeft += bgBorderWidth;
+        child.text.maxWidth -= bgBorderWidth * 2;
+        if (child.text.maxWidth < 1) child.text.maxWidth = containerWidth;
+      }
+    }
+  }
+
   // Build the top-level container
   return {
     type: 'box',

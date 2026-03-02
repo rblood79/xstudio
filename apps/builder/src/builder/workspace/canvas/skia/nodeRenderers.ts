@@ -1225,7 +1225,7 @@ export function renderText(
     whiteSpace,
     wordBreak,
     overflowWrap,
-    isEllipsis ? '1' : '0',
+    isEllipsis ? node.text.maxWidth : '0',
     textIndent,
   ].join('\u0000');
 
@@ -1350,7 +1350,8 @@ export function renderText(
       },
       textAlign,
       // text-overflow: ellipsis → maxLines:1 + ellipsis 문자열
-      ...(isEllipsis ? { maxLines: 1, ellipsis: '...' } : {}),
+      // CSS text-overflow: ellipsis는 U+2026 (…) 사용 → 동일 문자로 일치시켜야 truncation 지점 동기화
+      ...(isEllipsis ? { maxLines: 1, ellipsis: '\u2026' } : {}),
       // NOTE: CanvasKit 0.40 ParagraphStyle에는 wordBreak/breakStrategy API가 없다.
       // allowBreakAll(wordBreak: break-all, overflowWrap: break-word/anywhere) 상태는
       // key에 포함되어 캐시를 분리하며, 향후 CanvasKit API 업데이트 시 여기서 처리 예정.
