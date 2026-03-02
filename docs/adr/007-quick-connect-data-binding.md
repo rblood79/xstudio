@@ -259,6 +259,7 @@ useQuickConnect:
 | **currentProjectId null** | console.error + 조용히 실패 |
 | **Stale Closure** | async 내 `useDataStore.getState()` 사용 |
 | **Quick Connect 재실행** | 기존 DataTable 유지 + 새 DataTable 생성 + 바인딩 교체 |
+| **Table columnCreationRequestedRef 캐시** | `TableRenderer.tsx` 모듈 레벨 `Set<string>` 캐시는 `dataBinding.source` 타입 변경 시에만 clear됨. 동일 타입 재연결 시 Column 생성 차단됨. **해결: 3-Phase null-dataBinding 접근법** (Phase 4-B 상세 설계 참조) — `dataBinding=null` 중간 단계로 source 타입 변경을 강제하여 캐시 clear 트리거 |
 | **Undo/Redo** | 현재 `ADD_COLUMN_ELEMENTS` 경로는 `useStore.setState()` 직접 반영이므로 히스토리 스택을 타지 않음. DataTable도 Data Store 독립. Quick Connect 전체가 Undo 대상 밖이며, 되돌리기는 수동 바인딩 해제 + Column 삭제로 대응. 향후 히스토리 통합 시 `ADD_COLUMN_ELEMENTS` 핸들러에 `recordHistory()` 추가 필요 |
 | **기존 수동 경로** | PropertyDataBinding + "바인딩 제거" 버튼 유지 |
 | **Spec shapes 빈 상태** | 구현 전 6개 컴포넌트 placeholder 렌더링 검증 필수 |
@@ -370,6 +371,70 @@ DialogTrigger
 
 CSS: `@layer components { }` + BEM-like + M3 변수
 
+##### 상세 설계 (핵심 난관 #1)
+
+**참조 패턴**: `ActionTypePicker.tsx` 구조를 그대로 따름. 기존 코드베이스에 Popover+검색+카테고리 리스트 조합의 선례가 없으므로 ActionTypePicker가 유일한 참조점.
+
+**카테고리 헤더 구현** — `ListBoxSection` 미사용:
+```tsx
+// ActionTypePicker 패턴: flatMap으로 헤더 + 아이템을 평면 배열로 생성
+const filteredItems = useMemo(() => {
+  return PRESET_CATEGORIES.flatMap(category => {
+    const presets = getPresetsByCategory(category.id)
+      .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (presets.length === 0) return [];
+    return [
+      { type: 'header' as const, id: `header-${category.id}`, label: category.label },
+      ...presets.map(p => ({ type: 'preset' as const, ...p })),
+    ];
+  });
+}, [searchTerm]);
+
+// ListBox 내부: 헤더는 pointer-events: none으로 비인터랙티브 처리
+<ListBox selectionMode="single" onSelectionChange={handleSelect}>
+  {filteredItems.map(item =>
+    item.type === 'header'
+      ? <ListBoxItem key={item.id} id={item.id} textValue={item.label}
+          className="quick-connect-group-label">
+          {item.label}
+        </ListBoxItem>
+      : <ListBoxItem key={item.id} id={item.id} textValue={item.name}>
+          <Icon name={item.icon} size={16} />
+          {item.name}
+        </ListBoxItem>
+  )}
+</ListBox>
+```
+
+**Preset 아이콘 처리** — `icon` 필드는 Lucide 문자열 이름(`"User"`, `"Key"` 등):
+```tsx
+// iconMap으로 문자열 → React 컴포넌트 변환 (14개 preset 전용)
+import { User, Key, Lock, ShoppingCart, Package, Mail, /* ... */ } from 'lucide-react';
+
+const PRESET_ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {
+  User, Key, Lock, ShoppingCart, Package, Mail,
+  FileText, Calendar, MapPin, Star, Tag, Briefcase, Heart, Image,
+};
+
+// 사용: const IconComponent = PRESET_ICON_MAP[preset.icon] ?? Database;
+```
+
+**검색 포커스**: ActionTypePicker 패턴 — `onOpenChange` 시 `setTimeout(() => searchInputRef.current?.focus(), 50)`
+
+**"빈 테이블" 옵션**: 검색 필터 대상 외, ListBox 최상단 고정. `id="empty"` → `onSelectionChange`에서 `quickConnect(null)` 호출.
+
+**Popover props**: `placement="bottom start"`, `offset={4}`, `showArrow={false}`, `containFocus={true}`
+
+**CSS 핵심 클래스** (EventsPanel.css의 ActionTypePicker 스타일 참조):
+```css
+@layer components {
+  .quick-connect-popover { max-height: 320px; min-width: 260px; overflow-y: auto; }
+  .quick-connect-search { display: flex; gap: var(--spacing-sm); border-bottom: 1px solid var(--color-border); padding: var(--spacing-sm); }
+  .quick-connect-group-label { cursor: default; pointer-events: none; font-size: 11px; font-weight: 600; color: var(--color-text-secondary); padding: var(--spacing-xs) var(--spacing-sm); }
+  .quick-connect-item[data-focused] { background: var(--color-surface-100); }
+}
+```
+
 ---
 
 ### Phase 4: 에디터 통합
@@ -378,24 +443,126 @@ CSS: `@layer components { }` + BEM-like + M3 변수
 
 **`apps/builder/src/builder/panels/properties/editors/ListBoxEditor.tsx`**
 
-제거:
-- `inferFieldType` (L108~125), `handleAutoGenerateFields` (L128~223)
-- `existingFields`, `templateItem`, `getChildElements` 관련 코드
-- Auto-Generate 버튼 UI (L609~649)
-- `handleDataBindingChange`의 Field 삭제 confirm 로직 (L278~293) → 단순화
+##### 상세 설계 (핵심 난관 #2)
 
-추가: `useQuickConnect` 훅 + `<QuickConnectButton>` (PropertyDataBinding 위에)
+**제거 대상 의존성 맵** (모두 자기 완결적 — 다른 코드에서 참조하지 않음):
+
+| 제거 대상 | 라인 | 의존하는 import/selector |
+|-----------|------|------------------------|
+| `inferFieldType` 함수 | L108~125 | 없음 (handleAutoGenerateFields 전용) |
+| `handleAutoGenerateFields` 함수 | L128~223 | `getDB`, `addElement`, `generateCustomId`, `ElementUtils`, `Element` 타입, `currentPageId`, `useDataTables` |
+| `existingFields` useMemo | 의존: templateItem, getChildElements | `getChildElements` selector |
+| `templateItem` useMemo | 의존: getChildElements | `getChildElements` selector |
+| Auto-Generate 버튼 UI | L609~649 | `Wand2` (lucide icon), `Database` (lucide icon) |
+| `handleDataBindingChange` 복잡 로직 | L278~293 | `removeElement` selector, `window.confirm` |
+
+**제거할 Store selector** (L65~67):
+```diff
+- const addElement = useStore(s => s.addElement);
+- const removeElement = useStore(s => s.removeElement);
+- const currentPageId = useStore(s => s.currentPageId);
+```
+
+**제거할 import**:
+```diff
+- import { Database, Wand2 } from 'lucide-react';  // Database는 Quick Connect가 사용하면 유지
+- import { getDB } from '../../../../services/supabase';
+- import { ElementUtils } from '../../utils/ElementUtils';
+- import { generateCustomId } from '../../utils/idGenerator';
+- import type { Element } from '../../types';
+- import { useDataTables } from '../../hooks/useDataTables';
+```
+
+**`handleDataBindingChange` 단순화** (L271~297 → 1줄):
+```typescript
+// Before: Field 삭제 confirm + templateItem 삭제 + existingFields 삭제 (~30줄)
+// After:
+const handleDataBindingChange = useCallback((binding: DataBindingValue | null) => {
+  onUpdate({ ...currentProps, dataBinding: binding || undefined });
+}, [currentProps, onUpdate]);
+```
+
+**추가할 코드** (dataBindingSection useMemo 내부, PropertyDataBinding 위):
+```tsx
+import { useQuickConnect } from '../../../hooks';
+import { QuickConnectButton } from '../../../components';
+
+// 훅 호출 (컴포넌트 본문)
+const { quickConnect, isConnected, isConnecting } = useQuickConnect({
+  elementId, componentTag: 'ListBox',
+  currentDataBinding: currentProps?.dataBinding,
+  onDataBindingChange: handleDataBindingChange,
+});
+
+// dataBindingSection useMemo 내부 — PropertyDataBinding 바로 위에 배치
+<QuickConnectButton
+  onQuickConnect={quickConnect}
+  isConnected={isConnected}
+  isConnecting={isConnecting}
+/>
+```
+
+**영향 없는 섹션** (8개 — 수정 불필요):
+Basic, Content, Performance, Filtering, State, Behavior, Form Integration, Item Management
 
 #### 4-B. TableEditor 통합 (Column replace 포함)
 
 **`apps/builder/src/builder/panels/properties/editors/TableEditor.tsx`**
 
+##### 상세 설계 (핵심 난관 #3 — columnCreationRequestedRef 캐시 문제)
+
+**발견된 문제**: `TableRenderer.tsx`의 모듈 레벨 `columnCreationRequestedRef` (`Set<string>`, L15~19)는 Column 중복 생성 방지용 캐시. 캐시 clear 조건은 `dataBinding.source` **타입**이 변경될 때만 실행 (L136~152). 동일 타입(`dataTable`)으로 다른 DataTable에 재연결하면 requestKey가 동일하게 유지되어 **Column 생성이 차단됨**.
+
+```
+// TableRenderer.tsx 캐시 clear 로직 (L136~152)
+if (prevSourceRef !== currentSource) {       // "dataTable" → "dataTable"은 false!
+  columnCreationRequestedRef.current.clear();
+  prevSourceRef = currentSource;
+}
+```
+
+**해결: 3-Phase null-dataBinding 접근법**
+
+```typescript
+const handleQuickConnect = useCallback(async (preset: DataTablePreset | null) => {
+  const tableHeaderId = tableHeaderElement?.id;
+  if (!tableHeaderId) return;
+
+  // Phase 0: 기존 Column+ColumnGroup 존재 시 확인
+  const columnIds = [...actualColumns, ...actualColumnGroups].map(e => e.id);
+  if (columnIds.length > 0) {
+    const confirmed = window.confirm('기존 컬럼을 새 스키마로 교체합니다.');
+    if (!confirmed) return;
+    await removeElements(columnIds);
+  }
+
+  // Phase 1: dataBinding을 null로 설정 → source "dataTable" → "none" 전환
+  //          → TableRenderer의 prevSourceRef 변경 → 캐시 clear 트리거
+  handleDataBindingChange(null);
+
+  // Phase 2: 다음 tick에서 새 dataBinding 설정
+  //          → source "none" → "dataTable" 전환 → 캐시가 비어있으므로 Column 생성 정상 진행
+  await new Promise(resolve => setTimeout(resolve, 0));
+  await quickConnect(preset);
+}, [tableHeaderElement, actualColumns, actualColumnGroups, quickConnect, handleDataBindingChange]);
+```
+
+**왜 이 접근이 작동하는가**:
+1. `handleDataBindingChange(null)` → Preview의 TableRenderer가 `dataBinding.source`를 `undefined`(= 없음)로 인식
+2. `prevSourceRef`가 `"dataTable"` → `undefined`로 변경 → `columnCreationRequestedRef.clear()` 실행
+3. 다음 tick에서 `quickConnect(preset)` → 새 dataBinding 설정 → source가 다시 `"dataTable"`
+4. requestKey가 새로 생성되지만 캐시가 비어있으므로 `columnCreationRequestedRef.has(key)` = false → Column 생성 진행
+
+**대안 검토 (기각)**:
+- `columnCreationRequestedRef`에 직접 접근하여 clear → 모듈 레벨 변수이므로 Builder에서 접근 불가 (Preview iframe 격리)
+- requestKey에 timestamp 추가 → TableRenderer 코드 수정 필요 (범위 초과)
+
 추가:
 - `useQuickConnect` 훅 호출
-- `handleQuickConnect` 래퍼: 기존 Column+ColumnGroup 있으면 confirm → `removeElements(ids)` → `quickConnect(preset)` → `ADD_COLUMN_ELEMENTS` 파이프라인 자동 트리거
+- `handleQuickConnect` 래퍼 (위 3-Phase 로직)
 - `<QuickConnectButton onQuickConnect={handleQuickConnect}>` (Data Binding 섹션 L306~313)
 
-재사용: `removeElements` (`elements.ts` L113), `columnCreationRequestedRef` 자동 초기화 (수동 reset 불필요)
+재사용: `removeElements` (elementRemoval.ts), `tableHeaderElement`/`actualColumns`/`actualColumnGroups` (기존 L270~291)
 
 #### 4-C. 나머지 4개 에디터 — 동일 패턴
 
