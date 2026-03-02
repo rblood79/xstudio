@@ -33,6 +33,7 @@ const MAX_PARAGRAPH_CACHE_SIZE = (() => {
   return 1000; // 기본값 500 → 1000으로 상향
 })();
 const paragraphCache = new Map<string, Paragraph>();
+const paragraphAlignOffsetCache = new Map<string, number>();
 let lastParagraphFontMgr: FontMgr | null = null;
 
 function clearParagraphCache(): void {
@@ -40,6 +41,7 @@ function clearParagraphCache(): void {
     paragraph.delete();
   }
   paragraphCache.clear();
+  paragraphAlignOffsetCache.clear();
 }
 
 export function clearTextParagraphCache(): void {
@@ -1155,6 +1157,80 @@ export function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeDat
 }
 
 /**
+ * CSS word-break:normal 줄바꿈 시뮬레이션
+ *
+ * CSS 동작: 단어 경계(공백)에서만 줄바꿈. 긴 단어는 overflow하되 컨테이너 width 유지.
+ * 수동으로 줄바꿈 위치를 계산하고 \n을 삽입한 텍스트와 effectiveWidth를 반환.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function cssNormalBreakProcess(
+  ck: any, paraStyle: any, fontMgr: any, text: string, maxWidth: number,
+): { text: string; effectiveWidth: number } {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return { text, effectiveWidth: maxWidth };
+
+  // 각 단어 폭 측정
+  let maxWordWidth = 0;
+  const wordWidths: number[] = [];
+  for (const word of words) {
+    const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+    b.addText(word);
+    const p = b.build();
+    p.layout(1e6);
+    const ww = p.getMaxIntrinsicWidth();
+    p.delete();
+    b.delete();
+    wordWidths.push(ww);
+    if (ww > maxWordWidth) maxWordWidth = ww;
+  }
+
+  // 스페이스 폭 측정
+  const bs = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+  bs.addText('x x');
+  const ps = bs.build();
+  ps.layout(1e6);
+  const xxSpace = ps.getMaxIntrinsicWidth();
+  ps.delete();
+  bs.delete();
+  const bx = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+  bx.addText('xx');
+  const px = bx.build();
+  px.layout(1e6);
+  const xxNoSpace = px.getMaxIntrinsicWidth();
+  px.delete();
+  bx.delete();
+  const spaceWidth = xxSpace - xxNoSpace;
+
+  // CSS 줄바꿈 시뮬레이션
+  const lines: string[] = [];
+  let currentLine = '';
+  let currentWidth = 0;
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const ww = wordWidths[i];
+
+    if (currentLine === '') {
+      currentLine = word;
+      currentWidth = ww;
+    } else if (currentWidth + spaceWidth + ww <= maxWidth) {
+      currentLine += ' ' + word;
+      currentWidth += spaceWidth + ww;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+      currentWidth = ww;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+
+  return {
+    text: lines.join('\n'),
+    effectiveWidth: Math.max(maxWidth, Math.ceil(maxWordWidth)),
+  };
+}
+
+/**
  * keep-all 에뮬레이션: 공백에서만 분할하여 최대 단어 너비 계산
  *
  * @param allowOverflowBreak - true면 단어가 maxWidth 초과 시 CanvasKit 기본 분할 허용
@@ -1325,7 +1401,8 @@ export function renderText(
   const cached = getCachedParagraph(key);
   if (cached) {
     const drawY = computeDrawY(cached);
-    canvas.drawParagraph(cached, node.text.paddingLeft + textIndent, drawY);
+    const cachedOffset = paragraphAlignOffsetCache.get(key) ?? 0;
+    canvas.drawParagraph(cached, node.text.paddingLeft + textIndent + cachedOffset, drawY);
     return;
   }
 
@@ -1433,52 +1510,36 @@ export function renderText(
 
     // ADR-008: text preprocessing for word-break/overflow-wrap
     let renderText = processedText;
-    if (wordBreak === 'break-all') {
-      renderText = Array.from(processedText).join('\u200B');
-    } else if ((overflowWrap === 'break-word' || overflowWrap === 'anywhere') && wordBreak !== 'break-all') {
-      renderText = preprocessBreakWordText(ck, paraStyle, fontMgr, processedText, layoutMaxWidth);
-    }
-
-    const builder = scope.track(ck.ParagraphBuilder.Make(paraStyle, fontMgr));
-    builder.addText(renderText);
-    const paragraph = builder.build();
-
-    // ADR-008: word-break × overflow-wrap 조합 테이블 기반 effectiveLayoutWidth 계산
     let effectiveLayoutWidth = isEllipsis ? node.text.maxWidth : layoutMaxWidth;
+
     if (!isEllipsis && layoutMaxWidth < 100000) {
-      if (wordBreak === 'break-all') {
+      if (wordBreak === 'normal' && overflowWrap === 'normal') {
+        // normal + normal: CSS 줄바꿈 시뮬레이션
+        const result = cssNormalBreakProcess(ck, paraStyle, fontMgr, processedText, layoutMaxWidth);
+        renderText = result.text;
+        effectiveLayoutWidth = result.effectiveWidth;
+      } else if (wordBreak === 'break-all') {
         // break-all: ZWS로 이미 분할 가능 → maxWidth 그대로
+        renderText = Array.from(processedText).join('\u200B');
         effectiveLayoutWidth = layoutMaxWidth;
       } else if (overflowWrap === 'break-word' || overflowWrap === 'anywhere') {
         if (wordBreak === 'keep-all') {
           // keep-all + break-word: CJK 단어 넘침 시에만 분할 허용
           effectiveLayoutWidth = computeKeepAllWidth(ck, paraStyle, fontMgr, processedText, layoutMaxWidth, true);
         } else {
-          // normal + break-word/anywhere: CanvasKit 기본 동작
+          // normal + break-word/anywhere: CSS break-word 시뮬레이션
+          renderText = preprocessBreakWordText(ck, paraStyle, fontMgr, processedText, layoutMaxWidth);
           effectiveLayoutWidth = layoutMaxWidth;
         }
       } else if (wordBreak === 'keep-all') {
         // keep-all + normal: CJK 넘침 허용 (단어 보호)
         effectiveLayoutWidth = computeKeepAllWidth(ck, paraStyle, fontMgr, processedText, layoutMaxWidth, false);
-      } else {
-        // normal + normal: 기존 단어 보호 로직
-        const words = processedText.split(/\s+/).filter(Boolean);
-        if (words.length > 0) {
-          let maxWordWidth = 0;
-          for (const word of words) {
-            const wb = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-            wb.addText(word);
-            const wp = wb.build();
-            wp.layout(1e6);
-            const ww = wp.getMaxIntrinsicWidth();
-            wp.delete();
-            wb.delete();
-            if (ww > maxWordWidth) maxWordWidth = ww;
-          }
-          effectiveLayoutWidth = Math.max(layoutMaxWidth, Math.ceil(maxWordWidth));
-        }
       }
     }
+
+    const builder = scope.track(ck.ParagraphBuilder.Make(paraStyle, fontMgr));
+    builder.addText(renderText);
+    const paragraph = builder.build();
     paragraph.layout(effectiveLayoutWidth);
 
     // ADR-008: nowrap/pre — CanvasKit은 매우 큰 layout width(100000+)로 렌더링하면
@@ -1491,7 +1552,20 @@ export function renderText(
       }
     }
 
+    // CSS 줄바꿈 시뮬레이션으로 effectiveWidth > layoutMaxWidth인 경우
+    // textAlign에 따른 센터링 오프셋 보정 (CSS는 container width 기준 정렬)
+    let alignOffset = 0;
+    if (effectiveLayoutWidth > layoutMaxWidth && layoutMaxWidth < 100000) {
+      const widthDiff = effectiveLayoutWidth - layoutMaxWidth;
+      if (textAlign === ck.TextAlign.Center) {
+        alignOffset = -widthDiff / 2;
+      } else if (textAlign === ck.TextAlign.Right) {
+        alignOffset = -widthDiff;
+      }
+    }
+
     setCachedParagraph(key, paragraph);
+    if (alignOffset !== 0) paragraphAlignOffsetCache.set(key, alignOffset);
     const drawY = computeDrawY(paragraph);
 
     // ADR-008 Phase 3: clipText 시 텍스트 영역 클리핑
@@ -1507,7 +1581,7 @@ export function renderText(
     }
 
     // text-indent: 첫 줄 들여쓰기 → paddingLeft에 offset 추가
-    canvas.drawParagraph(paragraph, node.text.paddingLeft + textIndent, drawY);
+    canvas.drawParagraph(paragraph, node.text.paddingLeft + textIndent + alignOffset, drawY);
 
     if (shouldClip) {
       canvas.restore();

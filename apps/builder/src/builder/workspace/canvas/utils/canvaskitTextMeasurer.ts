@@ -167,17 +167,25 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
       return this.measureCSSBreakWord(ck, paraStyle, fontMgr, text, maxWidth, style.lineHeight);
     }
 
-    // break-all: ZWS 삽입으로 모든 문자 사이에 줄바꿈 가능 지점 생성
+    // ADR-008: normal+normal → CSS 줄바꿈 시뮬레이션으로 텍스트 전처리
     let processedText = text;
-    if (wb === 'break-all') {
+    let effectiveMaxWidth: number;
+
+    if (wb === 'normal' && ow === 'normal') {
+      const result = this.cssNormalBreakProcess(ck, paraStyle, fontMgr, text, maxWidth);
+      processedText = result.text;
+      effectiveMaxWidth = result.effectiveWidth;
+    } else if (wb === 'break-all') {
+      // break-all: ZWS 삽입으로 모든 문자 사이에 줄바꿈 가능 지점 생성
       processedText = Array.from(text).join('\u200B');
+      effectiveMaxWidth = this.computeEffectiveMaxWidth(ck, paraStyle, fontMgr, text, maxWidth, wb, ow);
+    } else {
+      effectiveMaxWidth = this.computeEffectiveMaxWidth(ck, paraStyle, fontMgr, text, maxWidth, wb, ow);
     }
 
     const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
     builder.addText(processedText);
     const paragraph = builder.build();
-
-    const effectiveMaxWidth = this.computeEffectiveMaxWidth(ck, paraStyle, fontMgr, text, maxWidth, wb, ow);
     paragraph.layout(effectiveMaxWidth);
 
     const height = paragraph.getHeight();
@@ -222,23 +230,31 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
       return this.cssKeepAllBreakMaxWidth(ck, paraStyle, fontMgr, text, maxWidth, false);
     }
 
-    // normal + normal: 기존 로직 (단어 보호)
-    return this.cssNormalBreakMaxWidth(ck, paraStyle, fontMgr, text, maxWidth);
+    // normal + normal: CSS 줄바꿈 시뮬레이션 (computeEffectiveMaxWidth에서는 width만 반환)
+    const result = this.cssNormalBreakProcess(ck, paraStyle, fontMgr, text, maxWidth);
+    return result.effectiveWidth;
   }
 
   /**
-   * CSS word-break: normal 에뮬레이션을 위한 유효 최대 너비 계산
+   * CSS word-break: normal 에뮬레이션 — 줄바꿈 시뮬레이션
    *
-   * 텍스트를 공백으로 분리하여 각 단어의 너비를 측정하고,
-   * 가장 넓은 단어의 너비와 maxWidth 중 큰 값을 반환한다.
-   * 이를 통해 CanvasKit이 단어 내부에서 줄바꿈하는 것을 방지한다.
+   * CSS 동작: 단어 경계(공백)에서만 줄바꿈. 긴 단어는 overflow하되 컨테이너 width 유지.
+   * CanvasKit 한계: 단일 layout width만 지원 → 긴 단어를 수용하면 모든 줄이 넓어짐.
+   *
+   * 해결: 단어 폭을 측정하여 CSS 규칙대로 수동 줄바꿈 후, \n 삽입된 텍스트와
+   * max(maxWidth, maxWordWidth) 레이아웃 폭을 반환한다.
+   * → CanvasKit이 수동 줄바꿈을 유지하면서 긴 단어도 문자 분할 없이 렌더링.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private cssNormalBreakMaxWidth(ck: any, paraStyle: any, fontMgr: any, text: string, maxWidth: number): number {
+  private cssNormalBreakProcess(
+    ck: any, paraStyle: any, fontMgr: any, text: string, maxWidth: number,
+  ): { text: string; effectiveWidth: number } {
     const words = text.split(/\s+/).filter(Boolean);
-    if (words.length === 0) return maxWidth;
+    if (words.length === 0) return { text, effectiveWidth: maxWidth };
 
+    // 1. 각 단어 폭 측정
     let maxWordWidth = 0;
+    const wordWidths: number[] = [];
     for (const word of words) {
       const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
       b.addText(word);
@@ -247,11 +263,57 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
       const ww = p.getMaxIntrinsicWidth();
       p.delete();
       b.delete();
+      wordWidths.push(ww);
       if (ww > maxWordWidth) maxWordWidth = ww;
     }
-    // 부동소수점 정밀도 이슈 방지: getMaxIntrinsicWidth()와 layout() 사이의
-    // 미세한 차이로 인해 동일 너비에서도 줄바꿈이 발생할 수 있으므로 ceil 적용
-    return Math.max(maxWidth, Math.ceil(maxWordWidth));
+
+    // 2. 스페이스 폭 측정
+    const bs = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+    bs.addText('x x');
+    const ps = bs.build();
+    ps.layout(1e6);
+    const xxSpace = ps.getMaxIntrinsicWidth();
+    ps.delete();
+    bs.delete();
+    const bx = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+    bx.addText('xx');
+    const px = bx.build();
+    px.layout(1e6);
+    const xxNoSpace = px.getMaxIntrinsicWidth();
+    px.delete();
+    bx.delete();
+    const spaceWidth = xxSpace - xxNoSpace;
+
+    // 3. CSS 줄바꿈 시뮬레이션
+    const lines: string[] = [];
+    let currentLine = '';
+    let currentWidth = 0;
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const ww = wordWidths[i];
+
+      if (currentLine === '') {
+        // 줄의 첫 단어: 항상 추가 (overflow 허용)
+        currentLine = word;
+        currentWidth = ww;
+      } else if (currentWidth + spaceWidth + ww <= maxWidth) {
+        // 현재 줄에 들어감
+        currentLine += ' ' + word;
+        currentWidth += spaceWidth + ww;
+      } else {
+        // 안 들어감 → 새 줄 시작
+        lines.push(currentLine);
+        currentLine = word;
+        currentWidth = ww;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+
+    return {
+      text: lines.join('\n'),
+      effectiveWidth: Math.max(maxWidth, Math.ceil(maxWordWidth)),
+    };
   }
 
   /**
