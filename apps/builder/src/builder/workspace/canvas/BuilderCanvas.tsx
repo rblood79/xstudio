@@ -58,7 +58,7 @@ import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 import type { Element } from "../../../types/core/store.types";
 import { getPageElements } from "../../stores/utils/elementIndexer";
 import { resolveClickTarget } from "../../utils/hierarchicalSelection";
-import { isRustWasmReady } from "./wasm-bindings/rustWasm";
+import { isRustWasmReady, initRustWasm } from "./wasm-bindings/rustWasm";
 
 import { useGPUProfiler } from "./utils/gpuProfilerCore";
 
@@ -185,6 +185,10 @@ interface PageContainerProps {
   onClick: (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => void;
   onDoubleClick: (elementId: string) => void;
   onTitleDragStart: (pageId: string, clientX: number, clientY: number) => void;
+  /** ADR-006 P3-1: 레이아웃 변경 감지 버전 */
+  layoutVersion: number;
+  /** ADR-006 P3-1: 이번 프레임에서 레이아웃이 변경된 요소 ID 집합 */
+  dirtyElementIds: Set<string>;
 }
 
 const titleHitDraw = (pageWidth: number) => (g: PixiGraphics) => {
@@ -211,6 +215,8 @@ const PageContainer = memo(function PageContainer({
   onClick,
   onDoubleClick,
   onTitleDragStart,
+  layoutVersion,
+  dirtyElementIds,
 }: PageContainerProps) {
   const draw = useMemo(() => titleHitDraw(pageWidth), [pageWidth]);
 
@@ -253,6 +259,8 @@ const PageContainer = memo(function PageContainer({
           onClick={onClick}
           onDoubleClick={onDoubleClick}
           wasmLayoutReady={wasmLayoutReady}
+          layoutVersion={layoutVersion}
+          dirtyElementIds={dirtyElementIds}
         />
       )}
     </pixiContainer>
@@ -524,6 +532,8 @@ const ElementsLayer = memo(function ElementsLayer({
   onDoubleClick,
   pagePositionVersion = 0,
   wasmLayoutReady: _wasmLayoutReady = false,
+  layoutVersion = 0,
+  dirtyElementIds,
 }: {
   pageElements: Element[];
   bodyElement: Element | null;
@@ -538,6 +548,10 @@ const ElementsLayer = memo(function ElementsLayer({
   pagePositionVersion?: number;
   /** Rust WASM(Taffy/Grid) 엔진 로드 완료 여부 - 로드 시 레이아웃 재계산 트리거 */
   wasmLayoutReady?: boolean;
+  /** ADR-006 P3-1: 레이아웃 변경 감지 버전 — 이 값이 바뀔 때만 fullTreeLayoutMap 재계산 */
+  layoutVersion?: number;
+  /** ADR-006 P3-1: 이번 프레임에서 레이아웃이 변경된 요소 ID 집합 */
+  dirtyElementIds?: Set<string>;
 }) {
   // 🚀 성능 최적화: selectedElementIds 구독 제거
   // 기존: ElementsLayer가 selectedElementIds 구독 → 선택 변경 시 전체 리렌더 O(n)
@@ -653,7 +667,12 @@ const ElementsLayer = memo(function ElementsLayer({
   const SPEC_SHAPES_ONLY_TAGS = useMemo(() => new Set<string>([
   ]), []);
 
-  // ADR-005 Phase 1: Full-Tree Layout pre-computation (side effect 격리)
+  // ADR-006 P3-1: layoutVersion 기반 의존성 최적화
+  // 기존: [bodyElement, elementById, pageChildrenMap, ...] — 모든 요소 변경 시 재계산
+  // 개선: [bodyElement, layoutVersion, ...] — 레이아웃 영향 변경 시에만 재계산
+  // NOTE: useMemo 본문에서는 최신 elementById/pageChildrenMap을 참조하기 위해
+  //       useStore에서 직접 읽지 않고 props로 전달받은 값을 그대로 사용한다.
+  //       의존성에서만 제거하고 본문은 기존과 동일하게 접근.
   const fullTreeLayoutMap = useMemo(() => {
     if (!bodyElement || !_wasmLayoutReady) return null;
     const childrenIdMap = new Map<string, string[]>();
@@ -671,6 +690,7 @@ const ElementsLayer = memo(function ElementsLayer({
       bodyElement.id, elementById, childrenIdMap,
       avW, avH,
       (id: string) => pageChildrenMap.get(id) ?? [],
+      dirtyElementIds,
     );
     // Phase 3: SkiaOverlay에서 접근할 수 있도록 공유
     // Multi-page: 페이지별 저장 (bodyElement.page_id로 구분)
@@ -679,7 +699,8 @@ const ElementsLayer = memo(function ElementsLayer({
       console.warn('[Phase1] Full-tree layout failed, falling back to per-level');
     }
     return result;
-  }, [bodyElement, elementById, pageChildrenMap, pageWidth, pageHeight, _wasmLayoutReady]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bodyElement, layoutVersion, pageWidth, pageHeight, _wasmLayoutReady]);
 
   // Phase 11: 엔진이 계산한 레이아웃으로 직접 배치 (Yoga 제거)
   const renderedTree = useMemo(() => {
@@ -1108,6 +1129,8 @@ export function BuilderCanvas({
   const [appReady, setAppReady] = useState(false);
   // 🚀 Phase 9: Rust WASM 로드 완료 상태 (Taffy/Grid 엔진 활성화 시점에 레이아웃 재계산 트리거)
   const [wasmLayoutReady, setWasmLayoutReady] = useState(() => isRustWasmReady());
+  // ADR-006 P1-2: WASM 로드 최종 실패 상태 (15초 타임아웃)
+  const [wasmLayoutFailed, setWasmLayoutFailed] = useState(false);
   // 폰트 로딩 완료 후 레이아웃 재계산 트리거
   // measureFontMetrics 캐시가 폰트 로드 전 폴백 메트릭으로 오염되는 것을 방지
   const [, setFontsReadyTick] = useState(0);
@@ -1134,17 +1157,44 @@ export function BuilderCanvas({
 
   // Application onInit 콜백에서 appReady 설정 (아래 onInit prop 참고)
 
-  // WASM 로드 완료 시 레이아웃 재계산 트리거
-  // Rust WASM(Taffy)이 비동기로 로드되므로, 로드 완료 시점에 renderedTree 재계산 필요
+  // ADR-006 P1-2: WASM 로드 완료 시 레이아웃 재계산 트리거
+  // 지수 백오프 폴링: 200ms → 400ms → 800ms → 1600ms → 3200ms (최대)
+  // 5초 경과 시 WASM 재초기화 1회 시도, 15초 이후 실패 배너 노출
   useEffect(() => {
     if (wasmLayoutReady) return;
-    const id = setInterval(() => {
+
+    let delay = 200;
+    const MAX_TOTAL_WAIT = 15_000;
+    let totalWait = 0;
+    let retried = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const poll = () => {
       if (isRustWasmReady()) {
         setWasmLayoutReady(true);
-        clearInterval(id);
+        return;
       }
-    }, 200);
-    return () => clearInterval(id);
+
+      totalWait += delay;
+
+      // 5초 경과 시 WASM 재초기화 1회 시도
+      if (!retried && totalWait >= 5_000) {
+        retried = true;
+        void initRustWasm();
+      }
+
+      if (totalWait >= MAX_TOTAL_WAIT) {
+        setWasmLayoutFailed(true);
+        console.error('[BuilderCanvas] WASM 로드 실패 (15초 타임아웃)');
+        return;
+      }
+
+      delay = Math.min(delay * 2, 3200);
+      timeoutId = setTimeout(poll, delay);
+    };
+
+    timeoutId = setTimeout(poll, delay);
+    return () => clearTimeout(timeoutId);
   }, [wasmLayoutReady]);
 
   // 컨테이너 ref 콜백: 마운트 시점에 DOM 노드를 안전하게 확보
@@ -2044,6 +2094,35 @@ export function BuilderCanvas({
         }
       }}
     >
+      {/* ADR-006 P1-2: WASM 로드 실패 배너 */}
+      {wasmLayoutFailed && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0,
+          padding: '12px 16px',
+          backgroundColor: '#FEF2F2',
+          borderBottom: '1px solid #FECACA',
+          color: '#991B1B',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          zIndex: 9999,
+          fontSize: '14px',
+        }}>
+          <span>레이아웃 엔진 로드에 실패했습니다.</span>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '4px 12px',
+              backgroundColor: '#DC2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '13px',
+            }}
+          >
+            새로고침
+          </button>
+        </div>
+      )}
       {/* 🚀 Phase 7: Application 즉시 렌더링, Yoga는 LayoutSystem.init()에서 로드 */}
       {containerEl && (
         <Application

@@ -9,7 +9,7 @@
 
 export const WASM_FLAGS = {
   /** Phase 1: SpatialIndex WASM 가속 (Rust wasm-pack 빌드 필요) */
-  SPATIAL_INDEX: false,
+  SPATIAL_INDEX: true,
 
   /** Phase 2: Layout Engine WASM 가속 (TaffyFlexEngine, TaffyGridEngine 의존) */
   LAYOUT_ENGINE: true,

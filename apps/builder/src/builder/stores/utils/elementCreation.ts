@@ -53,7 +53,8 @@ export const createAddElementAction =
     }
 
     // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
-    set({ elements: [...state.elements, elementToAdd] });
+    // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
+    set((prevState) => ({ elements: [...prevState.elements, elementToAdd], layoutVersion: prevState.layoutVersion + 1 }));
 
     // 🔧 CRITICAL: elementsMap 재구축 (요소 추가 후 캐시 업데이트)
     get()._rebuildIndexes();
@@ -140,7 +141,8 @@ export const createAddComplexElementAction =
     }
 
     // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
-    set({ elements: [...state.elements, ...allElements] });
+    // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
+    set((prevState) => ({ elements: [...prevState.elements, ...allElements], layoutVersion: prevState.layoutVersion + 1 }));
 
     // 🔧 CRITICAL: elementsMap 재구축 (복합 요소 추가 후 캐시 업데이트)
     get()._rebuildIndexes();

@@ -29,6 +29,18 @@ import { useScrollState } from '../../../../stores/scrollState';
 /** flex/grid container 판별 집합 (CSS Blockification 적용 기준) */
 const FLEX_GRID_DISPLAYS = new Set(['flex', 'inline-flex', 'grid', 'inline-grid']);
 
+/** traversePostOrder 최대 재귀 깊이 (ADR-006 P0-4) */
+const MAX_TREE_DEPTH = 100;
+
+// ─── NaN/Infinity sanitize 유틸 (ADR-006 P0-2) ───────────────────────
+
+const sanitizeStats = { count: 0 };
+function sanitizeLayoutValue(v: number, fallback: number = 0): number {
+  if (Number.isFinite(v)) return v;
+  sanitizeStats.count++;
+  return fallback;
+}
+
 
 // ─── 페이지별 PersistentTaffyTree ──────────────────────────────────
 
@@ -44,6 +56,18 @@ const FLEX_GRID_DISPLAYS = new Set(['flex', 'inline-flex', 'grid', 'inline-grid'
 const persistentTrees = new Map<string, PersistentTaffyTree>();
 
 /**
+ * ADR-006 P3-3: 요소별 스타일 version counter 맵.
+ *
+ * Store의 dirtyElementIds를 소비하여 해당 요소의 version을 증분한다.
+ * PersistentTaffyTree.updateNodeStyle()은 이 version과 내부 styleVersionMap을
+ * O(1) 비교하여 실제 변경이 없으면 JSON.stringify를 스킵한다.
+ *
+ * 멀티페이지: 페이지 경계를 넘은 elementId 충돌은 실제 발생하지 않으므로
+ * 단일 전역 맵으로 충분하다.
+ */
+const elementStyleVersions = new Map<string, number>();
+
+/**
  * Persistent 트리 리셋.
  *
  * 전체 트리 재구축이 필요한 경우 호출한다.
@@ -56,11 +80,20 @@ export function resetPersistentTree(pageId?: string): void {
       tree.reset();
       persistentTrees.delete(pageId);
     }
+    // stale 레이아웃 제거
+    publishLayoutMap(null, pageId);
   } else {
     for (const tree of persistentTrees.values()) {
       tree.reset();
     }
     persistentTrees.clear();
+    // ADR-006 P3-3: 전체 리셋 시 elementStyleVersions도 초기화
+    // (페이지 전환으로 buildFull이 재호출될 것이므로 version 0으로 리셋)
+    elementStyleVersions.clear();
+    // 모든 페이지의 stale 레이아웃 제거
+    for (const key of [..._perPageLayoutMaps.keys()]) {
+      publishLayoutMap(null, key);
+    }
   }
 }
 
@@ -303,6 +336,7 @@ function buildNodeStyle(
   computedStyle: ComputedStyle,
   childDisplays: string[],
   parentDisplay: string,
+  childElements?: Element[],
 ): Record<string, unknown> {
   const display = getElementDisplay(element);
   const normalized = display.trim().toLowerCase();
@@ -374,7 +408,7 @@ function buildNodeStyle(
   // block / inline-block / inline / flow-root / 기타 → TaffyBlockEngine 경로
   // taffyDisplayAdapter가 모든 block layout 시뮬레이션 규칙을 TaffyDisplayConfig에 포함하고,
   // elementToTaffyBlockStyle이 모든 필드를 패스스루하므로 수동 주입 불필요.
-  const taffyConfig = toTaffyDisplay(display, childDisplays);
+  const taffyConfig = toTaffyDisplay(display, childDisplays, childElements);
   const taffyStyle: TaffyStyle = elementToTaffyBlockStyle(element, taffyConfig);
   const record = taffyStyleToRecord(taffyStyle);
 
@@ -471,9 +505,35 @@ function traversePostOrder(
   parentDisplay: string,
   batch: PersistentBatchNode[],
   indexMap: Map<string, number>,
+  visiting: Set<string>,
+  depth: number = 0,
 ): void {
+  // 1. 중복 방문 방지 (이미 post-order 완료된 노드)
+  if (indexMap.has(elementId)) return;
+
+  // 2. 순환 참조 감지
+  if (visiting.has(elementId)) {
+    if (import.meta.env.DEV) {
+      console.warn(`[fullTreeLayout] Cycle detected at ${elementId}`);
+    }
+    return;
+  }
+
+  // 3. 깊이 제한
+  if (depth > MAX_TREE_DEPTH) {
+    if (import.meta.env.DEV) {
+      console.warn(`[fullTreeLayout] Max depth ${MAX_TREE_DEPTH} exceeded for ${elementId}`);
+    }
+    return;
+  }
+
+  visiting.add(elementId);
+
   const rawElement = elementsMap.get(elementId);
-  if (!rawElement) return;
+  if (!rawElement) {
+    visiting.delete(elementId);
+    return;
+  }
 
   // GAP 3: Implicit Style 통합 — 원본 자식 수집 후 applyImplicitStyles로 전처리
   const rawChildIds = childrenMap.get(elementId) ?? [];
@@ -493,6 +553,23 @@ function traversePostOrder(
 
   // filteredChildren 기반으로 유효한 자식 ID 목록 재구성
   const childIds = filteredChildren.map(child => child.id);
+
+  // CSS `order` 속성 기반 stable sort (ADR-006 P1-1)
+  // order 값이 모두 0(기본값)이면 복사 비용을 회피하기 위해 원본 배열을 그대로 사용
+  const getOrder = (id: string): number => {
+    const s = (elementsMap.get(id)?.props?.style ?? {}) as Record<string, unknown>;
+    const o = parseInt(String(s.order ?? '0'), 10);
+    return isNaN(o) ? 0 : o;
+  };
+  const hasOrder = childIds.some(id => getOrder(id) !== 0);
+  const sortedChildIds = hasOrder
+    ? [...childIds].sort((a, b) => getOrder(a) - getOrder(b))  // stable sort (CSS spec)
+    : childIds;  // order 미사용 시 복사 비용 회피
+
+  // DEV 모드 로그
+  if (hasOrder && import.meta.env.DEV) {
+    console.info(`[fullTreeLayout] CSS order applied for children of ${elementId}`);
+  }
 
   // 1. computed style 계산 (CSS 상속 처리)
   const elementStyle = (element.props?.style ?? {}) as Record<string, unknown>;
@@ -533,7 +610,7 @@ function traversePostOrder(
   // 3. 자식 먼저 재귀 (post-order)
   // Fix 6: 현재 요소의 content area 크기를 자식의 availableWidth/Height로 전달
   const childAvail = estimateChildAvailableSize(elementStyle, availableWidth, availableHeight);
-  for (const childId of childIds) {
+  for (const childId of sortedChildIds) {
     traversePostOrder(
       childId,
       elementsMap,
@@ -545,6 +622,8 @@ function traversePostOrder(
       effectiveDisplay,   // 현재 요소의 display를 자식의 parentDisplay로 전달
       batch,
       indexMap,
+      visiting,
+      depth + 1,
     );
   }
 
@@ -675,7 +754,8 @@ function traversePostOrder(
   }
 
   // 5. 현재 노드의 TaffyStyle 계산 → Record 변환
-  const styleRecord = buildNodeStyle(enriched, computedStyle, childDisplays, parentDisplay);
+  // filteredChildren 전달: vertical-align 기반 alignItems 동적 결정에 사용 (ADR-006 P2-3)
+  const styleRecord = buildNodeStyle(enriched, computedStyle, childDisplays, parentDisplay, filteredChildren);
 
   // 5.5. block→flex-row-wrap 변환 시 block-level 자식에 width:100% 주입
   // CSS block container 내 block-level 자식은 자동으로 부모 폭 100%이지만
@@ -694,8 +774,9 @@ function traversePostOrder(
   }
 
   // 6. 자식 batch 인덱스 목록 구성 (filteredChildren 기반)
+  // CSS order 정렬 순서를 유지하기 위해 sortedChildIds 사용
   const childIndices: number[] = [];
-  for (const childId of childIds) {
+  for (const childId of sortedChildIds) {
     const childIdx = indexMap.get(childId);
     if (childIdx !== undefined) {
       childIndices.push(childIdx);
@@ -710,6 +791,9 @@ function traversePostOrder(
     elementId,
   });
   indexMap.set(elementId, currentIndex);
+
+  // 순환 참조 감지용 visiting set에서 제거 (DFS backtrack)
+  visiting.delete(elementId);
 }
 
 // ─── 증분 갱신 ──────────────────────────────────────────────────────
@@ -729,9 +813,18 @@ function incrementalUpdate(
   tree: PersistentTaffyTree,
   batch: PersistentBatchNode[],
   filteredChildIdsMap: Map<string, string[]>,
+  dirtyElementIds: Set<string>,
 ): { stylesUpdated: number; childrenUpdated: number; added: number; removed: number } {
   const stats = { stylesUpdated: 0, childrenUpdated: 0, added: 0, removed: 0 };
   const currentNodeIds = new Set(batch.map(n => n.elementId));
+
+  // ADR-006 P3-3: dirtyElementIds 소비 → 해당 요소의 version counter 증분
+  // dirty 요소가 없으면 모든 노드의 version이 이전 프레임과 동일 →
+  // updateNodeStyle이 JSON.stringify 없이 O(1) 스킵
+  for (const dirtyId of dirtyElementIds) {
+    const prev = elementStyleVersions.get(dirtyId) ?? 0;
+    elementStyleVersions.set(dirtyId, prev + 1);
+  }
 
   // 1. 삭제된 노드 식별 (현재 batch에 없는 기존 노드)
   const allHandles = tree.getAllHandles();
@@ -747,11 +840,16 @@ function incrementalUpdate(
   //    addNode 후 부모의 updateChildren 시 자식 handle이 이미 존재
   for (const node of batch) {
     if (tree.hasNode(node.elementId)) {
-      if (tree.updateNodeStyle(node.elementId, node.style)) {
+      // P3-3: elementStyleVersions에서 현재 version 조회 (dirtyIds에 없으면 이전 값 유지)
+      const version = elementStyleVersions.get(node.elementId) ?? 0;
+      if (tree.updateNodeStyle(node.elementId, node.style, version)) {
         stats.stylesUpdated++;
       }
     } else {
       tree.addNode(node.elementId, node.style);
+      // 새 노드 추가: version을 1로 초기화 (addNode 후 즉시 1로 설정하여
+      // 이후 동일 프레임에서 updateNodeStyle 호출 시 버전 불일치 방지)
+      elementStyleVersions.set(node.elementId, 1);
       stats.added++;
     }
   }
@@ -804,6 +902,7 @@ export function calculateFullTreeLayout(
   availableWidth: number,
   availableHeight: number,
   getChildElements: (id: string) => Element[],
+  dirtyElementIds?: Set<string>,
 ): Map<string, ComputedLayout> | null {
   // WASM 가용성 확인
   if (!isRustWasmReady()) return null;
@@ -825,6 +924,8 @@ export function calculateFullTreeLayout(
   //    (항상 수행 — implicit style, enrichment, CSS resolve 필요)
   const batch: PersistentBatchNode[] = [];
   const indexMap = new Map<string, number>();
+  // ADR-006 P0-4: per-call 사이클 감지용 visiting set (모듈 레벨 선언 금지)
+  const visiting = new Set<string>();
 
   traversePostOrder(
     rootElementId,
@@ -837,6 +938,8 @@ export function calculateFullTreeLayout(
     'block',  // 루트의 부모 display (기본값: block)
     batch,
     indexMap,
+    visiting,
+    0,
   );
 
   if (batch.length === 0) return null;
@@ -883,7 +986,8 @@ export function calculateFullTreeLayout(
       persistentTree.buildFull(rootElementId, batch, filteredChildIdsMap);
     } else {
       // Path B: 증분 갱신 (변경된 노드만 WASM 호출)
-      const stats = incrementalUpdate(persistentTree, batch, filteredChildIdsMap);
+      // P3-3: dirtyElementIds를 전달하여 version counter 기반 O(1) 스킵 활성화
+      const stats = incrementalUpdate(persistentTree, batch, filteredChildIdsMap, dirtyElementIds ?? new Set<string>());
 
       if (import.meta.env.DEV && (stats.stylesUpdated + stats.added + stats.removed > 0)) {
         console.log(
@@ -900,6 +1004,8 @@ export function calculateFullTreeLayout(
     const layoutBatch = persistentTree.getLayoutsBatch();
     const result = new Map<string, ComputedLayout>();
 
+    sanitizeStats.count = 0;
+
     for (let i = 0; i < batch.length; i++) {
       const node = batch[i];
       const handle = persistentTree.getHandle(node.elementId);
@@ -913,18 +1019,23 @@ export function calculateFullTreeLayout(
 
       result.set(node.elementId, {
         elementId: node.elementId,
-        x: layoutResult.x,
-        y: layoutResult.y,
-        width: layoutResult.width,
-        height: layoutResult.height,
+        x: sanitizeLayoutValue(layoutResult.x),
+        y: sanitizeLayoutValue(layoutResult.y),
+        width: sanitizeLayoutValue(layoutResult.width),
+        height: sanitizeLayoutValue(layoutResult.height),
         margin: {
-          top: margin.top,
-          right: margin.right,
-          bottom: margin.bottom,
-          left: margin.left,
+          top: sanitizeLayoutValue(margin.top),
+          right: sanitizeLayoutValue(margin.right),
+          bottom: sanitizeLayoutValue(margin.bottom),
+          left: sanitizeLayoutValue(margin.left),
         },
       });
     }
+
+    if (sanitizeStats.count > 0 && import.meta.env.DEV) {
+      console.warn(`[fullTreeLayout] Sanitized non-finite values: ${sanitizeStats.count}`);
+    }
+    sanitizeStats.count = 0; // 매 호출 리셋
 
     // GAP 4: overflow:scroll/auto 요소의 maxScroll 업데이트
     for (const [elementId, layout] of result) {

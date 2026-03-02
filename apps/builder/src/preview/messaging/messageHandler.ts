@@ -604,9 +604,15 @@ export class MessageHandler {
 export const messageSender = {
   /**
    * Preview 준비 완료 알림
+   *
+   * srcdoc에 주입된 __bootstrapNonce를 함께 전송하여 builder가 출처를 검증합니다.
    */
   sendReady(): void {
-    window.parent.postMessage({ type: 'PREVIEW_READY' }, '*');
+    const nonce = (window as Window & { __bootstrapNonce?: string }).__bootstrapNonce ?? null;
+    window.parent.postMessage(
+      { type: 'PREVIEW_READY', nonce },
+      window.location.origin !== 'null' ? window.location.origin : '*',
+    );
   },
 
   /**

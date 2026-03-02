@@ -24,7 +24,14 @@ import { resolveFontVariantFeatures, resolveFontStretchWidth } from '../layout/e
 // Text paragraph cache (Pencil-style)
 // ============================================
 
-const MAX_PARAGRAPH_CACHE_SIZE = 500;
+const MAX_PARAGRAPH_CACHE_SIZE = (() => {
+  const env = import.meta.env.VITE_PARAGRAPH_CACHE_SIZE;
+  if (env) {
+    const parsed = parseInt(env, 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return 1000; // 기본값 500 → 1000으로 상향
+})();
 const paragraphCache = new Map<string, Paragraph>();
 let lastParagraphFontMgr: FontMgr | null = null;
 

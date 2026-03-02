@@ -43,6 +43,7 @@ import { useDataTableStore } from "../stores/datatable";
 import { useDataStore } from "../stores/data";
 
 import { MessageService } from "../../utils/messaging";
+import { isValidPreviewMessage } from "../../utils/messageValidation";
 import { getValueByPath, upsertData, appendData, mergeData, safeJsonParse } from "../../utils/dataHelpers";
 import { downloadStaticHtml } from "@xstudio/shared/utils";
 import { getCustomFonts } from '../fonts/customFonts';
@@ -395,7 +396,8 @@ export const BuilderCore: React.FC = () => {
   // NAVIGATE_TO_PAGE 메시지 수신 (Preview iframe에서)
   useEffect(() => {
     const handleNavigateMessage = async (event: MessageEvent) => {
-      // 메시지 출처 검증 (보안)
+      // ADR-006 P2-2: source + origin 이중 검증
+      if (!isValidPreviewMessage(event)) return;
       if (event.data?.type !== "NAVIGATE_TO_PAGE") return;
 
       const { path } = event.data.payload as { path: string; replace?: boolean };
@@ -435,6 +437,8 @@ export const BuilderCore: React.FC = () => {
   // ===== Data Panel Integration Message Handlers (Phase 5) =====
   useEffect(() => {
     const handleDataMessage = async (event: MessageEvent) => {
+      // ADR-006 P2-2: source + origin 이중 검증
+      if (!isValidPreviewMessage(event)) return;
       const { type, payload } = event.data || {};
 
       switch (type) {

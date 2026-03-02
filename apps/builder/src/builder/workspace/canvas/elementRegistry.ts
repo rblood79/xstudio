@@ -14,16 +14,6 @@ import { Container, Bounds } from 'pixi.js';
 
 import { notifyLayoutChange } from './skia/useSkiaNode';
 
-// SpatialIndex 동기화 (lazy import, 호출 빈도가 높으므로 캐싱)
-let _spatialModule: typeof import('./wasm-bindings/spatialIndex') | null = null;
-async function getSpatialModule() {
-  if (!_spatialModule) {
-    _spatialModule = await import('./wasm-bindings/spatialIndex');
-  }
-  return _spatialModule;
-}
-// SpatialIndex 모듈 프리로드
-getSpatialModule();
 
 // ============================================
 // Types
@@ -90,13 +80,8 @@ export function updateElementBounds(id: string, bounds: ElementBounds): void {
   // DirectContainer의 레이아웃 콜백에서 호출되므로, registryVersion 증가로
   // 다음 프레임에서 container.width가 반영된 Skia 트리가 재구축된다.
   notifyLayoutChange();
-
-  // SpatialIndex 동기화 (스크린 좌표 저장)
-  // getBounds()는 스크린 좌표(pan/zoom 포함)를 반환한다.
-  // pan 시 stale될 수 있으므로, useViewportCulling에서 getBounds() 폴백으로 보완한다.
-  if (_spatialModule) {
-    _spatialModule.updateElement(id, bounds.x, bounds.y, bounds.width, bounds.height);
-  }
+  // NOTE: SpatialIndex 동기화는 renderCommands.ts의 syncSpatialIndex()에서 수행.
+  // 이 함수에서 스크린 좌표(pan/zoom 미반영)로 동기화하면 pan 시 stale 좌표가 발생하므로 제거.
 }
 
 /**
@@ -107,11 +92,8 @@ export function updateElementBounds(id: string, bounds: ElementBounds): void {
 export function unregisterElement(id: string): void {
   elementRegistry.delete(id);
   layoutBoundsRegistry.delete(id);
-
-  // SpatialIndex 동기화
-  if (_spatialModule) {
-    _spatialModule.removeElement(id);
-  }
+  // NOTE: SpatialIndex 항목은 renderCommands.ts의 syncSpatialIndex()가
+  // 다음 프레임에 batchUpdate로 덮어쓰므로 개별 removeElement() 불필요.
 }
 
 /**
@@ -189,11 +171,8 @@ export function getRegistrySize(): number {
 export function clearRegistry(): void {
   elementRegistry.clear();
   layoutBoundsRegistry.clear();
-
-  // SpatialIndex 초기화
-  if (_spatialModule) {
-    _spatialModule.clearAll();
-  }
+  // NOTE: SpatialIndex는 renderCommands.ts의 syncSpatialIndex()가
+  // 다음 렌더 프레임에 batchUpdate로 재구성한다.
 }
 
 // ============================================

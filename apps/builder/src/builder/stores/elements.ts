@@ -46,6 +46,74 @@ import {
   getPageElements as getPageElementsFromIndex,
 } from "./utils/elementIndexer";
 
+// ─── Dirty Tracking 유틸리티 ─────────────────────────────────────────
+
+/**
+ * 레이아웃에 영향을 주지 않는 CSS 속성 집합.
+ * 이 속성만 변경되면 layoutVersion을 증가시키지 않는다.
+ */
+const NON_LAYOUT_PROPS = new Set([
+  'color', 'backgroundColor', 'background', 'backgroundImage',
+  'backgroundSize', 'backgroundPosition', 'backgroundRepeat',
+  'opacity', 'visibility',
+  'boxShadow', 'textShadow', 'filter', 'backdropFilter',
+  'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
+  'borderStyle', 'borderTopStyle', 'borderRightStyle', 'borderBottomStyle', 'borderLeftStyle',
+  'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius',
+  'borderBottomLeftRadius', 'borderBottomRightRadius',
+  'outlineColor', 'outlineStyle',
+  'cursor', 'pointerEvents', 'userSelect',
+  'transition', 'transitionProperty', 'transitionDuration',
+  'animation', 'animationName', 'animationDuration',
+  'textDecoration', 'textDecorationColor', 'textDecorationStyle',
+  'zIndex',
+  'objectFit', 'objectPosition', 'mixBlendMode',
+  'clipPath', 'mask', 'maskImage',
+  'transformOrigin',
+]);
+
+/**
+ * 자식에게 상속되어 레이아웃에 영향을 주는 CSS 속성 집합.
+ * 이 속성이 변경되면 하위 요소 전체를 dirty로 표시한다.
+ */
+const INHERITED_LAYOUT_PROPS = new Set([
+  'fontSize', 'fontFamily', 'fontWeight', 'fontStyle',
+  'lineHeight', 'letterSpacing', 'wordSpacing',
+  'whiteSpace', 'wordBreak', 'overflowWrap',
+  'textAlign', 'direction', 'writingMode',
+]);
+
+/**
+ * 변경된 props 중 레이아웃에 영향을 주는 속성이 있는지 확인.
+ */
+function isLayoutAffecting(changedProps: Record<string, unknown>): boolean {
+  return Object.keys(changedProps).some(k => !NON_LAYOUT_PROPS.has(k));
+}
+
+/**
+ * elementId와 그 자식(상속 속성 변경 시)을 dirty 집합에 추가.
+ */
+function markDirtyWithDescendants(
+  elementId: string,
+  changedProps: Record<string, unknown>,
+  childrenMap: Map<string, Element[]>,
+  dirtySet: Set<string>,
+): void {
+  dirtySet.add(elementId);
+  const hasInheritedChange = Object.keys(changedProps).some(k => INHERITED_LAYOUT_PROPS.has(k));
+  if (hasInheritedChange) {
+    const queue = [elementId];
+    while (queue.length > 0) {
+      const parentId = queue.pop()!;
+      const children = childrenMap.get(parentId) ?? [];
+      for (const child of children) {
+        dirtySet.add(child.id);
+        queue.push(child.id);
+      }
+    }
+  }
+}
+
 export interface ElementsState {
   elements: Element[];
   // 성능 최적화: O(1) 조회를 위한 Map 인덱스
@@ -73,6 +141,14 @@ export interface ElementsState {
   // 🆕 Multi-page: 페이지별 캔버스 위치
   pagePositions: Record<string, { x: number; y: number }>;
   pagePositionsVersion: number;
+
+  // ADR-006 P3-1: Dirty Tracking — 레이아웃 변경 감지
+  /** 레이아웃에 영향 있는 변경이 발생할 때마다 증가. useMemo 의존성에 사용. */
+  layoutVersion: number;
+  /** 현재 프레임에서 레이아웃이 변경된 요소 ID 집합. fullTreeLayout이 소비 후 초기화. */
+  dirtyElementIds: Set<string>;
+  /** dirtyElementIds를 초기화 (fullTreeLayout 호출 후 호출) */
+  clearDirtyElementIds: () => void;
 
   // 내부 헬퍼: 인덱스 재구축
   _rebuildIndexes: () => void;
@@ -111,7 +187,6 @@ export interface ElementsState {
   goToHistoryIndex: (targetIndex: number) => Promise<void>;
   removeElement: (elementId: string) => Promise<void>;
   removeElements: (elementIds: string[]) => Promise<void>;
-  removeTabPair: (elementId: string) => void;
   addComplexElement: (
     parentElement: Element,
     childElements: Element[]
@@ -277,6 +352,11 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // 🆕 Multi-page: 페이지별 캔버스 위치
     pagePositions: {},
     pagePositionsVersion: 0,
+
+    // ADR-006 P3-1: Dirty Tracking 초기값
+    layoutVersion: 0,
+    dirtyElementIds: new Set<string>(),
+    clearDirtyElementIds: () => set({ dirtyElementIds: new Set<string>() }),
 
     _rebuildIndexes,
     _cancelHydrateSelectedProps: cancelHydrateSelectedProps,
@@ -491,26 +571,6 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   removeElement,
   removeElements,
 
-  // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)
-  removeTabPair: (elementId) => {
-    const state = get();
-    // Tab과 Panel 쌍 제거
-    const elements = state.elements.filter(
-      (el) => el.parent_id !== elementId && el.id !== elementId
-    );
-
-    // 선택 상태 업데이트
-    const isSelected = state.selectedElementId === elementId;
-
-    set({
-      elements,
-      ...(isSelected && {
-        selectedElementId: null,
-        selectedElementProps: {},
-      }),
-    });
-  },
-
   // Factory 함수로 생성된 addComplexElement 사용
   addComplexElement,
 
@@ -520,7 +580,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     const updatedElements = elements.map((el) =>
       el.id === elementId ? { ...el, order_num: orderNum } : el
     );
-    set({ elements: updatedElements });
+    set((state) => ({ elements: updatedElements, layoutVersion: state.layoutVersion + 1 }));
     get()._rebuildIndexes();
   },
 
@@ -533,7 +593,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       const newOrder = updateMap.get(el.id);
       return newOrder !== undefined ? { ...el, order_num: newOrder } : el;
     });
-    set({ elements: updatedElements });
+    set((state) => ({ elements: updatedElements, layoutVersion: state.layoutVersion + 1 }));
     get()._rebuildIndexes();
   },
 

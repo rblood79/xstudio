@@ -7,6 +7,64 @@ import { getElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
 import { getDB } from "../../../lib/db";
 import { globalToast } from "../toast";
+
+// ─── Dirty Tracking 유틸리티 ─────────────────────────────────────────
+// elements.ts의 NON_LAYOUT_PROPS/INHERITED_LAYOUT_PROPS를 재사용하지 않고
+// 독립 모듈로 유지 (순환 import 방지)
+
+/** 레이아웃에 영향 없는 CSS 속성 집합 (elementUpdate 전용) */
+const NON_LAYOUT_PROPS_UPDATE = new Set([
+  'color', 'backgroundColor', 'background', 'backgroundImage',
+  'backgroundSize', 'backgroundPosition', 'backgroundRepeat',
+  'opacity', 'visibility',
+  'boxShadow', 'textShadow', 'filter', 'backdropFilter',
+  'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
+  'borderStyle', 'borderTopStyle', 'borderRightStyle', 'borderBottomStyle', 'borderLeftStyle',
+  'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius',
+  'borderBottomLeftRadius', 'borderBottomRightRadius',
+  'outlineColor', 'outlineStyle',
+  'cursor', 'pointerEvents', 'userSelect',
+  'transition', 'transitionProperty', 'transitionDuration',
+  'animation', 'animationName', 'animationDuration',
+  'textDecoration', 'textDecorationColor', 'textDecorationStyle',
+  'zIndex',
+  'objectFit', 'objectPosition', 'mixBlendMode',
+  'clipPath', 'mask', 'maskImage',
+  'transformOrigin',
+]);
+
+/** 자식에게 상속되어 레이아웃에 영향을 주는 CSS 속성 (elementUpdate 전용) */
+const INHERITED_LAYOUT_PROPS_UPDATE = new Set([
+  'fontSize', 'fontFamily', 'fontWeight', 'fontStyle',
+  'lineHeight', 'letterSpacing', 'wordSpacing',
+  'whiteSpace', 'wordBreak', 'overflowWrap',
+  'textAlign', 'direction', 'writingMode',
+]);
+
+function isLayoutAffectingUpdate(changedStyle: Record<string, unknown>): boolean {
+  return Object.keys(changedStyle).some(k => !NON_LAYOUT_PROPS_UPDATE.has(k));
+}
+
+function markDirtyWithDescendantsUpdate(
+  elementId: string,
+  changedStyle: Record<string, unknown>,
+  childrenMap: Map<string, Element[]>,
+  dirtySet: Set<string>,
+): void {
+  dirtySet.add(elementId);
+  const hasInheritedChange = Object.keys(changedStyle).some(k => INHERITED_LAYOUT_PROPS_UPDATE.has(k));
+  if (hasInheritedChange) {
+    const queue = [elementId];
+    while (queue.length > 0) {
+      const parentId = queue.pop()!;
+      const children = childrenMap.get(parentId) ?? [];
+      for (const child of children) {
+        dirtySet.add(child.id);
+        queue.push(child.id);
+      }
+    }
+  }
+}
 import {
   rebuildPageIndex,
   rebuildComponentIndex,
@@ -115,16 +173,36 @@ export const createUpdateElementPropsAction =
         ? createCompleteProps(updatedElement, props)
         : currentState.selectedElementProps;
 
+    // ADR-006 P3-1: props.style 변경 시 dirty tracking
+    // props 중 style 객체만 추출하여 레이아웃 영향 여부 판단
+    const changedStyle = (props.style ?? {}) as Record<string, unknown>;
+    const hasStyleChange = Object.keys(changedStyle).length > 0;
+    const isLayoutChange = hasStyleChange
+      ? isLayoutAffectingUpdate(changedStyle)
+      : Object.keys(patch).some(k => k !== 'style'); // style 외 props 변경은 레이아웃 영향으로 간주
+
     // updateElementProps는 element 구조(parent_id/page_id/tag/variableBindings 등)를 바꾸지 않으므로,
     // 전체 인덱스 재구축(O(n)) 대신 변경된 요소만 O(1)로 갱신한다.
     if (updatedElement) {
       const elementsMap = new Map(currentState.elementsMap);
       elementsMap.set(elementId, updatedElement);
-      set({
-        elements: updatedElements,
-        elementsMap,
-        selectedElementProps,
-      });
+      if (isLayoutChange) {
+        const dirtyIds = new Set(currentState.dirtyElementIds);
+        markDirtyWithDescendantsUpdate(elementId, changedStyle, currentState.childrenMap, dirtyIds);
+        set((state) => ({
+          elements: updatedElements,
+          elementsMap,
+          selectedElementProps,
+          layoutVersion: state.layoutVersion + 1,
+          dirtyElementIds: dirtyIds,
+        }));
+      } else {
+        set({
+          elements: updatedElements,
+          elementsMap,
+          selectedElementProps,
+        });
+      }
     } else {
       set({
         elements: updatedElements,
@@ -211,10 +289,28 @@ export const createUpdateElementAction =
         ? createCompleteProps(updatedElement, updates.props)
         : currentState.selectedElementProps;
 
-    set({
-      elements: updatedElements,
-      selectedElementProps,
-    });
+    // ADR-006 P3-1: props.style 변경 시 dirty tracking
+    const changedStyle = (updates.props?.style ?? {}) as Record<string, unknown>;
+    const hasStyleChange = Object.keys(changedStyle).length > 0;
+    const isLayoutChange = hasStyleChange
+      ? isLayoutAffectingUpdate(changedStyle)
+      : Boolean(updates.props); // props 변경이 있으면 레이아웃 영향으로 간주
+
+    if (isLayoutChange) {
+      const dirtyIds = new Set(currentState.dirtyElementIds);
+      markDirtyWithDescendantsUpdate(elementId, changedStyle, currentState.childrenMap, dirtyIds);
+      set((state) => ({
+        elements: updatedElements,
+        selectedElementProps,
+        layoutVersion: state.layoutVersion + 1,
+        dirtyElementIds: dirtyIds,
+      }));
+    } else {
+      set({
+        elements: updatedElements,
+        selectedElementProps,
+      });
+    }
 
     // 🔧 CRITICAL: elementsMap 재구축 (재선택 시 이전 값 반환 방지)
     // Immer produce() 외부에서 호출 (Map은 Immer가 직접 지원하지 않음)
@@ -313,11 +409,37 @@ export const createBatchUpdateElementPropsAction =
         })()
       : state.selectedElementProps;
 
-    set({
-      elements: updatedElements,
-      elementsMap: nextElementsMap,
-      selectedElementProps: selectedProps,
-    });
+    // ADR-006 P3-1: batch props 변경 시 dirty tracking
+    // 업데이트 중 하나라도 레이아웃 영향이 있으면 layoutVersion 증가
+    const dirtyIds = new Set(state.dirtyElementIds);
+    let hasAnyLayoutChange = false;
+    for (const { elementId, props } of validUpdates) {
+      const changedStyle = (props.style ?? {}) as Record<string, unknown>;
+      const hasStyleChange = Object.keys(changedStyle).length > 0;
+      const isLayoutChange = hasStyleChange
+        ? isLayoutAffectingUpdate(changedStyle)
+        : Object.keys(props as Record<string, unknown>).some(k => k !== 'style');
+      if (isLayoutChange) {
+        hasAnyLayoutChange = true;
+        markDirtyWithDescendantsUpdate(elementId, changedStyle, state.childrenMap, dirtyIds);
+      }
+    }
+
+    if (hasAnyLayoutChange) {
+      set((prevState) => ({
+        elements: updatedElements,
+        elementsMap: nextElementsMap,
+        selectedElementProps: selectedProps,
+        layoutVersion: prevState.layoutVersion + 1,
+        dirtyElementIds: dirtyIds,
+      }));
+    } else {
+      set({
+        elements: updatedElements,
+        elementsMap: nextElementsMap,
+        selectedElementProps: selectedProps,
+      });
+    }
 
     // 2. 단일 히스토리 엔트리 추가 (batch 타입)
     const currentPageId = get().currentPageId;
@@ -422,28 +544,48 @@ export const createBatchUpdateElementsAction =
 
     // Fix 3: 단일 atomic set() — elements + indexes 동시 갱신 (transient 불일치 방지)
     const elementsMap = new Map<string, Element>();
-    const childrenMap = new Map<string, Element[]>();
+    const newChildrenMap = new Map<string, Element[]>();
     updatedElements.forEach((el) => {
       elementsMap.set(el.id, el);
       const parentId = el.parent_id || 'root';
-      if (!childrenMap.has(parentId)) {
-        childrenMap.set(parentId, []);
+      if (!newChildrenMap.has(parentId)) {
+        newChildrenMap.set(parentId, []);
       }
-      childrenMap.get(parentId)!.push(el);
+      newChildrenMap.get(parentId)!.push(el);
     });
     const pageIndex = rebuildPageIndex(updatedElements, elementsMap);
     const componentIndex = rebuildComponentIndex(updatedElements);
     const variableUsageIndex = rebuildVariableUsageIndex(updatedElements);
 
-    set({
+    // ADR-006 P3-1: batch elements 변경 시 dirty tracking
+    const dirtyIds = new Set(state.dirtyElementIds);
+    let hasAnyLayoutChange = false;
+    for (const { elementId, updates: elementUpdates } of validUpdates) {
+      if (!elementUpdates.props) continue;
+      const changedStyle = (elementUpdates.props.style ?? {}) as Record<string, unknown>;
+      const hasStyleChange = Object.keys(changedStyle).length > 0;
+      const isLayoutChange = hasStyleChange
+        ? isLayoutAffectingUpdate(changedStyle)
+        : true; // props 변경 → 레이아웃 영향 간주
+      if (isLayoutChange) {
+        hasAnyLayoutChange = true;
+        markDirtyWithDescendantsUpdate(elementId, changedStyle, newChildrenMap, dirtyIds);
+      }
+    }
+
+    set((prevState) => ({
       elements: updatedElements,
       selectedElementProps: selectedProps,
       elementsMap,
-      childrenMap,
+      childrenMap: newChildrenMap,
       pageIndex,
       componentIndex,
       variableUsageIndex,
-    });
+      ...(hasAnyLayoutChange && {
+        layoutVersion: prevState.layoutVersion + 1,
+        dirtyElementIds: dirtyIds,
+      }),
+    }));
 
     // 2. 단일 히스토리 엔트리 추가 (batch 타입)
     const currentPageId = get().currentPageId;

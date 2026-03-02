@@ -55,6 +55,19 @@ ADR-005 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 - **P2-2 (HIGH)**: origin+type만으로 검증하는 `isValidBootstrapMessage`에 `expectedNonce` 파라미터 추가. 빌더가 iframe 생성 시 `crypto.randomUUID()`를 srcdoc에 주입하고, Preview `sendReady()`가 nonce를 포함하여 전송. 빌더 측에서 nonce 일치 여부로 실제 preview iframe 식별. same-origin 다른 윈도우의 선행 PREVIEW_READY가 정식 초기화를 오염시키는 문제 해소. 소비자 레벨 ready-state 중복 가드 제거 (nonce 갱신으로 이전 iframe 자동 무효화).
 - **P2-2 (MEDIUM)**: 테스트 항목 #3이 "6개 핸들러 모두 event.source/event.origin 검증"으로 되어 있었으나, 부트스트랩 메시지는 source 대신 nonce 검증. 2단계 검증(부트스트랩=nonce, 일반=source+origin)을 반영하여 테스트 항목 분리.
 
+### P3-3 설계 정정: Version Counter → JSON 비교 전환 (2026-03-02 12차)
+
+- **P3-3 (CRITICAL)**: Version counter 기반 변경 감지 설계가 **DFS 컨텍스트 의존성을 간과**하여 `[PersistentTaffyTree] Version match but JSON mismatch` 런타임 오류 발생. 근본 원인: DFS 순회 중 `taffyStyleToRecord()` 결과는 요소 자신의 Store 데이터뿐 아니라 **부모/형제/자식 컨텍스트**에도 의존하므로, Store 레벨 dirty tracking(P3-1)만으로는 모든 스타일 변경을 포착할 수 없음.
+  - `toTaffyDisplay()`: 자식들의 display 값에 따라 부모 layout 전략 결정 (flex-row-wrap ↔ column) — 자식만 dirty
+  - `enrichWithIntrinsicSize()`: 형제 크기 변경 → `availableWidth` 변경 — 형제만 dirty
+  - `applyImplicitStyles()`: 부모 변경 → 자식에 marginLeft, flex:1 등 주입 — 부모만 dirty
+- **설계 전환**: Version counter O(1) 스킵 → **JSON 문자열 비교** 기반 변경 감지. `_lastJsonMap`을 DEV 전용 교차 검증용 → 프로덕션 상시 변경 감지용으로 승격
+- **성능 영향**: JSON.stringify 비용은 유지되나, 문자열 `===` 비교가 첫 불일치 바이트에서 즉시 종료되므로 변경 없는 노드의 WASM 호출 스킵은 동일하게 보장
+- **P3-3 ↔ P3-1 의존 관계 해제**: P3-3이 P3-1의 dirty tracking에 의존하지 않으므로 독립 실행 가능으로 변경
+- **Negative 섹션 정정**: "store의 `styleVersion` 증가 누락 시 스타일 갱신 스킵 위험" → 삭제 (JSON 비교 방식에서는 해당 위험 원천 제거)
+- **Risks 섹션 정정**: P3-3 위험을 "version counter 불일치" → "JSON.stringify CPU 비용" + "_lastJsonMap 메모리 비용"으로 교체
+- **`clearDirtyElementIds` 미호출 발견**: Store에 선언/구현되어 있으나 호출처 0건. dirty ID가 무한 누적되어 `elementStyleVersions` Map도 계속 증분됨. JSON 비교 전환으로 실질적 영향은 없으나 메모리 측면에서 정리 필요 → Open Questions에 추가
+
 ### 3차 검토 피드백 반영 (2026-03-02 11차)
 
 - **Finding 1 (MEDIUM)**: `markDirtyWithDescendants()` 호출 예시에 `isLayoutChange` 가드 누락 → 비레이아웃 변경(color 등)도 DFS를 유발하는 것처럼 읽히는 모순 수정. `if (isLayoutChange) { ... }` 블록으로 감싸고, 비레이아웃 변경은 dirty/layoutVersion 미변경임을 주석 명시
@@ -73,7 +86,7 @@ ADR-005 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 - **Finding 1 (HIGH)**: IframeMessenger "어디서도 import되지 않는 코드" 표현을 정밀화. `services/messaging.ts`의 `MessagingService`가 import/생성하지만 `MessagingService` 자체가 활성 코드에서 import되지 않아 "실행 경로 미연결"로 수정 (3곳: 6차 이력, isValidBootstrapMessage JSDoc, IframeMessenger 참고 섹션)
 - **Finding 2 (HIGH)**: P3-1 dirty 전략에 **descendant invalidation 규칙 추가**. `INHERITED_LAYOUT_PROPS` Set + `markDirtyWithDescendants()` 함수 명시. 부모의 font*/텍스트 상속 속성 변경 시 모든 자손을 dirty에 추가하여 intrinsic size 재계산 보장
 - **Finding 3 (MEDIUM)**: `textTransform`을 `NON_LAYOUT_PROPS`에서 **제거**. 대소문자 변환이 텍스트 폭/줄바꿈에 영향 → 레이아웃 트리거로 처리
-- **Finding 4 (LOW)**: Negative 섹션의 P3-3 "해시 충돌 가능성" → "store의 `styleVersion` 증가 누락 시 스타일 갱신 스킵 위험 (DEV 검증 가드로 감지)"으로 수정
+- ~~**Finding 4 (LOW)**: Negative 섹션의 P3-3 "해시 충돌 가능성" → "store의 `styleVersion` 증가 누락 시 스타일 갱신 스킵 위험 (DEV 검증 가드로 감지)"으로 수정~~ → **12차에서 대체됨**: version counter 폐기로 해당 위험 원천 제거. Negative를 "JSON.stringify CPU + _lastJsonMap 메모리 비용"으로 교체
 - **Open Question 1**: `services/messaging.ts` 정리 시점 → Open Questions 섹션에 기록
 - **Open Question 2**: P3-1 descendant invalidation 트리거 범위 → Open Questions 섹션에 기록 (container query 포함 여부)
 - **Open Question 3**: P2-2 nonce 위협 범위를 "same-origin 우발 메시지 차단"으로 한정, 설계 근거 섹션에 명시
@@ -92,7 +105,7 @@ ADR-005 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 - **P2-3 (MEDIUM)**: `vertical-align` 미명시 시 기존 `center` 유지하는 하위 호환성 보장으로 변경. 기존: `baseline` 기본값 → 수정: `explicitAligns.length === 0` → `'center'` 반환
 - **P3-1 (CRITICAL)**: `LAYOUT_AFFECTING_PROPS` 화이트리스트 → **`NON_LAYOUT_PROPS` 블랙리스트 전환**. 미등록 속성은 자동으로 레이아웃 트리거 → 사일런트 미갱신 버그 근본 차단. `fontSize`/`lineHeight`/`fontFamily`/`letterSpacing`/`whiteSpace`/`wordBreak`/`boxSizing`/`textContent`/`label`/`placeholder` 등이 자동 커버됨. DEV 모드 full DFS 교차 검증 가드 추가
 - **P3-2 (LOW)**: DEV 모드 SpatialIndex vs getBounds() 교차 검증 (1% 샘플링) 추가. 레이아웃 계산에 무관함 명시
-- **P3-3 (LOW)**: DEV 모드 version 스킵 시 JSON 교차 비교 가드 추가
+- ~~**P3-3 (LOW)**: DEV 모드 version 스킵 시 JSON 교차 비교 가드 추가~~ → **12차에서 대체됨**: version counter 자체를 폐기하고 JSON 비교를 프로덕션 변경 감지 메커니즘으로 승격
 - **Risks 섹션**: 항목별 "레이아웃 영향" 열 추가하여 모든 항목이 기존 레이아웃을 보존함을 명시
 
 ### 적용 범위 및 용어 정합성 검증 반영 (2026-03-01 6차)
@@ -113,7 +126,7 @@ ADR-005 Foundation 완료로 레이아웃 엔진이 단일 Taffy WASM 경로로 
   → React useMemo (BuilderCanvas)
   → calculateFullTreeLayout():
       → traversePostOrder() DFS: enrichment + CSS resolve + buildNodeStyle
-      → PersistentTaffyTree: incrementalUpdate() (JSON.stringify 해시 비교)
+      → PersistentTaffyTree: incrementalUpdate() (JSON 문자열 비교 기반 변경 감지)
       → WASM: computeLayout() → getLayoutsBatch()
   → publishLayoutMap() → SkiaOverlay 접근
   → SkiaRenderer: getCachedCommandStream() → executeRenderCommands()
@@ -1209,73 +1222,85 @@ if (import.meta.env.DEV && spatialResult && Math.random() < 0.01) {
 
 ---
 
-### P3-3. JSON.stringify 해시 대체
+### P3-3. PersistentTaffyTree 증분 갱신 최적화
 
-**파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/persistentTaffyTree.ts` (라인 188-189)
+**파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/persistentTaffyTree.ts`
 
 **현상**: 매 증분 갱신 시 모든 노드에 `JSON.stringify(styleRecord)` + 문자열 비교. 5,000 노드 × 20+ 필드 = 상당한 CPU 비용.
 
-#### 방안: Version Counter (P3-1 연계, 권장)
+#### ~~방안 A: Version Counter (P3-1 연계)~~ — 설계 결함으로 폐기
 
-P3-1에서 `layoutVersion`과 `dirtyElementIds`가 도입되면, PersistentTaffyTree의 해시 비교 자체가 대폭 축소됨:
-- dirty 노드만 `updateNodeStyle()` 호출 → JSON.stringify 횟수 감소
-- 비dirty 노드는 아예 호출하지 않음
+> **CRITICAL 설계 결함 (12차 정정)**: Version counter는 Store 레벨 dirty tracking(P3-1)에 기반하여 "dirty가 아닌 요소의 스타일은 불변"이라고 가정했으나, 이 전제가 틀렸다. DFS 순회 중 `taffyStyleToRecord()` 결과는 요소 자신의 Store 데이터뿐 아니라 **부모/형제/자식 트리 컨텍스트**에도 의존한다:
+>
+> | DFS 계산 함수 | 의존 대상 | dirty 마킹 여부 |
+> |---|---|---|
+> | `toTaffyDisplay()` | 자식들의 display 값 → 부모 layout 전략 결정 | **X** — 자식만 dirty |
+> | `enrichWithIntrinsicSize()` | 형제 크기 → availableWidth | **X** — 형제만 dirty |
+> | `applyImplicitStyles()` | 부모 flexDirection 등 → 자식 marginLeft/flex 주입 | **X** — 부모만 dirty |
+>
+> 결과: version counter가 불변이어도 실제 스타일이 달라질 수 있으며, DEV 검증 가드에서 `[PersistentTaffyTree] Version match but JSON mismatch` 오류가 다수 확인됨.
+>
+> **근본 원인**: Store dirty ≠ DFS 결과 dirty. Store 레벨 변경 추적은 **직접 변경**(사용자 편집)만 포착하고, DFS 순회 중 발생하는 **간접 변경**(컨텍스트 의존 계산)을 포착할 수 없다. 이를 완전히 해소하려면 모든 간접 의존 관계를 dirty 전파에 반영해야 하는데, `toTaffyDisplay`(자식→부모), `enrichment`(형제→본인), `implicitStyles`(부모→자식) 등 방향이 다양하여 Store 레벨 전파의 복잡도가 과도하게 증가한다.
 
-#### 독립 최적화 (P3-1 없이도 적용 가능)
+#### 방안: JSON 문자열 비교 (확정, 구현 완료)
 
-`styleHashMap`을 `Map<string, number>` (version counter)로 교체:
+`_lastJsonMap`을 DEV 전용 교차 검증용에서 **프로덕션 상시 변경 감지 메커니즘**으로 승격:
 
 ```typescript
 // PersistentTaffyTree 내부
-private styleVersionMap = new Map<string, number>();
+private _lastJsonMap = new Map<string, string>();  // DEV 전용 → 상시 활성
 
 updateNodeStyle(
   elementId: string,
   styleRecord: Record<string, unknown>,
-  styleVersion: number,  // ← Store에서 요소 스타일 변경 시 증가
+  styleVersion: number,
 ): boolean {
   const handle = this.handleMap.get(elementId);
   if (handle === undefined) return false;
 
-  // version 비교 O(1) — JSON.stringify 제거
-  if (this.styleVersionMap.get(elementId) === styleVersion) return false;
+  // JSON 직렬화 + 비교 — 간접 의존성 변경까지 포착
+  const json = JSON.stringify(styleRecord);
+  const existingJson = this._lastJsonMap.get(elementId);
 
-  const json = JSON.stringify(styleRecord);  // 변경 확정 시에만 직렬화
+  if (existingJson === json) {
+    // JSON 동일 → WASM 호출 불필요, version만 동기화
+    this.styleVersionMap.set(elementId, styleVersion);
+    return false;
+  }
+
   this.taffy.updateStyleRaw(handle, json);
   this.styleVersionMap.set(elementId, styleVersion);
+  this._lastJsonMap.set(elementId, json);
   return true;
 }
 ```
 
-**ADR-005 연계**: Phase 2 (Binary Protocol)의 전단계 최적화.
+**Version counter와의 차이**:
+- Version counter: Store dirty 기반 O(1) 비교 → **간접 변경 미감지** (설계 결함)
+- JSON 비교: DFS 계산 결과 직접 비교 → **모든 변경 포착** (의존 경로 무관)
 
-**예상 효과**: 5,000 노드 증분 갱신 3~5ms → <0.5ms (dirty 노드만 stringify)
+**ADR-005 연계**: Phase 2 (Binary Protocol)의 전단계 최적화. Binary protocol 전환 시 JSON.stringify 대신 binary diff로 추가 최적화 가능.
+
+**성능 특성**:
+- `JSON.stringify`: 5,000 노드 × 평균 ~100B = ~500KB/프레임. V8의 JSON.stringify는 고도로 최적화되어 있어 ~2ms 수준
+- 문자열 `===` 비교: 변경 없는 노드는 첫 바이트부터 동일하므로 V8 내부 포인터 비교로 O(1)에 가까움. 변경된 노드만 전체 비교 수행
+- WASM 호출 스킵: JSON 동일 시 `updateStyleRaw()` 미호출 → Taffy dirty flag 미설정 → computeLayout에서 해당 서브트리 O(1) 스킵 유지
+- `_lastJsonMap` 메모리: 5,000 노드 × ~100B = ~500KB 상시 유지 (트레이드오프)
+
+**향후 최적화 경로**:
+- P3-1 dirty tracking과 결합: dirty 노드만 `updateNodeStyle()` 호출 → JSON.stringify 횟수 자체를 감소
+- Binary Protocol: JSON.stringify 대신 TypedArray 기반 binary diff로 직렬화 비용 제거
 
 **레이아웃 안전성**:
-- version counter가 증가하면 **반드시** `JSON.stringify` + `updateStyleRaw()` 실행 → 스타일 누락 불가능
-- version counter가 불변이면 스타일이 실제로 동일한 것이므로 스킵이 정확
-- `styleVersion`은 store의 `layoutVersion`과 연동 — dirty tracking의 블랙리스트 방식과 동일한 안전성 보장
-
-**DEV 모드 안전 가드**:
-```typescript
-// DEV 모드: version 스킵 시 JSON 비교로 정합성 확인 (초기 배포 기간)
-if (import.meta.env.DEV && this.styleVersionMap.get(elementId) === styleVersion) {
-  const currentJson = JSON.stringify(styleRecord);
-  const prevJson = this._debugPrevJsonMap?.get(elementId);
-  if (prevJson && currentJson !== prevJson) {
-    console.error(
-      `[PersistentTaffyTree] Version unchanged but style differs for ${elementId}!`,
-      `This indicates a styleVersion increment bug in the store.`
-    );
-  }
-}
-```
+- JSON 비교는 DFS 계산 결과를 **직접** 비교하므로, 의존 경로와 무관하게 정확
+- JSON 동일 = 스타일 동일이 보장되므로 WASM 스킵이 항상 안전
+- 간접 의존성(부모/형제/자식 컨텍스트) 변경도 JSON 차이로 자동 포착
 
 **검증**:
-- 5,000 노드 증분 갱신 시간: 현재 ~8ms → 목표 < 2ms
-- 레이아웃 정확도 동일 (version 기반이므로 충돌 불가)
-- `styleVersion` 불변 시 `JSON.stringify` 호출 없음 확인 (console.count)
-- **DEV 모드: version 스킵 시 `Version unchanged but style differs` 에러 미출력 확인**
+- 기존 DEV 모드 `Version match but JSON mismatch` 에러 0건 확인 (JSON 비교로 전환 후 해당 경로 자체 제거)
+- 5,000 노드 증분 갱신 시간: ~3ms (JSON.stringify + 비교)
+- 변경 없는 노드: WASM `updateStyleRaw()` 호출 0건 확인
+- `_lastJsonMap` 메모리 안정성: 요소 삭제 시 `removeNode()`에서 정리 확인
 
 ---
 
@@ -1310,9 +1335,9 @@ P2 (중기, 3~5일) ← P1 완료 후
 └── P2-3. inline-block alignItems (P1-1 이후 권장)
 
 P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
-├── P3-1. Dirty Tracking + useMemo 최적화 ← 핵심, P3-3의 전제
+├── P3-1. Dirty Tracking + useMemo 최적화 ← 핵심 (P3-3과 결합 시 추가 최적화)
 ├── P3-2. Viewport Culling: 씬 좌표 SpatialIndex (독립 실행 가능, P3-1과 병렬)
-└── P3-3. JSON.stringify 해시 대체 (P3-1과 연계)
+└── P3-3. JSON 비교 기반 변경 감지 (구현 완료, P3-1과 독립)
 ```
 
 ---
@@ -1346,12 +1371,12 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 | 단계 | 비용 | 개선 |
 |------|------|------|
 | JS DFS (dirty subtree) | 1~3ms | P3-1: dirty tracking |
-| 해시 비교 (version) | < 0.5ms | P3-3: version counter |
+| JSON 비교 (dirty만) | < 1ms | P3-3: JSON 비교 + P3-1 결합 (dirty 노드만 stringify) |
 | WASM computeLayout | 1~3ms | dirty subtree만 |
 | Viewport Culling | < 0.5ms | P3-2: 씬 좌표 SpatialIndex (기존 ~5ms) |
 | Skia Command Stream | 2~4ms | viewport culling 연계 |
 | Skia Render | 3~5ms | viewport culling 연계 |
-| **합계** | **~8ms** | **50% 예산 이내** |
+| **합계** | **~9ms** | **56% 예산 이내** |
 
 ---
 
@@ -1407,7 +1432,7 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 ### Negative
 - P0~P2: 추가 코드량 적음 (~100줄), 유지보수 비용 미미
 - P3: 아키텍처 변경 필요 (dirty tracking, SpatialIndex 좌표계 전환), 복잡도 증가
-- P3-3 version counter 대체: store의 `styleVersion` 증가 누락 시 스타일 갱신이 스킵될 위험 (DEV 검증 가드로 감지)
+- P3-3 JSON 비교: `_lastJsonMap` 상시 유지로 메모리 증가 (~500KB at 5,000 nodes). JSON.stringify CPU 비용은 유지되나, P3-1 결합 시 dirty 노드만 호출하여 감소
 
 ### Risks & Mitigations
 
@@ -1419,14 +1444,14 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 | P2-3 (inline-block) | vertical-align 동적 결정 | **없음** — 미명시 시 기존 `center` 유지 | 하위 호환성 보장 (`explicitAligns.length === 0` → `'center'`) |
 | P3-1 (dirty tracking) | 블랙리스트 오분류 + 상속 속성 자손 전파 | **블랙리스트 방식으로 근본 차단** + `INHERITED_LAYOUT_PROPS` 변경 시 descendant invalidation | DEV 검증 가드: full DFS 결과 교차 비교 |
 | P3-2 (SpatialIndex) | 가시성 판단 오류 | **없음** — 레이아웃 계산에 무관, 가시성만 영향 | Feature flag 즉시 롤백 + DEV 교차 검증 |
-| P3-3 (해시 대체) | version counter 불일치 | **없음** — version 증가 시 반드시 stringify 실행 | DEV 가드: version 스킵 시 JSON 교차 비교 |
+| P3-3 (JSON 비교) | JSON.stringify CPU 비용 + _lastJsonMap 메모리 (~500KB) | **없음** — JSON 동일 = 스타일 동일 보장, 의존 경로 무관 | P3-1 결합 시 dirty 노드만 호출하여 CPU 비용 감소. Binary Protocol(ADR-005 Phase 2)에서 추가 최적화 |
 
 **레이아웃 안전성 종합**:
 - **P0~P1**: 방어 코드 추가 + 버그 수정. 기존 레이아웃에 영향 없음
 - **P2-3**: 하위 호환성 보장 — `vertical-align` 미명시 시 기존 `center` 유지
 - **P3-1**: 화이트리스트 → **블랙리스트 전환**으로 속성 누락 위험 근본 제거. **상속 속성(font\*, lineHeight 등) 변경 시 자손까지 dirty 전파** (`INHERITED_LAYOUT_PROPS` + `markDirtyWithDescendants()`). DEV 모드 교차 검증으로 오분류 즉시 감지
 - **P3-2**: 레이아웃 계산 무관 (가시성만). Feature flag으로 즉시 롤백 가능
-- **P3-3**: version counter는 store의 `layoutVersion`과 연동. 변경 시 반드시 stringify 실행
+- **P3-3**: ~~version counter~~ → JSON 비교로 전환 (12차 정정). DFS 결과를 직접 비교하므로 간접 의존성 변경도 100% 포착. `_lastJsonMap` 메모리 비용은 Binary Protocol 전환 시 해소 가능
 
 ---
 
@@ -1435,6 +1460,7 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 1. **`services/messaging.ts` 정리 시점**: `MessagingService`는 `IframeMessenger`를 import/생성하지만 활성 코드에서 import되지 않아 실행 경로 미연결 상태. 향후 재활성화 계획이 있는지, 아니면 레거시 정리 대상인지 확인 필요.
 2. **P3-1 descendant invalidation 범위**: `INHERITED_LAYOUT_PROPS`(font\*, lineHeight 등) 외에 CSS container query 영향 속성(`containerType`, `containIntrinsicSize` 등)까지 포함할지 합의 필요. 현재 프로젝트에서 container query 미사용 시 font/text 관련 속성만으로 충분.
 3. **P2-2 nonce 보안 기대치**: "same-origin 우발 메시지 차단"으로 한정하여 문서에 명시 완료 (설계 근거 섹션). 동일 출처 XSS는 별도 CSP/입력 새니타이즈에서 통제.
+4. **`clearDirtyElementIds` 미호출**: Store에 인터페이스 선언(라인 151)과 구현체(라인 359)가 존재하나 호출처 0건. `dirtyElementIds`가 소비 후 초기화되지 않아 무한 누적됨. P3-3의 JSON 비교 전환으로 `elementStyleVersions` version counter는 더 이상 변경 감지에 사용되지 않으므로 실질적 영향은 없으나, 메모리 측면에서 `calculateFullTreeLayout` 호출 후 또는 `incrementalUpdate` 내부에서 소비 완료된 dirty ID를 정리하는 것이 권장됨.
 
 ---
 

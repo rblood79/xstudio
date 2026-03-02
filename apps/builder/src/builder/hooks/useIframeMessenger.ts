@@ -30,8 +30,15 @@ import { elementsApi } from '../../services/api';
 import { canvasDeltaMessenger } from '../utils/canvasDeltaMessenger';
 // 🚀 Phase 11: Feature Flags for WebGL-only mode optimization
 import { isWebGLCanvas, isCanvasCompareMode } from '../../utils/featureFlags';
+// ADR-006 P2-2: postMessage 보안 검증
+import { isValidBootstrapMessage, isValidPreviewMessage } from '../../utils/messageValidation';
 
 export type IframeReadyState = 'not_initialized' | 'loading' | 'ready' | 'error';
+
+export interface UseIframeMessengerOptions {
+  /** ADR-006 P2-2: PREVIEW_READY 부트스트랩 메시지 검증용 nonce */
+  bootstrapNonce?: string;
+}
 
 // 🎯 모듈 레벨 변수: 모든 useIframeMessenger 인스턴스가 공유
 let pendingAutoSelectElementId: string | null = null;
@@ -56,7 +63,8 @@ export interface UseIframeMessengerReturn {
 // 🚀 Phase 11: No-op debounced functions for WebGL-only mode
 const noopDebouncedAsync = debounce(() => Promise.resolve(), 0);
 
-export const useIframeMessenger = (): UseIframeMessengerReturn => {
+export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIframeMessengerReturn => {
+    const bootstrapNonce = options?.bootstrapNonce;
     // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 완전 스킵
     // - isWebGLCanvas(): WebGL 캔버스 활성화 여부 (빌드타임 상수)
     // - isCanvasCompareMode(): 비교 모드 (빌드타임 상수)
@@ -384,9 +392,17 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     }, []);
 
     const handleMessage = useCallback((event: MessageEvent) => {
-        if (event.origin !== window.location.origin) {
-            console.warn("Received message from untrusted origin:", event.origin);
-            return;
+        // ADR-006 P2-2: PREVIEW_READY는 nonce 포함 부트스트랩 검증, 그 외는 source+origin 이중 검증
+        const isBootstrap = event.data?.type === 'PREVIEW_READY';
+        if (isBootstrap) {
+            if (!isValidBootstrapMessage(event, bootstrapNonce)) {
+                console.warn('[Security] PREVIEW_READY 메시지 검증 실패 — nonce 불일치 또는 잘못된 origin:', event.origin);
+                return;
+            }
+        } else {
+            if (!isValidPreviewMessage(event)) {
+                return;
+            }
         }
 
         // 🔧 FIX: Preview가 준비되었다는 신호 처리
@@ -683,7 +699,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         if (event.data.type === "element-hover" && event.data.elementId) {
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [setSelectedElement, elementsMap, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe, sendApiEndpointsToIframe, sendVariablesToIframe]);
+    }, [bootstrapNonce, setSelectedElement, elementsMap, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe, sendApiEndpointsToIframe, sendVariablesToIframe]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;

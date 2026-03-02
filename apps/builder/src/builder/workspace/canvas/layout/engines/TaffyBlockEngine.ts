@@ -245,7 +245,8 @@ export class TaffyBlockEngine extends BaseTaffyEngine {
     // ── 5. 부모 display 변환 (자식 display 목록 기반) ───────────────────
     const parentRawStyle = (parent.props?.style || {}) as Record<string, unknown>;
     const parentDisplay = getElementDisplay(parent);
-    const parentTaffyConfig = toTaffyDisplay(parentDisplay, childDisplayValues);
+    // enrichedChildren 전달: vertical-align 기반 alignItems 동적 결정 (ADR-006 P2-3)
+    const parentTaffyConfig = toTaffyDisplay(parentDisplay, childDisplayValues, enrichedChildren);
 
     // ── 6. 부모 노드 생성 ───────────────────────────────────────────────
     const parentStyle: TaffyStyle = {};

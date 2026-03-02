@@ -3,6 +3,7 @@ import { useStore, useSelectedElementData } from "../stores";
 import { Maximize2 } from "lucide-react";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { MessageService } from "../../utils/messaging";
+import { isValidPreviewMessage } from "../../utils/messageValidation";
 import { useVisibleOverlays } from "./hooks/useVisibleOverlays";
 import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverlays";
 import { useOverlayRAF, type OverlayUpdateResult } from "./hooks/useOverlayRAF";
@@ -267,7 +268,8 @@ export default function SelectionOverlay() {
 
     // 🚀 Phase 6.3: Ref를 통해 최신 상태 참조 (클로저 문제 회피)
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      // ADR-006 P2-2: source + origin 이중 검증
+      if (!isValidPreviewMessage(event)) return;
 
       if (event.data.type === "ELEMENT_SELECTED" && event.data.payload?.rect) {
         const { top, left, width, height } = event.data.payload.rect;

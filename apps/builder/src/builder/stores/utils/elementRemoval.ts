@@ -36,18 +36,20 @@ function collectElementsToRemove(
   elementId: string,
   elements: Element[],
   elementsMap: Map<string, Element>,
+  childrenMap: Map<string, Element[]>,
 ): { rootElement: Element; allElements: Element[] } | null {
   const element = getElementById(elementsMap, elementId);
   if (!element) return null;
   if (element.tag.toLowerCase() === 'body') return null;
 
-  // 자식 요소들 찾기 (재귀적으로)
+  // 자식 요소들 찾기 (재귀적으로) — O(1) childrenMap 사용
   const findChildren = (parentId: string): Element[] => {
-    const children = elements.filter((el) => el.parent_id === parentId);
-    const allChildren: Element[] = [...children];
-    children.forEach((child) => {
+    const directChildren = childrenMap.get(parentId) ?? [];
+    const allChildren: Element[] = [];
+    for (const child of directChildren) {
+      allChildren.push(child);
       allChildren.push(...findChildren(child.id));
-    });
+    }
     return allChildren;
   };
 
@@ -246,13 +248,15 @@ async function executeRemoval(
     newChildrenMap.get(parentId)!.push(el);
   });
 
-  set({
+  set((state) => ({
     elements: filteredElements,
     elementsMap: newElementsMap,
     childrenMap: newChildrenMap,
     pageIndex: rebuildPageIndex(filteredElements, newElementsMap),
     componentIndex: rebuildComponentIndex(filteredElements),
     variableUsageIndex: rebuildVariableUsageIndex(filteredElements),
+    // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
+    layoutVersion: state.layoutVersion + 1,
     ...(isSelectedRemoved && {
       selectedElementId: null,
       selectedElementProps: {},
@@ -264,7 +268,7 @@ async function executeRemoval(
     ...(isEditingContextRemoved && {
       editingContextId: null,
     }),
-  });
+  }));
 
   // postMessage
   const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
@@ -294,7 +298,7 @@ async function executeRemoval(
 export const createRemoveElementAction =
   (set: SetState, get: GetState) => async (elementId: string) => {
     const state = get();
-    const result = collectElementsToRemove(elementId, state.elements, state.elementsMap);
+    const result = collectElementsToRemove(elementId, state.elements, state.elementsMap, state.childrenMap);
     if (!result) {
       if (import.meta.env.DEV) {
         console.debug("⚠️ removeElement: 삭제 불가 (미존재 또는 Body)", { elementId });
@@ -324,7 +328,7 @@ export const createRemoveElementsAction =
 
     // 각 요소에 대해 삭제 대상 수집
     for (const id of elementIds) {
-      const result = collectElementsToRemove(id, state.elements, state.elementsMap);
+      const result = collectElementsToRemove(id, state.elements, state.elementsMap, state.childrenMap);
       if (!result) continue;
 
       rootElements.push(result.rootElement);

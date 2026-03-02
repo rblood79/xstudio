@@ -62,7 +62,7 @@ function getCustomFontStyleTag(): string {
  * 중요: Vite React SWC 플러그인은 React Refresh preamble이 필요합니다.
  * srcdoc iframe에서는 이를 수동으로 로드해야 합니다.
  */
-export function generateDevSrcdoc(projectId: string): string {
+export function generateDevSrcdoc(projectId: string, bootstrapNonce: string): string {
   const customFontStyleTag = getCustomFontStyleTag();
   // 개발 모드에서는 ESM import를 사용하여 HMR 지원
   // React Refresh preamble 전역 변수를 먼저 설정해야 함
@@ -81,6 +81,7 @@ export function generateDevSrcdoc(projectId: string): string {
 </head>
 <body data-preview="true" data-project-id="${projectId}">
   <div class="preview-loading">Loading Preview Runtime...</div>
+  <script>window.__bootstrapNonce = '${bootstrapNonce}';</script>
   <script>
     // React Refresh preamble 전역 변수 설정 (모듈 로드 전에 필요)
     // @vitejs/plugin-react-swc가 이 변수들을 확인함
@@ -141,10 +142,10 @@ export function setPreviewBundle(js: string, css?: string): void {
  * 프로덕션 모드용 srcdoc 생성
  * 빌드된 번들을 인라인으로 포함합니다.
  */
-export function generateProdSrcdoc(projectId: string): string {
+export function generateProdSrcdoc(projectId: string, bootstrapNonce: string): string {
   if (!previewBundle) {
     console.warn('[Preview] Production bundle not available, falling back to dev mode');
-    return generateDevSrcdoc(projectId);
+    return generateDevSrcdoc(projectId, bootstrapNonce);
   }
 
   const customFontStyleTag = getCustomFontStyleTag();
@@ -163,6 +164,7 @@ export function generateProdSrcdoc(projectId: string): string {
   ${previewCSS ? `<style>${previewCSS}</style>` : ''}
 </head>
 <body data-preview="true" data-project-id="${projectId}">
+  <script>window.__bootstrapNonce = '${bootstrapNonce}';</script>
   <script>${previewBundle}</script>
 </body>
 </html>
@@ -176,11 +178,11 @@ export function generateProdSrcdoc(projectId: string): string {
 /**
  * 환경에 따른 srcdoc 생성
  */
-export function generatePreviewSrcdoc(projectId: string): string {
+export function generatePreviewSrcdoc(projectId: string, bootstrapNonce: string): string {
   if (import.meta.env.DEV) {
-    return generateDevSrcdoc(projectId);
+    return generateDevSrcdoc(projectId, bootstrapNonce);
   }
-  return generateProdSrcdoc(projectId);
+  return generateProdSrcdoc(projectId, bootstrapNonce);
 }
 
 /**

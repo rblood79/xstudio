@@ -30,6 +30,8 @@ import {
 } from './nodeRenderers';
 import { beginRenderEffects, endRenderEffects } from './effects';
 import { toSkiaBlendMode } from './blendModes';
+import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+import * as spatialIndex from '../wasm-bindings/spatialIndex';
 
 // ── Command 타입 ──────────────────────────────────────────────────────
 
@@ -209,7 +211,29 @@ export function buildRenderCommandStream(
     visitElement(bodyId, offsetX, offsetY, commands, boundsMap, childrenMap, layoutMap, offsetX, offsetY);
   }
 
+  // SpatialIndex 동기화: boundsMap에 최신 씬 좌표를 반영
+  if (WASM_FLAGS.SPATIAL_INDEX) {
+    syncSpatialIndex(boundsMap);
+  }
+
   return { commands, boundsMap };
+}
+
+/**
+ * boundsMap → SpatialIndex 동기화.
+ *
+ * renderCommands가 씬 좌표(페이지 오프셋 포함) 절대좌표로 boundsMap을 구성하므로,
+ * 항상 최신 씬 좌표 기반 SpatialIndex를 유지한다.
+ * elementRegistry.updateElementBounds()의 스크린 좌표 동기화를 대체.
+ */
+function syncSpatialIndex(boundsMap: Map<string, BoundingBox>): void {
+  const items: Array<{ id: string; x: number; y: number; w: number; h: number }> = [];
+  for (const [id, bounds] of boundsMap) {
+    if (bounds.width > 0 && bounds.height > 0) {
+      items.push({ id, x: bounds.x, y: bounds.y, w: bounds.width, h: bounds.height });
+    }
+  }
+  spatialIndex.batchUpdate(items);
 }
 
 /**

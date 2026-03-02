@@ -25,6 +25,8 @@ import {
   shouldUseDelta,
 } from '../utils/canvasDeltaMessenger';
 import type { Element } from '../../types/core/store.types';
+// ADR-006 P2-2: postMessage 보안 검증
+import { isValidBootstrapMessage, isValidPreviewMessage } from '../../utils/messageValidation';
 
 // Delta 전송 통계
 interface DeltaStats {
@@ -87,7 +89,13 @@ export interface UseDeltaMessengerReturn {
   getDeltaStats: () => DeltaStats;
 }
 
-export const useDeltaMessenger = (): UseDeltaMessengerReturn => {
+export interface UseDeltaMessengerOptions {
+  /** ADR-006 P2-2: PREVIEW_READY 부트스트랩 메시지 검증용 nonce */
+  bootstrapNonce?: string;
+}
+
+export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaMessengerReturn => {
+  const bootstrapNonce = options?.bootstrapNonce;
   const statsRef = useRef<DeltaStats>({
     deltaSent: 0,
     fullUpdateSent: 0,
@@ -123,7 +131,13 @@ export const useDeltaMessenger = (): UseDeltaMessengerReturn => {
    */
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      // ADR-006 P2-2: PREVIEW_READY는 nonce 포함 부트스트랩 검증, 그 외는 source+origin 이중 검증
+      const isBootstrap = event.data?.type === 'PREVIEW_READY';
+      if (isBootstrap) {
+        if (!isValidBootstrapMessage(event, bootstrapNonce)) return;
+      } else {
+        if (!isValidPreviewMessage(event)) return;
+      }
 
       if (event.data.type === 'PREVIEW_READY') {
         isReadyRef.current = true;
@@ -145,7 +159,7 @@ export const useDeltaMessenger = (): UseDeltaMessengerReturn => {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [bootstrapNonce]);
 
   /**
    * 요소 추가 Delta 전송

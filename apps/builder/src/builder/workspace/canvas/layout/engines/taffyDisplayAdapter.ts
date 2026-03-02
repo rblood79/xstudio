@@ -48,6 +48,7 @@
  * @since 2026-02-28
  */
 
+import type { Element } from '../../../../../types/core/store.types';
 import { INLINE_BLOCK_TAGS } from './utils';
 
 // ============================================
@@ -167,13 +168,51 @@ export const VERTICAL_ALIGN_MIDDLE_TAGS: ReadonlySet<string> = new Set([
 /** block 폴백 결과 (미인식 display 값 및 inline → block) */
 const BLOCK_FALLBACK: TaffyDisplayConfig = { taffyDisplay: 'block' };
 
+// ============================================
+// 내부 헬퍼
+// ============================================
+
+/**
+ * inline-block 자식들의 vertical-align 값을 기반으로
+ * 부모 flex row wrap의 alignItems 값을 동적으로 결정한다.
+ *
+ * ADR-006 P2-3: vertical-align이 명시된 자식이 없으면 기존 'center'를 유지하여
+ * 하위 호환성을 보장한다. 명시된 자식이 있으면 첫 번째 값을 사용한다.
+ *
+ * CSS vertical-align → Flexbox alignItems 매핑:
+ * - top    → 'flex-start'
+ * - middle → 'center'
+ * - bottom → 'flex-end'
+ * - baseline → 'baseline'
+ *
+ * @param childElements - 직계 자식 Element 배열
+ * @returns Taffy alignItems 값 (기본값: 'center')
+ */
+function resolveInlineBlockAlignItems(childElements: Element[]): string {
+  const map: Record<string, string> = {
+    top: 'flex-start',
+    middle: 'center',
+    bottom: 'flex-end',
+    baseline: 'baseline',
+  };
+
+  const explicitAligns = childElements
+    .map(el => (el.props?.style as Record<string, unknown> | undefined)?.verticalAlign as string | undefined)
+    .filter((va): va is string => va !== undefined && va !== '');
+
+  // 하위 호환성: vertical-align을 명시한 자식이 없으면 기존 'center' 유지
+  if (explicitAligns.length === 0) return 'center';
+
+  return map[explicitAligns[0]] ?? 'center';
+}
+
 /**
  * inline-block 자식을 가진 block 부모가 사용하는 flex row wrap 설정.
  *
  * CSS inline formatting context를 Taffy flex로 시뮬레이션:
  * - flexDirection: 'row' — 가로 배치
  * - flexWrap: 'wrap' — 줄바꿈
- * - alignItems: 'center' — VERTICAL_ALIGN_MIDDLE_TAGS 대다수가 middle
+ * - alignItems: 'center' — VERTICAL_ALIGN_MIDDLE_TAGS 대다수가 middle (동적 오버라이드 가능)
  * - alignContent: 'flex-start' — CSS line box는 상단부터 쌓임 (Taffy 기본 stretch 방지)
  */
 const INLINE_BLOCK_PARENT_CONFIG: TaffyDisplayConfig = {
@@ -383,6 +422,8 @@ export function needsBlockChildFullWidth(childDisplay: string, childWidth: unkno
  *
  * @param display - 요소의 CSS display 값 (e.g. 'block', 'flex', 'inline-block')
  * @param childDisplays - 직계 자식 요소들의 CSS display 값 배열
+ * @param childElements - 직계 자식 Element 배열 (optional). 전달 시 vertical-align 기반
+ *                        alignItems 동적 결정에 사용된다. (ADR-006 P2-3)
  * @returns Taffy 엔진에 전달할 TaffyDisplayConfig
  *
  * @example
@@ -403,6 +444,7 @@ export function needsBlockChildFullWidth(childDisplay: string, childWidth: unkno
 export function toTaffyDisplay(
   display: string,
   childDisplays: string[],
+  childElements?: Element[],
 ): TaffyDisplayConfig {
   const parsed = parseDisplay(display);
 
@@ -436,6 +478,13 @@ export function toTaffyDisplay(
   // block 부모 + inline-level 자식 → flex row wrap으로 IFC 시뮬레이션
   // classifyChildDisplay()로 Dropflow classifyChild() 패턴 적용
   if (childDisplays.some(cd => classifyChildDisplay(cd) === 'inline')) {
+    // ADR-006 P2-3: vertical-align 명시 자식이 있으면 alignItems를 동적으로 결정
+    if (childElements !== undefined && childElements.length > 0) {
+      const alignItems = resolveInlineBlockAlignItems(childElements);
+      if (alignItems !== INLINE_BLOCK_PARENT_CONFIG.alignItems) {
+        return { ...INLINE_BLOCK_PARENT_CONFIG, alignItems };
+      }
+    }
     return INLINE_BLOCK_PARENT_CONFIG;
   }
 

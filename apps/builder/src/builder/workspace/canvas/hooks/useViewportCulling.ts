@@ -17,6 +17,8 @@
 import { useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 import { getElementContainer } from '../elementRegistry';
+import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+import { queryVisibleElements } from '../wasm-bindings/spatialIndex';
 
 // ============================================
 // Types
@@ -93,6 +95,30 @@ export function calculateViewportBounds(
 }
 
 /**
+ * 씬 좌표 기반 뷰포트 경계 계산 (SpatialIndex Fast Path 전용)
+ *
+ * 스크린 좌표를 pan/zoom 역변환하여 씬 좌표계로 변환.
+ * renderCommands.ts의 boundsMap이 씬 좌표를 기록하므로,
+ * SpatialIndex에도 씬 좌표로 쿼리해야 정확한 결과를 얻는다.
+ *
+ * 변환 공식: sceneX = (screenX - panOffset.x) / zoom
+ */
+export function calculateViewportBoundsScene(
+  screenWidth: number,
+  screenHeight: number,
+  zoom: number,
+  panOffset: { x: number; y: number },
+  margin: number = VIEWPORT_MARGIN,
+): { left: number; top: number; right: number; bottom: number } {
+  const sceneMargin = margin / zoom;
+  const left = (-panOffset.x) / zoom - sceneMargin;
+  const top = (-panOffset.y) / zoom - sceneMargin;
+  const right = (-panOffset.x + screenWidth) / zoom + sceneMargin;
+  const bottom = (-panOffset.y + screenHeight) / zoom + sceneMargin;
+  return { left, top, right, bottom };
+}
+
+/**
  * 요소의 경계 박스 추출 (style 기반 fallback)
  */
 export function getElementBounds(
@@ -132,6 +158,103 @@ export function isElementInViewport(
     elementBounds.y + elementBounds.height < viewport.top ||
     elementBounds.y > viewport.bottom
   );
+}
+
+/**
+ * getBounds() 기반 O(N) 스크린 좌표 culling (Fallback / 교차 검증용)
+ *
+ * 부모-자식 관계를 고려하여 overflow 가능성이 있는 자식을 포함.
+ */
+function getBoundsVisibleElements(elements: Element[], viewport: ViewportBounds): Element[] {
+  const parentVisibilityCache = new Map<string, boolean>();
+
+  const isParentOnScreen = (parentId: string | null | undefined): boolean => {
+    if (!parentId) return true;
+    const cached = parentVisibilityCache.get(parentId);
+    if (cached !== undefined) return cached;
+
+    const parentContainer = getElementContainer(parentId);
+    if (!parentContainer) {
+      parentVisibilityCache.set(parentId, true);
+      return true;
+    }
+    try {
+      const bounds = parentContainer.getBounds();
+      if (bounds.width <= 0 && bounds.height <= 0) {
+        parentVisibilityCache.set(parentId, true);
+        return true;
+      }
+      const visible = isElementInViewport(
+        { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+        viewport,
+      );
+      parentVisibilityCache.set(parentId, visible);
+      return visible;
+    } catch {
+      parentVisibilityCache.set(parentId, true);
+      return true;
+    }
+  };
+
+  return elements.filter((element) => {
+    const container = getElementContainer(element.id);
+    if (!container) return true;
+
+    try {
+      const bounds = container.getBounds();
+      if (bounds.width <= 0 && bounds.height <= 0) return true;
+      if (isElementInViewport(
+        { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+        viewport,
+      )) return true;
+      if (isParentOnScreen(element.parent_id)) return true;
+      return false;
+    } catch {
+      return true;
+    }
+  });
+}
+
+/**
+ * DEV 교차 검증: SpatialIndex 결과 vs getBounds() O(N) 결과 비교.
+ * 불일치 발생 시 콘솔 경고를 출력하여 씬 좌표 동기화 이슈를 조기 감지.
+ */
+function crossValidateCulling(
+  elements: Element[],
+  spatialVisibleElements: Element[],
+  screenWidth: number,
+  screenHeight: number,
+  zoom: number,
+  panOffset: { x: number; y: number },
+): void {
+  if (process.env.NODE_ENV !== 'development') return;
+
+  // panOffset은 변환 공식에서 사용됨 (향후 스크린→씬 좌표 역변환 교차검증용)
+  void zoom;
+  void panOffset;
+
+  const viewport = calculateViewportBounds(screenWidth, screenHeight);
+  const boundsVisible = getBoundsVisibleElements(elements, viewport);
+
+  const spatialIds = new Set(spatialVisibleElements.map((el) => el.id));
+  const boundsIds = new Set(boundsVisible.map((el) => el.id));
+
+  const falseNegatives: string[] = []; // getBounds 가시 but SpatialIndex 누락
+  const falsePositives: string[] = []; // SpatialIndex 가시 but getBounds 누락
+
+  for (const id of boundsIds) {
+    if (!spatialIds.has(id)) falseNegatives.push(id);
+  }
+  for (const id of spatialIds) {
+    if (!boundsIds.has(id)) falsePositives.push(id);
+  }
+
+  if (falseNegatives.length > 0 || falsePositives.length > 0) {
+    console.warn(
+      '[ViewportCulling] SpatialIndex vs getBounds() 불일치',
+      { falseNegatives: falseNegatives.slice(0, 5), falsePositives: falsePositives.slice(0, 5) },
+    );
+  }
 }
 
 // ============================================
@@ -197,10 +320,42 @@ export function useViewportCulling({
       };
     }
 
-    // ── 스크린 좌표 뷰포트 (공통) ──
-    const viewport = calculateViewportBounds(screenWidth, screenHeight);
+    // ── Fast path: SpatialIndex 씬 좌표 쿼리 ──────────────────────────────
+    // SPATIAL_INDEX 플래그가 활성화된 경우, renderCommands.ts가 매 프레임
+    // boundsMap → batchUpdate()로 SpatialIndex를 씬 좌표 기준으로 최신화한다.
+    // 따라서 pan/zoom 변환만으로 항상 정확한 결과를 보장한다.
+    if (WASM_FLAGS.SPATIAL_INDEX) {
+      const sceneBounds = calculateViewportBoundsScene(
+        screenWidth,
+        screenHeight,
+        zoom,
+        panOffset,
+      );
+      const visibleIds = new Set(
+        queryVisibleElements(sceneBounds.left, sceneBounds.top, sceneBounds.right, sceneBounds.bottom),
+      );
 
-    // ── 실시간 스크린 좌표 기반 visibility 체크 ──
+      // SpatialIndex에 미등록된 요소(아직 레이아웃 전)는 포함
+      const visibleElements = elements.filter(
+        (el) => !visibleIds.size || visibleIds.has(el.id) || !getElementContainer(el.id),
+      );
+
+      const culledCount = elements.length - visibleElements.length;
+
+      // DEV 교차 검증: 1% 확률로 SpatialIndex vs getBounds() 결과 비교
+      if (import.meta.env.DEV && Math.random() < 0.01) {
+        crossValidateCulling(elements, visibleElements, screenWidth, screenHeight, zoom, panOffset);
+      }
+
+      return {
+        visibleElements,
+        culledCount,
+        totalCount: elements.length,
+        cullingRatio: elements.length > 0 ? culledCount / elements.length : 0,
+      };
+    }
+
+    // ── Fallback: 실시간 getBounds() O(N) 스크린 좌표 culling ─────────────
     // container.getBounds()는 현재 프레임의 스크린 좌표를 반환하므로
     // pan/zoom 시에도 항상 정확하다.
     //
@@ -208,60 +363,8 @@ export function useViewportCulling({
     // - 자식이 부모보다 클 수 있음 (overflow: visible 기본)
     // - 요소가 culled → unmount → unregister → 다음 체크에서 재포함 → render → cull → 무한 cycle
     // - 부모가 화면에 있으면 자식은 overflow 가능성이 있으므로 cull하지 않음
-    const parentVisibilityCache = new Map<string, boolean>();
-
-    const isParentOnScreen = (parentId: string | null | undefined): boolean => {
-      if (!parentId) return true; // 부모 없음(body 직접 자식) → body는 항상 화면에 있음
-      const cached = parentVisibilityCache.get(parentId);
-      if (cached !== undefined) return cached;
-
-      const parentContainer = getElementContainer(parentId);
-      if (!parentContainer) {
-        // 부모 container 미등록 (body 등 항상 렌더링되는 요소) → 화면에 있다고 간주
-        parentVisibilityCache.set(parentId, true);
-        return true;
-      }
-      try {
-        const bounds = parentContainer.getBounds();
-        if (bounds.width <= 0 && bounds.height <= 0) {
-          parentVisibilityCache.set(parentId, true);
-          return true;
-        }
-        const visible = isElementInViewport(
-          { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
-          viewport
-        );
-        parentVisibilityCache.set(parentId, visible);
-        return visible;
-      } catch {
-        parentVisibilityCache.set(parentId, true);
-        return true;
-      }
-    };
-
-    const visibleElements = elements.filter((element) => {
-      const container = getElementContainer(element.id);
-      if (!container) return true; // 컨테이너 미등록 → 렌더링 포함 (cull하지 않음)
-
-      try {
-        const bounds = container.getBounds();
-        // 아직 렌더링되지 않은 요소 (bounds 0) → 포함
-        if (bounds.width <= 0 && bounds.height <= 0) return true;
-        // 요소 자체가 뷰포트에 있으면 포함
-        if (isElementInViewport(
-          { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
-          viewport
-        )) return true;
-
-        // 요소는 뷰포트 밖이지만, 부모가 화면에 있으면 포함
-        // (자식이 부모를 overflow하여 화면에 보일 가능성)
-        if (isParentOnScreen(element.parent_id)) return true;
-
-        return false;
-      } catch {
-        return true; // getBounds 실패 → 포함
-      }
-    });
+    const viewport = calculateViewportBounds(screenWidth, screenHeight);
+    const visibleElements = getBoundsVisibleElements(elements, viewport);
 
     const culledCount = elements.length - visibleElements.length;
 
