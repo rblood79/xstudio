@@ -684,6 +684,9 @@ export function SkiaOverlay({
             '../utils/textMeasure'
           );
           setTextMeasurer(new CanvasKitTextMeasurer());
+          // CanvasKit 측정기로 교체 후 레이아웃 재계산 트리거
+          // Canvas2D → CanvasKit 폰트 메트릭 차이 보정
+          useStore.getState().invalidateLayout();
         } catch (e) {
           console.warn('[SkiaOverlay] CanvasKit TextMeasurer 초기화 실패:', e);
         }

@@ -1123,9 +1123,11 @@ export function BuilderCanvas({
   const [wasmLayoutFailed, setWasmLayoutFailed] = useState(false);
   // 폰트 로딩 완료 후 레이아웃 재계산 트리거
   // measureFontMetrics 캐시가 폰트 로드 전 폴백 메트릭으로 오염되는 것을 방지
-  const [, setFontsReadyTick] = useState(0);
+  // ADR-006: layoutVersion 증가로 fullTreeLayoutMap 재계산 보장
   useEffect(() => {
-    const handler = () => setFontsReadyTick(t => t + 1);
+    const handler = () => {
+      useStore.getState().invalidateLayout();
+    };
     window.addEventListener('xstudio:fonts-ready', handler);
     return () => window.removeEventListener('xstudio:fonts-ready', handler);
   }, []);

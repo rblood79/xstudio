@@ -183,17 +183,28 @@ export const createInspectorActionsSlice: StateCreator<
     }
 
     // 🚀 단일 set() 호출 - 배칭으로 리렌더링 최소화
-    const stateUpdate: Partial<CombinedState> = {
-      elements: newElements,
-      elementsMap: newElementsMap,
-    };
+    // ADR-006 P3-1: 레이아웃 영향 prop 변경 시 layoutVersion 증가 → fullTreeLayoutMap 재계산 트리거
+    // style 변경 외에도 size, label, children, text 등 레이아웃에 영향을 미치는 prop 포함
+    const LAYOUT_AFFECTING_PROPS = new Set(['style', 'size', 'label', 'children', 'text', 'placeholder', 'orientation', 'items']);
+    const hasLayoutChange = Object.keys(propsUpdate).some(key => LAYOUT_AFFECTING_PROPS.has(key));
+    set((prevState) => {
+      const stateUpdate: Partial<CombinedState> = {
+        elements: newElements,
+        elementsMap: newElementsMap,
+      };
 
-    // selectedElementProps 동시 업데이트
-    if (selectedElementId === elementId) {
-      (stateUpdate as Record<string, unknown>).selectedElementProps = newProps;
-    }
+      // selectedElementProps 동시 업데이트
+      if (selectedElementId === elementId) {
+        (stateUpdate as Record<string, unknown>).selectedElementProps = newProps;
+      }
 
-    set(stateUpdate);
+      // 레이아웃 영향 prop 변경 시 layoutVersion 증가 (PersistentTaffyTree JSON 비교로 불필요 WASM 호출 방지)
+      if (hasLayoutChange) {
+        (stateUpdate as Record<string, unknown>).layoutVersion = prevState.layoutVersion + 1;
+      }
+
+      return stateUpdate;
+    });
 
     // ⚠️ 구조 변경(parent_id, 추가/삭제) 시에만 인덱스 재구축
     // props/style 변경은 구조 변경이 아니므로 스킵
@@ -322,10 +333,12 @@ export const createInspectorActionsSlice: StateCreator<
         newElements[elementIndex] = updatedElement;
       }
 
-      set({
+      // ADR-006 P3-1: style 프리뷰도 layoutVersion 증가 → 캔버스 레이아웃 즉시 반영
+      set((prevState) => ({
         elements: newElements,
         elementsMap: newElementsMap,
-      } as Partial<CombinedState>);
+        layoutVersion: prevState.layoutVersion + 1,
+      } as Partial<CombinedState>));
     },
 
     updateSelectedStyles: (styles) => {

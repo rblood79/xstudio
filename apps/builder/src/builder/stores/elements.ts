@@ -211,6 +211,9 @@ export interface ElementsState {
 
   // G.1: Instance 생성 액션
   createInstance: (masterId: string, parentId: string, pageId: string) => Element | null;
+
+  // ADR-006: 외부 트리거(텍스트 측정기 교체, 폰트 로딩 등)에서 레이아웃 재계산 요청
+  invalidateLayout: () => void;
 }
 
 export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
@@ -367,7 +370,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   // 실제 요소 변경은 addElement, updateElementProps, removeElement에서 처리
   setElements: (elements) => {
     const { elements: normalizedElements } = normalizeElementTags(elements);
-    set({ elements: normalizedElements });
+    set((state) => ({ elements: normalizedElements, layoutVersion: state.layoutVersion + 1 }));
     // 인덱스 자동 재구축
     get()._rebuildIndexes();
   },
@@ -388,7 +391,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
     // 페이지 변경 시 히스토리 초기화
     historyManager.setCurrentPage(pageId);
-    set({ elements: migratedElements, currentPageId: pageId });
+    set((state) => ({ elements: migratedElements, currentPageId: pageId, layoutVersion: state.layoutVersion + 1 }));
 
     // 인덱스 자동 재구축
     get()._rebuildIndexes();
@@ -771,6 +774,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   // G.1: Instance 생성 액션
   createInstance: (masterId: string, parentId: string, pageId: string) => {
     return createInstanceAction(get, set, masterId, parentId, pageId);
+  },
+
+  invalidateLayout: () => {
+    set((state) => ({ layoutVersion: state.layoutVersion + 1 }));
   },
   };
 };

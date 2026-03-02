@@ -32,15 +32,25 @@ export const createAddElementAction =
   (set: SetState, get: GetState) => async (element: Element) => {
     const state = get();
 
-    // 🔧 order_num 중복 방지: 기존 형제 요소와 중복되면 새로운 값 할당
-    let elementToAdd = normalizeElementTagInElement(element);
-    const siblings = state.elements.filter(el => el.parent_id === elementToAdd.parent_id);
-    const hasConflict = siblings.some(sibling => sibling.order_num === elementToAdd.order_num);
+    // 🔧 order_num 중복 방지: set() 내부에서 atomic하게 할당
+    // 외부 get() 기반 계산은 race condition으로 중복 가능 → prevState 기반 계산으로 전환
+    const normalizedElement = normalizeElementTagInElement(element);
 
-    if (hasConflict || elementToAdd.order_num === undefined || elementToAdd.order_num === null) {
-      const nextOrderNum = HierarchyManager.calculateNextOrderNum(elementToAdd.parent_id ?? null, state.elements);
-      elementToAdd = { ...elementToAdd, order_num: nextOrderNum };
-    }
+    // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
+    // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
+    let elementToAdd = normalizedElement;
+    set((prevState) => {
+      // atomic order_num 계산: prevState.elements 기반으로 중복 방지
+      const siblings = prevState.elements.filter(el => el.parent_id === normalizedElement.parent_id);
+      const hasConflict = siblings.some(sibling => sibling.order_num === normalizedElement.order_num);
+      if (hasConflict || normalizedElement.order_num === undefined || normalizedElement.order_num === null) {
+        const maxOrder = siblings.length > 0
+          ? Math.max(...siblings.map(el => el.order_num || 0))
+          : -1;
+        elementToAdd = { ...normalizedElement, order_num: maxOrder + 1 };
+      }
+      return { elements: [...prevState.elements, elementToAdd], layoutVersion: prevState.layoutVersion + 1 };
+    });
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
     // 1. 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
@@ -51,10 +61,6 @@ export const createAddElementAction =
         data: { element: { ...elementToAdd } },
       });
     }
-
-    // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
-    // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
-    set((prevState) => ({ elements: [...prevState.elements, elementToAdd], layoutVersion: prevState.layoutVersion + 1 }));
 
     // 🔧 CRITICAL: elementsMap 재구축 (요소 추가 후 캐시 업데이트)
     get()._rebuildIndexes();
@@ -115,17 +121,23 @@ export const createAddComplexElementAction =
     const normalizedParent = normalizeElementTagInElement(parentElement);
     const normalizedChildren = childElements.map(normalizeElementTagInElement);
 
-    // 🔧 부모 요소의 order_num 중복 방지
+    // 🔧 부모 요소의 order_num 중복 방지: set() 내부에서 atomic하게 할당
     let parentToAdd = normalizedParent;
-    const parentSiblings = state.elements.filter(el => el.parent_id === normalizedParent.parent_id);
-    const parentHasConflict = parentSiblings.some(sibling => sibling.order_num === normalizedParent.order_num);
 
-    if (parentHasConflict || normalizedParent.order_num === undefined || normalizedParent.order_num === null) {
-      const nextOrderNum = HierarchyManager.calculateNextOrderNum(normalizedParent.parent_id ?? null, state.elements);
-      parentToAdd = { ...normalizedParent, order_num: nextOrderNum };
-    }
-
-    const allElements = [parentToAdd, ...normalizedChildren];
+    // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
+    // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
+    set((prevState) => {
+      const siblings = prevState.elements.filter(el => el.parent_id === normalizedParent.parent_id);
+      const hasConflict = siblings.some(sibling => sibling.order_num === normalizedParent.order_num);
+      if (hasConflict || normalizedParent.order_num === undefined || normalizedParent.order_num === null) {
+        const maxOrder = siblings.length > 0
+          ? Math.max(...siblings.map(el => el.order_num || 0))
+          : -1;
+        parentToAdd = { ...normalizedParent, order_num: maxOrder + 1 };
+      }
+      const allElements = [parentToAdd, ...normalizedChildren];
+      return { elements: [...prevState.elements, ...allElements], layoutVersion: prevState.layoutVersion + 1 };
+    });
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
     // 1. 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
@@ -139,10 +151,6 @@ export const createAddComplexElementAction =
         },
       });
     }
-
-    // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
-    // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
-    set((prevState) => ({ elements: [...prevState.elements, ...allElements], layoutVersion: prevState.layoutVersion + 1 }));
 
     // 🔧 CRITICAL: elementsMap 재구축 (복합 요소 추가 후 캐시 업데이트)
     get()._rebuildIndexes();
