@@ -12,10 +12,13 @@ tags: [domain, async, pipeline]
 ```
 1. Memory Update (즉시) → UI 반응
 2. Index Rebuild (즉시) → 검색 가능
-3. History Record (즉시) → Undo 가능
-4. IndexedDB Persist (백그라운드) → 영구 저장
-5. Preview Sync (백그라운드) → iframe 동기화
+3. Layout Version Bump (즉시, 조건부) → fullTreeLayoutMap 재계산 트리거
+4. History Record (즉시) → Undo 가능
+5. IndexedDB Persist (백그라운드) → 영구 저장
+6. Preview Sync (백그라운드) → iframe 동기화
 ```
+
+> **Step 3 조건**: `LAYOUT_AFFECTING_PROPS`(`style`, `size`, `label`, `children`, `text`, `placeholder`, `orientation`, `items`) 중 하나 이상 변경 시 `layoutVersion + 1`. 비-레이아웃 변경(color, opacity 등)은 스킵.
 
 ## Incorrect
 
@@ -137,10 +140,31 @@ setTimeout(() => {
 }, 100);
 ```
 
+## layoutVersion 계약 (ADR-006 P4)
+
+`fullTreeLayoutMap` useMemo는 `layoutVersion` 카운터에 의존합니다. 레이아웃 영향 변경 시 반드시 카운터를 증가시켜야 합니다.
+
+```typescript
+// ✅ Store 내부: set() 내에서 layoutVersion 증가
+set((state) => ({ elements: newElements, layoutVersion: state.layoutVersion + 1 }));
+
+// ✅ Store 외부(텍스트 측정기 교체, 폰트 로딩 등): invalidateLayout() 호출
+useStore.getState().invalidateLayout();
+
+// ✅ inspectorActions: LAYOUT_AFFECTING_PROPS 체크 후 조건부 증가
+const LAYOUT_AFFECTING_PROPS = new Set(['style', 'size', 'label', 'children', 'text', 'placeholder', 'orientation', 'items']);
+const hasLayoutChange = Object.keys(propsUpdate).some(key => LAYOUT_AFFECTING_PROPS.has(key));
+if (hasLayoutChange) set((state) => ({ layoutVersion: state.layoutVersion + 1 }));
+
+// ❌ layoutVersion 미증가 → fullTreeLayoutMap 재계산 스킵 → 크기 고정
+set({ elements: newElements }); // layoutVersion 변경 없음!
+```
+
 ## 참조 파일
 
 - `apps/builder/src/builder/stores/utils/elementCreation.ts` - 추가 파이프라인
 - `apps/builder/src/builder/stores/utils/elementUpdate.ts` - 업데이트 파이프라인
 - `apps/builder/src/builder/stores/utils/elementRemoval.ts` - 삭제 파이프라인 (단일/배치)
 - `apps/builder/src/builder/stores/utils/elementReorder.ts` - order_num 재정렬 (순수 함수 + batch)
+- `apps/builder/src/builder/stores/inspectorActions.ts` - 프로퍼티 업데이트 + layoutVersion 증가
 - `apps/builder/src/builder/utils/canvasDeltaMessenger.ts` - Delta 동기화

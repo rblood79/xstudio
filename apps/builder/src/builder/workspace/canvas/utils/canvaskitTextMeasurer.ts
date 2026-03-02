@@ -159,7 +159,13 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
     builder.addText(text);
     const paragraph = builder.build();
-    paragraph.layout(maxWidth);
+
+    // CSS word-break: normal 에뮬레이션 — CanvasKit HarfBuzz 기본 동작은
+    // 컨테이너보다 넓은 단어를 문자 단위로 분할(overflow-wrap: break-word 유사).
+    // CSS word-break: normal은 단어 내부에서 줄바꿈하지 않으므로,
+    // 가장 넓은 단어의 너비를 하한으로 사용하여 문자 분할을 방지한다.
+    const effectiveMaxWidth = this.cssNormalBreakMaxWidth(ck, paraStyle, fontMgr, text, maxWidth);
+    paragraph.layout(effectiveMaxWidth);
 
     const height = paragraph.getHeight();
     const width = paragraph.getMaxWidth();
@@ -169,5 +175,33 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     // ParagraphStyle is a plain JS object, no delete needed
 
     return { width, height };
+  }
+
+  /**
+   * CSS word-break: normal 에뮬레이션을 위한 유효 최대 너비 계산
+   *
+   * 텍스트를 공백으로 분리하여 각 단어의 너비를 측정하고,
+   * 가장 넓은 단어의 너비와 maxWidth 중 큰 값을 반환한다.
+   * 이를 통해 CanvasKit이 단어 내부에서 줄바꿈하는 것을 방지한다.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private cssNormalBreakMaxWidth(ck: any, paraStyle: any, fontMgr: any, text: string, maxWidth: number): number {
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return maxWidth;
+
+    let maxWordWidth = 0;
+    for (const word of words) {
+      const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+      b.addText(word);
+      const p = b.build();
+      p.layout(1e6);
+      const ww = p.getMaxIntrinsicWidth();
+      p.delete();
+      b.delete();
+      if (ww > maxWordWidth) maxWordWidth = ww;
+    }
+    // 부동소수점 정밀도 이슈 방지: getMaxIntrinsicWidth()와 layout() 사이의
+    // 미세한 차이로 인해 동일 너비에서도 줄바꿈이 발생할 수 있으므로 ceil 적용
+    return Math.max(maxWidth, Math.ceil(maxWordWidth));
   }
 }

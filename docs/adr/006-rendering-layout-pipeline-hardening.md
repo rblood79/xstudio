@@ -1380,6 +1380,54 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 
 ---
 
+## P4: layoutVersion 커버리지 보완 (2026-03-02)
+
+> 목표: P3-1 dirty tracking의 `layoutVersion` 카운터가 모든 레이아웃 영향 코드 경로에서 증가되도록 보장
+> 근본 원인: `fullTreeLayoutMap` useMemo가 `elementById`(Map 참조) 대신 `layoutVersion` 카운터에 의존하는 최적화(P3-1)에서, 카운터 증가 누락 4건 발견
+
+### P4-1. `setElements`/`loadPageElements` layoutVersion 미증가
+
+- **파일**: `apps/builder/src/builder/stores/elements.ts`
+- **문제**: 초기 로딩(`setElements`, `loadPageElements`)에서 `layoutVersion` 미증가 → fullTreeLayoutMap 재계산 미트리거 → 이전 레이아웃 결과 고정
+- **수정**: `set({ elements })` → `set((state) => ({ elements, layoutVersion: state.layoutVersion + 1 }))`
+- **영향**: 페이지 로딩/전환 시 레이아웃 즉시 계산
+
+### P4-2. `invalidateLayout()` 외부 트리거 액션 추가
+
+- **파일**: `apps/builder/src/builder/stores/elements.ts`
+- **문제**: Store 외부(SkiaOverlay, BuilderCanvas)에서 layoutVersion을 증가시킬 수단 없음
+- **수정**: `invalidateLayout: () => set((state) => ({ layoutVersion: state.layoutVersion + 1 }))` 액션 추가
+- **용도**: 텍스트 측정기 교체, 폰트 로딩 완료 등 비-Store 이벤트에서 레이아웃 재계산 트리거
+
+### P4-3. Canvas2D → CanvasKit 측정기 교체 후 레이아웃 재계산
+
+- **파일**: `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx`
+- **문제**: `setTextMeasurer(new CanvasKitTextMeasurer())` 후 layoutVersion 미증가 → Canvas2D 기반 레이아웃 결과 고정 → 캔버스 vs 웹 CSS 크기 차이
+- **수정**: `setTextMeasurer()` 직후 `useStore.getState().invalidateLayout()` 호출
+
+### P4-4. 폰트 로딩 완료 후 레이아웃 재계산
+
+- **파일**: `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+- **문제**: `xstudio:fonts-ready` 이벤트가 로컬 `useState`만 변경 → fullTreeLayoutMap useMemo deps에 미포함
+- **수정**: `setFontsReadyTick(t => t + 1)` → `useStore.getState().invalidateLayout()` (로컬 state 제거)
+
+### P4-5. `LAYOUT_AFFECTING_PROPS` — 비-style 프로퍼티의 layoutVersion 증가
+
+- **파일**: `apps/builder/src/builder/stores/inspectorActions.ts`
+- **문제**: `hasStyleChange = propsUpdate.style !== undefined` 조건이 `size`, `label`, `children` 등 비-style 프로퍼티 변경을 미커버 → layoutVersion 미증가 → 크기 축소 미반영
+- **수정**: `LAYOUT_AFFECTING_PROPS = new Set(['style', 'size', 'label', 'children', 'text', 'placeholder', 'orientation', 'items'])` + `hasLayoutChange = Object.keys(propsUpdate).some(key => LAYOUT_AFFECTING_PROPS.has(key))`
+- **영향**: 프로퍼티 패널에서 size(sm→xs 등) 축소 변경 즉시 반영
+
+### P4 검증 결과 (MCP 브라우저 자동화)
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| layoutVersion | 0 (고정) | 3 (setElements +1, loadPageElements +1, setTextMeasurer +1) |
+| Button 126×26 vs CSS 138×34 | ΔW -12.1, ΔH -8 | ΔW -4.1, ΔH +1 (폰트 메트릭 오차) |
+| size sm→xs 축소 | 미반영 (새로고침 필요) | 즉시 반영 (68×35 → 60×27) |
+
+---
+
 ## 검증 계획
 
 ### 각 Phase 완료 시

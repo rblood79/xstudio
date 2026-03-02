@@ -1353,7 +1353,31 @@ export function renderText(
     const paragraph = builder.build();
     // text-overflow ellipsis 시 nowrap layoutMaxWidth가 매우 크므로
     // 실제 컨테이너 maxWidth로 재레이아웃하여 잘림 처리
-    paragraph.layout(isEllipsis ? node.text.maxWidth : layoutMaxWidth);
+    // CSS word-break: normal 에뮬레이션 — CanvasKit HarfBuzz 기본 동작은
+    // 컨테이너보다 넓은 단어를 문자 단위로 분할(overflow-wrap: break-word 유사).
+    // CSS word-break: normal은 단어 내부에서 줄바꿈하지 않으므로,
+    // 가장 넓은 단어의 너비를 하한으로 사용하여 문자 분할을 방지한다.
+    let effectiveLayoutWidth = isEllipsis ? node.text.maxWidth : layoutMaxWidth;
+    if (wordBreak === 'normal' && overflowWrap === 'normal' && !isEllipsis && layoutMaxWidth < 100000) {
+      const words = processedText.split(/\s+/).filter(Boolean);
+      if (words.length > 0) {
+        let maxWordWidth = 0;
+        for (const word of words) {
+          const wb = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+          wb.addText(word);
+          const wp = wb.build();
+          wp.layout(1e6);
+          const ww = wp.getMaxIntrinsicWidth();
+          wp.delete();
+          wb.delete();
+          if (ww > maxWordWidth) maxWordWidth = ww;
+        }
+        // 부동소수점 정밀도 이슈 방지: getMaxIntrinsicWidth()와 layout() 사이의
+        // 미세한 차이로 인해 동일 너비에서도 줄바꿈이 발생할 수 있으므로 ceil 적용
+        effectiveLayoutWidth = Math.max(layoutMaxWidth, Math.ceil(maxWordWidth));
+      }
+    }
+    paragraph.layout(effectiveLayoutWidth);
     setCachedParagraph(key, paragraph);
     const drawY = computeDrawY(paragraph);
     // text-indent: 첫 줄 들여쓰기 → paddingLeft에 offset 추가

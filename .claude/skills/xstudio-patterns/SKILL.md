@@ -64,6 +64,14 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
   mod.ping(); // TypeError — wasm 전역 변수가 undefined
   ```
 
+#### Layout Version (layoutVersion 계약)
+- **CRITICAL**: `fullTreeLayoutMap` useMemo는 `layoutVersion` 카운터에 의존 (P3-1 최적화). 레이아웃에 영향을 주는 **모든 코드 경로**에서 반드시 `layoutVersion + 1` 증가 필수
+- **CRITICAL**: Store 내부(`setElements`, `loadPageElements`, `updateAndSave`) → `set((state) => ({ ..., layoutVersion: state.layoutVersion + 1 }))` 패턴 사용
+- **CRITICAL**: Store 외부(텍스트 측정기 교체, 폰트 로딩 등) → `useStore.getState().invalidateLayout()` 호출
+- **CRITICAL**: `LAYOUT_AFFECTING_PROPS` Set(`style`, `size`, `label`, `children`, `text`, `placeholder`, `orientation`, `items`)에 해당하는 프로퍼티 변경 시 layoutVersion 증가 필수. 새 레이아웃 영향 프로퍼티 추가 시 Set 갱신
+- 누락 증상: 초기 로딩 후 크기 고정, 프로퍼티 변경(size sm→xs 등) 축소 미반영, 새로고침 시만 정상
+- 참조: ADR-006 P4 (layoutVersion 커버리지 보완)
+
 #### Order Num (order_num 재정렬)
 - **CRITICAL**: order_num 재정렬 시 `batchUpdateElementOrders()` 사용 필수 (단일 set() + _rebuildIndexes()). 구 패턴 `updateElementOrder` N회 호출 금지
 - **CRITICAL**: setTimeout/queueMicrotask 안에서 반드시 `get()`으로 최신 `elements` 참조 (stale closure 방지). 외부 캡처 금지

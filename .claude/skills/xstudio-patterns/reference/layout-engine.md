@@ -330,6 +330,45 @@ const minContentW = calculateMinContentWidth(textContent, fontSize);
 **적용 범위**: TEXT_LEAF_TAGS는 `enrichWithIntrinsicSize`에서 별도 처리되므로 step 4.8 대상 아님.
 Card/Tabs: Factory에 `width: '100%'` 설정하여 flex center에서 전체 폭 유지.
 
+### layoutVersion 계약 (ADR-006 P4, 2026-03-02)
+
+`fullTreeLayoutMap` useMemo는 `[bodyElement, layoutVersion, pageWidth, pageHeight, _wasmLayoutReady]`에 의존합니다.
+`elementById`/`pageChildrenMap` 등 Map 참조를 deps에서 의도적으로 제외(P3-1 최적화)하므로, **layoutVersion 카운터가 유일한 재계산 트리거**입니다.
+
+#### 증가 필수 코드 경로
+
+| 코드 경로 | 파일 | 패턴 |
+|-----------|------|------|
+| 초기 로딩 (`setElements`) | `elements.ts` | `set((state) => ({ elements, layoutVersion: state.layoutVersion + 1 }))` |
+| 페이지 전환 (`loadPageElements`) | `elements.ts` | 동일 패턴 |
+| 프로퍼티 변경 (`updateAndSave`) | `inspectorActions.ts` | `LAYOUT_AFFECTING_PROPS` 체크 후 조건부 증가 |
+| 텍스트 측정기 교체 | `SkiaOverlay.tsx` | `useStore.getState().invalidateLayout()` |
+| 폰트 로딩 완료 | `BuilderCanvas.tsx` | `useStore.getState().invalidateLayout()` |
+
+#### LAYOUT_AFFECTING_PROPS
+
+```typescript
+const LAYOUT_AFFECTING_PROPS = new Set([
+  'style',        // CSS 속성 변경
+  'size',         // 컴포넌트 크기 변형 (sm/md/lg)
+  'label',        // 텍스트 콘텐츠 변경 → intrinsic size 변경
+  'children',     // 자식 콘텐츠 변경
+  'text',         // 텍스트 콘텐츠
+  'placeholder',  // placeholder 텍스트
+  'orientation',  // 레이아웃 방향 (horizontal/vertical)
+  'items',        // 항목 수 변경 → 크기 변경
+]);
+```
+
+새 프로퍼티가 레이아웃에 영향을 준다면 이 Set에 추가해야 합니다. 누락 시 해당 프로퍼티 변경이 캔버스에 즉시 반영되지 않고 새로고침 시에만 적용됩니다.
+
+#### PersistentTaffyTree JSON 비교와의 관계
+
+layoutVersion은 **Store → useMemo 레벨**의 dirty tracking입니다. 이와 별도로 PersistentTaffyTree는 **WASM 레벨**에서 JSON 문자열 비교 기반 변경 감지(P3-3)를 수행합니다. 두 계층은 독립적:
+
+- layoutVersion 증가 → useMemo 재실행 → DFS 순회 → JSON 비교 → 변경된 노드만 WASM 업데이트
+- layoutVersion 미증가 → useMemo 스킵 → DFS/JSON 비교 미실행 → 레이아웃 고정
+
 ### 레이아웃 엔진 개선 이력 (2026-02-23)
 
 #### line-height 이중 전략: normal vs 1.5 (2026-02-23)
