@@ -133,6 +133,14 @@ export class PersistentTaffyTree {
       handles = this.taffy.buildTreeBatch(JSON.stringify(batchPayload));
     }
 
+    // 1.5. handles 길이 검증 — WASM 반환값이 batch와 불일치하면 데이터 손상 방지
+    if (handles.length !== batch.length) {
+      console.error(
+        `[PersistentTaffyTree] buildFull: handles 길이 불일치 (expected=${batch.length}, actual=${handles.length}). 트리 초기화 스킵.`,
+      );
+      return [];
+    }
+
     // 2. 내부 맵 초기화 후 새 상태로 구성
     this.handleMap.clear();
     this.childrenHashMap.clear();
@@ -275,10 +283,14 @@ export class PersistentTaffyTree {
     const handle = this.handleMap.get(elementId);
     if (handle === undefined) return;
 
-    this.taffy.removeNode(handle);
-    this.handleMap.delete(elementId);
-    this._lastJsonMap.delete(elementId);
-    this.childrenHashMap.delete(elementId);
+    try {
+      this.taffy.removeNode(handle);
+    } finally {
+      // WASM 예외 시에도 내부 맵 정리 보장 — stale handle 방지
+      this.handleMap.delete(elementId);
+      this._lastJsonMap.delete(elementId);
+      this.childrenHashMap.delete(elementId);
+    }
   }
 
   // ─── 레이아웃 계산 / 결과 수집 ──────────────────────────────────────

@@ -161,6 +161,26 @@ function CanvasBounds({ width, height, zoom = 1 }: { width: number; height: numb
   return <pixiGraphics draw={draw} />;
 }
 
+// Opt-out: 자식을 내부에 렌더링하지 않는 태그 (나머지는 모두 컨테이너)
+const NON_CONTAINER_TAGS = new Set([
+  // TEXT_TAGS: TextSprite 렌더링, 컨테이너 불가
+  'Text', 'Heading', 'Description', 'Label', 'Paragraph',
+  'Link', 'Strong', 'Em', 'Code', 'Pre', 'Blockquote',
+  'ListItem', 'ListBoxItem', 'GridListItem',
+  // Void/Visual: 자식 없는 단일 요소
+  'Input', 'Separator', 'Skeleton',
+  // Color Sub-component: 부모 ColorPicker의 내부 요소
+  'ColorSwatch', 'ColorWheel', 'ColorArea', 'ColorSlider',
+  // Field sub-components: leaf 요소 (자식 없음)
+  'FieldError', 'DateSegment', 'TimeSegment', 'SliderOutput', 'SliderThumb',
+  // Select sub-components: leaf 요소
+  'SelectValue', 'SelectIcon',
+  // ComboBox sub-components: leaf 요소
+  'ComboBoxInput', 'ComboBoxTrigger',
+  // Calendar sub-components: leaf 요소
+  'CalendarHeader', 'CalendarGrid',
+]);
+
 /**
  * 🚀 Multi-page: 메모이제이션된 페이지 컨테이너
  * 부모(BuilderCanvas)가 리렌더되어도 props가 같으면 스킵.
@@ -187,6 +207,8 @@ interface PageContainerProps {
   onTitleDragStart: (pageId: string, clientX: number, clientY: number) => void;
   /** ADR-006 P3-1: 레이아웃 변경 감지 버전 */
   layoutVersion: number;
+  /** 페이지 위치 변경 감지 버전 — viewport culling 갱신용 */
+  pagePositionVersion: number;
 }
 
 const titleHitDraw = (pageWidth: number) => (g: PixiGraphics) => {
@@ -214,6 +236,7 @@ const PageContainer = memo(function PageContainer({
   onDoubleClick,
   onTitleDragStart,
   layoutVersion,
+  pagePositionVersion,
 }: PageContainerProps) {
   const draw = useMemo(() => titleHitDraw(pageWidth), [pageWidth]);
 
@@ -257,6 +280,7 @@ const PageContainer = memo(function PageContainer({
           onDoubleClick={onDoubleClick}
           wasmLayoutReady={wasmLayoutReady}
           layoutVersion={layoutVersion}
+          pagePositionVersion={pagePositionVersion}
         />
       )}
     </pixiContainer>
@@ -538,7 +562,7 @@ const ElementsLayer = memo(function ElementsLayer({
   pageHeight: number;
   zoom: number;
   panOffset: { x: number; y: number };
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => void;
   onDoubleClick?: (elementId: string) => void;
   pagePositionVersion?: number;
   /** Rust WASM(Taffy/Grid) 엔진 로드 완료 여부 - 로드 시 레이아웃 재계산 트리거 */
@@ -633,32 +657,6 @@ const ElementsLayer = memo(function ElementsLayer({
     return ids;
   }, [visibleElements, elementById]);
 
-  // Opt-out: 자식을 내부에 렌더링하지 않는 태그 (나머지는 모두 컨테이너)
-  const NON_CONTAINER_TAGS = useMemo(() => new Set([
-    // TEXT_TAGS: TextSprite 렌더링, 컨테이너 불가
-    'Text', 'Heading', 'Description', 'Label', 'Paragraph',
-    'Link', 'Strong', 'Em', 'Code', 'Pre', 'Blockquote',
-    'ListItem', 'ListBoxItem', 'GridListItem',
-    // Void/Visual: 자식 없는 단일 요소
-    'Input', 'Separator', 'Skeleton',
-    // Color Sub-component: 부모 ColorPicker의 내부 요소
-    'ColorSwatch', 'ColorWheel', 'ColorArea', 'ColorSlider',
-    // Field sub-components: leaf 요소 (자식 없음)
-    'FieldError', 'DateSegment', 'TimeSegment', 'SliderOutput', 'SliderThumb',
-    // Select sub-components: leaf 요소
-    'SelectValue', 'SelectIcon',
-    // ComboBox sub-components: leaf 요소
-    'ComboBoxInput', 'ComboBoxTrigger',
-    // Calendar sub-components: leaf 요소
-    'CalendarHeader', 'CalendarGrid',
-  ]), []);
-
-  // Spec shapes 전용 컴포넌트: 모든 시각 요소를 spec shapes로 렌더링하므로
-  // 자식 요소(dropdown items 등)를 별도 sprite로 렌더링하면 label 영역을 덮는 문제 발생
-  // → 자식 재귀 렌더링 차단
-  // E-2 전환 완료: ListBox/GridList → NON_CONTAINER_TAGS 제외 (컨테이너로 처리)
-  const SPEC_SHAPES_ONLY_TAGS = useMemo(() => new Set<string>([
-  ]), []);
 
   // ADR-006 P3-1: layoutVersion 기반 의존성 최적화
   // 기존: [bodyElement, elementById, pageChildrenMap, ...] — 모든 요소 변경 시 재계산
@@ -954,7 +952,7 @@ const ElementsLayer = memo(function ElementsLayer({
                   )
                 : undefined}
             />
-            {!isContainerType && !SPEC_SHAPES_ONLY_TAGS.has(effectiveChildEl.tag) && renderTree(effectiveChildEl.id, { width: layout.width, height: layout.height })}
+            {!isContainerType && renderTree(effectiveChildEl.id, { width: layout.width, height: layout.height })}
           </DirectContainer>
         );
       };
@@ -1053,7 +1051,7 @@ const ElementsLayer = memo(function ElementsLayer({
                     ? createContainerChildRenderer(child, layout.width, layout.height, renderChildren)
                     : undefined}
                 />
-                {!isContainerType && !SPEC_SHAPES_ONLY_TAGS.has(child.tag) && renderTreeFn(child.id, { width: layout.width, height: layout.height })}
+                {!isContainerType && renderTreeFn(child.id, { width: layout.width, height: layout.height })}
               </DirectContainer>
             );
           })}
@@ -1073,7 +1071,7 @@ const ElementsLayer = memo(function ElementsLayer({
     }
 
     return renderTree(bodyElement?.id ?? null);
-  }, [fullTreeLayoutMap, pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, NON_CONTAINER_TAGS, SPEC_SHAPES_ONLY_TAGS]);
+  }, [fullTreeLayoutMap, pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight]);
 
   // body의 border+padding 오프셋 계산 (자식 시작 위치)
   const bodyStyle = bodyElement?.props?.style as Record<string, unknown> | undefined;
@@ -1214,7 +1212,10 @@ export function BuilderCanvas({
   const gridSize = useStore((state) => state.gridSize);
 
   const zoom = useCanvasSyncStore((state) => state.zoom);
-  const panOffset = useCanvasSyncStore((state) => state.panOffset);
+  const panOffset = useCanvasSyncStore(
+    (state) => state.panOffset,
+    (a, b) => a.x === b.x && a.y === b.y,
+  );
 
   // 🆕 Multi-page: 페이지 타이틀 드래그
   const { startDrag: startPageDrag } = usePageDrag(zoom);
@@ -1323,7 +1324,14 @@ export function BuilderCanvas({
   // 🆕 Multi-page: Skia 페이지 프레임 (타이틀 렌더링용)
   const pageFrames = useMemo(() => {
     return pages.map(page => {
-      const count = elements.filter(el => el.page_id === page.id && !el.deleted).length;
+      const pageElIds = pageIndex.elementsByPage.get(page.id);
+      let count = 0;
+      if (pageElIds) {
+        for (const id of pageElIds) {
+          const el = elementsMap.get(id);
+          if (el && !el.deleted) count++;
+        }
+      }
       return {
         id: page.id,
         title: page.title,
@@ -1334,8 +1342,8 @@ export function BuilderCanvas({
         elementCount: count,
       };
     });
-     
-  }, [pages, pagePositions, pageWidth, pageHeight, elements]);
+
+  }, [pages, pagePositions, pageWidth, pageHeight, pageIndex, elementsMap]);
 
   // 🆕 Multi-page: 뷰포트 밖 페이지 컬링 (성능 최적화)
   const visiblePageIds = useMemo(() => {
@@ -2070,7 +2078,7 @@ export function BuilderCanvas({
       canvas.removeEventListener("webglcontextlost", handleContextLost);
       canvas.removeEventListener("webglcontextrestored", handleContextRestored);
     };
-  }, [setContextLost]);
+  }, [setContextLost, appReady]);
 
   // Sync render version after each frame
   useEffect(() => {
@@ -2226,6 +2234,7 @@ export function BuilderCanvas({
                   onDoubleClick={handleElementDoubleClick}
                   onTitleDragStart={startPageDrag}
                   layoutVersion={layoutVersion}
+                  pagePositionVersion={pagePositionsVersion}
                 />
               );
             })}
