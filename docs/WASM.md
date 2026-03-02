@@ -4,7 +4,7 @@
 > 최종 수정: 2026-02-18 (Phase 11 반영: Yoga/@pixi/layout 제거, Taffy+Dropflow 레이아웃 엔진 정합화)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: CanvasKit/Skia WASM + PixiJS v8.14.3 (씬 그래프/이벤트) + Taffy WASM(Flex/Grid) + Dropflow Fork(Block) + Zustand
-> 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
+> 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (삭제됨 — git history 참조)
 
 ---
 
@@ -1657,7 +1657,7 @@ if (isTagList) {
 
 ## ~~Phase 3: Text Engine + CSS Parser~~ → 제거 (후순위)
 
-> **원래 제안:** `docs/PENCIL_APP_ANALYSIS.md` §13.5에서 "Phase 3: 텍스트 메트릭 WASM 모듈 (fontkit-wasm 또는 커스텀 구축)"로 제안됨.
+> **원래 제안:** Pencil 아키텍처 분석 §13.5에서 "Phase 3: 텍스트 메트릭 WASM 모듈 (fontkit-wasm 또는 커스텀 구축)"로 제안됨.
 > **제거 사유:** 성능 병목 분석(본 문서 §성능 병목 분석) 결과, 대상 연산이 WASM 최적화에 부적합하다.
 >
 > 1. **텍스트 데코레이션** (`TextSprite.tsx:139-160`): 곱셈 1회 + 직선 그리기.
@@ -1705,7 +1705,7 @@ if (isTagList) {
 
 > 목표: 무거운 WASM 연산을 메인 스레드에서 분리
 > 핵심 과제: **비동기 레이아웃 결과의 동기 렌더링 파이프라인 통합**
-> **제약:** SharedArrayBuffer 사용 불가 — xstudio는 Supabase 인증 호환을 위해 Vite 설정에서 COOP/COEP 헤더를 제거하고 있으며, SharedArrayBuffer는 이 헤더가 필수이다 (`docs/PENCIL_VS_XSTUDIO_RENDERING.md` §3.2 참조). Worker 통신은 `postMessage` + `Transferable` (ArrayBuffer transfer)로 한정한다.
+> **제약:** SharedArrayBuffer 사용 불가 — xstudio는 Supabase 인증 호환을 위해 Vite 설정에서 COOP/COEP 헤더를 제거하고 있으며, SharedArrayBuffer는 이 헤더가 필수이다. Worker 통신은 `postMessage` + `Transferable` (ArrayBuffer transfer)로 한정한다.
 >
 > **선두 기업 참고:** Figma는 Workers + SharedArrayBuffer로 렌더링/네트워크/협업 스레드를 완전 분리한다.
 > Adobe는 WASM Pthreads로 진정한 멀티스레딩을 구현했다.
@@ -1971,7 +1971,7 @@ export const wasmBridge = new WasmWorkerBridge();
 > **목표:** Pencil §11 아키텍처를 적용하여 CanvasKit/Skia WASM을 메인 렌더러로 도입.
 > PixiJS는 씬 그래프 관리 + EventBoundary(Hit Testing)에만 사용하고, 모든 디자인 노드의 실제 렌더링은 CanvasKit이 담당한다.
 > **전제 조건:** Phase 0 벤치마크 완료 (현재 PixiJS 렌더링 성능 기준선 확보)
-> **참고:** `docs/PENCIL_APP_ANALYSIS.md` §11, `docs/PENCIL_VS_XSTUDIO_RENDERING.md` §10.9
+> **참고:** Pencil 아키텍처 분석 기반 (삭제됨 — git history 참조)
 
 ### 5.1 아키텍처 전환 개요
 
@@ -2709,7 +2709,7 @@ class SkiaFontManager {
 
 > **목표:** CanvasKit 메인 렌더러 도입 후, Pencil의 고급 렌더링 최적화를 적용한다.
 > **전제 조건:** Phase 5 완료 (CanvasKit 렌더 루프 동작)
-> **참고:** `docs/PENCIL_VS_XSTUDIO_RENDERING.md` §2.1, §4
+> **참고:** Pencil 렌더링 비교 분석 기반 (삭제됨 — git history 참조)
 
 ### 6.1 이중 Surface 캐싱 (Pencil §10.9.1)
 
@@ -3297,7 +3297,7 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
 
 ═══════════════════════════════════════════════════════════════
   추가 개선 항목 (WASM 불필요, JS 구현)
-  → 상세: docs/PENCIL_VS_XSTUDIO_RENDERING.md §4, §7
+  → 상세: Pencil 렌더링 비교 분석 기반 (삭제됨 — git history 참조)
 ═══════════════════════════════════════════════════════════════
 
   [높음] LOD 스위칭 — 줌 레벨별 디테일 조절 (§4.3)

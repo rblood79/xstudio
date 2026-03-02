@@ -11,4 +11,4 @@
 | ipc/ | IPC 통신 시스템 |
 | ui/ | UI/디자인 킷, React 컴포넌트 |
 
-참조: [PENCIL_APP_ANALYSIS.md](../PENCIL_APP_ANALYSIS.md), [WASM.md](../WASM.md)
+참조: [WASM.md](../WASM.md)

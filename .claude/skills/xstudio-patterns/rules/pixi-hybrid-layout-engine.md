@@ -887,4 +887,4 @@ if (COMPLEX_WITH_LABEL_CHILD.has(tag) && element._hasLabelChild) {
 - **이후**: 레이아웃 계산 전 `filteredContainerChildren`에 implicit styles 합성, 렌더링 시 tag별 implicitStyle spread
 - **적용**: SelectValue(`flex: 1`), SelectIcon(`18×18, flexShrink: 0`), ComboBoxInput(`flex: 1`), ComboBoxTrigger(`18×18, flexShrink: 0`)
 
-> **참고**: 레이아웃 엔진 상세 구현은 [ENGINE_UPGRADE.md](../../../../docs/ENGINE_UPGRADE.md) 참조.
+> **참고**: 레이아웃 엔진 전략 결정은 [ENGINE.md](../../../../docs/ENGINE.md) 참조.

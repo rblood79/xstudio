@@ -2,7 +2,7 @@
 
 > **목표**: Pencil 앱 수준의 컬러 피커 및 Fill/Border 시스템 구축
 > **현재 상태**: Phase 1~3 구현 완료 (ScrubInput 제외). Phase 4 미착수.
-> **참조**: `docs/PENCIL_APP_ANALYSIS.md`, `apps/builder/src/builder/workspace/canvas/skia/types.ts`
+> **참조**: `apps/builder/src/builder/workspace/canvas/skia/types.ts`
 >
 > **Phase 착수 조건**:
 > - ~~Phase 1: 타입 정의 + Element 확장~~ → **완료** (`cc5ec34a`, 2026-02-10)

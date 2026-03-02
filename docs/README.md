@@ -28,10 +28,8 @@ docs/
 - [WASM 렌더링 아키텍처](./WASM.md) - CanvasKit/Skia WASM 전환 계획
 - [컴포넌트 스펙 아키텍처](./COMPONENT_SPEC_ARCHITECTURE.md) - 단일 소스 컴포넌트 스펙
 - [레이아웃 엔진 전환 ADR](./ENGINE.md) - Taffy WASM + Dropflow Fork 전략
-- [CSS 레이아웃 엔진 설계](./ENGINE_UPGRADE.md) - 상세 설계 및 구현 현황
 - [CSS 속성 지원 체크리스트](./ENGINE_CHECKLIST.md) - CSS 속성별 지원 상태
 - [컬러 피커 + Fill 시스템](./COLOR_PICKER.md) - Color/Gradient/EyeDropper/BlendMode
-- [Pencil 앱 분석](./PENCIL_APP_ANALYSIS.md) - Pencil Desktop 아키텍처 분석
 - [Agent Teams 매뉴얼](./AGENTS_TEAMS.md) - Claude Code 에이전트 협업
 
 ### ADR (Architecture Decision Records)
@@ -63,7 +61,6 @@ docs/
 - [React Query 스타일 마이그레이션](./how-to/migration/REACT_QUERY_STYLE.md)
 - [M3 마이그레이션 체크리스트](./how-to/migration/M3_CHECKLIST.md)
 - [React Aria 마이그레이션](./how-to/migration/REACT_ARIA.md)
-- [WebGL 마이그레이션](./how-to/migration/WEBGL.md)
 
 ### Troubleshooting (문제 해결)
 - [Rate Limit 해결](./how-to/troubleshooting/RATE_LIMIT.md)
@@ -74,7 +71,6 @@ docs/
 - [PGlite 퀵스타트](./how-to/development/PGLITE_QUICK_START.md)
 - [PGlite 구현](./how-to/development/PGLITE_IMPLEMENTATION.md)
 - [PGlite 검증](./how-to/development/PGLITE_VALIDATION.md)
-- [Canvas Border Box 구현](./how-to/development/CANVAS_BORDER_BOX.md)
 - [Skeleton 시스템 구현](./how-to/development/SKELETON_SYSTEM.md)
 - [P7 구현 계획](./how-to/development/P7_IMPLEMENTATION.md)
 - [패널 최적화](./how-to/development/PANEL_OPTIMIZATION.md)
@@ -141,21 +137,10 @@ docs/
 - [완료된 기능](./reference/status/COMPLETED.md)
 - [계획된 기능](./reference/status/PLANNED.md)
 - [미구현 기능](./reference/status/UNIMPLEMENTED.md)
-- [WebGL 마이그레이션 상태](./reference/status/WEBGL_MIGRATION.md)
 - [M3 Phase 0 완료](./reference/status/M3_PHASE_0.md)
 - [M3 인덱스](./reference/status/M3_INDEX.md)
 - [M3 브라우저 호환성](./reference/status/M3_BROWSER.md)
 - [React Aria 1.13 업데이트](./reference/status/REACT_ARIA_1.13.md)
-- [성능 인덱스](./reference/status/PERFORMANCE_INDEX.md)
-- [성능 태스크](./reference/status/PERFORMANCE_TASKS.md)
-- [성능 Phase 1-4](./reference/status/PERF_PHASE_1_4.md)
-- [성능 Phase 5-8](./reference/status/PERF_PHASE_5_8.md)
-- [성능 보충](./reference/status/PERF_SUPPLEMENT.md)
-- [성능 결정사항](./reference/status/PERF_DECISIONS.md)
-- [성능 아이디어](./reference/status/PERF_IDEAS.md)
-- [성능 최적화 계획](./reference/status/PERFORMANCE_PLAN.md)
-- [Canvas Resize 최적화](./reference/status/CANVAS_RESIZE.md)
-- [WebGL Canvas 최종](./reference/status/WEBGL_CANVAS_FINAL.md)
 - [DB 호환성](./reference/status/DB_COMPATIBILITY.md)
 - [스타일 시스템](./reference/status/STYLE_SYSTEM.md)
 
@@ -174,8 +159,6 @@ docs/
 - [Nodes Panel 설계](./explanation/architecture/NODES_PANEL_DESIGN.md)
 - [Drag & Drop 설계](./explanation/architecture/DRAG_DROP_DESIGN.md)
 - [성능 문제 분석](./explanation/architecture/PERF_PROBLEM.md)
-- [성능 아키텍처](./explanation/architecture/PERF_ARCHITECTURE.md)
-- [WebGL Builder 아키텍처](./explanation/architecture/WEBGL_BUILDER.md)
 
 ### Research (리서치)
 - [빌더 아키텍처 비교](./explanation/research/BUILDER_COMPARISON.md)
@@ -187,9 +170,7 @@ docs/
 - [Photoshop 벤치마크](./explanation/research/PHOTOSHOP_BENCHMARK.md)
 
 ### Pencil 분석
-- [Pencil vs XStudio 렌더링](./PENCIL_VS_XSTUDIO_RENDERING.md)
 - [Pencil vs XStudio UI/UX](./PENCIL_VS_XSTUDIO_UI_UX.md)
-- [WASM 문서 영향 분석](./WASM_DOC_IMPACT_ANALYSIS.md)
 - [Pencil 역공학 추출물](./pencil-extracted/) - Pencil Desktop 소스 분석
 
 ---

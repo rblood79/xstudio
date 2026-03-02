@@ -1489,6 +1489,5 @@ Phase 0~1 진행 중 발견된 **Monolithic Spec 버그**를 근본적으로 해
 - [React Aria Components 공식 문서](https://react-aria.adobe.com)
 - [Component Spec 아키텍처](./COMPONENT_SPEC_ARCHITECTURE.md)
 - [CSS 아키텍처](./reference/components/CSS_ARCHITECTURE.md)
-- [엔진 업그레이드](./ENGINE_UPGRADE.md)
 - [WASM 아키텍처](./WASM.md)
 - [Canvas 렌더링 ADR](./adr/003-canvas-rendering.md)

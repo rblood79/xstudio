@@ -79,7 +79,6 @@ PixiJS는 씬 그래프 관리 + 이벤트(EventBoundary) 전용으로 축소되
 모든 시각적 렌더링은 CanvasKit Surface에서 처리한다.
 
 - 상세 설계: `docs/WASM.md` Phase 5-6
-- 영향 분석: `docs/WASM_DOC_IMPACT_ANALYSIS.md` §B (18건)
 
 **Spec 시스템의 렌더러 독립성:**
 - ComponentSpec의 **Shape 타입 정의**는 렌더러 무관 (CanvasKit 전환에도 유지)
@@ -180,7 +179,7 @@ Element props  ──→  skiaNodeData 생성  ──→  글로벌 레지스트
 > | **Dropflow Fork** | Block/Inline 레이아웃 | `block`, `inline`, `inline-block` |
 >
 > React 경로는 브라우저 CSS 레이아웃을, Canvas 경로는 Taffy/Dropflow가 계산한 절대 px 값을 CanvasKit이 사용합니다.
-> 자세한 내용은 [ENGINE_UPGRADE.md](./ENGINE_UPGRADE.md)를 참조하세요.
+> 자세한 내용은 [ENGINE.md](./ENGINE.md)를 참조하세요.
 
 <details>
 <summary>Phase 1-4 레거시 데이터 흐름 (PixiJS 중심)</summary>
@@ -4002,7 +4001,7 @@ async function captureCanvasKit(page: Page): Promise<Buffer> {
 ### 8.1.4 Spec Shape ↔ CanvasKit API 매핑
 
 각 Spec Shape 타입과 CanvasKit API의 1:1 매핑 참조.
-> 상세: `docs/WASM.md` Phase 6.3, `docs/PENCIL_APP_ANALYSIS.md` §11 참조
+> 상세: `docs/WASM.md` Phase 6.3 참조
 
 | Spec Shape | CanvasKit Canvas API (현재) | Skia Paint/Path | 레거시 PixiJS | 비고 |
 |------------|---------------------|-----------------|------------|------|
@@ -4231,7 +4230,7 @@ Body의 `display: 'block'` → DropflowBlockEngine 경로에서의 폼 컨트롤
 
 ### 9.4 flexDirection:column 지원
 
-> 레이아웃 엔진 관련 — §4.7.4 CSS 단위 규칙 및 [ENGINE_UPGRADE.md](./ENGINE_UPGRADE.md) 참조.
+> 레이아웃 엔진 관련 — §4.7.4 CSS 단위 규칙 및 [ENGINE.md](./ENGINE.md) 참조.
 
 Spec `shapes()` 함수는 항상 row 레이아웃 좌표를 생성. column 지원을 위한 3단계 변환:
 
@@ -6193,7 +6192,6 @@ function ElementSpriteButton({ element }) {
 
 ### B. 참조 문서
 
-- [PIXI_COMPONENT_PLAN.md](./PIXI_COMPONENT_PLAN.md) - 현재 구현 상태
 - [ADR-002: Styling Approach](./adr/002-styling-approach.md) - 스타일링 결정
 - [ADR-003: Canvas Rendering](./adr/003-canvas-rendering.md) - 캔버스 렌더링 결정
 - [CSS_ARCHITECTURE.md](./reference/components/CSS_ARCHITECTURE.md) - CSS 아키텍처

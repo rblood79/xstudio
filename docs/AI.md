@@ -1,7 +1,6 @@
 # xstudio AI 기능 업그레이드 설계
 
 > 작성일: 2026-01-31
-> 참고: `docs/PENCIL_APP_ANALYSIS.md` §20 (Pencil AI 통합 분석)
 > 참고: `docs/WASM.md` (렌더링 전환 계획)
 > 대상: `apps/builder/src/services/ai/`, `apps/builder/src/builder/panels/ai/`
 > LLM 공급자: Groq SDK (무료 tier, llama-3.3-70b-versatile)
@@ -93,7 +92,7 @@ executeIntent() — 단일 요소 생성/수정/삭제
 
 ## 2. Pencil AI 기능 분석
 
-> 출처: `docs/PENCIL_APP_ANALYSIS.md` §20, §24.11
+> 출처: Pencil AI 아키텍처 분석 기반
 
 ### 2.1 Pencil AI 아키텍처
 
@@ -1229,7 +1228,7 @@ Phase 0: 벤치마크 → Phase 5: CanvasKit → Phase 6: 고급 렌더링
 
 ## 11. 참고 자료
 
-- Pencil AI 분석: `docs/PENCIL_APP_ANALYSIS.md` §20, §24.11
+- Pencil AI 분석: (삭제됨 — git history 참조)
 - 렌더링 전환 계획: `docs/WASM.md` Phase 5-6
 - Groq SDK 문서: https://console.groq.com/docs
 - Groq Tool Use: https://console.groq.com/docs/tool-use

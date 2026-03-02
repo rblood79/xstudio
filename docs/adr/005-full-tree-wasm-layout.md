@@ -1579,7 +1579,6 @@ Week 17:
 - [ENGINE.md](../ENGINE.md) -- Taffy + Dropflow 레이아웃 엔진 전략
 - [WASM.md](../WASM.md) -- WASM 아키텍처 상세
 - [MULTIPAGE.md](../MULTIPAGE.md) -- Multi-page Canvas 렌더링
-- [PENCIL_APP_ANALYSIS.md](../PENCIL_APP_ANALYSIS.md) -- Pencil 역공학 분석
 
 ### 코드베이스
 - `apps/builder/src/.../wasm/src/taffy_bridge.rs` -- Rust Taffy 바인딩

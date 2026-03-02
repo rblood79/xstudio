@@ -11,8 +11,6 @@
 | INSPECTOR_TESTING.md | Inspector 구조 변경 |
 | PERFORMANCE_BENCHMARK.md | 성능 기준 변경 |
 | PERFORMANCE_REPORT.md | 성능 기준 변경 |
-| PIXI_LAYOUT.md | @pixi/layout 제거 (Phase 11) |
-| PIXI_LAYOUT_FORKING.md | @pixi/layout 제거 (Phase 11) |
 | PREVIEW_CHECKBOX.md | Preview 구조 변경 |
 | PREVIEW_STATE_RESET.md | Preview 구조 변경 |
 | REDESIGN_PLAN.md | 리디자인 완료 |

@@ -2,7 +2,7 @@
 
 > **작성일**: 2025-12-31
 > **상태**: ✅ 완료 (Completed) - 2025-12-31
-> **관련 문서**: [WEBGL_BUILDER.md](./explanation/architecture/WEBGL_BUILDER.md)
+> **관련 문서**: [WASM.md](../WASM.md)
 
 ---
 

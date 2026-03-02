@@ -230,7 +230,6 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 
 ### 내부 문서
 - [WASM 아키텍처](./WASM.md)
-- [CSS 레이아웃 엔진 설계문서](./ENGINE_UPGRADE.md)
 - [ADR-003: Canvas 렌더링](./adr/003-canvas-rendering.md)
 
 ### 외부 참고 저장소
