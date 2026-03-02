@@ -171,14 +171,14 @@ Element props  ──→  skiaNodeData 생성  ──→  글로벌 레지스트
 ```
 
 > **레이아웃 계층 분리**: Spec은 컴포넌트 **내부** Shape 배치를 정의하고,
-> **외부** 컨테이너 간 배치는 Taffy/Dropflow 레이아웃 엔진이 담당합니다.
+> **외부** 컨테이너 간 배치는 Taffy 레이아웃 엔진이 담당합니다.
 >
 > | 엔진 | 담당 | CSS display |
 > |------|------|-------------|
 > | **Taffy WASM** | Flex/Grid 레이아웃 | `flex`, `grid`, `inline-flex` |
-> | **Dropflow Fork** | Block/Inline 레이아웃 | `block`, `inline`, `inline-block` |
+> | **TaffyBlockEngine** | Block/Inline 레이아웃 | `block`, `inline`, `inline-block` |
 >
-> React 경로는 브라우저 CSS 레이아웃을, Canvas 경로는 Taffy/Dropflow가 계산한 절대 px 값을 CanvasKit이 사용합니다.
+> React 경로는 브라우저 CSS 레이아웃을, Canvas 경로는 Taffy가 계산한 절대 px 값을 CanvasKit이 사용합니다.
 > 자세한 내용은 [ENGINE.md](./ENGINE.md)를 참조하세요.
 
 <details>
@@ -736,7 +736,7 @@ export interface ContainerShape {
   children: Shape[];
   clip?: boolean;
 
-  /** 레이아웃 설정 (Taffy WASM/Dropflow 연동) */
+  /** 레이아웃 설정 (Taffy WASM 연동) */
   layout?: ContainerLayout;
 }
 
@@ -2679,13 +2679,13 @@ if (ENABLE_BUTTON_SPEC) {
 > - `layout/engines/utils.ts` — `enrichWithIntrinsicSize()`, `parseBoxModel()`, `calculateContentHeight/Width()` (intrinsic 크기)
 > - 레거시 `parseCSSSize()` (`sprites/styleConverter`) — 폐기됨, 위 함수로 대체
 
-**CanvasKit/Skia 렌더링 (현재):** Taffy/Dropflow 레이아웃 엔진이 CSS 단위(%, vw, vh, rem, calc 등)를 **절대 px로 변환**한 결과를 CanvasKit이 받으므로, CanvasKit 렌더러에서는 CSS 단위 해석이 **불필요**하다. `skiaNodeData.width/height` 등 이미 계산된 숫자를 직접 사용한다.
+**CanvasKit/Skia 렌더링 (현재):** Taffy 레이아웃 엔진이 CSS 단위(%, vw, vh, rem, calc 등)를 **절대 px로 변환**한 결과를 CanvasKit이 받으므로, CanvasKit 렌더러에서는 CSS 단위 해석이 **불필요**하다. `skiaNodeData.width/height` 등 이미 계산된 숫자를 직접 사용한다.
 
-| 항목 | Phase 1-4 (PixiJS) | 현재 (CanvasKit + Taffy/Dropflow) |
+| 항목 | Phase 1-4 (PixiJS) | 현재 (CanvasKit + Taffy WASM) |
 |------|---------------------|---------------------|
 | CSS 단위 해석 | 각 Pixi 컴포넌트에서 `parseCSSSize()` 필요 | **불필요** — 레이아웃 엔진이 px로 변환 완료 |
 | viewport 크기 참조 | vw/vh → parentContentArea 기준 변환 | `resolveCSSSizeValue()`가 `CSSValueContext`로 처리, CanvasKit은 결과만 수신 |
-| % 단위 | 부모 content area 수동 계산 | Taffy/Dropflow가 자동 계산 |
+| % 단위 | 부모 content area 수동 계산 | Taffy가 자동 계산 |
 | 입력 형식 | CSS 문자열 ("16px", "50%") | 숫자 (px 절대값) |
 
 **CSS 단위 파서 (`cssValueParser.ts`):**
@@ -2726,7 +2726,7 @@ interface CSSValueContext {
 
 > **⚠️ 예외: 시각 전용 속성 (borderRadius, borderColor 등)**
 >
-> Taffy/Dropflow가 변환하는 것은 **레이아웃 속성**(width, height, padding, margin 등)뿐이다.
+> Taffy가 변환하는 것은 **레이아웃 속성**(width, height, padding, margin 등)뿐이다.
 > `borderRadius`와 같은 **시각 전용 속성**은 레이아웃 엔진을 거치지 않으므로 `element.props.style`에
 > CSS 문자열 형태(`"12px"`, `"8"`)로 남아 있다.
 > `ElementSprite`의 Skia 폴백에서 이런 속성을 읽을 때는 반드시 `convertStyle()`의 반환값을
@@ -2748,7 +2748,7 @@ interface CSSValueContext {
 <summary>Phase 1-4 레거시: Pixi UI 컴포넌트 CSS 단위 해석 규칙 (폐기됨)</summary>
 
 > **⚠️ 폐기됨**: 아래 규칙은 Phase 1-4 PixiJS 컴포넌트에만 적용되었던 레거시 규칙이다.
-> 현재는 Taffy/Dropflow 레이아웃 엔진이 CSS 단위를 자동 해석하며,
+> 현재는 Taffy 레이아웃 엔진이 CSS 단위를 자동 해석하며,
 > `resolveCSSSizeValue()` + `CSSValueContext` (`layout/engines/cssValueParser.ts`)로 대체되었다.
 >
 > - `parseCSSSize()` → `resolveCSSSizeValue()`
@@ -2818,7 +2818,7 @@ pnpm --filter @xstudio/builder dev
 #### 4.7.4.1 Padding/Border 이중 적용 방지 (CRITICAL)
 
 자체적으로 padding/border를 그래픽 크기에 반영하는 leaf UI 컴포넌트(Button 등)는
-레이아웃 엔진(Taffy/Dropflow)에도 padding/border를 전달하면 **이중 적용**된다.
+레이아웃 엔진(Taffy)에도 padding/border를 전달하면 **이중 적용**된다.
 
 **현행 해결 방식: `enrichWithIntrinsicSize()` + `parseBoxModel()`**
 
@@ -3008,7 +3008,7 @@ if (treatAsBorderBox) {
 **v3.9 추가 → v3.12 수정 — Card/Box/Section padding 처리**:
 컨테이너 요소(`Card`, `Box`, `Section`)도 `parseBoxModel()`에서 `treatAsBorderBox` 대상입니다.
 단, `enrichWithIntrinsicSize()`에서는 CSS에 padding/border가 명시된 경우 **content-box 높이만 주입**합니다.
-레이아웃 엔진(Dropflow/Taffy)이 CSS padding/border를 자체 추가하므로, enrichment에서 중복 추가하면 이중 계산이 발생합니다.
+레이아웃 엔진(Taffy)이 CSS padding/border를 자체 추가하므로, enrichment에서 중복 추가하면 이중 계산이 발생합니다.
 
 ```typescript
 // utils.ts enrichWithIntrinsicSize() — CSS padding 유무에 따른 조건부 추가
@@ -4220,11 +4220,11 @@ line?: {
 
 #### 9.3.4 레이아웃 통합
 
-Body의 `display: 'block'` → DropflowBlockEngine 경로에서의 폼 컨트롤 크기 계산:
+Body의 `display: 'block'` → TaffyBlockEngine 경로에서의 폼 컨트롤 크기 계산:
 
 | 파일 | 변경 |
 |------|------|
-| `engines/utils.ts` | `enrichWithIntrinsicSize()`: leaf UI 컴포넌트 intrinsic 크기 주입 (Taffy Flex/Dropflow Block 공용) |
+| `engines/utils.ts` | `enrichWithIntrinsicSize()`: leaf UI 컴포넌트 intrinsic 크기 주입 (Taffy Flex/Block 공용) |
 | `engines/utils.ts` | `calculateContentHeight`/`Width`: INLINE_FORM 테이블 기반 크기 계산 |
 | `engines/utils.ts` | `INLINE_FORM_INDICATOR_WIDTHS` switch/toggle 값 수정 (26/34/42 → 36/44/52) + `INLINE_FORM_GAPS` 테이블 신규 추가 (v3.10) |
 

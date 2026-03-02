@@ -1,14 +1,14 @@
 # Color Picker 상세 설계 문서
 
 > **목표**: Pencil 앱 수준의 컬러 피커 및 Fill/Border 시스템 구축
-> **현재 상태**: Phase 1~3 구현 완료 (ScrubInput 제외). Phase 4 미착수.
+> **현재 상태**: Phase 1~4 구현 완료.
 > **참조**: `apps/builder/src/builder/workspace/canvas/skia/types.ts`
 >
 > **Phase 착수 조건**:
 > - ~~Phase 1: 타입 정의 + Element 확장~~ → **완료** (`cc5ec34a`, 2026-02-10)
 > - ~~Phase 2: 그래디언트 에디터~~ → **완료** (`2c0b2166`, `3852a35d`, 2026-02-10)
 > - ~~Phase 3: EyeDropper + BlendMode~~ → **완료** (`2067f337`, `2990b80e`, 2026-02-10). ScrubInput은 미구현.
-> - Phase 4: Phase 3 기능 안정화 + 이미지 업로드 인프라 준비 완료 시
+> - ~~Phase 4: 이미지 Fill + 메쉬 그래디언트 + 변수 바인딩~~ → **완료**
 
 ---
 
@@ -23,7 +23,7 @@
 | **Phase 1** | Fill 데이터 모델 + 다중 Fill UI + 색상 모드 전환 | **완료** | `cc5ec34a` |
 | **Phase 2** | 그래디언트 에디터 (Linear/Radial/Angular) | **완료** | `2c0b2166`, `3852a35d` |
 | **Phase 3** | EyeDropper + BlendMode 선택기 | **완료** (ScrubInput 제외) | `2067f337`, `2990b80e` |
-| **Phase 4** | 이미지 Fill + 메쉬 그래디언트 + 변수 바인딩 | 미착수 | — |
+| **Phase 4** | 이미지 Fill + 메쉬 그래디언트 + 변수 바인딩 | **완료** | — |
 
 ### 구현된 기능 체크리스트
 

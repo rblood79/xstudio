@@ -47,7 +47,7 @@ xstudio/
 - **CanvasKit/Skia WASM**: 메인 렌더러 (디자인 노드 + AI 이펙트 + Selection 오버레이)
 - **PixiJS 8**: 씬 그래프 + EventBoundary 이벤트 처리 전용 (Camera 하위 alpha=0)
 - **DirectContainer**: 엔진 계산 결과(x/y/w/h)를 직접 배치 (@pixi/layout 제거됨)
-- **레이아웃 엔진**: Taffy WASM (Flex/Grid) + Dropflow Fork (Block)
+- **레이아웃 엔진**: Taffy WASM (Flex/Grid/Block) — 단일 엔진 체계
 
 ### 상태 관리
 - **Zustand**: 슬라이스 패턴

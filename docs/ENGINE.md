@@ -2,7 +2,7 @@
 
 - 상태: **Implemented**
 - 결정일: **2026-02-17**
-- 마지막 수정: **2026-03-01**
+- 마지막 수정: **2026-03-03**
 - 대상 코드: `apps/builder/src/builder/workspace/canvas/layout/`
 - 관련 경로:
   - `apps/builder/src/builder/workspace/canvas/layout/engines/`
@@ -54,56 +54,46 @@
 ### 전략 D: Taffy(Flex+Grid) + Dropflow Fork(Block+Inline) + CanvasKit 텍스트 어댑터
 - 장점: Block/Inline/Float/줄바꿈 요구를 실질적으로 충족
 - 단점: Fork 유지보수 + 어댑터 PoC 리스크
-- 판단: **최종 채택**
+- 판단: **최종 채택 → 이후 Dropflow Fork 제거, Taffy 단일 엔진(TaffyBlockEngine)으로 최종 통합**
 
 ---
 
 ## 4) 최종 결정 (Decision)
 
-**전략 D를 채택한다.**
+**전략 D를 채택한다. 이후 Dropflow Fork는 완전 제거되고, Taffy 단일 엔진 아키텍처(TaffyBlockEngine)로 최종 통합되었다.**
 
-### 4.1 목표 아키텍처
+### 4.1 목표 아키텍처 (현재 구현 상태)
 
-- `display: flex | inline-flex` → **Taffy WASM**
-- `display: grid | inline-grid` → **Taffy WASM**
-- `display: block | inline | inline-block | flow-root` → **Dropflow Fork**
+- `display: flex | inline-flex` → **TaffyFlexEngine** (Taffy WASM)
+- `display: grid | inline-grid` → **TaffyGridEngine** (Taffy WASM)
+- `display: block | inline | inline-block | flow-root` → **TaffyBlockEngine** (Taffy WASM, 전 Dropflow Fork)
 - 텍스트 shaping/metrics → **CanvasKit Paragraph/SkFont 기반 어댑터**
 - 렌더링 파이프라인 → 기존 CanvasKit/Skia 유지
 
+> **변경 이력**: 초기 결정 당시 Block/Inline 경로는 Dropflow Fork(DropflowBlockEngine)로 구현되었다.
+> 이후 Phase 11(2026-02-28)에서 Dropflow Fork가 완전 제거되고 TaffyBlockEngine으로 대체되어
+> Taffy WASM 단일 엔진 체계로 통합되었다.
+
 ```typescript
-// engines/index.ts (실제 구현)
-// WASM 미로드 시 DropflowBlockEngine으로 안전 폴백
-import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
+// engines/fullTreeLayout.ts (현재 구현 — 단일 Taffy 엔진 체계)
+// 모든 display 타입을 fullTreeLayout.ts의 buildNodeStyle()이 단일 WASM 호출로 처리.
+// TaffyBlockEngine, TaffyFlexEngine, TaffyGridEngine이 display 타입별로 내부 라우팅.
 
-const dropflowBlockEngine = new DropflowBlockEngine();
-const taffyFlexEngine = new TaffyFlexEngine();
-const taffyGridEngine = new TaffyGridEngine();
+import { elementToTaffyBlockStyle } from './TaffyBlockEngine';
 
-export function selectEngine(display: string | undefined): LayoutEngine {
-  const wasmReady = isRustWasmReady();
-  switch (display) {
-    case 'flex':
-    case 'inline-flex':
-      return wasmReady ? taffyFlexEngine : dropflowBlockEngine;
-    case 'grid':
-    case 'inline-grid':
-      return wasmReady ? taffyGridEngine : dropflowBlockEngine;
-    case 'block':
-    case 'inline-block':
-    case 'flow-root':
-    case 'inline':
-      return dropflowBlockEngine;
-    case undefined:
-    default:
-      return dropflowBlockEngine;
-  }
-}
+// block / inline-block / inline / flow-root / 기타 → TaffyBlockEngine 경로
+// taffyDisplayAdapter가 모든 block layout 시뮬레이션 규칙을 TaffyDisplayConfig에 포함.
+const taffyConfig = toTaffyDisplay(display, childDisplays, childElements);
+const taffyStyle: TaffyStyle = elementToTaffyBlockStyle(element, taffyConfig);
+
+// flex / inline-flex → TaffyFlexEngine 경로
+// grid / inline-grid → TaffyGridEngine 경로
 ```
 
 ### 4.2 결정 근거 요약
 
-1. Taffy 단독으로는 Inline Formatting Context 요구를 충족하지 못한다 ([taffy#627](https://github.com/DioxusLabs/taffy/issues/627): 메인테이너가 "inline/flow layout은 Taffy 외부에서 구현" 명시).
-2. Dropflow Fork는 Block/Inline/Float/Line box 영역의 기능 공백을 메운다.
+1. Taffy 단독으로는 Inline Formatting Context 요구를 충족하지 못한다 ([taffy#627](https://github.com/DioxusLabs/taffy/issues/627): 메인테이너가 "inline/flow layout은 Taffy 외부에서 구현" 명시). → 이후 TaffyBlockEngine의 `taffyDisplayAdapter`가 inline-block 자식을 가진 부모를 flex row wrap으로 자동 변환하는 방식으로 Inline Flow를 시뮬레이션하여 해결.
+2. (역사적) 초기 결정 당시 Dropflow Fork가 Block/Inline/Float/Line box 영역의 기능 공백을 메우는 역할을 담당했다. 이후 TaffyBlockEngine이 동일 역할을 대체하면서 Dropflow 의존이 제거되었다.
 3. HarfBuzz 직접 의존은 CanvasKit 어댑터로 치환하여 중복 번들 리스크를 줄인다. **이것이 전략 B 대비 전략 D의 핵심 차별점이다** — 전략 B는 HarfBuzz WASM을 직접 번들링(+200-400KB)해야 하지만, 전략 D는 이미 로드된 CanvasKit의 Paragraph/SkFont API를 어댑터로 활용하여 추가 번들 비용 없이 동일한 텍스트 shaping을 확보한다.
 4. 현 코드베이스의 WASM 빌드 인프라(`wasm-pack`, Cargo) 재사용이 가능하다.
 
@@ -135,7 +125,7 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 - 엔진 책임 분리가 명확해져 디버깅 경계가 뚜렷해짐
 
 ### 부정/비용
-- Dropflow Fork 유지보수 책임 발생
+- (해소됨) Dropflow Fork 유지보수 책임 → TaffyBlockEngine으로 대체 후 제거됨
 - CanvasKit shaper 어댑터 구현 난이도 존재
 - 초기 통합 단계에서 회귀 테스트 범위 확대 필요
 
@@ -206,7 +196,7 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 - 조건: 레거시 엔진 삭제 완료, 번들 크기 절감 (~1,580줄 코드 삭제)
 - 결과: **조건 충족. Gate C 통과.**
   - `BlockEngine.ts`(952줄), `FlexEngine.ts`(65줄), `GridEngine.ts`(563줄) 삭제 완료
-  - WASM 미로드 시 `DropflowBlockEngine` 폴백으로 안전성 확보 (플래그 기반 안정 경로)
+  - (초기 기록) WASM 미로드 시 `DropflowBlockEngine` 폴백으로 안전성 확보 → 이후 Phase 11에서 `TaffyBlockEngine`으로 대체됨
 
 ---
 
@@ -253,6 +243,7 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 - **2026-02-26**: Phase 4-1C box-sizing 근본 수정 기록 추가 — `enrichWithIntrinsicSize()` border-box 통일, `applyCommonTaffyStyle()` content-box 변환.
 - **2026-02-26**: fontSize CSS 상속 일관성 수정 기록 추가 — `calculateContentHeight()` computedStyle 파라미터 추가, min/max-content 하드코딩 제거.
 - **2026-03-01**: fullTreeLayout.ts 속성 커버리지 확장 기록 추가 — `applyFlexItemProperties()` 공유 유틸 추가, `applyCommonTaffyStyle()` overflow/aspectRatio 지원 추가, block/grid 경로 flex 부모 자식 처리 개선, CSS `height: auto` 컨테이너 enrichment 제거.
+- **2026-03-03**: Phase 11 완료 반영 — Dropflow Fork(`DropflowBlockEngine`) 완전 제거, `TaffyBlockEngine`으로 대체. 4.1 목표 아키텍처, 코드 예시, 결정 근거, 결과 영향 섹션을 현재 Taffy 단일 엔진 체계에 맞게 업데이트. 섹션 3 검토 대안은 역사적 기록으로 원문 유지, 전략 D 채택 근거에 이후 전환 이력 추가.
 
 ---
 
@@ -275,7 +266,7 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 |------|------|
 | `LayoutEngine.ts` | `LayoutContext.getChildElements` 추가 |
 | `utils.ts` | `enrichWithIntrinsicSize` childElements, fontBoundingBox lineHeight, border shorthand |
-| `DropflowBlockEngine.ts` | enrichment 시 childElements 전달 |
+| `TaffyBlockEngine.ts` | enrichment 시 childElements 전달 (구 DropflowBlockEngine.ts — Phase 11에서 대체됨) |
 | `TaffyFlexEngine.ts` | enrichment 시 childElements 전달, context 파라미터 추가 |
 | `BuilderCanvas.tsx` | `getChildElements` context 주입 |
 | `textMeasure.ts` | `measureWrappedTextHeight` fontBoundingBox lineHeight |

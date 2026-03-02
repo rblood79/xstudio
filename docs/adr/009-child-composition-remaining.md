@@ -1,7 +1,7 @@
 # Child Composition Pattern — 전환 완료 보고서
 
 > **작성일**: 2026-02-24
-> **상태**: 전환 완료 (Table, Tree 2개 보류)
+> **상태**: Implemented — 전환 완료 (Table, Tree 2개 보류)
 > **관련**: `docs/COMPONENT_SPEC_ARCHITECTURE.md` §9.13
 
 ---

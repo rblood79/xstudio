@@ -29,9 +29,9 @@ docs/
 - [WASM 렌더링 아키텍처](./WASM.md) - CanvasKit/Skia WASM 전환
 - [컴포넌트 스펙 아키텍처](./COMPONENT_SPEC_ARCHITECTURE.md) - 단일 소스 컴포넌트 스펙
 - [React Aria 마이그레이션 전략](./REACT_ARIA.md) - WebGL 컴포넌트 마이그레이션
-- [레이아웃 엔진 ADR](./ENGINE.md) - Taffy WASM + Dropflow Fork 전략
+- [레이아웃 엔진 ADR](./ENGINE.md) - Taffy WASM 단일 엔진 전략
 - [CSS 속성 지원 체크리스트](./ENGINE_CHECKLIST.md) - CSS 속성별 지원 상태
-- [컬러 피커 + Fill 시스템](./COLOR_PICKER.md) - Color/Gradient/EyeDropper/BlendMode
+- [컬러 피커 + Fill 시스템](./COLOR_PICKER.md) - Color/Gradient/EyeDropper/BlendMode/ImageFill
 - [Agent Teams 매뉴얼](./AGENTS_TEAMS.md) - Claude Code 에이전트 협업
 
 ### ADR (Architecture Decision Records)
@@ -42,14 +42,14 @@ docs/
 | [002](./adr/002-styling-approach.md) | 스타일링 (ITCSS + Tailwind) | Implemented |
 | [003](./adr/003-canvas-rendering.md) | Canvas 렌더링 (CanvasKit/Skia + PixiJS) | Implemented |
 | [004](./adr/004-preview-isolation.md) | Preview 격리 (iframe + postMessage) | Implemented |
-| [005](./adr/005-full-tree-wasm-layout.md) | Full-Tree WASM 레이아웃 | In Progress |
+| [005](./adr/005-full-tree-wasm-layout.md) | Full-Tree WASM 레이아웃 | Implemented |
 | [006](./adr/006-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 강화 | Implemented |
-| [007](./adr/007-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩 | Implemented |
+| [007](./adr/007-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩 | Proposed |
 | [008](./adr/008-css-text-wrapping.md) | CSS 텍스트 래핑 에뮬레이션 | Implemented |
-| [009](./adr/009-child-composition-remaining.md) | Child Composition 잔여 작업 | In Progress |
+| [009](./adr/009-child-composition-remaining.md) | Child Composition 잔여 작업 | Implemented |
 | [010](./adr/010-events-panel.md) | Events Panel | Implemented |
 | [011](./adr/011-fonts.md) | 폰트 시스템 | Implemented |
-| [012](./adr/012-project-export.md) | 프로젝트 내보내기 | Design |
+| [012](./adr/012-project-export.md) | 프로젝트 내보내기 | Implemented |
 | [013](./adr/013-sitemap-layout.md) | Sitemap 레이아웃 | Design |
 
 ---
@@ -58,12 +58,8 @@ docs/
 
 > 학습 중심의 실습 가이드입니다.
 
-### Getting Started
-- [Electron 설정 가이드](./tutorials/getting-started/ELECTRON_SETUP.md)
-
 ### Features
 - [Tree 컴포넌트 가이드](./tutorials/features/TREE_COMPONENT.md)
-- [이벤트 테스트 가이드](./tutorials/features/EVENT_TESTING.md)
 
 ---
 
@@ -106,7 +102,7 @@ docs/
 - [Store 구조](./reference/STRUCTURE_STORE.md) - Zustand store 구조 및 슬라이스 패턴
 - [Monorepo 구조](./reference/MONOREPO.md) - 모노레포 패키지 구조
 - [Multi-Page 렌더링](./reference/MULTIPAGE.md) - 다중 페이지 캔버스 렌더링
-- [Workflow 설계](./reference/WORKFLOW.md) - Workflow 시스템
+- ~~[Workflow 설계](./reference/WORKFLOW.md)~~ - Legacy로 이동 ([legacy/WORKFLOW.md](./legacy/WORKFLOW.md))
 
 ### Components (컴포넌트)
 - [패널 시스템](./reference/components/PANEL_SYSTEM.md)
@@ -143,9 +139,7 @@ docs/
 - [완료된 기능](./reference/status/COMPLETED.md)
 - [계획된 기능](./reference/status/PLANNED.md)
 - [미구현 기능](./reference/status/UNIMPLEMENTED.md)
-- [React Aria 1.13 업데이트](./reference/status/REACT_ARIA_1.13.md)
 - [DB 호환성](./reference/status/DB_COMPATIBILITY.md)
-- [스타일 시스템](./reference/status/STYLE_SYSTEM.md)
 
 ---
 

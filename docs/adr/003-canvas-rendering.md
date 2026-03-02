@@ -2,6 +2,7 @@
 
 **Status:** Superseded (2026-02-05)
 **Date:** 2024-01-01
+**Last Updated:** 2026-03-03
 **Decision Makers:** XStudio Team
 
 > **Superseded By:** Pencil 방식 CanvasKit/Skia 2-pass 렌더러(컨텐츠 캐시 + present(blit) + 오버레이 분리).
@@ -9,7 +10,7 @@
 >
 > **후속 문서:**
 > - [`docs/WASM.md`](../WASM.md) — CanvasKit/Skia WASM 렌더링 아키텍처 (현행 기준 문서)
-> - [`docs/ENGINE.md`](../ENGINE.md) — Taffy+Dropflow 레이아웃 엔진 전략
+> - [`docs/ENGINE.md`](../ENGINE.md) — Taffy 단일 레이아웃 엔진 전략 (Dropflow 제거, TaffyBlockEngine 통합)
 > - [`docs/ENGINE_CHECKLIST.md`](../ENGINE_CHECKLIST.md) — CSS Level 3 지원 현황
 >
 > **참고:** 본 ADR의 Updates 섹션(2026-02-01~02-18, 30+ 항목)은 전환 과정의 상세 이력입니다.
@@ -716,7 +717,7 @@ ENGINE.md 전략 D의 최종 단계인 Phase 9를 완료하여, 레거시 레이
 
 | 삭제 대상 | 라인 수 | 대체 엔진 |
 |-----------|---------|-----------|
-| `BlockEngine.ts` | 952줄 | `DropflowBlockEngine` |
+| `BlockEngine.ts` | 952줄 | `TaffyBlockEngine` |
 | `FlexEngine.ts` | 65줄 | `TaffyFlexEngine` (Taffy WASM) |
 | `GridEngine.ts` | 563줄 | `TaffyGridEngine` (Taffy WASM) |
 
@@ -726,14 +727,14 @@ ENGINE.md 전략 D의 최종 단계인 Phase 9를 완료하여, 레거시 레이
 |------------|------|------|
 | `flex`, `inline-flex` | `TaffyFlexEngine` | Taffy WASM |
 | `grid`, `inline-grid` | `TaffyGridEngine` | Taffy WASM |
-| `block`, `inline-block`, `flow-root`, `inline` | `DropflowBlockEngine` | Dropflow Fork (JS) |
+| `block`, `inline-block`, `flow-root`, `inline` | `TaffyBlockEngine` | Taffy WASM |
 
-**WASM 초기화:** `WASM_FLAGS.LAYOUT_ENGINE`이 `true`여야 `initRustWasm()`이 호출됨. `initRustWasm()`은 `import()` 후 **반드시 default export(`__wbg_init`)를 명시적으로 호출**하여 내부 wasm 바인딩을 초기화한다 (wasm-pack `--target bundler` 필수 요건). WASM 미로드 시 모든 display 모드가 `DropflowBlockEngine`으로 안전 폴백.
+**WASM 초기화:** `WASM_FLAGS.LAYOUT_ENGINE`이 `true`여야 `initRustWasm()`이 호출됨. `initRustWasm()`은 `import()` 후 **반드시 default export(`__wbg_init`)를 명시적으로 호출**하여 내부 wasm 바인딩을 초기화한다 (wasm-pack `--target bundler` 필수 요건). WASM 미로드 시 `TaffyBlockEngine`이 JavaScript 폴백 경로로 동작 (Dropflow는 제거됨 — Phase 9 이후 `TaffyBlockEngine`이 block 레이아웃 단독 처리).
 
 ### 3. 디스패처 정리 (Phase 9C)
 
 - `engines/index.ts`에서 `shouldDelegateToPixiLayout` 제거
-- Feature flag 분기 (`isTaffyFlexEnabled`, `isTaffyGridEnabled`, `isDropflowBlockEnabled`) 제거
+- Feature flag 분기 (`isTaffyFlexEnabled`, `isTaffyGridEnabled`, `isDropflowBlockEnabled`) 제거 (Dropflow 제거와 함께 `isDropflowBlockEnabled`도 삭제)
 - `selectEngine()` 직접 라우팅으로 단순화
 - 싱글톤 엔진 인스턴스 (매 호출마다 new 생성 → 싱글톤)
 
@@ -749,8 +750,8 @@ ENGINE.md 전략 D의 최종 단계인 Phase 9를 완료하여, 레거시 레이
 
 | 항목 | 변경 전 | 변경 후 |
 |------|---------|---------|
-| **Layout Engine** | 하이브리드 (BlockEngine, FlexEngine, GridEngine) + Feature flags | Taffy WASM (Flex/Grid) + Dropflow Fork (Block) — 직접 라우팅 |
-| **Feature flags** | `taffyFlex`, `taffyGrid`, `dropflowBlock` | 제거 (항상 활성) |
+| **Layout Engine** | 하이브리드 (BlockEngine, FlexEngine, GridEngine) + Feature flags | Taffy WASM (Flex/Grid/Block) — `TaffyBlockEngine` 단일 엔진, 직접 라우팅 |
+| **Feature flags** | `taffyFlex`, `taffyGrid`, `dropflowBlock` | 제거 (항상 활성, `dropflowBlock`은 Dropflow 제거로 폐기) |
 | **코드 라인** | ~1,580줄 레거시 코드 | 삭제 완료 |
 
 **상세:** `docs/ENGINE.md`, `apps/builder/src/.../layout/engines/index.ts`
@@ -788,8 +789,8 @@ ENGINE.md 전략 D의 최종 단계인 Phase 9를 완료하여, 레거시 레이
 |------|------|
 | **CanvasKit/Skia WASM** | 메인 렌더러 (디자인 노드 + AI 이펙트 + Selection 오버레이) |
 | **PixiJS 8 + @pixi/react** | 이벤트 전용 레이어 (alpha=0, DirectContainer 직접 배치) |
-| **Taffy WASM** | Flex/Grid 레이아웃 엔진 |
-| **Dropflow Fork** | Block 레이아웃 엔진 |
+| **Taffy WASM** | Flex/Grid/Block 레이아웃 엔진 (`TaffyBlockEngine`이 block 통합) |
+| ~~Dropflow Fork~~ | **제거됨** (Phase 9 — `TaffyBlockEngine`으로 대체) |
 | ~~@pixi/layout~~ | **제거됨** (Phase 11) |
 | ~~@pixi/ui~~ | **제거됨** (Phase 10) |
 | ~~yoga-layout~~ | **제거됨** (Phase 11) |

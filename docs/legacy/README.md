@@ -50,3 +50,11 @@
 | PERFORMANCE_BENCHMARK.md | 성능 기준 변경 |
 | PERFORMANCE_REPORT.md | 성능 기준 변경 |
 | PREVIEW_STATE_RESET.md | Preview 구조 변경 |
+
+## Workflow / UI
+
+| 파일 | 레거시 사유 |
+|------|-----------|
+| WORKFLOW.md | `apps/builder/src/workflow/` 삭제 완료. Phase 1~4 CanvasKit 기반 워크플로우 오버레이로 완전 전환. ReactFlow(@xyflow/react) + dagre 의존성 제거 완료 |
+| REACT_ARIA_1.13.md | react-aria-components 현재 버전 1.15.1. 1.13.0 기준 업데이트 계획 문서로 두 버전 이상 초과된 구식 문서 |
+| STYLE_SYSTEM.md | Phase 2~4 미구현 설계안. `styleStore.ts`, `tokenResolver.ts`, `atomicCssGenerator.ts`, `cssVariableGenerator.ts` 미존재. 현재 Jotai 기반 섹션 훅 + themeStore로 운영 중 |

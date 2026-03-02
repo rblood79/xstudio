@@ -154,7 +154,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 | State | Zustand (메인), Jotai (스타일 패널), TanStack Query |
 | Styling | Tailwind CSS v4, tailwind-variants |
 | Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용, DirectContainer 직접 배치), @pixi/react |
-| Layout Engine | Taffy WASM (TaffyFlexEngine, TaffyGridEngine) + Dropflow Fork (DropflowBlockEngine) |
+| Layout Engine | Taffy WASM (TaffyFlexEngine, TaffyGridEngine, TaffyBlockEngine) — 단일 엔진 체계 |
 | Backend | Supabase (Auth, Database, RLS) |
 | Build | Vite, TypeScript 5 |
 | Testing | Storybook, Vitest |
@@ -267,11 +267,11 @@ tags: [tag1, tag2]
 주요 기술 결정의 배경과 근거:
 - **[ADR-001](../../../docs/adr/001-state-management.md)** - Zustand 선택 이유
 - **[ADR-002](../../../docs/adr/002-styling-approach.md)** - ITCSS + tv() 선택 이유
-- **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - Canvas 렌더링 (CanvasKit/Skia 이중 렌더러 + Taffy/Dropflow 레이아웃 엔진)
+- **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - Canvas 렌더링 (CanvasKit/Skia 이중 렌더러 + Taffy WASM 단일 레이아웃 엔진)
 - **[ADR-004](../../../docs/adr/004-preview-isolation.md)** - iframe 격리 이유
 - **[ADR-008](../../../docs/adr/008-css-text-wrapping.md)** - CSS 텍스트 래핑 에뮬레이션 (textWrapUtils.ts 공유 유틸, Preset UI, clipText)
 - **[Component Spec Architecture](../../../docs/COMPONENT_SPEC_ARCHITECTURE.md)** - 단일 소스 컴포넌트 스펙 설계
-- **[Engine Strategy D](../../../docs/ENGINE.md)** - 레이아웃 엔진 전환 전략 (Taffy WASM + Dropflow Fork)
+- **[Engine Strategy D](../../../docs/ENGINE.md)** - 레이아웃 엔진 전환 전략 (Taffy WASM 단일 엔진)
 
 ## 기여
 

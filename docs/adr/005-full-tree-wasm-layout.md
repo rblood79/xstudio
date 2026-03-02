@@ -1,7 +1,7 @@
 # ADR-005: Figma-Class Rendering & Layout Architecture
 
 ## Status
-In Progress (Foundation 완료 + Phase 0~2 구현 완료, CSS 일반 규칙 적용 완료, Dropflow 제거 완료)
+Implemented (Foundation + Phase 0~2 구현 완료, CSS 일반 규칙 적용 완료, Dropflow → Taffy 단일 엔진 전환 완료)
 
 ## Date
 2026-02-27 (최종 업데이트: 2026-03-02)
