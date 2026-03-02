@@ -11,6 +11,7 @@ import type { TextMeasurer, TextMeasureStyle, TextMeasureResult } from './textMe
 import { getCanvasKit, isCanvasKitInitialized } from '../skia/initCanvasKit';
 import { skiaFontManager } from '../skia/fontManager';
 import { resolveFontVariantFeatures, resolveFontStretchWidth } from '../layout/engines/cssResolver';
+import { cssNormalBreakProcess, computeKeepAllWidth, measureTokenWidth } from './textWrapUtils';
 
 // ============================================
 // CanvasKit enum 매핑 헬퍼
@@ -172,7 +173,7 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     let effectiveMaxWidth: number;
 
     if (wb === 'normal' && ow === 'normal') {
-      const result = this.cssNormalBreakProcess(ck, paraStyle, fontMgr, text, maxWidth);
+      const result = cssNormalBreakProcess(ck, paraStyle, fontMgr, text, maxWidth);
       processedText = result.text;
       effectiveMaxWidth = result.effectiveWidth;
     } else if (wb === 'break-all') {
@@ -220,138 +221,19 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     if (overflowWrap === 'break-word' || overflowWrap === 'anywhere') {
       if (wordBreak === 'keep-all') {
         // keep-all + break-word: CJK 단어 넘침 시에만 분할 허용
-        return this.cssKeepAllBreakMaxWidth(ck, paraStyle, fontMgr, text, maxWidth, true);
+        return computeKeepAllWidth(ck, paraStyle, fontMgr, text, maxWidth, true);
       }
       return maxWidth;
     }
 
     // keep-all + normal: CJK 연속도 단어로 취급, 넘침 허용
     if (wordBreak === 'keep-all') {
-      return this.cssKeepAllBreakMaxWidth(ck, paraStyle, fontMgr, text, maxWidth, false);
+      return computeKeepAllWidth(ck, paraStyle, fontMgr, text, maxWidth, false);
     }
 
     // normal + normal: CSS 줄바꿈 시뮬레이션 (computeEffectiveMaxWidth에서는 width만 반환)
-    const result = this.cssNormalBreakProcess(ck, paraStyle, fontMgr, text, maxWidth);
+    const result = cssNormalBreakProcess(ck, paraStyle, fontMgr, text, maxWidth);
     return result.effectiveWidth;
-  }
-
-  /**
-   * CSS word-break: normal 에뮬레이션 — 줄바꿈 시뮬레이션
-   *
-   * CSS 동작: 단어 경계(공백)에서만 줄바꿈. 긴 단어는 overflow하되 컨테이너 width 유지.
-   * CanvasKit 한계: 단일 layout width만 지원 → 긴 단어를 수용하면 모든 줄이 넓어짐.
-   *
-   * 해결: 단어 폭을 측정하여 CSS 규칙대로 수동 줄바꿈 후, \n 삽입된 텍스트와
-   * max(maxWidth, maxWordWidth) 레이아웃 폭을 반환한다.
-   * → CanvasKit이 수동 줄바꿈을 유지하면서 긴 단어도 문자 분할 없이 렌더링.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private cssNormalBreakProcess(
-    ck: any, paraStyle: any, fontMgr: any, text: string, maxWidth: number,
-  ): { text: string; effectiveWidth: number } {
-    const words = text.split(/\s+/).filter(Boolean);
-    if (words.length === 0) return { text, effectiveWidth: maxWidth };
-
-    // 1. 각 단어 폭 측정
-    let maxWordWidth = 0;
-    const wordWidths: number[] = [];
-    for (const word of words) {
-      const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-      b.addText(word);
-      const p = b.build();
-      p.layout(1e6);
-      const ww = p.getMaxIntrinsicWidth();
-      p.delete();
-      b.delete();
-      wordWidths.push(ww);
-      if (ww > maxWordWidth) maxWordWidth = ww;
-    }
-
-    // 2. 스페이스 폭 측정
-    const bs = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-    bs.addText('x x');
-    const ps = bs.build();
-    ps.layout(1e6);
-    const xxSpace = ps.getMaxIntrinsicWidth();
-    ps.delete();
-    bs.delete();
-    const bx = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-    bx.addText('xx');
-    const px = bx.build();
-    px.layout(1e6);
-    const xxNoSpace = px.getMaxIntrinsicWidth();
-    px.delete();
-    bx.delete();
-    const spaceWidth = xxSpace - xxNoSpace;
-
-    // 3. CSS 줄바꿈 시뮬레이션
-    const lines: string[] = [];
-    let currentLine = '';
-    let currentWidth = 0;
-
-    for (let i = 0; i < words.length; i++) {
-      const word = words[i];
-      const ww = wordWidths[i];
-
-      if (currentLine === '') {
-        // 줄의 첫 단어: 항상 추가 (overflow 허용)
-        currentLine = word;
-        currentWidth = ww;
-      } else if (currentWidth + spaceWidth + ww <= maxWidth) {
-        // 현재 줄에 들어감
-        currentLine += ' ' + word;
-        currentWidth += spaceWidth + ww;
-      } else {
-        // 안 들어감 → 새 줄 시작
-        lines.push(currentLine);
-        currentLine = word;
-        currentWidth = ww;
-      }
-    }
-    if (currentLine) lines.push(currentLine);
-
-    return {
-      text: lines.join('\n'),
-      effectiveWidth: Math.max(maxWidth, Math.ceil(maxWordWidth)),
-    };
-  }
-
-  /**
-   * CSS word-break: keep-all 에뮬레이션
-   *
-   * keep-all: CJK 연속 문자열을 하나의 "단어"로 취급하여
-   * 공백에서만 분할한다 (CJK 문자 사이 분할 금지).
-   * 실질적으로 cssNormalBreakMaxWidth와 동일 로직이지만
-   * 의미적으로 분리하여 향후 CJK 특화 최적화 가능.
-   *
-   * @param allowOverflowBreak - true면 단어가 maxWidth 초과 시 CanvasKit 기본 분할 허용
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private cssKeepAllBreakMaxWidth(
-    ck: any, paraStyle: any, fontMgr: any, text: string, maxWidth: number,
-    allowOverflowBreak: boolean,
-  ): number {
-    const words = text.split(/\s+/).filter(Boolean);
-    if (words.length === 0) return maxWidth;
-
-    let maxWordWidth = 0;
-    for (const word of words) {
-      const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-      b.addText(word);
-      const p = b.build();
-      p.layout(1e6);
-      const ww = p.getMaxIntrinsicWidth();
-      p.delete();
-      b.delete();
-      if (ww > maxWordWidth) maxWordWidth = ww;
-    }
-
-    if (allowOverflowBreak) {
-      // keep-all + break-word: 넘침 시 CanvasKit 기본 분할 허용
-      return maxWordWidth > maxWidth ? maxWidth : Math.max(maxWidth, Math.ceil(maxWordWidth));
-    }
-    // keep-all + normal: 넘침 허용 (단어 보호)
-    return Math.max(maxWidth, Math.ceil(maxWordWidth));
   }
 
   /**
@@ -394,12 +276,12 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
       if (!token) continue;
 
       if (/^\s+$/.test(token)) {
-        const spaceWidth = this.measureTokenWidth(ck, paraStyle, fontMgr, token);
+        const spaceWidth = measureTokenWidth(ck, paraStyle, fontMgr, token);
         currentLineWidth += spaceWidth;
         continue;
       }
 
-      const wordWidth = this.measureTokenWidth(ck, paraStyle, fontMgr, token);
+      const wordWidth = measureTokenWidth(ck, paraStyle, fontMgr, token);
 
       if (currentLineWidth + wordWidth <= maxWidth) {
         // 현재 줄에 들어감
@@ -451,7 +333,7 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     let lines = 1;
 
     for (const ch of chars) {
-      const chWidth = this.measureTokenWidth(ck, paraStyle, fontMgr, ch);
+      const chWidth = measureTokenWidth(ck, paraStyle, fontMgr, ch);
       if (currentLineWidth + chWidth > maxWidth && currentLineWidth > 0) {
         lines++;
         currentLineWidth = chWidth;
@@ -463,16 +345,4 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     return { lines, lastLineWidth: currentLineWidth };
   }
 
-  /** 토큰(단어/공백/문자) 폭 측정 */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private measureTokenWidth(ck: any, paraStyle: any, fontMgr: any, token: string): number {
-    const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-    b.addText(token);
-    const p = b.build();
-    p.layout(1e6);
-    const w = p.getMaxIntrinsicWidth();
-    p.delete();
-    b.delete();
-    return w;
-  }
 }

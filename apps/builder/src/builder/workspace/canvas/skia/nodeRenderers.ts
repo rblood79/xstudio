@@ -19,6 +19,7 @@ import { toSkiaBlendMode } from './blendModes';
 import { SkiaDisposable } from './disposable';
 import { colord } from 'colord';
 import { resolveFontVariantFeatures, resolveFontStretchWidth } from '../layout/engines/cssResolver';
+import { cssNormalBreakProcess, computeKeepAllWidth } from '../utils/textWrapUtils';
 
 // ============================================
 // Text paragraph cache (Pencil-style)
@@ -1154,107 +1155,6 @@ export function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeDat
   }
 
   paint.delete();
-}
-
-/**
- * CSS word-break:normal 줄바꿈 시뮬레이션
- *
- * CSS 동작: 단어 경계(공백)에서만 줄바꿈. 긴 단어는 overflow하되 컨테이너 width 유지.
- * 수동으로 줄바꿈 위치를 계산하고 \n을 삽입한 텍스트와 effectiveWidth를 반환.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function cssNormalBreakProcess(
-  ck: any, paraStyle: any, fontMgr: any, text: string, maxWidth: number,
-): { text: string; effectiveWidth: number } {
-  const words = text.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return { text, effectiveWidth: maxWidth };
-
-  // 각 단어 폭 측정
-  let maxWordWidth = 0;
-  const wordWidths: number[] = [];
-  for (const word of words) {
-    const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-    b.addText(word);
-    const p = b.build();
-    p.layout(1e6);
-    const ww = p.getMaxIntrinsicWidth();
-    p.delete();
-    b.delete();
-    wordWidths.push(ww);
-    if (ww > maxWordWidth) maxWordWidth = ww;
-  }
-
-  // 스페이스 폭 측정
-  const bs = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-  bs.addText('x x');
-  const ps = bs.build();
-  ps.layout(1e6);
-  const xxSpace = ps.getMaxIntrinsicWidth();
-  ps.delete();
-  bs.delete();
-  const bx = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-  bx.addText('xx');
-  const px = bx.build();
-  px.layout(1e6);
-  const xxNoSpace = px.getMaxIntrinsicWidth();
-  px.delete();
-  bx.delete();
-  const spaceWidth = xxSpace - xxNoSpace;
-
-  // CSS 줄바꿈 시뮬레이션
-  const lines: string[] = [];
-  let currentLine = '';
-  let currentWidth = 0;
-
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    const ww = wordWidths[i];
-
-    if (currentLine === '') {
-      currentLine = word;
-      currentWidth = ww;
-    } else if (currentWidth + spaceWidth + ww <= maxWidth) {
-      currentLine += ' ' + word;
-      currentWidth += spaceWidth + ww;
-    } else {
-      lines.push(currentLine);
-      currentLine = word;
-      currentWidth = ww;
-    }
-  }
-  if (currentLine) lines.push(currentLine);
-
-  return {
-    text: lines.join('\n'),
-    effectiveWidth: Math.max(maxWidth, Math.ceil(maxWordWidth)),
-  };
-}
-
-/**
- * keep-all 에뮬레이션: 공백에서만 분할하여 최대 단어 너비 계산
- *
- * @param allowOverflowBreak - true면 단어가 maxWidth 초과 시 CanvasKit 기본 분할 허용
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function computeKeepAllWidth(
-  ck: any, paraStyle: any, fontMgr: any,
-  text: string, maxWidth: number, allowOverflowBreak: boolean,
-): number {
-  const words = text.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return maxWidth;
-  let maxWordWidth = 0;
-  for (const word of words) {
-    const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-    b.addText(word);
-    const p = b.build();
-    p.layout(1e6);
-    const ww = p.getMaxIntrinsicWidth();
-    p.delete();
-    b.delete();
-    if (ww > maxWordWidth) maxWordWidth = ww;
-  }
-  if (allowOverflowBreak && maxWordWidth > maxWidth) return maxWidth;
-  return Math.max(maxWidth, Math.ceil(maxWordWidth));
 }
 
 /**
