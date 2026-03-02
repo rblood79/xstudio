@@ -161,3 +161,59 @@ export function computeKeepAllWidth(
   if (allowOverflowBreak && maxWordWidth > maxWidth) return maxWidth;
   return Math.max(maxWidth, Math.ceil(maxWordWidth));
 }
+
+/**
+ * CSS overflow-wrap:break-word 전처리
+ *
+ * maxWidth를 초과하는 단어 앞에 \n을 삽입하여 새 줄로 이동시키고,
+ * 내부에 ZWS를 삽입하여 문자 단위 줄바꿈을 허용한다.
+ * 이를 통해 CanvasKit이 CSS break-word와 유사하게 렌더링한다.
+ *
+ * canvaskitTextMeasurer.ts(높이 측정)와 nodeRenderers.ts(렌더링) 양쪽에서 사용하여
+ * 측정-렌더링 경로 일치를 보장한다.
+ *
+ * @param ck - CanvasKit 인스턴스
+ * @param paraStyle - ParagraphStyle 객체
+ * @param fontMgr - FontManager
+ * @param text - 원본 텍스트
+ * @param maxWidth - 컨테이너 최대 너비 (px)
+ * @returns ZWS/\n 전처리된 텍스트
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function preprocessBreakWordText(
+  ck: any, paraStyle: any, fontMgr: any,
+  text: string, maxWidth: number,
+): string {
+  const tokens = text.split(/(\s+)/);
+  const result: string[] = [];
+  let hasContentBefore = false;
+
+  for (const token of tokens) {
+    if (!token) continue;
+
+    if (/^\s+$/.test(token)) {
+      result.push(token);
+      continue;
+    }
+
+    // 단어 폭 측정
+    const ww = measureTokenWidth(ck, paraStyle, fontMgr, token);
+
+    if (ww > maxWidth) {
+      // maxWidth 초과 단어: 앞에 \n 삽입하여 새 줄로 이동 + ZWS로 문자 분할
+      if (hasContentBefore && result.length > 0) {
+        const lastIdx = result.length - 1;
+        if (/^\s+$/.test(result[lastIdx])) {
+          result[lastIdx] = '\n';
+        }
+      }
+      result.push(Array.from(token).join('\u200B'));
+    } else {
+      result.push(token);
+    }
+
+    hasContentBefore = true;
+  }
+
+  return result.join('');
+}

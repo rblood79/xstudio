@@ -1311,7 +1311,8 @@ export const ElementSprite = memo(function ElementSprite({
                   if (style?.wordBreak) child.text.wordBreak = style.wordBreak as typeof child.text.wordBreak;
                   if (style?.overflowWrap) child.text.overflowWrap = style.overflowWrap as typeof child.text.overflowWrap;
                   if (style?.textOverflow) child.text.textOverflow = style.textOverflow as typeof child.text.textOverflow;
-                  if (style?.overflow === 'hidden' || style?.overflow === 'clip') child.text.clipText = true;
+                  const overflow = style?.overflow as string | undefined;
+                  child.text.clipText = overflow === 'hidden' || overflow === 'clip';
 
                   // ADR-008: nowrap/pre → 단일 줄 → paddingTop 보정 불필요
                   const ws = child.text.whiteSpace;

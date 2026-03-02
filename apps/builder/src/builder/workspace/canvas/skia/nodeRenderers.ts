@@ -19,7 +19,7 @@ import { toSkiaBlendMode } from './blendModes';
 import { SkiaDisposable } from './disposable';
 import { colord } from 'colord';
 import { resolveFontVariantFeatures, resolveFontStretchWidth } from '../layout/engines/cssResolver';
-import { cssNormalBreakProcess, computeKeepAllWidth } from '../utils/textWrapUtils';
+import { cssNormalBreakProcess, computeKeepAllWidth, preprocessBreakWordText } from '../utils/textWrapUtils';
 
 // ============================================
 // Text paragraph cache (Pencil-style)
@@ -1155,58 +1155,6 @@ export function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeDat
   }
 
   paint.delete();
-}
-
-/**
- * CSS overflow-wrap: break-word 렌더링 전처리
- *
- * maxWidth를 초과하는 단어 앞에 \n을 삽입하여 새 줄로 이동시키고,
- * 내부에 ZWS를 삽입하여 문자 단위 줄바꿈을 허용한다.
- * 이를 통해 CanvasKit이 CSS break-word와 유사하게 렌더링한다.
- */
-function preprocessBreakWordText(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ck: any, paraStyle: any, fontMgr: any,
-  text: string, maxWidth: number,
-): string {
-  const tokens = text.split(/(\s+)/);
-  const result: string[] = [];
-  let hasContentBefore = false;
-
-  for (const token of tokens) {
-    if (!token) continue;
-
-    if (/^\s+$/.test(token)) {
-      result.push(token);
-      continue;
-    }
-
-    // 단어 폭 측정
-    const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-    b.addText(token);
-    const p = b.build();
-    p.layout(1e6);
-    const ww = p.getMaxIntrinsicWidth();
-    p.delete();
-    b.delete();
-
-    if (ww > maxWidth) {
-      // maxWidth 초과 단어: 앞에 \n 삽입하여 새 줄로 이동 + ZWS로 문자 분할
-      if (hasContentBefore && result.length > 0) {
-        const lastIdx = result.length - 1;
-        if (/^\s+$/.test(result[lastIdx])) {
-          result[lastIdx] = '\n';
-        }
-      }
-      result.push(Array.from(token).join('\u200B'));
-    } else {
-      result.push(token);
-    }
-
-    hasContentBefore = true;
-  }
-
-  return result.join('');
 }
 
 /** Text 노드 렌더링 */

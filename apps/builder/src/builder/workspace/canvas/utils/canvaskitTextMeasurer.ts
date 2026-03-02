@@ -11,7 +11,7 @@ import type { TextMeasurer, TextMeasureStyle, TextMeasureResult } from './textMe
 import { getCanvasKit, isCanvasKitInitialized } from '../skia/initCanvasKit';
 import { skiaFontManager } from '../skia/fontManager';
 import { resolveFontVariantFeatures, resolveFontStretchWidth } from '../layout/engines/cssResolver';
-import { cssNormalBreakProcess, computeKeepAllWidth, measureTokenWidth } from './textWrapUtils';
+import { cssNormalBreakProcess, computeKeepAllWidth, measureTokenWidth, preprocessBreakWordText } from './textWrapUtils';
 
 // ============================================
 // CanvasKit enum 매핑 헬퍼
@@ -161,11 +161,34 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     const wb = style.wordBreak ?? 'normal';
     const ow = style.overflowWrap ?? 'normal';
 
-    // ADR-008: overflow-wrap: break-word/anywhere → CSS 동작 시뮬레이션
-    // CanvasKit은 CSS break-word를 네이티브로 지원하지 않으므로
-    // 단어 단위 줄바꿈을 직접 시뮬레이션한다.
+    // ADR-008: overflow-wrap: break-word/anywhere
+    // 렌더링 경로(nodeRenderers)와 동일한 전처리 + CanvasKit layout으로 높이를 측정하여
+    // 측정-렌더링 경로 일치를 보장한다.
     if ((ow === 'break-word' || ow === 'anywhere') && wb !== 'break-all') {
-      return this.measureCSSBreakWord(ck, paraStyle, fontMgr, text, maxWidth, style.lineHeight);
+      if (wb === 'keep-all') {
+        // keep-all + break-word: computeKeepAllWidth로 effectiveWidth 조정 (렌더링과 동일)
+        const effectiveMaxWidth = computeKeepAllWidth(ck, paraStyle, fontMgr, text, maxWidth, true);
+        const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+        builder.addText(text);
+        const paragraph = builder.build();
+        paragraph.layout(effectiveMaxWidth);
+        const height = paragraph.getHeight();
+        const width = paragraph.getMaxWidth();
+        paragraph.delete();
+        builder.delete();
+        return { width, height };
+      }
+      // normal + break-word: preprocessBreakWordText + CanvasKit layout (렌더링과 동일)
+      const processed = preprocessBreakWordText(ck, paraStyle, fontMgr, text, maxWidth);
+      const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+      builder.addText(processed);
+      const paragraph = builder.build();
+      paragraph.layout(maxWidth);
+      const height = paragraph.getHeight();
+      const width = paragraph.getMaxWidth();
+      paragraph.delete();
+      builder.delete();
+      return { width, height };
     }
 
     // ADR-008: normal+normal → CSS 줄바꿈 시뮬레이션으로 텍스트 전처리
@@ -234,115 +257,6 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     // normal + normal: CSS 줄바꿈 시뮬레이션 (computeEffectiveMaxWidth에서는 width만 반환)
     const result = cssNormalBreakProcess(ck, paraStyle, fontMgr, text, maxWidth);
     return result.effectiveWidth;
-  }
-
-  /**
-   * CSS overflow-wrap: break-word 에뮬레이션
-   *
-   * CSS break-word 알고리즘:
-   * 1. 단어가 현재 줄에 안 맞고 줄에 이미 내용이 있으면 → 새 줄로 이동
-   * 2. 새 줄에서도 단어가 maxWidth를 초과하면 → 문자 단위로 분할
-   *
-   * CanvasKit은 이 동작을 지원하지 않으므로 단어 단위로 직접 시뮬레이션한다.
-   *
-   * @param explicitLineHeight - 사용자 지정 lineHeight (undefined면 CanvasKit 폰트 메트릭 사용)
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private measureCSSBreakWord(
-    ck: any, paraStyle: any, fontMgr: any,
-    text: string, maxWidth: number, explicitLineHeight?: number,
-  ): TextMeasureResult {
-    // lineHeight 결정: 명시적 값이 없으면 CanvasKit 폰트 메트릭 기반 측정
-    // CSS line-height: normal과 동일한 값을 사용해야 Preview와 일치
-    let lineHeight: number;
-    if (explicitLineHeight) {
-      lineHeight = explicitLineHeight;
-    } else {
-      const slb = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-      slb.addText('Mg');
-      const slp = slb.build();
-      slp.layout(1e6);
-      lineHeight = slp.getHeight();
-      slp.delete();
-      slb.delete();
-    }
-
-    const tokens = text.split(/(\s+)/);
-    let currentLineWidth = 0;
-    let lineCount = 1;
-    let maxLineWidth = 0;
-
-    for (const token of tokens) {
-      if (!token) continue;
-
-      if (/^\s+$/.test(token)) {
-        const spaceWidth = measureTokenWidth(ck, paraStyle, fontMgr, token);
-        currentLineWidth += spaceWidth;
-        continue;
-      }
-
-      const wordWidth = measureTokenWidth(ck, paraStyle, fontMgr, token);
-
-      if (currentLineWidth + wordWidth <= maxWidth) {
-        // 현재 줄에 들어감
-        currentLineWidth += wordWidth;
-      } else if (currentLineWidth < 0.5) {
-        // 빈 줄 시작 — 단어가 maxWidth 이하면 그대로, 초과하면 문자 분할
-        if (wordWidth <= maxWidth) {
-          currentLineWidth = wordWidth;
-        } else {
-          const br = this.measureWordCharBreaking(ck, paraStyle, fontMgr, token, maxWidth);
-          lineCount += br.lines - 1;
-          currentLineWidth = br.lastLineWidth;
-        }
-      } else {
-        // 현재 줄에 안 맞음 → 새 줄로 이동
-        if (currentLineWidth > maxLineWidth) maxLineWidth = currentLineWidth;
-        lineCount++;
-        currentLineWidth = 0;
-
-        if (wordWidth <= maxWidth) {
-          currentLineWidth = wordWidth;
-        } else {
-          // 새 줄에서도 maxWidth 초과 → 문자 단위 분할
-          const br = this.measureWordCharBreaking(ck, paraStyle, fontMgr, token, maxWidth);
-          lineCount += br.lines - 1;
-          currentLineWidth = br.lastLineWidth;
-        }
-      }
-
-      if (currentLineWidth > maxLineWidth) maxLineWidth = currentLineWidth;
-    }
-
-    return {
-      width: Math.min(maxLineWidth || maxWidth, maxWidth),
-      height: lineCount * lineHeight,
-    };
-  }
-
-  /**
-   * 단어를 문자 단위로 분할했을 때의 줄 수와 마지막 줄 폭 계산
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private measureWordCharBreaking(
-    ck: any, paraStyle: any, fontMgr: any,
-    word: string, maxWidth: number,
-  ): { lines: number; lastLineWidth: number } {
-    const chars = Array.from(word);
-    let currentLineWidth = 0;
-    let lines = 1;
-
-    for (const ch of chars) {
-      const chWidth = measureTokenWidth(ck, paraStyle, fontMgr, ch);
-      if (currentLineWidth + chWidth > maxWidth && currentLineWidth > 0) {
-        lines++;
-        currentLineWidth = chWidth;
-      } else {
-        currentLineWidth += chWidth;
-      }
-    }
-
-    return { lines, lastLineWidth: currentLineWidth };
   }
 
 }
