@@ -1491,3 +1491,8 @@ Phase 0~1 진행 중 발견된 **Monolithic Spec 버그**를 근본적으로 해
 - [CSS 아키텍처](./reference/components/CSS_ARCHITECTURE.md)
 - [WASM 아키텍처](./WASM.md)
 - [Canvas 렌더링 ADR](./adr/003-canvas-rendering.md)
+
+### 관련 문서
+
+- [React Aria 라이브러리 통합 가이드](./reference/components/REACT_ARIA_LIBRARIES.md) — @react-aria, @internationalized 패키지 통합
+- [React Aria 1.14.0 마이그레이션 기록](./legacy/REACT_ARIA_MIGRATION_1_14.md) — v1.14.0 업그레이드, data-* 패턴 전환, StyleValues 최적화 (✅ 완료)

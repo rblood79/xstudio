@@ -132,3 +132,4 @@ pnpm storybook
 - [ADR: Styling](docs/adr/002-styling-approach.md)
 - [ADR: Canvas](docs/adr/003-canvas-rendering.md)
 - [ADR: Preview](docs/adr/004-preview-isolation.md)
+- [ADR: Text Wrapping](docs/adr/008-css-text-wrapping.md)

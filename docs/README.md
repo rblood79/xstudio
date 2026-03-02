@@ -8,12 +8,13 @@ XStudio 프로젝트의 기술 문서를 [Diátaxis 프레임워크](https://dia
 
 ```
 docs/
-├── tutorials/        # 학습 중심 실습 가이드
+├── adr/             # Architecture Decision Records
+├── tutorials/       # 학습 중심 실습 가이드
 ├── how-to/          # 문제 해결 단계별 가이드
 ├── reference/       # API, 스키마, 상태 참조
 ├── explanation/     # 아키텍처, 개념 설명
-├── plans/           # 기능 구현 계획
 ├── legacy/          # 완료/폐기된 과거 문서
+├── pencil-extracted/# Pencil Desktop 역공학 분석
 ├── CHANGELOG.md     # 변경 이력
 └── README.md        # 문서 인덱스
 ```
@@ -25,31 +26,44 @@ docs/
 > 핵심 아키텍처 및 기능 설계 문서입니다.
 
 - [AI 기능 설계](./AI.md) - AI Agent Loop + Tool Calling 설계
-- [WASM 렌더링 아키텍처](./WASM.md) - CanvasKit/Skia WASM 전환 계획
+- [WASM 렌더링 아키텍처](./WASM.md) - CanvasKit/Skia WASM 전환
 - [컴포넌트 스펙 아키텍처](./COMPONENT_SPEC_ARCHITECTURE.md) - 단일 소스 컴포넌트 스펙
-- [레이아웃 엔진 전환 ADR](./ENGINE.md) - Taffy WASM + Dropflow Fork 전략
+- [React Aria 마이그레이션 전략](./REACT_ARIA.md) - WebGL 컴포넌트 마이그레이션
+- [레이아웃 엔진 ADR](./ENGINE.md) - Taffy WASM + Dropflow Fork 전략
 - [CSS 속성 지원 체크리스트](./ENGINE_CHECKLIST.md) - CSS 속성별 지원 상태
 - [컬러 피커 + Fill 시스템](./COLOR_PICKER.md) - Color/Gradient/EyeDropper/BlendMode
 - [Agent Teams 매뉴얼](./AGENTS_TEAMS.md) - Claude Code 에이전트 협업
 
 ### ADR (Architecture Decision Records)
-- [ADR-001: 상태 관리](./adr/001-state-management.md) - Zustand 채택
-- [ADR-002: 스타일링](./adr/002-styling-approach.md) - ITCSS + tailwind-variants
-- [ADR-003: Canvas 렌더링](./adr/003-canvas-rendering.md) - CanvasKit/Skia + Taffy/Dropflow
-- [ADR-004: Preview 격리](./adr/004-preview-isolation.md) - iframe + postMessage
+
+| ADR | 제목 | 상태 |
+|-----|------|------|
+| [001](./adr/001-state-management.md) | 상태 관리 (Zustand) | Implemented |
+| [002](./adr/002-styling-approach.md) | 스타일링 (ITCSS + Tailwind) | Implemented |
+| [003](./adr/003-canvas-rendering.md) | Canvas 렌더링 (CanvasKit/Skia + PixiJS) | Implemented |
+| [004](./adr/004-preview-isolation.md) | Preview 격리 (iframe + postMessage) | Implemented |
+| [005](./adr/005-full-tree-wasm-layout.md) | Full-Tree WASM 레이아웃 | In Progress |
+| [006](./adr/006-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 강화 | Implemented |
+| [007](./adr/007-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩 | Implemented |
+| [008](./adr/008-css-text-wrapping.md) | CSS 텍스트 래핑 에뮬레이션 | Implemented |
+| [009](./adr/009-child-composition-remaining.md) | Child Composition 잔여 작업 | In Progress |
+| [010](./adr/010-events-panel.md) | Events Panel | Implemented |
+| [011](./adr/011-fonts.md) | 폰트 시스템 | Implemented |
+| [012](./adr/012-project-export.md) | 프로젝트 내보내기 | Design |
+| [013](./adr/013-sitemap-layout.md) | Sitemap 레이아웃 | Design |
 
 ---
 
 ## Tutorials (튜토리얼)
 
-> 학습 중심의 실습 가이드입니다. 처음부터 끝까지 따라하며 배울 수 있습니다.
+> 학습 중심의 실습 가이드입니다.
 
 ### Getting Started
-- [Electron 설정 가이드](./tutorials/getting-started/ELECTRON_SETUP.md) - Electron 데스크톱 앱 설정
+- [Electron 설정 가이드](./tutorials/getting-started/ELECTRON_SETUP.md)
 
 ### Features
-- [Tree 컴포넌트 가이드](./tutorials/features/TREE_COMPONENT.md) - Tree 컴포넌트 사용법
-- [이벤트 테스트 가이드](./tutorials/features/EVENT_TESTING.md) - 이벤트 시스템 테스트
+- [Tree 컴포넌트 가이드](./tutorials/features/TREE_COMPONENT.md)
+- [이벤트 테스트 가이드](./tutorials/features/EVENT_TESTING.md)
 
 ---
 
@@ -59,8 +73,6 @@ docs/
 
 ### Migration (마이그레이션)
 - [React Query 스타일 마이그레이션](./how-to/migration/REACT_QUERY_STYLE.md)
-- [M3 마이그레이션 체크리스트](./how-to/migration/M3_CHECKLIST.md)
-- [React Aria 마이그레이션](./how-to/migration/REACT_ARIA.md)
 
 ### Troubleshooting (문제 해결)
 - [Rate Limit 해결](./how-to/troubleshooting/RATE_LIMIT.md)
@@ -68,9 +80,6 @@ docs/
 ### Development (개발)
 - [기여 가이드](./how-to/development/CONTRIBUTING.md)
 - [README 작성 가이드](./how-to/development/README_WRITING.md)
-- [PGlite 퀵스타트](./how-to/development/PGLITE_QUICK_START.md)
-- [PGlite 구현](./how-to/development/PGLITE_IMPLEMENTATION.md)
-- [PGlite 검증](./how-to/development/PGLITE_VALIDATION.md)
 - [Skeleton 시스템 구현](./how-to/development/SKELETON_SYSTEM.md)
 - [P7 구현 계획](./how-to/development/P7_IMPLEMENTATION.md)
 - [패널 최적화](./how-to/development/PANEL_OPTIMIZATION.md)
@@ -91,9 +100,6 @@ docs/
 ### Schemas (스키마)
 - [IndexedDB 스키마](./reference/schemas/INDEXDB.md)
 - [Supabase 스키마](./reference/schemas/SUPABASE.md)
-- [M3 Palette 매핑](./reference/schemas/M3_PALETTE.md)
-- [M3 컴포넌트 템플릿](./reference/schemas/M3_COMPONENT_TEMPLATE.css)
-- [M3 Storybook 템플릿](./reference/schemas/M3_STORYBOOK_TEMPLATE.tsx)
 
 ### Structure (구조)
 - [Hooks 구조](./reference/STRUCTURE_HOOKS.md) - Builder hooks 구조 및 사용 패턴
@@ -105,7 +111,7 @@ docs/
 ### Components (컴포넌트)
 - [패널 시스템](./reference/components/PANEL_SYSTEM.md)
 - [CSS 아키텍처](./reference/components/CSS_ARCHITECTURE.md)
-- [React Aria 통합](./reference/components/REACT_ARIA.md)
+- [React Aria 라이브러리 통합](./reference/components/REACT_ARIA_LIBRARIES.md)
 - [Transformer 보안](./reference/components/TRANSFORMER_SECURITY.md)
 - [Custom ID 패턴](./reference/components/CUSTOM_ID_PATTERN.md)
 - [Data Panel](./reference/components/DATA_PANEL.md)
@@ -137,9 +143,6 @@ docs/
 - [완료된 기능](./reference/status/COMPLETED.md)
 - [계획된 기능](./reference/status/PLANNED.md)
 - [미구현 기능](./reference/status/UNIMPLEMENTED.md)
-- [M3 Phase 0 완료](./reference/status/M3_PHASE_0.md)
-- [M3 인덱스](./reference/status/M3_INDEX.md)
-- [M3 브라우저 호환성](./reference/status/M3_BROWSER.md)
 - [React Aria 1.13 업데이트](./reference/status/REACT_ARIA_1.13.md)
 - [DB 호환성](./reference/status/DB_COMPATIBILITY.md)
 - [스타일 시스템](./reference/status/STYLE_SYSTEM.md)
@@ -153,12 +156,9 @@ docs/
 ### Architecture (아키텍처)
 - [페이지 타입 분리](./explanation/architecture/PAGE_TYPES.md)
 - [데이터 아키텍처](./explanation/architecture/DATA_ARCHITECTURE.md)
-- [파일 동기화](./explanation/architecture/FILE_SYNC.md)
-- [데이터 동기화](./explanation/architecture/DATA_SYNC.md)
 - [History Panel 설계](./explanation/architecture/HISTORY_PANEL.md)
 - [Nodes Panel 설계](./explanation/architecture/NODES_PANEL_DESIGN.md)
 - [Drag & Drop 설계](./explanation/architecture/DRAG_DROP_DESIGN.md)
-- [성능 문제 분석](./explanation/architecture/PERF_PROBLEM.md)
 
 ### Research (리서치)
 - [빌더 아키텍처 비교](./explanation/research/BUILDER_COMPARISON.md)
@@ -170,25 +170,13 @@ docs/
 - [Photoshop 벤치마크](./explanation/research/PHOTOSHOP_BENCHMARK.md)
 
 ### Pencil 분석
-- [Pencil vs XStudio UI/UX](./PENCIL_VS_XSTUDIO_UI_UX.md)
 - [Pencil 역공학 추출물](./pencil-extracted/) - Pencil Desktop 소스 분석
-
----
-
-## Plans (계획)
-
-> 기능 구현 계획 문서입니다.
-
-- [Events Panel 계획](./plans/EVENTS_PANEL.md)
-- [폰트 시스템 계획](./plans/FONTS.md)
-- [프로젝트 내보내기 계획](./plans/PROJECT_EXPORT.md)
-- [Sitemap 레이아웃 계획](./plans/SITEMAP_LAYOUT_PLAN.md)
 
 ---
 
 ## Legacy (레거시)
 
-완료된 리팩토링 문서 및 폐기된 문서가 보관되어 있습니다.
+완료된 리팩토링/마이그레이션 기록 및 폐기된 문서가 보관되어 있습니다.
 
 - [legacy/](./legacy/) - 과거 문서 (역사적 참조 목적)
 

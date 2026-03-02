@@ -172,6 +172,9 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 ### Child Composition & Spec
 **[reference/child-composition.md](reference/child-composition.md)** — 자식 조합 패턴, Child Spec 등록, `_hasChildren` 2단계 로직, Spec shapes 카테고리, label 렌더링 패턴, Property Editor 자식 동기화, Canvas 2D↔CanvasKit 보정, TokenRef fontSize 해석, INLINE_FORM dimensions, Phantom Indicator, TextMeasurer 정합성
 
+### Text Wrapping & Measurement
+**[reference/text-wrapping.md](reference/text-wrapping.md)** — ADR-008 CSS 텍스트 래핑 에뮬레이션, textWrapUtils.ts 공유 유틸, 에뮬레이션 조합 테이블, isEllipsis 3중 조건, clipText 클리핑 패턴, Inspector Preset UI, spec shapes 수동 주입
+
 ### Component Registry
 **[reference/component-registry.md](reference/component-registry.md)** — 컴포넌트 등급 현황, COMPLEX_COMPONENT_TAGS, CHILD_COMPOSITION_EXCLUDE_TAGS, NON_CONTAINER_TAGS, SPEC_RENDERS_ALL_TAGS_SET
 
@@ -266,6 +269,7 @@ tags: [tag1, tag2]
 - **[ADR-002](../../../docs/adr/002-styling-approach.md)** - ITCSS + tv() 선택 이유
 - **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - Canvas 렌더링 (CanvasKit/Skia 이중 렌더러 + Taffy/Dropflow 레이아웃 엔진)
 - **[ADR-004](../../../docs/adr/004-preview-isolation.md)** - iframe 격리 이유
+- **[ADR-008](../../../docs/adr/008-css-text-wrapping.md)** - CSS 텍스트 래핑 에뮬레이션 (textWrapUtils.ts 공유 유틸, Preset UI, clipText)
 - **[Component Spec Architecture](../../../docs/COMPONENT_SPEC_ARCHITECTURE.md)** - 단일 소스 컴포넌트 스펙 설계
 - **[Engine Strategy D](../../../docs/ENGINE.md)** - 레이아웃 엔진 전환 전략 (Taffy WASM + Dropflow Fork)
 

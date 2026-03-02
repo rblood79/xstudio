@@ -1,10 +1,9 @@
 # ADR-008: CSS 텍스트 래핑 속성 체계적 지원
 
 ## Status
-Accepted, Partially Implemented
+**Implemented** (Phase 1~3 완료, 2026-03-03)
 
-> `word-break: normal` 에뮬레이션은 선행 작업으로 이미 렌더러/측정기에 반영 완료.
-> 나머지 조합(break-all, keep-all, overflow-wrap)과 인스펙터 UI, overflow 클리핑은 미구현.
+> Phase 1(CanvasKit 에뮬레이션), Phase 2(인스펙터 UI), Phase 3(overflow 클리핑) 모두 구현 완료.
 
 ## Date
 2026-03-02
@@ -22,15 +21,15 @@ CanvasKit 0.40 ParagraphStyle에 `wordBreak`/`breakStrategy` API가 존재하지
 
 `word-break: normal` 에뮬레이션 작업 중, CanvasKit HarfBuzz가 CSS 표준과 다르게 단어 내부에서 문자 단위 분할을 수행하는 문제를 발견. 조사 결과 5개 텍스트 래핑 속성이 렌더러/측정기/인스펙터 간에 비대칭적으로 구현되어 있고, 사용자가 이를 제어할 UI가 없음을 확인.
 
-### 현재 구현 현황
+### 구현 현황 (최종)
 
 | 속성 | Skia 렌더러 | 측정기 | 인스펙터 |
 |------|------------|--------|----------|
-| `white-space` | ✅ `nowrap`→단일행, `pre-wrap`→개행 보존 | ✅ `measureTextWithWhiteSpace()` | ❌ |
-| `word-break` | ⚠️ `normal` 에뮬레이션만 (선행 작업 완료) | ⚠️ `normal` 에뮬레이션만 | ❌ |
-| `overflow-wrap` | ⚠️ `normal` 에뮬레이션만 | ⚠️ `normal` 에뮬레이션만 | ❌ |
-| `text-overflow` | ✅ `ellipsis` → CanvasKit `maxLines:1` + `ellipsis:'...'` | ❌ (높이 측정 미반영) | ❌ |
-| `overflow` | ❌ (클리핑 없음) | ❌ | ❌ |
+| `white-space` | ✅ `nowrap`→단일행, `pre-wrap`→개행 보존 | ✅ `measureTextWithWhiteSpace()` | ✅ Preset UI |
+| `word-break` | ✅ `normal`/`break-all`/`keep-all` 전체 조합 | ✅ `textWrapUtils.ts` 공유 로직 | ✅ Preset UI |
+| `overflow-wrap` | ✅ `normal`/`break-word`/`anywhere` 전체 조합 | ✅ `textWrapUtils.ts` 공유 로직 | ✅ Preset UI |
+| `text-overflow` | ✅ `ellipsis` → `maxLines:1` + `ellipsis:'…'` (3중 조건) | ✅ 높이 측정 반영 | ✅ Preset UI |
+| `overflow` | ✅ `hidden`/`clip` → `canvas.clipRect()` 적용 | ✅ `clipText` 플래그 연동 | ✅ Preset UI |
 
 ---
 
@@ -211,48 +210,77 @@ CSS 사양에서 `text-overflow: ellipsis`는 다음 조건이 모두 충족될 
 
 > 모든 파일 경로는 `apps/builder/src/builder/` 기준
 
-### Phase 1: CanvasKit 에뮬레이션 완성
+### Phase 1: CanvasKit 에뮬레이션 완성 ✅
 
 **범위**: 렌더러 + 측정기에 `word-break` × `overflow-wrap` 전체 조합 분기 구현
 
 | 파일 (apps/builder/src/builder/) | 변경 |
 |------|------|
+| `workspace/canvas/utils/textWrapUtils.ts` | **신규** — 공유 에뮬레이션 유틸: `cssNormalBreakProcess`, `computeKeepAllWidth`, `preprocessBreakWordText`, `measureTokenWidth`, `measureSpaceWidth` |
 | `workspace/canvas/utils/textMeasure.ts` | `TextMeasureStyle`에 `wordBreak`, `overflowWrap` 추가 |
-| `workspace/canvas/utils/canvaskitTextMeasurer.ts` | `measureWrapped()` 조합별 분기 + `keep-all` 로직 + break-all ZWS 전처리 |
-| `workspace/canvas/skia/nodeRenderers.ts` | `effectiveLayoutWidth` 조합별 분기 + `computeKeepAllWidth` 헬퍼 + break-all ZWS 전처리 + `isEllipsis` 조건 1차 강화(`&& whiteSpace === 'nowrap'`) |
-| `workspace/canvas/layout/engines/utils.ts` | `measureTextWithWhiteSpace` 시그니처 확장, 호출 체인 관통 |
+| `workspace/canvas/utils/canvaskitTextMeasurer.ts` | `measureWrapped()` 조합별 분기 — textWrapUtils 공유 함수 호출 |
+| `workspace/canvas/skia/nodeRenderers.ts` | `effectiveLayoutWidth` 조합별 분기 — textWrapUtils 공유 함수 호출 + `isEllipsis` 3중 조건(`&& whiteSpace === 'nowrap' && !!clipText`) |
+| `workspace/canvas/layout/engines/utils.ts` | `measureTextWithWhiteSpace` 시그니처 확장 (`wordBreak`, `overflowWrap` 추가), 호출 체인 관통 |
+| `workspace/canvas/layout/engines/cssResolver.ts` | `wordBreak`, `overflowWrap`, `whiteSpace`를 상속 속성(INHERITED_PROPERTIES)에 등록 + ComputedStyle 인터페이스 + ROOT_COMPUTED_STYLE 초기값 |
+| `stores/elements.ts` | `INHERITED_LAYOUT_PROPS`에 `whiteSpace`, `wordBreak`, `overflowWrap` 추가 (dirty tracking) |
+| `stores/utils/elementUpdate.ts` | `INHERITED_LAYOUT_PROPS_UPDATE`에 동일 3개 속성 추가 (순환 import 방지용 독립 복사본) |
 
 **측정 체인 관통 경로**:
 ```
-calculateContentHeight()  (utils.ts:1034, 1584)
-  → measureTextWithWhiteSpace(text, fontSize, fontFamily, fontWeight, whiteSpace, maxWidth, wordBreak, overflowWrap)  (utils.ts:2179)
-    → measureWrappedTextHeight()  (textMeasure.ts:355)
-      → getTextMeasurer().measureWrapped(text, style{wordBreak, overflowWrap}, maxWidth)  (canvaskitTextMeasurer.ts:123)
+calculateContentHeight()  (utils.ts)
+  → measureTextWithWhiteSpace(text, fontSize, fontFamily, fontWeight, whiteSpace, maxWidth, wordBreak, overflowWrap)  (utils.ts)
+    → measureWrappedTextHeight()  (textMeasure.ts)
+      → getTextMeasurer().measureWrapped(text, style{wordBreak, overflowWrap}, maxWidth)  (canvaskitTextMeasurer.ts)
+        → textWrapUtils: cssNormalBreakProcess / preprocessBreakWordText / computeKeepAllWidth
 ```
 
-> **참고**: `LAYOUT_AFFECTING_PROPS`에 `'style'`이 이미 포함 → `style.wordBreak` 등 변경 시 `layoutVersion` 자동 증가 (추가 등록 불필요)
+**렌더링 체인 관통 경로**:
+```
+TextSprite.tsx → SkiaNodeData.text에 whiteSpace/wordBreak/overflowWrap/textOverflow/clipText 주입
+ElementSprite.tsx → specShapesToSkia 결과의 text children에 수동 주입 (spec shapes는 자동 상속 안 됨)
+nodeRenderers.renderText()
+  → textWrapUtils: cssNormalBreakProcess / preprocessBreakWordText / computeKeepAllWidth
+  → paragraph.layout(effectiveLayoutWidth)
+  → nowrap/pre: maxIntrinsicWidth + 1로 재레이아웃 (CanvasKit 큰 width 버그 회피)
+  → clipText: canvas.clipRect() 적용
+```
 
-### Phase 2: 인스펙터 UI
+> **참고**: `LAYOUT_AFFECTING_PROPS`에 `'style'`이 이미 포함 → `style.wordBreak` 등 변경 시 `layoutVersion` 자동 증가 (추가 등록 불필요).
+> 추가로 `INHERITED_LAYOUT_PROPS`(elements.ts) + `INHERITED_LAYOUT_PROPS_UPDATE`(elementUpdate.ts)에 3개 속성을 등록하여 자식 요소 dirty tracking도 보장.
+
+**공유 유틸리티 구조** (`textWrapUtils.ts`):
+
+`canvaskitTextMeasurer.ts`(높이 측정)와 `nodeRenderers.ts`(렌더링) 양쪽에서 동일한 전처리 함수를 호출하여 **측정-렌더링 경로 일치**를 보장한다. 이전에는 각 파일에 중복 로직이 있어 불일치 위험이 있었으나, `textWrapUtils.ts` 추출로 단일 소스를 확보.
+
+### Phase 2: 인스펙터 UI ✅
 
 **범위**: Typography 섹션에 Text Behavior Preset 컨트롤 추가
 
 | 파일 (apps/builder/src/builder/) | 변경 |
 |------|------|
 | `panels/styles/atoms/styleAtoms.ts` | `typographyValuesAtom` 확장 (5개 필드 + equalityFn) |
-| `panels/styles/hooks/useTypographyValuesJotai.ts` | 인터페이스 확장 + `deriveTextBehaviorPreset()` |
-| `panels/styles/sections/TypographySection.tsx` | Text Behavior PropertySelect UI + `handleTextBehaviorChange` |
+| `panels/styles/hooks/useTypographyValuesJotai.ts` | `TypographyStyleValues` 인터페이스에 `whiteSpace`, `wordBreak`, `overflowWrap`, `textOverflow`, `overflow`, `textBehaviorPreset` 추가 + `deriveTextBehaviorPreset()` 역변환 함수 |
+| `panels/styles/sections/TypographySection.tsx` | `WrapText` 아이콘 + `PropertySelect` UI (7 프리셋 + Custom) + `handleTextBehaviorChange()` — `updateStyles` batch로 5개 속성 단일 set() 적용 |
 
-### Phase 3: 텍스트 overflow 클리핑
+### Phase 3: 텍스트 overflow 클리핑 ✅
 
 **범위**: `overflow: hidden` 또는 `clip` 시 CanvasKit `clipRect` 적용
 
 | 파일 (apps/builder/src/builder/) | 변경 |
 |------|------|
-| `workspace/canvas/sprites/TextSprite.tsx` | `overflow → clipText` SkiaNodeData 전달 |
-| `workspace/canvas/skia/nodeRenderers.ts` | `clipText` 시 `canvas.clipRect()` 적용 + `isEllipsis` 조건 2차 강화(`&& clipText`) |
+| `workspace/canvas/sprites/TextSprite.tsx` | `style.overflow === 'hidden' \|\| 'clip'` → `clipText: true` SkiaNodeData.text에 주입 |
+| `workspace/canvas/sprites/ElementSprite.tsx` | spec shapes의 text children에 `clipText` 수동 주입 (자동 상속 안 됨) |
+| `workspace/canvas/skia/nodeRenderers.ts` | `shouldClip = clipText && !isEllipsis` → `canvas.save()` + `canvas.clipRect(ck.XYWHRect(0, 0, width, height))` + `canvas.restore()` |
 
-> `text-overflow: ellipsis`는 CanvasKit의 `maxLines:1` + `ellipsis:'...'`로 이미 처리되므로 별도 clip 불필요.
-> Phase 1에서 1차 강화된 `isEllipsis`(`&& whiteSpace === 'nowrap'`)에 `&& clipText` 조건을 추가하여 CSS 3중 전제조건 완성.
+**isEllipsis 최종 조건** (Phase 1 + Phase 3 통합):
+```typescript
+const isEllipsis = node.text.textOverflow === 'ellipsis'
+  && whiteSpace === 'nowrap'
+  && !!node.text.clipText;
+```
+CSS 3중 전제조건(`text-overflow:ellipsis` + `white-space:nowrap` + `overflow:hidden|clip`)을 한 번에 체크.
+
+> `text-overflow: ellipsis`는 CanvasKit의 `maxLines:1` + `ellipsis:'…'`로 자체 처리되므로 별도 clip 불필요 (`shouldClip`에서 `!isEllipsis`로 제외).
 
 ---
 
