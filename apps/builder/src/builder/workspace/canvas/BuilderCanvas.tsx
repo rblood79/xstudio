@@ -187,8 +187,6 @@ interface PageContainerProps {
   onTitleDragStart: (pageId: string, clientX: number, clientY: number) => void;
   /** ADR-006 P3-1: 레이아웃 변경 감지 버전 */
   layoutVersion: number;
-  /** ADR-006 P3-1: 이번 프레임에서 레이아웃이 변경된 요소 ID 집합 */
-  dirtyElementIds: Set<string>;
 }
 
 const titleHitDraw = (pageWidth: number) => (g: PixiGraphics) => {
@@ -216,7 +214,6 @@ const PageContainer = memo(function PageContainer({
   onDoubleClick,
   onTitleDragStart,
   layoutVersion,
-  dirtyElementIds,
 }: PageContainerProps) {
   const draw = useMemo(() => titleHitDraw(pageWidth), [pageWidth]);
 
@@ -260,7 +257,6 @@ const PageContainer = memo(function PageContainer({
           onDoubleClick={onDoubleClick}
           wasmLayoutReady={wasmLayoutReady}
           layoutVersion={layoutVersion}
-          dirtyElementIds={dirtyElementIds}
         />
       )}
     </pixiContainer>
@@ -533,7 +529,6 @@ const ElementsLayer = memo(function ElementsLayer({
   pagePositionVersion = 0,
   wasmLayoutReady: _wasmLayoutReady = false,
   layoutVersion = 0,
-  dirtyElementIds,
 }: {
   pageElements: Element[];
   bodyElement: Element | null;
@@ -550,8 +545,6 @@ const ElementsLayer = memo(function ElementsLayer({
   wasmLayoutReady?: boolean;
   /** ADR-006 P3-1: 레이아웃 변경 감지 버전 — 이 값이 바뀔 때만 fullTreeLayoutMap 재계산 */
   layoutVersion?: number;
-  /** ADR-006 P3-1: 이번 프레임에서 레이아웃이 변경된 요소 ID 집합 */
-  dirtyElementIds?: Set<string>;
 }) {
   // 🚀 성능 최적화: selectedElementIds 구독 제거
   // 기존: ElementsLayer가 selectedElementIds 구독 → 선택 변경 시 전체 리렌더 O(n)
@@ -690,7 +683,6 @@ const ElementsLayer = memo(function ElementsLayer({
       bodyElement.id, elementById, childrenIdMap,
       avW, avH,
       (id: string) => pageChildrenMap.get(id) ?? [],
-      dirtyElementIds,
     );
     // Phase 3: SkiaOverlay에서 접근할 수 있도록 공유
     // Multi-page: 페이지별 저장 (bodyElement.page_id로 구분)
@@ -1236,6 +1228,17 @@ export function BuilderCanvas({
   // elementsMap을 직접 사용 (elements로부터 중복 Map 생성 제거)
   const elementsMap = useStore((state) => state.elementsMap);
   const elementById = elementsMap;
+
+  // ADR-006 P3-1: dirtyElementIds 소비 후 초기화
+  // layoutVersion이 변경되면 render cycle에서 useMemo가 레이아웃을 재계산한 뒤,
+  // useEffect에서 이전 프레임의 dirty ID를 정리하여 메모리 누적을 방지한다.
+  const layoutVersion = useStore((state) => state.layoutVersion);
+  const clearDirtyElementIds = useStore((state) => state.clearDirtyElementIds);
+  useEffect(() => {
+    if (layoutVersion > 0) {
+      clearDirtyElementIds();
+    }
+  }, [layoutVersion, clearDirtyElementIds]);
 
   const depthMap = useMemo(() => {
     const cache = new Map<string, number>();
@@ -2222,6 +2225,7 @@ export function BuilderCanvas({
                   onClick={handleElementClick}
                   onDoubleClick={handleElementDoubleClick}
                   onTitleDragStart={startPageDrag}
+                  layoutVersion={layoutVersion}
                 />
               );
             })}

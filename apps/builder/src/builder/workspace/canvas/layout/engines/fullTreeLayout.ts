@@ -55,17 +55,6 @@ function sanitizeLayoutValue(v: number, fallback: number = 0): number {
  */
 const persistentTrees = new Map<string, PersistentTaffyTree>();
 
-/**
- * ADR-006 P3-3: 요소별 스타일 version counter 맵.
- *
- * Store의 dirtyElementIds를 소비하여 해당 요소의 version을 증분한다.
- * PersistentTaffyTree.updateNodeStyle()은 이 version과 내부 styleVersionMap을
- * O(1) 비교하여 실제 변경이 없으면 JSON.stringify를 스킵한다.
- *
- * 멀티페이지: 페이지 경계를 넘은 elementId 충돌은 실제 발생하지 않으므로
- * 단일 전역 맵으로 충분하다.
- */
-const elementStyleVersions = new Map<string, number>();
 
 /**
  * Persistent 트리 리셋.
@@ -87,9 +76,6 @@ export function resetPersistentTree(pageId?: string): void {
       tree.reset();
     }
     persistentTrees.clear();
-    // ADR-006 P3-3: 전체 리셋 시 elementStyleVersions도 초기화
-    // (페이지 전환으로 buildFull이 재호출될 것이므로 version 0으로 리셋)
-    elementStyleVersions.clear();
     // 모든 페이지의 stale 레이아웃 제거
     for (const key of [..._perPageLayoutMaps.keys()]) {
       publishLayoutMap(null, key);
@@ -704,7 +690,7 @@ function traversePostOrder(
     const enrichedStyle = (enriched.props?.style ?? {}) as Record<string, unknown>;
     if (!enrichedStyle.height && (!elementStyle.height || elementStyle.height === 'auto')) {
       const intrinsicHeight = calculateContentHeight(
-        element, availableWidth, childElements, getChildElements, computedStyle,
+        element, availableWidth, filteredChildren, getChildElements, computedStyle,
       );
       if (intrinsicHeight > 0) {
         const box = parseBoxModel(element, availableWidth, availableHeight);
@@ -813,18 +799,9 @@ function incrementalUpdate(
   tree: PersistentTaffyTree,
   batch: PersistentBatchNode[],
   filteredChildIdsMap: Map<string, string[]>,
-  dirtyElementIds: Set<string>,
 ): { stylesUpdated: number; childrenUpdated: number; added: number; removed: number } {
   const stats = { stylesUpdated: 0, childrenUpdated: 0, added: 0, removed: 0 };
   const currentNodeIds = new Set(batch.map(n => n.elementId));
-
-  // ADR-006 P3-3: dirtyElementIds 소비 → 해당 요소의 version counter 증분
-  // dirty 요소가 없으면 모든 노드의 version이 이전 프레임과 동일 →
-  // updateNodeStyle이 JSON.stringify 없이 O(1) 스킵
-  for (const dirtyId of dirtyElementIds) {
-    const prev = elementStyleVersions.get(dirtyId) ?? 0;
-    elementStyleVersions.set(dirtyId, prev + 1);
-  }
 
   // 1. 삭제된 노드 식별 (현재 batch에 없는 기존 노드)
   const allHandles = tree.getAllHandles();
@@ -838,18 +815,14 @@ function incrementalUpdate(
   // 2. post-order 순회: 새 노드 추가 + 기존 노드 스타일 갱신
   //    post-order 보장: 자식이 부모보다 먼저 처리되므로
   //    addNode 후 부모의 updateChildren 시 자식 handle이 이미 존재
+  //    변경 감지: PersistentTaffyTree._lastJsonMap JSON 비교로 처리 (12차 정정)
   for (const node of batch) {
     if (tree.hasNode(node.elementId)) {
-      // P3-3: elementStyleVersions에서 현재 version 조회 (dirtyIds에 없으면 이전 값 유지)
-      const version = elementStyleVersions.get(node.elementId) ?? 0;
-      if (tree.updateNodeStyle(node.elementId, node.style, version)) {
+      if (tree.updateNodeStyle(node.elementId, node.style)) {
         stats.stylesUpdated++;
       }
     } else {
       tree.addNode(node.elementId, node.style);
-      // 새 노드 추가: version을 1로 초기화 (addNode 후 즉시 1로 설정하여
-      // 이후 동일 프레임에서 updateNodeStyle 호출 시 버전 불일치 방지)
-      elementStyleVersions.set(node.elementId, 1);
       stats.added++;
     }
   }
@@ -902,7 +875,6 @@ export function calculateFullTreeLayout(
   availableWidth: number,
   availableHeight: number,
   getChildElements: (id: string) => Element[],
-  dirtyElementIds?: Set<string>,
 ): Map<string, ComputedLayout> | null {
   // WASM 가용성 확인
   if (!isRustWasmReady()) return null;
@@ -986,8 +958,8 @@ export function calculateFullTreeLayout(
       persistentTree.buildFull(rootElementId, batch, filteredChildIdsMap);
     } else {
       // Path B: 증분 갱신 (변경된 노드만 WASM 호출)
-      // P3-3: dirtyElementIds를 전달하여 version counter 기반 O(1) 스킵 활성화
-      const stats = incrementalUpdate(persistentTree, batch, filteredChildIdsMap, dirtyElementIds ?? new Set<string>());
+      // 변경 감지: PersistentTaffyTree._lastJsonMap JSON 비교 (12차 정정)
+      const stats = incrementalUpdate(persistentTree, batch, filteredChildIdsMap);
 
       if (import.meta.env.DEV && (stats.stylesUpdated + stats.added + stats.removed > 0)) {
         console.log(

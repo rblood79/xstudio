@@ -1460,7 +1460,7 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 1. **`services/messaging.ts` 정리 시점**: `MessagingService`는 `IframeMessenger`를 import/생성하지만 활성 코드에서 import되지 않아 실행 경로 미연결 상태. 향후 재활성화 계획이 있는지, 아니면 레거시 정리 대상인지 확인 필요.
 2. **P3-1 descendant invalidation 범위**: `INHERITED_LAYOUT_PROPS`(font\*, lineHeight 등) 외에 CSS container query 영향 속성(`containerType`, `containIntrinsicSize` 등)까지 포함할지 합의 필요. 현재 프로젝트에서 container query 미사용 시 font/text 관련 속성만으로 충분.
 3. **P2-2 nonce 보안 기대치**: "same-origin 우발 메시지 차단"으로 한정하여 문서에 명시 완료 (설계 근거 섹션). 동일 출처 XSS는 별도 CSP/입력 새니타이즈에서 통제.
-4. **`clearDirtyElementIds` 미호출**: Store에 인터페이스 선언(라인 151)과 구현체(라인 359)가 존재하나 호출처 0건. `dirtyElementIds`가 소비 후 초기화되지 않아 무한 누적됨. P3-3의 JSON 비교 전환으로 `elementStyleVersions` version counter는 더 이상 변경 감지에 사용되지 않으므로 실질적 영향은 없으나, 메모리 측면에서 `calculateFullTreeLayout` 호출 후 또는 `incrementalUpdate` 내부에서 소비 완료된 dirty ID를 정리하는 것이 권장됨.
+4. ~~**`clearDirtyElementIds` 미호출**~~ → **해결 완료 (12차)**: BuilderCanvas 최상위 컴포넌트에서 `layoutVersion` 구독 + `useEffect`로 render cycle 완료 후 `clearDirtyElementIds()` 호출. 동시에 version counter 인프라(`elementStyleVersions`, `styleVersionMap`, `dirtyElementIds` prop threading)를 데드코드로 제거하여 메모리 누적 원천 차단.
 
 ---
 

@@ -65,14 +65,6 @@ export class PersistentTaffyTree {
   private handleMap = new Map<string, TaffyNodeHandle>();
 
   /**
-   * elementId → version counter.
-   * Store의 dirtyElementIds 기반으로 증분된 version과 비교하여
-   * 변경 없는 노드의 updateStyle 호출 및 JSON.stringify를 O(1)으로 스킵한다.
-   * (ADR-006 P3-3: JSON.stringify 해시 비교 → version counter 교체)
-   */
-  private styleVersionMap = new Map<string, number>();
-
-  /**
    * elementId → 마지막으로 WASM에 전달한 JSON.
    * 간접 의존성 변경 감지(부모/형제 변경 → enrichment/display adapter 결과 변경)를 위해
    * JSON 문자열 비교를 수행하며, 동일하면 WASM 호출을 스킵한다.
@@ -112,7 +104,7 @@ export class PersistentTaffyTree {
    *
    * fullTreeLayout.ts의 DFS post-order 순회 결과(batch)를 받아서
    * buildTreeBatch() 1회 WASM 호출로 전체 트리를 구축하고
-   * handleMap / styleVersionMap / childrenHashMap을 초기화한다.
+   * handleMap / childrenHashMap / _lastJsonMap을 초기화한다.
    *
    * post-order 배열의 마지막 요소가 루트이므로 rootHandle = handles[last].
    *
@@ -143,16 +135,12 @@ export class PersistentTaffyTree {
 
     // 2. 내부 맵 초기화 후 새 상태로 구성
     this.handleMap.clear();
-    this.styleVersionMap.clear();
     this.childrenHashMap.clear();
     this._lastJsonMap.clear();
 
     for (let i = 0; i < batch.length; i++) {
       const node = batch[i];
       this.handleMap.set(node.elementId, handles[i]);
-      // buildFull 시점에는 version 0 (=초기 상태)으로 기록
-      // 이후 incrementalUpdate에서 dirtyElementIds 기반으로 증분된 version 전달
-      this.styleVersionMap.set(node.elementId, 0);
       this._lastJsonMap.set(node.elementId, JSON.stringify(node.style));
 
       // childrenHashMap: filteredChildIds 기준 (implicit style 적용 후 실제 자식)
@@ -182,11 +170,10 @@ export class PersistentTaffyTree {
   /**
    * 노드 스타일 증분 갱신.
    *
-   * 변경 감지 전략 (2단계):
-   * 1. version counter O(1) 비교 — dirty 요소 감지 (fast path)
-   * 2. JSON 문자열 비교 — 간접 의존성 변경 감지 (safe path)
-   *    부모/형제 변경에 의한 enrichment, display adapter, implicit style 변경 등
-   *    dirty 마킹 없이도 스타일이 달라질 수 있으므로 JSON 비교로 최종 확인.
+   * JSON 문자열 비교로 실제 변경 여부를 판단한다.
+   * DFS 순회 중 계산되는 스타일은 부모/형제/자식 컨텍스트에 의존하므로,
+   * Store 레벨 dirty tracking만으로는 모든 변경을 포착할 수 없다.
+   * JSON 비교는 DFS 계산 결과를 직접 비교하여 의존 경로와 무관하게 정확하다.
    *
    * Taffy는 내부적으로 mark_dirty()를 호출하므로 다음 computeLayout()에서
    * 해당 노드와 조상 노드만 재계산된다.
@@ -196,13 +183,11 @@ export class PersistentTaffyTree {
    *
    * @param elementId   - 업데이트할 요소 ID
    * @param styleRecord - taffyStyleToRecord() 결과 (이미 정규화된 Record)
-   * @param styleVersion - Store에서 요소 스타일 변경 시 증분된 version counter.
    * @returns true if 실제로 스타일이 변경되어 WASM 호출이 발생한 경우
    */
   updateNodeStyle(
     elementId: string,
     styleRecord: Record<string, unknown>,
-    styleVersion: number,
   ): boolean {
     const handle = this.handleMap.get(elementId);
     if (handle === undefined) return false;
@@ -214,15 +199,12 @@ export class PersistentTaffyTree {
     const existingJson = this._lastJsonMap.get(elementId);
 
     if (existingJson === json) {
-      // JSON 동일 → WASM 호출 불필요, version만 동기화
-      this.styleVersionMap.set(elementId, styleVersion);
       return false;
     }
 
     // taffyStyleToRecord() 결과는 이미 "Npx" 형식으로 정규화되어 있으므로
     // normalizeStyle() 이중 변환을 방지하기 위해 updateStyleRaw() 사용
     this.taffy.updateStyleRaw(handle, json);
-    this.styleVersionMap.set(elementId, styleVersion);
     this._lastJsonMap.set(elementId, json);
     return true;
   }
@@ -276,9 +258,6 @@ export class PersistentTaffyTree {
     // normalizeStyle() 이중 변환 방지를 위해 createNodeRaw() 사용
     const handle = this.taffy.createNodeRaw(json);
     this.handleMap.set(elementId, handle);
-    // 새 노드는 version 0으로 초기화 (다음 incrementalUpdate에서 dirtyElementIds에 포함되므로
-    // 실제 version은 1 이상으로 즉시 증분됨)
-    this.styleVersionMap.set(elementId, 0);
     this._lastJsonMap.set(elementId, json);
     // childrenHashMap은 updateChildren() 호출 시 설정
     return handle;
@@ -298,7 +277,6 @@ export class PersistentTaffyTree {
 
     this.taffy.removeNode(handle);
     this.handleMap.delete(elementId);
-    this.styleVersionMap.delete(elementId);
     this._lastJsonMap.delete(elementId);
     this.childrenHashMap.delete(elementId);
   }
@@ -397,7 +375,6 @@ export class PersistentTaffyTree {
     }
     this.rootHandle = null;
     this.handleMap.clear();
-    this.styleVersionMap.clear();
     this._lastJsonMap.clear();
     this.childrenHashMap.clear();
   }
