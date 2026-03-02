@@ -27,11 +27,35 @@ export interface TypographyStyleValues {
   textDecoration: string;
   textTransform: string;
   verticalAlign: string;
+  // ADR-008: 텍스트 래핑 속성
+  whiteSpace: string;
+  wordBreak: string;
+  overflowWrap: string;
+  textOverflow: string;
+  overflow: string;
+  /** ADR-008: 조합 테이블 기반 파생 프리셋 */
+  textBehaviorPreset: string;
   /**
    * fontSize가 inline style / computedStyle이 아닌 size prop preset에서 파생된 값인지 여부.
    * true이면 StylePanel에서 "preset" 뱃지 표시 가능.
    */
   isFontSizeFromPreset?: boolean;
+}
+
+/**
+ * ADR-008: 텍스트 래핑 속성 조합 → 프리셋 이름 파생
+ */
+function deriveTextBehaviorPreset(
+  ws: string, wb: string, ow: string, to: string, of: string,
+): string {
+  if (ws === 'nowrap' && to === 'ellipsis' && of === 'hidden') return 'truncate';
+  if (ws === 'nowrap') return 'nowrap';
+  if (ws === 'pre-wrap') return 'preserve';
+  if (wb === 'break-all') return 'break-all';
+  if (wb === 'keep-all') return 'keep-all';
+  if (ow === 'break-word') return 'break-words';
+  if (ws === 'normal' && wb === 'normal' && ow === 'normal' && to === 'clip' && of === 'visible') return 'normal';
+  return 'custom';
 }
 
 /**
@@ -59,6 +83,10 @@ export function useTypographyValuesJotai(): TypographyStyleValues | null {
   return {
     ...values,
     isFontSizeFromPreset,
+    textBehaviorPreset: deriveTextBehaviorPreset(
+      values.whiteSpace, values.wordBreak, values.overflowWrap,
+      values.textOverflow, values.overflow,
+    ),
   };
 }
 

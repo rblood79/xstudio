@@ -569,7 +569,13 @@ function measureSpecTextMinHeight(
   shapes: Shape[],
   containerWidth: number,
   sizeSpec: Record<string, unknown>,
+  whiteSpace?: string,
+  wordBreak?: string,
+  overflowWrap?: string,
 ): number | undefined {
+  // ADR-008: nowrap/pre → 텍스트 줄바꿈 없음 → 높이 확장 불필요
+  if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return undefined;
+
   const paddingY = (sizeSpec.paddingY as number) ?? 8;
 
   for (const shape of shapes) {
@@ -603,6 +609,9 @@ function measureSpecTextMinHeight(
     const lineHeight = fontSize * 1.2;
     const wrappedHeight = measureWrappedTextHeight(
       shape.text, fontSize, fontWeight, fontFamily, maxWidth,
+      undefined,
+      wordBreak as 'normal' | 'break-all' | 'keep-all' | undefined,
+      overflowWrap as 'normal' | 'break-word' | 'anywhere' | undefined,
     );
 
     // 한 줄이면 auto-height 불필요
@@ -1219,7 +1228,12 @@ export const ElementSprite = memo(function ElementSprite({
             // 텍스트 줄바꿈 시 높이 자동 확장: 명시적 height가 없을 때만
             const hasExplicitHeight = style?.height !== undefined && style?.height !== 'auto';
             if (!hasExplicitHeight && finalWidth > 0) {
-              const textMinHeight = measureSpecTextMinHeight(shapes, finalWidth, sizeSpec);
+              const textMinHeight = measureSpecTextMinHeight(
+                shapes, finalWidth, sizeSpec,
+                style?.whiteSpace as string | undefined,
+                style?.wordBreak as string | undefined,
+                style?.overflowWrap as string | undefined,
+              );
               if (textMinHeight !== undefined && textMinHeight > specHeight) {
                 specHeight = textMinHeight;
                 cardCalculatedHeight = textMinHeight;
@@ -1292,13 +1306,27 @@ export const ElementSprite = memo(function ElementSprite({
             if (specNode.children) {
               for (const child of specNode.children) {
                 if (child.type === 'text' && child.text) {
-                  const wrappedH = measureWrappedTextHeight(
-                    child.text.content, child.text.fontSize, child.text.fontWeight || 500,
-                    child.text.fontFamilies[0] || 'Pretendard', child.text.maxWidth,
-                  );
-                  const lineHeight = child.text.fontSize * 1.2;
-                  if (wrappedH > lineHeight + 0.5) {
-                    child.text.paddingTop = Math.max(0, (specHeight - wrappedH) / 2);
+                  // ADR-008: element style → spec text child에 텍스트 래핑 속성 주입
+                  if (style?.whiteSpace) child.text.whiteSpace = style.whiteSpace as typeof child.text.whiteSpace;
+                  if (style?.wordBreak) child.text.wordBreak = style.wordBreak as typeof child.text.wordBreak;
+                  if (style?.overflowWrap) child.text.overflowWrap = style.overflowWrap as typeof child.text.overflowWrap;
+                  if (style?.textOverflow) child.text.textOverflow = style.textOverflow as typeof child.text.textOverflow;
+                  if (style?.overflow === 'hidden' || style?.overflow === 'clip') child.text.clipText = true;
+
+                  // ADR-008: nowrap/pre → 단일 줄 → paddingTop 보정 불필요
+                  const ws = child.text.whiteSpace;
+                  if (ws !== 'nowrap' && ws !== 'pre') {
+                    const wrappedH = measureWrappedTextHeight(
+                      child.text.content, child.text.fontSize, child.text.fontWeight || 500,
+                      child.text.fontFamilies[0] || 'Pretendard', child.text.maxWidth,
+                      undefined,
+                      style?.wordBreak as 'normal' | 'break-all' | 'keep-all' | undefined,
+                      style?.overflowWrap as 'normal' | 'break-word' | 'anywhere' | undefined,
+                    );
+                    const lineHeight = child.text.fontSize * 1.2;
+                    if (wrappedH > lineHeight + 0.5) {
+                      child.text.paddingTop = Math.max(0, (specHeight - wrappedH) / 2);
+                    }
                   }
                 }
               }

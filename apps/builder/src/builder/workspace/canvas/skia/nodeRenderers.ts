@@ -168,6 +168,8 @@ export interface SkiaNodeData {
     fontVariant?: string;
     /** CSS font-stretch 값 (예: 'condensed', '75%') */
     fontStretch?: string;
+    /** ADR-008: overflow:hidden|clip 시 텍스트 영역 클리핑 */
+    clipText?: boolean;
   };
   /** Image 전용 */
   image?: {
@@ -1152,6 +1154,85 @@ export function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeDat
   paint.delete();
 }
 
+/**
+ * keep-all 에뮬레이션: 공백에서만 분할하여 최대 단어 너비 계산
+ *
+ * @param allowOverflowBreak - true면 단어가 maxWidth 초과 시 CanvasKit 기본 분할 허용
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function computeKeepAllWidth(
+  ck: any, paraStyle: any, fontMgr: any,
+  text: string, maxWidth: number, allowOverflowBreak: boolean,
+): number {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return maxWidth;
+  let maxWordWidth = 0;
+  for (const word of words) {
+    const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+    b.addText(word);
+    const p = b.build();
+    p.layout(1e6);
+    const ww = p.getMaxIntrinsicWidth();
+    p.delete();
+    b.delete();
+    if (ww > maxWordWidth) maxWordWidth = ww;
+  }
+  if (allowOverflowBreak && maxWordWidth > maxWidth) return maxWidth;
+  return Math.max(maxWidth, Math.ceil(maxWordWidth));
+}
+
+/**
+ * CSS overflow-wrap: break-word 렌더링 전처리
+ *
+ * maxWidth를 초과하는 단어 앞에 \n을 삽입하여 새 줄로 이동시키고,
+ * 내부에 ZWS를 삽입하여 문자 단위 줄바꿈을 허용한다.
+ * 이를 통해 CanvasKit이 CSS break-word와 유사하게 렌더링한다.
+ */
+function preprocessBreakWordText(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ck: any, paraStyle: any, fontMgr: any,
+  text: string, maxWidth: number,
+): string {
+  const tokens = text.split(/(\s+)/);
+  const result: string[] = [];
+  let hasContentBefore = false;
+
+  for (const token of tokens) {
+    if (!token) continue;
+
+    if (/^\s+$/.test(token)) {
+      result.push(token);
+      continue;
+    }
+
+    // 단어 폭 측정
+    const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+    b.addText(token);
+    const p = b.build();
+    p.layout(1e6);
+    const ww = p.getMaxIntrinsicWidth();
+    p.delete();
+    b.delete();
+
+    if (ww > maxWidth) {
+      // maxWidth 초과 단어: 앞에 \n 삽입하여 새 줄로 이동 + ZWS로 문자 분할
+      if (hasContentBefore && result.length > 0) {
+        const lastIdx = result.length - 1;
+        if (/^\s+$/.test(result[lastIdx])) {
+          result[lastIdx] = '\n';
+        }
+      }
+      result.push(Array.from(token).join('\u200B'));
+    } else {
+      result.push(token);
+    }
+
+    hasContentBefore = true;
+  }
+
+  return result.join('');
+}
+
 /** Text 노드 렌더링 */
 export function renderText(
   ck: CanvasKit,
@@ -1179,7 +1260,7 @@ export function renderText(
     ? 100000
     : node.text.maxWidth;
 
-  // wordBreak/overflowWrap: 캐시 key에 포함 (CanvasKit API 지원 시 break 동작에 사용 예정)
+  // wordBreak/overflowWrap
   const wordBreak = node.text.wordBreak ?? 'normal';
   const overflowWrap = node.text.overflowWrap ?? 'normal';
 
@@ -1191,8 +1272,10 @@ export function renderText(
     : 0;
   // text-indent: 첫 줄 들여쓰기 (px)
   const textIndent = node.text.textIndent ?? 0;
-  // text-overflow: ellipsis 여부 (nowrap 조합에서만 의미)
-  const isEllipsis = node.text.textOverflow === 'ellipsis';
+  // text-overflow: ellipsis 여부 — ADR-008: nowrap + overflow:hidden|clip 조합에서만 유효
+  const isEllipsis = node.text.textOverflow === 'ellipsis'
+    && whiteSpace === 'nowrap'
+    && !!node.text.clipText;
   // decoration color key
   const dc = node.text.decorationColor;
   const decorationColorKey = dc
@@ -1348,40 +1431,87 @@ export function renderText(
       // key에 포함되어 캐시를 분리하며, 향후 CanvasKit API 업데이트 시 여기서 처리 예정.
     });
 
+    // ADR-008: text preprocessing for word-break/overflow-wrap
+    let renderText = processedText;
+    if (wordBreak === 'break-all') {
+      renderText = Array.from(processedText).join('\u200B');
+    } else if ((overflowWrap === 'break-word' || overflowWrap === 'anywhere') && wordBreak !== 'break-all') {
+      renderText = preprocessBreakWordText(ck, paraStyle, fontMgr, processedText, layoutMaxWidth);
+    }
+
     const builder = scope.track(ck.ParagraphBuilder.Make(paraStyle, fontMgr));
-    builder.addText(processedText);
+    builder.addText(renderText);
     const paragraph = builder.build();
-    // text-overflow ellipsis 시 nowrap layoutMaxWidth가 매우 크므로
-    // 실제 컨테이너 maxWidth로 재레이아웃하여 잘림 처리
-    // CSS word-break: normal 에뮬레이션 — CanvasKit HarfBuzz 기본 동작은
-    // 컨테이너보다 넓은 단어를 문자 단위로 분할(overflow-wrap: break-word 유사).
-    // CSS word-break: normal은 단어 내부에서 줄바꿈하지 않으므로,
-    // 가장 넓은 단어의 너비를 하한으로 사용하여 문자 분할을 방지한다.
+
+    // ADR-008: word-break × overflow-wrap 조합 테이블 기반 effectiveLayoutWidth 계산
     let effectiveLayoutWidth = isEllipsis ? node.text.maxWidth : layoutMaxWidth;
-    if (wordBreak === 'normal' && overflowWrap === 'normal' && !isEllipsis && layoutMaxWidth < 100000) {
-      const words = processedText.split(/\s+/).filter(Boolean);
-      if (words.length > 0) {
-        let maxWordWidth = 0;
-        for (const word of words) {
-          const wb = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-          wb.addText(word);
-          const wp = wb.build();
-          wp.layout(1e6);
-          const ww = wp.getMaxIntrinsicWidth();
-          wp.delete();
-          wb.delete();
-          if (ww > maxWordWidth) maxWordWidth = ww;
+    if (!isEllipsis && layoutMaxWidth < 100000) {
+      if (wordBreak === 'break-all') {
+        // break-all: ZWS로 이미 분할 가능 → maxWidth 그대로
+        effectiveLayoutWidth = layoutMaxWidth;
+      } else if (overflowWrap === 'break-word' || overflowWrap === 'anywhere') {
+        if (wordBreak === 'keep-all') {
+          // keep-all + break-word: CJK 단어 넘침 시에만 분할 허용
+          effectiveLayoutWidth = computeKeepAllWidth(ck, paraStyle, fontMgr, processedText, layoutMaxWidth, true);
+        } else {
+          // normal + break-word/anywhere: CanvasKit 기본 동작
+          effectiveLayoutWidth = layoutMaxWidth;
         }
-        // 부동소수점 정밀도 이슈 방지: getMaxIntrinsicWidth()와 layout() 사이의
-        // 미세한 차이로 인해 동일 너비에서도 줄바꿈이 발생할 수 있으므로 ceil 적용
-        effectiveLayoutWidth = Math.max(layoutMaxWidth, Math.ceil(maxWordWidth));
+      } else if (wordBreak === 'keep-all') {
+        // keep-all + normal: CJK 넘침 허용 (단어 보호)
+        effectiveLayoutWidth = computeKeepAllWidth(ck, paraStyle, fontMgr, processedText, layoutMaxWidth, false);
+      } else {
+        // normal + normal: 기존 단어 보호 로직
+        const words = processedText.split(/\s+/).filter(Boolean);
+        if (words.length > 0) {
+          let maxWordWidth = 0;
+          for (const word of words) {
+            const wb = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+            wb.addText(word);
+            const wp = wb.build();
+            wp.layout(1e6);
+            const ww = wp.getMaxIntrinsicWidth();
+            wp.delete();
+            wb.delete();
+            if (ww > maxWordWidth) maxWordWidth = ww;
+          }
+          effectiveLayoutWidth = Math.max(layoutMaxWidth, Math.ceil(maxWordWidth));
+        }
       }
     }
     paragraph.layout(effectiveLayoutWidth);
+
+    // ADR-008: nowrap/pre — CanvasKit은 매우 큰 layout width(100000+)로 렌더링하면
+    // 텍스트가 보이지 않는 내부 이슈가 있다. maxIntrinsicWidth로 재레이아웃하여
+    // 단일 줄 렌더링을 보장한다. (ellipsis 경로는 maxLines:1로 자체 처리)
+    if (!isEllipsis && (whiteSpace === 'nowrap' || whiteSpace === 'pre')) {
+      const intrinsicWidth = paragraph.getMaxIntrinsicWidth();
+      if (intrinsicWidth > 0) {
+        paragraph.layout(Math.ceil(intrinsicWidth) + 1);
+      }
+    }
+
     setCachedParagraph(key, paragraph);
     const drawY = computeDrawY(paragraph);
+
+    // ADR-008 Phase 3: clipText 시 텍스트 영역 클리핑
+    // ellipsis는 CanvasKit이 maxLines+ellipsis로 자체 처리하므로 clip 불필요
+    const shouldClip = node.text.clipText && !isEllipsis;
+    if (shouldClip) {
+      canvas.save();
+      canvas.clipRect(
+        ck.XYWHRect(0, 0, node.width, node.height),
+        ck.ClipOp.Intersect,
+        true,
+      );
+    }
+
     // text-indent: 첫 줄 들여쓰기 → paddingLeft에 offset 추가
     canvas.drawParagraph(paragraph, node.text.paddingLeft + textIndent, drawY);
+
+    if (shouldClip) {
+      canvas.restore();
+    }
   } finally {
     scope.dispose();
   }

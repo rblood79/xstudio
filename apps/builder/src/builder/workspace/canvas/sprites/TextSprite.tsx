@@ -385,6 +385,8 @@ export const TextSprite = memo(function TextSprite({
         ...(style?.wordSpacing != null ? { wordSpacing: parseCSSSize(style.wordSpacing, undefined, 0) } : {}),
         // text-overflow: ellipsis (C-1): overflow:hidden + white-space:nowrap 조합에서 동작
         ...(style?.textOverflow ? { textOverflow: style.textOverflow as 'ellipsis' | 'clip' } : {}),
+        // ADR-008 Phase 3: overflow:hidden|clip → 텍스트 영역 클리핑
+        ...(style?.overflow === 'hidden' || style?.overflow === 'clip' ? { clipText: true } : {}),
         // text-indent: 첫 줄 들여쓰기 (C-3)
         ...(style?.textIndent != null ? { textIndent: parseCSSSize(style.textIndent, undefined, 0) } : {}),
         // font-variant: OpenType feature (예: small-caps)

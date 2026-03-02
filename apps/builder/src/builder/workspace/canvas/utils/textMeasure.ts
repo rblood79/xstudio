@@ -36,6 +36,9 @@ export interface TextMeasureStyle {
   fontStyle?: number | string;  // 0|'normal'=upright, 1|'italic', 2|'oblique'
   fontStretch?: string;         // 'normal', 'condensed', 'expanded' 등
   fontVariant?: string;         // 'normal', 'small-caps' 등
+  // CSS 텍스트 래핑 에뮬레이션 (ADR-008)
+  wordBreak?: 'normal' | 'break-all' | 'keep-all';
+  overflowWrap?: 'normal' | 'break-word' | 'anywhere';
 }
 
 /**
@@ -122,29 +125,81 @@ export class Canvas2DTextMeasurer implements TextMeasurer {
         : '';
     ctx.font = `${fontStyleStr}${style.fontWeight ?? 400} ${style.fontSize}px ${style.fontFamily}`;
 
+    // ADR-008: word-break × overflow-wrap 에뮬레이션
+    const wb = style.wordBreak || 'normal';
+    const ow = style.overflowWrap || 'normal';
+
+    // break-all: 모든 문자가 줄바꿈 지점 → 문자 단위 측정
+    if (wb === 'break-all') {
+      return this._measureBreakAll(ctx, text, maxWidth, lineHeight, style);
+    }
+
     const words = text.split(/(\s+)/); // 공백 포함 분리
     let lineCount = 1;
     let currentLineWidth = 0;
+    const allowBreakWord = ow === 'break-word' || ow === 'anywhere';
 
     for (const word of words) {
-      let wordWidth = ctx.measureText(word).width;
-      // letterSpacing 가산
-      if (style.letterSpacing && style.letterSpacing !== 0) {
-        wordWidth += style.letterSpacing * Math.max(0, word.length - 1);
-      }
-      // wordSpacing 가산 (공백 토큰에 적용)
+      let wordWidth = this._measureWord(ctx, word, style);
+      // 공백 토큰: wordSpacing 가산
       if (style.wordSpacing && style.wordSpacing !== 0 && /^\s+$/.test(word)) {
         const spaceCount = (word.match(/ /g) ?? []).length;
         wordWidth += style.wordSpacing * spaceCount;
       }
       if (currentLineWidth + wordWidth > maxWidth && currentLineWidth > 0) {
-        lineCount++;
-        currentLineWidth = wordWidth;
+        // ADR-008: overflow-wrap: break-word — 단어가 maxWidth보다 크면 문자 단위 분할
+        if (allowBreakWord && wordWidth > maxWidth) {
+          // 먼저 새 줄로 이동 후 문자 단위 분할 (CSS break-word 동작)
+          lineCount++;
+          currentLineWidth = 0;
+          const chars = Array.from(word);
+          for (const ch of chars) {
+            const chWidth = this._measureWord(ctx, ch, style);
+            if (currentLineWidth + chWidth > maxWidth && currentLineWidth > 0) {
+              lineCount++;
+              currentLineWidth = chWidth;
+            } else {
+              currentLineWidth += chWidth;
+            }
+          }
+        } else {
+          lineCount++;
+          currentLineWidth = wordWidth;
+        }
       } else {
         currentLineWidth += wordWidth;
       }
     }
 
+    return { width: maxWidth, height: lineCount * lineHeight };
+  }
+
+  /** 단어 폭 측정 (letterSpacing 포함) */
+  private _measureWord(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, word: string, style: TextMeasureStyle): number {
+    let w = ctx.measureText(word).width;
+    if (style.letterSpacing && style.letterSpacing !== 0) {
+      w += style.letterSpacing * Math.max(0, word.length - 1);
+    }
+    return w;
+  }
+
+  /** break-all: 문자 단위 줄바꿈 측정 */
+  private _measureBreakAll(
+    ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+    text: string, maxWidth: number, lineHeight: number, style: TextMeasureStyle,
+  ): TextMeasureResult {
+    const chars = Array.from(text);
+    let lineCount = 1;
+    let currentLineWidth = 0;
+    for (const ch of chars) {
+      const chWidth = this._measureWord(ctx, ch, style);
+      if (currentLineWidth + chWidth > maxWidth && currentLineWidth > 0) {
+        lineCount++;
+        currentLineWidth = chWidth;
+      } else {
+        currentLineWidth += chWidth;
+      }
+    }
     return { width: maxWidth, height: lineCount * lineHeight };
   }
 }
@@ -359,12 +414,16 @@ export function measureWrappedTextHeight(
   fontFamily: string,
   maxWidth: number,
   lineHeight?: number,
+  wordBreak?: 'normal' | 'break-all' | 'keep-all',
+  overflowWrap?: 'normal' | 'break-word' | 'anywhere',
 ): number {
   const result = getTextMeasurer().measureWrapped(text, {
     fontSize,
     fontFamily,
     fontWeight,
     lineHeight,
+    wordBreak,
+    overflowWrap,
   }, maxWidth);
   return result.height;
 }

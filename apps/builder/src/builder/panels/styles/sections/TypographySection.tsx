@@ -28,6 +28,7 @@ import {
   CaseLower,
   CaseUpper,
   Baseline,
+  WrapText,
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
@@ -46,13 +47,30 @@ import {
  * - Jotai atom에서 직접 값 구독 (props 불필요)
  */
 const TypographySectionContent = memo(function TypographySectionContent() {
-  const { updateStyle } = useStyleActions();
+  const { updateStyle, updateStyles } = useStyleActions();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
   const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useTypographyValuesJotai();
   const [customFonts, setCustomFonts] = useState(() => getCustomFonts());
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ADR-008: Text Behavior 프리셋 변경 핸들러
+  // updateStyles (batch)로 5개 속성을 단일 set()에 적용 → 히스토리 1건 + 레이아웃 1회
+  const handleTextBehaviorChange = useCallback((preset: string) => {
+    const presets: Record<string, Record<string, string>> = {
+      normal:        { whiteSpace: '', wordBreak: '', overflowWrap: '', textOverflow: '', overflow: '' },
+      nowrap:        { whiteSpace: 'nowrap', wordBreak: '', overflowWrap: '', textOverflow: '', overflow: '' },
+      truncate:      { whiteSpace: 'nowrap', wordBreak: '', overflowWrap: '', textOverflow: 'ellipsis', overflow: 'hidden' },
+      'break-words': { whiteSpace: '', wordBreak: '', overflowWrap: 'break-word', textOverflow: '', overflow: '' },
+      'break-all':   { whiteSpace: '', wordBreak: 'break-all', overflowWrap: '', textOverflow: '', overflow: '' },
+      'keep-all':    { whiteSpace: '', wordBreak: 'keep-all', overflowWrap: 'break-word', textOverflow: '', overflow: '' },
+      preserve:      { whiteSpace: 'pre-wrap', wordBreak: '', overflowWrap: '', textOverflow: '', overflow: '' },
+    };
+    const values = presets[preset];
+    if (!values) return; // 'custom' → no-op
+    updateStyles(values);
+  }, [updateStyles]);
 
   useEffect(() => {
     const syncFonts = () => setCustomFonts(getCustomFonts());
@@ -412,6 +430,25 @@ const TypographySectionContent = memo(function TypographySectionContent() {
           </ToggleButton>
         </ToggleButtonGroup>
       </fieldset>
+
+      {/* ADR-008: Text Behavior Preset */}
+      <PropertySelect
+        icon={WrapText}
+        label="Text Behavior"
+        className="text-behavior"
+        value={styleValues.textBehaviorPreset}
+        options={[
+          { value: 'normal', label: 'Normal' },
+          { value: 'nowrap', label: 'No Wrap' },
+          { value: 'truncate', label: 'Truncate (...)' },
+          { value: 'break-words', label: 'Break Words' },
+          { value: 'break-all', label: 'Break All' },
+          { value: 'keep-all', label: 'Keep All (CJK)' },
+          { value: 'preserve', label: 'Preserve' },
+          { value: 'custom', label: 'Custom...' },
+        ]}
+        onChange={handleTextBehaviorChange}
+      />
     </>
   );
 });
@@ -438,6 +475,11 @@ export const TypographySection = memo(function TypographySection() {
       'textDecoration',
       'textTransform',
       'verticalAlign',
+      'whiteSpace',
+      'wordBreak',
+      'overflowWrap',
+      'textOverflow',
+      'overflow',
     ]);
   };
 

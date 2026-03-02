@@ -1031,7 +1031,9 @@ export function calculateContentHeight(
         if (textContent) {
           const ws = (style?.whiteSpace as string) ?? 'normal';
           const fw = parseNumericValue(style?.fontWeight) ?? 500;
-          const measured = measureTextWithWhiteSpace(textContent, fontSize, specFontFamily.sans, fw, ws, maxTextWidth);
+          const wbVal = (style?.wordBreak as string) ?? undefined;
+          const owVal = (style?.overflowWrap as string) ?? undefined;
+          const measured = measureTextWithWhiteSpace(textContent, fontSize, specFontFamily.sans, fw, ws, maxTextWidth, wbVal, owVal);
           if (measured.height > textHeight + 0.5) {
             const wrappedHeight = Math.max(measured.height, minContentHeight);
             // 텍스트 줄바꿈 높이가 configHeight보다 크면 확장
@@ -1581,7 +1583,9 @@ export function calculateContentHeight(
       if (maxTextWidth > 0) {
         // Tailwind CSS v4 기본 line-height: 1.5 → fontSize * 1.5
         const resolvedLH = parseLineHeight(style, fs0) ?? (fs0 * 1.5);
-        const wrappedHeight = measureWrappedTextHeight(textContent, fs0, fw0, ff0, maxTextWidth, resolvedLH);
+        const wb1 = (style?.wordBreak as string) as 'normal' | 'break-all' | 'keep-all' | undefined;
+        const ow1 = (style?.overflowWrap as string) as 'normal' | 'break-word' | 'anywhere' | undefined;
+        const wrappedHeight = measureWrappedTextHeight(textContent, fs0, fw0, ff0, maxTextWidth, resolvedLH, wb1, ow1);
         const singleLineH = resolvedLH;
         if (wrappedHeight > singleLineH + 0.5) {
           return wrappedHeight;
@@ -2183,10 +2187,16 @@ export function measureTextWithWhiteSpace(
   fontWeight: number | string,
   whiteSpace: string,
   maxWidth: number,
+  wordBreak?: string,
+  overflowWrap?: string,
 ): { width: number; height: number } {
   // CSS line-height: normal 근사값 (fontBoundingBox 기반)
   const fm = measureFontMetrics(fontFamily, fontSize, fontWeight);
   const lineHeight = fm.lineHeight;
+
+  // ADR-008: word-break/overflow-wrap 타입 캐스팅
+  const wb = wordBreak as 'normal' | 'break-all' | 'keep-all' | undefined;
+  const ow = overflowWrap as 'normal' | 'break-word' | 'anywhere' | undefined;
 
   switch (whiteSpace) {
     case 'nowrap': {
@@ -2212,14 +2222,14 @@ export function measureTextWithWhiteSpace(
         : text;
       return {
         width: maxWidth,
-        height: measureWrappedTextHeight(processedText, fontSize, fontWeight, fontFamily, maxWidth),
+        height: measureWrappedTextHeight(processedText, fontSize, fontWeight, fontFamily, maxWidth, undefined, wb, ow),
       };
     }
     default: {
       // normal: 기본 동작
       return {
         width: maxWidth,
-        height: measureWrappedTextHeight(text, fontSize, fontWeight, fontFamily, maxWidth),
+        height: measureWrappedTextHeight(text, fontSize, fontWeight, fontFamily, maxWidth, undefined, wb, ow),
       };
     }
   }

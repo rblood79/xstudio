@@ -687,6 +687,12 @@ export const typographyValuesAtom = selectAtom(
       textDecoration: String(style.textDecoration ?? computed.textDecoration ?? 'none'),
       textTransform: String(style.textTransform ?? computed.textTransform ?? 'none'),
       verticalAlign: String(style.verticalAlign ?? computed.verticalAlign ?? 'baseline'),
+      // ADR-008: 텍스트 래핑 속성
+      whiteSpace: String(style.whiteSpace ?? computed.whiteSpace ?? 'normal'),
+      wordBreak: String(style.wordBreak ?? computed.wordBreak ?? 'normal'),
+      overflowWrap: String(style.overflowWrap ?? computed.overflowWrap ?? 'normal'),
+      textOverflow: String(style.textOverflow ?? computed.textOverflow ?? 'clip'),
+      overflow: String(style.overflow ?? computed.overflow ?? 'visible'),
     };
   },
   (a, b) => {
@@ -703,7 +709,12 @@ export const typographyValuesAtom = selectAtom(
       a.textAlign === b.textAlign &&
       a.textDecoration === b.textDecoration &&
       a.textTransform === b.textTransform &&
-      a.verticalAlign === b.verticalAlign
+      a.verticalAlign === b.verticalAlign &&
+      a.whiteSpace === b.whiteSpace &&
+      a.wordBreak === b.wordBreak &&
+      a.overflowWrap === b.overflowWrap &&
+      a.textOverflow === b.textOverflow &&
+      a.overflow === b.overflow
     );
   }
 );
