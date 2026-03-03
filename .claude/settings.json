@@ -3,8 +3,8 @@
     "allow": [
       "Bash(node scripts/:*)",
       "Bash(npx playwright:*)",
-      "Bash(npm run check:*)",
-      "Bash(npm run perf:*)"
+      "Bash(pnpm run check:*)",
+      "Bash(pnpm run perf:*)"
     ]
   },
   "hooks": {
