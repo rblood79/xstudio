@@ -39,12 +39,12 @@
 
 ### 미구현
 
-| ADR                                      | 제목                               | 상태     | 규모                                                   | 우선순위 |
-| ---------------------------------------- | ---------------------------------- | -------- | ------------------------------------------------------ | :------: |
-| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩        | Proposed | 5 Phase, 21파일                                        |  **P3**  |
-| [014](014-fonts.md)                      | Fonts 실행 계획                    | Proposed | Phase A~E, 프로젝트 레벨 폰트 시스템                   |  **P2**  |
-| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                           |    P5    |
-| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations |    P5    |
+| ADR                                      | 제목                               | 상태     | 규모                                                            | 우선순위 |
+| ---------------------------------------- | ---------------------------------- | -------- | --------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩        | Proposed | 5 Phase, 21파일                                                 |  **P3**  |
+| [014](014-fonts.md)                      | Fonts 실행 계획                    | Partial  | Phase A+B 완료, Phase C~E 미구현 (localStorage 레지스트리 기반) |  **P2**  |
+| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                                    |    P5    |
+| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations          |    P5    |
 
 ---
 

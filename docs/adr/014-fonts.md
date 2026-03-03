@@ -1,5 +1,9 @@
 # FONTS 실행 계획서
 
+## Status
+
+Partial — Phase A+B 완료 (2026-03-04), Phase C~E 미구현
+
 ## 0) 확정 결정 (2026-02-13)
 
 1. 폰트 적용 규칙은 Builder/WebGL, Preview, Publish, Static Export에 **동일 적용**한다.
@@ -408,7 +412,13 @@ interface LegacyCustomFontAsset {
 
 ### Status 판단
 
-**Proposed 유지.** Phase A~E 전혀 시작되지 않은 상태이며, 코드 베이스의 기반 모듈(customFonts.ts, fontManager.ts, font.utils.ts)은 문서 Baseline과 일치한다.
+**Partial 승격 (2026-03-04)**. Phase A+B가 완료되었다.
+
+- ✅ Phase A: FontRegistryV2 타입 + CRUD + 마이그레이션 + CSS 생성 (`fontRegistry.ts`, `font.types.ts`)
+- ✅ Phase B: Builder UX 레지스트리 연동 (`customFonts.ts`, `initCustomFonts.ts`, `TypographySection.tsx`, `previewSrcdoc.ts`)
+- ❌ Phase C: Skia `loadFontFromBuffer()` 미구현
+- ❌ Phase D: Publish 앱 레지스트리 전환 미구현
+- ❌ Phase E: 정적 Export 멀티파일 미구현
 
 ---
 
