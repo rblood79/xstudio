@@ -196,7 +196,8 @@
 .workspace-compare-label {
   position: absolute;
   top: 8px;
-  left: 8px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 100;
   padding: 4px 12px;
   font-size: var(--text-xs);

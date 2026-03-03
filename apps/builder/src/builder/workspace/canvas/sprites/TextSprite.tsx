@@ -10,20 +10,29 @@
  * @updated 2025-12-15 Border-Box v2 - drawBox 유틸리티 적용
  */
 
-import { useExtend } from '@pixi/react';
-import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCallback, useMemo, useRef, useContext, memo } from 'react';
-import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
-import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, applyTextTransform, buildSkiaEffects, parseCSSSize, type CSSStyle } from './styleConverter';
-import { colord } from 'colord';
-import { parseZIndex, createsStackingContext } from '../layout/engines/cssStackingContext';
-import { parsePadding } from './paddingUtils';
-import { drawBox, parseBorderConfig } from '../utils';
-import { useSkiaNode } from '../skia/useSkiaNode';
-import type { SkiaNodeData } from '../skia/nodeRenderers';
-import { LayoutComputedSizeContext } from '../layoutContext';
-
+import { useExtend } from "@pixi/react";
+import { PIXI_COMPONENTS } from "../pixiSetup";
+import { useCallback, useMemo, useRef, useContext, memo } from "react";
+import { Graphics as PixiGraphics, TextStyle, Text } from "pixi.js";
+import type { Element } from "../../../../types/core/store.types";
+import {
+  convertStyle,
+  applyTextTransform,
+  buildSkiaEffects,
+  parseCSSSize,
+  type CSSStyle,
+} from "./styleConverter";
+import { colord } from "colord";
+import {
+  parseZIndex,
+  createsStackingContext,
+} from "../layout/engines/cssStackingContext";
+import { parsePadding } from "./paddingUtils";
+import { drawBox, parseBorderConfig } from "../utils";
+import { useSkiaNode } from "../skia/useSkiaNode";
+import type { SkiaNodeData } from "../skia/nodeRenderers";
+import { skiaFontManager } from "../skia/fontManager";
+import { LayoutComputedSizeContext } from "../layoutContext";
 
 // ============================================
 // Types
@@ -59,16 +68,18 @@ interface TextDecorationConfig {
  * parseTextDecoration('underline') // { underline: true, lineThrough: false, overline: false }
  * parseTextDecoration('underline line-through') // { underline: true, lineThrough: true, overline: false }
  */
-function parseTextDecoration(decoration: string | undefined): TextDecorationConfig {
-  if (!decoration || decoration === 'none') {
+function parseTextDecoration(
+  decoration: string | undefined,
+): TextDecorationConfig {
+  if (!decoration || decoration === "none") {
     return { underline: false, lineThrough: false, overline: false };
   }
 
   const lower = decoration.toLowerCase();
   return {
-    underline: lower.includes('underline'),
-    lineThrough: lower.includes('line-through'),
-    overline: lower.includes('overline'),
+    underline: lower.includes("underline"),
+    lineThrough: lower.includes("line-through"),
+    overline: lower.includes("overline"),
   };
 }
 
@@ -93,48 +104,65 @@ export const TextSprite = memo(function TextSprite({
 
     const styleWidth = style?.width;
     const styleHeight = style?.height;
-    const usesLayoutWidth = styleWidth === undefined || styleWidth === 'auto' ||
-      styleWidth === 'fit-content' || styleWidth === 'min-content' || styleWidth === 'max-content' ||
-      (typeof styleWidth === 'string' && styleWidth.endsWith('%'));
-    const usesLayoutHeight = styleHeight === undefined || styleHeight === 'auto' ||
-      styleHeight === 'fit-content' || styleHeight === 'min-content' || styleHeight === 'max-content' ||
-      (typeof styleHeight === 'string' && styleHeight.endsWith('%'));
+    const usesLayoutWidth =
+      styleWidth === undefined ||
+      styleWidth === "auto" ||
+      styleWidth === "fit-content" ||
+      styleWidth === "min-content" ||
+      styleWidth === "max-content" ||
+      (typeof styleWidth === "string" && styleWidth.endsWith("%"));
+    const usesLayoutHeight =
+      styleHeight === undefined ||
+      styleHeight === "auto" ||
+      styleHeight === "fit-content" ||
+      styleHeight === "min-content" ||
+      styleHeight === "max-content" ||
+      (typeof styleHeight === "string" && styleHeight.endsWith("%"));
 
     if (!usesLayoutWidth && !usesLayoutHeight) return converted.transform;
 
     return {
       ...converted.transform,
-      width: usesLayoutWidth ? computedContainerSize.width : converted.transform.width,
-      height: usesLayoutHeight ? computedContainerSize.height : converted.transform.height,
+      width: usesLayoutWidth
+        ? computedContainerSize.width
+        : converted.transform.width,
+      height: usesLayoutHeight
+        ? computedContainerSize.height
+        : converted.transform.height,
     };
   }, [computedContainerSize, converted.transform, style?.width, style?.height]);
 
   // display: flex일 때 flex 속성 → 텍스트 정렬 매핑
   // Text는 leaf 요소이므로 justify-content/align-items를 텍스트 수평/수직 정렬로 변환
   const flexAlignment = useMemo(() => {
-    if (style?.display !== 'flex') return null;
+    if (style?.display !== "flex") return null;
 
-    const dir = (style?.flexDirection as string) ?? 'row';
-    const isRow = dir === 'row' || dir === 'row-reverse';
-    const jc = (style?.justifyContent as string) ?? 'flex-start';
-    const ai = (style?.alignItems as string) ?? 'stretch';
+    const dir = (style?.flexDirection as string) ?? "row";
+    const isRow = dir === "row" || dir === "row-reverse";
+    const jc = (style?.justifyContent as string) ?? "flex-start";
+    const ai = (style?.alignItems as string) ?? "stretch";
 
-    const toHAlign = (v: string): 'left' | 'center' | 'right' => {
-      if (v === 'center') return 'center';
-      if (v === 'flex-end' || v === 'end') return 'right';
-      return 'left';
+    const toHAlign = (v: string): "left" | "center" | "right" => {
+      if (v === "center") return "center";
+      if (v === "flex-end" || v === "end") return "right";
+      return "left";
     };
 
-    const toVAlign = (v: string): 'top' | 'middle' | 'bottom' => {
-      if (v === 'center') return 'middle';
-      if (v === 'flex-end' || v === 'end') return 'bottom';
-      return 'top';
+    const toVAlign = (v: string): "top" | "middle" | "bottom" => {
+      if (v === "center") return "middle";
+      if (v === "flex-end" || v === "end") return "bottom";
+      return "top";
     };
 
     return isRow
       ? { textAlign: toHAlign(jc), verticalAlign: toVAlign(ai) }
       : { textAlign: toHAlign(ai), verticalAlign: toVAlign(jc) };
-  }, [style?.display, style?.flexDirection, style?.justifyContent, style?.alignItems]);
+  }, [
+    style?.display,
+    style?.flexDirection,
+    style?.justifyContent,
+    style?.alignItems,
+  ]);
 
   // Border-Box v2: parseBorderConfig로 border 정보 추출
   const borderConfig = useMemo(() => parseBorderConfig(style), [style]);
@@ -142,7 +170,9 @@ export const TextSprite = memo(function TextSprite({
   // Text content with P7.6 textTransform applied
   const textContent = useMemo(() => {
     const props = element.props as Record<string, unknown> | undefined;
-    const rawText = String(props?.children || props?.text || props?.label || element.tag);
+    const rawText = String(
+      props?.children || props?.text || props?.label || element.tag,
+    );
     // P7.6: Apply textTransform (uppercase, lowercase, capitalize)
     return applyTextTransform(rawText, style?.textTransform);
   }, [element.props, element.tag, style?.textTransform]);
@@ -150,9 +180,12 @@ export const TextSprite = memo(function TextSprite({
   // P7.7: Parse textDecoration
   const textDecoration = useMemo(
     () => parseTextDecoration(style?.textDecoration),
-    [style?.textDecoration]
+    [style?.textDecoration],
   );
-  const hasDecoration = textDecoration.underline || textDecoration.lineThrough || textDecoration.overline;
+  const hasDecoration =
+    textDecoration.underline ||
+    textDecoration.lineThrough ||
+    textDecoration.overline;
 
   // Text ref for measuring bounds
   const textRef = useRef<Text | null>(null);
@@ -163,7 +196,7 @@ export const TextSprite = memo(function TextSprite({
       new TextStyle({
         fontFamily: textStyle.fontFamily,
         fontSize: textStyle.fontSize,
-        fontWeight: textStyle.fontWeight as 'normal' | 'bold',
+        fontWeight: textStyle.fontWeight as "normal" | "bold",
         fontStyle: textStyle.fontStyle, // P7.2: italic, oblique
         fill: textStyle.fill,
         align: flexAlignment?.textAlign ?? textStyle.align,
@@ -172,7 +205,7 @@ export const TextSprite = memo(function TextSprite({
         wordWrap: textStyle.wordWrap,
         wordWrapWidth: transform.width,
       }),
-    [textStyle, transform.width, flexAlignment]
+    [textStyle, transform.width, flexAlignment],
   );
 
   // P7.7: Draw text decoration lines
@@ -215,14 +248,16 @@ export const TextSprite = memo(function TextSprite({
         g.stroke();
       }
     },
-    [hasDecoration, textStyle.fontSize, textStyle.fill, textDecoration]
+    [hasDecoration, textStyle.fontSize, textStyle.fill, textDecoration],
   );
 
   // Border-Box v2: drawBox 유틸리티 사용
-  const effectiveBorderRadius = typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0;
+  const effectiveBorderRadius =
+    typeof borderRadius === "number" ? borderRadius : (borderRadius?.[0] ?? 0);
   const drawBackground = useCallback(
     (g: PixiGraphics) => {
-      const hasBg = style?.backgroundColor && style.backgroundColor !== 'transparent';
+      const hasBg =
+        style?.backgroundColor && style.backgroundColor !== "transparent";
       const hasVisual = hasBg || borderConfig || effectiveBorderRadius;
 
       if (hasVisual) {
@@ -241,37 +276,47 @@ export const TextSprite = memo(function TextSprite({
         g.fill({ color: 0xffffff, alpha: 0.001 });
       }
     },
-    [style, transform, fill, effectiveBorderRadius, borderConfig]
+    [style, transform, fill, effectiveBorderRadius, borderConfig],
   );
 
-  const handleClick = useCallback((e: unknown) => {
-    // PixiJS FederatedPointerEvent has modifier keys directly
-    const pixiEvent = e as {
-      metaKey?: boolean;
-      shiftKey?: boolean;
-      ctrlKey?: boolean;
-      nativeEvent?: MouseEvent | PointerEvent;
-    };
+  const handleClick = useCallback(
+    (e: unknown) => {
+      // PixiJS FederatedPointerEvent has modifier keys directly
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-    // Try direct properties first (PixiJS v8), fallback to nativeEvent
-    const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
-    const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
-    const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+      // Try direct properties first (PixiJS v8), fallback to nativeEvent
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-    onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
-  }, [element.id, onClick]);
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+    },
+    [element.id, onClick],
+  );
 
   const lastPointerDownAtRef = useRef(0);
-  const handlePointerDown = useCallback((e: unknown) => {
-    const now = Date.now();
-    const isDoubleClick = Boolean(onDoubleClick) && now - lastPointerDownAtRef.current < 300;
-    lastPointerDownAtRef.current = now;
+  const handlePointerDown = useCallback(
+    (e: unknown) => {
+      const now = Date.now();
+      const isDoubleClick =
+        Boolean(onDoubleClick) && now - lastPointerDownAtRef.current < 300;
+      lastPointerDownAtRef.current = now;
 
-    handleClick(e);
-    if (isDoubleClick) {
-      onDoubleClick?.(element.id);
-    }
-  }, [element.id, handleClick, onDoubleClick]);
+      handleClick(e);
+      if (isDoubleClick) {
+        onDoubleClick?.(element.id);
+      }
+    },
+    [element.id, handleClick, onDoubleClick],
+  );
 
   // Padding (paddingUtils 사용)
   const padding = useMemo(() => parsePadding(style), [style]);
@@ -282,8 +327,8 @@ export const TextSprite = memo(function TextSprite({
   }, []);
 
   // Phase 6: Interaction 속성
-  const isPointerEventsNone = style?.pointerEvents === 'none';
-  const pixiCursor = style?.cursor ?? 'default';
+  const isPointerEventsNone = style?.pointerEvents === "none";
+  const pixiCursor = style?.cursor ?? "default";
 
   // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
   const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
@@ -296,13 +341,21 @@ export const TextSprite = memo(function TextSprite({
 
     // CSS fontWeight string → numeric (100–900)
     const fw = textStyle.fontWeight;
-    const numericFontWeight = fw === 'normal' ? 400 : fw === 'bold' ? 700 : (parseInt(fw, 10) || 400);
+    const numericFontWeight =
+      fw === "normal" ? 400 : fw === "bold" ? 700 : parseInt(fw, 10) || 400;
 
     // CSS fontStyle → numeric (0=upright, 1=italic, 2=oblique)
-    const numericFontStyle = textStyle.fontStyle === 'italic' ? 1 : textStyle.fontStyle === 'oblique' ? 2 : 0;
+    const numericFontStyle =
+      textStyle.fontStyle === "italic"
+        ? 1
+        : textStyle.fontStyle === "oblique"
+          ? 2
+          : 0;
 
     const zIndex = parseZIndex(style?.zIndex);
-    const isStackingCtx = createsStackingContext(style as Record<string, unknown>);
+    const isStackingCtx = createsStackingContext(
+      style as Record<string, unknown>,
+    );
 
     // Box 데이터: background/border를 Skia에서도 렌더링 (CSS 정합성)
     const bgR = ((fill.color >> 16) & 0xff) / 255;
@@ -330,18 +383,21 @@ export const TextSprite = memo(function TextSprite({
         borderConfig.alpha ?? 1,
       );
       boxData.strokeWidth = borderConfig.width;
-      if (borderConfig.style !== 'solid' && borderConfig.style !== 'none') {
+      if (borderConfig.style !== "solid" && borderConfig.style !== "none") {
         boxData.strokeStyle = borderConfig.style;
       }
     }
 
     return {
-      type: 'text' as const,
+      type: "text" as const,
       x: transform.x,
       y: transform.y,
       width: transform.width,
       height: transform.height,
-      visible: style?.display !== 'none' && style?.visibility !== 'hidden' && style?.visibility !== 'collapse',
+      visible:
+        style?.display !== "none" &&
+        style?.visibility !== "hidden" &&
+        style?.visibility !== "collapse",
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
       ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       ...(zIndex !== undefined ? { zIndex } : {}),
@@ -349,7 +405,12 @@ export const TextSprite = memo(function TextSprite({
       box: boxData,
       text: {
         content: textContent,
-        fontFamilies: [textStyle.fontFamily.split(',')[0].trim()],
+        fontFamilies: [
+          skiaFontManager.resolveFamily(
+            textStyle.fontFamily.split(",")[0].trim(),
+          ),
+          "Pretendard",
+        ],
         fontSize: textStyle.fontSize,
         fontWeight: numericFontWeight,
         fontStyle: numericFontStyle,
@@ -357,57 +418,130 @@ export const TextSprite = memo(function TextSprite({
         align: flexAlignment?.textAlign ?? textStyle.align,
         letterSpacing: textStyle.letterSpacing,
         // leading > 0이면 명시적 lineHeight 설정 (leading=0이면 폰트 기본값 사용)
-        ...(textStyle.leading > 0 ? { lineHeight: textStyle.leading + textStyle.fontSize } : {}),
+        ...(textStyle.leading > 0
+          ? { lineHeight: textStyle.leading + textStyle.fontSize }
+          : {}),
         // textDecoration → CanvasKit 비트마스크: underline=1, overline=2, lineThrough=4
-        ...(hasDecoration ? {
-          decoration: (textDecoration.underline ? 1 : 0)
-            | (textDecoration.overline ? 2 : 0)
-            | (textDecoration.lineThrough ? 4 : 0),
-          // text-decoration-style (C-5)
-          ...(style?.textDecorationStyle ? { decorationStyle: style.textDecorationStyle as 'solid' | 'dashed' | 'dotted' | 'double' | 'wavy' } : {}),
-          // text-decoration-color (C-6): colord로 파싱 후 Float32Array로 변환
-          ...(style?.textDecorationColor ? (() => {
-            const parsed = colord(style.textDecorationColor);
-            if (!parsed.isValid()) return {};
-            const rgba = parsed.toRgb();
-            return { decorationColor: Float32Array.of(rgba.r / 255, rgba.g / 255, rgba.b / 255, rgba.a) };
-          })() : {}),
-        } : {}),
+        ...(hasDecoration
+          ? {
+              decoration:
+                (textDecoration.underline ? 1 : 0) |
+                (textDecoration.overline ? 2 : 0) |
+                (textDecoration.lineThrough ? 4 : 0),
+              // text-decoration-style (C-5)
+              ...(style?.textDecorationStyle
+                ? {
+                    decorationStyle: style.textDecorationStyle as
+                      | "solid"
+                      | "dashed"
+                      | "dotted"
+                      | "double"
+                      | "wavy",
+                  }
+                : {}),
+              // text-decoration-color (C-6): colord로 파싱 후 Float32Array로 변환
+              ...(style?.textDecorationColor
+                ? (() => {
+                    const parsed = colord(style.textDecorationColor);
+                    if (!parsed.isValid()) return {};
+                    const rgba = parsed.toRgb();
+                    return {
+                      decorationColor: Float32Array.of(
+                        rgba.r / 255,
+                        rgba.g / 255,
+                        rgba.b / 255,
+                        rgba.a,
+                      ),
+                    };
+                  })()
+                : {}),
+            }
+          : {}),
         paddingLeft: padding.left,
         paddingTop: padding.top,
         maxWidth: transform.width - padding.left - padding.right,
         ...(flexAlignment?.verticalAlign
           ? { verticalAlign: flexAlignment.verticalAlign }
-          : style?.verticalAlign ? { verticalAlign: style.verticalAlign as 'top' | 'middle' | 'bottom' | 'baseline' } : {}),
-        ...(style?.whiteSpace ? { whiteSpace: style.whiteSpace as 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line' } : {}),
-        ...(style?.wordBreak ? { wordBreak: style.wordBreak as 'normal' | 'break-all' | 'keep-all' } : {}),
-        ...(style?.overflowWrap ? { overflowWrap: style.overflowWrap as 'normal' | 'break-word' | 'anywhere' } : {}),
-        ...(style?.wordSpacing != null ? { wordSpacing: parseCSSSize(style.wordSpacing, undefined, 0) } : {}),
+          : style?.verticalAlign
+            ? {
+                verticalAlign: style.verticalAlign as
+                  | "top"
+                  | "middle"
+                  | "bottom"
+                  | "baseline",
+              }
+            : {}),
+        ...(style?.whiteSpace
+          ? {
+              whiteSpace: style.whiteSpace as
+                | "normal"
+                | "nowrap"
+                | "pre"
+                | "pre-wrap"
+                | "pre-line",
+            }
+          : {}),
+        ...(style?.wordBreak
+          ? {
+              wordBreak: style.wordBreak as "normal" | "break-all" | "keep-all",
+            }
+          : {}),
+        ...(style?.overflowWrap
+          ? {
+              overflowWrap: style.overflowWrap as
+                | "normal"
+                | "break-word"
+                | "anywhere",
+            }
+          : {}),
+        ...(style?.wordSpacing != null
+          ? { wordSpacing: parseCSSSize(style.wordSpacing, undefined, 0) }
+          : {}),
         // text-overflow: ellipsis (C-1): overflow:hidden + white-space:nowrap 조합에서 동작
-        ...(style?.textOverflow ? { textOverflow: style.textOverflow as 'ellipsis' | 'clip' } : {}),
+        ...(style?.textOverflow
+          ? { textOverflow: style.textOverflow as "ellipsis" | "clip" }
+          : {}),
         // ADR-008 Phase 3: overflow:hidden|clip → 텍스트 영역 클리핑
-        ...(style?.overflow === 'hidden' || style?.overflow === 'clip' ? { clipText: true } : {}),
+        ...(style?.overflow === "hidden" || style?.overflow === "clip"
+          ? { clipText: true }
+          : {}),
         // text-indent: 첫 줄 들여쓰기 (C-3)
-        ...(style?.textIndent != null ? { textIndent: parseCSSSize(style.textIndent, undefined, 0) } : {}),
+        ...(style?.textIndent != null
+          ? { textIndent: parseCSSSize(style.textIndent, undefined, 0) }
+          : {}),
         // font-variant: OpenType feature (예: small-caps)
-        ...(style?.fontVariant && style.fontVariant !== 'normal' ? { fontVariant: style.fontVariant } : {}),
+        ...(style?.fontVariant && style.fontVariant !== "normal"
+          ? { fontVariant: style.fontVariant }
+          : {}),
         // font-stretch: CanvasKit FontWidth (예: condensed, 75%)
-        ...(style?.fontStretch && style.fontStretch !== 'normal' ? { fontStretch: style.fontStretch } : {}),
+        ...(style?.fontStretch && style.fontStretch !== "normal"
+          ? { fontStretch: style.fontStretch }
+          : {}),
       },
     };
-  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, fill, borderRadius, borderConfig, flexAlignment, style]);
+  }, [
+    transform,
+    textStyle,
+    textContent,
+    padding,
+    skiaEffects,
+    hasDecoration,
+    textDecoration,
+    fill,
+    borderRadius,
+    borderConfig,
+    flexAlignment,
+    style,
+  ]);
 
   useSkiaNode(element.id, skiaNodeData as SkiaNodeData);
 
   return (
-    <pixiContainer
-      x={transform.x}
-      y={transform.y}
-    >
+    <pixiContainer x={transform.x} y={transform.y}>
       {/* Background - clickable */}
       <pixiGraphics
         draw={drawBackground}
-        eventMode={isPointerEventsNone ? 'none' : 'static'}
+        eventMode={isPointerEventsNone ? "none" : "static"}
         cursor={pixiCursor}
         {...(!isPointerEventsNone && { onPointerDown: handlePointerDown })}
       />

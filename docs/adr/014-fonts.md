@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial — Phase A+B 완료 (2026-03-04), Phase C~E 미구현
+Partial — Phase A+B+C 완료 (2026-03-03), Phase D~E 미구현
 
 ## 0) 확정 결정 (2026-02-13)
 

@@ -10,16 +10,32 @@
  * @see docs/RENDERING_ARCHITECTURE.md §5.11 노드별 renderSkia() 구현
  */
 
-import type { CanvasKit, Canvas, FontMgr, Paragraph, Image as SkImage, EmbindEnumEntity, Paint } from 'canvaskit-wasm';
-import type { EffectStyle, FillStyle } from './types';
-import type { ClipPathShape } from '../sprites/styleConverter';
-import { applyFill } from './fills';
-import { beginRenderEffects, endRenderEffects } from './effects';
-import { toSkiaBlendMode } from './blendModes';
-import { SkiaDisposable } from './disposable';
-import { colord } from 'colord';
-import { resolveFontVariantFeatures, resolveFontStretchWidth } from '../layout/engines/cssResolver';
-import { cssNormalBreakProcess, computeKeepAllWidth, preprocessBreakWordText } from '../utils/textWrapUtils';
+import type {
+  CanvasKit,
+  Canvas,
+  FontMgr,
+  Paragraph,
+  Image as SkImage,
+  EmbindEnumEntity,
+  Paint,
+} from "canvaskit-wasm";
+import type { EffectStyle, FillStyle } from "./types";
+import type { ClipPathShape } from "../sprites/styleConverter";
+import { applyFill } from "./fills";
+import { beginRenderEffects, endRenderEffects } from "./effects";
+import { toSkiaBlendMode } from "./blendModes";
+import { SkiaDisposable } from "./disposable";
+import { colord } from "colord";
+import {
+  resolveFontVariantFeatures,
+  resolveFontStretchWidth,
+} from "../layout/engines/cssResolver";
+import {
+  cssNormalBreakProcess,
+  computeKeepAllWidth,
+  preprocessBreakWordText,
+} from "../utils/textWrapUtils";
+import { skiaFontManager } from "./fontManager";
 
 // ============================================
 // Text paragraph cache (Pencil-style)
@@ -103,7 +119,14 @@ export interface PartialBorderData {
 
 /** PixiJS Container에 부착되는 Skia 렌더 정보 */
 export interface SkiaNodeData {
-  type: 'box' | 'text' | 'image' | 'container' | 'line' | 'icon_path' | 'partial_border';
+  type:
+    | "box"
+    | "text"
+    | "image"
+    | "container"
+    | "line"
+    | "icon_path"
+    | "partial_border";
   /** 이 노드를 소유한 element의 ID (AI 이펙트 타겟팅용) */
   elementId?: string;
   /** 노드 로컬 위치/크기 */
@@ -130,7 +153,15 @@ export interface SkiaNodeData {
     borderRadius: number | [number, number, number, number];
     strokeColor?: Float32Array;
     strokeWidth?: number;
-    strokeStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset';
+    strokeStyle?:
+      | "solid"
+      | "dashed"
+      | "dotted"
+      | "double"
+      | "groove"
+      | "ridge"
+      | "inset"
+      | "outset";
     /** QW-3: CSS outline (focus ring — box 외부에 그려짐) */
     outlineColor?: Float32Array;
     outlineWidth?: number;
@@ -144,7 +175,7 @@ export interface SkiaNodeData {
     fontWeight?: number;
     fontStyle?: number;
     color: Float32Array;
-    align?: EmbindEnumEntity | 'left' | 'center' | 'right';
+    align?: EmbindEnumEntity | "left" | "center" | "right";
     letterSpacing?: number;
     wordSpacing?: number;
     lineHeight?: number;
@@ -155,14 +186,14 @@ export interface SkiaNodeData {
     maxWidth: number;
     /** false이면 updateTextChildren에서 자동 중앙 정렬 스킵 (Card 등 다중 텍스트) */
     autoCenter?: boolean;
-    verticalAlign?: 'top' | 'middle' | 'bottom' | 'baseline';
-    whiteSpace?: 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line';
-    wordBreak?: 'normal' | 'break-all' | 'keep-all';
-    overflowWrap?: 'normal' | 'break-word' | 'anywhere';
+    verticalAlign?: "top" | "middle" | "bottom" | "baseline";
+    whiteSpace?: "normal" | "nowrap" | "pre" | "pre-wrap" | "pre-line";
+    wordBreak?: "normal" | "break-all" | "keep-all";
+    overflowWrap?: "normal" | "break-word" | "anywhere";
     /** text-overflow: ellipsis 처리 여부 */
-    textOverflow?: 'ellipsis' | 'clip';
+    textOverflow?: "ellipsis" | "clip";
     /** text-decoration-style: solid, dashed, dotted, double, wavy */
-    decorationStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | 'wavy';
+    decorationStyle?: "solid" | "dashed" | "dotted" | "double" | "wavy";
     /** text-decoration-color (미지정 시 text color 사용) */
     decorationColor?: Float32Array;
     /** text-indent: 첫 줄 들여쓰기 (px) */
@@ -251,7 +282,7 @@ export function sortByStackingOrder(children: SkiaNodeData[]): SkiaNodeData[] {
     if (zA !== zB) return zA - zB;
     return a.originalIndex - b.originalIndex;
   });
-  return indexed.map(item => item.child);
+  return indexed.map((item) => item.child);
 }
 
 // ============================================
@@ -306,7 +337,8 @@ function renderNodeInternal(
       cullRight < nodeLeft ||
       cullTop > nodeBottom ||
       cullBottom < nodeTop
-    ) return;
+    )
+      return;
   }
 
   // 캔버스 상태 저장 + 로컬 변환
@@ -329,9 +361,13 @@ function renderNodeInternal(
 
   // blend mode 적용 (non-default인 경우 saveLayer로 분리)
   let hasBlendLayer = false;
-  if (node.blendMode && node.blendMode !== 'normal') {
+  if (node.blendMode && node.blendMode !== "normal") {
     const blendPaint = new ck.Paint();
-    blendPaint.setBlendMode(toSkiaBlendMode(ck, node.blendMode) as Parameters<typeof blendPaint.setBlendMode>[0]);
+    blendPaint.setBlendMode(
+      toSkiaBlendMode(ck, node.blendMode) as Parameters<
+        typeof blendPaint.setBlendMode
+      >[0],
+    );
     canvas.saveLayer(blendPaint);
     blendPaint.delete();
     hasBlendLayer = true;
@@ -344,27 +380,27 @@ function renderNodeInternal(
 
   // 타입별 렌더링
   switch (node.type) {
-    case 'box':
+    case "box":
       renderBox(ck, canvas, node);
       break;
-    case 'text':
+    case "text":
       // 배경/테두리를 텍스트 아래에 먼저 렌더링 (CSS 정합성)
       if (node.box) renderBox(ck, canvas, node);
       if (fontMgr) renderText(ck, canvas, node, fontMgr);
       break;
-    case 'image':
+    case "image":
       renderImage(ck, canvas, node);
       break;
-    case 'line':
+    case "line":
       renderLine(ck, canvas, node);
       break;
-    case 'icon_path':
+    case "icon_path":
       renderIconPath(ck, canvas, node);
       break;
-    case 'partial_border':
+    case "partial_border":
       renderPartialBorder(ck, canvas, node);
       break;
-    case 'container':
+    case "container":
       // 컨테이너는 자체 콘텐츠 없음
       break;
   }
@@ -380,19 +416,28 @@ function renderNodeInternal(
     }
 
     // overflow:scroll/auto → 스크롤 오프셋을 canvas 변환으로 적용
-    const hasScrollOffset = node.scrollOffset &&
+    const hasScrollOffset =
+      node.scrollOffset &&
       (node.scrollOffset.scrollTop !== 0 || node.scrollOffset.scrollLeft !== 0);
     if (hasScrollOffset) {
       canvas.save();
-      canvas.translate(-node.scrollOffset!.scrollLeft, -node.scrollOffset!.scrollTop);
+      canvas.translate(
+        -node.scrollOffset!.scrollLeft,
+        -node.scrollOffset!.scrollTop,
+      );
     }
 
-    const childCullLeft = cullLeft - node.x + (node.scrollOffset?.scrollLeft ?? 0);
+    const childCullLeft =
+      cullLeft - node.x + (node.scrollOffset?.scrollLeft ?? 0);
     const childCullTop = cullTop - node.y + (node.scrollOffset?.scrollTop ?? 0);
-    const childCullRight = cullRight - node.x + (node.scrollOffset?.scrollLeft ?? 0);
-    const childCullBottom = cullBottom - node.y + (node.scrollOffset?.scrollTop ?? 0);
-    const hasZIndex = node.children.some(c => c.zIndex !== undefined);
-    const childrenToRender = hasZIndex ? sortByStackingOrder(node.children) : node.children;
+    const childCullRight =
+      cullRight - node.x + (node.scrollOffset?.scrollLeft ?? 0);
+    const childCullBottom =
+      cullBottom - node.y + (node.scrollOffset?.scrollTop ?? 0);
+    const hasZIndex = node.children.some((c) => c.zIndex !== undefined);
+    const childrenToRender = hasZIndex
+      ? sortByStackingOrder(node.children)
+      : node.children;
     for (const child of childrenToRender) {
       renderNodeInternal(
         ck,
@@ -440,7 +485,7 @@ function createRoundRectPath(
   width: number,
   height: number,
   radii: [number, number, number, number],
-): ReturnType<CanvasKit['Path']['prototype']['constructor']> {
+): ReturnType<CanvasKit["Path"]["prototype"]["constructor"]> {
   const [tl, tr, br, bl] = radii;
   const maxRadius = Math.min(width, height) / 2;
   const rTL = Math.min(Math.max(0, tl), maxRadius);
@@ -506,9 +551,9 @@ export function buildClipPath(
   shape: ClipPathShape,
   width: number,
   height: number,
-): ReturnType<CanvasKit['Path']['prototype']['constructor']> | null {
+): ReturnType<CanvasKit["Path"]["prototype"]["constructor"]> | null {
   switch (shape.type) {
-    case 'inset': {
+    case "inset": {
       const { top, right, bottom, left, borderRadius } = shape;
       const x = left;
       const y = top;
@@ -526,21 +571,21 @@ export function buildClipPath(
       return path;
     }
 
-    case 'circle': {
+    case "circle": {
       const { radius, cx, cy } = shape;
       const path = new ck.Path();
       path.addCircle(cx, cy, radius);
       return path;
     }
 
-    case 'ellipse': {
+    case "ellipse": {
       const { rx, ry, cx, cy } = shape;
       const path = new ck.Path();
       path.addOval(ck.LTRBRect(cx - rx, cy - ry, cx + rx, cy + ry));
       return path;
     }
 
-    case 'polygon': {
+    case "polygon": {
       const { points } = shape;
       if (points.length < 3) return null;
       const path = new ck.Path();
@@ -599,7 +644,14 @@ function drawStrokeShape(
         Math.max(0, radii[2] - inset),
         Math.max(0, radii[3] - inset),
       ];
-      const path = createRoundRectPath(ck, inset, inset, width - inset * 2, height - inset * 2, innerRadii);
+      const path = createRoundRectPath(
+        ck,
+        inset,
+        inset,
+        width - inset * 2,
+        height - inset * 2,
+        innerRadii,
+      );
       canvas.drawPath(path, paint);
       path.delete();
     } else {
@@ -621,7 +673,7 @@ function renderSolidBorder(
   br: BorderRadius,
   hasRadius: boolean,
   isArrayRadius: boolean,
-  strokeStyle: 'solid' | 'dashed' | 'dotted' | undefined,
+  strokeStyle: "solid" | "dashed" | "dotted" | undefined,
 ): void {
   const inset = sw / 2;
   paint.setStyle(ck.PaintStyle.Stroke);
@@ -629,18 +681,28 @@ function renderSolidBorder(
   paint.setColor(node.box!.strokeColor!);
 
   let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
-  if (strokeStyle === 'dashed') {
+  if (strokeStyle === "dashed") {
     const dashLen = Math.max(sw * 3, 4);
     const gapLen = Math.max(sw * 2, 3);
     dashEffect = ck.PathEffect.MakeDash([dashLen, gapLen]);
     paint.setPathEffect(dashEffect);
-  } else if (strokeStyle === 'dotted') {
+  } else if (strokeStyle === "dotted") {
     dashEffect = ck.PathEffect.MakeDash([sw, sw * 1.5]);
     paint.setPathEffect(dashEffect);
     paint.setStrokeCap(ck.StrokeCap.Round);
   }
 
-  drawStrokeShape(ck, canvas, paint, inset, node.width, node.height, br, hasRadius, isArrayRadius);
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    inset,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
 
   if (dashEffect) {
     paint.setPathEffect(null);
@@ -659,7 +721,17 @@ function renderDoubleBorder(
   isArrayRadius: boolean,
 ): void {
   if (sw < 3) {
-    renderSolidBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius, 'solid');
+    renderSolidBorder(
+      ck,
+      canvas,
+      node,
+      paint,
+      sw,
+      br,
+      hasRadius,
+      isArrayRadius,
+      "solid",
+    );
     return;
   }
 
@@ -670,8 +742,28 @@ function renderDoubleBorder(
   paint.setColor(color);
   paint.setStrokeWidth(lineW);
 
-  drawStrokeShape(ck, canvas, paint, lineW / 2, node.width, node.height, br, hasRadius, isArrayRadius);
-  drawStrokeShape(ck, canvas, paint, sw - lineW / 2, node.width, node.height, br, hasRadius, isArrayRadius);
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    lineW / 2,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    sw - lineW / 2,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
 }
 
 function renderGrooveRidgeBorder(
@@ -683,7 +775,7 @@ function renderGrooveRidgeBorder(
   br: BorderRadius,
   hasRadius: boolean,
   isArrayRadius: boolean,
-  style: 'groove' | 'ridge',
+  style: "groove" | "ridge",
 ): void {
   const halfSw = sw / 2;
   const color = node.box!.strokeColor!;
@@ -691,19 +783,42 @@ function renderGrooveRidgeBorder(
   const baseHex = parseSkiaColor(color);
 
   const darkColor = hexToSkiaColor(colord(baseHex).darken(0.3).toHex(), alpha);
-  const lightColor = hexToSkiaColor(colord(baseHex).lighten(0.3).toHex(), alpha);
+  const lightColor = hexToSkiaColor(
+    colord(baseHex).lighten(0.3).toHex(),
+    alpha,
+  );
 
-  const outerColor = style === 'groove' ? darkColor : lightColor;
-  const innerColor = style === 'groove' ? lightColor : darkColor;
+  const outerColor = style === "groove" ? darkColor : lightColor;
+  const innerColor = style === "groove" ? lightColor : darkColor;
 
   paint.setStyle(ck.PaintStyle.Stroke);
   paint.setStrokeWidth(halfSw);
 
   paint.setColor(outerColor);
-  drawStrokeShape(ck, canvas, paint, halfSw / 2, node.width, node.height, br, hasRadius, isArrayRadius);
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    halfSw / 2,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
 
   paint.setColor(innerColor);
-  drawStrokeShape(ck, canvas, paint, halfSw + halfSw / 2, node.width, node.height, br, hasRadius, isArrayRadius);
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    halfSw + halfSw / 2,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
 }
 
 function renderInsetOutsetBorder(
@@ -715,17 +830,20 @@ function renderInsetOutsetBorder(
   br: BorderRadius,
   hasRadius: boolean,
   isArrayRadius: boolean,
-  style: 'inset' | 'outset',
+  style: "inset" | "outset",
 ): void {
   const color = node.box!.strokeColor!;
   const alpha = color[3];
   const baseHex = parseSkiaColor(color);
 
   const darkColor = hexToSkiaColor(colord(baseHex).darken(0.3).toHex(), alpha);
-  const lightColor = hexToSkiaColor(colord(baseHex).lighten(0.3).toHex(), alpha);
+  const lightColor = hexToSkiaColor(
+    colord(baseHex).lighten(0.3).toHex(),
+    alpha,
+  );
 
-  const tlColor = style === 'inset' ? darkColor : lightColor;
-  const brColor = style === 'inset' ? lightColor : darkColor;
+  const tlColor = style === "inset" ? darkColor : lightColor;
+  const brColor = style === "inset" ? lightColor : darkColor;
 
   const inset = sw / 2;
 
@@ -744,7 +862,17 @@ function renderInsetOutsetBorder(
   paint.setStyle(ck.PaintStyle.Stroke);
   paint.setStrokeWidth(sw);
   paint.setColor(tlColor);
-  drawStrokeShape(ck, canvas, paint, inset, node.width, node.height, br, hasRadius, isArrayRadius);
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    inset,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
   canvas.restore();
 
   canvas.save();
@@ -760,12 +888,26 @@ function renderInsetOutsetBorder(
   brClipPath.delete();
 
   paint.setColor(brColor);
-  drawStrokeShape(ck, canvas, paint, inset, node.width, node.height, br, hasRadius, isArrayRadius);
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    inset,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
   canvas.restore();
 }
 
 /** Box 노드 렌더링 */
-export function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderBox(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+): void {
   if (!node.box) return;
 
   const scope = new SkiaDisposable();
@@ -789,7 +931,7 @@ export function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): vo
     const rect = ck.LTRBRect(0, 0, node.width, node.height);
     const br = node.box.borderRadius;
     const isArrayRadius = Array.isArray(br);
-    const hasRadius = isArrayRadius ? br.some(r => r > 0) : br > 0;
+    const hasRadius = isArrayRadius ? br.some((r) => r > 0) : br > 0;
 
     if (hasRadius) {
       if (isArrayRadius) {
@@ -820,19 +962,62 @@ export function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): vo
 
       paint.setShader(null);
 
-      if (strokeStyle === 'double') {
-        renderDoubleBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius);
-      } else if (strokeStyle === 'groove' || strokeStyle === 'ridge') {
-        renderGrooveRidgeBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius, strokeStyle);
-      } else if (strokeStyle === 'inset' || strokeStyle === 'outset') {
-        renderInsetOutsetBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius, strokeStyle);
+      if (strokeStyle === "double") {
+        renderDoubleBorder(
+          ck,
+          canvas,
+          node,
+          paint,
+          sw,
+          br,
+          hasRadius,
+          isArrayRadius,
+        );
+      } else if (strokeStyle === "groove" || strokeStyle === "ridge") {
+        renderGrooveRidgeBorder(
+          ck,
+          canvas,
+          node,
+          paint,
+          sw,
+          br,
+          hasRadius,
+          isArrayRadius,
+          strokeStyle,
+        );
+      } else if (strokeStyle === "inset" || strokeStyle === "outset") {
+        renderInsetOutsetBorder(
+          ck,
+          canvas,
+          node,
+          paint,
+          sw,
+          br,
+          hasRadius,
+          isArrayRadius,
+          strokeStyle,
+        );
       } else {
-        renderSolidBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius, strokeStyle);
+        renderSolidBorder(
+          ck,
+          canvas,
+          node,
+          paint,
+          sw,
+          br,
+          hasRadius,
+          isArrayRadius,
+          strokeStyle,
+        );
       }
     }
 
     // QW-3: CSS outline 렌더링 (focus ring — box 외부에 그려짐)
-    if (node.box.outlineColor && node.box.outlineWidth && node.box.outlineWidth > 0) {
+    if (
+      node.box.outlineColor &&
+      node.box.outlineWidth &&
+      node.box.outlineWidth > 0
+    ) {
       const ow = node.box.outlineWidth;
       const oo = node.box.outlineOffset ?? 0;
       const expansion = oo + ow / 2;
@@ -849,7 +1034,7 @@ export function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): vo
 
       const br = node.box.borderRadius;
       const isArrayBr = Array.isArray(br);
-      const hasBr = isArrayBr ? br.some(r => r > 0) : br > 0;
+      const hasBr = isArrayBr ? br.some((r) => r > 0) : br > 0;
 
       if (hasBr) {
         if (isArrayBr) {
@@ -866,7 +1051,10 @@ export function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): vo
         } else {
           const expandedR = Math.max(0, (br as number) + oo);
           const outlineRect = ck.LTRBRect(ox, oy, ox + ow2, oy + oh2);
-          canvas.drawRRect(ck.RRectXY(outlineRect, expandedR, expandedR), outlinePaint);
+          canvas.drawRRect(
+            ck.RRectXY(outlineRect, expandedR, expandedR),
+            outlinePaint,
+          );
         }
       } else {
         canvas.drawRect(ck.LTRBRect(ox, oy, ox + ow2, oy + oh2), outlinePaint);
@@ -878,7 +1066,11 @@ export function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): vo
 }
 
 /** Line 노드 렌더링 */
-export function renderLine(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderLine(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+): void {
   if (!node.line) return;
   const paint = new ck.Paint();
   paint.setAntiAlias(true);
@@ -894,7 +1086,13 @@ export function renderLine(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): v
     paint.setPathEffect(dashEffect);
   }
 
-  canvas.drawLine(node.line.x1, node.line.y1, node.line.x2, node.line.y2, paint);
+  canvas.drawLine(
+    node.line.x1,
+    node.line.y1,
+    node.line.x2,
+    node.line.y2,
+    paint,
+  );
 
   if (dashEffect) {
     paint.setPathEffect(null);
@@ -918,9 +1116,14 @@ export function renderLine(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): v
  *   bottom-right corner → right 변 끝 + bottom 변 끝
  *   bottom-left  corner → bottom 변 시작 + left 변 시작
  */
-export function renderPartialBorder(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderPartialBorder(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+): void {
   if (!node.partialBorder) return;
-  const { sides, strokeColor, strokeWidth, strokeDasharray, borderRadius } = node.partialBorder;
+  const { sides, strokeColor, strokeWidth, strokeDasharray, borderRadius } =
+    node.partialBorder;
   const w = node.width;
   const h = node.height;
 
@@ -1050,9 +1253,14 @@ export function renderPartialBorder(ck: CanvasKit, canvas: Canvas, node: SkiaNod
 }
 
 /** Icon Path 노드 렌더링 (SVG 경로 기반 아이콘) */
-export function renderIconPath(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderIconPath(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+): void {
   if (!node.iconPath) return;
-  const { paths, circles, cx, cy, size, strokeColor, strokeWidth } = node.iconPath;
+  const { paths, circles, cx, cy, size, strokeColor, strokeWidth } =
+    node.iconPath;
 
   // 24x24 viewBox → 렌더 크기로 스케일
   const scale = size / 24;
@@ -1094,7 +1302,11 @@ export function renderIconPath(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData
  * Phase E: 스크롤바 UI 렌더링
  * clip 영역 내에서 scroll offset 미적용 상태로 그린다.
  */
-export function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderScrollbar(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+): void {
   if (!node.scrollbar) return;
 
   const TRACK_WIDTH = 8;
@@ -1117,7 +1329,8 @@ export function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeDat
     paint.setColor(TRACK_COLOR);
     const trackRRect = ck.RRectXY(
       ck.LTRBRect(trackX, trackY, trackX + TRACK_WIDTH, trackY + trackHeight),
-      TRACK_RADIUS, TRACK_RADIUS,
+      TRACK_RADIUS,
+      TRACK_RADIUS,
     );
     canvas.drawRRect(trackRRect, paint);
 
@@ -1125,7 +1338,8 @@ export function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeDat
     paint.setColor(THUMB_COLOR);
     const thumbRRect = ck.RRectXY(
       ck.LTRBRect(trackX, thumbY, trackX + TRACK_WIDTH, thumbY + thumbHeight),
-      THUMB_RADIUS, THUMB_RADIUS,
+      THUMB_RADIUS,
+      THUMB_RADIUS,
     );
     canvas.drawRRect(thumbRRect, paint);
   }
@@ -1141,7 +1355,8 @@ export function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeDat
     paint.setColor(TRACK_COLOR);
     const trackRRect = ck.RRectXY(
       ck.LTRBRect(trackX, trackY, trackX + trackWidth, trackY + TRACK_WIDTH),
-      TRACK_RADIUS, TRACK_RADIUS,
+      TRACK_RADIUS,
+      TRACK_RADIUS,
     );
     canvas.drawRRect(trackRRect, paint);
 
@@ -1149,7 +1364,8 @@ export function renderScrollbar(ck: CanvasKit, canvas: Canvas, node: SkiaNodeDat
     paint.setColor(THUMB_COLOR);
     const thumbRRect = ck.RRectXY(
       ck.LTRBRect(thumbX, trackY, thumbX + thumbWidth, trackY + TRACK_WIDTH),
-      THUMB_RADIUS, THUMB_RADIUS,
+      THUMB_RADIUS,
+      THUMB_RADIUS,
     );
     canvas.drawRRect(thumbRRect, paint);
   }
@@ -1173,20 +1389,21 @@ export function renderText(
   }
 
   // white-space 전처리
-  const whiteSpace = node.text.whiteSpace ?? 'normal';
+  const whiteSpace = node.text.whiteSpace ?? "normal";
   let processedText = node.text.content;
-  if (whiteSpace === 'normal' || whiteSpace === 'pre-line') {
-    processedText = processedText.replace(/[ \t]+/g, ' ');
+  if (whiteSpace === "normal" || whiteSpace === "pre-line") {
+    processedText = processedText.replace(/[ \t]+/g, " ");
   }
 
   // nowrap/pre: 줄바꿈 없이 한 줄로 렌더링
-  const layoutMaxWidth = whiteSpace === 'nowrap' || whiteSpace === 'pre'
-    ? 100000
-    : node.text.maxWidth;
+  const layoutMaxWidth =
+    whiteSpace === "nowrap" || whiteSpace === "pre"
+      ? 100000
+      : node.text.maxWidth;
 
   // wordBreak/overflowWrap
-  const wordBreak = node.text.wordBreak ?? 'normal';
-  const overflowWrap = node.text.overflowWrap ?? 'normal';
+  const wordBreak = node.text.wordBreak ?? "normal";
+  const overflowWrap = node.text.overflowWrap ?? "normal";
 
   // key는 텍스트 shaping/layout에 영향을 주는 값만 포함한다.
   const color = node.text.color;
@@ -1197,49 +1414,54 @@ export function renderText(
   // text-indent: 첫 줄 들여쓰기 (px)
   const textIndent = node.text.textIndent ?? 0;
   // text-overflow: ellipsis 여부 — ADR-008: nowrap + overflow:hidden|clip 조합에서만 유효
-  const isEllipsis = node.text.textOverflow === 'ellipsis'
-    && whiteSpace === 'nowrap'
-    && !!node.text.clipText;
+  const isEllipsis =
+    node.text.textOverflow === "ellipsis" &&
+    whiteSpace === "nowrap" &&
+    !!node.text.clipText;
   // decoration color key
   const dc = node.text.decorationColor;
   const decorationColorKey = dc
     ? `${dc[0].toFixed(3)},${dc[1].toFixed(3)},${dc[2].toFixed(3)},${dc[3].toFixed(3)}`
-    : '';
+    : "";
   const key = [
     processedText,
     layoutMaxWidth,
-    node.text.fontFamilies.join('|'),
+    node.text.fontFamilies.join("|"),
     node.text.fontSize,
     node.text.fontWeight ?? 400,
     node.text.fontStyle ?? 0,
-    node.text.fontVariant ?? 'normal',
-    node.text.fontStretch ?? 'normal',
+    node.text.fontVariant ?? "normal",
+    node.text.fontStretch ?? "normal",
     node.text.letterSpacing ?? 0,
     node.text.wordSpacing ?? 0,
     heightMultiplier,
-    typeof node.text.align === 'string' ? node.text.align : 'enum',
+    typeof node.text.align === "string" ? node.text.align : "enum",
     node.text.decoration ?? 0,
-    node.text.decorationStyle ?? 'solid',
+    node.text.decorationStyle ?? "solid",
     decorationColorKey,
     colorKey,
     whiteSpace,
     wordBreak,
     overflowWrap,
-    isEllipsis ? node.text.maxWidth : '0',
+    isEllipsis ? node.text.maxWidth : "0",
     textIndent,
-  ].join('\u0000');
+  ].join("\u0000");
 
   // verticalAlign에 따른 drawY 계산 함수
   const computeDrawY = (paragraph: Paragraph): number => {
     const verticalAlign = node.text!.verticalAlign;
-    if (!verticalAlign || verticalAlign === 'top' || verticalAlign === 'baseline') {
+    if (
+      !verticalAlign ||
+      verticalAlign === "top" ||
+      verticalAlign === "baseline"
+    ) {
       return node.text!.paddingTop;
     }
     const textHeight = paragraph.getHeight();
     switch (verticalAlign) {
-      case 'middle':
+      case "middle":
         return (node.height - textHeight) / 2;
-      case 'bottom':
+      case "bottom":
         return node.height - textHeight;
       default:
         return node.text!.paddingTop;
@@ -1250,7 +1472,11 @@ export function renderText(
   if (cached) {
     const drawY = computeDrawY(cached);
     const cachedOffset = paragraphAlignOffsetCache.get(key) ?? 0;
-    canvas.drawParagraph(cached, node.text.paddingLeft + textIndent + cachedOffset, drawY);
+    canvas.drawParagraph(
+      cached,
+      node.text.paddingLeft + textIndent + cachedOffset,
+      drawY,
+    );
     return;
   }
 
@@ -1259,7 +1485,7 @@ export function renderText(
     // string align → CanvasKit TextAlign enum 변환
     let textAlign: EmbindEnumEntity;
     const rawAlign = node.text.align;
-    if (typeof rawAlign === 'string') {
+    if (typeof rawAlign === "string") {
       const alignMap: Record<string, EmbindEnumEntity> = {
         left: ck.TextAlign.Left,
         center: ck.TextAlign.Center,
@@ -1282,7 +1508,8 @@ export function renderText(
       800: ck.FontWeight.ExtraBold,
       900: ck.FontWeight.Black,
     };
-    const fontWeight = fontWeightMap[node.text.fontWeight ?? 400] ?? ck.FontWeight.Normal;
+    const fontWeight =
+      fontWeightMap[node.text.fontWeight ?? 400] ?? ck.FontWeight.Normal;
 
     // fontStyle → CanvasKit FontSlant enum 변환
     // 0 = upright, 1 = italic, 2 = oblique
@@ -1291,67 +1518,91 @@ export function renderText(
       1: ck.FontSlant.Italic,
       2: ck.FontSlant.Oblique,
     };
-    const fontSlant = fontSlantMap[node.text.fontStyle ?? 0] ?? ck.FontSlant.Upright;
+    const fontSlant =
+      fontSlantMap[node.text.fontStyle ?? 0] ?? ck.FontSlant.Upright;
 
     // font-stretch → CanvasKit FontWidth enum
-    const fontStretchStr = node.text.fontStretch ?? 'normal';
+    const fontStretchStr = node.text.fontStretch ?? "normal";
     const fontWidthIndex = resolveFontStretchWidth(fontStretchStr);
     const fontWidthEnumValues = ck.FontWidth;
     const fontWidthEntries: [string, EmbindEnumEntity][] = [
-      ['UltraCondensed', fontWidthEnumValues.UltraCondensed],
-      ['ExtraCondensed', fontWidthEnumValues.ExtraCondensed],
-      ['Condensed', fontWidthEnumValues.Condensed],
-      ['SemiCondensed', fontWidthEnumValues.SemiCondensed],
-      ['Normal', fontWidthEnumValues.Normal],
-      ['SemiExpanded', fontWidthEnumValues.SemiExpanded],
-      ['Expanded', fontWidthEnumValues.Expanded],
-      ['ExtraExpanded', fontWidthEnumValues.ExtraExpanded],
-      ['UltraExpanded', fontWidthEnumValues.UltraExpanded],
+      ["UltraCondensed", fontWidthEnumValues.UltraCondensed],
+      ["ExtraCondensed", fontWidthEnumValues.ExtraCondensed],
+      ["Condensed", fontWidthEnumValues.Condensed],
+      ["SemiCondensed", fontWidthEnumValues.SemiCondensed],
+      ["Normal", fontWidthEnumValues.Normal],
+      ["SemiExpanded", fontWidthEnumValues.SemiExpanded],
+      ["Expanded", fontWidthEnumValues.Expanded],
+      ["ExtraExpanded", fontWidthEnumValues.ExtraExpanded],
+      ["UltraExpanded", fontWidthEnumValues.UltraExpanded],
     ];
-    const fontWidth = fontWidthEntries[fontWidthIndex - 1]?.[1] ?? fontWidthEnumValues.Normal;
+    const fontWidth =
+      fontWidthEntries[fontWidthIndex - 1]?.[1] ?? fontWidthEnumValues.Normal;
 
     // font-variant → OpenType fontFeatures
-    const fontVariantStr = node.text.fontVariant ?? 'normal';
+    const fontVariantStr = node.text.fontVariant ?? "normal";
     const fontFeatureTags = resolveFontVariantFeatures(fontVariantStr);
 
-    const heightMultiplierOpt = heightMultiplier > 0 ? heightMultiplier : undefined;
+    const heightMultiplierOpt =
+      heightMultiplier > 0 ? heightMultiplier : undefined;
+
+    // 사용자 fontFamily → CanvasKit 내부 이름 변환
+    // (FontMgr.FromData는 바이너리 내장 이름 사용, 파일명과 다를 수 있음)
+    const resolvedFamilies = node.text.fontFamilies.map((f) =>
+      skiaFontManager.resolveFamily(f),
+    );
 
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
-        fontFamilies: node.text.fontFamilies,
+        fontFamilies: resolvedFamilies,
         fontSize: node.text.fontSize,
         fontStyle: { weight: fontWeight, slant: fontSlant, width: fontWidth },
         color: node.text.color,
         letterSpacing: node.text.letterSpacing ?? 0,
         wordSpacing: node.text.wordSpacing ?? 0,
-        ...(heightMultiplierOpt !== undefined ? { heightMultiplier: heightMultiplierOpt, halfLeading: true } : {}),
-        ...(fontFeatureTags.length > 0 ? { fontFeatures: fontFeatureTags } : {}),
+        ...(heightMultiplierOpt !== undefined
+          ? { heightMultiplier: heightMultiplierOpt, halfLeading: true }
+          : {}),
+        ...(fontFeatureTags.length > 0
+          ? { fontFeatures: fontFeatureTags }
+          : {}),
         // textDecoration: CanvasKit TextDecoration 비트마스크
-        ...(node.text.decoration ? {
-          decoration: node.text.decoration,
-          // text-decoration-color: 미지정 시 텍스트 color 사용
-          decorationColor: node.text.decorationColor ?? node.text.color,
-          decorationThickness: 1,
-          // text-decoration-style → CanvasKit DecorationStyle enum
-          ...(() => {
-            if (!node.text!.decorationStyle || node.text!.decorationStyle === 'solid') return {};
-            const ckDs = (ck as unknown as Record<string, Record<string, EmbindEnumEntity>>).DecorationStyle;
-            if (!ckDs) return {};
-            const styleMap: Record<string, EmbindEnumEntity | undefined> = {
-              dashed: ckDs.Dashed,
-              dotted: ckDs.Dotted,
-              double: ckDs.Double,
-              wavy: ckDs.Wavy,
-            };
-            const resolved = styleMap[node.text!.decorationStyle];
-            return resolved ? { decorationStyle: resolved } : {};
-          })(),
-        } : {}),
+        ...(node.text.decoration
+          ? {
+              decoration: node.text.decoration,
+              // text-decoration-color: 미지정 시 텍스트 color 사용
+              decorationColor: node.text.decorationColor ?? node.text.color,
+              decorationThickness: 1,
+              // text-decoration-style → CanvasKit DecorationStyle enum
+              ...(() => {
+                if (
+                  !node.text!.decorationStyle ||
+                  node.text!.decorationStyle === "solid"
+                )
+                  return {};
+                const ckDs = (
+                  ck as unknown as Record<
+                    string,
+                    Record<string, EmbindEnumEntity>
+                  >
+                ).DecorationStyle;
+                if (!ckDs) return {};
+                const styleMap: Record<string, EmbindEnumEntity | undefined> = {
+                  dashed: ckDs.Dashed,
+                  dotted: ckDs.Dotted,
+                  double: ckDs.Double,
+                  wavy: ckDs.Wavy,
+                };
+                const resolved = styleMap[node.text!.decorationStyle];
+                return resolved ? { decorationStyle: resolved } : {};
+              })(),
+            }
+          : {}),
       },
       textAlign,
       // text-overflow: ellipsis → maxLines:1 + ellipsis 문자열
       // CSS text-overflow: ellipsis는 U+2026 (…) 사용 → 동일 문자로 일치시켜야 truncation 지점 동기화
-      ...(isEllipsis ? { maxLines: 1, ellipsis: '\u2026' } : {}),
+      ...(isEllipsis ? { maxLines: 1, ellipsis: "\u2026" } : {}),
       // NOTE: CanvasKit 0.40 ParagraphStyle에는 wordBreak/breakStrategy API가 없다.
       // allowBreakAll(wordBreak: break-all, overflowWrap: break-word/anywhere) 상태는
       // key에 포함되어 캐시를 분리하며, 향후 CanvasKit API 업데이트 시 여기서 처리 예정.
@@ -1362,27 +1613,53 @@ export function renderText(
     let effectiveLayoutWidth = isEllipsis ? node.text.maxWidth : layoutMaxWidth;
 
     if (!isEllipsis && layoutMaxWidth < 100000) {
-      if (wordBreak === 'normal' && overflowWrap === 'normal') {
+      if (wordBreak === "normal" && overflowWrap === "normal") {
         // normal + normal: CSS 줄바꿈 시뮬레이션
-        const result = cssNormalBreakProcess(ck, paraStyle, fontMgr, processedText, layoutMaxWidth);
+        const result = cssNormalBreakProcess(
+          ck,
+          paraStyle,
+          fontMgr,
+          processedText,
+          layoutMaxWidth,
+        );
         renderText = result.text;
         effectiveLayoutWidth = result.effectiveWidth;
-      } else if (wordBreak === 'break-all') {
+      } else if (wordBreak === "break-all") {
         // break-all: ZWS로 이미 분할 가능 → maxWidth 그대로
-        renderText = Array.from(processedText).join('\u200B');
+        renderText = Array.from(processedText).join("\u200B");
         effectiveLayoutWidth = layoutMaxWidth;
-      } else if (overflowWrap === 'break-word' || overflowWrap === 'anywhere') {
-        if (wordBreak === 'keep-all') {
+      } else if (overflowWrap === "break-word" || overflowWrap === "anywhere") {
+        if (wordBreak === "keep-all") {
           // keep-all + break-word: CJK 단어 넘침 시에만 분할 허용
-          effectiveLayoutWidth = computeKeepAllWidth(ck, paraStyle, fontMgr, processedText, layoutMaxWidth, true);
+          effectiveLayoutWidth = computeKeepAllWidth(
+            ck,
+            paraStyle,
+            fontMgr,
+            processedText,
+            layoutMaxWidth,
+            true,
+          );
         } else {
           // normal + break-word/anywhere: CSS break-word 시뮬레이션
-          renderText = preprocessBreakWordText(ck, paraStyle, fontMgr, processedText, layoutMaxWidth);
+          renderText = preprocessBreakWordText(
+            ck,
+            paraStyle,
+            fontMgr,
+            processedText,
+            layoutMaxWidth,
+          );
           effectiveLayoutWidth = layoutMaxWidth;
         }
-      } else if (wordBreak === 'keep-all') {
+      } else if (wordBreak === "keep-all") {
         // keep-all + normal: CJK 넘침 허용 (단어 보호)
-        effectiveLayoutWidth = computeKeepAllWidth(ck, paraStyle, fontMgr, processedText, layoutMaxWidth, false);
+        effectiveLayoutWidth = computeKeepAllWidth(
+          ck,
+          paraStyle,
+          fontMgr,
+          processedText,
+          layoutMaxWidth,
+          false,
+        );
       }
     }
 
@@ -1394,7 +1671,7 @@ export function renderText(
     // ADR-008: nowrap/pre — CanvasKit은 매우 큰 layout width(100000+)로 렌더링하면
     // 텍스트가 보이지 않는 내부 이슈가 있다. maxIntrinsicWidth로 재레이아웃하여
     // 단일 줄 렌더링을 보장한다. (ellipsis 경로는 maxLines:1로 자체 처리)
-    if (!isEllipsis && (whiteSpace === 'nowrap' || whiteSpace === 'pre')) {
+    if (!isEllipsis && (whiteSpace === "nowrap" || whiteSpace === "pre")) {
       const intrinsicWidth = paragraph.getMaxIntrinsicWidth();
       if (intrinsicWidth > 0) {
         paragraph.layout(Math.ceil(intrinsicWidth) + 1);
@@ -1430,7 +1707,11 @@ export function renderText(
     }
 
     // text-indent: 첫 줄 들여쓰기 → paddingLeft에 offset 추가
-    canvas.drawParagraph(paragraph, node.text.paddingLeft + textIndent + alignOffset, drawY);
+    canvas.drawParagraph(
+      paragraph,
+      node.text.paddingLeft + textIndent + alignOffset,
+      drawY,
+    );
 
     if (shouldClip) {
       canvas.restore();
@@ -1446,28 +1727,40 @@ export function renderText(
  * 이미지가 없는 경우(로딩 중) box.fillColor로 placeholder를 그린다.
  * box.borderRadius가 있으면 클리핑을 적용하여 원형/둥근 이미지를 지원한다.
  */
-export function renderImage(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+export function renderImage(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+): void {
   const scope = new SkiaDisposable();
   try {
     // borderRadius 클리핑 적용 (원형 아바타 등)
     const br = node.box?.borderRadius ?? 0;
     const isArrayRadius = Array.isArray(br);
     const hasRadius = isArrayRadius
-      ? (br as number[]).some(r => r > 0)
+      ? (br as number[]).some((r) => r > 0)
       : (br as number) > 0;
 
     if (hasRadius) {
       canvas.save();
       if (isArrayRadius) {
         const clipPath = createRoundRectPath(
-          ck, 0, 0, node.width, node.height,
+          ck,
+          0,
+          0,
+          node.width,
+          node.height,
           br as [number, number, number, number],
         );
         canvas.clipPath(clipPath, ck.ClipOp.Intersect, true);
         clipPath.delete();
       } else {
         const r = Math.min(br as number, Math.min(node.width, node.height) / 2);
-        const rrect = ck.RRectXY(ck.LTRBRect(0, 0, node.width, node.height), r, r);
+        const rrect = ck.RRectXY(
+          ck.LTRBRect(0, 0, node.width, node.height),
+          r,
+          r,
+        );
         canvas.clipRRect(rrect, ck.ClipOp.Intersect, true);
       }
     }
@@ -1479,7 +1772,10 @@ export function renderImage(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): 
         placeholderPaint.setAntiAlias(true);
         placeholderPaint.setStyle(ck.PaintStyle.Fill);
         placeholderPaint.setColor(node.box.fillColor);
-        canvas.drawRect(ck.LTRBRect(0, 0, node.width, node.height), placeholderPaint);
+        canvas.drawRect(
+          ck.LTRBRect(0, 0, node.width, node.height),
+          placeholderPaint,
+        );
       }
       if (hasRadius) canvas.restore();
       return;

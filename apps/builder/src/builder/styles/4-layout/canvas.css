@@ -42,44 +42,6 @@
     will-change: transform;
   }
 
-  /* Canvas Width Label */
-  .canvas::before {
-    content: " " attr(data-max-width) "px ";
-    display: block;
-    width: auto;
-    position: absolute;
-    top: -24px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    font-weight: var(--font-weight-semibold);
-    background-color: var(--primary);
-    color: var(--on-primary);
-    padding: 0 var(--spacing-sm);
-    border-radius: var(--radius-xs);
-    text-align: center;
-  }
-
-  /* Canvas Height Label */
-  .canvas::after {
-    transform-origin: center center;
-    content: " " attr(data-max-height) "px ";
-    display: block;
-    width: auto;
-    position: absolute;
-    top: 50%;
-    left: -16px;
-    transform: translate(-50%, -50%) rotate(-90deg);
-    font-size: var(--text-xs);
-    font-weight: var(--font-weight-semibold);
-    background-color: var(--primary);
-    color: var(--on-primary);
-    padding: 0 var(--spacing-sm);
-    border-radius: var(--radius-xs);
-    text-align: center;
-  }
-
   /* ========================================
    * Sidebar
    * ======================================== */

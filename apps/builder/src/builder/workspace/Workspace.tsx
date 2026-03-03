@@ -61,7 +61,17 @@ const EdgeStyleIcon: React.FC<{
   if (style === "group") {
     return (
       <svg width={w} height={h} aria-hidden="true" style={{ flexShrink: 0 }}>
-        <rect x={1} y={0.5} width={18} height={9} rx={2} fill="none" stroke={color} strokeWidth={1.5} strokeDasharray="4 2" />
+        <rect
+          x={1}
+          y={0.5}
+          width={18}
+          height={9}
+          rx={2}
+          fill="none"
+          stroke={color}
+          strokeWidth={1.5}
+          strokeDasharray="4 2"
+        />
       </svg>
     );
   }
@@ -72,7 +82,16 @@ const EdgeStyleIcon: React.FC<{
 
   return (
     <svg width={w} height={h} aria-hidden="true" style={{ flexShrink: 0 }}>
-      <line x1={0} y1={y} x2={w} y2={y} stroke={color} strokeWidth={2} strokeDasharray={strokeDasharray} strokeLinecap="round" />
+      <line
+        x1={0}
+        y1={y}
+        x2={w}
+        y2={y}
+        stroke={color}
+        strokeWidth={2}
+        strokeDasharray={strokeDasharray}
+        strokeLinecap="round"
+      />
     </svg>
   );
 };
@@ -98,20 +117,57 @@ const WorkflowCanvasToggles: React.FC = () => {
 
   return (
     <div className="workflow-canvas-toggles">
-      <Checkbox isSelected={showNavigation} onChange={setNavigation} size="sm" isTreeItemChild>
-        <span className="workflow-toggle-label"><EdgeStyleIcon style="solid" color="#3b82f6" />Navigation</span>
+      <Checkbox
+        isSelected={showNavigation}
+        onChange={setNavigation}
+        size="sm"
+        isTreeItemChild
+      >
+        <span className="workflow-toggle-label">
+          <EdgeStyleIcon style="solid" color="#3b82f6" />
+          Navigation
+        </span>
       </Checkbox>
-      <Checkbox isSelected={showEvents} onChange={setEvents} size="sm" isTreeItemChild>
-        <span className="workflow-toggle-label"><EdgeStyleIcon style="dashed" color="#a855f7" />Events</span>
+      <Checkbox
+        isSelected={showEvents}
+        onChange={setEvents}
+        size="sm"
+        isTreeItemChild
+      >
+        <span className="workflow-toggle-label">
+          <EdgeStyleIcon style="dashed" color="#a855f7" />
+          Events
+        </span>
       </Checkbox>
-      <Checkbox isSelected={showDataSources} onChange={setDataSources} size="sm" isTreeItemChild>
-        <span className="workflow-toggle-label"><EdgeStyleIcon style="dotted" color="#22c55e" />Data Sources</span>
+      <Checkbox
+        isSelected={showDataSources}
+        onChange={setDataSources}
+        size="sm"
+        isTreeItemChild
+      >
+        <span className="workflow-toggle-label">
+          <EdgeStyleIcon style="dotted" color="#22c55e" />
+          Data Sources
+        </span>
       </Checkbox>
-      <Checkbox isSelected={showLayoutGroups} onChange={setLayoutGroups} size="sm" isTreeItemChild>
-        <span className="workflow-toggle-label"><EdgeStyleIcon style="group" color="#a78bfa" />Layout Groups</span>
+      <Checkbox
+        isSelected={showLayoutGroups}
+        onChange={setLayoutGroups}
+        size="sm"
+        isTreeItemChild
+      >
+        <span className="workflow-toggle-label">
+          <EdgeStyleIcon style="group" color="#a78bfa" />
+          Layout Groups
+        </span>
       </Checkbox>
       <div className="workflow-toggle-divider" />
-      <Checkbox isSelected={straightEdges} onChange={setStraightEdges} size="sm" isTreeItemChild>
+      <Checkbox
+        isSelected={straightEdges}
+        onChange={setStraightEdges}
+        size="sm"
+        isTreeItemChild
+      >
         <span className="workflow-toggle-label">Orthogonal</span>
       </Checkbox>
     </div>
@@ -132,7 +188,10 @@ export function Workspace({
   // 🚀 Phase 2 최적화: containerSize를 ref로 관리 (React 리렌더 방지)
   const containerSizeRef = useRef({ width: 0, height: 0 });
   // % breakpoint일 때만 React state로 관리 (canvasSize 재계산용)
-  const [containerSizeForPercent, setContainerSizeForPercent] = useState({ width: 0, height: 0 });
+  const [containerSizeForPercent, setContainerSizeForPercent] = useState({
+    width: 0,
+    height: 0,
+  });
   const usesPercentBreakpointRef = useRef(false);
 
   // Feature flags
@@ -176,7 +235,7 @@ export function Workspace({
     // Handle percentage values ("100%") by using container size
     const parseSize = (
       value: string | number,
-      containerDimension: number
+      containerDimension: number,
     ): number => {
       if (typeof value === "number") return value;
       const strValue = String(value);
@@ -232,7 +291,9 @@ export function Workspace({
     if (containerSize.width <= 0 || containerSize.height <= 0) return false;
 
     // 비교 모드에서는 WebGL 패널이 절반 너비만 차지
-    const effectiveWidth = compareMode ? containerSize.width / 2 : containerSize.width;
+    const effectiveWidth = compareMode
+      ? containerSize.width / 2
+      : containerSize.width;
 
     const scaleX = effectiveWidth / canvasSize.width;
     const scaleY = containerSize.height / canvasSize.height;
@@ -252,7 +313,9 @@ export function Workspace({
     if (containerSize.width <= 0 || containerSize.height <= 0) return false;
 
     // 비교 모드에서는 WebGL 패널이 절반 너비만 차지
-    const effectiveWidth = compareMode ? containerSize.width / 2 : containerSize.width;
+    const effectiveWidth = compareMode
+      ? containerSize.width / 2
+      : containerSize.width;
 
     const zoom100 = 1; // 100%
     setZoom(zoom100);
@@ -308,7 +371,6 @@ export function Workspace({
       lastCenteredKeyRef.current = breakpointKey;
     }
   }, [selectedBreakpoint, canvasSize.width, canvasSize.height, centerCanvas]);
-
 
   // ============================================
   // Container Size Tracking
@@ -374,9 +436,14 @@ export function Workspace({
     const initialHeight = container.clientHeight;
     if (initialWidth > 0 && initialHeight > 0) {
       containerSizeRef.current = { width: initialWidth, height: initialHeight };
-      useCanvasSyncStore.getState().setContainerSize({ width: initialWidth, height: initialHeight });
+      useCanvasSyncStore
+        .getState()
+        .setContainerSize({ width: initialWidth, height: initialHeight });
       if (usesPercentBreakpointRef.current) {
-        setContainerSizeForPercent({ width: initialWidth, height: initialHeight });
+        setContainerSizeForPercent({
+          width: initialWidth,
+          height: initialHeight,
+        });
       }
       // 🚀 초기 100% 센터링 수행 (ref 사용 - 의존성 불필요)
       centerCanvasAt100Ref.current();
@@ -398,15 +465,13 @@ export function Workspace({
       <div ref={containerRef} className="workspace workspace--compare-mode">
         {/* 왼쪽: iframe Canvas */}
         <div className="workspace-compare-panel workspace-compare-panel--left">
-          <div className="workspace-compare-label">iframe Preview</div>
-          <div className="workspace-compare-content">
-            {fallbackCanvas}
-          </div>
+          <div className="workspace-compare-label">CSS</div>
+          <div className="workspace-compare-content">{fallbackCanvas}</div>
         </div>
 
         {/* 오른쪽: WebGL Canvas */}
         <div className="workspace-compare-panel workspace-compare-panel--right">
-          <div className="workspace-compare-label">WebGL Canvas</div>
+          <div className="workspace-compare-label">Canvas</div>
           <div className="workspace-compare-content">
             <BuilderCanvas
               pageWidth={canvasSize.width}

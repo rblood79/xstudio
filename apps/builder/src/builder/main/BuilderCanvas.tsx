@@ -35,7 +35,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
   bootstrapNonce,
 }) => {
   const currentBreakpoint = breakpoints.find(
-    (bp) => bp.id === Array.from(breakpoint)[0]
+    (bp) => bp.id === Array.from(breakpoint)[0],
   );
 
   // srcdoc 모드 여부 및 srcdoc 콘텐츠 생성
@@ -71,8 +71,6 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
     <main className="workSpace">
       <div
         className="canvas"
-        data-max-width={currentBreakpoint?.max_width?.toString() || "100%"}
-        data-max-height={currentBreakpoint?.max_height?.toString() || "100%"}
         style={{
           width: currentBreakpoint?.max_width || "100%",
           height: currentBreakpoint?.max_height || "100%",
