@@ -19,6 +19,8 @@ XStudio 협업을 위한 간단한 가이드입니다. 변경은 작게, 관측 
 - `npm run build`: `tsc -b` + Vite 프로덕션 빌드.
 - `npm run build:preview` / `npm run build:all`: 프리뷰 빌드만 또는 프리뷰+메인 빌드.
 - 도구 실행 전 항상 `mise hook-env` 로 환경 셔임을 활성화하세요.
+- Codex 품질 게이트: `npm run codex:preflight` (보호 파일 체크 + 변경 파일 Prettier + TS 변경 시 type-check).
+- 세부 실행: `npm run codex:guard`, `npm run codex:format`, `npm run codex:typecheck`.
 - `npm run lint`: ESLint + 로컬 안티패턴 룰(Zustand 셀렉터, 단축키 레지스트리, 이벤트 import).
 - `npm run test`, `npm run test:coverage`: Vitest 및 커버리지. Playwright는 `npm run playwright:install` 후 `npx playwright test`.
 - `npm run storybook`, `npm run build-storybook`: 컴포넌트 문서 dev/prod.
