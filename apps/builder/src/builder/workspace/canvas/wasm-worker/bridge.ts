@@ -4,7 +4,7 @@
  * Worker 생성, 초기화, Promise 기반 요청/응답 매칭.
  * Float32Array는 Transferable로 전송하여 zero-copy.
  *
- * @see docs/WASM.md §Phase 4: Web Worker
+ * @see docs/RENDERING_ARCHITECTURE.md §Phase 4: Web Worker
  */
 
 import {

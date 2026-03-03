@@ -7,7 +7,7 @@
  * try/finally 패턴(방법 A)을 사용한다 — tsconfig ES2020 target에서
  * `using` 키워드 없이 동작한다.
  *
- * @see docs/WASM.md §5.4 Disposable 패턴
+ * @see docs/RENDERING_ARCHITECTURE.md §5.4 Disposable 패턴
  */
 
 /** .delete() 메서드를 가진 CanvasKit 네이티브 객체 */

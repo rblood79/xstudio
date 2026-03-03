@@ -4,7 +4,7 @@
  * canvaskit-wasm npm 패키지를 로드하고 싱글톤 인스턴스를 관리한다.
  * initYoga.ts의 HMR 안전 패턴(window 전역 캐시)을 적용한다.
  *
- * @see docs/WASM.md §5.2 CanvasKit WASM 로드 및 Surface 생성
+ * @see docs/RENDERING_ARCHITECTURE.md §5.2 CanvasKit WASM 로드 및 Surface 생성
  */
 
 import type { CanvasKit } from 'canvaskit-wasm';

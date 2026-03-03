@@ -337,7 +337,7 @@ export default defineConfig({
 ## 📚 Related Documentation
 
 - [ADR-002: Styling Approach](../../adr/002-styling-approach.md) - ITCSS + tailwind-variants 결정 배경
-- [ENGINE_CHECKLIST.md](../../ENGINE_CHECKLIST.md) - CSS Level 3 지원 현황 (88%)
+- [CSS_SUPPORT_MATRIX.md](../../CSS_SUPPORT_MATRIX.md) - CSS Level 3 지원 현황 (88%)
 - [CLAUDE.md](../../../CLAUDE.md) - 프로젝트 가이드라인
 
 > **참고**: 이전에 참조되던 `CSS_BASELINE_SNAPSHOT.md`, `LAYER_USAGE_PATTERNS.md`, `CSS_REFACTORING_REPORT.md`는 Phase 1-3 완료 후 별도 생성되지 않았으며, 해당 내용은 본 문서의 Performance Metrics 섹션에 통합됨.

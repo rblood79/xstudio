@@ -5,7 +5,7 @@
  * .woff2/.ttf 바이너리를 직접 로드하고 Typeface를 등록해야 한다.
  * IndexedDB에 폰트 바이너리를 캐싱하여 재방문 시 네트워크 요청을 줄인다.
  *
- * @see docs/WASM.md §5.7 폰트 관리
+ * @see docs/RENDERING_ARCHITECTURE.md §5.7 폰트 관리
  */
 
 import type { FontMgr, Typeface } from 'canvaskit-wasm';

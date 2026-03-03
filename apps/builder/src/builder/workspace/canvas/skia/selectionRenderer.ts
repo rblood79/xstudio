@@ -7,7 +7,7 @@
  * aiEffects.ts와 동일한 패턴(순수 함수 + SkiaDisposable).
  * 카메라 변환(translate + scale) 내부에서 씬-로컬 좌표로 호출된다.
  *
- * @see docs/WASM.md §5.11
+ * @see docs/RENDERING_ARCHITECTURE.md §5.11
  */
 
 import type { CanvasKit, Canvas, FontMgr } from 'canvaskit-wasm';

@@ -219,7 +219,7 @@ const taffyStyle: TaffyStyle = elementToTaffyBlockStyle(element, taffyConfig);
 ## 11) 관련 문서
 
 ### 내부 문서
-- [WASM 아키텍처](./WASM.md)
+- [WASM 아키텍처](./RENDERING_ARCHITECTURE.md)
 - [ADR-003: Canvas 렌더링](./adr/003-canvas-rendering.md)
 
 ### 외부 참고 저장소

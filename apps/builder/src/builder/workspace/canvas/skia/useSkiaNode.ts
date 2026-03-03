@@ -13,7 +13,7 @@
  * 2. 레지스트리에서 렌더 데이터 조회
  * 3. PixiJS stage의 Camera 변환을 적용
  *
- * @see docs/WASM.md §5.11 renderSkia() React 컴포넌트 통합
+ * @see docs/RENDERING_ARCHITECTURE.md §5.11 renderSkia() React 컴포넌트 통합
  */
 
 import { useLayoutEffect } from 'react';

@@ -7,7 +7,7 @@
  * 캐시 키: `${parentId}:${childIds.join(',')}:${availW}:${availH}`
  * 같은 입력이면 캐시된 결과를 즉시 반환하고 백그라운드에서 재계산.
  *
- * @see docs/WASM.md §Phase 4: Web Worker
+ * @see docs/RENDERING_ARCHITECTURE.md §Phase 4: Web Worker
  */
 
 import type { ComputedLayout } from '../layout/engines/LayoutEngine';

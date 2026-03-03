@@ -3,7 +3,7 @@
  *
  * Pencil의 renderSkia() 패턴을 xstudio에 도입하기 위한 인터페이스.
  *
- * @see docs/WASM.md §5.3 renderSkia() 패턴 도입
+ * @see docs/RENDERING_ARCHITECTURE.md §5.3 renderSkia() 패턴 도입
  */
 
 import type { CanvasKit, Canvas } from 'canvaskit-wasm';

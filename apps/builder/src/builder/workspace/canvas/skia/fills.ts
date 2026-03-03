@@ -4,7 +4,7 @@
  * 6종의 Fill 타입을 CanvasKit Paint에 적용한다.
  * Pencil §10.9.6 패턴을 따른다.
  *
- * @see docs/WASM.md §5.5 Fill 시스템
+ * @see docs/RENDERING_ARCHITECTURE.md §5.5 Fill 시스템
  */
 
 import type { CanvasKit, Paint } from 'canvaskit-wasm';

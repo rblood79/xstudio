@@ -5,7 +5,7 @@
  * Main Thread가 전처리한 Float32Array를 받아 WASM에 전달하고
  * 결과를 Transferable로 반환한다.
  *
- * @see docs/WASM.md §Phase 4: Web Worker
+ * @see docs/RENDERING_ARCHITECTURE.md §Phase 4: Web Worker
  */
 
 import {

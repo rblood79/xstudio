@@ -4,7 +4,7 @@
  * Rust WASM SpatialIndex를 감싸서 string UUID 인터페이스를 제공한다.
  * 내부적으로 idMapper를 통해 u32 ↔ string 변환을 수행한다.
  *
- * @see docs/WASM.md §1.3 TypeScript 바인딩
+ * @see docs/RENDERING_ARCHITECTURE.md §1.3 TypeScript 바인딩
  */
 
 

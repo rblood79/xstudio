@@ -28,8 +28,7 @@ xstudio/
 ├── packages/
 │   └── shared/           # 공유 유틸리티
 ├── docs/
-│   ├── AI.md             # AI 기능 설계 문서
-│   ├── adr/              # 아키텍처 결정 기록
+│   ├── adr/              # 아키텍처 결정 기록 (AI 설계 포함)
 │   └── reference/        # 기술 문서
 └── .claude/
     └── skills/           # Claude Code Skills
@@ -123,9 +122,9 @@ pnpm storybook
 
 ## 참조 문서
 
-- [AI Feature Design](docs/AI.md)
-- [WASM Architecture](docs/WASM.md)
-- [Component Spec](docs/COMPONENT.md)
+- [AI Feature Design](docs/adr/014-ai-assistant-design.md)
+- [WASM Architecture](docs/RENDERING_ARCHITECTURE.md)
+- [Component Spec](docs/COMPONENT_SPEC.md)
 - [CSS Architecture](docs/reference/components/CSS_ARCHITECTURE.md)
 - [Skill Rules](.claude/skills/xstudio-patterns/SKILL.md)
 - [ADR: State Management](docs/adr/001-state-management.md)

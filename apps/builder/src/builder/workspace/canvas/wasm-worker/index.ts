@@ -3,7 +3,7 @@
  *
  * bridge + scheduler 를 한 번만 생성하고 전역에서 참조.
  *
- * @see docs/WASM.md §Phase 4: Web Worker
+ * @see docs/RENDERING_ARCHITECTURE.md §Phase 4: Web Worker
  */
 
 import { WasmWorkerBridge } from './bridge';

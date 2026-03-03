@@ -11,7 +11,7 @@
  * 매 프레임 PixiJS 씬 그래프를 순회하여 Skia 렌더 트리를 재구성하고
  * CanvasKit으로 렌더링한다.
  *
- * @see docs/WASM.md §5.7, §6.1, §6.2
+ * @see docs/RENDERING_ARCHITECTURE.md §5.7, §6.1, §6.2
  */
 
 import { useEffect, useRef, useState } from 'react';

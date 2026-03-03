@@ -26,8 +26,7 @@ maxTurns: 20
 
 ```
 docs/
-├── AI.md                    # AI 기능 설계 문서
-├── adr/                     # 아키텍처 결정 기록
+├── adr/                     # 아키텍처 결정 기록 (AI 설계 포함)
 │   ├── 001-state-management.md
 │   ├── 002-styling-approach.md
 │   ├── 003-canvas-rendering.md

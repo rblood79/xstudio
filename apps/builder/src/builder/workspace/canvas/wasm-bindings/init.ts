@@ -3,7 +3,7 @@
  *
  * Phase 0-5 WASM 모듈을 병렬로 초기화한다.
  *
- * @see docs/WASM.md §WASM 초기화 통합
+ * @see docs/RENDERING_ARCHITECTURE.md §WASM 초기화 통합
  */
 
 let wasmReady = false;

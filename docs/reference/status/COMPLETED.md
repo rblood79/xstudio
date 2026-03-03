@@ -130,7 +130,7 @@ Rust WASM 기반 캔버스 성능 가속 모듈 빌드 및 활성화.
 
 **Feature Flags:** 환경변수 제거됨 (2026-02-02). 모든 WASM 모듈 하드코딩 활성화.
 
-**상세:** `docs/WASM.md` Phase 0-4
+**상세:** `docs/RENDERING_ARCHITECTURE.md` Phase 0-4
 
 ---
 

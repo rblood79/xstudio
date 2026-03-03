@@ -10,7 +10,7 @@
  * 3. 유효성 검증 (TaffyLayoutEngine 존재 확인)
  * 4. DEV 모드에서 ping/pong 파이프라인 테스트
  *
- * @see docs/WASM.md §0.1 Rust + wasm-pack 개발 환경
+ * @see docs/RENDERING_ARCHITECTURE.md §0.1 Rust + wasm-pack 개발 환경
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

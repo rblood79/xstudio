@@ -4,7 +4,7 @@
  * WebGL GPU Surface를 우선 생성하고, 실패 시 SW(Software) 폴백으로 전환한다.
  * Pencil §10.9.2 패턴을 따른다.
  *
- * @see docs/WASM.md §5.2 Surface 생성
+ * @see docs/RENDERING_ARCHITECTURE.md §5.2 Surface 생성
  */
 
 import type { CanvasKit, Surface } from 'canvaskit-wasm';

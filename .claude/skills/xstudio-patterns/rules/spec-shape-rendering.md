@@ -770,7 +770,7 @@ const containerWidthOverride = isYogaSizedContainer
 
 ## 참조
 
-- `docs/COMPONENT.md` - Shape 타입 정의
+- `docs/COMPONENT_SPEC.md` - Shape 타입 정의
 - `apps/builder/src/.../skia/specShapeConverter.ts` - Shape[] -> SkiaNodeData 변환
 - `apps/builder/src/.../sprites/ElementSprite.tsx` - getSpecForTag(), spec shapes 통합, TAG_SPEC_MAP
 - `apps/builder/src/.../skia/nodeRenderers.ts` - renderLine() 포함 Skia 렌더

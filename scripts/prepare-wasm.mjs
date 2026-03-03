@@ -4,7 +4,7 @@
  * canvaskit-wasm npm 패키지의 .wasm 파일을 apps/builder/public/wasm/에 복사한다.
  * pnpm install 시 postinstall로 자동 실행된다.
  *
- * @see docs/WASM.md §5.2 WASM 파일 복사 설정
+ * @see docs/RENDERING_ARCHITECTURE.md §5.2 WASM 파일 복사 설정
  */
 
 import { cpSync, mkdirSync, statSync } from 'node:fs';

@@ -79,7 +79,7 @@ CanvasKit/Skia가 **메인 렌더러로 전환 완료**되었다.
 PixiJS는 씬 그래프 관리 + 이벤트(EventBoundary) 전용으로 축소되었으며,
 모든 시각적 렌더링은 CanvasKit Surface에서 처리한다.
 
-- 상세 설계: `docs/WASM.md` Phase 5-6
+- 상세 설계: `docs/RENDERING_ARCHITECTURE.md` Phase 5-6
 
 **Spec 시스템의 렌더러 독립성:**
 - ComponentSpec의 **Shape 타입 정의**는 렌더러 무관 (CanvasKit 전환에도 유지)
@@ -1603,7 +1603,7 @@ export interface PixiRenderContext {
 
 #### 3.5.3.1 CanvasKit/Skia 렌더링 상세
 
-상세: `docs/WASM.md` Phase 5.3, 6.3 참조
+상세: `docs/RENDERING_ARCHITECTURE.md` Phase 5.3, 6.3 참조
 
 **PixiJS → CanvasKit 역할 전환 (완료):**
 
@@ -3944,7 +3944,7 @@ export async function stableScreenshot(
 #### 8.1.3 테스트 코드 — React ↔ CanvasKit 비교
 
 > **구현 상태:** `waitForCanvasKitRender` 및 Playwright 비주얼 리그레션 테스트 구축 예정.
-> 상세: `docs/WASM.md` Phase 5.3 참조
+> 상세: `docs/RENDERING_ARCHITECTURE.md` Phase 5.3 참조
 
 ```typescript
 // packages/specs/tests/visual/button.test.ts
@@ -4002,7 +4002,7 @@ async function captureCanvasKit(page: Page): Promise<Buffer> {
 ### 8.1.4 Spec Shape ↔ CanvasKit API 매핑
 
 각 Spec Shape 타입과 CanvasKit API의 1:1 매핑 참조.
-> 상세: `docs/WASM.md` Phase 6.3 참조
+> 상세: `docs/RENDERING_ARCHITECTURE.md` Phase 6.3 참조
 
 | Spec Shape | CanvasKit Canvas API (현재) | Skia Paint/Path | 레거시 PixiJS | 비고 |
 |------------|---------------------|-----------------|------------|------|
@@ -4077,7 +4077,7 @@ export function invalidateCache(): void {
 
 #### 8.2.1 CanvasKit/Skia 최적화 (현재)
 
-상세: `docs/WASM.md` Phase 5.5, 6.1-6.2 참조
+상세: `docs/RENDERING_ARCHITECTURE.md` Phase 5.5, 6.1-6.2 참조
 
 **이중 Surface 캐싱 + Frame Classification:**
 

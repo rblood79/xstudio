@@ -437,7 +437,7 @@ const drawIndicator = useCallback(
 #### 애니메이션 처리
 
 - **CSS 웹**: `translate` + `width` + `height` 200ms transition
-- **캔버스**: 정적 렌더링 (트랜지션 ❌ — `ENGINE_CHECKLIST.md` §13 참조)
+- **캔버스**: 정적 렌더링 (트랜지션 ❌ — `CSS_SUPPORT_MATRIX.md` §13 참조)
 - 빌더는 디자인 도구이므로 정적 indicator 위치 표시만으로 충분
 
 ### 의존성

@@ -109,7 +109,7 @@ const invalid: ColorTokenRef = '{color.invalid}';  // ❌ 타입 에러
 
 ## 참조
 
-- `docs/COMPONENT.md` - 토큰 시스템 설계
+- `docs/COMPONENT_SPEC.md` - 토큰 시스템 설계
 - `packages/specs/src/primitives/colors.ts` - 색상 토큰 정의
 - `packages/specs/src/primitives/shadows.ts` - 그림자 토큰 정의
 - `packages/specs/src/renderers/utils/tokenResolver.ts` - 토큰 해석

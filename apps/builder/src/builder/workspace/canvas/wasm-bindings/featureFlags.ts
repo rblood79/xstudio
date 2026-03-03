@@ -4,7 +4,7 @@
  * Canvas 렌더링 관련 WASM 모듈의 활성화 상태.
  * 모든 플래그는 하드코딩 — 환경변수 분기 없음.
  *
- * @see docs/WASM.md §0.3 Feature Flag 인프라
+ * @see docs/RENDERING_ARCHITECTURE.md §0.3 Feature Flag 인프라
  */
 
 export const WASM_FLAGS = {

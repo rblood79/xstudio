@@ -11,7 +11,7 @@
  * - content: 요소 변경 → 컨텐츠 재렌더링 + 캐시 갱신
  * - full: 리사이즈/첫 프레임/cleanup → 전체 재렌더링
  *
- * @see docs/WASM.md §5.10, §6.1, §6.2
+ * @see docs/RENDERING_ARCHITECTURE.md §5.10, §6.1, §6.2
  */
 
 import type { CanvasKit, Canvas, Surface, Image } from 'canvaskit-wasm';

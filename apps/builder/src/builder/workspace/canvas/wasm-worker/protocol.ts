@@ -4,7 +4,7 @@
  * Main Thread ↔ Layout Worker 간 메시지 타입 정의.
  * Float32Array Transferable을 사용하여 zero-copy 전송.
  *
- * @see docs/WASM.md §Phase 4: Web Worker
+ * @see docs/RENDERING_ARCHITECTURE.md §Phase 4: Web Worker
  */
 
 // ── Request Types ──

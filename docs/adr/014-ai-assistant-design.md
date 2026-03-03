@@ -1,7 +1,7 @@
 # xstudio AI 기능 업그레이드 설계
 
 > 작성일: 2026-01-31
-> 참고: `docs/WASM.md` (렌더링 전환 계획)
+> 참고: `docs/RENDERING_ARCHITECTURE.md` (렌더링 전환 계획)
 > 대상: `apps/builder/src/services/ai/`, `apps/builder/src/builder/panels/ai/`
 > LLM 공급자: Groq SDK (무료 tier, llama-3.3-70b-versatile)
 
@@ -1000,7 +1000,7 @@ AI 도구 출력 → adaptStyles() → Element.props.style ($-- 유지)
 
 ## 7. 렌더링 전환(WASM/CanvasKit)과의 영향 분석
 
-> 참고: `docs/WASM.md` Phase 5-6
+> 참고: `docs/RENDERING_ARCHITECTURE.md` Phase 5-6
 
 ### 7.1 아키텍처 계층 관계
 
@@ -1169,7 +1169,7 @@ Phase A5: 캔버스 통합 (Phase 5-6 이후)
   └── 📋 get_style_guide, get_variables, set_variables 도구 (보류: 컴포넌트 인스턴스 시스템 Phase 5+ 선행 필요)
 
 ═══════════════════════════════════════════════════════════════
-  렌더링 전환 (AI와 독립) — docs/WASM.md 참조
+  렌더링 전환 (AI와 독립) — docs/RENDERING_ARCHITECTURE.md 참조
 ═══════════════════════════════════════════════════════════════
 
 Phase 0: 벤치마크 → Phase 5: CanvasKit → Phase 6: 고급 렌더링
@@ -1229,6 +1229,6 @@ Phase 0: 벤치마크 → Phase 5: CanvasKit → Phase 6: 고급 렌더링
 ## 11. 참고 자료
 
 - Pencil AI 분석: (삭제됨 — git history 참조)
-- 렌더링 전환 계획: `docs/WASM.md` Phase 5-6
+- 렌더링 전환 계획: `docs/RENDERING_ARCHITECTURE.md` Phase 5-6
 - Groq SDK 문서: https://console.groq.com/docs
 - Groq Tool Use: https://console.groq.com/docs/tool-use

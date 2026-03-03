@@ -4,7 +4,7 @@
  * WASM SpatialIndex는 u32 ID를 사용하고, xstudio는 string UUID를 사용한다.
  * 이 모듈이 두 ID 체계를 투명하게 변환한다.
  *
- * @see docs/WASM.md §1.3 TypeScript 바인딩
+ * @see docs/RENDERING_ARCHITECTURE.md §1.3 TypeScript 바인딩
  */
 
 class ElementIdMapper {

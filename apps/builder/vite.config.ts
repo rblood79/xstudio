@@ -174,6 +174,8 @@ export default defineConfig(({ command }) => {
       ],
     },
     server: {
+      port: 5173,
+      strictPort: true, // 포트가 사용 중이면 에러 발생 (자동 증가 방지)
       // Note: Supabase client connects directly using VITE_SUPABASE_URL
       headers: {
         // Development CORS headers (느슨한 설정)

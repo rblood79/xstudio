@@ -5,7 +5,7 @@
  * JS 전처리(스타일 파싱, BFC 판별, CSS Blockification) 후
  * 정규화된 Float32Array를 WASM에 전달하고 결과를 역직렬화한다.
  *
- * @see docs/WASM.md §Phase 2: Layout Engine 배치 가속
+ * @see docs/RENDERING_ARCHITECTURE.md §Phase 2: Layout Engine 배치 가속
  */
 
 import { getRustWasm } from './rustWasm';

@@ -88,14 +88,14 @@
 
 **xstudio 적용 전략:**
 
-| 단계 | 전략 | 참고 기업 | WASM.md Phase |
+| 단계 | 전략 | 참고 기업 | RENDERING_ARCHITECTURE.md Phase |
 |------|------|----------|--------------|
 | **1단계** | 공식 CanvasKit으로 안정성 확보 | Flutter Web | Phase 5-6 |
 | **2단계** | Skia 포크 + Web Worker 고도화 → 대규모 스케일링 | Figma | Post-Phase 6 (§장기 최적화) |
 | **3단계** | Rust 메모리 최적화 + WASM SIMD + 커스텀 할당기 | Figma + Adobe | Post-Phase 6 (§장기 최적화) |
 | **4단계** | WebGPU 전환 (Compute shaders, 차세대 GPU API) | Figma (2025~) | §장기 최적화 7.5 |
 
-> **현재 WASM.md 커버리지:** 1단계(Phase 5-6)는 구현/검증 완료 상태다.
+> **현재 RENDERING_ARCHITECTURE.md 커버리지:** 1단계(Phase 5-6)는 구현/검증 완료 상태다.
 > 2-4단계는 Phase 6 완료 후 실측 데이터에 기반하여 착수 여부를 판단한다.
 
 ---

@@ -3,7 +3,7 @@
  *
  * 18종의 블렌드 모드를 CanvasKit의 네이티브 BlendMode 상수에 매핑한다.
  *
- * @see docs/WASM.md §6.3 블렌드 모드 18종
+ * @see docs/RENDERING_ARCHITECTURE.md §6.3 블렌드 모드 18종
  */
 
 import type { CanvasKit } from 'canvaskit-wasm';

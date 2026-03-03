@@ -7,7 +7,7 @@
  * SkiaRenderer가 PixiJS 씬 그래프를 순회하며 각 노드의
  * __skiaRender를 호출하여 CanvasKit으로 렌더링한다.
  *
- * @see docs/WASM.md §5.11 노드별 renderSkia() 구현
+ * @see docs/RENDERING_ARCHITECTURE.md §5.11 노드별 renderSkia() 구현
  */
 
 import type { CanvasKit, Canvas, FontMgr, Paragraph, Image as SkImage, EmbindEnumEntity, Paint } from 'canvaskit-wasm';

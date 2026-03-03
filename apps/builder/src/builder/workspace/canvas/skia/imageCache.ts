@@ -9,7 +9,7 @@
  * - CORS 모드 설정 (외부 이미지 지원)
  * - 로딩 완료 시 Canvas 재렌더 트리거 콜백 지원 (specShapeConverter 연동)
  *
- * @see docs/WASM.md §5.11 이미지 렌더링
+ * @see docs/RENDERING_ARCHITECTURE.md §5.11 이미지 렌더링
  */
 
 import type { CanvasKit, Image as SkImage } from 'canvaskit-wasm';

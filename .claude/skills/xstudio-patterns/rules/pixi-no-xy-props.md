@@ -77,4 +77,4 @@ tags: [pixi, layout, canvas, direct-container]
 > **참고**: PixiJS `renderable=false` 사용 금지 — PixiJS 8 EventBoundary가 히트 테스팅까지 비활성화함.
 > alpha=0으로 시각적으로 숨기되 이벤트는 유지해야 함. [ADR-003](../../../../docs/adr/003-canvas-rendering.md) 참조.
 >
-> **레이아웃 엔진 상세:** [pixi-hybrid-layout-engine](pixi-hybrid-layout-engine.md), [ENGINE.md](../../../../docs/ENGINE.md) 참조.
+> **레이아웃 엔진 상세:** [pixi-hybrid-layout-engine](pixi-hybrid-layout-engine.md), [ENGINE.md](../../../../docs/adr/015-layout-engine.md) 참조.

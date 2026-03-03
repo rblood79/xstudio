@@ -4,7 +4,7 @@
  * saveLayer 기반으로 Opacity, Background Blur, Drop Shadow, Color Matrix를 적용한다.
  * Pencil §10.9.5 패턴을 따른다.
  *
- * @see docs/WASM.md §5.6 이펙트 파이프라인
+ * @see docs/RENDERING_ARCHITECTURE.md §5.6 이펙트 파이프라인
  */
 
 import type { CanvasKit, Canvas, ImageFilter } from 'canvaskit-wasm';

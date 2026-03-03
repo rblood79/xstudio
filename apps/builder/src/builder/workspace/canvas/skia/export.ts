@@ -6,7 +6,7 @@
  *
  * PixiJS extract 대비 벡터 정밀도를 유지한 고품질 Export를 제공한다.
  *
- * @see docs/WASM.md §6.4 Export 파이프라인
+ * @see docs/RENDERING_ARCHITECTURE.md §6.4 Export 파이프라인
  */
 
 import type { CanvasKit } from 'canvaskit-wasm';
