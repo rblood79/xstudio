@@ -1,7 +1,7 @@
 # XStudio CSS Architecture - ITCSS
 
-**Date:** 2025-11-08 (초판) / 2026-02-19 (최종 갱신)
-**Version:** 2.1 (Post Phase 1-3 Refactoring, Phase 4 상태 명시)
+**Date:** 2025-11-08 (초판) / 2026-03-04 (최종 갱신)
+**Version:** 2.2 (CSS 중복 로딩 근본 해결, import chain 단일화)
 
 ---
 
@@ -46,11 +46,13 @@ src/builder/styles/
 **Purpose:** CSS variables and design tokens
 **Specificity:** Lowest (`:root`)
 **Files:**
+
 - `builder-system.css` - Builder UI variables
 - `preview-system.css` - Preview component variables
 - `shared-tokens.css` - Typography, spacing, colors
 
 **Example:**
+
 ```css
 @layer builder-system {
   :root {
@@ -67,10 +69,12 @@ src/builder/styles/
 **Purpose:** CSS reset and base element styles
 **Specificity:** Element selectors (`body`, `h1`, `a`)
 **Planned Files:**
+
 - `reset.css` - Normalize/reset
 - `animations.css` - Keyframes
 
 **Example:**
+
 ```css
 @layer base {
   body {
@@ -87,10 +91,12 @@ src/builder/styles/
 **Purpose:** Reusable utility classes
 **Specificity:** Single-purpose classes
 **Planned Files:**
+
 - `layout.css` - `.flex-col-sm`, `.grid-2col`
 - `spacing.css` - Margin/padding helpers
 
 **Example:**
+
 ```css
 @layer utilities {
   .flex-col-sm {
@@ -108,11 +114,13 @@ src/builder/styles/
 **Purpose:** Major structural layouts
 **Specificity:** Structural classes
 **Planned Files:**
+
 - `grid.css` - Main grid system
 - `header.css` - Header layout
 - `panels.css` - Sidebar/Inspector panels
 
 **Example:**
+
 ```css
 @layer layout {
   .builder-grid {
@@ -131,12 +139,14 @@ src/builder/styles/
 **Purpose:** Feature-specific modules
 **Specificity:** Highest (module-specific)
 **Planned Files:**
+
 - `main.css` - Workspace module
 - `sidebar.css` - Sidebar module
 - `inspector.css` - Inspector module
 - `theme-studio.css` - ThemeStudio module
 
 **Example:**
+
 ```css
 @layer builder-system {
   .inspector {
@@ -150,13 +160,13 @@ src/builder/styles/
 ## 🔄 CSS Layer Order (Cascade Priority)
 
 ```css
-@layer dashboard;        /* Lowest priority */
-@layer builder-system;   /* Builder UI */
-@layer preview-system;   /* Preview components */
-@layer shared-tokens;    /* Common tokens */
-@layer base;             /* Base styles */
-@layer components;       /* React Aria components */
-@layer utilities;        /* Highest priority */
+@layer dashboard; /* Lowest priority */
+@layer builder-system; /* Builder UI */
+@layer preview-system; /* Preview components */
+@layer shared-tokens; /* Common tokens */
+@layer base; /* Base styles */
+@layer components; /* React Aria components */
+@layer utilities; /* Highest priority */
 ```
 
 **Note:** Later layers override earlier layers, regardless of source order.
@@ -172,6 +182,7 @@ src/builder/styles/
 **Dark mode:** `[data-builder-theme="dark"]`
 
 **Key Tokens:**
+
 ```css
 --builder-header-bg
 --builder-sidebar-bg
@@ -191,6 +202,7 @@ src/builder/styles/
 **Dark mode:** `[data-theme="dark"]`
 
 **Key Tokens:**
+
 ```css
 --action-primary-bg
 --action-secondary-bg
@@ -208,13 +220,10 @@ src/builder/styles/
 **Source:** Tailwind v4 standards
 
 **Examples:**
+
 ```css
---text-xs: 0.75rem
---text-sm: 0.875rem
---spacing-sm: 0.5rem
---radius-md: 0.375rem
---color-neutral-500
---color-success-600
+--text-xs: 0.75rem --text-sm: 0.875rem --spacing-sm: 0.5rem
+  --radius-md: 0.375rem --color-neutral-500 --color-success-600;
 ```
 
 ---
@@ -223,14 +232,12 @@ src/builder/styles/
 
 ### **React Aria Components**
 
-**Location:** `src/builder/components/styles/`
-**Count:** 61 component files
+**Location:** `packages/shared/src/components/styles/`
+**Count:** 70+ component files
 **Pattern:**
 
 ```css
 /* Button.css */
-@import './base.css';
-
 @layer components {
   .react-aria-Button {
     background: var(--button-background);
@@ -241,6 +248,28 @@ src/builder/styles/
   }
 }
 ```
+
+### **CSS Import Chain (v2.2 — 단일 경로 원칙)**
+
+> **규칙**: 각 CSS 파일은 **한 가지 경로**로만 로드되어야 함. CSS `@import` 체인과 JS `import` 체인이 동일 파일을 로드하면 Vite가 별도 `<style>` 태그를 생성하여 중복 발생.
+
+```
+apps/builder/src/index.css (CSS @import chain — theme + builder styles only)
+├── @import "tailwindcss"
+├── @import theme.css → CSS 변수 (preview-system, shared-tokens, builder-system)
+└── @import builder/styles/index.css → 빌더 전용 레이아웃/모듈 CSS
+
+packages/shared/src/components/index.tsx (JS import chain — foundation only)
+└── import './styles/foundation.css'
+    ├── theme.css (CSS 변수)
+    ├── base.css, animations.css, forms.css, overlays.css, collections.css
+    └── orphan CSS (ActionList, CalendarCommon, Group, SortIcon 등)
+
+Individual component .tsx files (JS import — component CSS)
+└── import './styles/Button.css'  ← 각 컴포넌트가 자기 CSS만 로드
+```
+
+**중요**: `styles/index.css`(전체 cascade)는 **preview iframe**과 **publish 앱** 전용. Builder는 사용하지 않음.
 
 ---
 
@@ -256,6 +285,16 @@ src/builder/styles/
 - [x] ITCSS directory structure created
 - [x] Master index.css entry point
 
+### **✅ Completed (Phase 5 — CSS 중복 로딩 해결, 2026-03-04)**
+
+- [x] `1-theme/` 중복 디렉토리 삭제 (마스터 theme에 병합)
+- [x] `Signin.tsx`, `AIPanel.tsx` 등 중복 CSS import 제거
+- [x] `theme.css` 내 `@layer` 이중 선언 제거
+- [x] `index.css` @import chain을 theme-only로 변경 (480KB → 172KB)
+- [x] `foundation.css` 신규 생성 (기반 + orphan CSS 17개)
+- [x] `index.tsx` 벌크 CSS import를 foundation-only로 변경
+- [x] 동일 파일 중복 `<style>` 태그 0건 달성
+
 ### **⏳ Phase 4: 보류 (Deferred)**
 
 > **상태**: 보류 — Tailwind v4 + tv() 패턴 도입으로 유틸리티 추출 방식이 변경됨. ADR-002 참조.
@@ -265,7 +304,7 @@ src/builder/styles/
 - [ ] Migrate main/sidebar/inspector to modules/ (낮은 우선순위)
 - [ ] Create base reset.css (Tailwind preflight로 대체 가능)
 - [ ] ~~Create layout grid.css~~ → Tailwind grid 유틸리티 사용
-- [ ] Consolidate @import chains
+- [x] ~~Consolidate @import chains~~ → Phase 5에서 해결 (단일 경로 원칙)
 - [ ] Bundle size optimization (30% target) — 현재 측정 미실시
 
 ---
@@ -273,6 +312,7 @@ src/builder/styles/
 ## 📊 Performance Metrics
 
 ### **Before Refactoring (Phase 0)**
+
 - **Total Files:** 105 CSS files
 - **Total Lines:** 15,716 lines
 - **Hardcoded Colors:** 27 instances
@@ -280,13 +320,22 @@ src/builder/styles/
 - **@layer Coverage:** 85% (17 files missing)
 
 ### **After Phase 1-3**
+
 - **Total Files:** 108 CSS files (+3 theme files)
 - **Total Lines:** ~15,900 lines (+184 for modular theme)
 - **Hardcoded Colors:** 0 instances ✅
 - **@layer Coverage:** 95% (main, sidebar, inspector added)
 - **Theme Files:** 658 lines → 822 lines (3 modular files)
 
+### **After Phase 5 (CSS Dedup)**
+
+- **`index.css` `<style>` 크기:** 480KB → 172KB (-64%)
+- **중복 `<style>` 태그:** 3건 (index+components+개별) → 0건
+- **동일 파일 중복 로딩:** 0건 ✅
+- **theme.css 소량 중복:** ~5KB (index.css + foundation.css 양쪽 — 의도적, CSS 변수 조기 로드용)
+
 ### **Target (Phase 4)**
+
 - **Total Files:** 80 files (-24%)
 - **Total Lines:** 11,000 lines (-30%)
 - **Duplicate Code:** 35 utilities (-92%)
@@ -306,8 +355,8 @@ export default defineConfig({
   css: {
     postcss: {
       plugins: [
-        postcssImport(),   // Resolve @import
-        postcssNested(),   // Nested selectors
+        postcssImport(), // Resolve @import
+        postcssNested(), // Nested selectors
       ],
     },
   },
@@ -319,6 +368,7 @@ export default defineConfig({
 ## 🎯 Best Practices
 
 ### **DO:**
+
 - ✅ Use `--builder-*` tokens for Builder UI
 - ✅ Use `--action-*` tokens for Preview components
 - ✅ Use semantic class names (`.inspector`, `.sidebar`)
@@ -326,11 +376,14 @@ export default defineConfig({
 - ✅ Use CSS variables for all colors
 
 ### **DON'T:**
+
 - ❌ Use hardcoded colors (`#ffffff`, `rgba(...)`)
 - ❌ Mix Builder and Preview tokens
 - ❌ Create global classes without namespace
 - ❌ Use `@apply` directive (Tailwind v4 doesn't support)
 - ❌ Skip `@layer` declarations
+- ❌ **CSS `@import`와 JS `import`로 동일 CSS를 이중 로드** — Vite가 별도 `<style>` 태그 생성하여 중복 발생
+- ❌ **`index.css`에서 component CSS를 `@import`** — component CSS는 각 .tsx의 JS import로만 로드
 
 ---
 
@@ -346,12 +399,13 @@ export default defineConfig({
 
 ## 🔄 Update History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 2.1 | 2026-02-19 | Phase 4 상태 명시 (보류/대체), 미존재 참조 문서 정리, 날짜 보정 |
-| 2.0 | 2025-11-08 | Phase 1-3 complete: Theme separation, hardcoded color removal, ITCSS structure |
-| 1.0 | 2025-11-08 | Initial baseline documentation |
+| Version | Date       | Changes                                                                          |
+| ------- | ---------- | -------------------------------------------------------------------------------- |
+| 2.2     | 2026-03-04 | Phase 5: CSS 중복 로딩 해결 — import chain 단일화, foundation.css, 1-theme/ 삭제 |
+| 2.1     | 2026-02-19 | Phase 4 상태 명시 (보류/대체), 미존재 참조 문서 정리, 날짜 보정                  |
+| 2.0     | 2025-11-08 | Phase 1-3 complete: Theme separation, hardcoded color removal, ITCSS structure   |
+| 1.0     | 2025-11-08 | Initial baseline documentation                                                   |
 
 ---
 
-**현재 상태**: Phase 1-3 완료. Phase 4는 Tailwind v4 + tv() 도입으로 방향 재검토 중.
+**현재 상태**: Phase 1-3 + Phase 5 완료. Phase 4는 Tailwind v4 + tv() 도입으로 방향 재검토 중.
