@@ -54,6 +54,7 @@ docs/
 | [013](./adr/013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩 | Proposed |
 | [014](./adr/014-fonts.md) | 폰트 시스템 | Proposed |
 | [015](./adr/015-sitemap-layout.md) | Sitemap 레이아웃 | Proposed |
+| [016](./adr/016-photoshop-ui-ux.md) | Photoshop UI/UX 적용 계획 | Proposed |
 
 ---
 
