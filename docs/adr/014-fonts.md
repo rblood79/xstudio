@@ -27,20 +27,20 @@
 
 > 아래는 계획 수립 기준으로 이미 구현된 코드를 정리한 것이다. Phase별 작업 시 이 기반 위에서 시작한다.
 
-| 영역 | 상태 | 파일 |
-|------|------|------|
-| **커스텀 폰트 타입** | ✅ `CustomFontAsset` | `packages/shared/src/utils/font.utils.ts` |
-| **localStorage 저장** | ✅ `xstudio.custom-fonts` 키 | `packages/shared/src/utils/font.utils.ts` (`CUSTOM_FONT_STORAGE_KEY`) |
-| **@font-face CSS 생성** | ✅ `buildCustomFontFaceCss()` | `packages/shared/src/utils/font.utils.ts` |
-| **Builder DOM 적용** | ✅ | `apps/builder/src/builder/fonts/customFonts.ts` |
-| **초기화** | ✅ | `apps/builder/src/builder/fonts/initCustomFonts.ts` |
-| **Publish 읽기** | ✅ localStorage에서 읽어 적용 | `apps/publish/src/App.tsx` |
-| **Skia 폰트 매니저** | ✅ 기본 폰트만, 커스텀 미지원 | `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts` |
-| **IndexedDB 캐싱** | ✅ DB명 `xstudio-fonts` | `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts` |
-| **Typography UI** | ✅ 폰트 추가 버튼 + family 입력 흐름 존재 | `apps/builder/src/builder/panels/styles/sections/TypographySection.tsx` |
-| **프로젝트 레벨 레지스트리** | ❌ 미구현 | — |
-| **Export에 폰트 포함** | ❌ 미구현 | `packages/shared/src/types/export.types.ts` (`ExportedProjectData`에 폰트 필드 없음) |
-| **마이그레이션** | ❌ 미구현 | — |
+| 영역                         | 상태                                      | 파일                                                                                 |
+| ---------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------ |
+| **커스텀 폰트 타입**         | ✅ `CustomFontAsset`                      | `packages/shared/src/utils/font.utils.ts`                                            |
+| **localStorage 저장**        | ✅ `xstudio.custom-fonts` 키              | `packages/shared/src/utils/font.utils.ts` (`CUSTOM_FONT_STORAGE_KEY`)                |
+| **@font-face CSS 생성**      | ✅ `buildCustomFontFaceCss()`             | `packages/shared/src/utils/font.utils.ts`                                            |
+| **Builder DOM 적용**         | ✅                                        | `apps/builder/src/builder/fonts/customFonts.ts`                                      |
+| **초기화**                   | ✅                                        | `apps/builder/src/builder/fonts/initCustomFonts.ts`                                  |
+| **Publish 읽기**             | ✅ localStorage에서 읽어 적용             | `apps/publish/src/App.tsx`                                                           |
+| **Skia 폰트 매니저**         | ✅ 기본 폰트만, 커스텀 미지원             | `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts`                      |
+| **IndexedDB 캐싱**           | ✅ DB명 `xstudio-fonts`                   | `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts`                      |
+| **Typography UI**            | ✅ 폰트 추가 버튼 + family 입력 흐름 존재 | `apps/builder/src/builder/panels/styles/sections/TypographySection.tsx`              |
+| **프로젝트 레벨 레지스트리** | ❌ 미구현                                 | —                                                                                    |
+| **Export에 폰트 포함**       | ❌ 미구현                                 | `packages/shared/src/types/export.types.ts` (`ExportedProjectData`에 폰트 필드 없음) |
+| **마이그레이션**             | ❌ 미구현                                 | —                                                                                    |
 
 ---
 
@@ -77,11 +77,11 @@
 ## 4) 데이터 모델 제안 (v2)
 
 ```ts
-type FontSourceType = 'project-asset' | 'remote-url' | 'data-url-temp';
+type FontSourceType = "project-asset" | "remote-url" | "data-url-temp";
 
 interface FontFileRef {
   type: FontSourceType;
-  url: string;                 // /assets/fonts/*.woff2 | https://... | data:...
+  url: string; // /assets/fonts/*.woff2 | https://... | data:...
   originalFileName?: string;
   mimeType?: string;
   byteSize?: number;
@@ -90,12 +90,12 @@ interface FontFileRef {
 
 interface FontFaceAsset {
   id: string;
-  family: string;              // 예: "Pretendard Custom"
-  weight?: string;             // "400", "700" 등
-  style?: 'normal' | 'italic';
-  format?: 'woff2' | 'woff' | 'truetype' | 'opentype';
+  family: string; // 예: "Pretendard Custom"
+  weight?: string; // "400", "700" 등
+  style?: "normal" | "italic";
+  format?: "woff2" | "woff" | "truetype" | "opentype";
   unicodeRange?: string;
-  display?: 'swap' | 'fallback' | 'block' | 'optional';
+  display?: "swap" | "fallback" | "block" | "optional";
   source: FontFileRef;
   createdAt: string;
   updatedAt: string;
@@ -117,34 +117,49 @@ interface FontRegistryV2 {
 interface LegacyCustomFontAsset {
   id: string;
   family: string;
-  source: string;   // 현재는 data URL만 사용
-  format?: 'woff2' | 'woff' | 'truetype' | 'opentype' | 'embedded-opentype' | 'svg';
+  source: string; // 현재는 data URL만 사용
+  format?:
+    | "woff2"
+    | "woff"
+    | "truetype"
+    | "opentype"
+    | "embedded-opentype"
+    | "svg";
 }
 ```
 
 ---
 
-## 5) 저장 전략 (일반적인 빌더 방식)
+## 5) 저장 전략 (2단계)
 
-1. **정본(Source of Truth)**: 프로젝트 데이터(`projects.font_registry`)
-2. **편집 캐시**: IndexedDB(바이너리) + localStorage(경량 메타 캐시)
+### Stage 1: localStorage 기반 (현재 Phase A~E 대상)
+
+1. **정본(Source of Truth)**: localStorage (`xstudio.font-registry`)
+2. **바이너리 캐시**: IndexedDB (`xstudio-fonts`) — Skia Typeface 바이너리
 3. **런타임 로드**: Builder/Preview/Publish는 동일 레지스트리에서 `@font-face` 생성
 4. **Export 시점**: `project-asset` 경로로 정규화 후 상대 경로로 주입
 
 핵심:
-- localStorage 단독 저장은 중단하고, 프로젝트 상태 기반으로 통일한다.
-- 기존 localStorage(`xstudio.custom-fonts`)는 읽어서 `FontRegistryV2`로 1회 마이그레이션한다.
-- 서버/DB 정본은 `projects.font_registry (json/jsonb)` 컬럼으로 관리한다.
+
+- 기존 키(`xstudio.custom-fonts`)에서 새 키(`xstudio.font-registry`)로 `FontRegistryV2` 형식 마이그레이션
+- 레거시 키는 1~2 릴리스 동안 fallback read 유지 후 삭제
+- 모든 Phase(A~E)는 localStorage 기반으로 완성
+
+### Stage 2: Supabase 연동 (향후)
+
+- `projects.font_registry (jsonb)` 컬럼 추가
+- localStorage → Supabase 동기화 레이어 추가
+- Stage 1 코드의 저장/조회 인터페이스만 교체 (레지스트리 로직 재사용)
 
 ---
 
 ## 6) 마이그레이션 전략 (Legacy → v2)
 
-1. 앱 부팅 시 `projects.font_registry` 유무 확인
+1. 앱 부팅 시 `xstudio.font-registry` 키 유무 확인
 2. 없고 `xstudio.custom-fonts`가 있으면 `LegacyCustomFontAsset[]` 파싱
 3. 각 항목을 `FontFaceAsset`으로 변환
 4. `source`가 data URL이면 `source.type = 'data-url-temp'`로 표기
-5. 변환 완료 후 `projects.font_registry(version:2)` 저장
+5. 변환 완료 후 `xstudio.font-registry` 키에 `FontRegistryV2` JSON 저장
 6. 기존 키는 즉시 삭제하지 않고 1~2 릴리스 동안 fallback read만 유지
 
 ---
@@ -164,6 +179,7 @@ interface LegacyCustomFontAsset {
   - Supabase 쿼리는 `select("*")` 패턴이라 DB 반영 후 데이터는 자동 조회됨
 
 **산출물**
+
 - 공용 유틸/타입
 - 레지스트리 단위 테스트
 - 레거시 마이그레이션 단위 테스트
@@ -181,6 +197,7 @@ interface LegacyCustomFontAsset {
 - `customFonts.ts`와 `initCustomFonts.ts`를 레지스트리 기반으로 리팩터링
 
 **산출물**
+
 - 스타일 패널 UI 레지스트리 연동
 - 사용자 액션(추가/삭제/선택) E2E 시나리오
 
@@ -196,6 +213,7 @@ interface LegacyCustomFontAsset {
 - 로드 실패 시 fallback 체인 명확화
 
 **산출물**
+
 - `SkiaFontManager` 커스텀 폰트 통합 테스트
 - 대표 컴포넌트 폰트 적용 검증 (예: Text/Button/Input/Badge/Heading)
 
@@ -209,6 +227,7 @@ interface LegacyCustomFontAsset {
 - 세션 프리뷰/새 탭 프리뷰 간 레지스트리 전달 방식 통일
 
 **산출물**
+
 - Preview/Publish 렌더 동일성 확인
 
 ### Phase E. 정적 Export (멀티파일, 핵심)
@@ -221,12 +240,14 @@ interface LegacyCustomFontAsset {
   - 구현 기준 API: File System Access API (`showDirectoryPicker`)
 
 **산출물 구조 (예시)**
+
 - `index.html`
 - `project.json`
 - `assets/fonts/*.woff2`
 - `assets/fonts/manifest.json` (선택)
 
 검증:
+
 - 로컬 파일 서버에서 오프라인 상태로 폰트 정상 동작
 
 ---
@@ -288,17 +309,17 @@ interface LegacyCustomFontAsset {
 
 ## 12) 관련 코드 위치 요약
 
-| 파일 | 역할 |
-|------|------|
-| `packages/shared/src/utils/font.utils.ts` | `CustomFontAsset` 타입, `CUSTOM_FONT_STORAGE_KEY`, `buildCustomFontFaceCss()` |
-| `apps/builder/src/builder/fonts/customFonts.ts` | Builder DOM 폰트 적용 |
-| `apps/builder/src/builder/fonts/initCustomFonts.ts` | 앱 부팅 시 폰트 초기화 |
-| `apps/builder/src/builder/panels/styles/sections/TypographySection.tsx` | Typography UI (폰트 추가/선택) |
-| `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts` | `SkiaFontManager` (IndexedDB 캐싱, Typeface 로드) |
-| `apps/publish/src/App.tsx` | Publish 앱 폰트 읽기 |
-| `apps/builder/src/services/api/ProjectsApiService.ts` | `projects` API 타입/저장 (`font_registry` 확장 대상) |
-| `packages/shared/src/types/export.types.ts` | `ExportedProjectData` (폰트 필드 추가 필요) |
-| `packages/shared/src/utils/export.utils.ts` | Export 유틸리티 |
+| 파일                                                                    | 역할                                                                          |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `packages/shared/src/utils/font.utils.ts`                               | `CustomFontAsset` 타입, `CUSTOM_FONT_STORAGE_KEY`, `buildCustomFontFaceCss()` |
+| `apps/builder/src/builder/fonts/customFonts.ts`                         | Builder DOM 폰트 적용                                                         |
+| `apps/builder/src/builder/fonts/initCustomFonts.ts`                     | 앱 부팅 시 폰트 초기화                                                        |
+| `apps/builder/src/builder/panels/styles/sections/TypographySection.tsx` | Typography UI (폰트 추가/선택)                                                |
+| `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts`         | `SkiaFontManager` (IndexedDB 캐싱, Typeface 로드)                             |
+| `apps/publish/src/App.tsx`                                              | Publish 앱 폰트 읽기                                                          |
+| `apps/builder/src/services/api/ProjectsApiService.ts`                   | `projects` API 타입/저장 (`font_registry` 확장 대상)                          |
+| `packages/shared/src/types/export.types.ts`                             | `ExportedProjectData` (폰트 필드 추가 필요)                                   |
+| `packages/shared/src/utils/export.utils.ts`                             | Export 유틸리티                                                               |
 
 ---
 
@@ -306,12 +327,12 @@ interface LegacyCustomFontAsset {
 
 - [x] 계획서 리뷰 승인
 - [x] Export 산출물 포맷: 멀티파일(`assets/fonts`)로 확정
-- [ ] 용량 제한/허용 확장자 정책 확정
-- [ ] 테스트 범위(필수 E2E 시나리오) 확정
-- [ ] `SkiaFontManager` 커스텀 폰트 로드 전략 확정 (레지스트리 연동 방식)
-- [ ] `ExportedProjectData` 스키마 변경 범위 확정
-- [ ] 디렉터리 저장 API 지원 브라우저 정책 확정
-- [ ] `projects.font_registry` 컬럼 마이그레이션 방식 확정 (DB/타입/API 동시 반영)
+- [x] 용량 제한/허용 확장자 정책 확정 (2026-03-04)
+- [x] 테스트 범위(필수 E2E 시나리오) 확정 (2026-03-04)
+- [x] `SkiaFontManager` 커스텀 폰트 로드 전략 확정 (2026-03-04)
+- [x] `ExportedProjectData` 스키마 변경 범위 확정 (2026-03-04)
+- [x] 디렉터리 저장 API 지원 브라우저 정책 확정 (2026-03-04)
+- [x] `projects.font_registry` 컬럼 마이그레이션 방식 확정 (2026-03-04)
 
 ---
 
@@ -325,53 +346,53 @@ interface LegacyCustomFontAsset {
 
 #### 공유 유틸 (`packages/shared/src/utils/font.utils.ts`)
 
-| 항목 | 확인 결과 |
-|------|----------|
+| 항목                         | 확인 결과                                  |
+| ---------------------------- | ------------------------------------------ |
 | `CustomFontAsset` 인터페이스 | ✅ 존재. `{ id, family, source, format? }` |
-| `CUSTOM_FONT_STORAGE_KEY` | ✅ `'xstudio.custom-fonts'` |
-| `buildCustomFontFaceCss()` | ✅ 존재. `@font-face` CSS 생성 |
-| `inferFontFormatFromName()` | ✅ 존재 |
-| `stripExtension()` | ✅ 존재 |
+| `CUSTOM_FONT_STORAGE_KEY`    | ✅ `'xstudio.custom-fonts'`                |
+| `buildCustomFontFaceCss()`   | ✅ 존재. `@font-face` CSS 생성             |
+| `inferFontFormatFromName()`  | ✅ 존재                                    |
+| `stripExtension()`           | ✅ 존재                                    |
 
 #### Builder 폰트 모듈
 
-| 파일 | 확인 결과 |
-|------|----------|
-| `apps/builder/src/builder/fonts/customFonts.ts` | ✅ `getCustomFonts()`, `saveCustomFonts()`, `injectCustomFontStyle()`, `createCustomFontFromFile()`, `DEFAULT_FONT_FAMILY = 'Pretendard'`, `DEFAULT_FONT_OPTIONS` 포함 |
-| `apps/builder/src/builder/fonts/initCustomFonts.ts` | ✅ 앱 부팅 시 localStorage에서 폰트 읽어 DOM 주입, `storage` 이벤트 + `xstudio:custom-fonts-updated` 이벤트 구독 |
+| 파일                                                | 확인 결과                                                                                                                                                              |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/builder/src/builder/fonts/customFonts.ts`     | ✅ `getCustomFonts()`, `saveCustomFonts()`, `injectCustomFontStyle()`, `createCustomFontFromFile()`, `DEFAULT_FONT_FAMILY = 'Pretendard'`, `DEFAULT_FONT_OPTIONS` 포함 |
+| `apps/builder/src/builder/fonts/initCustomFonts.ts` | ✅ 앱 부팅 시 localStorage에서 폰트 읽어 DOM 주입, `storage` 이벤트 + `xstudio:custom-fonts-updated` 이벤트 구독                                                       |
 
 #### Skia 폰트 매니저 (`apps/builder/src/builder/workspace/canvas/skia/fontManager.ts`)
 
-| 항목 | 확인 결과 |
-|------|----------|
-| IndexedDB 캐싱 | ✅ DB명 `xstudio-fonts`, store `fonts` |
-| `SkiaFontManager.loadFont(family, url)` | ✅ URL 기반 폰트 로드 (네트워크 fetch + IndexedDB 캐시) |
-| `CanvasKit.Typeface.MakeFreeTypeFaceFromData()` | ✅ 사용 중 |
-| 커스텀 폰트 레지스트리 연동 | ❌ 미구현 — URL 직접 전달 방식만 지원, `CustomFontAsset` 배열 연동 없음 |
+| 항목                                            | 확인 결과                                                               |
+| ----------------------------------------------- | ----------------------------------------------------------------------- |
+| IndexedDB 캐싱                                  | ✅ DB명 `xstudio-fonts`, store `fonts`                                  |
+| `SkiaFontManager.loadFont(family, url)`         | ✅ URL 기반 폰트 로드 (네트워크 fetch + IndexedDB 캐시)                 |
+| `CanvasKit.Typeface.MakeFreeTypeFaceFromData()` | ✅ 사용 중                                                              |
+| 커스텀 폰트 레지스트리 연동                     | ❌ 미구현 — URL 직접 전달 방식만 지원, `CustomFontAsset` 배열 연동 없음 |
 
 #### Publish 앱 (`apps/publish/src/App.tsx`)
 
-| 항목 | 확인 결과 |
-|------|----------|
-| localStorage 직접 읽기 | ✅ `localStorage.getItem(CUSTOM_FONT_STORAGE_KEY)` — 문서 내용과 일치 |
-| 프로젝트 데이터 기반 전환 | ❌ 미구현 |
+| 항목                      | 확인 결과                                                             |
+| ------------------------- | --------------------------------------------------------------------- |
+| localStorage 직접 읽기    | ✅ `localStorage.getItem(CUSTOM_FONT_STORAGE_KEY)` — 문서 내용과 일치 |
+| 프로젝트 데이터 기반 전환 | ❌ 미구현                                                             |
 
 #### 프로젝트 레벨 레지스트리
 
-| 항목 | 확인 결과 |
-|------|----------|
+| 항목                                                                         | 확인 결과                  |
+| ---------------------------------------------------------------------------- | -------------------------- |
 | `apps/builder/src/services/api/ProjectsApiService.ts`에 `font_registry` 필드 | ❌ 미구현 — grep 결과 없음 |
-| `packages/shared/src/types/export.types.ts`에 `fontRegistry` 필드 | ❌ 미구현 — grep 결과 없음 |
+| `packages/shared/src/types/export.types.ts`에 `fontRegistry` 필드            | ❌ 미구현 — grep 결과 없음 |
 
 ### Phase별 전제 조건 현황
 
-| Phase | 설명 | 전제 조건 현황 |
-|-------|------|--------------|
-| Phase A | 레지스트리/서비스 계층 정리 | 기반 타입(`CustomFontAsset`)은 존재. `FontRegistryV2` 신규 작성 필요 |
-| Phase B | Builder UX 보완 | `TypographySection.tsx` 폰트 추가 UI 이미 구현됨 (✅). localStorage → 레지스트리 전환 필요 |
-| Phase C | WebGL/Skia 반영 | `SkiaFontManager`는 구현됨(✅). 커스텀 폰트 레지스트리 연동 경로 추가 필요(❌) |
-| Phase D | Preview/Publish 런타임 반영 | Publish는 localStorage 직접 읽기(✅ 동작하나 레거시 방식). 전환 필요 |
-| Phase E | 정적 Export 멀티파일 | `ExportedProjectData`에 폰트 필드 없음(❌). 전체 구현 필요 |
+| Phase   | 설명                        | 전제 조건 현황                                                                             |
+| ------- | --------------------------- | ------------------------------------------------------------------------------------------ |
+| Phase A | 레지스트리/서비스 계층 정리 | 기반 타입(`CustomFontAsset`)은 존재. `FontRegistryV2` 신규 작성 필요                       |
+| Phase B | Builder UX 보완             | `TypographySection.tsx` 폰트 추가 UI 이미 구현됨 (✅). localStorage → 레지스트리 전환 필요 |
+| Phase C | WebGL/Skia 반영             | `SkiaFontManager`는 구현됨(✅). 커스텀 폰트 레지스트리 연동 경로 추가 필요(❌)             |
+| Phase D | Preview/Publish 런타임 반영 | Publish는 localStorage 직접 읽기(✅ 동작하나 레거시 방식). 전환 필요                       |
+| Phase E | 정적 Export 멀티파일        | `ExportedProjectData`에 폰트 필드 없음(❌). 전체 구현 필요                                 |
 
 ### 파일 경로 정확성
 
@@ -380,6 +401,7 @@ interface LegacyCustomFontAsset {
 ### 1-1 Baseline 표 갱신 사항
 
 문서의 Baseline 표(section 1-1)는 현재 코드와 일치함을 확인하였다.
+
 - `packages/shared/src/utils/font.utils.ts` — ✅ 일치
 - `apps/builder/src/builder/fonts/customFonts.ts` — ✅ 일치. 단, 파일 내에 `DEFAULT_FONT_FAMILY`, `DEFAULT_FONT_OPTIONS`도 포함됨 (문서에 미기재)
 - `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts` — ✅ IndexedDB 캐싱 구현 일치. 커스텀 폰트 미지원 확인
@@ -387,3 +409,176 @@ interface LegacyCustomFontAsset {
 ### Status 판단
 
 **Proposed 유지.** Phase A~E 전혀 시작되지 않은 상태이며, 코드 베이스의 기반 모듈(customFonts.ts, fontManager.ts, font.utils.ts)은 문서 Baseline과 일치한다.
+
+---
+
+## 14) 체크리스트 확정 내역 (2026-03-04)
+
+### 14-1. 용량 제한/허용 확장자 정책
+
+| 항목                        | 확정 내용                                                               |
+| --------------------------- | ----------------------------------------------------------------------- |
+| **허용 확장자**             | `.woff2` (권장), `.woff`, `.ttf`, `.otf` — 4종                          |
+| **제외 확장자**             | `.eot` (IE 전용 레거시), `.svg` (비효율, 보안 위험)                     |
+| **파일 크기 제한**          | 파일당 **5MB** (`EXPORT_LIMITS.MAX_FILE_SIZE` 10MB의 절반)              |
+| **MIME 타입 검증**          | `font/woff2`, `font/woff`, `font/ttf`, `font/otf`, `application/font-*` |
+| **프로젝트당 최대 폰트 수** | **20개** (face 단위, 같은 family 다른 weight 각각 1개)                  |
+| **검증 시점**               | `createCustomFontFromFile()` 진입 직후 (Phase A에서 구현)               |
+
+**근거**: 현재 `TypographySection.tsx`의 `accept=".woff,.woff2,.ttf,.otf,.eot,.svg"` → `.eot`/`.svg` 제거. 파일 크기 검증은 현재 미구현(❌)이므로 Phase A에서 추가.
+
+### 14-2. 테스트 범위 (필수 시나리오)
+
+**단위 테스트 (Phase A)**:
+
+1. `FontRegistryV2` CRUD (추가/삭제/중복 검출/버전 검증)
+2. `LegacyCustomFontAsset[]` → `FontRegistryV2` 마이그레이션 변환
+3. `buildCustomFontFaceCss()` v2 레지스트리 입력 지원
+4. 파일 크기/확장자/MIME 검증 거부 케이스
+
+**통합 테스트 (Phase B~C)**: 5. Typography 패널 → 폰트 추가 → 레지스트리 저장 → 폰트 목록 갱신 6. `SkiaFontManager` 커스텀 폰트 로드 → 텍스트 렌더링 반영
+
+**E2E 테스트 (Phase D~E)**: 7. 업로드 → Builder 적용 → Preview iframe 동일 렌더 확인 8. 프로젝트 재진입 → 폰트 목록/적용 상태 유지 확인 9. Export 멀티파일 → `assets/fonts/` 생성 + 오프라인 동작 확인
+
+### 14-3. SkiaFontManager 커스텀 폰트 로드 전략
+
+**현황**: `loadFont(family, url)` — HTTP(S) URL `fetch()`만 지원. data URL `fetch()` 불가.
+
+**확정 전략: `loadFontFromBuffer()` 메서드 추가**
+
+```
+기존: loadFont(family, url) → fetch(url) → ArrayBuffer → Typeface
+추가: loadFontFromBuffer(family, buffer) → 직접 ArrayBuffer → Typeface
+```
+
+| source.type     | 로드 경로                   | 메서드                                      |
+| --------------- | --------------------------- | ------------------------------------------- |
+| `project-asset` | 상대 URL fetch              | `loadFont(family, url)` (기존)              |
+| `remote-url`    | 외부 URL fetch              | `loadFont(family, url)` (기존)              |
+| `data-url-temp` | base64 디코딩 → ArrayBuffer | `loadFontFromBuffer(family, buffer)` (신규) |
+
+**레지스트리 연동 흐름 (Phase C)**:
+
+1. `FontRegistryV2.faces` 순회
+2. `source.type`에 따라 분기
+3. data-url-temp → `atob()` + `Uint8Array` → `loadFontFromBuffer()`
+4. 나머지 → `loadFont(family, source.url)`
+5. 전체 완료 후 `window.dispatchEvent(new CustomEvent('xstudio:fonts-ready'))` 발생
+6. `BuilderCanvas.tsx`의 기존 `xstudio:fonts-ready` 핸들러가 `invalidateLayout()` 호출
+
+### 14-4. ExportedProjectData 스키마 변경 범위
+
+```ts
+// packages/shared/src/types/export.types.ts
+export interface ExportedProjectData {
+  version: string;
+  exportedAt: string;
+  project: { id: string; name: string };
+  pages: Page[];
+  elements: Element[];
+  currentPageId?: string | null;
+  metadata?: ProjectMetadata;
+  fontRegistry?: FontRegistryV2; // ← 추가 (optional, 하위 호환)
+}
+```
+
+- **Optional 필드**: 기존 export 데이터와 하위 호환 유지
+- **Import 시**: `fontRegistry` 있으면 레지스트리 복원, 없으면 스킵
+- **Export 시**: 레지스트리가 비어있으면 필드 자체 생략 (`undefined`)
+- **EXPORT_LIMITS 추가**: `MAX_FONT_REGISTRY_SIZE: 50 * 1024 * 1024` (50MB — 폰트 바이너리 포함)
+
+### 14-5. 디렉터리 저장 API 지원 브라우저 정책
+
+| 브라우저   | `showDirectoryPicker` | 정책                       |
+| ---------- | --------------------- | -------------------------- |
+| Chrome 86+ | ✅                    | 1순위 (멀티파일 직접 저장) |
+| Edge 86+   | ✅                    | 1순위                      |
+| Firefox    | ❌                    | ZIP 다운로드 fallback      |
+| Safari     | ❌                    | ZIP 다운로드 fallback      |
+
+**구현**:
+
+```ts
+async function exportProject(data: ExportData): Promise<void> {
+  if ("showDirectoryPicker" in window) {
+    await exportToDirectory(data); // File System Access API
+  } else {
+    await exportAsZip(data); // JSZip → Blob → <a download>
+  }
+}
+```
+
+**JSZip 의존성**: Phase E에서 `pnpm add jszip` (번들 ~45KB gzip). Export 전용이므로 동적 import로 초기 번들 미포함.
+
+### 14-6. projects.font_registry 컬럼 마이그레이션 방식
+
+**DB 마이그레이션 (Supabase 콘솔)**:
+
+```sql
+ALTER TABLE projects
+ADD COLUMN font_registry jsonb DEFAULT NULL;
+
+COMMENT ON COLUMN projects.font_registry IS 'FontRegistryV2 JSON — 프로젝트 폰트 메타데이터';
+```
+
+**영향 분석**:
+
+- `nullable jsonb` → 기존 row 영향 없음 (`NULL`)
+- `select("*")` 패턴 → 쿼리 변경 불필요
+- RLS: 기존 `projects` 테이블 RLS 정책 자동 적용 (컬럼 레벨 RLS 불필요)
+
+**타입 확장**:
+
+```ts
+// ProjectsApiService.ts
+export interface Project {
+  id: string;
+  name: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  font_registry?: FontRegistryV2 | null; // ← 추가
+}
+```
+
+**저장/조회**:
+
+- 저장: `updateProject(id, { font_registry: registryV2 })`
+- 조회: `project.font_registry ?? { version: 2, faces: [] }`
+- 캐시 무효화: 기존 `updateProject` 로직이 자동 처리
+
+---
+
+## 15) Gates (잔존 HIGH 위험 관리)
+
+| Gate                              | 시점            | 조건                                                                                | 실패 시 대안                                                                    |
+| --------------------------------- | --------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| **G1: localStorage 마이그레이션** | Phase A 완료 시 | 레거시 `xstudio.custom-fonts` → `xstudio.font-registry` 변환 후 기존 폰트 정상 동작 | 마이그레이션 스킵, 레거시 키 직접 읽기 유지                                     |
+| **G2: Skia 폰트 로딩 타이밍**     | Phase C 완료 시 | Builder Canvas에서 커스텀 폰트 텍스트가 1초 내 정상 렌더 + fallback 없이 표시       | `xstudio:fonts-ready` 이벤트 대기 + `invalidateLayout()` 재호출 루프 (최대 3회) |
+| **G3: Export 브라우저 호환**      | Phase E 완료 시 | Chrome + fallback(ZIP) 양쪽에서 폰트 파일 포함 확인                                 | ZIP 전용으로 단순화 (showDirectoryPicker 제거)                                  |
+
+### G1 상세: localStorage 마이그레이션 안전성
+
+**위험**: 레거시 data URL 폰트가 `FontRegistryV2`로 변환 시 데이터 손실 또는 형식 오류.
+
+**Gate 통과 조건**:
+
+1. 레거시 `CustomFontAsset[]` → `FontRegistryV2` 변환 후 폰트 수 일치
+2. 변환 후 `buildCustomFontFaceCss()` 출력이 레거시와 동일
+3. 새 키(`xstudio.font-registry`) 저장/조회 왕복 일치
+
+**실패 시**: 마이그레이션 로직 롤백, 레거시 키(`xstudio.custom-fonts`) 직접 읽기 유지.
+
+> **Supabase 연동 (Stage 2 Gate)**: 향후 `projects.font_registry` 컬럼 추가 시 별도 Gate 정의. 현재 Phase A~E는 localStorage 전용.
+
+### G2 상세: Skia 폰트 로딩 타이밍
+
+**위험**: DOM `@font-face` 로드와 Skia `Typeface.MakeFreeTypeFaceFromData()` 완료 시점 차이로 텍스트 깜빡임 또는 폴백 폰트 고착.
+
+**Gate 통과 조건**:
+
+1. 커스텀 폰트 적용 요소가 Builder Canvas에서 1초 내 정상 렌더
+2. `xstudio:fonts-ready` 이벤트 → `invalidateLayout()` → 재측정/재렌더 정상 동작
+3. 폰트 로드 실패 시 Pretendard fallback으로 graceful degradation
+
+**실패 시**: Skia 폰트 로드를 비동기 큐잉으로 전환 + `requestAnimationFrame` 기반 점진 렌더.

@@ -1,15 +1,17 @@
-import { CUSTOM_FONT_STORAGE_KEY } from '@xstudio/shared/utils';
-import { getCustomFonts, injectCustomFontStyle } from './customFonts';
+import {
+  FONT_REGISTRY_STORAGE_KEY,
+  injectRegistryFontStyle,
+} from "./customFonts";
 
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-  injectCustomFontStyle(getCustomFonts());
+if (typeof window !== "undefined" && typeof document !== "undefined") {
+  injectRegistryFontStyle();
 
-  window.addEventListener('storage', (event) => {
-    if (event.key !== CUSTOM_FONT_STORAGE_KEY) return;
-    injectCustomFontStyle(getCustomFonts());
+  window.addEventListener("storage", (event) => {
+    if (event.key !== FONT_REGISTRY_STORAGE_KEY) return;
+    injectRegistryFontStyle();
   });
 
-  window.addEventListener('xstudio:custom-fonts-updated', () => {
-    injectCustomFontStyle(getCustomFonts());
+  window.addEventListener("xstudio:custom-fonts-updated", () => {
+    injectRegistryFontStyle();
   });
 }

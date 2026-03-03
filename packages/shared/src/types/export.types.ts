@@ -4,7 +4,8 @@
  * @since 2026-01-02 Phase 1
  */
 
-import type { Element, Page } from './element.types';
+import type { Element, Page } from "./element.types";
+import type { FontRegistryV2 } from "./font.types";
 
 // ============================================
 // Error Codes
@@ -15,43 +16,43 @@ import type { Element, Page } from './element.types';
  */
 export enum ExportErrorCode {
   // 검증 오류 (Phase 1)
-  VALIDATION_ERROR = 'VALIDATION_ERROR',
-  MISSING_FIELD = 'MISSING_FIELD',
-  INVALID_TYPE = 'INVALID_TYPE',
-  PARENT_CYCLE = 'PARENT_CYCLE',
-  UNSUPPORTED_TAG = 'UNSUPPORTED_TAG',
-  EXPORT_LIMIT_EXCEEDED = 'EXPORT_LIMIT_EXCEEDED',
+  VALIDATION_ERROR = "VALIDATION_ERROR",
+  MISSING_FIELD = "MISSING_FIELD",
+  INVALID_TYPE = "INVALID_TYPE",
+  PARENT_CYCLE = "PARENT_CYCLE",
+  UNSUPPORTED_TAG = "UNSUPPORTED_TAG",
+  EXPORT_LIMIT_EXCEEDED = "EXPORT_LIMIT_EXCEEDED",
 
   // 페이지 오류 (Phase 2)
-  PAGE_NOT_FOUND = 'PAGE_NOT_FOUND',
-  NO_PAGES = 'NO_PAGES',
-  NO_ELEMENTS = 'NO_ELEMENTS',
+  PAGE_NOT_FOUND = "PAGE_NOT_FOUND",
+  NO_PAGES = "NO_PAGES",
+  NO_ELEMENTS = "NO_ELEMENTS",
 
   // 이벤트 런타임 오류 (Phase 3)
-  UNSUPPORTED_ACTION = 'UNSUPPORTED_ACTION',
-  API_CALL_FAILED = 'API_CALL_FAILED',
-  POPUP_BLOCKED = 'POPUP_BLOCKED',
-  HANDLER_DUPLICATE = 'HANDLER_DUPLICATE',
-  HANDLER_POOL_HIGH = 'HANDLER_POOL_HIGH',
+  UNSUPPORTED_ACTION = "UNSUPPORTED_ACTION",
+  API_CALL_FAILED = "API_CALL_FAILED",
+  POPUP_BLOCKED = "POPUP_BLOCKED",
+  HANDLER_DUPLICATE = "HANDLER_DUPLICATE",
+  HANDLER_POOL_HIGH = "HANDLER_POOL_HIGH",
 
   // 버전/마이그레이션 오류 (Phase 4)
-  UNKNOWN_VERSION = 'UNKNOWN_VERSION',
-  MIGRATION_FAILED = 'MIGRATION_FAILED',
-  ASSET_TOO_LARGE = 'ASSET_TOO_LARGE',
+  UNKNOWN_VERSION = "UNKNOWN_VERSION",
+  MIGRATION_FAILED = "MIGRATION_FAILED",
+  ASSET_TOO_LARGE = "ASSET_TOO_LARGE",
 
   // 보안 오류
-  SECURITY_BLOCKED = 'SECURITY_BLOCKED',
-  INVALID_URL_SCHEME = 'INVALID_URL_SCHEME',
-  FILE_TOO_LARGE = 'FILE_TOO_LARGE',
+  SECURITY_BLOCKED = "SECURITY_BLOCKED",
+  INVALID_URL_SCHEME = "INVALID_URL_SCHEME",
+  FILE_TOO_LARGE = "FILE_TOO_LARGE",
 
   // 파싱 오류
-  PARSE_ERROR = 'PARSE_ERROR',
+  PARSE_ERROR = "PARSE_ERROR",
 }
 
 /**
  * 에러 심각도
  */
-export type ErrorSeverity = 'error' | 'warning' | 'info' | 'debug';
+export type ErrorSeverity = "error" | "warning" | "info" | "debug";
 
 /**
  * Export 에러 상세
@@ -91,6 +92,7 @@ export interface ExportedProjectData {
   pages: Page[];
   elements: Element[];
   currentPageId?: string | null;
+  fontRegistry?: FontRegistryV2;
   metadata?: ProjectMetadata;
 }
 

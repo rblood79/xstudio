@@ -7,10 +7,22 @@
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
-import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../../components';
-import { ToggleButton, ToggleButtonGroup, Button } from "@xstudio/shared/components";
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+} from "react";
+import {
+  PropertySection,
+  PropertyUnitInput,
+  PropertyColor,
+  PropertySelect,
+} from "../../../components";
+import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
+import { iconProps } from "../../../../utils/ui/uiConstants";
 import {
   Type,
   EllipsisVertical,
@@ -28,18 +40,22 @@ import {
   CaseLower,
   CaseUpper,
   Baseline,
-  WrapText,
-} from 'lucide-react';
-import { useStyleActions } from '../hooks/useStyleActions';
-import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
-import { useTypographyValuesJotai } from '../hooks/useTypographyValuesJotai';
-import { useResetStyles } from '../hooks/useResetStyles';
+  TextWrap,
+} from "lucide-react";
+import { useStyleActions } from "../hooks/useStyleActions";
+import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
+import { useTypographyValuesJotai } from "../hooks/useTypographyValuesJotai";
+import { useResetStyles } from "../hooks/useResetStyles";
+import { validateFontFile } from "@xstudio/shared";
 import {
   DEFAULT_FONT_OPTIONS,
-  createCustomFontFromFile,
+  FONT_REGISTRY_STORAGE_KEY,
+  addFontFace,
+  createFontFaceFromFile,
   getCustomFonts,
-  saveCustomFonts,
-} from '../../../fonts/customFonts';
+  loadFontRegistry,
+  saveRegistryAndNotify,
+} from "../../../fonts/customFonts";
 
 /**
  * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
@@ -49,37 +65,86 @@ import {
 const TypographySectionContent = memo(function TypographySectionContent() {
   const { updateStyle, updateStyles } = useStyleActions();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
-  const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
+  const { updateStyleImmediate, updateStylePreview } =
+    useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useTypographyValuesJotai();
   const [customFonts, setCustomFonts] = useState(() => getCustomFonts());
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ADR-008: Text Behavior 프리셋 변경 핸들러
   // updateStyles (batch)로 5개 속성을 단일 set()에 적용 → 히스토리 1건 + 레이아웃 1회
-  const handleTextBehaviorChange = useCallback((preset: string) => {
-    const presets: Record<string, Record<string, string>> = {
-      normal:        { whiteSpace: '', wordBreak: '', overflowWrap: '', textOverflow: '', overflow: '' },
-      nowrap:        { whiteSpace: 'nowrap', wordBreak: '', overflowWrap: '', textOverflow: '', overflow: '' },
-      truncate:      { whiteSpace: 'nowrap', wordBreak: '', overflowWrap: '', textOverflow: 'ellipsis', overflow: 'hidden' },
-      'break-words': { whiteSpace: '', wordBreak: '', overflowWrap: 'break-word', textOverflow: '', overflow: '' },
-      'break-all':   { whiteSpace: '', wordBreak: 'break-all', overflowWrap: '', textOverflow: '', overflow: '' },
-      'keep-all':    { whiteSpace: '', wordBreak: 'keep-all', overflowWrap: 'break-word', textOverflow: '', overflow: '' },
-      preserve:      { whiteSpace: 'pre-wrap', wordBreak: '', overflowWrap: '', textOverflow: '', overflow: '' },
-    };
-    const values = presets[preset];
-    if (!values) return; // 'custom' → no-op
-    updateStyles(values);
-  }, [updateStyles]);
+  const handleTextBehaviorChange = useCallback(
+    (preset: string) => {
+      const presets: Record<string, Record<string, string>> = {
+        normal: {
+          whiteSpace: "",
+          wordBreak: "",
+          overflowWrap: "",
+          textOverflow: "",
+          overflow: "",
+        },
+        nowrap: {
+          whiteSpace: "nowrap",
+          wordBreak: "",
+          overflowWrap: "",
+          textOverflow: "",
+          overflow: "",
+        },
+        truncate: {
+          whiteSpace: "nowrap",
+          wordBreak: "",
+          overflowWrap: "",
+          textOverflow: "ellipsis",
+          overflow: "hidden",
+        },
+        "break-words": {
+          whiteSpace: "",
+          wordBreak: "",
+          overflowWrap: "break-word",
+          textOverflow: "",
+          overflow: "",
+        },
+        "break-all": {
+          whiteSpace: "",
+          wordBreak: "break-all",
+          overflowWrap: "",
+          textOverflow: "",
+          overflow: "",
+        },
+        "keep-all": {
+          whiteSpace: "",
+          wordBreak: "keep-all",
+          overflowWrap: "break-word",
+          textOverflow: "",
+          overflow: "",
+        },
+        preserve: {
+          whiteSpace: "pre-wrap",
+          wordBreak: "",
+          overflowWrap: "",
+          textOverflow: "",
+          overflow: "",
+        },
+      };
+      const values = presets[preset];
+      if (!values) return; // 'custom' → no-op
+      updateStyles(values);
+    },
+    [updateStyles],
+  );
 
   useEffect(() => {
     const syncFonts = () => setCustomFonts(getCustomFonts());
 
-    window.addEventListener('xstudio:custom-fonts-updated', syncFonts);
-    window.addEventListener('storage', syncFonts);
+    window.addEventListener("xstudio:custom-fonts-updated", syncFonts);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== FONT_REGISTRY_STORAGE_KEY) return;
+      syncFonts();
+    };
+    window.addEventListener("storage", handleStorage);
     return () => {
-      window.removeEventListener('xstudio:custom-fonts-updated', syncFonts);
-      window.removeEventListener('storage', syncFonts);
+      window.removeEventListener("xstudio:custom-fonts-updated", syncFonts);
+      window.removeEventListener("storage", handleStorage);
     };
   }, []);
 
@@ -92,30 +157,28 @@ const TypographySectionContent = memo(function TypographySectionContent() {
     return [...DEFAULT_FONT_OPTIONS, ...dynamicOptions];
   }, [customFonts]);
 
-  const handleAddCustomFont = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
+  const handleFontFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-  const handleFontFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+      const validationError = validateFontFile(file);
+      if (validationError) {
+        console.warn("[FontRegistry]", validationError);
+        event.target.value = "";
+        return;
+      }
 
-    const defaultFamily = file.name.replace(/\.[^.]+$/, '');
-    const familyInput = window.prompt('폰트 패밀리 이름을 입력하세요.', defaultFamily);
-    const family = familyInput?.trim();
-
-    if (!family) {
-      event.target.value = '';
-      return;
-    }
-
-    const font = await createCustomFontFromFile(file, family);
-    const merged = [...customFonts.filter((item) => item.family !== font.family), font];
-    saveCustomFonts(merged);
-    setCustomFonts(merged);
-    updateStyle('fontFamily', font.family);
-    event.target.value = '';
-  }, [customFonts, updateStyle]);
+      const face = await createFontFaceFromFile(file);
+      let registry = loadFontRegistry();
+      registry = addFontFace(registry, face);
+      saveRegistryAndNotify(registry);
+      setCustomFonts(getCustomFonts());
+      updateStyle("fontFamily", face.family);
+      event.target.value = "";
+    },
+    [updateStyle],
+  );
 
   if (!styleValues) return null;
 
@@ -127,7 +190,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         className="font-family"
         value={styleValues.fontFamily}
         options={fontOptions}
-        onChange={(value) => updateStyle('fontFamily', value)}
+        onChange={(value) => updateStyle("fontFamily", value)}
       />
 
       <PropertyColor
@@ -135,25 +198,30 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         label="Color"
         className="color"
         value={styleValues.color}
-        onChange={(value) => updateStyle('color', value)}
+        onChange={(value) => updateStyle("color", value)}
         placeholder="#000000"
       />
 
       <div className="fieldset-actions actions-font">
-        <Button onPress={handleAddCustomFont}>
+        <label
+          className="react-aria-Button"
+          data-variant="default"
+          data-size="sm"
+          title="커스텀 폰트 추가 (.woff2, .woff, .ttf, .otf)"
+          style={{ cursor: "pointer", borderRadius: 4 }}
+        >
           <EllipsisVertical
             color={iconProps.color}
             size={iconProps.size}
             strokeWidth={iconProps.strokeWidth}
           />
-        </Button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".woff,.woff2,.ttf,.otf,.eot,.svg"
-          style={{ display: 'none' }}
-          onChange={handleFontFileChange}
-        />
+          <input
+            type="file"
+            accept=".woff2,.woff,.ttf,.otf"
+            style={{ display: "none" }}
+            onChange={handleFontFileChange}
+          />
+        </label>
       </div>
 
       <PropertyUnitInput
@@ -161,10 +229,10 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         label="Font Size"
         className="font-size"
         value={styleValues.fontSize}
-        units={['reset', 'px']}
+        units={["reset", "px"]}
         defaultUnit="px"
-        onChange={(value) => updateStyleImmediate('fontSize', value)}
-        onDrag={(value) => updateStylePreview('fontSize', value)}
+        onChange={(value) => updateStyleImmediate("fontSize", value)}
+        onDrag={(value) => updateStylePreview("fontSize", value)}
         min={8}
         max={200}
       />
@@ -173,9 +241,9 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         label="Line Height"
         className="line-height"
         value={styleValues.lineHeight}
-        units={['reset', 'px']}
-        onChange={(value) => updateStyleImmediate('lineHeight', value)}
-        onDrag={(value) => updateStylePreview('lineHeight', value)}
+        units={["reset", "px"]}
+        onChange={(value) => updateStyleImmediate("lineHeight", value)}
+        onDrag={(value) => updateStylePreview("lineHeight", value)}
         min={0}
         max={10}
         allowKeywords
@@ -187,42 +255,33 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         className="font-weight"
         value={styleValues.fontWeight}
         options={[
-          { value: 'reset', label: 'Reset' },
-          { value: '100', label: '100 - Thin' },
-          { value: '200', label: '200 - Extra Light' },
-          { value: '300', label: '300 - Light' },
-          { value: '400', label: '400 - Normal' },
-          { value: '500', label: '500 - Medium' },
-          { value: '600', label: '600 - Semi Bold' },
-          { value: '700', label: '700 - Bold' },
-          { value: '800', label: '800 - Extra Bold' },
-          { value: '900', label: '900 - Black' },
-          { value: 'normal', label: 'Normal' },
-          { value: 'bold', label: 'Bold' },
+          { value: "reset", label: "Reset" },
+          { value: "100", label: "100 - Thin" },
+          { value: "200", label: "200 - Extra Light" },
+          { value: "300", label: "300 - Light" },
+          { value: "400", label: "400 - Normal" },
+          { value: "500", label: "500 - Medium" },
+          { value: "600", label: "600 - Semi Bold" },
+          { value: "700", label: "700 - Bold" },
+          { value: "800", label: "800 - Extra Bold" },
+          { value: "900", label: "900 - Black" },
+          { value: "normal", label: "Normal" },
+          { value: "bold", label: "Bold" },
         ]}
-        onChange={(value) => updateStyle('fontWeight', value)}
+        onChange={(value) => updateStyle("fontWeight", value)}
       />
       <PropertyUnitInput
         icon={Type}
         label="Letter Spacing"
         className="letter-spacing"
         value={styleValues.letterSpacing}
-        units={['reset', 'px']}
-        onChange={(value) => updateStyleImmediate('letterSpacing', value)}
-        onDrag={(value) => updateStylePreview('letterSpacing', value)}
+        units={["reset", "px"]}
+        onChange={(value) => updateStyleImmediate("letterSpacing", value)}
+        onDrag={(value) => updateStylePreview("letterSpacing", value)}
         min={-10}
         max={10}
         allowKeywords
       />
-      <div className="fieldset-actions">
-        <Button>
-          <EllipsisVertical
-            color={iconProps.color}
-            size={iconProps.size}
-            strokeWidth={iconProps.strokeWidth}
-          />
-        </Button>
-      </div>
 
       <fieldset className="properties-aria text-align">
         <legend className="fieldset-legend">Text Align</legend>
@@ -232,7 +291,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
           selectedKeys={[styleValues.textAlign]}
           onSelectionChange={(keys) => {
             const value = Array.from(keys)[0] as string;
-            if (value) updateStyle('textAlign', value);
+            if (value) updateStyle("textAlign", value);
           }}
         >
           <ToggleButton id="left">
@@ -267,7 +326,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
           selectedKeys={[styleValues.verticalAlign]}
           onSelectionChange={(keys) => {
             const value = Array.from(keys)[0] as string;
-            if (value) updateStyle('verticalAlign', value);
+            if (value) updateStyle("verticalAlign", value);
           }}
         >
           <ToggleButton id="top">
@@ -294,30 +353,20 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         </ToggleButtonGroup>
       </fieldset>
 
-      <div className="fieldset-actions">
-        <Button>
-          <EllipsisVertical
-            color={iconProps.color}
-            size={iconProps.size}
-            strokeWidth={iconProps.strokeWidth}
-          />
-        </Button>
-      </div>
-
       <fieldset className="properties-aria text-decoration">
         <legend className="fieldset-legend">Text Decoration</legend>
         <ToggleButtonGroup
           aria-label="Text decoration"
           indicator
           selectedKeys={
-            styleValues.textDecoration === 'none'
+            styleValues.textDecoration === "none"
               ? []
               : [styleValues.textDecoration]
           }
           onSelectionChange={(keys) => {
             const value = Array.from(keys)[0] as string;
             // 선택 해제 시 'none'으로 초기화
-            updateStyle('textDecoration', value || 'none');
+            updateStyle("textDecoration", value || "none");
           }}
         >
           <ToggleButton id="overline">
@@ -325,7 +374,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
               color={iconProps.color}
               size={iconProps.size}
               strokeWidth={iconProps.strokeWidth}
-              style={{ transform: 'rotate(180deg)' }}
+              style={{ transform: "rotate(180deg)" }}
             />
           </ToggleButton>
           <ToggleButton id="underline">
@@ -353,7 +402,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
           selectedKeys={[styleValues.fontStyle]}
           onSelectionChange={(keys) => {
             const value = Array.from(keys)[0] as string;
-            if (value) updateStyle('fontStyle', value);
+            if (value) updateStyle("fontStyle", value);
           }}
         >
           <ToggleButton id="normal">
@@ -375,21 +424,11 @@ const TypographySectionContent = memo(function TypographySectionContent() {
               color={iconProps.color}
               size={iconProps.size}
               strokeWidth={iconProps.strokeWidth}
-              style={{ fontStyle: 'oblique', transform: 'skewX(-10deg)' }}
+              style={{ fontStyle: "oblique", transform: "skewX(-10deg)" }}
             />
           </ToggleButton>
         </ToggleButtonGroup>
       </fieldset>
-
-      <div className="fieldset-actions">
-        <Button>
-          <EllipsisVertical
-            color={iconProps.color}
-            size={iconProps.size}
-            strokeWidth={iconProps.strokeWidth}
-          />
-        </Button>
-      </div>
 
       <fieldset className="properties-aria text-transform">
         <legend className="fieldset-legend">Text Transform</legend>
@@ -397,14 +436,14 @@ const TypographySectionContent = memo(function TypographySectionContent() {
           aria-label="Text transform"
           indicator
           selectedKeys={
-            styleValues.textTransform === 'none'
+            styleValues.textTransform === "none"
               ? []
               : [styleValues.textTransform]
           }
           onSelectionChange={(keys) => {
             const value = Array.from(keys)[0] as string;
             // 선택 해제 시 'none'으로 초기화
-            updateStyle('textTransform', value || 'none');
+            updateStyle("textTransform", value || "none");
           }}
         >
           <ToggleButton id="uppercase">
@@ -433,19 +472,19 @@ const TypographySectionContent = memo(function TypographySectionContent() {
 
       {/* ADR-008: Text Behavior Preset */}
       <PropertySelect
-        icon={WrapText}
-        label="Text Behavior"
+        icon={TextWrap}
+        label="Wrap"
         className="text-behavior"
         value={styleValues.textBehaviorPreset}
         options={[
-          { value: 'normal', label: 'Normal' },
-          { value: 'nowrap', label: 'No Wrap' },
-          { value: 'truncate', label: 'Truncate (...)' },
-          { value: 'break-words', label: 'Break Words' },
-          { value: 'break-all', label: 'Break All' },
-          { value: 'keep-all', label: 'Keep All (CJK)' },
-          { value: 'preserve', label: 'Preserve' },
-          { value: 'custom', label: 'Custom...' },
+          { value: "normal", label: "Normal" },
+          { value: "nowrap", label: "No Wrap" },
+          { value: "truncate", label: "Truncate (...)" },
+          { value: "break-words", label: "Break Words" },
+          { value: "break-all", label: "Break All" },
+          { value: "keep-all", label: "Keep All (CJK)" },
+          { value: "preserve", label: "Preserve" },
+          { value: "custom", label: "Custom..." },
         ]}
         onChange={handleTextBehaviorChange}
       />
@@ -464,22 +503,22 @@ export const TypographySection = memo(function TypographySection() {
 
   const handleReset = () => {
     resetStyles([
-      'fontFamily',
-      'fontSize',
-      'fontWeight',
-      'fontStyle',
-      'lineHeight',
-      'letterSpacing',
-      'color',
-      'textAlign',
-      'textDecoration',
-      'textTransform',
-      'verticalAlign',
-      'whiteSpace',
-      'wordBreak',
-      'overflowWrap',
-      'textOverflow',
-      'overflow',
+      "fontFamily",
+      "fontSize",
+      "fontWeight",
+      "fontStyle",
+      "lineHeight",
+      "letterSpacing",
+      "color",
+      "textAlign",
+      "textDecoration",
+      "textTransform",
+      "verticalAlign",
+      "whiteSpace",
+      "wordBreak",
+      "overflowWrap",
+      "textOverflow",
+      "overflow",
     ]);
   };
 
