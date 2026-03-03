@@ -34,7 +34,7 @@
 |-----|------|-----------|-------------|:--------:|
 | [009](009-full-tree-wasm-layout.md) | Figma-Class Rendering & Layout | Foundation + Phase 0~2 (Dropflow 제거, Full-Tree Layout, Persistent Taffy Tree) | Phase 3 (Binary Protocol), Phase 4 (Flat Render List + R-tree), Phase 5 (OffscreenCanvas Worker) | P4 |
 | [010](010-events-panel.md) | Events Panel Smart Recommendations | P0 + P1 전체 (추천 이벤트/액션, 배지, 경고) | P1.5 (UX 폴리싱, 제안), P2 (AI 생성 + 고급) | P5 |
-| [011](011-ai-assistant-design.md) | AI Assistant 설계 (Groq Tool Calling) | Phase A1~A4 전체 (Tool Calling, Agent Loop, 7개 도구, UI) | Phase A5 (캔버스 통합: styleAdapter 업데이트, 멀티모달, 인스턴스 도구) | P5 |
+| [011](011-ai-assistant-design.md) | AI Assistant 설계 (Groq Tool Calling) | Phase A1~A4 전체 (Tool Calling, Agent Loop, 7개 도구, UI) | Phase A5 (styleAdapter 캔버스 통합 업데이트, 멀티모달 이미지 입력, 인스턴스 생성 도구) | P5 |
 
 ### 미구현
 
@@ -77,11 +77,12 @@
 - **전제 조건**: Phase 2 완료 (충족)
 - **영향 범위**: 5,000+ 요소 대규모 프로젝트 성능
 
-### P5: ADR-010 P1.5/P2 + ADR-015
+### P5: ADR-010 P1.5/P2 + ADR-011 A5 + ADR-015
 
 - **근거**: 핵심 기능 완료, 부가 기능/장기 계획
 - ADR-010 P1.5: UX 폴리싱 (제안 단계)
 - ADR-010 P2: AI 기반 이벤트 생성 (장기)
+- **ADR-011 A5**: 캔버스 통합(styleAdapter 업데이트, 멀티모달, 인스턴스 도구) — AI 인프라 성숙 후 실행
 - ADR-015: Sitemap 계층 시각화 (있으면 좋지만 필수 아님)
 
 ---

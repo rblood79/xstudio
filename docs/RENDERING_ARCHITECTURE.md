@@ -307,7 +307,7 @@ performance.measure('bounds-lookup', 'bounds-lookup-start', 'bounds-lookup-end')
 // wasm-bindings/featureFlags.ts (하드코딩)
 
 export const WASM_FLAGS = {
-  SPATIAL_INDEX: false,
+  SPATIAL_INDEX: true,
   LAYOUT_ENGINE: true,
   LAYOUT_WORKER: false,
   CANVASKIT_RENDERER: true,
@@ -706,6 +706,8 @@ if (WASM_FLAGS.SPATIAL_INDEX) {
 > 따라서 “move마다 `syncToReactState()`를 호출해 폭증”하는 형태는 현재 경로에서 발생하지 않는다.
 
 **`elementOrderIndex` 생성 및 갱신:**
+
+> **미구현**: 아래 설계는 SpatialIndex query 결과 정렬이 필요해질 때 적용 예정. 현재 Taffy WASM 엔진 기반 레이아웃 순서가 이 역할을 대체하고 있음.
 
 `elementOrderIndex`는 전체 요소의 렌더 순서(= DFS 트리 순회 순서)를
 `Map<string, number>`로 캐시한 파생 인덱스이다.
@@ -1188,6 +1190,8 @@ impl GridLayoutEngine {
 
 ### 2.3 TypeScript 바인딩
 
+> **레거시 PoC**: 아래 코드 예시는 초기 설계 당시의 API입니다. 실제 구현(`layoutAccelerator.ts`)은 `wasmBlockLayout()`, `wasmParseTracks()`, `wasmGridCellPositions()` 등 다른 인터페이스를 사용합니다.
+
 **`wasm-bindings/layoutAccelerator.ts`:**
 ```typescript
 import init, { BlockLayoutEngine, GridLayoutEngine } from './pkg/xstudio_wasm';
@@ -1267,6 +1271,8 @@ export function wasmGridCellPositions(
 
 > **원칙:** `collapseMargins()`, `createsBFC()` 등 개별 함수는 JS에 유지한다.
 > WASM 경계는 `calculate()` 진입점에서 1회만 넘기고, 내부에서 모든 연산을 일괄 수행한다.
+
+> **Phase 11 이후 제거됨**: 아래 `BlockEngine.ts`/`GridEngine.ts` 코드 예시는 레거시 PoC 기록입니다. 현재는 `TaffyBlockEngine.ts`, `TaffyFlexEngine.ts`, `TaffyGridEngine.ts`가 역할을 담당합니다.
 
 **`BlockEngine.ts` 수정 (calculate 메서드만):**
 ```typescript
@@ -1810,6 +1816,8 @@ type WorkerResponse =
 
 ### 4.3 Worker 구현
 
+> **설계 의도 코드**: 아래 코드 예시는 설계 시점의 구조입니다. 실제 구현은 `WorkerRequestType` enum 기반 메시지 처리와 `WasmModule` 타입 래핑을 사용합니다.
+
 ```typescript
 // wasm-worker/layoutWorker.ts
 
@@ -2043,6 +2051,8 @@ export function getCanvasKit(): CanvasKit {
   return canvasKit;
 }
 ```
+
+> **Note**: 실제 구현에서는 `window.__XSTUDIO_CANVASKIT_INSTANCE__` 전역 캐시와 `window.__XSTUDIO_CANVASKIT_PROMISE__` 중복 초기화 방지 패턴이 추가로 적용되어 HMR 안전성을 보장합니다.
 
 **WASM 파일 복사 설정:**
 
@@ -2534,7 +2544,7 @@ Step 5: PixiJS 자체 렌더링 비활성화
 >
 > Step 3에서 반드시 **측정 경로도 함께 전환**해야 한다:
 > ```typescript
-> // apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts
+> // apps/builder/src/builder/workspace/canvas/utils/textMeasure.ts
 >
 > function measureText(
 >   ck: CanvasKit,
@@ -2586,8 +2596,18 @@ export function getRenderMode(): 'skia' { return 'skia'; }
 | `apps/builder/src/builder/workspace/canvas/skia/effects.ts` | 이펙트 파이프라인 (saveLayer 기반) | ✅ 구현 |
 | `apps/builder/src/builder/workspace/canvas/skia/types.ts` | SkiaRenderable 인터페이스 | ✅ 구현 |
 | `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 | ✅ 구현 |
-| `apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 유틸리티 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/utils/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 유틸리티 | ✅ 구현 |
 | `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts` | Box/Text/Image/Container 노드 렌더링 + AABB 컬링 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/useSkiaNode.ts` | Skia 노드 React hook | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/specShapeConverter.ts` | Spec shapes → Skia shapes 변환 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/hoverRenderer.ts` | 호버 상태 렌더링 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/renderCommands.ts` | Skia 렌더 커맨드 추상화 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/gridRenderer.ts` | 그리드 렌더러 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` | 워크플로우 렌더러 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` | 워크플로우 엣지 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` | 워크플로우 그래프 유틸 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` | 워크플로우 히트테스트 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` | 워크플로우 미니맵 | ✅ 구현 |
 | `apps/builder/src/builder/workspace/canvas/skia/eventBridge.ts` | DOM 이벤트 브리징 (CanvasKit 캔버스 → PixiJS 캔버스) | ❌ 삭제됨 (불필요) |
 | BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
 | TextSprite renderSkia() | ParagraphBuilder 텍스트 렌더링 |
@@ -3136,7 +3156,7 @@ export async function initAllWasm(): Promise<void> {
 ```
 
 > **Note (2026-02-18):** 현재 Feature Flag 조건문은 유지된다.
-> 기본값은 `SPATIAL_INDEX=false`, `LAYOUT_ENGINE=true`, `LAYOUT_WORKER=false`, `CANVASKIT_RENDERER=true`, `DUAL_SURFACE_CACHE=true`다.
+> 기본값은 `SPATIAL_INDEX=true`, `LAYOUT_ENGINE=true`, `LAYOUT_WORKER=false`, `CANVASKIT_RENDERER=true`, `DUAL_SURFACE_CACHE=true`다.
 
 **앱 진입점에서 호출:**
 

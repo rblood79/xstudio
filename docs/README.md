@@ -105,7 +105,7 @@ docs/
 - [Store 구조](./reference/STRUCTURE_STORE.md) - Zustand store 구조 및 슬라이스 패턴
 - [Monorepo 구조](./reference/MONOREPO.md) - 모노레포 패키지 구조
 - [Multi-Page 렌더링](./reference/MULTIPAGE.md) - 다중 페이지 캔버스 렌더링
-- ~~[Workflow 설계](./reference/WORKFLOW.md)~~ - Legacy로 이동 ([legacy/WORKFLOW.md](./legacy/WORKFLOW.md))
+- [Workflow 설계](./legacy/WORKFLOW.md) (legacy)
 
 ### Components (컴포넌트)
 - [패널 시스템](./reference/components/PANEL_SYSTEM.md)

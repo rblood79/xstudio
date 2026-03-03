@@ -9,24 +9,28 @@ XStudio는 **노코드 웹 빌더** 애플리케이션입니다.
 ```
 xstudio/
 ├── apps/
-│   └── builder/          # 메인 빌더 앱
-│       └── src/
-│           ├── builder/  # Builder UI (에디터)
-│           │   ├── panels/ai/           # AI 어시스턴트 패널
-│           │   │   ├── hooks/useAgentLoop.ts  # Agent Loop React hook
-│           │   │   └── components/      # ToolCallMessage, ToolResultMessage, AgentControls
-│           │   └── stores/
-│           │       ├── conversation.ts  # 대화 + Agent 상태 (Zustand)
-│           │       └── aiVisualFeedback.ts  # G.3 시각 피드백
-│           ├── preview/  # Preview (iframe 내부)
-│           └── services/ # Supabase, AI 서비스
-│               └── ai/
-│                   ├── GroqAgentService.ts  # Tool Calling + Agent Loop
-│                   ├── tools/              # 7개 도구 (CRUD, search, batch)
-│                   ├── systemPrompt.ts     # 동적 시스템 프롬프트
-│                   └── styleAdapter.ts     # CSS → 내부 스키마 변환
+│   ├── builder/          # 메인 빌더 앱
+│   │   └── src/
+│   │       ├── builder/  # Builder UI (에디터)
+│   │       │   ├── panels/ai/           # AI 어시스턴트 패널
+│   │       │   │   ├── hooks/useAgentLoop.ts  # Agent Loop React hook
+│   │       │   │   └── components/      # ToolCallMessage, ToolResultMessage, AgentControls
+│   │       │   └── stores/
+│   │       │       ├── conversation.ts  # 대화 + Agent 상태 (Zustand)
+│   │       │       └── aiVisualFeedback.ts  # G.3 시각 피드백
+│   │       ├── preview/  # Preview (iframe 내부)
+│   │       └── services/ # Supabase, AI 서비스
+│   │           └── ai/
+│   │               ├── GroqAgentService.ts  # Tool Calling + Agent Loop
+│   │               ├── tools/              # 7개 도구 (CRUD, search, batch)
+│   │               ├── systemPrompt.ts     # 동적 시스템 프롬프트
+│   │               └── styleAdapter.ts     # CSS → 내부 스키마 변환
+│   └── publish/          # Publish 앱 (프로젝트 배포)
 ├── packages/
-│   └── shared/           # 공유 유틸리티
+│   ├── config/           # 공유 설정 (ESLint, TypeScript)
+│   ├── layout-flow/      # 레이아웃 플로우 엔진
+│   ├── shared/           # 공유 유틸리티
+│   └── specs/            # 컴포넌트 스펙 (Skia 렌더링용)
 ├── docs/
 │   ├── adr/              # 아키텍처 결정 기록 (AI 설계 포함)
 │   └── reference/        # 기술 문서
@@ -114,7 +118,7 @@ pnpm dev
 pnpm build
 
 # 타입 체크
-pnpm typecheck
+pnpm type-check
 
 # Storybook
 pnpm storybook
@@ -122,13 +126,13 @@ pnpm storybook
 
 ## 참조 문서
 
-- [AI Feature Design](docs/adr/011-ai-assistant-design.md)
-- [WASM Architecture](docs/RENDERING_ARCHITECTURE.md)
-- [Component Spec](docs/COMPONENT_SPEC.md)
+- [AI Assistant 설계 (ADR-011)](docs/adr/011-ai-assistant-design.md)
+- [렌더링 아키텍처](docs/RENDERING_ARCHITECTURE.md)
+- [컴포넌트 스펙](docs/COMPONENT_SPEC.md)
 - [CSS Architecture](docs/reference/components/CSS_ARCHITECTURE.md)
 - [Skill Rules](.claude/skills/xstudio-patterns/SKILL.md)
-- [ADR: State Management](docs/adr/001-state-management.md)
-- [ADR: Styling](docs/adr/002-styling-approach.md)
-- [ADR: Canvas](docs/adr/003-canvas-rendering.md)
-- [ADR: Preview](docs/adr/004-preview-isolation.md)
-- [ADR: Text Wrapping](docs/adr/005-css-text-wrapping.md)
+- [ADR-001: State Management](docs/adr/001-state-management.md)
+- [ADR-002: Styling](docs/adr/002-styling-approach.md)
+- [ADR-003: Canvas Rendering](docs/adr/003-canvas-rendering.md)
+- [ADR-004: Preview Isolation](docs/adr/004-preview-isolation.md)
+- [ADR-005: CSS Text Wrapping](docs/adr/005-css-text-wrapping.md)

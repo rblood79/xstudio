@@ -5,7 +5,7 @@
  * fullTreeLayout.ts가 모든 display 타입(flex/grid/block)을 단일 WASM 호출로 처리.
  *
  * @since 2026-01-28 Phase 2 - 하이브리드 레이아웃 엔진
- * @updated 2026-03-01 ADR-005 Foundation 완료 - Dropflow 제거, 단일 엔진 전환
+ * @updated 2026-03-01 ADR-009 Foundation 완료 - Dropflow 제거, 단일 엔진 전환
  */
 
 // Re-export types

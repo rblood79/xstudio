@@ -178,7 +178,7 @@ const taffyStyle: TaffyStyle = elementToTaffyBlockStyle(element, taffyConfig);
 - **Phase 9A**: 레거시 엔진 삭제 (`BlockEngine.ts` 952줄, `FlexEngine.ts` 65줄, `GridEngine.ts` 563줄)
 - **Phase 9B**: Feature flag 제거 (`taffyFlex`, `taffyGrid`, `dropflowBlock`)
 - **Phase 9C**: `engines/index.ts` 디스패처 정리 (`shouldDelegateToPixiLayout` 제거, 직접 라우팅)
-- **Phase 9D**: `TaffyFlexEngine` / `TaffyGridEngine` / `DropflowBlockEngine` 리뷰 이슈 수정
+- **Phase 9D**: `TaffyFlexEngine` / `TaffyGridEngine` / `TaffyBlockEngine (Phase 11에서 Dropflow 대체)` 리뷰 이슈 수정
 
 ---
 
@@ -219,8 +219,8 @@ const taffyStyle: TaffyStyle = elementToTaffyBlockStyle(element, taffyConfig);
 ## 11) 관련 문서
 
 ### 내부 문서
-- [WASM 아키텍처](./RENDERING_ARCHITECTURE.md)
-- [ADR-003: Canvas 렌더링](./adr/003-canvas-rendering.md)
+- [WASM 아키텍처](../RENDERING_ARCHITECTURE.md)
+- [ADR-003: Canvas 렌더링](./003-canvas-rendering.md)
 
 ### 외부 참고 저장소
 
