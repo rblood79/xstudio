@@ -35,14 +35,14 @@
 | [009](009-full-tree-wasm-layout.md)               | Figma-Class Rendering & Layout        | Foundation + Phase 0~2 + Phase 3 Binary Protocol 부분       | Phase 3 SharedArrayBuffer, Phase 4 (Flat Render List + R-tree), Phase 5 (OffscreenCanvas Worker) |    P4    |
 | [010](010-events-panel.md)                        | Events Panel Smart Recommendations    | P0 + P1 전체 (추천 이벤트/액션, 배지, 경고, 25개 액션 타입) | P1.5 (UX 폴리싱), P2 (AI 생성 + 고급)                                                            |    P5    |
 | [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling) | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화)           | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스 도구)                                   |    P5    |
-| [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝     | P0~P2 전체 완료 (80%)                                       | P3 전체 (Dirty Tracking, Viewport Culling, PersistentTaffyTree)                                  |  **P1**  |
+| [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝     | P0~P2 전체 완료 (80%)                                       | P3 전체 (Dirty Tracking, Viewport Culling, PersistentTaffyTree) — 대규모 작업으로 후순위 이동    |    P5    |
 
 ### 미구현
 
 | ADR                                      | 제목                               | 상태     | 규모                                                            | 우선순위 |
 | ---------------------------------------- | ---------------------------------- | -------- | --------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩        | Proposed | 5 Phase, 21파일                                                 |  **P3**  |
-| [014](014-fonts.md)                      | Fonts 실행 계획                    | Partial  | Phase A+B 완료, Phase C~E 미구현 (localStorage 레지스트리 기반) |  **P2**  |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩        | Proposed | 5 Phase, 21파일                                                 |  **P2**  |
+| [014](014-fonts.md)                      | Fonts 실행 계획                    | Partial  | Phase A+B 완료, Phase C~E 미구현 (localStorage 레지스트리 기반) |  **P1**  |
 | [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                                    |    P5    |
 | [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations          |    P5    |
 
@@ -50,23 +50,15 @@
 
 ## 우선순위 근거
 
-### P1: ADR-012 파이프라인 하드닝
-
-- **근거**: 데이터 무결성 + 런타임 안정성 직결
-- **진행률**: 80% 완료 (P0~P2 전체 구현됨)
-- **잔여 이슈**: P3 전체 — Dirty Tracking (P3-1), Viewport Culling (P3-2), PersistentTaffyTree 증분 갱신 (P3-3)
-- **전제 조건**: ADR-009 Foundation 완료 (충족)
-- **영향 범위**: 1,500+ 요소 시나리오 안정성
-
-### P2: ADR-014 Fonts
+### P1: ADR-014 Fonts
 
 - **근거**: 프로젝트 레벨 폰트 관리 부재 → 협업/배포 제약
-- **진행률**: Phase A~E 전체 미착수
+- **진행률**: Phase A+B 완료, Phase C~E 미구현
 - **핵심 이슈**: localStorage만 사용 → 프로젝트 공유 시 폰트 유실, Skia 커스텀 폰트 미구현
 - **전제 조건**: 없음 (독립 실행 가능)
 - **영향 범위**: Builder/Preview/Publish 폰트 일관성
 
-### P3: ADR-013 Quick Connect
+### P2: ADR-013 Quick Connect
 
 - **근거**: Collection 컴포넌트 데이터 바인딩 3단계 수동 → 1클릭 자동화
 - **진행률**: 전체 미착수 (Factory 6종, useCollectionData 등 기반 인프라는 존재)
@@ -74,19 +66,20 @@
 - **전제 조건**: 없음 (독립 실행 가능)
 - **영향 범위**: 데이터 바인딩 UX
 
-### P4: ADR-009 Phase 3~5
+### P3: ADR-009 Phase 3~5
 
 - **근거**: Foundation~Phase 2 + Binary Protocol 부분 완료로 기본 성능 확보, 추가 최적화는 사용자 규모 증가 시
 - **핵심 항목**: SharedArrayBuffer 제로카피, Flat Render List, OffscreenCanvas Worker
 - **전제 조건**: Phase 2 Binary Protocol TypedArray 완료 (충족)
 - **영향 범위**: 5,000+ 요소 대규모 프로젝트 성능
 
-### P5: ADR-010 P1.5/P2 + ADR-011 A5 + ADR-015 + ADR-016
+### P4: ADR-010 P1.5/P2 + ADR-011 A5 + ADR-012 P3 + ADR-015 + ADR-016
 
 - **근거**: 핵심 기능 완료, 부가 기능/장기 계획
 - ADR-010 P1.5: UX 폴리싱 (제안 단계)
 - ADR-010 P2: AI 기반 이벤트 생성 (장기)
 - **ADR-011 A5**: 캔버스 통합(CanvasKit 스키마 변환, 멀티모달, 인스턴스 도구) — AI 인프라 성숙 후 실행
+- **ADR-012 P3**: Dirty Tracking, Viewport Culling, PersistentTaffyTree — 대규모 최적화 작업으로 후순위 이동
 - ADR-015: Sitemap 계층 시각화 (있으면 좋지만 필수 아님)
 - ADR-016: Photoshop UI/UX (Action Bar, Context Menu, Floating Panel)
 
