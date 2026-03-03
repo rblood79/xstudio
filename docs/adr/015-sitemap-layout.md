@@ -576,3 +576,134 @@ if (direction === 'vertical') {
 - **Page 타입**: `apps/builder/src/types/builder/unified.types.ts` — parent_id 필드 존재
 - **레이아웃 알고리즘**: `apps/builder/src/builder/stores/elements.ts` — initializePagePositions
 - **페이지 관리**: `apps/builder/src/builder/hooks/usePageManager.ts` — addPage, 위치 계산
+
+---
+
+## 코드 대조 검증 (2026-03-03)
+
+### 검증 범위
+
+실제 파일 경로와 구현 현황을 `Grep/Glob/Read`로 확인한 결과를 기록한다.
+
+### 워크플로우 관련 파일 존재 확인 (✅ 완료)
+
+| 파일 | 확인 결과 |
+|------|----------|
+| `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` | ✅ 존재 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` | ✅ 존재 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` | ✅ 존재 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` | ✅ 존재 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` | ✅ 존재 |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | ✅ 존재 |
+| `apps/builder/src/builder/stores/canvasSettings.ts` | ✅ 존재 |
+| `apps/builder/src/builder/workspace/Workspace.tsx` | ✅ 존재 |
+
+### WorkflowEdge 타입 현황
+
+현재 `workflowEdges.ts`의 `WorkflowEdge` 타입:
+
+```typescript
+export interface WorkflowEdge {
+  id: string;
+  type: 'navigation' | 'event-navigation';  // 'hierarchy' 미추가 (문서와 일치)
+  sourcePageId: string;
+  targetPageId: string;
+  sourceElementId?: string;
+  label?: string;
+}
+```
+
+- `DataSourceEdge`, `LayoutGroup` 인터페이스는 별도 독립 인터페이스로 동일 파일에 존재함 (문서 설명과 일치)
+- `computeDataSourceEdges()`, `computeLayoutGroups()` 함수도 동일 파일에 존재함
+
+### canvasSettings.ts 현황
+
+현재 `showWorkflowHierarchy` 미추가 상태:
+
+| 기존 토글 | 현황 |
+|----------|------|
+| `showWorkflowNavigation` | ✅ 존재 (기본값: true) |
+| `showWorkflowEvents` | ✅ 존재 (기본값: true) |
+| `showWorkflowDataSources` | ✅ 존재 (기본값: true) |
+| `showWorkflowLayoutGroups` | ✅ 존재 (기본값: true) |
+| `workflowStraightEdges` | ✅ 존재 (기본값: true = orthogonal) |
+| `showWorkflowHierarchy` | ❌ 미추가 |
+
+### WorkflowCanvasToggles 현황 (Workspace.tsx)
+
+현재 토글 목록 (WorkflowCanvasToggles 컴포넌트):
+- ✅ Navigation (blue-500, solid)
+- ✅ Events (purple-500, dashed)
+- ✅ Data Sources (green-500, dotted)
+- ✅ Layout Groups (violet-400, group)
+- ✅ Orthogonal 전환 토글
+- ❌ Hierarchy 토글 미추가
+
+### workflowRenderer.ts 현황
+
+현재 색상 분기:
+
+```typescript
+const isEvent = edge.type === 'event-navigation';
+const color = isEvent ? EVENT_NAV_COLOR : NAVIGATION_COLOR;
+// 'hierarchy' 분기 없음 — 추가 필요
+```
+
+- `NAVIGATION_COLOR` = blue-500 (`#3b82f6`)
+- `EVENT_NAV_COLOR` = purple-500 (`#a855f7`)
+- `HIERARCHY_COLOR` (teal-500 `#14b8a6`) — 미정의
+
+### workflowMinimap.ts 현황
+
+현재 Paint 객체:
+- `navEdgePaint` = NAVIGATION_COLOR
+- `eventEdgePaint` = EVENT_NAV_COLOR
+- `hierarchyEdgePaint` — 미추가
+
+### SkiaOverlay.tsx 현황
+
+현재 filteredEdges 분기:
+```typescript
+const filteredEdges = workflowEdgesRef.current.filter((e) => {
+  if (e.type === 'navigation') return showNav;
+  if (e.type === 'event-navigation') return showEvents;
+  return false;
+  // 'hierarchy' 분기 없음 — 추가 필요
+});
+```
+
+### 기존 버그 확인 (usePageManager.ts)
+
+문서 section 8의 버그 (addPage 시 항상 maxX, y=0 배치) 확인됨:
+
+```typescript
+// apps/builder/src/builder/hooks/usePageManager.ts (addPage 내부)
+let maxX = 0;
+for (const pos of Object.values(pagePositions)) {
+    const endX = pos.x + currentCanvasWidth + PAGE_STACK_GAP;
+    if (endX > maxX) maxX = endX;
+}
+useStore.getState().updatePagePosition(newPage.id, maxX, 0);  // 항상 y=0
+```
+
+단, `addPageWithParams`는 `parentId` 파라미터를 지원하며, `initializeProject` 내에서는 `initializePagePositions`가 `pageLayoutDirection`을 인자로 받아 정상 계산함. **버그는 `addPage` (기본 파라미터 없는 버전)에만 해당**.
+
+### parent_id 필드 확인
+
+- `apps/builder/src/builder/hooks/usePageManager.ts` — `parent_id` 필드 포함 (신규 페이지 생성 시 `parent_id: null` 설정)
+- `apps/builder/src/builder/panels/nodes/tree/PageTree/usePageTreeData.ts` — ✅ 존재
+- `apps/builder/src/builder/stores/elements.ts` — `initializePagePositions` 함수 존재 (✅)
+
+### Phase별 전제 조건 현황
+
+| Phase | 설명 | 전제 조건 현황 |
+|-------|------|--------------|
+| Phase 1 | 엣지 타입 & 계산 | `workflowEdges.ts` 존재(✅). `WorkflowEdge.type` 유니온에 `'hierarchy'` 추가 및 `computeHierarchyEdges()` 작성 필요 |
+| Phase 2 | 스토어 토글 | `canvasSettings.ts`에 기존 패턴 확인(✅). `showWorkflowHierarchy` 추가만 필요 |
+| Phase 3 | UI 토글 | `WorkflowCanvasToggles` 컴포넌트 구조 확인(✅). Hierarchy 체크박스 1개 추가 |
+| Phase 4 | 렌더링 통합 | 모든 대상 파일 존재(✅). 색상 분기/Paint 객체 추가 필요 |
+| Phase 5 | Auto-Arrange | 별도 진행 — `initializePagePositions` 로직 참조 필요 |
+
+### Status 판단
+
+**Proposed 유지.** 구현이 전혀 시작되지 않은 상태이며, 모든 전제 조건 파일이 존재한다. 변경량은 문서 추정(~90~120줄)이 실제 코드 구조와 일치한다.

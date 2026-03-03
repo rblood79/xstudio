@@ -640,3 +640,57 @@ ListBox/GridList에 Field 자식 자동 생성. 수정 이유:
 - [React Aria Collections](https://react-aria.adobe.com/collections)
 - [React Aria GridList](https://react-aria.adobe.com/GridList)
 - [ADR-001: State Management](./001-state-management.md)
+
+---
+
+## 코드 대조 검증 (2026-03-03)
+
+### 검증 범위
+
+실제 파일 경로와 구현 현황을 `Grep/Glob/Read`로 확인한 결과를 기록한다.
+
+### 컬렉션 컴포넌트 존재 확인 (✅ 완료)
+
+| 컴포넌트 | Factory 파일 | Factory 기본 아이템 현황 |
+|----------|-------------|----------------------|
+| ListBox | `apps/builder/src/builder/factories/definitions/SelectionComponents.ts` | ✅ ListBoxItem×3 포함 (문서 내용과 일치) |
+| GridList | 동일 파일 | ✅ GridListItem×4 포함 (문서 내용과 일치) |
+| Select | 동일 파일 | ✅ Label + SelectTrigger 구조 (SelectItem은 없음) |
+| ComboBox | 동일 파일 | ✅ ComboBoxItem×1 포함 (문서 내용과 일치) |
+| Menu | `apps/builder/src/builder/factories/definitions/NavigationComponents.ts` | ✅ MenuItem×3 포함 (문서 내용과 일치) |
+| Table | `apps/builder/src/builder/factories/definitions/TableComponents.ts` | ✅ TableHeader + TableBody 빈 구조 (문서 내용과 일치) |
+
+### 데이터 바인딩 기존 구현 확인 (✅ 완료)
+
+| 항목 | 확인 결과 |
+|------|----------|
+| `useCollectionData.ts` | ✅ 존재. `DataBinding` 타입 사용, DataTable Store 지원 포함 |
+| `useDataStore` (createDataTable, dataTables) | ✅ `stores/data.ts`에서 import 확인 |
+| `DataTablePreset` / `PRESET_CATEGORIES` | ✅ `panels/datatable/presets/index.ts` — `PRESET_CATEGORIES`, `DATATABLE_PRESETS`, `getPresetsByCategory` export 확인 |
+| `PixiListBox.tsx` | ✅ `apps/builder/src/builder/workspace/canvas/ui/PixiListBox.tsx` 존재 |
+| `PixiList.tsx` | ✅ `apps/builder/src/builder/workspace/canvas/ui/PixiList.tsx` 존재 |
+
+### Quick Connect 미구현 확인 (전제 조건 현황)
+
+| 항목 | 상태 |
+|------|------|
+| `useQuickConnect.ts` | ❌ 미구현 — `apps/builder/src/builder/hooks/` 에 없음 |
+| `QuickConnectButton.tsx` | ❌ 미구현 — `components/property/` 에 없음 |
+| 에디터 6개에 Quick Connect 통합 | ❌ 미구현 |
+| Factory 기본 아이템 제거 | ❌ 미구현 (현재 ListBoxItem×3, GridListItem×4, MenuItem×3, ComboBoxItem×1 포함) |
+| Empty State 추가 | ❌ 미구현 |
+
+### 파일 경로 정확성
+
+- 문서의 모든 파일 경로(`apps/builder/src/builder/...`)는 실제 경로와 일치한다.
+- `packages/shared/src/components/ListBox.tsx`, `GridList.tsx` 등 공유 컴포넌트 경로 확인됨.
+- `apps/builder/src/builder/panels/datatable/presets/index.ts` — presets 모듈 경로 정확.
+
+### 라인 번호 주의사항
+
+- 문서의 라인 번호(예: `SelectionComponents.ts` L80~89 등)는 코드 변경으로 인해 현재와 다를 수 있음.
+- 구현 전 최신 파일 확인 후 정확한 라인 위치 재검토 필요.
+
+### Status 판단
+
+**Proposed 유지.** 구현이 전혀 시작되지 않은 상태이며, 전제 조건(DataTable Store, PRESET_CATEGORIES, useCollectionData)은 모두 충족되어 있다.

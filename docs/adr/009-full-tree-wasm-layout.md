@@ -1,10 +1,10 @@
 # ADR-009: Figma-Class Rendering & Layout Architecture
 
 ## Status
-Implemented (Foundation + Phase 0~2 구현 완료, CSS 일반 규칙 적용 완료, Dropflow → Taffy 단일 엔진 전환 완료)
+Implemented (Foundation + Phase 0~2 구현 완료, Phase 3 Binary Protocol 부분 구현, CSS 일반 규칙 적용 완료, Dropflow → Taffy 단일 엔진 전환 완료)
 
 ## Date
-2026-02-27 (최종 업데이트: 2026-03-02)
+2026-02-27 (최종 업데이트: 2026-03-03)
 
 ## Decision Makers
 XStudio Team
@@ -792,9 +792,16 @@ Phase 2 선행 구현: `buildFull()`에서 `hasBinaryProtocol()` 조건 시 `enc
 
 ---
 
-## Phase 2: Binary Protocol (TypedArray / SharedArrayBuffer)
+## Phase 2: Binary Protocol (TypedArray / SharedArrayBuffer) — ✅ 부분 구현
 
 > JSON 직렬화를 제거하여 WASM 경계 데이터 전송 비용을 원천적으로 제거.
+>
+> **구현 현황 (2026-03-03 코드 대조 검증)**:
+> - ✅ `binaryProtocol.ts` (647 LOC): `encodeBatchBinary()` TypedArray 인코더 구현
+> - ✅ `binary_protocol.rs`: Rust WASM 디코더 구현
+> - ✅ `persistentTaffyTree.ts:124`: `hasBinaryProtocol()` → `buildTreeBatchBinary()` 활성 코드 경로
+> - ✅ `taffyLayout.ts:448-462`: TypeScript WASM 래퍼
+> - ⏳ SharedArrayBuffer 제로카피: 미구현 (TypedArray 복사 방식만 사용)
 
 ### 동기
 
@@ -1606,3 +1613,23 @@ Week 17:
 - [Spineless Traversal (PLDI 2025)](https://dl.acm.org/doi/10.1145/3656463) -- Priority-queue 기반 dirty 노드 처리
 - [RBush](https://github.com/mourner/rbush) -- JavaScript R-tree (참고)
 - [Skia Graphite](https://skia.org/docs/dev/design/graphite/) -- WebGPU 백엔드
+
+---
+
+## 코드 대조 검증 (2026-03-03)
+
+| Phase | 상태 | 핵심 파일 | 비고 |
+|-------|------|----------|------|
+| Foundation | ✅ 완료 | `TaffyBlockEngine.ts`, `taffyDisplayAdapter.ts` | Dropflow 완전 제거, Taffy Block 통합 |
+| Phase 0 | ✅ 완료 | `fullTreeLayout.ts` (1046 LOC) | `calculateFullTreeLayout()` + `traversePostOrder()` DFS |
+| Phase 1 | ✅ 완료 | `persistentTaffyTree.ts` | `incrementalUpdate()` JSON 비교 기반, `buildFull()` 초기 빌드 |
+| Phase 2 | ✅ 부분 완료 | `binaryProtocol.ts` (647 LOC), `binary_protocol.rs` | TypedArray 인코딩 활성, SharedArrayBuffer 미구현 |
+| Phase 3 | ❌ 미구현 | (파일 미존재) | Flat Render List + Depth Sort |
+| Phase 4 | ❌ 미구현 | (파일 미존재) | Element-Level Viewport Culling (R-tree) — `spatialIndex.ts` 기존 Rust WASM 존재 |
+| Phase 5 | ❌ 미구현 | (파일 미존재) | OffscreenCanvas Worker Rendering |
+
+**추가 확인사항**:
+- `_perPageLayoutMaps`: 페이지별 레이아웃 캐싱 구현됨 (fullTreeLayout.ts:91)
+- `sanitizeLayoutValue()`: NaN/Infinity 가드 구현됨 (fullTreeLayout.ts:35-42)
+- `MAX_TREE_DEPTH=100`: DFS 깊이 가드 구현됨 (fullTreeLayout.ts:33)
+- CSS `order` 속성: TS 레벨 sort 구현됨 (fullTreeLayout.ts:541-553)

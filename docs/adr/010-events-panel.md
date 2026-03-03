@@ -212,38 +212,117 @@
 src/builder/panels/events/
 ├── EventsPanel.tsx                        # 메인 패널 (P0+P1: 추천/템플릿/ActionPicker 배지)
 ├── EventsPanel.css                        # 스타일 (P0+P1: 추천 chips, 경고, 배지)
+├── index.ts                               # 패널 barrel export
 ├── components/
 │   ├── index.ts                           # barrel exports
 │   ├── RecommendedEventsSection.tsx       # [P0] 추천 이벤트 chips 컴포넌트
 │   ├── TemplateSuggestionSection.tsx      # [P0] 레시피 템플릿 카드 컴포넌트
-│   └── RecommendedActionsChips.tsx        # [P1] THEN/ELSE 블록 내 추천 액션 chips
+│   ├── RecommendedActionsChips.tsx        # [P1] THEN/ELSE 블록 내 추천 액션 chips
+│   ├── ConditionEditor.tsx                # 조건 편집기
+│   ├── DebounceThrottleEditor.tsx         # 디바운스/쓰로틀 설정 편집기
+│   ├── ActionDelayEditor.tsx              # 액션 지연 설정 편집기
+│   ├── ComponentSelector.tsx              # 컴포넌트 선택기
+│   └── ExecutionDebugger.tsx              # 실행 디버거
 ├── blocks/
+│   ├── index.ts
+│   ├── WhenBlock.tsx                      # WHEN 이벤트 트리거 블록
+│   ├── IfBlock.tsx                        # IF 조건 블록
 │   ├── ThenElseBlock.tsx                  # [P1 수정] 추천 액션 chips 통합
-│   └── ActionBlock.tsx                    # [P1 수정] 누락 설정 경고 아이콘 추가
+│   ├── ActionBlock.tsx                    # [P1 수정] 누락 설정 경고 아이콘 추가
+│   ├── ActionList.tsx                     # 액션 목록
+│   └── BlockConnector.tsx                 # 블록 간 연결선
 ├── hooks/
+│   ├── index.ts
 │   ├── useRecommendedEvents.ts            # [기존] 컴포넌트별 추천 이벤트 훅
-│   └── useApplyTemplate.ts               # [기존] 템플릿 적용 훅 + generateEventHandlerIds
+│   ├── useApplyTemplate.ts               # [기존] 템플릿 적용 훅 + generateEventHandlerIds
+│   ├── useEventSearch.ts                  # 이벤트 검색 훅
+│   ├── useBlockKeyboard.ts                # 블록 키보드 단축키 훅
+│   ├── useCopyPasteActions.ts             # 액션 복사/붙여넣기 훅
+│   └── useVariableSchema.ts               # 변수 스키마 훅
+├── state/
+│   ├── index.ts
+│   ├── useEventHandlers.ts                # 이벤트 핸들러 상태 관리
+│   ├── useActions.ts                      # 액션 상태 관리
+│   └── useEventSelection.ts               # 이벤트 선택 상태
 ├── data/
+│   ├── index.ts
 │   ├── eventCategories.ts                 # [기존] COMPONENT_RECOMMENDED_EVENTS, EVENT_METADATA
 │   ├── actionMetadata.ts                  # [기존] ACTION_METADATA, getRecommendedActions()
-│   └── eventTemplates.ts                  # [기존] 19개 레시피 템플릿 데이터
+│   └── eventTemplates.ts                  # [기존] 18개 레시피 템플릿 데이터 (FORM: 4, NAVIGATION: 4, UI: 5, DATA: 5)
+├── types/
+│   ├── index.ts
+│   ├── eventTypes.ts                      # EventType, ActionType, EventHandler 등 타입 정의
+│   ├── eventBlockTypes.ts                 # 블록 UI 전용 타입 (BlockEventAction, ConditionGroup 등)
+│   └── templateTypes.ts                   # 템플릿 관련 타입
+├── editors/
+│   ├── index.ts
+│   ├── BlockActionEditor.tsx              # 액션 편집기 (블록 기반)
+│   ├── ConditionRow.tsx                   # 조건 행 편집기
+│   ├── VariableBindingEditor.tsx          # 변수 바인딩 편집기
+│   ├── OperatorToggle.tsx                 # 연산자 토글
+│   ├── OperatorPicker.tsx                 # 연산자 선택기
+│   └── ElementPicker.tsx                  # 요소 선택기
+├── actions/
+│   ├── index.ts
+│   ├── ActionEditor.tsx                   # 액션 에디터 래퍼
+│   ├── NavigateActionEditor.tsx           # navigate 액션 에디터
+│   ├── SetStateActionEditor.tsx           # setState 액션 에디터
+│   ├── APICallActionEditor.tsx            # apiCall 액션 에디터
+│   ├── ShowModalActionEditor.tsx          # showModal 액션 에디터
+│   ├── HideModalActionEditor.tsx          # hideModal 액션 에디터
+│   ├── ShowToastActionEditor.tsx          # showToast 액션 에디터
+│   ├── ValidateFormActionEditor.tsx       # validateForm 액션 에디터
+│   ├── ResetFormActionEditor.tsx          # resetForm 액션 에디터
+│   ├── SubmitFormActionEditor.tsx         # submitForm 액션 에디터
+│   ├── ScrollToActionEditor.tsx           # scrollTo 액션 에디터
+│   ├── CopyToClipboardActionEditor.tsx    # copyToClipboard 액션 에디터
+│   ├── CustomFunctionActionEditor.tsx     # customFunction 액션 에디터
+│   ├── SetComponentStateActionEditor.tsx  # setComponentState 액션 에디터
+│   ├── TriggerComponentActionEditor.tsx   # triggerComponentAction 액션 에디터
+│   ├── UpdateFormFieldActionEditor.tsx    # updateFormField 액션 에디터
+│   ├── FilterCollectionActionEditor.tsx   # filterCollection 액션 에디터
+│   ├── SelectItemActionEditor.tsx         # selectItem 액션 에디터
+│   ├── ClearSelectionActionEditor.tsx     # clearSelection 액션 에디터
+│   ├── ToggleVisibilityActionEditor.tsx   # toggleVisibility 액션 에디터
+│   ├── LoadDataTableActionEditor.tsx      # loadDataTable 액션 에디터
+│   ├── SyncComponentActionEditor.tsx      # syncComponent 액션 에디터
+│   ├── SaveToDataTableActionEditor.tsx    # saveToDataTable 액션 에디터
+│   └── UpdateStateActionEditor.tsx        # updateState 액션 에디터
+├── execution/
+│   ├── index.ts
+│   ├── conditionEvaluator.ts              # 조건 평가기
+│   ├── eventExecutor.ts                   # 이벤트 실행기
+│   └── executionLogger.ts                 # 실행 로거
+├── utils/
+│   ├── index.ts
+│   ├── normalizeEventTypes.ts             # 이벤트 타입 정규화 (snake_case → camelCase)
+│   ├── actionHelpers.ts                   # 액션 헬퍼 함수
+│   ├── variableParser.ts                  # 변수 파서
+│   └── bindingValidator.ts               # 바인딩 유효성 검사
+├── preview/
+│   ├── index.ts
+│   ├── EventMinimap.tsx                   # 이벤트 미니맵
+│   ├── EventDebugger.tsx                  # 이벤트 디버거
+│   └── CodePreviewPanel.tsx               # 코드 미리보기 패널
 └── pickers/
-    └── EventTypePicker.tsx                # [기존] 이벤트 선택 팝오버
+    ├── index.ts
+    ├── EventTypePicker.tsx                # [기존] 이벤트 선택 팝오버
+    └── ActionTypePicker.tsx               # 액션 타입 선택기
 ```
 
 ### 데이터 소스 활용
 | 데이터 | 위치 | 용도 | 사용 단계 |
 |--------|------|------|-----------|
-| `COMPONENT_RECOMMENDED_EVENTS` | `data/eventCategories.ts:257` | 컴포넌트별 추천 이벤트 목록 | P0 |
-| `EVENT_METADATA` | `data/eventCategories.ts:58` | 이벤트 라벨, 설명, 사용률 | P0 |
-| `getRecommendedEvents()` | `data/eventCategories.ts:313` | 추천 이벤트 조회 함수 | P0 |
+| `COMPONENT_RECOMMENDED_EVENTS` | `data/eventCategories.ts:264` | 컴포넌트별 추천 이벤트 목록 | P0 |
+| `EVENT_METADATA` | `data/eventCategories.ts:65` | 이벤트 라벨, 설명, 사용률 | P0 |
+| `getRecommendedEvents()` | `data/eventCategories.ts:320` | 추천 이벤트 조회 함수 | P0 |
 | `useRecommendedEvents()` | `hooks/useRecommendedEvents.ts:38` | 추천 이벤트 훅 (메타데이터 포함) | P0 |
 | `isImplementedEventType()` | `@/types/events/events.types` | 구현된 이벤트 필터링 | P0 |
-| `getRecommendedTemplates()` | `data/eventTemplates.ts` | 컴포넌트별 추천 템플릿 조회 | P0 |
-| `generateEventHandlerIds()` | `hooks/useApplyTemplate.ts` | 템플릿 이벤트 ID 생성 | P0 |
-| `getRecommendedActions()` | `data/actionMetadata.ts:651` | 컨텍스트 기반 추천 액션 조회 | P1 |
-| `ACTION_METADATA[type].configFields` | `data/actionMetadata.ts` | 액션별 필수/선택 config 필드 | P1 |
-| `ACTION_TYPE_LABELS` | `types/eventTypes.ts` | 한국어 액션 라벨 | P1 |
+| `getRecommendedTemplates()` | `data/eventTemplates.ts:571` | 컴포넌트별 추천 템플릿 조회 (상위 5개) | P0 |
+| `generateEventHandlerIds()` | `hooks/useApplyTemplate.ts:74` | 템플릿 이벤트 ID 생성 | P0 |
+| `getRecommendedActions()` | `data/actionMetadata.ts:674` | 컨텍스트 기반 추천 액션 조회 | P1 |
+| `ACTION_METADATA[type].configFields` | `data/actionMetadata.ts:33` | 액션별 필수/선택 config 필드 | P1 |
+| `ACTION_TYPE_LABELS` | `types/eventTypes.ts:491` | 한국어 액션 라벨 (Partial Record) | P1 |
 
 ### 컴포넌트 명세
 
@@ -251,14 +330,15 @@ src/builder/panels/events/
 ```tsx
 interface RecommendedEventsSectionProps {
   componentType: string;              // 선택된 컴포넌트 타입
-  registeredEvents: EventType[];      // 이미 등록된 이벤트 (필터링용)
+  registeredEvents: EventType[];      // 이미 등록된 이벤트 (필터링용, RegistryEventType으로 처리)
   onAddEvent: (type: EventType) => void;
 }
 ```
 - **배치**: `panel-contents` 상단 (핸들러 없음 + 리스트 뷰)
 - **숨김**: 핸들러 상세 뷰
-- **최대 표시**: 4개 (overflow 시 "+N more")
+- **최대 표시**: 4개 (overflow 시 "+N more", 상수 `MAX_VISIBLE_CHIPS = 4`)
 - **스타일**: `.recommended-events-section`, `.recommended-event-chip`
+- **구현 위치**: `components/RecommendedEventsSection.tsx` — `useRecommendedEvents()` 훅 사용, 사용률 기준 정렬
 
 #### TemplateSuggestionSection (P0)
 ```tsx
@@ -272,6 +352,8 @@ interface TemplateSuggestionSectionProps {
 - **배치**: 핸들러 없음 상태에서 추천 이벤트 아래
 - **동작**: 클릭 시 이벤트+액션 일괄 생성, 기존 핸들러와 이벤트 겹치면 "merge" 배지
 - **스타일**: `.template-suggestion-card`, `.template-merge-badge`
+- **구현 위치**: `components/TemplateSuggestionSection.tsx` — "Show all (N)" 펼침/접힘 지원
+- **템플릿 추천 범위**: `getRecommendedTemplates()` → 컴포넌트 타입 일치 + 사용률 정렬 + 상위 5개 반환
 
 #### RecommendedActionsChips (P1)
 ```tsx
@@ -282,20 +364,23 @@ interface RecommendedActionsChipsProps {
   onAddAction: (actionType: ActionType) => void;
 }
 ```
-- **배치**: ThenElseBlock 내부 (빈 상태: chips + "More actions" / 액션 있음: 리스트 아래)
-- **추천 로직**: `getRecommendedActions({ eventType, componentType })` + 마지막 액션 체이닝
+- **배치**: ThenElseBlock 내부 (빈 상태: chips + "More actions" / 액션 있음: 리스트 아래) — 두 위치 모두 렌더링됨
+- **추천 로직**: `getRecommendedActions({ eventType, componentType })` + 마지막 액션 `previousAction` 체이닝 결과 병합 → 중복 제거 → 기존 타입 제외 → 최대 3개
 - **최대 표시**: 3개 (이미 추가된 액션 타입 제외)
 - **스타일**: `.recommended-actions-chips`, `.recommended-action-chip` (dashed 테두리)
+- **구현 위치**: `components/RecommendedActionsChips.tsx` — `ACTION_CHIP_ICONS` 매핑 포함
 
 #### ActionBlock 경고 (P1)
-- **헬퍼**: `getMissingRequiredFields(action)` — `ACTION_METADATA[type].configFields`에서 `required: true`인 필드 중 값이 비어있는 항목 반환
-- **렌더링**: `AlertTriangle` 아이콘 + `TooltipTrigger`로 누락 필드명 표시
-- **스타일**: `.action-warning`, `.action-warning-icon`, `.action-warning-tooltip` (amber 색상)
+- **헬퍼**: `getMissingRequiredFields(action)` — `ACTION_METADATA[type].configFields`에서 `required: true`인 필드 중 값이 `undefined | '' | null`인 항목 반환
+- **렌더링**: `AlertTriangle` 아이콘 + `TooltipTrigger`로 누락 필드명 표시 (react-aria-components 사용)
+- **스타일**: `.action-warning`, `.action-warning-icon`, `.action-warning-tooltip`
+- **구현 위치**: `blocks/ActionBlock.tsx` (line 125–132) — `ACTION_METADATA` import 사용
 
 #### ActionPickerOverlay 추천 배지 (P1)
-- **로직**: `getRecommendedActions({ eventType, componentType })` 결과를 Set으로 변환
+- **로직**: `getRecommendedActions({ eventType, componentType })` 결과를 `Set<string>`으로 변환
 - **렌더링**: 추천 액션 항목에 `<span className="action-recommended-badge">추천</span>` 추가
 - **스타일**: `.action-recommended-badge` (primary 색상)
+- **구현 위치**: `EventsPanel.tsx` 내 `ActionPickerOverlay` 컴포넌트 (line 176–278) — 검색, 카테고리 그룹화(`REGISTRY_ACTION_CATEGORIES`) 포함
 
 ### 스타일 가이드
 - 모든 스타일은 `EventsPanel.css`에 집중 (개별 CSS 파일 분리 없음)
@@ -375,11 +460,11 @@ interface RecommendedActionsChipsProps {
 ## 구현 이력
 
 ### P0 (2025-02-10)
-**변경 파일 6개:**
+**변경 파일 5개:**
 | 파일 | 작업 |
 |------|------|
 | `components/RecommendedEventsSection.tsx` | 신규 — 추천 이벤트 chips (useRecommendedEvents 기반, 최대 4개, 툴팁) |
-| `components/TemplateSuggestionSection.tsx` | 신규 — 레시피 템플릿 카드 (getRecommendedTemplates 기반, 최대 3개, merge 배지) |
+| `components/TemplateSuggestionSection.tsx` | 신규 — 레시피 템플릿 카드 (getRecommendedTemplates 기반, 최대 3개 표시, merge 배지) |
 | `components/index.ts` | 수정 — barrel export 추가 |
 | `EventsPanel.tsx` | 수정 — 3가지 상태별 추천 노출 + handleApplyTemplate 콜백 |
 | `EventsPanel.css` | 수정 — 추천 chips/템플릿 카드 스타일 (~120줄 추가) |
@@ -406,6 +491,58 @@ interface RecommendedActionsChipsProps {
 - 누락 경고: `ACTION_METADATA[type].configFields`에서 `required: true`인 필드의 값이 비어있으면 amber 경고
 - ActionPicker 배지: 추천 액션 Set 생성 → 해당 액션 항목에 "추천" 배지 렌더링
 - ThenElseBlock 빈 상태: "No actions" + 추천 chips + "More actions" 버튼
+
+## 코드 대조 검증 (2026-03-03)
+
+### 검증 결과 요약
+
+실제 코드(`apps/builder/src/builder/panels/events/`)와 본 문서를 대조한 결과:
+
+#### P0: 기본 이벤트 패널 — 구현 확인
+- `components/RecommendedEventsSection.tsx` 존재, `MAX_VISIBLE_CHIPS = 4` 상수 사용
+- `components/TemplateSuggestionSection.tsx` 존재, "Show all / Show less" 펼침 지원
+- `hooks/useRecommendedEvents.ts` 존재, `useRecommendedEvents` / `useEventMetadata` / `useIsEventRecommended` 세 훅 내보냄
+- `hooks/useApplyTemplate.ts` 존재, `generateEventHandlerIds()` 함수 exported
+- `EventsPanel.tsx` — 핸들러 없음/목록/상세 3가지 뷰 분기 정상
+- `data/eventTemplates.ts` — 18개 템플릿 (FORM: 4개, NAVIGATION: 4개, UI: 5개, DATA: 5개) ← 문서에 기재된 "19개"는 오류, 실제 **18개**
+
+#### P1: 추천 액션 + 호환성 배지 + 누락 경고 — 구현 확인
+- `components/RecommendedActionsChips.tsx` 존재 — 빈 블록/액션 있는 블록 양쪽 모두에 렌더링
+- `blocks/ThenElseBlock.tsx` — `eventType`, `componentType`, `onQuickAddAction` props 통합 확인
+- `blocks/ActionBlock.tsx` — `getMissingRequiredFields()` + `AlertTriangle` + `TooltipTrigger` 구현 확인
+- `EventsPanel.tsx` 내 `ActionPickerOverlay` — `recommendedActionSet` Set + `action-recommended-badge` 렌더링 확인
+
+#### P1.5 / P2 — 미구현 확인
+- 인라인 액션 추가행, 경고 즉시 수정, 최근 사용 액션, aria-live 등 미구현
+- AI 생성 기능 미구현
+
+### 파일 경로 수정 사항
+| 수정 전 | 수정 후 | 비고 |
+|---------|---------|------|
+| `data/eventCategories.ts:257` | `data/eventCategories.ts:264` | COMPONENT_RECOMMENDED_EVENTS 실제 위치 |
+| `data/eventCategories.ts:58` | `data/eventCategories.ts:65` | EVENT_METADATA 실제 위치 |
+| `data/eventCategories.ts:313` | `data/eventCategories.ts:320` | getRecommendedEvents() 실제 위치 |
+| `data/actionMetadata.ts:651` | `data/actionMetadata.ts:674` | getRecommendedActions() 실제 위치 |
+| 템플릿 19개 | 템플릿 18개 | createTemplate() 호출 수 기준 |
+| P0 변경 파일 6개 | P0 변경 파일 5개 | 실제 기재된 항목 수 |
+
+### 실제 구현 타입 수 (2026-03-03 기준)
+
+**ActionType (types/eventTypes.ts)**
+- 총 24개: navigate, scrollTo, setState, updateState, apiCall, showModal, hideModal, showToast, toggleVisibility, validateForm, resetForm, submitForm, setComponentState, triggerComponentAction, updateFormField, filterCollection, selectItem, clearSelection, loadDataTable, syncComponent, saveToDataTable, setVariable, copyToClipboard, customFunction
+
+**EventType (types/eventTypes.ts)**
+- 총 20개: onClick, onDoubleClick, onMouseEnter, onMouseLeave, onMouseDown, onMouseUp, onChange, onInput, onSubmit, onFocus, onBlur, onKeyDown, onKeyUp, onKeyPress, onPress, onSelectionChange, onAction, onOpenChange, onScroll, onResize, onLoad
+
+### 미문서화 서브 디렉터리
+본 검증에서 확인된 문서에 누락된 하위 폴더들:
+- `state/` — useEventHandlers, useActions, useEventSelection
+- `editors/` — BlockActionEditor, ConditionRow, VariableBindingEditor 등
+- `actions/` — 액션 타입별 전용 에디터 (NavigateActionEditor 등 24개)
+- `execution/` — conditionEvaluator, eventExecutor, executionLogger
+- `utils/` — normalizeEventTypes, actionHelpers, variableParser, bindingValidator
+- `preview/` — EventMinimap, EventDebugger, CodePreviewPanel (미래 기능용 준비)
+- `types/` — eventTypes, eventBlockTypes, templateTypes
 
 ## 출처
 1. https://www.framer.com/ai/ (Framer AI 설명)

@@ -12,46 +12,56 @@
 ### 1.1 AI 파일 구조
 
 > **Phase A1~A4 구현 완료** (2026-02-06)
+> **코드 대조 검증 완료** (2026-03-03)
 
 ```
 apps/builder/src/
 ├── types/integrations/
 │   ├── ai.types.ts              # ✅ AgentEvent, ToolCall, ToolExecutor, AIAgentProvider 타입
+│   │                            #    (기존 AIProvider, AIResponse는 @deprecated 유지)
 │   └── chat.types.ts            # ✅ tool role, ToolCallInfo, ConversationState 확장
+│                                #    (appendToLastMessage 액션 포함)
 ├── types/theme/
 │   └── generation.types.ts      # 테마 생성 타입
 ├── services/ai/
 │   ├── GroqAgentService.ts      # ✅ Tool Calling + Agent Loop 핵심 서비스
+│   │                            #    (MAX_TURNS=10, MAX_RETRIES=3, temperature=0.7, max_tokens=2048)
 │   ├── GroqService.ts           # ⚠️ deprecated — IntentParser fallback 전용
 │   ├── IntentParser.ts          # 유지 (최후 fallback)
 │   ├── systemPrompt.ts          # ✅ 동적 시스템 프롬프트 빌더
+│   │                            #    (컴포넌트 목록, Mock 엔드포인트, 현재 빌더 상태 포함)
 │   ├── styleAdapter.ts          # ✅ CSS-like → 내부 스키마 변환 레이어
+│   │                            #    ⚠️ AI-A5a: rem/em/vh/vw → px 단위 정규화 구현됨
 │   └── tools/                   # ✅ 도구 구현 디렉토리
 │       ├── index.ts             # 도구 레지스트리 (7개 도구)
 │       ├── definitions.ts       # 도구 JSON Schema 정의
-│       ├── createElement.ts     # create_element (G.3 flash 연동)
+│       ├── createElement.ts     # create_element (G.3 flash 연동, HierarchyManager 사용)
 │       ├── updateElement.ts     # update_element (G.3 flash 연동)
 │       ├── deleteElement.ts     # delete_element (body 보호)
-│       ├── getEditorState.ts    # get_editor_state (트리 구조 변환)
-│       ├── getSelection.ts      # get_selection (선택 요소 상세)
-│       ├── searchElements.ts    # search_elements (tag/prop/style 필터)
-│       └── batchDesign.ts       # batch_design (일괄 create/update/delete)
+│       ├── getEditorState.ts    # get_editor_state (childrenMap 기반 트리 구조)
+│       ├── getSelection.ts      # get_selection (elementsMap 기반)
+│       ├── searchElements.ts    # search_elements (tag/propName/propValue/styleProp 필터)
+│       └── batchDesign.ts       # batch_design (최대 20개, 실패 시 나머지 중단)
 ├── services/theme/
 │   └── ThemeGenerationService.ts # AI 테마 생성
 ├── builder/panels/ai/
 │   ├── AIPanel.tsx              # ✅ useAgentLoop 기반, Tool 피드백 UI
+│   │                            #    (ChatMessage, ChatInput, ChatContainer 내부 정의)
+│   │                            #    ⚠️ ToolCallMessage는 AIPanel에서 직접 import 안 함
+│   │                            #    (ChatMessage 내부에서 role='tool' 시 ToolResultMessage 호출)
 │   ├── AIPanel.css
 │   ├── components/              # ✅ 패널 하위 컴포넌트
-│   │   ├── ToolCallMessage.tsx  # 도구 호출 상태 표시 (아이콘+라벨+스피너)
-│   │   ├── ToolResultMessage.tsx # 도구 실행 결과 표시
-│   │   └── AgentControls.tsx    # 중단 버튼 + 현재 turn 표시
+│   │   ├── ToolCallMessage.tsx  # 도구 호출 상태 표시 (아이콘+라벨+스피너) — activeToolCalls 전용
+│   │   ├── ToolResultMessage.tsx # 도구 실행 결과 표시 (role='tool' 메시지)
+│   │   └── AgentControls.tsx    # 중단 버튼 + 현재 turn 표시 (isAgentRunning=true 시 노출)
 │   └── hooks/
-│       └── useAgentLoop.ts      # ✅ Agent Loop React hook (G.3 연동)
+│       └── useAgentLoop.ts      # ✅ Agent Loop React hook (G.3 연동, IntentParser fallback)
 ├── builder/panels/themes/components/
 │   └── AIThemeGenerator.tsx     # 테마 생성 UI
 └── builder/stores/
-    ├── conversation.ts          # ✅ agent 상태, tool events 확장
+    ├── conversation.ts          # ✅ agent 상태, tool events, appendToLastMessage 확장
     └── aiVisualFeedback.ts      # ✅ G.3 시각 피드백 (generating/flash)
+                                 #    (독립 Zustand 스토어, 렌더 루프에서 getState() 직접 읽기)
 ```
 
 ### 1.2 기존 아키텍처의 문제점 및 해결 상태
@@ -846,34 +856,58 @@ interface ConversationState {
 
 ### 6.5 시스템 프롬프트
 
+> ⚠️ 실제 구현과 차이 있음 — 코드 대조 검증 (2026-03-03) 기준으로 갱신
+
 ```typescript
-// services/ai/systemPrompt.ts
+// services/ai/systemPrompt.ts (실제 구현)
 
 export function buildSystemPrompt(context: BuilderContext): string {
+  const { currentPageId, selectedElementId, elements } = context;
+
+  const selectedElement = selectedElementId
+    ? elements.find((el) => el.id === selectedElementId)
+    : null;
+
   return `당신은 XStudio 웹 빌더의 AI 디자인 어시스턴트입니다.
 사용자의 자연어 요청을 분석하여 제공된 도구를 사용해 디자인 요소를 생성, 수정, 삭제합니다.
 
 ## 사용 가능한 컴포넌트
-Button, TextField, NumberField, SearchField, Select, ComboBox, ListBox, GridList,
-Table, Tree, TagGroup, Card, Panel, Tabs, Modal, Dialog,
-Checkbox, CheckboxGroup, Radio, RadioGroup, Switch, Slider,
-DatePicker, DateRangePicker, TimeField, Calendar,
-ColorPicker, ColorWheel, ColorField, ProgressBar, Meter, Tooltip
+Button, TextField, Checkbox, Radio, ToggleButton, ToggleButtonGroup,
+CheckboxGroup, RadioGroup, Select, ComboBox, Slider,
+Tabs, Panel, Tree, Calendar, DatePicker, DateRangePicker,
+Switch, Table, Card, TagGroup, ListBox, GridList,
+Text, Div, Section, Nav
 
 ## 사용 가능한 Mock Data 엔드포인트
 /countries, /cities, /timezones, /products, /categories,
 /status, /priorities, /tags, /languages, /currencies,
 /users, /departments, /projects, /component-tree
 
+## 현재 빌더 상태
+- 페이지 ID: ${currentPageId}
+- 선택된 요소: ${selectedElement ? `${selectedElement.tag} (ID: ${selectedElementId})` : '없음'}
+- 총 요소 수: ${elements.length}개
+${selectedElement ? `
+## 선택된 요소 정보
+- 태그: ${selectedElement.tag}
+- Props: ${JSON.stringify(selectedElement.props, null, 2)}
+- 부모 ID: ${selectedElement.parent_id || 'root'}
+` : ''}
 ## 규칙
 1. 요소를 생성/수정하기 전에 get_editor_state나 get_selection으로 현재 상태를 파악하세요.
-2. 복수 요소를 변경할 때는 batch_design 도구를 사용하세요.
-3. "현재 선택된 요소"를 수정할 때는 elementId에 "selected"를 사용하세요.
-4. 스타일은 CSS 속성명을 camelCase로 사용하세요 (backgroundColor, fontSize 등).
-5. 항상 한국어로 응답하세요.
-6. 작업 완료 후 사용자에게 무엇을 했는지 간략히 설명하세요.`;
+2. "현재 선택된 요소"를 수정할 때는 elementId에 "selected"를 사용하세요.
+3. 스타일은 CSS 속성명을 camelCase로 사용하세요 (backgroundColor, fontSize 등).
+4. 항상 한국어로 응답하세요.
+5. 작업 완료 후 사용자에게 무엇을 했는지 간략히 설명하세요.`;
 }
 ```
+
+**설계 대비 실제 차이점:**
+| 항목 | ADR 설계 | 실제 구현 |
+|------|----------|----------|
+| 컴포넌트 목록 | Modal, Dialog, TimeField, ColorPicker, Meter, Tooltip 포함 | ToggleButton, ToggleButtonGroup, Text, Div, Section, Nav 포함; Modal/Dialog 미포함 |
+| 규칙 항목 | batch_design 사용 권장 포함 (6개 규칙) | batch_design 규칙 없음 (5개 규칙) |
+| 현재 상태 | 정적 정보만 | 동적 컨텍스트 (페이지ID, 선택 요소 상세, 총 요소 수) 포함 |
 
 #### Phase 5+ 확장 (G.1/G.2/G.4 반영)
 
@@ -922,44 +956,72 @@ ${context.designVariables.map(v => `- $--${v.name} (${v.type}): ${v.defaultValue
 
 > 렌더링 전환(CanvasKit)과의 독립성을 보장하는 핵심 레이어.
 > AI 도구는 CSS-like 형식을 출력하고, 이 레이어가 내부 스키마로 변환한다.
+> ⚠️ AI-A5a 구현됨: CSS 단위 정규화 (rem/em/vh/vw → px) 추가됨 (코드 대조 검증 2026-03-03)
 
 ```typescript
-// services/ai/styleAdapter.ts
+// services/ai/styleAdapter.ts (실제 구현 — AI-A5a 단위 정규화 포함)
+
+/** CSS 크기 속성 목록 — 이 속성들만 단위 정규화 대상 */
+const SIZE_PROPERTIES = new Set([
+  'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
+  'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+  'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+  'gap', 'rowGap', 'columnGap',
+  'top', 'right', 'bottom', 'left',
+  'fontSize', 'lineHeight', 'letterSpacing',
+  'borderWidth', 'borderRadius',
+  'outlineWidth', 'outlineOffset',
+]);
 
 /**
- * AI 도구가 출력하는 CSS-like 스타일을 내부 요소 스키마로 변환.
- *
- * 현재: CSS 속성을 그대로 props.style에 저장
- * CanvasKit 전환 후: fills/effects/stroke 구조화된 형식으로 변환
- *
- * 이 레이어가 존재함으로써 AI 전환과 렌더링 전환이 독립적으로 진행 가능.
+ * CSS 스타일을 내부 스타일 형식으로 변환.
+ * AI-A5a: rem/em/vh/vw 등의 CSS 단위를 px 숫자로 정규화.
+ * % 포함 값은 레이아웃 엔진이 처리하므로 그대로 유지.
  */
 export function adaptStyles(
   cssStyles: Record<string, unknown>,
-): Record<string, unknown> {
-  // Phase 현재: 그대로 전달 (PixiJS 렌더러가 CSS 스타일 처리)
-  return { style: cssStyles };
+): { style: Record<string, unknown> } {
+  const normalized: Record<string, unknown> = {};
+  const ctx: CSSValueContext = {};
 
-  // Phase 5 이후: 구조화된 형식으로 변환
-  // return {
-  //   fills: extractFills(cssStyles),
-  //   effects: extractEffects(cssStyles),
-  //   stroke: extractStroke(cssStyles),
-  //   blendMode: cssStyles.mixBlendMode,
-  // };
+  for (const [key, value] of Object.entries(cssStyles)) {
+    if (SIZE_PROPERTIES.has(key) && typeof value === 'string') {
+      // % 포함 값은 레이아웃 엔진이 처리 → 그대로 유지
+      if (value.includes('%')) {
+        normalized[key] = value;
+        continue;
+      }
+      const px = resolveCSSSizeValue(value, ctx); // cssValueParser 사용
+      normalized[key] = px !== undefined && px >= 0 ? px : value;
+    } else {
+      normalized[key] = value;
+    }
+  }
+  return { style: normalized };
 }
 
 export function adaptPropsForElement(
-  tag: string,
+  _tag: string,
   props: Record<string, unknown>,
   styles: Record<string, unknown>,
 ): Record<string, unknown> {
+  if (Object.keys(styles).length === 0) {
+    return props;
+  }
   return {
     ...props,
     ...adaptStyles(styles),
   };
 }
 ```
+
+**현재 구현 상태 (2026-03-03 기준):**
+| 기능 | 상태 |
+|------|------|
+| CSS-like → `props.style` 저장 | ✅ |
+| rem/em/vh/vw → px 정규화 (AI-A5a) | ✅ 구현됨 |
+| CanvasKit fills/effects/stroke 변환 | ⏸ 차단됨 (ENGINE_CHECKLIST RC-3 선행 필요) |
+| $-- 변수 참조 지원 (Phase 5+) | ⏸ 미구현 |
 
 #### Phase 5+ 확장 (G.2 변수 참조 지원)
 
@@ -1164,7 +1226,8 @@ Phase A4: 고급 기능 ✅ (2026-02-06 완료)
 
 Phase A5: 캔버스 통합 (Phase 5-6 이후)
   └── ✅ AI 생성 시각 피드백 (CanvasKit renderGeneratingEffects — G.3 완료, 2026-02-02)
-  └── ⏸ styleAdapter.ts → CanvasKit 스키마 변환 업데이트 (차단됨: ENGINE_CHECKLIST RC-3 단위 정규화 선행 필요)
+  └── ✅ AI-A5a: styleAdapter.ts CSS 단위 정규화 (rem/em/vh/vw → px, resolveCSSSizeValue 사용, 2026-03-03)
+  └── ⏸ styleAdapter.ts → CanvasKit fills/effects/stroke 스키마 변환 (차단됨: ENGINE_CHECKLIST RC-3 단위 정규화 선행 필요)
   └── ⏸ 스크린샷 기반 컨텍스트 (차단됨: 멀티모달 LLM 전환 — Groq Vision API 미지원 대기)
   └── 📋 get_style_guide, get_variables, set_variables 도구 (보류: 컴포넌트 인스턴스 시스템 Phase 5+ 선행 필요)
 
@@ -1232,3 +1295,43 @@ Phase 0: 벤치마크 → Phase 5: CanvasKit → Phase 6: 고급 렌더링
 - 렌더링 전환 계획: `docs/RENDERING_ARCHITECTURE.md` Phase 5-6
 - Groq SDK 문서: https://console.groq.com/docs
 - Groq Tool Use: https://console.groq.com/docs/tool-use
+
+---
+
+## 12. 코드 대조 검증 이력
+
+### 2026-03-03 검증 (Implementer)
+
+**검증 대상:** Phase A1~A5 전체 파일
+
+**검증 결과 — 일치 확인:**
+
+| 파일 | 검증 결과 |
+|------|----------|
+| `services/ai/GroqAgentService.ts` | ✅ 문서와 일치. MAX_TURNS=10, MAX_RETRIES=3, 지수 백오프 구현 확인 |
+| `services/ai/tools/index.ts` | ✅ 7개 도구 레지스트리 정확히 일치 |
+| `services/ai/tools/createElement.ts` | ✅ HierarchyManager.calculateNextOrderNum, G.3 flash 연동 확인 |
+| `services/ai/tools/batchDesign.ts` | ✅ 최대 20개, 실패 시 나머지 중단 구현 확인 |
+| `services/ai/tools/getEditorState.ts` | ✅ childrenMap 기반 트리 구조, pages 조회 확인 |
+| `types/integrations/ai.types.ts` | ✅ AgentEvent, ToolCall, ToolExecutor, AIAgentProvider 구현 확인 |
+| `types/integrations/chat.types.ts` | ✅ appendToLastMessage 포함 ConversationState 확인 |
+| `builder/stores/conversation.ts` | ✅ agent 상태, tool events, appendToLastMessage 확인 |
+| `builder/stores/aiVisualFeedback.ts` | ✅ 독립 Zustand 스토어, 6가지 액션 (start/complete/cancel/addFlash/cleanup) 확인 |
+| `builder/panels/ai/hooks/useAgentLoop.ts` | ✅ G.3 연동, IntentParser fallback 확인 |
+| `builder/panels/ai/AIPanel.tsx` | ✅ useAgentLoop 기반, ChatMessage/ChatInput/ChatContainer 내부 정의 확인 |
+| `builder/panels/ai/components/ToolCallMessage.tsx` | ✅ 7개 도구 라벨, 상태 아이콘(Loader2/Check/X) 확인 |
+| `builder/panels/ai/components/ToolResultMessage.tsx` | ✅ role='tool' 메시지 렌더링 확인 |
+| `builder/panels/ai/components/AgentControls.tsx` | ✅ currentTurn/10 표시, 중단 버튼 확인 |
+
+**검증 결과 — 문서 오류 수정:**
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| `systemPrompt.ts` 컴포넌트 목록 | Modal, Dialog, TimeField 등 포함 | ToggleButton, ToggleButtonGroup, Text, Div, Section, Nav 포함; Modal/Dialog 미포함 |
+| `systemPrompt.ts` 규칙 수 | 6개 (batch_design 포함) | 5개 (batch_design 규칙 없음) |
+| `systemPrompt.ts` 컨텍스트 | 정적 정보만 기재 | 동적 컨텍스트 (페이지ID, 선택 요소 상세, 총 요소 수) 포함으로 수정 |
+| `styleAdapter.ts` 구현 | 단순 pass-through로 기재 | AI-A5a CSS 단위 정규화(rem/em/vh/vw → px) 구현됨으로 수정 |
+| `AIPanel.tsx` ToolCallMessage | 직접 import로 기재 | 실제로는 activeToolCalls 전용, role='tool' 시 ToolResultMessage 호출로 수정 |
+| Phase A5 styleAdapter 항목 | `차단됨` 단일 항목 | AI-A5a(단위 정규화) ✅ 완료 + CanvasKit 스키마 변환 ⏸ 차단됨으로 분리 |
+
+**파일 경로 정확성:** 문서에 기재된 모든 파일 경로가 실제 코드베이스와 일치함을 확인.

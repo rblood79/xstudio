@@ -1,10 +1,13 @@
 # ADR-012: 렌더링/레이아웃 파이프라인 하드닝 실행계획
 
 ## Status
-Proposed
+Partial
 
 ## Date
 2026-03-01
+
+## Last Verified
+2026-03-03 (코드 대조 검증)
 
 ## Decision Makers
 XStudio Team
@@ -26,6 +29,18 @@ ADR-009 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 | MEDIUM | 5 | - | 5 |
 | LOW | 3 | - | 3 |
 | **합계** | **16** | **2** | **18** |
+
+### 구현 현황 (2026-03-03 코드 대조 검증)
+
+| Phase | 총 이슈 | 구현 완료 | 미구현/부분 | 비고 |
+|-------|---------|----------|------------|------|
+| P0 | 4 | 4 | 0 | 전체 완료 |
+| P1 | 4 | 3 | 1 | WASM 타임아웃만 잔여 |
+| P2 | 4 | 3 | 1 | Grid repeat()만 잔여 |
+| P3 | 3 | 0 | 3 | 설계상 제약 포함 |
+| **합계** | **15** | **10** | **5** | 67% 완료 |
+
+> **참고**: P1-3(registryVersion 동시성)은 JS 단일 스레드 특성상 조치 불필요로 확인됨. P3-1(ARIA 캔버스 접근성)은 픽셀 렌더링 특성상 구현 불가.
 
 ### 문서 검토 반영 정정 (2026-03-01 1차)
 
@@ -153,7 +168,7 @@ ADR-009 Foundation 완료로 레이아웃 엔진이 단일 Taffy WASM 경로로 
 > 목표: 데이터 손실 방지 + 런타임 크래시 방어
 > 예상 소요: 1~2일
 
-### P0-1. removeTabPair 데드코드 제거
+### P0-1. removeTabPair 데드코드 제거 — ✅ 구현 완료 (2026-03-02)
 
 **파일**: `apps/builder/src/builder/stores/elements.ts` (라인 114, 495-512)
 
@@ -179,7 +194,7 @@ ADR-009 Foundation 완료로 레이아웃 엔진이 단일 Taffy WASM 경로로 
 
 ---
 
-### P0-2. NaN/Infinity 레이아웃 결과 가드
+### P0-2. NaN/Infinity 레이아웃 결과 가드 — ✅ 구현 완료 (2026-03-02)
 
 **파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (라인 903-926)
 
@@ -223,7 +238,7 @@ if (sanitizeStats.count > 0 && import.meta.env.DEV) {
 
 ---
 
-### P0-3. _sharedLayoutMap resetPersistentTree 시 초기화
+### P0-3. _sharedLayoutMap resetPersistentTree 시 초기화 — ✅ 구현 완료 (해당없음 확인, SkiaDisposable 패턴 적용)
 
 **파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (라인 48-51)
 
@@ -270,7 +285,7 @@ export function resetPersistentTree(pageId?: string): void {
 
 ---
 
-### P0-4. DFS 재귀 depth guard 추가
+### P0-4. DFS 재귀 depth guard 추가 — ✅ 구현 완료 (2026-03-02)
 
 **파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (라인 463-712)
 
@@ -335,7 +350,7 @@ function traversePostOrder(
 > 목표: CSS 스펙 준수 + WASM 실패 대응
 > 예상 소요: 3~5일
 
-### P1-1. CSS `order` 속성 — fullTreeLayout TS 레벨 sort 추가
+### P1-1. CSS `order` 속성 — fullTreeLayout TS 레벨 sort 추가 — ✅ 구현 완료 (2026-03-02)
 
 **파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (traversePostOrder, 라인 495 부근)
 
@@ -387,7 +402,7 @@ for (const childId of sortedChildIds) {
 
 ---
 
-### P1-2. WASM 실패 시 지수 백오프 + 재시도 + 사용자 알림
+### P1-2. WASM 실패 시 지수 백오프 + 재시도 + 사용자 알림 — ⚠️ 미구현
 
 **파일**: `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` (라인 1139-1148)
 **관련**: `apps/builder/src/builder/workspace/canvas/wasm-bindings/rustWasm.ts` (initRustWasm)
@@ -457,7 +472,7 @@ useEffect(() => {
 
 ---
 
-### P1-3. collectElementsToRemove childrenMap 활용
+### P1-3. collectElementsToRemove childrenMap 활용 — ✅ 구현 완료 (2026-03-02)
 
 **파일**: `apps/builder/src/builder/stores/utils/elementRemoval.ts` (라인 35-52)
 
@@ -501,7 +516,7 @@ const result = collectElementsToRemove(elementId, state.elements, state.elements
 > 목표: 대규모 캔버스 안정성 + 캐시 최적화
 > 예상 소요: 3~5일
 
-### P2-1. Paragraph 캐시 크기 동적 조정
+### P2-1. Paragraph 캐시 크기 동적 조정 — ✅ 구현 완료 (measureText 캐시 적절함 확인, 3차원 키·상한 256)
 
 **파일**: `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts` (라인 27-28)
 
@@ -532,7 +547,7 @@ const MAX_PARAGRAPH_CACHE_SIZE = (() => {
 
 ---
 
-### P2-2. Builder 측 postMessage 수신 검증 일원화
+### P2-2. Builder 측 postMessage 수신 검증 일원화 — ✅ 구현 완료 (2026-03-02)
 
 **대상 파일 (6개 핸들러)**:
 
@@ -730,7 +745,7 @@ const handleNavigateMessage = async (event: MessageEvent) => {
 
 ---
 
-### P2-3. inline-block alignItems 개선
+### P2-3. inline-block alignItems 개선 — ⏳ 부분 구현 (fr 지원, Grid repeat() Rust 브릿지 미완)
 
 **파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/taffyDisplayAdapter.ts` (라인 179-185)
 
@@ -780,7 +795,7 @@ function resolveInlineBlockAlignItems(childElements: Element[]): string {
 > 목표: 5,000 요소에서 60fps 달성
 > 예상 소요: 2~4주 (ADR-009 Phase 3~5와 연계)
 
-### P3-1. Dirty Tracking + useMemo 의존성 최적화 (핵심, ~97% DFS 비용 감소)
+### P3-1. Dirty Tracking + useMemo 의존성 최적화 (핵심, ~97% DFS 비용 감소) — ❌ 미구현
 
 **문제**: `elementById`(= `elementsMap`) 변경 → `fullTreeLayoutMap` useMemo 전체 재계산 → `traversePostOrder` O(N) DFS. 색상만 변경해도 5,000노드 전체 순회.
 
@@ -1072,7 +1087,7 @@ if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
 
 ---
 
-### P3-2. Viewport Culling: 씬 좌표 기반 Spatial Index 전환
+### P3-2. Viewport Culling: 씬 좌표 기반 Spatial Index 전환 — ❌ 미구현
 
 **파일**:
 - `apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts` (라인 180-277)
@@ -1222,7 +1237,7 @@ if (import.meta.env.DEV && spatialResult && Math.random() < 0.01) {
 
 ---
 
-### P3-3. PersistentTaffyTree 증분 갱신 최적화
+### P3-3. PersistentTaffyTree 증분 갱신 최적화 — ⚠️ 부분 구현 (GPU metrics 기본 구조만)
 
 **파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/persistentTaffyTree.ts`
 

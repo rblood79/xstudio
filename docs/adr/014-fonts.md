@@ -312,3 +312,78 @@ interface LegacyCustomFontAsset {
 - [ ] `ExportedProjectData` 스키마 변경 범위 확정
 - [ ] 디렉터리 저장 API 지원 브라우저 정책 확정
 - [ ] `projects.font_registry` 컬럼 마이그레이션 방식 확정 (DB/타입/API 동시 반영)
+
+---
+
+## 코드 대조 검증 (2026-03-03)
+
+### 검증 범위
+
+실제 파일 경로와 구현 현황을 `Grep/Glob/Read`로 확인한 결과를 기록한다.
+
+### 현재 폰트 시스템 구현 확인
+
+#### 공유 유틸 (`packages/shared/src/utils/font.utils.ts`)
+
+| 항목 | 확인 결과 |
+|------|----------|
+| `CustomFontAsset` 인터페이스 | ✅ 존재. `{ id, family, source, format? }` |
+| `CUSTOM_FONT_STORAGE_KEY` | ✅ `'xstudio.custom-fonts'` |
+| `buildCustomFontFaceCss()` | ✅ 존재. `@font-face` CSS 생성 |
+| `inferFontFormatFromName()` | ✅ 존재 |
+| `stripExtension()` | ✅ 존재 |
+
+#### Builder 폰트 모듈
+
+| 파일 | 확인 결과 |
+|------|----------|
+| `apps/builder/src/builder/fonts/customFonts.ts` | ✅ `getCustomFonts()`, `saveCustomFonts()`, `injectCustomFontStyle()`, `createCustomFontFromFile()`, `DEFAULT_FONT_FAMILY = 'Pretendard'`, `DEFAULT_FONT_OPTIONS` 포함 |
+| `apps/builder/src/builder/fonts/initCustomFonts.ts` | ✅ 앱 부팅 시 localStorage에서 폰트 읽어 DOM 주입, `storage` 이벤트 + `xstudio:custom-fonts-updated` 이벤트 구독 |
+
+#### Skia 폰트 매니저 (`apps/builder/src/builder/workspace/canvas/skia/fontManager.ts`)
+
+| 항목 | 확인 결과 |
+|------|----------|
+| IndexedDB 캐싱 | ✅ DB명 `xstudio-fonts`, store `fonts` |
+| `SkiaFontManager.loadFont(family, url)` | ✅ URL 기반 폰트 로드 (네트워크 fetch + IndexedDB 캐시) |
+| `CanvasKit.Typeface.MakeFreeTypeFaceFromData()` | ✅ 사용 중 |
+| 커스텀 폰트 레지스트리 연동 | ❌ 미구현 — URL 직접 전달 방식만 지원, `CustomFontAsset` 배열 연동 없음 |
+
+#### Publish 앱 (`apps/publish/src/App.tsx`)
+
+| 항목 | 확인 결과 |
+|------|----------|
+| localStorage 직접 읽기 | ✅ `localStorage.getItem(CUSTOM_FONT_STORAGE_KEY)` — 문서 내용과 일치 |
+| 프로젝트 데이터 기반 전환 | ❌ 미구현 |
+
+#### 프로젝트 레벨 레지스트리
+
+| 항목 | 확인 결과 |
+|------|----------|
+| `apps/builder/src/services/api/ProjectsApiService.ts`에 `font_registry` 필드 | ❌ 미구현 — grep 결과 없음 |
+| `packages/shared/src/types/export.types.ts`에 `fontRegistry` 필드 | ❌ 미구현 — grep 결과 없음 |
+
+### Phase별 전제 조건 현황
+
+| Phase | 설명 | 전제 조건 현황 |
+|-------|------|--------------|
+| Phase A | 레지스트리/서비스 계층 정리 | 기반 타입(`CustomFontAsset`)은 존재. `FontRegistryV2` 신규 작성 필요 |
+| Phase B | Builder UX 보완 | `TypographySection.tsx` 폰트 추가 UI 이미 구현됨 (✅). localStorage → 레지스트리 전환 필요 |
+| Phase C | WebGL/Skia 반영 | `SkiaFontManager`는 구현됨(✅). 커스텀 폰트 레지스트리 연동 경로 추가 필요(❌) |
+| Phase D | Preview/Publish 런타임 반영 | Publish는 localStorage 직접 읽기(✅ 동작하나 레거시 방식). 전환 필요 |
+| Phase E | 정적 Export 멀티파일 | `ExportedProjectData`에 폰트 필드 없음(❌). 전체 구현 필요 |
+
+### 파일 경로 정확성
+
+문서의 모든 파일 경로(`apps/builder/src/...`, `packages/shared/src/...`)는 실제 경로와 일치한다.
+
+### 1-1 Baseline 표 갱신 사항
+
+문서의 Baseline 표(section 1-1)는 현재 코드와 일치함을 확인하였다.
+- `packages/shared/src/utils/font.utils.ts` — ✅ 일치
+- `apps/builder/src/builder/fonts/customFonts.ts` — ✅ 일치. 단, 파일 내에 `DEFAULT_FONT_FAMILY`, `DEFAULT_FONT_OPTIONS`도 포함됨 (문서에 미기재)
+- `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts` — ✅ IndexedDB 캐싱 구현 일치. 커스텀 폰트 미지원 확인
+
+### Status 판단
+
+**Proposed 유지.** Phase A~E 전혀 시작되지 않은 상태이며, 코드 베이스의 기반 모듈(customFonts.ts, fontManager.ts, font.utils.ts)은 문서 Baseline과 일치한다.
