@@ -38,6 +38,9 @@ docs/
 
 ## ADR 형식
 
+> **필수**: Risk-First Design Loop 순서를 따른다. Alternatives → Risk → Decision → Gates 순서.
+> 자세한 방법론은 architect agent의 "Risk-First Design Loop" 참조.
+
 ```markdown
 # ADR-NNN: [Title]
 
@@ -45,21 +48,26 @@ docs/
 Proposed | Accepted | Deprecated | Superseded
 
 ## Context
-[문제 설명 및 배경 - 이 결정이 필요한 이유]
+[문제 설명 + 제약 조건 (hard constraints 명시)]
+
+## Alternatives Considered
+### 대안 A: [이름]
+- 설명: ...
+- 위험: 기술(L/M/H/C) / 성능(L/M/H/C) / 유지보수(L/M/H/C) / 마이그레이션(L/M/H/C)
+
+### 대안 B: [이름]
+- 설명: ...
+- 위험: 기술(L/M/H/C) / 성능(L/M/H/C) / 유지보수(L/M/H/C) / 마이그레이션(L/M/H/C)
 
 ## Decision
-[결정 사항 및 그 근거]
+[선택된 대안 + 위험 수용 근거]
+
+## Gates
+[잔존 HIGH 위험에 대한 Gate 테이블. 없으면 "잔존 HIGH 위험 없음" 명시]
 
 ## Consequences
-
 ### Positive
-[이 결정의 이점]
-
 ### Negative
-[단점 및 트레이드오프]
-
-### Risks
-[모니터링해야 할 잠재적 위험]
 ```
 
 ### ADR 번호 매기기

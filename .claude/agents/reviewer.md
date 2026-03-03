@@ -57,6 +57,14 @@ maxTurns: 20
 - [ ] 경계 입력 검증에 Zod 사용
 - [ ] 컴포넌트에 Error Boundary 래핑
 
+### 8. ADR 품질 (설계 문서 리뷰 시)
+- [ ] Alternatives Considered가 최소 2개 존재
+- [ ] 각 대안에 4축 위험 평가 (기술/성능/유지보수/마이그레이션) 있음
+- [ ] Decision이 Alternatives 뒤에 위치 (순서: Alternatives → Decision)
+- [ ] Decision에 "위험 수용 근거" 명시됨
+- [ ] HIGH 위험이 남은 경우 Gates 섹션 존재
+- [ ] Risk Threshold에 의한 대안 추가가 필요했는지 검토 (모든 대안이 HIGH면 대안 추가 필요)
+
 ## 신뢰도 점수
 
 각 이슈를 0-100 스케일로 평가:
