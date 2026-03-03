@@ -48,13 +48,23 @@
 
 ---
 
+## 다음 진행 목표 (2026-03-04 기준)
+
+| 순서 | 대상            | 내용                                                                                                 | 규모 |
+| :--: | --------------- | ---------------------------------------------------------------------------------------------------- | :--: |
+|  1   | ADR-014 Phase D | Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입         |  소  |
+|  2   | ADR-014 Phase E | 정적 Export 멀티파일 — `assets/fonts/*` 생성 + 상대 경로 연결 + `showDirectoryPicker` / ZIP fallback |  중  |
+|  3   | ADR-013         | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |
+
+---
+
 ## 우선순위 근거
 
 ### P1: ADR-014 Fonts
 
 - **근거**: 프로젝트 레벨 폰트 관리 부재 → 협업/배포 제약
 - **진행률**: Phase A+B+C+C2 완료 (Font Manager Panel + OS/2 메타 추출 + PropertyListItem 재사용 컴포넌트), Phase D~E 미구현
-- **핵심 이슈**: Publish 앱 레지스트리 전환 + 정적 Export 멀티파일 미구현
+- **다음 단계**: Phase D (Publish 레지스트리 전환, 소규모 1~2파일) → Phase E (정적 Export 멀티파일, 중규모 5~8파일)
 - **전제 조건**: 없음 (독립 실행 가능)
 - **영향 범위**: Builder/Preview/Publish 폰트 일관성
 
@@ -73,7 +83,7 @@
 - **전제 조건**: Phase 2 Binary Protocol TypedArray 완료 (충족)
 - **영향 범위**: 5,000+ 요소 대규모 프로젝트 성능
 
-### P4: ADR-010 P1.5/P2 + ADR-011 A5 + ADR-012 P3 + ADR-015 + ADR-016
+### P5: ADR-010 P1.5/P2 + ADR-011 A5 + ADR-012 P3 + ADR-015 + ADR-016
 
 - **근거**: 핵심 기능 완료, 부가 기능/장기 계획
 - ADR-010 P1.5: UX 폴리싱 (제안 단계)
