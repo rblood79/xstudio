@@ -30,21 +30,51 @@ tags: [style, css, reuse]
 ```tsx
 // ✅ 기존 클래스 재사용
 // 먼저 styles/index.css 확인
-import './styles/index.css';
+import "./styles/index.css";
 
 <div className="combobox-container">
   <label className="control-label">Label</label>
   <ComboBox className="react-aria-ComboBox" />
-</div>
+</div>;
 ```
 
 ```css
 /* styles/index.css - 기존 클래스 활용 */
-.combobox-container { /* 이미 정의됨 */ }
-.control-label { /* 이미 정의됨 */ }
+.combobox-container {
+  /* 이미 정의됨 */
+}
+.control-label {
+  /* 이미 정의됨 */
+}
 
 /* 필요한 경우에만 variant 추가 */
 .react-aria-UnitComboBox {
   /* UnitComboBox 전용 스타일 */
 }
 ```
+
+## 참조 패턴: PropertyListItem
+
+`PropertyListItem` 컴포넌트는 `PropertyUnitInput`의 DOM 구조를 그대로 복제하여 기존 CSS를 100% 재사용하는 모범 사례이다.
+
+```tsx
+// ✅ PropertyUnitInput 구조 복제 → 새 CSS 없이 동일 스타일
+<fieldset className="properties-aria property-list-item">
+  <legend className="fieldset-legend">{label}</legend>
+  <div className="react-aria-control react-aria-Group">
+    <label className="control-label">
+      <Icon />
+    </label>
+    <div className="react-aria-ComboBox react-aria-UnitComboBox">
+      <div className="combobox-container">
+        <input className="react-aria-Input" readOnly value={value} />
+        <button className="react-aria-Button">
+          <X />
+        </button>
+      </div>
+    </div>
+  </div>
+</fieldset>
+```
+
+핵심: 기존 CSS 클래스(`.properties-aria`, `.react-aria-Group`, `.react-aria-UnitComboBox`, `.combobox-container`, `.react-aria-Input`, `.react-aria-Button`)를 재사용하면 새 스타일 파일 없이 시각적 일관성을 보장한다.

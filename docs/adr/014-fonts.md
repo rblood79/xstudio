@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial — Phase A+B+C 완료 (2026-03-03), Phase D~E 미구현
+Partial — Phase A+B+C+**C2(Font Manager Panel)** 완료 (2026-03-04), Phase D~E 미구현
 
 ## 0) 확정 결정 (2026-02-13)
 
@@ -194,15 +194,15 @@ interface LegacyCustomFontAsset {
 > 아래는 v2 레지스트리 연동 기준 보완 사항이다.
 
 - ~~Typography 섹션에 `폰트 추가` 버튼 제공~~ → ✅ 이미 구현됨
-- **별도 신규 모달/패널은 만들지 않고, 기존 Typography 컨트롤 재사용**
-- 기존 localStorage 직접 저장 → `FontRegistryV2` 기반 저장으로 전환
-- 폰트 목록: 기본 폰트 + 커스텀 폰트 그룹화 표시 (현재 `DEFAULT_FONT_OPTIONS` + 커스텀 합산)
-- 삭제/교체 UX 보강
-- `customFonts.ts`와 `initCustomFonts.ts`를 레지스트리 기반으로 리팩터링
+- ~~별도 신규 모달/패널은 만들지 않고, 기존 Typography 컨트롤 재사용~~ → ✅ Phase C2에서 전용 Font Manager 패널 추가
+- ✅ 기존 localStorage 직접 저장 → `FontRegistryV2` 기반 저장으로 전환
+- ✅ 폰트 목록: 기본 폰트 + 커스텀 폰트 그룹화 표시 (현재 `DEFAULT_FONT_OPTIONS` + 커스텀 합산)
+- ✅ 삭제/교체 UX 보강 — Font Manager 패널에서 face 단위 삭제
+- ✅ `customFonts.ts`와 `initCustomFonts.ts`를 레지스트리 기반으로 리팩터링
 
 **산출물**
 
-- 스타일 패널 UI 레지스트리 연동
+- ✅ 스타일 패널 UI 레지스트리 연동
 - 사용자 액션(추가/삭제/선택) E2E 시나리오
 
 ### Phase C. WebGL/Skia 반영
@@ -220,6 +220,45 @@ interface LegacyCustomFontAsset {
 
 - `SkiaFontManager` 커스텀 폰트 통합 테스트
 - 대표 컴포넌트 폰트 적용 검증 (예: Text/Button/Input/Badge/Heading)
+
+### Phase C2. Font Manager Panel (2026-03-04 완료)
+
+> Typography 섹션의 제한된 폰트 관리 UX를 전용 패널로 분리.
+
+**구현 내역:**
+
+- ✅ **FontManagerPanel** (`panels/fonts/FontManagerPanel.tsx`) — 전용 폰트 관리 패널
+  - PanelHeader (Type 아이콘, "Fonts" 제목, face 카운트 배지)
+  - FontUploadZone (드래그 & 드롭 + 파일 선택, `secondary-container` 배경)
+  - FontFamilyGroup (패밀리별 PropertySection, weight 오름차순 정렬)
+  - EmptyState (폰트 미등록 시)
+- ✅ **PropertyListItem** (`components/property/PropertyListItem.tsx`) — 재사용 컴포넌트 신규
+  - PropertyUnitInput DOM 구조 그대로 복제하여 기존 CSS 100% 재사용
+  - `fieldset.properties-aria > .react-aria-Group > .control-label + .react-aria-UnitComboBox > .combobox-container > input[readOnly] + button(X)`
+  - 향후 HistoryPanel 등에서도 재사용 가능
+- ✅ **패널 시스템 등록** — PanelId `'fonts'`, 카테고리 `'tool'`, 우측 패널 배치
+- ✅ **TypographySection 통합** — Type 아이콘 버튼 → `togglePanel("right", "fonts")`
+- ✅ **폰트 메타데이터 추출** — OS/2 테이블 바이너리 파싱 (`parseOS2Table`)
+  - `usWeightClass` → weight (100~900), `fsSelection` bit 0 → italic
+  - CanvasKit `FontMgr.FromData()` → family 이름
+  - TTF/OTF 직접 파싱, WOFF/WOFF2는 파일명 추론 fallback
+
+**신규/수정 파일:**
+
+| 파일                                                  | 변경                                                                                |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **NEW** `panels/fonts/FontManagerPanel.tsx`           | 메인 패널 (Gateway + Content)                                                       |
+| **NEW** `panels/fonts/FontManagerPanel.css`           | 스타일 (upload zone, section-content grid)                                          |
+| **NEW** `panels/fonts/components/FontUploadZone.tsx`  | 드래그 & 드롭 업로드                                                                |
+| **NEW** `panels/fonts/components/FontFamilyGroup.tsx` | 패밀리별 그룹 (PropertySection + PropertyListItem)                                  |
+| **NEW** `components/property/PropertyListItem.tsx`    | 재사용 읽기전용 목록 항목 컴포넌트                                                  |
+| `panels/core/types.ts`                                | PanelId에 `'fonts'` 추가, rightPanels 등록                                          |
+| `panels/core/panelConfigs.ts`                         | FontManagerPanel config 등록                                                        |
+| `panels/index.ts`                                     | FontManagerPanel export                                                             |
+| `components/property/index.ts`                        | PropertyListItem export                                                             |
+| `components/index.ts`                                 | PropertyListItem export                                                             |
+| `fonts/customFonts.ts`                                | `extractFontMetadata()` + `parseOS2Table()` + `inferWeightStyleFromFileName()` 추가 |
+| `panels/styles/sections/TypographySection.tsx`        | 파일 업로드 → Font Manager 패널 열기 버튼으로 교체                                  |
 
 ### Phase D. Preview/Publish 런타임 반영
 
@@ -316,9 +355,16 @@ interface LegacyCustomFontAsset {
 | 파일                                                                    | 역할                                                                          |
 | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | `packages/shared/src/utils/font.utils.ts`                               | `CustomFontAsset` 타입, `CUSTOM_FONT_STORAGE_KEY`, `buildCustomFontFaceCss()` |
-| `apps/builder/src/builder/fonts/customFonts.ts`                         | Builder DOM 폰트 적용                                                         |
+| `packages/shared/src/types/font.types.ts`                               | `FontRegistryV2`, `FontFaceAsset` 타입 정의                                   |
+| `packages/shared/src/utils/fontRegistry.ts`                             | 레지스트리 CRUD (`addFontFace`, `removeFontFace`, `loadFontRegistry` 등)      |
+| `apps/builder/src/builder/fonts/customFonts.ts`                         | Builder DOM 폰트 적용 + OS/2 메타데이터 추출 + 파일명 추론                    |
 | `apps/builder/src/builder/fonts/initCustomFonts.ts`                     | 앱 부팅 시 폰트 초기화                                                        |
-| `apps/builder/src/builder/panels/styles/sections/TypographySection.tsx` | Typography UI (폰트 추가/선택)                                                |
+| `apps/builder/src/builder/panels/fonts/FontManagerPanel.tsx`            | Font Manager 패널 (업로드/조회/삭제)                                          |
+| `apps/builder/src/builder/panels/fonts/FontManagerPanel.css`            | Font Manager 패널 스타일                                                      |
+| `apps/builder/src/builder/panels/fonts/components/FontUploadZone.tsx`   | 드래그 & 드롭 폰트 업로드                                                     |
+| `apps/builder/src/builder/panels/fonts/components/FontFamilyGroup.tsx`  | 패밀리별 폰트 그룹 표시                                                       |
+| `apps/builder/src/builder/components/property/PropertyListItem.tsx`     | 재사용 읽기전용 목록 컴포넌트 (PropertyUnitInput 구조 복제)                   |
+| `apps/builder/src/builder/panels/styles/sections/TypographySection.tsx` | Typography UI (폰트 선택 + Font Manager 패널 열기)                            |
 | `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts`         | `SkiaFontManager` (IndexedDB 캐싱, Typeface 로드)                             |
 | `apps/publish/src/App.tsx`                                              | Publish 앱 폰트 읽기                                                          |
 | `apps/builder/src/services/api/ProjectsApiService.ts`                   | `projects` API 타입/저장 (`font_registry` 확장 대상)                          |
@@ -412,11 +458,12 @@ interface LegacyCustomFontAsset {
 
 ### Status 판단
 
-**Partial 승격 (2026-03-04)**. Phase A+B가 완료되었다.
+**Partial 승격 (2026-03-04)**. Phase A+B+C+C2가 완료되었다.
 
 - ✅ Phase A: FontRegistryV2 타입 + CRUD + 마이그레이션 + CSS 생성 (`fontRegistry.ts`, `font.types.ts`)
 - ✅ Phase B: Builder UX 레지스트리 연동 (`customFonts.ts`, `initCustomFonts.ts`, `TypographySection.tsx`, `previewSrcdoc.ts`)
-- ❌ Phase C: Skia `loadFontFromBuffer()` 미구현
+- ✅ Phase C: Skia `loadFontFromBuffer()` 구현 완료
+- ✅ Phase C2: Font Manager Panel 구현 완료 (전용 패널 + PropertyListItem 재사용 컴포넌트 + OS/2 메타데이터 추출)
 - ❌ Phase D: Publish 앱 레지스트리 전환 미구현
 - ❌ Phase E: 정적 Export 멀티파일 미구현
 

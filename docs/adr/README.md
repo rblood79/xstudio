@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-03 (코드 대조 검증 반영)
+> **최종 업데이트**: 2026-03-04 (ADR-014 Phase C2 Font Manager Panel 완료 반영)
 
 ## 현황 요약
 
@@ -39,12 +39,12 @@
 
 ### 미구현
 
-| ADR                                      | 제목                               | 상태     | 규모                                                                   | 우선순위 |
-| ---------------------------------------- | ---------------------------------- | -------- | ---------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩        | Proposed | 5 Phase, 21파일                                                        |  **P2**  |
-| [014](014-fonts.md)                      | Fonts 실행 계획                    | Partial  | Phase A+B+C 완료, Phase D~E 미구현 (Skia Canvas 커스텀 폰트 반영 완료) |  **P1**  |
-| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                                           |    P5    |
-| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                 |    P5    |
+| ADR                                      | 제목                               | 상태     | 규모                                                                             | 우선순위 |
+| ---------------------------------------- | ---------------------------------- | -------- | -------------------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩        | Proposed | 5 Phase, 21파일                                                                  |  **P2**  |
+| [014](014-fonts.md)                      | Fonts 실행 계획                    | Partial  | Phase A+B+C+C2 완료, Phase D~E 미구현 (Font Manager Panel + OS/2 메타 추출 완료) |  **P1**  |
+| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                                                     |    P5    |
+| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                           |    P5    |
 
 ---
 
@@ -53,8 +53,8 @@
 ### P1: ADR-014 Fonts
 
 - **근거**: 프로젝트 레벨 폰트 관리 부재 → 협업/배포 제약
-- **진행률**: Phase A+B 완료, Phase C~E 미구현
-- **핵심 이슈**: localStorage만 사용 → 프로젝트 공유 시 폰트 유실, Skia 커스텀 폰트 미구현
+- **진행률**: Phase A+B+C+C2 완료 (Font Manager Panel + OS/2 메타 추출 + PropertyListItem 재사용 컴포넌트), Phase D~E 미구현
+- **핵심 이슈**: Publish 앱 레지스트리 전환 + 정적 Export 멀티파일 미구현
 - **전제 조건**: 없음 (독립 실행 가능)
 - **영향 범위**: Builder/Preview/Publish 폰트 일관성
 
@@ -163,3 +163,4 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-03 | 코드 대조 검증 — ADR-009~016 전수 검증, ADR-012 Proposed→Partial 승격, ADR-009 Phase 3 Binary Protocol 부분 구현 확인, ADR-011 A5a 부분 완료 확인 |
 | 2026-03-03 | Risk-First ADR 템플릿 추가 — Alternatives→Risk→Decision→Gates 순서 필수화                                                                         |
 | 2026-03-04 | ADR-012 P1-2/P2-3 구현 완료 확인 — 코드 대조 결과 이미 구현됨 확인, 67%→80% 갱신. 잔여: P3 장기 최적화 3건                                        |
+| 2026-03-04 | ADR-014 Phase C2 완료 — Font Manager Panel + PropertyListItem 재사용 컴포넌트 + OS/2 메타데이터 추출. 우선순위 근거 갱신                          |
