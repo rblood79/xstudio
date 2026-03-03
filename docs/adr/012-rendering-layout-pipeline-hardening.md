@@ -1,4 +1,4 @@
-# ADR-006: 렌더링/레이아웃 파이프라인 하드닝 실행계획
+# ADR-012: 렌더링/레이아웃 파이프라인 하드닝 실행계획
 
 ## Status
 Proposed
@@ -13,7 +13,7 @@ XStudio Team
 
 ## Executive Summary
 
-ADR-005 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔터프라이즈 CMS 빌더 수준(1,500~5,000 요소)에서의 안정성·성능·보안을 확보하기 위한 **하드닝 실행계획**.
+ADR-009 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔터프라이즈 CMS 빌더 수준(1,500~5,000 요소)에서의 안정성·성능·보안을 확보하기 위한 **하드닝 실행계획**.
 
 심층 감사를 통해 발견된 이슈를 **4단계 우선순위(P0~P3)**로 분류하고, 각 단계별 구체적인 수정 방안·파일 위치·검증 기준을 정의한다.
 
@@ -118,7 +118,7 @@ ADR-005 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 
 ## Context: 현재 파이프라인 상태
 
-ADR-005 Foundation 완료로 레이아웃 엔진이 단일 Taffy WASM 경로로 통합되었다:
+ADR-009 Foundation 완료로 레이아웃 엔진이 단일 Taffy WASM 경로로 통합되었다:
 
 ```
 [사용자 편집]
@@ -778,7 +778,7 @@ function resolveInlineBlockAlignItems(childElements: Element[]): string {
 ## P3: 장기 성능 최적화 (대규모 캔버스)
 
 > 목표: 5,000 요소에서 60fps 달성
-> 예상 소요: 2~4주 (ADR-005 Phase 3~5와 연계)
+> 예상 소요: 2~4주 (ADR-009 Phase 3~5와 연계)
 
 ### P3-1. Dirty Tracking + useMemo 의존성 최적화 (핵심, ~97% DFS 비용 감소)
 
@@ -1053,7 +1053,7 @@ if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
 
 **예상 효과**: 5,000 노드 중 1개 변경 시 DFS 8~15ms → 0.1~0.5ms
 
-**ADR-005 연계**: Phase 1 (Persistent Tree + Incremental Layout)의 JS 측 최적화에 해당.
+**ADR-009 연계**: Phase 1 (Persistent Tree + Incremental Layout)의 JS 측 최적화에 해당.
 
 **레이아웃 안전성**:
 - **블랙리스트 방식**: `NON_LAYOUT_PROPS`에 미등록된 속성은 모두 레이아웃 트리거 → 누락으로 인한 사일런트 버그 불가능
@@ -1181,7 +1181,7 @@ SPATIAL_INDEX: true,  // false → true 전환
 
 **P3-1 의존 관계**: P3-2는 P3-1과 **독립 실행 가능**. P3-1 없이도 pan/zoom 시 O(K) 쿼리 이점을 얻으며, P3-1 적용 시 `buildRenderCommandStream` 캐시 히트율이 높아져 SpatialIndex 갱신 빈도가 추가 감소.
 
-**ADR-005 연계**: Phase 4 (Element-Level Viewport Culling).
+**ADR-009 연계**: Phase 4 (Element-Level Viewport Culling).
 
 **예상 효과**:
 
@@ -1279,7 +1279,7 @@ updateNodeStyle(
 - Version counter: Store dirty 기반 O(1) 비교 → **간접 변경 미감지** (설계 결함)
 - JSON 비교: DFS 계산 결과 직접 비교 → **모든 변경 포착** (의존 경로 무관)
 
-**ADR-005 연계**: Phase 2 (Binary Protocol)의 전단계 최적화. Binary protocol 전환 시 JSON.stringify 대신 binary diff로 추가 최적화 가능.
+**ADR-009 연계**: Phase 2 (Binary Protocol)의 전단계 최적화. Binary protocol 전환 시 JSON.stringify 대신 binary diff로 추가 최적화 가능.
 
 **성능 특성**:
 - `JSON.stringify`: 5,000 노드 × 평균 ~100B = ~500KB/프레임. V8의 JSON.stringify는 고도로 최적화되어 있어 ~2ms 수준
@@ -1334,7 +1334,7 @@ P2 (중기, 3~5일) ← P1 완료 후
 ├── P2-2. postMessage 수신 검증 일원화 (6개 핸들러, 부트스트랩/일반 2단계 검증)
 └── P2-3. inline-block alignItems (P1-1 이후 권장)
 
-P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
+P3 (장기, 2~4주) ← P2 완료 후, ADR-009 Phase 3~5와 병렬
 ├── P3-1. Dirty Tracking + useMemo 최적화 ← 핵심 (P3-3과 결합 시 추가 최적화)
 ├── P3-2. Viewport Culling: 씬 좌표 SpatialIndex (독립 실행 가능, P3-1과 병렬)
 └── P3-3. JSON 비교 기반 변경 감지 (구현 완료, P3-1과 독립)
@@ -1492,7 +1492,7 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 | P2-3 (inline-block) | vertical-align 동적 결정 | **없음** — 미명시 시 기존 `center` 유지 | 하위 호환성 보장 (`explicitAligns.length === 0` → `'center'`) |
 | P3-1 (dirty tracking) | 블랙리스트 오분류 + 상속 속성 자손 전파 | **블랙리스트 방식으로 근본 차단** + `INHERITED_LAYOUT_PROPS` 변경 시 descendant invalidation | DEV 검증 가드: full DFS 결과 교차 비교 |
 | P3-2 (SpatialIndex) | 가시성 판단 오류 | **없음** — 레이아웃 계산에 무관, 가시성만 영향 | Feature flag 즉시 롤백 + DEV 교차 검증 |
-| P3-3 (JSON 비교) | JSON.stringify CPU 비용 + _lastJsonMap 메모리 (~500KB) | **없음** — JSON 동일 = 스타일 동일 보장, 의존 경로 무관 | P3-1 결합 시 dirty 노드만 호출하여 CPU 비용 감소. Binary Protocol(ADR-005 Phase 2)에서 추가 최적화 |
+| P3-3 (JSON 비교) | JSON.stringify CPU 비용 + _lastJsonMap 메모리 (~500KB) | **없음** — JSON 동일 = 스타일 동일 보장, 의존 경로 무관 | P3-1 결합 시 dirty 노드만 호출하여 CPU 비용 감소. Binary Protocol(ADR-009 Phase 2)에서 추가 최적화 |
 
 **레이아웃 안전성 종합**:
 - **P0~P1**: 방어 코드 추가 + 버그 수정. 기존 레이아웃에 영향 없음
@@ -1514,7 +1514,7 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-005 Phase 3~5와 병렬
 
 ## References
 
-- [ADR-005: Full-Tree WASM Layout](./005-full-tree-wasm-layout.md)
+- [ADR-009: Full-Tree WASM Layout](./009-full-tree-wasm-layout.md)
 - [ADR-003: Canvas Rendering](./003-canvas-rendering.md)
 - [ADR-001: State Management](./001-state-management.md)
 - [Taffy 0.9 Documentation](https://github.com/DioxusLabs/taffy)

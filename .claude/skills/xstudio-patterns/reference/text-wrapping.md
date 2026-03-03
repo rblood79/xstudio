@@ -1,4 +1,4 @@
-# Text Wrapping & Measurement Patterns (ADR-008)
+# Text Wrapping & Measurement Patterns (ADR-005)
 
 CSS 텍스트 래핑 속성의 CanvasKit 에뮬레이션 패턴.
 

@@ -10,7 +10,7 @@
 >
 > **후속 문서:**
 > - [`docs/RENDERING_ARCHITECTURE.md`](../RENDERING_ARCHITECTURE.md) — CanvasKit/Skia WASM 렌더링 아키텍처 (현행 기준 문서)
-> - [`docs/adr/015-layout-engine.md`](015-layout-engine.md) — Taffy 단일 레이아웃 엔진 전략 (Dropflow 제거, TaffyBlockEngine 통합)
+> - [`docs/adr/008-layout-engine.md`](008-layout-engine.md) — Taffy 단일 레이아웃 엔진 전략 (Dropflow 제거, TaffyBlockEngine 통합)
 > - [`docs/CSS_SUPPORT_MATRIX.md`](../CSS_SUPPORT_MATRIX.md) — CSS Level 3 지원 현황
 >
 > **참고:** 본 ADR의 Updates 섹션(2026-02-01~02-18, 30+ 항목)은 전환 과정의 상세 이력입니다.
@@ -711,7 +711,7 @@ const drawContainerHitRect = useCallback(
 
 ## Update: 레이아웃 엔진 마이그레이션 완료 — 전략 D Phase 9 (2026-02-17)
 
-015-layout-engine.md 전략 D의 최종 단계인 Phase 9를 완료하여, 레거시 레이아웃 엔진을 모두 삭제하고 새 엔진 아키텍처로 완전 전환:
+008-layout-engine.md 전략 D의 최종 단계인 Phase 9를 완료하여, 레거시 레이아웃 엔진을 모두 삭제하고 새 엔진 아키텍처로 완전 전환:
 
 ### 1. 레거시 엔진 삭제 (Phase 9A)
 
@@ -754,7 +754,7 @@ const drawContainerHitRect = useCallback(
 | **Feature flags** | `taffyFlex`, `taffyGrid`, `dropflowBlock` | 제거 (항상 활성, `dropflowBlock`은 Dropflow 제거로 폐기) |
 | **코드 라인** | ~1,580줄 레거시 코드 | 삭제 완료 |
 
-**상세:** `docs/adr/015-layout-engine.md`, `apps/builder/src/.../layout/engines/index.ts`
+**상세:** `docs/adr/008-layout-engine.md`, `apps/builder/src/.../layout/engines/index.ts`
 
 ## Update: @pixi/layout + @pixi/ui 완전 제거 — Phase 10-11 (2026-02-18)
 
@@ -815,4 +815,4 @@ import { Application, extend } from '@pixi/react';
 
 - `apps/builder/src/builder/workspace/canvas/` - Canvas 구현
 - `.claude/skills/xstudio-patterns/rules/pixi-*.md` - PIXI 규칙
-- `docs/adr/015-layout-engine.md` - 레이아웃 엔진 전략
+- `docs/adr/008-layout-engine.md` - 레이아웃 엔진 전략

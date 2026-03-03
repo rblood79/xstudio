@@ -1,4 +1,4 @@
-# ADR-008: CSS 텍스트 래핑 속성 체계적 지원
+# ADR-005: CSS 텍스트 래핑 속성 체계적 지원
 
 ## Status
 **Implemented** (Phase 1~3 완료, 2026-03-03)
@@ -409,4 +409,4 @@ cd apps/builder && pnpm exec tsc --noEmit
 - [css-line-break](https://github.com/niklasvh/css-line-break) — UAX #14 구현
 - [Skia TextWrapper.cpp](https://skia.googlesource.com/skia/+/refs/heads/main/modules/skparagraph/src/TextWrapper.cpp)
 - [foliojs/linebreak](https://github.com/foliojs/linebreak) — UAX #14 순수 구현
-- ADR-006 P4: word-break:normal 에뮬레이션 (선행 작업)
+- ADR-012 P4: word-break:normal 에뮬레이션 (선행 작업)

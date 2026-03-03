@@ -122,7 +122,7 @@ pnpm storybook
 
 ## 참조 문서
 
-- [AI Feature Design](docs/adr/014-ai-assistant-design.md)
+- [AI Feature Design](docs/adr/011-ai-assistant-design.md)
 - [WASM Architecture](docs/RENDERING_ARCHITECTURE.md)
 - [Component Spec](docs/COMPONENT_SPEC.md)
 - [CSS Architecture](docs/reference/components/CSS_ARCHITECTURE.md)
@@ -131,4 +131,4 @@ pnpm storybook
 - [ADR: Styling](docs/adr/002-styling-approach.md)
 - [ADR: Canvas](docs/adr/003-canvas-rendering.md)
 - [ADR: Preview](docs/adr/004-preview-isolation.md)
-- [ADR: Text Wrapping](docs/adr/008-css-text-wrapping.md)
+- [ADR: Text Wrapping](docs/adr/005-css-text-wrapping.md)

@@ -330,7 +330,7 @@ const minContentW = calculateMinContentWidth(textContent, fontSize);
 **적용 범위**: TEXT_LEAF_TAGS는 `enrichWithIntrinsicSize`에서 별도 처리되므로 step 4.8 대상 아님.
 Card/Tabs: Factory에 `width: '100%'` 설정하여 flex center에서 전체 폭 유지.
 
-### layoutVersion 계약 (ADR-006 P4, 2026-03-02)
+### layoutVersion 계약 (ADR-012 P4, 2026-03-02)
 
 `fullTreeLayoutMap` useMemo는 `[bodyElement, layoutVersion, pageWidth, pageHeight, _wasmLayoutReady]`에 의존합니다.
 `elementById`/`pageChildrenMap` 등 Map 참조를 deps에서 의도적으로 제외(P3-1 최적화)하므로, **layoutVersion 카운터가 유일한 재계산 트리거**입니다.

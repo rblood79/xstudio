@@ -1,4 +1,4 @@
-# ADR-007: Quick Connect — Collection 컴포넌트 데이터 바인딩 자동화
+# ADR-013: Quick Connect — Collection 컴포넌트 데이터 바인딩 자동화
 
 ## Status
 Proposed

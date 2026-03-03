@@ -140,7 +140,7 @@ setTimeout(() => {
 }, 100);
 ```
 
-## layoutVersion 계약 (ADR-006 P4)
+## layoutVersion 계약 (ADR-012 P4)
 
 `fullTreeLayoutMap` useMemo는 `layoutVersion` 카운터에 의존합니다. 레이아웃 영향 변경 시 반드시 카운터를 증가시켜야 합니다.
 

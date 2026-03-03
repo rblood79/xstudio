@@ -44,7 +44,7 @@
  * @see packages/layout-flow/src/style.ts — Style.blockify(), Style.display 기본값
  * @see packages/layout-flow/src/adapters/xstudio-adapter.ts — parseDisplay(), classifyChild()
  * @see packages/layout-flow/src/layout-box.ts — FormattingBox.isInlineLevel()
- * @see ADR-005 (docs/adr/005-full-tree-wasm-layout.md)
+ * @see ADR-009 (docs/adr/009-full-tree-wasm-layout.md)
  * @since 2026-02-28
  */
 
