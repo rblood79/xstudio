@@ -12,14 +12,35 @@
  * @since 2025-12-11 Phase 10 B1.1
  * @updated 2026-02-18 Phase 11 - @pixi/layout 완전 제거, DirectContainer 전환
  */
-import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition, lazy, Suspense, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+  useState,
+  memo,
+  startTransition,
+  lazy,
+  Suspense,
+  type RefObject,
+} from "react";
 import { Application, useApplication } from "@pixi/react";
-import { Graphics as PixiGraphics, Container, Application as PixiApplication, FederatedPointerEvent } from "pixi.js";
+import {
+  Graphics as PixiGraphics,
+  Container,
+  Application as PixiApplication,
+  FederatedPointerEvent,
+} from "pixi.js";
 import { useStore } from "../../stores";
 
 // P4: useExtend 훅으로 메모이제이션된 컴포넌트 등록
 // 🚀 Phase 5: 동적 해상도 및 저사양 기기 감지
-import { useExtend, PIXI_COMPONENTS, isLowEndDevice, getDynamicResolution } from "./pixiSetup";
+import {
+  useExtend,
+  PIXI_COMPONENTS,
+  isLowEndDevice,
+  getDynamicResolution,
+} from "./pixiSetup";
 import { useCanvasSyncStore } from "./canvasSync";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
 import { ElementSprite } from "./sprites";
@@ -46,7 +67,13 @@ import {
   type ComputedLayout,
 } from "./layout";
 import { applyImplicitStyles } from "./layout/engines/implicitStyles";
-import { getElementBoundsSimple, getElementContainer, registerElement, unregisterElement, updateElementBounds } from "./elementRegistry";
+import {
+  getElementBoundsSimple,
+  getElementContainer,
+  registerElement,
+  unregisterElement,
+  updateElementBounds,
+} from "./elementRegistry";
 import { notifyLayoutChange } from "./skia/useSkiaNode";
 import { LayoutComputedSizeContext } from "./layoutContext";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
@@ -99,7 +126,7 @@ const PAGE_TITLE_HIT_HEIGHT = 24;
  * Phase 5: CanvasKit 오버레이 (Lazy Import)
  */
 const skiaOverlayImport = () =>
-  import('./skia/SkiaOverlay').then((mod) => ({ default: mod.SkiaOverlay }));
+  import("./skia/SkiaOverlay").then((mod) => ({ default: mod.SkiaOverlay }));
 const SkiaOverlayComponent = lazy(skiaOverlayImport);
 skiaOverlayImport(); // 모듈 프리로드: lazy 해제 없이 초기 번들 크기 유지하면서 청크 로딩 선행
 
@@ -110,7 +137,15 @@ function SkiaOverlayLazy(props: {
   dragStateRef?: RefObject<DragState | null>;
   pageWidth?: number;
   pageHeight?: number;
-  pageFrames?: Array<{ id: string; title: string; x: number; y: number; width: number; height: number; elementCount: number }>;
+  pageFrames?: Array<{
+    id: string;
+    title: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    elementCount: number;
+  }>;
   currentPageId?: string | null;
 }) {
   return (
@@ -134,7 +169,15 @@ function PixiExtendBridge() {
 /**
  * 캔버스 경계 표시
  */
-function CanvasBounds({ width, height, zoom = 1 }: { width: number; height: number; zoom?: number }) {
+function CanvasBounds({
+  width,
+  height,
+  zoom = 1,
+}: {
+  width: number;
+  height: number;
+  zoom?: number;
+}) {
   useExtend(PIXI_COMPONENTS);
   // 테마 변경 감지 (MutationObserver 기반)
   useThemeColors();
@@ -155,7 +198,7 @@ function CanvasBounds({ width, height, zoom = 1 }: { width: number; height: numb
       g.rect(0, 0, w, h);
       g.stroke();
     },
-    [w, h, strokeWidth]
+    [w, h, strokeWidth],
   );
 
   return <pixiGraphics draw={draw} />;
@@ -164,21 +207,44 @@ function CanvasBounds({ width, height, zoom = 1 }: { width: number; height: numb
 // Opt-out: 자식을 내부에 렌더링하지 않는 태그 (나머지는 모두 컨테이너)
 const NON_CONTAINER_TAGS = new Set([
   // TEXT_TAGS: TextSprite 렌더링, 컨테이너 불가
-  'Text', 'Heading', 'Description', 'Label', 'Paragraph',
-  'Link', 'Strong', 'Em', 'Code', 'Pre', 'Blockquote',
-  'ListItem', 'ListBoxItem', 'GridListItem',
+  "Text",
+  "Heading",
+  "Description",
+  "Label",
+  "Paragraph",
+  "Link",
+  "Strong",
+  "Em",
+  "Code",
+  "Pre",
+  "Blockquote",
+  "ListItem",
+  "ListBoxItem",
+  "GridListItem",
   // Void/Visual: 자식 없는 단일 요소
-  'Input', 'Separator', 'Skeleton',
+  "Input",
+  "Separator",
+  "Skeleton",
   // Color Sub-component: 부모 ColorPicker의 내부 요소
-  'ColorSwatch', 'ColorWheel', 'ColorArea', 'ColorSlider',
+  "ColorSwatch",
+  "ColorWheel",
+  "ColorArea",
+  "ColorSlider",
   // Field sub-components: leaf 요소 (자식 없음)
-  'FieldError', 'DateSegment', 'TimeSegment', 'SliderOutput', 'SliderThumb',
+  "FieldError",
+  "DateSegment",
+  "TimeSegment",
+  "SliderOutput",
+  "SliderThumb",
   // Select sub-components: leaf 요소
-  'SelectValue', 'SelectIcon',
+  "SelectValue",
+  "SelectIcon",
   // ComboBox sub-components: leaf 요소
-  'ComboBoxInput', 'ComboBoxTrigger',
+  "ComboBoxInput",
+  "ComboBoxTrigger",
   // Calendar sub-components: leaf 요소
-  'CalendarHeader', 'CalendarGrid',
+  "CalendarHeader",
+  "CalendarGrid",
 ]);
 
 /**
@@ -202,7 +268,10 @@ interface PageContainerProps {
   pageElements: Element[];
   elementById: Map<string, Element>;
   depthMap: Map<string, number>;
-  onClick: (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => void;
+  onClick: (
+    elementId: string,
+    modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean },
+  ) => void;
   onDoubleClick: (elementId: string) => void;
   onTitleDragStart: (pageId: string, clientX: number, clientY: number) => void;
   /** ADR-006 P3-1: 레이아웃 변경 감지 버전 */
@@ -240,10 +309,13 @@ const PageContainer = memo(function PageContainer({
 }: PageContainerProps) {
   const draw = useMemo(() => titleHitDraw(pageWidth), [pageWidth]);
 
-  const handleTitlePointerDown = useCallback((e: FederatedPointerEvent) => {
-    e.stopPropagation();
-    onTitleDragStart(pageId, e.clientX, e.clientY);
-  }, [pageId, onTitleDragStart]);
+  const handleTitlePointerDown = useCallback(
+    (e: FederatedPointerEvent) => {
+      e.stopPropagation();
+      onTitleDragStart(pageId, e.clientX, e.clientY);
+    },
+    [pageId, onTitleDragStart],
+  );
 
   return (
     <pixiContainer
@@ -302,7 +374,14 @@ interface ClickableBackgroundProps {
   panOffset: { x: number; y: number };
 }
 
-function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, zoom, panOffset }: ClickableBackgroundProps) {
+function ClickableBackground({
+  onClick,
+  onLassoStart,
+  onLassoDrag,
+  onLassoEnd,
+  zoom,
+  panOffset,
+}: ClickableBackgroundProps) {
   useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
 
@@ -326,40 +405,37 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
     if (!canvas) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') {
-        canvas.style.cursor = 'crosshair';
+      if (e.key === "Shift") {
+        canvas.style.cursor = "crosshair";
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') {
-        canvas.style.cursor = 'default';
+      if (e.key === "Shift") {
+        canvas.style.cursor = "default";
       }
     };
 
     // Shift 키 상태에 따른 커서 변경 (keyup도 필요하므로 useKeyboardShortcutsRegistry 부적합)
     // eslint-disable-next-line local/prefer-keyboard-shortcuts-registry
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
   }, [app]);
 
   // 🚀 최적화: resize 리스너 useEffect 제거
   // renderer.on("resize", update)가 매 프레임 setScreenSize 호출하여 프레임 드랍 유발
 
-  const draw = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-      // 🚀 최적화: 고정 크기 사용 (충분히 큰 영역으로 모든 뷰포트 커버)
-      // 투명한 영역 (클릭 감지용)
-      g.rect(-5000, -5000, 10000, 10000);
-      g.fill({ color: 0xffffff, alpha: 0 });
-    },
-    []
-  );
+  const draw = useCallback((g: PixiGraphics) => {
+    g.clear();
+    // 🚀 최적화: 고정 크기 사용 (충분히 큰 영역으로 모든 뷰포트 커버)
+    // 투명한 영역 (클릭 감지용)
+    g.rect(-5000, -5000, 10000, 10000);
+    g.fill({ color: 0xffffff, alpha: 0 });
+  }, []);
 
   // 라쏘 드래그 상태
   const isDragging = useRef(false);
@@ -367,26 +443,35 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
   const isPointerDownOnCanvas = useRef(false);
 
   // 화면 좌표를 캔버스 좌표로 변환
-  const screenToCanvas = useCallback((screenX: number, screenY: number) => {
-    return {
-      x: (screenX - panOffset.x) / zoom,
-      y: (screenY - panOffset.y) / zoom,
-    };
-  }, [zoom, panOffset]);
+  const screenToCanvas = useCallback(
+    (screenX: number, screenY: number) => {
+      return {
+        x: (screenX - panOffset.x) / zoom,
+        y: (screenY - panOffset.y) / zoom,
+      };
+    },
+    [zoom, panOffset],
+  );
 
-  const handlePointerDown = useCallback((e: { global: { x: number; y: number } }) => {
-    isPointerDownOnCanvas.current = true;
-    isDragging.current = true;
-    const canvasPos = screenToCanvas(e.global.x, e.global.y);
-    onLassoStart?.(canvasPos);
-  }, [onLassoStart, screenToCanvas]);
-
-  const handlePointerMove = useCallback((e: { global: { x: number; y: number } }) => {
-    if (isDragging.current) {
+  const handlePointerDown = useCallback(
+    (e: { global: { x: number; y: number } }) => {
+      isPointerDownOnCanvas.current = true;
+      isDragging.current = true;
       const canvasPos = screenToCanvas(e.global.x, e.global.y);
-      onLassoDrag?.(canvasPos);
-    }
-  }, [onLassoDrag, screenToCanvas]);
+      onLassoStart?.(canvasPos);
+    },
+    [onLassoStart, screenToCanvas],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: { global: { x: number; y: number } }) => {
+      if (isDragging.current) {
+        const canvasPos = screenToCanvas(e.global.x, e.global.y);
+        onLassoDrag?.(canvasPos);
+      }
+    },
+    [onLassoDrag, screenToCanvas],
+  );
 
   const handlePointerUp = useCallback(() => {
     // Canvas에서 pointerDown이 시작되지 않았으면 무시
@@ -446,12 +531,15 @@ const DirectContainer = memo(function DirectContainer({
   useExtend(PIXI_COMPONENTS);
 
   const containerRef = useRef<Container | null>(null);
-  const handleContainerRef = useCallback((container: Container | null) => {
-    containerRef.current = container;
-    if (container && elementId) {
-      registerElement(elementId, container);
-    }
-  }, [elementId]);
+  const handleContainerRef = useCallback(
+    (container: Container | null) => {
+      containerRef.current = container;
+      if (container && elementId) {
+        registerElement(elementId, container);
+      }
+    },
+    [elementId],
+  );
 
   // Props 변경 시 elementBounds 업데이트 + Skia 재렌더링 트리거
   useEffect(() => {
@@ -510,14 +598,19 @@ const DirectContainer = memo(function DirectContainer({
   // 0도 유효한 결과 (예: FieldError 에러 없을 때 height=0).
   // null로 반환하면 ElementSprite가 convertToTransform fallback(100x100)을 사용하므로
   // 엔진 결과를 항상 전달하여 정확한 크기를 보장한다.
-  const computedSize = useMemo(() =>
-    ({ width: Math.max(width, 0), height: Math.max(height, 0) }),
-    [width, height]
+  const computedSize = useMemo(
+    () => ({ width: Math.max(width, 0), height: Math.max(height, 0) }),
+    [width, height],
   );
 
   return (
     <LayoutComputedSizeContext.Provider value={computedSize}>
-      <pixiContainer ref={handleContainerRef} x={x} y={y} label={elementId ?? 'direct-wrapper'}>
+      <pixiContainer
+        ref={handleContainerRef}
+        x={x}
+        y={y}
+        label={elementId ?? "direct-wrapper"}
+      >
         {children}
       </pixiContainer>
     </LayoutComputedSizeContext.Provider>
@@ -562,7 +655,10 @@ const ElementsLayer = memo(function ElementsLayer({
   pageHeight: number;
   zoom: number;
   panOffset: { x: number; y: number };
-  onClick?: (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => void;
+  onClick?: (
+    elementId: string,
+    modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean },
+  ) => void;
   onDoubleClick?: (elementId: string) => void;
   pagePositionVersion?: number;
   /** Rust WASM(Taffy/Grid) 엔진 로드 완료 여부 - 로드 시 레이아웃 재계산 트리거 */
@@ -582,7 +678,7 @@ const ElementsLayer = memo(function ElementsLayer({
     // display:contents 요소의 자식을 실제 레이아웃 부모에 직접 포함 (플래튼)
     const isContentsElement = (el: Element): boolean => {
       const style = el.props?.style as Record<string, unknown> | undefined;
-      return style?.display === 'contents';
+      return style?.display === "contents";
     };
 
     // contents 체인을 따라 올라가서 실제 레이아웃 부모 찾기
@@ -657,7 +753,6 @@ const ElementsLayer = memo(function ElementsLayer({
     return ids;
   }, [visibleElements, elementById]);
 
-
   // ADR-006 P3-1: layoutVersion 기반 의존성 최적화
   // 기존: [bodyElement, elementById, pageChildrenMap, ...] — 모든 요소 변경 시 재계산
   // 개선: [bodyElement, layoutVersion, ...] — 레이아웃 영향 변경 시에만 재계산
@@ -669,35 +764,58 @@ const ElementsLayer = memo(function ElementsLayer({
     const childrenIdMap = new Map<string, string[]>();
     for (const [key, elems] of pageChildrenMap) {
       if (key != null) {
-        childrenIdMap.set(key, elems.map(e => e.id));
+        childrenIdMap.set(
+          key,
+          elems.map((e) => e.id),
+        );
       }
     }
-    const bodyStyle = bodyElement.props?.style as Record<string, unknown> | undefined;
+    const bodyStyle = bodyElement.props?.style as
+      | Record<string, unknown>
+      | undefined;
     const bodyBorderVal = parseBorder(bodyStyle);
     const bodyPaddingVal = parsePadding(bodyStyle, pageWidth);
-    const avW = pageWidth - bodyBorderVal.left - bodyBorderVal.right - bodyPaddingVal.left - bodyPaddingVal.right;
-    const avH = pageHeight - bodyBorderVal.top - bodyBorderVal.bottom - bodyPaddingVal.top - bodyPaddingVal.bottom;
+    const avW =
+      pageWidth -
+      bodyBorderVal.left -
+      bodyBorderVal.right -
+      bodyPaddingVal.left -
+      bodyPaddingVal.right;
+    const avH =
+      pageHeight -
+      bodyBorderVal.top -
+      bodyBorderVal.bottom -
+      bodyPaddingVal.top -
+      bodyPaddingVal.bottom;
     const result = calculateFullTreeLayout(
-      bodyElement.id, elementById, childrenIdMap,
-      avW, avH,
+      bodyElement.id,
+      elementById,
+      childrenIdMap,
+      avW,
+      avH,
       (id: string) => pageChildrenMap.get(id) ?? [],
     );
     // Phase 3: SkiaOverlay에서 접근할 수 있도록 공유
     // Multi-page: 페이지별 저장 (bodyElement.page_id로 구분)
     publishLayoutMap(result, bodyElement.page_id);
     if (import.meta.env.DEV && !result) {
-      console.warn('[Phase1] Full-tree layout failed, falling back to per-level');
+      console.warn(
+        "[Phase1] Full-tree layout failed, falling back to per-level",
+      );
     }
     return result;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bodyElement, layoutVersion, pageWidth, pageHeight, _wasmLayoutReady]);
 
   // Phase 11: 엔진이 계산한 레이아웃으로 직접 배치 (Yoga 제거)
   const renderedTree = useMemo(() => {
     // Container 태그 판별 (children을 내부에서 렌더링하는 컴포넌트)
-    function isContainerTagForLayout(tag: string, style?: Record<string, unknown>): boolean {
-      if (tag === 'Section') {
-        return style?.display === 'flex' || style?.flexDirection !== undefined;
+    function isContainerTagForLayout(
+      tag: string,
+      style?: Record<string, unknown>,
+    ): boolean {
+      if (tag === "Section") {
+        return style?.display === "flex" || style?.flexDirection !== undefined;
       }
       return !NON_CONTAINER_TAGS.has(tag);
     }
@@ -712,21 +830,25 @@ const ElementsLayer = memo(function ElementsLayer({
     ): (childEl: Element) => React.ReactNode {
       let cachedLayoutMap: Map<string, ComputedLayout> | null = null;
       let cachedPadding = { top: 0, right: 0, bottom: 0, left: 0 };
-      const containerChildren = overrideChildren ?? (pageChildrenMap.get(containerEl.id) ?? []);
+      const containerChildren =
+        overrideChildren ?? pageChildrenMap.get(containerEl.id) ?? [];
 
       return (childEl: Element): React.ReactNode => {
         // Lazy initialization: 첫 자식 렌더 시 모든 자식의 레이아웃 일괄 계산
         if (!cachedLayoutMap) {
           // Implicit style injection (공유 모듈)
-          const containerTag = (containerEl.tag ?? '').toLowerCase();
-          const { effectiveParent, filteredChildren: implicitChildren } = applyImplicitStyles(
-            containerEl,
-            containerChildren,
-            (id: string) => pageChildrenMap.get(id) ?? [],
-            elementById,
-          );
+          const containerTag = (containerEl.tag ?? "").toLowerCase();
+          const { effectiveParent, filteredChildren: implicitChildren } =
+            applyImplicitStyles(
+              containerEl,
+              containerChildren,
+              (id: string) => pageChildrenMap.get(id) ?? [],
+              elementById,
+            );
           let effectiveContainerEl = effectiveParent;
-          let parentStyle = effectiveContainerEl.props?.style as Record<string, unknown> | undefined;
+          let parentStyle = effectiveContainerEl.props?.style as
+            | Record<string, unknown>
+            | undefined;
           let filteredContainerChildren = implicitChildren;
 
           // ADR-005: Full-Tree Layout — 전체 맵에서 O(1) 조회
@@ -749,11 +871,13 @@ const ElementsLayer = memo(function ElementsLayer({
         // CardEditor가 Card.props.title/description을 업데이트하지만
         // WebGL TextSprite는 Heading.props.children을 읽으므로 동기화 필요
         let effectiveChildEl = childEl;
-        const containerTag = (containerEl.tag ?? '');
+        const containerTag = containerEl.tag ?? "";
         // 하위 호환: flat 구조 (Card → Heading/Description 직접 자식)
-        if (containerTag === 'Card') {
-          const cardProps = containerEl.props as Record<string, unknown> | undefined;
-          if (childEl.tag === 'Heading') {
+        if (containerTag === "Card") {
+          const cardProps = containerEl.props as
+            | Record<string, unknown>
+            | undefined;
+          if (childEl.tag === "Heading") {
             const headingText = cardProps?.title;
             if (headingText != null) {
               effectiveChildEl = {
@@ -761,7 +885,7 @@ const ElementsLayer = memo(function ElementsLayer({
                 props: { ...childEl.props, children: String(headingText) },
               };
             }
-          } else if (childEl.tag === 'Description') {
+          } else if (childEl.tag === "Description") {
             const descText = cardProps?.description;
             if (descText != null) {
               effectiveChildEl = {
@@ -774,10 +898,12 @@ const ElementsLayer = memo(function ElementsLayer({
 
         // 새 구조: Card → CardHeader → Heading / Card → CardContent → Description
         // CardHeader/CardContent는 투명 래퍼이므로 조부모(Card)에서 props를 읽어 주입
-        if (containerTag === 'CardHeader') {
-          const cardElement = elementById.get(containerEl.parent_id ?? '');
-          if (cardElement && childEl.tag === 'Heading') {
-            const cardProps = cardElement.props as Record<string, unknown> | undefined;
+        if (containerTag === "CardHeader") {
+          const cardElement = elementById.get(containerEl.parent_id ?? "");
+          if (cardElement && childEl.tag === "Heading") {
+            const cardProps = cardElement.props as
+              | Record<string, unknown>
+              | undefined;
             const headingText = cardProps?.heading ?? cardProps?.title;
             if (headingText != null) {
               effectiveChildEl = {
@@ -788,10 +914,12 @@ const ElementsLayer = memo(function ElementsLayer({
           }
         }
 
-        if (containerTag === 'CardContent') {
-          const cardElement = elementById.get(containerEl.parent_id ?? '');
-          if (cardElement && childEl.tag === 'Description') {
-            const cardProps = cardElement.props as Record<string, unknown> | undefined;
+        if (containerTag === "CardContent") {
+          const cardElement = elementById.get(containerEl.parent_id ?? "");
+          if (cardElement && childEl.tag === "Description") {
+            const cardProps = cardElement.props as
+              | Record<string, unknown>
+              | undefined;
             const descText = cardProps?.description;
             if (descText != null) {
               effectiveChildEl = {
@@ -805,9 +933,21 @@ const ElementsLayer = memo(function ElementsLayer({
         // Input Field 계열: props.label → Label.children 동기화
         // Editor가 parent.props.label을 업데이트하지만
         // WebGL TextSprite는 Label.props.children을 읽으므로 동기화 필요
-        if (['TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField', 'TextArea'].includes(containerTag)) {
-          const fieldProps = containerEl.props as Record<string, unknown> | undefined;
-          if (childEl.tag === 'Label') {
+        if (
+          [
+            "TextField",
+            "NumberField",
+            "SearchField",
+            "DateField",
+            "TimeField",
+            "ColorField",
+            "TextArea",
+          ].includes(containerTag)
+        ) {
+          const fieldProps = containerEl.props as
+            | Record<string, unknown>
+            | undefined;
+          if (childEl.tag === "Label") {
             const labelText = fieldProps?.label;
             if (labelText != null) {
               effectiveChildEl = {
@@ -819,9 +959,11 @@ const ElementsLayer = memo(function ElementsLayer({
         }
 
         // Inline Form 계열: props.children/label → Label.children 동기화
-        if (['Checkbox', 'Radio', 'Switch'].includes(containerTag)) {
-          const formProps = containerEl.props as Record<string, unknown> | undefined;
-          if (childEl.tag === 'Label') {
+        if (["Checkbox", "Radio", "Switch"].includes(containerTag)) {
+          const formProps = containerEl.props as
+            | Record<string, unknown>
+            | undefined;
+          if (childEl.tag === "Label") {
             const labelText = formProps?.children ?? formProps?.label;
             if (labelText != null) {
               effectiveChildEl = {
@@ -833,9 +975,15 @@ const ElementsLayer = memo(function ElementsLayer({
         }
 
         // Overlay / Form 계열: props.heading/description → Heading/Description.children 동기화
-        if (['Dialog', 'Popover', 'Tooltip', 'Toast', 'Form'].includes(containerTag)) {
-          const overlayProps = containerEl.props as Record<string, unknown> | undefined;
-          if (childEl.tag === 'Heading') {
+        if (
+          ["Dialog", "Popover", "Tooltip", "Toast", "Form"].includes(
+            containerTag,
+          )
+        ) {
+          const overlayProps = containerEl.props as
+            | Record<string, unknown>
+            | undefined;
+          if (childEl.tag === "Heading") {
             const headingText = overlayProps?.heading ?? overlayProps?.title;
             if (headingText != null) {
               effectiveChildEl = {
@@ -843,7 +991,7 @@ const ElementsLayer = memo(function ElementsLayer({
                 props: { ...childEl.props, children: String(headingText) },
               };
             }
-          } else if (childEl.tag === 'Description') {
+          } else if (childEl.tag === "Description") {
             const descText = overlayProps?.description ?? overlayProps?.message;
             if (descText != null) {
               effectiveChildEl = {
@@ -856,10 +1004,23 @@ const ElementsLayer = memo(function ElementsLayer({
 
         // Input Field 계열의 Input 자식: Input 자체가 배경/테두리/텍스트를 모두 렌더링
         // factory 기본값이 backgroundColor:'transparent'이므로 제거하여 InputSpec 기본 배경 사용
-        if (effectiveChildEl.tag === 'Input' &&
-            ['TextField', 'NumberField', 'SearchField', 'DateField', 'TimeField', 'ColorField', 'TextArea'].includes(containerTag)) {
-          const existingStyle = (effectiveChildEl.props?.style || {}) as Record<string, unknown>;
-          if (existingStyle.backgroundColor === 'transparent') {
+        if (
+          effectiveChildEl.tag === "Input" &&
+          [
+            "TextField",
+            "NumberField",
+            "SearchField",
+            "DateField",
+            "TimeField",
+            "ColorField",
+            "TextArea",
+          ].includes(containerTag)
+        ) {
+          const existingStyle = (effectiveChildEl.props?.style || {}) as Record<
+            string,
+            unknown
+          >;
+          if (existingStyle.backgroundColor === "transparent") {
             const { backgroundColor: _, ...restStyle } = existingStyle;
             effectiveChildEl = {
               ...effectiveChildEl,
@@ -871,10 +1032,16 @@ const ElementsLayer = memo(function ElementsLayer({
         // ComboBox 자식(ComboBoxWrapper/ComboBoxInput/ComboBoxTrigger)은 Compositional — 자체 spec으로 렌더링
         // Select 자식(SelectTrigger/SelectValue/SelectIcon)과 동일 패턴
         // factory backgroundColor:'transparent' 방어: 존재하면 제거하여 spec variant 배경 사용
-        if (effectiveChildEl.tag === 'ComboBoxWrapper'
-          || effectiveChildEl.tag === 'ComboBoxInput' || effectiveChildEl.tag === 'ComboBoxTrigger') {
-          const existingStyle = (effectiveChildEl.props?.style || {}) as Record<string, unknown>;
-          if (existingStyle.backgroundColor === 'transparent') {
+        if (
+          effectiveChildEl.tag === "ComboBoxWrapper" ||
+          effectiveChildEl.tag === "ComboBoxInput" ||
+          effectiveChildEl.tag === "ComboBoxTrigger"
+        ) {
+          const existingStyle = (effectiveChildEl.props?.style || {}) as Record<
+            string,
+            unknown
+          >;
+          if (existingStyle.backgroundColor === "transparent") {
             const { backgroundColor: _, ...restStyle } = existingStyle;
             effectiveChildEl = {
               ...effectiveChildEl,
@@ -883,8 +1050,13 @@ const ElementsLayer = memo(function ElementsLayer({
           }
         }
 
-        const childStyle = effectiveChildEl.props?.style as Record<string, unknown> | undefined;
-        const isContainerType = isContainerTagForLayout(effectiveChildEl.tag, childStyle);
+        const childStyle = effectiveChildEl.props?.style as
+          | Record<string, unknown>
+          | undefined;
+        const isContainerType = isContainerTagForLayout(
+          effectiveChildEl.tag,
+          childStyle,
+        );
         const childElements = isContainerType
           ? (pageChildrenMap.get(effectiveChildEl.id) ?? [])
           : [];
@@ -892,32 +1064,45 @@ const ElementsLayer = memo(function ElementsLayer({
         // Radio/Checkbox/Switch: props.children 텍스트가 있지만 Label 자식이 없는 경우
         // 가상 Label 자식을 주입하여 WebGL에서 텍스트 렌더링 (RadioGroup/CheckboxGroup 내부)
         let effectiveChildElements = childElements;
-        if (isContainerType && childElements.length === 0
-            && ['Radio', 'Checkbox', 'Switch', 'Toggle'].includes(effectiveChildEl.tag)) {
-          const childrenText = (effectiveChildEl.props as Record<string, unknown> | undefined)?.children;
-          if (typeof childrenText === 'string' && childrenText.trim()) {
+        if (
+          isContainerType &&
+          childElements.length === 0 &&
+          ["Radio", "Checkbox", "Switch", "Toggle"].includes(
+            effectiveChildEl.tag,
+          )
+        ) {
+          const childrenText = (
+            effectiveChildEl.props as Record<string, unknown> | undefined
+          )?.children;
+          if (typeof childrenText === "string" && childrenText.trim()) {
             // Checkbox/Radio: indicator box + gap만큼 marginLeft 주입 (gap은 사용자 값 우선)
-            const isIndicatorTag = effectiveChildEl.tag === 'Checkbox' || effectiveChildEl.tag === 'Radio';
+            const isIndicatorTag =
+              effectiveChildEl.tag === "Checkbox" ||
+              effectiveChildEl.tag === "Radio";
             let indicatorOffset = 0;
             if (isIndicatorTag) {
               const elProps = effectiveChildEl.props as Record<string, unknown>;
-              const indBoxes: Record<string, number> = { sm: 16, md: 20, lg: 24 };
+              const indBoxes: Record<string, number> = {
+                sm: 16,
+                md: 20,
+                lg: 24,
+              };
               const indGaps: Record<string, number> = { sm: 6, md: 8, lg: 10 };
-              const sz = (elProps?.size as string) ?? 'md';
+              const sz = (elProps?.size as string) ?? "md";
               const box = indBoxes[sz] ?? 20;
               const elStyle = (elProps?.style as Record<string, unknown>) ?? {};
-              const parsedGap = parseFloat(String(elStyle.gap ?? ''));
+              const parsedGap = parseFloat(String(elStyle.gap ?? ""));
               const gap = !isNaN(parsedGap) ? parsedGap : (indGaps[sz] ?? 8);
               indicatorOffset = box + gap;
             }
             const syntheticLabel = {
               id: `${effectiveChildEl.id}__synlabel`,
-              tag: 'Label',
+              tag: "Label",
               props: {
                 children: childrenText,
                 style: {
                   fontSize: 14,
-                  backgroundColor: 'transparent',
+                  backgroundColor: "transparent",
                   ...(indicatorOffset ? { marginLeft: indicatorOffset } : {}),
                 },
               },
@@ -944,15 +1129,25 @@ const ElementsLayer = memo(function ElementsLayer({
               element={effectiveChildEl}
               onClick={onClick}
               onDoubleClick={onDoubleClick}
-              childElements={isContainerType ? effectiveChildElements : undefined}
-              renderChildElement={isContainerType && effectiveChildElements.length > 0
-                ? createContainerChildRenderer(
-                    effectiveChildEl, layout.width, layout.height,
-                    hasOverrideChildren ? effectiveChildElements : undefined,
-                  )
-                : undefined}
+              childElements={
+                isContainerType ? effectiveChildElements : undefined
+              }
+              renderChildElement={
+                isContainerType && effectiveChildElements.length > 0
+                  ? createContainerChildRenderer(
+                      effectiveChildEl,
+                      layout.width,
+                      layout.height,
+                      hasOverrideChildren ? effectiveChildElements : undefined,
+                    )
+                  : undefined
+              }
             />
-            {!isContainerType && renderTree(effectiveChildEl.id, { width: layout.width, height: layout.height })}
+            {!isContainerType &&
+              renderTree(effectiveChildEl.id, {
+                width: layout.width,
+                height: layout.height,
+              })}
           </DirectContainer>
         );
       };
@@ -962,49 +1157,80 @@ const ElementsLayer = memo(function ElementsLayer({
     function renderWithCustomEngine(
       parentElement: Element,
       children: Element[],
-      renderTreeFn: (parentId: string | null, parentComputedSize?: { width: number; height: number }) => React.ReactNode,
-      parentComputedSize?: { width: number; height: number }
+      renderTreeFn: (
+        parentId: string | null,
+        parentComputedSize?: { width: number; height: number },
+      ) => React.ReactNode,
+      parentComputedSize?: { width: number; height: number },
     ): React.ReactNode {
-      const parentStyle = parentElement.props?.style as Record<string, unknown> | undefined;
+      const parentStyle = parentElement.props?.style as
+        | Record<string, unknown>
+        | undefined;
       const rawParentDisplay = parentStyle?.display as string | undefined;
-      const parentDisplay = rawParentDisplay ?? (parentElement.tag === 'Section' ? 'block' : undefined);
+      const parentDisplay =
+        rawParentDisplay ??
+        (parentElement.tag === "Section" ? "block" : undefined);
       // Body 이중 패딩 방지
       const isBodyParent = parentElement === bodyElement;
       const parentContentWidth = parentComputedSize?.width ?? pageWidth;
       const parentPadding = parsePadding(parentStyle, parentContentWidth);
-      const parentBorderVal = isBodyParent ? parseBorder(parentStyle) : { top: 0, right: 0, bottom: 0, left: 0 };
+      const parentBorderVal = isBodyParent
+        ? parseBorder(parentStyle)
+        : { top: 0, right: 0, bottom: 0, left: 0 };
       // RC-2: height:auto 부모는 definite height를 전달하지 않음
       // → 레이아웃 엔진이 max-content 기반으로 자식 높이를 계산
-      const parentHasAutoHeight = !parentStyle?.height || parentStyle.height === 'auto';
-      const parentContentHeight = parentComputedSize?.height
-        ?? (parentHasAutoHeight ? undefined : pageHeight);
+      const parentHasAutoHeight =
+        !parentStyle?.height || parentStyle.height === "auto";
+      const parentContentHeight =
+        parentComputedSize?.height ??
+        (parentHasAutoHeight ? undefined : pageHeight);
       const availableWidth = isBodyParent
-        ? pageWidth - parentBorderVal.left - parentBorderVal.right - parentPadding.left - parentPadding.right
+        ? pageWidth -
+          parentBorderVal.left -
+          parentBorderVal.right -
+          parentPadding.left -
+          parentPadding.right
         : parentContentWidth - parentPadding.left - parentPadding.right;
       const availableHeight = isBodyParent
-        ? pageHeight - parentBorderVal.top - parentBorderVal.bottom - parentPadding.top - parentPadding.bottom
+        ? pageHeight -
+          parentBorderVal.top -
+          parentBorderVal.bottom -
+          parentPadding.top -
+          parentPadding.bottom
         : parentContentHeight !== undefined
           ? parentContentHeight - parentPadding.top - parentPadding.bottom
-          : -1;  // RC-1 sentinel: height:auto → WASM이 MaxContent로 처리
+          : -1; // RC-1 sentinel: height:auto → WASM이 MaxContent로 처리
 
       // fullTreeLayout: Taffy가 부모 padding/border를 자식 location에 이미 포함 → offset 불필요.
       // per-level 폴백: setupParentDimensions()가 padding=0 리셋하므로 수동 offset 필요.
-      const paddingOffsetX = (isBodyParent || fullTreeLayoutMap) ? 0 : parentPadding.left;
-      const paddingOffsetY = (isBodyParent || fullTreeLayoutMap) ? 0 : parentPadding.top;
+      const paddingOffsetX =
+        isBodyParent || fullTreeLayoutMap ? 0 : parentPadding.left;
+      const paddingOffsetY =
+        isBodyParent || fullTreeLayoutMap ? 0 : parentPadding.top;
 
       // ADR-005: Full-Tree Layout — 전체 맵에서 O(1) 조회
-      const layoutMap: Map<string, ComputedLayout> = fullTreeLayoutMap ?? new Map();
+      const layoutMap: Map<string, ComputedLayout> =
+        fullTreeLayoutMap ?? new Map();
 
       // 엔진 결과의 x/y로 직접 배치 (Yoga 불필요)
       return (
-        <pixiContainer key={`engine-wrapper-${parentElement.id}`} x={paddingOffsetX} y={paddingOffsetY}>
+        <pixiContainer
+          key={`engine-wrapper-${parentElement.id}`}
+          x={paddingOffsetX}
+          y={paddingOffsetY}
+        >
           {children.map((child) => {
             if (!renderIdSet.has(child.id)) return null;
             const layout = layoutMap.get(child.id);
             if (!layout) return null;
 
-            const childStyle = child.props?.style as Record<string, unknown> | undefined;
-            const isContainerType = isContainerTagForLayout(child.tag, childStyle);
+            const childStyle = child.props?.style as
+              | Record<string, unknown>
+              | undefined;
+            const isContainerType = isContainerTagForLayout(
+              child.tag,
+              childStyle,
+            );
             let childElements = isContainerType
               ? (pageChildrenMap.get(child.id) ?? [])
               : [];
@@ -1014,19 +1240,27 @@ const ElementsLayer = memo(function ElementsLayer({
             // - activePanel → renderChildElement가 실제 렌더링 (layout 있음)
             // - TabPanels → renderChildElement에서 layout 없어 null (무해)
             let tabsRenderChildren: Element[] | undefined;
-            if (child.tag === 'Tabs' && isContainerType) {
-              let panelChildren = childElements.filter(c => c.tag === 'Panel');
+            if (child.tag === "Tabs" && isContainerType) {
+              let panelChildren = childElements.filter(
+                (c) => c.tag === "Panel",
+              );
               if (panelChildren.length === 0) {
-                const tabPanelsEl = childElements.find(c => c.tag === 'TabPanels');
+                const tabPanelsEl = childElements.find(
+                  (c) => c.tag === "TabPanels",
+                );
                 if (tabPanelsEl) {
-                  panelChildren = (pageChildrenMap.get(tabPanelsEl.id) ?? [])
-                    .filter(c => c.tag === 'Panel');
+                  panelChildren = (
+                    pageChildrenMap.get(tabPanelsEl.id) ?? []
+                  ).filter((c) => c.tag === "Panel");
                 }
               }
               const activePanel = panelChildren[0];
               tabsRenderChildren = activePanel ? [activePanel] : [];
               // childElements에 activePanel 추가 (renderChildElement 호출 대상에 포함)
-              if (activePanel && !childElements.some(c => c.id === activePanel.id)) {
+              if (
+                activePanel &&
+                !childElements.some((c) => c.id === activePanel.id)
+              ) {
                 childElements = [...childElements, activePanel];
               }
             }
@@ -1047,11 +1281,22 @@ const ElementsLayer = memo(function ElementsLayer({
                   onClick={onClick}
                   onDoubleClick={onDoubleClick}
                   childElements={isContainerType ? childElements : undefined}
-                  renderChildElement={isContainerType && renderChildren.length > 0
-                    ? createContainerChildRenderer(child, layout.width, layout.height, renderChildren)
-                    : undefined}
+                  renderChildElement={
+                    isContainerType && renderChildren.length > 0
+                      ? createContainerChildRenderer(
+                          child,
+                          layout.width,
+                          layout.height,
+                          renderChildren,
+                        )
+                      : undefined
+                  }
                 />
-                {!isContainerType && renderTreeFn(child.id, { width: layout.width, height: layout.height })}
+                {!isContainerType &&
+                  renderTreeFn(child.id, {
+                    width: layout.width,
+                    height: layout.height,
+                  })}
               </DirectContainer>
             );
           })}
@@ -1060,29 +1305,56 @@ const ElementsLayer = memo(function ElementsLayer({
     }
 
     // 재귀 렌더 트리
-    function renderTree(parentId: string | null, parentComputedSize?: { width: number; height: number }): React.ReactNode {
+    function renderTree(
+      parentId: string | null,
+      parentComputedSize?: { width: number; height: number },
+    ): React.ReactNode {
       const children = pageChildrenMap.get(parentId) ?? [];
       if (children.length === 0) return null;
 
       const parentElement = parentId ? elementById.get(parentId) : bodyElement;
       if (!parentElement) return null;
 
-      return renderWithCustomEngine(parentElement, children, renderTree, parentComputedSize);
+      return renderWithCustomEngine(
+        parentElement,
+        children,
+        renderTree,
+        parentComputedSize,
+      );
     }
 
     return renderTree(bodyElement?.id ?? null);
-  }, [fullTreeLayoutMap, pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight]);
+  }, [
+    fullTreeLayoutMap,
+    pageChildrenMap,
+    renderIdSet,
+    onClick,
+    onDoubleClick,
+    bodyElement,
+    elementById,
+    pageWidth,
+    pageHeight,
+  ]);
 
   // body의 border+padding 오프셋 계산 (자식 시작 위치)
-  const bodyStyle = bodyElement?.props?.style as Record<string, unknown> | undefined;
+  const bodyStyle = bodyElement?.props?.style as
+    | Record<string, unknown>
+    | undefined;
   const bodyBorder = useMemo(() => parseBorder(bodyStyle), [bodyStyle]);
-  const bodyPadding = useMemo(() => parsePadding(bodyStyle, pageWidth), [bodyStyle, pageWidth]);
+  const bodyPadding = useMemo(
+    () => parsePadding(bodyStyle, pageWidth),
+    [bodyStyle, pageWidth],
+  );
 
   // 자식 시작 위치 오프셋 (border + padding 안쪽)
   // fullTreeLayout: Taffy가 부모 padding+border를 자식 location에 이미 포함 → 0.
   // per-level 폴백: setupParentDimensions()가 padding=0 리셋하므로 수동 offset 필요.
-  const contentOffsetX = fullTreeLayoutMap ? 0 : bodyBorder.left + bodyPadding.left;
-  const contentOffsetY = fullTreeLayoutMap ? 0 : bodyBorder.top + bodyPadding.top;
+  const contentOffsetX = fullTreeLayoutMap
+    ? 0
+    : bodyBorder.left + bodyPadding.left;
+  const contentOffsetY = fullTreeLayoutMap
+    ? 0
+    : bodyBorder.top + bodyPadding.top;
 
   return (
     <pixiContainer
@@ -1118,7 +1390,9 @@ export function BuilderCanvas({
   // PixiJS Application 초기화 완료 상태
   const [appReady, setAppReady] = useState(false);
   // 🚀 Phase 9: Rust WASM 로드 완료 상태 (Taffy/Grid 엔진 활성화 시점에 레이아웃 재계산 트리거)
-  const [wasmLayoutReady, setWasmLayoutReady] = useState(() => isRustWasmReady());
+  const [wasmLayoutReady, setWasmLayoutReady] = useState(() =>
+    isRustWasmReady(),
+  );
   // ADR-006 P1-2: WASM 로드 최종 실패 상태 (15초 타임아웃)
   const [wasmLayoutFailed, setWasmLayoutFailed] = useState(false);
   // 폰트 로딩 완료 후 레이아웃 재계산 트리거
@@ -1128,8 +1402,8 @@ export function BuilderCanvas({
     const handler = () => {
       useStore.getState().invalidateLayout();
     };
-    window.addEventListener('xstudio:fonts-ready', handler);
-    return () => window.removeEventListener('xstudio:fonts-ready', handler);
+    window.addEventListener("xstudio:fonts-ready", handler);
+    return () => window.removeEventListener("xstudio:fonts-ready", handler);
   }, []);
   // Phase 5: PixiJS app 인스턴스 (SkiaOverlay에 전달)
   const [pixiApp, setPixiApp] = useState<PixiApplication | null>(null);
@@ -1144,7 +1418,7 @@ export function BuilderCanvas({
   const [isInteracting, setIsInteracting] = useState(false);
   const resolution = useMemo(
     () => getDynamicResolution(isInteracting, containerSize),
-    [isInteracting, containerSize]
+    [isInteracting, containerSize],
   );
 
   // Application onInit 콜백에서 appReady 설정 (아래 onInit prop 참고)
@@ -1158,26 +1432,42 @@ export function BuilderCanvas({
     let delay = 200;
     const MAX_TOTAL_WAIT = 15_000;
     let totalWait = 0;
+    let attempts = 0;
     let retried = false;
     let timeoutId: ReturnType<typeof setTimeout>;
 
     const poll = () => {
       if (isRustWasmReady()) {
+        if (import.meta.env.DEV) {
+          console.log(
+            `[BuilderCanvas] WASM 로드 완료 (${attempts}회 폴링, ${totalWait}ms 경과)`,
+          );
+        }
         setWasmLayoutReady(true);
         return;
       }
 
       totalWait += delay;
+      attempts++;
+
+      if (import.meta.env.DEV) {
+        console.log(
+          `[BuilderCanvas] WASM 폴링 #${attempts} (${totalWait}ms/${MAX_TOTAL_WAIT}ms, 다음 ${Math.min(delay * 2, 3200)}ms)`,
+        );
+      }
 
       // 5초 경과 시 WASM 재초기화 1회 시도
       if (!retried && totalWait >= 5_000) {
         retried = true;
+        if (import.meta.env.DEV) {
+          console.warn("[BuilderCanvas] WASM 5초 미로드 — 재초기화 시도");
+        }
         void initRustWasm();
       }
 
       if (totalWait >= MAX_TOTAL_WAIT) {
         setWasmLayoutFailed(true);
-        console.error('[BuilderCanvas] WASM 로드 실패 (15초 타임아웃)');
+        console.error("[BuilderCanvas] WASM 로드 실패 (15초 타임아웃)");
         return;
       }
 
@@ -1258,8 +1548,10 @@ export function BuilderCanvas({
       }
 
       // display:contents 요소는 레이아웃 트리에서 투명 — 깊이 증가 없이 부모를 따라감
-      const parentStyle = el.props?.style as Record<string, unknown> | undefined;
-      if (parentStyle?.display === 'contents') {
+      const parentStyle = el.props?.style as
+        | Record<string, unknown>
+        | undefined;
+      if (parentStyle?.display === "contents") {
         const depth = computeDepth(el.parent_id as string | null);
         cache.set(id, depth);
         return depth;
@@ -1282,37 +1574,56 @@ export function BuilderCanvas({
   // 현재 페이지 요소 필터링 (Body 제외)
   const pageElements = useMemo(() => {
     return elements.filter(
-      (el) => el.page_id === currentPageId && el.tag.toLowerCase() !== "body"
+      (el) => el.page_id === currentPageId && el.tag.toLowerCase() !== "body",
     );
   }, [elements, currentPageId]);
 
   // 🆕 Multi-page: 모든 페이지의 데이터 (body + elements) 사전 계산
   const pagePositions = useStore((state) => state.pagePositions);
   const pagePositionsVersion = useStore((state) => state.pagePositionsVersion);
-  const initializePagePositions = useStore((state) => state.initializePagePositions);
+  const initializePagePositions = useStore(
+    (state) => state.initializePagePositions,
+  );
   const pageLayoutDirection = useStore((state) => state.pageLayoutDirection);
 
   // 🆕 Multi-page: pageWidth/pageHeight/pageLayoutDirection 변경 시 페이지 위치 재계산
-  const prevLayoutKeyRef = useRef(`${pageWidth}:${pageHeight}:${pageLayoutDirection}`);
+  const prevLayoutKeyRef = useRef(
+    `${pageWidth}:${pageHeight}:${pageLayoutDirection}`,
+  );
   useEffect(() => {
     const layoutKey = `${pageWidth}:${pageHeight}:${pageLayoutDirection}`;
     if (prevLayoutKeyRef.current !== layoutKey && pages.length > 0) {
       prevLayoutKeyRef.current = layoutKey;
-      initializePagePositions(pages, pageWidth, pageHeight, PAGE_STACK_GAP, pageLayoutDirection);
+      initializePagePositions(
+        pages,
+        pageWidth,
+        pageHeight,
+        PAGE_STACK_GAP,
+        pageLayoutDirection,
+      );
     }
-  }, [pageWidth, pageHeight, pageLayoutDirection, pages, initializePagePositions]);
+  }, [
+    pageWidth,
+    pageHeight,
+    pageLayoutDirection,
+    pages,
+    initializePagePositions,
+  ]);
 
   // 🚀 O(1) pageIndex 기반 조회 (elements.find/filter O(N*M) 제거)
   const pageIndex = useStore((state) => state.pageIndex);
 
   const allPageData = useMemo(() => {
-    const map = new Map<string, { bodyElement: Element | null; pageElements: Element[] }>();
+    const map = new Map<
+      string,
+      { bodyElement: Element | null; pageElements: Element[] }
+    >();
     for (const page of pages) {
       const pageEls = getPageElements(pageIndex, page.id, elementsMap);
       let body: Element | null = null;
       const nonBody: Element[] = [];
       for (const el of pageEls) {
-        if (el.tag.toLowerCase() === 'body') {
+        if (el.tag.toLowerCase() === "body") {
           body = el;
         } else {
           nonBody.push(el);
@@ -1325,7 +1636,7 @@ export function BuilderCanvas({
 
   // 🆕 Multi-page: Skia 페이지 프레임 (타이틀 렌더링용)
   const pageFrames = useMemo(() => {
-    return pages.map(page => {
+    return pages.map((page) => {
       const pageElIds = pageIndex.elementsByPage.get(page.id);
       let count = 0;
       if (pageElIds) {
@@ -1344,7 +1655,6 @@ export function BuilderCanvas({
         elementCount: count,
       };
     });
-
   }, [pages, pagePositions, pageWidth, pageHeight, pageIndex, elementsMap]);
 
   // 🆕 Multi-page: 뷰포트 밖 페이지 컬링 (성능 최적화)
@@ -1369,8 +1679,16 @@ export function BuilderCanvas({
       if (isInViewport) visible.add(page.id);
     }
     return visible;
-     
-  }, [pages, pagePositions, pageWidth, pageHeight, zoom, panOffset.x, panOffset.y, containerSize]);
+  }, [
+    pages,
+    pagePositions,
+    pageWidth,
+    pageHeight,
+    zoom,
+    panOffset.x,
+    panOffset.y,
+    containerSize,
+  ]);
 
   // 라쏘 선택 영역 내 요소 찾기
   // 🚀 Phase 6: ElementRegistry의 getBounds() 사용
@@ -1389,7 +1707,12 @@ export function BuilderCanvas({
         pageElements.map((el) => {
           // 현재 프레임의 정확한 스크린 좌표를 우선 사용
           const container = getElementContainer(el.id);
-          let bounds: { x: number; y: number; width: number; height: number } | null = null;
+          let bounds: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+          } | null = null;
           if (container) {
             try {
               const b = container.getBounds();
@@ -1423,7 +1746,9 @@ export function BuilderCanvas({
           const localHeight = Number(style?.height ?? 0);
 
           const fallbackStyle = {
-            left: Number.isFinite(localLeft) ? localLeft * zoom + panOffset.x : 0,
+            left: Number.isFinite(localLeft)
+              ? localLeft * zoom + panOffset.x
+              : 0,
             top: Number.isFinite(localTop) ? localTop * zoom + panOffset.y : 0,
             width: Number.isFinite(localWidth) ? localWidth * zoom : 0,
             height: Number.isFinite(localHeight) ? localHeight * zoom : 0,
@@ -1435,10 +1760,10 @@ export function BuilderCanvas({
           };
         }),
         startGlobal,
-        endGlobal
+        endGlobal,
       );
     },
-    [pageElements, panOffset.x, panOffset.y, zoom]
+    [pageElements, panOffset.x, panOffset.y, zoom],
   );
 
   const screenToCanvasPoint = useCallback(
@@ -1448,7 +1773,7 @@ export function BuilderCanvas({
         y: (position.y - panOffset.y) / zoom,
       };
     },
-    [panOffset.x, panOffset.y, zoom]
+    [panOffset.x, panOffset.y, zoom],
   );
 
   // 🚀 Phase 6: ElementRegistry의 getBounds() 사용
@@ -1479,7 +1804,7 @@ export function BuilderCanvas({
         height,
       };
     },
-    [pageWidth, pageHeight]
+    [pageWidth, pageHeight],
   );
 
   const getDescendantIds = useCallback((rootId: string) => {
@@ -1551,7 +1876,9 @@ export function BuilderCanvas({
         target.element.parent_id != null
           ? elementById.get(target.element.parent_id)
           : null;
-      const parentStyle = parent?.props?.style as Record<string, unknown> | undefined;
+      const parentStyle = parent?.props?.style as
+        | Record<string, unknown>
+        | undefined;
       const flexDirection = parentStyle?.flexDirection;
       const isHorizontal =
         flexDirection === "row" || flexDirection === "row-reverse";
@@ -1577,14 +1904,14 @@ export function BuilderCanvas({
         dropPosition,
       };
     },
-    [elements, elementById, depthMap, getDescendantIds, getElementBounds]
+    [elements, elementById, depthMap, getDescendantIds, getElementBounds],
   );
 
   const buildReorderUpdates = useCallback(
     (
       movedId: string,
       targetId: string,
-      dropPosition: "before" | "after" | "on"
+      dropPosition: "before" | "after" | "on",
     ) => {
       const movedElement = elementById.get(movedId);
       const targetElement = elementById.get(targetId);
@@ -1601,9 +1928,13 @@ export function BuilderCanvas({
       const newParentId =
         dropPosition === "on"
           ? targetElement.id
-          : targetElement.parent_id ?? null;
+          : (targetElement.parent_id ?? null);
 
-      if (oldParentId === null && newParentId === null && dropPosition !== "on") {
+      if (
+        oldParentId === null &&
+        newParentId === null &&
+        dropPosition !== "on"
+      ) {
         return [];
       }
 
@@ -1627,7 +1958,8 @@ export function BuilderCanvas({
       if (dropPosition !== "on") {
         const targetIndex = siblingIds.indexOf(targetElement.id);
         if (targetIndex >= 0) {
-          insertIndex = dropPosition === "before" ? targetIndex : targetIndex + 1;
+          insertIndex =
+            dropPosition === "before" ? targetIndex : targetIndex + 1;
         }
       }
 
@@ -1638,7 +1970,7 @@ export function BuilderCanvas({
         const currentIds = getSiblings(oldParentId, true).map((el) => el.id);
         if (currentIds.length === nextIds.length) {
           const isSameOrder = currentIds.every(
-            (id, index) => id === nextIds[index]
+            (id, index) => id === nextIds[index],
           );
           if (isSameOrder) return [];
         }
@@ -1664,7 +1996,7 @@ export function BuilderCanvas({
 
       return updates;
     },
-    [elements, elementById]
+    [elements, elementById],
   );
 
   // 🚀 Phase 5: 드래그 시작/종료 시 해상도 조정
@@ -1677,188 +2009,191 @@ export function BuilderCanvas({
   }, []);
 
   // 드래그 인터랙션 - Lasso 선택 포함
-  const {
-    dragState,
-    startMove,
-    startResize,
-    startLasso,
-    updateDrag,
-    endDrag,
-  } = useDragInteraction({
-    // 🚀 Phase 5: 드래그 시작 시 해상도 낮춤
-    onDragStart: handleDragStart,
-    onMoveEnd: useCallback(
-      (elementId: string, delta: { x: number; y: number }) => {
-        // 🚀 Phase 5: 드래그 종료 시 해상도 복원
-        handleDragEnd();
+  const { dragState, startMove, startResize, startLasso, updateDrag, endDrag } =
+    useDragInteraction({
+      // 🚀 Phase 5: 드래그 시작 시 해상도 낮춤
+      onDragStart: handleDragStart,
+      onMoveEnd: useCallback(
+        (elementId: string, delta: { x: number; y: number }) => {
+          // 🚀 Phase 5: 드래그 종료 시 해상도 복원
+          handleDragEnd();
 
-        const element = elementById.get(elementId);
-        if (!element) return;
+          const element = elementById.get(elementId);
+          if (!element) return;
 
-        const dragDistance = Math.hypot(delta.x, delta.y);
-        if (dragDistance < DRAG_DISTANCE_THRESHOLD) {
-          selectionBoxRef.current?.resetPosition();
-          dragPointerRef.current = null;
-          return;
-        }
-
-        if (element.tag.toLowerCase() === "body") {
-          selectionBoxRef.current?.resetPosition();
-          dragPointerRef.current = null;
-          return;
-        }
-
-        const style = element.props?.style as
-          | Record<string, unknown>
-          | undefined;
-        const position = style?.position;
-        const shouldReorder =
-          position !== "absolute" && position !== "fixed";
-
-        if (shouldReorder && dragPointerRef.current) {
-          const drop = findDropTarget(dragPointerRef.current, elementId);
-          if (drop) {
-            const updates = buildReorderUpdates(
-              elementId,
-              drop.targetId,
-              drop.dropPosition
-            );
-            if (updates.length > 0) {
-              batchUpdateElements(updates);
-            }
+          const dragDistance = Math.hypot(delta.x, delta.y);
+          if (dragDistance < DRAG_DISTANCE_THRESHOLD) {
+            selectionBoxRef.current?.resetPosition();
+            dragPointerRef.current = null;
+            return;
           }
-          selectionBoxRef.current?.resetPosition();
-          dragPointerRef.current = null;
-          return;
-        }
 
-        const currentX = Number(style?.left) || 0;
-        const currentY = Number(style?.top) || 0;
+          if (element.tag.toLowerCase() === "body") {
+            selectionBoxRef.current?.resetPosition();
+            dragPointerRef.current = null;
+            return;
+          }
 
-        let newX = currentX + delta.x;
-        let newY = currentY + delta.y;
-        if (snapToGrid) {
-          newX = Math.round(newX / gridSize) * gridSize;
-          newY = Math.round(newY / gridSize) * gridSize;
-        }
+          const style = element.props?.style as
+            | Record<string, unknown>
+            | undefined;
+          const position = style?.position;
+          const shouldReorder = position !== "absolute" && position !== "fixed";
 
-        updateElementProps(elementId, {
-          style: {
-            ...style,
-            left: newX,
-            top: newY,
-          },
-        });
-        dragPointerRef.current = null;
-      },
-      [
-        batchUpdateElements,
-        buildReorderUpdates,
-        elementById,
-        findDropTarget,
-        handleDragEnd,
-        updateElementProps,
-        snapToGrid,
-        gridSize,
-      ]
-    ),
-    onResizeEnd: useCallback(
-      (elementId: string, _handle: HandlePosition, newBounds: BoundingBox) => {
-        // 🚀 Phase 5: 드래그 종료 시 해상도 복원
-        handleDragEnd();
-
-        // O(1) elementsMap 기반 조회 (elements.find O(N) 제거)
-        const element = elementById.get(elementId);
-        if (!element) return;
-
-        const style = element.props?.style as
-          | Record<string, unknown>
-          | undefined;
-
-        let { x, y, width, height } = newBounds;
-        if (snapToGrid) {
-          // 엣지를 그리드에 정렬하여 위치와 크기 모두 그리드에 맞춤
-          const right = Math.round((x + width) / gridSize) * gridSize;
-          const bottom = Math.round((y + height) / gridSize) * gridSize;
-          x = Math.round(x / gridSize) * gridSize;
-          y = Math.round(y / gridSize) * gridSize;
-          width = Math.max(gridSize, right - x);
-          height = Math.max(gridSize, bottom - y);
-        }
-
-        updateElementProps(elementId, {
-          style: {
-            ...style,
-            left: x,
-            top: y,
-            width,
-            height,
-          },
-        });
-        dragPointerRef.current = null;
-      },
-      [elementById, updateElementProps, handleDragEnd, snapToGrid, gridSize]
-    ),
-    onLassoEnd: useCallback(
-      (selectedIds: string[]) => {
-        // 🚀 Phase 5: 드래그 종료 시 해상도 복원
-        handleDragEnd();
-
-        // setSelectedElements([])는 selectedElementId, selectedElementProps까지
-        // 모두 초기화 (clearSelection은 selection slice만 초기화하여 불충분)
-        setSelectedElements(selectedIds);
-      },
-      [setSelectedElements, handleDragEnd]
-    ),
-    findElementsInLasso: findElementsInLassoArea,
-    // 🚀 Phase 19: 드래그 중 React 리렌더링 없이 PixiJS 직접 조작
-    onDragUpdate: useCallback(
-      (
-        operation: 'move' | 'resize' | 'lasso',
-        data: {
-          delta?: { x: number; y: number };
-          newBounds?: BoundingBox;
-        }
-      ) => {
-        if (!selectionBoxRef.current) return;
-
-        switch (operation) {
-          case 'move':
-            if (data.delta) {
-              const d = snapToGrid
-                ? { x: Math.round(data.delta.x / gridSize) * gridSize, y: Math.round(data.delta.y / gridSize) * gridSize }
-                : data.delta;
-              selectionBoxRef.current.updatePosition(d);
-            }
-            break;
-          case 'resize':
-            if (data.newBounds) {
-              if (snapToGrid) {
-                const { x, y, width, height } = data.newBounds;
-                const r = Math.round((x + width) / gridSize) * gridSize;
-                const b = Math.round((y + height) / gridSize) * gridSize;
-                const sx = Math.round(x / gridSize) * gridSize;
-                const sy = Math.round(y / gridSize) * gridSize;
-                selectionBoxRef.current.updateBounds({
-                  x: sx, y: sy,
-                  width: Math.max(gridSize, r - sx),
-                  height: Math.max(gridSize, b - sy),
-                });
-              } else {
-                selectionBoxRef.current.updateBounds(data.newBounds);
+          if (shouldReorder && dragPointerRef.current) {
+            const drop = findDropTarget(dragPointerRef.current, elementId);
+            if (drop) {
+              const updates = buildReorderUpdates(
+                elementId,
+                drop.targetId,
+                drop.dropPosition,
+              );
+              if (updates.length > 0) {
+                batchUpdateElements(updates);
               }
             }
-            break;
-          // lasso는 기존 방식 유지 (LassoSelection 컴포넌트 사용)
-        }
-      },
-      [snapToGrid, gridSize]
-    ),
-  });
+            selectionBoxRef.current?.resetPosition();
+            dragPointerRef.current = null;
+            return;
+          }
+
+          const currentX = Number(style?.left) || 0;
+          const currentY = Number(style?.top) || 0;
+
+          let newX = currentX + delta.x;
+          let newY = currentY + delta.y;
+          if (snapToGrid) {
+            newX = Math.round(newX / gridSize) * gridSize;
+            newY = Math.round(newY / gridSize) * gridSize;
+          }
+
+          updateElementProps(elementId, {
+            style: {
+              ...style,
+              left: newX,
+              top: newY,
+            },
+          });
+          dragPointerRef.current = null;
+        },
+        [
+          batchUpdateElements,
+          buildReorderUpdates,
+          elementById,
+          findDropTarget,
+          handleDragEnd,
+          updateElementProps,
+          snapToGrid,
+          gridSize,
+        ],
+      ),
+      onResizeEnd: useCallback(
+        (
+          elementId: string,
+          _handle: HandlePosition,
+          newBounds: BoundingBox,
+        ) => {
+          // 🚀 Phase 5: 드래그 종료 시 해상도 복원
+          handleDragEnd();
+
+          // O(1) elementsMap 기반 조회 (elements.find O(N) 제거)
+          const element = elementById.get(elementId);
+          if (!element) return;
+
+          const style = element.props?.style as
+            | Record<string, unknown>
+            | undefined;
+
+          let { x, y, width, height } = newBounds;
+          if (snapToGrid) {
+            // 엣지를 그리드에 정렬하여 위치와 크기 모두 그리드에 맞춤
+            const right = Math.round((x + width) / gridSize) * gridSize;
+            const bottom = Math.round((y + height) / gridSize) * gridSize;
+            x = Math.round(x / gridSize) * gridSize;
+            y = Math.round(y / gridSize) * gridSize;
+            width = Math.max(gridSize, right - x);
+            height = Math.max(gridSize, bottom - y);
+          }
+
+          updateElementProps(elementId, {
+            style: {
+              ...style,
+              left: x,
+              top: y,
+              width,
+              height,
+            },
+          });
+          dragPointerRef.current = null;
+        },
+        [elementById, updateElementProps, handleDragEnd, snapToGrid, gridSize],
+      ),
+      onLassoEnd: useCallback(
+        (selectedIds: string[]) => {
+          // 🚀 Phase 5: 드래그 종료 시 해상도 복원
+          handleDragEnd();
+
+          // setSelectedElements([])는 selectedElementId, selectedElementProps까지
+          // 모두 초기화 (clearSelection은 selection slice만 초기화하여 불충분)
+          setSelectedElements(selectedIds);
+        },
+        [setSelectedElements, handleDragEnd],
+      ),
+      findElementsInLasso: findElementsInLassoArea,
+      // 🚀 Phase 19: 드래그 중 React 리렌더링 없이 PixiJS 직접 조작
+      onDragUpdate: useCallback(
+        (
+          operation: "move" | "resize" | "lasso",
+          data: {
+            delta?: { x: number; y: number };
+            newBounds?: BoundingBox;
+          },
+        ) => {
+          if (!selectionBoxRef.current) return;
+
+          switch (operation) {
+            case "move":
+              if (data.delta) {
+                const d = snapToGrid
+                  ? {
+                      x: Math.round(data.delta.x / gridSize) * gridSize,
+                      y: Math.round(data.delta.y / gridSize) * gridSize,
+                    }
+                  : data.delta;
+                selectionBoxRef.current.updatePosition(d);
+              }
+              break;
+            case "resize":
+              if (data.newBounds) {
+                if (snapToGrid) {
+                  const { x, y, width, height } = data.newBounds;
+                  const r = Math.round((x + width) / gridSize) * gridSize;
+                  const b = Math.round((y + height) / gridSize) * gridSize;
+                  const sx = Math.round(x / gridSize) * gridSize;
+                  const sy = Math.round(y / gridSize) * gridSize;
+                  selectionBoxRef.current.updateBounds({
+                    x: sx,
+                    y: sy,
+                    width: Math.max(gridSize, r - sx),
+                    height: Math.max(gridSize, b - sy),
+                  });
+                } else {
+                  selectionBoxRef.current.updateBounds(data.newBounds);
+                }
+              }
+              break;
+            // lasso는 기존 방식 유지 (LassoSelection 컴포넌트 사용)
+          }
+        },
+        [snapToGrid, gridSize],
+      ),
+    });
 
   // dragState를 ref로 노출 (Skia Selection 렌더링에서 라쏘 상태 접근용)
   const dragStateRef = useRef<DragState>(dragState);
-  useEffect(() => { dragStateRef.current = dragState; }, [dragState]);
+  useEffect(() => {
+    dragStateRef.current = dragState;
+  }, [dragState]);
 
   // 리사이즈 시작 핸들러
   const handleResizeStart = useCallback(
@@ -1866,23 +2201,27 @@ export function BuilderCanvas({
       elementId: string,
       handle: HandlePosition,
       bounds: BoundingBox,
-      position: { x: number; y: number }
+      position: { x: number; y: number },
     ) => {
       const canvasPosition = screenToCanvasPoint(position);
       dragPointerRef.current = canvasPosition;
       startResize(elementId, handle, bounds, canvasPosition);
     },
-    [screenToCanvasPoint, startResize]
+    [screenToCanvasPoint, startResize],
   );
 
   // 이동 시작 핸들러
   const handleMoveStart = useCallback(
-    (elementId: string, bounds: BoundingBox, position: { x: number; y: number }) => {
+    (
+      elementId: string,
+      bounds: BoundingBox,
+      position: { x: number; y: number },
+    ) => {
       const canvasPosition = screenToCanvasPoint(position);
       dragPointerRef.current = canvasPosition;
       startMove(elementId, bounds, canvasPosition);
     },
-    [screenToCanvasPoint, startMove]
+    [screenToCanvasPoint, startMove],
   );
 
   useEffect(() => {
@@ -1912,7 +2251,14 @@ export function BuilderCanvas({
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [containerEl, dragState.isDragging, dragState.operation, endDrag, screenToCanvasPoint, updateDrag]);
+  }, [
+    containerEl,
+    dragState.isDragging,
+    dragState.operation,
+    endDrag,
+    screenToCanvasPoint,
+    updateDrag,
+  ]);
 
   // 커서 변경 핸들러
   const handleCursorChange = useCallback((cursor: CursorStyle) => {
@@ -1936,88 +2282,108 @@ export function BuilderCanvas({
   // 선택 변경 시 handleElementClick 재생성 방지 → 모든 ElementSprite 리렌더링 방지
   // 🚀 Phase 18: startTransition으로 선택 업데이트 → INP 개선 (245ms → ~50ms)
   const handleElementClick = useCallback(
-    (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => {
-      return longTaskMonitor.measure("interaction.select:webgl-pointerdown", () => {
-        // 텍스트 편집 중이면 클릭 무시
-        if (isEditing) return;
+    (
+      elementId: string,
+      modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean },
+    ) => {
+      return longTaskMonitor.measure(
+        "interaction.select:webgl-pointerdown",
+        () => {
+          // 텍스트 편집 중이면 클릭 무시
+          if (isEditing) return;
 
-        // 🆕 Multi-page: 다른 페이지 요소 클릭 시 페이지 전환
-        const state = useStore.getState();
-        const clickedElement = state.elementsMap.get(elementId);
-        if (clickedElement?.page_id && clickedElement.page_id !== state.currentPageId) {
-          clearSelection();
-          setCurrentPageId(clickedElement.page_id);
-        }
-
-        // 계층 해석: 클릭된 요소에서 현재 editingContext의 직계 자식을 찾음
-        const resolvedTarget = resolveClickTarget(
-          elementId,
-          state.editingContextId,
-          state.elementsMap,
-        );
-        if (!resolvedTarget) {
-          if (state.editingContextId === null) {
-            // 루트 레벨: Body 요소 클릭 시 body 선택
-            const clickedEl = state.elementsMap.get(elementId);
-            if (clickedEl && clickedEl.tag.toLowerCase() === 'body') {
-              if (clickedEl.page_id && clickedEl.page_id !== state.currentPageId) {
-                setCurrentPageId(clickedEl.page_id);
-              }
-              startTransition(() => {
-                setSelectedElement(elementId);
-              });
-            }
-          } else {
-            // editingContext 내부에서 context 외부 요소 클릭 → 한 단계 위로 복귀
-            state.exitEditingContext();
+          // 🆕 Multi-page: 다른 페이지 요소 클릭 시 페이지 전환
+          const state = useStore.getState();
+          const clickedElement = state.elementsMap.get(elementId);
+          if (
+            clickedElement?.page_id &&
+            clickedElement.page_id !== state.currentPageId
+          ) {
+            clearSelection();
+            setCurrentPageId(clickedElement.page_id);
           }
-          return;
-        }
 
-        // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
-        const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
-
-        // 🚀 Phase 18: startTransition으로 선택 업데이트를 비긴급 처리
-        // React가 현재 프레임을 먼저 완료하고, 유휴 시간에 리렌더링 수행
-        startTransition(() => {
-          if (isMultiSelectKey) {
-            // 🆕 Multi-page: 크로스 페이지 다중 선택 방지
-            // 다른 페이지 요소면 페이지 전환 + 단일 선택
-            const curPageId = useStore.getState().currentPageId;
-            const targetEl = useStore.getState().elementsMap.get(resolvedTarget);
-            if (targetEl?.page_id && targetEl.page_id !== curPageId) {
-              setSelectedElement(resolvedTarget);
-              return;
-            }
-
-            // 🚀 getState()로 현재 selectedElementIds 읽기 (stale closure 방지)
-            const currentSelectedIds = useStore.getState().selectedElementIds;
-
-            // 🚀 O(n) → O(1) 최적화: Set을 사용하여 빠른 검색
-            const selectedSet = new Set(currentSelectedIds);
-            const isAlreadySelected = selectedSet.has(resolvedTarget);
-
-            if (isAlreadySelected) {
-              // 선택 해제 - Set에서 제거 후 배열로 변환
-              selectedSet.delete(resolvedTarget);
-              if (selectedSet.size > 0) {
-                setSelectedElements(Array.from(selectedSet));
-              } else {
-                clearSelection();
+          // 계층 해석: 클릭된 요소에서 현재 editingContext의 직계 자식을 찾음
+          const resolvedTarget = resolveClickTarget(
+            elementId,
+            state.editingContextId,
+            state.elementsMap,
+          );
+          if (!resolvedTarget) {
+            if (state.editingContextId === null) {
+              // 루트 레벨: Body 요소 클릭 시 body 선택
+              const clickedEl = state.elementsMap.get(elementId);
+              if (clickedEl && clickedEl.tag.toLowerCase() === "body") {
+                if (
+                  clickedEl.page_id &&
+                  clickedEl.page_id !== state.currentPageId
+                ) {
+                  setCurrentPageId(clickedEl.page_id);
+                }
+                startTransition(() => {
+                  setSelectedElement(elementId);
+                });
               }
             } else {
-              // 선택에 추가 - Set에 추가 후 배열로 변환
-              selectedSet.add(resolvedTarget);
-              setSelectedElements(Array.from(selectedSet));
+              // editingContext 내부에서 context 외부 요소 클릭 → 한 단계 위로 복귀
+              state.exitEditingContext();
             }
-          } else {
-            // 단일 선택
-            setSelectedElement(resolvedTarget);
+            return;
           }
-        });
-      });
+
+          // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
+          const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
+
+          // 🚀 Phase 18: startTransition으로 선택 업데이트를 비긴급 처리
+          // React가 현재 프레임을 먼저 완료하고, 유휴 시간에 리렌더링 수행
+          startTransition(() => {
+            if (isMultiSelectKey) {
+              // 🆕 Multi-page: 크로스 페이지 다중 선택 방지
+              // 다른 페이지 요소면 페이지 전환 + 단일 선택
+              const curPageId = useStore.getState().currentPageId;
+              const targetEl = useStore
+                .getState()
+                .elementsMap.get(resolvedTarget);
+              if (targetEl?.page_id && targetEl.page_id !== curPageId) {
+                setSelectedElement(resolvedTarget);
+                return;
+              }
+
+              // 🚀 getState()로 현재 selectedElementIds 읽기 (stale closure 방지)
+              const currentSelectedIds = useStore.getState().selectedElementIds;
+
+              // 🚀 O(n) → O(1) 최적화: Set을 사용하여 빠른 검색
+              const selectedSet = new Set(currentSelectedIds);
+              const isAlreadySelected = selectedSet.has(resolvedTarget);
+
+              if (isAlreadySelected) {
+                // 선택 해제 - Set에서 제거 후 배열로 변환
+                selectedSet.delete(resolvedTarget);
+                if (selectedSet.size > 0) {
+                  setSelectedElements(Array.from(selectedSet));
+                } else {
+                  clearSelection();
+                }
+              } else {
+                // 선택에 추가 - Set에 추가 후 배열로 변환
+                selectedSet.add(resolvedTarget);
+                setSelectedElements(Array.from(selectedSet));
+              }
+            } else {
+              // 단일 선택
+              setSelectedElement(resolvedTarget);
+            }
+          });
+        },
+      );
     },
-    [setSelectedElement, setSelectedElements, clearSelection, isEditing, setCurrentPageId]
+    [
+      setSelectedElement,
+      setSelectedElements,
+      clearSelection,
+      isEditing,
+      setCurrentPageId,
+    ],
   );
 
   // Element double click handler (텍스트 편집 또는 컨테이너 진입)
@@ -2038,7 +2404,19 @@ export function BuilderCanvas({
       if (!resolvedElement) return;
 
       // 텍스트 요소: 텍스트 편집 시작 (기존 동작)
-      const textTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'label', 'button']);
+      const textTags = new Set([
+        "p",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "span",
+        "a",
+        "label",
+        "button",
+      ]);
       if (textTags.has(resolvedElement.tag)) {
         const layoutPosition = getElementBoundsSimple(resolvedTarget);
         startEdit(resolvedTarget, layoutPosition ?? undefined);
@@ -2056,7 +2434,7 @@ export function BuilderCanvas({
       const layoutPosition = getElementBoundsSimple(resolvedTarget);
       startEdit(resolvedTarget, layoutPosition ?? undefined);
     },
-    [startEdit]
+    [startEdit],
   );
 
   // WebGL context recovery
@@ -2109,27 +2487,34 @@ export function BuilderCanvas({
     >
       {/* ADR-006 P1-2: WASM 로드 실패 배너 */}
       {wasmLayoutFailed && (
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0,
-          padding: '12px 16px',
-          backgroundColor: '#FEF2F2',
-          borderBottom: '1px solid #FECACA',
-          color: '#991B1B',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          zIndex: 9999,
-          fontSize: '14px',
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            padding: "12px 16px",
+            backgroundColor: "#FEF2F2",
+            borderBottom: "1px solid #FECACA",
+            color: "#991B1B",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            zIndex: 9999,
+            fontSize: "14px",
+          }}
+        >
           <span>레이아웃 엔진 로드에 실패했습니다.</span>
           <button
             onClick={() => window.location.reload()}
             style={{
-              padding: '4px 12px',
-              backgroundColor: '#DC2626',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '13px',
+              padding: "4px 12px",
+              backgroundColor: "#DC2626",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "13px",
             }}
           >
             새로고침
@@ -2175,7 +2560,13 @@ export function BuilderCanvas({
           {/* 전체 Canvas 영역 클릭 → editingContext 복귀 또는 body 선택 */}
           <ClickableBackground
             onClick={() => {
-              const { editingContextId, exitEditingContext, currentPageId, elementsMap: storeElementsMap, pageIndex: storePageIndex } = useStore.getState();
+              const {
+                editingContextId,
+                exitEditingContext,
+                currentPageId,
+                elementsMap: storeElementsMap,
+                pageIndex: storePageIndex,
+              } = useStore.getState();
               // editingContext 진입 상태 → 한 단계 위로 복귀 (Pencil 방식)
               if (editingContextId !== null) {
                 exitEditingContext();
@@ -2184,11 +2575,12 @@ export function BuilderCanvas({
               // 루트 레벨 빈 영역 클릭 → body 요소 선택
               // O(페이지요소수) 조회 (전체 elements O(N) 대신 pageIndex 활용)
               if (currentPageId) {
-                const pageElementIds = storePageIndex.elementsByPage.get(currentPageId);
+                const pageElementIds =
+                  storePageIndex.elementsByPage.get(currentPageId);
                 if (pageElementIds) {
                   for (const eid of pageElementIds) {
                     const el = storeElementsMap.get(eid);
-                    if (el && el.tag === 'body') {
+                    if (el && el.tag === "body") {
                       setSelectedElement(el.id);
                       return;
                     }
@@ -2256,7 +2648,6 @@ export function BuilderCanvas({
               pagePositionsVersion={pagePositionsVersion}
             />
           </pixiContainer>
-
         </Application>
       )}
 

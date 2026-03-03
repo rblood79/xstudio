@@ -1,15 +1,19 @@
 # ADR-012: 렌더링/레이아웃 파이프라인 하드닝 실행계획
 
 ## Status
+
 Partial
 
 ## Date
+
 2026-03-01
 
 ## Last Verified
+
 2026-03-03 (코드 대조 검증)
 
 ## Decision Makers
+
 XStudio Team
 
 ---
@@ -22,23 +26,23 @@ ADR-009 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 
 ### 감사 결과 요약
 
-| 심각도 | 확인됨 | 미확인/해당없음 | 총 발견 |
-|--------|--------|-----------------|---------|
-| CRITICAL | 2 | 1 (Paint/Path 누수 없음 확인) | 3 |
-| HIGH | 6 | 1 (EventBoundary는 PixiJS 내부) | 7 |
-| MEDIUM | 5 | - | 5 |
-| LOW | 3 | - | 3 |
-| **합계** | **16** | **2** | **18** |
+| 심각도   | 확인됨 | 미확인/해당없음                 | 총 발견 |
+| -------- | ------ | ------------------------------- | ------- |
+| CRITICAL | 2      | 1 (Paint/Path 누수 없음 확인)   | 3       |
+| HIGH     | 6      | 1 (EventBoundary는 PixiJS 내부) | 7       |
+| MEDIUM   | 5      | -                               | 5       |
+| LOW      | 3      | -                               | 3       |
+| **합계** | **16** | **2**                           | **18**  |
 
-### 구현 현황 (2026-03-03 코드 대조 검증)
+### 구현 현황 (2026-03-04 P0~P2 전체 완료 확인)
 
-| Phase | 총 이슈 | 구현 완료 | 미구현/부분 | 비고 |
-|-------|---------|----------|------------|------|
-| P0 | 4 | 4 | 0 | 전체 완료 |
-| P1 | 4 | 3 | 1 | WASM 타임아웃만 잔여 |
-| P2 | 4 | 3 | 1 | Grid repeat()만 잔여 |
-| P3 | 3 | 0 | 3 | 설계상 제약 포함 |
-| **합계** | **15** | **10** | **5** | 67% 완료 |
+| Phase    | 총 이슈 | 구현 완료 | 미구현/부분 | 비고                                               |
+| -------- | ------- | --------- | ----------- | -------------------------------------------------- |
+| P0       | 4       | 4         | 0           | 전체 완료                                          |
+| P1       | 4       | 4         | 0           | 전체 완료 (P1-2 DEV 로그 보강)                     |
+| P2       | 4       | 4         | 0           | 전체 완료 (P2-3 코드 구현 확인, 문서 미갱신이었음) |
+| P3       | 3       | 0         | 3           | 설계상 제약 포함                                   |
+| **합계** | **15**  | **12**    | **3**       | 80% 완료 (잔여: P3 장기 최적화)                    |
 
 > **참고**: P1-3(registryVersion 동시성)은 JS 단일 스레드 특성상 조치 불필요로 확인됨. P3-1(ARIA 캔버스 접근성)은 픽셀 렌더링 특성상 구현 불가.
 
@@ -80,7 +84,7 @@ ADR-009 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 - **성능 영향**: JSON.stringify 비용은 유지되나, 문자열 `===` 비교가 첫 불일치 바이트에서 즉시 종료되므로 변경 없는 노드의 WASM 호출 스킵은 동일하게 보장
 - **P3-3 ↔ P3-1 의존 관계 해제**: P3-3이 P3-1의 dirty tracking에 의존하지 않으므로 독립 실행 가능으로 변경
 - **Negative 섹션 정정**: "store의 `styleVersion` 증가 누락 시 스타일 갱신 스킵 위험" → 삭제 (JSON 비교 방식에서는 해당 위험 원천 제거)
-- **Risks 섹션 정정**: P3-3 위험을 "version counter 불일치" → "JSON.stringify CPU 비용" + "_lastJsonMap 메모리 비용"으로 교체
+- **Risks 섹션 정정**: P3-3 위험을 "version counter 불일치" → "JSON.stringify CPU 비용" + "\_lastJsonMap 메모리 비용"으로 교체
 - **`clearDirtyElementIds` 미호출 발견**: Store에 선언/구현되어 있으나 호출처 0건. dirty ID가 무한 누적되어 `elementStyleVersions` Map도 계속 증분됨. JSON 비교 전환으로 실질적 영향은 없으나 메모리 측면에서 정리 필요 → Open Questions에 추가
 
 ### 3차 검토 피드백 반영 (2026-03-02 11차)
@@ -99,9 +103,9 @@ ADR-009 Foundation(Dropflow 제거 + Taffy 단일 엔진 전환) 완료 후, 엔
 ### 검토 피드백 반영 (2026-03-02 9차)
 
 - **Finding 1 (HIGH)**: IframeMessenger "어디서도 import되지 않는 코드" 표현을 정밀화. `services/messaging.ts`의 `MessagingService`가 import/생성하지만 `MessagingService` 자체가 활성 코드에서 import되지 않아 "실행 경로 미연결"로 수정 (3곳: 6차 이력, isValidBootstrapMessage JSDoc, IframeMessenger 참고 섹션)
-- **Finding 2 (HIGH)**: P3-1 dirty 전략에 **descendant invalidation 규칙 추가**. `INHERITED_LAYOUT_PROPS` Set + `markDirtyWithDescendants()` 함수 명시. 부모의 font*/텍스트 상속 속성 변경 시 모든 자손을 dirty에 추가하여 intrinsic size 재계산 보장
+- **Finding 2 (HIGH)**: P3-1 dirty 전략에 **descendant invalidation 규칙 추가**. `INHERITED_LAYOUT_PROPS` Set + `markDirtyWithDescendants()` 함수 명시. 부모의 font\*/텍스트 상속 속성 변경 시 모든 자손을 dirty에 추가하여 intrinsic size 재계산 보장
 - **Finding 3 (MEDIUM)**: `textTransform`을 `NON_LAYOUT_PROPS`에서 **제거**. 대소문자 변환이 텍스트 폭/줄바꿈에 영향 → 레이아웃 트리거로 처리
-- ~~**Finding 4 (LOW)**: Negative 섹션의 P3-3 "해시 충돌 가능성" → "store의 `styleVersion` 증가 누락 시 스타일 갱신 스킵 위험 (DEV 검증 가드로 감지)"으로 수정~~ → **12차에서 대체됨**: version counter 폐기로 해당 위험 원천 제거. Negative를 "JSON.stringify CPU + _lastJsonMap 메모리 비용"으로 교체
+- ~~**Finding 4 (LOW)**: Negative 섹션의 P3-3 "해시 충돌 가능성" → "store의 `styleVersion` 증가 누락 시 스타일 갱신 스킵 위험 (DEV 검증 가드로 감지)"으로 수정~~ → **12차에서 대체됨**: version counter 폐기로 해당 위험 원천 제거. Negative를 "JSON.stringify CPU + \_lastJsonMap 메모리 비용"으로 교체
 - **Open Question 1**: `services/messaging.ts` 정리 시점 → Open Questions 섹션에 기록
 - **Open Question 2**: P3-1 descendant invalidation 트리거 범위 → Open Questions 섹션에 기록 (container query 포함 여부)
 - **Open Question 3**: P2-2 nonce 위협 범위를 "same-origin 우발 메시지 차단"으로 한정, 설계 근거 섹션에 명시
@@ -189,6 +193,7 @@ ADR-009 Foundation 완료로 레이아웃 엔진이 단일 Taffy WASM 경로로 
 ```
 
 **검증**:
+
 - `pnpm exec tsc --noEmit` 타입체크 통과 (호출처 없으므로 컴파일 에러 0건)
 - `grep -r "removeTabPair" apps/ --include="*.ts" --include="*.tsx"` → 0건 (문서 제외)
 
@@ -201,6 +206,7 @@ ADR-009 Foundation 완료로 레이아웃 엔진이 단일 Taffy WASM 경로로 
 **현상**: WASM `computeLayout()` 결과에 NaN/Infinity 검사 없음. 잘못된 입력(0 나누기, NaN 크기)이 Taffy를 거쳐 CanvasKit/Skia에 전파되면 렌더링 이상 또는 크래시 발생.
 
 **수정 방안**:
+
 ```typescript
 // fullTreeLayout.ts 결과 수집 루프 (라인 903-926)에 가드 추가
 const sanitizeStats = { count: 0 };
@@ -227,18 +233,21 @@ result.set(node.elementId, {
 
 // 루프 종료 후 (DEV/모니터링)
 if (sanitizeStats.count > 0 && import.meta.env.DEV) {
-  console.warn(`[fullTreeLayout] Sanitized non-finite values: ${sanitizeStats.count}`);
+  console.warn(
+    `[fullTreeLayout] Sanitized non-finite values: ${sanitizeStats.count}`,
+  );
 }
 ```
 
 **검증**:
+
 - `Number.isNaN()` 또는 `Infinity` 입력 시 0으로 폴백 확인
 - sanitize 카운트가 로그/모니터링 지표로 집계되는지 확인
 - 정상 레이아웃 값은 변경 없이 통과
 
 ---
 
-### P0-3. _sharedLayoutMap resetPersistentTree 시 초기화 — ✅ 구현 완료 (해당없음 확인, SkiaDisposable 패턴 적용)
+### P0-3. \_sharedLayoutMap resetPersistentTree 시 초기화 — ✅ 구현 완료 (해당없음 확인, SkiaDisposable 패턴 적용)
 
 **파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts` (라인 48-51)
 
@@ -247,28 +256,40 @@ if (sanitizeStats.count > 0 && import.meta.env.DEV) {
 **수정 방안**: `resetPersistentTree()` (라인 51-64)에 `_perPageLayoutMaps` 정리 추가.
 
 현재 코드:
+
 ```typescript
 export function resetPersistentTree(pageId?: string): void {
   if (pageId) {
     const tree = persistentTrees.get(pageId);
-    if (tree) { tree.reset(); persistentTrees.delete(pageId); }
+    if (tree) {
+      tree.reset();
+      persistentTrees.delete(pageId);
+    }
   } else {
-    for (const tree of persistentTrees.values()) { tree.reset(); }
+    for (const tree of persistentTrees.values()) {
+      tree.reset();
+    }
     persistentTrees.clear();
   }
 }
 ```
 
 수정:
+
 ```typescript
 export function resetPersistentTree(pageId?: string): void {
   if (pageId) {
     const tree = persistentTrees.get(pageId);
-    if (tree) { tree.reset(); persistentTrees.delete(pageId); }
+    if (tree) {
+      tree.reset();
+      persistentTrees.delete(pageId);
+    }
     // stale 레이아웃 제거
     publishLayoutMap(null, pageId);
   } else {
-    for (const tree of persistentTrees.values()) { tree.reset(); }
+    for (const tree of persistentTrees.values()) {
+      tree.reset();
+    }
     persistentTrees.clear();
     // 모든 페이지의 stale 레이아웃 제거
     for (const key of [..._perPageLayoutMaps.keys()]) {
@@ -279,6 +300,7 @@ export function resetPersistentTree(pageId?: string): void {
 ```
 
 **검증**:
+
 - `resetPersistentTree()` 호출 후 `getSharedLayoutMap()` === null
 - 페이지별 `resetPersistentTree(pageId)` 시 해당 페이지만 정리 확인
 - SkiaOverlay가 null 수신 시 렌더링 스킵 확인
@@ -339,6 +361,7 @@ function traversePostOrder(
 ```
 
 **검증**:
+
 - 순환 참조(A→B→A) 데이터에서 무한 재귀 없이 경고 출력
 - 깊이 100 초과 트리에서 크래시 없이 경고 출력
 - 정상 트리(~20 레벨)에서 동작 변경 없음
@@ -391,10 +414,12 @@ for (const childId of sortedChildIds) {
 **장기 로드맵**: Taffy 업스트림에서 CSS `order` 지원 시 Rust bridge에 필드 추가 + TS sort 제거.
 
 **레이아웃 안전성**:
+
 - `order` 속성을 사용하지 않는 요소(기본값 0)는 `hasOrder === false` → `sortedChildIds === childIds` (참조 동일) → **기존 동작과 100% 동일, 복사조차 발생하지 않음**
 - `order` 속성을 사용하는 요소만 정렬이 적용되며, 이는 기존에 무시되던 버그의 수정임
 
 **검증**:
+
 - `order: 2` 설정된 flex 아이템이 올바른 위치에 렌더링
 - `order: 0` (기본값) 요소들은 DOM 순서 유지 확인 (sortedChildIds === childIds 참조 동일성 확인)
 - `pnpm exec tsc --noEmit` → 타입체크 통과
@@ -402,7 +427,7 @@ for (const childId of sortedChildIds) {
 
 ---
 
-### P1-2. WASM 실패 시 지수 백오프 + 재시도 + 사용자 알림 — ⚠️ 미구현
+### P1-2. WASM 실패 시 지수 백오프 + 재시도 + 사용자 알림 — ✅ 구현 완료 (2026-03-04)
 
 **파일**: `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` (라인 1139-1148)
 **관련**: `apps/builder/src/builder/workspace/canvas/wasm-bindings/rustWasm.ts` (initRustWasm)
@@ -465,6 +490,7 @@ useEffect(() => {
 ```
 
 **검증**:
+
 - 정상 로드(< 5초): 기존 동작 유지
 - 느린 로드(5~15초): 재초기화 시도 후 성공 시 정상 전환
 - 영구 실패(> 15초): 폴링 중단 + 사용자 알림 + 새로고침 버튼
@@ -479,12 +505,13 @@ useEffect(() => {
 **현상**: `findChildren`이 `elements.filter(el => el.parent_id === parentId)` O(N) 반복. 깊은 트리에서 O(N×D) 복잡도.
 
 **수정 방안**:
+
 ```typescript
 function collectElementsToRemove(
   elementId: string,
   elements: Element[],
   elementsMap: Map<string, Element>,
-  childrenMap: Map<string, Element[]>,  // store 타입과 일치
+  childrenMap: Map<string, Element[]>, // store 타입과 일치
 ): { rootElement: Element; allElements: Element[] } | null {
   // ...
   const findChildren = (parentId: string): Element[] => {
@@ -501,11 +528,18 @@ function collectElementsToRemove(
 ```
 
 **호출부 수정** (라인 297):
+
 ```typescript
-const result = collectElementsToRemove(elementId, state.elements, state.elementsMap, state.childrenMap);
+const result = collectElementsToRemove(
+  elementId,
+  state.elements,
+  state.elementsMap,
+  state.childrenMap,
+);
 ```
 
 **검증**:
+
 - 요소 삭제 시 자식 요소 완전 제거 확인
 - 타입체크 통과
 
@@ -523,6 +557,7 @@ const result = collectElementsToRemove(elementId, state.elements, state.elements
 **현상**: `MAX_PARAGRAPH_CACHE_SIZE = 500` 하드코딩. 2,500+ 텍스트 요소 시 캐시 스래싱 발생 가능. 각 Paragraph는 CanvasKit 네이티브 객체로 GPU 메모리 점유.
 
 **수정 방안**:
+
 ```typescript
 // 환경변수 기반 설정 + 합리적 기본값
 const MAX_PARAGRAPH_CACHE_SIZE = (() => {
@@ -536,11 +571,13 @@ const MAX_PARAGRAPH_CACHE_SIZE = (() => {
 ```
 
 **관련 캐시도 동일 패턴 적용 검토**:
+
 - `canvas/utils/textMeasure.ts` (라인 183): `MAX_FONT_METRICS_CACHE_SIZE = 256` — 폰트 메트릭 캐시, 상한 초과 시 전체 clear
 - `skia/imageCache.ts` (라인 48): `MAX_CACHE_SIZE = 100` — CanvasKit 이미지 캐시, LRU 퇴거 + refCount 기반 GPU 메모리 관리
 - `services/computedStyleService.ts` (라인 61): `MAX_CACHE_SIZE = 200` — 합성 CSS 스타일 캐시, 상한 초과 시 전체 clear
 
 **검증**:
+
 - 환경변수 설정 시 해당 크기 적용 확인
 - 기본값 사용 시 1000 적용 확인
 - 메모리 프로파일링: 1000개 캐시 엔트리 GPU 메모리 측정
@@ -551,16 +588,17 @@ const MAX_PARAGRAPH_CACHE_SIZE = (() => {
 
 **대상 파일 (6개 핸들러)**:
 
-| 파일 | 라인 | origin 검증 | source 검증 | 상태 |
-|------|------|-------------|-------------|------|
-| `builder/hooks/useIframeMessenger.ts` | 387 | `event.origin !== window.location.origin` | 없음 | **source 보강** |
-| `builder/overlay/index.tsx` | 270 | `event.origin !== window.location.origin` | 없음 | **source 보강** |
-| `builder/hooks/useDeltaMessenger.ts` | 126 | `event.origin !== window.location.origin` | 없음 | **source 보강** |
-| **`builder/main/BuilderCore.tsx`** | **397** | **없음** | **없음** | **origin+source 추가 필수** |
-| **`builder/main/BuilderCore.tsx`** | **437** | **없음** | **없음** | **origin+source 추가 필수** |
-| **`builder/panels/monitor/hooks/useWebVitals.ts`** | **44** | **없음** | **없음** | **origin+source 추가 필수** |
+| 파일                                               | 라인    | origin 검증                               | source 검증 | 상태                        |
+| -------------------------------------------------- | ------- | ----------------------------------------- | ----------- | --------------------------- |
+| `builder/hooks/useIframeMessenger.ts`              | 387     | `event.origin !== window.location.origin` | 없음        | **source 보강**             |
+| `builder/overlay/index.tsx`                        | 270     | `event.origin !== window.location.origin` | 없음        | **source 보강**             |
+| `builder/hooks/useDeltaMessenger.ts`               | 126     | `event.origin !== window.location.origin` | 없음        | **source 보강**             |
+| **`builder/main/BuilderCore.tsx`**                 | **397** | **없음**                                  | **없음**    | **origin+source 추가 필수** |
+| **`builder/main/BuilderCore.tsx`**                 | **437** | **없음**                                  | **없음**    | **origin+source 추가 필수** |
+| **`builder/panels/monitor/hooks/useWebVitals.ts`** | **44**  | **없음**                                  | **없음**    | **origin+source 추가 필수** |
 
 **현상**:
+
 - `useIframeMessenger`, `overlay`, `useDeltaMessenger`는 origin 검증이 있으나 source 검증 없음
 - **`BuilderCore.tsx`의 2개 핸들러와 `useWebVitals.ts`는 origin/source 검증이 전혀 없어 임의 출처 메시지를 처리함**
 - `sandbox="allow-same-origin"` 설정으로 srcdoc iframe의 origin이 부모와 동일 → 현재 origin 검증이 정상 동작
@@ -575,7 +613,10 @@ const MAX_PARAGRAPH_CACHE_SIZE = (() => {
 
 ```typescript
 // builder/main/previewSrcdoc.ts
-export function generateDevSrcdoc(projectId: string, bootstrapNonce: string): string {
+export function generateDevSrcdoc(
+  projectId: string,
+  bootstrapNonce: string,
+): string {
   // ... 기존 코드 ...
   return `
 <!DOCTYPE html>
@@ -618,7 +659,7 @@ sendReady(): void {
 
 ```typescript
 // utils/messageValidation.ts (신규)
-import { MessageService } from './messaging';
+import { MessageService } from "./messaging";
 
 /**
  * 부트스트랩 메시지 검증 (순수 함수, 상태 없음)
@@ -644,7 +685,7 @@ export function isValidBootstrapMessage(
   expectedNonce: string,
 ): boolean {
   if (event.origin !== window.location.origin) return false;
-  if (event.data?.type !== 'PREVIEW_READY') return false;
+  if (event.data?.type !== "PREVIEW_READY") return false;
   // nonce 불일치 → 다른 윈도우 또는 이전 iframe의 메시지
   return event.data?.nonce === expectedNonce;
 }
@@ -664,6 +705,7 @@ export function isValidPreviewMessage(event: MessageEvent): boolean {
 ```
 
 **4단계: 각 핸들러에 적용** (2개 활성 핸들러가 동일 PREVIEW_READY 이벤트를 독립 수신):
+
 ```typescript
 // 1) useIframeMessenger.ts (라인 387) — 상태 + 초기 데이터 전송
 //    bootstrapNonceRef는 BuilderCanvas에서 prop/context로 전달
@@ -712,6 +754,7 @@ const handleNavigateMessage = async (event: MessageEvent) => {
 ```
 
 **IframeMessenger(utils/dom/iframeMessenger.ts) 참고**:
+
 - `services/messaging.ts`의 `MessagingService`가 import/생성(`new IframeMessenger()`)하지만, `MessagingService` 자체가 활성 코드에서 import되지 않아 **실행 경로에 연결되지 않음** (모든 활성 코드는 `utils/messaging`의 `MessageService`를 사용).
 - `initMessageListener()`가 자동 실행되어 `window.addEventListener('message', ...)`를 등록하지만, 활성 소비자가 없으므로 nonce 적용 대상이 아님.
 - 정리 권장: `MessagingService`(services/messaging.ts)와 `IframeMessenger`(utils/dom/iframeMessenger.ts)를 함께 삭제 또는 활성 경로로 리팩토링. 향후 재활성화 계획 여부에 따라 결정.
@@ -719,22 +762,26 @@ const handleNavigateMessage = async (event: MessageEvent) => {
 **위협 범위**: nonce 모델은 **same-origin 우발 메시지 차단**(다른 탭/윈도우의 선행 PREVIEW_READY가 정식 초기화를 오염시키는 문제)을 주 목적으로 한다. 동일 출처 XSS를 통한 의도적 nonce 탈취는 별도 XSS 방어 레이어(CSP, 입력 새니타이즈 등)에서 통제하며, 이 ADR의 범위 밖이다.
 
 **설계 근거**:
+
 - **nonce 기반 출처 보증**: `isValidBootstrapMessage`에 `expectedNonce` 파라미터로 실제 preview iframe 식별. source 체크의 race condition 문제(contentWindow 교체 타이밍)를 nonce로 우회. same-origin 다른 윈도우는 nonce를 모르므로 가짜 PREVIEW_READY 자체가 차단됨
 - **전역 상태 없음**: 검증 함수는 순수 함수. nonce는 호출자가 ref로 관리하므로 다중 핸들러 간 간섭 없음
 - **소비자 레벨 중복 가드 불필요**: nonce가 iframe 재생성 시 갱신되므로, 이전 iframe의 PREVIEW_READY는 자동 무효화. 동일 nonce의 중복 PREVIEW_READY는 정상 초기화 재실행이나, `sendReady()`가 Preview 마운트 시 1회만 호출(`App.tsx` useEffect)되므로 실제 발생하지 않음
 
 **nonce 전파 경로**:
+
 - `BuilderCanvas` → `bootstrapNonceRef` 생성 (srcdoc 생성 시 갱신)
 - `useIframeMessenger` → `bootstrapNonceRef`를 prop 또는 context로 수신
 - `useDeltaMessenger` → 동일 경로로 수신
 - Preview 측 `sendReady()`의 targetOrigin: 현재 `'*'` → `getTargetOrigin()`으로 변경 (예시 코드에 반영 완료)
 
 **시그니처 변경 필수**:
+
 - `generatePreviewSrcdoc(projectId)` → `generatePreviewSrcdoc(projectId, bootstrapNonce)` (previewSrcdoc.ts:179)
 - `generateDevSrcdoc(projectId)` → `generateDevSrcdoc(projectId, bootstrapNonce)` (previewSrcdoc.ts:65)
 - `generateProdSrcdoc(projectId)` → `generateProdSrcdoc(projectId, bootstrapNonce)` (previewSrcdoc.ts:144)
 
 **검증**:
+
 - **nonce 일치**: 실제 preview iframe의 PREVIEW_READY만 2개 활성 핸들러(useIframeMessenger, useDeltaMessenger) 모두 정상 초기화 확인
 - **nonce 불일치 거부**: 다른 윈도우/이전 iframe에서 보낸 PREVIEW_READY가 2개 핸들러 모두에서 무시 확인
 - **다중 리스너 동시 처리**: 동일 nonce의 PREVIEW_READY에 대해 useIframeMessenger/useDeltaMessenger 모두 독립 통과 확인
@@ -745,7 +792,7 @@ const handleNavigateMessage = async (event: MessageEvent) => {
 
 ---
 
-### P2-3. inline-block alignItems 개선 — ⏳ 부분 구현 (fr 지원, Grid repeat() Rust 브릿지 미완)
+### P2-3. inline-block alignItems 개선 — ✅ 구현 완료 (2026-03-04 코드 확인: resolveInlineBlockAlignItems + repeat() Rust 브릿지 구현됨)
 
 **파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/taffyDisplayAdapter.ts` (라인 179-185)
 
@@ -757,32 +804,39 @@ const handleNavigateMessage = async (event: MessageEvent) => {
 function resolveInlineBlockAlignItems(childElements: Element[]): string {
   // vertical-align 값별 Flex 매핑
   const map: Record<string, string> = {
-    top: 'flex-start',
-    middle: 'center',
-    bottom: 'flex-end',
-    baseline: 'baseline',
+    top: "flex-start",
+    middle: "center",
+    bottom: "flex-end",
+    baseline: "baseline",
   };
 
   // vertical-align이 명시적으로 설정된 자식만 수집
   const explicitAligns = childElements
-    .map(el => (el.props?.style as Record<string, unknown>)?.verticalAlign as string | undefined)
-    .filter((va): va is string => va !== undefined && va !== '');
+    .map(
+      (el) =>
+        (el.props?.style as Record<string, unknown>)?.verticalAlign as
+          | string
+          | undefined,
+    )
+    .filter((va): va is string => va !== undefined && va !== "");
 
   // 하위 호환성: vertical-align을 명시한 자식이 하나도 없으면 기존 'center' 유지
-  if (explicitAligns.length === 0) return 'center';
+  if (explicitAligns.length === 0) return "center";
 
   // 첫 번째 명시적 vertical-align 값 사용
-  return map[explicitAligns[0]] ?? 'center';
+  return map[explicitAligns[0]] ?? "center";
 }
 ```
 
 `INLINE_BLOCK_PARENT_CONFIG` 사용 시 `alignItems`를 `resolveInlineBlockAlignItems()` 반환값으로 오버라이드.
 
 **레이아웃 안전성**:
+
 - **`vertical-align` 미설정 (기존 데이터)**: `explicitAligns.length === 0` → `'center'` 반환 → **기존 레이아웃 100% 동일**
 - **`vertical-align` 명시 (새 데이터)**: 해당 값에 맞는 정렬 적용 → 의도된 동작
 
 **검증**:
+
 - `vertical-align: top` 요소가 상단 정렬 확인
 - `vertical-align: baseline` 명시 시 기준선 정렬 확인
 - **`vertical-align` 미지정 시 기존 center 정렬 유지 확인** (회귀 테스트 핵심)
@@ -804,6 +858,7 @@ function resolveInlineBlockAlignItems(childElements: Element[]): string {
 **파일**: `apps/builder/src/builder/stores/elements.ts`
 
 인터페이스에 추가:
+
 ```typescript
 /** 레이아웃 영향 속성 변경 시 증가하는 카운터 */
 layoutVersion: number;
@@ -829,47 +884,81 @@ clearDirtyElementIds: () => void;
  */
 const NON_LAYOUT_PROPS = new Set([
   // 색상/배경
-  'color', 'backgroundColor', 'background', 'backgroundImage',
-  'backgroundSize', 'backgroundPosition', 'backgroundRepeat',
+  "color",
+  "backgroundColor",
+  "background",
+  "backgroundImage",
+  "backgroundSize",
+  "backgroundPosition",
+  "backgroundRepeat",
   // 투명도/가시성 (layout에 영향 없음)
-  'opacity', 'visibility',
+  "opacity",
+  "visibility",
   // 그림자/효과
-  'boxShadow', 'textShadow', 'filter', 'backdropFilter',
+  "boxShadow",
+  "textShadow",
+  "filter",
+  "backdropFilter",
   // 테두리 색상/스타일 (너비는 제외 — 레이아웃 영향)
-  'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
-  'borderStyle', 'borderTopStyle', 'borderRightStyle', 'borderBottomStyle', 'borderLeftStyle',
-  'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius',
-  'borderBottomLeftRadius', 'borderBottomRightRadius',
-  'outlineColor', 'outlineStyle',
+  "borderColor",
+  "borderTopColor",
+  "borderRightColor",
+  "borderBottomColor",
+  "borderLeftColor",
+  "borderStyle",
+  "borderTopStyle",
+  "borderRightStyle",
+  "borderBottomStyle",
+  "borderLeftStyle",
+  "borderRadius",
+  "borderTopLeftRadius",
+  "borderTopRightRadius",
+  "borderBottomLeftRadius",
+  "borderBottomRightRadius",
+  "outlineColor",
+  "outlineStyle",
   // 커서/포인터
-  'cursor', 'pointerEvents', 'userSelect',
+  "cursor",
+  "pointerEvents",
+  "userSelect",
   // 트랜지션/애니메이션 (레이아웃 비영향)
-  'transition', 'transitionProperty', 'transitionDuration',
-  'animation', 'animationName', 'animationDuration',
+  "transition",
+  "transitionProperty",
+  "transitionDuration",
+  "animation",
+  "animationName",
+  "animationDuration",
   // 텍스트 장식 (크기 비영향)
-  'textDecoration', 'textDecorationColor', 'textDecorationStyle',
+  "textDecoration",
+  "textDecorationColor",
+  "textDecorationStyle",
   // 주의: textTransform은 대소문자 변환으로 텍스트 폭/줄바꿈에 영향 → 제외 (레이아웃 트리거로 처리)
   // z-index (페인트 순서만)
-  'zIndex',
+  "zIndex",
   // 기타 시각적
-  'objectFit', 'objectPosition', 'mixBlendMode',
-  'clipPath', 'mask', 'maskImage',
-  'transformOrigin',  // transform 자체는 레이아웃 비영향이나 Taffy 미지원
+  "objectFit",
+  "objectPosition",
+  "mixBlendMode",
+  "clipPath",
+  "mask",
+  "maskImage",
+  "transformOrigin", // transform 자체는 레이아웃 비영향이나 Taffy 미지원
 ]);
 
 function isLayoutAffecting(changedProps: Record<string, unknown>): boolean {
   // 블랙리스트에 없는 속성이 하나라도 있으면 레이아웃 영향
-  return Object.keys(changedProps).some(k => !NON_LAYOUT_PROPS.has(k));
+  return Object.keys(changedProps).some((k) => !NON_LAYOUT_PROPS.has(k));
 }
 ```
 
 > **참고**: 이 방식에서 `fontSize`, `lineHeight`, `fontFamily`, `letterSpacing`, `whiteSpace`, `wordBreak`, `boxSizing`, `textContent`, `label`, `placeholder` 등 텍스트/폰트/컨텐츠 관련 속성은 `NON_LAYOUT_PROPS`에 미포함이므로 자동으로 레이아웃 트리거가 된다. 화이트리스트 방식에서 이들을 누락했을 때의 사일런트 버그 위험이 근본적으로 제거된다.
 
 요소 변경 액션(`updateElementProps`, `updateElementStyle` 등) 내부:
+
 ```typescript
 const isLayoutChange = isLayoutAffecting(changedStyleProps);
 
-set(state => ({
+set((state) => ({
   ...updates,
   layoutVersion: isLayoutChange ? state.layoutVersion + 1 : state.layoutVersion,
   dirtyElementIds: isLayoutChange
@@ -879,10 +968,11 @@ set(state => ({
 ```
 
 **구조 변경은 항상 layout-affecting** (요소 추가/삭제/이동):
+
 ```typescript
 // addElement, removeElement, reparentElement 등:
 // isLayoutAffecting 체크 없이 무조건 layoutVersion++ 및 dirtyElementIds 추가
-set(state => ({
+set((state) => ({
   ...updates,
   layoutVersion: state.layoutVersion + 1,
   dirtyElementIds: new Set([...state.dirtyElementIds, ...affectedElementIds]),
@@ -890,6 +980,7 @@ set(state => ({
 ```
 
 **DEV 모드 안전 가드** — 블랙리스트 누락 감지:
+
 ```typescript
 // DEV 모드에서 useMemo 스킵 시 결과 검증 (P3-1 초기 배포 기간에만 활성)
 if (import.meta.env.DEV && !isLayoutChange) {
@@ -901,13 +992,14 @@ if (import.meta.env.DEV && !isLayoutChange) {
     if (freshMap && currentMap && !layoutMapsEqual(currentMap, freshMap)) {
       console.error(
         `[dirty-tracking] Layout mismatch detected after non-layout change!`,
-        `Changed props: ${Object.keys(changedStyleProps).join(', ')}`,
-        `These props may need to be removed from NON_LAYOUT_PROPS.`
+        `Changed props: ${Object.keys(changedStyleProps).join(", ")}`,
+        `These props may need to be removed from NON_LAYOUT_PROPS.`,
       );
     }
   });
 }
 ```
+
 > 이 검증은 DEV 모드 + 비레이아웃 변경 시에만 실행되므로 프로덕션 성능에 영향 없음. 블랙리스트에 잘못 포함된 레이아웃 속성이 있으면 즉시 console.error로 감지됨.
 
 #### Step 2: BuilderCanvas useMemo 의존성 분리
@@ -917,18 +1009,22 @@ if (import.meta.env.DEV && !isLayoutChange) {
 현재 의존성: `[bodyElement, elementById, pageChildrenMap, pageWidth, pageHeight, _wasmLayoutReady]`
 
 변경:
+
 ```typescript
-const layoutVersion = useStore(s => s.layoutVersion);
-const dirtyElementIds = useStore(s => s.dirtyElementIds);
+const layoutVersion = useStore((s) => s.layoutVersion);
+const dirtyElementIds = useStore((s) => s.dirtyElementIds);
 
 const fullTreeLayoutMap = useMemo(() => {
   if (!bodyElement || !_wasmLayoutReady) return null;
   // ... (기존 코드)
   const result = calculateFullTreeLayout(
-    bodyElement.id, elementById, childrenIdMap,
-    avW, avH,
+    bodyElement.id,
+    elementById,
+    childrenIdMap,
+    avW,
+    avH,
     (id: string) => pageChildrenMap.get(id) ?? [],
-    dirtyElementIds,  // ← 새 파라미터
+    dirtyElementIds, // ← 새 파라미터
   );
   // dirty 소비 후 리셋
   if (dirtyElementIds.size > 0) {
@@ -947,6 +1043,7 @@ const fullTreeLayoutMap = useMemo(() => {
 **파일**: `apps/builder/src/builder/workspace/canvas/layout/engines/fullTreeLayout.ts`
 
 시그니처 변경:
+
 ```typescript
 export function calculateFullTreeLayout(
   rootElementId: string,
@@ -960,23 +1057,41 @@ export function calculateFullTreeLayout(
 ```
 
 DFS 분기:
+
 ```typescript
 if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
   // Incremental path: dirty(변경 노드 + 상속 속성 변경 시 자손) + 조상 경로만 재순회
   const dirtyAncestors = collectDirtyAncestors(dirtyElementIds, elementsMap);
   traversePostOrderDirty(
-    rootElementId, elementsMap, childrenMap,
-    availableWidth, availableHeight, getChildElements,
-    ROOT_COMPUTED_STYLE, 'block', batch, indexMap,
-    visiting, 0, dirtyAncestors,
+    rootElementId,
+    elementsMap,
+    childrenMap,
+    availableWidth,
+    availableHeight,
+    getChildElements,
+    ROOT_COMPUTED_STYLE,
+    "block",
+    batch,
+    indexMap,
+    visiting,
+    0,
+    dirtyAncestors,
   );
 } else {
   // Full path: 초기 빌드 또는 구조 변경
   traversePostOrder(
-    rootElementId, elementsMap, childrenMap,
-    availableWidth, availableHeight, getChildElements,
-    ROOT_COMPUTED_STYLE, 'block', batch, indexMap,
-    visiting, 0,
+    rootElementId,
+    elementsMap,
+    childrenMap,
+    availableWidth,
+    availableHeight,
+    getChildElements,
+    ROOT_COMPUTED_STYLE,
+    "block",
+    batch,
+    indexMap,
+    visiting,
+    0,
   );
 }
 ```
@@ -995,10 +1110,19 @@ if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
  * 이 속성이 변경되면 해당 요소의 모든 자손을 dirtyElementIds에 추가.
  */
 const INHERITED_LAYOUT_PROPS = new Set([
-  'fontSize', 'fontFamily', 'fontWeight', 'fontStyle',
-  'lineHeight', 'letterSpacing', 'wordSpacing',
-  'whiteSpace', 'wordBreak', 'overflowWrap',
-  'textAlign', 'direction', 'writingMode',
+  "fontSize",
+  "fontFamily",
+  "fontWeight",
+  "fontStyle",
+  "lineHeight",
+  "letterSpacing",
+  "wordSpacing",
+  "whiteSpace",
+  "wordBreak",
+  "overflowWrap",
+  "textAlign",
+  "direction",
+  "writingMode",
 ]);
 
 /**
@@ -1019,8 +1143,9 @@ function markDirtyWithDescendants(
   dirtySet.add(elementId);
 
   // 상속 속성이 변경된 경우 → 모든 자손도 dirty
-  const hasInheritedChange = Object.keys(changedProps)
-    .some(k => INHERITED_LAYOUT_PROPS.has(k));
+  const hasInheritedChange = Object.keys(changedProps).some((k) =>
+    INHERITED_LAYOUT_PROPS.has(k),
+  );
 
   if (hasInheritedChange) {
     const queue = [elementId];
@@ -1037,19 +1162,26 @@ function markDirtyWithDescendants(
 ```
 
 Store의 요소 변경 액션에서 `markDirtyWithDescendants()` 사용:
+
 ```typescript
 // updateElementStyle 등 내부:
 const isLayoutChange = isLayoutAffecting(changedStyleProps);
 
 if (isLayoutChange) {
   const dirtyIds = new Set(state.dirtyElementIds);
-  markDirtyWithDescendants(elementId, changedStyleProps, state.childrenMap, dirtyIds);
+  markDirtyWithDescendants(
+    elementId,
+    changedStyleProps,
+    state.childrenMap,
+    dirtyIds,
+  );
   set({ dirtyElementIds: dirtyIds, layoutVersion: state.layoutVersion + 1 });
 }
 // 비레이아웃 변경(color, opacity 등)은 dirtyElementIds/layoutVersion 미변경 → DFS 미트리거
 ```
 
 `traversePostOrderDirty` 분기 갱신:
+
 ```typescript
 if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
   // dirty 노드 = 변경된 요소 + 조상 + 상속 속성 변경 시 자손
@@ -1062,6 +1194,7 @@ if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
 ```
 
 **참고**: `INHERITED_LAYOUT_PROPS`와 `NON_LAYOUT_PROPS`의 관계:
+
 - `NON_LAYOUT_PROPS`에 포함된 `color`는 레이아웃 비영향 → DFS 자체가 스킵됨
 - `INHERITED_LAYOUT_PROPS`는 **DFS가 트리거된 후** dirty 범위를 확장하는 용도
 - 두 Set의 교집합은 없어야 함 (교집합 존재 시 DFS가 트리거되지 않아 자손 전파도 안 됨)
@@ -1071,11 +1204,13 @@ if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
 **ADR-009 연계**: Phase 1 (Persistent Tree + Incremental Layout)의 JS 측 최적화에 해당.
 
 **레이아웃 안전성**:
+
 - **블랙리스트 방식**: `NON_LAYOUT_PROPS`에 미등록된 속성은 모두 레이아웃 트리거 → 누락으로 인한 사일런트 버그 불가능
 - **DEV 검증 가드**: 비레이아웃 판정 시 full DFS 결과와 비교 → 블랙리스트 오분류 즉시 감지
 - **구조 변경 무조건 트리거**: 요소 추가/삭제/이동은 `isLayoutAffecting` 체크 없이 `layoutVersion++`
 
 **검증**:
+
 - 색상 변경 시 DFS 미실행 확인 (console.time 프로파일링)
 - 크기/위치 변경 시에만 dirty subtree DFS 실행 확인
 - **fontSize/lineHeight/fontFamily 변경 시 DFS 실행 확인** (NON_LAYOUT_PROPS 미포함 → 자동 트리거)
@@ -1090,6 +1225,7 @@ if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
 ### P3-2. Viewport Culling: 씬 좌표 기반 Spatial Index 전환 — ❌ 미구현
 
 **파일**:
+
 - `apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts` (라인 180-277)
 - `apps/builder/src/builder/workspace/canvas/skia/renderCommands.ts` (라인 195-213)
 - `apps/builder/src/builder/workspace/canvas/elementRegistry.ts` (라인 94-99)
@@ -1115,19 +1251,32 @@ if (dirtyElementIds && dirtyElementIds.size > 0 && persistentTree.hasBuilt()) {
 function syncSpatialIndex(boundsMap: Map<string, BoundingBox>): void {
   if (!getSpatialIndex()) return;
 
-  const items: Array<{ id: string; x: number; y: number; w: number; h: number }> = [];
+  const items: Array<{
+    id: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }> = [];
   for (const [id, bounds] of boundsMap) {
     if (bounds.width > 0 && bounds.height > 0) {
-      items.push({ id, x: bounds.x, y: bounds.y, w: bounds.width, h: bounds.height });
+      items.push({
+        id,
+        x: bounds.x,
+        y: bounds.y,
+        w: bounds.width,
+        h: bounds.height,
+      });
     }
   }
 
   spatialClearAll();
-  spatialBatchUpdate(items);  // clear + bulk insert
+  spatialBatchUpdate(items); // clear + bulk insert
 }
 ```
 
 **갱신 타이밍**: `buildRenderCommandStream()`은 `getCachedCommandStream()`이 캐시 미스할 때만 호출 (registryVersion, pagePosVersion, layoutVersion 3중 키):
+
 - **pan/zoom만**: 캐시 히트 → SpatialIndex 갱신 없음 (핵심 이점)
 - **레이아웃 변경**: 캐시 미스 → 전체 rebuild → SpatialIndex 갱신 (필요한 경우에만)
 - **P3-1 dirty tracking 적용 후**: 비레이아웃 변경(색상 등)도 캐시 히트 → 갱신 빈도 더 감소
@@ -1146,11 +1295,18 @@ export function calculateViewportBoundsScene(
   margin: number = VIEWPORT_MARGIN,
 ): ViewportBounds {
   const sceneMargin = margin / zoom;
-  const left = (-panOffset.x) / zoom - sceneMargin;
-  const top = (-panOffset.y) / zoom - sceneMargin;
+  const left = -panOffset.x / zoom - sceneMargin;
+  const top = -panOffset.y / zoom - sceneMargin;
   const right = (-panOffset.x + screenWidth) / zoom + sceneMargin;
   const bottom = (-panOffset.y + screenHeight) / zoom + sceneMargin;
-  return { left, top, right, bottom, width: right - left, height: bottom - top };
+  return {
+    left,
+    top,
+    right,
+    bottom,
+    width: right - left,
+    height: bottom - top,
+  };
 }
 ```
 
@@ -1159,12 +1315,21 @@ export function calculateViewportBoundsScene(
 const spatialIndex = getSpatialIndex();
 if (spatialIndex && spatialIndex.count() > 0) {
   // Fast path: WASM SpatialIndex 씬 좌표 쿼리
-  const sv = calculateViewportBoundsScene(screenWidth, screenHeight, zoom, panOffset);
-  const visibleIds = new Set(queryVisibleElements(sv.left, sv.top, sv.right, sv.bottom));
+  const sv = calculateViewportBoundsScene(
+    screenWidth,
+    screenHeight,
+    zoom,
+    panOffset,
+  );
+  const visibleIds = new Set(
+    queryVisibleElements(sv.left, sv.top, sv.right, sv.bottom),
+  );
 
   // overflow:visible 부모 포함 (기존 로직 유지)
-  const visibleElements = elements.filter(el =>
-    visibleIds.has(el.id) || isAncestorVisible(el.parent_id, visibleIds, elements)
+  const visibleElements = elements.filter(
+    (el) =>
+      visibleIds.has(el.id) ||
+      isAncestorVisible(el.parent_id, visibleIds, elements),
   );
   // ...
 } else {
@@ -1200,18 +1365,20 @@ SPATIAL_INDEX: true,  // false → true 전환
 
 **예상 효과**:
 
-| 시나리오 | 현재 | 재설계 | 개선 |
-|----------|------|--------|------|
-| 5,000 요소 pan | ~5ms | ~0.1ms | 50x |
-| 5,000 요소 zoom | ~5ms | ~0.1ms | 50x |
-| 레이아웃 변경 | ~5ms | ~0.6ms (rebuild + query) | 8x |
+| 시나리오        | 현재 | 재설계                   | 개선 |
+| --------------- | ---- | ------------------------ | ---- |
+| 5,000 요소 pan  | ~5ms | ~0.1ms                   | 50x  |
+| 5,000 요소 zoom | ~5ms | ~0.1ms                   | 50x  |
+| 레이아웃 변경   | ~5ms | ~0.6ms (rebuild + query) | 8x   |
 
 **레이아웃 안전성**:
+
 - **레이아웃 계산 자체에 무관**: SpatialIndex는 가시성 판단에만 사용되며, `calculateFullTreeLayout()`이나 Taffy WASM 계산에 일절 관여하지 않음 → 레이아웃 오류 가능성 0
 - **최악 시나리오**: SpatialIndex 쿼리 오류 → 요소가 안 보이거나 불필요하게 보임 (시각적 깜빡임, 레이아웃 자체는 정상)
 - **즉시 롤백**: `SPATIAL_INDEX: false` 전환만으로 기존 getBounds() O(N) 방식으로 완전 복원
 
 **DEV 모드 교차 검증** (초기 배포 기간):
+
 ```typescript
 // DEV 모드: SpatialIndex 결과와 getBounds() 결과 비교
 if (import.meta.env.DEV && spatialResult && Math.random() < 0.01) {
@@ -1227,6 +1394,7 @@ if (import.meta.env.DEV && spatialResult && Math.random() < 0.01) {
 ```
 
 **검증**:
+
 - 5,000 요소 시 viewport culling 시간 < 0.5ms 목표 (console.time 측정)
 - 카메라 팬 30초간 프레임 드롭 없음 (60fps 유지)
 - SpatialIndex 미초기화 상태에서 getBounds() 폴백 정상 동작
@@ -1247,11 +1415,11 @@ if (import.meta.env.DEV && spatialResult && Math.random() < 0.01) {
 
 > **CRITICAL 설계 결함 (12차 정정)**: Version counter는 Store 레벨 dirty tracking(P3-1)에 기반하여 "dirty가 아닌 요소의 스타일은 불변"이라고 가정했으나, 이 전제가 틀렸다. DFS 순회 중 `taffyStyleToRecord()` 결과는 요소 자신의 Store 데이터뿐 아니라 **부모/형제/자식 트리 컨텍스트**에도 의존한다:
 >
-> | DFS 계산 함수 | 의존 대상 | dirty 마킹 여부 |
-> |---|---|---|
-> | `toTaffyDisplay()` | 자식들의 display 값 → 부모 layout 전략 결정 | **X** — 자식만 dirty |
-> | `enrichWithIntrinsicSize()` | 형제 크기 → availableWidth | **X** — 형제만 dirty |
-> | `applyImplicitStyles()` | 부모 flexDirection 등 → 자식 marginLeft/flex 주입 | **X** — 부모만 dirty |
+> | DFS 계산 함수               | 의존 대상                                         | dirty 마킹 여부      |
+> | --------------------------- | ------------------------------------------------- | -------------------- |
+> | `toTaffyDisplay()`          | 자식들의 display 값 → 부모 layout 전략 결정       | **X** — 자식만 dirty |
+> | `enrichWithIntrinsicSize()` | 형제 크기 → availableWidth                        | **X** — 형제만 dirty |
+> | `applyImplicitStyles()`     | 부모 flexDirection 등 → 자식 marginLeft/flex 주입 | **X** — 부모만 dirty |
 >
 > 결과: version counter가 불변이어도 실제 스타일이 달라질 수 있으며, DEV 검증 가드에서 `[PersistentTaffyTree] Version match but JSON mismatch` 오류가 다수 확인됨.
 >
@@ -1291,27 +1459,32 @@ updateNodeStyle(
 ```
 
 **Version counter와의 차이**:
+
 - Version counter: Store dirty 기반 O(1) 비교 → **간접 변경 미감지** (설계 결함)
 - JSON 비교: DFS 계산 결과 직접 비교 → **모든 변경 포착** (의존 경로 무관)
 
 **ADR-009 연계**: Phase 2 (Binary Protocol)의 전단계 최적화. Binary protocol 전환 시 JSON.stringify 대신 binary diff로 추가 최적화 가능.
 
 **성능 특성**:
+
 - `JSON.stringify`: 5,000 노드 × 평균 ~100B = ~500KB/프레임. V8의 JSON.stringify는 고도로 최적화되어 있어 ~2ms 수준
 - 문자열 `===` 비교: 변경 없는 노드는 첫 바이트부터 동일하므로 V8 내부 포인터 비교로 O(1)에 가까움. 변경된 노드만 전체 비교 수행
 - WASM 호출 스킵: JSON 동일 시 `updateStyleRaw()` 미호출 → Taffy dirty flag 미설정 → computeLayout에서 해당 서브트리 O(1) 스킵 유지
 - `_lastJsonMap` 메모리: 5,000 노드 × ~100B = ~500KB 상시 유지 (트레이드오프)
 
 **향후 최적화 경로**:
+
 - P3-1 dirty tracking과 결합: dirty 노드만 `updateNodeStyle()` 호출 → JSON.stringify 횟수 자체를 감소
 - Binary Protocol: JSON.stringify 대신 TypedArray 기반 binary diff로 직렬화 비용 제거
 
 **레이아웃 안전성**:
+
 - JSON 비교는 DFS 계산 결과를 **직접** 비교하므로, 의존 경로와 무관하게 정확
 - JSON 동일 = 스타일 동일이 보장되므로 WASM 스킵이 항상 안전
 - 간접 의존성(부모/형제/자식 컨텍스트) 변경도 JSON 차이로 자동 포착
 
 **검증**:
+
 - 기존 DEV 모드 `Version match but JSON mismatch` 에러 0건 확인 (JSON 비교로 전환 후 해당 경로 자체 제거)
 - 5,000 노드 증분 갱신 시간: ~3ms (JSON.stringify + 비교)
 - 변경 없는 노드: WASM `updateStyleRaw()` 호출 0건 확인
@@ -1321,12 +1494,12 @@ updateNodeStyle(
 
 ## 변경하지 않는 것
 
-| 항목 | 이유 |
-|------|------|
-| Paint/Path GPU 리소스 관리 | 감사 결과 모든 객체가 정상 `delete()` 호출됨 (nodeRenderers.ts) |
-| EventBoundary 히트 테스팅 | PixiJS 8 프레임워크 내부 동작. `_interactivePrune()` 가지치기 작동 중 |
-| engines/index.ts | Dropflow 제거 후 깔끔하게 정리 완료 |
-| publishLayoutMap 메커니즘 | 모듈 레벨 싱글턴 + version counter 패턴 정상 작동 |
+| 항목                       | 이유                                                                  |
+| -------------------------- | --------------------------------------------------------------------- |
+| Paint/Path GPU 리소스 관리 | 감사 결과 모든 객체가 정상 `delete()` 호출됨 (nodeRenderers.ts)       |
+| EventBoundary 히트 테스팅  | PixiJS 8 프레임워크 내부 동작. `_interactivePrune()` 가지치기 작동 중 |
+| engines/index.ts           | Dropflow 제거 후 깔끔하게 정리 완료                                   |
+| publishLayoutMap 메커니즘  | 모듈 레벨 싱글턴 + version counter 패턴 정상 작동                     |
 
 ---
 
@@ -1361,37 +1534,37 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-009 Phase 3~5와 병렬
 
 ### 현재 (5,000 요소, 콘텐츠 변경 시)
 
-| 단계 | 비용 | 비고 |
-|------|------|------|
-| JS DFS (traversePostOrder) | 8~15ms | 전체 트리 순회 |
-| JSON.stringify 해시 비교 | 3~5ms | 5,000 노드 × 20+ 필드 |
-| WASM computeLayout | 3~5ms | Taffy 내부 dirty 스킵 |
-| Skia Command Stream 생성 | 5~8ms | buildSkiaTree DFS |
-| Skia Render | 5~10ms | CanvasKit 드로콜 |
-| **합계** | **~30ms** | **1.9x 예산 초과** |
+| 단계                       | 비용      | 비고                  |
+| -------------------------- | --------- | --------------------- |
+| JS DFS (traversePostOrder) | 8~15ms    | 전체 트리 순회        |
+| JSON.stringify 해시 비교   | 3~5ms     | 5,000 노드 × 20+ 필드 |
+| WASM computeLayout         | 3~5ms     | Taffy 내부 dirty 스킵 |
+| Skia Command Stream 생성   | 5~8ms     | buildSkiaTree DFS     |
+| Skia Render                | 5~10ms    | CanvasKit 드로콜      |
+| **합계**                   | **~30ms** | **1.9x 예산 초과**    |
 
 ### P0~P2 완료 후 (예상)
 
-| 단계 | 비용 | 개선 |
-|------|------|------|
-| JS DFS | 8~15ms | 변경 없음 (P3에서 개선) |
-| JSON.stringify | 3~5ms | 변경 없음 (P3에서 개선) |
-| WASM computeLayout | 3~5ms | NaN 가드 추가 (overhead < 0.1ms) |
-| Skia Command Stream | 5~8ms | 변경 없음 |
-| Skia Render | 5~10ms | 변경 없음 |
-| **합계** | **~30ms** | **안정성 향상, 성능 동일** |
+| 단계                | 비용      | 개선                             |
+| ------------------- | --------- | -------------------------------- |
+| JS DFS              | 8~15ms    | 변경 없음 (P3에서 개선)          |
+| JSON.stringify      | 3~5ms     | 변경 없음 (P3에서 개선)          |
+| WASM computeLayout  | 3~5ms     | NaN 가드 추가 (overhead < 0.1ms) |
+| Skia Command Stream | 5~8ms     | 변경 없음                        |
+| Skia Render         | 5~10ms    | 변경 없음                        |
+| **합계**            | **~30ms** | **안정성 향상, 성능 동일**       |
 
 ### P3 완료 후 (목표)
 
-| 단계 | 비용 | 개선 |
-|------|------|------|
-| JS DFS (dirty subtree) | 1~3ms | P3-1: dirty tracking |
-| JSON 비교 (dirty만) | < 1ms | P3-3: JSON 비교 + P3-1 결합 (dirty 노드만 stringify) |
-| WASM computeLayout | 1~3ms | dirty subtree만 |
-| Viewport Culling | < 0.5ms | P3-2: 씬 좌표 SpatialIndex (기존 ~5ms) |
-| Skia Command Stream | 2~4ms | viewport culling 연계 |
-| Skia Render | 3~5ms | viewport culling 연계 |
-| **합계** | **~9ms** | **56% 예산 이내** |
+| 단계                   | 비용     | 개선                                                 |
+| ---------------------- | -------- | ---------------------------------------------------- |
+| JS DFS (dirty subtree) | 1~3ms    | P3-1: dirty tracking                                 |
+| JSON 비교 (dirty만)    | < 1ms    | P3-3: JSON 비교 + P3-1 결합 (dirty 노드만 stringify) |
+| WASM computeLayout     | 1~3ms    | dirty subtree만                                      |
+| Viewport Culling       | < 0.5ms  | P3-2: 씬 좌표 SpatialIndex (기존 ~5ms)               |
+| Skia Command Stream    | 2~4ms    | viewport culling 연계                                |
+| Skia Render            | 3~5ms    | viewport culling 연계                                |
+| **합계**               | **~9ms** | **56% 예산 이내**                                    |
 
 ---
 
@@ -1435,11 +1608,11 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-009 Phase 3~5와 병렬
 
 ### P4 검증 결과 (MCP 브라우저 자동화)
 
-| 항목 | 수정 전 | 수정 후 |
-|------|---------|---------|
-| layoutVersion | 0 (고정) | 3 (setElements +1, loadPageElements +1, setTextMeasurer +1) |
-| Button 126×26 vs CSS 138×34 | ΔW -12.1, ΔH -8 | ΔW -4.1, ΔH +1 (폰트 메트릭 오차) |
-| size sm→xs 축소 | 미반영 (새로고침 필요) | 즉시 반영 (68×35 → 60×27) |
+| 항목                        | 수정 전                | 수정 후                                                     |
+| --------------------------- | ---------------------- | ----------------------------------------------------------- |
+| layoutVersion               | 0 (고정)               | 3 (setElements +1, loadPageElements +1, setTextMeasurer +1) |
+| Button 126×26 vs CSS 138×34 | ΔW -12.1, ΔH -8        | ΔW -4.1, ΔH +1 (폰트 메트릭 오차)                           |
+| size sm→xs 축소             | 미반영 (새로고침 필요) | 즉시 반영 (68×35 → 60×27)                                   |
 
 ---
 
@@ -1486,6 +1659,7 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-009 Phase 3~5와 병렬
 ## Consequences
 
 ### Positive
+
 - 데드코드 제거로 코드베이스 정리 (removeTabPair 불완전 구현 삭제)
 - 런타임 안정성 향상 (NaN 가드, cycle/depth 제한, stale map 방지)
 - CSS 스펙 준수 개선 (order 속성 TS sort, Taffy 업스트림 지원 시 Rust 전환 가능)
@@ -1493,23 +1667,25 @@ P3 (장기, 2~4주) ← P2 완료 후, ADR-009 Phase 3~5와 병렬
 - 대규모 캔버스 성능 기반 마련 (P3 최적화)
 
 ### Negative
+
 - P0~P2: 추가 코드량 적음 (~100줄), 유지보수 비용 미미
 - P3: 아키텍처 변경 필요 (dirty tracking, SpatialIndex 좌표계 전환), 복잡도 증가
 - P3-3 JSON 비교: `_lastJsonMap` 상시 유지로 메모리 증가 (~500KB at 5,000 nodes). JSON.stringify CPU 비용은 유지되나, P3-1 결합 시 dirty 노드만 호출하여 감소
 
 ### Risks & Mitigations
 
-| 항목 | 위험 | 레이아웃 영향 | 완화 방안 |
-|------|------|-------------|-----------|
-| P1-1 (CSS order) | Taffy 0.9.2 미지원으로 TS sort 유지 | **없음** — `order` 미사용 시 `sortedChildIds === childIds` (참조 동일) | DEV 로그로 order 적용 사전 인지 |
-| P1-2 (WASM 백오프) | 15초 타임아웃 적절성 | **없음** — 폴링 방식만 변경 | 실환경 검증 필요 |
-| P2-2 (메시지 검증) | nonce 복잡도 증가, 시그니처 변경 | **없음** — 메시지 필터링만 | 레거시 정리 시점 결정 필요 |
-| P2-3 (inline-block) | vertical-align 동적 결정 | **없음** — 미명시 시 기존 `center` 유지 | 하위 호환성 보장 (`explicitAligns.length === 0` → `'center'`) |
-| P3-1 (dirty tracking) | 블랙리스트 오분류 + 상속 속성 자손 전파 | **블랙리스트 방식으로 근본 차단** + `INHERITED_LAYOUT_PROPS` 변경 시 descendant invalidation | DEV 검증 가드: full DFS 결과 교차 비교 |
-| P3-2 (SpatialIndex) | 가시성 판단 오류 | **없음** — 레이아웃 계산에 무관, 가시성만 영향 | Feature flag 즉시 롤백 + DEV 교차 검증 |
-| P3-3 (JSON 비교) | JSON.stringify CPU 비용 + _lastJsonMap 메모리 (~500KB) | **없음** — JSON 동일 = 스타일 동일 보장, 의존 경로 무관 | P3-1 결합 시 dirty 노드만 호출하여 CPU 비용 감소. Binary Protocol(ADR-009 Phase 2)에서 추가 최적화 |
+| 항목                  | 위험                                                    | 레이아웃 영향                                                                                | 완화 방안                                                                                          |
+| --------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| P1-1 (CSS order)      | Taffy 0.9.2 미지원으로 TS sort 유지                     | **없음** — `order` 미사용 시 `sortedChildIds === childIds` (참조 동일)                       | DEV 로그로 order 적용 사전 인지                                                                    |
+| P1-2 (WASM 백오프)    | 15초 타임아웃 적절성                                    | **없음** — 폴링 방식만 변경                                                                  | 실환경 검증 필요                                                                                   |
+| P2-2 (메시지 검증)    | nonce 복잡도 증가, 시그니처 변경                        | **없음** — 메시지 필터링만                                                                   | 레거시 정리 시점 결정 필요                                                                         |
+| P2-3 (inline-block)   | vertical-align 동적 결정                                | **없음** — 미명시 시 기존 `center` 유지                                                      | 하위 호환성 보장 (`explicitAligns.length === 0` → `'center'`)                                      |
+| P3-1 (dirty tracking) | 블랙리스트 오분류 + 상속 속성 자손 전파                 | **블랙리스트 방식으로 근본 차단** + `INHERITED_LAYOUT_PROPS` 변경 시 descendant invalidation | DEV 검증 가드: full DFS 결과 교차 비교                                                             |
+| P3-2 (SpatialIndex)   | 가시성 판단 오류                                        | **없음** — 레이아웃 계산에 무관, 가시성만 영향                                               | Feature flag 즉시 롤백 + DEV 교차 검증                                                             |
+| P3-3 (JSON 비교)      | JSON.stringify CPU 비용 + \_lastJsonMap 메모리 (~500KB) | **없음** — JSON 동일 = 스타일 동일 보장, 의존 경로 무관                                      | P3-1 결합 시 dirty 노드만 호출하여 CPU 비용 감소. Binary Protocol(ADR-009 Phase 2)에서 추가 최적화 |
 
 **레이아웃 안전성 종합**:
+
 - **P0~P1**: 방어 코드 추가 + 버그 수정. 기존 레이아웃에 영향 없음
 - **P2-3**: 하위 호환성 보장 — `vertical-align` 미명시 시 기존 `center` 유지
 - **P3-1**: 화이트리스트 → **블랙리스트 전환**으로 속성 누락 위험 근본 제거. **상속 속성(font\*, lineHeight 등) 변경 시 자손까지 dirty 전파** (`INHERITED_LAYOUT_PROPS` + `markDirtyWithDescendants()`). DEV 모드 교차 검증으로 오분류 즉시 감지

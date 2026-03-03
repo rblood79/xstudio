@@ -35,7 +35,7 @@
 | [009](009-full-tree-wasm-layout.md)               | Figma-Class Rendering & Layout        | Foundation + Phase 0~2 + Phase 3 Binary Protocol 부분       | Phase 3 SharedArrayBuffer, Phase 4 (Flat Render List + R-tree), Phase 5 (OffscreenCanvas Worker) |    P4    |
 | [010](010-events-panel.md)                        | Events Panel Smart Recommendations    | P0 + P1 전체 (추천 이벤트/액션, 배지, 경고, 25개 액션 타입) | P1.5 (UX 폴리싱), P2 (AI 생성 + 고급)                                                            |    P5    |
 | [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling) | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화)           | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스 도구)                                   |    P5    |
-| [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝     | P0 전체 + P1 3/4 + P2 3/4 (67% 완료)                        | P1-2 WASM 타임아웃, P2-4 Grid repeat(), P3 전체                                                  |  **P1**  |
+| [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝     | P0~P2 전체 완료 (80%)                                       | P3 전체 (Dirty Tracking, Viewport Culling, PersistentTaffyTree)                                  |  **P1**  |
 
 ### 미구현
 
@@ -53,8 +53,8 @@
 ### P1: ADR-012 파이프라인 하드닝
 
 - **근거**: 데이터 무결성 + 런타임 안정성 직결
-- **진행률**: 67% 완료 (P0 전체, P1 3/4, P2 3/4 구현됨)
-- **잔여 이슈**: WASM 지수 백오프/재시도 (P1-2), Grid repeat() Rust 브릿지 (P2-4), ErrorBoundary/Telemetry (P3)
+- **진행률**: 80% 완료 (P0~P2 전체 구현됨)
+- **잔여 이슈**: P3 전체 — Dirty Tracking (P3-1), Viewport Culling (P3-2), PersistentTaffyTree 증분 갱신 (P3-3)
 - **전제 조건**: ADR-009 Foundation 완료 (충족)
 - **영향 범위**: 1,500+ 요소 시나리오 안정성
 
@@ -169,3 +169,4 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-03 | ADR-008 추가 — LAYOUT_ENGINE.md → adr/008-layout-engine.md 이동                                                                                   |
 | 2026-03-03 | 코드 대조 검증 — ADR-009~016 전수 검증, ADR-012 Proposed→Partial 승격, ADR-009 Phase 3 Binary Protocol 부분 구현 확인, ADR-011 A5a 부분 완료 확인 |
 | 2026-03-03 | Risk-First ADR 템플릿 추가 — Alternatives→Risk→Decision→Gates 순서 필수화                                                                         |
+| 2026-03-04 | ADR-012 P1-2/P2-3 구현 완료 확인 — 코드 대조 결과 이미 구현됨 확인, 67%→80% 갱신. 잔여: P3 장기 최적화 3건                                        |
