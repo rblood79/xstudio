@@ -7,8 +7,8 @@
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 8      |
-| 부분 완료                              | 4      |
-| 미구현 (Proposed/계획)                 | 4      |
+| 부분 완료                              | 5      |
+| 미구현 (Proposed/계획)                 | 3      |
 | **합계**                               | **16** |
 
 ---
@@ -36,15 +36,15 @@
 | [010](010-events-panel.md)                        | Events Panel Smart Recommendations    | P0 + P1 전체 (추천 이벤트/액션, 배지, 경고, 25개 액션 타입) | P1.5 (UX 폴리싱), P2 (AI 생성 + 고급)                                                            |    P5    |
 | [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling) | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화)           | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스 도구)                                   |    P5    |
 | [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝     | P0~P2 전체 완료 (80%)                                       | P3 전체 (Dirty Tracking, Viewport Culling, PersistentTaffyTree) — 대규모 작업으로 후순위 이동    |    P5    |
+| [014](014-fonts.md)                               | Fonts 실행 계획                       | Phase A+B+C+C2 완료 (Font Manager Panel + OS/2 메타 추출)   | Phase D (Publish 레지스트리 전환), Phase E (정적 Export 멀티파일)                                |  **P1**  |
 
 ### 미구현
 
-| ADR                                      | 제목                               | 상태     | 규모                                                                             | 우선순위 |
-| ---------------------------------------- | ---------------------------------- | -------- | -------------------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩        | Proposed | 5 Phase, 21파일                                                                  |  **P2**  |
-| [014](014-fonts.md)                      | Fonts 실행 계획                    | Partial  | Phase A+B+C+C2 완료, Phase D~E 미구현 (Font Manager Panel + OS/2 메타 추출 완료) |  **P1**  |
-| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                                                     |    P5    |
-| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                           |    P5    |
+| ADR                                      | 제목                               | 상태     | 규모                                                   | 우선순위 |
+| ---------------------------------------- | ---------------------------------- | -------- | ------------------------------------------------------ | :------: |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩        | Proposed | 5 Phase, 21파일                                        |  **P2**  |
+| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                           |    P5    |
+| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations |    P5    |
 
 ---
 
