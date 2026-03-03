@@ -26,10 +26,7 @@ import type {
   BuilderContext,
   ChatMessage as ChatMessageType,
 } from "../../../types/integrations/chat.types";
-import "@xstudio/shared/components/styles/ChatContainer.css";
-import "@xstudio/shared/components/styles/ChatMessage.css";
-import "@xstudio/shared/components/styles/ChatInput.css";
-import './AIPanel.css';
+import "./AIPanel.css";
 
 /**
  * ChatMessage - 개별 메시지 표시
@@ -163,11 +160,7 @@ function ChatContainer({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const suggestions = [
-    "빨간 버튼 추가",
-    "테이블 생성",
-    "선택한 요소 수정",
-  ];
+  const suggestions = ["빨간 버튼 추가", "테이블 생성", "선택한 요소 수정"];
 
   return (
     <div className="chat-container">
@@ -252,10 +245,7 @@ function AIPanelContent() {
         actions={
           <>
             {isAgentRunning && (
-              <AgentControls
-                currentTurn={currentTurn}
-                onStop={stopAgent}
-              />
+              <AgentControls currentTurn={currentTurn} onStop={stopAgent} />
             )}
             {messages.length > 0 && !isAgentRunning && (
               <button

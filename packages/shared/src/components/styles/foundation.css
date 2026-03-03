@@ -1,0 +1,43 @@
+/* ============================================
+   Foundation CSS — loaded once via index.tsx JS import
+   ============================================
+
+   This file contains ONLY CSS that is NOT imported by individual
+   component .tsx files. Component CSS (Button.css, Select.css, etc.)
+   is loaded by each component's own `import './styles/X.css'` statement.
+
+   This separation prevents Vite from creating duplicate <style> tags
+   for the same CSS loaded via both @import chain and JS imports.
+
+   ============================================ */
+
+/* ============================================
+   FOUNDATION LAYER — Theme & Base
+   ============================================ */
+@import "../theme.css";
+@import "./base.css";
+@import "./animations.css";
+
+/* ============================================
+   UTILITY LAYER — Shared Foundations
+   ============================================ */
+@import "./forms.css";
+@import "./overlays.css";
+@import "./collections.css";
+
+/* ============================================
+   ORPHAN CSS — No corresponding .tsx component
+   These CSS files are used by other components
+   but have no standalone .tsx that imports them.
+   ============================================ */
+@import "./ActionList.css";
+@import "./CalendarCommon.css";
+@import "./DatePickerCommon.css";
+@import "./EventHandlerManager.css";
+@import "./EventPalette.css";
+@import "./EventSection.css";
+@import "./Group.css";
+@import "./SortIcon.css";
+@import "./ChatContainer.css";
+@import "./ChatInput.css";
+@import "./ChatMessage.css";

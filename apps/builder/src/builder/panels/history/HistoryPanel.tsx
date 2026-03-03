@@ -1,4 +1,3 @@
-import "../../components/styles";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Clock, History, Redo, Trash2, Undo } from "lucide-react";
 import type { PanelProps } from "../core/types";
@@ -26,7 +25,8 @@ function getElementLabel(entry: HistoryEntry): string | null {
   const element = entry.data.element || entry.data.prevElement;
   if (element?.customId) return element.customId;
   if (element?.tag) return element.tag;
-  if (entry.elementId && entry.elementId !== "batch_diff") return entry.elementId;
+  if (entry.elementId && entry.elementId !== "batch_diff")
+    return entry.elementId;
   return null;
 }
 
@@ -48,11 +48,13 @@ function getEntryLabel(entry: HistoryEntry): string {
       return `일괄 수정 (${count})`;
     }
     case "group": {
-      const count = entry.data.groupData?.childIds?.length ?? entry.elementIds?.length ?? 0;
+      const count =
+        entry.data.groupData?.childIds?.length ?? entry.elementIds?.length ?? 0;
       return `그룹 (${count})`;
     }
     case "ungroup": {
-      const count = entry.data.groupData?.childIds?.length ?? entry.elementIds?.length ?? 0;
+      const count =
+        entry.data.groupData?.childIds?.length ?? entry.elementIds?.length ?? 0;
       return `그룹 해제 (${count})`;
     }
     default:
@@ -76,14 +78,14 @@ export function HistoryPanel({ isActive }: PanelProps) {
 function HistoryPanelContent() {
   const goToHistoryIndex = useStore((state) => state.goToHistoryIndex);
   const historyOperationInProgress = useStore(
-    (state) => state.historyOperationInProgress
+    (state) => state.historyOperationInProgress,
   );
   const undo = useStore((state) => state.undo);
   const redo = useStore((state) => state.redo);
 
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [historyInfo, setHistoryInfo] = useState(
-    historyManager.getCurrentPageHistory()
+    historyManager.getCurrentPageHistory(),
   );
 
   useEffect(() => {
@@ -128,7 +130,7 @@ function HistoryPanelContent() {
       // 한 번에 목표 인덱스로 이동 (중간 렌더링 없이)
       await goToHistoryIndex(targetIndex);
     },
-    [historyOperationInProgress, goToHistoryIndex]
+    [historyOperationInProgress, goToHistoryIndex],
   );
 
   const displayEntries = useMemo<HistoryListItem[]>(() => {
@@ -178,7 +180,8 @@ function HistoryPanelContent() {
         actions={
           <div className="history-actions">
             <span className="history-count">
-              {Math.max(historyInfo.currentIndex + 1, 0)}/{historyInfo.totalEntries}
+              {Math.max(historyInfo.currentIndex + 1, 0)}/
+              {historyInfo.totalEntries}
             </span>
             <ShortcutTooltip shortcutId="undo" placement="bottom">
               <button

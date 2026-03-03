@@ -11,7 +11,6 @@ import {
   Button,
 } from "react-aria-components";
 import "./index.css";
-import "../builder/styles/1-theme/builder-system.css";
 
 interface AuthCredentials {
   email: string;
@@ -40,7 +39,7 @@ const Signin = () => {
         setEmail("");
         setPassword("");
       },
-    }
+    },
   );
 
   // Sign In mutation
@@ -59,7 +58,7 @@ const Signin = () => {
       onSuccess: () => {
         navigate("/dashboard");
       },
-    }
+    },
   );
 
   const loading = signUpMutation.isLoading || signInMutation.isLoading;
@@ -148,8 +147,8 @@ const Signin = () => {
                 ? "Signing Up..."
                 : "Signing In..."
               : isSignUp
-              ? "Sign Up"
-              : "Sign In"}
+                ? "Sign Up"
+                : "Sign In"}
           </Button>
 
           <div className="helper-text">

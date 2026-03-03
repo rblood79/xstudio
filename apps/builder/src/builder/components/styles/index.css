@@ -1,8 +1,6 @@
 @layer builder-system {
   :root {
-    /* Inspector 전용 크기 토큰 */
-    --inspector-control-size: calc(var(--text-2xl) + var(--spacing));
-    --inspector-label-width: calc(var(--text-2xl) + var(--spacing));
+    /* Inspector 전용 크기 토큰은 builder-system.css에서 정의 */
 
     /* Panel Button 공통 스타일 변수 */
     --panel-btn-bg: var(--surface-variant);
