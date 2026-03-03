@@ -5,8 +5,8 @@
  * 12개 패널을 동등하게 취급하는 범용 시스템
  */
 
-import type { ComponentType } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { ComponentType } from "react";
+import type { LucideIcon } from "lucide-react";
 
 /**
  * 패널 카테고리
@@ -15,19 +15,19 @@ import type { LucideIcon } from 'lucide-react';
  * - tool: Theme, AI 등 도구
  * - system: User, Settings 등 시스템
  */
-export type PanelCategory = 'navigation' | 'editor' | 'tool' | 'system';
+export type PanelCategory = "navigation" | "editor" | "tool" | "system";
 
 /**
  * 패널 위치
  */
-export type PanelSide = 'left' | 'right' | 'bottom';
+export type PanelSide = "left" | "right" | "bottom";
 
 /**
  * 패널 표시 모드
  * - panel: 사이드바/하단에 고정된 패널 (기본)
  * - modal: 떠있는 모달 형태 (드래그 가능, React Aria Components 기반)
  */
-export type PanelDisplayMode = 'panel' | 'modal';
+export type PanelDisplayMode = "panel" | "modal";
 
 /**
  * 패널 ID
@@ -35,25 +35,26 @@ export type PanelDisplayMode = 'panel' | 'modal';
  */
 export type PanelId =
   // Navigation panels
-  | 'nodes'
-  | 'components'
-  | 'library'
-  | 'datatable'
-  | 'datatableEditor'  // DataTable 에디터 패널 (DataTablePanel과 함께 사용)
-  | 'designKit'         // G.4: 디자인 킷 브라우저
+  | "nodes"
+  | "components"
+  | "library"
+  | "datatable"
+  | "datatableEditor" // DataTable 에디터 패널 (DataTablePanel과 함께 사용)
+  | "designKit" // G.4: 디자인 킷 브라우저
   // Tool panels
-  | 'theme'
-  | 'ai'
+  | "theme"
+  | "fonts"
+  | "ai"
   // System panels
-  | 'user'
-  | 'settings'
+  | "user"
+  | "settings"
   // Editor panels
-  | 'properties'
-  | 'styles'
-  | 'events'
-  | 'history'
+  | "properties"
+  | "styles"
+  | "events"
+  | "history"
   // Bottom panels
-  | 'monitor';
+  | "monitor";
 
 /**
  * 패널 설정
@@ -137,7 +138,7 @@ export interface ModalPanelState {
   panelId: PanelId;
 
   /** 표시 모드 */
-  mode: 'modal';
+  mode: "modal";
 
   /** 위치 (드래그 이동 시 업데이트) */
   position: { x: number; y: number };
@@ -199,26 +200,20 @@ export interface PanelLayoutState {
  */
 export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
   leftPanels: [
-    'nodes',
-    'components',
-    'datatable',
-    'datatableEditor',  // DataTable 에디터 (datatable과 함께 사용)
-    'designKit',         // G.4: 디자인 킷 브라우저
-    'theme',
+    "nodes",
+    "components",
+    "datatable",
+    "datatableEditor", // DataTable 에디터 (datatable과 함께 사용)
+    "designKit", // G.4: 디자인 킷 브라우저
+    "theme",
   ],
-  rightPanels: [
-    'properties',
-    'styles',
-    'events',
-    'ai',
-    'history',
-  ],
-  activeLeftPanels: ['nodes'], // Multi toggle 지원: 배열
-  activeRightPanels: ['properties'], // Multi toggle 지원: 배열
+  rightPanels: ["properties", "styles", "events", "ai", "fonts", "history"],
+  activeLeftPanels: ["nodes"], // Multi toggle 지원: 배열
+  activeRightPanels: ["properties"], // Multi toggle 지원: 배열
   showLeft: true,
   showRight: true,
   // Bottom panel defaults
-  bottomPanels: ['monitor'],
+  bottomPanels: ["monitor"],
   activeBottomPanels: [], // 기본 닫힘
   showBottom: false,
   bottomHeight: 200,
@@ -262,10 +257,16 @@ export interface PanelLayoutActions {
   focusModalPanel: (panelId: PanelId) => void;
 
   /** Modal 패널 위치 업데이트 */
-  updateModalPanelPosition: (panelId: PanelId, position: { x: number; y: number }) => void;
+  updateModalPanelPosition: (
+    panelId: PanelId,
+    position: { x: number; y: number },
+  ) => void;
 
   /** Modal 패널 크기 업데이트 */
-  updateModalPanelSize: (panelId: PanelId, size: { width: number; height: number }) => void;
+  updateModalPanelSize: (
+    panelId: PanelId,
+    size: { width: number; height: number },
+  ) => void;
 
   /** 모든 Modal 패널 닫기 */
   closeAllModalPanels: () => void;

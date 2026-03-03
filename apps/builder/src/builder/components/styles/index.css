@@ -808,7 +808,7 @@
           width: var(--text-xl);
           height: var(--text-xl);
           border-radius: var(--radius-sm);
-          margin-right: 0;
+          margin: 0;
           /* Layer 우선순위로 builder-system.css 값 사용
            * 수정 불필요 - ComboBox.css와 동일한 변수명 */
         }
@@ -935,6 +935,10 @@
       line-height: var(--text-xs--line-height);
       padding: var(--spacing-3xs);
       padding-inline-start: var(--spacing);
+
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
 
       /* ⭐ 개별 Input 포커스 스타일 제거 - 부모 Group에서 처리 */
       &:focus {

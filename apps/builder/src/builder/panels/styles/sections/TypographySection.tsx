@@ -7,14 +7,7 @@
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ChangeEvent,
-} from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   PropertySection,
   PropertyUnitInput,
@@ -25,7 +18,6 @@ import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import {
   Type,
-  EllipsisVertical,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -46,16 +38,12 @@ import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useTypographyValuesJotai } from "../hooks/useTypographyValuesJotai";
 import { useResetStyles } from "../hooks/useResetStyles";
-import { validateFontFile } from "@xstudio/shared";
 import {
   DEFAULT_FONT_OPTIONS,
   FONT_REGISTRY_STORAGE_KEY,
-  addFontFace,
-  createFontFaceFromFile,
   getCustomFonts,
-  loadFontRegistry,
-  saveRegistryAndNotify,
 } from "../../../fonts/customFonts";
+import { usePanelLayout } from "../../../hooks/usePanelLayout";
 
 /**
  * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
@@ -64,6 +52,7 @@ import {
  */
 const TypographySectionContent = memo(function TypographySectionContent() {
   const { updateStyle, updateStyles } = useStyleActions();
+  const { togglePanel } = usePanelLayout();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
   const { updateStyleImmediate, updateStylePreview } =
     useOptimizedStyleActions();
@@ -157,29 +146,6 @@ const TypographySectionContent = memo(function TypographySectionContent() {
     return [...DEFAULT_FONT_OPTIONS, ...dynamicOptions];
   }, [customFonts]);
 
-  const handleFontFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      const validationError = validateFontFile(file);
-      if (validationError) {
-        console.warn("[FontRegistry]", validationError);
-        event.target.value = "";
-        return;
-      }
-
-      const face = await createFontFaceFromFile(file);
-      let registry = loadFontRegistry();
-      registry = addFontFace(registry, face);
-      saveRegistryAndNotify(registry);
-      setCustomFonts(getCustomFonts());
-      updateStyle("fontFamily", face.family);
-      event.target.value = "";
-    },
-    [updateStyle],
-  );
-
   if (!styleValues) return null;
 
   return (
@@ -203,25 +169,21 @@ const TypographySectionContent = memo(function TypographySectionContent() {
       />
 
       <div className="fieldset-actions actions-font">
-        <label
+        <button
           className="react-aria-Button"
           data-variant="default"
           data-size="sm"
-          title="커스텀 폰트 추가 (.woff2, .woff, .ttf, .otf)"
+          type="button"
+          title="폰트 관리"
           style={{ cursor: "pointer", borderRadius: 4 }}
+          onClick={() => togglePanel("right", "fonts")}
         >
-          <EllipsisVertical
+          <Type
             color={iconProps.color}
             size={iconProps.size}
             strokeWidth={iconProps.strokeWidth}
           />
-          <input
-            type="file"
-            accept=".woff2,.woff,.ttf,.otf"
-            style={{ display: "none" }}
-            onChange={handleFontFileChange}
-          />
-        </label>
+        </button>
       </div>
 
       <PropertyUnitInput

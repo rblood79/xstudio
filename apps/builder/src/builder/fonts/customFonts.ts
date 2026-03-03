@@ -7,6 +7,7 @@ import {
   loadFontRegistry,
   saveFontRegistry,
   addFontFace,
+  removeFontFace,
   buildRegistryFontFaceCss,
   registryToLegacyFonts,
   FONT_REGISTRY_STORAGE_KEY,
@@ -52,14 +53,14 @@ export async function createFontFaceFromFile(
       : legacyFormat;
   const now = new Date().toISOString();
 
-  // 폰트 바이너리 내부 이름 추출 (CanvasKit 초기화 상태에서만)
-  const resolvedFamily =
-    family ||
-    (await extractEmbeddedFontName(source)) ||
-    stripExtension(file.name);
+  // 폰트 바이너리에서 family/weight/style 추출
+  const meta = await extractFontMetadata(source);
+  const resolvedFamily = family || meta.family || stripExtension(file.name);
 
-  // 파일명에서 weight/style 추론 (예: "NanumGothic-Bold.woff2" → "700")
-  const { weight, style } = inferWeightStyleFromFileName(file.name);
+  // 바이너리 메타 우선, fallback으로 파일명 추론
+  const fileNameHints = inferWeightStyleFromFileName(file.name);
+  const weight = meta.weight ?? fileNameHints.weight;
+  const style = meta.style ?? fileNameHints.style;
 
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -119,36 +120,100 @@ export function getCustomFonts(): CustomFontAsset[] {
 // Internal helpers
 // ============================================
 
-/**
- * 폰트 바이너리에서 내장 패밀리 이름을 추출한다.
- * CanvasKit FontMgr.FromData()는 바이너리 name 테이블의 이름을 사용하므로
- * 이 이름을 처음부터 사용하면 CSS ↔ CanvasKit 간 이름 불일치가 발생하지 않는다.
- *
- * CanvasKit 미초기화 시 null 반환 → 파일명 fallback.
- */
-async function extractEmbeddedFontName(
-  dataUrl: string,
-): Promise<string | null> {
-  try {
-    // 지연 import — customFonts.ts가 CanvasKit에 직접 의존하지 않도록
-    const { isCanvasKitInitialized, getCanvasKit } =
-      await import("../workspace/canvas/skia/initCanvasKit");
-    if (!isCanvasKitInitialized()) return null;
+interface FontMetadata {
+  family: string | null;
+  weight?: string;
+  style?: "normal" | "italic";
+}
 
-    const ck = getCanvasKit();
+/**
+ * 폰트 바이너리에서 family/weight/style 메타데이터를 추출한다.
+ *
+ * - family: CanvasKit FontMgr name 테이블에서 추출
+ * - weight: OS/2 테이블 usWeightClass (100~900)
+ * - style: OS/2 테이블 fsSelection bit 0 (italic)
+ *
+ * CanvasKit 미초기화 시 family=null → 파일명 fallback.
+ * OS/2 테이블 파싱 실패 시 weight/style=undefined → 파일명 추론 fallback.
+ */
+async function extractFontMetadata(dataUrl: string): Promise<FontMetadata> {
+  const result: FontMetadata = { family: null };
+
+  try {
     const response = await fetch(dataUrl);
     const buffer = await response.arrayBuffer();
-    const tempMgr = ck.FontMgr.FromData(buffer);
-    if (!tempMgr || tempMgr.countFamilies() === 0) {
-      tempMgr?.delete();
-      return null;
+
+    // 1) OS/2 테이블에서 weight/style 추출 (CanvasKit 불필요)
+    const os2 = parseOS2Table(buffer);
+    if (os2) {
+      // usWeightClass → 가장 가까운 100 단위로 정규화
+      const rounded = Math.round(os2.usWeightClass / 100) * 100;
+      const clamped = Math.max(100, Math.min(900, rounded));
+      result.weight = String(clamped);
+
+      // fsSelection bit 0 = italic
+      if (os2.fsSelection & 0x0001) {
+        result.style = "italic";
+      }
     }
-    const name = tempMgr.getFamilyName(0);
-    tempMgr.delete();
-    return name || null;
+
+    // 2) CanvasKit으로 family 이름 추출
+    const { isCanvasKitInitialized, getCanvasKit } =
+      await import("../workspace/canvas/skia/initCanvasKit");
+    if (isCanvasKitInitialized()) {
+      const ck = getCanvasKit();
+      const tempMgr = ck.FontMgr.FromData(buffer);
+      if (tempMgr && tempMgr.countFamilies() > 0) {
+        result.family = tempMgr.getFamilyName(0) || null;
+      }
+      tempMgr?.delete();
+    }
   } catch {
-    return null;
+    // 파싱 실패 시 빈 결과 반환 → 파일명 fallback
   }
+
+  return result;
+}
+
+/**
+ * OpenType/TrueType 바이너리에서 OS/2 테이블을 파싱한다.
+ * usWeightClass + fsSelection만 추출.
+ *
+ * @see https://learn.microsoft.com/en-us/typography/opentype/spec/os2
+ */
+function parseOS2Table(
+  buffer: ArrayBuffer,
+): { usWeightClass: number; fsSelection: number } | null {
+  try {
+    const view = new DataView(buffer);
+
+    // sfVersion (0x00010000=TrueType, 0x4F54544F='OTTO'=CFF)
+    // numTables at offset 4
+    const numTables = view.getUint16(4);
+
+    // Table directory starts at offset 12
+    for (let i = 0; i < numTables; i++) {
+      const offset = 12 + i * 16;
+      // tag: 4 bytes ASCII
+      const tag =
+        String.fromCharCode(view.getUint8(offset)) +
+        String.fromCharCode(view.getUint8(offset + 1)) +
+        String.fromCharCode(view.getUint8(offset + 2)) +
+        String.fromCharCode(view.getUint8(offset + 3));
+
+      if (tag === "OS/2") {
+        const tableOffset = view.getUint32(offset + 8);
+        // usWeightClass: OS/2 offset +4 (UInt16)
+        const usWeightClass = view.getUint16(tableOffset + 4);
+        // fsSelection: OS/2 offset +62 (UInt16)
+        const fsSelection = view.getUint16(tableOffset + 62);
+        return { usWeightClass, fsSelection };
+      }
+    }
+  } catch {
+    // 파싱 실패
+  }
+  return null;
 }
 
 /**
@@ -213,7 +278,12 @@ function readFileAsDataUrl(file: File): Promise<string> {
 // Re-exports (소비자 변경 최소화)
 // ============================================
 
-export { addFontFace, loadFontRegistry, FONT_REGISTRY_STORAGE_KEY };
+export {
+  addFontFace,
+  removeFontFace,
+  loadFontRegistry,
+  FONT_REGISTRY_STORAGE_KEY,
+};
 export type { FontFaceAsset, FontRegistryV2 };
 
 /** 기본 폰트 패밀리 — body 상속, 스타일 패널 폴백 등에서 참조 */

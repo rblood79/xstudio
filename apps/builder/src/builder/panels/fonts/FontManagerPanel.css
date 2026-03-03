@@ -1,0 +1,65 @@
+@layer builder-system {
+  .font-manager-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* Count badge */
+  .font-count-badge {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    background: var(--outline);
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Upload wrapper */
+  .font-upload-wrapper {
+    padding: var(--spacing-sm);
+    background-color: var(--secondary-container);
+    border-bottom: 1px solid var(--outline-variant);
+  }
+
+  /* Upload zone */
+  .font-upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border: 2px dashed var(--outline);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    transition: all 150ms;
+    cursor: pointer;
+  }
+
+  .font-upload-zone[data-drag-over="true"] {
+    border-color: var(--primary);
+    background: var(--primary-container);
+  }
+
+  .font-upload-zone[data-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .font-upload-label {
+    font-size: var(--text-sm);
+    color: var(--on-surface-variant);
+    text-align: center;
+  }
+
+  .font-upload-hint {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    opacity: 0.7;
+  }
+
+  .font-manager-panel .section-content {
+    display: grid;
+    gap: var(--spacing-sm);
+  }
+}

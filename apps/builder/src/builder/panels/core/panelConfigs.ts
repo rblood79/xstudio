@@ -18,6 +18,7 @@ import {
   Activity,
   History,
   Package,
+  Type,
 } from "lucide-react";
 import type { PanelConfig } from "./types";
 import { PanelRegistry } from "./PanelRegistry";
@@ -39,6 +40,9 @@ import { HistoryPanel } from "../history/HistoryPanel";
 
 // Design Kit panel (G.4)
 import { DesignKitPanel } from "../designKit/DesignKitPanel";
+
+// Font Manager panel
+import { FontManagerPanel } from "../fonts/FontManagerPanel";
 
 // Bottom panels
 import { MonitorPanel } from "../monitor/MonitorPanel";
@@ -113,6 +117,20 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     maxWidth: 400,
     description: "디자인 킷 브라우저 및 적용",
     shortcut: "Ctrl+Shift+K",
+  },
+
+  // Font Manager panel
+  {
+    id: "fonts",
+    name: "폰트",
+    nameEn: "Fonts",
+    icon: Type,
+    component: FontManagerPanel,
+    category: "tool",
+    defaultPosition: "right",
+    minWidth: 249,
+    maxWidth: 400,
+    description: "커스텀 폰트 업로드 및 관리",
   },
 
   // Tool panels
