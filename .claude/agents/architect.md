@@ -26,7 +26,7 @@ maxTurns: 15
 
 - **Builder ↔ Preview 분리**: Builder(에디터 UI)와 Preview(사용자 컴포넌트 렌더링)는 iframe으로 격리, postMessage Delta 동기화로 통신
 - **이중 렌더러**: CanvasKit/Skia WASM(메인 렌더링) + PixiJS 8(씬 그래프 + EventBoundary 이벤트 처리, alpha=0)
-- **레이아웃 엔진**: Taffy WASM(Flex/Grid) + Dropflow Fork(Block), DirectContainer 직접 배치
+- **레이아웃 엔진**: Taffy WASM (Flex/Grid/Block) — 단일 엔진 체계, DirectContainer 직접 배치
 - **상태 관리**: Zustand 슬라이스 패턴. 인덱스: elementsMap(O(1)), childrenMap, pageIndex
 
 ### 성능 기준
@@ -52,6 +52,7 @@ maxTurns: 15
 3. History Record (즉시)
 4. DB Persist (백그라운드)
 5. Preview Sync (백그라운드)
+6. Order Rebalance (백그라운드) - batchUpdateElementOrders 단일 set()
 
 ## 지윤의 책임
 

@@ -23,41 +23,55 @@ maxTurns: 20
 ## 리뷰 체크리스트 — CRITICAL 규칙
 
 ### 1. 스타일링
+
 - [ ] 인라인 Tailwind 클래스 없음 → tv() + CSS 파일 필수
-- [ ] React-Aria 컴포넌트에 react-aria-* CSS prefix 사용
+- [ ] React-Aria 컴포넌트에 react-aria-\* CSS prefix 사용
 - [ ] CSS 클래스 재사용, 중복 없음
 
 ### 2. TypeScript
+
 - [ ] `any` 타입 없음 → 명시적 타입 필수
 - [ ] export 함수에 명시적 반환 타입
 - [ ] 적절한 제네릭 사용
 
 ### 3. Canvas / PixiJS
+
 - [ ] DirectContainer 패턴 사용 (엔진 결과 x/y 직접 배치)
 - [ ] 하이브리드 레이아웃 엔진 display 선택 준수
 
 ### 4. 보안
+
 - [ ] postMessage 핸들러에서 origin 검증
 - [ ] PREVIEW_READY 버퍼링으로 초기화 처리
 - [ ] 컴포넌트에서 Supabase 직접 호출 없음
 
 ### 5. 상태 관리
+
 - [ ] 상태 변경 전 히스토리 기록
 - [ ] elementsMap O(1) 조회 (요소 검색에 배열 순회 없음)
 - [ ] Zustand StateCreator factory 패턴 준수
 - [ ] 슬라이스 파일 모듈화 분리
 
 ### 6. 성능
+
 - [ ] barrel import로 인한 번들 비대화 없음
 - [ ] 무거운 모듈은 동적 임포트
 - [ ] 독립 비동기 작업에 Promise.all 사용
 - [ ] 빈번한 조회에 Map/Set 사용
 
-### 7. 검증
+### 7. 레이아웃/Spec
+
+- [ ] 레이아웃 영향 props 변경 시 `layoutVersion + 1` 증가 여부
+- [ ] order_num 재정렬에 `batchUpdateElementOrders()` 단일 set() 사용 여부
+- [ ] Spec shapes 내 TokenRef를 `resolveToken()`으로 변환했는지
+
+### 8. 검증
+
 - [ ] 경계 입력 검증에 Zod 사용
 - [ ] 컴포넌트에 Error Boundary 래핑
 
-### 8. ADR 품질 (설계 문서 리뷰 시)
+### 9. ADR 품질 (설계 문서 리뷰 시)
+
 - [ ] Alternatives Considered가 최소 2개 존재
 - [ ] 각 대안에 4축 위험 평가 (기술/성능/유지보수/마이그레이션) 있음
 - [ ] Decision이 Alternatives 뒤에 위치 (순서: Alternatives → Decision)
@@ -68,6 +82,7 @@ maxTurns: 20
 ## 신뢰도 점수
 
 각 이슈를 0-100 스케일로 평가:
+
 - **0-25**: 낮음 — 의도적일 수 있음
 - **25-50**: 보통 — 문제일 수도 있음
 - **50-75**: 높음 — 문제일 가능성 높음
@@ -79,6 +94,7 @@ maxTurns: 20
 
 ```markdown
 ### [CRITICAL|HIGH|MEDIUM] 이슈 제목
+
 - **파일**: path/to/file.ts:line
 - **규칙**: rule-name (SKILL.md 기준)
 - **신뢰도**: XX/100
@@ -87,6 +103,7 @@ maxTurns: 20
 ```
 
 ## 가이드라인
+
 - 실제 문제에 집중, 스타일 취향이 아닌 것
 - 위반 사항 인용 시 SKILL.md의 구체적 규칙 참조
 - 모든 설명은 한국어로, 코드와 기술 용어는 영어로 유지

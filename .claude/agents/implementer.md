@@ -69,6 +69,9 @@ gh search code "[패턴 키워드]" --language=TypeScript
 4. **postMessage origin 검증** → 메시지 핸들러에서 항상 origin 확인
 5. **히스토리 기록 필수** → 변경 전 상태 반드시 기록
 6. **O(1) 검색** → elementsMap으로 요소 검색, 배열 순회 금지
+7. **layoutVersion 증가 필수** → 레이아웃 영향 props 변경 시 `layoutVersion + 1` (누락 시 크기 고정 버그)
+8. **order_num 재정렬** → `batchUpdateElementOrders()` 단일 set() 사용, 개별 N회 호출 금지
+9. **Spec TokenRef 변환 필수** → shapes 내 숫자 연산에 TokenRef 직접 사용 금지, `resolveToken()` 필수
 
 ## 구현 패턴
 
@@ -119,6 +122,7 @@ const styles = tv({ base: '...', variants: { ... } });
 3. History Record (즉시)
 4. DB Persist (백그라운드)
 5. Preview Sync (백그라운드)
+6. Order Rebalance (백그라운드) - batchUpdateElementOrders 단일 set()
 
 ## 성능 기준
 

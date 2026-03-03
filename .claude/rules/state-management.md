@@ -30,6 +30,7 @@ globs:
 3. History Record (즉시)
 4. DB Persist (백그라운드)
 5. Preview Sync (백그라운드)
+6. Order Rebalance (백그라운드) - batchUpdateElementOrders 단일 set()
 
 ## 히스토리
 

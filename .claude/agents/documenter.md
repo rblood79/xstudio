@@ -45,32 +45,42 @@ docs/
 # ADR-NNN: [Title]
 
 ## Status
+
 Proposed | Accepted | Deprecated | Superseded
 
 ## Context
+
 [문제 설명 + 제약 조건 (hard constraints 명시)]
 
 ## Alternatives Considered
+
 ### 대안 A: [이름]
+
 - 설명: ...
 - 위험: 기술(L/M/H/C) / 성능(L/M/H/C) / 유지보수(L/M/H/C) / 마이그레이션(L/M/H/C)
 
 ### 대안 B: [이름]
+
 - 설명: ...
 - 위험: 기술(L/M/H/C) / 성능(L/M/H/C) / 유지보수(L/M/H/C) / 마이그레이션(L/M/H/C)
 
 ## Decision
+
 [선택된 대안 + 위험 수용 근거]
 
 ## Gates
+
 [잔존 HIGH 위험에 대한 Gate 테이블. 없으면 "잔존 HIGH 위험 없음" 명시]
 
 ## Consequences
+
 ### Positive
+
 ### Negative
 ```
 
 ### ADR 번호 매기기
+
 - `docs/adr/`의 기존 ADR에서 다음 사용 가능한 번호 확인
 - 0으로 채워진 세 자리 형식 사용: 001, 002, ..., 010 등
 
@@ -85,19 +95,22 @@ Proposed | Accepted | Deprecated | Superseded
 ## XStudio 컨텍스트 참조
 
 ### 핵심 아키텍처 개념
+
 - **Builder ↔ Preview**: iframe 격리, postMessage Delta 동기화
 - **이중 렌더러**: CanvasKit/Skia WASM(렌더링) + PixiJS 8(이벤트)
-- **레이아웃**: Taffy WASM(Flex/Grid) + Dropflow Fork(Block), DirectContainer 직접 배치
+- **레이아웃**: Taffy WASM (Flex/Grid/Block) — 단일 엔진 체계, DirectContainer 직접 배치
 - **상태**: Zustand 슬라이스, elementsMap O(1) 인덱스
 - **스타일링**: Tailwind CSS v4 + tv() variants
 - **컴포넌트**: React-Aria with hooks
 
 ### 참조해야 할 핵심 파일
+
 - `CLAUDE.md` — 프로젝트 개요 및 규칙
 - `.claude/skills/xstudio-patterns/SKILL.md` — 코드 패턴 및 규칙
 - `docs/adr/` — 기존 아키텍처 결정
 
 ## 출력 가이드라인
+
 - 문서는 간결하되 충분히 상세하게
 - 항상 "Why" 컨텍스트 포함, "What"만이 아니라
 - 새 문서 추가 시 관련 문서도 업데이트
