@@ -135,7 +135,7 @@ Skia `renderBox()`의 stroke가 요소 바운드 밖으로 넘쳐 인접 요소 
 | **투명 variant** | 미지원 | outline/ghost → `bgAlpha=0`, ghost → 테두리 없음 |
 | **우선순위** | 없음 | `style.backgroundColor > variant > 기본값` |
 
-**상세:** `apps/builder/src/.../sprites/ElementSprite.tsx`, `docs/COMPONENT_SPEC_ARCHITECTURE.md` §4.5
+**상세:** `apps/builder/src/.../sprites/ElementSprite.tsx`, `docs/COMPONENT.md` §4.5
 
 ## Update: Skia 렌더 트리 계층화 (2026-02-02)
 
@@ -519,7 +519,7 @@ function getSpecForTag(tag: string): ComponentSpec<any> | null {
 | `skia/aiEffects.ts` | `borderRadius` 튜플 타입 호환성 패치 (`number \| readonly [number, number, number, number]`) |
 | `types/builder/unified.types.ts` | `createDefaultCheckboxProps`/`RadioProps`/`SwitchProps`에 `variant`, `size`, `style` 기본값 추가 |
 
-**상세:** `apps/builder/src/.../skia/specShapeConverter.ts`, `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../skia/nodeRenderers.ts`, `docs/COMPONENT_SPEC_ARCHITECTURE.md`
+**상세:** `apps/builder/src/.../skia/specShapeConverter.ts`, `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../skia/nodeRenderers.ts`, `docs/COMPONENT.md`
 
 ## Update: Spec Shapes props.style 오버라이드 패턴 (2026-02-12)
 

@@ -125,7 +125,7 @@ pnpm storybook
 
 - [AI Feature Design](docs/AI.md)
 - [WASM Architecture](docs/WASM.md)
-- [Component Spec](docs/COMPONENT_SPEC_ARCHITECTURE.md)
+- [Component Spec](docs/COMPONENT.md)
 - [CSS Architecture](docs/reference/components/CSS_ARCHITECTURE.md)
 - [Skill Rules](.claude/skills/xstudio-patterns/SKILL.md)
 - [ADR: State Management](docs/adr/001-state-management.md)

@@ -138,4 +138,4 @@ const effectiveBorderRadius = isUIComponent ? 6 : 0;
 ## 참조
 
 - [spec-build-sync](spec-build-sync.md) — 빌드 동기화 필수
-- `docs/COMPONENT_SPEC_ARCHITECTURE.md` §4.7.4.0, §4.7.4.5~4.7.4.6
+- `docs/COMPONENT.md` §4.7.4.0, §4.7.4.5~4.7.4.6

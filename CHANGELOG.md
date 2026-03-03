@@ -53,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 4곳 하드코딩 제거: `unified.types.ts`, `styleAtoms.ts`, `cssResolver.ts`의 `ROOT_COMPUTED_STYLE`
 - Body 기본 props에 `fontFamily: DEFAULT_FONT_FAMILY` 추가 (CSS 상속 기반)
 
-### Docs - COMPONENT_SPEC_ARCHITECTURE.md 전체 검증 및 수정 (2026-02-27)
+### Docs - COMPONENT.md (구 COMPONENT_SPEC_ARCHITECTURE.md) 전체 검증 및 수정 (2026-02-27)
 
 4개 병렬 에이전트로 전체 문서(6400+ lines)를 코드와 대조 검증, 14건 불일치 수정:
 

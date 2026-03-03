@@ -56,4 +56,4 @@ pnpm --filter @xstudio/specs dev
 ## 참조
 
 - `packages/specs/package.json` — `"main": "./dist/index.js"`
-- `docs/COMPONENT_SPEC_ARCHITECTURE.md` §4.7.4.0
+- `docs/COMPONENT.md` §4.7.4.0

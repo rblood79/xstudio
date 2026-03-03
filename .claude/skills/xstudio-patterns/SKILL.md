@@ -270,7 +270,7 @@ tags: [tag1, tag2]
 - **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - Canvas 렌더링 (CanvasKit/Skia 이중 렌더러 + Taffy WASM 단일 레이아웃 엔진)
 - **[ADR-004](../../../docs/adr/004-preview-isolation.md)** - iframe 격리 이유
 - **[ADR-008](../../../docs/adr/008-css-text-wrapping.md)** - CSS 텍스트 래핑 에뮬레이션 (textWrapUtils.ts 공유 유틸, Preset UI, clipText)
-- **[Component Spec Architecture](../../../docs/COMPONENT_SPEC_ARCHITECTURE.md)** - 단일 소스 컴포넌트 스펙 설계
+- **[Component Spec Architecture](../../../docs/COMPONENT.md)** - 단일 소스 컴포넌트 스펙 설계
 - **[Engine Strategy D](../../../docs/ENGINE.md)** - 레이아웃 엔진 전환 전략 (Taffy WASM 단일 엔진)
 
 ## 기여

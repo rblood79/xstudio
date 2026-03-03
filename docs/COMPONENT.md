@@ -1,8 +1,9 @@
 # Component Spec Architecture - 상세 설계 문서
 
-> **작성일**: 2026-01-27 | **수정일**: 2026-02-27
+> **작성일**: 2026-01-27 | **수정일**: 2026-03-03
 > **상태**: Phase 6 Skia Spec 렌더링 구현 완료 | **Compositional Architecture 전환 완료** (2026-02-25) — SPEC_RENDERS_ALL_TAGS 폐기, 7개 Child Spec 추가
 > **목표**: Builder(CanvasKit/Skia)와 Publish(React)의 100% 시각적 일치
+> **통합**: `REACT_ARIA.md` 문서를 본 문서에 병합 (2026-03-03) — React Aria DOM 구조 레퍼런스 및 ARIA Role 매핑을 부록으로 이관
 
 ---
 
@@ -6190,11 +6191,603 @@ function ElementSpriteButton({ element }) {
 
 </details>
 
-### B. 참조 문서
+### B. React Aria DOM 구조 레퍼런스
+
+> 원본: `REACT_ARIA.md` §2 (2026-02-25 작성) — 50개 React Aria Components의 실제 DOM 구조
+
+<details>
+<summary>클릭하여 펼치기</summary>
+
+#### B.1 Form/Input 컴포넌트
+
+##### Button
+
+```html
+<button class="react-aria-Button"
+  data-hovered data-pressed data-focused data-focus-visible data-disabled data-pending>
+  {children}
+</button>
+```
+
+| 속성 | data-* | Render Props |
+|------|--------|-------------|
+| 루트 | `<button>` | `isHovered, isPressed, isFocused, isFocusVisible, isDisabled, isPending` |
+
+##### ToggleButton
+
+```html
+<button class="react-aria-ToggleButton"
+  data-selected data-hovered data-pressed data-focused data-focus-visible data-disabled>
+  {children}
+</button>
+```
+
+| 속성 | data-* | Render Props |
+|------|--------|-------------|
+| 루트 | `<button>` | Button + `isSelected` (isPending 제외) |
+
+##### TextField
+
+```html
+<div class="react-aria-TextField" data-disabled data-invalid data-readonly data-required>
+  <label class="react-aria-Label">...</label>
+  <input class="react-aria-Input" data-hovered data-focused data-focus-visible data-disabled data-invalid />
+  <div slot="description">...</div>
+  <div class="react-aria-FieldError">...</div>
+</div>
+```
+
+| 하위 컴포넌트 | HTML | data-* 속성 |
+|-------------|------|------------|
+| TextField (root) | `<div>` | disabled, invalid, readonly, required |
+| Label | `<label>` | - |
+| Input | `<input>` | hovered, focused, focus-visible, disabled, invalid |
+| Text (description) | `<div>` | - |
+| FieldError | `<div>` | - |
+
+##### NumberField
+
+```html
+<div class="react-aria-NumberField" data-disabled data-invalid data-required>
+  <label class="react-aria-Label">...</label>
+  <div class="react-aria-Group" role="group" data-hovered data-focus-within data-focus-visible data-disabled data-invalid>
+    <button slot="decrement">-</button>
+    <input class="react-aria-Input" />
+    <button slot="increment">+</button>
+  </div>
+  <div class="react-aria-FieldError">...</div>
+</div>
+```
+
+##### SearchField
+
+```html
+<div class="react-aria-SearchField" data-empty data-disabled data-invalid data-readonly data-required>
+  <label class="react-aria-Label">...</label>
+  <input class="react-aria-Input" type="search" />
+  <button class="react-aria-Button">X (clear)</button>
+  <div class="react-aria-FieldError">...</div>
+</div>
+```
+
+##### Checkbox
+
+```html
+<label class="react-aria-Checkbox"
+  data-selected data-indeterminate data-hovered data-pressed data-focused
+  data-focus-visible data-disabled data-readonly data-invalid data-required>
+  <input type="hidden" />
+  <div class="indicator"><svg>...</svg></div>
+  {children (label text)}
+</label>
+```
+
+##### CheckboxGroup
+
+```html
+<div class="react-aria-CheckboxGroup" data-disabled data-readonly data-required data-invalid>
+  <label class="react-aria-Label">...</label>
+  <label class="react-aria-Checkbox">...</label>
+  <label class="react-aria-Checkbox">...</label>
+  <div class="react-aria-FieldError">...</div>
+</div>
+```
+
+##### RadioGroup + Radio
+
+```html
+<div class="react-aria-RadioGroup" data-orientation data-disabled data-readonly data-required data-invalid>
+  <label class="react-aria-Label">...</label>
+  <label class="react-aria-Radio"
+    data-selected data-hovered data-pressed data-focused data-focus-visible
+    data-disabled data-readonly data-invalid data-required>
+    <input type="radio" hidden />
+    <div class="indicator">...</div>
+    {children}
+  </label>
+</div>
+```
+
+##### Switch
+
+```html
+<label class="react-aria-Switch"
+  data-selected data-hovered data-pressed data-focused data-focus-visible
+  data-disabled data-readonly>
+  <input type="hidden" />
+  <div class="indicator">{track + thumb}</div>
+  {children (label text)}
+</label>
+```
+
+##### Slider
+
+```html
+<div class="react-aria-Slider" data-orientation data-disabled>
+  <label class="react-aria-Label">...</label>
+  <output class="react-aria-SliderOutput">50</output>
+  <div class="react-aria-SliderTrack" data-hovered data-disabled data-orientation>
+    <div class="react-aria-SliderThumb" data-dragging data-hovered data-focused data-focus-visible data-disabled>
+      <input type="hidden" />
+    </div>
+  </div>
+</div>
+```
+
+##### Form
+
+```html
+<form class="react-aria-Form">
+  {children}
+</form>
+```
+
+#### B.2 Selection/Collection 컴포넌트
+
+##### Select
+
+```html
+<div class="react-aria-Select">
+  <label>...</label>
+  <button>
+    <span class="react-aria-SelectValue" data-placeholder>선택된 값</span>
+    <span aria-hidden="true">▼</span>
+  </button>
+  <!-- Popover (portal) -->
+  <div class="react-aria-Popover" data-trigger="Select">
+    <div role="listbox">
+      <div role="option" data-selected data-focused data-disabled data-hovered data-focus-visible>항목</div>
+    </div>
+  </div>
+</div>
+```
+
+##### ComboBox
+
+```html
+<div class="react-aria-ComboBox" data-open data-disabled>
+  <label>...</label>
+  <div>
+    <input role="combobox" aria-expanded aria-autocomplete aria-activedescendant />
+    <button>▼</button>
+  </div>
+  <div class="react-aria-Popover" data-trigger="ComboBox">
+    <div role="listbox">
+      <div role="option">항목</div>
+    </div>
+  </div>
+</div>
+```
+
+##### ListBox
+
+```html
+<div role="listbox" class="react-aria-ListBox" data-focus-visible data-empty data-layout data-orientation>
+  <div role="option" data-selected data-focused data-focus-visible data-hovered data-pressed data-disabled data-dragging data-drop-target>
+    <span slot="label">레이블</span>
+    <span slot="description">설명</span>
+  </div>
+</div>
+```
+
+##### Menu
+
+```html
+<div role="menu" class="react-aria-Menu" data-empty>
+  <div role="menuitem" data-focused data-hovered data-pressed data-disabled data-open data-selected data-selection-mode>
+    <span slot="label">메뉴 항목</span>
+    <kbd class="react-aria-Keyboard">⌘C</kbd>
+  </div>
+  <hr class="react-aria-Separator" />
+</div>
+```
+
+| ARIA role 변형 | 조건 |
+|--------------|------|
+| `menuitem` | 기본 (선택 모드 없음) |
+| `menuitemcheckbox` | selectionMode="multiple" |
+| `menuitemradio` | selectionMode="single" |
+
+##### Tabs
+
+```html
+<div class="react-aria-Tabs" data-orientation="horizontal">
+  <div role="tablist" data-orientation="horizontal">
+    <div role="tab" data-selected data-hovered data-focus-visible data-disabled>탭 1</div>
+    <div role="tab">탭 2</div>
+  </div>
+  <div role="tabpanel" data-focus-visible data-entering data-exiting>
+    탭 콘텐츠
+  </div>
+</div>
+```
+
+##### TagGroup
+
+```html
+<div class="react-aria-TagGroup">
+  <label>태그</label>
+  <div class="react-aria-TagList">
+    <div class="react-aria-Tag" data-selected data-focused data-focus-visible data-hovered data-pressed data-disabled>
+      태그 텍스트
+      <button slot="remove">✕</button>
+    </div>
+  </div>
+</div>
+```
+
+##### GridList
+
+```html
+<div role="grid" class="react-aria-GridList" data-layout data-focus-visible data-empty data-drop-target>
+  <div role="row" data-selected data-focus-visible data-pressed data-disabled data-dragging data-drop-target>
+    <div role="gridcell">
+      <input type="checkbox" slot="selection" />
+      항목 텍스트
+    </div>
+  </div>
+</div>
+```
+
+##### Table
+
+```html
+<table class="react-aria-Table">
+  <thead>
+    <tr>
+      <th data-pressed data-sort-direction data-focus-visible>
+        컬럼명
+        <div class="react-aria-ColumnResizer" data-resizable-direction data-resizing />
+      </th>
+    </tr>
+  </thead>
+  <tbody data-empty data-drop-target>
+    <tr data-selected data-focus-visible data-pressed data-disabled data-dragging data-drop-target>
+      <td data-focus-visible>셀 값</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+##### Tree
+
+```html
+<div role="treegrid" class="react-aria-Tree" data-focus-visible data-empty data-drop-target>
+  <div role="row" data-expanded data-has-child-items data-selected data-focus-visible data-pressed data-disabled>
+    <div role="gridcell">
+      <button slot="chevron">▶</button>
+      <input type="checkbox" slot="selection" />
+      노드 이름
+    </div>
+  </div>
+</div>
+```
+
+##### Breadcrumbs
+
+```html
+<ol class="react-aria-Breadcrumbs">
+  <li class="react-aria-Breadcrumb">
+    <a class="react-aria-Link" data-current data-hovered data-focus-visible data-disabled>
+      현재 페이지
+    </a>
+  </li>
+</ol>
+```
+
+##### Toolbar
+
+```html
+<div role="toolbar" class="react-aria-Toolbar" data-orientation aria-label="도구모음">
+  <div role="group">{controls}</div>
+  <hr class="react-aria-Separator" />
+</div>
+```
+
+#### B.3 Overlay 컴포넌트
+
+##### Dialog
+
+```html
+<div role="dialog" class="react-aria-Dialog">
+  <h2 slot="title">제목</h2>
+  {content}
+  <button slot="close">닫기</button>
+</div>
+```
+
+##### Popover
+
+```html
+<div class="react-aria-Popover" data-placement data-entering data-exiting data-trigger>
+  <div class="react-aria-OverlayArrow"><svg /></div>
+  {content}
+</div>
+```
+
+##### Tooltip
+
+```html
+<div class="react-aria-Tooltip" data-placement data-entering data-exiting>
+  <div class="react-aria-OverlayArrow" />
+  {content}
+</div>
+```
+
+##### Modal / ModalOverlay
+
+```html
+<div class="react-aria-ModalOverlay" data-entering data-exiting>
+  <div class="react-aria-Modal" data-entering data-exiting>
+    {Dialog content}
+  </div>
+</div>
+```
+
+#### B.4 Date/Time 컴포넌트
+
+##### DateField / TimeField
+
+```html
+<div class="react-aria-DateField">
+  <label class="react-aria-Label">...</label>
+  <div class="react-aria-DateInput" data-focus-within data-invalid>
+    <div class="react-aria-DateSegment" data-type="year" data-placeholder data-readonly data-focused>2024</div>
+    <div class="react-aria-DateSegment" data-type="literal">/</div>
+    <div class="react-aria-DateSegment" data-type="month">01</div>
+  </div>
+  <div class="react-aria-FieldError">...</div>
+</div>
+```
+
+| DateSegment data-type | 값 |
+|----------------------|---|
+| `year`, `month`, `day` | 날짜 세그먼트 |
+| `hour`, `minute`, `second` | 시간 세그먼트 |
+| `dayPeriod` | AM/PM |
+| `literal` | 구분자 (/, :, 등) |
+
+##### DatePicker
+
+```html
+<div class="react-aria-DatePicker">
+  <label />
+  <div class="react-aria-Group">
+    <div class="react-aria-DateInput">{segments}</div>
+    <button>📅</button>
+  </div>
+  <div class="react-aria-Popover" data-trigger="DatePicker">
+    <div class="react-aria-Dialog">
+      <div class="react-aria-Calendar">
+        <header>
+          <button slot="previous" />
+          <h2 class="react-aria-Heading" />
+          <button slot="next" />
+        </header>
+        <table class="react-aria-CalendarGrid">...</table>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+##### DateRangePicker
+
+```html
+<div class="react-aria-DateRangePicker">
+  <label />
+  <div class="react-aria-Group">
+    <div class="react-aria-DateInput" slot="start">{segments}</div>
+    <span aria-hidden="true"> -- </span>
+    <div class="react-aria-DateInput" slot="end">{segments}</div>
+    <button />
+  </div>
+  <!-- RangeCalendar with data-selection-start, data-selection-end -->
+</div>
+```
+
+##### Calendar / RangeCalendar
+
+```html
+<div class="react-aria-Calendar">
+  <header>
+    <button slot="previous">◀</button>
+    <h2 class="react-aria-Heading">January 2024</h2>
+    <button slot="next">▶</button>
+  </header>
+  <table class="react-aria-CalendarGrid" role="grid">
+    <thead class="react-aria-CalendarGridHeader">
+      <tr><th class="react-aria-CalendarHeaderCell">Sun</th>...</tr>
+    </thead>
+    <tbody class="react-aria-CalendarGridBody">
+      <tr><td class="react-aria-CalendarCell" data-selected data-outside-month>1</td>...</tr>
+    </tbody>
+  </table>
+</div>
+```
+
+#### B.5 Color 컴포넌트
+
+##### ColorField
+
+```html
+<div class="react-aria-ColorField">
+  <label />
+  <input class="react-aria-Input" data-focused data-invalid data-disabled />
+  <div class="react-aria-FieldError">...</div>
+</div>
+```
+
+##### ColorPicker (Provider만, 자체 DOM 없음)
+
+```tsx
+<ColorPicker value={color} onChange={setColor}>
+  <ColorArea /><ColorSlider /><ColorField />
+</ColorPicker>
+```
+
+##### ColorArea
+
+```html
+<div class="react-aria-ColorArea" data-disabled>
+  <div class="react-aria-ColorThumb" data-dragging data-focused data-focus-visible data-disabled />
+  <input type="hidden" /><input type="hidden" />
+</div>
+```
+
+##### ColorSlider
+
+```html
+<div class="react-aria-ColorSlider" data-orientation data-disabled>
+  <label />
+  <output class="react-aria-SliderOutput" />
+  <div class="react-aria-SliderTrack">
+    <div class="react-aria-ColorThumb" data-dragging data-focused data-focus-visible data-disabled />
+  </div>
+</div>
+```
+
+##### ColorWheel
+
+```html
+<div class="react-aria-ColorWheel" data-disabled>
+  <div class="react-aria-ColorWheelTrack" />
+  <div class="react-aria-ColorThumb" data-dragging data-focused data-focus-visible />
+</div>
+```
+
+##### ColorSwatch
+
+```html
+<div class="react-aria-ColorSwatch" role="img" aria-roledescription="color swatch" aria-label="red" />
+```
+
+#### B.6 Utility 컴포넌트
+
+##### Link
+
+```html
+<a class="react-aria-Link" data-hovered data-pressed data-focus-visible data-disabled data-current>
+  Link text
+</a>
+```
+
+##### ProgressBar
+
+```html
+<div class="react-aria-ProgressBar" role="progressbar"
+  aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" aria-valuetext="50%">
+  <label>Loading...</label>
+  <span class="value">50%</span>
+  <div class="track"><div class="fill" style="width: 50%"></div></div>
+</div>
+```
+
+##### Meter
+
+```html
+<div class="react-aria-Meter" role="meter"
+  aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+  <label>Storage</label>
+  <div class="track"><div class="fill" style="width: 75%"></div></div>
+</div>
+```
+
+##### Separator
+
+```html
+<div class="react-aria-Separator" role="separator" aria-orientation="horizontal" />
+```
+
+##### Disclosure
+
+```html
+<div class="react-aria-Disclosure" data-expanded data-disabled>
+  <h3 class="react-aria-Heading">
+    <button class="react-aria-Button" slot="trigger" aria-expanded aria-controls="[panel-id]">
+      Section Title
+    </button>
+  </h3>
+  <div class="react-aria-DisclosurePanel" id="[panel-id]" role="group">
+    Panel content
+  </div>
+</div>
+```
+
+##### DropZone
+
+```html
+<div class="react-aria-DropZone" role="button" tabindex="0"
+  data-focus-visible data-drop-target data-hovered data-focused data-disabled>
+  <span slot="label">Drop files here</span>
+</div>
+```
+
+</details>
+
+### C. ARIA Role 매핑 총표
+
+> 원본: `REACT_ARIA.md` 부록 (2026-02-25 작성)
+
+| 컴포넌트 | Container Role | Item Role | 비고 |
+|---------|---------------|-----------|-----|
+| Button | - | `<button>` | 시맨틱 HTML |
+| ToggleButton | - | `<button>` | `aria-pressed` |
+| TextField | - | `<div>` wrapper | Label+Input 연결 |
+| NumberField | `group` (Group) | `<div>` wrapper | spinbutton |
+| SearchField | - | `<div>` wrapper | type="search" |
+| Checkbox | - | `<label>` | `aria-checked` |
+| CheckboxGroup | `group` | - | 그룹 래퍼 |
+| RadioGroup | `radiogroup` | - | `aria-checked` |
+| Switch | - | `<label>` | `role="switch"` |
+| Slider | - | `<div>` | `role="slider"` (hidden input) |
+| Select | - | `<div>` | ListBox는 `listbox` |
+| ComboBox | - | `<div>` | Input은 `combobox` |
+| ListBox | `listbox` | `option` | 표준 |
+| Menu | `menu` | `menuitem` / `menuitemcheckbox` / `menuitemradio` | 선택 모드에 따라 |
+| Tabs | `tablist` | `tab` + `tabpanel` | Tab-Panel 쌍 |
+| TagGroup | `grid` | `row` > `gridcell` | 키보드 탐색 |
+| GridList | `grid` | `row` > `gridcell` | 2단 중첩 |
+| Table | (암시적) | `row` > `columnheader` / `gridcell` | 시맨틱 HTML |
+| Tree | `treegrid` | `row` > `gridcell` | `aria-expanded`, `aria-level` |
+| Breadcrumbs | `nav` | `<li>` > `<a>` | `aria-current` |
+| Toolbar | `toolbar` | (다양) | roving tabindex |
+| Dialog | `dialog` / `alertdialog` | - | 포커스 트랩 |
+| Calendar | - | `grid` > `gridcell` | 표준 달력 |
+| Disclosure | - | - | `aria-expanded` + `aria-controls` |
+| ProgressBar | `progressbar` | - | `aria-valuenow` |
+| Meter | `meter` | - | `aria-valuenow` |
+| Separator | `separator` | - | `aria-orientation` |
+| DropZone | `button` | - | 키보드 접근성 |
+
+### D. 참조 문서
 
 - [ADR-002: Styling Approach](./adr/002-styling-approach.md) - 스타일링 결정
 - [ADR-003: Canvas Rendering](./adr/003-canvas-rendering.md) - 캔버스 렌더링 결정
 - [CSS_ARCHITECTURE.md](./reference/components/CSS_ARCHITECTURE.md) - CSS 아키텍처
+- [React Aria Components 공식 문서](https://react-aria.adobe.com)
+- [React Aria 라이브러리 통합 가이드](./reference/components/REACT_ARIA_LIBRARIES.md)
+- [React Aria 1.14.0 마이그레이션 기록](./legacy/REACT_ARIA_MIGRATION_1_14.md)
 
 ---
 

@@ -1633,7 +1633,7 @@ Skia 렌더링 파이프라인의 남은 기능 8건을 모두 구현하여 Penc
 
 #### 변경된 파일
 - `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` — VARIANT_BG_COLORS, VARIANT_BG_ALPHA, VARIANT_BORDER_COLORS 추가
-- `docs/COMPONENT_SPEC_ARCHITECTURE.md` — §4.5 variant 배경/테두리 색상 테이블 추가
+- `docs/COMPONENT.md` — §4.5 variant 배경/테두리 색상 테이블 추가
 - `docs/reference/components/PIXI_WEBGL.md` — Skia 폴백 variant 색상 매핑 섹션 추가
 - `docs/WASM.md` — UI 컴포넌트 variant 배경/테두리 색상 노트 추가
 - `docs/adr/003-canvas-rendering.md` — variant 색상 매핑 업데이트 항목 추가
@@ -1845,7 +1845,7 @@ Selection 오버레이(선택 박스, Transform 핸들, 라쏘)를 PixiJS 듀얼
 ### Docs - 레이아웃/버튼 버그 수정 관련 문서 동기화 (2026-01-31)
 
 #### 개요
-display/button 관련 버그 수정 사항을 `LAYOUT_REQUIREMENTS.md`(v1.29), `COMPONENT_SPEC_ARCHITECTURE.md`(v1.13) 문서에 반영
+display/button 관련 버그 수정 사항을 `LAYOUT_REQUIREMENTS.md`(v1.29), `COMPONENT.md`(v1.13) 문서에 반영
 
 #### 수정 내용
 
@@ -1855,14 +1855,14 @@ display/button 관련 버그 수정 사항을 `LAYOUT_REQUIREMENTS.md`(v1.29), `
 - `parseBoxModel` 의사코드에 `treatAsBorderBox` 로직 추가 — `box-sizing: border-box` 또는 폼 요소 명시적 width/height 시 padding+border 차감
 - 변경 이력 v1.29 추가
 
-**2. COMPONENT_SPEC_ARCHITECTURE.md**
+**2. COMPONENT.md**
 - §4.7.4.5에 `treatAsBorderBox` 코드 및 설명 추가 — 폼 요소 자동 border-box 변환
 - §4.7.4.2에 v1.13 참고 블록 추가 — parseBoxModel border-box 변환으로 이중 계산 방지 설명
 - 변경 이력 v1.13 추가
 
 #### 변경된 파일
 - `docs/LAYOUT_REQUIREMENTS.md` — calculateContentHeight 공식, availableWidth border 차감, parseBoxModel treatAsBorderBox, 변경 이력 v1.29
-- `docs/COMPONENT_SPEC_ARCHITECTURE.md` — §4.7.4.5 treatAsBorderBox, §4.7.4.2 참고, 변경 이력 v1.13
+- `docs/COMPONENT.md` — §4.7.4.5 treatAsBorderBox, §4.7.4.2 참고, 변경 이력 v1.13
 
 ---
 

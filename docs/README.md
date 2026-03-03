@@ -27,8 +27,7 @@ docs/
 
 - [AI 기능 설계](./AI.md) - AI Agent Loop + Tool Calling 설계
 - [WASM 렌더링 아키텍처](./WASM.md) - CanvasKit/Skia WASM 전환
-- [컴포넌트 스펙 아키텍처](./COMPONENT_SPEC_ARCHITECTURE.md) - 단일 소스 컴포넌트 스펙
-- [React Aria 마이그레이션 전략](./REACT_ARIA.md) - WebGL 컴포넌트 마이그레이션
+- [컴포넌트 스펙 아키텍처](./COMPONENT.md) - 단일 소스 컴포넌트 스펙 + React Aria DOM 구조 레퍼런스
 - [레이아웃 엔진 ADR](./ENGINE.md) - Taffy WASM 단일 엔진 전략
 - [CSS 속성 지원 체크리스트](./ENGINE_CHECKLIST.md) - CSS 속성별 지원 상태
 - [컬러 피커 + Fill 시스템](./COLOR_PICKER.md) - Color/Gradient/EyeDropper/BlendMode/ImageFill

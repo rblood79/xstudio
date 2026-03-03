@@ -5,11 +5,24 @@
 ## Quick Start
 
 ```bash
-# 의존성 설치
+# 의존성 설치 (자동으로 specs 빌드 포함)
 pnpm install
 
 # 개발 서버 실행
 pnpm dev
+```
+
+### 다른 PC에서 작업한 내용 동기화 후
+
+```bash
+# Git pull 후
+git pull
+
+# 의존성 및 빌드 산출물 동기화
+pnpm install  # specs 자동 빌드됨
+
+# WASM 바인딩이 변경된 경우 (선택사항)
+pnpm wasm:build
 ```
 
 ## Project Structure

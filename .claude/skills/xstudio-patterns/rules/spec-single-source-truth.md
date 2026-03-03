@@ -117,7 +117,7 @@ const fontSize = props.style?.fontSize ?? size.fontSize;
 
 ## 참조
 
-- `docs/COMPONENT_SPEC_ARCHITECTURE.md` - 전체 설계 문서 (§4.7.4.4~4.7.4.8)
+- `docs/COMPONENT.md` - 전체 설계 문서 (§4.7.4.4~4.7.4.8)
 - `packages/specs/src/components/Button.spec.ts` - 참조 구현
 - `apps/builder/src/.../skia/specShapeConverter.ts` - Shape[] → SkiaNodeData 변환
 - `apps/builder/src/.../sprites/ElementSprite.tsx` - getSpecForTag() + TAG_SPEC_MAP
