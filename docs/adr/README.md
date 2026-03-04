@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-04 (ADR-014 Phase C2 Font Manager Panel 완료 반영)
+> **최종 업데이트**: 2026-03-04 (ADR-017 M3 제거 + Tailwind 통합으로 재작성)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 8      |
 | 부분 완료                              | 5      |
-| 미구현 (Proposed/계획)                 | 3      |
-| **합계**                               | **16** |
+| 미구현 (Proposed/계획)                 | 4      |
+| **합계**                               | **17** |
 
 ---
 
@@ -40,11 +40,12 @@
 
 ### 미구현
 
-| ADR                                      | 제목                               | 상태     | 규모                                                   | 우선순위 |
-| ---------------------------------------- | ---------------------------------- | -------- | ------------------------------------------------------ | :------: |
-| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩        | Proposed | 5 Phase, 21파일                                        |  **P2**  |
-| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                           |    P5    |
-| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations |    P5    |
+| ADR                                      | 제목                                                   | 상태     | 규모                                                                 | 우선순위 |
+| ---------------------------------------- | ------------------------------------------------------ | -------- | -------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                            | Proposed | 5 Phase, 21파일                                                      |  **P2**  |
+| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                      | Proposed | 변경 대상 8파일, 코드 미생성                                         |    P5    |
+| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)                     | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations               |    P5    |
+| [017](017-css-override-ssot.md)          | React-Aria CSS Override SSOT — M3 제거 + Tailwind 통합 | Proposed | 4 Phase, 93파일 M3 토큰 제거 + 시맨틱 토큰 복귀 + Tailwind 직접 통합 |    P3    |
 
 ---
 
@@ -54,7 +55,9 @@
 | :--: | --------------- | ---------------------------------------------------------------------------------------------------- | :--: |
 |  1   | ADR-014 Phase D | Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입         |  소  |
 |  2   | ADR-014 Phase E | 정적 Export 멀티파일 — `assets/fonts/*` 생성 + 상대 경로 연결 + `showDirectoryPicker` / ZIP fallback |  중  |
-|  3   | ADR-013         | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |
+|  3   | ADR-017 Phase 1 | M3 토큰 제거 — preview-system.css, builder-system.css에서 M3 섹션 제거, 시맨틱 토큰 복귀             |  소  |
+|  4   | ADR-017 Phase 2 | 컴포넌트 CSS M3→시맨틱 치환 — 88개 CSS 파일 find-replace (`--primary`→`--highlight-background` 등)   |  중  |
+|  5   | ADR-013         | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |
 
 ---
 
@@ -76,7 +79,15 @@
 - **전제 조건**: 없음 (독립 실행 가능)
 - **영향 범위**: 데이터 바인딩 UX
 
-### P3: ADR-009 Phase 3~5
+### P3: ADR-017 CSS Override SSOT — M3 제거 + Tailwind 통합
+
+- **근거**: M3 토큰 38개가 기존 시맨틱 토큰 ~20개 위에 불필요하게 중첩 → 3-layer 변수 체인, 93개 파일 cascade 오버라이드 과다
+- **진행률**: 전체 미착수 (ADR 작성 완료)
+- **핵심 항목**: preview-system.css/builder-system.css M3 섹션 제거, 88개 컴포넌트 CSS M3→시맨틱 find-replace
+- **전제 조건**: 없음 (독립 실행 가능, 레이아웃 무관 — 색상/배경/테두리만 변경)
+- **영향 범위**: 전체 CSS 아키텍처 단순화, 토큰 체인 3-layer→2-layer
+
+### P4: ADR-009 Phase 3~5
 
 - **근거**: Foundation~Phase 2 + Binary Protocol 부분 완료로 기본 성능 확보, 추가 최적화는 사용자 규모 증가 시
 - **핵심 항목**: SharedArrayBuffer 제로카피, Flat Render List, OffscreenCanvas Worker
@@ -174,3 +185,5 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-03 | Risk-First ADR 템플릿 추가 — Alternatives→Risk→Decision→Gates 순서 필수화                                                                         |
 | 2026-03-04 | ADR-012 P1-2/P2-3 구현 완료 확인 — 코드 대조 결과 이미 구현됨 확인, 67%→80% 갱신. 잔여: P3 장기 최적화 3건                                        |
 | 2026-03-04 | ADR-014 Phase C2 완료 — Font Manager Panel + PropertyListItem 재사용 컴포넌트 + OS/2 메타데이터 추출. 우선순위 근거 갱신                          |
+| 2026-03-04 | ADR-017 추가 — Input CSS Override SSOT 정리 (CSS Custom Properties SSOT + 셀렉터 정규화 + Dead Code 제거)                                         |
+| 2026-03-04 | ADR-017 재작성 — M3 제거 + Tailwind 통합 방향으로 전면 개정. ADR-009 P3→P4 조정, ADR-017 P3 신설. 로드맵에 Phase 1~2 추가                         |
