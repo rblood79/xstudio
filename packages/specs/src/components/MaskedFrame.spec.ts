@@ -1,7 +1,7 @@
 /**
  * MaskedFrame Component Spec
  *
- * Material Design 3 기반 마스크 프레임 컴포넌트
+ * React Aria 기반 마스크 프레임 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -24,7 +24,7 @@ export interface MaskedFrameProps {
  */
 export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
   name: 'MaskedFrame',
-  description: 'Material Design 3 기반 마스크 프레임 컴포넌트',
+  description: 'React Aria 기반 마스크 프레임 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -32,18 +32,18 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.primary-container}' as TokenRef,
-      backgroundHover: '{color.primary-container}' as TokenRef,
-      backgroundPressed: '{color.primary-container}' as TokenRef,
-      text: '{color.on-primary-container}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.accent-subtle}' as TokenRef,
+      backgroundHover: '{color.accent-subtle}' as TokenRef,
+      backgroundPressed: '{color.accent-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
   },
 

@@ -1,7 +1,7 @@
 /**
  * Dialog Component Spec
  *
- * Material Design 3 기반 다이얼로그 컴포넌트
+ * React Aria 기반 다이얼로그 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -28,7 +28,7 @@ export interface DialogProps {
  */
 export const DialogSpec: ComponentSpec<DialogProps> = {
   name: 'Dialog',
-  description: 'Material Design 3 기반 다이얼로그 컴포넌트',
+  description: 'React Aria 기반 다이얼로그 컴포넌트',
   element: 'div',
 
   defaultVariant: 'primary',
@@ -46,16 +46,16 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
 
   variants: {
     primary: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     error: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.error}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.negative}' as TokenRef,
     },
   },
 

@@ -1,7 +1,7 @@
 /**
  * Meter Component Spec
  *
- * Material Design 3 기반 미터 컴포넌트 (트랙 + 채우기)
+ * React Aria 기반 미터 컴포넌트 (트랙 + 채우기)
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -30,10 +30,10 @@ export interface MeterProps {
 
 /** variant별 채우기 색상 */
 export const METER_FILL_COLORS: Record<string, TokenRef> = {
-  default: '{color.primary}' as TokenRef,
-  primary: '{color.primary}' as TokenRef,
-  secondary: '{color.secondary}' as TokenRef,
-  error: '{color.error}' as TokenRef,
+  default: '{color.accent}' as TokenRef,
+  primary: '{color.accent}' as TokenRef,
+  secondary: '{color.neutral-subtle}' as TokenRef,
+  error: '{color.negative}' as TokenRef,
 };
 
 /** 사이즈별 바 치수 */
@@ -48,7 +48,7 @@ export const METER_DIMENSIONS: Record<string, { barHeight: number; width: number
  */
 export const MeterSpec: ComponentSpec<MeterProps> = {
   name: 'Meter',
-  description: 'Material Design 3 기반 미터 컴포넌트',
+  description: 'React Aria 기반 미터 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -56,28 +56,28 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     primary: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     secondary: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     error: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
   },
 

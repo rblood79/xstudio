@@ -1,7 +1,7 @@
 /**
  * ColorSlider Component Spec
  *
- * Material Design 3 기반 색상 슬라이더 컴포넌트
+ * React Aria 기반 색상 슬라이더 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -26,7 +26,7 @@ export interface ColorSliderProps {
  */
 export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
   name: 'ColorSlider',
-  description: 'Material Design 3 기반 색상 슬라이더 (gradient track + thumb)',
+  description: 'React Aria 기반 색상 슬라이더 (gradient track + thumb)',
   element: 'div',
 
   defaultVariant: 'default',
@@ -34,18 +34,18 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
   },
 
@@ -153,7 +153,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
           type: 'border' as const,
           target: 'track',
           borderWidth: 1,
-          color: '{color.outline-variant}' as TokenRef,
+          color: '{color.border}' as TokenRef,
           radius: borderRadius as unknown as number,
         },
         // Thumb (원형)
@@ -162,7 +162,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
           x: thumbSize / 2 + value * (width - thumbSize),
           y: trackHeight / 2,
           radius: thumbSize / 2,
-          fill: '{color.surface}' as TokenRef,
+          fill: '{color.base}' as TokenRef,
         },
         // Thumb 테두리
         {
@@ -172,7 +172,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
           width: thumbSize,
           height: thumbSize,
           borderWidth: 2,
-          color: '{color.outline-variant}' as TokenRef,
+          color: '{color.border}' as TokenRef,
           radius: thumbSize / 2,
         },
       ];

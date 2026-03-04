@@ -1,7 +1,7 @@
 /**
  * ColorPicker Component Spec
  *
- * Material Design 3 기반 색상 선택기 컴포넌트
+ * React Aria 기반 색상 선택기 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -33,7 +33,7 @@ export interface ColorPickerProps {
  */
 export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
   name: 'ColorPicker',
-  description: 'Material Design 3 기반 색상 선택기 (area + sliders + swatches)',
+  description: 'React Aria 기반 색상 선택기 (area + sliders + swatches)',
   element: 'div',
 
   defaultVariant: 'default',
@@ -51,25 +51,25 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     compact: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-2}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     expanded: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
     },
   },
 
@@ -123,7 +123,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
         ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
         : size.borderRadius;
 
-      const borderColor = props.style?.borderColor ?? variant.border ?? ('{color.outline-variant}' as TokenRef);
+      const borderColor = props.style?.borderColor ?? variant.border ?? ('{color.border}' as TokenRef);
       const styleBw = props.style?.borderWidth;
       const borderWidth = styleBw != null
         ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
@@ -196,8 +196,8 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
           type: 'linear',
           angle: 90,
           stops: [
-            { offset: 0, color: '{color.surface}' as TokenRef },
-            { offset: 1, color: '{color.primary}' as TokenRef },
+            { offset: 0, color: '{color.base}' as TokenRef },
+            { offset: 1, color: '{color.accent}' as TokenRef },
           ],
         },
       });
@@ -210,7 +210,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
         x: thumbX,
         y: thumbY,
         radius: 7,
-        fill: '{color.surface}' as TokenRef,
+        fill: '{color.base}' as TokenRef,
       });
 
       // Hue slider
@@ -251,7 +251,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
           angle: 0,
           stops: [
             { offset: 0, color: 'rgba(0, 0, 0, 0)' },
-            { offset: 1, color: '{color.primary}' as TokenRef },
+            { offset: 1, color: '{color.accent}' as TokenRef },
           ],
         },
       });

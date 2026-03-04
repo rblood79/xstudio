@@ -1,7 +1,7 @@
 /**
  * Calendar Component Spec
  *
- * Material Design 3 기반 캘린더 컴포넌트
+ * React Aria 기반 캘린더 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -31,7 +31,7 @@ export interface CalendarProps {
  */
 export const CalendarSpec: ComponentSpec<CalendarProps> = {
   name: 'Calendar',
-  description: 'Material Design 3 기반 캘린더 (월 그리드 + 네비게이션)',
+  description: 'React Aria 기반 캘린더 (월 그리드 + 네비게이션)',
   element: 'div',
 
   defaultVariant: 'default',
@@ -39,18 +39,18 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
   },
 
@@ -148,7 +148,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           type: 'border' as const,
           target: 'bg',
           borderWidth: 1,
-          color: variant.border ?? ('{color.outline-variant}' as TokenRef),
+          color: variant.border ?? ('{color.border}' as TokenRef),
           radius: borderRadius as unknown as number,
         },
       ];
@@ -205,7 +205,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           fontSize: fontSize - 2,
           fontFamily: ff,
           fontWeight: 500,
-          fill: '{color.on-surface-variant}' as TokenRef,
+          fill: '{color.neutral-subdued}' as TokenRef,
           align: 'center' as const,
           baseline: 'middle' as const,
           maxWidth: cellSize,
@@ -228,7 +228,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
             x: cx,
             y: cy,
             radius: cellSize / 2,
-            fill: '{color.primary}' as TokenRef,
+            fill: '{color.accent}' as TokenRef,
           });
         }
 
@@ -240,7 +240,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           fontSize,
           fontFamily: ff,
           fontWeight: day === today ? 600 : 400,
-          fill: day === today ? ('{color.on-primary}' as TokenRef) : variant.text,
+          fill: day === today ? ('{color.on-accent}' as TokenRef) : variant.text,
           align: 'center' as const,
           baseline: 'middle' as const,
           maxWidth: cellSize,

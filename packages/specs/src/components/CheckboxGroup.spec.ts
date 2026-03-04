@@ -1,7 +1,7 @@
 /**
  * CheckboxGroup Component Spec
  *
- * Material Design 3 기반 체크박스 그룹 컨테이너 컴포넌트
+ * React Aria 기반 체크박스 그룹 컨테이너 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -32,7 +32,7 @@ export interface CheckboxGroupProps {
  */
 export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
   name: 'CheckboxGroup',
-  description: 'Material Design 3 기반 체크박스 그룹 컨테이너 컴포넌트',
+  description: 'React Aria 기반 체크박스 그룹 컨테이너 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -40,16 +40,16 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
   },
 
@@ -139,7 +139,7 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
           text: descText,
           fontSize: fontSize - 2,
           fontFamily: ff,
-          fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
+          fill: props.isInvalid ? ('{color.negative}' as TokenRef) : ('{color.neutral-subdued}' as TokenRef),
           align: textAlign,
           baseline: 'top' as const,
         });

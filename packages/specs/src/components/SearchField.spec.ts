@@ -1,7 +1,7 @@
 /**
  * SearchField Component Spec
  *
- * Material Design 3 기반 검색 입력 컴포넌트 (검색 아이콘 + 클리어 버튼)
+ * React Aria 기반 검색 입력 컴포넌트 (검색 아이콘 + 클리어 버튼)
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -30,7 +30,7 @@ export interface SearchFieldProps {
  */
 export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   name: 'SearchField',
-  description: 'Material Design 3 기반 검색 입력 컴포넌트',
+  description: 'React Aria 기반 검색 입력 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -38,20 +38,20 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
-      borderHover: '{color.primary}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
+      borderHover: '{color.accent}' as TokenRef,
     },
     primary: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
-      borderHover: '{color.primary}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
+      borderHover: '{color.accent}' as TokenRef,
     },
   },
 
@@ -143,7 +143,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
 
       const textColor = props.style?.color
-                      ?? (props.value ? variant.text : ('{color.on-surface-variant}' as TokenRef));
+                      ?? (props.value ? variant.text : ('{color.neutral-subdued}' as TokenRef));
 
       const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
       const paddingX = stylePx != null
@@ -206,7 +206,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         x: iconX - 2,
         y: iconY - 2,
         radius: iconSize / 3,
-        fill: '{color.on-surface-variant}' as TokenRef,
+        fill: '{color.neutral-subdued}' as TokenRef,
         fillAlpha: 0,
       });
       shapes.push({
@@ -215,7 +215,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         y1: iconY + iconSize / 5,
         x2: iconX + iconSize / 2.5,
         y2: iconY + iconSize / 2.5,
-        stroke: '{color.on-surface-variant}' as TokenRef,
+        stroke: '{color.neutral-subdued}' as TokenRef,
         strokeWidth: 2,
       });
 
@@ -241,7 +241,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
           x: width - paddingX - iconSize / 2,
           y: labelOffset + height / 2,
           radius: iconSize / 2.5,
-          fill: '{color.on-surface-variant}' as TokenRef,
+          fill: '{color.neutral-subdued}' as TokenRef,
           fillAlpha: 0.15,
         });
         // X 마크
@@ -254,7 +254,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
           y1: cy - cs,
           x2: cx + cs,
           y2: cy + cs,
-          stroke: '{color.on-surface-variant}' as TokenRef,
+          stroke: '{color.neutral-subdued}' as TokenRef,
           strokeWidth: 2,
         });
         shapes.push({
@@ -263,7 +263,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
           y1: cy - cs,
           x2: cx - cs,
           y2: cy + cs,
-          stroke: '{color.on-surface-variant}' as TokenRef,
+          stroke: '{color.neutral-subdued}' as TokenRef,
           strokeWidth: 2,
         });
       }

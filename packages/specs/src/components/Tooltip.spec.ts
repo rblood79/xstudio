@@ -1,7 +1,7 @@
 /**
  * Tooltip Component Spec
  *
- * Material Design 3 기반 툴팁 컴포넌트
+ * React Aria 기반 툴팁 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -39,7 +39,7 @@ export const TOOLTIP_MAX_WIDTH: Record<string, number> = {
  */
 export const TooltipSpec: ComponentSpec<TooltipProps> = {
   name: 'Tooltip',
-  description: 'Material Design 3 기반 툴팁 컴포넌트',
+  description: 'React Aria 기반 툴팁 컴포넌트',
   element: 'div',
 
   defaultVariant: 'surface',
@@ -56,16 +56,16 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
 
   variants: {
     primary: {
-      background: '{color.primary}' as TokenRef,
-      backgroundHover: '{color.primary}' as TokenRef,
-      backgroundPressed: '{color.primary}' as TokenRef,
-      text: '{color.on-primary}' as TokenRef,
+      background: '{color.accent}' as TokenRef,
+      backgroundHover: '{color.accent}' as TokenRef,
+      backgroundPressed: '{color.accent}' as TokenRef,
+      text: '{color.on-accent}' as TokenRef,
     },
     surface: {
-      background: '{color.surface-container-highest}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.neutral-subtle}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
   },
 

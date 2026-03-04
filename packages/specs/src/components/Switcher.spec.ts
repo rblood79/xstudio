@@ -36,18 +36,18 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface-variant}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral-subdued}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface-variant}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral-subdued}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
   },
 
@@ -109,7 +109,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const borderColor = props.style?.borderColor
-                        ?? (variant.border ?? '{color.outline-variant}' as TokenRef);
+                        ?? (variant.border ?? '{color.border}' as TokenRef);
 
       const items = props.items ?? ['Tab 1', 'Tab 2'];
       const activeIndex = props.activeIndex ?? 0;
@@ -151,7 +151,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
         width: itemWidth,
         height: activeHeight,
         radius: activeRadius,
-        fill: '{color.primary}' as TokenRef,
+        fill: '{color.accent}' as TokenRef,
       });
 
       // 탭 텍스트 스타일
@@ -181,7 +181,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
           : (isActive ? 600 : 400);
 
         const textColor = props.style?.color
-                        ?? (isActive ? '{color.on-primary}' as TokenRef : variant.text);
+                        ?? (isActive ? '{color.on-accent}' as TokenRef : variant.text);
 
         shapes.push({
           type: 'text' as const,

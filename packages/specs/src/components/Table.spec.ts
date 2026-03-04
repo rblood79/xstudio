@@ -1,7 +1,7 @@
 /**
  * Table Component Spec
  *
- * Material Design 3 기반 데이터 테이블 컴포넌트
+ * React Aria 기반 데이터 테이블 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -47,7 +47,7 @@ export interface TableProps {
  */
 export const TableSpec: ComponentSpec<TableProps> = {
   name: 'Table',
-  description: 'Material Design 3 기반 데이터 테이블 컴포넌트',
+  description: 'React Aria 기반 데이터 테이블 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -55,25 +55,25 @@ export const TableSpec: ComponentSpec<TableProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     striped: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     bordered: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
     },
   },
 
@@ -198,7 +198,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
         y: 0,
         width: totalWidth,
         height: size.height,
-        fill: '{color.surface-container}' as TokenRef,
+        fill: '{color.layer-2}' as TokenRef,
       });
 
       // 헤더 텍스트
@@ -228,7 +228,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
         y1: size.height,
         x2: totalWidth,
         y2: size.height,
-        stroke: borderColor || ('{color.outline-variant}' as TokenRef),
+        stroke: borderColor || ('{color.border}' as TokenRef),
         strokeWidth: 1,
       });
 
@@ -237,7 +237,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
       rows.forEach((row, rowIndex) => {
         const isEven = rowIndex % 2 === 0;
         const rowBg = props.variant === 'striped' && !isEven
-          ? '{color.surface-container}' as TokenRef
+          ? '{color.layer-2}' as TokenRef
           : (bgColor ?? variant.background);
 
         // 행 배경
@@ -248,7 +248,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
           width: totalWidth,
           height: size.height,
           fill: row.isSelected
-            ? ('{color.primary-container}' as TokenRef)
+            ? ('{color.accent-subtle}' as TokenRef)
             : rowBg,
         });
 
@@ -266,7 +266,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
             fontFamily: ff,
             fontWeight: cellFw,
             fill: row.isSelected
-              ? ('{color.on-primary-container}' as TokenRef)
+              ? ('{color.neutral}' as TokenRef)
               : textColor,
             baseline: 'middle' as const,
             align: textAlign,
@@ -282,7 +282,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
           y1: yOffset + size.height,
           x2: totalWidth,
           y2: yOffset + size.height,
-          stroke: borderColor || ('{color.outline-variant}' as TokenRef),
+          stroke: borderColor || ('{color.border}' as TokenRef),
           strokeWidth: 1,
         });
 

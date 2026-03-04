@@ -1,7 +1,7 @@
 /**
  * ToggleButton Component Spec
  *
- * Material Design 3 기반 토글 버튼 컴포넌트
+ * React Aria 기반 토글 버튼 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -35,24 +35,24 @@ export interface ToggleButtonProps {
 /** isSelected 시 variant별 반전 색상 */
 export const TOGGLE_SELECTED_COLORS: Record<string, { bg: TokenRef; text: TokenRef; border: TokenRef }> = {
   default: {
-    bg: '{color.secondary}' as TokenRef,
-    text: '{color.on-secondary}' as TokenRef,
-    border: '{color.secondary}' as TokenRef,
+    bg: '{color.neutral-subtle}' as TokenRef,
+    text: '{color.white}' as TokenRef,
+    border: '{color.neutral-subtle}' as TokenRef,
   },
   primary: {
-    bg: '{color.primary}' as TokenRef,
-    text: '{color.on-primary}' as TokenRef,
-    border: '{color.primary}' as TokenRef,
+    bg: '{color.accent}' as TokenRef,
+    text: '{color.on-accent}' as TokenRef,
+    border: '{color.accent}' as TokenRef,
   },
   secondary: {
-    bg: '{color.secondary}' as TokenRef,
-    text: '{color.on-secondary}' as TokenRef,
-    border: '{color.secondary}' as TokenRef,
+    bg: '{color.neutral-subtle}' as TokenRef,
+    text: '{color.white}' as TokenRef,
+    border: '{color.neutral-subtle}' as TokenRef,
   },
   surface: {
-    bg: '{color.primary}' as TokenRef,
-    text: '{color.on-primary}' as TokenRef,
-    border: '{color.primary}' as TokenRef,
+    bg: '{color.accent}' as TokenRef,
+    text: '{color.on-accent}' as TokenRef,
+    border: '{color.accent}' as TokenRef,
   },
 };
 
@@ -61,7 +61,7 @@ export const TOGGLE_SELECTED_COLORS: Record<string, { bg: TokenRef; text: TokenR
  */
 export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
   name: 'ToggleButton',
-  description: 'Material Design 3 기반 토글 버튼 컴포넌트',
+  description: 'React Aria 기반 토글 버튼 컴포넌트',
   element: 'button',
 
   defaultVariant: 'default',
@@ -69,32 +69,32 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     secondary: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     surface: {
-      background: '{color.surface-container-highest}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.neutral-subtle}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
   },
 

@@ -1,7 +1,7 @@
 /**
  * Pagination Component Spec
  *
- * Material Design 3 기반 페이지네이션 컴포넌트
+ * React Aria 기반 페이지네이션 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -27,7 +27,7 @@ export interface PaginationProps {
  */
 export const PaginationSpec: ComponentSpec<PaginationProps> = {
   name: 'Pagination',
-  description: 'Material Design 3 기반 페이지네이션 컴포넌트',
+  description: 'React Aria 기반 페이지네이션 컴포넌트',
   element: 'nav',
 
   defaultVariant: 'default',
@@ -35,18 +35,18 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.primary}' as TokenRef,
-      backgroundHover: '{color.primary-hover}' as TokenRef,
-      backgroundPressed: '{color.primary-pressed}' as TokenRef,
-      text: '{color.on-primary}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.accent}' as TokenRef,
+      backgroundHover: '{color.accent-hover}' as TokenRef,
+      backgroundPressed: '{color.accent-pressed}' as TokenRef,
+      text: '{color.on-accent}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
   },
 
@@ -143,7 +143,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
         width: buttonSize,
         height: buttonSize,
         radius: borderRadius as unknown as number,
-        fill: '{color.surface-container}' as TokenRef,
+        fill: '{color.layer-2}' as TokenRef,
       });
 
       // 페이지 버튼들
@@ -156,7 +156,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
           width: buttonSize,
           height: buttonSize,
           radius: borderRadius as unknown as number,
-          fill: isActive ? bgColor : ('{color.surface}' as TokenRef),
+          fill: isActive ? bgColor : ('{color.base}' as TokenRef),
         });
 
         const fwRaw = props.style?.fontWeight;
@@ -172,7 +172,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
           fontSize,
           fontFamily: ff,
           fontWeight: fw,
-          fill: isActive ? textColor : ('{color.on-surface}' as TokenRef),
+          fill: isActive ? textColor : ('{color.neutral}' as TokenRef),
           align: textAlign,
           baseline: 'middle' as const,
         });
@@ -186,7 +186,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
         width: buttonSize,
         height: buttonSize,
         radius: borderRadius as unknown as number,
-        fill: '{color.surface-container}' as TokenRef,
+        fill: '{color.layer-2}' as TokenRef,
       });
 
       return shapes;

@@ -1,7 +1,7 @@
 /**
  * DropZone Component Spec
  *
- * Material Design 3 기반 드롭 존 컴포넌트
+ * React Aria 기반 드롭 존 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -27,7 +27,7 @@ export interface DropZoneProps {
  */
 export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
   name: 'DropZone',
-  description: 'Material Design 3 기반 파일 드롭 존 컴포넌트',
+  description: 'React Aria 기반 파일 드롭 존 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -35,18 +35,18 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface-variant}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral-subdued}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.primary-container}' as TokenRef,
-      backgroundPressed: '{color.primary-container}' as TokenRef,
-      text: '{color.primary}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.accent-subtle}' as TokenRef,
+      backgroundPressed: '{color.accent-subtle}' as TokenRef,
+      text: '{color.accent}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
   },
 
@@ -112,8 +112,8 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
                     ?? (isActive ? variant.backgroundHover : variant.background);
       const borderColor = props.style?.borderColor
                         ?? (isActive
-                            ? ('{color.primary}' as TokenRef)
-                            : variant.border || ('{color.outline-variant}' as TokenRef));
+                            ? ('{color.accent}' as TokenRef)
+                            : variant.border || ('{color.border}' as TokenRef));
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
       const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
@@ -136,7 +136,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'center';
       const textColor = props.style?.color
-                      ?? (isActive ? ('{color.primary}' as TokenRef) : variant.text);
+                      ?? (isActive ? ('{color.accent}' as TokenRef) : variant.text);
 
       const shapes: Shape[] = [
         // 배경

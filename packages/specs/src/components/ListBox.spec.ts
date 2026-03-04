@@ -1,7 +1,7 @@
 /**
  * ListBox Component Spec
  *
- * Material Design 3 기반 리스트박스 컴포넌트
+ * React Aria 기반 리스트박스 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -36,7 +36,7 @@ export interface ListBoxProps {
  */
 export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   name: 'ListBox',
-  description: 'Material Design 3 기반 리스트박스 컴포넌트',
+  description: 'React Aria 기반 리스트박스 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -44,18 +44,18 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.primary-container}' as TokenRef,
-      backgroundPressed: '{color.primary-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.accent-subtle}' as TokenRef,
+      backgroundPressed: '{color.accent-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
   },
 
@@ -229,8 +229,8 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
             y: itemY + itemH / 2,
             fontSize,
             fill: isSelected
-              ? ('{color.primary}' as TokenRef)
-              : ('{color.on-surface-variant}' as TokenRef),
+              ? ('{color.accent}' as TokenRef)
+              : ('{color.neutral-subdued}' as TokenRef),
             strokeWidth: 2,
           });
         }
@@ -248,7 +248,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           fontFamily: ff,
           fontWeight: isSelected ? 600 : 400,
           fill: isSelected
-            ? ('{color.on-surface}' as TokenRef)
+            ? ('{color.neutral}' as TokenRef)
             : textColor,
           align: textAlign,
           baseline: 'middle' as const,

@@ -1,7 +1,7 @@
 /**
  * Slider Component Spec
  *
- * Material Design 3 기반 슬라이더 컴포넌트 (트랙 + 썸 + 채우기)
+ * React Aria 기반 슬라이더 컴포넌트 (트랙 + 썸 + 채우기)
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -32,16 +32,16 @@ export interface SliderProps {
 /** variant별 채우기/핸들 색상 */
 export const SLIDER_FILL_COLORS: Record<string, { fill: TokenRef; handle: TokenRef }> = {
   default: {
-    fill: '{color.primary}' as TokenRef,
-    handle: '{color.primary}' as TokenRef,
+    fill: '{color.accent}' as TokenRef,
+    handle: '{color.accent}' as TokenRef,
   },
   primary: {
-    fill: '{color.primary}' as TokenRef,
-    handle: '{color.primary}' as TokenRef,
+    fill: '{color.accent}' as TokenRef,
+    handle: '{color.accent}' as TokenRef,
   },
   secondary: {
-    fill: '{color.secondary}' as TokenRef,
-    handle: '{color.secondary}' as TokenRef,
+    fill: '{color.neutral-subtle}' as TokenRef,
+    handle: '{color.neutral-subtle}' as TokenRef,
   },
 };
 
@@ -57,7 +57,7 @@ export const SLIDER_DIMENSIONS: Record<string, { trackHeight: number; thumbSize:
  */
 export const SliderSpec: ComponentSpec<SliderProps> = {
   name: 'Slider',
-  description: 'Material Design 3 기반 슬라이더 컴포넌트',
+  description: 'React Aria 기반 슬라이더 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -65,22 +65,22 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     primary: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     secondary: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
   },
 
@@ -241,7 +241,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         type: 'border' as const,
         target: 'thumb',
         borderWidth: 2,
-        color: '{color.surface}' as TokenRef,
+        color: '{color.base}' as TokenRef,
         radius: sliderDims.thumbSize / 2,
       });
 

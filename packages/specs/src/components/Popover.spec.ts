@@ -1,7 +1,7 @@
 /**
  * Popover Component Spec
  *
- * Material Design 3 기반 팝오버 컴포넌트
+ * React Aria 기반 팝오버 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -28,7 +28,7 @@ export interface PopoverProps {
  */
 export const PopoverSpec: ComponentSpec<PopoverProps> = {
   name: 'Popover',
-  description: 'Material Design 3 기반 팝오버 컴포넌트',
+  description: 'React Aria 기반 팝오버 컴포넌트',
   element: 'div',
 
   defaultVariant: 'surface',
@@ -46,25 +46,25 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
 
   variants: {
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
     secondary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.secondary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.neutral-subtle}' as TokenRef,
     },
     surface: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-2}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
   },
 
@@ -131,7 +131,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
           type: 'border' as const,
           target: 'bg',
           borderWidth: 1,
-          color: variant.border ?? '{color.outline-variant}' as TokenRef,
+          color: variant.border ?? '{color.border}' as TokenRef,
           radius: borderRadius as unknown as number,
         },
       ];

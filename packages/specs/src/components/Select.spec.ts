@@ -1,7 +1,7 @@
 /**
  * Select Component Spec
  *
- * Material Design 3 기반 드롭다운 셀렉트 컴포넌트
+ * React Aria 기반 드롭다운 셀렉트 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -42,7 +42,7 @@ export interface SelectProps {
  */
 export const SelectSpec: ComponentSpec<SelectProps> = {
   name: 'Select',
-  description: 'Material Design 3 기반 드롭다운 셀렉트 컴포넌트',
+  description: 'React Aria 기반 드롭다운 셀렉트 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -50,28 +50,28 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
-      borderHover: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-2}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
+      borderHover: '{color.accent}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
-      borderHover: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-2}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
+      borderHover: '{color.accent}' as TokenRef,
     },
     error: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.error-container}' as TokenRef,
-      backgroundPressed: '{color.error-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.error}' as TokenRef,
-      borderHover: '{color.error-hover}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.negative-subtle}' as TokenRef,
+      backgroundPressed: '{color.negative-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.negative}' as TokenRef,
+      borderHover: '{color.negative-hover}' as TokenRef,
     },
   },
 
@@ -221,7 +221,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             type: 'border' as const,
             target: 'trigger',
             borderWidth,
-            color: props.isInvalid ? ('{color.error}' as TokenRef) : borderColor,
+            color: props.isInvalid ? ('{color.negative}' as TokenRef) : borderColor,
             radius: borderRadius,
           });
         }
@@ -237,7 +237,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             fontFamily: ff,
             fill: (props.selectedText || props.value)
               ? textColor
-              : ('{color.on-surface-variant}' as TokenRef),
+              : ('{color.neutral-subdued}' as TokenRef),
             align: textAlign,
             baseline: 'middle' as const,
           });
@@ -251,7 +251,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           x: chevX,
           y: chevY,
           fontSize: chevronSize,
-          fill: '{color.on-surface-variant}' as TokenRef,
+          fill: '{color.neutral-subdued}' as TokenRef,
           strokeWidth: 2,
         });
       }
@@ -281,13 +281,13 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           width,
           height: dropdownHeight,
           radius: borderRadius,
-          fill: '{color.surface-container}' as TokenRef,
+          fill: '{color.layer-2}' as TokenRef,
         });
         shapes.push({
           type: 'border' as const,
           target: 'dropdown',
           borderWidth: 1,
-          color: '{color.outline-variant}' as TokenRef,
+          color: '{color.border}' as TokenRef,
           radius: borderRadius,
         });
 
@@ -312,7 +312,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
               width: width - 8,
               height: itemH - 4,
               radius: borderRadius,
-              fill: '{color.primary-container}' as TokenRef,
+              fill: '{color.accent-subtle}' as TokenRef,
             });
           }
 
@@ -326,8 +326,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             fontFamily: ff,
             fontWeight: isSelected ? 600 : 400,
             fill: isSelected
-              ? ('{color.on-primary-container}' as TokenRef)
-              : ('{color.on-surface}' as TokenRef),
+              ? ('{color.neutral}' as TokenRef)
+              : ('{color.neutral}' as TokenRef),
             align: textAlign,
             baseline: 'middle' as const,
           });
@@ -348,7 +348,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           text: descText,
           fontSize: fontSize - 2,
           fontFamily: ff,
-          fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
+          fill: props.isInvalid ? ('{color.negative}' as TokenRef) : ('{color.neutral-subdued}' as TokenRef),
           align: textAlign,
           baseline: 'top' as const,
         });

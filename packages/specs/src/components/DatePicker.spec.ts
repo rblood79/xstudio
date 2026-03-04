@@ -1,7 +1,7 @@
 /**
  * DatePicker Component Spec
  *
- * Material Design 3 기반 날짜 선택기 컴포넌트
+ * React Aria 기반 날짜 선택기 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -33,7 +33,7 @@ export interface DatePickerProps {
  */
 export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
   name: 'DatePicker',
-  description: 'Material Design 3 기반 날짜 선택기 (trigger + calendar overlay)',
+  description: 'React Aria 기반 날짜 선택기 (trigger + calendar overlay)',
   element: 'div',
 
   defaultVariant: 'default',
@@ -51,28 +51,28 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
-      borderHover: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
+      borderHover: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
-      borderHover: '{color.primary-hover}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
+      borderHover: '{color.accent-hover}' as TokenRef,
     },
     error: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.error}' as TokenRef,
-      borderHover: '{color.error-hover}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.negative}' as TokenRef,
+      borderHover: '{color.negative-hover}' as TokenRef,
     },
   },
 
@@ -164,7 +164,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
       const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
 
       const textColor = props.style?.color
-                      ?? (props.value ? variant.text : '{color.on-surface-variant}' as TokenRef);
+                      ?? (props.value ? variant.text : '{color.neutral-subdued}' as TokenRef);
 
       const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
       const paddingX = stylePx != null
@@ -188,7 +188,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
           type: 'border' as const,
           target: 'trigger',
           borderWidth,
-          color: borderColor ?? '{color.outline}' as TokenRef,
+          color: borderColor ?? '{color.border-hover}' as TokenRef,
           radius: borderRadius,
         },
         // 날짜 텍스트
@@ -236,7 +236,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
           width: calendarWidth,
           height: 'auto',
           radius: borderRadius,
-          fill: '{color.surface-container}' as TokenRef,
+          fill: '{color.layer-2}' as TokenRef,
         });
 
         // 캘린더 테두리
@@ -244,7 +244,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
           type: 'border' as const,
           target: 'calendar',
           borderWidth: 1,
-          color: '{color.outline-variant}' as TokenRef,
+          color: '{color.border}' as TokenRef,
           radius: borderRadius,
         });
       }

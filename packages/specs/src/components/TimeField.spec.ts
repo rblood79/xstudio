@@ -1,7 +1,7 @@
 /**
  * TimeField Component Spec
  *
- * Material Design 3 기반 시간 입력 필드 컴포넌트
+ * React Aria 기반 시간 입력 필드 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -31,7 +31,7 @@ export interface TimeFieldProps {
  */
 export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
   name: 'TimeField',
-  description: 'Material Design 3 기반 시간 입력 필드 (hour:minute:second 세그먼트)',
+  description: 'React Aria 기반 시간 입력 필드 (hour:minute:second 세그먼트)',
   element: 'div',
 
   defaultVariant: 'default',
@@ -39,28 +39,28 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
-      borderHover: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
+      borderHover: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
-      borderHover: '{color.primary-hover}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
+      borderHover: '{color.accent-hover}' as TokenRef,
     },
     error: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.error}' as TokenRef,
-      borderHover: '{color.error-hover}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.negative}' as TokenRef,
+      borderHover: '{color.negative-hover}' as TokenRef,
     },
   },
 
@@ -170,7 +170,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
           type: 'border' as const,
           target: 'bg',
           borderWidth,
-          color: borderColor ?? '{color.outline}' as TokenRef,
+          color: borderColor ?? '{color.border-hover}' as TokenRef,
           radius: borderRadius,
         },
       ];

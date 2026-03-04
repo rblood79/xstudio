@@ -1,7 +1,7 @@
 /**
  * Toast Component Spec
  *
- * Material Design 3 기반 토스트 알림 컴포넌트
+ * React Aria 기반 토스트 알림 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -30,7 +30,7 @@ export interface ToastProps {
  */
 export const ToastSpec: ComponentSpec<ToastProps> = {
   name: 'Toast',
-  description: 'Material Design 3 기반 토스트 알림 컴포넌트',
+  description: 'React Aria 기반 토스트 알림 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -47,32 +47,32 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container-highest}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.neutral-subtle}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.primary-container}' as TokenRef,
-      backgroundHover: '{color.primary-container}' as TokenRef,
-      backgroundPressed: '{color.primary-container}' as TokenRef,
-      text: '{color.on-primary-container}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.accent-subtle}' as TokenRef,
+      backgroundHover: '{color.accent-subtle}' as TokenRef,
+      backgroundPressed: '{color.accent-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
     error: {
-      background: '{color.error-container}' as TokenRef,
-      backgroundHover: '{color.error-container}' as TokenRef,
-      backgroundPressed: '{color.error-container}' as TokenRef,
-      text: '{color.on-error-container}' as TokenRef,
-      border: '{color.error}' as TokenRef,
+      background: '{color.negative-subtle}' as TokenRef,
+      backgroundHover: '{color.negative-subtle}' as TokenRef,
+      backgroundPressed: '{color.negative-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.negative}' as TokenRef,
     },
     success: {
-      background: '{color.tertiary-container}' as TokenRef,
-      backgroundHover: '{color.tertiary-container}' as TokenRef,
-      backgroundPressed: '{color.tertiary-container}' as TokenRef,
-      text: '{color.on-tertiary-container}' as TokenRef,
-      border: '{color.tertiary}' as TokenRef,
+      background: '{color.purple-subtle}' as TokenRef,
+      backgroundHover: '{color.purple-subtle}' as TokenRef,
+      backgroundPressed: '{color.purple-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.purple}' as TokenRef,
     },
   },
 
@@ -127,7 +127,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
 
       const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
       const borderColor = props.style?.borderColor
-                        ?? (variant.border || ('{color.outline-variant}' as TokenRef));
+                        ?? (variant.border || ('{color.border}' as TokenRef));
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
       const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
@@ -189,7 +189,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
           y: 0,
           width: 3,
           height: size.height,
-          fill: variant.border || ('{color.primary}' as TokenRef),
+          fill: variant.border || ('{color.accent}' as TokenRef),
         },
       ];
       if (hasChildren) return shapes;

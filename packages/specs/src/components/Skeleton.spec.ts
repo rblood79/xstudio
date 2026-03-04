@@ -1,7 +1,7 @@
 /**
  * Skeleton Component Spec
  *
- * Material Design 3 기반 스켈레톤 로딩 컴포넌트
+ * React Aria 기반 스켈레톤 로딩 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -26,7 +26,7 @@ export interface SkeletonProps {
  */
 export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
   name: 'Skeleton',
-  description: 'Material Design 3 기반 스켈레톤 로딩 플레이스홀더 컴포넌트',
+  description: 'React Aria 기반 스켈레톤 로딩 플레이스홀더 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -34,16 +34,16 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
-      text: '{color.on-surface-variant}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-2}' as TokenRef,
+      text: '{color.neutral-subdued}' as TokenRef,
     },
     primary: {
-      background: '{color.primary-container}' as TokenRef,
-      backgroundHover: '{color.primary-container}' as TokenRef,
-      backgroundPressed: '{color.primary-container}' as TokenRef,
-      text: '{color.on-primary-container}' as TokenRef,
+      background: '{color.accent-subtle}' as TokenRef,
+      backgroundHover: '{color.accent-subtle}' as TokenRef,
+      backgroundPressed: '{color.accent-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
   },
 
@@ -118,7 +118,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
           y: 0,
           width,
           height: height * 0.5,
-          fill: '{color.surface-container-high}' as TokenRef,
+          fill: '{color.layer-1}' as TokenRef,
         });
         // 제목 라인
         shapes.push({
@@ -128,7 +128,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
           width: width * 0.7,
           height: size.height * 0.8,
           radius: 4,
-          fill: '{color.surface-container-high}' as TokenRef,
+          fill: '{color.layer-1}' as TokenRef,
         });
       } else if (skeletonType === 'list') {
         // 리스트 스켈레톤 (3행)

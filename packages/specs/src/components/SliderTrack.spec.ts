@@ -1,7 +1,7 @@
 /**
  * SliderTrack Component Spec
  *
- * Material Design 3 기반 슬라이더 트랙 컴포넌트
+ * React Aria 기반 슬라이더 트랙 컴포넌트
  * Slider compound 컴포넌트의 child 요소 (트랙 배경 + 채우기 바)
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
@@ -45,22 +45,22 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     primary: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     secondary: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
   },
 

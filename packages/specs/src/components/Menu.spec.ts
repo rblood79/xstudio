@@ -1,7 +1,7 @@
 /**
  * Menu Component Spec
  *
- * Material Design 3 기반 메뉴 컴포넌트
+ * React Aria 기반 메뉴 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -28,7 +28,7 @@ export interface MenuProps {
  */
 export const MenuSpec: ComponentSpec<MenuProps> = {
   name: 'Menu',
-  description: 'Material Design 3 기반 드롭다운 메뉴 컴포넌트',
+  description: 'React Aria 기반 드롭다운 메뉴 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -46,18 +46,18 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.primary-container}' as TokenRef,
-      backgroundPressed: '{color.primary-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.accent-subtle}' as TokenRef,
+      backgroundPressed: '{color.accent-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
   },
 
@@ -127,7 +127,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
             y1: itemY + 4,
             x2: width,
             y2: itemY + 4,
-            stroke: '{color.outline-variant}' as TokenRef,
+            stroke: '{color.border}' as TokenRef,
             strokeWidth: 1,
           });
           itemY += 9;
@@ -183,7 +183,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
           type: 'border' as const,
           target: 'bg',
           borderWidth: 1,
-          color: variant.border || ('{color.outline-variant}' as TokenRef),
+          color: variant.border || ('{color.border}' as TokenRef),
           radius: borderRadius as unknown as number,
         },
       ];

@@ -1,7 +1,7 @@
 /**
  * SliderThumb Component Spec
  *
- * Material Design 3 기반 슬라이더 썸(핸들) 컴포넌트
+ * React Aria 기반 슬라이더 썸(핸들) 컴포넌트
  * Slider compound 컴포넌트의 child 요소 (드래그 가능한 원형 핸들)
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
@@ -46,22 +46,22 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
 
   variants: {
     default: {
-      background: '{color.primary}' as TokenRef,
-      backgroundHover: '{color.primary}' as TokenRef,
-      backgroundPressed: '{color.primary}' as TokenRef,
-      text: '{color.on-primary}' as TokenRef,
+      background: '{color.accent}' as TokenRef,
+      backgroundHover: '{color.accent}' as TokenRef,
+      backgroundPressed: '{color.accent}' as TokenRef,
+      text: '{color.on-accent}' as TokenRef,
     },
     primary: {
-      background: '{color.primary}' as TokenRef,
-      backgroundHover: '{color.primary}' as TokenRef,
-      backgroundPressed: '{color.primary}' as TokenRef,
-      text: '{color.on-primary}' as TokenRef,
+      background: '{color.accent}' as TokenRef,
+      backgroundHover: '{color.accent}' as TokenRef,
+      backgroundPressed: '{color.accent}' as TokenRef,
+      text: '{color.on-accent}' as TokenRef,
     },
     secondary: {
-      background: '{color.secondary}' as TokenRef,
-      backgroundHover: '{color.secondary}' as TokenRef,
-      backgroundPressed: '{color.secondary}' as TokenRef,
-      text: '{color.on-secondary}' as TokenRef,
+      background: '{color.neutral-subtle}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.white}' as TokenRef,
     },
   },
 
@@ -134,7 +134,7 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
           type: 'border' as const,
           target: 'thumb',
           borderWidth: 2,
-          color: '{color.surface}' as TokenRef,
+          color: '{color.base}' as TokenRef,
           radius: thumbRadius,
         },
       ];

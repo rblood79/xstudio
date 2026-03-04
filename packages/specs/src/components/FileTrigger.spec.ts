@@ -1,7 +1,7 @@
 /**
  * FileTrigger Component Spec
  *
- * Material Design 3 기반 파일 트리거 컴포넌트
+ * React Aria 기반 파일 트리거 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -31,7 +31,7 @@ export interface FileTriggerProps {
  */
 export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
   name: 'FileTrigger',
-  description: 'Material Design 3 기반 파일 선택 트리거 컴포넌트',
+  description: 'React Aria 기반 파일 선택 트리거 컴포넌트',
   element: 'button',
 
   defaultVariant: 'default',
@@ -39,18 +39,18 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.layer-1}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.primary}' as TokenRef,
-      backgroundHover: '{color.primary-hover}' as TokenRef,
-      backgroundPressed: '{color.primary-pressed}' as TokenRef,
-      text: '{color.on-primary}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.accent}' as TokenRef,
+      backgroundHover: '{color.accent-hover}' as TokenRef,
+      backgroundPressed: '{color.accent-pressed}' as TokenRef,
+      text: '{color.on-accent}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
   },
 
@@ -121,7 +121,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
 
       // 상태에 따른 테두리색 선택 (사용자 스타일 우선)
       const borderColor = props.style?.borderColor
-                        ?? (variant.border || ('{color.outline-variant}' as TokenRef));
+                        ?? (variant.border || ('{color.border}' as TokenRef));
 
       const shapes: Shape[] = [
         // 배경

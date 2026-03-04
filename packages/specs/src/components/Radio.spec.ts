@@ -1,7 +1,7 @@
 /**
  * Radio Component Spec
  *
- * Material Design 3 기반 라디오 버튼 컴포넌트
+ * React Aria 기반 라디오 버튼 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -30,20 +30,20 @@ export interface RadioProps {
 /** variant별 선택 시 색상 */
 export const RADIO_SELECTED_COLORS: Record<string, { ring: TokenRef; dot: TokenRef }> = {
   default: {
-    ring: '{color.primary}' as TokenRef,
-    dot: '{color.primary}' as TokenRef,
+    ring: '{color.accent}' as TokenRef,
+    dot: '{color.accent}' as TokenRef,
   },
   primary: {
-    ring: '{color.primary}' as TokenRef,
-    dot: '{color.primary}' as TokenRef,
+    ring: '{color.accent}' as TokenRef,
+    dot: '{color.accent}' as TokenRef,
   },
   secondary: {
-    ring: '{color.secondary}' as TokenRef,
-    dot: '{color.secondary}' as TokenRef,
+    ring: '{color.neutral-subtle}' as TokenRef,
+    dot: '{color.neutral-subtle}' as TokenRef,
   },
   error: {
-    ring: '{color.error}' as TokenRef,
-    dot: '{color.error}' as TokenRef,
+    ring: '{color.negative}' as TokenRef,
+    dot: '{color.negative}' as TokenRef,
   },
 };
 
@@ -59,7 +59,7 @@ export const RADIO_DIMENSIONS: Record<string, { outer: number; inner: number }> 
  */
 export const RadioSpec: ComponentSpec<RadioProps> = {
   name: 'Radio',
-  description: 'Material Design 3 기반 라디오 버튼 컴포넌트',
+  description: 'React Aria 기반 라디오 버튼 컴포넌트',
   element: 'label',
 
   defaultVariant: 'default',
@@ -67,32 +67,32 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
     },
     secondary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
     },
     error: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.error-container}' as TokenRef,
-      backgroundPressed: '{color.error-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.error}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.negative-subtle}' as TokenRef,
+      backgroundPressed: '{color.negative-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.negative}' as TokenRef,
     },
   },
 

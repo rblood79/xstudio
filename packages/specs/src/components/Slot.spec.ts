@@ -34,11 +34,11 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container}' as TokenRef,
-      text: '{color.on-surface-variant}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-2}' as TokenRef,
+      text: '{color.neutral-subdued}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
   },
 
@@ -88,7 +88,7 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const borderColor = props.style?.borderColor
-                        ?? (variant.border || ('{color.outline-variant}' as TokenRef));
+                        ?? (variant.border || ('{color.border}' as TokenRef));
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
       const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;

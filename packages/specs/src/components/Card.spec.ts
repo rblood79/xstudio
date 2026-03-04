@@ -1,7 +1,7 @@
 /**
  * Card Component Spec
  *
- * Material Design 3 기반 카드 컴포넌트
+ * React Aria 기반 카드 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -31,7 +31,7 @@ export interface CardProps {
  */
 export const CardSpec: ComponentSpec<CardProps> = {
   name: 'Card',
-  description: 'Material Design 3 기반 카드 컴포넌트',
+  description: 'React Aria 기반 카드 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -39,53 +39,53 @@ export const CardSpec: ComponentSpec<CardProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.primary}' as TokenRef,
-      backgroundHover: '{color.primary-hover}' as TokenRef,
-      backgroundPressed: '{color.primary-pressed}' as TokenRef,
-      text: '{color.on-primary}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.accent}' as TokenRef,
+      backgroundHover: '{color.accent-hover}' as TokenRef,
+      backgroundPressed: '{color.accent-pressed}' as TokenRef,
+      text: '{color.on-accent}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
     secondary: {
-      background: '{color.secondary}' as TokenRef,
-      backgroundHover: '{color.secondary-hover}' as TokenRef,
-      backgroundPressed: '{color.secondary-pressed}' as TokenRef,
-      text: '{color.on-secondary}' as TokenRef,
-      border: '{color.secondary}' as TokenRef,
+      background: '{color.neutral-subtle}' as TokenRef,
+      backgroundHover: '{color.neutral-hover}' as TokenRef,
+      backgroundPressed: '{color.neutral-pressed}' as TokenRef,
+      text: '{color.white}' as TokenRef,
+      border: '{color.neutral-subtle}' as TokenRef,
     },
     tertiary: {
-      background: '{color.tertiary}' as TokenRef,
-      backgroundHover: '{color.tertiary-hover}' as TokenRef,
-      backgroundPressed: '{color.tertiary-pressed}' as TokenRef,
-      text: '{color.on-tertiary}' as TokenRef,
-      border: '{color.tertiary}' as TokenRef,
+      background: '{color.purple}' as TokenRef,
+      backgroundHover: '{color.purple-hover}' as TokenRef,
+      backgroundPressed: '{color.purple-pressed}' as TokenRef,
+      text: '{color.white}' as TokenRef,
+      border: '{color.purple}' as TokenRef,
     },
     surface: {
-      background: '{color.surface-container-highest}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.neutral-subtle}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     elevated: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
       // elevated는 border 대신 shadow 사용 (render.shapes에서 처리)
     },
     outlined: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
     },
   },
 
@@ -195,7 +195,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
           type: 'border' as const,
           target: 'bg',
           borderWidth: 2,
-          color: '{color.primary}' as TokenRef,
+          color: '{color.accent}' as TokenRef,
           radius: borderRadius as unknown as number,
         });
       }

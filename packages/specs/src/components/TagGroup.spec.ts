@@ -1,7 +1,7 @@
 /**
  * TagGroup Component Spec
  *
- * Material Design 3 기반 태그 그룹 컴포넌트
+ * React Aria 기반 태그 그룹 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -30,7 +30,7 @@ export interface TagGroupProps {
  */
 export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   name: 'TagGroup',
-  description: 'Material Design 3 기반 태그 그룹 컴포넌트',
+  description: 'React Aria 기반 태그 그룹 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -38,32 +38,32 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.primary-container}' as TokenRef,
-      backgroundHover: '{color.primary-container}' as TokenRef,
-      backgroundPressed: '{color.primary-container}' as TokenRef,
-      text: '{color.on-primary-container}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.accent-subtle}' as TokenRef,
+      backgroundHover: '{color.accent-subtle}' as TokenRef,
+      backgroundPressed: '{color.accent-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
     secondary: {
-      background: '{color.secondary-container}' as TokenRef,
-      backgroundHover: '{color.secondary-container}' as TokenRef,
-      backgroundPressed: '{color.secondary-container}' as TokenRef,
-      text: '{color.on-secondary-container}' as TokenRef,
-      border: '{color.secondary}' as TokenRef,
+      background: '{color.neutral-subtle}' as TokenRef,
+      backgroundHover: '{color.neutral-subtle}' as TokenRef,
+      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.neutral-subtle}' as TokenRef,
     },
     error: {
-      background: '{color.error-container}' as TokenRef,
-      backgroundHover: '{color.error-container}' as TokenRef,
-      backgroundPressed: '{color.error-container}' as TokenRef,
-      text: '{color.on-error-container}' as TokenRef,
-      border: '{color.error}' as TokenRef,
+      background: '{color.negative-subtle}' as TokenRef,
+      backgroundHover: '{color.negative-subtle}' as TokenRef,
+      backgroundPressed: '{color.negative-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.negative}' as TokenRef,
     },
   },
 

@@ -1,15 +1,15 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-04 (ADR-018 Phase 2~5 완료, M3 토큰 전체 제거)
+> **최종 업데이트**: 2026-03-05 (ADR-022 Accepted, ADR-023~025 S2 후속 ADR Proposed)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 10     |
+| 완료 (Accepted/Implemented/Superseded) | 11     |
 | 부분 완료                              | 5      |
-| 미구현 (Proposed/계획)                 | 6      |
-| **합계**                               | **21** |
+| 미구현 (Proposed/계획)                 | 9      |
+| **합계**                               | **25** |
 
 ---
 
@@ -29,6 +29,7 @@
 | [008](008-layout-engine.md)               | 캔버스 레이아웃 엔진 전환 (전략 D) | Implemented | 2026-02-17 | Taffy WASM 단일 엔진 전환 완료                           |
 | [017](017-css-override-ssot.md)           | React-Aria CSS Override SSOT       | Implemented | 2026-03-04 | M3 38개 제거, 107개 CSS 치환, Tint Color System 도입     |
 | [018](018-component-css-restructure.md)   | 컴포넌트 CSS 구조 재작성           | Implemented | 2026-03-04 | Phase 1~5 전체 완료, 38파일 11,657→8,101줄 (-30%)        |
+| [022](022-s2-color-token-migration.md)    | React Spectrum S2 색상 토큰 전환   |  Accepted   | 2026-03-05 | Phase 1~5 완료, M3→S2 토큰 rename + CSS↔Skia 불일치 해소 |
 
 ### 부분 완료
 
@@ -42,14 +43,17 @@
 
 ### 미구현
 
-| ADR                                      | 제목                                             | 상태     | 규모                                                                 | 우선순위 |
-| ---------------------------------------- | ------------------------------------------------ | -------- | -------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                      | Proposed | 5 Phase, 21파일                                                      |  **P2**  |
-| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                | Proposed | 변경 대상 8파일, 코드 미생성                                         |    P5    |
-| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)               | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations               |    P5    |
-| [019](019-icon-system.md)                | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가 | Proposed | 5 Phase, Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링 |  **P2**  |
-| [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선                     | Proposed | 3 Phase, 13파일 — History 통합, Kit v2 스키마, Factory 연동          |    P4    |
-| [021](021-theme-system-redesign.md)      | 테마 시스템 개편 — Tint + Tailwind 인라인 패널   | Proposed | 5 Phase (A~E), ThemeStudio 폐기 → 인라인 CSS 변수 테마 패널          |  **P2**  |
+| ADR                                      | 제목                                             | 상태     | 규모                                                                   | 우선순위 |
+| ---------------------------------------- | ------------------------------------------------ | -------- | ---------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                      | Proposed | 5 Phase, 21파일                                                        |  **P2**  |
+| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                | Proposed | 변경 대상 8파일, 코드 미생성                                           |    P5    |
+| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)               | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                 |    P5    |
+| [019](019-icon-system.md)                | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가 | Proposed | 5 Phase, Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링   |  **P2**  |
+| [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선                     | Proposed | 3 Phase, 13파일 — History 통합, Kit v2 스키마, Factory 연동            |    P4    |
+| [021](021-theme-system-redesign.md)      | 테마 시스템 개편 — Tint + Tailwind 인라인 패널   | Proposed | 5 Phase (A~E), ThemeStudio 폐기 → 인라인 CSS 변수 테마 패널            |  **P2**  |
+| [023](023-s2-component-variant-props.md) | 컴포넌트 Variant Props S2 전환                   | Proposed | 2 Phase, Spec/Factory/CSS variant rename + fillStyle/isEmphasized 도입 |  **P2**  |
+| [024](024-s2-css-variable-migration.md)  | CSS 변수명 S2 체계 전환                          | Proposed | 4 Phase, alias 점진 전환 → 60+ CSS 파일 변경                           |    P3    |
+| [025](025-s2-named-color-palette.md)     | S2 Named Color Palette 확장                      | Proposed | 4 Phase, 12색×2 = 24 토큰 추가 + Badge 확장 + Inspector UI             |    P3    |
 
 ---
 
@@ -179,24 +183,25 @@ Proposed | Accepted | Deprecated | Superseded
 
 ## 변경 이력
 
-| 날짜       | 변경 내용                                                                                                                                                                                                                                                                                         |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-03-03 | 최초 작성 — 13개 ADR 전수 분석, 우선순위 결정                                                                                                                                                                                                                                                     |
-| 2026-03-03 | ADR-011 추가 — AI_ASSISTANT_DESIGN.md → adr/011-ai-assistant-design.md 이동                                                                                                                                                                                                                       |
-| 2026-03-03 | ADR-008 추가 — LAYOUT_ENGINE.md → adr/008-layout-engine.md 이동                                                                                                                                                                                                                                   |
-| 2026-03-03 | 코드 대조 검증 — ADR-009~016 전수 검증, ADR-012 Proposed→Partial 승격, ADR-009 Phase 3 Binary Protocol 부분 구현 확인, ADR-011 A5a 부분 완료 확인                                                                                                                                                 |
-| 2026-03-03 | Risk-First ADR 템플릿 추가 — Alternatives→Risk→Decision→Gates 순서 필수화                                                                                                                                                                                                                         |
-| 2026-03-04 | ADR-012 P1-2/P2-3 구현 완료 확인 — 코드 대조 결과 이미 구현됨 확인, 67%→80% 갱신. 잔여: P3 장기 최적화 3건                                                                                                                                                                                        |
-| 2026-03-04 | ADR-014 Phase C2 완료 — Font Manager Panel + PropertyListItem 재사용 컴포넌트 + OS/2 메타데이터 추출. 우선순위 근거 갱신                                                                                                                                                                          |
-| 2026-03-04 | ADR-017 추가 — Input CSS Override SSOT 정리 (CSS Custom Properties SSOT + 셀렉터 정규화 + Dead Code 제거)                                                                                                                                                                                         |
-| 2026-03-04 | ADR-017 재작성 — M3 제거 + Tailwind 통합 방향으로 전면 개정. ADR-009 P3→P4 조정, ADR-017 P3 신설. 로드맵에 Phase 1~2 추가                                                                                                                                                                         |
-| 2026-03-04 | ADR-018 추가 — 컴포넌트 CSS 구조 재작성 (react-aria-starter 패턴 기반, utilities.css 3대 유틸리티 도입, 15,652→~6,000줄 목표). P3에 017+018 통합                                                                                                                                                  |
-| 2026-03-04 | ADR-017/018 갭 분석 12건 반영 — Gate 번호 수정, M3 실참조 64파일 정정, Publish 앱 영향 추가, Card.css 레거시 셀렉터 마이그레이션, AI Theme Generator 5파일 열거, :focus-visible 3파일 처리 추가, M3_COMPONENT_TEMPLATE.css 폐기 명시                                                              |
-| 2026-03-04 | ADR-019 추가 — 아이콘 시스템 (Builder UI 아이콘 선택/변경/추가). Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링. 5 Phase (A~E), P2 우선순위                                                                                                                                          |
-| 2026-03-04 | ADR-017/018 코드베이스 재검증 — builder CSS M3 사용 7개→52개(총 107개) 정정, base.css Phase 1 대상 제외, Gate G0(자동화 dry-run) 추가 + Tier 4(builder 패널 45파일) 신설, Card.tsx data-variant 전달 확인됨                                                                                       |
-| 2026-03-04 | ADR-017/018 최종 갭 해소 — ① Theme Studio 12파일 작업 경계 명시(ADR-017 단독 소유, ADR-018 제외 확인), ② builder-system.css 기존 버그 문서화(8토큰 누락: tertiary 6개 + error-hover/pressed 2개, Phase 2에서 자연 해소), ③ Phase 1+Tier 1 원자적 적용 필수 명시(G1 Gate 재정의)                   |
-| 2026-03-04 | **ADR-017 Implemented** — M3 38개 토큰 제거, 107개 CSS 시맨틱 치환, Tint Color System 도입, Spec 전환, Theme Studio 확인. **ADR-018 Partial** — Phase 1 (utilities.css) + Button/Card 완료. 로드맵 갱신, 현황 요약 카운트 조정                                                                    |
-| 2026-03-04 | ADR-020 추가 — Design Kit 패널 분석 및 개선 (10개 문제점 식별, 3 Phase 로드맵, Kit v2 스키마 + Factory 통합 설계). P4 우선순위                                                                                                                                                                    |
-| 2026-03-04 | ADR-021 추가 — 테마 시스템 개편 (Tint + Tailwind 인라인 패널). 업계 리서치 (Webflow/Framer/Figma/Squarespace/shadcn), ThemeStudio 새 창 → 인라인 패널 전환, CSS 변수 네이티브 테마. P2 우선순위                                                                                                   |
-| 2026-03-04 | **ADR-018 Implemented** — Phase 2~5 전체 완료 (38파일 11,657→8,101줄, -30%). 로컬 CSS 변수 패턴 전환, 셀렉터 정규화(class→data-\*), M3 토큰 Spec/Builder/PerformanceDashboard/Group 전체 제거. ADR-018 완료→완료 섹션 이동, 로드맵/우선순위 갱신                                                  |
-| 2026-03-04 | **ADR-017 Phase 3 패치** — SelectIcon Skia 색상 불일치 수정 (`field-background`→`surface-container`, `text-color`→`on-surface-variant`), `transparent` 토큰 추가 (ColorTokens+colors.ts+tokenResolver), specShapeConverter `colorValueToFloat32()` 안전 처리. Phase 3 실제 구현 내역으로 ADR 갱신 |
+| 날짜       | 변경 내용                                                                                                                                                                                                                                                                                          |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-03 | 최초 작성 — 13개 ADR 전수 분석, 우선순위 결정                                                                                                                                                                                                                                                      |
+| 2026-03-03 | ADR-011 추가 — AI_ASSISTANT_DESIGN.md → adr/011-ai-assistant-design.md 이동                                                                                                                                                                                                                        |
+| 2026-03-03 | ADR-008 추가 — LAYOUT_ENGINE.md → adr/008-layout-engine.md 이동                                                                                                                                                                                                                                    |
+| 2026-03-03 | 코드 대조 검증 — ADR-009~016 전수 검증, ADR-012 Proposed→Partial 승격, ADR-009 Phase 3 Binary Protocol 부분 구현 확인, ADR-011 A5a 부분 완료 확인                                                                                                                                                  |
+| 2026-03-03 | Risk-First ADR 템플릿 추가 — Alternatives→Risk→Decision→Gates 순서 필수화                                                                                                                                                                                                                          |
+| 2026-03-04 | ADR-012 P1-2/P2-3 구현 완료 확인 — 코드 대조 결과 이미 구현됨 확인, 67%→80% 갱신. 잔여: P3 장기 최적화 3건                                                                                                                                                                                         |
+| 2026-03-04 | ADR-014 Phase C2 완료 — Font Manager Panel + PropertyListItem 재사용 컴포넌트 + OS/2 메타데이터 추출. 우선순위 근거 갱신                                                                                                                                                                           |
+| 2026-03-04 | ADR-017 추가 — Input CSS Override SSOT 정리 (CSS Custom Properties SSOT + 셀렉터 정규화 + Dead Code 제거)                                                                                                                                                                                          |
+| 2026-03-04 | ADR-017 재작성 — M3 제거 + Tailwind 통합 방향으로 전면 개정. ADR-009 P3→P4 조정, ADR-017 P3 신설. 로드맵에 Phase 1~2 추가                                                                                                                                                                          |
+| 2026-03-04 | ADR-018 추가 — 컴포넌트 CSS 구조 재작성 (react-aria-starter 패턴 기반, utilities.css 3대 유틸리티 도입, 15,652→~6,000줄 목표). P3에 017+018 통합                                                                                                                                                   |
+| 2026-03-04 | ADR-017/018 갭 분석 12건 반영 — Gate 번호 수정, M3 실참조 64파일 정정, Publish 앱 영향 추가, Card.css 레거시 셀렉터 마이그레이션, AI Theme Generator 5파일 열거, :focus-visible 3파일 처리 추가, M3_COMPONENT_TEMPLATE.css 폐기 명시                                                               |
+| 2026-03-04 | ADR-019 추가 — 아이콘 시스템 (Builder UI 아이콘 선택/변경/추가). Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링. 5 Phase (A~E), P2 우선순위                                                                                                                                           |
+| 2026-03-04 | ADR-017/018 코드베이스 재검증 — builder CSS M3 사용 7개→52개(총 107개) 정정, base.css Phase 1 대상 제외, Gate G0(자동화 dry-run) 추가 + Tier 4(builder 패널 45파일) 신설, Card.tsx data-variant 전달 확인됨                                                                                        |
+| 2026-03-04 | ADR-017/018 최종 갭 해소 — ① Theme Studio 12파일 작업 경계 명시(ADR-017 단독 소유, ADR-018 제외 확인), ② builder-system.css 기존 버그 문서화(8토큰 누락: tertiary 6개 + error-hover/pressed 2개, Phase 2에서 자연 해소), ③ Phase 1+Tier 1 원자적 적용 필수 명시(G1 Gate 재정의)                    |
+| 2026-03-04 | **ADR-017 Implemented** — M3 38개 토큰 제거, 107개 CSS 시맨틱 치환, Tint Color System 도입, Spec 전환, Theme Studio 확인. **ADR-018 Partial** — Phase 1 (utilities.css) + Button/Card 완료. 로드맵 갱신, 현황 요약 카운트 조정                                                                     |
+| 2026-03-04 | ADR-020 추가 — Design Kit 패널 분석 및 개선 (10개 문제점 식별, 3 Phase 로드맵, Kit v2 스키마 + Factory 통합 설계). P4 우선순위                                                                                                                                                                     |
+| 2026-03-04 | ADR-021 추가 — 테마 시스템 개편 (Tint + Tailwind 인라인 패널). 업계 리서치 (Webflow/Framer/Figma/Squarespace/shadcn), ThemeStudio 새 창 → 인라인 패널 전환, CSS 변수 네이티브 테마. P2 우선순위                                                                                                    |
+| 2026-03-04 | **ADR-018 Implemented** — Phase 2~5 전체 완료 (38파일 11,657→8,101줄, -30%). 로컬 CSS 변수 패턴 전환, 셀렉터 정규화(class→data-\*), M3 토큰 Spec/Builder/PerformanceDashboard/Group 전체 제거. ADR-018 완료→완료 섹션 이동, 로드맵/우선순위 갱신                                                   |
+| 2026-03-04 | **ADR-017 Phase 3 패치** — SelectIcon Skia 색상 불일치 수정 (`field-background`→`surface-container`, `text-color`→`on-surface-variant`), `transparent` 토큰 추가 (ColorTokens+colors.ts+tokenResolver), specShapeConverter `colorValueToFloat32()` 안전 처리. Phase 3 실제 구현 내역으로 ADR 갱신  |
+| 2026-03-05 | **ADR-022 Accepted** — Phase 1~5 구현 완료 (M3→S2 토큰 전환, CSS↔Skia 불일치 해소, Label 색상 상속). 완료 섹션 이동. **ADR-023/024/025 Proposed** — S2 후속 3건: 컴포넌트 Variant Props 전환(P2), CSS 변수명 전환(P3), Named Color Palette 확장(P3). 현황 카운트 갱신 (완료 11, 미구현 9, 합계 25) |

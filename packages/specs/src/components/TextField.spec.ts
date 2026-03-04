@@ -1,7 +1,7 @@
 /**
  * TextField Component Spec
  *
- * Material Design 3 기반 텍스트 입력 컴포넌트
+ * React Aria 기반 텍스트 입력 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -34,7 +34,7 @@ export interface TextFieldProps {
  */
 export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   name: 'TextField',
-  description: 'Material Design 3 기반 텍스트 입력 컴포넌트',
+  description: 'React Aria 기반 텍스트 입력 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -42,52 +42,52 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
-      borderHover: '{color.primary}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
+      borderHover: '{color.accent}' as TokenRef,
     },
     primary: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
-      borderHover: '{color.primary}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
+      borderHover: '{color.accent}' as TokenRef,
     },
     secondary: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
-      borderHover: '{color.secondary}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
+      borderHover: '{color.neutral-subtle}' as TokenRef,
     },
     tertiary: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
-      borderHover: '{color.tertiary}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
+      borderHover: '{color.purple}' as TokenRef,
     },
     error: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.error-container}' as TokenRef,
-      backgroundPressed: '{color.error-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.error}' as TokenRef,
-      borderHover: '{color.error-hover}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.negative-subtle}' as TokenRef,
+      backgroundPressed: '{color.negative-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.negative}' as TokenRef,
+      borderHover: '{color.negative-hover}' as TokenRef,
     },
     success: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
-      borderHover: '{color.primary-hover}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
+      borderHover: '{color.accent-hover}' as TokenRef,
     },
   },
 
@@ -232,7 +232,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           type: 'border' as const,
           target: 'bg',
           borderWidth,
-          color: props.isInvalid ? ('{color.error}' as TokenRef) : borderColor,
+          color: props.isInvalid ? ('{color.negative}' as TokenRef) : borderColor,
           radius: borderRadius,
         });
       }
@@ -247,7 +247,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           text: displayText,
           fontSize,
           fontFamily: ff,
-          fill: props.value ? textColor : ('{color.on-surface-variant}' as TokenRef),
+          fill: props.value ? textColor : ('{color.neutral-subdued}' as TokenRef),
           align: textAlign,
           baseline: 'middle' as const,
         });
@@ -264,7 +264,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
             text: descText,
             fontSize: descFontSize,
             fontFamily: ff,
-            fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
+            fill: props.isInvalid ? ('{color.negative}' as TokenRef) : ('{color.neutral-subdued}' as TokenRef),
             align: textAlign,
             baseline: 'top' as const,
           });

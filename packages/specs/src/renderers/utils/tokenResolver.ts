@@ -22,7 +22,7 @@ export function resolveToken(
   ref: TokenRef,
   theme: "light" | "dark" = "light",
 ): string | number {
-  // '{color.primary}' → 'primary'
+  // '{color.accent}' → 'accent'
   const match = ref.match(/^\{(\w+)\.(.+)\}$/);
   if (!match) {
     console.warn(`Invalid token reference: ${ref}`);
@@ -64,69 +64,76 @@ export function resolveColor(
 }
 
 /**
- * M3 색상 토큰 → 시맨틱 CSS 변수 매핑 (ADR-017)
+ * S2 색상 토큰 → 시맨틱 CSS 변수 매핑 (ADR-022)
  *
- * Spec 파일의 기존 M3 토큰 이름({color.primary} 등)을
+ * Spec 파일의 S2 토큰 이름({color.accent} 등)을
  * 시맨틱 CSS 변수명(--highlight-background 등)으로 변환.
- * color-mix() 표현식은 hover/pressed 상태에 사용.
  */
 const COLOR_TOKEN_TO_CSS: Record<string, string> = {
-  // Primary → Highlight
-  primary: "var(--highlight-background)",
-  "primary-hover": "color-mix(in srgb, var(--highlight-background) 85%, black)",
-  "primary-pressed": "var(--highlight-background-pressed)",
-  "on-primary": "var(--highlight-foreground)",
+  // --- Accent ---
+  accent: "var(--highlight-background)",
+  "accent-hover": "color-mix(in srgb, var(--highlight-background) 85%, black)",
+  "accent-pressed":
+    "color-mix(in srgb, var(--highlight-background) 75%, black)",
+  "on-accent": "var(--highlight-foreground)",
+  "accent-subtle": "var(--color-primary-100)",
 
-  // Secondary → Button
-  secondary: "var(--button-background)",
-  "secondary-hover": "color-mix(in srgb, var(--button-background) 85%, black)",
-  "secondary-pressed":
-    "color-mix(in srgb, var(--button-background) 75%, black)",
-  "on-secondary": "var(--color-white)",
+  // --- Neutral ---
+  neutral: "var(--text-color)",
+  "neutral-subdued": "var(--text-color-placeholder)",
+  "neutral-subtle": "var(--color-neutral-200)",
+  "neutral-hover": "color-mix(in srgb, var(--color-neutral-200) 85%, black)",
+  "neutral-pressed": "color-mix(in srgb, var(--color-neutral-200) 75%, black)",
 
-  // Tertiary → Purple
-  tertiary: "var(--color-purple-600)",
-  "tertiary-hover": "color-mix(in srgb, var(--color-purple-600) 85%, black)",
-  "tertiary-pressed": "color-mix(in srgb, var(--color-purple-600) 75%, black)",
-  "on-tertiary": "var(--color-white)",
+  // --- Negative ---
+  negative: "var(--invalid-color)",
+  "negative-hover": "color-mix(in srgb, var(--invalid-color) 85%, black)",
+  "negative-pressed": "color-mix(in srgb, var(--invalid-color) 75%, black)",
+  "on-negative": "var(--color-white)",
+  "negative-subtle": "var(--color-error-100)",
 
-  // Error → Invalid
-  error: "var(--invalid-color)",
-  "error-hover": "color-mix(in srgb, var(--invalid-color) 85%, black)",
-  "error-pressed": "color-mix(in srgb, var(--invalid-color) 75%, black)",
-  "on-error": "var(--color-white)",
+  // --- Informative / Positive / Notice ---
+  informative: "var(--color-info-600)",
+  "informative-subtle": "var(--color-info-100)",
+  positive: "var(--color-green-600)",
+  "positive-subtle": "var(--color-green-100)",
+  notice: "var(--color-warning-600)",
+  "notice-subtle": "var(--color-warning-100)",
 
-  // Container → Tailwind palette
-  "primary-container": "var(--color-primary-100)",
-  "on-primary-container": "var(--color-primary-900)",
-  "secondary-container": "var(--color-neutral-100)",
-  "on-secondary-container": "var(--color-neutral-900)",
-  "tertiary-container": "var(--color-tertiary-100)",
-  "on-tertiary-container": "var(--color-tertiary-900)",
-  "error-container": "var(--color-error-100)",
-  "on-error-container": "var(--color-error-900)",
+  // --- Surface / Layer ---
+  base: "var(--background-color)",
+  "layer-1": "var(--overlay-background)",
+  "layer-2": "var(--field-background)",
+  elevated: "var(--color-white)",
+  disabled: "var(--color-neutral-200)",
 
-  // Surface → Semantic
-  surface: "var(--color-white)",
-  "surface-container": "var(--field-background)",
-  "surface-container-high": "var(--overlay-background)",
-  "surface-container-highest": "var(--color-neutral-200)",
-  "on-surface": "var(--text-color)",
-  "on-surface-variant": "var(--text-color-placeholder)",
+  // --- Border ---
+  border: "var(--border-color)",
+  "border-hover": "var(--border-color-hover)",
+  "border-disabled": "var(--border-color-disabled)",
 
-  // Outline → Border
-  outline: "var(--border-color-hover)",
-  "outline-variant": "var(--border-color)",
-
-  // Special
+  // --- Special ---
   transparent: "transparent",
+  white: "var(--color-white)",
+  black: "var(--color-black)",
+};
+
+/**
+ * Named color → CSS 변수 매핑 (ADR-022)
+ * S2에 글로벌 시맨틱이 없는 named color 처리 (기존 tertiary 등)
+ */
+const NAMED_COLOR_TO_CSS: Record<string, string> = {
+  purple: "var(--color-purple-600)",
+  "purple-hover": "color-mix(in srgb, var(--color-purple-600) 85%, black)",
+  "purple-pressed": "color-mix(in srgb, var(--color-purple-600) 75%, black)",
+  "purple-subtle": "var(--color-purple-100)",
 };
 
 /**
  * CSS 변수명으로 변환
  */
 export function tokenToCSSVar(ref: TokenRef): string {
-  // '{color.primary}' → 'var(--highlight-background)'
+  // '{color.accent}' → 'var(--highlight-background)'
   // '{spacing.md}' → 'var(--spacing-md)'
   const match = ref.match(/^\{(\w+)\.(.+)\}$/);
   if (!match) return ref;
@@ -135,7 +142,7 @@ export function tokenToCSSVar(ref: TokenRef): string {
 
   switch (category) {
     case "color": {
-      const mapped = COLOR_TOKEN_TO_CSS[name];
+      const mapped = COLOR_TOKEN_TO_CSS[name] ?? NAMED_COLOR_TO_CSS[name];
       return mapped ?? `var(--${name})`;
     }
     case "spacing":

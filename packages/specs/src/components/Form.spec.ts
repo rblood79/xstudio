@@ -1,7 +1,7 @@
 /**
  * Form Component Spec
  *
- * Material Design 3 기반 폼 컨테이너 컴포넌트
+ * React Aria 기반 폼 컨테이너 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -29,7 +29,7 @@ export interface FormProps {
  */
 export const FormSpec: ComponentSpec<FormProps> = {
   name: 'Form',
-  description: 'Material Design 3 기반 폼 컨테이너 컴포넌트',
+  description: 'React Aria 기반 폼 컨테이너 컴포넌트',
   element: 'form',
 
   defaultVariant: 'default',
@@ -37,17 +37,17 @@ export const FormSpec: ComponentSpec<FormProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     outlined: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
   },
 
@@ -176,7 +176,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
           text: props.description,
           fontSize: fontSize - 2,
           fontFamily: ff,
-          fill: '{color.on-surface-variant}' as TokenRef,
+          fill: '{color.neutral-subdued}' as TokenRef,
           align: textAlign,
           baseline: 'top' as const,
         });

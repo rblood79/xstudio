@@ -1,22 +1,22 @@
 /**
  * Switch Component Spec
  *
- * Material Design 3 기반 스위치(토글) 컴포넌트
+ * React Aria 기반 스위치(토글) 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Switch Props
  */
 export interface SwitchProps {
-  variant?: 'default' | 'primary' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "default" | "primary" | "secondary";
+  size?: "sm" | "md" | "lg";
   children?: string;
   label?: string;
   isSelected?: boolean;
@@ -26,13 +26,21 @@ export interface SwitchProps {
 
 /** variant별 선택 시 트랙 색상 */
 export const SWITCH_SELECTED_TRACK_COLORS: Record<string, TokenRef> = {
-  default: '{color.primary}' as TokenRef,
-  primary: '{color.primary}' as TokenRef,
-  secondary: '{color.secondary}' as TokenRef,
+  default: "{color.accent}" as TokenRef,
+  primary: "{color.accent}" as TokenRef,
+  secondary: "{color.neutral-subtle}" as TokenRef,
 };
 
 /** 사이즈별 트랙/썸 치수 */
-export const SWITCH_DIMENSIONS: Record<string, { trackWidth: number; trackHeight: number; thumbSize: number; thumbOffset: number }> = {
+export const SWITCH_DIMENSIONS: Record<
+  string,
+  {
+    trackWidth: number;
+    trackHeight: number;
+    thumbSize: number;
+    thumbOffset: number;
+  }
+> = {
   sm: { trackWidth: 36, trackHeight: 20, thumbSize: 14, thumbOffset: 3 },
   md: { trackWidth: 44, trackHeight: 24, thumbSize: 18, thumbOffset: 3 },
   lg: { trackWidth: 52, trackHeight: 28, thumbSize: 22, thumbOffset: 3 },
@@ -42,34 +50,34 @@ export const SWITCH_DIMENSIONS: Record<string, { trackWidth: number; trackHeight
  * Switch Component Spec
  */
 export const SwitchSpec: ComponentSpec<SwitchProps> = {
-  name: 'Switch',
-  description: 'Material Design 3 기반 스위치(토글) 컴포넌트',
-  element: 'label',
+  name: "Switch",
+  description: "React Aria 기반 스위치(토글) 컴포넌트",
+  element: "label",
 
-  defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultVariant: "default",
+  defaultSize: "md",
 
   variants: {
     default: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border-hover}" as TokenRef,
     },
     primary: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border-hover}" as TokenRef,
     },
     secondary: {
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-highest}' as TokenRef,
-      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border-hover}" as TokenRef,
     },
   },
 
@@ -78,24 +86,24 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       height: 20,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.full}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
       gap: 8,
     },
     md: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.full}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
       gap: 10,
     },
     lg: {
       height: 28,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.full}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
       gap: 12,
     },
   },
@@ -105,25 +113,26 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      cursor: 'not-allowed',
-      pointerEvents: 'none',
+      cursor: "not-allowed",
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--highlight-background)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--highlight-background)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
-      const variantName = props.variant ?? 'default';
-      const sizeName = props.size ?? 'md';
+    shapes: (props, variant, size, _state = "default") => {
+      const variantName = props.variant ?? "default";
+      const sizeName = props.size ?? "md";
       const switchSize = SWITCH_DIMENSIONS[sizeName] ?? SWITCH_DIMENSIONS.md;
       const gap = size.gap ?? 10;
 
       const isChecked = props.isSelected;
       const defaultTrackColor = isChecked
-        ? (SWITCH_SELECTED_TRACK_COLORS[variantName] ?? SWITCH_SELECTED_TRACK_COLORS.default)
+        ? (SWITCH_SELECTED_TRACK_COLORS[variantName] ??
+          SWITCH_SELECTED_TRACK_COLORS.default)
         : variant.background;
 
       const thumbX = isChecked
@@ -135,9 +144,12 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       const bgColor = props.style?.backgroundColor ?? defaultTrackColor;
 
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 2;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 2;
 
       const borderColor = props.style?.borderColor ?? variant.border!;
 
@@ -145,8 +157,8 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
 
       // 트랙 배경
       shapes.push({
-        id: 'track',
-        type: 'roundRect' as const,
+        id: "track",
+        type: "roundRect" as const,
         x: 0,
         y: 0,
         width: switchSize.trackWidth,
@@ -158,8 +170,8 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       // 트랙 테두리 (비선택 시)
       if (!isChecked) {
         shapes.push({
-          type: 'border' as const,
-          target: 'track',
+          type: "border" as const,
+          target: "track",
           borderWidth,
           color: borderColor,
           radius: trackRadius,
@@ -167,15 +179,16 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       }
 
       // 썸 (동그란 노브)
+      // CSS: 선택 시 white, 비선택 시 --button-background-pressed (neutral-100 계열)
       shapes.push({
-        id: 'thumb',
-        type: 'circle' as const,
+        id: "thumb",
+        type: "circle" as const,
         x: thumbX + switchSize.thumbSize / 2,
         y: switchSize.trackHeight / 2,
         radius: switchSize.thumbSize / 2,
         fill: isChecked
-          ? ('{color.on-primary}' as TokenRef)
-          : ('{color.on-surface-variant}' as TokenRef),
+          ? ("{color.on-accent}" as TokenRef)
+          : ("{color.border-hover}" as TokenRef),
       });
 
       // 라벨 텍스트 — 자식 Element가 있으면 스킵 (TextSprite가 렌더링)
@@ -184,17 +197,19 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       if (!hasChildren && labelText) {
         const textColor = props.style?.color ?? variant.text;
         const rawFontSize = props.style?.fontSize ?? size.fontSize;
-        const resolvedFs = typeof rawFontSize === 'number'
-          ? rawFontSize
-          : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+        const resolvedFs =
+          typeof rawFontSize === "number"
+            ? rawFontSize
+            : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
               ? resolveToken(rawFontSize as TokenRef)
-              : rawFontSize);
-        const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+              : rawFontSize;
+        const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
         const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-        const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+        const textAlign =
+          (props.style?.textAlign as "left" | "center" | "right") || "left";
 
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: switchSize.trackWidth + gap,
           y: switchSize.trackHeight / 2,
           text: labelText,
@@ -202,7 +217,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
           fontFamily: ff,
           fill: textColor,
           align: textAlign,
-          baseline: 'middle' as const,
+          baseline: "middle" as const,
         });
       }
 
@@ -210,14 +225,14 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
     },
 
     react: (props) => ({
-      'data-selected': props.isSelected || undefined,
-      'aria-checked': props.isSelected || undefined,
-      role: 'switch',
+      "data-selected": props.isSelected || undefined,
+      "aria-checked": props.isSelected || undefined,
+      role: "switch",
     }),
 
     pixi: (props) => ({
-      eventMode: 'static' as const,
-      cursor: props.isDisabled ? 'not-allowed' : 'pointer',
+      eventMode: "static" as const,
+      cursor: props.isDisabled ? "not-allowed" : "pointer",
     }),
   },
 };

@@ -1,7 +1,7 @@
 /**
  * ColorSwatch Component Spec
  *
- * Material Design 3 기반 색상 프리뷰 컴포넌트
+ * React Aria 기반 색상 프리뷰 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -26,7 +26,7 @@ export interface ColorSwatchProps {
  */
 export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
   name: 'ColorSwatch',
-  description: 'Material Design 3 기반 색상 프리뷰 스와치',
+  description: 'React Aria 기반 색상 프리뷰 스와치',
   element: 'div',
 
   defaultVariant: 'default',
@@ -34,18 +34,18 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     selected: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
   },
 
@@ -101,8 +101,8 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
 
       const borderColor = props.style?.borderColor
         ?? (props.isSelected
-            ? '{color.primary}' as TokenRef
-            : variant.border ?? ('{color.outline-variant}' as TokenRef));
+            ? '{color.accent}' as TokenRef
+            : variant.border ?? ('{color.border}' as TokenRef));
       const styleBw = props.style?.borderWidth;
       const defaultBw = props.isSelected ? 2 : 1;
       const borderWidth = styleBw != null
@@ -119,7 +119,7 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
           width: swatchSize,
           height: swatchSize,
           radius: borderRadius as unknown as number,
-          fill: '{color.surface-container}' as TokenRef,
+          fill: '{color.layer-2}' as TokenRef,
         },
         // 색상 채우기
         {

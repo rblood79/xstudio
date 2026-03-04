@@ -33,7 +33,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
       background: '{color.transparent}' as TokenRef,
       backgroundHover: '{color.transparent}' as TokenRef,
       backgroundPressed: '{color.transparent}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
   },
 
@@ -98,7 +98,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
       const isPlaceholder = props.isPlaceholder || (!props.children && !!props.placeholder);
       const textColor = props.style?.color
                       ?? (isPlaceholder
-                          ? ('{color.on-surface-variant}' as TokenRef)
+                          ? ('{color.neutral-subdued}' as TokenRef)
                           : variant.text);
 
       const shapes: Shape[] = [

@@ -405,6 +405,38 @@ const UI_SELECT_CHILD_TAGS = new Set([
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
+// ADR-022 Phase 5d: Label ← Field 부모 색상 상속
+// CSS --field-accent cascade를 Skia TextSprite에 반영
+// ============================================
+
+/** Label을 자식으로 가지는 field 컴포넌트 태그 */
+const FIELD_PARENT_TAGS = new Set([
+  "TextField",
+  "NumberField",
+  "SearchField",
+  "TextArea",
+  "Select",
+  "ComboBox",
+  "DateField",
+  "TimeField",
+  "DatePicker",
+  "DateRangePicker",
+  "ColorField",
+]);
+
+/**
+ * parent variant → Label 텍스트 hex 색상 (lightColors 기준, Skia 렌더링용)
+ * CSS: default variant → --text-color (no override), 나머지 → --field-accent
+ * "default" 미포함: CSS에서 default Label은 --text-color 유지 (별도 override 없음)
+ */
+const PARENT_VARIANT_TO_LABEL_COLOR: Record<string, string> = {
+  primary: "#2563eb", // --field-accent = --highlight-background (blue-600)
+  secondary: "#fafafa", // --field-accent = --button-background (neutral-50)
+  tertiary: "#9333ea", // --field-accent = --color-purple-600
+  error: "#ef4444", // --field-accent = --invalid-color
+};
+
+// ============================================
 // QW-3: Outline parsing helper for focus ring
 // ============================================
 
@@ -1103,6 +1135,38 @@ export const ElementSprite = memo(function ElementSprite({
     return resolvedElement;
   }, [resolvedElement, layoutPosition, computedContainerSize]);
 
+  // ADR-022 Phase 5d: Label ← Field 부모 색상 상속 (TextSprite 경로)
+  // Label은 TEXT_TAGS → TextSprite 렌더링 → style.color로만 텍스트 색상 결정
+  // CSS의 --field-accent cascade를 Skia에서 재현하려면 style.color에 hex 직접 주입
+  const labelColorElement = useMemo(() => {
+    if (element.tag !== "Label") return effectiveElement;
+    if (!parentElement?.tag || !FIELD_PARENT_TAGS.has(parentElement.tag))
+      return effectiveElement;
+
+    const existingStyle = (effectiveElement.props?.style || {}) as Record<
+      string,
+      unknown
+    >;
+    // 사용자가 명시적으로 color를 설정한 경우 존중
+    if (existingStyle.color) return effectiveElement;
+
+    const parentVariant = String(
+      (parentElement.props as Record<string, unknown> | undefined)?.variant ||
+        "default",
+    );
+    const inheritedColor = PARENT_VARIANT_TO_LABEL_COLOR[parentVariant];
+    // default variant → CSS에서 --text-color 유지 (override 없음)
+    if (!inheritedColor) return effectiveElement;
+
+    return {
+      ...effectiveElement,
+      props: {
+        ...effectiveElement.props,
+        style: { ...existingStyle, color: inheritedColor },
+      },
+    } as Element;
+  }, [effectiveElement, element.tag, parentElement]);
+
   // Tabs/Breadcrumbs: 실제 자식 레이블을 spec shapes에 전달
   // 문제: childrenMap은 props 변경 시 갱신되지 않아 stale Element 참조
   // 해결: childrenMap(구조/ID) + elementsMap(최신 props) 조합
@@ -1273,7 +1337,28 @@ export const ElementSprite = memo(function ElementSprite({
     };
 
     const props = elementProps as Record<string, unknown> | undefined;
-    const variant = isUIComponent ? String(props?.variant || "default") : "";
+    // Label child variant 상속: UI 컴포넌트용 (spec shapes 경로)
+    // Note: Label은 TEXT_TAGS → isUIComponent=false이므로 이 분기를 타지 않음
+    // Label의 실제 색상 주입은 labelColorElement useMemo에서 처리 (TextSprite 경로)
+    const PARENT_VARIANT_TO_LABEL: Record<string, string> = {
+      default: "accent",
+      primary: "accent",
+      secondary: "neutral",
+      tertiary: "purple",
+      error: "negative",
+    };
+    const variant = isUIComponent
+      ? tag === "Label" &&
+        parentElement?.tag &&
+        FIELD_PARENT_TAGS.has(parentElement.tag)
+        ? (PARENT_VARIANT_TO_LABEL[
+            String(
+              (parentElement.props as Record<string, unknown> | undefined)
+                ?.variant || "default",
+            )
+          ] ?? "accent")
+        : String(props?.variant || "default")
+      : "";
 
     let r: number, g: number, b: number;
     let effectiveAlpha: number;
@@ -2694,7 +2779,7 @@ export const ElementSprite = memo(function ElementSprite({
       case "text":
         return (
           <TextSprite
-            element={effectiveElement}
+            element={labelColorElement}
             isSelected={isSelected}
             onClick={onClick}
             onDoubleClick={onDoubleClick}

@@ -1,7 +1,7 @@
 /**
  * DateSegment Component Spec
  *
- * Material Design 3 기반 날짜/시간 세그먼트 컴포넌트
+ * React Aria 기반 날짜/시간 세그먼트 컴포넌트
  * DateField, TimeField compound 컴포넌트의 child 요소
  * TimeSegment도 동일한 spec으로 재사용
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
@@ -61,28 +61,28 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container-low}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
-      borderHover: '{color.outline}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
+      borderHover: '{color.border-hover}' as TokenRef,
     },
     primary: {
-      background: '{color.primary-container}' as TokenRef,
-      backgroundHover: '{color.primary-container}' as TokenRef,
-      backgroundPressed: '{color.primary-container}' as TokenRef,
-      text: '{color.on-primary-container}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
-      borderHover: '{color.primary}' as TokenRef,
+      background: '{color.accent-subtle}' as TokenRef,
+      backgroundHover: '{color.accent-subtle}' as TokenRef,
+      backgroundPressed: '{color.accent-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
+      borderHover: '{color.accent}' as TokenRef,
     },
     error: {
-      background: '{color.error-container}' as TokenRef,
-      backgroundHover: '{color.error-container}' as TokenRef,
-      backgroundPressed: '{color.error-container}' as TokenRef,
-      text: '{color.on-error-container}' as TokenRef,
-      border: '{color.error}' as TokenRef,
-      borderHover: '{color.error}' as TokenRef,
+      background: '{color.negative-subtle}' as TokenRef,
+      backgroundHover: '{color.negative-subtle}' as TokenRef,
+      backgroundPressed: '{color.negative-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.negative}' as TokenRef,
+      borderHover: '{color.negative}' as TokenRef,
     },
   },
 
@@ -170,7 +170,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
       // 포커스 시 primary 배경, 기본은 반투명 표면 색상
       const bgColor = props.style?.backgroundColor
         ?? (props.isFocused
-            ? '{color.primary-container}' as TokenRef
+            ? '{color.accent-subtle}' as TokenRef
             : (state === 'hover' ? variant.backgroundHover : variant.background));
 
       const bgAlpha = props.isFocused ? 1.0 : 0.7;
@@ -193,10 +193,10 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
       const displayText = String(props.value ?? props.placeholder ?? '');
       const textColor = props.style?.color
         ?? (props.isFocused
-            ? '{color.on-primary-container}' as TokenRef
+            ? '{color.neutral}' as TokenRef
             : (props.value != null
                 ? variant.text
-                : '{color.on-surface-variant}' as TokenRef));
+                : '{color.neutral-subdued}' as TokenRef));
 
       const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
       const paddingX = stylePx != null

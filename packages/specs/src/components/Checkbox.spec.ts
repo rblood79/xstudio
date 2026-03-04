@@ -1,22 +1,22 @@
 /**
  * Checkbox Component Spec
  *
- * Material Design 3 기반 체크박스 컴포넌트
+ * React Aria 기반 체크박스 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Checkbox Props
  */
 export interface CheckboxProps {
-  variant?: 'default' | 'primary' | 'secondary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "default" | "primary" | "secondary" | "error";
+  size?: "sm" | "md" | "lg";
   children?: string;
   label?: string;
   text?: string;
@@ -28,22 +28,25 @@ export interface CheckboxProps {
 }
 
 /** variant별 체크 시 색상 */
-export const CHECKBOX_CHECKED_COLORS: Record<string, { bg: TokenRef; border: TokenRef }> = {
+export const CHECKBOX_CHECKED_COLORS: Record<
+  string,
+  { bg: TokenRef; border: TokenRef }
+> = {
   default: {
-    bg: '{color.primary}' as TokenRef,
-    border: '{color.primary}' as TokenRef,
+    bg: "{color.accent}" as TokenRef,
+    border: "{color.accent}" as TokenRef,
   },
   primary: {
-    bg: '{color.primary}' as TokenRef,
-    border: '{color.primary}' as TokenRef,
+    bg: "{color.accent}" as TokenRef,
+    border: "{color.accent}" as TokenRef,
   },
   secondary: {
-    bg: '{color.secondary}' as TokenRef,
-    border: '{color.secondary}' as TokenRef,
+    bg: "{color.neutral-subtle}" as TokenRef,
+    border: "{color.neutral-subtle}" as TokenRef,
   },
   error: {
-    bg: '{color.error}' as TokenRef,
-    border: '{color.error}' as TokenRef,
+    bg: "{color.negative}" as TokenRef,
+    border: "{color.negative}" as TokenRef,
   },
 };
 
@@ -58,41 +61,41 @@ export const CHECKBOX_BOX_SIZES: Record<string, number> = {
  * Checkbox Component Spec
  */
 export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
-  name: 'Checkbox',
-  description: 'Material Design 3 기반 체크박스 컴포넌트',
-  element: 'label',
+  name: "Checkbox",
+  description: "React Aria 기반 체크박스 컴포넌트",
+  element: "label",
 
-  defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultVariant: "default",
+  defaultSize: "md",
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     secondary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     error: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.error-container}' as TokenRef,
-      backgroundPressed: '{color.error-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.error}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.negative-subtle}" as TokenRef,
+      backgroundPressed: "{color.negative-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.negative}" as TokenRef,
     },
   },
 
@@ -101,24 +104,24 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       height: 20,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 6,
     },
     md: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 8,
     },
     lg: {
       height: 28,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 10,
     },
   },
@@ -128,48 +131,57 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      cursor: 'not-allowed',
-      pointerEvents: 'none',
+      cursor: "not-allowed",
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--highlight-background)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--highlight-background)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
-      const variantName = props.variant ?? 'default';
-      const sizeName = props.size ?? 'md';
+    shapes: (props, variant, size, _state = "default") => {
+      const variantName = props.variant ?? "default";
+      const sizeName = props.size ?? "md";
       const boxSize = CHECKBOX_BOX_SIZES[sizeName] ?? 20;
       const gap = size.gap ?? 8;
 
       const isChecked = props.isSelected;
-      const checkedColors = CHECKBOX_CHECKED_COLORS[variantName] ?? CHECKBOX_CHECKED_COLORS.default;
+      const checkedColors =
+        CHECKBOX_CHECKED_COLORS[variantName] ?? CHECKBOX_CHECKED_COLORS.default;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 2;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 2;
 
-      const bgColor = props.style?.backgroundColor
-                    ?? (isChecked ? checkedColors.bg : variant.background);
+      const bgColor =
+        props.style?.backgroundColor ??
+        (isChecked ? checkedColors.bg : variant.background);
 
-      const borderColor = props.style?.borderColor
-                        ?? (isChecked ? checkedColors.border : variant.border!);
+      const borderColor =
+        props.style?.borderColor ??
+        (isChecked ? checkedColors.border : variant.border!);
 
       const shapes: Shape[] = [];
 
       // 체크박스 박스 배경
       shapes.push({
-        id: 'box',
-        type: 'roundRect' as const,
+        id: "box",
+        type: "roundRect" as const,
         x: 0,
         y: 0,
         width: boxSize,
@@ -180,8 +192,8 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
 
       // 체크박스 박스 테두리
       shapes.push({
-        type: 'border' as const,
-        target: 'box',
+        type: "border" as const,
+        target: "box",
         borderWidth,
         color: borderColor,
         radius: borderRadius as unknown as number,
@@ -191,21 +203,21 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       if (isChecked && !props.isIndeterminate) {
         const pad = boxSize * 0.2;
         shapes.push({
-          type: 'line' as const,
+          type: "line" as const,
           x1: pad,
           y1: boxSize * 0.5,
           x2: boxSize * 0.4,
           y2: boxSize - pad,
-          stroke: '{color.on-primary}' as TokenRef,
+          stroke: "{color.on-accent}" as TokenRef,
           strokeWidth: 2.5,
         });
         shapes.push({
-          type: 'line' as const,
+          type: "line" as const,
           x1: boxSize * 0.4,
           y1: boxSize - pad,
           x2: boxSize - pad,
           y2: pad,
-          stroke: '{color.on-primary}' as TokenRef,
+          stroke: "{color.on-accent}" as TokenRef,
           strokeWidth: 2.5,
         });
       }
@@ -214,12 +226,12 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       if (props.isIndeterminate) {
         const pad = boxSize * 0.25;
         shapes.push({
-          type: 'line' as const,
+          type: "line" as const,
           x1: pad,
           y1: boxSize / 2,
           x2: boxSize - pad,
           y2: boxSize / 2,
-          stroke: '{color.on-primary}' as TokenRef,
+          stroke: "{color.on-accent}" as TokenRef,
           strokeWidth: 2.5,
         });
       }
@@ -230,17 +242,19 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       if (!hasChildren && labelText) {
         const textColor = props.style?.color ?? variant.text;
         const rawFontSize = props.style?.fontSize ?? size.fontSize;
-        const resolvedFs = typeof rawFontSize === 'number'
-          ? rawFontSize
-          : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+        const resolvedFs =
+          typeof rawFontSize === "number"
+            ? rawFontSize
+            : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
               ? resolveToken(rawFontSize as TokenRef)
-              : rawFontSize);
-        const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+              : rawFontSize;
+        const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
         const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-        const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+        const textAlign =
+          (props.style?.textAlign as "left" | "center" | "right") || "left";
 
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: boxSize + gap,
           y: boxSize / 2,
           text: labelText,
@@ -248,7 +262,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
           fontFamily: ff,
           fill: textColor,
           align: textAlign,
-          baseline: 'middle' as const,
+          baseline: "middle" as const,
         });
       }
 
@@ -256,14 +270,16 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
     },
 
     react: (props) => ({
-      'data-selected': props.isSelected || undefined,
-      'data-indeterminate': props.isIndeterminate || undefined,
-      'aria-checked': props.isIndeterminate ? 'mixed' : props.isSelected || undefined,
+      "data-selected": props.isSelected || undefined,
+      "data-indeterminate": props.isIndeterminate || undefined,
+      "aria-checked": props.isIndeterminate
+        ? "mixed"
+        : props.isSelected || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: 'static' as const,
-      cursor: props.isDisabled ? 'not-allowed' : 'pointer',
+      eventMode: "static" as const,
+      cursor: props.isDisabled ? "not-allowed" : "pointer",
     }),
   },
 };

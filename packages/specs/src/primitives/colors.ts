@@ -1,8 +1,8 @@
 /**
  * Color Tokens
  *
- * 시맨틱 토큰 기반 색상 값 (ADR-017)
- * M3 토큰 이름을 유지하되, 실제 값은 시맨틱/Tailwind 색상으로 변환.
+ * S2 역할 기반 색상 토큰 (ADR-022)
+ * React Spectrum S2의 accent/neutral/negative 체계 채택.
  * tokenToCSSVar()의 매핑 테이블과 함께 사용됨.
  *
  * @packageDocumentation
@@ -15,54 +15,53 @@ import type { ColorTokens } from "../types/token.types";
  * 시맨틱 토큰 CSS 변수의 fallback 값 기준 (Tailwind hex)
  */
 export const lightColors: ColorTokens = {
-  // Primary → --highlight-background (blue-600)
-  primary: "#2563eb",
-  "primary-hover": "#1f54c8",
-  "primary-pressed": "#1d4ed8",
-  "on-primary": "#ffffff",
+  // --- Accent (기존 primary → --highlight-background) ---
+  accent: "#2563eb", // blue-600
+  "accent-hover": "#1f54c8",
+  "accent-pressed": "#1d4ed8",
+  "on-accent": "#ffffff",
+  "accent-subtle": "#dbeafe", // blue-100
 
-  // Secondary → --button-background (neutral-50)
-  secondary: "#fafafa",
-  "secondary-hover": "#d5d5d5",
-  "secondary-pressed": "#bcbcbc",
-  "on-secondary": "#ffffff",
+  // --- Neutral ---
+  neutral: "#171717", // neutral-900 (기존 on-surface)
+  "neutral-subdued": "#404040", // neutral-700 (기존 on-surface-variant)
+  "neutral-subtle": "#e5e5e5", // neutral-200 (기존 surface-container-highest)
+  "neutral-hover": "#c3c3c3",
+  "neutral-pressed": "#a8a8a8",
 
-  // Tertiary → --color-purple-600
-  tertiary: "#9333ea",
-  "tertiary-hover": "#7d2bc7",
-  "tertiary-pressed": "#6e26a6",
-  "on-tertiary": "#ffffff",
+  // --- Negative (기존 error → --invalid-color) ---
+  negative: "#ef4444", // error-400
+  "negative-hover": "#cb3a3a",
+  "negative-pressed": "#b33333",
+  "on-negative": "#ffffff",
+  "negative-subtle": "#fee2e2", // error-100
 
-  // Error → --invalid-color (error-400)
-  error: "#ef4444",
-  "error-hover": "#cb3a3a",
-  "error-pressed": "#b33333",
-  "on-error": "#ffffff",
+  // --- Informative ---
+  informative: "#2563eb", // info-600 (= blue-600)
+  "informative-subtle": "#dbeafe",
+  // --- Positive ---
+  positive: "#16a34a", // green-600
+  "positive-subtle": "#dcfce7",
+  // --- Notice ---
+  notice: "#ea580c", // warning-600 (= orange-600)
+  "notice-subtle": "#ffedd5",
 
-  // Container → Tailwind palette direct
-  "primary-container": "#dbeafe",
-  "on-primary-container": "#1e3a8a",
-  "secondary-container": "#f5f5f5",
-  "on-secondary-container": "#171717",
-  "tertiary-container": "#f3e8ff",
-  "on-tertiary-container": "#581c87",
-  "error-container": "#fee2e2",
-  "on-error-container": "#7f1d1d",
+  // --- Surface / Layer ---
+  base: "#ffffff",
+  "layer-1": "#fafafa", // neutral-50
+  "layer-2": "#fafafa", // neutral-50
+  elevated: "#ffffff",
+  disabled: "#e5e5e5", // neutral-200
 
-  // Surface → Semantic
-  surface: "#ffffff",
-  "surface-container": "#fafafa",
-  "surface-container-high": "#fafafa",
-  "surface-container-highest": "#e5e5e5",
-  "on-surface": "#171717",
-  "on-surface-variant": "#404040",
+  // --- Border ---
+  border: "#d4d4d4", // neutral-300
+  "border-hover": "#a3a3a3", // neutral-400
+  "border-disabled": "#f5f5f5", // neutral-100
 
-  // Outline → Border
-  outline: "#a3a3a3",
-  "outline-variant": "#d4d4d4",
-
-  // Special
+  // --- Special ---
   transparent: "transparent",
+  white: "#ffffff",
+  black: "#000000",
 };
 
 /**
@@ -70,54 +69,53 @@ export const lightColors: ColorTokens = {
  * 시맨틱 토큰 dark mode fallback 값 기준
  */
 export const darkColors: ColorTokens = {
-  // Primary → --highlight-background dark (blue-500)
-  primary: "#3b82f6",
-  "primary-hover": "#3270d1",
-  "primary-pressed": "#60a5fa",
-  "on-primary": "#171717",
+  // --- Accent ---
+  accent: "#3b82f6", // blue-500
+  "accent-hover": "#3270d1",
+  "accent-pressed": "#60a5fa",
+  "on-accent": "#171717",
+  "accent-subtle": "#1e3a8a", // blue-900
 
-  // Secondary → --button-background dark (neutral-800)
-  secondary: "#262626",
-  "secondary-hover": "#202020",
-  "secondary-pressed": "#1c1c1c",
-  "on-secondary": "#ffffff",
+  // --- Neutral ---
+  neutral: "#f5f5f5", // neutral-100 (dark mode에서 밝은 텍스트)
+  "neutral-subdued": "#a3a3a3", // neutral-400
+  "neutral-subtle": "#404040", // neutral-700
+  "neutral-hover": "#363636",
+  "neutral-pressed": "#2e2e2e",
 
-  // Tertiary → purple-600 (same in dark)
-  tertiary: "#9333ea",
-  "tertiary-hover": "#7d2bc7",
-  "tertiary-pressed": "#6e26a6",
-  "on-tertiary": "#ffffff",
+  // --- Negative ---
+  negative: "#f87171", // error-400 dark
+  "negative-hover": "#d36060",
+  "negative-pressed": "#ba5555",
+  "on-negative": "#ffffff",
+  "negative-subtle": "#7f1d1d", // error-900
 
-  // Error → --invalid-color dark (error-400 equivalent)
-  error: "#f87171",
-  "error-hover": "#d36060",
-  "error-pressed": "#ba5555",
-  "on-error": "#ffffff",
+  // --- Informative ---
+  informative: "#3b82f6",
+  "informative-subtle": "#1e3a8a",
+  // --- Positive ---
+  positive: "#22c55e", // green-500
+  "positive-subtle": "#14532d",
+  // --- Notice ---
+  notice: "#f97316", // orange-500
+  "notice-subtle": "#7c2d12",
 
-  // Container
-  "primary-container": "#1e3a8a",
-  "on-primary-container": "#dbeafe",
-  "secondary-container": "#262626",
-  "on-secondary-container": "#f5f5f5",
-  "tertiary-container": "#581c87",
-  "on-tertiary-container": "#f3e8ff",
-  "error-container": "#7f1d1d",
-  "on-error-container": "#fee2e2",
+  // --- Surface / Layer ---
+  base: "#171717", // neutral-900
+  "layer-1": "#262626", // neutral-800
+  "layer-2": "#262626", // neutral-800
+  elevated: "#262626",
+  disabled: "#404040", // neutral-700
 
-  // Surface
-  surface: "#171717",
-  "surface-container": "#262626",
-  "surface-container-high": "#262626",
-  "surface-container-highest": "#404040",
-  "on-surface": "#f5f5f5",
-  "on-surface-variant": "#a3a3a3",
+  // --- Border ---
+  border: "#404040", // neutral-700
+  "border-hover": "#737373", // neutral-500
+  "border-disabled": "#262626", // neutral-800
 
-  // Outline
-  outline: "#737373",
-  "outline-variant": "#404040",
-
-  // Special
+  // --- Special ---
   transparent: "transparent",
+  white: "#ffffff",
+  black: "#000000",
 };
 
 /**

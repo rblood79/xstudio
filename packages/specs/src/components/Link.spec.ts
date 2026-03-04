@@ -1,7 +1,7 @@
 /**
  * Link Component Spec
  *
- * Material Design 3 기반 링크 컴포넌트
+ * React Aria 기반 링크 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -34,7 +34,7 @@ export interface LinkProps {
  */
 export const LinkSpec: ComponentSpec<LinkProps> = {
   name: 'Link',
-  description: 'Material Design 3 기반 링크 컴포넌트',
+  description: 'React Aria 기반 링크 컴포넌트',
   element: 'a',
 
   defaultVariant: 'primary',
@@ -42,20 +42,20 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
 
   variants: {
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
       backgroundAlpha: 0,
-      text: '{color.primary}' as TokenRef,
-      textHover: '{color.primary-hover}' as TokenRef,
+      text: '{color.accent}' as TokenRef,
+      textHover: '{color.accent-hover}' as TokenRef,
     },
     secondary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
       backgroundAlpha: 0,
-      text: '{color.on-surface}' as TokenRef,
-      textHover: '{color.primary}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      textHover: '{color.accent}' as TokenRef,
     },
   },
 

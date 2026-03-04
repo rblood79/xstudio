@@ -1,7 +1,7 @@
 /**
  * Button Component Spec
  *
- * Material Design 3 기반 버튼 컴포넌트
+ * React Aria 기반 버튼 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -38,7 +38,7 @@ export interface ButtonProps {
  */
 export const ButtonSpec: ComponentSpec<ButtonProps> = {
   name: "Button",
-  description: "Material Design 3 기반 버튼 컴포넌트",
+  description: "React Aria 기반 버튼 컴포넌트",
   element: "button",
 
   defaultVariant: "default",
@@ -46,64 +46,64 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
 
   variants: {
     default: {
-      background: "{color.surface-container-high}" as TokenRef,
-      backgroundHover: "{color.surface-container-highest}" as TokenRef,
-      backgroundPressed: "{color.surface-container-highest}" as TokenRef,
-      text: "{color.on-surface}" as TokenRef,
-      border: "{color.outline-variant}" as TokenRef,
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     primary: {
-      background: "{color.primary}" as TokenRef,
-      backgroundHover: "{color.primary-hover}" as TokenRef,
-      backgroundPressed: "{color.primary-pressed}" as TokenRef,
-      text: "{color.on-primary}" as TokenRef,
-      border: "{color.primary}" as TokenRef, // CSS: border-color: var(--highlight-background) → 배경과 동일 → 투명
-      borderHover: "{color.primary-hover}" as TokenRef,
+      background: "{color.accent}" as TokenRef,
+      backgroundHover: "{color.accent-hover}" as TokenRef,
+      backgroundPressed: "{color.accent-pressed}" as TokenRef,
+      text: "{color.on-accent}" as TokenRef,
+      border: "{color.accent}" as TokenRef, // CSS: border-color: var(--highlight-background) → 배경과 동일 → 투명
+      borderHover: "{color.accent-hover}" as TokenRef,
     },
     secondary: {
-      background: "{color.secondary}" as TokenRef,
-      backgroundHover: "{color.secondary-hover}" as TokenRef,
-      backgroundPressed: "{color.secondary-pressed}" as TokenRef,
-      text: "{color.on-secondary}" as TokenRef,
-      border: "{color.secondary}" as TokenRef,
-      borderHover: "{color.secondary-hover}" as TokenRef,
+      background: "{color.neutral-subtle}" as TokenRef,
+      backgroundHover: "{color.neutral-hover}" as TokenRef,
+      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+      border: "{color.neutral-subtle}" as TokenRef,
+      borderHover: "{color.neutral-hover}" as TokenRef,
     },
     tertiary: {
-      background: "{color.tertiary}" as TokenRef,
-      backgroundHover: "{color.tertiary-hover}" as TokenRef,
-      backgroundPressed: "{color.tertiary-pressed}" as TokenRef,
-      text: "{color.on-tertiary}" as TokenRef,
-      border: "{color.tertiary}" as TokenRef,
-      borderHover: "{color.tertiary-hover}" as TokenRef,
+      background: "{color.purple}" as TokenRef,
+      backgroundHover: "{color.purple-hover}" as TokenRef,
+      backgroundPressed: "{color.purple-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+      border: "{color.purple}" as TokenRef,
+      borderHover: "{color.purple-hover}" as TokenRef,
     },
     error: {
-      background: "{color.error}" as TokenRef,
-      backgroundHover: "{color.error-hover}" as TokenRef,
-      backgroundPressed: "{color.error-pressed}" as TokenRef,
-      text: "{color.on-error}" as TokenRef,
-      border: "{color.error}" as TokenRef,
-      borderHover: "{color.error-hover}" as TokenRef,
+      background: "{color.negative}" as TokenRef,
+      backgroundHover: "{color.negative-hover}" as TokenRef,
+      backgroundPressed: "{color.negative-pressed}" as TokenRef,
+      text: "{color.on-negative}" as TokenRef,
+      border: "{color.negative}" as TokenRef,
+      borderHover: "{color.negative-hover}" as TokenRef,
     },
     surface: {
-      background: "{color.surface-container-highest}" as TokenRef,
-      backgroundHover: "{color.surface-container-highest}" as TokenRef,
-      backgroundPressed: "{color.surface-container-highest}" as TokenRef,
-      text: "{color.on-surface}" as TokenRef,
-      border: "{color.outline-variant}" as TokenRef,
+      background: "{color.neutral-subtle}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     outline: {
-      background: "{color.surface}" as TokenRef,
-      backgroundHover: "{color.surface-container}" as TokenRef,
-      backgroundPressed: "{color.surface-container-high}" as TokenRef,
-      text: "{color.primary}" as TokenRef,
-      border: "{color.outline}" as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.accent}" as TokenRef,
+      border: "{color.border-hover}" as TokenRef,
       backgroundAlpha: 0,
     },
     ghost: {
-      background: "{color.surface}" as TokenRef,
-      backgroundHover: "{color.surface-container}" as TokenRef,
-      backgroundPressed: "{color.surface-container-high}" as TokenRef,
-      text: "{color.primary}" as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.accent}" as TokenRef,
       backgroundAlpha: 0,
     },
   },

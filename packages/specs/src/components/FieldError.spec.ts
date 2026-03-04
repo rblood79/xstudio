@@ -1,7 +1,7 @@
 /**
  * FieldError Component Spec
  *
- * Material Design 3 기반 에러 메시지 컴포넌트
+ * React Aria 기반 에러 메시지 컴포넌트
  * TextField, NumberField 등 compound 컴포넌트의 child 요소
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
@@ -38,7 +38,7 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
       background: '{color.transparent}' as TokenRef,
       backgroundHover: '{color.transparent}' as TokenRef,
       backgroundPressed: '{color.transparent}' as TokenRef,
-      text: '{color.error}' as TokenRef,
+      text: '{color.negative}' as TokenRef,
     },
   },
 

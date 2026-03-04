@@ -1,7 +1,7 @@
 /**
  * Input Component Spec
  *
- * Material Design 3 기반 기본 입력 컴포넌트
+ * React Aria 기반 기본 입력 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -31,7 +31,7 @@ export interface InputProps {
  */
 export const InputSpec: ComponentSpec<InputProps> = {
   name: 'Input',
-  description: 'Material Design 3 기반 기본 입력 컴포넌트',
+  description: 'React Aria 기반 기본 입력 컴포넌트',
   element: 'input',
 
   defaultVariant: 'default',
@@ -39,28 +39,28 @@ export const InputSpec: ComponentSpec<InputProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
-      borderHover: '{color.outline}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
+      borderHover: '{color.border-hover}' as TokenRef,
     },
     primary: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
-      borderHover: '{color.primary-hover}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
+      borderHover: '{color.accent-hover}' as TokenRef,
     },
     error: {
-      background: '{color.surface-container}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.error}' as TokenRef,
-      borderHover: '{color.error-hover}' as TokenRef,
+      background: '{color.layer-2}' as TokenRef,
+      backgroundHover: '{color.layer-1}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.negative}' as TokenRef,
+      borderHover: '{color.negative-hover}' as TokenRef,
     },
   },
 
@@ -146,7 +146,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
       const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
 
       const textColor = props.style?.color
-                      ?? (props.value ? variant.text : '{color.on-surface-variant}' as TokenRef);
+                      ?? (props.value ? variant.text : '{color.neutral-subdued}' as TokenRef);
 
       const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
       const paddingX = stylePx != null
@@ -170,7 +170,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
           type: 'border' as const,
           target: 'bg',
           borderWidth,
-          color: borderColor ?? '{color.outline}' as TokenRef,
+          color: borderColor ?? '{color.border-hover}' as TokenRef,
           radius: borderRadius,
         },
       ];

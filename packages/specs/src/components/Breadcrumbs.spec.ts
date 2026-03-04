@@ -1,7 +1,7 @@
 /**
  * Breadcrumbs Component Spec
  *
- * Material Design 3 기반 브레드크럼 컴포넌트
+ * React Aria 기반 브레드크럼 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -28,7 +28,7 @@ export interface BreadcrumbsProps {
  */
 export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   name: 'Breadcrumbs',
-  description: 'Material Design 3 기반 브레드크럼 네비게이션 컴포넌트',
+  description: 'React Aria 기반 브레드크럼 네비게이션 컴포넌트',
   element: 'nav',
 
   defaultVariant: 'default',
@@ -36,18 +36,18 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface-variant}' as TokenRef,
-      textHover: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral-subdued}' as TokenRef,
+      textHover: '{color.accent}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface-variant}' as TokenRef,
-      textHover: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral-subdued}' as TokenRef,
+      textHover: '{color.accent}' as TokenRef,
     },
   },
 
@@ -118,7 +118,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
           fontSize: resolvedFontSize,
           fontFamily: ff,
           fontWeight: isLast ? 600 : 400,
-          fill: isLast ? variant.text : ('{color.on-surface-variant}' as TokenRef),
+          fill: isLast ? variant.text : ('{color.neutral-subdued}' as TokenRef),
           align: 'left' as const,
           baseline: 'middle' as const,
         });
@@ -137,7 +137,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
             fontSize: resolvedFontSize,
             fontFamily: ff,
             fontWeight: 400,
-            fill: '{color.on-surface-variant}' as TokenRef,
+            fill: '{color.neutral-subdued}' as TokenRef,
             align: 'left' as const,
             baseline: 'middle' as const,
           });

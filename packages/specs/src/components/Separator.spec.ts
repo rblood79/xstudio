@@ -1,7 +1,7 @@
 /**
  * Separator Component Spec
  *
- * Material Design 3 기반 구분선 컴포넌트
+ * React Aria 기반 구분선 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -28,7 +28,7 @@ export interface SeparatorProps {
  */
 export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
   name: 'Separator',
-  description: 'Material Design 3 기반 구분선 컴포넌트',
+  description: 'React Aria 기반 구분선 컴포넌트',
   element: 'hr',
 
   defaultVariant: 'default',
@@ -36,60 +36,60 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
       backgroundAlpha: 0,
-      text: '{color.outline-variant}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      text: '{color.border}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     solid: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
       backgroundAlpha: 0,
-      text: '{color.outline-variant}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      text: '{color.border}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     dashed: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
       backgroundAlpha: 0,
-      text: '{color.outline-variant}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      text: '{color.border}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     dotted: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
       backgroundAlpha: 0,
-      text: '{color.outline-variant}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      text: '{color.border}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
       backgroundAlpha: 0,
-      text: '{color.primary}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      text: '{color.accent}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
     secondary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
       backgroundAlpha: 0,
-      text: '{color.secondary}' as TokenRef,
-      border: '{color.secondary}' as TokenRef,
+      text: '{color.neutral-subtle}' as TokenRef,
+      border: '{color.neutral-subtle}' as TokenRef,
     },
     surface: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
       backgroundAlpha: 0,
-      text: '{color.outline}' as TokenRef,
-      border: '{color.outline}' as TokenRef,
+      text: '{color.border-hover}' as TokenRef,
+      border: '{color.border-hover}' as TokenRef,
     },
   },
 

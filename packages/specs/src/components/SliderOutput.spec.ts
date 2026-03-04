@@ -1,7 +1,7 @@
 /**
  * SliderOutput Component Spec
  *
- * Material Design 3 기반 슬라이더 값 출력 컴포넌트
+ * React Aria 기반 슬라이더 값 출력 컴포넌트
  * Slider compound 컴포넌트의 child 요소 (현재 값 텍스트 표시)
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
@@ -39,19 +39,19 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
       background: '{color.transparent}' as TokenRef,
       backgroundHover: '{color.transparent}' as TokenRef,
       backgroundPressed: '{color.transparent}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
     },
     primary: {
       background: '{color.transparent}' as TokenRef,
       backgroundHover: '{color.transparent}' as TokenRef,
       backgroundPressed: '{color.transparent}' as TokenRef,
-      text: '{color.primary}' as TokenRef,
+      text: '{color.accent}' as TokenRef,
     },
     secondary: {
       background: '{color.transparent}' as TokenRef,
       backgroundHover: '{color.transparent}' as TokenRef,
       backgroundPressed: '{color.transparent}' as TokenRef,
-      text: '{color.secondary}' as TokenRef,
+      text: '{color.neutral-subtle}' as TokenRef,
     },
   },
 

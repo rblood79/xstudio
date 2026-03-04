@@ -1,7 +1,7 @@
 /**
  * GridList Component Spec
  *
- * Material Design 3 기반 그리드 리스트 컴포넌트
+ * React Aria 기반 그리드 리스트 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -37,7 +37,7 @@ export interface GridListProps {
  */
 export const GridListSpec: ComponentSpec<GridListProps> = {
   name: 'GridList',
-  description: 'Material Design 3 기반 그리드 리스트 컴포넌트',
+  description: 'React Aria 기반 그리드 리스트 컴포넌트',
   element: 'div',
 
   defaultVariant: 'default',
@@ -45,18 +45,18 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface-container}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.layer-2}' as TokenRef,
+      backgroundPressed: '{color.layer-1}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.primary-container}' as TokenRef,
-      backgroundPressed: '{color.primary-container}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.accent-subtle}' as TokenRef,
+      backgroundPressed: '{color.accent-subtle}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
   },
 
@@ -179,7 +179,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
           width: cellWidth,
           height: cellHeight,
           radius: 6,
-          fill: '{color.surface-container}' as TokenRef,
+          fill: '{color.layer-2}' as TokenRef,
         });
 
         // 아이템 레이블
@@ -206,7 +206,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
             fontSize: Math.max(fontSize - 2, 10),
             fontFamily: ff,
             fontWeight: 400,
-            fill: '{color.on-surface-variant}' as TokenRef,
+            fill: '{color.neutral-subdued}' as TokenRef,
             baseline: 'middle' as const,
             align: 'left' as const,
           });

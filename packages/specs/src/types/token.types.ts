@@ -9,7 +9,7 @@
 
 /**
  * 토큰 참조 문자열
- * 예: '{color.primary}', '{spacing.md}', '{radius.lg}'
+ * 예: '{color.accent}', '{spacing.md}', '{radius.lg}'
  */
 export type TokenRef = `{${string}}`;
 
@@ -54,57 +54,64 @@ export interface TokenCategories {
 }
 
 /**
- * 색상 토큰
+ * 색상 토큰 (S2 체계, ADR-022)
+ *
+ * React Spectrum S2의 역할 기반 네이밍 채택:
+ * - accent/neutral/negative: 핵심 시맨틱
+ * - informative/positive/notice: 상태 시맨틱
+ * - base/layer-1/layer-2/elevated: 레이어 시스템
+ * - -subtle: 연한 배경 변형 (S2 fillStyle=subtle)
  */
 export interface ColorTokens {
-  // Primary
-  primary: string;
-  "primary-hover": string;
-  "primary-pressed": string;
-  "on-primary": string;
+  // --- Accent (기존 primary) ---
+  accent: string;
+  "accent-hover": string;
+  "accent-pressed": string;
+  "on-accent": string;
+  "accent-subtle": string;
 
-  // Secondary
-  secondary: string;
-  "secondary-hover": string;
-  "secondary-pressed": string;
-  "on-secondary": string;
+  // --- Neutral (기존 on-surface + secondary) ---
+  neutral: string;
+  "neutral-subdued": string;
+  "neutral-subtle": string;
+  "neutral-hover": string;
+  "neutral-pressed": string;
 
-  // Tertiary
-  tertiary: string;
-  "tertiary-hover": string;
-  "tertiary-pressed": string;
-  "on-tertiary": string;
+  // --- Negative (기존 error) ---
+  negative: string;
+  "negative-hover": string;
+  "negative-pressed": string;
+  "on-negative": string;
+  "negative-subtle": string;
 
-  // Error
-  error: string;
-  "error-hover": string;
-  "error-pressed": string;
-  "on-error": string;
+  // --- Informative ---
+  informative: string;
+  "informative-subtle": string;
 
-  // Container (MD3 color roles)
-  "primary-container": string;
-  "on-primary-container": string;
-  "secondary-container": string;
-  "on-secondary-container": string;
-  "tertiary-container": string;
-  "on-tertiary-container": string;
-  "error-container": string;
-  "on-error-container": string;
+  // --- Positive ---
+  positive: string;
+  "positive-subtle": string;
 
-  // Surface
-  surface: string;
-  "surface-container": string;
-  "surface-container-high": string;
-  "surface-container-highest": string;
-  "on-surface": string;
-  "on-surface-variant": string;
+  // --- Notice ---
+  notice: string;
+  "notice-subtle": string;
 
-  // Outline
-  outline: string;
-  "outline-variant": string;
+  // --- Surface / Layer ---
+  base: string;
+  "layer-1": string;
+  "layer-2": string;
+  elevated: string;
+  disabled: string;
 
-  // Special
+  // --- Border ---
+  border: string;
+  "border-hover": string;
+  "border-disabled": string;
+
+  // --- Special ---
   transparent: string;
+  white: string;
+  black: string;
 }
 
 /**

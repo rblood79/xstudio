@@ -52,18 +52,18 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
   },
 
@@ -144,7 +144,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
           fontSize: fontSize - 2,
           fontFamily: ff,
           fontWeight: 500,
-          fill: '{color.on-surface-variant}' as TokenRef,
+          fill: '{color.neutral-subdued}' as TokenRef,
           align: 'center' as const,
           baseline: 'middle' as const,
           maxWidth: cellSize,
@@ -167,7 +167,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
             x: cx,
             y: cy,
             radius: cellSize / 2,
-            fill: '{color.primary}' as TokenRef,
+            fill: '{color.accent}' as TokenRef,
           });
         }
 
@@ -179,7 +179,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
           fontSize,
           fontFamily: ff,
           fontWeight: day === today ? 600 : 400,
-          fill: day === today ? ('{color.on-primary}' as TokenRef) : variant.text,
+          fill: day === today ? ('{color.on-accent}' as TokenRef) : variant.text,
           align: 'center' as const,
           baseline: 'middle' as const,
           maxWidth: cellSize,

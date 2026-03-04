@@ -1,7 +1,7 @@
 /**
  * ColorArea Component Spec
  *
- * Material Design 3 기반 2D 색상 영역 컴포넌트
+ * React Aria 기반 2D 색상 영역 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
  * @packageDocumentation
@@ -27,7 +27,7 @@ export interface ColorAreaProps {
  */
 export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
   name: 'ColorArea',
-  description: 'Material Design 3 기반 2D 색상 선택 영역 (saturation/brightness)',
+  description: 'React Aria 기반 2D 색상 선택 영역 (saturation/brightness)',
   element: 'div',
 
   defaultVariant: 'default',
@@ -35,18 +35,18 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
 
   variants: {
     default: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.outline-variant}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.border}' as TokenRef,
     },
     primary: {
-      background: '{color.surface}' as TokenRef,
-      backgroundHover: '{color.surface}' as TokenRef,
-      backgroundPressed: '{color.surface}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
-      border: '{color.primary}' as TokenRef,
+      background: '{color.base}' as TokenRef,
+      backgroundHover: '{color.base}' as TokenRef,
+      backgroundPressed: '{color.base}' as TokenRef,
+      text: '{color.neutral}' as TokenRef,
+      border: '{color.accent}' as TokenRef,
     },
   },
 
@@ -126,7 +126,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
           type: 'border' as const,
           target: 'area',
           borderWidth: 1,
-          color: '{color.outline-variant}' as TokenRef,
+          color: '{color.border}' as TokenRef,
           radius: borderRadius as unknown as number,
         },
         // Thumb (원형)
@@ -135,7 +135,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
           x: xValue * areaSize,
           y: (1 - yValue) * areaSize,
           radius: thumbSize / 2,
-          fill: '{color.surface}' as TokenRef,
+          fill: '{color.base}' as TokenRef,
         },
         // Thumb 테두리
         {
@@ -145,7 +145,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
           width: thumbSize,
           height: thumbSize,
           borderWidth: 2,
-          color: '{color.outline-variant}' as TokenRef,
+          color: '{color.border}' as TokenRef,
           radius: thumbSize / 2,
         },
       ];
