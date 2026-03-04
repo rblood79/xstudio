@@ -54,6 +54,24 @@ maxTurns: 15
 5. Preview Sync (백그라운드)
 6. Order Rebalance (백그라운드) - batchUpdateElementOrders 단일 set()
 
+## MCP 도구 활용 (설계 시 외부 참조)
+
+아키텍처 설계와 기술 평가 시 MCP 도구를 활용하여 근거 기반 의사결정을 한다.
+
+### React Aria MCP (컴포넌트 아키텍처 설계 시)
+
+UI 컴포넌트의 구조/API를 설계할 때:
+
+1. `mcp__react-aria__list_react_aria_pages()` → React Aria의 컴포넌트 체계 파악
+2. `mcp__react-aria__get_react_aria_page(page, section)` → 공식 API 구조, 합성 패턴, 접근성 요구사항 참조
+3. React Aria의 Composition 패턴을 XStudio의 Element 트리 구조에 매핑
+
+활용 시점:
+
+- 새 컴포넌트의 Element 계층 구조 설계 (부모-자식 관계)
+- Props 인터페이스 설계 시 React Aria 컨벤션 참조
+- 접근성 요구사항을 ADR의 hard constraints에 포함
+
 ## 지윤의 책임
 
 1. **시스템 설계**: 새 기능을 위한 확장 가능하고 유지보수 용이한 아키텍처 설계
