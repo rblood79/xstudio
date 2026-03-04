@@ -5,6 +5,49 @@ All notable changes to XStudio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-017 M3 제거 + Tint Color System + ADR-018 Phase 1] - 2026-03-04
+
+### Breaking Changes
+
+- **M3 토큰 전체 제거 (ADR-017)**: 38개 M3 CSS 변수(`--primary`, `--on-surface`, `--surface-container` 등) 삭제. 107개 CSS 파일에서 시맨틱 토큰으로 치환 완료
+- **Spec 토큰 시스템 전환**: `ColorTokens` 인터페이스 M3 33개 → 시맨틱 ~20개, `colors.ts` M3 hex → Tailwind hex, 30+ Spec 파일 TokenRef 치환
+
+### Features
+
+- **Tint Color System 도입** (`preview-system.css`): React Aria starter 패턴 기반
+  - `--tint: var(--blue)` 한 줄로 전체 테마 액센트 색상 전환
+  - 10개 oklch 프리셋: red, orange, yellow, green, turquoise, cyan, blue, indigo, purple, pink
+  - `--tint-100` ~ `--tint-1600` 자동 파생 (oklch relative color syntax)
+  - 다크모드 lightness 스케일 자동 반전
+  - ThemeStudio 오버라이드(`--color-*`)가 tint fallback보다 우선
+- **utilities.css 생성 (ADR-018 Phase 1)**: `.button-base`, `.indicator`, `.inset` 3대 유틸리티 클래스
+  - `--button-color` 1개로 bg/hover/pressed/text/border 자동 파생 (`color-mix()` 기반)
+  - `:where()` specificity 0 패턴으로 오버라이드 안전
+
+### Bug Fixes
+
+- **Preview iframe 팔레트 미정의**: `--color-primary-*`, `--color-white`, `--color-tertiary-*` 등 Tailwind 팔레트가 Preview iframe에서 정의되지 않던 문제 → `shared-tokens.css`에 정적 팔레트 추가
+- **Card.css dead 셀렉터**: TSX는 `data-variant` 전달하지만 CSS는 class 셀렉터(`.primary`) 사용 → `[data-variant]` 기반으로 수정
+- **utilities.css Preview 누락**: `index.css` (shared)에 `@import "./utilities.css"` 추가
+
+### Changed
+
+- **`preview-system.css`**: M3 섹션 삭제 + Tint Color System 전면 도입
+- **`builder-system.css`**: M3 섹션 삭제
+- **`shared-tokens.css`**: `--color-white/black`, `--color-primary-*`(Blue), `--color-tertiary-*`(Purple), `--color-blue/green/red/orange/yellow/purple-*` 팔레트 추가
+- **`Button.css`**: `.button-base` 적용, variant/state 블록 제거 (-48%)
+- **`Card.css`**: class 셀렉터 → `[data-variant]`/`[data-size]` 수정
+- **`foundation.css`**: `@import "./utilities.css"` 추가
+- **`index.css` (shared)**: `@import "./utilities.css"` 추가
+- **Spec 파일 30+개**: M3 TokenRef → 시맨틱 TokenRef 치환
+
+### Removed
+
+- **M3 토큰 정의**: `preview-system.css`, `builder-system.css`에서 M3 light/dark 섹션 삭제
+- **`M3ColorSystemGuide.tsx/css`**: 삭제 (M3 시스템 가이드 UI)
+
+---
+
 ## [CSS Duplication Fix — Import Chain 단일화] - 2026-03-04
 
 ### Bug Fixes

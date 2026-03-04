@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposed
+Partial (2026-03-04)
+
+> Phase 1 완료 (utilities.css 생성 + foundation.css/index.css 연결). Button.css, Card.css 마이그레이션 완료. Phase 2~5 미착수.
 
 ## Context
 

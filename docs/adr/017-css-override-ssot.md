@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposed
+Implemented (2026-03-04)
+
+> Phase 1~4 전체 완료. M3 토큰 38개 제거, 107개 CSS 파일 시맨틱 치환, Tint Color System 도입, Spec 토큰 전환, Theme Studio 확인.
 
 ## Context
 

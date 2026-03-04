@@ -6,10 +6,10 @@
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 8      |
-| 부분 완료                              | 5      |
-| 미구현 (Proposed/계획)                 | 6      |
-| **합계**                               | **19** |
+| 완료 (Accepted/Implemented/Superseded) | 9      |
+| 부분 완료                              | 6      |
+| 미구현 (Proposed/계획)                 | 5      |
+| **합계**                               | **20** |
 
 ---
 
@@ -27,6 +27,7 @@
 | [006](006-child-composition-remaining.md) | Child Composition Pattern          | Implemented | 2026-02-24 | 49/62 spec 완료, Table/Tree 2개 보류                     |
 | [007](007-project-export.md)              | Project Export/Import              | Implemented | 2026-01-02 | 100% 완성                                                |
 | [008](008-layout-engine.md)               | 캔버스 레이아웃 엔진 전환 (전략 D) | Implemented | 2026-02-17 | Taffy WASM 단일 엔진 전환 완료                           |
+| [017](017-css-override-ssot.md)           | React-Aria CSS Override SSOT       | Implemented | 2026-03-04 | M3 38개 제거, 107개 CSS 치환, Tint Color System 도입     |
 
 ### 부분 완료
 
@@ -37,33 +38,31 @@
 | [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling) | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화)           | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스 도구)                                   |    P5    |
 | [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝     | P0~P2 전체 완료 (80%)                                       | P3 전체 (Dirty Tracking, Viewport Culling, PersistentTaffyTree) — 대규모 작업으로 후순위 이동    |    P5    |
 | [014](014-fonts.md)                               | Fonts 실행 계획                       | Phase A+B+C+C2 완료 (Font Manager Panel + OS/2 메타 추출)   | Phase D (Publish 레지스트리 전환), Phase E (정적 Export 멀티파일)                                |  **P1**  |
+| [018](018-component-css-restructure.md)           | 컴포넌트 CSS 구조 재작성              | Phase 1 (utilities.css) + Button/Card 완료                  | Phase 2~5 (입력 필드/인디케이터/복합 컴포넌트 마이그레이션)                                      |    P3    |
 
 ### 미구현
 
-| ADR                                      | 제목                                                   | 상태     | 규모                                                                 | 우선순위 |
-| ---------------------------------------- | ------------------------------------------------------ | -------- | -------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                            | Proposed | 5 Phase, 21파일                                                      |  **P2**  |
-| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                      | Proposed | 변경 대상 8파일, 코드 미생성                                         |    P5    |
-| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)                     | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations               |    P5    |
-| [017](017-css-override-ssot.md)          | React-Aria CSS Override SSOT — M3 제거 + Tailwind 통합 | Proposed | 5 Phase, M3 실참조 107파일 토큰 치환 + Spec 전환 + Theme Studio      |    P3    |
-| [018](018-component-css-restructure.md)  | 컴포넌트 CSS 구조 재작성 — starter 패턴 기반           | Proposed | 6 Phase, 82파일 utilities 패턴 도입 + 구조 단순화 (16,647→~6,500줄)  |    P3    |
-| [019](019-icon-system.md)                | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가       | Proposed | 5 Phase, Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링 |  **P2**  |
+| ADR                                      | 제목                                             | 상태     | 규모                                                                 | 우선순위 |
+| ---------------------------------------- | ------------------------------------------------ | -------- | -------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                      | Proposed | 5 Phase, 21파일                                                      |  **P2**  |
+| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                | Proposed | 변경 대상 8파일, 코드 미생성                                         |    P5    |
+| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)               | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations               |    P5    |
+| [019](019-icon-system.md)                | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가 | Proposed | 5 Phase, Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링 |  **P2**  |
+| [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선                     | Proposed | 3 Phase, 13파일 — History 통합, Kit v2 스키마, Factory 연동          |    P4    |
 
 ---
 
 ## 다음 진행 목표 (2026-03-04 기준)
 
-| 순서 | 대상              | 내용                                                                                                 | 규모 |
-| :--: | ----------------- | ---------------------------------------------------------------------------------------------------- | :--: |
-|  1   | ADR-014 Phase D   | Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입         |  소  |
-|  2   | ADR-014 Phase E   | 정적 Export 멀티파일 — `assets/fonts/*` 생성 + 상대 경로 연결 + `showDirectoryPicker` / ZIP fallback |  중  |
-|  3   | ADR-017 Phase 1   | M3 토큰 제거 — preview-system.css, builder-system.css에서 M3 섹션 제거, 시맨틱 토큰 복귀             |  소  |
-|  4   | ADR-017 Phase 2   | 컴포넌트 CSS M3→시맨틱 치환 — 107개 CSS 파일 find-replace (`--primary`→`--highlight-background` 등)  |  중  |
-|  5   | ADR-017 Phase 3   | Spec 토큰 전환 — ColorTokens + colors.ts + 전체 Spec TokenRef M3→시맨틱 치환 (Canvas/Preview 통일)   |  중  |
-|  6   | ADR-017 Phase 4   | Theme Studio — `--tint` 기반 단일 변수 테마 전환 도입                                                |  중  |
-|  7   | ADR-018 Phase 1   | utilities.css 기반 구축 — `.button-base`, `.indicator`, `.inset` 3대 유틸리티 생성                   |  소  |
-|  8   | ADR-018 Phase 2~5 | 컴포넌트 CSS 구조 재작성 — 82파일 utilities 패턴 전환 (16,647→~6,500줄)                              |  대  |
-|  9   | ADR-013           | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |
+| 순서  | 대상                | 내용                                                                                                 | 규모 |   상태   |
+| :---: | ------------------- | ---------------------------------------------------------------------------------------------------- | :--: | :------: |
+| ~~1~~ | ~~ADR-017~~         | ~~M3 토큰 제거 + Tint Color System + Spec 전환 + Theme Studio~~                                      |  중  | **완료** |
+| ~~2~~ | ~~ADR-018 Phase 1~~ | ~~utilities.css 생성 + Button/Card 마이그레이션~~                                                    |  소  | **완료** |
+|   3   | ADR-014 Phase D     | Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입         |  소  |          |
+|   4   | ADR-014 Phase E     | 정적 Export 멀티파일 — `assets/fonts/*` 생성 + 상대 경로 연결 + `showDirectoryPicker` / ZIP fallback |  중  |          |
+|   5   | ADR-018 Phase 2~5   | 컴포넌트 CSS 구조 재작성 — 나머지 컴포넌트 utilities 패턴 전환 (입력 필드/인디케이터/복합)           |  대  |          |
+|   6   | ADR-013             | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |          |
+|   7   | ADR-019             | 아이콘 시스템 — Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링                          |  중  |          |
 
 ---
 
@@ -88,12 +87,10 @@
 ### P3: ADR-017 + ADR-018 CSS 아키텍처 정비
 
 - **근거**: M3 토큰 38개 불필요 중첩 + 컴포넌트 CSS 3.8x 비대화 (16,647줄 vs starter 4,430줄)
-- **진행률**: 전체 미착수 (ADR 작성 완료)
-- **실행 순서**: ADR-017 (M3 제거, 토큰 치환) → ADR-018 (구조 재작성, utilities 패턴)
-- **ADR-017**: preview-system.css/builder-system.css M3 섹션 제거, 107개 CSS M3→시맨틱 find-replace + Spec 토큰 전환 + Theme Studio
-- **ADR-018**: utilities.css 3대 유틸리티 도입 + 82개 컴포넌트 CSS 구조 단순화 (16,647→~6,500줄)
-- **전제 조건**: ADR-017은 독립 실행 가능, ADR-018은 ADR-017 완료 후 진행
-- **영향 범위**: 전체 CSS 아키텍처 — 토큰 체인 단순화 + 코드량 62% 감소
+- **ADR-017**: **완료** (2026-03-04) — M3 38개 토큰 제거, 107개 CSS 치환, Tint Color System 도입, Spec 토큰 전환
+- **ADR-018**: Phase 1 완료 (utilities.css + Button/Card), Phase 2~5 미착수
+- **다음 단계**: ADR-018 Phase 2~5 (입력 필드/인디케이터/복합 컴포넌트 마이그레이션)
+- **영향 범위**: 전체 CSS 아키텍처 — 토큰 체인 단순화 완료, 잔여 코드량 감소 대기
 
 ### P4: ADR-009 Phase 3~5
 
@@ -200,3 +197,5 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-04 | ADR-019 추가 — 아이콘 시스템 (Builder UI 아이콘 선택/변경/추가). Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링. 5 Phase (A~E), P2 우선순위                                                                                                                        |
 | 2026-03-04 | ADR-017/018 코드베이스 재검증 — builder CSS M3 사용 7개→52개(총 107개) 정정, base.css Phase 1 대상 제외, Gate G0(자동화 dry-run) 추가 + Tier 4(builder 패널 45파일) 신설, Card.tsx data-variant 전달 확인됨                                                                     |
 | 2026-03-04 | ADR-017/018 최종 갭 해소 — ① Theme Studio 12파일 작업 경계 명시(ADR-017 단독 소유, ADR-018 제외 확인), ② builder-system.css 기존 버그 문서화(8토큰 누락: tertiary 6개 + error-hover/pressed 2개, Phase 2에서 자연 해소), ③ Phase 1+Tier 1 원자적 적용 필수 명시(G1 Gate 재정의) |
+| 2026-03-04 | **ADR-017 Implemented** — M3 38개 토큰 제거, 107개 CSS 시맨틱 치환, Tint Color System 도입, Spec 전환, Theme Studio 확인. **ADR-018 Partial** — Phase 1 (utilities.css) + Button/Card 완료. 로드맵 갱신, 현황 요약 카운트 조정                                                  |
+| 2026-03-04 | ADR-020 추가 — Design Kit 패널 분석 및 개선 (10개 문제점 식별, 3 Phase 로드맵, Kit v2 스키마 + Factory 통합 설계). P4 우선순위                                                                                                                                                  |
