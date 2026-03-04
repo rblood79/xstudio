@@ -376,6 +376,8 @@ Card.css의 클래스 기반 variant (`.primary`, `.elevated` 등)를 `[data-var
 
 **Builder CSS 참고**: Builder 전용 CSS **52파일**(ITCSS 레이어 7개 + 패널 CSS 45개)은 ADR-017에서 M3 토큰 치환만 수행 (ADR-017 Phase 2 Tier 3~4 참조). ADR-018의 utilities 패턴은 Builder CSS에 적용하지 않음 (builder-system.css 독립 유지).
 
+**Theme Studio 제외**: Theme Studio CSS **12파일**(~3,536줄, `panels/themes/` 하위)은 **ADR-017이 단독 소유** — Phase 2 Tier 4에서 M3 토큰 치환, Phase 4에서 TSX 기능 전환. ADR-018은 Theme Studio 파일에 대해 **어떤 작업도 수행하지 않음**. 상세 파일 목록은 ADR-017 "Theme Studio 작업 경계" 섹션 참조.
+
 ### Phase 6 (Optional): dead code 제거 + 문서화
 
 - 미사용 CSS 셀렉터 제거 (variant 축소 포함)

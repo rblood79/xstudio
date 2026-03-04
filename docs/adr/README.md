@@ -58,7 +58,7 @@
 |  1   | ADR-014 Phase D   | Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입         |  소  |
 |  2   | ADR-014 Phase E   | 정적 Export 멀티파일 — `assets/fonts/*` 생성 + 상대 경로 연결 + `showDirectoryPicker` / ZIP fallback |  중  |
 |  3   | ADR-017 Phase 1   | M3 토큰 제거 — preview-system.css, builder-system.css에서 M3 섹션 제거, 시맨틱 토큰 복귀             |  소  |
-|  4   | ADR-017 Phase 2   | 컴포넌트 CSS M3→시맨틱 치환 — 64개 CSS 파일 find-replace (`--primary`→`--highlight-background` 등)   |  중  |
+|  4   | ADR-017 Phase 2   | 컴포넌트 CSS M3→시맨틱 치환 — 107개 CSS 파일 find-replace (`--primary`→`--highlight-background` 등)  |  중  |
 |  5   | ADR-017 Phase 3   | Spec 토큰 전환 — ColorTokens + colors.ts + 전체 Spec TokenRef M3→시맨틱 치환 (Canvas/Preview 통일)   |  중  |
 |  6   | ADR-017 Phase 4   | Theme Studio — `--tint` 기반 단일 변수 테마 전환 도입                                                |  중  |
 |  7   | ADR-018 Phase 1   | utilities.css 기반 구축 — `.button-base`, `.indicator`, `.inset` 3대 유틸리티 생성                   |  소  |
@@ -90,7 +90,7 @@
 - **근거**: M3 토큰 38개 불필요 중첩 + 컴포넌트 CSS 3.8x 비대화 (16,647줄 vs starter 4,430줄)
 - **진행률**: 전체 미착수 (ADR 작성 완료)
 - **실행 순서**: ADR-017 (M3 제거, 토큰 치환) → ADR-018 (구조 재작성, utilities 패턴)
-- **ADR-017**: preview-system.css/builder-system.css M3 섹션 제거, 64개 CSS M3→시맨틱 find-replace + Spec 토큰 전환 + Theme Studio
+- **ADR-017**: preview-system.css/builder-system.css M3 섹션 제거, 107개 CSS M3→시맨틱 find-replace + Spec 토큰 전환 + Theme Studio
 - **ADR-018**: utilities.css 3대 유틸리티 도입 + 82개 컴포넌트 CSS 구조 단순화 (16,647→~6,500줄)
 - **전제 조건**: ADR-017은 독립 실행 가능, ADR-018은 ADR-017 완료 후 진행
 - **영향 범위**: 전체 CSS 아키텍처 — 토큰 체인 단순화 + 코드량 62% 감소
@@ -184,18 +184,19 @@ Proposed | Accepted | Deprecated | Superseded
 
 ## 변경 이력
 
-| 날짜       | 변경 내용                                                                                                                                                                                                                            |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 2026-03-03 | 최초 작성 — 13개 ADR 전수 분석, 우선순위 결정                                                                                                                                                                                        |
-| 2026-03-03 | ADR-011 추가 — AI_ASSISTANT_DESIGN.md → adr/011-ai-assistant-design.md 이동                                                                                                                                                          |
-| 2026-03-03 | ADR-008 추가 — LAYOUT_ENGINE.md → adr/008-layout-engine.md 이동                                                                                                                                                                      |
-| 2026-03-03 | 코드 대조 검증 — ADR-009~016 전수 검증, ADR-012 Proposed→Partial 승격, ADR-009 Phase 3 Binary Protocol 부분 구현 확인, ADR-011 A5a 부분 완료 확인                                                                                    |
-| 2026-03-03 | Risk-First ADR 템플릿 추가 — Alternatives→Risk→Decision→Gates 순서 필수화                                                                                                                                                            |
-| 2026-03-04 | ADR-012 P1-2/P2-3 구현 완료 확인 — 코드 대조 결과 이미 구현됨 확인, 67%→80% 갱신. 잔여: P3 장기 최적화 3건                                                                                                                           |
-| 2026-03-04 | ADR-014 Phase C2 완료 — Font Manager Panel + PropertyListItem 재사용 컴포넌트 + OS/2 메타데이터 추출. 우선순위 근거 갱신                                                                                                             |
-| 2026-03-04 | ADR-017 추가 — Input CSS Override SSOT 정리 (CSS Custom Properties SSOT + 셀렉터 정규화 + Dead Code 제거)                                                                                                                            |
-| 2026-03-04 | ADR-017 재작성 — M3 제거 + Tailwind 통합 방향으로 전면 개정. ADR-009 P3→P4 조정, ADR-017 P3 신설. 로드맵에 Phase 1~2 추가                                                                                                            |
-| 2026-03-04 | ADR-018 추가 — 컴포넌트 CSS 구조 재작성 (react-aria-starter 패턴 기반, utilities.css 3대 유틸리티 도입, 15,652→~6,000줄 목표). P3에 017+018 통합                                                                                     |
-| 2026-03-04 | ADR-017/018 갭 분석 12건 반영 — Gate 번호 수정, M3 실참조 64파일 정정, Publish 앱 영향 추가, Card.css 레거시 셀렉터 마이그레이션, AI Theme Generator 5파일 열거, :focus-visible 3파일 처리 추가, M3_COMPONENT_TEMPLATE.css 폐기 명시 |
-| 2026-03-04 | ADR-019 추가 — 아이콘 시스템 (Builder UI 아이콘 선택/변경/추가). Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링. 5 Phase (A~E), P2 우선순위                                                                             |
-| 2026-03-04 | ADR-017/018 코드베이스 재검증 — builder CSS M3 사용 7개→52개(총 107개) 정정, base.css Phase 1 대상 제외, Gate G0(자동화 dry-run) 추가 + Tier 4(builder 패널 45파일) 신설, Card.tsx data-variant 전달 확인됨                          |
+| 날짜       | 변경 내용                                                                                                                                                                                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-03 | 최초 작성 — 13개 ADR 전수 분석, 우선순위 결정                                                                                                                                                                                                                                   |
+| 2026-03-03 | ADR-011 추가 — AI_ASSISTANT_DESIGN.md → adr/011-ai-assistant-design.md 이동                                                                                                                                                                                                     |
+| 2026-03-03 | ADR-008 추가 — LAYOUT_ENGINE.md → adr/008-layout-engine.md 이동                                                                                                                                                                                                                 |
+| 2026-03-03 | 코드 대조 검증 — ADR-009~016 전수 검증, ADR-012 Proposed→Partial 승격, ADR-009 Phase 3 Binary Protocol 부분 구현 확인, ADR-011 A5a 부분 완료 확인                                                                                                                               |
+| 2026-03-03 | Risk-First ADR 템플릿 추가 — Alternatives→Risk→Decision→Gates 순서 필수화                                                                                                                                                                                                       |
+| 2026-03-04 | ADR-012 P1-2/P2-3 구현 완료 확인 — 코드 대조 결과 이미 구현됨 확인, 67%→80% 갱신. 잔여: P3 장기 최적화 3건                                                                                                                                                                      |
+| 2026-03-04 | ADR-014 Phase C2 완료 — Font Manager Panel + PropertyListItem 재사용 컴포넌트 + OS/2 메타데이터 추출. 우선순위 근거 갱신                                                                                                                                                        |
+| 2026-03-04 | ADR-017 추가 — Input CSS Override SSOT 정리 (CSS Custom Properties SSOT + 셀렉터 정규화 + Dead Code 제거)                                                                                                                                                                       |
+| 2026-03-04 | ADR-017 재작성 — M3 제거 + Tailwind 통합 방향으로 전면 개정. ADR-009 P3→P4 조정, ADR-017 P3 신설. 로드맵에 Phase 1~2 추가                                                                                                                                                       |
+| 2026-03-04 | ADR-018 추가 — 컴포넌트 CSS 구조 재작성 (react-aria-starter 패턴 기반, utilities.css 3대 유틸리티 도입, 15,652→~6,000줄 목표). P3에 017+018 통합                                                                                                                                |
+| 2026-03-04 | ADR-017/018 갭 분석 12건 반영 — Gate 번호 수정, M3 실참조 64파일 정정, Publish 앱 영향 추가, Card.css 레거시 셀렉터 마이그레이션, AI Theme Generator 5파일 열거, :focus-visible 3파일 처리 추가, M3_COMPONENT_TEMPLATE.css 폐기 명시                                            |
+| 2026-03-04 | ADR-019 추가 — 아이콘 시스템 (Builder UI 아이콘 선택/변경/추가). Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링. 5 Phase (A~E), P2 우선순위                                                                                                                        |
+| 2026-03-04 | ADR-017/018 코드베이스 재검증 — builder CSS M3 사용 7개→52개(총 107개) 정정, base.css Phase 1 대상 제외, Gate G0(자동화 dry-run) 추가 + Tier 4(builder 패널 45파일) 신설, Card.tsx data-variant 전달 확인됨                                                                     |
+| 2026-03-04 | ADR-017/018 최종 갭 해소 — ① Theme Studio 12파일 작업 경계 명시(ADR-017 단독 소유, ADR-018 제외 확인), ② builder-system.css 기존 버그 문서화(8토큰 누락: tertiary 6개 + error-hover/pressed 2개, Phase 2에서 자연 해소), ③ Phase 1+Tier 1 원자적 적용 필수 명시(G1 Gate 재정의) |

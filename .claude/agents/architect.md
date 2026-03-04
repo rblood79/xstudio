@@ -54,17 +54,18 @@ maxTurns: 15
 5. Preview Sync (백그라운드)
 6. Order Rebalance (백그라운드) - batchUpdateElementOrders 단일 set()
 
-## MCP 도구 활용 (설계 시 외부 참조)
+## 문서 참조 (설계 시 외부 참조)
 
-아키텍처 설계와 기술 평가 시 MCP 도구를 활용하여 근거 기반 의사결정을 한다.
+아키텍처 설계와 기술 평가 시 프로젝트 내 Skill 문서를 활용하여 근거 기반 의사결정을 한다.
 
-### React Aria MCP (컴포넌트 아키텍처 설계 시)
+### React Aria Skill (컴포넌트 아키텍처 설계 시)
 
 UI 컴포넌트의 구조/API를 설계할 때:
 
-1. `mcp__react-aria__list_react_aria_pages()` → React Aria의 컴포넌트 체계 파악
-2. `mcp__react-aria__get_react_aria_page(page, section)` → 공식 API 구조, 합성 패턴, 접근성 요구사항 참조
-3. React Aria의 Composition 패턴을 XStudio의 Element 트리 구조에 매핑
+1. `Read .claude/skills/react-aria/references/components/{ComponentName}.md` → 공식 API 구조, 합성 패턴, 접근성 요구사항 참조
+2. `Read .claude/skills/react-aria/references/guides/collections.md` → 컬렉션/합성 패턴 참조
+3. `Read .claude/skills/react-spectrum-s2/references/components/{ComponentName}.md` → Spectrum S2 디자인 시스템 구현 비교
+4. React Aria의 Composition 패턴을 XStudio의 Element 트리 구조에 매핑
 
 활용 시점:
 
