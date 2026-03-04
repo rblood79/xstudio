@@ -317,21 +317,27 @@
         }
       }
     }
+  }
 
-    &[data-size="sm"] .react-aria-ListBox .react-aria-ListBoxItem {
-      padding: var(--spacing-sm) var(--spacing);
-      font-size: var(--text-xs);
-    }
+  .react-aria-Popover[data-trigger="ComboBox"].sm
+    .react-aria-ListBox
+    .react-aria-ListBoxItem {
+    padding: var(--spacing-sm) var(--spacing);
+    font-size: var(--text-xs);
+  }
 
-    &[data-size="md"] .react-aria-ListBox .react-aria-ListBoxItem {
-      padding: var(--spacing-sm) var(--spacing-md);
-      font-size: var(--text-base);
-    }
+  .react-aria-Popover[data-trigger="ComboBox"].md
+    .react-aria-ListBox
+    .react-aria-ListBoxItem {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--text-base);
+  }
 
-    &[data-size="lg"] .react-aria-ListBox .react-aria-ListBoxItem {
-      padding: var(--spacing-md) var(--spacing-lg);
-      font-size: var(--text-base);
-    }
+  .react-aria-Popover[data-trigger="ComboBox"].lg
+    .react-aria-ListBox
+    .react-aria-ListBoxItem {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--text-base);
   }
 
   /* ========== Forced Colors Mode ========== */
