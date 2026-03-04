@@ -18,7 +18,6 @@ import {
   Cloud,
   HardDrive,
   Download,
-  SwatchBook,
   Settings,
   Plus,
   Package,
@@ -58,7 +57,7 @@ function Dashboard() {
 
   // Fetch cloud projects with useAsyncQuery
   const cloudProjectsQuery = useAsyncQuery<Project>(
-    async () => await projectsApi.fetchProjects()
+    async () => await projectsApi.fetchProjects(),
   );
 
   // Load and merge local + cloud projects
@@ -200,7 +199,7 @@ function Dashboard() {
         setNewProjectName("");
         navigate(`/builder/${newProject.id}`);
       },
-    }
+    },
   );
 
   // Delete project mutation
@@ -235,7 +234,7 @@ function Dashboard() {
             "[Dashboard] 페이지",
             page.title,
             "의 요소:",
-            elements.length
+            elements.length,
           );
 
           for (const element of elements) {
@@ -282,7 +281,7 @@ function Dashboard() {
             "[Dashboard] 레이아웃",
             layout.name,
             "의 요소:",
-            layoutElements.length
+            layoutElements.length,
           );
 
           for (const element of layoutElements) {
@@ -305,7 +304,7 @@ function Dashboard() {
           await db.api_endpoints.delete(endpoint.id);
         }
         console.log(
-          `[Dashboard] API Endpoints ${apiEndpoints.length}개 삭제 완료`
+          `[Dashboard] API Endpoints ${apiEndpoints.length}개 삭제 완료`,
         );
 
         const variables = await db.variables.getByProject(id);
@@ -319,7 +318,7 @@ function Dashboard() {
           await db.transformers.delete(transformer.id);
         }
         console.log(
-          `[Dashboard] Transformers ${transformers.length}개 삭제 완료`
+          `[Dashboard] Transformers ${transformers.length}개 삭제 완료`,
         );
 
         // 7. 프로젝트 삭제 (IndexedDB)
@@ -335,7 +334,7 @@ function Dashboard() {
         } catch (error) {
           console.warn(
             "[Dashboard] Supabase 삭제 실패 (프로젝트가 클라우드에 없을 수 있음):",
-            error
+            error,
           );
         }
       }
@@ -346,7 +345,7 @@ function Dashboard() {
       onSuccess: () => {
         cloudProjectsQuery.reload(); // 목록 갱신
       },
-    }
+    },
   );
 
   // Sync project mutation (local → cloud)
@@ -359,7 +358,7 @@ function Dashboard() {
       onSuccess: () => {
         cloudProjectsQuery.reload(); // 목록 갱신
       },
-    }
+    },
   );
 
   // Download project mutation (cloud → local)
@@ -373,7 +372,7 @@ function Dashboard() {
         // 로컬 프로젝트가 추가되었으므로 목록 갱신
         cloudProjectsQuery.reload();
       },
-    }
+    },
   );
 
   const handleAddProject = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -558,7 +557,7 @@ function Dashboard() {
                         try {
                           await syncProjectMutation.execute(project.id);
                           alert(
-                            "✅ 동기화 완료! 프로젝트가 클라우드에 업로드되었습니다."
+                            "✅ 동기화 완료! 프로젝트가 클라우드에 업로드되었습니다.",
                           );
                         } catch (err) {
                           console.error("[Dashboard] Sync 에러:", err);
@@ -583,7 +582,7 @@ function Dashboard() {
                         try {
                           await downloadProjectMutation.execute(project.id);
                           alert(
-                            "✅ 다운로드 완료! 프로젝트가 로컬에 저장되었습니다."
+                            "✅ 다운로드 완료! 프로젝트가 로컬에 저장되었습니다.",
                           );
                         } catch (err) {
                           console.error("[Dashboard] Download 에러:", err);
@@ -598,15 +597,6 @@ function Dashboard() {
                         : "Download"}
                     </Button>
                   )}
-
-                  {/* Theme 버튼 */}
-                  <Button
-                    className="react-aria-Button default"
-                    onPress={() => navigate(`/theme/${project.id}`)}
-                    isDisabled={loading}
-                  >
-                    <SwatchBook size={16} />
-                  </Button>
 
                   {/* Delete 버튼 */}
                   <Button

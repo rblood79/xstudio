@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed (2026-03-04)
+Partial (2026-03-05) — Phase A+B+C 구현 완료, Phase D+E 미구현
 
 ## Scope
 
@@ -589,6 +589,69 @@ function generateThemeCSS(config: ThemeConfig): string {
 - XStudio 장점: Preview/Publish 양쪽에서 동일 CSS로 동작, Skia도 동일 로직
 
 **위험**: M (CSS 스코프 관리 복잡도, Skia 서브트리 색상 오버라이드 구현)
+
+---
+
+## Implementation Status (2026-03-05)
+
+### Phase A: 구현 완료 ✅
+
+| 파일                              | 작업       | 설명                                                                         |
+| --------------------------------- | ---------- | ---------------------------------------------------------------------------- |
+| `stores/themeConfigStore.ts`      | **신규**   | ThemeConfig Zustand store — tint/darkMode/neutral/radiusScale + themeVersion |
+| `utils/theme/tintToSkiaColors.ts` | **신규**   | Tint 프리셋 → lightColors/darkColors accent 5개 토큰 mutation (oklch→hex)    |
+| `utils/theme/oklchToHex.ts`       | **신규**   | oklch → hex 변환 유틸리티                                                    |
+| `panels/themes/ThemesPanel.tsx`   | **재작성** | 인라인 편집 패널 — TintGrid(10색) + Mode/Tone/Scale PropertySelect           |
+| `panels/themes/ThemesPanel.css`   | **수정**   | TintSwatch + MiniPreview CSS                                                 |
+| `panels/core/panelConfigs.ts`     | **수정**   | ThemesPanel 패널 등록                                                        |
+| `main/BuilderCore.tsx`            | **수정**   | Preview iframe에 THEME_VARS postMessage 전송                                 |
+
+### Phase B: 구현 완료 ✅
+
+| 파일                                 | 작업     | 설명                                                                    |
+| ------------------------------------ | -------- | ----------------------------------------------------------------------- |
+| `utils/theme/neutralToSkiaColors.ts` | **신규** | Neutral 프리셋(5종) → lightColors/darkColors neutral 13개 토큰 mutation |
+| `panels/themes/MiniThemePreview.tsx` | **신규** | CSS 변수 기반 미니 프리뷰 (inline `--mp-*` 변수로 즉시 반영)            |
+
+### Phase C: 구현 완료 ✅
+
+**설계 변경**: IndexedDB → **localStorage** 선택 (ThemeConfig은 ~100B JSON, DB 마이그레이션 불필요)
+
+| 파일                                        | 작업     | 설명                                                                                    |
+| ------------------------------------------- | -------- | --------------------------------------------------------------------------------------- |
+| `stores/themeConfigStore.ts`                | **수정** | localStorage 영속화 (`xstudio-theme-config-{projectId}`) + `initThemeConfig(projectId)` |
+| `utils/theme/generateThemeCSS.ts`           | **신규** | ThemeConfig → CSS 변수 문자열 (Publish/Export용)                                        |
+| `main/BuilderCore.tsx`                      | **수정** | initThemeConfig 호출 + handlePublish/Preview themeCSS 통합                              |
+| `packages/shared/src/utils/export.utils.ts` | **수정** | generateStaticHtml에 `themeCSS` 파라미터 추가                                           |
+| `apps/publish/src/App.tsx`                  | **수정** | sessionStorage에서 themeConfig 복원 → CSS 변수 주입                                     |
+
+### 패치 내역
+
+| 날짜       | 문제                                               | 원인                                                                          | 수정                                                                                            |
+| ---------- | -------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 2026-03-05 | CSS Preview에 tint 변경 미반영                     | BuilderCore가 `cssVar` 필드 전송, Preview는 `name` 필드 기대                  | `cssVar` → `name` 변경                                                                          |
+| 2026-03-05 | Neutral/Radius 변경 시 Tint 색상 초기화            | `setThemeVars`가 전체 배열 교체 (merge 아님)                                  | `name+isDark` 키 기반 merge 로직 추가                                                           |
+| 2026-03-05 | Neutral/Radius 변경해도 Preview 무반응             | Neutral이 `var(--color-slate-50)` 전송 (Preview에 미정의)                     | NEUTRAL_PALETTES에서 hex 값 직접 전송                                                           |
+| 2026-03-05 | MiniThemePreview가 Neutral/Radius 변경에 무반응    | Builder DOM의 전역 CSS 변수에 의존 (업데이트 안 됨)                           | Store 직접 구독 + inline `--mp-*` CSS 변수 계산                                                 |
+| 2026-03-05 | 새로고침 시 CSS Preview 색상 초기화 (WebGL은 유지) | initThemeConfig이 iframe ready 전에 실행 → subscribe 미등록                   | iframe ready 시 즉시 현재 config 전송 + subscribe                                               |
+| 2026-03-05 | Dark mode 전환 시 CSS Preview 무반응               | `SET_DARK_MODE` postMessage 미전송                                            | `sendThemeConfigToIframe` 헬퍼에 SET_DARK_MODE 추가                                             |
+| 2026-03-05 | Dark mode가 Skia/WebGL에 미적용                    | `specShapesToSkia`에 `"light"` 하드코딩 + `setDarkMode`가 themeVersion 미증가 | `useResolvedSkiaTheme()` 도입, `skiaTheme` 전달, `themeVersion++` + `notifyLayoutChange()` 추가 |
+| 2026-03-05 | Dark mode 시 Body 배경 미전환                      | BodyLayer backgroundColor fallback이 `0xffffff` 고정                          | `resolveSkiaTheme` 기반으로 `lightColors.base`/`darkColors.base` fallback 전환                  |
+
+### 핵심 구현 파일 (최종)
+
+| 파일                                 | 역할                                                                 |
+| ------------------------------------ | -------------------------------------------------------------------- |
+| `stores/themeConfigStore.ts`         | 중앙 상태 관리 + localStorage 영속화 + `resolveSkiaTheme()`          |
+| `utils/theme/tintToSkiaColors.ts`    | Tint → Skia accent 색상 동기화 (lightColors/darkColors mutation)     |
+| `utils/theme/neutralToSkiaColors.ts` | Neutral → Skia neutral 색상 동기화 (lightColors/darkColors mutation) |
+| `utils/theme/oklchToHex.ts`          | oklch → hex 변환                                                     |
+| `utils/theme/generateThemeCSS.ts`    | ThemeConfig → CSS 문자열 (Publish/Export)                            |
+| `panels/themes/ThemesPanel.tsx`      | 인라인 테마 편집 UI                                                  |
+| `panels/themes/MiniThemePreview.tsx` | CSS 변수 기반 미니 프리뷰                                            |
+| `main/BuilderCore.tsx`               | iframe 동기화 + Publish/Preview 통합                                 |
+| `sprites/ElementSprite.tsx`          | `skiaTheme` 전달 (`specShapesToSkia` 두 번째 인자)                   |
+| `layers/BodyLayer.tsx`               | Dark mode 시 Body 배경 `{color.base}` 토큰 기반 전환                 |
 
 ---
 

@@ -10,8 +10,8 @@
  * @updated 2026-01-02 Phase 1 - 검증 강화, Phase 2 - 멀티 페이지 네비게이션
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Element, Page } from '@xstudio/shared';
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { Element, Page } from "@xstudio/shared";
 import {
   CUSTOM_FONT_STORAGE_KEY,
   buildCustomFontFaceCss,
@@ -21,11 +21,11 @@ import {
   type ExportError,
   type CustomFontAsset,
   ExportErrorCode,
-} from '@xstudio/shared/utils';
-import { PageRenderer } from './renderer';
-import { PageNav } from './components/PageNav';
-import { usePageRouting } from './hooks/usePageRouting';
-import './styles/index.css';
+} from "@xstudio/shared/utils";
+import { PageRenderer } from "./renderer";
+import { PageNav } from "./components/PageNav";
+import { usePageRouting } from "./hooks/usePageRouting";
+import "./styles/index.css";
 
 // ============================================
 // Types
@@ -39,7 +39,7 @@ interface ProjectData {
   version: string;
 }
 
-type LoadingState = 'idle' | 'loading' | 'loaded' | 'error';
+type LoadingState = "idle" | "loading" | "loaded" | "error";
 
 // ============================================
 // Error Display Component
@@ -80,7 +80,9 @@ function ErrorDisplay({ error, errors, onRetry }: ErrorDisplayProps) {
             {errors.map((err, i) => (
               <li key={i}>
                 <code>{err.code}</code>: {err.message}
-                {err.field && <span className="error-field"> ({err.field})</span>}
+                {err.field && (
+                  <span className="error-field"> ({err.field})</span>
+                )}
               </li>
             ))}
           </ul>
@@ -124,15 +126,68 @@ function EmptyState({ message }: EmptyStateProps) {
 }
 
 // ============================================
+// Theme Config Helper (ADR-021 Phase C)
+// ============================================
+
+const NEUTRAL_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+
+const RADIUS_MAP: Record<string, string> = {
+  none: "0px",
+  sm: "4px",
+  md: "8px",
+  lg: "12px",
+  xl: "16px",
+};
+
+function applyThemeConfig(themeConfig?: {
+  tint?: string;
+  neutral?: string;
+  radiusScale?: string;
+}) {
+  if (!themeConfig) return;
+
+  const lines: string[] = [];
+
+  if (themeConfig.tint) {
+    lines.push(`--tint: var(--${themeConfig.tint});`);
+  }
+
+  if (themeConfig.neutral) {
+    for (const step of NEUTRAL_STEPS) {
+      lines.push(
+        `--color-neutral-${step}: var(--color-${themeConfig.neutral}-${step});`,
+      );
+    }
+  }
+
+  if (themeConfig.radiusScale && RADIUS_MAP[themeConfig.radiusScale]) {
+    lines.push(`--radius-base: ${RADIUS_MAP[themeConfig.radiusScale]};`);
+  }
+
+  if (lines.length === 0) return;
+
+  // 기존 스타일 태그 제거 (중복 방지)
+  const existing = document.getElementById("xstudio-theme-config");
+  if (existing) existing.remove();
+
+  const style = document.createElement("style");
+  style.id = "xstudio-theme-config";
+  style.textContent = `:root {\n  ${lines.join("\n  ")}\n}`;
+  document.head.appendChild(style);
+}
+
+// ============================================
 // App Component
 // ============================================
 
 export function App() {
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
-  const [loadingState, setLoadingState] = useState<LoadingState>('idle');
+  const [loadingState, setLoadingState] = useState<LoadingState>("idle");
   const [error, setError] = useState<ExportError | null>(null);
   const [errors, setErrors] = useState<ExportError[] | undefined>(undefined);
-  const [warnings, setWarnings] = useState<ExportError[] | undefined>(undefined);
+  const [warnings, setWarnings] = useState<ExportError[] | undefined>(
+    undefined,
+  );
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -147,8 +202,8 @@ export function App() {
       const css = buildCustomFontFaceCss(fonts);
       if (!css) return;
 
-      const styleEl = document.createElement('style');
-      styleEl.id = 'xstudio-publish-custom-fonts';
+      const styleEl = document.createElement("style");
+      styleEl.id = "xstudio-publish-custom-fonts";
       styleEl.textContent = css;
       document.head.appendChild(styleEl);
 
@@ -167,42 +222,47 @@ export function App() {
   });
 
   // 현재 페이지의 요소들
-  const currentElements = projectData?.elements.filter(
-    (el) => el.page_id === currentPageId
-  ) || [];
+  const currentElements =
+    projectData?.elements.filter((el) => el.page_id === currentPageId) || [];
 
   // 프로젝트 데이터 설정
-  const setProject = useCallback((data: ExportedProjectData, loadWarnings?: ExportError[]) => {
-    const projectData: ProjectData = {
-      pages: data.pages,
-      elements: data.elements,
-      currentPageId: data.currentPageId || null,
-      projectName: data.project.name,
-      version: data.version,
-    };
+  const setProject = useCallback(
+    (data: ExportedProjectData, loadWarnings?: ExportError[]) => {
+      const projectData: ProjectData = {
+        pages: data.pages,
+        elements: data.elements,
+        currentPageId: data.currentPageId || null,
+        projectName: data.project.name,
+        version: data.version,
+      };
 
-    setProjectData(projectData);
-    setWarnings(loadWarnings);
-    setLoadingState('loaded');
-    setError(null);
-    setErrors(undefined);
-  }, []);
+      setProjectData(projectData);
+      setWarnings(loadWarnings);
+      setLoadingState("loaded");
+      setError(null);
+      setErrors(undefined);
+    },
+    [],
+  );
 
   // 에러 설정
-  const setLoadError = useCallback((err: ExportError, allErrors?: ExportError[]) => {
-    setError(err);
-    setErrors(allErrors);
-    setLoadingState('error');
-  }, []);
+  const setLoadError = useCallback(
+    (err: ExportError, allErrors?: ExportError[]) => {
+      setError(err);
+      setErrors(allErrors);
+      setLoadingState("error");
+    },
+    [],
+  );
 
   // URL 파라미터에서 프로젝트 로드
   useEffect(() => {
     async function loadFromUrlParam() {
       const urlParams = new URLSearchParams(window.location.search);
-      const projectUrl = urlParams.get('project');
+      const projectUrl = urlParams.get("project");
 
       if (projectUrl) {
-        setLoadingState('loading');
+        setLoadingState("loading");
         const result = await loadProjectFromUrl(projectUrl);
 
         if (result.success) {
@@ -216,8 +276,8 @@ export function App() {
     }
 
     async function loadFromDefaultPath() {
-      setLoadingState('loading');
-      const result = await loadProjectFromUrl('/project.json');
+      setLoadingState("loading");
+      const result = await loadProjectFromUrl("/project.json");
 
       if (result.success) {
         setProject(result.data, result.warnings);
@@ -227,7 +287,7 @@ export function App() {
     }
 
     function loadFromSessionStorage(): boolean {
-      const previewData = sessionStorage.getItem('xstudio-preview-data');
+      const previewData = sessionStorage.getItem("xstudio-preview-data");
       if (previewData) {
         try {
           const parsed = JSON.parse(previewData);
@@ -236,16 +296,20 @@ export function App() {
             pages: parsed.pages,
             elements: parsed.elements,
             currentPageId: parsed.currentPageId || null,
-            projectName: parsed.project?.name || 'Preview',
+            projectName: parsed.project?.name || "Preview",
             version: parsed.version,
           };
           setProjectData(projectData);
-          setLoadingState('loaded');
+          setLoadingState("loaded");
+
+          // ADR-021 Phase C: themeConfig → CSS 변수 주입
+          applyThemeConfig(parsed.themeConfig);
+
           // 사용 후 삭제 (새로고침 시 다시 로드하지 않음)
           // sessionStorage.removeItem('xstudio-preview-data');
           return true;
         } catch (error) {
-          console.warn('[Publish] Failed to parse sessionStorage data:', error);
+          console.warn("[Publish] Failed to parse sessionStorage data:", error);
         }
       }
       return false;
@@ -265,7 +329,7 @@ export function App() {
       if (loadedFromDefault) return;
 
       // 4. 프로젝트 없음 - 파일 드롭 대기
-      setLoadingState('idle');
+      setLoadingState("idle");
     }
 
     init();
@@ -278,16 +342,16 @@ export function App() {
       setIsDragging(false);
 
       const file = e.dataTransfer.files[0];
-      if (!file || !file.name.endsWith('.json')) {
+      if (!file || !file.name.endsWith(".json")) {
         setLoadError({
           code: ExportErrorCode.VALIDATION_ERROR,
-          message: 'JSON 파일만 업로드할 수 있습니다',
-          severity: 'error',
+          message: "JSON 파일만 업로드할 수 있습니다",
+          severity: "error",
         });
         return;
       }
 
-      setLoadingState('loading');
+      setLoadingState("loading");
       const result = await loadProjectFromFile(file);
 
       if (result.success) {
@@ -296,7 +360,7 @@ export function App() {
         setLoadError(result.error, result.errors);
       }
     },
-    [setProject, setLoadError]
+    [setProject, setLoadError],
   );
 
   // 파일 선택 핸들러
@@ -305,7 +369,7 @@ export function App() {
       const file = e.target.files?.[0];
       if (!file) return;
 
-      setLoadingState('loading');
+      setLoadingState("loading");
       const result = await loadProjectFromFile(file);
 
       if (result.success) {
@@ -314,7 +378,7 @@ export function App() {
         setLoadError(result.error, result.errors);
       }
     },
-    [setProject, setLoadError]
+    [setProject, setLoadError],
   );
 
   // 드래그 이벤트 핸들러
@@ -332,24 +396,24 @@ export function App() {
   const handleRetry = useCallback(() => {
     setError(null);
     setErrors(undefined);
-    setLoadingState('idle');
+    setLoadingState("idle");
   }, []);
 
   // 에러 상태
-  if (loadingState === 'error' && error) {
+  if (loadingState === "error" && error) {
     return <ErrorDisplay error={error} errors={errors} onRetry={handleRetry} />;
   }
 
   // 로딩 상태
-  if (loadingState === 'loading') {
+  if (loadingState === "loading") {
     return <LoadingScreen />;
   }
 
   // 프로젝트 없음 - 파일 드롭 UI
-  if (loadingState === 'idle' || !projectData) {
+  if (loadingState === "idle" || !projectData) {
     return (
       <div
-        className={`publish-dropzone ${isDragging ? 'dragging' : ''}`}
+        className={`publish-dropzone ${isDragging ? "dragging" : ""}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -357,7 +421,7 @@ export function App() {
         tabIndex={0}
         aria-label="프로젝트 파일 업로드"
         aria-describedby="dropzone-instructions"
-        onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+        onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
       >
         <div className="dropzone-content">
           <h1>XStudio Publish</h1>
@@ -373,7 +437,7 @@ export function App() {
             type="file"
             accept=".json"
             onChange={handleFileSelect}
-            style={{ display: 'none' }}
+            style={{ display: "none" }}
           />
         </div>
       </div>

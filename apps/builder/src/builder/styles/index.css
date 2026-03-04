@@ -57,7 +57,6 @@
 @import "./5-modules/panel-container.css";
 @import "./5-modules/element-tree.css";
 @import "./5-modules/error-loading.css";
-@import "./5-modules/themes/index.css";
 
 /* Monitor Panel */
 @import "../panels/monitor/monitor-panel.css";

@@ -192,6 +192,10 @@ import {
 } from "../ui";
 import { useStore } from "../../../stores";
 import { shallow } from "zustand/shallow";
+import {
+  useThemeConfigVersion,
+  useResolvedSkiaTheme,
+} from "../../../../stores/themeConfigStore";
 import { useResolvedElement } from "./useResolvedElement";
 import { isFlexContainer, isGridContainer } from "../layout";
 import { measureWrappedTextHeight } from "../utils/textMeasure";
@@ -1001,6 +1005,10 @@ export const ElementSprite = memo(function ElementSprite({
   const isSelected =
     useStore((state) => state.selectedElementIdsSet.has(elementId)) ?? false;
 
+  // ADR-021: Tint/DarkMode 변경 시 SkiaNodeData 재생성 트리거
+  const themeVersion = useThemeConfigVersion();
+  const skiaTheme = useResolvedSkiaTheme();
+
   // 부모 요소 확인 (CheckboxGroup 자식 여부 판단용)
   // 🚀 최적화: elements 배열 대신 elementsMap 사용 (O(1) 조회)
   // elements 배열 전체 구독 → 다른 요소 변경 시에도 리렌더링 발생
@@ -1660,7 +1668,7 @@ export const ElementSprite = memo(function ElementSprite({
 
               const specNode = specShapesToSkia(
                 shapes,
-                "light",
+                skiaTheme,
                 finalWidth,
                 specHeight,
               );
@@ -1948,6 +1956,8 @@ export const ElementSprite = memo(function ElementSprite({
     toggleGroupPosition,
     childElements,
     previewState,
+    themeVersion,
+    skiaTheme,
   ]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로

@@ -4,3 +4,121 @@
   height: 100%;
   background: var(--color-surface);
 }
+
+.themes-panel .section-content {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+/* TintGrid: 5열 원형 색상 프리셋 */
+.tint-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 4px 0;
+  justify-items: center;
+}
+
+.tint-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  outline: none;
+}
+
+.tint-swatch:hover {
+  box-shadow: 0 0 0 2px var(--field-background);
+}
+
+.tint-swatch:focus-visible {
+  box-shadow: 0 0 0 2px var(--focus-ring-color);
+}
+
+.tint-swatch[data-selected] {
+  border-color: var(--text-color);
+  box-shadow: 0 0 0 2px var(--field-background);
+}
+
+/* MiniThemePreview — 인라인 CSS 변수(--mp-*)로 즉시 반영 */
+.mini-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--mp-radius, 8px);
+  background: var(--mp-bg);
+  border: 1px solid var(--mp-border);
+}
+
+.mini-preview__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mini-preview__button {
+  padding: 4px 12px;
+  border-radius: var(--mp-radius, 6px);
+  background: var(--mp-highlight-bg);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mini-preview__input {
+  flex: 1;
+  padding: 4px 8px;
+  border-radius: var(--mp-radius, 6px);
+  background: var(--mp-bg);
+  border: 1px solid var(--mp-border);
+  color: var(--mp-placeholder);
+  font-size: 11px;
+}
+
+.mini-preview__link {
+  font-size: 11px;
+  color: var(--mp-link);
+  text-decoration: underline;
+}
+
+.mini-preview__card {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: var(--mp-radius, 6px);
+  background: var(--mp-overlay);
+  border: 1px solid var(--mp-border);
+}
+
+/* Neutral 스와치 바 — tone 프리셋 간 차이 시각 확인 */
+.mini-preview__swatches {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.mini-preview__swatch {
+  flex: 1;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.mini-preview__card-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mp-text);
+  margin-bottom: 2px;
+}
+
+.mini-preview__card-text {
+  font-size: 10px;
+  color: var(--mp-text-sub);
+}

@@ -7,6 +7,7 @@
  * @updated 2025-12-29 - Save Mode, Preview & Overlay, Element Visualization 섹션 제거
  *   (WebGL 캔버스 전환 및 로컬 저장 방식으로 변경됨에 따라 불필요해짐)
  * @updated 2026-02-11 - Page Layout 설정 추가 (가로/세로/지그재그 페이지 배치, BuilderHeader에서 이동)
+ * @updated 2026-03-05 - ADR-021 Phase D: Supabase 테마 선택 UI 제거 (Tint System으로 대체)
  */
 
 import {
@@ -14,18 +15,15 @@ import {
   Magnet,
   Ruler,
   LayoutGrid,
-  Palette,
   ZoomIn,
   Moon,
   Sun,
   Settings,
 } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
-import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
 import { useStore } from "../../stores";
 import type { PageLayoutDirection } from "../../stores/canvasSettings";
-import { useUnifiedThemeStore } from "../../../stores/themeStore";
 import { useUiStore } from "../../../stores/uiStore";
 import {
   PropertySwitch,
@@ -33,13 +31,10 @@ import {
   PropertySection,
   PanelHeader,
 } from "../../components";
-import { useThemes } from "@/hooks";
-import { ThemeService } from "../../../services/theme";
 import { useThemeMessenger } from "@/builder/hooks";
 
 function SettingsContent() {
-  const { projectId } = useParams<{ projectId: string }>();
-  const { sendThemeTokens, sendDarkMode } = useThemeMessenger();
+  const { sendDarkMode } = useThemeMessenger();
 
   // Grid & Guides 설정
   const showGrid = useStore((state) => state.showGrid);
@@ -53,7 +48,9 @@ function SettingsContent() {
 
   // Page Layout 설정
   const pageLayoutDirection = useStore((state) => state.pageLayoutDirection);
-  const setPageLayoutDirection = useStore((state) => state.setPageLayoutDirection);
+  const setPageLayoutDirection = useStore(
+    (state) => state.setPageLayoutDirection,
+  );
 
   // UI 설정 (글로벌 uiStore에서 가져옴)
   const themeMode = useUiStore((state) => state.themeMode);
@@ -62,40 +59,12 @@ function SettingsContent() {
   const uiScale = useUiStore((state) => state.uiScale);
   const setUiScale = useUiStore((state) => state.setUiScale);
 
-  // Theme 관련 상태
-  const activeTheme = useUnifiedThemeStore((state) => state.activeTheme);
-  const loadActiveTheme = useUnifiedThemeStore(
-    (state) => state.loadActiveTheme
-  );
-  const { themes } = useThemes({
-    projectId: projectId || "",
-    enableRealtime: false,
-  });
-
-  const handleThemeChange = async (themeId: string): Promise<void> => {
-    if (!projectId) return;
-
-    try {
-      await ThemeService.activateTheme(themeId);
-      await loadActiveTheme(projectId);
-
-      const { tokens } = useUnifiedThemeStore.getState();
-      if (tokens.length > 0) {
-        sendThemeTokens(tokens);
-      }
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error("[SettingsPanel] Failed to switch theme:", error);
-      }
-    }
-  };
-
   // Theme Mode에 따른 아이콘 결정
   const getThemeModeIcon = () => {
     if (themeMode === "dark") return Moon;
     if (themeMode === "light") return Sun;
     const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
+      "(prefers-color-scheme: dark)",
     ).matches;
     return prefersDark ? Moon : Sun;
   };
@@ -177,7 +146,9 @@ function SettingsContent() {
           <PropertySelect
             label="Page Layout"
             value={pageLayoutDirection}
-            onChange={(value) => setPageLayoutDirection(value as PageLayoutDirection)}
+            onChange={(value) =>
+              setPageLayoutDirection(value as PageLayoutDirection)
+            }
             options={pageLayoutOptions}
             icon={LayoutGrid}
           />
@@ -185,20 +156,6 @@ function SettingsContent() {
 
         {/* Theme Settings Section */}
         <PropertySection title="Theme & Appearance">
-          {/* Theme Select */}
-          {projectId && themes.length > 0 && (
-            <PropertySelect
-              label="Theme Select"
-              value={activeTheme?.id || ""}
-              onChange={handleThemeChange}
-              options={themes.map((theme) => ({
-                value: theme.id,
-                label: theme.name,
-              }))}
-              icon={Palette}
-            />
-          )}
-
           <PropertySelect
             label="Theme Mode"
             value={themeMode}

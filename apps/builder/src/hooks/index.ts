@@ -4,27 +4,13 @@
  */
 
 // Root hooks
-export { useFrameCallback, useStyleUpdateCallback, useValueCallback } from './useFrameCallback';
-export { useTheme } from './useTheme';
+export {
+  useFrameCallback,
+  useStyleUpdateCallback,
+  useValueCallback,
+} from "./useFrameCallback";
 
 // Theme hooks (re-export from theme module)
-export {
-  useThemes,
-  useActiveTheme,
-  useTokens,
-  useTokenSearch,
-  useTokenStats,
-} from './theme';
+export { useTokens } from "./theme";
 
-export type {
-  UseThemesOptions,
-  UseThemesReturn,
-  UseActiveThemeOptions,
-  UseActiveThemeReturn,
-  UseTokensOptions,
-  UseTokensReturn,
-  UseTokenSearchOptions,
-  UseTokenSearchReturn,
-  UseTokenStatsOptions,
-  UseTokenStatsReturn,
-} from './theme';
+export type { UseTokensOptions, UseTokensReturn } from "./theme";

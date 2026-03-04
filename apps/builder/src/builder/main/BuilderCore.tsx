@@ -35,6 +35,7 @@ import {
 // import { projectsApi, type Project } from "../../services/api";  // Supabase 동기화는 대시보드에서만 처리
 import type { Project } from "../../services/api";
 import { useUnifiedThemeStore } from "../../stores/themeStore";
+import { useThemeConfigStore } from "../../stores/themeConfigStore";
 import { useUiStore } from "../../stores/uiStore";
 import { getDB } from "../../lib/db";
 import { useEditModeStore } from "../stores/editMode";
@@ -44,9 +45,17 @@ import { useDataStore } from "../stores/data";
 
 import { MessageService } from "../../utils/messaging";
 import { isValidPreviewMessage } from "../../utils/messageValidation";
-import { getValueByPath, upsertData, appendData, mergeData, safeJsonParse } from "../../utils/dataHelpers";
+import {
+  getValueByPath,
+  upsertData,
+  appendData,
+  mergeData,
+  safeJsonParse,
+} from "../../utils/dataHelpers";
 import { downloadStaticHtml } from "@xstudio/shared/utils";
-import { getCustomFonts } from '../fonts/customFonts';
+import { getCustomFonts } from "../fonts/customFonts";
+import { generateThemeCSS } from "../../utils/theme/generateThemeCSS";
+import { NEUTRAL_PALETTES } from "../../utils/theme/neutralToSkiaColors";
 
 export const BuilderCore: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -66,7 +75,9 @@ export const BuilderCore: React.FC = () => {
   const themeMode = useUiStore((state) => state.themeMode);
   const setHistoryInfo = useStore((state) => state.setHistoryInfo);
   const showWorkflowOverlay = useStore((state) => state.showWorkflowOverlay);
-  const toggleWorkflowOverlay = useStore((state) => state.toggleWorkflowOverlay);
+  const toggleWorkflowOverlay = useStore(
+    (state) => state.toggleWorkflowOverlay,
+  );
 
   // 히스토리 정보 업데이트 (구독 기반)
   useEffect(() => {
@@ -82,25 +93,25 @@ export const BuilderCore: React.FC = () => {
 
   // Theme Mode 적용 (Builder UI 전용 - Preview와 분리)
   useEffect(() => {
-    const applyTheme = (theme: 'light' | 'dark') => {
-      document.documentElement.setAttribute('data-builder-theme', theme);
+    const applyTheme = (theme: "light" | "dark") => {
+      document.documentElement.setAttribute("data-builder-theme", theme);
     };
 
-    if (themeMode === 'auto') {
+    if (themeMode === "auto") {
       // 시스템 테마 감지
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
-        applyTheme(e.matches ? 'dark' : 'light');
+        applyTheme(e.matches ? "dark" : "light");
       };
 
       // 초기 테마 적용
       handleChange(mediaQuery);
 
       // 시스템 테마 변경 리스너
-      mediaQuery.addEventListener('change', handleChange);
+      mediaQuery.addEventListener("change", handleChange);
 
       return () => {
-        mediaQuery.removeEventListener('change', handleChange);
+        mediaQuery.removeEventListener("change", handleChange);
       };
     } else {
       // 명시적인 테마 적용
@@ -131,7 +142,7 @@ export const BuilderCore: React.FC = () => {
     handleIframeLoad,
     handleMessage,
     // iframeUndo, iframeRedo는 사용하지 않음
-    sendElementsToIframe,  // 🚀 elements 동기화용
+    sendElementsToIframe, // 🚀 elements 동기화용
     // updateElementProps는 제거됨
     iframeReadyState,
     requestAutoSelectAfterUpdate,
@@ -161,20 +172,26 @@ export const BuilderCore: React.FC = () => {
 
   // 🚀 Phase 7: 자동 복구 통합
   const { stats: recoveryStats } = useAutoRecovery({
-    onRecovery: useCallback((reason: string) => {
-      showToast('info', `성능 자동 복구 완료: ${reason}`, 8000);
-    }, [showToast]),
-    onWarning: useCallback((metrics: { healthScore: number }) => {
-      showToast('warning', `성능 경고: Health ${metrics.healthScore}%`, 5000);
-    }, [showToast]),
+    onRecovery: useCallback(
+      (reason: string) => {
+        showToast("info", `성능 자동 복구 완료: ${reason}`, 8000);
+      },
+      [showToast],
+    ),
+    onWarning: useCallback(
+      (metrics: { healthScore: number }) => {
+        showToast("warning", `성능 경고: Health ${metrics.healthScore}%`, 5000);
+      },
+      [showToast],
+    ),
   });
 
   // Dev 모드에서 복구 통계 로깅 (필요 시 구현)
-   
+
   const _recoveryStatsForDebug = recoveryStats;
 
   // Dev 모드에서 페이지 로더 통계 로깅 (필요 시 구현)
-   
+
   const _pageLoaderStatsForDebug = pageLoaderStats;
 
   // Local 상태
@@ -234,7 +251,11 @@ export const BuilderCore: React.FC = () => {
   useEffect(() => {
     const initialize = async () => {
       // 중복 실행 방지: 이미 초기화 중이거나 같은 프로젝트가 초기화되었으면 스킵
-      if (!projectId || isInitializing.current || initializedProjectId.current === projectId) {
+      if (
+        !projectId ||
+        isInitializing.current ||
+        initializedProjectId.current === projectId
+      ) {
         return;
       }
 
@@ -254,17 +275,18 @@ export const BuilderCore: React.FC = () => {
       const editMode = useEditModeStore.getState().mode;
       const currentLayoutId = useLayoutsStore.getState().currentLayoutId;
 
-      if (editMode === 'layout' && currentLayoutId) {
+      if (editMode === "layout" && currentLayoutId) {
         try {
           const db = await getDB();
           const layoutElements = await db.elements.getByLayout(currentLayoutId);
 
           // 기존 요소들과 병합
           const { elements, setElements } = useStore.getState();
-          const otherElements = elements.filter((el) => el.layout_id !== currentLayoutId);
+          const otherElements = elements.filter(
+            (el) => el.layout_id !== currentLayoutId,
+          );
           const mergedElements = [...otherElements, ...layoutElements];
           setElements(mergedElements);
-
 
           // ⭐ Layouts 목록도 로드 (LayoutsTab이 마운트되기 전에 필요)
           const { fetchLayouts } = useLayoutsStore.getState();
@@ -273,7 +295,7 @@ export const BuilderCore: React.FC = () => {
           // ⭐ DataStore 초기화 (Variables, DataTables, ApiEndpoints, Transformers)
           await useDataStore.getState().initializeForProject(projectId);
         } catch (error) {
-          console.error('[BuilderCore] Layout 요소 로드 실패:', error);
+          console.error("[BuilderCore] Layout 요소 로드 실패:", error);
         }
       }
 
@@ -282,6 +304,9 @@ export const BuilderCore: React.FC = () => {
       // ✅ 테마 로드 (비동기 처리 - 완료 기다리지 않음)
       // iframe ready 시 subscribe가 자동으로 전송 처리
       loadProjectTheme(projectId);
+
+      // ADR-021 Phase C: localStorage에서 ThemeConfig 복원
+      useThemeConfigStore.getState().initThemeConfig(projectId);
 
       // Preview iframe에 초기 테마 토큰 전송
       // iframe이 준비되면 자동으로 전송되도록 별도 useEffect 사용
@@ -315,7 +340,7 @@ export const BuilderCore: React.FC = () => {
   }, [sendThemeTokens]);
 
   useEffect(() => {
-    if (iframeReadyState !== 'ready') return;
+    if (iframeReadyState !== "ready") return;
 
     // 즉시 전송 (이미 로드된 경우)
     const { tokens } = useUnifiedThemeStore.getState();
@@ -340,6 +365,103 @@ export const BuilderCore: React.FC = () => {
     };
   }, [iframeReadyState]); // ✅ sendThemeTokens 의존성 제거 (subscribe 재등록 방지)
 
+  // ADR-021: Tint/Neutral/Radius/DarkMode → Preview에 CSS 변수 + 다크모드 전송
+  useEffect(() => {
+    if (iframeReadyState !== "ready") return;
+
+    /** 현재 ThemeConfig 상태를 iframe에 전송 */
+    function sendThemeConfigToIframe(config: {
+      tint: string;
+      neutral: string;
+      radiusScale: string;
+      darkMode: string;
+    }) {
+      const iframe = MessageService.getIframe();
+      if (!iframe?.contentWindow) return;
+      const origin = window.location.origin;
+
+      // Tint
+      const tintVars = [
+        { name: "--tint", value: `var(--${config.tint})`, isDark: false },
+        { name: "--tint", value: `var(--${config.tint})`, isDark: true },
+      ];
+
+      // Neutral — hex 직접 전송 (Preview에 팔레트 변수 없음)
+      const palette =
+        NEUTRAL_PALETTES[config.neutral as keyof typeof NEUTRAL_PALETTES];
+      const neutralSteps = [
+        50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950,
+      ];
+      const neutralVars = neutralSteps.flatMap((step) => [
+        {
+          name: `--color-neutral-${step}`,
+          value: palette[step],
+          isDark: false,
+        },
+        { name: `--color-neutral-${step}`, value: palette[step], isDark: true },
+      ]);
+
+      // Radius — 스케일 팩터로 조정
+      const scaleFactors: Record<string, number> = {
+        none: 0,
+        sm: 0.5,
+        md: 1,
+        lg: 1.5,
+        xl: 2,
+      };
+      const factor = scaleFactors[config.radiusScale] ?? 1;
+      const baseRadii: Record<string, number> = {
+        "--radius-xs": 2,
+        "--radius-sm": 4,
+        "--radius-md": 6,
+        "--radius-lg": 8,
+        "--radius-xl": 12,
+        "--radius-2xl": 16,
+        "--radius-3xl": 24,
+        "--radius-4xl": 32,
+      };
+      const radiusVars = Object.entries(baseRadii).flatMap(([name, px]) => [
+        { name, value: `${px * factor}px`, isDark: false },
+        { name, value: `${px * factor}px`, isDark: true },
+      ]);
+
+      // THEME_VARS 전송
+      const allVars = [...tintVars, ...neutralVars, ...radiusVars];
+      iframe.contentWindow.postMessage(
+        { type: "THEME_VARS", vars: allVars },
+        origin,
+      );
+
+      // DarkMode — SET_DARK_MODE 메시지 전송
+      const isDark =
+        config.darkMode === "dark" ||
+        (config.darkMode === "system" &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches);
+      iframe.contentWindow.postMessage(
+        { type: "SET_DARK_MODE", isDark },
+        origin,
+      );
+    }
+
+    // 초기 전송: iframe ready 시 현재 복원된 설정 즉시 반영
+    const current = useThemeConfigStore.getState();
+    sendThemeConfigToIframe(current);
+
+    // 변경 구독
+    const unsub = useThemeConfigStore.subscribe((state, prev) => {
+      if (
+        state.tint !== prev.tint ||
+        state.neutral !== prev.neutral ||
+        state.radiusScale !== prev.radiusScale ||
+        state.darkMode !== prev.darkMode
+      ) {
+        sendThemeConfigToIframe(state);
+      }
+    });
+
+    return unsub;
+  }, [iframeReadyState]);
+
   // Phase 4.2 최적화: setTimeout 제거, useEffect batching 활용
   // order_num 검증 (dev 모드 전용) - 페이지 변경 시에만 실행
   useEffect(() => {
@@ -356,11 +478,11 @@ export const BuilderCore: React.FC = () => {
   // 🚀 Phase 11: WebGL-only 모드에서는 iframeReadyState='not_initialized'로 반환되어
   //    이 구독이 자동으로 스킵됨 (~3ms/변경 절감)
   const lastSentElementsRef = useRef<Element[]>([]);
-  const lastSentEditModeRef = useRef<string>('page');
+  const lastSentEditModeRef = useRef<string>("page");
 
   useEffect(() => {
     // iframe이 준비되지 않았으면 구독하지 않음 (WebGL-only 모드 포함)
-    if (iframeReadyState !== 'ready') return;
+    if (iframeReadyState !== "ready") return;
 
     const unsubscribe = useStore.subscribe((state, prevState) => {
       // elements가 변경되었는지 확인 (참조 비교)
@@ -372,8 +494,10 @@ export const BuilderCore: React.FC = () => {
 
       // editMode에 따라 필터링
       let filteredElements = state.elements;
-      if (editMode === 'layout' && currentLayoutId) {
-        filteredElements = state.elements.filter(el => el.layout_id === currentLayoutId);
+      if (editMode === "layout" && currentLayoutId) {
+        filteredElements = state.elements.filter(
+          (el) => el.layout_id === currentLayoutId,
+        );
       }
 
       // 변경 확인 (editMode도 포함)
@@ -400,17 +524,22 @@ export const BuilderCore: React.FC = () => {
       if (!isValidPreviewMessage(event)) return;
       if (event.data?.type !== "NAVIGATE_TO_PAGE") return;
 
-      const { path } = event.data.payload as { path: string; replace?: boolean };
+      const { path } = event.data.payload as {
+        path: string;
+        replace?: boolean;
+      };
 
       // 경로 정규화: 항상 "/"로 시작하도록 통일
-      const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
       // pages 배열에서 slug 기반으로 pageId 조회
       // slug와 path 모두 "/"로 시작하는 형식으로 통일하여 비교
       const targetPage = pages.find((p) => {
-        const pageSlug = p.slug || '/';
+        const pageSlug = p.slug || "/";
         // slug도 정규화 (DB에 "/" 없이 저장된 경우 대비)
-        const normalizedSlug = pageSlug.startsWith('/') ? pageSlug : `/${pageSlug}`;
+        const normalizedSlug = pageSlug.startsWith("/")
+          ? pageSlug
+          : `/${pageSlug}`;
         return normalizedSlug === normalizedPath;
       });
 
@@ -418,12 +547,18 @@ export const BuilderCore: React.FC = () => {
         // 페이지 elements 로드
         const result = await fetchElements(targetPage.id);
         if (!result.success) {
-          handleError(result.error || new Error("페이지 로드 실패"), "페이지 이동");
+          handleError(
+            result.error || new Error("페이지 로드 실패"),
+            "페이지 이동",
+          );
         }
       } else {
         console.warn(`[BuilderCore] Page not found for path: ${path}`);
         // 페이지를 찾지 못한 경우 사용자에게 알림
-        handleError(new Error(`페이지를 찾을 수 없습니다: ${path}`), "페이지 이동");
+        handleError(
+          new Error(`페이지를 찾을 수 없습니다: ${path}`),
+          "페이지 이동",
+        );
       }
     };
 
@@ -464,7 +599,8 @@ export const BuilderCore: React.FC = () => {
       targetVariable?: string;
     }) {
       const { dataTableName, forceRefresh } = payload;
-      const { dataTables, loadDataTable, refreshDataTable } = useDataTableStore.getState();
+      const { dataTables, loadDataTable, refreshDataTable } =
+        useDataTableStore.getState();
 
       // DataTable을 이름으로 검색
       let targetDataTableId: string | null = null;
@@ -486,7 +622,6 @@ export const BuilderCore: React.FC = () => {
         await loadDataTable(targetDataTableId);
       }
 
-
       // TODO: Canvas iframe에 업데이트된 데이터 전송
       // sendDataTablesToIframe();
     }
@@ -505,7 +640,7 @@ export const BuilderCore: React.FC = () => {
 
       // 소스 컴포넌트 찾기 (customId 또는 id)
       const sourceElement = elements.find(
-        (el) => el.customId === sourceId || el.id === sourceId
+        (el) => el.customId === sourceId || el.id === sourceId,
       );
 
       if (!sourceElement) {
@@ -515,7 +650,7 @@ export const BuilderCore: React.FC = () => {
 
       // 타겟 컴포넌트 찾기
       const targetElement = elements.find(
-        (el) => el.customId === targetId || el.id === targetId
+        (el) => el.customId === targetId || el.id === targetId,
       );
 
       if (!targetElement) {
@@ -525,7 +660,8 @@ export const BuilderCore: React.FC = () => {
 
       // 소스에서 데이터 추출 (selectedKeys, value 등)
       const sourceProps = sourceElement.props as Record<string, unknown>;
-      let sourceData = sourceProps.selectedKeys || sourceProps.value || sourceProps.items;
+      let sourceData =
+        sourceProps.selectedKeys || sourceProps.value || sourceProps.items;
 
       // dataPath가 있으면 경로로 값 추출
       if (dataPath && sourceData) {
@@ -542,10 +678,10 @@ export const BuilderCore: React.FC = () => {
           newValue = sourceData;
           break;
         case "merge":
-          if (typeof targetValue === 'object' && !Array.isArray(targetValue)) {
+          if (typeof targetValue === "object" && !Array.isArray(targetValue)) {
             newValue = mergeData(
               targetValue as Record<string, unknown>,
-              sourceData
+              sourceData,
             );
           } else {
             newValue = sourceData;
@@ -555,7 +691,7 @@ export const BuilderCore: React.FC = () => {
           if (Array.isArray(targetValue)) {
             newValue = appendData(
               targetValue as Record<string, unknown>[],
-              sourceData
+              sourceData,
             );
           } else {
             newValue = sourceData;
@@ -567,7 +703,6 @@ export const BuilderCore: React.FC = () => {
 
       // 타겟 엘리먼트 업데이트
       await updateElementProps(targetElement.id, { value: newValue });
-
     }
 
     /**
@@ -581,7 +716,14 @@ export const BuilderCore: React.FC = () => {
       keyField?: string;
       transform?: string;
     }) {
-      const { dataTableName, source, sourcePath, saveMode, keyField, transform } = payload;
+      const {
+        dataTableName,
+        source,
+        sourcePath,
+        saveMode,
+        keyField,
+        transform,
+      } = payload;
       const { dataTables, dataTableStates } = useDataTableStore.getState();
 
       // DataTable을 이름으로 검색
@@ -637,12 +779,16 @@ export const BuilderCore: React.FC = () => {
       // saveMode에 따라 DataTable 업데이트
       switch (saveMode) {
         case "replace":
-          newData = Array.isArray(data) ? data as Record<string, unknown>[] : [data as Record<string, unknown>];
+          newData = Array.isArray(data)
+            ? (data as Record<string, unknown>[])
+            : [data as Record<string, unknown>];
           break;
         case "merge":
           newData = currentData.map((item, i) => ({
             ...item,
-            ...(Array.isArray(data) ? (data as Record<string, unknown>[])[i] : data as Record<string, unknown>)
+            ...(Array.isArray(data)
+              ? (data as Record<string, unknown>[])[i]
+              : (data as Record<string, unknown>)),
           }));
           break;
         case "append":
@@ -670,7 +816,6 @@ export const BuilderCore: React.FC = () => {
 
         return { dataTableStates: newDataTableStates };
       });
-
     }
 
     window.addEventListener("message", handleDataMessage);
@@ -739,28 +884,31 @@ export const BuilderCore: React.FC = () => {
     const state = useStore.getState();
     const { elements, currentPageId: storeCurrentPageId } = state;
 
+    // ADR-021 Phase C: themeConfig 포함
+    const { tint, neutral, radiusScale } = useThemeConfigStore.getState();
+
     // 프로젝트 데이터 구성 (pages는 usePageManager에서 가져온 것 사용)
     const previewData = {
-      version: '1.0.0',
+      version: "1.0.0",
       exportedAt: new Date().toISOString(),
       project: {
-        id: projectId || 'preview',
-        name: projectInfo?.name || 'Preview',
+        id: projectId || "preview",
+        name: projectInfo?.name || "Preview",
       },
-      pages,  // usePageManager에서 가져온 pages 사용
+      pages, // usePageManager에서 가져온 pages 사용
       elements,
       currentPageId: storeCurrentPageId,
+      themeConfig: { tint, neutral, radiusScale },
     };
 
     // sessionStorage에 저장 (같은 origin의 새 탭에서 접근 가능)
-    sessionStorage.setItem('xstudio-preview-data', JSON.stringify(previewData));
+    sessionStorage.setItem("xstudio-preview-data", JSON.stringify(previewData));
 
     // 새 탭에서 publish 앱 열기
-    window.open('/publish/', '_blank');
+    window.open("/publish/", "_blank");
   }, [projectId, projectInfo, pages]);
 
-  const handlePlay = useCallback(() => {
-  }, []);
+  const handlePlay = useCallback(() => {}, []);
 
   const handlePublish = useCallback(() => {
     // Store에서 현재 상태 가져오기
@@ -768,11 +916,27 @@ export const BuilderCore: React.FC = () => {
     const { elements, pages, currentPageId: storeCurrentPageId } = state;
 
     // 프로젝트 ID와 이름
-    const id = projectId || 'unknown-project';
-    const name = projectInfo?.name || 'Untitled Project';
+    const id = projectId || "unknown-project";
+    const name = projectInfo?.name || "Untitled Project";
+
+    // ADR-021 Phase C: ThemeConfig → CSS 변수 문자열
+    const themeState = useThemeConfigStore.getState();
+    const themeCSS = generateThemeCSS({
+      tint: themeState.tint,
+      neutral: themeState.neutral,
+      radiusScale: themeState.radiusScale,
+    });
 
     // 정적 HTML 파일로 다운로드
-    downloadStaticHtml(id, name, pages, elements, storeCurrentPageId, getCustomFonts());
+    downloadStaticHtml(
+      id,
+      name,
+      pages,
+      elements,
+      storeCurrentPageId,
+      getCustomFonts(),
+      themeCSS,
+    );
   }, [projectId, projectInfo]);
 
   // 클릭 외부 감지
@@ -826,7 +990,7 @@ export const BuilderCore: React.FC = () => {
       {(isLoading || isPageLoading) && (
         <div className="loading-overlay">
           <div className="loading-spinner">
-            {isLoading ? 'Initializing...' : 'Loading page...'}
+            {isLoading ? "Initializing..." : "Loading page..."}
           </div>
         </div>
       )}

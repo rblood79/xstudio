@@ -23,7 +23,6 @@ import App from "./App.tsx";
 import Dashboard from "./dashboard";
 import Builder from "./builder";
 import Signin from "./auth/Signin";
-import { ThemeStudio } from "./builder/panels/themes/ThemeStudio.tsx";
 
 // Lazy load PublishApp to prevent CSS conflicts (CSS loads only when route is accessed)
 const PublishApp = lazy(() => import("@xstudio/publish"));
@@ -54,12 +53,6 @@ export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   return children;
 };
 
-function ThemeStudioRoute() {
-  const { projectId } = useParams<{ projectId: string }>();
-  if (!projectId) return <div>Project ID required</div>;
-  return <ThemeStudio projectId={projectId} />;
-}
-
 function AppLayout() {
   const location = useLocation();
   const shouldShowBackground =
@@ -89,18 +82,17 @@ function AppLayout() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/theme/:projectId"
-          element={
-            <ProtectedRoute>
-              <ThemeStudioRoute />
-            </ProtectedRoute>
-          }
-        />
+
         <Route
           path="/publish/*"
           element={
-            <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>}>
+            <Suspense
+              fallback={
+                <div style={{ padding: "2rem", textAlign: "center" }}>
+                  Loading...
+                </div>
+              }
+            >
               <PublishApp />
             </Suspense>
           }
@@ -152,5 +144,5 @@ ReactDOM.createRoot(root!).render(
         position="right"
       />
     )}
-  </QueryClientProvider>
+  </QueryClientProvider>,
 );

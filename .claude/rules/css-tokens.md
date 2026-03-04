@@ -1,4 +1,4 @@
-# CSS 토큰 규칙 — S2 체계 (ADR-022) + Tint System
+# CSS 토큰 규칙 — S2 체계 (ADR-022) + Tint System + Dark Mode (ADR-021)
 
 ## 금지된 M3 토큰
 
@@ -122,3 +122,13 @@ background: color-mix(in srgb, var(--highlight-background) 75%, black);
 - `.button-base` — `--button-color` 설정 시 hover/pressed/disabled 자동 파생
 - `.indicator` — `--indicator-color` 설정 시 selected/hover 자동 파생
 - `.inset` — `--inset-bg`/`--inset-border` 설정 시 focus/invalid 자동 파생
+
+## Dark Mode — Skia/WebGL 적용 (ADR-021)
+
+Skia 캔버스에서 dark mode를 반영하려면:
+
+1. **`resolveSkiaTheme(darkMode)`**: `DarkModePreference` → `"light" | "dark"` 변환 ("system"은 OS 미디어 쿼리 기반)
+2. **`specShapesToSkia(shapes, skiaTheme, ...)`**: 두 번째 인자에 `skiaTheme` 전달 (하드코딩 `"light"` 금지)
+3. **`setDarkMode`**: 반드시 `themeVersion++` + `notifyLayoutChange()` 호출 (누락 시 Skia 무반응)
+4. **BodyLayer**: 명시적 배경색 미지정 시 `lightColors.base`/`darkColors.base` fallback 전환
+5. **lightColors/darkColors**: `@xstudio/specs` export, Object.freeze() 미적용 → mutation으로 Tint/Neutral 동적 갱신

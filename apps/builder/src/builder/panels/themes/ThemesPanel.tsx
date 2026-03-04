@@ -1,197 +1,217 @@
 /**
- * ThemesPanel - 테마 관리 패널
+ * ThemesPanel - 인라인 테마 설정 패널 (ADR-021 Phase A+B)
  *
- * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
- * 활성 테마 정보 표시 및 Theme Studio 접근 제공
+ * Tint 프리셋 선택 + Dark Mode 토글 + Neutral Tone + Radius Scale + 미니 프리뷰.
+ * 기존 PropertySection/PanelHeader 패턴 준수.
  */
 
-import { useParams } from 'react-router-dom';
-import { useMemo } from 'react';
-import { Palette, SwatchBook } from 'lucide-react';
-import { iconProps } from '../../../utils/ui/uiConstants';
-import type { PanelProps } from '../core/types';
-import { useUnifiedThemeStore } from '../../../stores/themeStore';
+import { memo, useCallback } from "react";
+import { SwatchBook, Check } from "lucide-react";
+import { Button } from "react-aria-components";
+import { iconProps } from "../../../utils/ui/uiConstants";
+import type { PanelProps } from "../core/types";
 import {
-  PanelHeader,
-  PropertySection,
-  PropertyInput,
-  EmptyState,
-} from '../../components';
-import { Button } from 'react-aria-components';
-import './ThemesPanel.css';
+  useThemeConfigStore,
+  useThemeConfigTint,
+  useThemeConfigDarkMode,
+  useThemeConfigNeutral,
+  useThemeConfigRadiusScale,
+} from "../../../stores/themeConfigStore";
+import type { TintPreset } from "../../../utils/theme/tintToSkiaColors";
+import { TINT_PRESETS } from "../../../utils/theme/tintToSkiaColors";
+import type { NeutralPreset } from "../../../utils/theme/neutralToSkiaColors";
+import type { RadiusScale } from "../../../stores/themeConfigStore";
+import { oklchToHex } from "../../../utils/theme/oklchToHex";
+import { PanelHeader, PropertySection, PropertySelect } from "../../components";
+import { MiniThemePreview } from "./MiniThemePreview";
+import "./ThemesPanel.css";
+
+// ============================================================================
+// TintGrid — 10색 원형 프리셋 버튼
+// ============================================================================
+
+/** Tint 프리셋 표시 순서 */
+const TINT_ORDER: TintPreset[] = [
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "turquoise",
+  "cyan",
+  "blue",
+  "indigo",
+  "purple",
+  "pink",
+];
+
+/** 프리셋별 미리보기 hex (55% lightness = highlight-background 기준) */
+const TINT_HEX_MAP: Record<TintPreset, string> = Object.fromEntries(
+  TINT_ORDER.map((key) => {
+    const { h, c } = TINT_PRESETS[key];
+    return [key, oklchToHex(0.55, c, h)];
+  }),
+) as Record<TintPreset, string>;
+
+/** Tint 프리셋 한글 라벨 */
+const TINT_LABELS: Record<TintPreset, string> = {
+  red: "Red",
+  orange: "Orange",
+  yellow: "Yellow",
+  green: "Green",
+  turquoise: "Turquoise",
+  cyan: "Cyan",
+  blue: "Blue",
+  indigo: "Indigo",
+  purple: "Purple",
+  pink: "Pink",
+};
+
+interface TintSwatchProps {
+  tint: TintPreset;
+  selected: boolean;
+  onSelect: (tint: TintPreset) => void;
+}
+
+const TintSwatch = memo(
+  function TintSwatch({ tint, selected, onSelect }: TintSwatchProps) {
+    const handlePress = useCallback(() => onSelect(tint), [tint, onSelect]);
+
+    return (
+      <Button
+        className="tint-swatch"
+        aria-label={TINT_LABELS[tint]}
+        data-selected={selected || undefined}
+        style={{ backgroundColor: TINT_HEX_MAP[tint] }}
+        onPress={handlePress}
+      >
+        {selected && <Check size={14} strokeWidth={3} color="#fff" />}
+      </Button>
+    );
+  },
+  (prev, next) =>
+    prev.tint === next.tint &&
+    prev.selected === next.selected &&
+    prev.onSelect === next.onSelect,
+);
+
+// ============================================================================
+// Select 옵션
+// ============================================================================
+
+const DARK_MODE_OPTIONS = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+];
+
+const NEUTRAL_OPTIONS = [
+  { value: "slate", label: "Slate" },
+  { value: "gray", label: "Gray" },
+  { value: "zinc", label: "Zinc" },
+  { value: "neutral", label: "Neutral" },
+  { value: "stone", label: "Stone" },
+];
+
+const RADIUS_OPTIONS = [
+  { value: "none", label: "None" },
+  { value: "sm", label: "Small" },
+  { value: "md", label: "Medium" },
+  { value: "lg", label: "Large" },
+  { value: "xl", label: "Extra Large" },
+];
+
+// ============================================================================
+// ThemesContent
+// ============================================================================
 
 function ThemesContent() {
-  const { projectId } = useParams<{ projectId: string }>();
-  const activeTheme = useUnifiedThemeStore((state) => state.activeTheme);
-  const tokens = useUnifiedThemeStore((state) => state.tokens);
+  const currentTint = useThemeConfigTint();
+  const darkMode = useThemeConfigDarkMode();
+  const neutral = useThemeConfigNeutral();
+  const radiusScale = useThemeConfigRadiusScale();
+  const setTint = useThemeConfigStore((s) => s.setTint);
+  const setDarkMode = useThemeConfigStore((s) => s.setDarkMode);
+  const setNeutral = useThemeConfigStore((s) => s.setNeutral);
+  const setRadiusScale = useThemeConfigStore((s) => s.setRadiusScale);
 
-  // Format token value (handle objects)
-  const formatTokenValue = (value: unknown): string => {
-    if (value === null || value === undefined) return '';
-    if (typeof value === 'object') {
-      return JSON.stringify(value, null, 2);
-    }
-    return String(value);
-  };
+  const handleTintSelect = useCallback(
+    (tint: TintPreset) => {
+      setTint(tint);
+    },
+    [setTint],
+  );
 
-  // Group tokens by type
-  const tokensByType = useMemo(() => {
-    const grouped: Record<string, Array<{ name: string; value: string }>> = {};
+  const handleDarkModeChange = useCallback(
+    (value: string) => {
+      setDarkMode(value as "light" | "dark" | "system");
+    },
+    [setDarkMode],
+  );
 
-    tokens.forEach((token) => {
-      const type = token.type || 'other';
-      if (!grouped[type]) {
-        grouped[type] = [];
-      }
-      grouped[type].push({
-        name: token.name,
-        value: formatTokenValue(token.value),
-      });
-    });
+  const handleNeutralChange = useCallback(
+    (value: string) => {
+      setNeutral(value as NeutralPreset);
+    },
+    [setNeutral],
+  );
 
-    return grouped;
-  }, [tokens]);
-
-  // Get type display name
-  const getTypeDisplayName = (type: string): string => {
-    const typeMap: Record<string, string> = {
-      color: 'Colors',
-      spacing: 'Spacing',
-      borderRadius: 'Border Radius',
-      fontSize: 'Font Size',
-      fontWeight: 'Font Weight',
-      lineHeight: 'Line Height',
-      shadow: 'Shadows',
-      other: 'Other',
-    };
-    return typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1);
-  };
-
-  const handleOpenThemeStudio = () => {
-    if (projectId) {
-      window.open(`/theme/${projectId}`, '_blank');
-    }
-  };
-
-  if (!projectId) {
-    return <EmptyState message="Project ID is required" />;
-  }
-
-  if (!activeTheme) {
-    return (
-      <div className="themes-panel">
-        <PanelHeader
-          icon={<SwatchBook size={iconProps.size} />}
-          title="Themes"
-          actions={
-            <Button
-              onPress={handleOpenThemeStudio}
-              className="iconButton"
-            >
-              <Palette size={iconProps.size} />
-            </Button>
-          }
-        />
-        <EmptyState
-          message="No active theme"
-          description="Select a theme in Settings or create one in Theme Studio"
-        />
-      </div>
-    );
-  }
+  const handleRadiusChange = useCallback(
+    (value: string) => {
+      setRadiusScale(value as RadiusScale);
+    },
+    [setRadiusScale],
+  );
 
   return (
     <div className="themes-panel">
-      <PanelHeader
-        icon={<SwatchBook size={iconProps.size} />}
-        title="Themes"
-        actions={
-          <Button
-            onPress={handleOpenThemeStudio}
-            className="iconButton"
-          >
-            <Palette size={iconProps.size} />
-          </Button>
-        }
-      />
+      <PanelHeader icon={<SwatchBook size={iconProps.size} />} title="Theme" />
 
-      <PropertySection title="Active Theme">
-        <PropertyInput
-          label="Theme Name"
-          value={activeTheme.name || ''}
-          onChange={() => {}}
-          disabled
-          placeholder="Theme name"
+      <PropertySection title="Accent Color" id="theme-accent">
+        <div className="tint-grid">
+          {TINT_ORDER.map((tint) => (
+            <TintSwatch
+              key={tint}
+              tint={tint}
+              selected={currentTint === tint}
+              onSelect={handleTintSelect}
+            />
+          ))}
+        </div>
+      </PropertySection>
+
+      <PropertySection title="Appearance" id="theme-appearance">
+        <PropertySelect
+          label="Mode"
+          value={darkMode}
+          onChange={handleDarkModeChange}
+          options={DARK_MODE_OPTIONS}
         />
-
-        <PropertyInput
-          label="Version"
-          value={activeTheme.version || '1.0'}
-          onChange={() => {}}
-          disabled
-          placeholder="Version"
+        <PropertySelect
+          label="Tone"
+          value={neutral}
+          onChange={handleNeutralChange}
+          options={NEUTRAL_OPTIONS}
         />
-
-        <PropertyInput
-          label="Status"
-          value={activeTheme.status || 'active'}
-          onChange={() => {}}
-          disabled
-          placeholder="Status"
+        <PropertySelect
+          label="Scale"
+          value={radiusScale}
+          onChange={handleRadiusChange}
+          options={RADIUS_OPTIONS}
         />
       </PropertySection>
 
-      {/* Render token sections by type */}
-      {Object.keys(tokensByType).length === 0 ? (
-        <PropertySection title="Theme Tokens">
-          <EmptyState
-            message="No custom tokens defined"
-            description="Create tokens in Theme Studio to customize your theme"
-          />
-          <Button
-            onPress={handleOpenThemeStudio}
-          >
-            <Palette size={iconProps.size} />
-          </Button>
-        </PropertySection>
-      ) : (
-        <>
-          {Object.entries(tokensByType).map(([type, typeTokens]) => (
-            <PropertySection key={type} title={getTypeDisplayName(type)}>
-              {typeTokens.map((token) => (
-                <PropertyInput
-                  key={token.name}
-                  label={token.name}
-                  value={token.value}
-                  onChange={() => {}}
-                  disabled
-                  placeholder="Not set"
-                />
-              ))}
-            </PropertySection>
-          ))}
-
-          {/* Theme Studio button at the end */}
-          <PropertySection title="Advanced Editing">
-            <Button
-              onPress={handleOpenThemeStudio}
-              className="iconButton"
-            >
-              <Palette size={iconProps.size} />
-              Manage All Tokens in Theme Studio
-            </Button>
-          </PropertySection>
-        </>
-      )}
+      <PropertySection title="Preview" id="theme-preview">
+        <MiniThemePreview />
+      </PropertySection>
     </div>
   );
 }
 
-export function ThemesPanel({ isActive }: PanelProps) {
-  // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
-  if (!isActive) {
-    return null;
-  }
+// ============================================================================
+// ThemesPanel (Gateway)
+// ============================================================================
 
+export function ThemesPanel({ isActive }: PanelProps) {
+  if (!isActive) return null;
   return <ThemesContent />;
 }

@@ -8,19 +8,27 @@
  * @updated 2025-12-15 Border-Box v2 - drawBox 유틸리티 적용
  */
 
-import { useCallback, useMemo, memo } from 'react';
-import { Graphics as PixiGraphics } from 'pixi.js';
-import { useExtend } from '@pixi/react';
-import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useStore } from '../../../stores';
-import { cssColorToHex, cssColorToAlpha, parseCSSSize } from '../sprites/styleConverter';
-import type { CSSStyle } from '../sprites/styleConverter';
-import { drawBox, parseBorderConfig } from '../utils';
-import { useSkiaNode } from '../skia/useSkiaNode';
-import { isFillV2Enabled } from '../../../../utils/featureFlags';
-import { fillsToSkiaFillColor, fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
-import type { FillStyle } from '../skia/types';
-
+import { useCallback, useMemo, memo } from "react";
+import { Graphics as PixiGraphics } from "pixi.js";
+import { useExtend } from "@pixi/react";
+import { PIXI_COMPONENTS } from "../pixiSetup";
+import { useStore } from "../../../stores";
+import {
+  cssColorToHex,
+  cssColorToAlpha,
+  parseCSSSize,
+} from "../sprites/styleConverter";
+import type { CSSStyle } from "../sprites/styleConverter";
+import { drawBox, parseBorderConfig } from "../utils";
+import { useSkiaNode } from "../skia/useSkiaNode";
+import { isFillV2Enabled } from "../../../../utils/featureFlags";
+import {
+  fillsToSkiaFillColor,
+  fillsToSkiaFillStyle,
+} from "../../../panels/styles/utils/fillToSkia";
+import type { FillStyle } from "../skia/types";
+import { useResolvedSkiaTheme } from "../../../../stores/themeConfigStore";
+import { lightColors, darkColors } from "@xstudio/specs";
 
 // ============================================
 // Types
@@ -69,21 +77,29 @@ export const BodyLayer = memo(function BodyLayer({
   // Body 요소 찾기 (페이지당 1개만 존재)
   const bodyElement = useMemo(() => {
     for (const el of elementsMap.values()) {
-      if (el.page_id === pageId && el.tag.toLowerCase() === 'body') {
+      if (el.page_id === pageId && el.tag.toLowerCase() === "body") {
         return el;
       }
     }
     return undefined;
   }, [elementsMap, pageId]);
 
+  // ADR-021: 다크 모드 시 Body 배경을 {color.base} 토큰 기반으로 전환
+  const skiaTheme = useResolvedSkiaTheme();
+
   // Body 스타일
   const bodyStyle = bodyElement?.props?.style as CSSStyle | undefined;
   const backgroundColorCss = bodyStyle?.backgroundColor;
 
-  // 스타일 값 추출
+  // 스타일 값 추출 — 명시적 배경색 없으면 theme의 base 색상 사용
   const backgroundColor = useMemo(() => {
-    return cssColorToHex(backgroundColorCss, 0xffffff);
-  }, [backgroundColorCss]);
+    if (backgroundColorCss) {
+      return cssColorToHex(backgroundColorCss, 0xffffff);
+    }
+    // 명시적 배경색 없음 → theme base color
+    const baseHex = skiaTheme === "dark" ? darkColors.base : lightColors.base;
+    return cssColorToHex(baseHex, 0xffffff);
+  }, [backgroundColorCss, skiaTheme]);
 
   const backgroundAlpha = useMemo(() => {
     if (!backgroundColorCss) return 1;
@@ -110,7 +126,14 @@ export const BodyLayer = memo(function BodyLayer({
         border: borderConfig,
       });
     },
-    [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius, borderConfig]
+    [
+      pageWidth,
+      pageHeight,
+      backgroundColor,
+      backgroundAlpha,
+      borderRadius,
+      borderConfig,
+    ],
   );
 
   // Phase 5: Skia 렌더 데이터 등록 (body 배경)
@@ -119,14 +142,15 @@ export const BodyLayer = memo(function BodyLayer({
   const bodySkiaData = useMemo(() => {
     // Fill V2: fills 배열에서 fillColor/gradient 추출
     let fillColor: Float32Array;
-    const fillV2Color = isFillV2Enabled() && fills && fills.length > 0
-      ? fillsToSkiaFillColor(fills)
-      : null;
+    const fillV2Color =
+      isFillV2Enabled() && fills && fills.length > 0
+        ? fillsToSkiaFillColor(fills)
+        : null;
 
     let gradientFill: FillStyle | undefined;
     if (isFillV2Enabled() && fills && fills.length > 0) {
       const fillV2Style = fillsToSkiaFillStyle(fills, pageWidth, pageHeight);
-      if (fillV2Style && fillV2Style.type !== 'color') {
+      if (fillV2Style && fillV2Style.type !== "color") {
         gradientFill = fillV2Style;
       }
     }
@@ -142,7 +166,7 @@ export const BodyLayer = memo(function BodyLayer({
     }
 
     return {
-      type: 'box' as const,
+      type: "box" as const,
       x: 0,
       y: 0,
       width: pageWidth,
@@ -166,33 +190,47 @@ export const BodyLayer = memo(function BodyLayer({
         strokeWidth: borderConfig?.width,
       },
     };
-  }, [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius, borderConfig, fills]);
+  }, [
+    pageWidth,
+    pageHeight,
+    backgroundColor,
+    backgroundAlpha,
+    borderRadius,
+    borderConfig,
+    fills,
+  ]);
 
-  useSkiaNode(bodyElement?.id ?? '', bodyElement ? bodySkiaData : null);
+  useSkiaNode(bodyElement?.id ?? "", bodyElement ? bodySkiaData : null);
 
   // 클릭 핸들러 (modifier 키 전달)
-  const handleClick = useCallback((e: unknown) => {
-    if (bodyElement && onClick) {
-      // PixiJS FederatedPointerEvent has modifier keys directly
-      const pixiEvent = e as {
-        metaKey?: boolean;
-        shiftKey?: boolean;
-        ctrlKey?: boolean;
-        nativeEvent?: MouseEvent | PointerEvent;
-      };
+  const handleClick = useCallback(
+    (e: unknown) => {
+      if (bodyElement && onClick) {
+        // PixiJS FederatedPointerEvent has modifier keys directly
+        const pixiEvent = e as {
+          metaKey?: boolean;
+          shiftKey?: boolean;
+          ctrlKey?: boolean;
+          nativeEvent?: MouseEvent | PointerEvent;
+        };
 
-      // Try direct properties first (PixiJS v8), fallback to nativeEvent
-      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
-      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
-      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+        // Try direct properties first (PixiJS v8), fallback to nativeEvent
+        const metaKey =
+          pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+        const shiftKey =
+          pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+        const ctrlKey =
+          pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-      onClick(bodyElement.id, { metaKey, shiftKey, ctrlKey });
-    }
-  }, [bodyElement, onClick]);
+        onClick(bodyElement.id, { metaKey, shiftKey, ctrlKey });
+      }
+    },
+    [bodyElement, onClick],
+  );
 
   return (
     <pixiGraphics
-      label={bodyElement?.id || 'BodyLayer'}
+      label={bodyElement?.id || "BodyLayer"}
       draw={draw}
       eventMode="static"
       cursor="default"

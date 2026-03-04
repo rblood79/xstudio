@@ -10,30 +10,30 @@
  * @updated 2026-01-02 Phase 1 - Zod 검증 추가
  */
 
-import type { Element, Page } from '../types/element.types';
+import type { Element, Page } from "../types/element.types";
 import {
   ExportErrorCode,
   EXPORT_LIMITS,
   type ExportedProjectData,
   type ExportError,
   type ImportResult,
-} from '../types/export.types';
-import type { ZodError } from 'zod';
+} from "../types/export.types";
+import type { ZodError } from "zod";
 import {
   ExportedProjectSchema,
   detectPageCycle,
   findInvalidParentIds,
   findDuplicateSlugs,
-} from '../schemas/project.schema';
-import { migrateProject } from './migration.utils';
-import { buildCustomFontFaceCss, type CustomFontAsset } from './font.utils';
+} from "../schemas/project.schema";
+import { migrateProject } from "./migration.utils";
+import { buildCustomFontFaceCss, type CustomFontAsset } from "./font.utils";
 
 // ============================================
 // Constants
 // ============================================
 
-const CURRENT_VERSION = '1.0.0';
-const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+const CURRENT_VERSION = "1.0.0";
+const DANGEROUS_KEYS = ["__proto__", "constructor", "prototype"];
 
 // ============================================
 // Error Helpers
@@ -45,14 +45,18 @@ const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
 function createError(
   code: ExportErrorCode,
   message: string,
-  options?: { field?: string; detail?: string; severity?: ExportError['severity'] }
+  options?: {
+    field?: string;
+    detail?: string;
+    severity?: ExportError["severity"];
+  },
 ): ExportError {
   return {
     code,
     message,
     field: options?.field,
     detail: options?.detail,
-    severity: options?.severity ?? 'error',
+    severity: options?.severity ?? "error",
   };
 }
 
@@ -61,12 +65,15 @@ function createError(
  */
 function zodErrorToExportError(zodError: ZodError): ExportError {
   const firstError = zodError.issues[0];
-  const field = firstError?.path.map(String).join('.') || undefined;
-  const message = firstError?.message || 'Validation failed';
+  const field = firstError?.path.map(String).join(".") || undefined;
+  const message = firstError?.message || "Validation failed";
 
   return createError(ExportErrorCode.VALIDATION_ERROR, message, {
     field,
-    detail: zodError.issues.length > 1 ? `+${zodError.issues.length - 1} more errors` : undefined,
+    detail:
+      zodError.issues.length > 1
+        ? `+${zodError.issues.length - 1} more errors`
+        : undefined,
   });
 }
 
@@ -75,8 +82,10 @@ function zodErrorToExportError(zodError: ZodError): ExportError {
  */
 function zodErrorsToExportErrors(zodError: ZodError): ExportError[] {
   return zodError.issues.map((err) => {
-    const field = err.path.map(String).join('.') || undefined;
-    return createError(ExportErrorCode.VALIDATION_ERROR, err.message, { field });
+    const field = err.path.map(String).join(".") || undefined;
+    return createError(ExportErrorCode.VALIDATION_ERROR, err.message, {
+      field,
+    });
   });
 }
 
@@ -105,7 +114,7 @@ function validateFileSize(size: number): ExportError | null {
     return createError(
       ExportErrorCode.FILE_TOO_LARGE,
       `File exceeds ${EXPORT_LIMITS.MAX_FILE_SIZE / 1024 / 1024}MB limit`,
-      { detail: `Size: ${(size / 1024 / 1024).toFixed(2)}MB` }
+      { detail: `Size: ${(size / 1024 / 1024).toFixed(2)}MB` },
     );
   }
   return null;
@@ -123,7 +132,7 @@ export function serializeProjectData(
   projectName: string,
   pages: Page[],
   elements: Element[],
-  currentPageId?: string | null
+  currentPageId?: string | null,
 ): string {
   const exportData: ExportedProjectData = {
     version: CURRENT_VERSION,
@@ -148,22 +157,22 @@ export function downloadProjectAsJson(
   projectName: string,
   pages: Page[],
   elements: Element[],
-  currentPageId?: string | null
+  currentPageId?: string | null,
 ): void {
   const jsonString = serializeProjectData(
     projectId,
     projectName,
     pages,
     elements,
-    currentPageId
+    currentPageId,
   );
 
-  const blob = new Blob([jsonString], { type: 'application/json' });
+  const blob = new Blob([jsonString], { type: "application/json" });
   const url = URL.createObjectURL(blob);
 
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
-  link.download = `${projectName || 'project'}-${projectId}.json`;
+  link.download = `${projectName || "project"}-${projectId}.json`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -188,7 +197,7 @@ export function parseProjectData(jsonString: string): ImportResult {
       success: false,
       error: createError(
         ExportErrorCode.PARSE_ERROR,
-        error instanceof Error ? error.message : 'Failed to parse JSON'
+        error instanceof Error ? error.message : "Failed to parse JSON",
       ),
     };
   }
@@ -198,14 +207,16 @@ export function parseProjectData(jsonString: string): ImportResult {
   if (!migrationResult.success) {
     return {
       success: false,
-      error: migrationResult.error || createError(ExportErrorCode.VALIDATION_ERROR, 'Migration failed'),
+      error:
+        migrationResult.error ||
+        createError(ExportErrorCode.VALIDATION_ERROR, "Migration failed"),
     };
   }
 
   // 마이그레이션 발생 시 로그
   if (migrationResult.migratedFrom) {
     console.log(
-      `[Migration] Project migrated from v${migrationResult.migratedFrom} to v${migrationResult.migratedTo}`
+      `[Migration] Project migrated from v${migrationResult.migratedFrom} to v${migrationResult.migratedTo}`,
     );
   }
 
@@ -228,7 +239,7 @@ export function parseProjectData(jsonString: string): ImportResult {
     warnings.push({
       code: ExportErrorCode.UNKNOWN_VERSION,
       message: `Project was migrated from v${migrationResult.migratedFrom} to v${migrationResult.migratedTo}`,
-      severity: 'info',
+      severity: "info",
     });
   }
 
@@ -242,7 +253,9 @@ export function parseProjectData(jsonString: string): ImportResult {
       error: createError(
         ExportErrorCode.PARENT_CYCLE,
         `Page "${cyclePageId}" forms a circular reference`,
-        { field: `pages[${data.pages.findIndex((p) => p.id === cyclePageId)}].parent_id` }
+        {
+          field: `pages[${data.pages.findIndex((p) => p.id === cyclePageId)}].parent_id`,
+        },
       ),
     };
   }
@@ -257,7 +270,7 @@ export function parseProjectData(jsonString: string): ImportResult {
       error: createError(
         ExportErrorCode.VALIDATION_ERROR,
         `Page "${pageId}" references non-existent parent`,
-        { field: `pages[${pageIndex}].parent_id` }
+        { field: `pages[${pageIndex}].parent_id` },
       ),
     };
   }
@@ -268,9 +281,9 @@ export function parseProjectData(jsonString: string): ImportResult {
     warnings.push(
       createError(
         ExportErrorCode.VALIDATION_ERROR,
-        `Duplicate slugs found for pages: ${duplicateSlugs.join(', ')}`,
-        { severity: 'warning' }
-      )
+        `Duplicate slugs found for pages: ${duplicateSlugs.join(", ")}`,
+        { severity: "warning" },
+      ),
     );
   }
 
@@ -280,9 +293,9 @@ export function parseProjectData(jsonString: string): ImportResult {
     warnings.push(
       createError(
         ExportErrorCode.VALIDATION_ERROR,
-        'exportedAt is in the future',
-        { field: 'exportedAt', severity: 'warning' }
-      )
+        "exportedAt is in the future",
+        { field: "exportedAt", severity: "warning" },
+      ),
     );
   }
 
@@ -305,13 +318,13 @@ export async function loadProjectFromUrl(url: string): Promise<ImportResult> {
         success: false,
         error: createError(
           ExportErrorCode.PARSE_ERROR,
-          `Failed to fetch: ${response.status} ${response.statusText}`
+          `Failed to fetch: ${response.status} ${response.statusText}`,
         ),
       };
     }
 
     // Content-Length가 있으면 파일 크기 검증
-    const contentLength = response.headers.get('Content-Length');
+    const contentLength = response.headers.get("Content-Length");
     if (contentLength) {
       const sizeError = validateFileSize(parseInt(contentLength, 10));
       if (sizeError) {
@@ -333,7 +346,7 @@ export async function loadProjectFromUrl(url: string): Promise<ImportResult> {
       success: false,
       error: createError(
         ExportErrorCode.PARSE_ERROR,
-        error instanceof Error ? error.message : 'Failed to load project'
+        error instanceof Error ? error.message : "Failed to load project",
       ),
     };
   }
@@ -354,12 +367,15 @@ export async function loadProjectFromFile(file: File): Promise<ImportResult> {
 
     reader.onload = (event) => {
       const content = event.target?.result;
-      if (typeof content === 'string') {
+      if (typeof content === "string") {
         resolve(parseProjectData(content));
       } else {
         resolve({
           success: false,
-          error: createError(ExportErrorCode.PARSE_ERROR, 'Failed to read file content'),
+          error: createError(
+            ExportErrorCode.PARSE_ERROR,
+            "Failed to read file content",
+          ),
         });
       }
     };
@@ -367,7 +383,7 @@ export async function loadProjectFromFile(file: File): Promise<ImportResult> {
     reader.onerror = () => {
       resolve({
         success: false,
-        error: createError(ExportErrorCode.PARSE_ERROR, 'Failed to read file'),
+        error: createError(ExportErrorCode.PARSE_ERROR, "Failed to read file"),
       });
     };
 
@@ -390,7 +406,8 @@ export function generateStaticHtml(
   pages: Page[],
   elements: Element[],
   currentPageId?: string | null,
-  customFonts: CustomFontAsset[] = []
+  customFonts: CustomFontAsset[] = [],
+  themeCSS: string = "",
 ): string {
   const projectData = {
     version: CURRENT_VERSION,
@@ -421,6 +438,8 @@ export function generateStaticHtml(
     }
 
     ${customFontCss}
+
+    ${themeCSS}
 
     /* Navigation */
     .publish-nav {
@@ -594,11 +613,11 @@ export function generateStaticHtml(
  */
 function escapeHtml(str: string): string {
   return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 /**
@@ -610,16 +629,25 @@ export function downloadStaticHtml(
   pages: Page[],
   elements: Element[],
   currentPageId?: string | null,
-  customFonts: CustomFontAsset[] = []
+  customFonts: CustomFontAsset[] = [],
+  themeCSS: string = "",
 ): void {
-  const html = generateStaticHtml(projectId, projectName, pages, elements, currentPageId, customFonts);
+  const html = generateStaticHtml(
+    projectId,
+    projectName,
+    pages,
+    elements,
+    currentPageId,
+    customFonts,
+    themeCSS,
+  );
 
-  const blob = new Blob([html], { type: 'text/html' });
+  const blob = new Blob([html], { type: "text/html" });
   const url = URL.createObjectURL(blob);
 
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
-  link.download = `${projectName || 'project'}.html`;
+  link.download = `${projectName || "project"}.html`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -631,5 +659,9 @@ export function downloadStaticHtml(
 // Re-exports for convenience
 // ============================================
 
-export type { ExportedProjectData, ImportResult, ExportError } from '../types/export.types';
-export { ExportErrorCode, EXPORT_LIMITS } from '../types/export.types';
+export type {
+  ExportedProjectData,
+  ImportResult,
+  ExportError,
+} from "../types/export.types";
+export { ExportErrorCode, EXPORT_LIMITS } from "../types/export.types";

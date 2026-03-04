@@ -15,22 +15,29 @@ export {
   type UiState,
   type ThemeMode,
   type UiScale,
-} from './uiStore';
+} from "./uiStore";
 
 // 디자인 시스템 테마/토큰
 export {
   useUnifiedThemeStore,
-  useThemes,
-  useActiveTheme,
   useTokens,
-  useRawTokens,
-  useSemanticTokens,
   useThemeLoading,
   useThemeError,
-} from './themeStore';
+} from "./themeStore";
 
 // 앱 환경 설정
+export { useSettingsStore, getSettings } from "./settingsStore";
+
+// 테마 설정 (Tint, Dark Mode, Neutral, Radius — ADR-021)
 export {
-  useSettingsStore,
-  getSettings,
-} from './settingsStore';
+  useThemeConfigStore,
+  useThemeConfigTint,
+  useThemeConfigVersion,
+  useThemeConfigDarkMode,
+  useThemeConfigNeutral,
+  useThemeConfigRadiusScale,
+  type DarkModePreference,
+  type RadiusScale,
+} from "./themeConfigStore";
+export type { TintPreset } from "../utils/theme/tintToSkiaColors";
+export type { NeutralPreset } from "../utils/theme/neutralToSkiaColors";

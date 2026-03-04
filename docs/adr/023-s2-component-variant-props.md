@@ -23,7 +23,7 @@ ADR-022에서 Spec 내부 색상 토큰을 M3→S2로 전환 완료했으나, **
 
 - ADR-022 색상 토큰 체계(S2 ColorTokens)는 변경하지 않음
 - CSS 변수명(`--highlight-background` 등)은 변경하지 않음 (ADR-024 범위)
-- 기존 프로젝트 데이터의 variant 값 마이그레이션 필수 (DB + localStorage)
+- 기존 프로젝트 데이터(IndexedDB)의 variant 값 런타임 마이그레이션 필요
 - CSS 클래스/data-variant 셀렉터도 동시 변경 필요
 
 ## Alternatives Considered
@@ -35,7 +35,7 @@ ADR-022에서 Spec 내부 색상 토큰을 M3→S2로 전환 완료했으나, **
   - 기술: **M** — S2 Button의 `primary`=검정 vs XStudio의 `primary`=파란 → 의미 반전, 사용자 혼란
   - 성능: **L** — 런타임 영향 없음
   - 유지보수: **L** — S2 문서와 1:1 대응으로 장기적 유지보수 용이
-  - 마이그레이션: **H** — Factory 20+, Inspector Panel, DB 마이그레이션, CSS data-variant 셀렉터 전체 변경
+  - 마이그레이션: **H** — Factory 20+, Inspector Panel, IndexedDB 런타임 마이그레이션, CSS data-variant 셀렉터 전체 변경
 
 ### 대안 B: 하이브리드 (variant rename + fillStyle 점진 도입)
 
@@ -76,14 +76,14 @@ ADR-022에서 Spec 내부 색상 토큰을 M3→S2로 전환 완료했으나, **
 
 **대상 파일**:
 
-| 영역          | 파일                                                                  | 변경 내용                            |
-| ------------- | --------------------------------------------------------------------- | ------------------------------------ |
-| Spec          | `packages/specs/src/components/*.spec.ts` (~20개)                     | variant 키 rename                    |
-| Factory       | `apps/builder/src/builder/factories/definitions/*.ts` (~15개)         | variant prop 값 변경                 |
-| Inspector     | `apps/builder/src/builder/panels/inspector/*.tsx` (~5개)              | variant 옵션 UI 변경                 |
-| CSS           | `packages/shared/src/components/styles/*.css` (~30개)                 | `data-variant` 셀렉터 rename         |
-| ElementSprite | `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` | variant 매핑 상수 변경               |
-| DB Migration  | Supabase migration SQL                                                | 기존 프로젝트 데이터 variant 값 변환 |
+| 영역              | 파일                                                                  | 변경 내용                                              |
+| ----------------- | --------------------------------------------------------------------- | ------------------------------------------------------ |
+| Spec              | `packages/specs/src/components/*.spec.ts` (~20개)                     | variant 키 rename                                      |
+| Factory           | `apps/builder/src/builder/factories/definitions/*.ts` (~15개)         | variant prop 값 변경                                   |
+| Inspector         | `apps/builder/src/builder/panels/inspector/*.tsx` (~5개)              | variant 옵션 UI 변경                                   |
+| CSS               | `packages/shared/src/components/styles/*.css` (~30개)                 | `data-variant` 셀렉터 rename                           |
+| ElementSprite     | `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` | variant 매핑 상수 변경                                 |
+| Runtime Migration | 프로젝트 로드 시 variant 값 자동 변환                                 | IndexedDB 데이터의 구 variant → 신 variant 런타임 매핑 |
 
 ### Phase 2: fillStyle / isEmphasized 도입
 
@@ -93,12 +93,12 @@ ADR-022에서 Spec 내부 색상 토큰을 M3→S2로 전환 완료했으나, **
 
 ## Gates
 
-| Gate | 조건                                                     | 확인 방법                             |
-| ---- | -------------------------------------------------------- | ------------------------------------- |
-| G1   | Phase 1 variant rename 후 모든 Spec 빌드 성공            | `pnpm build:specs && pnpm type-check` |
-| G2   | CSS data-variant 셀렉터 전체 변환 후 Preview 시각적 동일 | 수동 비교 (5개 대표 컴포넌트)         |
-| G3   | DB migration dry-run 성공                                | Supabase local migration 테스트       |
-| G4   | Phase 2 fillStyle 추가 후 기존 variant 동작 보존         | 기존 프로젝트 로드 → 시각적 동일 확인 |
+| Gate | 조건                                                     | 확인 방법                                   |
+| ---- | -------------------------------------------------------- | ------------------------------------------- |
+| G1   | Phase 1 variant rename 후 모든 Spec 빌드 성공            | `pnpm build:specs && pnpm type-check`       |
+| G2   | CSS data-variant 셀렉터 전체 변환 후 Preview 시각적 동일 | 수동 비교 (5개 대표 컴포넌트)               |
+| G3   | 기존 프로젝트 로드 시 variant 자동 변환 정상             | IndexedDB 구 데이터 로드 → 시각적 동일 확인 |
+| G4   | Phase 2 fillStyle 추가 후 기존 variant 동작 보존         | 기존 프로젝트 로드 → 시각적 동일 확인       |
 
 ## Consequences
 
@@ -111,5 +111,5 @@ ADR-022에서 Spec 내부 색상 토큰을 M3→S2로 전환 완료했으나, **
 ### Negative
 
 - Phase 1 마이그레이션 중 50+ 파일 동시 변경 → 충돌 위험
-- DB 마이그레이션 필요 (기존 프로젝트 데이터)
+- 런타임 마이그레이션 필요 (기존 IndexedDB 프로젝트 데이터)
 - `tertiary`→`purple`은 S2에 없는 XStudio 전용 확장 → 향후 S2 업데이트와 괴리 가능
