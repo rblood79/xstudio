@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "react-aria": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@react-aria/mcp@latest"]
+    },
+    "react-spectrum-s2": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@react-spectrum/mcp@latest"]
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-04 (ADR-017/018 갭 분석 12건 반영)
+> **최종 업데이트**: 2026-03-04 (ADR-019 아이콘 시스템 추가)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 8      |
 | 부분 완료                              | 5      |
-| 미구현 (Proposed/계획)                 | 5      |
-| **합계**                               | **18** |
+| 미구현 (Proposed/계획)                 | 6      |
+| **합계**                               | **19** |
 
 ---
 
@@ -40,13 +40,14 @@
 
 ### 미구현
 
-| ADR                                      | 제목                                                   | 상태     | 규모                                                                | 우선순위 |
-| ---------------------------------------- | ------------------------------------------------------ | -------- | ------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                            | Proposed | 5 Phase, 21파일                                                     |  **P2**  |
-| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                      | Proposed | 변경 대상 8파일, 코드 미생성                                        |    P5    |
-| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)                     | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations              |    P5    |
-| [017](017-css-override-ssot.md)          | React-Aria CSS Override SSOT — M3 제거 + Tailwind 통합 | Proposed | 5 Phase, M3 실참조 64파일 토큰 치환 + Spec 전환 + Theme Studio      |    P3    |
-| [018](018-component-css-restructure.md)  | 컴포넌트 CSS 구조 재작성 — starter 패턴 기반           | Proposed | 6 Phase, 82파일 utilities 패턴 도입 + 구조 단순화 (16,647→~6,500줄) |    P3    |
+| ADR                                      | 제목                                                   | 상태     | 규모                                                                 | 우선순위 |
+| ---------------------------------------- | ------------------------------------------------------ | -------- | -------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                            | Proposed | 5 Phase, 21파일                                                      |  **P2**  |
+| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                      | Proposed | 변경 대상 8파일, 코드 미생성                                         |    P5    |
+| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)                     | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations               |    P5    |
+| [017](017-css-override-ssot.md)          | React-Aria CSS Override SSOT — M3 제거 + Tailwind 통합 | Proposed | 5 Phase, M3 실참조 107파일 토큰 치환 + Spec 전환 + Theme Studio      |    P3    |
+| [018](018-component-css-restructure.md)  | 컴포넌트 CSS 구조 재작성 — starter 패턴 기반           | Proposed | 6 Phase, 82파일 utilities 패턴 도입 + 구조 단순화 (16,647→~6,500줄)  |    P3    |
+| [019](019-icon-system.md)                | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가       | Proposed | 5 Phase, Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링 |  **P2**  |
 
 ---
 
@@ -196,3 +197,5 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-04 | ADR-017 재작성 — M3 제거 + Tailwind 통합 방향으로 전면 개정. ADR-009 P3→P4 조정, ADR-017 P3 신설. 로드맵에 Phase 1~2 추가                                                                                                            |
 | 2026-03-04 | ADR-018 추가 — 컴포넌트 CSS 구조 재작성 (react-aria-starter 패턴 기반, utilities.css 3대 유틸리티 도입, 15,652→~6,000줄 목표). P3에 017+018 통합                                                                                     |
 | 2026-03-04 | ADR-017/018 갭 분석 12건 반영 — Gate 번호 수정, M3 실참조 64파일 정정, Publish 앱 영향 추가, Card.css 레거시 셀렉터 마이그레이션, AI Theme Generator 5파일 열거, :focus-visible 3파일 처리 추가, M3_COMPONENT_TEMPLATE.css 폐기 명시 |
+| 2026-03-04 | ADR-019 추가 — 아이콘 시스템 (Builder UI 아이콘 선택/변경/추가). Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링. 5 Phase (A~E), P2 우선순위                                                                             |
+| 2026-03-04 | ADR-017/018 코드베이스 재검증 — builder CSS M3 사용 7개→52개(총 107개) 정정, base.css Phase 1 대상 제외, Gate G0(자동화 dry-run) 추가 + Tier 4(builder 패널 45파일) 신설, Card.tsx data-variant 전달 확인됨                          |
