@@ -59,7 +59,9 @@
     border: none;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
   }
 
   .monitor-tab:hover {
@@ -218,7 +220,7 @@
   }
 
   .optimize-button:hover:not([data-disabled]) {
-    background-color: var(--primary-dark, var(--highlight-background));
+    background-color: var(--highlight-background);
     filter: brightness(0.9);
   }
 
@@ -340,28 +342,48 @@
 
   .threshold-indicator[data-threshold="safe"] {
     color: var(--threshold-safe);
-    background-color: color-mix(in srgb, var(--threshold-safe) 10%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--threshold-safe) 10%,
+      transparent
+    );
   }
 
   .threshold-indicator[data-threshold="warning"] {
     color: var(--threshold-warning);
-    background-color: color-mix(in srgb, var(--threshold-warning) 10%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--threshold-warning) 10%,
+      transparent
+    );
   }
 
   .threshold-indicator[data-threshold="danger"] {
     color: var(--threshold-danger);
-    background-color: color-mix(in srgb, var(--threshold-danger) 10%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--threshold-danger) 10%,
+      transparent
+    );
   }
 
   /* Stat Card Threshold States */
   .stat-card[data-threshold="warning"] {
     border-color: var(--threshold-warning);
-    background-color: color-mix(in srgb, var(--threshold-warning) 10%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--threshold-warning) 10%,
+      transparent
+    );
   }
 
   .stat-card[data-threshold="danger"] {
     border-color: var(--threshold-danger);
-    background-color: color-mix(in srgb, var(--threshold-danger) 10%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--threshold-danger) 10%,
+      transparent
+    );
   }
 
   .stat-card[data-threshold="safe"] {
@@ -380,7 +402,9 @@
     border-radius: var(--radius-sm);
     cursor: pointer;
     color: var(--text-color);
-    transition: background-color 150ms ease, border-color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
   }
 
   .export-button:hover:not([data-disabled]) {
@@ -913,7 +937,9 @@
     border-radius: var(--radius-sm);
     cursor: pointer;
     color: var(--text-color-placeholder);
-    transition: background-color 150ms ease, border-color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
   }
 
   .threshold-settings-btn:hover {

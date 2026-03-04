@@ -32,7 +32,7 @@ export const shadows: ShadowTokens = {
   inset: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)',
 
   /** 포커스 링 */
-  'focus-ring': '0 0 0 2px var(--primary, #6750a4)',
+  'focus-ring': '0 0 0 2px var(--highlight-background)',
 };
 
 /**

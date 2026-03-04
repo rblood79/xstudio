@@ -320,14 +320,14 @@ describe("generateCSS 분기 커버리지", () => {
       makeSpec({
         states: {
           focusVisible: {
-            outline: "3px solid var(--primary)",
+            outline: "3px solid var(--highlight-background)",
             outlineOffset: "3px",
             boxShadow: "{shadow.focus-ring}",
           },
         },
       }),
     );
-    expect(css).toContain("outline: 3px solid var(--primary)");
+    expect(css).toContain("outline: 3px solid var(--highlight-background)");
     expect(css).toContain("outline-offset: 3px");
     expect(css).toContain("box-shadow: var(--shadow-focus-ring)");
   });

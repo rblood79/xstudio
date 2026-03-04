@@ -42,10 +42,7 @@ export function RealtimeChart({
 
     const pts = data.map((d, i) => ({
       x: padding.left + (i / (data.length - 1 || 1)) * chartWidth,
-      y:
-        padding.top +
-        chartHeight -
-        ((d[metric] - min) / range) * chartHeight,
+      y: padding.top + chartHeight - ((d[metric] - min) / range) * chartHeight,
       value: d[metric],
       time: d.timestamp,
     }));
@@ -138,20 +135,30 @@ export function RealtimeChart({
       {pathD && points.length > 0 && (
         <g className="chart-area">
           <defs>
-            <linearGradient id="realtimeAreaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.05" />
+            <linearGradient
+              id="realtimeAreaGradient"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop
+                offset="0%"
+                stopColor="var(--highlight-background)"
+                stopOpacity="0.3"
+              />
+              <stop
+                offset="100%"
+                stopColor="var(--highlight-background)"
+                stopOpacity="0.05"
+              />
             </linearGradient>
           </defs>
           <path
             d={`${pathD} L ${points[points.length - 1]?.x ?? 0} ${padding.top + chartHeight} L ${padding.left} ${padding.top + chartHeight} Z`}
             fill="url(#realtimeAreaGradient)"
           />
-          <path
-            d={pathD}
-            fill="none"
-            className="chart-line"
-          />
+          <path d={pathD} fill="none" className="chart-line" />
         </g>
       )}
 

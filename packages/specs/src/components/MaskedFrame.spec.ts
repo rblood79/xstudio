@@ -74,7 +74,7 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
   states: {
     hover: {},
     focusVisible: {
-      outline: '2px solid var(--primary)',
+      outline: '2px solid var(--highlight-background)',
       outlineOffset: '2px',
     },
   },

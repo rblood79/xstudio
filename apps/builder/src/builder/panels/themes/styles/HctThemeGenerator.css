@@ -3,7 +3,7 @@
  * Material 3 Dynamic Color based theme generation
  */
 
-@import './_common.css';
+@import "./_common.css";
 
 @layer components {
   .hct-generator-container {
@@ -520,7 +520,11 @@
 
   .hct-generator-container .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--highlight-background), var(--tertiary, var(--highlight-background)));
+    background: linear-gradient(
+      90deg,
+      var(--highlight-background),
+      var(--highlight-background)
+    );
     transition: width 300ms ease-out;
   }
 
@@ -533,7 +537,7 @@
   /* Error Message */
   .hct-generator-container .error-message {
     padding: var(--spacing-4);
-    background: var(--error-container, var(--field-background));
+    background: var(--field-background);
     border: 1px solid var(--status-error);
     border-radius: var(--radius-lg);
   }

@@ -7,30 +7,29 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 export interface SelectIconProps {
-  variant?: 'default';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "default";
+  size?: "sm" | "md" | "lg";
   style?: Record<string, string | number | undefined>;
 }
 
 export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
-  name: 'SelectIcon',
-  description: 'Select 드롭다운 쉐브론 아이콘',
-  element: 'span',
+  name: "SelectIcon",
+  description: "Select 드롭다운 쉐브론 아이콘",
+  element: "span",
 
-  defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultVariant: "default",
+  defaultSize: "md",
 
   variants: {
     default: {
-      // CSS: --select-accent-container: var(--surface-container-high); --select-on-accent-container: var(--on-surface);
-      background: '{color.surface-container-high}' as TokenRef,
-      backgroundHover: '{color.surface-container-high}' as TokenRef,
-      backgroundPressed: '{color.surface-container-high}' as TokenRef,
-      text: '{color.on-surface}' as TokenRef,
+      background: "{color.field-background}" as TokenRef,
+      backgroundHover: "{color.field-background}" as TokenRef,
+      backgroundPressed: "{color.field-background}" as TokenRef,
+      text: "{color.text-color}" as TokenRef,
     },
   },
 
@@ -39,8 +38,8 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
       height: 14,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       iconSize: 14,
       gap: 0,
     },
@@ -48,8 +47,8 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
       height: 18,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       iconSize: 18,
       gap: 0,
     },
@@ -57,8 +56,8 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
       height: 22,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       iconSize: 22,
       gap: 0,
     },
@@ -78,20 +77,23 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
       const iconSize = size.iconSize ?? 18;
 
       const rawFontSize = props.style?.fontSize;
-      const resolvedFs = rawFontSize != null
-        ? (typeof rawFontSize === 'number'
+      const resolvedFs =
+        rawFontSize != null
+          ? typeof rawFontSize === "number"
             ? rawFontSize
-            : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
-                ? resolveToken(rawFontSize as TokenRef)
-                : rawFontSize))
-        : undefined;
-      const effectiveSize = (typeof resolvedFs === 'number' ? resolvedFs : undefined) ?? iconSize;
+            : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
+              ? resolveToken(rawFontSize as TokenRef)
+              : rawFontSize
+          : undefined;
+      const effectiveSize =
+        (typeof resolvedFs === "number" ? resolvedFs : undefined) ?? iconSize;
 
       // 배경색: 사용자 설정 우선, 'transparent'는 미설정으로 처리
       const userBg = props.style?.backgroundColor;
-      const bgColor = (userBg != null && userBg !== 'transparent')
-                    ? userBg
-                    : variant.background;
+      const bgColor =
+        userBg != null && userBg !== "transparent"
+          ? userBg
+          : variant.background;
 
       const fill = props.style?.color ?? variant.text;
 
@@ -99,8 +101,8 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
 
       const shapes: Shape[] = [
         {
-          id: 'icon-bg',
-          type: 'roundRect' as const,
+          id: "icon-bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width: effectiveSize,
@@ -109,8 +111,8 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
           fill: bgColor,
         },
         {
-          type: 'icon_font' as const,
-          iconName: 'chevron-down',
+          type: "icon_font" as const,
+          iconName: "chevron-down",
           x: effectiveSize / 2,
           y: effectiveSize / 2,
           fontSize: effectiveSize,
@@ -125,7 +127,7 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
     react: () => ({}),
 
     pixi: () => ({
-      eventMode: 'none' as const,
+      eventMode: "none" as const,
     }),
   },
 };

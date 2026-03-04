@@ -81,7 +81,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
       pointerEvents: 'none',
     },
     focusVisible: {
-      outline: '2px solid var(--primary)',
+      outline: '2px solid var(--highlight-background)',
       outlineOffset: '2px',
     },
   },

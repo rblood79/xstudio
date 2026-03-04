@@ -57,7 +57,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       backgroundHover: "{color.primary-hover}" as TokenRef,
       backgroundPressed: "{color.primary-pressed}" as TokenRef,
       text: "{color.on-primary}" as TokenRef,
-      border: "{color.primary}" as TokenRef, // CSS: border-color: var(--primary) → 배경과 동일 → 투명
+      border: "{color.primary}" as TokenRef, // CSS: border-color: var(--highlight-background) → 배경과 동일 → 투명
       borderHover: "{color.primary-hover}" as TokenRef,
     },
     secondary: {

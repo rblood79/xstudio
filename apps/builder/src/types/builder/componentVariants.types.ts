@@ -45,12 +45,12 @@ export type LegacySize = "small" | "medium" | "large";
  * Used by: Button component
  *
  * - default: Default style (base button styles)
- * - primary: Main call-to-action (uses M3 --primary token)
- * - secondary: Secondary actions (uses M3 --secondary token)
- * - tertiary: Tertiary actions (uses M3 --tertiary token)
- * - error: Error/destructive actions (uses M3 --error token)
- * - surface: Surface-level actions (uses M3 --surface-container-highest token)
- * - outline: Outlined style (uses M3 --outline token)
+ * - primary: Main call-to-action (uses --highlight-background token)
+ * - secondary: Secondary actions (uses --button-background token)
+ * - tertiary: Tertiary actions (uses --color-purple-600 token)
+ * - error: Error/destructive actions (uses --invalid-color token)
+ * - surface: Surface-level actions (uses --overlay-background token)
+ * - outline: Outlined style (uses --border-color token)
  * - ghost: Minimal style (transparent background)
  */
 export type ButtonVariant =
@@ -279,10 +279,10 @@ export type TableColumnVariant = "default" | "primary" | "secondary";
 export type ConvertLegacySize<T extends LegacySize> = T extends "small"
   ? "sm"
   : T extends "medium"
-  ? "md"
-  : T extends "large"
-  ? "lg"
-  : never;
+    ? "md"
+    : T extends "large"
+      ? "lg"
+      : never;
 
 /**
  * Props interface for components with variant and size

@@ -10,8 +10,8 @@
   width: 400px;
   max-height: 600px;
   overflow-y: auto;
-  background: var(--surface);
-  border: 1px solid var(--outline-variant);
+  background: var(--field-background);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   font-size: var(--text-sm);
@@ -24,15 +24,15 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-md);
-  border-bottom: 1px solid var(--outline);
-  background: var(--surface-variant);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--overlay-background);
 }
 
 .dashboard-header h3 {
   margin: 0;
   font-size: var(--text-base);
   font-weight: 600;
-  color: var(--on-surface);
+  color: var(--text-color);
 }
 
 .dashboard-actions {
@@ -43,16 +43,16 @@
 .action-btn {
   padding: var(--spacing-xs) var(--spacing);
   background: transparent;
-  border: 1px solid var(--outline-variant);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: var(--text-base);
-  color: var(--on-surface);
+  color: var(--text-color);
   transition: all 0.2s;
 }
 
 .action-btn:hover {
-  background: var(--surface-container-low);
+  background: var(--overlay-background);
 }
 
 .action-btn.active {
@@ -78,7 +78,7 @@
   margin: 0;
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--on-surface-variant);
+  color: var(--text-color-placeholder);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -93,21 +93,21 @@
   display: flex;
   flex-direction: column;
   padding: var(--spacing);
-  background: var(--surface-variant);
+  background: var(--overlay-background);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--outline-variant);
+  border: 1px solid var(--border-color);
 }
 
 .stat-label {
   font-size: var(--text-xs);
-  color: var(--on-surface-variant);
+  color: var(--text-color-placeholder);
   margin-bottom: 2px;
 }
 
 .stat-value {
   font-size: var(--text-lg);
   font-weight: 600;
-  color: var(--on-surface);
+  color: var(--text-color);
   font-variant-numeric: tabular-nums;
 }
 
@@ -125,14 +125,14 @@
 
 .dashboard-footer {
   padding: var(--spacing) var(--spacing-md);
-  border-top: 1px solid var(--outline);
-  background: var(--surface-variant);
+  border-top: 1px solid var(--border-color);
+  background: var(--overlay-background);
   text-align: center;
 }
 
 .elapsed-time {
   font-size: var(--text-xs);
-  color: var(--on-surface-variant);
+  color: var(--text-color-placeholder);
   font-variant-numeric: tabular-nums;
 }
 

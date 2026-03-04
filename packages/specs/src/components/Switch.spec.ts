@@ -109,7 +109,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       pointerEvents: 'none',
     },
     focusVisible: {
-      outline: '2px solid var(--primary)',
+      outline: '2px solid var(--highlight-background)',
       outlineOffset: '2px',
     },
   },
