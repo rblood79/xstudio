@@ -46,7 +46,7 @@
 | [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                      | Proposed | 변경 대상 8파일, 코드 미생성                                        |    P5    |
 | [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)                     | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations              |    P5    |
 | [017](017-css-override-ssot.md)          | React-Aria CSS Override SSOT — M3 제거 + Tailwind 통합 | Proposed | 5 Phase, M3 실참조 64파일 토큰 치환 + Spec 전환 + Theme Studio      |    P3    |
-| [018](018-component-css-restructure.md)  | 컴포넌트 CSS 구조 재작성 — starter 패턴 기반           | Proposed | 6 Phase, 79파일 utilities 패턴 도입 + 구조 단순화 (15,652→~6,000줄) |    P3    |
+| [018](018-component-css-restructure.md)  | 컴포넌트 CSS 구조 재작성 — starter 패턴 기반           | Proposed | 6 Phase, 82파일 utilities 패턴 도입 + 구조 단순화 (16,647→~6,500줄) |    P3    |
 
 ---
 
@@ -61,7 +61,7 @@
 |  5   | ADR-017 Phase 3   | Spec 토큰 전환 — ColorTokens + colors.ts + 전체 Spec TokenRef M3→시맨틱 치환 (Canvas/Preview 통일)   |  중  |
 |  6   | ADR-017 Phase 4   | Theme Studio — `--tint` 기반 단일 변수 테마 전환 도입                                                |  중  |
 |  7   | ADR-018 Phase 1   | utilities.css 기반 구축 — `.button-base`, `.indicator`, `.inset` 3대 유틸리티 생성                   |  소  |
-|  8   | ADR-018 Phase 2~5 | 컴포넌트 CSS 구조 재작성 — 79파일 utilities 패턴 전환 (15,652→~6,000줄)                              |  대  |
+|  8   | ADR-018 Phase 2~5 | 컴포넌트 CSS 구조 재작성 — 82파일 utilities 패턴 전환 (16,647→~6,500줄)                              |  대  |
 |  9   | ADR-013           | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |
 
 ---
@@ -86,11 +86,11 @@
 
 ### P3: ADR-017 + ADR-018 CSS 아키텍처 정비
 
-- **근거**: M3 토큰 38개 불필요 중첩 + 컴포넌트 CSS 3.5x 비대화 (15,652줄 vs starter 4,430줄)
+- **근거**: M3 토큰 38개 불필요 중첩 + 컴포넌트 CSS 3.8x 비대화 (16,647줄 vs starter 4,430줄)
 - **진행률**: 전체 미착수 (ADR 작성 완료)
 - **실행 순서**: ADR-017 (M3 제거, 토큰 치환) → ADR-018 (구조 재작성, utilities 패턴)
 - **ADR-017**: preview-system.css/builder-system.css M3 섹션 제거, 64개 CSS M3→시맨틱 find-replace + Spec 토큰 전환 + Theme Studio
-- **ADR-018**: utilities.css 3대 유틸리티 도입 + 79개 컴포넌트 CSS 구조 단순화 (15,652→~6,000줄)
+- **ADR-018**: utilities.css 3대 유틸리티 도입 + 82개 컴포넌트 CSS 구조 단순화 (16,647→~6,500줄)
 - **전제 조건**: ADR-017은 독립 실행 가능, ADR-018은 ADR-017 완료 후 진행
 - **영향 범위**: 전체 CSS 아키텍처 — 토큰 체인 단순화 + 코드량 62% 감소
 
