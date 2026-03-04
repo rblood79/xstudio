@@ -1,7 +1,7 @@
 # XStudio CSS Architecture - ITCSS
 
 **Date:** 2025-11-08 (초판) / 2026-03-04 (최종 갱신)
-**Version:** 3.0 (ADR-017 M3 토큰 제거 + ADR-018 utilities.css 도입)
+**Version:** 3.1 (Tint Color System 도입 + shared-tokens 팔레트 완성)
 
 ---
 
@@ -195,11 +195,48 @@ src/builder/styles/
 
 ---
 
-### **Preview Semantic Tokens (ADR-017)**
+### **Preview Semantic Tokens (ADR-017) + Tint System**
 
 **Purpose:** Preview iframe components — M3 토큰 제거 후 시맨틱 토큰 단일 체계
 **Customizable by:** AI Theme System
 **Dark mode:** `[data-theme="dark"]`
+
+#### Tint Color System (React Aria starter 패턴)
+
+`--tint` 변수 하나로 전체 accent 색상 전환:
+
+```css
+:root {
+  /* 프리셋 (oklch base colors) */
+  --blue: oklch(0.5 0.22049 266.315);
+  --indigo: oklch(1 0.25049 284.23);
+  --purple: oklch(0.7 0.223324 302);
+  /* ... red, orange, yellow, green, cyan, turquoise, pink */
+
+  /* 이 한 줄로 테마 색상 전환 */
+  --tint: var(--blue);
+
+  /* 자동 생성되는 16단계 tint 스케일 (oklch relative color) */
+  --tint-100 ~ --tint-1600
+}
+```
+
+**시맨틱 토큰 → tint 매핑:**
+
+| Semantic Token           | Tint Fallback                              |
+| ------------------------ | ------------------------------------------ |
+| `--highlight-background` | `oklch(from var(--tint) 55% c h)`          |
+| `--highlight-bg-pressed` | `oklch(from var(--tint) 50% c h)`          |
+| `--focus-ring-color`     | `var(--tint-1000)`                         |
+| `--link-color`           | `var(--tint-1200)`                         |
+| `--link-color-pressed`   | `var(--tint-1300)`                         |
+| `--highlight-overlay`    | `oklch(from var(--tint-1000) l c h / 15%)` |
+
+**다크모드**: lightness 스케일이 자동 반전 (light: 98%→17%, dark: 30%→100%). `--highlight-background`는 고정 55% lightness로 양쪽 모드에서 동일 대비 유지.
+
+**ThemeStudio 오버라이드**: `--color-highlight-background` 등 토큰이 설정되면 tint fallback보다 우선 적용.
+
+#### Semantic Token Catalog
 
 | Category  | Token                            | Description                     |
 | --------- | -------------------------------- | ------------------------------- |
@@ -235,16 +272,25 @@ color-mix(in srgb, var(--highlight-background) 75%, black)
 
 ### **Shared Tokens (Fixed)**
 
-**Purpose:** Common design tokens
-**Not customizable:** Typography, spacing, radius
+**Purpose:** Common design tokens — Typography, spacing, radius, color palettes
+**Not customizable:** AI Theme System 영향 없음
 **Source:** Tailwind v4 standards
 
-**Examples:**
+**Color Palettes (shared-tokens.css):**
 
-```css
---text-xs: 0.75rem --text-sm: 0.875rem --spacing-sm: 0.5rem
-  --radius-md: 0.375rem --color-neutral-500 --color-success-600;
-```
+| Palette                                         | Range  | 용도                                |
+| ----------------------------------------------- | ------ | ----------------------------------- |
+| `--color-white/black`                           | —      | 기본 흑백                           |
+| `--color-primary-*`                             | 50-950 | Tailwind Blue 기반, tint fallback용 |
+| `--color-neutral-*`                             | 50-950 | Gray scale                          |
+| `--color-tertiary-*`                            | 50-900 | Tailwind Purple 기반                |
+| `--color-error-*`                               | 50-900 | Red                                 |
+| `--color-success-*`                             | 50-900 | Green                               |
+| `--color-warning-*`                             | 50-900 | Orange                              |
+| `--color-info-*`                                | 50-900 | Blue (HSL)                          |
+| `--color-blue/green/red/orange/yellow/purple-*` | 50-900 | Tailwind standard palettes          |
+
+> **Note:** `--color-primary-*`, `--color-blue-*` 등은 Preview iframe에서 Tailwind 없이도 동작하도록 shared-tokens.css에 정적 값으로 정의됨.
 
 ---
 
@@ -322,6 +368,17 @@ Individual component .tsx files (JS import — component CSS)
 └── import './styles/Button.css'  ← 각 컴포넌트가 자기 CSS만 로드
 ```
 
+**Preview/Publish 전용 경로 (`styles/index.css`):**
+
+```
+packages/shared/src/components/styles/index.css (preview iframe + publish)
+├── @import theme.css → CSS 변수 (preview-system + tint system, shared-tokens, builder-system)
+├── @import base.css, animations.css
+├── @import utilities.css (ADR-018: .button-base, .indicator, .inset)
+├── @import forms.css, overlays.css, collections.css
+└── @import 70+ component CSS files (전체 cascade)
+```
+
 **중요**: `styles/index.css`(전체 cascade)는 **preview iframe**과 **publish 앱** 전용. Builder는 사용하지 않음.
 
 ---
@@ -361,10 +418,9 @@ Individual component .tsx files (JS import — component CSS)
 ### **🔄 In Progress (ADR-018 — Component CSS 재구조화)**
 
 - [x] Phase 1: `utilities.css` 생성 (`.button-base`, `.indicator`, `.inset`)
-- [ ] Phase 2: 버튼류 CSS 마이그레이션 (Button, ToggleButton, Link, Breadcrumbs, TagGroup)
-- [ ] Phase 3: 입력 필드류 CSS 마이그레이션 (TextField, NumberField, Select, DateField 등)
-- [ ] Phase 4: 인디케이터류 CSS 마이그레이션 (Checkbox, RadioGroup, Switch, Slider)
-- [ ] Phase 5: 복합/오버레이류 + Card.css 셀렉터 마이그레이션
+- [x] Button.css: `.button-base` 적용 + variant/state 블록 제거 (186→97줄, -48%)
+- [x] Card.css: dead class 셀렉터 → `[data-variant]`/`[data-size]`/`[data-selected]` 수정
+- [ ] Phase 2-5: 나머지 컴포넌트 (대부분 이미 CSS custom property 패턴 사용, 효과 제한적)
 
 ### **⏳ Phase 4: 보류 (Deferred)**
 
@@ -474,14 +530,15 @@ export default defineConfig({
 
 ## 🔄 Update History
 
-| Version | Date       | Changes                                                                                        |
-| ------- | ---------- | ---------------------------------------------------------------------------------------------- |
-| 3.0     | 2026-03-04 | ADR-017: M3 토큰 제거 + 시맨틱 토큰 카탈로그. ADR-018: utilities.css 도입, Best Practices 갱신 |
-| 2.2     | 2026-03-04 | Phase 5: CSS 중복 로딩 해결 — import chain 단일화, foundation.css, 1-theme/ 삭제               |
-| 2.1     | 2026-02-19 | Phase 4 상태 명시 (보류/대체), 미존재 참조 문서 정리, 날짜 보정                                |
-| 2.0     | 2025-11-08 | Phase 1-3 complete: Theme separation, hardcoded color removal, ITCSS structure                 |
-| 1.0     | 2025-11-08 | Initial baseline documentation                                                                 |
+| Version | Date       | Changes                                                                                            |
+| ------- | ---------- | -------------------------------------------------------------------------------------------------- |
+| 3.1     | 2026-03-04 | Tint Color System 도입 (oklch relative color), shared-tokens 팔레트 완성, Card.css/Button.css 수정 |
+| 3.0     | 2026-03-04 | ADR-017: M3 토큰 제거 + 시맨틱 토큰 카탈로그. ADR-018: utilities.css 도입, Best Practices 갱신     |
+| 2.2     | 2026-03-04 | Phase 5: CSS 중복 로딩 해결 — import chain 단일화, foundation.css, 1-theme/ 삭제                   |
+| 2.1     | 2026-02-19 | Phase 4 상태 명시 (보류/대체), 미존재 참조 문서 정리, 날짜 보정                                    |
+| 2.0     | 2025-11-08 | Phase 1-3 complete: Theme separation, hardcoded color removal, ITCSS structure                     |
+| 1.0     | 2025-11-08 | Initial baseline documentation                                                                     |
 
 ---
 
-**현재 상태**: Phase 1-3 + Phase 5 + ADR-017 완료. ADR-018 Phase 1 (utilities.css) 완료, Phase 2-5 진행 중.
+**현재 상태**: Phase 1-3 + Phase 5 + ADR-017 완료. Tint Color System 도입. ADR-018 Button/Card 완료, 나머지 보류 (기존 CSS custom property 패턴과 중복).

@@ -1,4 +1,4 @@
-# CSS 토큰 규칙 — M3 사용 금지 (ADR-017)
+# CSS 토큰 규칙 — M3 사용 금지 (ADR-017) + Tint System
 
 ## 금지된 M3 토큰
 
@@ -21,23 +21,39 @@
 --error-hover, --error-pressed
 ```
 
+## Tint Color System (preview-system.css)
+
+`--tint` 변수 하나로 전체 accent 색상 전환 (React Aria starter 패턴):
+
+```css
+--tint: var(--blue); /* 기본: 파란 테마 */
+--tint: var(--purple); /* 보라 테마로 전환 */
+--tint: var(--indigo); /* 남색 테마로 전환 */
+```
+
+- 프리셋: `--red`, `--orange`, `--yellow`, `--green`, `--turquoise`, `--cyan`, `--blue`, `--indigo`, `--purple`, `--pink`
+- 자동 생성: `--tint-100` ~ `--tint-1600` (oklch relative color)
+- 다크모드: lightness 스케일 자동 반전
+- ThemeStudio 오버라이드(`--color-highlight-background` 등)가 tint fallback보다 우선
+
 ## 시맨틱 토큰 사용
 
-| 용도             | 시맨틱 토큰                      |
-| ---------------- | -------------------------------- |
-| 주요 강조 배경   | `--highlight-background`         |
-| 주요 강조 텍스트 | `--highlight-foreground`         |
-| 일반 텍스트      | `--text-color`                   |
-| 보조 텍스트      | `--text-color-secondary`         |
-| 비활성 텍스트    | `--text-color-disabled`          |
-| 플레이스홀더     | `--text-color-placeholder`       |
-| 테두리           | `--border-color`                 |
-| 테두리 hover     | `--border-color-hover`           |
-| 입력 배경        | `--field-background`             |
-| 오버레이 배경    | `--overlay-background`           |
-| 버튼 배경        | `--button-background`            |
-| 에러             | `--invalid-color`                |
-| 흰색/검정        | `--color-white`, `--color-black` |
+| 용도             | 시맨틱 토큰                      | tint fallback                      |
+| ---------------- | -------------------------------- | ---------------------------------- |
+| 주요 강조 배경   | `--highlight-background`         | `oklch(from var(--tint) 55% c h)`  |
+| 주요 강조 텍스트 | `--highlight-foreground`         | `white`                            |
+| 포커스 링        | `--focus-ring-color`             | `var(--tint-1000)`                 |
+| 링크 색상        | `--link-color`                   | `var(--tint-1200)`                 |
+| 일반 텍스트      | `--text-color`                   | `var(--color-neutral-900)`         |
+| 비활성 텍스트    | `--text-color-disabled`          | `var(--color-neutral-500)`         |
+| 플레이스홀더     | `--text-color-placeholder`       | `var(--color-neutral-700)`         |
+| 테두리           | `--border-color`                 | `var(--color-neutral-300)`         |
+| 테두리 hover     | `--border-color-hover`           | `var(--color-neutral-400)`         |
+| 입력 배경        | `--field-background`             | `var(--color-neutral-50)`          |
+| 오버레이 배경    | `--overlay-background`           | `var(--color-neutral-50)`          |
+| 버튼 배경        | `--button-background`            | `var(--color-neutral-50)`          |
+| 에러             | `--invalid-color`                | `var(--color-error-400)`           |
+| 흰색/검정        | `--color-white`, `--color-black` | `#fff`, `#000` (shared-tokens.css) |
 
 ## Hover/Pressed 파생
 
