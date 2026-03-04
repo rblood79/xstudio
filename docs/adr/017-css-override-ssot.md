@@ -307,7 +307,7 @@ M3를 유지한 채 `--input-*`, `--btn-*` 등 컴포넌트 레벨 변수를 추
 
 - "M3를 제거하면 디자인 시스템이 약해지지 않나?" → M3의 실사용 고빈도 토큰 ~10개는 모두 시맨틱 토큰에 1:1 매핑됨. 시맨틱 의미는 유지.
 - "다크모드가 깨지지 않나?" → `preview-system.css`의 `[data-theme="dark"]` 섹션에서 시맨틱 토큰도 이미 다크 값을 정의하고 있음 (L196-227). M3 다크 섹션(L229-312)만 제거.
-- "Theme Studio가 동작하지 않나?" → Theme Studio는 별도 이슈. M3 토큰에 의존하는 부분을 시맨틱 토큰으로 전환하는 후속 작업 필요 (Phase 3에 포함).
+- "Theme Studio가 동작하지 않나?" → 오히려 개선됨. M3는 38개 토큰을 일일이 설정해야 하지만, starter의 `--tint` 패턴은 **변수 1개로 전체 테마 전환** 가능. Phase 4에서 구현.
 
 ---
 
@@ -320,8 +320,9 @@ M3를 유지한 채 `--input-*`, `--btn-*` 등 컴포넌트 레벨 변수를 추
 | G1   | Phase 1 완료         | preview-system.css에서 M3 섹션 제거 후 Storybook 시각적 일치 | M3 섹션 복원                |
 | G2   | Phase 2 각 파일      | 해당 컴포넌트 Storybook 전 variant/state 시각적 확인         | 해당 파일만 revert          |
 | G3   | Phase 2 완료         | Builder Inspector/Sidebar/Header 외관 확인                   | builder-system.css만 revert |
-| G4   | Phase 3 완료         | Theme Studio 기본 테마 생성/적용 동작 확인                   | Theme Studio 변경만 revert  |
-| G5   | `:focus` 정규화 완료 | 12개 파일에서 `:focus` 제거, `[data-focused]` 통일           | 해당 파일만 revert          |
+| G4   | Phase 3 완료         | Canvas에서 Button/Input/Card 렌더링 색상이 Preview와 일치    | colors.ts만 revert          |
+| G5   | Phase 4 완료         | Theme Studio 기본 테마 생성/적용 동작 확인                   | Theme Studio 변경만 revert  |
+| G6   | `:focus` 정규화 완료 | 12개 파일에서 `:focus` 제거, `[data-focused]` 통일           | 해당 파일만 revert          |
 
 ---
 
@@ -337,13 +338,16 @@ M3를 유지한 채 `--input-*`, `--btn-*` 등 컴포넌트 레벨 변수를 추
 6. **오버라이드 감소** — 시맨틱 토큰이 base.css에서 통일되므로 개별 컴포넌트 중복 선언 감소
 7. **포커스 일관성** — `:focus`(12파일) → `[data-focused]` 전면 통일
 8. **번들 감소** — M3 정의(light+dark ~150줄) 제거
+9. **Canvas/Preview 색상 통일** — Spec과 CSS가 동일한 Tailwind 색상 사용 (현재 M3 보라 vs Tailwind 파랑 불일치 해소)
+10. **`--tint` 기반 테마 전환** — 변수 1개로 전체 색상 변경 가능 (M3는 38개 세팅 필요). Theme Studio/AI Theme 연동 대폭 단순화
 
 ### Negative
 
-1. **Theme Studio 후속 작업** — M3 토큰 기반 UI를 시맨틱 토큰 기반으로 전환 필요
-2. **AI Theme Generator 수정** — M3 역할(primary/secondary/tertiary/error) 기반 생성 로직 변경 필요
-3. **HCT 색상 공간 미지원** — M3 HCT 기반 색상 생성 도구 비활성화 (oklch 또는 Tailwind 팔레트로 대체 가능)
-4. **88파일 변경** — find-and-replace 성격이나 양이 많음
+1. **Spec 전체 TokenRef 치환 필요** — 모든 `*Spec.ts` 파일의 `{color.primary}` → `{color.highlight-background}` 등 일괄 변경 + 테스트 갱신
+2. **Theme Studio 후속 작업** — M3 토큰 기반 UI를 시맨틱 토큰 기반으로 전환 필요
+3. **AI Theme Generator 수정** — M3 역할(primary/secondary/tertiary/error) 기반 생성 로직 변경 필요
+4. **HCT 색상 공간 미지원** — M3 HCT 기반 색상 생성 도구 비활성화 (oklch 또는 Tailwind 팔레트로 대체 가능)
+5. **88 CSS 파일 + Spec 파일 변경** — find-and-replace 성격이나 총량이 많음
 
 ---
 
@@ -398,15 +402,81 @@ builder-system.css의 M3 섹션 제거 후, Builder 영역 14파일에서 잔여
 
 **Gate G2, G3**: 각 파일별 Storybook + Builder 시각적 확인.
 
-### Phase 3: Theme Studio / AI Theme Generator 전환
+### Phase 3: Spec 토큰 시스템 전환 (Canvas/WebGL 렌더링)
+
+**현재 문제**: Spec의 `colors.ts`가 M3 기본 보라 팔레트(`#6750a4`)를 사용하고, CSS는 Tailwind 파랑(`--blue-400`)을 사용 → **Canvas와 Preview가 다른 색상**으로 렌더링.
+
+**변경 대상:**
+
+| 파일                                         | 작업                                                               |
+| -------------------------------------------- | ------------------------------------------------------------------ |
+| `specs/src/types/token.types.ts`             | `ColorTokens` 인터페이스를 M3→시맨틱 이름으로 변경                 |
+| `specs/src/primitives/colors.ts`             | M3 hex 값 → Tailwind hex 값으로 교체 (light/dark)                  |
+| `specs/src/renderers/utils/tokenResolver.ts` | `{color.primary}` → `{color.highlight-background}` 해석            |
+| `specs/src/renderers/CSSGenerator.ts`        | `tokenToCSSVar()` 출력을 `var(--highlight-background)` 등으로 변경 |
+| `specs/src/**/*Spec.ts` (전체)               | TokenRef 문자열 일괄 치환                                          |
+| `specs/__tests__/**`                         | 테스트 기대값 갱신                                                 |
+
+**ColorTokens 매핑 (Phase 2 매핑 테이블과 동일):**
+
+```typescript
+// Before (M3)
+export interface ColorTokens {
+  primary: string; // '#6750a4'
+  "on-primary": string; // '#ffffff'
+  "on-surface": string; // '#1d1b20'
+  "outline-variant": string; // '#cac4d0'
+  "surface-container": string;
+  // ... 38개
+}
+
+// After (시맨틱 + Tailwind 값)
+export interface ColorTokens {
+  "highlight-background": string; // '#3b82f6' (Tailwind blue-500)
+  "highlight-foreground": string; // '#ffffff'
+  "text-color": string; // '#171717' (Tailwind neutral-900)
+  "border-color": string; // '#d4d4d4' (Tailwind neutral-300)
+  "field-background": string; // '#fafafa' (Tailwind neutral-50)
+  "invalid-color": string; // '#ef4444' (Tailwind red-500)
+  "focus-ring-color": string; // '#60a5fa' (Tailwind blue-400)
+  "button-background": string; // '#fafafa' (Tailwind neutral-50)
+  "overlay-background": string; // '#fafafa' (Tailwind neutral-50)
+  // ... ~20개 (시맨틱 토큰 카탈로그와 1:1)
+}
+```
+
+**결과**: Canvas(Skia)와 Preview(CSS)가 **동일한 Tailwind 색상**을 렌더링.
+
+**Gate G4**: Canvas에서 Button/Input/Card 렌더링 색상이 Preview와 일치하는지 확인.
+
+### Phase 4: Theme Studio / 테마 변경 기능
+
+react-aria-starter `theme.css`의 `--tint` 패턴 도입으로 **단일 변수 테마 전환** 가능:
+
+```css
+/* theme.css 패턴 — --tint 1개로 전체 색상 변경 */
+:root {
+  --tint: var(--blue); /* 기본 테마 */
+}
+
+/* 사용자 테마 변경 시 */
+[data-theme-color="green"] {
+  --tint: var(--green);
+}
+[data-theme-color="purple"] {
+  --tint: var(--purple);
+}
+```
+
+**변경 대상:**
 
 - Theme Studio UI를 시맨틱 토큰 기반으로 전환
 - AI Theme Generator 출력을 시맨틱 토큰 형식으로 변경
-- HCT 색상 도구를 oklch 기반으로 대체 (또는 비활성화)
+- `--tint` 기반 팔레트 파생 검토 (oklch 브라우저 지원 확인 후 결정)
 
-**Gate G4**: 기본 테마 생성/적용 동작 확인.
+**Gate G5**: 기본 테마 생성/적용 동작 확인.
 
-### Cross-Phase: `:focus` → `[data-focused]` 정규화 (12파일)
+### Cross-Phase (Phase 1~3 병행): `:focus` → `[data-focused]` 정규화 (12파일)
 
 각 Phase 작업 시 해당 파일의 `:focus` 정규화를 함께 수행.
 
@@ -427,7 +497,7 @@ builder-system.css의 M3 섹션 제거 후, Builder 영역 14파일에서 잔여
 
 **Gate G5**: 12개 파일에서 `:focus` 제거 확인.
 
-### Phase 4 (Optional): 문서화 + 규칙
+### Phase 5 (Optional): 문서화 + 규칙
 
 1. CSS_ARCHITECTURE.md에 시맨틱 토큰 카탈로그 추가
 2. `.claude/rules/`에 `css-tokens.md` 규칙 추가 (M3 토큰 사용 금지)

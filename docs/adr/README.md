@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-04 (ADR-017 M3 제거 + Tailwind 통합으로 재작성)
+> **최종 업데이트**: 2026-03-04 (ADR-018 컴포넌트 CSS 구조 재작성 추가)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 8      |
 | 부분 완료                              | 5      |
-| 미구현 (Proposed/계획)                 | 4      |
-| **합계**                               | **17** |
+| 미구현 (Proposed/계획)                 | 5      |
+| **합계**                               | **18** |
 
 ---
 
@@ -46,18 +46,23 @@
 | [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                      | Proposed | 변경 대상 8파일, 코드 미생성                                         |    P5    |
 | [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)                     | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations               |    P5    |
 | [017](017-css-override-ssot.md)          | React-Aria CSS Override SSOT — M3 제거 + Tailwind 통합 | Proposed | 4 Phase, 93파일 M3 토큰 제거 + 시맨틱 토큰 복귀 + Tailwind 직접 통합 |    P3    |
+| [018](018-component-css-restructure.md)  | 컴포넌트 CSS 구조 재작성 — starter 패턴 기반           | Proposed | 6 Phase, 79파일 utilities 패턴 도입 + 구조 단순화 (15,652→~6,000줄)  |    P3    |
 
 ---
 
 ## 다음 진행 목표 (2026-03-04 기준)
 
-| 순서 | 대상            | 내용                                                                                                 | 규모 |
-| :--: | --------------- | ---------------------------------------------------------------------------------------------------- | :--: |
-|  1   | ADR-014 Phase D | Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입         |  소  |
-|  2   | ADR-014 Phase E | 정적 Export 멀티파일 — `assets/fonts/*` 생성 + 상대 경로 연결 + `showDirectoryPicker` / ZIP fallback |  중  |
-|  3   | ADR-017 Phase 1 | M3 토큰 제거 — preview-system.css, builder-system.css에서 M3 섹션 제거, 시맨틱 토큰 복귀             |  소  |
-|  4   | ADR-017 Phase 2 | 컴포넌트 CSS M3→시맨틱 치환 — 88개 CSS 파일 find-replace (`--primary`→`--highlight-background` 등)   |  중  |
-|  5   | ADR-013         | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |
+| 순서 | 대상              | 내용                                                                                                 | 규모 |
+| :--: | ----------------- | ---------------------------------------------------------------------------------------------------- | :--: |
+|  1   | ADR-014 Phase D   | Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입         |  소  |
+|  2   | ADR-014 Phase E   | 정적 Export 멀티파일 — `assets/fonts/*` 생성 + 상대 경로 연결 + `showDirectoryPicker` / ZIP fallback |  중  |
+|  3   | ADR-017 Phase 1   | M3 토큰 제거 — preview-system.css, builder-system.css에서 M3 섹션 제거, 시맨틱 토큰 복귀             |  소  |
+|  4   | ADR-017 Phase 2   | 컴포넌트 CSS M3→시맨틱 치환 — 88개 CSS 파일 find-replace (`--primary`→`--highlight-background` 등)   |  중  |
+|  5   | ADR-017 Phase 3   | Spec 토큰 전환 — ColorTokens + colors.ts + 전체 Spec TokenRef M3→시맨틱 치환 (Canvas/Preview 통일)   |  중  |
+|  6   | ADR-017 Phase 4   | Theme Studio — `--tint` 기반 단일 변수 테마 전환 도입                                                |  중  |
+|  7   | ADR-018 Phase 1   | utilities.css 기반 구축 — `.button-base`, `.indicator`, `.inset` 3대 유틸리티 생성                   |  소  |
+|  8   | ADR-018 Phase 2~5 | 컴포넌트 CSS 구조 재작성 — 79파일 utilities 패턴 전환 (15,652→~6,000줄)                              |  대  |
+|  9   | ADR-013           | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |
 
 ---
 
@@ -79,13 +84,15 @@
 - **전제 조건**: 없음 (독립 실행 가능)
 - **영향 범위**: 데이터 바인딩 UX
 
-### P3: ADR-017 CSS Override SSOT — M3 제거 + Tailwind 통합
+### P3: ADR-017 + ADR-018 CSS 아키텍처 정비
 
-- **근거**: M3 토큰 38개가 기존 시맨틱 토큰 ~20개 위에 불필요하게 중첩 → 3-layer 변수 체인, 93개 파일 cascade 오버라이드 과다
+- **근거**: M3 토큰 38개 불필요 중첩 + 컴포넌트 CSS 3.5x 비대화 (15,652줄 vs starter 4,430줄)
 - **진행률**: 전체 미착수 (ADR 작성 완료)
-- **핵심 항목**: preview-system.css/builder-system.css M3 섹션 제거, 88개 컴포넌트 CSS M3→시맨틱 find-replace
-- **전제 조건**: 없음 (독립 실행 가능, 레이아웃 무관 — 색상/배경/테두리만 변경)
-- **영향 범위**: 전체 CSS 아키텍처 단순화, 토큰 체인 3-layer→2-layer
+- **실행 순서**: ADR-017 (M3 제거, 토큰 치환) → ADR-018 (구조 재작성, utilities 패턴)
+- **ADR-017**: preview-system.css/builder-system.css M3 섹션 제거, 88개 CSS M3→시맨틱 find-replace
+- **ADR-018**: utilities.css 3대 유틸리티 도입 + 79개 컴포넌트 CSS 구조 단순화 (15,652→~6,000줄)
+- **전제 조건**: ADR-017은 독립 실행 가능, ADR-018은 ADR-017 완료 후 진행
+- **영향 범위**: 전체 CSS 아키텍처 — 토큰 체인 단순화 + 코드량 62% 감소
 
 ### P4: ADR-009 Phase 3~5
 
@@ -187,3 +194,4 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-04 | ADR-014 Phase C2 완료 — Font Manager Panel + PropertyListItem 재사용 컴포넌트 + OS/2 메타데이터 추출. 우선순위 근거 갱신                          |
 | 2026-03-04 | ADR-017 추가 — Input CSS Override SSOT 정리 (CSS Custom Properties SSOT + 셀렉터 정규화 + Dead Code 제거)                                         |
 | 2026-03-04 | ADR-017 재작성 — M3 제거 + Tailwind 통합 방향으로 전면 개정. ADR-009 P3→P4 조정, ADR-017 P3 신설. 로드맵에 Phase 1~2 추가                         |
+| 2026-03-04 | ADR-018 추가 — 컴포넌트 CSS 구조 재작성 (react-aria-starter 패턴 기반, utilities.css 3대 유틸리티 도입, 15,652→~6,000줄 목표). P3에 017+018 통합  |
