@@ -613,52 +613,41 @@ Theme Studio CSS **12파일(~3,536줄)**은 **ADR-017이 단독 소유**. ADR-01
 **Gate G2**: 각 Tier 완료 시 해당 영역 Storybook/Builder 시각 확인.
 **Gate G3**: Tier 3+4 완료 후 Builder Inspector/Sidebar/Header + **Publish 앱** 외관 확인.
 
-### Phase 3: Spec 토큰 시스템 전환 (Canvas/Skia 렌더링)
+### Phase 3: Spec 토큰 시스템 전환 (Canvas/Skia 렌더링) — 완료
 
-**현재 문제**: Spec의 `colors.ts`가 M3 기본 보라 팔레트(`#6750a4`)를 사용하고, CSS는 Tailwind 파랑(`--blue-400`)을 사용 → **Canvas와 Preview가 다른 색상**으로 렌더링.
+**문제**: Spec의 `colors.ts`가 M3 기본 보라 팔레트(`#6750a4`)를 사용하고, CSS는 Tailwind 파랑(`--blue-400`)을 사용 → **Canvas와 Preview가 다른 색상**으로 렌더링.
 
-**변경 대상:**
+**실제 구현 (계획과 차이점):**
 
-| 파일                                         | 작업                                                               |
-| -------------------------------------------- | ------------------------------------------------------------------ |
-| `specs/src/types/token.types.ts`             | `ColorTokens` 인터페이스를 M3→시맨틱 이름으로 변경                 |
-| `specs/src/primitives/colors.ts`             | M3 hex 값 → Tailwind hex 값으로 교체 (light/dark)                  |
-| `specs/src/renderers/utils/tokenResolver.ts` | `{color.primary}` → `{color.highlight-background}` 해석            |
-| `specs/src/renderers/CSSGenerator.ts`        | `tokenToCSSVar()` 출력을 `var(--highlight-background)` 등으로 변경 |
-| `specs/src/**/*Spec.ts` (전체)               | TokenRef 문자열 일괄 치환                                          |
-| `specs/__tests__/**`                         | 테스트 기대값 갱신                                                 |
+계획에서는 ColorTokens 이름 자체를 시맨틱(`highlight-background` 등)으로 변경하려 했으나, 실제로는 **M3 토큰 이름을 유지**하고 hex 값만 Tailwind로 교체하는 접근을 채택. 이유:
 
-**ColorTokens 매핑 (Phase 2 매핑 테이블과 동일):**
+1. 50+ Spec 파일의 TokenRef 문자열을 일괄 변경하는 리스크 회피
+2. `COLOR_TOKEN_TO_CSS` 매핑 테이블이 M3 이름 → CSS 변수 변환을 이미 담당
 
-```typescript
-// Before (M3)
-export interface ColorTokens {
-  primary: string; // '#6750a4'
-  "on-primary": string; // '#ffffff'
-  "on-surface": string; // '#1d1b20'
-  "outline-variant": string; // '#cac4d0'
-  "surface-container": string;
-  // ... 38개
-}
+**변경 완료:**
 
-// After (시맨틱 + Tailwind 값)
-export interface ColorTokens {
-  "highlight-background": string; // '#3b82f6' (Tailwind blue-500)
-  "highlight-foreground": string; // '#ffffff'
-  "text-color": string; // '#171717' (Tailwind neutral-900)
-  "border-color": string; // '#d4d4d4' (Tailwind neutral-300)
-  "field-background": string; // '#fafafa' (Tailwind neutral-50)
-  "invalid-color": string; // '#ef4444' (Tailwind red-500)
-  "focus-ring-color": string; // '#60a5fa' (Tailwind blue-400)
-  "button-background": string; // '#fafafa' (Tailwind neutral-50)
-  "overlay-background": string; // '#fafafa' (Tailwind neutral-50)
-  // ... ~20개 (시맨틱 토큰 카탈로그와 1:1)
-}
-```
+| 파일                                         | 작업                                                            |
+| -------------------------------------------- | --------------------------------------------------------------- |
+| `specs/src/primitives/colors.ts`             | M3 hex 값 → Tailwind hex 값으로 교체 (light/dark)               |
+| `specs/src/renderers/utils/tokenResolver.ts` | `COLOR_TOKEN_TO_CSS` 매핑 테이블 추가 (M3 이름 → CSS 변수 변환) |
+| `specs/src/types/token.types.ts`             | `ColorTokens`에 `transparent` 추가                              |
+
+**Patch (2026-03-04): SelectIcon 색상 불일치 수정 + transparent 토큰 추가**
+
+SelectIcon.spec.ts에서 CSS 변수명(`field-background`, `text-color`)을 TokenRef 키로 사용하여 `resolveToken()`이 `undefined` 반환 → Skia에서 검정색 렌더링 버그 발생. 수정:
+
+| 파일                           | 작업                                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `SelectIcon.spec.ts`           | `{color.field-background}` → `{color.surface-container}`, `{color.text-color}` → `{color.on-surface-variant}` |
+| `colors.ts` + `token.types.ts` | `transparent: "transparent"` 추가 (Label, Description 등 5개 Spec에서 사용)                                   |
+| `tokenResolver.ts`             | `COLOR_TOKEN_TO_CSS`에 `transparent: "transparent"` 추가                                                      |
+| `specShapeConverter.ts`        | `colorValueToFloat32()` 안전 처리: `"transparent"` / `undefined` / `null` → `TRANSPARENT` (alpha=0) 반환      |
+
+> **교훈**: Spec TokenRef 키는 반드시 `ColorTokens` 인터페이스에 정의된 이름만 사용. CSS 변수명(`--field-background`)과 ColorTokens 키(`surface-container`)는 다름. `.claude/rules/css-tokens.md`에 매핑 가이드 추가됨.
 
 **결과**: Canvas(Skia)와 Preview(CSS)가 **동일한 Tailwind 색상**을 렌더링.
 
-**Gate G4**: Canvas에서 Button/Input/Card 렌더링 색상이 Preview와 일치하는지 확인.
+**Gate G4**: Canvas에서 Button/Input/Card/Select 렌더링 색상이 Preview와 일치하는지 확인. ✅ 완료
 
 ### Phase 4: Theme Studio / 테마 변경 기능
 
