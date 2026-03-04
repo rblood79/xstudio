@@ -32,6 +32,7 @@ packages/*/coverage/
 /public/s/uploads
 /public/cgi/asset
 *storybook.log
+storybook-static
 
 /src_bak
 # Added by Claude Task Master
