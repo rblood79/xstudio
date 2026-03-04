@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 9      |
 | 부분 완료                              | 6      |
-| 미구현 (Proposed/계획)                 | 5      |
-| **합계**                               | **20** |
+| 미구현 (Proposed/계획)                 | 6      |
+| **합계**                               | **21** |
 
 ---
 
@@ -49,6 +49,7 @@
 | [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)               | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations               |    P5    |
 | [019](019-icon-system.md)                | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가 | Proposed | 5 Phase, Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링 |  **P2**  |
 | [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선                     | Proposed | 3 Phase, 13파일 — History 통합, Kit v2 스키마, Factory 연동          |    P4    |
+| [021](021-theme-system-redesign.md)      | 테마 시스템 개편 — Tint + Tailwind 인라인 패널   | Proposed | 5 Phase (A~E), ThemeStudio 폐기 → 인라인 CSS 변수 테마 패널          |  **P2**  |
 
 ---
 
@@ -199,3 +200,4 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-04 | ADR-017/018 최종 갭 해소 — ① Theme Studio 12파일 작업 경계 명시(ADR-017 단독 소유, ADR-018 제외 확인), ② builder-system.css 기존 버그 문서화(8토큰 누락: tertiary 6개 + error-hover/pressed 2개, Phase 2에서 자연 해소), ③ Phase 1+Tier 1 원자적 적용 필수 명시(G1 Gate 재정의) |
 | 2026-03-04 | **ADR-017 Implemented** — M3 38개 토큰 제거, 107개 CSS 시맨틱 치환, Tint Color System 도입, Spec 전환, Theme Studio 확인. **ADR-018 Partial** — Phase 1 (utilities.css) + Button/Card 완료. 로드맵 갱신, 현황 요약 카운트 조정                                                  |
 | 2026-03-04 | ADR-020 추가 — Design Kit 패널 분석 및 개선 (10개 문제점 식별, 3 Phase 로드맵, Kit v2 스키마 + Factory 통합 설계). P4 우선순위                                                                                                                                                  |
+| 2026-03-04 | ADR-021 추가 — 테마 시스템 개편 (Tint + Tailwind 인라인 패널). 업계 리서치 (Webflow/Framer/Figma/Squarespace/shadcn), ThemeStudio 새 창 → 인라인 패널 전환, CSS 변수 네이티브 테마. P2 우선순위                                                                                 |
