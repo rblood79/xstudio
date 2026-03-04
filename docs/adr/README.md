@@ -1,13 +1,13 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-04 (ADR-019 아이콘 시스템 추가)
+> **최종 업데이트**: 2026-03-04 (ADR-018 Phase 2~5 완료, M3 토큰 전체 제거)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 9      |
-| 부분 완료                              | 6      |
+| 완료 (Accepted/Implemented/Superseded) | 10     |
+| 부분 완료                              | 5      |
 | 미구현 (Proposed/계획)                 | 6      |
 | **합계**                               | **21** |
 
@@ -28,6 +28,7 @@
 | [007](007-project-export.md)              | Project Export/Import              | Implemented | 2026-01-02 | 100% 완성                                                |
 | [008](008-layout-engine.md)               | 캔버스 레이아웃 엔진 전환 (전략 D) | Implemented | 2026-02-17 | Taffy WASM 단일 엔진 전환 완료                           |
 | [017](017-css-override-ssot.md)           | React-Aria CSS Override SSOT       | Implemented | 2026-03-04 | M3 38개 제거, 107개 CSS 치환, Tint Color System 도입     |
+| [018](018-component-css-restructure.md)   | 컴포넌트 CSS 구조 재작성           | Implemented | 2026-03-04 | Phase 1~5 전체 완료, 38파일 11,657→8,101줄 (-30%)        |
 
 ### 부분 완료
 
@@ -38,7 +39,6 @@
 | [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling) | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화)           | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스 도구)                                   |    P5    |
 | [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝     | P0~P2 전체 완료 (80%)                                       | P3 전체 (Dirty Tracking, Viewport Culling, PersistentTaffyTree) — 대규모 작업으로 후순위 이동    |    P5    |
 | [014](014-fonts.md)                               | Fonts 실행 계획                       | Phase A+B+C+C2 완료 (Font Manager Panel + OS/2 메타 추출)   | Phase D (Publish 레지스트리 전환), Phase E (정적 Export 멀티파일)                                |  **P1**  |
-| [018](018-component-css-restructure.md)           | 컴포넌트 CSS 구조 재작성              | Phase 1 (utilities.css) + Button/Card 완료                  | Phase 2~5 (입력 필드/인디케이터/복합 컴포넌트 마이그레이션)                                      |    P3    |
 
 ### 미구현
 
@@ -55,15 +55,15 @@
 
 ## 다음 진행 목표 (2026-03-04 기준)
 
-| 순서  | 대상                | 내용                                                                                                 | 규모 |   상태   |
-| :---: | ------------------- | ---------------------------------------------------------------------------------------------------- | :--: | :------: |
-| ~~1~~ | ~~ADR-017~~         | ~~M3 토큰 제거 + Tint Color System + Spec 전환 + Theme Studio~~                                      |  중  | **완료** |
-| ~~2~~ | ~~ADR-018 Phase 1~~ | ~~utilities.css 생성 + Button/Card 마이그레이션~~                                                    |  소  | **완료** |
-|   3   | ADR-014 Phase D     | Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입         |  소  |          |
-|   4   | ADR-014 Phase E     | 정적 Export 멀티파일 — `assets/fonts/*` 생성 + 상대 경로 연결 + `showDirectoryPicker` / ZIP fallback |  중  |          |
-|   5   | ADR-018 Phase 2~5   | 컴포넌트 CSS 구조 재작성 — 나머지 컴포넌트 utilities 패턴 전환 (입력 필드/인디케이터/복합)           |  대  |          |
-|   6   | ADR-013             | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |          |
-|   7   | ADR-019             | 아이콘 시스템 — Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링                          |  중  |          |
+| 순서  | 대상                  | 내용                                                                                                 | 규모 |   상태   |
+| :---: | --------------------- | ---------------------------------------------------------------------------------------------------- | :--: | :------: |
+| ~~1~~ | ~~ADR-017~~           | ~~M3 토큰 제거 + Tint Color System + Spec 전환 + Theme Studio~~                                      |  중  | **완료** |
+| ~~2~~ | ~~ADR-018 Phase 1~~   | ~~utilities.css 생성 + Button/Card 마이그레이션~~                                                    |  소  | **완료** |
+|   3   | ADR-014 Phase D       | Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입         |  소  |          |
+|   4   | ADR-014 Phase E       | 정적 Export 멀티파일 — `assets/fonts/*` 생성 + 상대 경로 연결 + `showDirectoryPicker` / ZIP fallback |  중  |          |
+| ~~5~~ | ~~ADR-018 Phase 2~5~~ | ~~컴포넌트 CSS 구조 재작성 — 나머지 컴포넌트 utilities 패턴 전환 (입력 필드/인디케이터/복합)~~       |  대  | **완료** |
+|   6   | ADR-013               | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |          |
+|   7   | ADR-019               | 아이콘 시스템 — Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링                          |  중  |          |
 
 ---
 
@@ -85,13 +85,10 @@
 - **전제 조건**: 없음 (독립 실행 가능)
 - **영향 범위**: 데이터 바인딩 UX
 
-### P3: ADR-017 + ADR-018 CSS 아키텍처 정비
+### ~~P3: ADR-017 + ADR-018 CSS 아키텍처 정비~~ ✓ 완료
 
-- **근거**: M3 토큰 38개 불필요 중첩 + 컴포넌트 CSS 3.8x 비대화 (16,647줄 vs starter 4,430줄)
-- **ADR-017**: **완료** (2026-03-04) — M3 38개 토큰 제거, 107개 CSS 치환, Tint Color System 도입, Spec 토큰 전환
-- **ADR-018**: Phase 1 완료 (utilities.css + Button/Card), Phase 2~5 미착수
-- **다음 단계**: ADR-018 Phase 2~5 (입력 필드/인디케이터/복합 컴포넌트 마이그레이션)
-- **영향 범위**: 전체 CSS 아키텍처 — 토큰 체인 단순화 완료, 잔여 코드량 감소 대기
+- **ADR-017**: **완료** (2026-03-04) — M3 38개 토큰 제거, 107개 CSS 시맨틱 치환, Tint Color System 도입, Spec 토큰 전환
+- **ADR-018**: **완료** (2026-03-04) — Phase 1~5 전체 완료, 38파일 11,657→8,101줄 (-30%), 로컬 CSS 변수 패턴 전환, 셀렉터 정규화(class→data-\*), M3 토큰 Spec/Builder 전체 제거
 
 ### P4: ADR-009 Phase 3~5
 
@@ -201,3 +198,4 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-04 | **ADR-017 Implemented** — M3 38개 토큰 제거, 107개 CSS 시맨틱 치환, Tint Color System 도입, Spec 전환, Theme Studio 확인. **ADR-018 Partial** — Phase 1 (utilities.css) + Button/Card 완료. 로드맵 갱신, 현황 요약 카운트 조정                                                  |
 | 2026-03-04 | ADR-020 추가 — Design Kit 패널 분석 및 개선 (10개 문제점 식별, 3 Phase 로드맵, Kit v2 스키마 + Factory 통합 설계). P4 우선순위                                                                                                                                                  |
 | 2026-03-04 | ADR-021 추가 — 테마 시스템 개편 (Tint + Tailwind 인라인 패널). 업계 리서치 (Webflow/Framer/Figma/Squarespace/shadcn), ThemeStudio 새 창 → 인라인 패널 전환, CSS 변수 네이티브 테마. P2 우선순위                                                                                 |
+| 2026-03-04 | **ADR-018 Implemented** — Phase 2~5 전체 완료 (38파일 11,657→8,101줄, -30%). 로컬 CSS 변수 패턴 전환, 셀렉터 정규화(class→data-\*), M3 토큰 Spec/Builder/PerformanceDashboard/Group 전체 제거. ADR-018 완료→완료 섹션 이동, 로드맵/우선순위 갱신                                |
