@@ -255,7 +255,10 @@ src/builder/styles/
 | Surface   | `--button-background`            | Secondary button bg             |
 | Feedback  | `--invalid-color`                | Error/validation                |
 | Palette   | `--color-white`, `--color-black` | Fixed colors                    |
+| Surface   | `--color-white`                  | White (surface, on-primary)     |
+| Surface   | `--color-neutral-*`              | Neutral palette (100–900)       |
 | Palette   | `--color-purple-600`             | Tertiary accent                 |
+| Special   | `transparent`                    | Spec TokenRef용 투명 색상       |
 
 **Hover/Pressed 파생 패턴:**
 

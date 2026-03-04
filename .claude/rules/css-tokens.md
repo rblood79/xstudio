@@ -38,22 +38,33 @@
 
 ## 시맨틱 토큰 사용
 
-| 용도             | 시맨틱 토큰                      | tint fallback                      |
-| ---------------- | -------------------------------- | ---------------------------------- |
-| 주요 강조 배경   | `--highlight-background`         | `oklch(from var(--tint) 55% c h)`  |
-| 주요 강조 텍스트 | `--highlight-foreground`         | `white`                            |
-| 포커스 링        | `--focus-ring-color`             | `var(--tint-1000)`                 |
-| 링크 색상        | `--link-color`                   | `var(--tint-1200)`                 |
-| 일반 텍스트      | `--text-color`                   | `var(--color-neutral-900)`         |
-| 비활성 텍스트    | `--text-color-disabled`          | `var(--color-neutral-500)`         |
-| 플레이스홀더     | `--text-color-placeholder`       | `var(--color-neutral-700)`         |
-| 테두리           | `--border-color`                 | `var(--color-neutral-300)`         |
-| 테두리 hover     | `--border-color-hover`           | `var(--color-neutral-400)`         |
-| 입력 배경        | `--field-background`             | `var(--color-neutral-50)`          |
-| 오버레이 배경    | `--overlay-background`           | `var(--color-neutral-50)`          |
-| 버튼 배경        | `--button-background`            | `var(--color-neutral-50)`          |
-| 에러             | `--invalid-color`                | `var(--color-error-400)`           |
-| 흰색/검정        | `--color-white`, `--color-black` | `#fff`, `#000` (shared-tokens.css) |
+| 용도             | 시맨틱 토큰                      | tint fallback                           |
+| ---------------- | -------------------------------- | --------------------------------------- |
+| 주요 강조 배경   | `--highlight-background`         | `oklch(from var(--tint) 55% c h)`       |
+| 주요 강조 텍스트 | `--highlight-foreground`         | `white`                                 |
+| 포커스 링        | `--focus-ring-color`             | `var(--tint-1000)`                      |
+| 링크 색상        | `--link-color`                   | `var(--tint-1200)`                      |
+| 일반 텍스트      | `--text-color`                   | `var(--color-neutral-900)`              |
+| 비활성 텍스트    | `--text-color-disabled`          | `var(--color-neutral-500)`              |
+| 플레이스홀더     | `--text-color-placeholder`       | `var(--color-neutral-700)`              |
+| 테두리           | `--border-color`                 | `var(--color-neutral-300)`              |
+| 테두리 hover     | `--border-color-hover`           | `var(--color-neutral-400)`              |
+| 입력 배경        | `--field-background`             | `var(--color-neutral-50)`               |
+| 오버레이 배경    | `--overlay-background`           | `var(--color-neutral-50)`               |
+| 버튼 배경        | `--button-background`            | `var(--color-neutral-50)`               |
+| 에러             | `--invalid-color`                | `var(--color-error-400)`                |
+| 흰색/검정        | `--color-white`, `--color-black` | `#fff`, `#000` (shared-tokens.css)      |
+| 투명             | `transparent`                    | Spec TokenRef용 (`{color.transparent}`) |
+
+## Spec TokenRef ↔ CSS 변수 매핑 주의
+
+Spec의 `{color.*}` TokenRef 키는 `colors.ts`의 `ColorTokens` 인터페이스에 정의된 이름만 사용 가능.
+CSS 변수명을 TokenRef 키로 직접 사용하면 Skia 렌더링에서 `undefined` → 검정색 버그 발생.
+
+| CSS 변수 (사용 금지)       | 올바른 TokenRef 키           |
+| -------------------------- | ---------------------------- |
+| `{color.field-background}` | `{color.surface-container}`  |
+| `{color.text-color}`       | `{color.on-surface-variant}` |
 
 ## Hover/Pressed 파생
 

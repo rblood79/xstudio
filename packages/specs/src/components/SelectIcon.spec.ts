@@ -26,10 +26,10 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
 
   variants: {
     default: {
-      background: "{color.field-background}" as TokenRef,
-      backgroundHover: "{color.field-background}" as TokenRef,
-      backgroundPressed: "{color.field-background}" as TokenRef,
-      text: "{color.text-color}" as TokenRef,
+      background: "{color.surface-container}" as TokenRef,
+      backgroundHover: "{color.surface-container}" as TokenRef,
+      backgroundPressed: "{color.surface-container}" as TokenRef,
+      text: "{color.on-surface-variant}" as TokenRef,
     },
   },
 

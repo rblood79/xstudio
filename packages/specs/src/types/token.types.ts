@@ -37,7 +37,8 @@ export type StrictTokenRef =
  * 토큰 참조 유효성 검사 유틸리티
  */
 export function isValidTokenRef(ref: string): ref is TokenRef {
-  const pattern = /^\{(color|spacing|typography|radius|shadow)\.[a-zA-Z0-9-]+\}$/;
+  const pattern =
+    /^\{(color|spacing|typography|radius|shadow)\.[a-zA-Z0-9-]+\}$/;
   return pattern.test(ref);
 }
 
@@ -58,85 +59,88 @@ export interface TokenCategories {
 export interface ColorTokens {
   // Primary
   primary: string;
-  'primary-hover': string;
-  'primary-pressed': string;
-  'on-primary': string;
+  "primary-hover": string;
+  "primary-pressed": string;
+  "on-primary": string;
 
   // Secondary
   secondary: string;
-  'secondary-hover': string;
-  'secondary-pressed': string;
-  'on-secondary': string;
+  "secondary-hover": string;
+  "secondary-pressed": string;
+  "on-secondary": string;
 
   // Tertiary
   tertiary: string;
-  'tertiary-hover': string;
-  'tertiary-pressed': string;
-  'on-tertiary': string;
+  "tertiary-hover": string;
+  "tertiary-pressed": string;
+  "on-tertiary": string;
 
   // Error
   error: string;
-  'error-hover': string;
-  'error-pressed': string;
-  'on-error': string;
+  "error-hover": string;
+  "error-pressed": string;
+  "on-error": string;
 
   // Container (MD3 color roles)
-  'primary-container': string;
-  'on-primary-container': string;
-  'secondary-container': string;
-  'on-secondary-container': string;
-  'tertiary-container': string;
-  'on-tertiary-container': string;
-  'error-container': string;
-  'on-error-container': string;
+  "primary-container": string;
+  "on-primary-container": string;
+  "secondary-container": string;
+  "on-secondary-container": string;
+  "tertiary-container": string;
+  "on-tertiary-container": string;
+  "error-container": string;
+  "on-error-container": string;
 
   // Surface
   surface: string;
-  'surface-container': string;
-  'surface-container-high': string;
-  'surface-container-highest': string;
-  'on-surface': string;
-  'on-surface-variant': string;
+  "surface-container": string;
+  "surface-container-high": string;
+  "surface-container-highest": string;
+  "on-surface": string;
+  "on-surface-variant": string;
 
   // Outline
   outline: string;
-  'outline-variant': string;
+  "outline-variant": string;
+
+  // Special
+  transparent: string;
 }
 
 /**
  * 간격 토큰
  */
 export interface SpacingTokens {
-  xs: number;    // 4
-  sm: number;    // 8
-  md: number;    // 16
-  lg: number;    // 24
-  xl: number;    // 32
-  '2xl': number; // 48
+  xs: number; // 4
+  sm: number; // 8
+  md: number; // 16
+  lg: number; // 24
+  xl: number; // 32
+  "2xl": number; // 48
 }
 
 /**
  * 타이포그래피 토큰
  */
 export interface TypographyTokens {
-  'text-xs': number;   // 12
-  'text-sm': number;   // 14
-  'text-md': number;   // 16
-  'text-lg': number;   // 18
-  'text-xl': number;   // 20
-  'text-2xl': number;  // 24
+  "text-xs": number; // 12
+  "text-sm": number; // 14
+  "text-md": number; // 16
+  "text-lg": number; // 18
+  "text-xl": number; // 20
+  "text-2xl": number; // 24
 }
 
 /**
  * 둥근 모서리 토큰
  */
 export interface RadiusTokens {
-  none: number;  // 0
-  sm: number;    // 4
-  md: number;    // 8
-  lg: number;    // 12
-  xl: number;    // 16
-  full: number;  // 9999
+  none: number; // 0
+  sm: number; // 4
+  md: number; // 8
+  lg: number; // 12
+  xl: number; // 16
+  full: number; // 9999
 }
 
 /**
@@ -162,5 +166,5 @@ export interface ShadowTokens {
   inset: string;
 
   /** 포커스 링 */
-  'focus-ring': string;
+  "focus-ring": string;
 }

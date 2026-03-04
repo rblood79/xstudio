@@ -60,6 +60,9 @@ export const lightColors: ColorTokens = {
   // Outline → Border
   outline: "#a3a3a3",
   "outline-variant": "#d4d4d4",
+
+  // Special
+  transparent: "transparent",
 };
 
 /**
@@ -112,6 +115,9 @@ export const darkColors: ColorTokens = {
   // Outline
   outline: "#737373",
   "outline-variant": "#404040",
+
+  // Special
+  transparent: "transparent",
 };
 
 /**

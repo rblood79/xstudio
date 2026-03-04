@@ -5,28 +5,38 @@
  * CanvasKit/Skia 렌더러가 이해하는 SkiaNodeData로 변환한다.
  */
 
-import type { Shape, ColorValue } from '@xstudio/specs';
-import { getIconData } from '@xstudio/specs';
-import type { SkiaNodeData } from './nodeRenderers';
-import type { EffectStyle, FillStyle } from './types';
-import { resolveColor, resolveToken, hexStringToNumber } from '@xstudio/specs';
-import { getSkImage, loadSkImage } from './imageCache';
+import type { Shape, ColorValue } from "@xstudio/specs";
+import { getIconData } from "@xstudio/specs";
+import type { SkiaNodeData } from "./nodeRenderers";
+import type { EffectStyle, FillStyle } from "./types";
+import { resolveColor, resolveToken, hexStringToNumber } from "@xstudio/specs";
+import { getSkImage, loadSkImage } from "./imageCache";
 
 // ========== Helpers ==========
 
 /** Resolve a value that might be a TokenRef string to a number */
-function resolveNum(value: unknown, theme: 'light' | 'dark', fallback: number = 0, depth: number = 0): number {
+function resolveNum(
+  value: unknown,
+  theme: "light" | "dark",
+  fallback: number = 0,
+  depth: number = 0,
+): number {
   if (depth > 5) return fallback;
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string' && value.startsWith('{')) {
-    const resolved = resolveToken(value as Parameters<typeof resolveToken>[0], theme);
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value.startsWith("{")) {
+    const resolved = resolveToken(
+      value as Parameters<typeof resolveToken>[0],
+      theme,
+    );
     // 중첩 TokenRef 재귀 해석 (e.g. {spacing.md} → {sizing.4} → 16)
-    if (typeof resolved === 'string' && resolved.startsWith('{')) {
+    if (typeof resolved === "string" && resolved.startsWith("{")) {
       return resolveNum(resolved, theme, fallback, depth + 1);
     }
-    return typeof resolved === 'number' ? resolved : (parseFloat(String(resolved)) || fallback);
+    return typeof resolved === "number"
+      ? resolved
+      : parseFloat(String(resolved)) || fallback;
   }
-  if (typeof value === 'string') return parseFloat(value) || fallback;
+  if (typeof value === "string") return parseFloat(value) || fallback;
   return fallback;
 }
 
@@ -36,7 +46,7 @@ function resolveNum(value: unknown, theme: 'light' | 'dark', fallback: number = 
  */
 function resolveRadius(
   value: unknown,
-  theme: 'light' | 'dark',
+  theme: "light" | "dark",
 ): number | [number, number, number, number] {
   if (Array.isArray(value)) {
     return [
@@ -50,11 +60,17 @@ function resolveRadius(
 }
 
 /** ColorValue → Float32Array color for Skia */
-function colorValueToFloat32(value: ColorValue, theme: 'light' | 'dark', alpha: number = 1): Float32Array {
-  if (value === 'transparent') return TRANSPARENT;
+function colorValueToFloat32(
+  value: ColorValue,
+  theme: "light" | "dark",
+  alpha: number = 1,
+): Float32Array {
+  if (value === "transparent") return TRANSPARENT;
   const resolved = resolveColor(value, theme);
+  if (resolved === "transparent" || resolved === undefined || resolved === null)
+    return TRANSPARENT;
   let hex: number;
-  if (typeof resolved === 'string') {
+  if (typeof resolved === "string") {
     hex = hexStringToNumber(resolved);
   } else {
     hex = resolved;
@@ -73,16 +89,16 @@ const TRANSPARENT = Float32Array.of(0, 0, 0, 0);
  * 반환값: 컨테이너 내부에서 이미지가 그려질 (x, y, w, h)
  */
 function computeImageFit(
-  fit: 'contain' | 'cover' | 'fill' | 'none',
+  fit: "contain" | "cover" | "fill" | "none",
   containerW: number,
   containerH: number,
   imgW: number,
   imgH: number,
 ): { x: number; y: number; w: number; h: number } {
-  if (fit === 'fill' || imgW === 0 || imgH === 0) {
+  if (fit === "fill" || imgW === 0 || imgH === 0) {
     return { x: 0, y: 0, w: containerW, h: containerH };
   }
-  if (fit === 'none') {
+  if (fit === "none") {
     // 원본 크기, 중앙 정렬
     return {
       x: (containerW - imgW) / 2,
@@ -93,7 +109,8 @@ function computeImageFit(
   }
   const scaleX = containerW / imgW;
   const scaleY = containerH / imgH;
-  const scale = fit === 'contain' ? Math.min(scaleX, scaleY) : Math.max(scaleX, scaleY);
+  const scale =
+    fit === "contain" ? Math.min(scaleX, scaleY) : Math.max(scaleX, scaleY);
   const w = imgW * scale;
   const h = imgH * scale;
   return {
@@ -116,7 +133,7 @@ function computeImageFit(
  */
 export function specShapesToSkia(
   shapes: Shape[],
-  theme: 'light' | 'dark',
+  theme: "light" | "dark",
   containerWidth: number,
   containerHeight: number,
 ): SkiaNodeData {
@@ -126,7 +143,7 @@ export function specShapesToSkia(
   let lastNode: SkiaNodeData | null = null;
 
   // First background box data (extracted from first rect/roundRect)
-  let bgBox: SkiaNodeData['box'] | undefined;
+  let bgBox: SkiaNodeData["box"] | undefined;
   let bgExtracted = false;
 
   // Deferred shapes: shadow/border with explicit target (forward reference)
@@ -135,7 +152,7 @@ export function specShapesToSkia(
   // ===== Pass 1: geometry shapes + targetless shadow/border =====
   for (const shape of shapes) {
     // Defer shadow/border with explicit target to Pass 2
-    if ((shape.type === 'shadow' || shape.type === 'border') && shape.target) {
+    if ((shape.type === "shadow" || shape.type === "border") && shape.target) {
       deferredShapes.push(shape);
       continue;
     }
@@ -155,7 +172,7 @@ export function specShapesToSkia(
   const bgBorderWidth = bgBox?.strokeWidth ?? 0;
   if (bgBorderWidth > 0) {
     for (const child of children) {
-      if (child.type === 'text' && child.text) {
+      if (child.type === "text" && child.text) {
         child.text.paddingLeft += bgBorderWidth;
         child.text.maxWidth -= bgBorderWidth * 2;
         if (child.text.maxWidth < 1) child.text.maxWidth = containerWidth;
@@ -165,7 +182,7 @@ export function specShapesToSkia(
 
   // Build the top-level container
   return {
-    type: 'box',
+    type: "box",
     x: 0,
     y: 0,
     width: containerWidth,
@@ -178,16 +195,16 @@ export function specShapesToSkia(
   // ===== Shape processor (shared by both passes) =====
   function processShape(shape: Shape): void {
     switch (shape.type) {
-      case 'roundRect': {
-        const w = shape.width === 'auto' ? containerWidth : shape.width;
-        const h = shape.height === 'auto' ? containerHeight : shape.height;
+      case "roundRect": {
+        const w = shape.width === "auto" ? containerWidth : shape.width;
+        const h = shape.height === "auto" ? containerHeight : shape.height;
         const fillColor = shape.fill
           ? colorValueToFloat32(shape.fill, theme, shape.fillAlpha ?? 1)
           : TRANSPARENT;
         const radius = resolveRadius(shape.radius, theme);
 
         const node: SkiaNodeData = {
-          type: 'box',
+          type: "box",
           x: shape.x,
           y: shape.y,
           width: w,
@@ -199,31 +216,46 @@ export function specShapesToSkia(
         // First rect/roundRect at origin = component background
         // 'auto' 또는 containerWidth의 90% 이상이면 full-width 배경으로 추출
         // Fixed-size shapes at origin (e.g., checkbox indicator 20x20) should NOT be extracted as bg
-        const isFullWidthRR = shape.width === 'auto'
-          || (typeof shape.width === 'number' && shape.width >= containerWidth * 0.9);
-        const isFullHeightRR = shape.height === 'auto' || shape.height === containerHeight;
-        if (!bgExtracted && shape.x === 0 && shape.y === 0
-            && isFullWidthRR && isFullHeightRR) {
+        const isFullWidthRR =
+          shape.width === "auto" ||
+          (typeof shape.width === "number" &&
+            shape.width >= containerWidth * 0.9);
+        const isFullHeightRR =
+          shape.height === "auto" || shape.height === containerHeight;
+        if (
+          !bgExtracted &&
+          shape.x === 0 &&
+          shape.y === 0 &&
+          isFullWidthRR &&
+          isFullHeightRR
+        ) {
           bgBox = node.box;
           bgExtracted = true;
         } else {
           children.push(node);
         }
 
-        if (shape.id) nodeById.set(shape.id, bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node);
-        lastNode = bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node;
+        if (shape.id)
+          nodeById.set(
+            shape.id,
+            bgExtracted && children.length === 0
+              ? { ...node, box: bgBox }
+              : node,
+          );
+        lastNode =
+          bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node;
         break;
       }
 
-      case 'rect': {
-        const w = shape.width === 'auto' ? containerWidth : shape.width;
-        const h = shape.height === 'auto' ? containerHeight : shape.height;
+      case "rect": {
+        const w = shape.width === "auto" ? containerWidth : shape.width;
+        const h = shape.height === "auto" ? containerHeight : shape.height;
         const fillColor = shape.fill
           ? colorValueToFloat32(shape.fill, theme, shape.fillAlpha ?? 1)
           : TRANSPARENT;
 
         const node: SkiaNodeData = {
-          type: 'box',
+          type: "box",
           x: shape.x,
           y: shape.y,
           width: w,
@@ -234,23 +266,39 @@ export function specShapesToSkia(
 
         // 음수 좌표를 가진 shape는 backdrop 등 전체화면 오버레이이므로 bgBox로 추출하지 않음
         const isPositiveOriginR = shape.x >= 0 && shape.y >= 0;
-        const isFullWidthR = shape.width === 'auto'
-          || (typeof shape.width === 'number' && shape.width >= containerWidth * 0.9);
-        const isFullHeightR = shape.height === 'auto' || shape.height === containerHeight;
-        if (!bgExtracted && isPositiveOriginR && shape.x === 0 && shape.y === 0
-            && isFullWidthR && isFullHeightR) {
+        const isFullWidthR =
+          shape.width === "auto" ||
+          (typeof shape.width === "number" &&
+            shape.width >= containerWidth * 0.9);
+        const isFullHeightR =
+          shape.height === "auto" || shape.height === containerHeight;
+        if (
+          !bgExtracted &&
+          isPositiveOriginR &&
+          shape.x === 0 &&
+          shape.y === 0 &&
+          isFullWidthR &&
+          isFullHeightR
+        ) {
           bgBox = node.box;
           bgExtracted = true;
         } else {
           children.push(node);
         }
 
-        if (shape.id) nodeById.set(shape.id, bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node);
-        lastNode = bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node;
+        if (shape.id)
+          nodeById.set(
+            shape.id,
+            bgExtracted && children.length === 0
+              ? { ...node, box: bgBox }
+              : node,
+          );
+        lastNode =
+          bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node;
         break;
       }
 
-      case 'circle': {
+      case "circle": {
         // Circle → box with borderRadius = radius
         const diameter = shape.radius * 2;
         const fillColor = shape.fill
@@ -258,8 +306,8 @@ export function specShapesToSkia(
           : TRANSPARENT;
 
         const node: SkiaNodeData = {
-          type: 'box',
-          x: shape.x - shape.radius,  // center → top-left
+          type: "box",
+          x: shape.x - shape.radius, // center → top-left
           y: shape.y - shape.radius,
           width: diameter,
           height: diameter,
@@ -273,17 +321,19 @@ export function specShapesToSkia(
         break;
       }
 
-      case 'line': {
+      case "line": {
         const strokeColor = colorValueToFloat32(shape.stroke, theme);
 
         // Resolve 'auto' values (used by Tabs, Panel line shapes)
-        const x1 = (shape.x1 as unknown) === 'auto' ? containerWidth : shape.x1;
-        const y1 = (shape.y1 as unknown) === 'auto' ? containerHeight : shape.y1;
-        const x2 = (shape.x2 as unknown) === 'auto' ? containerWidth : shape.x2;
-        const y2 = (shape.y2 as unknown) === 'auto' ? containerHeight : shape.y2;
+        const x1 = (shape.x1 as unknown) === "auto" ? containerWidth : shape.x1;
+        const y1 =
+          (shape.y1 as unknown) === "auto" ? containerHeight : shape.y1;
+        const x2 = (shape.x2 as unknown) === "auto" ? containerWidth : shape.x2;
+        const y2 =
+          (shape.y2 as unknown) === "auto" ? containerHeight : shape.y2;
 
         const node: SkiaNodeData = {
-          type: 'line',
+          type: "line",
           x: 0,
           y: 0,
           width: 0,
@@ -297,7 +347,9 @@ export function specShapesToSkia(
             strokeColor,
             strokeWidth: shape.strokeWidth,
             // Separator dashed/dotted 등 strokeDasharray 전달
-            ...(shape.strokeDasharray ? { strokeDasharray: shape.strokeDasharray } : {}),
+            ...(shape.strokeDasharray
+              ? { strokeDasharray: shape.strokeDasharray }
+              : {}),
           },
         };
 
@@ -306,9 +358,12 @@ export function specShapesToSkia(
         break;
       }
 
-      case 'icon_font': {
+      case "icon_font": {
         if (!shape.iconName) break;
-        const iconData = getIconData(shape.iconName, shape.iconFontFamily ?? 'lucide');
+        const iconData = getIconData(
+          shape.iconName,
+          shape.iconFontFamily ?? "lucide",
+        );
         if (!iconData) break;
 
         const strokeColor = shape.fill
@@ -317,7 +372,7 @@ export function specShapesToSkia(
         const size = resolveNum(shape.fontSize ?? 16, theme, 16);
 
         const node: SkiaNodeData = {
-          type: 'icon_path',
+          type: "icon_path",
           x: 0,
           y: 0,
           width: size,
@@ -339,41 +394,52 @@ export function specShapesToSkia(
         break;
       }
 
-      case 'border': {
+      case "border": {
         // Apply stroke to the target or last node
-        const targetNode = shape.target
-          ? nodeById.get(shape.target)
-          : lastNode;
+        const targetNode = shape.target ? nodeById.get(shape.target) : lastNode;
 
         // M-6: partial border — sides 지정 시 개별 변 렌더링
         if (shape.sides) {
           const strokeColor = colorValueToFloat32(shape.color, theme);
           const bw = shape.borderWidth;
-          const tw = targetNode?.width ?? (shape.width === 'auto' ? containerWidth : (shape.width ?? containerWidth));
-          const th = targetNode?.height ?? (shape.height === 'auto' ? containerHeight : (shape.height ?? containerHeight));
-          const ox = targetNode?.x ?? (shape.x ?? 0);
-          const oy = targetNode?.y ?? (shape.y ?? 0);
+          const tw =
+            targetNode?.width ??
+            (shape.width === "auto"
+              ? containerWidth
+              : (shape.width ?? containerWidth));
+          const th =
+            targetNode?.height ??
+            (shape.height === "auto"
+              ? containerHeight
+              : (shape.height ?? containerHeight));
+          const ox = targetNode?.x ?? shape.x ?? 0;
+          const oy = targetNode?.y ?? shape.y ?? 0;
 
           // sides border의 style → strokeDasharray 변환
           const sideStyle = shape.style;
           const sideDasharray: number[] | undefined =
-            sideStyle === 'dashed' ? [Math.max(bw * 3, 4), Math.max(bw * 2, 3)]
-            : sideStyle === 'dotted' ? [bw, bw * 1.5]
-            : undefined;
+            sideStyle === "dashed"
+              ? [Math.max(bw * 3, 4), Math.max(bw * 2, 3)]
+              : sideStyle === "dotted"
+                ? [bw, bw * 1.5]
+                : undefined;
 
           // M-6 개선: border-radius가 있는 경우 partial_border 노드로 렌더링
           // 우선순위: shape.radius → targetNode.box?.borderRadius
           const rawRadius = shape.radius ?? targetNode?.box?.borderRadius;
-          const resolvedRadius = rawRadius !== undefined ? resolveRadius(rawRadius, theme) : 0;
-          const radiusArr: [number, number, number, number] = Array.isArray(resolvedRadius)
+          const resolvedRadius =
+            rawRadius !== undefined ? resolveRadius(rawRadius, theme) : 0;
+          const radiusArr: [number, number, number, number] = Array.isArray(
+            resolvedRadius,
+          )
             ? resolvedRadius
             : [resolvedRadius, resolvedRadius, resolvedRadius, resolvedRadius];
-          const hasRadius = radiusArr.some(r => r > 0);
+          const hasRadius = radiusArr.some((r) => r > 0);
 
           if (hasRadius) {
             // Path-based rendering: arc를 포함한 변별 테두리 (radius 표현 가능)
             children.push({
-              type: 'partial_border' as const,
+              type: "partial_border" as const,
               x: ox,
               y: oy,
               width: tw,
@@ -390,24 +456,80 @@ export function specShapesToSkia(
           } else {
             // 기존 line-based rendering (radius 없을 때 유지)
             if (shape.sides.top) {
-              children.push({ type: 'line' as const, x: 0, y: 0, width: tw, height: bw, visible: true,
-                line: { x1: ox, y1: oy, x2: ox + tw, y2: oy, strokeColor, strokeWidth: bw,
-                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}) } });
+              children.push({
+                type: "line" as const,
+                x: 0,
+                y: 0,
+                width: tw,
+                height: bw,
+                visible: true,
+                line: {
+                  x1: ox,
+                  y1: oy,
+                  x2: ox + tw,
+                  y2: oy,
+                  strokeColor,
+                  strokeWidth: bw,
+                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}),
+                },
+              });
             }
             if (shape.sides.right) {
-              children.push({ type: 'line' as const, x: 0, y: 0, width: bw, height: th, visible: true,
-                line: { x1: ox + tw, y1: oy, x2: ox + tw, y2: oy + th, strokeColor, strokeWidth: bw,
-                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}) } });
+              children.push({
+                type: "line" as const,
+                x: 0,
+                y: 0,
+                width: bw,
+                height: th,
+                visible: true,
+                line: {
+                  x1: ox + tw,
+                  y1: oy,
+                  x2: ox + tw,
+                  y2: oy + th,
+                  strokeColor,
+                  strokeWidth: bw,
+                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}),
+                },
+              });
             }
             if (shape.sides.bottom) {
-              children.push({ type: 'line' as const, x: 0, y: 0, width: tw, height: bw, visible: true,
-                line: { x1: ox, y1: oy + th, x2: ox + tw, y2: oy + th, strokeColor, strokeWidth: bw,
-                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}) } });
+              children.push({
+                type: "line" as const,
+                x: 0,
+                y: 0,
+                width: tw,
+                height: bw,
+                visible: true,
+                line: {
+                  x1: ox,
+                  y1: oy + th,
+                  x2: ox + tw,
+                  y2: oy + th,
+                  strokeColor,
+                  strokeWidth: bw,
+                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}),
+                },
+              });
             }
             if (shape.sides.left) {
-              children.push({ type: 'line' as const, x: 0, y: 0, width: bw, height: th, visible: true,
-                line: { x1: ox, y1: oy, x2: ox, y2: oy + th, strokeColor, strokeWidth: bw,
-                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}) } });
+              children.push({
+                type: "line" as const,
+                x: 0,
+                y: 0,
+                width: bw,
+                height: th,
+                visible: true,
+                line: {
+                  x1: ox,
+                  y1: oy,
+                  x2: ox,
+                  y2: oy + th,
+                  strokeColor,
+                  strokeWidth: bw,
+                  ...(sideDasharray ? { strokeDasharray: sideDasharray } : {}),
+                },
+              });
             }
           }
           break;
@@ -420,22 +542,28 @@ export function specShapesToSkia(
           if (targetNode.box === bgBox && bgBox) {
             bgBox.strokeColor = strokeColor;
             bgBox.strokeWidth = shape.borderWidth;
-            bgBox.strokeStyle = shape.style ?? 'solid';
+            bgBox.strokeStyle = shape.style ?? "solid";
           } else if (targetNode.box) {
             targetNode.box.strokeColor = strokeColor;
             targetNode.box.strokeWidth = shape.borderWidth;
-            targetNode.box.strokeStyle = shape.style ?? 'solid';
+            targetNode.box.strokeStyle = shape.style ?? "solid";
           }
         } else {
           // No target found - render as standalone border box
           const bx = shape.x ?? 0;
           const by = shape.y ?? 0;
-          const bw = shape.width === 'auto' ? containerWidth : (shape.width ?? containerWidth);
-          const bh = shape.height === 'auto' ? containerHeight : (shape.height ?? containerHeight);
+          const bw =
+            shape.width === "auto"
+              ? containerWidth
+              : (shape.width ?? containerWidth);
+          const bh =
+            shape.height === "auto"
+              ? containerHeight
+              : (shape.height ?? containerHeight);
           const br = resolveRadius(shape.radius, theme);
 
           children.push({
-            type: 'box',
+            type: "box",
             x: bx,
             y: by,
             width: bw,
@@ -446,19 +574,19 @@ export function specShapesToSkia(
               borderRadius: br,
               strokeColor: colorValueToFloat32(shape.color, theme),
               strokeWidth: shape.borderWidth,
-              strokeStyle: shape.style ?? 'solid',
+              strokeStyle: shape.style ?? "solid",
             },
           });
         }
         break;
       }
 
-      case 'text': {
+      case "text": {
         if (!shape.text) break;
 
         const fillColor = shape.fill
           ? colorValueToFloat32(shape.fill, theme)
-          : Float32Array.of(0, 0, 0, 1);  // default black
+          : Float32Array.of(0, 0, 0, 1); // default black
 
         // Resolve fontSize (might be TokenRef like '{typography.text-md}')
         const fontSize = resolveNum(shape.fontSize, theme, 14);
@@ -468,14 +596,14 @@ export function specShapesToSkia(
         // - shape.lineHeight > 5  → px값으로 직접 사용
         // - undefined → 기본값 fontSize * 1.2
         const lineHeightPx = shape.lineHeight
-          ? (shape.lineHeight <= 5
+          ? shape.lineHeight <= 5
             ? fontSize * shape.lineHeight
-            : resolveNum(shape.lineHeight, theme, fontSize * 1.2))
+            : resolveNum(shape.lineHeight, theme, fontSize * 1.2)
           : fontSize * 1.2;
 
         // Calculate paddingTop based on baseline
         let paddingTop = shape.y;
-        if (shape.baseline === 'middle') {
+        if (shape.baseline === "middle") {
           if (shape.y > 0) {
             // shape.y > 0: y는 텍스트 수직 중앙이 위치해야 할 지점
             // (Checkbox, Radio, Switch 등 인디케이터 중심에 텍스트 정렬)
@@ -494,7 +622,7 @@ export function specShapesToSkia(
 
         // Auto-reduce maxWidth when text has padding offset (shape.x > 0) and no explicit maxWidth
         if (shape.x > 0 && shape.maxWidth == null) {
-          if (shape.align === 'center') {
+          if (shape.align === "center") {
             // Center-aligned: symmetric padding (subtract from both sides)
             maxWidth = containerWidth - shape.x * 2;
           } else {
@@ -508,38 +636,41 @@ export function specShapesToSkia(
         // Parse fontWeight
         let fontWeight: number | undefined;
         if (shape.fontWeight !== undefined) {
-          fontWeight = typeof shape.fontWeight === 'number' ? shape.fontWeight : parseInt(String(shape.fontWeight), 10) || 400;
-          if (shape.fontWeight === 'bold') fontWeight = 700;
-          if (shape.fontWeight === 'normal') fontWeight = 400;
-          if (shape.fontWeight === 'medium') fontWeight = 500;
+          fontWeight =
+            typeof shape.fontWeight === "number"
+              ? shape.fontWeight
+              : parseInt(String(shape.fontWeight), 10) || 400;
+          if (shape.fontWeight === "bold") fontWeight = 700;
+          if (shape.fontWeight === "normal") fontWeight = 400;
+          if (shape.fontWeight === "medium") fontWeight = 500;
         }
 
         // Font families
         const fontFamilies = shape.fontFamily
-          ? [shape.fontFamily, 'Inter', 'system-ui', 'sans-serif']
-          : ['Inter', 'system-ui', 'sans-serif'];
+          ? [shape.fontFamily, "Inter", "system-ui", "sans-serif"]
+          : ["Inter", "system-ui", "sans-serif"];
 
         // textDecoration → CanvasKit 비트마스크 변환
         // underline=1, overline=2, lineThrough=4
         let decoration: number | undefined;
-        if (shape.textDecoration === 'underline') {
+        if (shape.textDecoration === "underline") {
           decoration = 1;
-        } else if (shape.textDecoration === 'line-through') {
+        } else if (shape.textDecoration === "line-through") {
           decoration = 4;
         }
 
         // textTransform → 텍스트 콘텐츠 변환
         let textContent = shape.text;
-        if (shape.textTransform === 'uppercase') {
+        if (shape.textTransform === "uppercase") {
           textContent = textContent.toUpperCase();
-        } else if (shape.textTransform === 'lowercase') {
+        } else if (shape.textTransform === "lowercase") {
           textContent = textContent.toLowerCase();
-        } else if (shape.textTransform === 'capitalize') {
-          textContent = textContent.replace(/\b\w/g, c => c.toUpperCase());
+        } else if (shape.textTransform === "capitalize") {
+          textContent = textContent.replace(/\b\w/g, (c) => c.toUpperCase());
         }
 
         const node: SkiaNodeData = {
-          type: 'text',
+          type: "text",
           x: 0,
           y: 0,
           width: containerWidth,
@@ -551,9 +682,10 @@ export function specShapesToSkia(
             fontSize,
             fontWeight,
             color: fillColor,
-            align: shape.align ?? 'left',
+            align: shape.align ?? "left",
             letterSpacing: shape.letterSpacing,
-            lineHeight: shape.lineHeight !== undefined ? lineHeightPx : undefined,
+            lineHeight:
+              shape.lineHeight !== undefined ? lineHeightPx : undefined,
             decoration,
             paddingLeft,
             paddingTop: Math.max(0, paddingTop),
@@ -566,16 +698,18 @@ export function specShapesToSkia(
         break;
       }
 
-      case 'shadow': {
+      case "shadow": {
         // Apply shadow as effect to target or last node
-        const targetNode = shape.target
-          ? nodeById.get(shape.target)
-          : lastNode;
+        const targetNode = shape.target ? nodeById.get(shape.target) : lastNode;
 
         if (targetNode) {
-          const shadowColor = colorValueToFloat32(shape.color, theme, shape.alpha ?? 0.3);
+          const shadowColor = colorValueToFloat32(
+            shape.color,
+            theme,
+            shape.alpha ?? 0.3,
+          );
           const effect: EffectStyle = {
-            type: 'drop-shadow',
+            type: "drop-shadow",
             dx: shape.offsetX,
             dy: shape.offsetY,
             sigmaX: shape.blur / 2,
@@ -591,13 +725,17 @@ export function specShapesToSkia(
         break;
       }
 
-      case 'container': {
+      case "container": {
         // Recursively convert children
         const containerNode = specShapesToSkia(
           shape.children,
           theme,
-          shape.width === 'auto' ? containerWidth : (shape.width ?? containerWidth),
-          shape.height === 'auto' ? containerHeight : (shape.height ?? containerHeight),
+          shape.width === "auto"
+            ? containerWidth
+            : (shape.width ?? containerWidth),
+          shape.height === "auto"
+            ? containerHeight
+            : (shape.height ?? containerHeight),
         );
         containerNode.x = shape.x;
         containerNode.y = shape.y;
@@ -605,39 +743,53 @@ export function specShapesToSkia(
         break;
       }
 
-      case 'gradient': {
-        const w = shape.width === 'auto' ? containerWidth : shape.width;
-        const h = shape.height === 'auto' ? containerHeight : shape.height;
-        const colors = shape.gradient.stops.map(s => colorValueToFloat32(s.color, theme));
-        const positions = shape.gradient.stops.map(s => s.offset);
+      case "gradient": {
+        const w = shape.width === "auto" ? containerWidth : shape.width;
+        const h = shape.height === "auto" ? containerHeight : shape.height;
+        const colors = shape.gradient.stops.map((s) =>
+          colorValueToFloat32(s.color, theme),
+        );
+        const positions = shape.gradient.stops.map((s) => s.offset);
 
         let fill: FillStyle;
-        if (shape.gradient.type === 'linear') {
-          const angle = (shape.gradient.angle ?? 0) * Math.PI / 180;
+        if (shape.gradient.type === "linear") {
+          const angle = ((shape.gradient.angle ?? 0) * Math.PI) / 180;
           fill = {
-            type: 'linear-gradient',
-            start: [w / 2 - Math.sin(angle) * w / 2, h / 2 - Math.cos(angle) * h / 2],
-            end: [w / 2 + Math.sin(angle) * w / 2, h / 2 + Math.cos(angle) * h / 2],
+            type: "linear-gradient",
+            start: [
+              w / 2 - (Math.sin(angle) * w) / 2,
+              h / 2 - (Math.cos(angle) * h) / 2,
+            ],
+            end: [
+              w / 2 + (Math.sin(angle) * w) / 2,
+              h / 2 + (Math.cos(angle) * h) / 2,
+            ],
             colors,
             positions,
           };
-        } else if (shape.gradient.type === 'conic') {
+        } else if (shape.gradient.type === "conic") {
           // CSS conic-gradient 0°=12시 → CanvasKit MakeSweepGradient 0°=3시
           // -90° 보정 + 사용자 angle 적용
           const angleDeg = (shape.gradient.angle ?? 0) - 90;
-          const angleRad = angleDeg * Math.PI / 180;
+          const angleRad = (angleDeg * Math.PI) / 180;
           const cos = Math.cos(angleRad);
           const sin = Math.sin(angleRad);
           // CanvasKit 3x3 행렬 (row-major): cx/cy 중심 회전
           const cx = w / 2;
           const cy = h / 2;
           const rotationMatrix = Float32Array.of(
-            cos, -sin, cx - cx * cos + cy * sin,
-            sin, cos, cy - cx * sin - cy * cos,
-            0, 0, 1,
+            cos,
+            -sin,
+            cx - cx * cos + cy * sin,
+            sin,
+            cos,
+            cy - cx * sin - cy * cos,
+            0,
+            0,
+            1,
           );
           fill = {
-            type: 'angular-gradient',
+            type: "angular-gradient",
             cx,
             cy,
             colors,
@@ -646,7 +798,7 @@ export function specShapesToSkia(
           };
         } else {
           fill = {
-            type: 'radial-gradient',
+            type: "radial-gradient",
             center: [w / 2, h / 2],
             startRadius: 0,
             endRadius: Math.max(w, h) / 2,
@@ -657,7 +809,7 @@ export function specShapesToSkia(
 
         const radius = shape.radius ? resolveRadius(shape.radius, theme) : 0;
         const node: SkiaNodeData = {
-          type: 'box',
+          type: "box",
           x: shape.x,
           y: shape.y,
           width: w,
@@ -667,27 +819,48 @@ export function specShapesToSkia(
         };
 
         // Gradient can also be a background (same logic as roundRect/rect)
-        const isFullWidthG = shape.width === 'auto'
-          || (typeof shape.width === 'number' && shape.width >= containerWidth * 0.9);
-        const isFullHeightG = shape.height === 'auto' || shape.height === containerHeight;
-        if (!bgExtracted && shape.x === 0 && shape.y === 0
-            && isFullWidthG && isFullHeightG) {
+        const isFullWidthG =
+          shape.width === "auto" ||
+          (typeof shape.width === "number" &&
+            shape.width >= containerWidth * 0.9);
+        const isFullHeightG =
+          shape.height === "auto" || shape.height === containerHeight;
+        if (
+          !bgExtracted &&
+          shape.x === 0 &&
+          shape.y === 0 &&
+          isFullWidthG &&
+          isFullHeightG
+        ) {
           bgBox = node.box;
           bgExtracted = true;
         } else {
           children.push(node);
         }
 
-        if (shape.id) nodeById.set(shape.id, bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node);
-        lastNode = bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node;
+        if (shape.id)
+          nodeById.set(
+            shape.id,
+            bgExtracted && children.length === 0
+              ? { ...node, box: bgBox }
+              : node,
+          );
+        lastNode =
+          bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node;
         break;
       }
 
-      case 'image': {
+      case "image": {
         const imgX = shape.x ?? 0;
         const imgY = shape.y ?? 0;
-        const imgW = shape.width === 'auto' ? containerWidth : (shape.width ?? containerWidth);
-        const imgH = shape.height === 'auto' ? containerHeight : (shape.height ?? containerHeight);
+        const imgW =
+          shape.width === "auto"
+            ? containerWidth
+            : (shape.width ?? containerWidth);
+        const imgH =
+          shape.height === "auto"
+            ? containerHeight
+            : (shape.height ?? containerHeight);
         const imgRadius = resolveRadius(shape.radius, theme);
 
         // 동기 캐시 조회 — 캐시 미스 시 비동기 로딩 트리거
@@ -697,13 +870,19 @@ export function specShapesToSkia(
         }
 
         // 이미지 콘텐츠 영역 계산 (object-fit)
-        const fit = shape.fit ?? 'cover';
+        const fit = shape.fit ?? "cover";
         const intrinsicW = skImage ? skImage.width() : imgW;
         const intrinsicH = skImage ? skImage.height() : imgH;
-        const content = computeImageFit(fit, imgW, imgH, intrinsicW, intrinsicH);
+        const content = computeImageFit(
+          fit,
+          imgW,
+          imgH,
+          intrinsicW,
+          intrinsicH,
+        );
 
         const imgNode: SkiaNodeData = {
-          type: 'image',
+          type: "image",
           x: imgX,
           y: imgY,
           width: imgW,

@@ -117,6 +117,9 @@ const COLOR_TOKEN_TO_CSS: Record<string, string> = {
   // Outline → Border
   outline: "var(--border-color-hover)",
   "outline-variant": "var(--border-color)",
+
+  // Special
+  transparent: "transparent",
 };
 
 /**
