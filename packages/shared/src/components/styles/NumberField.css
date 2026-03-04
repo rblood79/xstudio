@@ -18,7 +18,7 @@
     .react-aria-Label {
       font-size: var(--text-sm);
       font-weight: 500;
-      color: var(--on-surface);
+      color: var(--text-color);
       margin-bottom: var(--spacing-xs);
     }
 
@@ -31,7 +31,7 @@
 
       /* Group Focus State */
       &[data-focus-within] {
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--highlight-background);
         outline-offset: -1px;
 
         .react-aria-Input,
@@ -49,9 +49,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--surface-container-high);
-      border: 1px solid var(--outline-variant);
-      color: var(--on-surface);
+      background: var(--overlay-background);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
       cursor: pointer;
       transition: all 200ms ease;
 
@@ -73,20 +73,20 @@
 
       /* Hover State */
       &[data-hovered]:not([data-disabled]) {
-        background: var(--surface-container-highest);
-        border-color: var(--outline);
+        background: var(--color-neutral-200);
+        border-color: var(--border-color-hover);
       }
 
       /* Pressed State */
       &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--surface-container-high) 88%, black);
+        background: color-mix(in srgb, var(--overlay-background) 88%, black);
       }
 
       /* Disabled State */
       &[data-disabled] {
-        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
-        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
-        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        background: color-mix(in srgb, var(--text-color) 4%, transparent);
+        border-color: color-mix(in srgb, var(--text-color) 12%, transparent);
+        color: color-mix(in srgb, var(--text-color) 38%, transparent);
         cursor: not-allowed;
         opacity: 0.38;
       }
@@ -94,10 +94,10 @@
 
     /* ===== Input Field ===== */
     .react-aria-Input {
-      background: var(--surface-container);
-      border: 1px solid var(--outline-variant);
+      background: var(--field-background);
+      border: 1px solid var(--border-color);
       border-radius: 0;
-      color: var(--on-surface);
+      color: var(--text-color);
       margin: 0 -1px;
       z-index: 1;
       font-size: var(--text-base);
@@ -110,9 +110,9 @@
 
       /* Disabled State */
       &[data-disabled] {
-        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
-        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
-        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        background: color-mix(in srgb, var(--text-color) 4%, transparent);
+        border-color: color-mix(in srgb, var(--text-color) 12%, transparent);
+        color: color-mix(in srgb, var(--text-color) 38%, transparent);
         cursor: not-allowed;
         opacity: 0.38;
       }
@@ -121,18 +121,18 @@
     /* ===== Invalid State ===== */
     &[data-invalid] {
       .react-aria-Group {
-        outline-color: var(--error);
+        outline-color: var(--invalid-color);
       }
 
       .react-aria-Input,
       .react-aria-Button {
-        border-color: var(--error);
+        border-color: var(--invalid-color);
       }
 
       &:focus-within {
         .react-aria-Input,
         .react-aria-Button {
-          border-color: var(--error);
+          border-color: var(--invalid-color);
         }
       }
     }
@@ -140,13 +140,13 @@
     /* ===== Description Text ===== */
     [slot="description"] {
       font-size: var(--text-xs);
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
 
     /* ===== Field Error ===== */
     .react-aria-FieldError {
       font-size: var(--text-xs);
-      color: var(--error);
+      color: var(--invalid-color);
       margin-top: var(--spacing-xs);
     }
   }
@@ -156,34 +156,34 @@
 
   .react-aria-NumberField {
     /* 기본 variant 변수 */
-    --nf-accent: var(--outline-variant);
-    --nf-accent-container: var(--surface-container-high);
-    --nf-on-accent-container: var(--on-surface);
+    --nf-accent: var(--border-color);
+    --nf-accent-container: var(--overlay-background);
+    --nf-on-accent-container: var(--text-color);
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-NumberField[data-variant="primary"] {
-    --nf-accent: var(--primary);
-    --nf-accent-container: var(--primary-container);
-    --nf-on-accent-container: var(--on-primary-container);
+    --nf-accent: var(--highlight-background);
+    --nf-accent-container: var(--color-primary-100);
+    --nf-on-accent-container: var(--color-primary-900);
   }
 
   .react-aria-NumberField[data-variant="secondary"] {
-    --nf-accent: var(--secondary);
-    --nf-accent-container: var(--secondary-container);
-    --nf-on-accent-container: var(--on-secondary-container);
+    --nf-accent: var(--button-background);
+    --nf-accent-container: var(--color-neutral-100);
+    --nf-on-accent-container: var(--color-neutral-900);
   }
 
   .react-aria-NumberField[data-variant="tertiary"] {
-    --nf-accent: var(--tertiary);
-    --nf-accent-container: var(--tertiary-container);
-    --nf-on-accent-container: var(--on-tertiary-container);
+    --nf-accent: var(--color-purple-600);
+    --nf-accent-container: var(--color-tertiary-100);
+    --nf-on-accent-container: var(--color-tertiary-900);
   }
 
   .react-aria-NumberField[data-variant="error"] {
-    --nf-accent: var(--error);
-    --nf-accent-container: var(--error-container);
-    --nf-on-accent-container: var(--on-error-container);
+    --nf-accent: var(--invalid-color);
+    --nf-accent-container: var(--color-error-100);
+    --nf-on-accent-container: var(--color-error-900);
   }
 
   /* 모든 color variant에 공통 적용되는 스타일 */
@@ -233,24 +233,24 @@
     }
 
     .react-aria-Button {
-      background: var(--surface-container-highest);
+      background: var(--color-neutral-200);
       border: none;
-      border-bottom: 2px solid var(--outline-variant);
+      border-bottom: 2px solid var(--border-color);
 
       &[data-hovered]:not([data-disabled]) {
-        background: var(--surface-container-high);
-        border-bottom-color: var(--outline);
+        background: var(--overlay-background);
+        border-bottom-color: var(--border-color-hover);
       }
     }
 
     .react-aria-Input {
-      background: var(--surface-container-highest);
+      background: var(--color-neutral-200);
       border: none;
-      border-bottom: 2px solid var(--outline-variant);
+      border-bottom: 2px solid var(--border-color);
 
       &[data-focus-within] {
-        background: var(--surface-container-high);
-        border-bottom-color: var(--primary);
+        background: var(--overlay-background);
+        border-bottom-color: var(--highlight-background);
       }
     }
   }
@@ -337,12 +337,12 @@
   .react-aria-NumberField[data-variant="tertiary"][data-invalid],
   .react-aria-NumberField[data-variant="filled"][data-invalid] {
     .react-aria-Group {
-      outline-color: var(--error);
+      outline-color: var(--invalid-color);
     }
 
     .react-aria-Input,
     .react-aria-Button {
-      border-color: var(--error);
+      border-color: var(--invalid-color);
     }
   }
 

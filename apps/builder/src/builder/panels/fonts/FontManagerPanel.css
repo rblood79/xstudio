@@ -8,8 +8,8 @@
   /* Count badge */
   .font-count-badge {
     font-size: var(--text-xs);
-    color: var(--on-surface-variant);
-    background: var(--outline);
+    color: var(--text-color-placeholder);
+    background: var(--border-color-hover);
     padding: var(--spacing-2xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
   }
@@ -17,8 +17,8 @@
   /* Upload wrapper */
   .font-upload-wrapper {
     padding: var(--spacing-sm);
-    background-color: var(--secondary-container);
-    border-bottom: 1px solid var(--outline-variant);
+    background-color: var(--color-neutral-100);
+    border-bottom: 1px solid var(--border-color);
   }
 
   /* Upload zone */
@@ -29,16 +29,16 @@
     justify-content: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-sm);
-    border: 2px dashed var(--outline);
+    border: 2px dashed var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--surface);
+    background: var(--color-white);
     transition: all 150ms;
     cursor: pointer;
   }
 
   .font-upload-zone[data-drag-over="true"] {
-    border-color: var(--primary);
-    background: var(--primary-container);
+    border-color: var(--highlight-background);
+    background: var(--color-primary-100);
   }
 
   .font-upload-zone[data-disabled="true"] {
@@ -48,13 +48,13 @@
 
   .font-upload-label {
     font-size: var(--text-sm);
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
     text-align: center;
   }
 
   .font-upload-hint {
     font-size: var(--text-xs);
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
     opacity: 0.7;
   }
 

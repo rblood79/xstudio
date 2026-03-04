@@ -11,10 +11,10 @@
   /* ========== Base Disclosure Container ========== */
   .react-aria-Disclosure {
     width: 100%;
-    border: 1px solid var(--outline-variant);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    background: var(--surface-container);
-    color: var(--on-surface);
+    background: var(--field-background);
+    color: var(--text-color);
     padding: var(--spacing-md);
 
     /* Trigger button */
@@ -27,7 +27,7 @@
       padding: var(--spacing-sm);
       font-weight: 500;
       font-size: var(--text-base);
-      color: var(--on-surface);
+      color: var(--text-color);
       background: transparent;
       border-radius: var(--radius-sm);
       cursor: pointer;
@@ -48,23 +48,23 @@
 
       /* Hover state */
       &[data-hovered] {
-        background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+        background: color-mix(in srgb, var(--text-color) 8%, transparent);
       }
 
       /* Pressed state */
       &[data-pressed] {
-        background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        background: color-mix(in srgb, var(--text-color) 12%, transparent);
       }
 
       /* Focus visible state */
       &[data-focus-visible] {
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--highlight-background);
         outline-offset: 2px;
       }
 
       /* Disabled state */
       &[data-disabled] {
-        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        color: color-mix(in srgb, var(--text-color) 38%, transparent);
         cursor: not-allowed;
         pointer-events: none;
       }
@@ -81,7 +81,7 @@
     margin-left: calc(16px + var(--spacing-sm) + var(--spacing-sm));
     margin-top: var(--spacing-sm);
     padding: var(--spacing);
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
 
     /* React Aria 1.13.0: CSS variable animation support */
     overflow: hidden;
@@ -145,51 +145,51 @@
 
   /* ===== Primary Variant ===== */
   .react-aria-Disclosure.primary {
-    border-color: var(--primary);
+    border-color: var(--highlight-background);
 
     .react-aria-Button[slot=trigger] {
-      color: var(--primary);
+      color: var(--highlight-background);
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--primary) 8%, transparent);
+        background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
       }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--primary) 12%, transparent);
+        background: color-mix(in srgb, var(--highlight-background) 12%, transparent);
       }
 
       &[data-focus-visible] {
-        outline-color: var(--primary);
+        outline-color: var(--highlight-background);
       }
     }
 
     &[data-expanded] {
-      background: color-mix(in srgb, var(--primary) 4%, transparent);
+      background: color-mix(in srgb, var(--highlight-background) 4%, transparent);
     }
   }
 
   /* ===== Secondary Variant ===== */
   .react-aria-Disclosure.secondary {
-    border-color: var(--secondary);
+    border-color: var(--button-background);
 
     .react-aria-Button[slot=trigger] {
-      color: var(--secondary);
+      color: var(--button-background);
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--secondary) 8%, transparent);
+        background: color-mix(in srgb, var(--button-background) 8%, transparent);
       }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--secondary) 12%, transparent);
+        background: color-mix(in srgb, var(--button-background) 12%, transparent);
       }
 
       &[data-focus-visible] {
-        outline-color: var(--secondary);
+        outline-color: var(--button-background);
       }
     }
 
     &[data-expanded] {
-      background: color-mix(in srgb, var(--secondary) 4%, transparent);
+      background: color-mix(in srgb, var(--button-background) 4%, transparent);
     }
   }
 

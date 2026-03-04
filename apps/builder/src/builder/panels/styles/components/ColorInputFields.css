@@ -35,7 +35,7 @@
 
   .color-input-number-field__label {
     font-size: 9px;
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
     text-align: center;
     text-transform: uppercase;
     user-select: none;
@@ -54,23 +54,23 @@
     padding: 3px 6px;
     font-size: var(--text-xs);
     font-family: var(--font-mono);
-    background: var(--surface-container-high);
-    border: 1px solid var(--outline-variant);
+    background: var(--overlay-background);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    color: var(--on-surface);
+    color: var(--text-color);
     text-align: center;
     box-sizing: border-box;
 
     &:focus {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: -2px;
-      border-color: var(--primary);
+      border-color: var(--highlight-background);
     }
   }
 
   .color-input-text-field__label {
     font-size: 9px;
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
     text-align: center;
     text-transform: uppercase;
     user-select: none;

@@ -6,9 +6,9 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, VariantSpec, SizeSpec } from '../types';
-import type { ShadowTokenRef } from '../types/token.types';
-import { tokenToCSSVar } from './utils/tokenResolver';
+import type { ComponentSpec, VariantSpec, SizeSpec } from "../types";
+import type { ShadowTokenRef } from "../types/token.types";
+import { tokenToCSSVar } from "./utils/tokenResolver";
 
 /**
  * ComponentSpec에서 CSS 파일 내용 생성
@@ -19,60 +19,70 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string {
   // 파일 헤더
   lines.push(`/* Generated from ${spec.name}.spec.ts */`);
   lines.push(`/* DO NOT EDIT MANUALLY */`);
-  lines.push('');
-  lines.push('@layer components {');
+  lines.push("");
+  lines.push("@layer components {");
 
   // 기본 스타일
   lines.push(`  .react-aria-${spec.name} {`);
   lines.push(...generateBaseStyles(spec));
-  lines.push('  }');
-  lines.push('');
+  lines.push("  }");
+  lines.push("");
 
   // Variant 스타일
   Object.entries(spec.variants).forEach(([variantName, variantSpec]) => {
     lines.push(`  .react-aria-${spec.name}[data-variant="${variantName}"] {`);
     lines.push(...generateVariantStyles(variantSpec));
-    lines.push('');
+    lines.push("");
 
     // hover 상태
-    lines.push('    &[data-hovered] {');
-    lines.push(`      background: ${tokenToCSSVar(variantSpec.backgroundHover)};`);
+    lines.push("    &[data-hovered] {");
+    lines.push(
+      `      background: ${tokenToCSSVar(variantSpec.backgroundHover)};`,
+    );
     if (variantSpec.textHover) {
       lines.push(`      color: ${tokenToCSSVar(variantSpec.textHover)};`);
     }
     if (variantSpec.borderHover) {
-      lines.push(`      border-color: ${tokenToCSSVar(variantSpec.borderHover)};`);
+      lines.push(
+        `      border-color: ${tokenToCSSVar(variantSpec.borderHover)};`,
+      );
     } else if (variantSpec.border) {
-      lines.push(`      border-color: ${tokenToCSSVar(variantSpec.backgroundHover)};`);
+      lines.push(
+        `      border-color: ${tokenToCSSVar(variantSpec.backgroundHover)};`,
+      );
     }
-    lines.push('    }');
-    lines.push('');
+    lines.push("    }");
+    lines.push("");
 
     // pressed 상태
-    lines.push('    &[data-pressed] {');
-    lines.push(`      background: ${tokenToCSSVar(variantSpec.backgroundPressed)};`);
+    lines.push("    &[data-pressed] {");
+    lines.push(
+      `      background: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
+    );
     if (variantSpec.border) {
-      lines.push(`      border-color: ${tokenToCSSVar(variantSpec.backgroundPressed)};`);
+      lines.push(
+        `      border-color: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
+      );
     }
-    lines.push('    }');
-    lines.push('  }');
-    lines.push('');
+    lines.push("    }");
+    lines.push("  }");
+    lines.push("");
   });
 
   // Size 스타일
   Object.entries(spec.sizes).forEach(([sizeName, sizeSpec]) => {
     lines.push(`  .react-aria-${spec.name}[data-size="${sizeName}"] {`);
     lines.push(...generateSizeStyles(sizeSpec));
-    lines.push('  }');
-    lines.push('');
+    lines.push("  }");
+    lines.push("");
   });
 
   // 상태 스타일
   lines.push(...generateStateStyles(spec));
 
-  lines.push('}');
+  lines.push("}");
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
@@ -140,11 +150,13 @@ function generateSizeStyles(size: SizeSpec): string[] {
 /**
  * boxShadow 값 해석 (토큰 또는 CSS 문자열)
  */
-function resolveBoxShadow(value: string | ShadowTokenRef | undefined): string | undefined {
+function resolveBoxShadow(
+  value: string | ShadowTokenRef | undefined,
+): string | undefined {
   if (!value) return undefined;
 
   // 토큰 참조 형식 {shadow.md}, {shadow.lg} 등
-  if (value.startsWith('{shadow.')) {
+  if (value.startsWith("{shadow.")) {
     const name = value.slice(8, -1); // "md", "lg" 등
     return `var(--shadow-${name})`;
   }
@@ -161,7 +173,9 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
   if (states?.hover) {
     lines.push(`  .react-aria-${spec.name}[data-hovered] {`);
     if (states.hover.boxShadow) {
-      lines.push(`    box-shadow: ${resolveBoxShadow(states.hover.boxShadow)};`);
+      lines.push(
+        `    box-shadow: ${resolveBoxShadow(states.hover.boxShadow)};`,
+      );
     }
     if (states.hover.transform) {
       lines.push(`    transform: ${states.hover.transform};`);
@@ -186,7 +200,9 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
       lines.push(`    outline-offset: ${states.focused.outlineOffset};`);
     }
     if (states.focused.boxShadow) {
-      lines.push(`    box-shadow: ${resolveBoxShadow(states.focused.boxShadow)};`);
+      lines.push(
+        `    box-shadow: ${resolveBoxShadow(states.focused.boxShadow)};`,
+      );
     }
     if (states.focused.transform) {
       lines.push(`    transform: ${states.focused.transform};`);
@@ -201,7 +217,7 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
     if (states.focusVisible.outline) {
       lines.push(`    outline: ${states.focusVisible.outline};`);
     } else {
-      lines.push(`    outline: 2px solid var(--primary);`);
+      lines.push(`    outline: 2px solid var(--highlight-background);`);
     }
     if (states.focusVisible.outlineOffset) {
       lines.push(`    outline-offset: ${states.focusVisible.outlineOffset};`);
@@ -209,10 +225,12 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
       lines.push(`    outline-offset: 2px;`);
     }
     if (states.focusVisible.boxShadow) {
-      lines.push(`    box-shadow: ${resolveBoxShadow(states.focusVisible.boxShadow)};`);
+      lines.push(
+        `    box-shadow: ${resolveBoxShadow(states.focusVisible.boxShadow)};`,
+      );
     }
   } else {
-    lines.push(`    outline: 2px solid var(--primary);`);
+    lines.push(`    outline: 2px solid var(--highlight-background);`);
     lines.push(`    outline-offset: 2px;`);
   }
   lines.push(`  }`);
@@ -222,7 +240,9 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
   if (states?.pressed) {
     lines.push(`  .react-aria-${spec.name}[data-pressed] {`);
     if (states.pressed.boxShadow) {
-      lines.push(`    box-shadow: ${resolveBoxShadow(states.pressed.boxShadow)};`);
+      lines.push(
+        `    box-shadow: ${resolveBoxShadow(states.pressed.boxShadow)};`,
+      );
     }
     if (states.pressed.transform) {
       lines.push(`    transform: ${states.pressed.transform};`);
@@ -238,7 +258,7 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
   lines.push(`  .react-aria-${spec.name}[data-disabled] {`);
   if (states?.disabled) {
     lines.push(`    opacity: ${states.disabled.opacity ?? 0.38};`);
-    lines.push(`    cursor: ${states.disabled.cursor ?? 'not-allowed'};`);
+    lines.push(`    cursor: ${states.disabled.cursor ?? "not-allowed"};`);
     if (states.disabled.pointerEvents) {
       lines.push(`    pointer-events: ${states.disabled.pointerEvents};`);
     } else {
@@ -259,15 +279,15 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
  */
 export async function generateAllCSS(
   specs: ComponentSpec<unknown>[],
-  outputDir: string
+  outputDir: string,
 ): Promise<void> {
-  const fs = await import('fs/promises');
-  const path = await import('path');
+  const fs = await import("fs/promises");
+  const path = await import("path");
 
   for (const spec of specs) {
     const css = generateCSS(spec);
     const filePath = path.join(outputDir, `${spec.name}.css`);
-    await fs.writeFile(filePath, css, 'utf-8');
+    await fs.writeFile(filePath, css, "utf-8");
     console.log(`Generated: ${filePath}`);
   }
 }

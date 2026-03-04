@@ -19,7 +19,7 @@
       "track track";
     grid-template-columns: 1fr auto;
     max-width: 300px;
-    color: var(--on-surface);
+    color: var(--text-color);
     gap: var(--spacing-sm);
 
     /* ===== Label Styles ===== */
@@ -46,7 +46,7 @@
         content: "";
         display: block;
         position: absolute;
-        background: var(--surface-container-high);
+        background: var(--overlay-background);
         border-radius: var(--radius-full, 9999px);
       }
     }
@@ -56,19 +56,19 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      background: var(--primary);
-      border: 2px solid var(--surface);
+      background: var(--highlight-background);
+      border: 2px solid var(--color-white);
       forced-color-adjust: none;
       cursor: grab;
 
       &[data-dragging] {
-        background: var(--primary-pressed);
-        outline: 2px solid var(--primary);
+        background: var(--highlight-background-pressed);
+        outline: 2px solid var(--highlight-background);
         cursor: grabbing;
       }
 
       &[data-focus-visible] {
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--highlight-background);
         outline-offset: 2px;
       }
     }
@@ -125,11 +125,11 @@
       cursor: not-allowed;
 
       .react-aria-SliderTrack:before {
-        background: var(--on-surface-variant);
+        background: var(--text-color-placeholder);
       }
 
       .react-aria-SliderThumb {
-        background: var(--on-surface-variant);
+        background: var(--text-color-placeholder);
         cursor: not-allowed;
       }
     }
@@ -250,14 +250,14 @@
   /* Default variant (same as primary) */
   .react-aria-Slider[data-variant="default"] {
     .react-aria-SliderThumb {
-      background: var(--primary);
+      background: var(--highlight-background);
 
       &[data-dragging] {
-        background: var(--primary-pressed);
+        background: var(--highlight-background-pressed);
       }
 
       &[data-focus-visible] {
-        outline-color: var(--primary);
+        outline-color: var(--highlight-background);
       }
     }
   }
@@ -265,14 +265,14 @@
   /* Primary variant */
   .react-aria-Slider[data-variant="primary"] {
     .react-aria-SliderThumb {
-      background: var(--primary);
+      background: var(--highlight-background);
 
       &[data-dragging] {
-        background: var(--primary-pressed);
+        background: var(--highlight-background-pressed);
       }
 
       &[data-focus-visible] {
-        outline-color: var(--primary);
+        outline-color: var(--highlight-background);
       }
     }
   }
@@ -280,14 +280,14 @@
   /* Secondary variant */
   .react-aria-Slider[data-variant="secondary"] {
     .react-aria-SliderThumb {
-      background: var(--secondary);
+      background: var(--button-background);
 
       &[data-dragging] {
-        background: color-mix(in srgb, var(--secondary) 88%, black);
+        background: color-mix(in srgb, var(--button-background) 88%, black);
       }
 
       &[data-focus-visible] {
-        outline-color: var(--secondary);
+        outline-color: var(--button-background);
       }
     }
   }
@@ -295,14 +295,14 @@
   /* Tertiary variant */
   .react-aria-Slider[data-variant="tertiary"] {
     .react-aria-SliderThumb {
-      background: var(--tertiary);
+      background: var(--color-purple-600);
 
       &[data-dragging] {
-        background: color-mix(in srgb, var(--tertiary) 88%, black);
+        background: color-mix(in srgb, var(--color-purple-600) 88%, black);
       }
 
       &[data-focus-visible] {
-        outline-color: var(--tertiary);
+        outline-color: var(--color-purple-600);
       }
     }
   }
@@ -310,14 +310,14 @@
   /* Error variant */
   .react-aria-Slider[data-variant="error"] {
     .react-aria-SliderThumb {
-      background: var(--error);
+      background: var(--invalid-color);
 
       &[data-dragging] {
-        background: color-mix(in srgb, var(--error) 88%, black);
+        background: color-mix(in srgb, var(--invalid-color) 88%, black);
       }
 
       &[data-focus-visible] {
-        outline-color: var(--error);
+        outline-color: var(--invalid-color);
       }
     }
   }
@@ -325,14 +325,14 @@
   /* Surface variant */
   .react-aria-Slider[data-variant="surface"] {
     .react-aria-SliderThumb {
-      background: var(--surface-container-highest);
+      background: var(--color-neutral-200);
 
       &[data-dragging] {
-        background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+        background: color-mix(in srgb, var(--color-neutral-200) 88%, black);
       }
 
       &[data-focus-visible] {
-        outline-color: var(--on-surface);
+        outline-color: var(--text-color);
       }
     }
   }

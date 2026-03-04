@@ -19,7 +19,7 @@
 
   /* ========== Time Section ========== */
   .date-picker-time-section {
-    border-top: 1px solid var(--outline-variant);
+    border-top: 1px solid var(--border-color);
     padding-top: var(--spacing-4);
   }
 
@@ -34,7 +34,7 @@
   .date-picker-time-field-label {
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--on-surface);
+    color: var(--text-color);
   }
 
   /* ========== Time Fields Container (DateRangePicker) ========== */

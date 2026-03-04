@@ -25,14 +25,14 @@
     align-items: center;
     flex-grow: 1;
     position: relative;
-    background-color: var(--surface-variant);
+    background-color: var(--color-surface-200);
   }
 
   /* Canvas */
   .app .canvas {
     padding: 0;
     background: var(--background-color);
-    border: 1px solid var(--outline-variant);
+    border: 1px solid var(--border-color);
     will-change: transform;
   }
 
@@ -65,8 +65,8 @@
   /* Panel Header */
   .app aside .panel-header {
     height: var(--header-height);
-    background-color: var(--surface-variant);
-    border-bottom: 1px solid var(--outline-variant);
+    background-color: var(--color-surface-200);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -97,7 +97,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
   }
 
   /* Component Search */
@@ -110,8 +110,8 @@
     border-width: 0px;
     border-radius: 0px;
     outline: none;
-    background-color: var(--secondary-container);
-    border-bottom: 1px solid var(--outline-variant);
+    background-color: var(--color-neutral-100);
+    border-bottom: 1px solid var(--border-color);
   }
 
   /* Header Actions */

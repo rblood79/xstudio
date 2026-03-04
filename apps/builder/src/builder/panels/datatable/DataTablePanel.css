@@ -46,8 +46,8 @@
 }
 
 .panel-tab.active {
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--highlight-background);
+  color: var(--highlight-foreground);
 }
 
 /* DataTable-specific list count */

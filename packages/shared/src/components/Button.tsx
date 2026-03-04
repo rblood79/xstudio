@@ -6,10 +6,7 @@ import {
 } from "react-aria-components";
 import { useFocusRing } from "@react-aria/focus";
 import { mergeProps } from "@react-aria/utils";
-import type {
-  ButtonVariant,
-  ComponentSize,
-} from "../types";
+import type { ButtonVariant, ComponentSize } from "../types";
 import { Skeleton } from "./Skeleton";
 import "./styles/Button.css";
 
@@ -20,11 +17,11 @@ import "./styles/Button.css";
  * --radius-lg: 0.5rem = 8px
  */
 const SIZE_BORDER_RADIUS: Record<ComponentSize, number> = {
-  xs: 4,  // --radius-sm
-  sm: 4,  // --radius-sm
-  md: 6,  // --radius-md
-  lg: 8,  // --radius-lg
-  xl: 8,  // --radius-lg
+  xs: 4, // --radius-sm
+  sm: 4, // --radius-sm
+  md: 6, // --radius-md
+  lg: 8, // --radius-lg
+  xl: 8, // --radius-lg
 };
 
 export interface ButtonProps extends RACButtonProps {
@@ -70,7 +67,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         data-loading={isLoading || undefined}
         aria-busy={isLoading || undefined}
         className={composeRenderProps(className, (cls) =>
-          cls ? `react-aria-Button ${cls}` : "react-aria-Button"
+          cls
+            ? `react-aria-Button button-base ${cls}`
+            : "react-aria-Button button-base",
         )}
         style={composeRenderProps(style, (baseStyle) => ({
           ...baseStyle,
@@ -91,7 +90,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
       </RACButton>
     );
-  }
+  },
 );
 
 export { Slider } from "./Slider";

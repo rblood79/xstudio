@@ -1,126 +1,132 @@
 /**
  * Color Tokens
  *
- * Material Design 3 기반 색상 토큰
+ * 시맨틱 토큰 기반 색상 값 (ADR-017)
+ * M3 토큰 이름을 유지하되, 실제 값은 시맨틱/Tailwind 색상으로 변환.
+ * tokenToCSSVar()의 매핑 테이블과 함께 사용됨.
  *
  * @packageDocumentation
  */
 
-import type { ColorTokens } from '../types/token.types';
+import type { ColorTokens } from "../types/token.types";
 
 /**
  * Light 모드 색상 토큰
- * Material Design 3 기반
+ * 시맨틱 토큰 CSS 변수의 fallback 값 기준 (Tailwind hex)
  */
 export const lightColors: ColorTokens = {
-  // Primary (Purple)
-  primary: '#6750a4',
-  'primary-hover': '#5c4799',
-  'primary-pressed': '#523e8e',
-  'on-primary': '#ffffff',
+  // Primary → --highlight-background (blue-600)
+  primary: "#2563eb",
+  "primary-hover": "#1f54c8",
+  "primary-pressed": "#1d4ed8",
+  "on-primary": "#ffffff",
 
-  // Secondary
-  secondary: '#625b71',
-  'secondary-hover': '#584f66',
-  'secondary-pressed': '#4e455c',
-  'on-secondary': '#ffffff',
+  // Secondary → --button-background (neutral-50)
+  secondary: "#fafafa",
+  "secondary-hover": "#d5d5d5",
+  "secondary-pressed": "#bcbcbc",
+  "on-secondary": "#ffffff",
 
-  // Tertiary
-  tertiary: '#7d5260',
-  'tertiary-hover': '#714956',
-  'tertiary-pressed': '#65404c',
-  'on-tertiary': '#ffffff',
+  // Tertiary → --color-purple-600
+  tertiary: "#9333ea",
+  "tertiary-hover": "#7d2bc7",
+  "tertiary-pressed": "#6e26a6",
+  "on-tertiary": "#ffffff",
 
-  // Error
-  error: '#b3261e',
-  'error-hover': '#a1221b',
-  'error-pressed': '#8f1e18',
-  'on-error': '#ffffff',
+  // Error → --invalid-color (error-400)
+  error: "#ef4444",
+  "error-hover": "#cb3a3a",
+  "error-pressed": "#b33333",
+  "on-error": "#ffffff",
 
-  // Container (MD3 color roles)
-  'primary-container': '#eaddff',
-  'on-primary-container': '#21005d',
-  'secondary-container': '#e8def8',
-  'on-secondary-container': '#1d192b',
-  'tertiary-container': '#ffd8e4',
-  'on-tertiary-container': '#31111d',
-  'error-container': '#f9dedc',
-  'on-error-container': '#410e0b',
+  // Container → Tailwind palette direct
+  "primary-container": "#dbeafe",
+  "on-primary-container": "#1e3a8a",
+  "secondary-container": "#f5f5f5",
+  "on-secondary-container": "#171717",
+  "tertiary-container": "#f3e8ff",
+  "on-tertiary-container": "#581c87",
+  "error-container": "#fee2e2",
+  "on-error-container": "#7f1d1d",
 
-  // Surface
-  surface: '#fef7ff',
-  'surface-container': '#f3edf7',
-  'surface-container-high': '#ece6f0',
-  'surface-container-highest': '#e6e0e9',
-  'on-surface': '#1d1b20',
-  'on-surface-variant': '#49454f',
+  // Surface → Semantic
+  surface: "#ffffff",
+  "surface-container": "#fafafa",
+  "surface-container-high": "#fafafa",
+  "surface-container-highest": "#e5e5e5",
+  "on-surface": "#171717",
+  "on-surface-variant": "#404040",
 
-  // Outline
-  outline: '#79747e',
-  'outline-variant': '#cac4d0',
+  // Outline → Border
+  outline: "#a3a3a3",
+  "outline-variant": "#d4d4d4",
 };
 
 /**
  * Dark 모드 색상 토큰
+ * 시맨틱 토큰 dark mode fallback 값 기준
  */
 export const darkColors: ColorTokens = {
-  // Primary
-  primary: '#d0bcff',
-  'primary-hover': '#c4aff7',
-  'primary-pressed': '#b8a2ef',
-  'on-primary': '#381e72',
+  // Primary → --highlight-background dark (blue-500)
+  primary: "#3b82f6",
+  "primary-hover": "#3270d1",
+  "primary-pressed": "#60a5fa",
+  "on-primary": "#171717",
 
-  // Secondary
-  secondary: '#ccc2dc',
-  'secondary-hover': '#c0b5d0',
-  'secondary-pressed': '#b4a8c4',
-  'on-secondary': '#332d41',
+  // Secondary → --button-background dark (neutral-800)
+  secondary: "#262626",
+  "secondary-hover": "#202020",
+  "secondary-pressed": "#1c1c1c",
+  "on-secondary": "#ffffff",
 
-  // Tertiary
-  tertiary: '#efb8c8',
-  'tertiary-hover': '#e3acbc',
-  'tertiary-pressed': '#d7a0b0',
-  'on-tertiary': '#492532',
+  // Tertiary → purple-600 (same in dark)
+  tertiary: "#9333ea",
+  "tertiary-hover": "#7d2bc7",
+  "tertiary-pressed": "#6e26a6",
+  "on-tertiary": "#ffffff",
 
-  // Error
-  error: '#f2b8b5',
-  'error-hover': '#e6acab',
-  'error-pressed': '#daa0a1',
-  'on-error': '#601410',
+  // Error → --invalid-color dark (error-400 equivalent)
+  error: "#f87171",
+  "error-hover": "#d36060",
+  "error-pressed": "#ba5555",
+  "on-error": "#ffffff",
 
-  // Container (MD3 color roles)
-  'primary-container': '#4f378b',
-  'on-primary-container': '#eaddff',
-  'secondary-container': '#4a4458',
-  'on-secondary-container': '#e8def8',
-  'tertiary-container': '#633b48',
-  'on-tertiary-container': '#ffd8e4',
-  'error-container': '#8c1d18',
-  'on-error-container': '#f9dedc',
+  // Container
+  "primary-container": "#1e3a8a",
+  "on-primary-container": "#dbeafe",
+  "secondary-container": "#262626",
+  "on-secondary-container": "#f5f5f5",
+  "tertiary-container": "#581c87",
+  "on-tertiary-container": "#f3e8ff",
+  "error-container": "#7f1d1d",
+  "on-error-container": "#fee2e2",
 
   // Surface
-  surface: '#141218',
-  'surface-container': '#211f26',
-  'surface-container-high': '#2b2930',
-  'surface-container-highest': '#36343b',
-  'on-surface': '#e6e0e9',
-  'on-surface-variant': '#cac4d0',
+  surface: "#171717",
+  "surface-container": "#262626",
+  "surface-container-high": "#262626",
+  "surface-container-highest": "#404040",
+  "on-surface": "#f5f5f5",
+  "on-surface-variant": "#a3a3a3",
 
   // Outline
-  outline: '#938f99',
-  'outline-variant': '#49454f',
+  outline: "#737373",
+  "outline-variant": "#404040",
 };
 
 /**
  * 현재 테마에 따른 색상 반환
  */
-export function getColorToken(name: keyof ColorTokens, theme: 'light' | 'dark' = 'light'): string {
-  return theme === 'dark' ? darkColors[name] : lightColors[name];
+export function getColorToken(
+  name: keyof ColorTokens,
+  theme: "light" | "dark" = "light",
+): string {
+  return theme === "dark" ? darkColors[name] : lightColors[name];
 }
 
 /**
  * 테마별 색상 객체 반환
  */
-export function getColorTokens(theme: 'light' | 'dark' = 'light'): ColorTokens {
-  return theme === 'dark' ? darkColors : lightColors;
+export function getColorTokens(theme: "light" | "dark" = "light"): ColorTokens {
+  return theme === "dark" ? darkColors : lightColors;
 }

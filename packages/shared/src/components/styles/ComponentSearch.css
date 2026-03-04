@@ -18,7 +18,7 @@
 
   .component-search-field .react-aria-Input {
     box-shadow: var(--inset-shadow-sm);
-    background-color: var(--surface-container-high);
+    background-color: var(--overlay-background);
     outline: 1px solid var(--border-color);
     border: 0;
     width: 100%;
@@ -27,7 +27,7 @@
     line-height: var(--text-xs--line-height);
     padding: var(--spacing-sm);
     padding-inline-start: var(--spacing-sm);
-    color: var(--primary);
+    color: var(--highlight-background);
     transition: all 200ms;
   }
 
@@ -48,14 +48,14 @@
     padding: 0;
     border: none;
     border-radius: var(--radius-sm);
-    background: var(--surface-container);
-    color: var(--on-surface-variant);
+    background: var(--field-background);
+    color: var(--text-color-placeholder);
     cursor: pointer;
     transition: all 150ms;
   }
 
   .component-search-field .react-aria-Button:hover {
-    background: var(--surface);
+    background: var(--color-white);
     color: var(--text-color);
   }
 }

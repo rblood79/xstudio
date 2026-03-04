@@ -13,13 +13,13 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    color: var(--on-surface);
+    color: var(--text-color);
 
     /* ===== Label Styles ===== */
     .react-aria-Label {
       font-size: var(--text-sm);
       font-weight: 500;
-      color: var(--on-surface);
+      color: var(--text-color);
       margin-bottom: var(--spacing-xs);
     }
 
@@ -36,10 +36,10 @@
       padding: var(--spacing-sm) 14px;
       padding-right: 30px;
       margin: 0;
-      border: 1px solid var(--outline-variant);
+      border: 1px solid var(--border-color);
       border-radius: var(--border-radius);
-      background: var(--surface-container);
-      color: var(--on-surface);
+      background: var(--field-background);
+      color: var(--text-color);
       font-size: var(--text-base);
       outline: none;
       transition: all 200ms ease;
@@ -47,34 +47,34 @@
 
       /* Placeholder */
       &::placeholder {
-        color: var(--on-surface-variant);
+        color: var(--text-color-placeholder);
         opacity: 0.6;
       }
 
       /* Focus State */
       &[data-focused] {
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--highlight-background);
         outline-offset: -1px;
-        border-color: var(--primary);
-        background: var(--surface-container-high);
+        border-color: var(--highlight-background);
+        background: var(--overlay-background);
       }
 
       /* Hover State */
       &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        border-color: var(--outline);
-        background: var(--surface-container-high);
+        border-color: var(--border-color-hover);
+        background: var(--overlay-background);
       }
 
       /* Invalid State */
       &[data-invalid]:not([data-focused]) {
-        border-color: var(--error);
+        border-color: var(--invalid-color);
       }
 
       /* Disabled State */
       &[data-disabled] {
-        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
-        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
-        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        background: color-mix(in srgb, var(--text-color) 4%, transparent);
+        border-color: color-mix(in srgb, var(--text-color) 12%, transparent);
+        color: color-mix(in srgb, var(--text-color) 38%, transparent);
         cursor: not-allowed;
         opacity: 0.38;
       }
@@ -90,8 +90,8 @@
       margin-left: -26px;
       margin-right: var(--spacing);
       border-radius: var(--radius-xs);
-      background: var(--surface-container-high);
-      color: var(--on-surface);
+      background: var(--overlay-background);
+      color: var(--text-color);
       border: none;
       padding: 0;
       cursor: pointer;
@@ -102,24 +102,24 @@
 
       /* Hover State */
       &[data-hovered]:not([data-disabled]) {
-        background: var(--surface-container-highest);
+        background: var(--color-neutral-200);
       }
 
       /* Pressed State */
       &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--on-surface) 12%, var(--surface-container-high));
+        background: color-mix(in srgb, var(--text-color) 12%, var(--overlay-background));
       }
 
       /* Focus Visible State */
       &[data-focus-visible] {
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--highlight-background);
         outline-offset: 2px;
       }
 
       /* Disabled State */
       &[data-disabled] {
-        background: color-mix(in srgb, var(--on-surface) 12%, transparent);
-        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        background: color-mix(in srgb, var(--text-color) 12%, transparent);
+        color: color-mix(in srgb, var(--text-color) 38%, transparent);
         cursor: not-allowed;
       }
     }
@@ -127,13 +127,13 @@
     /* ===== Description Text ===== */
     [slot="description"] {
       font-size: var(--text-xs);
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
 
     /* ===== Field Error ===== */
     .react-aria-FieldError {
       font-size: var(--text-xs);
-      color: var(--error);
+      color: var(--invalid-color);
       margin-top: var(--spacing-xs);
     }
   }
@@ -143,9 +143,9 @@
     width: var(--trigger-width);
     max-height: 300px;
     overflow: auto;
-    border: 1px solid var(--outline-variant);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    background: var(--surface-container);
+    background: var(--field-background);
     box-shadow: var(--shadow-lg);
     contain: layout style paint;
 
@@ -161,7 +161,7 @@
       .react-aria-ListBoxItem {
         padding: var(--spacing) var(--spacing-md);
         border-radius: var(--radius-xs);
-        color: var(--on-surface);
+        color: var(--text-color);
         cursor: pointer;
         outline: none;
         transition: all 150ms ease;
@@ -169,24 +169,24 @@
 
         /* Hover State */
         &[data-hovered] {
-          background: var(--surface-container-high);
+          background: var(--overlay-background);
         }
 
         /* Focused State */
         &[data-focused] {
-          background: var(--surface-container-high);
+          background: var(--overlay-background);
         }
 
         /* Selected State */
         &[data-selected] {
-          background: var(--primary-container);
-          color: var(--on-primary-container);
+          background: var(--color-primary-100);
+          color: var(--color-primary-900);
           font-weight: 500;
         }
 
         /* Disabled State */
         &[data-disabled] {
-          color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+          color: color-mix(in srgb, var(--text-color) 38%, transparent);
           cursor: not-allowed;
         }
 
@@ -204,39 +204,39 @@
 
   .react-aria-ComboBox {
     /* 기본 variant 변수 */
-    --combo-accent: var(--outline-variant);
-    --combo-accent-container: var(--surface-container-high);
-    --combo-on-accent-container: var(--on-surface);
-    --combo-on-accent: var(--on-surface);
+    --combo-accent: var(--border-color);
+    --combo-accent-container: var(--overlay-background);
+    --combo-on-accent-container: var(--text-color);
+    --combo-on-accent: var(--text-color);
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-ComboBox.primary {
-    --combo-accent: var(--primary);
-    --combo-accent-container: var(--primary-container);
-    --combo-on-accent-container: var(--on-primary-container);
-    --combo-on-accent: var(--on-primary);
+    --combo-accent: var(--highlight-background);
+    --combo-accent-container: var(--color-primary-100);
+    --combo-on-accent-container: var(--color-primary-900);
+    --combo-on-accent: var(--highlight-foreground);
   }
 
   .react-aria-ComboBox.secondary {
-    --combo-accent: var(--secondary);
-    --combo-accent-container: var(--secondary-container);
-    --combo-on-accent-container: var(--on-secondary-container);
-    --combo-on-accent: var(--on-secondary);
+    --combo-accent: var(--button-background);
+    --combo-accent-container: var(--color-neutral-100);
+    --combo-on-accent-container: var(--color-neutral-900);
+    --combo-on-accent: var(--color-white);
   }
 
   .react-aria-ComboBox.tertiary {
-    --combo-accent: var(--tertiary);
-    --combo-accent-container: var(--tertiary-container);
-    --combo-on-accent-container: var(--on-tertiary-container);
-    --combo-on-accent: var(--on-tertiary);
+    --combo-accent: var(--color-purple-600);
+    --combo-accent-container: var(--color-tertiary-100);
+    --combo-on-accent-container: var(--color-tertiary-900);
+    --combo-on-accent: var(--color-white);
   }
 
   .react-aria-ComboBox.error {
-    --combo-accent: var(--error);
-    --combo-accent-container: var(--error-container);
-    --combo-on-accent-container: var(--on-error-container);
-    --combo-on-accent: var(--on-error);
+    --combo-accent: var(--invalid-color);
+    --combo-accent-container: var(--color-error-100);
+    --combo-on-accent-container: var(--color-error-900);
+    --combo-on-accent: var(--color-white);
   }
 
   /* 모든 color variant에 공통 적용되는 스타일 */
@@ -280,20 +280,20 @@
   /* ===== M3 Filled Variant ===== */
   .react-aria-ComboBox.filled {
     .react-aria-Input {
-      background: var(--surface-container-highest);
+      background: var(--color-neutral-200);
       border-color: transparent;
-      border-bottom: 2px solid var(--outline-variant);
+      border-bottom: 2px solid var(--border-color);
       border-radius: var(--border-radius) var(--border-radius) 0 0;
 
       &[data-focused] {
         outline: none;
-        border-bottom-color: var(--primary);
-        background: var(--surface-container-high);
+        border-bottom-color: var(--highlight-background);
+        background: var(--overlay-background);
       }
 
       &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        background: var(--surface-container-high);
-        border-bottom-color: var(--outline);
+        background: var(--overlay-background);
+        border-bottom-color: var(--border-color-hover);
       }
     }
   }
@@ -400,17 +400,17 @@
   /* Invalid state overrides all color variants */
   .react-aria-ComboBox[data-invalid] {
     .react-aria-Input {
-      border-color: var(--error);
+      border-color: var(--invalid-color);
 
       &[data-focused] {
-        outline-color: var(--error);
+        outline-color: var(--invalid-color);
       }
     }
   }
 
   .react-aria-ComboBox.filled[data-invalid] {
     .react-aria-Input {
-      border-bottom-color: var(--error);
+      border-bottom-color: var(--invalid-color);
     }
   }
 

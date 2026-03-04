@@ -12,7 +12,7 @@
   .react-aria-Tabs {
     width: 100%;
     display: flex;
-    color: var(--on-surface);
+    color: var(--text-color);
 
     &[data-orientation="horizontal"] {
       flex-direction: column;
@@ -29,12 +29,12 @@
     position: relative;
 
     &[data-orientation="horizontal"] {
-      border-bottom: 1px solid var(--outline-variant);
+      border-bottom: 1px solid var(--border-color);
     }
 
     &[data-orientation="vertical"] {
       flex-direction: column;
-      border-inline-end: 1px solid var(--outline-variant);
+      border-inline-end: 1px solid var(--border-color);
     }
   }
 
@@ -42,7 +42,7 @@
   /* SelectionIndicator는 각 Tab 내부에 위치 */
   .react-aria-Tab .react-aria-SelectionIndicator {
     position: absolute;
-    background: var(--primary);
+    background: var(--highlight-background);
     border-radius: var(--radius-full);
     pointer-events: none;
     transition:
@@ -84,7 +84,7 @@
     font-weight: 500;
     cursor: pointer;
     outline: none;
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
     background: transparent;
     border: none;
     transition: color 200ms, background 200ms;
@@ -92,23 +92,23 @@
 
     /* Hover state */
     &[data-hovered] {
-      color: var(--on-surface);
-      background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+      color: var(--text-color);
+      background: color-mix(in srgb, var(--text-color) 8%, transparent);
     }
 
     /* Focus state */
     &[data-focused] {
-      color: var(--on-surface);
+      color: var(--text-color);
     }
 
     /* Selected state */
     &[data-selected] {
-      color: var(--on-surface);
+      color: var(--text-color);
     }
 
     /* Disabled state */
     &[data-disabled] {
-      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      color: color-mix(in srgb, var(--text-color) 38%, transparent);
       cursor: not-allowed;
       pointer-events: none;
     }
@@ -119,7 +119,7 @@
       position: absolute;
       inset: 4px;
       border-radius: var(--radius-sm);
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: 2px;
     }
 
@@ -136,7 +136,7 @@
     }
 
     &[data-orientation="horizontal"][data-selected]::before {
-      background: var(--primary);
+      background: var(--highlight-background);
     }
 
     /* Active indicator (vertical) */
@@ -152,7 +152,7 @@
     }
 
     &[data-orientation="vertical"][data-selected]::before {
-      background: var(--primary);
+      background: var(--highlight-background);
     }
 
     /* Link style (if tab has href) */
@@ -167,10 +167,10 @@
     padding: var(--spacing-lg);
     border-radius: var(--radius-sm);
     outline: none;
-    color: var(--on-surface);
+    color: var(--text-color);
 
     &[data-focus-visible] {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: 2px;
     }
   }
@@ -182,25 +182,25 @@
   .react-aria-TabList.primary {
     .react-aria-Tab {
       &[data-selected] {
-        color: var(--primary);
+        color: var(--highlight-background);
       }
 
       &[data-orientation="horizontal"][data-selected]::before,
       &[data-orientation="vertical"][data-selected]::before {
-        background: var(--primary);
+        background: var(--highlight-background);
       }
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--primary) 8%, transparent);
+        background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
       }
 
       &[data-focus-visible]::after {
-        outline-color: var(--primary);
+        outline-color: var(--highlight-background);
       }
     }
 
     .react-aria-Tab .react-aria-SelectionIndicator {
-      background: var(--primary);
+      background: var(--highlight-background);
     }
   }
 
@@ -209,24 +209,24 @@
   .react-aria-TabList.secondary {
     .react-aria-Tab {
       &[data-selected] {
-        color: var(--secondary);
+        color: var(--button-background);
       }
 
       &[data-orientation="horizontal"][data-selected]::before,
       &[data-orientation="vertical"][data-selected]::before {
-        background: var(--secondary);
+        background: var(--button-background);
       }
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--secondary) 8%, transparent);
+        background: color-mix(in srgb, var(--button-background) 8%, transparent);
       }
 
       &[data-focus-visible]::after {
-        outline-color: var(--secondary);
+        outline-color: var(--button-background);
       }
 
       .react-aria-SelectionIndicator {
-        background: var(--secondary);
+        background: var(--button-background);
       }
     }
   }
@@ -236,29 +236,29 @@
   .react-aria-TabList.tertiary {
     .react-aria-Tab {
       &[data-selected] {
-        color: var(--tertiary);
+        color: var(--color-purple-600);
       }
 
       &[data-orientation="horizontal"][data-selected]::before,
       &[data-orientation="vertical"][data-selected]::before {
-        background: var(--tertiary);
+        background: var(--color-purple-600);
       }
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--tertiary) 8%, transparent);
+        background: color-mix(in srgb, var(--color-purple-600) 8%, transparent);
       }
 
       &[data-focus-visible]::after {
-        outline-color: var(--tertiary);
+        outline-color: var(--color-purple-600);
       }
 
       .react-aria-SelectionIndicator {
-        background: var(--tertiary);
+        background: var(--color-purple-600);
       }
     }
 
     .react-aria-SelectionIndicator {
-      background: var(--tertiary);
+      background: var(--color-purple-600);
     }
   }
 

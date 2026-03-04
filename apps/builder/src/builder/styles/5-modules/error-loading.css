@@ -5,9 +5,9 @@
    * ======================================== */
 
   .error-banner {
-    background-color: var(--error-container);
-    border: 1px solid var(--error-container);
-    color: var(--on-error-container);
+    background-color: var(--color-error-100);
+    border: 1px solid var(--color-error-100);
+    color: var(--color-error-900);
     padding: 12px 16px;
     border-radius: 6px;
     margin-bottom: 16px;
@@ -27,7 +27,7 @@
   .error-banner button {
     background: none;
     border: none;
-    color: var(--on-error-container);
+    color: var(--color-error-900);
     cursor: pointer;
     font-size: 16px;
     font-weight: bold;
@@ -54,7 +54,7 @@
   }
 
   .loading-spinner {
-    background-color: var(--surface);
+    background-color: var(--color-white);
     padding: 20px 40px;
     border-radius: 8px;
     font-size: 16px;
@@ -67,8 +67,8 @@
     display: inline-block;
     width: 20px;
     height: 20px;
-    border: 2px solid var(--outline-variant);
-    border-top: 2px solid var(--primary);
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--highlight-background);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-right: 10px;

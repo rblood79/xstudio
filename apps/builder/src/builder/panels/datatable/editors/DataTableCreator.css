@@ -107,8 +107,8 @@
 }
 
 .section-tab.active {
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--highlight-background);
+  color: var(--highlight-foreground);
 }
 
 /* ============================================
@@ -126,14 +126,14 @@
 
 /* Preset Card selected state extension */
 .section[data-section-id="table-creator"] .list-item.selected {
-  border-color: var(--primary-pressed);
-  background: var(--primary);
-  color: var(--on-primary);
+  border-color: var(--highlight-background-pressed);
+  background: var(--highlight-background);
+  color: var(--highlight-foreground);
   box-shadow: var(--shadow-sm);
 }
 
 .section[data-section-id="table-creator"] .list-item.selected .list-item-name {
-  color: var(--on-primary);
+  color: var(--highlight-foreground);
 }
 
 /* ============================================
@@ -161,7 +161,7 @@
   border: 1px solid var(--color-border);
   font-size: var(--text-xs);
   text-align: center;
-  background-color: var(--outline-variant);
+  background-color: var(--border-color);
   border-radius: var(--radius-sm);
   min-width: 0;
   padding: var(--spacing-2xs);

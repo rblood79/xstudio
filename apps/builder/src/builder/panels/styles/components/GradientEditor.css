@@ -19,13 +19,13 @@
 
   .gradient-editor__section-label {
     font-size: var(--text-xs);
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
     font-weight: 500;
   }
 
   .gradient-editor__divider {
     height: 1px;
-    background: var(--outline-variant);
+    background: var(--border-color);
     margin: 2px 0;
   }
 

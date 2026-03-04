@@ -11,7 +11,7 @@
 @layer components {
   /* ========== Base DatePicker Styles ========== */
   .react-aria-DatePicker {
-    color: var(--on-surface);
+    color: var(--text-color);
 
     .react-aria-Group {
       display: flex;
@@ -26,12 +26,12 @@
 
     .react-aria-FieldError {
       font-size: 12px;
-      color: var(--error);
+      color: var(--invalid-color);
     }
 
     [slot="description"] {
       font-size: 12px;
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
 
     &[data-invalid] {
@@ -70,46 +70,46 @@
 
   .react-aria-DatePicker {
     /* 기본 variant 변수 */
-    --dp-accent: var(--on-surface);
-    --dp-accent-container: var(--surface-container-high);
-    --dp-on-accent-container: var(--on-surface);
-    --dp-pressed-bg: var(--surface-container-highest);
+    --dp-accent: var(--text-color);
+    --dp-accent-container: var(--overlay-background);
+    --dp-on-accent-container: var(--text-color);
+    --dp-pressed-bg: var(--color-neutral-200);
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-DatePicker.primary {
-    --dp-accent: var(--primary);
-    --dp-accent-container: var(--primary-container);
-    --dp-on-accent-container: var(--on-primary-container);
-    --dp-pressed-bg: color-mix(in srgb, var(--primary) 12%, var(--primary-container));
+    --dp-accent: var(--highlight-background);
+    --dp-accent-container: var(--color-primary-100);
+    --dp-on-accent-container: var(--color-primary-900);
+    --dp-pressed-bg: color-mix(in srgb, var(--highlight-background) 12%, var(--color-primary-100));
   }
 
   .react-aria-DatePicker.secondary {
-    --dp-accent: var(--secondary);
-    --dp-accent-container: var(--secondary-container);
-    --dp-on-accent-container: var(--on-secondary-container);
-    --dp-pressed-bg: color-mix(in srgb, var(--secondary) 12%, var(--secondary-container));
+    --dp-accent: var(--button-background);
+    --dp-accent-container: var(--color-neutral-100);
+    --dp-on-accent-container: var(--color-neutral-900);
+    --dp-pressed-bg: color-mix(in srgb, var(--button-background) 12%, var(--color-neutral-100));
   }
 
   .react-aria-DatePicker.tertiary {
-    --dp-accent: var(--tertiary);
-    --dp-accent-container: var(--tertiary-container);
-    --dp-on-accent-container: var(--on-tertiary-container);
-    --dp-pressed-bg: color-mix(in srgb, var(--tertiary) 12%, var(--tertiary-container));
+    --dp-accent: var(--color-purple-600);
+    --dp-accent-container: var(--color-tertiary-100);
+    --dp-on-accent-container: var(--color-tertiary-900);
+    --dp-pressed-bg: color-mix(in srgb, var(--color-purple-600) 12%, var(--color-tertiary-100));
   }
 
   .react-aria-DatePicker.error {
-    --dp-accent: var(--error);
-    --dp-accent-container: var(--error-container);
-    --dp-on-accent-container: var(--on-error-container);
-    --dp-pressed-bg: color-mix(in srgb, var(--error) 12%, var(--error-container));
+    --dp-accent: var(--invalid-color);
+    --dp-accent-container: var(--color-error-100);
+    --dp-on-accent-container: var(--color-error-900);
+    --dp-pressed-bg: color-mix(in srgb, var(--invalid-color) 12%, var(--color-error-100));
   }
 
   .react-aria-DatePicker.filled {
-    --dp-accent: var(--on-surface);
-    --dp-accent-container: var(--surface-container-highest);
-    --dp-on-accent-container: var(--on-surface);
-    --dp-pressed-bg: var(--surface-container-high);
+    --dp-accent: var(--text-color);
+    --dp-accent-container: var(--color-neutral-200);
+    --dp-on-accent-container: var(--text-color);
+    --dp-pressed-bg: var(--overlay-background);
   }
 
   /* 모든 color variant에 공통 적용되는 Button 스타일 */

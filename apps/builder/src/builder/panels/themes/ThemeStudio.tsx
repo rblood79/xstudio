@@ -3,20 +3,19 @@
  * 테마 생성, 편집, AI 생성, Figma Import 통합 인터페이스
  */
 
-import { useState, useEffect } from 'react';
-import { useThemes, useActiveTheme } from '@/hooks';
-import { Moon, Sun } from 'lucide-react';
-import { iconProps, iconEditProps } from '../../../utils/ui/uiConstants';
+import { useState, useEffect } from "react";
+import { useThemes, useActiveTheme } from "@/hooks";
+import { Moon, Sun } from "lucide-react";
+import { iconProps, iconEditProps } from "../../../utils/ui/uiConstants";
 
 // 하위 컴포넌트 import
-import { AIThemeGenerator } from './components/AIThemeGenerator';
-import { HctThemeGenerator } from './components/HctThemeGenerator';
-import { FigmaImporter } from './components/FigmaImporter';
-import { TokenEditor } from './components/TokenEditor';
-import { ThemeExporter } from './components/ThemeExporter';
-import { DarkModeGenerator } from './components/DarkModeGenerator';
-import { FigmaPluginExporter } from './components/FigmaPluginExporter';
-import { M3ColorSystemGuide } from './components/M3ColorSystemGuide';
+import { AIThemeGenerator } from "./components/AIThemeGenerator";
+import { HctThemeGenerator } from "./components/HctThemeGenerator";
+import { FigmaImporter } from "./components/FigmaImporter";
+import { TokenEditor } from "./components/TokenEditor";
+import { ThemeExporter } from "./components/ThemeExporter";
+import { DarkModeGenerator } from "./components/DarkModeGenerator";
+import { FigmaPluginExporter } from "./components/FigmaPluginExporter";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -24,31 +23,47 @@ import { M3ColorSystemGuide } from './components/M3ColorSystemGuide';
  * - 직접 CSS 클래스 사용
  */
 const styles = {
-  container: 'themePanel',
-  header: 'theme-studio-header',
-  sidebar: 'theme-studio-sidebar',
-  main: 'theme-studio-main',
-  panel: 'theme-studio-panel',
+  container: "themePanel",
+  header: "theme-studio-header",
+  sidebar: "theme-studio-sidebar",
+  main: "theme-studio-main",
+  panel: "theme-studio-panel",
 };
 
 interface ThemeStudioProps {
   projectId: string;
 }
 
-type ThemeStudioView = 'tokens' | 'ai-generator' | 'hct-generator' | 'figma-import' | 'dark-mode' | 'figma-plugin' | 'settings';
+type ThemeStudioView =
+  | "tokens"
+  | "ai-generator"
+  | "hct-generator"
+  | "figma-import"
+  | "dark-mode"
+  | "figma-plugin"
+  | "settings";
 
 export function ThemeStudio({ projectId }: ThemeStudioProps) {
-
-  const [currentView, setCurrentView] = useState<ThemeStudioView>('tokens');
+  const [currentView, setCurrentView] = useState<ThemeStudioView>("tokens");
   const [isPreviewDarkMode, setIsPreviewDarkMode] = useState(false);
 
   // Theme 데이터 로드
-  const { themes, loading: themesLoading, createTheme, activateTheme, deleteTheme } = useThemes({
+  const {
+    themes,
+    loading: themesLoading,
+    createTheme,
+    activateTheme,
+    deleteTheme,
+  } = useThemes({
     projectId,
     enableRealtime: true,
   });
 
-  const { activeTheme, loading: activeLoading, refetch: refetchActiveTheme } = useActiveTheme({
+  const {
+    activeTheme,
+    loading: activeLoading,
+    refetch: refetchActiveTheme,
+  } = useActiveTheme({
     projectId,
     enableRealtime: true,
   });
@@ -57,8 +72,8 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
 
   // 다크모드 미리보기 초기화 (로컬 스토리지에서 복원)
   useEffect(() => {
-    const savedMode = localStorage.getItem('themestudio-preview-dark-mode');
-    const shouldBeDark = savedMode === 'dark';
+    const savedMode = localStorage.getItem("themestudio-preview-dark-mode");
+    const shouldBeDark = savedMode === "dark";
     setIsPreviewDarkMode(shouldBeDark);
   }, []);
 
@@ -72,8 +87,14 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
   const handleTogglePreviewDarkMode = () => {
     const newMode = !isPreviewDarkMode;
     setIsPreviewDarkMode(newMode);
-    localStorage.setItem('themestudio-preview-dark-mode', newMode ? 'dark' : 'light');
-    console.log('[ThemeStudio] Preview dark mode:', newMode ? 'enabled' : 'disabled');
+    localStorage.setItem(
+      "themestudio-preview-dark-mode",
+      newMode ? "dark" : "light",
+    );
+    console.log(
+      "[ThemeStudio] Preview dark mode:",
+      newMode ? "enabled" : "disabled",
+    );
   };
 
   if (loading) {
@@ -87,18 +108,17 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
     );
   }
 
-
   return (
     <div
       className={styles.container}
-      data-theme={isPreviewDarkMode ? 'dark' : undefined}
+      data-theme={isPreviewDarkMode ? "dark" : undefined}
     >
       {/* Header */}
       <div className="panel-header">
         <h3 className="panel-title">Theme</h3>
         <div className="header-actions">
           <select
-            value={activeTheme?.id || ''}
+            value={activeTheme?.id || ""}
             onChange={(e) => handleActivateTheme(e.target.value)}
           >
             {themes.map((theme) => (
@@ -111,50 +131,54 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
           <button
             className="iconButton preview-dark-mode-toggle"
             onClick={handleTogglePreviewDarkMode}
-            title={isPreviewDarkMode ? 'Light 모드로 전환' : 'Dark 모드로 전환'}
+            title={isPreviewDarkMode ? "Light 모드로 전환" : "Dark 모드로 전환"}
           >
-            {isPreviewDarkMode ? <Sun size={iconProps.size} /> : <Moon size={iconProps.size} />}
-            <span>{isPreviewDarkMode ? 'Light' : 'Dark'}</span>
+            {isPreviewDarkMode ? (
+              <Sun size={iconProps.size} />
+            ) : (
+              <Moon size={iconProps.size} />
+            )}
+            <span>{isPreviewDarkMode ? "Light" : "Dark"}</span>
           </button>
           <button
-            className={currentView === 'tokens' ? 'active' : ''}
-            onClick={() => setCurrentView('tokens')}
+            className={currentView === "tokens" ? "active" : ""}
+            onClick={() => setCurrentView("tokens")}
           >
             토큰 편집
           </button>
           <button
-            className={currentView === 'ai-generator' ? 'active' : ''}
-            onClick={() => setCurrentView('ai-generator')}
+            className={currentView === "ai-generator" ? "active" : ""}
+            onClick={() => setCurrentView("ai-generator")}
           >
             AI 생성
           </button>
           <button
-            className={currentView === 'hct-generator' ? 'active' : ''}
-            onClick={() => setCurrentView('hct-generator')}
+            className={currentView === "hct-generator" ? "active" : ""}
+            onClick={() => setCurrentView("hct-generator")}
           >
             HCT (M3)
           </button>
           <button
-            className={currentView === 'figma-import' ? 'active' : ''}
-            onClick={() => setCurrentView('figma-import')}
+            className={currentView === "figma-import" ? "active" : ""}
+            onClick={() => setCurrentView("figma-import")}
           >
             Figma Import
           </button>
           <button
-            className={currentView === 'dark-mode' ? 'active' : ''}
-            onClick={() => setCurrentView('dark-mode')}
+            className={currentView === "dark-mode" ? "active" : ""}
+            onClick={() => setCurrentView("dark-mode")}
           >
             다크 모드
           </button>
           <button
-            className={currentView === 'figma-plugin' ? 'active' : ''}
-            onClick={() => setCurrentView('figma-plugin')}
+            className={currentView === "figma-plugin" ? "active" : ""}
+            onClick={() => setCurrentView("figma-plugin")}
           >
             Figma Plugin
           </button>
           <button
-            className={currentView === 'settings' ? 'active' : ''}
-            onClick={() => setCurrentView('settings')}
+            className={currentView === "settings" ? "active" : ""}
+            onClick={() => setCurrentView("settings")}
           >
             설정
           </button>
@@ -169,7 +193,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
             <button
               className="create-theme-btn"
               onClick={() => {
-                const name = prompt('새 테마 이름:');
+                const name = prompt("새 테마 이름:");
                 if (name) {
                   createTheme(name);
                 }
@@ -183,7 +207,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
             {themes.map((theme) => (
               <div
                 key={theme.id}
-                className={`theme-item ${activeTheme?.id === theme.id ? 'active' : ''}`}
+                className={`theme-item ${activeTheme?.id === theme.id ? "active" : ""}`}
               >
                 <div
                   className="theme-info"
@@ -192,7 +216,10 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
                   <div className="theme-name-row">
                     <span className="theme-name">{theme.name}</span>
                     {(theme.supports_dark_mode ?? true) && (
-                      <Moon size={iconEditProps.size} className="dark-mode-indicator" />
+                      <Moon
+                        size={iconEditProps.size}
+                        className="dark-mode-indicator"
+                      />
                     )}
                   </div>
                   <span className="theme-status">{theme.status}</span>
@@ -216,61 +243,61 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
 
         {/* Main Content */}
         <main className={styles.main}>
-          {currentView === 'tokens' && activeTheme && (
+          {currentView === "tokens" && activeTheme && (
             <TokenEditor themeId={activeTheme.id} projectId={projectId} />
           )}
 
-          {currentView === 'ai-generator' && (
+          {currentView === "ai-generator" && (
             <div className="ai-generator-view">
               <AIThemeGenerator
                 projectId={projectId}
                 onThemeGenerated={(themeId) => {
                   handleActivateTheme(themeId);
-                  setCurrentView('tokens');
+                  setCurrentView("tokens");
                 }}
               />
             </div>
           )}
 
-          {currentView === 'hct-generator' && (
+          {currentView === "hct-generator" && (
             <div className="hct-generator-view">
               <HctThemeGenerator
                 projectId={projectId}
                 onThemeGenerated={(themeId) => {
                   handleActivateTheme(themeId);
-                  setCurrentView('tokens');
+                  setCurrentView("tokens");
                 }}
               />
             </div>
           )}
 
-          {currentView === 'figma-import' && (
+          {currentView === "figma-import" && (
             <div className="figma-import-view">
               <FigmaImporter
                 projectId={projectId}
-                themeId={activeTheme?.id || ''}
+                themeId={activeTheme?.id || ""}
                 onImportComplete={(result) => {
-                  console.log('Figma import complete:', result);
-                  setCurrentView('tokens');
+                  console.log("Figma import complete:", result);
+                  setCurrentView("tokens");
                 }}
               />
             </div>
           )}
 
-          {currentView === 'dark-mode' && activeTheme && (
+          {currentView === "dark-mode" && activeTheme && (
             <div className="dark-mode-view">
               <DarkModeGenerator
                 projectId={projectId}
                 themeId={activeTheme.id}
                 onDarkThemeCreated={(darkThemeId) => {
                   handleActivateTheme(darkThemeId);
-                  setCurrentView('tokens');
+                  setCurrentView("tokens");
                 }}
               />
             </div>
           )}
 
-          {currentView === 'figma-plugin' && activeTheme && (
+          {currentView === "figma-plugin" && activeTheme && (
             <div className="figma-plugin-view">
               <FigmaPluginExporter
                 projectId={projectId}
@@ -279,7 +306,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
             </div>
           )}
 
-          {currentView === 'settings' && activeTheme && (
+          {currentView === "settings" && activeTheme && (
             <div className="settings-view">
               <div className="theme-settings-section">
                 <h3>테마 설정</h3>
@@ -295,20 +322,28 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
                     onChange={async (e) => {
                       const newValue = e.target.checked;
                       try {
-                        const { supabase } = await import('../../../env/supabase.client');
+                        const { supabase } =
+                          await import("../../../env/supabase.client");
                         await supabase
-                          .from('design_themes')
+                          .from("design_themes")
                           .update({ supports_dark_mode: newValue })
-                          .eq('id', activeTheme.id);
+                          .eq("id", activeTheme.id);
                         // Realtime subscription will automatically update the state
-                        console.log('[ThemeStudio] Updated dark mode support:', newValue);
+                        console.log(
+                          "[ThemeStudio] Updated dark mode support:",
+                          newValue,
+                        );
                       } catch (error) {
-                        console.error('[ThemeStudio] Failed to update dark mode support:', error);
+                        console.error(
+                          "[ThemeStudio] Failed to update dark mode support:",
+                          error,
+                        );
                       }
                     }}
                   />
                   <p className="setting-description">
-                    이 옵션을 비활성화하면 Builder에서 다크모드 토글이 비활성화됩니다.
+                    이 옵션을 비활성화하면 Builder에서 다크모드 토글이
+                    비활성화됩니다.
                   </p>
                 </div>
               </div>

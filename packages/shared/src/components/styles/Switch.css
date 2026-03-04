@@ -10,7 +10,7 @@
     align-items: center;
     gap: 10px;
     font-size: var(--text-base);
-    color: var(--on-surface);
+    color: var(--text-color);
     forced-color-adjust: none;
     padding: var(--spacing) 0;
 
@@ -18,8 +18,8 @@
       width: calc(var(--text-4xl) + 4px);
       height: calc(var(--text-lg) + 2px);
       border-radius: var(--text-xl);
-      border: 2px solid var(--outline);
-      background: var(--surface-container-highest);
+      border: 2px solid var(--border-color-hover);
+      background: var(--color-neutral-200);
       transition: all 200ms;
 
       &:before {
@@ -29,34 +29,34 @@
         height: 100% !important;
         border-radius: var(--text-lg);
         margin: 0px;
-        background: var(--outline);
+        background: var(--border-color-hover);
         transition: all 200ms;
       }
     }
 
     &[data-pressed] .indicator {
-      border-color: var(--outline);
+      border-color: var(--border-color-hover);
 
       &:before {
-        background: var(--on-surface-variant);
+        background: var(--text-color-placeholder);
       }
     }
 
     &[data-selected] {
       .indicator {
-        border-color: var(--primary);
-        background: var(--primary);
+        border-color: var(--highlight-background);
+        background: var(--highlight-background);
 
         &:before {
-          background: var(--on-primary);
+          background: var(--highlight-foreground);
           transform: translateX(100%);
         }
       }
 
       &[data-pressed] {
         .indicator {
-          border-color: var(--primary-pressed);
-          background: var(--primary-pressed);
+          border-color: var(--highlight-background-pressed);
+          background: var(--highlight-background-pressed);
         }
       }
     }
@@ -83,17 +83,17 @@
   .react-aria-Switch[data-variant="primary"] {
     &[data-selected] {
       .indicator {
-        border-color: var(--primary);
-        background: var(--primary);
+        border-color: var(--highlight-background);
+        background: var(--highlight-background);
 
         &:before {
-          background: var(--on-primary);
+          background: var(--highlight-foreground);
         }
       }
 
       &[data-pressed] .indicator {
-        border-color: var(--primary-pressed);
-        background: var(--primary-pressed);
+        border-color: var(--highlight-background-pressed);
+        background: var(--highlight-background-pressed);
       }
     }
   }
@@ -102,17 +102,17 @@
   .react-aria-Switch[data-variant="secondary"] {
     &[data-selected] {
       .indicator {
-        border-color: var(--secondary);
-        background: var(--secondary);
+        border-color: var(--button-background);
+        background: var(--button-background);
 
         &:before {
-          background: var(--on-secondary);
+          background: var(--color-white);
         }
       }
 
       &[data-pressed] .indicator {
-        border-color: var(--secondary-pressed);
-        background: var(--secondary-pressed);
+        border-color: color-mix(in srgb, var(--button-background) 75%, black);
+        background: color-mix(in srgb, var(--button-background) 75%, black);
       }
     }
   }
@@ -121,17 +121,17 @@
   .react-aria-Switch[data-variant="tertiary"] {
     &[data-selected] {
       .indicator {
-        border-color: var(--tertiary);
-        background: var(--tertiary);
+        border-color: var(--color-purple-600);
+        background: var(--color-purple-600);
 
         &:before {
-          background: var(--on-tertiary);
+          background: var(--color-white);
         }
       }
 
       &[data-pressed] .indicator {
-        border-color: var(--tertiary-pressed);
-        background: var(--tertiary-pressed);
+        border-color: color-mix(in srgb, var(--color-purple-600) 75%, black);
+        background: color-mix(in srgb, var(--color-purple-600) 75%, black);
       }
     }
   }
@@ -140,17 +140,17 @@
   .react-aria-Switch[data-variant="error"] {
     &[data-selected] {
       .indicator {
-        border-color: var(--error);
-        background: var(--error);
+        border-color: var(--invalid-color);
+        background: var(--invalid-color);
 
         &:before {
-          background: var(--on-error);
+          background: var(--color-white);
         }
       }
 
       &[data-pressed] .indicator {
-        border-color: var(--error-pressed);
-        background: var(--error-pressed);
+        border-color: color-mix(in srgb, var(--invalid-color) 75%, black);
+        background: color-mix(in srgb, var(--invalid-color) 75%, black);
       }
     }
   }
@@ -159,17 +159,17 @@
   .react-aria-Switch[data-variant="surface"] {
     &[data-selected] {
       .indicator {
-        border-color: var(--surface-container-highest);
-        background: var(--surface-container-highest);
+        border-color: var(--color-neutral-200);
+        background: var(--color-neutral-200);
 
         &:before {
-          background: var(--on-surface);
+          background: var(--text-color);
         }
       }
 
       &[data-pressed] .indicator {
-        border-color: color-mix(in srgb, var(--surface-container-highest) 88%, black);
-        background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+        border-color: color-mix(in srgb, var(--color-neutral-200) 88%, black);
+        background: color-mix(in srgb, var(--color-neutral-200) 88%, black);
       }
     }
   }

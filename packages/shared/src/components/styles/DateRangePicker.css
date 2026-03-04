@@ -11,7 +11,7 @@
 @layer components {
   /* ========== Base DateRangePicker Styles ========== */
   .react-aria-DateRangePicker {
-    color: var(--on-surface);
+    color: var(--text-color);
 
     .react-aria-Group {
       display: flex;
@@ -23,20 +23,20 @@
       overflow: auto;
       position: relative;
       padding: 8px 8px 8px 14px;
-      border: 1px solid var(--outline-variant);
+      border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      background: var(--surface-container);
+      background: var(--field-background);
       white-space: nowrap;
 
       &[data-pressed] {
         box-shadow: none;
-        background: var(--surface-container-high);
+        background: var(--overlay-background);
       }
     }
 
     [slot="start"] + span {
       padding: 0 4px;
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
 
     [slot="end"] {
@@ -58,12 +58,12 @@
 
     .react-aria-FieldError {
       font-size: var(--text-xs);
-      color: var(--error);
+      color: var(--invalid-color);
     }
 
     [slot="description"] {
       font-size: var(--text-xs);
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
 
     &[data-invalid] {
@@ -105,48 +105,48 @@
 
   .react-aria-DateRangePicker {
     /* 기본 variant 변수 */
-    --drp-accent: var(--on-surface);
-    --drp-accent-container: var(--surface-container-high);
-    --drp-on-accent-container: var(--on-surface);
-    --drp-pressed-bg: var(--surface-container);
-    --drp-group-bg: var(--surface-container);
+    --drp-accent: var(--text-color);
+    --drp-accent-container: var(--overlay-background);
+    --drp-on-accent-container: var(--text-color);
+    --drp-pressed-bg: var(--field-background);
+    --drp-group-bg: var(--field-background);
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-DateRangePicker.primary {
-    --drp-accent: var(--primary);
-    --drp-accent-container: var(--primary-container);
-    --drp-on-accent-container: var(--on-primary-container);
-    --drp-pressed-bg: color-mix(in srgb, var(--primary) 12%, var(--primary-container));
+    --drp-accent: var(--highlight-background);
+    --drp-accent-container: var(--color-primary-100);
+    --drp-on-accent-container: var(--color-primary-900);
+    --drp-pressed-bg: color-mix(in srgb, var(--highlight-background) 12%, var(--color-primary-100));
   }
 
   .react-aria-DateRangePicker.secondary {
-    --drp-accent: var(--secondary);
-    --drp-accent-container: var(--secondary-container);
-    --drp-on-accent-container: var(--on-secondary-container);
-    --drp-pressed-bg: color-mix(in srgb, var(--secondary) 12%, var(--secondary-container));
+    --drp-accent: var(--button-background);
+    --drp-accent-container: var(--color-neutral-100);
+    --drp-on-accent-container: var(--color-neutral-900);
+    --drp-pressed-bg: color-mix(in srgb, var(--button-background) 12%, var(--color-neutral-100));
   }
 
   .react-aria-DateRangePicker.tertiary {
-    --drp-accent: var(--tertiary);
-    --drp-accent-container: var(--tertiary-container);
-    --drp-on-accent-container: var(--on-tertiary-container);
-    --drp-pressed-bg: color-mix(in srgb, var(--tertiary) 12%, var(--tertiary-container));
+    --drp-accent: var(--color-purple-600);
+    --drp-accent-container: var(--color-tertiary-100);
+    --drp-on-accent-container: var(--color-tertiary-900);
+    --drp-pressed-bg: color-mix(in srgb, var(--color-purple-600) 12%, var(--color-tertiary-100));
   }
 
   .react-aria-DateRangePicker.error {
-    --drp-accent: var(--error);
-    --drp-accent-container: var(--error-container);
-    --drp-on-accent-container: var(--on-error-container);
-    --drp-pressed-bg: color-mix(in srgb, var(--error) 12%, var(--error-container));
+    --drp-accent: var(--invalid-color);
+    --drp-accent-container: var(--color-error-100);
+    --drp-on-accent-container: var(--color-error-900);
+    --drp-pressed-bg: color-mix(in srgb, var(--invalid-color) 12%, var(--color-error-100));
   }
 
   .react-aria-DateRangePicker.filled {
-    --drp-accent: var(--on-surface);
-    --drp-accent-container: var(--surface-container-high);
-    --drp-on-accent-container: var(--on-surface);
-    --drp-pressed-bg: var(--surface-container);
-    --drp-group-bg: var(--surface-container-highest);
+    --drp-accent: var(--text-color);
+    --drp-accent-container: var(--overlay-background);
+    --drp-on-accent-container: var(--text-color);
+    --drp-pressed-bg: var(--field-background);
+    --drp-group-bg: var(--color-neutral-200);
   }
 
   /* 모든 color variant에 공통 적용되는 스타일 */

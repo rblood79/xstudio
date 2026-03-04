@@ -12,16 +12,16 @@
   .react-aria-ColorField {
     display: flex;
     flex-direction: column;
-    color: var(--on-surface);
+    color: var(--text-color);
 
     .react-aria-Input {
       padding: 6px 10px;
       margin: 0;
-      border: 1px solid var(--outline-variant);
+      border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      background: var(--surface-container);
+      background: var(--field-background);
       font-size: var(--text-base);
-      color: var(--on-surface);
+      color: var(--text-color);
       width: 100%;
       max-width: 12ch;
       box-sizing: border-box;
@@ -29,24 +29,24 @@
 
     &[data-invalid] {
       .react-aria-Input {
-        border-color: var(--error);
+        border-color: var(--invalid-color);
       }
     }
 
     .react-aria-FieldError {
       font-size: 12px;
-      color: var(--error);
+      color: var(--invalid-color);
     }
 
     [slot=description] {
       font-size: 12px;
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
 
     .react-aria-Input {
       &[data-disabled] {
-        border-color: color-mix(in srgb, var(--outline-variant) 38%, transparent);
-        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        border-color: color-mix(in srgb, var(--border-color) 38%, transparent);
+        color: color-mix(in srgb, var(--text-color) 38%, transparent);
         cursor: not-allowed;
       }
     }
@@ -57,30 +57,30 @@
 
   .react-aria-ColorField {
     /* 기본 variant 변수 */
-    --cf-accent: var(--outline-variant);
-    --cf-accent-bg: var(--surface-container);
+    --cf-accent: var(--border-color);
+    --cf-accent-bg: var(--field-background);
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-ColorField.primary {
-    --cf-accent: var(--primary);
+    --cf-accent: var(--highlight-background);
   }
 
   .react-aria-ColorField.secondary {
-    --cf-accent: var(--secondary);
+    --cf-accent: var(--button-background);
   }
 
   .react-aria-ColorField.tertiary {
-    --cf-accent: var(--tertiary);
+    --cf-accent: var(--color-purple-600);
   }
 
   .react-aria-ColorField.error {
-    --cf-accent: var(--error);
+    --cf-accent: var(--invalid-color);
   }
 
   .react-aria-ColorField.filled {
-    --cf-accent: var(--on-surface);
-    --cf-accent-bg: var(--surface-container-highest);
+    --cf-accent: var(--text-color);
+    --cf-accent-bg: var(--color-neutral-200);
   }
 
   /* 모든 color variant에 공통 적용되는 스타일 */
@@ -100,7 +100,7 @@
   /* error variant의 기본 border */
   .react-aria-ColorField.error {
     .react-aria-Input {
-      border-color: var(--error);
+      border-color: var(--invalid-color);
     }
   }
 

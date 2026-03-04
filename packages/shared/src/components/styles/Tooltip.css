@@ -34,10 +34,10 @@
 
   /* ========== Base Tooltip Styles ========== */
   .react-aria-Tooltip {
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--on-surface) 12%, transparent);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--text-color) 12%, transparent);
     border-radius: var(--radius-sm);
-    background: var(--inverse-surface);
-    color: var(--inverse-on-surface);
+    background: var(--color-neutral-800);
+    color: var(--color-neutral-100);
     forced-color-adjust: none;
     outline: none;
     padding: 6px 10px;
@@ -108,7 +108,7 @@
 
     & .react-aria-OverlayArrow svg {
       display: block;
-      fill: var(--inverse-surface);
+      fill: var(--color-neutral-800);
     }
   }
 
@@ -124,51 +124,51 @@
 
   /* ===== M3 Primary Variant ===== */
   .react-aria-Tooltip.primary {
-    background: var(--primary);
-    color: var(--on-primary);
+    background: var(--highlight-background);
+    color: var(--highlight-foreground);
 
     & .react-aria-OverlayArrow svg {
-      fill: var(--primary);
+      fill: var(--highlight-background);
     }
   }
 
   /* ===== M3 Secondary Variant ===== */
   .react-aria-Tooltip.secondary {
-    background: var(--secondary);
-    color: var(--on-secondary);
+    background: var(--button-background);
+    color: var(--color-white);
 
     & .react-aria-OverlayArrow svg {
-      fill: var(--secondary);
+      fill: var(--button-background);
     }
   }
 
   /* ===== M3 Tertiary Variant ===== */
   .react-aria-Tooltip.tertiary {
-    background: var(--tertiary);
-    color: var(--on-tertiary);
+    background: var(--color-purple-600);
+    color: var(--color-white);
 
     & .react-aria-OverlayArrow svg {
-      fill: var(--tertiary);
+      fill: var(--color-purple-600);
     }
   }
 
   /* ===== M3 Error Variant ===== */
   .react-aria-Tooltip.error {
-    background: var(--error);
-    color: var(--on-error);
+    background: var(--invalid-color);
+    color: var(--color-white);
 
     & .react-aria-OverlayArrow svg {
-      fill: var(--error);
+      fill: var(--invalid-color);
     }
   }
 
   /* ===== M3 Filled Variant ===== */
   .react-aria-Tooltip.filled {
-    background: var(--surface-container-highest);
-    color: var(--on-surface);
+    background: var(--color-neutral-200);
+    color: var(--text-color);
 
     & .react-aria-OverlayArrow svg {
-      fill: var(--surface-container-highest);
+      fill: var(--color-neutral-200);
     }
   }
 

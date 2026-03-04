@@ -2129,16 +2129,16 @@
 .field-label {
   font-size: var(--font-size-sm);
   font-weight: 500;
-  color: var(--on-surface);
+  color: var(--text-color);
 }
 
 .field-input,
 .field-textarea {
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-sm);
-  color: var(--on-surface);
-  background: var(--surface-variant);
-  border: 1px solid var(--outline-variant);
+  color: var(--text-color);
+  background: var(--color-surface-200);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
 }
@@ -2147,7 +2147,7 @@
 .field-textarea:focus {
   outline: none;
   border-color: var(--focus-ring-color);
-  box-shadow: 0 0 0 3px var(--surface-container-low);
+  box-shadow: 0 0 0 3px var(--color-neutral-50);
 }
 
 .field-textarea {
@@ -2161,7 +2161,7 @@
 
 .field-hint {
   font-size: var(--font-size-xs);
-  color: var(--on-surface-variant);
+  color: var(--text-color-placeholder);
   margin: 0;
 }
 
@@ -2176,12 +2176,12 @@
   align-items: center;
   gap: var(--spacing-sm);
   font-size: var(--font-size-sm);
-  color: var(--on-surface);
+  color: var(--text-color);
 }
 
 .switch-label {
   font-size: var(--font-size-sm);
-  color: var(--on-surface);
+  color: var(--text-color);
 }
 
 /* ==========================================================================
@@ -2195,9 +2195,9 @@
   justify-content: space-between;
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-sm);
-  color: var(--on-surface);
-  background: var(--surface-variant);
-  border: 1px solid var(--outline-variant);
+  color: var(--text-color);
+  background: var(--color-surface-200);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -2208,8 +2208,8 @@
 }
 
 .select-popover {
-  background: var(--surface);
-  border: 1px solid var(--outline-variant);
+  background: var(--color-white);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   max-height: 300px;
@@ -2227,8 +2227,8 @@
 .helper-text {
   padding: var(--spacing-sm);
   font-size: var(--font-size-xs);
-  color: var(--on-surface-variant);
-  background: var(--surface);
+  color: var(--text-color-placeholder);
+  background: var(--color-white);
   border-radius: var(--radius-md);
 }
 
@@ -2238,9 +2238,9 @@
 
 .error-message {
   font-size: var(--font-size-xs);
-  color: var(--on-error-container);
+  color: var(--color-error-900);
   padding: var(--spacing-sm);
-  background: var(--error-container);
+  background: var(--color-error-100);
   border-radius: var(--radius-sm);
 }
 
@@ -2273,9 +2273,9 @@
 .variable-type-badge {
   font-size: var(--font-size-xs);
   padding: 2px 6px;
-  background: var(--surface-variant);
+  background: var(--color-surface-200);
   border-radius: var(--radius-sm);
-  color: var(--on-surface-variant);
+  color: var(--text-color-placeholder);
 }
 
 .variable-info {
@@ -2283,9 +2283,9 @@
   align-items: center;
   gap: var(--spacing-sm);
   font-size: var(--font-size-xs);
-  color: var(--on-surface-variant);
+  color: var(--text-color-placeholder);
   padding: var(--spacing-sm);
-  background: var(--surface-variant);
+  background: var(--color-surface-200);
   border-radius: var(--radius-sm);
 }
 

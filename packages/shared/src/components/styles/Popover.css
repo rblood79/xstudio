@@ -34,11 +34,11 @@
 
   /* ========== Base Popover Styles ========== */
   .react-aria-Popover {
-    border: 1px solid var(--outline-variant);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--on-surface) 15%, transparent);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--text-color) 15%, transparent);
     border-radius: var(--radius-lg);
-    background: var(--surface-container);
-    color: var(--on-surface);
+    background: var(--field-background);
+    color: var(--text-color);
     outline: none;
     max-width: 250px;
     transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -55,8 +55,8 @@
 
     .react-aria-OverlayArrow svg {
       display: block;
-      fill: var(--surface-container);
-      stroke: var(--outline-variant);
+      fill: var(--field-background);
+      stroke: var(--border-color);
       stroke-width: 1px;
     }
 
@@ -143,48 +143,48 @@
 
   /* ===== M3 Primary Variant ===== */
   .react-aria-Popover.primary {
-    border-color: var(--primary);
+    border-color: var(--highlight-background);
 
     .react-aria-OverlayArrow svg {
-      stroke: var(--primary);
+      stroke: var(--highlight-background);
     }
   }
 
   /* ===== M3 Secondary Variant ===== */
   .react-aria-Popover.secondary {
-    border-color: var(--secondary);
+    border-color: var(--button-background);
 
     .react-aria-OverlayArrow svg {
-      stroke: var(--secondary);
+      stroke: var(--button-background);
     }
   }
 
   /* ===== M3 Tertiary Variant ===== */
   .react-aria-Popover.tertiary {
-    border-color: var(--tertiary);
+    border-color: var(--color-purple-600);
 
     .react-aria-OverlayArrow svg {
-      stroke: var(--tertiary);
+      stroke: var(--color-purple-600);
     }
   }
 
   /* ===== M3 Error Variant ===== */
   .react-aria-Popover.error {
-    border-color: var(--error);
+    border-color: var(--invalid-color);
 
     .react-aria-OverlayArrow svg {
-      stroke: var(--error);
+      stroke: var(--invalid-color);
     }
   }
 
   /* ===== M3 Filled Variant ===== */
   .react-aria-Popover.filled {
-    background: var(--surface-container-highest);
+    background: var(--color-neutral-200);
     border: none;
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--on-surface) 15%, transparent);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--text-color) 15%, transparent);
 
     .react-aria-OverlayArrow svg {
-      fill: var(--surface-container-highest);
+      fill: var(--color-neutral-200);
       stroke: none;
     }
   }

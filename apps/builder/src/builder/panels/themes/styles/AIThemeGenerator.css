@@ -52,16 +52,16 @@
     font-size: var(--text-base);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--surface-container);
+    background: var(--field-background);
     color: var(--text-color);
   }
 
   .form-group input:focus,
   .form-group textarea:focus,
   .form-group select:focus {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--highlight-background);
     outline-offset: 0;
-    border-color: var(--primary);
+    border-color: var(--highlight-background);
   }
 
   .form-group textarea {
@@ -70,7 +70,7 @@
 
   .field-hint {
     font-size: var(--text-sm);
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
     margin: 0;
   }
 
@@ -98,8 +98,8 @@
     padding: var(--spacing-3) var(--spacing-6);
     font-size: var(--text-base);
     font-weight: var(--font-weight-semibold);
-    color: var(--surface-container);
-    background: var(--primary);
+    color: var(--field-background);
+    background: var(--highlight-background);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -107,7 +107,7 @@
   }
 
   .generate-btn:hover {
-    background: var(--primary);
+    background: var(--highlight-background);
   }
 
   .generate-btn:active {
@@ -117,7 +117,7 @@
   /* Progress */
   .progress-container {
     padding: var(--spacing-6);
-    background: var(--surface-container-low);
+    background: var(--color-neutral-50);
     border-radius: var(--radius-lg);
   }
 
@@ -138,7 +138,7 @@
   .progress-percentage {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-bold);
-    color: var(--primary);
+    color: var(--highlight-background);
   }
 
   .progress-bar {
@@ -151,7 +151,7 @@
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary), var(--primary));
+    background: linear-gradient(90deg, var(--highlight-background), var(--highlight-background));
     transition: width 300ms ease-out;
   }
 
@@ -189,12 +189,12 @@
     height: 32px;
     border: 2px solid var(--border-color-hover);
     border-radius: 50%;
-    background: var(--surface-container);
+    background: var(--field-background);
   }
 
   .stage-indicator.active .stage-icon {
-    border-color: var(--primary);
-    background: var(--primary-container);
+    border-color: var(--highlight-background);
+    background: var(--color-primary-100);
     animation: pulse 2s infinite;
   }
 
@@ -221,7 +221,7 @@
   /* Results */
   .generation-results {
     padding: var(--spacing-6);
-    background: var(--primary-container);
+    background: var(--color-primary-100);
     border: 1px solid var(--status-success);
     border-radius: var(--radius-lg);
   }
@@ -244,17 +244,17 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--primary);
-    background: var(--surface-container);
-    border: 1px solid var(--primary);
+    color: var(--highlight-background);
+    background: var(--field-background);
+    border: 1px solid var(--highlight-background);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .new-theme-btn:hover {
-    background: var(--primary-container);
-    border-color: var(--primary);
+    background: var(--color-primary-100);
+    border-color: var(--highlight-background);
   }
 
   /* Result Stats */
@@ -270,7 +270,7 @@
     flex-direction: column;
     gap: var(--spacing-1);
     padding: var(--spacing-4);
-    background: var(--surface-container);
+    background: var(--field-background);
     border-radius: var(--radius-md);
   }
 
@@ -282,7 +282,7 @@
   /* Palette Preview */
   .palette-preview {
     padding: var(--spacing-4);
-    background: var(--surface-container);
+    background: var(--field-background);
     border-radius: var(--radius-md);
   }
 
@@ -334,7 +334,7 @@
   /* Error */
   .error-message {
     padding: var(--spacing-6);
-    background: var(--primary-container);
+    background: var(--color-primary-100);
     border: 1px solid var(--status-error);
     border-radius: var(--radius-lg);
   }
@@ -356,7 +356,7 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--surface-container);
+    color: var(--field-background);
     background: var(--status-error);
     border: none;
     border-radius: var(--radius-md);

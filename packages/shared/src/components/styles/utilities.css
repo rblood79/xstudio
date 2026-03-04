@@ -1,0 +1,142 @@
+/* ============================================
+   Utilities CSS — ADR-018 Phase 1
+   Shared color derivation patterns for components.
+   Uses single custom property + color-mix() to
+   derive hover/pressed/focus states automatically.
+
+   :where() ensures specificity 0 — components can
+   override without escalation.
+   ============================================ */
+
+@layer utilities {
+  /* =========================================
+     .button-base — Filled Button Color System
+     Set --button-color, --button-text on the element.
+     Hover/pressed/border are auto-derived.
+     ========================================= */
+  .button-base {
+    background: var(--button-color);
+    color: var(--button-text, var(--color-white));
+    border-color: var(--button-border, var(--button-color));
+
+    &:where([data-hovered]) {
+      background: color-mix(in srgb, var(--button-color) 85%, black);
+      border-color: color-mix(
+        in srgb,
+        var(--button-border, var(--button-color)) 85%,
+        black
+      );
+    }
+
+    &:where([data-pressed]) {
+      background: color-mix(in srgb, var(--button-color) 75%, black);
+      border-color: color-mix(
+        in srgb,
+        var(--button-border, var(--button-color)) 75%,
+        black
+      );
+    }
+
+    &:where([data-focus-visible]) {
+      outline: 2px solid var(--highlight-background);
+      outline-offset: 2px;
+    }
+
+    &:where([data-disabled]) {
+      background: color-mix(in srgb, var(--text-color) 12%, transparent);
+      color: color-mix(in srgb, var(--text-color) 38%, transparent);
+      border-color: transparent;
+      opacity: 0.38;
+      pointer-events: none;
+    }
+  }
+
+  /* Outline/Ghost variant — transparent bg, tinted hover */
+  .button-base:where([data-variant="outline"]),
+  .button-base:where([data-variant="ghost"]) {
+    background: transparent;
+
+    &:where([data-hovered]) {
+      background: color-mix(in srgb, var(--button-color) 8%, transparent);
+    }
+
+    &:where([data-pressed]) {
+      background: color-mix(in srgb, var(--button-color) 12%, transparent);
+    }
+  }
+
+  /* =========================================
+     .indicator — Selection Indicator Color
+     Set --indicator-color on the element.
+     Used by Checkbox, RadioGroup, Switch.
+     ========================================= */
+  .indicator {
+    --indicator-selected: var(--indicator-color, var(--highlight-background));
+    --indicator-hover: color-mix(in srgb, var(--indicator-selected) 85%, black);
+
+    &:where([data-selected]) {
+      background: var(--indicator-selected);
+      border-color: var(--indicator-selected);
+      color: var(--highlight-foreground);
+    }
+
+    &:where([data-selected][data-hovered]) {
+      background: var(--indicator-hover);
+      border-color: var(--indicator-hover);
+    }
+
+    &:where([data-selected][data-pressed]) {
+      background: color-mix(in srgb, var(--indicator-selected) 75%, black);
+      border-color: color-mix(in srgb, var(--indicator-selected) 75%, black);
+    }
+
+    &:where([data-focus-visible]) {
+      outline: 2px solid var(--indicator-selected);
+      outline-offset: 2px;
+    }
+
+    &:where([data-disabled]) {
+      opacity: 0.38;
+      pointer-events: none;
+    }
+  }
+
+  /* =========================================
+     .inset — Input Field Appearance
+     Set --inset-bg, --inset-border on the element.
+     Used by TextField, NumberField, Select trigger,
+     ColorField, DateField, etc.
+     ========================================= */
+  .inset {
+    background: var(--inset-bg, var(--field-background));
+    border: 1px solid var(--inset-border, var(--border-color));
+    color: var(--field-text-color);
+
+    &:where([data-hovered]) {
+      border-color: var(--border-color-hover);
+    }
+
+    &:where([data-focused]),
+    &:where([data-focus-within]) {
+      border-color: var(--highlight-background);
+      outline: none;
+    }
+
+    &:where([data-focus-visible]) {
+      outline: 2px solid var(--highlight-background);
+      outline-offset: -1px;
+    }
+
+    &:where([data-invalid]) {
+      border-color: var(--invalid-color);
+    }
+
+    &:where([data-disabled]) {
+      background: color-mix(in srgb, var(--text-color) 6%, transparent);
+      color: var(--text-color-disabled);
+      border-color: var(--border-color-disabled);
+      opacity: 0.38;
+      pointer-events: none;
+    }
+  }
+}

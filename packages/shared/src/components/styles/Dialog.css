@@ -15,14 +15,14 @@
     max-height: inherit;
     box-sizing: border-box;
     overflow: auto;
-    background: var(--surface-container-high);
-    color: var(--on-surface);
+    background: var(--overlay-background);
+    color: var(--text-color);
     border-radius: var(--radius-xl);
 
     .react-aria-Heading[slot='title'] {
       line-height: 1em;
       margin-top: 0;
-      color: var(--on-surface);
+      color: var(--text-color);
       font-size: var(--text-xl);
       font-weight: 500;
     }
@@ -32,43 +32,43 @@
 
   /* ===== M3 Primary Variant ===== */
   .react-aria-Dialog.primary {
-    border: 1px solid var(--primary);
+    border: 1px solid var(--highlight-background);
 
     .react-aria-Heading[slot='title'] {
-      color: var(--primary);
+      color: var(--highlight-background);
     }
   }
 
   /* ===== M3 Secondary Variant ===== */
   .react-aria-Dialog.secondary {
-    border: 1px solid var(--secondary);
+    border: 1px solid var(--button-background);
 
     .react-aria-Heading[slot='title'] {
-      color: var(--secondary);
+      color: var(--button-background);
     }
   }
 
   /* ===== M3 Tertiary Variant ===== */
   .react-aria-Dialog.tertiary {
-    border: 1px solid var(--tertiary);
+    border: 1px solid var(--color-purple-600);
 
     .react-aria-Heading[slot='title'] {
-      color: var(--tertiary);
+      color: var(--color-purple-600);
     }
   }
 
   /* ===== M3 Error Variant ===== */
   .react-aria-Dialog.error {
-    border: 1px solid var(--error);
+    border: 1px solid var(--invalid-color);
 
     .react-aria-Heading[slot='title'] {
-      color: var(--error);
+      color: var(--invalid-color);
     }
   }
 
   /* ===== M3 Filled Variant ===== */
   .react-aria-Dialog.filled {
-    background: var(--surface-container-highest);
+    background: var(--color-neutral-200);
     border: none;
   }
 

@@ -17,9 +17,9 @@ exports[`generateCSS > 스냅샷 일치 1`] = `
     font-family: var(--font-sans);
 
     /* Default variant */
-    background: var(--surface-container-high);
-    color: var(--on-surface);
-    border: 1px solid var(--outline-variant);
+    background: var(--overlay-background);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
 
     /* Default size */
     height: 32px;
@@ -29,129 +29,129 @@ exports[`generateCSS > 스냅샷 일치 1`] = `
   }
 
   .react-aria-Button[data-variant="default"] {
-    background: var(--surface-container-high);
-    color: var(--on-surface);
-    border-color: var(--outline-variant);
+    background: var(--overlay-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
 
     &[data-hovered] {
-      background: var(--surface-container-highest);
-      border-color: var(--surface-container-highest);
+      background: var(--color-neutral-200);
+      border-color: var(--color-neutral-200);
     }
 
     &[data-pressed] {
-      background: var(--surface-container-highest);
-      border-color: var(--surface-container-highest);
+      background: var(--color-neutral-200);
+      border-color: var(--color-neutral-200);
     }
   }
 
   .react-aria-Button[data-variant="primary"] {
-    background: var(--primary);
-    color: var(--on-primary);
-    border-color: var(--primary);
+    background: var(--highlight-background);
+    color: var(--highlight-foreground);
+    border-color: var(--highlight-background);
 
     &[data-hovered] {
-      background: var(--primary-hover);
-      border-color: var(--primary-hover);
+      background: color-mix(in srgb, var(--highlight-background) 85%, black);
+      border-color: color-mix(in srgb, var(--highlight-background) 85%, black);
     }
 
     &[data-pressed] {
-      background: var(--primary-pressed);
-      border-color: var(--primary-pressed);
+      background: var(--highlight-background-pressed);
+      border-color: var(--highlight-background-pressed);
     }
   }
 
   .react-aria-Button[data-variant="secondary"] {
-    background: var(--secondary);
-    color: var(--on-secondary);
-    border-color: var(--secondary);
+    background: var(--button-background);
+    color: var(--color-white);
+    border-color: var(--button-background);
 
     &[data-hovered] {
-      background: var(--secondary-hover);
-      border-color: var(--secondary-hover);
+      background: color-mix(in srgb, var(--button-background) 85%, black);
+      border-color: color-mix(in srgb, var(--button-background) 85%, black);
     }
 
     &[data-pressed] {
-      background: var(--secondary-pressed);
-      border-color: var(--secondary-pressed);
+      background: color-mix(in srgb, var(--button-background) 75%, black);
+      border-color: color-mix(in srgb, var(--button-background) 75%, black);
     }
   }
 
   .react-aria-Button[data-variant="tertiary"] {
-    background: var(--tertiary);
-    color: var(--on-tertiary);
-    border-color: var(--tertiary);
+    background: var(--color-purple-600);
+    color: var(--color-white);
+    border-color: var(--color-purple-600);
 
     &[data-hovered] {
-      background: var(--tertiary-hover);
-      border-color: var(--tertiary-hover);
+      background: color-mix(in srgb, var(--color-purple-600) 85%, black);
+      border-color: color-mix(in srgb, var(--color-purple-600) 85%, black);
     }
 
     &[data-pressed] {
-      background: var(--tertiary-pressed);
-      border-color: var(--tertiary-pressed);
+      background: color-mix(in srgb, var(--color-purple-600) 75%, black);
+      border-color: color-mix(in srgb, var(--color-purple-600) 75%, black);
     }
   }
 
   .react-aria-Button[data-variant="error"] {
-    background: var(--error);
-    color: var(--on-error);
-    border-color: var(--error);
+    background: var(--invalid-color);
+    color: var(--color-white);
+    border-color: var(--invalid-color);
 
     &[data-hovered] {
-      background: var(--error-hover);
-      border-color: var(--error-hover);
+      background: color-mix(in srgb, var(--invalid-color) 85%, black);
+      border-color: color-mix(in srgb, var(--invalid-color) 85%, black);
     }
 
     &[data-pressed] {
-      background: var(--error-pressed);
-      border-color: var(--error-pressed);
+      background: color-mix(in srgb, var(--invalid-color) 75%, black);
+      border-color: color-mix(in srgb, var(--invalid-color) 75%, black);
     }
   }
 
   .react-aria-Button[data-variant="surface"] {
-    background: var(--surface-container-highest);
-    color: var(--on-surface);
-    border-color: var(--outline-variant);
+    background: var(--color-neutral-200);
+    color: var(--text-color);
+    border-color: var(--border-color);
 
     &[data-hovered] {
-      background: var(--surface-container-highest);
-      border-color: var(--surface-container-highest);
+      background: var(--color-neutral-200);
+      border-color: var(--color-neutral-200);
     }
 
     &[data-pressed] {
-      background: var(--surface-container-highest);
-      border-color: var(--surface-container-highest);
+      background: var(--color-neutral-200);
+      border-color: var(--color-neutral-200);
     }
   }
 
   .react-aria-Button[data-variant="outline"] {
-    background: var(--surface);
-    color: var(--primary);
-    border-color: var(--outline);
+    background: var(--color-white);
+    color: var(--highlight-background);
+    border-color: var(--border-color-hover);
     background: transparent;
 
     &[data-hovered] {
-      background: var(--surface-container);
-      border-color: var(--surface-container);
+      background: var(--field-background);
+      border-color: var(--field-background);
     }
 
     &[data-pressed] {
-      background: var(--surface-container-high);
-      border-color: var(--surface-container-high);
+      background: var(--overlay-background);
+      border-color: var(--overlay-background);
     }
   }
 
   .react-aria-Button[data-variant="ghost"] {
-    background: var(--surface);
-    color: var(--primary);
+    background: var(--color-white);
+    color: var(--highlight-background);
     background: transparent;
 
     &[data-hovered] {
-      background: var(--surface-container);
+      background: var(--field-background);
     }
 
     &[data-pressed] {
-      background: var(--surface-container-high);
+      background: var(--overlay-background);
     }
   }
 
@@ -199,7 +199,7 @@ exports[`generateCSS > 스냅샷 일치 1`] = `
   }
 
   .react-aria-Button[data-focus-visible] {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--highlight-background);
     outline-offset: 2px;
   }
 

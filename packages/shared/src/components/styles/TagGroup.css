@@ -15,9 +15,9 @@
   }
   
   .react-aria-Tag {
-    color: var(--on-surface);
-    background: var(--surface-container-high);
-    border: 1px solid var(--outline-variant);
+    color: var(--text-color);
+    background: var(--overlay-background);
+    border: 1px solid var(--border-color);
     forced-color-adjust: none;
     border-radius: var(--radius-sm);
     padding: var(--spacing-2xs) var(--spacing-sm);
@@ -29,104 +29,104 @@
     transition: all 200ms;
 
     &[data-hovered] {
-      border-color: var(--outline);
-      background: color-mix(in srgb, var(--surface-container-high) 92%, black);
+      border-color: var(--border-color-hover);
+      background: color-mix(in srgb, var(--overlay-background) 92%, black);
     }
 
     &[data-focus-visible] {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: 2px;
     }
 
     &[data-selected] {
-      border-color: var(--primary);
-      background: var(--primary);
-      color: var(--on-primary);
+      border-color: var(--highlight-background);
+      background: var(--highlight-background);
+      color: var(--highlight-foreground);
     }
   }
 
   /* ===== M3 Primary - Controlled by TagGroup ===== */
   .react-aria-TagGroup[data-tag-variant="primary"] .react-aria-Tag {
-    background: var(--primary);
-    color: var(--on-primary);
-    border-color: var(--primary);
+    background: var(--highlight-background);
+    color: var(--highlight-foreground);
+    border-color: var(--highlight-background);
 
     &[data-hovered] {
-      background: var(--primary-hover);
-      border-color: var(--primary-hover);
+      background: color-mix(in srgb, var(--highlight-background) 85%, black);
+      border-color: color-mix(in srgb, var(--highlight-background) 85%, black);
     }
 
     &[data-pressed] {
-      background: var(--primary-pressed);
-      border-color: var(--primary-pressed);
+      background: var(--highlight-background-pressed);
+      border-color: var(--highlight-background-pressed);
     }
   }
 
   /* ===== M3 Secondary - Controlled by TagGroup ===== */
   .react-aria-TagGroup[data-tag-variant="secondary"] .react-aria-Tag {
-    background: var(--secondary);
-    color: var(--on-secondary);
-    border-color: var(--secondary);
+    background: var(--button-background);
+    color: var(--color-white);
+    border-color: var(--button-background);
 
     &[data-hovered] {
-      background: var(--secondary-hover);
-      border-color: var(--secondary-hover);
+      background: color-mix(in srgb, var(--button-background) 85%, black);
+      border-color: color-mix(in srgb, var(--button-background) 85%, black);
     }
 
     &[data-pressed] {
-      background: var(--secondary-pressed);
-      border-color: var(--secondary-pressed);
+      background: color-mix(in srgb, var(--button-background) 75%, black);
+      border-color: color-mix(in srgb, var(--button-background) 75%, black);
     }
   }
 
   /* ===== M3 Tertiary - Controlled by TagGroup ===== */
   .react-aria-TagGroup[data-tag-variant="tertiary"] .react-aria-Tag {
-    background: var(--tertiary);
-    color: var(--on-tertiary);
-    border-color: var(--tertiary);
+    background: var(--color-purple-600);
+    color: var(--color-white);
+    border-color: var(--color-purple-600);
 
     &[data-hovered] {
-      background: var(--tertiary-hover);
-      border-color: var(--tertiary-hover);
+      background: color-mix(in srgb, var(--color-purple-600) 85%, black);
+      border-color: color-mix(in srgb, var(--color-purple-600) 85%, black);
     }
 
     &[data-pressed] {
-      background: var(--tertiary-pressed);
-      border-color: var(--tertiary-pressed);
+      background: color-mix(in srgb, var(--color-purple-600) 75%, black);
+      border-color: color-mix(in srgb, var(--color-purple-600) 75%, black);
     }
   }
 
   /* ===== M3 Error - Controlled by TagGroup ===== */
   .react-aria-TagGroup[data-tag-variant="error"] .react-aria-Tag {
-    background: var(--error);
-    color: var(--on-error);
-    border-color: var(--error);
+    background: var(--invalid-color);
+    color: var(--color-white);
+    border-color: var(--invalid-color);
 
     &[data-hovered] {
-      background: var(--error-hover);
-      border-color: var(--error-hover);
+      background: color-mix(in srgb, var(--invalid-color) 85%, black);
+      border-color: color-mix(in srgb, var(--invalid-color) 85%, black);
     }
 
     &[data-pressed] {
-      background: var(--error-pressed);
-      border-color: var(--error-pressed);
+      background: color-mix(in srgb, var(--invalid-color) 75%, black);
+      border-color: color-mix(in srgb, var(--invalid-color) 75%, black);
     }
   }
 
   /* ===== M3 Surface - Controlled by TagGroup ===== */
   .react-aria-TagGroup[data-tag-variant="surface"] .react-aria-Tag {
-    background: var(--surface-container-highest);
-    color: var(--on-surface);
-    border-color: var(--outline-variant);
+    background: var(--color-neutral-200);
+    color: var(--text-color);
+    border-color: var(--border-color);
 
     &[data-hovered] {
-      background: color-mix(in srgb, var(--surface-container-highest) 92%, black);
-      border-color: var(--outline);
+      background: color-mix(in srgb, var(--color-neutral-200) 92%, black);
+      border-color: var(--border-color-hover);
     }
 
     &[data-pressed] {
-      background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
-      border-color: var(--outline);
+      background: color-mix(in srgb, var(--color-neutral-200) 88%, black);
+      border-color: var(--border-color-hover);
     }
   }
 

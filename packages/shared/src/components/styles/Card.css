@@ -1,35 +1,35 @@
 .react-aria-Card {
-  /* M3 Default: Filled tonal card */
+  /* Default: Filled tonal card */
   display: block;
   width: 100%;
   box-sizing: border-box;
-  background: var(--surface-container);
-  color: var(--on-surface);
-  border: 1px solid var(--outline-variant);
+  background: var(--field-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   box-shadow: var(--shadow-sm);
   transition: all 150ms ease;
 
   &[data-focused] {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--highlight-background);
     outline-offset: 2px;
   }
 
   &[data-hovered] {
     box-shadow: var(--shadow-md);
-    background: color-mix(in srgb, var(--surface-container) 92%, black);
-    border-color: var(--outline);
+    background: color-mix(in srgb, var(--field-background) 92%, black);
+    border-color: var(--border-color-hover);
   }
 
   &[data-pressed] {
     box-shadow: var(--inset-shadow-sm);
-    background: color-mix(in srgb, var(--surface-container) 88%, black);
-    border-color: var(--outline);
+    background: color-mix(in srgb, var(--field-background) 88%, black);
+    border-color: var(--border-color-hover);
   }
 
   /* Variant styles */
-  &.elevated {
+  &:where([data-variant="elevated"]) {
     border: 0;
     box-shadow: var(--shadow-md);
 
@@ -38,102 +38,106 @@
     }
   }
 
-  &.outlined {
+  &:where([data-variant="outlined"]) {
     box-shadow: none;
     border-width: 2px;
 
     &[data-hovered] {
       box-shadow: none;
-      border-color: var(--primary);
+      border-color: var(--highlight-background);
     }
   }
 
-  /* ===== M3 Primary (Filled Card) ===== */
-  &.primary {
-    background: var(--primary);
-    color: var(--on-primary);
-    border-color: var(--primary);
+  /* ===== Primary (Filled Card) ===== */
+  &:where([data-variant="primary"]) {
+    background: var(--highlight-background);
+    color: var(--highlight-foreground);
+    border-color: var(--highlight-background);
 
     &[data-hovered] {
-      background: var(--action-primary-bg-hover);
-      border-color: var(--action-primary-bg-hover);
+      background: color-mix(in srgb, var(--highlight-background) 85%, black);
+      border-color: color-mix(in srgb, var(--highlight-background) 85%, black);
     }
 
     &[data-pressed] {
-      background: var(--action-primary-bg-pressed);
-      border-color: var(--action-primary-bg-pressed);
+      background: color-mix(in srgb, var(--highlight-background) 75%, black);
+      border-color: color-mix(in srgb, var(--highlight-background) 75%, black);
     }
   }
 
-  /* ===== M3 Secondary (Filled Card) ===== */
-  &.secondary {
-    background: var(--secondary);
-    color: var(--on-secondary);
-    border-color: var(--secondary);
+  /* ===== Secondary (Filled Card) ===== */
+  &:where([data-variant="secondary"]) {
+    background: var(--button-background);
+    color: var(--color-white);
+    border-color: var(--button-background);
 
     &[data-hovered] {
-      background: var(--action-secondary-bg-hover);
-      border-color: var(--action-secondary-bg-hover);
+      background: color-mix(in srgb, var(--button-background) 85%, black);
+      border-color: color-mix(in srgb, var(--button-background) 85%, black);
     }
 
     &[data-pressed] {
-      background: var(--action-secondary-bg-pressed);
-      border-color: var(--action-secondary-bg-pressed);
+      background: color-mix(in srgb, var(--button-background) 75%, black);
+      border-color: color-mix(in srgb, var(--button-background) 75%, black);
     }
   }
 
-  /* ===== M3 Surface (Filled Tonal Card) ===== */
-  &.surface {
-    background: var(--surface-container-highest);
-    color: var(--on-surface);
-    border-color: var(--outline-variant);
+  /* ===== Surface (Filled Tonal Card) ===== */
+  &:where([data-variant="surface"]) {
+    background: var(--color-neutral-200);
+    color: var(--text-color);
+    border-color: var(--border-color);
 
     &[data-hovered] {
-      background: color-mix(in srgb, var(--surface-container-highest) 92%, black);
-      border-color: var(--outline);
+      background: color-mix(in srgb, var(--color-neutral-200) 92%, black);
+      border-color: var(--border-color-hover);
     }
 
     &[data-pressed] {
-      background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
-      border-color: var(--outline);
+      background: color-mix(in srgb, var(--color-neutral-200) 88%, black);
+      border-color: var(--border-color-hover);
     }
   }
 
   /* Size variants */
-  &.sm {
+  &:where([data-size="sm"]) {
     padding: var(--spacing-sm);
     border-radius: var(--radius-md);
   }
 
-  &.md {
+  &:where([data-size="md"]) {
     padding: var(--spacing-lg);
     border-radius: var(--radius-lg);
   }
 
-  &.lg {
+  &:where([data-size="lg"]) {
     padding: var(--spacing-lg);
     border-radius: var(--radius-xl);
   }
 
   /* State variants */
-  &.selected {
-    border-color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 12%, transparent);
+  &:where([data-selected]) {
+    border-color: var(--highlight-background);
+    background: color-mix(
+      in srgb,
+      var(--highlight-background) 12%,
+      transparent
+    );
   }
 
-  &.quiet {
+  &:where([data-quiet]) {
     box-shadow: none;
     border: 0;
 
     &[data-hovered] {
       box-shadow: none;
-      background: var(--surface-container-high);
+      background: var(--overlay-background);
     }
   }
 
   &[data-disabled] {
-    background: color-mix(in srgb, var(--on-surface) 12%, transparent);
-    color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+    background: color-mix(in srgb, var(--text-color) 12%, transparent);
+    color: color-mix(in srgb, var(--text-color) 38%, transparent);
     border-color: transparent;
     opacity: 0.38;
     cursor: not-allowed;

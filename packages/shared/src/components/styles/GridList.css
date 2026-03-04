@@ -15,17 +15,17 @@
     display: flex;
     flex-direction: column;
     padding: var(--spacing-xs);
-    border: 1px solid var(--outline-variant);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    background: var(--surface-container);
-    color: var(--on-surface);
+    background: var(--field-background);
+    color: var(--text-color);
     outline: none;
     max-height: 300px;
     overflow: auto;
     gap: var(--spacing-2xs);
 
     &[data-focus-visible] {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: -1px;
     }
 
@@ -33,7 +33,7 @@
       align-items: center;
       justify-content: center;
       font-style: italic;
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
   }
 
@@ -44,7 +44,7 @@
     min-height: 40px;
     padding: var(--spacing) var(--spacing-md);
     border-radius: var(--radius-xs);
-    color: var(--on-surface);
+    color: var(--text-color);
     cursor: pointer;
     outline: none;
     transition: all 150ms ease;
@@ -53,39 +53,39 @@
 
     /* Hover State */
     &[data-hovered] {
-      background: var(--surface-container-high);
+      background: var(--overlay-background);
     }
 
     /* Pressed State */
     &[data-pressed] {
-      background: color-mix(in srgb, var(--on-surface) 8%, var(--surface-container));
+      background: color-mix(in srgb, var(--text-color) 8%, var(--field-background));
     }
 
     /* Focus Visible State */
     &[data-focus-visible] {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: -2px;
     }
 
     /* Selected State */
     &[data-selected] {
-      background: var(--primary-container);
-      color: var(--on-primary-container);
+      background: var(--color-primary-100);
+      color: var(--color-primary-900);
       font-weight: 500;
 
       &[data-focus-visible] {
-        outline-color: var(--primary);
+        outline-color: var(--highlight-background);
         outline-offset: -4px;
       }
 
       .react-aria-Button {
-        color: var(--on-primary-container);
+        color: var(--color-primary-900);
       }
     }
 
     /* Disabled State */
     &[data-disabled] {
-      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      color: color-mix(in srgb, var(--text-color) 38%, transparent);
       cursor: not-allowed;
       opacity: 0.38;
     }
@@ -122,11 +122,11 @@
       forced-color-adjust: none;
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+        background: color-mix(in srgb, var(--text-color) 8%, transparent);
       }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        background: color-mix(in srgb, var(--text-color) 12%, transparent);
         box-shadow: none;
       }
     }
@@ -136,12 +136,12 @@
       all: unset;
       width: 15px;
       text-align: center;
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
       cursor: grab;
 
       &[data-focus-visible] {
         border-radius: 4px;
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--highlight-background);
       }
 
       &:active {
@@ -175,11 +175,11 @@
 
   .react-aria-GridList {
     /* 기본 Checkbox 변수 */
-    --gl-cb-selected: var(--primary);
-    --gl-cb-checkmark: var(--on-primary);
-    --gl-cb-bg: var(--primary-container);
-    --gl-cb-selected-on: var(--on-primary-container);
-    --gl-cb-checkmark-on: var(--primary-container);
+    --gl-cb-selected: var(--highlight-background);
+    --gl-cb-checkmark: var(--highlight-foreground);
+    --gl-cb-bg: var(--color-primary-100);
+    --gl-cb-selected-on: var(--color-primary-900);
+    --gl-cb-checkmark-on: var(--color-primary-100);
   }
 
   :where(.react-aria-GridListItem) .react-aria-Checkbox {
@@ -197,7 +197,7 @@
   /* ========== Drag and Drop Styles ========== */
   .react-aria-DropIndicator {
     &[data-drop-target] {
-      outline: 1px solid var(--primary);
+      outline: 1px solid var(--highlight-background);
     }
 
     @supports not selector(:has(.foo)) {
@@ -207,14 +207,14 @@
   }
 
   .react-aria-GridList[data-drop-target] {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--highlight-background);
     outline-offset: -1px;
-    background: color-mix(in srgb, var(--primary) 8%, transparent);
+    background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
   }
 
   .react-aria-GridListItem[data-drop-target] {
-    outline: 2px solid var(--primary);
-    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    outline: 2px solid var(--highlight-background);
+    background: color-mix(in srgb, var(--highlight-background) 12%, transparent);
   }
 
   /* ========== M3 Color Variants ========== */
@@ -222,59 +222,59 @@
 
   .react-aria-GridList {
     /* 기본 variant 변수 */
-    --gl-accent: var(--outline-variant);
-    --gl-accent-container: var(--primary-container);
-    --gl-on-accent-container: var(--on-primary-container);
-    --gl-drop-bg: color-mix(in srgb, var(--primary) 8%, transparent);
-    --gl-drop-bg-item: color-mix(in srgb, var(--primary) 12%, transparent);
+    --gl-accent: var(--border-color);
+    --gl-accent-container: var(--color-primary-100);
+    --gl-on-accent-container: var(--color-primary-900);
+    --gl-drop-bg: color-mix(in srgb, var(--highlight-background) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--highlight-background) 12%, transparent);
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-GridList.primary {
-    --gl-accent: var(--primary);
-    --gl-accent-container: var(--primary-container);
-    --gl-on-accent-container: var(--on-primary-container);
-    --gl-drop-bg: color-mix(in srgb, var(--primary) 8%, transparent);
-    --gl-drop-bg-item: color-mix(in srgb, var(--primary) 12%, transparent);
+    --gl-accent: var(--highlight-background);
+    --gl-accent-container: var(--color-primary-100);
+    --gl-on-accent-container: var(--color-primary-900);
+    --gl-drop-bg: color-mix(in srgb, var(--highlight-background) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--highlight-background) 12%, transparent);
   }
 
   .react-aria-GridList.secondary {
-    --gl-accent: var(--secondary);
-    --gl-accent-container: var(--secondary-container);
-    --gl-on-accent-container: var(--on-secondary-container);
-    --gl-drop-bg: color-mix(in srgb, var(--secondary) 8%, transparent);
-    --gl-drop-bg-item: color-mix(in srgb, var(--secondary) 12%, transparent);
-    --gl-cb-selected: var(--secondary);
-    --gl-cb-checkmark: var(--on-secondary);
-    --gl-cb-bg: var(--secondary-container);
-    --gl-cb-selected-on: var(--on-secondary-container);
-    --gl-cb-checkmark-on: var(--secondary-container);
+    --gl-accent: var(--button-background);
+    --gl-accent-container: var(--color-neutral-100);
+    --gl-on-accent-container: var(--color-neutral-900);
+    --gl-drop-bg: color-mix(in srgb, var(--button-background) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--button-background) 12%, transparent);
+    --gl-cb-selected: var(--button-background);
+    --gl-cb-checkmark: var(--color-white);
+    --gl-cb-bg: var(--color-neutral-100);
+    --gl-cb-selected-on: var(--color-neutral-900);
+    --gl-cb-checkmark-on: var(--color-neutral-100);
   }
 
   .react-aria-GridList.tertiary {
-    --gl-accent: var(--tertiary);
-    --gl-accent-container: var(--tertiary-container);
-    --gl-on-accent-container: var(--on-tertiary-container);
-    --gl-drop-bg: color-mix(in srgb, var(--tertiary) 8%, transparent);
-    --gl-drop-bg-item: color-mix(in srgb, var(--tertiary) 12%, transparent);
-    --gl-cb-selected: var(--tertiary);
-    --gl-cb-checkmark: var(--on-tertiary);
-    --gl-cb-bg: var(--tertiary-container);
-    --gl-cb-selected-on: var(--on-tertiary-container);
-    --gl-cb-checkmark-on: var(--tertiary-container);
+    --gl-accent: var(--color-purple-600);
+    --gl-accent-container: var(--color-tertiary-100);
+    --gl-on-accent-container: var(--color-tertiary-900);
+    --gl-drop-bg: color-mix(in srgb, var(--color-purple-600) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--color-purple-600) 12%, transparent);
+    --gl-cb-selected: var(--color-purple-600);
+    --gl-cb-checkmark: var(--color-white);
+    --gl-cb-bg: var(--color-tertiary-100);
+    --gl-cb-selected-on: var(--color-tertiary-900);
+    --gl-cb-checkmark-on: var(--color-tertiary-100);
   }
 
   .react-aria-GridList.error {
-    --gl-accent: var(--error);
-    --gl-accent-container: var(--error-container);
-    --gl-on-accent-container: var(--on-error-container);
-    --gl-drop-bg: color-mix(in srgb, var(--error) 8%, transparent);
-    --gl-drop-bg-item: color-mix(in srgb, var(--error) 12%, transparent);
-    --gl-cb-selected: var(--error);
-    --gl-cb-checkmark: var(--on-error);
-    --gl-cb-bg: var(--error-container);
-    --gl-cb-selected-on: var(--on-error-container);
-    --gl-cb-checkmark-on: var(--error-container);
+    --gl-accent: var(--invalid-color);
+    --gl-accent-container: var(--color-error-100);
+    --gl-on-accent-container: var(--color-error-900);
+    --gl-drop-bg: color-mix(in srgb, var(--invalid-color) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--invalid-color) 12%, transparent);
+    --gl-cb-selected: var(--invalid-color);
+    --gl-cb-checkmark: var(--color-white);
+    --gl-cb-bg: var(--color-error-100);
+    --gl-cb-selected-on: var(--color-error-900);
+    --gl-cb-checkmark-on: var(--color-error-100);
   }
 
   /* 모든 color variant에 공통 적용되는 스타일 */
@@ -320,17 +320,17 @@
 
   /* ===== M3 Filled Variant ===== */
   .react-aria-GridList.filled {
-    background: var(--surface-container-highest);
+    background: var(--color-neutral-200);
     border-color: transparent;
 
     .react-aria-GridListItem {
       &[data-hovered] {
-        background: var(--surface-container-high);
+        background: var(--overlay-background);
       }
 
       &[data-selected] {
-        background: var(--primary-container);
-        color: var(--on-primary-container);
+        background: var(--color-primary-100);
+        color: var(--color-primary-900);
       }
     }
   }

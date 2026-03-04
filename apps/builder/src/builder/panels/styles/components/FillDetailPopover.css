@@ -13,7 +13,7 @@
 
   .fill-detail-popover__divider {
     height: 1px;
-    background: var(--outline-variant);
+    background: var(--border-color);
     margin: 2px 0;
   }
 }

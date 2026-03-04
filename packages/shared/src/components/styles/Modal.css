@@ -58,7 +58,7 @@
     left: 0;
     width: 100vw;
     height: var(--visual-viewport-height);
-    background: color-mix(in srgb, var(--on-surface) 32%, transparent);
+    background: color-mix(in srgb, var(--text-color) 32%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -76,11 +76,11 @@
   /* ========== Base Modal Styles ========== */
   .react-aria-Modal {
     box-shadow: 0 8px 24px
-      color-mix(in srgb, var(--on-surface) 15%, transparent);
+      color-mix(in srgb, var(--text-color) 15%, transparent);
     border-radius: var(--radius-xl);
-    background: var(--surface-container-high);
-    color: var(--on-surface);
-    border: 1px solid var(--outline-variant);
+    background: var(--overlay-background);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
     outline: none;
     max-width: 300px;
 
@@ -97,27 +97,27 @@
 
   /* ===== M3 Primary Variant ===== */
   .react-aria-Modal.primary {
-    border-color: var(--primary);
+    border-color: var(--highlight-background);
   }
 
   /* ===== M3 Secondary Variant ===== */
   .react-aria-Modal.secondary {
-    border-color: var(--secondary);
+    border-color: var(--button-background);
   }
 
   /* ===== M3 Tertiary Variant ===== */
   .react-aria-Modal.tertiary {
-    border-color: var(--tertiary);
+    border-color: var(--color-purple-600);
   }
 
   /* ===== M3 Error Variant ===== */
   .react-aria-Modal.error {
-    border-color: var(--error);
+    border-color: var(--invalid-color);
   }
 
   /* ===== M3 Filled Variant ===== */
   .react-aria-Modal.filled {
-    background: var(--surface-container-highest);
+    background: var(--color-neutral-200);
     border: none;
   }
 

@@ -16,18 +16,18 @@
     margin: 0;
     padding: 0;
     font-size: var(--text-base);
-    color: var(--on-surface);
+    color: var(--text-color);
 
     .react-aria-Breadcrumb:not(:last-child)::after {
       content: '›';
       content: '›' / '';
       alt: ' ';
       padding: 0 var(--spacing);
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
 
     .react-aria-Link {
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
       outline: none;
       position: relative;
       text-decoration: none;
@@ -36,11 +36,11 @@
 
       &[data-hovered] {
         text-decoration: underline;
-        color: var(--on-surface);
+        color: var(--text-color);
       }
 
       &[data-current] {
-        color: var(--on-surface);
+        color: var(--text-color);
         font-weight: 500;
       }
 
@@ -49,14 +49,14 @@
         position: absolute;
         inset: -2px -4px;
         border-radius: var(--radius-xs);
-        border: 2px solid var(--primary);
+        border: 2px solid var(--highlight-background);
       }
 
       &[data-disabled] {
         cursor: default;
 
         &:not([data-current]) {
-          color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+          color: color-mix(in srgb, var(--text-color) 38%, transparent);
           opacity: 0.38;
         }
       }
@@ -69,11 +69,11 @@
   .react-aria-Breadcrumbs.primary {
     .react-aria-Link {
       &[data-focus-visible]:after {
-        border-color: var(--primary);
+        border-color: var(--highlight-background);
       }
 
       &[data-current] {
-        color: var(--primary);
+        color: var(--highlight-background);
       }
     }
   }
@@ -82,11 +82,11 @@
   .react-aria-Breadcrumbs.secondary {
     .react-aria-Link {
       &[data-focus-visible]:after {
-        border-color: var(--secondary);
+        border-color: var(--button-background);
       }
 
       &[data-current] {
-        color: var(--secondary);
+        color: var(--button-background);
       }
     }
   }
@@ -95,11 +95,11 @@
   .react-aria-Breadcrumbs.tertiary {
     .react-aria-Link {
       &[data-focus-visible]:after {
-        border-color: var(--tertiary);
+        border-color: var(--color-purple-600);
       }
 
       &[data-current] {
-        color: var(--tertiary);
+        color: var(--color-purple-600);
       }
     }
   }
@@ -108,23 +108,23 @@
   .react-aria-Breadcrumbs.error {
     .react-aria-Link {
       &[data-focus-visible]:after {
-        border-color: var(--error);
+        border-color: var(--invalid-color);
       }
 
       &[data-current] {
-        color: var(--error);
+        color: var(--invalid-color);
       }
     }
   }
 
   /* ===== M3 Filled Variant ===== */
   .react-aria-Breadcrumbs.filled {
-    background: var(--surface-container);
+    background: var(--field-background);
     padding: var(--spacing-xs) var(--spacing);
     border-radius: var(--radius-md);
 
     .react-aria-Link {
-      color: var(--on-surface);
+      color: var(--text-color);
     }
   }
 

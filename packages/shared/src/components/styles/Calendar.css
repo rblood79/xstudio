@@ -13,7 +13,7 @@
   .react-aria-Calendar {
     .react-aria-CalendarCell {
       &[data-focus-visible] {
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--highlight-background);
         outline-offset: 2px;
       }
     }
@@ -24,28 +24,28 @@
 
   .react-aria-Calendar {
     /* 기본 variant 변수 */
-    --cal-accent: var(--primary);
-    --cal-accent-container: var(--primary-container);
-    --cal-on-accent-container: var(--on-primary-container);
+    --cal-accent: var(--highlight-background);
+    --cal-accent-container: var(--color-primary-100);
+    --cal-on-accent-container: var(--color-primary-900);
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-Calendar.primary {
-    --cal-accent: var(--primary);
-    --cal-accent-container: var(--primary-container);
-    --cal-on-accent-container: var(--on-primary-container);
+    --cal-accent: var(--highlight-background);
+    --cal-accent-container: var(--color-primary-100);
+    --cal-on-accent-container: var(--color-primary-900);
   }
 
   .react-aria-Calendar.secondary {
-    --cal-accent: var(--secondary);
-    --cal-accent-container: var(--secondary-container);
-    --cal-on-accent-container: var(--on-secondary-container);
+    --cal-accent: var(--button-background);
+    --cal-accent-container: var(--color-neutral-100);
+    --cal-on-accent-container: var(--color-neutral-900);
   }
 
   .react-aria-Calendar.tertiary {
-    --cal-accent: var(--tertiary);
-    --cal-accent-container: var(--tertiary-container);
-    --cal-on-accent-container: var(--on-tertiary-container);
+    --cal-accent: var(--color-purple-600);
+    --cal-accent-container: var(--color-tertiary-100);
+    --cal-on-accent-container: var(--color-tertiary-900);
   }
 
   /* 모든 color variant에 공통 적용되는 스타일 */

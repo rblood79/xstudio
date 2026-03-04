@@ -12,7 +12,7 @@
     gap: var(--spacing-sm);
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
-    color: var(--on-surface);
+    color: var(--text-color);
     forced-color-adjust: none;
     padding: var(--spacing) 0;
     width: fit-content;
@@ -23,39 +23,39 @@
       width: var(--text-lg);
       height: var(--text-lg);
       box-sizing: border-box;
-      border: 2px solid var(--outline);
-      background: var(--surface);
+      border: 2px solid var(--border-color-hover);
+      background: var(--color-white);
       border-radius: var(--text-lg);
       transition: all 0.2s ease;
     }
 
     &[data-pressed]:before {
-      border-color: var(--outline);
+      border-color: var(--border-color-hover);
     }
 
     &[data-selected] {
       &:before {
-        border-color: var(--primary);
+        border-color: var(--highlight-background);
         border-width: calc(var(--spacing) * 1.25);
       }
 
       &[data-pressed]:before {
-        border-color: var(--primary-pressed);
+        border-color: var(--highlight-background-pressed);
       }
     }
 
     &[data-focus-visible]:before {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: 2px;
     }
 
     &[data-invalid] {
       &:before {
-        border-color: var(--error);
+        border-color: var(--invalid-color);
       }
 
       &[data-selected]:before {
-        border-color: var(--error);
+        border-color: var(--invalid-color);
       }
     }
 
@@ -73,75 +73,75 @@
   /* ===== M3 Primary - Controlled by RadioGroup ===== */
   .react-aria-RadioGroup[data-radio-variant="primary"] .react-aria-Radio {
     &[data-selected]:before {
-      border-color: var(--primary);
+      border-color: var(--highlight-background);
     }
 
     &[data-selected][data-pressed]:before {
-      border-color: var(--primary-pressed);
+      border-color: var(--highlight-background-pressed);
     }
 
     &[data-focus-visible]:before {
-      outline-color: var(--primary);
+      outline-color: var(--highlight-background);
     }
   }
 
   /* ===== M3 Secondary - Controlled by RadioGroup ===== */
   .react-aria-RadioGroup[data-radio-variant="secondary"] .react-aria-Radio {
     &[data-selected]:before {
-      border-color: var(--secondary);
+      border-color: var(--button-background);
     }
 
     &[data-selected][data-pressed]:before {
-      border-color: var(--secondary-pressed);
+      border-color: color-mix(in srgb, var(--button-background) 75%, black);
     }
 
     &[data-focus-visible]:before {
-      outline-color: var(--secondary);
+      outline-color: var(--button-background);
     }
   }
 
   /* ===== M3 Tertiary - Controlled by RadioGroup ===== */
   .react-aria-RadioGroup[data-radio-variant="tertiary"] .react-aria-Radio {
     &[data-selected]:before {
-      border-color: var(--tertiary);
+      border-color: var(--color-purple-600);
     }
 
     &[data-selected][data-pressed]:before {
-      border-color: var(--tertiary-pressed);
+      border-color: color-mix(in srgb, var(--color-purple-600) 75%, black);
     }
 
     &[data-focus-visible]:before {
-      outline-color: var(--tertiary);
+      outline-color: var(--color-purple-600);
     }
   }
 
   /* ===== M3 Error - Controlled by RadioGroup ===== */
   .react-aria-RadioGroup[data-radio-variant="error"] .react-aria-Radio {
     &[data-selected]:before {
-      border-color: var(--error);
+      border-color: var(--invalid-color);
     }
 
     &[data-selected][data-pressed]:before {
-      border-color: var(--error-pressed);
+      border-color: color-mix(in srgb, var(--invalid-color) 75%, black);
     }
 
     &[data-focus-visible]:before {
-      outline-color: var(--error);
+      outline-color: var(--invalid-color);
     }
   }
 
   /* ===== M3 Surface - Controlled by RadioGroup ===== */
   .react-aria-RadioGroup[data-radio-variant="surface"] .react-aria-Radio {
     &[data-selected]:before {
-      border-color: var(--surface-container-highest);
+      border-color: var(--color-neutral-200);
     }
 
     &[data-selected][data-pressed]:before {
-      border-color: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+      border-color: color-mix(in srgb, var(--color-neutral-200) 88%, black);
     }
 
     &[data-focus-visible]:before {
-      outline-color: var(--on-surface);
+      outline-color: var(--text-color);
     }
   }
 

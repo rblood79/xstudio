@@ -15,10 +15,10 @@
     gap: var(--spacing-2xs);
     overflow: auto;
     padding: var(--spacing);
-    border: 1px solid var(--outline-variant);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    background: var(--surface-container);
-    color: var(--on-surface);
+    background: var(--field-background);
+    color: var(--text-color);
     forced-color-adjust: none;
     outline: none;
     width: 100%;
@@ -26,7 +26,7 @@
     box-sizing: border-box;
 
     &[data-focus-visible] {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: -1px;
     }
 
@@ -35,7 +35,7 @@
       align-items: center;
       justify-content: center;
       font-style: italic;
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
       padding: var(--spacing-xl);
     }
 
@@ -48,9 +48,9 @@
     }
 
     &[data-drop-target] {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: -1px;
-      background: color-mix(in srgb, var(--primary) 8%, transparent);
+      background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
     }
   }
 
@@ -65,7 +65,7 @@
     border-radius: var(--radius-sm);
     outline: none;
     cursor: pointer;
-    color: var(--on-surface);
+    color: var(--text-color);
     font-size: var(--text-base);
     position: relative;
     transform: translateZ(0);
@@ -104,39 +104,39 @@
 
     /* Focus state */
     &[data-focus-visible] {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: -2px;
     }
 
     /* Hover state */
     &[data-hovered] {
-      background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+      background: color-mix(in srgb, var(--text-color) 8%, transparent);
     }
 
     /* Pressed state */
     &[data-pressed] {
-      background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+      background: color-mix(in srgb, var(--text-color) 12%, transparent);
     }
 
     /* Selected state */
     &[data-selected] {
-      background: var(--primary-container);
-      color: var(--on-primary-container);
-      --focus-ring-color: var(--on-primary-container);
+      background: var(--color-primary-100);
+      color: var(--color-primary-900);
+      --focus-ring-color: var(--color-primary-900);
 
       &[data-focus-visible] {
-        outline-color: var(--on-primary-container);
+        outline-color: var(--color-primary-900);
         outline-offset: -4px;
       }
 
       .react-aria-Button {
-        color: var(--on-primary-container);
+        color: var(--color-primary-900);
       }
     }
 
     /* Disabled state */
     &[data-disabled] {
-      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      color: color-mix(in srgb, var(--text-color) 38%, transparent);
       cursor: not-allowed;
       pointer-events: none;
     }
@@ -152,11 +152,11 @@
       cursor: pointer;
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+        background: color-mix(in srgb, var(--text-color) 8%, transparent);
       }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        background: color-mix(in srgb, var(--text-color) 12%, transparent);
       }
     }
 
@@ -174,8 +174,8 @@
     }
 
     &[data-drop-target] {
-      outline: 2px solid var(--primary);
-      background: color-mix(in srgb, var(--primary) 8%, transparent);
+      outline: 2px solid var(--highlight-background);
+      background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
     }
 
     [slot=drag] {
@@ -185,7 +185,7 @@
 
       &[data-focus-visible] {
         border-radius: var(--radius-xs);
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--highlight-background);
       }
     }
   }
@@ -209,16 +209,16 @@
 
   /* Checkbox styling within Tree */
   :where(.react-aria-TreeItem) .react-aria-Checkbox {
-    --selected-color: var(--on-primary-container);
-    --selected-color-pressed: var(--on-primary-container);
-    --checkmark-color: var(--primary-container);
-    --background-color: var(--primary-container);
+    --selected-color: var(--color-primary-900);
+    --selected-color-pressed: var(--color-primary-900);
+    --checkmark-color: var(--color-primary-100);
+    --background-color: var(--color-primary-100);
   }
 
   /* Drop indicator */
   .react-aria-Tree .react-aria-DropIndicator {
     &[data-drop-target] {
-      outline: 1px solid var(--primary);
+      outline: 1px solid var(--highlight-background);
       margin-left: calc(8px + var(--checkbox-width, 0px) + var(--drag-button-width, 0px) + 26px + (var(--tree-item-level) - 1) * 16px);
     }
   }
@@ -227,103 +227,103 @@
 
   /* ===== Primary Variant ===== */
   .react-aria-Tree.primary {
-    border-color: var(--outline-variant);
+    border-color: var(--border-color);
 
     &[data-focus-visible] {
-      outline-color: var(--primary);
+      outline-color: var(--highlight-background);
     }
 
     &[data-drop-target] {
-      outline-color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 8%, transparent);
+      outline-color: var(--highlight-background);
+      background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
     }
 
     .react-aria-TreeItem {
       &[data-focus-visible] {
-        outline-color: var(--primary);
+        outline-color: var(--highlight-background);
       }
 
       &[data-selected] {
-        background: var(--primary-container);
-        color: var(--on-primary-container);
+        background: var(--color-primary-100);
+        color: var(--color-primary-900);
       }
 
       &[data-drop-target] {
-        outline-color: var(--primary);
-        background: color-mix(in srgb, var(--primary) 8%, transparent);
+        outline-color: var(--highlight-background);
+        background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
       }
     }
 
     .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--primary);
+      outline-color: var(--highlight-background);
     }
   }
 
   /* ===== Secondary Variant ===== */
   .react-aria-Tree.secondary {
-    border-color: var(--outline-variant);
+    border-color: var(--border-color);
 
     &[data-focus-visible] {
-      outline-color: var(--secondary);
+      outline-color: var(--button-background);
     }
 
     &[data-drop-target] {
-      outline-color: var(--secondary);
-      background: color-mix(in srgb, var(--secondary) 8%, transparent);
+      outline-color: var(--button-background);
+      background: color-mix(in srgb, var(--button-background) 8%, transparent);
     }
 
     .react-aria-TreeItem {
       &[data-focus-visible] {
-        outline-color: var(--secondary);
+        outline-color: var(--button-background);
       }
 
       &[data-selected] {
-        background: var(--secondary-container);
-        color: var(--on-secondary-container);
+        background: var(--color-neutral-100);
+        color: var(--color-neutral-900);
       }
 
       &[data-drop-target] {
-        outline-color: var(--secondary);
-        background: color-mix(in srgb, var(--secondary) 8%, transparent);
+        outline-color: var(--button-background);
+        background: color-mix(in srgb, var(--button-background) 8%, transparent);
       }
     }
 
     .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--secondary);
+      outline-color: var(--button-background);
     }
   }
 
   /* ===== Tertiary Variant ===== */
   .react-aria-Tree.tertiary {
-    border-color: var(--outline-variant);
+    border-color: var(--border-color);
 
     &[data-focus-visible] {
-      outline-color: var(--tertiary);
+      outline-color: var(--color-purple-600);
     }
 
     &[data-drop-target] {
-      outline-color: var(--tertiary);
-      background: color-mix(in srgb, var(--tertiary) 8%, transparent);
+      outline-color: var(--color-purple-600);
+      background: color-mix(in srgb, var(--color-purple-600) 8%, transparent);
     }
 
     .react-aria-TreeItem {
       &[data-focus-visible] {
-        outline-color: var(--tertiary);
+        outline-color: var(--color-purple-600);
       }
 
       &[data-selected] {
-        background: var(--tertiary-container);
-        color: var(--on-tertiary-container);
+        background: var(--color-tertiary-100);
+        color: var(--color-tertiary-900);
       }
 
       &[data-drop-target] {
-        outline-color: var(--tertiary);
-        background: color-mix(in srgb, var(--tertiary) 8%, transparent);
+        outline-color: var(--color-purple-600);
+        background: color-mix(in srgb, var(--color-purple-600) 8%, transparent);
       }
     }
 
     .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--tertiary);
+      outline-color: var(--color-purple-600);
     }
   }
 

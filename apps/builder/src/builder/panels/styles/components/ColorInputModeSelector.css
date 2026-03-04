@@ -8,7 +8,7 @@
   .color-input-mode-selector {
     display: flex;
     gap: 2px;
-    background: var(--surface-container-high);
+    background: var(--overlay-background);
     border-radius: var(--radius-sm);
     padding: 2px;
   }
@@ -18,7 +18,7 @@
     padding: var(--spacing-2xs) var(--spacing-xs);
     font-size: var(--text-2xs);
     font-family: var(--font-mono);
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
     background: transparent;
     border: none;
     border-radius: var(--radius-sm);
@@ -28,16 +28,16 @@
     transition: background 0.15s ease, color 0.15s ease;
 
     &:hover {
-      background: var(--surface-container-highest);
+      background: var(--color-neutral-200);
     }
 
     &[data-active] {
-      background: var(--primary);
-      color: var(--on-primary);
+      background: var(--highlight-background);
+      color: var(--highlight-foreground);
     }
 
     &:focus-visible {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: -2px;
     }
   }

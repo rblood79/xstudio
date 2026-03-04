@@ -11,12 +11,12 @@
     grid-template-columns: 1fr auto;
     gap: var(--spacing-xs);
     width: 240px;
-    color: var(--on-surface);
+    color: var(--text-color);
 
     .value {
       grid-area: value;
       font-size: var(--text-sm);
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
 
     .bar {
@@ -27,11 +27,11 @@
       border-radius: var(--radius-sm);
       overflow: hidden;
       will-change: transform;
-      background: var(--surface-container-highest);
+      background: var(--color-neutral-200);
     }
 
     .fill {
-      background: var(--primary);
+      background: var(--highlight-background);
       height: 100%;
       transition: width 200ms ease-out;
     }
@@ -48,27 +48,27 @@
 
   /* ===== M3 Primary Variant ===== */
   .react-aria-ProgressBar.primary .fill {
-    background: var(--primary);
+    background: var(--highlight-background);
   }
 
   /* ===== M3 Secondary Variant ===== */
   .react-aria-ProgressBar.secondary .fill {
-    background: var(--secondary);
+    background: var(--button-background);
   }
 
   /* ===== M3 Tertiary Variant ===== */
   .react-aria-ProgressBar.tertiary .fill {
-    background: var(--tertiary);
+    background: var(--color-purple-600);
   }
 
   /* ===== M3 Error Variant ===== */
   .react-aria-ProgressBar.error .fill {
-    background: var(--error);
+    background: var(--invalid-color);
   }
 
   /* ===== M3 Surface Variant ===== */
   .react-aria-ProgressBar.surface .fill {
-    background: var(--on-surface-variant);
+    background: var(--text-color-placeholder);
   }
 
   /* Small size */

@@ -22,6 +22,7 @@
 /* ============================================
    UTILITY LAYER - Base Dependencies
    ============================================ */
+@import "./utilities.css"; /* ADR-018: .button-base, .indicator, .inset */
 @import "./forms.css"; /* depends on base.css */
 @import "./overlays.css"; /* depends on animations.css */
 @import "./collections.css"; /* depends on base.css */

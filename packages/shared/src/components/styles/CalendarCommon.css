@@ -16,7 +16,7 @@
   .react-aria-RangeCalendar {
     width: fit-content;
     max-width: 100%;
-    color: var(--on-surface);
+    color: var(--text-color);
   }
 
   /* ========== Header Layout ========== */
@@ -33,7 +33,7 @@
     margin: 0;
     text-align: center;
     font-size: var(--text-sm);
-    color: var(--on-surface);
+    color: var(--text-color);
   }
 
   .react-aria-Calendar .react-aria-Button,
@@ -49,14 +49,14 @@
 
   .react-aria-CalendarGridHeader th {
     border: 0;
-    background-color: var(--surface-container);
-    color: var(--on-surface-variant);
+    background-color: var(--field-background);
+    color: var(--text-color-placeholder);
     text-align: center;
     font-size: var(--text-sm);
   }
 
   .react-aria-CalendarGridBody td {
-    border: 1px solid var(--outline-variant);
+    border: 1px solid var(--border-color);
     .react-aria-CalendarCell {
       width: 2rem;
       line-height: 2rem;
@@ -73,7 +73,7 @@
     cursor: default;
     outline: none;
     forced-color-adjust: none;
-    color: var(--on-surface);
+    color: var(--text-color);
   }
 
   /* ========== CalendarCell State Styles ========== */
@@ -87,13 +87,13 @@
   /* Pressed state */
   .react-aria-Calendar .react-aria-CalendarCell[data-pressed],
   .react-aria-RangeCalendar .react-aria-CalendarCell[data-pressed] {
-    background: var(--surface-container);
+    background: var(--field-background);
   }
 
   /* Disabled state */
   .react-aria-Calendar .react-aria-CalendarCell[data-disabled],
   .react-aria-RangeCalendar .react-aria-CalendarCell[data-disabled] {
-    color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+    color: color-mix(in srgb, var(--text-color) 38%, transparent);
     cursor: not-allowed;
   }
 
@@ -101,21 +101,21 @@
   .react-aria-Calendar .react-aria-CalendarCell[data-unavailable],
   .react-aria-RangeCalendar .react-aria-CalendarCell[data-unavailable] {
     text-decoration: line-through;
-    color: var(--error);
+    color: var(--invalid-color);
   }
 
   /* Invalid state */
   .react-aria-Calendar .react-aria-CalendarCell[data-invalid],
   .react-aria-RangeCalendar .react-aria-CalendarCell[data-invalid] {
-    background: var(--error);
-    color: var(--on-error);
+    background: var(--invalid-color);
+    color: var(--color-white);
   }
 
   /* ========== Error Message ========== */
   .react-aria-Calendar [slot="errorMessage"],
   .react-aria-RangeCalendar [slot="errorMessage"] {
     font-size: var(--text-xs);
-    color: var(--error);
+    color: var(--invalid-color);
     margin-top: var(--spacing-sm);
   }
 

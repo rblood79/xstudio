@@ -18,7 +18,7 @@
     .react-aria-Label {
       font-size: var(--text-sm);
       font-weight: 500;
-      color: var(--on-surface);
+      color: var(--text-color);
       margin-bottom: var(--spacing-xs);
     }
 
@@ -26,10 +26,10 @@
     .react-aria-TimeInput {
       display: inline-flex;
       padding: var(--spacing-sm) 14px;
-      border: 1px solid var(--outline-variant);
+      border: 1px solid var(--border-color);
       border-radius: var(--border-radius);
-      background: var(--surface-container);
-      color: var(--on-surface);
+      background: var(--field-background);
+      color: var(--text-color);
       width: fit-content;
       min-width: 150px;
       white-space: nowrap;
@@ -39,23 +39,23 @@
 
       /* Focus State */
       &[data-focus-within] {
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--highlight-background);
         outline-offset: -1px;
-        border-color: var(--primary);
-        background: var(--surface-container-high);
+        border-color: var(--highlight-background);
+        background: var(--overlay-background);
       }
 
       /* Hover State */
       &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        border-color: var(--outline);
-        background: var(--surface-container-high);
+        border-color: var(--border-color-hover);
+        background: var(--overlay-background);
       }
 
       /* Disabled State */
       &[data-disabled] {
-        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
-        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
-        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        background: color-mix(in srgb, var(--text-color) 4%, transparent);
+        border-color: color-mix(in srgb, var(--text-color) 12%, transparent);
+        color: color-mix(in srgb, var(--text-color) 38%, transparent);
         cursor: not-allowed;
         opacity: 0.38;
       }
@@ -66,7 +66,7 @@
       padding: 0 2px;
       font-variant-numeric: tabular-nums;
       text-align: end;
-      color: var(--on-surface);
+      color: var(--text-color);
       border-radius: var(--radius-xs);
       transition: all 150ms ease;
 
@@ -77,15 +77,15 @@
 
       /* Placeholder state */
       &[data-placeholder] {
-        color: var(--on-surface-variant);
+        color: var(--text-color-placeholder);
         font-style: italic;
         opacity: 0.6;
       }
 
       /* Focus state (individual segment) */
       &:focus {
-        color: var(--on-primary-container);
-        background: var(--primary-container);
+        color: var(--color-primary-900);
+        background: var(--color-primary-100);
         outline: none;
         border-radius: var(--radius-xs);
         caret-color: transparent;
@@ -93,17 +93,17 @@
 
       /* Invalid state */
       &[data-invalid] {
-        color: var(--error);
+        color: var(--invalid-color);
 
         &:focus {
-          background: var(--error-container);
-          color: var(--on-error-container);
+          background: var(--color-error-100);
+          color: var(--color-error-900);
         }
       }
 
       /* Disabled state */
       &[data-disabled] {
-        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        color: color-mix(in srgb, var(--text-color) 38%, transparent);
         cursor: not-allowed;
       }
     }
@@ -111,10 +111,10 @@
     /* ===== Invalid State (Container) ===== */
     &[data-invalid] {
       .react-aria-TimeInput {
-        border-color: var(--error);
+        border-color: var(--invalid-color);
 
         &[data-focus-within] {
-          outline-color: var(--error);
+          outline-color: var(--invalid-color);
         }
       }
     }
@@ -122,13 +122,13 @@
     /* ===== Description Text ===== */
     [slot="description"] {
       font-size: var(--text-xs);
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
 
     /* ===== Field Error ===== */
     .react-aria-FieldError {
       font-size: var(--text-xs);
-      color: var(--error);
+      color: var(--invalid-color);
       margin-top: var(--spacing-xs);
     }
   }
@@ -138,34 +138,34 @@
 
   .react-aria-TimeField {
     /* 기본 variant 변수 */
-    --tf-accent: var(--outline-variant);
-    --tf-accent-container: var(--surface-container-high);
-    --tf-on-accent-container: var(--on-surface);
+    --tf-accent: var(--border-color);
+    --tf-accent-container: var(--overlay-background);
+    --tf-on-accent-container: var(--text-color);
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-TimeField.primary {
-    --tf-accent: var(--primary);
-    --tf-accent-container: var(--primary-container);
-    --tf-on-accent-container: var(--on-primary-container);
+    --tf-accent: var(--highlight-background);
+    --tf-accent-container: var(--color-primary-100);
+    --tf-on-accent-container: var(--color-primary-900);
   }
 
   .react-aria-TimeField.secondary {
-    --tf-accent: var(--secondary);
-    --tf-accent-container: var(--secondary-container);
-    --tf-on-accent-container: var(--on-secondary-container);
+    --tf-accent: var(--button-background);
+    --tf-accent-container: var(--color-neutral-100);
+    --tf-on-accent-container: var(--color-neutral-900);
   }
 
   .react-aria-TimeField.tertiary {
-    --tf-accent: var(--tertiary);
-    --tf-accent-container: var(--tertiary-container);
-    --tf-on-accent-container: var(--on-tertiary-container);
+    --tf-accent: var(--color-purple-600);
+    --tf-accent-container: var(--color-tertiary-100);
+    --tf-on-accent-container: var(--color-tertiary-900);
   }
 
   .react-aria-TimeField.error {
-    --tf-accent: var(--error);
-    --tf-accent-container: var(--error-container);
-    --tf-on-accent-container: var(--on-error-container);
+    --tf-accent: var(--invalid-color);
+    --tf-accent-container: var(--color-error-100);
+    --tf-on-accent-container: var(--color-error-900);
   }
 
   /* 모든 color variant에 공통 적용되는 스타일 */
@@ -203,25 +203,25 @@
   /* ===== M3 Filled Variant ===== */
   .react-aria-TimeField.filled {
     .react-aria-TimeInput {
-      background: var(--surface-container-highest);
+      background: var(--color-neutral-200);
       border-color: transparent;
-      border-bottom: 2px solid var(--outline-variant);
+      border-bottom: 2px solid var(--border-color);
       border-radius: var(--border-radius) var(--border-radius) 0 0;
 
       &[data-focus-within] {
         outline: none;
-        border-bottom-color: var(--primary);
-        background: var(--surface-container-high);
+        border-bottom-color: var(--highlight-background);
+        background: var(--overlay-background);
       }
 
       &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--surface-container-high);
-        border-bottom-color: var(--outline);
+        background: var(--overlay-background);
+        border-bottom-color: var(--border-color-hover);
       }
     }
 
     &[data-invalid] .react-aria-TimeInput {
-      border-bottom-color: var(--error);
+      border-bottom-color: var(--invalid-color);
     }
   }
 
@@ -297,10 +297,10 @@
   .react-aria-TimeField.tertiary[data-invalid],
   .react-aria-TimeField.filled[data-invalid] {
     .react-aria-TimeInput {
-      border-color: var(--error);
+      border-color: var(--invalid-color);
 
       &[data-focus-within] {
-        outline-color: var(--error);
+        outline-color: var(--invalid-color);
       }
     }
   }

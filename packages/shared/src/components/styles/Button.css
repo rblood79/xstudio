@@ -1,157 +1,68 @@
 @layer components {
   .react-aria-Button {
-    /* M3 Default: Filled tonal button (surface-container) */
-    color: var(--on-surface);
-    background: var(--surface-container-high);
-    border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-sm); /* default, overridden by size variants */
+    /* Structure */
     appearance: none;
     vertical-align: middle;
-    font-size: var(--text-sm);
     text-align: center;
     margin: 0;
     outline: none;
-    padding: var(--spacing) var(--spacing-md);
     text-decoration: none;
+    border: 1px solid;
 
+    /* Default variant: surface tonal */
+    --button-color: var(--overlay-background);
+    --button-text: var(--text-color);
+    --button-border: var(--border-color);
+
+    /* Default sizing (sm) */
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    padding: var(--spacing) var(--spacing-md);
+
+    /* Pressed shadow (all variants) */
     &[data-pressed] {
       box-shadow: var(--inset-shadow-sm);
-      background: color-mix(in srgb, var(--surface-container-high) 92%, black);
-      border-color: var(--outline);
     }
 
-    &[data-focus-visible] {
-      outline: 2px solid var(--primary);
-      outline-offset: 2px;
-    }
+    /* ===== Color Variants ===== */
 
-    &[data-disabled] {
-      background: color-mix(in srgb, var(--on-surface) 12%, transparent);
-      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
-      border-color: transparent;
-      opacity: 0.38;
-    }
-
-    /* ===== M3 Primary (Filled Button) ===== */
     &[data-variant="primary"] {
-      background: var(--primary);
-      color: var(--on-primary);
-      border-color: var(--primary);
-
-      &[data-hovered] {
-        background: var(--primary-hover);
-        border-color: var(--primary-hover);
-      }
-
-      &[data-pressed] {
-        background: var(--primary-pressed);
-        border-color: var(--primary-pressed);
-      }
+      --button-color: var(--highlight-background);
+      --button-text: var(--highlight-foreground);
     }
 
-    /* ===== M3 Secondary (Filled Button) ===== */
     &[data-variant="secondary"] {
-      background: var(--secondary);
-      color: var(--on-secondary);
-      border-color: var(--secondary);
-
-      &[data-hovered] {
-        background: var(--secondary-hover);
-        border-color: var(--secondary-hover);
-      }
-
-      &[data-pressed] {
-        background: var(--secondary-pressed);
-        border-color: var(--secondary-pressed);
-      }
+      --button-color: var(--button-background);
     }
 
-    /* ===== M3 Tertiary (Filled Button) ===== */
     &[data-variant="tertiary"] {
-      background: var(--tertiary);
-      color: var(--on-tertiary);
-      border-color: var(--tertiary);
-
-      &[data-hovered] {
-        background: var(--tertiary-hover);
-        border-color: var(--tertiary-hover);
-      }
-
-      &[data-pressed] {
-        background: var(--tertiary-pressed);
-        border-color: var(--tertiary-pressed);
-      }
+      --button-color: var(--color-purple-600);
     }
 
-    /* ===== M3 Error (Filled Button) ===== */
     &[data-variant="error"] {
-      background: var(--error);
-      color: var(--on-error);
-      border-color: var(--error);
-
-      &[data-hovered] {
-        background: var(--error-hover);
-        border-color: var(--error-hover);
-      }
-
-      &[data-pressed] {
-        background: var(--error-pressed);
-        border-color: var(--error-pressed);
-      }
+      --button-color: var(--invalid-color);
     }
 
-    /* ===== M3 Surface (Filled Tonal Button) ===== */
     &[data-variant="surface"] {
-      background: var(--surface-container-highest);
-      color: var(--on-surface);
-      border-color: var(--outline-variant);
-
-      &[data-hovered] {
-        background: color-mix(in srgb, var(--surface-container-highest) 92%, black);
-        border-color: var(--outline);
-      }
-
-      &[data-pressed] {
-        background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
-        border-color: var(--outline);
-      }
+      --button-color: var(--color-neutral-200);
+      --button-text: var(--text-color);
+      --button-border: var(--border-color);
     }
 
-    /* ===== M3 Outline (Outlined Button) ===== */
     &[data-variant="outline"] {
-      background: transparent;
-      color: var(--primary);
-      border-color: var(--outline);
-
-      &[data-hovered] {
-        background: color-mix(in srgb, var(--primary) 8%, transparent);
-        color: var(--primary);
-        border-color: var(--outline);
-      }
-
-      &[data-pressed] {
-        background: color-mix(in srgb, var(--primary) 12%, transparent);
-        border-color: var(--outline);
-      }
+      --button-color: var(--highlight-background);
+      --button-text: var(--highlight-background);
+      --button-border: var(--border-color-hover);
     }
 
-    /* ===== M3 Ghost (Text Button) ===== */
     &[data-variant="ghost"] {
-      background: transparent;
-      color: var(--primary);
-      border-color: transparent;
-
-      &[data-hovered] {
-        background: color-mix(in srgb, var(--primary) 8%, transparent);
-        color: var(--primary);
-      }
-
-      &[data-pressed] {
-        background: color-mix(in srgb, var(--primary) 12%, transparent);
-      }
+      --button-color: var(--highlight-background);
+      --button-text: var(--highlight-background);
+      --button-border: transparent;
     }
 
     /* ===== Size Variants ===== */
+
     &[data-size="xs"] {
       font-size: var(--text-2xs);
       padding: var(--spacing-xs) var(--spacing-sm);

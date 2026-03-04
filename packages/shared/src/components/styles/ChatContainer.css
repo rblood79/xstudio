@@ -12,7 +12,7 @@
     overflow-y: auto;
     gap: var(--gap);
     padding: 0;
-    background-color: var(--surface-container-low);
+    background-color: var(--color-neutral-50);
   }
 
   /* Header styles are now inherited from global .panel-header */
@@ -32,7 +32,7 @@
   }
 
   .chat-content::-webkit-scrollbar-track {
-    background: var(--surface-container);
+    background: var(--field-background);
   }
 
   .chat-content::-webkit-scrollbar-thumb {
@@ -41,7 +41,7 @@
   }
 
   .chat-content::-webkit-scrollbar-thumb:hover {
-    background: var(--on-surface-variant);
+    background: var(--text-color-placeholder);
   }
 
   .chat-content-empty {
@@ -50,7 +50,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
     text-align: center;
     padding: var(--spacing-8);
   }
@@ -82,18 +82,18 @@
 
   .chat-content-suggestion {
     padding: var(--spacing-2) var(--spacing-3);
-    background-color: var(--surface-container);
-    border: 1px solid var(--outline-variant);
+    background-color: var(--field-background);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
-    color: var(--on-surface);
+    color: var(--text-color);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .chat-content-suggestion:hover {
-    background-color: var(--primary-hover);
-    border-color: var(--primary);
-    color: var(--on-primary);
+    background-color: color-mix(in srgb, var(--highlight-background) 85%, black);
+    border-color: var(--highlight-background);
+    color: var(--highlight-foreground);
   }
 }

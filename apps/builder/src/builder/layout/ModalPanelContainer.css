@@ -61,8 +61,8 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-md);
-  background: var(--surface-variant);
-  border-bottom: 1px solid var(--outline-variant);
+  background: var(--color-surface-200);
+  border-bottom: 1px solid var(--border-color);
   cursor: grab;
   user-select: none;
   flex-shrink: 0;
@@ -77,7 +77,7 @@
   margin: 0;
   font-size: 13px;
   font-weight: 600;
-  color: var(--on-surface);
+  color: var(--text-color);
 }
 
 /* 닫기 버튼 */
@@ -91,18 +91,18 @@
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--on-surface-variant);
+  color: var(--text-color-placeholder);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
 .modal-panel-close:hover {
-  background: var(--surface-container-high);
-  color: var(--on-surface);
+  background: var(--overlay-background);
+  color: var(--text-color);
 }
 
 .modal-panel-close:active {
-  background: var(--surface-container-highest);
+  background: var(--color-neutral-200);
 }
 
 /* 컨텐츠 영역 */

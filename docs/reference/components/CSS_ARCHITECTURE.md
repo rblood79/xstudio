@@ -1,7 +1,7 @@
 # XStudio CSS Architecture - ITCSS
 
 **Date:** 2025-11-08 (초판) / 2026-03-04 (최종 갱신)
-**Version:** 2.2 (CSS 중복 로딩 근본 해결, import chain 단일화)
+**Version:** 3.0 (ADR-017 M3 토큰 제거 + ADR-018 utilities.css 도입)
 
 ---
 
@@ -195,21 +195,41 @@ src/builder/styles/
 
 ---
 
-### **Preview System Tokens (`--action-*`, `--highlight-*`)**
+### **Preview Semantic Tokens (ADR-017)**
 
-**Purpose:** Preview iframe components
+**Purpose:** Preview iframe components — M3 토큰 제거 후 시맨틱 토큰 단일 체계
 **Customizable by:** AI Theme System
 **Dark mode:** `[data-theme="dark"]`
 
-**Key Tokens:**
+| Category  | Token                            | Description                     |
+| --------- | -------------------------------- | ------------------------------- |
+| Highlight | `--highlight-background`         | Primary accent (buttons, links) |
+| Highlight | `--highlight-foreground`         | Text on primary accent          |
+| Highlight | `--highlight-background-pressed` | Primary pressed state           |
+| Text      | `--text-color`                   | Default text                    |
+| Text      | `--text-color-secondary`         | Secondary text                  |
+| Text      | `--text-color-disabled`          | Disabled text                   |
+| Text      | `--text-color-placeholder`       | Placeholder text                |
+| Border    | `--border-color`                 | Default border                  |
+| Border    | `--border-color-hover`           | Border hover state              |
+| Border    | `--border-color-disabled`        | Disabled border                 |
+| Surface   | `--field-background`             | Input/select background         |
+| Surface   | `--overlay-background`           | Elevated surfaces               |
+| Surface   | `--button-background`            | Secondary button bg             |
+| Feedback  | `--invalid-color`                | Error/validation                |
+| Palette   | `--color-white`, `--color-black` | Fixed colors                    |
+| Palette   | `--color-purple-600`             | Tertiary accent                 |
+
+**Hover/Pressed 파생 패턴:**
 
 ```css
---action-primary-bg
---action-secondary-bg
---action-surface-bg
---highlight-background
---shadow-md
+/* hover: base 85% + black 15% */
+color-mix(in srgb, var(--highlight-background) 85%, black)
+/* pressed: base 75% + black 25% */
+color-mix(in srgb, var(--highlight-background) 75%, black)
 ```
+
+> **Note:** M3 토큰 (`--primary`, `--on-surface`, `--surface-container` 등 38개)은 ADR-017에 의해 제거됨. 새 코드에서 사용 금지. 상세: `.claude/rules/css-tokens.md`
 
 ---
 
@@ -230,21 +250,52 @@ src/builder/styles/
 
 ## 📦 Component CSS Organization
 
+### **Utility Classes (ADR-018 — `utilities.css`)**
+
+**Location:** `packages/shared/src/components/styles/utilities.css`
+**Layer:** `@layer utilities` (specificity 0 via `:where()`)
+**Loaded via:** `foundation.css` `@import`
+
+3개 utility 클래스로 variant/state 색상 자동 파생:
+
+| Class          | Custom Properties                 | Used by                                   |
+| -------------- | --------------------------------- | ----------------------------------------- |
+| `.button-base` | `--button-color`, `--button-text` | Button, ToggleButton, Link, Breadcrumbs   |
+| `.indicator`   | `--indicator-color`               | Checkbox, RadioGroup, Switch              |
+| `.inset`       | `--inset-bg`, `--inset-border`    | TextField, NumberField, Select, DateField |
+
+```css
+/* 사용 예: Button.css */
+@layer components {
+  .react-aria-Button {
+    /* 구조: layout, sizing */
+    display: inline-flex;
+    height: 32px;
+  }
+  &[data-variant="primary"] {
+    --button-color: var(--highlight-background);
+    --button-text: var(--highlight-foreground);
+    /* hover/pressed/disabled 자동 파생 (.button-base) */
+  }
+}
+```
+
 ### **React Aria Components**
 
 **Location:** `packages/shared/src/components/styles/`
 **Count:** 70+ component files
-**Pattern:**
+**Pattern:** `data-variant`/`data-size` 속성 셀렉터 + utility 클래스 조합
 
 ```css
-/* Button.css */
+/* Button.css — 구조만 유지, 색상은 .button-base가 처리 */
 @layer components {
   .react-aria-Button {
-    background: var(--button-background);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
-
-  .react-aria-Button.primary {
-    background: var(--action-primary-bg);
+  &[data-variant="primary"] {
+    --button-color: var(--highlight-background);
   }
 }
 ```
@@ -262,7 +313,9 @@ apps/builder/src/index.css (CSS @import chain — theme + builder styles only)
 packages/shared/src/components/index.tsx (JS import chain — foundation only)
 └── import './styles/foundation.css'
     ├── theme.css (CSS 변수)
-    ├── base.css, animations.css, forms.css, overlays.css, collections.css
+    ├── base.css, animations.css
+    ├── utilities.css (ADR-018: .button-base, .indicator, .inset)
+    ├── forms.css, overlays.css, collections.css
     └── orphan CSS (ActionList, CalendarCommon, Group, SortIcon 등)
 
 Individual component .tsx files (JS import — component CSS)
@@ -294,6 +347,24 @@ Individual component .tsx files (JS import — component CSS)
 - [x] `foundation.css` 신규 생성 (기반 + orphan CSS 17개)
 - [x] `index.tsx` 벌크 CSS import를 foundation-only로 변경
 - [x] 동일 파일 중복 `<style>` 태그 0건 달성
+
+### **✅ Completed (ADR-017 — M3 토큰 제거, 2026-03-04)**
+
+- [x] Phase 1: theme 파일 M3 섹션 삭제 (preview-system.css, builder-system.css)
+- [x] Phase 2 Tier 1: 자동화 스크립트 → 107파일 2,636건 치환 (M3 → 시맨틱 토큰)
+- [x] Phase 2 Tier 2: 저빈도 토큰 수동 치환 + 포커스 셀렉터 정규화 (15파일)
+- [x] Phase 2 Tier 3-4: Builder CSS 52파일 M3 치환
+- [x] Phase 3: Spec 토큰 시스템 전환 (colors.ts, tokenResolver.ts, CSSGenerator.ts)
+- [x] Phase 4: Theme Studio TSX 확인 (M3 참조 없음, M3ColorSystemGuide 삭제)
+- [x] Phase 5: 문서화 + `.claude/rules/css-tokens.md` M3 금지 규칙
+
+### **🔄 In Progress (ADR-018 — Component CSS 재구조화)**
+
+- [x] Phase 1: `utilities.css` 생성 (`.button-base`, `.indicator`, `.inset`)
+- [ ] Phase 2: 버튼류 CSS 마이그레이션 (Button, ToggleButton, Link, Breadcrumbs, TagGroup)
+- [ ] Phase 3: 입력 필드류 CSS 마이그레이션 (TextField, NumberField, Select, DateField 등)
+- [ ] Phase 4: 인디케이터류 CSS 마이그레이션 (Checkbox, RadioGroup, Switch, Slider)
+- [ ] Phase 5: 복합/오버레이류 + Card.css 셀렉터 마이그레이션
 
 ### **⏳ Phase 4: 보류 (Deferred)**
 
@@ -370,19 +441,23 @@ export default defineConfig({
 ### **DO:**
 
 - ✅ Use `--builder-*` tokens for Builder UI
-- ✅ Use `--action-*` tokens for Preview components
-- ✅ Use semantic class names (`.inspector`, `.sidebar`)
+- ✅ Use semantic tokens for Preview components (`--highlight-background`, `--text-color`, `--border-color` 등)
+- ✅ Use utility classes (`.button-base`, `.indicator`, `.inset`) for color state derivation
+- ✅ Use `color-mix()` for hover/pressed states (85%/75% with black)
+- ✅ Use `data-variant`/`data-size` attribute selectors (not class selectors)
+- ✅ Use `:where()` for zero-specificity utility overrides
 - ✅ Wrap styles in appropriate `@layer`
 - ✅ Use CSS variables for all colors
 
 ### **DON'T:**
 
+- ❌ Use M3 tokens (`--primary`, `--on-surface`, `--surface-container` 등) — ADR-017에 의해 제거됨
 - ❌ Use hardcoded colors (`#ffffff`, `rgba(...)`)
+- ❌ Duplicate variant/state color blocks — utility 클래스 사용
 - ❌ Mix Builder and Preview tokens
-- ❌ Create global classes without namespace
 - ❌ Use `@apply` directive (Tailwind v4 doesn't support)
 - ❌ Skip `@layer` declarations
-- ❌ **CSS `@import`와 JS `import`로 동일 CSS를 이중 로드** — Vite가 별도 `<style>` 태그 생성하여 중복 발생
+- ❌ **CSS `@import`와 JS `import`로 동일 CSS를 이중 로드**
 - ❌ **`index.css`에서 component CSS를 `@import`** — component CSS는 각 .tsx의 JS import로만 로드
 
 ---
@@ -390,22 +465,23 @@ export default defineConfig({
 ## 📚 Related Documentation
 
 - [ADR-002: Styling Approach](../../adr/002-styling-approach.md) - ITCSS + tailwind-variants 결정 배경
+- [ADR-017: CSS Override SSOT](../../adr/017-css-override-ssot.md) - M3 토큰 제거, 시맨틱 토큰 단일화
+- [ADR-018: Component CSS Restructure](../../adr/018-component-css-restructure.md) - utilities.css 패턴, CSS 61% 감소
 - [CSS_SUPPORT_MATRIX.md](../../CSS_SUPPORT_MATRIX.md) - CSS Level 3 지원 현황 (88%)
 - [CLAUDE.md](../../../CLAUDE.md) - 프로젝트 가이드라인
-
-> **참고**: 이전에 참조되던 `CSS_BASELINE_SNAPSHOT.md`, `LAYER_USAGE_PATTERNS.md`, `CSS_REFACTORING_REPORT.md`는 Phase 1-3 완료 후 별도 생성되지 않았으며, 해당 내용은 본 문서의 Performance Metrics 섹션에 통합됨.
 
 ---
 
 ## 🔄 Update History
 
-| Version | Date       | Changes                                                                          |
-| ------- | ---------- | -------------------------------------------------------------------------------- |
-| 2.2     | 2026-03-04 | Phase 5: CSS 중복 로딩 해결 — import chain 단일화, foundation.css, 1-theme/ 삭제 |
-| 2.1     | 2026-02-19 | Phase 4 상태 명시 (보류/대체), 미존재 참조 문서 정리, 날짜 보정                  |
-| 2.0     | 2025-11-08 | Phase 1-3 complete: Theme separation, hardcoded color removal, ITCSS structure   |
-| 1.0     | 2025-11-08 | Initial baseline documentation                                                   |
+| Version | Date       | Changes                                                                                        |
+| ------- | ---------- | ---------------------------------------------------------------------------------------------- |
+| 3.0     | 2026-03-04 | ADR-017: M3 토큰 제거 + 시맨틱 토큰 카탈로그. ADR-018: utilities.css 도입, Best Practices 갱신 |
+| 2.2     | 2026-03-04 | Phase 5: CSS 중복 로딩 해결 — import chain 단일화, foundation.css, 1-theme/ 삭제               |
+| 2.1     | 2026-02-19 | Phase 4 상태 명시 (보류/대체), 미존재 참조 문서 정리, 날짜 보정                                |
+| 2.0     | 2025-11-08 | Phase 1-3 complete: Theme separation, hardcoded color removal, ITCSS structure                 |
+| 1.0     | 2025-11-08 | Initial baseline documentation                                                                 |
 
 ---
 
-**현재 상태**: Phase 1-3 + Phase 5 완료. Phase 4는 Tailwind v4 + tv() 도입으로 방향 재검토 중.
+**현재 상태**: Phase 1-3 + Phase 5 + ADR-017 완료. ADR-018 Phase 1 (utilities.css) 완료, Phase 2-5 진행 중.

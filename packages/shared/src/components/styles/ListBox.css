@@ -15,17 +15,17 @@
     display: flex;
     flex-direction: column;
     padding: var(--spacing-xs);
-    border: 1px solid var(--outline-variant);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    background: var(--surface-container);
-    color: var(--on-surface);
+    background: var(--field-background);
+    color: var(--text-color);
     outline: none;
     max-height: 300px;
     overflow: auto;
     gap: var(--spacing-2xs);
 
     &[data-focus-visible] {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: -1px;
     }
 
@@ -33,7 +33,7 @@
       align-items: center;
       justify-content: center;
       font-style: italic;
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
     }
   }
 
@@ -45,7 +45,7 @@
     padding: var(--spacing) var(--spacing-md);
     border-radius: var(--radius-xs);
     min-height: 20px;
-    color: var(--on-surface);
+    color: var(--text-color);
     cursor: pointer;
     outline: none;
     transition: all 150ms ease;
@@ -53,30 +53,30 @@
 
     /* Hover State */
     &[data-hovered] {
-      background: var(--surface-container-high);
+      background: var(--overlay-background);
     }
 
     /* Focus Visible State */
     &[data-focus-visible] {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: -2px;
     }
 
     /* Selected State */
     &[data-selected] {
-      background: var(--primary-container);
-      color: var(--on-primary-container);
+      background: var(--color-primary-100);
+      color: var(--color-primary-900);
       font-weight: 500;
 
       &[data-focus-visible] {
-        outline-color: var(--primary);
+        outline-color: var(--highlight-background);
         outline-offset: -4px;
       }
     }
 
     /* Disabled State */
     &[data-disabled] {
-      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      color: color-mix(in srgb, var(--text-color) 38%, transparent);
       cursor: not-allowed;
       opacity: 0.38;
     }
@@ -101,7 +101,7 @@
 
     [slot="description"] {
       font-size: var(--text-xs);
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
       margin-top: var(--spacing-2xs);
     }
   }
@@ -115,7 +115,7 @@
     .react-aria-Header {
       font-size: var(--text-sm);
       font-weight: 700;
-      color: var(--on-surface-variant);
+      color: var(--text-color-placeholder);
       padding: 0 var(--spacing-md);
       margin-bottom: var(--spacing-xs);
     }
@@ -153,9 +153,9 @@
           position: absolute;
           top: 8px;
           right: 8px;
-          background: var(--primary);
-          border: 2px solid var(--primary);
-          color: var(--on-primary);
+          background: var(--highlight-background);
+          border: 2px solid var(--highlight-background);
+          color: var(--highlight-foreground);
           width: 22px;
           height: 22px;
           border-radius: 50%;
@@ -170,7 +170,7 @@
       }
 
       &[data-focus-visible] {
-        outline: 2px solid var(--primary);
+        outline: 2px solid var(--highlight-background);
         outline-offset: -2px;
       }
     }
@@ -226,18 +226,18 @@
 
   /* ========== Drag and Drop Styles ========== */
   .react-aria-DropIndicator[data-drop-target] {
-    outline: 1px solid var(--primary);
+    outline: 1px solid var(--highlight-background);
   }
 
   .react-aria-ListBox[data-drop-target] {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--highlight-background);
     outline-offset: -1px;
-    background: color-mix(in srgb, var(--primary) 8%, transparent);
+    background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
   }
 
   .react-aria-ListBoxItem[data-drop-target] {
-    outline: 2px solid var(--primary);
-    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    outline: 2px solid var(--highlight-background);
+    background: color-mix(in srgb, var(--highlight-background) 12%, transparent);
   }
 
   /* ========== Popover Context (ComboBox, Select) ========== */
@@ -267,7 +267,7 @@
       &[data-selected] {
         font-weight: 600;
         background: unset;
-        color: var(--on-surface);
+        color: var(--text-color);
 
         &::before {
           content: "✓";
@@ -276,13 +276,13 @@
           position: absolute;
           top: 4px;
           left: 4px;
-          color: var(--primary);
+          color: var(--highlight-background);
         }
       }
 
       &[data-focused],
       &[data-pressed] {
-        background: var(--surface-container-high);
+        background: var(--overlay-background);
       }
     }
   }
@@ -292,34 +292,34 @@
 
   .react-aria-ListBox {
     /* 기본 variant 변수 */
-    --lb-accent: var(--outline-variant);
-    --lb-accent-container: var(--primary-container);
-    --lb-on-accent-container: var(--on-primary-container);
+    --lb-accent: var(--border-color);
+    --lb-accent-container: var(--color-primary-100);
+    --lb-on-accent-container: var(--color-primary-900);
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-ListBox.primary {
-    --lb-accent: var(--primary);
-    --lb-accent-container: var(--primary-container);
-    --lb-on-accent-container: var(--on-primary-container);
+    --lb-accent: var(--highlight-background);
+    --lb-accent-container: var(--color-primary-100);
+    --lb-on-accent-container: var(--color-primary-900);
   }
 
   .react-aria-ListBox.secondary {
-    --lb-accent: var(--secondary);
-    --lb-accent-container: var(--secondary-container);
-    --lb-on-accent-container: var(--on-secondary-container);
+    --lb-accent: var(--button-background);
+    --lb-accent-container: var(--color-neutral-100);
+    --lb-on-accent-container: var(--color-neutral-900);
   }
 
   .react-aria-ListBox.tertiary {
-    --lb-accent: var(--tertiary);
-    --lb-accent-container: var(--tertiary-container);
-    --lb-on-accent-container: var(--on-tertiary-container);
+    --lb-accent: var(--color-purple-600);
+    --lb-accent-container: var(--color-tertiary-100);
+    --lb-on-accent-container: var(--color-tertiary-900);
   }
 
   .react-aria-ListBox.error {
-    --lb-accent: var(--error);
-    --lb-accent-container: var(--error-container);
-    --lb-on-accent-container: var(--on-error-container);
+    --lb-accent: var(--invalid-color);
+    --lb-accent-container: var(--color-error-100);
+    --lb-on-accent-container: var(--color-error-900);
   }
 
   /* 모든 color variant에 공통 적용되는 스타일 */
@@ -347,12 +347,12 @@
 
   /* ===== M3 Filled Variant ===== */
   .react-aria-ListBox.filled {
-    background: var(--surface-container-highest);
+    background: var(--color-neutral-200);
     border-color: transparent;
 
     .react-aria-ListBoxItem {
       &[data-hovered] {
-        background: var(--surface-container-high);
+        background: var(--overlay-background);
       }
 
       &[data-selected] {
@@ -513,22 +513,22 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
     font-style: italic;
   }
 
   .react-aria-ListBox.virtualized .virtualized-error {
-    color: var(--error);
+    color: var(--invalid-color);
   }
 
   /* 포커스 링 최적화 */
   .react-aria-ListBox.virtualized:focus {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--highlight-background);
     outline-offset: -1px;
   }
 
   .react-aria-ListBox.virtualized:focus-visible {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--highlight-background);
     outline-offset: -1px;
   }
 }

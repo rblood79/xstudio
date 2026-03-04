@@ -32,8 +32,8 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: var(--primary);
-  border: 2px solid var(--on-primary);
+  background: var(--highlight-background);
+  border: 2px solid var(--highlight-foreground);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -47,7 +47,7 @@
 /* 활성(드래그 중) 상태 */
 .border-radius-handle.active .handle-inner {
   transform: scale(1.3);
-  background: var(--primary-hover);
+  background: color-mix(in srgb, var(--highlight-background) 85%, black);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
@@ -74,8 +74,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--highlight-background);
+  color: var(--highlight-foreground);
   padding: var(--spacing) var(--spacing-md);
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
@@ -90,7 +90,7 @@
 /* 가이드라인 (선택적 - 드래그 중 표시) */
 .border-radius-guide {
   position: absolute;
-  border: 1px dashed var(--primary);
+  border: 1px dashed var(--highlight-background);
   opacity: 0.5;
   pointer-events: none;
 }

@@ -19,7 +19,7 @@
     flex-direction: column;
     gap: var(--spacing-md);
     padding: var(--spacing-lg);
-    background: var(--surface);
+    background: var(--color-white);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     min-width: 400px;
@@ -35,7 +35,7 @@
     margin: 0;
     font-size: var(--text-lg);
     font-weight: var(--font-weight-semibold);
-    color: var(--on-surface);
+    color: var(--text-color);
   }
 
   .add-page-form {
@@ -56,22 +56,22 @@
     gap: var(--spacing-xs);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--on-surface);
+    color: var(--text-color);
   }
 
   .add-page-field input {
     padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid var(--outline);
+    border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-sm);
     font-size: var(--text-sm);
-    color: var(--on-surface);
-    background: var(--surface-variant);
+    color: var(--text-color);
+    background: var(--color-surface-200);
     transition: border-color 150ms;
   }
 
   .add-page-field input:focus {
     outline: none;
-    border-color: var(--primary);
+    border-color: var(--highlight-background);
   }
 
   .add-page-field[data-invalid] input {
@@ -80,17 +80,17 @@
 
   .add-page-select {
     padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid var(--outline);
+    border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-sm);
     font-size: var(--text-sm);
-    color: var(--on-surface);
-    background: var(--surface-variant);
+    color: var(--text-color);
+    background: var(--color-surface-200);
     cursor: pointer;
   }
 
   .add-page-select:focus {
     outline: none;
-    border-color: var(--primary);
+    border-color: var(--highlight-background);
   }
 
   .add-page-error {
@@ -106,7 +106,7 @@
 
   .add-page-hint {
     font-size: var(--text-xs);
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
   }
 
   .add-page-preview {
@@ -114,20 +114,20 @@
     flex-direction: column;
     gap: var(--spacing-xs);
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--surface-variant);
+    background: var(--color-surface-200);
     border-radius: var(--radius-sm);
-    border: 1px solid var(--outline-variant);
+    border: 1px solid var(--border-color);
   }
 
   .add-page-preview-label {
     font-size: var(--text-xs);
-    color: var(--on-surface-variant);
+    color: var(--text-color-placeholder);
   }
 
   .add-page-preview-url {
     font-size: var(--text-sm);
     font-family: var(--font-mono);
-    color: var(--primary);
+    color: var(--highlight-background);
     word-break: break-all;
   }
 
@@ -136,30 +136,30 @@
     justify-content: flex-end;
     gap: var(--spacing-sm);
     padding-top: var(--spacing-md);
-    border-top: 1px solid var(--outline-variant);
+    border-top: 1px solid var(--border-color);
   }
 
   .add-page-cancel {
     padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid var(--outline);
+    border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--on-surface);
+    color: var(--text-color);
     font-size: var(--text-sm);
     cursor: pointer;
     transition: background 150ms;
   }
 
   .add-page-cancel:hover {
-    background: var(--surface-variant);
+    background: var(--color-surface-200);
   }
 
   .add-page-submit {
     padding: var(--spacing-sm) var(--spacing-md);
     border: none;
     border-radius: var(--radius-sm);
-    background: var(--primary);
-    color: var(--on-primary);
+    background: var(--highlight-background);
+    color: var(--highlight-foreground);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
@@ -167,7 +167,7 @@
   }
 
   .add-page-submit:hover:not([data-disabled]) {
-    background: var(--primary-container);
+    background: var(--color-primary-100);
   }
 
   .add-page-submit[data-disabled] {

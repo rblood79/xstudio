@@ -20,7 +20,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-xl);
-  color: var(--on-surface-variant);
+  color: var(--text-color-placeholder);
   font-size: var(--text-sm);
 }
 
@@ -30,6 +30,6 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-xl);
-  color: var(--on-surface-variant);
+  color: var(--text-color-placeholder);
   font-size: var(--text-sm);
 }

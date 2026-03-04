@@ -13,7 +13,7 @@
     transition: all 200ms;
     border-radius: var(--radius-sm);
     outline: none;
-    color: var(--primary);
+    color: var(--highlight-background);
 
     /* External icon spacing */
     & .link-external-icon {
@@ -25,7 +25,7 @@
 
     /* Hover state */
     &[data-hovered] {
-      color: var(--primary-hover);
+      color: color-mix(in srgb, var(--highlight-background) 85%, black);
       text-decoration: underline;
       text-decoration-thickness: 2px;
       text-underline-offset: 4px;
@@ -33,12 +33,12 @@
 
     /* Pressed state */
     &[data-pressed] {
-      color: var(--primary-pressed);
+      color: var(--highlight-background-pressed);
     }
 
     /* Disabled state */
     &[data-disabled] {
-      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      color: color-mix(in srgb, var(--text-color) 38%, transparent);
       cursor: not-allowed;
       pointer-events: none;
       opacity: 0.38;
@@ -46,7 +46,7 @@
 
     /* Focus visible (keyboard only) */
     &.focus-visible {
-      outline: 2px solid var(--primary);
+      outline: 2px solid var(--highlight-background);
       outline-offset: 2px;
     }
 
@@ -60,27 +60,27 @@
 
   /* ===== M3 Primary Link ===== */
   .react-aria-Link.primary {
-    color: var(--primary);
+    color: var(--highlight-background);
 
     &[data-hovered] {
-      color: var(--primary-hover);
+      color: color-mix(in srgb, var(--highlight-background) 85%, black);
     }
 
     &[data-pressed] {
-      color: var(--primary-pressed);
+      color: var(--highlight-background-pressed);
     }
   }
 
   /* ===== M3 Secondary Link ===== */
   .react-aria-Link.secondary {
-    color: var(--secondary);
+    color: var(--button-background);
 
     &[data-hovered] {
-      color: var(--secondary-hover);
+      color: color-mix(in srgb, var(--button-background) 85%, black);
     }
 
     &[data-pressed] {
-      color: var(--secondary-pressed);
+      color: color-mix(in srgb, var(--button-background) 75%, black);
     }
   }
 

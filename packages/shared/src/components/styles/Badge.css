@@ -20,8 +20,8 @@
     white-space: nowrap;
     border-radius: var(--radius-full);
     transition: all 200ms;
-    background: var(--surface-container-high);
-    color: var(--on-surface-variant);
+    background: var(--overlay-background);
+    color: var(--text-color-placeholder);
     border: 1px solid transparent;
   }
 
@@ -29,32 +29,32 @@
 
   /* ===== Primary Variant ===== */
   .react-aria-Badge[data-variant="primary"] {
-    background: var(--primary);
-    color: var(--on-primary);
+    background: var(--highlight-background);
+    color: var(--highlight-foreground);
   }
 
   /* ===== Secondary Variant ===== */
   .react-aria-Badge[data-variant="secondary"] {
-    background: var(--secondary);
-    color: var(--on-secondary);
+    background: var(--button-background);
+    color: var(--color-white);
   }
 
   /* ===== Tertiary Variant ===== */
   .react-aria-Badge[data-variant="tertiary"] {
-    background: var(--tertiary);
-    color: var(--on-tertiary);
+    background: var(--color-purple-600);
+    color: var(--color-white);
   }
 
   /* ===== Error Variant ===== */
   .react-aria-Badge[data-variant="error"] {
-    background: var(--error);
-    color: var(--on-error);
+    background: var(--invalid-color);
+    color: var(--color-white);
   }
 
   /* ===== Surface Variant ===== */
   .react-aria-Badge[data-variant="surface"] {
-    background: var(--surface-container-highest);
-    color: var(--on-surface);
+    background: var(--color-neutral-200);
+    color: var(--text-color);
   }
 
   /* ========== Size Variants ========== */

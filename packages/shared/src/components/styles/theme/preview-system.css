@@ -2,15 +2,123 @@
  * These tokens are customizable via AI Theme System
  * Used ONLY in Preview iframe (src/preview/)
  * User theme changes affect ONLY these tokens, NOT Builder UI
+ *
+ * Tint System (inspired by React Aria starter):
+ * Change --tint to switch the entire accent color in one line.
+ * ThemeStudio tokens (e.g., --color-highlight-background) still override
+ * individual semantic tokens when defined.
  */
 
 @layer preview-system {
   :root {
-    /* Semantic colors - Integrated with Design Token System
-     * ThemeStudio tokens (e.g., color.background.base) will automatically
-     * override these fallback values when defined. */
+    /* ===== Tint Color System ===== */
+    /* Color presets — oklch(lightness chroma hue)
+     * lightness is used as a multiplier for chroma in the scale */
+    --red: oklch(0.6 0.181447 27.0726);
+    --orange: oklch(0.7 0.150492 54);
+    --yellow: oklch(0.8 0.128516 73.8032);
+    --green: oklch(0.5 0.121276 155.372);
+    --turquoise: oklch(0.5 0.081146 205.114);
+    --cyan: oklch(0.4 0.142107 243.926);
+    --blue: oklch(0.5 0.22049 266.315);
+    --indigo: oklch(1 0.25049 284.23);
+    --purple: oklch(0.7 0.223324 302);
+    --pink: oklch(0.6 0.177717 347.813);
+
+    /* Change this ONE variable to set the theme accent color */
+    --tint: var(--blue);
+
+    /* Light mode lightness scale (high → low) */
+    --lightness-100: 98.1187%;
+    --lightness-200: 95.2045%;
+    --lightness-300: 91.1434%;
+    --lightness-400: 85.1751%;
+    --lightness-500: 79.1773%;
+    --lightness-600: 72.3297%;
+    --lightness-700: 67.0121%;
+    --lightness-800: 62.3039%;
+    --lightness-900: 57.9699%;
+    --lightness-1000: 51.9076%;
+    --lightness-1100: 46.9058%;
+    --lightness-1200: 41.0821%;
+    --lightness-1300: 35.3616%;
+    --lightness-1400: 29.6725%;
+    --lightness-1500: 24.5366%;
+    --lightness-1600: 16.6959%;
+
+    /* Chroma scale — lower chroma at light end for subtlety */
+    --chroma-100: calc(l * c * 0.5);
+    --chroma-200: calc(l * c * 0.6);
+    --chroma-300: calc(l * c * 0.7);
+    --chroma-400: calc(l * c * 0.8);
+    --chroma-500: calc(l * c * 0.9);
+    --chroma-600: c;
+    --chroma-700: c;
+    --chroma-800: c;
+    --chroma-900: c;
+    --chroma-1000: c;
+    --chroma-1100: c;
+    --chroma-1200: c;
+    --chroma-1300: c;
+    --chroma-1400: c;
+    --chroma-1500: c;
+    --chroma-1600: c;
+
+    /* Generated tint scale (100=lightest → 1600=darkest) */
+    --tint-100: oklch(
+      from var(--tint) var(--lightness-100) var(--chroma-100) h
+    );
+    --tint-200: oklch(
+      from var(--tint) var(--lightness-200) var(--chroma-200) h
+    );
+    --tint-300: oklch(
+      from var(--tint) var(--lightness-300) var(--chroma-300) h
+    );
+    --tint-400: oklch(
+      from var(--tint) var(--lightness-400) var(--chroma-400) h
+    );
+    --tint-500: oklch(
+      from var(--tint) var(--lightness-500) var(--chroma-500) h
+    );
+    --tint-600: oklch(
+      from var(--tint) var(--lightness-600) var(--chroma-600) h
+    );
+    --tint-700: oklch(
+      from var(--tint) var(--lightness-700) var(--chroma-700) h
+    );
+    --tint-800: oklch(
+      from var(--tint) var(--lightness-800) var(--chroma-800) h
+    );
+    --tint-900: oklch(
+      from var(--tint) var(--lightness-900) var(--chroma-900) h
+    );
+    --tint-1000: oklch(
+      from var(--tint) var(--lightness-1000) var(--chroma-1000) h
+    );
+    --tint-1100: oklch(
+      from var(--tint) var(--lightness-1100) var(--chroma-1100) h
+    );
+    --tint-1200: oklch(
+      from var(--tint) var(--lightness-1200) var(--chroma-1200) h
+    );
+    --tint-1300: oklch(
+      from var(--tint) var(--lightness-1300) var(--chroma-1300) h
+    );
+    --tint-1400: oklch(
+      from var(--tint) var(--lightness-1400) var(--chroma-1400) h
+    );
+    --tint-1500: oklch(
+      from var(--tint) var(--lightness-1500) var(--chroma-1500) h
+    );
+    --tint-1600: oklch(
+      from var(--tint) var(--lightness-1600) var(--chroma-1600) h
+    );
+
+    /* ===== Semantic Tokens ===== */
+    /* ThemeStudio overrides (--color-*) take priority, tint-based fallbacks below */
+
     --background-color: var(--color-background-base, var(--color-white));
-    --focus-ring-color: var(--color-focus-ring, var(--color-primary-400));
+    --focus-ring-color: var(--color-focus-ring, var(--tint-1000));
     --text-color: var(--color-text-primary, var(--color-neutral-900));
     --text-color-base: var(--color-text-base, var(--color-neutral-900));
     --text-color-hover: var(--color-text-hover, var(--color-neutral-950));
@@ -19,17 +127,26 @@
       --color-text-placeholder,
       var(--color-neutral-700)
     );
-    --link-color: var(--color-link, var(--color-primary-500));
-    --link-color-secondary: var(--color-link-secondary, var(--color-neutral-900));
-    --link-color-pressed: var(--color-link-pressed, var(--color-primary-600));
+    --link-color: var(--color-link, var(--tint-1200));
+    --link-color-secondary: var(
+      --color-link-secondary,
+      var(--color-neutral-900)
+    );
+    --link-color-pressed: var(--color-link-pressed, var(--tint-1300));
     --border-color: var(--color-border-base, var(--color-neutral-300));
     --border-color-hover: var(--color-border-hover, var(--color-neutral-400));
-    --border-color-pressed: var(--color-border-pressed, var(--color-neutral-500));
+    --border-color-pressed: var(
+      --color-border-pressed,
+      var(--color-neutral-500)
+    );
     --border-color-disabled: var(
       --color-border-disabled,
       var(--color-neutral-100)
     );
-    --button-background: var(--color-button-background, var(--color-neutral-50));
+    --button-background: var(
+      --color-button-background,
+      var(--color-neutral-50)
+    );
     --button-background-pressed: var(
       --color-button-background-pressed,
       var(--color-neutral-100)
@@ -41,107 +158,34 @@
       var(--color-neutral-50)
     );
 
-    /* Highlight colors - Token integrated, based on theme primary colors */
+    /* Highlight colors — fixed oklch lightness ensures contrast with foreground
+     * These are the same in light and dark modes */
     --highlight-background: var(
       --color-highlight-background,
-      var(--color-primary-600)
+      oklch(from var(--tint) 55% c h)
     );
     --highlight-background-pressed: var(
       --color-highlight-background-pressed,
-      var(--color-primary-700)
+      oklch(from var(--tint) 50% c h)
     );
     --highlight-background-invalid: var(
       --color-highlight-background-invalid,
       var(--color-error-600)
     );
-    --highlight-foreground: var(--color-highlight-foreground, var(--color-white));
+    --highlight-foreground: var(--color-highlight-foreground, white);
     --highlight-foreground-pressed: var(
       --color-highlight-foreground-pressed,
       var(--color-neutral-100)
     );
-    --highlight-overlay: var(--color-highlight-overlay, rgba(14, 165, 233, 0.15));
+    --highlight-overlay: var(
+      --color-highlight-overlay,
+      oklch(from var(--tint-1000) l c h / 15%)
+    );
     --invalid-color: var(--color-invalid, var(--color-error-400));
-    --invalid-color-pressed: var(--color-invalid-pressed, var(--color-error-500));
-
-    /* ========== Material Design 3 Color Roles ==========
-     * Reference: https://m3.material.io/styles/color/roles
-     *
-     * Structure:
-     * - Primary: Main brand color, key actions (FAB, prominent buttons)
-     * - Secondary: Less prominent actions (Chips, secondary buttons)
-     * - Tertiary: Contrasting accent (Tabs, badges)
-     * - Error: Error states
-     * - Surface: Background layers (Cards, dialogs)
-     * - Outline: Borders and dividers
-     *
-     * Naming Convention:
-     * - {role}: Base color
-     * - {role}-hover: Hover state (92% mix with black in light, white in dark)
-     * - {role}-pressed: Pressed state (88% mix with black in light, white in dark)
-     * - on-{role}: Text/icon color on base
-     * - {role}-container: Container background (less prominent)
-     * - on-{role}-container: Text/icon color on container
-     */
-
-    /* ===== Primary Role ===== */
-    --primary: var(--color-primary-600, #6750A4);
-    --primary-hover: color-mix(in srgb, var(--primary) 92%, black);
-    --primary-pressed: color-mix(in srgb, var(--primary) 88%, black);
-    --on-primary: var(--color-white);
-    --primary-container: var(--color-primary-100, #EADDFF);
-    --on-primary-container: var(--color-primary-900, #21005D);
-
-    /* ===== Secondary Role ===== */
-    --secondary: var(--color-secondary-600, #625B71);
-    --secondary-hover: color-mix(in srgb, var(--secondary) 92%, black);
-    --secondary-pressed: color-mix(in srgb, var(--secondary) 88%, black);
-    --on-secondary: var(--color-white);
-    --secondary-container: var(--color-secondary-100, #E8DEF8);
-    --on-secondary-container: var(--color-secondary-900, #1D192B);
-
-    /* ===== Tertiary Role ===== */
-    --tertiary: var(--color-tertiary-600, #7D5260);
-    --tertiary-hover: color-mix(in srgb, var(--tertiary) 92%, black);
-    --tertiary-pressed: color-mix(in srgb, var(--tertiary) 88%, black);
-    --on-tertiary: var(--color-white);
-    --tertiary-container: var(--color-tertiary-100, #FFD8E4);
-    --on-tertiary-container: var(--color-tertiary-900, #31111D);
-
-    /* ===== Error Role ===== */
-    --error: var(--color-error-600, #B3261E);
-    --error-hover: color-mix(in srgb, var(--error) 92%, black);
-    --error-pressed: color-mix(in srgb, var(--error) 88%, black);
-    --on-error: var(--color-white);
-    --error-container: var(--color-error-100, #F9DEDC);
-    --on-error-container: var(--color-error-900, #410E0B);
-
-    /* ===== Surface Role ===== */
-    --surface: var(--color-surface-50, #FEF7FF);
-    --on-surface: var(--color-neutral-900, #1D1B20);
-    --surface-variant: var(--color-surface-200, #E7E0EC);
-    --on-surface-variant: var(--color-neutral-700, #49454F);
-    --surface-container-lowest: var(--color-white);
-    --surface-container-low: var(--color-surface-50, #F7F2FA);
-    --surface-container: var(--color-surface-100, #F3EDF7);
-    --surface-container-high: var(--color-surface-200, #ECE6F0);
-    --surface-container-highest: var(--color-surface-300, #E6E0E9);
-
-    /* ===== Background Role ===== */
-    --background: var(--color-surface-50, #FEF7FF);
-    --on-background: var(--color-neutral-900, #1D1B20);
-
-    /* ===== Outline Role ===== */
-    --outline: var(--color-neutral-600, #79747E);
-    --outline-variant: var(--color-neutral-400, #CAC4D0);
-
-    /* ===== Inverse Role (for Snackbar, Toast) ===== */
-    --inverse-surface: var(--color-neutral-800, #322F35);
-    --inverse-on-surface: var(--color-neutral-100, #F5EFF7);
-    --inverse-primary: var(--color-primary-300, #D0BCFF);
-
-    /* ===== Shadow & Scrim ===== */
-    --scrim: rgba(0, 0, 0, 0.32);
-    --surface-tint: var(--primary);
+    --invalid-color-pressed: var(
+      --color-invalid-pressed,
+      var(--color-error-500)
+    );
 
     /* Shadow System - AI Theme Integration Ready */
     --shadow-sm: var(--box-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
@@ -189,13 +233,30 @@
     --highlight-pressed-overlay: rgba(255 255 255 / 0.2);
   }
 
-  /* Dark theme overrides - Token System Integration
-   * ThemeStudio dark mode tokens (e.g., color.background.base.dark) are automatically
-   * injected as overrides for the same CSS variable names via cssVars.ts.
-   * These semantic variables reference the token variables with dark mode Tailwind fallbacks. */
+  /* Dark theme overrides
+   * Lightness scale is INVERTED — tint-100 becomes dark, tint-1600 becomes light.
+   * ThemeStudio dark tokens (--color-*) still take priority. */
   [data-theme="dark"] {
+    /* Inverted lightness scale (low → high) */
+    --lightness-100: 29.6725%;
+    --lightness-200: 35.3616%;
+    --lightness-300: 41.0821%;
+    --lightness-400: 46.9058%;
+    --lightness-500: 51.9076%;
+    --lightness-600: 57.9699%;
+    --lightness-700: 56.1347%;
+    --lightness-800: 59.2866%;
+    --lightness-900: 62.3039%;
+    --lightness-1000: 67.0121%;
+    --lightness-1100: 72.3297%;
+    --lightness-1200: 79.1773%;
+    --lightness-1300: 85.1751%;
+    --lightness-1400: 91.1434%;
+    --lightness-1500: 95.2045%;
+    --lightness-1600: 100%;
+
     --background-color: var(--color-background-base, var(--color-neutral-900));
-    --focus-ring-color: var(--color-focus-ring, var(--color-primary-400));
+    --focus-ring-color: var(--color-focus-ring, var(--tint-1000));
     --text-color: var(--color-text-primary, var(--color-neutral-100));
     --text-color-base: var(--color-text-base, var(--color-neutral-100));
     --text-color-hover: var(--color-text-hover, var(--color-neutral-50));
@@ -204,17 +265,26 @@
       --color-text-placeholder,
       var(--color-neutral-400)
     );
-    --link-color: var(--color-link, var(--color-primary-400));
-    --link-color-secondary: var(--color-link-secondary, var(--color-neutral-100));
-    --link-color-pressed: var(--color-link-pressed, var(--color-primary-300));
+    --link-color: var(--color-link, var(--tint-1200));
+    --link-color-secondary: var(
+      --color-link-secondary,
+      var(--color-neutral-100)
+    );
+    --link-color-pressed: var(--color-link-pressed, var(--tint-1300));
     --border-color: var(--color-border-base, var(--color-neutral-700));
     --border-color-hover: var(--color-border-hover, var(--color-neutral-600));
-    --border-color-pressed: var(--color-border-pressed, var(--color-neutral-500));
+    --border-color-pressed: var(
+      --color-border-pressed,
+      var(--color-neutral-500)
+    );
     --border-color-disabled: var(
       --color-border-disabled,
       var(--color-neutral-800)
     );
-    --button-background: var(--color-button-background, var(--color-neutral-800));
+    --button-background: var(
+      --color-button-background,
+      var(--color-neutral-800)
+    );
     --button-background-pressed: var(
       --color-button-background-pressed,
       var(--color-neutral-700)
@@ -226,77 +296,8 @@
       var(--color-neutral-800)
     );
 
-    /* ========== Material Design 3 Color Roles (Dark Mode) ========== */
-
-    /* ===== Primary Role (Dark) ===== */
-    --primary: var(--color-primary-400, #D0BCFF);
-    --primary-hover: color-mix(in srgb, var(--primary) 92%, white);
-    --primary-pressed: color-mix(in srgb, var(--primary) 88%, white);
-    --on-primary: var(--color-primary-900, #381E72);
-    --primary-container: var(--color-primary-800, #4F378B);
-    --on-primary-container: var(--color-primary-100, #EADDFF);
-
-    /* ===== Secondary Role (Dark) ===== */
-    --secondary: var(--color-secondary-400, #CCC2DC);
-    --secondary-hover: color-mix(in srgb, var(--secondary) 92%, white);
-    --secondary-pressed: color-mix(in srgb, var(--secondary) 88%, white);
-    --on-secondary: var(--color-secondary-900, #332D41);
-    --secondary-container: var(--color-secondary-800, #4A4458);
-    --on-secondary-container: var(--color-secondary-100, #E8DEF8);
-
-    /* ===== Tertiary Role (Dark) ===== */
-    --tertiary: var(--color-tertiary-400, #EFB8C8);
-    --tertiary-hover: color-mix(in srgb, var(--tertiary) 92%, white);
-    --tertiary-pressed: color-mix(in srgb, var(--tertiary) 88%, white);
-    --on-tertiary: var(--color-tertiary-900, #492532);
-    --tertiary-container: var(--color-tertiary-800, #633B48);
-    --on-tertiary-container: var(--color-tertiary-100, #FFD8E4);
-
-    /* ===== Error Role (Dark) ===== */
-    --error: var(--color-error-400, #F2B8B5);
-    --error-hover: color-mix(in srgb, var(--error) 92%, white);
-    --error-pressed: color-mix(in srgb, var(--error) 88%, white);
-    --on-error: var(--color-error-900, #601410);
-    --error-container: var(--color-error-800, #8C1D18);
-    --on-error-container: var(--color-error-100, #F9DEDC);
-
-    /* ===== Surface Role (Dark) ===== */
-    --surface: var(--color-surface-900, #1D1B20);
-    --on-surface: var(--color-neutral-100, #E6E0E9);
-    --surface-variant: var(--color-surface-700, #49454F);
-    --on-surface-variant: var(--color-neutral-400, #CAC4D0);
-    --surface-container-lowest: var(--color-surface-950, #0F0D13);
-    --surface-container-low: var(--color-surface-900, #1D1B20);
-    --surface-container: var(--color-surface-800, #211F26);
-    --surface-container-high: var(--color-surface-700, #2B2930);
-    --surface-container-highest: var(--color-surface-600, #36343B);
-
-    /* ===== Background Role (Dark) ===== */
-    --background: var(--color-surface-900, #1D1B20);
-    --on-background: var(--color-neutral-100, #E6E0E9);
-
-    /* ===== Outline Role (Dark) ===== */
-    --outline: var(--color-neutral-500, #938F99);
-    --outline-variant: var(--color-neutral-700, #49454F);
-
-    /* ===== Inverse Role (Dark) ===== */
-    --inverse-surface: var(--color-neutral-100, #E6E0E9);
-    --inverse-on-surface: var(--color-neutral-800, #322F35);
-    --inverse-primary: var(--color-primary-600, #6750A4);
-
-    /* ===== Shadow & Scrim (Dark) ===== */
-    --scrim: rgba(0, 0, 0, 0.32);
-    --surface-tint: var(--primary);
-
-    /* Highlight colors for dark mode - Based on lighter primary shades */
-    --highlight-background: var(
-      --color-highlight-background,
-      var(--color-primary-500)
-    );
-    --highlight-background-pressed: var(
-      --color-highlight-background-pressed,
-      var(--color-primary-400)
-    );
+    /* highlight-background uses fixed oklch — same formula as light mode,
+     * no override needed here since 55%/50% lightness works for both modes */
     --highlight-background-invalid: var(
       --color-highlight-background-invalid,
       var(--color-error-500)
@@ -309,7 +310,10 @@
       --color-highlight-foreground-pressed,
       var(--color-neutral-800)
     );
-    --highlight-overlay: var(--color-highlight-overlay, rgba(56, 189, 248, 0.15));
+    --highlight-overlay: var(
+      --color-highlight-overlay,
+      oklch(from var(--tint-1000) l c h / 15%)
+    );
 
     /* Shadow System - Dark mode (increased opacity for visibility) */
     --shadow-sm: var(--box-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.2));

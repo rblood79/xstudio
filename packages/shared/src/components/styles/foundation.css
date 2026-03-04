@@ -21,6 +21,7 @@
 /* ============================================
    UTILITY LAYER — Shared Foundations
    ============================================ */
+@import "./utilities.css";
 @import "./forms.css";
 @import "./overlays.css";
 @import "./collections.css";
