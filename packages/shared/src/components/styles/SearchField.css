@@ -1,14 +1,4 @@
-/**
- * Material Design 3 SearchField Styles
- *
- * M3 Variants: primary, secondary, tertiary, error, filled
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components/search
- */
-
 @layer components {
-  /* ========== Base SearchField Styles ========== */
   .react-aria-SearchField {
     display: grid;
     grid-template-areas: "input button";
@@ -16,43 +6,119 @@
     align-items: center;
     width: fit-content;
 
-    /* ===== Label Styles ===== */
+    /* Accent locals */
+    --field-accent: var(--highlight-background);
+    --field-accent-container: color-mix(
+      in srgb,
+      var(--field-accent) 15%,
+      white
+    );
+    --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
+
+    /* Size locals (md default) */
+    --sf-label-size: var(--text-sm);
+    --sf-input-padding: var(--spacing-sm) var(--spacing-xl) var(--spacing-sm)
+      14px;
+    --sf-input-size: var(--text-base);
+    --sf-btn-width: 24px;
+    --sf-btn-height: 24px;
+    --sf-btn-margin-left: -32px;
+    --sf-btn-margin-right: var(--spacing);
+    --sf-btn-size: var(--text-xs);
+    --sf-hint-size: var(--text-xs);
+
+    /* ===== Variant ===== */
+    &[data-variant="secondary"] {
+      --field-accent: var(--button-background);
+    }
+    &[data-variant="tertiary"] {
+      --field-accent: var(--color-purple-600);
+    }
+    &[data-variant="error"] {
+      --field-accent: var(--invalid-color);
+    }
+
+    /* ===== Size ===== */
+    &[data-size="sm"] {
+      --sf-label-size: var(--text-xs);
+      --sf-input-padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-sm)
+        var(--spacing);
+      --sf-input-size: var(--text-xs);
+      --sf-btn-width: 20px;
+      --sf-btn-height: 20px;
+      --sf-btn-margin-left: -28px;
+      --sf-btn-margin-right: var(--spacing-sm);
+      --sf-btn-size: 10px;
+      --sf-hint-size: 10px;
+    }
+    &[data-size="md"] {
+      --sf-label-size: var(--text-sm);
+      --sf-input-padding: var(--spacing-sm) var(--spacing-xl) var(--spacing-sm)
+        14px;
+      --sf-input-size: var(--text-base);
+      --sf-btn-width: 24px;
+      --sf-btn-height: 24px;
+      --sf-btn-margin-left: -32px;
+      --sf-btn-margin-right: var(--spacing);
+      --sf-btn-size: var(--text-xs);
+      --sf-hint-size: var(--text-xs);
+    }
+    &[data-size="lg"] {
+      --sf-label-size: var(--text-base);
+      --sf-input-padding: var(--spacing-md) var(--spacing-2xl) var(--spacing-md)
+        var(--spacing-lg);
+      --sf-input-size: var(--text-base);
+      --sf-btn-width: 28px;
+      --sf-btn-height: 28px;
+      --sf-btn-margin-left: -36px;
+      --sf-btn-margin-right: var(--spacing-md);
+      --sf-btn-size: var(--text-sm);
+      --sf-hint-size: var(--text-sm);
+    }
+
+    /* ===== Label ===== */
     .react-aria-Label {
       grid-area: label;
-      font-size: var(--text-sm);
+      font-size: var(--sf-label-size);
       font-weight: 500;
       color: var(--text-color);
       margin-bottom: var(--spacing-xs);
     }
 
-    /* ===== Input Styles ===== */
+    &[data-variant="primary"] .react-aria-Label,
+    &[data-variant="secondary"] .react-aria-Label,
+    &[data-variant="tertiary"] .react-aria-Label,
+    &[data-variant="error"] .react-aria-Label {
+      color: var(--field-accent);
+    }
+
+    /* ===== Input ===== */
     .react-aria-Input {
       grid-area: input;
       width: 100%;
-      padding: var(--spacing-sm) var(--spacing-xl) var(--spacing-sm) 14px;
+      padding: var(--sf-input-padding);
       margin: 0;
       border: 1px solid var(--border-color);
       border-radius: var(--border-radius);
       background: var(--field-background);
-      font-size: var(--text-base);
+      font-size: var(--sf-input-size);
       color: var(--text-color);
       outline: none;
-      transition: border-color 200ms ease, background-color 200ms ease;
+      transition:
+        border-color 200ms ease,
+        background-color 200ms ease;
       forced-color-adjust: none;
 
-      /* Remove default browser search decorations */
       &::-webkit-search-cancel-button,
       &::-webkit-search-decoration {
         -webkit-appearance: none;
       }
 
-      /* Placeholder */
       &::placeholder {
         color: var(--text-color-placeholder);
         opacity: 0.6;
       }
 
-      /* Focus State */
       &[data-focused] {
         outline: 2px solid var(--highlight-background);
         outline-offset: -1px;
@@ -60,13 +126,11 @@
         background: var(--overlay-background);
       }
 
-      /* Hover State */
       &[data-hovered]:not([data-focused]):not([data-disabled]) {
         border-color: var(--border-color-hover);
         background: var(--overlay-background);
       }
 
-      /* Invalid State */
       &[data-invalid] {
         border-color: var(--invalid-color);
 
@@ -75,7 +139,6 @@
         }
       }
 
-      /* Disabled State */
       &[data-disabled] {
         background: color-mix(in srgb, var(--text-color) 4%, transparent);
         border-color: color-mix(in srgb, var(--text-color) 12%, transparent);
@@ -85,150 +148,34 @@
       }
     }
 
-    /* ===== Clear Button Styles ===== */
-    .react-aria-Button {
-      grid-area: button;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      margin-left: -32px;
-      margin-right: var(--spacing);
-      font-size: var(--text-xs);
-      line-height: 1;
-      vertical-align: middle;
-      text-align: center;
-      background: var(--overlay-background);
-      color: var(--text-color);
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      transition: all 150ms ease;
-      forced-color-adjust: none;
-
-      /* Hover State */
-      &[data-hovered]:not([data-disabled]) {
-        background: var(--color-neutral-200);
-      }
-
-      /* Pressed State */
-      &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--text-color) 12%, var(--overlay-background));
-      }
-
-      /* Focus Visible State */
-      &[data-focus-visible] {
-        outline: 2px solid var(--highlight-background);
-        outline-offset: 2px;
-      }
-
-      /* Disabled State */
-      &[data-disabled] {
-        background: color-mix(in srgb, var(--text-color) 4%, transparent);
-        color: color-mix(in srgb, var(--text-color) 38%, transparent);
-        cursor: not-allowed;
-      }
-    }
-
-    /* Hide clear button when input is empty */
-    &[data-empty] .react-aria-Button {
-      display: none;
-    }
-
-    /* ===== Description Text ===== */
-    [slot="description"] {
-      grid-area: help;
-      font-size: var(--text-xs);
-      color: var(--text-color-placeholder);
-    }
-
-    /* ===== Field Error ===== */
-    .react-aria-FieldError {
-      grid-area: help;
-      font-size: var(--text-xs);
-      color: var(--invalid-color);
-      margin-top: var(--spacing-xs);
-    }
-  }
-
-  /* ========== M3 Color Variants ========== */
-  /* CSS 변수 패턴으로 Button/Input 스타일 통합 */
-
-  .react-aria-SearchField {
-    /* 기본 variant 변수 */
-    --sf-accent: var(--border-color);
-    --sf-accent-container: var(--overlay-background);
-    --sf-on-accent-container: var(--text-color);
-    --sf-on-accent: var(--text-color);
-  }
-
-  /* Variant별 CSS 변수만 오버라이드 */
-  .react-aria-SearchField[data-variant="primary"] {
-    --sf-accent: var(--highlight-background);
-    --sf-accent-container: var(--color-primary-100);
-    --sf-on-accent-container: var(--color-primary-900);
-    --sf-on-accent: var(--highlight-foreground);
-  }
-
-  .react-aria-SearchField[data-variant="secondary"] {
-    --sf-accent: var(--button-background);
-    --sf-accent-container: var(--color-neutral-100);
-    --sf-on-accent-container: var(--color-neutral-900);
-    --sf-on-accent: var(--color-white);
-  }
-
-  .react-aria-SearchField[data-variant="tertiary"] {
-    --sf-accent: var(--color-purple-600);
-    --sf-accent-container: var(--color-tertiary-100);
-    --sf-on-accent-container: var(--color-tertiary-900);
-    --sf-on-accent: var(--color-white);
-  }
-
-  .react-aria-SearchField[data-variant="error"] {
-    --sf-accent: var(--invalid-color);
-    --sf-accent-container: var(--color-error-100);
-    --sf-on-accent-container: var(--color-error-900);
-    --sf-on-accent: var(--color-white);
-  }
-
-  /* 모든 color variant에 공통 적용되는 스타일 */
-  .react-aria-SearchField[data-variant="primary"],
-  .react-aria-SearchField[data-variant="secondary"],
-  .react-aria-SearchField[data-variant="tertiary"],
-  .react-aria-SearchField[data-variant="error"] {
-    .react-aria-Label {
-      color: var(--sf-accent);
-    }
-
-    .react-aria-Input {
-      border-color: var(--sf-accent);
+    &[data-variant="primary"] .react-aria-Input,
+    &[data-variant="secondary"] .react-aria-Input,
+    &[data-variant="tertiary"] .react-aria-Input,
+    &[data-variant="error"] .react-aria-Input {
+      border-color: var(--field-accent);
 
       &[data-focused] {
-        outline-color: var(--sf-accent);
-        border-color: var(--sf-accent);
-        background: var(--sf-accent-container);
+        outline-color: var(--field-accent);
+        border-color: var(--field-accent);
+        background: var(--field-accent-container);
       }
 
       &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        background: var(--sf-accent-container);
-        border-color: var(--sf-accent);
+        background: var(--field-accent-container);
+        border-color: var(--field-accent);
+      }
+
+      &[data-invalid] {
+        border-color: var(--invalid-color);
+
+        &[data-focused] {
+          outline-color: var(--invalid-color);
+        }
       }
     }
 
-    .react-aria-Button {
-      &[data-hovered]:not([data-disabled]) {
-        background: var(--sf-accent-container);
-        color: var(--sf-on-accent-container);
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--sf-on-accent) 12%, var(--sf-accent-container));
-      }
-    }
-  }
-
-  /* ===== M3 Filled Variant ===== */
-  .react-aria-SearchField[data-variant="filled"] {
-    .react-aria-Input {
+    /* ===== Filled Variant ===== */
+    &[data-variant="filled"] .react-aria-Input {
       background: var(--color-neutral-200);
       border-color: transparent;
       border-bottom: 2px solid var(--border-color);
@@ -246,150 +193,89 @@
       }
     }
 
-    &[data-invalid] .react-aria-Input {
+    &[data-variant="filled"][data-invalid] .react-aria-Input {
       border-bottom-color: var(--invalid-color);
     }
-  }
 
-  /* ========== Size Variants ========== */
-  /* CSS 변수 패턴으로 크기 스타일 통합 */
-
-  .react-aria-SearchField {
-    /* 기본 size 변수 (md) */
-    --sf-label-size: var(--text-sm);
-    --sf-input-padding: var(--spacing-sm) var(--spacing-xl) var(--spacing-sm) 14px;
-    --sf-input-size: var(--text-base);
-    --sf-btn-width: 24px;
-    --sf-btn-height: 24px;
-    --sf-btn-margin-left: -32px;
-    --sf-btn-margin-right: var(--spacing);
-    --sf-btn-size: var(--text-xs);
-    --sf-hint-size: var(--text-xs);
-  }
-
-  /* Size별 CSS 변수만 오버라이드 */
-  .react-aria-SearchField[data-size="sm"] {
-    --sf-label-size: var(--text-xs);
-    --sf-input-padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-sm) var(--spacing);
-    --sf-input-size: var(--text-xs);
-    --sf-btn-width: 20px;
-    --sf-btn-height: 20px;
-    --sf-btn-margin-left: -28px;
-    --sf-btn-margin-right: var(--spacing-sm);
-    --sf-btn-size: 10px;
-    --sf-hint-size: 10px;
-  }
-
-  .react-aria-SearchField[data-size="md"] {
-    --sf-label-size: var(--text-sm);
-    --sf-input-padding: var(--spacing-sm) var(--spacing-xl) var(--spacing-sm) 14px;
-    --sf-input-size: var(--text-base);
-    --sf-btn-width: 24px;
-    --sf-btn-height: 24px;
-    --sf-btn-margin-left: -32px;
-    --sf-btn-margin-right: var(--spacing);
-    --sf-btn-size: var(--text-xs);
-    --sf-hint-size: var(--text-xs);
-  }
-
-  .react-aria-SearchField[data-size="lg"] {
-    --sf-label-size: var(--text-base);
-    --sf-input-padding: var(--spacing-md) var(--spacing-2xl) var(--spacing-md) var(--spacing-lg);
-    --sf-input-size: var(--text-base);
-    --sf-btn-width: 28px;
-    --sf-btn-height: 28px;
-    --sf-btn-margin-left: -36px;
-    --sf-btn-margin-right: var(--spacing-md);
-    --sf-btn-size: var(--text-sm);
-    --sf-hint-size: var(--text-sm);
-  }
-
-  /* 모든 size에 공통 적용되는 스타일 */
-  .react-aria-SearchField[data-size="sm"],
-  .react-aria-SearchField[data-size="md"],
-  .react-aria-SearchField[data-size="lg"] {
-    .react-aria-Label {
-      font-size: var(--sf-label-size);
-    }
-
-    .react-aria-Input {
-      padding: var(--sf-input-padding);
-      font-size: var(--sf-input-size);
-    }
-
+    /* ===== Clear Button ===== */
     .react-aria-Button {
+      grid-area: button;
       width: var(--sf-btn-width);
       height: var(--sf-btn-height);
+      border-radius: 50%;
       margin-left: var(--sf-btn-margin-left);
       margin-right: var(--sf-btn-margin-right);
       font-size: var(--sf-btn-size);
+      line-height: 1;
+      vertical-align: middle;
+      text-align: center;
+      background: var(--overlay-background);
+      color: var(--text-color);
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: all 150ms ease;
+      forced-color-adjust: none;
+
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--color-neutral-200);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(
+          in srgb,
+          var(--text-color) 12%,
+          var(--overlay-background)
+        );
+      }
+
+      &[data-focus-visible] {
+        outline: 2px solid var(--highlight-background);
+        outline-offset: 2px;
+      }
+
+      &[data-disabled] {
+        background: color-mix(in srgb, var(--text-color) 4%, transparent);
+        color: color-mix(in srgb, var(--text-color) 38%, transparent);
+        cursor: not-allowed;
+      }
     }
 
-    [slot="description"],
-    .react-aria-FieldError {
+    &[data-variant="primary"] .react-aria-Button,
+    &[data-variant="secondary"] .react-aria-Button,
+    &[data-variant="tertiary"] .react-aria-Button,
+    &[data-variant="error"] .react-aria-Button {
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--field-accent-container);
+        color: var(--field-on-accent);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(
+          in srgb,
+          var(--field-accent) 12%,
+          var(--field-accent-container)
+        );
+      }
+    }
+
+    /* Hide clear button when input is empty */
+    &[data-empty] .react-aria-Button {
+      display: none;
+    }
+
+    /* ===== Description / FieldError ===== */
+    [slot="description"] {
+      grid-area: help;
       font-size: var(--sf-hint-size);
-    }
-  }
-
-  /* ========== Invalid State Override ========== */
-  /* Invalid state overrides all color variants */
-  .react-aria-SearchField[data-variant="primary"][data-invalid],
-  .react-aria-SearchField[data-variant="secondary"][data-invalid],
-  .react-aria-SearchField[data-variant="tertiary"][data-invalid],
-  .react-aria-SearchField[data-variant="filled"][data-invalid] {
-    .react-aria-Input {
-      border-color: var(--invalid-color);
-
-      &[data-focused] {
-        outline-color: var(--invalid-color);
-      }
-    }
-  }
-
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Browser Fallbacks ========== */
-  /* For browsers that don't support color-mix() (Safari < 16.2) */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .react-aria-SearchField .react-aria-Input {
-      &[data-disabled] {
-        background: rgba(0, 0, 0, 0.04);
-        border-color: rgba(0, 0, 0, 0.12);
-        color: rgba(0, 0, 0, 0.38);
-      }
+      color: var(--text-color-placeholder);
     }
 
-    .react-aria-SearchField .react-aria-Button {
-      &[data-pressed]:not([data-disabled]) {
-        background: rgba(0, 0, 0, 0.12);
-      }
-
-      &[data-disabled] {
-        background: rgba(0, 0, 0, 0.04);
-        color: rgba(0, 0, 0, 0.38);
-      }
-    }
-
-    [data-theme="dark"] .react-aria-SearchField .react-aria-Input {
-      &[data-disabled] {
-        background: rgba(255, 255, 255, 0.04);
-        border-color: rgba(255, 255, 255, 0.12);
-        color: rgba(255, 255, 255, 0.38);
-      }
-    }
-
-    [data-theme="dark"] .react-aria-SearchField .react-aria-Button {
-      &[data-pressed]:not([data-disabled]) {
-        background: rgba(255, 255, 255, 0.12);
-      }
-
-      &[data-disabled] {
-        background: rgba(255, 255, 255, 0.04);
-        color: rgba(255, 255, 255, 0.38);
-      }
+    .react-aria-FieldError {
+      grid-area: help;
+      font-size: var(--sf-hint-size);
+      color: var(--invalid-color);
+      margin-top: var(--spacing-xs);
     }
   }
 }

@@ -1,15 +1,5 @@
-/**
- * Material Design 3 Popover Styles
- *
- * M3 Variants: primary, secondary, tertiary, error, filled
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components/menus
- */
-
 @layer components {
   /* ========== Animations ========== */
-  /* React Aria 1.13.0: Origin-aware scale animation */
   @keyframes popover-enter {
     from {
       opacity: 0;
@@ -35,20 +25,22 @@
   /* ========== Base Popover Styles ========== */
   .react-aria-Popover {
     border: 1px solid var(--border-color);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--text-color) 15%, transparent);
+    box-shadow: 0 4px 12px
+      color-mix(in srgb, var(--text-color) 15%, transparent);
     border-radius: var(--radius-lg);
     background: var(--field-background);
     color: var(--text-color);
     outline: none;
     max-width: 250px;
-    transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+      transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 150ms cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform, opacity;
     backface-visibility: hidden;
     transform: translate3d(0, 0, 0);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 
-    /* React Aria 1.13.0: Origin-aware transform-origin */
     --popover-origin-x: 50%;
     --popover-origin-y: 0%;
     transform-origin: var(--popover-origin-x) var(--popover-origin-y);
@@ -74,7 +66,7 @@
     }
 
     /* ===== Placement Variants with Origin-Aware Animation ===== */
-    &[data-placement='top'] {
+    &[data-placement="top"] {
       --origin: translateY(8px);
       --popover-offset-y: 8px;
       --popover-origin-x: 50%;
@@ -85,7 +77,7 @@
       }
     }
 
-    &[data-placement='bottom'] {
+    &[data-placement="bottom"] {
       --origin: translateY(-8px);
       --popover-offset-y: -8px;
       --popover-origin-x: 50%;
@@ -100,7 +92,7 @@
       }
     }
 
-    &[data-placement='right'] {
+    &[data-placement="right"] {
       --origin: translateX(-8px);
       --popover-offset-y: 0;
       --popover-origin-x: 0%;
@@ -115,7 +107,7 @@
       }
     }
 
-    &[data-placement='left'] {
+    &[data-placement="left"] {
       --origin: translateX(8px);
       --popover-offset-y: 0;
       --popover-origin-x: 100%;
@@ -139,10 +131,8 @@
     }
   }
 
-  /* ========== M3 Color Variants ========== */
-
-  /* ===== M3 Primary Variant ===== */
-  .react-aria-Popover.primary {
+  /* ========== Color Variants ========== */
+  .react-aria-Popover[data-variant="primary"] {
     border-color: var(--highlight-background);
 
     .react-aria-OverlayArrow svg {
@@ -150,8 +140,7 @@
     }
   }
 
-  /* ===== M3 Secondary Variant ===== */
-  .react-aria-Popover.secondary {
+  .react-aria-Popover[data-variant="secondary"] {
     border-color: var(--button-background);
 
     .react-aria-OverlayArrow svg {
@@ -159,8 +148,7 @@
     }
   }
 
-  /* ===== M3 Tertiary Variant ===== */
-  .react-aria-Popover.tertiary {
+  .react-aria-Popover[data-variant="tertiary"] {
     border-color: var(--color-purple-600);
 
     .react-aria-OverlayArrow svg {
@@ -168,8 +156,7 @@
     }
   }
 
-  /* ===== M3 Error Variant ===== */
-  .react-aria-Popover.error {
+  .react-aria-Popover[data-variant="error"] {
     border-color: var(--invalid-color);
 
     .react-aria-OverlayArrow svg {
@@ -177,11 +164,12 @@
     }
   }
 
-  /* ===== M3 Filled Variant ===== */
-  .react-aria-Popover.filled {
+  /* ===== Filled Variant ===== */
+  .react-aria-Popover[data-variant="filled"] {
     background: var(--color-neutral-200);
     border: none;
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--text-color) 15%, transparent);
+    box-shadow: 0 4px 12px
+      color-mix(in srgb, var(--text-color) 15%, transparent);
 
     .react-aria-OverlayArrow svg {
       fill: var(--color-neutral-200);
@@ -190,51 +178,22 @@
   }
 
   /* ========== Size Variants ========== */
-
-  /* ===== Small Size ===== */
-  .react-aria-Popover.sm {
+  .react-aria-Popover[data-size="sm"] {
     max-width: 200px;
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
   }
 
-  /* ===== Medium Size (Default) ===== */
-  .react-aria-Popover.md {
+  .react-aria-Popover[data-size="md"] {
     max-width: 250px;
     border-radius: var(--radius-lg);
     font-size: var(--text-base);
   }
 
-  /* ===== Large Size ===== */
-  .react-aria-Popover.lg {
+  .react-aria-Popover[data-size="lg"] {
     max-width: 320px;
     border-radius: var(--radius-xl);
     font-size: var(--text-lg);
-  }
-
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Browser Fallbacks ========== */
-  /* For browsers that don't support color-mix() (Safari < 16.2) */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .react-aria-Popover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-
-      &.filled {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      }
-    }
-
-    [data-theme='dark'] .react-aria-Popover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-
-      &.filled {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      }
-    }
   }
 
   /* ========== Forced Colors Mode (High Contrast) ========== */

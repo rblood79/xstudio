@@ -1,13 +1,29 @@
 /**
- * ProgressBar Component Styles (M3)
+ * ProgressBar Component Styles
  */
 
 @layer components {
-
   .react-aria-ProgressBar {
+    --fill-color: var(--highlight-background);
+
+    /* Variants */
+    &[data-variant="secondary"] {
+      --fill-color: var(--button-background);
+    }
+    &[data-variant="tertiary"] {
+      --fill-color: var(--color-purple-600);
+    }
+    &[data-variant="error"] {
+      --fill-color: var(--invalid-color);
+    }
+    &[data-variant="surface"] {
+      --fill-color: var(--text-color-placeholder);
+    }
+
     display: grid;
-    grid-template-areas: "label value"
-                         "bar bar";
+    grid-template-areas:
+      "label value"
+      "bar bar";
     grid-template-columns: 1fr auto;
     gap: var(--spacing-xs);
     width: 240px;
@@ -31,7 +47,7 @@
     }
 
     .fill {
-      background: var(--highlight-background);
+      background: var(--fill-color);
       height: 100%;
       transition: width 200ms ease-out;
     }
@@ -46,33 +62,9 @@
     }
   }
 
-  /* ===== M3 Primary Variant ===== */
-  .react-aria-ProgressBar.primary .fill {
-    background: var(--highlight-background);
-  }
+  /* ===== Size Variants ===== */
 
-  /* ===== M3 Secondary Variant ===== */
-  .react-aria-ProgressBar.secondary .fill {
-    background: var(--button-background);
-  }
-
-  /* ===== M3 Tertiary Variant ===== */
-  .react-aria-ProgressBar.tertiary .fill {
-    background: var(--color-purple-600);
-  }
-
-  /* ===== M3 Error Variant ===== */
-  .react-aria-ProgressBar.error .fill {
-    background: var(--invalid-color);
-  }
-
-  /* ===== M3 Surface Variant ===== */
-  .react-aria-ProgressBar.surface .fill {
-    background: var(--text-color-placeholder);
-  }
-
-  /* Small size */
-  .react-aria-ProgressBar.sm {
+  .react-aria-ProgressBar[data-size="sm"] {
     width: 200px;
 
     .bar {
@@ -85,8 +77,7 @@
     }
   }
 
-  /* Medium size (default) */
-  .react-aria-ProgressBar.md {
+  .react-aria-ProgressBar[data-size="md"] {
     width: 240px;
 
     .bar {
@@ -99,8 +90,7 @@
     }
   }
 
-  /* Large size */
-  .react-aria-ProgressBar.lg {
+  .react-aria-ProgressBar[data-size="lg"] {
     width: 300px;
 
     .bar {

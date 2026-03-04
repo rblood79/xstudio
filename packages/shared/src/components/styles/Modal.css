@@ -1,12 +1,3 @@
-/**
- * Material Design 3 Modal Styles
- *
- * M3 Variants: primary, secondary, tertiary, error, filled
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components/dialogs
- */
-
 @layer components {
   /* ========== Animations ========== */
   @keyframes modal-fade {
@@ -93,77 +84,43 @@
     }
   }
 
-  /* ========== M3 Color Variants ========== */
-
-  /* ===== M3 Primary Variant ===== */
-  .react-aria-Modal.primary {
+  /* ========== Color Variants ========== */
+  .react-aria-Modal[data-variant="primary"] {
     border-color: var(--highlight-background);
   }
 
-  /* ===== M3 Secondary Variant ===== */
-  .react-aria-Modal.secondary {
+  .react-aria-Modal[data-variant="secondary"] {
     border-color: var(--button-background);
   }
 
-  /* ===== M3 Tertiary Variant ===== */
-  .react-aria-Modal.tertiary {
+  .react-aria-Modal[data-variant="tertiary"] {
     border-color: var(--color-purple-600);
   }
 
-  /* ===== M3 Error Variant ===== */
-  .react-aria-Modal.error {
+  .react-aria-Modal[data-variant="error"] {
     border-color: var(--invalid-color);
   }
 
-  /* ===== M3 Filled Variant ===== */
-  .react-aria-Modal.filled {
+  /* ===== Filled Variant ===== */
+  .react-aria-Modal[data-variant="filled"] {
     background: var(--color-neutral-200);
     border: none;
   }
 
   /* ========== Size Variants ========== */
-
-  /* ===== Small Size ===== */
-  .react-aria-Modal.sm {
+  .react-aria-Modal[data-size="sm"] {
     max-width: 240px;
     border-radius: var(--radius-lg);
   }
 
-  /* ===== Medium Size (Default) ===== */
-  .react-aria-Modal.md {
+  .react-aria-Modal[data-size="md"] {
     max-width: 300px;
     border-radius: var(--radius-xl);
   }
 
-  /* ===== Large Size ===== */
-  .react-aria-Modal.lg {
+  .react-aria-Modal[data-size="lg"] {
     max-width: 400px;
     border-radius: var(--radius-2xl);
-  }
-
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Browser Fallbacks ========== */
-  /* For browsers that don't support color-mix() (Safari < 16.2) */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .react-aria-ModalOverlay {
-      background: rgba(0, 0, 0, 0.32);
-    }
-
-    .react-aria-Modal {
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    }
-
-    [data-theme="dark"] .react-aria-ModalOverlay {
-      background: rgba(0, 0, 0, 0.5);
-    }
-
-    [data-theme="dark"] .react-aria-Modal {
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    }
   }
 
   /* ========== Forced Colors Mode (High Contrast) ========== */

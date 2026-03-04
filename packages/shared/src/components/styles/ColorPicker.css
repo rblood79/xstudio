@@ -1,15 +1,4 @@
-/**
- * Material Design 3 ColorPicker Styles
- *
- * M3 Variants: primary, secondary, tertiary
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components
- */
-
 @layer components {
-
-  /* ========== Base ColorPicker Styles ========== */
   .react-aria-ColorPicker {
     background: none;
     border: none;
@@ -23,9 +12,76 @@
     vertical-align: middle;
     font-size: var(--text-sm);
     color: var(--text-color);
+
+    /* Accent local */
+    --field-accent: var(--highlight-background);
+
+    /* Size locals (md default) */
+    --cp-font-size: var(--text-sm);
+    --cp-gap: 10px;
+    --cp-btn-width: 32px;
+    --cp-btn-height: 32px;
+    --cp-dialog-padding: 14px;
+    --cp-dialog-gap: 10px;
+    --cp-dialog-min-width: 192px;
+
+    /* ===== Variant ===== */
+    &[data-variant="secondary"] {
+      --field-accent: var(--button-background);
+    }
+    &[data-variant="tertiary"] {
+      --field-accent: var(--color-purple-600);
+    }
+
+    /* ===== Size ===== */
+    &[data-size="sm"] {
+      --cp-font-size: var(--text-xs);
+      --cp-gap: 6px;
+      --cp-btn-width: 24px;
+      --cp-btn-height: 24px;
+      --cp-dialog-padding: 12px;
+      --cp-dialog-gap: 6px;
+      --cp-dialog-min-width: 160px;
+    }
+    &[data-size="md"] {
+      --cp-font-size: var(--text-sm);
+      --cp-gap: 10px;
+      --cp-btn-width: 32px;
+      --cp-btn-height: 32px;
+      --cp-dialog-padding: 14px;
+      --cp-dialog-gap: 10px;
+      --cp-dialog-min-width: 192px;
+    }
+    &[data-size="lg"] {
+      --cp-font-size: var(--text-lg);
+      --cp-gap: 10px;
+      --cp-btn-width: 40px;
+      --cp-btn-height: 40px;
+      --cp-dialog-padding: 18px;
+      --cp-dialog-gap: 10px;
+      --cp-dialog-min-width: 224px;
+    }
+
+    font-size: var(--cp-font-size);
+    gap: var(--cp-gap);
+
+    /* ===== Focus Visible (variant-aware) ===== */
+    &[data-variant="primary"][data-focus-visible],
+    &[data-variant="secondary"][data-focus-visible],
+    &[data-variant="tertiary"][data-focus-visible] {
+      outline: 2px solid var(--field-accent);
+      outline-offset: 2px;
+    }
+
+    /* ===== Popover Dialog Border (variant-aware) ===== */
+    &[data-variant="primary"] .color-picker-popover .react-aria-Dialog,
+    &[data-variant="secondary"] .color-picker-popover .react-aria-Dialog,
+    &[data-variant="tertiary"] .color-picker-popover .react-aria-Dialog {
+      border: 1px solid var(--field-accent);
+    }
   }
 
-  /* Color picker button container */
+  /* ===== Color Picker Button Container ===== */
   .color-picker-button {
     background: none;
     border: none;
@@ -35,17 +91,20 @@
     justify-content: center;
     outline: none;
     cursor: pointer;
+
+    width: var(--cp-btn-width, 32px);
+    height: var(--cp-btn-height, 32px);
   }
 
-  /* Color picker popover content */
+  /* ===== Color Picker Popover ===== */
   .color-picker-popover {
     .react-aria-Dialog {
       outline: none;
-      padding: 14px;
+      padding: var(--cp-dialog-padding, 14px);
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      min-width: 192px;
+      gap: var(--cp-dialog-gap, 10px);
+      min-width: var(--cp-dialog-min-width, 192px);
       max-height: inherit;
       box-sizing: border-box;
       overflow: auto;
@@ -81,7 +140,7 @@
     }
   }
 
-  /* Color swatch button for compact mode */
+  /* ===== Color Swatch Button ===== */
   .color-swatch-button {
     display: flex;
     align-items: center;
@@ -114,103 +173,7 @@
     }
   }
 
-  /* ========== M3 Variant Colors ========== */
-
-  /* ===== Primary Variant ===== */
-  .react-aria-ColorPicker.primary {
-    &[data-focus-visible] {
-      outline: 2px solid var(--highlight-background);
-      outline-offset: 2px;
-    }
-
-    .color-picker-popover .react-aria-Dialog {
-      border: 1px solid var(--highlight-background);
-    }
-  }
-
-  /* ===== Secondary Variant ===== */
-  .react-aria-ColorPicker.secondary {
-    &[data-focus-visible] {
-      outline: 2px solid var(--button-background);
-      outline-offset: 2px;
-    }
-
-    .color-picker-popover .react-aria-Dialog {
-      border: 1px solid var(--button-background);
-    }
-  }
-
-  /* ===== Tertiary Variant ===== */
-  .react-aria-ColorPicker.tertiary {
-    &[data-focus-visible] {
-      outline: 2px solid var(--color-purple-600);
-      outline-offset: 2px;
-    }
-
-    .color-picker-popover .react-aria-Dialog {
-      border: 1px solid var(--color-purple-600);
-    }
-  }
-
-  /* ========== Size Variants ========== */
-
-  /* ===== Small Size ===== */
-  .react-aria-ColorPicker.sm {
-    font-size: var(--text-xs);
-    gap: 6px;
-
-    .color-picker-button {
-      width: 24px;
-      height: 24px;
-    }
-
-    .color-picker-popover .react-aria-Dialog {
-      padding: 12px;
-      gap: 6px;
-      min-width: 160px;
-    }
-  }
-
-  /* ===== Medium Size (Default) ===== */
-  .react-aria-ColorPicker.md {
-    font-size: var(--text-sm);
-    gap: 10px;
-
-    .color-picker-button {
-      width: 32px;
-      height: 32px;
-    }
-
-    .color-picker-popover .react-aria-Dialog {
-      padding: 14px;
-      gap: 10px;
-      min-width: 192px;
-    }
-  }
-
-  /* ===== Large Size ===== */
-  .react-aria-ColorPicker.lg {
-    font-size: var(--text-lg);
-    gap: 10px;
-
-    .color-picker-button {
-      width: 40px;
-      height: 40px;
-    }
-
-    .color-picker-popover .react-aria-Dialog {
-      padding: 18px;
-      gap: 10px;
-      min-width: 224px;
-    }
-  }
-
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Forced Colors Mode (High Contrast) ========== */
+  /* ========== Forced Colors Mode ========== */
   @media (forced-colors: active) {
     .react-aria-ColorPicker {
       forced-color-adjust: auto;

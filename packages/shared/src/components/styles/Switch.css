@@ -1,11 +1,34 @@
 /**
- * Switch Component Styles (M3)
+ * Switch Component Styles
  */
 
 @layer components {
   .react-aria-Switch {
+    --switch-color: var(--highlight-background);
+    --switch-thumb-color: var(--highlight-foreground);
+
+    /* Variants */
+    &[data-variant="secondary"] {
+      --switch-color: var(--button-background);
+      --switch-thumb-color: var(--color-white);
+    }
+
+    &[data-variant="tertiary"] {
+      --switch-color: var(--color-purple-600);
+      --switch-thumb-color: var(--color-white);
+    }
+
+    &[data-variant="error"] {
+      --switch-color: var(--invalid-color);
+      --switch-thumb-color: var(--color-white);
+    }
+
+    &[data-variant="surface"] {
+      --switch-color: var(--color-neutral-200);
+      --switch-thumb-color: var(--text-color);
+    }
+
     display: flex;
-    /* This is needed so the HiddenInput is positioned correctly */
     position: relative;
     align-items: center;
     gap: 10px;
@@ -44,20 +67,18 @@
 
     &[data-selected] {
       .indicator {
-        border-color: var(--highlight-background);
-        background: var(--highlight-background);
+        border-color: var(--switch-color);
+        background: var(--switch-color);
 
         &:before {
-          background: var(--highlight-foreground);
+          background: var(--switch-thumb-color);
           transform: translateX(100%);
         }
       }
 
-      &[data-pressed] {
-        .indicator {
-          border-color: var(--highlight-background-pressed);
-          background: var(--highlight-background-pressed);
-        }
+      &[data-pressed] .indicator {
+        border-color: color-mix(in srgb, var(--switch-color) 75%, black);
+        background: color-mix(in srgb, var(--switch-color) 75%, black);
       }
     }
 
@@ -79,102 +100,8 @@
     }
   }
 
-  /* ===== M3 Primary Variant ===== */
-  .react-aria-Switch[data-variant="primary"] {
-    &[data-selected] {
-      .indicator {
-        border-color: var(--highlight-background);
-        background: var(--highlight-background);
+  /* ===== Size Variants ===== */
 
-        &:before {
-          background: var(--highlight-foreground);
-        }
-      }
-
-      &[data-pressed] .indicator {
-        border-color: var(--highlight-background-pressed);
-        background: var(--highlight-background-pressed);
-      }
-    }
-  }
-
-  /* ===== M3 Secondary Variant ===== */
-  .react-aria-Switch[data-variant="secondary"] {
-    &[data-selected] {
-      .indicator {
-        border-color: var(--button-background);
-        background: var(--button-background);
-
-        &:before {
-          background: var(--color-white);
-        }
-      }
-
-      &[data-pressed] .indicator {
-        border-color: color-mix(in srgb, var(--button-background) 75%, black);
-        background: color-mix(in srgb, var(--button-background) 75%, black);
-      }
-    }
-  }
-
-  /* ===== M3 Tertiary Variant ===== */
-  .react-aria-Switch[data-variant="tertiary"] {
-    &[data-selected] {
-      .indicator {
-        border-color: var(--color-purple-600);
-        background: var(--color-purple-600);
-
-        &:before {
-          background: var(--color-white);
-        }
-      }
-
-      &[data-pressed] .indicator {
-        border-color: color-mix(in srgb, var(--color-purple-600) 75%, black);
-        background: color-mix(in srgb, var(--color-purple-600) 75%, black);
-      }
-    }
-  }
-
-  /* ===== M3 Error Variant ===== */
-  .react-aria-Switch[data-variant="error"] {
-    &[data-selected] {
-      .indicator {
-        border-color: var(--invalid-color);
-        background: var(--invalid-color);
-
-        &:before {
-          background: var(--color-white);
-        }
-      }
-
-      &[data-pressed] .indicator {
-        border-color: color-mix(in srgb, var(--invalid-color) 75%, black);
-        background: color-mix(in srgb, var(--invalid-color) 75%, black);
-      }
-    }
-  }
-
-  /* ===== M3 Surface Variant ===== */
-  .react-aria-Switch[data-variant="surface"] {
-    &[data-selected] {
-      .indicator {
-        border-color: var(--color-neutral-200);
-        background: var(--color-neutral-200);
-
-        &:before {
-          background: var(--text-color);
-        }
-      }
-
-      &[data-pressed] .indicator {
-        border-color: color-mix(in srgb, var(--color-neutral-200) 88%, black);
-        background: color-mix(in srgb, var(--color-neutral-200) 88%, black);
-      }
-    }
-  }
-
-  /* Small size */
   .react-aria-Switch[data-size="sm"] {
     font-size: var(--text-sm);
 
@@ -192,7 +119,6 @@
     }
   }
 
-  /* Medium size (default) */
   .react-aria-Switch[data-size="md"] {
     font-size: var(--text-base);
 
@@ -210,7 +136,6 @@
     }
   }
 
-  /* Large size */
   .react-aria-Switch[data-size="lg"] {
     font-size: var(--text-lg);
 

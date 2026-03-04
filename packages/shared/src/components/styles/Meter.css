@@ -1,13 +1,29 @@
 /**
- * Meter Component Styles (M3)
+ * Meter Component Styles
  */
 
 @layer components {
-
   .react-aria-Meter {
+    --fill-color: var(--highlight-background);
+
+    /* Variants */
+    &[data-variant="secondary"] {
+      --fill-color: var(--button-background);
+    }
+    &[data-variant="tertiary"] {
+      --fill-color: var(--color-purple-600);
+    }
+    &[data-variant="error"] {
+      --fill-color: var(--invalid-color);
+    }
+    &[data-variant="surface"] {
+      --fill-color: var(--text-color-placeholder);
+    }
+
     display: grid;
-    grid-template-areas: "label value"
-                         "bar bar";
+    grid-template-areas:
+      "label value"
+      "bar bar";
     grid-template-columns: 1fr auto;
     gap: var(--spacing-xs);
     width: 240px;
@@ -30,39 +46,15 @@
     }
 
     .fill {
-      background: var(--highlight-background);
+      background: var(--fill-color);
       height: 100%;
       transition: width 200ms ease-out;
     }
   }
 
-  /* ===== M3 Primary Variant ===== */
-  .react-aria-Meter.primary .fill {
-    background: var(--highlight-background);
-  }
+  /* ===== Size Variants ===== */
 
-  /* ===== M3 Secondary Variant ===== */
-  .react-aria-Meter.secondary .fill {
-    background: var(--button-background);
-  }
-
-  /* ===== M3 Tertiary Variant ===== */
-  .react-aria-Meter.tertiary .fill {
-    background: var(--color-purple-600);
-  }
-
-  /* ===== M3 Error Variant ===== */
-  .react-aria-Meter.error .fill {
-    background: var(--invalid-color);
-  }
-
-  /* ===== M3 Surface Variant ===== */
-  .react-aria-Meter.surface .fill {
-    background: var(--text-color-placeholder);
-  }
-
-  /* Small size */
-  .react-aria-Meter.sm {
+  .react-aria-Meter[data-size="sm"] {
     width: 200px;
 
     .bar {
@@ -75,8 +67,7 @@
     }
   }
 
-  /* Medium size (default) */
-  .react-aria-Meter.md {
+  .react-aria-Meter[data-size="md"] {
     width: 240px;
 
     .bar {
@@ -89,8 +80,7 @@
     }
   }
 
-  /* Large size */
-  .react-aria-Meter.lg {
+  .react-aria-Meter[data-size="lg"] {
     width: 300px;
 
     .bar {

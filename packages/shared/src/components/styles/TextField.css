@@ -1,48 +1,93 @@
-/**
- * Material Design 3 TextField Styles
- *
- * M3 Variants: primary, secondary, tertiary, error, filled
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components/text-fields
- */
-
 @layer components {
-  /* ========== Base TextField Styles ========== */
   .react-aria-TextField {
     display: flex;
     flex-direction: column;
     width: fit-content;
     gap: var(--spacing-xs);
 
-    /* ===== Label Styles ===== */
-    .react-aria-Label {
-      font-size: var(--text-sm);
-      font-weight: 500;
-      color: var(--text-color);
-      margin-bottom: 2px;
+    /* Accent locals */
+    --field-accent: var(--highlight-background);
+    --field-accent-container: color-mix(
+      in srgb,
+      var(--field-accent) 15%,
+      white
+    );
+    --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
+
+    /* Size locals (md default) */
+    --tf-label-size: var(--text-sm);
+    --tf-label-margin: 2px;
+    --tf-input-padding: var(--spacing-sm) 14px;
+    --tf-input-size: var(--text-base);
+    --tf-hint-size: var(--text-xs);
+
+    /* ===== Variant ===== */
+    &[data-variant="secondary"] {
+      --field-accent: var(--button-background);
+    }
+    &[data-variant="tertiary"] {
+      --field-accent: var(--color-purple-600);
+    }
+    &[data-variant="error"] {
+      --field-accent: var(--invalid-color);
     }
 
-    /* ===== Input Base Styles ===== */
+    /* ===== Size ===== */
+    &[data-size="sm"] {
+      --tf-label-size: var(--text-xs);
+      --tf-label-margin: 0px;
+      --tf-input-padding: var(--spacing-sm) var(--spacing);
+      --tf-input-size: var(--text-xs);
+      --tf-hint-size: 10px;
+    }
+    &[data-size="md"] {
+      --tf-label-size: var(--text-sm);
+      --tf-label-margin: 2px;
+      --tf-input-padding: var(--spacing-sm) 14px;
+      --tf-input-size: var(--text-base);
+      --tf-hint-size: var(--text-xs);
+    }
+    &[data-size="lg"] {
+      --tf-label-size: var(--text-base);
+      --tf-label-margin: 4px;
+      --tf-input-padding: var(--spacing-md) var(--spacing-lg);
+      --tf-input-size: var(--text-base);
+      --tf-hint-size: var(--text-sm);
+    }
+
+    /* ===== Label ===== */
+    .react-aria-Label {
+      font-size: var(--tf-label-size);
+      font-weight: 500;
+      color: var(--text-color);
+      margin-bottom: var(--tf-label-margin);
+    }
+
+    &[data-variant="primary"] .react-aria-Label,
+    &[data-variant="secondary"] .react-aria-Label,
+    &[data-variant="tertiary"] .react-aria-Label,
+    &[data-variant="error"] .react-aria-Label {
+      color: var(--field-accent);
+    }
+
+    /* ===== Input ===== */
     .react-aria-Input {
       width: 100%;
       margin: 0;
       border: 1px solid var(--border-color);
       border-radius: var(--border-radius);
-      padding: var(--spacing-sm) 14px;
+      padding: var(--tf-input-padding);
       background: var(--field-background);
-      font-size: var(--text-base);
+      font-size: var(--tf-input-size);
       color: var(--text-color);
       line-height: var(--text-sm--line-height);
       transition: all 200ms ease;
 
-      /* Placeholder */
       &::placeholder {
         color: var(--text-color-placeholder);
         opacity: 0.6;
       }
 
-      /* ===== Focus State ===== */
       &[data-focused] {
         outline: 2px solid var(--highlight-background);
         outline-offset: -1px;
@@ -50,13 +95,11 @@
         background: var(--overlay-background);
       }
 
-      /* ===== Hover State ===== */
       &[data-hovered]:not([data-focused]):not([data-disabled]) {
         border-color: var(--border-color-hover);
         background: var(--overlay-background);
       }
 
-      /* ===== Invalid State ===== */
       &[data-invalid] {
         border-color: var(--invalid-color);
 
@@ -65,7 +108,6 @@
         }
       }
 
-      /* ===== Disabled State ===== */
       &[data-disabled] {
         border-color: color-mix(in srgb, var(--text-color) 12%, transparent);
         background: color-mix(in srgb, var(--text-color) 4%, transparent);
@@ -74,7 +116,6 @@
         opacity: 0.38;
       }
 
-      /* ===== Read Only State ===== */
       &[data-readonly] {
         background: var(--color-neutral-50);
         border-color: var(--border-color);
@@ -82,88 +123,40 @@
       }
     }
 
-    /* ===== Description Text ===== */
-    [slot="description"] {
-      font-size: var(--text-xs);
-      color: var(--text-color-placeholder);
-    }
-
-    /* ===== Field Error ===== */
-    .react-aria-FieldError {
-      font-size: var(--text-xs);
-      color: var(--invalid-color);
-    }
-  }
-
-  /* ========== M3 Color Variants ========== */
-  /* CSS 변수 패턴으로 Input 스타일 통합 */
-
-  .react-aria-TextField {
-    /* 기본 variant 변수 */
-    --tf-accent: var(--border-color);
-    --tf-accent-container: var(--overlay-background);
-    --tf-on-accent-container: var(--text-color-placeholder);
-  }
-
-  /* Variant별 CSS 변수만 오버라이드 */
-  .react-aria-TextField[data-variant="primary"] {
-    --tf-accent: var(--highlight-background);
-    --tf-accent-container: var(--color-primary-100);
-    --tf-on-accent-container: var(--color-primary-900);
-  }
-
-  .react-aria-TextField[data-variant="secondary"] {
-    --tf-accent: var(--button-background);
-    --tf-accent-container: var(--color-neutral-100);
-    --tf-on-accent-container: var(--color-neutral-900);
-  }
-
-  .react-aria-TextField[data-variant="tertiary"] {
-    --tf-accent: var(--color-purple-600);
-    --tf-accent-container: var(--color-tertiary-100);
-    --tf-on-accent-container: var(--color-tertiary-900);
-  }
-
-  .react-aria-TextField[data-variant="error"] {
-    --tf-accent: var(--invalid-color);
-    --tf-accent-container: var(--color-error-100);
-    --tf-on-accent-container: var(--color-error-900);
-  }
-
-  /* 모든 color variant에 공통 적용되는 스타일 */
-  .react-aria-TextField[data-variant="primary"],
-  .react-aria-TextField[data-variant="secondary"],
-  .react-aria-TextField[data-variant="tertiary"],
-  .react-aria-TextField[data-variant="error"] {
-    .react-aria-Label {
-      color: var(--tf-accent);
-    }
-
-    .react-aria-Input {
-      border-color: var(--tf-accent);
+    /* Variant-accented input states */
+    &[data-variant="primary"] .react-aria-Input,
+    &[data-variant="secondary"] .react-aria-Input,
+    &[data-variant="tertiary"] .react-aria-Input,
+    &[data-variant="error"] .react-aria-Input {
+      border-color: var(--field-accent);
 
       &[data-focused] {
-        outline-color: var(--tf-accent);
-        border-color: var(--tf-accent);
-        background: var(--tf-accent-container);
+        outline-color: var(--field-accent);
+        border-color: var(--field-accent);
+        background: var(--field-accent-container);
       }
 
       &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        background: var(--tf-accent-container);
-        border-color: var(--tf-accent);
+        background: var(--field-accent-container);
+        border-color: var(--field-accent);
       }
 
       &::placeholder {
-        color: var(--tf-on-accent-container);
+        color: var(--field-on-accent);
         opacity: 0.6;
       }
-    }
-  }
 
-  /* ===== M3 Filled Variant ===== */
-  /* Filled style with subtle surface background */
-  .react-aria-TextField[data-variant="filled"] {
-    .react-aria-Input {
+      &[data-invalid] {
+        border-color: var(--invalid-color);
+
+        &[data-focused] {
+          outline-color: var(--invalid-color);
+        }
+      }
+    }
+
+    /* ===== Filled Variant ===== */
+    &[data-variant="filled"] .react-aria-Input {
       background: var(--color-neutral-200);
       border-color: transparent;
       border-bottom: 2px solid var(--border-color);
@@ -184,103 +177,16 @@
         border-bottom-color: var(--invalid-color);
       }
     }
-  }
 
-  /* ========== Size Variants ========== */
-  /* CSS 변수 패턴으로 크기 스타일 통합 */
-
-  .react-aria-TextField {
-    /* 기본 size 변수 (md) */
-    --tf-label-size: var(--text-sm);
-    --tf-label-margin: 2px;
-    --tf-input-padding: var(--spacing-sm) 14px;
-    --tf-input-size: var(--text-base);
-    --tf-hint-size: var(--text-xs);
-  }
-
-  /* Size별 CSS 변수만 오버라이드 */
-  .react-aria-TextField[data-size="sm"] {
-    --tf-label-size: var(--text-xs);
-    --tf-label-margin: 0px;
-    --tf-input-padding: var(--spacing-sm) var(--spacing);
-    --tf-input-size: var(--text-xs);
-    --tf-hint-size: 10px;
-  }
-
-  .react-aria-TextField[data-size="md"] {
-    --tf-label-size: var(--text-sm);
-    --tf-label-margin: 2px;
-    --tf-input-padding: var(--spacing-sm) 14px;
-    --tf-input-size: var(--text-base);
-    --tf-hint-size: var(--text-xs);
-  }
-
-  .react-aria-TextField[data-size="lg"] {
-    --tf-label-size: var(--text-base);
-    --tf-label-margin: 4px;
-    --tf-input-padding: var(--spacing-md) var(--spacing-lg);
-    --tf-input-size: var(--text-base);
-    --tf-hint-size: var(--text-sm);
-  }
-
-  /* 모든 size에 공통 적용되는 스타일 */
-  .react-aria-TextField[data-size="sm"],
-  .react-aria-TextField[data-size="md"],
-  .react-aria-TextField[data-size="lg"] {
-    .react-aria-Label {
-      font-size: var(--tf-label-size);
-      margin-bottom: var(--tf-label-margin);
+    /* ===== Description / FieldError ===== */
+    [slot="description"] {
+      font-size: var(--tf-hint-size);
+      color: var(--text-color-placeholder);
     }
 
-    .react-aria-Input {
-      padding: var(--tf-input-padding);
-      font-size: var(--tf-input-size);
-    }
-
-    [slot="description"],
     .react-aria-FieldError {
       font-size: var(--tf-hint-size);
-    }
-  }
-
-  /* ========== Invalid State Override ========== */
-  /* Invalid state overrides all color variants */
-  .react-aria-TextField[data-variant="primary"][data-invalid],
-  .react-aria-TextField[data-variant="secondary"][data-invalid],
-  .react-aria-TextField[data-variant="tertiary"][data-invalid],
-  .react-aria-TextField[data-variant="filled"][data-invalid] {
-    .react-aria-Input {
-      border-color: var(--invalid-color);
-
-      &[data-focused] {
-        outline-color: var(--invalid-color);
-      }
-    }
-  }
-
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Browser Fallbacks ========== */
-  /* For browsers that don't support color-mix() (Safari < 16.2) */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .react-aria-TextField .react-aria-Input {
-      &[data-disabled] {
-        /* Fallback: Use semi-transparent background */
-        background: rgba(0, 0, 0, 0.04);
-        border-color: rgba(0, 0, 0, 0.12);
-        color: rgba(0, 0, 0, 0.38);
-      }
-    }
-
-    [data-theme="dark"] .react-aria-TextField .react-aria-Input {
-      &[data-disabled] {
-        background: rgba(255, 255, 255, 0.04);
-        border-color: rgba(255, 255, 255, 0.12);
-        color: rgba(255, 255, 255, 0.38);
-      }
+      color: var(--invalid-color);
     }
   }
 }

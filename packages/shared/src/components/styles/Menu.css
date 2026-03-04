@@ -1,12 +1,3 @@
-/**
- * Material Design 3 Menu Styles
- *
- * M3 Variants: primary, secondary, tertiary, error, filled
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components/menus
- */
-
 @layer components {
   /* ========== Base Menu Styles ========== */
   .react-aria-Menu {
@@ -19,6 +10,11 @@
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
     color: var(--text-color);
+
+    /* 기본 variant 변수 */
+    --menu-accent: var(--border-color);
+    --menu-focused-bg: var(--color-primary-100);
+    --menu-focused-color: var(--color-primary-900);
   }
 
   /* ========== MenuItem Styles ========== */
@@ -40,20 +36,17 @@
     forced-color-adjust: none;
     transition: all 150ms ease;
 
-    /* Focused State */
     &[data-focused] {
       background: var(--color-primary-100);
       color: var(--color-primary-900);
     }
 
-    /* Disabled State */
     &[data-disabled] {
       color: color-mix(in srgb, var(--text-color) 38%, transparent);
       cursor: not-allowed;
       opacity: 0.38;
     }
 
-    /* Link items */
     &[href] {
       text-decoration: none;
       cursor: pointer;
@@ -141,7 +134,11 @@
       }
 
       kbd {
-        background: color-mix(in srgb, var(--color-primary-900) 12%, transparent);
+        background: color-mix(
+          in srgb,
+          var(--color-primary-900) 12%,
+          transparent
+        );
       }
     }
   }
@@ -225,7 +222,6 @@
       margin-right: -5px;
     }
 
-    /* Submenu Menu Styles */
     .react-aria-Menu {
       min-width: 150px;
       transform: translate3d(0, 0, 0);
@@ -236,7 +232,6 @@
       }
     }
 
-    /* Submenu SearchField */
     .react-aria-SearchField {
       margin: 4px 8px;
     }
@@ -257,94 +252,56 @@
     }
   }
 
-  /* ========== M3 Color Variants ========== */
+  /* ========== Color Variants ========== */
+  .react-aria-Menu[data-variant="primary"] {
+    --menu-accent: var(--highlight-background);
+    --menu-focused-bg: var(--color-primary-100);
+    --menu-focused-color: var(--color-primary-900);
+  }
 
-  /* ===== M3 Primary Variant ===== */
-  .react-aria-Menu.primary {
-    border-color: var(--highlight-background);
+  .react-aria-Menu[data-variant="secondary"] {
+    --menu-accent: var(--button-background);
+    --menu-focused-bg: var(--color-neutral-100);
+    --menu-focused-color: var(--color-neutral-900);
+  }
+
+  .react-aria-Menu[data-variant="tertiary"] {
+    --menu-accent: var(--color-purple-600);
+    --menu-focused-bg: var(--color-tertiary-100);
+    --menu-focused-color: var(--color-tertiary-900);
+  }
+
+  .react-aria-Menu[data-variant="error"] {
+    --menu-accent: var(--invalid-color);
+    --menu-focused-bg: var(--color-error-100);
+    --menu-focused-color: var(--color-error-900);
+  }
+
+  .react-aria-Menu[data-variant="primary"],
+  .react-aria-Menu[data-variant="secondary"],
+  .react-aria-Menu[data-variant="tertiary"],
+  .react-aria-Menu[data-variant="error"] {
+    border-color: var(--menu-accent);
 
     .react-aria-MenuItem {
       &[data-focused] {
-        background: var(--color-primary-100);
-        color: var(--color-primary-900);
+        background: var(--menu-focused-bg);
+        color: var(--menu-focused-color);
       }
 
       &[data-selection-mode]::before {
-        color: var(--highlight-background);
+        color: var(--menu-accent);
       }
     }
 
     .react-aria-Separator {
-      background: var(--highlight-background);
+      background: var(--menu-accent);
       opacity: 0.12;
     }
   }
 
-  /* ===== M3 Secondary Variant ===== */
-  .react-aria-Menu.secondary {
-    border-color: var(--button-background);
-
-    .react-aria-MenuItem {
-      &[data-focused] {
-        background: var(--color-neutral-100);
-        color: var(--color-neutral-900);
-      }
-
-      &[data-selection-mode]::before {
-        color: var(--button-background);
-      }
-    }
-
-    .react-aria-Separator {
-      background: var(--button-background);
-      opacity: 0.12;
-    }
-  }
-
-  /* ===== M3 Tertiary Variant ===== */
-  .react-aria-Menu.tertiary {
-    border-color: var(--color-purple-600);
-
-    .react-aria-MenuItem {
-      &[data-focused] {
-        background: var(--color-tertiary-100);
-        color: var(--color-tertiary-900);
-      }
-
-      &[data-selection-mode]::before {
-        color: var(--color-purple-600);
-      }
-    }
-
-    .react-aria-Separator {
-      background: var(--color-purple-600);
-      opacity: 0.12;
-    }
-  }
-
-  /* ===== M3 Error Variant ===== */
-  .react-aria-Menu.error {
-    border-color: var(--invalid-color);
-
-    .react-aria-MenuItem {
-      &[data-focused] {
-        background: var(--color-error-100);
-        color: var(--color-error-900);
-      }
-
-      &[data-selection-mode]::before {
-        color: var(--invalid-color);
-      }
-    }
-
-    .react-aria-Separator {
-      background: var(--invalid-color);
-      opacity: 0.12;
-    }
-  }
-
-  /* ===== M3 Filled Variant ===== */
-  .react-aria-Menu.filled {
+  /* ===== Filled Variant ===== */
+  .react-aria-Menu[data-variant="filled"] {
     background: var(--color-neutral-200);
     border-color: transparent;
 
@@ -356,9 +313,7 @@
   }
 
   /* ========== Size Variants ========== */
-
-  /* ===== Small Size ===== */
-  .react-aria-Menu.sm {
+  .react-aria-Menu[data-size="sm"] {
     padding: var(--spacing-sm);
     min-width: 120px;
 
@@ -394,8 +349,7 @@
     }
   }
 
-  /* ===== Medium Size (Default) ===== */
-  .react-aria-Menu.md {
+  .react-aria-Menu[data-size="md"] {
     padding: var(--spacing);
     min-width: 150px;
 
@@ -431,8 +385,7 @@
     }
   }
 
-  /* ===== Large Size ===== */
-  .react-aria-Menu.lg {
+  .react-aria-Menu[data-size="lg"] {
     padding: var(--spacing-md);
     min-width: 180px;
 
@@ -465,51 +418,6 @@
     .react-aria-Header {
       font-size: var(--text-base);
       padding: 0 var(--spacing-md);
-    }
-  }
-
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Browser Fallbacks ========== */
-  /* For browsers that don't support color-mix() (Safari < 16.2) */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .react-aria-MenuItem {
-      &[data-disabled] {
-        color: rgba(0, 0, 0, 0.38);
-      }
-
-      kbd,
-      .menu-item-shortcut {
-        background: rgba(0, 0, 0, 0.08);
-      }
-
-      &[data-focused] {
-        kbd,
-        .menu-item-shortcut {
-          background: rgba(0, 0, 0, 0.12);
-        }
-      }
-    }
-
-    [data-theme="dark"] .react-aria-MenuItem {
-      &[data-disabled] {
-        color: rgba(255, 255, 255, 0.38);
-      }
-
-      kbd,
-      .menu-item-shortcut {
-        background: rgba(255, 255, 255, 0.08);
-      }
-
-      &[data-focused] {
-        kbd,
-        .menu-item-shortcut {
-          background: rgba(255, 255, 255, 0.12);
-        }
-      }
     }
   }
 

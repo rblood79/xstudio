@@ -1,12 +1,3 @@
-/**
- * Material Design 3 Disclosure Styles
- *
- * M3 Variants: primary, secondary
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components
- */
-
 @layer components {
   /* ========== Base Disclosure Container ========== */
   .react-aria-Disclosure {
@@ -17,8 +8,10 @@
     color: var(--text-color);
     padding: var(--spacing-md);
 
-    /* Trigger button */
-    .react-aria-Button[slot=trigger] {
+    /* 기본 variant 변수 */
+    --disc-accent: var(--border-color);
+
+    .react-aria-Button[slot="trigger"] {
       all: unset;
       display: flex;
       align-items: center;
@@ -31,10 +24,11 @@
       background: transparent;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: background 200ms, color 200ms;
+      transition:
+        background 200ms,
+        color 200ms;
       outline: none;
 
-      /* Chevron icon */
       svg {
         rotate: 0deg;
         transition: rotate 200ms;
@@ -46,23 +40,19 @@
         stroke-width: 2px;
       }
 
-      /* Hover state */
       &[data-hovered] {
         background: color-mix(in srgb, var(--text-color) 8%, transparent);
       }
 
-      /* Pressed state */
       &[data-pressed] {
         background: color-mix(in srgb, var(--text-color) 12%, transparent);
       }
 
-      /* Focus visible state */
       &[data-focus-visible] {
         outline: 2px solid var(--highlight-background);
         outline-offset: 2px;
       }
 
-      /* Disabled state */
       &[data-disabled] {
         color: color-mix(in srgb, var(--text-color) 38%, transparent);
         cursor: not-allowed;
@@ -70,8 +60,7 @@
       }
     }
 
-    /* Rotate chevron when expanded */
-    &[data-expanded] .react-aria-Button[slot=trigger] svg {
+    &[data-expanded] .react-aria-Button[slot="trigger"] svg {
       rotate: 90deg;
     }
   }
@@ -83,10 +72,8 @@
     padding: var(--spacing);
     color: var(--text-color-placeholder);
 
-    /* React Aria 1.13.0: CSS variable animation support */
     overflow: hidden;
 
-    /* Smooth height animation using CSS variable from React Aria */
     &[data-entering],
     &[data-exiting] {
       height: var(--disclosure-panel-height, auto);
@@ -136,26 +123,33 @@
       transition: none !important;
     }
 
-    .react-aria-Disclosure .react-aria-Button[slot=trigger] svg {
+    .react-aria-Disclosure .react-aria-Button[slot="trigger"] svg {
       transition: none;
     }
   }
 
-  /* ========== M3 Variant Colors ========== */
-
-  /* ===== Primary Variant ===== */
-  .react-aria-Disclosure.primary {
+  /* ========== Color Variants ========== */
+  .react-aria-Disclosure[data-variant="primary"] {
+    --disc-accent: var(--highlight-background);
     border-color: var(--highlight-background);
 
-    .react-aria-Button[slot=trigger] {
+    .react-aria-Button[slot="trigger"] {
       color: var(--highlight-background);
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
+        background: color-mix(
+          in srgb,
+          var(--highlight-background) 8%,
+          transparent
+        );
       }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--highlight-background) 12%, transparent);
+        background: color-mix(
+          in srgb,
+          var(--highlight-background) 12%,
+          transparent
+        );
       }
 
       &[data-focus-visible] {
@@ -164,23 +158,35 @@
     }
 
     &[data-expanded] {
-      background: color-mix(in srgb, var(--highlight-background) 4%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--highlight-background) 4%,
+        transparent
+      );
     }
   }
 
-  /* ===== Secondary Variant ===== */
-  .react-aria-Disclosure.secondary {
+  .react-aria-Disclosure[data-variant="secondary"] {
+    --disc-accent: var(--button-background);
     border-color: var(--button-background);
 
-    .react-aria-Button[slot=trigger] {
+    .react-aria-Button[slot="trigger"] {
       color: var(--button-background);
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--button-background) 8%, transparent);
+        background: color-mix(
+          in srgb,
+          var(--button-background) 8%,
+          transparent
+        );
       }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--button-background) 12%, transparent);
+        background: color-mix(
+          in srgb,
+          var(--button-background) 12%,
+          transparent
+        );
       }
 
       &[data-focus-visible] {
@@ -194,12 +200,10 @@
   }
 
   /* ========== Size Variants ========== */
-
-  /* ===== Small Size ===== */
-  .react-aria-Disclosure.sm {
+  .react-aria-Disclosure[data-size="sm"] {
     padding: var(--spacing-xs);
 
-    .react-aria-Button[slot=trigger] {
+    .react-aria-Button[slot="trigger"] {
       gap: var(--spacing-xs);
       padding: var(--spacing-xs);
       font-size: var(--text-sm);
@@ -218,11 +222,10 @@
     }
   }
 
-  /* ===== Medium Size (Default) ===== */
-  .react-aria-Disclosure.md {
+  .react-aria-Disclosure[data-size="md"] {
     padding: var(--spacing-md);
 
-    .react-aria-Button[slot=trigger] {
+    .react-aria-Button[slot="trigger"] {
       gap: var(--spacing-sm);
       padding: var(--spacing-sm);
       font-size: var(--text-base);
@@ -241,11 +244,10 @@
     }
   }
 
-  /* ===== Large Size ===== */
-  .react-aria-Disclosure.lg {
+  .react-aria-Disclosure[data-size="lg"] {
     padding: var(--spacing);
 
-    .react-aria-Button[slot=trigger] {
+    .react-aria-Button[slot="trigger"] {
       gap: var(--spacing);
       padding: var(--spacing);
       font-size: var(--text-lg);
@@ -264,54 +266,13 @@
     }
   }
 
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Browser Fallbacks ========== */
-  /* For browsers that don't support color-mix() (Safari < 16.2) */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .react-aria-Button[slot=trigger] {
-      &[data-hovered] {
-        background: rgba(0, 0, 0, 0.08);
-      }
-
-      &[data-pressed] {
-        background: rgba(0, 0, 0, 0.12);
-      }
-
-      &[data-disabled] {
-        opacity: 0.38;
-      }
-    }
-
-    .react-aria-Disclosure.primary[data-expanded] {
-      background: rgba(0, 0, 255, 0.04);
-    }
-
-    .react-aria-Disclosure.secondary[data-expanded] {
-      background: rgba(128, 0, 128, 0.04);
-    }
-
-    [data-theme='dark'] .react-aria-Button[slot=trigger] {
-      &[data-hovered] {
-        background: rgba(255, 255, 255, 0.08);
-      }
-
-      &[data-pressed] {
-        background: rgba(255, 255, 255, 0.12);
-      }
-    }
-  }
-
   /* ========== Forced Colors Mode (High Contrast) ========== */
   @media (forced-colors: active) {
     .react-aria-Disclosure {
       forced-color-adjust: auto;
     }
 
-    .react-aria-Button[slot=trigger] {
+    .react-aria-Button[slot="trigger"] {
       forced-color-adjust: auto;
 
       &[data-focus-visible] {

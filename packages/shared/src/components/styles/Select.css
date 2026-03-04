@@ -1,63 +1,110 @@
-/**
- * Material Design 3 Select Styles
- *
- * M3 Variants: primary, secondary, tertiary, error, filled
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components/menus
- */
-
 @layer components {
-  /* ========== Base Select Styles ========== */
   .react-aria-Select {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
     color: var(--text-color);
 
-    /* ===== Label Styles ===== */
+    /* Accent locals */
+    --field-accent: var(--highlight-background);
+    --field-accent-container: color-mix(
+      in srgb,
+      var(--field-accent) 15%,
+      white
+    );
+    --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
+
+    /* Size locals (md default) */
+    --select-label-size: var(--text-sm);
+    --select-btn-padding: var(--spacing-sm) 14px;
+    --select-btn-font-size: var(--text-base);
+    --select-chevron-size: 18px;
+    --select-chevron-margin: var(--spacing);
+    --select-hint-size: var(--text-xs);
+
+    /* ===== Variant ===== */
+    &[data-variant="secondary"] {
+      --field-accent: var(--button-background);
+    }
+    &[data-variant="tertiary"] {
+      --field-accent: var(--color-purple-600);
+    }
+    &[data-variant="error"] {
+      --field-accent: var(--invalid-color);
+    }
+
+    /* ===== Size ===== */
+    &[data-size="sm"] {
+      --select-label-size: var(--text-xs);
+      --select-btn-padding: var(--spacing-sm) var(--spacing);
+      --select-btn-font-size: var(--text-xs);
+      --select-chevron-size: 20px;
+      --select-chevron-margin: var(--spacing-sm);
+      --select-hint-size: 10px;
+    }
+    &[data-size="md"] {
+      --select-label-size: var(--text-sm);
+      --select-btn-padding: var(--spacing-sm) 14px;
+      --select-btn-font-size: var(--text-base);
+      --select-chevron-size: 18px;
+      --select-chevron-margin: var(--spacing);
+      --select-hint-size: var(--text-xs);
+    }
+    &[data-size="lg"] {
+      --select-label-size: var(--text-base);
+      --select-btn-padding: var(--spacing-md) var(--spacing-lg);
+      --select-btn-font-size: var(--text-base);
+      --select-chevron-size: 28px;
+      --select-chevron-margin: var(--spacing-md);
+      --select-hint-size: var(--text-sm);
+    }
+
+    /* ===== Label ===== */
     .react-aria-Label {
-      font-size: var(--text-sm);
+      font-size: var(--select-label-size);
       font-weight: 500;
       color: var(--text-color);
       margin-bottom: var(--spacing-xs);
     }
 
-    /* ===== Button (Trigger) Styles ===== */
+    &[data-variant="primary"] .react-aria-Label,
+    &[data-variant="secondary"] .react-aria-Label,
+    &[data-variant="tertiary"] .react-aria-Label,
+    &[data-variant="error"] .react-aria-Label {
+      color: var(--field-accent);
+    }
+
+    /* ===== Button (Trigger) ===== */
     .react-aria-Button {
       text-align: left;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: var(--spacing-sm) 14px;
+      padding: var(--select-btn-padding);
       border: 1px solid var(--border-color);
       border-radius: var(--border-radius);
       background: var(--field-background);
       color: var(--text-color);
-      font-size: var(--text-base);
+      font-size: var(--select-btn-font-size);
       cursor: pointer;
       transition: all 200ms ease;
       forced-color-adjust: none;
 
-      /* Hover State */
       &[data-hovered]:not([data-pressed]):not([data-disabled]) {
         border-color: var(--border-color-hover);
         background: var(--overlay-background);
       }
 
-      /* Pressed State */
       &[data-pressed]:not([data-disabled]) {
         background: var(--color-neutral-200);
         border-color: var(--highlight-background);
       }
 
-      /* Focus Visible State */
       &[data-focus-visible] {
         outline: 2px solid var(--highlight-background);
         outline-offset: -1px;
       }
 
-      /* Disabled State */
       &[data-disabled] {
         background: color-mix(in srgb, var(--text-color) 4%, transparent);
         border-color: color-mix(in srgb, var(--text-color) 12%, transparent);
@@ -72,186 +119,30 @@
       }
     }
 
-    /* ===== SelectValue Styles ===== */
-    .react-aria-SelectValue {
-      font-size: var(--text-base);
-      color: var(--text-color);
-      flex: 1;
-      display: flex;
-
-      &[data-placeholder] {
-        font-style: italic;
-        color: var(--text-color-placeholder);
-        opacity: 0.6;
-      }
-
-      [slot="description"] {
-        display: none;
-      }
-    }
-
-    /* ===== Chevron Icon Styles ===== */
-    .select-chevron {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 18px;
-      height: 18px;
-      margin-left: var(--spacing);
-      border-radius: var(--radius-xs);
-      background: var(--overlay-background);
-      color: var(--text-color);
-      transition: all 150ms ease;
-      forced-color-adjust: none;
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* ===== Description Text ===== */
-    [slot="description"] {
-      font-size: var(--text-xs);
-      color: var(--text-color-placeholder);
-    }
-
-    /* ===== Field Error ===== */
-    .react-aria-FieldError {
-      font-size: var(--text-xs);
-      color: var(--invalid-color);
-      margin-top: var(--spacing-xs);
-    }
-  }
-
-  /* ========== Popover Styles (for Select dropdown) ========== */
-  .react-aria-Popover[data-trigger="Select"] {
-    min-width: var(--trigger-width);
-    max-height: 300px;
-    overflow: auto;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    background: var(--field-background);
-    box-shadow: var(--shadow-lg);
-    contain: layout style paint;
-
-    /* ===== ListBox Styles ===== */
-    .react-aria-ListBox {
-      padding: var(--spacing-xs);
-      outline: none;
-      transform: translate3d(0, 0, 0);
-      backface-visibility: hidden;
-      min-height: 24px;
-
-      /* ===== ListBoxItem Styles ===== */
-      .react-aria-ListBoxItem {
-        padding: var(--spacing) var(--spacing-md);
-        border-radius: var(--radius-xs);
-        color: var(--text-color);
-        cursor: pointer;
-        outline: none;
-        transition: all 150ms ease;
-        transform: translate3d(0, 0, 0);
-        display: flex;
-        flex-direction: row;
-        align-self: center;
-        justify-content: flex-start;
-
-        /* Hover State */
-        &[data-hovered] {
-          background: var(--overlay-background);
-        }
-
-        /* Focused State */
-        &[data-focused] {
-          background: var(--overlay-background);
-        }
-
-        /* Selected State */
-        &[data-selected] {
-          background: var(--color-primary-100);
-          color: var(--color-primary-900);
-          font-weight: 500;
-        }
-
-        /* Disabled State */
-        &[data-disabled] {
-          color: color-mix(in srgb, var(--text-color) 38%, transparent);
-          cursor: not-allowed;
-        }
-
-        /* Link items */
-        &[href] {
-          text-decoration: none;
-          cursor: pointer;
-        }
-      }
-    }
-  }
-
-  /* ========== M3 Color Variants ========== */
-  /* CSS 변수 패턴으로 Button 스타일 통합 */
-
-  .react-aria-Select {
-    /* 기본 variant 변수 */
-    --select-accent: var(--border-color);
-    --select-accent-container: var(--overlay-background);
-    --select-on-accent-container: var(--text-color);
-  }
-
-  /* Variant별 CSS 변수만 오버라이드 */
-  .react-aria-Select[data-variant="primary"] {
-    --select-accent: var(--highlight-background);
-    --select-accent-container: var(--color-primary-100);
-    --select-on-accent-container: var(--color-primary-900);
-  }
-
-  .react-aria-Select[data-variant="secondary"] {
-    --select-accent: var(--button-background);
-    --select-accent-container: var(--color-neutral-100);
-    --select-on-accent-container: var(--color-neutral-900);
-  }
-
-  .react-aria-Select[data-variant="tertiary"] {
-    --select-accent: var(--color-purple-600);
-    --select-accent-container: var(--color-tertiary-100);
-    --select-on-accent-container: var(--color-tertiary-900);
-  }
-
-  .react-aria-Select[data-variant="error"] {
-    --select-accent: var(--invalid-color);
-    --select-accent-container: var(--color-error-100);
-    --select-on-accent-container: var(--color-error-900);
-  }
-
-  /* 모든 color variant에 공통 적용되는 Button 스타일 */
-  .react-aria-Select[data-variant="primary"],
-  .react-aria-Select[data-variant="secondary"],
-  .react-aria-Select[data-variant="tertiary"],
-  .react-aria-Select[data-variant="error"] {
-    .react-aria-Label {
-      color: var(--select-accent);
-    }
-
-    .react-aria-Button {
-      border-color: var(--select-accent);
+    &[data-variant="primary"] .react-aria-Button,
+    &[data-variant="secondary"] .react-aria-Button,
+    &[data-variant="tertiary"] .react-aria-Button,
+    &[data-variant="error"] .react-aria-Button {
+      border-color: var(--field-accent);
 
       &[data-hovered]:not([data-pressed]):not([data-disabled]) {
-        background: var(--select-accent-container);
-        border-color: var(--select-accent);
+        background: var(--field-accent-container);
+        border-color: var(--field-accent);
       }
 
       &[data-pressed]:not([data-disabled]) {
-        background: var(--select-accent-container);
-        border-color: var(--select-accent);
+        background: var(--field-accent-container);
+        border-color: var(--field-accent);
       }
 
       .select-chevron {
-        background: var(--select-accent-container);
-        color: var(--select-on-accent-container);
+        background: var(--field-accent-container);
+        color: var(--field-on-accent);
       }
     }
-  }
 
-  /* ===== M3 Filled Variant ===== */
-  .react-aria-Select[data-variant="filled"] {
-    .react-aria-Button {
+    /* ===== Filled Variant ===== */
+    &[data-variant="filled"] .react-aria-Button {
       background: var(--color-neutral-200);
       border-color: transparent;
       border-bottom: 2px solid var(--border-color);
@@ -271,110 +162,144 @@
         border-bottom-color: var(--highlight-background);
       }
     }
-  }
 
-  /* ========== Size Variants ========== */
-  /* CSS 변수 패턴으로 크기 스타일 통합 */
-
-  .react-aria-Select {
-    /* 기본 size 변수 (md) */
-    --select-label-size: var(--text-sm);
-    --select-btn-padding: var(--spacing-sm) 14px;
-    --select-btn-font-size: var(--text-base);
-    --select-chevron-size: 18px;
-    --select-chevron-margin: var(--spacing);
-    --select-hint-size: var(--text-xs);
-  }
-
-  /* Size별 CSS 변수만 오버라이드 */
-  .react-aria-Select[data-size="sm"] {
-    --select-label-size: var(--text-xs);
-    --select-btn-padding: var(--spacing-sm) var(--spacing);
-    --select-btn-font-size: var(--text-xs);
-    --select-chevron-size: 20px;
-    --select-chevron-margin: var(--spacing-sm);
-    --select-hint-size: 10px;
-  }
-
-  .react-aria-Select[data-size="md"] {
-    --select-label-size: var(--text-sm);
-    --select-btn-padding: var(--spacing-sm) 14px;
-    --select-btn-font-size: var(--text-base);
-    --select-chevron-size: 18px;
-    --select-chevron-margin: var(--spacing);
-    --select-hint-size: var(--text-xs);
-  }
-
-  .react-aria-Select[data-size="lg"] {
-    --select-label-size: var(--text-base);
-    --select-btn-padding: var(--spacing-md) var(--spacing-lg);
-    --select-btn-font-size: var(--text-base);
-    --select-chevron-size: 28px;
-    --select-chevron-margin: var(--spacing-md);
-    --select-hint-size: var(--text-sm);
-  }
-
-  /* 모든 size에 공통 적용되는 스타일 */
-  .react-aria-Select[data-size="sm"],
-  .react-aria-Select[data-size="md"],
-  .react-aria-Select[data-size="lg"] {
-    .react-aria-Label {
-      font-size: var(--select-label-size);
+    /* ===== Invalid State ===== */
+    &[data-invalid] .react-aria-Button {
+      border-color: var(--invalid-color);
     }
 
-    .react-aria-Button {
-      padding: var(--select-btn-padding);
-      font-size: var(--select-btn-font-size);
+    &[data-variant="filled"][data-invalid] .react-aria-Button {
+      border-bottom-color: var(--invalid-color);
     }
 
+    /* ===== SelectValue ===== */
     .react-aria-SelectValue {
       font-size: var(--select-btn-font-size);
+      color: var(--text-color);
+      flex: 1;
+      display: flex;
+
+      &[data-placeholder] {
+        font-style: italic;
+        color: var(--text-color-placeholder);
+        opacity: 0.6;
+      }
+
+      [slot="description"] {
+        display: none;
+      }
     }
 
+    /* ===== Chevron Icon ===== */
     .select-chevron {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: var(--select-chevron-size);
       height: var(--select-chevron-size);
       margin-left: var(--select-chevron-margin);
+      border-radius: var(--radius-xs);
+      background: var(--overlay-background);
+      color: var(--text-color);
+      transition: all 150ms ease;
+      forced-color-adjust: none;
+      box-shadow: var(--shadow-sm);
     }
 
-    [slot="description"],
+    /* ===== Description / FieldError ===== */
+    [slot="description"] {
+      font-size: var(--select-hint-size);
+      color: var(--text-color-placeholder);
+    }
+
     .react-aria-FieldError {
       font-size: var(--select-hint-size);
+      color: var(--invalid-color);
+      margin-top: var(--spacing-xs);
     }
   }
 
-  /* Popover size variants */
-  .react-aria-Popover[data-trigger="Select"][data-size="sm"] {
-    .react-aria-ListBox .react-aria-ListBoxItem {
+  /* ========== Popover ========== */
+  .react-aria-Popover[data-trigger="Select"] {
+    min-width: var(--trigger-width);
+    max-height: 300px;
+    overflow: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--field-background);
+    box-shadow: var(--shadow-lg);
+    contain: layout style paint;
+
+    .react-aria-ListBox {
+      padding: var(--spacing-xs);
+      outline: none;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      min-height: 24px;
+
+      .react-aria-ListBoxItem {
+        padding: var(--spacing) var(--spacing-md);
+        border-radius: var(--radius-xs);
+        color: var(--text-color);
+        cursor: pointer;
+        outline: none;
+        transition: all 150ms ease;
+        transform: translate3d(0, 0, 0);
+        display: flex;
+        flex-direction: row;
+        align-self: center;
+        justify-content: flex-start;
+
+        &[data-hovered] {
+          background: var(--overlay-background);
+        }
+
+        &[data-focused] {
+          background: var(--overlay-background);
+        }
+
+        &[data-selected] {
+          background: var(--field-accent-container, var(--color-primary-100));
+          color: var(--field-on-accent, var(--color-primary-900));
+          font-weight: 500;
+        }
+
+        &[data-disabled] {
+          color: color-mix(in srgb, var(--text-color) 38%, transparent);
+          cursor: not-allowed;
+        }
+
+        &[href] {
+          text-decoration: none;
+          cursor: pointer;
+        }
+      }
+    }
+
+    &[data-size="sm"] .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing-sm) var(--spacing);
       font-size: var(--text-xs);
     }
-  }
 
-  .react-aria-Popover[data-trigger="Select"][data-size="md"] {
-    .react-aria-ListBox .react-aria-ListBoxItem {
+    &[data-size="md"] .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing-sm) var(--spacing-md);
       font-size: var(--text-base);
     }
-  }
 
-  .react-aria-Popover[data-trigger="Select"][data-size="lg"] {
-    .react-aria-ListBox .react-aria-ListBoxItem {
+    &[data-size="lg"] .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing-md) var(--spacing-lg);
       font-size: var(--text-base);
     }
   }
 
-  /* ========== React Aria 1.13.0: Multi-Selection Mode ========== */
+  /* ========== Multi-Selection Mode ========== */
   .react-aria-Select[data-selection-mode="multiple"] {
     .react-aria-ListBox .react-aria-ListBoxItem {
-      /* Add padding for checkbox */
       padding-left: calc(var(--spacing-md) + 20px);
       position: relative;
 
-      /* Checkbox indicator */
       &::before {
-        content: '';
+        content: "";
         position: absolute;
         left: var(--spacing-md);
         top: 50%;
@@ -387,7 +312,6 @@
         transition: all 150ms ease;
       }
 
-      /* Selected state - checkmark */
       &[data-selected] {
         &::before {
           background: var(--highlight-background);
@@ -395,7 +319,7 @@
         }
 
         &::after {
-          content: '';
+          content: "";
           position: absolute;
           left: calc(var(--spacing-md) + 3px);
           top: 50%;
@@ -407,103 +331,33 @@
         }
       }
 
-      /* Hover state */
       &[data-hovered]::before {
         border-color: var(--highlight-background);
       }
     }
   }
 
-  /* Multi-selection variant colors */
   .react-aria-Select[data-variant="primary"][data-selection-mode="multiple"],
   .react-aria-Select[data-variant="secondary"][data-selection-mode="multiple"],
   .react-aria-Select[data-variant="tertiary"][data-selection-mode="multiple"],
   .react-aria-Select[data-variant="error"][data-selection-mode="multiple"] {
     .react-aria-ListBox .react-aria-ListBoxItem {
       &[data-selected]::before {
-        background: var(--select-accent);
-        border-color: var(--select-accent);
+        background: var(--field-accent);
+        border-color: var(--field-accent);
       }
 
       &[data-hovered]::before {
-        border-color: var(--select-accent);
+        border-color: var(--field-accent);
       }
     }
   }
 
-  /* ========== Invalid State Override ========== */
-  /* Invalid state overrides all color variants */
-  .react-aria-Select[data-invalid] {
-    .react-aria-Button {
-      border-color: var(--invalid-color);
-    }
-  }
-
-  .react-aria-Select[data-variant="filled"][data-invalid] {
-    .react-aria-Button {
-      border-bottom-color: var(--invalid-color);
-    }
-  }
-
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Browser Fallbacks ========== */
-  /* For browsers that don't support color-mix() (Safari < 16.2) */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .react-aria-Select .react-aria-Button {
-      &[data-disabled] {
-        background: rgba(0, 0, 0, 0.04);
-        border-color: rgba(0, 0, 0, 0.12);
-        color: rgba(0, 0, 0, 0.38);
-
-        .select-chevron {
-          background: rgba(0, 0, 0, 0.12);
-          color: rgba(0, 0, 0, 0.38);
-        }
-      }
-    }
-
-    .react-aria-Popover[data-trigger="Select"]
-      .react-aria-ListBox
-      .react-aria-ListBoxItem {
-      &[data-disabled] {
-        color: rgba(0, 0, 0, 0.38);
-      }
-    }
-
-    [data-theme="dark"] .react-aria-Select .react-aria-Button {
-      &[data-disabled] {
-        background: rgba(255, 255, 255, 0.04);
-        border-color: rgba(255, 255, 255, 0.12);
-        color: rgba(255, 255, 255, 0.38);
-
-        .select-chevron {
-          background: rgba(255, 255, 255, 0.12);
-          color: rgba(255, 255, 255, 0.38);
-        }
-      }
-    }
-
-    [data-theme="dark"]
-      .react-aria-Popover[data-trigger="Select"]
-      .react-aria-ListBox
-      .react-aria-ListBoxItem {
-      &[data-disabled] {
-        color: rgba(255, 255, 255, 0.38);
-      }
-    }
-  }
-
-  /* ========== Forced Colors Mode (High Contrast) ========== */
+  /* ========== Forced Colors Mode ========== */
   @media (forced-colors: active) {
-    .react-aria-Select {
-      .react-aria-Button {
-        &[data-disabled] .select-chevron {
-          background: transparent;
-        }
+    .react-aria-Select .react-aria-Button {
+      &[data-disabled] .select-chevron {
+        background: transparent;
       }
     }
   }

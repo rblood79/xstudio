@@ -1,15 +1,8 @@
-/**
- * Material Design 3 Breadcrumbs Styles
- *
- * M3 Variants: primary, secondary, tertiary, error, filled
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components/breadcrumb
- */
-
 @layer components {
-  /* ========== Base Breadcrumbs Styles ========== */
   .react-aria-Breadcrumbs {
+    /* Local color variable — variant overrides only this */
+    --breadcrumb-accent: var(--highlight-background);
+
     display: flex;
     align-items: center;
     list-style: none;
@@ -19,9 +12,9 @@
     color: var(--text-color);
 
     .react-aria-Breadcrumb:not(:last-child)::after {
-      content: '›';
-      content: '›' / '';
-      alt: ' ';
+      content: "\203A";
+      content: "\203A" / "";
+      alt: " ";
       padding: 0 var(--spacing);
       color: var(--text-color-placeholder);
     }
@@ -40,16 +33,16 @@
       }
 
       &[data-current] {
-        color: var(--text-color);
+        color: var(--breadcrumb-accent);
         font-weight: 500;
       }
 
       &[data-focus-visible]:after {
-        content: '';
+        content: "";
         position: absolute;
         inset: -2px -4px;
         border-radius: var(--radius-xs);
-        border: 2px solid var(--highlight-background);
+        border: 2px solid var(--breadcrumb-accent);
       }
 
       &[data-disabled] {
@@ -61,142 +54,67 @@
         }
       }
     }
-  }
 
-  /* ========== M3 Color Variants ========== */
+    /* ===== Color Variants ===== */
 
-  /* ===== M3 Primary Variant ===== */
-  .react-aria-Breadcrumbs.primary {
-    .react-aria-Link {
-      &[data-focus-visible]:after {
-        border-color: var(--highlight-background);
-      }
-
-      &[data-current] {
-        color: var(--highlight-background);
-      }
-    }
-  }
-
-  /* ===== M3 Secondary Variant ===== */
-  .react-aria-Breadcrumbs.secondary {
-    .react-aria-Link {
-      &[data-focus-visible]:after {
-        border-color: var(--button-background);
-      }
-
-      &[data-current] {
-        color: var(--button-background);
-      }
-    }
-  }
-
-  /* ===== M3 Tertiary Variant ===== */
-  .react-aria-Breadcrumbs.tertiary {
-    .react-aria-Link {
-      &[data-focus-visible]:after {
-        border-color: var(--color-purple-600);
-      }
-
-      &[data-current] {
-        color: var(--color-purple-600);
-      }
-    }
-  }
-
-  /* ===== M3 Error Variant ===== */
-  .react-aria-Breadcrumbs.error {
-    .react-aria-Link {
-      &[data-focus-visible]:after {
-        border-color: var(--invalid-color);
-      }
-
-      &[data-current] {
-        color: var(--invalid-color);
-      }
-    }
-  }
-
-  /* ===== M3 Filled Variant ===== */
-  .react-aria-Breadcrumbs.filled {
-    background: var(--field-background);
-    padding: var(--spacing-xs) var(--spacing);
-    border-radius: var(--radius-md);
-
-    .react-aria-Link {
-      color: var(--text-color);
-    }
-  }
-
-  /* ========== Size Variants ========== */
-
-  /* ===== Small Size ===== */
-  .react-aria-Breadcrumbs.sm {
-    font-size: var(--text-xs);
-
-    .react-aria-Breadcrumb:not(:last-child)::after {
-      padding: 0 var(--spacing-xs);
+    &[data-variant="secondary"] {
+      --breadcrumb-accent: var(--button-background);
     }
 
-    &.filled {
-      padding: var(--spacing-2xs) var(--spacing-xs);
-    }
-  }
-
-  /* ===== Medium Size (Default) ===== */
-  .react-aria-Breadcrumbs.md {
-    font-size: var(--text-base);
-
-    .react-aria-Breadcrumb:not(:last-child)::after {
-      padding: 0 var(--spacing);
+    &[data-variant="tertiary"] {
+      --breadcrumb-accent: var(--color-purple-600);
     }
 
-    &.filled {
+    &[data-variant="error"] {
+      --breadcrumb-accent: var(--invalid-color);
+    }
+
+    &[data-variant="filled"] {
+      background: var(--field-background);
       padding: var(--spacing-xs) var(--spacing);
-    }
-  }
+      border-radius: var(--radius-md);
 
-  /* ===== Large Size ===== */
-  .react-aria-Breadcrumbs.lg {
-    font-size: var(--text-base);
-
-    .react-aria-Breadcrumb:not(:last-child)::after {
-      padding: 0 var(--spacing-sm);
-    }
-
-    &.filled {
-      padding: var(--spacing-sm) var(--spacing-md);
-    }
-  }
-
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Browser Fallbacks ========== */
-  /* For browsers that don't support color-mix() (Safari < 16.2) */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .react-aria-Breadcrumbs {
       .react-aria-Link {
-        &[data-disabled]:not([data-current]) {
-          color: rgba(0, 0, 0, 0.38);
-          opacity: 0.38;
-        }
+        color: var(--text-color);
       }
     }
 
-    [data-theme='dark'] .react-aria-Breadcrumbs {
-      .react-aria-Link {
-        &[data-disabled]:not([data-current]) {
-          color: rgba(255, 255, 255, 0.38);
-          opacity: 0.38;
-        }
+    /* ===== Size Variants ===== */
+
+    &[data-size="sm"] {
+      font-size: var(--text-xs);
+
+      .react-aria-Breadcrumb:not(:last-child)::after {
+        padding: 0 var(--spacing-xs);
+      }
+
+      &[data-variant="filled"] {
+        padding: var(--spacing-2xs) var(--spacing-xs);
+      }
+    }
+
+    &[data-size="md"] {
+      font-size: var(--text-base);
+
+      &[data-variant="filled"] {
+        padding: var(--spacing-xs) var(--spacing);
+      }
+    }
+
+    &[data-size="lg"] {
+      font-size: var(--text-base);
+
+      .react-aria-Breadcrumb:not(:last-child)::after {
+        padding: 0 var(--spacing-sm);
+      }
+
+      &[data-variant="filled"] {
+        padding: var(--spacing-sm) var(--spacing-md);
       }
     }
   }
 
-  /* ========== Forced Colors Mode (High Contrast) ========== */
+  /* Forced Colors Mode (High Contrast) */
   @media (forced-colors: active) {
     .react-aria-Breadcrumbs {
       forced-color-adjust: auto;

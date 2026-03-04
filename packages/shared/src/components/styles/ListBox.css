@@ -1,13 +1,4 @@
-/**
- * Material Design 3 ListBox Styles
- *
- * M3 Variants: primary, secondary, tertiary, error, filled
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components/lists
- */
-
-@import './collections.css';
+@import "./collections.css";
 
 @layer components {
   /* ========== Base ListBox Styles ========== */
@@ -23,6 +14,21 @@
     max-height: 300px;
     overflow: auto;
     gap: var(--spacing-2xs);
+
+    /* 기본 variant 변수 */
+    --lb-accent: var(--border-color);
+    --lb-accent-container: var(--color-primary-100);
+    --lb-on-accent-container: var(--color-primary-900);
+
+    /* 기본 size 변수 (md) */
+    --lb-padding: var(--spacing-xs);
+    --lb-gap: var(--spacing-2xs);
+    --lb-header-size: var(--text-sm);
+    --lb-header-padding: 0 var(--spacing-md);
+    --lb-item-padding: var(--spacing) var(--spacing-md);
+    --lb-item-min-height: 20px;
+    --lb-item-size: var(--text-base);
+    --lb-desc-size: var(--text-xs);
 
     &[data-focus-visible] {
       outline: 2px solid var(--highlight-background);
@@ -51,18 +57,15 @@
     transition: all 150ms ease;
     forced-color-adjust: none;
 
-    /* Hover State */
     &[data-hovered] {
       background: var(--overlay-background);
     }
 
-    /* Focus Visible State */
     &[data-focus-visible] {
       outline: 2px solid var(--highlight-background);
       outline-offset: -2px;
     }
 
-    /* Selected State */
     &[data-selected] {
       background: var(--color-primary-100);
       color: var(--color-primary-900);
@@ -74,26 +77,22 @@
       }
     }
 
-    /* Disabled State */
     &[data-disabled] {
       color: color-mix(in srgb, var(--text-color) 38%, transparent);
       cursor: not-allowed;
       opacity: 0.38;
     }
 
-    /* Link items */
     &[href] {
       text-decoration: none;
       cursor: pointer;
       -webkit-touch-callout: none;
     }
 
-    /* Dragging State */
     &[data-dragging] {
       opacity: 0.6;
     }
 
-    /* Label and Description Slots */
     [slot="label"] {
       font-weight: 600;
       color: inherit;
@@ -237,7 +236,11 @@
 
   .react-aria-ListBoxItem[data-drop-target] {
     outline: 2px solid var(--highlight-background);
-    background: color-mix(in srgb, var(--highlight-background) 12%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--highlight-background) 12%,
+      transparent
+    );
   }
 
   /* ========== Popover Context (ComboBox, Select) ========== */
@@ -287,46 +290,35 @@
     }
   }
 
-  /* ========== M3 Color Variants ========== */
-  /* CSS 변수 패턴으로 색상 스타일 통합 */
-
-  .react-aria-ListBox {
-    /* 기본 variant 변수 */
-    --lb-accent: var(--border-color);
-    --lb-accent-container: var(--color-primary-100);
-    --lb-on-accent-container: var(--color-primary-900);
-  }
-
-  /* Variant별 CSS 변수만 오버라이드 */
-  .react-aria-ListBox.primary {
+  /* ========== Color Variants ========== */
+  .react-aria-ListBox[data-variant="primary"] {
     --lb-accent: var(--highlight-background);
     --lb-accent-container: var(--color-primary-100);
     --lb-on-accent-container: var(--color-primary-900);
   }
 
-  .react-aria-ListBox.secondary {
+  .react-aria-ListBox[data-variant="secondary"] {
     --lb-accent: var(--button-background);
     --lb-accent-container: var(--color-neutral-100);
     --lb-on-accent-container: var(--color-neutral-900);
   }
 
-  .react-aria-ListBox.tertiary {
+  .react-aria-ListBox[data-variant="tertiary"] {
     --lb-accent: var(--color-purple-600);
     --lb-accent-container: var(--color-tertiary-100);
     --lb-on-accent-container: var(--color-tertiary-900);
   }
 
-  .react-aria-ListBox.error {
+  .react-aria-ListBox[data-variant="error"] {
     --lb-accent: var(--invalid-color);
     --lb-accent-container: var(--color-error-100);
     --lb-on-accent-container: var(--color-error-900);
   }
 
-  /* 모든 color variant에 공통 적용되는 스타일 */
-  .react-aria-ListBox.primary,
-  .react-aria-ListBox.secondary,
-  .react-aria-ListBox.tertiary,
-  .react-aria-ListBox.error {
+  .react-aria-ListBox[data-variant="primary"],
+  .react-aria-ListBox[data-variant="secondary"],
+  .react-aria-ListBox[data-variant="tertiary"],
+  .react-aria-ListBox[data-variant="error"] {
     border-color: var(--lb-accent);
 
     &[data-focus-visible] {
@@ -345,8 +337,8 @@
     }
   }
 
-  /* ===== M3 Filled Variant ===== */
-  .react-aria-ListBox.filled {
+  /* ===== Filled Variant ===== */
+  .react-aria-ListBox[data-variant="filled"] {
     background: var(--color-neutral-200);
     border-color: transparent;
 
@@ -363,22 +355,7 @@
   }
 
   /* ========== Size Variants ========== */
-  /* CSS 변수 패턴으로 크기 스타일 통합 */
-
-  .react-aria-ListBox {
-    /* 기본 size 변수 (md) */
-    --lb-padding: var(--spacing-xs);
-    --lb-gap: var(--spacing-2xs);
-    --lb-header-size: var(--text-sm);
-    --lb-header-padding: 0 var(--spacing-md);
-    --lb-item-padding: var(--spacing) var(--spacing-md);
-    --lb-item-min-height: 20px;
-    --lb-item-size: var(--text-base);
-    --lb-desc-size: var(--text-xs);
-  }
-
-  /* Size별 CSS 변수만 오버라이드 */
-  .react-aria-ListBox.sm {
+  .react-aria-ListBox[data-size="sm"] {
     --lb-padding: var(--spacing-2xs);
     --lb-gap: var(--spacing-3xs);
     --lb-header-size: var(--text-xs);
@@ -389,7 +366,7 @@
     --lb-desc-size: 10px;
   }
 
-  .react-aria-ListBox.md {
+  .react-aria-ListBox[data-size="md"] {
     --lb-padding: var(--spacing-xs);
     --lb-gap: var(--spacing-2xs);
     --lb-header-size: var(--text-sm);
@@ -400,7 +377,7 @@
     --lb-desc-size: var(--text-xs);
   }
 
-  .react-aria-ListBox.lg {
+  .react-aria-ListBox[data-size="lg"] {
     --lb-padding: var(--spacing-sm);
     --lb-gap: var(--spacing-xs);
     --lb-header-size: var(--text-base);
@@ -411,10 +388,9 @@
     --lb-desc-size: var(--text-sm);
   }
 
-  /* 모든 size에 공통 적용되는 스타일 */
-  .react-aria-ListBox.sm,
-  .react-aria-ListBox.md,
-  .react-aria-ListBox.lg {
+  .react-aria-ListBox[data-size="sm"],
+  .react-aria-ListBox[data-size="md"],
+  .react-aria-ListBox[data-size="lg"] {
     padding: var(--lb-padding);
     gap: var(--lb-gap);
 
@@ -434,79 +410,24 @@
     }
   }
 
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Browser Fallbacks ========== */
-  /* For browsers that don't support color-mix() (Safari < 16.2) */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .react-aria-ListBoxItem {
-      &[data-disabled] {
-        color: rgba(0, 0, 0, 0.38);
-      }
-    }
-
-    .react-aria-ListBox[data-drop-target] {
-      background: rgba(0, 0, 0, 0.08);
-    }
-
-    .react-aria-ListBoxItem[data-drop-target] {
-      background: rgba(0, 0, 0, 0.12);
-    }
-
-    [data-theme="dark"] .react-aria-ListBoxItem {
-      &[data-disabled] {
-        color: rgba(255, 255, 255, 0.38);
-      }
-    }
-
-    [data-theme="dark"] .react-aria-ListBox[data-drop-target] {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    [data-theme="dark"] .react-aria-ListBoxItem[data-drop-target] {
-      background: rgba(255, 255, 255, 0.12);
-    }
-  }
-
-  /* ========== Forced Colors Mode (High Contrast) ========== */
-  @media (forced-colors: active) {
-    .react-aria-ListBox {
-      forced-color-adjust: auto;
-    }
-  }
-
   /* ========== Virtualized ListBox Styles ========== */
   .react-aria-ListBox.virtualized {
-    /* 가상화 모드에서는 max-height 제거 (height prop으로 직접 제어) */
     max-height: none;
-
-    /* 스크롤 성능 최적화 */
     contain: strict;
     will-change: scroll-position;
-
-    /* 스크롤바 항상 표시 (레이아웃 쉬프트 방지) */
     scrollbar-gutter: stable;
   }
 
-  /* 가상화 컨테이너 내부 */
   .react-aria-ListBox.virtualized > div {
     contain: content;
   }
 
-  /* 가상화된 아이템 스타일 */
   .react-aria-ListBox.virtualized .react-aria-ListBoxItem {
-    /* position: absolute이 인라인 스타일로 적용됨 */
     box-sizing: border-box;
-
-    /* GPU 가속 활성화 */
     will-change: transform;
     backface-visibility: hidden;
   }
 
-  /* 로딩/에러 상태 */
   .react-aria-ListBox.virtualized .virtualized-loading,
   .react-aria-ListBox.virtualized .virtualized-error {
     display: flex;
@@ -521,14 +442,16 @@
     color: var(--invalid-color);
   }
 
-  /* 포커스 링 최적화 */
-  .react-aria-ListBox.virtualized:focus {
+  .react-aria-ListBox.virtualized:focus,
+  .react-aria-ListBox.virtualized:focus-visible {
     outline: 2px solid var(--highlight-background);
     outline-offset: -1px;
   }
 
-  .react-aria-ListBox.virtualized:focus-visible {
-    outline: 2px solid var(--highlight-background);
-    outline-offset: -1px;
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-ListBox {
+      forced-color-adjust: auto;
+    }
   }
 }

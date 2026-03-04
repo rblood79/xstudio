@@ -1,12 +1,3 @@
-/**
- * Material Design 3 Table Styles
- *
- * M3 Variants: primary, secondary, tertiary, error, filled
- * Sizes: sm, md, lg
- *
- * Reference: https://m3.material.io/components/data-tables
- */
-
 @layer components {
   /* ========== Base Table Styles ========== */
   .react-aria-Table {
@@ -24,6 +15,18 @@
     word-break: break-word;
     forced-color-adjust: none;
     overflow: hidden;
+
+    /* 기본 variant 변수 */
+    --tbl-accent: var(--highlight-background);
+    --tbl-selected-bg: var(--color-primary-100);
+    --tbl-selected-color: var(--color-primary-900);
+
+    /* 기본 Checkbox 변수 */
+    --tbl-cb-selected: var(--highlight-background);
+    --tbl-cb-checkmark: var(--highlight-foreground);
+    --tbl-cb-bg: var(--color-primary-100);
+    --tbl-cb-selected-on: var(--color-primary-900);
+    --tbl-cb-checkmark-on: var(--color-primary-100);
 
     table {
       display: grid;
@@ -187,28 +190,21 @@
   /* ========== Selection Joining (Adjacent Selected Rows) ========== */
   @supports selector(:has(.foo)) {
     .react-aria-Row[data-selected]:has(+ [data-selected]),
-    .react-aria-Row[data-selected]:has(+ .react-aria-DropIndicator + [data-selected]) {
+    .react-aria-Row[data-selected]:has(
+        + .react-aria-DropIndicator + [data-selected]
+      ) {
       --radius-bottom: 0px;
     }
 
     .react-aria-Row[data-selected] + [data-selected],
-    .react-aria-Row[data-selected] + .react-aria-DropIndicator + [data-selected] {
+    .react-aria-Row[data-selected]
+      + .react-aria-DropIndicator
+      + [data-selected] {
       --radius-top: 0px;
     }
   }
 
   /* ========== Checkbox Integration ========== */
-  /* CSS 변수 패턴으로 Checkbox 스타일 통합 */
-
-  .react-aria-Table {
-    /* 기본 Checkbox 변수 */
-    --tbl-cb-selected: var(--highlight-background);
-    --tbl-cb-checkmark: var(--highlight-foreground);
-    --tbl-cb-bg: var(--color-primary-100);
-    --tbl-cb-selected-on: var(--color-primary-900);
-    --tbl-cb-checkmark-on: var(--color-primary-100);
-  }
-
   :where(.react-aria-Row) .react-aria-Checkbox {
     --selected-color: var(--tbl-cb-selected);
     --selected-color-pressed: var(--tbl-cb-selected);
@@ -296,7 +292,11 @@
 
   .react-aria-Row[data-drop-target] {
     outline: 2px solid var(--highlight-background);
-    background: color-mix(in srgb, var(--highlight-background) 12%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--highlight-background) 12%,
+      transparent
+    );
   }
 
   /* ========== Cell Images ========== */
@@ -365,7 +365,11 @@
     justify-content: center;
 
     &:hover:not(:disabled) {
-      background-color: color-mix(in srgb, var(--highlight-background) 12%, transparent);
+      background-color: color-mix(
+        in srgb,
+        var(--highlight-background) 12%,
+        transparent
+      );
     }
 
     &:disabled {
@@ -379,7 +383,11 @@
     }
 
     &.active:hover {
-      background-color: color-mix(in srgb, var(--color-primary-900) 8%, var(--color-primary-100));
+      background-color: color-mix(
+        in srgb,
+        var(--color-primary-900) 8%,
+        var(--color-primary-100)
+      );
     }
   }
 
@@ -408,7 +416,11 @@
   }
 
   .react-aria-GoToPageButton:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--highlight-background) 12%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--highlight-background) 12%,
+      transparent
+    );
   }
 
   .react-aria-GoToPageButton:disabled {
@@ -428,347 +440,88 @@
     font-style: italic;
   }
 
-  /* ========== M3 Color Variants ========== */
-
-  /* ===== M3 Primary Variant ===== */
-  .react-aria-Table.primary {
-    /* Checkbox 변수 오버라이드 - 기본과 동일하므로 생략 가능하지만 명시성을 위해 유지 */
-    --tbl-cb-selected: var(--highlight-background);
-    --tbl-cb-checkmark: var(--highlight-foreground);
-    --tbl-cb-bg: var(--color-primary-100);
-    --tbl-cb-selected-on: var(--color-primary-900);
-    --tbl-cb-checkmark-on: var(--color-primary-100);
-
-    border-color: var(--highlight-background);
-
-    &[data-focus-visible] {
-      outline-color: var(--highlight-background);
-    }
-
-    .react-aria-TableHeader {
-      .react-aria-Column {
-        border-color: var(--highlight-background);
-        opacity: 0.12;
-      }
-
-      & tr:last-child .react-aria-Column {
-        border-color: var(--highlight-background);
-      }
-    }
-
-    .react-aria-Resizable .react-aria-ColumnResizer {
-      background-color: var(--highlight-background);
-
-      &[data-focus-visible] {
-        background-color: var(--highlight-background);
-      }
-
-      &[data-resizing] {
-        border-color: var(--highlight-background);
-      }
-    }
-
-    .react-aria-Row {
-      &[data-focus-visible] {
-        outline-color: var(--highlight-background);
-      }
-
-      &[data-selected] {
-        background: var(--color-primary-100);
-        color: var(--color-primary-900);
-      }
-    }
-
-    .react-aria-Cell,
-    .react-aria-Column {
-      &[data-focus-visible] {
-        outline-color: var(--highlight-background);
-      }
-    }
-
-    [slot="drag"][data-focus-visible] {
-      outline-color: var(--highlight-background);
-    }
-
-    .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--highlight-background);
-    }
-
-    &[data-drop-target] {
-      outline-color: var(--highlight-background);
-      background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
-    }
-
-    .react-aria-Row[data-drop-target] {
-      outline-color: var(--highlight-background);
-      background: color-mix(in srgb, var(--highlight-background) 12%, transparent);
-    }
-
-    .react-aria-PageButton {
-      &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(--highlight-background) 12%, transparent);
-      }
-
-      &.active {
-        background-color: var(--color-primary-100);
-        color: var(--color-primary-900);
-      }
-    }
-
-    .react-aria-GoToPageInput:focus {
-      border-color: var(--highlight-background);
-      box-shadow: 0 0 0 1px var(--highlight-background);
-    }
-  }
-
-  /* ===== M3 Secondary Variant ===== */
-  .react-aria-Table.secondary {
+  /* ========== Color Variants ========== */
+  .react-aria-Table[data-variant="secondary"] {
+    --tbl-accent: var(--button-background);
+    --tbl-selected-bg: var(--color-neutral-100);
+    --tbl-selected-color: var(--color-neutral-900);
     --tbl-cb-selected: var(--button-background);
     --tbl-cb-checkmark: var(--color-white);
     --tbl-cb-bg: var(--color-neutral-100);
     --tbl-cb-selected-on: var(--color-neutral-900);
     --tbl-cb-checkmark-on: var(--color-neutral-100);
-
-    border-color: var(--button-background);
-
-    &[data-focus-visible] {
-      outline-color: var(--button-background);
-    }
-
-    .react-aria-TableHeader {
-      .react-aria-Column {
-        border-color: var(--button-background);
-        opacity: 0.12;
-      }
-
-      & tr:last-child .react-aria-Column {
-        border-color: var(--button-background);
-      }
-    }
-
-    .react-aria-Resizable .react-aria-ColumnResizer {
-      background-color: var(--button-background);
-
-      &[data-focus-visible] {
-        background-color: var(--button-background);
-      }
-
-      &[data-resizing] {
-        border-color: var(--button-background);
-      }
-    }
-
-    .react-aria-Row {
-      &[data-focus-visible] {
-        outline-color: var(--button-background);
-      }
-
-      &[data-selected] {
-        background: var(--color-neutral-100);
-        color: var(--color-neutral-900);
-
-        &[data-focus-visible] {
-          outline-color: var(--button-background);
-        }
-
-        .react-aria-Cell[data-focus-visible] {
-          outline-color: var(--button-background);
-        }
-      }
-    }
-
-    .react-aria-Cell,
-    .react-aria-Column {
-      &[data-focus-visible] {
-        outline-color: var(--button-background);
-      }
-    }
-
-    [slot="drag"][data-focus-visible] {
-      outline-color: var(--button-background);
-    }
-
-    .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--button-background);
-    }
-
-    &[data-drop-target] {
-      outline-color: var(--button-background);
-      background: color-mix(in srgb, var(--button-background) 8%, transparent);
-    }
-
-    .react-aria-Row[data-drop-target] {
-      outline-color: var(--button-background);
-      background: color-mix(in srgb, var(--button-background) 12%, transparent);
-    }
-
-    .react-aria-PageButton {
-      &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(--button-background) 12%, transparent);
-      }
-
-      &.active {
-        background-color: var(--color-neutral-100);
-        color: var(--color-neutral-900);
-      }
-    }
-
-    .react-aria-GoToPageInput:focus {
-      border-color: var(--button-background);
-      box-shadow: 0 0 0 1px var(--button-background);
-    }
   }
 
-  /* ===== M3 Tertiary Variant ===== */
-  .react-aria-Table.tertiary {
+  .react-aria-Table[data-variant="tertiary"] {
+    --tbl-accent: var(--color-purple-600);
+    --tbl-selected-bg: var(--color-tertiary-100);
+    --tbl-selected-color: var(--color-tertiary-900);
     --tbl-cb-selected: var(--color-purple-600);
     --tbl-cb-checkmark: var(--color-white);
     --tbl-cb-bg: var(--color-tertiary-100);
     --tbl-cb-selected-on: var(--color-tertiary-900);
     --tbl-cb-checkmark-on: var(--color-tertiary-100);
-
-    border-color: var(--color-purple-600);
-
-    &[data-focus-visible] {
-      outline-color: var(--color-purple-600);
-    }
-
-    .react-aria-TableHeader {
-      .react-aria-Column {
-        border-color: var(--color-purple-600);
-        opacity: 0.12;
-      }
-
-      & tr:last-child .react-aria-Column {
-        border-color: var(--color-purple-600);
-      }
-    }
-
-    .react-aria-Resizable .react-aria-ColumnResizer {
-      background-color: var(--color-purple-600);
-
-      &[data-focus-visible] {
-        background-color: var(--color-purple-600);
-      }
-
-      &[data-resizing] {
-        border-color: var(--color-purple-600);
-      }
-    }
-
-    .react-aria-Row {
-      &[data-focus-visible] {
-        outline-color: var(--color-purple-600);
-      }
-
-      &[data-selected] {
-        background: var(--color-tertiary-100);
-        color: var(--color-tertiary-900);
-
-        &[data-focus-visible] {
-          outline-color: var(--color-purple-600);
-        }
-
-        .react-aria-Cell[data-focus-visible] {
-          outline-color: var(--color-purple-600);
-        }
-      }
-    }
-
-    .react-aria-Cell,
-    .react-aria-Column {
-      &[data-focus-visible] {
-        outline-color: var(--color-purple-600);
-      }
-    }
-
-    [slot="drag"][data-focus-visible] {
-      outline-color: var(--color-purple-600);
-    }
-
-    .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--color-purple-600);
-    }
-
-    &[data-drop-target] {
-      outline-color: var(--color-purple-600);
-      background: color-mix(in srgb, var(--color-purple-600) 8%, transparent);
-    }
-
-    .react-aria-Row[data-drop-target] {
-      outline-color: var(--color-purple-600);
-      background: color-mix(in srgb, var(--color-purple-600) 12%, transparent);
-    }
-
-    .react-aria-PageButton {
-      &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(--color-purple-600) 12%, transparent);
-      }
-
-      &.active {
-        background-color: var(--color-tertiary-100);
-        color: var(--color-tertiary-900);
-      }
-    }
-
-    .react-aria-GoToPageInput:focus {
-      border-color: var(--color-purple-600);
-      box-shadow: 0 0 0 1px var(--color-purple-600);
-    }
   }
 
-  /* ===== M3 Error Variant ===== */
-  .react-aria-Table.error {
+  .react-aria-Table[data-variant="error"] {
+    --tbl-accent: var(--invalid-color);
+    --tbl-selected-bg: var(--color-error-100);
+    --tbl-selected-color: var(--color-error-900);
     --tbl-cb-selected: var(--invalid-color);
     --tbl-cb-checkmark: var(--color-white);
     --tbl-cb-bg: var(--color-error-100);
     --tbl-cb-selected-on: var(--color-error-900);
     --tbl-cb-checkmark-on: var(--color-error-100);
+  }
 
-    border-color: var(--invalid-color);
+  .react-aria-Table[data-variant="primary"],
+  .react-aria-Table[data-variant="secondary"],
+  .react-aria-Table[data-variant="tertiary"],
+  .react-aria-Table[data-variant="error"] {
+    border-color: var(--tbl-accent);
 
     &[data-focus-visible] {
-      outline-color: var(--invalid-color);
+      outline-color: var(--tbl-accent);
     }
 
     .react-aria-TableHeader {
       .react-aria-Column {
-        border-color: var(--invalid-color);
+        border-color: var(--tbl-accent);
         opacity: 0.12;
       }
 
       & tr:last-child .react-aria-Column {
-        border-color: var(--invalid-color);
+        border-color: var(--tbl-accent);
       }
     }
 
     .react-aria-Resizable .react-aria-ColumnResizer {
-      background-color: var(--invalid-color);
+      background-color: var(--tbl-accent);
 
       &[data-focus-visible] {
-        background-color: var(--invalid-color);
+        background-color: var(--tbl-accent);
       }
 
       &[data-resizing] {
-        border-color: var(--invalid-color);
+        border-color: var(--tbl-accent);
       }
     }
 
     .react-aria-Row {
       &[data-focus-visible] {
-        outline-color: var(--invalid-color);
+        outline-color: var(--tbl-accent);
       }
 
       &[data-selected] {
-        background: var(--color-error-100);
-        color: var(--color-error-900);
+        background: var(--tbl-selected-bg);
+        color: var(--tbl-selected-color);
 
         &[data-focus-visible] {
-          outline-color: var(--invalid-color);
+          outline-color: var(--tbl-accent);
         }
 
         .react-aria-Cell[data-focus-visible] {
-          outline-color: var(--invalid-color);
+          outline-color: var(--tbl-accent);
         }
       }
     }
@@ -776,47 +529,51 @@
     .react-aria-Cell,
     .react-aria-Column {
       &[data-focus-visible] {
-        outline-color: var(--invalid-color);
+        outline-color: var(--tbl-accent);
       }
     }
 
     [slot="drag"][data-focus-visible] {
-      outline-color: var(--invalid-color);
+      outline-color: var(--tbl-accent);
     }
 
     .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--invalid-color);
+      outline-color: var(--tbl-accent);
     }
 
     &[data-drop-target] {
-      outline-color: var(--invalid-color);
-      background: color-mix(in srgb, var(--invalid-color) 8%, transparent);
+      outline-color: var(--tbl-accent);
+      background: color-mix(in srgb, var(--tbl-accent) 8%, transparent);
     }
 
     .react-aria-Row[data-drop-target] {
-      outline-color: var(--invalid-color);
-      background: color-mix(in srgb, var(--invalid-color) 12%, transparent);
+      outline-color: var(--tbl-accent);
+      background: color-mix(in srgb, var(--tbl-accent) 12%, transparent);
     }
 
     .react-aria-PageButton {
       &:hover:not(:disabled) {
-        background-color: color-mix(in srgb, var(--invalid-color) 12%, transparent);
+        background-color: color-mix(
+          in srgb,
+          var(--tbl-accent) 12%,
+          transparent
+        );
       }
 
       &.active {
-        background-color: var(--color-error-100);
-        color: var(--color-error-900);
+        background-color: var(--tbl-selected-bg);
+        color: var(--tbl-selected-color);
       }
     }
 
     .react-aria-GoToPageInput:focus {
-      border-color: var(--invalid-color);
-      box-shadow: 0 0 0 1px var(--invalid-color);
+      border-color: var(--tbl-accent);
+      box-shadow: 0 0 0 1px var(--tbl-accent);
     }
   }
 
-  /* ===== M3 Filled Variant ===== */
-  .react-aria-Table.filled {
+  /* ===== Filled Variant ===== */
+  .react-aria-Table[data-variant="filled"] {
     background: var(--color-neutral-200);
     border-color: transparent;
 
@@ -837,9 +594,7 @@
   }
 
   /* ========== Size Variants ========== */
-
-  /* ===== Small Size ===== */
-  .react-aria-Table.sm {
+  .react-aria-Table[data-size="sm"] {
     font-size: var(--text-xs);
 
     .react-aria-TableHeader {
@@ -875,8 +630,7 @@
     }
   }
 
-  /* ===== Medium Size (Default) ===== */
-  .react-aria-Table.md {
+  .react-aria-Table[data-size="md"] {
     font-size: var(--text-base);
 
     .react-aria-TableHeader {
@@ -912,8 +666,7 @@
     }
   }
 
-  /* ===== Large Size ===== */
-  .react-aria-Table.lg {
+  .react-aria-Table[data-size="lg"] {
     font-size: var(--text-base);
 
     .react-aria-TableHeader {
@@ -946,63 +699,6 @@
 
     .react-aria-PageInfo {
       font-size: var(--text-sm);
-    }
-  }
-
-  /* ========== Dark Mode Compatibility ========== */
-  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
-   * No additional CSS needed - tokens adapt automatically
-   */
-
-  /* ========== Browser Fallbacks ========== */
-  /* For browsers that don't support color-mix() (Safari < 16.2) */
-  @supports not (color: color-mix(in srgb, red 50%, blue)) {
-    .react-aria-Row {
-      &[data-disabled] {
-        color: rgba(0, 0, 0, 0.38);
-      }
-    }
-
-    .react-aria-Table[data-drop-target] {
-      background: rgba(0, 0, 0, 0.08);
-    }
-
-    .react-aria-Row[data-drop-target] {
-      background: rgba(0, 0, 0, 0.12);
-    }
-
-    .react-aria-PageButton {
-      &:hover:not(:disabled) {
-        background-color: rgba(0, 0, 0, 0.12);
-      }
-
-      &.active:hover {
-        background-color: rgba(0, 0, 0, 0.08);
-      }
-    }
-
-    [data-theme="dark"] .react-aria-Row {
-      &[data-disabled] {
-        color: rgba(255, 255, 255, 0.38);
-      }
-    }
-
-    [data-theme="dark"] .react-aria-Table[data-drop-target] {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    [data-theme="dark"] .react-aria-Row[data-drop-target] {
-      background: rgba(255, 255, 255, 0.12);
-    }
-
-    [data-theme="dark"] .react-aria-PageButton {
-      &:hover:not(:disabled) {
-        background-color: rgba(255, 255, 255, 0.12);
-      }
-
-      &.active:hover {
-        background-color: rgba(255, 255, 255, 0.08);
-      }
     }
   }
 

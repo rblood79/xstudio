@@ -1,8 +1,10 @@
-@import './base.css';
+@import "./base.css";
 
 @layer components {
-  /* M3 Base Link Styles */
   .react-aria-Link {
+    /* Local color variable — variant overrides only this */
+    --link-color: var(--highlight-background);
+
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -13,7 +15,7 @@
     transition: all 200ms;
     border-radius: var(--radius-sm);
     outline: none;
-    color: var(--highlight-background);
+    color: var(--link-color);
 
     /* External icon spacing */
     & .link-external-icon {
@@ -23,20 +25,17 @@
       opacity: 0.7;
     }
 
-    /* Hover state */
     &[data-hovered] {
-      color: color-mix(in srgb, var(--highlight-background) 85%, black);
+      color: color-mix(in srgb, var(--link-color) 85%, black);
       text-decoration: underline;
       text-decoration-thickness: 2px;
       text-underline-offset: 4px;
     }
 
-    /* Pressed state */
     &[data-pressed] {
-      color: var(--highlight-background-pressed);
+      color: color-mix(in srgb, var(--link-color) 75%, black);
     }
 
-    /* Disabled state */
     &[data-disabled] {
       color: color-mix(in srgb, var(--text-color) 38%, transparent);
       cursor: not-allowed;
@@ -44,61 +43,44 @@
       opacity: 0.38;
     }
 
-    /* Focus visible (keyboard only) */
-    &.focus-visible {
+    &[data-focus-visible] {
       outline: 2px solid var(--highlight-background);
       outline-offset: 2px;
     }
 
-    /* External link indicator */
     &[data-external="true"] {
       & .link-external-icon {
         opacity: 1;
       }
     }
-  }
 
-  /* ===== M3 Primary Link ===== */
-  .react-aria-Link.primary {
-    color: var(--highlight-background);
+    /* ===== Color Variants ===== */
 
-    &[data-hovered] {
-      color: color-mix(in srgb, var(--highlight-background) 85%, black);
+    &[data-variant="secondary"] {
+      --link-color: var(--button-background);
     }
 
-    &[data-pressed] {
-      color: var(--highlight-background-pressed);
-    }
-  }
-
-  /* ===== M3 Secondary Link ===== */
-  .react-aria-Link.secondary {
-    color: var(--button-background);
-
-    &[data-hovered] {
-      color: color-mix(in srgb, var(--button-background) 85%, black);
+    &[data-variant="tertiary"] {
+      --link-color: var(--color-purple-600);
     }
 
-    &[data-pressed] {
-      color: color-mix(in srgb, var(--button-background) 75%, black);
+    &[data-variant="error"] {
+      --link-color: var(--invalid-color);
     }
-  }
 
-  /* ========== Size Variants ========== */
+    /* ===== Size Variants ===== */
 
-  /* ===== Small Size ===== */
-  .react-aria-Link.sm {
-    font-size: var(--text-sm);
-  }
+    &[data-size="sm"] {
+      font-size: var(--text-sm);
+    }
 
-  /* ===== Medium Size (Default) ===== */
-  .react-aria-Link.md {
-    font-size: var(--text-base);
-  }
+    &[data-size="md"] {
+      font-size: var(--text-base);
+    }
 
-  /* ===== Large Size ===== */
-  .react-aria-Link.lg {
-    font-size: var(--text-lg);
+    &[data-size="lg"] {
+      font-size: var(--text-lg);
+    }
   }
 
   /* High contrast mode support */
@@ -108,7 +90,7 @@
         text-decoration: underline;
       }
 
-      &.focus-visible {
+      &[data-focus-visible] {
         outline: 2px solid Highlight;
       }
 

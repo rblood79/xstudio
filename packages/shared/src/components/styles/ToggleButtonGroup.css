@@ -2,7 +2,6 @@
   .react-aria-ToggleButtonGroup {
     display: flex;
 
-    /* ⭐ 그룹 전체에 focus-within 스타일 적용 (클릭/탭 모두 표시) */
     &:focus-within {
       outline: 2px solid var(--focus-ring-color);
       outline-offset: 2px;
@@ -21,24 +20,25 @@
         z-index: 2;
       }
 
-      /* ⭐ 그룹 내부 버튼은 개별 포커스 표시 제거 */
       &[data-focus-visible] {
         z-index: 2;
         outline: none;
       }
     }
 
+    /* ===== Indicator Mode ===== */
+
     &[data-indicator="true"] {
-      /* React Aria 1.13.0: SelectionIndicator 스타일 (ToggleButton 내부에 위치) */
+      /* Local color variable — variant overrides only this */
+      --indicator-bg: var(--overlay-background);
+      --indicator-text: var(--highlight-foreground);
+
       .react-aria-ToggleButton .react-aria-SelectionIndicator {
         position: absolute;
-        /*width: calc(100% + 2px);
-        height: calc(18px + 2px);
-        transform: translate(-1px, -1px);*/
         inset: 0;
         z-index: -1;
         border-radius: var(--radius-sm);
-        background: var(--overlay-background);
+        background: var(--indicator-bg);
         box-shadow: var(--shadow-sm);
         pointer-events: none;
         transition:
@@ -51,35 +51,31 @@
         }
       }
 
-      /* Primary variant indicator */
+      /* Variant overrides for indicator background */
       &[data-togglebutton-variant="primary"]
         .react-aria-ToggleButton
         .react-aria-SelectionIndicator {
         background: var(--highlight-background);
       }
 
-      /* Secondary variant indicator */
       &[data-togglebutton-variant="secondary"]
         .react-aria-ToggleButton
         .react-aria-SelectionIndicator {
         background: var(--button-background);
       }
 
-      /* Tertiary variant indicator */
       &[data-togglebutton-variant="tertiary"]
         .react-aria-ToggleButton
         .react-aria-SelectionIndicator {
         background: var(--color-purple-600);
       }
 
-      /* Error variant indicator */
       &[data-togglebutton-variant="error"]
         .react-aria-ToggleButton
         .react-aria-SelectionIndicator {
         background: var(--invalid-color);
       }
 
-      /* Surface variant indicator */
       &[data-togglebutton-variant="surface"]
         .react-aria-ToggleButton
         .react-aria-SelectionIndicator {
@@ -98,7 +94,7 @@
 
         &[data-selected] {
           background: transparent;
-          color: var(--highlight-foreground);
+          color: var(--indicator-text);
 
           &[data-pressed] {
             background: transparent;
@@ -107,37 +103,24 @@
         }
       }
 
-      /* Primary variant - selected button text */
-      &[data-togglebutton-variant="primary"]
-        .react-aria-ToggleButton[data-selected] {
-        color: var(--highlight-foreground);
-      }
-
-      /* Secondary variant - selected button text */
+      /* Variant overrides for selected button text */
       &[data-togglebutton-variant="secondary"]
-        .react-aria-ToggleButton[data-selected] {
-        color: var(--color-white);
-      }
-
-      /* Tertiary variant - selected button text */
+        .react-aria-ToggleButton[data-selected],
       &[data-togglebutton-variant="tertiary"]
-        .react-aria-ToggleButton[data-selected] {
-        color: var(--color-white);
-      }
-
-      /* Error variant - selected button text */
+        .react-aria-ToggleButton[data-selected],
       &[data-togglebutton-variant="error"]
         .react-aria-ToggleButton[data-selected] {
         color: var(--color-white);
       }
 
-      /* Surface variant - selected button text */
       &[data-togglebutton-variant="surface"]
         .react-aria-ToggleButton[data-selected] {
         color: var(--text-color);
       }
     }
   }
+
+  /* ===== Orientation ===== */
 
   .react-aria-ToggleButtonGroup[data-orientation="horizontal"] {
     flex-direction: row;

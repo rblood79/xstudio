@@ -1,150 +1,156 @@
-.react-aria-Card {
-  /* Default: Filled tonal card */
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  background: var(--field-background);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: var(--shadow-sm);
-  transition: all 150ms ease;
-
-  &[data-focused] {
-    outline: 2px solid var(--highlight-background);
-    outline-offset: 2px;
-  }
-
-  &[data-hovered] {
-    box-shadow: var(--shadow-md);
-    background: color-mix(in srgb, var(--field-background) 92%, black);
-    border-color: var(--border-color-hover);
-  }
-
-  &[data-pressed] {
-    box-shadow: var(--inset-shadow-sm);
-    background: color-mix(in srgb, var(--field-background) 88%, black);
-    border-color: var(--border-color-hover);
-  }
-
-  /* Variant styles */
-  &:where([data-variant="elevated"]) {
-    border: 0;
-    box-shadow: var(--shadow-md);
-
-    &[data-hovered] {
-      box-shadow: var(--shadow-lg);
-    }
-  }
-
-  &:where([data-variant="outlined"]) {
-    box-shadow: none;
-    border-width: 2px;
-
-    &[data-hovered] {
-      box-shadow: none;
-      border-color: var(--highlight-background);
-    }
-  }
-
-  /* ===== Primary (Filled Card) ===== */
-  &:where([data-variant="primary"]) {
-    background: var(--highlight-background);
-    color: var(--highlight-foreground);
-    border-color: var(--highlight-background);
-
-    &[data-hovered] {
-      background: color-mix(in srgb, var(--highlight-background) 85%, black);
-      border-color: color-mix(in srgb, var(--highlight-background) 85%, black);
-    }
-
-    &[data-pressed] {
-      background: color-mix(in srgb, var(--highlight-background) 75%, black);
-      border-color: color-mix(in srgb, var(--highlight-background) 75%, black);
-    }
-  }
-
-  /* ===== Secondary (Filled Card) ===== */
-  &:where([data-variant="secondary"]) {
-    background: var(--button-background);
-    color: var(--color-white);
-    border-color: var(--button-background);
-
-    &[data-hovered] {
-      background: color-mix(in srgb, var(--button-background) 85%, black);
-      border-color: color-mix(in srgb, var(--button-background) 85%, black);
-    }
-
-    &[data-pressed] {
-      background: color-mix(in srgb, var(--button-background) 75%, black);
-      border-color: color-mix(in srgb, var(--button-background) 75%, black);
-    }
-  }
-
-  /* ===== Surface (Filled Tonal Card) ===== */
-  &:where([data-variant="surface"]) {
-    background: var(--color-neutral-200);
+@layer components {
+  .react-aria-Card {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--field-background);
     color: var(--text-color);
-    border-color: var(--border-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all 150ms ease;
+
+    &[data-focused] {
+      outline: 2px solid var(--highlight-background);
+      outline-offset: 2px;
+    }
 
     &[data-hovered] {
-      background: color-mix(in srgb, var(--color-neutral-200) 92%, black);
+      box-shadow: var(--shadow-md);
+      background: color-mix(in srgb, var(--field-background) 92%, black);
       border-color: var(--border-color-hover);
     }
 
     &[data-pressed] {
-      background: color-mix(in srgb, var(--color-neutral-200) 88%, black);
+      box-shadow: var(--inset-shadow-sm);
+      background: color-mix(in srgb, var(--field-background) 88%, black);
       border-color: var(--border-color-hover);
     }
-  }
 
-  /* Size variants */
-  &:where([data-size="sm"]) {
-    padding: var(--spacing-sm);
-    border-radius: var(--radius-md);
-  }
+    /* Variant styles */
+    &:where([data-variant="elevated"]) {
+      border: 0;
+      box-shadow: var(--shadow-md);
 
-  &:where([data-size="md"]) {
-    padding: var(--spacing-lg);
-    border-radius: var(--radius-lg);
-  }
+      &[data-hovered] {
+        box-shadow: var(--shadow-lg);
+      }
+    }
 
-  &:where([data-size="lg"]) {
-    padding: var(--spacing-lg);
-    border-radius: var(--radius-xl);
-  }
-
-  /* State variants */
-  &:where([data-selected]) {
-    border-color: var(--highlight-background);
-    background: color-mix(
-      in srgb,
-      var(--highlight-background) 12%,
-      transparent
-    );
-  }
-
-  &:where([data-quiet]) {
-    box-shadow: none;
-    border: 0;
-
-    &[data-hovered] {
+    &:where([data-variant="outlined"]) {
       box-shadow: none;
-      background: var(--overlay-background);
+      border-width: 2px;
+
+      &[data-hovered] {
+        box-shadow: none;
+        border-color: var(--highlight-background);
+      }
+    }
+
+    &:where([data-variant="primary"]) {
+      background: var(--highlight-background);
+      color: var(--highlight-foreground);
+      border-color: var(--highlight-background);
+
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--highlight-background) 85%, black);
+        border-color: color-mix(
+          in srgb,
+          var(--highlight-background) 85%,
+          black
+        );
+      }
+
+      &[data-pressed] {
+        background: color-mix(in srgb, var(--highlight-background) 75%, black);
+        border-color: color-mix(
+          in srgb,
+          var(--highlight-background) 75%,
+          black
+        );
+      }
+    }
+
+    &:where([data-variant="secondary"]) {
+      background: var(--button-background);
+      color: var(--color-white);
+      border-color: var(--button-background);
+
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--button-background) 85%, black);
+        border-color: color-mix(in srgb, var(--button-background) 85%, black);
+      }
+
+      &[data-pressed] {
+        background: color-mix(in srgb, var(--button-background) 75%, black);
+        border-color: color-mix(in srgb, var(--button-background) 75%, black);
+      }
+    }
+
+    &:where([data-variant="surface"]) {
+      background: var(--color-neutral-200);
+      color: var(--text-color);
+      border-color: var(--border-color);
+
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--color-neutral-200) 92%, black);
+        border-color: var(--border-color-hover);
+      }
+
+      &[data-pressed] {
+        background: color-mix(in srgb, var(--color-neutral-200) 88%, black);
+        border-color: var(--border-color-hover);
+      }
+    }
+
+    /* Size variants */
+    &:where([data-size="sm"]) {
+      padding: var(--spacing-sm);
+      border-radius: var(--radius-md);
+    }
+
+    &:where([data-size="md"]) {
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-lg);
+    }
+
+    &:where([data-size="lg"]) {
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-xl);
+    }
+
+    /* State variants */
+    &:where([data-selected]) {
+      border-color: var(--highlight-background);
+      background: color-mix(
+        in srgb,
+        var(--highlight-background) 12%,
+        transparent
+      );
+    }
+
+    &:where([data-quiet]) {
+      box-shadow: none;
+      border: 0;
+
+      &[data-hovered] {
+        box-shadow: none;
+        background: var(--overlay-background);
+      }
+    }
+
+    &[data-disabled] {
+      background: color-mix(in srgb, var(--text-color) 12%, transparent);
+      color: color-mix(in srgb, var(--text-color) 38%, transparent);
+      border-color: transparent;
+      opacity: 0.38;
+      cursor: not-allowed;
     }
   }
 
-  &[data-disabled] {
-    background: color-mix(in srgb, var(--text-color) 12%, transparent);
-    color: color-mix(in srgb, var(--text-color) 38%, transparent);
-    border-color: transparent;
-    opacity: 0.38;
-    cursor: not-allowed;
+  /* Card 내부 구조 요소 */
+  .card-title {
+    margin: 0;
   }
-}
-
-/* Card 내부 구조 요소 */
-.card-title {
-  margin: 0;
 }
