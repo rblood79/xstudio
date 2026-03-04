@@ -46,7 +46,7 @@ ThemeConfig (사용자 설정)
 
 1. **Theme Studio가 새 창(`window.open`)으로 분리됨** — Builder 워크플로우 단절
 2. **ThemesPanel이 읽기 전용** — 토큰 목록만 표시, 편집 불가 → "Theme Studio 열기" 버튼이 유일한 인터랙션
-3. **Supabase DB 기반 토큰 관리** — `DesignToken` 테이블에 개별 토큰 CRUD → 색상 하나 변경에 DB 왕복 필요
+3. **구 ThemeStudio가 Supabase CRUD 기반** — `DesignToken` 테이블에 개별 토큰 CRUD → 색상 하나 변경에 불필요한 DB 왕복 (실제 앱은 IndexedDB 기반)
 4. **과도한 기능** — HCT Generator, Figma Import/Export, AI Theme Generator 등 사용되지 않는 서브 뷰 7개
 5. **ADR-017/022 완료 후 토큰 이름 정합** — M3 → S2 토큰 전환 완료(`accent`/`neutral`/`negative` 등), 하지만 Theme Store/DB 스키마는 구 토큰 구조 유지
 6. **현재 Tint System이 하드코딩** — `--tint: var(--blue)` 고정, 사용자가 Builder 내에서 변경 불가
@@ -527,20 +527,23 @@ function generateThemeCSS(config: ThemeConfig): string {
 **변경 파일**: ~4개 신규/수정
 **위험**: L
 
-### Phase C: 프로젝트 메타데이터 영속화 + Publish 통합
+### Phase C: IndexedDB 영속화 + Publish 통합
 
-**목표**: ThemeConfig를 DB에 저장/복원, Publish 앱에서 정적 테마 적용
+**목표**: ThemeConfig를 IndexedDB에 저장/복원, Publish 앱에서 정적 테마 적용
+
+**전제**: XStudio는 IndexedDB 기반 로컬 저장. Supabase는 대시보드에서 사용자가 명시적으로 연동할 때만 접근.
 
 **작업 범위:**
 
-1. Supabase `projects` 테이블에 `theme_config` JSONB 컬럼 추가 (또는 기존 metadata 필드 활용)
+1. 프로젝트 IndexedDB에 `themeConfig` 키로 JSON 저장
 2. 프로젝트 로딩 시 ThemeConfig 복원 → CSS 주입 + Skia 색상 맵 갱신
-3. ThemeConfig 변경 시 비동기 DB 저장 (디바운스)
+3. ThemeConfig 변경 시 IndexedDB 비동기 저장 (디바운스)
 4. **Publish 빌드**: `generateThemeCSS(config)` → `theme.css` 정적 파일 생성
-5. **Publish 런타임**: `App.tsx`에서 `theme_config` JSON 로드 → CSS 변수 적용 + `data-theme` 설정
+5. **Publish 런타임**: `theme_config` JSON 로드 → CSS 변수 적용 + `data-theme` 설정
+6. (선택) 대시보드 Supabase 연동 시 ThemeConfig도 프로젝트 메타데이터에 포함하여 동기화
 
-**변경 파일**: ~4개 수정 (projects 스키마, Builder 로딩, Publish App, Publish 빌드)
-**위험**: M (DB 마이그레이션)
+**변경 파일**: ~3개 수정 (Builder 로딩, Publish App, Publish 빌드)
+**위험**: L (DB 마이그레이션 불필요, IndexedDB는 기존 패턴 재사용)
 
 ### Phase D: 레거시 정리
 
@@ -551,8 +554,8 @@ function generateThemeCSS(config: ThemeConfig): string {
 1. `ThemeStudio.tsx` + 7개 서브 컴포넌트 제거
 2. `themeStore.ts` (UnifiedThemeStore) 제거 또는 축소
 3. `/theme/:projectId` 라우트 제거
-4. Supabase `design_themes`, `design_tokens` 테이블 비활성화 (데이터 보존, 코드 참조 제거)
-5. `types/theme/index.ts` 간소화 — `ThemeConfig` 중심으로
+4. `types/theme/index.ts` 간소화 — `ThemeConfig` 중심으로
+5. Supabase 관련 테마 서비스 코드 제거 (대시보드 연동과 무관한 구 CRUD)
 
 **변경 파일**: ~15개 삭제, ~5개 수정
 **위험**: M (삭제 범위 넓지만 Phase A-C에서 대체 완료 후 진행)
@@ -591,13 +594,13 @@ function generateThemeCSS(config: ThemeConfig): string {
 
 ## Gates
 
-| Gate | 시점            | 조건                                                                                    | 위험 대응                          |
-| ---- | --------------- | --------------------------------------------------------------------------------------- | ---------------------------------- |
-| G1   | Phase A 완료    | Tint 프리셋 10종 변경 시 **CSS Preview + Skia 캔버스** 동시 반영 확인                   | 실패 시 기존 ThemesPanel 복원      |
-| G1.1 | Phase A 완료    | **Skia-CSS 색상 일치 검증**: S2 `accent` 토큰이 캔버스와 Preview에서 같은 색상 (ΔE < 2) | oklch→hex 변환 정밀도 검증         |
-| G2   | Phase B 완료    | Neutral 5종 전환 시 전체 gray scale 일관 교체 확인 (3경로 모두)                         | shared-tokens.css 호환성 검증      |
-| G3   | Phase C 완료    | 새로고침 후 테마 설정 복원 + **Publish 정적 CSS 정상** + Skia 색상 복원                 | DB 마이그레이션 롤백 스크립트 준비 |
-| G4   | Phase D 시작 전 | Phase A-C 전체 안정화 2주 이상 운영                                                     | 조기 삭제 방지                     |
+| Gate | 시점            | 조건                                                                                    | 위험 대응                     |
+| ---- | --------------- | --------------------------------------------------------------------------------------- | ----------------------------- |
+| G1   | Phase A 완료    | Tint 프리셋 10종 변경 시 **CSS Preview + Skia 캔버스** 동시 반영 확인                   | 실패 시 기존 ThemesPanel 복원 |
+| G1.1 | Phase A 완료    | **Skia-CSS 색상 일치 검증**: S2 `accent` 토큰이 캔버스와 Preview에서 같은 색상 (ΔE < 2) | oklch→hex 변환 정밀도 검증    |
+| G2   | Phase B 완료    | Neutral 5종 전환 시 전체 gray scale 일관 교체 확인 (3경로 모두)                         | shared-tokens.css 호환성 검증 |
+| G3   | Phase C 완료    | 새로고침 후 테마 설정 복원 (IndexedDB) + **Publish 정적 CSS 정상** + Skia 색상 복원     | IndexedDB 키 충돌 방지 확인   |
+| G4   | Phase D 시작 전 | Phase A-C 전체 안정화 2주 이상 운영                                                     | 조기 삭제 방지                |
 
 ---
 
@@ -615,7 +618,7 @@ function generateThemeCSS(config: ThemeConfig): string {
 
 ### Negative
 
-1. **기존 DB 토큰 비활성화** — `design_themes`/`design_tokens` 테이블 데이터 사실상 폐기
+1. **구 ThemeStudio 코드 폐기** — ThemeStudio 서브뷰 7개 + UnifiedThemeStore 제거 (Supabase 테마 테이블은 대시보드 연동과 무관)
 2. **고급 토큰 기능 축소** — HCT 생성, Figma Import 등 제거 (사용률 미미하나 재도입 시 비용 발생)
 3. **커스텀 색상 제한** — Tint 프리셋 10종 + 커스텀 hue/chroma로 범위 제한 (개별 토큰 세밀 제어 불가)
 
