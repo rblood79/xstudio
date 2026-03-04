@@ -1,14 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useStore, useSelectedElementData } from "../stores";
-import { Maximize2 } from "lucide-react";
-import { iconProps } from "../../utils/ui/uiConstants";
+import { useStore } from "../stores";
 import { MessageService } from "../../utils/messaging";
 import { isValidPreviewMessage } from "../../utils/messageValidation";
 import { useVisibleOverlays } from "./hooks/useVisibleOverlays";
 import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverlays";
 import { useOverlayRAF, type OverlayUpdateResult } from "./hooks/useOverlayRAF";
 import { useOverlayDebug } from "./OverlayDebug";
-import { BorderRadiusHandles } from "./components/BorderRadiusHandles";
 
 import "./index.css";
 
@@ -28,7 +25,7 @@ export default function SelectionOverlay() {
   const selectedElementId = useStore((state) => state.selectedElementId);
   // ⭐ Multi-select state
   const selectedElementIds = useStore(
-    (state) => state.selectedElementIds || []
+    (state) => state.selectedElementIds || [],
   );
   const multiSelectMode = useStore((state) => state.multiSelectMode || false);
 
@@ -45,7 +42,7 @@ export default function SelectionOverlay() {
 
   // ⭐ Multi-select state: Map of elementId -> overlay data
   const [multiOverlays, setMultiOverlays] = useState<Map<string, OverlayData>>(
-    new Map()
+    new Map(),
   );
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -54,48 +51,29 @@ export default function SelectionOverlay() {
   // 🚀 Phase 7.1: RAF 기반 오버레이 스케줄러
   const getIframeDocument = useCallback(
     () => iframeRef.current?.contentDocument,
-    []
+    [],
   );
 
-  const handleOverlayUpdate = useCallback(
-    (result: OverlayUpdateResult) => {
-      setMultiOverlays((prev) => {
-        const next = result.reset ? new Map<string, OverlayData>() : new Map(prev);
-        result.rects.forEach((rect, elementId) => {
-          next.set(elementId, {
-            rect,
-            tag: result.tags.get(elementId) || next.get(elementId)?.tag || "",
-          });
+  const handleOverlayUpdate = useCallback((result: OverlayUpdateResult) => {
+    setMultiOverlays((prev) => {
+      const next = result.reset
+        ? new Map<string, OverlayData>()
+        : new Map(prev);
+      result.rects.forEach((rect, elementId) => {
+        next.set(elementId, {
+          rect,
+          tag: result.tags.get(elementId) || next.get(elementId)?.tag || "",
         });
-        return next;
       });
-    },
-    []
-  );
+      return next;
+    });
+  }, []);
 
-  const { schedule: scheduleOverlayUpdate, scheduleThrottled, clear: clearOverlayScheduler } = useOverlayRAF(
-    handleOverlayUpdate,
-    getIframeDocument
-  );
-
-  // ⭐ Border Radius 구독 (리액티브 업데이트) - 조건부 return 전에 선언
-  const selectedElement = useSelectedElementData();
-  const borderRadiusFromStore = useMemo(() => {
-    const computed = selectedElement?.computedStyle?.borderRadius;
-    const inline = selectedElement?.style?.borderRadius as string | undefined;
-    const computedStr = typeof computed === 'number' ? `${computed}px` : computed;
-    return inline || computedStr;
-  }, [selectedElement?.computedStyle?.borderRadius, selectedElement?.style?.borderRadius]);
-
-  // Tag 표시 로직 (useMemo로 최적화, getState() 사용)
-  // 🚀 Performance: selectedElementId 변경 시에만 최신 요소 정보 조회
-  const displayTag = useMemo(() => {
-    const elementsMap = useStore.getState().elementsMap;
-    const element = selectedElementId
-      ? elementsMap.get(selectedElementId)
-      : null;
-    return element?.tag || selectedTag || "";
-  }, [selectedElementId, selectedTag]);
+  const {
+    schedule: scheduleOverlayUpdate,
+    scheduleThrottled,
+    clear: clearOverlayScheduler,
+  } = useOverlayRAF(handleOverlayUpdate, getIframeDocument);
 
   // immediate: true면 RAF 없이 즉시 실행 (초기 선택 시 사용)
   // immediate: false면 기존 RAF 사용 (ResizeObserver, 스크롤 등)
@@ -109,7 +87,7 @@ export default function SelectionOverlay() {
         }
 
         let element = iframe.contentDocument.querySelector(
-          `[data-element-id="${selectedElementId}"]`
+          `[data-element-id="${selectedElementId}"]`,
         ) as HTMLElement;
 
         // ⭐ body element 선택 시: 실제 <body> 태그에서 찾기
@@ -163,7 +141,7 @@ export default function SelectionOverlay() {
         });
       }
     },
-    [selectedElementId] // 🚀 Performance: elementsMap 의존성 제거 - getState()로 조회
+    [selectedElementId], // 🚀 Performance: elementsMap 의존성 제거 - getState()로 조회
   );
 
   // 🚀 Phase 7.1: 멀티 오버레이 스케줄 래퍼 (즉시 실행 옵션)
@@ -175,7 +153,7 @@ export default function SelectionOverlay() {
       }
       scheduleOverlayUpdate(selectedElementIds, immediate);
     },
-    [selectedElementIds, scheduleOverlayUpdate]
+    [selectedElementIds, scheduleOverlayUpdate],
   );
 
   // 🚀 Phase 7.1: 쓰로틀된 스케줄 (스크롤/리사이즈용)
@@ -198,14 +176,14 @@ export default function SelectionOverlay() {
           height: overlayData.rect.height,
         },
         isPrimary: elementId === selectedElementId,
-      })
+      }),
     );
   }, [multiOverlays, selectedElementId]);
 
   // ⭐ Apply virtual scrolling to only render visible overlays
   const visibleOverlays = useVisibleOverlays(
     overlaysForVirtualScrolling,
-    iframeRef
+    iframeRef,
   );
 
   // ⭐ Multi-select mode: Update overlays when selectedElementIds changes
@@ -220,7 +198,7 @@ export default function SelectionOverlay() {
     if (!selectedElementId || !iframeRef.current?.contentDocument) return;
 
     const selectedElement = iframeRef.current.contentDocument.querySelector(
-      `[data-element-id="${selectedElementId}"]`
+      `[data-element-id="${selectedElementId}"]`,
     );
 
     if (!selectedElement) return;
@@ -242,7 +220,9 @@ export default function SelectionOverlay() {
   const multiSelectModeRef = useRef(multiSelectMode);
   const updatePositionRef = useRef(updatePosition);
   const scheduleMultiOverlayUpdateRef = useRef(scheduleMultiOverlayUpdate);
-  const scheduleMultiOverlayThrottledRef = useRef(scheduleMultiOverlayThrottled);
+  const scheduleMultiOverlayThrottledRef = useRef(
+    scheduleMultiOverlayThrottled,
+  );
 
   // Ref 업데이트 (렌더링마다)
   useEffect(() => {
@@ -341,7 +321,12 @@ export default function SelectionOverlay() {
     } else {
       updatePosition();
     }
-  }, [selectedElementId, multiSelectMode, updatePosition, scheduleMultiOverlayUpdate]);
+  }, [
+    selectedElementId,
+    multiSelectMode,
+    updatePosition,
+    scheduleMultiOverlayUpdate,
+  ]);
 
   // ⭐ Multi-select mode: Render multiple overlays (with virtual scrolling)
   if (multiSelectMode && multiOverlays.size > 0) {
@@ -354,10 +339,6 @@ export default function SelectionOverlay() {
         {visibleOverlays.map((overlayData) => {
           const elementId = overlayData.id;
           const isPrimary = overlayData.isPrimary;
-          // 🚀 Performance: getState()로 현재 elementsMap 조회
-          const element = useStore.getState().elementsMap.get(elementId);
-          const overlayInfo = multiOverlays.get(elementId);
-          const tag = element?.tag || overlayInfo?.tag || "";
 
           return (
             <div
@@ -374,14 +355,6 @@ export default function SelectionOverlay() {
                 height: overlayData.rect.height,
               }}
             >
-              {isPrimary && (
-                <div className="overlay-info">
-                  <div className="overlay-tag-parent">
-                    <Maximize2 size={iconProps.size} />
-                  </div>
-                  <div className="overlay-tag">{tag}</div>
-                </div>
-              )}
               <div className="overlay-background" />
               <div className="overlay-pattern">
                 <div className="overlay-pattern-inner" />
@@ -414,25 +387,11 @@ export default function SelectionOverlay() {
           height: overlayRect.height,
         }}
       >
-        <div className="overlay-info">
-          <div className="overlay-tag-parent">
-            <Maximize2 size={iconProps.size} />
-          </div>
-          <div className="overlay-tag">{displayTag}</div>
-        </div>
-        <div title="Drag to resize" className="resize-handle" />
-
         <div className="overlay-background" />
 
         <div className="overlay-pattern">
           <div className="overlay-pattern-inner" />
         </div>
-
-        {/* Border Radius 코너 포인트 */}
-        <BorderRadiusHandles
-          rect={overlayRect}
-          borderRadius={borderRadiusFromStore}
-        />
       </div>
     </div>
   );
