@@ -53,7 +53,7 @@ import {
   safeJsonParse,
 } from "../../utils/dataHelpers";
 import { downloadStaticHtml } from "@xstudio/shared/utils";
-import { getCustomFonts } from "../fonts/customFonts";
+import { loadFontRegistry } from "../fonts/customFonts";
 import { generateThemeCSS } from "../../utils/theme/generateThemeCSS";
 import { NEUTRAL_PALETTES } from "../../utils/theme/neutralToSkiaColors";
 
@@ -899,6 +899,7 @@ export const BuilderCore: React.FC = () => {
       elements,
       currentPageId: storeCurrentPageId,
       themeConfig: { tint, neutral, radiusScale },
+      fontRegistry: loadFontRegistry(),
     };
 
     // sessionStorage에 저장 (같은 origin의 새 탭에서 접근 가능)
@@ -934,7 +935,7 @@ export const BuilderCore: React.FC = () => {
       pages,
       elements,
       storeCurrentPageId,
-      getCustomFonts(),
+      loadFontRegistry(),
       themeCSS,
     );
   }, [projectId, projectInfo]);

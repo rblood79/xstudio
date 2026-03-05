@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial — Phase A+B+C+**C2(Font Manager Panel)** 완료 (2026-03-04), Phase D~E 미구현
+Partial — Phase A+B+C+**C2(Font Manager Panel)**+**D(Preview/Publish 런타임)** 완료 (2026-03-05), Phase E 미구현
 
 ## 0) 확정 결정 (2026-02-13)
 

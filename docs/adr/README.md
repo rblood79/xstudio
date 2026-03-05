@@ -38,7 +38,7 @@
 | [010](010-events-panel.md)                        | Events Panel Smart Recommendations             | P0 + P1 전체 (추천 이벤트/액션, 배지, 경고, 25개 액션 타입)                                                     | P1.5 (UX 폴리싱), P2 (AI 생성 + 고급)                                           |    P5    |
 | [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)          | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화)                                                               | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스 도구)                  |    P5    |
 | [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝              | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                                      | P3-1 (Store-level Dirty Tracking) 미구현                                        |    P5    |
-| [014](014-fonts.md)                               | Fonts 실행 계획                                | Phase A+B+C+C2 완료 (Font Manager Panel + OS/2 메타 추출)                                                       | Phase D (Publish 레지스트리 전환), Phase E (정적 Export 멀티파일)               |  **P1**  |
+| [014](014-fonts.md)                               | Fonts 실행 계획                                | Phase A+B+C+C2+D 완료 (Font Manager + OS/2 메타 + Publish/Export FontRegistryV2 전환)                           | Phase E (정적 Export 멀티파일)                                                  |  **P1**  |
 | [018](018-component-css-restructure.md)           | 컴포넌트 CSS 구조 재작성                       | Phase 1 완료 (utilities.css 생성 + Button/Card 마이그레이션)                                                    | Phase 2~5 미착수 (컴포넌트별 utility 패턴 전환, CSS 줄수 삭감)                  |    P3    |
 | [021](021-theme-system-redesign.md)               | 테마 시스템 개편 — Tint + Tailwind 인라인 패널 | Phase A+B+C 완료 + Phase D 부분 완료(ThemeStudio 삭제, themeStore 축소, /theme 라우트 제거)                     | Phase D 잔여(Supabase 테마 서비스 정리), Phase E (컴포넌트별 accent 오버라이드) |  **P2**  |
 
@@ -64,7 +64,7 @@
 | :---: | ------------------- | ---------------------------------------------------------------------------------------------------- | :--: | :------: |
 | ~~1~~ | ~~ADR-017~~         | ~~M3 토큰 제거 + Tint Color System + Spec 전환 + Theme Studio~~                                      |  중  | **완료** |
 | ~~2~~ | ~~ADR-018 Phase 1~~ | ~~utilities.css 생성 + Button/Card 마이그레이션~~                                                    |  소  | **완료** |
-|   3   | ADR-014 Phase D     | Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입         |  소  |          |
+| ~~3~~ | ~~ADR-014 Phase D~~ | ~~Publish 앱 레지스트리 전환 — localStorage 직접 읽기 → 프로젝트 데이터 기반 `@font-face` 주입~~     |  소  | **완료** |
 |   4   | ADR-014 Phase E     | 정적 Export 멀티파일 — `assets/fonts/*` 생성 + 상대 경로 연결 + `showDirectoryPicker` / ZIP fallback |  중  |          |
 |   5   | ADR-018 Phase 2~5   | 컴포넌트 CSS 구조 재작성 — 나머지 컴포넌트 utilities 패턴 전환 (입력 필드/인디케이터/복합)           |  대  |          |
 |   6   | ADR-013             | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                     |  대  |          |
@@ -77,8 +77,8 @@
 ### P1: ADR-014 Fonts
 
 - **근거**: 프로젝트 레벨 폰트 관리 부재 → 협업/배포 제약
-- **진행률**: Phase A+B+C+C2 완료 (Font Manager Panel + OS/2 메타 추출 + PropertyListItem 재사용 컴포넌트), Phase D~E 미구현
-- **다음 단계**: Phase D (Publish 레지스트리 전환, 소규모 1~2파일) → Phase E (정적 Export 멀티파일, 중규모 5~8파일)
+- **진행률**: Phase A+B+C+C2+D 완료 (Font Manager Panel + OS/2 메타 추출 + Publish/Export FontRegistryV2 전환), Phase E 미구현
+- **다음 단계**: Phase E (정적 Export 멀티파일, 중규모 5~8파일 — showDirectoryPicker + ZIP fallback)
 - **전제 조건**: 없음 (독립 실행 가능)
 - **영향 범위**: Builder/Preview/Publish 폰트 일관성
 

@@ -13,15 +13,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Element, Page } from "@xstudio/shared";
 import {
-  CUSTOM_FONT_STORAGE_KEY,
-  buildCustomFontFaceCss,
   loadProjectFromUrl,
   loadProjectFromFile,
   type ExportedProjectData,
   type ExportError,
-  type CustomFontAsset,
   ExportErrorCode,
 } from "@xstudio/shared/utils";
+import { loadFontRegistry, buildRegistryFontFaceCss } from "@xstudio/shared";
+import type { FontRegistryV2 } from "@xstudio/shared";
 import { PageRenderer } from "./renderer";
 import { PageNav } from "./components/PageNav";
 import { usePageRouting } from "./hooks/usePageRouting";
@@ -177,6 +176,26 @@ function applyThemeConfig(themeConfig?: {
 }
 
 // ============================================
+// Font Registry Helper (ADR-014 Phase D)
+// ============================================
+
+function injectFontRegistryFromData(fontRegistry?: FontRegistryV2) {
+  if (!fontRegistry || !fontRegistry.faces?.length) return;
+
+  const css = buildRegistryFontFaceCss(fontRegistry);
+  if (!css) return;
+
+  // 기존 스타일 태그 제거 (중복 방지)
+  const existing = document.getElementById("xstudio-publish-custom-fonts");
+  if (existing) existing.remove();
+
+  const styleEl = document.createElement("style");
+  styleEl.id = "xstudio-publish-custom-fonts";
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+}
+
+// ============================================
 // App Component
 // ============================================
 
@@ -193,13 +212,9 @@ export function App() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(CUSTOM_FONT_STORAGE_KEY);
-      if (!raw) return;
-
-      const fonts = JSON.parse(raw) as CustomFontAsset[];
-      if (!Array.isArray(fonts)) return;
-
-      const css = buildCustomFontFaceCss(fonts);
+      // FontRegistryV2 기반 폰트 로드 (ADR-014 Phase D)
+      const registry = loadFontRegistry();
+      const css = buildRegistryFontFaceCss(registry);
       if (!css) return;
 
       const styleEl = document.createElement("style");
@@ -235,6 +250,9 @@ export function App() {
         projectName: data.project.name,
         version: data.version,
       };
+
+      // ADR-014 Phase D: fontRegistry → @font-face 주입
+      injectFontRegistryFromData(data.fontRegistry);
 
       setProjectData(projectData);
       setWarnings(loadWarnings);
@@ -304,6 +322,9 @@ export function App() {
 
           // ADR-021 Phase C: themeConfig → CSS 변수 주입
           applyThemeConfig(parsed.themeConfig);
+
+          // ADR-014 Phase D: fontRegistry → @font-face 주입
+          injectFontRegistryFromData(parsed.fontRegistry);
 
           // 사용 후 삭제 (새로고침 시 다시 로드하지 않음)
           // sessionStorage.removeItem('xstudio-preview-data');

@@ -26,7 +26,8 @@ import {
   findDuplicateSlugs,
 } from "../schemas/project.schema";
 import { migrateProject } from "./migration.utils";
-import { buildCustomFontFaceCss, type CustomFontAsset } from "./font.utils";
+import { buildRegistryFontFaceCss } from "./fontRegistry";
+import type { FontRegistryV2 } from "../types/font.types";
 
 // ============================================
 // Constants
@@ -406,19 +407,22 @@ export function generateStaticHtml(
   pages: Page[],
   elements: Element[],
   currentPageId?: string | null,
-  customFonts: CustomFontAsset[] = [],
+  fontRegistry?: FontRegistryV2,
   themeCSS: string = "",
 ): string {
-  const projectData = {
+  const projectData: ExportedProjectData = {
     version: CURRENT_VERSION,
     exportedAt: new Date().toISOString(),
     project: { id: projectId, name: projectName },
     pages,
     elements,
     currentPageId,
+    fontRegistry,
   };
 
-  const customFontCss = buildCustomFontFaceCss(customFonts);
+  const customFontCss = fontRegistry
+    ? buildRegistryFontFaceCss(fontRegistry)
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -629,7 +633,7 @@ export function downloadStaticHtml(
   pages: Page[],
   elements: Element[],
   currentPageId?: string | null,
-  customFonts: CustomFontAsset[] = [],
+  fontRegistry?: FontRegistryV2,
   themeCSS: string = "",
 ): void {
   const html = generateStaticHtml(
@@ -638,7 +642,7 @@ export function downloadStaticHtml(
     pages,
     elements,
     currentPageId,
-    customFonts,
+    fontRegistry,
     themeCSS,
   );
 
