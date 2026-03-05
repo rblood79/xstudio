@@ -625,7 +625,7 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * 정적 HTML 파일 다운로드
+ * 정적 HTML 파일 다운로드 (단일 파일, 레거시 호환)
  */
 export function downloadStaticHtml(
   projectId: string,
@@ -646,16 +646,236 @@ export function downloadStaticHtml(
     themeCSS,
   );
 
-  const blob = new Blob([html], { type: "text/html" });
-  const url = URL.createObjectURL(blob);
+  downloadBlob(
+    new Blob([html], { type: "text/html" }),
+    `${projectName || "project"}.html`,
+  );
+}
 
+// ============================================
+// Multi-file Export (ADR-014 Phase E)
+// ============================================
+
+/**
+ * Data URL → Uint8Array 변환
+ */
+function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
+  const base64 = dataUrl.split(",")[1];
+  if (!base64) throw new Error("Invalid data URL");
+  const binary = atob(base64);
+  const buffer = new ArrayBuffer(binary.length);
+  const view = new Uint8Array(buffer);
+  for (let i = 0; i < binary.length; i++) {
+    view[i] = binary.charCodeAt(i);
+  }
+  return buffer;
+}
+
+/**
+ * 안전한 파일명 생성 (특수문자 제거)
+ */
+function sanitizeFileName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "_").toLowerCase();
+}
+
+/**
+ * FontRegistryV2를 export용으로 복사 — data URL → assets/fonts/ 상대경로로 변환
+ * 반환: { registry: 변환된 레지스트리, assets: 폰트 파일 배열 }
+ */
+interface FontAssetFile {
+  path: string;
+  data: ArrayBuffer;
+}
+
+function rewriteRegistryForExport(registry: FontRegistryV2): {
+  registry: FontRegistryV2;
+  assets: FontAssetFile[];
+} {
+  const assets: FontAssetFile[] = [];
+  const usedNames = new Set<string>();
+
+  const faces = registry.faces.map((face) => {
+    if (face.source.type !== "data-url-temp") {
+      // remote-url, project-asset → 그대로 유지
+      return face;
+    }
+
+    // data URL → 바이너리 추출
+    const data = dataUrlToArrayBuffer(face.source.url);
+
+    // 파일명 결정
+    const ext = face.format
+      ? `.${face.format === "truetype" ? "ttf" : face.format === "opentype" ? "otf" : face.format}`
+      : ".woff2";
+    let baseName = face.source.originalFileName
+      ? sanitizeFileName(face.source.originalFileName.replace(/\.[^.]+$/, ""))
+      : sanitizeFileName(`${face.family}-${face.weight || "400"}`);
+
+    // 중복 방지
+    let fileName = `${baseName}${ext}`;
+    let counter = 1;
+    while (usedNames.has(fileName)) {
+      fileName = `${baseName}-${counter}${ext}`;
+      counter++;
+    }
+    usedNames.add(fileName);
+
+    const relativePath = `assets/fonts/${fileName}`;
+    assets.push({ path: relativePath, data });
+
+    return {
+      ...face,
+      source: {
+        ...face.source,
+        type: "project-asset" as const,
+        url: relativePath,
+      },
+    };
+  });
+
+  return {
+    registry: { version: 2, faces },
+    assets,
+  };
+}
+
+interface ExportProjectOptions {
+  projectId: string;
+  projectName: string;
+  pages: Page[];
+  elements: Element[];
+  currentPageId?: string | null;
+  fontRegistry?: FontRegistryV2;
+  themeCSS?: string;
+}
+
+/**
+ * 멀티파일 프로젝트 Export
+ *
+ * showDirectoryPicker (Chrome) 또는 ZIP fallback (Firefox/Safari)
+ */
+export async function exportProject(
+  options: ExportProjectOptions,
+): Promise<void> {
+  const { fontRegistry } = options;
+
+  // 폰트 레지스트리 rewrite
+  let exportRegistry: FontRegistryV2 | undefined;
+  let fontAssets: FontAssetFile[] = [];
+
+  if (fontRegistry && fontRegistry.faces.length > 0) {
+    const result = rewriteRegistryForExport(fontRegistry);
+    exportRegistry = result.registry;
+    fontAssets = result.assets;
+  }
+
+  // HTML 생성 (rewritten 폰트 경로 사용)
+  const html = generateStaticHtml(
+    options.projectId,
+    options.projectName,
+    options.pages,
+    options.elements,
+    options.currentPageId,
+    exportRegistry,
+    options.themeCSS || "",
+  );
+
+  // 폰트가 없으면 단일 HTML 다운로드
+  if (fontAssets.length === 0) {
+    downloadBlob(
+      new Blob([html], { type: "text/html" }),
+      `${options.projectName || "project"}.html`,
+    );
+    return;
+  }
+
+  // 멀티파일 export
+  if ("showDirectoryPicker" in window) {
+    await exportToDirectory(html, fontAssets, options.projectName);
+  } else {
+    await exportAsZip(html, fontAssets, options.projectName);
+  }
+}
+
+/**
+ * File System Access API로 디렉터리에 직접 저장
+ */
+async function exportToDirectory(
+  html: string,
+  fontAssets: FontAssetFile[],
+  projectName: string,
+): Promise<void> {
+  const dirHandle = await (
+    window as unknown as {
+      showDirectoryPicker: () => Promise<FileSystemDirectoryHandle>;
+    }
+  ).showDirectoryPicker();
+
+  // index.html 쓰기
+  const htmlFile = await dirHandle.getFileHandle("index.html", {
+    create: true,
+  });
+  const htmlWritable = await htmlFile.createWritable();
+  await htmlWritable.write(html);
+  await htmlWritable.close();
+
+  // assets/fonts/ 디렉터리 생성 후 폰트 파일 쓰기
+  if (fontAssets.length > 0) {
+    const assetsDir = await dirHandle.getDirectoryHandle("assets", {
+      create: true,
+    });
+    const fontsDir = await assetsDir.getDirectoryHandle("fonts", {
+      create: true,
+    });
+
+    for (const asset of fontAssets) {
+      const fileName = asset.path.split("/").pop()!;
+      const fileHandle = await fontsDir.getFileHandle(fileName, {
+        create: true,
+      });
+      const writable = await fileHandle.createWritable();
+      await writable.write(asset.data);
+      await writable.close();
+    }
+  }
+
+  console.log(
+    `[Export] 디렉터리 저장 완료: index.html + ${fontAssets.length} font files`,
+  );
+}
+
+/**
+ * JSZip fallback — ZIP 파일로 다운로드
+ */
+async function exportAsZip(
+  html: string,
+  fontAssets: FontAssetFile[],
+  projectName: string,
+): Promise<void> {
+  const JSZip = (await import("jszip")).default;
+  const zip = new JSZip();
+
+  zip.file("index.html", html);
+
+  for (const asset of fontAssets) {
+    zip.file(asset.path, asset.data);
+  }
+
+  const blob = await zip.generateAsync({ type: "blob" });
+  downloadBlob(blob, `${projectName || "project"}.zip`);
+}
+
+/**
+ * Blob → <a download> 다운로드
+ */
+function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${projectName || "project"}.html`;
+  link.download = fileName;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-
   URL.revokeObjectURL(url);
 }
 

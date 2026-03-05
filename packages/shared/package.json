@@ -63,6 +63,7 @@
     "@tanstack/react-virtual": "^3.13.19",
     "@types/node": "catalog:",
     "clsx": "^2.1.1",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.575.0",
     "react-aria-components": "catalog:",
     "react-stately": "^3.44.0",

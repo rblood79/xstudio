@@ -89,6 +89,80 @@ function resolveWidth(ck: any, stretch?: string): any {
   return entries[idx - 1] ?? ck.FontWidth.Normal;
 }
 
+// ============================================
+// 측정 결과 캐시 (WASM Paragraph 객체가 아닌 결과값만 캐싱)
+// ============================================
+
+const _widthCache = new Map<string, number>();
+const _wrappedCache = new Map<string, TextMeasureResult>();
+const MAX_MEASURE_CACHE_SIZE = 1000;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _measureCacheFontMgr: any = null;
+
+function invalidateMeasureCacheIfNeeded(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fontMgr: any,
+): void {
+  if (_measureCacheFontMgr !== fontMgr) {
+    _widthCache.clear();
+    _wrappedCache.clear();
+    _measureCacheFontMgr = fontMgr;
+  }
+}
+
+function buildWidthCacheKey(text: string, style: TextMeasureStyle): string {
+  return [
+    text,
+    style.fontSize,
+    style.fontFamily,
+    style.fontWeight ?? 400,
+    style.fontStyle ?? 0,
+    style.fontVariant ?? "",
+    style.fontStretch ?? "",
+    style.letterSpacing ?? 0,
+    style.wordSpacing ?? 0,
+    style.lineHeight ?? 0,
+  ].join("\0");
+}
+
+function buildWrappedCacheKey(
+  text: string,
+  style: TextMeasureStyle,
+  maxWidth: number,
+): string {
+  return [
+    text,
+    maxWidth,
+    style.fontSize,
+    style.fontFamily,
+    style.fontWeight ?? 400,
+    style.fontStyle ?? 0,
+    style.fontVariant ?? "",
+    style.fontStretch ?? "",
+    style.letterSpacing ?? 0,
+    style.wordSpacing ?? 0,
+    style.lineHeight ?? 0,
+    style.wordBreak ?? "normal",
+    style.overflowWrap ?? "normal",
+  ].join("\0");
+}
+
+function lruSet<V>(cache: Map<string, V>, key: string, value: V): void {
+  if (cache.size >= MAX_MEASURE_CACHE_SIZE) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+  cache.set(key, value);
+}
+
+// Vite HMR에서 모듈이 교체될 때 캐시 누수 방지
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    _widthCache.clear();
+    _wrappedCache.clear();
+  });
+}
+
 /**
  * CanvasKit Paragraph API 기반 텍스트 측정기
  *
@@ -104,6 +178,12 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     const fontMgr = skiaFontManager.getFontMgr();
     if (!ck || !fontMgr) return text.length * (style.fontSize * 0.5);
 
+    // 캐시 무효화 체크 + 캐시 조회
+    invalidateMeasureCacheIfNeeded(fontMgr);
+    const cacheKey = buildWidthCacheKey(text, style);
+    const cached = _widthCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
     // nodeRenderers.ts의 renderText()와 동일한 textStyle 구성
     // heightMultiplier / halfLeading도 렌더러와 일치시켜야
     // getMaxIntrinsicWidth()가 동일한 text shaping 결과를 반환
@@ -116,10 +196,11 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     const heightMultiplier = style.lineHeight
       ? style.lineHeight / style.fontSize
       : 0;
+    const fontFamilies = [fontFamily, "Pretendard"];
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
         fontSize: style.fontSize,
-        fontFamilies: [fontFamily, "Pretendard"],
+        fontFamilies,
         fontStyle: {
           weight: resolveWeight(ck, style.fontWeight),
           slant: resolveSlant(ck, style.fontStyle),
@@ -132,6 +213,19 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
           : {}),
         ...(fontFeatures.length > 0 ? { fontFeatures } : {}),
       },
+      // strutStyle: CSS line-height 강제 적용 (렌더러와 동기화)
+      ...(heightMultiplier > 0
+        ? {
+            strutStyle: {
+              strutEnabled: true,
+              fontFamilies,
+              fontSize: style.fontSize,
+              heightMultiplier,
+              halfLeading: true,
+              forceStrutHeight: true,
+            },
+          }
+        : {}),
     });
 
     const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
@@ -143,8 +237,8 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
 
     paragraph.delete();
     builder.delete();
-    // ParagraphStyle is a plain JS object, no delete needed
 
+    lruSet(_widthCache, cacheKey, width);
     return width;
   }
 
@@ -169,6 +263,12 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
       return { width: maxWidth, height: lineHeight };
     }
 
+    // 캐시 무효화 체크 + 캐시 조회
+    invalidateMeasureCacheIfNeeded(fontMgr);
+    const cacheKey = buildWrappedCacheKey(text, style, maxWidth);
+    const cached = _wrappedCache.get(cacheKey);
+    if (cached) return cached;
+
     // measureWidth와 동일한 textStyle + halfLeading (CSS line-height 상하 균등 분배)
     const fontFeatures = style.fontVariant
       ? resolveFontVariantFeatures(style.fontVariant)
@@ -176,10 +276,14 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     const fontFamily = skiaFontManager.resolveFamily(
       resolveFontFamily(style.fontFamily),
     );
+    const heightMultiplier = style.lineHeight
+      ? style.lineHeight / style.fontSize
+      : 0;
+    const fontFamilies = [fontFamily, "Pretendard"];
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
         fontSize: style.fontSize,
-        fontFamilies: [fontFamily, "Pretendard"],
+        fontFamilies,
         fontStyle: {
           weight: resolveWeight(ck, style.fontWeight),
           slant: resolveSlant(ck, style.fontStyle),
@@ -187,14 +291,24 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
         },
         letterSpacing: style.letterSpacing ?? 0,
         wordSpacing: style.wordSpacing ?? 0,
-        ...(style.lineHeight
-          ? {
-              heightMultiplier: style.lineHeight / style.fontSize,
-              halfLeading: true,
-            }
+        ...(heightMultiplier > 0
+          ? { heightMultiplier, halfLeading: true }
           : {}),
         ...(fontFeatures.length > 0 ? { fontFeatures } : {}),
       },
+      // strutStyle: CSS line-height 강제 적용 (렌더러와 동기화)
+      ...(heightMultiplier > 0
+        ? {
+            strutStyle: {
+              strutEnabled: true,
+              fontFamilies,
+              fontSize: style.fontSize,
+              heightMultiplier,
+              halfLeading: true,
+              forceStrutHeight: true,
+            },
+          }
+        : {}),
     });
 
     // ADR-008: word-break × overflow-wrap 조합 테이블 기반 에뮬레이션
@@ -220,10 +334,12 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
         const paragraph = builder.build();
         paragraph.layout(effectiveMaxWidth);
         const height = paragraph.getHeight();
-        const width = paragraph.getMaxWidth();
+        const width = paragraph.getLongestLine();
         paragraph.delete();
         builder.delete();
-        return { width, height };
+        const result = { width, height };
+        lruSet(_wrappedCache, cacheKey, result);
+        return result;
       }
       // normal + break-word: preprocessBreakWordText + CanvasKit layout (렌더링과 동일)
       const processed = preprocessBreakWordText(
@@ -238,10 +354,12 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
       const paragraph = builder.build();
       paragraph.layout(maxWidth);
       const height = paragraph.getHeight();
-      const width = paragraph.getMaxWidth();
+      const width = paragraph.getLongestLine();
       paragraph.delete();
       builder.delete();
-      return { width, height };
+      const result = { width, height };
+      lruSet(_wrappedCache, cacheKey, result);
+      return result;
     }
 
     // ADR-008: normal+normal → CSS 줄바꿈 시뮬레이션으로 텍스트 전처리
@@ -288,12 +406,14 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     paragraph.layout(effectiveMaxWidth);
 
     const height = paragraph.getHeight();
-    const width = paragraph.getMaxWidth();
+    const width = paragraph.getLongestLine();
 
     paragraph.delete();
     builder.delete();
 
-    return { width, height };
+    const result = { width, height };
+    lruSet(_wrappedCache, cacheKey, result);
+    return result;
   }
 
   /**

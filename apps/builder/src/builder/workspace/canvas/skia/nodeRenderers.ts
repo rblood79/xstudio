@@ -1600,6 +1600,19 @@ export function renderText(
           : {}),
       },
       textAlign,
+      // strutStyle: CSS line-height 강제 적용 (측정기와 동기화)
+      ...(heightMultiplierOpt !== undefined
+        ? {
+            strutStyle: {
+              strutEnabled: true,
+              fontFamilies: resolvedFamilies,
+              fontSize: node.text.fontSize,
+              heightMultiplier: heightMultiplierOpt,
+              halfLeading: true,
+              forceStrutHeight: true,
+            },
+          }
+        : {}),
       // text-overflow: ellipsis → maxLines:1 + ellipsis 문자열
       // CSS text-overflow: ellipsis는 U+2026 (…) 사용 → 동일 문자로 일치시켜야 truncation 지점 동기화
       ...(isEllipsis ? { maxLines: 1, ellipsis: "\u2026" } : {}),

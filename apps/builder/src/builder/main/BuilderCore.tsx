@@ -52,7 +52,7 @@ import {
   mergeData,
   safeJsonParse,
 } from "../../utils/dataHelpers";
-import { downloadStaticHtml } from "@xstudio/shared/utils";
+import { exportProject } from "@xstudio/shared/utils";
 import { loadFontRegistry } from "../fonts/customFonts";
 import { generateThemeCSS } from "../../utils/theme/generateThemeCSS";
 import { NEUTRAL_PALETTES } from "../../utils/theme/neutralToSkiaColors";
@@ -911,7 +911,7 @@ export const BuilderCore: React.FC = () => {
 
   const handlePlay = useCallback(() => {}, []);
 
-  const handlePublish = useCallback(() => {
+  const handlePublish = useCallback(async () => {
     // Store에서 현재 상태 가져오기
     const state = useStore.getState();
     const { elements, pages, currentPageId: storeCurrentPageId } = state;
@@ -928,16 +928,16 @@ export const BuilderCore: React.FC = () => {
       radiusScale: themeState.radiusScale,
     });
 
-    // 정적 HTML 파일로 다운로드
-    downloadStaticHtml(
-      id,
-      name,
+    // ADR-014 Phase E: 멀티파일 export (폰트 포함)
+    await exportProject({
+      projectId: id,
+      projectName: name,
       pages,
       elements,
-      storeCurrentPageId,
-      loadFontRegistry(),
+      currentPageId: storeCurrentPageId,
+      fontRegistry: loadFontRegistry(),
       themeCSS,
-    );
+    });
   }, [projectId, projectInfo]);
 
   // 클릭 외부 감지

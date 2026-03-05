@@ -28,6 +28,34 @@ globs:
 - Child Spec 추가 시 `packages/specs/src/index.ts` + `components/index.ts` 양쪽에 export 후 `pnpm build:specs`
 - `TAG_SPEC_MAP`에 해당 태그의 Spec 등록 필수
 
+## TextMeasurer ↔ nodeRenderers 동기화 (필수)
+
+ParagraphStyle 변경 시 **측정기 + 렌더러 양쪽 동시 업데이트** 필수 (3곳):
+
+1. `canvaskitTextMeasurer.ts` — measureWidth() + measureWrapped()
+2. `nodeRenderers.ts` — renderText()
+3. `TextMeasureStyle` 인터페이스 — 필드 추가 시
+
+### strutStyle (CSS line-height 정합성)
+
+- `heightMultiplier > 0` (lineHeight 명시) 시 strutStyle 활성화
+- `forceStrutHeight: true` — CSS처럼 line-height를 줄 높이로 강제
+- 측정기와 렌더러에 **완전히 동일한 strutStyle** 적용 필수
+
+### Paragraph API 사용 규칙
+
+- 실제 콘텐츠 폭: `getLongestLine()` (fit-content/auto 계산용)
+- max-content: `getMaxIntrinsicWidth()` (줄바꿈 없는 전체 폭)
+- min-content: `getMinIntrinsicWidth()` (가장 긴 단어 폭)
+- `getMaxWidth()` 사용 금지 — layout 제약 폭을 그대로 반환하므로 콘텐츠 폭과 무관
+
+### 측정 결과 캐싱
+
+- WASM Paragraph 객체 캐싱 금지 (GC 대상 아님 → 메모리 누수)
+- 결과값 `{ width, height }` 만 LRU 캐싱 (canvaskitTextMeasurer.ts)
+- FontMgr 교체 시 캐시 자동 clear
+- 렌더러의 Paragraph LRU 캐시(nodeRenderers.ts)와 별도 — 목적이 다름 (렌더 vs 측정)
+
 ## registryVersion 캐싱
 
 - LayoutContainer 'layout' 이벤트에서 `notifyLayoutChange()` 무조건 호출

@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial — Phase A+B+C+**C2(Font Manager Panel)**+**D(Preview/Publish 런타임)** 완료 (2026-03-05), Phase E 미구현
+Implemented — Phase A+B+C+**C2(Font Manager Panel)**+**D(Preview/Publish 런타임)**+**E(정적 Export 멀티파일)** 완료 (2026-03-05)
 
 ## 0) 확정 결정 (2026-02-13)
 
@@ -464,8 +464,8 @@ interface LegacyCustomFontAsset {
 - ✅ Phase B: Builder UX 레지스트리 연동 (`customFonts.ts`, `initCustomFonts.ts`, `TypographySection.tsx`, `previewSrcdoc.ts`)
 - ✅ Phase C: Skia `loadFontFromBuffer()` 구현 완료
 - ✅ Phase C2: Font Manager Panel 구현 완료 (전용 패널 + PropertyListItem 재사용 컴포넌트 + OS/2 메타데이터 추출)
-- ❌ Phase D: Publish 앱 레지스트리 전환 미구현
-- ❌ Phase E: 정적 Export 멀티파일 미구현
+- ✅ Phase D: Publish 앱 레지스트리 전환 완료
+- ✅ Phase E: 정적 Export 멀티파일 완료 (showDirectoryPicker + JSZip fallback)
 
 ---
 

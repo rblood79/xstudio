@@ -6,8 +6,12 @@
  */
 
 import { memo, useCallback } from "react";
-import { SwatchBook, Check } from "lucide-react";
-import { Button, parseColor } from "react-aria-components";
+import { SwatchBook, Check, Sun, Moon } from "lucide-react";
+import {
+  Button,
+  ToggleButton as RAToggleButton,
+  parseColor,
+} from "react-aria-components";
 import { ColorSwatch } from "@xstudio/shared/components/ColorSwatch";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import type { PanelProps } from "../core/types";
@@ -107,12 +111,6 @@ const TintSwatch = memo(
 // Select 옵션
 // ============================================================================
 
-const DARK_MODE_OPTIONS = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
-];
-
 const NEUTRAL_OPTIONS = [
   { value: "slate", label: "Slate" },
   { value: "gray", label: "Gray" },
@@ -143,18 +141,20 @@ function ThemesContent() {
   const setNeutral = useThemeConfigStore((s) => s.setNeutral);
   const setRadiusScale = useThemeConfigStore((s) => s.setRadiusScale);
 
+  const isDark = darkMode === "dark";
+
+  const handleDarkModeToggle = useCallback(
+    (isSelected: boolean) => {
+      setDarkMode(isSelected ? "dark" : "light");
+    },
+    [setDarkMode],
+  );
+
   const handleTintSelect = useCallback(
     (tint: TintPreset) => {
       setTint(tint);
     },
     [setTint],
-  );
-
-  const handleDarkModeChange = useCallback(
-    (value: string) => {
-      setDarkMode(value as "light" | "dark" | "system");
-    },
-    [setDarkMode],
   );
 
   const handleNeutralChange = useCallback(
@@ -173,7 +173,24 @@ function ThemesContent() {
 
   return (
     <div className="themes-panel">
-      <PanelHeader icon={<SwatchBook size={iconProps.size} />} title="Theme" />
+      <PanelHeader
+        icon={<SwatchBook size={iconProps.size} />}
+        title="Theme"
+        actions={
+          <RAToggleButton
+            className="iconButton"
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            isSelected={isDark}
+            onChange={handleDarkModeToggle}
+          >
+            {isDark ? (
+              <Sun size={iconProps.size} strokeWidth={iconProps.strokeWidth} />
+            ) : (
+              <Moon size={iconProps.size} strokeWidth={iconProps.strokeWidth} />
+            )}
+          </RAToggleButton>
+        }
+      />
 
       <PropertySection title="Accent Color" id="theme-accent">
         <div className="tint-grid">
@@ -189,12 +206,6 @@ function ThemesContent() {
       </PropertySection>
 
       <PropertySection title="Appearance" id="theme-appearance">
-        <PropertySelect
-          label="Mode"
-          value={darkMode}
-          onChange={handleDarkModeChange}
-          options={DARK_MODE_OPTIONS}
-        />
         <PropertySelect
           label="Tone"
           value={neutral}
