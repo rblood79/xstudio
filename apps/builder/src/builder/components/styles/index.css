@@ -557,9 +557,11 @@
       .react-aria-ToggleButton {
         background-color: transparent;
         border-width: 0;
+        width: var(--text-xl);
         max-width: var(--text-xl);
         height: var(--text-xl);
         padding: var(--spacing-xs);
+        font-size: var(--text-xs);
         display: flex;
         align-items: center;
         justify-content: center;

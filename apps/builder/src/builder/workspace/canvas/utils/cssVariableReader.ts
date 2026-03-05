@@ -10,7 +10,7 @@
  * @since 2025-12-15
  */
 
-import { cssColorToPixiHex } from '../../../../utils/color';
+import { cssColorToPixiHex } from "../../../../utils/color";
 
 // ============================================
 // Types
@@ -112,7 +112,9 @@ export function getCSSVariable(name: string): string {
   const cached = cssVarCache.get(name);
   if (cached !== undefined) return cached;
 
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
   cssVarCache.set(name, value);
   return value;
 }
@@ -130,7 +132,7 @@ export function getCSSVariable(name: string): string {
  * @returns 변수 값 문자열, 없으면 빈 문자열
  */
 export function resolveVariableFromDOM(varName: string): string {
-  if (typeof document === 'undefined') return '';
+  if (typeof document === "undefined") return "";
   return getCSSVariable(varName);
 }
 
@@ -144,7 +146,7 @@ function cssColorToHex(color: string, fallback: number): number {
   if (!color) return fallback;
 
   // color-mix() 처리 - 브라우저가 계산한 값을 canvas로 읽어옴
-  if (color.startsWith('color-mix')) {
+  if (color.startsWith("color-mix")) {
     return resolveColorMix(color, fallback);
   }
 
@@ -158,9 +160,9 @@ function cssColorToHex(color: string, fallback: number): number {
  */
 function resolveColorMix(colorMix: string, fallback: number): number {
   try {
-    const tempDiv = document.createElement('div');
+    const tempDiv = document.createElement("div");
     tempDiv.style.color = colorMix;
-    tempDiv.style.display = 'none';
+    tempDiv.style.display = "none";
     document.body.appendChild(tempDiv);
 
     const computedColor = getComputedStyle(tempDiv).color;
@@ -212,7 +214,7 @@ const FALLBACK_COLORS = {
   onTertiary: 0xffffff,
   error: 0xb3261e,
   onError: 0xffffff,
-  surfaceContainer: 0xf3edf7,       // --surface-container (Card 기본 배경)
+  surfaceContainer: 0xf3edf7, // --surface-container (Card 기본 배경)
   surfaceContainerHigh: 0xece6f0,
   surfaceContainerHighest: 0xe6e0e9,
   onSurface: 0x1d1b20,
@@ -240,25 +242,40 @@ export interface LabelStylePreset {
 }
 
 const LABEL_STYLE_FALLBACKS: Record<string, LabelStylePreset> = {
-  sm: { fontSize: 12, fontWeight: '500', color: 0x374151, fontFamily: 'Inter, system-ui, sans-serif' },
-  md: { fontSize: 14, fontWeight: '500', color: 0x374151, fontFamily: 'Inter, system-ui, sans-serif' },
-  lg: { fontSize: 16, fontWeight: '500', color: 0x374151, fontFamily: 'Inter, system-ui, sans-serif' },
+  sm: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: 0x374151,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
+  md: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: 0x374151,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
+  lg: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: 0x374151,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
 };
 
 /**
  * .react-aria-Label 클래스에서 스타일 읽기
  * 모든 Form 컴포넌트 (TextField, Input, RadioGroup, CheckboxGroup 등)에서 공통 사용
  */
-export function getLabelStylePreset(size: string = 'md'): LabelStylePreset {
+export function getLabelStylePreset(size: string = "md"): LabelStylePreset {
   const fallback = LABEL_STYLE_FALLBACKS[size] || LABEL_STYLE_FALLBACKS.md;
 
   try {
     // 임시 DOM 요소 생성 - .react-aria-Label 클래스 적용
-    const label = document.createElement('label');
-    label.className = 'react-aria-Label';
-    label.style.position = 'absolute';
-    label.style.visibility = 'hidden';
-    label.style.pointerEvents = 'none';
+    const label = document.createElement("label");
+    label.className = "react-aria-Label";
+    label.style.position = "absolute";
+    label.style.visibility = "hidden";
+    label.style.pointerEvents = "none";
 
     document.body.appendChild(label);
 
@@ -295,31 +312,49 @@ export interface DescriptionStylePreset {
 }
 
 const DESCRIPTION_STYLE_FALLBACKS: Record<string, DescriptionStylePreset> = {
-  sm: { fontSize: 11, color: 0x6b7280, errorColor: 0xef4444, fontFamily: 'Inter, system-ui, sans-serif' },
-  md: { fontSize: 12, color: 0x6b7280, errorColor: 0xef4444, fontFamily: 'Inter, system-ui, sans-serif' },
-  lg: { fontSize: 14, color: 0x6b7280, errorColor: 0xef4444, fontFamily: 'Inter, system-ui, sans-serif' },
+  sm: {
+    fontSize: 11,
+    color: 0x6b7280,
+    errorColor: 0xef4444,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
+  md: {
+    fontSize: 12,
+    color: 0x6b7280,
+    errorColor: 0xef4444,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
+  lg: {
+    fontSize: 14,
+    color: 0x6b7280,
+    errorColor: 0xef4444,
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
 };
 
 /**
  * Description / FieldError 스타일 읽기
  */
-export function getDescriptionStylePreset(size: string = 'md'): DescriptionStylePreset {
-  const fallback = DESCRIPTION_STYLE_FALLBACKS[size] || DESCRIPTION_STYLE_FALLBACKS.md;
+export function getDescriptionStylePreset(
+  size: string = "md",
+): DescriptionStylePreset {
+  const fallback =
+    DESCRIPTION_STYLE_FALLBACKS[size] || DESCRIPTION_STYLE_FALLBACKS.md;
 
   try {
     // TextField 컨테이너 내에서 description 스타일 읽기
-    const textField = document.createElement('div');
-    textField.className = 'react-aria-TextField';
-    textField.style.position = 'absolute';
-    textField.style.visibility = 'hidden';
-    textField.style.pointerEvents = 'none';
+    const textField = document.createElement("div");
+    textField.className = "react-aria-TextField";
+    textField.style.position = "absolute";
+    textField.style.visibility = "hidden";
+    textField.style.pointerEvents = "none";
 
-    const description = document.createElement('div');
-    description.slot = 'description';
+    const description = document.createElement("div");
+    description.slot = "description";
     textField.appendChild(description);
 
-    const fieldError = document.createElement('div');
-    fieldError.className = 'react-aria-FieldError';
+    const fieldError = document.createElement("div");
+    fieldError.className = "react-aria-FieldError";
     textField.appendChild(fieldError);
 
     document.body.appendChild(textField);
@@ -354,20 +389,59 @@ export function getDescriptionStylePreset(size: string = 'md'): DescriptionStyle
  */
 export function getM3ButtonColors(): M3ButtonColors {
   // CSS 변수에서 색상 읽기
-  const primary = cssColorToHex(getCSSVariable('--primary'), FALLBACK_COLORS.primary);
-  const onPrimary = cssColorToHex(getCSSVariable('--on-primary'), FALLBACK_COLORS.onPrimary);
-  const secondary = cssColorToHex(getCSSVariable('--secondary'), FALLBACK_COLORS.secondary);
-  const onSecondary = cssColorToHex(getCSSVariable('--on-secondary'), FALLBACK_COLORS.onSecondary);
-  const tertiary = cssColorToHex(getCSSVariable('--tertiary'), FALLBACK_COLORS.tertiary);
-  const onTertiary = cssColorToHex(getCSSVariable('--on-tertiary'), FALLBACK_COLORS.onTertiary);
-  const error = cssColorToHex(getCSSVariable('--error'), FALLBACK_COLORS.error);
-  const onError = cssColorToHex(getCSSVariable('--on-error'), FALLBACK_COLORS.onError);
-  const surfaceContainer = cssColorToHex(getCSSVariable('--surface-container'), FALLBACK_COLORS.surfaceContainer);
-  const surfaceContainerHigh = cssColorToHex(getCSSVariable('--surface-container-high'), FALLBACK_COLORS.surfaceContainerHigh);
-  const surfaceContainerHighest = cssColorToHex(getCSSVariable('--surface-container-highest'), FALLBACK_COLORS.surfaceContainerHighest);
-  const onSurface = cssColorToHex(getCSSVariable('--on-surface'), FALLBACK_COLORS.onSurface);
-  const outline = cssColorToHex(getCSSVariable('--outline'), FALLBACK_COLORS.outline);
-  const outlineVariant = cssColorToHex(getCSSVariable('--outline-variant'), FALLBACK_COLORS.outlineVariant);
+  const primary = cssColorToHex(
+    getCSSVariable("--primary"),
+    FALLBACK_COLORS.primary,
+  );
+  const onPrimary = cssColorToHex(
+    getCSSVariable("--on-primary"),
+    FALLBACK_COLORS.onPrimary,
+  );
+  const secondary = cssColorToHex(
+    getCSSVariable("--secondary"),
+    FALLBACK_COLORS.secondary,
+  );
+  const onSecondary = cssColorToHex(
+    getCSSVariable("--on-secondary"),
+    FALLBACK_COLORS.onSecondary,
+  );
+  const tertiary = cssColorToHex(
+    getCSSVariable("--tertiary"),
+    FALLBACK_COLORS.tertiary,
+  );
+  const onTertiary = cssColorToHex(
+    getCSSVariable("--on-tertiary"),
+    FALLBACK_COLORS.onTertiary,
+  );
+  const error = cssColorToHex(getCSSVariable("--error"), FALLBACK_COLORS.error);
+  const onError = cssColorToHex(
+    getCSSVariable("--on-error"),
+    FALLBACK_COLORS.onError,
+  );
+  const surfaceContainer = cssColorToHex(
+    getCSSVariable("--surface-container"),
+    FALLBACK_COLORS.surfaceContainer,
+  );
+  const surfaceContainerHigh = cssColorToHex(
+    getCSSVariable("--surface-container-high"),
+    FALLBACK_COLORS.surfaceContainerHigh,
+  );
+  const surfaceContainerHighest = cssColorToHex(
+    getCSSVariable("--surface-container-highest"),
+    FALLBACK_COLORS.surfaceContainerHighest,
+  );
+  const onSurface = cssColorToHex(
+    getCSSVariable("--on-surface"),
+    FALLBACK_COLORS.onSurface,
+  );
+  const outline = cssColorToHex(
+    getCSSVariable("--outline"),
+    FALLBACK_COLORS.outline,
+  );
+  const outlineVariant = cssColorToHex(
+    getCSSVariable("--outline-variant"),
+    FALLBACK_COLORS.outlineVariant,
+  );
 
   return {
     // Default
@@ -432,7 +506,10 @@ export function getM3ButtonColors(): M3ButtonColors {
  * --outline-variant 색상 가져오기 (캔버스 경계선 등)
  */
 export function getOutlineVariantColor(): number {
-  return cssColorToHex(getCSSVariable('--outline-variant'), FALLBACK_COLORS.outlineVariant);
+  return cssColorToHex(
+    getCSSVariable("--outline-variant"),
+    FALLBACK_COLORS.outlineVariant,
+  );
 }
 
 /**
@@ -440,7 +517,7 @@ export function getOutlineVariantColor(): number {
  */
 export function getVariantColors(
   variant: string,
-  colors: M3ButtonColors
+  colors: M3ButtonColors,
 ): {
   bg: number;
   bgHover: number;
@@ -450,35 +527,35 @@ export function getVariantColors(
   bgAlpha?: number;
 } {
   switch (variant) {
-    case 'primary':
+    case "primary":
       return {
         bg: colors.primaryBg,
         bgHover: colors.primaryBgHover,
         bgPressed: colors.primaryBgPressed,
         text: colors.primaryText,
       };
-    case 'secondary':
+    case "secondary":
       return {
         bg: colors.secondaryBg,
         bgHover: colors.secondaryBgHover,
         bgPressed: colors.secondaryBgPressed,
         text: colors.secondaryText,
       };
-    case 'tertiary':
+    case "tertiary":
       return {
         bg: colors.tertiaryBg,
         bgHover: colors.tertiaryBgHover,
         bgPressed: colors.tertiaryBgPressed,
         text: colors.tertiaryText,
       };
-    case 'error':
+    case "error":
       return {
         bg: colors.errorBg,
         bgHover: colors.errorBgHover,
         bgPressed: colors.errorBgPressed,
         text: colors.errorText,
       };
-    case 'surface':
+    case "surface":
       return {
         bg: colors.surfaceBg,
         bgHover: colors.surfaceBgHover,
@@ -486,7 +563,7 @@ export function getVariantColors(
         text: colors.surfaceText,
         border: colors.surfaceBorder,
       };
-    case 'outline':
+    case "outline":
       return {
         bg: colors.outlineBg,
         bgHover: colors.outlineBgHover,
@@ -495,7 +572,7 @@ export function getVariantColors(
         border: colors.outlineBorder,
         bgAlpha: 0,
       };
-    case 'ghost':
+    case "ghost":
       return {
         bg: colors.ghostBg,
         bgHover: colors.ghostBgHover,
@@ -503,7 +580,7 @@ export function getVariantColors(
         text: colors.ghostText,
         bgAlpha: 0,
       };
-    case 'default':
+    case "default":
     default:
       return {
         bg: colors.defaultBg,
@@ -539,12 +616,12 @@ function parseCSSValue(value: string, fallback: number): number {
   const trimmed = value.trim();
 
   // px 값
-  if (trimmed.endsWith('px')) {
+  if (trimmed.endsWith("px")) {
     return parseFloat(trimmed) || fallback;
   }
 
   // rem 값 → px 변환 (1rem = 16px)
-  if (trimmed.endsWith('rem')) {
+  if (trimmed.endsWith("rem")) {
     const remValue = parseFloat(trimmed);
     return remValue ? remValue * 16 : fallback;
   }
@@ -564,12 +641,40 @@ function parseCSSValue(value: string, fallback: number): number {
  * - lg: font-size: var(--text-lg),  padding: var(--spacing-md) var(--spacing-2xl)
  * - xl: font-size: var(--text-xl),  padding: var(--spacing-lg) var(--spacing-3xl)
  */
-const SIZE_CSS_MAPPING: Record<string, { fontSize: string; paddingY: string; paddingX: string; borderRadius: string }> = {
-  xs: { fontSize: '--text-2xs', paddingY: '--spacing-2xs', paddingX: '--spacing-sm', borderRadius: '--radius-sm' },
-  sm: { fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md', borderRadius: '--radius-sm' },
-  md: { fontSize: '--text-base', paddingY: '--spacing-sm', paddingX: '--spacing-xl', borderRadius: '--radius-md' },
-  lg: { fontSize: '--text-lg', paddingY: '--spacing-md', paddingX: '--spacing-2xl', borderRadius: '--radius-lg' },
-  xl: { fontSize: '--text-xl', paddingY: '--spacing-lg', paddingX: '--spacing-3xl', borderRadius: '--radius-lg' },
+const SIZE_CSS_MAPPING: Record<
+  string,
+  { fontSize: string; paddingY: string; paddingX: string; borderRadius: string }
+> = {
+  xs: {
+    fontSize: "--text-2xs",
+    paddingY: "--spacing-2xs",
+    paddingX: "--spacing-sm",
+    borderRadius: "--radius-sm",
+  },
+  sm: {
+    fontSize: "--text-sm",
+    paddingY: "--spacing",
+    paddingX: "--spacing-md",
+    borderRadius: "--radius-sm",
+  },
+  md: {
+    fontSize: "--text-base",
+    paddingY: "--spacing-sm",
+    paddingX: "--spacing-xl",
+    borderRadius: "--radius-md",
+  },
+  lg: {
+    fontSize: "--text-lg",
+    paddingY: "--spacing-md",
+    paddingX: "--spacing-2xl",
+    borderRadius: "--radius-lg",
+  },
+  xl: {
+    fontSize: "--text-xl",
+    paddingY: "--spacing-lg",
+    paddingX: "--spacing-3xl",
+    borderRadius: "--radius-lg",
+  },
 };
 
 /**
@@ -605,10 +710,22 @@ export function getSizePreset(size: string): SizePreset {
   }
 
   // CSS 변수에서 값 읽기
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
-  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
-  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const paddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.paddingX,
+  );
+  const paddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.paddingY,
+  );
+  const borderRadius = parseCSSValue(
+    getCSSVariable(mapping.borderRadius),
+    fallback.borderRadius,
+  );
 
   return { fontSize, paddingX, paddingY, borderRadius };
 }
@@ -621,11 +738,11 @@ export function getSizePreset(size: string): SizePreset {
  */
 export function getAllSizePresets(): Record<string, SizePreset> {
   return {
-    xs: getSizePreset('xs'),
-    sm: getSizePreset('sm'),
-    md: getSizePreset('md'),
-    lg: getSizePreset('lg'),
-    xl: getSizePreset('xl'),
+    xs: getSizePreset("xs"),
+    sm: getSizePreset("sm"),
+    md: getSizePreset("md"),
+    lg: getSizePreset("lg"),
+    xl: getSizePreset("xl"),
   };
 }
 
@@ -639,10 +756,13 @@ export interface CheckboxSizePreset {
   gap: number;
 }
 
-const CHECKBOX_SIZE_MAPPING: Record<string, { boxSize: string; fontSize: string }> = {
-  sm: { boxSize: '--spacing-lg', fontSize: '--text-sm' },       // 16px box
-  md: { boxSize: '--spacing-xl', fontSize: '--text-sm' },       // 24px box → 실제 20px 원함
-  lg: { boxSize: '--spacing-xl', fontSize: '--text-base' },     // 24px box
+const CHECKBOX_SIZE_MAPPING: Record<
+  string,
+  { boxSize: string; fontSize: string }
+> = {
+  sm: { boxSize: "--spacing-lg", fontSize: "--text-sm" }, // 16px box
+  md: { boxSize: "--spacing-xl", fontSize: "--text-sm" }, // 24px box → 실제 20px 원함
+  lg: { boxSize: "--spacing-xl", fontSize: "--text-base" }, // 24px box
 };
 
 const CHECKBOX_FALLBACKS: Record<string, CheckboxSizePreset> = {
@@ -663,11 +783,15 @@ export function getCheckboxSizePreset(size: string): CheckboxSizePreset {
   }
 
   // CSS 변수에서 읽되, md의 경우 특수 처리 (20px 고정)
-  const boxSize = size === 'md'
-    ? 20
-    : parseCSSValue(getCSSVariable(mapping.boxSize), fallback.boxSize);
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const gap = parseCSSValue(getCSSVariable('--spacing-sm'), fallback.gap);
+  const boxSize =
+    size === "md"
+      ? 20
+      : parseCSSValue(getCSSVariable(mapping.boxSize), fallback.boxSize);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const gap = parseCSSValue(getCSSVariable("--spacing-sm"), fallback.gap);
 
   return { boxSize, fontSize, gap };
 }
@@ -691,9 +815,9 @@ export interface SliderSizePreset {
 }
 
 const SLIDER_SIZE_MAPPING: Record<string, { thumbSize: string }> = {
-  sm: { thumbSize: '--text-xl' },   // 20px
-  md: { thumbSize: '--text-2xl' },  // 24px
-  lg: { thumbSize: '--text-3xl' },  // 30px
+  sm: { thumbSize: "--text-xl" }, // 20px
+  md: { thumbSize: "--text-2xl" }, // 24px
+  lg: { thumbSize: "--text-3xl" }, // 30px
 };
 
 const SLIDER_FALLBACKS: Record<string, SliderSizePreset> = {
@@ -713,7 +837,10 @@ export function getSliderSizePreset(size: string): SliderSizePreset {
     return fallback;
   }
 
-  const thumbSize = parseCSSValue(getCSSVariable(mapping.thumbSize), fallback.thumbSize);
+  const thumbSize = parseCSSValue(
+    getCSSVariable(mapping.thumbSize),
+    fallback.thumbSize,
+  );
 
   // trackHeight와 trackWidth는 CSS에서 하드코딩됨
   return {
@@ -746,16 +873,37 @@ export interface RadioSizePreset {
   labelGap: number;
 }
 
-const RADIO_SIZE_MAPPING: Record<string, { radioSize: string; fontSize: string; gap: string }> = {
-  sm: { radioSize: '--text-lg', fontSize: '--text-sm', gap: '--gap' },
-  md: { radioSize: '--text-xl', fontSize: '--text-base', gap: '--gap' },
-  lg: { radioSize: '--text-2xl', fontSize: '--text-lg', gap: '--gap' },
+const RADIO_SIZE_MAPPING: Record<
+  string,
+  { radioSize: string; fontSize: string; gap: string }
+> = {
+  sm: { radioSize: "--text-lg", fontSize: "--text-sm", gap: "--gap" },
+  md: { radioSize: "--text-xl", fontSize: "--text-base", gap: "--gap" },
+  lg: { radioSize: "--text-2xl", fontSize: "--text-lg", gap: "--gap" },
 };
 
 const RADIO_FALLBACKS: Record<string, RadioSizePreset> = {
-  sm: { radioSize: 18, fontSize: 14, selectedBorderWidth: 5, gap: 8, labelGap: 6 },
-  md: { radioSize: 20, fontSize: 16, selectedBorderWidth: 6, gap: 12, labelGap: 8 },
-  lg: { radioSize: 24, fontSize: 18, selectedBorderWidth: 7, gap: 16, labelGap: 10 },
+  sm: {
+    radioSize: 18,
+    fontSize: 14,
+    selectedBorderWidth: 5,
+    gap: 8,
+    labelGap: 6,
+  },
+  md: {
+    radioSize: 20,
+    fontSize: 16,
+    selectedBorderWidth: 6,
+    gap: 12,
+    labelGap: 8,
+  },
+  lg: {
+    radioSize: 24,
+    fontSize: 18,
+    selectedBorderWidth: 7,
+    gap: 16,
+    labelGap: 10,
+  },
 };
 
 /**
@@ -769,8 +917,14 @@ export function getRadioSizePreset(size: string): RadioSizePreset {
     return fallback;
   }
 
-  const radioSize = parseCSSValue(getCSSVariable(mapping.radioSize), fallback.radioSize);
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const radioSize = parseCSSValue(
+    getCSSVariable(mapping.radioSize),
+    fallback.radioSize,
+  );
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
   const gap = parseCSSValue(getCSSVariable(mapping.gap), fallback.gap);
 
   return {
@@ -801,10 +955,13 @@ export interface ProgressBarSizePreset {
   borderRadius: number;
 }
 
-const PROGRESSBAR_SIZE_MAPPING: Record<string, { fontSize: string; borderRadius: string }> = {
-  sm: { fontSize: '--text-sm', borderRadius: '--radius-sm' },
-  md: { fontSize: '--text-base', borderRadius: '--radius-md' },
-  lg: { fontSize: '--text-lg', borderRadius: '--radius-lg' },
+const PROGRESSBAR_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; borderRadius: string }
+> = {
+  sm: { fontSize: "--text-sm", borderRadius: "--radius-sm" },
+  md: { fontSize: "--text-base", borderRadius: "--radius-md" },
+  lg: { fontSize: "--text-lg", borderRadius: "--radius-lg" },
 };
 
 const PROGRESSBAR_FALLBACKS: Record<string, ProgressBarSizePreset> = {
@@ -824,8 +981,14 @@ export function getProgressBarSizePreset(size: string): ProgressBarSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const borderRadius = parseCSSValue(
+    getCSSVariable(mapping.borderRadius),
+    fallback.borderRadius,
+  );
 
   return {
     width: fallback.width,
@@ -855,16 +1018,52 @@ export interface InputSizePreset {
   borderRadius: number;
 }
 
-const INPUT_SIZE_MAPPING: Record<string, { labelSize: string; fontSize: string; paddingY: string; paddingX: string }> = {
-  sm: { labelSize: '--text-xs', fontSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing' },
-  md: { labelSize: '--text-sm', fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
-  lg: { labelSize: '--text-base', fontSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg' },
+const INPUT_SIZE_MAPPING: Record<
+  string,
+  { labelSize: string; fontSize: string; paddingY: string; paddingX: string }
+> = {
+  sm: {
+    labelSize: "--text-xs",
+    fontSize: "--text-xs",
+    paddingY: "--spacing-sm",
+    paddingX: "--spacing",
+  },
+  md: {
+    labelSize: "--text-sm",
+    fontSize: "--text-sm",
+    paddingY: "--spacing",
+    paddingX: "--spacing-md",
+  },
+  lg: {
+    labelSize: "--text-base",
+    fontSize: "--text-base",
+    paddingY: "--spacing-md",
+    paddingX: "--spacing-lg",
+  },
 };
 
 const INPUT_FALLBACKS: Record<string, InputSizePreset> = {
-  sm: { fontSize: 12, labelSize: 12, paddingX: 8, paddingY: 6, borderRadius: 6 },
-  md: { fontSize: 14, labelSize: 14, paddingX: 12, paddingY: 8, borderRadius: 6 },
-  lg: { fontSize: 16, labelSize: 16, paddingX: 16, paddingY: 12, borderRadius: 6 },
+  sm: {
+    fontSize: 12,
+    labelSize: 12,
+    paddingX: 8,
+    paddingY: 6,
+    borderRadius: 6,
+  },
+  md: {
+    fontSize: 14,
+    labelSize: 14,
+    paddingX: 12,
+    paddingY: 8,
+    borderRadius: 6,
+  },
+  lg: {
+    fontSize: 16,
+    labelSize: 16,
+    paddingX: 16,
+    paddingY: 12,
+    borderRadius: 6,
+  },
 };
 
 /**
@@ -878,11 +1077,26 @@ export function getInputSizePreset(size: string): InputSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const labelSize = parseCSSValue(getCSSVariable(mapping.labelSize), fallback.labelSize);
-  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
-  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
-  const borderRadius = parseCSSValue(getCSSVariable('--border-radius'), fallback.borderRadius);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const labelSize = parseCSSValue(
+    getCSSVariable(mapping.labelSize),
+    fallback.labelSize,
+  );
+  const paddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.paddingX,
+  );
+  const paddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.paddingY,
+  );
+  const borderRadius = parseCSSValue(
+    getCSSVariable("--border-radius"),
+    fallback.borderRadius,
+  );
 
   return { fontSize, labelSize, paddingX, paddingY, borderRadius };
 }
@@ -908,16 +1122,55 @@ export interface SelectSizePreset {
   borderRadius: number;
 }
 
-const SELECT_SIZE_MAPPING: Record<string, { labelSize: string; fontSize: string; paddingY: string; paddingX: string }> = {
-  sm: { labelSize: '--text-xs', fontSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing' },
-  md: { labelSize: '--text-sm', fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
-  lg: { labelSize: '--text-base', fontSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg' },
+const SELECT_SIZE_MAPPING: Record<
+  string,
+  { labelSize: string; fontSize: string; paddingY: string; paddingX: string }
+> = {
+  sm: {
+    labelSize: "--text-xs",
+    fontSize: "--text-xs",
+    paddingY: "--spacing-sm",
+    paddingX: "--spacing",
+  },
+  md: {
+    labelSize: "--text-sm",
+    fontSize: "--text-sm",
+    paddingY: "--spacing",
+    paddingX: "--spacing-md",
+  },
+  lg: {
+    labelSize: "--text-base",
+    fontSize: "--text-base",
+    paddingY: "--spacing-md",
+    paddingX: "--spacing-lg",
+  },
 };
 
 const SELECT_FALLBACKS: Record<string, SelectSizePreset> = {
-  sm: { fontSize: 12, labelSize: 12, paddingX: 8, paddingY: 6, chevronSize: 20, borderRadius: 6 },
-  md: { fontSize: 14, labelSize: 14, paddingX: 12, paddingY: 8, chevronSize: 24, borderRadius: 6 },
-  lg: { fontSize: 16, labelSize: 16, paddingX: 16, paddingY: 12, chevronSize: 28, borderRadius: 6 },
+  sm: {
+    fontSize: 12,
+    labelSize: 12,
+    paddingX: 8,
+    paddingY: 6,
+    chevronSize: 20,
+    borderRadius: 6,
+  },
+  md: {
+    fontSize: 14,
+    labelSize: 14,
+    paddingX: 12,
+    paddingY: 8,
+    chevronSize: 24,
+    borderRadius: 6,
+  },
+  lg: {
+    fontSize: 16,
+    labelSize: 16,
+    paddingX: 16,
+    paddingY: 12,
+    chevronSize: 28,
+    borderRadius: 6,
+  },
 };
 
 /**
@@ -931,11 +1184,26 @@ export function getSelectSizePreset(size: string): SelectSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const labelSize = parseCSSValue(getCSSVariable(mapping.labelSize), fallback.labelSize);
-  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
-  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
-  const borderRadius = parseCSSValue(getCSSVariable('--border-radius'), fallback.borderRadius);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const labelSize = parseCSSValue(
+    getCSSVariable(mapping.labelSize),
+    fallback.labelSize,
+  );
+  const paddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.paddingX,
+  );
+  const paddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.paddingY,
+  );
+  const borderRadius = parseCSSValue(
+    getCSSVariable("--border-radius"),
+    fallback.borderRadius,
+  );
 
   return {
     fontSize,
@@ -966,24 +1234,44 @@ export interface ToggleButtonSizePreset {
   borderRadius: number;
 }
 
-const TOGGLE_BUTTON_SIZE_MAPPING: Record<string, { fontSize: string; paddingY: string; paddingX: string; borderRadius: string }> = {
-  sm: { fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md', borderRadius: '--radius-sm' },
-  md: { fontSize: '--text-base', paddingY: '--spacing-sm', paddingX: '--spacing-xl', borderRadius: '--radius-md' },
-  lg: { fontSize: '--text-lg', paddingY: '--spacing-md', paddingX: '--spacing-2xl', borderRadius: '--radius-lg' },
+const TOGGLE_BUTTON_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; paddingY: string; paddingX: string; borderRadius: string }
+> = {
+  sm: {
+    fontSize: "--text-sm",
+    paddingY: "--spacing",
+    paddingX: "--spacing-md",
+    borderRadius: "--radius-sm",
+  },
+  md: {
+    fontSize: "--text-base",
+    paddingY: "--spacing-sm",
+    paddingX: "--spacing-xl",
+    borderRadius: "--radius-md",
+  },
+  lg: {
+    fontSize: "--text-lg",
+    paddingY: "--spacing-md",
+    paddingX: "--spacing-2xl",
+    borderRadius: "--radius-lg",
+  },
 };
 
 const TOGGLE_BUTTON_FALLBACKS: Record<string, ToggleButtonSizePreset> = {
   // @sync ToggleButton.css [data-size] padding 값과 일치해야 함
   // Button.css와 동일한 padding/borderRadius 사용
-  sm: { fontSize: 14, paddingY: 4, paddingX: 12, borderRadius: 4 },   // --radius-sm
-  md: { fontSize: 16, paddingY: 8, paddingX: 24, borderRadius: 6 },   // --radius-md
-  lg: { fontSize: 18, paddingY: 12, paddingX: 32, borderRadius: 8 },  // --radius-lg
+  sm: { fontSize: 14, paddingY: 4, paddingX: 12, borderRadius: 4 }, // --radius-sm
+  md: { fontSize: 16, paddingY: 8, paddingX: 24, borderRadius: 6 }, // --radius-md
+  lg: { fontSize: 18, paddingY: 12, paddingX: 32, borderRadius: 8 }, // --radius-lg
 };
 
 /**
  * ToggleButton 사이즈 프리셋 읽기
  */
-export function getToggleButtonSizePreset(size: string): ToggleButtonSizePreset {
+export function getToggleButtonSizePreset(
+  size: string,
+): ToggleButtonSizePreset {
   const mapping = TOGGLE_BUTTON_SIZE_MAPPING[size];
   const fallback = TOGGLE_BUTTON_FALLBACKS[size] || TOGGLE_BUTTON_FALLBACKS.md;
 
@@ -991,10 +1279,22 @@ export function getToggleButtonSizePreset(size: string): ToggleButtonSizePreset 
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
-  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
-  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const paddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.paddingY,
+  );
+  const paddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.paddingX,
+  );
+  const borderRadius = parseCSSValue(
+    getCSSVariable(mapping.borderRadius),
+    fallback.borderRadius,
+  );
 
   return {
     fontSize,
@@ -1026,43 +1326,24 @@ export interface ToggleButtonColorPreset {
   pressedBackground: number;
 }
 
+/** S2 ToggleButton: default (neutral selected) vs emphasized (accent selected) */
 const TOGGLE_BUTTON_COLOR_FALLBACKS: Record<string, ToggleButtonColorPreset> = {
   default: {
+    background: 0xe9e9e9, // S2: rgb(233,233,233)
+    border: 0xd1d5db,
+    text: 0x292929, // S2: rgb(41,41,41)
+    selectedBackground: 0x292929, // S2: dark bg (= Button primary)
+    selectedBorder: 0x292929,
+    selectedText: 0xffffff, // S2: white text
+    hoverBackground: 0xdcdcdc,
+    pressedBackground: 0xd0d0d0,
+  },
+  emphasized: {
     background: 0xffffff,
     border: 0xd1d5db,
     text: 0x374151,
-    selectedBackground: 0x3b82f6,
+    selectedBackground: 0x3b82f6, // accent (highlight-background)
     selectedBorder: 0x3b82f6,
-    selectedText: 0xffffff,
-    hoverBackground: 0xf3f4f6,
-    pressedBackground: 0xe5e7eb,
-  },
-  primary: {
-    background: 0xffffff,
-    border: 0xd1d5db,
-    text: 0x374151,
-    selectedBackground: 0x3b82f6,
-    selectedBorder: 0x3b82f6,
-    selectedText: 0xffffff,
-    hoverBackground: 0xdbeafe,
-    pressedBackground: 0xbfdbfe,
-  },
-  secondary: {
-    background: 0xffffff,
-    border: 0xd1d5db,
-    text: 0x374151,
-    selectedBackground: 0x6366f1,
-    selectedBorder: 0x6366f1,
-    selectedText: 0xffffff,
-    hoverBackground: 0xe0e7ff,
-    pressedBackground: 0xc7d2fe,
-  },
-  surface: {
-    background: 0xffffff,
-    border: 0xd1d5db,
-    text: 0x374151,
-    selectedBackground: 0x6b7280,
-    selectedBorder: 0x6b7280,
     selectedText: 0xffffff,
     hoverBackground: 0xf3f4f6,
     pressedBackground: 0xe5e7eb,
@@ -1072,15 +1353,22 @@ const TOGGLE_BUTTON_COLOR_FALLBACKS: Record<string, ToggleButtonColorPreset> = {
 /**
  * ToggleButton 색상 프리셋 읽기
  */
-export function getToggleButtonColorPreset(variant: string): ToggleButtonColorPreset {
-  const fallback = TOGGLE_BUTTON_COLOR_FALLBACKS[variant] || TOGGLE_BUTTON_COLOR_FALLBACKS.default;
+export function getToggleButtonColorPreset(
+  variant: string,
+): ToggleButtonColorPreset {
+  // S2: variant → isEmphasized key ("emphasized" or "default")
+  const key = variant === "emphasized" ? "emphasized" : "default";
+  const fallback = TOGGLE_BUTTON_COLOR_FALLBACKS[key];
 
   // CSS 변수에서 색상 읽기 시도 (fallback 사용)
   // ToggleButton CSS에서는 --tb-selected-bg 등의 변수 사용
   return {
-    background: cssColorToHex(getCSSVariable('--color-white'), fallback.background),
-    border: cssColorToHex(getCSSVariable('--color-gray-300'), fallback.border),
-    text: cssColorToHex(getCSSVariable('--color-gray-700'), fallback.text),
+    background: cssColorToHex(
+      getCSSVariable("--color-white"),
+      fallback.background,
+    ),
+    border: cssColorToHex(getCSSVariable("--color-gray-300"), fallback.border),
+    text: cssColorToHex(getCSSVariable("--color-gray-700"), fallback.text),
     selectedBackground: fallback.selectedBackground,
     selectedBorder: fallback.selectedBorder,
     selectedText: fallback.selectedText,
@@ -1111,16 +1399,55 @@ export interface ListBoxSizePreset {
   gap: number;
 }
 
-const LISTBOX_SIZE_MAPPING: Record<string, { fontSize: string; paddingY: string; paddingX: string }> = {
-  sm: { fontSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing' },
-  md: { fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
-  lg: { fontSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg' },
+const LISTBOX_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; paddingY: string; paddingX: string }
+> = {
+  sm: {
+    fontSize: "--text-xs",
+    paddingY: "--spacing-sm",
+    paddingX: "--spacing",
+  },
+  md: {
+    fontSize: "--text-sm",
+    paddingY: "--spacing",
+    paddingX: "--spacing-md",
+  },
+  lg: {
+    fontSize: "--text-base",
+    paddingY: "--spacing-md",
+    paddingX: "--spacing-lg",
+  },
 };
 
 const LISTBOX_FALLBACKS: Record<string, ListBoxSizePreset> = {
-  sm: { fontSize: 12, itemPaddingY: 8, itemPaddingX: 4, itemHeight: 32, borderRadius: 4, containerPadding: 2, gap: 2 },
-  md: { fontSize: 14, itemPaddingY: 4, itemPaddingX: 12, itemHeight: 40, borderRadius: 8, containerPadding: 4, gap: 4 },
-  lg: { fontSize: 16, itemPaddingY: 12, itemPaddingX: 16, itemHeight: 48, borderRadius: 8, containerPadding: 8, gap: 6 },
+  sm: {
+    fontSize: 12,
+    itemPaddingY: 8,
+    itemPaddingX: 4,
+    itemHeight: 32,
+    borderRadius: 4,
+    containerPadding: 2,
+    gap: 2,
+  },
+  md: {
+    fontSize: 14,
+    itemPaddingY: 4,
+    itemPaddingX: 12,
+    itemHeight: 40,
+    borderRadius: 8,
+    containerPadding: 4,
+    gap: 4,
+  },
+  lg: {
+    fontSize: 16,
+    itemPaddingY: 12,
+    itemPaddingX: 16,
+    itemHeight: 48,
+    borderRadius: 8,
+    containerPadding: 8,
+    gap: 6,
+  },
 };
 
 /**
@@ -1134,10 +1461,22 @@ export function getListBoxSizePreset(size: string): ListBoxSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const itemPaddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.itemPaddingY);
-  const itemPaddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.itemPaddingX);
-  const borderRadius = parseCSSValue(getCSSVariable('--radius-xs'), fallback.borderRadius);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const itemPaddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.itemPaddingY,
+  );
+  const itemPaddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.itemPaddingX,
+  );
+  const borderRadius = parseCSSValue(
+    getCSSVariable("--radius-xs"),
+    fallback.borderRadius,
+  );
 
   return {
     fontSize,
@@ -1252,16 +1591,40 @@ export interface BadgeSizePreset {
   dotSize: number;
 }
 
-const BADGE_SIZE_MAPPING: Record<string, { fontSize: string; paddingX: string }> = {
-  sm: { fontSize: '--text-sm', paddingX: '--spacing-md' },
-  md: { fontSize: '--text-base', paddingX: '--spacing-md' },
-  lg: { fontSize: '--text-lg', paddingX: '--spacing-lg' },
+const BADGE_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; paddingX: string }
+> = {
+  sm: { fontSize: "--text-sm", paddingX: "--spacing-md" },
+  md: { fontSize: "--text-base", paddingX: "--spacing-md" },
+  lg: { fontSize: "--text-lg", paddingX: "--spacing-lg" },
 };
 
 const BADGE_FALLBACKS: Record<string, BadgeSizePreset> = {
-  sm: { fontSize: 14, paddingY: 2, paddingX: 12, height: 20, minWidth: 20, dotSize: 8 },
-  md: { fontSize: 16, paddingY: 8, paddingX: 12, height: 24, minWidth: 24, dotSize: 10 },
-  lg: { fontSize: 18, paddingY: 8, paddingX: 16, height: 28, minWidth: 28, dotSize: 12 },
+  sm: {
+    fontSize: 14,
+    paddingY: 2,
+    paddingX: 12,
+    height: 20,
+    minWidth: 20,
+    dotSize: 8,
+  },
+  md: {
+    fontSize: 16,
+    paddingY: 8,
+    paddingX: 12,
+    height: 24,
+    minWidth: 24,
+    dotSize: 10,
+  },
+  lg: {
+    fontSize: 18,
+    paddingY: 8,
+    paddingX: 16,
+    height: 28,
+    minWidth: 28,
+    dotSize: 12,
+  },
 };
 
 /**
@@ -1275,8 +1638,14 @@ export function getBadgeSizePreset(size: string): BadgeSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const paddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.paddingX,
+  );
 
   return {
     fontSize,
@@ -1301,19 +1670,34 @@ export interface BadgeColorPreset {
 }
 
 const BADGE_COLOR_FALLBACKS: Record<string, BadgeColorPreset> = {
-  default: { background: 0xe5e7eb, text: 0x6b7280 },
-  primary: { background: 0x3b82f6, text: 0xffffff },
-  secondary: { background: 0x6366f1, text: 0xffffff },
-  tertiary: { background: 0xec4899, text: 0xffffff },
-  error: { background: 0xef4444, text: 0xffffff },
-  surface: { background: 0xf3f4f6, text: 0x374151 },
+  // Semantic variants
+  accent: { background: 0x3b63fb, text: 0xffffff },
+  informative: { background: 0x2563eb, text: 0xffffff },
+  neutral: { background: 0x292929, text: 0xffffff },
+  positive: { background: 0x16a34a, text: 0xffffff },
+  notice: { background: 0xca8a04, text: 0xffffff },
+  negative: { background: 0xdc2626, text: 0xffffff },
+  // Named color variants
+  gray: { background: 0x6b7280, text: 0xffffff },
+  red: { background: 0xdc2626, text: 0xffffff },
+  orange: { background: 0xea580c, text: 0xffffff },
+  yellow: { background: 0xeab308, text: 0x000000 },
+  green: { background: 0x16a34a, text: 0xffffff },
+  blue: { background: 0x2563eb, text: 0xffffff },
+  purple: { background: 0x9333ea, text: 0xffffff },
+  indigo: { background: 0x4f46e5, text: 0xffffff },
+  cyan: { background: 0x0891b2, text: 0xffffff },
+  pink: { background: 0xdb2777, text: 0xffffff },
+  turquoise: { background: 0x0d9488, text: 0xffffff },
+  fuchsia: { background: 0xc026d3, text: 0xffffff },
+  magenta: { background: 0xbe185d, text: 0xffffff },
 };
 
 /**
  * Badge 색상 프리셋 읽기
  */
 export function getBadgeColorPreset(variant: string): BadgeColorPreset {
-  return BADGE_COLOR_FALLBACKS[variant] || BADGE_COLOR_FALLBACKS.default;
+  return BADGE_COLOR_FALLBACKS[variant] || BADGE_COLOR_FALLBACKS.accent;
 }
 
 // ============================================
@@ -1336,10 +1720,13 @@ export interface MeterSizePreset {
   gap: number;
 }
 
-const METER_SIZE_MAPPING: Record<string, { fontSize: string; borderRadius: string }> = {
-  sm: { fontSize: '--text-sm', borderRadius: '--radius-sm' },
-  md: { fontSize: '--text-base', borderRadius: '--radius-md' },
-  lg: { fontSize: '--text-lg', borderRadius: '--radius-lg' },
+const METER_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; borderRadius: string }
+> = {
+  sm: { fontSize: "--text-sm", borderRadius: "--radius-sm" },
+  md: { fontSize: "--text-base", borderRadius: "--radius-md" },
+  lg: { fontSize: "--text-lg", borderRadius: "--radius-lg" },
 };
 
 const METER_FALLBACKS: Record<string, MeterSizePreset> = {
@@ -1359,8 +1746,14 @@ export function getMeterSizePreset(size: string): MeterSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const borderRadius = parseCSSValue(
+    getCSSVariable(mapping.borderRadius),
+    fallback.borderRadius,
+  );
 
   return {
     width: fallback.width,
@@ -1386,12 +1779,42 @@ export interface MeterColorPreset {
 }
 
 const METER_COLOR_FALLBACKS: Record<string, MeterColorPreset> = {
-  default: { trackColor: 0xe5e7eb, fillColor: 0x3b82f6, labelColor: 0x374151, valueColor: 0x6b7280 },
-  primary: { trackColor: 0xe5e7eb, fillColor: 0x3b82f6, labelColor: 0x374151, valueColor: 0x6b7280 },
-  secondary: { trackColor: 0xe5e7eb, fillColor: 0x6366f1, labelColor: 0x374151, valueColor: 0x6b7280 },
-  tertiary: { trackColor: 0xe5e7eb, fillColor: 0xec4899, labelColor: 0x374151, valueColor: 0x6b7280 },
-  error: { trackColor: 0xe5e7eb, fillColor: 0xef4444, labelColor: 0x374151, valueColor: 0x6b7280 },
-  surface: { trackColor: 0xe5e7eb, fillColor: 0x6b7280, labelColor: 0x374151, valueColor: 0x6b7280 },
+  default: {
+    trackColor: 0xe5e7eb,
+    fillColor: 0x3b82f6,
+    labelColor: 0x374151,
+    valueColor: 0x6b7280,
+  },
+  primary: {
+    trackColor: 0xe5e7eb,
+    fillColor: 0x3b82f6,
+    labelColor: 0x374151,
+    valueColor: 0x6b7280,
+  },
+  secondary: {
+    trackColor: 0xe5e7eb,
+    fillColor: 0x6366f1,
+    labelColor: 0x374151,
+    valueColor: 0x6b7280,
+  },
+  tertiary: {
+    trackColor: 0xe5e7eb,
+    fillColor: 0xec4899,
+    labelColor: 0x374151,
+    valueColor: 0x6b7280,
+  },
+  error: {
+    trackColor: 0xe5e7eb,
+    fillColor: 0xef4444,
+    labelColor: 0x374151,
+    valueColor: 0x6b7280,
+  },
+  surface: {
+    trackColor: 0xe5e7eb,
+    fillColor: 0x6b7280,
+    labelColor: 0x374151,
+    valueColor: 0x6b7280,
+  },
 };
 
 /**
@@ -1419,9 +1842,9 @@ export interface SeparatorSizePreset {
 }
 
 const SEPARATOR_SIZE_MAPPING: Record<string, { margin: string }> = {
-  sm: { margin: '--spacing-2' },
-  md: { margin: '--spacing-4' },
-  lg: { margin: '--spacing-6' },
+  sm: { margin: "--spacing-2" },
+  md: { margin: "--spacing-4" },
+  lg: { margin: "--spacing-6" },
 };
 
 const SEPARATOR_FALLBACKS: Record<string, SeparatorSizePreset> = {
@@ -1467,7 +1890,9 @@ const SEPARATOR_COLOR_FALLBACKS: Record<string, SeparatorColorPreset> = {
  * Separator 색상 프리셋 읽기
  */
 export function getSeparatorColorPreset(variant: string): SeparatorColorPreset {
-  return SEPARATOR_COLOR_FALLBACKS[variant] || SEPARATOR_COLOR_FALLBACKS.default;
+  return (
+    SEPARATOR_COLOR_FALLBACKS[variant] || SEPARATOR_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -1487,9 +1912,9 @@ export interface LinkSizePreset {
 }
 
 const LINK_SIZE_MAPPING: Record<string, { fontSize: string }> = {
-  sm: { fontSize: '--text-sm' },
-  md: { fontSize: '--text-base' },
-  lg: { fontSize: '--text-lg' },
+  sm: { fontSize: "--text-sm" },
+  md: { fontSize: "--text-base" },
+  lg: { fontSize: "--text-lg" },
 };
 
 const LINK_FALLBACKS: Record<string, LinkSizePreset> = {
@@ -1509,7 +1934,10 @@ export function getLinkSizePreset(size: string): LinkSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
 
   return {
     fontSize,
@@ -1551,10 +1979,13 @@ export interface BreadcrumbsSizePreset {
   padding: number;
 }
 
-const BREADCRUMBS_SIZE_MAPPING: Record<string, { fontSize: string; gap: string }> = {
-  sm: { fontSize: '--text-xs', gap: '--spacing-xs' },
-  md: { fontSize: '--text-sm', gap: '--spacing' },
-  lg: { fontSize: '--text-base', gap: '--spacing-sm' },
+const BREADCRUMBS_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; gap: string }
+> = {
+  sm: { fontSize: "--text-xs", gap: "--spacing-xs" },
+  md: { fontSize: "--text-sm", gap: "--spacing" },
+  lg: { fontSize: "--text-base", gap: "--spacing-sm" },
 };
 
 const BREADCRUMBS_FALLBACKS: Record<string, BreadcrumbsSizePreset> = {
@@ -1574,7 +2005,10 @@ export function getBreadcrumbsSizePreset(size: string): BreadcrumbsSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
   const gap = parseCSSValue(getCSSVariable(mapping.gap), fallback.gap);
 
   return {
@@ -1594,18 +2028,42 @@ export interface BreadcrumbsColorPreset {
 }
 
 const BREADCRUMBS_COLOR_FALLBACKS: Record<string, BreadcrumbsColorPreset> = {
-  default: { textColor: 0x6b7280, currentColor: 0x374151, separatorColor: 0x9ca3af },
-  primary: { textColor: 0x6b7280, currentColor: 0x3b82f6, separatorColor: 0x9ca3af },
-  secondary: { textColor: 0x6b7280, currentColor: 0x6366f1, separatorColor: 0x9ca3af },
-  tertiary: { textColor: 0x6b7280, currentColor: 0xec4899, separatorColor: 0x9ca3af },
-  error: { textColor: 0x6b7280, currentColor: 0xef4444, separatorColor: 0x9ca3af },
+  default: {
+    textColor: 0x6b7280,
+    currentColor: 0x374151,
+    separatorColor: 0x9ca3af,
+  },
+  primary: {
+    textColor: 0x6b7280,
+    currentColor: 0x3b82f6,
+    separatorColor: 0x9ca3af,
+  },
+  secondary: {
+    textColor: 0x6b7280,
+    currentColor: 0x6366f1,
+    separatorColor: 0x9ca3af,
+  },
+  tertiary: {
+    textColor: 0x6b7280,
+    currentColor: 0xec4899,
+    separatorColor: 0x9ca3af,
+  },
+  error: {
+    textColor: 0x6b7280,
+    currentColor: 0xef4444,
+    separatorColor: 0x9ca3af,
+  },
 };
 
 /**
  * Breadcrumbs 색상 프리셋 읽기
  */
-export function getBreadcrumbsColorPreset(variant: string): BreadcrumbsColorPreset {
-  return BREADCRUMBS_COLOR_FALLBACKS[variant] || BREADCRUMBS_COLOR_FALLBACKS.default;
+export function getBreadcrumbsColorPreset(
+  variant: string,
+): BreadcrumbsColorPreset {
+  return (
+    BREADCRUMBS_COLOR_FALLBACKS[variant] || BREADCRUMBS_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -1620,10 +2078,13 @@ export interface CardSizePreset {
   borderRadius: number;
 }
 
-const CARD_SIZE_MAPPING: Record<string, { padding: string; borderRadius: string }> = {
-  sm: { padding: '--spacing-sm', borderRadius: '--radius-md' },
-  md: { padding: '--spacing-md', borderRadius: '--radius-lg' },
-  lg: { padding: '--spacing-lg', borderRadius: '--radius-xl' },
+const CARD_SIZE_MAPPING: Record<
+  string,
+  { padding: string; borderRadius: string }
+> = {
+  sm: { padding: "--spacing-sm", borderRadius: "--radius-md" },
+  md: { padding: "--spacing-md", borderRadius: "--radius-lg" },
+  lg: { padding: "--spacing-lg", borderRadius: "--radius-xl" },
 };
 
 const CARD_FALLBACKS: Record<string, CardSizePreset> = {
@@ -1643,8 +2104,14 @@ export function getCardSizePreset(size: string): CardSizePreset {
     return fallback;
   }
 
-  const padding = parseCSSValue(getCSSVariable(mapping.padding), fallback.padding);
-  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
+  const padding = parseCSSValue(
+    getCSSVariable(mapping.padding),
+    fallback.padding,
+  );
+  const borderRadius = parseCSSValue(
+    getCSSVariable(mapping.borderRadius),
+    fallback.borderRadius,
+  );
 
   return {
     padding,
@@ -1663,12 +2130,42 @@ export interface CardColorPreset {
 }
 
 const CARD_COLOR_FALLBACKS: Record<string, CardColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, hoverBgColor: 0xe5e7eb },
-  primary: { backgroundColor: 0x3b82f6, borderColor: 0x3b82f6, textColor: 0xffffff, hoverBgColor: 0x2563eb },
-  secondary: { backgroundColor: 0x6366f1, borderColor: 0x6366f1, textColor: 0xffffff, hoverBgColor: 0x4f46e5 },
-  surface: { backgroundColor: 0xf9fafb, borderColor: 0xcad3dc, textColor: 0x374151, hoverBgColor: 0xf3f4f6 },
-  elevated: { backgroundColor: 0xffffff, borderColor: 0x00000000, textColor: 0x374151, hoverBgColor: 0xf9fafb },
-  outlined: { backgroundColor: 0xffffff, borderColor: 0x9ca3af, textColor: 0x374151, hoverBgColor: 0xf9fafb },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    hoverBgColor: 0xe5e7eb,
+  },
+  primary: {
+    backgroundColor: 0x3b82f6,
+    borderColor: 0x3b82f6,
+    textColor: 0xffffff,
+    hoverBgColor: 0x2563eb,
+  },
+  secondary: {
+    backgroundColor: 0x6366f1,
+    borderColor: 0x6366f1,
+    textColor: 0xffffff,
+    hoverBgColor: 0x4f46e5,
+  },
+  surface: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    hoverBgColor: 0xf3f4f6,
+  },
+  elevated: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x00000000,
+    textColor: 0x374151,
+    hoverBgColor: 0xf9fafb,
+  },
+  outlined: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x9ca3af,
+    textColor: 0x374151,
+    hoverBgColor: 0xf9fafb,
+  },
 };
 
 /**
@@ -1695,17 +2192,56 @@ export interface PanelSizePreset {
   minHeight: number;
 }
 
-const PANEL_SIZE_MAPPING: Record<string, { borderRadius: string; spacing: string; fontSize: string }> = {
-  sm: { borderRadius: '--radius-md', spacing: '--spacing-sm', fontSize: '--text-sm' },
-  md: { borderRadius: '--radius-lg', spacing: '--spacing-md', fontSize: '--text-base' },
-  lg: { borderRadius: '--radius-xl', spacing: '--spacing-lg', fontSize: '--text-lg' },
+const PANEL_SIZE_MAPPING: Record<
+  string,
+  { borderRadius: string; spacing: string; fontSize: string }
+> = {
+  sm: {
+    borderRadius: "--radius-md",
+    spacing: "--spacing-sm",
+    fontSize: "--text-sm",
+  },
+  md: {
+    borderRadius: "--radius-lg",
+    spacing: "--spacing-md",
+    fontSize: "--text-base",
+  },
+  lg: {
+    borderRadius: "--radius-xl",
+    spacing: "--spacing-lg",
+    fontSize: "--text-lg",
+  },
 };
 
 // CSS: .panel-content { min-height: 64px; } - 고정값
 const PANEL_FALLBACKS: Record<string, PanelSizePreset> = {
-  sm: { borderRadius: 8, titleFontSize: 13, titlePaddingX: 8, titlePaddingY: 6, contentFontSize: 13, contentPadding: 12, minHeight: 64 },
-  md: { borderRadius: 12, titleFontSize: 14, titlePaddingX: 12, titlePaddingY: 8, contentFontSize: 14, contentPadding: 16, minHeight: 64 },
-  lg: { borderRadius: 16, titleFontSize: 16, titlePaddingX: 16, titlePaddingY: 12, contentFontSize: 16, contentPadding: 20, minHeight: 64 },
+  sm: {
+    borderRadius: 8,
+    titleFontSize: 13,
+    titlePaddingX: 8,
+    titlePaddingY: 6,
+    contentFontSize: 13,
+    contentPadding: 12,
+    minHeight: 64,
+  },
+  md: {
+    borderRadius: 12,
+    titleFontSize: 14,
+    titlePaddingX: 12,
+    titlePaddingY: 8,
+    contentFontSize: 14,
+    contentPadding: 16,
+    minHeight: 64,
+  },
+  lg: {
+    borderRadius: 16,
+    titleFontSize: 16,
+    titlePaddingX: 16,
+    titlePaddingY: 12,
+    contentFontSize: 16,
+    contentPadding: 20,
+    minHeight: 64,
+  },
 };
 
 /**
@@ -1719,9 +2255,18 @@ export function getPanelSizePreset(size: string): PanelSizePreset {
     return fallback;
   }
 
-  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
-  const spacing = parseCSSValue(getCSSVariable(mapping.spacing), fallback.contentPadding);
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.contentFontSize);
+  const borderRadius = parseCSSValue(
+    getCSSVariable(mapping.borderRadius),
+    fallback.borderRadius,
+  );
+  const spacing = parseCSSValue(
+    getCSSVariable(mapping.spacing),
+    fallback.contentPadding,
+  );
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.contentFontSize,
+  );
 
   return {
     borderRadius,
@@ -1746,11 +2291,36 @@ export interface PanelColorPreset {
 
 const PANEL_COLOR_FALLBACKS: Record<string, PanelColorPreset> = {
   // CSS 동기화: .react-aria-Panel background-color
-  default: { backgroundColor: 0xf3edf7, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
-  tab: { backgroundColor: 0xf3edf7, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
-  sidebar: { backgroundColor: 0xe5e7eb, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
-  card: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
-  modal: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
+  default: {
+    backgroundColor: 0xf3edf7,
+    borderColor: 0xcad3dc,
+    titleColor: 0x374151,
+    textColor: 0x6b7280,
+  },
+  tab: {
+    backgroundColor: 0xf3edf7,
+    borderColor: 0xcad3dc,
+    titleColor: 0x374151,
+    textColor: 0x6b7280,
+  },
+  sidebar: {
+    backgroundColor: 0xe5e7eb,
+    borderColor: 0xcad3dc,
+    titleColor: 0x374151,
+    textColor: 0x6b7280,
+  },
+  card: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    titleColor: 0x374151,
+    textColor: 0x6b7280,
+  },
+  modal: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    titleColor: 0x374151,
+    textColor: 0x6b7280,
+  },
 };
 
 /**
@@ -1776,16 +2346,52 @@ export interface MenuSizePreset {
   borderRadius: number;
 }
 
-const MENU_SIZE_MAPPING: Record<string, { fontSize: string; paddingX: string; paddingY: string }> = {
-  sm: { fontSize: '--text-xs', paddingX: '--spacing', paddingY: '--spacing-sm' },
-  md: { fontSize: '--text-sm', paddingX: '--spacing-md', paddingY: '--spacing' },
-  lg: { fontSize: '--text-base', paddingX: '--spacing-lg', paddingY: '--spacing-md' },
+const MENU_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; paddingX: string; paddingY: string }
+> = {
+  sm: {
+    fontSize: "--text-xs",
+    paddingX: "--spacing",
+    paddingY: "--spacing-sm",
+  },
+  md: {
+    fontSize: "--text-sm",
+    paddingX: "--spacing-md",
+    paddingY: "--spacing",
+  },
+  lg: {
+    fontSize: "--text-base",
+    paddingX: "--spacing-lg",
+    paddingY: "--spacing-md",
+  },
 };
 
 const MENU_FALLBACKS: Record<string, MenuSizePreset> = {
-  sm: { fontSize: 12, itemPaddingX: 8, itemPaddingY: 6, containerPadding: 6, minWidth: 120, borderRadius: 6 },
-  md: { fontSize: 14, itemPaddingX: 12, itemPaddingY: 8, containerPadding: 8, minWidth: 150, borderRadius: 8 },
-  lg: { fontSize: 16, itemPaddingX: 16, itemPaddingY: 12, containerPadding: 12, minWidth: 180, borderRadius: 10 },
+  sm: {
+    fontSize: 12,
+    itemPaddingX: 8,
+    itemPaddingY: 6,
+    containerPadding: 6,
+    minWidth: 120,
+    borderRadius: 6,
+  },
+  md: {
+    fontSize: 14,
+    itemPaddingX: 12,
+    itemPaddingY: 8,
+    containerPadding: 8,
+    minWidth: 150,
+    borderRadius: 8,
+  },
+  lg: {
+    fontSize: 16,
+    itemPaddingX: 16,
+    itemPaddingY: 12,
+    containerPadding: 12,
+    minWidth: 180,
+    borderRadius: 10,
+  },
 };
 
 /**
@@ -1799,9 +2405,18 @@ export function getMenuSizePreset(size: string): MenuSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const itemPaddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.itemPaddingX);
-  const itemPaddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.itemPaddingY);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const itemPaddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.itemPaddingX,
+  );
+  const itemPaddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.itemPaddingY,
+  );
 
   return {
     fontSize,
@@ -1826,12 +2441,54 @@ export interface MenuColorPreset {
 }
 
 const MENU_COLOR_FALLBACKS: Record<string, MenuColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, hoverBgColor: 0xdbeafe, hoverTextColor: 0x1e40af, separatorColor: 0xcad3dc },
-  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, hoverBgColor: 0xdbeafe, hoverTextColor: 0x1e40af, separatorColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, hoverBgColor: 0xe0e7ff, hoverTextColor: 0x3730a3, separatorColor: 0x6366f1 },
-  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, hoverBgColor: 0xfce7f3, hoverTextColor: 0x9d174d, separatorColor: 0xec4899 },
-  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, hoverBgColor: 0xfee2e2, hoverTextColor: 0x991b1b, separatorColor: 0xef4444 },
-  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, textColor: 0x374151, hoverBgColor: 0xe5e7eb, hoverTextColor: 0x374151, separatorColor: 0x9ca3af },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    hoverBgColor: 0xdbeafe,
+    hoverTextColor: 0x1e40af,
+    separatorColor: 0xcad3dc,
+  },
+  primary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    hoverBgColor: 0xdbeafe,
+    hoverTextColor: 0x1e40af,
+    separatorColor: 0x3b82f6,
+  },
+  secondary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x6366f1,
+    textColor: 0x374151,
+    hoverBgColor: 0xe0e7ff,
+    hoverTextColor: 0x3730a3,
+    separatorColor: 0x6366f1,
+  },
+  tertiary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xec4899,
+    textColor: 0x374151,
+    hoverBgColor: 0xfce7f3,
+    hoverTextColor: 0x9d174d,
+    separatorColor: 0xec4899,
+  },
+  error: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xef4444,
+    textColor: 0x374151,
+    hoverBgColor: 0xfee2e2,
+    hoverTextColor: 0x991b1b,
+    separatorColor: 0xef4444,
+  },
+  filled: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0x00000000,
+    textColor: 0x374151,
+    hoverBgColor: 0xe5e7eb,
+    hoverTextColor: 0x374151,
+    separatorColor: 0x9ca3af,
+  },
 };
 
 /**
@@ -1859,16 +2516,52 @@ export interface TabsSizePreset {
 // 🚀 Phase 11: CSS .react-aria-Tab, .react-aria-TabPanel과 동기화
 // CSS: .react-aria-Tab { padding: var(--spacing) var(--spacing-lg); font-size: var(--text-sm); }
 // CSS: .react-aria-TabPanel { padding: var(--spacing-lg); }
-const TABS_SIZE_MAPPING: Record<string, { fontSize: string; paddingX: string; paddingY: string; panelPadding: string }> = {
-  sm: { fontSize: '--text-xs', paddingX: '--spacing-md', paddingY: '--spacing-sm', panelPadding: '--spacing-md' },
-  md: { fontSize: '--text-sm', paddingX: '--spacing-lg', paddingY: '--spacing', panelPadding: '--spacing-lg' },
-  lg: { fontSize: '--text-base', paddingX: '--spacing-xl', paddingY: '--spacing-md', panelPadding: '--spacing-xl' },
+const TABS_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; paddingX: string; paddingY: string; panelPadding: string }
+> = {
+  sm: {
+    fontSize: "--text-xs",
+    paddingX: "--spacing-md",
+    paddingY: "--spacing-sm",
+    panelPadding: "--spacing-md",
+  },
+  md: {
+    fontSize: "--text-sm",
+    paddingX: "--spacing-lg",
+    paddingY: "--spacing",
+    panelPadding: "--spacing-lg",
+  },
+  lg: {
+    fontSize: "--text-base",
+    paddingX: "--spacing-xl",
+    paddingY: "--spacing-md",
+    panelPadding: "--spacing-xl",
+  },
 };
 
 const TABS_FALLBACKS: Record<string, TabsSizePreset> = {
-  sm: { fontSize: 12, tabPaddingX: 12, tabPaddingY: 6, indicatorHeight: 2, panelPadding: 12 },
-  md: { fontSize: 14, tabPaddingX: 16, tabPaddingY: 8, indicatorHeight: 3, panelPadding: 16 },
-  lg: { fontSize: 16, tabPaddingX: 20, tabPaddingY: 12, indicatorHeight: 4, panelPadding: 20 },
+  sm: {
+    fontSize: 12,
+    tabPaddingX: 12,
+    tabPaddingY: 6,
+    indicatorHeight: 2,
+    panelPadding: 12,
+  },
+  md: {
+    fontSize: 14,
+    tabPaddingX: 16,
+    tabPaddingY: 8,
+    indicatorHeight: 3,
+    panelPadding: 16,
+  },
+  lg: {
+    fontSize: 16,
+    tabPaddingX: 20,
+    tabPaddingY: 12,
+    indicatorHeight: 4,
+    panelPadding: 20,
+  },
 };
 
 /**
@@ -1882,10 +2575,22 @@ export function getTabsSizePreset(size: string): TabsSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const tabPaddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.tabPaddingX);
-  const tabPaddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.tabPaddingY);
-  const panelPadding = parseCSSValue(getCSSVariable(mapping.panelPadding), fallback.panelPadding);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const tabPaddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.tabPaddingX,
+  );
+  const tabPaddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.tabPaddingY,
+  );
+  const panelPadding = parseCSSValue(
+    getCSSVariable(mapping.panelPadding),
+    fallback.panelPadding,
+  );
 
   return {
     fontSize,
@@ -1908,10 +2613,34 @@ export interface TabsColorPreset {
 }
 
 const TABS_COLOR_FALLBACKS: Record<string, TabsColorPreset> = {
-  default: { textColor: 0x6b7280, selectedTextColor: 0x374151, indicatorColor: 0x3b82f6, hoverBgColor: 0x00000014, borderColor: 0xcad3dc },
-  primary: { textColor: 0x6b7280, selectedTextColor: 0x3b82f6, indicatorColor: 0x3b82f6, hoverBgColor: 0x3b82f614, borderColor: 0xcad3dc },
-  secondary: { textColor: 0x6b7280, selectedTextColor: 0x6366f1, indicatorColor: 0x6366f1, hoverBgColor: 0x6366f114, borderColor: 0xcad3dc },
-  tertiary: { textColor: 0x6b7280, selectedTextColor: 0xec4899, indicatorColor: 0xec4899, hoverBgColor: 0xec489914, borderColor: 0xcad3dc },
+  default: {
+    textColor: 0x6b7280,
+    selectedTextColor: 0x374151,
+    indicatorColor: 0x3b82f6,
+    hoverBgColor: 0x00000014,
+    borderColor: 0xcad3dc,
+  },
+  primary: {
+    textColor: 0x6b7280,
+    selectedTextColor: 0x3b82f6,
+    indicatorColor: 0x3b82f6,
+    hoverBgColor: 0x3b82f614,
+    borderColor: 0xcad3dc,
+  },
+  secondary: {
+    textColor: 0x6b7280,
+    selectedTextColor: 0x6366f1,
+    indicatorColor: 0x6366f1,
+    hoverBgColor: 0x6366f114,
+    borderColor: 0xcad3dc,
+  },
+  tertiary: {
+    textColor: 0x6b7280,
+    selectedTextColor: 0xec4899,
+    indicatorColor: 0xec4899,
+    hoverBgColor: 0xec489914,
+    borderColor: 0xcad3dc,
+  },
 };
 
 /**
@@ -1938,16 +2667,58 @@ export interface NumberFieldSizePreset {
   borderRadius: number;
 }
 
-const NUMBERFIELD_SIZE_MAPPING: Record<string, { fontSize: string; labelSize: string; paddingY: string; paddingX: string }> = {
-  sm: { fontSize: '--text-xs', labelSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing' },
-  md: { fontSize: '--text-sm', labelSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
-  lg: { fontSize: '--text-base', labelSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg' },
+const NUMBERFIELD_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; labelSize: string; paddingY: string; paddingX: string }
+> = {
+  sm: {
+    fontSize: "--text-xs",
+    labelSize: "--text-xs",
+    paddingY: "--spacing-sm",
+    paddingX: "--spacing",
+  },
+  md: {
+    fontSize: "--text-sm",
+    labelSize: "--text-sm",
+    paddingY: "--spacing",
+    paddingX: "--spacing-md",
+  },
+  lg: {
+    fontSize: "--text-base",
+    labelSize: "--text-base",
+    paddingY: "--spacing-md",
+    paddingX: "--spacing-lg",
+  },
 };
 
 const NUMBERFIELD_FALLBACKS: Record<string, NumberFieldSizePreset> = {
-  sm: { fontSize: 12, labelFontSize: 12, buttonWidth: 28, inputWidth: 80, paddingX: 8, paddingY: 6, borderRadius: 6 },
-  md: { fontSize: 14, labelFontSize: 14, buttonWidth: 32, inputWidth: 120, paddingX: 12, paddingY: 8, borderRadius: 6 },
-  lg: { fontSize: 16, labelFontSize: 16, buttonWidth: 40, inputWidth: 160, paddingX: 16, paddingY: 12, borderRadius: 8 },
+  sm: {
+    fontSize: 12,
+    labelFontSize: 12,
+    buttonWidth: 28,
+    inputWidth: 80,
+    paddingX: 8,
+    paddingY: 6,
+    borderRadius: 6,
+  },
+  md: {
+    fontSize: 14,
+    labelFontSize: 14,
+    buttonWidth: 32,
+    inputWidth: 120,
+    paddingX: 12,
+    paddingY: 8,
+    borderRadius: 6,
+  },
+  lg: {
+    fontSize: 16,
+    labelFontSize: 16,
+    buttonWidth: 40,
+    inputWidth: 160,
+    paddingX: 16,
+    paddingY: 12,
+    borderRadius: 8,
+  },
 };
 
 /**
@@ -1961,10 +2732,22 @@ export function getNumberFieldSizePreset(size: string): NumberFieldSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const labelFontSize = parseCSSValue(getCSSVariable(mapping.labelSize), fallback.labelFontSize);
-  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
-  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const labelFontSize = parseCSSValue(
+    getCSSVariable(mapping.labelSize),
+    fallback.labelFontSize,
+  );
+  const paddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.paddingX,
+  );
+  const paddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.paddingY,
+  );
 
   return {
     fontSize,
@@ -1991,19 +2774,71 @@ export interface NumberFieldColorPreset {
 }
 
 const NUMBERFIELD_COLOR_FALLBACKS: Record<string, NumberFieldColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, buttonBgColor: 0xe5e7eb, buttonHoverBgColor: 0xd1d5db, focusColor: 0x3b82f6 },
-  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, labelColor: 0x3b82f6, buttonBgColor: 0xdbeafe, buttonHoverBgColor: 0xbfdbfe, focusColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, labelColor: 0x6366f1, buttonBgColor: 0xe0e7ff, buttonHoverBgColor: 0xc7d2fe, focusColor: 0x6366f1 },
-  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, labelColor: 0xec4899, buttonBgColor: 0xfce7f3, buttonHoverBgColor: 0xfbcfe8, focusColor: 0xec4899 },
-  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, labelColor: 0xef4444, buttonBgColor: 0xfee2e2, buttonHoverBgColor: 0xfecaca, focusColor: 0xef4444 },
-  filled: { backgroundColor: 0xf9fafb, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, buttonBgColor: 0xe5e7eb, buttonHoverBgColor: 0xd1d5db, focusColor: 0x3b82f6 },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    labelColor: 0x374151,
+    buttonBgColor: 0xe5e7eb,
+    buttonHoverBgColor: 0xd1d5db,
+    focusColor: 0x3b82f6,
+  },
+  primary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    labelColor: 0x3b82f6,
+    buttonBgColor: 0xdbeafe,
+    buttonHoverBgColor: 0xbfdbfe,
+    focusColor: 0x3b82f6,
+  },
+  secondary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x6366f1,
+    textColor: 0x374151,
+    labelColor: 0x6366f1,
+    buttonBgColor: 0xe0e7ff,
+    buttonHoverBgColor: 0xc7d2fe,
+    focusColor: 0x6366f1,
+  },
+  tertiary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xec4899,
+    textColor: 0x374151,
+    labelColor: 0xec4899,
+    buttonBgColor: 0xfce7f3,
+    buttonHoverBgColor: 0xfbcfe8,
+    focusColor: 0xec4899,
+  },
+  error: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xef4444,
+    textColor: 0x374151,
+    labelColor: 0xef4444,
+    buttonBgColor: 0xfee2e2,
+    buttonHoverBgColor: 0xfecaca,
+    focusColor: 0xef4444,
+  },
+  filled: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    labelColor: 0x374151,
+    buttonBgColor: 0xe5e7eb,
+    buttonHoverBgColor: 0xd1d5db,
+    focusColor: 0x3b82f6,
+  },
 };
 
 /**
  * NumberField 색상 프리셋 읽기
  */
-export function getNumberFieldColorPreset(variant: string): NumberFieldColorPreset {
-  return NUMBERFIELD_COLOR_FALLBACKS[variant] || NUMBERFIELD_COLOR_FALLBACKS.default;
+export function getNumberFieldColorPreset(
+  variant: string,
+): NumberFieldColorPreset {
+  return (
+    NUMBERFIELD_COLOR_FALLBACKS[variant] || NUMBERFIELD_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -2023,16 +2858,58 @@ export interface SearchFieldSizePreset {
   borderRadius: number;
 }
 
-const SEARCHFIELD_SIZE_MAPPING: Record<string, { fontSize: string; labelSize: string; paddingY: string; paddingX: string }> = {
-  sm: { fontSize: '--text-xs', labelSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing' },
-  md: { fontSize: '--text-sm', labelSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
-  lg: { fontSize: '--text-base', labelSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg' },
+const SEARCHFIELD_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; labelSize: string; paddingY: string; paddingX: string }
+> = {
+  sm: {
+    fontSize: "--text-xs",
+    labelSize: "--text-xs",
+    paddingY: "--spacing-sm",
+    paddingX: "--spacing",
+  },
+  md: {
+    fontSize: "--text-sm",
+    labelSize: "--text-sm",
+    paddingY: "--spacing",
+    paddingX: "--spacing-md",
+  },
+  lg: {
+    fontSize: "--text-base",
+    labelSize: "--text-base",
+    paddingY: "--spacing-md",
+    paddingX: "--spacing-lg",
+  },
 };
 
 const SEARCHFIELD_FALLBACKS: Record<string, SearchFieldSizePreset> = {
-  sm: { fontSize: 12, labelFontSize: 12, inputWidth: 160, paddingX: 8, paddingY: 6, clearButtonSize: 20, borderRadius: 6 },
-  md: { fontSize: 14, labelFontSize: 14, inputWidth: 200, paddingX: 12, paddingY: 8, clearButtonSize: 24, borderRadius: 6 },
-  lg: { fontSize: 16, labelFontSize: 16, inputWidth: 240, paddingX: 16, paddingY: 12, clearButtonSize: 28, borderRadius: 8 },
+  sm: {
+    fontSize: 12,
+    labelFontSize: 12,
+    inputWidth: 160,
+    paddingX: 8,
+    paddingY: 6,
+    clearButtonSize: 20,
+    borderRadius: 6,
+  },
+  md: {
+    fontSize: 14,
+    labelFontSize: 14,
+    inputWidth: 200,
+    paddingX: 12,
+    paddingY: 8,
+    clearButtonSize: 24,
+    borderRadius: 6,
+  },
+  lg: {
+    fontSize: 16,
+    labelFontSize: 16,
+    inputWidth: 240,
+    paddingX: 16,
+    paddingY: 12,
+    clearButtonSize: 28,
+    borderRadius: 8,
+  },
 };
 
 /**
@@ -2046,10 +2923,22 @@ export function getSearchFieldSizePreset(size: string): SearchFieldSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const labelFontSize = parseCSSValue(getCSSVariable(mapping.labelSize), fallback.labelFontSize);
-  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
-  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const labelFontSize = parseCSSValue(
+    getCSSVariable(mapping.labelSize),
+    fallback.labelFontSize,
+  );
+  const paddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.paddingX,
+  );
+  const paddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.paddingY,
+  );
 
   return {
     fontSize,
@@ -2077,19 +2966,77 @@ export interface SearchFieldColorPreset {
 }
 
 const SEARCHFIELD_COLOR_FALLBACKS: Record<string, SearchFieldColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xe5e7eb, clearButtonHoverBgColor: 0xd1d5db, focusColor: 0x3b82f6 },
-  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, labelColor: 0x3b82f6, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xdbeafe, clearButtonHoverBgColor: 0xbfdbfe, focusColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, labelColor: 0x6366f1, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xe0e7ff, clearButtonHoverBgColor: 0xc7d2fe, focusColor: 0x6366f1 },
-  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, labelColor: 0xec4899, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xfce7f3, clearButtonHoverBgColor: 0xfbcfe8, focusColor: 0xec4899 },
-  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, labelColor: 0xef4444, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xfee2e2, clearButtonHoverBgColor: 0xfecaca, focusColor: 0xef4444 },
-  filled: { backgroundColor: 0xf9fafb, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xe5e7eb, clearButtonHoverBgColor: 0xd1d5db, focusColor: 0x3b82f6 },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    labelColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    clearButtonBgColor: 0xe5e7eb,
+    clearButtonHoverBgColor: 0xd1d5db,
+    focusColor: 0x3b82f6,
+  },
+  primary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    labelColor: 0x3b82f6,
+    placeholderColor: 0x9ca3af,
+    clearButtonBgColor: 0xdbeafe,
+    clearButtonHoverBgColor: 0xbfdbfe,
+    focusColor: 0x3b82f6,
+  },
+  secondary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x6366f1,
+    textColor: 0x374151,
+    labelColor: 0x6366f1,
+    placeholderColor: 0x9ca3af,
+    clearButtonBgColor: 0xe0e7ff,
+    clearButtonHoverBgColor: 0xc7d2fe,
+    focusColor: 0x6366f1,
+  },
+  tertiary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xec4899,
+    textColor: 0x374151,
+    labelColor: 0xec4899,
+    placeholderColor: 0x9ca3af,
+    clearButtonBgColor: 0xfce7f3,
+    clearButtonHoverBgColor: 0xfbcfe8,
+    focusColor: 0xec4899,
+  },
+  error: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xef4444,
+    textColor: 0x374151,
+    labelColor: 0xef4444,
+    placeholderColor: 0x9ca3af,
+    clearButtonBgColor: 0xfee2e2,
+    clearButtonHoverBgColor: 0xfecaca,
+    focusColor: 0xef4444,
+  },
+  filled: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    labelColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    clearButtonBgColor: 0xe5e7eb,
+    clearButtonHoverBgColor: 0xd1d5db,
+    focusColor: 0x3b82f6,
+  },
 };
 
 /**
  * SearchField 색상 프리셋 읽기
  */
-export function getSearchFieldColorPreset(variant: string): SearchFieldColorPreset {
-  return SEARCHFIELD_COLOR_FALLBACKS[variant] || SEARCHFIELD_COLOR_FALLBACKS.default;
+export function getSearchFieldColorPreset(
+  variant: string,
+): SearchFieldColorPreset {
+  return (
+    SEARCHFIELD_COLOR_FALLBACKS[variant] || SEARCHFIELD_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -2111,16 +3058,77 @@ export interface ComboBoxSizePreset {
   borderRadius: number;
 }
 
-const COMBOBOX_SIZE_MAPPING: Record<string, { fontSize: string; labelSize: string; paddingY: string; paddingX: string; itemPaddingY: string; itemPaddingX: string }> = {
-  sm: { fontSize: '--text-xs', labelSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing', itemPaddingY: '--spacing-sm', itemPaddingX: '--spacing' },
-  md: { fontSize: '--text-sm', labelSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md', itemPaddingY: '--spacing', itemPaddingX: '--spacing-md' },
-  lg: { fontSize: '--text-base', labelSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg', itemPaddingY: '--spacing-md', itemPaddingX: '--spacing-lg' },
+const COMBOBOX_SIZE_MAPPING: Record<
+  string,
+  {
+    fontSize: string;
+    labelSize: string;
+    paddingY: string;
+    paddingX: string;
+    itemPaddingY: string;
+    itemPaddingX: string;
+  }
+> = {
+  sm: {
+    fontSize: "--text-xs",
+    labelSize: "--text-xs",
+    paddingY: "--spacing-sm",
+    paddingX: "--spacing",
+    itemPaddingY: "--spacing-sm",
+    itemPaddingX: "--spacing",
+  },
+  md: {
+    fontSize: "--text-sm",
+    labelSize: "--text-sm",
+    paddingY: "--spacing",
+    paddingX: "--spacing-md",
+    itemPaddingY: "--spacing",
+    itemPaddingX: "--spacing-md",
+  },
+  lg: {
+    fontSize: "--text-base",
+    labelSize: "--text-base",
+    paddingY: "--spacing-md",
+    paddingX: "--spacing-lg",
+    itemPaddingY: "--spacing-md",
+    itemPaddingX: "--spacing-lg",
+  },
 };
 
 const COMBOBOX_FALLBACKS: Record<string, ComboBoxSizePreset> = {
-  sm: { fontSize: 12, labelFontSize: 12, inputWidth: 160, paddingX: 8, paddingY: 6, buttonSize: 20, itemPaddingX: 8, itemPaddingY: 6, borderRadius: 6 },
-  md: { fontSize: 14, labelFontSize: 14, inputWidth: 200, paddingX: 12, paddingY: 8, buttonSize: 24, itemPaddingX: 12, itemPaddingY: 8, borderRadius: 6 },
-  lg: { fontSize: 16, labelFontSize: 16, inputWidth: 240, paddingX: 16, paddingY: 12, buttonSize: 28, itemPaddingX: 16, itemPaddingY: 12, borderRadius: 8 },
+  sm: {
+    fontSize: 12,
+    labelFontSize: 12,
+    inputWidth: 160,
+    paddingX: 8,
+    paddingY: 6,
+    buttonSize: 20,
+    itemPaddingX: 8,
+    itemPaddingY: 6,
+    borderRadius: 6,
+  },
+  md: {
+    fontSize: 14,
+    labelFontSize: 14,
+    inputWidth: 200,
+    paddingX: 12,
+    paddingY: 8,
+    buttonSize: 24,
+    itemPaddingX: 12,
+    itemPaddingY: 8,
+    borderRadius: 6,
+  },
+  lg: {
+    fontSize: 16,
+    labelFontSize: 16,
+    inputWidth: 240,
+    paddingX: 16,
+    paddingY: 12,
+    buttonSize: 28,
+    itemPaddingX: 16,
+    itemPaddingY: 12,
+    borderRadius: 8,
+  },
 };
 
 /**
@@ -2134,12 +3142,30 @@ export function getComboBoxSizePreset(size: string): ComboBoxSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const labelFontSize = parseCSSValue(getCSSVariable(mapping.labelSize), fallback.labelFontSize);
-  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
-  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
-  const itemPaddingX = parseCSSValue(getCSSVariable(mapping.itemPaddingX), fallback.itemPaddingX);
-  const itemPaddingY = parseCSSValue(getCSSVariable(mapping.itemPaddingY), fallback.itemPaddingY);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const labelFontSize = parseCSSValue(
+    getCSSVariable(mapping.labelSize),
+    fallback.labelFontSize,
+  );
+  const paddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.paddingX,
+  );
+  const paddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.paddingY,
+  );
+  const itemPaddingX = parseCSSValue(
+    getCSSVariable(mapping.itemPaddingX),
+    fallback.itemPaddingX,
+  );
+  const itemPaddingY = parseCSSValue(
+    getCSSVariable(mapping.itemPaddingY),
+    fallback.itemPaddingY,
+  );
 
   return {
     fontSize,
@@ -2173,12 +3199,90 @@ export interface ComboBoxColorPreset {
 }
 
 const COMBOBOX_COLOR_FALLBACKS: Record<string, ComboBoxColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, placeholderColor: 0x9ca3af, buttonBgColor: 0xe5e7eb, buttonHoverBgColor: 0xd1d5db, dropdownBgColor: 0xf3f4f6, itemHoverBgColor: 0xe5e7eb, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
-  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, labelColor: 0x3b82f6, placeholderColor: 0x9ca3af, buttonBgColor: 0xdbeafe, buttonHoverBgColor: 0xbfdbfe, dropdownBgColor: 0xf3f4f6, itemHoverBgColor: 0xdbeafe, itemSelectedBgColor: 0xbfdbfe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, labelColor: 0x6366f1, placeholderColor: 0x9ca3af, buttonBgColor: 0xe0e7ff, buttonHoverBgColor: 0xc7d2fe, dropdownBgColor: 0xf3f4f6, itemHoverBgColor: 0xe0e7ff, itemSelectedBgColor: 0xc7d2fe, itemSelectedTextColor: 0x3730a3, focusColor: 0x6366f1 },
-  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, labelColor: 0xec4899, placeholderColor: 0x9ca3af, buttonBgColor: 0xfce7f3, buttonHoverBgColor: 0xfbcfe8, dropdownBgColor: 0xf3f4f6, itemHoverBgColor: 0xfce7f3, itemSelectedBgColor: 0xfbcfe8, itemSelectedTextColor: 0x9d174d, focusColor: 0xec4899 },
-  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, labelColor: 0xef4444, placeholderColor: 0x9ca3af, buttonBgColor: 0xfee2e2, buttonHoverBgColor: 0xfecaca, dropdownBgColor: 0xf3f4f6, itemHoverBgColor: 0xfee2e2, itemSelectedBgColor: 0xfecaca, itemSelectedTextColor: 0x991b1b, focusColor: 0xef4444 },
-  filled: { backgroundColor: 0xf9fafb, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, placeholderColor: 0x9ca3af, buttonBgColor: 0xe5e7eb, buttonHoverBgColor: 0xd1d5db, dropdownBgColor: 0xf9fafb, itemHoverBgColor: 0xe5e7eb, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    labelColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    buttonBgColor: 0xe5e7eb,
+    buttonHoverBgColor: 0xd1d5db,
+    dropdownBgColor: 0xf3f4f6,
+    itemHoverBgColor: 0xe5e7eb,
+    itemSelectedBgColor: 0xdbeafe,
+    itemSelectedTextColor: 0x1e40af,
+    focusColor: 0x3b82f6,
+  },
+  primary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    labelColor: 0x3b82f6,
+    placeholderColor: 0x9ca3af,
+    buttonBgColor: 0xdbeafe,
+    buttonHoverBgColor: 0xbfdbfe,
+    dropdownBgColor: 0xf3f4f6,
+    itemHoverBgColor: 0xdbeafe,
+    itemSelectedBgColor: 0xbfdbfe,
+    itemSelectedTextColor: 0x1e40af,
+    focusColor: 0x3b82f6,
+  },
+  secondary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x6366f1,
+    textColor: 0x374151,
+    labelColor: 0x6366f1,
+    placeholderColor: 0x9ca3af,
+    buttonBgColor: 0xe0e7ff,
+    buttonHoverBgColor: 0xc7d2fe,
+    dropdownBgColor: 0xf3f4f6,
+    itemHoverBgColor: 0xe0e7ff,
+    itemSelectedBgColor: 0xc7d2fe,
+    itemSelectedTextColor: 0x3730a3,
+    focusColor: 0x6366f1,
+  },
+  tertiary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xec4899,
+    textColor: 0x374151,
+    labelColor: 0xec4899,
+    placeholderColor: 0x9ca3af,
+    buttonBgColor: 0xfce7f3,
+    buttonHoverBgColor: 0xfbcfe8,
+    dropdownBgColor: 0xf3f4f6,
+    itemHoverBgColor: 0xfce7f3,
+    itemSelectedBgColor: 0xfbcfe8,
+    itemSelectedTextColor: 0x9d174d,
+    focusColor: 0xec4899,
+  },
+  error: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xef4444,
+    textColor: 0x374151,
+    labelColor: 0xef4444,
+    placeholderColor: 0x9ca3af,
+    buttonBgColor: 0xfee2e2,
+    buttonHoverBgColor: 0xfecaca,
+    dropdownBgColor: 0xf3f4f6,
+    itemHoverBgColor: 0xfee2e2,
+    itemSelectedBgColor: 0xfecaca,
+    itemSelectedTextColor: 0x991b1b,
+    focusColor: 0xef4444,
+  },
+  filled: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    labelColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    buttonBgColor: 0xe5e7eb,
+    buttonHoverBgColor: 0xd1d5db,
+    dropdownBgColor: 0xf9fafb,
+    itemHoverBgColor: 0xe5e7eb,
+    itemSelectedBgColor: 0xdbeafe,
+    itemSelectedTextColor: 0x1e40af,
+    focusColor: 0x3b82f6,
+  },
 };
 
 /**
@@ -2205,16 +3309,67 @@ export interface GridListSizePreset {
   borderRadius: number;
 }
 
-const GRIDLIST_SIZE_MAPPING: Record<string, { fontSize: string; itemPaddingY: string; itemPaddingX: string; listPadding: string; listGap: string }> = {
-  sm: { fontSize: '--text-xs', itemPaddingY: '--spacing-sm', itemPaddingX: '--spacing', listPadding: '--spacing-2xs', listGap: '--spacing-3xs' },
-  md: { fontSize: '--text-sm', itemPaddingY: '--spacing', itemPaddingX: '--spacing-md', listPadding: '--spacing-xs', listGap: '--spacing-2xs' },
-  lg: { fontSize: '--text-base', itemPaddingY: '--spacing-md', itemPaddingX: '--spacing-lg', listPadding: '--spacing-sm', listGap: '--spacing-xs' },
+const GRIDLIST_SIZE_MAPPING: Record<
+  string,
+  {
+    fontSize: string;
+    itemPaddingY: string;
+    itemPaddingX: string;
+    listPadding: string;
+    listGap: string;
+  }
+> = {
+  sm: {
+    fontSize: "--text-xs",
+    itemPaddingY: "--spacing-sm",
+    itemPaddingX: "--spacing",
+    listPadding: "--spacing-2xs",
+    listGap: "--spacing-3xs",
+  },
+  md: {
+    fontSize: "--text-sm",
+    itemPaddingY: "--spacing",
+    itemPaddingX: "--spacing-md",
+    listPadding: "--spacing-xs",
+    listGap: "--spacing-2xs",
+  },
+  lg: {
+    fontSize: "--text-base",
+    itemPaddingY: "--spacing-md",
+    itemPaddingX: "--spacing-lg",
+    listPadding: "--spacing-sm",
+    listGap: "--spacing-xs",
+  },
 };
 
 const GRIDLIST_FALLBACKS: Record<string, GridListSizePreset> = {
-  sm: { fontSize: 12, itemMinHeight: 32, itemPaddingX: 8, itemPaddingY: 6, listPadding: 4, listGap: 2, borderRadius: 6 },
-  md: { fontSize: 14, itemMinHeight: 40, itemPaddingX: 12, itemPaddingY: 8, listPadding: 6, listGap: 4, borderRadius: 6 },
-  lg: { fontSize: 16, itemMinHeight: 48, itemPaddingX: 16, itemPaddingY: 12, listPadding: 8, listGap: 6, borderRadius: 8 },
+  sm: {
+    fontSize: 12,
+    itemMinHeight: 32,
+    itemPaddingX: 8,
+    itemPaddingY: 6,
+    listPadding: 4,
+    listGap: 2,
+    borderRadius: 6,
+  },
+  md: {
+    fontSize: 14,
+    itemMinHeight: 40,
+    itemPaddingX: 12,
+    itemPaddingY: 8,
+    listPadding: 6,
+    listGap: 4,
+    borderRadius: 6,
+  },
+  lg: {
+    fontSize: 16,
+    itemMinHeight: 48,
+    itemPaddingX: 16,
+    itemPaddingY: 12,
+    listPadding: 8,
+    listGap: 6,
+    borderRadius: 8,
+  },
 };
 
 /**
@@ -2228,11 +3383,26 @@ export function getGridListSizePreset(size: string): GridListSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const itemPaddingX = parseCSSValue(getCSSVariable(mapping.itemPaddingX), fallback.itemPaddingX);
-  const itemPaddingY = parseCSSValue(getCSSVariable(mapping.itemPaddingY), fallback.itemPaddingY);
-  const listPadding = parseCSSValue(getCSSVariable(mapping.listPadding), fallback.listPadding);
-  const listGap = parseCSSValue(getCSSVariable(mapping.listGap), fallback.listGap);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const itemPaddingX = parseCSSValue(
+    getCSSVariable(mapping.itemPaddingX),
+    fallback.itemPaddingX,
+  );
+  const itemPaddingY = parseCSSValue(
+    getCSSVariable(mapping.itemPaddingY),
+    fallback.itemPaddingY,
+  );
+  const listPadding = parseCSSValue(
+    getCSSVariable(mapping.listPadding),
+    fallback.listPadding,
+  );
+  const listGap = parseCSSValue(
+    getCSSVariable(mapping.listGap),
+    fallback.listGap,
+  );
 
   return {
     fontSize,
@@ -2259,12 +3429,60 @@ export interface GridListColorPreset {
 }
 
 const GRIDLIST_COLOR_FALLBACKS: Record<string, GridListColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, itemHoverBgColor: 0xe5e7eb, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
-  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, itemHoverBgColor: 0xdbeafe, itemSelectedBgColor: 0xbfdbfe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, itemHoverBgColor: 0xe0e7ff, itemSelectedBgColor: 0xc7d2fe, itemSelectedTextColor: 0x3730a3, focusColor: 0x6366f1 },
-  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, itemHoverBgColor: 0xfce7f3, itemSelectedBgColor: 0xfbcfe8, itemSelectedTextColor: 0x9d174d, focusColor: 0xec4899 },
-  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, itemHoverBgColor: 0xfee2e2, itemSelectedBgColor: 0xfecaca, itemSelectedTextColor: 0x991b1b, focusColor: 0xef4444 },
-  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, textColor: 0x374151, itemHoverBgColor: 0xe5e7eb, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    itemHoverBgColor: 0xe5e7eb,
+    itemSelectedBgColor: 0xdbeafe,
+    itemSelectedTextColor: 0x1e40af,
+    focusColor: 0x3b82f6,
+  },
+  primary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    itemHoverBgColor: 0xdbeafe,
+    itemSelectedBgColor: 0xbfdbfe,
+    itemSelectedTextColor: 0x1e40af,
+    focusColor: 0x3b82f6,
+  },
+  secondary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x6366f1,
+    textColor: 0x374151,
+    itemHoverBgColor: 0xe0e7ff,
+    itemSelectedBgColor: 0xc7d2fe,
+    itemSelectedTextColor: 0x3730a3,
+    focusColor: 0x6366f1,
+  },
+  tertiary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xec4899,
+    textColor: 0x374151,
+    itemHoverBgColor: 0xfce7f3,
+    itemSelectedBgColor: 0xfbcfe8,
+    itemSelectedTextColor: 0x9d174d,
+    focusColor: 0xec4899,
+  },
+  error: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xef4444,
+    textColor: 0x374151,
+    itemHoverBgColor: 0xfee2e2,
+    itemSelectedBgColor: 0xfecaca,
+    itemSelectedTextColor: 0x991b1b,
+    focusColor: 0xef4444,
+  },
+  filled: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0x00000000,
+    textColor: 0x374151,
+    itemHoverBgColor: 0xe5e7eb,
+    itemSelectedBgColor: 0xdbeafe,
+    itemSelectedTextColor: 0x1e40af,
+    focusColor: 0x3b82f6,
+  },
 };
 
 /**
@@ -2289,16 +3507,49 @@ export interface TagGroupSizePreset {
   borderRadius: number;
 }
 
-const TAGGROUP_SIZE_MAPPING: Record<string, { fontSize: string; paddingY: string; paddingX: string }> = {
-  sm: { fontSize: '--text-sm', paddingY: '--spacing-2xs', paddingX: '--spacing-sm' },
-  md: { fontSize: '--text-base', paddingY: '--spacing-xs', paddingX: '--spacing-md' },
-  lg: { fontSize: '--text-lg', paddingY: '--spacing-sm', paddingX: '--spacing-lg' },
+const TAGGROUP_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; paddingY: string; paddingX: string }
+> = {
+  sm: {
+    fontSize: "--text-sm",
+    paddingY: "--spacing-2xs",
+    paddingX: "--spacing-sm",
+  },
+  md: {
+    fontSize: "--text-base",
+    paddingY: "--spacing-xs",
+    paddingX: "--spacing-md",
+  },
+  lg: {
+    fontSize: "--text-lg",
+    paddingY: "--spacing-sm",
+    paddingX: "--spacing-lg",
+  },
 };
 
 const TAGGROUP_FALLBACKS: Record<string, TagGroupSizePreset> = {
-  sm: { fontSize: 14, tagPaddingX: 8, tagPaddingY: 4, tagGap: 4, borderRadius: 4 },
-  md: { fontSize: 16, tagPaddingX: 12, tagPaddingY: 6, tagGap: 4, borderRadius: 6 },
-  lg: { fontSize: 18, tagPaddingX: 16, tagPaddingY: 8, tagGap: 6, borderRadius: 8 },
+  sm: {
+    fontSize: 14,
+    tagPaddingX: 8,
+    tagPaddingY: 4,
+    tagGap: 4,
+    borderRadius: 4,
+  },
+  md: {
+    fontSize: 16,
+    tagPaddingX: 12,
+    tagPaddingY: 6,
+    tagGap: 4,
+    borderRadius: 6,
+  },
+  lg: {
+    fontSize: 18,
+    tagPaddingX: 16,
+    tagPaddingY: 8,
+    tagGap: 6,
+    borderRadius: 8,
+  },
 };
 
 /**
@@ -2312,9 +3563,18 @@ export function getTagGroupSizePreset(size: string): TagGroupSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const tagPaddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.tagPaddingX);
-  const tagPaddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.tagPaddingY);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const tagPaddingX = parseCSSValue(
+    getCSSVariable(mapping.paddingX),
+    fallback.tagPaddingX,
+  );
+  const tagPaddingY = parseCSSValue(
+    getCSSVariable(mapping.paddingY),
+    fallback.tagPaddingY,
+  );
 
   return {
     fontSize,
@@ -2339,12 +3599,60 @@ export interface TagGroupColorPreset {
 }
 
 const TAGGROUP_COLOR_FALLBACKS: Record<string, TagGroupColorPreset> = {
-  default: { backgroundColor: 0xe5e7eb, borderColor: 0xcad3dc, textColor: 0x374151, hoverBgColor: 0xd1d5db, selectedBgColor: 0x3b82f6, selectedTextColor: 0xffffff, removeButtonColor: 0x6b7280 },
-  primary: { backgroundColor: 0x3b82f6, borderColor: 0x3b82f6, textColor: 0xffffff, hoverBgColor: 0x2563eb, selectedBgColor: 0x1d4ed8, selectedTextColor: 0xffffff, removeButtonColor: 0xffffff },
-  secondary: { backgroundColor: 0x6366f1, borderColor: 0x6366f1, textColor: 0xffffff, hoverBgColor: 0x4f46e5, selectedBgColor: 0x4338ca, selectedTextColor: 0xffffff, removeButtonColor: 0xffffff },
-  tertiary: { backgroundColor: 0xec4899, borderColor: 0xec4899, textColor: 0xffffff, hoverBgColor: 0xdb2777, selectedBgColor: 0xbe185d, selectedTextColor: 0xffffff, removeButtonColor: 0xffffff },
-  error: { backgroundColor: 0xef4444, borderColor: 0xef4444, textColor: 0xffffff, hoverBgColor: 0xdc2626, selectedBgColor: 0xb91c1c, selectedTextColor: 0xffffff, removeButtonColor: 0xffffff },
-  surface: { backgroundColor: 0xf9fafb, borderColor: 0xcad3dc, textColor: 0x374151, hoverBgColor: 0xe5e7eb, selectedBgColor: 0xd1d5db, selectedTextColor: 0x374151, removeButtonColor: 0x6b7280 },
+  default: {
+    backgroundColor: 0xe5e7eb,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    hoverBgColor: 0xd1d5db,
+    selectedBgColor: 0x3b82f6,
+    selectedTextColor: 0xffffff,
+    removeButtonColor: 0x6b7280,
+  },
+  primary: {
+    backgroundColor: 0x3b82f6,
+    borderColor: 0x3b82f6,
+    textColor: 0xffffff,
+    hoverBgColor: 0x2563eb,
+    selectedBgColor: 0x1d4ed8,
+    selectedTextColor: 0xffffff,
+    removeButtonColor: 0xffffff,
+  },
+  secondary: {
+    backgroundColor: 0x6366f1,
+    borderColor: 0x6366f1,
+    textColor: 0xffffff,
+    hoverBgColor: 0x4f46e5,
+    selectedBgColor: 0x4338ca,
+    selectedTextColor: 0xffffff,
+    removeButtonColor: 0xffffff,
+  },
+  tertiary: {
+    backgroundColor: 0xec4899,
+    borderColor: 0xec4899,
+    textColor: 0xffffff,
+    hoverBgColor: 0xdb2777,
+    selectedBgColor: 0xbe185d,
+    selectedTextColor: 0xffffff,
+    removeButtonColor: 0xffffff,
+  },
+  error: {
+    backgroundColor: 0xef4444,
+    borderColor: 0xef4444,
+    textColor: 0xffffff,
+    hoverBgColor: 0xdc2626,
+    selectedBgColor: 0xb91c1c,
+    selectedTextColor: 0xffffff,
+    removeButtonColor: 0xffffff,
+  },
+  surface: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    hoverBgColor: 0xe5e7eb,
+    selectedBgColor: 0xd1d5db,
+    selectedTextColor: 0x374151,
+    removeButtonColor: 0x6b7280,
+  },
 };
 
 /**
@@ -2373,16 +3681,69 @@ export interface TreeSizePreset {
   borderRadius: number;
 }
 
-const TREE_SIZE_MAPPING: Record<string, { fontSize: string; itemPaddingY: string; itemPaddingX: string; treePadding: string }> = {
-  sm: { fontSize: '--text-xs', itemPaddingY: '--spacing-2xs', itemPaddingX: '--spacing-xs', treePadding: '--spacing-sm' },
-  md: { fontSize: '--text-sm', itemPaddingY: '--spacing-xs', itemPaddingX: '--spacing-sm', treePadding: '--spacing' },
-  lg: { fontSize: '--text-base', itemPaddingY: '--spacing-sm', itemPaddingX: '--spacing', treePadding: '--spacing-md' },
+const TREE_SIZE_MAPPING: Record<
+  string,
+  {
+    fontSize: string;
+    itemPaddingY: string;
+    itemPaddingX: string;
+    treePadding: string;
+  }
+> = {
+  sm: {
+    fontSize: "--text-xs",
+    itemPaddingY: "--spacing-2xs",
+    itemPaddingX: "--spacing-xs",
+    treePadding: "--spacing-sm",
+  },
+  md: {
+    fontSize: "--text-sm",
+    itemPaddingY: "--spacing-xs",
+    itemPaddingX: "--spacing-sm",
+    treePadding: "--spacing",
+  },
+  lg: {
+    fontSize: "--text-base",
+    itemPaddingY: "--spacing-sm",
+    itemPaddingX: "--spacing",
+    treePadding: "--spacing-md",
+  },
 };
 
 const TREE_FALLBACKS: Record<string, TreeSizePreset> = {
-  sm: { fontSize: 12, itemMinHeight: 28, itemPaddingX: 6, itemPaddingY: 4, treePadding: 8, treeGap: 1, chevronSize: 12, indentSize: 16, borderRadius: 4 },
-  md: { fontSize: 14, itemMinHeight: 32, itemPaddingX: 8, itemPaddingY: 6, treePadding: 8, treeGap: 4, chevronSize: 16, indentSize: 20, borderRadius: 4 },
-  lg: { fontSize: 16, itemMinHeight: 40, itemPaddingX: 12, itemPaddingY: 8, treePadding: 12, treeGap: 6, chevronSize: 20, indentSize: 24, borderRadius: 6 },
+  sm: {
+    fontSize: 12,
+    itemMinHeight: 28,
+    itemPaddingX: 6,
+    itemPaddingY: 4,
+    treePadding: 8,
+    treeGap: 1,
+    chevronSize: 12,
+    indentSize: 16,
+    borderRadius: 4,
+  },
+  md: {
+    fontSize: 14,
+    itemMinHeight: 32,
+    itemPaddingX: 8,
+    itemPaddingY: 6,
+    treePadding: 8,
+    treeGap: 4,
+    chevronSize: 16,
+    indentSize: 20,
+    borderRadius: 4,
+  },
+  lg: {
+    fontSize: 16,
+    itemMinHeight: 40,
+    itemPaddingX: 12,
+    itemPaddingY: 8,
+    treePadding: 12,
+    treeGap: 6,
+    chevronSize: 20,
+    indentSize: 24,
+    borderRadius: 6,
+  },
 };
 
 /**
@@ -2396,10 +3757,22 @@ export function getTreeSizePreset(size: string): TreeSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const itemPaddingX = parseCSSValue(getCSSVariable(mapping.itemPaddingX), fallback.itemPaddingX);
-  const itemPaddingY = parseCSSValue(getCSSVariable(mapping.itemPaddingY), fallback.itemPaddingY);
-  const treePadding = parseCSSValue(getCSSVariable(mapping.treePadding), fallback.treePadding);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const itemPaddingX = parseCSSValue(
+    getCSSVariable(mapping.itemPaddingX),
+    fallback.itemPaddingX,
+  );
+  const itemPaddingY = parseCSSValue(
+    getCSSVariable(mapping.itemPaddingY),
+    fallback.itemPaddingY,
+  );
+  const treePadding = parseCSSValue(
+    getCSSVariable(mapping.treePadding),
+    fallback.treePadding,
+  );
 
   return {
     fontSize,
@@ -2429,10 +3802,46 @@ export interface TreeColorPreset {
 }
 
 const TREE_COLOR_FALLBACKS: Record<string, TreeColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, itemHoverBgColor: 0x00000014, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, chevronColor: 0x6b7280, focusColor: 0x3b82f6 },
-  primary: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, itemHoverBgColor: 0x00000014, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, chevronColor: 0x6b7280, focusColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, itemHoverBgColor: 0x00000014, itemSelectedBgColor: 0xe0e7ff, itemSelectedTextColor: 0x3730a3, chevronColor: 0x6b7280, focusColor: 0x6366f1 },
-  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, itemHoverBgColor: 0x00000014, itemSelectedBgColor: 0xfce7f3, itemSelectedTextColor: 0x9d174d, chevronColor: 0x6b7280, focusColor: 0xec4899 },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    itemHoverBgColor: 0x00000014,
+    itemSelectedBgColor: 0xdbeafe,
+    itemSelectedTextColor: 0x1e40af,
+    chevronColor: 0x6b7280,
+    focusColor: 0x3b82f6,
+  },
+  primary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    itemHoverBgColor: 0x00000014,
+    itemSelectedBgColor: 0xdbeafe,
+    itemSelectedTextColor: 0x1e40af,
+    chevronColor: 0x6b7280,
+    focusColor: 0x3b82f6,
+  },
+  secondary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    itemHoverBgColor: 0x00000014,
+    itemSelectedBgColor: 0xe0e7ff,
+    itemSelectedTextColor: 0x3730a3,
+    chevronColor: 0x6b7280,
+    focusColor: 0x6366f1,
+  },
+  tertiary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    itemHoverBgColor: 0x00000014,
+    itemSelectedBgColor: 0xfce7f3,
+    itemSelectedTextColor: 0x9d174d,
+    chevronColor: 0x6b7280,
+    focusColor: 0xec4899,
+  },
 };
 
 /**
@@ -2458,16 +3867,52 @@ export interface TableSizePreset {
   borderRadius: number;
 }
 
-const TABLE_SIZE_MAPPING: Record<string, { fontSize: string; cellPaddingY: string; cellPaddingX: string }> = {
-  sm: { fontSize: '--text-xs', cellPaddingY: '--spacing-sm', cellPaddingX: '--spacing' },
-  md: { fontSize: '--text-sm', cellPaddingY: '--spacing', cellPaddingX: '--spacing-md' },
-  lg: { fontSize: '--text-base', cellPaddingY: '--spacing-md', cellPaddingX: '--spacing-lg' },
+const TABLE_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; cellPaddingY: string; cellPaddingX: string }
+> = {
+  sm: {
+    fontSize: "--text-xs",
+    cellPaddingY: "--spacing-sm",
+    cellPaddingX: "--spacing",
+  },
+  md: {
+    fontSize: "--text-sm",
+    cellPaddingY: "--spacing",
+    cellPaddingX: "--spacing-md",
+  },
+  lg: {
+    fontSize: "--text-base",
+    cellPaddingY: "--spacing-md",
+    cellPaddingX: "--spacing-lg",
+  },
 };
 
 const TABLE_FALLBACKS: Record<string, TableSizePreset> = {
-  sm: { fontSize: 12, headerFontSize: 12, cellPaddingX: 8, cellPaddingY: 6, rowMinHeight: 32, borderRadius: 6 },
-  md: { fontSize: 14, headerFontSize: 14, cellPaddingX: 12, cellPaddingY: 8, rowMinHeight: 40, borderRadius: 6 },
-  lg: { fontSize: 16, headerFontSize: 16, cellPaddingX: 16, cellPaddingY: 12, rowMinHeight: 48, borderRadius: 8 },
+  sm: {
+    fontSize: 12,
+    headerFontSize: 12,
+    cellPaddingX: 8,
+    cellPaddingY: 6,
+    rowMinHeight: 32,
+    borderRadius: 6,
+  },
+  md: {
+    fontSize: 14,
+    headerFontSize: 14,
+    cellPaddingX: 12,
+    cellPaddingY: 8,
+    rowMinHeight: 40,
+    borderRadius: 6,
+  },
+  lg: {
+    fontSize: 16,
+    headerFontSize: 16,
+    cellPaddingX: 16,
+    cellPaddingY: 12,
+    rowMinHeight: 48,
+    borderRadius: 8,
+  },
 };
 
 /**
@@ -2481,9 +3926,18 @@ export function getTableSizePreset(size: string): TableSizePreset {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const cellPaddingX = parseCSSValue(getCSSVariable(mapping.cellPaddingX), fallback.cellPaddingX);
-  const cellPaddingY = parseCSSValue(getCSSVariable(mapping.cellPaddingY), fallback.cellPaddingY);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const cellPaddingX = parseCSSValue(
+    getCSSVariable(mapping.cellPaddingX),
+    fallback.cellPaddingX,
+  );
+  const cellPaddingY = parseCSSValue(
+    getCSSVariable(mapping.cellPaddingY),
+    fallback.cellPaddingY,
+  );
 
   return {
     fontSize,
@@ -2511,12 +3965,72 @@ export interface TableColorPreset {
 }
 
 const TABLE_COLOR_FALLBACKS: Record<string, TableColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, headerBgColor: 0xf3f4f6, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xdbeafe, rowSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
-  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, headerBgColor: 0xf3f4f6, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xdbeafe, rowSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, headerBgColor: 0xf3f4f6, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xe0e7ff, rowSelectedTextColor: 0x3730a3, focusColor: 0x6366f1 },
-  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, headerBgColor: 0xf3f4f6, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xfce7f3, rowSelectedTextColor: 0x9d174d, focusColor: 0xec4899 },
-  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, headerBgColor: 0xf3f4f6, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xfee2e2, rowSelectedTextColor: 0x991b1b, focusColor: 0xef4444 },
-  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, headerBgColor: 0xf9fafb, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xdbeafe, rowSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    headerBgColor: 0xf3f4f6,
+    headerTextColor: 0x6b7280,
+    textColor: 0x374151,
+    rowHoverBgColor: 0xe5e7eb,
+    rowSelectedBgColor: 0xdbeafe,
+    rowSelectedTextColor: 0x1e40af,
+    focusColor: 0x3b82f6,
+  },
+  primary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x3b82f6,
+    headerBgColor: 0xf3f4f6,
+    headerTextColor: 0x6b7280,
+    textColor: 0x374151,
+    rowHoverBgColor: 0xe5e7eb,
+    rowSelectedBgColor: 0xdbeafe,
+    rowSelectedTextColor: 0x1e40af,
+    focusColor: 0x3b82f6,
+  },
+  secondary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x6366f1,
+    headerBgColor: 0xf3f4f6,
+    headerTextColor: 0x6b7280,
+    textColor: 0x374151,
+    rowHoverBgColor: 0xe5e7eb,
+    rowSelectedBgColor: 0xe0e7ff,
+    rowSelectedTextColor: 0x3730a3,
+    focusColor: 0x6366f1,
+  },
+  tertiary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xec4899,
+    headerBgColor: 0xf3f4f6,
+    headerTextColor: 0x6b7280,
+    textColor: 0x374151,
+    rowHoverBgColor: 0xe5e7eb,
+    rowSelectedBgColor: 0xfce7f3,
+    rowSelectedTextColor: 0x9d174d,
+    focusColor: 0xec4899,
+  },
+  error: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xef4444,
+    headerBgColor: 0xf3f4f6,
+    headerTextColor: 0x6b7280,
+    textColor: 0x374151,
+    rowHoverBgColor: 0xe5e7eb,
+    rowSelectedBgColor: 0xfee2e2,
+    rowSelectedTextColor: 0x991b1b,
+    focusColor: 0xef4444,
+  },
+  filled: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0x00000000,
+    headerBgColor: 0xf9fafb,
+    headerTextColor: 0x6b7280,
+    textColor: 0x374151,
+    rowHoverBgColor: 0xe5e7eb,
+    rowSelectedBgColor: 0xdbeafe,
+    rowSelectedTextColor: 0x1e40af,
+    focusColor: 0x3b82f6,
+  },
 };
 
 /**
@@ -2542,16 +4056,40 @@ export interface DisclosureSizePreset {
   borderRadius: number;
 }
 
-const DISCLOSURE_SIZE_MAPPING: Record<string, { fontSize: string; padding: string; gap: string }> = {
-  sm: { fontSize: '--text-sm', padding: '--spacing-xs', gap: '--spacing-xs' },
-  md: { fontSize: '--text-base', padding: '--spacing-sm', gap: '--spacing-sm' },
-  lg: { fontSize: '--text-lg', padding: '--spacing', gap: '--spacing' },
+const DISCLOSURE_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; padding: string; gap: string }
+> = {
+  sm: { fontSize: "--text-sm", padding: "--spacing-xs", gap: "--spacing-xs" },
+  md: { fontSize: "--text-base", padding: "--spacing-sm", gap: "--spacing-sm" },
+  lg: { fontSize: "--text-lg", padding: "--spacing", gap: "--spacing" },
 };
 
 const DISCLOSURE_FALLBACKS: Record<string, DisclosureSizePreset> = {
-  sm: { fontSize: 14, padding: 4, gap: 4, chevronSize: 12, panelIndent: 20, borderRadius: 4 },
-  md: { fontSize: 16, padding: 8, gap: 8, chevronSize: 16, panelIndent: 32, borderRadius: 6 },
-  lg: { fontSize: 18, padding: 8, gap: 8, chevronSize: 20, panelIndent: 44, borderRadius: 8 },
+  sm: {
+    fontSize: 14,
+    padding: 4,
+    gap: 4,
+    chevronSize: 12,
+    panelIndent: 20,
+    borderRadius: 4,
+  },
+  md: {
+    fontSize: 16,
+    padding: 8,
+    gap: 8,
+    chevronSize: 16,
+    panelIndent: 32,
+    borderRadius: 6,
+  },
+  lg: {
+    fontSize: 18,
+    padding: 8,
+    gap: 8,
+    chevronSize: 20,
+    panelIndent: 44,
+    borderRadius: 8,
+  },
 };
 
 /**
@@ -2566,7 +4104,10 @@ export function getDisclosureSizePreset(size: string): DisclosureSizePreset {
   }
 
   return {
-    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    fontSize: parseCSSValue(
+      getCSSVariable(mapping.fontSize),
+      fallback.fontSize,
+    ),
     padding: parseCSSValue(getCSSVariable(mapping.padding), fallback.padding),
     gap: parseCSSValue(getCSSVariable(mapping.gap), fallback.gap),
     chevronSize: fallback.chevronSize,
@@ -2589,16 +4130,44 @@ export interface DisclosureColorPreset {
 }
 
 const DISCLOSURE_COLOR_FALLBACKS: Record<string, DisclosureColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, triggerHoverBgColor: 0x00000014, expandedBgColor: 0xf3f4f6, panelTextColor: 0x6b7280, focusColor: 0x3b82f6 },
-  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x3b82f6, triggerHoverBgColor: 0x3b82f614, expandedBgColor: 0x3b82f60a, panelTextColor: 0x6b7280, focusColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x6366f1, triggerHoverBgColor: 0x6366f114, expandedBgColor: 0x6366f10a, panelTextColor: 0x6b7280, focusColor: 0x6366f1 },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    triggerHoverBgColor: 0x00000014,
+    expandedBgColor: 0xf3f4f6,
+    panelTextColor: 0x6b7280,
+    focusColor: 0x3b82f6,
+  },
+  primary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x3b82f6,
+    textColor: 0x3b82f6,
+    triggerHoverBgColor: 0x3b82f614,
+    expandedBgColor: 0x3b82f60a,
+    panelTextColor: 0x6b7280,
+    focusColor: 0x3b82f6,
+  },
+  secondary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x6366f1,
+    textColor: 0x6366f1,
+    triggerHoverBgColor: 0x6366f114,
+    expandedBgColor: 0x6366f10a,
+    panelTextColor: 0x6b7280,
+    focusColor: 0x6366f1,
+  },
 };
 
 /**
  * Disclosure 색상 프리셋 읽기
  */
-export function getDisclosureColorPreset(variant: string): DisclosureColorPreset {
-  return DISCLOSURE_COLOR_FALLBACKS[variant] || DISCLOSURE_COLOR_FALLBACKS.default;
+export function getDisclosureColorPreset(
+  variant: string,
+): DisclosureColorPreset {
+  return (
+    DISCLOSURE_COLOR_FALLBACKS[variant] || DISCLOSURE_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -2616,16 +4185,49 @@ export interface TooltipSizePreset {
   borderRadius: number;
 }
 
-const TOOLTIP_SIZE_MAPPING: Record<string, { fontSize: string; paddingX: string; paddingY: string }> = {
-  sm: { fontSize: '--text-2xs', paddingX: '--spacing-xs', paddingY: '--spacing-2xs' },
-  md: { fontSize: '--text-xs', paddingX: '--spacing', paddingY: '--spacing-xs' },
-  lg: { fontSize: '--text-sm', paddingX: '--spacing-sm', paddingY: '--spacing-xs' },
+const TOOLTIP_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; paddingX: string; paddingY: string }
+> = {
+  sm: {
+    fontSize: "--text-2xs",
+    paddingX: "--spacing-xs",
+    paddingY: "--spacing-2xs",
+  },
+  md: {
+    fontSize: "--text-xs",
+    paddingX: "--spacing",
+    paddingY: "--spacing-xs",
+  },
+  lg: {
+    fontSize: "--text-sm",
+    paddingX: "--spacing-sm",
+    paddingY: "--spacing-xs",
+  },
 };
 
 const TOOLTIP_FALLBACKS: Record<string, TooltipSizePreset> = {
-  sm: { fontSize: 10, paddingX: 4, paddingY: 2, maxWidth: 120, borderRadius: 4 },
-  md: { fontSize: 12, paddingX: 8, paddingY: 4, maxWidth: 150, borderRadius: 4 },
-  lg: { fontSize: 14, paddingX: 8, paddingY: 4, maxWidth: 200, borderRadius: 4 },
+  sm: {
+    fontSize: 10,
+    paddingX: 4,
+    paddingY: 2,
+    maxWidth: 120,
+    borderRadius: 4,
+  },
+  md: {
+    fontSize: 12,
+    paddingX: 8,
+    paddingY: 4,
+    maxWidth: 150,
+    borderRadius: 4,
+  },
+  lg: {
+    fontSize: 14,
+    paddingX: 8,
+    paddingY: 4,
+    maxWidth: 200,
+    borderRadius: 4,
+  },
 };
 
 /**
@@ -2640,9 +4242,18 @@ export function getTooltipSizePreset(size: string): TooltipSizePreset {
   }
 
   return {
-    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
-    paddingX: parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX),
-    paddingY: parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY),
+    fontSize: parseCSSValue(
+      getCSSVariable(mapping.fontSize),
+      fallback.fontSize,
+    ),
+    paddingX: parseCSSValue(
+      getCSSVariable(mapping.paddingX),
+      fallback.paddingX,
+    ),
+    paddingY: parseCSSValue(
+      getCSSVariable(mapping.paddingY),
+      fallback.paddingY,
+    ),
     maxWidth: fallback.maxWidth,
     borderRadius: fallback.borderRadius,
   };
@@ -2658,12 +4269,36 @@ export interface TooltipColorPreset {
 }
 
 const TOOLTIP_COLOR_FALLBACKS: Record<string, TooltipColorPreset> = {
-  default: { backgroundColor: 0x374151, textColor: 0xffffff, arrowColor: 0x374151 },
-  primary: { backgroundColor: 0x3b82f6, textColor: 0xffffff, arrowColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0x6366f1, textColor: 0xffffff, arrowColor: 0x6366f1 },
-  tertiary: { backgroundColor: 0xec4899, textColor: 0xffffff, arrowColor: 0xec4899 },
-  error: { backgroundColor: 0xef4444, textColor: 0xffffff, arrowColor: 0xef4444 },
-  filled: { backgroundColor: 0xf9fafb, textColor: 0x374151, arrowColor: 0xf9fafb },
+  default: {
+    backgroundColor: 0x374151,
+    textColor: 0xffffff,
+    arrowColor: 0x374151,
+  },
+  primary: {
+    backgroundColor: 0x3b82f6,
+    textColor: 0xffffff,
+    arrowColor: 0x3b82f6,
+  },
+  secondary: {
+    backgroundColor: 0x6366f1,
+    textColor: 0xffffff,
+    arrowColor: 0x6366f1,
+  },
+  tertiary: {
+    backgroundColor: 0xec4899,
+    textColor: 0xffffff,
+    arrowColor: 0xec4899,
+  },
+  error: {
+    backgroundColor: 0xef4444,
+    textColor: 0xffffff,
+    arrowColor: 0xef4444,
+  },
+  filled: {
+    backgroundColor: 0xf9fafb,
+    textColor: 0x374151,
+    arrowColor: 0xf9fafb,
+  },
 };
 
 /**
@@ -2688,9 +4323,9 @@ export interface PopoverSizePreset {
 }
 
 const POPOVER_SIZE_MAPPING: Record<string, { fontSize: string }> = {
-  sm: { fontSize: '--text-sm' },
-  md: { fontSize: '--text-base' },
-  lg: { fontSize: '--text-lg' },
+  sm: { fontSize: "--text-sm" },
+  md: { fontSize: "--text-base" },
+  lg: { fontSize: "--text-lg" },
 };
 
 const POPOVER_FALLBACKS: Record<string, PopoverSizePreset> = {
@@ -2711,7 +4346,10 @@ export function getPopoverSizePreset(size: string): PopoverSizePreset {
   }
 
   return {
-    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    fontSize: parseCSSValue(
+      getCSSVariable(mapping.fontSize),
+      fallback.fontSize,
+    ),
     maxWidth: fallback.maxWidth,
     borderRadius: fallback.borderRadius,
     padding: fallback.padding,
@@ -2731,12 +4369,54 @@ export interface PopoverColorPreset {
 }
 
 const POPOVER_COLOR_FALLBACKS: Record<string, PopoverColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, arrowFillColor: 0xf3f4f6, arrowStrokeColor: 0xcad3dc, shadowColor: 0x00000026 },
-  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, arrowFillColor: 0xf3f4f6, arrowStrokeColor: 0x3b82f6, shadowColor: 0x00000026 },
-  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, arrowFillColor: 0xf3f4f6, arrowStrokeColor: 0x6366f1, shadowColor: 0x00000026 },
-  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, arrowFillColor: 0xf3f4f6, arrowStrokeColor: 0xec4899, shadowColor: 0x00000026 },
-  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, arrowFillColor: 0xf3f4f6, arrowStrokeColor: 0xef4444, shadowColor: 0x00000026 },
-  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, textColor: 0x374151, arrowFillColor: 0xf9fafb, arrowStrokeColor: 0x00000000, shadowColor: 0x00000026 },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    arrowFillColor: 0xf3f4f6,
+    arrowStrokeColor: 0xcad3dc,
+    shadowColor: 0x00000026,
+  },
+  primary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    arrowFillColor: 0xf3f4f6,
+    arrowStrokeColor: 0x3b82f6,
+    shadowColor: 0x00000026,
+  },
+  secondary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x6366f1,
+    textColor: 0x374151,
+    arrowFillColor: 0xf3f4f6,
+    arrowStrokeColor: 0x6366f1,
+    shadowColor: 0x00000026,
+  },
+  tertiary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xec4899,
+    textColor: 0x374151,
+    arrowFillColor: 0xf3f4f6,
+    arrowStrokeColor: 0xec4899,
+    shadowColor: 0x00000026,
+  },
+  error: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xef4444,
+    textColor: 0x374151,
+    arrowFillColor: 0xf3f4f6,
+    arrowStrokeColor: 0xef4444,
+    shadowColor: 0x00000026,
+  },
+  filled: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0x00000000,
+    textColor: 0x374151,
+    arrowFillColor: 0xf9fafb,
+    arrowStrokeColor: 0x00000000,
+    shadowColor: 0x00000026,
+  },
 };
 
 /**
@@ -2761,16 +4441,49 @@ export interface DialogSizePreset {
   minWidth: number;
 }
 
-const DIALOG_SIZE_MAPPING: Record<string, { fontSize: string; titleFontSize: string; padding: string }> = {
-  sm: { fontSize: '--text-sm', titleFontSize: '--text-lg', padding: '--spacing-md' },
-  md: { fontSize: '--text-base', titleFontSize: '--text-xl', padding: '--spacing-lg' },
-  lg: { fontSize: '--text-lg', titleFontSize: '--text-2xl', padding: '--spacing-xl' },
+const DIALOG_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; titleFontSize: string; padding: string }
+> = {
+  sm: {
+    fontSize: "--text-sm",
+    titleFontSize: "--text-lg",
+    padding: "--spacing-md",
+  },
+  md: {
+    fontSize: "--text-base",
+    titleFontSize: "--text-xl",
+    padding: "--spacing-lg",
+  },
+  lg: {
+    fontSize: "--text-lg",
+    titleFontSize: "--text-2xl",
+    padding: "--spacing-xl",
+  },
 };
 
 const DIALOG_FALLBACKS: Record<string, DialogSizePreset> = {
-  sm: { fontSize: 14, titleFontSize: 18, padding: 12, borderRadius: 12, minWidth: 280 },
-  md: { fontSize: 16, titleFontSize: 20, padding: 16, borderRadius: 16, minWidth: 320 },
-  lg: { fontSize: 18, titleFontSize: 24, padding: 24, borderRadius: 20, minWidth: 400 },
+  sm: {
+    fontSize: 14,
+    titleFontSize: 18,
+    padding: 12,
+    borderRadius: 12,
+    minWidth: 280,
+  },
+  md: {
+    fontSize: 16,
+    titleFontSize: 20,
+    padding: 16,
+    borderRadius: 16,
+    minWidth: 320,
+  },
+  lg: {
+    fontSize: 18,
+    titleFontSize: 24,
+    padding: 24,
+    borderRadius: 20,
+    minWidth: 400,
+  },
 };
 
 /**
@@ -2785,8 +4498,14 @@ export function getDialogSizePreset(size: string): DialogSizePreset {
   }
 
   return {
-    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
-    titleFontSize: parseCSSValue(getCSSVariable(mapping.titleFontSize), fallback.titleFontSize),
+    fontSize: parseCSSValue(
+      getCSSVariable(mapping.fontSize),
+      fallback.fontSize,
+    ),
+    titleFontSize: parseCSSValue(
+      getCSSVariable(mapping.titleFontSize),
+      fallback.titleFontSize,
+    ),
     padding: parseCSSValue(getCSSVariable(mapping.padding), fallback.padding),
     borderRadius: fallback.borderRadius,
     minWidth: fallback.minWidth,
@@ -2805,12 +4524,48 @@ export interface DialogColorPreset {
 }
 
 const DIALOG_COLOR_FALLBACKS: Record<string, DialogColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, titleColor: 0x374151, textColor: 0x374151, backdropColor: 0x00000080 },
-  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, titleColor: 0x3b82f6, textColor: 0x374151, backdropColor: 0x00000080 },
-  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, titleColor: 0x6366f1, textColor: 0x374151, backdropColor: 0x00000080 },
-  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, titleColor: 0xec4899, textColor: 0x374151, backdropColor: 0x00000080 },
-  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, titleColor: 0xef4444, textColor: 0x374151, backdropColor: 0x00000080 },
-  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, titleColor: 0x374151, textColor: 0x374151, backdropColor: 0x00000080 },
+  default: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x00000000,
+    titleColor: 0x374151,
+    textColor: 0x374151,
+    backdropColor: 0x00000080,
+  },
+  primary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x3b82f6,
+    titleColor: 0x3b82f6,
+    textColor: 0x374151,
+    backdropColor: 0x00000080,
+  },
+  secondary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x6366f1,
+    titleColor: 0x6366f1,
+    textColor: 0x374151,
+    backdropColor: 0x00000080,
+  },
+  tertiary: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xec4899,
+    titleColor: 0xec4899,
+    textColor: 0x374151,
+    backdropColor: 0x00000080,
+  },
+  error: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xef4444,
+    titleColor: 0xef4444,
+    textColor: 0x374151,
+    backdropColor: 0x00000080,
+  },
+  filled: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0x00000000,
+    titleColor: 0x374151,
+    textColor: 0x374151,
+    backdropColor: 0x00000080,
+  },
 };
 
 /**
@@ -2839,9 +4594,9 @@ export interface ColorSwatchSizePreset {
 }
 
 const COLOR_SWATCH_SIZE_MAPPING: Record<string, { size: string }> = {
-  sm: { size: '--text-sm' },
-  md: { size: '--text-lg' },
-  lg: { size: '--text-2xl' },
+  sm: { size: "--text-sm" },
+  md: { size: "--text-lg" },
+  lg: { size: "--text-2xl" },
 };
 
 const COLOR_SWATCH_FALLBACKS: Record<string, ColorSwatchSizePreset> = {
@@ -2880,18 +4635,43 @@ export interface ColorSwatchColorPreset {
 }
 
 const COLOR_SWATCH_COLOR_FALLBACKS: Record<string, ColorSwatchColorPreset> = {
-  default: { borderColor: 0xcad3dc, checkerColor: 0xe5e7eb, selectedBorderColor: 0x3b82f6 },
-  primary: { borderColor: 0x3b82f6, checkerColor: 0xe5e7eb, selectedBorderColor: 0x3b82f6 },
-  secondary: { borderColor: 0x6366f1, checkerColor: 0xe5e7eb, selectedBorderColor: 0x6366f1 },
-  tertiary: { borderColor: 0xec4899, checkerColor: 0xe5e7eb, selectedBorderColor: 0xec4899 },
-  error: { borderColor: 0xef4444, checkerColor: 0xe5e7eb, selectedBorderColor: 0xef4444 },
+  default: {
+    borderColor: 0xcad3dc,
+    checkerColor: 0xe5e7eb,
+    selectedBorderColor: 0x3b82f6,
+  },
+  primary: {
+    borderColor: 0x3b82f6,
+    checkerColor: 0xe5e7eb,
+    selectedBorderColor: 0x3b82f6,
+  },
+  secondary: {
+    borderColor: 0x6366f1,
+    checkerColor: 0xe5e7eb,
+    selectedBorderColor: 0x6366f1,
+  },
+  tertiary: {
+    borderColor: 0xec4899,
+    checkerColor: 0xe5e7eb,
+    selectedBorderColor: 0xec4899,
+  },
+  error: {
+    borderColor: 0xef4444,
+    checkerColor: 0xe5e7eb,
+    selectedBorderColor: 0xef4444,
+  },
 };
 
 /**
  * ColorSwatch 색상 프리셋 읽기
  */
-export function getColorSwatchColorPreset(variant: string): ColorSwatchColorPreset {
-  return COLOR_SWATCH_COLOR_FALLBACKS[variant] || COLOR_SWATCH_COLOR_FALLBACKS.default;
+export function getColorSwatchColorPreset(
+  variant: string,
+): ColorSwatchColorPreset {
+  return (
+    COLOR_SWATCH_COLOR_FALLBACKS[variant] ||
+    COLOR_SWATCH_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -2910,9 +4690,27 @@ export interface ColorSliderSizePreset {
 }
 
 const COLOR_SLIDER_FALLBACKS: Record<string, ColorSliderSizePreset> = {
-  sm: { trackWidth: 160, trackHeight: 20, thumbSize: 16, thumbBorderWidth: 2, borderRadius: 10 },
-  md: { trackWidth: 192, trackHeight: 28, thumbSize: 20, thumbBorderWidth: 2, borderRadius: 14 },
-  lg: { trackWidth: 240, trackHeight: 36, thumbSize: 24, thumbBorderWidth: 3, borderRadius: 18 },
+  sm: {
+    trackWidth: 160,
+    trackHeight: 20,
+    thumbSize: 16,
+    thumbBorderWidth: 2,
+    borderRadius: 10,
+  },
+  md: {
+    trackWidth: 192,
+    trackHeight: 28,
+    thumbSize: 20,
+    thumbBorderWidth: 2,
+    borderRadius: 14,
+  },
+  lg: {
+    trackWidth: 240,
+    trackHeight: 36,
+    thumbSize: 24,
+    thumbBorderWidth: 3,
+    borderRadius: 18,
+  },
 };
 
 /**
@@ -2932,18 +4730,43 @@ export interface ColorSliderColorPreset {
 }
 
 const COLOR_SLIDER_COLOR_FALLBACKS: Record<string, ColorSliderColorPreset> = {
-  default: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x00000033, focusRingColor: 0x3b82f6 },
-  primary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x3b82f633, focusRingColor: 0x3b82f6 },
-  secondary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x6366f133, focusRingColor: 0x6366f1 },
-  tertiary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xec489933, focusRingColor: 0xec4899 },
-  error: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xef444433, focusRingColor: 0xef4444 },
+  default: {
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x00000033,
+    focusRingColor: 0x3b82f6,
+  },
+  primary: {
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x3b82f633,
+    focusRingColor: 0x3b82f6,
+  },
+  secondary: {
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x6366f133,
+    focusRingColor: 0x6366f1,
+  },
+  tertiary: {
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xec489933,
+    focusRingColor: 0xec4899,
+  },
+  error: {
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xef444433,
+    focusRingColor: 0xef4444,
+  },
 };
 
 /**
  * ColorSlider 색상 프리셋 읽기
  */
-export function getColorSliderColorPreset(variant: string): ColorSliderColorPreset {
-  return COLOR_SLIDER_COLOR_FALLBACKS[variant] || COLOR_SLIDER_COLOR_FALLBACKS.default;
+export function getColorSliderColorPreset(
+  variant: string,
+): ColorSliderColorPreset {
+  return (
+    COLOR_SLIDER_COLOR_FALLBACKS[variant] ||
+    COLOR_SLIDER_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -2962,16 +4785,52 @@ export interface TimeFieldSizePreset {
   segmentPadding: number;
 }
 
-const TIME_FIELD_SIZE_MAPPING: Record<string, { fontSize: string; height: string; padding: string }> = {
-  sm: { fontSize: '--text-sm', height: '--spacing-xl', padding: '--spacing-xs' },
-  md: { fontSize: '--text-base', height: '--spacing-2xl', padding: '--spacing-sm' },
-  lg: { fontSize: '--text-lg', height: '--spacing-3xl', padding: '--spacing-md' },
+const TIME_FIELD_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; height: string; padding: string }
+> = {
+  sm: {
+    fontSize: "--text-sm",
+    height: "--spacing-xl",
+    padding: "--spacing-xs",
+  },
+  md: {
+    fontSize: "--text-base",
+    height: "--spacing-2xl",
+    padding: "--spacing-sm",
+  },
+  lg: {
+    fontSize: "--text-lg",
+    height: "--spacing-3xl",
+    padding: "--spacing-md",
+  },
 };
 
 const TIME_FIELD_FALLBACKS: Record<string, TimeFieldSizePreset> = {
-  sm: { fontSize: 14, height: 32, padding: 4, gap: 2, borderRadius: 6, segmentPadding: 2 },
-  md: { fontSize: 16, height: 40, padding: 8, gap: 4, borderRadius: 8, segmentPadding: 4 },
-  lg: { fontSize: 18, height: 48, padding: 12, gap: 6, borderRadius: 10, segmentPadding: 6 },
+  sm: {
+    fontSize: 14,
+    height: 32,
+    padding: 4,
+    gap: 2,
+    borderRadius: 6,
+    segmentPadding: 2,
+  },
+  md: {
+    fontSize: 16,
+    height: 40,
+    padding: 8,
+    gap: 4,
+    borderRadius: 8,
+    segmentPadding: 4,
+  },
+  lg: {
+    fontSize: 18,
+    height: 48,
+    padding: 12,
+    gap: 6,
+    borderRadius: 10,
+    segmentPadding: 6,
+  },
 };
 
 /**
@@ -2986,7 +4845,10 @@ export function getTimeFieldSizePreset(size: string): TimeFieldSizePreset {
   }
 
   return {
-    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    fontSize: parseCSSValue(
+      getCSSVariable(mapping.fontSize),
+      fallback.fontSize,
+    ),
     height: parseCSSValue(getCSSVariable(mapping.height), fallback.height),
     padding: parseCSSValue(getCSSVariable(mapping.padding), fallback.padding),
     gap: fallback.gap,
@@ -3009,19 +4871,69 @@ export interface TimeFieldColorPreset {
 }
 
 const TIME_FIELD_COLOR_FALLBACKS: Record<string, TimeFieldColorPreset> = {
-  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
-  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
-  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x6366f1, segmentSelectedBg: 0x6366f1, segmentSelectedText: 0xffffff },
-  tertiary: { backgroundColor: 0xffffff, borderColor: 0xec4899, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0xec4899, segmentSelectedBg: 0xec4899, segmentSelectedText: 0xffffff },
-  error: { backgroundColor: 0xffffff, borderColor: 0xef4444, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0xef4444, segmentSelectedBg: 0xef4444, segmentSelectedText: 0xffffff },
-  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
+  default: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0x3b82f6,
+    segmentSelectedBg: 0x3b82f6,
+    segmentSelectedText: 0xffffff,
+  },
+  primary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0x3b82f6,
+    segmentSelectedBg: 0x3b82f6,
+    segmentSelectedText: 0xffffff,
+  },
+  secondary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x6366f1,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0x6366f1,
+    segmentSelectedBg: 0x6366f1,
+    segmentSelectedText: 0xffffff,
+  },
+  tertiary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xec4899,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0xec4899,
+    segmentSelectedBg: 0xec4899,
+    segmentSelectedText: 0xffffff,
+  },
+  error: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xef4444,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0xef4444,
+    segmentSelectedBg: 0xef4444,
+    segmentSelectedText: 0xffffff,
+  },
+  filled: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x00000000,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0x3b82f6,
+    segmentSelectedBg: 0x3b82f6,
+    segmentSelectedText: 0xffffff,
+  },
 };
 
 /**
  * TimeField 색상 프리셋 읽기
  */
 export function getTimeFieldColorPreset(variant: string): TimeFieldColorPreset {
-  return TIME_FIELD_COLOR_FALLBACKS[variant] || TIME_FIELD_COLOR_FALLBACKS.default;
+  return (
+    TIME_FIELD_COLOR_FALLBACKS[variant] || TIME_FIELD_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -3040,16 +4952,52 @@ export interface DateFieldSizePreset {
   segmentPadding: number;
 }
 
-const DATE_FIELD_SIZE_MAPPING: Record<string, { fontSize: string; height: string; padding: string }> = {
-  sm: { fontSize: '--text-sm', height: '--spacing-xl', padding: '--spacing-xs' },
-  md: { fontSize: '--text-base', height: '--spacing-2xl', padding: '--spacing-sm' },
-  lg: { fontSize: '--text-lg', height: '--spacing-3xl', padding: '--spacing-md' },
+const DATE_FIELD_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; height: string; padding: string }
+> = {
+  sm: {
+    fontSize: "--text-sm",
+    height: "--spacing-xl",
+    padding: "--spacing-xs",
+  },
+  md: {
+    fontSize: "--text-base",
+    height: "--spacing-2xl",
+    padding: "--spacing-sm",
+  },
+  lg: {
+    fontSize: "--text-lg",
+    height: "--spacing-3xl",
+    padding: "--spacing-md",
+  },
 };
 
 const DATE_FIELD_FALLBACKS: Record<string, DateFieldSizePreset> = {
-  sm: { fontSize: 14, height: 32, padding: 4, gap: 2, borderRadius: 6, segmentPadding: 2 },
-  md: { fontSize: 16, height: 40, padding: 8, gap: 4, borderRadius: 8, segmentPadding: 4 },
-  lg: { fontSize: 18, height: 48, padding: 12, gap: 6, borderRadius: 10, segmentPadding: 6 },
+  sm: {
+    fontSize: 14,
+    height: 32,
+    padding: 4,
+    gap: 2,
+    borderRadius: 6,
+    segmentPadding: 2,
+  },
+  md: {
+    fontSize: 16,
+    height: 40,
+    padding: 8,
+    gap: 4,
+    borderRadius: 8,
+    segmentPadding: 4,
+  },
+  lg: {
+    fontSize: 18,
+    height: 48,
+    padding: 12,
+    gap: 6,
+    borderRadius: 10,
+    segmentPadding: 6,
+  },
 };
 
 /**
@@ -3064,7 +5012,10 @@ export function getDateFieldSizePreset(size: string): DateFieldSizePreset {
   }
 
   return {
-    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    fontSize: parseCSSValue(
+      getCSSVariable(mapping.fontSize),
+      fallback.fontSize,
+    ),
     height: parseCSSValue(getCSSVariable(mapping.height), fallback.height),
     padding: parseCSSValue(getCSSVariable(mapping.padding), fallback.padding),
     gap: fallback.gap,
@@ -3087,19 +5038,69 @@ export interface DateFieldColorPreset {
 }
 
 const DATE_FIELD_COLOR_FALLBACKS: Record<string, DateFieldColorPreset> = {
-  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
-  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
-  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x6366f1, segmentSelectedBg: 0x6366f1, segmentSelectedText: 0xffffff },
-  tertiary: { backgroundColor: 0xffffff, borderColor: 0xec4899, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0xec4899, segmentSelectedBg: 0xec4899, segmentSelectedText: 0xffffff },
-  error: { backgroundColor: 0xffffff, borderColor: 0xef4444, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0xef4444, segmentSelectedBg: 0xef4444, segmentSelectedText: 0xffffff },
-  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
+  default: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0x3b82f6,
+    segmentSelectedBg: 0x3b82f6,
+    segmentSelectedText: 0xffffff,
+  },
+  primary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0x3b82f6,
+    segmentSelectedBg: 0x3b82f6,
+    segmentSelectedText: 0xffffff,
+  },
+  secondary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x6366f1,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0x6366f1,
+    segmentSelectedBg: 0x6366f1,
+    segmentSelectedText: 0xffffff,
+  },
+  tertiary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xec4899,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0xec4899,
+    segmentSelectedBg: 0xec4899,
+    segmentSelectedText: 0xffffff,
+  },
+  error: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xef4444,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0xef4444,
+    segmentSelectedBg: 0xef4444,
+    segmentSelectedText: 0xffffff,
+  },
+  filled: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x00000000,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    focusBorderColor: 0x3b82f6,
+    segmentSelectedBg: 0x3b82f6,
+    segmentSelectedText: 0xffffff,
+  },
 };
 
 /**
  * DateField 색상 프리셋 읽기
  */
 export function getDateFieldColorPreset(variant: string): DateFieldColorPreset {
-  return DATE_FIELD_COLOR_FALLBACKS[variant] || DATE_FIELD_COLOR_FALLBACKS.default;
+  return (
+    DATE_FIELD_COLOR_FALLBACKS[variant] || DATE_FIELD_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -3118,9 +5119,27 @@ export interface ColorAreaSizePreset {
 }
 
 const COLOR_AREA_FALLBACKS: Record<string, ColorAreaSizePreset> = {
-  sm: { width: 144, height: 144, thumbSize: 16, thumbBorderWidth: 2, borderRadius: 8 },
-  md: { width: 192, height: 192, thumbSize: 20, thumbBorderWidth: 2, borderRadius: 10 },
-  lg: { width: 256, height: 256, thumbSize: 24, thumbBorderWidth: 3, borderRadius: 12 },
+  sm: {
+    width: 144,
+    height: 144,
+    thumbSize: 16,
+    thumbBorderWidth: 2,
+    borderRadius: 8,
+  },
+  md: {
+    width: 192,
+    height: 192,
+    thumbSize: 20,
+    thumbBorderWidth: 2,
+    borderRadius: 10,
+  },
+  lg: {
+    width: 256,
+    height: 256,
+    thumbSize: 24,
+    thumbBorderWidth: 3,
+    borderRadius: 12,
+  },
 };
 
 /**
@@ -3141,18 +5160,45 @@ export interface ColorAreaColorPreset {
 }
 
 const COLOR_AREA_COLOR_FALLBACKS: Record<string, ColorAreaColorPreset> = {
-  default: { borderColor: 0xcad3dc, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x00000033, focusRingColor: 0x3b82f6 },
-  primary: { borderColor: 0x3b82f6, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x3b82f633, focusRingColor: 0x3b82f6 },
-  secondary: { borderColor: 0x6366f1, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x6366f133, focusRingColor: 0x6366f1 },
-  tertiary: { borderColor: 0xec4899, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xec489933, focusRingColor: 0xec4899 },
-  error: { borderColor: 0xef4444, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xef444433, focusRingColor: 0xef4444 },
+  default: {
+    borderColor: 0xcad3dc,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x00000033,
+    focusRingColor: 0x3b82f6,
+  },
+  primary: {
+    borderColor: 0x3b82f6,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x3b82f633,
+    focusRingColor: 0x3b82f6,
+  },
+  secondary: {
+    borderColor: 0x6366f1,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x6366f133,
+    focusRingColor: 0x6366f1,
+  },
+  tertiary: {
+    borderColor: 0xec4899,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xec489933,
+    focusRingColor: 0xec4899,
+  },
+  error: {
+    borderColor: 0xef4444,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xef444433,
+    focusRingColor: 0xef4444,
+  },
 };
 
 /**
  * ColorArea 색상 프리셋 읽기
  */
 export function getColorAreaColorPreset(variant: string): ColorAreaColorPreset {
-  return COLOR_AREA_COLOR_FALLBACKS[variant] || COLOR_AREA_COLOR_FALLBACKS.default;
+  return (
+    COLOR_AREA_COLOR_FALLBACKS[variant] || COLOR_AREA_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -3172,16 +5218,43 @@ export interface CalendarSizePreset {
   buttonSize: number;
 }
 
-const CALENDAR_SIZE_MAPPING: Record<string, { fontSize: string; headerFontSize: string }> = {
-  sm: { fontSize: '--text-sm', headerFontSize: '--text-base' },
-  md: { fontSize: '--text-base', headerFontSize: '--text-lg' },
-  lg: { fontSize: '--text-lg', headerFontSize: '--text-xl' },
+const CALENDAR_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; headerFontSize: string }
+> = {
+  sm: { fontSize: "--text-sm", headerFontSize: "--text-base" },
+  md: { fontSize: "--text-base", headerFontSize: "--text-lg" },
+  lg: { fontSize: "--text-lg", headerFontSize: "--text-xl" },
 };
 
 const CALENDAR_FALLBACKS: Record<string, CalendarSizePreset> = {
-  sm: { fontSize: 14, headerFontSize: 16, cellSize: 28, padding: 8, gap: 2, borderRadius: 8, buttonSize: 24 },
-  md: { fontSize: 16, headerFontSize: 18, cellSize: 36, padding: 12, gap: 4, borderRadius: 10, buttonSize: 28 },
-  lg: { fontSize: 18, headerFontSize: 20, cellSize: 44, padding: 16, gap: 6, borderRadius: 12, buttonSize: 32 },
+  sm: {
+    fontSize: 14,
+    headerFontSize: 16,
+    cellSize: 28,
+    padding: 8,
+    gap: 2,
+    borderRadius: 8,
+    buttonSize: 24,
+  },
+  md: {
+    fontSize: 16,
+    headerFontSize: 18,
+    cellSize: 36,
+    padding: 12,
+    gap: 4,
+    borderRadius: 10,
+    buttonSize: 28,
+  },
+  lg: {
+    fontSize: 18,
+    headerFontSize: 20,
+    cellSize: 44,
+    padding: 16,
+    gap: 6,
+    borderRadius: 12,
+    buttonSize: 32,
+  },
 };
 
 /**
@@ -3196,8 +5269,14 @@ export function getCalendarSizePreset(size: string): CalendarSizePreset {
   }
 
   return {
-    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
-    headerFontSize: parseCSSValue(getCSSVariable(mapping.headerFontSize), fallback.headerFontSize),
+    fontSize: parseCSSValue(
+      getCSSVariable(mapping.fontSize),
+      fallback.fontSize,
+    ),
+    headerFontSize: parseCSSValue(
+      getCSSVariable(mapping.headerFontSize),
+      fallback.headerFontSize,
+    ),
     cellSize: fallback.cellSize,
     padding: fallback.padding,
     gap: fallback.gap,
@@ -3225,34 +5304,82 @@ export interface CalendarColorPreset {
 
 const CALENDAR_COLOR_FALLBACKS: Record<string, CalendarColorPreset> = {
   default: {
-    backgroundColor: 0xffffff, borderColor: 0xcad3dc, headerColor: 0x374151, textColor: 0x374151,
-    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0x3b82f6,
-    selectedBgColor: 0x3b82f6, selectedTextColor: 0xffffff, hoverBgColor: 0xf3f4f6, outsideMonthColor: 0x9ca3af
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    headerColor: 0x374151,
+    textColor: 0x374151,
+    weekdayColor: 0x6b7280,
+    disabledColor: 0xd1d5db,
+    todayBorderColor: 0x3b82f6,
+    selectedBgColor: 0x3b82f6,
+    selectedTextColor: 0xffffff,
+    hoverBgColor: 0xf3f4f6,
+    outsideMonthColor: 0x9ca3af,
   },
   primary: {
-    backgroundColor: 0xffffff, borderColor: 0x3b82f6, headerColor: 0x3b82f6, textColor: 0x374151,
-    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0x3b82f6,
-    selectedBgColor: 0x3b82f6, selectedTextColor: 0xffffff, hoverBgColor: 0xeff6ff, outsideMonthColor: 0x9ca3af
+    backgroundColor: 0xffffff,
+    borderColor: 0x3b82f6,
+    headerColor: 0x3b82f6,
+    textColor: 0x374151,
+    weekdayColor: 0x6b7280,
+    disabledColor: 0xd1d5db,
+    todayBorderColor: 0x3b82f6,
+    selectedBgColor: 0x3b82f6,
+    selectedTextColor: 0xffffff,
+    hoverBgColor: 0xeff6ff,
+    outsideMonthColor: 0x9ca3af,
   },
   secondary: {
-    backgroundColor: 0xffffff, borderColor: 0x6366f1, headerColor: 0x6366f1, textColor: 0x374151,
-    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0x6366f1,
-    selectedBgColor: 0x6366f1, selectedTextColor: 0xffffff, hoverBgColor: 0xeef2ff, outsideMonthColor: 0x9ca3af
+    backgroundColor: 0xffffff,
+    borderColor: 0x6366f1,
+    headerColor: 0x6366f1,
+    textColor: 0x374151,
+    weekdayColor: 0x6b7280,
+    disabledColor: 0xd1d5db,
+    todayBorderColor: 0x6366f1,
+    selectedBgColor: 0x6366f1,
+    selectedTextColor: 0xffffff,
+    hoverBgColor: 0xeef2ff,
+    outsideMonthColor: 0x9ca3af,
   },
   tertiary: {
-    backgroundColor: 0xffffff, borderColor: 0xec4899, headerColor: 0xec4899, textColor: 0x374151,
-    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0xec4899,
-    selectedBgColor: 0xec4899, selectedTextColor: 0xffffff, hoverBgColor: 0xfdf2f8, outsideMonthColor: 0x9ca3af
+    backgroundColor: 0xffffff,
+    borderColor: 0xec4899,
+    headerColor: 0xec4899,
+    textColor: 0x374151,
+    weekdayColor: 0x6b7280,
+    disabledColor: 0xd1d5db,
+    todayBorderColor: 0xec4899,
+    selectedBgColor: 0xec4899,
+    selectedTextColor: 0xffffff,
+    hoverBgColor: 0xfdf2f8,
+    outsideMonthColor: 0x9ca3af,
   },
   error: {
-    backgroundColor: 0xffffff, borderColor: 0xef4444, headerColor: 0xef4444, textColor: 0x374151,
-    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0xef4444,
-    selectedBgColor: 0xef4444, selectedTextColor: 0xffffff, hoverBgColor: 0xfef2f2, outsideMonthColor: 0x9ca3af
+    backgroundColor: 0xffffff,
+    borderColor: 0xef4444,
+    headerColor: 0xef4444,
+    textColor: 0x374151,
+    weekdayColor: 0x6b7280,
+    disabledColor: 0xd1d5db,
+    todayBorderColor: 0xef4444,
+    selectedBgColor: 0xef4444,
+    selectedTextColor: 0xffffff,
+    hoverBgColor: 0xfef2f2,
+    outsideMonthColor: 0x9ca3af,
   },
   filled: {
-    backgroundColor: 0xf9fafb, borderColor: 0x00000000, headerColor: 0x374151, textColor: 0x374151,
-    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0x3b82f6,
-    selectedBgColor: 0x3b82f6, selectedTextColor: 0xffffff, hoverBgColor: 0xf3f4f6, outsideMonthColor: 0x9ca3af
+    backgroundColor: 0xf9fafb,
+    borderColor: 0x00000000,
+    headerColor: 0x374151,
+    textColor: 0x374151,
+    weekdayColor: 0x6b7280,
+    disabledColor: 0xd1d5db,
+    todayBorderColor: 0x3b82f6,
+    selectedBgColor: 0x3b82f6,
+    selectedTextColor: 0xffffff,
+    hoverBgColor: 0xf3f4f6,
+    outsideMonthColor: 0x9ca3af,
   },
 };
 
@@ -3300,18 +5427,42 @@ export interface ColorWheelColorPreset {
 }
 
 const COLOR_WHEEL_COLOR_FALLBACKS: Record<string, ColorWheelColorPreset> = {
-  default: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x00000033, focusRingColor: 0x3b82f6 },
-  primary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x3b82f633, focusRingColor: 0x3b82f6 },
-  secondary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x6366f133, focusRingColor: 0x6366f1 },
-  tertiary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xec489933, focusRingColor: 0xec4899 },
-  error: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xef444433, focusRingColor: 0xef4444 },
+  default: {
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x00000033,
+    focusRingColor: 0x3b82f6,
+  },
+  primary: {
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x3b82f633,
+    focusRingColor: 0x3b82f6,
+  },
+  secondary: {
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x6366f133,
+    focusRingColor: 0x6366f1,
+  },
+  tertiary: {
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xec489933,
+    focusRingColor: 0xec4899,
+  },
+  error: {
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xef444433,
+    focusRingColor: 0xef4444,
+  },
 };
 
 /**
  * ColorWheel 색상 프리셋 읽기
  */
-export function getColorWheelColorPreset(variant: string): ColorWheelColorPreset {
-  return COLOR_WHEEL_COLOR_FALLBACKS[variant] || COLOR_WHEEL_COLOR_FALLBACKS.default;
+export function getColorWheelColorPreset(
+  variant: string,
+): ColorWheelColorPreset {
+  return (
+    COLOR_WHEEL_COLOR_FALLBACKS[variant] || COLOR_WHEEL_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -3333,15 +5484,42 @@ export interface DatePickerSizePreset {
 }
 
 const DATE_PICKER_SIZE_MAPPING: Record<string, { fontSize: string }> = {
-  sm: { fontSize: '--text-sm' },
-  md: { fontSize: '--text-base' },
-  lg: { fontSize: '--text-lg' },
+  sm: { fontSize: "--text-sm" },
+  md: { fontSize: "--text-base" },
+  lg: { fontSize: "--text-lg" },
 };
 
 const DATE_PICKER_FALLBACKS: Record<string, DatePickerSizePreset> = {
-  sm: { fieldHeight: 32, fieldPadding: 8, fieldFontSize: 14, fieldBorderRadius: 6, buttonSize: 28, calendarWidth: 260, calendarCellSize: 28, gap: 8 },
-  md: { fieldHeight: 40, fieldPadding: 12, fieldFontSize: 16, fieldBorderRadius: 8, buttonSize: 32, calendarWidth: 300, calendarCellSize: 36, gap: 12 },
-  lg: { fieldHeight: 48, fieldPadding: 16, fieldFontSize: 18, fieldBorderRadius: 10, buttonSize: 40, calendarWidth: 360, calendarCellSize: 44, gap: 16 },
+  sm: {
+    fieldHeight: 32,
+    fieldPadding: 8,
+    fieldFontSize: 14,
+    fieldBorderRadius: 6,
+    buttonSize: 28,
+    calendarWidth: 260,
+    calendarCellSize: 28,
+    gap: 8,
+  },
+  md: {
+    fieldHeight: 40,
+    fieldPadding: 12,
+    fieldFontSize: 16,
+    fieldBorderRadius: 8,
+    buttonSize: 32,
+    calendarWidth: 300,
+    calendarCellSize: 36,
+    gap: 12,
+  },
+  lg: {
+    fieldHeight: 48,
+    fieldPadding: 16,
+    fieldFontSize: 18,
+    fieldBorderRadius: 10,
+    buttonSize: 40,
+    calendarWidth: 360,
+    calendarCellSize: 44,
+    gap: 16,
+  },
 };
 
 /**
@@ -3357,7 +5535,10 @@ export function getDatePickerSizePreset(size: string): DatePickerSizePreset {
 
   return {
     ...fallback,
-    fieldFontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fieldFontSize),
+    fieldFontSize: parseCSSValue(
+      getCSSVariable(mapping.fontSize),
+      fallback.fieldFontSize,
+    ),
   };
 }
 
@@ -3378,42 +5559,82 @@ export interface DatePickerColorPreset {
 
 const DATE_PICKER_COLOR_FALLBACKS: Record<string, DatePickerColorPreset> = {
   default: {
-    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xcad3dc, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xf3f4f6, buttonIconColor: 0x374151,
-    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xcad3dc
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0xcad3dc,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xf3f4f6,
+    buttonIconColor: 0x374151,
+    focusBorderColor: 0x3b82f6,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0xcad3dc,
   },
   primary: {
-    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0x3b82f6, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xeff6ff, buttonIconColor: 0x3b82f6,
-    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0x3b82f6
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0x3b82f6,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xeff6ff,
+    buttonIconColor: 0x3b82f6,
+    focusBorderColor: 0x3b82f6,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0x3b82f6,
   },
   secondary: {
-    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0x6366f1, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xeef2ff, buttonIconColor: 0x6366f1,
-    focusBorderColor: 0x6366f1, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0x6366f1
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0x6366f1,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xeef2ff,
+    buttonIconColor: 0x6366f1,
+    focusBorderColor: 0x6366f1,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0x6366f1,
   },
   tertiary: {
-    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xec4899, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xfdf2f8, buttonIconColor: 0xec4899,
-    focusBorderColor: 0xec4899, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xec4899
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0xec4899,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xfdf2f8,
+    buttonIconColor: 0xec4899,
+    focusBorderColor: 0xec4899,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0xec4899,
   },
   error: {
-    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xef4444, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xfef2f2, buttonIconColor: 0xef4444,
-    focusBorderColor: 0xef4444, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xef4444
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0xef4444,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xfef2f2,
+    buttonIconColor: 0xef4444,
+    focusBorderColor: 0xef4444,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0xef4444,
   },
   filled: {
-    fieldBackgroundColor: 0xf3f4f6, fieldBorderColor: 0x00000000, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xe5e7eb, buttonIconColor: 0x374151,
-    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xcad3dc
+    fieldBackgroundColor: 0xf3f4f6,
+    fieldBorderColor: 0x00000000,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xe5e7eb,
+    buttonIconColor: 0x374151,
+    focusBorderColor: 0x3b82f6,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0xcad3dc,
   },
 };
 
 /**
  * DatePicker 색상 프리셋 읽기
  */
-export function getDatePickerColorPreset(variant: string): DatePickerColorPreset {
-  return DATE_PICKER_COLOR_FALLBACKS[variant] || DATE_PICKER_COLOR_FALLBACKS.default;
+export function getDatePickerColorPreset(
+  variant: string,
+): DatePickerColorPreset {
+  return (
+    DATE_PICKER_COLOR_FALLBACKS[variant] || DATE_PICKER_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -3435,9 +5656,36 @@ export interface ColorPickerSizePreset {
 }
 
 const COLOR_PICKER_FALLBACKS: Record<string, ColorPickerSizePreset> = {
-  sm: { areaSize: 144, sliderWidth: 144, sliderHeight: 20, swatchSize: 20, thumbSize: 16, padding: 8, gap: 8, borderRadius: 8 },
-  md: { areaSize: 192, sliderWidth: 192, sliderHeight: 28, swatchSize: 24, thumbSize: 20, padding: 12, gap: 12, borderRadius: 10 },
-  lg: { areaSize: 256, sliderWidth: 256, sliderHeight: 36, swatchSize: 32, thumbSize: 24, padding: 16, gap: 16, borderRadius: 12 },
+  sm: {
+    areaSize: 144,
+    sliderWidth: 144,
+    sliderHeight: 20,
+    swatchSize: 20,
+    thumbSize: 16,
+    padding: 8,
+    gap: 8,
+    borderRadius: 8,
+  },
+  md: {
+    areaSize: 192,
+    sliderWidth: 192,
+    sliderHeight: 28,
+    swatchSize: 24,
+    thumbSize: 20,
+    padding: 12,
+    gap: 12,
+    borderRadius: 10,
+  },
+  lg: {
+    areaSize: 256,
+    sliderWidth: 256,
+    sliderHeight: 36,
+    swatchSize: 32,
+    thumbSize: 24,
+    padding: 16,
+    gap: 16,
+    borderRadius: 12,
+  },
 };
 
 /**
@@ -3460,18 +5708,58 @@ export interface ColorPickerColorPreset {
 }
 
 const COLOR_PICKER_COLOR_FALLBACKS: Record<string, ColorPickerColorPreset> = {
-  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x00000033, focusRingColor: 0x3b82f6, labelColor: 0x374151 },
-  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x3b82f633, focusRingColor: 0x3b82f6, labelColor: 0x374151 },
-  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x6366f133, focusRingColor: 0x6366f1, labelColor: 0x374151 },
-  tertiary: { backgroundColor: 0xffffff, borderColor: 0xec4899, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xec489933, focusRingColor: 0xec4899, labelColor: 0x374151 },
-  error: { backgroundColor: 0xffffff, borderColor: 0xef4444, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xef444433, focusRingColor: 0xef4444, labelColor: 0x374151 },
+  default: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x00000033,
+    focusRingColor: 0x3b82f6,
+    labelColor: 0x374151,
+  },
+  primary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x3b82f6,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x3b82f633,
+    focusRingColor: 0x3b82f6,
+    labelColor: 0x374151,
+  },
+  secondary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x6366f1,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0x6366f133,
+    focusRingColor: 0x6366f1,
+    labelColor: 0x374151,
+  },
+  tertiary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xec4899,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xec489933,
+    focusRingColor: 0xec4899,
+    labelColor: 0x374151,
+  },
+  error: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xef4444,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xef444433,
+    focusRingColor: 0xef4444,
+    labelColor: 0x374151,
+  },
 };
 
 /**
  * ColorPicker 색상 프리셋 읽기
  */
-export function getColorPickerColorPreset(variant: string): ColorPickerColorPreset {
-  return COLOR_PICKER_COLOR_FALLBACKS[variant] || COLOR_PICKER_COLOR_FALLBACKS.default;
+export function getColorPickerColorPreset(
+  variant: string,
+): ColorPickerColorPreset {
+  return (
+    COLOR_PICKER_COLOR_FALLBACKS[variant] ||
+    COLOR_PICKER_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================
@@ -3494,23 +5782,56 @@ export interface DateRangePickerSizePreset {
 }
 
 const DATE_RANGE_PICKER_SIZE_MAPPING: Record<string, { fontSize: string }> = {
-  sm: { fontSize: '--text-sm' },
-  md: { fontSize: '--text-base' },
-  lg: { fontSize: '--text-lg' },
+  sm: { fontSize: "--text-sm" },
+  md: { fontSize: "--text-base" },
+  lg: { fontSize: "--text-lg" },
 };
 
 const DATE_RANGE_PICKER_FALLBACKS: Record<string, DateRangePickerSizePreset> = {
-  sm: { fieldHeight: 32, fieldPadding: 8, fieldFontSize: 14, fieldBorderRadius: 6, buttonSize: 28, calendarWidth: 520, calendarCellSize: 28, gap: 8, separatorWidth: 16 },
-  md: { fieldHeight: 40, fieldPadding: 12, fieldFontSize: 16, fieldBorderRadius: 8, buttonSize: 32, calendarWidth: 600, calendarCellSize: 36, gap: 12, separatorWidth: 24 },
-  lg: { fieldHeight: 48, fieldPadding: 16, fieldFontSize: 18, fieldBorderRadius: 10, buttonSize: 40, calendarWidth: 720, calendarCellSize: 44, gap: 16, separatorWidth: 32 },
+  sm: {
+    fieldHeight: 32,
+    fieldPadding: 8,
+    fieldFontSize: 14,
+    fieldBorderRadius: 6,
+    buttonSize: 28,
+    calendarWidth: 520,
+    calendarCellSize: 28,
+    gap: 8,
+    separatorWidth: 16,
+  },
+  md: {
+    fieldHeight: 40,
+    fieldPadding: 12,
+    fieldFontSize: 16,
+    fieldBorderRadius: 8,
+    buttonSize: 32,
+    calendarWidth: 600,
+    calendarCellSize: 36,
+    gap: 12,
+    separatorWidth: 24,
+  },
+  lg: {
+    fieldHeight: 48,
+    fieldPadding: 16,
+    fieldFontSize: 18,
+    fieldBorderRadius: 10,
+    buttonSize: 40,
+    calendarWidth: 720,
+    calendarCellSize: 44,
+    gap: 16,
+    separatorWidth: 32,
+  },
 };
 
 /**
  * DateRangePicker 사이즈 프리셋 읽기
  */
-export function getDateRangePickerSizePreset(size: string): DateRangePickerSizePreset {
+export function getDateRangePickerSizePreset(
+  size: string,
+): DateRangePickerSizePreset {
   const mapping = DATE_RANGE_PICKER_SIZE_MAPPING[size];
-  const fallback = DATE_RANGE_PICKER_FALLBACKS[size] || DATE_RANGE_PICKER_FALLBACKS.md;
+  const fallback =
+    DATE_RANGE_PICKER_FALLBACKS[size] || DATE_RANGE_PICKER_FALLBACKS.md;
 
   if (!mapping) {
     return fallback;
@@ -3518,7 +5839,10 @@ export function getDateRangePickerSizePreset(size: string): DateRangePickerSizeP
 
   return {
     ...fallback,
-    fieldFontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fieldFontSize),
+    fieldFontSize: parseCSSValue(
+      getCSSVariable(mapping.fontSize),
+      fallback.fieldFontSize,
+    ),
   };
 }
 
@@ -3540,50 +5864,106 @@ export interface DateRangePickerColorPreset {
   separatorColor: number;
 }
 
-const DATE_RANGE_PICKER_COLOR_FALLBACKS: Record<string, DateRangePickerColorPreset> = {
+const DATE_RANGE_PICKER_COLOR_FALLBACKS: Record<
+  string,
+  DateRangePickerColorPreset
+> = {
   default: {
-    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xcad3dc, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xf3f4f6, buttonIconColor: 0x374151,
-    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xcad3dc,
-    rangeBgColor: 0xeff6ff, rangeTextColor: 0x374151, separatorColor: 0x9ca3af
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0xcad3dc,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xf3f4f6,
+    buttonIconColor: 0x374151,
+    focusBorderColor: 0x3b82f6,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0xcad3dc,
+    rangeBgColor: 0xeff6ff,
+    rangeTextColor: 0x374151,
+    separatorColor: 0x9ca3af,
   },
   primary: {
-    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0x3b82f6, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xeff6ff, buttonIconColor: 0x3b82f6,
-    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0x3b82f6,
-    rangeBgColor: 0xeff6ff, rangeTextColor: 0x374151, separatorColor: 0x3b82f6
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0x3b82f6,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xeff6ff,
+    buttonIconColor: 0x3b82f6,
+    focusBorderColor: 0x3b82f6,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0x3b82f6,
+    rangeBgColor: 0xeff6ff,
+    rangeTextColor: 0x374151,
+    separatorColor: 0x3b82f6,
   },
   secondary: {
-    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0x6366f1, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xeef2ff, buttonIconColor: 0x6366f1,
-    focusBorderColor: 0x6366f1, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0x6366f1,
-    rangeBgColor: 0xeef2ff, rangeTextColor: 0x374151, separatorColor: 0x6366f1
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0x6366f1,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xeef2ff,
+    buttonIconColor: 0x6366f1,
+    focusBorderColor: 0x6366f1,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0x6366f1,
+    rangeBgColor: 0xeef2ff,
+    rangeTextColor: 0x374151,
+    separatorColor: 0x6366f1,
   },
   tertiary: {
-    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xec4899, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xfdf2f8, buttonIconColor: 0xec4899,
-    focusBorderColor: 0xec4899, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xec4899,
-    rangeBgColor: 0xfdf2f8, rangeTextColor: 0x374151, separatorColor: 0xec4899
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0xec4899,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xfdf2f8,
+    buttonIconColor: 0xec4899,
+    focusBorderColor: 0xec4899,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0xec4899,
+    rangeBgColor: 0xfdf2f8,
+    rangeTextColor: 0x374151,
+    separatorColor: 0xec4899,
   },
   error: {
-    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xef4444, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xfef2f2, buttonIconColor: 0xef4444,
-    focusBorderColor: 0xef4444, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xef4444,
-    rangeBgColor: 0xfef2f2, rangeTextColor: 0x374151, separatorColor: 0xef4444
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0xef4444,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xfef2f2,
+    buttonIconColor: 0xef4444,
+    focusBorderColor: 0xef4444,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0xef4444,
+    rangeBgColor: 0xfef2f2,
+    rangeTextColor: 0x374151,
+    separatorColor: 0xef4444,
   },
   filled: {
-    fieldBackgroundColor: 0xf3f4f6, fieldBorderColor: 0x00000000, fieldTextColor: 0x374151,
-    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xe5e7eb, buttonIconColor: 0x374151,
-    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xcad3dc,
-    rangeBgColor: 0xeff6ff, rangeTextColor: 0x374151, separatorColor: 0x9ca3af
+    fieldBackgroundColor: 0xf3f4f6,
+    fieldBorderColor: 0x00000000,
+    fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af,
+    buttonBackgroundColor: 0xe5e7eb,
+    buttonIconColor: 0x374151,
+    focusBorderColor: 0x3b82f6,
+    popoverBackgroundColor: 0xffffff,
+    popoverBorderColor: 0xcad3dc,
+    rangeBgColor: 0xeff6ff,
+    rangeTextColor: 0x374151,
+    separatorColor: 0x9ca3af,
   },
 };
 
 /**
  * DateRangePicker 색상 프리셋 읽기
  */
-export function getDateRangePickerColorPreset(variant: string): DateRangePickerColorPreset {
-  return DATE_RANGE_PICKER_COLOR_FALLBACKS[variant] || DATE_RANGE_PICKER_COLOR_FALLBACKS.default;
+export function getDateRangePickerColorPreset(
+  variant: string,
+): DateRangePickerColorPreset {
+  return (
+    DATE_RANGE_PICKER_COLOR_FALLBACKS[variant] ||
+    DATE_RANGE_PICKER_COLOR_FALLBACKS.default
+  );
 }
 
 // ============================================================================
@@ -3606,35 +5986,63 @@ export interface TextFieldSizePreset {
 }
 
 const TEXT_FIELD_SIZE_FALLBACKS: Record<string, TextFieldSizePreset> = {
-  sm: { fontSize: 12, height: 32, padding: 6, paddingX: 10, borderRadius: 6, labelFontSize: 12, descriptionFontSize: 11, gap: 4 },
-  md: { fontSize: 14, height: 40, padding: 8, paddingX: 12, borderRadius: 8, labelFontSize: 14, descriptionFontSize: 12, gap: 6 },
-  lg: { fontSize: 16, height: 48, padding: 10, paddingX: 14, borderRadius: 10, labelFontSize: 16, descriptionFontSize: 14, gap: 8 },
+  sm: {
+    fontSize: 12,
+    height: 32,
+    padding: 6,
+    paddingX: 10,
+    borderRadius: 6,
+    labelFontSize: 12,
+    descriptionFontSize: 11,
+    gap: 4,
+  },
+  md: {
+    fontSize: 14,
+    height: 40,
+    padding: 8,
+    paddingX: 12,
+    borderRadius: 8,
+    labelFontSize: 14,
+    descriptionFontSize: 12,
+    gap: 6,
+  },
+  lg: {
+    fontSize: 16,
+    height: 48,
+    padding: 10,
+    paddingX: 14,
+    borderRadius: 10,
+    labelFontSize: 16,
+    descriptionFontSize: 14,
+    gap: 8,
+  },
 };
 
 /**
  * .react-aria-TextField / .react-aria-Input 클래스에서 사이즈 스타일 읽기
  */
 export function getTextFieldSizePreset(size: string): TextFieldSizePreset {
-  const fallback = TEXT_FIELD_SIZE_FALLBACKS[size] || TEXT_FIELD_SIZE_FALLBACKS.md;
+  const fallback =
+    TEXT_FIELD_SIZE_FALLBACKS[size] || TEXT_FIELD_SIZE_FALLBACKS.md;
 
   try {
     // 임시 DOM 요소 생성
-    const textField = document.createElement('div');
+    const textField = document.createElement("div");
     textField.className = `react-aria-TextField ${size}`;
-    textField.style.position = 'absolute';
-    textField.style.visibility = 'hidden';
-    textField.style.pointerEvents = 'none';
+    textField.style.position = "absolute";
+    textField.style.visibility = "hidden";
+    textField.style.pointerEvents = "none";
 
-    const label = document.createElement('label');
-    label.className = 'react-aria-Label';
+    const label = document.createElement("label");
+    label.className = "react-aria-Label";
     textField.appendChild(label);
 
-    const input = document.createElement('input');
-    input.className = 'react-aria-Input';
+    const input = document.createElement("input");
+    input.className = "react-aria-Input";
     textField.appendChild(input);
 
-    const description = document.createElement('div');
-    description.slot = 'description';
+    const description = document.createElement("div");
+    description.slot = "description";
     textField.appendChild(description);
 
     document.body.appendChild(textField);
@@ -3646,11 +6054,14 @@ export function getTextFieldSizePreset(size: string): TextFieldSizePreset {
 
     // 값 파싱
     const fontSize = parseFloat(inputStyle.fontSize) || fallback.fontSize;
-    const labelFontSize = parseFloat(labelStyle.fontSize) || fallback.labelFontSize;
-    const descriptionFontSize = parseFloat(descStyle.fontSize) || fallback.descriptionFontSize;
+    const labelFontSize =
+      parseFloat(labelStyle.fontSize) || fallback.labelFontSize;
+    const descriptionFontSize =
+      parseFloat(descStyle.fontSize) || fallback.descriptionFontSize;
     const paddingTop = parseFloat(inputStyle.paddingTop) || fallback.padding;
     const paddingLeft = parseFloat(inputStyle.paddingLeft) || fallback.paddingX;
-    const borderRadius = parseFloat(inputStyle.borderRadius) || fallback.borderRadius;
+    const borderRadius =
+      parseFloat(inputStyle.borderRadius) || fallback.borderRadius;
     const gap = parseFloat(textFieldStyle.gap) || fallback.gap;
 
     // Input 높이 계산 (padding + lineHeight)
@@ -3694,28 +6105,56 @@ export interface TextFieldColorPreset {
 
 const TEXT_FIELD_COLOR_FALLBACKS: Record<string, TextFieldColorPreset> = {
   default: {
-    backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151,
-    placeholderColor: 0x9ca3af, labelColor: 0x374151, descriptionColor: 0x6b7280,
-    focusBorderColor: 0x3b82f6, errorBorderColor: 0xef4444, errorTextColor: 0xef4444,
-    disabledBackgroundColor: 0xf3f4f6, disabledTextColor: 0x9ca3af
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    labelColor: 0x374151,
+    descriptionColor: 0x6b7280,
+    focusBorderColor: 0x3b82f6,
+    errorBorderColor: 0xef4444,
+    errorTextColor: 0xef4444,
+    disabledBackgroundColor: 0xf3f4f6,
+    disabledTextColor: 0x9ca3af,
   },
   primary: {
-    backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151,
-    placeholderColor: 0x9ca3af, labelColor: 0x3b82f6, descriptionColor: 0x6b7280,
-    focusBorderColor: 0x2563eb, errorBorderColor: 0xef4444, errorTextColor: 0xef4444,
-    disabledBackgroundColor: 0xf3f4f6, disabledTextColor: 0x9ca3af
+    backgroundColor: 0xffffff,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    labelColor: 0x3b82f6,
+    descriptionColor: 0x6b7280,
+    focusBorderColor: 0x2563eb,
+    errorBorderColor: 0xef4444,
+    errorTextColor: 0xef4444,
+    disabledBackgroundColor: 0xf3f4f6,
+    disabledTextColor: 0x9ca3af,
   },
   secondary: {
-    backgroundColor: 0xffffff, borderColor: 0x6366f1, textColor: 0x374151,
-    placeholderColor: 0x9ca3af, labelColor: 0x6366f1, descriptionColor: 0x6b7280,
-    focusBorderColor: 0x4f46e5, errorBorderColor: 0xef4444, errorTextColor: 0xef4444,
-    disabledBackgroundColor: 0xf3f4f6, disabledTextColor: 0x9ca3af
+    backgroundColor: 0xffffff,
+    borderColor: 0x6366f1,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    labelColor: 0x6366f1,
+    descriptionColor: 0x6b7280,
+    focusBorderColor: 0x4f46e5,
+    errorBorderColor: 0xef4444,
+    errorTextColor: 0xef4444,
+    disabledBackgroundColor: 0xf3f4f6,
+    disabledTextColor: 0x9ca3af,
   },
   filled: {
-    backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151,
-    placeholderColor: 0x9ca3af, labelColor: 0x374151, descriptionColor: 0x6b7280,
-    focusBorderColor: 0x3b82f6, errorBorderColor: 0xef4444, errorTextColor: 0xef4444,
-    disabledBackgroundColor: 0xe5e7eb, disabledTextColor: 0x9ca3af
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x00000000,
+    textColor: 0x374151,
+    placeholderColor: 0x9ca3af,
+    labelColor: 0x374151,
+    descriptionColor: 0x6b7280,
+    focusBorderColor: 0x3b82f6,
+    errorBorderColor: 0xef4444,
+    errorTextColor: 0xef4444,
+    disabledBackgroundColor: 0xe5e7eb,
+    disabledTextColor: 0x9ca3af,
   },
 };
 
@@ -3723,30 +6162,31 @@ const TEXT_FIELD_COLOR_FALLBACKS: Record<string, TextFieldColorPreset> = {
  * .react-aria-TextField / .react-aria-Input 클래스에서 색상 스타일 읽기
  */
 export function getTextFieldColorPreset(variant: string): TextFieldColorPreset {
-  const fallback = TEXT_FIELD_COLOR_FALLBACKS[variant] || TEXT_FIELD_COLOR_FALLBACKS.default;
+  const fallback =
+    TEXT_FIELD_COLOR_FALLBACKS[variant] || TEXT_FIELD_COLOR_FALLBACKS.default;
 
   try {
     // 임시 DOM 요소 생성
-    const textField = document.createElement('div');
+    const textField = document.createElement("div");
     textField.className = `react-aria-TextField ${variant}`;
-    textField.style.position = 'absolute';
-    textField.style.visibility = 'hidden';
-    textField.style.pointerEvents = 'none';
+    textField.style.position = "absolute";
+    textField.style.visibility = "hidden";
+    textField.style.pointerEvents = "none";
 
-    const label = document.createElement('label');
-    label.className = 'react-aria-Label';
+    const label = document.createElement("label");
+    label.className = "react-aria-Label";
     textField.appendChild(label);
 
-    const input = document.createElement('input');
-    input.className = 'react-aria-Input';
+    const input = document.createElement("input");
+    input.className = "react-aria-Input";
     textField.appendChild(input);
 
-    const description = document.createElement('div');
-    description.slot = 'description';
+    const description = document.createElement("div");
+    description.slot = "description";
     textField.appendChild(description);
 
-    const fieldError = document.createElement('div');
-    fieldError.className = 'react-aria-FieldError';
+    const fieldError = document.createElement("div");
+    fieldError.className = "react-aria-FieldError";
     textField.appendChild(fieldError);
 
     document.body.appendChild(textField);
@@ -3757,24 +6197,39 @@ export function getTextFieldColorPreset(variant: string): TextFieldColorPreset {
     const errorStyle = getComputedStyle(fieldError);
 
     // 색상 읽기
-    const backgroundColor = cssColorToHex(inputStyle.backgroundColor, fallback.backgroundColor);
-    const borderColor = cssColorToHex(inputStyle.borderColor, fallback.borderColor);
+    const backgroundColor = cssColorToHex(
+      inputStyle.backgroundColor,
+      fallback.backgroundColor,
+    );
+    const borderColor = cssColorToHex(
+      inputStyle.borderColor,
+      fallback.borderColor,
+    );
     const textColor = cssColorToHex(inputStyle.color, fallback.textColor);
     const labelColor = cssColorToHex(labelStyle.color, fallback.labelColor);
-    const descriptionColor = cssColorToHex(descStyle.color, fallback.descriptionColor);
-    const errorTextColor = cssColorToHex(errorStyle.color, fallback.errorTextColor);
+    const descriptionColor = cssColorToHex(
+      descStyle.color,
+      fallback.descriptionColor,
+    );
+    const errorTextColor = cssColorToHex(
+      errorStyle.color,
+      fallback.errorTextColor,
+    );
 
     // Focus 상태 색상 (CSS 변수에서 직접 읽기)
     const focusBorderColor = cssColorToHex(
-      getCSSVariable('--primary') || getCSSVariable('--tf-accent'),
-      fallback.focusBorderColor
+      getCSSVariable("--primary") || getCSSVariable("--tf-accent"),
+      fallback.focusBorderColor,
     );
-    const errorBorderColor = cssColorToHex(getCSSVariable('--error'), fallback.errorBorderColor);
+    const errorBorderColor = cssColorToHex(
+      getCSSVariable("--error"),
+      fallback.errorBorderColor,
+    );
 
     // Placeholder 색상 (CSS 변수에서 읽기)
     const placeholderColor = cssColorToHex(
-      getCSSVariable('--on-surface-variant'),
-      fallback.placeholderColor
+      getCSSVariable("--on-surface-variant"),
+      fallback.placeholderColor,
     );
 
     // Disabled 상태 색상 (opacity 38%로 계산)
@@ -3815,9 +6270,33 @@ export interface SwitchSizePreset {
 }
 
 const SWITCH_FALLBACKS: Record<string, SwitchSizePreset> = {
-  sm: { trackWidth: 36, trackHeight: 20, thumbSize: 16, thumbOffset: 2, borderRadius: 10, labelFontSize: 12, gap: 8 },
-  md: { trackWidth: 44, trackHeight: 24, thumbSize: 20, thumbOffset: 2, borderRadius: 12, labelFontSize: 14, gap: 10 },
-  lg: { trackWidth: 52, trackHeight: 28, thumbSize: 24, thumbOffset: 2, borderRadius: 14, labelFontSize: 16, gap: 12 },
+  sm: {
+    trackWidth: 36,
+    trackHeight: 20,
+    thumbSize: 16,
+    thumbOffset: 2,
+    borderRadius: 10,
+    labelFontSize: 12,
+    gap: 8,
+  },
+  md: {
+    trackWidth: 44,
+    trackHeight: 24,
+    thumbSize: 20,
+    thumbOffset: 2,
+    borderRadius: 12,
+    labelFontSize: 14,
+    gap: 10,
+  },
+  lg: {
+    trackWidth: 52,
+    trackHeight: 28,
+    thumbSize: 24,
+    thumbOffset: 2,
+    borderRadius: 14,
+    labelFontSize: 16,
+    gap: 12,
+  },
 };
 
 export function getSwitchSizePreset(size: string): SwitchSizePreset {
@@ -3840,29 +6319,54 @@ export interface SwitchColorPreset {
 
 const SWITCH_COLOR_FALLBACKS: Record<string, SwitchColorPreset> = {
   default: {
-    trackColor: 0xe5e7eb, trackSelectedColor: 0x3b82f6, thumbColor: 0xffffff,
-    thumbBorderColor: 0xcad3dc, labelColor: 0x374151, focusRingColor: 0x3b82f6,
-    disabledTrackColor: 0xf3f4f6, disabledThumbColor: 0xe5e7eb
+    trackColor: 0xe5e7eb,
+    trackSelectedColor: 0x3b82f6,
+    thumbColor: 0xffffff,
+    thumbBorderColor: 0xcad3dc,
+    labelColor: 0x374151,
+    focusRingColor: 0x3b82f6,
+    disabledTrackColor: 0xf3f4f6,
+    disabledThumbColor: 0xe5e7eb,
   },
   primary: {
-    trackColor: 0xe5e7eb, trackSelectedColor: 0x3b82f6, thumbColor: 0xffffff,
-    thumbBorderColor: 0xcad3dc, labelColor: 0x374151, focusRingColor: 0x3b82f6,
-    disabledTrackColor: 0xf3f4f6, disabledThumbColor: 0xe5e7eb
+    trackColor: 0xe5e7eb,
+    trackSelectedColor: 0x3b82f6,
+    thumbColor: 0xffffff,
+    thumbBorderColor: 0xcad3dc,
+    labelColor: 0x374151,
+    focusRingColor: 0x3b82f6,
+    disabledTrackColor: 0xf3f4f6,
+    disabledThumbColor: 0xe5e7eb,
   },
   secondary: {
-    trackColor: 0xe5e7eb, trackSelectedColor: 0x6366f1, thumbColor: 0xffffff,
-    thumbBorderColor: 0xcad3dc, labelColor: 0x374151, focusRingColor: 0x6366f1,
-    disabledTrackColor: 0xf3f4f6, disabledThumbColor: 0xe5e7eb
+    trackColor: 0xe5e7eb,
+    trackSelectedColor: 0x6366f1,
+    thumbColor: 0xffffff,
+    thumbBorderColor: 0xcad3dc,
+    labelColor: 0x374151,
+    focusRingColor: 0x6366f1,
+    disabledTrackColor: 0xf3f4f6,
+    disabledThumbColor: 0xe5e7eb,
   },
   tertiary: {
-    trackColor: 0xe5e7eb, trackSelectedColor: 0xec4899, thumbColor: 0xffffff,
-    thumbBorderColor: 0xcad3dc, labelColor: 0x374151, focusRingColor: 0xec4899,
-    disabledTrackColor: 0xf3f4f6, disabledThumbColor: 0xe5e7eb
+    trackColor: 0xe5e7eb,
+    trackSelectedColor: 0xec4899,
+    thumbColor: 0xffffff,
+    thumbBorderColor: 0xcad3dc,
+    labelColor: 0x374151,
+    focusRingColor: 0xec4899,
+    disabledTrackColor: 0xf3f4f6,
+    disabledThumbColor: 0xe5e7eb,
   },
   error: {
-    trackColor: 0xe5e7eb, trackSelectedColor: 0xef4444, thumbColor: 0xffffff,
-    thumbBorderColor: 0xcad3dc, labelColor: 0x374151, focusRingColor: 0xef4444,
-    disabledTrackColor: 0xf3f4f6, disabledThumbColor: 0xe5e7eb
+    trackColor: 0xe5e7eb,
+    trackSelectedColor: 0xef4444,
+    thumbColor: 0xffffff,
+    thumbBorderColor: 0xcad3dc,
+    labelColor: 0x374151,
+    focusRingColor: 0xef4444,
+    disabledTrackColor: 0xf3f4f6,
+    disabledThumbColor: 0xe5e7eb,
   },
 };
 
@@ -3886,9 +6390,39 @@ export interface TextAreaSizePreset {
 }
 
 const TEXT_AREA_FALLBACKS: Record<string, TextAreaSizePreset> = {
-  sm: { fontSize: 12, minHeight: 64, padding: 8, paddingX: 10, borderRadius: 6, labelFontSize: 12, descriptionFontSize: 11, gap: 4, lineHeight: 1.4 },
-  md: { fontSize: 14, minHeight: 80, padding: 10, paddingX: 12, borderRadius: 8, labelFontSize: 14, descriptionFontSize: 12, gap: 6, lineHeight: 1.5 },
-  lg: { fontSize: 16, minHeight: 96, padding: 12, paddingX: 14, borderRadius: 10, labelFontSize: 16, descriptionFontSize: 14, gap: 8, lineHeight: 1.6 },
+  sm: {
+    fontSize: 12,
+    minHeight: 64,
+    padding: 8,
+    paddingX: 10,
+    borderRadius: 6,
+    labelFontSize: 12,
+    descriptionFontSize: 11,
+    gap: 4,
+    lineHeight: 1.4,
+  },
+  md: {
+    fontSize: 14,
+    minHeight: 80,
+    padding: 10,
+    paddingX: 12,
+    borderRadius: 8,
+    labelFontSize: 14,
+    descriptionFontSize: 12,
+    gap: 6,
+    lineHeight: 1.5,
+  },
+  lg: {
+    fontSize: 16,
+    minHeight: 96,
+    padding: 12,
+    paddingX: 14,
+    borderRadius: 10,
+    labelFontSize: 16,
+    descriptionFontSize: 14,
+    gap: 8,
+    lineHeight: 1.6,
+  },
 };
 
 export function getTextAreaSizePreset(size: string): TextAreaSizePreset {
@@ -3899,7 +6433,9 @@ export function getTextAreaSizePreset(size: string): TextAreaSizePreset {
  * TextArea 색상 프리셋 (TextField와 동일한 구조)
  */
 export function getTextAreaColorPreset(variant: string): TextFieldColorPreset {
-  return TEXT_FIELD_COLOR_FALLBACKS[variant] || TEXT_FIELD_COLOR_FALLBACKS.default;
+  return (
+    TEXT_FIELD_COLOR_FALLBACKS[variant] || TEXT_FIELD_COLOR_FALLBACKS.default
+  );
 }
 
 /**
@@ -3914,9 +6450,27 @@ export interface FormSizePreset {
 }
 
 const FORM_FALLBACKS: Record<string, FormSizePreset> = {
-  sm: { padding: 12, gap: 12, borderRadius: 8, labelFontSize: 12, sectionGap: 16 },
-  md: { padding: 16, gap: 16, borderRadius: 10, labelFontSize: 14, sectionGap: 24 },
-  lg: { padding: 20, gap: 20, borderRadius: 12, labelFontSize: 16, sectionGap: 32 },
+  sm: {
+    padding: 12,
+    gap: 12,
+    borderRadius: 8,
+    labelFontSize: 12,
+    sectionGap: 16,
+  },
+  md: {
+    padding: 16,
+    gap: 16,
+    borderRadius: 10,
+    labelFontSize: 14,
+    sectionGap: 24,
+  },
+  lg: {
+    padding: 20,
+    gap: 20,
+    borderRadius: 12,
+    labelFontSize: 16,
+    sectionGap: 32,
+  },
 };
 
 export function getFormSizePreset(size: string): FormSizePreset {
@@ -3934,10 +6488,30 @@ export interface FormColorPreset {
 }
 
 const FORM_COLOR_FALLBACKS: Record<string, FormColorPreset> = {
-  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, labelColor: 0x374151, separatorColor: 0xe5e7eb },
-  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, labelColor: 0x3b82f6, separatorColor: 0xeff6ff },
-  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, labelColor: 0x6366f1, separatorColor: 0xeef2ff },
-  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, labelColor: 0x374151, separatorColor: 0xe5e7eb },
+  default: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    labelColor: 0x374151,
+    separatorColor: 0xe5e7eb,
+  },
+  primary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x3b82f6,
+    labelColor: 0x3b82f6,
+    separatorColor: 0xeff6ff,
+  },
+  secondary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x6366f1,
+    labelColor: 0x6366f1,
+    separatorColor: 0xeef2ff,
+  },
+  filled: {
+    backgroundColor: 0xf9fafb,
+    borderColor: 0x00000000,
+    labelColor: 0x374151,
+    separatorColor: 0xe5e7eb,
+  },
 };
 
 export function getFormColorPreset(variant: string): FormColorPreset {
@@ -3957,9 +6531,30 @@ export interface ToolbarSizePreset {
 }
 
 const TOOLBAR_FALLBACKS: Record<string, ToolbarSizePreset> = {
-  sm: { height: 36, padding: 6, gap: 4, borderRadius: 6, separatorWidth: 1, separatorHeight: 20 },
-  md: { height: 44, padding: 8, gap: 6, borderRadius: 8, separatorWidth: 1, separatorHeight: 24 },
-  lg: { height: 52, padding: 10, gap: 8, borderRadius: 10, separatorWidth: 1, separatorHeight: 28 },
+  sm: {
+    height: 36,
+    padding: 6,
+    gap: 4,
+    borderRadius: 6,
+    separatorWidth: 1,
+    separatorHeight: 20,
+  },
+  md: {
+    height: 44,
+    padding: 8,
+    gap: 6,
+    borderRadius: 8,
+    separatorWidth: 1,
+    separatorHeight: 24,
+  },
+  lg: {
+    height: 52,
+    padding: 10,
+    gap: 8,
+    borderRadius: 10,
+    separatorWidth: 1,
+    separatorHeight: 28,
+  },
 };
 
 export function getToolbarSizePreset(size: string): ToolbarSizePreset {
@@ -3978,10 +6573,34 @@ export interface ToolbarColorPreset {
 }
 
 const TOOLBAR_COLOR_FALLBACKS: Record<string, ToolbarColorPreset> = {
-  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, separatorColor: 0xe5e7eb, iconColor: 0x374151, hoverBackgroundColor: 0xf3f4f6 },
-  primary: { backgroundColor: 0xeff6ff, borderColor: 0x3b82f6, separatorColor: 0xbfdbfe, iconColor: 0x3b82f6, hoverBackgroundColor: 0xdbeafe },
-  secondary: { backgroundColor: 0xeef2ff, borderColor: 0x6366f1, separatorColor: 0xc7d2fe, iconColor: 0x6366f1, hoverBackgroundColor: 0xe0e7ff },
-  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, separatorColor: 0xe5e7eb, iconColor: 0x374151, hoverBackgroundColor: 0xe5e7eb },
+  default: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    separatorColor: 0xe5e7eb,
+    iconColor: 0x374151,
+    hoverBackgroundColor: 0xf3f4f6,
+  },
+  primary: {
+    backgroundColor: 0xeff6ff,
+    borderColor: 0x3b82f6,
+    separatorColor: 0xbfdbfe,
+    iconColor: 0x3b82f6,
+    hoverBackgroundColor: 0xdbeafe,
+  },
+  secondary: {
+    backgroundColor: 0xeef2ff,
+    borderColor: 0x6366f1,
+    separatorColor: 0xc7d2fe,
+    iconColor: 0x6366f1,
+    hoverBackgroundColor: 0xe0e7ff,
+  },
+  filled: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x00000000,
+    separatorColor: 0xe5e7eb,
+    iconColor: 0x374151,
+    hoverBackgroundColor: 0xe5e7eb,
+  },
 };
 
 export function getToolbarColorPreset(variant: string): ToolbarColorPreset {
@@ -4002,9 +6621,33 @@ export interface FileTriggerSizePreset {
 }
 
 const FILE_TRIGGER_FALLBACKS: Record<string, FileTriggerSizePreset> = {
-  sm: { fontSize: 12, height: 32, padding: 6, paddingX: 12, borderRadius: 6, iconSize: 14, gap: 6 },
-  md: { fontSize: 14, height: 40, padding: 8, paddingX: 16, borderRadius: 8, iconSize: 16, gap: 8 },
-  lg: { fontSize: 16, height: 48, padding: 10, paddingX: 20, borderRadius: 10, iconSize: 18, gap: 10 },
+  sm: {
+    fontSize: 12,
+    height: 32,
+    padding: 6,
+    paddingX: 12,
+    borderRadius: 6,
+    iconSize: 14,
+    gap: 6,
+  },
+  md: {
+    fontSize: 14,
+    height: 40,
+    padding: 8,
+    paddingX: 16,
+    borderRadius: 8,
+    iconSize: 16,
+    gap: 8,
+  },
+  lg: {
+    fontSize: 16,
+    height: 48,
+    padding: 10,
+    paddingX: 20,
+    borderRadius: 10,
+    iconSize: 18,
+    gap: 10,
+  },
 };
 
 export function getFileTriggerSizePreset(size: string): FileTriggerSizePreset {
@@ -4024,14 +6667,47 @@ export interface FileTriggerColorPreset {
 }
 
 const FILE_TRIGGER_COLOR_FALLBACKS: Record<string, FileTriggerColorPreset> = {
-  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, iconColor: 0x6b7280, hoverBackgroundColor: 0xf3f4f6, focusRingColor: 0x3b82f6 },
-  primary: { backgroundColor: 0x3b82f6, borderColor: 0x3b82f6, textColor: 0xffffff, iconColor: 0xffffff, hoverBackgroundColor: 0x2563eb, focusRingColor: 0x3b82f6 },
-  secondary: { backgroundColor: 0x6366f1, borderColor: 0x6366f1, textColor: 0xffffff, iconColor: 0xffffff, hoverBackgroundColor: 0x4f46e5, focusRingColor: 0x6366f1 },
-  surface: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, iconColor: 0x6b7280, hoverBackgroundColor: 0xe5e7eb, focusRingColor: 0x3b82f6 },
+  default: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    iconColor: 0x6b7280,
+    hoverBackgroundColor: 0xf3f4f6,
+    focusRingColor: 0x3b82f6,
+  },
+  primary: {
+    backgroundColor: 0x3b82f6,
+    borderColor: 0x3b82f6,
+    textColor: 0xffffff,
+    iconColor: 0xffffff,
+    hoverBackgroundColor: 0x2563eb,
+    focusRingColor: 0x3b82f6,
+  },
+  secondary: {
+    backgroundColor: 0x6366f1,
+    borderColor: 0x6366f1,
+    textColor: 0xffffff,
+    iconColor: 0xffffff,
+    hoverBackgroundColor: 0x4f46e5,
+    focusRingColor: 0x6366f1,
+  },
+  surface: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x00000000,
+    textColor: 0x374151,
+    iconColor: 0x6b7280,
+    hoverBackgroundColor: 0xe5e7eb,
+    focusRingColor: 0x3b82f6,
+  },
 };
 
-export function getFileTriggerColorPreset(variant: string): FileTriggerColorPreset {
-  return FILE_TRIGGER_COLOR_FALLBACKS[variant] || FILE_TRIGGER_COLOR_FALLBACKS.default;
+export function getFileTriggerColorPreset(
+  variant: string,
+): FileTriggerColorPreset {
+  return (
+    FILE_TRIGGER_COLOR_FALLBACKS[variant] ||
+    FILE_TRIGGER_COLOR_FALLBACKS.default
+  );
 }
 
 /**
@@ -4049,9 +6725,36 @@ export interface DropZoneSizePreset {
 }
 
 const DROP_ZONE_FALLBACKS: Record<string, DropZoneSizePreset> = {
-  sm: { minHeight: 80, padding: 16, borderRadius: 8, borderWidth: 2, iconSize: 24, fontSize: 12, labelFontSize: 14, gap: 8 },
-  md: { minHeight: 120, padding: 24, borderRadius: 10, borderWidth: 2, iconSize: 32, fontSize: 14, labelFontSize: 16, gap: 12 },
-  lg: { minHeight: 160, padding: 32, borderRadius: 12, borderWidth: 2, iconSize: 40, fontSize: 16, labelFontSize: 18, gap: 16 },
+  sm: {
+    minHeight: 80,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    iconSize: 24,
+    fontSize: 12,
+    labelFontSize: 14,
+    gap: 8,
+  },
+  md: {
+    minHeight: 120,
+    padding: 24,
+    borderRadius: 10,
+    borderWidth: 2,
+    iconSize: 32,
+    fontSize: 14,
+    labelFontSize: 16,
+    gap: 12,
+  },
+  lg: {
+    minHeight: 160,
+    padding: 32,
+    borderRadius: 12,
+    borderWidth: 2,
+    iconSize: 40,
+    fontSize: 16,
+    labelFontSize: 18,
+    gap: 16,
+  },
 };
 
 export function getDropZoneSizePreset(size: string): DropZoneSizePreset {
@@ -4075,24 +6778,44 @@ export interface DropZoneColorPreset {
 
 const DROP_ZONE_COLOR_FALLBACKS: Record<string, DropZoneColorPreset> = {
   default: {
-    backgroundColor: 0xfafafa, borderColor: 0xcad3dc, textColor: 0x6b7280, labelColor: 0x374151,
-    iconColor: 0x9ca3af, hoverBackgroundColor: 0xf3f4f6, hoverBorderColor: 0x9ca3af,
-    dropTargetBackgroundColor: 0xeff6ff, dropTargetBorderColor: 0x3b82f6
+    backgroundColor: 0xfafafa,
+    borderColor: 0xcad3dc,
+    textColor: 0x6b7280,
+    labelColor: 0x374151,
+    iconColor: 0x9ca3af,
+    hoverBackgroundColor: 0xf3f4f6,
+    hoverBorderColor: 0x9ca3af,
+    dropTargetBackgroundColor: 0xeff6ff,
+    dropTargetBorderColor: 0x3b82f6,
   },
   primary: {
-    backgroundColor: 0xeff6ff, borderColor: 0x93c5fd, textColor: 0x3b82f6, labelColor: 0x1d4ed8,
-    iconColor: 0x60a5fa, hoverBackgroundColor: 0xdbeafe, hoverBorderColor: 0x3b82f6,
-    dropTargetBackgroundColor: 0xdbeafe, dropTargetBorderColor: 0x2563eb
+    backgroundColor: 0xeff6ff,
+    borderColor: 0x93c5fd,
+    textColor: 0x3b82f6,
+    labelColor: 0x1d4ed8,
+    iconColor: 0x60a5fa,
+    hoverBackgroundColor: 0xdbeafe,
+    hoverBorderColor: 0x3b82f6,
+    dropTargetBackgroundColor: 0xdbeafe,
+    dropTargetBorderColor: 0x2563eb,
   },
   secondary: {
-    backgroundColor: 0xeef2ff, borderColor: 0xa5b4fc, textColor: 0x6366f1, labelColor: 0x4338ca,
-    iconColor: 0x818cf8, hoverBackgroundColor: 0xe0e7ff, hoverBorderColor: 0x6366f1,
-    dropTargetBackgroundColor: 0xe0e7ff, dropTargetBorderColor: 0x4f46e5
+    backgroundColor: 0xeef2ff,
+    borderColor: 0xa5b4fc,
+    textColor: 0x6366f1,
+    labelColor: 0x4338ca,
+    iconColor: 0x818cf8,
+    hoverBackgroundColor: 0xe0e7ff,
+    hoverBorderColor: 0x6366f1,
+    dropTargetBackgroundColor: 0xe0e7ff,
+    dropTargetBorderColor: 0x4f46e5,
   },
 };
 
 export function getDropZoneColorPreset(variant: string): DropZoneColorPreset {
-  return DROP_ZONE_COLOR_FALLBACKS[variant] || DROP_ZONE_COLOR_FALLBACKS.default;
+  return (
+    DROP_ZONE_COLOR_FALLBACKS[variant] || DROP_ZONE_COLOR_FALLBACKS.default
+  );
 }
 
 /**
@@ -4107,9 +6830,27 @@ export interface SkeletonSizePreset {
 }
 
 const SKELETON_FALLBACKS: Record<string, SkeletonSizePreset> = {
-  sm: { height: 16, borderRadius: 4, avatarSize: 32, lineHeight: 12, lineGap: 8 },
-  md: { height: 20, borderRadius: 6, avatarSize: 40, lineHeight: 16, lineGap: 10 },
-  lg: { height: 24, borderRadius: 8, avatarSize: 48, lineHeight: 20, lineGap: 12 },
+  sm: {
+    height: 16,
+    borderRadius: 4,
+    avatarSize: 32,
+    lineHeight: 12,
+    lineGap: 8,
+  },
+  md: {
+    height: 20,
+    borderRadius: 6,
+    avatarSize: 40,
+    lineHeight: 16,
+    lineGap: 10,
+  },
+  lg: {
+    height: 24,
+    borderRadius: 8,
+    avatarSize: 48,
+    lineHeight: 20,
+    lineGap: 12,
+  },
 };
 
 export function getSkeletonSizePreset(size: string): SkeletonSizePreset {
@@ -4154,9 +6895,36 @@ export interface ToastSizePreset {
 }
 
 const TOAST_FALLBACKS: Record<string, ToastSizePreset> = {
-  sm: { fontSize: 12, padding: 8, paddingX: 12, borderRadius: 6, iconSize: 16, gap: 8, maxWidth: 320, dismissButtonSize: 20 },
-  md: { fontSize: 14, padding: 10, paddingX: 14, borderRadius: 8, iconSize: 18, gap: 10, maxWidth: 400, dismissButtonSize: 24 },
-  lg: { fontSize: 16, padding: 12, paddingX: 16, borderRadius: 10, iconSize: 20, gap: 12, maxWidth: 480, dismissButtonSize: 28 },
+  sm: {
+    fontSize: 12,
+    padding: 8,
+    paddingX: 12,
+    borderRadius: 6,
+    iconSize: 16,
+    gap: 8,
+    maxWidth: 320,
+    dismissButtonSize: 20,
+  },
+  md: {
+    fontSize: 14,
+    padding: 10,
+    paddingX: 14,
+    borderRadius: 8,
+    iconSize: 18,
+    gap: 10,
+    maxWidth: 400,
+    dismissButtonSize: 24,
+  },
+  lg: {
+    fontSize: 16,
+    padding: 12,
+    paddingX: 16,
+    borderRadius: 10,
+    iconSize: 20,
+    gap: 12,
+    maxWidth: 480,
+    dismissButtonSize: 28,
+  },
 };
 
 export function getToastSizePreset(size: string): ToastSizePreset {
@@ -4177,10 +6945,42 @@ export interface ToastColorPreset {
 }
 
 const TOAST_COLOR_FALLBACKS: Record<string, ToastColorPreset> = {
-  info: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151, accentColor: 0x3b82f6, iconColor: 0x3b82f6, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
-  success: { backgroundColor: 0xffffff, borderColor: 0x22c55e, textColor: 0x374151, accentColor: 0x22c55e, iconColor: 0x22c55e, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
-  warning: { backgroundColor: 0xffffff, borderColor: 0xeab308, textColor: 0x374151, accentColor: 0xeab308, iconColor: 0xeab308, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
-  error: { backgroundColor: 0xffffff, borderColor: 0xef4444, textColor: 0x374151, accentColor: 0xef4444, iconColor: 0xef4444, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
+  info: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    accentColor: 0x3b82f6,
+    iconColor: 0x3b82f6,
+    dismissButtonColor: 0x6b7280,
+    shadowColor: 0x000000,
+  },
+  success: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x22c55e,
+    textColor: 0x374151,
+    accentColor: 0x22c55e,
+    iconColor: 0x22c55e,
+    dismissButtonColor: 0x6b7280,
+    shadowColor: 0x000000,
+  },
+  warning: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xeab308,
+    textColor: 0x374151,
+    accentColor: 0xeab308,
+    iconColor: 0xeab308,
+    dismissButtonColor: 0x6b7280,
+    shadowColor: 0x000000,
+  },
+  error: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xef4444,
+    textColor: 0x374151,
+    accentColor: 0xef4444,
+    iconColor: 0xef4444,
+    dismissButtonColor: 0x6b7280,
+    shadowColor: 0x000000,
+  },
 };
 
 export function getToastColorPreset(type: string): ToastColorPreset {
@@ -4224,24 +7024,43 @@ export interface PaginationColorPreset {
 
 const PAGINATION_COLOR_FALLBACKS: Record<string, PaginationColorPreset> = {
   default: {
-    backgroundColor: 0xf3f4f6, textColor: 0x374151, currentBackgroundColor: 0x3b82f6,
-    currentTextColor: 0xffffff, hoverBackgroundColor: 0xe5e7eb, disabledTextColor: 0x9ca3af,
-    borderColor: 0xcad3dc, ellipsisColor: 0x6b7280
+    backgroundColor: 0xf3f4f6,
+    textColor: 0x374151,
+    currentBackgroundColor: 0x3b82f6,
+    currentTextColor: 0xffffff,
+    hoverBackgroundColor: 0xe5e7eb,
+    disabledTextColor: 0x9ca3af,
+    borderColor: 0xcad3dc,
+    ellipsisColor: 0x6b7280,
   },
   primary: {
-    backgroundColor: 0xeff6ff, textColor: 0x374151, currentBackgroundColor: 0x3b82f6,
-    currentTextColor: 0xffffff, hoverBackgroundColor: 0xdbeafe, disabledTextColor: 0x9ca3af,
-    borderColor: 0x93c5fd, ellipsisColor: 0x3b82f6
+    backgroundColor: 0xeff6ff,
+    textColor: 0x374151,
+    currentBackgroundColor: 0x3b82f6,
+    currentTextColor: 0xffffff,
+    hoverBackgroundColor: 0xdbeafe,
+    disabledTextColor: 0x9ca3af,
+    borderColor: 0x93c5fd,
+    ellipsisColor: 0x3b82f6,
   },
   secondary: {
-    backgroundColor: 0xeef2ff, textColor: 0x374151, currentBackgroundColor: 0x6366f1,
-    currentTextColor: 0xffffff, hoverBackgroundColor: 0xe0e7ff, disabledTextColor: 0x9ca3af,
-    borderColor: 0xa5b4fc, ellipsisColor: 0x6366f1
+    backgroundColor: 0xeef2ff,
+    textColor: 0x374151,
+    currentBackgroundColor: 0x6366f1,
+    currentTextColor: 0xffffff,
+    hoverBackgroundColor: 0xe0e7ff,
+    disabledTextColor: 0x9ca3af,
+    borderColor: 0xa5b4fc,
+    ellipsisColor: 0x6366f1,
   },
 };
 
-export function getPaginationColorPreset(variant: string): PaginationColorPreset {
-  return PAGINATION_COLOR_FALLBACKS[variant] || PAGINATION_COLOR_FALLBACKS.default;
+export function getPaginationColorPreset(
+  variant: string,
+): PaginationColorPreset {
+  return (
+    PAGINATION_COLOR_FALLBACKS[variant] || PAGINATION_COLOR_FALLBACKS.default
+  );
 }
 
 /**
@@ -4258,9 +7077,33 @@ export interface ColorFieldSizePreset {
 }
 
 const COLOR_FIELD_FALLBACKS: Record<string, ColorFieldSizePreset> = {
-  sm: { fontSize: 12, height: 28, padding: 6, borderRadius: 4, maxWidth: 100, labelFontSize: 11, gap: 4 },
-  md: { fontSize: 14, height: 32, padding: 8, borderRadius: 6, maxWidth: 120, labelFontSize: 12, gap: 6 },
-  lg: { fontSize: 16, height: 40, padding: 10, borderRadius: 8, maxWidth: 140, labelFontSize: 14, gap: 8 },
+  sm: {
+    fontSize: 12,
+    height: 28,
+    padding: 6,
+    borderRadius: 4,
+    maxWidth: 100,
+    labelFontSize: 11,
+    gap: 4,
+  },
+  md: {
+    fontSize: 14,
+    height: 32,
+    padding: 8,
+    borderRadius: 6,
+    maxWidth: 120,
+    labelFontSize: 12,
+    gap: 6,
+  },
+  lg: {
+    fontSize: 16,
+    height: 40,
+    padding: 10,
+    borderRadius: 8,
+    maxWidth: 140,
+    labelFontSize: 14,
+    gap: 8,
+  },
 };
 
 export function getColorFieldSizePreset(size: string): ColorFieldSizePreset {
@@ -4281,14 +7124,50 @@ export interface ColorFieldColorPreset {
 }
 
 const COLOR_FIELD_COLOR_FALLBACKS: Record<string, ColorFieldColorPreset> = {
-  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, focusBorderColor: 0x3b82f6, errorBorderColor: 0xef4444, disabledBackgroundColor: 0xf3f4f6 },
-  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151, labelColor: 0x3b82f6, focusBorderColor: 0x2563eb, errorBorderColor: 0xef4444, disabledBackgroundColor: 0xf3f4f6 },
-  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, textColor: 0x374151, labelColor: 0x6366f1, focusBorderColor: 0x4f46e5, errorBorderColor: 0xef4444, disabledBackgroundColor: 0xf3f4f6 },
-  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, labelColor: 0x374151, focusBorderColor: 0x3b82f6, errorBorderColor: 0xef4444, disabledBackgroundColor: 0xe5e7eb },
+  default: {
+    backgroundColor: 0xffffff,
+    borderColor: 0xcad3dc,
+    textColor: 0x374151,
+    labelColor: 0x374151,
+    focusBorderColor: 0x3b82f6,
+    errorBorderColor: 0xef4444,
+    disabledBackgroundColor: 0xf3f4f6,
+  },
+  primary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x3b82f6,
+    textColor: 0x374151,
+    labelColor: 0x3b82f6,
+    focusBorderColor: 0x2563eb,
+    errorBorderColor: 0xef4444,
+    disabledBackgroundColor: 0xf3f4f6,
+  },
+  secondary: {
+    backgroundColor: 0xffffff,
+    borderColor: 0x6366f1,
+    textColor: 0x374151,
+    labelColor: 0x6366f1,
+    focusBorderColor: 0x4f46e5,
+    errorBorderColor: 0xef4444,
+    disabledBackgroundColor: 0xf3f4f6,
+  },
+  filled: {
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0x00000000,
+    textColor: 0x374151,
+    labelColor: 0x374151,
+    focusBorderColor: 0x3b82f6,
+    errorBorderColor: 0xef4444,
+    disabledBackgroundColor: 0xe5e7eb,
+  },
 };
 
-export function getColorFieldColorPreset(variant: string): ColorFieldColorPreset {
-  return COLOR_FIELD_COLOR_FALLBACKS[variant] || COLOR_FIELD_COLOR_FALLBACKS.default;
+export function getColorFieldColorPreset(
+  variant: string,
+): ColorFieldColorPreset {
+  return (
+    COLOR_FIELD_COLOR_FALLBACKS[variant] || COLOR_FIELD_COLOR_FALLBACKS.default
+  );
 }
 
 /**
@@ -4301,14 +7180,21 @@ export interface ColorSwatchPickerSizePreset {
   selectionBorderWidth: number;
 }
 
-const COLOR_SWATCH_PICKER_FALLBACKS: Record<string, ColorSwatchPickerSizePreset> = {
+const COLOR_SWATCH_PICKER_FALLBACKS: Record<
+  string,
+  ColorSwatchPickerSizePreset
+> = {
   sm: { swatchSize: 24, gap: 6, borderRadius: 4, selectionBorderWidth: 2 },
   md: { swatchSize: 32, gap: 8, borderRadius: 4, selectionBorderWidth: 2 },
   lg: { swatchSize: 40, gap: 10, borderRadius: 6, selectionBorderWidth: 3 },
 };
 
-export function getColorSwatchPickerSizePreset(size: string): ColorSwatchPickerSizePreset {
-  return COLOR_SWATCH_PICKER_FALLBACKS[size] || COLOR_SWATCH_PICKER_FALLBACKS.md;
+export function getColorSwatchPickerSizePreset(
+  size: string,
+): ColorSwatchPickerSizePreset {
+  return (
+    COLOR_SWATCH_PICKER_FALLBACKS[size] || COLOR_SWATCH_PICKER_FALLBACKS.md
+  );
 }
 
 /**
@@ -4321,14 +7207,37 @@ export interface ColorSwatchPickerColorPreset {
   disabledOpacity: number;
 }
 
-const COLOR_SWATCH_PICKER_COLOR_FALLBACKS: Record<string, ColorSwatchPickerColorPreset> = {
-  default: { selectionOuterColor: 0x000000, selectionInnerColor: 0xffffff, focusRingColor: 0x3b82f6, disabledOpacity: 0.2 },
-  primary: { selectionOuterColor: 0x3b82f6, selectionInnerColor: 0xffffff, focusRingColor: 0x3b82f6, disabledOpacity: 0.2 },
-  secondary: { selectionOuterColor: 0x6366f1, selectionInnerColor: 0xffffff, focusRingColor: 0x6366f1, disabledOpacity: 0.2 },
+const COLOR_SWATCH_PICKER_COLOR_FALLBACKS: Record<
+  string,
+  ColorSwatchPickerColorPreset
+> = {
+  default: {
+    selectionOuterColor: 0x000000,
+    selectionInnerColor: 0xffffff,
+    focusRingColor: 0x3b82f6,
+    disabledOpacity: 0.2,
+  },
+  primary: {
+    selectionOuterColor: 0x3b82f6,
+    selectionInnerColor: 0xffffff,
+    focusRingColor: 0x3b82f6,
+    disabledOpacity: 0.2,
+  },
+  secondary: {
+    selectionOuterColor: 0x6366f1,
+    selectionInnerColor: 0xffffff,
+    focusRingColor: 0x6366f1,
+    disabledOpacity: 0.2,
+  },
 };
 
-export function getColorSwatchPickerColorPreset(variant: string): ColorSwatchPickerColorPreset {
-  return COLOR_SWATCH_PICKER_COLOR_FALLBACKS[variant] || COLOR_SWATCH_PICKER_COLOR_FALLBACKS.default;
+export function getColorSwatchPickerColorPreset(
+  variant: string,
+): ColorSwatchPickerColorPreset {
+  return (
+    COLOR_SWATCH_PICKER_COLOR_FALLBACKS[variant] ||
+    COLOR_SWATCH_PICKER_COLOR_FALLBACKS.default
+  );
 }
 
 /**
@@ -4343,9 +7252,27 @@ export interface GroupSizePreset {
 }
 
 const GROUP_FALLBACKS: Record<string, GroupSizePreset> = {
-  sm: { padding: 8, gap: 6, borderRadius: 4, labelFontSize: 10, labelPadding: 4 },
-  md: { padding: 12, gap: 8, borderRadius: 6, labelFontSize: 12, labelPadding: 6 },
-  lg: { padding: 16, gap: 10, borderRadius: 8, labelFontSize: 14, labelPadding: 8 },
+  sm: {
+    padding: 8,
+    gap: 6,
+    borderRadius: 4,
+    labelFontSize: 10,
+    labelPadding: 4,
+  },
+  md: {
+    padding: 12,
+    gap: 8,
+    borderRadius: 6,
+    labelFontSize: 12,
+    labelPadding: 6,
+  },
+  lg: {
+    padding: 16,
+    gap: 10,
+    borderRadius: 8,
+    labelFontSize: 14,
+    labelPadding: 8,
+  },
 };
 
 export function getGroupSizePreset(size: string): GroupSizePreset {
@@ -4365,9 +7292,30 @@ export interface GroupColorPreset {
 }
 
 const GROUP_COLOR_FALLBACKS: Record<string, GroupColorPreset> = {
-  default: { borderColor: 0xcad3dc, hoverBorderColor: 0x3b82f680, focusBorderColor: 0x3b82f6, labelBackgroundColor: 0xffffff, labelTextColor: 0x6b7280, disabledOpacity: 0.5 },
-  primary: { borderColor: 0x93c5fd, hoverBorderColor: 0x3b82f6, focusBorderColor: 0x2563eb, labelBackgroundColor: 0xffffff, labelTextColor: 0x3b82f6, disabledOpacity: 0.5 },
-  secondary: { borderColor: 0xa5b4fc, hoverBorderColor: 0x6366f1, focusBorderColor: 0x4f46e5, labelBackgroundColor: 0xffffff, labelTextColor: 0x6366f1, disabledOpacity: 0.5 },
+  default: {
+    borderColor: 0xcad3dc,
+    hoverBorderColor: 0x3b82f680,
+    focusBorderColor: 0x3b82f6,
+    labelBackgroundColor: 0xffffff,
+    labelTextColor: 0x6b7280,
+    disabledOpacity: 0.5,
+  },
+  primary: {
+    borderColor: 0x93c5fd,
+    hoverBorderColor: 0x3b82f6,
+    focusBorderColor: 0x2563eb,
+    labelBackgroundColor: 0xffffff,
+    labelTextColor: 0x3b82f6,
+    disabledOpacity: 0.5,
+  },
+  secondary: {
+    borderColor: 0xa5b4fc,
+    hoverBorderColor: 0x6366f1,
+    focusBorderColor: 0x4f46e5,
+    labelBackgroundColor: 0xffffff,
+    labelTextColor: 0x6366f1,
+    disabledOpacity: 0.5,
+  },
 };
 
 export function getGroupColorPreset(variant: string): GroupColorPreset {
@@ -4389,9 +7337,36 @@ export interface SlotSizePreset {
 }
 
 const SLOT_FALLBACKS: Record<string, SlotSizePreset> = {
-  sm: { minHeight: 60, padding: 12, borderWidth: 2, borderRadius: 6, iconSize: 32, labelFontSize: 12, descriptionFontSize: 10, gap: 8 },
-  md: { minHeight: 80, padding: 16, borderWidth: 2, borderRadius: 8, iconSize: 48, labelFontSize: 14, descriptionFontSize: 12, gap: 10 },
-  lg: { minHeight: 100, padding: 20, borderWidth: 2, borderRadius: 10, iconSize: 56, labelFontSize: 16, descriptionFontSize: 14, gap: 12 },
+  sm: {
+    minHeight: 60,
+    padding: 12,
+    borderWidth: 2,
+    borderRadius: 6,
+    iconSize: 32,
+    labelFontSize: 12,
+    descriptionFontSize: 10,
+    gap: 8,
+  },
+  md: {
+    minHeight: 80,
+    padding: 16,
+    borderWidth: 2,
+    borderRadius: 8,
+    iconSize: 48,
+    labelFontSize: 14,
+    descriptionFontSize: 12,
+    gap: 10,
+  },
+  lg: {
+    minHeight: 100,
+    padding: 20,
+    borderWidth: 2,
+    borderRadius: 10,
+    iconSize: 56,
+    labelFontSize: 16,
+    descriptionFontSize: 14,
+    gap: 12,
+  },
 };
 
 export function getSlotSizePreset(size: string): SlotSizePreset {
@@ -4417,22 +7392,43 @@ export interface SlotColorPreset {
 
 const SLOT_COLOR_FALLBACKS: Record<string, SlotColorPreset> = {
   default: {
-    backgroundColor: 0xfafafa, borderColor: 0xcad3dc, emptyBorderColor: 0x9ca3af,
-    textColor: 0x6b7280, iconBackgroundColor: 0xe5e7eb, iconColor: 0x9ca3af,
-    hoverBorderColor: 0x3b82f6, selectedBorderColor: 0x3b82f6,
-    requiredBorderColor: 0xeab308, requiredBadgeBackgroundColor: 0xfef3c7, requiredBadgeTextColor: 0xb45309
+    backgroundColor: 0xfafafa,
+    borderColor: 0xcad3dc,
+    emptyBorderColor: 0x9ca3af,
+    textColor: 0x6b7280,
+    iconBackgroundColor: 0xe5e7eb,
+    iconColor: 0x9ca3af,
+    hoverBorderColor: 0x3b82f6,
+    selectedBorderColor: 0x3b82f6,
+    requiredBorderColor: 0xeab308,
+    requiredBadgeBackgroundColor: 0xfef3c7,
+    requiredBadgeTextColor: 0xb45309,
   },
   primary: {
-    backgroundColor: 0xeff6ff, borderColor: 0x93c5fd, emptyBorderColor: 0x60a5fa,
-    textColor: 0x3b82f6, iconBackgroundColor: 0xdbeafe, iconColor: 0x60a5fa,
-    hoverBorderColor: 0x3b82f6, selectedBorderColor: 0x2563eb,
-    requiredBorderColor: 0xeab308, requiredBadgeBackgroundColor: 0xfef3c7, requiredBadgeTextColor: 0xb45309
+    backgroundColor: 0xeff6ff,
+    borderColor: 0x93c5fd,
+    emptyBorderColor: 0x60a5fa,
+    textColor: 0x3b82f6,
+    iconBackgroundColor: 0xdbeafe,
+    iconColor: 0x60a5fa,
+    hoverBorderColor: 0x3b82f6,
+    selectedBorderColor: 0x2563eb,
+    requiredBorderColor: 0xeab308,
+    requiredBadgeBackgroundColor: 0xfef3c7,
+    requiredBadgeTextColor: 0xb45309,
   },
   secondary: {
-    backgroundColor: 0xeef2ff, borderColor: 0xa5b4fc, emptyBorderColor: 0x818cf8,
-    textColor: 0x6366f1, iconBackgroundColor: 0xe0e7ff, iconColor: 0x818cf8,
-    hoverBorderColor: 0x6366f1, selectedBorderColor: 0x4f46e5,
-    requiredBorderColor: 0xeab308, requiredBadgeBackgroundColor: 0xfef3c7, requiredBadgeTextColor: 0xb45309
+    backgroundColor: 0xeef2ff,
+    borderColor: 0xa5b4fc,
+    emptyBorderColor: 0x818cf8,
+    textColor: 0x6366f1,
+    iconBackgroundColor: 0xe0e7ff,
+    iconColor: 0x818cf8,
+    hoverBorderColor: 0x6366f1,
+    selectedBorderColor: 0x4f46e5,
+    requiredBorderColor: 0xeab308,
+    requiredBadgeBackgroundColor: 0xfef3c7,
+    requiredBadgeTextColor: 0xb45309,
   },
 };
 
@@ -4460,10 +7456,13 @@ export interface CheckboxGroupSizePreset {
   labelGap: number;
 }
 
-const CHECKBOX_GROUP_SIZE_MAPPING: Record<string, { fontSize: string; boxSize: string; gap: string }> = {
-  sm: { fontSize: '--text-sm', boxSize: '--text-lg', gap: '--gap' },
-  md: { fontSize: '--text-base', boxSize: '--text-xl', gap: '--gap' },
-  lg: { fontSize: '--text-lg', boxSize: '--text-2xl', gap: '--gap' },
+const CHECKBOX_GROUP_SIZE_MAPPING: Record<
+  string,
+  { fontSize: string; boxSize: string; gap: string }
+> = {
+  sm: { fontSize: "--text-sm", boxSize: "--text-lg", gap: "--gap" },
+  md: { fontSize: "--text-base", boxSize: "--text-xl", gap: "--gap" },
+  lg: { fontSize: "--text-lg", boxSize: "--text-2xl", gap: "--gap" },
 };
 
 const CHECKBOX_GROUP_FALLBACKS: Record<string, CheckboxGroupSizePreset> = {
@@ -4475,16 +7474,25 @@ const CHECKBOX_GROUP_FALLBACKS: Record<string, CheckboxGroupSizePreset> = {
 /**
  * CheckboxGroup 사이즈 프리셋 읽기
  */
-export function getCheckboxGroupSizePreset(size: string): CheckboxGroupSizePreset {
+export function getCheckboxGroupSizePreset(
+  size: string,
+): CheckboxGroupSizePreset {
   const mapping = CHECKBOX_GROUP_SIZE_MAPPING[size];
-  const fallback = CHECKBOX_GROUP_FALLBACKS[size] || CHECKBOX_GROUP_FALLBACKS.md;
+  const fallback =
+    CHECKBOX_GROUP_FALLBACKS[size] || CHECKBOX_GROUP_FALLBACKS.md;
 
   if (!mapping) {
     return fallback;
   }
 
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const boxSize = parseCSSValue(getCSSVariable(mapping.boxSize), fallback.boxSize);
+  const fontSize = parseCSSValue(
+    getCSSVariable(mapping.fontSize),
+    fallback.fontSize,
+  );
+  const boxSize = parseCSSValue(
+    getCSSVariable(mapping.boxSize),
+    fallback.boxSize,
+  );
   const gap = parseCSSValue(getCSSVariable(mapping.gap), fallback.gap);
 
   return {

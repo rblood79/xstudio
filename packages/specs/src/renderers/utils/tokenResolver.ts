@@ -123,10 +123,47 @@ const COLOR_TOKEN_TO_CSS: Record<string, string> = {
  * S2에 글로벌 시맨틱이 없는 named color 처리 (기존 tertiary 등)
  */
 const NAMED_COLOR_TO_CSS: Record<string, string> = {
+  // Purple
   purple: "var(--color-purple-600)",
   "purple-hover": "color-mix(in srgb, var(--color-purple-600) 85%, black)",
   "purple-pressed": "color-mix(in srgb, var(--color-purple-600) 75%, black)",
   "purple-subtle": "var(--color-purple-100)",
+  // Gray
+  gray: "var(--color-neutral-500)",
+  "gray-subtle": "var(--color-neutral-200)",
+  // Red
+  red: "var(--color-red-600)",
+  "red-subtle": "var(--color-red-100)",
+  // Orange
+  orange: "var(--color-orange-600)",
+  "orange-subtle": "var(--color-orange-100)",
+  // Yellow
+  yellow: "var(--color-yellow-500)",
+  "yellow-subtle": "var(--color-yellow-100)",
+  // Green (named, not semantic positive)
+  "green-named": "var(--color-green-600)",
+  "green-named-subtle": "var(--color-green-100)",
+  // Blue
+  blue: "var(--color-blue-600)",
+  "blue-subtle": "var(--color-blue-100)",
+  // Indigo
+  indigo: "oklch(0.45 0.2 284)",
+  "indigo-subtle": "oklch(0.93 0.04 284)",
+  // Cyan
+  cyan: "oklch(0.5 0.14 220)",
+  "cyan-subtle": "oklch(0.93 0.03 220)",
+  // Pink
+  pink: "oklch(0.6 0.18 348)",
+  "pink-subtle": "oklch(0.93 0.04 348)",
+  // Turquoise
+  turquoise: "oklch(0.55 0.1 195)",
+  "turquoise-subtle": "oklch(0.93 0.02 195)",
+  // Fuchsia
+  fuchsia: "oklch(0.55 0.22 320)",
+  "fuchsia-subtle": "oklch(0.93 0.04 320)",
+  // Magenta
+  magenta: "oklch(0.55 0.2 335)",
+  "magenta-subtle": "oklch(0.93 0.04 335)",
 };
 
 /**

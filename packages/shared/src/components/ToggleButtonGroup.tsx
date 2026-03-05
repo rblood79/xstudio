@@ -10,7 +10,6 @@ import type {
   ColumnMapping,
   DataBindingValue,
   ComponentSizeSubset,
-  ToggleButtonVariant,
 } from "../types";
 import { useCollectionData } from "../hooks";
 import "./styles/ToggleButtonGroup.css";
@@ -26,13 +25,18 @@ export function useToggleButtonGroupIndicator() {
 export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
   indicator?: boolean;
   /**
-   * Visual variant for child ToggleButton buttons
-   * @default 'default'
+   * Emphasize the toggle button group with accent color (S2)
+   * @default false
    */
-  variant?: ToggleButtonVariant;
+  isEmphasized?: boolean;
+  /**
+   * Quiet variant (reduced visual weight) (S2)
+   * @default false
+   */
+  isQuiet?: boolean;
   /**
    * Size for child ToggleButton buttons
-   * @default 'sm'
+   * @default 'md'
    */
   size?: ComponentSizeSubset;
   // 데이터 바인딩
@@ -41,14 +45,16 @@ export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
 }
 
 /**
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-togglebutton-variant, data-togglebutton-size 사용 (그룹 컨텍스트)
+ * S2 variant 전환: isEmphasized / isQuiet data-* 패턴
+ * - data-emphasized: accent color 강조 (선택 시)
+ * - data-quiet: 배경 없는 quiet 스타일
+ * - data-togglebutton-size: 크기 (그룹 컨텍스트)
  */
 export function ToggleButtonGroup({
   indicator = false,
-  variant = "default",
-  size = "sm",
+  isEmphasized = false,
+  isQuiet = false,
+  size = "md",
   dataBinding,
   columnMapping,
   children,
@@ -86,7 +92,10 @@ export function ToggleButtonGroup({
 
   const toggleButtonGroupClassName = composeRenderProps(
     props.className,
-    (cls) => cls ? `react-aria-ToggleButtonGroup ${cls}` : "react-aria-ToggleButtonGroup"
+    (cls) =>
+      cls
+        ? `react-aria-ToggleButtonGroup ${cls}`
+        : "react-aria-ToggleButtonGroup",
   );
 
   // ColumnMapping이 있으면 각 데이터 항목마다 ToggleButton 렌더링
@@ -98,7 +107,7 @@ export function ToggleButtonGroup({
         columnMapping,
         hasChildren: !!children,
         dataCount: boundData.length,
-      }
+      },
     );
 
     // Loading 상태
@@ -107,7 +116,8 @@ export function ToggleButtonGroup({
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-variant={variant}
+          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
+          data-togglebutton-quiet={isQuiet ? "true" : "false"}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
@@ -127,7 +137,8 @@ export function ToggleButtonGroup({
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-variant={variant}
+          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
+          data-togglebutton-quiet={isQuiet ? "true" : "false"}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
@@ -144,14 +155,15 @@ export function ToggleButtonGroup({
     // 데이터가 있을 때: children 템플릿 사용
     if (boundData.length > 0) {
       console.log(
-        "✅ ToggleButtonGroup with columnMapping - using children template"
+        "✅ ToggleButtonGroup with columnMapping - using children template",
       );
 
       return (
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-variant={variant}
+          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
+          data-togglebutton-quiet={isQuiet ? "true" : "false"}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
         >
@@ -167,7 +179,8 @@ export function ToggleButtonGroup({
       <RACToggleButtonGroup
         {...props}
         data-indicator={indicator ? "true" : "false"}
-        data-togglebutton-variant={variant}
+        data-emphasized={isEmphasized || undefined}
+        data-quiet={isQuiet || undefined}
         data-togglebutton-size={size}
         className={toggleButtonGroupClassName}
       >
@@ -186,7 +199,8 @@ export function ToggleButtonGroup({
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-variant={variant}
+          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
+          data-togglebutton-quiet={isQuiet ? "true" : "false"}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
@@ -206,7 +220,8 @@ export function ToggleButtonGroup({
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-variant={variant}
+          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
+          data-togglebutton-quiet={isQuiet ? "true" : "false"}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
@@ -225,21 +240,22 @@ export function ToggleButtonGroup({
       const buttonItems = boundData.map((item, index) => ({
         id: String(item.id || item.value || index),
         label: String(
-          item.name || item.title || item.label || `Button ${index + 1}`
+          item.name || item.title || item.label || `Button ${index + 1}`,
         ),
         isDisabled: Boolean(item.isDisabled),
       }));
 
       console.log(
         "✅ ToggleButtonGroup Dynamic Collection - items:",
-        buttonItems
+        buttonItems,
       );
 
       return (
         <RACToggleButtonGroup
           {...props}
           data-indicator={indicator ? "true" : "false"}
-          data-togglebutton-variant={variant}
+          data-togglebutton-emphasized={isEmphasized ? "true" : "false"}
+          data-togglebutton-quiet={isQuiet ? "true" : "false"}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
         >
@@ -265,7 +281,8 @@ export function ToggleButtonGroup({
     <RACToggleButtonGroup
       {...props}
       data-indicator={indicator ? "true" : "false"}
-      data-togglebutton-variant={variant}
+      data-emphasized={isEmphasized || undefined}
+      data-quiet={isQuiet || undefined}
       data-togglebutton-size={size}
       className={toggleButtonGroupClassName}
     >

@@ -7,7 +7,7 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
  * Phase 4: Grouping & Organization
  */
 export function createGroupDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -41,7 +41,7 @@ export function createGroupDefinition(
  * ToggleButtonGroup 컴포넌트 정의
  */
 export function createToggleButtonGroupDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -58,8 +58,7 @@ export function createToggleButtonGroupDefinition(
       tag: "ToggleButtonGroup",
       props: {
         tag: "ToggleButtonGroup",
-        variant: "default",
-        size: "sm",
+        size: "md",
         orientation: "horizontal",
         selectionMode: "single",
         value: [],
@@ -79,8 +78,7 @@ export function createToggleButtonGroupDefinition(
         tag: "ToggleButton",
         props: {
           children: "Toggle 1",
-          variant: "default",
-          size: "sm",
+          size: "md",
           isSelected: false,
           isDisabled: false,
         } as ComponentElementProps,
@@ -91,8 +89,7 @@ export function createToggleButtonGroupDefinition(
         tag: "ToggleButton",
         props: {
           children: "Toggle 2",
-          variant: "default",
-          size: "sm",
+          size: "md",
           isSelected: false,
           isDisabled: false,
         } as ComponentElementProps,
@@ -112,7 +109,7 @@ export function createToggleButtonGroupDefinition(
  *   └─ ToggleButton (tag="ToggleButton", children="Tab 2", transparent bg)
  */
 export function createSwitcherDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -152,8 +149,8 @@ export function createSwitcherDefinition(
           isDisabled: false,
           style: {
             flex: 1,
-            backgroundColor: 'transparent',
-            textAlign: 'center',
+            backgroundColor: "transparent",
+            textAlign: "center",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -167,8 +164,8 @@ export function createSwitcherDefinition(
           isDisabled: false,
           style: {
             flex: 1,
-            backgroundColor: 'transparent',
-            textAlign: 'center',
+            backgroundColor: "transparent",
+            textAlign: "center",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -182,7 +179,7 @@ export function createSwitcherDefinition(
  * CheckboxGroup 컴포넌트 정의
  */
 export function createCheckboxGroupDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -228,7 +225,7 @@ export function createCheckboxGroupDefinition(
             tag: "Label",
             props: {
               children: "Option 1",
-              style: { fontSize: 14, backgroundColor: 'transparent' },
+              style: { fontSize: 14, backgroundColor: "transparent" },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -255,7 +252,7 @@ export function createCheckboxGroupDefinition(
             tag: "Label",
             props: {
               children: "Option 2",
-              style: { fontSize: 14, backgroundColor: 'transparent' },
+              style: { fontSize: 14, backgroundColor: "transparent" },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -270,7 +267,7 @@ export function createCheckboxGroupDefinition(
  * RadioGroup 컴포넌트 정의
  */
 export function createRadioGroupDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -315,7 +312,7 @@ export function createRadioGroupDefinition(
             tag: "Label",
             props: {
               children: "Option 1",
-              style: { fontSize: 14, backgroundColor: 'transparent' },
+              style: { fontSize: 14, backgroundColor: "transparent" },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -342,7 +339,7 @@ export function createRadioGroupDefinition(
             tag: "Label",
             props: {
               children: "Option 2",
-              style: { fontSize: 14, backgroundColor: 'transparent' },
+              style: { fontSize: 14, backgroundColor: "transparent" },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -357,7 +354,7 @@ export function createRadioGroupDefinition(
  * TagGroup 컴포넌트 정의
  */
 export function createTagGroupDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -377,7 +374,12 @@ export function createTagGroupDefinition(
         label: "Tag Group",
         allowsRemoving: false,
         selectionMode: "multiple",
-        style: { display: "flex", flexDirection: "column", gap: 2, width: "fit-content" },
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          width: "fit-content",
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -388,7 +390,7 @@ export function createTagGroupDefinition(
         tag: "Label",
         props: {
           children: "Tag Group",
-          style: { fontSize: 14, fontWeight: 500, width: 'fit-content' },
+          style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -396,7 +398,12 @@ export function createTagGroupDefinition(
       {
         tag: "TagList",
         props: {
-          style: { display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 4 },
+          style: {
+            display: "flex",
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 4,
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
@@ -429,7 +436,7 @@ export function createTagGroupDefinition(
  * Breadcrumbs 컴포넌트 정의
  */
 export function createBreadcrumbsDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -492,7 +499,7 @@ export function createBreadcrumbsDefinition(
  *   └─ Label (tag="Label", children="Checkbox")
  */
 export function createCheckboxDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -533,7 +540,7 @@ export function createCheckboxDefinition(
           children: "Checkbox",
           style: {
             fontSize: 14,
-            backgroundColor: 'transparent',
+            backgroundColor: "transparent",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -551,7 +558,7 @@ export function createCheckboxDefinition(
  *   └─ Label (tag="Label", children="Radio")
  */
 export function createRadioDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -592,7 +599,7 @@ export function createRadioDefinition(
           children: "Radio",
           style: {
             fontSize: 14,
-            backgroundColor: 'transparent',
+            backgroundColor: "transparent",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -610,7 +617,7 @@ export function createRadioDefinition(
  *   └─ Label (tag="Label", children="Switch")
  */
 export function createSwitchDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -650,7 +657,7 @@ export function createSwitchDefinition(
           children: "Switch",
           style: {
             fontSize: 14,
-            backgroundColor: 'transparent',
+            backgroundColor: "transparent",
           },
         } as ComponentElementProps,
         ...ownerFields,

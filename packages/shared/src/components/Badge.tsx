@@ -5,8 +5,8 @@ import "./styles/Badge.css";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   /**
-   * M3 variant
-   * @default 'primary'
+   * S2 variant
+   * @default 'accent'
    */
   variant?: BadgeVariant;
   /**
@@ -29,6 +29,11 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
    */
   isPulsing?: boolean;
   /**
+   * Fill style of the badge
+   * @default 'bold'
+   */
+  fillStyle?: "bold" | "subtle" | "outline";
+  /**
    * Show loading skeleton instead of content
    * @default false
    */
@@ -36,33 +41,24 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 /**
- * Badge Component with Material Design 3 support
+ * Badge Component — Spectrum S2
  *
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-variant, data-size, data-dot, data-pulsing 속성 사용
- *
- * M3 Features:
- * - 5 variants: primary, secondary, tertiary, error, surface
- * - 3 sizes: sm, md, lg
- * - M3 color tokens for consistent theming
- *
- * Features:
- * - Status indicators and labels
- * - Dot mode for minimal indicators
- * - Pulsing animation for notifications
- * - Compact and legible design
+ * S2 Variants: accent, informative, neutral, positive, notice, negative
+ * Fill Styles: bold (default), subtle, outline
+ * Sizes: sm, md, lg
  *
  * @example
- * <Badge variant="primary" size="sm">New</Badge>
- * <Badge variant="error" size="md">5</Badge>
- * <Badge variant="secondary" isDot isPulsing />
+ * <Badge variant="accent" size="sm">New</Badge>
+ * <Badge variant="negative" size="md">5</Badge>
+ * <Badge variant="positive" fillStyle="subtle">Active</Badge>
+ * <Badge variant="informative" isDot isPulsing />
  */
 export function Badge({
-  variant = "primary",
+  variant = "accent",
   size = "sm",
   isDot = false,
   isPulsing = false,
+  fillStyle,
   isLoading = false,
   className,
   children,
@@ -82,12 +78,15 @@ export function Badge({
   return (
     <span
       {...props}
-      className={className ? `react-aria-Badge ${className}` : "react-aria-Badge"}
+      className={
+        className ? `react-aria-Badge ${className}` : "react-aria-Badge"
+      }
       data-badge
       data-variant={variant}
       data-size={size}
       data-dot={isDot || undefined}
       data-pulsing={isPulsing || undefined}
+      data-fill-style={fillStyle || undefined}
     >
       {!isDot && children}
     </span>

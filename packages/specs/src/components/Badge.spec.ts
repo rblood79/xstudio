@@ -16,7 +16,27 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  * Badge Props
  */
 export interface BadgeProps {
-  variant?: "primary" | "secondary" | "tertiary" | "error" | "surface";
+  variant?:
+    | "accent"
+    | "informative"
+    | "neutral"
+    | "positive"
+    | "notice"
+    | "negative"
+    | "gray"
+    | "red"
+    | "orange"
+    | "yellow"
+    | "green"
+    | "blue"
+    | "purple"
+    | "indigo"
+    | "cyan"
+    | "pink"
+    | "turquoise"
+    | "fuchsia"
+    | "magenta";
+  fillStyle?: "bold" | "subtle" | "outline";
   size?: "sm" | "md" | "lg";
   children?: string;
   text?: string;
@@ -34,66 +54,167 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
   description: "React Aria 기반 배지 컴포넌트",
   element: "span",
 
-  defaultVariant: "surface",
+  defaultVariant: "accent",
   defaultSize: "sm",
 
   variants: {
-    primary: {
+    accent: {
       background: "{color.accent}" as TokenRef,
       backgroundHover: "{color.accent}" as TokenRef,
       backgroundPressed: "{color.accent}" as TokenRef,
       text: "{color.on-accent}" as TokenRef,
     },
-    secondary: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+    informative: {
+      background: "{color.informative}" as TokenRef,
+      backgroundHover: "{color.informative}" as TokenRef,
+      backgroundPressed: "{color.informative}" as TokenRef,
       text: "{color.white}" as TokenRef,
     },
-    tertiary: {
-      background: "{color.purple}" as TokenRef,
-      backgroundHover: "{color.purple}" as TokenRef,
-      backgroundPressed: "{color.purple}" as TokenRef,
+    neutral: {
+      background: "{color.neutral}" as TokenRef,
+      backgroundHover: "{color.neutral}" as TokenRef,
+      backgroundPressed: "{color.neutral}" as TokenRef,
       text: "{color.white}" as TokenRef,
     },
-    error: {
+    positive: {
+      background: "{color.positive}" as TokenRef,
+      backgroundHover: "{color.positive}" as TokenRef,
+      backgroundPressed: "{color.positive}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    notice: {
+      background: "{color.notice}" as TokenRef,
+      backgroundHover: "{color.notice}" as TokenRef,
+      backgroundPressed: "{color.notice}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    negative: {
       background: "{color.negative}" as TokenRef,
       backgroundHover: "{color.negative}" as TokenRef,
       backgroundPressed: "{color.negative}" as TokenRef,
       text: "{color.on-negative}" as TokenRef,
     },
-    surface: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
+    // Named color variants (S2)
+    gray: {
+      background: "{color.gray}" as TokenRef,
+      backgroundHover: "{color.gray}" as TokenRef,
+      backgroundPressed: "{color.gray}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    red: {
+      background: "{color.red}" as TokenRef,
+      backgroundHover: "{color.red}" as TokenRef,
+      backgroundPressed: "{color.red}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    orange: {
+      background: "{color.orange}" as TokenRef,
+      backgroundHover: "{color.orange}" as TokenRef,
+      backgroundPressed: "{color.orange}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    yellow: {
+      background: "{color.yellow}" as TokenRef,
+      backgroundHover: "{color.yellow}" as TokenRef,
+      backgroundPressed: "{color.yellow}" as TokenRef,
+      text: "{color.black}" as TokenRef,
+    },
+    green: {
+      background: "{color.green-named}" as TokenRef,
+      backgroundHover: "{color.green-named}" as TokenRef,
+      backgroundPressed: "{color.green-named}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    blue: {
+      background: "{color.blue}" as TokenRef,
+      backgroundHover: "{color.blue}" as TokenRef,
+      backgroundPressed: "{color.blue}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    purple: {
+      background: "{color.purple}" as TokenRef,
+      backgroundHover: "{color.purple}" as TokenRef,
+      backgroundPressed: "{color.purple}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    indigo: {
+      background: "{color.indigo}" as TokenRef,
+      backgroundHover: "{color.indigo}" as TokenRef,
+      backgroundPressed: "{color.indigo}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    cyan: {
+      background: "{color.cyan}" as TokenRef,
+      backgroundHover: "{color.cyan}" as TokenRef,
+      backgroundPressed: "{color.cyan}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    pink: {
+      background: "{color.pink}" as TokenRef,
+      backgroundHover: "{color.pink}" as TokenRef,
+      backgroundPressed: "{color.pink}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    turquoise: {
+      background: "{color.turquoise}" as TokenRef,
+      backgroundHover: "{color.turquoise}" as TokenRef,
+      backgroundPressed: "{color.turquoise}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    fuchsia: {
+      background: "{color.fuchsia}" as TokenRef,
+      backgroundHover: "{color.fuchsia}" as TokenRef,
+      backgroundPressed: "{color.fuchsia}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+    },
+    magenta: {
+      background: "{color.magenta}" as TokenRef,
+      backgroundHover: "{color.magenta}" as TokenRef,
+      backgroundPressed: "{color.magenta}" as TokenRef,
+      text: "{color.white}" as TokenRef,
     },
   },
 
   sizes: {
+    xs: {
+      height: 16,
+      paddingX: 8,
+      paddingY: 2,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
+      gap: 2,
+    },
     sm: {
       height: 20,
-      paddingX: 6,
-      paddingY: 2,
+      paddingX: 12,
+      paddingY: 4,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
     },
     md: {
       height: 24,
-      paddingX: 8,
-      paddingY: 2,
+      paddingX: 16,
+      paddingY: 8,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
     },
     lg: {
       height: 28,
-      paddingX: 10,
-      paddingY: 4,
-      fontSize: "{typography.text-md}" as TokenRef,
+      paddingX: 24,
+      paddingY: 8,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 6,
+    },
+    xl: {
+      height: 32,
+      paddingX: 32,
+      paddingY: 12,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
+      gap: 8,
     },
   },
 

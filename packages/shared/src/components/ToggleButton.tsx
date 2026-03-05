@@ -5,34 +5,38 @@ import {
   SelectionIndicator,
   composeRenderProps,
 } from "react-aria-components";
-import type {
-  ComponentSizeSubset,
-  ToggleButtonVariant,
-} from "../types";
+import type { ComponentSizeSubset } from "../types";
 import { useToggleButtonGroupIndicator } from "./ToggleButtonGroup";
 import "./styles/ToggleButton.css";
 
 export interface ToggleButtonExtendedProps extends ToggleButtonProps {
   /**
-   * Visual variant of the toggle button
-   * @default 'default'
+   * Emphasizes the toggle button with accent color when selected (S2)
+   * @default false
    */
-  variant?: ToggleButtonVariant;
+  isEmphasized?: boolean;
+  /**
+   * Renders the toggle button with no visible background (S2)
+   * @default false
+   */
+  isQuiet?: boolean;
   /**
    * Size of the toggle button
-   * @default 'md'
+   * @default 'sm'
    */
   size?: ComponentSizeSubset;
 }
 
 /**
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-variant, data-size 속성 사용
+ * S2 variant 전환: isEmphasized / isQuiet data-* 패턴
+ * - data-emphasized: accent color 강조 (선택 시)
+ * - data-quiet: 배경 없는 quiet 스타일
+ * - data-size: 크기
  */
 export function ToggleButton({
-  variant = "default",
-  size = "sm",
+  isEmphasized = false,
+  isQuiet = false,
+  size = "md",
   children,
   ...props
 }: ToggleButtonExtendedProps) {
@@ -41,10 +45,11 @@ export function ToggleButton({
   return (
     <RACToggleButton
       {...props}
-      data-variant={variant}
+      data-emphasized={isEmphasized || undefined}
+      data-quiet={isQuiet || undefined}
       data-size={size}
       className={composeRenderProps(props.className, (cls) =>
-        cls ? `react-aria-ToggleButton ${cls}` : "react-aria-ToggleButton"
+        cls ? `react-aria-ToggleButton ${cls}` : "react-aria-ToggleButton",
       )}
     >
       {showIndicator && <SelectionIndicator />}

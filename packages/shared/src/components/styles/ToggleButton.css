@@ -1,22 +1,23 @@
 @layer components {
   .react-aria-ToggleButton {
-    /* Local color variables — variant overrides only these */
-    --tb-selected-bg: var(--highlight-background);
-    --tb-selected-text: var(--highlight-foreground);
+    /* S2 Default (non-emphasized): dark bg + white text when selected */
+    --tb-selected-bg: var(--text-color);
+    --tb-selected-text: var(--background-color);
 
     box-sizing: border-box;
     color: var(--text-color);
-    background: var(--overlay-background);
-    border: 1px solid var(--border-color);
+    background: var(--color-neutral-200);
+    border: 1px solid transparent;
     forced-color-adjust: none;
     border-radius: var(--border-radius);
     appearance: none;
     vertical-align: middle;
-    font-size: var(--text-base);
+    /* Default sizing (md) */
+    font-size: var(--text-sm);
     text-align: center;
     margin: 0;
     outline: none;
-    padding: var(--spacing-sm) var(--spacing-xl);
+    padding: var(--spacing-sm) var(--spacing-lg);
 
     &[data-pressed] {
       box-shadow: var(--inset-shadow-sm);
@@ -47,93 +48,88 @@
       opacity: 0.38;
     }
 
-    /* ===== Color Variants ===== */
+    /* ===== Emphasized Variant ===== */
 
-    &[data-variant="secondary"] {
-      --tb-selected-bg: var(--button-background);
-      --tb-selected-text: var(--color-white);
+    &[data-emphasized] {
+      --tb-selected-bg: var(--highlight-background);
+      --tb-selected-text: var(--highlight-foreground);
     }
 
-    &[data-variant="tertiary"] {
-      --tb-selected-bg: var(--color-purple-600);
-      --tb-selected-text: var(--color-white);
-    }
+    /* ===== Quiet Variant ===== */
 
-    &[data-variant="error"] {
-      --tb-selected-bg: var(--invalid-color);
-      --tb-selected-text: var(--color-white);
-    }
+    &[data-quiet] {
+      background: transparent;
+      border-color: transparent;
 
-    &[data-variant="surface"] {
-      --tb-selected-bg: var(--color-neutral-200);
-      --tb-selected-text: var(--text-color);
+      &[data-selected] {
+        background: transparent;
+        border-color: transparent;
+      }
     }
 
     /* ===== Size Variants ===== */
 
+    &[data-size="xs"] {
+      font-size: var(--text-2xs);
+      padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
     &[data-size="sm"] {
-      font-size: var(--text-sm);
-      padding: var(--spacing-sm) var(--spacing-md);
+      font-size: var(--text-xs);
+      padding: var(--spacing-xs) var(--spacing-md);
     }
 
     &[data-size="md"] {
-      font-size: var(--text-base);
-      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--text-sm);
+      padding: var(--spacing-sm) var(--spacing-lg);
     }
 
     &[data-size="lg"] {
+      font-size: var(--text-base);
+      padding: var(--spacing-md) var(--spacing-xl);
+    }
+
+    &[data-size="xl"] {
       font-size: var(--text-lg);
-      padding: var(--spacing-lg) var(--spacing-xl);
+      padding: var(--spacing-lg) var(--spacing-2xl);
     }
   }
 
   /* ===== Parent delegation (ToggleButtonGroup) ===== */
 
-  .react-aria-ToggleButtonGroup[data-togglebutton-variant="primary"]
+  .react-aria-ToggleButtonGroup[data-togglebutton-emphasized]
     .react-aria-ToggleButton {
     --tb-selected-bg: var(--highlight-background);
     --tb-selected-text: var(--highlight-foreground);
   }
 
-  .react-aria-ToggleButtonGroup[data-togglebutton-variant="secondary"]
+  .react-aria-ToggleButtonGroup[data-togglebutton-size="xs"]
     .react-aria-ToggleButton {
-    --tb-selected-bg: var(--button-background);
-    --tb-selected-text: var(--color-white);
-  }
-
-  .react-aria-ToggleButtonGroup[data-togglebutton-variant="tertiary"]
-    .react-aria-ToggleButton {
-    --tb-selected-bg: var(--color-purple-600);
-    --tb-selected-text: var(--color-white);
-  }
-
-  .react-aria-ToggleButtonGroup[data-togglebutton-variant="error"]
-    .react-aria-ToggleButton {
-    --tb-selected-bg: var(--invalid-color);
-    --tb-selected-text: var(--color-white);
-  }
-
-  .react-aria-ToggleButtonGroup[data-togglebutton-variant="surface"]
-    .react-aria-ToggleButton {
-    --tb-selected-bg: var(--color-neutral-200);
-    --tb-selected-text: var(--text-color);
+    font-size: var(--text-2xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
 
   .react-aria-ToggleButtonGroup[data-togglebutton-size="sm"]
     .react-aria-ToggleButton {
-    font-size: var(--text-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--text-xs);
+    padding: var(--spacing-xs) var(--spacing-md);
   }
 
   .react-aria-ToggleButtonGroup[data-togglebutton-size="md"]
     .react-aria-ToggleButton {
-    font-size: var(--text-base);
-    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--text-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
   }
 
   .react-aria-ToggleButtonGroup[data-togglebutton-size="lg"]
     .react-aria-ToggleButton {
+    font-size: var(--text-base);
+    padding: var(--spacing-md) var(--spacing-xl);
+  }
+
+  .react-aria-ToggleButtonGroup[data-togglebutton-size="xl"]
+    .react-aria-ToggleButton {
     font-size: var(--text-lg);
-    padding: var(--spacing-lg) var(--spacing-xl);
+    padding: var(--spacing-lg) var(--spacing-2xl);
   }
 }

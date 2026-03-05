@@ -2,7 +2,13 @@
 
 ## Status
 
-Proposed (2026-03-05)
+Accepted (2026-03-05)
+
+### 완료 이력
+
+- **Phase 1** (2026-03-05): 타입 정의 S2 전환, 30+ 컴포넌트 TSX variant/isEmphasized 변경, 렌더러 S2 props, 5개 에디터 S2 옵션
+- **Phase 2** (2026-03-05): ToggleButton.spec.ts isEmphasized, Label.spec.ts 주석 S2 정리, NavigationComponents.ts Factory 기본값 S2 전환 (Pagination variant: outline→secondary+fillStyle, default→accent)
+- **Phase 3** (2026-03-05): Button premium/genai variant 추가, ToggleButton S2 전환 (variant 제거 → isEmphasized/isQuiet boolean), ToggleButtonGroup default size S→M, Badge S2 named color variant 13종 추가 (총 19종), Badge size padding S2 spacing 토큰 동기화
 
 ## Context
 
@@ -10,12 +16,12 @@ Proposed (2026-03-05)
 
 ADR-022에서 Spec 내부 색상 토큰을 M3→S2로 전환 완료했으나, **컴포넌트의 외부 API(variant Props)**는 여전히 M3 네이밍을 사용:
 
-| 컴포넌트        | 현재 Props                                                                | S2 대응                                                                                                                            |
-| --------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Button          | `variant: "primary" \| "secondary" \| "tertiary" \| "error"`              | `variant: "accent" \| "primary" \| "secondary" \| "negative"`                                                                      |
-| Badge           | `variant: "primary" \| "secondary" \| "tertiary" \| "error" \| "surface"` | `variant: "accent" \| "informative" \| "positive" \| "notice" \| "negative" \| ...` + `fillStyle: "bold" \| "subtle" \| "outline"` |
-| TextField 등    | `variant: "default" \| "primary" \| "secondary" \| "tertiary" \| "error"` | `variant: "default" \| "accent" \| "secondary" \| "tertiary" \| "error"` + `isEmphasized`                                          |
-| Checkbox/Switch | `variant: "default" \| "primary" \| "secondary" \| "error"`               | `isEmphasized` boolean + `isInvalid`                                                                                               |
+| 컴포넌트        | 현재 Props                                                                | S2 대응                                                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Button          | `variant: "primary" \| "secondary" \| "tertiary" \| "error"`              | `variant: "accent" \| "primary" \| "secondary" \| "negative"`                                                                                               |
+| Badge           | `variant: "primary" \| "secondary" \| "tertiary" \| "error" \| "surface"` | `variant: "accent" \| "informative" \| "neutral" \| "positive" \| "notice" \| "negative" \| 13 named colors` + `fillStyle: "bold" \| "subtle" \| "outline"` |
+| TextField 등    | `variant: "default" \| "primary" \| "secondary" \| "tertiary" \| "error"` | `variant: "default" \| "accent" \| "secondary" \| "tertiary" \| "error"` + `isEmphasized`                                                                   |
+| Checkbox/Switch | `variant: "default" \| "primary" \| "secondary" \| "error"`               | `isEmphasized` boolean + `isInvalid`                                                                                                                        |
 
 **핵심 불일치**: S2에서 `primary`는 "검은/중립 채움 버튼"이고, XStudio에서는 "파란 강조 버튼"을 의미. 이 혼동이 S2 컴포넌트 확장 시 장기적 부채.
 

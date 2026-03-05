@@ -11,7 +11,12 @@ import {
   Toolbar,
 } from "../components/list";
 import { DataField } from "../components/Field";
-import type { PreviewElement, RenderContext, ColumnMapping, DataBinding } from "../types";
+import type {
+  PreviewElement,
+  RenderContext,
+  ColumnMapping,
+  DataBinding,
+} from "../types";
 
 /**
  * Collection 관련 컴포넌트 렌더러
@@ -26,24 +31,30 @@ import type { PreviewElement, RenderContext, ColumnMapping, DataBinding } from "
  */
 export const renderTree = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
 
   const treeItemChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "TreeItem")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "TreeItem",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   const renderTreeItemsRecursively = (
-    items: PreviewElement[]
+    items: PreviewElement[],
   ): React.ReactNode => {
     return items.map((item) => {
       const childTreeItems = elements
-        .filter((child) => child.parent_id === item.id && child.tag === "TreeItem")
+        .filter(
+          (child) => child.parent_id === item.id && child.tag === "TreeItem",
+        )
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       const otherChildren = elements
-        .filter((child) => child.parent_id === item.id && child.tag !== "TreeItem")
+        .filter(
+          (child) => child.parent_id === item.id && child.tag !== "TreeItem",
+        )
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       const displayTitle = String(
@@ -51,7 +62,7 @@ export const renderTree = (
           item.props.label ||
           item.props.value ||
           item.props.children ||
-          `Item ${item.id}`
+          `Item ${item.id}`,
       );
 
       const hasChildren = childTreeItems.length > 0;
@@ -80,7 +91,11 @@ export const renderTree = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
+      dataBinding={
+        (element.dataBinding || element.props.dataBinding) as
+          | DataBinding
+          | undefined
+      }
       style={element.props.style}
       className={element.props.className}
       aria-label={String(element.props["aria-label"] || "Tree")}
@@ -126,16 +141,20 @@ export const renderTree = (
  */
 export const renderTreeItem = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements } = context;
 
   const childTreeItems = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "TreeItem")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "TreeItem",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   const otherChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag !== "TreeItem")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag !== "TreeItem",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   const displayTitle = String(
@@ -143,7 +162,7 @@ export const renderTreeItem = (
       element.props.label ||
       element.props.value ||
       element.props.children ||
-      `Item ${element.id}`
+      `Item ${element.id}`,
   );
 
   const hasChildren = childTreeItems.length > 0;
@@ -171,7 +190,7 @@ export const renderTreeItem = (
  */
 export const renderTagGroup = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps, setElements } = context;
 
@@ -185,21 +204,26 @@ export const renderTagGroup = (
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
   const dataBinding = element.dataBinding || element.props.dataBinding;
-  const isPropertyBinding = dataBinding &&
-    typeof dataBinding === 'object' &&
-    'source' in (dataBinding as object) &&
-    'name' in (dataBinding as object) &&
-    !('type' in (dataBinding as object));
+  const isPropertyBinding =
+    dataBinding &&
+    typeof dataBinding === "object" &&
+    "source" in (dataBinding as object) &&
+    "name" in (dataBinding as object) &&
+    !("type" in (dataBinding as object));
 
   // Tag 템플릿에 Field children이 있는지 미리 확인
   const tagTemplate = tagChildren.length > 0 ? tagChildren[0] : null;
   const fieldChildrenInTemplate = tagTemplate
-    ? elements.filter((child) => child.parent_id === tagTemplate.id && child.tag === "Field")
+    ? elements.filter(
+        (child) => child.parent_id === tagTemplate.id && child.tag === "Field",
+      )
     : [];
   const hasFieldChildren = fieldChildrenInTemplate.length > 0;
 
   // columnMapping이 있거나, (PropertyDataBinding + Field children) 있으면 Field 렌더링 모드 사용
-  const hasValidTemplate = (columnMapping || (isPropertyBinding && hasFieldChildren)) && tagChildren.length > 0;
+  const hasValidTemplate =
+    (columnMapping || (isPropertyBinding && hasFieldChildren)) &&
+    tagChildren.length > 0;
 
   // 제거된 항목 ID 추적 (columnMapping 모드에서 동적 데이터 항목 제거용)
   const removedItemIds = Array.isArray(element.props.removedItemIds)
@@ -212,7 +236,7 @@ export const renderTagGroup = (
         const fieldChildren = context.elements
           .filter(
             (child) =>
-              child.parent_id === tagTemplate.id && child.tag === "Field"
+              child.parent_id === tagTemplate.id && child.tag === "Field",
           )
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
@@ -227,8 +251,9 @@ export const renderTagGroup = (
             {fieldChildren.length > 0
               ? fieldChildren.map((field) => {
                   // fieldKey 또는 key 속성 모두 지원 (fieldKey 우선)
-                  const fieldKey = (field.props as { fieldKey?: string; key?: string }).fieldKey ||
-                    (field.props as { key?: string }).key;
+                  const fieldKey =
+                    (field.props as { fieldKey?: string; key?: string })
+                      .fieldKey || (field.props as { key?: string }).key;
                   const fieldValue = fieldKey ? item[fieldKey] : undefined;
 
                   return (
@@ -247,7 +272,9 @@ export const renderTagGroup = (
                           | "email"
                       }
                       value={fieldValue}
-                      visible={(field.props as { visible?: boolean }).visible !== false}
+                      visible={
+                        (field.props as { visible?: boolean }).visible !== false
+                      }
                       style={field.props.style}
                       className={field.props.className}
                     />
@@ -281,7 +308,8 @@ export const renderTagGroup = (
       errorMessage={String(element.props.errorMessage || "")}
       allowsRemoving={Boolean(element.props.allowsRemoving)}
       selectionMode={
-        (element.props.selectionMode as "none" | "single" | "multiple") || "none"
+        (element.props.selectionMode as "none" | "single" | "multiple") ||
+        "none"
       }
       selectionBehavior={
         (element.props.selectionBehavior as "toggle" | "replace") || "toggle"
@@ -296,13 +324,12 @@ export const renderTagGroup = (
       }
       isDisabled={Boolean(element.props.isDisabled)}
       disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
-      variant={
-        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      dataBinding={
+        (element.dataBinding || element.props.dataBinding) as
+          | DataBinding
+          | undefined
       }
-      size={
-        (element.props.size as "sm" | "md" | "lg") || "md"
-      }
-      dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
       columnMapping={columnMapping}
       removedItemIds={removedItemIds}
       onSelectionChange={async (selectedKeys) => {
@@ -313,13 +340,27 @@ export const renderTagGroup = (
         updateElementProps(element.id, updatedProps);
 
         try {
-          const db = await context.services?.getDB?.() as { elements: { update: (id: string, data: Record<string, unknown>) => Promise<void> } } | undefined;
+          const db = (await context.services?.getDB?.()) as
+            | {
+                elements: {
+                  update: (
+                    id: string,
+                    data: Record<string, unknown>,
+                  ) => Promise<void>;
+                };
+              }
+            | undefined;
           if (db) {
             await db.elements.update(element.id, { props: updatedProps });
-            console.log("✅ [IndexedDB] TagGroup selectedKeys updated successfully");
+            console.log(
+              "✅ [IndexedDB] TagGroup selectedKeys updated successfully",
+            );
           }
         } catch (err) {
-          console.error("❌ [IndexedDB] Error updating TagGroup selectedKeys:", err);
+          console.error(
+            "❌ [IndexedDB] Error updating TagGroup selectedKeys:",
+            err,
+          );
         }
 
         window.parent.postMessage(
@@ -331,7 +372,7 @@ export const renderTagGroup = (
             },
             merge: true,
           },
-          window.location.origin
+          window.location.origin,
         );
       }}
       onRemove={async (keys) => {
@@ -351,7 +392,7 @@ export const renderTagGroup = (
             ? (element.props.selectedKeys as unknown as string[])
             : [];
           const updatedSelectedKeys = currentSelectedKeys.filter(
-            (key) => !keysToRemove.includes(String(key))
+            (key) => !keysToRemove.includes(String(key)),
           );
 
           const updatedProps = {
@@ -363,13 +404,28 @@ export const renderTagGroup = (
           updateElementProps(element.id, updatedProps);
 
           try {
-            const db = await context.services?.getDB?.() as { elements: { update: (id: string, data: Record<string, unknown>) => Promise<void> } } | undefined;
+            const db = (await context.services?.getDB?.()) as
+              | {
+                  elements: {
+                    update: (
+                      id: string,
+                      data: Record<string, unknown>,
+                    ) => Promise<void>;
+                  };
+                }
+              | undefined;
             if (db) {
               await db.elements.update(element.id, { props: updatedProps });
-              console.log("✅ [IndexedDB] TagGroup removedItemIds updated:", updatedRemovedIds);
+              console.log(
+                "✅ [IndexedDB] TagGroup removedItemIds updated:",
+                updatedRemovedIds,
+              );
             }
           } catch (err) {
-            console.error("❌ [IndexedDB] Error updating TagGroup removedItemIds:", err);
+            console.error(
+              "❌ [IndexedDB] Error updating TagGroup removedItemIds:",
+              err,
+            );
           }
 
           window.parent.postMessage(
@@ -382,7 +438,7 @@ export const renderTagGroup = (
               },
               merge: true,
             },
-            window.location.origin
+            window.location.origin,
           );
 
           return;
@@ -402,7 +458,9 @@ export const renderTagGroup = (
           }
 
           try {
-            const db = await context.services?.getDB?.() as { elements: { delete: (id: string) => Promise<void> } } | undefined;
+            const db = (await context.services?.getDB?.()) as
+              | { elements: { delete: (id: string) => Promise<void> } }
+              | undefined;
             if (db) {
               await db.elements.delete(String(tagId));
               deletedTagIds.push(String(tagId));
@@ -415,14 +473,14 @@ export const renderTagGroup = (
 
         const currentElements = elements;
         const updatedElements = currentElements.filter(
-          (el) => !deletedTagIds.includes(el.id)
+          (el) => !deletedTagIds.includes(el.id),
         );
 
         const currentSelectedKeys = Array.isArray(element.props.selectedKeys)
           ? (element.props.selectedKeys as unknown as string[])
           : [];
         const updatedSelectedKeys = currentSelectedKeys.filter(
-          (key) => !keysToRemove.includes(String(key))
+          (key) => !keysToRemove.includes(String(key)),
         );
 
         const updatedProps = {
@@ -434,15 +492,26 @@ export const renderTagGroup = (
         updateElementProps(element.id, updatedProps);
 
         try {
-          const db = await context.services?.getDB?.() as { elements: { update: (id: string, data: Record<string, unknown>) => Promise<void> } } | undefined;
+          const db = (await context.services?.getDB?.()) as
+            | {
+                elements: {
+                  update: (
+                    id: string,
+                    data: Record<string, unknown>,
+                  ) => Promise<void>;
+                };
+              }
+            | undefined;
           if (db) {
             await db.elements.update(element.id, { props: updatedProps });
-            console.log("✅ [IndexedDB] TagGroup selectedKeys updated after removal");
+            console.log(
+              "✅ [IndexedDB] TagGroup selectedKeys updated after removal",
+            );
           }
         } catch (err) {
           console.error(
             "Error updating TagGroup selectedKeys after removal:",
-            err
+            err,
           );
         }
 
@@ -452,7 +521,7 @@ export const renderTagGroup = (
               type: "UPDATE_ELEMENTS",
               elements: updatedElements,
             },
-            window.location.origin
+            window.location.origin,
           );
         }, 0);
       }}
@@ -468,7 +537,7 @@ export const renderTagGroup = (
  */
 export const renderTag = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements } = context;
 
@@ -487,10 +556,13 @@ export const renderTag = (
         isDisabled={Boolean(element.props.isDisabled)}
         style={element.props.style}
         className={element.props.className}
-        textValue={String(element.props.textValue || element.props.children || "")}
+        textValue={String(
+          element.props.textValue || element.props.children || "",
+        )}
       >
         {fieldChildren.map((field) => {
-          const fieldKey = (field.props as { fieldKey?: string; key?: string }).fieldKey ||
+          const fieldKey =
+            (field.props as { fieldKey?: string; key?: string }).fieldKey ||
             (field.props as { key?: string }).key;
           return (
             <DataField
@@ -508,7 +580,9 @@ export const renderTag = (
                   | "email"
               }
               value={`{${fieldKey}}`} // 템플릿 모드에서 fieldKey 표시
-              showLabel={(field.props as { showLabel?: boolean }).showLabel !== false}
+              showLabel={
+                (field.props as { showLabel?: boolean }).showLabel !== false
+              }
               visible={(field.props as { visible?: boolean }).visible !== false}
               style={field.props.style}
               className={field.props.className}
@@ -540,7 +614,7 @@ export const renderTag = (
  */
 export const renderToggleButtonGroup = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
 
@@ -548,7 +622,9 @@ export const renderToggleButtonGroup = (
   const indicator = Boolean(element.props.indicator);
 
   const toggleButtonChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "ToggleButton")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "ToggleButton",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   return (
@@ -561,12 +637,9 @@ export const renderToggleButtonGroup = (
       orientation={orientation}
       selectionMode={element.props.selectionMode as "single" | "multiple"}
       indicator={indicator}
-      variant={
-        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
-      }
-      size={
-        (element.props.size as "sm" | "md" | "lg") || "md"
-      }
+      isEmphasized={Boolean(element.props.isEmphasized)}
+      isQuiet={Boolean(element.props.isQuiet)}
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
       defaultSelectedKeys={
         Array.isArray(element.props.value) ? element.props.value : []
       }
@@ -579,7 +652,7 @@ export const renderToggleButtonGroup = (
       }}
     >
       {toggleButtonChildren.map((toggleButton) =>
-        context.renderElement(toggleButton)
+        context.renderElement(toggleButton),
       )}
     </ToggleButtonGroup>
   );
@@ -590,7 +663,7 @@ export const renderToggleButtonGroup = (
  */
 export const renderToggleButton = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
 
@@ -600,7 +673,7 @@ export const renderToggleButton = (
 
   const isInGroup = elements.some(
     (parent) =>
-      parent.id === element.parent_id && parent.tag === "ToggleButtonGroup"
+      parent.id === element.parent_id && parent.tag === "ToggleButtonGroup",
   );
 
   const parentGroup = isInGroup
@@ -618,12 +691,14 @@ export const renderToggleButton = (
             parentGroup.props.value.includes(element.id)
           : Boolean(element.props.isSelected)
       }
-      defaultSelected={typeof element.props.defaultSelected === 'boolean' ? element.props.defaultSelected : undefined}
-      isDisabled={Boolean(element.props.isDisabled)}
-      variant={
-        !isInGroup
-          ? (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      defaultSelected={
+        typeof element.props.defaultSelected === "boolean"
+          ? element.props.defaultSelected
           : undefined
+      }
+      isDisabled={Boolean(element.props.isDisabled)}
+      isEmphasized={
+        !isInGroup ? Boolean(element.props.isEmphasized) : undefined
       }
       size={
         !isInGroup
@@ -660,7 +735,9 @@ export const renderToggleButton = (
         }
       }}
     >
-      {typeof element.props.children === "string" ? element.props.children : null}
+      {typeof element.props.children === "string"
+        ? element.props.children
+        : null}
       {children.map((child) => context.renderElement(child, child.id))}
     </ToggleButton>
   );
@@ -673,13 +750,15 @@ export const renderToggleButton = (
  */
 export const renderMenu = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
   // Static 방법: 직접 추가된 MenuItem 자식 요소들 찾기
   const menuItemChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "MenuItem")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "MenuItem",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   return (
@@ -690,7 +769,11 @@ export const renderMenu = (
       label={String(element.props.label || "Menu")}
       style={element.props.style}
       className={element.props.className}
-      dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
+      dataBinding={
+        (element.dataBinding || element.props.dataBinding) as
+          | DataBinding
+          | undefined
+      }
     >
       {/* Static 방법: MenuItem 자식 렌더링 (dataBinding이 없을 때만) */}
       {menuItemChildren.map((child) => renderElement(child, child.id))}
@@ -703,7 +786,7 @@ export const renderMenu = (
  */
 export const renderMenuItem = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -718,7 +801,9 @@ export const renderMenuItem = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      textValue={String(element.props.textValue || element.props.children || "")}
+      textValue={String(
+        element.props.textValue || element.props.children || "",
+      )}
       isDisabled={Boolean(element.props.isDisabled)}
     >
       {typeof element.props.children === "string"
@@ -734,7 +819,7 @@ export const renderMenuItem = (
  */
 export const renderToolbar = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 

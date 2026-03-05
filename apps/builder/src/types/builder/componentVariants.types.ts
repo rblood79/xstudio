@@ -1,11 +1,12 @@
 /**
  * Component Variant & Size Type Definitions
  *
- * This file defines shared type definitions for component variants and sizes
- * to ensure consistency across the component library.
+ * S2 (Spectrum 2) aligned variant system.
+ * Only components that have variant in S2 retain variant prop.
+ * Components without S2 variant use isEmphasized/isQuiet/fillStyle instead.
  *
  * @created 2025-11-07
- * @see {@link /docs/implementation/COMPONENT_MIGRATION_PLAN.md}
+ * @updated 2026-03-05 (ADR-023: S2 variant alignment)
  */
 
 // ============================================================================
@@ -37,245 +38,109 @@ export type DensitySize = "compact" | "comfortable" | "relaxed" | "spacious";
 export type LegacySize = "small" | "medium" | "large";
 
 // ============================================================================
-// Button Variants
+// S2 Common Props
 // ============================================================================
 
 /**
- * Button visual variants
- * Used by: Button component
- *
- * - default: Default style (base button styles)
- * - primary: Main call-to-action (uses --highlight-background token)
- * - secondary: Secondary actions (uses --button-background token)
- * - tertiary: Tertiary actions (uses --color-purple-600 token)
- * - error: Error/destructive actions (uses --invalid-color token)
- * - surface: Surface-level actions (uses --overlay-background token)
- * - outline: Outlined style (uses --border-color token)
- * - ghost: Minimal style (transparent background)
+ * Static color for components on colored backgrounds
+ * Used by: Button, ToggleButton, Link, Meter, ProgressBar
  */
-export type ButtonVariant =
-  | "default"
-  | "primary"
-  | "secondary"
-  | "tertiary"
-  | "error"
-  | "surface"
-  | "outline"
-  | "ghost";
+export type StaticColor = "auto" | "black" | "white";
 
 // ============================================================================
-// Field/Input Variants
+// Button (S2: variant + fillStyle)
 // ============================================================================
 
 /**
- * Field/Input visual variants
- * Used by: TextField, TextArea, and other form inputs
- *
- * - default: Standard field style
- * - filled: Filled background style (uses --field-background-filled)
- * - outlined: Outlined border style
+ * Button visual variants (S2 aligned)
+ * - accent: Blue/accent emphasis
+ * - primary: Dark/neutral fill
+ * - secondary: Neutral outline
+ * - negative: Error/destructive
  */
-export type FieldVariant = "default" | "filled" | "outlined";
-
-// ============================================================================
-// Card/Panel Variants
-// ============================================================================
+export type ButtonVariant = "accent" | "primary" | "secondary" | "negative";
 
 /**
- * Card visual variants
- * Used by: Card component
- *
- * - default: Standard card style
- * - primary: Primary action card (uses --action-primary-* tokens)
- * - secondary: Secondary action card (uses --action-secondary-* tokens)
- * - surface: Surface action card (uses --action-surface-* tokens)
- * - elevated: Card with shadow elevation
- * - outlined: Card with border outline
+ * Button fill style (S2)
  */
-export type CardVariant =
-  | "default"
-  | "primary"
-  | "secondary"
-  | "surface"
-  | "elevated"
-  | "outlined";
+export type ButtonFillStyle = "fill" | "outline";
 
-/**
- * Panel visual variants
- * Used by: Panel component
- *
- * - default: Standard panel
- * - tab: Tab panel style
- * - sidebar: Sidebar panel style
- * - card: Card-like panel
- * - modal: Modal panel style
- */
+// ============================================================================
+// Badge (S2: variant + fillStyle)
+// ============================================================================
+
+export type BadgeVariant =
+  | "accent"
+  | "informative"
+  | "neutral"
+  | "positive"
+  | "notice"
+  | "negative"
+  | "gray"
+  | "red"
+  | "orange"
+  | "yellow"
+  | "green"
+  | "blue"
+  | "purple"
+  | "indigo"
+  | "cyan"
+  | "pink"
+  | "turquoise"
+  | "fuchsia"
+  | "magenta";
+
+export type BadgeFillStyle = "bold" | "subtle" | "outline";
+
+// ============================================================================
+// Link (S2: variant)
+// ============================================================================
+
+export type LinkVariant = "primary" | "secondary";
+
+// ============================================================================
+// Meter (S2: variant)
+// ============================================================================
+
+export type MeterVariant = "informative" | "positive" | "notice" | "negative";
+
+// ============================================================================
+// Panel (XStudio-specific layout variants)
+// ============================================================================
+
 export type PanelVariant = "default" | "tab" | "sidebar" | "card" | "modal";
 
 // ============================================================================
-// Separator Variants
+// Separator (style variants, not color-based)
 // ============================================================================
 
-/**
- * Separator visual variants
- * Used by: Separator component
- *
- * - default: Solid line
- * - dashed: Dashed line
- * - dotted: Dotted line
- */
 export type SeparatorVariant = "default" | "dashed" | "dotted";
 
 // ============================================================================
-// Tag Variants
+// Table (structural variants)
 // ============================================================================
 
-/**
- * Tag visual variants
- * Used by: Tag component (within TagGroup)
- *
- * - default: Standard tag style
- * - primary: Primary action tag (uses --action-primary-* tokens)
- * - secondary: Secondary action tag (uses --action-secondary-* tokens)
- * - surface: Surface action tag (uses --action-surface-* tokens)
- */
-export type TagVariant = "default" | "primary" | "secondary" | "surface";
-
-// ============================================================================
-// ProgressBar Variants
-// ============================================================================
-
-/**
- * ProgressBar visual variants
- * Used by: ProgressBar component
- *
- * - default: Standard progress bar style
- * - primary: Primary progress (uses --action-primary-bg token)
- * - secondary: Secondary progress (uses --action-secondary-bg token)
- * - surface: Surface progress (uses --action-surface-bg token)
- */
-export type ProgressBarVariant =
-  | "default"
-  | "primary"
-  | "secondary"
-  | "surface";
-
-// ============================================================================
-// Meter Variants
-// ============================================================================
-
-/**
- * Meter visual variants
- * Used by: Meter component
- *
- * - default: Standard meter style
- * - primary: Primary meter (uses --action-primary-bg token)
- * - secondary: Secondary meter (uses --action-secondary-bg token)
- * - surface: Surface meter (uses --action-surface-bg token)
- */
-export type MeterVariant = "default" | "primary" | "secondary" | "surface";
-
-// ============================================================================
-// Switch Variants
-// ============================================================================
-
-/**
- * Switch visual variants
- * Used by: Switch component
- *
- * - default: Standard switch style
- * - primary: Primary switch (uses --action-primary-bg token when selected)
- * - secondary: Secondary switch (uses --action-secondary-bg token when selected)
- * - surface: Surface switch (uses --action-surface-bg token when selected)
- */
-export type SwitchVariant = "default" | "primary" | "secondary" | "surface";
-
-// ============================================================================
-// Checkbox Variants
-// ============================================================================
-
-/**
- * Checkbox visual variants
- * Used by: Checkbox component
- *
- * - default: Standard checkbox style
- * - primary: Primary checkbox (uses --action-primary-bg token when selected)
- * - secondary: Secondary checkbox (uses --action-secondary-bg token when selected)
- * - surface: Surface checkbox (uses --action-surface-bg token when selected)
- */
-export type CheckboxVariant = "default" | "primary" | "secondary" | "surface";
-
-// ============================================================================
-// Radio Variants
-// ============================================================================
-
-/**
- * Radio visual variants
- * Used by: RadioGroup component (controls child Radio buttons)
- *
- * - default: Standard radio style
- * - primary: Primary radio (uses --action-primary-bg token when selected)
- * - secondary: Secondary radio (uses --action-secondary-bg token when selected)
- * - surface: Surface radio (uses --action-surface-bg token when selected)
- */
-export type RadioVariant = "default" | "primary" | "secondary" | "surface";
-
-// ============================================================================
-// Slider Variants
-// ============================================================================
-
-/**
- * Slider visual variants
- * Used by: Slider component
- *
- * - default: Standard slider style
- * - primary: Primary slider (uses --action-primary-bg token for thumb)
- * - secondary: Secondary slider (uses --action-secondary-bg token for thumb)
- * - surface: Surface slider (uses --action-surface-bg token for thumb)
- */
-export type SliderVariant = "default" | "primary" | "secondary" | "surface";
-
-// ============================================================================
-// ToggleButton Variants
-// ============================================================================
-
-/**
- * ToggleButton visual variants
- * Used by: ToggleButtonGroup component (controls child ToggleButton styling)
- *
- * - default: Standard toggle button style
- * - primary: Primary toggle button (uses --action-primary-bg token when selected)
- * - secondary: Secondary toggle button (uses --action-secondary-bg token when selected)
- * - surface: Surface toggle button (uses --action-surface-bg token when selected)
- */
-export type ToggleButtonVariant =
-  | "default"
-  | "primary"
-  | "secondary"
-  | "surface";
-
-// ============================================================================
-// Table Column Variants
-// ============================================================================
-
-/**
- * Table Column visual variants
- * Used by: Table Column component
- *
- * - default: Standard column
- * - primary: Primary emphasis column
- * - secondary: Secondary emphasis column
- */
+export type TableVariant = "default" | "striped" | "bordered";
+export type TableHeaderVariant = "default" | "dark" | "light" | "bordered";
+export type TableBodyVariant = "default" | "striped" | "bordered" | "hover";
 export type TableColumnVariant = "default" | "primary" | "secondary";
+
+// ============================================================================
+// Card (structural only, S2 has no color variant)
+// ============================================================================
+
+export type CardVariant = "default" | "outlined" | "elevated";
+
+// ============================================================================
+// Tabs density (S2: density instead of variant)
+// ============================================================================
+
+export type TabsDensity = "compact" | "regular";
 
 // ============================================================================
 // Utility Types
 // ============================================================================
 
-/**
- * Convert legacy size to standard size
- * Helper type for migration
- */
 export type ConvertLegacySize<T extends LegacySize> = T extends "small"
   ? "sm"
   : T extends "medium"
@@ -284,21 +149,8 @@ export type ConvertLegacySize<T extends LegacySize> = T extends "small"
       ? "lg"
       : never;
 
-/**
- * Props interface for components with variant and size
- * Generic interface that can be extended by components
- */
 export interface VariantSizeProps<V = string, S = ComponentSize> {
-  /**
-   * Visual variant of the component
-   * @default "default"
-   */
   variant?: V;
-
-  /**
-   * Size of the component
-   * @default "sm"
-   */
   size?: S;
 }
 
@@ -306,27 +158,18 @@ export interface VariantSizeProps<V = string, S = ComponentSize> {
 // Type Guards
 // ============================================================================
 
-/**
- * Type guard to check if a size is a valid ComponentSize
- */
 export function isComponentSize(value: unknown): value is ComponentSize {
   return (
     typeof value === "string" && ["xs", "sm", "md", "lg", "xl"].includes(value)
   );
 }
 
-/**
- * Type guard to check if a size is a legacy size
- */
 export function isLegacySize(value: unknown): value is LegacySize {
   return (
     typeof value === "string" && ["small", "medium", "large"].includes(value)
   );
 }
 
-/**
- * Convert legacy size to standard size
- */
 export function convertLegacySize(size: LegacySize): ComponentSizeSubset {
   switch (size) {
     case "small":
