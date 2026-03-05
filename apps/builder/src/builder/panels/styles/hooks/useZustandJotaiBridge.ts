@@ -9,13 +9,13 @@
  * @since 2025-12-20 Phase 3 - Advanced State Management
  */
 
-import { useLayoutEffect } from 'react';
-import { useSetAtom } from 'jotai';
-import { useStore } from '../../../stores';
-import { selectedElementAtom } from '../atoms/styleAtoms';
-import { previewComponentStateAtom } from '../atoms/componentStateAtom';
-import type { FillItem } from '../../../../types/builder/fill.types';
-import { ensureFills } from '../utils/fillMigration';
+import { useLayoutEffect } from "react";
+import { useSetAtom } from "jotai";
+import { useStore } from "../../../stores";
+import { selectedElementAtom } from "../atoms/styleAtoms";
+import { previewComponentStateAtom } from "../atoms/componentStateAtom";
+import type { FillItem } from "../../../../types/builder/fill.types";
+import { ensureFills } from "../utils/fillMigration";
 // Local interface for style panel's selected element (different from inspector's SelectedElement)
 interface StylePanelSelectedElement {
   id: string;
@@ -25,6 +25,7 @@ interface StylePanelSelectedElement {
   computedLayout?: { width?: number; height?: number }; // 🚀 WebGL computed layout
   className: string;
   fills?: FillItem[];
+  properties?: { size?: string; variant?: string; [key: string]: unknown };
 }
 
 /**
@@ -51,7 +52,9 @@ export function useZustandJotaiBridge(): void {
     // 초기값 설정
     const state = useStore.getState();
     const initialElement = buildSelectedElement(state);
-    setSelectedElement(initialElement as unknown as Parameters<typeof setSelectedElement>[0]);
+    setSelectedElement(
+      initialElement as unknown as Parameters<typeof setSelectedElement>[0],
+    );
 
     // Zustand 구독
     const unsubscribe = useStore.subscribe((state, prevState) => {
@@ -63,7 +66,9 @@ export function useZustandJotaiBridge(): void {
         state.elementsMap !== prevState.elementsMap
       ) {
         const element = buildSelectedElement(state);
-        setSelectedElement(element as unknown as Parameters<typeof setSelectedElement>[0]);
+        setSelectedElement(
+          element as unknown as Parameters<typeof setSelectedElement>[0],
+        );
 
         // 선택된 요소가 바뀌면 컴포넌트 상태 미리보기를 default(null)로 리셋
         // → 이전 요소의 hover/pressed 상태가 다음 요소에 남아있지 않도록 방지
@@ -79,8 +84,15 @@ export function useZustandJotaiBridge(): void {
 
 /** CSS 상속 가능 속성 — 스타일 패널에서 부모 체인 탐색 대상 */
 const STYLE_PANEL_INHERITABLE = new Set([
-  'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
-  'lineHeight', 'letterSpacing', 'color', 'textAlign', 'textTransform',
+  "fontFamily",
+  "fontSize",
+  "fontWeight",
+  "fontStyle",
+  "lineHeight",
+  "letterSpacing",
+  "color",
+  "textAlign",
+  "textTransform",
 ]);
 
 /**
@@ -88,7 +100,10 @@ const STYLE_PANEL_INHERITABLE = new Set([
  */
 function resolveInheritedStyle(
   element: { parent_id?: string | null },
-  elementsMap: Map<string, { parent_id?: string | null; props: Record<string, unknown> }>,
+  elementsMap: Map<
+    string,
+    { parent_id?: string | null; props: Record<string, unknown> }
+  >,
 ): Record<string, unknown> {
   const inherited: Record<string, unknown> = {};
   const remaining = new Set(STYLE_PANEL_INHERITABLE);
@@ -101,7 +116,7 @@ function resolveInheritedStyle(
     const parentStyle = (parent.props?.style ?? {}) as Record<string, unknown>;
     for (const prop of [...remaining]) {
       const val = parentStyle[prop];
-      if (val !== undefined && val !== null && val !== '') {
+      if (val !== undefined && val !== null && val !== "") {
         inherited[prop] = val;
         remaining.delete(prop);
       }
@@ -117,7 +132,7 @@ function resolveInheritedStyle(
  * Zustand state에서 SelectedElement 객체 생성
  */
 function buildSelectedElement(
-  state: ReturnType<typeof useStore.getState>
+  state: ReturnType<typeof useStore.getState>,
 ): StylePanelSelectedElement | null {
   const { selectedElementId, elementsMap, selectedElementProps } = state;
 
@@ -127,8 +142,8 @@ function buildSelectedElement(
   if (!element) return null;
 
   // selectedElementProps가 비어있을 때(hydration 대기 중) element.props에서 직접 읽기
-  const hasValidProps = selectedElementProps
-    && Object.keys(selectedElementProps).length > 0;
+  const hasValidProps =
+    selectedElementProps && Object.keys(selectedElementProps).length > 0;
   const effectiveProps = hasValidProps
     ? selectedElementProps
     : (element.props as Record<string, unknown>);
@@ -142,16 +157,28 @@ function buildSelectedElement(
 
   // CSS 상속 속성 해결: 부모 체인 탐색 → computedStyle에 병합
   const inheritedStyle = resolveInheritedStyle(element, elementsMap);
-  const explicitComputed = effectiveProps?.computedStyle as Record<string, unknown> | undefined;
+  const explicitComputed = effectiveProps?.computedStyle as
+    | Record<string, unknown>
+    | undefined;
+
+  // properties: size/variant 등 컴포넌트 고유 속성 → computeSyntheticStyle에서 사용
+  const size = effectiveProps?.size as string | undefined;
+  const variant = effectiveProps?.variant as string | undefined;
 
   return {
     id: element.id,
     type: element.tag,
     style,
     computedStyle: { ...inheritedStyle, ...(explicitComputed ?? {}) },
-    computedLayout: effectiveProps?.computedLayout as { width?: number; height?: number } | undefined,
-    className: (effectiveProps?.className as string) ?? '',
+    computedLayout: effectiveProps?.computedLayout as
+      | { width?: number; height?: number }
+      | undefined,
+    className: (effectiveProps?.className as string) ?? "",
     fills,
+    properties:
+      size !== undefined || variant !== undefined
+        ? { size, variant }
+        : undefined,
   };
 }
 

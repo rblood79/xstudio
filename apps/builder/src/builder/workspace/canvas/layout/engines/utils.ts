@@ -18,6 +18,7 @@ import {
   InputSpec,
   resolveToken,
 } from "@xstudio/specs";
+import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
   measureWrappedTextHeight,
   measureFontMetrics,
@@ -873,10 +874,17 @@ export function calculateContentWidth(
       TOGGLEBUTTON_SIZE_CONFIG[sizeName] ?? TOGGLEBUTTON_SIZE_CONFIG["md"];
     const borderWidth = sizeConfig.borderWidth;
     const paddingX = sizeConfig.paddingLeft; // paddingLeft === paddingRight
-    const fontSize = sizeConfig.fontSize;
     const orientation = String(props?.orientation || "horizontal");
     const isHorizontal = orientation === "horizontal";
     const gap = parseNumericValue(style?.gap) ?? 0; // CSS gap (0 = default -1px overlap)
+
+    // Spec에서 ToggleButton의 실제 text style 추출 (fontWeight/fontFamily 정합성)
+    const tbSpecStyle = extractSpecTextStyle("togglebutton", {
+      size: sizeName,
+    });
+    const tbFontSize = tbSpecStyle?.fontSize ?? sizeConfig.fontSize;
+    const tbFontWeight = tbSpecStyle?.fontWeight ?? 400;
+    const tbFontFamily = tbSpecStyle?.fontFamily ?? specFontFamily.sans;
 
     // items 배열에서 레이블 추출
     const items = Array.isArray(props?.items) ? (props.items as unknown[]) : [];
@@ -902,7 +910,12 @@ export function calculateContentWidth(
             : (((item as Record<string, unknown>)?.label as string) ??
               ((item as Record<string, unknown>)?.children as string) ??
               "");
-        const textWidth = calculateTextWidth(String(label), fontSize, 0);
+        const textWidth = measureTextWidth(
+          String(label),
+          tbFontSize,
+          tbFontFamily,
+          tbFontWeight,
+        );
         return Math.max(
           40,
           borderWidth + paddingX + textWidth + paddingX + borderWidth,
@@ -1009,8 +1022,18 @@ export function calculateContentWidth(
     const indicatorGap = hasCSSGapSec3
       ? (parseNumericValue(style?.gap ?? style?.columnGap) ?? specIndicatorGap)
       : specIndicatorGap;
-    // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
-    const fontSize = sizeName === "sm" ? 14 : sizeName === "lg" ? 18 : 16;
+    // Spec에서 실제 text style 추출 (fontWeight/fontFamily 정합성)
+    const indicatorSpecStyle = extractSpecTextStyle(
+      tag,
+      props as Record<string, unknown>,
+    );
+    // fallback: typography 토큰 매칭 text-sm=14, text-md=16, text-lg=18
+    const fontSize =
+      indicatorSpecStyle?.fontSize ??
+      (sizeName === "sm" ? 14 : sizeName === "lg" ? 18 : 16);
+    const indicatorFontWeight = indicatorSpecStyle?.fontWeight ?? 400;
+    const indicatorFontFamily =
+      indicatorSpecStyle?.fontFamily ?? specFontFamily.sans;
     const labelText = String(
       props?.children ?? props?.label ?? props?.text ?? "",
     );
@@ -1018,8 +1041,14 @@ export function calculateContentWidth(
     // CanvasKit 측정기 사용 시 보정 불필요 (동일 렌더러로 측정)
     const canvas2dCompensation = isCanvasKitMeasurer() ? 0 : 2;
     const textWidth = labelText
-      ? Math.ceil(calculateTextWidth(labelText, fontSize, 0)) +
-        canvas2dCompensation
+      ? Math.ceil(
+          measureTextWidth(
+            labelText,
+            fontSize,
+            indicatorFontFamily,
+            indicatorFontWeight,
+          ),
+        ) + canvas2dCompensation
       : 0;
     const flexDir = style?.flexDirection as string | undefined;
     const isColumn = flexDir === "column" || flexDir === "column-reverse";
@@ -1040,6 +1069,12 @@ export function calculateContentWidth(
     const isFormElement = ["button", "input", "select", "a"].includes(tag);
     const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[tag];
     if (isFormElement || inlineUIConfig) {
+      // Spec에서 실제 text style 추출 — 렌더러와 동일한 fontWeight/fontFamily 보장
+      const inlineSpecStyle = extractSpecTextStyle(
+        tag,
+        props as Record<string, unknown>,
+      );
+
       const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? "md";
       const size = (props?.size as string) ?? defaultSize;
       const configMap = isFormElement ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
@@ -1047,9 +1082,23 @@ export function calculateContentWidth(
         configMap[size] ??
         configMap[defaultSize] ??
         Object.values(configMap)[0];
+      // Spec 기반 font 속성 (style override는 Spec 내부에서 반영됨)
       const fontSize =
-        parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
-      const textWidth = calculateTextWidth(text, fontSize, 0);
+        parseNumericValue(style?.fontSize) ??
+        inlineSpecStyle?.fontSize ??
+        sizeConfig.fontSize;
+      const inlineFontWeight = inlineSpecStyle?.fontWeight ?? 400;
+      const inlineFontFamily =
+        inlineSpecStyle?.fontFamily ?? specFontFamily.sans;
+      const textWidth = measureTextWidth(
+        text,
+        fontSize,
+        inlineFontFamily,
+        inlineFontWeight,
+        inlineSpecStyle?.letterSpacing
+          ? { letterSpacing: inlineSpecStyle.letterSpacing }
+          : undefined,
+      );
 
       // minWidth 적용: totalWidth = contentWidth + padding >= minWidth
       // PixiBadge와 동일한 너비 계산 (cssVariableReader.ts BADGE_FALLBACKS 참조)

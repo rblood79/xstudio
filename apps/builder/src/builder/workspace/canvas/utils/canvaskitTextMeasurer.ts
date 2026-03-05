@@ -70,6 +70,31 @@ function resolveFontFamily(family: string): string {
   return family.split(",")[0].trim();
 }
 
+/**
+ * CSS fontFamily 체인을 split+resolve하여 렌더러(specShapeConverter.ts)와
+ * 동일한 fontFamilies 배열을 생성한다.
+ *
+ * 렌더러: shape.fontFamily.split(",") → map trim/unquote → resolveFamily()
+ * 측정기도 동일 처리해야 CanvasKit text shaping 결과(폭)가 일치한다.
+ */
+function buildFontFamilies(fontFamilyCSS: string | undefined): string[] {
+  const rawFamilies = (fontFamilyCSS ?? "Pretendard")
+    .split(",")
+    .map((f) => f.trim().replace(/['"]/g, ""))
+    .filter(Boolean);
+  const resolved = rawFamilies.map((f) => skiaFontManager.resolveFamily(f));
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const f of resolved) {
+    if (!seen.has(f)) {
+      seen.add(f);
+      result.push(f);
+    }
+  }
+  if (!seen.has("Pretendard")) result.push("Pretendard");
+  return result;
+}
+
 /** fontStretch → CanvasKit FontWidth enum */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function resolveWidth(ck: any, stretch?: string): any {
@@ -190,13 +215,11 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     const fontFeatures = style.fontVariant
       ? resolveFontVariantFeatures(style.fontVariant)
       : [];
-    const fontFamily = skiaFontManager.resolveFamily(
-      resolveFontFamily(style.fontFamily),
-    );
+    // 렌더러(specShapeConverter)와 동일하게 CSS 체인 전체를 split+resolve
+    const fontFamilies = buildFontFamilies(style.fontFamily);
     const heightMultiplier = style.lineHeight
       ? style.lineHeight / style.fontSize
       : 0;
-    const fontFamilies = [fontFamily, "Pretendard"];
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
         fontSize: style.fontSize,
@@ -273,13 +296,11 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
     const fontFeatures = style.fontVariant
       ? resolveFontVariantFeatures(style.fontVariant)
       : [];
-    const fontFamily = skiaFontManager.resolveFamily(
-      resolveFontFamily(style.fontFamily),
-    );
+    // 렌더러(specShapeConverter)와 동일하게 CSS 체인 전체를 split+resolve
+    const fontFamilies = buildFontFamilies(style.fontFamily);
     const heightMultiplier = style.lineHeight
       ? style.lineHeight / style.fontSize
       : 0;
-    const fontFamilies = [fontFamily, "Pretendard"];
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
         fontSize: style.fontSize,

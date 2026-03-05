@@ -19,7 +19,8 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 ### CRITICAL (즉시 적용 필수)
 
-#### Domain (domain-*) - 비즈니스 로직
+#### Domain (domain-\*) - 비즈니스 로직
+
 - **[domain-element-hierarchy](rules/domain-element-hierarchy.md)** - Element 계층 구조 규칙
 - **[domain-o1-lookup](rules/domain-o1-lookup.md)** - O(1) 인덱스 기반 검색
 - **[domain-history-integration](rules/domain-history-integration.md)** - 히스토리 기록 필수
@@ -29,42 +30,50 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[domain-component-lifecycle](rules/domain-component-lifecycle.md)** - 컴포넌트 생명주기
 - **[domain-structure-change-audit](rules/domain-structure-change-audit.md)** - Element 트리 구조 변경 시 소비자 감사 필수
 
-#### Zustand (zustand-*) - 상태 관리
+#### Zustand (zustand-\*) - 상태 관리
+
 - **[zustand-childrenmap-staleness](rules/zustand-childrenmap-staleness.md)** - childrenMap은 props 변경 시 갱신 안 됨 → elementsMap 최신 조회, useRef 캐싱 필수
 
-#### Validation (validation-*) - 입력 검증/에러 처리
+#### Validation (validation-\*) - 입력 검증/에러 처리
+
 - **[validation-input-boundary](rules/validation-input-boundary.md)** - 경계 입력 검증 (Zod)
 - **[validation-error-boundary](rules/validation-error-boundary.md)** - Error Boundary 필수
 
-#### Styling (style-*)
+#### Styling (style-\*)
+
 - **[style-no-inline-tailwind](rules/style-no-inline-tailwind.md)** - 인라인 Tailwind 클래스 금지
 - **[style-tv-variants](rules/style-tv-variants.md)** - tv() 사용 필수
-- **[style-react-aria-prefix](rules/style-react-aria-prefix.md)** - react-aria-* CSS 접두사
+- **[style-react-aria-prefix](rules/style-react-aria-prefix.md)** - react-aria-\* CSS 접두사
 
-#### TypeScript (type-*)
+#### TypeScript (type-\*)
+
 - **[type-no-any](rules/type-no-any.md)** - any 타입 금지
 - **[type-explicit-return](rules/type-explicit-return.md)** - 명시적 반환 타입
 
-#### PIXI Layout (pixi-*)
+#### PIXI Layout (pixi-\*)
+
 - **[pixi-direct-container](rules/pixi-no-xy-props.md)** - DirectContainer 직접 배치 패턴 (엔진 결과 x/y 사용)
 - **[pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md)** - 하이브리드 레이아웃 엔진 display 선택
 - **[pixi-container-hit-rect](rules/pixi-container-hit-rect.md)** - Non-layout 컨테이너 히트 영역 (padding offset 보정)
 
-#### WASM (wasm-*)
+#### WASM (wasm-\*)
+
 - **CRITICAL**: wasm-pack `--target bundler` 출력은 `import()`만으로 내부 `wasm` 바인딩이 초기화되지 않음 → **반드시 default export(`__wbg_init`)를 명시적으로 호출** 필수
+
   ```typescript
   // ✅ 올바른 초기화 패턴 (rustWasm.ts)
-  const mod = await import('./pkg/xstudio_wasm');
-  if (typeof mod.default === 'function') {
+  const mod = await import("./pkg/xstudio_wasm");
+  if (typeof mod.default === "function") {
     await mod.default(); // __wbg_init() → fetch .wasm → instantiate → finalize
   }
 
   // ❌ import만으로는 wasm 바인딩 미초기화
-  const mod = await import('./pkg/xstudio_wasm');
+  const mod = await import("./pkg/xstudio_wasm");
   mod.ping(); // TypeError — wasm 전역 변수가 undefined
   ```
 
 #### Layout Version (layoutVersion 계약)
+
 - **CRITICAL**: `fullTreeLayoutMap` useMemo는 `layoutVersion` 카운터에 의존 (P3-1 최적화). 레이아웃에 영향을 주는 **모든 코드 경로**에서 반드시 `layoutVersion + 1` 증가 필수
 - **CRITICAL**: Store 내부(`setElements`, `loadPageElements`, `updateAndSave`) → `set((state) => ({ ..., layoutVersion: state.layoutVersion + 1 }))` 패턴 사용
 - **CRITICAL**: Store 외부(텍스트 측정기 교체, 폰트 로딩 등) → `useStore.getState().invalidateLayout()` 호출
@@ -73,15 +82,18 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - 참조: ADR-012 P4 (layoutVersion 커버리지 보완)
 
 #### Order Num (order_num 재정렬)
-- **CRITICAL**: order_num 재정렬 시 `batchUpdateElementOrders()` 사용 필수 (단일 set() + _rebuildIndexes()). 구 패턴 `updateElementOrder` N회 호출 금지
+
+- **CRITICAL**: order_num 재정렬 시 `batchUpdateElementOrders()` 사용 필수 (단일 set() + \_rebuildIndexes()). 구 패턴 `updateElementOrder` N회 호출 금지
 - **CRITICAL**: setTimeout/queueMicrotask 안에서 반드시 `get()`으로 최신 `elements` 참조 (stale closure 방지). 외부 캡처 금지
 - **CRITICAL**: `calculateNextOrderNum` — 0-based (빈 부모 → 0). AI 도구 `createElement.ts`에서 `elements.length` 사용 금지
 - 참조: `elementReorder.ts`의 `computeReorderUpdates()` (순수 함수) + `reorderElements()` (실행)
 
-#### Security (postmessage-*)
+#### Security (postmessage-\*)
+
 - **[postmessage-origin-verify](rules/postmessage-origin-verify.md)** - origin 검증 필수
 
-#### Component Spec (spec-*)
+#### Component Spec (spec-\*)
+
 - **[spec-build-sync](rules/spec-build-sync.md)** - @xstudio/specs 빌드 동기화 필수
 - **[spec-value-sync](rules/spec-value-sync.md)** - Spec ↔ Builder ↔ CSS 값 동기화
 - **CRITICAL**: Spec shapes 내 숫자 연산에 TokenRef 값을 직접 사용 금지 → `resolveToken()` 변환 필수 (TokenRef 문자열을 수 연산에 사용하면 NaN 좌표 → 렌더링 실패)
@@ -91,39 +103,49 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 ### HIGH (강력 권장)
 
-#### Architecture (arch-*)
+#### Architecture (arch-\*)
+
 - **[arch-reference-impl](rules/arch-reference-impl.md)** - 참조 구현 모음
 
-#### Component Spec (spec-*)
+#### Component Spec (spec-\*)
+
 - **[spec-single-source-truth](rules/spec-single-source-truth.md)** - ComponentSpec 단일 소스 패턴
 - **[spec-shape-rendering](rules/spec-shape-rendering.md)** - Shape 기반 렌더링
 - **[spec-token-usage](rules/spec-token-usage.md)** - 토큰 참조 형식
+- **spec-text-style**: Spec 기반 컴포넌트 텍스트 측정 시 `extractSpecTextStyle()` 사용 — fontSize/fontWeight/fontFamily 하드코딩 금지 (`specTextStyle.ts`)
 
-#### Styling (style-*)
+#### Styling (style-\*)
+
 - **[style-css-reuse](rules/style-css-reuse.md)** - CSS 클래스 재사용
 
-#### React-Aria (react-aria-*)
+#### React-Aria (react-aria-\*)
+
 - **[react-aria-hooks-required](rules/react-aria-hooks-required.md)** - React-Aria 훅 사용
 - **[react-aria-no-manual-aria](rules/react-aria-no-manual-aria.md)** - 수동 ARIA 속성 금지
 - **[react-aria-stately-hooks](rules/react-aria-stately-hooks.md)** - React-Stately 상태 훅
 
-#### Supabase (supabase-*)
+#### Supabase (supabase-\*)
+
 - **[supabase-no-direct-calls](rules/supabase-no-direct-calls.md)** - 컴포넌트 직접 호출 금지
 - **[supabase-service-modules](rules/supabase-service-modules.md)** - 서비스 모듈 사용
 - **[supabase-rls-required](rules/supabase-rls-required.md)** - Row Level Security 필수
 
-#### Zustand (zustand-*)
+#### Zustand (zustand-\*)
+
 - **[zustand-factory-pattern](rules/zustand-factory-pattern.md)** - StateCreator factory 패턴
 - **[zustand-modular-files](rules/zustand-modular-files.md)** - 슬라이스 파일 분리
 
-#### PostMessage (postmessage-*)
+#### PostMessage (postmessage-\*)
+
 - **[postmessage-buffer-ready](rules/postmessage-buffer-ready.md)** - PREVIEW_READY 버퍼링
 
-#### Inspector (inspector-*)
+#### Inspector (inspector-\*)
+
 - **[inspector-inline-styles](rules/inspector-inline-styles.md)** - 오버레이 인라인 스타일
 - **[inspector-history-sync](rules/inspector-history-sync.md)** - Inspector 히스토리 동기화
 
-#### PIXI Layout (pixi-*)
+#### PIXI Layout (pixi-\*)
+
 - **[pixi-border-box-model](rules/pixi-border-box-model.md)** - border-box 크기 모델
 - **[pixi-text-isleaf](rules/pixi-text-isleaf.md)** - Text isLeaf 설정
 - **[pixi-hitarea-absolute](rules/pixi-hitarea-absolute.md)** - 히트 영역 절대 좌표
@@ -131,51 +153,59 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 ### MEDIUM-HIGH
 
-#### PIXI Layout (pixi-*)
+#### PIXI Layout (pixi-\*)
+
 - **[pixi-no-flex-height](rules/pixi-no-flex-height.md)** - flex + % height 금지
 
 ### MEDIUM (권장)
 
-#### Performance (perf-*)
+#### Performance (perf-\*)
+
 - **[perf-checklist](rules/perf-checklist.md)** - 성능 체크리스트
 - **[perf-barrel-imports](rules/perf-barrel-imports.md)** - barrel import 회피
 - **[perf-promise-all](rules/perf-promise-all.md)** - Promise.all 병렬 실행
 - **[perf-dynamic-imports](rules/perf-dynamic-imports.md)** - 동적 임포트
 - **[perf-map-set-lookups](rules/perf-map-set-lookups.md)** - Map/Set O(1) 검색
 
-#### Testing (test-*)
+#### Testing (test-\*)
+
 - **[test-stories-required](rules/test-stories-required.md)** - Storybook 스토리 필수
 
 ## 기술 스택
 
-| 영역 | 기술 |
-|------|------|
-| UI Framework | React 19, React-Aria Components |
-| State | Zustand (메인), Jotai (스타일 패널), TanStack Query |
-| Styling | Tailwind CSS v4, tailwind-variants |
-| Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용, DirectContainer 직접 배치), @pixi/react |
-| Layout Engine | Taffy WASM (TaffyFlexEngine, TaffyGridEngine, TaffyBlockEngine) — 단일 엔진 체계 |
-| Backend | Supabase (Auth, Database, RLS) |
-| Build | Vite, TypeScript 5 |
-| Testing | Storybook, Vitest |
+| 영역          | 기술                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------ |
+| UI Framework  | React 19, React-Aria Components                                                                        |
+| State         | Zustand (메인), Jotai (스타일 패널), TanStack Query                                                    |
+| Styling       | Tailwind CSS v4, tailwind-variants                                                                     |
+| Canvas        | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용, DirectContainer 직접 배치), @pixi/react |
+| Layout Engine | Taffy WASM (TaffyFlexEngine, TaffyGridEngine, TaffyBlockEngine) — 단일 엔진 체계                       |
+| Backend       | Supabase (Auth, Database, RLS)                                                                         |
+| Build         | Vite, TypeScript 5                                                                                     |
+| Testing       | Storybook, Vitest                                                                                      |
 
 ## 상세 패턴 레퍼런스
 
 아래 reference 파일들은 필요 시 참조하세요. 각 파일은 특정 도메인의 상세 구현 패턴을 포함합니다.
 
 ### Layout Engine
+
 **[reference/layout-engine.md](reference/layout-engine.md)** — 엔진 선택, DirectContainer 패턴, LayoutComputedSizeContext, enrichWithIntrinsicSize, Card Nested Tree 레이아웃, Tabs 높이 계산, Compositional Component 전환 체크리스트, enrichment filteredChildren 패턴, ElementSprite CSS keyword→pixel 해석, CSS min-width:auto 에뮬레이션(step 4.8), 레이아웃 엔진 개선 이력
 
 ### Compositional Architecture
+
 **[reference/compositional-architecture.md](reference/compositional-architecture.md)** — ComboBox/Calendar/DatePicker Compositional 전환 패턴, CSS 값 일관성, Spec Shapes 배경색 규칙, Breadcrumbs/Card 높이 계산, convertToFillStyle, TextSprite 렌더링, Container Props 주입
 
 ### Child Composition & Spec
+
 **[reference/child-composition.md](reference/child-composition.md)** — 자식 조합 패턴, Child Spec 등록, `_hasChildren` 2단계 로직, Spec shapes 카테고리, label 렌더링 패턴, Property Editor 자식 동기화, Canvas 2D↔CanvasKit 보정, TokenRef fontSize 해석, INLINE_FORM dimensions, Phantom Indicator, TextMeasurer 정합성
 
 ### Text Wrapping & Measurement
+
 **[reference/text-wrapping.md](reference/text-wrapping.md)** — ADR-005 CSS 텍스트 래핑 에뮬레이션, textWrapUtils.ts 공유 유틸, 에뮬레이션 조합 테이블, isEllipsis 3중 조건, clipText 클리핑 패턴, Inspector Preset UI, spec shapes 수동 주입
 
 ### Component Registry
+
 **[reference/component-registry.md](reference/component-registry.md)** — 컴포넌트 등급 현황, COMPLEX_COMPONENT_TAGS, CHILD_COMPOSITION_EXCLUDE_TAGS, NON_CONTAINER_TAGS, SPEC_RENDERS_ALL_TAGS_SET
 
 ## 서브에이전트 위임 가이드라인
@@ -208,15 +238,19 @@ Spec 파일 일괄 수정 등 병렬 에이전트(Task tool)에 작업을 위임
 
 ```markdown
 ## 작업 범위
+
 [구체적 수정 내용만 기술]
 
 ## 수정 대상 파일
+
 [파일 목록]
 
 ## 수정 패턴
+
 [Before → After 예시 코드]
 
 ## ⚠️ 수정 금지
+
 - `_hasChildren` 체크 코드 (삭제/이동/변경 금지)
 - `COMPLEX_COMPONENT_TAGS` 관련 로직
 - shapes 함수의 early return 구조
@@ -225,12 +259,12 @@ Spec 파일 일괄 수정 등 병렬 에이전트(Task tool)에 작업을 위임
 
 ### 위임 시 체크리스트
 
-| 항목 | 설명 |
-|------|------|
-| 범위 한정 | "fontSize만 수정", "import만 추가" 등 명시적 범위 |
-| 금지 패턴 포함 | 위 수정 금지 패턴을 프롬프트에 복사 |
-| Before/After 예시 | 정확한 변경 패턴을 코드로 제시 |
-| 검증 지시 | `npx tsc --noEmit` 타입 체크 수행 지시 |
+| 항목              | 설명                                              |
+| ----------------- | ------------------------------------------------- |
+| 범위 한정         | "fontSize만 수정", "import만 추가" 등 명시적 범위 |
+| 금지 패턴 포함    | 위 수정 금지 패턴을 프롬프트에 복사               |
+| Before/After 예시 | 정확한 변경 패턴을 코드로 제시                    |
+| 검증 지시         | `npx tsc --noEmit` 타입 체크 수행 지시            |
 
 ## 사용법
 
@@ -256,9 +290,11 @@ tags: [tag1, tag2]
 규칙 설명
 
 ## Incorrect
+
 잘못된 코드 예시
 
 ## Correct
+
 올바른 코드 예시
 ```
 
@@ -274,6 +310,7 @@ tags: [tag1, tag2]
 ## 아키텍처 결정 기록 (ADR)
 
 주요 기술 결정의 배경과 근거:
+
 - **[ADR-001](../../../docs/adr/001-state-management.md)** - Zustand 선택 이유
 - **[ADR-002](../../../docs/adr/002-styling-approach.md)** - ITCSS + tv() 선택 이유
 - **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - Canvas 렌더링 (CanvasKit/Skia 이중 렌더러 + Taffy WASM 단일 레이아웃 엔진)
@@ -285,6 +322,7 @@ tags: [tag1, tag2]
 ## 기여
 
 새 규칙 추가 시:
+
 1. `rules/_template.md` 복사
 2. 적절한 접두사 사용 (style-, type-, react-aria- 등)
 3. SKILL.md에 규칙 링크 추가

@@ -1691,6 +1691,21 @@ export function renderText(
       }
     }
 
+    // Safety Net: 측정-렌더링 float 오차로 인한 불필요한 줄바꿈 방지
+    // maxIntrinsicWidth가 layoutWidth와 DPR epsilon 범위 내인데 줄바꿈이 발생했으면
+    // intrinsic width로 재레이아웃하여 단일행 보장 (의도된 줄바꿈은 건드리지 않음)
+    if (!isEllipsis && whiteSpace !== "nowrap" && whiteSpace !== "pre") {
+      const lineMetrics = paragraph.getLineMetrics();
+      if (lineMetrics.length > 1) {
+        const maxIntrinsic = paragraph.getMaxIntrinsicWidth();
+        const dprEpsilon =
+          1 / (typeof devicePixelRatio !== "undefined" ? devicePixelRatio : 1);
+        if (maxIntrinsic <= effectiveLayoutWidth + dprEpsilon) {
+          paragraph.layout(Math.ceil(maxIntrinsic) + 1);
+        }
+      }
+    }
+
     // CSS 줄바꿈 시뮬레이션으로 effectiveWidth > layoutMaxWidth인 경우
     // textAlign에 따른 센터링 오프셋 보정 (CSS는 container width 기준 정렬)
     let alignOffset = 0;

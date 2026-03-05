@@ -21,7 +21,12 @@
  * @returns 토큰의 intrinsic width (px)
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function measureTokenWidth(ck: any, paraStyle: any, fontMgr: any, token: string): number {
+export function measureTokenWidth(
+  ck: any,
+  paraStyle: any,
+  fontMgr: any,
+  token: string,
+): number {
   const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
   b.addText(token);
   const p = b.build();
@@ -38,9 +43,13 @@ export function measureTokenWidth(ck: any, paraStyle: any, fontMgr: any, token: 
  * 'x x'와 'xx'의 폭 차이로 계산 (단독 공백은 trailing space로 잘릴 수 있음).
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function measureSpaceWidth(ck: any, paraStyle: any, fontMgr: any): number {
+export function measureSpaceWidth(
+  ck: any,
+  paraStyle: any,
+  fontMgr: any,
+): number {
   const bs = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-  bs.addText('x x');
+  bs.addText("x x");
   const ps = bs.build();
   ps.layout(1e6);
   const xxSpace = ps.getMaxIntrinsicWidth();
@@ -48,7 +57,7 @@ export function measureSpaceWidth(ck: any, paraStyle: any, fontMgr: any): number
   bs.delete();
 
   const bx = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
-  bx.addText('xx');
+  bx.addText("xx");
   const px = bx.build();
   px.layout(1e6);
   const xxNoSpace = px.getMaxIntrinsicWidth();
@@ -81,10 +90,27 @@ export function measureSpaceWidth(ck: any, paraStyle: any, fontMgr: any): number
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function cssNormalBreakProcess(
-  ck: any, paraStyle: any, fontMgr: any, text: string, maxWidth: number,
+  ck: any,
+  paraStyle: any,
+  fontMgr: any,
+  text: string,
+  maxWidth: number,
 ): { text: string; effectiveWidth: number } {
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length === 0) return { text, effectiveWidth: maxWidth };
+
+  // Early exit: 전체 텍스트의 intrinsic width가 maxWidth 이내이면
+  // 수동 줄바꿈 불필요 (개별 단어 합산은 커닝/셰이핑으로 인해 전체보다 넓을 수 있음)
+  const fb = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+  fb.addText(text);
+  const fp = fb.build();
+  fp.layout(1e6);
+  const fullIntrinsic = fp.getMaxIntrinsicWidth();
+  fp.delete();
+  fb.delete();
+  if (fullIntrinsic <= maxWidth) {
+    return { text, effectiveWidth: maxWidth };
+  }
 
   // 1. 각 단어 폭 측정
   let maxWordWidth = 0;
@@ -100,20 +126,20 @@ export function cssNormalBreakProcess(
 
   // 3. CSS 줄바꿈 시뮬레이션
   const lines: string[] = [];
-  let currentLine = '';
+  let currentLine = "";
   let currentWidth = 0;
 
   for (let i = 0; i < words.length; i++) {
     const word = words[i];
     const ww = wordWidths[i];
 
-    if (currentLine === '') {
+    if (currentLine === "") {
       // 줄의 첫 단어: 항상 추가 (overflow 허용)
       currentLine = word;
       currentWidth = ww;
     } else if (currentWidth + spaceWidth + ww <= maxWidth) {
       // 현재 줄에 들어감
-      currentLine += ' ' + word;
+      currentLine += " " + word;
       currentWidth += spaceWidth + ww;
     } else {
       // 안 들어감 → 새 줄 시작
@@ -125,7 +151,7 @@ export function cssNormalBreakProcess(
   if (currentLine) lines.push(currentLine);
 
   return {
-    text: lines.join('\n'),
+    text: lines.join("\n"),
     effectiveWidth: Math.max(maxWidth, Math.ceil(maxWordWidth)),
   };
 }
@@ -146,8 +172,12 @@ export function cssNormalBreakProcess(
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function computeKeepAllWidth(
-  ck: any, paraStyle: any, fontMgr: any,
-  text: string, maxWidth: number, allowOverflowBreak: boolean,
+  ck: any,
+  paraStyle: any,
+  fontMgr: any,
+  text: string,
+  maxWidth: number,
+  allowOverflowBreak: boolean,
 ): number {
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length === 0) return maxWidth;
@@ -181,8 +211,11 @@ export function computeKeepAllWidth(
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function preprocessBreakWordText(
-  ck: any, paraStyle: any, fontMgr: any,
-  text: string, maxWidth: number,
+  ck: any,
+  paraStyle: any,
+  fontMgr: any,
+  text: string,
+  maxWidth: number,
 ): string {
   const tokens = text.split(/(\s+)/);
   const result: string[] = [];
@@ -204,10 +237,10 @@ export function preprocessBreakWordText(
       if (hasContentBefore && result.length > 0) {
         const lastIdx = result.length - 1;
         if (/^\s+$/.test(result[lastIdx])) {
-          result[lastIdx] = '\n';
+          result[lastIdx] = "\n";
         }
       }
-      result.push(Array.from(token).join('\u200B'));
+      result.push(Array.from(token).join("\u200B"));
     } else {
       result.push(token);
     }
@@ -215,5 +248,5 @@ export function preprocessBreakWordText(
     hasContentBefore = true;
   }
 
-  return result.join('');
+  return result.join("");
 }

@@ -8,7 +8,7 @@
  * @since 2026-02-19 Wave 5 - StylePanel computedStyle 동기화
  */
 
-import type { SelectedElement } from '../builder/inspector/types';
+import type { SelectedElement } from "../builder/inspector/types";
 import {
   getSizePreset,
   getCheckboxSizePreset,
@@ -29,7 +29,7 @@ import {
   getComboBoxSizePreset,
   getNumberFieldSizePreset,
   getSearchFieldSizePreset,
-} from '../builder/workspace/canvas/utils/cssVariableReader';
+} from "../builder/workspace/canvas/utils/cssVariableReader";
 
 // ============================================
 // Types
@@ -41,6 +41,7 @@ import {
  */
 export interface SyntheticComputedStyle {
   fontSize?: string;
+  fontWeight?: string;
   paddingTop?: string;
   paddingRight?: string;
   paddingBottom?: string;
@@ -94,11 +95,15 @@ function px(value: number): string {
 /**
  * Button/ToggleButton 계열: fontSize, paddingX, paddingY, borderRadius
  */
-function fromButtonPreset(
-  preset: { fontSize: number; paddingX: number; paddingY: number; borderRadius: number }
-): SyntheticComputedStyle {
+function fromButtonPreset(preset: {
+  fontSize: number;
+  paddingX: number;
+  paddingY: number;
+  borderRadius: number;
+}): SyntheticComputedStyle {
   return {
     fontSize: px(preset.fontSize),
+    fontWeight: "500",
     paddingTop: px(preset.paddingY),
     paddingRight: px(preset.paddingX),
     paddingBottom: px(preset.paddingY),
@@ -110,9 +115,9 @@ function fromButtonPreset(
 /**
  * Checkbox/Radio/Switch 계열: fontSize만
  */
-function fromCheckboxPreset(
-  preset: { fontSize: number }
-): SyntheticComputedStyle {
+function fromCheckboxPreset(preset: {
+  fontSize: number;
+}): SyntheticComputedStyle {
   return {
     fontSize: px(preset.fontSize),
   };
@@ -121,11 +126,15 @@ function fromCheckboxPreset(
 /**
  * Input/Select/ComboBox 계열: fontSize, paddingX, paddingY, borderRadius
  */
-function fromInputPreset(
-  preset: { fontSize: number; paddingX: number; paddingY: number; borderRadius: number }
-): SyntheticComputedStyle {
+function fromInputPreset(preset: {
+  fontSize: number;
+  paddingX: number;
+  paddingY: number;
+  borderRadius: number;
+}): SyntheticComputedStyle {
   return {
     fontSize: px(preset.fontSize),
+    fontWeight: "400",
     paddingTop: px(preset.paddingY),
     paddingRight: px(preset.paddingX),
     paddingBottom: px(preset.paddingY),
@@ -137,9 +146,10 @@ function fromInputPreset(
 /**
  * ProgressBar/Meter 계열: fontSize, borderRadius
  */
-function fromBarPreset(
-  preset: { fontSize: number; borderRadius: number }
-): SyntheticComputedStyle {
+function fromBarPreset(preset: {
+  fontSize: number;
+  borderRadius: number;
+}): SyntheticComputedStyle {
   return {
     fontSize: px(preset.fontSize),
     borderRadius: px(preset.borderRadius),
@@ -159,52 +169,63 @@ function fromBarPreset(
 function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
   switch (tag) {
     // Button 계열
-    case 'Button':
+    case "Button":
       return fromButtonPreset(getSizePreset(size));
-    case 'ToggleButton':
+    case "ToggleButton":
       return fromButtonPreset(getToggleButtonSizePreset(size));
 
     // Input 계열
-    case 'TextField': {
+    case "TextField": {
       const p = getTextFieldSizePreset(size);
-      return fromInputPreset({ fontSize: p.fontSize, paddingX: p.paddingX, paddingY: p.padding, borderRadius: p.borderRadius });
+      return fromInputPreset({
+        fontSize: p.fontSize,
+        paddingX: p.paddingX,
+        paddingY: p.padding,
+        borderRadius: p.borderRadius,
+      });
     }
-    case 'TextArea': {
+    case "TextArea": {
       const p = getTextAreaSizePreset(size);
-      return fromInputPreset({ fontSize: p.fontSize, paddingX: p.paddingX, paddingY: p.padding, borderRadius: p.borderRadius });
+      return fromInputPreset({
+        fontSize: p.fontSize,
+        paddingX: p.paddingX,
+        paddingY: p.padding,
+        borderRadius: p.borderRadius,
+      });
     }
-    case 'Select':
+    case "Select":
       return fromInputPreset(getSelectSizePreset(size));
-    case 'ComboBox':
+    case "ComboBox":
       return fromInputPreset(getComboBoxSizePreset(size));
-    case 'NumberField':
+    case "NumberField":
       return fromInputPreset(getNumberFieldSizePreset(size));
-    case 'SearchField':
+    case "SearchField":
       return fromInputPreset(getSearchFieldSizePreset(size));
 
     // Checkbox/Radio/Switch
-    case 'Checkbox':
-    case 'CheckboxGroup':
+    case "Checkbox":
+    case "CheckboxGroup":
       return fromCheckboxPreset(getCheckboxSizePreset(size));
-    case 'Radio':
-    case 'RadioGroup':
+    case "Radio":
+    case "RadioGroup":
       return fromCheckboxPreset(getRadioSizePreset(size));
-    case 'Switch':
+    case "Switch":
       return { fontSize: px(getSwitchSizePreset(size).thumbSize) };
 
     // Bar 계열
-    case 'ProgressBar':
+    case "ProgressBar":
       return fromBarPreset(getProgressBarSizePreset(size));
-    case 'Meter':
+    case "Meter":
       return fromBarPreset(getMeterSizePreset(size));
-    case 'Slider':
+    case "Slider":
       return { fontSize: px(getSliderSizePreset(size).thumbSize) };
 
     // Badge
-    case 'Badge': {
+    case "Badge": {
       const p = getBadgeSizePreset(size);
       return {
         fontSize: px(p.fontSize),
+        fontWeight: "500",
         paddingTop: px(p.paddingY),
         paddingRight: px(p.paddingX),
         paddingBottom: px(p.paddingY),
@@ -213,7 +234,7 @@ function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
     }
 
     // Card
-    case 'Card': {
+    case "Card": {
       const preset = getCardSizePreset(size);
       return {
         paddingTop: px(preset.padding),
@@ -225,13 +246,13 @@ function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
     }
 
     // Navigation
-    case 'Link':
+    case "Link":
       return { fontSize: px(getLinkSizePreset(size).fontSize) };
-    case 'Breadcrumbs':
+    case "Breadcrumbs":
       return { fontSize: px(getBreadcrumbsSizePreset(size).fontSize) };
 
     // Input (legacy alias)
-    case 'Input':
+    case "Input":
       return fromInputPreset(getInputSizePreset(size));
 
     default:
@@ -259,13 +280,13 @@ function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
  * ```
  */
 export function computeSyntheticStyle(
-  element: SelectedElement | null
+  element: SelectedElement | null,
 ): SyntheticComputedStyle {
   if (!element) return {};
 
   const tag = element.type;
-  const size = (element.properties?.size as string) ?? 'md';
-  const variant = (element.properties?.variant as string) ?? 'default';
+  const size = (element.properties?.size as string) ?? "md";
+  const variant = (element.properties?.variant as string) ?? "default";
 
   // 캐시 확인
   const cacheKey = getCacheKey(tag, size, variant);
@@ -292,16 +313,17 @@ export function resolveStyleValue(
   inlineStyle: React.CSSProperties | null | undefined,
   syntheticStyle: SyntheticComputedStyle,
   property: keyof React.CSSProperties & keyof SyntheticComputedStyle,
-  defaultValue: string
+  defaultValue: string,
 ): string {
   // Priority 1: Inline style (사용자 직접 설정)
   const inlineValue = inlineStyle?.[property as keyof React.CSSProperties];
-  if (inlineValue !== undefined && inlineValue !== null && inlineValue !== '') {
+  if (inlineValue !== undefined && inlineValue !== null && inlineValue !== "") {
     return String(inlineValue);
   }
 
   // Priority 2: Synthetic computed style (preset에서 파생)
-  const syntheticValue = syntheticStyle[property as keyof SyntheticComputedStyle];
+  const syntheticValue =
+    syntheticStyle[property as keyof SyntheticComputedStyle];
   if (syntheticValue !== undefined) {
     return syntheticValue;
   }

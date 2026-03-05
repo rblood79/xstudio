@@ -645,9 +645,18 @@ export function specShapesToSkia(
           if (shape.fontWeight === "medium") fontWeight = 500;
         }
 
-        // Font families
+        // Font families — CSS fallback chain을 개별 폰트명으로 분리
+        // "Pretendard, Inter, system-ui" → ["Pretendard", "Inter", "system-ui"]
+        // 분리하지 않으면 CanvasKit이 전체 문자열을 단일 폰트명으로 매칭 → 실패 → fallback 폰트 사용 → 폭 차이
         const fontFamilies = shape.fontFamily
-          ? [shape.fontFamily, "Inter", "system-ui", "sans-serif"]
+          ? [
+              ...shape.fontFamily
+                .split(",")
+                .map((f: string) => f.trim().replace(/['"]/g, "")),
+              "Inter",
+              "system-ui",
+              "sans-serif",
+            ]
           : ["Inter", "system-ui", "sans-serif"];
 
         // textDecoration → CanvasKit 비트마스크 변환
