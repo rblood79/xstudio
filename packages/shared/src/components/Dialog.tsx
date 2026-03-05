@@ -1,6 +1,6 @@
-import { Dialog as RACDialog, DialogProps } from 'react-aria-components';
-import type { DialogVariant, ComponentSize } from '../types';
-import './styles/Dialog.css';
+import { Dialog as RACDialog, DialogProps } from "react-aria-components";
+import type { ComponentSize } from "../types";
+import "./styles/Dialog.css";
 
 /**
  * Dialog Component with Material Design 3 support
@@ -34,14 +34,28 @@ import './styles/Dialog.css';
  */
 
 export interface DialogExtendedProps extends DialogProps {
-  variant?: DialogVariant;
+  variant?: string;
   size?: ComponentSize;
 }
 
-export function Dialog({ variant = 'primary', size = 'md', ...props }: DialogExtendedProps) {
+export function Dialog({
+  variant = "primary",
+  size = "md",
+  ...props
+}: DialogExtendedProps) {
   // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
-  const baseClassName = typeof props.className === 'string' ? props.className : undefined;
-  const dialogClassName = baseClassName ? `react-aria-Dialog ${baseClassName}` : 'react-aria-Dialog';
+  const baseClassName =
+    typeof props.className === "string" ? props.className : undefined;
+  const dialogClassName = baseClassName
+    ? `react-aria-Dialog ${baseClassName}`
+    : "react-aria-Dialog";
 
-  return <RACDialog {...props} className={dialogClassName} data-variant={variant} data-size={size} />;
+  return (
+    <RACDialog
+      {...props}
+      className={dialogClassName}
+      data-variant={variant}
+      data-size={size}
+    />
+  );
 }

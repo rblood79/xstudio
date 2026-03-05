@@ -166,57 +166,31 @@
     }
   }
 
-  /* ========== Color Variants ========== */
-  .react-aria-Tabs[data-variant="primary"],
-  .react-aria-TabList[data-variant="primary"] {
-    --tab-accent: var(--highlight-background);
+  /* ========== Density Variants ========== */
 
+  /* compact: 좁은 간격 */
+  .react-aria-Tabs[data-density="compact"],
+  .react-aria-TabList[data-density="compact"] {
     .react-aria-Tab {
-      &[data-selected] {
-        color: var(--highlight-background);
-      }
+      padding: var(--spacing-sm) var(--spacing-md);
+      font-size: var(--text-sm);
+    }
 
-      &[data-hovered] {
-        background: color-mix(
-          in srgb,
-          var(--highlight-background) 8%,
-          transparent
-        );
-      }
+    .react-aria-TabPanel {
+      padding: var(--spacing-md);
     }
   }
 
-  .react-aria-Tabs[data-variant="secondary"],
-  .react-aria-TabList[data-variant="secondary"] {
-    --tab-accent: var(--button-background);
-
+  /* regular (기본): 기본 간격 — 명시적 선언 */
+  .react-aria-Tabs[data-density="regular"],
+  .react-aria-TabList[data-density="regular"] {
     .react-aria-Tab {
-      &[data-selected] {
-        color: var(--button-background);
-      }
-
-      &[data-hovered] {
-        background: color-mix(
-          in srgb,
-          var(--button-background) 8%,
-          transparent
-        );
-      }
+      padding: var(--spacing) var(--spacing-lg);
+      font-size: var(--text-base);
     }
-  }
 
-  .react-aria-Tabs[data-variant="tertiary"],
-  .react-aria-TabList[data-variant="tertiary"] {
-    --tab-accent: var(--color-purple-600);
-
-    .react-aria-Tab {
-      &[data-selected] {
-        color: var(--color-purple-600);
-      }
-
-      &[data-hovered] {
-        background: color-mix(in srgb, var(--color-purple-600) 8%, transparent);
-      }
+    .react-aria-TabPanel {
+      padding: var(--spacing-lg);
     }
   }
 

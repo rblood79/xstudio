@@ -11,23 +11,32 @@
  * @updated 2026-01-28 Phase 6 - P2 기능 (vertical-align, line-height)
  */
 
-import type { Margin, BoxModel, VerticalAlign } from './types';
-import type { Element } from '../../../../../types/core/store.types';
-import { fontFamily as specFontFamily, InputSpec, resolveToken } from '@xstudio/specs';
-import { measureWrappedTextHeight, measureFontMetrics, getTextMeasurer, isCanvasKitMeasurer } from '../../utils/textMeasure';
-import type { FontMetrics } from '../../utils/textMeasure';
+import type { Margin, BoxModel, VerticalAlign } from "./types";
+import type { Element } from "../../../../../types/core/store.types";
+import {
+  fontFamily as specFontFamily,
+  InputSpec,
+  resolveToken,
+} from "@xstudio/specs";
+import {
+  measureWrappedTextHeight,
+  measureFontMetrics,
+  getTextMeasurer,
+  isCanvasKitMeasurer,
+} from "../../utils/textMeasure";
+import type { FontMetrics } from "../../utils/textMeasure";
 import {
   resolveCSSSizeValue,
   FIT_CONTENT as CSS_FIT_CONTENT,
   MIN_CONTENT as CSS_MIN_CONTENT,
   MAX_CONTENT as CSS_MAX_CONTENT,
   parseBorderShorthand,
-} from './cssValueParser';
-import type { CSSValueContext, CSSVariableScope } from './cssValueParser';
-import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
-import type { ComputedStyle } from './cssResolver';
-import type { LayoutContext } from './LayoutEngine';
-import { applyTextTransform } from '../../sprites/styleConverter';
+} from "./cssValueParser";
+import type { CSSValueContext, CSSVariableScope } from "./cssValueParser";
+import { resolveStyle, ROOT_COMPUTED_STYLE } from "./cssResolver";
+import type { ComputedStyle } from "./cssResolver";
+import type { LayoutContext } from "./LayoutEngine";
+import { applyTextTransform } from "../../sprites/styleConverter";
 
 // ─── Phantom Indicator 설정 (단일 소스) ─────────────────────────────────
 // Switch/Checkbox/Radio: Preview DOM에는 [indicator + label] 구조이지만
@@ -35,32 +44,33 @@ import { applyTextTransform } from '../../sprites/styleConverter';
 // 값의 원천: packages/specs/src/components/{Switch,Checkbox,Radio}.spec.ts
 
 interface PhantomIndicatorConfig {
-  widths:     { sm: number; md: number; lg: number };
-  heights:    { sm: number; md: number; lg: number };
-  gaps:       { sm: number; md: number; lg: number };
+  widths: { sm: number; md: number; lg: number };
+  heights: { sm: number; md: number; lg: number };
+  gaps: { sm: number; md: number; lg: number };
   rowHeights: { sm: number; md: number; lg: number };
 }
 
-export const PHANTOM_INDICATOR_CONFIGS: Record<string, PhantomIndicatorConfig> = {
-  switch: {
-    widths:     { sm: 36, md: 44, lg: 52 },
-    heights:    { sm: 20, md: 24, lg: 28 },
-    gaps:       { sm: 8,  md: 10, lg: 12 },
-    rowHeights: { sm: 20, md: 24, lg: 28 },
-  },
-  checkbox: {
-    widths:     { sm: 16, md: 20, lg: 24 },
-    heights:    { sm: 16, md: 20, lg: 24 },
-    gaps:       { sm: 6,  md: 8,  lg: 10 },
-    rowHeights: { sm: 20, md: 24, lg: 28 },  // spec.sizes.height (전체 행 높이)
-  },
-  radio: {
-    widths:     { sm: 16, md: 20, lg: 24 },
-    heights:    { sm: 16, md: 20, lg: 24 },
-    gaps:       { sm: 6,  md: 8,  lg: 10 },
-    rowHeights: { sm: 20, md: 24, lg: 28 },  // spec.sizes.height (전체 행 높이)
-  },
-};
+export const PHANTOM_INDICATOR_CONFIGS: Record<string, PhantomIndicatorConfig> =
+  {
+    switch: {
+      widths: { sm: 36, md: 44, lg: 52 },
+      heights: { sm: 20, md: 24, lg: 28 },
+      gaps: { sm: 8, md: 10, lg: 12 },
+      rowHeights: { sm: 20, md: 24, lg: 28 },
+    },
+    checkbox: {
+      widths: { sm: 16, md: 20, lg: 24 },
+      heights: { sm: 16, md: 20, lg: 24 },
+      gaps: { sm: 6, md: 8, lg: 10 },
+      rowHeights: { sm: 20, md: 24, lg: 28 }, // spec.sizes.height (전체 행 높이)
+    },
+    radio: {
+      widths: { sm: 16, md: 20, lg: 24 },
+      heights: { sm: 16, md: 20, lg: 24 },
+      gaps: { sm: 6, md: 8, lg: 10 },
+      rowHeights: { sm: 20, md: 24, lg: 28 }, // spec.sizes.height (전체 행 높이)
+    },
+  };
 
 /** Phantom indicator의 width + gap (Row용). 해당 태그가 아니면 null */
 export function getPhantomIndicatorSpace(
@@ -69,7 +79,7 @@ export function getPhantomIndicatorSpace(
 ): { width: number; height: number; gap: number } | null {
   const config = PHANTOM_INDICATOR_CONFIGS[tag];
   if (!config) return null;
-  const s = (size ?? 'md') as 'sm' | 'md' | 'lg';
+  const s = (size ?? "md") as "sm" | "md" | "lg";
   const w = config.widths[s] ?? config.widths.md;
   const h = config.heights[s] ?? config.heights.md;
   const gap = config.gaps[s] ?? config.gaps.md;
@@ -77,10 +87,7 @@ export function getPhantomIndicatorSpace(
 }
 
 /** Phantom indicator의 width + gap (number, 폴백 0) */
-export function getPhantomIndicatorWidth(
-  tag: string,
-  size?: string,
-): number {
+export function getPhantomIndicatorWidth(tag: string, size?: string): number {
   const space = getPhantomIndicatorSpace(tag, size);
   return space?.width ?? 0;
 }
@@ -135,8 +142,8 @@ const PX_NUMBER_PATTERN = /^-?\d+(\.\d+)?(px)?$/;
  * @returns 파싱된 숫자 또는 undefined (미지원 단위)
  */
 function parseNumericValue(value: unknown): number | undefined {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
     // px 또는 숫자만 허용
     if (!PX_NUMBER_PATTERN.test(value.trim())) {
       return undefined; // rem, em, %, calc 등 미지원
@@ -168,11 +175,11 @@ export function parseSize(
   viewportHeight?: number,
   variableScope?: CSSVariableScope,
 ): number | undefined {
-  if (value === undefined || value === 'auto') return undefined;
+  if (value === undefined || value === "auto") return undefined;
 
   // C2: % 값인데 available이 음수(sentinel -1)이면 auto로 처리
   // CSS 스펙: auto height 부모의 블록 컨텍스트에서 자식의 percentage height는 auto
-  if (typeof value === 'string' && value.endsWith('%') && available < 0) {
+  if (typeof value === "string" && value.endsWith("%") && available < 0) {
     return undefined;
   }
 
@@ -192,8 +199,11 @@ export function parseSize(
  * 개별 margin/padding 속성의 % 값 해석용
  * CSS 스펙: margin/padding의 % 값은 포함 블록의 inline-size(width) 기준
  */
-function resolvePercentValue(value: unknown, containerWidth?: number): number | undefined {
-  if (typeof value !== 'string' || !value.endsWith('%')) return undefined;
+function resolvePercentValue(
+  value: unknown,
+  containerWidth?: number,
+): number | undefined {
+  if (typeof value !== "string" || !value.endsWith("%")) return undefined;
   if (containerWidth === undefined || containerWidth <= 0) return undefined;
   const pct = parseFloat(value);
   if (isNaN(pct)) return undefined;
@@ -227,10 +237,10 @@ function parseShorthandValue(value: string): number | undefined {
  */
 function parseShorthand(value: unknown, containerWidth?: number): Margin {
   const zero = { top: 0, right: 0, bottom: 0, left: 0 };
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return { top: value, right: value, bottom: value, left: value };
   }
-  if (typeof value !== 'string') return zero;
+  if (typeof value !== "string") return zero;
 
   const tokens = value.split(/\s+/);
   const parts = tokens.map((token) => {
@@ -238,7 +248,11 @@ function parseShorthand(value: unknown, containerWidth?: number): Margin {
     const parsed = parseShorthandValue(token);
     if (parsed !== undefined) return parsed;
     // C3: % 해석 시도 (containerWidth 기준)
-    if (token.endsWith('%') && containerWidth !== undefined && containerWidth > 0) {
+    if (
+      token.endsWith("%") &&
+      containerWidth !== undefined &&
+      containerWidth > 0
+    ) {
       const pct = parseFloat(token);
       if (!isNaN(pct)) return (pct / 100) * containerWidth;
     }
@@ -251,13 +265,33 @@ function parseShorthand(value: unknown, containerWidth?: number): Margin {
 
   switch (parts.length) {
     case 1:
-      return { top: parts[0], right: parts[0], bottom: parts[0], left: parts[0] };
+      return {
+        top: parts[0],
+        right: parts[0],
+        bottom: parts[0],
+        left: parts[0],
+      };
     case 2:
-      return { top: parts[0], right: parts[1], bottom: parts[0], left: parts[1] };
+      return {
+        top: parts[0],
+        right: parts[1],
+        bottom: parts[0],
+        left: parts[1],
+      };
     case 3:
-      return { top: parts[0], right: parts[1], bottom: parts[2], left: parts[1] };
+      return {
+        top: parts[0],
+        right: parts[1],
+        bottom: parts[2],
+        left: parts[1],
+      };
     case 4:
-      return { top: parts[0], right: parts[1], bottom: parts[2], left: parts[3] };
+      return {
+        top: parts[0],
+        right: parts[1],
+        bottom: parts[2],
+        left: parts[3],
+      };
     default:
       return zero;
   }
@@ -272,7 +306,10 @@ function parseShorthand(value: unknown, containerWidth?: number): Margin {
  * C3: containerWidth가 제공되면 % 값을 해석
  * CSS 스펙: margin의 % 값은 포함 블록의 width 기준 (4면 모두)
  */
-export function parseMargin(style: Record<string, unknown> | undefined, containerWidth?: number): Margin {
+export function parseMargin(
+  style: Record<string, unknown> | undefined,
+  containerWidth?: number,
+): Margin {
   if (!style) {
     return { top: 0, right: 0, bottom: 0, left: 0 };
   }
@@ -285,10 +322,22 @@ export function parseMargin(style: Record<string, unknown> | undefined, containe
 
   // 개별 속성으로 override (% 해석 포함)
   return {
-    top: parseNumericValue(style.marginTop) ?? resolvePercentValue(style.marginTop, containerWidth) ?? base.top,
-    right: parseNumericValue(style.marginRight) ?? resolvePercentValue(style.marginRight, containerWidth) ?? base.right,
-    bottom: parseNumericValue(style.marginBottom) ?? resolvePercentValue(style.marginBottom, containerWidth) ?? base.bottom,
-    left: parseNumericValue(style.marginLeft) ?? resolvePercentValue(style.marginLeft, containerWidth) ?? base.left,
+    top:
+      parseNumericValue(style.marginTop) ??
+      resolvePercentValue(style.marginTop, containerWidth) ??
+      base.top,
+    right:
+      parseNumericValue(style.marginRight) ??
+      resolvePercentValue(style.marginRight, containerWidth) ??
+      base.right,
+    bottom:
+      parseNumericValue(style.marginBottom) ??
+      resolvePercentValue(style.marginBottom, containerWidth) ??
+      base.bottom,
+    left:
+      parseNumericValue(style.marginLeft) ??
+      resolvePercentValue(style.marginLeft, containerWidth) ??
+      base.left,
   };
 }
 
@@ -298,7 +347,10 @@ export function parseMargin(style: Record<string, unknown> | undefined, containe
  * C3: containerWidth가 제공되면 % 값을 해석
  * CSS 스펙: padding의 % 값은 포함 블록의 width 기준 (4면 모두)
  */
-export function parsePadding(style: Record<string, unknown> | undefined, containerWidth?: number): Margin {
+export function parsePadding(
+  style: Record<string, unknown> | undefined,
+  containerWidth?: number,
+): Margin {
   if (!style) {
     return { top: 0, right: 0, bottom: 0, left: 0 };
   }
@@ -309,10 +361,22 @@ export function parsePadding(style: Record<string, unknown> | undefined, contain
       : { top: 0, right: 0, bottom: 0, left: 0 };
 
   return {
-    top: parseNumericValue(style.paddingTop) ?? resolvePercentValue(style.paddingTop, containerWidth) ?? base.top,
-    right: parseNumericValue(style.paddingRight) ?? resolvePercentValue(style.paddingRight, containerWidth) ?? base.right,
-    bottom: parseNumericValue(style.paddingBottom) ?? resolvePercentValue(style.paddingBottom, containerWidth) ?? base.bottom,
-    left: parseNumericValue(style.paddingLeft) ?? resolvePercentValue(style.paddingLeft, containerWidth) ?? base.left,
+    top:
+      parseNumericValue(style.paddingTop) ??
+      resolvePercentValue(style.paddingTop, containerWidth) ??
+      base.top,
+    right:
+      parseNumericValue(style.paddingRight) ??
+      resolvePercentValue(style.paddingRight, containerWidth) ??
+      base.right,
+    bottom:
+      parseNumericValue(style.paddingBottom) ??
+      resolvePercentValue(style.paddingBottom, containerWidth) ??
+      base.bottom,
+    left:
+      parseNumericValue(style.paddingLeft) ??
+      resolvePercentValue(style.paddingLeft, containerWidth) ??
+      base.left,
   };
 }
 
@@ -323,7 +387,9 @@ export function parsePadding(style: Record<string, unknown> | undefined, contain
  * 빌더의 개별 속성(borderTopWidth 등) 우선, borderWidth shorthand 차선,
  * border shorthand("1px solid red")가 최종 폴백으로 적용됩니다.
  */
-export function parseBorder(style: Record<string, unknown> | undefined): Margin {
+export function parseBorder(
+  style: Record<string, unknown> | undefined,
+): Margin {
   if (!style) {
     return { top: 0, right: 0, bottom: 0, left: 0 };
   }
@@ -339,7 +405,12 @@ export function parseBorder(style: Record<string, unknown> | undefined): Margin 
   const base =
     style.borderWidth !== undefined
       ? parseShorthand(style.borderWidth)
-      : { top: shorthandWidth, right: shorthandWidth, bottom: shorthandWidth, left: shorthandWidth };
+      : {
+          top: shorthandWidth,
+          right: shorthandWidth,
+          bottom: shorthandWidth,
+          left: shorthandWidth,
+        };
 
   // 개별 속성으로 override
   return {
@@ -383,23 +454,56 @@ const DEFAULT_WIDTH = 80;
  * max(paddingY*2 + textHeight, MIN_HEIGHT) 공식으로 계산되어 불일치 발생.
  * 동일 공식을 사용하여 CSS/WebGL 정합성 보장.
  */
-const BUTTON_SIZE_CONFIG: Record<string, {
-  height?: number;
-  paddingLeft: number;
-  paddingRight: number;
-  paddingY: number;
-  fontSize: number;
-  borderWidth: number;
-}> = {
+const BUTTON_SIZE_CONFIG: Record<
+  string,
+  {
+    height?: number;
+    paddingLeft: number;
+    paddingRight: number;
+    paddingY: number;
+    fontSize: number;
+    borderWidth: number;
+  }
+> = {
   // @sync Button.css [data-size] padding 값과 일치해야 함
   // @sync Button.css base: border: 1px solid (all variants, all sizes)
   // CSS Button은 명시적 height를 설정하지 않음 → line-height:normal + padding + border로 자동 결정
   // height를 지정하면 CSS 렌더링과 불일치 (CSS는 fontBoundingBox 기반 line-height 사용)
-  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 4, fontSize: 12, borderWidth: 1 },
-  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 8, fontSize: 14, borderWidth: 1 },
-  md: { paddingLeft: 16, paddingRight: 16, paddingY: 12, fontSize: 16, borderWidth: 1 },
-  lg: { paddingLeft: 24, paddingRight: 24, paddingY: 16, fontSize: 18, borderWidth: 1 },
-  xl: { paddingLeft: 32, paddingRight: 32, paddingY: 24, fontSize: 20, borderWidth: 1 },
+  xs: {
+    paddingLeft: 8,
+    paddingRight: 8,
+    paddingY: 4,
+    fontSize: 10,
+    borderWidth: 1,
+  },
+  sm: {
+    paddingLeft: 12,
+    paddingRight: 12,
+    paddingY: 4,
+    fontSize: 12,
+    borderWidth: 1,
+  },
+  md: {
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingY: 8,
+    fontSize: 14,
+    borderWidth: 1,
+  },
+  lg: {
+    paddingLeft: 24,
+    paddingRight: 24,
+    paddingY: 12,
+    fontSize: 16,
+    borderWidth: 1,
+  },
+  xl: {
+    paddingLeft: 32,
+    paddingRight: 32,
+    paddingY: 16,
+    fontSize: 18,
+    borderWidth: 1,
+  },
 };
 
 /** PixiButton MIN_BUTTON_HEIGHT과 동일 */
@@ -411,21 +515,64 @@ const MIN_BUTTON_HEIGHT = 24;
  * cssVariableReader.ts의 BADGE_FALLBACKS와 1:1 동기화
  * PixiBadge 렌더링과 동일한 레이아웃 크기 보장
  */
-const BADGE_SIZE_CONFIG: Record<string, {
-  paddingLeft: number;
-  paddingRight: number;
-  paddingY: number;
-  fontSize: number;
-  borderWidth: number;
-  minWidth: number;
-  height: number;
-}> = {
-  // xs/xl은 BADGE_FALLBACKS에 없으므로 sm/lg 기준 추정
-  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 1, fontSize: 12, borderWidth: 0, minWidth: 16, height: 16 },
-  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 2, fontSize: 14, borderWidth: 0, minWidth: 20, height: 20 },
-  md: { paddingLeft: 12, paddingRight: 12, paddingY: 8, fontSize: 16, borderWidth: 0, minWidth: 24, height: 24 },
-  lg: { paddingLeft: 16, paddingRight: 16, paddingY: 8, fontSize: 18, borderWidth: 0, minWidth: 28, height: 28 },
-  xl: { paddingLeft: 20, paddingRight: 20, paddingY: 10, fontSize: 20, borderWidth: 0, minWidth: 32, height: 32 },
+const BADGE_SIZE_CONFIG: Record<
+  string,
+  {
+    paddingLeft: number;
+    paddingRight: number;
+    paddingY: number;
+    fontSize: number;
+    borderWidth: number;
+    minWidth: number;
+    height: number;
+  }
+> = {
+  // @sync Badge.css [data-size] padding/fontSize 값과 일치해야 함
+  xs: {
+    paddingLeft: 4,
+    paddingRight: 4,
+    paddingY: 2,
+    fontSize: 10,
+    borderWidth: 0,
+    minWidth: 16,
+    height: 16,
+  },
+  sm: {
+    paddingLeft: 6,
+    paddingRight: 6,
+    paddingY: 2,
+    fontSize: 12,
+    borderWidth: 0,
+    minWidth: 20,
+    height: 20,
+  },
+  md: {
+    paddingLeft: 8,
+    paddingRight: 8,
+    paddingY: 2,
+    fontSize: 14,
+    borderWidth: 0,
+    minWidth: 24,
+    height: 24,
+  },
+  lg: {
+    paddingLeft: 10,
+    paddingRight: 10,
+    paddingY: 4,
+    fontSize: 16,
+    borderWidth: 0,
+    minWidth: 28,
+    height: 28,
+  },
+  xl: {
+    paddingLeft: 12,
+    paddingRight: 12,
+    paddingY: 4,
+    fontSize: 18,
+    borderWidth: 0,
+    minWidth: 32,
+    height: 32,
+  },
 };
 
 /**
@@ -434,17 +581,52 @@ const BADGE_SIZE_CONFIG: Record<string, {
  * @sync ToggleButton.css [data-size] padding 값과 일치해야 함
  * Button.css와 동일한 padding 사용
  */
-const TOGGLEBUTTON_SIZE_CONFIG: Record<string, {
-  paddingLeft: number;
-  paddingRight: number;
-  paddingY: number;
-  fontSize: number;
-  borderWidth: number;
-}> = {
-  // @sync ToggleButton.css [data-size] padding 값과 일치해야 함
-  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 8, fontSize: 14, borderWidth: 1 },   // --spacing-md = 12px
-  md: { paddingLeft: 16, paddingRight: 16, paddingY: 12, fontSize: 16, borderWidth: 1 },  // --spacing-lg = 16px
-  lg: { paddingLeft: 24, paddingRight: 24, paddingY: 16, fontSize: 18, borderWidth: 1 },  // --spacing-xl = 24px
+const TOGGLEBUTTON_SIZE_CONFIG: Record<
+  string,
+  {
+    paddingLeft: number;
+    paddingRight: number;
+    paddingY: number;
+    fontSize: number;
+    borderWidth: number;
+  }
+> = {
+  // @sync ToggleButton.css [data-size] padding 값과 일치해야 함 (Button.css와 동일)
+  xs: {
+    paddingLeft: 8,
+    paddingRight: 8,
+    paddingY: 4,
+    fontSize: 10,
+    borderWidth: 1,
+  },
+  sm: {
+    paddingLeft: 12,
+    paddingRight: 12,
+    paddingY: 4,
+    fontSize: 12,
+    borderWidth: 1,
+  },
+  md: {
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingY: 8,
+    fontSize: 14,
+    borderWidth: 1,
+  },
+  lg: {
+    paddingLeft: 24,
+    paddingRight: 24,
+    paddingY: 12,
+    fontSize: 16,
+    borderWidth: 1,
+  },
+  xl: {
+    paddingLeft: 32,
+    paddingRight: 32,
+    paddingY: 16,
+    fontSize: 18,
+    borderWidth: 1,
+  },
 };
 
 /**
@@ -460,15 +642,21 @@ const CARD_SIZE_CONFIG: Record<string, { padding: number }> = {
 };
 
 /** inline-level UI 컴포넌트 태그 → size config 매핑 */
-const INLINE_UI_SIZE_CONFIGS: Record<string, Record<string, {
-  paddingLeft: number;
-  paddingRight: number;
-  paddingY: number;
-  fontSize: number;
-  borderWidth: number;
-  minWidth?: number;
-  height?: number;
-}>> = {
+const INLINE_UI_SIZE_CONFIGS: Record<
+  string,
+  Record<
+    string,
+    {
+      paddingLeft: number;
+      paddingRight: number;
+      paddingY: number;
+      fontSize: number;
+      borderWidth: number;
+      minWidth?: number;
+      height?: number;
+    }
+  >
+> = {
   badge: BADGE_SIZE_CONFIG,
   tag: BADGE_SIZE_CONFIG,
   chip: BADGE_SIZE_CONFIG,
@@ -488,21 +676,36 @@ const INLINE_UI_SIZE_CONFIGS: Record<string, Record<string, {
 export function getButtonSizeConfig(
   tag: string,
   sizePropValue?: string,
-): { paddingY: number; paddingX: number; fontSize: number; borderWidth: number } | null {
+): {
+  paddingY: number;
+  paddingX: number;
+  fontSize: number;
+  borderWidth: number;
+} | null {
   const t = tag.toLowerCase();
 
   // button / submitbutton / fancybutton → BUTTON_SIZE_CONFIG
-  if (t === 'button' || t === 'submitbutton' || t === 'fancybutton') {
-    const size = sizePropValue ?? 'sm';
-    const c = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG['sm'];
-    return { paddingY: c.paddingY, paddingX: c.paddingLeft, fontSize: c.fontSize, borderWidth: c.borderWidth };
+  if (t === "button" || t === "submitbutton" || t === "fancybutton") {
+    const size = sizePropValue ?? "md";
+    const c = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG["md"];
+    return {
+      paddingY: c.paddingY,
+      paddingX: c.paddingLeft,
+      fontSize: c.fontSize,
+      borderWidth: c.borderWidth,
+    };
   }
 
   // togglebutton → TOGGLEBUTTON_SIZE_CONFIG
-  if (t === 'togglebutton') {
-    const size = sizePropValue ?? 'md';
-    const c = TOGGLEBUTTON_SIZE_CONFIG[size] ?? TOGGLEBUTTON_SIZE_CONFIG['md'];
-    return { paddingY: c.paddingY, paddingX: c.paddingLeft, fontSize: c.fontSize, borderWidth: c.borderWidth };
+  if (t === "togglebutton") {
+    const size = sizePropValue ?? "md";
+    const c = TOGGLEBUTTON_SIZE_CONFIG[size] ?? TOGGLEBUTTON_SIZE_CONFIG["md"];
+    return {
+      paddingY: c.paddingY,
+      paddingX: c.paddingLeft,
+      fontSize: c.fontSize,
+      borderWidth: c.borderWidth,
+    };
   }
 
   return null;
@@ -551,8 +754,10 @@ export function measureTextWidth(
  * 다양한 prop에서 텍스트 문자열 추출
  * 우선순위: children > text > label > title > placeholder > value
  */
-function extractTextContent(props: Record<string, unknown> | undefined): string {
-  if (!props) return '';
+function extractTextContent(
+  props: Record<string, unknown> | undefined,
+): string {
+  if (!props) return "";
 
   // 우선순위에 따라 텍스트 소스 확인
   const textSources = [
@@ -569,33 +774,33 @@ function extractTextContent(props: Record<string, unknown> | undefined): string 
     if (text) return text;
   }
 
-  return '';
+  return "";
 }
 
 /**
  * 단일 값에서 텍스트 추출
  */
 function extractFromValue(value: unknown): string {
-  if (value === undefined || value === null) return '';
+  if (value === undefined || value === null) return "";
 
   // 문자열
-  if (typeof value === 'string') return value;
+  if (typeof value === "string") return value;
 
   // 숫자
-  if (typeof value === 'number') return String(value);
+  if (typeof value === "number") return String(value);
 
   // 배열 (복수 children)
   if (Array.isArray(value)) {
     return value
       .map((item) => {
-        if (typeof item === 'string') return item;
-        if (typeof item === 'number') return String(item);
-        return '';
+        if (typeof item === "string") return item;
+        if (typeof item === "number") return String(item);
+        return "";
       })
-      .join('');
+      .join("");
   }
 
-  return '';
+  return "";
 }
 
 /**
@@ -608,7 +813,11 @@ function extractFromValue(value: unknown): string {
  * @param fontSize - 폰트 크기 (기본 14px)
  * @param padding - 좌우 패딩 합계
  */
-function calculateTextWidth(text: string, fontSize: number = 14, padding: number = 0): number {
+function calculateTextWidth(
+  text: string,
+  fontSize: number = 14,
+  padding: number = 0,
+): number {
   if (!text) return 0;
 
   const textWidth = measureTextWidth(text, fontSize);
@@ -619,18 +828,18 @@ function calculateTextWidth(text: string, fontSize: number = 14, padding: number
 
 /** 컴포넌트별 기본 size prop 값 */
 const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
-  // Badge 계열: PixiBadge와 동일하게 'md' 기본값
-  badge: 'md',
-  tag: 'md',
-  chip: 'md',
-  // Button 계열: 'sm' 기본값
-  button: 'sm',
-  submitbutton: 'sm',
-  fancybutton: 'sm',
-  input: 'sm',
-  select: 'sm',
-  a: 'sm',
-  togglebutton: 'sm',
+  // Badge 계열: 'sm' 기본값
+  badge: "sm",
+  tag: "sm",
+  chip: "sm",
+  // Button 계열: 'md' 기본값
+  button: "md",
+  submitbutton: "md",
+  fancybutton: "md",
+  input: "sm",
+  select: "sm",
+  a: "md",
+  togglebutton: "md",
 };
 
 /**
@@ -649,7 +858,7 @@ export function calculateContentWidth(
   computedStyle?: ComputedStyle,
 ): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
-  const tag = (element.tag ?? '').toLowerCase();
+  const tag = (element.tag ?? "").toLowerCase();
 
   // 1. 명시적 width가 있으면 사용
   const explicitWidth = parseNumericValue(style?.width);
@@ -657,25 +866,28 @@ export function calculateContentWidth(
 
   // 🚀 ToggleButtonGroup: 자식 버튼 텍스트 크기 합산
   // PixiToggleButtonGroup.tsx의 buttonSizes/contentWidth와 동일한 공식
-  if (tag === 'togglebuttongroup') {
+  if (tag === "togglebuttongroup") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
-    const sizeConfig = TOGGLEBUTTON_SIZE_CONFIG[sizeName] ?? TOGGLEBUTTON_SIZE_CONFIG['md'];
+    const sizeName = (props?.size as string) ?? "md";
+    const sizeConfig =
+      TOGGLEBUTTON_SIZE_CONFIG[sizeName] ?? TOGGLEBUTTON_SIZE_CONFIG["md"];
     const borderWidth = sizeConfig.borderWidth;
     const paddingX = sizeConfig.paddingLeft; // paddingLeft === paddingRight
     const fontSize = sizeConfig.fontSize;
-    const orientation = String(props?.orientation || 'horizontal');
-    const isHorizontal = orientation === 'horizontal';
+    const orientation = String(props?.orientation || "horizontal");
+    const isHorizontal = orientation === "horizontal";
     const gap = parseNumericValue(style?.gap) ?? 0; // CSS gap (0 = default -1px overlap)
 
     // items 배열에서 레이블 추출
-    const items = Array.isArray(props?.items) ? props.items as unknown[] : [];
+    const items = Array.isArray(props?.items) ? (props.items as unknown[]) : [];
 
     // items prop이 없으면 child elements에서 레이블 추출
     if (items.length === 0 && childElements && childElements.length > 0) {
       for (const child of childElements) {
         const childProps = child.props as Record<string, unknown> | undefined;
-        const label = String(childProps?.children ?? childProps?.text ?? childProps?.label ?? '');
+        const label = String(
+          childProps?.children ?? childProps?.text ?? childProps?.label ?? "",
+        );
         if (label) {
           items.push(label);
         }
@@ -684,15 +896,25 @@ export function calculateContentWidth(
 
     if (items.length > 0) {
       const buttonWidths = items.map((item) => {
-        const label = typeof item === 'string'
-          ? item
-          : (item as Record<string, unknown>)?.label as string ?? (item as Record<string, unknown>)?.children as string ?? '';
+        const label =
+          typeof item === "string"
+            ? item
+            : (((item as Record<string, unknown>)?.label as string) ??
+              ((item as Record<string, unknown>)?.children as string) ??
+              "");
         const textWidth = calculateTextWidth(String(label), fontSize, 0);
-        return Math.max(40, borderWidth + paddingX + textWidth + paddingX + borderWidth);
+        return Math.max(
+          40,
+          borderWidth + paddingX + textWidth + paddingX + borderWidth,
+        );
       });
       if (isHorizontal) {
         // horizontal: 버튼 너비 합 + gap * (n-1) - margin overlap(1px * (n-1))
-        return buttonWidths.reduce((sum, w) => sum + w, 0) + gap * (items.length - 1) - (items.length - 1);
+        return (
+          buttonWidths.reduce((sum, w) => sum + w, 0) +
+          gap * (items.length - 1) -
+          (items.length - 1)
+        );
       }
       // vertical: 가장 넓은 버튼
       return Math.max(...buttonWidths);
@@ -703,7 +925,7 @@ export function calculateContentWidth(
 
   // Phantom indicator space (모듈 스코프 PHANTOM_INDICATOR_CONFIGS 사용)
   const _phantomProps = element.props as Record<string, unknown> | undefined;
-  const _phantomSize = (_phantomProps?.size as string) ?? 'md';
+  const _phantomSize = (_phantomProps?.size as string) ?? "md";
   const phantomSpace = getPhantomIndicatorSpace(tag, _phantomSize);
   const phantomW = phantomSpace?.width ?? 0;
 
@@ -715,39 +937,55 @@ export function calculateContentWidth(
   //    자식 기반 너비(~132px)에 도달하지 못함
   if (childElements && childElements.length > 0) {
     const display = style?.display;
-    if (display === 'flex' || display === 'inline-flex') {
-      const flexDir = (style?.flexDirection as string) || 'row';
+    if (display === "flex" || display === "inline-flex") {
+      const flexDir = (style?.flexDirection as string) || "row";
       const gap = parseNumericValue(style?.gap) ?? 0;
-      const isRow = flexDir === 'row' || flexDir === 'row-reverse';
+      const isRow = flexDir === "row" || flexDir === "row-reverse";
 
-      const childWidths = childElements.map(child => {
-        const childStyle = child.props?.style as Record<string, unknown> | undefined;
+      const childWidths = childElements.map((child) => {
+        const childStyle = child.props?.style as
+          | Record<string, unknown>
+          | undefined;
         const explicitW = parseNumericValue(childStyle?.width);
         if (explicitW !== undefined) return explicitW;
         // content-box 너비
         const grandChildren = getChildElements?.(child.id);
-        const contentW = calculateContentWidth(child, grandChildren, getChildElements);
+        const contentW = calculateContentWidth(
+          child,
+          grandChildren,
+          getChildElements,
+        );
         // border-box 산출: enrichWithIntrinsicSize와 동일하게 padding + border 추가
         // (Tag, Badge 등 INLINE_BLOCK_TAGS의 spec padding/border가 포함되어야 함)
         const childBox = parseBoxModel(child, 0, -1);
-        return contentW + childBox.padding.left + childBox.padding.right
-          + childBox.border.left + childBox.border.right;
+        return (
+          contentW +
+          childBox.padding.left +
+          childBox.padding.right +
+          childBox.border.left +
+          childBox.border.right
+        );
       });
 
       // Phantom indicator: Checkbox/Radio/Switch의 indicator는 element tree에 없지만
       // spec shapes(Skia)가 시각적으로 그리므로 width 계산에 반영
       // CSS gap이 설정되면 specGap을 제거하고 CSS gap으로 대체
-      const hasCSSGapW = style?.gap !== undefined || style?.columnGap !== undefined;
-      const effectivePhantomW = (hasCSSGapW && phantomW > 0)
-        ? phantomW - (phantomSpace?.gap ?? 0)
-        : phantomW;
+      const hasCSSGapW =
+        style?.gap !== undefined || style?.columnGap !== undefined;
+      const effectivePhantomW =
+        hasCSSGapW && phantomW > 0
+          ? phantomW - (phantomSpace?.gap ?? 0)
+          : phantomW;
 
       if (isRow) {
         // phantomW > 0이면 phantom도 flex child로 간주 → gap 횟수에 포함
-        const gapCount = childElements.length - 1 + (effectivePhantomW > 0 ? 1 : 0);
-        return childWidths.reduce((sum, w) => sum + w, 0)
-          + gap * Math.max(0, gapCount)
-          + effectivePhantomW;
+        const gapCount =
+          childElements.length - 1 + (effectivePhantomW > 0 ? 1 : 0);
+        return (
+          childWidths.reduce((sum, w) => sum + w, 0) +
+          gap * Math.max(0, gapCount) +
+          effectivePhantomW
+        );
       }
       return Math.max(...childWidths, phantomW, 0);
     }
@@ -760,24 +998,31 @@ export function calculateContentWidth(
   const indicatorConfig = PHANTOM_INDICATOR_CONFIGS[tag];
   if (indicatorConfig) {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
-    const s = sizeName as 'sm' | 'md' | 'lg';
-    const indicatorSize = indicatorConfig.widths[s] ?? indicatorConfig.widths.md;
+    const sizeName = (props?.size as string) ?? "md";
+    const s = sizeName as "sm" | "md" | "lg";
+    const indicatorSize =
+      indicatorConfig.widths[s] ?? indicatorConfig.widths.md;
     const specIndicatorGap = indicatorConfig.gaps[s] ?? indicatorConfig.gaps.md;
     // CSS gap이 설정되면 specGap 대신 CSS gap 사용
-    const hasCSSGapSec3 = style?.gap !== undefined || style?.columnGap !== undefined;
+    const hasCSSGapSec3 =
+      style?.gap !== undefined || style?.columnGap !== undefined;
     const indicatorGap = hasCSSGapSec3
       ? (parseNumericValue(style?.gap ?? style?.columnGap) ?? specIndicatorGap)
       : specIndicatorGap;
     // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
-    const fontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
-    const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
+    const fontSize = sizeName === "sm" ? 14 : sizeName === "lg" ? 18 : 16;
+    const labelText = String(
+      props?.children ?? props?.label ?? props?.text ?? "",
+    );
     // Canvas 2D 사용 시 CanvasKit paragraph API와의 폰트 측정 오차 보정 (+2px)
     // CanvasKit 측정기 사용 시 보정 불필요 (동일 렌더러로 측정)
     const canvas2dCompensation = isCanvasKitMeasurer() ? 0 : 2;
-    const textWidth = labelText ? Math.ceil(calculateTextWidth(labelText, fontSize, 0)) + canvas2dCompensation : 0;
+    const textWidth = labelText
+      ? Math.ceil(calculateTextWidth(labelText, fontSize, 0)) +
+        canvas2dCompensation
+      : 0;
     const flexDir = style?.flexDirection as string | undefined;
-    const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+    const isColumn = flexDir === "column" || flexDir === "column-reverse";
     if (isColumn) {
       // Column: 너비 = max(indicator, text)
       return Math.max(indicatorSize, textWidth);
@@ -792,14 +1037,18 @@ export function calculateContentWidth(
     // 버튼, 인풋 등은 size prop에 따라 fontSize 결정
     // padding/border는 parseBoxModel에서 처리 → 여기서는 텍스트 너비만 반환
     // (inline padding 변경 시 이중 계산 방지)
-    const isFormElement = ['button', 'input', 'select', 'a'].includes(tag);
+    const isFormElement = ["button", "input", "select", "a"].includes(tag);
     const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[tag];
     if (isFormElement || inlineUIConfig) {
-      const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? 'sm';
+      const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? "md";
       const size = (props?.size as string) ?? defaultSize;
       const configMap = isFormElement ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
-      const sizeConfig = configMap[size] ?? configMap[defaultSize] ?? Object.values(configMap)[0];
-      const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
+      const sizeConfig =
+        configMap[size] ??
+        configMap[defaultSize] ??
+        Object.values(configMap)[0];
+      const fontSize =
+        parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
       const textWidth = calculateTextWidth(text, fontSize, 0);
 
       // minWidth 적용: totalWidth = contentWidth + padding >= minWidth
@@ -816,26 +1065,25 @@ export function calculateContentWidth(
 
     // 일반 요소: computedStyle 기준으로 font 속성을 해소
     // raw style에 fontSize가 없으면 CSS 상속 기본값(16px)을 사용해야 렌더러와 일치
-    const fontSize = parseNumericValue(style?.fontSize)
-      ?? computedStyle?.fontSize
-      ?? 16; // CSS initial value (ROOT_COMPUTED_STYLE.fontSize)
-    const fontFamily = (style?.fontFamily as string)
-      ?? computedStyle?.fontFamily
-      ?? specFontFamily.sans;
-    const fontWeight = style?.fontWeight
-      ?? computedStyle?.fontWeight
-      ?? 400;
-    const letterSpacing = parseNumericValue(style?.letterSpacing)
-      ?? computedStyle?.letterSpacing
-      ?? 0;
-    const wordSpacing = parseNumericValue(style?.wordSpacing)
-      ?? computedStyle?.wordSpacing
-      ?? 0;
+    const fontSize =
+      parseNumericValue(style?.fontSize) ?? computedStyle?.fontSize ?? 16; // CSS initial value (ROOT_COMPUTED_STYLE.fontSize)
+    const fontFamily =
+      (style?.fontFamily as string) ??
+      computedStyle?.fontFamily ??
+      specFontFamily.sans;
+    const fontWeight = style?.fontWeight ?? computedStyle?.fontWeight ?? 400;
+    const letterSpacing =
+      parseNumericValue(style?.letterSpacing) ??
+      computedStyle?.letterSpacing ??
+      0;
+    const wordSpacing =
+      parseNumericValue(style?.wordSpacing) ?? computedStyle?.wordSpacing ?? 0;
 
     // textTransform 적용: 렌더러(TextSprite.tsx)는 applyTextTransform() 후 텍스트를 그림
     // 측정도 동일한 변환 후 텍스트로 수행해야 폭이 일치
-    const textTransform = (style?.textTransform as string | undefined)
-      ?? computedStyle?.textTransform;
+    const textTransform =
+      (style?.textTransform as string | undefined) ??
+      computedStyle?.textTransform;
     const measuredText = applyTextTransform(text, textTransform);
 
     // lineHeight 계산: styleConverter.ts convertToTextStyle()와 동일 로직
@@ -845,10 +1093,11 @@ export function calculateContentWidth(
     if (rawLineHeight != null) {
       const lh = parseNumericValue(rawLineHeight);
       if (lh != null) {
-        const isMultiplier = lh < 10 && (
-          typeof rawLineHeight === 'number' ||
-          (typeof rawLineHeight === 'string' && /^\d*\.?\d+$/.test(String(rawLineHeight).trim()))
-        );
+        const isMultiplier =
+          lh < 10 &&
+          (typeof rawLineHeight === "number" ||
+            (typeof rawLineHeight === "string" &&
+              /^\d*\.?\d+$/.test(String(rawLineHeight).trim())));
         lineHeight = isMultiplier ? lh * fontSize : lh;
       }
     } else {
@@ -856,14 +1105,27 @@ export function calculateContentWidth(
       lineHeight = 1.5 * fontSize;
     }
 
-    const baseWidth = measureTextWidth(measuredText, fontSize, fontFamily, fontWeight as number | string, {
-      letterSpacing,
-      wordSpacing,
-      fontStyle: (style?.fontStyle ?? computedStyle?.fontStyle) as number | string | undefined,
-      fontStretch: (style?.fontStretch ?? computedStyle?.fontStretch) as string | undefined,
-      fontVariant: (style?.fontVariant ?? computedStyle?.fontVariant) as string | undefined,
-      lineHeight,
-    });
+    const baseWidth = measureTextWidth(
+      measuredText,
+      fontSize,
+      fontFamily,
+      fontWeight as number | string,
+      {
+        letterSpacing,
+        wordSpacing,
+        fontStyle: (style?.fontStyle ?? computedStyle?.fontStyle) as
+          | number
+          | string
+          | undefined,
+        fontStretch: (style?.fontStretch ?? computedStyle?.fontStretch) as
+          | string
+          | undefined,
+        fontVariant: (style?.fontVariant ?? computedStyle?.fontVariant) as
+          | string
+          | undefined,
+        lineHeight,
+      },
+    );
     // CanvasKit: ParagraphStyle이 렌더러와 일치하므로 보정 불필요, Math.ceil만으로 충분
     // Canvas 2D: CanvasKit 렌더링과의 엔진 간 오차 보정 (+4px)
     const generalCompensation = isCanvasKitMeasurer() ? 0 : 4;
@@ -970,7 +1232,7 @@ export function calculateContentHeight(
   const style = element.props?.style as Record<string, unknown> | undefined;
 
   // 0. display: none → 레이아웃에서 제외, 높이 0
-  if (style?.display === 'none') return 0;
+  if (style?.display === "none") return 0;
 
   // 1. 명시적 height가 있으면 사용
   const explicitHeight = parseNumericValue(style?.height);
@@ -979,11 +1241,12 @@ export function calculateContentHeight(
   // 1.5. ToggleButtonGroup: 자식 ToggleButton의 border-box 높이 기반 계산
   // ToggleButtonGroup 자체는 padding/border 없는 flex 컨테이너이므로
   // content-box height = 자식 ToggleButton의 border-box height
-  const tag0 = (element.tag ?? '').toLowerCase();
-  if (tag0 === 'togglebuttongroup') {
+  const tag0 = (element.tag ?? "").toLowerCase();
+  if (tag0 === "togglebuttongroup") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
-    const sizeConfig = TOGGLEBUTTON_SIZE_CONFIG[sizeName] ?? TOGGLEBUTTON_SIZE_CONFIG['md'];
+    const sizeName = (props?.size as string) ?? "md";
+    const sizeConfig =
+      TOGGLEBUTTON_SIZE_CONFIG[sizeName] ?? TOGGLEBUTTON_SIZE_CONFIG["md"];
     const fontSize = sizeConfig.fontSize;
     // CSS line-height: 1.5 (Tailwind 기본) 기반 텍스트 높이 + padding + border
     const textHeight = estimateTextHeight(fontSize);
@@ -993,24 +1256,31 @@ export function calculateContentHeight(
   // 2. Self-rendering 요소는 size prop에 따라 높이 결정
   // contentHeight는 content-box 높이(텍스트 영역)만 반환해야 함
   // padding/border는 parseBoxModel에서 별도 관리 → BlockEngine이 합산
-  const tag = (element.tag ?? '').toLowerCase();
+  const tag = (element.tag ?? "").toLowerCase();
   const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[tag];
-  if (tag === 'button' || inlineUIConfig) {
+  if (tag === "button" || inlineUIConfig) {
     const props = element.props as Record<string, unknown> | undefined;
-    const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? 'sm';
+    const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? "md";
     const size = (props?.size as string) ?? defaultSize;
-    const configMap = tag === 'button' ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
-    const sizeConfig = configMap[size] ?? configMap[defaultSize] ?? Object.values(configMap)[0];
+    const configMap = tag === "button" ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
+    const sizeConfig =
+      configMap[size] ?? configMap[defaultSize] ?? Object.values(configMap)[0];
 
     // 사용자가 인라인 padding을 설정했는지 확인 (configHeight 분기보다 먼저 판별 필요)
-    const hasInlinePadding = style?.padding !== undefined ||
-      style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
+    const hasInlinePadding =
+      style?.padding !== undefined ||
+      style?.paddingTop !== undefined ||
+      style?.paddingBottom !== undefined;
 
     // configHeight: border-box 기준 → content-box로 변환
     const configHeight = (sizeConfig as { height?: number }).height;
-    const configContentHeight = (configHeight !== undefined && !hasInlinePadding)
-      ? Math.max(0, configHeight - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2)
-      : undefined;
+    const configContentHeight =
+      configHeight !== undefined && !hasInlinePadding
+        ? Math.max(
+            0,
+            configHeight - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2,
+          )
+        : undefined;
 
     const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
     const resolvedLineHeight = parseLineHeight(style, fontSize);
@@ -1019,21 +1289,40 @@ export function calculateContentHeight(
     // 사용자가 인라인 padding을 설정한 경우 MIN_BUTTON_HEIGHT 미적용 (padding:0으로 축소 허용)
     const minContentHeight = hasInlinePadding
       ? 0
-      : Math.max(0, MIN_BUTTON_HEIGHT - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2);
+      : Math.max(
+          0,
+          MIN_BUTTON_HEIGHT -
+            sizeConfig.paddingY * 2 -
+            sizeConfig.borderWidth * 2,
+        );
 
     // 텍스트 줄바꿈 높이 계산: availableWidth가 제공되면 줄바꿈 고려
     // configHeight보다 먼저 체크하여 텍스트가 줄바꿈되면 더 큰 높이를 사용
     if (availableWidth !== undefined && availableWidth > 0) {
-      const paddingX = parseNumericValue(style?.paddingLeft) ?? parseNumericValue(style?.padding) ?? sizeConfig.paddingLeft;
+      const paddingX =
+        parseNumericValue(style?.paddingLeft) ??
+        parseNumericValue(style?.padding) ??
+        sizeConfig.paddingLeft;
       const maxTextWidth = availableWidth - paddingX * 2;
       if (maxTextWidth > 0) {
-        const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
+        const textContent = String(
+          props?.children ?? props?.text ?? props?.label ?? "",
+        );
         if (textContent) {
-          const ws = (style?.whiteSpace as string) ?? 'normal';
+          const ws = (style?.whiteSpace as string) ?? "normal";
           const fw = parseNumericValue(style?.fontWeight) ?? 500;
           const wbVal = (style?.wordBreak as string) ?? undefined;
           const owVal = (style?.overflowWrap as string) ?? undefined;
-          const measured = measureTextWithWhiteSpace(textContent, fontSize, specFontFamily.sans, fw, ws, maxTextWidth, wbVal, owVal);
+          const measured = measureTextWithWhiteSpace(
+            textContent,
+            fontSize,
+            specFontFamily.sans,
+            fw,
+            ws,
+            maxTextWidth,
+            wbVal,
+            owVal,
+          );
           if (measured.height > textHeight + 0.5) {
             const wrappedHeight = Math.max(measured.height, minContentHeight);
             // 텍스트 줄바꿈 높이가 configHeight보다 크면 확장
@@ -1055,16 +1344,19 @@ export function calculateContentHeight(
 
   // 2.5. Input: fontSize 기반 동적 높이 계산 (Text 컴포넌트와 동일 패턴)
   // InputSpec.sizes에서 fontSize를 읽고, line-height: 1.5 기준으로 텍스트 높이 반환
-  if (tag === 'input') {
+  if (tag === "input") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
+    const sizeName = (props?.size as string) ?? "md";
     const sizeConfig = InputSpec.sizes[sizeName] ?? InputSpec.sizes.md;
     const rawFontSize = sizeConfig.fontSize;
-    const specFontSize = typeof rawFontSize === 'number'
-      ? rawFontSize
-      : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
-        ? (resolveToken(rawFontSize as Parameters<typeof resolveToken>[0]) as number)
-        : 16);
+    const specFontSize =
+      typeof rawFontSize === "number"
+        ? rawFontSize
+        : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
+          ? (resolveToken(
+              rawFontSize as Parameters<typeof resolveToken>[0],
+            ) as number)
+          : 16;
     const fontSize = parseNumericValue(style?.fontSize) ?? specFontSize;
     const resolvedLineHeight = parseLineHeight(style, fontSize);
     return estimateTextHeight(fontSize, resolvedLineHeight);
@@ -1075,44 +1367,60 @@ export function calculateContentHeight(
   // 각 래퍼가 자신의 자식 높이를 올바르게 반환해야 Card 전체 높이 계산이 정확해짐
   // SelectTrigger: Compositional Architecture — flex row 자식(SelectValue, SelectIcon) max 높이
   // flexDirection에 따라: column → 합산+gap, row → max (일반 flex 컨테이너와 동일)
-  if (tag === 'cardheader' || tag === 'cardcontent' || tag === 'selecttrigger') {
+  if (
+    tag === "cardheader" ||
+    tag === "cardcontent" ||
+    tag === "selecttrigger"
+  ) {
     if (childElements && childElements.length > 0) {
       const gapValue = parseNumericValue(style?.gap) ?? 8;
-      const flexDir = (style?.flexDirection as string) || 'column';
-      const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+      const flexDir = (style?.flexDirection as string) || "column";
+      const isColumn = flexDir === "column" || flexDir === "column-reverse";
 
-      const childHeights = childElements.map(child => {
+      const childHeights = childElements.map((child) => {
         const grandChildren = getChildElements?.(child.id);
         const contentH = calculateContentHeight(
-          child, availableWidth, grandChildren, getChildElements
+          child,
+          availableWidth,
+          grandChildren,
+          getChildElements,
         );
         // 자식의 border-box 높이 계산: content-box + padding + border
         // Button 등 자식이 auto height일 때 padding/border를 포함해야 정확한 합산
         // (일반 flex 컨테이너 브랜치와 동일 패턴)
-        const childStyle = child.props?.style as Record<string, unknown> | undefined;
-        const childTag = (child.tag ?? '').toLowerCase();
+        const childStyle = child.props?.style as
+          | Record<string, unknown>
+          | undefined;
+        const childTag = (child.tag ?? "").toLowerCase();
         const childExplicitH = parseNumericValue(childStyle?.height);
-        const childIsFormEl = ['button', 'input', 'select'].includes(childTag);
+        const childIsFormEl = ["button", "input", "select"].includes(childTag);
         const childBoxSizing = childStyle?.boxSizing as string | undefined;
-        const childIsSectionLike = childTag === 'section';
-        const childIsCardLike = childTag === 'card' || childTag === 'box';
-        const childIsBorderBox = childBoxSizing === 'border-box' ||
+        const childIsSectionLike = childTag === "section";
+        const childIsCardLike = childTag === "card" || childTag === "box";
+        const childIsBorderBox =
+          childBoxSizing === "border-box" ||
           (childIsFormEl && childExplicitH !== undefined) ||
           ((childIsSectionLike || childIsCardLike) &&
-            childBoxSizing !== 'content-box' && childExplicitH !== undefined);
+            childBoxSizing !== "content-box" &&
+            childExplicitH !== undefined);
 
         if (childExplicitH !== undefined && childIsBorderBox) {
           return childExplicitH;
         }
         const childBox = parseBoxModel(child, 0, -1);
-        return contentH + childBox.padding.top + childBox.padding.bottom
-          + childBox.border.top + childBox.border.bottom;
+        return (
+          contentH +
+          childBox.padding.top +
+          childBox.padding.bottom +
+          childBox.border.top +
+          childBox.border.bottom
+        );
       });
 
       if (isColumn) {
         return Math.max(
-          childHeights.reduce((sum, h) => sum + h, 0)
-            + gapValue * Math.max(0, childHeights.length - 1),
+          childHeights.reduce((sum, h) => sum + h, 0) +
+            gapValue * Math.max(0, childHeights.length - 1),
           0,
         );
       }
@@ -1125,21 +1433,25 @@ export function calculateContentHeight(
   // 3. Card 컴포넌트: 자식 기반 or 텍스트 콘텐츠 기반 높이 계산
   // 🚀 Card는 style.padding이 있으므로 BlockEngine이 padding을 별도로 추가함
   // contentHeight는 content-box 높이만 반환 (padding 제외)
-  if (tag === 'card') {
+  if (tag === "card") {
     // childElements가 있으면 자식 기반 높이 계산 (display:flex column)
     // Card factory가 Heading + Description 자식을 생성하므로 이 경로가 우선
     if (childElements && childElements.length > 0) {
       const gap = parseNumericValue(style?.gap) ?? 8;
       // Card padding을 빼서 자식의 실제 텍스트 줄바꿈 너비 계산
       const cardPad = parsePadding(style, availableWidth);
-      const childAvailableWidth = availableWidth != null
-        ? availableWidth - cardPad.left - cardPad.right
-        : availableWidth;
+      const childAvailableWidth =
+        availableWidth != null
+          ? availableWidth - cardPad.left - cardPad.right
+          : availableWidth;
       let totalHeight = 0;
       for (let i = 0; i < childElements.length; i++) {
         const grandChildren = getChildElements?.(childElements[i].id);
         totalHeight += calculateContentHeight(
-          childElements[i], childAvailableWidth, grandChildren, getChildElements
+          childElements[i],
+          childAvailableWidth,
+          grandChildren,
+          getChildElements,
         );
         if (i < childElements.length - 1) totalHeight += gap;
       }
@@ -1148,7 +1460,7 @@ export function calculateContentHeight(
 
     // fallback: props 기반 (자식 없는 Card)
     const props = element.props as Record<string, unknown> | undefined;
-    const size = (props?.size as string) ?? 'md';
+    const size = (props?.size as string) ?? "md";
     const cardConfig = CARD_SIZE_CONFIG[size] ?? CARD_SIZE_CONFIG.md;
 
     // padding은 style.padding 우선, 없으면 size config 사용
@@ -1160,8 +1472,8 @@ export function calculateContentHeight(
     const wrapWidth = cardWidth - cardPad * 2;
     const fontFamily = specFontFamily.sans;
 
-    const cardTitle = String(props?.title || '');
-    const description = String(props?.description || props?.children || '');
+    const cardTitle = String(props?.title || "");
+    const description = String(props?.description || props?.children || "");
 
     let h = 0; // content-box height (padding 제외)
 
@@ -1172,7 +1484,13 @@ export function calculateContentHeight(
       h += 8; // marginBottom between header and content
     }
     if (description) {
-      h += measureWrappedTextHeight(description, 14, 400, fontFamily, wrapWidth);
+      h += measureWrappedTextHeight(
+        description,
+        14,
+        400,
+        fontFamily,
+        wrapWidth,
+      );
     }
 
     // minHeight 36 (60 - 24px default padding = 36px content)
@@ -1181,17 +1499,21 @@ export function calculateContentHeight(
 
   // 3.5. Calendar Compositional Architecture: Card 패턴과 동일
   // Calendar → CalendarHeader + CalendarGrid 자식 높이 합산
-  if (tag === 'calendar') {
+  if (tag === "calendar") {
     if (childElements && childElements.length > 0) {
       const gap = parseNumericValue(style?.gap) ?? 6;
       const calPad = parsePadding(style, availableWidth);
-      const childAvailableWidth = availableWidth != null
-        ? availableWidth - calPad.left - calPad.right
-        : availableWidth;
+      const childAvailableWidth =
+        availableWidth != null
+          ? availableWidth - calPad.left - calPad.right
+          : availableWidth;
       let totalHeight = 0;
       for (let i = 0; i < childElements.length; i++) {
         totalHeight += calculateContentHeight(
-          childElements[i], childAvailableWidth, undefined, getChildElements
+          childElements[i],
+          childAvailableWidth,
+          undefined,
+          getChildElements,
         );
         if (i < childElements.length - 1) totalHeight += gap;
       }
@@ -1201,42 +1523,52 @@ export function calculateContentHeight(
   }
 
   // CalendarHeader: intrinsic height = fontSize + 8
-  if (tag === 'calendarheader') {
+  if (tag === "calendarheader") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
+    const sizeName = (props?.size as string) ?? "md";
     const headerFontSizes: Record<string, number> = { sm: 12, md: 14, lg: 16 };
     return (headerFontSizes[sizeName] ?? 14) + 8;
   }
 
   // CalendarGrid: intrinsic height = weekdayRow + dateRows
-  if (tag === 'calendargrid') {
+  if (tag === "calendargrid") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
+    const sizeName = (props?.size as string) ?? "md";
     const gridDims: Record<string, { iconSize: number; gap: number }> = {
-      sm: { iconSize: 24, gap: 4 }, md: { iconSize: 28, gap: 6 }, lg: { iconSize: 32, gap: 8 },
+      sm: { iconSize: 24, gap: 4 },
+      md: { iconSize: 28, gap: 6 },
+      lg: { iconSize: 32, gap: 8 },
     };
     const d = gridDims[sizeName] ?? gridDims.md;
     const cellSize = d.iconSize + 4;
     const gp = d.gap;
     const now = new Date();
-    const dayOffset = (props?.dayOffset as number) ?? new Date(now.getFullYear(), now.getMonth(), 1).getDay();
-    const totalDays = (props?.totalDays as number) ?? new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const dayOffset =
+      (props?.dayOffset as number) ??
+      new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+    const totalDays =
+      (props?.totalDays as number) ??
+      new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const totalRows = Math.ceil((totalDays + dayOffset) / 7);
     return cellSize + totalRows * (cellSize + gp) - gp;
   }
 
   // 3.6a. DatePicker: 자식 기반 동적 높이 계산 (Card/Calendar 패턴)
-  if (tag === 'datepicker') {
+  if (tag === "datepicker") {
     if (childElements && childElements.length > 0) {
       const gap = parseNumericValue(style?.gap) ?? 8;
       const dpPad = parsePadding(style, availableWidth);
-      const childAvailableWidth = availableWidth != null
-        ? availableWidth - dpPad.left - dpPad.right
-        : availableWidth;
+      const childAvailableWidth =
+        availableWidth != null
+          ? availableWidth - dpPad.left - dpPad.right
+          : availableWidth;
       let totalHeight = 0;
       for (let i = 0; i < childElements.length; i++) {
         totalHeight += calculateContentHeight(
-          childElements[i], childAvailableWidth, undefined, getChildElements
+          childElements[i],
+          childAvailableWidth,
+          undefined,
+          getChildElements,
         );
         if (i < childElements.length - 1) totalHeight += gap;
       }
@@ -1246,9 +1578,9 @@ export function calculateContentHeight(
   }
 
   // 3.6b. DateField: intrinsic height from size (sm:32, md:40, lg:48)
-  if (tag === 'datefield') {
+  if (tag === "datefield") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
+    const sizeName = (props?.size as string) ?? "md";
     const dfHeights: Record<string, number> = { sm: 32, md: 40, lg: 48 };
     return dfHeights[sizeName] ?? 40;
   }
@@ -1257,37 +1589,49 @@ export function calculateContentHeight(
   // Select/ComboBox: 실제 visible 자식들의 높이 합산 + gap (flexDirection:column)
   // Dropdown: 레거시 spec shapes 기반 계산
   const COMBOBOX_INPUT_HEIGHTS: Record<string, number> = {
-    sm: 20, md: 30, lg: 40,
+    sm: 20,
+    md: 30,
+    lg: 40,
   };
   // SelectItem 등 드롭다운 전용 자식은 collapsed 상태에서 비표시
-  const SELECT_HIDDEN_CHILDREN = new Set(['SelectItem', 'ComboBoxItem', 'ListBoxItem']);
-  if (tag === 'combobox' || tag === 'select' || tag === 'dropdown') {
+  const SELECT_HIDDEN_CHILDREN = new Set([
+    "SelectItem",
+    "ComboBoxItem",
+    "ListBoxItem",
+  ]);
+  if (tag === "combobox" || tag === "select" || tag === "dropdown") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
-    const isCompositional = tag === 'select' || tag === 'combobox';
+    const sizeName = (props?.size as string) ?? "md";
+    const isCompositional = tag === "select" || tag === "combobox";
 
     // gap: display:flex일 때만 적용 (CSS gap은 block에서 미적용)
     const displayVal = style?.display;
-    const isFlex = displayVal === 'flex' || displayVal === 'inline-flex';
+    const isFlex = displayVal === "flex" || displayVal === "inline-flex";
     const gapRaw = style?.gap;
-    const gapParsed = typeof gapRaw === 'number' ? gapRaw : parseFloat(String(gapRaw ?? ''));
+    const gapParsed =
+      typeof gapRaw === "number" ? gapRaw : parseFloat(String(gapRaw ?? ""));
     const gap = isFlex ? (isNaN(gapParsed) ? 8 : gapParsed) : 0;
 
     // Select/ComboBox: 실제 visible 자식 요소 순회 (Card와 동일 패턴)
     // label prop이 없으면 Label 자식 제외 (web preview 동작과 일치)
     if (isCompositional && childElements) {
-      const hasLabel = !!(props?.label);
+      const hasLabel = !!props?.label;
       // wrapper tag: Select → SelectTrigger, ComboBox → ComboBoxWrapper
-      const wrapperTag = tag === 'select' ? 'SelectTrigger' : 'ComboBoxWrapper';
-      const visibleChildren = childElements.filter(c =>
-        !SELECT_HIDDEN_CHILDREN.has(c.tag ?? '') && (c.tag !== 'Label' || hasLabel)
+      const wrapperTag = tag === "select" ? "SelectTrigger" : "ComboBoxWrapper";
+      const visibleChildren = childElements.filter(
+        (c) =>
+          !SELECT_HIDDEN_CHILDREN.has(c.tag ?? "") &&
+          (c.tag !== "Label" || hasLabel),
       );
       let totalH = 0;
       let visibleCount = 0;
 
       for (const child of visibleChildren) {
-        const childTag = (child.tag ?? '').toLowerCase();
-        const childStyle = (child.props?.style || {}) as Record<string, unknown>;
+        const childTag = (child.tag ?? "").toLowerCase();
+        const childStyle = (child.props?.style || {}) as Record<
+          string,
+          unknown
+        >;
         let childH: number;
 
         if (child.tag === wrapperTag) {
@@ -1296,18 +1640,26 @@ export function calculateContentHeight(
           let wrapperContentH = 0;
           if (wrapperChildren && wrapperChildren.length > 0) {
             for (const wc of wrapperChildren) {
-              const wcStyle = (wc.props?.style || {}) as Record<string, unknown>;
-              const wcH = typeof wcStyle.height === 'number'
-                ? wcStyle.height
-                : Math.ceil((parseFloat(String(wcStyle.fontSize ?? 14)) || 14) * 1.5);
+              const wcStyle = (wc.props?.style || {}) as Record<
+                string,
+                unknown
+              >;
+              const wcH =
+                typeof wcStyle.height === "number"
+                  ? wcStyle.height
+                  : Math.ceil(
+                      (parseFloat(String(wcStyle.fontSize ?? 14)) || 14) * 1.5,
+                    );
               if (wcH > wrapperContentH) wrapperContentH = wcH;
             }
           } else {
             wrapperContentH = Math.ceil(14 * 1.5);
           }
           // Wrapper padding (store 값 또는 spec 기본값)
-          const hasWrapperPadding = childStyle.padding !== undefined
-            || childStyle.paddingTop !== undefined || childStyle.paddingBottom !== undefined;
+          const hasWrapperPadding =
+            childStyle.padding !== undefined ||
+            childStyle.paddingTop !== undefined ||
+            childStyle.paddingBottom !== undefined;
           if (hasWrapperPadding) {
             const wrapperPad = parsePadding(childStyle);
             childH = wrapperContentH + wrapperPad.top + wrapperPad.bottom;
@@ -1315,20 +1667,28 @@ export function calculateContentHeight(
             const specPadY: Record<string, number> = { sm: 8, md: 16, lg: 24 };
             childH = wrapperContentH + (specPadY[sizeName] ?? 16);
           }
-        } else if (childTag === 'label' || childTag === 'description' || childTag === 'fielderror') {
+        } else if (
+          childTag === "label" ||
+          childTag === "description" ||
+          childTag === "fielderror"
+        ) {
           // 텍스트 자식: explicit height 우선, 없으면 fontSize * lineHeight
           const explicitH = parseNumericValue(childStyle.height);
           if (explicitH != null && explicitH > 0) {
             childH = explicitH;
           } else {
-            const fontSize = parseFloat(String(childStyle.fontSize ?? 14)) || 14;
+            const fontSize =
+              parseFloat(String(childStyle.fontSize ?? 14)) || 14;
             childH = Math.ceil(fontSize * 1.5);
           }
         } else {
           // 기타 자식: explicit height 또는 텍스트 기반
-          childH = typeof childStyle.height === 'number'
-            ? childStyle.height
-            : Math.ceil((parseFloat(String(childStyle.fontSize ?? 14)) || 14) * 1.5);
+          childH =
+            typeof childStyle.height === "number"
+              ? childStyle.height
+              : Math.ceil(
+                  (parseFloat(String(childStyle.fontSize ?? 14)) || 14) * 1.5,
+                );
         }
 
         if (childH > 0) {
@@ -1346,10 +1706,13 @@ export function calculateContentHeight(
 
     // Dropdown: 레거시 spec shapes 기반 계산
     const bodyHeight = COMBOBOX_INPUT_HEIGHTS[sizeName] ?? 30;
-    const hasLabel = !!(props?.label);
+    const hasLabel = !!props?.label;
     if (hasLabel) {
-      const labelChild = childElements?.find(c => c.tag === 'Label');
-      const labelStyle = (labelChild?.props?.style || {}) as Record<string, unknown>;
+      const labelChild = childElements?.find((c) => c.tag === "Label");
+      const labelStyle = (labelChild?.props?.style || {}) as Record<
+        string,
+        unknown
+      >;
       const labelFontSize = parseFloat(String(labelStyle.fontSize ?? 14)) || 14;
       const labelHeight = Math.ceil(labelFontSize * 1.5);
       return labelHeight + gap + bodyHeight;
@@ -1362,30 +1725,40 @@ export function calculateContentHeight(
   const heightIndicatorConfig = PHANTOM_INDICATOR_CONFIGS[tag];
   if (heightIndicatorConfig) {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
-    const s = sizeName as 'sm' | 'md' | 'lg';
+    const sizeName = (props?.size as string) ?? "md";
+    const s = sizeName as "sm" | "md" | "lg";
     const flexDir = style?.flexDirection as string | undefined;
-    const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+    const isColumn = flexDir === "column" || flexDir === "column-reverse";
     if (isColumn) {
-      const indicatorH = heightIndicatorConfig.heights[s] ?? heightIndicatorConfig.heights.md;
-      const specGap = heightIndicatorConfig.gaps[s] ?? heightIndicatorConfig.gaps.md;
+      const indicatorH =
+        heightIndicatorConfig.heights[s] ?? heightIndicatorConfig.heights.md;
+      const specGap =
+        heightIndicatorConfig.gaps[s] ?? heightIndicatorConfig.gaps.md;
       // CSS gap이 설정되면 specGap 대신 CSS gap 사용
-      const hasCSSGapH = style?.gap !== undefined || style?.rowGap !== undefined;
-      const gap = hasCSSGapH ? (parseNumericValue(style?.gap ?? style?.rowGap) ?? specGap) : specGap;
-      const fs = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
+      const hasCSSGapH =
+        style?.gap !== undefined || style?.rowGap !== undefined;
+      const gap = hasCSSGapH
+        ? (parseNumericValue(style?.gap ?? style?.rowGap) ?? specGap)
+        : specGap;
+      const fs = sizeName === "sm" ? 14 : sizeName === "lg" ? 18 : 16;
       return indicatorH + gap + Math.round(fs * 1.4);
     }
-    return heightIndicatorConfig.rowHeights[s] ?? heightIndicatorConfig.rowHeights.md;
+    return (
+      heightIndicatorConfig.rowHeights[s] ?? heightIndicatorConfig.rowHeights.md
+    );
   }
 
   // 4. Panel: spec shapes 기반 컴포넌트 — 자식 요소 없이 자체 렌더링
   // CSS Preview 기준 높이 추정 (title section + content section + border)
   // ⚠️ childElements 블록 밖에 배치: Panel은 element tree에 자식이 없음
-  if (tag === 'panel') {
+  if (tag === "panel") {
     const props = element.props as Record<string, unknown> | undefined;
     const hasTitle = !!props?.title;
-    const sizeName = (props?.size as string) ?? 'md';
-    const PANEL_HEIGHTS: Record<string, { withTitle: number; noTitle: number }> = {
+    const sizeName = (props?.size as string) ?? "md";
+    const PANEL_HEIGHTS: Record<
+      string,
+      { withTitle: number; noTitle: number }
+    > = {
       sm: { withTitle: 80, noTitle: 44 },
       md: { withTitle: 104, noTitle: 64 },
       lg: { withTitle: 130, noTitle: 80 },
@@ -1397,10 +1770,14 @@ export function calculateContentHeight(
   // 4.2. Breadcrumbs: display:flex, align-items:center — 높이 = lineHeight
   // CSS에 명시적 height 없음, 텍스트 line-height로 결정
   // sm: text-xs(12px) * ~1.33 ≈ 16px, md/lg: text-base(16px) * 1.5 = 24px
-  if (tag === 'breadcrumbs') {
+  if (tag === "breadcrumbs") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = (props?.size as string) ?? 'md';
-    const BREADCRUMBS_HEIGHTS: Record<string, number> = { sm: 16, md: 24, lg: 24 };
+    const sizeName = (props?.size as string) ?? "md";
+    const BREADCRUMBS_HEIGHTS: Record<string, number> = {
+      sm: 16,
+      md: 24,
+      lg: 24,
+    };
     return BREADCRUMBS_HEIGHTS[sizeName] ?? 24;
   }
 
@@ -1409,22 +1786,28 @@ export function calculateContentHeight(
   // ⚠️ lineHeight 체크보다 먼저 와야 함: 컨테이너의 높이는 자식 기반으로 산출해야 함
   if (childElements && childElements.length > 0) {
     // CheckboxGroup: 그룹 라벨 + 자식 Checkbox 세로 합산
-    if (tag === 'checkboxgroup' || tag === 'radiogroup') {
+    if (tag === "checkboxgroup" || tag === "radiogroup") {
       const props = element.props as Record<string, unknown> | undefined;
-      const sizeName = (props?.size as string) ?? 'md';
-      const gap = sizeName === 'sm' ? 8 : sizeName === 'lg' ? 16 : 12;
+      const sizeName = (props?.size as string) ?? "md";
+      const gap = sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
 
       let totalHeight = 0;
       // 그룹 라벨
       if (props?.label) {
         // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
-        const labelFontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
+        const labelFontSize =
+          sizeName === "sm" ? 14 : sizeName === "lg" ? 18 : 16;
         totalHeight += estimateTextHeight(labelFontSize) + 8; // label + spacing
       }
       // 자식 Checkbox/Radio 항목
       for (let i = 0; i < childElements.length; i++) {
         const grandChildren = getChildElements?.(childElements[i].id);
-        totalHeight += calculateContentHeight(childElements[i], availableWidth, grandChildren, getChildElements);
+        totalHeight += calculateContentHeight(
+          childElements[i],
+          availableWidth,
+          grandChildren,
+          getChildElements,
+        );
         if (i < childElements.length - 1) totalHeight += gap;
       }
       return totalHeight;
@@ -1432,32 +1815,39 @@ export function calculateContentHeight(
 
     // Tabs: 탭 바 높이 + TabPanel 패딩 + 활성 Panel 높이
     // CSS Preview 기준: Tabs(flex col) → TabList(30px) + TabPanel(pad=16px → Panel)
-    if (tag === 'tabs') {
+    if (tag === "tabs") {
       const props = element.props as Record<string, unknown> | undefined;
-      const sizeName = (props?.size as string) ?? 'md';
+      const sizeName = (props?.size as string) ?? "md";
       // CSS 기준 탭 바 높이: sm=25, md=30, lg=35
-      const tabBarHeight = sizeName === 'sm' ? 25 : sizeName === 'lg' ? 35 : 30;
+      const tabBarHeight = sizeName === "sm" ? 25 : sizeName === "lg" ? 35 : 30;
       const tabPanelPadding = 16; // React-Aria TabPanel 기본 padding
 
       // 활성 Panel의 높이 계산 (Dual Lookup: 직속 → TabPanels 내부)
-      let panelChildren = childElements.filter(c => c.tag === 'Panel');
+      let panelChildren = childElements.filter((c) => c.tag === "Panel");
       if (panelChildren.length === 0) {
-        const tabPanelsEl = childElements.find(c => c.tag === 'TabPanels');
+        const tabPanelsEl = childElements.find((c) => c.tag === "TabPanels");
         if (tabPanelsEl && getChildElements) {
-          panelChildren = getChildElements(tabPanelsEl.id).filter(c => c.tag === 'Panel');
+          panelChildren = getChildElements(tabPanelsEl.id).filter(
+            (c) => c.tag === "Panel",
+          );
         }
       }
       const activePanel = panelChildren[0]; // 기본: 첫 번째 Panel
       if (activePanel) {
         const panelGrandChildren = getChildElements?.(activePanel.id);
         const panelHeight = calculateContentHeight(
-          activePanel, availableWidth,
-          panelGrandChildren, getChildElements
+          activePanel,
+          availableWidth,
+          panelGrandChildren,
+          getChildElements,
         );
         const panelBox = parseBoxModel(activePanel, 0, -1);
-        const panelBorderBox = panelHeight
-          + panelBox.padding.top + panelBox.padding.bottom
-          + panelBox.border.top + panelBox.border.bottom;
+        const panelBorderBox =
+          panelHeight +
+          panelBox.padding.top +
+          panelBox.padding.bottom +
+          panelBox.border.top +
+          panelBox.border.bottom;
         return tabBarHeight + tabPanelPadding * 2 + panelBorderBox;
       }
       return tabBarHeight;
@@ -1465,34 +1855,45 @@ export function calculateContentHeight(
 
     // 일반 flex 컨테이너: flexDirection에 따라 자식 높이 합산/max
     const display = style?.display;
-    if (display === 'flex' || display === 'inline-flex') {
-      const flexDir = (style?.flexDirection as string) || 'row';
+    if (display === "flex" || display === "inline-flex") {
+      const flexDir = (style?.flexDirection as string) || "row";
       const gap = parseNumericValue(style?.gap) ?? 0;
-      const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+      const isColumn = flexDir === "column" || flexDir === "column-reverse";
 
       // display: none 자식은 레이아웃에서 제외 (높이 0, gap 미적용)
-      const visibleChildren = childElements.filter(child => {
-        const childStyle = child.props?.style as Record<string, unknown> | undefined;
-        return childStyle?.display !== 'none';
+      const visibleChildren = childElements.filter((child) => {
+        const childStyle = child.props?.style as
+          | Record<string, unknown>
+          | undefined;
+        return childStyle?.display !== "none";
       });
 
-      const childHeights = visibleChildren.map(child => {
+      const childHeights = visibleChildren.map((child) => {
         const grandChildren = getChildElements?.(child.id);
-        const contentH = calculateContentHeight(child, availableWidth, grandChildren, getChildElements);
+        const contentH = calculateContentHeight(
+          child,
+          availableWidth,
+          grandChildren,
+          getChildElements,
+        );
         // 자식에 explicit height가 있고 border-box로 처리되는 경우,
         // calculateContentHeight가 반환한 값이 이미 border-box 높이이므로
         // padding+border를 추가하면 이중 계산됨
-        const childStyle = child.props?.style as Record<string, unknown> | undefined;
-        const childTag = (child.tag ?? '').toLowerCase();
+        const childStyle = child.props?.style as
+          | Record<string, unknown>
+          | undefined;
+        const childTag = (child.tag ?? "").toLowerCase();
         const childExplicitH = parseNumericValue(childStyle?.height);
-        const childIsFormEl = ['button', 'input', 'select'].includes(childTag);
+        const childIsFormEl = ["button", "input", "select"].includes(childTag);
         const childBoxSizing = childStyle?.boxSizing as string | undefined;
-        const childIsSectionLike = childTag === 'section';
-        const childIsCardLike = childTag === 'card' || childTag === 'box';
-        const childIsBorderBox = childBoxSizing === 'border-box' ||
+        const childIsSectionLike = childTag === "section";
+        const childIsCardLike = childTag === "card" || childTag === "box";
+        const childIsBorderBox =
+          childBoxSizing === "border-box" ||
           (childIsFormEl && childExplicitH !== undefined) ||
           ((childIsSectionLike || childIsCardLike) &&
-            childBoxSizing !== 'content-box' && childExplicitH !== undefined);
+            childBoxSizing !== "content-box" &&
+            childExplicitH !== undefined);
 
         if (childExplicitH !== undefined && childIsBorderBox) {
           // border-box: explicit height가 이미 padding+border 포함
@@ -1500,13 +1901,20 @@ export function calculateContentHeight(
         }
         // content-box: padding + border 추가
         const childBox = parseBoxModel(child, 0, -1);
-        return contentH + childBox.padding.top + childBox.padding.bottom
-          + childBox.border.top + childBox.border.bottom;
+        return (
+          contentH +
+          childBox.padding.top +
+          childBox.padding.bottom +
+          childBox.border.top +
+          childBox.border.bottom
+        );
       });
 
       if (isColumn) {
-        return childHeights.reduce((sum, h) => sum + h, 0)
-          + gap * Math.max(0, visibleChildren.length - 1);
+        return (
+          childHeights.reduce((sum, h) => sum + h, 0) +
+          gap * Math.max(0, visibleChildren.length - 1)
+        );
       }
       return Math.max(...childHeights, 0);
     }
@@ -1515,52 +1923,77 @@ export function calculateContentHeight(
     // display:flex가 아닌 컨테이너(display:block, 미지정 등)도
     // 자식이 있으면 자식 높이를 합산해야 정확한 높이 반환
     // (Menu → MenuItem, Disclosure → DisclosureHeader/Content 등)
-    const visibleBlockChildren = childElements.filter(child => {
+    const visibleBlockChildren = childElements.filter((child) => {
       const cs = child.props?.style as Record<string, unknown> | undefined;
-      return cs?.display !== 'none';
+      return cs?.display !== "none";
     });
 
     if (visibleBlockChildren.length > 0) {
       // Group: 자식이 원래 캔버스 좌표(left/top)를 유지하므로
       // block flow 합산이 아닌 bounding box 기반 높이 계산
-      if (tag === 'group') {
+      if (tag === "group") {
         let minTop = Infinity;
         let maxBottom = 0;
         for (const child of visibleBlockChildren) {
-          const childStyle = child.props?.style as Record<string, unknown> | undefined;
+          const childStyle = child.props?.style as
+            | Record<string, unknown>
+            | undefined;
           const childTop = parseNumericValue(childStyle?.top) ?? 0;
           const grandChildren = getChildElements?.(child.id);
-          const contentH = calculateContentHeight(child, availableWidth, grandChildren, getChildElements);
+          const contentH = calculateContentHeight(
+            child,
+            availableWidth,
+            grandChildren,
+            getChildElements,
+          );
           const childBox = parseBoxModel(child, 0, -1);
-          const borderBoxH = contentH + childBox.padding.top + childBox.padding.bottom
-            + childBox.border.top + childBox.border.bottom;
+          const borderBoxH =
+            contentH +
+            childBox.padding.top +
+            childBox.padding.bottom +
+            childBox.border.top +
+            childBox.border.bottom;
           minTop = Math.min(minTop, childTop);
           maxBottom = Math.max(maxBottom, childTop + borderBoxH);
         }
         return minTop === Infinity ? 0 : maxBottom - minTop;
       }
 
-      const blockChildHeights = visibleBlockChildren.map(child => {
+      const blockChildHeights = visibleBlockChildren.map((child) => {
         const grandChildren = getChildElements?.(child.id);
-        const contentH = calculateContentHeight(child, availableWidth, grandChildren, getChildElements);
-        const childStyle = child.props?.style as Record<string, unknown> | undefined;
-        const childTag = (child.tag ?? '').toLowerCase();
+        const contentH = calculateContentHeight(
+          child,
+          availableWidth,
+          grandChildren,
+          getChildElements,
+        );
+        const childStyle = child.props?.style as
+          | Record<string, unknown>
+          | undefined;
+        const childTag = (child.tag ?? "").toLowerCase();
         const childExplicitH = parseNumericValue(childStyle?.height);
-        const childIsFormEl = ['button', 'input', 'select'].includes(childTag);
+        const childIsFormEl = ["button", "input", "select"].includes(childTag);
         const childBoxSizing = childStyle?.boxSizing as string | undefined;
-        const childIsSectionLike = childTag === 'section';
-        const childIsCardLike = childTag === 'card' || childTag === 'box';
-        const childIsBorderBox = childBoxSizing === 'border-box' ||
+        const childIsSectionLike = childTag === "section";
+        const childIsCardLike = childTag === "card" || childTag === "box";
+        const childIsBorderBox =
+          childBoxSizing === "border-box" ||
           (childIsFormEl && childExplicitH !== undefined) ||
           ((childIsSectionLike || childIsCardLike) &&
-            childBoxSizing !== 'content-box' && childExplicitH !== undefined);
+            childBoxSizing !== "content-box" &&
+            childExplicitH !== undefined);
 
         if (childExplicitH !== undefined && childIsBorderBox) {
           return childExplicitH;
         }
         const childBox = parseBoxModel(child, 0, -1);
-        return contentH + childBox.padding.top + childBox.padding.bottom
-          + childBox.border.top + childBox.border.bottom;
+        return (
+          contentH +
+          childBox.padding.top +
+          childBox.padding.bottom +
+          childBox.border.top +
+          childBox.border.bottom
+        );
       });
 
       // Block flow: 세로 합산 (gap 없음, margin collapse는 미지원)
@@ -1573,19 +2006,45 @@ export function calculateContentHeight(
   // availableWidth가 있으면 줄바꿈을 고려한 실제 높이를 반환
   if (TEXT_LEAF_TAGS.has(tag) && availableWidth != null && availableWidth > 0) {
     const props = element.props as Record<string, unknown> | undefined;
-    const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
+    const textContent = String(
+      props?.children ?? props?.text ?? props?.label ?? "",
+    );
     if (textContent) {
-      const fs0 = parseNumericValue(style?.fontSize) ?? computedStyle?.fontSize ?? 16;
-      const fw0 = parseNumericValue(style?.fontWeight) ?? computedStyle?.fontWeight ?? 400;
-      const ff0 = (style?.fontFamily as string) ?? computedStyle?.fontFamily ?? specFontFamily.sans;
+      const fs0 =
+        parseNumericValue(style?.fontSize) ?? computedStyle?.fontSize ?? 16;
+      const fw0 =
+        parseNumericValue(style?.fontWeight) ??
+        computedStyle?.fontWeight ??
+        400;
+      const ff0 =
+        (style?.fontFamily as string) ??
+        computedStyle?.fontFamily ??
+        specFontFamily.sans;
       const pad = parsePadding(style, availableWidth);
       const maxTextWidth = availableWidth - pad.left - pad.right;
       if (maxTextWidth > 0) {
         // Tailwind CSS v4 기본 line-height: 1.5 → fontSize * 1.5
-        const resolvedLH = parseLineHeight(style, fs0) ?? (fs0 * 1.5);
-        const wb1 = (style?.wordBreak as string) as 'normal' | 'break-all' | 'keep-all' | undefined;
-        const ow1 = (style?.overflowWrap as string) as 'normal' | 'break-word' | 'anywhere' | undefined;
-        const wrappedHeight = measureWrappedTextHeight(textContent, fs0, fw0, ff0, maxTextWidth, resolvedLH, wb1, ow1);
+        const resolvedLH = parseLineHeight(style, fs0) ?? fs0 * 1.5;
+        const wb1 = style?.wordBreak as string as
+          | "normal"
+          | "break-all"
+          | "keep-all"
+          | undefined;
+        const ow1 = style?.overflowWrap as string as
+          | "normal"
+          | "break-word"
+          | "anywhere"
+          | undefined;
+        const wrappedHeight = measureWrappedTextHeight(
+          textContent,
+          fs0,
+          fw0,
+          ff0,
+          maxTextWidth,
+          resolvedLH,
+          wb1,
+          ow1,
+        );
         const singleLineH = resolvedLH;
         if (wrappedHeight > singleLineH + 0.5) {
           return wrappedHeight;
@@ -1595,7 +2054,8 @@ export function calculateContentHeight(
   }
 
   // 5. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용
-  const fontSize = parseNumericValue(style?.fontSize) ?? computedStyle?.fontSize;
+  const fontSize =
+    parseNumericValue(style?.fontSize) ?? computedStyle?.fontSize;
   const resolvedLineHeight = parseLineHeight(style, fontSize);
   if (resolvedLineHeight !== undefined) {
     // float 정밀도 유지: Math.round 제거 → 소수점 절사로 인한 줄바꿈 방지
@@ -1630,19 +2090,49 @@ export function parseBoxModel(
   availableWidth: number,
   availableHeight: number,
   viewportWidth?: number,
-  viewportHeight?: number
+  viewportHeight?: number,
 ): BoxModel {
   const style = element.props?.style as Record<string, unknown> | undefined;
 
   // width/height 파싱 (%, px, vh, vw, auto 지원)
-  let width = parseSize(style?.width, availableWidth, viewportWidth, viewportHeight);
-  let height = parseSize(style?.height, availableHeight, viewportWidth, viewportHeight);
+  let width = parseSize(
+    style?.width,
+    availableWidth,
+    viewportWidth,
+    viewportHeight,
+  );
+  let height = parseSize(
+    style?.height,
+    availableHeight,
+    viewportWidth,
+    viewportHeight,
+  );
 
   // min/max 파싱
-  const minWidth = parseSize(style?.minWidth, availableWidth, viewportWidth, viewportHeight);
-  const maxWidth = parseSize(style?.maxWidth, availableWidth, viewportWidth, viewportHeight);
-  const minHeight = parseSize(style?.minHeight, availableHeight, viewportWidth, viewportHeight);
-  const maxHeight = parseSize(style?.maxHeight, availableHeight, viewportWidth, viewportHeight);
+  const minWidth = parseSize(
+    style?.minWidth,
+    availableWidth,
+    viewportWidth,
+    viewportHeight,
+  );
+  const maxWidth = parseSize(
+    style?.maxWidth,
+    availableWidth,
+    viewportWidth,
+    viewportHeight,
+  );
+  const minHeight = parseSize(
+    style?.minHeight,
+    availableHeight,
+    viewportWidth,
+    viewportHeight,
+  );
+  const maxHeight = parseSize(
+    style?.maxHeight,
+    availableHeight,
+    viewportWidth,
+    viewportHeight,
+  );
 
   // padding 파싱 (C3: availableWidth 전달로 % 값 해석)
   let padding = parsePadding(style, availableWidth);
@@ -1654,21 +2144,25 @@ export function parseBoxModel(
   // Select는 Compositional Architecture (Card와 동일) — BUTTON_SIZE_CONFIG 미적용
   // Select 컨테이너는 web CSS에서 padding:0 + display:flex 구조이며,
   // 내부 SelectTrigger가 자체 padding을 처리
-  const tag = (element.tag ?? '').toLowerCase();
-  const isFormElement = ['button', 'input'].includes(tag);
+  const tag = (element.tag ?? "").toLowerCase();
+  const isFormElement = ["button", "input"].includes(tag);
   const inlineUISizeConfig = INLINE_UI_SIZE_CONFIGS[tag];
   const hasSizeConfig = isFormElement || !!inlineUISizeConfig;
 
   if (hasSizeConfig) {
     const props = element.props as Record<string, unknown> | undefined;
-    const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? 'sm';
+    const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? "md";
     const size = (props?.size as string) ?? defaultSize;
     const configMap = isFormElement ? BUTTON_SIZE_CONFIG : inlineUISizeConfig!;
-    const sizeConfig = configMap[size] ?? configMap[defaultSize] ?? Object.values(configMap)[0];
+    const sizeConfig =
+      configMap[size] ?? configMap[defaultSize] ?? Object.values(configMap)[0];
 
-    const hasInlinePadding = style?.padding !== undefined ||
-      style?.paddingTop !== undefined || style?.paddingRight !== undefined ||
-      style?.paddingBottom !== undefined || style?.paddingLeft !== undefined;
+    const hasInlinePadding =
+      style?.padding !== undefined ||
+      style?.paddingTop !== undefined ||
+      style?.paddingRight !== undefined ||
+      style?.paddingBottom !== undefined ||
+      style?.paddingLeft !== undefined;
     if (!hasInlinePadding) {
       padding = {
         top: sizeConfig.paddingY,
@@ -1678,9 +2172,12 @@ export function parseBoxModel(
       };
     }
 
-    const hasInlineBorder = style?.borderWidth !== undefined ||
-      style?.borderTopWidth !== undefined || style?.borderRightWidth !== undefined ||
-      style?.borderBottomWidth !== undefined || style?.borderLeftWidth !== undefined;
+    const hasInlineBorder =
+      style?.borderWidth !== undefined ||
+      style?.borderTopWidth !== undefined ||
+      style?.borderRightWidth !== undefined ||
+      style?.borderBottomWidth !== undefined ||
+      style?.borderLeftWidth !== undefined;
     if (!hasInlineBorder) {
       border = {
         top: sizeConfig.borderWidth,
@@ -1703,14 +2200,18 @@ export function parseBoxModel(
   // Preview iframe는 전역 `* { box-sizing: border-box; }`를 사용한다.
   // Section/Card(Box)는 style.boxSizing이 비어 있어도 명시적 width/height를
   // border-box로 해석해야 Web 모드와 동일하게 총 크기(패딩 포함)가 유지된다.
-  const isSectionElement = tag === 'section';
-  const isCardLikeElement = tag === 'card' || tag === 'box';
-  const isCalendarElement = tag === 'calendar';
-  const isDatePickerElement = tag === 'datepicker';
-  const treatAsBorderBox = boxSizing === 'border-box' ||
+  const isSectionElement = tag === "section";
+  const isCardLikeElement = tag === "card" || tag === "box";
+  const isCalendarElement = tag === "calendar";
+  const isDatePickerElement = tag === "datepicker";
+  const treatAsBorderBox =
+    boxSizing === "border-box" ||
     (isFormElement && (width !== undefined || height !== undefined)) ||
-    ((isSectionElement || isCardLikeElement || isCalendarElement || isDatePickerElement) &&
-      boxSizing !== 'content-box' &&
+    ((isSectionElement ||
+      isCardLikeElement ||
+      isCalendarElement ||
+      isDatePickerElement) &&
+      boxSizing !== "content-box" &&
       (width !== undefined || height !== undefined));
 
   // Button 등 self-rendering 요소의 텍스트 줄바꿈 높이를 정확히 계산하려면
@@ -1734,9 +2235,11 @@ export function parseBoxModel(
   }
 
   // 콘텐츠 크기 계산
-  const elementAvailableWidth = (originalBorderBoxWidth !== undefined && originalBorderBoxWidth !== FIT_CONTENT)
-    ? originalBorderBoxWidth
-    : availableWidth;
+  const elementAvailableWidth =
+    originalBorderBoxWidth !== undefined &&
+    originalBorderBoxWidth !== FIT_CONTENT
+      ? originalBorderBoxWidth
+      : availableWidth;
   const contentWidth = calculateContentWidth(element);
   const contentHeight = calculateContentHeight(element, elementAvailableWidth);
 
@@ -1766,10 +2269,17 @@ export function parseBoxModel(
  * fit-content 동작을 에뮬레이트하기 위해 intrinsic width를 주입한다.
  */
 export const INLINE_BLOCK_TAGS = new Set([
-  'button', 'submitbutton', 'fancybutton', 'togglebutton',
-  'badge', 'tag', 'chip',
-  'checkbox', 'radio', 'switch',
-  'togglebuttongroup',
+  "button",
+  "submitbutton",
+  "fancybutton",
+  "togglebutton",
+  "badge",
+  "tag",
+  "chip",
+  "checkbox",
+  "radio",
+  "switch",
+  "togglebuttongroup",
 ]);
 
 /**
@@ -1777,7 +2287,11 @@ export const INLINE_BLOCK_TAGS = new Set([
  * enrichWithIntrinsicSize 2-pass에서 width 변경 시 높이 재계산 대상
  */
 export const TEXT_LEAF_TAGS = new Set([
-  'text', 'heading', 'description', 'label', 'paragraph',
+  "text",
+  "heading",
+  "description",
+  "label",
+  "paragraph",
 ]);
 
 /**
@@ -1804,24 +2318,41 @@ export function enrichWithIntrinsicSize(
   isFlexChild?: boolean,
 ): Element {
   const style = element.props?.style as Record<string, unknown> | undefined;
-  const tag = (element.tag ?? '').toLowerCase();
+  const tag = (element.tag ?? "").toLowerCase();
 
   const rawHeight = style?.height;
-  const INTRINSIC_HEIGHT_KEYWORDS = new Set(['fit-content', 'min-content', 'max-content', 'auto']);
-  const needsHeight = !rawHeight || INTRINSIC_HEIGHT_KEYWORDS.has(rawHeight as string);
+  const INTRINSIC_HEIGHT_KEYWORDS = new Set([
+    "fit-content",
+    "min-content",
+    "max-content",
+    "auto",
+  ]);
+  const needsHeight =
+    !rawHeight || INTRINSIC_HEIGHT_KEYWORDS.has(rawHeight as string);
 
   const rawWidth = style?.width;
-  const INTRINSIC_WIDTH_KEYWORDS = new Set(['fit-content', 'min-content', 'max-content', 'auto']);
+  const INTRINSIC_WIDTH_KEYWORDS = new Set([
+    "fit-content",
+    "min-content",
+    "max-content",
+    "auto",
+  ]);
   // C1: 모든 요소에서 intrinsic width keyword(fit-content/min-content/max-content) 처리
   // INLINE_BLOCK 태그의 width:auto 자동 주입은 기존 동작 유지
-  const hasExplicitIntrinsicWidthKeyword = typeof rawWidth === 'string' &&
-    rawWidth !== 'auto' && INTRINSIC_WIDTH_KEYWORDS.has(rawWidth);
+  const hasExplicitIntrinsicWidthKeyword =
+    typeof rawWidth === "string" &&
+    rawWidth !== "auto" &&
+    INTRINSIC_WIDTH_KEYWORDS.has(rawWidth);
   // Flex 자식인 TEXT_LEAF_TAGS(Label, Description 등)도 intrinsic width 필요:
   // Block layout에서는 자동 stretch되지만, Flex layout에서는 Taffy가 content size를
   // 알 수 없어 width=0으로 처리함 (Checkbox/Radio/Switch 내부 Label 세로 출력 버그)
-  const needsWidth = hasExplicitIntrinsicWidthKeyword ||
-    (INLINE_BLOCK_TAGS.has(tag) && (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string))) ||
-    (isFlexChild && TEXT_LEAF_TAGS.has(tag) && (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string)));
+  const needsWidth =
+    hasExplicitIntrinsicWidthKeyword ||
+    (INLINE_BLOCK_TAGS.has(tag) &&
+      (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string))) ||
+    (isFlexChild &&
+      TEXT_LEAF_TAGS.has(tag) &&
+      (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string)));
 
   if (!needsHeight && !needsWidth) return element;
 
@@ -1829,17 +2360,24 @@ export function enrichWithIntrinsicSize(
 
   // min-content / max-content 너비 직접 계산
   let resolvedIntrinsicWidth: number | undefined;
-  if (needsWidth && (rawWidth === 'min-content' || rawWidth === 'max-content')) {
+  if (
+    needsWidth &&
+    (rawWidth === "min-content" || rawWidth === "max-content")
+  ) {
     const props = element.props as Record<string, unknown> | undefined;
     const textContent = String(
-      props?.children ?? props?.text ?? props?.label ?? props?.title ?? '',
+      props?.children ?? props?.text ?? props?.label ?? props?.title ?? "",
     );
     if (textContent) {
       const styleRecord = style as Record<string, unknown> | undefined;
-      const fontSize = typeof styleRecord?.fontSize === 'number' ? styleRecord.fontSize : (_computedStyle?.fontSize ?? 16);
-      resolvedIntrinsicWidth = rawWidth === 'min-content'
-        ? calculateMinContentWidth(textContent, fontSize)
-        : calculateMaxContentWidth(textContent, fontSize);
+      const fontSize =
+        typeof styleRecord?.fontSize === "number"
+          ? styleRecord.fontSize
+          : (_computedStyle?.fontSize ?? 16);
+      resolvedIntrinsicWidth =
+        rawWidth === "min-content"
+          ? calculateMinContentWidth(textContent, fontSize)
+          : calculateMaxContentWidth(textContent, fontSize);
     }
   }
 
@@ -1850,9 +2388,13 @@ export function enrichWithIntrinsicSize(
   // 또한, childElements가 있는 컨테이너(CardHeader/CardContent 등)도 예외:
   // 자체 텍스트는 없지만 자식 요소의 높이를 합산해야 하므로 calculateContentHeight가 필요함
   // Select: Compositional Architecture — Card와 동일하게 자식 기반 높이 + padding 경로
-  const SPEC_SHAPES_INPUT_TAGS = new Set(['dropdown', 'breadcrumbs']);
-  if (box.contentHeight <= 0 && !needsWidth && !SPEC_SHAPES_INPUT_TAGS.has(tag)
-    && !(childElements && childElements.length > 0)) {
+  const SPEC_SHAPES_INPUT_TAGS = new Set(["dropdown", "breadcrumbs"]);
+  if (
+    box.contentHeight <= 0 &&
+    !needsWidth &&
+    !SPEC_SHAPES_INPUT_TAGS.has(tag) &&
+    !(childElements && childElements.length > 0)
+  ) {
     return element;
   }
 
@@ -1866,9 +2408,16 @@ export function enrichWithIntrinsicSize(
 
   // Height 주입
   // childElements가 있으면 재계산 (CheckboxGroup 등 자식 기반 높이 필요)
-  const childResolvedHeight = (childElements && childElements.length > 0)
-    ? calculateContentHeight(element, availableWidth, childElements, getChildElements, _computedStyle)
-    : box.contentHeight;
+  const childResolvedHeight =
+    childElements && childElements.length > 0
+      ? calculateContentHeight(
+          element,
+          availableWidth,
+          childElements,
+          getChildElements,
+          _computedStyle,
+        )
+      : box.contentHeight;
   if (needsHeight && childResolvedHeight > 0) {
     let injectHeight = childResolvedHeight;
     // ComboBox/Select: calculateContentHeight가 전체 시각적 높이(label+input/trigger)를 반환
@@ -1883,9 +2432,15 @@ export function enrichWithIntrinsicSize(
 
   // Width 주입 (inline-block 태그의 fit-content / min-content / max-content 에뮬레이션)
   // childElements가 있으면 재계산 (ToggleButtonGroup 등 자식이 Element로 저장된 경우)
-  const childResolvedWidth = (childElements && childElements.length > 0)
-    ? calculateContentWidth(element, childElements, getChildElements, _computedStyle)
-    : box.contentWidth;
+  const childResolvedWidth =
+    childElements && childElements.length > 0
+      ? calculateContentWidth(
+          element,
+          childElements,
+          getChildElements,
+          _computedStyle,
+        )
+      : box.contentWidth;
   const baseContentWidth = resolvedIntrinsicWidth ?? childResolvedWidth;
   if (needsWidth && baseContentWidth > 0) {
     let injectWidth = baseContentWidth;
@@ -1895,7 +2450,10 @@ export function enrichWithIntrinsicSize(
   }
 
   // 변경이 없으면 원본 반환
-  if (injectedStyle.height === undefined && injectedStyle.width === style?.width) {
+  if (
+    injectedStyle.height === undefined &&
+    injectedStyle.width === style?.width
+  ) {
     return element;
   }
 
@@ -1915,28 +2473,28 @@ export function enrichWithIntrinsicSize(
  * text-top, text-bottom, super, sub 등은 폰트 메트릭이 필요하여 baseline으로 폴백
  */
 export function parseVerticalAlign(
-  style: Record<string, unknown> | undefined
+  style: Record<string, unknown> | undefined,
 ): VerticalAlign {
-  if (!style) return 'baseline';
+  if (!style) return "baseline";
 
   const value = style.verticalAlign as string | undefined;
-  if (!value) return 'baseline';
+  if (!value) return "baseline";
 
   switch (value) {
-    case 'top':
-      return 'top';
-    case 'bottom':
-      return 'bottom';
-    case 'middle':
-      return 'middle';
-    case 'baseline':
-    case 'text-top':
-    case 'text-bottom':
-    case 'super':
-    case 'sub':
+    case "top":
+      return "top";
+    case "bottom":
+      return "bottom";
+    case "middle":
+      return "middle";
+    case "baseline":
+    case "text-top":
+    case "text-bottom":
+    case "super":
+    case "sub":
     default:
       // text-top/text-bottom/super/sub은 폰트 메트릭이 필요하여 baseline으로 폴백
-      return 'baseline';
+      return "baseline";
   }
 }
 
@@ -1952,25 +2510,25 @@ export function parseVerticalAlign(
  */
 export function parseLineHeight(
   style: Record<string, unknown> | undefined,
-  fontSize?: number
+  fontSize?: number,
 ): number | undefined {
   if (!style) return undefined;
 
   const value = style.lineHeight;
-  if (value === undefined || value === 'normal') return undefined;
+  if (value === undefined || value === "normal") return undefined;
 
   // 숫자 (배율)
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     const baseFontSize = fontSize ?? 16; // 기본 폰트 크기
     return value * baseFontSize;
   }
 
   // 문자열
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const trimmed = value.trim();
 
     // px 값 (명시적으로 'px'가 있는 경우만)
-    if (trimmed.endsWith('px')) {
+    if (trimmed.endsWith("px")) {
       return parseFloat(trimmed);
     }
 
@@ -2005,9 +2563,15 @@ export function parseLineHeight(
 // CSS에서 button/input/badge 등은 내부 텍스트가 수직 중앙 정렬되므로
 // baseline이 요소의 수직 중앙 근처에 위치
 const VERTICALLY_CENTERED_TAGS = new Set([
-  'button', 'submitbutton', 'fancybutton', 'togglebutton',
-  'input', 'select',
-  'badge', 'tag', 'chip',  // inline-flex 컴포넌트
+  "button",
+  "submitbutton",
+  "fancybutton",
+  "togglebutton",
+  "input",
+  "select",
+  "badge",
+  "tag",
+  "chip", // inline-flex 컴포넌트
 ]);
 
 /**
@@ -2023,9 +2587,11 @@ interface ParsedFontProps {
   fontWeight: string | number;
 }
 
-function parseFontProps(style: Record<string, unknown> | undefined): ParsedFontProps {
+function parseFontProps(
+  style: Record<string, unknown> | undefined,
+): ParsedFontProps {
   if (!style) {
-    return { fontFamily: 'sans-serif', fontSize: 16, fontWeight: 400 };
+    return { fontFamily: "sans-serif", fontSize: 16, fontWeight: 400 };
   }
 
   const sizeProp = style.fontSize;
@@ -2034,24 +2600,24 @@ function parseFontProps(style: Record<string, unknown> | undefined): ParsedFontP
 
   // fontSize 파싱
   let fontSize = 16;
-  if (typeof sizeProp === 'number') {
+  if (typeof sizeProp === "number") {
     fontSize = sizeProp;
-  } else if (typeof sizeProp === 'string' && sizeProp.trim()) {
+  } else if (typeof sizeProp === "string" && sizeProp.trim()) {
     const parsed = parseFloat(sizeProp.trim());
     if (!isNaN(parsed)) fontSize = parsed;
   }
 
   // fontFamily 파싱
-  let fontFamily = 'sans-serif';
-  if (typeof familyProp === 'string' && familyProp.trim()) {
+  let fontFamily = "sans-serif";
+  if (typeof familyProp === "string" && familyProp.trim()) {
     fontFamily = familyProp.trim();
   }
 
   // fontWeight 파싱
   let fontWeight: string | number = 400;
-  if (typeof weightProp === 'number') {
+  if (typeof weightProp === "number") {
     fontWeight = weightProp;
-  } else if (typeof weightProp === 'string' && weightProp.trim()) {
+  } else if (typeof weightProp === "string" && weightProp.trim()) {
     fontWeight = weightProp.trim();
   }
 
@@ -2076,7 +2642,9 @@ function parseFontProps(style: Record<string, unknown> | undefined): ParsedFontP
  *   - 캐시 히트 시 Canvas context 접근 없음
  *   - SSR 환경에서도 fontSize 기반 근사값 자동 반환 (null 대신)
  */
-function getFontMetricsFromStyle(style: Record<string, unknown> | undefined): FontMetrics {
+function getFontMetricsFromStyle(
+  style: Record<string, unknown> | undefined,
+): FontMetrics {
   const { fontFamily, fontSize, fontWeight } = parseFontProps(style);
   return measureFontMetrics(fontFamily, fontSize, fontWeight);
 }
@@ -2102,12 +2670,9 @@ function getFontMetricsFromStyle(style: Record<string, unknown> | undefined): Fo
  * // 높이 100px, baseline이 하단에서 20px 위
  * calculateBaseline(element, 100) // → 80 (상단에서 80px 아래)
  */
-export function calculateBaseline(
-  element: Element,
-  height: number
-): number {
+export function calculateBaseline(element: Element, height: number): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
-  const tag = (element.tag ?? '').toLowerCase();
+  const tag = (element.tag ?? "").toLowerCase();
 
   // overflow가 visible이 아니면 하단이 baseline
   const overflow = style?.overflow as string | undefined;
@@ -2115,9 +2680,9 @@ export function calculateBaseline(
   const overflowY = style?.overflowY as string | undefined;
 
   if (
-    (overflow && overflow !== 'visible') ||
-    (overflowX && overflowX !== 'visible') ||
-    (overflowY && overflowY !== 'visible')
+    (overflow && overflow !== "visible") ||
+    (overflowX && overflowX !== "visible") ||
+    (overflowY && overflowY !== "visible")
   ) {
     return height; // 하단
   }
@@ -2195,18 +2760,18 @@ export function measureTextWithWhiteSpace(
   const lineHeight = fm.lineHeight;
 
   // ADR-008: word-break/overflow-wrap 타입 캐스팅
-  const wb = wordBreak as 'normal' | 'break-all' | 'keep-all' | undefined;
-  const ow = overflowWrap as 'normal' | 'break-word' | 'anywhere' | undefined;
+  const wb = wordBreak as "normal" | "break-all" | "keep-all" | undefined;
+  const ow = overflowWrap as "normal" | "break-word" | "anywhere" | undefined;
 
   switch (whiteSpace) {
-    case 'nowrap': {
+    case "nowrap": {
       // 줄바꿈 없이 한 줄
       const width = measureTextWidth(text, fontSize, fontFamily, fontWeight);
       return { width, height: lineHeight };
     }
-    case 'pre': {
+    case "pre": {
       // \n만 줄바꿈, 자동 줄바꿈 없음
-      const lines = text.split('\n');
+      const lines = text.split("\n");
       let maxLineWidth = 0;
       for (const line of lines) {
         const w = measureTextWidth(line, fontSize, fontFamily, fontWeight);
@@ -2214,22 +2779,39 @@ export function measureTextWithWhiteSpace(
       }
       return { width: maxLineWidth, height: lines.length * lineHeight };
     }
-    case 'pre-wrap':
-    case 'pre-line': {
+    case "pre-wrap":
+    case "pre-line": {
       // \n + 자동 줄바꿈 (pre-line은 공백 축소)
-      const processedText = whiteSpace === 'pre-line'
-        ? text.replace(/[ \t]+/g, ' ')
-        : text;
+      const processedText =
+        whiteSpace === "pre-line" ? text.replace(/[ \t]+/g, " ") : text;
       return {
         width: maxWidth,
-        height: measureWrappedTextHeight(processedText, fontSize, fontWeight, fontFamily, maxWidth, undefined, wb, ow),
+        height: measureWrappedTextHeight(
+          processedText,
+          fontSize,
+          fontWeight,
+          fontFamily,
+          maxWidth,
+          undefined,
+          wb,
+          ow,
+        ),
       };
     }
     default: {
       // normal: 기본 동작
       return {
         width: maxWidth,
-        height: measureWrappedTextHeight(text, fontSize, fontWeight, fontFamily, maxWidth, undefined, wb, ow),
+        height: measureWrappedTextHeight(
+          text,
+          fontSize,
+          fontWeight,
+          fontFamily,
+          maxWidth,
+          undefined,
+          wb,
+          ow,
+        ),
       };
     }
   }
@@ -2310,13 +2892,19 @@ export function parseCSSPropWithContext(
   value: unknown,
   ctx: CSSValueContext = {},
 ): number | string | undefined {
-  if (value === undefined || value === null || value === '' || value === 'auto') return undefined;
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
+  if (value === undefined || value === null || value === "" || value === "auto")
+    return undefined;
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
     // % 값은 Taffy가 네이티브로 처리
-    if (value.endsWith('%')) return value;
+    if (value.endsWith("%")) return value;
     // intrinsic sizing 키워드는 Taffy에서 미지원 → undefined
-    if (value === 'fit-content' || value === 'min-content' || value === 'max-content') return undefined;
+    if (
+      value === "fit-content" ||
+      value === "min-content" ||
+      value === "max-content"
+    )
+      return undefined;
     // resolveCSSSizeValue: rem, em, vh, vw, calc(), clamp(), min(), max() 해석
     const px = resolveCSSSizeValue(value, ctx);
     if (px !== undefined && px >= 0) return px;
@@ -2421,34 +3009,54 @@ export function applyFlexItemProperties(
   // result에 이미 값이 있으면(taffyConfig 패스스루 등) shorthand로 덮어쓰지 않음
   if (style.flex !== undefined && style.flex !== null) {
     const flexVal = style.flex;
-    if (typeof flexVal === 'number') {
+    if (typeof flexVal === "number") {
       // flex: 1 → flexGrow: 1, flexShrink: 1, flexBasis: 0%
-      if (style.flexGrow === undefined && result.flexGrow === undefined) result.flexGrow = flexVal;
-      if (style.flexShrink === undefined && result.flexShrink === undefined) result.flexShrink = 1;
-      if (style.flexBasis === undefined && result.flexBasis === undefined) result.flexBasis = '0%';
-    } else if (typeof flexVal === 'string') {
+      if (style.flexGrow === undefined && result.flexGrow === undefined)
+        result.flexGrow = flexVal;
+      if (style.flexShrink === undefined && result.flexShrink === undefined)
+        result.flexShrink = 1;
+      if (style.flexBasis === undefined && result.flexBasis === undefined)
+        result.flexBasis = "0%";
+    } else if (typeof flexVal === "string") {
       const parts = String(flexVal).trim().split(/\s+/);
       if (parts.length === 1) {
         const n = Number(parts[0]);
         if (!isNaN(n)) {
-          if (style.flexGrow === undefined && result.flexGrow === undefined) result.flexGrow = n;
-          if (style.flexShrink === undefined && result.flexShrink === undefined) result.flexShrink = 1;
-          if (style.flexBasis === undefined && result.flexBasis === undefined) result.flexBasis = '0%';
-        } else if (parts[0] === 'auto') {
-          if (style.flexGrow === undefined && result.flexGrow === undefined) result.flexGrow = 1;
-          if (style.flexShrink === undefined && result.flexShrink === undefined) result.flexShrink = 1;
-        } else if (parts[0] === 'none') {
-          if (style.flexGrow === undefined && result.flexGrow === undefined) result.flexGrow = 0;
-          if (style.flexShrink === undefined && result.flexShrink === undefined) result.flexShrink = 0;
+          if (style.flexGrow === undefined && result.flexGrow === undefined)
+            result.flexGrow = n;
+          if (style.flexShrink === undefined && result.flexShrink === undefined)
+            result.flexShrink = 1;
+          if (style.flexBasis === undefined && result.flexBasis === undefined)
+            result.flexBasis = "0%";
+        } else if (parts[0] === "auto") {
+          if (style.flexGrow === undefined && result.flexGrow === undefined)
+            result.flexGrow = 1;
+          if (style.flexShrink === undefined && result.flexShrink === undefined)
+            result.flexShrink = 1;
+        } else if (parts[0] === "none") {
+          if (style.flexGrow === undefined && result.flexGrow === undefined)
+            result.flexGrow = 0;
+          if (style.flexShrink === undefined && result.flexShrink === undefined)
+            result.flexShrink = 0;
         }
       } else if (parts.length >= 2) {
-        if (style.flexGrow === undefined && result.flexGrow === undefined) result.flexGrow = Number(parts[0]) || 0;
-        if (style.flexShrink === undefined && result.flexShrink === undefined) result.flexShrink = Number(parts[1]) || 0;
-        if (parts[2] && style.flexBasis === undefined && result.flexBasis === undefined) {
+        if (style.flexGrow === undefined && result.flexGrow === undefined)
+          result.flexGrow = Number(parts[0]) || 0;
+        if (style.flexShrink === undefined && result.flexShrink === undefined)
+          result.flexShrink = Number(parts[1]) || 0;
+        if (
+          parts[2] &&
+          style.flexBasis === undefined &&
+          result.flexBasis === undefined
+        ) {
           const basisVal = parseCSSPropWithContext(parts[2], ctx);
           if (basisVal !== undefined) result.flexBasis = basisVal;
-        } else if (!parts[2] && style.flexBasis === undefined && result.flexBasis === undefined) {
-          result.flexBasis = '0%';
+        } else if (
+          !parts[2] &&
+          style.flexBasis === undefined &&
+          result.flexBasis === undefined
+        ) {
+          result.flexBasis = "0%";
         }
       }
     }
@@ -2456,7 +3064,8 @@ export function applyFlexItemProperties(
 
   // 개별 속성은 shorthand/taffyConfig 모두를 덮어씀 (CSS 우선순위)
   if (style.flexGrow !== undefined) result.flexGrow = Number(style.flexGrow);
-  if (style.flexShrink !== undefined) result.flexShrink = Number(style.flexShrink);
+  if (style.flexShrink !== undefined)
+    result.flexShrink = Number(style.flexShrink);
   if (style.flexBasis !== undefined) {
     const basis = parseCSSPropWithContext(style.flexBasis, ctx);
     if (basis !== undefined) result.flexBasis = basis;
@@ -2479,13 +3088,20 @@ export function resolveParentContext(
   parent: Element,
   context?: LayoutContext,
 ): { parentComputed: ComputedStyle; cssCtx: CSSValueContext } {
-  const parentRawStyle = parent.props?.style as Record<string, unknown> | undefined;
-  const parentComputed = context?.parentComputedStyle
-    ?? resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
+  const parentRawStyle = parent.props?.style as
+    | Record<string, unknown>
+    | undefined;
+  const parentComputed =
+    context?.parentComputedStyle ??
+    resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
 
   const cssCtx: CSSValueContext = {
-    viewportWidth: context?.viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1920),
-    viewportHeight: context?.viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 1080),
+    viewportWidth:
+      context?.viewportWidth ??
+      (typeof window !== "undefined" ? window.innerWidth : 1920),
+    viewportHeight:
+      context?.viewportHeight ??
+      (typeof window !== "undefined" ? window.innerHeight : 1080),
     parentSize: parentComputed.fontSize,
     rootFontSize: 16,
   };

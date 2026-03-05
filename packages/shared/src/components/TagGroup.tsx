@@ -1,4 +1,4 @@
-import React, { JSX } from 'react';
+import React, { JSX } from "react";
 import {
   Button,
   Label,
@@ -10,33 +10,33 @@ import {
   TagProps,
   Text,
   type Key,
-  type Selection
-} from 'react-aria-components';
-import { X } from 'lucide-react';
-import type { DataBinding, ColumnMapping, DataBindingValue } from '../types';
+  type Selection,
+} from "react-aria-components";
+import { X } from "lucide-react";
+import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
-import { useCollectionData } from '../hooks';
-import './styles/TagGroup.css';
+import { useCollectionData } from "../hooks";
+import "./styles/TagGroup.css";
 
 export interface TagGroupProps<T>
   extends
-  Omit<AriaTagGroupProps, 'children'>,
-  Pick<TagListProps<T>, 'items' | 'children' | 'renderEmptyState'> {
+    Omit<AriaTagGroupProps, "children">,
+    Pick<TagListProps<T>, "items" | "children" | "renderEmptyState"> {
   label?: string;
   description?: string;
   errorMessage?: string;
   allowsRemoving?: boolean;
   onRemove?: (keys: Selection) => void;
   // 선택 관련 프로퍼티 추가
-  selectionMode?: 'none' | 'single' | 'multiple';
-  selectionBehavior?: 'toggle' | 'replace';
-  selectedKeys?: 'all' | Iterable<Key>;
-  defaultSelectedKeys?: 'all' | Iterable<Key>;
+  selectionMode?: "none" | "single" | "multiple";
+  selectionBehavior?: "toggle" | "replace";
+  selectedKeys?: "all" | Iterable<Key>;
+  defaultSelectedKeys?: "all" | Iterable<Key>;
   onSelectionChange?: (keys: Selection) => void;
   // 비활성화 관련 프로퍼티 추가
   isDisabled?: boolean;
   // 기타 유용한 프로퍼티들
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: "horizontal" | "vertical";
   disallowEmptySelection?: boolean;
   // 데이터 바인딩
   dataBinding?: DataBinding | DataBindingValue;
@@ -44,8 +44,8 @@ export interface TagGroupProps<T>
   // 제거된 항목 추적 (columnMapping 모드에서 동적 데이터 항목 제거용)
   removedItemIds?: string[];
   // Tag 스타일 제어
-  variant?: 'default' | 'primary' | 'secondary' | 'surface';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: string;
+  size?: "sm" | "md" | "lg";
   /**
    * React Aria 1.13.0: 커스텀 필터 함수
    * @example filter={(item) => item.status === 'active'}
@@ -63,35 +63,33 @@ export interface TagGroupProps<T>
   filterFields?: (keyof T)[];
 }
 
-export function TagGroup<T extends object>(
-  {
-    label,
-    description,
-    errorMessage,
-    items,
-    children,
-    renderEmptyState,
-    allowsRemoving,
-    onRemove,
-    selectionMode = 'none',
-    selectionBehavior = 'toggle',
-    selectedKeys,
-    defaultSelectedKeys,
-    onSelectionChange,
-    disallowEmptySelection = false,
-    dataBinding,
-    columnMapping,
-    removedItemIds = [],
-    variant = 'default',
-    size = 'md',
-    filter,
-    filterText,
-    filterFields = ['label', 'name', 'title'] as (keyof T)[],
-    ...props
-  }: TagGroupProps<T>
-): JSX.Element {
+export function TagGroup<T extends object>({
+  label,
+  description,
+  errorMessage,
+  items,
+  children,
+  renderEmptyState,
+  allowsRemoving,
+  onRemove,
+  selectionMode = "none",
+  selectionBehavior = "toggle",
+  selectedKeys,
+  defaultSelectedKeys,
+  onSelectionChange,
+  disallowEmptySelection = false,
+  dataBinding,
+  columnMapping,
+  removedItemIds = [],
+  variant = "default",
+  size = "md",
+  filter,
+  filterText,
+  filterFields = ["label", "name", "title"] as (keyof T)[],
+  ...props
+}: TagGroupProps<T>): JSX.Element {
   // Build className with variant and size (재사용을 위해 최상위에 선언)
-  const tagGroupClassName = 'react-aria-TagGroup';
+  const tagGroupClassName = "react-aria-TagGroup";
 
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
@@ -100,10 +98,10 @@ export function TagGroup<T extends object>(
     error,
   } = useCollectionData({
     dataBinding: dataBinding as DataBinding,
-    componentName: 'TagGroup',
+    componentName: "TagGroup",
     fallbackData: [
-      { id: 1, name: 'Tag 1', label: 'Tag 1' },
-      { id: 2, name: 'Tag 2', label: 'Tag 2' },
+      { id: 1, name: "Tag 1", label: "Tag 1" },
+      { id: 2, name: "Tag 2", label: "Tag 2" },
     ],
   });
 
@@ -123,7 +121,7 @@ export function TagGroup<T extends object>(
         filterFields.some((field) => {
           const value = item[field as string];
           return value && String(value).toLowerCase().includes(searchText);
-        })
+        }),
       );
     }
 
@@ -145,12 +143,11 @@ export function TagGroup<T extends object>(
     isPropertyBinding;
 
   // children이 render function인지 확인 (Field children 렌더링 모드)
-  const isRenderFunction = typeof children === 'function';
+  const isRenderFunction = typeof children === "function";
 
   // ColumnMapping이 있거나 children이 render function이면 Field 렌더링 모드 사용
   // ListBox와 동일한 패턴: Element tree의 Tag 템플릿 + Field 자식 사용
   if (hasDataBinding && (columnMapping || isRenderFunction)) {
-
     // Loading 상태
     if (loading) {
       return (
@@ -162,7 +159,7 @@ export function TagGroup<T extends object>(
           data-tag-size={size}
         >
           {label && <Label>{label}</Label>}
-          <TagList className='react-aria-TagList'>
+          <TagList className="react-aria-TagList">
             <AriaTag textValue="Loading">⏳ 데이터 로딩 중...</AriaTag>
           </TagList>
           {description && <Text slot="description">{description}</Text>}
@@ -181,7 +178,7 @@ export function TagGroup<T extends object>(
           data-tag-size={size}
         >
           {label && <Label>{label}</Label>}
-          <TagList className='react-aria-TagList'>
+          <TagList className="react-aria-TagList">
             <AriaTag textValue="Error">❌ 오류: {error}</AriaTag>
           </TagList>
           {description && <Text slot="description">{description}</Text>}
@@ -197,7 +194,7 @@ export function TagGroup<T extends object>(
           // 원본 데이터의 id를 문자열로 변환하여 비교
           const itemId = String(item.id ?? index);
           const isRemoved = removedItemIds.includes(itemId);
-          console.log('🔍 Filter check:', {
+          console.log("🔍 Filter check:", {
             originalId: item.id,
             originalIdType: typeof item.id,
             itemId,
@@ -205,7 +202,7 @@ export function TagGroup<T extends object>(
             isRemoved,
           });
           if (isRemoved) {
-            console.log('🚫 Filtering out removed item:', itemId);
+            console.log("🚫 Filtering out removed item:", itemId);
           }
           return !isRemoved;
         })
@@ -214,11 +211,13 @@ export function TagGroup<T extends object>(
           ...item,
         })) as T[];
 
-      console.log('✅ TagGroup with columnMapping - items:', {
+      console.log("✅ TagGroup with columnMapping - items:", {
         totalItems: filteredData.length,
         removedItemIds,
         filteredItems: tagItems.length,
-        tagItems: tagItems.map(item => String((item as { id: string | number }).id)),
+        tagItems: tagItems.map((item) =>
+          String((item as { id: string | number }).id),
+        ),
       });
 
       return (
@@ -239,7 +238,7 @@ export function TagGroup<T extends object>(
           <TagList
             items={tagItems}
             renderEmptyState={renderEmptyState}
-            className='react-aria-TagList'
+            className="react-aria-TagList"
           >
             {children}
           </TagList>
@@ -268,7 +267,7 @@ export function TagGroup<T extends object>(
         <TagList
           items={items}
           renderEmptyState={renderEmptyState}
-          className='react-aria-TagList'
+          className="react-aria-TagList"
         >
           {children}
         </TagList>
@@ -291,7 +290,7 @@ export function TagGroup<T extends object>(
           data-tag-size={size}
         >
           {label && <Label>{label}</Label>}
-          <TagList className='react-aria-TagList'>
+          <TagList className="react-aria-TagList">
             <AriaTag textValue="Loading">⏳ 데이터 로딩 중...</AriaTag>
           </TagList>
           {description && <Text slot="description">{description}</Text>}
@@ -310,7 +309,7 @@ export function TagGroup<T extends object>(
           data-tag-size={size}
         >
           {label && <Label>{label}</Label>}
-          <TagList className='react-aria-TagList'>
+          <TagList className="react-aria-TagList">
             <AriaTag textValue="Error">❌ 오류: {error}</AriaTag>
           </TagList>
           {description && <Text slot="description">{description}</Text>}
@@ -323,12 +322,12 @@ export function TagGroup<T extends object>(
       const tagItems = filteredData.map((item, index) => ({
         id: String(item.id || index),
         label: String(
-          item.name || item.title || item.label || `Tag ${index + 1}`
+          item.name || item.title || item.label || `Tag ${index + 1}`,
         ),
         ...item,
       }));
 
-      console.log('✅ TagGroup Dynamic Collection - items:', tagItems);
+      console.log("✅ TagGroup Dynamic Collection - items:", tagItems);
 
       return (
         <AriaTagGroup
@@ -348,19 +347,23 @@ export function TagGroup<T extends object>(
           <TagList
             items={tagItems}
             renderEmptyState={renderEmptyState}
-            className='react-aria-TagList'
+            className="react-aria-TagList"
           >
             {(item) => (
               <AriaTag
                 key={item.id}
                 id={item.id}
                 textValue={item.label}
-                className='react-aria-Tag'
+                className="react-aria-Tag"
               >
                 {({ allowsRemoving: removing }) => (
                   <>
                     {item.label}
-                    {removing && <Button slot="remove"><X size={14} /></Button>}
+                    {removing && (
+                      <Button slot="remove">
+                        <X size={14} />
+                      </Button>
+                    )}
                   </>
                 )}
               </AriaTag>
@@ -388,12 +391,11 @@ export function TagGroup<T extends object>(
       data-tag-variant={variant}
       data-tag-size={size}
     >
-
       {label && <Label>{label}</Label>}
       <TagList
         items={items}
         renderEmptyState={renderEmptyState}
-        className='react-aria-TagList'
+        className="react-aria-TagList"
       >
         {children}
       </TagList>
@@ -404,13 +406,17 @@ export function TagGroup<T extends object>(
 }
 
 export function Tag({ children, ...props }: TagProps): JSX.Element {
-  const textValue = typeof children === 'string' ? children : undefined;
+  const textValue = typeof children === "string" ? children : undefined;
   return (
-    <AriaTag textValue={textValue} {...props} className='react-aria-Tag'>
+    <AriaTag textValue={textValue} {...props} className="react-aria-Tag">
       {({ allowsRemoving }) => (
         <>
           {children}
-          {allowsRemoving && <Button slot="remove"><X size={14} /></Button>}
+          {allowsRemoving && (
+            <Button slot="remove">
+              <X size={14} />
+            </Button>
+          )}
         </>
       )}
     </AriaTag>

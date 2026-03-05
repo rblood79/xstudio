@@ -26,6 +26,8 @@ const SIZE_BORDER_RADIUS: Record<ComponentSize, number> = {
 
 export interface ButtonProps extends RACButtonProps {
   variant?: ButtonVariant;
+  /** Fill style: fill (solid) or outline (S2) */
+  fillStyle?: "fill" | "outline";
   size?: ComponentSize;
   /** Show loading skeleton instead of content */
   isLoading?: boolean;
@@ -44,8 +46,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       isLoading,
       loadingLabel = "Loading...",
       children,
-      variant = "default",
-      size = "sm",
+      variant = "primary",
+      fillStyle = "fill",
+      size = "md",
       className,
       style,
       ...restProps
@@ -62,6 +65,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type={props.type}
         isDisabled={isLoading || props.isDisabled}
         data-variant={variant}
+        data-fill-style={fillStyle}
         data-size={size}
         data-focus-visible={isFocusVisible || undefined}
         data-loading={isLoading || undefined}

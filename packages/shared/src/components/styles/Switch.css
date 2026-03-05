@@ -4,28 +4,14 @@
 
 @layer components {
   .react-aria-Switch {
-    --switch-color: var(--highlight-background);
-    --switch-thumb-color: var(--highlight-foreground);
+    /* Default (non-emphasized): neutral color when selected */
+    --switch-color: var(--text-color);
+    --switch-thumb-color: var(--color-white);
 
-    /* Variants */
-    &[data-variant="secondary"] {
-      --switch-color: var(--button-background);
-      --switch-thumb-color: var(--color-white);
-    }
-
-    &[data-variant="tertiary"] {
-      --switch-color: var(--color-purple-600);
-      --switch-thumb-color: var(--color-white);
-    }
-
-    &[data-variant="error"] {
-      --switch-color: var(--invalid-color);
-      --switch-thumb-color: var(--color-white);
-    }
-
-    &[data-variant="surface"] {
-      --switch-color: var(--color-neutral-200);
-      --switch-thumb-color: var(--text-color);
+    /* Emphasized: accent color when selected */
+    &[data-emphasized] {
+      --switch-color: var(--highlight-background);
+      --switch-thumb-color: var(--highlight-foreground);
     }
 
     display: flex;

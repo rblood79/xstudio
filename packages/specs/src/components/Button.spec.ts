@@ -16,14 +16,13 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface ButtonProps {
   variant?:
-    | "default"
+    | "accent"
     | "primary"
     | "secondary"
-    | "tertiary"
-    | "error"
-    | "surface"
-    | "outline"
-    | "ghost";
+    | "negative"
+    | "premium"
+    | "genai";
+  fillStyle?: "fill" | "outline";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   children?: string;
   text?: string;
@@ -41,42 +40,34 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
   description: "React Aria 기반 버튼 컴포넌트",
   element: "button",
 
-  defaultVariant: "default",
-  defaultSize: "sm",
+  defaultVariant: "primary",
+  defaultSize: "md",
 
   variants: {
-    default: {
+    accent: {
+      background: "{color.accent}" as TokenRef,
+      backgroundHover: "{color.accent-hover}" as TokenRef,
+      backgroundPressed: "{color.accent-pressed}" as TokenRef,
+      text: "{color.on-accent}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
+      borderHover: "{color.accent-hover}" as TokenRef,
+    },
+    primary: {
+      background: "{color.neutral}" as TokenRef,
+      backgroundHover: "{color.neutral-hover}" as TokenRef,
+      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+      border: "{color.neutral}" as TokenRef,
+      borderHover: "{color.neutral-hover}" as TokenRef,
+    },
+    secondary: {
       background: "{color.layer-1}" as TokenRef,
       backgroundHover: "{color.neutral-subtle}" as TokenRef,
       backgroundPressed: "{color.neutral-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
-    primary: {
-      background: "{color.accent}" as TokenRef,
-      backgroundHover: "{color.accent-hover}" as TokenRef,
-      backgroundPressed: "{color.accent-pressed}" as TokenRef,
-      text: "{color.on-accent}" as TokenRef,
-      border: "{color.accent}" as TokenRef, // CSS: border-color: var(--highlight-background) → 배경과 동일 → 투명
-      borderHover: "{color.accent-hover}" as TokenRef,
-    },
-    secondary: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-hover}" as TokenRef,
-      backgroundPressed: "{color.neutral-pressed}" as TokenRef,
-      text: "{color.white}" as TokenRef,
-      border: "{color.neutral-subtle}" as TokenRef,
-      borderHover: "{color.neutral-hover}" as TokenRef,
-    },
-    tertiary: {
-      background: "{color.purple}" as TokenRef,
-      backgroundHover: "{color.purple-hover}" as TokenRef,
-      backgroundPressed: "{color.purple-pressed}" as TokenRef,
-      text: "{color.white}" as TokenRef,
-      border: "{color.purple}" as TokenRef,
-      borderHover: "{color.purple-hover}" as TokenRef,
-    },
-    error: {
+    negative: {
       background: "{color.negative}" as TokenRef,
       backgroundHover: "{color.negative-hover}" as TokenRef,
       backgroundPressed: "{color.negative-pressed}" as TokenRef,
@@ -84,72 +75,66 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       border: "{color.negative}" as TokenRef,
       borderHover: "{color.negative-hover}" as TokenRef,
     },
-    surface: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
+    premium: {
+      background: "{color.purple}" as TokenRef,
+      backgroundHover: "{color.purple-hover}" as TokenRef,
+      backgroundPressed: "{color.purple-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+      border: "{color.purple}" as TokenRef,
+      borderHover: "{color.purple-hover}" as TokenRef,
     },
-    outline: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.accent}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
-      backgroundAlpha: 0,
-    },
-    ghost: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.accent}" as TokenRef,
-      backgroundAlpha: 0,
+    genai: {
+      background: "{color.purple}" as TokenRef,
+      backgroundHover: "{color.purple-hover}" as TokenRef,
+      backgroundPressed: "{color.purple-pressed}" as TokenRef,
+      text: "{color.white}" as TokenRef,
+      border: "{color.purple}" as TokenRef,
+      borderHover: "{color.purple-hover}" as TokenRef,
     },
   },
 
   sizes: {
     xs: {
-      height: 24,
+      height: 20,
       paddingX: 8,
       paddingY: 4,
-      fontSize: "{typography.text-xs}" as TokenRef,
+      fontSize: "{typography.text-2xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 12,
       gap: 4,
     },
     sm: {
-      height: 32,
+      height: 22,
       paddingX: 12,
-      paddingY: 8,
-      fontSize: "{typography.text-sm}" as TokenRef,
+      paddingY: 4,
+      fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 6,
     },
     md: {
-      height: 40,
+      height: 32,
       paddingX: 16,
-      paddingY: 12,
-      fontSize: "{typography.text-md}" as TokenRef,
+      paddingY: 8,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 16,
       gap: 8,
     },
     lg: {
-      height: 48,
+      height: 42,
       paddingX: 24,
-      paddingY: 16,
-      fontSize: "{typography.text-lg}" as TokenRef,
+      paddingY: 12,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 20,
       gap: 10,
     },
     xl: {
-      height: 56,
+      height: 52,
       paddingX: 32,
-      paddingY: 24,
-      fontSize: "{typography.text-xl}" as TokenRef,
+      paddingY: 16,
+      fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 24,
       gap: 12,

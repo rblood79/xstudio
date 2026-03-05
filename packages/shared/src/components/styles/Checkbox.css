@@ -4,28 +4,14 @@
 
 @layer components {
   .react-aria-Checkbox {
-    --selected-color: var(--highlight-background);
-    --checkmark-color: var(--highlight-foreground);
+    /* Default (non-emphasized): neutral color when selected */
+    --selected-color: var(--text-color);
+    --checkmark-color: var(--color-white);
 
-    /* Variants */
-    &[data-variant="secondary"] {
-      --selected-color: var(--button-background);
-      --checkmark-color: var(--color-white);
-    }
-
-    &[data-variant="tertiary"] {
-      --selected-color: var(--color-purple-600);
-      --checkmark-color: var(--color-white);
-    }
-
-    &[data-variant="error"] {
-      --selected-color: var(--invalid-color);
-      --checkmark-color: var(--color-white);
-    }
-
-    &[data-variant="surface"] {
-      --selected-color: var(--color-neutral-200);
-      --checkmark-color: var(--text-color);
+    /* Emphasized: accent color when selected */
+    &[data-emphasized] {
+      --selected-color: var(--highlight-background);
+      --checkmark-color: var(--highlight-foreground);
     }
 
     display: flex;
@@ -154,28 +140,9 @@
 
   /* ===== Parent CheckboxGroup delegation ===== */
 
-  .react-aria-CheckboxGroup[data-checkbox-variant="secondary"]
-    .react-aria-Checkbox {
-    --selected-color: var(--button-background);
-    --checkmark-color: var(--color-white);
-  }
-
-  .react-aria-CheckboxGroup[data-checkbox-variant="tertiary"]
-    .react-aria-Checkbox {
-    --selected-color: var(--color-purple-600);
-    --checkmark-color: var(--color-white);
-  }
-
-  .react-aria-CheckboxGroup[data-checkbox-variant="error"]
-    .react-aria-Checkbox {
-    --selected-color: var(--invalid-color);
-    --checkmark-color: var(--color-white);
-  }
-
-  .react-aria-CheckboxGroup[data-checkbox-variant="surface"]
-    .react-aria-Checkbox {
-    --selected-color: var(--color-neutral-200);
-    --checkmark-color: var(--text-color);
+  .react-aria-CheckboxGroup[data-checkbox-emphasized] .react-aria-Checkbox {
+    --selected-color: var(--highlight-background);
+    --checkmark-color: var(--highlight-foreground);
   }
 
   /* ===== Size delegation from CheckboxGroup ===== */

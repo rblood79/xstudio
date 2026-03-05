@@ -14,3 +14,4 @@ export {
   type DataBindingValue,
 } from "./PropertyDataBinding";
 export { PropertyListItem } from "./PropertyListItem";
+export { PropertySizeToggle } from "./PropertySizeToggle";

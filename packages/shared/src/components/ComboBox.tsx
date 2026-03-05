@@ -5,7 +5,7 @@
  * Sizes: sm, md, lg
  */
 
-import React from 'react';
+import React from "react";
 import {
   Button,
   ComboBox as AriaComboBox,
@@ -18,15 +18,15 @@ import {
   ListBoxItemProps,
   Popover,
   Text,
-  ValidationResult
-} from 'react-aria-components';
-import { ChevronDown } from 'lucide-react';
-import type { ComboBoxVariant, ComponentSize } from '../types';
-import type { DataBinding, ColumnMapping, DataBindingValue } from '../types';
+  ValidationResult,
+} from "react-aria-components";
+import { ChevronDown } from "lucide-react";
+import type { ComponentSize } from "../types";
+import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
-import { useCollectionData } from '../hooks';
-import { Skeleton } from './Skeleton';
-import './styles/ComboBox.css';
+import { useCollectionData } from "../hooks";
+import { Skeleton } from "./Skeleton";
+import "./styles/ComboBox.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -34,8 +34,10 @@ import './styles/ComboBox.css';
  * - data-variant, data-size 속성 사용
  */
 
-export interface ComboBoxProps<T extends object>
-  extends Omit<AriaComboBoxProps<T>, 'children'> {
+export interface ComboBoxProps<T extends object> extends Omit<
+  AriaComboBoxProps<T>,
+  "children"
+> {
   label?: string;
   description?: string | null;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -47,7 +49,7 @@ export interface ComboBoxProps<T extends object>
   columnMapping?: ColumnMapping;
   popoverClassName?: string;
   // M3 props
-  variant?: ComboBoxVariant;
+  variant?: string;
   size?: ComponentSize;
   /**
    * Show loading skeleton instead of combobox
@@ -67,8 +69,8 @@ export function ComboBox<T extends object>({
   dataBinding,
   columnMapping,
   popoverClassName,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   isLoading: externalLoading,
   ...props
 }: ComboBoxProps<T>) {
@@ -79,10 +81,10 @@ export function ComboBox<T extends object>({
     error,
   } = useCollectionData({
     dataBinding: dataBinding as DataBinding,
-    componentName: 'ComboBox',
+    componentName: "ComboBox",
     fallbackData: [
-      { id: 1, name: 'Option 1', value: 'option-1' },
-      { id: 2, name: 'Option 2', value: 'option-2' },
+      { id: 1, name: "Option 1", value: "option-1" },
+      { id: 2, name: "Option 2", value: "option-2" },
     ],
   });
 
@@ -102,7 +104,7 @@ export function ComboBox<T extends object>({
   const hasVisibleLabel = label && String(label).trim();
   const ariaLabel = hasVisibleLabel
     ? undefined
-    : props['aria-label'] || placeholder || 'Select an option';
+    : props["aria-label"] || placeholder || "Select an option";
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
   // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
@@ -120,13 +122,16 @@ export function ComboBox<T extends object>({
 
   // ComboBox className generator (reused across all conditional renders)
   // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
-  const baseClassName = typeof props.className === 'string' ? props.className : undefined;
-  const comboBoxClassName = baseClassName ? `react-aria-ComboBox ${baseClassName}` : 'react-aria-ComboBox';
+  const baseClassName =
+    typeof props.className === "string" ? props.className : undefined;
+  const comboBoxClassName = baseClassName
+    ? `react-aria-ComboBox ${baseClassName}`
+    : "react-aria-ComboBox";
 
   // ColumnMapping이 있으면 각 데이터 항목마다 ListBoxItem 렌더링
   // ListBox와 동일한 패턴: Element tree의 ComboBoxItem 템플릿 + Field 자식 사용
   if (hasDataBinding && columnMapping) {
-    console.log('🎯 ComboBox: columnMapping 감지 - 데이터로 아이템 렌더링', {
+    console.log("🎯 ComboBox: columnMapping 감지 - 데이터로 아이템 렌더링", {
       columnMapping,
       hasChildren: !!children,
       dataCount: boundData.length,
@@ -152,7 +157,7 @@ export function ComboBox<T extends object>({
           </div>
           {description && <Text slot="description">{description}</Text>}
           <Popover className={popoverClassName}>
-            <ListBox className='react-aria-ListBox'>
+            <ListBox className="react-aria-ListBox">
               <ListBoxItem key="loading" textValue="Loading">
                 ⏳ 데이터 로딩 중...
               </ListBoxItem>
@@ -182,7 +187,7 @@ export function ComboBox<T extends object>({
           </div>
           <FieldError>❌ 오류: {error}</FieldError>
           <Popover className={popoverClassName}>
-            <ListBox className='react-aria-ListBox'>
+            <ListBox className="react-aria-ListBox">
               <ListBoxItem key="error" textValue="Error">
                 ❌ 오류: {error}
               </ListBoxItem>
@@ -199,7 +204,7 @@ export function ComboBox<T extends object>({
         ...item,
       })) as T[];
 
-      console.log('✅ ComboBox with columnMapping - items:', items);
+      console.log("✅ ComboBox with columnMapping - items:", items);
 
       return (
         <AriaComboBox
@@ -221,7 +226,7 @@ export function ComboBox<T extends object>({
           {description && <Text slot="description">{description}</Text>}
           {errorMessage && <FieldError>{errorMessage}</FieldError>}
           <Popover className={popoverClassName}>
-            <ListBox className='react-aria-ListBox' items={items}>
+            <ListBox className="react-aria-ListBox" items={items}>
               {children}
             </ListBox>
           </Popover>
@@ -250,9 +255,7 @@ export function ComboBox<T extends object>({
         {description && <Text slot="description">{description}</Text>}
         {errorMessage && <FieldError>{errorMessage}</FieldError>}
         <Popover className={popoverClassName}>
-          <ListBox className='react-aria-ListBox'>
-            {children}
-          </ListBox>
+          <ListBox className="react-aria-ListBox">{children}</ListBox>
         </Popover>
       </AriaComboBox>
     );
@@ -260,31 +263,36 @@ export function ComboBox<T extends object>({
 
   // Dynamic Collection: items prop 사용 (columnMapping 없을 때)
   if (hasDataBinding && !loading && !error && boundData.length > 0) {
-    const config = (dataBinding as { config?: Record<string, unknown> })?.config as {
-      columnMapping?: {
-        id: string;
-        label: string;
-      };
-      dataMapping?: {
-        idField: string;
-        labelField: string;
-      };
-    } | undefined;
+    const config = (dataBinding as { config?: Record<string, unknown> })
+      ?.config as
+      | {
+          columnMapping?: {
+            id: string;
+            label: string;
+          };
+          dataMapping?: {
+            idField: string;
+            labelField: string;
+          };
+        }
+      | undefined;
 
     const idField =
-      config?.columnMapping?.id || config?.dataMapping?.idField || 'id';
+      config?.columnMapping?.id || config?.dataMapping?.idField || "id";
     const labelField =
-      config?.columnMapping?.label || config?.dataMapping?.labelField || 'label';
+      config?.columnMapping?.label ||
+      config?.dataMapping?.labelField ||
+      "label";
 
     const comboBoxItems = boundData.map((item, index) => ({
       id: String(item[idField] || item.id || index),
       label: String(
-        item[labelField] || item.label || item.name || `Item ${index + 1}`
+        item[labelField] || item.label || item.name || `Item ${index + 1}`,
       ),
       ...item,
     }));
 
-    console.log('✅ ComboBox Dynamic Collection - items:', comboBoxItems);
+    console.log("✅ ComboBox Dynamic Collection - items:", comboBoxItems);
 
     return (
       <AriaComboBox
@@ -306,13 +314,9 @@ export function ComboBox<T extends object>({
         {description && <Text slot="description">{description}</Text>}
         {errorMessage && <FieldError>{errorMessage}</FieldError>}
         <Popover className={popoverClassName}>
-          <ListBox className='react-aria-ListBox' items={comboBoxItems}>
+          <ListBox className="react-aria-ListBox" items={comboBoxItems}>
             {(item) => (
-              <ListBoxItem
-                key={item.id}
-                id={item.id}
-                textValue={item.label}
-              >
+              <ListBoxItem key={item.id} id={item.id} textValue={item.label}>
                 {item.label}
               </ListBoxItem>
             )}
@@ -389,9 +393,7 @@ export function ComboBox<T extends object>({
       {description && <Text slot="description">{description}</Text>}
       {errorMessage && <FieldError>{errorMessage}</FieldError>}
       <Popover className={popoverClassName}>
-        <ListBox className='react-aria-ListBox'>
-          {children}
-        </ListBox>
+        <ListBox className="react-aria-ListBox">{children}</ListBox>
       </Popover>
     </AriaComboBox>
   );

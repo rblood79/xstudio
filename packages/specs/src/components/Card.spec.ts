@@ -7,15 +7,15 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
  * Card Props
  */
 export interface CardProps {
-  variant?: 'default' | 'primary' | 'secondary' | 'tertiary' | 'surface' | 'elevated' | 'outlined';
-  size?: 'sm' | 'md' | 'lg';
-  orientation?: 'vertical' | 'horizontal';
+  variant?: "default" | "elevated" | "outlined";
+  size?: "sm" | "md" | "lg";
+  orientation?: "vertical" | "horizontal";
   isSelectable?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -30,62 +30,36 @@ export interface CardProps {
  * paddingX/paddingY 동일 값으로 균일 padding 표현
  */
 export const CardSpec: ComponentSpec<CardProps> = {
-  name: 'Card',
-  description: 'React Aria 기반 카드 컴포넌트',
-  element: 'div',
+  name: "Card",
+  description: "React Aria 기반 카드 컴포넌트",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultVariant: "default",
+  defaultSize: "md",
 
   variants: {
+    // default: 기본 카드 (배경 있음, 테두리 없음)
     default: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
-    primary: {
-      background: '{color.accent}' as TokenRef,
-      backgroundHover: '{color.accent-hover}' as TokenRef,
-      backgroundPressed: '{color.accent-pressed}' as TokenRef,
-      text: '{color.on-accent}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
-    },
-    secondary: {
-      background: '{color.neutral-subtle}' as TokenRef,
-      backgroundHover: '{color.neutral-hover}' as TokenRef,
-      backgroundPressed: '{color.neutral-pressed}' as TokenRef,
-      text: '{color.white}' as TokenRef,
-      border: '{color.neutral-subtle}' as TokenRef,
-    },
-    tertiary: {
-      background: '{color.purple}' as TokenRef,
-      backgroundHover: '{color.purple-hover}' as TokenRef,
-      backgroundPressed: '{color.purple-pressed}' as TokenRef,
-      text: '{color.white}' as TokenRef,
-      border: '{color.purple}' as TokenRef,
-    },
-    surface: {
-      background: '{color.neutral-subtle}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
-    },
-    elevated: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      // elevated는 border 대신 shadow 사용 (render.shapes에서 처리)
-    },
+    // outlined: 테두리 있는 카드
     outlined: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border-hover}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+    },
+    // elevated: 흰색 배경 + 그림자로 높이감 표현, border 없음
+    elevated: {
+      background: "{color.elevated}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      // elevated는 border 없이 shadow만 사용 (render.shapes에서 처리)
     },
   },
 
@@ -94,24 +68,24 @@ export const CardSpec: ComponentSpec<CardProps> = {
       height: 0,
       paddingX: 8,
       paddingY: 8,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
     md: {
       height: 0,
       paddingX: 16,
       paddingY: 16,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 12,
     },
     lg: {
       height: 0,
       paddingX: 24,
       paddingY: 24,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.xl}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
       gap: 16,
     },
   },
@@ -119,55 +93,61 @@ export const CardSpec: ComponentSpec<CardProps> = {
   states: {
     hover: {},
     pressed: {
-      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.06)',
+      boxShadow: "inset 0 1px 2px rgba(0,0,0,0.06)",
     },
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--highlight-background)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--highlight-background)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       // 사용자 스타일 우선, 없으면 spec 기본값
-      const bgColor = props.style?.backgroundColor
-                    ?? (state === 'hover' ? variant.backgroundHover
-                    : state === 'pressed' ? variant.backgroundPressed
-                    : variant.background);
+      const bgColor =
+        props.style?.backgroundColor ??
+        (state === "hover"
+          ? variant.backgroundHover
+          : state === "pressed"
+            ? variant.backgroundPressed
+            : variant.background);
 
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const shapes: Shape[] = [];
 
       // elevated variant: shadow
-      if (props.variant === 'elevated') {
+      if (props.variant === "elevated") {
         shapes.push({
-          type: 'shadow' as const,
-          target: 'bg',
+          type: "shadow" as const,
+          target: "bg",
           offsetX: 0,
-          offsetY: state === 'hover' ? 6 : 4,
-          blur: state === 'hover' ? 8 : 6,
+          offsetY: state === "hover" ? 6 : 4,
+          blur: state === "hover" ? 8 : 6,
           spread: -1,
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: "rgba(0, 0, 0, 0.1)",
           alpha: 0.1,
         });
       }
 
       // 배경
       shapes.push({
-        id: 'bg',
-        type: 'roundRect' as const,
+        id: "bg",
+        type: "roundRect" as const,
         x: 0,
         y: 0,
-        width: 'auto' as const,
-        height: 'auto',
+        width: "auto" as const,
+        height: "auto",
         radius: borderRadius as unknown as number,
         fill: bgColor,
       });
@@ -175,14 +155,17 @@ export const CardSpec: ComponentSpec<CardProps> = {
       // 테두리
       const borderColor = props.style?.borderColor ?? variant.border;
       const styleBw = props.style?.borderWidth;
-      const defaultBw = props.variant === 'outlined' ? 2 : 1;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : defaultBw;
+      const defaultBw = props.variant === "outlined" ? 2 : 1;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : defaultBw;
       if (borderColor) {
         shapes.push({
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
           color: borderColor,
           radius: borderRadius as unknown as number,
@@ -192,10 +175,10 @@ export const CardSpec: ComponentSpec<CardProps> = {
       // 선택 상태 강조
       if (props.isSelected) {
         shapes.push({
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth: 2,
-          color: '{color.accent}' as TokenRef,
+          color: "{color.accent}" as TokenRef,
           radius: borderRadius as unknown as number,
         });
       }
@@ -206,19 +189,22 @@ export const CardSpec: ComponentSpec<CardProps> = {
 
       // 콘텐츠 컨테이너
       const stylePad = props.style?.padding;
-      const padding = stylePad != null
-        ? (typeof stylePad === 'number' ? stylePad : parseFloat(String(stylePad)) || 0)
-        : size.paddingY;
+      const padding =
+        stylePad != null
+          ? typeof stylePad === "number"
+            ? stylePad
+            : parseFloat(String(stylePad)) || 0
+          : size.paddingY;
       shapes.push({
-        type: 'container' as const,
+        type: "container" as const,
         x: 0,
         y: 0,
-        width: 'auto',
-        height: 'auto',
+        width: "auto",
+        height: "auto",
         children: [],
         layout: {
-          display: 'flex',
-          flexDirection: props.orientation === 'horizontal' ? 'row' : 'column',
+          display: "flex",
+          flexDirection: props.orientation === "horizontal" ? "row" : "column",
           gap: size.gap,
           padding,
         },
@@ -228,15 +214,15 @@ export const CardSpec: ComponentSpec<CardProps> = {
     },
 
     react: (props) => ({
-      'data-selectable': props.isSelectable || undefined,
-      'data-selected': props.isSelected || undefined,
-      role: props.isSelectable ? 'button' : undefined,
+      "data-selectable": props.isSelectable || undefined,
+      "data-selected": props.isSelected || undefined,
+      role: props.isSelectable ? "button" : undefined,
       tabIndex: props.isSelectable ? 0 : undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: props.isSelectable ? 'static' : ('passive' as const),
-      cursor: props.isSelectable ? 'pointer' : 'default',
+      eventMode: props.isSelectable ? "static" : ("passive" as const),
+      cursor: props.isSelectable ? "pointer" : "default",
     }),
   },
 };

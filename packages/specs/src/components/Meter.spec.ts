@@ -7,22 +7,22 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Meter Props
  */
 export interface MeterProps {
-  variant?: 'default' | 'primary' | 'secondary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "informative" | "positive" | "notice" | "negative";
+  size?: "sm" | "md" | "lg";
   label?: string;
   value?: number;
   minValue?: number;
   maxValue?: number;
   showValue?: boolean;
-  valueFormat?: 'number' | 'percent';
+  valueFormat?: "number" | "percent";
   isDisabled?: boolean;
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -30,14 +30,17 @@ export interface MeterProps {
 
 /** variant별 채우기 색상 */
 export const METER_FILL_COLORS: Record<string, TokenRef> = {
-  default: '{color.accent}' as TokenRef,
-  primary: '{color.accent}' as TokenRef,
-  secondary: '{color.neutral-subtle}' as TokenRef,
-  error: '{color.negative}' as TokenRef,
+  informative: "{color.informative}" as TokenRef,
+  positive: "{color.positive}" as TokenRef,
+  notice: "{color.notice}" as TokenRef,
+  negative: "{color.negative}" as TokenRef,
 };
 
 /** 사이즈별 바 치수 */
-export const METER_DIMENSIONS: Record<string, { barHeight: number; width: number }> = {
+export const METER_DIMENSIONS: Record<
+  string,
+  { barHeight: number; width: number }
+> = {
   sm: { barHeight: 6, width: 200 },
   md: { barHeight: 8, width: 240 },
   lg: { barHeight: 12, width: 320 },
@@ -47,37 +50,37 @@ export const METER_DIMENSIONS: Record<string, { barHeight: number; width: number
  * Meter Component Spec
  */
 export const MeterSpec: ComponentSpec<MeterProps> = {
-  name: 'Meter',
-  description: 'React Aria 기반 미터 컴포넌트',
-  element: 'div',
+  name: "Meter",
+  description: "React Aria 기반 미터 컴포넌트",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultVariant: "informative",
+  defaultSize: "md",
 
   variants: {
-    default: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+    informative: {
+      background: "{color.neutral-subtle}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
-    primary: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+    positive: {
+      background: "{color.neutral-subtle}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
-    secondary: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+    notice: {
+      background: "{color.neutral-subtle}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
-    error: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+    negative: {
+      background: "{color.neutral-subtle}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
   },
 
@@ -86,24 +89,24 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       height: 6,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 6,
     },
     md: {
       height: 8,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 8,
     },
     lg: {
       height: 12,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 10,
     },
   },
@@ -113,40 +116,48 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {},
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
-      const variantName = props.variant ?? 'default';
-      const sizeName = props.size ?? 'md';
+    shapes: (props, variant, size, _state = "default") => {
+      const variantName = props.variant ?? "informative";
+      const sizeName = props.size ?? "md";
       const meterDims = METER_DIMENSIONS[sizeName] ?? METER_DIMENSIONS.md;
-      const fillColor = METER_FILL_COLORS[variantName] ?? METER_FILL_COLORS.default;
+      const fillColor =
+        METER_FILL_COLORS[variantName] ?? METER_FILL_COLORS.informative;
       const width = (props.style?.width as number) || meterDims.width;
       const barHeight = meterDims.barHeight;
       const gap = size.gap ?? 8;
 
       // 사용자 스타일 우선
       const styleBr = props.style?.borderRadius;
-      const barRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const barRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const textColor = props.style?.color ?? variant.text;
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
-      const fw = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
-        : 500;
+      const fw =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 500
+          : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
       const min = props.minValue ?? 0;
@@ -161,11 +172,12 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
       // 라벨 + 값 행
-      const hasLabelRow = !hasChildren && (props.label || props.showValue !== false);
+      const hasLabelRow =
+        !hasChildren && (props.label || props.showValue !== false);
       if (hasLabelRow) {
         if (props.label) {
           shapes.push({
-            type: 'text' as const,
+            type: "text" as const,
             x: 0,
             y: 0,
             text: props.label,
@@ -173,24 +185,25 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
             fontFamily: ff,
             fontWeight: fw,
             fill: textColor,
-            align: 'left' as const,
-            baseline: 'top' as const,
+            align: "left" as const,
+            baseline: "top" as const,
           });
         }
         if (props.showValue !== false) {
-          const formattedValue = props.valueFormat === 'number'
-            ? String(value)
-            : `${Math.round(percent)}%`;
+          const formattedValue =
+            props.valueFormat === "number"
+              ? String(value)
+              : `${Math.round(percent)}%`;
           shapes.push({
-            type: 'text' as const,
+            type: "text" as const,
             x: width,
             y: 0,
             text: formattedValue,
             fontSize,
             fontFamily: ff,
             fill: textColor,
-            align: 'right' as const,
-            baseline: 'top' as const,
+            align: "right" as const,
+            baseline: "top" as const,
           });
         }
       }
@@ -199,8 +212,8 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
 
       // 트랙 배경
       shapes.push({
-        id: 'track',
-        type: 'roundRect' as const,
+        id: "track",
+        type: "roundRect" as const,
         x: 0,
         y: offsetY,
         width,
@@ -212,8 +225,8 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       // 채우기
       if (fillWidth > 0) {
         shapes.push({
-          id: 'fill',
-          type: 'roundRect' as const,
+          id: "fill",
+          type: "roundRect" as const,
           x: 0,
           y: offsetY,
           width: fillWidth,
@@ -227,15 +240,15 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
     },
 
     react: (props) => ({
-      role: 'meter',
-      'aria-valuemin': props.minValue ?? 0,
-      'aria-valuemax': props.maxValue ?? 100,
-      'aria-valuenow': props.value ?? 50,
+      role: "meter",
+      "aria-valuemin": props.minValue ?? 0,
+      "aria-valuemax": props.maxValue ?? 100,
+      "aria-valuenow": props.value ?? 50,
     }),
 
     pixi: (props) => ({
-      eventMode: 'static' as const,
-      cursor: props.isDisabled ? 'not-allowed' : 'default',
+      eventMode: "static" as const,
+      cursor: props.isDisabled ? "not-allowed" : "default",
     }),
   },
 };

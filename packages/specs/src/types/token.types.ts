@@ -130,9 +130,11 @@ export interface SpacingTokens {
  * 타이포그래피 토큰
  */
 export interface TypographyTokens {
+  "text-2xs": number; // 10
   "text-xs": number; // 12
   "text-sm": number; // 14
-  "text-md": number; // 16
+  "text-base": number; // 16
+  "text-md": number; // 16 (alias for text-base)
   "text-lg": number; // 18
   "text-xl": number; // 20
   "text-2xl": number; // 24

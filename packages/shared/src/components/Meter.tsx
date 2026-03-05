@@ -9,19 +9,19 @@ import {
   Label,
   Meter as AriaMeter,
   MeterProps as AriaMeterProps,
-  composeRenderProps
-} from 'react-aria-components';
-import type { ComponentSizeSubset, MeterVariant } from '../types';
-import { formatPercent, formatNumber } from '../utils/core/numberUtils';
-import { Skeleton } from './Skeleton';
+  composeRenderProps,
+} from "react-aria-components";
+import type { ComponentSizeSubset, MeterVariant } from "../types";
+import { formatPercent, formatNumber } from "../utils/core/numberUtils";
+import { Skeleton } from "./Skeleton";
 
-import './styles/Meter.css';
+import "./styles/Meter.css";
 
 export interface MeterProps extends AriaMeterProps {
   label?: string;
   /**
-   * Visual variant
-   * @default 'default'
+   * Visual variant (S2)
+   * @default 'informative'
    */
   variant?: MeterVariant;
   /**
@@ -41,7 +41,7 @@ export interface MeterProps extends AriaMeterProps {
    * - custom: 커스텀 포맷터 사용
    * @default 'percent'
    */
-  valueFormat?: 'number' | 'percent' | 'custom';
+  valueFormat?: "number" | "percent" | "custom";
   /**
    * 값 표시 여부
    * @default true
@@ -65,10 +65,10 @@ export interface MeterProps extends AriaMeterProps {
  */
 export function Meter({
   label,
-  variant = 'default',
-  size = 'md',
-  locale = 'ko-KR',
-  valueFormat = 'percent',
+  variant = "informative",
+  size = "md",
+  locale = "ko-KR",
+  valueFormat = "percent",
   showValue = true,
   customFormatter,
   isLoading,
@@ -91,9 +91,9 @@ export function Meter({
     }
 
     switch (valueFormat) {
-      case 'percent':
+      case "percent":
         return formatPercent(value / 100, locale, 0);
-      case 'number':
+      case "number":
         return formatNumber(value, locale);
       default:
         return String(value);
@@ -103,9 +103,8 @@ export function Meter({
   return (
     <AriaMeter
       {...props}
-      className={composeRenderProps(
-        props.className,
-        (className) => className ? `react-aria-Meter ${className}` : 'react-aria-Meter'
+      className={composeRenderProps(props.className, (className) =>
+        className ? `react-aria-Meter ${className}` : "react-aria-Meter",
       )}
       data-variant={variant}
       data-size={size}
@@ -121,7 +120,7 @@ export function Meter({
             </span>
           )}
           <div className="bar">
-            <div className="fill" style={{ width: percentage + '%' }} />
+            <div className="fill" style={{ width: percentage + "%" }} />
           </div>
         </>
       )}

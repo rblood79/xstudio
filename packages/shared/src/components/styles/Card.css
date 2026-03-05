@@ -29,78 +29,49 @@
     }
 
     /* Variant styles */
-    &:where([data-variant="elevated"]) {
-      border: 0;
-      box-shadow: var(--shadow-md);
+
+    /* default: 기본 카드 (배경 있음, 테두리 없음) */
+    &:where([data-variant="default"]) {
+      border: none;
+      box-shadow: var(--shadow-sm);
 
       &[data-hovered] {
-        box-shadow: var(--shadow-lg);
+        box-shadow: var(--shadow-md);
+      }
+
+      &[data-pressed] {
+        box-shadow: var(--inset-shadow-sm);
       }
     }
 
+    /* outlined: 테두리 있는 카드 */
     &:where([data-variant="outlined"]) {
       box-shadow: none;
       border-width: 2px;
+      border-color: var(--border-color);
 
       &[data-hovered] {
         box-shadow: none;
         border-color: var(--highlight-background);
       }
-    }
-
-    &:where([data-variant="primary"]) {
-      background: var(--highlight-background);
-      color: var(--highlight-foreground);
-      border-color: var(--highlight-background);
-
-      &[data-hovered] {
-        background: color-mix(in srgb, var(--highlight-background) 85%, black);
-        border-color: color-mix(
-          in srgb,
-          var(--highlight-background) 85%,
-          black
-        );
-      }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--highlight-background) 75%, black);
-        border-color: color-mix(
-          in srgb,
-          var(--highlight-background) 75%,
-          black
-        );
+        box-shadow: none;
       }
     }
 
-    &:where([data-variant="secondary"]) {
-      background: var(--button-background);
-      color: var(--color-white);
-      border-color: var(--button-background);
+    /* elevated: 그림자로 높이감 표현 */
+    &:where([data-variant="elevated"]) {
+      background: var(--color-white);
+      border: none;
+      box-shadow: var(--shadow-md);
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--button-background) 85%, black);
-        border-color: color-mix(in srgb, var(--button-background) 85%, black);
+        box-shadow: var(--shadow-lg);
       }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--button-background) 75%, black);
-        border-color: color-mix(in srgb, var(--button-background) 75%, black);
-      }
-    }
-
-    &:where([data-variant="surface"]) {
-      background: var(--color-neutral-200);
-      color: var(--text-color);
-      border-color: var(--border-color);
-
-      &[data-hovered] {
-        background: color-mix(in srgb, var(--color-neutral-200) 92%, black);
-        border-color: var(--border-color-hover);
-      }
-
-      &[data-pressed] {
-        background: color-mix(in srgb, var(--color-neutral-200) 88%, black);
-        border-color: var(--border-color-hover);
+        box-shadow: var(--shadow-sm);
       }
     }
 

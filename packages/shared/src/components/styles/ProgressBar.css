@@ -6,20 +6,6 @@
   .react-aria-ProgressBar {
     --fill-color: var(--highlight-background);
 
-    /* Variants */
-    &[data-variant="secondary"] {
-      --fill-color: var(--button-background);
-    }
-    &[data-variant="tertiary"] {
-      --fill-color: var(--color-purple-600);
-    }
-    &[data-variant="error"] {
-      --fill-color: var(--invalid-color);
-    }
-    &[data-variant="surface"] {
-      --fill-color: var(--text-color-placeholder);
-    }
-
     display: grid;
     grid-template-areas:
       "label value"

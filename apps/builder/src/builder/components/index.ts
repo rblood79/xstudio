@@ -22,6 +22,7 @@ export {
   PropertyDataBinding,
   type DataBindingValue,
   PropertyListItem,
+  PropertySizeToggle,
 } from "./property";
 
 // Panel 컴포넌트

@@ -44,28 +44,28 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
-    // parent field variant: default/primary → --field-accent: --highlight-background
+    // S2 accent — 강조 필드 라벨 (highlight-background)
     accent: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.accent}" as TokenRef,
     },
-    // parent field variant: secondary → --field-accent: --button-background
+    // S2 neutral — 보조 필드 라벨 (neutral-subdued)
     neutral: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral-subdued}" as TokenRef,
     },
-    // parent field variant: tertiary → --field-accent: --color-purple-600
+    // S2 purple — Named Color 라벨 (purple-600)
     purple: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.purple}" as TokenRef,
     },
-    // parent field variant: error → --field-accent: --invalid-color
+    // S2 negative — 에러 필드 라벨 (invalid-color)
     negative: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,

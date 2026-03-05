@@ -51,17 +51,16 @@
     }
   }
 
-  /* Outline/Ghost variant — transparent bg, tinted hover */
-  .button-base:where([data-variant="outline"]),
-  .button-base:where([data-variant="ghost"]) {
+  /* S2 outline fill style — transparent bg, tinted hover */
+  .button-base:where([data-fill-style="outline"]) {
     background: transparent;
 
     &:where([data-hovered]) {
-      background: color-mix(in srgb, var(--button-color) 8%, transparent);
+      background: color-mix(in srgb, var(--button-text) 8%, transparent);
     }
 
     &:where([data-pressed]) {
-      background: color-mix(in srgb, var(--button-color) 12%, transparent);
+      background: color-mix(in srgb, var(--button-text) 12%, transparent);
     }
   }
 

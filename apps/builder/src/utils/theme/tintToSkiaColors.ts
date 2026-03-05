@@ -16,6 +16,26 @@ import { lightColors, darkColors } from "@xstudio/specs";
 import { oklchToHex } from "./oklchToHex";
 
 // ============================================================================
+// srgb color-mix 유틸 (CSS color-mix(in srgb, color P%, black) 정합)
+// ============================================================================
+
+/**
+ * CSS `color-mix(in srgb, hexColor P%, black)` 과 동일한 결과를 반환.
+ * srgb 채널별 선형 혼합: result = color × (percent/100)
+ * (black = 0,0,0 이므로 두 번째 항은 0)
+ */
+function mixWithBlackSrgb(hex: string, percent: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const p = percent / 100;
+  const mr = Math.max(0, Math.min(255, Math.round(r * p)));
+  const mg = Math.max(0, Math.min(255, Math.round(g * p)));
+  const mb = Math.max(0, Math.min(255, Math.round(b * p)));
+  return `#${mr.toString(16).padStart(2, "0")}${mg.toString(16).padStart(2, "0")}${mb.toString(16).padStart(2, "0")}`;
+}
+
+// ============================================================================
 // Tint 프리셋 정의 (preview-system.css 기준)
 // ============================================================================
 
@@ -111,16 +131,14 @@ function applyAccentColors(
   const ls = LIGHTNESS[mode];
 
   // accent: highlight-background (55% lightness 고정)
-  colors.accent = oklchToHex(ls.highlight, c, h);
+  const accentHex = oklchToHex(ls.highlight, c, h);
+  colors.accent = accentHex;
 
-  // accent-hover: color-mix(in srgb, accent 85%, black)
-  // → lightness를 약간 낮춤 (light) 또는 높임 (dark)
-  const hoverL = mode === "light" ? ls.highlight * 0.85 : ls.highlight * 1.15;
-  colors["accent-hover"] = oklchToHex(Math.min(1, hoverL), c, h);
+  // accent-hover: color-mix(in srgb, accent 85%, black) — CSS 정합
+  colors["accent-hover"] = mixWithBlackSrgb(accentHex, 85);
 
-  // accent-pressed: color-mix(in srgb, accent 75%, black)
-  const pressedL = mode === "light" ? ls.highlight * 0.75 : ls.highlight * 1.25;
-  colors["accent-pressed"] = oklchToHex(Math.min(1, pressedL), c, h);
+  // accent-pressed: color-mix(in srgb, accent 75%, black) — CSS 정합
+  colors["accent-pressed"] = mixWithBlackSrgb(accentHex, 75);
 
   // on-accent: 항상 대비색 (light → white, dark → near-black)
   colors["on-accent"] = mode === "light" ? "#ffffff" : "#171717";

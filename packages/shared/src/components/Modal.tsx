@@ -1,15 +1,14 @@
-import React from 'react';
-import { Modal as RACModal, ModalOverlayProps, composeRenderProps } from 'react-aria-components';
-import { FocusScope } from '@react-aria/focus';
-import type { ModalVariant, ComponentSize } from '../types';
-import './styles/Modal.css';
+import React from "react";
+import {
+  Modal as RACModal,
+  ModalOverlayProps,
+  composeRenderProps,
+} from "react-aria-components";
+import { FocusScope } from "@react-aria/focus";
+import type { ComponentSize } from "../types";
+import "./styles/Modal.css";
 
 export interface ModalProps extends ModalOverlayProps {
-  /**
-   * M3 variant
-   * @default 'primary'
-   */
-  variant?: ModalVariant;
   /**
    * Size variant
    * @default 'md'
@@ -64,21 +63,19 @@ export interface ModalProps extends ModalOverlayProps {
  * </Modal>
  */
 export function Modal({
-  variant = 'primary',
-  size = 'md',
+  size = "md",
   trapFocus = true,
   autoFocus = true,
   restoreFocus = true,
   children,
   ...props
 }: ModalProps) {
-  const modalClassName = composeRenderProps(
-    props.className,
-    (className) => className ? `react-aria-Modal ${className}` : 'react-aria-Modal'
+  const modalClassName = composeRenderProps(props.className, (className) =>
+    className ? `react-aria-Modal ${className}` : "react-aria-Modal",
   );
 
   return (
-    <RACModal {...props} className={modalClassName} data-variant={variant} data-size={size}>
+    <RACModal {...props} className={modalClassName} data-size={size}>
       <FocusScope
         contain={trapFocus}
         autoFocus={autoFocus}

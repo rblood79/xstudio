@@ -2,7 +2,7 @@
 import {
   ColorPicker as AriaColorPicker,
   ColorPickerProps as AriaColorPickerProps,
-  DialogTrigger
+  DialogTrigger,
 } from "react-aria-components";
 import { Button } from "./Button";
 import { ColorSwatch } from "./ColorSwatch";
@@ -10,7 +10,7 @@ import { ColorSlider } from "./ColorSlider";
 import { ColorArea } from "./ColorArea";
 import { ColorField } from "./ColorField";
 import { Popover } from "./Popover";
-import type { ColorPickerVariant, ComponentSize } from '../types';
+import type { ComponentSize } from "../types";
 
 import "./styles/ColorPicker.css";
 
@@ -20,12 +20,15 @@ import "./styles/ColorPicker.css";
  * - data-variant, data-size 속성 사용
  */
 
-export interface ColorPickerProps extends Omit<AriaColorPickerProps, 'children'> {
+export interface ColorPickerProps extends Omit<
+  AriaColorPickerProps,
+  "children"
+> {
   /**
    * M3 variant
    * @default 'primary'
    */
-  variant?: ColorPickerVariant;
+  variant?: string;
   /**
    * Size variant
    * @default 'md'
@@ -57,18 +60,24 @@ export interface ColorPickerProps extends Omit<AriaColorPickerProps, 'children'>
  * </ColorPicker>
  */
 export function ColorPicker({
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   children,
   className,
   ...props
 }: ColorPickerProps) {
   // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
-  const baseClassName = typeof className === 'string' ? className : undefined;
-  const colorPickerClassName = baseClassName ? `react-aria-ColorPicker ${baseClassName}` : 'react-aria-ColorPicker';
+  const baseClassName = typeof className === "string" ? className : undefined;
+  const colorPickerClassName = baseClassName
+    ? `react-aria-ColorPicker ${baseClassName}`
+    : "react-aria-ColorPicker";
 
   return (
-    <div className={colorPickerClassName} data-variant={variant} data-size={size}>
+    <div
+      className={colorPickerClassName}
+      data-variant={variant}
+      data-size={size}
+    >
       <AriaColorPicker {...props}>
         <DialogTrigger>
           <Button className="color-picker-button">

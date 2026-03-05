@@ -11,7 +11,12 @@ import {
   Slider,
 } from "../components/list";
 import { DataField } from "../components/Field";
-import type { PreviewElement, RenderContext, ColumnMapping, DataBinding } from "../types";
+import type {
+  PreviewElement,
+  RenderContext,
+  ColumnMapping,
+  DataBinding,
+} from "../types";
 
 /**
  * Selection 관련 컴포넌트 렌더러
@@ -34,13 +39,15 @@ if (!fieldCreationRequestedRef.current) {
  */
 export const renderListBox = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
 
   // 실제 ListBoxItem 자식 요소들을 찾기
   const listBoxChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "ListBoxItem")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "ListBoxItem",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // ColumnMapping이 있고 visible columns가 있으면 Field Elements 자동 생성
@@ -49,11 +56,12 @@ export const renderListBox = (
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable', name: 'xxx')
   const dataBinding = element.dataBinding || element.props.dataBinding;
-  const isPropertyBinding = dataBinding &&
-    typeof dataBinding === 'object' &&
-    'source' in (dataBinding as object) &&
-    'name' in (dataBinding as object) &&
-    !('type' in (dataBinding as object));
+  const isPropertyBinding =
+    dataBinding &&
+    typeof dataBinding === "object" &&
+    "source" in (dataBinding as object) &&
+    "name" in (dataBinding as object) &&
+    !("type" in (dataBinding as object));
 
   if (columnMapping) {
     // ⚠️ Preview에서 자동으로 Field Elements를 생성하지 않음
@@ -62,8 +70,8 @@ export const renderListBox = (
   }
 
   // columnMapping이 있거나 PropertyDataBinding이 있고 ListBoxItem 템플릿이 있으면 render function 사용
-  const hasValidTemplate = (columnMapping || isPropertyBinding) && listBoxChildren.length > 0;
-
+  const hasValidTemplate =
+    (columnMapping || isPropertyBinding) && listBoxChildren.length > 0;
 
   // hasValidTemplate일 때는 render function을 사용
   if (hasValidTemplate) {
@@ -73,7 +81,7 @@ export const renderListBox = (
     const fieldChildren = context.elements
       .filter(
         (child) =>
-          child.parent_id === listBoxItemTemplate.id && child.tag === "Field"
+          child.parent_id === listBoxItemTemplate.id && child.tag === "Field",
       )
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
@@ -109,7 +117,9 @@ export const renderListBox = (
                         | "email"
                     }
                     value={fieldValue}
-                    visible={(field.props as { visible?: boolean }).visible !== false}
+                    visible={
+                      (field.props as { visible?: boolean }).visible !== false
+                    }
                     style={field.props.style}
                     className={field.props.className}
                   />
@@ -131,14 +141,19 @@ export const renderListBox = (
           (element.props.orientation as "horizontal" | "vertical") || "vertical"
         }
         selectionMode={
-          (element.props.selectionMode as "none" | "single" | "multiple") || "none"
+          (element.props.selectionMode as "none" | "single" | "multiple") ||
+          "none"
         }
         defaultSelectedKeys={
           Array.isArray(element.props.selectedKeys)
             ? (element.props.selectedKeys as unknown as string[])
             : []
         }
-        dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
+        dataBinding={
+          (element.dataBinding || element.props.dataBinding) as
+            | DataBinding
+            | undefined
+        }
         columnMapping={columnMapping}
         onSelectionChange={(selectedKeys) => {
           const updatedProps = {
@@ -154,7 +169,9 @@ export const renderListBox = (
   }
 
   // Static children (no data binding)
-  const staticChildren = listBoxChildren.map((item) => context.renderElement(item));
+  const staticChildren = listBoxChildren.map((item) =>
+    context.renderElement(item),
+  );
 
   return (
     <ListBox
@@ -167,14 +184,19 @@ export const renderListBox = (
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
       }
       selectionMode={
-        (element.props.selectionMode as "none" | "single" | "multiple") || "none"
+        (element.props.selectionMode as "none" | "single" | "multiple") ||
+        "none"
       }
       defaultSelectedKeys={
         Array.isArray(element.props.selectedKeys)
           ? (element.props.selectedKeys as unknown as string[])
           : []
       }
-      dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
+      dataBinding={
+        (element.dataBinding || element.props.dataBinding) as
+          | DataBinding
+          | undefined
+      }
       columnMapping={columnMapping}
       onSelectionChange={(selectedKeys) => {
         const updatedProps = {
@@ -194,7 +216,7 @@ export const renderListBox = (
  */
 export const renderListBoxItem = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements } = context;
 
@@ -249,7 +271,7 @@ export const renderListBoxItem = (
  */
 export const renderDataField = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements } = context;
 
@@ -267,14 +289,19 @@ export const renderDataField = (
 
     if (parent && path) {
       // 부모의 value에서 데이터 추출
-      const parentValue = parent.props.value as Record<string, unknown> | undefined;
+      const parentValue = parent.props.value as
+        | Record<string, unknown>
+        | undefined;
 
       if (parentValue && typeof parentValue === "object") {
         const rawValue = parentValue[path];
         // null과 boolean을 적절히 변환 (DataField는 string | number | readonly string[] | undefined만 허용)
-        value = rawValue === null ? undefined :
-          typeof rawValue === 'boolean' ? String(rawValue) :
-          rawValue as string | number | undefined;
+        value =
+          rawValue === null
+            ? undefined
+            : typeof rawValue === "boolean"
+              ? String(rawValue)
+              : (rawValue as string | number | undefined);
       }
     }
   }
@@ -290,7 +317,17 @@ export const renderDataField = (
       data-element-id={element.id}
       fieldKey={element.props.key as string | undefined}
       label={element.props.label as string | undefined}
-      type={element.props.type as "string" | "number" | "boolean" | "date" | "image" | "url" | "email" | undefined}
+      type={
+        element.props.type as
+          | "string"
+          | "number"
+          | "boolean"
+          | "date"
+          | "image"
+          | "url"
+          | "email"
+          | undefined
+      }
       value={value}
       showLabel={element.props.showLabel !== false}
       visible={element.props.visible !== false}
@@ -309,13 +346,15 @@ export const renderDataField = (
  */
 export const renderGridList = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
 
   // 실제 GridListItem 자식 요소들을 찾기
   const gridListChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "GridListItem")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "GridListItem",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // ColumnMapping이 있고 visible columns가 있으면 Field Elements 자동 생성
@@ -324,14 +363,16 @@ export const renderGridList = (
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
   const dataBinding = element.dataBinding || element.props.dataBinding;
-  const isPropertyBinding = dataBinding &&
-    typeof dataBinding === 'object' &&
-    'source' in (dataBinding as object) &&
-    'name' in (dataBinding as object) &&
-    !('type' in (dataBinding as object));
+  const isPropertyBinding =
+    dataBinding &&
+    typeof dataBinding === "object" &&
+    "source" in (dataBinding as object) &&
+    "name" in (dataBinding as object) &&
+    !("type" in (dataBinding as object));
 
   // columnMapping이 있거나 PropertyDataBinding이 있고 GridListItem 템플릿이 있으면 render function 사용
-  const hasValidTemplate = (columnMapping || isPropertyBinding) && gridListChildren.length > 0;
+  const hasValidTemplate =
+    (columnMapping || isPropertyBinding) && gridListChildren.length > 0;
 
   const renderChildren = hasValidTemplate
     ? (item: Record<string, unknown>) => {
@@ -342,7 +383,8 @@ export const renderGridList = (
         const fieldChildren = context.elements
           .filter(
             (child) =>
-              child.parent_id === gridListItemTemplate.id && child.tag === "Field"
+              child.parent_id === gridListItemTemplate.id &&
+              child.tag === "Field",
           )
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
@@ -376,7 +418,9 @@ export const renderGridList = (
                           | "email"
                       }
                       value={fieldValue}
-                      visible={(field.props as { visible?: boolean }).visible !== false}
+                      visible={
+                        (field.props as { visible?: boolean }).visible !== false
+                      }
                       style={field.props.style}
                       className={field.props.className}
                     />
@@ -396,14 +440,19 @@ export const renderGridList = (
       style={element.props.style}
       className={element.props.className}
       selectionMode={
-        (element.props.selectionMode as "none" | "single" | "multiple") || "none"
+        (element.props.selectionMode as "none" | "single" | "multiple") ||
+        "none"
       }
       defaultSelectedKeys={
         Array.isArray(element.props.selectedKeys)
           ? (element.props.selectedKeys as unknown as string[])
           : []
       }
-      dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
+      dataBinding={
+        (element.dataBinding || element.props.dataBinding) as
+          | DataBinding
+          | undefined
+      }
       columnMapping={columnMapping}
       onSelectionChange={(selectedKeys) => {
         const updatedProps = {
@@ -423,7 +472,7 @@ export const renderGridList = (
  */
 export const renderGridListItem = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements } = context;
 
@@ -474,12 +523,14 @@ export const renderGridListItem = (
  */
 export const renderSelect = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
 
   const selectItemChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "SelectItem")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "SelectItem",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // ColumnMapping 추출
@@ -488,14 +539,16 @@ export const renderSelect = (
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
   const dataBinding = element.dataBinding || element.props.dataBinding;
-  const isPropertyBinding = dataBinding &&
-    typeof dataBinding === 'object' &&
-    'source' in (dataBinding as object) &&
-    'name' in (dataBinding as object) &&
-    !('type' in (dataBinding as object));
+  const isPropertyBinding =
+    dataBinding &&
+    typeof dataBinding === "object" &&
+    "source" in (dataBinding as object) &&
+    "name" in (dataBinding as object) &&
+    !("type" in (dataBinding as object));
 
   // columnMapping이 있거나 PropertyDataBinding이 있고 SelectItem 템플릿이 있으면 render function 사용
-  const hasValidTemplate = (columnMapping || isPropertyBinding) && selectItemChildren.length > 0;
+  const hasValidTemplate =
+    (columnMapping || isPropertyBinding) && selectItemChildren.length > 0;
 
   // props를 안전하게 보존
   const elementProps = { ...element.props };
@@ -512,7 +565,9 @@ export const renderSelect = (
   // 접근성을 위한 aria-label 설정
   const ariaLabel = processedLabel
     ? undefined
-    : (typeof elementProps["aria-label"] === 'string' ? elementProps["aria-label"] : undefined) ||
+    : (typeof elementProps["aria-label"] === "string"
+        ? elementProps["aria-label"]
+        : undefined) ||
       processedPlaceholder ||
       `Select ${element.id}`;
 
@@ -525,7 +580,8 @@ export const renderSelect = (
         const fieldChildren = context.elements
           .filter(
             (child) =>
-              child.parent_id === selectItemTemplate.id && child.tag === "Field"
+              child.parent_id === selectItemTemplate.id &&
+              child.tag === "Field",
           )
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
@@ -559,7 +615,9 @@ export const renderSelect = (
                           | "email"
                       }
                       value={fieldValue}
-                      visible={(field.props as { visible?: boolean }).visible !== false}
+                      visible={
+                        (field.props as { visible?: boolean }).visible !== false
+                      }
                       style={field.props.style}
                       className={field.props.className}
                     />
@@ -613,7 +671,11 @@ export const renderSelect = (
       isDisabled={Boolean(elementProps.isDisabled)}
       isRequired={Boolean(elementProps.isRequired)}
       autoFocus={Boolean(elementProps.autoFocus)}
-      dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
+      dataBinding={
+        (element.dataBinding || element.props.dataBinding) as
+          | DataBinding
+          | undefined
+      }
       columnMapping={columnMapping}
       onSelectionChange={async (selectedKey) => {
         // React Aria의 내부 ID를 실제 값으로 변환
@@ -629,7 +691,7 @@ export const renderSelect = (
             actualValue = String(
               selectedItem.props.value ||
                 selectedItem.props.label ||
-                `option-${index + 1}`
+                `option-${index + 1}`,
             );
           }
         }
@@ -644,7 +706,16 @@ export const renderSelect = (
         updateElementProps(element.id, updatedProps);
 
         try {
-          const db = await context.services?.getDB?.() as { elements: { update: (id: string, data: Record<string, unknown>) => Promise<void> } } | undefined;
+          const db = (await context.services?.getDB?.()) as
+            | {
+                elements: {
+                  update: (
+                    id: string,
+                    data: Record<string, unknown>,
+                  ) => Promise<void>;
+                };
+              }
+            | undefined;
           if (db) {
             await db.elements.update(element.id, { props: updatedProps });
           }
@@ -660,7 +731,7 @@ export const renderSelect = (
             props: updatedProps,
             merge: false,
           },
-          window.location.origin
+          window.location.origin,
         );
       }}
     >
@@ -674,13 +745,15 @@ export const renderSelect = (
  */
 export const renderComboBox = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
 
   // 실제 ComboBoxItem 자식 요소들을 찾기
   const comboBoxItemChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "ComboBoxItem")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "ComboBoxItem",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // ColumnMapping 추출
@@ -689,14 +762,16 @@ export const renderComboBox = (
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
   const dataBinding = element.dataBinding || element.props.dataBinding;
-  const isPropertyBinding = dataBinding &&
-    typeof dataBinding === 'object' &&
-    'source' in (dataBinding as object) &&
-    'name' in (dataBinding as object) &&
-    !('type' in (dataBinding as object));
+  const isPropertyBinding =
+    dataBinding &&
+    typeof dataBinding === "object" &&
+    "source" in (dataBinding as object) &&
+    "name" in (dataBinding as object) &&
+    !("type" in (dataBinding as object));
 
   // columnMapping이 있거나 PropertyDataBinding이 있고 ComboBoxItem 템플릿이 있으면 render function 사용
-  const hasValidTemplate = (columnMapping || isPropertyBinding) && comboBoxItemChildren.length > 0;
+  const hasValidTemplate =
+    (columnMapping || isPropertyBinding) && comboBoxItemChildren.length > 0;
 
   const renderChildren = hasValidTemplate
     ? (item: Record<string, unknown>) => {
@@ -707,20 +782,23 @@ export const renderComboBox = (
         const fieldChildren = context.elements
           .filter(
             (child) =>
-              child.parent_id === comboBoxItemTemplate.id && child.tag === "Field"
+              child.parent_id === comboBoxItemTemplate.id &&
+              child.tag === "Field",
           )
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
         // textValue 계산 - 보이는 Field 값들을 연결하여 검색 가능한 텍스트 생성
         const textValue = fieldChildren
-          .filter((field) => (field.props as { visible?: boolean }).visible !== false)
+          .filter(
+            (field) => (field.props as { visible?: boolean }).visible !== false,
+          )
           .map((field) => {
             const fieldKey = (field.props as { key?: string }).key;
             const fieldValue = fieldKey ? item[fieldKey] : undefined;
-            return fieldValue != null ? String(fieldValue) : '';
+            return fieldValue != null ? String(fieldValue) : "";
           })
           .filter(Boolean)
-          .join(' ');
+          .join(" ");
 
         return (
           <ComboBoxItem
@@ -753,7 +831,9 @@ export const renderComboBox = (
                           | "email"
                       }
                       value={fieldValue}
-                      visible={(field.props as { visible?: boolean }).visible !== false}
+                      visible={
+                        (field.props as { visible?: boolean }).visible !== false
+                      }
                       style={field.props.style}
                       className={field.props.className}
                     />
@@ -794,7 +874,7 @@ export const renderComboBox = (
       {...(element.props.selectedKey || element.props.selectedValue
         ? {
             defaultSelectedKey: String(
-              element.props.selectedKey || element.props.selectedValue
+              element.props.selectedKey || element.props.selectedValue,
             ),
           }
         : {})}
@@ -803,7 +883,11 @@ export const renderComboBox = (
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
-      dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
+      dataBinding={
+        (element.dataBinding || element.props.dataBinding) as
+          | DataBinding
+          | undefined
+      }
       columnMapping={columnMapping}
       onSelectionChange={async (selectedKey) => {
         // selectedKey가 undefined이면 선택 해제로 처리
@@ -833,31 +917,31 @@ export const renderComboBox = (
             actualValue = String(
               selectedItem.props.value ||
                 selectedItem.props.label ||
-                `option-${index + 1}`
+                `option-${index + 1}`,
             );
             displayValue = String(
               selectedItem.props.label ||
                 selectedItem.props.value ||
-                `option-${index + 1}`
+                `option-${index + 1}`,
             );
           }
         } else {
           const selectedItem = comboBoxItemChildren.find(
             (item) =>
               String(item.props.value) === String(selectedKey) ||
-              String(item.props.label) === String(selectedKey)
+              String(item.props.label) === String(selectedKey),
           );
 
           if (selectedItem) {
             actualValue = String(
               selectedItem.props.value ||
                 selectedItem.props.label ||
-                selectedKey
+                selectedKey,
             );
             displayValue = String(
               selectedItem.props.label ||
                 selectedItem.props.value ||
-                selectedKey
+                selectedKey,
             );
           }
         }
@@ -872,7 +956,16 @@ export const renderComboBox = (
         updateElementProps(element.id, updatedProps);
 
         try {
-          const db = await context.services?.getDB?.() as { elements: { update: (id: string, data: Record<string, unknown>) => Promise<void> } } | undefined;
+          const db = (await context.services?.getDB?.()) as
+            | {
+                elements: {
+                  update: (
+                    id: string,
+                    data: Record<string, unknown>,
+                  ) => Promise<void>;
+                };
+              }
+            | undefined;
           if (db) {
             await db.elements.update(element.id, { props: updatedProps });
           }
@@ -891,7 +984,7 @@ export const renderComboBox = (
             },
             merge: true,
           },
-          window.location.origin
+          window.location.origin,
         );
       }}
       onInputChange={(inputValue) => {
@@ -912,7 +1005,7 @@ export const renderComboBox = (
  */
 export const renderSlider = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -924,19 +1017,17 @@ export const renderSlider = (
       style={element.props.style}
       className={element.props.className}
       label={String(element.props.label || "")}
-      defaultValue={Array.isArray(element.props.value) ? element.props.value : [50]}
+      defaultValue={
+        Array.isArray(element.props.value) ? element.props.value : [50]
+      }
       minValue={Number(element.props.minValue) || 0}
       maxValue={Number(element.props.maxValue) || 100}
       step={Number(element.props.step) || 1}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "horizontal"
       }
-      size={
-        (element.props.size as "sm" | "md" | "lg") || "md"
-      }
-      variant={
-        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
-      }
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      isEmphasized={Boolean(element.props.isEmphasized)}
       onChange={(value) => {
         const updatedProps = {
           ...element.props,

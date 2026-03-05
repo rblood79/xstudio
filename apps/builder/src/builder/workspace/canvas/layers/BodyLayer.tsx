@@ -91,20 +91,13 @@ export const BodyLayer = memo(function BodyLayer({
   const bodyStyle = bodyElement?.props?.style as CSSStyle | undefined;
   const backgroundColorCss = bodyStyle?.backgroundColor;
 
-  // 스타일 값 추출 — 명시적 배경색 없으면 theme의 base 색상 사용
+  // 스타일 값 추출 — 테마 base 색상을 1순위로 사용
   const backgroundColor = useMemo(() => {
-    if (backgroundColorCss) {
-      return cssColorToHex(backgroundColorCss, 0xffffff);
-    }
-    // 명시적 배경색 없음 → theme base color
     const baseHex = skiaTheme === "dark" ? darkColors.base : lightColors.base;
     return cssColorToHex(baseHex, 0xffffff);
-  }, [backgroundColorCss, skiaTheme]);
+  }, [skiaTheme]);
 
-  const backgroundAlpha = useMemo(() => {
-    if (!backgroundColorCss) return 1;
-    return cssColorToAlpha(backgroundColorCss);
-  }, [backgroundColorCss]);
+  const backgroundAlpha = 1;
 
   // Border-Box v2: parseBorderConfig로 border 정보 추출
   const borderConfig = useMemo(() => parseBorderConfig(bodyStyle), [bodyStyle]);

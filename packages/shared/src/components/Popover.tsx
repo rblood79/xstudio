@@ -3,20 +3,15 @@ import {
   OverlayArrow,
   Popover as AriaPopover,
   PopoverProps as AriaPopoverProps,
-  composeRenderProps
-} from 'react-aria-components';
-import { FocusScope } from '@react-aria/focus';
-import type { PopoverVariant, ComponentSize } from '../types';
+  composeRenderProps,
+} from "react-aria-components";
+import { FocusScope } from "@react-aria/focus";
+import type { ComponentSize } from "../types";
 
-import './styles/Popover.css';
+import "./styles/Popover.css";
 
-export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
+export interface PopoverProps extends Omit<AriaPopoverProps, "children"> {
   children: React.ReactNode;
-  /**
-   * M3 variant
-   * @default 'primary'
-   */
-  variant?: PopoverVariant;
   /**
    * Size variant
    * @default 'md'
@@ -76,21 +71,19 @@ export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
  */
 export function Popover({
   children,
-  variant = 'primary',
-  size = 'md',
+  size = "md",
   showArrow = true,
   containFocus = false,
   autoFocus = true,
   restoreFocus = true,
   ...props
 }: PopoverProps) {
-  const popoverClassName = composeRenderProps(
-    props.className,
-    (className) => className ? `react-aria-Popover ${className}` : 'react-aria-Popover'
+  const popoverClassName = composeRenderProps(props.className, (className) =>
+    className ? `react-aria-Popover ${className}` : "react-aria-Popover",
   );
 
   return (
-    <AriaPopover {...props} className={popoverClassName} data-variant={variant} data-size={size}>
+    <AriaPopover {...props} className={popoverClassName} data-size={size}>
       {showArrow && (
         <OverlayArrow>
           <svg width={12} height={12} viewBox="0 0 12 12">

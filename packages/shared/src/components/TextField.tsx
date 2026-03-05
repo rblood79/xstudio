@@ -13,12 +13,12 @@ import {
   TextField as AriaTextField,
   TextFieldProps as AriaTextFieldProps,
   ValidationResult,
-  composeRenderProps
-} from 'react-aria-components';
-import type { TextFieldVariant, ComponentSize } from '../types';
-import { Skeleton } from './Skeleton';
+  composeRenderProps,
+} from "react-aria-components";
+import type { ComponentSize } from "../types";
+import { Skeleton } from "./Skeleton";
 
-import './styles/TextField.css';
+import "./styles/TextField.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -31,14 +31,13 @@ export interface TextFieldProps extends AriaTextFieldProps {
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
   placeholder?: string;
-  type?: 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number';
+  type?: "text" | "email" | "password" | "search" | "tel" | "url" | "number";
   value?: string;
   onChange?: (value: string) => void;
   isRequired?: boolean;
   isDisabled?: boolean;
   isReadOnly?: boolean;
-  // M3 props
-  variant?: TextFieldVariant;
+  // S2 props
   size?: ComponentSize;
   /** Show loading skeleton instead of input */
   isLoading?: boolean;
@@ -49,14 +48,13 @@ export function TextField({
   description,
   errorMessage,
   placeholder = "Enter text...",
-  type = 'text',
+  type = "text",
   value,
   onChange,
   isRequired,
   isDisabled,
   isReadOnly,
-  variant = 'primary',
-  size = 'md',
+  size = "md",
   isLoading,
   ...props
 }: TextFieldProps) {
@@ -74,11 +72,11 @@ export function TextField({
   return (
     <AriaTextField
       {...props}
-      className={composeRenderProps(
-        props.className,
-        (className) => className ? `react-aria-TextField ${className}` : 'react-aria-TextField'
+      className={composeRenderProps(props.className, (className) =>
+        className
+          ? `react-aria-TextField ${className}`
+          : "react-aria-TextField",
       )}
-      data-variant={variant}
       data-size={size}
       value={value}
       onChange={onChange}
@@ -87,10 +85,7 @@ export function TextField({
       isReadOnly={isReadOnly}
     >
       {label && <Label>{label}</Label>}
-      <Input
-        type={type}
-        placeholder={placeholder}
-      />
+      <Input type={type} placeholder={placeholder} />
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>
     </AriaTextField>

@@ -6,26 +6,28 @@
  * @packageDocumentation
  */
 
-import type { TypographyTokens } from '../types/token.types';
+import type { TypographyTokens } from "../types/token.types";
 
 /**
  * 폰트 크기 토큰
  */
 export const typography: TypographyTokens = {
-  'text-xs': 12,
-  'text-sm': 14,
-  'text-md': 16,
-  'text-lg': 18,
-  'text-xl': 20,
-  'text-2xl': 24,
+  "text-2xs": 10,
+  "text-xs": 12,
+  "text-sm": 14,
+  "text-base": 16,
+  "text-md": 16,
+  "text-lg": 18,
+  "text-xl": 20,
+  "text-2xl": 24,
 };
 
 /**
  * 폰트 패밀리
  */
 export const fontFamily = {
-  sans: 'Pretendard, Inter, system-ui, -apple-system, sans-serif',
-  mono: 'JetBrains Mono, Consolas, monospace',
+  sans: "Pretendard, Inter, system-ui, -apple-system, sans-serif",
+  mono: "JetBrains Mono, Consolas, monospace",
 };
 
 /**

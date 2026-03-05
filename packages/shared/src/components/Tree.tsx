@@ -13,7 +13,7 @@ import {
 import { InfoIcon, ChevronRightIcon, Minus } from "lucide-react";
 import { MyCheckbox } from "./Checkbox";
 import type { DataBinding } from "../types";
-import type { TreeVariant, ComponentSize } from "../types";
+import type { ComponentSize } from "../types";
 import { useCollectionData } from "../hooks";
 import { Skeleton } from "./Skeleton";
 
@@ -24,7 +24,7 @@ export interface MyTreeProps<T extends object> extends TreeProps<T> {
    * M3 variant
    * @default 'primary'
    */
-  variant?: TreeVariant;
+  variant?: string;
   /**
    * Size variant
    * @default 'md'
@@ -75,7 +75,15 @@ export interface MyTreeProps<T extends object> extends TreeProps<T> {
  * </Tree>
  */
 export function Tree<T extends object>(props: MyTreeProps<T>) {
-  const { variant = 'primary', size = 'md', dataBinding, isLoading: externalLoading, skeletonNodeCount = 3, children, ...restProps } = props;
+  const {
+    variant = "primary",
+    size = "md",
+    dataBinding,
+    isLoading: externalLoading,
+    skeletonNodeCount = 3,
+    children,
+    ...restProps
+  } = props;
 
   // useCollectionData Hook - 항상 최상단에서 호출 (Rules of Hooks)
   const {
@@ -92,7 +100,11 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
   if (externalLoading) {
     return (
       <div
-        className={restProps.className ? `react-aria-Tree ${restProps.className}` : "react-aria-Tree"}
+        className={
+          restProps.className
+            ? `react-aria-Tree ${restProps.className}`
+            : "react-aria-Tree"
+        }
         data-variant={variant}
         data-size={size}
         role="tree"
@@ -100,7 +112,11 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
         aria-label="Loading tree..."
       >
         {Array.from({ length: skeletonNodeCount }).map((_, i) => (
-          <div key={i} className="react-aria-TreeItem" style={{ paddingLeft: i === 1 ? '24px' : i === 2 ? '48px' : '0' }}>
+          <div
+            key={i}
+            className="react-aria-TreeItem"
+            style={{ paddingLeft: i === 1 ? "24px" : i === 2 ? "48px" : "0" }}
+          >
             <Skeleton componentVariant="tree-node" size={size} index={i} />
           </div>
         ))}
@@ -108,18 +124,19 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
     );
   }
 
-  const treeClassName = composeRenderProps(
-    restProps.className,
-    (cls) => cls ? `react-aria-Tree ${cls}` : "react-aria-Tree"
+  const treeClassName = composeRenderProps(restProps.className, (cls) =>
+    cls ? `react-aria-Tree ${cls}` : "react-aria-Tree",
   );
 
   // DataBinding이 있고 데이터가 로드된 경우
   if (dataBinding && treeData.length > 0) {
-    const renderTreeItemsRecursively = (items: Record<string, unknown>[]): React.ReactNode => {
+    const renderTreeItemsRecursively = (
+      items: Record<string, unknown>[],
+    ): React.ReactNode => {
       return items.map((item) => {
         const itemId = String(item.id || item.name || Math.random());
         const displayTitle = String(
-          item.name || item.label || item.title || itemId
+          item.name || item.label || item.title || itemId,
         );
         const hasChildren =
           Array.isArray(item.children) && item.children.length > 0;
@@ -133,7 +150,9 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
             showInfoButton={false}
             childItems={
               hasChildren
-                ? renderTreeItemsRecursively(item.children as Record<string, unknown>[])
+                ? renderTreeItemsRecursively(
+                    item.children as Record<string, unknown>[],
+                  )
                 : undefined
             }
           />
@@ -142,7 +161,12 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
     };
 
     return (
-      <AriaTree {...restProps} className={treeClassName} data-variant={variant} data-size={size}>
+      <AriaTree
+        {...restProps}
+        className={treeClassName}
+        data-variant={variant}
+        data-size={size}
+      >
         {loading ? (
           <TreeItem
             key="loading"
@@ -160,7 +184,12 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
 
   // Static children
   return (
-    <AriaTree {...restProps} className={treeClassName} data-variant={variant} data-size={size}>
+    <AriaTree
+      {...restProps}
+      className={treeClassName}
+      data-variant={variant}
+      data-size={size}
+    >
       {children}
     </AriaTree>
   );
@@ -170,7 +199,7 @@ export function TreeItemContent(
   props: Omit<TreeItemContentProps, "children"> & {
     children?: React.ReactNode;
     hasChildren?: boolean;
-  }
+  },
 ) {
   return (
     <AriaTreeItemContent {...props}>
@@ -194,8 +223,10 @@ export function TreeItemContent(
   );
 }
 
-export interface TreeItemProps
-  extends Omit<Partial<AriaTreeItemProps>, "value"> {
+export interface TreeItemProps extends Omit<
+  Partial<AriaTreeItemProps>,
+  "value"
+> {
   title?: string;
   value?: string;
   label?: string;

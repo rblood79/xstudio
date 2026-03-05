@@ -5,21 +5,21 @@
  * Sizes: sm, md, lg
  */
 
-import React from 'react';
+import React from "react";
 import {
   Button,
   GridList as AriaGridList,
   GridListItem as AriaGridListItem,
   GridListItemProps,
-  GridListProps
-} from 'react-aria-components';
-import { MyCheckbox } from './Checkbox';
-import type { GridListVariant, ComponentSize } from '../types';
-import type { DataBinding, ColumnMapping, DataBindingValue } from '../types';
+  GridListProps,
+} from "react-aria-components";
+import { MyCheckbox } from "./Checkbox";
+import type { ComponentSize } from "../types";
+import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
-import { useCollectionData } from '../hooks';
+import { useCollectionData } from "../hooks";
 
-import './styles/GridList.css';
+import "./styles/GridList.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -31,7 +31,7 @@ interface ExtendedGridListProps<T extends object> extends GridListProps<T> {
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   // M3 props
-  variant?: GridListVariant;
+  variant?: string;
   size?: ComponentSize;
   /**
    * React Aria 1.13.0: 커스텀 필터 함수
@@ -54,11 +54,11 @@ export function GridList<T extends object>({
   children,
   dataBinding,
   columnMapping,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   filter,
   filterText,
-  filterFields = ['label', 'name', 'title'] as (keyof T)[],
+  filterFields = ["label", "name", "title"] as (keyof T)[],
   ...props
 }: ExtendedGridListProps<T>) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -68,10 +68,10 @@ export function GridList<T extends object>({
     error,
   } = useCollectionData({
     dataBinding: dataBinding as DataBinding,
-    componentName: 'GridList',
+    componentName: "GridList",
     fallbackData: [
-      { id: 1, name: 'Item 1', description: 'Description 1' },
-      { id: 2, name: 'Item 2', description: 'Description 2' },
+      { id: 1, name: "Item 1", description: "Description 1" },
+      { id: 2, name: "Item 2", description: "Description 2" },
     ],
   });
 
@@ -91,7 +91,7 @@ export function GridList<T extends object>({
         filterFields.some((field) => {
           const value = item[field as string];
           return value && String(value).toLowerCase().includes(searchText);
-        })
+        }),
       );
     }
 
@@ -114,17 +114,20 @@ export function GridList<T extends object>({
 
   // GridList className generator (reused across all conditional renders)
   // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
-  const baseClassName = typeof props.className === 'string' ? props.className : undefined;
-  const gridListClassName = baseClassName ? `react-aria-GridList ${baseClassName}` : 'react-aria-GridList';
+  const baseClassName =
+    typeof props.className === "string" ? props.className : undefined;
+  const gridListClassName = baseClassName
+    ? `react-aria-GridList ${baseClassName}`
+    : "react-aria-GridList";
 
   // ColumnMapping이 있으면 각 데이터 항목마다 GridListItem 렌더링
   // ListBox와 동일한 패턴: Element tree의 GridListItem 템플릿 + Field 자식 사용
   if (hasDataBinding && columnMapping) {
-    console.log('🎯 GridList: columnMapping 감지 - 데이터로 아이템 렌더링', {
+    console.log("🎯 GridList: columnMapping 감지 - 데이터로 아이템 렌더링", {
       columnMapping,
       hasChildren: !!children,
       childrenType: typeof children,
-      isChildrenFunction: typeof children === 'function',
+      isChildrenFunction: typeof children === "function",
       dataCount: filteredData.length,
       loading,
       error,
@@ -133,18 +136,24 @@ export function GridList<T extends object>({
     // Loading 상태
     if (loading) {
       return (
-        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
+        <AriaGridList
+          {...props}
+          className={gridListClassName}
+          data-variant={variant}
+          data-size={size}
+        >
           <AriaGridListItem
             key="loading"
             value={{}}
-            className='react-aria-GridListItem'
+            className="react-aria-GridListItem"
           >
             {({ selectionMode, selectionBehavior, allowsDragging }) => (
               <>
                 {allowsDragging && <Button slot="drag">≡</Button>}
-                {selectionMode === 'multiple' && selectionBehavior === 'toggle' && (
-                  <MyCheckbox slot="selection" />
-                )}
+                {selectionMode === "multiple" &&
+                  selectionBehavior === "toggle" && (
+                    <MyCheckbox slot="selection" />
+                  )}
                 ⏳ 데이터 로딩 중...
               </>
             )}
@@ -156,18 +165,24 @@ export function GridList<T extends object>({
     // Error 상태
     if (error) {
       return (
-        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
+        <AriaGridList
+          {...props}
+          className={gridListClassName}
+          data-variant={variant}
+          data-size={size}
+        >
           <AriaGridListItem
             key="error"
             value={{}}
-            className='react-aria-GridListItem'
+            className="react-aria-GridListItem"
           >
             {({ selectionMode, selectionBehavior, allowsDragging }) => (
               <>
                 {allowsDragging && <Button slot="drag">≡</Button>}
-                {selectionMode === 'multiple' && selectionBehavior === 'toggle' && (
-                  <MyCheckbox slot="selection" />
-                )}
+                {selectionMode === "multiple" &&
+                  selectionBehavior === "toggle" && (
+                    <MyCheckbox slot="selection" />
+                  )}
                 ❌ 오류: {error}
               </>
             )}
@@ -183,10 +198,16 @@ export function GridList<T extends object>({
         ...item,
       })) as T[];
 
-      console.log('✅ GridList with columnMapping - items:', items);
+      console.log("✅ GridList with columnMapping - items:", items);
 
       return (
-        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size} items={items}>
+        <AriaGridList
+          {...props}
+          className={gridListClassName}
+          data-variant={variant}
+          data-size={size}
+          items={items}
+        >
           {children}
         </AriaGridList>
       );
@@ -194,7 +215,12 @@ export function GridList<T extends object>({
 
     // 데이터 없음
     return (
-      <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
+      <AriaGridList
+        {...props}
+        className={gridListClassName}
+        data-variant={variant}
+        data-size={size}
+      >
         {children}
       </AriaGridList>
     );
@@ -205,18 +231,24 @@ export function GridList<T extends object>({
     // Loading 상태
     if (loading) {
       return (
-        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
+        <AriaGridList
+          {...props}
+          className={gridListClassName}
+          data-variant={variant}
+          data-size={size}
+        >
           <AriaGridListItem
             key="loading"
             value={{}}
-            className='react-aria-GridListItem'
+            className="react-aria-GridListItem"
           >
             {({ selectionMode, selectionBehavior, allowsDragging }) => (
               <>
                 {allowsDragging && <Button slot="drag">≡</Button>}
-                {selectionMode === 'multiple' && selectionBehavior === 'toggle' && (
-                  <MyCheckbox slot="selection" />
-                )}
+                {selectionMode === "multiple" &&
+                  selectionBehavior === "toggle" && (
+                    <MyCheckbox slot="selection" />
+                  )}
                 ⏳ 데이터 로딩 중...
               </>
             )}
@@ -228,18 +260,24 @@ export function GridList<T extends object>({
     // Error 상태
     if (error) {
       return (
-        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
+        <AriaGridList
+          {...props}
+          className={gridListClassName}
+          data-variant={variant}
+          data-size={size}
+        >
           <AriaGridListItem
             key="error"
             value={{}}
-            className='react-aria-GridListItem'
+            className="react-aria-GridListItem"
           >
             {({ selectionMode, selectionBehavior, allowsDragging }) => (
               <>
                 {allowsDragging && <Button slot="drag">≡</Button>}
-                {selectionMode === 'multiple' && selectionBehavior === 'toggle' && (
-                  <MyCheckbox slot="selection" />
-                )}
+                {selectionMode === "multiple" &&
+                  selectionBehavior === "toggle" && (
+                    <MyCheckbox slot="selection" />
+                  )}
                 ❌ 오류: {error}
               </>
             )}
@@ -253,28 +291,35 @@ export function GridList<T extends object>({
       const items = filteredData.map((item, index) => ({
         id: String(item.id || index),
         label: String(
-          item.name || item.title || item.label || `Item ${index + 1}`
+          item.name || item.title || item.label || `Item ${index + 1}`,
         ),
         ...item,
       }));
 
-      console.log('✅ GridList Dynamic Collection - items:', items);
+      console.log("✅ GridList Dynamic Collection - items:", items);
 
       return (
-        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size} items={items}>
+        <AriaGridList
+          {...props}
+          className={gridListClassName}
+          data-variant={variant}
+          data-size={size}
+          items={items}
+        >
           {(item) => (
             <AriaGridListItem
               key={item.id}
               id={item.id}
               textValue={item.label}
-              className='react-aria-GridListItem'
+              className="react-aria-GridListItem"
             >
               {({ selectionMode, selectionBehavior, allowsDragging }) => (
                 <>
                   {allowsDragging && <Button slot="drag">≡</Button>}
-                  {selectionMode === 'multiple' && selectionBehavior === 'toggle' && (
-                    <MyCheckbox slot="selection" />
-                  )}
+                  {selectionMode === "multiple" &&
+                    selectionBehavior === "toggle" && (
+                      <MyCheckbox slot="selection" />
+                    )}
                   {item.label}
                 </>
               )}
@@ -287,7 +332,12 @@ export function GridList<T extends object>({
 
   // Static Children (기존 방식)
   return (
-    <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
+    <AriaGridList
+      {...props}
+      className={gridListClassName}
+      data-variant={variant}
+      data-size={size}
+    >
       {children}
     </AriaGridList>
   );
@@ -295,19 +345,24 @@ export function GridList<T extends object>({
 
 export { GridList as MyGridList };
 
-export function GridListItem(
-  { children, ...props }: Omit<GridListItemProps, 'children'> & {
-    children?: React.ReactNode;
-  }
-) {
-  const textValue = typeof children === 'string' ? children : undefined;
+export function GridListItem({
+  children,
+  ...props
+}: Omit<GridListItemProps, "children"> & {
+  children?: React.ReactNode;
+}) {
+  const textValue = typeof children === "string" ? children : undefined;
   return (
-    <AriaGridListItem textValue={textValue} {...props} className='react-aria-GridListItem'>
+    <AriaGridListItem
+      textValue={textValue}
+      {...props}
+      className="react-aria-GridListItem"
+    >
       {({ selectionMode, selectionBehavior, allowsDragging }) => (
         <>
           {/* Add elements for drag and drop and selection. */}
           {allowsDragging && <Button slot="drag">≡</Button>}
-          {selectionMode === 'multiple' && selectionBehavior === 'toggle' && (
+          {selectionMode === "multiple" && selectionBehavior === "toggle" && (
             <MyCheckbox slot="selection" />
           )}
           {children}

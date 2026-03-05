@@ -15,7 +15,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  * Checkbox Props
  */
 export interface CheckboxProps {
-  variant?: "default" | "primary" | "secondary" | "error";
+  variant?: "default" | "emphasized";
   size?: "sm" | "md" | "lg";
   children?: string;
   label?: string;
@@ -33,20 +33,12 @@ export const CHECKBOX_CHECKED_COLORS: Record<
   { bg: TokenRef; border: TokenRef }
 > = {
   default: {
+    bg: "{color.neutral}" as TokenRef,
+    border: "{color.neutral}" as TokenRef,
+  },
+  emphasized: {
     bg: "{color.accent}" as TokenRef,
     border: "{color.accent}" as TokenRef,
-  },
-  primary: {
-    bg: "{color.accent}" as TokenRef,
-    border: "{color.accent}" as TokenRef,
-  },
-  secondary: {
-    bg: "{color.neutral-subtle}" as TokenRef,
-    border: "{color.neutral-subtle}" as TokenRef,
-  },
-  error: {
-    bg: "{color.negative}" as TokenRef,
-    border: "{color.negative}" as TokenRef,
   },
 };
 
@@ -76,26 +68,12 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
-    primary: {
+    emphasized: {
       background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.accent-subtle}" as TokenRef,
+      backgroundPressed: "{color.accent-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
-    },
-    secondary: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-    error: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.negative-subtle}" as TokenRef,
-      backgroundPressed: "{color.negative-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.negative}" as TokenRef,
     },
   },
 
@@ -208,7 +186,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
           y1: boxSize * 0.5,
           x2: boxSize * 0.4,
           y2: boxSize - pad,
-          stroke: "{color.on-accent}" as TokenRef,
+          stroke: "{color.white}" as TokenRef,
           strokeWidth: 2.5,
         });
         shapes.push({
@@ -217,7 +195,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
           y1: boxSize - pad,
           x2: boxSize - pad,
           y2: pad,
-          stroke: "{color.on-accent}" as TokenRef,
+          stroke: "{color.white}" as TokenRef,
           strokeWidth: 2.5,
         });
       }
@@ -231,7 +209,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
           y1: boxSize / 2,
           x2: boxSize - pad,
           y2: boxSize / 2,
-          stroke: "{color.on-accent}" as TokenRef,
+          stroke: "{color.white}" as TokenRef,
           strokeWidth: 2.5,
         });
       }

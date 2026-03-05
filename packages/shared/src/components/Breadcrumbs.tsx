@@ -1,10 +1,15 @@
-import {Breadcrumbs as RACBreadcrumbs, BreadcrumbsProps, Breadcrumb, Link} from 'react-aria-components';
-import type { BreadcrumbsVariant, ComponentSize } from '../types';
-import type { DataBinding, ColumnMapping, DataBindingValue } from '../types';
+import {
+  Breadcrumbs as RACBreadcrumbs,
+  BreadcrumbsProps,
+  Breadcrumb,
+  Link,
+} from "react-aria-components";
+import type { ComponentSize } from "../types";
+import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
-import { useCollectionData } from '../hooks';
-import { Skeleton } from './Skeleton';
-import './styles/Breadcrumbs.css';
+import { useCollectionData } from "../hooks";
+import { Skeleton } from "./Skeleton";
+import "./styles/Breadcrumbs.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -12,12 +17,14 @@ import './styles/Breadcrumbs.css';
  * - data-variant, data-size 속성 사용
  */
 
-export interface BreadcrumbsExtendedProps<T extends object> extends BreadcrumbsProps<T> {
+export interface BreadcrumbsExtendedProps<
+  T extends object,
+> extends BreadcrumbsProps<T> {
   /**
    * M3 variant
    * @default 'primary'
    */
-  variant?: BreadcrumbsVariant;
+  variant?: string;
   /**
    * Size variant
    * @default 'md'
@@ -66,8 +73,8 @@ export interface BreadcrumbsExtendedProps<T extends object> extends BreadcrumbsP
  * </Breadcrumbs>
  */
 export function Breadcrumbs<T extends object>({
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   dataBinding,
   columnMapping,
   isLoading: externalLoading,
@@ -82,11 +89,11 @@ export function Breadcrumbs<T extends object>({
     error,
   } = useCollectionData({
     dataBinding: dataBinding as DataBinding,
-    componentName: 'Breadcrumbs',
+    componentName: "Breadcrumbs",
     fallbackData: [
-      { id: 1, name: 'Home', href: '/' },
-      { id: 2, name: 'Products', href: '/products' },
-      { id: 3, name: 'Current', href: '' },
+      { id: 1, name: "Home", href: "/" },
+      { id: 2, name: "Products", href: "/products" },
+      { id: 3, name: "Current", href: "" },
     ],
   });
 
@@ -94,17 +101,35 @@ export function Breadcrumbs<T extends object>({
   if (externalLoading) {
     return (
       <nav
-        className={props.className ? `react-aria-Breadcrumbs ${props.className}` : 'react-aria-Breadcrumbs'}
+        className={
+          props.className
+            ? `react-aria-Breadcrumbs ${props.className}`
+            : "react-aria-Breadcrumbs"
+        }
         data-variant={variant}
         data-size={size}
         aria-busy="true"
         aria-label="Loading breadcrumbs..."
       >
-        <ol style={{ display: 'flex', alignItems: 'center', gap: '8px', listStyle: 'none', padding: 0, margin: 0 }}>
+        <ol
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            listStyle: "none",
+            padding: 0,
+            margin: 0,
+          }}
+        >
           {Array.from({ length: skeletonCount }).map((_, i) => (
-            <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <li
+              key={i}
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
+            >
               <Skeleton componentVariant="breadcrumb" size={size} index={i} />
-              {i < skeletonCount - 1 && <span style={{ color: 'var(--color-gray-400)' }}>/</span>}
+              {i < skeletonCount - 1 && (
+                <span style={{ color: "var(--color-gray-400)" }}>/</span>
+              )}
             </li>
           ))}
         </ol>
@@ -115,41 +140,63 @@ export function Breadcrumbs<T extends object>({
   // PropertyDataBinding 형식 감지
   const isPropertyBinding =
     dataBinding &&
-    'source' in dataBinding &&
-    'name' in dataBinding &&
-    !('type' in dataBinding);
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
   const hasDataBinding =
     (!isPropertyBinding &&
       dataBinding &&
-      'type' in dataBinding &&
-      dataBinding.type === 'collection') ||
+      "type" in dataBinding &&
+      dataBinding.type === "collection") ||
     isPropertyBinding;
 
   // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
-  const baseClassName = typeof props.className === 'string' ? props.className : undefined;
-  const breadcrumbsClassName = baseClassName ? `react-aria-Breadcrumbs ${baseClassName}` : 'react-aria-Breadcrumbs';
+  const baseClassName =
+    typeof props.className === "string" ? props.className : undefined;
+  const breadcrumbsClassName = baseClassName
+    ? `react-aria-Breadcrumbs ${baseClassName}`
+    : "react-aria-Breadcrumbs";
 
   // DataBinding이 있고 columnMapping이 있으면 children 템플릿 사용
   if (hasDataBinding && columnMapping) {
     if (loading) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
-          <Breadcrumb><Link>⏳ 로딩 중...</Link></Breadcrumb>
+        <RACBreadcrumbs
+          {...props}
+          className={breadcrumbsClassName}
+          data-variant={variant}
+          data-size={size}
+        >
+          <Breadcrumb>
+            <Link>⏳ 로딩 중...</Link>
+          </Breadcrumb>
         </RACBreadcrumbs>
       );
     }
 
     if (error) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
-          <Breadcrumb><Link>❌ 오류</Link></Breadcrumb>
+        <RACBreadcrumbs
+          {...props}
+          className={breadcrumbsClassName}
+          data-variant={variant}
+          data-size={size}
+        >
+          <Breadcrumb>
+            <Link>❌ 오류</Link>
+          </Breadcrumb>
         </RACBreadcrumbs>
       );
     }
 
     if (boundData.length > 0) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
+        <RACBreadcrumbs
+          {...props}
+          className={breadcrumbsClassName}
+          data-variant={variant}
+          data-size={size}
+        >
           {children}
         </RACBreadcrumbs>
       );
@@ -160,27 +207,48 @@ export function Breadcrumbs<T extends object>({
   if (hasDataBinding && !columnMapping) {
     if (loading) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
-          <Breadcrumb><Link>⏳ 로딩 중...</Link></Breadcrumb>
+        <RACBreadcrumbs
+          {...props}
+          className={breadcrumbsClassName}
+          data-variant={variant}
+          data-size={size}
+        >
+          <Breadcrumb>
+            <Link>⏳ 로딩 중...</Link>
+          </Breadcrumb>
         </RACBreadcrumbs>
       );
     }
 
     if (error) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
-          <Breadcrumb><Link>❌ 오류</Link></Breadcrumb>
+        <RACBreadcrumbs
+          {...props}
+          className={breadcrumbsClassName}
+          data-variant={variant}
+          data-size={size}
+        >
+          <Breadcrumb>
+            <Link>❌ 오류</Link>
+          </Breadcrumb>
         </RACBreadcrumbs>
       );
     }
 
     if (boundData.length > 0) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
+        <RACBreadcrumbs
+          {...props}
+          className={breadcrumbsClassName}
+          data-variant={variant}
+          data-size={size}
+        >
           {boundData.map((item, index) => (
             <Breadcrumb key={String(item.id || index)}>
-              <Link href={String(item.href || item.url || '')}>
-                {String(item.name || item.title || item.label || `Item ${index + 1}`)}
+              <Link href={String(item.href || item.url || "")}>
+                {String(
+                  item.name || item.title || item.label || `Item ${index + 1}`,
+                )}
               </Link>
             </Breadcrumb>
           ))}
@@ -190,5 +258,14 @@ export function Breadcrumbs<T extends object>({
   }
 
   // Static children (기존 방식)
-  return <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>{children}</RACBreadcrumbs>;
+  return (
+    <RACBreadcrumbs
+      {...props}
+      className={breadcrumbsClassName}
+      data-variant={variant}
+      data-size={size}
+    >
+      {children}
+    </RACBreadcrumbs>
+  );
 }

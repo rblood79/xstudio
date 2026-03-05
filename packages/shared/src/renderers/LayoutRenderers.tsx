@@ -18,8 +18,14 @@ import {
   Group,
 } from "../components/list";
 import { Slot } from "../components/Slot";
-import type { PreviewElement, RenderContext, DataBinding, ColumnMapping } from "../types";
-
+import type {
+  PreviewElement,
+  RenderContext,
+  DataBinding,
+  ColumnMapping,
+  ButtonVariant,
+  BadgeVariant,
+} from "../types";
 
 /**
  * Layout 관련 컴포넌트 렌더러
@@ -36,7 +42,7 @@ import type { PreviewElement, RenderContext, DataBinding, ColumnMapping } from "
  */
 export const renderTabs = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps, renderElement } = context;
 
@@ -44,7 +50,7 @@ export const renderTabs = (
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding =
     dataBinding &&
-    typeof dataBinding === 'object' &&
+    typeof dataBinding === "object" &&
     "source" in (dataBinding as object) &&
     "name" in (dataBinding as object) &&
     !("type" in (dataBinding as object));
@@ -57,11 +63,14 @@ export const renderTabs = (
   // 2단계: TabList 아래에서 Tab 검색 (새 구조)
   if (tabChildren.length === 0) {
     const tabListElement = elements.find(
-      (child) => child.parent_id === element.id && child.tag === "TabList"
+      (child) => child.parent_id === element.id && child.tag === "TabList",
     );
     if (tabListElement) {
       tabChildren = elements
-        .filter((child) => child.parent_id === tabListElement.id && child.tag === "Tab")
+        .filter(
+          (child) =>
+            child.parent_id === tabListElement.id && child.tag === "Tab",
+        )
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
     }
   }
@@ -74,11 +83,14 @@ export const renderTabs = (
   // 2단계: TabPanels 아래에서 Panel 검색 (새 구조)
   if (panelChildren.length === 0) {
     const tabPanelsElement = elements.find(
-      (child) => child.parent_id === element.id && child.tag === "TabPanels"
+      (child) => child.parent_id === element.id && child.tag === "TabPanels",
     );
     if (tabPanelsElement) {
       panelChildren = elements
-        .filter((child) => child.parent_id === tabPanelsElement.id && child.tag === "Panel")
+        .filter(
+          (child) =>
+            child.parent_id === tabPanelsElement.id && child.tag === "Panel",
+        )
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
     }
   }
@@ -95,7 +107,11 @@ export const renderTabs = (
         (element.props.orientation as "horizontal" | "vertical") || "horizontal"
       }
       isDisabled={Boolean(element.props.isDisabled)}
-      dataBinding={(isPropertyBinding ? dataBinding : element.dataBinding) as DataBinding | undefined}
+      dataBinding={
+        (isPropertyBinding ? dataBinding : element.dataBinding) as
+          | DataBinding
+          | undefined
+      }
       columnMapping={element.props.columnMapping as ColumnMapping | undefined}
       onSelectionChange={(key) => {
         const updatedProps = {
@@ -111,7 +127,9 @@ export const renderTabs = (
           const tabKey = (tab.props.tabId as string) || tab.id;
           return (
             <Tab key={tab.id} id={tabKey}>
-              {typeof tab.props.title === 'string' ? tab.props.title : String(tab.props.title || '')}
+              {typeof tab.props.title === "string"
+                ? tab.props.title
+                : String(tab.props.title || "")}
             </Tab>
           );
         })}
@@ -145,7 +163,11 @@ export const renderTabs = (
                   | "card"
                   | "modal") || "tab"
               }
-              title={typeof correspondingPanel.props.title === 'string' ? correspondingPanel.props.title : undefined}
+              title={
+                typeof correspondingPanel.props.title === "string"
+                  ? correspondingPanel.props.title
+                  : undefined
+              }
               style={correspondingPanel.props.style}
               className={correspondingPanel.props.className}
             >
@@ -167,7 +189,7 @@ export const renderTabs = (
  */
 export const renderTabList = (
   _element: PreviewElement,
-  _context: RenderContext
+  _context: RenderContext,
 ): React.ReactNode => {
   return null;
 };
@@ -178,7 +200,7 @@ export const renderTabList = (
  */
 export const renderTabPanels = (
   _element: PreviewElement,
-  _context: RenderContext
+  _context: RenderContext,
 ): React.ReactNode => {
   return null;
 };
@@ -188,7 +210,7 @@ export const renderTabPanels = (
  */
 export const renderPanel = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -209,7 +231,11 @@ export const renderPanel = (
           | "card"
           | "modal") || "default"
       }
-      title={typeof element.props.title === 'string' ? element.props.title : undefined}
+      title={
+        typeof element.props.title === "string"
+          ? element.props.title
+          : undefined
+      }
       style={element.props.style}
       className={element.props.className}
     >
@@ -223,7 +249,7 @@ export const renderPanel = (
  */
 export const renderCard = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -233,10 +259,11 @@ export const renderCard = (
 
   // 새 구조 감지: CardHeader/CardContent 자식이 있는지 확인
   const hasStructuralChildren = allChildren.some(
-    (c) => c.tag === 'CardHeader' || c.tag === 'CardContent'
+    (c) => c.tag === "CardHeader" || c.tag === "CardContent",
   );
 
-  const eventHandlers = context.services?.createEventHandlerMap?.(element, context) ?? {};
+  const eventHandlers =
+    context.services?.createEventHandlerMap?.(element, context) ?? {};
 
   if (hasStructuralChildren) {
     // 새 구조: title/description은 children(CardHeader/CardContent)에서 처리
@@ -266,7 +293,7 @@ export const renderCard = (
 
   // 이전 구조: Heading/Description은 title/description props로 처리
   const children = allChildren.filter(
-    (child) => child.tag !== 'Heading' && child.tag !== 'Description'
+    (child) => child.tag !== "Heading" && child.tag !== "Description",
   );
 
   return (
@@ -274,11 +301,31 @@ export const renderCard = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      heading={typeof element.props.heading === 'string' ? element.props.heading : undefined}
-      subheading={typeof element.props.subheading === 'string' ? element.props.subheading : undefined}
-      title={typeof element.props.title === 'string' ? element.props.title : undefined}
-      description={element.props.description ? String(element.props.description) : undefined}
-      footer={typeof element.props.footer === 'string' ? element.props.footer : undefined}
+      heading={
+        typeof element.props.heading === "string"
+          ? element.props.heading
+          : undefined
+      }
+      subheading={
+        typeof element.props.subheading === "string"
+          ? element.props.subheading
+          : undefined
+      }
+      title={
+        typeof element.props.title === "string"
+          ? element.props.title
+          : undefined
+      }
+      description={
+        element.props.description
+          ? String(element.props.description)
+          : undefined
+      }
+      footer={
+        typeof element.props.footer === "string"
+          ? element.props.footer
+          : undefined
+      }
       variant={
         (element.props.variant as "default" | "elevated" | "outlined") ||
         "default"
@@ -306,7 +353,7 @@ export const renderCard = (
  */
 export const renderCardHeader = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -335,7 +382,7 @@ export const renderCardHeader = (
  */
 export const renderCardContent = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -352,12 +399,13 @@ export const renderCardContent = (
     >
       {children.map((child) => {
         // Description: React Aria slot 컨텍스트 없이 직접 렌더링
-        if (child.tag === 'Description') {
-          const text = typeof child.props?.children === 'string'
-            ? child.props.children
-            : typeof child.props?.text === 'string'
-              ? child.props.text
-              : null;
+        if (child.tag === "Description") {
+          const text =
+            typeof child.props?.children === "string"
+              ? child.props.children
+              : typeof child.props?.text === "string"
+                ? child.props.text
+                : null;
           return (
             <div
               key={child.id}
@@ -380,7 +428,7 @@ export const renderCardContent = (
  */
 export const renderButton = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -388,7 +436,8 @@ export const renderButton = (
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  const eventHandlers = context.services?.createEventHandlerMap?.(element, context) ?? {};
+  const eventHandlers =
+    context.services?.createEventHandlerMap?.(element, context) ?? {};
 
   // React Aria Button은 onPress를 사용하므로 onClick과 onPress 모두 확인
   const handlePress = eventHandlers.onPress || eventHandlers.onClick;
@@ -399,14 +448,16 @@ export const renderButton = (
       id={element.customId}
       data-element-id={element.id}
       variant={
-        element.props.variant as
+        (element.props.variant as
+          | "accent"
           | "primary"
           | "secondary"
-          | "surface"
-          | "outline"
-          | "ghost"
+          | "negative"
+          | "premium"
+          | "genai") || "primary"
       }
-      size={element.props.size as "sm" | "md" | "lg"}
+      fillStyle={(element.props.fillStyle as "fill" | "outline") || "fill"}
+      size={element.props.size as "xs" | "sm" | "md" | "lg" | "xl"}
       type={(element.props.type as "button" | "submit" | "reset") || "button"}
       isDisabled={Boolean(element.props.isDisabled as boolean)}
       style={element.props.style}
@@ -424,8 +475,8 @@ export const renderButton = (
       {typeof element.props.children === "string"
         ? element.props.children
         : children.length === 0
-        ? "Button"
-        : null}
+          ? "Button"
+          : null}
       {children.map((child) => renderElement(child, child.id))}
     </Button>
   );
@@ -436,7 +487,7 @@ export const renderButton = (
  */
 export const renderText = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -455,7 +506,7 @@ export const renderText = (
       className: element.props.className,
     },
     element.props.children,
-    ...children.map((child) => renderElement(child, child.id))
+    ...children.map((child) => renderElement(child, child.id)),
   );
 };
 
@@ -464,7 +515,7 @@ export const renderText = (
  */
 export const renderTooltip = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -475,7 +526,6 @@ export const renderTooltip = (
   return (
     <Tooltip
       key={element.id}
-      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -493,7 +543,7 @@ export const renderTooltip = (
  */
 export const renderProgressBar = (
   element: PreviewElement,
-  _context: RenderContext  
+  _context: RenderContext,
 ): React.ReactNode => {
   return (
     <ProgressBar
@@ -515,12 +565,7 @@ export const renderProgressBar = (
           : 100
       }
       isIndeterminate={Boolean(element.props.isIndeterminate || false)}
-      variant={
-        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
-      }
-      size={
-        (element.props.size as "sm" | "md" | "lg") || "md"
-      }
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
     />
   );
 };
@@ -530,7 +575,7 @@ export const renderProgressBar = (
  */
 export const renderMeter = (
   element: PreviewElement,
-  _context: RenderContext  
+  _context: RenderContext,
 ): React.ReactNode => {
   return (
     <Meter
@@ -552,11 +597,13 @@ export const renderMeter = (
           : 100
       }
       variant={
-        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+        (element.props.variant as
+          | "informative"
+          | "positive"
+          | "notice"
+          | "negative") || "informative"
       }
-      size={
-        (element.props.size as "sm" | "md" | "lg") || "md"
-      }
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
     />
   );
 };
@@ -566,7 +613,7 @@ export const renderMeter = (
  */
 export const renderSeparator = (
   element: PreviewElement,
-  _context: RenderContext  
+  _context: RenderContext,
 ): React.ReactNode => {
   return (
     <Separator
@@ -591,7 +638,7 @@ export const renderSeparator = (
  */
 export const renderGroup = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -608,7 +655,9 @@ export const renderGroup = (
       isDisabled={Boolean(element.props.isDisabled)}
       isInvalid={Boolean(element.props.isInvalid)}
       isReadOnly={Boolean(element.props.isReadOnly)}
-      role={(element.props.role as "group" | "region" | "presentation") || "group"}
+      role={
+        (element.props.role as "group" | "region" | "presentation") || "group"
+      }
       aria-label={element.props["aria-label"] as string | undefined}
       aria-labelledby={element.props["aria-labelledby"] as string | undefined}
       style={element.props.style}
@@ -624,10 +673,11 @@ export const renderGroup = (
  */
 export const renderModal = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
-  const eventHandlers = context.services?.createEventHandlerMap?.(element, context) ?? {};
+  const eventHandlers =
+    context.services?.createEventHandlerMap?.(element, context) ?? {};
 
   const children = elements
     .filter((child) => child.parent_id === element.id)
@@ -666,22 +716,25 @@ export const renderModal = (
  */
 export const renderBreadcrumbs = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
-  const eventHandlers = context.services?.createEventHandlerMap?.(element, context) ?? {};
+  const eventHandlers =
+    context.services?.createEventHandlerMap?.(element, context) ?? {};
 
   // PropertyDataBinding 형식 감지
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding =
     dataBinding &&
-    typeof dataBinding === 'object' &&
+    typeof dataBinding === "object" &&
     "source" in (dataBinding as object) &&
     "name" in (dataBinding as object) &&
     !("type" in (dataBinding as object));
 
   const breadcrumbChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "Breadcrumb")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "Breadcrumb",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   return (
@@ -689,11 +742,19 @@ export const renderBreadcrumbs = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      aria-label={typeof element.props["aria-label"] === 'string' ? element.props["aria-label"] : undefined}
+      aria-label={
+        typeof element.props["aria-label"] === "string"
+          ? element.props["aria-label"]
+          : undefined
+      }
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
       className={element.props.className}
-      dataBinding={(isPropertyBinding ? dataBinding : element.dataBinding) as DataBinding | undefined}
+      dataBinding={
+        (isPropertyBinding ? dataBinding : element.dataBinding) as
+          | DataBinding
+          | undefined
+      }
       columnMapping={element.props.columnMapping as ColumnMapping | undefined}
       {...eventHandlers}
     >
@@ -707,7 +768,7 @@ export const renderBreadcrumbs = (
  */
 export const renderBreadcrumb = (
   element: PreviewElement,
-  _context: RenderContext  
+  _context: RenderContext,
 ): React.ReactNode => {
   return (
     <Breadcrumb
@@ -726,7 +787,7 @@ export const renderBreadcrumb = (
  */
 export const renderLink = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -734,7 +795,8 @@ export const renderLink = (
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  const eventHandlers = context.services?.createEventHandlerMap?.(element, context) ?? {};
+  const eventHandlers =
+    context.services?.createEventHandlerMap?.(element, context) ?? {};
 
   return (
     <Link
@@ -742,9 +804,7 @@ export const renderLink = (
       data-custom-id={element.customId || undefined}
       data-element-id={element.id}
       href={String(element.props.href || "")}
-      variant={
-        (element.props.variant as "primary" | "secondary") || undefined
-      }
+      variant={(element.props.variant as "primary" | "secondary") || undefined}
       size={(element.props.size as "sm" | "md" | "lg") || undefined}
       isExternal={Boolean(element.props.isExternal)}
       showExternalIcon={element.props.showExternalIcon !== false}
@@ -762,8 +822,8 @@ export const renderLink = (
       {typeof element.props.children === "string"
         ? element.props.children
         : children.length === 0
-        ? "Link"
-        : null}
+          ? "Link"
+          : null}
       {children.map((child) => renderElement(child, child.id))}
     </Link>
   );
@@ -774,7 +834,7 @@ export const renderLink = (
  */
 export const renderBadge = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -787,8 +847,9 @@ export const renderBadge = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      variant={
-        (element.props.variant as "primary" | "secondary" | "tertiary" | "error" | "surface") || undefined
+      variant={(element.props.variant as BadgeVariant) || undefined}
+      fillStyle={
+        (element.props.fillStyle as "bold" | "subtle" | "outline") || undefined
       }
       size={(element.props.size as "sm" | "md" | "lg") || undefined}
       isDot={Boolean(element.props.isDot)}
@@ -799,8 +860,8 @@ export const renderBadge = (
       {typeof element.props.children === "string"
         ? element.props.children
         : children.length === 0
-        ? "1"
-        : null}
+          ? "1"
+          : null}
       {children.map((child) => renderElement(child, child.id))}
     </Badge>
   );
@@ -815,7 +876,7 @@ export const renderBadge = (
  */
 export const renderSlot = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement, editMode } = context;
 

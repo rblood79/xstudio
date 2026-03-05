@@ -14,6 +14,7 @@ import {
   PropertyInput,
   PropertySwitch,
   PropertySelect,
+  PropertySizeToggle,
   PropertyCustomId,
   PropertySection,
 } from "../../../components";
@@ -38,88 +39,146 @@ export const ButtonEditor = memo(function ButtonEditor({
   // currentProps가 실제로 변경될 때만 ButtonEditor가 리렌더링됨
   // 각 자식 컴포넌트(PropertySwitch, PropertyInput 등)는 React.memo로
   // 실제 value/isSelected가 변경될 때만 리렌더링됨
-  const handleChildrenChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, children: value });
-  }, [currentProps, onUpdate]);
+  const handleChildrenChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, children: value });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleVariantChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, variant: value });
-  }, [currentProps, onUpdate]);
+  const handleVariantChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, variant: value });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleSizeChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, size: value });
-  }, [currentProps, onUpdate]);
+  const handleFillStyleChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, fillStyle: value });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleTypeChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, type: value });
-  }, [currentProps, onUpdate]);
+  const handleSizeChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, size: value });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleAutoFocusChange = useCallback((checked: boolean) => {
-    onUpdate({ ...currentProps, autoFocus: checked });
-  }, [currentProps, onUpdate]);
+  const handleTypeChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, type: value });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleIsPendingChange = useCallback((checked: boolean) => {
-    onUpdate({ ...currentProps, isPending: checked });
-  }, [currentProps, onUpdate]);
+  const handleAutoFocusChange = useCallback(
+    (checked: boolean) => {
+      onUpdate({ ...currentProps, autoFocus: checked });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleIsDisabledChange = useCallback((checked: boolean) => {
-    onUpdate({ ...currentProps, isDisabled: checked });
-  }, [currentProps, onUpdate]);
+  const handleIsPendingChange = useCallback(
+    (checked: boolean) => {
+      onUpdate({ ...currentProps, isPending: checked });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleHrefChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, href: value || undefined });
-  }, [currentProps, onUpdate]);
+  const handleIsDisabledChange = useCallback(
+    (checked: boolean) => {
+      onUpdate({ ...currentProps, isDisabled: checked });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleTargetChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, target: value });
-  }, [currentProps, onUpdate]);
+  const handleHrefChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, href: value || undefined });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleRelChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, rel: value || undefined });
-  }, [currentProps, onUpdate]);
+  const handleTargetChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, target: value });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleFormChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, form: value || undefined });
-  }, [currentProps, onUpdate]);
+  const handleRelChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, rel: value || undefined });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleNameChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, name: value || undefined });
-  }, [currentProps, onUpdate]);
+  const handleFormChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, form: value || undefined });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleValueChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, value: value || undefined });
-  }, [currentProps, onUpdate]);
+  const handleNameChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, name: value || undefined });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleFormActionChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, formAction: value || undefined });
-  }, [currentProps, onUpdate]);
+  const handleValueChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, value: value || undefined });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleFormMethodChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, formMethod: value });
-  }, [currentProps, onUpdate]);
+  const handleFormActionChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, formAction: value || undefined });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleFormNoValidateChange = useCallback((checked: boolean) => {
-    onUpdate({ ...currentProps, formNoValidate: checked });
-  }, [currentProps, onUpdate]);
+  const handleFormMethodChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, formMethod: value });
+    },
+    [currentProps, onUpdate],
+  );
 
-  const handleFormTargetChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, formTarget: value });
-  }, [currentProps, onUpdate]);
+  const handleFormNoValidateChange = useCallback(
+    (checked: boolean) => {
+      onUpdate({ ...currentProps, formNoValidate: checked });
+    },
+    [currentProps, onUpdate],
+  );
+
+  const handleFormTargetChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, formTarget: value });
+    },
+    [currentProps, onUpdate],
+  );
 
   // ⭐ 최적화: 조건부 렌더링을 위한 값들을 useMemo로 캐싱
   const showLinkSection = useMemo(
     () => typeof currentProps.href === "string" && currentProps.href,
-    [currentProps.href]
+    [currentProps.href],
   );
 
   const showFormSection = useMemo(
     () => currentProps.type === "submit" || currentProps.type === "reset",
-    [currentProps.type]
+    [currentProps.type],
   );
 
   const showSubmitFields = useMemo(
     () => currentProps.type === "submit",
-    [currentProps.type]
+    [currentProps.type],
   );
 
   // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
@@ -135,7 +194,7 @@ export const ButtonEditor = memo(function ButtonEditor({
         />
       </PropertySection>
     ),
-    [customId, elementId]
+    [customId, elementId],
   );
 
   const contentSection = useMemo(
@@ -149,7 +208,7 @@ export const ButtonEditor = memo(function ButtonEditor({
         />
       </PropertySection>
     ),
-    [currentProps.children, handleChildrenChange]
+    [currentProps.children, handleChildrenChange],
   );
 
   const designSection = useMemo(
@@ -157,35 +216,46 @@ export const ButtonEditor = memo(function ButtonEditor({
       <PropertySection title="Design">
         <PropertySelect
           label={PROPERTY_LABELS.VARIANT}
-          value={String(currentProps.variant || "default")}
+          value={String(currentProps.variant || "primary")}
           onChange={handleVariantChange}
           options={[
-            { value: "default", label: PROPERTY_LABELS.VARIANT_DEFAULT },
-            { value: "primary", label: PROPERTY_LABELS.VARIANT_PRIMARY },
-            { value: "secondary", label: PROPERTY_LABELS.VARIANT_SECONDARY },
-            { value: "surface", label: PROPERTY_LABELS.VARIANT_SURFACE },
-            { value: "outline", label: PROPERTY_LABELS.VARIANT_OUTLINE },
-            { value: "ghost", label: PROPERTY_LABELS.VARIANT_GHOST },
+            { value: "accent", label: "Accent" },
+            { value: "primary", label: "Primary" },
+            { value: "secondary", label: "Secondary" },
+            { value: "negative", label: "Negative" },
+            { value: "premium", label: "Premium" },
+            { value: "genai", label: "GenAI" },
           ]}
           icon={Parentheses}
         />
 
         <PropertySelect
-          label={PROPERTY_LABELS.SIZE}
-          value={String(currentProps.size || "sm")}
-          onChange={handleSizeChange}
+          label="Fill Style"
+          value={String(currentProps.fillStyle || "fill")}
+          onChange={handleFillStyleChange}
           options={[
-            { value: "xs", label: PROPERTY_LABELS.SIZE_XS },
-            { value: "sm", label: PROPERTY_LABELS.SIZE_SM },
-            { value: "md", label: PROPERTY_LABELS.SIZE_MD },
-            { value: "lg", label: PROPERTY_LABELS.SIZE_LG },
-            { value: "xl", label: PROPERTY_LABELS.SIZE_XL },
+            { value: "fill", label: "Fill" },
+            { value: "outline", label: "Outline" },
           ]}
           icon={Parentheses}
         />
+
+        <PropertySizeToggle
+          label={PROPERTY_LABELS.SIZE}
+          value={String(currentProps.size || "md")}
+          onChange={handleSizeChange}
+          scale="5"
+        />
       </PropertySection>
     ),
-    [currentProps.variant, currentProps.size, handleVariantChange, handleSizeChange]
+    [
+      currentProps.variant,
+      currentProps.fillStyle,
+      currentProps.size,
+      handleVariantChange,
+      handleFillStyleChange,
+      handleSizeChange,
+    ],
   );
 
   const behaviorSection = useMemo(
@@ -234,7 +304,7 @@ export const ButtonEditor = memo(function ButtonEditor({
       handleAutoFocusChange,
       handleIsPendingChange,
       handleIsDisabledChange,
-    ]
+    ],
   );
 
   const linkSection = useMemo(
@@ -282,7 +352,7 @@ export const ButtonEditor = memo(function ButtonEditor({
       handleHrefChange,
       handleTargetChange,
       handleRelChange,
-    ]
+    ],
   );
 
   const formSection = useMemo(
@@ -378,7 +448,7 @@ export const ButtonEditor = memo(function ButtonEditor({
       handleFormMethodChange,
       handleFormNoValidateChange,
       handleFormTargetChange,
-    ]
+    ],
   );
 
   return (

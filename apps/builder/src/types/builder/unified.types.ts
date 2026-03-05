@@ -88,29 +88,29 @@ export interface Element {
 
   // --- Fill System (Color Picker Phase 1) ---
   /** 다중 Fill 레이어 (IndexedDB 저장) */
-  fills?: import('./fill.types').FillItem[];
+  fills?: import("./fill.types").FillItem[];
   /** Border 설정 (Phase 1: 타입만 추가, UI 미연결) */
-  border?: import('./fill.types').BorderConfig;
+  border?: import("./fill.types").BorderConfig;
 }
 
 // === G.1/G.2 타입 별칭 및 가드 ===
 
-export type ComponentRole = 'master' | 'instance';
+export type ComponentRole = "master" | "instance";
 export type DescendantOverrides = Record<string, Record<string, unknown>>;
 
 /** $-- 접두사 디자인 변수 참조인지 검사 */
 export function isVariableRef(value: unknown): value is string {
-  return typeof value === 'string' && value.startsWith('$--');
+  return typeof value === "string" && value.startsWith("$--");
 }
 
 /** master 컴포넌트 여부 검사 */
 export function isMasterElement(el: Element): boolean {
-  return el.componentRole === 'master';
+  return el.componentRole === "master";
 }
 
 /** instance 요소 여부 검사 (masterId 필수) */
 export function isInstanceElement(el: Element): boolean {
-  return el.componentRole === 'instance' && !!el.masterId;
+  return el.componentRole === "instance" && !!el.masterId;
 }
 
 // === 통합된 Page 타입 ===
@@ -130,7 +130,13 @@ export interface Page {
 // === 컴포넌트별 Props 타입 ===
 export interface ButtonElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  variant?: "default" | "primary" | "secondary" | "surface";
+  variant?:
+    | "accent"
+    | "primary"
+    | "secondary"
+    | "negative"
+    | "premium"
+    | "genai";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   isDisabled?: boolean;
   onPress?: () => void;
@@ -139,7 +145,13 @@ export interface ButtonElementProps extends BaseElementProps {
 export interface LinkElementProps extends BaseElementProps {
   children?: React.ReactNode;
   href?: string;
-  variant?: "default" | "primary" | "secondary" | "surface" | "outline" | "ghost";
+  variant?:
+    | "default"
+    | "primary"
+    | "secondary"
+    | "surface"
+    | "outline"
+    | "ghost";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   isDisabled?: boolean;
   isExternal?: boolean;
@@ -181,8 +193,9 @@ export interface RadioElementProps extends BaseElementProps {
 
 export interface ToggleButtonElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  variant?: "default" | "primary" | "secondary" | "surface";
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  isEmphasized?: boolean;
+  isQuiet?: boolean;
   isSelected?: boolean;
   defaultSelected?: boolean;
   isDisabled?: boolean;
@@ -191,8 +204,9 @@ export interface ToggleButtonElementProps extends BaseElementProps {
 
 export interface ToggleButtonGroupElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  variant?: "default" | "primary" | "secondary" | "surface";
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  isEmphasized?: boolean;
+  isQuiet?: boolean;
   value?: string[];
   defaultValue?: string[];
   onChange?: (value: string[]) => void;
@@ -430,7 +444,15 @@ export interface CellElementProps extends BaseElementProps {
 
 export interface CardElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  variant?: "default" | "outlined" | "elevated" | "primary" | "secondary" | "surface" | "gallery" | "quiet";
+  variant?:
+    | "default"
+    | "outlined"
+    | "elevated"
+    | "primary"
+    | "secondary"
+    | "surface"
+    | "gallery"
+    | "quiet";
   size?: "sm" | "md" | "lg";
   orientation?: "horizontal" | "vertical";
   title?: string;
@@ -443,7 +465,13 @@ export interface CardElementProps extends BaseElementProps {
 
 export interface BadgeElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  variant?: "default" | "primary" | "secondary" | "surface" | "outline" | "ghost";
+  variant?:
+    | "default"
+    | "primary"
+    | "secondary"
+    | "surface"
+    | "outline"
+    | "ghost";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   isDot?: boolean;
   isPulsing?: boolean;
@@ -626,14 +654,14 @@ export interface Store extends ElementsState, ThemeState, SelectionState {
   // 액션들
   setElements: (
     elements: Element[],
-    options?: { skipHistory?: boolean }
+    options?: { skipHistory?: boolean },
   ) => void;
   loadPageElements: (elements: Element[], pageId: string) => void;
   addElement: (element: Element) => void;
   updateElementProps: (elementId: string, props: ComponentElementProps) => void;
   setSelectedElement: (
     elementId: string | null,
-    props?: ComponentElementProps
+    props?: ComponentElementProps,
   ) => void;
   removeElement: (elementId: string) => Promise<void>;
 
@@ -642,7 +670,7 @@ export interface Store extends ElementsState, ThemeState, SelectionState {
   updateTokenValue: (
     name: string,
     scope: "raw" | "semantic",
-    value: TokenValue
+    value: TokenValue,
   ) => void;
 
   // 히스토리 액션들
@@ -655,15 +683,14 @@ export interface Store extends ElementsState, ThemeState, SelectionState {
 export function createDefaultButtonProps(): ButtonElementProps {
   return {
     children: "Button",
-    variant: "default",
-    size: "sm",
+    variant: "primary",
+    size: "md",
     isDisabled: false,
     // CSS base rule: border: 1px solid var(--outline-variant)
     // 스타일 패널에서 borderWidth 값 정상 표시를 위해 기본값 설정
     style: {
-      width: 'fit-content',
-      fontSize: 14,
-      borderWidth: '1px',
+      width: "fit-content",
+      borderWidth: "1px",
     },
   };
 }
@@ -679,8 +706,8 @@ export function createDefaultLinkProps(): LinkElementProps {
     showExternalIcon: true,
     // CSS base: display:inline-flex; align-items:center; gap:var(--spacing)
     style: {
-      display: 'inline-flex',
-      alignItems: 'center',
+      display: "inline-flex",
+      alignItems: "center",
     },
   };
 }
@@ -702,9 +729,9 @@ export function createDefaultCheckboxProps(): CheckboxElementProps {
     isSelected: false,
     isDisabled: false,
     style: {
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
     },
   };
 }
@@ -716,9 +743,9 @@ export function createDefaultRadioProps(): RadioElementProps {
     isSelected: false,
     isDisabled: false,
     style: {
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
     },
   };
 }
@@ -726,34 +753,35 @@ export function createDefaultRadioProps(): RadioElementProps {
 export function createDefaultToggleButtonProps(): ToggleButtonElementProps {
   return {
     children: "Toggle Button",
-    variant: "default",
-    size: "sm",
+    size: "md",
+    isEmphasized: false,
+    isQuiet: false,
     isSelected: false,
     isDisabled: false,
     // CSS base: display:flex; border:1px solid var(--outline-variant); width:fit-content
     style: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: 'fit-content',
-      borderWidth: '1px',
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "fit-content",
+      borderWidth: "1px",
     },
   };
 }
 
 export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementProps {
   return {
-    variant: "default",
-    size: "sm",
+    size: "md",
+    isEmphasized: false,
     value: [],
     isDisabled: false,
     selectionMode: "single",
     orientation: "horizontal",
     style: {
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
-      width: 'fit-content',
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
+      width: "fit-content",
     },
   };
 }
@@ -766,9 +794,9 @@ export function createDefaultCheckboxGroupProps(): CheckboxGroupElementProps {
     // CSS base: display:flex; flex-direction:column; gap:var(--gap)
     // orientation=horizontal → flex-direction:row; align-items:center
     style: {
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
   };
@@ -782,9 +810,9 @@ export function createDefaultRadioGroupProps(): RadioGroupElementProps {
     // CSS base: display:flex; flex-direction:column; gap:var(--gap)
     // orientation=horizontal → flex-direction:row; align-items:center
     style: {
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
     },
   };
@@ -795,8 +823,8 @@ export function createDefaultSelectProps(): SelectElementProps {
     isDisabled: false,
     // CSS base: display:flex; flex-direction:column; gap:var(--spacing-xs)
     style: {
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
       gap: 4,
     },
   };
@@ -808,8 +836,8 @@ export function createDefaultComboBoxProps(): ComboBoxElementProps {
     allowsCustomValue: false,
     // CSS base: display:flex; flex-direction:column; gap:var(--spacing-xs)
     style: {
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
       gap: 4,
     },
   };
@@ -828,7 +856,7 @@ export function createDefaultSliderProps(): SliderElementProps {
     // CSS base: display:grid; max-width:300px
     // Spec md: label(14*1.2≈17) + gap(10) + thumbSize(18) = 45
     style: {
-      display: 'grid',
+      display: "grid",
       width: 200,
       height: 45,
       maxWidth: 300,
@@ -850,9 +878,9 @@ export function createDefaultTabsProps(): TabsElementProps {
     // CSS base: display:flex; width:100%
     // orientation=horizontal → flex-direction:column (TabList 위 + TabPanel 아래)
     style: {
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
+      display: "flex",
+      flexDirection: "column",
+      width: "100%",
     },
   };
 }
@@ -865,13 +893,13 @@ export function createDefaultTabProps(): TabElementProps {
 
 export function createDefaultTabListProps(): BaseElementProps {
   return {
-    style: { display: 'flex', flexDirection: 'row' },
+    style: { display: "flex", flexDirection: "row" },
   };
 }
 
 export function createDefaultTabPanelsProps(): BaseElementProps {
   return {
-    style: { display: 'flex', flexDirection: 'column' },
+    style: { display: "flex", flexDirection: "column" },
   };
 }
 
@@ -880,9 +908,9 @@ export function createDefaultPanelProps(): PanelElementProps {
     variant: "default",
     // CSS base: display:flex; flex-direction:column; width:100%
     style: {
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
+      display: "flex",
+      flexDirection: "column",
+      width: "100%",
     },
   };
 }
@@ -894,9 +922,9 @@ export function createDefaultTreeProps(): TreeElementProps {
     isDisabled: false,
     // CSS base: display:flex; flex-direction:column; gap:var(--spacing-2xs); width:100%
     style: {
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
+      display: "flex",
+      flexDirection: "column",
+      width: "100%",
     },
   };
 }
@@ -944,9 +972,9 @@ export function createDefaultSwitchProps(): SwitchElementProps {
     isSelected: false,
     isDisabled: false,
     style: {
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
     },
   };
 }
@@ -1040,11 +1068,11 @@ export function createDefaultCardProps(): CardElementProps {
     // Factory(LayoutComponents.ts)와 동일한 기본값
     // Card → CardHeader → Heading / CardContent → Description 구조
     style: {
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '16px',  // var(--spacing-lg) = 16px
-      borderWidth: '1px',
-      gap: '8px',
+      display: "flex",
+      flexDirection: "column",
+      padding: "16px", // var(--spacing-lg) = 16px
+      borderWidth: "1px",
+      gap: "8px",
     },
   };
 }
@@ -1058,17 +1086,17 @@ export function createDefaultBadgeProps(): BadgeElementProps {
     isPulsing: false,
     // CSS base: display:inline-flex; align-items:center; justify-content:center
     style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
     },
   };
 }
 
 export function createDefaultLabelProps(): BaseElementProps {
   return {
-    children: 'Tag Group',
-    style: { fontSize: 14, fontWeight: 500, width: 'fit-content' },
+    children: "Tag Group",
+    style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
   };
 }
 
@@ -1078,13 +1106,18 @@ export function createDefaultTagGroupProps(): TagGroupElementProps {
     selectedKeys: [],
     isDisabled: false,
     allowsRemoving: false,
-    style: { display: 'flex', flexDirection: 'column', gap: 2, width: 'fit-content' },
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 2,
+      width: "fit-content",
+    },
   };
 }
 
 export function createDefaultTagListProps(): BaseElementProps {
   return {
-    style: { display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+    style: { display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 4 },
   };
 }
 
@@ -1102,9 +1135,9 @@ export function createDefaultListBoxProps(): ListBoxElementProps {
     selectionMode: "single",
     // CSS base: display:flex; flex-direction:column; width:100%
     style: {
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
+      display: "flex",
+      flexDirection: "column",
+      width: "100%",
     },
   };
 }
@@ -1131,9 +1164,9 @@ export function createDefaultGridListProps(): GridListElementProps {
     selectionMode: "single",
     // CSS base: display:flex; flex-direction:column; width:100%
     style: {
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
+      display: "flex",
+      flexDirection: "column",
+      width: "100%",
     },
   };
 }
@@ -1157,7 +1190,7 @@ export function createDefaultDivProps(): DivElementProps {
 export function createDefaultBodyProps(): DivElementProps {
   return {
     style: {
-      display: 'block',
+      display: "block",
       fontFamily: DEFAULT_FONT_FAMILY,
     },
   };
@@ -1166,7 +1199,7 @@ export function createDefaultBodyProps(): DivElementProps {
 export function createDefaultSectionProps(): SectionElementProps {
   return {
     style: {
-      display: 'block',
+      display: "block",
     },
   };
 }
@@ -1176,10 +1209,10 @@ export function createDefaultNavProps(): NavElementProps {
     // CSS base: display:flex; flex-direction:row; align-items:center; width:100%
     // nav 태그는 링크 목록을 수평으로 배열하는 탐색 영역
     style: {
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
-      width: '100%',
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
+      width: "100%",
     },
   };
 }
@@ -1199,11 +1232,11 @@ export function createDefaultToolbarProps(): BaseElementProps {
     // CSS base: display:flex; flex-wrap:wrap; gap:5px; width:fit-content
     // orientation=horizontal → flex-direction:row
     style: {
-      display: 'flex',
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+      display: "flex",
+      flexDirection: "row",
+      flexWrap: "wrap",
       gap: 5,
-      width: 'fit-content',
+      width: "fit-content",
     },
   };
 }
@@ -1212,9 +1245,9 @@ export function createDefaultBreadcrumbsProps(): BaseElementProps {
   return {
     // CSS base: display:flex; align-items:center (implicit row)
     style: {
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
     },
   };
 }
@@ -1224,8 +1257,8 @@ export function createDefaultSeparatorProps(): BaseElementProps {
     // CSS base: width:100%; height:1px (horizontal)
     // orientation=vertical → height:100%; width:1px
     style: {
-      width: '100%',
-      height: '1px',
+      width: "100%",
+      height: "1px",
     },
   };
 }
@@ -1234,7 +1267,7 @@ export function createDefaultDisclosureProps(): BaseElementProps {
   return {
     // CSS base: width:100%
     style: {
-      width: '100%',
+      width: "100%",
     },
   };
 }
@@ -1243,9 +1276,9 @@ export function createDefaultDisclosureGroupProps(): BaseElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; width:100%
     style: {
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
+      display: "flex",
+      flexDirection: "column",
+      width: "100%",
     },
   };
 }
@@ -1254,8 +1287,8 @@ export function createDefaultDialogProps(): BaseElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; max-height:inherit
     style: {
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
     },
   };
 }
@@ -1264,8 +1297,8 @@ export function createDefaultFormProps(): BaseElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; gap:var(--spacing-md)
     style: {
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
       gap: 12,
     },
   };
@@ -1275,8 +1308,8 @@ export function createDefaultMenuProps(): BaseElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; outline:none
     style: {
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
     },
   };
 }
@@ -1285,7 +1318,7 @@ export function createDefaultNumberFieldProps(): BaseElementProps {
   return {
     // CSS base: display:grid; Group 내부에 border:1px solid var(--outline-variant)
     style: {
-      display: 'grid',
+      display: "grid",
     },
   };
 }
@@ -1294,8 +1327,8 @@ export function createDefaultSearchFieldProps(): BaseElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; Group border:1px solid var(--outline-variant)
     style: {
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
     },
   };
 }
@@ -1304,8 +1337,8 @@ export function createDefaultProgressBarProps(): BaseElementProps {
   return {
     // CSS base: display:grid; gap:4px; width:100%
     style: {
-      display: 'grid',
-      width: '100%',
+      display: "grid",
+      width: "100%",
     },
   };
 }
@@ -1314,8 +1347,8 @@ export function createDefaultMeterProps(): BaseElementProps {
   return {
     // CSS base: display:grid; gap:4px; width:100%
     style: {
-      display: 'grid',
-      width: '100%',
+      display: "grid",
+      width: "100%",
     },
   };
 }
@@ -1324,8 +1357,8 @@ export function createDefaultDateFieldProps(): BaseElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; Group border:1px
     style: {
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
     },
   };
 }
@@ -1334,8 +1367,8 @@ export function createDefaultTimeFieldProps(): BaseElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; Group border:1px
     style: {
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
     },
   };
 }
@@ -1344,8 +1377,8 @@ export function createDefaultColorFieldProps(): BaseElementProps {
   return {
     // CSS base: Group border:1px solid var(--outline-variant)
     style: {
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
     },
   };
 }
@@ -1353,8 +1386,8 @@ export function createDefaultColorFieldProps(): BaseElementProps {
 export function createDefaultColorPickerProps(): BaseElementProps {
   return {
     style: {
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
       gap: 8,
     },
   };
@@ -1364,8 +1397,8 @@ export function createDefaultColorSwatchProps(): BaseElementProps {
   return {
     // CSS base: display:inline-block; border:1px solid var(--outline-variant); border-radius:var(--radius-sm)
     style: {
-      display: 'inline-block',
-      borderWidth: '1px',
+      display: "inline-block",
+      borderWidth: "1px",
     },
   };
 }
@@ -1374,11 +1407,11 @@ export function createDefaultDropZoneProps(): BaseElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; border:2px dashed var(--outline-variant)
     style: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: '2px',
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: "2px",
     },
   };
 }
@@ -1386,7 +1419,7 @@ export function createDefaultDropZoneProps(): BaseElementProps {
 export function createDefaultFileTriggerProps(): BaseElementProps {
   return {
     style: {
-      display: 'inline-flex',
+      display: "inline-flex",
     },
   };
 }
@@ -1401,7 +1434,7 @@ export function createDefaultPopoverProps(): BaseElementProps {
   return {
     // CSS base: border:1px solid var(--outline-variant)
     style: {
-      borderWidth: '1px',
+      borderWidth: "1px",
     },
   };
 }
@@ -1410,7 +1443,7 @@ export function createDefaultModalProps(): BaseElementProps {
   return {
     // CSS base: border:1px solid var(--outline-variant)
     style: {
-      borderWidth: '1px',
+      borderWidth: "1px",
     },
   };
 }
@@ -1418,9 +1451,9 @@ export function createDefaultModalProps(): BaseElementProps {
 export function createDefaultGroupProps(): BaseElementProps {
   return {
     style: {
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
     },
   };
 }

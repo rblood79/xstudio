@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from "react";
 import {
   Tabs as RACTabs,
   TabsProps,
@@ -11,25 +11,31 @@ import {
   SelectionIndicator,
   SharedElementTransition,
   composeRenderProps,
-} from 'react-aria-components';
-import type { TabsVariant, ComponentSize, DataBinding, ColumnMapping, DataBindingValue } from '../types';
+} from "react-aria-components";
+import type {
+  ComponentSize,
+  DataBinding,
+  ColumnMapping,
+  DataBindingValue,
+} from "../types";
 
-import { useCollectionData } from '../hooks';
-import { Skeleton } from './Skeleton';
-import './styles/Tabs.css';
+import { useCollectionData } from "../hooks";
+import { Skeleton } from "./Skeleton";
+import "./styles/Tabs.css";
 
 /**
- * 🚀 Phase 4: data-* 패턴 전환
+ * Phase 4: data-* 패턴 전환
  * - tailwind-variants 제거
- * - data-variant, data-size 속성 사용
+ * - data-density, data-size 속성 사용
+ * - S2 체계: variant 없음, density(compact/regular)로 간격 제어
  */
 
 export interface TabsExtendedProps extends TabsProps {
   /**
-   * M3 variant
-   * @default 'primary'
+   * S2 density — 탭 간격 제어
+   * @default 'regular'
    */
-  variant?: TabsVariant;
+  density?: "compact" | "regular";
   /**
    * Size variant
    * @default 'md'
@@ -55,12 +61,14 @@ export interface TabsExtendedProps extends TabsProps {
   skeletonTabCount?: number;
 }
 
-export interface TabListExtendedProps<T extends object> extends TabListProps<T> {
+export interface TabListExtendedProps<
+  T extends object,
+> extends TabListProps<T> {
   /**
-   * M3 variant (inherited from Tabs)
-   * @default 'primary'
+   * S2 density (inherited from Tabs)
+   * @default 'regular'
    */
-  variant?: TabsVariant;
+  density?: "compact" | "regular";
   /**
    * Size variant (inherited from Tabs)
    * @default 'md'
@@ -74,12 +82,12 @@ export interface TabListExtendedProps<T extends object> extends TabListProps<T> 
 }
 
 /**
- * Tabs Component with Material Design 3 support
+ * Tabs Component with S2 design system support
  *
- * M3 Features:
- * - 3 variants: primary, secondary, tertiary
+ * S2 Features:
+ * - density: compact | regular (간격 제어)
  * - 3 sizes: sm, md, lg
- * - M3 color tokens for consistent theming
+ * - accent 기반 단일 indicator 스타일
  *
  * Features:
  * - Tabbed navigation interface
@@ -89,8 +97,8 @@ export interface TabListExtendedProps<T extends object> extends TabListProps<T> 
  * - DataBinding support for dynamic tabs
  *
  * @example
- * <Tabs variant="primary" size="md">
- *   <TabList variant="primary" size="md">
+ * <Tabs density="regular" size="md">
+ *   <TabList density="regular" size="md">
  *     <Tab>Tab 1</Tab>
  *     <Tab>Tab 2</Tab>
  *   </TabList>
@@ -99,8 +107,8 @@ export interface TabListExtendedProps<T extends object> extends TabListProps<T> 
  * </Tabs>
  */
 export function Tabs({
-  variant = 'primary',
-  size = 'md',
+  density = "regular",
+  size = "md",
   dataBinding,
   columnMapping,
   isLoading: externalLoading,
@@ -115,10 +123,10 @@ export function Tabs({
     error,
   } = useCollectionData({
     dataBinding: dataBinding as DataBinding,
-    componentName: 'Tabs',
+    componentName: "Tabs",
     fallbackData: [
-      { id: 'tab-1', title: 'Tab 1', content: 'Content 1' },
-      { id: 'tab-2', title: 'Tab 2', content: 'Content 2' },
+      { id: "tab-1", title: "Tab 1", content: "Content 1" },
+      { id: "tab-2", title: "Tab 2", content: "Content 2" },
     ],
   });
 
@@ -126,19 +134,26 @@ export function Tabs({
   if (externalLoading) {
     return (
       <div
-        className={props.className ? `react-aria-Tabs ${props.className}` : 'react-aria-Tabs'}
-        data-variant={variant}
+        className={
+          props.className
+            ? `react-aria-Tabs ${props.className}`
+            : "react-aria-Tabs"
+        }
+        data-density={density}
         data-size={size}
         role="tablist"
         aria-busy="true"
         aria-label="Loading tabs..."
       >
-        <div className="react-aria-TabList" style={{ display: 'flex', gap: '4px' }}>
+        <div
+          className="react-aria-TabList"
+          style={{ display: "flex", gap: "4px" }}
+        >
           {Array.from({ length: skeletonTabCount }).map((_, i) => (
             <Skeleton key={i} componentVariant="tab" size={size} index={i} />
           ))}
         </div>
-        <div className="react-aria-TabPanel" style={{ padding: '16px' }}>
+        <div className="react-aria-TabPanel" style={{ padding: "16px" }}>
           <Skeleton variant="text" lines={3} />
         </div>
       </div>
@@ -148,25 +163,30 @@ export function Tabs({
   // PropertyDataBinding 형식 감지
   const isPropertyBinding =
     dataBinding &&
-    'source' in dataBinding &&
-    'name' in dataBinding &&
-    !('type' in dataBinding);
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
   const hasDataBinding =
     (!isPropertyBinding &&
       dataBinding &&
-      'type' in dataBinding &&
-      dataBinding.type === 'collection') ||
+      "type" in dataBinding &&
+      dataBinding.type === "collection") ||
     isPropertyBinding;
 
   const tabsClassName = composeRenderProps(props.className, (className) => {
-    return className ? `react-aria-Tabs ${className}` : 'react-aria-Tabs';
+    return className ? `react-aria-Tabs ${className}` : "react-aria-Tabs";
   });
 
   // DataBinding이 있고 columnMapping이 있으면 children 템플릿 사용
   if (hasDataBinding && columnMapping) {
     if (loading) {
       return (
-        <RACTabs {...props} className={tabsClassName} data-variant={variant} data-size={size}>
+        <RACTabs
+          {...props}
+          className={tabsClassName}
+          data-density={density}
+          data-size={size}
+        >
           <RACTabList className="react-aria-TabList">
             <RACTab className="react-aria-Tab">⏳ 로딩 중...</RACTab>
           </RACTabList>
@@ -177,7 +197,12 @@ export function Tabs({
 
     if (error) {
       return (
-        <RACTabs {...props} className={tabsClassName} data-variant={variant} data-size={size}>
+        <RACTabs
+          {...props}
+          className={tabsClassName}
+          data-density={density}
+          data-size={size}
+        >
           <RACTabList className="react-aria-TabList">
             <RACTab className="react-aria-Tab">❌ 오류</RACTab>
           </RACTabList>
@@ -188,7 +213,12 @@ export function Tabs({
 
     if (boundData.length > 0) {
       return (
-        <RACTabs {...props} className={tabsClassName} data-variant={variant} data-size={size}>
+        <RACTabs
+          {...props}
+          className={tabsClassName}
+          data-density={density}
+          data-size={size}
+        >
           {children}
         </RACTabs>
       );
@@ -199,7 +229,12 @@ export function Tabs({
   if (hasDataBinding && !columnMapping) {
     if (loading) {
       return (
-        <RACTabs {...props} className={tabsClassName} data-variant={variant} data-size={size}>
+        <RACTabs
+          {...props}
+          className={tabsClassName}
+          data-density={density}
+          data-size={size}
+        >
           <RACTabList className="react-aria-TabList">
             <RACTab className="react-aria-Tab">⏳ 로딩 중...</RACTab>
           </RACTabList>
@@ -210,7 +245,12 @@ export function Tabs({
 
     if (error) {
       return (
-        <RACTabs {...props} className={tabsClassName} data-variant={variant} data-size={size}>
+        <RACTabs
+          {...props}
+          className={tabsClassName}
+          data-density={density}
+          data-size={size}
+        >
           <RACTabList className="react-aria-TabList">
             <RACTab className="react-aria-Tab">❌ 오류</RACTab>
           </RACTabList>
@@ -221,7 +261,12 @@ export function Tabs({
 
     if (boundData.length > 0) {
       return (
-        <RACTabs {...props} className={tabsClassName} data-variant={variant} data-size={size}>
+        <RACTabs
+          {...props}
+          className={tabsClassName}
+          data-density={density}
+          data-size={size}
+        >
           <RACTabList className="react-aria-TabList">
             {boundData.map((item, index) => (
               <RACTab
@@ -229,7 +274,9 @@ export function Tabs({
                 id={String(item.id || index)}
                 className="react-aria-Tab"
               >
-                {String(item.title || item.name || item.label || `Tab ${index + 1}`)}
+                {String(
+                  item.title || item.name || item.label || `Tab ${index + 1}`,
+                )}
               </RACTab>
             ))}
           </RACTabList>
@@ -239,7 +286,12 @@ export function Tabs({
               id={String(item.id || index)}
               className="react-aria-TabPanel"
             >
-              {String(item.content || item.description || item.body || `Content ${index + 1}`)}
+              {String(
+                item.content ||
+                  item.description ||
+                  item.body ||
+                  `Content ${index + 1}`,
+              )}
             </RACTabPanel>
           ))}
         </RACTabs>
@@ -248,28 +300,43 @@ export function Tabs({
   }
 
   // Static children (기존 방식)
-  return <RACTabs {...props} className={tabsClassName} data-variant={variant} data-size={size}>{children}</RACTabs>;
+  return (
+    <RACTabs
+      {...props}
+      className={tabsClassName}
+      data-density={density}
+      data-size={size}
+    >
+      {children}
+    </RACTabs>
+  );
 }
 
 // TabList용 Context - showIndicator 상태 공유
 const TabListIndicatorContext = createContext(false);
 
 export function TabList<T extends object>({
-  variant = 'primary',
-  size = 'md',
+  density = "regular",
+  size = "md",
   showIndicator = false,
   children,
   ...props
 }: TabListExtendedProps<T>) {
   const tabListClassName = composeRenderProps(props.className, (className) => {
-    return className ? `react-aria-TabList ${className}` : 'react-aria-TabList';
+    return className ? `react-aria-TabList ${className}` : "react-aria-TabList";
   });
 
   // showIndicator가 true면 SharedElementTransition으로 감싸기
   // SelectionIndicator는 각 Tab 내부에서 렌더링됨
   if (showIndicator) {
     return (
-      <RACTabList {...props} className={tabListClassName} data-variant={variant} data-size={size} data-show-indicator="true">
+      <RACTabList
+        {...props}
+        className={tabListClassName}
+        data-density={density}
+        data-size={size}
+        data-show-indicator="true"
+      >
         <SharedElementTransition>
           <TabListIndicatorContext.Provider value={true}>
             {children as ReactNode}
@@ -281,7 +348,12 @@ export function TabList<T extends object>({
 
   // 기본: CSS ::before 기반 인디케이터
   return (
-    <RACTabList {...props} className={tabListClassName} data-variant={variant} data-size={size}>
+    <RACTabList
+      {...props}
+      className={tabListClassName}
+      data-density={density}
+      data-size={size}
+    >
       <TabListIndicatorContext.Provider value={false}>
         {children as ReactNode}
       </TabListIndicatorContext.Provider>

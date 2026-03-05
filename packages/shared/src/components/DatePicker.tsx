@@ -17,16 +17,13 @@ import {
   Text,
   TimeField,
   ValidationResult,
-  composeRenderProps
+  composeRenderProps,
 } from "react-aria-components";
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  getLocalTimeZone,
-  today
-} from '@internationalized/date';
-import { safeParseDateString } from '../utils/core/dateUtils';
-import type { DatePickerVariant, ComponentSize } from '../types';
+import { getLocalTimeZone, today } from "@internationalized/date";
+import { safeParseDateString } from "../utils/core/dateUtils";
+import type { ComponentSize } from "../types";
 
 import "./styles/DatePicker.css";
 
@@ -36,13 +33,14 @@ import "./styles/DatePicker.css";
  * - data-variant, data-size 속성 사용
  */
 
-export interface DatePickerProps<T extends DateValue>
-  extends AriaDatePickerProps<T> {
+export interface DatePickerProps<
+  T extends DateValue,
+> extends AriaDatePickerProps<T> {
   /**
    * M3 variant
    * @default 'primary'
    */
-  variant?: DatePickerVariant;
+  variant?: string;
   /**
    * Size variant
    * @default 'md'
@@ -114,8 +112,8 @@ export interface DatePickerProps<T extends DateValue>
  * <DatePicker variant="error" includeTime timeFormat="12h" />
  */
 export function DatePicker<T extends DateValue>({
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   label,
   description,
   errorMessage,
@@ -145,22 +143,24 @@ export function DatePicker<T extends DateValue>({
     : granularity || "day";
 
   // minDate/maxDate 자동 파싱 (문자열인 경우)
-  const minValue = typeof minDate === 'string'
-    ? safeParseDateString(minDate)
-    : minDate;
+  const minValue =
+    typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
 
-  const maxValue = typeof maxDate === 'string'
-    ? safeParseDateString(maxDate)
-    : maxDate;
+  const maxValue =
+    typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
 
   // defaultToday가 true이고 value가 없으면 오늘 날짜 설정
-  const defaultValue = defaultToday && !props.value && !props.defaultValue
-    ? (today(effectiveTimezone) as T)
-    : props.defaultValue;
+  const defaultValue =
+    defaultToday && !props.value && !props.defaultValue
+      ? (today(effectiveTimezone) as T)
+      : props.defaultValue;
 
   const datePickerClassName = composeRenderProps(
     props.className,
-    (className) => className ? `react-aria-DatePicker ${className}` : 'react-aria-DatePicker'
+    (className) =>
+      className
+        ? `react-aria-DatePicker ${className}`
+        : "react-aria-DatePicker",
   );
 
   return (
@@ -230,7 +230,9 @@ export function DatePicker<T extends DateValue>({
             {includeTime && (
               <div className="date-picker-time-section">
                 <div className="date-picker-time-field-wrapper">
-                  <Label className="date-picker-time-field-label">{timeLabel}</Label>
+                  <Label className="date-picker-time-field-label">
+                    {timeLabel}
+                  </Label>
                   <TimeField
                     hourCycle={timeFormat === "12h" ? 12 : 24}
                     className="react-aria-DatePicker-time-field"

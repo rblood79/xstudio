@@ -19,7 +19,8 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  * Tabs Props
  */
 export interface TabsProps {
-  variant?: "default" | "primary" | "secondary";
+  variant?: "default";
+  density?: "compact" | "regular";
   size?: "sm" | "md" | "lg";
   orientation?: "horizontal" | "vertical";
   selectedKey?: string;
@@ -40,28 +41,13 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
   defaultSize: "md",
 
   variants: {
+    // S2에서 Tabs는 단일 스타일 (accent 기반 indicator)
     default: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral-subdued}" as TokenRef,
-      textHover: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-    primary: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral-subdued}" as TokenRef,
       textHover: "{color.accent}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-    secondary: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral-subdued}" as TokenRef,
-      textHover: "{color.neutral-subtle}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
   },

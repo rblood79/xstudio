@@ -6,15 +6,15 @@ import {
   Label,
   Text,
   ValidationResult,
-  composeRenderProps
-} from 'react-aria-components';
-import { CheckIcon, Minus } from 'lucide-react';
-import type { DataBinding, ColumnMapping, DataBindingValue } from '../types';
+  composeRenderProps,
+} from "react-aria-components";
+import { CheckIcon, Minus } from "lucide-react";
+import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
-import type { ComponentSizeSubset, CheckboxVariant } from '../types';
-import { useCollectionData } from '../hooks';
+import type { ComponentSizeSubset } from "../types";
+import { useCollectionData } from "../hooks";
 
-import './styles/CheckboxGroup.css';
+import "./styles/CheckboxGroup.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -22,13 +22,15 @@ import './styles/CheckboxGroup.css';
  * - data-checkbox-variant, data-checkbox-size 속성 사용
  */
 
-export interface CheckboxGroupProps
-  extends Omit<AriaCheckboxGroupProps, 'children'> {
+export interface CheckboxGroupProps extends Omit<
+  AriaCheckboxGroupProps,
+  "children"
+> {
   children?: React.ReactNode;
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: "horizontal" | "vertical";
   // 데이터 바인딩
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
@@ -36,7 +38,7 @@ export interface CheckboxGroupProps
    * Visual variant for child Checkbox buttons
    * @default 'default'
    */
-  variant?: CheckboxVariant;
+  variant?: string;
   /**
    * Size for child Checkbox buttons
    * @default 'md'
@@ -44,20 +46,18 @@ export interface CheckboxGroupProps
   size?: ComponentSizeSubset;
 }
 
-export function CheckboxGroup(
-  {
-    label,
-    description,
-    errorMessage,
-    children,
-    orientation = 'vertical',
-    dataBinding,
-    columnMapping,
-    variant = 'default',
-    size = 'md',
-    ...props
-  }: CheckboxGroupProps
-) {
+export function CheckboxGroup({
+  label,
+  description,
+  errorMessage,
+  children,
+  orientation = "vertical",
+  dataBinding,
+  columnMapping,
+  variant = "default",
+  size = "md",
+  ...props
+}: CheckboxGroupProps) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
     data: boundData,
@@ -65,10 +65,10 @@ export function CheckboxGroup(
     error,
   } = useCollectionData({
     dataBinding: dataBinding as DataBinding,
-    componentName: 'CheckboxGroup',
+    componentName: "CheckboxGroup",
     fallbackData: [
-      { id: 1, name: 'Option 1', value: 'option-1' },
-      { id: 2, name: 'Option 2', value: 'option-2' },
+      { id: 1, name: "Option 1", value: "option-1" },
+      { id: 2, name: "Option 2", value: "option-2" },
     ],
   });
 
@@ -88,17 +88,23 @@ export function CheckboxGroup(
 
   const checkboxGroupClassName = composeRenderProps(
     props.className,
-    (className) => className ? `react-aria-CheckboxGroup ${className}` : 'react-aria-CheckboxGroup'
+    (className) =>
+      className
+        ? `react-aria-CheckboxGroup ${className}`
+        : "react-aria-CheckboxGroup",
   );
 
   // ColumnMapping이 있으면 각 데이터 항목마다 Checkbox 렌더링
   // ListBox와 동일한 패턴
   if (hasDataBinding && columnMapping) {
-    console.log('🎯 CheckboxGroup: columnMapping 감지 - 데이터로 Checkbox 렌더링', {
-      columnMapping,
-      hasChildren: !!children,
-      dataCount: boundData.length,
-    });
+    console.log(
+      "🎯 CheckboxGroup: columnMapping 감지 - 데이터로 Checkbox 렌더링",
+      {
+        columnMapping,
+        hasChildren: !!children,
+        dataCount: boundData.length,
+      },
+    );
 
     // Loading 상태
     if (loading) {
@@ -138,7 +144,9 @@ export function CheckboxGroup(
 
     // 데이터가 있을 때: children 템플릿 사용
     if (boundData.length > 0) {
-      console.log('✅ CheckboxGroup with columnMapping - using children template');
+      console.log(
+        "✅ CheckboxGroup with columnMapping - using children template",
+      );
 
       // children은 Checkbox 템플릿 (Field 자식 포함 가능)
       return (
@@ -218,12 +226,15 @@ export function CheckboxGroup(
         id: String(item.id || index),
         value: String(item.value || item.id || index),
         label: String(
-          item.name || item.title || item.label || `Option ${index + 1}`
+          item.name || item.title || item.label || `Option ${index + 1}`,
         ),
         isDisabled: Boolean(item.isDisabled),
       }));
 
-      console.log('✅ CheckboxGroup Dynamic Collection - items:', checkboxItems);
+      console.log(
+        "✅ CheckboxGroup Dynamic Collection - items:",
+        checkboxItems,
+      );
 
       return (
         <AriaCheckboxGroup
@@ -239,12 +250,16 @@ export function CheckboxGroup(
               key={item.id}
               value={item.value}
               isDisabled={item.isDisabled}
-              className='react-aria-Checkbox'
+              className="react-aria-Checkbox"
             >
               {({ isSelected, isIndeterminate }) => (
                 <>
                   <div className="checkbox">
-                    {isIndeterminate ? <Minus size={16} strokeWidth={4} /> : isSelected && <CheckIcon size={16} strokeWidth={4} />}
+                    {isIndeterminate ? (
+                      <Minus size={16} strokeWidth={4} />
+                    ) : (
+                      isSelected && <CheckIcon size={16} strokeWidth={4} />
+                    )}
                   </div>
                   {item.label}
                 </>

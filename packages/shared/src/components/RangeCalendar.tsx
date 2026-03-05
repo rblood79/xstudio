@@ -7,15 +7,15 @@ import {
   DateValue,
   Heading,
   Text,
-  composeRenderProps
-} from 'react-aria-components';
+  composeRenderProps,
+} from "react-aria-components";
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { safeParseDateString } from '../utils/core/dateUtils';
-import type { CalendarVariant, ComponentSize } from '../types';
-import { Skeleton } from './Skeleton';
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { safeParseDateString } from "../utils/core/dateUtils";
+import type { ComponentSize } from "../types";
+import { Skeleton } from "./Skeleton";
 
-import './styles/RangeCalendar.css';
+import "./styles/RangeCalendar.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -23,13 +23,14 @@ import './styles/RangeCalendar.css';
  * - data-variant, data-size 속성 사용
  */
 
-export interface RangeCalendarProps<T extends DateValue>
-  extends AriaRangeCalendarProps<T> {
+export interface RangeCalendarProps<
+  T extends DateValue,
+> extends AriaRangeCalendarProps<T> {
   /**
    * M3 variant
    * @default 'primary'
    */
-  variant?: CalendarVariant;
+  variant?: string;
   /**
    * Size variant
    * @default 'md'
@@ -71,17 +72,15 @@ export interface RangeCalendarProps<T extends DateValue>
  * <RangeCalendar variant="primary" size="md" />
  * <RangeCalendar variant="secondary" minDate="2024-01-01" maxDate="2024-12-31" />
  */
-export function RangeCalendar<T extends DateValue>(
-  {
-    variant = 'primary',
-    size = 'md',
-    errorMessage,
-    minDate,
-    maxDate,
-    isLoading,
-    ...props
-  }: RangeCalendarProps<T>
-) {
+export function RangeCalendar<T extends DateValue>({
+  variant = "primary",
+  size = "md",
+  errorMessage,
+  minDate,
+  maxDate,
+  isLoading,
+  ...props
+}: RangeCalendarProps<T>) {
   if (isLoading) {
     return (
       <Skeleton
@@ -94,17 +93,18 @@ export function RangeCalendar<T extends DateValue>(
   }
 
   // minDate/maxDate 자동 파싱
-  const minValue = typeof minDate === 'string'
-    ? safeParseDateString(minDate)
-    : minDate;
+  const minValue =
+    typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
 
-  const maxValue = typeof maxDate === 'string'
-    ? safeParseDateString(maxDate)
-    : maxDate;
+  const maxValue =
+    typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
 
   const rangeCalendarClassName = composeRenderProps(
     props.className,
-    (className) => className ? `react-aria-RangeCalendar ${className}` : 'react-aria-RangeCalendar'
+    (className) =>
+      className
+        ? `react-aria-RangeCalendar ${className}`
+        : "react-aria-RangeCalendar",
   );
 
   return (
@@ -125,9 +125,7 @@ export function RangeCalendar<T extends DateValue>(
           <ChevronRight size={16} />
         </Button>
       </header>
-      <CalendarGrid>
-        {(date) => <CalendarCell date={date} />}
-      </CalendarGrid>
+      <CalendarGrid>{(date) => <CalendarCell date={date} />}</CalendarGrid>
       {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
     </AriaRangeCalendar>
   );

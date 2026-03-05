@@ -8,7 +8,7 @@
  * @since 2025-12-11 Phase 10 B2.2
  */
 
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from "react";
 
 // ============================================
 // Data Binding Types
@@ -18,8 +18,8 @@ import type { CSSProperties, ReactNode } from 'react';
  * 데이터 바인딩 타입
  */
 export interface DataBinding {
-  type: 'collection' | 'value' | 'field';
-  source: 'supabase' | 'api' | 'state' | 'static' | 'parent';
+  type: "collection" | "value" | "field";
+  source: "supabase" | "api" | "state" | "static" | "parent";
   config: Record<string, unknown>;
 }
 
@@ -27,13 +27,13 @@ export interface DataBinding {
  * 필드 타입 (컬렉션 컴포넌트용)
  */
 export type FieldType =
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'date'
-  | 'image'
-  | 'url'
-  | 'email';
+  | "string"
+  | "number"
+  | "boolean"
+  | "date"
+  | "image"
+  | "url"
+  | "email";
 
 /**
  * 필드 정의
@@ -65,7 +65,7 @@ export interface BaseElementProps {
   className?: string;
   style?: CSSProperties;
   computedStyle?: Partial<CSSProperties>;
-  'data-element-id'?: string;
+  "data-element-id"?: string;
   children?: ReactNode;
 }
 
@@ -90,7 +90,7 @@ export interface Element {
 
   // --- G.1: Component-Instance System ---
   /** 'master' = 재사용 가능 컴포넌트 원본, 'instance' = master 참조 인스턴스 */
-  componentRole?: 'master' | 'instance';
+  componentRole?: "master" | "instance";
   /** instance가 참조하는 master element ID */
   masterId?: string;
   /** instance 직접 props 오버라이드 (master 기본값 위에 적용) */
@@ -124,18 +124,18 @@ export interface Page {
 // Component Props Types
 // ============================================
 
-// Note: ComponentSize and ComponentVariant are defined in componentVariants.types.ts
+// Note: ComponentSize is defined in componentVariants.types.ts
 // to avoid circular dependencies, we re-export them here
-import type { ComponentSize, ComponentVariant } from './componentVariants.types';
+import type { ComponentSize } from "./componentVariants.types";
 
 /**
  * 공통 컴포넌트 Props
  */
 export interface CommonComponentProps extends BaseElementProps {
-  variant?: ComponentVariant;
+  variant?: string;
   size?: ComponentSize;
   isDisabled?: boolean;
 }
 
 // Re-export for convenience (used by other files that import from element.types)
-export type { ComponentSize, ComponentVariant } from './componentVariants.types';
+export type { ComponentSize } from "./componentVariants.types";

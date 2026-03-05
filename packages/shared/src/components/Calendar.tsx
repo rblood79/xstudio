@@ -7,16 +7,16 @@ import {
   DateValue,
   Heading,
   Text,
-  composeRenderProps
-} from 'react-aria-components';
+  composeRenderProps,
+} from "react-aria-components";
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getLocalTimeZone, today } from '@internationalized/date';
-import { safeParseDateString } from '../utils/core/dateUtils';
-import type { CalendarVariant, ComponentSize } from '../types';
-import { Skeleton } from './Skeleton';
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getLocalTimeZone, today } from "@internationalized/date";
+import { safeParseDateString } from "../utils/core/dateUtils";
+import type { ComponentSize } from "../types";
+import { Skeleton } from "./Skeleton";
 
-import './styles/Calendar.css';
+import "./styles/Calendar.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -24,13 +24,14 @@ import './styles/Calendar.css';
  * - data-variant, data-size 속성 사용
  */
 
-export interface CalendarProps<T extends DateValue>
-  extends AriaCalendarProps<T> {
+export interface CalendarProps<
+  T extends DateValue,
+> extends AriaCalendarProps<T> {
   /**
    * M3 variant
    * @default 'primary'
    */
-  variant?: CalendarVariant;
+  variant?: string;
   /**
    * Size variant
    * @default 'md'
@@ -64,7 +65,7 @@ export interface CalendarProps<T extends DateValue>
    * - 'end': 선택된 날짜가 visible range의 끝에 오도록 스크롤
    * @default 'center'
    */
-  selectionAlignment?: 'start' | 'center' | 'end';
+  selectionAlignment?: "start" | "center" | "end";
   /**
    * Show loading skeleton instead of calendar
    * @default false
@@ -91,20 +92,18 @@ export interface CalendarProps<T extends DateValue>
  * <Calendar variant="primary" size="md" defaultToday />
  * <Calendar variant="secondary" minDate="2024-01-01" maxDate="2024-12-31" />
  */
-export function Calendar<T extends DateValue>(
-  {
-    variant = 'primary',
-    size = 'md',
-    errorMessage,
-    timezone,
-    defaultToday = false,
-    minDate,
-    maxDate,
-    selectionAlignment = 'center',
-    isLoading,
-    ...props
-  }: CalendarProps<T>
-) {
+export function Calendar<T extends DateValue>({
+  variant = "primary",
+  size = "md",
+  errorMessage,
+  timezone,
+  defaultToday = false,
+  minDate,
+  maxDate,
+  selectionAlignment = "center",
+  isLoading,
+  ...props
+}: CalendarProps<T>) {
   if (isLoading) {
     return (
       <Skeleton
@@ -119,22 +118,20 @@ export function Calendar<T extends DateValue>(
   const effectiveTimezone = timezone || getLocalTimeZone();
 
   // minDate/maxDate 자동 파싱
-  const minValue = typeof minDate === 'string'
-    ? safeParseDateString(minDate)
-    : minDate;
+  const minValue =
+    typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
 
-  const maxValue = typeof maxDate === 'string'
-    ? safeParseDateString(maxDate)
-    : maxDate;
+  const maxValue =
+    typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
 
   // defaultToday가 true이고 value가 없으면 오늘 날짜 설정
-  const defaultValue = defaultToday && !props.value && !props.defaultValue
-    ? (today(effectiveTimezone) as T)
-    : props.defaultValue;
+  const defaultValue =
+    defaultToday && !props.value && !props.defaultValue
+      ? (today(effectiveTimezone) as T)
+      : props.defaultValue;
 
-  const calendarClassName = composeRenderProps(
-    props.className,
-    (className) => className ? `react-aria-Calendar ${className}` : 'react-aria-Calendar'
+  const calendarClassName = composeRenderProps(props.className, (className) =>
+    className ? `react-aria-Calendar ${className}` : "react-aria-Calendar",
   );
 
   return (
@@ -157,9 +154,7 @@ export function Calendar<T extends DateValue>(
           <ChevronRight size={16} />
         </Button>
       </header>
-      <CalendarGrid>
-        {(date) => <CalendarCell date={date} />}
-      </CalendarGrid>
+      <CalendarGrid>{(date) => <CalendarCell date={date} />}</CalendarGrid>
       {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
     </AriaCalendar>
   );

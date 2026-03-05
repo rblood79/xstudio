@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * ProgressBar Props
  */
 export interface ProgressBarProps {
-  variant?: 'default' | 'primary' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "default";
+  size?: "sm" | "md" | "lg";
   label?: string;
   value?: number;
   showValue?: boolean;
@@ -28,13 +28,14 @@ export interface ProgressBarProps {
 
 /** variant별 채우기 색상 */
 export const PROGRESSBAR_FILL_COLORS: Record<string, TokenRef> = {
-  default: '{color.accent}' as TokenRef,
-  primary: '{color.accent}' as TokenRef,
-  secondary: '{color.neutral-subtle}' as TokenRef,
+  default: "{color.accent}" as TokenRef,
 };
 
 /** 사이즈별 바 치수 */
-export const PROGRESSBAR_DIMENSIONS: Record<string, { barHeight: number; width: number }> = {
+export const PROGRESSBAR_DIMENSIONS: Record<
+  string,
+  { barHeight: number; width: number }
+> = {
   sm: { barHeight: 4, width: 200 },
   md: { barHeight: 6, width: 240 },
   lg: { barHeight: 8, width: 320 },
@@ -44,31 +45,19 @@ export const PROGRESSBAR_DIMENSIONS: Record<string, { barHeight: number; width: 
  * ProgressBar Component Spec
  */
 export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
-  name: 'ProgressBar',
-  description: 'React Aria 기반 프로그레스바 컴포넌트',
-  element: 'div',
+  name: "ProgressBar",
+  description: "React Aria 기반 프로그레스바 컴포넌트",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultVariant: "default",
+  defaultSize: "md",
 
   variants: {
     default: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-    },
-    primary: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-    },
-    secondary: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+      background: "{color.neutral-subtle}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
   },
 
@@ -77,24 +66,24 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       height: 4,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 6,
     },
     md: {
       height: 6,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 8,
     },
     lg: {
       height: 8,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 10,
     },
   },
@@ -104,40 +93,49 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {},
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
-      const variantName = props.variant ?? 'default';
-      const sizeName = props.size ?? 'md';
-      const barDims = PROGRESSBAR_DIMENSIONS[sizeName] ?? PROGRESSBAR_DIMENSIONS.md;
-      const fillColor = PROGRESSBAR_FILL_COLORS[variantName] ?? PROGRESSBAR_FILL_COLORS.default;
+    shapes: (props, variant, size, _state = "default") => {
+      const variantName = props.variant ?? "default";
+      const sizeName = props.size ?? "md";
+      const barDims =
+        PROGRESSBAR_DIMENSIONS[sizeName] ?? PROGRESSBAR_DIMENSIONS.md;
+      const fillColor =
+        PROGRESSBAR_FILL_COLORS[variantName] ?? PROGRESSBAR_FILL_COLORS.default;
       const width = (props.style?.width as number) || barDims.width;
       const barHeight = barDims.barHeight;
       const gap = size.gap ?? 8;
 
       // 사용자 스타일 우선
       const styleBr = props.style?.borderRadius;
-      const barRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const barRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const textColor = props.style?.color ?? variant.text;
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
-      const fw = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
-        : 500;
+      const fw =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 500
+          : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
       const value = Math.max(0, Math.min(100, props.value ?? 0));
@@ -153,7 +151,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       if (hasLabelRow) {
         if (props.label) {
           shapes.push({
-            type: 'text' as const,
+            type: "text" as const,
             x: 0,
             y: 0,
             text: props.label,
@@ -161,21 +159,21 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             fontFamily: ff,
             fontWeight: fw,
             fill: textColor,
-            align: 'left' as const,
-            baseline: 'top' as const,
+            align: "left" as const,
+            baseline: "top" as const,
           });
         }
         if (props.showValue) {
           shapes.push({
-            type: 'text' as const,
+            type: "text" as const,
             x: width,
             y: 0,
             text: `${Math.round(value)}%`,
             fontSize,
             fontFamily: ff,
             fill: textColor,
-            align: 'right' as const,
-            baseline: 'top' as const,
+            align: "right" as const,
+            baseline: "top" as const,
           });
         }
       }
@@ -184,8 +182,8 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
 
       // 트랙 배경
       shapes.push({
-        id: 'track',
-        type: 'roundRect' as const,
+        id: "track",
+        type: "roundRect" as const,
         x: 0,
         y: offsetY,
         width,
@@ -197,8 +195,8 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       // 채우기 (determinate 모드)
       if (!props.isIndeterminate && fillWidth > 0) {
         shapes.push({
-          id: 'fill',
-          type: 'roundRect' as const,
+          id: "fill",
+          type: "roundRect" as const,
           x: 0,
           y: offsetY,
           width: fillWidth,
@@ -211,8 +209,8 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       // Indeterminate 애니메이션 표현 (정적 50% 위치)
       if (props.isIndeterminate) {
         shapes.push({
-          id: 'indeterminate-fill',
-          type: 'roundRect' as const,
+          id: "indeterminate-fill",
+          type: "roundRect" as const,
           x: width * 0.2,
           y: offsetY,
           width: width * 0.3,
@@ -226,16 +224,16 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
     },
 
     react: (props) => ({
-      role: 'progressbar',
-      'aria-valuemin': 0,
-      'aria-valuemax': 100,
-      'aria-valuenow': props.isIndeterminate ? undefined : (props.value ?? 0),
-      'data-indeterminate': props.isIndeterminate || undefined,
+      role: "progressbar",
+      "aria-valuemin": 0,
+      "aria-valuemax": 100,
+      "aria-valuenow": props.isIndeterminate ? undefined : (props.value ?? 0),
+      "data-indeterminate": props.isIndeterminate || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: 'static' as const,
-      cursor: props.isDisabled ? 'not-allowed' : 'default',
+      eventMode: "static" as const,
+      cursor: props.isDisabled ? "not-allowed" : "default",
     }),
   },
 };

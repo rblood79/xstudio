@@ -25,6 +25,7 @@ import {
 import type { TintPreset } from "../../../utils/theme/tintToSkiaColors";
 import { TINT_PRESETS } from "../../../utils/theme/tintToSkiaColors";
 import type { NeutralPreset } from "../../../utils/theme/neutralToSkiaColors";
+import { NEUTRAL_PALETTES } from "../../../utils/theme/neutralToSkiaColors";
 import type { RadiusScale } from "../../../stores/themeConfigStore";
 import { oklchToHex } from "../../../utils/theme/oklchToHex";
 import { PanelHeader, PropertySection, PropertySelect } from "../../components";
@@ -108,16 +109,75 @@ const TintSwatch = memo(
 );
 
 // ============================================================================
-// Select 옵션
+// NeutralGrid — 5색 Neutral 프리셋 스와치
 // ============================================================================
 
-const NEUTRAL_OPTIONS = [
-  { value: "slate", label: "Slate" },
-  { value: "gray", label: "Gray" },
-  { value: "zinc", label: "Zinc" },
-  { value: "neutral", label: "Neutral" },
-  { value: "stone", label: "Stone" },
+/** Neutral 프리셋 표시 순서 */
+const NEUTRAL_ORDER: NeutralPreset[] = [
+  "slate",
+  "gray",
+  "zinc",
+  "neutral",
+  "stone",
 ];
+
+/** 프리셋별 대표 hex (step 500 = 중간 밝기) */
+const NEUTRAL_HEX_MAP: Record<NeutralPreset, string> = {
+  slate: NEUTRAL_PALETTES.slate[500],
+  gray: NEUTRAL_PALETTES.gray[500],
+  zinc: NEUTRAL_PALETTES.zinc[500],
+  neutral: NEUTRAL_PALETTES.neutral[500],
+  stone: NEUTRAL_PALETTES.stone[500],
+};
+
+/** Neutral 프리셋 라벨 */
+const NEUTRAL_LABELS: Record<NeutralPreset, string> = {
+  slate: "Slate",
+  gray: "Gray",
+  zinc: "Zinc",
+  neutral: "Neutral",
+  stone: "Stone",
+};
+
+interface NeutralSwatchProps {
+  preset: NeutralPreset;
+  selected: boolean;
+  onSelect: (preset: NeutralPreset) => void;
+}
+
+const NeutralSwatch = memo(
+  function NeutralSwatch({ preset, selected, onSelect }: NeutralSwatchProps) {
+    const handlePress = useCallback(() => onSelect(preset), [preset, onSelect]);
+    const color = parseColor(NEUTRAL_HEX_MAP[preset]);
+
+    return (
+      <Button
+        className="react-aria-Group color-swatch-button tint-swatch"
+        aria-label={NEUTRAL_LABELS[preset]}
+        data-selected={selected || undefined}
+        onPress={handlePress}
+      >
+        <ColorSwatch color={color} />
+        {selected && (
+          <Check
+            size={14}
+            strokeWidth={3}
+            color="#fff"
+            className="tint-swatch-check"
+          />
+        )}
+      </Button>
+    );
+  },
+  (prev, next) =>
+    prev.preset === next.preset &&
+    prev.selected === next.selected &&
+    prev.onSelect === next.onSelect,
+);
+
+// ============================================================================
+// Select 옵션
+// ============================================================================
 
 const RADIUS_OPTIONS = [
   { value: "none", label: "None" },
@@ -157,9 +217,9 @@ function ThemesContent() {
     [setTint],
   );
 
-  const handleNeutralChange = useCallback(
-    (value: string) => {
-      setNeutral(value as NeutralPreset);
+  const handleNeutralSelect = useCallback(
+    (preset: NeutralPreset) => {
+      setNeutral(preset);
     },
     [setNeutral],
   );
@@ -192,26 +252,37 @@ function ThemesContent() {
         }
       />
 
-      <PropertySection title="Accent Color" id="theme-accent">
-        <div className="tint-grid">
-          {TINT_ORDER.map((tint) => (
-            <TintSwatch
-              key={tint}
-              tint={tint}
-              selected={currentTint === tint}
-              onSelect={handleTintSelect}
-            />
-          ))}
-        </div>
+      <PropertySection title="Colors" id="theme-colors">
+        <fieldset className="properties-aria">
+          <legend className="fieldset-legend">Accent</legend>
+          <div className="tint-grid">
+            {TINT_ORDER.map((tint) => (
+              <TintSwatch
+                key={tint}
+                tint={tint}
+                selected={currentTint === tint}
+                onSelect={handleTintSelect}
+              />
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="properties-aria">
+          <legend className="fieldset-legend">Tone</legend>
+          <div className="tint-grid">
+            {NEUTRAL_ORDER.map((preset) => (
+              <NeutralSwatch
+                key={preset}
+                preset={preset}
+                selected={neutral === preset}
+                onSelect={handleNeutralSelect}
+              />
+            ))}
+          </div>
+        </fieldset>
       </PropertySection>
 
       <PropertySection title="Appearance" id="theme-appearance">
-        <PropertySelect
-          label="Tone"
-          value={neutral}
-          onChange={handleNeutralChange}
-          options={NEUTRAL_OPTIONS}
-        />
         <PropertySelect
           label="Radius"
           value={radiusScale}

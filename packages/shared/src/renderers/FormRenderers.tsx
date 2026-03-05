@@ -30,7 +30,7 @@ import type { PreviewElement, RenderContext } from "../types";
  */
 export const renderTextField = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -75,7 +75,7 @@ export const renderTextField = (
  */
 export const renderNumberField = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -90,9 +90,21 @@ export const renderNumberField = (
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
       defaultValue={Number(element.props.value || 0)}
-      minValue={element.props.minValue !== undefined ? Number(element.props.minValue) : undefined}
-      maxValue={element.props.maxValue !== undefined ? Number(element.props.maxValue) : undefined}
-      step={element.props.step !== undefined ? Number(element.props.step) : undefined}
+      minValue={
+        element.props.minValue !== undefined
+          ? Number(element.props.minValue)
+          : undefined
+      }
+      maxValue={
+        element.props.maxValue !== undefined
+          ? Number(element.props.maxValue)
+          : undefined
+      }
+      step={
+        element.props.step !== undefined
+          ? Number(element.props.step)
+          : undefined
+      }
       isDisabled={Boolean(element.props.isDisabled || false)}
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
@@ -112,7 +124,7 @@ export const renderNumberField = (
  */
 export const renderSearchField = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -161,7 +173,7 @@ export const renderSearchField = (
  */
 export const renderInput = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -202,7 +214,7 @@ export const renderInput = (
  */
 export const renderLabel = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -231,7 +243,7 @@ export const renderLabel = (
  */
 export const renderDescription = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -262,7 +274,7 @@ export const renderDescription = (
  */
 export const renderFieldError = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -289,7 +301,7 @@ export const renderFieldError = (
  */
 export const renderCheckbox = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps, renderElement } = context;
 
@@ -307,12 +319,8 @@ export const renderCheckbox = (
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
       className={element.props.className}
-      variant={
-        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
-      }
-      size={
-        (element.props.size as "sm" | "md" | "lg") || "md"
-      }
+      isEmphasized={Boolean(element.props.isEmphasized)}
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
       onChange={async (isSelected) => {
         const updatedProps = {
           ...element.props,
@@ -335,7 +343,8 @@ export const renderCheckbox = (
       }}
     >
       {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
-      {typeof element.props.children === "string" && !children.some(c => c.tag === 'Label')
+      {typeof element.props.children === "string" &&
+      !children.some((c) => c.tag === "Label")
         ? element.props.children
         : null}
       {children.map((child) => renderElement(child, child.id))}
@@ -348,13 +357,15 @@ export const renderCheckbox = (
  */
 export const renderCheckboxGroup = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
 
   // 실제 Checkbox 자식 요소들을 찾기
   const checkboxChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "Checkbox")
+    .filter(
+      (child) => child.parent_id === element.id && child.tag === "Checkbox",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // isSelected: true인 체크박스들의 ID를 value 배열로 생성
@@ -374,12 +385,7 @@ export const renderCheckboxGroup = (
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
       }
-      variant={
-        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
-      }
-      size={
-        (element.props.size as "sm" | "md" | "lg") || "md"
-      }
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
       onChange={async (newSelectedValues) => {
         // CheckboxGroup의 onChange: 전체 value 배열 업데이트
         const updatedProps = {
@@ -431,7 +437,7 @@ export const renderCheckboxGroup = (
  */
 export const renderRadio = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, renderElement } = context;
 
@@ -440,7 +446,9 @@ export const renderRadio = (
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // 부모가 RadioGroup인지 확인
-  const parentElement = elements.find((parent) => parent.id === element.parent_id);
+  const parentElement = elements.find(
+    (parent) => parent.id === element.parent_id,
+  );
 
   if (parentElement && parentElement.tag === "RadioGroup") {
     return (
@@ -454,7 +462,8 @@ export const renderRadio = (
         className={element.props.className}
       >
         {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
-        {typeof element.props.children === "string" && !children.some(c => c.tag === 'Label')
+        {typeof element.props.children === "string" &&
+        !children.some((c) => c.tag === "Label")
           ? element.props.children
           : null}
         {children.map((child) => renderElement(child, child.id))}
@@ -478,7 +487,8 @@ export const renderRadio = (
           className={element.props.className}
         >
           {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
-          {typeof element.props.children === "string" && !children.some(c => c.tag === 'Label')
+          {typeof element.props.children === "string" &&
+          !children.some((c) => c.tag === "Label")
             ? element.props.children
             : null}
           {children.map((child) => renderElement(child, child.id))}
@@ -493,7 +503,7 @@ export const renderRadio = (
  */
 export const renderRadioGroup = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps, renderElement } = context;
 
@@ -514,12 +524,7 @@ export const renderRadioGroup = (
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
       }
-      variant={
-        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
-      }
-      size={
-        (element.props.size as "sm" | "md" | "lg") || "md"
-      }
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
       onChange={(selectedValue) => {
         const updatedProps = {
           ...element.props,
@@ -549,7 +554,7 @@ export const renderRadioGroup = (
  */
 export const renderSwitch = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -562,12 +567,8 @@ export const renderSwitch = (
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
       className={element.props.className}
-      variant={
-        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
-      }
-      size={
-        (element.props.size as "sm" | "md" | "lg") || "md"
-      }
+      isEmphasized={Boolean(element.props.isEmphasized)}
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
       onChange={(isSelected) => {
         const updatedProps = {
           ...element.props,
@@ -588,7 +589,7 @@ export const renderSwitch = (
  */
 export const renderTailSwatch = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -623,7 +624,8 @@ export const renderTailSwatch = (
         areaProps={{
           value: color,
           onChange: handleColorChange,
-          colorSpace: (element.props.colorSpace as "rgb" | "hsl" | "hsb") || "hsb",
+          colorSpace:
+            (element.props.colorSpace as "rgb" | "hsl" | "hsb") || "hsb",
           isDisabled: Boolean(element.props.isDisabled),
         }}
         sliderProps={{

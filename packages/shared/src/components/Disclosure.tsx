@@ -5,17 +5,17 @@ import {
   DisclosureProps as AriaDisclosureProps,
   Heading,
   composeRenderProps,
-} from 'react-aria-components';
-import type { DisclosureVariant, ComponentSize } from '../types';
+} from "react-aria-components";
+import type { ComponentSize } from "../types";
 
-import './styles/Disclosure.css';
+import "./styles/Disclosure.css";
 
-export interface DisclosureProps extends Omit<AriaDisclosureProps, 'children'> {
+export interface DisclosureProps extends Omit<AriaDisclosureProps, "children"> {
   /**
    * M3 variant
    * @default 'primary'
    */
-  variant?: DisclosureVariant;
+  variant?: string;
   /**
    * Size variant
    * @default 'md'
@@ -54,14 +54,28 @@ export interface DisclosureProps extends Omit<AriaDisclosureProps, 'children'> {
  *   <p>This content is hidden by default and shown when expanded.</p>
  * </Disclosure>
  */
-export function Disclosure({ variant = 'primary', size = 'md', title, children, ...props }: DisclosureProps) {
+export function Disclosure({
+  variant = "primary",
+  size = "md",
+  title,
+  children,
+  ...props
+}: DisclosureProps) {
   const disclosureClassName = composeRenderProps(
     props.className,
-    (className) => className ? `react-aria-Disclosure ${className}` : 'react-aria-Disclosure'
+    (className) =>
+      className
+        ? `react-aria-Disclosure ${className}`
+        : "react-aria-Disclosure",
   );
 
   return (
-    <AriaDisclosure {...props} className={disclosureClassName} data-variant={variant} data-size={size}>
+    <AriaDisclosure
+      {...props}
+      className={disclosureClassName}
+      data-variant={variant}
+      data-size={size}
+    >
       <Heading>
         <Button slot="trigger">
           <svg viewBox="0 0 24 24" className="disclosure-chevron">

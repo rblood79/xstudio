@@ -12,10 +12,15 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button, Select, SelectItem } from "./list";
-import type { TableVariant, ComponentSize, DataBinding, ColumnMapping, DataBindingValue } from '../types';
-import { useCollectionData } from '../hooks';
-import { generateId } from '../utils';
-import './styles/Table.css';
+import type {
+  ComponentSize,
+  DataBinding,
+  ColumnMapping,
+  DataBindingValue,
+} from "../types";
+import { useCollectionData } from "../hooks";
+import { generateId } from "../utils";
+import "./styles/Table.css";
 import {
   ChevronDown,
   ChevronUp,
@@ -31,7 +36,7 @@ import { Skeleton } from "./Skeleton";
  */
 export type ApiFetcher<T> = (
   endpoint: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
 ) => Promise<T[]>;
 
 /**
@@ -84,7 +89,7 @@ export interface TableProps<T extends { id: string | number }> {
   tableHeaderElementId?: string; // TableHeader Element ID for selection
 
   // M3 props
-  variant?: TableVariant;
+  variant?: string;
   size?: ComponentSize;
 
   // 데이터 바인딩 (PropertyDataBinding 형식 지원)
@@ -139,18 +144,21 @@ export interface TableProps<T extends { id: string | number }> {
 }
 
 // Table className helper
-const getTableClassName = (variant: TableVariant, size: ComponentSize, className?: string) =>
-  className ? `react-aria-Table ${className}` : 'react-aria-Table';
+const getTableClassName = (
+  variant: string,
+  size: ComponentSize,
+  className?: string,
+) => (className ? `react-aria-Table ${className}` : "react-aria-Table");
 
 export default React.memo(function Table<T extends { id: string | number }>(
-  props: TableProps<T>
+  props: TableProps<T>,
 ) {
   const {
     className,
     tableHeaderElementId,
 
-    variant = 'primary',
-    size = 'md',
+    variant = "primary",
+    size = "md",
 
     dataBinding,
     // Note: columnMapping is available in props but not destructured until needed
@@ -208,7 +216,11 @@ export default React.memo(function Table<T extends { id: string | number }>(
   // DataBinding 데이터가 있으면 사용, 없으면 staticData 사용
   const effectiveStaticData = React.useMemo(() => {
     if (hasDataBinding && boundData.length > 0) {
-      console.log("📊 Table: DataBinding 데이터 사용", boundData.length, "items");
+      console.log(
+        "📊 Table: DataBinding 데이터 사용",
+        boundData.length,
+        "items",
+      );
       return boundData as T[];
     }
     return staticData;
@@ -217,11 +229,14 @@ export default React.memo(function Table<T extends { id: string | number }>(
   const mode: PaginationMode = paginationMode || "pagination";
 
   // staticData가 빈 배열이 아닌 실제 데이터가 있는지 확인
-  const hasValidStaticData = effectiveStaticData && Array.isArray(effectiveStaticData) && effectiveStaticData.length > 0;
+  const hasValidStaticData =
+    effectiveStaticData &&
+    Array.isArray(effectiveStaticData) &&
+    effectiveStaticData.length > 0;
 
   const isAsync =
     enableAsyncLoading === true &&
-    !hasValidStaticData &&  // 빈 배열도 false로 처리
+    !hasValidStaticData && // 빈 배열도 false로 처리
     Boolean(apiUrlKey) &&
     Boolean(endpointPath) &&
     (endpointPath?.trim().length ?? 0) > 0;
@@ -236,7 +251,14 @@ export default React.memo(function Table<T extends { id: string | number }>(
       endpointPath,
       isAsync,
     });
-  }, [enableAsyncLoading, staticData, hasValidStaticData, apiUrlKey, endpointPath, isAsync]);
+  }, [
+    enableAsyncLoading,
+    staticData,
+    hasValidStaticData,
+    apiUrlKey,
+    endpointPath,
+    isAsync,
+  ]);
 
   // 페이지네이션 표시 여부 (API 또는 Static/Supabase 모두 지원)
   const shouldShowPagination = mode === "pagination";
@@ -245,7 +267,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
   const processApiResponse = React.useCallback(
     (
       response: unknown,
-      mapping?: DataMapping
+      mapping?: DataMapping,
     ): { items: T[]; total: number } => {
       if (!mapping) {
         // 매핑 설정이 없으면 원본 데이터 그대로 사용
@@ -294,7 +316,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
         return { items, total: items.length };
       }
     },
-    []
+    [],
   );
 
   // ---------- 높이 계산 ----------
@@ -327,29 +349,38 @@ export default React.memo(function Table<T extends { id: string | number }>(
   >([]);
 
   // ---------- 컬럼 자동 감지 함수 ----------
-  const detectColumnsFromData = React.useCallback((data: T[]): ColumnDefinition<T>[] => {
-    if (!data || data.length === 0) return [];
+  const detectColumnsFromData = React.useCallback(
+    (data: T[]): ColumnDefinition<T>[] => {
+      if (!data || data.length === 0) return [];
 
-    const firstItem = data[0];
-    const keys = Object.keys(firstItem);
+      const firstItem = data[0];
+      const keys = Object.keys(firstItem);
 
-    return keys.map((key) => ({
-      key: key as keyof T,
-      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
-      allowsSorting: true,
-      enableResizing: true,
-      width: 150,
-      align: 'left' as const,
-      // 자동 생성된 컬럼에 UUID 기반 elementId 부여
-      elementId: generateId(),
-    }));
-  }, []);
+      return keys.map((key) => ({
+        key: key as keyof T,
+        label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "),
+        allowsSorting: true,
+        enableResizing: true,
+        width: 150,
+        align: "left" as const,
+        // 자동 생성된 컬럼에 UUID 기반 elementId 부여
+        elementId: generateId(),
+      }));
+    },
+    [],
+  );
 
   // ---------- Static 데이터 자동 감지 ----------
   React.useEffect(() => {
     // Static 데이터이고, 컬럼이 제공되지 않았고, 데이터가 있으면 자동 감지
     // 단, 이미 자동 감지된 컬럼이 있으면 건너뛰기 (중복 방지)
-    if (!isAsync && columns.length === 0 && effectiveStaticData && effectiveStaticData.length > 0 && detectedColumns.length === 0) {
+    if (
+      !isAsync &&
+      columns.length === 0 &&
+      effectiveStaticData &&
+      effectiveStaticData.length > 0 &&
+      detectedColumns.length === 0
+    ) {
       const detected = detectColumnsFromData(effectiveStaticData);
       setDetectedColumns(detected);
       console.log("🔍 Static 데이터 컬럼 자동 감지:", detected);
@@ -359,7 +390,14 @@ export default React.memo(function Table<T extends { id: string | number }>(
         onColumnsDetected(detected);
       }
     }
-  }, [effectiveStaticData, columns.length, isAsync, detectColumnsFromData, onColumnsDetected, detectedColumns.length]);
+  }, [
+    effectiveStaticData,
+    columns.length,
+    isAsync,
+    detectColumnsFromData,
+    onColumnsDetected,
+    detectedColumns.length,
+  ]);
 
   // ---------- Column Definitions with Groups ----------
   const columnDefsWithGroups = React.useMemo<ColumnDef<T>[]>(() => {
@@ -376,33 +414,40 @@ export default React.memo(function Table<T extends { id: string | number }>(
     if (columnGroups.length === 0) {
       // Column Group이 없으면 기본 컬럼 정의 반환
       const basicColumns = effectiveColumns.map((c) =>
-        columnHelper.accessor((row) => (row as Record<string, unknown>)[String(c.key)], {
-          id: String(c.key),
-          header: () => (
-            <span
-              style={{
-                fontWeight: "500",
-                fontSize: "13px",
-                color: "#374151",
-              }}
-            >
-              {c.label}
-            </span>
-          ),
-          size: c.width ?? 150,
-          minSize: c.minWidth,
-          maxSize: c.maxWidth,
-          enableSorting: c.allowsSorting ?? true,
-          enableResizing: c.enableResizing ?? true,
-          cell: (info: { getValue: () => unknown }) => {
-            const value = info.getValue();
-            // 중첩 객체는 JSON 문자열로 변환
-            if (value && typeof value === "object" && !React.isValidElement(value)) {
-              return JSON.stringify(value);
-            }
-            return value as React.ReactNode;
+        columnHelper.accessor(
+          (row) => (row as Record<string, unknown>)[String(c.key)],
+          {
+            id: String(c.key),
+            header: () => (
+              <span
+                style={{
+                  fontWeight: "500",
+                  fontSize: "13px",
+                  color: "#374151",
+                }}
+              >
+                {c.label}
+              </span>
+            ),
+            size: c.width ?? 150,
+            minSize: c.minWidth,
+            maxSize: c.maxWidth,
+            enableSorting: c.allowsSorting ?? true,
+            enableResizing: c.enableResizing ?? true,
+            cell: (info: { getValue: () => unknown }) => {
+              const value = info.getValue();
+              // 중첩 객체는 JSON 문자열로 변환
+              if (
+                value &&
+                typeof value === "object" &&
+                !React.isValidElement(value)
+              ) {
+                return JSON.stringify(value);
+              }
+              return value as React.ReactNode;
+            },
           },
-        })
+        ),
       );
       return basicColumns;
     }
@@ -433,29 +478,36 @@ export default React.memo(function Table<T extends { id: string | number }>(
       // 그룹에 속할 컬럼들 선택 (span 범위만큼)
       const groupColumns = sortedColumns.slice(
         columnIndex,
-        columnIndex + group.span
+        columnIndex + group.span,
       );
 
       if (groupColumns.length > 0) {
         // 하위 컬럼들을 columnHelper.accessor()로 생성
         const subColumns = groupColumns.map((c) =>
-          columnHelper.accessor((row) => (row as Record<string, unknown>)[String(c.key)], {
-            id: String(c.key),
-            header: () => <span style={{}}>{c.label}</span>,
-            size: c.width ?? 150,
-            minSize: c.minWidth,
-            maxSize: c.maxWidth,
-            enableSorting: c.allowsSorting ?? true,
-            enableResizing: c.enableResizing ?? true,
-            cell: (info: { getValue: () => unknown }) => {
-              const value = info.getValue();
-              // 중첩 객체는 JSON 문자열로 변환
-              if (value && typeof value === "object" && !React.isValidElement(value)) {
-                return JSON.stringify(value);
-              }
-              return value as React.ReactNode;
+          columnHelper.accessor(
+            (row) => (row as Record<string, unknown>)[String(c.key)],
+            {
+              id: String(c.key),
+              header: () => <span style={{}}>{c.label}</span>,
+              size: c.width ?? 150,
+              minSize: c.minWidth,
+              maxSize: c.maxWidth,
+              enableSorting: c.allowsSorting ?? true,
+              enableResizing: c.enableResizing ?? true,
+              cell: (info: { getValue: () => unknown }) => {
+                const value = info.getValue();
+                // 중첩 객체는 JSON 문자열로 변환
+                if (
+                  value &&
+                  typeof value === "object" &&
+                  !React.isValidElement(value)
+                ) {
+                  return JSON.stringify(value);
+                }
+                return value as React.ReactNode;
+              },
             },
-          })
+          ),
         );
 
         // TanStack Table의 columnHelper.group()을 사용한 Column Group 생성
@@ -499,33 +551,40 @@ export default React.memo(function Table<T extends { id: string | number }>(
       const remainingColumns = sortedColumns.slice(columnIndex);
       for (const c of remainingColumns) {
         result.push(
-          columnHelper.accessor((row) => (row as Record<string, unknown>)[String(c.key)], {
-            id: String(c.key),
-            header: () => (
-              <span
-                style={{
-                  fontWeight: "500",
-                  fontSize: "13px",
-                  color: "#374151",
-                }}
-              >
-                {c.label}
-              </span>
-            ),
-            size: c.width ?? 150,
-            minSize: c.minWidth,
-            maxSize: c.maxWidth,
-            enableSorting: c.allowsSorting ?? true,
-            enableResizing: c.enableResizing ?? true,
-            cell: (info: { getValue: () => unknown }) => {
-              const value = info.getValue();
-              // 중첩 객체는 JSON 문자열로 변환
-              if (value && typeof value === "object" && !React.isValidElement(value)) {
-                return JSON.stringify(value);
-              }
-              return value as React.ReactNode;
+          columnHelper.accessor(
+            (row) => (row as Record<string, unknown>)[String(c.key)],
+            {
+              id: String(c.key),
+              header: () => (
+                <span
+                  style={{
+                    fontWeight: "500",
+                    fontSize: "13px",
+                    color: "#374151",
+                  }}
+                >
+                  {c.label}
+                </span>
+              ),
+              size: c.width ?? 150,
+              minSize: c.minWidth,
+              maxSize: c.maxWidth,
+              enableSorting: c.allowsSorting ?? true,
+              enableResizing: c.enableResizing ?? true,
+              cell: (info: { getValue: () => unknown }) => {
+                const value = info.getValue();
+                // 중첩 객체는 JSON 문자열로 변환
+                if (
+                  value &&
+                  typeof value === "object" &&
+                  !React.isValidElement(value)
+                ) {
+                  return JSON.stringify(value);
+                }
+                return value as React.ReactNode;
+              },
             },
-          })
+          ),
         );
       }
     }
@@ -542,7 +601,8 @@ export default React.memo(function Table<T extends { id: string | number }>(
   const [pageIndex, setPageIndex] = React.useState(0);
   const [pageCount, setPageCount] = React.useState<number | null>(null);
   const [pageRows, setPageRows] = React.useState<T[]>([]);
-  const [currentItemsPerPage, setCurrentItemsPerPage] = React.useState(itemsPerPage); // 내부 상태 추가
+  const [currentItemsPerPage, setCurrentItemsPerPage] =
+    React.useState(itemsPerPage); // 내부 상태 추가
   const [flatRows, setFlatRows] = React.useState<T[]>([]);
   const [cursor, setCursor] = React.useState<string | undefined>(undefined);
   const [hasNext, setHasNext] = React.useState(true);
@@ -559,7 +619,13 @@ export default React.memo(function Table<T extends { id: string | number }>(
     const start = clientPageIndex * currentItemsPerPage;
     const end = start + currentItemsPerPage;
     return effectiveStaticData.slice(start, end);
-  }, [isAsync, effectiveStaticData, mode, clientPageIndex, currentItemsPerPage]);
+  }, [
+    isAsync,
+    effectiveStaticData,
+    mode,
+    clientPageIndex,
+    currentItemsPerPage,
+  ]);
 
   const clientTotalPages = React.useMemo(() => {
     if (isAsync || !effectiveStaticData) return 0;
@@ -575,7 +641,13 @@ export default React.memo(function Table<T extends { id: string | number }>(
   React.useEffect(() => {
     // API 데이터이고, 컬럼이 제공되지 않았고, 페이지 데이터가 있으면 자동 감지
     // 단, 이미 자동 감지된 컬럼이 있으면 건너뛰기 (중복 방지)
-    if (isAsync && columns.length === 0 && pageRows && pageRows.length > 0 && detectedColumns.length === 0) {
+    if (
+      isAsync &&
+      columns.length === 0 &&
+      pageRows &&
+      pageRows.length > 0 &&
+      detectedColumns.length === 0
+    ) {
       const detected = detectColumnsFromData(pageRows);
       setDetectedColumns(detected);
       console.log("🔍 API 데이터 컬럼 자동 감지:", detected);
@@ -585,7 +657,14 @@ export default React.memo(function Table<T extends { id: string | number }>(
         onColumnsDetected(detected);
       }
     }
-  }, [pageRows, columns.length, isAsync, detectColumnsFromData, onColumnsDetected, detectedColumns.length]);
+  }, [
+    pageRows,
+    columns.length,
+    isAsync,
+    detectColumnsFromData,
+    onColumnsDetected,
+    detectedColumns.length,
+  ]);
 
   // ---------- API 어댑터 (더미 배열 응답 기반) ----------
   const isFetchingRef = React.useRef(false);
@@ -614,9 +693,10 @@ export default React.memo(function Table<T extends { id: string | number }>(
       // Custom URL을 사용하는 경우와 일반 API 서비스를 사용하는 경우 구분
       const isCustomUrl = apiUrlKey === "CUSTOM";
 
-      const service = !isCustomUrl && apiConfig
-        ? (apiConfig[apiUrlKey] as ApiFetcher<T>)
-        : null;
+      const service =
+        !isCustomUrl && apiConfig
+          ? (apiConfig[apiUrlKey] as ApiFetcher<T>)
+          : null;
 
       if (!isCustomUrl && !service) {
         console.error("❌ API 서비스를 찾을 수 없음:", {
@@ -657,12 +737,17 @@ export default React.memo(function Table<T extends { id: string | number }>(
           // Custom URL 직접 fetch
           const fullUrl = `${customApiUrl}${endpointPath}`;
           const queryParams = new URLSearchParams(
-            Object.entries(params).reduce((acc, [key, value]) => {
-              acc[key] = String(value);
-              return acc;
-            }, {} as Record<string, string>)
+            Object.entries(params).reduce(
+              (acc, [key, value]) => {
+                acc[key] = String(value);
+                return acc;
+              },
+              {} as Record<string, string>,
+            ),
           ).toString();
-          const urlWithParams = queryParams ? `${fullUrl}?${queryParams}` : fullUrl;
+          const urlWithParams = queryParams
+            ? `${fullUrl}?${queryParams}`
+            : fullUrl;
 
           console.log("🌐 Custom API 호출:", urlWithParams);
           const res = await fetch(urlWithParams);
@@ -679,8 +764,8 @@ export default React.memo(function Table<T extends { id: string | number }>(
         }
 
         console.log("📦 API 응답:", {
-          responseType: Array.isArray(response) ? 'Array' : typeof response,
-          responseLength: Array.isArray(response) ? response.length : 'N/A',
+          responseType: Array.isArray(response) ? "Array" : typeof response,
+          responseLength: Array.isArray(response) ? response.length : "N/A",
           dataMapping,
         });
 
@@ -747,7 +832,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
       detectColumnsFromData,
       setDetectedColumns,
       onColumnsDetected,
-    ]
+    ],
   );
 
   const fetchMore = React.useCallback(
@@ -771,9 +856,10 @@ export default React.memo(function Table<T extends { id: string | number }>(
       // Custom URL을 사용하는 경우와 일반 API 서비스를 사용하는 경우 구분
       const isCustomUrl = apiUrlKey === "CUSTOM";
 
-      const service = !isCustomUrl && apiConfig
-        ? (apiConfig[apiUrlKey] as ApiFetcher<T>)
-        : null;
+      const service =
+        !isCustomUrl && apiConfig
+          ? (apiConfig[apiUrlKey] as ApiFetcher<T>)
+          : null;
 
       isFetchingRef.current = true;
       setLoading(true);
@@ -796,12 +882,17 @@ export default React.memo(function Table<T extends { id: string | number }>(
           // Custom URL 직접 fetch
           const fullUrl = `${customApiUrl}${endpointPath}`;
           const queryParams = new URLSearchParams(
-            Object.entries(params).reduce((acc, [key, value]) => {
-              acc[key] = String(value);
-              return acc;
-            }, {} as Record<string, string>)
+            Object.entries(params).reduce(
+              (acc, [key, value]) => {
+                acc[key] = String(value);
+                return acc;
+              },
+              {} as Record<string, string>,
+            ),
           ).toString();
-          const urlWithParams = queryParams ? `${fullUrl}?${queryParams}` : fullUrl;
+          const urlWithParams = queryParams
+            ? `${fullUrl}?${queryParams}`
+            : fullUrl;
 
           console.log("🌐 Custom API 호출 (fetchMore):", urlWithParams);
           const res = await fetch(urlWithParams);
@@ -818,8 +909,8 @@ export default React.memo(function Table<T extends { id: string | number }>(
         }
 
         console.log("📦 API 응답 (fetchMore):", {
-          responseType: Array.isArray(response) ? 'Array' : typeof response,
-          responseLength: Array.isArray(response) ? response.length : 'N/A',
+          responseType: Array.isArray(response) ? "Array" : typeof response,
+          responseLength: Array.isArray(response) ? response.length : "N/A",
           dataMapping,
         });
 
@@ -873,14 +964,19 @@ export default React.memo(function Table<T extends { id: string | number }>(
       detectColumnsFromData,
       setDetectedColumns,
       onColumnsDetected,
-    ]
+    ],
   );
 
   // ---------- 초기/리로드 ----------
   const containerRef = React.useRef<HTMLDivElement>(null);
   const initialLoadRef = React.useRef(false);
   const prevModeRef = React.useRef<PaginationMode>(mode);
-  const prevApiConfigRef = React.useRef({ apiUrlKey, customApiUrl, endpointPath, isAsync });
+  const prevApiConfigRef = React.useRef({
+    apiUrlKey,
+    customApiUrl,
+    endpointPath,
+    isAsync,
+  });
   const prevStaticDataRef = React.useRef(effectiveStaticData);
 
   // Static 데이터 변경 감지 - 데이터 소스가 변경되면 detectedColumns 초기화
@@ -905,7 +1001,12 @@ export default React.memo(function Table<T extends { id: string | number }>(
       // 상태 초기화
       initialLoadRef.current = false;
       prevModeRef.current = mode;
-      prevApiConfigRef.current = { apiUrlKey, customApiUrl, endpointPath, isAsync };
+      prevApiConfigRef.current = {
+        apiUrlKey,
+        customApiUrl,
+        endpointPath,
+        isAsync,
+      };
 
       // 기존 데이터 초기화
       setPageRows([]);
@@ -928,14 +1029,17 @@ export default React.memo(function Table<T extends { id: string | number }>(
 
     // API 설정이 완전하지 않으면 API 호출하지 않음
     if (!apiUrlKey || !endpointPath || endpointPath.trim().length === 0) {
-      console.log("⏭️ API 설정 불완전, API 호출 건너뛰기:", { apiUrlKey, endpointPath });
+      console.log("⏭️ API 설정 불완전, API 호출 건너뛰기:", {
+        apiUrlKey,
+        endpointPath,
+      });
       return;
     }
 
     // 초기 로드 중복 방지 (React Strict Mode 대응)
     if (initialLoadRef.current) {
       console.log(
-        "⏸️ Initial load already in progress, skipping duplicate effect"
+        "⏸️ Initial load already in progress, skipping duplicate effect",
       );
       return;
     }
@@ -947,7 +1051,9 @@ export default React.memo(function Table<T extends { id: string | number }>(
         const { items, total } = await fetchPage(0);
         setPageRows(items);
         setPageIndex(0);
-        setPageCount(Math.max(1, Math.ceil((total || 0) / currentItemsPerPage)));
+        setPageCount(
+          Math.max(1, Math.ceil((total || 0) / currentItemsPerPage)),
+        );
         initialLoadRef.current = false;
       })();
     } else {
@@ -980,7 +1086,15 @@ export default React.memo(function Table<T extends { id: string | number }>(
     }
     // fetchPage와 fetchMore는 의도적으로 의존성에서 제외 (초기 로드만 실행, 리렌더링 시 재실행 방지)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAsync, mode, currentItemsPerPage, apiUrlKey, customApiUrl, endpointPath, enableAsyncLoading]);
+  }, [
+    isAsync,
+    mode,
+    currentItemsPerPage,
+    apiUrlKey,
+    customApiUrl,
+    endpointPath,
+    enableAsyncLoading,
+  ]);
 
   // ---------- 데이터 결정 ----------
   const data: T[] = React.useMemo(() => {
@@ -1010,7 +1124,15 @@ export default React.memo(function Table<T extends { id: string | number }>(
 
     // 서버 사이드 페이지네이션 (API)
     return mode === "pagination" ? pageRows : flatRows;
-  }, [effectiveStaticData, sorting, mode, pageRows, flatRows, isAsync, clientPaginatedData]);
+  }, [
+    effectiveStaticData,
+    sorting,
+    mode,
+    pageRows,
+    flatRows,
+    isAsync,
+    clientPaginatedData,
+  ]);
 
   // ---------- React Table ----------
   const table = useReactTable({
@@ -1037,7 +1159,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     getScrollElement: () => containerRef.current,
     measureElement:
       typeof window !== "undefined" &&
-        navigator.userAgent.indexOf("Firefox") === -1
+      navigator.userAgent.indexOf("Firefox") === -1
         ? (el) => el?.getBoundingClientRect().height
         : undefined,
     overscan: Math.max(overscan, 5),
@@ -1069,7 +1191,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
         })();
       }
     },
-    [isAsync, mode, hasNext, cursor, loading, fetchMore]
+    [isAsync, mode, hasNext, cursor, loading, fetchMore],
   );
 
   // ---------- 렌더 ----------
@@ -1089,8 +1211,14 @@ export default React.memo(function Table<T extends { id: string | number }>(
           style={{ height: calculatedHeight, overflow: "hidden" }}
         >
           <table style={{ display: "grid", width: "100%" }}>
-            <thead className="react-aria-TableHeader" style={{ display: "grid" }}>
-              <tr className="react-aria-Row" style={{ display: "flex", width: "100%" }}>
+            <thead
+              className="react-aria-TableHeader"
+              style={{ display: "grid" }}
+            >
+              <tr
+                className="react-aria-Row"
+                style={{ display: "flex", width: "100%" }}
+              >
                 {Array.from({ length: skeletonColumnCount }).map((_, i) => (
                   <th
                     key={i}
@@ -1109,15 +1237,21 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   className="react-aria-Row"
                   style={{ display: "flex", width: "100%" }}
                 >
-                  {Array.from({ length: skeletonColumnCount }).map((_, colIndex) => (
-                    <td
-                      key={colIndex}
-                      className="react-aria-Cell"
-                      style={{ flex: 1, padding: "8px 12px" }}
-                    >
-                      <Skeleton componentVariant="table-cell" size={size} index={rowIndex} />
-                    </td>
-                  ))}
+                  {Array.from({ length: skeletonColumnCount }).map(
+                    (_, colIndex) => (
+                      <td
+                        key={colIndex}
+                        className="react-aria-Cell"
+                        style={{ flex: 1, padding: "8px 12px" }}
+                      >
+                        <Skeleton
+                          componentVariant="table-cell"
+                          size={size}
+                          index={rowIndex}
+                        />
+                      </td>
+                    ),
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -1174,7 +1308,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                       unknown
                     >;
                     return groupMeta?.isGroupHeader !== true;
-                  }
+                  },
                 );
 
                 return (
@@ -1230,7 +1364,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                             >
                               {flexRender(
                                 header.column.columnDef.header,
-                                header.getContext()
+                                header.getContext(),
                               )}
                             </th>
                           );
@@ -1247,7 +1381,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                       >
                         {individualHeaders.map((header, colIndex) => {
                           const columnDef = effectiveColumns.find(
-                            (c) => String(c.key) === header.column.id
+                            (c) => String(c.key) === header.column.id,
                           );
                           const align = columnDef?.align ?? "left";
                           const isSorted = header.column.getIsSorted();
@@ -1281,10 +1415,11 @@ export default React.memo(function Table<T extends { id: string | number }>(
                               }}
                             >
                               <div
-                                className={`flex items-center gap-2 ${header.column.getCanSort()
-                                  ? "cursor-pointer select-none hover:text-blue-600"
-                                  : ""
-                                  }`}
+                                className={`flex items-center gap-2 ${
+                                  header.column.getCanSort()
+                                    ? "cursor-pointer select-none hover:text-blue-600"
+                                    : ""
+                                }`}
                                 onClick={header.column.getToggleSortingHandler()}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
@@ -1310,7 +1445,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                                 >
                                   {flexRender(
                                     header.column.columnDef.header,
-                                    header.getContext()
+                                    header.getContext(),
                                   )}
                                 </span>
                                 {header.column.getIsSorted() === "asc" ? (
@@ -1379,8 +1514,9 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   >
                     {row.getVisibleCells().map((cell, cellIndex) => {
                       const align =
-                        effectiveColumns.find((c) => String(c.key) === cell.column.id)
-                          ?.align ?? "left";
+                        effectiveColumns.find(
+                          (c) => String(c.key) === cell.column.id,
+                        )?.align ?? "left";
                       return (
                         <td
                           key={cell.id}
@@ -1394,7 +1530,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </td>
                       );
@@ -1408,10 +1544,9 @@ export default React.memo(function Table<T extends { id: string | number }>(
       </div>
 
       {/* 페이지네이션 (grid 바깥) */}
-      {shouldShowPagination && (
-        (isAsync && pageCount !== null) ||
-        (effectiveStaticData && effectiveStaticData.length > 0)
-      ) && (
+      {shouldShowPagination &&
+        ((isAsync && pageCount !== null) ||
+          (effectiveStaticData && effectiveStaticData.length > 0)) && (
           <div className="react-aria-Pagination">
             {isAsync && pageCount !== null ? (
               // 서버 사이드 페이지네이션 (API)
@@ -1421,7 +1556,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   {pageIndex * currentItemsPerPage + 1} to{" "}
                   {Math.min(
                     (pageIndex + 1) * currentItemsPerPage,
-                    pageRows.length + pageIndex * currentItemsPerPage
+                    pageRows.length + pageIndex * currentItemsPerPage,
                   )}{" "}
                   of {pageCount * currentItemsPerPage} entries
                 </div>
@@ -1430,11 +1565,17 @@ export default React.memo(function Table<T extends { id: string | number }>(
                 <div className="react-aria-PageNavigation">
                   <Button
                     onClick={async () => {
-                      const { items, total } = await fetchPage(0, currentItemsPerPage);
+                      const { items, total } = await fetchPage(
+                        0,
+                        currentItemsPerPage,
+                      );
                       setPageRows(items);
                       setPageIndex(0);
                       setPageCount(
-                        Math.max(1, Math.ceil((total || 0) / currentItemsPerPage))
+                        Math.max(
+                          1,
+                          Math.ceil((total || 0) / currentItemsPerPage),
+                        ),
                       );
                     }}
                     isDisabled={pageIndex === 0 || loading}
@@ -1448,7 +1589,10 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   <Button
                     onClick={async () => {
                       const next = Math.max(0, pageIndex - 1);
-                      const { items } = await fetchPage(next, currentItemsPerPage);
+                      const { items } = await fetchPage(
+                        next,
+                        currentItemsPerPage,
+                      );
                       setPageRows(items);
                       setPageIndex(next);
                     }}
@@ -1468,11 +1612,11 @@ export default React.memo(function Table<T extends { id: string | number }>(
                       const maxVisible = 5;
                       let startPage = Math.max(
                         1,
-                        currentPage - Math.floor(maxVisible / 2)
+                        currentPage - Math.floor(maxVisible / 2),
                       );
                       const endPage = Math.min(
                         totalPages,
-                        startPage + maxVisible - 1
+                        startPage + maxVisible - 1,
                       );
 
                       if (endPage - startPage < maxVisible - 1) {
@@ -1488,18 +1632,19 @@ export default React.memo(function Table<T extends { id: string | number }>(
                               const targetPage = i - 1;
                               const { items } = await fetchPage(
                                 targetPage,
-                                currentItemsPerPage
+                                currentItemsPerPage,
                               );
                               setPageRows(items);
                               setPageIndex(targetPage);
                             }}
                             isDisabled={loading}
-                            className={`react-aria-PageButton ${i === currentPage ? "active" : ""
-                              }`}
+                            className={`react-aria-PageButton ${
+                              i === currentPage ? "active" : ""
+                            }`}
                             size="sm"
                           >
                             {i}
-                          </Button>
+                          </Button>,
                         );
                       }
                       return pages;
@@ -1508,8 +1653,14 @@ export default React.memo(function Table<T extends { id: string | number }>(
 
                   <Button
                     onClick={async () => {
-                      const next = Math.min((pageCount ?? 1) - 1, pageIndex + 1);
-                      const { items } = await fetchPage(next, currentItemsPerPage);
+                      const next = Math.min(
+                        (pageCount ?? 1) - 1,
+                        pageIndex + 1,
+                      );
+                      const { items } = await fetchPage(
+                        next,
+                        currentItemsPerPage,
+                      );
                       setPageRows(items);
                       setPageIndex(next);
                     }}
@@ -1526,7 +1677,10 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   <Button
                     onClick={async () => {
                       const next = (pageCount ?? 1) - 1;
-                      const { items } = await fetchPage(next, currentItemsPerPage);
+                      const { items } = await fetchPage(
+                        next,
+                        currentItemsPerPage,
+                      );
                       setPageRows(items);
                       setPageIndex(next);
                     }}
@@ -1558,7 +1712,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                     onChange={(e) => {
                       const targetPage = Math.max(
                         1,
-                        Math.min(pageCount, Number(e.target.value))
+                        Math.min(pageCount, Number(e.target.value)),
                       );
                       setPageIndex(targetPage - 1);
                     }}
@@ -1566,11 +1720,11 @@ export default React.memo(function Table<T extends { id: string | number }>(
                       if (e.key === "Enter") {
                         const targetPage = Math.max(
                           1,
-                          Math.min(pageCount, Number(e.currentTarget.value))
+                          Math.min(pageCount, Number(e.currentTarget.value)),
                         );
                         const { items } = await fetchPage(
                           targetPage - 1,
-                          currentItemsPerPage
+                          currentItemsPerPage,
                         );
                         setPageRows(items);
                         setPageIndex(targetPage - 1);
@@ -1583,9 +1737,12 @@ export default React.memo(function Table<T extends { id: string | number }>(
                     onClick={async () => {
                       const targetPage = Math.max(
                         1,
-                        Math.min(pageCount, pageIndex + 1)
+                        Math.min(pageCount, pageIndex + 1),
                       );
-                      const { items } = await fetchPage(targetPage - 1, currentItemsPerPage);
+                      const { items } = await fetchPage(
+                        targetPage - 1,
+                        currentItemsPerPage,
+                      );
                       setPageRows(items);
                       setPageIndex(targetPage - 1);
                     }}
@@ -1609,7 +1766,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                       setPageRows(items);
                       setPageIndex(0);
                       setPageCount(
-                        Math.max(1, Math.ceil((total || 0) / newPageSize))
+                        Math.max(1, Math.ceil((total || 0) / newPageSize)),
                       );
                       // 부모 컴포넌트에 페이지당 항목 수 변경 알림
                       if (onItemsPerPageChange) {
@@ -1634,7 +1791,9 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   </Select>
                 </div>
 
-                {loading && <span className="react-aria-LoadingText">Loading…</span>}
+                {loading && (
+                  <span className="react-aria-LoadingText">Loading…</span>
+                )}
               </>
             ) : effectiveStaticData ? (
               // 클라이언트 사이드 페이지네이션 (Static/Supabase)
@@ -1644,7 +1803,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   {clientPageIndex * currentItemsPerPage + 1} to{" "}
                   {Math.min(
                     (clientPageIndex + 1) * currentItemsPerPage,
-                    effectiveStaticData.length
+                    effectiveStaticData.length,
                   )}{" "}
                   of {effectiveStaticData.length} entries
                 </div>
@@ -1662,7 +1821,9 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   </Button>
 
                   <Button
-                    onClick={() => setClientPageIndex(Math.max(0, clientPageIndex - 1))}
+                    onClick={() =>
+                      setClientPageIndex(Math.max(0, clientPageIndex - 1))
+                    }
                     isDisabled={clientPageIndex === 0}
                     className="react-aria-PageButton"
                     aria-label="Previous page"
@@ -1679,11 +1840,11 @@ export default React.memo(function Table<T extends { id: string | number }>(
                       const maxVisible = 5;
                       let startPage = Math.max(
                         1,
-                        currentPage - Math.floor(maxVisible / 2)
+                        currentPage - Math.floor(maxVisible / 2),
                       );
                       const endPage = Math.min(
                         totalPages,
-                        startPage + maxVisible - 1
+                        startPage + maxVisible - 1,
                       );
 
                       if (endPage - startPage < maxVisible - 1) {
@@ -1696,12 +1857,13 @@ export default React.memo(function Table<T extends { id: string | number }>(
                           <Button
                             key={i}
                             onClick={() => setClientPageIndex(i - 1)}
-                            className={`react-aria-PageButton ${i === currentPage ? "active" : ""
-                              }`}
+                            className={`react-aria-PageButton ${
+                              i === currentPage ? "active" : ""
+                            }`}
                             size="sm"
                           >
                             {i}
-                          </Button>
+                          </Button>,
                         );
                       }
                       return pages;
@@ -1709,7 +1871,11 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   </div>
 
                   <Button
-                    onClick={() => setClientPageIndex(Math.min(clientTotalPages - 1, clientPageIndex + 1))}
+                    onClick={() =>
+                      setClientPageIndex(
+                        Math.min(clientTotalPages - 1, clientPageIndex + 1),
+                      )
+                    }
                     isDisabled={clientPageIndex >= clientTotalPages - 1}
                     className="react-aria-PageButton"
                     aria-label="Next page"
@@ -1746,7 +1912,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                     onChange={(e) => {
                       const targetPage = Math.max(
                         1,
-                        Math.min(clientTotalPages, Number(e.target.value))
+                        Math.min(clientTotalPages, Number(e.target.value)),
                       );
                       setClientPageIndex(targetPage - 1);
                     }}

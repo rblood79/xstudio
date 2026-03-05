@@ -17,13 +17,13 @@ import {
   Text,
   TimeField,
   ValidationResult,
-  composeRenderProps
+  composeRenderProps,
 } from "react-aria-components";
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { getLocalTimeZone, today } from '@internationalized/date';
-import { safeParseDateString } from '../utils/core/dateUtils';
-import type { DateRangePickerVariant, ComponentSize } from '../types';
+import { getLocalTimeZone, today } from "@internationalized/date";
+import { safeParseDateString } from "../utils/core/dateUtils";
+import type { ComponentSize } from "../types";
 
 import "./styles/DateRangePicker.css";
 
@@ -33,13 +33,9 @@ import "./styles/DateRangePicker.css";
  * - data-variant, data-size 속성 사용
  */
 
-export interface DateRangePickerProps<T extends DateValue>
-  extends AriaDateRangePickerProps<T> {
-  /**
-   * M3 variant
-   * @default 'primary'
-   */
-  variant?: DateRangePickerVariant;
+export interface DateRangePickerProps<
+  T extends DateValue,
+> extends AriaDateRangePickerProps<T> {
   /**
    * Size variant
    * @default 'md'
@@ -110,8 +106,7 @@ export interface DateRangePickerProps<T extends DateValue>
  * <DateRangePicker variant="error" includeTime timeFormat="12h" />
  */
 export function DateRangePicker<T extends DateValue>({
-  variant = 'primary',
-  size = 'md',
+  size = "md",
   label,
   description,
   errorMessage,
@@ -142,29 +137,33 @@ export function DateRangePicker<T extends DateValue>({
     : granularity || "day";
 
   // minDate/maxDate 자동 파싱
-  const minValue = typeof minDate === 'string'
-    ? safeParseDateString(minDate)
-    : minDate;
+  const minValue =
+    typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
 
-  const maxValue = typeof maxDate === 'string'
-    ? safeParseDateString(maxDate)
-    : maxDate;
+  const maxValue =
+    typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
 
   // defaultToday가 true이고 value가 없으면 오늘 날짜로 시작일과 종료일 설정
-  const defaultValue = defaultToday && !props.value && !props.defaultValue
-    ? { start: today(effectiveTimezone) as T, end: today(effectiveTimezone) as T }
-    : props.defaultValue;
+  const defaultValue =
+    defaultToday && !props.value && !props.defaultValue
+      ? {
+          start: today(effectiveTimezone) as T,
+          end: today(effectiveTimezone) as T,
+        }
+      : props.defaultValue;
 
   const dateRangePickerClassName = composeRenderProps(
     props.className,
-    (className) => className ? `react-aria-DateRangePicker ${className}` : 'react-aria-DateRangePicker'
+    (className) =>
+      className
+        ? `react-aria-DateRangePicker ${className}`
+        : "react-aria-DateRangePicker",
   );
 
   return (
     <AriaDateRangePicker
       {...props}
       className={dateRangePickerClassName}
-      data-variant={variant}
       data-size={size}
       granularity={effectiveGranularity}
       defaultValue={defaultValue}

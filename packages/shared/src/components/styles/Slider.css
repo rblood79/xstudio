@@ -9,23 +9,12 @@
 
 @layer components {
   .react-aria-Slider {
-    --slider-color: var(--highlight-background);
+    /* Default (non-emphasized): neutral color for track fill */
+    --slider-color: var(--text-color);
 
-    /* Variants */
-    &[data-variant="secondary"] {
-      --slider-color: var(--button-background);
-    }
-
-    &[data-variant="tertiary"] {
-      --slider-color: var(--color-purple-600);
-    }
-
-    &[data-variant="error"] {
-      --slider-color: var(--invalid-color);
-    }
-
-    &[data-variant="surface"] {
-      --slider-color: var(--color-neutral-200);
+    /* Emphasized: accent color for track fill */
+    &[data-emphasized] {
+      --slider-color: var(--highlight-background);
     }
 
     display: grid;

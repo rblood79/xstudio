@@ -115,6 +115,15 @@ background: color-mix(in srgb, var(--highlight-background) 85%, black);
 background: color-mix(in srgb, var(--highlight-background) 75%, black);
 ```
 
+### Skia/Canvas 측 color-mix 처리
+
+Skia는 CSS `color-mix()`를 네이티브 지원하지 않으므로 JS에서 동일 연산 수행:
+
+- **`tintToSkiaColors.ts`의 `mixWithBlackSrgb()`**: srgb 채널별 선형 혼합 (CSS 정합)
+  - `mixWithBlackSrgb(accentHex, 85)` = `color-mix(in srgb, accent 85%, black)`
+  - oklch lightness 근사 사용 금지 (srgb 혼합과 수학적으로 다른 결과)
+- light/dark 모드 무관하게 동일 연산 (CSS `color-mix`는 모드별 분기 없음)
+
 ## Utility 클래스 (ADR-018)
 
 컴포넌트에서 variant/state 색상 블록 대신 utility 클래스 사용 권장:

@@ -8,24 +8,24 @@
 import {
   Checkbox as AriaCheckbox,
   CheckboxProps as AriaCheckboxProps,
-  composeRenderProps
-} from 'react-aria-components';
-import { CheckIcon, Minus } from 'lucide-react';
-import { useFocusRing } from '@react-aria/focus';
-import { mergeProps } from '@react-aria/utils';
-import type { ComponentSizeSubset, CheckboxVariant } from '../types';
-import { Skeleton } from './Skeleton';
+  composeRenderProps,
+} from "react-aria-components";
+import { CheckIcon, Minus } from "lucide-react";
+import { useFocusRing } from "@react-aria/focus";
+import { mergeProps } from "@react-aria/utils";
+import type { ComponentSizeSubset } from "../types";
+import { Skeleton } from "./Skeleton";
 
-import './styles/Checkbox.css';
+import "./styles/Checkbox.css";
 
-export interface CheckboxProps extends Omit<AriaCheckboxProps, 'children'> {
+export interface CheckboxProps extends Omit<AriaCheckboxProps, "children"> {
   children?: React.ReactNode;
   isTreeItemChild?: boolean; // TreeItem 내부에서 사용될 때를 위한 prop
   /**
-   * Visual variant
-   * @default 'default'
+   * Emphasizes the checkbox with accent color when selected (S2)
+   * @default false
    */
-  variant?: CheckboxVariant;
+  isEmphasized?: boolean;
   /**
    * Size of the checkbox
    * @default 'md'
@@ -39,12 +39,20 @@ export interface CheckboxProps extends Omit<AriaCheckboxProps, 'children'> {
 }
 
 /**
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-variant, data-size, data-focus-visible 속성 사용
+ * S2 variant 전환: isEmphasized data-* 패턴
+ * - data-emphasized: accent color 강조 (선택 시)
+ * - data-size: 크기
+ * - data-focus-visible: 포커스 링 표시
  */
 export function MyCheckbox(props: CheckboxProps) {
-  const { children, isTreeItemChild = false, variant = 'default', size = 'md', isLoading, ...restProps } = props;
+  const {
+    children,
+    isTreeItemChild = false,
+    isEmphasized = false,
+    size = "md",
+    isLoading,
+    ...restProps
+  } = props;
   const { focusProps, isFocusVisible } = useFocusRing();
 
   if (isLoading) {
@@ -66,17 +74,20 @@ export function MyCheckbox(props: CheckboxProps) {
     <AriaCheckbox
       {...checkboxProps}
       data-focus-visible={isFocusVisible || undefined}
-      data-variant={variant}
+      data-emphasized={isEmphasized || undefined}
       data-size={size}
-      className={composeRenderProps(
-        checkboxProps.className,
-        (className) => className ? `react-aria-Checkbox ${className}` : 'react-aria-Checkbox'
+      className={composeRenderProps(checkboxProps.className, (className) =>
+        className ? `react-aria-Checkbox ${className}` : "react-aria-Checkbox",
       )}
     >
       {({ isSelected, isIndeterminate }) => (
         <>
           <div className="checkbox">
-            {isIndeterminate ? <Minus size={16} strokeWidth={4} /> : isSelected && <CheckIcon size={16} strokeWidth={4} />}
+            {isIndeterminate ? (
+              <Minus size={16} strokeWidth={4} />
+            ) : (
+              isSelected && <CheckIcon size={16} strokeWidth={4} />
+            )}
           </div>
           {children}
         </>

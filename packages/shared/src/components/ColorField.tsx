@@ -4,11 +4,11 @@ import {
   ColorFieldProps as AriaColorFieldProps,
   Input,
   ValidationResult,
-  composeRenderProps
+  composeRenderProps,
 } from "react-aria-components";
 import { Text } from "./Content";
 import { Label, FieldError } from "./Field";
-import type { ColorFieldVariant, ComponentSize } from '../types';
+import type { ComponentSize } from "../types";
 
 import "./styles/ColorField.css";
 
@@ -23,7 +23,7 @@ export interface ColorFieldProps extends AriaColorFieldProps {
    * M3 variant
    * @default 'primary'
    */
-  variant?: ColorFieldVariant;
+  variant?: string;
   /**
    * Size variant
    * @default 'md'
@@ -53,8 +53,8 @@ export interface ColorFieldProps extends AriaColorFieldProps {
  * <ColorField variant="error" errorMessage="Invalid color" />
  */
 export function ColorField({
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   label,
   description,
   errorMessage,
@@ -62,11 +62,19 @@ export function ColorField({
 }: ColorFieldProps) {
   const colorFieldClassName = composeRenderProps(
     props.className,
-    (className) => className ? `react-aria-ColorField ${className}` : 'react-aria-ColorField'
+    (className) =>
+      className
+        ? `react-aria-ColorField ${className}`
+        : "react-aria-ColorField",
   );
 
   return (
-    <AriaColorField {...props} className={colorFieldClassName} data-variant={variant} data-size={size}>
+    <AriaColorField
+      {...props}
+      className={colorFieldClassName}
+      data-variant={variant}
+      data-size={size}
+    >
       {label && <Label>{label}</Label>}
       <Input />
       {description && <Text slot="description">{description}</Text>}

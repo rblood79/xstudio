@@ -14,7 +14,13 @@
  * - filterFields: 필터링 대상 필드
  */
 
-import React, { useRef, useCallback, useMemo, useEffect, useState } from "react";
+import React, {
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+  useState,
+} from "react";
 import {
   ListBox as AriaListBox,
   ListBoxItem as AriaListBoxItem,
@@ -24,7 +30,6 @@ import {
 } from "react-aria-components";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type {
-  ListBoxVariant,
   ComponentSizeSubset,
   DataBinding,
   ColumnMapping,
@@ -32,7 +37,10 @@ import type {
 } from "../types";
 
 import { useCollectionData } from "../hooks";
-import { CollectionLoadingState, CollectionErrorDisplay } from "./CollectionErrorState";
+import {
+  CollectionLoadingState,
+  CollectionErrorDisplay,
+} from "./CollectionErrorState";
 import { Skeleton } from "./Skeleton";
 
 import "./styles/ListBox.css";
@@ -48,7 +56,7 @@ interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   // M3 props
-  variant?: ListBoxVariant;
+  variant?: string;
   size?: ComponentSizeSubset;
   // Virtualization props
   enableVirtualization?: boolean;
@@ -99,7 +107,7 @@ export function ListBox<T extends object>({
   overscan = 5,
   filter,
   filterText,
-  filterFields = ['label', 'name', 'title'] as (keyof T)[],
+  filterFields = ["label", "name", "title"] as (keyof T)[],
   isLoading: externalLoading,
   skeletonCount = 5,
   ...props
@@ -148,7 +156,7 @@ export function ListBox<T extends object>({
         filterFields.some((field) => {
           const value = item[field as string];
           return value && String(value).toLowerCase().includes(searchText);
-        })
+        }),
       );
     }
 
@@ -172,7 +180,9 @@ export function ListBox<T extends object>({
   // ListBox className generator (reused across all conditional renders)
   const getListBoxClassName = (baseClassName?: ListBoxProps<T>["className"]) =>
     composeRenderProps(baseClassName, (className) => {
-      return className ? `react-aria-ListBox ${className}` : "react-aria-ListBox";
+      return className
+        ? `react-aria-ListBox ${className}`
+        : "react-aria-ListBox";
     });
 
   // 가상화용 아이템 배열 (메모이제이션) - filteredData 사용
@@ -180,7 +190,9 @@ export function ListBox<T extends object>({
     if (!hasDataBinding || filteredData.length === 0) return [];
     return filteredData.map((item, index) => ({
       id: String(item.id || index),
-      label: String(item.name || item.title || item.label || `Item ${index + 1}`),
+      label: String(
+        item.name || item.title || item.label || `Item ${index + 1}`,
+      ),
       ...item,
     }));
   }, [hasDataBinding, filteredData]);
@@ -202,7 +214,9 @@ export function ListBox<T extends object>({
     const keys = selectedKeys as Iterable<string | number>;
     const firstKey = Array.from(keys)[0];
     if (firstKey !== undefined) {
-      const index = virtualItems.findIndex((item) => item.id === String(firstKey));
+      const index = virtualItems.findIndex(
+        (item) => item.id === String(firstKey),
+      );
       if (index !== -1) {
         virtualizer.scrollToIndex(index, { align: "auto" });
         setFocusedIndex(index);
@@ -257,7 +271,13 @@ export function ListBox<T extends object>({
         }
       }
     },
-    [enableVirtualization, focusedIndex, virtualItems, virtualizer, onSelectionChange]
+    [
+      enableVirtualization,
+      focusedIndex,
+      virtualItems,
+      virtualizer,
+      onSelectionChange,
+    ],
   );
 
   // ================================================================
@@ -294,7 +314,11 @@ export function ListBox<T extends object>({
           className={`react-aria-ListBox virtualized ${variant} ${size}`}
           style={{ height }}
         >
-          <CollectionLoadingState size={size} variant={variant} height={height} />
+          <CollectionLoadingState
+            size={size}
+            variant={variant}
+            height={height}
+          />
         </div>
       );
     }
@@ -306,7 +330,13 @@ export function ListBox<T extends object>({
           className={`react-aria-ListBox virtualized ${variant} ${size}`}
           style={{ height }}
         >
-          <CollectionErrorDisplay error={error} onRetry={reload} size={size} variant={variant} height={height} />
+          <CollectionErrorDisplay
+            error={error}
+            onRetry={reload}
+            size={size}
+            variant={variant}
+            height={height}
+          />
         </div>
       );
     }
@@ -340,7 +370,9 @@ export function ListBox<T extends object>({
             if (!item) return null;
 
             const isSelected = props.selectedKeys
-              ? Array.from(props.selectedKeys as Iterable<string | number>).includes(item.id)
+              ? Array.from(
+                  props.selectedKeys as Iterable<string | number>,
+                ).includes(item.id)
               : false;
             const isFocused = focusedIndex === virtualRow.index;
 
@@ -370,7 +402,9 @@ export function ListBox<T extends object>({
               >
                 {/* children이 render function이면 사용, 아니면 기본 label */}
                 {typeof children === "function"
-                  ? (children as (item: T) => React.ReactNode)(item as unknown as T)
+                  ? (children as (item: T) => React.ReactNode)(
+                      item as unknown as T,
+                    )
                   : item.label}
               </div>
             );
@@ -447,7 +481,12 @@ export function ListBox<T extends object>({
 
     // 데이터 없음
     return (
-      <AriaListBox {...props} className={getListBoxClassName(props.className)} data-variant={variant} data-size={size}>
+      <AriaListBox
+        {...props}
+        className={getListBoxClassName(props.className)}
+        data-variant={variant}
+        data-size={size}
+      >
         {children}
       </AriaListBox>
     );
@@ -502,7 +541,7 @@ export function ListBox<T extends object>({
       const items = filteredData.map((item, index) => ({
         id: String(item.id || index),
         label: String(
-          item.name || item.title || item.label || `Item ${index + 1}`
+          item.name || item.title || item.label || `Item ${index + 1}`,
         ),
         ...item,
       })) as T[];
@@ -552,7 +591,12 @@ export function ListBox<T extends object>({
 
   // Static Children (기존 방식)
   return (
-    <AriaListBox {...props} className={getListBoxClassName(props.className)} data-variant={variant} data-size={size}>
+    <AriaListBox
+      {...props}
+      className={getListBoxClassName(props.className)}
+      data-variant={variant}
+      data-size={size}
+    >
       {children}
     </AriaListBox>
   );

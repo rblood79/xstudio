@@ -8,9 +8,14 @@ import {
   MenuTriggerProps,
   Popover,
   SubmenuTrigger,
-  composeRenderProps
+  composeRenderProps,
 } from "react-aria-components";
-import type { MenuVariant, ComponentSize, DataBinding, ColumnMapping, DataBindingValue } from '../types';
+import type {
+  ComponentSize,
+  DataBinding,
+  ColumnMapping,
+  DataBindingValue,
+} from "../types";
 
 import { useCollectionData } from "../hooks";
 import "./styles/Menu.css";
@@ -32,13 +37,12 @@ export interface MenuItem {
 }
 
 export interface MenuButtonProps<T>
-  extends MenuProps<T>,
-    Omit<MenuTriggerProps, "children"> {
+  extends MenuProps<T>, Omit<MenuTriggerProps, "children"> {
   label?: string;
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   // M3 props
-  variant?: MenuVariant;
+  variant?: string;
   size?: ComponentSize;
 }
 
@@ -47,8 +51,8 @@ export function MenuButton<T extends object>({
   children,
   dataBinding,
   columnMapping,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   ...props
 }: MenuButtonProps<T>) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -98,17 +102,17 @@ export function MenuButton<T extends object>({
 
   // Menu className generator (reused across all conditional renders)
   // props.className can be string or function, so we extract string value if available
-  const baseClassName = typeof props.className === 'string' ? props.className : undefined;
+  const baseClassName =
+    typeof props.className === "string" ? props.className : undefined;
   const getMenuClassName = () =>
-    composeRenderProps(
-      baseClassName,
-      (className) => className ? `react-aria-Menu ${className}` : 'react-aria-Menu'
+    composeRenderProps(baseClassName, (className) =>
+      className ? `react-aria-Menu ${className}` : "react-aria-Menu",
     );
 
   // ColumnMapping이 있으면 각 데이터 항목마다 MenuItem 렌더링
   // ListBox와 동일한 패턴: Element tree의 MenuItem 템플릿 + Field 자식 사용
   if (hasDataBinding && columnMapping) {
-    console.log('🎯 Menu: columnMapping 감지 - 데이터로 아이템 렌더링', {
+    console.log("🎯 Menu: columnMapping 감지 - 데이터로 아이템 렌더링", {
       columnMapping,
       hasChildren: !!children,
       dataCount: boundData.length,
@@ -120,7 +124,11 @@ export function MenuButton<T extends object>({
         <MenuTrigger {...props}>
           <Button>{label}</Button>
           <Popover>
-            <Menu className={getMenuClassName()} data-variant={variant} data-size={size}>
+            <Menu
+              className={getMenuClassName()}
+              data-variant={variant}
+              data-size={size}
+            >
               <AriaMenuItem key="loading" textValue="Loading">
                 ⏳ 데이터 로딩 중...
               </AriaMenuItem>
@@ -136,7 +144,11 @@ export function MenuButton<T extends object>({
         <MenuTrigger {...props}>
           <Button>{label}</Button>
           <Popover>
-            <Menu className={getMenuClassName()} data-variant={variant} data-size={size}>
+            <Menu
+              className={getMenuClassName()}
+              data-variant={variant}
+              data-size={size}
+            >
               <AriaMenuItem key="error" textValue="Error">
                 ❌ 오류: {error}
               </AriaMenuItem>
@@ -153,7 +165,7 @@ export function MenuButton<T extends object>({
         return {
           id: itemId,
           label: String(
-            item.label || item.text || item.name || `Item ${index + 1}`
+            item.label || item.text || item.name || `Item ${index + 1}`,
           ),
           isDisabled: Boolean(item.isDisabled),
           icon: item.icon as string | undefined,
@@ -164,7 +176,7 @@ export function MenuButton<T extends object>({
         };
       });
 
-      console.log('✅ Menu with columnMapping - items:', menuItems);
+      console.log("✅ Menu with columnMapping - items:", menuItems);
 
       // Recursive render function for menu items with submenus
       const renderMenuItem = (item: MenuItem) => {
@@ -179,7 +191,7 @@ export function MenuButton<T extends object>({
                 child.label ||
                   (child as unknown as Record<string, unknown>).text ||
                   (child as unknown as Record<string, unknown>).name ||
-                  `Item ${childIndex + 1}`
+                  `Item ${childIndex + 1}`,
               ),
               isDisabled: Boolean(child.isDisabled),
               icon: child.icon as string | undefined,
@@ -188,25 +200,34 @@ export function MenuButton<T extends object>({
               children: Array.isArray(child.children)
                 ? child.children
                 : undefined,
-            })
+            }),
           );
 
           return (
             <SubmenuTrigger>
               <AriaMenuItem textValue={item.label} isDisabled={item.isDisabled}>
                 <span className="menu-item-content">
-                  {item.icon && <span className="menu-item-icon">{item.icon}</span>}
+                  {item.icon && (
+                    <span className="menu-item-icon">{item.icon}</span>
+                  )}
                   <span className="menu-item-label">{item.label}</span>
                   {item.shortcut && (
                     <kbd className="menu-item-shortcut">{item.shortcut}</kbd>
                   )}
                 </span>
                 {item.description && (
-                  <span className="menu-item-description">{item.description}</span>
+                  <span className="menu-item-description">
+                    {item.description}
+                  </span>
                 )}
               </AriaMenuItem>
               <Popover>
-                <Menu items={submenuItems as Iterable<T>} className={getMenuClassName()} data-variant={variant} data-size={size}>
+                <Menu
+                  items={submenuItems as Iterable<T>}
+                  className={getMenuClassName()}
+                  data-variant={variant}
+                  data-size={size}
+                >
                   {(subItem) => renderMenuItem(subItem as unknown as MenuItem)}
                 </Menu>
               </Popover>
@@ -234,7 +255,12 @@ export function MenuButton<T extends object>({
         <MenuTrigger {...props}>
           <Button>{label}</Button>
           <Popover>
-            <Menu items={menuItems as Iterable<T>} className={getMenuClassName()} data-variant={variant} data-size={size}>
+            <Menu
+              items={menuItems as Iterable<T>}
+              className={getMenuClassName()}
+              data-variant={variant}
+              data-size={size}
+            >
               {(item) => renderMenuItem(item as unknown as MenuItem)}
             </Menu>
           </Popover>
@@ -247,7 +273,11 @@ export function MenuButton<T extends object>({
       <MenuTrigger {...props}>
         <Button>{label}</Button>
         <Popover>
-          <Menu className={getMenuClassName()} data-variant={variant} data-size={size}>
+          <Menu
+            className={getMenuClassName()}
+            data-variant={variant}
+            data-size={size}
+          >
             {children}
           </Menu>
         </Popover>
@@ -262,7 +292,7 @@ export function MenuButton<T extends object>({
       const processedItem = {
         id: itemId, // 고유 ID
         label: String(
-          item.label || item.text || item.name || `Item ${index + 1}`
+          item.label || item.text || item.name || `Item ${index + 1}`,
         ),
         isDisabled: Boolean(item.isDisabled),
         icon: item.icon as string | undefined,
@@ -286,7 +316,7 @@ export function MenuButton<T extends object>({
         id: item.id,
         label: item.label,
         hasChildren: !!item.children,
-      }))
+      })),
     );
 
     // Recursive render function for menu items with submenus
@@ -323,7 +353,7 @@ export function MenuButton<T extends object>({
               child.label ||
                 child.text ||
                 child.name ||
-                `Item ${childIndex + 1}`
+                `Item ${childIndex + 1}`,
             ),
             isDisabled: Boolean(child.isDisabled),
             icon: child.icon as string | undefined,
@@ -333,7 +363,7 @@ export function MenuButton<T extends object>({
               ? child.children
               : undefined,
             ...child,
-          })
+          }),
         );
 
         console.log("🔹 서브메뉴 생성:", {
@@ -400,7 +430,12 @@ export function MenuButton<T extends object>({
     <MenuTrigger {...props}>
       <Button>{label}</Button>
       <Popover>
-        <Menu {...props} className={getMenuClassName()} data-variant={variant} data-size={size}>
+        <Menu
+          {...props}
+          className={getMenuClassName()}
+          data-variant={variant}
+          data-size={size}
+        >
           {loading && (
             <AriaMenuItem key="loading" textValue="Loading">
               ⏳ 데이터 로딩 중...
@@ -418,8 +453,7 @@ export function MenuButton<T extends object>({
   );
 }
 
-export interface ExtendedMenuItemProps
-  extends Omit<MenuItemProps, "children"> {
+export interface ExtendedMenuItemProps extends Omit<MenuItemProps, "children"> {
   children?: React.ReactNode;
   /** 직접 지정하는 단축키 문자열 */
   shortcut?: string;
@@ -431,8 +465,7 @@ export function MenuItem({
   ...props
 }: ExtendedMenuItemProps) {
   const textValue =
-    props.textValue ||
-    (typeof children === "string" ? children : undefined);
+    props.textValue || (typeof children === "string" ? children : undefined);
 
   // 직접 지정된 shortcut 문자열 사용
   const shortcutDisplay = shortcut || null;

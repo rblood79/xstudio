@@ -15,11 +15,11 @@ import {
   TimeFieldProps as AriaTimeFieldProps,
   TimeValue,
   ValidationResult,
-  composeRenderProps
-} from 'react-aria-components';
-import type { TimeFieldVariant, ComponentSize } from '../types';
+  composeRenderProps,
+} from "react-aria-components";
+import type { ComponentSize } from "../types";
 
-import './styles/TimeField.css';
+import "./styles/TimeField.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -27,8 +27,9 @@ import './styles/TimeField.css';
  * - data-variant, data-size 속성 사용
  */
 
-export interface TimeFieldProps<T extends TimeValue>
-  extends AriaTimeFieldProps<T> {
+export interface TimeFieldProps<
+  T extends TimeValue,
+> extends AriaTimeFieldProps<T> {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -43,8 +44,7 @@ export interface TimeFieldProps<T extends TimeValue>
    * 플레이스홀더 텍스트
    */
   placeholder?: string;
-  // M3 props
-  variant?: TimeFieldVariant;
+  // S2 props
   size?: ComponentSize;
 }
 
@@ -54,18 +54,17 @@ export function TimeField<T extends TimeValue>({
   errorMessage,
   hourCycle = 24,
   placeholder,
-  variant = 'primary',
-  size = 'md',
+  size = "md",
   ...props
 }: TimeFieldProps<T>) {
   return (
     <AriaTimeField
       {...props}
-      className={composeRenderProps(
-        props.className,
-        (className) => className ? `react-aria-TimeField ${className}` : 'react-aria-TimeField'
+      className={composeRenderProps(props.className, (className) =>
+        className
+          ? `react-aria-TimeField ${className}`
+          : "react-aria-TimeField",
       )}
-      data-variant={variant}
       data-size={size}
       hourCycle={hourCycle}
     >

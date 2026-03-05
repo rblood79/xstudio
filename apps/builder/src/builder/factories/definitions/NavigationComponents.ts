@@ -12,7 +12,7 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
  *     └─ MenuItem (tag="MenuItem", children="Menu Item 3")
  */
 export function createMenuDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -79,7 +79,7 @@ export function createMenuDefinition(
  *     └─ Button ("→", Next)
  */
 export function createPaginationDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -112,7 +112,8 @@ export function createPaginationDefinition(
         tag: "Button",
         props: {
           children: "←",
-          variant: "outline",
+          variant: "secondary",
+          fillStyle: "outline",
           size: "sm",
         } as ComponentElementProps,
         ...ownerFields,
@@ -122,7 +123,7 @@ export function createPaginationDefinition(
         tag: "Button",
         props: {
           children: "1",
-          variant: "default",
+          variant: "accent",
           size: "sm",
         } as ComponentElementProps,
         ...ownerFields,
@@ -132,7 +133,8 @@ export function createPaginationDefinition(
         tag: "Button",
         props: {
           children: "2",
-          variant: "outline",
+          variant: "secondary",
+          fillStyle: "outline",
           size: "sm",
         } as ComponentElementProps,
         ...ownerFields,
@@ -142,7 +144,8 @@ export function createPaginationDefinition(
         tag: "Button",
         props: {
           children: "3",
-          variant: "outline",
+          variant: "secondary",
+          fillStyle: "outline",
           size: "sm",
         } as ComponentElementProps,
         ...ownerFields,
@@ -152,7 +155,8 @@ export function createPaginationDefinition(
         tag: "Button",
         props: {
           children: "→",
-          variant: "outline",
+          variant: "secondary",
+          fillStyle: "outline",
           size: "sm",
         } as ComponentElementProps,
         ...ownerFields,
@@ -171,7 +175,7 @@ export function createPaginationDefinition(
  *     └─ DisclosureContent (tag="DisclosureContent", children="Section content goes here.")
  */
 export function createDisclosureDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -231,7 +235,7 @@ export function createDisclosureDefinition(
  * ChildDefinition.children 재귀 필드로 3레벨 중첩 표현
  */
 export function createDisclosureGroupDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;

@@ -9,13 +9,13 @@ import {
   Label,
   ProgressBar as AriaProgressBar,
   ProgressBarProps as AriaProgressBarProps,
-  composeRenderProps
-} from 'react-aria-components';
-import type { ComponentSizeSubset, ProgressBarVariant } from '../types';
-import { formatPercent, formatNumber } from '../utils/core/numberUtils';
-import { Skeleton } from './Skeleton';
+  composeRenderProps,
+} from "react-aria-components";
+import type { ComponentSizeSubset } from "../types";
+import { formatPercent, formatNumber } from "../utils/core/numberUtils";
+import { Skeleton } from "./Skeleton";
 
-import './styles/ProgressBar.css';
+import "./styles/ProgressBar.css";
 
 export interface ProgressBarProps extends AriaProgressBarProps {
   label?: string;
@@ -23,7 +23,7 @@ export interface ProgressBarProps extends AriaProgressBarProps {
    * Visual variant
    * @default 'default'
    */
-  variant?: ProgressBarVariant;
+  variant?: string;
   /**
    * Size of the progress bar
    * @default 'md'
@@ -41,7 +41,7 @@ export interface ProgressBarProps extends AriaProgressBarProps {
    * - custom: 커스텀 포맷터 사용
    * @default 'percent'
    */
-  valueFormat?: 'number' | 'percent' | 'custom';
+  valueFormat?: "number" | "percent" | "custom";
   /**
    * 값 표시 여부
    * @default true
@@ -65,10 +65,10 @@ export interface ProgressBarProps extends AriaProgressBarProps {
  */
 export function ProgressBar({
   label,
-  variant = 'default',
-  size = 'md',
-  locale = 'ko-KR',
-  valueFormat = 'percent',
+  variant = "default",
+  size = "md",
+  locale = "ko-KR",
+  valueFormat = "percent",
   showValue = true,
   customFormatter,
   isLoading,
@@ -91,9 +91,9 @@ export function ProgressBar({
     }
 
     switch (valueFormat) {
-      case 'percent':
+      case "percent":
         return formatPercent(value / 100, locale, 0);
-      case 'number':
+      case "number":
         return formatNumber(value, locale);
       default:
         return String(value);
@@ -103,9 +103,10 @@ export function ProgressBar({
   return (
     <AriaProgressBar
       {...props}
-      className={composeRenderProps(
-        props.className,
-        (className) => className ? `react-aria-ProgressBar ${className}` : 'react-aria-ProgressBar'
+      className={composeRenderProps(props.className, (className) =>
+        className
+          ? `react-aria-ProgressBar ${className}`
+          : "react-aria-ProgressBar",
       )}
       data-variant={variant}
       data-size={size}
@@ -121,7 +122,7 @@ export function ProgressBar({
             </span>
           )}
           <div className="bar">
-            <div className="fill" style={{ width: percentage + '%' }} />
+            <div className="fill" style={{ width: percentage + "%" }} />
           </div>
         </>
       )}

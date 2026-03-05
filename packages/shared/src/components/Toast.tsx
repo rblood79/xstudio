@@ -1,14 +1,26 @@
-import { createContext, useContext, useCallback, useState, ReactNode } from 'react';
-import { Button } from './Button';
-import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useState,
+  ReactNode,
+} from "react";
+import { Button } from "./Button";
+import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react";
 
-import './styles/Toast.css';
+import "./styles/Toast.css";
 
 /**
  * Toast types and interfaces
  */
-export type ToastVariant = 'info' | 'success' | 'warning' | 'error';
-export type ToastPosition = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
+export type ToastVariant = "info" | "success" | "warning" | "error";
+export type ToastPosition =
+  | "top-right"
+  | "top-left"
+  | "bottom-right"
+  | "bottom-left"
+  | "top-center"
+  | "bottom-center";
 
 export interface ToastOptions {
   title: string;
@@ -40,7 +52,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
+    throw new Error("useToast must be used within a ToastProvider");
   }
   return context;
 }
@@ -56,47 +68,56 @@ interface ToastProviderProps {
 
 export function ToastProvider({
   children,
-  position = 'top-right',
-  maxToasts = 5
+  position = "top-right",
+  maxToasts = 5,
 }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
   const removeAllToasts = useCallback(() => {
     setToasts([]);
   }, []);
 
-  const addToast = useCallback((options: ToastOptions): string => {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const timeout = options.timeout ?? 5000;
+  const addToast = useCallback(
+    (options: ToastOptions): string => {
+      const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const timeout = options.timeout ?? 5000;
 
-    setToasts(prev => {
-      const newToasts = [...prev, { ...options, id }];
-      // Limit max toasts
-      if (newToasts.length > maxToasts) {
-        return newToasts.slice(-maxToasts);
+      setToasts((prev) => {
+        const newToasts = [...prev, { ...options, id }];
+        // Limit max toasts
+        if (newToasts.length > maxToasts) {
+          return newToasts.slice(-maxToasts);
+        }
+        return newToasts;
+      });
+
+      // Auto dismiss
+      if (timeout > 0) {
+        setTimeout(() => {
+          removeToast(id);
+          options.onClose?.();
+        }, timeout);
       }
-      return newToasts;
-    });
 
-    // Auto dismiss
-    if (timeout > 0) {
-      setTimeout(() => {
-        removeToast(id);
-        options.onClose?.();
-      }, timeout);
-    }
-
-    return id;
-  }, [maxToasts, removeToast]);
+      return id;
+    },
+    [maxToasts, removeToast],
+  );
 
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast, removeAllToasts }}>
+    <ToastContext.Provider
+      value={{ toasts, addToast, removeToast, removeAllToasts }}
+    >
       {children}
-      <ToastRegion toasts={toasts} position={position} onDismiss={removeToast} />
+      <ToastRegion
+        toasts={toasts}
+        position={position}
+        onDismiss={removeToast}
+      />
     </ToastContext.Provider>
   );
 }
@@ -121,8 +142,12 @@ function ToastRegion({ toasts, position, onDismiss }: ToastRegionProps) {
       aria-label="Notifications"
       aria-live="polite"
     >
-      {toasts.map(toast => (
-        <Toast key={toast.id} toast={toast} onDismiss={() => onDismiss(toast.id)} />
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          toast={toast}
+          onDismiss={() => onDismiss(toast.id)}
+        />
       ))}
     </div>
   );
@@ -137,13 +162,13 @@ interface ToastProps {
 }
 
 function Toast({ toast, onDismiss }: ToastProps) {
-  const { title, description, variant = 'info' } = toast;
+  const { title, description, variant = "info" } = toast;
 
   const Icon = {
     info: Info,
     success: CheckCircle,
     warning: AlertTriangle,
-    error: AlertCircle
+    error: AlertCircle,
   }[variant];
 
   return (
@@ -164,7 +189,7 @@ function Toast({ toast, onDismiss }: ToastProps) {
         className="toast-close"
         aria-label="Dismiss"
         onPress={onDismiss}
-        variant="ghost"
+        variant="secondary"
         size="sm"
       >
         <X size={16} />

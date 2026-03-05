@@ -4,20 +4,20 @@
 
 @layer components {
   .react-aria-Meter {
-    --fill-color: var(--highlight-background);
+    --fill-color: var(--color-info-600);
 
     /* Variants */
-    &[data-variant="secondary"] {
-      --fill-color: var(--button-background);
+    &[data-variant="informative"] {
+      --fill-color: var(--color-info-600);
     }
-    &[data-variant="tertiary"] {
-      --fill-color: var(--color-purple-600);
+    &[data-variant="positive"] {
+      --fill-color: var(--color-green-600);
     }
-    &[data-variant="error"] {
+    &[data-variant="notice"] {
+      --fill-color: var(--color-warning-600);
+    }
+    &[data-variant="negative"] {
       --fill-color: var(--invalid-color);
-    }
-    &[data-variant="surface"] {
-      --fill-color: var(--text-color-placeholder);
     }
 
     display: grid;

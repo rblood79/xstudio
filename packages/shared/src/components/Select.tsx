@@ -23,7 +23,6 @@ import {
 } from "react-aria-components";
 import { ChevronDown } from "lucide-react";
 import type {
-  SelectVariant,
   ComponentSize,
   DataBinding,
   ColumnMapping,
@@ -34,8 +33,10 @@ import { useCollectionData } from "../hooks";
 import { Skeleton } from "./Skeleton";
 import "./styles/Select.css";
 
-export interface SelectProps<T extends object>
-  extends Omit<AriaSelectProps<T>, "children" | "selectionMode"> {
+export interface SelectProps<T extends object> extends Omit<
+  AriaSelectProps<T>,
+  "children" | "selectionMode"
+> {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -46,7 +47,7 @@ export interface SelectProps<T extends object>
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   // M3 props
-  variant?: SelectVariant;
+  variant?: string;
   size?: ComponentSize;
   /**
    * React Aria 1.13.0: 선택 모드
@@ -165,7 +166,7 @@ export function Select<T extends object>({
       return boundData.map((item, index) => ({
         id: String(item[idField] || item.id || index),
         label: String(
-          item[labelField] || item.label || item.name || `Item ${index + 1}`
+          item[labelField] || item.label || item.name || `Item ${index + 1}`,
         ),
         ...item,
       })) as Iterable<T>;
@@ -262,9 +263,8 @@ export function Select<T extends object>({
       {...props}
       data-variant={variant}
       data-size={size}
-      className={composeRenderProps(
-        props.className,
-        (cls) => cls ? `react-aria-Select ${cls}` : "react-aria-Select"
+      className={composeRenderProps(props.className, (cls) =>
+        cls ? `react-aria-Select ${cls}` : "react-aria-Select",
       )}
       aria-label={ariaLabel}
       placeholder={placeholder}

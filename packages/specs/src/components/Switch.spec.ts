@@ -15,7 +15,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  * Switch Props
  */
 export interface SwitchProps {
-  variant?: "default" | "primary" | "secondary";
+  variant?: "default" | "emphasized";
   size?: "sm" | "md" | "lg";
   children?: string;
   label?: string;
@@ -26,9 +26,8 @@ export interface SwitchProps {
 
 /** variant별 선택 시 트랙 색상 */
 export const SWITCH_SELECTED_TRACK_COLORS: Record<string, TokenRef> = {
-  default: "{color.accent}" as TokenRef,
-  primary: "{color.accent}" as TokenRef,
-  secondary: "{color.neutral-subtle}" as TokenRef,
+  default: "{color.neutral}" as TokenRef,
+  emphasized: "{color.accent}" as TokenRef,
 };
 
 /** 사이즈별 트랙/썸 치수 */
@@ -65,17 +64,10 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       text: "{color.neutral}" as TokenRef,
       border: "{color.border-hover}" as TokenRef,
     },
-    primary: {
+    emphasized: {
       background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
-    },
-    secondary: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      backgroundHover: "{color.accent-subtle}" as TokenRef,
+      backgroundPressed: "{color.accent-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.border-hover}" as TokenRef,
     },
@@ -187,7 +179,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         y: switchSize.trackHeight / 2,
         radius: switchSize.thumbSize / 2,
         fill: isChecked
-          ? ("{color.on-accent}" as TokenRef)
+          ? ("{color.white}" as TokenRef)
           : ("{color.border-hover}" as TokenRef),
       });
 

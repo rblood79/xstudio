@@ -15,13 +15,13 @@ import {
   Label,
   Text,
   ValidationResult,
-  composeRenderProps
-} from 'react-aria-components';
-import type { DateFieldVariant, ComponentSize } from '../types';
-import { getLocalTimeZone, today } from '@internationalized/date';
-import { safeParseDateString } from '../utils/core/dateUtils';
+  composeRenderProps,
+} from "react-aria-components";
+import type { ComponentSize } from "../types";
+import { getLocalTimeZone, today } from "@internationalized/date";
+import { safeParseDateString } from "../utils/core/dateUtils";
 
-import './styles/DateField.css';
+import "./styles/DateField.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -29,8 +29,9 @@ import './styles/DateField.css';
  * - data-variant, data-size 속성 사용
  */
 
-export interface DateFieldProps<T extends DateValue>
-  extends AriaDateFieldProps<T> {
+export interface DateFieldProps<
+  T extends DateValue,
+> extends AriaDateFieldProps<T> {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -55,7 +56,7 @@ export interface DateFieldProps<T extends DateValue>
    */
   maxDate?: string | DateValue;
   // M3 props
-  variant?: DateFieldVariant;
+  variant?: string;
   size?: ComponentSize;
 }
 
@@ -67,33 +68,33 @@ export function DateField<T extends DateValue>({
   defaultToday = false,
   minDate,
   maxDate,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   ...props
 }: DateFieldProps<T>) {
   // 타임존 설정
   const effectiveTimezone = timezone || getLocalTimeZone();
 
   // minDate/maxDate 자동 파싱
-  const minValue = typeof minDate === 'string'
-    ? safeParseDateString(minDate)
-    : minDate;
+  const minValue =
+    typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
 
-  const maxValue = typeof maxDate === 'string'
-    ? safeParseDateString(maxDate)
-    : maxDate;
+  const maxValue =
+    typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
 
   // defaultToday가 true이고 value가 없으면 오늘 날짜 설정
-  const defaultValue = defaultToday && !props.value && !props.defaultValue
-    ? (today(effectiveTimezone) as T)
-    : props.defaultValue;
+  const defaultValue =
+    defaultToday && !props.value && !props.defaultValue
+      ? (today(effectiveTimezone) as T)
+      : props.defaultValue;
 
   return (
     <AriaDateField
       {...props}
-      className={composeRenderProps(
-        props.className,
-        (className) => className ? `react-aria-DateField ${className}` : 'react-aria-DateField'
+      className={composeRenderProps(props.className, (className) =>
+        className
+          ? `react-aria-DateField ${className}`
+          : "react-aria-DateField",
       )}
       data-variant={variant}
       data-size={size}
@@ -102,9 +103,7 @@ export function DateField<T extends DateValue>({
       maxValue={maxValue as T | undefined}
     >
       {label && <Label>{label}</Label>}
-      <DateInput>
-        {(segment) => <DateSegment segment={segment} />}
-      </DateInput>
+      <DateInput>{(segment) => <DateSegment segment={segment} />}</DateInput>
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>
     </AriaDateField>

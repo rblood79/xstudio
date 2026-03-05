@@ -15,12 +15,12 @@ import {
   NumberFieldProps as AriaNumberFieldProps,
   Text,
   ValidationResult,
-  composeRenderProps
-} from 'react-aria-components';
-import type { NumberFieldVariant, ComponentSize } from '../types';
-import { Plus, Minus } from 'lucide-react';
+  composeRenderProps,
+} from "react-aria-components";
+import type { ComponentSize } from "../types";
+import { Plus, Minus } from "lucide-react";
 
-import './styles/NumberField.css';
+import "./styles/NumberField.css";
 
 /**
  * 🚀 Phase 4: data-* 패턴 전환
@@ -45,7 +45,7 @@ export interface NumberFieldProps extends AriaNumberFieldProps {
    * - unit: 단위 (10 km, 25°C)
    * @default 'decimal'
    */
-  formatStyle?: 'decimal' | 'currency' | 'percent' | 'unit';
+  formatStyle?: "decimal" | "currency" | "percent" | "unit";
   /**
    * 통화 코드 (formatStyle이 'currency'일 때 사용)
    * @example 'KRW', 'USD', 'EUR', 'JPY'
@@ -63,7 +63,7 @@ export interface NumberFieldProps extends AriaNumberFieldProps {
    * - compact: 축약 표기 (1.2K)
    * @default 'standard'
    */
-  notation?: 'standard' | 'compact';
+  notation?: "standard" | "compact";
   /**
    * 소수점 자릿수
    */
@@ -73,8 +73,7 @@ export interface NumberFieldProps extends AriaNumberFieldProps {
    * @default true
    */
   showGroupSeparator?: boolean;
-  // M3 props
-  variant?: NumberFieldVariant;
+  // S2 props
   size?: ComponentSize;
 }
 
@@ -82,14 +81,13 @@ export function NumberField({
   label,
   description,
   errorMessage,
-  formatStyle = 'decimal',
-  currency = 'KRW',
+  formatStyle = "decimal",
+  currency = "KRW",
   unit,
-  notation = 'standard',
+  notation = "standard",
   decimals,
   showGroupSeparator = true,
-  variant = 'primary',
-  size = 'md',
+  size = "md",
   ...props
 }: NumberFieldProps) {
   // NumberFormatter 옵션 생성
@@ -100,15 +98,15 @@ export function NumberField({
   };
 
   // 통화 설정
-  if (formatStyle === 'currency') {
+  if (formatStyle === "currency") {
     formatOptions.currency = currency;
-    formatOptions.currencyDisplay = 'symbol';
+    formatOptions.currencyDisplay = "symbol";
   }
 
   // 단위 설정
-  if (formatStyle === 'unit' && unit) {
+  if (formatStyle === "unit" && unit) {
     formatOptions.unit = unit;
-    formatOptions.unitDisplay = 'short';
+    formatOptions.unitDisplay = "short";
   }
 
   // 소수점 자릿수 설정
@@ -120,19 +118,23 @@ export function NumberField({
   return (
     <AriaNumberField
       {...props}
-      className={composeRenderProps(
-        props.className,
-        (className) => className ? `react-aria-NumberField ${className}` : 'react-aria-NumberField'
+      className={composeRenderProps(props.className, (className) =>
+        className
+          ? `react-aria-NumberField ${className}`
+          : "react-aria-NumberField",
       )}
-      data-variant={variant}
       data-size={size}
       formatOptions={formatOptions}
     >
       {label && <Label>{label}</Label>}
       <Group>
-        <Button slot="decrement"><Minus size={16}/></Button>
+        <Button slot="decrement">
+          <Minus size={16} />
+        </Button>
         <Input />
-        <Button slot="increment"><Plus size={16}/></Button>
+        <Button slot="increment">
+          <Plus size={16} />
+        </Button>
       </Group>
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>
