@@ -41,3 +41,23 @@ globs:
 
 - setTimeout/queueMicrotask 안에서 반드시 `get()`으로 최신 상태 참조
 - 외부 캡처된 elements/updateElementOrder 사용 금지
+
+## 스타일 패널 (Zustand → Jotai Bridge)
+
+### PropertyUnitInput 요소 전환 보호
+
+- `handleInputFocus`에서 `selectedElementId`를 ref에 캡처
+- `handleInputBlur`에서 blur 시점 `selectedElementId`와 비교 → 다르면 onChange 스킵
+- 이벤트 순서: mousedown(선택 변경) → blur(입력 커밋) — blur 시점에 이미 새 요소 선택됨
+
+### buildSelectedElement에 properties 전달 필수
+
+- `useZustandJotaiBridge.ts`의 `StylePanelSelectedElement`에 `properties` 포함
+- `effectiveProps`에서 `size`/`variant` 추출하여 `properties`로 전달
+- 미전달 시: `computeSyntheticStyle`이 size를 모름 → 항상 md fallback → 잘못된 fontSize 표시
+
+### SyntheticComputedStyle 확장 규칙
+
+- Spec preset에 새 속성 추가 시 `SyntheticComputedStyle` 인터페이스에도 추가
+- `typographyValuesAtom` + 개별 atom에 synthetic fallback 체인 추가
+- 우선순위: inline → computed(상속) → synthetic(preset) → 글로벌 기본값

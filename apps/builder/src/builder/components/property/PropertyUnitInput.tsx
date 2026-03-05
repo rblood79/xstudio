@@ -43,6 +43,16 @@ const KEYWORDS = [
   "max-content", // CSS intrinsic sizing
 ];
 
+/** input 표시용 축약 label (드롭다운 목록은 원본 유지) */
+const INPUT_DISPLAY_LABELS: Record<string, string> = {
+  "fit-content": "fit",
+};
+
+/** 축약 label → 원본 keyword 역매핑 (input 입력값 복원용) */
+const INPUT_LABEL_TO_KEYWORD: Record<string, string> = {
+  fit: "fit-content",
+};
+
 function parseUnitValue(value: string): {
   numericValue: number | null;
   unit: string;
@@ -88,7 +98,9 @@ export const PropertyUnitInput = memo(
       parsed.unit || (parsed.numericValue !== null ? defaultUnit : parsed.unit);
     const isKeyword = parsed.numericValue === null;
     const [inputValue, setInputValue] = useState(
-      parsed.numericValue !== null ? String(parsed.numericValue) : parsed.unit,
+      parsed.numericValue !== null
+        ? String(parsed.numericValue)
+        : (INPUT_DISPLAY_LABELS[parsed.unit] ?? parsed.unit),
     );
     // ⭐ useRef로 변경: Enter 키로 저장했는지 추적 (useState는 비동기!)
     const justSavedViaEnterRef = useRef(false);
@@ -104,7 +116,7 @@ export const PropertyUnitInput = memo(
       setInputValue(
         parsed.numericValue !== null
           ? String(parsed.numericValue)
-          : parsed.unit,
+          : (INPUT_DISPLAY_LABELS[parsed.unit] ?? parsed.unit),
       );
     }
 
@@ -156,9 +168,11 @@ export const PropertyUnitInput = memo(
       }
 
       const trimmed = inputValue.trim();
+      const resolved =
+        INPUT_LABEL_TO_KEYWORD[trimmed.toLowerCase()] ?? trimmed.toLowerCase();
 
-      if (allowKeywords && KEYWORDS.includes(trimmed.toLowerCase())) {
-        const keyword = trimmed.toLowerCase();
+      if (allowKeywords && KEYWORDS.includes(resolved)) {
+        const keyword = resolved;
         // "reset" 선택 시 inline style 제거 (빈 문자열 전달)
         const newValue = keyword === "reset" ? "" : keyword;
         // ⭐ 값이 변경된 경우에만 onChange 호출 + 중복 호출 방지
@@ -257,10 +271,13 @@ export const PropertyUnitInput = memo(
         e.preventDefault();
         // ⭐ Enter로 저장하기 전에 값이 변경되었는지 확인
         const trimmed = inputValue.trim();
+        const resolved =
+          INPUT_LABEL_TO_KEYWORD[trimmed.toLowerCase()] ??
+          trimmed.toLowerCase();
         let shouldSave = false;
 
-        if (allowKeywords && KEYWORDS.includes(trimmed.toLowerCase())) {
-          const keyword = trimmed.toLowerCase();
+        if (allowKeywords && KEYWORDS.includes(resolved)) {
+          const keyword = resolved;
           const newVal = keyword === "reset" ? "" : keyword;
           if (newVal !== value) {
             onChange(newVal);

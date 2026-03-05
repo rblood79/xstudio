@@ -15,7 +15,7 @@
 // Types
 // ============================================
 
-export type RenderMode = 'skia';
+export type RenderMode = "skia";
 
 export interface FeatureFlags {
   /** WebGL Canvas 사용 여부 (Phase 10) */
@@ -32,6 +32,8 @@ export interface FeatureFlags {
   renderMode: RenderMode;
   /** Fill V2: 다중 Fill 레이어 + 색상 모드 전환 (Color Picker Phase 1) */
   fillV2: boolean;
+  /** React Query Devtools 활성화 */
+  enableReactQueryDevtools: boolean;
 }
 
 // ============================================
@@ -45,11 +47,14 @@ export interface FeatureFlags {
  * @param defaultValue - 기본값
  * @returns boolean
  */
-function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
-  if (value === undefined || value === '') {
+function parseBoolean(
+  value: string | undefined,
+  defaultValue: boolean,
+): boolean {
+  if (value === undefined || value === "") {
     return defaultValue;
   }
-  return value.toLowerCase() === 'true' || value === '1';
+  return value.toLowerCase() === "true" || value === "1";
 }
 
 /**
@@ -133,7 +138,7 @@ export function isWasmLayoutEngine(): boolean {
  * 렌더 모드 조회 (skia 고정)
  */
 export function getRenderMode(): RenderMode {
-  return 'skia';
+  return "skia";
 }
 
 /**
@@ -166,6 +171,22 @@ export function isFillV2Enabled(): boolean {
 }
 
 /**
+ * React Query Devtools 활성화 여부
+ *
+ * @returns true if React Query Devtools should be displayed
+ *
+ * @example
+ * ```typescript
+ * if (isReactQueryDevtoolsEnabled()) {
+ *   return <ReactQueryDevtools />;
+ * }
+ * ```
+ */
+export function isReactQueryDevtoolsEnabled(): boolean {
+  return parseBoolean(import.meta.env.VITE_ENABLE_REACT_QUERY_DEVTOOLS, false);
+}
+
+/**
  * 모든 Feature Flags 조회
  *
  * @returns 현재 Feature Flags 상태
@@ -179,11 +200,17 @@ export function isFillV2Enabled(): boolean {
 export function getFeatureFlags(): FeatureFlags {
   return {
     useWebGLCanvas: parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, true),
-    enableDebugLogs: parseBoolean(import.meta.env.VITE_ENABLE_DEBUG_LOGS, false),
-    canvasCompareMode: parseBoolean(import.meta.env.VITE_CANVAS_COMPARE_MODE, false),
+    enableDebugLogs: parseBoolean(
+      import.meta.env.VITE_ENABLE_DEBUG_LOGS,
+      false,
+    ),
+    canvasCompareMode: parseBoolean(
+      import.meta.env.VITE_CANVAS_COMPARE_MODE,
+      false,
+    ),
     wasmSpatialIndex: true,
     wasmLayoutEngine: true,
-    renderMode: 'skia' as RenderMode,
+    renderMode: "skia" as RenderMode,
     fillV2: parseBoolean(import.meta.env.VITE_FEATURE_FILL_V2, false),
   };
 }
@@ -194,12 +221,12 @@ export function getFeatureFlags(): FeatureFlags {
 export function logFeatureFlags(): void {
   if (import.meta.env.DEV) {
     const flags = getFeatureFlags();
-    console.log('[FeatureFlags]', flags);
+    console.log("[FeatureFlags]", flags);
   }
 }
 
 // 개발 환경에서 자동 로그
-if (import.meta.env.DEV && typeof window !== 'undefined') {
+if (import.meta.env.DEV && typeof window !== "undefined") {
   // 페이지 로드 시 1회만 출력
   if (!window.__featureFlagsLogged) {
     window.__featureFlagsLogged = true;

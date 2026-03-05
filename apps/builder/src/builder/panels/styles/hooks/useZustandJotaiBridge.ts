@@ -26,6 +26,10 @@ interface StylePanelSelectedElement {
   className: string;
   fills?: FillItem[];
   properties?: { size?: string; variant?: string; [key: string]: unknown };
+  /** ADR-026: 부모 요소의 display 값 (Size Mode 결정에 사용) */
+  parentDisplay?: string;
+  /** ADR-026: 부모 요소의 flex-direction 값 */
+  parentFlexDirection?: string;
 }
 
 /**
@@ -165,6 +169,20 @@ function buildSelectedElement(
   const size = effectiveProps?.size as string | undefined;
   const variant = effectiveProps?.variant as string | undefined;
 
+  // ADR-026: 부모 요소의 display/flexDirection 추출 (Size Mode 결정용)
+  const parentElement = element.parent_id
+    ? elementsMap.get(element.parent_id)
+    : null;
+  const parentStyle = parentElement
+    ? ((parentElement.props?.style ?? {}) as Record<string, unknown>)
+    : undefined;
+  const parentDisplay = parentStyle?.display
+    ? String(parentStyle.display)
+    : undefined;
+  const parentFlexDirection = parentStyle?.flexDirection
+    ? String(parentStyle.flexDirection)
+    : undefined;
+
   return {
     id: element.id,
     type: element.tag,
@@ -179,6 +197,8 @@ function buildSelectedElement(
       size !== undefined || variant !== undefined
         ? { size, variant }
         : undefined,
+    parentDisplay,
+    parentFlexDirection,
   };
 }
 

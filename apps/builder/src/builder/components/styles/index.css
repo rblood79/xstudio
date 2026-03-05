@@ -334,11 +334,20 @@
       grid-template-rows: auto;
       gap: var(--spacing-sm);
       grid-template-areas:
+        "size-mode-width size-mode-height ."
         "width height actions-size"
         "left top actions-position";
 
       > * {
         min-width: 0;
+      }
+
+      .size-mode-width {
+        grid-area: size-mode-width;
+      }
+
+      .size-mode-height {
+        grid-area: size-mode-height;
       }
 
       .width {

@@ -204,6 +204,10 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 **[reference/text-wrapping.md](reference/text-wrapping.md)** — ADR-005 CSS 텍스트 래핑 에뮬레이션, textWrapUtils.ts 공유 유틸, 에뮬레이션 조합 테이블, isEllipsis 3중 조건, clipText 클리핑 패턴, Inspector Preset UI, spec shapes 수동 주입
 
+### Style Panel (Zustand-Jotai Bridge)
+
+**[reference/style-panel.md](reference/style-panel.md)** — PropertyUnitInput 요소 전환 보호, buildSelectedElement properties 전달, SyntheticComputedStyle 확장 규칙, 스타일 값 우선순위 (inline → computed → synthetic → default)
+
 ### Component Registry
 
 **[reference/component-registry.md](reference/component-registry.md)** — 컴포넌트 등급 현황, COMPLEX_COMPONENT_TAGS, CHILD_COMPOSITION_EXCLUDE_TAGS, NON_CONTAINER_TAGS, SPEC_RENDERS_ALL_TAGS_SET

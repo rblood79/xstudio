@@ -10,6 +10,7 @@ import {
 } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { isReactQueryDevtoolsEnabled } from "./utils/featureFlags";
 
 // 🚀 Phase 9: Performance Monitors (dev mode only)
 // Side-effect import to initialize monitors and attach to window
@@ -137,7 +138,7 @@ ReactDOM.createRoot(root!).render(
         <AppLayout />
       </ParticleBackgroundProvider>
     </BrowserRouter>
-    {import.meta.env.DEV && (
+    {import.meta.env.DEV && isReactQueryDevtoolsEnabled() && (
       <ReactQueryDevtools
         initialIsOpen={false}
         buttonPosition="top-right"

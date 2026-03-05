@@ -14,6 +14,8 @@ import type { SelectedElement } from "../../../inspector/types";
 import { computeSyntheticStyle } from "../../../../services/computedStyleService";
 import type { SyntheticComputedStyle } from "../../../../services/computedStyleService";
 import { DEFAULT_FONT_FAMILY } from "../../../fonts/customFonts";
+import { inferSizeMode } from "../../../stores/utils/sizeModeResolver";
+import type { SizeMode } from "../../../stores/utils/sizeModeResolver";
 
 // ============================================
 // Base Atoms
@@ -312,6 +314,63 @@ export const transformValuesAtom = selectAtom(
       a.isBody === b.isBody
     );
   },
+);
+
+// ============================================
+// ADR-026: Size Mode Atoms
+// ============================================
+
+/** 부모 요소의 display 값 */
+export const parentDisplayAtom = selectAtom(
+  selectedElementAtom,
+  (element): string => {
+    const pd = (element as Record<string, unknown> | null)?.parentDisplay;
+    return pd ? String(pd) : "block";
+  },
+  (a, b) => a === b,
+);
+
+/** 부모 요소의 flex-direction 값 */
+export const parentFlexDirectionAtom = selectAtom(
+  selectedElementAtom,
+  (element): string => {
+    const pfd = (element as Record<string, unknown> | null)
+      ?.parentFlexDirection;
+    return pfd ? String(pfd) : "row";
+  },
+  (a, b) => a === b,
+);
+
+/** Width Size Mode (역추론) */
+export const widthSizeModeAtom = selectAtom(
+  selectedElementAtom,
+  (element): SizeMode => {
+    if (!element) return "fit";
+    const el = element as Record<string, unknown>;
+    const style = (el.style ?? {}) as Record<string, unknown>;
+    const parentDisplay = el.parentDisplay ? String(el.parentDisplay) : "block";
+    const parentFlexDirection = el.parentFlexDirection
+      ? String(el.parentFlexDirection)
+      : "row";
+    return inferSizeMode(style, "width", parentDisplay, parentFlexDirection);
+  },
+  (a, b) => a === b,
+);
+
+/** Height Size Mode (역추론) */
+export const heightSizeModeAtom = selectAtom(
+  selectedElementAtom,
+  (element): SizeMode => {
+    if (!element) return "fit";
+    const el = element as Record<string, unknown>;
+    const style = (el.style ?? {}) as Record<string, unknown>;
+    const parentDisplay = el.parentDisplay ? String(el.parentDisplay) : "block";
+    const parentFlexDirection = el.parentFlexDirection
+      ? String(el.parentFlexDirection)
+      : "row";
+    return inferSizeMode(style, "height", parentDisplay, parentFlexDirection);
+  },
+  (a, b) => a === b,
 );
 
 // ============================================
