@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-06 (ADR-027 Proposed — Canvas Inline Text Editing)
+> **최종 업데이트**: 2026-03-05 (ADR-028 Proposed — Code Editor 통합)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 11     |
 | 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 9      |
-| **합계**                               | **27** |
+| 미구현 (Proposed/계획)                 | 10     |
+| **합계**                               | **28** |
 
 ---
 
@@ -56,6 +56,7 @@
 | [025](025-s2-named-color-palette.md)     | S2 Named Color Palette 확장                       | Proposed | 4 Phase, 12색×2 = 24 토큰 추가 — Badge 부분은 ADR-023 Ph3에서 구현 완료 |    P3    |
 | [026](026-responsive-constraint-ui.md)   | Responsive Constraint UI (Size Mode → CSS 매핑)   | Proposed | 4 Phase, Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio + 정렬   |  **P2**  |
 | [027](027-inline-text-editing.md)        | Canvas Inline Text Editing (WebGL 위 텍스트 편집) | Proposed | 4 Phase (A~D), DOM Overlay + contenteditable, Pencil/Figma 패턴         |  **P2**  |
+| [028](028-code-editor-integration.md)    | Code Editor 통합 — 하드유저 React 코드 편집       | Proposed | 4 Phase (A~D), Monaco Editor + 양방향 동기화 + IntelliSense             |    P3    |
 
 ---
 
@@ -221,3 +222,4 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-05 | **ADR-023 Accepted** — Phase 2 완료: ToggleButton.spec.ts isEmphasized, Label.spec.ts 주석 S2 정리, NavigationComponents.ts Factory Pagination 버튼 S2 전환(variant: outline→secondary+fillStyle, default→accent). Partial→Accepted(완료) 이동. P2 우선순위 ADR-026→ADR-013→ADR-019으로 갱신                                                                                                                                                                                                 |
 | 2026-03-05 | **ADR-023 Phase 3 완료** — Button premium/genai variant 추가, ToggleButton S2 전환(variant 제거→isEmphasized/isQuiet boolean), ToggleButtonGroup default size S→M, Badge S2 named color 13종 추가(총 19 variants), Badge size padding S2 spacing 토큰 동기화, tokenResolver 13색 매핑, cssVariableReader S2 fallback 전환. ADR-025 Badge 부분 supersede 반영                                                                                                                                 |
 | 2026-03-06 | **ADR-027 Proposed** — Canvas Inline Text Editing (WebGL 위 텍스트 직접 편집). Pencil 앱 분석 기반, DOM Overlay + contenteditable 방식 채택. 4 Phase (A: MVP Text/Heading, B: 줌/팬/멀티페이지, C: Spec 컴포넌트 내부 텍스트, D: 리치 텍스트). P2 우선순위. 현황 카운트 갱신 (미구현 9, 합계 27)                                                                                                                                                                                             |
+| 2026-03-05 | **ADR-028 Proposed** — Code Editor 통합 (하드유저 React 코드 편집). Monaco Editor(MIT) 채택, 4 Phase (A: 에디터 인프라 MVP, B: 양방향 동기화, C: IntelliSense 강화, D: 고급 기능). P3 우선순위. 현황 카운트 갱신 (미구현 10, 합계 28)                                                                                                                                                                                                                                                        |
