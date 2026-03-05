@@ -22,6 +22,7 @@ import {
   neutralToSkiaColors,
   type NeutralPreset,
 } from "../utils/theme/neutralToSkiaColors";
+import { radiusScaleToSkia } from "../utils/theme/radiusScaleToSkia";
 import { notifyLayoutChange } from "../builder/workspace/canvas/skia/useSkiaNode";
 
 // ============================================================================
@@ -185,7 +186,23 @@ export const useThemeConfigStore = create<ThemeConfigState>()(
       },
 
       setRadiusScale: (radiusScale: RadiusScale) => {
-        set({ radiusScale }, undefined, "setRadiusScale");
+        // 1. radius 토큰 mutation (즉시 반영)
+        radiusScaleToSkia(radiusScale);
+
+        // 2. themeVersion 증가 → ElementSprite 재렌더 트리거
+        set(
+          (state) => ({
+            radiusScale,
+            themeVersion: state.themeVersion + 1,
+          }),
+          undefined,
+          "setRadiusScale",
+        );
+
+        // 3. registryVersion 증가 → Skia 트리 캐시 무효화
+        notifyLayoutChange();
+
+        // 4. localStorage 영속화
         persistCurrentConfig();
       },
 
@@ -195,9 +212,10 @@ export const useThemeConfigStore = create<ThemeConfigState>()(
         const persisted = loadPersistedConfig(projectId);
         if (!persisted) return;
 
-        // Skia 색상 동기화
+        // Skia 색상/토큰 동기화
         if (persisted.tint) tintToSkiaColors(persisted.tint);
         if (persisted.neutral) neutralToSkiaColors(persisted.neutral);
+        if (persisted.radiusScale) radiusScaleToSkia(persisted.radiusScale);
 
         // 상태 복원 + themeVersion 증가
         set(
