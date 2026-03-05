@@ -7,7 +7,8 @@
 
 import { memo, useCallback } from "react";
 import { SwatchBook, Check } from "lucide-react";
-import { Button } from "react-aria-components";
+import { Button, parseColor } from "react-aria-components";
+import { ColorSwatch } from "@xstudio/shared/components/ColorSwatch";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import type { PanelProps } from "../core/types";
 import {
@@ -27,7 +28,7 @@ import { MiniThemePreview } from "./MiniThemePreview";
 import "./ThemesPanel.css";
 
 // ============================================================================
-// TintGrid — 10색 원형 프리셋 버튼
+// TintGrid — 10색 ColorSwatch 프리셋 버튼
 // ============================================================================
 
 /** Tint 프리셋 표시 순서 */
@@ -75,16 +76,24 @@ interface TintSwatchProps {
 const TintSwatch = memo(
   function TintSwatch({ tint, selected, onSelect }: TintSwatchProps) {
     const handlePress = useCallback(() => onSelect(tint), [tint, onSelect]);
+    const color = parseColor(TINT_HEX_MAP[tint]);
 
     return (
       <Button
-        className="tint-swatch"
+        className="react-aria-Group color-swatch-button tint-swatch"
         aria-label={TINT_LABELS[tint]}
         data-selected={selected || undefined}
-        style={{ backgroundColor: TINT_HEX_MAP[tint] }}
         onPress={handlePress}
       >
-        {selected && <Check size={14} strokeWidth={3} color="#fff" />}
+        <ColorSwatch color={color} />
+        {selected && (
+          <Check
+            size={14}
+            strokeWidth={3}
+            color="#fff"
+            className="tint-swatch-check"
+          />
+        )}
       </Button>
     );
   },
@@ -193,7 +202,7 @@ function ThemesContent() {
           options={NEUTRAL_OPTIONS}
         />
         <PropertySelect
-          label="Scale"
+          label="Radius"
           value={radiusScale}
           onChange={handleRadiusChange}
           options={RADIUS_OPTIONS}

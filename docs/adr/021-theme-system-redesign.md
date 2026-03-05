@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial (2026-03-05) — Phase A+B+C 구현 완료, Phase D+E 미구현
+Partial (2026-03-05) — Phase A+B+C 구현 완료, Phase D 부분 완료(ThemeStudio.tsx 삭제, UnifiedThemeStore 축소, /theme 라우트 제거), Phase E 미구현
 
 ## Scope
 

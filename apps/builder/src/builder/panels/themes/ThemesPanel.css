@@ -10,7 +10,7 @@
   gap: var(--spacing-sm);
 }
 
-/* TintGrid: 5열 원형 색상 프리셋 */
+/* TintGrid: 5열 색상 프리셋 (color-swatch-button 스타일) */
 .tint-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -20,18 +20,22 @@
 }
 
 .tint-swatch {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid transparent;
+  position: relative;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  outline: none;
+  padding: var(--spacing-xs);
+  width: fit-content;
+  border: none;
+  border-radius: var(--radius-md);
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
-  outline: none;
+}
+
+.tint-swatch .react-aria-ColorSwatch {
+  width: var(--text-xl);
+  height: var(--text-xl);
+  border-radius: var(--radius-sm);
 }
 
 .tint-swatch:hover {
@@ -43,8 +47,15 @@
 }
 
 .tint-swatch[data-selected] {
-  border-color: var(--text-color);
   box-shadow: 0 0 0 2px var(--field-background);
+}
+
+.tint-swatch-check {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
 /* MiniThemePreview — 인라인 CSS 변수(--mp-*)로 즉시 반영 */
