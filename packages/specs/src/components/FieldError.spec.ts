@@ -17,7 +17,7 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  */
 export interface FieldErrorProps {
   variant?: 'default';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'S' | 'M' | 'L';
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -31,7 +31,7 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
   element: 'p',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -43,7 +43,7 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 14,
       paddingX: 0,
       paddingY: 0,
@@ -51,7 +51,7 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 0,
     },
-    md: {
+    M: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -59,7 +59,7 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 20,
       paddingX: 0,
       paddingY: 0,

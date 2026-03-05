@@ -16,8 +16,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Panel Props
  */
 export interface PanelProps {
-  variant?: 'default' | 'primary' | 'surface';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'surface';
+  size?: 'S' | 'M' | 'L';
   title?: string;
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -32,7 +32,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -42,7 +42,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.accent-subtle}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -59,7 +59,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 12,
       paddingY: 8,
@@ -67,7 +67,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 16,
       paddingY: 12,
@@ -75,7 +75,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 12,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 24,
       paddingY: 16,

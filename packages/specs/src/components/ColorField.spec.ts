@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * ColorField Props
  */
 export interface ColorFieldProps {
-  variant?: 'default' | 'primary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'negative';
+  size?: 'S' | 'M' | 'L';
   value?: string;
   label?: string;
   isDisabled?: boolean;
@@ -33,7 +33,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -44,7 +44,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       border: '{color.border-hover}' as TokenRef,
       borderHover: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -52,7 +52,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       border: '{color.accent}' as TokenRef,
       borderHover: '{color.accent-hover}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -63,7 +63,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 32,
       paddingX: 8,
       paddingY: 4,
@@ -72,7 +72,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       iconSize: 20,
       gap: 6,
     },
-    md: {
+    M: {
       height: 40,
       paddingX: 10,
       paddingY: 6,
@@ -81,7 +81,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       iconSize: 26,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 48,
       paddingX: 12,
       paddingY: 8,

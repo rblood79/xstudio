@@ -31,8 +31,8 @@ export type DateSegmentType =
  * DateSegment Props
  */
 export interface DateSegmentProps {
-  variant?: 'default' | 'primary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'negative';
+  size?: 'S' | 'M' | 'L';
   /** 세그먼트 타입 (month, day, year, hour, minute, second 등) */
   segmentType?: DateSegmentType;
   /** 표시할 값 (숫자 또는 텍스트) */
@@ -57,7 +57,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -68,7 +68,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
       border: '{color.border}' as TokenRef,
       borderHover: '{color.border-hover}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.accent-subtle}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -76,7 +76,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
       border: '{color.accent}' as TokenRef,
       borderHover: '{color.accent}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.negative-subtle}' as TokenRef,
       backgroundHover: '{color.negative-subtle}' as TokenRef,
       backgroundPressed: '{color.negative-subtle}' as TokenRef,
@@ -87,7 +87,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 24,
       paddingX: 4,
       paddingY: 2,
@@ -95,7 +95,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 0,
     },
-    md: {
+    M: {
       height: 32,
       paddingX: 6,
       paddingY: 4,
@@ -103,7 +103,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 40,
       paddingX: 8,
       paddingY: 6,

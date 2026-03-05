@@ -16,8 +16,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Tree Props
  */
 export interface TreeProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   selectionMode?: 'none' | 'single' | 'multiple';
   style?: Record<string, string | number | undefined>;
 }
@@ -31,7 +31,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -41,7 +41,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -51,7 +51,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 28,
       paddingX: 8,
       paddingY: 4,
@@ -60,7 +60,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
       iconSize: 14,
       gap: 2,
     },
-    md: {
+    M: {
       height: 36,
       paddingX: 12,
       paddingY: 6,
@@ -69,7 +69,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
       iconSize: 16,
       gap: 4,
     },
-    lg: {
+    L: {
       height: 44,
       paddingX: 16,
       paddingY: 8,

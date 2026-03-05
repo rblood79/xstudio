@@ -14,8 +14,8 @@ import { resolveStateColors } from '../utils/stateEffect';
  * ScrollBox Props
  */
 export interface ScrollBoxProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   scrollDirection?: 'vertical' | 'horizontal' | 'both';
   style?: Record<string, string | number | undefined>;
 }
@@ -29,7 +29,7 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -39,7 +39,7 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -49,21 +49,21 @@ export const ScrollBoxSpec: ComponentSpec<ScrollBoxProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 120,
       paddingX: 8,
       paddingY: 8,
       fontSize: '{typography.text-sm}' as TokenRef,
       borderRadius: '{radius.md}' as TokenRef,
     },
-    md: {
+    M: {
       height: 200,
       paddingX: 12,
       paddingY: 12,
       fontSize: '{typography.text-md}' as TokenRef,
       borderRadius: '{radius.md}' as TokenRef,
     },
-    lg: {
+    L: {
       height: 320,
       paddingX: 16,
       paddingY: 16,

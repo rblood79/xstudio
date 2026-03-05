@@ -14,8 +14,8 @@ import { resolveStateColors } from '../utils/stateEffect';
  * Popover Props
  */
 export interface PopoverProps {
-  variant?: 'primary' | 'secondary' | 'surface';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'accent' | 'neutral' | 'surface';
+  size?: 'S' | 'M' | 'L';
   placement?: 'top' | 'right' | 'bottom' | 'left';
   showArrow?: boolean;
 }
@@ -32,7 +32,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
   element: 'div',
 
   defaultVariant: 'surface',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   overlay: {
     usePortal: true,
@@ -45,14 +45,14 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
   },
 
   variants: {
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
       border: '{color.accent}' as TokenRef,
     },
-    secondary: {
+    neutral: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -69,7 +69,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 12,
       paddingY: 12,
@@ -77,7 +77,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 16,
       paddingY: 16,
@@ -85,7 +85,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
       borderRadius: '{radius.lg}' as TokenRef,
       gap: 12,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 20,
       paddingY: 20,

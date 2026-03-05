@@ -24,8 +24,8 @@ export interface GridListItem {
  * GridList Props
  */
 export interface GridListProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   selectionMode?: 'none' | 'single' | 'multiple';
   columns?: number;
   items?: GridListItem[];
@@ -41,7 +41,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -51,7 +51,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -61,7 +61,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 8,
       paddingY: 8,
@@ -69,7 +69,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 12,
       paddingY: 12,
@@ -77,7 +77,7 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 12,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 16,
       paddingY: 16,

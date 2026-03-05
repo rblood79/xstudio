@@ -13,8 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  * ColorSlider Props
  */
 export interface ColorSliderProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   channel?: 'hue' | 'saturation' | 'lightness' | 'brightness' | 'alpha';
   value?: number;
   isDisabled?: boolean;
@@ -30,7 +30,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -40,7 +40,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -50,7 +50,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -59,7 +59,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       iconSize: 14,
       gap: 0,
     },
-    md: {
+    M: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -68,7 +68,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       iconSize: 18,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

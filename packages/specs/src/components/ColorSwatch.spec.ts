@@ -14,7 +14,7 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  */
 export interface ColorSwatchProps {
   variant?: 'default' | 'selected';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'S' | 'M' | 'L';
   color?: string;
   isDisabled?: boolean;
   isSelected?: boolean;
@@ -30,7 +30,7 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -50,7 +50,7 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -58,7 +58,7 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 0,
     },
-    md: {
+    M: {
       height: 28,
       paddingX: 0,
       paddingY: 0,
@@ -66,7 +66,7 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 36,
       paddingX: 0,
       paddingY: 0,

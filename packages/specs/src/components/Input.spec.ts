@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Input Props
  */
 export interface InputProps {
-  variant?: 'default' | 'primary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'negative';
+  size?: 'S' | 'M' | 'L';
   value?: string;
   placeholder?: string;
   label?: string;
@@ -35,7 +35,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
   element: 'input',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -46,7 +46,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
       border: '{color.border}' as TokenRef,
       borderHover: '{color.border-hover}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.layer-2}' as TokenRef,
       backgroundHover: '{color.layer-1}' as TokenRef,
       backgroundPressed: '{color.layer-1}' as TokenRef,
@@ -54,7 +54,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
       border: '{color.accent}' as TokenRef,
       borderHover: '{color.accent-hover}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.layer-2}' as TokenRef,
       backgroundHover: '{color.layer-1}' as TokenRef,
       backgroundPressed: '{color.layer-1}' as TokenRef,
@@ -65,7 +65,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -73,7 +73,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 4,
     },
-    md: {
+    M: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -81,7 +81,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 6,
     },
-    lg: {
+    L: {
       height: 48,
       paddingX: 18,
       paddingY: 12,

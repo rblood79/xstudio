@@ -16,8 +16,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Toast Props
  */
 export interface ToastProps {
-  variant?: 'default' | 'primary' | 'error' | 'success';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'negative' | 'positive';
+  size?: 'S' | 'M' | 'L';
   message?: string;
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -34,7 +34,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   overlay: {
     usePortal: true,
@@ -53,21 +53,21 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.accent-subtle}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
       border: '{color.accent}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.negative-subtle}' as TokenRef,
       backgroundHover: '{color.negative-subtle}' as TokenRef,
       backgroundPressed: '{color.negative-subtle}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
       border: '{color.negative}' as TokenRef,
     },
-    success: {
+    positive: {
       background: '{color.purple-subtle}' as TokenRef,
       backgroundHover: '{color.purple-subtle}' as TokenRef,
       backgroundPressed: '{color.purple-subtle}' as TokenRef,
@@ -77,7 +77,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 40,
       paddingX: 12,
       paddingY: 8,
@@ -86,7 +86,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       iconSize: 16,
       gap: 8,
     },
-    md: {
+    M: {
       height: 48,
       paddingX: 16,
       paddingY: 12,
@@ -95,7 +95,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       iconSize: 20,
       gap: 10,
     },
-    lg: {
+    L: {
       height: 56,
       paddingX: 20,
       paddingY: 16,

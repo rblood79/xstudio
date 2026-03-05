@@ -16,7 +16,7 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  */
 export interface FormProps {
   variant?: 'default' | 'outlined';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'S' | 'M' | 'L';
   children?: string;
   title?: string;
   description?: string;
@@ -33,7 +33,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
   element: 'form',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -52,7 +52,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 12,
       paddingY: 12,
@@ -60,7 +60,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 12,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 20,
       paddingY: 20,
@@ -68,7 +68,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
       borderRadius: '{radius.lg}' as TokenRef,
       gap: 16,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 28,
       paddingY: 28,

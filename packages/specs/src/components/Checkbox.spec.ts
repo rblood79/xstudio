@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface CheckboxProps {
   variant?: "default" | "emphasized";
-  size?: "sm" | "md" | "lg";
+  size?: "S" | "M" | "L";
   children?: string;
   label?: string;
   text?: string;
@@ -58,7 +58,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
   element: "label",
 
   defaultVariant: "default",
-  defaultSize: "md",
+  defaultSize: "M",
 
   variants: {
     default: {
@@ -78,7 +78,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -86,7 +86,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 6,
     },
-    md: {
+    M: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
@@ -94,7 +94,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 28,
       paddingX: 0,
       paddingY: 0,

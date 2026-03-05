@@ -16,8 +16,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Calendar Props
  */
 export interface CalendarProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   value?: string;
   isDisabled?: boolean;
   isReadOnly?: boolean;
@@ -35,7 +35,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -45,7 +45,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.layer-2}' as TokenRef,
       backgroundPressed: '{color.layer-1}' as TokenRef,
@@ -55,7 +55,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 8,
       paddingY: 8,
@@ -64,7 +64,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       iconSize: 24,
       gap: 4,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 12,
       paddingY: 12,
@@ -73,7 +73,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       iconSize: 28,
       gap: 6,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 16,
       paddingY: 16,

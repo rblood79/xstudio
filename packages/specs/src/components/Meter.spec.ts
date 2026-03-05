@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface MeterProps {
   variant?: "informative" | "positive" | "notice" | "negative";
-  size?: "sm" | "md" | "lg";
+  size?: "S" | "M" | "L";
   label?: string;
   value?: number;
   minValue?: number;
@@ -41,9 +41,9 @@ export const METER_DIMENSIONS: Record<
   string,
   { barHeight: number; width: number }
 > = {
-  sm: { barHeight: 6, width: 200 },
-  md: { barHeight: 8, width: 240 },
-  lg: { barHeight: 12, width: 320 },
+  S: { barHeight: 6, width: 200 },
+  M: { barHeight: 8, width: 240 },
+  L: { barHeight: 12, width: 320 },
 };
 
 /**
@@ -55,7 +55,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
   element: "div",
 
   defaultVariant: "informative",
-  defaultSize: "md",
+  defaultSize: "M",
 
   variants: {
     informative: {
@@ -85,7 +85,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 6,
       paddingX: 0,
       paddingY: 0,
@@ -93,7 +93,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 6,
     },
-    md: {
+    M: {
       height: 8,
       paddingX: 0,
       paddingY: 0,
@@ -101,7 +101,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 12,
       paddingX: 0,
       paddingY: 0,
@@ -124,8 +124,8 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "informative";
-      const sizeName = props.size ?? "md";
-      const meterDims = METER_DIMENSIONS[sizeName] ?? METER_DIMENSIONS.md;
+      const sizeName = props.size ?? "M";
+      const meterDims = METER_DIMENSIONS[sizeName] ?? METER_DIMENSIONS.M;
       const fillColor =
         METER_FILL_COLORS[variantName] ?? METER_FILL_COLORS.informative;
       const width = (props.style?.width as number) || meterDims.width;

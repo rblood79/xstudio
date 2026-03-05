@@ -182,7 +182,7 @@ export const SwitchEditor = memo(
 
           <PropertySizeToggle
             label={PROPERTY_LABELS.SIZE}
-            value={String(currentProps.size || "md")}
+            value={String(currentProps.size || "M")}
             onChange={handleSizeChange}
           />
         </PropertySection>

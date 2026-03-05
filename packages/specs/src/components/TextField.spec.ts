@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * TextField Props
  */
 export interface TextFieldProps {
-  variant?: 'default' | 'primary' | 'secondary' | 'tertiary' | 'error' | 'success';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'neutral' | 'purple' | 'negative' | 'positive';
+  size?: 'S' | 'M' | 'L';
   label?: string;
   placeholder?: string;
   value?: string;
@@ -38,7 +38,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -49,7 +49,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       border: '{color.border}' as TokenRef,
       borderHover: '{color.accent}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.layer-2}' as TokenRef,
       backgroundHover: '{color.layer-1}' as TokenRef,
       backgroundPressed: '{color.layer-1}' as TokenRef,
@@ -57,7 +57,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       border: '{color.border}' as TokenRef,
       borderHover: '{color.accent}' as TokenRef,
     },
-    secondary: {
+    neutral: {
       background: '{color.layer-2}' as TokenRef,
       backgroundHover: '{color.layer-1}' as TokenRef,
       backgroundPressed: '{color.layer-1}' as TokenRef,
@@ -65,7 +65,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       border: '{color.border}' as TokenRef,
       borderHover: '{color.neutral-subtle}' as TokenRef,
     },
-    tertiary: {
+    purple: {
       background: '{color.layer-2}' as TokenRef,
       backgroundHover: '{color.layer-1}' as TokenRef,
       backgroundPressed: '{color.layer-1}' as TokenRef,
@@ -73,7 +73,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       border: '{color.border}' as TokenRef,
       borderHover: '{color.purple}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.layer-2}' as TokenRef,
       backgroundHover: '{color.negative-subtle}' as TokenRef,
       backgroundPressed: '{color.negative-subtle}' as TokenRef,
@@ -81,7 +81,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       border: '{color.negative}' as TokenRef,
       borderHover: '{color.negative-hover}' as TokenRef,
     },
-    success: {
+    positive: {
       background: '{color.layer-2}' as TokenRef,
       backgroundHover: '{color.layer-1}' as TokenRef,
       backgroundPressed: '{color.layer-1}' as TokenRef,
@@ -92,7 +92,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -100,7 +100,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 4,
     },
-    md: {
+    M: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -108,7 +108,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 6,
     },
-    lg: {
+    L: {
       height: 48,
       paddingX: 16,
       paddingY: 12,

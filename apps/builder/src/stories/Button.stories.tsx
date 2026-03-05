@@ -33,7 +33,7 @@ const meta = {
   args: {
     children: "Button",
     variant: "default",
-    size: "sm",
+    size: "S",
   },
 } satisfies Meta<typeof Button>;
 
@@ -52,24 +52,12 @@ export const Secondary: Story = {
   args: { variant: "secondary" },
 };
 
-export const Tertiary: Story = {
-  args: { variant: "tertiary" },
+export const Accent: Story = {
+  args: { variant: "accent" },
 };
 
-export const Error: Story = {
-  args: { variant: "error" },
-};
-
-export const Surface: Story = {
-  args: { variant: "surface" },
-};
-
-export const Outline: Story = {
-  args: { variant: "outline" },
-};
-
-export const Ghost: Story = {
-  args: { variant: "ghost" },
+export const Negative: Story = {
+  args: { variant: "negative" },
 };
 
 export const Disabled: Story = {

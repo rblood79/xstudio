@@ -276,7 +276,7 @@ function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
  * @example
  * ```typescript
  * const synth = computeSyntheticStyle(element);
- * // Button size="sm" → { fontSize: '14px', paddingTop: '4px', ... }
+ * // Button size="S" → { fontSize: '14px', paddingTop: '4px', ... }
  * ```
  */
 export function computeSyntheticStyle(
@@ -285,7 +285,7 @@ export function computeSyntheticStyle(
   if (!element) return {};
 
   const tag = element.type;
-  const size = (element.properties?.size as string) ?? "md";
+  const size = (element.properties?.size as string) ?? "M";
   const variant = (element.properties?.variant as string) ?? "default";
 
   // 캐시 확인

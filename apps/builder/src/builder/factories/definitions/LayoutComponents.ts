@@ -131,7 +131,7 @@ export function createCardDefinition(
       tag: "Card",
       props: {
         variant: "default",
-        size: "md",
+        size: "M",
         orientation: "vertical",
         title: "Card Title",
         description: "Card description text goes here.",

@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Breadcrumbs Props
  */
 export interface BreadcrumbsProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   separator?: string;
   style?: Record<string, string | number | undefined>;
   /** ElementSprite에서 주입: 자식 Breadcrumb 텍스트 배열 (Skia 렌더링용) */
@@ -32,7 +32,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   element: 'nav',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -42,7 +42,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       text: '{color.neutral-subdued}' as TokenRef,
       textHover: '{color.accent}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -52,7 +52,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -60,7 +60,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 4,
     },
-    md: {
+    M: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
@@ -68,7 +68,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

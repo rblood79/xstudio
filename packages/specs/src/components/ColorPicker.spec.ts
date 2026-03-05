@@ -16,7 +16,7 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  */
 export interface ColorPickerProps {
   variant?: 'default' | 'compact' | 'expanded';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'S' | 'M' | 'L';
   value?: string;
   hue?: number;
   saturation?: number;
@@ -37,7 +37,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   overlay: {
     usePortal: true,
@@ -74,7 +74,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 10,
       paddingY: 10,
@@ -82,7 +82,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 14,
       paddingY: 14,
@@ -90,7 +90,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       borderRadius: '{radius.lg}' as TokenRef,
       gap: 10,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 18,
       paddingY: 18,

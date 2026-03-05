@@ -5,22 +5,22 @@ interface PropertySizeToggleProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  /** Size options: "3" = sm/md/lg, "5" = xs/sm/md/lg/xl */
+  /** Size options: "3" = S/M/L, "5" = XS/S/M/L/XL */
   scale?: "3" | "5";
 }
 
 const SIZE_3 = [
-  { id: "sm", label: "S" },
-  { id: "md", label: "M" },
-  { id: "lg", label: "L" },
+  { id: "S", label: "S" },
+  { id: "M", label: "M" },
+  { id: "L", label: "L" },
 ];
 
 const SIZE_5 = [
-  { id: "xs", label: "XS" },
-  { id: "sm", label: "S" },
-  { id: "md", label: "M" },
-  { id: "lg", label: "L" },
-  { id: "xl", label: "XL" },
+  { id: "XS", label: "XS" },
+  { id: "S", label: "S" },
+  { id: "M", label: "M" },
+  { id: "L", label: "L" },
+  { id: "XL", label: "XL" },
 ];
 
 export const PropertySizeToggle = memo(function PropertySizeToggle({

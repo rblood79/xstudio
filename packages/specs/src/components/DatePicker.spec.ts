@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * DatePicker Props
  */
 export interface DatePickerProps {
-  variant?: 'default' | 'primary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'negative';
+  size?: 'S' | 'M' | 'L';
   value?: string;
   placeholder?: string;
   label?: string;
@@ -37,7 +37,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   overlay: {
     usePortal: true,
@@ -58,7 +58,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
       border: '{color.border-hover}' as TokenRef,
       borderHover: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -66,7 +66,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
       border: '{color.accent}' as TokenRef,
       borderHover: '{color.accent-hover}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -77,7 +77,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -86,7 +86,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
       iconSize: 14,
       gap: 6,
     },
-    md: {
+    M: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -95,7 +95,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
       iconSize: 16,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 48,
       paddingX: 18,
       paddingY: 12,

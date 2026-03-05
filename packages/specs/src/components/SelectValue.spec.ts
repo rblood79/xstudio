@@ -13,7 +13,7 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
 
 export interface SelectValueProps {
   variant?: 'default';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'S' | 'M' | 'L';
   children?: string;
   placeholder?: string;
   isPlaceholder?: boolean;
@@ -26,7 +26,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
   element: 'span',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -38,7 +38,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -46,7 +46,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 0,
     },
-    md: {
+    M: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -54,7 +54,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

@@ -14,8 +14,8 @@ import { resolveStateColors } from '../utils/stateEffect';
  * DisclosureGroup Props
  */
 export interface DisclosureGroupProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   allowsMultipleExpanded?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -29,7 +29,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -39,7 +39,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -49,7 +49,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -57,7 +57,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 0,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -65,7 +65,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 0,
       paddingY: 0,

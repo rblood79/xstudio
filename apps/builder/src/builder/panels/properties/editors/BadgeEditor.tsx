@@ -99,7 +99,7 @@ export const BadgeEditor = memo(function BadgeEditor({
 
         <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
-          value={String(currentProps.size || "sm")}
+          value={String(currentProps.size || "S")}
           onChange={(value) => updateProp("size", value)}
           scale="5"
         />

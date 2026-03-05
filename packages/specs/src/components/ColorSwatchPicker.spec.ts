@@ -13,8 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  * ColorSwatchPicker Props
  */
 export interface ColorSwatchPickerProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   value?: string;
   colors?: string[];
   columns?: number;
@@ -31,7 +31,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -41,7 +41,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -51,7 +51,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 4,
       paddingY: 4,
@@ -60,7 +60,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       iconSize: 20,
       gap: 4,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 6,
       paddingY: 6,
@@ -69,7 +69,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       iconSize: 28,
       gap: 6,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 8,
       paddingY: 8,

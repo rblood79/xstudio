@@ -86,7 +86,7 @@ export function createDatePickerDefinition(
             tag: "CalendarHeader",
             props: {
               variant: "default",
-              size: "md",
+              size: "M",
               children: monthText,
               style: {
                 display: "block",
@@ -100,7 +100,7 @@ export function createDatePickerDefinition(
             tag: "CalendarGrid",
             props: {
               variant: "default",
-              size: "md",
+              size: "M",
               defaultToday: true,
               dayOffset: firstDay,
               totalDays: calTotalDays,
@@ -251,7 +251,7 @@ export function createCalendarDefinition(
         tag: "CalendarHeader",
         props: {
           variant: "default",
-          size: "md",
+          size: "M",
           children: new Intl.DateTimeFormat(navigator.language || 'ko-KR', { year: 'numeric', month: 'long' }).format(now),
           style: {
             display: "block",
@@ -266,7 +266,7 @@ export function createCalendarDefinition(
         tag: "CalendarGrid",
         props: {
           variant: "default",
-          size: "md",
+          size: "M",
           defaultToday: true,
           dayOffset: firstDay,
           totalDays: calTotalDays,

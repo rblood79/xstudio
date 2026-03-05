@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * DateRangePicker Props
  */
 export interface DateRangePickerProps {
-  variant?: 'default' | 'primary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'negative';
+  size?: 'S' | 'M' | 'L';
   startDate?: string;
   endDate?: string;
   placeholder?: string;
@@ -38,7 +38,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   overlay: {
     usePortal: true,
@@ -59,7 +59,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
       border: '{color.border-hover}' as TokenRef,
       borderHover: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -67,7 +67,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
       border: '{color.accent}' as TokenRef,
       borderHover: '{color.accent-hover}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -78,7 +78,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -87,7 +87,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
       iconSize: 14,
       gap: 6,
     },
-    md: {
+    M: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -96,7 +96,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
       iconSize: 16,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 48,
       paddingX: 18,
       paddingY: 12,

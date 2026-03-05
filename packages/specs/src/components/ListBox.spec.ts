@@ -16,8 +16,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * ListBox Props
  */
 export interface ListBoxProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   label?: string;
   isDisabled?: boolean;
   selectionMode?: 'single' | 'multiple';
@@ -40,7 +40,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -50,7 +50,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -60,7 +60,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 8,
       paddingY: 4,
@@ -68,7 +68,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 2,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 12,
       paddingY: 8,
@@ -76,7 +76,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 4,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 16,
       paddingY: 12,

@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * CalendarGrid Props
  */
 export interface CalendarGridProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
   defaultToday?: boolean;
   /** 1일의 요일 오프셋 (0=Sun, 1=Mon, ..., 6=Sat) */
   dayOffset?: number;
@@ -29,67 +29,70 @@ export interface CalendarGridProps {
 }
 
 /** 사이즈별 치수 (Calendar와 동기화) */
-const CALENDAR_GRID_DIMS: Record<string, {
-  fontSize: number;
-  iconSize: number;
-  gap: number;
-}> = {
-  sm: { fontSize: 12, iconSize: 24, gap: 4 },
-  md: { fontSize: 14, iconSize: 28, gap: 6 },
-  lg: { fontSize: 16, iconSize: 32, gap: 8 },
+const CALENDAR_GRID_DIMS: Record<
+  string,
+  {
+    fontSize: number;
+    iconSize: number;
+    gap: number;
+  }
+> = {
+  S: { fontSize: 12, iconSize: 24, gap: 4 },
+  M: { fontSize: 14, iconSize: 28, gap: 6 },
+  L: { fontSize: 16, iconSize: 32, gap: 8 },
 };
 
 /**
  * CalendarGrid Component Spec
  */
 export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
-  name: 'CalendarGrid',
-  description: 'Calendar 요일 헤더 + 날짜 셀 그리드',
-  element: 'table',
+  name: "CalendarGrid",
+  description: "Calendar 요일 헤더 + 날짜 셀 그리드",
+  element: "table",
 
-  defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
-    primary: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+    accent: {
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 4,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 6,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
     },
   },
@@ -99,22 +102,24 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {},
   },
 
   render: {
     shapes: (props, variant, size) => {
-      const sizeName = props.size ?? 'md';
-      const dims = CALENDAR_GRID_DIMS[sizeName] ?? CALENDAR_GRID_DIMS.md;
+      const sizeName = props.size ?? "M";
+      const dims = CALENDAR_GRID_DIMS[sizeName] ?? CALENDAR_GRID_DIMS.M;
       const rawFontSize = size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : dims.fontSize;
+            : rawFontSize;
+      const fontSize =
+        typeof resolvedFs === "number" ? resolvedFs : dims.fontSize;
       const cellSize = dims.iconSize + 4;
       const gap = dims.gap;
       const ff = fontFamily.sans;
@@ -125,28 +130,32 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
 
       // props에서 현재 월 데이터 수신, 없으면 현재 월로 fallback
       const now = new Date();
-      const dayOffset = props.dayOffset ?? new Date(now.getFullYear(), now.getMonth(), 1).getDay();
-      const totalDays = props.totalDays ?? new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const dayOffset =
+        props.dayOffset ??
+        new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+      const totalDays =
+        props.totalDays ??
+        new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
       const showToday = props.defaultToday !== false;
       const today = showToday ? (props.todayDate ?? now.getDate()) : -1;
 
       const shapes: Shape[] = [];
 
       // 요일 헤더 (Su ~ Sa)
-      const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+      const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
       for (let col = 0; col < 7; col++) {
         const cellLeft = col * (cellSize + gap);
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: cellLeft,
           y: weekdayY,
           text: weekdays[col],
           fontSize: fontSize - 2,
           fontFamily: ff,
           fontWeight: 500,
-          fill: '{color.neutral-subdued}' as TokenRef,
-          align: 'center' as const,
-          baseline: 'middle' as const,
+          fill: "{color.neutral-subdued}" as TokenRef,
+          align: "center" as const,
+          baseline: "middle" as const,
           maxWidth: cellSize,
         });
       }
@@ -163,25 +172,26 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
         // today 강조 배경
         if (day === today) {
           shapes.push({
-            type: 'circle' as const,
+            type: "circle" as const,
             x: cx,
             y: cy,
             radius: cellSize / 2,
-            fill: '{color.accent}' as TokenRef,
+            fill: "{color.accent}" as TokenRef,
           });
         }
 
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: cellLeft,
           y: cy,
           text: String(day),
           fontSize,
           fontFamily: ff,
           fontWeight: day === today ? 600 : 400,
-          fill: day === today ? ('{color.on-accent}' as TokenRef) : variant.text,
-          align: 'center' as const,
-          baseline: 'middle' as const,
+          fill:
+            day === today ? ("{color.on-accent}" as TokenRef) : variant.text,
+          align: "center" as const,
+          baseline: "middle" as const,
           maxWidth: cellSize,
         });
       }
@@ -190,12 +200,12 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
     },
 
     react: (_props) => ({
-      role: 'grid',
+      role: "grid",
     }),
 
     pixi: (props) => ({
-      eventMode: props.isDisabled ? ('none' as const) : ('static' as const),
-      cursor: 'default',
+      eventMode: props.isDisabled ? ("none" as const) : ("static" as const),
+      cursor: "default",
     }),
   },
 };

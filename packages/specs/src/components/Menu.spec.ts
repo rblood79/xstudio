@@ -16,8 +16,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Menu Props
  */
 export interface MenuProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   style?: Record<string, string | number | undefined>;
 }
 
@@ -32,7 +32,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   overlay: {
     usePortal: true,
@@ -52,7 +52,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -62,7 +62,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 8,
       paddingY: 4,
@@ -70,7 +70,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 2,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 12,
       paddingY: 6,
@@ -78,7 +78,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 4,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 16,
       paddingY: 8,

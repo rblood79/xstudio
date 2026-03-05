@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface SwitchProps {
   variant?: "default" | "emphasized";
-  size?: "sm" | "md" | "lg";
+  size?: "S" | "M" | "L";
   children?: string;
   label?: string;
   isSelected?: boolean;
@@ -40,9 +40,9 @@ export const SWITCH_DIMENSIONS: Record<
     thumbOffset: number;
   }
 > = {
-  sm: { trackWidth: 36, trackHeight: 20, thumbSize: 14, thumbOffset: 3 },
-  md: { trackWidth: 44, trackHeight: 24, thumbSize: 18, thumbOffset: 3 },
-  lg: { trackWidth: 52, trackHeight: 28, thumbSize: 22, thumbOffset: 3 },
+  S: { trackWidth: 36, trackHeight: 20, thumbSize: 14, thumbOffset: 3 },
+  M: { trackWidth: 44, trackHeight: 24, thumbSize: 18, thumbOffset: 3 },
+  L: { trackWidth: 52, trackHeight: 28, thumbSize: 22, thumbOffset: 3 },
 };
 
 /**
@@ -54,7 +54,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
   element: "label",
 
   defaultVariant: "default",
-  defaultSize: "md",
+  defaultSize: "M",
 
   variants: {
     default: {
@@ -74,7 +74,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -82,7 +82,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 8,
     },
-    md: {
+    M: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
@@ -90,7 +90,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 10,
     },
-    lg: {
+    L: {
       height: 28,
       paddingX: 0,
       paddingY: 0,
@@ -117,8 +117,8 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";
-      const sizeName = props.size ?? "md";
-      const switchSize = SWITCH_DIMENSIONS[sizeName] ?? SWITCH_DIMENSIONS.md;
+      const sizeName = props.size ?? "M";
+      const switchSize = SWITCH_DIMENSIONS[sizeName] ?? SWITCH_DIMENSIONS.M;
       const gap = size.gap ?? 10;
 
       const isChecked = props.isSelected;

@@ -13,8 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  * ColorArea Props
  */
 export interface ColorAreaProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   hue?: number;
   xValue?: number;
   yValue?: number;
@@ -31,7 +31,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -41,7 +41,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -51,7 +51,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 120,
       paddingX: 0,
       paddingY: 0,
@@ -60,7 +60,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       iconSize: 14,
       gap: 0,
     },
-    md: {
+    M: {
       height: 180,
       paddingX: 0,
       paddingY: 0,
@@ -69,7 +69,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       iconSize: 18,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 240,
       paddingX: 0,
       paddingY: 0,

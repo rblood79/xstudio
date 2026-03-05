@@ -20,7 +20,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  * - isQuiet: 배경/테두리 없음
  */
 export interface ToggleButtonProps {
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  size?: "XS" | "S" | "M" | "L" | "XL";
   children?: string;
   text?: string;
   label?: string;
@@ -61,7 +61,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
   element: "button",
 
   defaultVariant: "default",
-  defaultSize: "md",
+  defaultSize: "M",
 
   variants: {
     /** S2 기본 스타일: neutral-200 배경, 투명 테두리 */
@@ -75,7 +75,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
   },
 
   sizes: {
-    xs: {
+    XS: {
       height: 20,
       paddingX: 8,
       paddingY: 4,
@@ -83,7 +83,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 4,
     },
-    sm: {
+    S: {
       height: 22,
       paddingX: 12,
       paddingY: 4,
@@ -91,7 +91,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 6,
     },
-    md: {
+    M: {
       height: 32,
       paddingX: 16,
       paddingY: 8,
@@ -99,7 +99,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 42,
       paddingX: 24,
       paddingY: 12,
@@ -107,7 +107,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 10,
     },
-    xl: {
+    XL: {
       height: 52,
       paddingX: 32,
       paddingY: 16,

@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Select Props
  */
 export interface SelectProps {
-  variant?: 'default' | 'primary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'negative';
+  size?: 'S' | 'M' | 'L';
   label?: string;
   placeholder?: string;
   value?: string;
@@ -46,7 +46,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -57,7 +57,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       border: '{color.border-hover}' as TokenRef,
       borderHover: '{color.accent}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.layer-2}' as TokenRef,
       backgroundPressed: '{color.layer-2}' as TokenRef,
@@ -65,7 +65,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       border: '{color.border-hover}' as TokenRef,
       borderHover: '{color.accent}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.negative-subtle}' as TokenRef,
       backgroundPressed: '{color.negative-subtle}' as TokenRef,
@@ -76,7 +76,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -85,7 +85,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       iconSize: 14,
       gap: 4,
     },
-    md: {
+    M: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -94,7 +94,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       iconSize: 18,
       gap: 6,
     },
-    lg: {
+    L: {
       height: 48,
       paddingX: 16,
       paddingY: 12,

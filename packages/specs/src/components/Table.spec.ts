@@ -35,7 +35,7 @@ export interface TableRow {
  */
 export interface TableProps {
   variant?: 'default' | 'striped' | 'bordered';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'S' | 'M' | 'L';
   columns?: TableColumn[];
   rows?: TableRow[];
   selectionMode?: 'none' | 'single' | 'multiple';
@@ -51,7 +51,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -78,7 +78,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 36,
       paddingX: 8,
       paddingY: 4,
@@ -86,7 +86,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 0,
     },
-    md: {
+    M: {
       height: 44,
       paddingX: 12,
       paddingY: 8,
@@ -94,7 +94,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 52,
       paddingX: 16,
       paddingY: 12,

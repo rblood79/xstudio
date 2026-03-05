@@ -13,8 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  * Separator Props
  */
 export interface SeparatorProps {
-  variant?: 'default' | 'solid' | 'dashed' | 'dotted' | 'primary' | 'secondary' | 'surface';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'solid' | 'dashed' | 'dotted' | 'accent' | 'neutral' | 'surface';
+  size?: 'S' | 'M' | 'L';
   orientation?: 'horizontal' | 'vertical';
 }
 
@@ -32,7 +32,7 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
   element: 'hr',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -67,7 +67,7 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
       text: '{color.border}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -75,7 +75,7 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
       text: '{color.accent}' as TokenRef,
       border: '{color.accent}' as TokenRef,
     },
-    secondary: {
+    neutral: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -94,21 +94,21 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 1,
       paddingX: 0,
       paddingY: 4,
       fontSize: '{typography.text-xs}' as TokenRef,
       borderRadius: '{radius.none}' as TokenRef,
     },
-    md: {
+    M: {
       height: 1,
       paddingX: 0,
       paddingY: 8,
       fontSize: '{typography.text-xs}' as TokenRef,
       borderRadius: '{radius.none}' as TokenRef,
     },
-    lg: {
+    L: {
       height: 2,
       paddingX: 0,
       paddingY: 16,

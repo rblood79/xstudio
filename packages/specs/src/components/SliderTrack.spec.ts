@@ -8,85 +8,86 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { SLIDER_FILL_COLORS } from './Slider.spec';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { SLIDER_FILL_COLORS } from "./Slider.spec";
 
 /**
  * SliderTrack Props
  */
 export interface SliderTrackProps {
-  variant?: 'default' | 'primary' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "default" | "accent" | "neutral";
+  size?: "S" | "M" | "L";
   value?: number;
   minValue?: number;
   maxValue?: number;
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: "horizontal" | "vertical";
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
 /** 사이즈별 트랙 치수 */
-export const SLIDER_TRACK_DIMENSIONS: Record<string, { trackHeight: number }> = {
-  sm: { trackHeight: 4 },
-  md: { trackHeight: 4 },
-  lg: { trackHeight: 6 },
-};
+export const SLIDER_TRACK_DIMENSIONS: Record<string, { trackHeight: number }> =
+  {
+    S: { trackHeight: 4 },
+    M: { trackHeight: 4 },
+    L: { trackHeight: 6 },
+  };
 
 /**
  * SliderTrack Component Spec
  */
 export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
-  name: 'SliderTrack',
-  description: '슬라이더 트랙 배경 + 채우기 바 렌더링',
-  element: 'div',
+  name: "SliderTrack",
+  description: "슬라이더 트랙 배경 + 채우기 바 렌더링",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
-    primary: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+    accent: {
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
-    secondary: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+    neutral: {
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 4,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.full}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
       gap: 0,
     },
-    md: {
+    M: {
       height: 4,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.full}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 6,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.full}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
       gap: 0,
     },
   },
@@ -96,18 +97,20 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      cursor: 'not-allowed',
-      pointerEvents: 'none',
+      cursor: "not-allowed",
+      pointerEvents: "none",
     },
     focusVisible: {},
   },
 
   render: {
     shapes: (props, variant, _size) => {
-      const sizeName = props.size ?? 'md';
-      const trackDims = SLIDER_TRACK_DIMENSIONS[sizeName] ?? SLIDER_TRACK_DIMENSIONS.md;
-      const variantName = props.variant ?? 'default';
-      const fillColors = SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
+      const sizeName = props.size ?? "M";
+      const trackDims =
+        SLIDER_TRACK_DIMENSIONS[sizeName] ?? SLIDER_TRACK_DIMENSIONS.M;
+      const variantName = props.variant ?? "default";
+      const fillColors =
+        SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
 
       const width = (props.style?.width as number) || 200;
       const trackHeight = trackDims.trackHeight;
@@ -116,7 +119,10 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       const min = props.minValue ?? 0;
       const max = props.maxValue ?? 100;
       const value = props.value ?? 50;
-      const percent = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+      const percent = Math.max(
+        0,
+        Math.min(100, ((value - min) / (max - min)) * 100),
+      );
       const fillWidth = (width * percent) / 100;
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
@@ -124,8 +130,8 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       const shapes: Shape[] = [
         // 트랙 배경
         {
-          id: 'track',
-          type: 'roundRect' as const,
+          id: "track",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width,
@@ -138,8 +144,8 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       // 채우기 (값 비율만큼)
       if (fillWidth > 0) {
         shapes.push({
-          id: 'fill',
-          type: 'roundRect' as const,
+          id: "fill",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width: fillWidth,
@@ -153,13 +159,13 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
     },
 
     react: (props) => ({
-      'data-disabled': props.isDisabled || undefined,
-      'data-orientation': props.orientation ?? 'horizontal',
+      "data-disabled": props.isDisabled || undefined,
+      "data-orientation": props.orientation ?? "horizontal",
     }),
 
     pixi: (props) => ({
-      eventMode: props.isDisabled ? ('none' as const) : ('static' as const),
-      cursor: props.isDisabled ? 'not-allowed' : 'pointer',
+      eventMode: props.isDisabled ? ("none" as const) : ("static" as const),
+      cursor: props.isDisabled ? "not-allowed" : "pointer",
     }),
   },
 };

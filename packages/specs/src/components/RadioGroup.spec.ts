@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * RadioGroup Props
  */
 export interface RadioGroupProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   label?: string;
   description?: string;
   orientation?: 'vertical' | 'horizontal';
@@ -36,7 +36,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -45,7 +45,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
       backgroundPressed: '{color.base}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -54,7 +54,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -62,7 +62,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 8,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -70,7 +70,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 12,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 0,
       paddingY: 0,

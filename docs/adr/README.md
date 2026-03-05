@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-05 (ADR-023 Accepted — Phase 1+2+3 완료, S2 variant 전환 + Badge 19 variants)
+> **최종 업데이트**: 2026-03-06 (ADR-027 Proposed — Canvas Inline Text Editing)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 11     |
 | 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 8      |
-| **합계**                               | **26** |
+| 미구현 (Proposed/계획)                 | 9      |
+| **합계**                               | **27** |
 
 ---
 
@@ -45,16 +45,17 @@
 
 ### 미구현
 
-| ADR                                      | 제목                                             | 상태     | 규모                                                                    | 우선순위 |
-| ---------------------------------------- | ------------------------------------------------ | -------- | ----------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                      | Proposed | 5 Phase, 21파일                                                         |  **P2**  |
-| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                | Proposed | 변경 대상 8파일, 코드 미생성                                            |    P5    |
-| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)               | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                  |    P5    |
-| [019](019-icon-system.md)                | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가 | Proposed | 5 Phase, Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링    |  **P2**  |
-| [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선                     | Proposed | 3 Phase, 13파일 — History 통합, Kit v2 스키마, Factory 연동             |    P4    |
-| [024](024-s2-css-variable-migration.md)  | CSS 변수명 S2 체계 전환                          | Proposed | 4 Phase, alias 점진 전환 → 60+ CSS 파일 변경                            |    P3    |
-| [025](025-s2-named-color-palette.md)     | S2 Named Color Palette 확장                      | Proposed | 4 Phase, 12색×2 = 24 토큰 추가 — Badge 부분은 ADR-023 Ph3에서 구현 완료 |    P3    |
-| [026](026-responsive-constraint-ui.md)   | Responsive Constraint UI (Size Mode → CSS 매핑)  | Proposed | 4 Phase, Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio + 정렬   |  **P2**  |
+| ADR                                      | 제목                                              | 상태     | 규모                                                                    | 우선순위 |
+| ---------------------------------------- | ------------------------------------------------- | -------- | ----------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                       | Proposed | 5 Phase, 21파일                                                         |  **P2**  |
+| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                 | Proposed | 변경 대상 8파일, 코드 미생성                                            |    P5    |
+| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)                | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                  |    P5    |
+| [019](019-icon-system.md)                | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가  | Proposed | 5 Phase, Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링    |  **P2**  |
+| [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선                      | Proposed | 3 Phase, 13파일 — History 통합, Kit v2 스키마, Factory 연동             |    P4    |
+| [024](024-s2-css-variable-migration.md)  | CSS 변수명 S2 체계 전환                           | Proposed | 4 Phase, alias 점진 전환 → 60+ CSS 파일 변경                            |    P3    |
+| [025](025-s2-named-color-palette.md)     | S2 Named Color Palette 확장                       | Proposed | 4 Phase, 12색×2 = 24 토큰 추가 — Badge 부분은 ADR-023 Ph3에서 구현 완료 |    P3    |
+| [026](026-responsive-constraint-ui.md)   | Responsive Constraint UI (Size Mode → CSS 매핑)   | Proposed | 4 Phase, Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio + 정렬   |  **P2**  |
+| [027](027-inline-text-editing.md)        | Canvas Inline Text Editing (WebGL 위 텍스트 편집) | Proposed | 4 Phase (A~D), DOM Overlay + contenteditable, Pencil/Figma 패턴         |  **P2**  |
 
 ---
 
@@ -73,7 +74,8 @@
 |   9   | ADR-026             | Responsive Constraint UI — Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio  |  대  |          |
 |  10   | ADR-013             | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)  |  대  |          |
 |  11   | ADR-019             | 아이콘 시스템 — Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링       |  중  |          |
-|  12   | ADR-018 Phase 2~5   | 컴포넌트 CSS 구조 재작성 — 나머지 컴포넌트 utilities 패턴 전환                    |  대  |          |
+|  12   | ADR-027             | Canvas Inline Text Editing — 더블클릭 인라인 텍스트 편집 (DOM Overlay 방식)       |  중  |          |
+|  13   | ADR-018 Phase 2~5   | 컴포넌트 CSS 구조 재작성 — 나머지 컴포넌트 utilities 패턴 전환                    |  대  |          |
 
 ---
 
@@ -89,11 +91,12 @@
 
 - Phase 1+2+3 전체 완료: 타입/컴포넌트/Spec/Factory/렌더러/에디터 S2 전환, Button premium/genai, ToggleButton S2, Badge 19 variants
 
-### P2: ADR-026 → ADR-013 → ADR-019
+### P2: ADR-026 → ADR-013 → ADR-019 → ADR-027
 
 - **ADR-026**: Responsive Constraint UI — 레이아웃 모드(Fixed/Fill/Fit) UX 핵심, 노코드 빌더 경쟁력 직결
 - **ADR-013**: Collection 컴포넌트 데이터 바인딩 1클릭 자동화 — 초보자 학습 곡선 완화
 - **ADR-019**: Icon 독립 컴포넌트 + IconPicker UI — 디자인 완성도
+- **ADR-027**: Canvas Inline Text Editing — 캔버스 직접 텍스트 편집, 노코드 빌더 핵심 UX (Pencil/Figma 검증 패턴)
 
 ### P3: ADR-018 + ADR-024 + ADR-025 CSS 체계
 
@@ -217,3 +220,4 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-05 | **ADR-023 Partial** — Phase 1 완료: componentVariants.types.ts S2 전환, 30+ 컴포넌트 TSX variant/isEmphasized 변경, 렌더러 S2 props 반영, 5개 에디터(Button/Badge/Card/Meter/Link) S2 옵션 전환. Proposed→Partial 이동. 로드맵/우선순위 재정리 (P2: ADR-023 Ph2→ADR-026→ADR-013→ADR-019, P3: ADR-018+024+025)                                                                                                                                                                                |
 | 2026-03-05 | **ADR-023 Accepted** — Phase 2 완료: ToggleButton.spec.ts isEmphasized, Label.spec.ts 주석 S2 정리, NavigationComponents.ts Factory Pagination 버튼 S2 전환(variant: outline→secondary+fillStyle, default→accent). Partial→Accepted(완료) 이동. P2 우선순위 ADR-026→ADR-013→ADR-019으로 갱신                                                                                                                                                                                                 |
 | 2026-03-05 | **ADR-023 Phase 3 완료** — Button premium/genai variant 추가, ToggleButton S2 전환(variant 제거→isEmphasized/isQuiet boolean), ToggleButtonGroup default size S→M, Badge S2 named color 13종 추가(총 19 variants), Badge size padding S2 spacing 토큰 동기화, tokenResolver 13색 매핑, cssVariableReader S2 fallback 전환. ADR-025 Badge 부분 supersede 반영                                                                                                                                 |
+| 2026-03-06 | **ADR-027 Proposed** — Canvas Inline Text Editing (WebGL 위 텍스트 직접 편집). Pencil 앱 분석 기반, DOM Overlay + contenteditable 방식 채택. 4 Phase (A: MVP Text/Heading, B: 줌/팬/멀티페이지, C: Spec 컴포넌트 내부 텍스트, D: 리치 텍스트). P2 우선순위. 현황 카운트 갱신 (미구현 9, 합계 27)                                                                                                                                                                                             |

@@ -242,7 +242,7 @@ export const ButtonEditor = memo(function ButtonEditor({
 
         <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
-          value={String(currentProps.size || "md")}
+          value={String(currentProps.size || "M")}
           onChange={handleSizeChange}
           scale="5"
         />

@@ -15,8 +15,8 @@ import { resolveStateColors } from '../utils/stateEffect';
  * Tooltip Props
  */
 export interface TooltipProps {
-  variant?: 'primary' | 'surface';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'accent' | 'surface';
+  size?: 'S' | 'M' | 'L';
   children?: string;
   text?: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
@@ -43,7 +43,7 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   element: 'div',
 
   defaultVariant: 'surface',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   overlay: {
     usePortal: true,
@@ -55,7 +55,7 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   },
 
   variants: {
-    primary: {
+    accent: {
       background: '{color.accent}' as TokenRef,
       backgroundHover: '{color.accent}' as TokenRef,
       backgroundPressed: '{color.accent}' as TokenRef,
@@ -70,21 +70,21 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 8,
       paddingY: 4,
       fontSize: '{typography.text-xs}' as TokenRef,
       borderRadius: '{radius.sm}' as TokenRef,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 10,
       paddingY: 6,
       fontSize: '{typography.text-xs}' as TokenRef,
       borderRadius: '{radius.sm}' as TokenRef,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 12,
       paddingY: 8,

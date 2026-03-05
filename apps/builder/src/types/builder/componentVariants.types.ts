@@ -17,13 +17,13 @@
  * Full size scale for components
  * Used by: Button, and potentially other interactive components
  */
-export type ComponentSize = "xs" | "sm" | "md" | "lg" | "xl";
+export type ComponentSize = "XS" | "S" | "M" | "L" | "XL";
 
 /**
  * Subset of sizes (3 options)
  * Used by: Separator, and components with limited size variations
  */
-export type ComponentSizeSubset = "sm" | "md" | "lg";
+export type ComponentSizeSubset = "S" | "M" | "L";
 
 /**
  * Density-based sizing for layouts
@@ -98,6 +98,11 @@ export type BadgeFillStyle = "bold" | "subtle" | "outline";
 
 export type LinkVariant = "primary" | "secondary";
 
+/**
+ * Card visual variants (S2 aligned)
+ */
+export type S2CardVariant = "primary" | "secondary" | "tertiary" | "quiet";
+
 // ============================================================================
 // Meter (S2: variant)
 // ============================================================================
@@ -129,7 +134,7 @@ export type TableColumnVariant = "default" | "primary" | "secondary";
 // Card (structural only, S2 has no color variant)
 // ============================================================================
 
-export type CardVariant = "default" | "outlined" | "elevated";
+export type CardVariant = "primary" | "secondary" | "tertiary" | "quiet";
 
 // ============================================================================
 // Tabs density (S2: density instead of variant)
@@ -142,11 +147,11 @@ export type TabsDensity = "compact" | "regular";
 // ============================================================================
 
 export type ConvertLegacySize<T extends LegacySize> = T extends "small"
-  ? "sm"
+  ? "S"
   : T extends "medium"
-    ? "md"
+    ? "M"
     : T extends "large"
-      ? "lg"
+      ? "L"
       : never;
 
 export interface VariantSizeProps<V = string, S = ComponentSize> {
@@ -160,7 +165,7 @@ export interface VariantSizeProps<V = string, S = ComponentSize> {
 
 export function isComponentSize(value: unknown): value is ComponentSize {
   return (
-    typeof value === "string" && ["xs", "sm", "md", "lg", "xl"].includes(value)
+    typeof value === "string" && ["XS", "S", "M", "L", "XL"].includes(value)
   );
 }
 
@@ -173,12 +178,12 @@ export function isLegacySize(value: unknown): value is LegacySize {
 export function convertLegacySize(size: LegacySize): ComponentSizeSubset {
   switch (size) {
     case "small":
-      return "sm";
+      return "S";
     case "medium":
-      return "md";
+      return "M";
     case "large":
-      return "lg";
+      return "L";
     default:
-      return "md";
+      return "M";
   }
 }

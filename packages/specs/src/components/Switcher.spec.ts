@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Switcher Props
  */
 export interface SwitcherProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   items?: Array<string | { label: string; value?: string }>;
   activeIndex?: number;
   isDisabled?: boolean;
@@ -32,7 +32,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -42,7 +42,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
       text: '{color.neutral-subdued}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.layer-2}' as TokenRef,
       backgroundHover: '{color.layer-1}' as TokenRef,
       backgroundPressed: '{color.neutral-subtle}' as TokenRef,
@@ -52,7 +52,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 32,
       paddingX: 4,
       paddingY: 4,
@@ -60,7 +60,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 2,
     },
-    md: {
+    M: {
       height: 40,
       paddingX: 4,
       paddingY: 4,
@@ -68,7 +68,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
       borderRadius: '{radius.lg}' as TokenRef,
       gap: 2,
     },
-    lg: {
+    L: {
       height: 48,
       paddingX: 6,
       paddingY: 6,

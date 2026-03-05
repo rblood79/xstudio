@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * DropZone Props
  */
 export interface DropZoneProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   label?: string;
   isDropTarget?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -31,7 +31,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -41,7 +41,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       text: '{color.neutral-subdued}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -51,7 +51,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 80,
       paddingX: 16,
       paddingY: 16,
@@ -60,7 +60,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       iconSize: 24,
       gap: 8,
     },
-    md: {
+    M: {
       height: 120,
       paddingX: 24,
       paddingY: 24,
@@ -69,7 +69,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       iconSize: 32,
       gap: 12,
     },
-    lg: {
+    L: {
       height: 160,
       paddingX: 32,
       paddingY: 32,

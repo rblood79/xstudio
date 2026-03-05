@@ -13,8 +13,9 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
  * Card Props
  */
 export interface CardProps {
-  variant?: "default" | "elevated" | "outlined";
-  size?: "sm" | "md" | "lg";
+  variant?: "primary" | "secondary" | "tertiary" | "quiet";
+  size?: "XS" | "S" | "M" | "L" | "XL";
+  density?: "compact" | "regular" | "spacious";
   orientation?: "vertical" | "horizontal";
   isSelectable?: boolean;
   isSelected?: boolean;
@@ -34,37 +35,51 @@ export const CardSpec: ComponentSpec<CardProps> = {
   description: "React Aria 기반 카드 컴포넌트",
   element: "div",
 
-  defaultVariant: "default",
-  defaultSize: "md",
+  defaultVariant: "primary",
+  defaultSize: "M",
 
   variants: {
-    // default: 기본 카드 (배경 있음, 테두리 없음)
-    default: {
+    // primary: 기본 카드 (배경 있음)
+    primary: {
       background: "{color.layer-2}" as TokenRef,
       backgroundHover: "{color.layer-1}" as TokenRef,
       backgroundPressed: "{color.neutral-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
-    // outlined: 테두리 있는 카드
-    outlined: {
+    // secondary: 테두리 있는 카드
+    secondary: {
       background: "{color.layer-2}" as TokenRef,
       backgroundHover: "{color.layer-1}" as TokenRef,
       backgroundPressed: "{color.neutral-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
-    // elevated: 흰색 배경 + 그림자로 높이감 표현, border 없음
-    elevated: {
+    // tertiary: 흰색 배경 + 그림자로 높이감 표현
+    tertiary: {
       background: "{color.elevated}" as TokenRef,
       backgroundHover: "{color.layer-2}" as TokenRef,
       backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      // elevated는 border 없이 shadow만 사용 (render.shapes에서 처리)
+    },
+    // quiet: 투명 배경
+    quiet: {
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
   },
 
   sizes: {
-    sm: {
+    XS: {
+      height: 0,
+      paddingX: 4,
+      paddingY: 4,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
+      gap: 4,
+    },
+    S: {
       height: 0,
       paddingX: 8,
       paddingY: 8,
@@ -72,7 +87,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
       borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 16,
       paddingY: 16,
@@ -80,13 +95,21 @@ export const CardSpec: ComponentSpec<CardProps> = {
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 12,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 24,
       paddingY: 24,
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.xl}" as TokenRef,
       gap: 16,
+    },
+    XL: {
+      height: 0,
+      paddingX: 32,
+      paddingY: 32,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
+      gap: 20,
     },
   },
 
@@ -126,8 +149,8 @@ export const CardSpec: ComponentSpec<CardProps> = {
 
       const shapes: Shape[] = [];
 
-      // elevated variant: shadow
-      if (props.variant === "elevated") {
+      // tertiary variant: shadow
+      if (props.variant === "tertiary") {
         shapes.push({
           type: "shadow" as const,
           target: "bg",
@@ -155,7 +178,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
       // 테두리
       const borderColor = props.style?.borderColor ?? variant.border;
       const styleBw = props.style?.borderWidth;
-      const defaultBw = props.variant === "outlined" ? 2 : 1;
+      const defaultBw = props.variant === "secondary" ? 2 : 1;
       const borderWidth =
         styleBw != null
           ? typeof styleBw === "number"

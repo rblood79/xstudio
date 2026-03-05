@@ -159,20 +159,16 @@ export const SliderEditor = memo(function SliderEditor({
           value={String(currentProps.variant || "default")}
           onChange={(value) => updateProp("variant", value)}
           options={[
-            { value: "default", label: PROPERTY_LABELS.SLIDER_VARIANT_DEFAULT },
-            { value: "primary", label: PROPERTY_LABELS.SLIDER_VARIANT_PRIMARY },
-            {
-              value: "secondary",
-              label: PROPERTY_LABELS.SLIDER_VARIANT_SECONDARY,
-            },
-            { value: "surface", label: PROPERTY_LABELS.SLIDER_VARIANT_SURFACE },
+            { value: "default", label: "Default" },
+            { value: "accent", label: "Accent" },
+            { value: "neutral", label: "Neutral" },
           ]}
           icon={Layout}
         />
 
         <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
-          value={String(currentProps.size || "md")}
+          value={String(currentProps.size || "M")}
           onChange={(value) => updateProp("size", value)}
         />
 

@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Pagination Props
  */
 export interface PaginationProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   totalPages?: number;
   currentPage?: number;
   style?: Record<string, string | number | undefined>;
@@ -31,7 +31,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
   element: 'nav',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -41,7 +41,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.accent}' as TokenRef,
       backgroundHover: '{color.accent-hover}' as TokenRef,
       backgroundPressed: '{color.accent-pressed}' as TokenRef,
@@ -51,7 +51,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 28,
       paddingX: 6,
       paddingY: 4,
@@ -59,7 +59,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 4,
     },
-    md: {
+    M: {
       height: 36,
       paddingX: 10,
       paddingY: 6,
@@ -67,7 +67,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 6,
     },
-    lg: {
+    L: {
       height: 44,
       paddingX: 14,
       paddingY: 8,

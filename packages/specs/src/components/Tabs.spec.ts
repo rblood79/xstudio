@@ -21,7 +21,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 export interface TabsProps {
   variant?: "default";
   density?: "compact" | "regular";
-  size?: "sm" | "md" | "lg";
+  size?: "S" | "M" | "L";
   orientation?: "horizontal" | "vertical";
   selectedKey?: string;
   /** 컨테이너 시스템에서 주입하는 실제 Tab 레이블 */
@@ -38,7 +38,7 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "md",
+  defaultSize: "M",
 
   variants: {
     // S2에서 Tabs는 단일 스타일 (accent 기반 indicator)
@@ -55,7 +55,7 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
   // CSS Preview 기준 측정값: Tab padding(Y) + fontSize*lineHeight(1.5) + border(1)
   // sm: 3*2 + 12*1.5 + 1 = 25, md: 4*2 + 14*1.5 + 1 = 30, lg: 5*2 + 16*1.5 + 1 = 35
   sizes: {
-    sm: {
+    S: {
       height: 25,
       paddingX: 12,
       paddingY: 3,
@@ -63,7 +63,7 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
-    md: {
+    M: {
       height: 30,
       paddingX: 16,
       paddingY: 4,
@@ -71,7 +71,7 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 35,
       paddingX: 20,
       paddingY: 5,

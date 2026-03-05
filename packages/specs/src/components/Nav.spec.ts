@@ -13,8 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  * Nav Props
  */
 export interface NavProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   'aria-label'?: string;
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -29,7 +29,7 @@ export const NavSpec: ComponentSpec<NavProps> = {
   element: 'nav',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -38,7 +38,7 @@ export const NavSpec: ComponentSpec<NavProps> = {
       backgroundPressed: '{color.base}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.accent-subtle}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -47,7 +47,7 @@ export const NavSpec: ComponentSpec<NavProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 48,
       paddingX: 12,
       paddingY: 8,
@@ -55,7 +55,7 @@ export const NavSpec: ComponentSpec<NavProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    md: {
+    M: {
       height: 56,
       paddingX: 16,
       paddingY: 12,
@@ -63,7 +63,7 @@ export const NavSpec: ComponentSpec<NavProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 12,
     },
-    lg: {
+    L: {
       height: 64,
       paddingX: 20,
       paddingY: 16,

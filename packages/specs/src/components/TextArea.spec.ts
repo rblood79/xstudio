@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * TextArea Props
  */
 export interface TextAreaProps {
-  variant?: 'default' | 'primary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'negative';
+  size?: 'S' | 'M' | 'L';
   label?: string;
   placeholder?: string;
   value?: string;
@@ -39,7 +39,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -50,7 +50,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       border: '{color.border-hover}' as TokenRef,
       borderHover: '{color.accent}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.layer-2}' as TokenRef,
       backgroundPressed: '{color.layer-2}' as TokenRef,
@@ -58,7 +58,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       border: '{color.border-hover}' as TokenRef,
       borderHover: '{color.accent}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.negative-subtle}' as TokenRef,
       backgroundPressed: '{color.negative-subtle}' as TokenRef,
@@ -69,7 +69,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 64,
       paddingX: 10,
       paddingY: 6,
@@ -77,7 +77,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 4,
     },
-    md: {
+    M: {
       height: 80,
       paddingX: 14,
       paddingY: 10,
@@ -85,7 +85,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 6,
     },
-    lg: {
+    L: {
       height: 120,
       paddingX: 16,
       paddingY: 12,

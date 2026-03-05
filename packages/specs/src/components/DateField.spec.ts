@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * DateField Props
  */
 export interface DateFieldProps {
-  variant?: 'default' | 'primary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'negative';
+  size?: 'S' | 'M' | 'L';
   value?: string;
   placeholder?: string;
   label?: string;
@@ -34,7 +34,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -45,7 +45,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       border: '{color.border-hover}' as TokenRef,
       borderHover: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -53,7 +53,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       border: '{color.accent}' as TokenRef,
       borderHover: '{color.accent-hover}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -64,7 +64,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -72,7 +72,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 4,
     },
-    md: {
+    M: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -80,7 +80,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 6,
     },
-    lg: {
+    L: {
       height: 48,
       paddingX: 18,
       paddingY: 12,

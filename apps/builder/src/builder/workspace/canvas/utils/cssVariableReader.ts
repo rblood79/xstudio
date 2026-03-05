@@ -242,19 +242,19 @@ export interface LabelStylePreset {
 }
 
 const LABEL_STYLE_FALLBACKS: Record<string, LabelStylePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     fontWeight: "500",
     color: 0x374151,
     fontFamily: "Inter, system-ui, sans-serif",
   },
-  md: {
+  M: {
     fontSize: 14,
     fontWeight: "500",
     color: 0x374151,
     fontFamily: "Inter, system-ui, sans-serif",
   },
-  lg: {
+  L: {
     fontSize: 16,
     fontWeight: "500",
     color: 0x374151,
@@ -266,8 +266,8 @@ const LABEL_STYLE_FALLBACKS: Record<string, LabelStylePreset> = {
  * .react-aria-Label 클래스에서 스타일 읽기
  * 모든 Form 컴포넌트 (TextField, Input, RadioGroup, CheckboxGroup 등)에서 공통 사용
  */
-export function getLabelStylePreset(size: string = "md"): LabelStylePreset {
-  const fallback = LABEL_STYLE_FALLBACKS[size] || LABEL_STYLE_FALLBACKS.md;
+export function getLabelStylePreset(size: string = "M"): LabelStylePreset {
+  const fallback = LABEL_STYLE_FALLBACKS[size] || LABEL_STYLE_FALLBACKS.M;
 
   try {
     // 임시 DOM 요소 생성 - .react-aria-Label 클래스 적용
@@ -312,19 +312,19 @@ export interface DescriptionStylePreset {
 }
 
 const DESCRIPTION_STYLE_FALLBACKS: Record<string, DescriptionStylePreset> = {
-  sm: {
+  S: {
     fontSize: 11,
     color: 0x6b7280,
     errorColor: 0xef4444,
     fontFamily: "Inter, system-ui, sans-serif",
   },
-  md: {
+  M: {
     fontSize: 12,
     color: 0x6b7280,
     errorColor: 0xef4444,
     fontFamily: "Inter, system-ui, sans-serif",
   },
-  lg: {
+  L: {
     fontSize: 14,
     color: 0x6b7280,
     errorColor: 0xef4444,
@@ -336,10 +336,10 @@ const DESCRIPTION_STYLE_FALLBACKS: Record<string, DescriptionStylePreset> = {
  * Description / FieldError 스타일 읽기
  */
 export function getDescriptionStylePreset(
-  size: string = "md",
+  size: string = "M",
 ): DescriptionStylePreset {
   const fallback =
-    DESCRIPTION_STYLE_FALLBACKS[size] || DESCRIPTION_STYLE_FALLBACKS.md;
+    DESCRIPTION_STYLE_FALLBACKS[size] || DESCRIPTION_STYLE_FALLBACKS.M;
 
   try {
     // TextField 컨테이너 내에서 description 스타일 읽기
@@ -527,6 +527,8 @@ export function getVariantColors(
   bgAlpha?: number;
 } {
   switch (variant) {
+    // S2 Button variants
+    case "accent":
     case "primary":
       return {
         bg: colors.primaryBg,
@@ -541,19 +543,22 @@ export function getVariantColors(
         bgPressed: colors.secondaryBgPressed,
         text: colors.secondaryText,
       };
-    case "tertiary":
-      return {
-        bg: colors.tertiaryBg,
-        bgHover: colors.tertiaryBgHover,
-        bgPressed: colors.tertiaryBgPressed,
-        text: colors.tertiaryText,
-      };
+    // S2 semantic variants
+    case "negative":
     case "error":
       return {
         bg: colors.errorBg,
         bgHover: colors.errorBgHover,
         bgPressed: colors.errorBgPressed,
         text: colors.errorText,
+      };
+    case "neutral":
+    case "tertiary":
+      return {
+        bg: colors.tertiaryBg,
+        bgHover: colors.tertiaryBgHover,
+        bgPressed: colors.tertiaryBgPressed,
+        text: colors.tertiaryText,
       };
     case "surface":
       return {
@@ -645,31 +650,31 @@ const SIZE_CSS_MAPPING: Record<
   string,
   { fontSize: string; paddingY: string; paddingX: string; borderRadius: string }
 > = {
-  xs: {
+  XS: {
     fontSize: "--text-2xs",
     paddingY: "--spacing-2xs",
     paddingX: "--spacing-sm",
     borderRadius: "--radius-sm",
   },
-  sm: {
+  S: {
     fontSize: "--text-sm",
     paddingY: "--spacing",
     paddingX: "--spacing-md",
     borderRadius: "--radius-sm",
   },
-  md: {
+  M: {
     fontSize: "--text-base",
     paddingY: "--spacing-sm",
     paddingX: "--spacing-xl",
     borderRadius: "--radius-md",
   },
-  lg: {
+  L: {
     fontSize: "--text-lg",
     paddingY: "--spacing-md",
     paddingX: "--spacing-2xl",
     borderRadius: "--radius-lg",
   },
-  xl: {
+  XL: {
     fontSize: "--text-xl",
     paddingY: "--spacing-lg",
     paddingX: "--spacing-3xl",
@@ -682,11 +687,11 @@ const SIZE_CSS_MAPPING: Record<
  * shared-tokens.css와 동기화
  */
 const SIZE_FALLBACKS: Record<string, SizePreset> = {
-  xs: { fontSize: 10, paddingX: 8, paddingY: 2, borderRadius: 4 },
-  sm: { fontSize: 14, paddingX: 12, paddingY: 4, borderRadius: 4 },
-  md: { fontSize: 16, paddingX: 24, paddingY: 8, borderRadius: 6 },
-  lg: { fontSize: 18, paddingX: 32, paddingY: 12, borderRadius: 8 },
-  xl: { fontSize: 20, paddingX: 40, paddingY: 16, borderRadius: 8 },
+  XS: { fontSize: 10, paddingX: 8, paddingY: 2, borderRadius: 4 },
+  S: { fontSize: 14, paddingX: 12, paddingY: 4, borderRadius: 4 },
+  M: { fontSize: 16, paddingX: 24, paddingY: 8, borderRadius: 6 },
+  L: { fontSize: 18, paddingX: 32, paddingY: 12, borderRadius: 8 },
+  XL: { fontSize: 20, paddingX: 40, paddingY: 16, borderRadius: 8 },
 };
 
 /**
@@ -703,7 +708,7 @@ const SIZE_FALLBACKS: Record<string, SizePreset> = {
  */
 export function getSizePreset(size: string): SizePreset {
   const mapping = SIZE_CSS_MAPPING[size];
-  const fallback = SIZE_FALLBACKS[size] || SIZE_FALLBACKS.sm;
+  const fallback = SIZE_FALLBACKS[size] || SIZE_FALLBACKS.S;
 
   if (!mapping) {
     return fallback;
@@ -738,11 +743,11 @@ export function getSizePreset(size: string): SizePreset {
  */
 export function getAllSizePresets(): Record<string, SizePreset> {
   return {
-    xs: getSizePreset("xs"),
-    sm: getSizePreset("sm"),
-    md: getSizePreset("md"),
-    lg: getSizePreset("lg"),
-    xl: getSizePreset("xl"),
+    XS: getSizePreset("XS"),
+    S: getSizePreset("S"),
+    M: getSizePreset("M"),
+    L: getSizePreset("L"),
+    XL: getSizePreset("XL"),
   };
 }
 
@@ -760,15 +765,15 @@ const CHECKBOX_SIZE_MAPPING: Record<
   string,
   { boxSize: string; fontSize: string }
 > = {
-  sm: { boxSize: "--spacing-lg", fontSize: "--text-sm" }, // 16px box
-  md: { boxSize: "--spacing-xl", fontSize: "--text-sm" }, // 24px box → 실제 20px 원함
-  lg: { boxSize: "--spacing-xl", fontSize: "--text-base" }, // 24px box
+  S: { boxSize: "--spacing-lg", fontSize: "--text-sm" }, // 16px box
+  M: { boxSize: "--spacing-xl", fontSize: "--text-sm" }, // 24px box → 실제 20px 원함
+  L: { boxSize: "--spacing-xl", fontSize: "--text-base" }, // 24px box
 };
 
 const CHECKBOX_FALLBACKS: Record<string, CheckboxSizePreset> = {
-  sm: { boxSize: 16, fontSize: 14, gap: 8 },
-  md: { boxSize: 20, fontSize: 14, gap: 8 },
-  lg: { boxSize: 24, fontSize: 16, gap: 8 },
+  S: { boxSize: 16, fontSize: 14, gap: 8 },
+  M: { boxSize: 20, fontSize: 14, gap: 8 },
+  L: { boxSize: 24, fontSize: 16, gap: 8 },
 };
 
 /**
@@ -776,7 +781,7 @@ const CHECKBOX_FALLBACKS: Record<string, CheckboxSizePreset> = {
  */
 export function getCheckboxSizePreset(size: string): CheckboxSizePreset {
   const mapping = CHECKBOX_SIZE_MAPPING[size];
-  const fallback = CHECKBOX_FALLBACKS[size] || CHECKBOX_FALLBACKS.md;
+  const fallback = CHECKBOX_FALLBACKS[size] || CHECKBOX_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -784,7 +789,7 @@ export function getCheckboxSizePreset(size: string): CheckboxSizePreset {
 
   // CSS 변수에서 읽되, md의 경우 특수 처리 (20px 고정)
   const boxSize =
-    size === "md"
+    size === "M"
       ? 20
       : parseCSSValue(getCSSVariable(mapping.boxSize), fallback.boxSize);
   const fontSize = parseCSSValue(
@@ -815,15 +820,15 @@ export interface SliderSizePreset {
 }
 
 const SLIDER_SIZE_MAPPING: Record<string, { thumbSize: string }> = {
-  sm: { thumbSize: "--text-xl" }, // 20px
-  md: { thumbSize: "--text-2xl" }, // 24px
-  lg: { thumbSize: "--text-3xl" }, // 30px
+  S: { thumbSize: "--text-xl" }, // 20px
+  M: { thumbSize: "--text-2xl" }, // 24px
+  L: { thumbSize: "--text-3xl" }, // 30px
 };
 
 const SLIDER_FALLBACKS: Record<string, SliderSizePreset> = {
-  sm: { trackHeight: 24, trackWidth: 1, thumbSize: 20 },
-  md: { trackHeight: 30, trackWidth: 2, thumbSize: 24 },
-  lg: { trackHeight: 36, trackWidth: 3, thumbSize: 30 },
+  S: { trackHeight: 24, trackWidth: 1, thumbSize: 20 },
+  M: { trackHeight: 30, trackWidth: 2, thumbSize: 24 },
+  L: { trackHeight: 36, trackWidth: 3, thumbSize: 30 },
 };
 
 /**
@@ -831,7 +836,7 @@ const SLIDER_FALLBACKS: Record<string, SliderSizePreset> = {
  */
 export function getSliderSizePreset(size: string): SliderSizePreset {
   const mapping = SLIDER_SIZE_MAPPING[size];
-  const fallback = SLIDER_FALLBACKS[size] || SLIDER_FALLBACKS.md;
+  const fallback = SLIDER_FALLBACKS[size] || SLIDER_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -877,27 +882,27 @@ const RADIO_SIZE_MAPPING: Record<
   string,
   { radioSize: string; fontSize: string; gap: string }
 > = {
-  sm: { radioSize: "--text-lg", fontSize: "--text-sm", gap: "--gap" },
-  md: { radioSize: "--text-xl", fontSize: "--text-base", gap: "--gap" },
-  lg: { radioSize: "--text-2xl", fontSize: "--text-lg", gap: "--gap" },
+  S: { radioSize: "--text-lg", fontSize: "--text-sm", gap: "--gap" },
+  M: { radioSize: "--text-xl", fontSize: "--text-base", gap: "--gap" },
+  L: { radioSize: "--text-2xl", fontSize: "--text-lg", gap: "--gap" },
 };
 
 const RADIO_FALLBACKS: Record<string, RadioSizePreset> = {
-  sm: {
+  S: {
     radioSize: 18,
     fontSize: 14,
     selectedBorderWidth: 5,
     gap: 8,
     labelGap: 6,
   },
-  md: {
+  M: {
     radioSize: 20,
     fontSize: 16,
     selectedBorderWidth: 6,
     gap: 12,
     labelGap: 8,
   },
-  lg: {
+  L: {
     radioSize: 24,
     fontSize: 18,
     selectedBorderWidth: 7,
@@ -911,7 +916,7 @@ const RADIO_FALLBACKS: Record<string, RadioSizePreset> = {
  */
 export function getRadioSizePreset(size: string): RadioSizePreset {
   const mapping = RADIO_SIZE_MAPPING[size];
-  const fallback = RADIO_FALLBACKS[size] || RADIO_FALLBACKS.md;
+  const fallback = RADIO_FALLBACKS[size] || RADIO_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -959,15 +964,15 @@ const PROGRESSBAR_SIZE_MAPPING: Record<
   string,
   { fontSize: string; borderRadius: string }
 > = {
-  sm: { fontSize: "--text-sm", borderRadius: "--radius-sm" },
-  md: { fontSize: "--text-base", borderRadius: "--radius-md" },
-  lg: { fontSize: "--text-lg", borderRadius: "--radius-lg" },
+  S: { fontSize: "--text-sm", borderRadius: "--radius-sm" },
+  M: { fontSize: "--text-base", borderRadius: "--radius-md" },
+  L: { fontSize: "--text-lg", borderRadius: "--radius-lg" },
 };
 
 const PROGRESSBAR_FALLBACKS: Record<string, ProgressBarSizePreset> = {
-  sm: { width: 200, barHeight: 6, fontSize: 14, borderRadius: 4 },
-  md: { width: 250, barHeight: 10, fontSize: 16, borderRadius: 6 },
-  lg: { width: 300, barHeight: 14, fontSize: 18, borderRadius: 8 },
+  S: { width: 200, barHeight: 6, fontSize: 14, borderRadius: 4 },
+  M: { width: 250, barHeight: 10, fontSize: 16, borderRadius: 6 },
+  L: { width: 300, barHeight: 14, fontSize: 18, borderRadius: 8 },
 };
 
 /**
@@ -975,7 +980,7 @@ const PROGRESSBAR_FALLBACKS: Record<string, ProgressBarSizePreset> = {
  */
 export function getProgressBarSizePreset(size: string): ProgressBarSizePreset {
   const mapping = PROGRESSBAR_SIZE_MAPPING[size];
-  const fallback = PROGRESSBAR_FALLBACKS[size] || PROGRESSBAR_FALLBACKS.md;
+  const fallback = PROGRESSBAR_FALLBACKS[size] || PROGRESSBAR_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1022,19 +1027,19 @@ const INPUT_SIZE_MAPPING: Record<
   string,
   { labelSize: string; fontSize: string; paddingY: string; paddingX: string }
 > = {
-  sm: {
+  S: {
     labelSize: "--text-xs",
     fontSize: "--text-xs",
     paddingY: "--spacing-sm",
     paddingX: "--spacing",
   },
-  md: {
+  M: {
     labelSize: "--text-sm",
     fontSize: "--text-sm",
     paddingY: "--spacing",
     paddingX: "--spacing-md",
   },
-  lg: {
+  L: {
     labelSize: "--text-base",
     fontSize: "--text-base",
     paddingY: "--spacing-md",
@@ -1043,21 +1048,21 @@ const INPUT_SIZE_MAPPING: Record<
 };
 
 const INPUT_FALLBACKS: Record<string, InputSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     labelSize: 12,
     paddingX: 8,
     paddingY: 6,
     borderRadius: 6,
   },
-  md: {
+  M: {
     fontSize: 14,
     labelSize: 14,
     paddingX: 12,
     paddingY: 8,
     borderRadius: 6,
   },
-  lg: {
+  L: {
     fontSize: 16,
     labelSize: 16,
     paddingX: 16,
@@ -1071,7 +1076,7 @@ const INPUT_FALLBACKS: Record<string, InputSizePreset> = {
  */
 export function getInputSizePreset(size: string): InputSizePreset {
   const mapping = INPUT_SIZE_MAPPING[size];
-  const fallback = INPUT_FALLBACKS[size] || INPUT_FALLBACKS.md;
+  const fallback = INPUT_FALLBACKS[size] || INPUT_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1126,19 +1131,19 @@ const SELECT_SIZE_MAPPING: Record<
   string,
   { labelSize: string; fontSize: string; paddingY: string; paddingX: string }
 > = {
-  sm: {
+  S: {
     labelSize: "--text-xs",
     fontSize: "--text-xs",
     paddingY: "--spacing-sm",
     paddingX: "--spacing",
   },
-  md: {
+  M: {
     labelSize: "--text-sm",
     fontSize: "--text-sm",
     paddingY: "--spacing",
     paddingX: "--spacing-md",
   },
-  lg: {
+  L: {
     labelSize: "--text-base",
     fontSize: "--text-base",
     paddingY: "--spacing-md",
@@ -1147,7 +1152,7 @@ const SELECT_SIZE_MAPPING: Record<
 };
 
 const SELECT_FALLBACKS: Record<string, SelectSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     labelSize: 12,
     paddingX: 8,
@@ -1155,7 +1160,7 @@ const SELECT_FALLBACKS: Record<string, SelectSizePreset> = {
     chevronSize: 20,
     borderRadius: 6,
   },
-  md: {
+  M: {
     fontSize: 14,
     labelSize: 14,
     paddingX: 12,
@@ -1163,7 +1168,7 @@ const SELECT_FALLBACKS: Record<string, SelectSizePreset> = {
     chevronSize: 24,
     borderRadius: 6,
   },
-  lg: {
+  L: {
     fontSize: 16,
     labelSize: 16,
     paddingX: 16,
@@ -1178,7 +1183,7 @@ const SELECT_FALLBACKS: Record<string, SelectSizePreset> = {
  */
 export function getSelectSizePreset(size: string): SelectSizePreset {
   const mapping = SELECT_SIZE_MAPPING[size];
-  const fallback = SELECT_FALLBACKS[size] || SELECT_FALLBACKS.md;
+  const fallback = SELECT_FALLBACKS[size] || SELECT_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1238,19 +1243,19 @@ const TOGGLE_BUTTON_SIZE_MAPPING: Record<
   string,
   { fontSize: string; paddingY: string; paddingX: string; borderRadius: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-sm",
     paddingY: "--spacing",
     paddingX: "--spacing-md",
     borderRadius: "--radius-sm",
   },
-  md: {
+  M: {
     fontSize: "--text-base",
     paddingY: "--spacing-sm",
     paddingX: "--spacing-xl",
     borderRadius: "--radius-md",
   },
-  lg: {
+  L: {
     fontSize: "--text-lg",
     paddingY: "--spacing-md",
     paddingX: "--spacing-2xl",
@@ -1261,9 +1266,9 @@ const TOGGLE_BUTTON_SIZE_MAPPING: Record<
 const TOGGLE_BUTTON_FALLBACKS: Record<string, ToggleButtonSizePreset> = {
   // @sync ToggleButton.css [data-size] padding 값과 일치해야 함
   // Button.css와 동일한 padding/borderRadius 사용
-  sm: { fontSize: 14, paddingY: 4, paddingX: 12, borderRadius: 4 }, // --radius-sm
-  md: { fontSize: 16, paddingY: 8, paddingX: 24, borderRadius: 6 }, // --radius-md
-  lg: { fontSize: 18, paddingY: 12, paddingX: 32, borderRadius: 8 }, // --radius-lg
+  S: { fontSize: 14, paddingY: 4, paddingX: 12, borderRadius: 4 }, // --radius-sm
+  M: { fontSize: 16, paddingY: 8, paddingX: 24, borderRadius: 6 }, // --radius-md
+  L: { fontSize: 18, paddingY: 12, paddingX: 32, borderRadius: 8 }, // --radius-lg
 };
 
 /**
@@ -1273,7 +1278,7 @@ export function getToggleButtonSizePreset(
   size: string,
 ): ToggleButtonSizePreset {
   const mapping = TOGGLE_BUTTON_SIZE_MAPPING[size];
-  const fallback = TOGGLE_BUTTON_FALLBACKS[size] || TOGGLE_BUTTON_FALLBACKS.md;
+  const fallback = TOGGLE_BUTTON_FALLBACKS[size] || TOGGLE_BUTTON_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1403,17 +1408,17 @@ const LISTBOX_SIZE_MAPPING: Record<
   string,
   { fontSize: string; paddingY: string; paddingX: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-xs",
     paddingY: "--spacing-sm",
     paddingX: "--spacing",
   },
-  md: {
+  M: {
     fontSize: "--text-sm",
     paddingY: "--spacing",
     paddingX: "--spacing-md",
   },
-  lg: {
+  L: {
     fontSize: "--text-base",
     paddingY: "--spacing-md",
     paddingX: "--spacing-lg",
@@ -1421,7 +1426,7 @@ const LISTBOX_SIZE_MAPPING: Record<
 };
 
 const LISTBOX_FALLBACKS: Record<string, ListBoxSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     itemPaddingY: 8,
     itemPaddingX: 4,
@@ -1430,7 +1435,7 @@ const LISTBOX_FALLBACKS: Record<string, ListBoxSizePreset> = {
     containerPadding: 2,
     gap: 2,
   },
-  md: {
+  M: {
     fontSize: 14,
     itemPaddingY: 4,
     itemPaddingX: 12,
@@ -1439,7 +1444,7 @@ const LISTBOX_FALLBACKS: Record<string, ListBoxSizePreset> = {
     containerPadding: 4,
     gap: 4,
   },
-  lg: {
+  L: {
     fontSize: 16,
     itemPaddingY: 12,
     itemPaddingX: 16,
@@ -1455,7 +1460,7 @@ const LISTBOX_FALLBACKS: Record<string, ListBoxSizePreset> = {
  */
 export function getListBoxSizePreset(size: string): ListBoxSizePreset {
   const mapping = LISTBOX_SIZE_MAPPING[size];
-  const fallback = LISTBOX_FALLBACKS[size] || LISTBOX_FALLBACKS.md;
+  const fallback = LISTBOX_FALLBACKS[size] || LISTBOX_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1595,13 +1600,13 @@ const BADGE_SIZE_MAPPING: Record<
   string,
   { fontSize: string; paddingX: string }
 > = {
-  sm: { fontSize: "--text-sm", paddingX: "--spacing-md" },
-  md: { fontSize: "--text-base", paddingX: "--spacing-md" },
-  lg: { fontSize: "--text-lg", paddingX: "--spacing-lg" },
+  S: { fontSize: "--text-sm", paddingX: "--spacing-md" },
+  M: { fontSize: "--text-base", paddingX: "--spacing-md" },
+  L: { fontSize: "--text-lg", paddingX: "--spacing-lg" },
 };
 
 const BADGE_FALLBACKS: Record<string, BadgeSizePreset> = {
-  sm: {
+  S: {
     fontSize: 14,
     paddingY: 2,
     paddingX: 12,
@@ -1609,7 +1614,7 @@ const BADGE_FALLBACKS: Record<string, BadgeSizePreset> = {
     minWidth: 20,
     dotSize: 8,
   },
-  md: {
+  M: {
     fontSize: 16,
     paddingY: 8,
     paddingX: 12,
@@ -1617,7 +1622,7 @@ const BADGE_FALLBACKS: Record<string, BadgeSizePreset> = {
     minWidth: 24,
     dotSize: 10,
   },
-  lg: {
+  L: {
     fontSize: 18,
     paddingY: 8,
     paddingX: 16,
@@ -1632,7 +1637,7 @@ const BADGE_FALLBACKS: Record<string, BadgeSizePreset> = {
  */
 export function getBadgeSizePreset(size: string): BadgeSizePreset {
   const mapping = BADGE_SIZE_MAPPING[size];
-  const fallback = BADGE_FALLBACKS[size] || BADGE_FALLBACKS.md;
+  const fallback = BADGE_FALLBACKS[size] || BADGE_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1724,15 +1729,15 @@ const METER_SIZE_MAPPING: Record<
   string,
   { fontSize: string; borderRadius: string }
 > = {
-  sm: { fontSize: "--text-sm", borderRadius: "--radius-sm" },
-  md: { fontSize: "--text-base", borderRadius: "--radius-md" },
-  lg: { fontSize: "--text-lg", borderRadius: "--radius-lg" },
+  S: { fontSize: "--text-sm", borderRadius: "--radius-sm" },
+  M: { fontSize: "--text-base", borderRadius: "--radius-md" },
+  L: { fontSize: "--text-lg", borderRadius: "--radius-lg" },
 };
 
 const METER_FALLBACKS: Record<string, MeterSizePreset> = {
-  sm: { width: 200, barHeight: 6, borderRadius: 4, fontSize: 14, gap: 4 },
-  md: { width: 250, barHeight: 10, borderRadius: 8, fontSize: 16, gap: 4 },
-  lg: { width: 300, barHeight: 14, borderRadius: 12, fontSize: 18, gap: 4 },
+  S: { width: 200, barHeight: 6, borderRadius: 4, fontSize: 14, gap: 4 },
+  M: { width: 250, barHeight: 10, borderRadius: 8, fontSize: 16, gap: 4 },
+  L: { width: 300, barHeight: 14, borderRadius: 12, fontSize: 18, gap: 4 },
 };
 
 /**
@@ -1740,7 +1745,7 @@ const METER_FALLBACKS: Record<string, MeterSizePreset> = {
  */
 export function getMeterSizePreset(size: string): MeterSizePreset {
   const mapping = METER_SIZE_MAPPING[size];
-  const fallback = METER_FALLBACKS[size] || METER_FALLBACKS.md;
+  const fallback = METER_FALLBACKS[size] || METER_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1842,15 +1847,15 @@ export interface SeparatorSizePreset {
 }
 
 const SEPARATOR_SIZE_MAPPING: Record<string, { margin: string }> = {
-  sm: { margin: "--spacing-2" },
-  md: { margin: "--spacing-4" },
-  lg: { margin: "--spacing-6" },
+  S: { margin: "--spacing-2" },
+  M: { margin: "--spacing-4" },
+  L: { margin: "--spacing-6" },
 };
 
 const SEPARATOR_FALLBACKS: Record<string, SeparatorSizePreset> = {
-  sm: { thickness: 1, margin: 4 },
-  md: { thickness: 1, margin: 8 },
-  lg: { thickness: 2, margin: 12 },
+  S: { thickness: 1, margin: 4 },
+  M: { thickness: 1, margin: 8 },
+  L: { thickness: 2, margin: 12 },
 };
 
 /**
@@ -1858,7 +1863,7 @@ const SEPARATOR_FALLBACKS: Record<string, SeparatorSizePreset> = {
  */
 export function getSeparatorSizePreset(size: string): SeparatorSizePreset {
   const mapping = SEPARATOR_SIZE_MAPPING[size];
-  const fallback = SEPARATOR_FALLBACKS[size] || SEPARATOR_FALLBACKS.md;
+  const fallback = SEPARATOR_FALLBACKS[size] || SEPARATOR_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1912,15 +1917,15 @@ export interface LinkSizePreset {
 }
 
 const LINK_SIZE_MAPPING: Record<string, { fontSize: string }> = {
-  sm: { fontSize: "--text-sm" },
-  md: { fontSize: "--text-base" },
-  lg: { fontSize: "--text-lg" },
+  S: { fontSize: "--text-sm" },
+  M: { fontSize: "--text-base" },
+  L: { fontSize: "--text-lg" },
 };
 
 const LINK_FALLBACKS: Record<string, LinkSizePreset> = {
-  sm: { fontSize: 14 },
-  md: { fontSize: 16 },
-  lg: { fontSize: 18 },
+  S: { fontSize: 14 },
+  M: { fontSize: 16 },
+  L: { fontSize: 18 },
 };
 
 /**
@@ -1928,7 +1933,7 @@ const LINK_FALLBACKS: Record<string, LinkSizePreset> = {
  */
 export function getLinkSizePreset(size: string): LinkSizePreset {
   const mapping = LINK_SIZE_MAPPING[size];
-  const fallback = LINK_FALLBACKS[size] || LINK_FALLBACKS.md;
+  const fallback = LINK_FALLBACKS[size] || LINK_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1983,15 +1988,15 @@ const BREADCRUMBS_SIZE_MAPPING: Record<
   string,
   { fontSize: string; gap: string }
 > = {
-  sm: { fontSize: "--text-xs", gap: "--spacing-xs" },
-  md: { fontSize: "--text-sm", gap: "--spacing" },
-  lg: { fontSize: "--text-base", gap: "--spacing-sm" },
+  S: { fontSize: "--text-xs", gap: "--spacing-xs" },
+  M: { fontSize: "--text-sm", gap: "--spacing" },
+  L: { fontSize: "--text-base", gap: "--spacing-sm" },
 };
 
 const BREADCRUMBS_FALLBACKS: Record<string, BreadcrumbsSizePreset> = {
-  sm: { fontSize: 12, gap: 4, padding: 4 },
-  md: { fontSize: 14, gap: 8, padding: 8 },
-  lg: { fontSize: 16, gap: 10, padding: 12 },
+  S: { fontSize: 12, gap: 4, padding: 4 },
+  M: { fontSize: 14, gap: 8, padding: 8 },
+  L: { fontSize: 16, gap: 10, padding: 12 },
 };
 
 /**
@@ -1999,7 +2004,7 @@ const BREADCRUMBS_FALLBACKS: Record<string, BreadcrumbsSizePreset> = {
  */
 export function getBreadcrumbsSizePreset(size: string): BreadcrumbsSizePreset {
   const mapping = BREADCRUMBS_SIZE_MAPPING[size];
-  const fallback = BREADCRUMBS_FALLBACKS[size] || BREADCRUMBS_FALLBACKS.md;
+  const fallback = BREADCRUMBS_FALLBACKS[size] || BREADCRUMBS_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -2082,15 +2087,19 @@ const CARD_SIZE_MAPPING: Record<
   string,
   { padding: string; borderRadius: string }
 > = {
-  sm: { padding: "--spacing-sm", borderRadius: "--radius-md" },
-  md: { padding: "--spacing-md", borderRadius: "--radius-lg" },
-  lg: { padding: "--spacing-lg", borderRadius: "--radius-xl" },
+  XS: { padding: "--spacing-xs", borderRadius: "--radius-sm" },
+  S: { padding: "--spacing-sm", borderRadius: "--radius-md" },
+  M: { padding: "--spacing-md", borderRadius: "--radius-lg" },
+  L: { padding: "--spacing-lg", borderRadius: "--radius-xl" },
+  XL: { padding: "--spacing-xl", borderRadius: "--radius-xl" },
 };
 
 const CARD_FALLBACKS: Record<string, CardSizePreset> = {
-  sm: { padding: 8, borderRadius: 8 },
-  md: { padding: 12, borderRadius: 12 },
-  lg: { padding: 16, borderRadius: 16 },
+  XS: { padding: 4, borderRadius: 4 },
+  S: { padding: 8, borderRadius: 8 },
+  M: { padding: 12, borderRadius: 12 },
+  L: { padding: 16, borderRadius: 16 },
+  XL: { padding: 24, borderRadius: 16 },
 };
 
 /**
@@ -2098,7 +2107,7 @@ const CARD_FALLBACKS: Record<string, CardSizePreset> = {
  */
 export function getCardSizePreset(size: string): CardSizePreset {
   const mapping = CARD_SIZE_MAPPING[size];
-  const fallback = CARD_FALLBACKS[size] || CARD_FALLBACKS.md;
+  const fallback = CARD_FALLBACKS[size] || CARD_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -2130,41 +2139,33 @@ export interface CardColorPreset {
 }
 
 const CARD_COLOR_FALLBACKS: Record<string, CardColorPreset> = {
-  default: {
+  // S2: primary — 기본 카드 (배경 채워진)
+  primary: {
     backgroundColor: 0xf3f4f6,
     borderColor: 0xcad3dc,
     textColor: 0x374151,
     hoverBgColor: 0xe5e7eb,
   },
-  primary: {
-    backgroundColor: 0x3b82f6,
-    borderColor: 0x3b82f6,
-    textColor: 0xffffff,
-    hoverBgColor: 0x2563eb,
-  },
+  // S2: secondary — 테두리 있는 카드
   secondary: {
-    backgroundColor: 0x6366f1,
-    borderColor: 0x6366f1,
-    textColor: 0xffffff,
-    hoverBgColor: 0x4f46e5,
-  },
-  surface: {
-    backgroundColor: 0xf9fafb,
-    borderColor: 0xcad3dc,
+    backgroundColor: 0xffffff,
+    borderColor: 0x9ca3af,
     textColor: 0x374151,
-    hoverBgColor: 0xf3f4f6,
+    hoverBgColor: 0xf9fafb,
   },
-  elevated: {
+  // S2: tertiary — 흰색 배경 + 그림자
+  tertiary: {
     backgroundColor: 0xffffff,
     borderColor: 0x00000000,
     textColor: 0x374151,
     hoverBgColor: 0xf9fafb,
   },
-  outlined: {
-    backgroundColor: 0xffffff,
-    borderColor: 0x9ca3af,
+  // S2: quiet — 투명 배경
+  quiet: {
+    backgroundColor: 0x00000000,
+    borderColor: 0x00000000,
     textColor: 0x374151,
-    hoverBgColor: 0xf9fafb,
+    hoverBgColor: 0xf3f4f6,
   },
 };
 
@@ -2172,7 +2173,7 @@ const CARD_COLOR_FALLBACKS: Record<string, CardColorPreset> = {
  * Card 색상 프리셋 읽기
  */
 export function getCardColorPreset(variant: string): CardColorPreset {
-  return CARD_COLOR_FALLBACKS[variant] || CARD_COLOR_FALLBACKS.default;
+  return CARD_COLOR_FALLBACKS[variant] || CARD_COLOR_FALLBACKS.primary;
 }
 
 // ============================================
@@ -2196,17 +2197,17 @@ const PANEL_SIZE_MAPPING: Record<
   string,
   { borderRadius: string; spacing: string; fontSize: string }
 > = {
-  sm: {
+  S: {
     borderRadius: "--radius-md",
     spacing: "--spacing-sm",
     fontSize: "--text-sm",
   },
-  md: {
+  M: {
     borderRadius: "--radius-lg",
     spacing: "--spacing-md",
     fontSize: "--text-base",
   },
-  lg: {
+  L: {
     borderRadius: "--radius-xl",
     spacing: "--spacing-lg",
     fontSize: "--text-lg",
@@ -2215,7 +2216,7 @@ const PANEL_SIZE_MAPPING: Record<
 
 // CSS: .panel-content { min-height: 64px; } - 고정값
 const PANEL_FALLBACKS: Record<string, PanelSizePreset> = {
-  sm: {
+  S: {
     borderRadius: 8,
     titleFontSize: 13,
     titlePaddingX: 8,
@@ -2224,7 +2225,7 @@ const PANEL_FALLBACKS: Record<string, PanelSizePreset> = {
     contentPadding: 12,
     minHeight: 64,
   },
-  md: {
+  M: {
     borderRadius: 12,
     titleFontSize: 14,
     titlePaddingX: 12,
@@ -2233,7 +2234,7 @@ const PANEL_FALLBACKS: Record<string, PanelSizePreset> = {
     contentPadding: 16,
     minHeight: 64,
   },
-  lg: {
+  L: {
     borderRadius: 16,
     titleFontSize: 16,
     titlePaddingX: 16,
@@ -2249,7 +2250,7 @@ const PANEL_FALLBACKS: Record<string, PanelSizePreset> = {
  */
 export function getPanelSizePreset(size: string): PanelSizePreset {
   const mapping = PANEL_SIZE_MAPPING[size];
-  const fallback = PANEL_FALLBACKS[size] || PANEL_FALLBACKS.md;
+  const fallback = PANEL_FALLBACKS[size] || PANEL_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -2350,17 +2351,17 @@ const MENU_SIZE_MAPPING: Record<
   string,
   { fontSize: string; paddingX: string; paddingY: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-xs",
     paddingX: "--spacing",
     paddingY: "--spacing-sm",
   },
-  md: {
+  M: {
     fontSize: "--text-sm",
     paddingX: "--spacing-md",
     paddingY: "--spacing",
   },
-  lg: {
+  L: {
     fontSize: "--text-base",
     paddingX: "--spacing-lg",
     paddingY: "--spacing-md",
@@ -2368,7 +2369,7 @@ const MENU_SIZE_MAPPING: Record<
 };
 
 const MENU_FALLBACKS: Record<string, MenuSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     itemPaddingX: 8,
     itemPaddingY: 6,
@@ -2376,7 +2377,7 @@ const MENU_FALLBACKS: Record<string, MenuSizePreset> = {
     minWidth: 120,
     borderRadius: 6,
   },
-  md: {
+  M: {
     fontSize: 14,
     itemPaddingX: 12,
     itemPaddingY: 8,
@@ -2384,7 +2385,7 @@ const MENU_FALLBACKS: Record<string, MenuSizePreset> = {
     minWidth: 150,
     borderRadius: 8,
   },
-  lg: {
+  L: {
     fontSize: 16,
     itemPaddingX: 16,
     itemPaddingY: 12,
@@ -2399,7 +2400,7 @@ const MENU_FALLBACKS: Record<string, MenuSizePreset> = {
  */
 export function getMenuSizePreset(size: string): MenuSizePreset {
   const mapping = MENU_SIZE_MAPPING[size];
-  const fallback = MENU_FALLBACKS[size] || MENU_FALLBACKS.md;
+  const fallback = MENU_FALLBACKS[size] || MENU_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -2520,19 +2521,19 @@ const TABS_SIZE_MAPPING: Record<
   string,
   { fontSize: string; paddingX: string; paddingY: string; panelPadding: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-xs",
     paddingX: "--spacing-md",
     paddingY: "--spacing-sm",
     panelPadding: "--spacing-md",
   },
-  md: {
+  M: {
     fontSize: "--text-sm",
     paddingX: "--spacing-lg",
     paddingY: "--spacing",
     panelPadding: "--spacing-lg",
   },
-  lg: {
+  L: {
     fontSize: "--text-base",
     paddingX: "--spacing-xl",
     paddingY: "--spacing-md",
@@ -2541,21 +2542,21 @@ const TABS_SIZE_MAPPING: Record<
 };
 
 const TABS_FALLBACKS: Record<string, TabsSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     tabPaddingX: 12,
     tabPaddingY: 6,
     indicatorHeight: 2,
     panelPadding: 12,
   },
-  md: {
+  M: {
     fontSize: 14,
     tabPaddingX: 16,
     tabPaddingY: 8,
     indicatorHeight: 3,
     panelPadding: 16,
   },
-  lg: {
+  L: {
     fontSize: 16,
     tabPaddingX: 20,
     tabPaddingY: 12,
@@ -2569,7 +2570,7 @@ const TABS_FALLBACKS: Record<string, TabsSizePreset> = {
  */
 export function getTabsSizePreset(size: string): TabsSizePreset {
   const mapping = TABS_SIZE_MAPPING[size];
-  const fallback = TABS_FALLBACKS[size] || TABS_FALLBACKS.md;
+  const fallback = TABS_FALLBACKS[size] || TABS_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -2671,19 +2672,19 @@ const NUMBERFIELD_SIZE_MAPPING: Record<
   string,
   { fontSize: string; labelSize: string; paddingY: string; paddingX: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-xs",
     labelSize: "--text-xs",
     paddingY: "--spacing-sm",
     paddingX: "--spacing",
   },
-  md: {
+  M: {
     fontSize: "--text-sm",
     labelSize: "--text-sm",
     paddingY: "--spacing",
     paddingX: "--spacing-md",
   },
-  lg: {
+  L: {
     fontSize: "--text-base",
     labelSize: "--text-base",
     paddingY: "--spacing-md",
@@ -2692,7 +2693,7 @@ const NUMBERFIELD_SIZE_MAPPING: Record<
 };
 
 const NUMBERFIELD_FALLBACKS: Record<string, NumberFieldSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     labelFontSize: 12,
     buttonWidth: 28,
@@ -2701,7 +2702,7 @@ const NUMBERFIELD_FALLBACKS: Record<string, NumberFieldSizePreset> = {
     paddingY: 6,
     borderRadius: 6,
   },
-  md: {
+  M: {
     fontSize: 14,
     labelFontSize: 14,
     buttonWidth: 32,
@@ -2710,7 +2711,7 @@ const NUMBERFIELD_FALLBACKS: Record<string, NumberFieldSizePreset> = {
     paddingY: 8,
     borderRadius: 6,
   },
-  lg: {
+  L: {
     fontSize: 16,
     labelFontSize: 16,
     buttonWidth: 40,
@@ -2726,7 +2727,7 @@ const NUMBERFIELD_FALLBACKS: Record<string, NumberFieldSizePreset> = {
  */
 export function getNumberFieldSizePreset(size: string): NumberFieldSizePreset {
   const mapping = NUMBERFIELD_SIZE_MAPPING[size];
-  const fallback = NUMBERFIELD_FALLBACKS[size] || NUMBERFIELD_FALLBACKS.md;
+  const fallback = NUMBERFIELD_FALLBACKS[size] || NUMBERFIELD_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -2862,19 +2863,19 @@ const SEARCHFIELD_SIZE_MAPPING: Record<
   string,
   { fontSize: string; labelSize: string; paddingY: string; paddingX: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-xs",
     labelSize: "--text-xs",
     paddingY: "--spacing-sm",
     paddingX: "--spacing",
   },
-  md: {
+  M: {
     fontSize: "--text-sm",
     labelSize: "--text-sm",
     paddingY: "--spacing",
     paddingX: "--spacing-md",
   },
-  lg: {
+  L: {
     fontSize: "--text-base",
     labelSize: "--text-base",
     paddingY: "--spacing-md",
@@ -2883,7 +2884,7 @@ const SEARCHFIELD_SIZE_MAPPING: Record<
 };
 
 const SEARCHFIELD_FALLBACKS: Record<string, SearchFieldSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     labelFontSize: 12,
     inputWidth: 160,
@@ -2892,7 +2893,7 @@ const SEARCHFIELD_FALLBACKS: Record<string, SearchFieldSizePreset> = {
     clearButtonSize: 20,
     borderRadius: 6,
   },
-  md: {
+  M: {
     fontSize: 14,
     labelFontSize: 14,
     inputWidth: 200,
@@ -2901,7 +2902,7 @@ const SEARCHFIELD_FALLBACKS: Record<string, SearchFieldSizePreset> = {
     clearButtonSize: 24,
     borderRadius: 6,
   },
-  lg: {
+  L: {
     fontSize: 16,
     labelFontSize: 16,
     inputWidth: 240,
@@ -2917,7 +2918,7 @@ const SEARCHFIELD_FALLBACKS: Record<string, SearchFieldSizePreset> = {
  */
 export function getSearchFieldSizePreset(size: string): SearchFieldSizePreset {
   const mapping = SEARCHFIELD_SIZE_MAPPING[size];
-  const fallback = SEARCHFIELD_FALLBACKS[size] || SEARCHFIELD_FALLBACKS.md;
+  const fallback = SEARCHFIELD_FALLBACKS[size] || SEARCHFIELD_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -3069,7 +3070,7 @@ const COMBOBOX_SIZE_MAPPING: Record<
     itemPaddingX: string;
   }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-xs",
     labelSize: "--text-xs",
     paddingY: "--spacing-sm",
@@ -3077,7 +3078,7 @@ const COMBOBOX_SIZE_MAPPING: Record<
     itemPaddingY: "--spacing-sm",
     itemPaddingX: "--spacing",
   },
-  md: {
+  M: {
     fontSize: "--text-sm",
     labelSize: "--text-sm",
     paddingY: "--spacing",
@@ -3085,7 +3086,7 @@ const COMBOBOX_SIZE_MAPPING: Record<
     itemPaddingY: "--spacing",
     itemPaddingX: "--spacing-md",
   },
-  lg: {
+  L: {
     fontSize: "--text-base",
     labelSize: "--text-base",
     paddingY: "--spacing-md",
@@ -3096,7 +3097,7 @@ const COMBOBOX_SIZE_MAPPING: Record<
 };
 
 const COMBOBOX_FALLBACKS: Record<string, ComboBoxSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     labelFontSize: 12,
     inputWidth: 160,
@@ -3107,7 +3108,7 @@ const COMBOBOX_FALLBACKS: Record<string, ComboBoxSizePreset> = {
     itemPaddingY: 6,
     borderRadius: 6,
   },
-  md: {
+  M: {
     fontSize: 14,
     labelFontSize: 14,
     inputWidth: 200,
@@ -3118,7 +3119,7 @@ const COMBOBOX_FALLBACKS: Record<string, ComboBoxSizePreset> = {
     itemPaddingY: 8,
     borderRadius: 6,
   },
-  lg: {
+  L: {
     fontSize: 16,
     labelFontSize: 16,
     inputWidth: 240,
@@ -3136,7 +3137,7 @@ const COMBOBOX_FALLBACKS: Record<string, ComboBoxSizePreset> = {
  */
 export function getComboBoxSizePreset(size: string): ComboBoxSizePreset {
   const mapping = COMBOBOX_SIZE_MAPPING[size];
-  const fallback = COMBOBOX_FALLBACKS[size] || COMBOBOX_FALLBACKS.md;
+  const fallback = COMBOBOX_FALLBACKS[size] || COMBOBOX_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -3319,21 +3320,21 @@ const GRIDLIST_SIZE_MAPPING: Record<
     listGap: string;
   }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-xs",
     itemPaddingY: "--spacing-sm",
     itemPaddingX: "--spacing",
     listPadding: "--spacing-2xs",
     listGap: "--spacing-3xs",
   },
-  md: {
+  M: {
     fontSize: "--text-sm",
     itemPaddingY: "--spacing",
     itemPaddingX: "--spacing-md",
     listPadding: "--spacing-xs",
     listGap: "--spacing-2xs",
   },
-  lg: {
+  L: {
     fontSize: "--text-base",
     itemPaddingY: "--spacing-md",
     itemPaddingX: "--spacing-lg",
@@ -3343,7 +3344,7 @@ const GRIDLIST_SIZE_MAPPING: Record<
 };
 
 const GRIDLIST_FALLBACKS: Record<string, GridListSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     itemMinHeight: 32,
     itemPaddingX: 8,
@@ -3352,7 +3353,7 @@ const GRIDLIST_FALLBACKS: Record<string, GridListSizePreset> = {
     listGap: 2,
     borderRadius: 6,
   },
-  md: {
+  M: {
     fontSize: 14,
     itemMinHeight: 40,
     itemPaddingX: 12,
@@ -3361,7 +3362,7 @@ const GRIDLIST_FALLBACKS: Record<string, GridListSizePreset> = {
     listGap: 4,
     borderRadius: 6,
   },
-  lg: {
+  L: {
     fontSize: 16,
     itemMinHeight: 48,
     itemPaddingX: 16,
@@ -3377,7 +3378,7 @@ const GRIDLIST_FALLBACKS: Record<string, GridListSizePreset> = {
  */
 export function getGridListSizePreset(size: string): GridListSizePreset {
   const mapping = GRIDLIST_SIZE_MAPPING[size];
-  const fallback = GRIDLIST_FALLBACKS[size] || GRIDLIST_FALLBACKS.md;
+  const fallback = GRIDLIST_FALLBACKS[size] || GRIDLIST_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -3511,17 +3512,17 @@ const TAGGROUP_SIZE_MAPPING: Record<
   string,
   { fontSize: string; paddingY: string; paddingX: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-sm",
     paddingY: "--spacing-2xs",
     paddingX: "--spacing-sm",
   },
-  md: {
+  M: {
     fontSize: "--text-base",
     paddingY: "--spacing-xs",
     paddingX: "--spacing-md",
   },
-  lg: {
+  L: {
     fontSize: "--text-lg",
     paddingY: "--spacing-sm",
     paddingX: "--spacing-lg",
@@ -3529,21 +3530,21 @@ const TAGGROUP_SIZE_MAPPING: Record<
 };
 
 const TAGGROUP_FALLBACKS: Record<string, TagGroupSizePreset> = {
-  sm: {
+  S: {
     fontSize: 14,
     tagPaddingX: 8,
     tagPaddingY: 4,
     tagGap: 4,
     borderRadius: 4,
   },
-  md: {
+  M: {
     fontSize: 16,
     tagPaddingX: 12,
     tagPaddingY: 6,
     tagGap: 4,
     borderRadius: 6,
   },
-  lg: {
+  L: {
     fontSize: 18,
     tagPaddingX: 16,
     tagPaddingY: 8,
@@ -3557,7 +3558,7 @@ const TAGGROUP_FALLBACKS: Record<string, TagGroupSizePreset> = {
  */
 export function getTagGroupSizePreset(size: string): TagGroupSizePreset {
   const mapping = TAGGROUP_SIZE_MAPPING[size];
-  const fallback = TAGGROUP_FALLBACKS[size] || TAGGROUP_FALLBACKS.md;
+  const fallback = TAGGROUP_FALLBACKS[size] || TAGGROUP_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -3690,19 +3691,19 @@ const TREE_SIZE_MAPPING: Record<
     treePadding: string;
   }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-xs",
     itemPaddingY: "--spacing-2xs",
     itemPaddingX: "--spacing-xs",
     treePadding: "--spacing-sm",
   },
-  md: {
+  M: {
     fontSize: "--text-sm",
     itemPaddingY: "--spacing-xs",
     itemPaddingX: "--spacing-sm",
     treePadding: "--spacing",
   },
-  lg: {
+  L: {
     fontSize: "--text-base",
     itemPaddingY: "--spacing-sm",
     itemPaddingX: "--spacing",
@@ -3711,7 +3712,7 @@ const TREE_SIZE_MAPPING: Record<
 };
 
 const TREE_FALLBACKS: Record<string, TreeSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     itemMinHeight: 28,
     itemPaddingX: 6,
@@ -3722,7 +3723,7 @@ const TREE_FALLBACKS: Record<string, TreeSizePreset> = {
     indentSize: 16,
     borderRadius: 4,
   },
-  md: {
+  M: {
     fontSize: 14,
     itemMinHeight: 32,
     itemPaddingX: 8,
@@ -3733,7 +3734,7 @@ const TREE_FALLBACKS: Record<string, TreeSizePreset> = {
     indentSize: 20,
     borderRadius: 4,
   },
-  lg: {
+  L: {
     fontSize: 16,
     itemMinHeight: 40,
     itemPaddingX: 12,
@@ -3751,7 +3752,7 @@ const TREE_FALLBACKS: Record<string, TreeSizePreset> = {
  */
 export function getTreeSizePreset(size: string): TreeSizePreset {
   const mapping = TREE_SIZE_MAPPING[size];
-  const fallback = TREE_FALLBACKS[size] || TREE_FALLBACKS.md;
+  const fallback = TREE_FALLBACKS[size] || TREE_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -3871,17 +3872,17 @@ const TABLE_SIZE_MAPPING: Record<
   string,
   { fontSize: string; cellPaddingY: string; cellPaddingX: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-xs",
     cellPaddingY: "--spacing-sm",
     cellPaddingX: "--spacing",
   },
-  md: {
+  M: {
     fontSize: "--text-sm",
     cellPaddingY: "--spacing",
     cellPaddingX: "--spacing-md",
   },
-  lg: {
+  L: {
     fontSize: "--text-base",
     cellPaddingY: "--spacing-md",
     cellPaddingX: "--spacing-lg",
@@ -3889,7 +3890,7 @@ const TABLE_SIZE_MAPPING: Record<
 };
 
 const TABLE_FALLBACKS: Record<string, TableSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     headerFontSize: 12,
     cellPaddingX: 8,
@@ -3897,7 +3898,7 @@ const TABLE_FALLBACKS: Record<string, TableSizePreset> = {
     rowMinHeight: 32,
     borderRadius: 6,
   },
-  md: {
+  M: {
     fontSize: 14,
     headerFontSize: 14,
     cellPaddingX: 12,
@@ -3905,7 +3906,7 @@ const TABLE_FALLBACKS: Record<string, TableSizePreset> = {
     rowMinHeight: 40,
     borderRadius: 6,
   },
-  lg: {
+  L: {
     fontSize: 16,
     headerFontSize: 16,
     cellPaddingX: 16,
@@ -3920,7 +3921,7 @@ const TABLE_FALLBACKS: Record<string, TableSizePreset> = {
  */
 export function getTableSizePreset(size: string): TableSizePreset {
   const mapping = TABLE_SIZE_MAPPING[size];
-  const fallback = TABLE_FALLBACKS[size] || TABLE_FALLBACKS.md;
+  const fallback = TABLE_FALLBACKS[size] || TABLE_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -4060,13 +4061,13 @@ const DISCLOSURE_SIZE_MAPPING: Record<
   string,
   { fontSize: string; padding: string; gap: string }
 > = {
-  sm: { fontSize: "--text-sm", padding: "--spacing-xs", gap: "--spacing-xs" },
-  md: { fontSize: "--text-base", padding: "--spacing-sm", gap: "--spacing-sm" },
-  lg: { fontSize: "--text-lg", padding: "--spacing", gap: "--spacing" },
+  S: { fontSize: "--text-sm", padding: "--spacing-xs", gap: "--spacing-xs" },
+  M: { fontSize: "--text-base", padding: "--spacing-sm", gap: "--spacing-sm" },
+  L: { fontSize: "--text-lg", padding: "--spacing", gap: "--spacing" },
 };
 
 const DISCLOSURE_FALLBACKS: Record<string, DisclosureSizePreset> = {
-  sm: {
+  S: {
     fontSize: 14,
     padding: 4,
     gap: 4,
@@ -4074,7 +4075,7 @@ const DISCLOSURE_FALLBACKS: Record<string, DisclosureSizePreset> = {
     panelIndent: 20,
     borderRadius: 4,
   },
-  md: {
+  M: {
     fontSize: 16,
     padding: 8,
     gap: 8,
@@ -4082,7 +4083,7 @@ const DISCLOSURE_FALLBACKS: Record<string, DisclosureSizePreset> = {
     panelIndent: 32,
     borderRadius: 6,
   },
-  lg: {
+  L: {
     fontSize: 18,
     padding: 8,
     gap: 8,
@@ -4097,7 +4098,7 @@ const DISCLOSURE_FALLBACKS: Record<string, DisclosureSizePreset> = {
  */
 export function getDisclosureSizePreset(size: string): DisclosureSizePreset {
   const mapping = DISCLOSURE_SIZE_MAPPING[size];
-  const fallback = DISCLOSURE_FALLBACKS[size] || DISCLOSURE_FALLBACKS.md;
+  const fallback = DISCLOSURE_FALLBACKS[size] || DISCLOSURE_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -4189,17 +4190,17 @@ const TOOLTIP_SIZE_MAPPING: Record<
   string,
   { fontSize: string; paddingX: string; paddingY: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-2xs",
     paddingX: "--spacing-xs",
     paddingY: "--spacing-2xs",
   },
-  md: {
+  M: {
     fontSize: "--text-xs",
     paddingX: "--spacing",
     paddingY: "--spacing-xs",
   },
-  lg: {
+  L: {
     fontSize: "--text-sm",
     paddingX: "--spacing-sm",
     paddingY: "--spacing-xs",
@@ -4207,21 +4208,21 @@ const TOOLTIP_SIZE_MAPPING: Record<
 };
 
 const TOOLTIP_FALLBACKS: Record<string, TooltipSizePreset> = {
-  sm: {
+  S: {
     fontSize: 10,
     paddingX: 4,
     paddingY: 2,
     maxWidth: 120,
     borderRadius: 4,
   },
-  md: {
+  M: {
     fontSize: 12,
     paddingX: 8,
     paddingY: 4,
     maxWidth: 150,
     borderRadius: 4,
   },
-  lg: {
+  L: {
     fontSize: 14,
     paddingX: 8,
     paddingY: 4,
@@ -4235,7 +4236,7 @@ const TOOLTIP_FALLBACKS: Record<string, TooltipSizePreset> = {
  */
 export function getTooltipSizePreset(size: string): TooltipSizePreset {
   const mapping = TOOLTIP_SIZE_MAPPING[size];
-  const fallback = TOOLTIP_FALLBACKS[size] || TOOLTIP_FALLBACKS.md;
+  const fallback = TOOLTIP_FALLBACKS[size] || TOOLTIP_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -4323,15 +4324,15 @@ export interface PopoverSizePreset {
 }
 
 const POPOVER_SIZE_MAPPING: Record<string, { fontSize: string }> = {
-  sm: { fontSize: "--text-sm" },
-  md: { fontSize: "--text-base" },
-  lg: { fontSize: "--text-lg" },
+  S: { fontSize: "--text-sm" },
+  M: { fontSize: "--text-base" },
+  L: { fontSize: "--text-lg" },
 };
 
 const POPOVER_FALLBACKS: Record<string, PopoverSizePreset> = {
-  sm: { fontSize: 14, maxWidth: 200, borderRadius: 8, padding: 12 },
-  md: { fontSize: 16, maxWidth: 250, borderRadius: 12, padding: 16 },
-  lg: { fontSize: 18, maxWidth: 320, borderRadius: 16, padding: 20 },
+  S: { fontSize: 14, maxWidth: 200, borderRadius: 8, padding: 12 },
+  M: { fontSize: 16, maxWidth: 250, borderRadius: 12, padding: 16 },
+  L: { fontSize: 18, maxWidth: 320, borderRadius: 16, padding: 20 },
 };
 
 /**
@@ -4339,7 +4340,7 @@ const POPOVER_FALLBACKS: Record<string, PopoverSizePreset> = {
  */
 export function getPopoverSizePreset(size: string): PopoverSizePreset {
   const mapping = POPOVER_SIZE_MAPPING[size];
-  const fallback = POPOVER_FALLBACKS[size] || POPOVER_FALLBACKS.md;
+  const fallback = POPOVER_FALLBACKS[size] || POPOVER_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -4445,17 +4446,17 @@ const DIALOG_SIZE_MAPPING: Record<
   string,
   { fontSize: string; titleFontSize: string; padding: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-sm",
     titleFontSize: "--text-lg",
     padding: "--spacing-md",
   },
-  md: {
+  M: {
     fontSize: "--text-base",
     titleFontSize: "--text-xl",
     padding: "--spacing-lg",
   },
-  lg: {
+  L: {
     fontSize: "--text-lg",
     titleFontSize: "--text-2xl",
     padding: "--spacing-xl",
@@ -4463,21 +4464,21 @@ const DIALOG_SIZE_MAPPING: Record<
 };
 
 const DIALOG_FALLBACKS: Record<string, DialogSizePreset> = {
-  sm: {
+  S: {
     fontSize: 14,
     titleFontSize: 18,
     padding: 12,
     borderRadius: 12,
     minWidth: 280,
   },
-  md: {
+  M: {
     fontSize: 16,
     titleFontSize: 20,
     padding: 16,
     borderRadius: 16,
     minWidth: 320,
   },
-  lg: {
+  L: {
     fontSize: 18,
     titleFontSize: 24,
     padding: 24,
@@ -4491,7 +4492,7 @@ const DIALOG_FALLBACKS: Record<string, DialogSizePreset> = {
  */
 export function getDialogSizePreset(size: string): DialogSizePreset {
   const mapping = DIALOG_SIZE_MAPPING[size];
-  const fallback = DIALOG_FALLBACKS[size] || DIALOG_FALLBACKS.md;
+  const fallback = DIALOG_FALLBACKS[size] || DIALOG_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -4594,15 +4595,15 @@ export interface ColorSwatchSizePreset {
 }
 
 const COLOR_SWATCH_SIZE_MAPPING: Record<string, { size: string }> = {
-  sm: { size: "--text-sm" },
-  md: { size: "--text-lg" },
-  lg: { size: "--text-2xl" },
+  S: { size: "--text-sm" },
+  M: { size: "--text-lg" },
+  L: { size: "--text-2xl" },
 };
 
 const COLOR_SWATCH_FALLBACKS: Record<string, ColorSwatchSizePreset> = {
-  sm: { width: 14, height: 14, borderRadius: 4, borderWidth: 1 },
-  md: { width: 18, height: 18, borderRadius: 6, borderWidth: 1 },
-  lg: { width: 24, height: 24, borderRadius: 8, borderWidth: 2 },
+  S: { width: 14, height: 14, borderRadius: 4, borderWidth: 1 },
+  M: { width: 18, height: 18, borderRadius: 6, borderWidth: 1 },
+  L: { width: 24, height: 24, borderRadius: 8, borderWidth: 2 },
 };
 
 /**
@@ -4610,7 +4611,7 @@ const COLOR_SWATCH_FALLBACKS: Record<string, ColorSwatchSizePreset> = {
  */
 export function getColorSwatchSizePreset(size: string): ColorSwatchSizePreset {
   const mapping = COLOR_SWATCH_SIZE_MAPPING[size];
-  const fallback = COLOR_SWATCH_FALLBACKS[size] || COLOR_SWATCH_FALLBACKS.md;
+  const fallback = COLOR_SWATCH_FALLBACKS[size] || COLOR_SWATCH_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -4690,21 +4691,21 @@ export interface ColorSliderSizePreset {
 }
 
 const COLOR_SLIDER_FALLBACKS: Record<string, ColorSliderSizePreset> = {
-  sm: {
+  S: {
     trackWidth: 160,
     trackHeight: 20,
     thumbSize: 16,
     thumbBorderWidth: 2,
     borderRadius: 10,
   },
-  md: {
+  M: {
     trackWidth: 192,
     trackHeight: 28,
     thumbSize: 20,
     thumbBorderWidth: 2,
     borderRadius: 14,
   },
-  lg: {
+  L: {
     trackWidth: 240,
     trackHeight: 36,
     thumbSize: 24,
@@ -4717,7 +4718,7 @@ const COLOR_SLIDER_FALLBACKS: Record<string, ColorSliderSizePreset> = {
  * ColorSlider 사이즈 프리셋 읽기
  */
 export function getColorSliderSizePreset(size: string): ColorSliderSizePreset {
-  return COLOR_SLIDER_FALLBACKS[size] || COLOR_SLIDER_FALLBACKS.md;
+  return COLOR_SLIDER_FALLBACKS[size] || COLOR_SLIDER_FALLBACKS.M;
 }
 
 /**
@@ -4789,17 +4790,17 @@ const TIME_FIELD_SIZE_MAPPING: Record<
   string,
   { fontSize: string; height: string; padding: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-sm",
     height: "--spacing-xl",
     padding: "--spacing-xs",
   },
-  md: {
+  M: {
     fontSize: "--text-base",
     height: "--spacing-2xl",
     padding: "--spacing-sm",
   },
-  lg: {
+  L: {
     fontSize: "--text-lg",
     height: "--spacing-3xl",
     padding: "--spacing-md",
@@ -4807,7 +4808,7 @@ const TIME_FIELD_SIZE_MAPPING: Record<
 };
 
 const TIME_FIELD_FALLBACKS: Record<string, TimeFieldSizePreset> = {
-  sm: {
+  S: {
     fontSize: 14,
     height: 32,
     padding: 4,
@@ -4815,7 +4816,7 @@ const TIME_FIELD_FALLBACKS: Record<string, TimeFieldSizePreset> = {
     borderRadius: 6,
     segmentPadding: 2,
   },
-  md: {
+  M: {
     fontSize: 16,
     height: 40,
     padding: 8,
@@ -4823,7 +4824,7 @@ const TIME_FIELD_FALLBACKS: Record<string, TimeFieldSizePreset> = {
     borderRadius: 8,
     segmentPadding: 4,
   },
-  lg: {
+  L: {
     fontSize: 18,
     height: 48,
     padding: 12,
@@ -4838,7 +4839,7 @@ const TIME_FIELD_FALLBACKS: Record<string, TimeFieldSizePreset> = {
  */
 export function getTimeFieldSizePreset(size: string): TimeFieldSizePreset {
   const mapping = TIME_FIELD_SIZE_MAPPING[size];
-  const fallback = TIME_FIELD_FALLBACKS[size] || TIME_FIELD_FALLBACKS.md;
+  const fallback = TIME_FIELD_FALLBACKS[size] || TIME_FIELD_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -4956,17 +4957,17 @@ const DATE_FIELD_SIZE_MAPPING: Record<
   string,
   { fontSize: string; height: string; padding: string }
 > = {
-  sm: {
+  S: {
     fontSize: "--text-sm",
     height: "--spacing-xl",
     padding: "--spacing-xs",
   },
-  md: {
+  M: {
     fontSize: "--text-base",
     height: "--spacing-2xl",
     padding: "--spacing-sm",
   },
-  lg: {
+  L: {
     fontSize: "--text-lg",
     height: "--spacing-3xl",
     padding: "--spacing-md",
@@ -4974,7 +4975,7 @@ const DATE_FIELD_SIZE_MAPPING: Record<
 };
 
 const DATE_FIELD_FALLBACKS: Record<string, DateFieldSizePreset> = {
-  sm: {
+  S: {
     fontSize: 14,
     height: 32,
     padding: 4,
@@ -4982,7 +4983,7 @@ const DATE_FIELD_FALLBACKS: Record<string, DateFieldSizePreset> = {
     borderRadius: 6,
     segmentPadding: 2,
   },
-  md: {
+  M: {
     fontSize: 16,
     height: 40,
     padding: 8,
@@ -4990,7 +4991,7 @@ const DATE_FIELD_FALLBACKS: Record<string, DateFieldSizePreset> = {
     borderRadius: 8,
     segmentPadding: 4,
   },
-  lg: {
+  L: {
     fontSize: 18,
     height: 48,
     padding: 12,
@@ -5005,7 +5006,7 @@ const DATE_FIELD_FALLBACKS: Record<string, DateFieldSizePreset> = {
  */
 export function getDateFieldSizePreset(size: string): DateFieldSizePreset {
   const mapping = DATE_FIELD_SIZE_MAPPING[size];
-  const fallback = DATE_FIELD_FALLBACKS[size] || DATE_FIELD_FALLBACKS.md;
+  const fallback = DATE_FIELD_FALLBACKS[size] || DATE_FIELD_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -5119,21 +5120,21 @@ export interface ColorAreaSizePreset {
 }
 
 const COLOR_AREA_FALLBACKS: Record<string, ColorAreaSizePreset> = {
-  sm: {
+  S: {
     width: 144,
     height: 144,
     thumbSize: 16,
     thumbBorderWidth: 2,
     borderRadius: 8,
   },
-  md: {
+  M: {
     width: 192,
     height: 192,
     thumbSize: 20,
     thumbBorderWidth: 2,
     borderRadius: 10,
   },
-  lg: {
+  L: {
     width: 256,
     height: 256,
     thumbSize: 24,
@@ -5146,7 +5147,7 @@ const COLOR_AREA_FALLBACKS: Record<string, ColorAreaSizePreset> = {
  * ColorArea 사이즈 프리셋 읽기
  */
 export function getColorAreaSizePreset(size: string): ColorAreaSizePreset {
-  return COLOR_AREA_FALLBACKS[size] || COLOR_AREA_FALLBACKS.md;
+  return COLOR_AREA_FALLBACKS[size] || COLOR_AREA_FALLBACKS.M;
 }
 
 /**
@@ -5222,13 +5223,13 @@ const CALENDAR_SIZE_MAPPING: Record<
   string,
   { fontSize: string; headerFontSize: string }
 > = {
-  sm: { fontSize: "--text-sm", headerFontSize: "--text-base" },
-  md: { fontSize: "--text-base", headerFontSize: "--text-lg" },
-  lg: { fontSize: "--text-lg", headerFontSize: "--text-xl" },
+  S: { fontSize: "--text-sm", headerFontSize: "--text-base" },
+  M: { fontSize: "--text-base", headerFontSize: "--text-lg" },
+  L: { fontSize: "--text-lg", headerFontSize: "--text-xl" },
 };
 
 const CALENDAR_FALLBACKS: Record<string, CalendarSizePreset> = {
-  sm: {
+  S: {
     fontSize: 14,
     headerFontSize: 16,
     cellSize: 28,
@@ -5237,7 +5238,7 @@ const CALENDAR_FALLBACKS: Record<string, CalendarSizePreset> = {
     borderRadius: 8,
     buttonSize: 24,
   },
-  md: {
+  M: {
     fontSize: 16,
     headerFontSize: 18,
     cellSize: 36,
@@ -5246,7 +5247,7 @@ const CALENDAR_FALLBACKS: Record<string, CalendarSizePreset> = {
     borderRadius: 10,
     buttonSize: 28,
   },
-  lg: {
+  L: {
     fontSize: 18,
     headerFontSize: 20,
     cellSize: 44,
@@ -5262,7 +5263,7 @@ const CALENDAR_FALLBACKS: Record<string, CalendarSizePreset> = {
  */
 export function getCalendarSizePreset(size: string): CalendarSizePreset {
   const mapping = CALENDAR_SIZE_MAPPING[size];
-  const fallback = CALENDAR_FALLBACKS[size] || CALENDAR_FALLBACKS.md;
+  const fallback = CALENDAR_FALLBACKS[size] || CALENDAR_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -5405,16 +5406,16 @@ export interface ColorWheelSizePreset {
 }
 
 const COLOR_WHEEL_FALLBACKS: Record<string, ColorWheelSizePreset> = {
-  sm: { outerRadius: 72, innerRadius: 56, thumbSize: 16, thumbBorderWidth: 2 },
-  md: { outerRadius: 96, innerRadius: 72, thumbSize: 20, thumbBorderWidth: 2 },
-  lg: { outerRadius: 128, innerRadius: 96, thumbSize: 24, thumbBorderWidth: 3 },
+  S: { outerRadius: 72, innerRadius: 56, thumbSize: 16, thumbBorderWidth: 2 },
+  M: { outerRadius: 96, innerRadius: 72, thumbSize: 20, thumbBorderWidth: 2 },
+  L: { outerRadius: 128, innerRadius: 96, thumbSize: 24, thumbBorderWidth: 3 },
 };
 
 /**
  * ColorWheel 사이즈 프리셋 읽기
  */
 export function getColorWheelSizePreset(size: string): ColorWheelSizePreset {
-  return COLOR_WHEEL_FALLBACKS[size] || COLOR_WHEEL_FALLBACKS.md;
+  return COLOR_WHEEL_FALLBACKS[size] || COLOR_WHEEL_FALLBACKS.M;
 }
 
 /**
@@ -5484,13 +5485,13 @@ export interface DatePickerSizePreset {
 }
 
 const DATE_PICKER_SIZE_MAPPING: Record<string, { fontSize: string }> = {
-  sm: { fontSize: "--text-sm" },
-  md: { fontSize: "--text-base" },
-  lg: { fontSize: "--text-lg" },
+  S: { fontSize: "--text-sm" },
+  M: { fontSize: "--text-base" },
+  L: { fontSize: "--text-lg" },
 };
 
 const DATE_PICKER_FALLBACKS: Record<string, DatePickerSizePreset> = {
-  sm: {
+  S: {
     fieldHeight: 32,
     fieldPadding: 8,
     fieldFontSize: 14,
@@ -5500,7 +5501,7 @@ const DATE_PICKER_FALLBACKS: Record<string, DatePickerSizePreset> = {
     calendarCellSize: 28,
     gap: 8,
   },
-  md: {
+  M: {
     fieldHeight: 40,
     fieldPadding: 12,
     fieldFontSize: 16,
@@ -5510,7 +5511,7 @@ const DATE_PICKER_FALLBACKS: Record<string, DatePickerSizePreset> = {
     calendarCellSize: 36,
     gap: 12,
   },
-  lg: {
+  L: {
     fieldHeight: 48,
     fieldPadding: 16,
     fieldFontSize: 18,
@@ -5527,7 +5528,7 @@ const DATE_PICKER_FALLBACKS: Record<string, DatePickerSizePreset> = {
  */
 export function getDatePickerSizePreset(size: string): DatePickerSizePreset {
   const mapping = DATE_PICKER_SIZE_MAPPING[size];
-  const fallback = DATE_PICKER_FALLBACKS[size] || DATE_PICKER_FALLBACKS.md;
+  const fallback = DATE_PICKER_FALLBACKS[size] || DATE_PICKER_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -5656,7 +5657,7 @@ export interface ColorPickerSizePreset {
 }
 
 const COLOR_PICKER_FALLBACKS: Record<string, ColorPickerSizePreset> = {
-  sm: {
+  S: {
     areaSize: 144,
     sliderWidth: 144,
     sliderHeight: 20,
@@ -5666,7 +5667,7 @@ const COLOR_PICKER_FALLBACKS: Record<string, ColorPickerSizePreset> = {
     gap: 8,
     borderRadius: 8,
   },
-  md: {
+  M: {
     areaSize: 192,
     sliderWidth: 192,
     sliderHeight: 28,
@@ -5676,7 +5677,7 @@ const COLOR_PICKER_FALLBACKS: Record<string, ColorPickerSizePreset> = {
     gap: 12,
     borderRadius: 10,
   },
-  lg: {
+  L: {
     areaSize: 256,
     sliderWidth: 256,
     sliderHeight: 36,
@@ -5692,7 +5693,7 @@ const COLOR_PICKER_FALLBACKS: Record<string, ColorPickerSizePreset> = {
  * ColorPicker 사이즈 프리셋 읽기
  */
 export function getColorPickerSizePreset(size: string): ColorPickerSizePreset {
-  return COLOR_PICKER_FALLBACKS[size] || COLOR_PICKER_FALLBACKS.md;
+  return COLOR_PICKER_FALLBACKS[size] || COLOR_PICKER_FALLBACKS.M;
 }
 
 /**
@@ -5782,13 +5783,13 @@ export interface DateRangePickerSizePreset {
 }
 
 const DATE_RANGE_PICKER_SIZE_MAPPING: Record<string, { fontSize: string }> = {
-  sm: { fontSize: "--text-sm" },
-  md: { fontSize: "--text-base" },
-  lg: { fontSize: "--text-lg" },
+  S: { fontSize: "--text-sm" },
+  M: { fontSize: "--text-base" },
+  L: { fontSize: "--text-lg" },
 };
 
 const DATE_RANGE_PICKER_FALLBACKS: Record<string, DateRangePickerSizePreset> = {
-  sm: {
+  S: {
     fieldHeight: 32,
     fieldPadding: 8,
     fieldFontSize: 14,
@@ -5799,7 +5800,7 @@ const DATE_RANGE_PICKER_FALLBACKS: Record<string, DateRangePickerSizePreset> = {
     gap: 8,
     separatorWidth: 16,
   },
-  md: {
+  M: {
     fieldHeight: 40,
     fieldPadding: 12,
     fieldFontSize: 16,
@@ -5810,7 +5811,7 @@ const DATE_RANGE_PICKER_FALLBACKS: Record<string, DateRangePickerSizePreset> = {
     gap: 12,
     separatorWidth: 24,
   },
-  lg: {
+  L: {
     fieldHeight: 48,
     fieldPadding: 16,
     fieldFontSize: 18,
@@ -5831,7 +5832,7 @@ export function getDateRangePickerSizePreset(
 ): DateRangePickerSizePreset {
   const mapping = DATE_RANGE_PICKER_SIZE_MAPPING[size];
   const fallback =
-    DATE_RANGE_PICKER_FALLBACKS[size] || DATE_RANGE_PICKER_FALLBACKS.md;
+    DATE_RANGE_PICKER_FALLBACKS[size] || DATE_RANGE_PICKER_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -5986,7 +5987,7 @@ export interface TextFieldSizePreset {
 }
 
 const TEXT_FIELD_SIZE_FALLBACKS: Record<string, TextFieldSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     height: 32,
     padding: 6,
@@ -5996,7 +5997,7 @@ const TEXT_FIELD_SIZE_FALLBACKS: Record<string, TextFieldSizePreset> = {
     descriptionFontSize: 11,
     gap: 4,
   },
-  md: {
+  M: {
     fontSize: 14,
     height: 40,
     padding: 8,
@@ -6006,7 +6007,7 @@ const TEXT_FIELD_SIZE_FALLBACKS: Record<string, TextFieldSizePreset> = {
     descriptionFontSize: 12,
     gap: 6,
   },
-  lg: {
+  L: {
     fontSize: 16,
     height: 48,
     padding: 10,
@@ -6023,7 +6024,7 @@ const TEXT_FIELD_SIZE_FALLBACKS: Record<string, TextFieldSizePreset> = {
  */
 export function getTextFieldSizePreset(size: string): TextFieldSizePreset {
   const fallback =
-    TEXT_FIELD_SIZE_FALLBACKS[size] || TEXT_FIELD_SIZE_FALLBACKS.md;
+    TEXT_FIELD_SIZE_FALLBACKS[size] || TEXT_FIELD_SIZE_FALLBACKS.M;
 
   try {
     // 임시 DOM 요소 생성
@@ -6270,7 +6271,7 @@ export interface SwitchSizePreset {
 }
 
 const SWITCH_FALLBACKS: Record<string, SwitchSizePreset> = {
-  sm: {
+  S: {
     trackWidth: 36,
     trackHeight: 20,
     thumbSize: 16,
@@ -6279,7 +6280,7 @@ const SWITCH_FALLBACKS: Record<string, SwitchSizePreset> = {
     labelFontSize: 12,
     gap: 8,
   },
-  md: {
+  M: {
     trackWidth: 44,
     trackHeight: 24,
     thumbSize: 20,
@@ -6288,7 +6289,7 @@ const SWITCH_FALLBACKS: Record<string, SwitchSizePreset> = {
     labelFontSize: 14,
     gap: 10,
   },
-  lg: {
+  L: {
     trackWidth: 52,
     trackHeight: 28,
     thumbSize: 24,
@@ -6300,7 +6301,7 @@ const SWITCH_FALLBACKS: Record<string, SwitchSizePreset> = {
 };
 
 export function getSwitchSizePreset(size: string): SwitchSizePreset {
-  return SWITCH_FALLBACKS[size] || SWITCH_FALLBACKS.md;
+  return SWITCH_FALLBACKS[size] || SWITCH_FALLBACKS.M;
 }
 
 /**
@@ -6390,7 +6391,7 @@ export interface TextAreaSizePreset {
 }
 
 const TEXT_AREA_FALLBACKS: Record<string, TextAreaSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     minHeight: 64,
     padding: 8,
@@ -6401,7 +6402,7 @@ const TEXT_AREA_FALLBACKS: Record<string, TextAreaSizePreset> = {
     gap: 4,
     lineHeight: 1.4,
   },
-  md: {
+  M: {
     fontSize: 14,
     minHeight: 80,
     padding: 10,
@@ -6412,7 +6413,7 @@ const TEXT_AREA_FALLBACKS: Record<string, TextAreaSizePreset> = {
     gap: 6,
     lineHeight: 1.5,
   },
-  lg: {
+  L: {
     fontSize: 16,
     minHeight: 96,
     padding: 12,
@@ -6426,7 +6427,7 @@ const TEXT_AREA_FALLBACKS: Record<string, TextAreaSizePreset> = {
 };
 
 export function getTextAreaSizePreset(size: string): TextAreaSizePreset {
-  return TEXT_AREA_FALLBACKS[size] || TEXT_AREA_FALLBACKS.md;
+  return TEXT_AREA_FALLBACKS[size] || TEXT_AREA_FALLBACKS.M;
 }
 
 /**
@@ -6450,21 +6451,21 @@ export interface FormSizePreset {
 }
 
 const FORM_FALLBACKS: Record<string, FormSizePreset> = {
-  sm: {
+  S: {
     padding: 12,
     gap: 12,
     borderRadius: 8,
     labelFontSize: 12,
     sectionGap: 16,
   },
-  md: {
+  M: {
     padding: 16,
     gap: 16,
     borderRadius: 10,
     labelFontSize: 14,
     sectionGap: 24,
   },
-  lg: {
+  L: {
     padding: 20,
     gap: 20,
     borderRadius: 12,
@@ -6474,7 +6475,7 @@ const FORM_FALLBACKS: Record<string, FormSizePreset> = {
 };
 
 export function getFormSizePreset(size: string): FormSizePreset {
-  return FORM_FALLBACKS[size] || FORM_FALLBACKS.md;
+  return FORM_FALLBACKS[size] || FORM_FALLBACKS.M;
 }
 
 /**
@@ -6531,7 +6532,7 @@ export interface ToolbarSizePreset {
 }
 
 const TOOLBAR_FALLBACKS: Record<string, ToolbarSizePreset> = {
-  sm: {
+  S: {
     height: 36,
     padding: 6,
     gap: 4,
@@ -6539,7 +6540,7 @@ const TOOLBAR_FALLBACKS: Record<string, ToolbarSizePreset> = {
     separatorWidth: 1,
     separatorHeight: 20,
   },
-  md: {
+  M: {
     height: 44,
     padding: 8,
     gap: 6,
@@ -6547,7 +6548,7 @@ const TOOLBAR_FALLBACKS: Record<string, ToolbarSizePreset> = {
     separatorWidth: 1,
     separatorHeight: 24,
   },
-  lg: {
+  L: {
     height: 52,
     padding: 10,
     gap: 8,
@@ -6558,7 +6559,7 @@ const TOOLBAR_FALLBACKS: Record<string, ToolbarSizePreset> = {
 };
 
 export function getToolbarSizePreset(size: string): ToolbarSizePreset {
-  return TOOLBAR_FALLBACKS[size] || TOOLBAR_FALLBACKS.md;
+  return TOOLBAR_FALLBACKS[size] || TOOLBAR_FALLBACKS.M;
 }
 
 /**
@@ -6621,7 +6622,7 @@ export interface FileTriggerSizePreset {
 }
 
 const FILE_TRIGGER_FALLBACKS: Record<string, FileTriggerSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     height: 32,
     padding: 6,
@@ -6630,7 +6631,7 @@ const FILE_TRIGGER_FALLBACKS: Record<string, FileTriggerSizePreset> = {
     iconSize: 14,
     gap: 6,
   },
-  md: {
+  M: {
     fontSize: 14,
     height: 40,
     padding: 8,
@@ -6639,7 +6640,7 @@ const FILE_TRIGGER_FALLBACKS: Record<string, FileTriggerSizePreset> = {
     iconSize: 16,
     gap: 8,
   },
-  lg: {
+  L: {
     fontSize: 16,
     height: 48,
     padding: 10,
@@ -6651,7 +6652,7 @@ const FILE_TRIGGER_FALLBACKS: Record<string, FileTriggerSizePreset> = {
 };
 
 export function getFileTriggerSizePreset(size: string): FileTriggerSizePreset {
-  return FILE_TRIGGER_FALLBACKS[size] || FILE_TRIGGER_FALLBACKS.md;
+  return FILE_TRIGGER_FALLBACKS[size] || FILE_TRIGGER_FALLBACKS.M;
 }
 
 /**
@@ -6725,7 +6726,7 @@ export interface DropZoneSizePreset {
 }
 
 const DROP_ZONE_FALLBACKS: Record<string, DropZoneSizePreset> = {
-  sm: {
+  S: {
     minHeight: 80,
     padding: 16,
     borderRadius: 8,
@@ -6735,7 +6736,7 @@ const DROP_ZONE_FALLBACKS: Record<string, DropZoneSizePreset> = {
     labelFontSize: 14,
     gap: 8,
   },
-  md: {
+  M: {
     minHeight: 120,
     padding: 24,
     borderRadius: 10,
@@ -6745,7 +6746,7 @@ const DROP_ZONE_FALLBACKS: Record<string, DropZoneSizePreset> = {
     labelFontSize: 16,
     gap: 12,
   },
-  lg: {
+  L: {
     minHeight: 160,
     padding: 32,
     borderRadius: 12,
@@ -6758,7 +6759,7 @@ const DROP_ZONE_FALLBACKS: Record<string, DropZoneSizePreset> = {
 };
 
 export function getDropZoneSizePreset(size: string): DropZoneSizePreset {
-  return DROP_ZONE_FALLBACKS[size] || DROP_ZONE_FALLBACKS.md;
+  return DROP_ZONE_FALLBACKS[size] || DROP_ZONE_FALLBACKS.M;
 }
 
 /**
@@ -6830,21 +6831,21 @@ export interface SkeletonSizePreset {
 }
 
 const SKELETON_FALLBACKS: Record<string, SkeletonSizePreset> = {
-  sm: {
+  S: {
     height: 16,
     borderRadius: 4,
     avatarSize: 32,
     lineHeight: 12,
     lineGap: 8,
   },
-  md: {
+  M: {
     height: 20,
     borderRadius: 6,
     avatarSize: 40,
     lineHeight: 16,
     lineGap: 10,
   },
-  lg: {
+  L: {
     height: 24,
     borderRadius: 8,
     avatarSize: 48,
@@ -6854,7 +6855,7 @@ const SKELETON_FALLBACKS: Record<string, SkeletonSizePreset> = {
 };
 
 export function getSkeletonSizePreset(size: string): SkeletonSizePreset {
-  return SKELETON_FALLBACKS[size] || SKELETON_FALLBACKS.md;
+  return SKELETON_FALLBACKS[size] || SKELETON_FALLBACKS.M;
 }
 
 /**
@@ -6895,7 +6896,7 @@ export interface ToastSizePreset {
 }
 
 const TOAST_FALLBACKS: Record<string, ToastSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     padding: 8,
     paddingX: 12,
@@ -6905,7 +6906,7 @@ const TOAST_FALLBACKS: Record<string, ToastSizePreset> = {
     maxWidth: 320,
     dismissButtonSize: 20,
   },
-  md: {
+  M: {
     fontSize: 14,
     padding: 10,
     paddingX: 14,
@@ -6915,7 +6916,7 @@ const TOAST_FALLBACKS: Record<string, ToastSizePreset> = {
     maxWidth: 400,
     dismissButtonSize: 24,
   },
-  lg: {
+  L: {
     fontSize: 16,
     padding: 12,
     paddingX: 16,
@@ -6928,7 +6929,7 @@ const TOAST_FALLBACKS: Record<string, ToastSizePreset> = {
 };
 
 export function getToastSizePreset(size: string): ToastSizePreset {
-  return TOAST_FALLBACKS[size] || TOAST_FALLBACKS.md;
+  return TOAST_FALLBACKS[size] || TOAST_FALLBACKS.M;
 }
 
 /**
@@ -6999,13 +7000,13 @@ export interface PaginationSizePreset {
 }
 
 const PAGINATION_FALLBACKS: Record<string, PaginationSizePreset> = {
-  sm: { fontSize: 12, buttonSize: 28, padding: 4, gap: 4, borderRadius: 4 },
-  md: { fontSize: 14, buttonSize: 32, padding: 6, gap: 6, borderRadius: 6 },
-  lg: { fontSize: 16, buttonSize: 40, padding: 8, gap: 8, borderRadius: 8 },
+  S: { fontSize: 12, buttonSize: 28, padding: 4, gap: 4, borderRadius: 4 },
+  M: { fontSize: 14, buttonSize: 32, padding: 6, gap: 6, borderRadius: 6 },
+  L: { fontSize: 16, buttonSize: 40, padding: 8, gap: 8, borderRadius: 8 },
 };
 
 export function getPaginationSizePreset(size: string): PaginationSizePreset {
-  return PAGINATION_FALLBACKS[size] || PAGINATION_FALLBACKS.md;
+  return PAGINATION_FALLBACKS[size] || PAGINATION_FALLBACKS.M;
 }
 
 /**
@@ -7077,7 +7078,7 @@ export interface ColorFieldSizePreset {
 }
 
 const COLOR_FIELD_FALLBACKS: Record<string, ColorFieldSizePreset> = {
-  sm: {
+  S: {
     fontSize: 12,
     height: 28,
     padding: 6,
@@ -7086,7 +7087,7 @@ const COLOR_FIELD_FALLBACKS: Record<string, ColorFieldSizePreset> = {
     labelFontSize: 11,
     gap: 4,
   },
-  md: {
+  M: {
     fontSize: 14,
     height: 32,
     padding: 8,
@@ -7095,7 +7096,7 @@ const COLOR_FIELD_FALLBACKS: Record<string, ColorFieldSizePreset> = {
     labelFontSize: 12,
     gap: 6,
   },
-  lg: {
+  L: {
     fontSize: 16,
     height: 40,
     padding: 10,
@@ -7107,7 +7108,7 @@ const COLOR_FIELD_FALLBACKS: Record<string, ColorFieldSizePreset> = {
 };
 
 export function getColorFieldSizePreset(size: string): ColorFieldSizePreset {
-  return COLOR_FIELD_FALLBACKS[size] || COLOR_FIELD_FALLBACKS.md;
+  return COLOR_FIELD_FALLBACKS[size] || COLOR_FIELD_FALLBACKS.M;
 }
 
 /**
@@ -7184,17 +7185,15 @@ const COLOR_SWATCH_PICKER_FALLBACKS: Record<
   string,
   ColorSwatchPickerSizePreset
 > = {
-  sm: { swatchSize: 24, gap: 6, borderRadius: 4, selectionBorderWidth: 2 },
-  md: { swatchSize: 32, gap: 8, borderRadius: 4, selectionBorderWidth: 2 },
-  lg: { swatchSize: 40, gap: 10, borderRadius: 6, selectionBorderWidth: 3 },
+  S: { swatchSize: 24, gap: 6, borderRadius: 4, selectionBorderWidth: 2 },
+  M: { swatchSize: 32, gap: 8, borderRadius: 4, selectionBorderWidth: 2 },
+  L: { swatchSize: 40, gap: 10, borderRadius: 6, selectionBorderWidth: 3 },
 };
 
 export function getColorSwatchPickerSizePreset(
   size: string,
 ): ColorSwatchPickerSizePreset {
-  return (
-    COLOR_SWATCH_PICKER_FALLBACKS[size] || COLOR_SWATCH_PICKER_FALLBACKS.md
-  );
+  return COLOR_SWATCH_PICKER_FALLBACKS[size] || COLOR_SWATCH_PICKER_FALLBACKS.M;
 }
 
 /**
@@ -7252,21 +7251,21 @@ export interface GroupSizePreset {
 }
 
 const GROUP_FALLBACKS: Record<string, GroupSizePreset> = {
-  sm: {
+  S: {
     padding: 8,
     gap: 6,
     borderRadius: 4,
     labelFontSize: 10,
     labelPadding: 4,
   },
-  md: {
+  M: {
     padding: 12,
     gap: 8,
     borderRadius: 6,
     labelFontSize: 12,
     labelPadding: 6,
   },
-  lg: {
+  L: {
     padding: 16,
     gap: 10,
     borderRadius: 8,
@@ -7276,7 +7275,7 @@ const GROUP_FALLBACKS: Record<string, GroupSizePreset> = {
 };
 
 export function getGroupSizePreset(size: string): GroupSizePreset {
-  return GROUP_FALLBACKS[size] || GROUP_FALLBACKS.md;
+  return GROUP_FALLBACKS[size] || GROUP_FALLBACKS.M;
 }
 
 /**
@@ -7337,7 +7336,7 @@ export interface SlotSizePreset {
 }
 
 const SLOT_FALLBACKS: Record<string, SlotSizePreset> = {
-  sm: {
+  S: {
     minHeight: 60,
     padding: 12,
     borderWidth: 2,
@@ -7347,7 +7346,7 @@ const SLOT_FALLBACKS: Record<string, SlotSizePreset> = {
     descriptionFontSize: 10,
     gap: 8,
   },
-  md: {
+  M: {
     minHeight: 80,
     padding: 16,
     borderWidth: 2,
@@ -7357,7 +7356,7 @@ const SLOT_FALLBACKS: Record<string, SlotSizePreset> = {
     descriptionFontSize: 12,
     gap: 10,
   },
-  lg: {
+  L: {
     minHeight: 100,
     padding: 20,
     borderWidth: 2,
@@ -7370,7 +7369,7 @@ const SLOT_FALLBACKS: Record<string, SlotSizePreset> = {
 };
 
 export function getSlotSizePreset(size: string): SlotSizePreset {
-  return SLOT_FALLBACKS[size] || SLOT_FALLBACKS.md;
+  return SLOT_FALLBACKS[size] || SLOT_FALLBACKS.M;
 }
 
 /**
@@ -7460,15 +7459,15 @@ const CHECKBOX_GROUP_SIZE_MAPPING: Record<
   string,
   { fontSize: string; boxSize: string; gap: string }
 > = {
-  sm: { fontSize: "--text-sm", boxSize: "--text-lg", gap: "--gap" },
-  md: { fontSize: "--text-base", boxSize: "--text-xl", gap: "--gap" },
-  lg: { fontSize: "--text-lg", boxSize: "--text-2xl", gap: "--gap" },
+  S: { fontSize: "--text-sm", boxSize: "--text-lg", gap: "--gap" },
+  M: { fontSize: "--text-base", boxSize: "--text-xl", gap: "--gap" },
+  L: { fontSize: "--text-lg", boxSize: "--text-2xl", gap: "--gap" },
 };
 
 const CHECKBOX_GROUP_FALLBACKS: Record<string, CheckboxGroupSizePreset> = {
-  sm: { fontSize: 14, boxSize: 18, gap: 8, labelGap: 6 },
-  md: { fontSize: 16, boxSize: 20, gap: 12, labelGap: 8 },
-  lg: { fontSize: 18, boxSize: 24, gap: 16, labelGap: 10 },
+  S: { fontSize: 14, boxSize: 18, gap: 8, labelGap: 6 },
+  M: { fontSize: 16, boxSize: 20, gap: 12, labelGap: 8 },
+  L: { fontSize: 18, boxSize: 24, gap: 16, labelGap: 10 },
 };
 
 /**
@@ -7478,8 +7477,7 @@ export function getCheckboxGroupSizePreset(
   size: string,
 ): CheckboxGroupSizePreset {
   const mapping = CHECKBOX_GROUP_SIZE_MAPPING[size];
-  const fallback =
-    CHECKBOX_GROUP_FALLBACKS[size] || CHECKBOX_GROUP_FALLBACKS.md;
+  const fallback = CHECKBOX_GROUP_FALLBACKS[size] || CHECKBOX_GROUP_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;

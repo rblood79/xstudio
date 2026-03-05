@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * SearchField Props
  */
 export interface SearchFieldProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   label?: string;
   placeholder?: string;
   value?: string;
@@ -34,7 +34,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -45,7 +45,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       border: '{color.border}' as TokenRef,
       borderHover: '{color.accent}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.layer-2}' as TokenRef,
       backgroundHover: '{color.layer-1}' as TokenRef,
       backgroundPressed: '{color.layer-1}' as TokenRef,
@@ -56,7 +56,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -65,7 +65,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       iconSize: 14,
       gap: 6,
     },
-    md: {
+    M: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -74,7 +74,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       iconSize: 18,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 48,
       paddingX: 16,
       paddingY: 12,

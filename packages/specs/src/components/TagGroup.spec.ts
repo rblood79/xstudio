@@ -16,8 +16,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * TagGroup Props
  */
 export interface TagGroupProps {
-  variant?: 'default' | 'primary' | 'secondary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'neutral' | 'negative';
+  size?: 'S' | 'M' | 'L';
   selectionMode?: 'none' | 'single' | 'multiple';
   label?: string;
   style?: Record<string, string | number | undefined>;
@@ -34,7 +34,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -44,21 +44,21 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.accent-subtle}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
       border: '{color.accent}' as TokenRef,
     },
-    secondary: {
+    neutral: {
       background: '{color.neutral-subtle}' as TokenRef,
       backgroundHover: '{color.neutral-subtle}' as TokenRef,
       backgroundPressed: '{color.neutral-subtle}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
       border: '{color.neutral-subtle}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.negative-subtle}' as TokenRef,
       backgroundHover: '{color.negative-subtle}' as TokenRef,
       backgroundPressed: '{color.negative-subtle}' as TokenRef,
@@ -68,7 +68,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 24,
       paddingX: 8,
       paddingY: 2,
@@ -76,7 +76,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 6,
     },
-    md: {
+    M: {
       height: 32,
       paddingX: 12,
       paddingY: 4,
@@ -84,7 +84,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 40,
       paddingX: 16,
       paddingY: 6,

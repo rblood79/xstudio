@@ -220,7 +220,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
 
         <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
-          value={String(currentProps.size || "md")}
+          value={String(currentProps.size || "M")}
           onChange={(value) => updateProp("size", value)}
         />
 

@@ -337,15 +337,15 @@ export const ComboBoxEditor = memo(
             onChange={handleVariantChange}
             options={[
               { value: "default", label: PROPERTY_LABELS.VARIANT_DEFAULT },
-              { value: "primary", label: PROPERTY_LABELS.VARIANT_PRIMARY },
-              { value: "error", label: "Error" },
+              { value: "accent", label: "Accent" },
+              { value: "negative", label: "Negative" },
             ]}
             icon={Parentheses}
           />
 
           <PropertySizeToggle
             label={PROPERTY_LABELS.SIZE}
-            value={String(currentProps.size || "md")}
+            value={String(currentProps.size || "M")}
             onChange={handleSizeChange}
           />
         </PropertySection>

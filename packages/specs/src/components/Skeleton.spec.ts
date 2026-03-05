@@ -13,8 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  * Skeleton Props
  */
 export interface SkeletonProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   skeletonVariant?: 'text' | 'avatar' | 'card' | 'list';
   width?: number;
   height?: number;
@@ -30,7 +30,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -39,7 +39,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
       backgroundPressed: '{color.layer-2}' as TokenRef,
       text: '{color.neutral-subdued}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.accent-subtle}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -48,21 +48,21 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
       fontSize: '{typography.text-sm}' as TokenRef,
       borderRadius: '{radius.sm}' as TokenRef,
     },
-    md: {
+    M: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
       fontSize: '{typography.text-md}' as TokenRef,
       borderRadius: '{radius.md}' as TokenRef,
     },
-    lg: {
+    L: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

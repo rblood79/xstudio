@@ -93,17 +93,17 @@ export const DisclosureEditor = memo(function DisclosureEditor({
       <PropertySection title="Design">
         <PropertySelect
           label={PROPERTY_LABELS.VARIANT}
-          value={String(currentProps.variant || "primary")}
+          value={String(currentProps.variant || "default")}
           onChange={(value) => updateProp("variant", value)}
           options={[
-            { value: "primary", label: "Primary" },
-            { value: "secondary", label: "Secondary" },
+            { value: "default", label: "Default" },
+            { value: "accent", label: "Accent" },
           ]}
         />
 
         <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
-          value={String(currentProps.size || "md")}
+          value={String(currentProps.size || "M")}
           onChange={(value) => updateProp("size", value)}
         />
       </PropertySection>

@@ -12,7 +12,7 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
  *     └─ DialogFooter — 버튼 영역 컨테이너
  */
 export function createDialogDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -28,8 +28,8 @@ export function createDialogDefinition(
     parent: {
       tag: "Dialog",
       props: {
-        variant: "primary",
-        size: "md",
+        variant: "accent",
+        size: "M",
         style: {
           display: "flex",
           flexDirection: "column",
@@ -95,7 +95,7 @@ export function createDialogDefinition(
  *     └─ Description — 팝오버 내용 노드
  */
 export function createPopoverDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -112,7 +112,7 @@ export function createPopoverDefinition(
       tag: "Popover",
       props: {
         variant: "default",
-        size: "sm",
+        size: "S",
         style: {
           display: "flex",
           flexDirection: "column",
@@ -165,7 +165,7 @@ export function createPopoverDefinition(
  *     └─ Description — 툴팁 텍스트 노드
  */
 export function createTooltipDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;

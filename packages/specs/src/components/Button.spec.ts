@@ -23,7 +23,7 @@ export interface ButtonProps {
     | "premium"
     | "genai";
   fillStyle?: "fill" | "outline";
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  size?: "XS" | "S" | "M" | "L" | "XL";
   children?: string;
   text?: string;
   label?: string;
@@ -41,7 +41,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
   element: "button",
 
   defaultVariant: "primary",
-  defaultSize: "md",
+  defaultSize: "M",
 
   variants: {
     accent: {
@@ -94,7 +94,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
   },
 
   sizes: {
-    xs: {
+    XS: {
       height: 20,
       paddingX: 8,
       paddingY: 4,
@@ -103,7 +103,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       iconSize: 12,
       gap: 4,
     },
-    sm: {
+    S: {
       height: 22,
       paddingX: 12,
       paddingY: 4,
@@ -112,7 +112,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       iconSize: 14,
       gap: 6,
     },
-    md: {
+    M: {
       height: 32,
       paddingX: 16,
       paddingY: 8,
@@ -121,7 +121,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       iconSize: 16,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 42,
       paddingX: 24,
       paddingY: 12,
@@ -130,7 +130,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       iconSize: 20,
       gap: 10,
     },
-    xl: {
+    XL: {
       height: 52,
       paddingX: 32,
       paddingY: 16,

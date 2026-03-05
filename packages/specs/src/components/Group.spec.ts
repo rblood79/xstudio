@@ -13,8 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  * Group Props
  */
 export interface GroupProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   orientation?: 'horizontal' | 'vertical';
   label?: string;
   style?: Record<string, string | number | undefined>;
@@ -29,7 +29,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -38,7 +38,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
       backgroundPressed: '{color.base}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.base}' as TokenRef,
       backgroundPressed: '{color.base}' as TokenRef,
@@ -47,7 +47,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -55,7 +55,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 6,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -63,7 +63,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 0,
       paddingY: 0,

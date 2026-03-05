@@ -348,9 +348,9 @@ export const TableEditor = memo(
           {/* Table Size */}
           <PropertySizeToggle
             label={PROPERTY_LABELS.TABLE_SIZE}
-            value={(currentProps as TableElementProps)?.size || "md"}
+            value={(currentProps as TableElementProps)?.size || "M"}
             onChange={(key) =>
-              updateTableProps({ size: key as "sm" | "md" | "lg" })
+              updateTableProps({ size: key as "S" | "M" | "L" })
             }
           />
 
@@ -383,11 +383,11 @@ export const TableEditor = memo(
             options={[
               { value: "default", label: PROPERTY_LABELS.HEADER_STYLE_DEFAULT },
               { value: "dark", label: "Dark" },
-              { value: "primary", label: "Primary" },
+              { value: "accent", label: "Accent" },
             ]}
             onChange={(key) =>
               updateTableProps({
-                headerVariant: key as "default" | "dark" | "primary",
+                headerVariant: key as "default" | "dark" | "accent",
               })
             }
             icon={Settings}

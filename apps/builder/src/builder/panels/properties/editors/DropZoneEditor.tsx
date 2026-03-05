@@ -87,7 +87,7 @@ export const DropZoneEditor = memo(function DropZoneEditor({
           onChange={(value) => updateProp("variant", value)}
           options={[
             { value: "default", label: "Default" },
-            { value: "primary", label: "Primary" },
+            { value: "accent", label: "Accent" },
             { value: "dashed", label: "Dashed" },
           ]}
           icon={Upload}
@@ -95,7 +95,7 @@ export const DropZoneEditor = memo(function DropZoneEditor({
 
         <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
-          value={String(currentProps.size || "md")}
+          value={String(currentProps.size || "M")}
           onChange={(value) => updateProp("size", value)}
         />
       </PropertySection>

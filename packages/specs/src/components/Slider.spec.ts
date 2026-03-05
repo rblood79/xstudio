@@ -7,17 +7,17 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveStateColors } from '../utils/stateEffect';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveStateColors } from "../utils/stateEffect";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Slider Props
  */
 export interface SliderProps {
-  variant?: 'default' | 'primary' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "default" | "accent" | "neutral";
+  size?: "S" | "M" | "L";
   label?: string;
   value?: number;
   minValue?: number;
@@ -30,83 +30,89 @@ export interface SliderProps {
 }
 
 /** variant별 채우기/핸들 색상 */
-export const SLIDER_FILL_COLORS: Record<string, { fill: TokenRef; handle: TokenRef }> = {
+export const SLIDER_FILL_COLORS: Record<
+  string,
+  { fill: TokenRef; handle: TokenRef }
+> = {
   default: {
-    fill: '{color.accent}' as TokenRef,
-    handle: '{color.accent}' as TokenRef,
+    fill: "{color.accent}" as TokenRef,
+    handle: "{color.accent}" as TokenRef,
   },
-  primary: {
-    fill: '{color.accent}' as TokenRef,
-    handle: '{color.accent}' as TokenRef,
+  accent: {
+    fill: "{color.accent}" as TokenRef,
+    handle: "{color.accent}" as TokenRef,
   },
-  secondary: {
-    fill: '{color.neutral-subtle}' as TokenRef,
-    handle: '{color.neutral-subtle}' as TokenRef,
+  neutral: {
+    fill: "{color.neutral-subtle}" as TokenRef,
+    handle: "{color.neutral-subtle}" as TokenRef,
   },
 };
 
 /** 사이즈별 트랙/핸들 치수 */
-export const SLIDER_DIMENSIONS: Record<string, { trackHeight: number; thumbSize: number }> = {
-  sm: { trackHeight: 4, thumbSize: 14 },
-  md: { trackHeight: 6, thumbSize: 18 },
-  lg: { trackHeight: 8, thumbSize: 22 },
+export const SLIDER_DIMENSIONS: Record<
+  string,
+  { trackHeight: number; thumbSize: number }
+> = {
+  S: { trackHeight: 4, thumbSize: 14 },
+  M: { trackHeight: 6, thumbSize: 18 },
+  L: { trackHeight: 8, thumbSize: 22 },
 };
 
 /**
  * Slider Component Spec
  */
 export const SliderSpec: ComponentSpec<SliderProps> = {
-  name: 'Slider',
-  description: 'React Aria 기반 슬라이더 컴포넌트',
-  element: 'div',
+  name: "Slider",
+  description: "React Aria 기반 슬라이더 컴포넌트",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
-    primary: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+    accent: {
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
-    secondary: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+    neutral: {
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.full}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
       gap: 8,
     },
-    md: {
+    M: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.full}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
       gap: 10,
     },
-    lg: {
+    L: {
       height: 28,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.full}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.full}" as TokenRef,
       gap: 12,
     },
   },
@@ -116,50 +122,61 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      cursor: 'not-allowed',
-      pointerEvents: 'none',
+      cursor: "not-allowed",
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--highlight-background)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--highlight-background)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
-      const variantName = props.variant ?? 'default';
-      const sizeName = props.size ?? 'md';
-      const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.md;
-      const fillColors = SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
+    shapes: (props, variant, size, state = "default") => {
+      const variantName = props.variant ?? "default";
+      const sizeName = props.size ?? "M";
+      const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.M;
+      const fillColors =
+        SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
       const width = (props.style?.width as number) || 200;
       const gap = size.gap ?? 10;
 
       const min = props.minValue ?? 0;
       const max = props.maxValue ?? 100;
       const value = props.value ?? 50;
-      const percent = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+      const percent = Math.max(
+        0,
+        Math.min(100, ((value - min) / (max - min)) * 100),
+      );
       const fillWidth = (width * percent) / 100;
       const thumbX = fillWidth;
       const trackY = sliderDims.thumbSize / 2 - sliderDims.trackHeight / 2;
       const trackRadius = sliderDims.trackHeight / 2;
 
       // 사용자 스타일 우선
-      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
+      const bgColor =
+        props.style?.backgroundColor ??
+        resolveStateColors(variant, state).background;
       const textColor = props.style?.color ?? variant.text;
       const fwRaw = props.style?.fontWeight;
-      const fw = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
-        : 500;
+      const fw =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 500
+          : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
       // fontSize가 TokenRef 문자열일 수 있으므로 resolveToken으로 숫자 변환
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFontSize = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFontSize =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : 14);
-      const numericFontSize = typeof resolvedFontSize === 'number' ? resolvedFontSize : 14;
+            : 14;
+      const numericFontSize =
+        typeof resolvedFontSize === "number" ? resolvedFontSize : 14;
 
       const shapes: Shape[] = [];
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
@@ -168,7 +185,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       if (!hasChildren && (props.label || props.showValue)) {
         if (props.label) {
           shapes.push({
-            type: 'text' as const,
+            type: "text" as const,
             x: 0,
             y: 0,
             text: props.label,
@@ -176,34 +193,33 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             fontFamily: ff,
             fontWeight: fw,
             fill: textColor,
-            align: 'left' as const,
-            baseline: 'top' as const,
+            align: "left" as const,
+            baseline: "top" as const,
           });
         }
         if (props.showValue) {
           shapes.push({
-            type: 'text' as const,
+            type: "text" as const,
             x: 0,
             y: 0,
             text: String(value),
             fontSize: numericFontSize,
             fontFamily: ff,
             fill: textColor,
-            align: 'right' as const,
-            baseline: 'top' as const,
+            align: "right" as const,
+            baseline: "top" as const,
             maxWidth: width,
           });
         }
       }
 
-      const offsetY = (props.label || props.showValue)
-        ? numericFontSize + gap
-        : 0;
+      const offsetY =
+        props.label || props.showValue ? numericFontSize + gap : 0;
 
       // 트랙 배경
       shapes.push({
-        id: 'track',
-        type: 'roundRect' as const,
+        id: "track",
+        type: "roundRect" as const,
         x: 0,
         y: offsetY + trackY,
         width,
@@ -215,8 +231,8 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       // 채우기
       if (fillWidth > 0) {
         shapes.push({
-          id: 'fill',
-          type: 'roundRect' as const,
+          id: "fill",
+          type: "roundRect" as const,
           x: 0,
           y: offsetY + trackY,
           width: fillWidth,
@@ -228,8 +244,8 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
 
       // 썸 (핸들)
       shapes.push({
-        id: 'thumb',
-        type: 'circle' as const,
+        id: "thumb",
+        type: "circle" as const,
         x: thumbX,
         y: offsetY + sliderDims.thumbSize / 2,
         radius: sliderDims.thumbSize / 2,
@@ -238,10 +254,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
 
       // 썸 테두리 (흰 외곽)
       shapes.push({
-        type: 'border' as const,
-        target: 'thumb',
+        type: "border" as const,
+        target: "thumb",
         borderWidth: 2,
-        color: '{color.base}' as TokenRef,
+        color: "{color.base}" as TokenRef,
         radius: sliderDims.thumbSize / 2,
       });
 
@@ -249,16 +265,16 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
     },
 
     react: (props) => ({
-      'data-disabled': props.isDisabled || undefined,
-      role: 'slider',
-      'aria-valuemin': props.minValue ?? 0,
-      'aria-valuemax': props.maxValue ?? 100,
-      'aria-valuenow': props.value ?? 50,
+      "data-disabled": props.isDisabled || undefined,
+      role: "slider",
+      "aria-valuemin": props.minValue ?? 0,
+      "aria-valuemax": props.maxValue ?? 100,
+      "aria-valuenow": props.value ?? 50,
     }),
 
     pixi: (props) => ({
-      eventMode: 'static' as const,
-      cursor: props.isDisabled ? 'not-allowed' : 'pointer',
+      eventMode: "static" as const,
+      cursor: props.isDisabled ? "not-allowed" : "pointer",
     }),
   },
 };

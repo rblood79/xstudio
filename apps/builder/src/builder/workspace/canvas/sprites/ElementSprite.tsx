@@ -1407,7 +1407,7 @@ export const ElementSprite = memo(function ElementSprite({
       style?.borderRadius !== undefined &&
       style?.borderRadius !== null &&
       style?.borderRadius !== "";
-    const size = isUIComponent ? String(props?.size || "md") : "";
+    const size = isUIComponent ? String(props?.size || "M") : "";
     const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
     let effectiveBorderRadius: number | [number, number, number, number] =
       hasBorderRadiusSet

@@ -15,8 +15,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * FileTrigger Props
  */
 export interface FileTriggerProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   children?: string;
   text?: string;
   label?: string;
@@ -35,7 +35,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
   element: 'button',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -45,7 +45,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.accent}' as TokenRef,
       backgroundHover: '{color.accent-hover}' as TokenRef,
       backgroundPressed: '{color.accent-pressed}' as TokenRef,
@@ -55,7 +55,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 32,
       paddingX: 12,
       paddingY: 4,
@@ -64,7 +64,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       iconSize: 14,
       gap: 6,
     },
-    md: {
+    M: {
       height: 40,
       paddingX: 24,
       paddingY: 8,
@@ -73,7 +73,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       iconSize: 16,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 48,
       paddingX: 32,
       paddingY: 12,

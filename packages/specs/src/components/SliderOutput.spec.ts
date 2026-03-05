@@ -16,8 +16,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * SliderOutput Props
  */
 export interface SliderOutputProps {
-  variant?: 'default' | 'primary' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'neutral';
+  size?: 'S' | 'M' | 'L';
   /** 표시할 값 텍스트 (포맷팅된 문자열) */
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -32,7 +32,7 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
   element: 'output',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -41,13 +41,13 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
       backgroundPressed: '{color.transparent}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.transparent}' as TokenRef,
       backgroundHover: '{color.transparent}' as TokenRef,
       backgroundPressed: '{color.transparent}' as TokenRef,
       text: '{color.accent}' as TokenRef,
     },
-    secondary: {
+    neutral: {
       background: '{color.transparent}' as TokenRef,
       backgroundHover: '{color.transparent}' as TokenRef,
       backgroundPressed: '{color.transparent}' as TokenRef,
@@ -56,7 +56,7 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -64,7 +64,7 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 0,
     },
-    md: {
+    M: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -72,7 +72,7 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 0,
     },
-    lg: {
+    L: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

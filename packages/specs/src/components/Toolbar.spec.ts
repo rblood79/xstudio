@@ -13,8 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  * Toolbar Props
  */
 export interface ToolbarProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   orientation?: 'horizontal' | 'vertical';
   style?: Record<string, string | number | undefined>;
 }
@@ -28,7 +28,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -38,7 +38,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.accent-subtle}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -48,7 +48,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 36,
       paddingX: 8,
       paddingY: 4,
@@ -56,7 +56,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 4,
     },
-    md: {
+    M: {
       height: 44,
       paddingX: 12,
       paddingY: 6,
@@ -64,7 +64,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 52,
       paddingX: 16,
       paddingY: 8,

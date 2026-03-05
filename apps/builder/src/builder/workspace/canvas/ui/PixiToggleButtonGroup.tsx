@@ -156,7 +156,7 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
   ) ?? element;
 
   // size - 최신 element에서 읽기
-  const size = String((latestElement.props as Record<string, unknown>)?.size || "md");
+  const size = String((latestElement.props as Record<string, unknown>)?.size || "M");
 
   // 🚀 Spec Migration
   const sizePreset = useMemo(() => {

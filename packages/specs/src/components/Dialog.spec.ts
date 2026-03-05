@@ -14,8 +14,8 @@ import { resolveStateColors } from '../utils/stateEffect';
  * Dialog Props
  */
 export interface DialogProps {
-  variant?: 'primary' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'accent' | 'negative';
+  size?: 'S' | 'M' | 'L';
   title?: string;
 }
 
@@ -31,8 +31,8 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   description: 'React Aria 기반 다이얼로그 컴포넌트',
   element: 'div',
 
-  defaultVariant: 'primary',
-  defaultSize: 'md',
+  defaultVariant: 'accent',
+  defaultSize: 'M',
 
   overlay: {
     usePortal: true,
@@ -45,13 +45,13 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   },
 
   variants: {
-    primary: {
+    accent: {
       background: '{color.layer-1}' as TokenRef,
       backgroundHover: '{color.layer-1}' as TokenRef,
       backgroundPressed: '{color.layer-1}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
     },
-    error: {
+    negative: {
       background: '{color.layer-1}' as TokenRef,
       backgroundHover: '{color.layer-1}' as TokenRef,
       backgroundPressed: '{color.layer-1}' as TokenRef,
@@ -60,7 +60,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 16,
       paddingY: 16,
@@ -68,7 +68,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
       borderRadius: '{radius.lg}' as TokenRef,
       gap: 16,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 24,
       paddingY: 24,
@@ -76,7 +76,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
       borderRadius: '{radius.xl}' as TokenRef,
       gap: 20,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 32,
       paddingY: 32,

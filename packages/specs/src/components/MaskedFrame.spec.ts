@@ -13,8 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  * MaskedFrame Props
  */
 export interface MaskedFrameProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   maskShape?: 'rect' | 'circle' | 'roundRect';
   style?: Record<string, string | number | undefined>;
 }
@@ -28,7 +28,7 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -38,7 +38,7 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.accent-subtle}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -48,21 +48,21 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 80,
       paddingX: 0,
       paddingY: 0,
       fontSize: '{typography.text-sm}' as TokenRef,
       borderRadius: '{radius.md}' as TokenRef,
     },
-    md: {
+    M: {
       height: 120,
       paddingX: 0,
       paddingY: 0,
       fontSize: '{typography.text-md}' as TokenRef,
       borderRadius: '{radius.lg}' as TokenRef,
     },
-    lg: {
+    L: {
       height: 200,
       paddingX: 0,
       paddingY: 0,

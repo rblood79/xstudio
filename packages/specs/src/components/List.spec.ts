@@ -16,8 +16,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * List Props
  */
 export interface ListProps {
-  variant?: 'default' | 'primary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent';
+  size?: 'S' | 'M' | 'L';
   items?: Array<{ label: string; description?: string }>;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -34,7 +34,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -44,7 +44,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -54,7 +54,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 8,
       paddingY: 4,
@@ -63,7 +63,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
       iconSize: 16,
       gap: 2,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 12,
       paddingY: 8,
@@ -72,7 +72,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
       iconSize: 20,
       gap: 4,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 16,
       paddingY: 12,

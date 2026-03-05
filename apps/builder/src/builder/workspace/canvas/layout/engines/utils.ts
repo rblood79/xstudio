@@ -80,7 +80,7 @@ export function getPhantomIndicatorSpace(
 ): { width: number; height: number; gap: number } | null {
   const config = PHANTOM_INDICATOR_CONFIGS[tag];
   if (!config) return null;
-  const s = (size ?? "md") as "sm" | "md" | "lg";
+  const s = (size ?? "M") as "sm" | "md" | "lg";
   const w = config.widths[s] ?? config.widths.md;
   const h = config.heights[s] ?? config.heights.md;
   const gap = config.gaps[s] ?? config.gaps.md;
@@ -1030,7 +1030,7 @@ export function calculateContentWidth(
     // fallback: typography 토큰 매칭 text-sm=14, text-md=16, text-lg=18
     const fontSize =
       indicatorSpecStyle?.fontSize ??
-      (sizeName === "sm" ? 14 : sizeName === "lg" ? 18 : 16);
+      (sizeName === "S" ? 14 : sizeName === "L" ? 18 : 16);
     const indicatorFontWeight = indicatorSpecStyle?.fontWeight ?? 400;
     const indicatorFontFamily =
       indicatorSpecStyle?.fontFamily ?? specFontFamily.sans;
@@ -1789,7 +1789,7 @@ export function calculateContentHeight(
       const gap = hasCSSGapH
         ? (parseNumericValue(style?.gap ?? style?.rowGap) ?? specGap)
         : specGap;
-      const fs = sizeName === "sm" ? 14 : sizeName === "lg" ? 18 : 16;
+      const fs = sizeName === "S" ? 14 : sizeName === "L" ? 18 : 16;
       return indicatorH + gap + Math.round(fs * 1.4);
     }
     return (
@@ -1838,14 +1838,14 @@ export function calculateContentHeight(
     if (tag === "checkboxgroup" || tag === "radiogroup") {
       const props = element.props as Record<string, unknown> | undefined;
       const sizeName = (props?.size as string) ?? "md";
-      const gap = sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
+      const gap = sizeName === "S" ? 8 : sizeName === "L" ? 16 : 12;
 
       let totalHeight = 0;
       // 그룹 라벨
       if (props?.label) {
         // typography 토큰 매칭: text-sm=14, text-md=16, text-lg=18
         const labelFontSize =
-          sizeName === "sm" ? 14 : sizeName === "lg" ? 18 : 16;
+          sizeName === "S" ? 14 : sizeName === "L" ? 18 : 16;
         totalHeight += estimateTextHeight(labelFontSize) + 8; // label + spacing
       }
       // 자식 Checkbox/Radio 항목
@@ -1868,7 +1868,7 @@ export function calculateContentHeight(
       const props = element.props as Record<string, unknown> | undefined;
       const sizeName = (props?.size as string) ?? "md";
       // CSS 기준 탭 바 높이: sm=25, md=30, lg=35
-      const tabBarHeight = sizeName === "sm" ? 25 : sizeName === "lg" ? 35 : 30;
+      const tabBarHeight = sizeName === "S" ? 25 : sizeName === "L" ? 35 : 30;
       const tabPanelPadding = 16; // React-Aria TabPanel 기본 padding
 
       // 활성 Panel의 높이 계산 (Dual Lookup: 직속 → TabPanels 내부)

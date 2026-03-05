@@ -16,8 +16,8 @@ import { resolveToken } from '../renderers/utils/tokenResolver';
  * Disclosure Props
  */
 export interface DisclosureProps {
-  variant?: 'default' | 'primary' | 'surface';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'surface';
+  size?: 'S' | 'M' | 'L';
   isExpanded?: boolean;
   title?: string;
   style?: Record<string, string | number | undefined>;
@@ -32,7 +32,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
   element: 'div',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -42,7 +42,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
       text: '{color.neutral}' as TokenRef,
       border: '{color.border}' as TokenRef,
     },
-    primary: {
+    accent: {
       background: '{color.base}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
@@ -59,7 +59,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 36,
       paddingX: 12,
       paddingY: 8,
@@ -68,7 +68,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
       iconSize: 14,
       gap: 8,
     },
-    md: {
+    M: {
       height: 44,
       paddingX: 16,
       paddingY: 12,
@@ -77,7 +77,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
       iconSize: 16,
       gap: 12,
     },
-    lg: {
+    L: {
       height: 52,
       paddingX: 20,
       paddingY: 16,

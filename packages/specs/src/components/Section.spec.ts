@@ -13,8 +13,8 @@ import type { ComponentSpec, Shape, TokenRef } from '../types';
  * Section Props
  */
 export interface SectionProps {
-  variant?: 'default' | 'primary' | 'secondary' | 'tertiary' | 'surface' | 'outlined';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'accent' | 'neutral' | 'purple' | 'surface' | 'outlined';
+  size?: 'S' | 'M' | 'L';
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -31,7 +31,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
   element: 'section',
 
   defaultVariant: 'default',
-  defaultSize: 'md',
+  defaultSize: 'M',
 
   variants: {
     default: {
@@ -41,19 +41,19 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
       text: '{color.neutral}' as TokenRef,
       backgroundAlpha: 0,
     },
-    primary: {
+    accent: {
       background: '{color.accent-subtle}' as TokenRef,
       backgroundHover: '{color.accent-subtle}' as TokenRef,
       backgroundPressed: '{color.accent-subtle}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
     },
-    secondary: {
+    neutral: {
       background: '{color.neutral-subtle}' as TokenRef,
       backgroundHover: '{color.neutral-subtle}' as TokenRef,
       backgroundPressed: '{color.neutral-subtle}' as TokenRef,
       text: '{color.neutral}' as TokenRef,
     },
-    tertiary: {
+    purple: {
       background: '{color.purple-subtle}' as TokenRef,
       backgroundHover: '{color.purple-subtle}' as TokenRef,
       backgroundPressed: '{color.purple-subtle}' as TokenRef,
@@ -75,7 +75,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 0,
       paddingX: 12,
       paddingY: 12,
@@ -83,7 +83,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 8,
     },
-    md: {
+    M: {
       height: 0,
       paddingX: 16,
       paddingY: 16,
@@ -91,7 +91,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 12,
     },
-    lg: {
+    L: {
       height: 0,
       paddingX: 24,
       paddingY: 24,

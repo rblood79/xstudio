@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface ProgressBarProps {
   variant?: "default";
-  size?: "sm" | "md" | "lg";
+  size?: "S" | "M" | "L";
   label?: string;
   value?: number;
   showValue?: boolean;
@@ -36,9 +36,9 @@ export const PROGRESSBAR_DIMENSIONS: Record<
   string,
   { barHeight: number; width: number }
 > = {
-  sm: { barHeight: 4, width: 200 },
-  md: { barHeight: 6, width: 240 },
-  lg: { barHeight: 8, width: 320 },
+  S: { barHeight: 4, width: 200 },
+  M: { barHeight: 6, width: 240 },
+  L: { barHeight: 8, width: 320 },
 };
 
 /**
@@ -50,7 +50,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "md",
+  defaultSize: "M",
 
   variants: {
     default: {
@@ -62,7 +62,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   },
 
   sizes: {
-    sm: {
+    S: {
       height: 4,
       paddingX: 0,
       paddingY: 0,
@@ -70,7 +70,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 6,
     },
-    md: {
+    M: {
       height: 6,
       paddingX: 0,
       paddingY: 0,
@@ -78,7 +78,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 8,
     },
-    lg: {
+    L: {
       height: 8,
       paddingX: 0,
       paddingY: 0,
@@ -101,9 +101,9 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";
-      const sizeName = props.size ?? "md";
+      const sizeName = props.size ?? "M";
       const barDims =
-        PROGRESSBAR_DIMENSIONS[sizeName] ?? PROGRESSBAR_DIMENSIONS.md;
+        PROGRESSBAR_DIMENSIONS[sizeName] ?? PROGRESSBAR_DIMENSIONS.M;
       const fillColor =
         PROGRESSBAR_FILL_COLORS[variantName] ?? PROGRESSBAR_FILL_COLORS.default;
       const width = (props.style?.width as number) || barDims.width;
