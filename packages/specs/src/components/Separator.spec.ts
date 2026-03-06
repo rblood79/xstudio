@@ -94,21 +94,21 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 1,
       paddingX: 0,
       paddingY: 4,
       fontSize: '{typography.text-xs}' as TokenRef,
       borderRadius: '{radius.none}' as TokenRef,
     },
-    M: {
+    md: {
       height: 1,
       paddingX: 0,
       paddingY: 8,
       fontSize: '{typography.text-xs}' as TokenRef,
       borderRadius: '{radius.none}' as TokenRef,
     },
-    L: {
+    lg: {
       height: 2,
       paddingX: 0,
       paddingY: 16,

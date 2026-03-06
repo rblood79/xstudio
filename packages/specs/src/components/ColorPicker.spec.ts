@@ -74,7 +74,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 10,
       paddingY: 10,
@@ -82,7 +82,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 14,
       paddingY: 14,
@@ -90,7 +90,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       borderRadius: '{radius.lg}' as TokenRef,
       gap: 10,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 18,
       paddingY: 18,

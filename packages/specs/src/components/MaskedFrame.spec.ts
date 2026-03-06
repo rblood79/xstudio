@@ -48,21 +48,21 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 80,
       paddingX: 0,
       paddingY: 0,
       fontSize: '{typography.text-sm}' as TokenRef,
       borderRadius: '{radius.md}' as TokenRef,
     },
-    M: {
+    md: {
       height: 120,
       paddingX: 0,
       paddingY: 0,
       fontSize: '{typography.text-md}' as TokenRef,
       borderRadius: '{radius.lg}' as TokenRef,
     },
-    L: {
+    lg: {
       height: 200,
       paddingX: 0,
       paddingY: 0,

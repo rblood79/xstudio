@@ -51,7 +51,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 120,
       paddingX: 0,
       paddingY: 0,
@@ -60,7 +60,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       iconSize: 14,
       gap: 0,
     },
-    M: {
+    md: {
       height: 180,
       paddingX: 0,
       paddingY: 0,
@@ -69,7 +69,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       iconSize: 18,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 240,
       paddingX: 0,
       paddingY: 0,

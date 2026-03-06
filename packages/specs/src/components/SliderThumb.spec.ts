@@ -16,7 +16,7 @@ import { SLIDER_FILL_COLORS, SLIDER_DIMENSIONS } from "./Slider.spec";
  */
 export interface SliderThumbProps {
   variant?: "default" | "accent" | "neutral";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   /** 트랙 내 위치 계산용 (0-100 퍼센트) */
   value?: number;
   minValue?: number;
@@ -42,7 +42,7 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -66,7 +66,7 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -74,7 +74,7 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -82,7 +82,7 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

@@ -52,7 +52,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -60,7 +60,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 4,
     },
-    M: {
+    md: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
@@ -68,7 +68,7 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

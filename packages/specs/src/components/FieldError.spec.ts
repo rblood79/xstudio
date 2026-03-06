@@ -43,7 +43,7 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 14,
       paddingX: 0,
       paddingY: 0,
@@ -51,7 +51,7 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -59,7 +59,7 @@ export const FieldErrorSpec: ComponentSpec<FieldErrorProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 20,
       paddingX: 0,
       paddingY: 0,

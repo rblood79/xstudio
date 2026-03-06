@@ -157,6 +157,7 @@ export interface LinkElementProps extends BaseElementProps {
 }
 
 export interface TextFieldElementProps extends BaseElementProps {
+  size?: "sm" | "md" | "lg";
   label?: string;
   description?: string;
   errorMessage?: string;
@@ -717,6 +718,7 @@ export function createDefaultLinkProps(): LinkElementProps {
 
 export function createDefaultTextFieldProps(): TextFieldElementProps {
   return {
+    size: "md",
     type: "text",
     isRequired: false,
     isDisabled: false,

@@ -48,21 +48,21 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
       fontSize: '{typography.text-sm}' as TokenRef,
       borderRadius: '{radius.sm}' as TokenRef,
     },
-    M: {
+    md: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
       fontSize: '{typography.text-md}' as TokenRef,
       borderRadius: '{radius.md}' as TokenRef,
     },
-    L: {
+    lg: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

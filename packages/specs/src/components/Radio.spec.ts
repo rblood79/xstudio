@@ -17,7 +17,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface RadioProps {
   variant?: "default" | "accent" | "neutral" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   label?: string;
   text?: string;
@@ -69,7 +69,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
   element: "label",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -103,7 +103,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -111,7 +111,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 6,
     },
-    M: {
+    md: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
@@ -119,7 +119,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 28,
       paddingX: 0,
       paddingY: 0,

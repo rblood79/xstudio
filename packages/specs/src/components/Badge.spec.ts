@@ -37,7 +37,7 @@ export interface BadgeProps {
     | "fuchsia"
     | "magenta";
   fillStyle?: "bold" | "subtle" | "outline";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   text?: string;
   isDot?: boolean;
@@ -55,7 +55,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
   element: "span",
 
   defaultVariant: "accent",
-  defaultSize: "S",
+  defaultSize: "sm",
 
   variants: {
     accent: {
@@ -176,7 +176,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
   },
 
   sizes: {
-    XS: {
+    xs: {
       height: 16,
       paddingX: 8,
       paddingY: 2,
@@ -184,7 +184,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 2,
     },
-    S: {
+    sm: {
       height: 20,
       paddingX: 12,
       paddingY: 4,
@@ -192,7 +192,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
     },
-    M: {
+    md: {
       height: 24,
       paddingX: 16,
       paddingY: 8,
@@ -200,7 +200,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
     },
-    L: {
+    lg: {
       height: 28,
       paddingX: 24,
       paddingY: 8,
@@ -208,7 +208,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 6,
     },
-    XL: {
+    xl: {
       height: 32,
       paddingX: 32,
       paddingY: 12,

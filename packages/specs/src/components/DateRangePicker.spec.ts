@@ -78,7 +78,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -87,7 +87,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
       iconSize: 14,
       gap: 6,
     },
-    M: {
+    md: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -96,7 +96,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
       iconSize: 16,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 48,
       paddingX: 18,
       paddingY: 12,

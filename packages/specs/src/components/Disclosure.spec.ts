@@ -59,7 +59,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 36,
       paddingX: 12,
       paddingY: 8,
@@ -68,7 +68,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
       iconSize: 14,
       gap: 8,
     },
-    M: {
+    md: {
       height: 44,
       paddingX: 16,
       paddingY: 12,
@@ -77,7 +77,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
       iconSize: 16,
       gap: 12,
     },
-    L: {
+    lg: {
       height: 52,
       paddingX: 20,
       paddingY: 16,

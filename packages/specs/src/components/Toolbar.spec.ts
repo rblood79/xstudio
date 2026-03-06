@@ -48,7 +48,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 36,
       paddingX: 8,
       paddingY: 4,
@@ -56,7 +56,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 4,
     },
-    M: {
+    md: {
       height: 44,
       paddingX: 12,
       paddingY: 6,
@@ -64,7 +64,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 52,
       paddingX: 16,
       paddingY: 8,

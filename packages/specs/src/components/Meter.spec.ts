@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface MeterProps {
   variant?: "informative" | "positive" | "notice" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   value?: number;
   minValue?: number;
@@ -55,7 +55,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
   element: "div",
 
   defaultVariant: "informative",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     informative: {
@@ -85,7 +85,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 6,
       paddingX: 0,
       paddingY: 0,
@@ -93,7 +93,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 6,
     },
-    M: {
+    md: {
       height: 8,
       paddingX: 0,
       paddingY: 0,
@@ -101,7 +101,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 12,
       paddingX: 0,
       paddingY: 0,

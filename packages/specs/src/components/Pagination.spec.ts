@@ -51,7 +51,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 28,
       paddingX: 6,
       paddingY: 4,
@@ -59,7 +59,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 4,
     },
-    M: {
+    md: {
       height: 36,
       paddingX: 10,
       paddingY: 6,
@@ -67,7 +67,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 6,
     },
-    L: {
+    lg: {
       height: 44,
       paddingX: 14,
       paddingY: 8,

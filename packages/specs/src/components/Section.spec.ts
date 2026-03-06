@@ -75,7 +75,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 12,
       paddingY: 12,
@@ -83,7 +83,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 8,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 16,
       paddingY: 16,
@@ -91,7 +91,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 12,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 24,
       paddingY: 24,

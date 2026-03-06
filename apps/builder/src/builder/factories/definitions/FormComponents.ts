@@ -12,7 +12,7 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
  *   └─ FieldError (tag="FieldError")
  */
 export function createTextFieldDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -34,12 +34,13 @@ export function createTextFieldDefinition(
         placeholder: "Enter text...",
         value: "",
         type: "text",
+        size: "md",
         isRequired: false,
         isDisabled: false,
         isReadOnly: false,
         style: {
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 6,
           width: 240,
         },
@@ -53,8 +54,9 @@ export function createTextFieldDefinition(
         tag: "Label",
         props: {
           children: "Text Field",
+          size: "md",
           style: {
-            width: 'fit-content',
+            width: "fit-content",
             fontSize: 14,
             fontWeight: 500,
           },
@@ -66,10 +68,10 @@ export function createTextFieldDefinition(
         tag: "Input",
         props: {
           type: "text",
+          size: "md",
           placeholder: "Enter text...",
           style: {
-            width: '100%',
-            height: 40,
+            width: "100%",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -81,7 +83,7 @@ export function createTextFieldDefinition(
           children: "",
           style: {
             fontSize: 12,
-            display: 'none',
+            display: "none",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -101,7 +103,7 @@ export function createTextFieldDefinition(
  *   └─ FieldError (tag="FieldError")
  */
 export function createTextAreaDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -127,8 +129,8 @@ export function createTextAreaDefinition(
         isDisabled: false,
         isReadOnly: false,
         style: {
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 6,
           width: 240,
         },
@@ -143,7 +145,7 @@ export function createTextAreaDefinition(
         props: {
           children: "Text Area",
           style: {
-            width: 'fit-content',
+            width: "fit-content",
             fontSize: 14,
             fontWeight: 500,
           },
@@ -157,7 +159,7 @@ export function createTextAreaDefinition(
           type: "text",
           placeholder: "Enter text...",
           style: {
-            width: '100%',
+            width: "100%",
             height: 80,
           },
         } as ComponentElementProps,
@@ -170,7 +172,7 @@ export function createTextAreaDefinition(
           children: "",
           style: {
             fontSize: 12,
-            display: 'none',
+            display: "none",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -198,7 +200,7 @@ export function createTextAreaDefinition(
  * (tag만 지정, 내부 구조는 TextField의 Spec이 처리)
  */
 export function createFormDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -339,7 +341,7 @@ export function createFormDefinition(
  *   └─ Description (tag="Description", fontSize 14px)
  */
 export function createToastDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -422,7 +424,7 @@ export function createToastDefinition(
  *   └─ FieldError (tag="FieldError")
  */
 export function createNumberFieldDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -545,7 +547,7 @@ export function createNumberFieldDefinition(
  *   └─ Button (tag="Button", children="✕", slot="clear")
  */
 export function createSearchFieldDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -627,7 +629,7 @@ export function createSearchFieldDefinition(
  *        └─ SliderThumb (tag="SliderThumb", border-radius 50%)
  */
 export function createSliderDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -651,7 +653,7 @@ export function createSliderDefinition(
         orientation: "horizontal",
         showValue: true,
         style: {
-          display: 'grid',
+          display: "grid",
           width: 200,
           height: 45,
           maxWidth: 300,
@@ -669,7 +671,7 @@ export function createSliderDefinition(
           style: {
             fontSize: 14,
             fontWeight: 500,
-            width: 'fit-content',
+            width: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -681,7 +683,7 @@ export function createSliderDefinition(
           children: "50",
           style: {
             fontSize: 14,
-            width: 'fit-content',
+            width: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -691,9 +693,9 @@ export function createSliderDefinition(
         tag: "SliderTrack",
         props: {
           style: {
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
             height: 24,
           },
         } as ComponentElementProps,
@@ -706,7 +708,7 @@ export function createSliderDefinition(
               style: {
                 width: 18,
                 height: 18,
-                borderRadius: '50%',
+                borderRadius: "50%",
               },
             } as ComponentElementProps,
             ...ownerFields,
@@ -719,7 +721,7 @@ export function createSliderDefinition(
 }
 
 export function createToolbarDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;

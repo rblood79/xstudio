@@ -41,6 +41,7 @@ export const renderTextField = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      size={element.props.size as "sm" | "md" | "lg"}
       label={String(element.props.label || "")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}

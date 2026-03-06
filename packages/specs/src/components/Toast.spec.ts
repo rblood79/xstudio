@@ -77,7 +77,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 40,
       paddingX: 12,
       paddingY: 8,
@@ -86,7 +86,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       iconSize: 16,
       gap: 8,
     },
-    M: {
+    md: {
       height: 48,
       paddingX: 16,
       paddingY: 12,
@@ -95,7 +95,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       iconSize: 20,
       gap: 10,
     },
-    L: {
+    lg: {
       height: 56,
       paddingX: 20,
       paddingY: 16,

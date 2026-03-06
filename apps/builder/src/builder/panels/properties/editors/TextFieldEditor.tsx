@@ -208,11 +208,44 @@ export const TextFieldEditor = memo(
       [customId, elementId],
     );
 
+    // @sync TextField.css --tf-label-size per size
+    const LABEL_FONT_SIZE: Record<string, number> = {
+      sm: 12,
+      md: 14,
+      lg: 16,
+    };
+
     const handleSizeChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, size: value });
+        const updatedProps = { ...currentProps, size: value };
+        // Input: size prop 동기화
+        const childUpdates = buildChildUpdates([
+          { childTag: "Input", propKey: "size", value },
+        ]);
+        // Label: style.fontSize도 업데이트 (WebGL에서 size prop만으로는 시각 변화 없음)
+        const { childrenMap } = useStore.getState();
+        const children = childrenMap.get(elementId);
+        const labelChild = children?.find((c) => c.tag === "Label");
+        if (labelChild) {
+          const labelStyle =
+            (labelChild.props?.style as Record<string, unknown>) || {};
+          childUpdates.push({
+            elementId: labelChild.id,
+            props: {
+              ...labelChild.props,
+              size: value,
+              style: {
+                ...labelStyle,
+                fontSize: LABEL_FONT_SIZE[value] ?? 14,
+              },
+            },
+          });
+        }
+        useStore
+          .getState()
+          .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
       },
-      [currentProps, onUpdate],
+      [currentProps, buildChildUpdates, elementId],
     );
 
     const designSection = useMemo(
@@ -222,7 +255,7 @@ export const TextFieldEditor = memo(
             label={PROPERTY_LABELS.SIZE}
             value={String(currentProps.size || "md")}
             onChange={handleSizeChange}
-            scale="5"
+            scale="3"
           />
         </PropertySection>
       ),

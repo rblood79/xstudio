@@ -463,46 +463,54 @@ const BUTTON_SIZE_CONFIG: Record<
     paddingRight: number;
     paddingY: number;
     fontSize: number;
+    lineHeight: number;
     borderWidth: number;
   }
 > = {
-  // @sync Button.css [data-size] padding 값과 일치해야 함
+  // @sync Button.css [data-size] padding/fontSize/line-height 값과 일치해야 함
   // @sync Button.css base: border: 1px solid (all variants, all sizes)
-  // CSS Button은 명시적 height를 설정하지 않음 → line-height:normal + padding + border로 자동 결정
-  // height를 지정하면 CSS 렌더링과 불일치 (CSS는 fontBoundingBox 기반 line-height 사용)
+  // @sync shared-tokens.css spacing: 3xs=1, 2xs=2, xs=4, sm=8, md=12, lg=16, xl=24, 2xl=32
+  // @sync shared-tokens.css line-height: text-sm=1.25/0.875, text-base=1.5/1, etc.
+  // CSS Button은 명시적 height를 설정하지 않음 → line-height + padding + border로 자동 결정
+  // lineHeight는 CSS line-height를 px로 환산한 값 (fontSize × ratio)
   xs: {
     paddingLeft: 8,
     paddingRight: 8,
-    paddingY: 4,
+    paddingY: 1, // --spacing-3xs
     fontSize: 10,
+    lineHeight: 16, // 10 * (1/0.625) = 16
     borderWidth: 1,
   },
   sm: {
     paddingLeft: 12,
     paddingRight: 12,
-    paddingY: 4,
+    paddingY: 2, // --spacing-2xs
     fontSize: 12,
+    lineHeight: 16, // 12 * (1/0.75) = 16
     borderWidth: 1,
   },
   md: {
     paddingLeft: 16,
     paddingRight: 16,
-    paddingY: 8,
+    paddingY: 4, // --spacing-xs
     fontSize: 14,
+    lineHeight: 20, // 14 * (1.25/0.875) = 20
     borderWidth: 1,
   },
   lg: {
     paddingLeft: 24,
     paddingRight: 24,
-    paddingY: 12,
+    paddingY: 8, // --spacing-sm
     fontSize: 16,
+    lineHeight: 24, // 16 * (1.5/1) = 24
     borderWidth: 1,
   },
   xl: {
     paddingLeft: 32,
     paddingRight: 32,
-    paddingY: 16,
+    paddingY: 12, // --spacing-md
     fontSize: 18,
+    lineHeight: 28, // 18 * (1.75/1.125) = 28
     borderWidth: 1,
   },
 };
@@ -589,43 +597,50 @@ const TOGGLEBUTTON_SIZE_CONFIG: Record<
     paddingRight: number;
     paddingY: number;
     fontSize: number;
+    lineHeight: number;
     borderWidth: number;
   }
 > = {
   // @sync ToggleButton.css [data-size] padding 값과 일치해야 함 (Button.css와 동일)
+  // @sync shared-tokens.css spacing/line-height 토큰
   xs: {
     paddingLeft: 8,
     paddingRight: 8,
-    paddingY: 4,
+    paddingY: 1, // --spacing-3xs
     fontSize: 10,
+    lineHeight: 16, // 10 * (1/0.625)
     borderWidth: 1,
   },
   sm: {
     paddingLeft: 12,
     paddingRight: 12,
-    paddingY: 4,
+    paddingY: 2, // --spacing-2xs
     fontSize: 12,
+    lineHeight: 16, // 12 * (1/0.75)
     borderWidth: 1,
   },
   md: {
     paddingLeft: 16,
     paddingRight: 16,
-    paddingY: 8,
+    paddingY: 4, // --spacing-xs
     fontSize: 14,
+    lineHeight: 20, // 14 * (1.25/0.875)
     borderWidth: 1,
   },
   lg: {
     paddingLeft: 24,
     paddingRight: 24,
-    paddingY: 12,
+    paddingY: 8, // --spacing-sm
     fontSize: 16,
+    lineHeight: 24, // 16 * (1.5/1)
     borderWidth: 1,
   },
   xl: {
     paddingLeft: 32,
     paddingRight: 32,
-    paddingY: 16,
+    paddingY: 12, // --spacing-md
     fontSize: 18,
+    lineHeight: 28, // 18 * (1.75/1.125)
     borderWidth: 1,
   },
 };
@@ -652,6 +667,7 @@ const INLINE_UI_SIZE_CONFIGS: Record<
       paddingRight: number;
       paddingY: number;
       fontSize: number;
+      lineHeight?: number;
       borderWidth: number;
       minWidth?: number;
       height?: number;
@@ -837,7 +853,7 @@ const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
   button: "md",
   submitbutton: "md",
   fancybutton: "md",
-  input: "sm",
+  input: "md",
   select: "sm",
   a: "md",
   togglebutton: "md",
@@ -1297,8 +1313,8 @@ export function calculateContentHeight(
     const sizeConfig =
       TOGGLEBUTTON_SIZE_CONFIG[sizeName] ?? TOGGLEBUTTON_SIZE_CONFIG["md"];
     const fontSize = sizeConfig.fontSize;
-    // CSS line-height: 1.5 (Tailwind 기본) 기반 텍스트 높이 + padding + border
-    const textHeight = estimateTextHeight(fontSize);
+    // CSS 명시적 line-height 기반 텍스트 높이 + padding + border
+    const textHeight = estimateTextHeight(fontSize, sizeConfig.lineHeight);
     return textHeight + sizeConfig.paddingY * 2 + sizeConfig.borderWidth * 2;
   }
 
@@ -1333,7 +1349,10 @@ export function calculateContentHeight(
 
     const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
     const resolvedLineHeight = parseLineHeight(style, fontSize);
-    const textHeight = estimateTextHeight(fontSize, resolvedLineHeight);
+    // CSS Button은 명시적 line-height를 사용 → inline style이 없으면 config의 lineHeight 적용
+    const configLineHeight = (sizeConfig as { lineHeight?: number }).lineHeight;
+    const effectiveLineHeight = resolvedLineHeight ?? configLineHeight;
+    const textHeight = estimateTextHeight(fontSize, effectiveLineHeight);
     // MIN_BUTTON_HEIGHT는 border-box 기준 → content-box 최소값으로 변환
     // 사용자가 인라인 padding을 설정한 경우 MIN_BUTTON_HEIGHT 미적용 (padding:0으로 축소 허용)
     const minContentHeight = hasInlinePadding
@@ -1408,7 +1427,11 @@ export function calculateContentHeight(
           : 16;
     const fontSize = parseNumericValue(style?.fontSize) ?? specFontSize;
     const resolvedLineHeight = parseLineHeight(style, fontSize);
-    return estimateTextHeight(fontSize, resolvedLineHeight);
+    // CSS Input은 명시적 line-height 사용 → BUTTON_SIZE_CONFIG에서 lineHeight 참조
+    // Input height = Button height (동일 size에서 동일 높이)
+    const configLineHeight = BUTTON_SIZE_CONFIG[sizeName]?.lineHeight;
+    const effectiveLineHeight = resolvedLineHeight ?? configLineHeight;
+    return estimateTextHeight(fontSize, effectiveLineHeight);
   }
 
   // 3. CardHeader/CardContent/SelectTrigger: 투명 컨테이너 — 자식 높이 합산/max

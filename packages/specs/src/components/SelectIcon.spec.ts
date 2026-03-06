@@ -12,7 +12,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 
 export interface SelectIconProps {
   variant?: "default";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -22,7 +22,7 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
   element: "span",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -34,7 +34,7 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 14,
       paddingX: 0,
       paddingY: 0,
@@ -43,7 +43,7 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
       iconSize: 14,
       gap: 0,
     },
-    M: {
+    md: {
       height: 18,
       paddingX: 0,
       paddingY: 0,
@@ -52,7 +52,7 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
       iconSize: 18,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 22,
       paddingX: 0,
       paddingY: 0,

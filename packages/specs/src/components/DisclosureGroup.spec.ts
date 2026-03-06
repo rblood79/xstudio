@@ -49,7 +49,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -57,7 +57,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -65,7 +65,7 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 0,
       paddingY: 0,

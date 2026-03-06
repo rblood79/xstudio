@@ -50,7 +50,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -59,7 +59,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       iconSize: 14,
       gap: 0,
     },
-    M: {
+    md: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -68,7 +68,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       iconSize: 18,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

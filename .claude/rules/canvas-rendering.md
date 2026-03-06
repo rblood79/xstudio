@@ -28,6 +28,16 @@ globs:
 - Child Spec 추가 시 `packages/specs/src/index.ts` + `components/index.ts` 양쪽에 export 후 `pnpm build:specs`
 - `TAG_SPEC_MAP`에 해당 태그의 Spec 등록 필수
 
+## BUTTON_SIZE_CONFIG ↔ CSS 높이 정합성
+
+`BUTTON_SIZE_CONFIG` / `TOGGLEBUTTON_SIZE_CONFIG` (engines/utils.ts)는 `lineHeight` 필드를 필수로 포함해야 함.
+CSS Button은 명시적 `line-height: var(--text-*--line-height)`를 사용하므로, `lineHeight` 누락 시
+`estimateTextHeight()`가 font metrics 기반 `line-height: normal`로 계산 → CSS와 높이 불일치.
+
+- CSS height = lineHeight + paddingY x 2 + borderWidth x 2
+- `calculateContentHeight()`에서 inline lineHeight가 없으면 `sizeConfig.lineHeight` 사용
+- 값 변경 시 반드시 `spec-value-sync.md` 레퍼런스 테이블과 대조
+
 ## TextMeasurer ↔ nodeRenderers 동기화 (필수)
 
 ParagraphStyle 변경 시 **측정기 + 렌더러 양쪽 동시 업데이트** 필수 (3곳):

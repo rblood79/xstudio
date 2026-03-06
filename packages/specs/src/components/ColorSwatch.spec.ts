@@ -50,7 +50,7 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -58,7 +58,7 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 28,
       paddingX: 0,
       paddingY: 0,
@@ -66,7 +66,7 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 36,
       paddingX: 0,
       paddingY: 0,

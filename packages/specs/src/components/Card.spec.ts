@@ -14,7 +14,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
  */
 export interface CardProps {
   variant?: "primary" | "secondary" | "tertiary" | "quiet";
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   density?: "compact" | "regular" | "spacious";
   orientation?: "vertical" | "horizontal";
   isSelectable?: boolean;
@@ -36,7 +36,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
   element: "div",
 
   defaultVariant: "primary",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     // primary: 기본 카드 (배경 있음)
@@ -71,7 +71,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
   },
 
   sizes: {
-    XS: {
+    xs: {
       height: 0,
       paddingX: 4,
       paddingY: 4,
@@ -79,7 +79,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 4,
     },
-    S: {
+    sm: {
       height: 0,
       paddingX: 8,
       paddingY: 8,
@@ -87,7 +87,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
       borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 16,
       paddingY: 16,
@@ -95,7 +95,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 12,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 24,
       paddingY: 24,
@@ -103,7 +103,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
       borderRadius: "{radius.xl}" as TokenRef,
       gap: 16,
     },
-    XL: {
+    xl: {
       height: 0,
       paddingX: 32,
       paddingY: 32,

@@ -16,7 +16,7 @@ import { SLIDER_FILL_COLORS } from "./Slider.spec";
  */
 export interface SliderTrackProps {
   variant?: "default" | "accent" | "neutral";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   value?: number;
   minValue?: number;
   maxValue?: number;
@@ -28,9 +28,9 @@ export interface SliderTrackProps {
 /** 사이즈별 트랙 치수 */
 export const SLIDER_TRACK_DIMENSIONS: Record<string, { trackHeight: number }> =
   {
-    S: { trackHeight: 4 },
-    M: { trackHeight: 4 },
-    L: { trackHeight: 6 },
+    sm: { trackHeight: 4 },
+    md: { trackHeight: 4 },
+    lg: { trackHeight: 6 },
   };
 
 /**
@@ -42,7 +42,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -66,7 +66,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 4,
       paddingX: 0,
       paddingY: 0,
@@ -74,7 +74,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 4,
       paddingX: 0,
       paddingY: 0,
@@ -82,7 +82,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 6,
       paddingX: 0,
       paddingY: 0,

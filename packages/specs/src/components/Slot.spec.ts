@@ -43,7 +43,7 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 40,
       paddingX: 8,
       paddingY: 8,
@@ -51,7 +51,7 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 4,
     },
-    M: {
+    md: {
       height: 60,
       paddingX: 12,
       paddingY: 12,
@@ -59,7 +59,7 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 80,
       paddingX: 16,
       paddingY: 16,

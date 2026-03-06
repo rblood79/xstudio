@@ -60,7 +60,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 16,
       paddingY: 16,
@@ -68,7 +68,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
       borderRadius: '{radius.lg}' as TokenRef,
       gap: 16,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 24,
       paddingY: 24,
@@ -76,7 +76,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
       borderRadius: '{radius.xl}' as TokenRef,
       gap: 20,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 32,
       paddingY: 32,

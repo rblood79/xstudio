@@ -78,7 +78,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 36,
       paddingX: 8,
       paddingY: 4,
@@ -86,7 +86,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 44,
       paddingX: 12,
       paddingY: 8,
@@ -94,7 +94,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 52,
       paddingX: 16,
       paddingY: 12,

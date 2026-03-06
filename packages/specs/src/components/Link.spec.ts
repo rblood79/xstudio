@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface LinkProps {
   variant?: "primary" | "secondary";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   text?: string;
   href?: string;
@@ -38,7 +38,7 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
   element: "a",
 
   defaultVariant: "primary",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     primary: {
@@ -60,35 +60,35 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
   },
 
   sizes: {
-    XS: {
+    xs: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-2xs}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
     },
-    S: {
+    sm: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
     },
-    XL: {
+    xl: {
       height: 0,
       paddingX: 0,
       paddingY: 0,

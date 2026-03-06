@@ -55,7 +55,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 8,
       paddingY: 8,
@@ -64,7 +64,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       iconSize: 24,
       gap: 4,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 12,
       paddingY: 12,
@@ -73,7 +73,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       iconSize: 28,
       gap: 6,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 16,
       paddingY: 16,

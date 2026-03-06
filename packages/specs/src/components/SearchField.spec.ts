@@ -56,7 +56,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -65,7 +65,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       iconSize: 14,
       gap: 6,
     },
-    M: {
+    md: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -74,7 +74,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       iconSize: 18,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 48,
       paddingX: 16,
       paddingY: 12,

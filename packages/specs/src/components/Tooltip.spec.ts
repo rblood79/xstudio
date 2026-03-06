@@ -70,21 +70,21 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 8,
       paddingY: 4,
       fontSize: '{typography.text-xs}' as TokenRef,
       borderRadius: '{radius.sm}' as TokenRef,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 10,
       paddingY: 6,
       fontSize: '{typography.text-xs}' as TokenRef,
       borderRadius: '{radius.sm}' as TokenRef,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 12,
       paddingY: 8,

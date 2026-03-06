@@ -55,7 +55,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 32,
       paddingX: 12,
       paddingY: 4,
@@ -64,7 +64,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       iconSize: 14,
       gap: 6,
     },
-    M: {
+    md: {
       height: 40,
       paddingX: 24,
       paddingY: 8,
@@ -73,7 +73,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       iconSize: 16,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 48,
       paddingX: 32,
       paddingY: 12,

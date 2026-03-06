@@ -7,16 +7,22 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * TextField Props
  */
 export interface TextFieldProps {
-  variant?: 'default' | 'accent' | 'neutral' | 'purple' | 'negative' | 'positive';
-  size?: 'S' | 'M' | 'L';
+  variant?:
+    | "default"
+    | "accent"
+    | "neutral"
+    | "purple"
+    | "negative"
+    | "positive";
+  size?: "sm" | "md" | "lg";
   label?: string;
   placeholder?: string;
   value?: string;
@@ -33,87 +39,88 @@ export interface TextFieldProps {
  * TextField Component Spec
  */
 export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
-  name: 'TextField',
-  description: 'React Aria 기반 텍스트 입력 컴포넌트',
-  element: 'div',
+  name: "TextField",
+  description: "React Aria 기반 텍스트 입력 컴포넌트",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "md",
 
   variants: {
     default: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
-      borderHover: '{color.accent}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+      borderHover: "{color.accent}" as TokenRef,
     },
     accent: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
-      borderHover: '{color.accent}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+      borderHover: "{color.accent}" as TokenRef,
     },
     neutral: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
-      borderHover: '{color.neutral-subtle}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+      borderHover: "{color.neutral-subtle}" as TokenRef,
     },
     purple: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
-      borderHover: '{color.purple}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+      borderHover: "{color.purple}" as TokenRef,
     },
     negative: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.negative-subtle}' as TokenRef,
-      backgroundPressed: '{color.negative-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.negative}' as TokenRef,
-      borderHover: '{color.negative-hover}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.negative-subtle}" as TokenRef,
+      backgroundPressed: "{color.negative-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.negative}" as TokenRef,
+      borderHover: "{color.negative-hover}" as TokenRef,
     },
     positive: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
-      borderHover: '{color.accent-hover}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
+      borderHover: "{color.accent-hover}" as TokenRef,
     },
   },
 
+  // @sync Button.spec.ts sizes — Input height = Button height
   sizes: {
-    S: {
-      height: 32,
-      paddingX: 10,
-      paddingY: 4,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+    sm: {
+      height: 22,
+      paddingX: 12,
+      paddingY: 2,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 4,
     },
-    M: {
-      height: 40,
-      paddingX: 14,
-      paddingY: 8,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+    md: {
+      height: 30,
+      paddingX: 16,
+      paddingY: 4,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 6,
     },
-    L: {
-      height: 48,
-      paddingX: 16,
-      paddingY: 12,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+    lg: {
+      height: 42,
+      paddingX: 24,
+      paddingY: 8,
+      fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 8,
     },
   },
@@ -123,66 +130,86 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      cursor: 'not-allowed',
-      pointerEvents: 'none',
+      cursor: "not-allowed",
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--highlight-background)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--highlight-background)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       const width = (props.style?.width as number) || 240;
       const height = size.height;
 
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius as unknown as number;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : (size.borderRadius as unknown as number);
 
-      const bgColor = props.style?.backgroundColor
-                    ?? (state === 'hover' ? variant.backgroundHover
-                    : state === 'pressed' ? variant.backgroundPressed
-                    : variant.background);
+      const bgColor =
+        props.style?.backgroundColor ??
+        (state === "hover"
+          ? variant.backgroundHover
+          : state === "pressed"
+            ? variant.backgroundPressed
+            : variant.background);
 
-      const borderColor = props.style?.borderColor
-                        ?? ((state === 'hover' && variant.borderHover)
-                            ? variant.borderHover
-                            : variant.border);
+      const borderColor =
+        props.style?.borderColor ??
+        (state === "hover" && variant.borderHover
+          ? variant.borderHover
+          : variant.border);
 
       const styleBw = props.style?.borderWidth;
       const defaultBw = props.isInvalid ? 2 : 1;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : defaultBw;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : defaultBw;
 
       // fontSize: TokenRef 문자열일 수 있으므로 resolveToken으로 숫자 변환
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
 
       const fwRaw = props.style?.fontWeight;
-      const fontWeight = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
-        : 500;
+      const fontWeight =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 500
+          : 500;
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const textColor = props.style?.color
-                      ?? variant.text;
+      const textColor = props.style?.color ?? variant.text;
 
-      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
-      const paddingX = stylePx != null
-        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
-        : size.paddingX;
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
 
       const shapes: Shape[] = [];
       // CONTAINER_TAGS에 등록된 경우 자식 Element가 시각 렌더링 담당
@@ -201,7 +228,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
       if (props.label) {
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: 0,
           y: 0,
           text: props.label,
@@ -210,14 +237,14 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           fontWeight,
           fill: textColor,
           align: textAlign,
-          baseline: 'top' as const,
+          baseline: "top" as const,
         });
       }
 
       // 입력 필드 배경
       shapes.push({
-        id: 'bg',
-        type: 'roundRect' as const,
+        id: "bg",
+        type: "roundRect" as const,
         x: 0,
         y: labelOffset,
         width,
@@ -229,44 +256,53 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       // 테두리
       if (borderColor) {
         shapes.push({
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
-          color: props.isInvalid ? ('{color.negative}' as TokenRef) : borderColor,
+          color: props.isInvalid
+            ? ("{color.negative}" as TokenRef)
+            : borderColor,
           radius: borderRadius,
         });
       }
 
       // 입력 텍스트 / 플레이스홀더
-      const displayText = props.value || props.placeholder || '';
+      const displayText = props.value || props.placeholder || "";
       if (displayText) {
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: paddingX,
           y: labelOffset + height / 2,
           text: displayText,
           fontSize,
           fontFamily: ff,
-          fill: props.value ? textColor : ('{color.neutral-subdued}' as TokenRef),
+          fill: props.value
+            ? textColor
+            : ("{color.neutral-subdued}" as TokenRef),
           align: textAlign,
-          baseline: 'middle' as const,
+          baseline: "middle" as const,
         });
       }
 
       // 설명 / 에러 메시지
       {
-        const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
+        const descText =
+          props.isInvalid && props.errorMessage
+            ? props.errorMessage
+            : props.description;
         if (descText) {
           shapes.push({
-            type: 'text' as const,
+            type: "text" as const,
             x: 0,
             y: labelOffset + height + 4,
             text: descText,
             fontSize: descFontSize,
             fontFamily: ff,
-            fill: props.isInvalid ? ('{color.negative}' as TokenRef) : ('{color.neutral-subdued}' as TokenRef),
+            fill: props.isInvalid
+              ? ("{color.negative}" as TokenRef)
+              : ("{color.neutral-subdued}" as TokenRef),
             align: textAlign,
-            baseline: 'top' as const,
+            baseline: "top" as const,
           });
         }
       }
@@ -275,14 +311,14 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
     },
 
     react: (props) => ({
-      'data-invalid': props.isInvalid || undefined,
-      'data-disabled': props.isDisabled || undefined,
-      'data-required': props.isRequired || undefined,
+      "data-invalid": props.isInvalid || undefined,
+      "data-disabled": props.isDisabled || undefined,
+      "data-required": props.isRequired || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: 'static' as const,
-      cursor: props.isDisabled ? 'not-allowed' : 'text',
+      eventMode: "static" as const,
+      cursor: props.isDisabled ? "not-allowed" : "text",
     }),
   },
 };

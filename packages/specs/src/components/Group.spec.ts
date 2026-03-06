@@ -47,7 +47,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -55,7 +55,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 6,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -63,7 +63,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 0,
       paddingY: 0,

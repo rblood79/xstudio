@@ -52,7 +52,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 32,
       paddingX: 4,
       paddingY: 4,
@@ -60,7 +60,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 2,
     },
-    M: {
+    md: {
       height: 40,
       paddingX: 4,
       paddingY: 4,
@@ -68,7 +68,7 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
       borderRadius: '{radius.lg}' as TokenRef,
       gap: 2,
     },
-    L: {
+    lg: {
       height: 48,
       paddingX: 6,
       paddingY: 6,

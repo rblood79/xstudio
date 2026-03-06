@@ -51,7 +51,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 80,
       paddingX: 16,
       paddingY: 16,
@@ -60,7 +60,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       iconSize: 24,
       gap: 8,
     },
-    M: {
+    md: {
       height: 120,
       paddingX: 24,
       paddingY: 24,
@@ -69,7 +69,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       iconSize: 32,
       gap: 12,
     },
-    L: {
+    lg: {
       height: 160,
       paddingX: 32,
       paddingY: 32,

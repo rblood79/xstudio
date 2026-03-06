@@ -38,7 +38,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -46,7 +46,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -54,7 +54,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

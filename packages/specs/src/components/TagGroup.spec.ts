@@ -68,7 +68,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 24,
       paddingX: 8,
       paddingY: 2,
@@ -76,7 +76,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 6,
     },
-    M: {
+    md: {
       height: 32,
       paddingX: 12,
       paddingY: 4,
@@ -84,7 +84,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 40,
       paddingX: 16,
       paddingY: 6,

@@ -13,7 +13,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
  * ToggleButtonGroup Props
  */
 export interface ToggleButtonGroupProps {
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   orientation?: "horizontal" | "vertical";
   selectionMode?: "single" | "multiple";
   isEmphasized?: boolean;
@@ -34,7 +34,7 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -47,7 +47,7 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -55,7 +55,7 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
       borderRadius: "{radius.md}" as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -63,7 +63,7 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 0,
       paddingY: 0,

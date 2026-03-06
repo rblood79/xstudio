@@ -18,7 +18,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 export interface LabelProps {
   /** Label 자체 variant 또는 parent field의 --field-accent 매핑 */
   variant?: "default" | "accent" | "neutral" | "purple" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   label?: string;
   isDisabled?: boolean;
@@ -34,7 +34,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
   element: "label",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     // standalone Label (parent가 field가 아닐 때)
@@ -75,7 +75,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
@@ -83,7 +83,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -91,7 +91,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 24,
       paddingX: 0,
       paddingY: 0,

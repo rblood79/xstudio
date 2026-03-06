@@ -54,7 +54,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 8,
       paddingY: 4,
@@ -63,7 +63,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
       iconSize: 16,
       gap: 2,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 12,
       paddingY: 8,
@@ -72,7 +72,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
       iconSize: 20,
       gap: 4,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 16,
       paddingY: 12,

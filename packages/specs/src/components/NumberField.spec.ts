@@ -70,7 +70,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -79,7 +79,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       iconSize: 12,
       gap: 4,
     },
-    M: {
+    md: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -88,7 +88,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       iconSize: 16,
       gap: 6,
     },
-    L: {
+    lg: {
       height: 48,
       paddingX: 16,
       paddingY: 12,

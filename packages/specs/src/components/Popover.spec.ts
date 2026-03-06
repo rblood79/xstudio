@@ -69,7 +69,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 12,
       paddingY: 12,
@@ -77,7 +77,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 8,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 16,
       paddingY: 16,
@@ -85,7 +85,7 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
       borderRadius: '{radius.lg}' as TokenRef,
       gap: 12,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 20,
       paddingY: 20,

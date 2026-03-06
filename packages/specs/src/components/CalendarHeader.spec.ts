@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface CalendarHeaderProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -45,7 +45,7 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
   element: "header",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -63,7 +63,7 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 28,
       paddingX: 0,
       paddingY: 0,
@@ -71,7 +71,7 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 4,
     },
-    M: {
+    md: {
       height: 32,
       paddingX: 0,
       paddingY: 0,
@@ -79,7 +79,7 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 6,
     },
-    L: {
+    lg: {
       height: 40,
       paddingX: 0,
       paddingY: 0,

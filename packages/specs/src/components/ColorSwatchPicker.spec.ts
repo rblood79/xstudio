@@ -51,7 +51,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 4,
       paddingY: 4,
@@ -60,7 +60,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       iconSize: 20,
       gap: 4,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 6,
       paddingY: 6,
@@ -69,7 +69,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       iconSize: 28,
       gap: 6,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 8,
       paddingY: 8,

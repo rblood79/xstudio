@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Input Props
  */
 export interface InputProps {
-  variant?: 'default' | 'accent' | 'negative';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent" | "negative";
+  size?: "S" | "M" | "L";
   value?: string;
   placeholder?: string;
   label?: string;
@@ -30,63 +30,66 @@ export interface InputProps {
  * Input Component Spec
  */
 export const InputSpec: ComponentSpec<InputProps> = {
-  name: 'Input',
-  description: 'React Aria 기반 기본 입력 컴포넌트',
-  element: 'input',
+  name: "Input",
+  description: "React Aria 기반 기본 입력 컴포넌트",
+  element: "input",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
-      borderHover: '{color.border-hover}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+      borderHover: "{color.border-hover}" as TokenRef,
     },
     accent: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
-      borderHover: '{color.accent-hover}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
+      borderHover: "{color.accent-hover}" as TokenRef,
     },
     negative: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.negative}' as TokenRef,
-      borderHover: '{color.negative-hover}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.negative}" as TokenRef,
+      borderHover: "{color.negative-hover}" as TokenRef,
     },
   },
 
+  // @sync BUTTON_SIZE_CONFIG (utils.ts) — Input height = Button height
+  // CSS height = lineHeight + paddingY×2 + borderWidth×2 (명시적 height 없음)
+  // sm: 16 + 2×2 + 1×2 = 22, md: 20 + 4×2 + 1×2 = 30, lg: 24 + 8×2 + 1×2 = 42
   sizes: {
-    S: {
-      height: 32,
-      paddingX: 10,
-      paddingY: 4,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+    sm: {
+      height: 22,
+      paddingX: 12,
+      paddingY: 2,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 4,
     },
-    M: {
-      height: 40,
-      paddingX: 14,
-      paddingY: 8,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+    md: {
+      height: 30,
+      paddingX: 16,
+      paddingY: 4,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 6,
     },
-    L: {
-      height: 48,
-      paddingX: 18,
-      paddingY: 12,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+    lg: {
+      height: 42,
+      paddingX: 24,
+      paddingY: 8,
+      fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 8,
     },
   },
@@ -96,68 +99,86 @@ export const InputSpec: ComponentSpec<InputProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      cursor: 'not-allowed',
-      pointerEvents: 'none',
+      cursor: "not-allowed",
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--highlight-background)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--highlight-background)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       const width = (props.style?.width as number) || 200;
       const height = size.height;
 
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius as unknown as number;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : (size.borderRadius as unknown as number);
 
-      const bgColor = props.style?.backgroundColor
-                    ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? variant.background;
 
-      const borderColor = props.style?.borderColor
-                        ?? ((state === 'hover' && variant.borderHover)
-                            ? variant.borderHover
-                            : variant.border);
+      const borderColor =
+        props.style?.borderColor ??
+        (state === "hover" && variant.borderHover
+          ? variant.borderHover
+          : variant.border);
 
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 1;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 1;
 
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
 
       const fwRaw = props.style?.fontWeight;
-      const fontWeight = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
-        : 400;
+      const fontWeight =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 400
+          : 400;
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const textColor = props.style?.color
-                      ?? (props.value ? variant.text : '{color.neutral-subdued}' as TokenRef);
+      const textColor =
+        props.style?.color ??
+        (props.value ? variant.text : ("{color.neutral-subdued}" as TokenRef));
 
-      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
-      const paddingX = stylePx != null
-        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
-        : size.paddingX;
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
 
       const shapes: Shape[] = [
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width,
@@ -167,19 +188,19 @@ export const InputSpec: ComponentSpec<InputProps> = {
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
-          color: borderColor ?? '{color.border-hover}' as TokenRef,
+          color: borderColor ?? ("{color.border-hover}" as TokenRef),
           radius: borderRadius,
         },
       ];
 
       // 텍스트
-      const text = props.value || props.placeholder || '';
+      const text = props.value || props.placeholder || "";
       if (text) {
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: paddingX,
           y: 0,
           text,
@@ -188,7 +209,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
           fontWeight,
           fill: textColor,
           align: textAlign,
-          baseline: 'middle' as const,
+          baseline: "middle" as const,
         });
       }
 
@@ -196,14 +217,14 @@ export const InputSpec: ComponentSpec<InputProps> = {
     },
 
     react: (props) => ({
-      'aria-invalid': props.isInvalid || undefined,
-      'aria-readonly': props.isReadOnly || undefined,
-      'data-disabled': props.isDisabled || undefined,
+      "aria-invalid": props.isInvalid || undefined,
+      "aria-readonly": props.isReadOnly || undefined,
+      "data-disabled": props.isDisabled || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: props.isDisabled ? ('none' as const) : ('static' as const),
-      cursor: props.isDisabled ? 'not-allowed' : 'text',
+      eventMode: props.isDisabled ? ("none" as const) : ("static" as const),
+      cursor: props.isDisabled ? "not-allowed" : "text",
     }),
   },
 };

@@ -54,7 +54,7 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -62,7 +62,7 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 8,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -70,7 +70,7 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
       borderRadius: '{radius.none}' as TokenRef,
       gap: 12,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 0,
       paddingY: 0,

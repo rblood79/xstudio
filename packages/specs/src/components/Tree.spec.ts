@@ -51,7 +51,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 28,
       paddingX: 8,
       paddingY: 4,
@@ -60,7 +60,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
       iconSize: 14,
       gap: 2,
     },
-    M: {
+    md: {
       height: 36,
       paddingX: 12,
       paddingY: 6,
@@ -69,7 +69,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
       iconSize: 16,
       gap: 4,
     },
-    L: {
+    lg: {
       height: 44,
       paddingX: 16,
       paddingY: 8,

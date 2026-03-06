@@ -69,7 +69,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 64,
       paddingX: 10,
       paddingY: 6,
@@ -77,7 +77,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 4,
     },
-    M: {
+    md: {
       height: 80,
       paddingX: 14,
       paddingY: 10,
@@ -85,7 +85,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 6,
     },
-    L: {
+    lg: {
       height: 120,
       paddingX: 16,
       paddingY: 12,

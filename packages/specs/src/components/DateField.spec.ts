@@ -64,7 +64,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 32,
       paddingX: 10,
       paddingY: 4,
@@ -72,7 +72,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 4,
     },
-    M: {
+    md: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
@@ -80,7 +80,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 6,
     },
-    L: {
+    lg: {
       height: 48,
       paddingX: 18,
       paddingY: 12,

@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface ProgressBarProps {
   variant?: "default";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   value?: number;
   showValue?: boolean;
@@ -50,7 +50,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -62,7 +62,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 4,
       paddingX: 0,
       paddingY: 0,
@@ -70,7 +70,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 6,
     },
-    M: {
+    md: {
       height: 6,
       paddingX: 0,
       paddingY: 0,
@@ -78,7 +78,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 8,
       paddingX: 0,
       paddingY: 0,

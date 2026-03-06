@@ -52,7 +52,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 12,
       paddingY: 12,
@@ -60,7 +60,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
       borderRadius: '{radius.md}' as TokenRef,
       gap: 12,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 20,
       paddingY: 20,
@@ -68,7 +68,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
       borderRadius: '{radius.lg}' as TokenRef,
       gap: 16,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 28,
       paddingY: 28,

@@ -87,7 +87,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 24,
       paddingX: 4,
       paddingY: 2,
@@ -95,7 +95,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 32,
       paddingX: 6,
       paddingY: 4,
@@ -103,7 +103,7 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
       borderRadius: '{radius.sm}' as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 40,
       paddingX: 8,
       paddingY: 6,

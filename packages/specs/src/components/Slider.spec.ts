@@ -17,7 +17,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface SliderProps {
   variant?: "default" | "accent" | "neutral";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   value?: number;
   minValue?: number;
@@ -67,7 +67,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -91,7 +91,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -99,7 +99,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 8,
     },
-    M: {
+    md: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
@@ -107,7 +107,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 10,
     },
-    L: {
+    lg: {
       height: 28,
       paddingX: 0,
       paddingY: 0,

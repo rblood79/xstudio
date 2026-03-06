@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface SwitchProps {
   variant?: "default" | "emphasized";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   label?: string;
   isSelected?: boolean;
@@ -54,7 +54,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
   element: "label",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -74,7 +74,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
@@ -82,7 +82,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 8,
     },
-    M: {
+    md: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
@@ -90,7 +90,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 10,
     },
-    L: {
+    lg: {
       height: 28,
       paddingX: 0,
       paddingY: 0,

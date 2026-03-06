@@ -23,7 +23,7 @@ export interface ButtonProps {
     | "premium"
     | "genai";
   fillStyle?: "fill" | "outline";
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   children?: string;
   text?: string;
   label?: string;
@@ -41,7 +41,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
   element: "button",
 
   defaultVariant: "primary",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     accent: {
@@ -94,48 +94,48 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
   },
 
   sizes: {
-    XS: {
+    xs: {
       height: 20,
       paddingX: 8,
-      paddingY: 4,
+      paddingY: 1,
       fontSize: "{typography.text-2xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 12,
       gap: 4,
     },
-    S: {
+    sm: {
       height: 22,
       paddingX: 12,
-      paddingY: 4,
+      paddingY: 2,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 6,
     },
-    M: {
-      height: 32,
+    md: {
+      height: 30,
       paddingX: 16,
-      paddingY: 8,
+      paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 16,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 42,
       paddingX: 24,
-      paddingY: 12,
+      paddingY: 8,
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 20,
       gap: 10,
     },
-    XL: {
-      height: 52,
+    xl: {
+      height: 54,
       paddingX: 32,
-      paddingY: 16,
+      paddingY: 12,
       fontSize: "{typography.text-lg}" as TokenRef,
-      borderRadius: "{radius.lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
       iconSize: 24,
       gap: 12,
     },

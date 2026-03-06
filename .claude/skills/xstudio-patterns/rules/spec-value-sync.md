@@ -6,6 +6,7 @@ tags: [spec, layout, sync]
 ---
 
 컴포넌트 수치(padding, fontSize, borderWidth 등)는 **3곳에서 동일하게** 유지해야 합니다:
+
 1. `@xstudio/specs` — ComponentSpec (예: `ButtonSpec.sizes.md.paddingX`)
 2. Builder 내부 상수 (예: `BUTTON_SIZE_CONFIG`)
 3. CSS 토큰 (예: `Button.css`의 `--spacing-*`)
@@ -36,16 +37,55 @@ md: { paddingLeft: 24, paddingRight: 24, borderWidth: 1 }  // 일치
 
 ## 동기화 대상 값
 
-| Spec 값 | Builder 내부 상수 | CSS 토큰 |
-|---------|-------------------|----------|
-| `ButtonSpec.sizes[size].paddingX` | `BUTTON_SIZE_CONFIG[size].paddingLeft/Right` | `Button.css [data-size] padding` |
-| `ButtonSpec.sizes[size].fontSize` | `BUTTON_SIZE_CONFIG[size].fontSize` | `Button.css [data-size] font-size` |
-| `fontFamily.sans` (typography.ts) | `measureTextWidth()` 기본 폰트 | `body { font-family }` |
-| CSS base `border: 1px solid` | `BUTTON_SIZE_CONFIG[size].borderWidth` (=1) | `Button.css base: border` |
-| `ButtonSpec.variants[v].border` | `PixiButton specDefaultBorderWidth` (=1) | `Button.css border-color` |
-| `ButtonSpec.sizes[size].borderRadius` | `UI_COMPONENT_DEFAULT_BORDER_RADIUS[size]` (ElementSprite.tsx) | `Button.css [data-size] border-radius` |
-| `spec.sizes[size].height` | `INLINE_FORM_HEIGHTS[tag][size]` (engines/utils.ts) | N/A (Skia에서 Yoga finalHeight 사용, spec height는 참조용) |
-| `spec indicator size` | `INLINE_FORM_INDICATOR_WIDTHS[tag][size]` (engines/utils.ts) | N/A |
+| Spec 값                               | Builder 내부 상수                                              | CSS 토큰                                                   |
+| ------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------- |
+| `ButtonSpec.sizes[size].paddingX`     | `BUTTON_SIZE_CONFIG[size].paddingLeft/Right`                   | `Button.css [data-size] padding (좌우)`                    |
+| `ButtonSpec.sizes[size].paddingY`     | `BUTTON_SIZE_CONFIG[size].paddingY`                            | `Button.css [data-size] padding (상하)`                    |
+| `ButtonSpec.sizes[size].fontSize`     | `BUTTON_SIZE_CONFIG[size].fontSize`                            | `Button.css [data-size] font-size`                         |
+| N/A (CSS 파생)                        | `BUTTON_SIZE_CONFIG[size].lineHeight`                          | `Button.css [data-size] line-height`                       |
+| `fontFamily.sans` (typography.ts)     | `measureTextWidth()` 기본 폰트                                 | `body { font-family }`                                     |
+| CSS base `border: 1px solid`          | `BUTTON_SIZE_CONFIG[size].borderWidth` (=1)                    | `Button.css base: border`                                  |
+| `ButtonSpec.variants[v].border`       | `PixiButton specDefaultBorderWidth` (=1)                       | `Button.css border-color`                                  |
+| `ButtonSpec.sizes[size].borderRadius` | `UI_COMPONENT_DEFAULT_BORDER_RADIUS[size]` (ElementSprite.tsx) | `Button.css [data-size] border-radius`                     |
+| `spec.sizes[size].height`             | `INLINE_FORM_HEIGHTS[tag][size]` (engines/utils.ts)            | N/A (Skia에서 Yoga finalHeight 사용, spec height는 참조용) |
+| `spec indicator size`                 | `INLINE_FORM_INDICATOR_WIDTHS[tag][size]` (engines/utils.ts)   | N/A                                                        |
+
+## Button/ToggleButton 사이즈 레퍼런스 테이블
+
+CSS height = lineHeight + paddingY x 2 + borderWidth x 2 (명시적 height 없음)
+
+| Size | fontSize | lineHeight (px) | paddingY | borderWidth | **CSS height** | CSS 토큰 참조                 |
+| ---- | -------- | --------------- | -------- | ----------- | -------------- | ----------------------------- |
+| xs   | 10       | 16              | 1        | 1           | **20px**       | `--text-2xs`, `--spacing-3xs` |
+| sm   | 12       | 16              | 2        | 1           | **22px**       | `--text-xs`, `--spacing-2xs`  |
+| md   | 14       | 20              | 4        | 1           | **30px**       | `--text-sm`, `--spacing-xs`   |
+| lg   | 16       | 24              | 8        | 1           | **42px**       | `--text-base`, `--spacing-sm` |
+| xl   | 18       | 28              | 12       | 1           | **54px**       | `--text-lg`, `--spacing-md`   |
+
+### lineHeight 계산 (shared-tokens.css)
+
+CSS `line-height`는 unitless ratio로 정의되어 있으며, `fontSize x ratio`로 px 환산:
+
+| Size | CSS line-height token      | ratio                 | px  |
+| ---- | -------------------------- | --------------------- | --- |
+| xs   | `--text-2xs--line-height`  | `1/0.625 = 1.6`       | 16  |
+| sm   | `--text-xs--line-height`   | `1/0.75 = 1.333`      | 16  |
+| md   | `--text-sm--line-height`   | `1.25/0.875 = 1.4286` | 20  |
+| lg   | `--text-base--line-height` | `1.5/1 = 1.5`         | 24  |
+| xl   | `--text-lg--line-height`   | `1.75/1.125 = 1.556`  | 28  |
+
+### BUTTON_SIZE_CONFIG lineHeight 필수 규칙
+
+`BUTTON_SIZE_CONFIG`와 `TOGGLEBUTTON_SIZE_CONFIG`에는 `lineHeight` 필드가 필수.
+CSS Button은 명시적 `line-height: var(--text-*--line-height)`를 사용하므로,
+WebGL `estimateTextHeight()`에 이 값을 전달하지 않으면 font metrics 기반
+`line-height: normal`(~1.2x)로 계산되어 CSS와 높이가 불일치함.
+
+```typescript
+// calculateContentHeight() 내부
+const effectiveLineHeight = resolvedLineHeight ?? configLineHeight;
+const textHeight = estimateTextHeight(fontSize, effectiveLineHeight);
+```
 
 ## parseBoxModel 기본값
 
@@ -64,12 +104,14 @@ md: { paddingLeft: 24, paddingRight: 24, borderWidth: 1 }  // 일치
 
 ```typescript
 // ❌ 금지: raw style 직접 typeof 체크
-const br = typeof style.borderRadius === 'number' ? style.borderRadius : 0;
+const br = typeof style.borderRadius === "number" ? style.borderRadius : 0;
 
 // ✅ 필수: convertStyle() 반환값 사용
 const { borderRadius: convertedBorderRadius } = convertStyle(style);
-const br = typeof convertedBorderRadius === 'number'
-  ? convertedBorderRadius : convertedBorderRadius?.[0] ?? 0;
+const br =
+  typeof convertedBorderRadius === "number"
+    ? convertedBorderRadius
+    : (convertedBorderRadius?.[0] ?? 0);
 ```
 
 > Yoga가 변환하는 레이아웃 속성(width, height, padding)과 달리, `borderRadius`는 시각 전용이므로 Yoga를 거치지 않고 CSS 문자열 형태로 남아 있다.
@@ -93,7 +135,7 @@ const specHeight = Math.min(sizeSpec.height || finalHeight, finalHeight);
 if (boxData.fill && specNode.box) {
   specNode.box.fill = boxData.fill;
 }
-boxData.fill = undefined;  // spec shapes가 시각 담당하므로 클리어
+boxData.fill = undefined; // spec shapes가 시각 담당하므로 클리어
 ```
 
 **maxWidth safety clamp**: `containerWidth - padding * 2`가 1 미만이면 `containerWidth`로 폴백하여 padding=0 시 음수 maxWidth 방지.
@@ -103,18 +145,22 @@ boxData.fill = undefined;  // spec shapes가 시각 담당하므로 클리어
 `ElementSprite.tsx`의 `UI_COMPONENT_DEFAULT_BORDER_RADIUS` 상수는 Spec radius 토큰 값을 미러링한다.
 `style.borderRadius`가 설정되지 않은 UI 컴포넌트는 `element.props.size`에 따라 기본값을 적용한다:
 
-| size | Spec 토큰 | radius 값 |
-|------|-----------|-----------|
-| xs, sm | `{radius.sm}` | 4px |
-| md | `{radius.md}` | 6px |
-| lg, xl | `{radius.lg}` | 8px |
+| size   | Spec 토큰     | radius 값 |
+| ------ | ------------- | --------- |
+| xs, sm | `{radius.sm}` | 4px       |
+| md     | `{radius.md}` | 6px       |
+| lg, xl | `{radius.lg}` | 8px       |
 
 ```typescript
 // ✅ Spec 토큰 기반 size별 기본 borderRadius
 const UI_COMPONENT_DEFAULT_BORDER_RADIUS: Record<string, number> = {
-  xs: 4, sm: 4, md: 6, lg: 8, xl: 8,
+  xs: 4,
+  sm: 4,
+  md: 6,
+  lg: 8,
+  xl: 8,
 };
-const size = String(props?.size || 'md');
+const size = String(props?.size || "md");
 const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
 
 // ❌ 금지: 하드코딩된 기본값
@@ -124,6 +170,7 @@ const effectiveBorderRadius = isUIComponent ? 6 : 0;
 ## 체크리스트
 
 값 수정 시 반드시 확인:
+
 - [ ] `packages/specs/src/components/[Component].spec.ts`
 - [ ] `apps/builder/.../engines/utils.ts` (`BUTTON_SIZE_CONFIG` 등 내부 상수)
 - [ ] `apps/builder/.../canvas/ui/Pixi[Component].tsx` (이벤트 레이어 전용, alpha=0)

@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface CalendarGridProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   defaultToday?: boolean;
   /** 1일의 요일 오프셋 (0=Sun, 1=Mon, ..., 6=Sat) */
   dayOffset?: number;
@@ -51,7 +51,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
   element: "table",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -71,7 +71,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -79,7 +79,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 4,
     },
-    M: {
+    md: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
@@ -87,7 +87,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 6,
     },
-    L: {
+    lg: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
