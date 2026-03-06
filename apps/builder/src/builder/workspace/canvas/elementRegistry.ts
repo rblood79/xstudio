@@ -10,10 +10,9 @@
  * @updated 2026-02-18 Phase 11 - DirectContainer 전환 완료
  */
 
-import { Container, Bounds } from 'pixi.js';
+import { Container, Bounds } from "pixi.js";
 
-import { notifyLayoutChange } from './skia/useSkiaNode';
-
+import { notifyLayoutChange } from "./skia/useSkiaNode";
 
 // ============================================
 // Types
@@ -183,12 +182,59 @@ export function clearRegistry(): void {
  * Registry 상태 로깅 (개발 환경)
  */
 export function logRegistryStats(): void {
-  if (process.env.NODE_ENV !== 'development') return;
+  if (process.env.NODE_ENV !== "development") return;
 
   console.log(
     `📦 [ElementRegistry] registered: ${elementRegistry.size} elements`,
-    Array.from(elementRegistry.keys()).slice(0, 5)
+    Array.from(elementRegistry.keys()).slice(0, 5),
   );
+}
+
+/**
+ * 좌표 기반 요소 히트 테스트 (Pencil-style)
+ *
+ * Pencil의 `findNodeAtPosition` 대응.
+ * layoutBoundsRegistry의 screen 좌표 bounds를 사용하여
+ * z-order 역순(render order 역순)으로 히트 판정.
+ *
+ * @param screenX - 스크린 좌표 X (panOffset 포함)
+ * @param screenY - 스크린 좌표 Y (panOffset 포함)
+ * @param candidateIds - 히트 테스트 대상 요소 ID (render order 순)
+ * @param excludeIds - 히트 테스트에서 제외할 요소 ID (예: Body)
+ * @returns 히트된 요소 ID 또는 null
+ */
+export function findElementAtPosition(
+  screenX: number,
+  screenY: number,
+  candidateIds: string[],
+  excludeIds?: Set<string>,
+): string | null {
+  // 히트된 모든 요소 수집 후, 가장 작은 영역(가장 구체적인 요소) 반환
+  // PixiJS EventBoundary의 "가장 깊은 자식 우선" 동작을 flat 히트 테스트로 근사
+  let bestId: string | null = null;
+  let bestArea = Infinity;
+
+  for (let i = candidateIds.length - 1; i >= 0; i--) {
+    const id = candidateIds[i];
+    if (excludeIds?.has(id)) continue;
+
+    const bounds = layoutBoundsRegistry.get(id);
+    if (!bounds) continue;
+
+    if (
+      screenX >= bounds.x &&
+      screenX <= bounds.x + bounds.width &&
+      screenY >= bounds.y &&
+      screenY <= bounds.y + bounds.height
+    ) {
+      const area = bounds.width * bounds.height;
+      if (area < bestArea) {
+        bestArea = area;
+        bestId = id;
+      }
+    }
+  }
+  return bestId;
 }
 
 export default {
@@ -201,4 +247,5 @@ export default {
   getRegistrySize,
   clearRegistry,
   logRegistryStats,
+  findElementAtPosition,
 };

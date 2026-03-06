@@ -231,19 +231,10 @@ export interface LayoutPosition {
   height: number;
 }
 
-/** Modifier keys for multi-select */
-export interface ClickModifiers {
-  metaKey: boolean;
-  shiftKey: boolean;
-  ctrlKey: boolean;
-}
-
 export interface ElementSpriteProps {
   element: Element;
   /** 레이아웃 계산된 위치 (있으면 style보다 우선) */
   layoutPosition?: LayoutPosition;
-  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
-  onDoubleClick?: (elementId: string) => void;
   onChange?: (elementId: string, value: unknown) => void;
   /** 🚀 Phase 10: Container 타입 컴포넌트의 children 요소들 */
   childElements?: Element[];
@@ -969,14 +960,11 @@ function rearrangeShapesForColumn(
  * <ElementSprite
  *   element={element}
  *   isSelected={selectedIds.includes(element.id)}
- *   onClick={handleElementClick}
  * />
  */
 export const ElementSprite = memo(function ElementSprite({
   element,
   layoutPosition,
-  onClick,
-  onDoubleClick,
   onChange,
   childElements,
   renderChildElement,
@@ -2025,36 +2013,12 @@ export const ElementSprite = memo(function ElementSprite({
     [computedW, computedH],
   );
 
-  const lastContainerPointerDownRef = useRef(0);
-  const handleContainerPointerDown = useCallback(
-    (e: unknown) => {
-      const now = Date.now();
-      const isDoubleClick = now - lastContainerPointerDownRef.current < 300;
-      lastContainerPointerDownRef.current = now;
-
-      const pixiEvent = e as {
-        metaKey?: boolean;
-        shiftKey?: boolean;
-        ctrlKey?: boolean;
-        nativeEvent?: MouseEvent | PointerEvent;
-      };
-      const metaKey =
-        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
-      const shiftKey =
-        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
-      const ctrlKey =
-        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
-      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
-
-      // 포인터 누름 상태로 즉시 전환 (선택/드래그 핸들링과 별개로 상태만 기록)
-      setPreviewState({ elementId: element.id, state: "pressed" });
-
-      if (isDoubleClick) {
-        onDoubleClick?.(element.id);
-      }
-    },
-    [element.id, onClick, onDoubleClick, setPreviewState],
-  );
+  // Pencil-style: 선택/더블클릭은 BuilderCanvas 중앙 핸들러가 처리
+  // PixiJS 이벤트는 hover/pressed 시각 효과만 담당
+  const handleContainerPointerDown = useCallback(() => {
+    // 포인터 누름 상태로 즉시 전환 (시각 효과만)
+    setPreviewState({ elementId: element.id, state: "pressed" });
+  }, [element.id, setPreviewState]);
 
   // Phase A: 포인터 진입 — hover 상태로 전환
   const handlePointerOver = useCallback(() => {
@@ -2124,11 +2088,7 @@ export const ElementSprite = memo(function ElementSprite({
       // P5: PixiButton 활성화 (pixiContainer 래퍼로 이벤트 처리)
       case "button":
         return (
-          <PixiButton
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiButton element={effectiveElement} isSelected={isSelected} />
         );
 
       case "checkboxGroup":
@@ -2136,7 +2096,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiCheckboxGroup
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={
               onChange ? (id, values) => onChange(id, values) : undefined
             }
@@ -2152,7 +2111,6 @@ export const ElementSprite = memo(function ElementSprite({
                 <PixiCheckboxItem
                   element={effectiveElement}
                   isSelected={isSelected}
-                  onClick={onClick}
                 />
                 {childElements.map((childEl) => renderChildElement(childEl))}
               </>
@@ -2162,7 +2120,6 @@ export const ElementSprite = memo(function ElementSprite({
             <PixiCheckboxItem
               element={effectiveElement}
               isSelected={isSelected}
-              onClick={onClick}
             />
           );
         }
@@ -2171,7 +2128,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiCheckbox
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={
               onChange ? (id, checked) => onChange(id, checked) : undefined
             }
@@ -2183,7 +2139,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiRadio
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2195,18 +2150,13 @@ export const ElementSprite = memo(function ElementSprite({
               <PixiRadioItem
                 element={effectiveElement}
                 isSelected={isSelected}
-                onClick={onClick}
               />
               {childElements.map((childEl) => renderChildElement(childEl))}
             </>
           );
         }
         return (
-          <PixiRadioItem
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiRadioItem element={effectiveElement} isSelected={isSelected} />
         );
 
       // Phase 6: @pixi/ui 컴포넌트
@@ -2215,7 +2165,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiSlider
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2225,7 +2174,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiInput
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2235,19 +2183,13 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiSelect
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
-            onDoubleClick={onDoubleClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
 
       case "progressBar":
         return (
-          <PixiProgressBar
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiProgressBar element={effectiveElement} isSelected={isSelected} />
         );
 
       case "switcher":
@@ -2255,36 +2197,21 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiSwitcher
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
 
       case "scrollBox":
         return (
-          <PixiScrollBox
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiScrollBox element={effectiveElement} isSelected={isSelected} />
         );
 
       case "list":
-        return (
-          <PixiList
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiList element={effectiveElement} isSelected={isSelected} />;
 
       case "maskedFrame":
         return (
-          <PixiMaskedFrame
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiMaskedFrame element={effectiveElement} isSelected={isSelected} />
         );
 
       // Phase 1 WebGL Migration 컴포넌트
@@ -2293,7 +2220,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiToggleButton
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
           />
         );
 
@@ -2302,7 +2228,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiToggleButtonGroup
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, keys) => onChange(id, keys) : undefined}
             childElements={childElements}
             renderChildElement={renderChildElement}
@@ -2314,90 +2239,44 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiListBox
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, keys) => onChange(id, keys) : undefined}
           />
         );
 
       case "badge":
-        return (
-          <PixiBadge
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiBadge element={effectiveElement} isSelected={isSelected} />;
 
       case "meter":
-        return (
-          <PixiMeter
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiMeter element={effectiveElement} isSelected={isSelected} />;
 
       // Phase 2 WebGL Migration 컴포넌트
       case "separator":
         return (
-          <PixiSeparator
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiSeparator element={effectiveElement} isSelected={isSelected} />
         );
 
       case "link":
-        return (
-          <PixiLink
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiLink element={effectiveElement} isSelected={isSelected} />;
 
       case "breadcrumbs":
         return (
-          <PixiBreadcrumbs
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiBreadcrumbs element={effectiveElement} isSelected={isSelected} />
         );
 
       case "card":
-        return (
-          <PixiCard
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiCard element={effectiveElement} isSelected={isSelected} />;
 
       case "panel":
-        return (
-          <PixiPanel
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiPanel element={effectiveElement} isSelected={isSelected} />;
 
       case "menu":
-        return (
-          <PixiMenu
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiMenu element={effectiveElement} isSelected={isSelected} />;
 
       case "tabs":
         return (
           <PixiTabs
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             childElements={childElements}
             renderChildElement={renderChildElement}
           />
@@ -2406,20 +2285,12 @@ export const ElementSprite = memo(function ElementSprite({
       // Phase 3 WebGL Migration 컴포넌트
       case "numberField":
         return (
-          <PixiNumberField
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiNumberField element={effectiveElement} isSelected={isSelected} />
         );
 
       case "searchField":
         return (
-          <PixiSearchField
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiSearchField element={effectiveElement} isSelected={isSelected} />
         );
 
       case "comboBox":
@@ -2427,8 +2298,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiComboBox
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
-            onDoubleClick={onDoubleClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2439,7 +2308,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiGridList
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2449,7 +2317,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiTree
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2459,7 +2326,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiTable
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2470,7 +2336,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiDisclosure
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2480,7 +2345,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiDisclosureGroup
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2490,7 +2354,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiTooltip
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2500,7 +2363,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiPopover
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2510,7 +2372,6 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiDialog
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
@@ -2518,83 +2379,47 @@ export const ElementSprite = memo(function ElementSprite({
       // Phase 6 WebGL Migration 컴포넌트 - Date/Color Components
       case "colorSwatch":
         return (
-          <PixiColorSwatch
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiColorSwatch element={effectiveElement} isSelected={isSelected} />
         );
 
       case "colorSlider":
         return (
-          <PixiColorSlider
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiColorSlider element={effectiveElement} isSelected={isSelected} />
         );
 
       case "timeField":
         return (
-          <PixiTimeField
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiTimeField element={effectiveElement} isSelected={isSelected} />
         );
 
       case "dateField":
         return (
-          <PixiDateField
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiDateField element={effectiveElement} isSelected={isSelected} />
         );
 
       case "colorArea":
         return (
-          <PixiColorArea
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiColorArea element={effectiveElement} isSelected={isSelected} />
         );
 
       case "calendar":
         return (
-          <PixiCalendar
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiCalendar element={effectiveElement} isSelected={isSelected} />
         );
 
       case "colorWheel":
         return (
-          <PixiColorWheel
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiColorWheel element={effectiveElement} isSelected={isSelected} />
         );
 
       case "datePicker":
         return (
-          <PixiDatePicker
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiDatePicker element={effectiveElement} isSelected={isSelected} />
         );
 
       case "colorPicker":
         return (
-          <PixiColorPicker
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiColorPicker element={effectiveElement} isSelected={isSelected} />
         );
 
       case "dateRangePicker":
@@ -2602,110 +2427,64 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiDateRangePicker
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
           />
         );
 
       // Phase 7 WebGL Migration 컴포넌트 - Form & Utility Components
       case "textField":
         return (
-          <PixiTextField
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiTextField element={effectiveElement} isSelected={isSelected} />
         );
 
       case "switch":
         return (
-          <PixiSwitch
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiSwitch element={effectiveElement} isSelected={isSelected} />
         );
 
       case "textArea":
         return (
-          <PixiTextArea
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiTextArea element={effectiveElement} isSelected={isSelected} />
         );
 
       case "form":
-        return (
-          <PixiForm
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiForm element={effectiveElement} isSelected={isSelected} />;
 
       case "toolbar":
         return (
-          <PixiToolbar
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiToolbar element={effectiveElement} isSelected={isSelected} />
         );
 
       case "fileTrigger":
         return (
-          <PixiFileTrigger
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiFileTrigger element={effectiveElement} isSelected={isSelected} />
         );
 
       case "dropZone":
         return (
-          <PixiDropZone
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiDropZone element={effectiveElement} isSelected={isSelected} />
         );
 
       case "skeleton":
         return (
-          <PixiSkeleton
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiSkeleton element={effectiveElement} isSelected={isSelected} />
         );
 
       // Phase 8 WebGL Migration 컴포넌트 - Notification & Color Utility Components
       case "toast":
-        return (
-          <PixiToast
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiToast element={effectiveElement} isSelected={isSelected} />;
 
       case "pagination":
         return (
           <PixiPagination
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
             onChange={onChange ? (id, value) => onChange(id, value) : undefined}
           />
         );
 
       case "colorField":
         return (
-          <PixiColorField
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <PixiColorField element={effectiveElement} isSelected={isSelected} />
         );
 
       case "colorSwatchPicker":
@@ -2713,27 +2492,14 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiColorSwatchPicker
             element={effectiveElement}
             isSelected={isSelected}
-            onClick={onClick}
           />
         );
 
       case "group":
-        return (
-          <PixiGroup
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiGroup element={effectiveElement} isSelected={isSelected} />;
 
       case "slot":
-        return (
-          <PixiSlot
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
-        );
+        return <PixiSlot element={effectiveElement} isSelected={isSelected} />;
 
       // Select child composition: 투명 히트 영역 (Skia spec shapes가 시각 렌더링)
       // SelectTrigger: 컨테이너 — 자식(SelectValue, SelectIcon) DirectContainer 렌더링
@@ -2789,44 +2555,23 @@ export const ElementSprite = memo(function ElementSprite({
                 })}
               />
               <pixiContainer x={0} y={0}>
-                <BoxSprite
-                  element={effectiveElement}
-                  isSelected={isSelected}
-                  onClick={onClick}
-                  onDoubleClick={onDoubleClick}
-                />
+                <BoxSprite element={effectiveElement} isSelected={isSelected} />
               </pixiContainer>
               {childElements.map((childEl) => renderChildElement(childEl))}
             </>
           );
         }
-        return (
-          <BoxSprite
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-            onDoubleClick={onDoubleClick}
-          />
-        );
+        return <BoxSprite element={effectiveElement} isSelected={isSelected} />;
 
       // 기본 타입
       case "text":
         return (
-          <TextSprite
-            element={labelColorElement}
-            isSelected={isSelected}
-            onClick={onClick}
-            onDoubleClick={onDoubleClick}
-          />
+          <TextSprite element={labelColorElement} isSelected={isSelected} />
         );
 
       case "image":
         return (
-          <ImageSprite
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-          />
+          <ImageSprite element={effectiveElement} isSelected={isSelected} />
         );
 
       case "box":
@@ -2847,25 +2592,13 @@ export const ElementSprite = memo(function ElementSprite({
                 })}
               />
               <pixiContainer x={0} y={0}>
-                <BoxSprite
-                  element={effectiveElement}
-                  isSelected={isSelected}
-                  onClick={onClick}
-                  onDoubleClick={onDoubleClick}
-                />
+                <BoxSprite element={effectiveElement} isSelected={isSelected} />
               </pixiContainer>
               {childElements.map((childEl) => renderChildElement(childEl))}
             </>
           );
         }
-        return (
-          <BoxSprite
-            element={effectiveElement}
-            isSelected={isSelected}
-            onClick={onClick}
-            onDoubleClick={onDoubleClick}
-          />
-        );
+        return <BoxSprite element={effectiveElement} isSelected={isSelected} />;
     }
   })();
 

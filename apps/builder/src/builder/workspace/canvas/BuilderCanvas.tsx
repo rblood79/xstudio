@@ -53,6 +53,9 @@ import {
   type CursorStyle,
   type SelectionBoxHandle,
   type DragState,
+  hitTestHandle,
+  hitTestSelectionBounds,
+  calculateCombinedBounds,
 } from "./selection";
 // GridLayer는 Skia gridRenderer로 대체됨
 import { ViewportControlBridge } from "./viewport";
@@ -74,6 +77,7 @@ import {
   unregisterElement,
   updateElementBounds,
 } from "./elementRegistry";
+import { hitTestPoint } from "./wasm-bindings/spatialIndex";
 import { notifyLayoutChange } from "./skia/useSkiaNode";
 import { LayoutComputedSizeContext } from "./layoutContext";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
@@ -268,11 +272,6 @@ interface PageContainerProps {
   pageElements: Element[];
   elementById: Map<string, Element>;
   depthMap: Map<string, number>;
-  onClick: (
-    elementId: string,
-    modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean },
-  ) => void;
-  onDoubleClick: (elementId: string) => void;
   onTitleDragStart: (pageId: string, clientX: number, clientY: number) => void;
   /** ADR-006 P3-1: 레이아웃 변경 감지 버전 */
   layoutVersion: number;
@@ -301,8 +300,6 @@ const PageContainer = memo(function PageContainer({
   pageElements,
   elementById,
   depthMap,
-  onClick,
-  onDoubleClick,
   onTitleDragStart,
   layoutVersion,
   pagePositionVersion,
@@ -335,7 +332,6 @@ const PageContainer = memo(function PageContainer({
         pageId={pageId}
         pageWidth={pageWidth}
         pageHeight={pageHeight}
-        onClick={onClick}
       />
       <CanvasBounds width={pageWidth} height={pageHeight} zoom={zoom} />
       {isVisible && appReady && bodyElement && (
@@ -348,8 +344,6 @@ const PageContainer = memo(function PageContainer({
           pageHeight={pageHeight}
           zoom={zoom}
           panOffset={panOffset}
-          onClick={onClick}
-          onDoubleClick={onDoubleClick}
           wasmLayoutReady={wasmLayoutReady}
           layoutVersion={layoutVersion}
           pagePositionVersion={pagePositionVersion}
@@ -641,8 +635,6 @@ const ElementsLayer = memo(function ElementsLayer({
   pageHeight,
   zoom,
   panOffset,
-  onClick,
-  onDoubleClick,
   pagePositionVersion = 0,
   wasmLayoutReady: _wasmLayoutReady = false,
   layoutVersion = 0,
@@ -655,11 +647,6 @@ const ElementsLayer = memo(function ElementsLayer({
   pageHeight: number;
   zoom: number;
   panOffset: { x: number; y: number };
-  onClick?: (
-    elementId: string,
-    modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean },
-  ) => void;
-  onDoubleClick?: (elementId: string) => void;
   pagePositionVersion?: number;
   /** Rust WASM(Taffy/Grid) 엔진 로드 완료 여부 - 로드 시 레이아웃 재계산 트리거 */
   wasmLayoutReady?: boolean;
@@ -1127,8 +1114,6 @@ const ElementsLayer = memo(function ElementsLayer({
           >
             <ElementSprite
               element={effectiveChildEl}
-              onClick={onClick}
-              onDoubleClick={onDoubleClick}
               childElements={
                 isContainerType ? effectiveChildElements : undefined
               }
@@ -1278,8 +1263,6 @@ const ElementsLayer = memo(function ElementsLayer({
               >
                 <ElementSprite
                   element={child}
-                  onClick={onClick}
-                  onDoubleClick={onDoubleClick}
                   childElements={isContainerType ? childElements : undefined}
                   renderChildElement={
                     isContainerType && renderChildren.length > 0
@@ -1328,8 +1311,6 @@ const ElementsLayer = memo(function ElementsLayer({
     fullTreeLayoutMap,
     pageChildrenMap,
     renderIdSet,
-    onClick,
-    onDoubleClick,
     bodyElement,
     elementById,
     pageWidth,
@@ -2195,34 +2176,61 @@ export function BuilderCanvas({
     dragStateRef.current = dragState;
   }, [dragState]);
 
-  // 리사이즈 시작 핸들러
-  const handleResizeStart = useCallback(
-    (
-      elementId: string,
-      handle: HandlePosition,
-      bounds: BoundingBox,
-      position: { x: number; y: number },
-    ) => {
-      const canvasPosition = screenToCanvasPoint(position);
-      dragPointerRef.current = canvasPosition;
-      startResize(elementId, handle, bounds, canvasPosition);
-    },
-    [screenToCanvasPoint, startResize],
-  );
+  // ============================================
+  // Pencil-style 중앙 pointerdown 핸들러
+  // ============================================
+  const lastClickTimeRef = useRef(0);
+  const lastClickTargetRef = useRef<string | null>(null);
+  const DOUBLE_CLICK_THRESHOLD = 300;
 
-  // 이동 시작 핸들러
-  const handleMoveStart = useCallback(
-    (
-      elementId: string,
-      bounds: BoundingBox,
-      position: { x: number; y: number },
-    ) => {
-      const canvasPosition = screenToCanvasPoint(position);
-      dragPointerRef.current = canvasPosition;
-      startMove(elementId, bounds, canvasPosition);
-    },
-    [screenToCanvasPoint, startMove],
-  );
+  // SelectionLayer의 selectionBounds를 ref로 저장 (중앙 핸들러에서 접근)
+  const selectionBoundsRef = useRef<BoundingBox | null>(null);
+
+  // selectionBounds 동기화: SelectionLayer가 bounds를 계산하면 ref에 저장
+  // SelectionLayer 내부의 computeSelectionBounds와 동일 로직이지만,
+  // BuilderCanvas에서 직접 접근 가능하도록 별도 계산
+  const computeSelectionBoundsForHitTest = useCallback(() => {
+    const state = useStore.getState();
+    const selectedIds = state.selectedElementIds;
+    if (selectedIds.length === 0) return null;
+
+    const boxes: BoundingBox[] = [];
+
+    for (const id of selectedIds) {
+      const el = state.elementsMap.get(id);
+      if (!el || el.page_id !== state.currentPageId) continue;
+
+      if (el.tag.toLowerCase() === "body") {
+        const pos = el.page_id ? pagePositions?.[el.page_id] : undefined;
+        boxes.push({
+          x: pos?.x ?? 0,
+          y: pos?.y ?? 0,
+          width: pageWidth,
+          height: pageHeight,
+        });
+        continue;
+      }
+
+      const bounds = getElementBoundsSimple(id);
+      if (bounds) {
+        // screen 좌표를 canvas 좌표로 변환
+        const localX = (bounds.x - panOffset.x) / zoom;
+        const localY = (bounds.y - panOffset.y) / zoom;
+        const localWidth = bounds.width / zoom;
+        const localHeight = bounds.height / zoom;
+        boxes.push({
+          x: localX,
+          y: localY,
+          width: localWidth,
+          height: localHeight,
+        });
+      }
+    }
+    return calculateCombinedBounds(boxes);
+  }, [pageWidth, pageHeight, zoom, panOffset, pagePositions]);
+
+  // selectionBounds를 프레임마다 갱신하지 않고, pointerdown 시점에 계산
+  // (RAF 지연 없이 즉시)
 
   useEffect(() => {
     if (!containerEl) return;
@@ -2260,12 +2268,220 @@ export function BuilderCanvas({
     updateDrag,
   ]);
 
-  // 커서 변경 핸들러
-  const handleCursorChange = useCallback((cursor: CursorStyle) => {
+  // Pencil-style: 커서 변경 유틸
+  const setCursor = useCallback((cursor: string) => {
     if (containerRef.current) {
       containerRef.current.style.cursor = cursor;
     }
   }, []);
+
+  // ============================================
+  // Pencil-style 중앙 DOM 이벤트 핸들러
+  // ============================================
+
+  // Ref로 최신 핸들러 유지 (TDZ 방지 + deps 배열에서 제거 → 리스너 재등록 최소화)
+  const handleElementClickRef = useRef<
+    (
+      elementId: string,
+      modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean },
+    ) => void
+  >(() => {});
+  const handleElementDoubleClickRef = useRef<(elementId: string) => void>(
+    () => {},
+  );
+  // 텍스트 편집 상태를 handleCentralPointerDown에서 참조하기 위한 ref
+  // (useTextEdit()보다 앞에 정의되므로 closure로 접근 불가 → ref 필요)
+  const isEditingRef = useRef(false);
+  const completeEditRef = useRef<(elementId: string) => void>(() => {});
+  const editingElementIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    // --- pointerdown: Pencil IdleState.onPointerDown 대응 ---
+    const handleCentralPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return; // 좌클릭만
+
+      // 다중 리스너 중복 처리 방지 (React StrictMode/HMR)
+      const ev = event as PointerEvent & { __handled?: boolean };
+      if (ev.__handled) return;
+      ev.__handled = true;
+
+      // Pencil EditingTextState 패턴: 편집 중 외부 클릭 → 편집 종료 + return
+      // pointerdown에서 직접 completeEdit 호출 (mousedown handleClickOutside 의존 제거)
+      // startMove rAF 예약 방지 → dragState stuck 방지
+      if (isEditingRef.current) {
+        const editId = editingElementIdRef.current;
+        if (editId) completeEditRef.current(editId);
+        return;
+      }
+
+      // input/textarea/contenteditable 요소 클릭 시 무시
+      const target = event.target as HTMLElement;
+      if (target.closest('input, textarea, [contenteditable="true"]')) return;
+
+      const rect = el.getBoundingClientRect();
+      const screenPos = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+      const canvasPos = screenToCanvasPoint(screenPos);
+
+      // 1. doubleClick 체크 (Pencil: lastClickTime 300ms)
+      const now = Date.now();
+      const isDoubleClick =
+        now - lastClickTimeRef.current < DOUBLE_CLICK_THRESHOLD;
+      lastClickTimeRef.current = now;
+
+      if (isDoubleClick && lastClickTargetRef.current) {
+        // 더블클릭 처리 후 리셋 — 연속 클릭이 추가 더블클릭으로 처리되는 것 방지
+        lastClickTimeRef.current = 0;
+        handleElementDoubleClickRef.current(lastClickTargetRef.current);
+        return;
+      }
+
+      // 2. 현재 selectionBounds 계산 (즉시, RAF 지연 없이)
+      const selBounds = computeSelectionBoundsForHitTest();
+      selectionBoundsRef.current = selBounds;
+
+      const state = useStore.getState();
+      const selectedIds = state.selectedElementIds;
+      const isSingleSelection = selectedIds.length === 1;
+
+      // 3. handle 히트 테스트 (단일 선택 시에만)
+      if (isSingleSelection && selBounds) {
+        const hitHandle = hitTestHandle(canvasPos, selBounds, zoom);
+        if (hitHandle) {
+          dragPointerRef.current = canvasPos;
+          startResize(selectedIds[0], hitHandle.position, selBounds, canvasPos);
+          return;
+        }
+      }
+
+      // 4. selectionBounds 히트 테스트 (이동 시작)
+      const inSelectionBounds = hitTestSelectionBounds(canvasPos, selBounds);
+
+      // 5. 요소 히트 테스트 (씬 좌표 기반 — SpatialIndex)
+      // layoutBoundsRegistry는 zoom 변경 시 갱신 안 됨 → SpatialIndex 씬 좌표 사용
+      // canvasPos는 screenToCanvasPoint()로 역카메라 변환된 씬 좌표
+      const hitCandidates = hitTestPoint(canvasPos.x, canvasPos.y);
+      // Body 요소 제외 (전체 페이지를 덮으므로 항상 히트됨) + 가장 작은 영역 선택
+      let hitElementId: string | null = null;
+      let bestArea = Infinity;
+      for (const cid of hitCandidates) {
+        const cel = state.elementsMap.get(cid);
+        if (!cel || cel.tag.toLowerCase() === "body") continue;
+        // 씬 좌표 bounds로 면적 비교 (가장 구체적인 요소 선택)
+        const cb = getElementBoundsSimple(cid);
+        const area = cb ? cb.width * cb.height : Infinity;
+        if (area < bestArea) {
+          bestArea = area;
+          hitElementId = cid;
+        }
+      }
+
+      // 6. 분기 (Pencil IdleState.onPointerDown 로직)
+      if (!inSelectionBounds && hitElementId) {
+        // selectionBounds 밖 + 요소 있음 → 선택 + 드래그 준비
+        const isMultiSelectKey = event.metaKey || event.ctrlKey;
+        handleElementClickRef.current(hitElementId, {
+          metaKey: event.metaKey,
+          shiftKey: event.shiftKey,
+          ctrlKey: event.ctrlKey,
+        });
+        lastClickTargetRef.current = hitElementId;
+
+        if (!isMultiSelectKey) {
+          // 선택 후 드래그 준비: 새 selectionBounds 계산
+          requestAnimationFrame(() => {
+            const newBounds = computeSelectionBoundsForHitTest();
+            if (newBounds) {
+              dragPointerRef.current = canvasPos;
+              startMove(hitElementId, newBounds, canvasPos);
+            }
+          });
+        }
+        return;
+      }
+
+      if (inSelectionBounds) {
+        // selectionBounds 안 → 이동 드래그 시작
+        if (hitElementId && !new Set(selectedIds).has(hitElementId)) {
+          // selectionBounds 안이지만 선택되지 않은 다른 요소 → 선택 변경
+          handleElementClickRef.current(hitElementId, {
+            metaKey: event.metaKey,
+            shiftKey: event.shiftKey,
+            ctrlKey: event.ctrlKey,
+          });
+          lastClickTargetRef.current = hitElementId;
+        } else if (selectedIds.length > 0 && selBounds) {
+          // 선택된 요소의 bounds 안 → 이동
+          lastClickTargetRef.current = selectedIds[0];
+          dragPointerRef.current = canvasPos;
+          startMove(selectedIds[0], selBounds, canvasPos);
+        }
+        return;
+      }
+
+      if (!hitElementId) {
+        // selectionBounds 밖 + 요소 없음 → lasso 또는 선택 해제
+        lastClickTargetRef.current = null;
+        if (!event.shiftKey) {
+          setSelectedElements([]);
+        }
+        // CanvasBackground의 lasso 시작은 PixiJS 이벤트로 유지
+        return;
+      }
+    };
+
+    // --- pointermove: 커서 변경 (handle hover 감지) ---
+    const handleCentralPointerMove = (event: PointerEvent) => {
+      // 드래그 중이면 무시 (useDragInteraction이 처리)
+      if (dragState.isDragging) return;
+
+      const rect = el.getBoundingClientRect();
+      const screenPos = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+      const canvasPos = screenToCanvasPoint(screenPos);
+
+      const state = useStore.getState();
+      const selectedIds = state.selectedElementIds;
+      const isSingleSelection = selectedIds.length === 1;
+
+      // handle hover 체크
+      if (isSingleSelection) {
+        const selBounds =
+          selectionBoundsRef.current ?? computeSelectionBoundsForHitTest();
+        const hitHandle = hitTestHandle(canvasPos, selBounds, zoom);
+        if (hitHandle) {
+          setCursor(hitHandle.cursor);
+          return;
+        }
+      }
+
+      setCursor("default");
+    };
+
+    el.addEventListener("pointerdown", handleCentralPointerDown);
+    el.addEventListener("pointermove", handleCentralPointerMove);
+
+    return () => {
+      el.removeEventListener("pointerdown", handleCentralPointerDown);
+      el.removeEventListener("pointermove", handleCentralPointerMove);
+    };
+  }, [
+    screenToCanvasPoint,
+    zoom,
+    computeSelectionBoundsForHitTest,
+    startResize,
+    startMove,
+    dragState.isDragging,
+    setCursor,
+    setSelectedElements,
+  ]);
 
   // 텍스트 편집 (B1.5)
   const {
@@ -2276,6 +2492,11 @@ export function BuilderCanvas({
     cancelEdit,
     isEditing,
   } = useTextEdit();
+
+  // 편집 상태 ref 동기화 (handleCentralPointerDown에서 참조)
+  isEditingRef.current = isEditing;
+  completeEditRef.current = completeEdit;
+  editingElementIdRef.current = editState?.elementId ?? null;
 
   // Element click handler with multi-select support
   // 🚀 최적화: selectedElementIds를 deps에서 제거하고 getState()로 읽어서
@@ -2402,20 +2623,20 @@ export function BuilderCanvas({
 
       const resolvedElement = state.elementsMap.get(resolvedTarget);
       if (!resolvedElement) return;
-
-      // 텍스트 요소: 텍스트 편집 시작 (기존 동작)
+      // 텍스트 요소: 텍스트 편집 시작
       const textTags = new Set([
-        "p",
-        "h1",
-        "h2",
-        "h3",
-        "h4",
-        "h5",
-        "h6",
-        "span",
-        "a",
-        "label",
-        "button",
+        "Text",
+        "Heading",
+        "Label",
+        "Paragraph",
+        "Link",
+        "Description",
+        "Strong",
+        "Em",
+        "Code",
+        "Button",
+        "Tag",
+        "Badge",
       ]);
       if (textTags.has(resolvedElement.tag)) {
         const layoutPosition = getElementBoundsSimple(resolvedTarget);
@@ -2436,6 +2657,10 @@ export function BuilderCanvas({
     },
     [startEdit],
   );
+
+  // Ref 동기화: 최신 핸들러를 ref에 할당 (중앙 DOM 이벤트 핸들러에서 사용)
+  handleElementClickRef.current = handleElementClick;
+  handleElementDoubleClickRef.current = handleElementDoubleClick;
 
   // WebGL context recovery
   useEffect(() => {
@@ -2624,8 +2849,6 @@ export function BuilderCanvas({
                   pageElements={data.pageElements}
                   elementById={elementById}
                   depthMap={depthMap}
-                  onClick={handleElementClick}
-                  onDoubleClick={handleElementDoubleClick}
                   onTitleDragStart={startPageDrag}
                   layoutVersion={layoutVersion}
                   pagePositionVersion={pagePositionsVersion}
@@ -2640,9 +2863,6 @@ export function BuilderCanvas({
               pageHeight={pageHeight}
               zoom={zoom}
               panOffset={panOffset}
-              onResizeStart={handleResizeStart}
-              onMoveStart={handleMoveStart}
-              onCursorChange={handleCursorChange}
               selectionBoxRef={selectionBoxRef}
               pagePositions={pagePositions}
               pagePositionsVersion={pagePositionsVersion}

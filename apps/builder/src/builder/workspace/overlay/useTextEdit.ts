@@ -1,15 +1,20 @@
 /**
  * useTextEdit Hook
  *
- * 🚀 Phase 10 B1.5: 텍스트 편집 상태 관리
+ * Pencil textEditorManager 패턴:
+ * - startEdit: 원본 스냅샷 저장 + Skia 텍스트 숨김
+ * - completeEdit: 히스토리 기록 + store 업데이트 + Skia 텍스트 복원
+ * - cancelEdit: Skia 텍스트 복원 (store 변경 없음)
  *
  * @since 2025-12-11 Phase 10 B1.5
+ * @updated 2026-03-07 Pencil 패턴 적용 (히스토리, Skia 연동)
  */
 
-import { useState, useCallback } from 'react';
-import { useStore } from '../../stores';
-import type { Element } from '../../../types/core/store.types';
-import type { TextStyleConfig } from './TextEditOverlay';
+import { useState, useCallback, useRef } from "react";
+import { useStore } from "../../stores";
+import type { TextStyleConfig } from "./TextEditOverlay";
+import { setEditingElementId } from "../canvas/skia/nodeRenderers";
+import { notifyLayoutChange } from "../canvas/skia/useSkiaNode";
 
 // ============================================
 // Types
@@ -20,9 +25,9 @@ export interface TextEditState {
   elementId: string | null;
   /** 현재 텍스트 값 */
   value: string;
-  /** 위치 (캔버스 좌표) */
+  /** 위치 (screen 좌표) */
   position: { x: number; y: number };
-  /** 크기 */
+  /** 크기 (screen 픽셀) */
   size: { width: number; height: number };
   /** 스타일 */
   style: TextStyleConfig;
@@ -39,7 +44,7 @@ export interface LayoutPosition {
 export interface UseTextEditReturn {
   /** 편집 상태 */
   editState: TextEditState | null;
-  /** 편집 시작 (layoutPosition: 레이아웃 엔진이 계산한 위치) */
+  /** 편집 시작 (layoutPosition: screen 좌표 bounds) */
   startEdit: (elementId: string, layoutPosition?: LayoutPosition) => void;
   /** 텍스트 변경 */
   updateText: (elementId: string, newValue: string) => void;
@@ -56,18 +61,36 @@ export interface UseTextEditReturn {
 // ============================================
 
 const TEXT_ELEMENT_TAGS = new Set([
-  'Text',
-  'Heading',
-  'Label',
-  'Paragraph',
-  'Link',
-  'Button', // 버튼의 텍스트도 편집 가능
-  // 🚀 Phase 19: Input 관련 태그 추가 - 더블클릭 시 TextEditOverlay로 텍스트 입력
-  'Input',
-  'TextField',
-  'TextInput',
-  'SearchField',
-  'TextArea',
+  "Text",
+  "Heading",
+  "Label",
+  "Paragraph",
+  "Link",
+  // 소문자 태그 (handleElementDoubleClick의 textTags와 호환)
+  "p",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "span",
+  "a",
+  "label",
+  "button",
+  "Description",
+  "Strong",
+  "Em",
+  "Code",
+  "Tag",
+  "Badge",
+  // Input 관련
+  "Button",
+  "Input",
+  "TextField",
+  "TextInput",
+  "SearchField",
+  "TextArea",
 ]);
 
 // ============================================
@@ -76,52 +99,56 @@ const TEXT_ELEMENT_TAGS = new Set([
 
 /**
  * 요소에서 텍스트 추출
- * 🚀 Phase 19: Input 컴포넌트의 value/defaultValue 지원
  */
-function extractText(element: Element): string {
-  const props = element.props as Record<string, unknown> | undefined;
-  // Input 컴포넌트: value, defaultValue 우선
-  // 텍스트 컴포넌트: children, text, label 우선
-  return String(props?.value || props?.defaultValue || props?.children || props?.text || props?.label || '');
+function extractText(props: Record<string, unknown> | undefined): string {
+  if (!props) return "";
+  return String(
+    props.value ||
+      props.defaultValue ||
+      props.children ||
+      props.text ||
+      props.label ||
+      "",
+  );
 }
 
 /**
  * 요소 스타일에서 텍스트 스타일 추출
  */
-function extractTextStyle(element: Element): TextStyleConfig {
-  const style = element.props?.style as Record<string, unknown> | undefined;
-
+function extractTextStyle(
+  style: Record<string, unknown> | undefined,
+): TextStyleConfig {
   return {
-    fontFamily: String(style?.fontFamily || 'Pretendard, sans-serif'),
+    fontFamily: String(style?.fontFamily || "Pretendard, sans-serif"),
     fontSize: Number(style?.fontSize) || 16,
     fontWeight: style?.fontWeight as string | number | undefined,
-    color: String(style?.color || '#000000'),
-    textAlign: (style?.textAlign as 'left' | 'center' | 'right') || 'left',
+    color: String(style?.color || "#000000"),
+    textAlign: (style?.textAlign as "left" | "center" | "right") || "left",
     lineHeight: style?.lineHeight as number | string | undefined,
     padding: Number(style?.padding || style?.paddingLeft || 0),
   };
 }
 
 /**
- * 요소 위치 추출
+ * 텍스트 속성 키 결정 (저장 시 사용)
  */
-function extractPosition(element: Element): { x: number; y: number } {
-  const style = element.props?.style as Record<string, unknown> | undefined;
-  return {
-    x: Number(style?.left) || 0,
-    y: Number(style?.top) || 0,
-  };
-}
-
-/**
- * 요소 크기 추출
- */
-function extractSize(element: Element): { width: number; height: number } {
-  const style = element.props?.style as Record<string, unknown> | undefined;
-  return {
-    width: Number(style?.width) || 100,
-    height: Number(style?.height) || 50,
-  };
+function getTextPropKey(
+  tag: string,
+  props: Record<string, unknown> | undefined,
+): string {
+  if (props && ("value" in props || "defaultValue" in props)) return "value";
+  if (props && "children" in props) return "children";
+  if (props && "text" in props) return "text";
+  if (props && "label" in props) return "label";
+  // Input 관련 태그면 value, 아니면 children
+  const inputTags = new Set([
+    "Input",
+    "TextField",
+    "TextInput",
+    "SearchField",
+    "TextArea",
+  ]);
+  return inputTags.has(tag) ? "value" : "children";
 }
 
 // ============================================
@@ -129,109 +156,119 @@ function extractSize(element: Element): { width: number; height: number } {
 // ============================================
 
 export function useTextEdit(): UseTextEditReturn {
-  const elements = useStore((state) => state.elements);
-  const updateElementProps = useStore((state) => state.updateElementProps);
-
   const [editState, setEditState] = useState<TextEditState | null>(null);
 
-  // 편집 시작
-  // 🚀 Phase 19: layoutPosition 파라미터 추가 - 레이아웃 엔진 계산 위치 사용
+  // Pencil originalUndoSnapshot 패턴: 편집 시작 시 원본 값 저장
+  const originalValueRef = useRef<string>("");
+  const editingIdRef = useRef<string | null>(null);
+  const currentValueRef = useRef<string>("");
+
+  // 편집 시작 (Pencil startTextEditing + nUt constructor 패턴)
   const startEdit = useCallback(
     (elementId: string, layoutPosition?: LayoutPosition) => {
-      const element = elements.find((el) => el.id === elementId);
+      const state = useStore.getState();
+      const element = state.elementsMap.get(elementId);
       if (!element) return;
 
       // 텍스트 요소만 편집 가능
       if (!TEXT_ELEMENT_TAGS.has(element.tag)) {
-        console.warn(`[useTextEdit] Element ${element.tag} is not a text element`);
+        console.warn(
+          `[useTextEdit] Element ${element.tag} is not a text element`,
+        );
         return;
       }
 
-      const text = extractText(element);
+      const props = element.props as Record<string, unknown> | undefined;
+      const text = extractText(props);
+      const elStyle = element.props?.style as
+        | Record<string, unknown>
+        | undefined;
 
-      // 🚀 Phase 19: layoutPosition이 있으면 우선 사용 (레이아웃 엔진 결과)
-      // 없으면 element의 style.left/top에서 추출 (fallback)
+      // Pencil: 원본 스냅샷 저장 (undo용)
+      originalValueRef.current = text;
+      currentValueRef.current = text;
+      editingIdRef.current = elementId;
+
+      // Pencil hideText: Skia 텍스트 렌더링 숨김 + 리렌더 트리거
+      setEditingElementId(elementId);
+      notifyLayoutChange();
+
+      // 위치 결정 (layoutPosition = screen 좌표 from layoutBoundsRegistry)
       const position = layoutPosition
         ? { x: layoutPosition.x, y: layoutPosition.y }
-        : extractPosition(element);
-
+        : { x: 0, y: 0 };
       const size = layoutPosition
         ? { width: layoutPosition.width, height: layoutPosition.height }
-        : extractSize(element);
+        : { width: 100, height: 40 };
 
       setEditState({
         elementId,
         value: text,
         position,
         size,
-        style: extractTextStyle(element),
+        style: extractTextStyle(elStyle),
       });
     },
-    [elements]
+    [],
   );
 
-  // 텍스트 변경 (실시간)
-  const updateText = useCallback(
-    (elementId: string, newValue: string) => {
-      setEditState((prev) => {
-        if (!prev || prev.elementId !== elementId) return prev;
-        return { ...prev, value: newValue };
-      });
-    },
-    []
-  );
+  // 텍스트 변경 (실시간 — Quill 내부에서만 관리, store 미반영)
+  // Pencil 패턴: 편집 중에는 DOM(Quill)에서만 텍스트 관리
+  // Skia 텍스트는 숨겨진 상태이므로 store 업데이트 불필요
+  // completeEdit에서 최종 값으로 store 한 번만 업데이트 (히스토리 1건)
+  const updateText = useCallback((elementId: string, newValue: string) => {
+    if (editingIdRef.current !== elementId) return;
+    currentValueRef.current = newValue;
+    setEditState((prev) => {
+      if (!prev || prev.elementId !== elementId) return prev;
+      return { ...prev, value: newValue };
+    });
+  }, []);
 
-  // 편집 완료 (저장)
-  // 🚀 Phase 19: Input 컴포넌트의 value 속성 지원
-  const completeEdit = useCallback(
-    (elementId: string) => {
-      if (!editState || editState.elementId !== elementId) return;
+  // 편집 완료 (Pencil: commitBlock with undo: true)
+  const completeEdit = useCallback((elementId: string) => {
+    if (editingIdRef.current !== elementId) return;
 
-      const element = elements.find((el) => el.id === elementId);
-      if (!element) return;
+    const finalValue = currentValueRef.current;
+    const originalValue = originalValueRef.current;
 
-      // props에 텍스트 업데이트
-      const props = element.props as Record<string, unknown> | undefined;
-      const updatedProps: Record<string, unknown> = { ...props };
+    // Pencil showText: Skia 텍스트 렌더링 복원 + 리렌더 트리거
+    setEditingElementId(null);
+    notifyLayoutChange();
+    editingIdRef.current = null;
 
-      // 텍스트 속성 결정 (우선순위: value > defaultValue > children > text > label)
-      // Input 컴포넌트는 value 사용
-      if ('value' in (props || {}) || 'defaultValue' in (props || {})) {
-        updatedProps.value = editState.value;
-      } else if ('children' in (props || {})) {
-        updatedProps.children = editState.value;
-      } else if ('text' in (props || {})) {
-        updatedProps.text = editState.value;
-      } else if ('label' in (props || {})) {
-        updatedProps.label = editState.value;
-      } else {
-        // Input 관련 태그면 value, 아니면 children
-        const isInputTag = ['Input', 'TextField', 'TextInput', 'SearchField', 'TextArea'].includes(element.tag);
-        if (isInputTag) {
-          updatedProps.value = editState.value;
-        } else {
-          updatedProps.children = editState.value;
-        }
+    // 변경이 있으면 store 업데이트 (히스토리 1건 자동 기록)
+    if (finalValue !== originalValue) {
+      const state = useStore.getState();
+      const element = state.elementsMap.get(elementId);
+      if (element) {
+        const props = element.props as Record<string, unknown> | undefined;
+        const propKey = getTextPropKey(element.tag, props);
+        state.updateElementProps(elementId, {
+          ...props,
+          [propKey]: finalValue,
+        });
+        // layoutVersion 증가 (텍스트 변경 → 레이아웃 재계산 필요)
+        state.invalidateLayout?.();
       }
+    }
 
-      updateElementProps(elementId, updatedProps);
-      setEditState(null);
-    },
-    [editState, elements, updateElementProps]
-  );
+    setEditState(null);
+  }, []);
 
-  // 편집 취소
-  const cancelEdit = useCallback(
-    (elementId: string) => {
-      if (!editState || editState.elementId !== elementId) return;
+  // 편집 취소 (Pencil: 원본 유지, store 변경 없음)
+  const cancelEdit = useCallback((elementId: string) => {
+    if (editingIdRef.current !== elementId) return;
 
-      // 편집 상태 초기화 (저장하지 않고 닫기)
-      setEditState(null);
-    },
-    [editState]
-  );
+    // Pencil showText: Skia 텍스트 렌더링 복원 + 리렌더 트리거
+    setEditingElementId(null);
+    notifyLayoutChange();
+    editingIdRef.current = null;
 
-  // 편집 중 여부
+    // 편집 중 store를 변경하지 않으므로 복원 불필요 — 그냥 닫기
+    setEditState(null);
+  }, []);
+
   const isEditing = editState !== null;
 
   return {

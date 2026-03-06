@@ -8,34 +8,30 @@
  * @updated 2025-12-15 Border-Box v2 - drawBox 유틸리티 적용
  */
 
-import { useExtend } from '@pixi/react';
-import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCallback, useMemo, useState, useEffect, memo } from 'react';
-import { Graphics as PixiGraphics, Texture, Assets } from 'pixi.js';
-import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, buildSkiaEffects, type CSSStyle } from './styleConverter';
-import { parsePadding, getContentBounds } from './paddingUtils';
-import { drawBox, parseBorderConfig } from '../utils';
-import { useSkiaNode } from '../skia/useSkiaNode';
+import { useExtend } from "@pixi/react";
+import { PIXI_COMPONENTS } from "../pixiSetup";
+import { useCallback, useMemo, useState, useEffect, memo } from "react";
+import { Graphics as PixiGraphics, Texture, Assets } from "pixi.js";
+import type { Element } from "../../../../types/core/store.types";
+import {
+  convertStyle,
+  buildSkiaEffects,
+  type CSSStyle,
+} from "./styleConverter";
+import { parsePadding, getContentBounds } from "./paddingUtils";
+import { drawBox, parseBorderConfig } from "../utils";
+import { useSkiaNode } from "../skia/useSkiaNode";
 
-import { loadSkImage, releaseSkImage } from '../skia/imageCache';
-import type { Image as SkImage } from 'canvaskit-wasm';
+import { loadSkImage, releaseSkImage } from "../skia/imageCache";
+import type { Image as SkImage } from "canvaskit-wasm";
 
 // ============================================
 // Types
 // ============================================
 
-/** Modifier keys for multi-select */
-interface ClickModifiers {
-  metaKey: boolean;
-  shiftKey: boolean;
-  ctrlKey: boolean;
-}
-
 export interface ImageSpriteProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
 }
 
 // ============================================
@@ -48,7 +44,9 @@ const PLACEHOLDER_COLOR = 0xe5e7eb; // gray-200
 // Component
 // ============================================
 
-export const ImageSprite = memo(function ImageSprite({ element, onClick }: ImageSpriteProps) {
+export const ImageSprite = memo(function ImageSprite({
+  element,
+}: ImageSpriteProps) {
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
@@ -56,23 +54,27 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
 
   // Border-Box v2: border 지원 대비
   const borderConfig = useMemo(() => parseBorderConfig(style), [style]);
-  const effectiveBorderRadius = typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0;
+  const effectiveBorderRadius =
+    typeof borderRadius === "number" ? borderRadius : (borderRadius?.[0] ?? 0);
 
   // Padding (paddingUtils 사용)
   const padding = useMemo(() => parsePadding(style), [style]);
   const contentBounds = useMemo(
     () => getContentBounds(transform.width, transform.height, padding),
-    [transform.width, transform.height, padding]
+    [transform.width, transform.height, padding],
   );
 
   // Image source
   const src = useMemo(() => {
     const props = element.props as Record<string, unknown> | undefined;
-    return String(props?.src || props?.source || '');
+    return String(props?.src || props?.source || "");
   }, [element.props]);
 
   // Texture state
-  const [loaded, setLoaded] = useState<{ src: string; texture: Texture } | null>(null);
+  const [loaded, setLoaded] = useState<{
+    src: string;
+    texture: Texture;
+  } | null>(null);
   const [errorSrc, setErrorSrc] = useState<string | null>(null);
 
   // Load texture
@@ -132,7 +134,8 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
       });
 
       // Icon (simple image placeholder) - contentBounds 내에 배치
-      const iconSize = Math.min(contentBounds.width, contentBounds.height) * 0.3;
+      const iconSize =
+        Math.min(contentBounds.width, contentBounds.height) * 0.3;
       const iconX = contentBounds.x + (contentBounds.width - iconSize) / 2;
       const iconY = contentBounds.y + (contentBounds.height - iconSize) / 2;
 
@@ -155,38 +158,34 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
         g.fill({ color: 0x9ca3af, alpha: 1 }); // gray-400
 
         // Sun - v8 Pattern: shape → fill
-        g.circle(iconX + iconSize * 0.7, iconY + iconSize * 0.25, iconSize * 0.1);
+        g.circle(
+          iconX + iconSize * 0.7,
+          iconY + iconSize * 0.25,
+          iconSize * 0.1,
+        );
         g.fill({ color: 0x9ca3af, alpha: 1 }); // gray-400
       }
     },
-    [transform.width, transform.height, effectiveBorderRadius, borderConfig, errorState, contentBounds]
+    [
+      transform.width,
+      transform.height,
+      effectiveBorderRadius,
+      borderConfig,
+      errorState,
+      contentBounds,
+    ],
   );
 
   // Draw border for loaded image (selection handled by SelectionBox)
-  const drawOverlay = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-      // Border or other overlay effects can be added here if needed
-    },
-    []
-  );
+  const drawOverlay = useCallback((g: PixiGraphics) => {
+    g.clear();
+    // Border or other overlay effects can be added here if needed
+  }, []);
 
-  const handleClick = useCallback((e: unknown) => {
-    // PixiJS FederatedPointerEvent has modifier keys directly
-    const pixiEvent = e as {
-      metaKey?: boolean;
-      shiftKey?: boolean;
-      ctrlKey?: boolean;
-      nativeEvent?: MouseEvent | PointerEvent;
-    };
-
-    // Try direct properties first (PixiJS v8), fallback to nativeEvent
-    const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
-    const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
-    const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
-
-    onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
-  }, [element.id, onClick]);
+  // Pencil-style: 선택은 BuilderCanvas 중앙 핸들러가 처리
+  const handleClick = useCallback(() => {
+    // no-op: selection handled by central handler
+  }, []);
 
   // Phase 6: CanvasKit 이미지 로딩 (imageCache 사용)
   const [skImage, setSkImage] = useState<SkImage | null>(null);
@@ -222,8 +221,8 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
   }, [src]);
 
   // Phase 6: Interaction 속성
-  const isPointerEventsNone = style?.pointerEvents === 'none';
-  const pixiCursor = style?.cursor ?? 'default';
+  const isPointerEventsNone = style?.pointerEvents === "none";
+  const pixiCursor = style?.cursor ?? "default";
 
   // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
   const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
@@ -231,12 +230,15 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
   // Skia 렌더 데이터
   const skiaNodeData = useMemo(() => {
     return {
-      type: 'image' as const,
+      type: "image" as const,
       x: transform.x,
       y: transform.y,
       width: transform.width,
       height: transform.height,
-      visible: style?.display !== 'none' && style?.visibility !== 'hidden' && style?.visibility !== 'collapse',
+      visible:
+        style?.display !== "none" &&
+        style?.visibility !== "hidden" &&
+        style?.visibility !== "collapse",
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
       ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       image: {
@@ -247,15 +249,19 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
         contentHeight: contentBounds.height,
       },
     };
-  }, [transform, contentBounds, skImage, skiaEffects, style?.display, style?.visibility]);
+  }, [
+    transform,
+    contentBounds,
+    skImage,
+    skiaEffects,
+    style?.display,
+    style?.visibility,
+  ]);
 
   useSkiaNode(element.id, skiaNodeData);
 
   return (
-    <pixiContainer
-      x={transform.x}
-      y={transform.y}
-    >
+    <pixiContainer x={transform.x} y={transform.y}>
       {/* Image or Placeholder - clickable (padding 적용) */}
       {activeTexture && !errorState ? (
         <>
@@ -265,7 +271,7 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
             y={contentBounds.y}
             width={contentBounds.width}
             height={contentBounds.height}
-            eventMode={isPointerEventsNone ? 'none' : 'static'}
+            eventMode={isPointerEventsNone ? "none" : "static"}
             cursor={pixiCursor}
             {...(!isPointerEventsNone && { onPointerDown: handleClick })}
           />
@@ -274,7 +280,7 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
       ) : (
         <pixiGraphics
           draw={drawPlaceholder}
-          eventMode={isPointerEventsNone ? 'none' : 'static'}
+          eventMode={isPointerEventsNone ? "none" : "static"}
           cursor={pixiCursor}
           {...(!isPointerEventsNone && { onPointerDown: handleClick })}
         />
@@ -285,7 +291,8 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
         <pixiGraphics
           draw={(g) => {
             g.clear();
-            const size = Math.min(contentBounds.width, contentBounds.height) * 0.2;
+            const size =
+              Math.min(contentBounds.width, contentBounds.height) * 0.2;
             const centerX = contentBounds.x + contentBounds.width / 2;
             const centerY = contentBounds.y + contentBounds.height / 2;
             g.circle(centerX, centerY, size);

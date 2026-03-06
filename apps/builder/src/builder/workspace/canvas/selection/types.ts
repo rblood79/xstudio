@@ -14,30 +14,30 @@
  * Transform 핸들 위치
  */
 export type HandlePosition =
-  | 'top-left'
-  | 'top-center'
-  | 'top-right'
-  | 'middle-right'
-  | 'bottom-right'
-  | 'bottom-center'
-  | 'bottom-left'
-  | 'middle-left';
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "middle-right"
+  | "bottom-right"
+  | "bottom-center"
+  | "bottom-left"
+  | "middle-left";
 
 /**
  * Transform 핸들 타입
  */
-export type HandleType = 'resize' | 'rotate';
+export type HandleType = "resize" | "rotate";
 
 /**
  * 커서 스타일
  */
 export type CursorStyle =
-  | 'default'
-  | 'move'
-  | 'nwse-resize'
-  | 'nesw-resize'
-  | 'ns-resize'
-  | 'ew-resize';
+  | "default"
+  | "move"
+  | "nwse-resize"
+  | "nesw-resize"
+  | "ns-resize"
+  | "ew-resize";
 
 // ============================================
 // Bounding Box
@@ -67,7 +67,7 @@ export interface TransformBox extends BoundingBox {
 /**
  * 드래그 작업 타입
  */
-export type DragOperation = 'move' | 'resize' | 'rotate' | 'lasso';
+export type DragOperation = "move" | "resize" | "rotate" | "lasso";
 
 /**
  * 드래그 상태
@@ -130,15 +130,63 @@ export interface HandleConfig {
  */
 export const HANDLE_CONFIGS: HandleConfig[] = [
   // 코너 핸들 (시각적으로 표시) - 양방향 대각선 화살표
-  { position: 'top-left', cursor: 'nwse-resize', relativeX: 0, relativeY: 0, isCorner: true },
-  { position: 'top-right', cursor: 'nesw-resize', relativeX: 1, relativeY: 0, isCorner: true },
-  { position: 'bottom-right', cursor: 'nwse-resize', relativeX: 1, relativeY: 1, isCorner: true },
-  { position: 'bottom-left', cursor: 'nesw-resize', relativeX: 0, relativeY: 1, isCorner: true },
+  {
+    position: "top-left",
+    cursor: "nwse-resize",
+    relativeX: 0,
+    relativeY: 0,
+    isCorner: true,
+  },
+  {
+    position: "top-right",
+    cursor: "nesw-resize",
+    relativeX: 1,
+    relativeY: 0,
+    isCorner: true,
+  },
+  {
+    position: "bottom-right",
+    cursor: "nwse-resize",
+    relativeX: 1,
+    relativeY: 1,
+    isCorner: true,
+  },
+  {
+    position: "bottom-left",
+    cursor: "nesw-resize",
+    relativeX: 0,
+    relativeY: 1,
+    isCorner: true,
+  },
   // 엣지 핸들 (보이지 않는 히트 영역) - 양방향 수직/수평 화살표
-  { position: 'top-center', cursor: 'ns-resize', relativeX: 0.5, relativeY: 0, isCorner: false },
-  { position: 'middle-right', cursor: 'ew-resize', relativeX: 1, relativeY: 0.5, isCorner: false },
-  { position: 'bottom-center', cursor: 'ns-resize', relativeX: 0.5, relativeY: 1, isCorner: false },
-  { position: 'middle-left', cursor: 'ew-resize', relativeX: 0, relativeY: 0.5, isCorner: false },
+  {
+    position: "top-center",
+    cursor: "ns-resize",
+    relativeX: 0.5,
+    relativeY: 0,
+    isCorner: false,
+  },
+  {
+    position: "middle-right",
+    cursor: "ew-resize",
+    relativeX: 1,
+    relativeY: 0.5,
+    isCorner: false,
+  },
+  {
+    position: "bottom-center",
+    cursor: "ns-resize",
+    relativeX: 0.5,
+    relativeY: 1,
+    isCorner: false,
+  },
+  {
+    position: "middle-left",
+    cursor: "ew-resize",
+    relativeX: 0,
+    relativeY: 0.5,
+    isCorner: false,
+  },
 ];
 
 // ============================================
@@ -174,8 +222,8 @@ export const LASSO_FILL_ALPHA = 0.1;
  * CSS 값 파싱 (px, %, 숫자 등)
  */
 function parseCSSValue(value: unknown, defaultValue: number = 0): number {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
     const parsed = parseFloat(value);
     return isNaN(parsed) ? defaultValue : parsed;
   }
@@ -186,7 +234,7 @@ function parseCSSValue(value: unknown, defaultValue: number = 0): number {
  * 요소의 바운딩 박스 계산
  */
 export function calculateBounds(
-  style: Record<string, unknown> | undefined
+  style: Record<string, unknown> | undefined,
 ): BoundingBox {
   return {
     x: parseCSSValue(style?.left, 0),
@@ -199,7 +247,9 @@ export function calculateBounds(
 /**
  * 여러 바운딩 박스의 합집합 계산
  */
-export function calculateCombinedBounds(boxes: BoundingBox[]): BoundingBox | null {
+export function calculateCombinedBounds(
+  boxes: BoundingBox[],
+): BoundingBox | null {
   if (boxes.length === 0) return null;
 
   let minX = Infinity;
@@ -239,7 +289,7 @@ export function boxesIntersect(a: BoundingBox, b: BoundingBox): boolean {
  */
 export function pointInBox(
   point: { x: number; y: number },
-  box: BoundingBox
+  box: BoundingBox,
 ): boolean {
   return (
     point.x >= box.x &&
@@ -247,4 +297,94 @@ export function pointInBox(
     point.y >= box.y &&
     point.y <= box.y + box.height
   );
+}
+
+// ============================================
+// Centralized Hit Testing (Pencil-style)
+// ============================================
+
+/**
+ * Selection bounds 내부인지 좌표 기반 히트 테스트
+ *
+ * Pencil의 `getWorldspaceBounds().containsPoint()` 대응
+ */
+export function hitTestSelectionBounds(
+  canvasPoint: { x: number; y: number },
+  selectionBounds: BoundingBox | null,
+): boolean {
+  if (!selectionBounds) return false;
+  return pointInBox(canvasPoint, selectionBounds);
+}
+
+/**
+ * Transform 핸들 히트 테스트 — 8방향 핸들 중 히트된 것을 반환
+ *
+ * Pencil은 별도 핸들 히트 테스트가 없지만(selection bounds 단일 영역),
+ * XStudio는 8방향 리사이즈를 지원하므로 좌표 기반으로 히트 판정.
+ *
+ * @returns 히트된 HandleConfig, 없으면 null
+ */
+export function hitTestHandle(
+  canvasPoint: { x: number; y: number },
+  selectionBounds: BoundingBox | null,
+  zoom: number,
+): HandleConfig | null {
+  if (!selectionBounds) return null;
+
+  const { x: bx, y: by, width: bw, height: bh } = selectionBounds;
+  const cornerSize = HANDLE_SIZE / zoom;
+  const edgeThickness = EDGE_HIT_THICKNESS / zoom;
+
+  // 코너 핸들 우선 (엣지보다 작지만 우선순위 높음)
+  for (const config of HANDLE_CONFIGS) {
+    const cx = bx + bw * config.relativeX;
+    const cy = by + bh * config.relativeY;
+
+    if (config.isCorner) {
+      const half = cornerSize / 2;
+      if (
+        canvasPoint.x >= cx - half &&
+        canvasPoint.x <= cx + half &&
+        canvasPoint.y >= cy - half &&
+        canvasPoint.y <= cy + half
+      ) {
+        return config;
+      }
+    }
+  }
+
+  // 엣지 핸들 (보이지 않는 히트 영역)
+  for (const config of HANDLE_CONFIGS) {
+    if (config.isCorner) continue;
+
+    const isHorizontal = config.relativeY === 0 || config.relativeY === 1;
+
+    if (isHorizontal) {
+      // 상단/하단 엣지
+      const ey = by + bh * config.relativeY;
+      const halfT = edgeThickness / 2;
+      if (
+        canvasPoint.x >= bx &&
+        canvasPoint.x <= bx + bw &&
+        canvasPoint.y >= ey - halfT &&
+        canvasPoint.y <= ey + halfT
+      ) {
+        return config;
+      }
+    } else {
+      // 좌측/우측 엣지
+      const ex = bx + bw * config.relativeX;
+      const halfT = edgeThickness / 2;
+      if (
+        canvasPoint.x >= ex - halfT &&
+        canvasPoint.x <= ex + halfT &&
+        canvasPoint.y >= by &&
+        canvasPoint.y <= by + bh
+      ) {
+        return config;
+      }
+    }
+  }
+
+  return null;
 }

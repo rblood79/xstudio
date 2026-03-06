@@ -38,18 +38,9 @@ import { LayoutComputedSizeContext } from "../layoutContext";
 // Types
 // ============================================
 
-/** Modifier keys for multi-select */
-interface ClickModifiers {
-  metaKey: boolean;
-  shiftKey: boolean;
-  ctrlKey: boolean;
-}
-
 export interface TextSpriteProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
-  onDoubleClick?: (elementId: string) => void;
 }
 
 // ============================================
@@ -89,8 +80,6 @@ function parseTextDecoration(
 
 export const TextSprite = memo(function TextSprite({
   element,
-  onClick,
-  onDoubleClick,
 }: TextSpriteProps) {
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
@@ -279,44 +268,10 @@ export const TextSprite = memo(function TextSprite({
     [style, transform, fill, effectiveBorderRadius, borderConfig],
   );
 
-  const handleClick = useCallback(
-    (e: unknown) => {
-      // PixiJS FederatedPointerEvent has modifier keys directly
-      const pixiEvent = e as {
-        metaKey?: boolean;
-        shiftKey?: boolean;
-        ctrlKey?: boolean;
-        nativeEvent?: MouseEvent | PointerEvent;
-      };
-
-      // Try direct properties first (PixiJS v8), fallback to nativeEvent
-      const metaKey =
-        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
-      const shiftKey =
-        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
-      const ctrlKey =
-        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
-
-      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
-    },
-    [element.id, onClick],
-  );
-
-  const lastPointerDownAtRef = useRef(0);
-  const handlePointerDown = useCallback(
-    (e: unknown) => {
-      const now = Date.now();
-      const isDoubleClick =
-        Boolean(onDoubleClick) && now - lastPointerDownAtRef.current < 300;
-      lastPointerDownAtRef.current = now;
-
-      handleClick(e);
-      if (isDoubleClick) {
-        onDoubleClick?.(element.id);
-      }
-    },
-    [element.id, handleClick, onDoubleClick],
-  );
+  // Pencil-style: 선택은 BuilderCanvas 중앙 핸들러가 처리
+  const handleClick = useCallback(() => {
+    // no-op: selection handled by central handler
+  }, []);
 
   // Padding (paddingUtils 사용)
   const padding = useMemo(() => parsePadding(style), [style]);
@@ -390,6 +345,7 @@ export const TextSprite = memo(function TextSprite({
 
     return {
       type: "text" as const,
+      elementId: element.id,
       x: transform.x,
       y: transform.y,
       width: transform.width,
@@ -543,7 +499,7 @@ export const TextSprite = memo(function TextSprite({
         draw={drawBackground}
         eventMode={isPointerEventsNone ? "none" : "static"}
         cursor={pixiCursor}
-        {...(!isPointerEventsNone && { onPointerDown: handlePointerDown })}
+        {...(!isPointerEventsNone && { onPointerDown: handleClick })}
       />
 
       {/* Text with ref for decoration measurement

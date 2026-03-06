@@ -8,15 +8,15 @@
  * @since 2026-02-28
  */
 
-import type { CanvasKit, Canvas, FontMgr } from 'canvaskit-wasm';
-import type { SkiaNodeData } from './nodeRenderers';
-import type { ClipPathShape } from '../sprites/styleConverter';
-import type { EffectStyle } from './types';
-import type { ComputedLayout } from '../layout/engines/LayoutEngine';
-import type { BoundingBox } from '../selection/types';
-import type { AIEffectNodeBounds } from './types';
-import type { Element } from '../../../../types/core/store.types';
-import { getSkiaNode } from './useSkiaNode';
+import type { CanvasKit, Canvas, FontMgr } from "canvaskit-wasm";
+import type { SkiaNodeData } from "./nodeRenderers";
+import type { ClipPathShape } from "../sprites/styleConverter";
+import type { EffectStyle } from "./types";
+import type { ComputedLayout } from "../layout/engines/LayoutEngine";
+import type { BoundingBox } from "../selection/types";
+import type { AIEffectNodeBounds } from "./types";
+import type { Element } from "../../../../types/core/store.types";
+import { getSkiaNode } from "./useSkiaNode";
 import {
   renderBox,
   renderText,
@@ -27,11 +27,12 @@ import {
   renderScrollbar,
   buildClipPath,
   sortByStackingOrder,
-} from './nodeRenderers';
-import { beginRenderEffects, endRenderEffects } from './effects';
-import { toSkiaBlendMode } from './blendModes';
-import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
-import * as spatialIndex from '../wasm-bindings/spatialIndex';
+  getEditingElementId,
+} from "./nodeRenderers";
+import { beginRenderEffects, endRenderEffects } from "./effects";
+import { toSkiaBlendMode } from "./blendModes";
+import { WASM_FLAGS } from "../wasm-bindings/featureFlags";
+import * as spatialIndex from "../wasm-bindings/spatialIndex";
 
 // ── Command 타입 ──────────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ interface ElementBeginCmd {
 
 interface DrawCmd {
   type: typeof CMD_DRAW;
-  nodeType: SkiaNodeData['type'];
+  nodeType: SkiaNodeData["type"];
   skiaData: SkiaNodeData;
   width: number;
   height: number;
@@ -75,7 +76,7 @@ interface ChildrenEndCmd {
   type: typeof CMD_CHILDREN_END;
   clipChildren: boolean;
   hasScrollOffset: boolean;
-  scrollbar?: SkiaNodeData['scrollbar'];
+  scrollbar?: SkiaNodeData["scrollbar"];
   scrollbarNode?: SkiaNodeData;
 }
 
@@ -105,7 +106,7 @@ function updateTextChildren(
   parentHeight: number,
 ): SkiaNodeData[] | undefined {
   return children?.map((child: SkiaNodeData) => {
-    if (child.type === 'text' && child.text) {
+    if (child.type === "text" && child.text) {
       if (child.text.autoCenter === false) {
         return child;
       }
@@ -122,8 +123,12 @@ function updateTextChildren(
         },
       };
     }
-    if (child.type === 'box' && child.children && child.children.length > 0) {
-      const updatedChildren = updateTextChildren(child.children, parentWidth, parentHeight);
+    if (child.type === "box" && child.children && child.children.length > 0) {
+      const updatedChildren = updateTextChildren(
+        child.children,
+        parentWidth,
+        parentHeight,
+      );
       return {
         ...child,
         width: parentWidth,
@@ -208,7 +213,17 @@ export function buildRenderCommandStream(
     const offsetX = pagePos?.x ?? 0;
     const offsetY = pagePos?.y ?? 0;
 
-    visitElement(bodyId, offsetX, offsetY, commands, boundsMap, childrenMap, layoutMap, offsetX, offsetY);
+    visitElement(
+      bodyId,
+      offsetX,
+      offsetY,
+      commands,
+      boundsMap,
+      childrenMap,
+      layoutMap,
+      offsetX,
+      offsetY,
+    );
   }
 
   // SpatialIndex 동기화: boundsMap에 최신 씬 좌표를 반영
@@ -227,10 +242,22 @@ export function buildRenderCommandStream(
  * elementRegistry.updateElementBounds()의 스크린 좌표 동기화를 대체.
  */
 function syncSpatialIndex(boundsMap: Map<string, BoundingBox>): void {
-  const items: Array<{ id: string; x: number; y: number; w: number; h: number }> = [];
+  const items: Array<{
+    id: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }> = [];
   for (const [id, bounds] of boundsMap) {
     if (bounds.width > 0 && bounds.height > 0) {
-      items.push({ id, x: bounds.x, y: bounds.y, w: bounds.width, h: bounds.height });
+      items.push({
+        id,
+        x: bounds.x,
+        y: bounds.y,
+        w: bounds.width,
+        h: bounds.height,
+      });
     }
   }
   spatialIndex.batchUpdate(items);
@@ -264,8 +291,10 @@ function visitElement(
   const rawHeight = layout?.height ?? skiaData.height;
 
   // contentMinHeight 적용 (Card 등 auto-height)
-  const width = rawWidth > 0 ? rawWidth : (skiaData.width > 0 ? skiaData.width : 0);
-  const baseHeight = rawHeight > 0 ? rawHeight : (skiaData.height > 0 ? skiaData.height : 0);
+  const width =
+    rawWidth > 0 ? rawWidth : skiaData.width > 0 ? skiaData.width : 0;
+  const baseHeight =
+    rawHeight > 0 ? rawHeight : skiaData.height > 0 ? skiaData.height : 0;
   const height = skiaData.contentMinHeight
     ? Math.max(baseHeight, skiaData.contentMinHeight)
     : baseHeight;
@@ -295,7 +324,11 @@ function visitElement(
   });
 
   // 내부 자식 (text 등) → DRAW 커맨드
-  const updatedInternalChildren = updateTextChildren(skiaData.children, width, height);
+  const updatedInternalChildren = updateTextChildren(
+    skiaData.children,
+    width,
+    height,
+  );
   emitDrawCommands(skiaData, updatedInternalChildren, width, height, commands);
 
   // 외부 자식 (element children) → CHILDREN_BEGIN/END + 재귀
@@ -313,26 +346,35 @@ function visitElement(
     const sortedChildren = sortChildElementsByZIndex(childElements);
 
     for (const child of sortedChildren) {
-      visitElement(child.id, absX, absY, commands, boundsMap, childrenMap, layoutMap);
+      visitElement(
+        child.id,
+        absX,
+        absY,
+        commands,
+        boundsMap,
+        childrenMap,
+        layoutMap,
+      );
     }
 
     commands.push({
       type: CMD_CHILDREN_END,
       clipChildren: skiaData.clipChildren ?? false,
-      hasScrollOffset: !!(skiaData.scrollOffset &&
-        (skiaData.scrollOffset.scrollTop !== 0 || skiaData.scrollOffset.scrollLeft !== 0)),
+      hasScrollOffset: !!(
+        skiaData.scrollOffset &&
+        (skiaData.scrollOffset.scrollTop !== 0 ||
+          skiaData.scrollOffset.scrollLeft !== 0)
+      ),
       scrollbar: skiaData.scrollbar,
       scrollbarNode: skiaData.scrollbar ? skiaData : undefined,
     });
   }
 
   // ELEMENT_END
-  const effectCount = skiaData.effects
-    ? skiaData.effects.length
-    : 0;
+  const effectCount = skiaData.effects ? skiaData.effects.length : 0;
   commands.push({
     type: CMD_ELEMENT_END,
-    hasBlend: !!(skiaData.blendMode && skiaData.blendMode !== 'normal'),
+    hasBlend: !!(skiaData.blendMode && skiaData.blendMode !== "normal"),
     effectLayerCount: effectCount,
   });
 }
@@ -362,7 +404,7 @@ function sortChildElementsByZIndex(children: Element[]): Element[] {
     if (a.zIndex !== b.zIndex) return a.zIndex - b.zIndex;
     return a.originalIndex - b.originalIndex;
   });
-  return indexed.map(item => item.child);
+  return indexed.map((item) => item.child);
 }
 
 /**
@@ -377,13 +419,13 @@ function emitDrawCommands(
   commands: RenderCommand[],
 ): void {
   // 자체 렌더 (box, text, image 등)
-  if (skiaData.type !== 'container') {
+  if (skiaData.type !== "container") {
     commands.push({
       type: CMD_DRAW,
       nodeType: skiaData.type,
       skiaData: {
         ...skiaData,
-        x: 0,  // ELEMENT_BEGIN에서 이미 translate됨
+        x: 0, // ELEMENT_BEGIN에서 이미 translate됨
         y: 0,
         width,
         height,
@@ -419,7 +461,7 @@ function emitInternalChildDraw(
     y: node.y,
     width: node.width,
     height: node.height,
-    elementId: '', // 내부 자식은 elementId 없음
+    elementId: "", // 내부 자식은 elementId 없음
     visible: node.visible ?? true,
     transform: node.transform,
     clipPath: node.clipPath,
@@ -427,7 +469,7 @@ function emitInternalChildDraw(
     effects: node.effects,
   });
 
-  if (node.type !== 'container') {
+  if (node.type !== "container") {
     commands.push({
       type: CMD_DRAW,
       nodeType: node.type,
@@ -452,7 +494,7 @@ function emitInternalChildDraw(
   const effectCount = node.effects ? node.effects.length : 0;
   commands.push({
     type: CMD_ELEMENT_END,
-    hasBlend: !!(node.blendMode && node.blendMode !== 'normal'),
+    hasBlend: !!(node.blendMode && node.blendMode !== "normal"),
     effectLayerCount: effectCount,
   });
 }
@@ -477,6 +519,11 @@ export function executeRenderCommands(
   // 절대좌표 추적 스택 (컬링용)
   const translateStack: Array<{ x: number; y: number }> = [{ x: 0, y: 0 }];
   let stackTop = 0;
+
+  // 현재 요소 ID 스택 (편집 중 텍스트 숨김용)
+  const elementIdStack: string[] = [""];
+  let eidTop = 0;
+  const editingId = getEditingElementId();
 
   // 비가시 요소 스킵 카운터
   let skipDepth = 0;
@@ -520,13 +567,29 @@ export function executeRenderCommands(
           }
         }
 
+        // elementId 스택 갱신 (편집 중 텍스트 숨김용)
+        // 실제 element의 ELEMENT_BEGIN은 non-empty elementId를 가짐
+        // 내부 자식(spec shapes)은 빈 문자열 → 부모 elementId를 유지
+        eidTop++;
+        if (eidTop >= elementIdStack.length) {
+          elementIdStack.push(cmd.elementId || elementIdStack[eidTop - 1]);
+        } else {
+          elementIdStack[eidTop] = cmd.elementId || elementIdStack[eidTop - 1];
+        }
+
         // translate 스택 갱신
         const parentPos = translateStack[stackTop];
         stackTop++;
         if (stackTop >= translateStack.length) {
-          translateStack.push({ x: parentPos.x + cmd.x, y: parentPos.y + cmd.y });
+          translateStack.push({
+            x: parentPos.x + cmd.x,
+            y: parentPos.y + cmd.y,
+          });
         } else {
-          translateStack[stackTop] = { x: parentPos.x + cmd.x, y: parentPos.y + cmd.y };
+          translateStack[stackTop] = {
+            x: parentPos.x + cmd.x,
+            y: parentPos.y + cmd.y,
+          };
         }
 
         canvas.save();
@@ -544,10 +607,12 @@ export function executeRenderCommands(
           }
         }
 
-        if (cmd.blendMode && cmd.blendMode !== 'normal') {
+        if (cmd.blendMode && cmd.blendMode !== "normal") {
           const blendPaint = new ck.Paint();
           blendPaint.setBlendMode(
-            toSkiaBlendMode(ck, cmd.blendMode) as Parameters<typeof blendPaint.setBlendMode>[0],
+            toSkiaBlendMode(ck, cmd.blendMode) as Parameters<
+              typeof blendPaint.setBlendMode
+            >[0],
           );
           canvas.saveLayer(blendPaint);
           blendPaint.delete();
@@ -562,26 +627,28 @@ export function executeRenderCommands(
       case CMD_DRAW: {
         // 타입별 렌더링 디스패치
         switch (cmd.nodeType) {
-          case 'box':
+          case "box":
             renderBox(ck, canvas, cmd.skiaData);
             break;
-          case 'text':
+          case "text":
             if (cmd.skiaData.box) renderBox(ck, canvas, cmd.skiaData);
-            if (fontMgr) renderText(ck, canvas, cmd.skiaData, fontMgr);
+            // Pencil hideText: 편집 중인 요소의 텍스트만 숨김 (배경/보더 유지)
+            if (fontMgr && !(editingId && elementIdStack[eidTop] === editingId))
+              renderText(ck, canvas, cmd.skiaData, fontMgr);
             break;
-          case 'image':
+          case "image":
             renderImage(ck, canvas, cmd.skiaData);
             break;
-          case 'line':
+          case "line":
             renderLine(ck, canvas, cmd.skiaData);
             break;
-          case 'icon_path':
+          case "icon_path":
             renderIconPath(ck, canvas, cmd.skiaData);
             break;
-          case 'partial_border':
+          case "partial_border":
             renderPartialBorder(ck, canvas, cmd.skiaData);
             break;
-          case 'container':
+          case "container":
             break;
         }
         break;
@@ -594,10 +661,16 @@ export function executeRenderCommands(
           canvas.clipRect(clipRect, ck.ClipOp.Intersect, true);
         }
 
-        if (cmd.scrollOffset &&
-          (cmd.scrollOffset.scrollTop !== 0 || cmd.scrollOffset.scrollLeft !== 0)) {
+        if (
+          cmd.scrollOffset &&
+          (cmd.scrollOffset.scrollTop !== 0 ||
+            cmd.scrollOffset.scrollLeft !== 0)
+        ) {
           canvas.save();
-          canvas.translate(-cmd.scrollOffset.scrollLeft, -cmd.scrollOffset.scrollTop);
+          canvas.translate(
+            -cmd.scrollOffset.scrollLeft,
+            -cmd.scrollOffset.scrollTop,
+          );
         }
         break;
       }
@@ -622,6 +695,7 @@ export function executeRenderCommands(
         if (cmd.hasBlend) canvas.restore();
         canvas.restore();
         if (stackTop > 0) stackTop--;
+        if (eidTop > 0) eidTop--;
         break;
       }
     }
@@ -642,7 +716,9 @@ export function buildAIBoundsFromStream(
     if (!bounds) continue;
     const node = getSkiaNode(id);
     const borderRadius = node?.box
-      ? (Array.isArray(node.box.borderRadius) ? node.box.borderRadius[0] : (node.box.borderRadius ?? 0))
+      ? Array.isArray(node.box.borderRadius)
+        ? node.box.borderRadius[0]
+        : (node.box.borderRadius ?? 0)
       : 0;
     result.set(id, {
       elementId: id,

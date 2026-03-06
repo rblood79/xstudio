@@ -17,7 +17,7 @@ export type {
   DragState,
   SelectionState,
   HandleConfig,
-} from './types';
+} from "./types";
 
 export {
   HANDLE_CONFIGS,
@@ -31,23 +31,28 @@ export {
   calculateCombinedBounds,
   boxesIntersect,
   pointInBox,
-} from './types';
+  hitTestHandle,
+  hitTestSelectionBounds,
+} from "./types";
 
 // Components
-export { SelectionBox } from './SelectionBox';
-export type { SelectionBoxProps, SelectionBoxHandle } from './SelectionBox';
+export { SelectionBox } from "./SelectionBox";
+export type { SelectionBoxProps, SelectionBoxHandle } from "./SelectionBox";
 
-export { TransformHandle } from './TransformHandle';
-export type { TransformHandleProps } from './TransformHandle';
+export { TransformHandle } from "./TransformHandle";
+export type { TransformHandleProps } from "./TransformHandle";
 
-export { LassoSelection } from './LassoSelection';
-export { getLassoBounds } from './LassoSelection.utils';
-export type { LassoSelectionProps } from './LassoSelection';
+export { LassoSelection } from "./LassoSelection";
+export { getLassoBounds } from "./LassoSelection.utils";
+export type { LassoSelectionProps } from "./LassoSelection";
 
-export { SelectionLayer } from './SelectionLayer';
-export { findElementsInLasso } from './SelectionLayer.utils';
-export type { SelectionLayerProps } from './SelectionLayer';
+export { SelectionLayer } from "./SelectionLayer";
+export { findElementsInLasso } from "./SelectionLayer.utils";
+export type { SelectionLayerProps } from "./SelectionLayer";
 
 // Hooks
-export { useDragInteraction } from './useDragInteraction';
-export type { UseDragInteractionOptions, UseDragInteractionReturn } from './useDragInteraction';
+export { useDragInteraction } from "./useDragInteraction";
+export type {
+  UseDragInteractionOptions,
+  UseDragInteractionReturn,
+} from "./useDragInteraction";

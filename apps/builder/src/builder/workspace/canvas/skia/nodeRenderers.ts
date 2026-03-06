@@ -25,6 +25,26 @@ import { applyFill } from "./fills";
 import { beginRenderEffects, endRenderEffects } from "./effects";
 import { toSkiaBlendMode } from "./blendModes";
 import { SkiaDisposable } from "./disposable";
+
+// ============================================
+// Text editing: 편집 중 Skia 텍스트 숨김 (Pencil hideText/showText 패턴)
+// ============================================
+
+/** 현재 편집 중인 요소 ID — 설정 시 해당 노드의 텍스트 렌더링 스킵 */
+let _editingElementId: string | null = null;
+
+/** 외부에서 편집 중인 요소 ID를 설정 (Skia 리렌더 트리거) */
+export function setEditingElementId(id: string | null): void {
+  if (_editingElementId === id) return;
+  _editingElementId = id;
+  // registryVersion 증가 → Skia 렌더 루프가 다음 프레임에서 재렌더링
+  // (import cycle 방지를 위해 useSkiaNode에서 import하지 않음)
+}
+
+/** 현재 편집 중인 요소 ID 조회 */
+export function getEditingElementId(): string | null {
+  return _editingElementId;
+}
 import { colord } from "colord";
 import {
   resolveFontVariantFeatures,
@@ -386,7 +406,9 @@ function renderNodeInternal(
     case "text":
       // 배경/테두리를 텍스트 아래에 먼저 렌더링 (CSS 정합성)
       if (node.box) renderBox(ck, canvas, node);
-      if (fontMgr) renderText(ck, canvas, node, fontMgr);
+      // Pencil hideText 패턴: 편집 중인 요소의 텍스트만 숨김 (배경/보더 유지)
+      if (fontMgr && !(node.elementId && node.elementId === _editingElementId))
+        renderText(ck, canvas, node, fontMgr);
       break;
     case "image":
       renderImage(ck, canvas, node);

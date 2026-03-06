@@ -6,22 +6,17 @@
  * @since 2025-12-11 Phase 10 B1.3
  */
 
-import { useCallback, memo } from 'react';
-import { Graphics as PixiGraphics } from 'pixi.js';
-import { useExtend } from '@pixi/react';
-import { PIXI_COMPONENTS } from '../pixiSetup';
-import type {
-  HandlePosition,
-  HandleConfig,
-  CursorStyle,
-} from './types';
+import { useCallback, memo } from "react";
+import { Graphics as PixiGraphics } from "pixi.js";
+import { useExtend } from "@pixi/react";
+import { PIXI_COMPONENTS } from "../pixiSetup";
+import type { HandlePosition, HandleConfig, CursorStyle } from "./types";
 import {
   HANDLE_SIZE,
   HANDLE_FILL_COLOR,
   HANDLE_STROKE_COLOR,
   EDGE_HIT_THICKNESS,
-} from './types';
-
+} from "./types";
 
 // ============================================
 // Types
@@ -41,7 +36,10 @@ export interface TransformHandleProps {
   /** 현재 줌 레벨 (핸들 크기 유지용) */
   zoom?: number;
   /** 드래그 시작 콜백 */
-  onDragStart?: (position: HandlePosition, origin: { x: number; y: number }) => void;
+  onDragStart?: (
+    position: HandlePosition,
+    origin: { x: number; y: number },
+  ) => void;
   /** 호버 시작 콜백 */
   onHoverStart?: (cursor: CursorStyle) => void;
   /** 호버 종료 콜백 */
@@ -124,7 +122,11 @@ export const TransformHandle = memo(function TransformHandle({
         g.rect(0, 0, handleW, handleH);
         g.fill({ color: HANDLE_FILL_COLOR, alpha: 1 });
 
-        g.setStrokeStyle({ width: strokeWidth, color: HANDLE_STROKE_COLOR, alpha: 1 });
+        g.setStrokeStyle({
+          width: strokeWidth,
+          color: HANDLE_STROKE_COLOR,
+          alpha: 1,
+        });
         g.rect(0, 0, handleW, handleH);
         g.stroke();
       } else {
@@ -133,36 +135,11 @@ export const TransformHandle = memo(function TransformHandle({
         g.fill({ color: 0x000000, alpha: 0.001 });
       }
     },
-    [isCorner, handleW, handleH, strokeWidth]
+    [isCorner, handleW, handleH, strokeWidth],
   );
 
-  // 이벤트 핸들러
-  const handlePointerDown = useCallback((e: { global?: { x: number; y: number } }) => {
-    const global = e.global;
-    if (!global) return;
-    onDragStart?.(config.position, { x: global.x, y: global.y });
-  }, [config.position, onDragStart]);
-
-  const handlePointerOver = useCallback(() => {
-    onHoverStart?.(config.cursor);
-  }, [config.cursor, onHoverStart]);
-
-  const handlePointerOut = useCallback(() => {
-    onHoverEnd?.();
-  }, [onHoverEnd]);
-
-  return (
-    <pixiGraphics
-      draw={draw}
-      x={handleX}
-      y={handleY}
-      eventMode="static"
-      cursor={config.cursor}
-      onPointerDown={handlePointerDown}
-      onPointerOver={handlePointerOver}
-      onPointerOut={handlePointerOut}
-    />
-  );
+  // Pencil-style: visual-only (이벤트는 BuilderCanvas 중앙 핸들러가 좌표 기반으로 처리)
+  return <pixiGraphics draw={draw} x={handleX} y={handleY} />;
 });
 
 export default TransformHandle;

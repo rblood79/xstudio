@@ -34,13 +34,6 @@ import { lightColors, darkColors } from "@xstudio/specs";
 // Types
 // ============================================
 
-/** Modifier keys for multi-select */
-interface ClickModifiers {
-  metaKey: boolean;
-  shiftKey: boolean;
-  ctrlKey: boolean;
-}
-
 export interface BodyLayerProps {
   /** 대상 페이지 ID */
   pageId: string;
@@ -48,8 +41,6 @@ export interface BodyLayerProps {
   pageWidth: number;
   /** 페이지 높이 */
   pageHeight: number;
-  /** 클릭 핸들러 */
-  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
 }
 
 // ============================================
@@ -69,7 +60,6 @@ export const BodyLayer = memo(function BodyLayer({
   pageId,
   pageWidth,
   pageHeight,
-  onClick,
 }: BodyLayerProps) {
   useExtend(PIXI_COMPONENTS);
   // 🚀 최적화: elements 배열 대신 elementsMap 사용
@@ -195,31 +185,10 @@ export const BodyLayer = memo(function BodyLayer({
 
   useSkiaNode(bodyElement?.id ?? "", bodyElement ? bodySkiaData : null);
 
-  // 클릭 핸들러 (modifier 키 전달)
-  const handleClick = useCallback(
-    (e: unknown) => {
-      if (bodyElement && onClick) {
-        // PixiJS FederatedPointerEvent has modifier keys directly
-        const pixiEvent = e as {
-          metaKey?: boolean;
-          shiftKey?: boolean;
-          ctrlKey?: boolean;
-          nativeEvent?: MouseEvent | PointerEvent;
-        };
-
-        // Try direct properties first (PixiJS v8), fallback to nativeEvent
-        const metaKey =
-          pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
-        const shiftKey =
-          pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
-        const ctrlKey =
-          pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
-
-        onClick(bodyElement.id, { metaKey, shiftKey, ctrlKey });
-      }
-    },
-    [bodyElement, onClick],
-  );
+  // Pencil-style: 선택은 BuilderCanvas 중앙 핸들러가 처리
+  const handleClick = useCallback(() => {
+    // no-op: selection handled by central handler
+  }, []);
 
   return (
     <pixiGraphics

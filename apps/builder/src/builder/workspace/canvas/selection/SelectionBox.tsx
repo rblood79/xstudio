@@ -8,14 +8,20 @@
  * @updated 2025-12-23 Phase 19 성능 최적화
  */
 
-import { useCallback, memo, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
-import { Graphics as PixiGraphics, Container as PixiContainer } from 'pixi.js';
-import { useExtend } from '@pixi/react';
-import { PIXI_COMPONENTS } from '../pixiSetup';
-import { TransformHandle } from './TransformHandle';
-import type { BoundingBox, HandlePosition, CursorStyle } from './types';
-import { SELECTION_COLOR, HANDLE_CONFIGS } from './types';
-
+import {
+  useCallback,
+  memo,
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+  useEffect,
+} from "react";
+import { Graphics as PixiGraphics, Container as PixiContainer } from "pixi.js";
+import { useExtend } from "@pixi/react";
+import { PIXI_COMPONENTS } from "../pixiSetup";
+import { TransformHandle } from "./TransformHandle";
+import type { BoundingBox } from "./types";
+import { SELECTION_COLOR, HANDLE_CONFIGS } from "./types";
 
 // ============================================
 // Types
@@ -39,16 +45,8 @@ export interface SelectionBoxProps {
   bounds: BoundingBox;
   /** 핸들 표시 여부 */
   showHandles?: boolean;
-  /** 이동 영역 활성화 여부 (false면 클릭 투과) */
-  enableMoveArea?: boolean;
   /** 현재 줌 레벨 (핸들/테두리 크기 유지용) */
   zoom?: number;
-  /** 드래그 시작 콜백 */
-  onDragStart?: (handle: HandlePosition, position: { x: number; y: number }) => void;
-  /** 이동 드래그 시작 콜백 */
-  onMoveStart?: (position: { x: number; y: number }) => void;
-  /** 커서 변경 콜백 */
-  onCursorChange?: (cursor: CursorStyle) => void;
 }
 
 // ============================================
@@ -63,16 +61,8 @@ export interface SelectionBoxProps {
  */
 export const SelectionBox = memo(
   forwardRef<SelectionBoxHandle, SelectionBoxProps>(function SelectionBox(
-    {
-      bounds,
-      showHandles = true,
-      enableMoveArea = true,
-      zoom = 1,
-      onDragStart,
-      onMoveStart,
-      onCursorChange,
-    },
-    ref
+    { bounds, showHandles = true, zoom = 1 },
+    ref,
   ) {
     useExtend(PIXI_COMPONENTS);
 
@@ -104,16 +94,13 @@ export const SelectionBox = memo(
             const original = originalBoundsRef.current;
             containerRef.current.position.set(
               original.x + delta.x,
-              original.y + delta.y
+              original.y + delta.y,
             );
           }
         },
         updateBounds: (newBounds: BoundingBox) => {
           if (containerRef.current) {
-            containerRef.current.position.set(
-              newBounds.x,
-              newBounds.y
-            );
+            containerRef.current.position.set(newBounds.x, newBounds.y);
           }
           // 테두리와 이동 영역도 업데이트
           const w = newBounds.width;
@@ -137,109 +124,56 @@ export const SelectionBox = memo(
         resetPosition: () => {
           if (containerRef.current) {
             const original = originalBoundsRef.current;
-            containerRef.current.position.set(
-              original.x,
-              original.y
-            );
+            containerRef.current.position.set(original.x, original.y);
           }
         },
       }),
-      [zoom]
+      [zoom],
     );
 
-  // 줌에 독립적인 선 두께 (화면상 항상 1px)
-  const strokeWidth = 1 / zoom;
+    // 줌에 독립적인 선 두께 (화면상 항상 1px)
+    const strokeWidth = 1 / zoom;
 
-  // 선택 박스 테두리 그리기
-  const drawBorder = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-      return; // Skia가 Selection 렌더링 담당
+    // 선택 박스 테두리 그리기
+    const drawBorder = useCallback(
+      (g: PixiGraphics) => {
+        g.clear();
+        return; // Skia가 Selection 렌더링 담당
 
-      // 줌에 관계없이 화면상 1px 유지
-      g.setStrokeStyle({ width: strokeWidth, color: SELECTION_COLOR, alpha: 1 });
-      g.rect(0, 0, width, height);
-      g.stroke();
-    },
-    [width, height, strokeWidth]
-  );
+        // 줌에 관계없이 화면상 1px 유지
+        g.setStrokeStyle({
+          width: strokeWidth,
+          color: SELECTION_COLOR,
+          alpha: 1,
+        });
+        g.rect(0, 0, width, height);
+        g.stroke();
+      },
+      [width, height, strokeWidth],
+    );
 
-  // 이동 영역 (배경 - 투명하지만 이벤트 감지)
-  const drawMoveArea = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-      // 투명 영역 (이벤트 감지용) - v8 Pattern: shape → fill
-      g.rect(0, 0, width, height);
-      g.fill({ color: 0x000000, alpha: 0.001 });
-    },
-    [width, height]
-  );
+    // Pencil-style: visual-only (이벤트는 BuilderCanvas 중앙 핸들러가 좌표 기반으로 처리)
+    return (
+      <pixiContainer ref={containerRef} x={x} y={y}>
+        {/* 선택 테두리 */}
+        <pixiGraphics ref={borderGraphicsRef} draw={drawBorder} />
 
-  // 핸들 드래그 시작
-  const handleDragStart = useCallback(
-    (position: HandlePosition, origin: { x: number; y: number }) => {
-      onDragStart?.(position, origin);
-    },
-    [onDragStart]
-  );
-
-  // 핸들 호버 시작
-  const handleHoverStart = useCallback(
-    (cursor: CursorStyle) => {
-      onCursorChange?.(cursor);
-    },
-    [onCursorChange]
-  );
-
-  // 핸들 호버 종료
-  const handleHoverEnd = useCallback(() => {
-    onCursorChange?.('default');
-  }, [onCursorChange]);
-
-  // 이동 영역 포인터 다운
-  const handleMovePointerDown = useCallback(
-    (e: { global?: { x: number; y: number } }) => {
-      const global = e.global;
-      if (!global) return;
-      onMoveStart?.({ x: global.x, y: global.y });
-    },
-    [onMoveStart]
-  );
-
-  return (
-    <pixiContainer ref={containerRef} x={x} y={y}>
-      {/* 이동 영역 (배경) - enableMoveArea가 false면 클릭 투과 */}
-      {enableMoveArea && (
-        <pixiGraphics
-          ref={moveAreaGraphicsRef}
-          draw={drawMoveArea}
-          eventMode="static"
-          onPointerDown={handleMovePointerDown}
-        />
-      )}
-
-      {/* 선택 테두리 */}
-      <pixiGraphics ref={borderGraphicsRef} draw={drawBorder} />
-
-      {/* Transform 핸들: 엣지(투명 히트 영역) → 코너(시각적 표시) 순서로 렌더링 (z-order) */}
-      {showHandles &&
-        HANDLE_CONFIGS.map((config) => (
-          <TransformHandle
-            key={config.position}
-            config={config}
-            boundsX={0}
-            boundsY={0}
-            boundsWidth={width}
-            boundsHeight={height}
-            zoom={zoom}
-            onDragStart={handleDragStart}
-            onHoverStart={handleHoverStart}
-            onHoverEnd={handleHoverEnd}
-          />
-        ))}
-    </pixiContainer>
-  );
-  })
+        {/* Transform 핸들 (visual-only) */}
+        {showHandles &&
+          HANDLE_CONFIGS.map((config) => (
+            <TransformHandle
+              key={config.position}
+              config={config}
+              boundsX={0}
+              boundsY={0}
+              boundsWidth={width}
+              boundsHeight={height}
+              zoom={zoom}
+            />
+          ))}
+      </pixiContainer>
+    );
+  }),
 );
 
 export default SelectionBox;
