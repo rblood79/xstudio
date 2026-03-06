@@ -25,6 +25,7 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        # package.json의 "packageManager" 필드에서 pnpm 버전 자동 감지
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -32,22 +33,38 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
+      # Rust WASM 빌드 (Taffy 레이아웃 엔진)
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/builder/src/builder/workspace/canvas/wasm/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('apps/builder/src/builder/workspace/canvas/wasm/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+
+      - name: Build Rust WASM
+        run: pnpm wasm:build
+
       - name: Verify lockfile sync and install dependencies
         run: |
-          echo "🔍 Verifying pnpm-lock.yaml is in sync with package.json..."
+          echo "Verifying pnpm-lock.yaml is in sync with package.json..."
           if ! pnpm install --frozen-lockfile 2>&1 | tee /tmp/install.log; then
             echo "::error::pnpm-lock.yaml is out of sync with package.json"
-            echo ""
-            echo "::error::To fix this issue:"
-            echo "::error::1. Run 'pnpm install' locally"
-            echo "::error::2. Commit the updated pnpm-lock.yaml file"
-            echo "::error::3. Push your changes"
-            echo ""
-            echo "::error::Installation log:"
+            echo "::error::Run 'pnpm install' locally, commit the updated pnpm-lock.yaml, and push."
             cat /tmp/install.log
             exit 1
           fi
-          echo "✅ Lockfile is in sync and dependencies installed"
 
       - name: Cache turbo build
         uses: actions/cache@v4
@@ -62,11 +79,13 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_USE_WEBGL_CANVAS: ${{ secrets.VITE_USE_WEBGL_CANVAS }}
-          VITE_CANVAS_COMPARE_MODE: ${{ secrets.VITE_CANVAS_COMPARE_MODE }}
+          VITE_GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
+          VITE_USE_WEBGL_CANVAS: "true"
+          VITE_FEATURE_FILL_V2: "true"
+          # VITE_CANVAS_COMPARE_MODE: 프로덕션에서는 기본값 false 사용 (디버그 전용)
 
       - name: Deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./apps/builder/dist
