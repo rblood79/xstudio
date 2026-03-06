@@ -59,118 +59,59 @@ Preview iframe은 별도 document이므로 builder-system이 적용되지 않는
 
 ### 업계 레퍼런스
 
-| 제품        | CSS 격리 전략                                                     |
-| ----------- | ----------------------------------------------------------------- |
-| **Figma**   | 에디터 UI는 자체 디자인 시스템(C++/WebGL), 플러그인만 iframe 격리 |
-| **Canva**   | Shadow DOM으로 에디터 UI와 사용자 콘텐츠 격리                     |
-| **Webflow** | 에디터 CSS와 사이트 CSS 완전 분리 빌드                            |
-| **Framer**  | 에디터 UI는 Radix + 자체 토큰, 프리뷰는 iframe 격리               |
+| 제품                    | 격리 메커니즘                            | Portal/Overlay         | 비고                             |
+| ----------------------- | ---------------------------------------- | ---------------------- | -------------------------------- |
+| **Figma**               | WebGL 완전 우회 (C++ 렌더러)             | 완벽 격리              | 캔버스=WebGL, UI=React/CSS       |
+| **Canva**               | Shadow DOM (에디터 UI ↔ 사용자 콘텐츠)   | Shadow 내부            | 강력하나 복잡                    |
+| **Webflow**             | 역할 기반 (`html.wf-design-mode` 클래스) | 제한적                 | CSS Selector Scoping             |
+| **Framer**              | CSS-in-JS (추정) + iframe 프리뷰         | 미공개                 | 공개 정보 제한적                 |
+| **GrapesJS**            | CSSOM 파싱 기반 (JS 레벨)                | DOM 내 관리            | 완전 격리 아님, 가벼움           |
+| **Builder.io**          | iframe (에디터 ↔ 사이트)                 | iframe 내부            | postMessage 통신                 |
+| **Plasmic**             | 컴포넌트 경계 격리, CSS 상속 명시적 차단 | 명시적 선언            | 예측 가능, 통합 복잡             |
+| **WordPress Gutenberg** | iframe (6.2+)                            | `enqueue_block_assets` | editorStyle/style 이원 체계      |
+| **Storybook**           | Preview iframe                           | 부분적                 | `inline: false`로 story별 iframe |
+| **CodeSandbox**         | Preview iframe (완전 분리)               | 완벽 격리              | postMessage 통신                 |
 
-## Alternatives Considered
+**분석 요약**: 10개 프로젝트의 격리 전략은 세 가지 패턴으로 수렴한다:
 
-### 대안 A: `[data-context="builder"]` 단일 선택자 전환
+| 패턴                     | 사용 프로젝트                                 | 격리 강도 | 복잡도                |
+| ------------------------ | --------------------------------------------- | --------- | --------------------- |
+| **iframe 격리**          | Builder.io, Gutenberg, Storybook, CodeSandbox | Hard      | 중 (postMessage 필요) |
+| **WebGL/Canvas 우회**    | Figma, XStudio(Skia)                          | 완벽      | 높음 (이미 구현됨)    |
+| **CSS Selector Scoping** | Webflow, Plasmic                              | Soft      | 낮음                  |
 
-BuilderViewport(`.app`)에 `data-context="builder"` 속성을 추가하고, builder-system.css의 모든 영역별 선택자를 이 단일 속성 선택자로 교체한다.
+10개 프로젝트 중 **물리적 CSS 파일 분리를 사용하는 사례는 0건**이다. 모두 런타임 격리(iframe, selector scope, WebGL)를 사용한다.
 
-```css
-/* After */
-[data-context="builder"] {
-  --highlight-background: var(--gray-900);
-  /* ...동일 변수... */
-}
-```
+## Decision
 
-Portal로 렌더링되는 Popover/Modal은 `[data-context="builder"]` 바깥(`document.body` 직하)에 mount되므로, React Aria의 `UNSTABLE_portalContainer`를 활용하여 Builder 컨텍스트 내부에 portal container를 지정한다.
+`[data-context="builder"]` 단일 선택자 전환 + ADR-018 utilities 시너지
 
-- 위험:
-  - 기술: **L** — CSS 변수 scoping은 검증된 기술. `UNSTABLE_portalContainer` API는 React Aria 공식 제공
-  - 성능: **L** — 번들 크기 변화 없음, 선택자 복잡도 오히려 감소
-  - 유지보수: **L** — 새 Builder UI 영역 추가 시 선택자 수정 불필요. Dark mode 선택자도 `[data-builder-theme="dark"][data-context="builder"]` 하나로 통합
-  - 마이그레이션: **L** — 선택자 교체 + BuilderViewport에 속성 1개 추가. 기존 CSS 변수명/값은 변경 없음
+### 핵심 전략
 
-### 대안 B: 물리적 CSS 패키지 분리 (Builder CSS / User CSS)
-
-`packages/shared/src/components/styles/`를 두 개로 분할:
-
-- `styles/user/` — Preview/Publish용 (tint system, 사용자 커스터마이징)
-- `styles/builder/` — Builder 에디터 UI 전용 (고정 gray 테마)
-
-공통 구조(레이아웃, 크기)는 `styles/base/`에 유지. 시각적 스타일(색상, 테두리)만 분리.
-
-- 위험:
-  - 기술: **M** — CSS 파일 분할 시 공통 구조/시각 분리 경계 불명확. 일부 컴포넌트는 구조와 시각이 긴밀 결합
-  - 성능: **M** — base CSS 중복 가능성. 두 패키지를 모두 로드하면 번들 증가
-  - 유지보수: **H** — 컴포넌트 CSS 수정 시 두 곳을 동기화해야 함. React Aria 컴포넌트 업데이트 시 양쪽 반영 필요
-  - 마이그레이션: **H** — 80개 파일을 분할 + 모든 import 경로 변경. ADR-017/018 진행 중인 상태에서 병행 위험
-
-### 대안 C: CSS Variable 기본값 반전 (Builder-first defaults)
-
-시맨틱 변수의 `:root` 기본값을 Builder 테마(gray)로 설정하고, Preview/Publish에서만 tint 기반 값으로 오버라이드한다. 현재 기본값 방향(preview-system이 `:root` 기본)을 뒤집는 것.
-
-```css
-/* :root에 Builder 값을 기본으로 */
-:root {
-  --highlight-background: var(--gray-900);
-  --highlight-foreground: var(--gray-0);
-}
-/* Preview에서만 tint로 오버라이드 */
-[data-preview="true"] {
-  --highlight-background: oklch(from var(--tint) 55% c h);
-}
-```
-
-- 위험:
-  - 기술: **M** — Preview iframe은 별도 document이므로 `:root` 기본값이 Preview에도 적용됨. iframe 내에서 다시 오버라이드 필요
-  - 성능: **L** — 변수 선언 위치만 변경, 번들 영향 없음
-  - 유지보수: **M** — "기본값이 Builder"라는 멘탈 모델과 "사용자 커스터마이징 가능한 컴포넌트"라는 Preview 정체성이 충돌. 새 시맨틱 변수 추가 시 Builder 기본값과 Preview 오버라이드 양쪽에 추가해야 함
-  - 마이그레이션: **M** — preview-system.css + builder-system.css 모두 리팩토링 필요. 기존 `:root` 기반 테마 커스터마이징(ThemeStudio `--color-*` 오버라이드)과의 호환성 검증 필요
-
-### 대안 D: 하이브리드 — 대안 A + ADR-018 utilities 시너지
-
-대안 A의 `[data-context="builder"]` 단일 선택자 전환을 즉시 적용하고, ADR-018 Phase 2~5 완료에 따라 builder-system.css의 변수 오버라이드를 점진적으로 축소한다.
+BuilderViewport(`.app`)에 `data-context="builder"` 속성을 추가하고, builder-system.css의 모든 영역별 선택자를 이 단일 속성 선택자로 교체한다. ADR-018 Phase 2~5 완료에 따라 변수 오버라이드를 점진적으로 축소한다.
 
 ADR-018의 `.button-base`, `.indicator`, `.inset` utilities 패턴이 모든 컴포넌트에 적용되면, 개별 variant/state 색상이 **로컬 변수 1개**(`--button-color`, `--indicator-color`, `--inset-bg`)로 수렴한다. Builder에서는 이 로컬 변수의 기반이 되는 시맨틱 변수(`--highlight-background`, `--field-background` 등) ~10개만 오버라이드하면 모든 hover/pressed/disabled 파생이 `color-mix()`로 자동 계산된다.
 
 **Phase 0** (즉시, ADR-018 무관): `[data-context="builder"]` 전환 — 선택자 나열 제거
 **Phase 1** (ADR-018 Phase 2~5 이후): builder-system.css 변수 오버라이드 ~30개 → ~10개로 축소
 
-- 위험:
-  - 기술: **L** — 기존 기술 조합, 추가 도입 없음
-  - 성능: **L** — CSS 오히려 감소 (선택자 단순화 + 변수 축소)
-  - 유지보수: **L** — 오버라이드 포인트 ~10개로 축소, 단일 선택자, dark mode 선택자 통합
-  - 마이그레이션: **L** — Phase 0은 독립 작업, Phase 1은 ADR-018에 편승
+### 위험 평가
 
-## Risk Threshold Check
-
-| 대안                  | 기술 | 성능 | 유지보수 | 마이그레이션 | HIGH 수 |
-| --------------------- | :--: | :--: | :------: | :----------: | :-----: |
-| A: 단일 선택자 전환   |  L   |  L   |    L     |      L       |    0    |
-| B: 물리적 패키지 분리 |  M   |  M   |  **H**   |    **H**     |  **2**  |
-| C: 기본값 반전        |  M   |  L   |    M     |      M       |    0    |
-| D: A + ADR-018 시너지 |  L   |  L   |    L     |      L       |    0    |
-
-대안 B는 HIGH 2개 — 80개 CSS 파일 분할과 이중 동기화 부담이 치명적. ADR-017/018이 활발히 진행 중인 시점에서 CSS 파일 구조를 동시에 분할하면 충돌이 불가피하다.
-
-대안 C는 HIGH 0개지만 MEDIUM 3개. `:root` 기본값 방향 전환은 개념적으로 깔끔하나, ThemeStudio의 `--color-*` 오버라이드 체인과의 호환성 검증이 필요하고, Preview iframe이 별도 document이므로 `:root` 기본값이 양쪽에 동시 적용되는 복잡성이 있다.
-
-대안 A와 D는 모두 전축 LOW. D는 A의 상위 호환이므로, A를 당장 적용하고 ADR-018 완료 시 자연스럽게 D로 확장된다.
-
-## Decision
-
-**대안 D 채택**: `[data-context="builder"]` 단일 선택자 전환 + ADR-018 utilities 시너지
+| 축           | 수준 | 근거                                                                           |
+| ------------ | :--: | ------------------------------------------------------------------------------ |
+| 기술         |  L   | CSS 변수 scoping은 검증된 기술. `UNSAFE_PortalProvider`는 React Aria 공식 제공 |
+| 성능         |  L   | CSS 오히려 감소 (선택자 단순화 + 변수 축소)                                    |
+| 유지보수     |  L   | 오버라이드 포인트 ~10개로 축소, 단일 선택자, dark mode 선택자 통합             |
+| 마이그레이션 |  L   | Phase 0은 독립 작업, Phase 1은 ADR-018에 편승                                  |
 
 ### 채택 근거
 
-1. **모든 축 LOW** — 유일하게 4축 전부 LOW
-2. **근본 원인 해결**: 영역별 선택자 나열을 구조적으로 제거. 새 Builder UI 영역 추가 시 CSS 수정 불필요
-3. **ADR-018과 자연스러운 시너지**: utilities 패턴 완료 후 변수 오버라이드가 ~30개 → ~10개로 축소
-4. **Dark mode 단순화**: `[data-builder-theme="dark"][data-context="builder"]` 단일 조합으로 통합
-5. **점진적 마이그레이션**: Phase 0은 ADR-018과 독립적으로 즉시 적용 가능
-6. **iframe 격리 활용**: Preview는 이미 iframe 격리(ADR-004). Builder 측 CSS만 scoping하면 충분
-
-### 왜 물리적 분리(대안 B)가 아닌가
-
-비유하자면, 대안 B는 "집을 두 채 짓는 것"이고 대안 D는 "한 집에 방문 잠금을 거는 것"이다. Preview가 **이미 iframe으로 격리**되어 있다는 점이 핵심이다. CSS가 같은 파일에서 정의되더라도, Builder main document와 Preview iframe document는 서로의 CSS를 공유하지 않는다. 실질적인 문제는 **Builder main document 내에서** preview-system 변수가 builder UI에 새어나오는 것뿐이며, 이것은 Variable Scope 하나로 해결된다.
+1. **근본 원인 해결**: 영역별 선택자 나열을 구조적으로 제거. 새 Builder UI 영역 추가 시 CSS 수정 불필요
+2. **ADR-018과 자연스러운 시너지**: utilities 패턴 완료 후 변수 오버라이드가 ~30개 → ~10개로 축소
+3. **Dark mode 단순화**: `[data-builder-theme="dark"][data-context="builder"]` 단일 조합으로 통합
+4. **점진적 마이그레이션**: Phase 0은 ADR-018과 독립적으로 즉시 적용 가능
+5. **iframe 격리 활용**: Preview는 이미 iframe 격리(ADR-004). Builder 측 CSS만 scoping하면 충분
+6. **업계 표준 정합**: Webflow(`html.wf-design-mode`), Tailwind v4(`[data-theme]`)와 동일한 CSS Selector Scoping 접근
 
 ## Implementation
 
@@ -208,24 +149,23 @@ body:not([data-preview="true"]) .react-aria-Modal,
 
 #### 0-3. Portal Container 설정
 
-React Aria Popover/Modal이 `[data-context="builder"]` 범위 내에서 렌더링되도록 portal container를 지정한다:
+React Aria Popover/Modal이 `[data-context="builder"]` 범위 내에서 렌더링되도록 `UNSAFE_PortalProvider`를 사용한다 (`@react-aria/overlays` v3.31+, 기존 `UNSTABLE_portalContainer`는 deprecated):
 
 ```tsx
-// Builder 최상위에 portal container ref 설정
+import { UNSAFE_PortalProvider } from "@react-aria/overlays";
+
 const portalContainerRef = useRef<HTMLDivElement>(null);
 
 <div data-context="builder" className="app">
-  {/* ... builder content ... */}
+  <UNSAFE_PortalProvider getContainer={() => portalContainerRef.current}>
+    {/* 모든 Popover/Modal이 builder-portal 내에서 렌더링 */}
+    {/* ... builder content ... */}
+  </UNSAFE_PortalProvider>
   <div ref={portalContainerRef} id="builder-portal" />
-</div>
-
-// React Aria Provider에 전달
-<OverlayProvider portalContainer={portalContainerRef.current}>
-  ...
-</OverlayProvider>
+</div>;
 ```
 
-대안으로, `UNSTABLE_portalContainer`가 불안정하다면 builder-system.css에 `body > .react-aria-Popover` 등 fallback 선택자를 유지할 수 있다:
+`UNSAFE_PortalProvider`가 안정화되지 않은 경우의 fallback으로, builder-system.css에 `body > .react-aria-Popover` 등 선택자를 유지할 수 있다:
 
 ```css
 /* Fallback: body 직하 portal에도 builder 변수 적용 */
@@ -237,6 +177,14 @@ body:not([data-preview="true"]) > .react-aria-Modal {
 ```
 
 #### 0-4. Dark mode 선택자 통합
+
+`data-builder-theme`은 `document.documentElement`(`<html>`)에 설정된다 (`BuilderCore.tsx`의 `applyTheme()`). `[data-context="builder"]`는 `.app` div에 위치하므로 조상-자손 관계가 성립한다:
+
+```
+<html data-builder-theme="dark">       ← :root
+  <body>
+    <div class="app" data-context="builder">  ← BuilderViewport
+```
 
 ```css
 /* Before: 10개 선택자 × [data-builder-theme="dark"] */
@@ -254,6 +202,28 @@ body:not([data-preview="true"]) > .react-aria-Modal {
 /* After: 1개 조합 */
 [data-builder-theme="dark"] [data-context="builder"] { ... }
 ```
+
+#### 0-5. Builder styles ITCSS 넘버링 제거
+
+`apps/builder/src/builder/styles/`의 ITCSS 넘버 접두사(`4-`, `5-`)를 제거한다. Layer 1~3은 이미 삭제/주석 처리되어 실제 import가 없으므로, 2개 레이어만 남은 넘버링은 의미가 없다:
+
+```
+Before                        After
+styles/                       styles/
+├── 4-layout/                 ├── layout/
+│   ├── canvas.css            │   ├── canvas.css
+│   ├── footer.css            │   ├── footer.css
+│   └── header.css            │   └── header.css
+├── 5-modules/                ├── modules/
+│   ├── element-tree.css      │   ├── element-tree.css
+│   ├── error-loading.css     │   ├── error-loading.css
+│   ├── panel-container.css   │   ├── panel-container.css
+│   └── panel-nav.css         │   └── panel-nav.css
+└── index.css                 └── index.css
+```
+
+- `index.css`의 import 경로를 `./layout/`, `./modules/`로 변경
+- 주석의 ITCSS 레이어 번호 참조 정리
 
 ### Phase 1: ADR-018 완료 후 변수 축소
 
@@ -288,6 +258,8 @@ Publish 앱에는 `[data-context="builder"]` 속성이 존재하지 않으므로
 
 현재 Publish 앱은 `packages/shared/src/components/index.css` → `styles/index.css` → `theme.css`를 통해 builder-system.css를 로드하지만, `[data-context="builder"]` 선택자가 매칭되는 요소가 없으므로 dead CSS다. builder-system.css는 ~186줄(~4KB)이므로 번들 영향 미미.
 
+> **향후 최적화**: Publish 번들에서 builder-system.css를 완전히 제거하려면, `theme.css`에서 `@import "./styles/theme/builder-system.css"`를 builder 전용 엔트리로 분리하면 된다. 현재는 dead CSS ~4KB이므로 우선순위 낮음.
+
 ### 최종 아키텍처
 
 ```
@@ -319,12 +291,12 @@ Publish 앱에는 `[data-context="builder"]` 속성이 존재하지 않으므로
 
 ## Gates
 
-| Gate | 시점         | 통과 조건                                                                           | 실패 시 대안                                                                      |
-| ---- | ------------ | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| G0   | Phase 0-2 후 | Builder UI 모든 영역(inspector, sidebar, header, modal, popover)에서 시각 변화 없음 | 누락 영역에 `[data-context="builder"]` 범위 확인, 필요 시 추가 선택자 보완        |
-| G1   | Phase 0-3 후 | Popover/Modal portal이 Builder 테마(gray)를 올바르게 적용. Preview tint 색상 미유입 | `UNSTABLE_portalContainer` 대신 `body:not([data-preview]) >` fallback 선택자 유지 |
-| G2   | Phase 0-4 후 | Builder dark mode 전체 영역 정상 동작                                               | Dark mode 선택자에 기존 영역 선택자 복원                                          |
-| G3   | Phase 1 후   | ADR-018 utilities 기반 hover/pressed 파생이 Builder gray 테마에서 정확한 색상 출력  | 해당 변수 오버라이드 복원                                                         |
+| Gate | 시점         | 통과 조건                                                                           | 실패 시 대안                                                                   |
+| ---- | ------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| G0   | Phase 0-2 후 | Builder UI 모든 영역(inspector, sidebar, header, modal, popover)에서 시각 변화 없음 | 누락 영역에 `[data-context="builder"]` 범위 확인, 필요 시 추가 선택자 보완     |
+| G1   | Phase 0-3 후 | Popover/Modal portal이 Builder 테마(gray)를 올바르게 적용. Preview tint 색상 미유입 | `UNSAFE_PortalProvider` 대신 `body:not([data-preview]) >` fallback 선택자 유지 |
+| G2   | Phase 0-4 후 | Builder dark mode 전체 영역 정상 동작                                               | Dark mode 선택자에 기존 영역 선택자 복원                                       |
+| G3   | Phase 1 후   | ADR-018 utilities 기반 hover/pressed 파생이 Builder gray 테마에서 정확한 색상 출력  | 해당 변수 오버라이드 복원                                                      |
 
 잔존 HIGH 위험 없음.
 
@@ -341,14 +313,56 @@ Publish 앱에는 `[data-context="builder"]` 속성이 존재하지 않으므로
 
 ### Negative
 
-1. **Portal container 설정 필요**: React Aria `UNSTABLE_portalContainer` 활용 또는 fallback 선택자 유지. API 안정화 전까지 모니터링 필요
+1. **Portal container 설정 필요**: React Aria `UNSAFE_PortalProvider` 활용 또는 fallback 선택자 유지. `UNSAFE_` 접두사는 API 안정화 전 단계를 의미하므로, 메이저 버전 업그레이드 시 API 변경 가능성이 있다. Fallback 선택자(`body:not([data-preview]) > .react-aria-Popover` 등)를 Phase 0-3에 병행 유지하고, React Aria의 stable PortalProvider 출시 후 fallback을 제거한다
 2. **Phase 1(변수 축소)은 ADR-018 완료 의존**: Phase 2~5 미완료 시 변수 축소 불가. 단, Phase 0만으로도 핵심 문제(선택자 나열) 해결
-3. **`[data-context="builder"]`가 CSS 변수 상속의 경계**: 이 속성 바깥에서 Builder 컴포넌트를 렌더링하면 preview-system 변수가 적용됨. Builder 컴포넌트는 반드시 이 속성 하위에서 렌더링해야 함
+3. **`[data-context="builder"]`가 CSS 변수 상속의 경계**: 이 속성 바깥에서 Builder 컴포넌트를 렌더링하면 preview-system 변수가 적용됨. 실제로는 모든 Builder UI가 `BuilderViewport` (`BuilderCore.tsx`의 유일한 사용처) 하위에서 렌더링되므로 이론적 위험에 가깝다. 단, 향후 Builder 외부에서 공유 컴포넌트를 렌더링하는 케이스가 생기면 이 제약을 인지해야 한다
+
+### 향후 전환: CSS `@scope`
+
+CSS `@scope`가 2026.01 Baseline Newly Available에 진입했다 (Chrome 120+, Safari 18+, Firefox 146+, Edge 120+). Phase 1 이후 `[data-context]` 속성 선택자를 `@scope` 규칙으로 전환할 수 있다:
+
+```css
+/* 현재 (Phase 0~1) */
+[data-context="builder"] {
+  --highlight-background: var(--gray-900);
+}
+
+/* 향후 (@scope 전환) */
+@scope ([data-context="builder"]) {
+  :scope {
+    --highlight-background: var(--gray-900);
+  }
+}
+
+/* "donut scope" — builder 범위 내, preview 영역 제외 */
+@scope ([data-context="builder"]) to (.preview-area) {
+  .button {
+    background: var(--highlight-background);
+  }
+}
+```
+
+`@scope`의 추가 이점:
+
+- **Donut scope**: `to` 절로 내부 특정 영역을 범위에서 제외. 중첩된 preview 영역 등을 선택자 없이 자동 제외 가능
+- **Proximity 우선순위**: 동일 specificity에서 가장 가까운 scope의 규칙이 자동 승리. 중첩 테마(Builder 내 다크/라이트 영역)에서 유용
+
+현 시점에서는 `[data-context]` 속성 선택자만으로 충분하며, `@scope`는 선택적 개선이다. 기존 `@layer` 체계(cascade 순서 제어)와 `@scope`(DOM 범위 제어)는 상호 보완적으로 조합 가능하다.
 
 ## References
+
+### Internal
 
 - ADR-004: Preview iframe 격리
 - ADR-017: CSS Override SSOT (M3 토큰 제거)
 - ADR-018: Component CSS Restructure (utilities 패턴)
 - ADR-021: Dark Mode
 - ADR-022: S2 Color Token 체계
+
+### External
+
+- React Aria: [UNSAFE_PortalProvider](https://react-aria.adobe.com/PortalProvider) (`@react-aria/overlays` v3.31+)
+- Tailwind CSS v4: [Multi-Theme with data-attributes](https://tailwindcss.com/blog/tailwindcss-v4)
+- MDN: [CSS @scope](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@scope) (2026.01 Baseline Newly Available)
+- MDN: [CSS Cascade Layers](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Cascade_layers)
+- CSS @scope Explainer: [OddBird](https://css.oddbird.net/scope/explainer/)

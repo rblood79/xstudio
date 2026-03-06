@@ -105,6 +105,7 @@ Pencil/Figma와 동일한 업계 검증된 패턴. Skia ↔ DOM 폰트 차이는
 | G1   | Skia 텍스트 숨김 ↔ DOM 텍스트 표시 전환 시 시각적 점프 2px 이내 (100% 줌 기준)        | Phase A 완료 시 |
 | G2   | 한글 IME 조합 정상 동작 (macOS, Chrome)                                               | Phase A 완료 시 |
 | G3   | 멀티페이지 환경에서 다른 페이지 텍스트 편집 시 좌표 정확                              | Phase B 완료 시 |
+| G4   | Spec shapes에서 텍스트 영역 bounds 추출 가능 여부 확인 (Button label 위치/크기)       | Phase C 착수 전 |
 
 ## Consequences
 
@@ -151,12 +152,20 @@ interface TextEditingSlice {
 - `finishTextEditing`: 히스토리 기록 → 요소 업데이트 → `isEditingText=false`
 - `cancelTextEditing`: 원본 복원 → `isEditingText=false`
 
-#### A-2. 더블클릭 감지
+#### A-2. 더블클릭 감지 (기존 인프라 활용)
 
-**파일**: `apps/builder/src/builder/workspace/canvas/` 관련 이벤트 핸들러
+**파일**: `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` (기존)
 
-- PixiJS EventBoundary의 `pointertap` / `pointerdown` 타임스탬프 비교 (300ms 임계)
-- 대상 요소 타입이 `text` | `heading`이면 `startTextEditing(elementId)` 호출
+**기존 `handleElementDoubleClick` (line ~2391) 재사용**:
+
+현재 이미 더블클릭 핸들러가 구현되어 있으며 두 가지 분기로 동작:
+
+1. **텍스트 요소** (`p, h1~h6, span, a, label, button`) → `startEdit(elementId, layoutPosition)` 호출
+2. **자식이 있는 컨테이너** → `enterEditingContext(elementId)` 호출 (한 단계 진입)
+
+텍스트 편집은 이미 `useTextEdit()` 훅 (`startEdit`, `completeEdit`, `cancelEdit`)에 연결되어 있으므로, **신규 더블클릭 감지 로직 추가 불필요**. `useTextEdit` 훅과 `TextEditOverlay`의 통합 완성이 핵심.
+
+- 더블클릭 감지: `ElementSprite.tsx`의 `handleContainerPointerDown`에서 300ms 타임스탬프 비교 → `onDoubleClick` 호출 (기존)
 - 편집 중 PixiJS 포인터 이벤트 차단 (hitArea 해제 또는 조건부 무시)
 
 #### A-3. DOM Overlay 레이어
@@ -196,8 +205,9 @@ interface TextEditingSlice {
 
 **파일**: `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts`
 
-- `renderText()` 진입 시 `isEditingText && editingElementId === elementId`이면 텍스트 렌더링 스킵
+- `renderText()` 진입 시 `editingElementId === elementId`이면 텍스트 렌더링 스킵
 - 배경/보더는 유지, **텍스트 드로잉만** 스킵
+- **store 접근 방식**: Skia 렌더 루프 내에서 매 프레임 `useStore.getState()` 호출을 피하기 위해, `editingElementId`를 렌더 함수 외부에서 읽어 인자로 전달 (예: `SkiaOverlay`에서 한 번 읽고 `renderTree()`에 전달) 또는 모듈 레벨 플래그로 관리
 
 #### A-5. 폰트 스타일 동기화
 
@@ -211,15 +221,17 @@ interface TextEditingSlice {
 
 #### A-6. 편집 완료/취소 처리
 
-- **Enter** (단일행) 또는 **Escape**: `cancelTextEditing()` (원본 복원)
-- **Cmd/Ctrl+Enter** (멀티행) 또는 외부 클릭: `finishTextEditing(newValue)`
+- **Enter** (단일행) 또는 **외부 클릭**: `finishTextEditing(newValue)` (편집 확정)
+- **Escape**: `cancelTextEditing()` (원본 복원)
+- **Cmd/Ctrl+Enter** (멀티행): `finishTextEditing(newValue)` (편집 확정)
 - **외부 클릭 감지**: `document.addEventListener('mousedown', handler)` — 오버레이 외부이면 finish
 
 #### A-7. Undo/Redo 통합
 
 - `startTextEditing`에서 원본 `textContent` 스냅샷
-- `finishTextEditing`에서 변경이 있으면 히스토리 기록 (단일 블록)
-- 편집 중 실시간 업데이트는 undo 미기록 (Pencil 패턴과 동일)
+- 편집 중에는 DOM contenteditable 내부에서만 텍스트 변경 (store 업데이트 없음 → Skia 재렌더 없음)
+- `finishTextEditing`에서 변경이 있으면 히스토리 기록 + store 업데이트 (단일 블록)
+- `cancelTextEditing`에서 원본 복원 (store 변경 없음)
 
 ### Phase B: 줌/팬 동기화 + 멀티페이지
 
@@ -244,6 +256,8 @@ interface TextEditingSlice {
 ### Phase C: Spec 컴포넌트 내부 텍스트
 
 > 범위: Button label, Badge text, Card title 등 Spec 기반 컴포넌트
+>
+> **선행 조건 (Gate G4)**: Spec shapes에서 텍스트 영역 bounds를 정확히 추출할 수 있는지 사전 검증 필수. 현재 Spec 구조가 텍스트 shape의 상대 위치/크기를 프로그래밍적으로 노출하는지 확인 필요. G4 실패 시 Spec 구조 확장 또는 대안 접근 (하드코딩된 offset 테이블 등) 검토.
 
 #### C-1. Spec 텍스트 bounds 계산
 
@@ -338,27 +352,34 @@ overlay.style.fontSize = `${fontSize * camera.zoom}px`;
 ```
 [더블클릭]
   ↓
-PixiJS EventBoundary → pointerdown 타임스탬프 비교
-  ↓ (300ms 이내 + text/heading 타입)
-store.startTextEditing(elementId)
+ElementSprite.handleContainerPointerDown → 300ms 타임스탬프 비교 → onDoubleClick(elementId)
   ↓
-TextEditOverlay 감지 (useStore subscribe)
+BuilderCanvas.handleElementDoubleClick → resolveClickTarget() → textTags 체크
+  ↓ (text/heading 타입)
+useTextEdit().startEdit(elementId, layoutPosition)
+  ↓
+TextEditOverlay 감지 (editState 변경)
   ↓
 1. Skia: nodeRenderers에서 해당 요소 텍스트 스킵
 2. DOM: contenteditable div 생성 + 포지셔닝 + 포커스
   ↓
 [사용자 입력]
   ↓
-contenteditable onChange → store.updateElement(textContent) [undo 미기록]
-  ↓
-[완료 트리거: Escape / Cmd+Enter / 외부 클릭]
+contenteditable 입력 → DOM 내부에서만 반영 (store 업데이트 안 함)
+  ↓ (Skia 텍스트는 숨겨져 있으므로 store 업데이트 불필요 — 불필요한 Skia 재렌더 방지)
+[완료 트리거: Enter(단일행) / Cmd+Enter(멀티행) / 외부 클릭]
   ↓
 store.finishTextEditing(newValue)
   ↓
 1. 히스토리 기록 (원본 → 최종, 단일 블록)
-2. DOM 오버레이 제거
-3. Skia 텍스트 렌더링 복원
-4. DB Persist + Preview Sync (백그라운드)
+2. 요소 textContent 업데이트 (store.updateElement)
+3. DOM 오버레이 제거
+4. Skia 텍스트 렌더링 복원 (업데이트된 텍스트로)
+5. DB Persist + Preview Sync (백그라운드)
+  ↓
+[취소 트리거: Escape]
+  ↓
+store.cancelTextEditing() → 원본 복원, DOM 오버레이 제거, Skia 복원
 ```
 
 ---

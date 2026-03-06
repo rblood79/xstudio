@@ -2,11 +2,11 @@
 
 ## Status
 
-Implemented (Foundation + Phase 0~5 구현 완료. Phase 2 Binary Protocol 부분 구현(TypedArray 완료, SharedArrayBuffer 미구현). Phase 3 Flat Render List(renderCommands.ts), Phase 4 R-tree Viewport Culling(spatialIndex.ts), Phase 5 Web Worker(layoutWorker.ts + LayoutScheduler.ts) 구현 완료. CSS 일반 규칙 적용 완료, Dropflow → Taffy 단일 엔진 전환 완료)
+Implemented (Foundation + Phase 0~4 구현 완료. Phase 2 Binary Protocol 부분 구현(TypedArray 완료, SharedArrayBuffer 미구현). Phase 3 Flat Render List(renderCommands.ts), Phase 4 R-tree Viewport Culling(spatialIndex.ts) 구현 완료. Layout Worker(layoutWorker.ts + LayoutScheduler.ts)는 레이아웃 계산용 Web Worker로 별도 구현 완료. Phase 5 OffscreenCanvas Worker Rendering 미구현. CSS 일반 규칙 적용 완료, Dropflow → Taffy 단일 엔진 전환 완료)
 
 ## Date
 
-2026-02-27 (최종 업데이트: 2026-03-05)
+2026-02-27 (최종 업데이트: 2026-03-06)
 
 ## Decision Makers
 
