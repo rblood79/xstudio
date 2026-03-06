@@ -11,12 +11,12 @@ tags: [pixi, layout, interaction, direct-container]
 
 ```tsx
 // ❌ 일반 레이아웃으로 히트 영역 배치
-<Container style={{ flexDirection: 'column' }}>
+<Container style={{ flexDirection: "column" }}>
   <PixiButton label="Button" />
   <Container
     interactive={true}
     onPointerDown={handleResize}
-    style={{ width: 10, height: 10 }}  // 위치 제어 불가
+    style={{ width: 10, height: 10 }} // 위치 제어 불가
   />
 </Container>
 ```
@@ -25,7 +25,7 @@ tags: [pixi, layout, interaction, direct-container]
 
 ```tsx
 // ✅ 절대 위치로 히트 영역 배치
-<Container style={{ position: 'relative', width: 200, height: 100 }}>
+<Container style={{ position: "relative", width: 200, height: 100 }}>
   {/* 메인 콘텐츠 */}
   <PixiButton label="Button" />
 
@@ -35,11 +35,11 @@ tags: [pixi, layout, interaction, direct-container]
     cursor="se-resize"
     onPointerDown={handleResizeStart}
     style={{
-      position: 'absolute',
+      position: "absolute",
       right: -5,
       bottom: -5,
       width: 10,
-      height: 10
+      height: 10,
     }}
   />
 
@@ -49,11 +49,11 @@ tags: [pixi, layout, interaction, direct-container]
     cursor="move"
     onPointerDown={handleDragStart}
     style={{
-      position: 'absolute',
+      position: "absolute",
       left: 0,
       top: 0,
       right: 0,
-      bottom: 0
+      bottom: 0,
     }}
   />
 </Container>
@@ -69,8 +69,10 @@ tags: [pixi, layout, interaction, direct-container]
 const computedSize = useContext(LayoutComputedSizeContext);
 
 // ⚠️ computedSize.height가 0일 수 있음 → ?? 대신 > 0 체크 필수
-const bgWidth = (computedSize?.width && computedSize.width > 0)
-  ? computedSize.width : fallbackWidth;
+const bgWidth =
+  computedSize?.width && computedSize.width > 0
+    ? computedSize.width
+    : fallbackWidth;
 
 return (
   <pixiGraphics
@@ -83,8 +85,9 @@ return (
 ```
 
 **주의사항:**
+
 - `??` 연산자는 `0`을 falsy로 취급하지 않음 → `computedSize.height === 0`이면 `bgHeight = 0` → hit area 없음
-- DirectContainer에서 x/y는 엔진(Taffy/Dropflow)이 계산한 결과를 직접 사용
+- DirectContainer에서 x/y는 Taffy 엔진이 계산한 결과를 직접 사용
 - `eventMode="none"`인 pixiGraphics는 클릭이 관통됨 — 반드시 `eventMode="static"` 설정
 
 ## Non-layout 히트 영역 패턴 (padding이 있는 컨테이너)
@@ -119,8 +122,20 @@ BoxSprite(배경/테두리)가 absolute로 배치되면 padding 영역에 히트
     onPointerDown={handleContainerPointerDown}
   />
   {/* BoxSprite: absolute 배치 (시각적 역할) */}
-  <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0, right: 0, bottom: 0 }}>
-    <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />
+  <pixiContainer
+    layout={{
+      position: "absolute" as const,
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0,
+    }}
+  >
+    <BoxSprite
+      element={effectiveElement}
+      isSelected={isSelected}
+      onClick={onClick}
+    />
   </pixiContainer>
   {/* 자식 요소들 */}
   {childElements.map((childEl) => renderChildElement(childEl))}
@@ -131,7 +146,9 @@ BoxSprite(배경/테두리)가 absolute로 배치되면 padding 영역에 히트
 // ❌ 잘못된 패턴: absolute BoxSprite만으로 히트 영역 처리
 // padding이 있으면 content 영역으로 오프셋되어 padding 영역 클릭 불가
 <>
-  <pixiContainer layout={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }}>
+  <pixiContainer
+    layout={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
+  >
     <BoxSprite element={element} onClick={onClick} />
   </pixiContainer>
   {childElements.map((childEl) => renderChildElement(childEl))}
@@ -144,14 +161,19 @@ BoxSprite(배경/테두리)가 absolute로 배치되면 padding 영역에 히트
 const drawContainerHitRect = useCallback(
   (g: PixiGraphics) => {
     g.clear();
-    const w = computedW ?? 0;  // LayoutComputedSizeContext → 엔진 계산 border-box 크기
+    const w = computedW ?? 0; // LayoutComputedSizeContext → 엔진 계산 border-box 크기
     const h = computedH ?? 0;
     if (w <= 0 || h <= 0) return;
     g.rect(0, 0, w, h);
     const debug = isDebugHitAreas();
-    g.fill(debug
-      ? { color: DEBUG_HIT_AREA_COLORS.box.color, alpha: DEBUG_HIT_AREA_COLORS.box.alpha }
-      : { color: 0xffffff, alpha: 0.001 });
+    g.fill(
+      debug
+        ? {
+            color: DEBUG_HIT_AREA_COLORS.box.color,
+            alpha: DEBUG_HIT_AREA_COLORS.box.alpha,
+          }
+        : { color: 0xffffff, alpha: 0.001 },
+    );
   },
   [computedW, computedH],
 );
