@@ -40,7 +40,7 @@
 | [010](010-events-panel.md)                        | Events Panel Smart Recommendations             | EventsPanel 기본 UI 완성 (Block WHEN→IF→THEN/ELSE) + `getRecommendedActions()` 추천 기능 부분 구현                               | P2 (AI 이벤트 생성) 미구현                                                                                                             |    P5    |
 | [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)          | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화) + G.3 시각 피드백                                                              | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스/변수 도구)                                                                    |    P5    |
 | [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝              | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                                                       | P3-1 부분 구현 (dirtyElementIds 인프라만, 핵심 DFS 최적화 미구현)                                                                      |    P5    |
-| [018](018-component-css-restructure.md)           | 컴포넌트 CSS 구조 재작성                       | Phase 1 완료 (utilities.css 142줄) + Phase 2 Button만 완료 (14%, 1/7)                                                            | Phase 2 잔여 6개 + Phase 3~5 미착수 (CSS 13,718줄 → 목표 ~8,101줄)                                                                     |    P3    |
+| [018](018-component-css-restructure.md)           | 컴포넌트 CSS 구조 재작성                       | Phase 1~3 완료 (utilities.css + button-base + inset), Phase 4 스킵, Phase 5 불필요                                               | Phase 6 (Optional) dead code 제거                                                                                                      |    P3    |
 | [021](021-theme-system-redesign.md)               | 테마 시스템 개편 — Tint + Tailwind 인라인 패널 | Phase A+B+C 완료 + Phase D 부분 완료(ThemeStudio 삭제, /theme 라우트 제거)                                                       | Phase D 잔여(UnifiedThemeStore/Service 정리), Phase E (컴포넌트별 accent)                                                              |  **P2**  |
 | [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                     | TextEditOverlay.tsx + useTextEdit.ts 구현 완료 (DOM Overlay + contenteditable)                                                   | BuilderCanvas double-click 통합 미완, Spec 컴포넌트 텍스트 미지원                                                                      |  **P2**  |
 | [028](028-builder-css-scope-isolation.md)         | Builder CSS 스코프 격리                        | Phase 0 완료 (`[data-context="builder"]` 전환 + ITCSS 정리)                                                                      | Phase 1 변수 축소 (ADR-018 의존)                                                                                                       |    P3    |
@@ -63,21 +63,21 @@
 
 ## 다음 진행 목표 (2026-03-06 기준)
 
-| 순서  | 대상                | 내용                                                                               | 규모 |   상태   |
-| :---: | ------------------- | ---------------------------------------------------------------------------------- | :--: | :------: |
-| ~~1~~ | ~~ADR-017~~         | ~~M3 토큰 제거 + Tint Color System + Spec 전환 + Theme Studio~~                    |  중  | **완료** |
-| ~~2~~ | ~~ADR-018 Phase 1~~ | ~~utilities.css 생성 + Button/Card 마이그레이션~~                                  |  소  | **완료** |
-| ~~3~~ | ~~ADR-014 Phase D~~ | ~~Publish 앱 레지스트리 전환~~                                                     |  소  | **완료** |
-| ~~4~~ | ~~ADR-014 Phase E~~ | ~~정적 Export 멀티파일~~                                                           |  중  | **완료** |
-| ~~5~~ | ~~ADR-022~~         | ~~S2 색상 토큰 전환 (M3→S2 rename + CSS↔Skia 일치)~~                               |  중  | **완료** |
-| ~~6~~ | ~~ADR-023 Phase 1~~ | ~~S2 variant props (타입/컴포넌트/렌더러/에디터)~~                                 |  중  | **완료** |
-| ~~7~~ | ~~ADR-023 Phase 2~~ | ~~S2 variant Spec blocks rename, Factory 기본값, CSS 잔여 정리~~                   |  중  | **완료** |
-| ~~8~~ | ~~ADR-023 Phase 3~~ | ~~Button premium/genai, ToggleButton S2, Badge 19 variants, size padding 동기화~~  |  중  | **완료** |
-|   9   | ADR-027 통합        | Canvas Inline Text Editing — TextEditOverlay 완성, BuilderCanvas double-click 통합 |  중  | 부분완료 |
-|  10   | ADR-026             | Responsive Constraint UI — Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio   |  대  |          |
-|  11   | ADR-013             | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)   |  대  |          |
-|  12   | ADR-019             | 아이콘 시스템 — Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링        |  중  |          |
-|  13   | ADR-018 Phase 2~5   | 컴포넌트 CSS 구조 재작성 — 나머지 컴포넌트 utilities 패턴 전환                     |  대  |          |
+| 순서  | 대상                  | 내용                                                                                  | 규모 |   상태   |
+| :---: | --------------------- | ------------------------------------------------------------------------------------- | :--: | :------: |
+| ~~1~~ | ~~ADR-017~~           | ~~M3 토큰 제거 + Tint Color System + Spec 전환 + Theme Studio~~                       |  중  | **완료** |
+| ~~2~~ | ~~ADR-018 Phase 1~~   | ~~utilities.css 생성 + Button/Card 마이그레이션~~                                     |  소  | **완료** |
+| ~~3~~ | ~~ADR-014 Phase D~~   | ~~Publish 앱 레지스트리 전환~~                                                        |  소  | **완료** |
+| ~~4~~ | ~~ADR-014 Phase E~~   | ~~정적 Export 멀티파일~~                                                              |  중  | **완료** |
+| ~~5~~ | ~~ADR-022~~           | ~~S2 색상 토큰 전환 (M3→S2 rename + CSS↔Skia 일치)~~                                  |  중  | **완료** |
+| ~~6~~ | ~~ADR-023 Phase 1~~   | ~~S2 variant props (타입/컴포넌트/렌더러/에디터)~~                                    |  중  | **완료** |
+| ~~7~~ | ~~ADR-023 Phase 2~~   | ~~S2 variant Spec blocks rename, Factory 기본값, CSS 잔여 정리~~                      |  중  | **완료** |
+| ~~8~~ | ~~ADR-023 Phase 3~~   | ~~Button premium/genai, ToggleButton S2, Badge 19 variants, size padding 동기화~~     |  중  | **완료** |
+|   9   | ADR-027 통합          | Canvas Inline Text Editing — TextEditOverlay 완성, BuilderCanvas double-click 통합    |  중  | 부분완료 |
+|  10   | ADR-026               | Responsive Constraint UI — Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio      |  대  |          |
+|  11   | ADR-013               | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)      |  대  |          |
+|  12   | ADR-019               | 아이콘 시스템 — Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링           |  중  |          |
+|  13   | ~~ADR-018 Phase 2~5~~ | ~~컴포넌트 CSS 구조 재작성 — button-base + inset 적용, Phase 4 스킵, Phase 5 불필요~~ |  중  | **완료** |
 
 ---
 
@@ -102,7 +102,7 @@
 
 ### P3: ADR-018 + ADR-024 + ADR-025 + ADR-028 CSS 체계
 
-- **ADR-018**: **부분 완료** — Phase 1 + Button만 완료 (utilities.css 142줄, CSS 총 13,718줄 → 목표 ~8,101줄). 나머지 컴포넌트는 로컬 변수+color-mix 중간 단계로 자체 진화 중
+- **ADR-018**: **실질 완료** — Phase 1~3 완료 (utilities.css + button-base + inset -249줄), Phase 4 스킵 (indicator 구조 불일치), Phase 5 불필요 (Card 이미 data-\*). Optional Phase 6 (dead code 제거) 잔여
 - **ADR-024**: CSS 변수명 S2 체계 전환 (alias 점진 전환)
 - **ADR-025**: S2 Named Color Palette 확장 (Badge 12색은 ADR-023 Ph3에서 구현 완료)
 - **ADR-028**: Builder CSS 스코프 격리
