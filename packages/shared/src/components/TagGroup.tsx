@@ -377,6 +377,36 @@ export function TagGroup<T extends object>({
   }
 
   // Static Children (기존 방식)
+  // React Aria의 TagList collection은 AriaTag(react-aria-components Tag)만 인식.
+  // 커스텀 Tag 래퍼는 인식 불가 → AriaTag로 변환하여 전달.
+  const mappedChildren =
+    typeof children === "function"
+      ? children
+      : React.Children.map(children as React.ReactNode, (child) => {
+          if (!React.isValidElement(child)) return child;
+          const { children: tagContent, ...tagProps } = child.props as TagProps;
+          const textValue =
+            typeof tagContent === "string" ? tagContent : undefined;
+          return (
+            <AriaTag
+              textValue={textValue}
+              {...tagProps}
+              className="react-aria-Tag"
+            >
+              {({ allowsRemoving }) => (
+                <>
+                  {tagContent}
+                  {allowsRemoving && (
+                    <Button slot="remove">
+                      <X size={14} />
+                    </Button>
+                  )}
+                </>
+              )}
+            </AriaTag>
+          );
+        });
+
   return (
     <AriaTagGroup
       {...props}
@@ -397,7 +427,7 @@ export function TagGroup<T extends object>({
         renderEmptyState={renderEmptyState}
         className="react-aria-TagList"
       >
-        {children}
+        {mappedChildren}
       </TagList>
       {description && <Text slot="description">{description}</Text>}
       {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}

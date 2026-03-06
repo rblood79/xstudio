@@ -23,9 +23,10 @@
     background: var(--tag-color);
     border: 1px solid var(--tag-border);
     forced-color-adjust: none;
-    border-radius: var(--radius-sm);
-    padding: var(--spacing-2xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-lg);
     font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
     outline: none;
     cursor: default;
     display: flex;
@@ -126,22 +127,40 @@
   }
 
   /* ===== Parent-delegated Size Variants ===== */
+  /* @sync Button.css size variants — padding/fontSize/lineHeight 동일 */
+
+  .react-aria-TagGroup[data-tag-size="xs"] .react-aria-Tag {
+    padding: var(--spacing-3xs) var(--spacing-sm);
+    font-size: var(--text-2xs);
+    line-height: var(--text-2xs--line-height);
+    border-radius: var(--radius-sm);
+  }
 
   .react-aria-TagGroup[data-tag-size="sm"] .react-aria-Tag {
-    padding: var(--spacing-2xs) var(--spacing-sm);
+    padding: var(--spacing-2xs) var(--spacing-md);
     font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
     border-radius: var(--radius-sm);
   }
 
   .react-aria-TagGroup[data-tag-size="md"] .react-aria-Tag {
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-lg);
     font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
     border-radius: var(--radius-md);
   }
 
   .react-aria-TagGroup[data-tag-size="lg"] .react-aria-Tag {
-    padding: var(--spacing-sm) var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-xl);
     font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    border-radius: var(--radius-lg);
+  }
+
+  .react-aria-TagGroup[data-tag-size="xl"] .react-aria-Tag {
+    padding: var(--spacing-md) var(--spacing-2xl);
+    font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
     border-radius: var(--radius-lg);
   }
 

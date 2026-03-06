@@ -10,8 +10,8 @@
  * @since 2026-02-28 Phase 1 — Full-Tree WASM Layout 통합
  */
 
-import type { Element } from '../../../../../types/core/store.types';
-import { parsePadding, PHANTOM_INDICATOR_CONFIGS } from './utils';
+import type { Element } from "../../../../../types/core/store.types";
+import { parsePadding, PHANTOM_INDICATOR_CONFIGS } from "./utils";
 
 // ─── 인터페이스 ──────────────────────────────────────────────────────
 
@@ -46,7 +46,7 @@ const INDICATOR_SIZES: Record<string, { box: number; gap: number }> = {
 };
 
 /** Synthetic Label을 생성하는 태그 */
-const SYNTHETIC_LABEL_TAGS = new Set(['radio', 'checkbox', 'switch', 'toggle']);
+const SYNTHETIC_LABEL_TAGS = new Set(["radio", "checkbox", "switch", "toggle"]);
 
 // ─── 내부 헬퍼 ──────────────────────────────────────────────────────
 
@@ -113,57 +113,81 @@ export function applyImplicitStyles(
   getChildElements: (id: string) => Element[],
   elementById: Map<string, Element>,
 ): ImplicitStyleResult {
-  const containerTag = (containerEl.tag ?? '').toLowerCase();
-  const parentStyle = (containerEl.props?.style || {}) as Record<string, unknown>;
-  const containerProps = containerEl.props as Record<string, unknown> | undefined;
+  const containerTag = (containerEl.tag ?? "").toLowerCase();
+  const parentStyle = (containerEl.props?.style || {}) as Record<
+    string,
+    unknown
+  >;
+  const containerProps = containerEl.props as
+    | Record<string, unknown>
+    | undefined;
 
   let effectiveParent = containerEl;
   let filteredChildren = children;
 
   // ── TagGroup ───────────────────────────────────────────────────────
-  if (containerTag === 'taggroup') {
+  // CSS 구조: TagGroup(column) > Label + TagList(row wrap) > Tags
+  // TagList가 있으면 그대로 통과, 없으면(레거시) row wrap으로 보정
+  if (containerTag === "taggroup") {
+    const hasTagList = children.some((c) => c.tag === "TagList");
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: hasTagList ? "column" : "row",
+      flexWrap: hasTagList ? undefined : "wrap",
       gap: 4,
+      width: parentStyle.width ?? "fit-content",
+    });
+  }
+
+  // ── TagList ──────────────────────────────────────────────────────
+  // TagGroup 내부 TagList: Tag를 가로 배치 (flex row wrap)
+  if (containerTag === "taglist") {
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: "flex",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: parentStyle.gap ?? 4,
     });
   }
 
   // ── CheckboxGroup / RadioGroup ─────────────────────────────────────
-  if (containerTag === 'checkboxgroup' || containerTag === 'radiogroup') {
-    const sizeName = (containerProps?.size as string) ?? 'md';
-    const gap = sizeName === 'sm' ? 8 : sizeName === 'lg' ? 16 : 12;
-    const labelFontSize = sizeName === 'sm' ? 14 : sizeName === 'lg' ? 18 : 16;
+  if (containerTag === "checkboxgroup" || containerTag === "radiogroup") {
+    const sizeName = (containerProps?.size as string) ?? "md";
+    const gap = sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
+    const labelFontSize = sizeName === "sm" ? 14 : sizeName === "lg" ? 18 : 16;
     const labelOffset = containerProps?.label ? labelFontSize + 8 : 0;
     const orientation = containerProps?.orientation as string | undefined;
 
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: 'flex',
-      flexDirection: orientation === 'horizontal' ? 'row' : 'column',
+      display: "flex",
+      flexDirection: orientation === "horizontal" ? "row" : "column",
       gap,
       paddingTop: labelOffset,
     });
   }
 
   // ── Breadcrumbs ────────────────────────────────────────────────────
-  if (containerTag === 'breadcrumbs') {
+  if (containerTag === "breadcrumbs") {
     filteredChildren = [];
   }
 
   // ── Tabs ───────────────────────────────────────────────────────────
-  if (containerTag === 'tabs') {
-    const sizeName = (containerProps?.size as string) ?? 'md';
-    const tabBarHeight = sizeName === 'sm' ? 25 : sizeName === 'lg' ? 35 : 30;
+  if (containerTag === "tabs") {
+    const sizeName = (containerProps?.size as string) ?? "md";
+    const tabBarHeight = sizeName === "sm" ? 25 : sizeName === "lg" ? 35 : 30;
     const tabPanelPadding = 16;
 
     // Dual Lookup: 직속 Panel 또는 TabPanels 내부 Panel
-    let panelChildren = children.filter(c => c.tag === 'Panel');
+    let panelChildren = children.filter((c) => c.tag === "Panel");
     if (panelChildren.length === 0) {
-      const tabPanelsEl = children.find(c => c.tag === 'TabPanels');
+      const tabPanelsEl = children.find((c) => c.tag === "TabPanels");
       if (tabPanelsEl) {
-        panelChildren = getChildElements(tabPanelsEl.id).filter(c => c.tag === 'Panel');
+        panelChildren = getChildElements(tabPanelsEl.id).filter(
+          (c) => c.tag === "Panel",
+        );
       }
     }
     const activePanel = panelChildren[0];
@@ -171,8 +195,8 @@ export function applyImplicitStyles(
 
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: 'flex',
-      flexDirection: 'column',
+      display: "flex",
+      flexDirection: "column",
       paddingTop: tabBarHeight + tabPanelPadding,
       paddingLeft: tabPanelPadding,
       paddingRight: tabPanelPadding,
@@ -181,19 +205,23 @@ export function applyImplicitStyles(
   }
 
   // ── ComboBox / Select ──────────────────────────────────────────────
-  if (containerTag === 'combobox' || containerTag === 'select') {
-    const hasLabel = !!(containerProps?.label);
-    filteredChildren = children.filter(c =>
-      (c.tag === 'Label' ? hasLabel : false) || c.tag === 'SelectTrigger' || c.tag === 'ComboBoxWrapper'
+  if (containerTag === "combobox" || containerTag === "select") {
+    const hasLabel = !!containerProps?.label;
+    filteredChildren = children.filter(
+      (c) =>
+        (c.tag === "Label" ? hasLabel : false) ||
+        c.tag === "SelectTrigger" ||
+        c.tag === "ComboBoxWrapper",
     );
 
     // SelectTrigger/ComboBoxWrapper에 padding + gap 주입
-    const wrapperChildTag = containerTag === 'select' ? 'SelectTrigger' : 'ComboBoxWrapper';
-    filteredChildren = filteredChildren.map(child => {
+    const wrapperChildTag =
+      containerTag === "select" ? "SelectTrigger" : "ComboBoxWrapper";
+    filteredChildren = filteredChildren.map((child) => {
       if (child.tag === wrapperChildTag) {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         const wrapperProps = child.props as Record<string, unknown> | undefined;
-        const sizeName = (wrapperProps?.size as string) ?? 'md';
+        const sizeName = (wrapperProps?.size as string) ?? "md";
         const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
         return {
           ...child,
@@ -201,8 +229,8 @@ export function applyImplicitStyles(
             ...child.props,
             style: {
               ...cs,
-              display: cs.display ?? 'flex',
-              flexDirection: cs.flexDirection ?? 'row',
+              display: cs.display ?? "flex",
+              flexDirection: cs.flexDirection ?? "row",
               gap: cs.gap ?? specGap,
               ...withSpecPadding(cs, sizeName),
             },
@@ -214,70 +242,120 @@ export function applyImplicitStyles(
 
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: parentStyle.display ?? 'flex',
-      flexDirection: parentStyle.flexDirection ?? 'column',
+      display: parentStyle.display ?? "flex",
+      flexDirection: parentStyle.flexDirection ?? "column",
       gap: parentStyle.gap ?? 8,
     });
   }
 
   // ── SelectTrigger ──────────────────────────────────────────────────
-  if (containerTag === 'selecttrigger') {
-    const sizeName = (containerProps?.size as string) ?? 'md';
+  if (containerTag === "selecttrigger") {
+    const sizeName = (containerProps?.size as string) ?? "md";
     const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
-    effectiveParent = withParentStyle(containerEl, withSpecPadding({
-      ...parentStyle,
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: parentStyle.gap ?? specGap,
-    }, sizeName));
+    effectiveParent = withParentStyle(
+      containerEl,
+      withSpecPadding(
+        {
+          ...parentStyle,
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: parentStyle.gap ?? specGap,
+        },
+        sizeName,
+      ),
+    );
 
-    filteredChildren = filteredChildren.map(child => {
+    filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
-      if (child.tag === 'SelectValue') {
-        return { ...child, props: { ...child.props, style: { ...cs, flex: cs.flex ?? 1 } } } as Element;
+      if (child.tag === "SelectValue") {
+        return {
+          ...child,
+          props: { ...child.props, style: { ...cs, flex: cs.flex ?? 1 } },
+        } as Element;
       }
-      if (child.tag === 'SelectIcon') {
-        return { ...child, props: { ...child.props, style: { ...cs, width: cs.width ?? 18, height: cs.height ?? 18, flexShrink: cs.flexShrink ?? 0 } } } as Element;
+      if (child.tag === "SelectIcon") {
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              width: cs.width ?? 18,
+              height: cs.height ?? 18,
+              flexShrink: cs.flexShrink ?? 0,
+            },
+          },
+        } as Element;
       }
       return child;
     });
   }
 
   // ── ComboBoxWrapper ────────────────────────────────────────────────
-  if (containerTag === 'comboboxwrapper') {
-    const sizeName = (containerProps?.size as string) ?? 'md';
+  if (containerTag === "comboboxwrapper") {
+    const sizeName = (containerProps?.size as string) ?? "md";
     const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
-    effectiveParent = withParentStyle(containerEl, withSpecPadding({
-      ...parentStyle,
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: parentStyle.gap ?? specGap,
-    }, sizeName));
+    effectiveParent = withParentStyle(
+      containerEl,
+      withSpecPadding(
+        {
+          ...parentStyle,
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: parentStyle.gap ?? specGap,
+        },
+        sizeName,
+      ),
+    );
 
-    filteredChildren = filteredChildren.map(child => {
+    filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
-      if (child.tag === 'ComboBoxInput') {
-        const comboBoxEl = elementById.get(containerEl.parent_id ?? '');
-        const comboBoxProps = comboBoxEl?.props as Record<string, unknown> | undefined;
-        const placeholder = comboBoxProps?.placeholder ?? child.props?.placeholder;
-        return { ...child, props: { ...child.props, placeholder, style: { ...cs, flex: cs.flex ?? 1 } } } as Element;
+      if (child.tag === "ComboBoxInput") {
+        const comboBoxEl = elementById.get(containerEl.parent_id ?? "");
+        const comboBoxProps = comboBoxEl?.props as
+          | Record<string, unknown>
+          | undefined;
+        const placeholder =
+          comboBoxProps?.placeholder ?? child.props?.placeholder;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            placeholder,
+            style: { ...cs, flex: cs.flex ?? 1 },
+          },
+        } as Element;
       }
-      if (child.tag === 'ComboBoxTrigger') {
-        return { ...child, props: { ...child.props, style: { ...cs, width: cs.width ?? 18, height: cs.height ?? 18, flexShrink: cs.flexShrink ?? 0 } } } as Element;
+      if (child.tag === "ComboBoxTrigger") {
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              width: cs.width ?? 18,
+              height: cs.height ?? 18,
+              flexShrink: cs.flexShrink ?? 0,
+            },
+          },
+        } as Element;
       }
       return child;
     });
   }
 
   // ── Card ────────────────────────────────────────────────────────────
-  if (containerTag === 'card') {
-    filteredChildren = filteredChildren.map(child => {
-      if (child.tag === 'CardHeader' || child.tag === 'CardContent') {
+  if (containerTag === "card") {
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag === "CardHeader" || child.tag === "CardContent") {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         if (!cs.width) {
-          return { ...child, props: { ...child.props, style: { ...cs, width: '100%' } } } as Element;
+          return {
+            ...child,
+            props: { ...child.props, style: { ...cs, width: "100%" } },
+          } as Element;
         }
       }
       return child;
@@ -285,12 +363,15 @@ export function applyImplicitStyles(
   }
 
   // ── CardHeader ──────────────────────────────────────────────────────
-  if (containerTag === 'cardheader') {
-    filteredChildren = filteredChildren.map(child => {
-      if (child.tag === 'Heading') {
+  if (containerTag === "cardheader") {
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag === "Heading") {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         if (cs.flex === undefined && cs.flexGrow === undefined && !cs.width) {
-          return { ...child, props: { ...child.props, style: { ...cs, flex: 1 } } } as Element;
+          return {
+            ...child,
+            props: { ...child.props, style: { ...cs, flex: 1 } },
+          } as Element;
         }
       }
       return child;
@@ -298,12 +379,15 @@ export function applyImplicitStyles(
   }
 
   // ── CardContent ─────────────────────────────────────────────────────
-  if (containerTag === 'cardcontent') {
-    filteredChildren = filteredChildren.map(child => {
-      if (child.tag === 'Description') {
+  if (containerTag === "cardcontent") {
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag === "Description") {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         if (!cs.width && cs.flex === undefined) {
-          return { ...child, props: { ...child.props, style: { ...cs, width: '100%' } } } as Element;
+          return {
+            ...child,
+            props: { ...child.props, style: { ...cs, width: "100%" } },
+          } as Element;
         }
       }
       return child;
@@ -314,17 +398,23 @@ export function applyImplicitStyles(
   // Indicator는 spec shapes로 렌더링 (Taffy 트리 밖).
   // Label 자식에 marginLeft = indicatorWidth + gap을 주입하여 indicator와 겹치지 않도록 한다.
   // gap은 사용자가 스타일 패널에서 변경 가능 → parentStyle.gap 우선 사용.
-  if (containerTag === 'checkbox' || containerTag === 'radio' || containerTag === 'switch') {
-    const sizeName = (containerProps?.size as string) ?? 'md';
-    const s = sizeName as 'sm' | 'md' | 'lg';
+  if (
+    containerTag === "checkbox" ||
+    containerTag === "radio" ||
+    containerTag === "switch"
+  ) {
+    const sizeName = (containerProps?.size as string) ?? "md";
+    const s = sizeName as "sm" | "md" | "lg";
     const phantomConfig = PHANTOM_INDICATOR_CONFIGS[containerTag];
-    const indicatorWidth = phantomConfig?.widths[s] ?? INDICATOR_SIZES[sizeName]?.box ?? 20;
-    const defaultGap = phantomConfig?.gaps[s] ?? INDICATOR_SIZES[sizeName]?.gap ?? 8;
-    const parsedGap = parseFloat(String(parentStyle.gap ?? ''));
+    const indicatorWidth =
+      phantomConfig?.widths[s] ?? INDICATOR_SIZES[sizeName]?.box ?? 20;
+    const defaultGap =
+      phantomConfig?.gaps[s] ?? INDICATOR_SIZES[sizeName]?.gap ?? 8;
+    const parsedGap = parseFloat(String(parentStyle.gap ?? ""));
     const userGap = !isNaN(parsedGap) ? parsedGap : defaultGap;
     const indicatorOffset = indicatorWidth + userGap;
 
-    filteredChildren = filteredChildren.map(child => {
+    filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
       return {
         ...child,
@@ -332,7 +422,8 @@ export function applyImplicitStyles(
           ...child.props,
           style: {
             ...cs,
-            marginLeft: (cs.marginLeft as number | undefined) ?? indicatorOffset,
+            marginLeft:
+              (cs.marginLeft as number | undefined) ?? indicatorOffset,
           },
         },
       } as Element;
@@ -343,28 +434,34 @@ export function applyImplicitStyles(
   if (SYNTHETIC_LABEL_TAGS.has(containerTag)) {
     if (filteredChildren.length === 0) {
       const labelText = containerProps?.children ?? containerProps?.label;
-      if (typeof labelText === 'string' && labelText.trim().length > 0) {
+      if (typeof labelText === "string" && labelText.trim().length > 0) {
         // Checkbox/Radio/Switch: indicator 공간만큼 marginLeft 주입 (gap은 사용자 값 우선)
-        const isIndicatorTag = containerTag === 'checkbox' || containerTag === 'radio' || containerTag === 'switch';
+        const isIndicatorTag =
+          containerTag === "checkbox" ||
+          containerTag === "radio" ||
+          containerTag === "switch";
         let synLabelMargin = 0;
         if (isIndicatorTag) {
-          const sn = ((containerProps?.size as string) ?? 'md') as 'sm' | 'md' | 'lg';
+          const sn = ((containerProps?.size as string) ?? "md") as
+            | "sm"
+            | "md"
+            | "lg";
           const pc = PHANTOM_INDICATOR_CONFIGS[containerTag];
           const indWidth = pc?.widths[sn] ?? INDICATOR_SIZES[sn]?.box ?? 20;
           const indGap = pc?.gaps[sn] ?? INDICATOR_SIZES[sn]?.gap ?? 8;
-          const pg = parseFloat(String(parentStyle.gap ?? ''));
+          const pg = parseFloat(String(parentStyle.gap ?? ""));
           const gap = !isNaN(pg) ? pg : indGap;
           synLabelMargin = indWidth + gap;
         }
 
         const syntheticLabel: Element = {
           id: `${containerEl.id}__synlabel`,
-          tag: 'Label',
+          tag: "Label",
           props: {
             children: labelText,
             style: {
               fontSize: 14,
-              backgroundColor: 'transparent',
+              backgroundColor: "transparent",
               ...(synLabelMargin > 0 ? { marginLeft: synLabelMargin } : {}),
             },
           },

@@ -194,8 +194,13 @@ export const renderTagGroup = (
 ): React.ReactNode => {
   const { elements, updateElementProps, setElements } = context;
 
+  // Tag 자식 검색: TagGroup 직접 자식 또는 TagList 중간 레이어 하위 모두 지원
+  const tagListChild = elements.find(
+    (child) => child.parent_id === element.id && child.tag === "TagList",
+  );
+  const tagParentId = tagListChild ? tagListChild.id : element.id;
   const tagChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "Tag")
+    .filter((child) => child.parent_id === tagParentId && child.tag === "Tag")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // ColumnMapping 추출

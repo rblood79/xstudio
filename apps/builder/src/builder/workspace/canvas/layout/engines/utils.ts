@@ -839,10 +839,10 @@ function calculateTextWidth(
 
 /** 컴포넌트별 기본 size prop 값 */
 const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
-  // Badge 계열: 'sm' 기본값
-  badge: "sm",
-  tag: "sm",
-  chip: "sm",
+  // Badge 계열: 'md' 기본값 (CSS TagGroup 기본 size=md와 동기화)
+  badge: "md",
+  tag: "md",
+  chip: "md",
   // Button 계열: 'md' 기본값
   button: "md",
   submitbutton: "md",

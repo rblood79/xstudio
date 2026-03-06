@@ -118,6 +118,7 @@ import {
   SelectTriggerSpec,
   SelectValueSpec,
   SelectIconSpec,
+  TagSpec,
 } from "@xstudio/specs";
 import {
   PixiButton,
@@ -707,7 +708,7 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   ToggleButtonGroup: ToggleButtonGroupSpec,
   ListBox: ListBoxSpec,
   Badge: BadgeSpec,
-  Tag: BadgeSpec,
+  Tag: TagSpec,
   Chip: BadgeSpec,
   Meter: MeterSpec,
   Gauge: MeterSpec,
@@ -1016,6 +1017,27 @@ export const ElementSprite = memo(function ElementSprite({
   const parentElement = useStore((state) => {
     if (!element.parent_id) return null;
     return state.elementsMap.get(element.parent_id) ?? null;
+  });
+
+  // Tag → TagGroup 조상 size 상속 (CSS data-tag-size parent delegation 에뮬레이션)
+  // Tag > TagList > TagGroup 구조에서 TagGroup의 size를 Tag에 전파
+  const tagGroupAncestorSize = useStore((state) => {
+    if (element.tag !== "Tag" || !element.parent_id) return null;
+    // Tag의 부모 = TagList
+    const tagList = state.elementsMap.get(element.parent_id);
+    if (!tagList?.parent_id) return null;
+    // TagList의 부모 = TagGroup (또는 레거시: Tag의 부모가 직접 TagGroup)
+    const ancestor =
+      tagList.tag === "TagList"
+        ? state.elementsMap.get(tagList.parent_id)
+        : tagList.tag === "TagGroup"
+          ? tagList
+          : null;
+    if (!ancestor || ancestor.tag !== "TagGroup") return null;
+    return (
+      ((ancestor.props as Record<string, unknown> | undefined)
+        ?.size as string) ?? null
+    );
   });
 
   // 🚀 ToggleButtonGroup 내 ToggleButton의 위치 정보 (borderRadius 계산용)
@@ -1407,7 +1429,9 @@ export const ElementSprite = memo(function ElementSprite({
       style?.borderRadius !== undefined &&
       style?.borderRadius !== null &&
       style?.borderRadius !== "";
-    const size = isUIComponent ? String(props?.size || "M") : "";
+    const size = isUIComponent
+      ? String(props?.size || tagGroupAncestorSize || "M")
+      : "";
     const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
     let effectiveBorderRadius: number | [number, number, number, number] =
       hasBorderRadiusSet

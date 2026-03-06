@@ -9,25 +9,46 @@
  * @since 2026-02-28
  */
 
-import type { Element } from '../../../../../types/core/store.types';
-import type { ComputedLayout } from './LayoutEngine';
-import type { TaffyStyle } from '../../wasm-bindings/taffyLayout';
-import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
-import { PersistentTaffyTree } from './persistentTaffyTree';
-import type { PersistentBatchNode } from './persistentTaffyTree';
-import { enrichWithIntrinsicSize, applyCommonTaffyStyle, applyFlexItemProperties, parseMargin, parsePadding, parseBorder, calculateContentHeight, parseBoxModel, parseCSSPropWithContext, measureTextWidth } from './utils';
-import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
-import type { ComputedStyle } from './cssResolver';
-import { toTaffyDisplay, blockifyDisplay, getElementDisplay, needsBlockChildFullWidth } from './taffyDisplayAdapter';
-import { elementToTaffyBlockStyle } from './TaffyBlockEngine';
-import { elementToTaffyStyle } from './TaffyFlexEngine';
-import { applyImplicitStyles } from './implicitStyles';
-import { useScrollState } from '../../../../stores/scrollState';
+import type { Element } from "../../../../../types/core/store.types";
+import type { ComputedLayout } from "./LayoutEngine";
+import type { TaffyStyle } from "../../wasm-bindings/taffyLayout";
+import { isRustWasmReady } from "../../wasm-bindings/rustWasm";
+import { PersistentTaffyTree } from "./persistentTaffyTree";
+import type { PersistentBatchNode } from "./persistentTaffyTree";
+import {
+  enrichWithIntrinsicSize,
+  applyCommonTaffyStyle,
+  applyFlexItemProperties,
+  parseMargin,
+  parsePadding,
+  parseBorder,
+  calculateContentHeight,
+  parseBoxModel,
+  parseCSSPropWithContext,
+  measureTextWidth,
+} from "./utils";
+import { resolveStyle, ROOT_COMPUTED_STYLE } from "./cssResolver";
+import type { ComputedStyle } from "./cssResolver";
+import {
+  toTaffyDisplay,
+  blockifyDisplay,
+  getElementDisplay,
+  needsBlockChildFullWidth,
+} from "./taffyDisplayAdapter";
+import { elementToTaffyBlockStyle } from "./TaffyBlockEngine";
+import { elementToTaffyStyle } from "./TaffyFlexEngine";
+import { applyImplicitStyles } from "./implicitStyles";
+import { useScrollState } from "../../../../stores/scrollState";
 
 // ─── 모듈 수준 상수 ──────────────────────────────────────────────────
 
 /** flex/grid container 판별 집합 (CSS Blockification 적용 기준) */
-const FLEX_GRID_DISPLAYS = new Set(['flex', 'inline-flex', 'grid', 'inline-grid']);
+const FLEX_GRID_DISPLAYS = new Set([
+  "flex",
+  "inline-flex",
+  "grid",
+  "inline-grid",
+]);
 
 /** traversePostOrder 최대 재귀 깊이 (ADR-006 P0-4) */
 const MAX_TREE_DEPTH = 100;
@@ -41,7 +62,6 @@ function sanitizeLayoutValue(v: number, fallback: number = 0): number {
   return fallback;
 }
 
-
 // ─── 페이지별 PersistentTaffyTree ──────────────────────────────────
 
 /**
@@ -54,7 +74,6 @@ function sanitizeLayoutValue(v: number, fallback: number = 0): number {
  * pageId별로 별도의 PersistentTaffyTree를 유지하여 해결한다.
  */
 const persistentTrees = new Map<string, PersistentTaffyTree>();
-
 
 /**
  * Persistent 트리 리셋.
@@ -94,8 +113,11 @@ let _mergedLayoutMap: Map<string, ComputedLayout> | null = null;
 let _mergedLayoutVersion = -1;
 
 /** fullTreeLayoutMap을 페이지 단위로 공유한다. */
-export function publishLayoutMap(map: Map<string, ComputedLayout> | null, pageId?: string): void {
-  const key = pageId ?? '__default__';
+export function publishLayoutMap(
+  map: Map<string, ComputedLayout> | null,
+  pageId?: string,
+): void {
+  const key = pageId ?? "__default__";
   if (map) {
     _perPageLayoutMaps.set(key, map);
   } else {
@@ -131,8 +153,11 @@ let _mergedFilteredMap: Map<string, string[]> | null = null;
 let _mergedFilteredVersion = -1;
 
 /** filteredChildIdsMap을 페이지 단위로 공유 */
-export function publishFilteredChildrenMap(map: Map<string, string[]> | null, pageId?: string): void {
-  const key = pageId ?? '__default__';
+export function publishFilteredChildrenMap(
+  map: Map<string, string[]> | null,
+  pageId?: string,
+): void {
+  const key = pageId ?? "__default__";
   if (map) {
     _perPageFilteredMaps.set(key, map);
   } else {
@@ -160,10 +185,24 @@ export function getSharedFilteredChildrenMap(): Map<string, string[]> | null {
 
 /** CSS dimension 속성 (number → "${v}px" 변환) */
 const IMPLICIT_DIM_PROPS = new Set([
-  'marginLeft', 'marginRight', 'marginTop', 'marginBottom',
-  'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom',
-  'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
-  'gap', 'rowGap', 'columnGap', 'flexBasis',
+  "marginLeft",
+  "marginRight",
+  "marginTop",
+  "marginBottom",
+  "paddingLeft",
+  "paddingRight",
+  "paddingTop",
+  "paddingBottom",
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+  "gap",
+  "rowGap",
+  "columnGap",
+  "flexBasis",
 ]);
 
 /**
@@ -184,30 +223,30 @@ function patchBatchStyleFromImplicit(
     if (val === undefined) continue;
 
     // flex shorthand → flexGrow/flexShrink/flexBasis 분해
-    if (key === 'flex') {
+    if (key === "flex") {
       const n = Number(val);
       if (!isNaN(n)) {
         batchStyle.flexGrow = n;
         batchStyle.flexShrink = 1;
-        batchStyle.flexBasis = '0%';
+        batchStyle.flexBasis = "0%";
       }
       continue;
     }
 
     // dimension 속성: number → "Npx", string → 그대로
     if (IMPLICIT_DIM_PROPS.has(key)) {
-      batchStyle[key] = typeof val === 'number' ? `${val}px` : val;
+      batchStyle[key] = typeof val === "number" ? `${val}px` : val;
       continue;
     }
 
     // numeric 속성
-    if (key === 'flexGrow' || key === 'flexShrink' || key === 'order') {
+    if (key === "flexGrow" || key === "flexShrink" || key === "order") {
       batchStyle[key] = Number(val);
       continue;
     }
 
     // string 속성 (display, flexDirection, alignItems 등)
-    if (typeof val === 'string') {
+    if (typeof val === "string") {
       batchStyle[key] = val;
     }
   }
@@ -229,7 +268,7 @@ function taffyStyleToRecord(style: TaffyStyle): Record<string, unknown> {
 
   // dimension 값을 string으로 정규화하는 내부 헬퍼
   function dim(v: string | number): string {
-    return typeof v === 'number' ? `${v}px` : v;
+    return typeof v === "number" ? `${v}px` : v;
   }
 
   // Display & position
@@ -239,12 +278,16 @@ function taffyStyleToRecord(style: TaffyStyle): Record<string, unknown> {
   if (style.overflowY !== undefined) result.overflowY = style.overflowY;
 
   // Flex container
-  if (style.flexDirection !== undefined) result.flexDirection = style.flexDirection;
+  if (style.flexDirection !== undefined)
+    result.flexDirection = style.flexDirection;
   if (style.flexWrap !== undefined) result.flexWrap = style.flexWrap;
-  if (style.justifyContent !== undefined) result.justifyContent = style.justifyContent;
-  if (style.justifyItems !== undefined) result.justifyItems = style.justifyItems;
+  if (style.justifyContent !== undefined)
+    result.justifyContent = style.justifyContent;
+  if (style.justifyItems !== undefined)
+    result.justifyItems = style.justifyItems;
   if (style.alignItems !== undefined) result.alignItems = style.alignItems;
-  if (style.alignContent !== undefined) result.alignContent = style.alignContent;
+  if (style.alignContent !== undefined)
+    result.alignContent = style.alignContent;
 
   // Flex item
   if (style.flexGrow !== undefined) result.flexGrow = style.flexGrow;
@@ -255,17 +298,26 @@ function taffyStyleToRecord(style: TaffyStyle): Record<string, unknown> {
   if (style.order !== undefined) result.order = style.order;
 
   // Grid container
-  if (style.gridTemplateColumns !== undefined) result.gridTemplateColumns = style.gridTemplateColumns;
-  if (style.gridTemplateRows !== undefined) result.gridTemplateRows = style.gridTemplateRows;
-  if (style.gridAutoFlow !== undefined) result.gridAutoFlow = style.gridAutoFlow;
-  if (style.gridAutoColumns !== undefined) result.gridAutoColumns = style.gridAutoColumns;
-  if (style.gridAutoRows !== undefined) result.gridAutoRows = style.gridAutoRows;
+  if (style.gridTemplateColumns !== undefined)
+    result.gridTemplateColumns = style.gridTemplateColumns;
+  if (style.gridTemplateRows !== undefined)
+    result.gridTemplateRows = style.gridTemplateRows;
+  if (style.gridAutoFlow !== undefined)
+    result.gridAutoFlow = style.gridAutoFlow;
+  if (style.gridAutoColumns !== undefined)
+    result.gridAutoColumns = style.gridAutoColumns;
+  if (style.gridAutoRows !== undefined)
+    result.gridAutoRows = style.gridAutoRows;
 
   // Grid item
-  if (style.gridColumnStart !== undefined) result.gridColumnStart = String(style.gridColumnStart);
-  if (style.gridColumnEnd !== undefined) result.gridColumnEnd = String(style.gridColumnEnd);
-  if (style.gridRowStart !== undefined) result.gridRowStart = String(style.gridRowStart);
-  if (style.gridRowEnd !== undefined) result.gridRowEnd = String(style.gridRowEnd);
+  if (style.gridColumnStart !== undefined)
+    result.gridColumnStart = String(style.gridColumnStart);
+  if (style.gridColumnEnd !== undefined)
+    result.gridColumnEnd = String(style.gridColumnEnd);
+  if (style.gridRowStart !== undefined)
+    result.gridRowStart = String(style.gridRowStart);
+  if (style.gridRowEnd !== undefined)
+    result.gridRowEnd = String(style.gridRowEnd);
 
   // Size
   if (style.width !== undefined) result.width = dim(style.width);
@@ -277,26 +329,34 @@ function taffyStyleToRecord(style: TaffyStyle): Record<string, unknown> {
 
   // Margin
   if (style.marginTop !== undefined) result.marginTop = dim(style.marginTop);
-  if (style.marginRight !== undefined) result.marginRight = dim(style.marginRight);
-  if (style.marginBottom !== undefined) result.marginBottom = dim(style.marginBottom);
+  if (style.marginRight !== undefined)
+    result.marginRight = dim(style.marginRight);
+  if (style.marginBottom !== undefined)
+    result.marginBottom = dim(style.marginBottom);
   if (style.marginLeft !== undefined) result.marginLeft = dim(style.marginLeft);
 
   // Padding
   if (style.paddingTop !== undefined) result.paddingTop = dim(style.paddingTop);
-  if (style.paddingRight !== undefined) result.paddingRight = dim(style.paddingRight);
-  if (style.paddingBottom !== undefined) result.paddingBottom = dim(style.paddingBottom);
-  if (style.paddingLeft !== undefined) result.paddingLeft = dim(style.paddingLeft);
+  if (style.paddingRight !== undefined)
+    result.paddingRight = dim(style.paddingRight);
+  if (style.paddingBottom !== undefined)
+    result.paddingBottom = dim(style.paddingBottom);
+  if (style.paddingLeft !== undefined)
+    result.paddingLeft = dim(style.paddingLeft);
 
   // Border
   if (style.borderTop !== undefined) result.borderTop = dim(style.borderTop);
-  if (style.borderRight !== undefined) result.borderRight = dim(style.borderRight);
-  if (style.borderBottom !== undefined) result.borderBottom = dim(style.borderBottom);
+  if (style.borderRight !== undefined)
+    result.borderRight = dim(style.borderRight);
+  if (style.borderBottom !== undefined)
+    result.borderBottom = dim(style.borderBottom);
   if (style.borderLeft !== undefined) result.borderLeft = dim(style.borderLeft);
 
   // Inset
   if (style.insetTop !== undefined) result.insetTop = dim(style.insetTop);
   if (style.insetRight !== undefined) result.insetRight = dim(style.insetRight);
-  if (style.insetBottom !== undefined) result.insetBottom = dim(style.insetBottom);
+  if (style.insetBottom !== undefined)
+    result.insetBottom = dim(style.insetBottom);
   if (style.insetLeft !== undefined) result.insetLeft = dim(style.insetLeft);
 
   // Gap
@@ -327,23 +387,25 @@ function buildNodeStyle(
   const display = getElementDisplay(element);
   const normalized = display.trim().toLowerCase();
 
-  if (normalized === 'flex' || normalized === 'inline-flex') {
+  if (normalized === "flex" || normalized === "inline-flex") {
     const taffyStyle: TaffyStyle = elementToTaffyStyle(element, computedStyle);
     return taffyStyleToRecord(taffyStyle);
   }
 
-  if (normalized === 'grid' || normalized === 'inline-grid') {
+  if (normalized === "grid" || normalized === "inline-grid") {
     // Grid: applyCommonTaffyStyle 기반 간소화 경로
     // 전체 grid 속성 변환은 TaffyGridEngine에 있으나
     // fullTreeLayout 배치에서는 size/padding/border/gap 처리가 핵심이므로
     // applyCommonTaffyStyle로 공통 부분을 처리하고 grid display를 주입한다.
     const style = (element.props?.style ?? {}) as Record<string, unknown>;
-    const partial: Record<string, unknown> = { display: 'grid' };
+    const partial: Record<string, unknown> = { display: "grid" };
     applyCommonTaffyStyle(partial, style, {});
 
     // Grid container 핵심 속성 직접 전달
-    if (style.gridTemplateColumns) partial.gridTemplateColumns = style.gridTemplateColumns;
-    if (style.gridTemplateRows) partial.gridTemplateRows = style.gridTemplateRows;
+    if (style.gridTemplateColumns)
+      partial.gridTemplateColumns = style.gridTemplateColumns;
+    if (style.gridTemplateRows)
+      partial.gridTemplateRows = style.gridTemplateRows;
     if (style.gridAutoFlow) partial.gridAutoFlow = style.gridAutoFlow;
     if (style.gridAutoColumns) partial.gridAutoColumns = style.gridAutoColumns;
     if (style.gridAutoRows) partial.gridAutoRows = style.gridAutoRows;
@@ -353,20 +415,26 @@ function buildNodeStyle(
     if (style.justifyItems) partial.justifyItems = style.justifyItems;
 
     // Grid item 배치 속성
-    if (style.gridColumnStart) partial.gridColumnStart = String(style.gridColumnStart);
-    if (style.gridColumnEnd) partial.gridColumnEnd = String(style.gridColumnEnd);
+    if (style.gridColumnStart)
+      partial.gridColumnStart = String(style.gridColumnStart);
+    if (style.gridColumnEnd)
+      partial.gridColumnEnd = String(style.gridColumnEnd);
     if (style.gridRowStart) partial.gridRowStart = String(style.gridRowStart);
     if (style.gridRowEnd) partial.gridRowEnd = String(style.gridRowEnd);
     if (style.alignSelf) partial.alignSelf = style.alignSelf;
     if (style.justifySelf) partial.justifySelf = style.justifySelf;
 
     // Position + Inset
-    if (style.position === 'absolute' || style.position === 'fixed') {
-      partial.position = 'absolute';
-    } else if (style.position === 'relative') {
-      partial.position = 'relative';
+    if (style.position === "absolute" || style.position === "fixed") {
+      partial.position = "absolute";
+    } else if (style.position === "relative") {
+      partial.position = "relative";
     }
-    if (style.position === 'absolute' || style.position === 'fixed' || style.position === 'relative') {
+    if (
+      style.position === "absolute" ||
+      style.position === "fixed" ||
+      style.position === "relative"
+    ) {
       const top = parseCSSPropWithContext(style.top, {});
       const left = parseCSSPropWithContext(style.left, {});
       const right = parseCSSPropWithContext(style.right, {});
@@ -426,10 +494,10 @@ function estimateChildAvailableSize(
   const rawW = style.width;
   if (rawW != null) {
     const strW = String(rawW);
-    if (strW.endsWith('%')) {
+    if (strW.endsWith("%")) {
       const pct = parseFloat(strW);
-      if (!isNaN(pct)) contentWidth = parentAvailWidth * pct / 100;
-    } else if (strW !== 'auto') {
+      if (!isNaN(pct)) contentWidth = (parentAvailWidth * pct) / 100;
+    } else if (strW !== "auto") {
       const px = parseFloat(strW);
       if (!isNaN(px)) contentWidth = px;
     }
@@ -440,10 +508,10 @@ function estimateChildAvailableSize(
   const rawH = style.height;
   if (rawH != null) {
     const strH = String(rawH);
-    if (strH.endsWith('%')) {
+    if (strH.endsWith("%")) {
       const pct = parseFloat(strH);
-      if (!isNaN(pct)) contentHeight = parentAvailHeight * pct / 100;
-    } else if (strH !== 'auto') {
+      if (!isNaN(pct)) contentHeight = (parentAvailHeight * pct) / 100;
+    } else if (strH !== "auto") {
       const px = parseFloat(strH);
       if (!isNaN(px)) contentHeight = px;
     }
@@ -452,8 +520,14 @@ function estimateChildAvailableSize(
   // padding + border 차감 → content area
   const pad = parsePadding(style, contentWidth);
   const brd = parseBorder(style);
-  contentWidth = Math.max(0, contentWidth - pad.left - pad.right - brd.left - brd.right);
-  contentHeight = Math.max(0, contentHeight - pad.top - pad.bottom - brd.top - brd.bottom);
+  contentWidth = Math.max(
+    0,
+    contentWidth - pad.left - pad.right - brd.left - brd.right,
+  );
+  contentHeight = Math.max(
+    0,
+    contentHeight - pad.top - pad.bottom - brd.top - brd.bottom,
+  );
 
   return { width: contentWidth, height: contentHeight };
 }
@@ -508,23 +582,50 @@ function traversePostOrder(
   // 3. 깊이 제한
   if (depth > MAX_TREE_DEPTH) {
     if (import.meta.env.DEV) {
-      console.warn(`[fullTreeLayout] Max depth ${MAX_TREE_DEPTH} exceeded for ${elementId}`);
+      console.warn(
+        `[fullTreeLayout] Max depth ${MAX_TREE_DEPTH} exceeded for ${elementId}`,
+      );
     }
     return;
   }
 
   visiting.add(elementId);
 
-  const rawElement = elementsMap.get(elementId);
+  let rawElement = elementsMap.get(elementId);
   if (!rawElement) {
     visiting.delete(elementId);
     return;
   }
 
+  // Tag → TagGroup 부모 size 상속 (CSS data-tag-size parent delegation 에뮬레이션)
+  // DFS 진입 시 element에 size를 주입하면 이후 calculateContentHeight/parseBoxModel 등에서 자연스럽게 사용
+  if (rawElement.tag === "Tag") {
+    const rawProps = rawElement.props as Record<string, unknown> | undefined;
+    if (!rawProps?.size) {
+      let ancestor = rawElement.parent_id
+        ? elementsMap.get(rawElement.parent_id)
+        : undefined;
+      if (ancestor?.tag === "TagList" && ancestor.parent_id) {
+        ancestor = elementsMap.get(ancestor.parent_id);
+      }
+      if (ancestor?.tag === "TagGroup") {
+        const groupSize = (
+          ancestor.props as Record<string, unknown> | undefined
+        )?.size as string | undefined;
+        if (groupSize) {
+          rawElement = {
+            ...rawElement,
+            props: { ...rawElement.props, size: groupSize },
+          };
+        }
+      }
+    }
+  }
+
   // GAP 3: Implicit Style 통합 — 원본 자식 수집 후 applyImplicitStyles로 전처리
   const rawChildIds = childrenMap.get(elementId) ?? [];
   const rawChildren = rawChildIds
-    .map(id => elementsMap.get(id))
+    .map((id) => elementsMap.get(id))
     .filter((el): el is Element => el !== undefined);
 
   const { effectiveParent, filteredChildren } = applyImplicitStyles(
@@ -538,23 +639,28 @@ function traversePostOrder(
   let element = effectiveParent;
 
   // filteredChildren 기반으로 유효한 자식 ID 목록 재구성
-  const childIds = filteredChildren.map(child => child.id);
+  const childIds = filteredChildren.map((child) => child.id);
 
   // CSS `order` 속성 기반 stable sort (ADR-006 P1-1)
   // order 값이 모두 0(기본값)이면 복사 비용을 회피하기 위해 원본 배열을 그대로 사용
   const getOrder = (id: string): number => {
-    const s = (elementsMap.get(id)?.props?.style ?? {}) as Record<string, unknown>;
-    const o = parseInt(String(s.order ?? '0'), 10);
+    const s = (elementsMap.get(id)?.props?.style ?? {}) as Record<
+      string,
+      unknown
+    >;
+    const o = parseInt(String(s.order ?? "0"), 10);
     return isNaN(o) ? 0 : o;
   };
-  const hasOrder = childIds.some(id => getOrder(id) !== 0);
+  const hasOrder = childIds.some((id) => getOrder(id) !== 0);
   const sortedChildIds = hasOrder
-    ? [...childIds].sort((a, b) => getOrder(a) - getOrder(b))  // stable sort (CSS spec)
-    : childIds;  // order 미사용 시 복사 비용 회피
+    ? [...childIds].sort((a, b) => getOrder(a) - getOrder(b)) // stable sort (CSS spec)
+    : childIds; // order 미사용 시 복사 비용 회피
 
   // DEV 모드 로그
   if (hasOrder && import.meta.env.DEV) {
-    console.info(`[fullTreeLayout] CSS order applied for children of ${elementId}`);
+    console.info(
+      `[fullTreeLayout] CSS order applied for children of ${elementId}`,
+    );
   }
 
   // 1. computed style 계산 (CSS 상속 처리)
@@ -573,7 +679,7 @@ function traversePostOrder(
         props: {
           ...element.props,
           style: {
-            ...(element.props?.style as Record<string, unknown> ?? {}),
+            ...((element.props?.style as Record<string, unknown>) ?? {}),
             display: blockified,
           },
         },
@@ -585,7 +691,7 @@ function traversePostOrder(
 
   // 2. 자식들의 display 값 수집 (toTaffyDisplay inline-block 감지용)
   // filteredChildren 기준으로 blockified 값 사용
-  const childDisplays: string[] = filteredChildren.map(childEl => {
+  const childDisplays: string[] = filteredChildren.map((childEl) => {
     const rawDisplay = getElementDisplay(childEl);
     if (FLEX_GRID_DISPLAYS.has(effectiveDisplay)) {
       return blockifyDisplay(rawDisplay);
@@ -595,7 +701,11 @@ function traversePostOrder(
 
   // 3. 자식 먼저 재귀 (post-order)
   // Fix 6: 현재 요소의 content area 크기를 자식의 availableWidth/Height로 전달
-  const childAvail = estimateChildAvailableSize(elementStyle, availableWidth, availableHeight);
+  const childAvail = estimateChildAvailableSize(
+    elementStyle,
+    availableWidth,
+    availableHeight,
+  );
   for (const childId of sortedChildIds) {
     traversePostOrder(
       childId,
@@ -605,7 +715,7 @@ function traversePostOrder(
       childAvail.height,
       getChildElements,
       computedStyle,
-      effectiveDisplay,   // 현재 요소의 display를 자식의 parentDisplay로 전달
+      effectiveDisplay, // 현재 요소의 display를 자식의 parentDisplay로 전달
       batch,
       indexMap,
       visiting,
@@ -620,14 +730,27 @@ function traversePostOrder(
   for (const synthChild of filteredChildren) {
     if (elementsMap.has(synthChild.id) || indexMap.has(synthChild.id)) continue;
 
-    const synthStyle = (synthChild.props?.style ?? {}) as Record<string, unknown>;
+    const synthStyle = (synthChild.props?.style ?? {}) as Record<
+      string,
+      unknown
+    >;
     const synthComputed = resolveStyle(synthStyle, computedStyle);
     const isSynthFlexChild = FLEX_GRID_DISPLAYS.has(effectiveDisplay);
     const synthEnriched = enrichWithIntrinsicSize(
-      synthChild, childAvail.width, childAvail.height,
-      synthComputed, [], getChildElements, isSynthFlexChild,
+      synthChild,
+      childAvail.width,
+      childAvail.height,
+      synthComputed,
+      [],
+      getChildElements,
+      isSynthFlexChild,
     );
-    const synthRecord = buildNodeStyle(synthEnriched, synthComputed, [], effectiveDisplay);
+    const synthRecord = buildNodeStyle(
+      synthEnriched,
+      synthComputed,
+      [],
+      effectiveDisplay,
+    );
     batch.push({ style: synthRecord, children: [], elementId: synthChild.id });
     indexMap.set(synthChild.id, batch.length - 1);
   }
@@ -647,8 +770,14 @@ function traversePostOrder(
     // props.style 참조 비교 — 동일하면 applyImplicitStyles가 수정하지 않은 것
     if (filteredChild.props?.style === originalEl.props?.style) continue;
 
-    const origStyle = (originalEl.props?.style ?? {}) as Record<string, unknown>;
-    const modStyle = (filteredChild.props?.style ?? {}) as Record<string, unknown>;
+    const origStyle = (originalEl.props?.style ?? {}) as Record<
+      string,
+      unknown
+    >;
+    const modStyle = (filteredChild.props?.style ?? {}) as Record<
+      string,
+      unknown
+    >;
     patchBatchStyleFromImplicit(batch[batchIdx].style, origStyle, modStyle);
   }
 
@@ -656,18 +785,24 @@ function traversePostOrder(
   // CSS height:auto 일반 규칙:
   //   A. 컨테이너 (Taffy 자식 있음) → Taffy가 자식 border-box + padding + border로 자동 계산
   //   B. 리프 (Taffy 자식 없음) → intrinsic height 주입 (텍스트 측정 / spec shapes)
-  const isFlexChild = parentDisplay === 'flex' || parentDisplay === 'inline-flex';
+  const isFlexChild =
+    parentDisplay === "flex" || parentDisplay === "inline-flex";
   // hasTaffyChildren: 실제 Taffy 노드로 처리된 자식이 있는지 확인
   // synthetic children도 이제 indexMap에 포함되므로 정상적으로 true 반환
-  const hasTaffyChildren = childIds.some(id => indexMap.has(id));
+  const hasTaffyChildren = childIds.some((id) => indexMap.has(id));
 
   // enrichment에 implicit-styled 자식 사용:
   // applyImplicitStyles가 주입한 padding/gap이 calculateContentWidth에 반영되어야
   // fit-content/min-content 계산 시 정확한 border-box 크기를 산출한다.
   // (원본 childElements는 spec padding/gap 미포함 → 크기 과소 산출)
   let enriched: Element = enrichWithIntrinsicSize(
-    element, availableWidth, availableHeight,
-    computedStyle, filteredChildren, getChildElements, isFlexChild,
+    element,
+    availableWidth,
+    availableHeight,
+    computedStyle,
+    filteredChildren,
+    getChildElements,
+    isFlexChild,
   );
 
   if (hasTaffyChildren) {
@@ -675,31 +810,55 @@ function traversePostOrder(
     // 사용자가 명시한 CSS height는 보존, enrichment가 추가한 height만 제거
     // → Taffy가 자식 border-box + padding + border로 height를 자동 계산
     const originalHeight = elementStyle.height;
-    if (!originalHeight || originalHeight === 'auto') {
-      const enrichedStyle = (enriched.props?.style ?? {}) as Record<string, unknown>;
-      if (enrichedStyle.height !== undefined && enrichedStyle.height !== originalHeight) {
+    if (!originalHeight || originalHeight === "auto") {
+      const enrichedStyle = (enriched.props?.style ?? {}) as Record<
+        string,
+        unknown
+      >;
+      if (
+        enrichedStyle.height !== undefined &&
+        enrichedStyle.height !== originalHeight
+      ) {
         const { height: _, ...restStyle } = enrichedStyle;
-        enriched = { ...enriched, props: { ...enriched.props, style: restStyle } };
+        enriched = {
+          ...enriched,
+          props: { ...enriched.props, style: restStyle },
+        };
       }
     }
-
   } else {
     // B. 리프: enrichWithIntrinsicSize의 early return guard로 height 미주입된 경우 보완
     // Panel 등 spec shapes 컴포넌트는 CSS height 없고 element children도 없지만
     // 시각적 콘텐츠가 있어 intrinsic height가 필요하다.
-    const enrichedStyle = (enriched.props?.style ?? {}) as Record<string, unknown>;
-    if (!enrichedStyle.height && (!elementStyle.height || elementStyle.height === 'auto')) {
+    const enrichedStyle = (enriched.props?.style ?? {}) as Record<
+      string,
+      unknown
+    >;
+    if (
+      !enrichedStyle.height &&
+      (!elementStyle.height || elementStyle.height === "auto")
+    ) {
       const intrinsicHeight = calculateContentHeight(
-        element, availableWidth, filteredChildren, getChildElements, computedStyle,
+        element,
+        availableWidth,
+        filteredChildren,
+        getChildElements,
+        computedStyle,
       );
       if (intrinsicHeight > 0) {
         const box = parseBoxModel(element, availableWidth, availableHeight);
-        const borderBoxHeight = intrinsicHeight
-          + box.padding.top + box.padding.bottom
-          + box.border.top + box.border.bottom;
+        const borderBoxHeight =
+          intrinsicHeight +
+          box.padding.top +
+          box.padding.bottom +
+          box.border.top +
+          box.border.bottom;
         enriched = {
           ...enriched,
-          props: { ...enriched.props, style: { ...enrichedStyle, height: borderBoxHeight } },
+          props: {
+            ...enriched.props,
+            style: { ...enrichedStyle, height: borderBoxHeight },
+          },
         };
       }
     }
@@ -712,27 +871,44 @@ function traversePostOrder(
   // max-content(전체 텍스트 폭)를 minWidth로 주입하여
   // shrink-wrap 환경(alignItems:center 등)에서 텍스트 축소를 방지한다.
   if (FLEX_GRID_DISPLAYS.has(parentDisplay) && !hasTaffyChildren) {
-    const enrichedStyle = (enriched.props?.style ?? {}) as Record<string, unknown>;
+    const enrichedStyle = (enriched.props?.style ?? {}) as Record<
+      string,
+      unknown
+    >;
     if (!enrichedStyle.width && !enrichedStyle.minWidth) {
       const props = rawElement.props as Record<string, unknown> | undefined;
       const textContent = String(
-        props?.children ?? props?.text ?? props?.label ?? props?.placeholder ?? ''
+        props?.children ??
+          props?.text ??
+          props?.label ??
+          props?.placeholder ??
+          "",
       );
       if (textContent) {
-        const fontSize = parseFloat(String(
-          enrichedStyle.fontSize ?? computedStyle?.fontSize ?? 14
-        )) || 14;
+        const fontSize =
+          parseFloat(
+            String(enrichedStyle.fontSize ?? computedStyle?.fontSize ?? 14),
+          ) || 14;
         const maxContentW = measureTextWidth(textContent, fontSize);
         if (maxContentW > 0) {
-          const box = parseBoxModel(rawElement, availableWidth, availableHeight);
+          const box = parseBoxModel(
+            rawElement,
+            availableWidth,
+            availableHeight,
+          );
           const borderBoxMinW = Math.ceil(
-            maxContentW
-            + box.padding.left + box.padding.right
-            + box.border.left + box.border.right
+            maxContentW +
+              box.padding.left +
+              box.padding.right +
+              box.border.left +
+              box.border.right,
           );
           enriched = {
             ...enriched,
-            props: { ...enriched.props, style: { ...enrichedStyle, minWidth: borderBoxMinW } },
+            props: {
+              ...enriched.props,
+              style: { ...enrichedStyle, minWidth: borderBoxMinW },
+            },
           };
         }
       }
@@ -741,19 +917,28 @@ function traversePostOrder(
 
   // 5. 현재 노드의 TaffyStyle 계산 → Record 변환
   // filteredChildren 전달: vertical-align 기반 alignItems 동적 결정에 사용 (ADR-006 P2-3)
-  const styleRecord = buildNodeStyle(enriched, computedStyle, childDisplays, parentDisplay, filteredChildren);
+  const styleRecord = buildNodeStyle(
+    enriched,
+    computedStyle,
+    childDisplays,
+    parentDisplay,
+    filteredChildren,
+  );
 
   // 5.5. block→flex-row-wrap 변환 시 block-level 자식에 width:100% 주입
   // CSS block container 내 block-level 자식은 자동으로 부모 폭 100%이지만
   // Taffy flex-row-wrap 시뮬레이션에서는 명시적 설정 필요 (taffyDisplayAdapter 규칙)
-  if (styleRecord.display === 'flex' && styleRecord.flexWrap === 'wrap') {
+  if (styleRecord.display === "flex" && styleRecord.flexWrap === "wrap") {
     for (let ci = 0; ci < childIds.length; ci++) {
       const childEl = elementsMap.get(childIds[ci]);
-      const childStyle = (childEl?.props?.style ?? {}) as Record<string, unknown>;
+      const childStyle = (childEl?.props?.style ?? {}) as Record<
+        string,
+        unknown
+      >;
       if (needsBlockChildFullWidth(childDisplays[ci], childStyle.width)) {
         const childBatchIdx = indexMap.get(childIds[ci]);
         if (childBatchIdx !== undefined) {
-          batch[childBatchIdx].style.width = '100%';
+          batch[childBatchIdx].style.width = "100%";
         }
       }
     }
@@ -799,9 +984,14 @@ function incrementalUpdate(
   tree: PersistentTaffyTree,
   batch: PersistentBatchNode[],
   filteredChildIdsMap: Map<string, string[]>,
-): { stylesUpdated: number; childrenUpdated: number; added: number; removed: number } {
+): {
+  stylesUpdated: number;
+  childrenUpdated: number;
+  added: number;
+  removed: number;
+} {
   const stats = { stylesUpdated: 0, childrenUpdated: 0, added: 0, removed: 0 };
-  const currentNodeIds = new Set(batch.map(n => n.elementId));
+  const currentNodeIds = new Set(batch.map((n) => n.elementId));
 
   // 1. 삭제된 노드 식별 (현재 batch에 없는 기존 노드)
   const allHandles = tree.getAllHandles();
@@ -884,7 +1074,7 @@ export function calculateFullTreeLayout(
   if (!rootEl) return null;
 
   // 페이지별 persistent tree 조회/생성
-  const pageId = rootEl.page_id ?? '__default__';
+  const pageId = rootEl.page_id ?? "__default__";
   let persistentTree = persistentTrees.get(pageId);
   if (!persistentTree) {
     persistentTree = new PersistentTaffyTree();
@@ -907,7 +1097,7 @@ export function calculateFullTreeLayout(
     availableHeight,
     getChildElements,
     ROOT_COMPUTED_STYLE,
-    'block',  // 루트의 부모 display (기본값: block)
+    "block", // 루트의 부모 display (기본값: block)
     batch,
     indexMap,
     visiting,
@@ -926,7 +1116,7 @@ export function calculateFullTreeLayout(
   const rootIdx = indexMap.get(rootElementId);
   if (rootIdx !== undefined) {
     const rootEl = elementsMap.get(rootElementId);
-    if (rootEl && rootEl.tag.toLowerCase() === 'body') {
+    if (rootEl && rootEl.tag.toLowerCase() === "body") {
       const rootStyle = (rootEl.props?.style ?? {}) as Record<string, unknown>;
       const bp = parsePadding(rootStyle, availableWidth);
       const bb = parseBorder(rootStyle);
@@ -942,7 +1132,7 @@ export function calculateFullTreeLayout(
   for (const node of batch) {
     filteredChildIdsMap.set(
       node.elementId,
-      node.children.map(idx => batch[idx].elementId),
+      node.children.map((idx) => batch[idx].elementId),
     );
   }
 
@@ -959,12 +1149,19 @@ export function calculateFullTreeLayout(
     } else {
       // Path B: 증분 갱신 (변경된 노드만 WASM 호출)
       // 변경 감지: PersistentTaffyTree._lastJsonMap JSON 비교 (12차 정정)
-      const stats = incrementalUpdate(persistentTree, batch, filteredChildIdsMap);
+      const stats = incrementalUpdate(
+        persistentTree,
+        batch,
+        filteredChildIdsMap,
+      );
 
-      if (import.meta.env.DEV && (stats.stylesUpdated + stats.added + stats.removed > 0)) {
+      if (
+        import.meta.env.DEV &&
+        stats.stylesUpdated + stats.added + stats.removed > 0
+      ) {
         console.log(
           `[fullTreeLayout] Incremental: styles=${stats.stylesUpdated}, ` +
-          `children=${stats.childrenUpdated}, added=${stats.added}, removed=${stats.removed}`,
+            `children=${stats.childrenUpdated}, added=${stats.added}, removed=${stats.removed}`,
         );
       }
     }
@@ -986,7 +1183,8 @@ export function calculateFullTreeLayout(
       if (!layoutResult) continue;
 
       // margin 정보 (ComputedLayout.margin 필드용)
-      const elementStyle = (elementsMap.get(node.elementId)?.props?.style ?? {}) as Record<string, unknown>;
+      const elementStyle = (elementsMap.get(node.elementId)?.props?.style ??
+        {}) as Record<string, unknown>;
       const margin = parseMargin(elementStyle);
 
       result.set(node.elementId, {
@@ -1005,7 +1203,9 @@ export function calculateFullTreeLayout(
     }
 
     if (sanitizeStats.count > 0 && import.meta.env.DEV) {
-      console.warn(`[fullTreeLayout] Sanitized non-finite values: ${sanitizeStats.count}`);
+      console.warn(
+        `[fullTreeLayout] Sanitized non-finite values: ${sanitizeStats.count}`,
+      );
     }
     sanitizeStats.count = 0; // 매 호출 리셋
 
@@ -1014,29 +1214,37 @@ export function calculateFullTreeLayout(
       const el = elementsMap.get(elementId);
       const elStyle = (el?.props?.style ?? {}) as Record<string, unknown>;
       const overflow = elStyle?.overflow as string | undefined;
-      if (overflow === 'scroll' || overflow === 'auto') {
+      if (overflow === "scroll" || overflow === "auto") {
         const scrollChildIds = childrenMap.get(elementId) ?? [];
         let maxRight = 0;
         let maxBottom = 0;
         for (const cid of scrollChildIds) {
           const cl = result.get(cid);
           if (cl) {
-            maxRight = Math.max(maxRight, cl.x + cl.width + (cl.margin?.right ?? 0));
-            maxBottom = Math.max(maxBottom, cl.y + cl.height + (cl.margin?.bottom ?? 0));
+            maxRight = Math.max(
+              maxRight,
+              cl.x + cl.width + (cl.margin?.right ?? 0),
+            );
+            maxBottom = Math.max(
+              maxBottom,
+              cl.y + cl.height + (cl.margin?.bottom ?? 0),
+            );
           }
         }
-        useScrollState.getState().updateMaxScroll(
-          elementId,
-          Math.max(0, maxBottom - layout.height),
-          Math.max(0, maxRight - layout.width),
-        );
+        useScrollState
+          .getState()
+          .updateMaxScroll(
+            elementId,
+            Math.max(0, maxBottom - layout.height),
+            Math.max(0, maxRight - layout.width),
+          );
       }
     }
 
     return result;
   } catch (err) {
     if (import.meta.env.DEV) {
-      console.error('[fullTreeLayout] WASM failed:', err);
+      console.error("[fullTreeLayout] WASM failed:", err);
     }
     // 에러 시 해당 페이지의 persistent tree만 리셋 → 다음 프레임에 초기 빌드(Path A) 재시도
     resetPersistentTree(pageId);
