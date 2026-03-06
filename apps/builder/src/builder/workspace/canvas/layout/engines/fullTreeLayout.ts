@@ -638,6 +638,41 @@ function traversePostOrder(
   // implicit style이 주입된 부모 요소 사용
   let element = effectiveParent;
 
+  // TagList/TagGroup의 Tag 자식에 TagGroup size 상속 (calculateContentWidth 정합성)
+  // DFS rawElement 주입(line 602)은 개별 Tag 노드 진입 시에만 적용되므로,
+  // 부모(TagList/TagGroup)의 filteredChildren에도 동일하게 size를 주입해야
+  // enrichWithIntrinsicSize → calculateContentWidth 재귀 시 올바른 크기를 산출한다.
+  const containerTag = (rawElement.tag ?? "").toLowerCase();
+  if (containerTag === "taglist" || containerTag === "taggroup") {
+    // TagGroup의 size 조회
+    let groupSize: string | undefined;
+    if (containerTag === "taggroup") {
+      groupSize = (rawElement.props as Record<string, unknown> | undefined)
+        ?.size as string | undefined;
+    } else {
+      // TagList → 부모 TagGroup에서 size 조회
+      const parentEl = rawElement.parent_id
+        ? elementsMap.get(rawElement.parent_id)
+        : undefined;
+      if (parentEl?.tag === "TagGroup") {
+        groupSize = (parentEl.props as Record<string, unknown> | undefined)
+          ?.size as string | undefined;
+      }
+    }
+    if (groupSize) {
+      for (let i = 0; i < filteredChildren.length; i++) {
+        const child = filteredChildren[i];
+        if (child.tag !== "Tag") continue;
+        const childProps = child.props as Record<string, unknown> | undefined;
+        if (childProps?.size) continue; // 이미 명시적 size 있음
+        filteredChildren[i] = {
+          ...child,
+          props: { ...child.props, size: groupSize },
+        };
+      }
+    }
+  }
+
   // filteredChildren 기반으로 유효한 자식 ID 목록 재구성
   const childIds = filteredChildren.map((child) => child.id);
 
@@ -795,13 +830,45 @@ function traversePostOrder(
   // applyImplicitStyles가 주입한 padding/gap이 calculateContentWidth에 반영되어야
   // fit-content/min-content 계산 시 정확한 border-box 크기를 산출한다.
   // (원본 childElements는 spec padding/gap 미포함 → 크기 과소 산출)
+
+  // TagGroup/TagList: getChildElements 래퍼로 재귀적 calculateContentWidth에서도
+  // Tag에 TagGroup size 상속 보장 (getChildElements는 elementsMap 원본을 반환하므로
+  // DFS rawElement 주입이 누락됨)
+  let effectiveGetChildElements = getChildElements;
+  if (containerTag === "taggroup" || containerTag === "taglist") {
+    let tagGroupSize: string | undefined;
+    if (containerTag === "taggroup") {
+      tagGroupSize = (rawElement.props as Record<string, unknown> | undefined)
+        ?.size as string | undefined;
+    } else {
+      const parentEl = rawElement.parent_id
+        ? elementsMap.get(rawElement.parent_id)
+        : undefined;
+      if (parentEl?.tag === "TagGroup") {
+        tagGroupSize = (parentEl.props as Record<string, unknown> | undefined)
+          ?.size as string | undefined;
+      }
+    }
+    if (tagGroupSize) {
+      effectiveGetChildElements = (id: string) => {
+        const children = getChildElements(id);
+        return children.map((child) => {
+          if (child.tag !== "Tag") return child;
+          const cp = child.props as Record<string, unknown> | undefined;
+          if (cp?.size) return child;
+          return { ...child, props: { ...child.props, size: tagGroupSize } };
+        });
+      };
+    }
+  }
+
   let enriched: Element = enrichWithIntrinsicSize(
     element,
     availableWidth,
     availableHeight,
     computedStyle,
     filteredChildren,
-    getChildElements,
+    effectiveGetChildElements,
     isFlexChild,
   );
 

@@ -13,14 +13,12 @@ import {
   GitBranch,
   Settings,
 } from "lucide-react";
-import {
-  Key,
-} from "react-aria-components";
+import { Key } from "react-aria-components";
 import { ToggleButtonGroup, ToggleButton } from "@xstudio/shared/components";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { usePanelLayout } from "../layout";
 import { ZoomControls } from "../workspace/ZoomControls";
-import { ShortcutTooltip } from "../components/overlay";
+import { ActionIconButton } from "../components/ui";
 export interface Breakpoint {
   id: string;
   label: string;
@@ -153,34 +151,32 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
         <span className="history-info">
           {historyInfo ? `${historyInfo.current}/${historyInfo.total}` : "0/0"}
         </span>
-        <ShortcutTooltip shortcutId="undo" placement="bottom">
-          <button
-            aria-label="Undo"
-            onClick={onUndo}
-            disabled={!canUndo}
-            className={!canUndo ? "disabled" : ""}
-          >
-            <Undo
-              color={!canUndo ? "#999" : iconProps.color}
-              strokeWidth={iconProps.strokeWidth}
-              size={iconProps.size}
-            />
-          </button>
-        </ShortcutTooltip>
-        <ShortcutTooltip shortcutId="redo" placement="bottom">
-          <button
-            aria-label="Redo"
-            onClick={onRedo}
-            disabled={!canRedo}
-            className={!canRedo ? "disabled" : ""}
-          >
-            <Redo
-              color={!canRedo ? "#999" : iconProps.color}
-              strokeWidth={iconProps.strokeWidth}
-              size={iconProps.size}
-            />
-          </button>
-        </ShortcutTooltip>
+        <ActionIconButton
+          aria-label="Undo"
+          onPress={onUndo}
+          isDisabled={!canUndo}
+          shortcutId="undo"
+          tooltipPlacement="bottom"
+        >
+          <Undo
+            color={!canUndo ? "#999" : iconProps.color}
+            strokeWidth={iconProps.strokeWidth}
+            size={iconProps.size}
+          />
+        </ActionIconButton>
+        <ActionIconButton
+          aria-label="Redo"
+          onPress={onRedo}
+          isDisabled={!canRedo}
+          shortcutId="redo"
+          tooltipPlacement="bottom"
+        >
+          <Redo
+            color={!canRedo ? "#999" : iconProps.color}
+            strokeWidth={iconProps.strokeWidth}
+            size={iconProps.size}
+          />
+        </ActionIconButton>
         <ToggleButtonGroup
           selectionMode="multiple"
           selectedKeys={
@@ -218,11 +214,15 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           <ToggleButton
             id="workflow"
             aria-label={
-              showWorkflowOverlay ? "Hide Workflow Overlay" : "Show Workflow Overlay"
+              showWorkflowOverlay
+                ? "Hide Workflow Overlay"
+                : "Show Workflow Overlay"
             }
           >
             <GitBranch
-              color={showWorkflowOverlay ? "var(--color-white)" : iconProps.color}
+              color={
+                showWorkflowOverlay ? "var(--color-white)" : iconProps.color
+              }
               strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
             />

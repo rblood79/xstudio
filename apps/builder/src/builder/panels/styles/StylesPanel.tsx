@@ -24,7 +24,7 @@ import { useState, useMemo, useCallback, memo } from "react";
 import { ToggleButton } from "react-aria-components";
 import type { PanelProps } from "../core/types";
 import { useDebouncedSelectedElementData } from "../../stores";
-import { Button } from "@xstudio/shared/components";
+import { ActionIconButton } from "../../components/ui";
 import { Copy, ClipboardPaste, PencilRuler, Palette } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { EmptyState } from "../../components";
@@ -237,31 +237,29 @@ function StylesPanelContent() {
           </ToggleButton>
         </div>
         <div className="panel-actions">
-          <Button
-            variant="ghost"
-            className="iconButton"
+          <ActionIconButton
             onPress={handleCopyStyles}
             aria-label="Copy styles"
             isDisabled={isCopyDisabled}
+            tooltip="스타일 복사"
           >
             <Copy
               color={iconProps.color}
               size={iconProps.size}
               strokeWidth={iconProps.strokeWidth}
             />
-          </Button>
-          <Button
-            variant="ghost"
-            className="iconButton"
+          </ActionIconButton>
+          <ActionIconButton
             onPress={handlePasteStyles}
             aria-label="Paste styles"
+            tooltip="스타일 붙여넣기"
           >
             <ClipboardPaste
               color={iconProps.color}
               size={iconProps.size}
               strokeWidth={iconProps.strokeWidth}
             />
-          </Button>
+          </ActionIconButton>
         </div>
 
         {/* Focus Mode indicator */}

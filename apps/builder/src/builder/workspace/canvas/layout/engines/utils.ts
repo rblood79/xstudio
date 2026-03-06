@@ -2521,7 +2521,10 @@ export function enrichWithIntrinsicSize(
     let injectWidth = baseContentWidth;
     injectWidth += box.padding.left + box.padding.right;
     injectWidth += box.border.left + box.border.right;
-    injectedStyle.width = injectWidth;
+    // Math.ceil: Taffy(f32)와 JS(f64) 간 부동소수점 정밀도 차이로
+    // flex-wrap 컨테이너에서 자식 합계가 부모 폭을 미세하게 초과하여
+    // 불필요한 wrap이 발생하는 것을 방지
+    injectedStyle.width = Math.ceil(injectWidth);
   }
 
   // 변경이 없으면 원본 반환

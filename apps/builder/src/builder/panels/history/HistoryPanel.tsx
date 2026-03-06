@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Clock, History, Redo, Trash2, Undo } from "lucide-react";
 import type { PanelProps } from "../core/types";
-import { PanelHeader, EmptyState, ShortcutTooltip } from "../../components";
+import { PanelHeader, EmptyState } from "../../components";
+import { ActionIconButton } from "../../components/ui";
 import { Button } from "@xstudio/shared/components";
 import { iconProps, iconSmall } from "../../../utils/ui/uiConstants";
 import { historyManager, type HistoryEntry } from "../../stores/history";
@@ -183,37 +184,32 @@ function HistoryPanelContent() {
               {Math.max(historyInfo.currentIndex + 1, 0)}/
               {historyInfo.totalEntries}
             </span>
-            <ShortcutTooltip shortcutId="undo" placement="bottom">
-              <button
-                className="iconButton"
-                type="button"
-                onClick={handleUndo}
-                disabled={!historyInfo.canUndo || historyOperationInProgress}
-                aria-label="Undo"
-              >
-                <Undo size={iconProps.size} />
-              </button>
-            </ShortcutTooltip>
-            <ShortcutTooltip shortcutId="redo" placement="bottom">
-              <button
-                className="iconButton"
-                type="button"
-                onClick={handleRedo}
-                disabled={!historyInfo.canRedo || historyOperationInProgress}
-                aria-label="Redo"
-              >
-                <Redo size={iconProps.size} />
-              </button>
-            </ShortcutTooltip>
-            <button
-              className="iconButton"
-              type="button"
-              onClick={handleClear}
-              disabled={historyOperationInProgress}
+            <ActionIconButton
+              onPress={handleUndo}
+              isDisabled={!historyInfo.canUndo || historyOperationInProgress}
+              aria-label="Undo"
+              shortcutId="undo"
+              tooltipPlacement="bottom"
+            >
+              <Undo size={iconProps.size} />
+            </ActionIconButton>
+            <ActionIconButton
+              onPress={handleRedo}
+              isDisabled={!historyInfo.canRedo || historyOperationInProgress}
+              aria-label="Redo"
+              shortcutId="redo"
+              tooltipPlacement="bottom"
+            >
+              <Redo size={iconProps.size} />
+            </ActionIconButton>
+            <ActionIconButton
+              onPress={handleClear}
+              isDisabled={historyOperationInProgress}
               aria-label="Clear history"
+              tooltip="히스토리 초기화"
             >
               <Trash2 size={iconProps.size} />
-            </button>
+            </ActionIconButton>
           </div>
         }
       />

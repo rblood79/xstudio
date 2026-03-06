@@ -1,0 +1,32 @@
+.action-icon-button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  color: var(--text-color-placeholder);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+
+  &[data-hovered] {
+    background: color-mix(in srgb, var(--text-color) 8%, transparent);
+    color: var(--text-color);
+  }
+
+  &[data-pressed] {
+    background: color-mix(in srgb, var(--text-color) 12%, transparent);
+  }
+
+  &[data-focus-visible] {
+    outline: 2px solid var(--highlight-background);
+    outline-offset: 2px;
+  }
+
+  &[data-disabled] {
+    opacity: 0.38;
+    pointer-events: none;
+  }
+}

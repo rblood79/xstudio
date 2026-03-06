@@ -63,5 +63,8 @@ export {
   type CommandPaletteProps,
 } from "./overlay";
 
+// UI 컴포넌트
+export { ActionIconButton, type ActionIconButtonProps } from "./ui";
+
 // Styles
 import "./styles";
