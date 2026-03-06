@@ -45,7 +45,7 @@
 }
 
 .binding-clear:hover {
-  background: var(--color-surface-200);
+  background: var(--gray-200);
   color: var(--color-gray-700);
 }
 
@@ -103,7 +103,7 @@
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
   text-align: center;
-  background: var(--color-surface-50);
+  background: var(--color-surface-secondary);
   border-radius: var(--radius-sm);
   border: 1px dashed var(--color-border);
 }

@@ -18,7 +18,7 @@
     position: relative;
     min-height: var(--text-5xl);
     border: 2px dashed var(--color-border);
-    background: var(--color-surface-50);
+    background: var(--color-surface-secondary);
     transition: all 200ms ease;
 
     /* Flex container for content */
@@ -84,7 +84,7 @@
     width: 48px;
     height: 48px;
     border-radius: var(--radius-full);
-    background: var(--color-surface-200);
+    background: var(--gray-200);
     color: var(--color-text-tertiary);
   }
 
@@ -203,7 +203,7 @@
     }
 
     .react-aria-Slot-icon {
-      background: var(--color-surface-700);
+      background: var(--gray-700);
     }
 
     .react-aria-Slot-required-badge {

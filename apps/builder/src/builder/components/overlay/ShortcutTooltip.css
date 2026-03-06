@@ -17,11 +17,11 @@
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: var(--md-sys-color-inverse-surface, #1a1a1a);
-  color: var(--md-sys-color-inverse-on-surface, #ffffff);
+  background: var(--gray-900);
+  color: var(--gray-0);
   border-radius: 6px;
   font-size: 12px;
-  font-family: var(--md-sys-typescale-body-small-font, sans-serif);
+  font-family: var(--font-sans);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   z-index: 10000;
   white-space: nowrap;
@@ -89,7 +89,7 @@
   background: rgba(255, 255, 255, 0.15);
   color: inherit;
   border-radius: 4px;
-  font-family: var(--md-sys-typescale-body-small-font, monospace);
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
   white-space: nowrap;

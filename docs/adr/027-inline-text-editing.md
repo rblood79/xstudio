@@ -433,9 +433,210 @@ useEffect(() => {
 
 ---
 
+## Pencil 텍스트 편집 구현 분석 (역공학)
+
+> 소스: `docs/pencil-extracted/` — Pencil Desktop v1.1.10 역공학 추출물
+
+### 아키텍처 개요
+
+Pencil의 텍스트 편집은 **상태 머신 + EventEmitter + Quill 에디터 + DOM 오버레이** 패턴으로 구성된다.
+
+```
+[더블클릭 감지]
+  ↓
+SelectionManager.lastClickTime 300ms 비교 (onPointerDown 내부)
+  ↓ (더블클릭 확인)
+IdleState.onDoubleClick()
+  ↓ (text/note/prompt/context 타입이면)
+textEditorManager.startTextEditing(node)
+  ↓
+1. stateManager.transitionTo(EditingTextState)  — 상태 머신 전환
+2. eventEmitter.emit("startTextEdit", node)     — React 훅에 알림
+  ↓
+[EditingTextState]
+- onEnter(): isEditingText=true, editingNodeId=node, guidesGraph.clear()
+- onPointerDown/Move/Up(): 빈 함수 (모든 포인터 이벤트 무시)
+- confirmEdit()/cancelEdit(): finishTextEditingInternal() → IdleState 복귀
+```
+
+### 더블클릭 감지 방식
+
+Pencil은 **SelectionManager에서 lastClickTime을 중앙 관리**한다 (07_scenegraph.txt:1211-1217):
+
+```javascript
+// IdleState.onPointerDown() 내부 (activeTool === "move" 분기)
+const now = Date.now();
+const isDoubleClick = now - selectionManager.getLastClickTime() < 300;
+selectionManager.setLastClickTime(now);
+if (isDoubleClick) {
+  this.onDoubleClick(); // pointerDownNode를 사용
+  return;
+}
+```
+
+**핵심 차이점 (XStudio 대비):**
+
+- Pencil은 **같은 상태 객체(IdleState)** 안에서 더블클릭을 감지 — SelectionBox 같은 별도 레이어가 이벤트를 가로채지 않음
+- `lastClickTime`이 `SelectionManager`에 영속 보관 — 상태 전환/컴포넌트 마운트와 무관
+- XStudio는 PixiJS SelectionBox moveArea가 두 번째 클릭을 가로채므로 **DOM dblclick 이벤트**로 우회 필요
+
+### Quill 에디터 통합 (index.txt:222036-222189)
+
+`nUt` 클래스 — 텍스트 편집 세션 객체:
+
+```
+constructor(sceneManager, parentElement, node):
+  1. node.hideText()                          — Skia 텍스트 렌더링 숨김
+  2. element = document.createElement("div")  — DOM 컨테이너 생성
+  3. quill = new Quill(element, { toolbar: false, formats: ["text"] })
+  4. originalUndoSnapshot = scenegraph.beginUpdate()  — undo 트랜잭션 시작
+  5. snapshot node.textContent                — 원본 스냅샷
+  6. quill.setText(originalText)              — 에디터 초기값
+  7. quill.setSelection(0, text.length)       — 전체 선택
+  8. quill.on("text-change", callback)        — 실시간 노드 업데이트 (undo: false)
+  9. keydown: Cmd+Enter/Escape → destroy()
+ 10. RAF → document.addEventListener("mousedown", clickOutside)
+ 11. quill.focus()
+
+destroy():
+  1. finishTextEditing()                      — 상태 머신 복귀
+  2. element 제거
+  3. document.removeEventListener("mousedown")
+  4. node.showText()                          — Skia 텍스트 렌더링 복원
+  5. node.isEmpty() → deleteNode (빈 텍스트면 노드 삭제)
+  6. scenegraph.commitBlock(originalUndoSnapshot, { undo: true }) — 단일 undo 블록
+```
+
+### DOM 포지셔닝 (행렬 기반)
+
+```javascript
+// updateSize() — camera.worldTransform + node.getWorldMatrix() 합성
+const matrix = new Matrix();
+matrix.append(camera.worldTransform); // 줌/팬 반영
+matrix.append(node.getWorldMatrix()); // 노드의 월드 좌표
+element.style.transform = `matrix(a,b,c,d,tx,ty) translate(bounds.minX, bounds.minY)`;
+quill.root.style.width = `${Math.ceil(bounds.width)}px`;
+quill.root.style.height = `${Math.ceil(bounds.height)}px`;
+```
+
+**뷰포트 변경 동기화**: `eventEmitter.on("afterUpdate", handleViewportChange)` — 줌/팬 변경마다 `updateSize()` 재호출
+
+### Skia 텍스트 숨김 (hideText/showText)
+
+노드 타입별 구현 (06_node-extensions.txt):
+
+- **TextNode (`Ux`)** — `isTextHidden` 플래그 + `invalidateView()` (렌더 캐시 무효화)
+- **StickyNode (`oI`)** — 동일 패턴
+
+```javascript
+// TextNode
+hideText() { this.isTextHidden = true; this.invalidateView(); }
+showText() { this.isTextHidden = false; this.invalidateView(); }
+```
+
+렌더 시 `isTextHidden`이면 텍스트 드로잉 스킵, 배경/보더는 유지.
+
+### 폰트 스타일 동기화 (getTextAreaInfo)
+
+`getTextAreaInfo(skiaRenderer)` — DOM 에디터에 적용할 CSS 스타일 추출:
+
+```javascript
+return {
+  bounds: node.localBounds(), // { minX, minY, width, height }
+  style: {
+    fontFamily: fontManager
+      .getFontList(matchedFont)
+      .map((f) => `"${f}"`)
+      .join(", "),
+    fontSize: `${resolvedFontSize}px`,
+    lineHeight:
+      lineHeight !== 0
+        ? `${Math.round(lineHeight * fontSize) / fontSize}`
+        : "normal",
+    fontWeight: String(resolvedFontWeight),
+    color: getFirstFillColor() ?? "black",
+    textAlign: resolvedTextAlign,
+    fontStyle: resolvedFontStyle,
+    letterSpacing: `${letterSpacing / fontSize}em`,
+  },
+};
+```
+
+**핵심**: `fontManager.matchFont()` → `getFontList()` — Skia FontManager에 등록된 실제 폰트 이름을 CSS fontFamily로 변환. XStudio의 `buildFontFamilies()` / `resolveFamily()`와 동일 목적.
+
+### Undo 통합 패턴
+
+1. **편집 시작**: `beginUpdate()` → `snapshotProperties(node, ["textContent"])` — 원본 스냅샷
+2. **편집 중**: `commitBlock(update, { undo: false })` — 실시간 반영하되 undo 기록 안 함
+3. **편집 완료**: `commitBlock(originalSnapshot, { undo: true })` — 원본→최종을 단일 undo 블록으로 커밋
+4. **빈 텍스트**: 편집 완료 시 `node.isEmpty()` → `deleteNode` (빈 텍스트 노드 자동 삭제)
+
+### 키보드 단축키
+
+| 키                                           | 동작                                           |
+| -------------------------------------------- | ---------------------------------------------- |
+| **Cmd/Ctrl + Enter**                         | 편집 완료 (`destroy()`)                        |
+| **Escape**                                   | 편집 취소 (`destroy()`)                        |
+| **Enter** (선택된 텍스트 노드, 편집 모드 밖) | `startTextEditing()` (index.txt:223372-223382) |
+
+### React 훅 연결 (useTextEditor)
+
+```javascript
+// iUt 함수 — React 훅 (index.txt:222162-222189)
+const containerRef = useRef(null);
+const editorRef = useRef(null);
+
+useEffect(() => {
+  function startHandler(node) {
+    editorRef.current?.destroy();
+    editorRef.current = new TextEditor(
+      sceneManager,
+      containerRef.current,
+      node,
+    );
+  }
+  function finishHandler() {
+    editorRef.current?.destroy();
+  }
+  eventEmitter.on("startTextEdit", startHandler);
+  eventEmitter.on("finishTextEdit", finishHandler);
+  return () => {
+    /* cleanup */
+  };
+}, [sceneManager]);
+
+// DOM 구조
+return (
+  <div
+    data-pencil-canvas-text-editor
+    className="absolute inset-0 pointer-events-none"
+  >
+    <div className="fixed" ref={containerRef} />
+  </div>
+);
+```
+
+### XStudio 대비 Pencil 차이점 요약
+
+| 항목               | Pencil                                                         | XStudio (ADR-027)                                              |
+| ------------------ | -------------------------------------------------------------- | -------------------------------------------------------------- |
+| **에디터**         | Quill (리치 텍스트 지원)                                       | contenteditable div (플레인 텍스트)                            |
+| **더블클릭 감지**  | SelectionManager.lastClickTime 300ms (중앙 관리)               | DOM `dblclick` 이벤트 (브라우저 네이티브)                      |
+| **상태 머신**      | `EditingTextState` 전용 상태 (포인터 이벤트 전부 무시)         | `canvasStore.isEditing` 플래그                                 |
+| **이벤트 브릿지**  | EventEmitter (`startTextEdit`/`finishTextEdit`)                | Zustand subscribe (canvasStore)                                |
+| **포지셔닝**       | `camera.worldTransform × node.worldMatrix` → CSS `matrix()`    | `getElementBoundsSimple()` → absolute positioning              |
+| **Skia 숨김**      | `node.hideText()` / `showText()` (invalidateView)              | `setEditingElementId()` → renderText 스킵                      |
+| **Undo**           | beginUpdate → 실시간 반영(undo:false) → commitBlock(undo:true) | DOM 내부만 변경 → finishEdit 시 store 업데이트 (히스토리 자동) |
+| **실시간 동기화**  | Quill text-change → node.textContent 즉시 업데이트             | DOM 내부에서만 반영 (store 업데이트 없음)                      |
+| **빈 텍스트 처리** | 편집 완료 시 isEmpty → 노드 자동 삭제                          | 미구현                                                         |
+| **뷰포트 추적**    | eventEmitter.on("afterUpdate") → updateSize()                  | Phase B 범위                                                   |
+
+---
+
 ## 참조
 
 - Pencil 구현 분석: `docs/pencil-extracted/` (engine/07, 11, 12, 13, 14, ui/19)
+- Pencil vs XStudio 비교: `docs/legacy/PENCIL_VS_XSTUDIO_UI_UX.md`
 - Skia 텍스트 렌더링: `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts`
 - Spec 텍스트 스타일: `apps/builder/src/builder/workspace/canvas/skia/specTextStyle.ts`
 - 멀티페이지: `docs/MULTIPAGE.md`

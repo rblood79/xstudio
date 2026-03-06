@@ -52,7 +52,7 @@
 }
 
 .schema-table th {
-  background: var(--color-surface-100);
+  background: var(--gray-100);
   font-weight: 600;
   color: var(--color-text-primary);
   white-space: nowrap;
@@ -63,7 +63,7 @@
 }
 
 .schema-table tr:hover td {
-  background: var(--color-surface-50);
+  background: var(--color-surface-secondary);
 }
 
 .schema-table .cell-center {
@@ -74,7 +74,7 @@
   width: 100%;
   min-width: 80px;
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--color-surface-200);
+  background: var(--gray-200);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
@@ -128,7 +128,7 @@
   justify-content: space-between;
   gap: var(--spacing-md);
   padding: var(--spacing-sm);
-  background: var(--color-surface-50);
+  background: var(--color-surface-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
@@ -140,7 +140,7 @@
   flex: 1;
   max-width: 240px;
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--color-surface-0);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   gap: var(--spacing-xs);
@@ -176,7 +176,7 @@
   justify-content: center;
   width: 18px;
   height: 18px;
-  background: var(--color-surface-200);
+  background: var(--gray-200);
   border: none;
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
@@ -185,7 +185,7 @@
 }
 
 .filter-clear-btn:hover {
-  background: var(--color-surface-300);
+  background: var(--gray-300);
   color: var(--color-text-primary);
 }
 
@@ -208,7 +208,7 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--color-surface-0);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
@@ -218,7 +218,7 @@
 }
 
 .toolbar-btn:hover:not(:disabled) {
-  background: var(--color-surface-100);
+  background: var(--gray-100);
   border-color: var(--color-text-tertiary);
   color: var(--color-text-primary);
 }
@@ -269,7 +269,7 @@
 }
 
 .data-table tr:hover td {
-  background: var(--color-surface-50);
+  background: var(--color-surface-secondary);
 }
 
 .row-index {
@@ -286,7 +286,7 @@
   width: 100%;
   min-width: 80px;
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--color-surface-200);
+  background: var(--gray-200);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
@@ -323,7 +323,7 @@
   justify-content: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-surface-0);
+  background: var(--color-surface);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
@@ -333,7 +333,7 @@
 }
 
 .add-row-btn:hover {
-  background: var(--color-surface-100);
+  background: var(--gray-100);
   border-color: var(--color-text-tertiary);
   color: var(--color-text-primary);
 }
@@ -362,7 +362,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
-  background: var(--color-surface-0);
+  background: var(--color-surface);
   color: var(--color-text-primary);
 }
 

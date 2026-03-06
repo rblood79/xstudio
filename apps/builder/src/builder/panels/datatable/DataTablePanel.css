@@ -171,7 +171,7 @@
 
 /* DataTable Source Badge */
 .datatable-panel .list-item-badge.local {
-  background: var(--color-surface-200);
+  background: var(--gray-200);
   color: var(--color-text-secondary);
 }
 

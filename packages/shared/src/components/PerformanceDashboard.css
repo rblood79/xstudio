@@ -120,7 +120,7 @@
 }
 
 .stat-value.error {
-  color: var(--error);
+  color: var(--invalid-color);
 }
 
 .dashboard-footer {

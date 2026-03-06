@@ -3,9 +3,9 @@
     /* Inspector 전용 크기 토큰은 builder-system.css에서 정의 */
 
     /* Panel Button 공통 스타일 변수 */
-    --panel-btn-bg: var(--color-surface-200);
+    --panel-btn-bg: var(--gray-200);
     --panel-btn-bg-hover: var(--color-white);
-    --panel-btn-bg-pressed: var(--color-surface-200);
+    --panel-btn-bg-pressed: var(--gray-200);
     --panel-btn-border: transparent;
     --panel-btn-border-hover: var(--border-color-hover);
     --panel-btn-color: var(--text-color);
@@ -101,7 +101,7 @@
       font-size: var(--text-xs);
       color: var(--text-color-placeholder);
       padding: var(--spacing-sm);
-      background: var(--color-surface-200);
+      background: var(--gray-200);
       border-radius: var(--radius-md);
       border: 1px solid var(--border-color);
       box-shadow: var(--inset-shadow-sm);
@@ -601,7 +601,7 @@
     .section-header {
       height: var(--header-height);
 
-      background-color: var(--color-surface-200);
+      background-color: var(--gray-200);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       flex-direction: row;
@@ -646,7 +646,7 @@
         display: flex;
 
         .react-aria-Button {
-          background-color: var(--color-surface-200);
+          background-color: var(--gray-200);
           border-color: transparent;
           padding: var(--spacing);
           height: var(--inspector-control-size);
@@ -744,7 +744,7 @@
         display: flex;
         flex-direction: column;
         gap: var(--spacing-sm);
-        background: var(--color-surface-200);
+        background: var(--gray-200);
         border-radius: var(--radius-sm);
       }
 
@@ -999,7 +999,7 @@
     }
 
     .react-aria-CheckboxGroup {
-      background-color: var(--color-surface-200);
+      background-color: var(--gray-200);
       border-radius: var(--radius-md);
       gap: 0;
 
@@ -1090,7 +1090,7 @@
       pre {
         margin: 0;
         padding: var(--spacing-2);
-        background: var(--color-surface-200);
+        background: var(--gray-200);
         border-radius: var(--radius-sm);
         font-size: var(--font-size-xs);
         font-family: var(--font-mono);
@@ -1307,7 +1307,7 @@
     align-items: center;
     gap: var(--spacing-xs);
     padding: var(--spacing-2xs) var(--spacing-sm);
-    background: var(--color-surface-200);
+    background: var(--gray-200);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-sm);
   }
@@ -1396,7 +1396,7 @@
     color: var(--text-color-placeholder);
     font-weight: var(--font-weight-medium);
     padding: 2px var(--spacing-xs);
-    background: var(--color-surface-200);
+    background: var(--gray-200);
     border-radius: var(--radius-xs);
     font-family: var(--font-mono);
   }
@@ -1406,7 +1406,7 @@
     flex-direction: column;
     gap: var(--spacing-sm);
     padding: var(--spacing);
-    background: var(--color-surface-200);
+    background: var(--gray-200);
     border-radius: var(--radius-sm);
   }
 
@@ -1901,7 +1901,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    background: var(--color-surface-200);
+    background: var(--gray-200);
     border-radius: var(--radius-sm);
   }
 
@@ -1949,7 +1949,7 @@
 
   .page-slug-generate {
     padding: var(--spacing-xs);
-    background: var(--color-surface-200);
+    background: var(--gray-200);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-sm);
     color: var(--text-color);
@@ -1968,7 +1968,7 @@
     flex-direction: column;
     gap: var(--spacing-xs);
     padding: var(--spacing-sm);
-    background: var(--color-surface-200);
+    background: var(--gray-200);
     border-radius: var(--radius-sm);
     margin-top: var(--spacing-sm);
   }

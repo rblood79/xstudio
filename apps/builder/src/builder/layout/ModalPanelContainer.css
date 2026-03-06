@@ -61,7 +61,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-md);
-  background: var(--color-surface-200);
+  background: var(--gray-200);
   border-bottom: 1px solid var(--border-color);
   cursor: grab;
   user-select: none;

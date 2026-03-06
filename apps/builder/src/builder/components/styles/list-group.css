@@ -288,7 +288,7 @@
 }
 
 .list-item-actions .iconButton:hover {
-  background: var(--color-surface-100);
+  background: var(--gray-100);
   color: var(--color-text-primary);
 }
 

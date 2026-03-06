@@ -21,7 +21,7 @@
 .command-palette-modal {
   width: 100%;
   max-width: 560px;
-  background: var(--md-sys-color-surface-container);
+  background: var(--overlay-background);
   border-radius: 12px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
   overflow: hidden;
@@ -47,11 +47,11 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .command-palette-search-icon {
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--text-color-placeholder);
   flex-shrink: 0;
 }
 
@@ -59,14 +59,14 @@
   flex: 1;
   border: none;
   background: transparent;
-  color: var(--md-sys-color-on-surface);
+  color: var(--text-color);
   font-size: 16px;
-  font-family: var(--md-sys-typescale-body-large-font);
+  font-family: var(--font-sans);
   outline: none;
 }
 
 .command-palette-input::placeholder {
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--text-color-placeholder);
 }
 
 /* List */
@@ -94,11 +94,11 @@
 
 .command-palette-item[data-focused="true"],
 .command-palette-item:hover {
-  background: var(--md-sys-color-surface-container-highest);
+  background: var(--gray-200);
 }
 
 .command-palette-item[data-selected="true"] {
-  background: var(--md-sys-color-primary-container);
+  background: var(--highlight-overlay);
 }
 
 /* Item Content */
@@ -111,7 +111,7 @@
 }
 
 .command-palette-item-label {
-  color: var(--md-sys-color-on-surface);
+  color: var(--text-color);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
@@ -120,7 +120,7 @@
 }
 
 .command-palette-item-category {
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--text-color-placeholder);
   font-size: 12px;
   text-transform: capitalize;
 }
@@ -131,10 +131,10 @@
   align-items: center;
   justify-content: center;
   padding: 4px 8px;
-  background: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-on-surface-variant);
+  background: var(--button-background);
+  color: var(--text-color-placeholder);
   border-radius: 4px;
-  font-family: var(--md-sys-typescale-body-small-font);
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -145,7 +145,7 @@
 .command-palette-empty {
   padding: 32px 16px;
   text-align: center;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--text-color-placeholder);
   font-size: 14px;
 }
 
@@ -155,8 +155,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-top: 1px solid var(--md-sys-color-outline-variant);
-  color: var(--md-sys-color-on-surface-variant);
+  border-top: 1px solid var(--border-color);
+  color: var(--text-color-placeholder);
   font-size: 12px;
 }
 
@@ -166,7 +166,7 @@
   justify-content: center;
   min-width: 20px;
   padding: 2px 6px;
-  background: var(--md-sys-color-surface-container-high);
+  background: var(--button-background);
   border-radius: 4px;
   font-family: inherit;
   font-size: 11px;
