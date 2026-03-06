@@ -13,7 +13,6 @@ import { BuilderHeader, Breakpoint } from "./BuilderHeader";
 import { BuilderCanvas } from "./BuilderCanvas";
 
 import { BuilderViewport } from "./BuilderViewport";
-import SelectionOverlay from "../overlay";
 import { Workspace } from "../workspace";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot, ModalPanelContainer } from "../layout";
@@ -1029,9 +1028,7 @@ export const BuilderCore: React.FC = () => {
               breakpoints={breakpoints}
               onIframeLoad={handleIframeLoad}
               onMessage={handleMessage}
-            >
-              <SelectionOverlay />
-            </BuilderCanvas>
+            />
           }
         />
       ) : (
@@ -1042,9 +1039,7 @@ export const BuilderCore: React.FC = () => {
           breakpoints={breakpoints}
           onIframeLoad={handleIframeLoad}
           onMessage={handleMessage}
-        >
-          <SelectionOverlay />
-        </BuilderCanvas>
+        />
       )}
 
       <aside className="sidebar">
