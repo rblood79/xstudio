@@ -1,52 +1,46 @@
 @layer components {
   .react-aria-ToggleButton {
+    /* Unselected: neutral fill — button-base reads these vars */
+    --button-color: var(--color-neutral-200);
+    --button-text: var(--text-color);
+    --button-border: transparent;
+
     /* S2 Default (non-emphasized): dark bg + white text when selected */
     --tb-selected-bg: var(--text-color);
     --tb-selected-text: var(--background-color);
 
+    /* Structure */
     box-sizing: border-box;
-    color: var(--text-color);
-    background: var(--color-neutral-200);
-    border: 1px solid transparent;
+    border: 1px solid;
     forced-color-adjust: none;
     border-radius: var(--border-radius);
     appearance: none;
     vertical-align: middle;
-    /* Default sizing (md) — @sync Button.css */
-    font-size: var(--text-sm);
-    line-height: var(--text-sm--line-height);
     text-align: center;
     margin: 0;
     outline: none;
+
+    /* Default sizing (md) — @sync Button.css */
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
     padding: var(--spacing-xs) var(--spacing-lg);
 
+    /* All pressed: inset shadow */
     &[data-pressed] {
       box-shadow: var(--inset-shadow-sm);
+    }
+
+    /* Unselected pressed — custom (differs from button-base 75% pattern) */
+    &:not([data-selected])[data-pressed] {
       background: color-mix(in srgb, var(--overlay-background) 92%, black);
       border-color: var(--border-color-hover);
     }
 
+    /* Selected: switch --button-* vars → button-base auto-derives hover/pressed */
     &[data-selected] {
-      background: var(--tb-selected-bg);
-      border-color: var(--tb-selected-bg);
-      color: var(--tb-selected-text);
-
-      &[data-pressed] {
-        background: color-mix(in srgb, var(--tb-selected-bg) 75%, black);
-        border-color: color-mix(in srgb, var(--tb-selected-bg) 75%, black);
-      }
-    }
-
-    &[data-focus-visible] {
-      outline: 2px solid var(--highlight-background);
-      outline-offset: 2px;
-    }
-
-    &[data-disabled] {
-      background: color-mix(in srgb, var(--text-color) 12%, transparent);
-      color: color-mix(in srgb, var(--text-color) 38%, transparent);
-      border-color: transparent;
-      opacity: 0.38;
+      --button-color: var(--tb-selected-bg);
+      --button-text: var(--tb-selected-text);
+      --button-border: var(--tb-selected-bg);
     }
 
     /* ===== Emphasized Variant ===== */
@@ -59,12 +53,12 @@
     /* ===== Quiet Variant ===== */
 
     &[data-quiet] {
-      background: transparent;
-      border-color: transparent;
+      --button-color: transparent;
+      --button-border: transparent;
 
       &[data-selected] {
-        background: transparent;
-        border-color: transparent;
+        --button-color: transparent;
+        --button-border: transparent;
       }
     }
 

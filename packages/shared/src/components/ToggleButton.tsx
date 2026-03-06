@@ -49,7 +49,9 @@ export function ToggleButton({
       data-quiet={isQuiet || undefined}
       data-size={size}
       className={composeRenderProps(props.className, (cls) =>
-        cls ? `react-aria-ToggleButton ${cls}` : "react-aria-ToggleButton",
+        cls
+          ? `react-aria-ToggleButton button-base ${cls}`
+          : "react-aria-ToggleButton button-base",
       )}
     >
       {showIndicator && <SelectionIndicator />}

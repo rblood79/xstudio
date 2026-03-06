@@ -1,5 +1,5 @@
 @layer components {
-  /* 공통 Input - variants는 각 컴포넌트에서 정의 */
+  /* 공통 Input structure — state styles delegated to .inset utility */
   .react-aria-Input,
   .react-aria-TextArea {
     width: 100%;
@@ -7,26 +7,8 @@
     border: 1px solid;
     border-radius: var(--border-radius);
     padding: var(--spacing);
-    border-color: var(--border-color);
-    background: var(--field-background);
     font-size: var(--text-sm);
-    color: var(--field-text-color);
     line-height: var(--text-sm--line-height);
-
-    &[data-focused] {
-      outline: 2px solid;
-      outline-offset: -1px;
-      outline-color: var(--focus-ring-color);
-    }
-
-    &[data-invalid] {
-      border-color: var(--invalid-color);
-    }
-
-    &[data-disabled] {
-      border-color: var(--border-color-disabled);
-      color: var(--text-color-disabled);
-    }
   }
 
   /* 공통 Label, FieldError */

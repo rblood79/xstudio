@@ -1,5 +1,16 @@
 import React from "react";
-import { FieldErrorProps, Group, GroupProps, InputProps, LabelProps, FieldError as RACFieldError, Input as RACInput, Label as RACLabel, TextProps, Text as RACText } from "react-aria-components";
+import {
+  FieldErrorProps,
+  Group,
+  GroupProps,
+  InputProps,
+  LabelProps,
+  FieldError as RACFieldError,
+  Input as RACInput,
+  Label as RACLabel,
+  TextProps,
+  Text as RACText,
+} from "react-aria-components";
 import type { FieldType } from "../types";
 
 import "./styles/Field.css";
@@ -13,19 +24,21 @@ export function Text(props: TextProps) {
 }
 
 export function Description(props: TextProps) {
-  return <RACText {...props} slot="description" className="react-aria-Description" />;
+  return (
+    <RACText {...props} slot="description" className="react-aria-Description" />
+  );
 }
 
 export function FieldError(props: FieldErrorProps) {
-  return <RACFieldError {...props} className="react-aria-FieldError" />
+  return <RACFieldError {...props} className="react-aria-FieldError" />;
 }
 
 export function FieldGroup(props: GroupProps) {
-  return <Group {...props} className='react-aria-FieldGroup' />;
+  return <Group {...props} className="react-aria-FieldGroup" />;
 }
 
 export function Input(props: InputProps) {
-  return <RACInput {...props} className="react-aria-Input" />
+  return <RACInput {...props} className="react-aria-Input inset" />;
 }
 
 /**
@@ -104,11 +117,7 @@ export function DataField({
 
     switch (type) {
       case "boolean":
-        return (
-          <span className="value-boolean">
-            {value ? "✓" : "✗"}
-          </span>
-        );
+        return <span className="value-boolean">{value ? "✓" : "✗"}</span>;
 
       case "number":
         return (
@@ -120,9 +129,7 @@ export function DataField({
       case "date":
         return (
           <span className="value-date">
-            {value instanceof Date
-              ? value.toLocaleDateString()
-              : String(value)}
+            {value instanceof Date ? value.toLocaleDateString() : String(value)}
           </span>
         );
 

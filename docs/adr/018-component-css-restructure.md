@@ -2,9 +2,11 @@
 
 ## Status
 
-Partial (2026-03-04)
+Partial (2026-03-07)
 
-> Phase 1 완료 (utilities.css 생성 + foundation.css/index.css 연결). Button.css, Card.css 마이그레이션 완료. Phase 2~5 미착수.
+> Phase 1 완료 (utilities.css 생성 + foundation.css/index.css 연결). Button.css, Card.css 마이그레이션 완료.
+> Phase 2 완료: ToggleButton → `button-base` 적용. TagGroup/Link/Breadcrumbs/Toolbar는 패턴 불일치로 미적용.
+> Phase 3 부분 완료: `.inset` 유틸리티 재설계 + Input 컴포넌트에 적용. TextField, SearchField, NumberField, ComboBox, ColorField의 Input 상태 스타일을 `.inset`에 위임 (-181줄). DateField/TimeField/DatePicker/DateRangePicker/ColorPicker는 DateInput/TimeInput 컨테이너 사용으로 별도 처리 필요.
 
 ## Context
 

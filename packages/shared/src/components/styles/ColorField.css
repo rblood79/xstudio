@@ -50,57 +50,35 @@
     }
 
     /* ===== Input ===== */
+    /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
     .react-aria-Input {
       padding: var(--cf-input-padding);
       margin: 0;
-      border: 1px solid var(--border-color);
+      border: 1px solid;
       border-radius: var(--radius-sm);
-      background: var(--field-background);
       font-size: var(--cf-input-size);
-      color: var(--text-color);
       width: 100%;
       max-width: var(--cf-input-max-width);
       box-sizing: border-box;
-
-      &[data-disabled] {
-        border-color: color-mix(in srgb, var(--border-color) 38%, transparent);
-        color: color-mix(in srgb, var(--text-color) 38%, transparent);
-        cursor: not-allowed;
-      }
     }
 
-    /* Variant-accented focus */
-    &[data-variant="primary"] .react-aria-Input,
-    &[data-variant="secondary"] .react-aria-Input,
-    &[data-variant="tertiary"] .react-aria-Input,
-    &[data-variant="error"] .react-aria-Input {
-      &[data-focused] {
-        outline: 2px solid var(--field-accent);
-        outline-offset: -1px;
-        border-color: var(--field-accent);
-      }
+    /* Variant-accented: override --inset-* vars for accent styling */
+    &[data-variant="primary"],
+    &[data-variant="secondary"],
+    &[data-variant="tertiary"],
+    &[data-variant="error"] {
+      --inset-focus-color: var(--field-accent);
     }
 
-    /* error variant default border */
-    &[data-variant="error"] .react-aria-Input {
-      border-color: var(--invalid-color);
+    &[data-variant="error"] {
+      --inset-border: var(--invalid-color);
     }
 
     /* ===== Filled Variant ===== */
-    &[data-variant="filled"] .react-aria-Input {
-      background: var(--field-accent-bg);
-      border-color: transparent;
-
-      &[data-focused] {
-        outline: 2px solid var(--field-accent);
-        outline-offset: -1px;
-        border-color: var(--field-accent);
-      }
-    }
-
-    /* ===== Invalid State ===== */
-    &[data-invalid] .react-aria-Input {
-      border-color: var(--invalid-color);
+    &[data-variant="filled"] {
+      --inset-bg: var(--field-accent-bg);
+      --inset-border: transparent;
+      --inset-focus-color: var(--field-accent);
     }
 
     /* ===== FieldError / Description ===== */

@@ -123,7 +123,7 @@ export function ToggleButtonGroup({
           isDisabled
         >
           <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            <RACToggleButton className="react-aria-ToggleButton">
+            <RACToggleButton className="react-aria-ToggleButton button-base">
               ⏳ 로딩 중...
             </RACToggleButton>
           </ToggleButtonGroupIndicatorContext.Provider>
@@ -144,7 +144,7 @@ export function ToggleButtonGroup({
           isDisabled
         >
           <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            <RACToggleButton className="react-aria-ToggleButton">
+            <RACToggleButton className="react-aria-ToggleButton button-base">
               ❌ 오류
             </RACToggleButton>
           </ToggleButtonGroupIndicatorContext.Provider>
@@ -206,7 +206,7 @@ export function ToggleButtonGroup({
           isDisabled
         >
           <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            <RACToggleButton className="react-aria-ToggleButton">
+            <RACToggleButton className="react-aria-ToggleButton button-base">
               ⏳ 로딩 중...
             </RACToggleButton>
           </ToggleButtonGroupIndicatorContext.Provider>
@@ -227,7 +227,7 @@ export function ToggleButtonGroup({
           isDisabled
         >
           <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            <RACToggleButton className="react-aria-ToggleButton">
+            <RACToggleButton className="react-aria-ToggleButton button-base">
               ❌ 오류
             </RACToggleButton>
           </ToggleButtonGroupIndicatorContext.Provider>
@@ -265,7 +265,7 @@ export function ToggleButtonGroup({
                 key={item.id}
                 id={item.id}
                 isDisabled={item.isDisabled}
-                className="react-aria-ToggleButton"
+                className="react-aria-ToggleButton button-base"
               >
                 {item.label}
               </RACToggleButton>
