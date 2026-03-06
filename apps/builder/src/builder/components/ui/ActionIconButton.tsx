@@ -59,15 +59,15 @@ export function ActionIconButton({
   return (
     <TooltipTrigger delay={700}>
       {button}
-      <Tooltip placement={tooltipPlacement} className="shortcut-tooltip">
+      <Tooltip placement={tooltipPlacement} className="action-tooltip">
         <OverlayArrow>
           <svg width={8} height={8} viewBox="0 0 8 8">
             <path d="M0 0 L4 4 L8 0" />
           </svg>
         </OverlayArrow>
-        <span className="shortcut-tooltip-label">{tooltipLabel}</span>
+        <span className="action-tooltip-label">{tooltipLabel}</span>
         {shortcutDisplay && (
-          <kbd className="shortcut-tooltip-kbd">{shortcutDisplay}</kbd>
+          <kbd className="action-tooltip-kbd">{shortcutDisplay}</kbd>
         )}
       </Tooltip>
     </TooltipTrigger>
