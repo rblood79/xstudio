@@ -361,28 +361,6 @@
     --color-border: rgba(13, 13, 13, 0.1);
     --color-border-strong: rgba(13, 13, 13, 0.15);
 
-    /* Light Mode Base (mapped to gray scale) */
-    --oai-bg-primary: var(--gray-0);
-    --oai-bg-secondary: var(--gray-50);
-    --oai-bg-tertiary: var(--gray-100);
-    --oai-text-primary: var(--gray-1000);
-    --oai-text-secondary: var(--gray-500);
-    --oai-text-tertiary: var(--gray-400);
-    --oai-border: var(--gray-100);
-    --oai-border-light: var(--gray-75);
-    --oai-border-hover: var(--gray-200);
-
-    /* Dark Mode Base (inverted gray scale) */
-    --oai-dark-bg-primary: var(--gray-800);
-    --oai-dark-bg-secondary: var(--gray-700);
-    --oai-dark-bg-tertiary: var(--gray-600);
-    --oai-dark-text-primary: var(--gray-100);
-    --oai-dark-text-secondary: var(--gray-300);
-    --oai-dark-text-tertiary: var(--gray-400);
-    --oai-dark-border: var(--gray-600);
-    --oai-dark-border-light: var(--gray-650);
-    --oai-dark-border-hover: var(--gray-500);
-
     /* Green Scale - Reference Tailwind green colors */
     --green-25: var(--color-green-50);
     --green-50: var(--color-green-50);
@@ -466,11 +444,6 @@
     --purple-700: var(--color-purple-700);
     --purple-800: var(--color-purple-800);
     --purple-900: var(--color-purple-900);
-
-    /* ChatGPT Accent (Green - using new scale) */
-    --oai-accent: var(--green-400);
-    --oai-accent-hover: var(--green-500);
-    --oai-accent-light: var(--green-50);
 
     /* Ring Colors */
     --color-ring: var(--blue-400);

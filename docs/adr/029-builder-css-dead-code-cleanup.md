@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed (2026-03-06)
+Phase 1-2 Implemented (2026-03-06)
 
 ## Context
 
@@ -121,9 +121,11 @@ var(--color-surface-700)  /* → --gray-700 또는 시맨틱 변수 */
 
 | 유령 변수             | 교체 대상                        | 근거                             |
 | --------------------- | -------------------------------- | -------------------------------- |
-| `--color-surface-50`  | `var(--color-surface-secondary)` | `--gray-50` 기반, 의미 동일      |
+| `--color-surface-0`   | `var(--color-surface)`           | `--gray-0` 기반, 정의 존재       |
+| `--color-surface-50`  | `var(--color-surface-secondary)` | `--gray-50` 기반, 정의 존재      |
 | `--color-surface-100` | `var(--gray-100)`                | 시맨틱 변수 없음, gray 직접 참조 |
 | `--color-surface-200` | `var(--gray-200)`                | 시맨틱 변수 없음, gray 직접 참조 |
+| `--color-surface-300` | `var(--gray-300)`                | 시맨틱 변수 없음, gray 직접 참조 |
 | `--color-surface-700` | `var(--gray-700)`                | 시맨틱 변수 없음, gray 직접 참조 |
 
 #### 대상 파일 (22파일, 120건)

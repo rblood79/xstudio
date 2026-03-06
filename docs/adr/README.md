@@ -7,8 +7,8 @@
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 12     |
-| 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 10     |
+| 부분 완료                              | 9      |
+| 미구현 (Proposed/계획)                 | 8      |
 | **합계**                               | **29** |
 
 ---
@@ -43,21 +43,21 @@
 | [018](018-component-css-restructure.md)           | 컴포넌트 CSS 구조 재작성                       | Phase 1 완료 (utilities.css 142줄) + Phase 2 Button만 완료 (14%, 1/7)                                                            | Phase 2 잔여 6개 + Phase 3~5 미착수 (CSS 13,718줄 → 목표 ~8,101줄)                                                                     |    P3    |
 | [021](021-theme-system-redesign.md)               | 테마 시스템 개편 — Tint + Tailwind 인라인 패널 | Phase A+B+C 완료 + Phase D 부분 완료(ThemeStudio 삭제, /theme 라우트 제거)                                                       | Phase D 잔여(UnifiedThemeStore/Service 정리), Phase E (컴포넌트별 accent)                                                              |  **P2**  |
 | [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                     | TextEditOverlay.tsx + useTextEdit.ts 구현 완료 (DOM Overlay + contenteditable)                                                   | BuilderCanvas double-click 통합 미완, Spec 컴포넌트 텍스트 미지원                                                                      |  **P2**  |
+| [028](028-builder-css-scope-isolation.md)         | Builder CSS 스코프 격리                        | Phase 0 완료 (`[data-context="builder"]` 전환 + ITCSS 정리)                                                                      | Phase 1 변수 축소 (ADR-018 의존)                                                                                                       |    P3    |
+| [029](029-builder-css-dead-code-cleanup.md)       | Builder CSS Dead Code 정리                     | Phase 1-2 완료 (유령변수 138건 치환 + dead code 24건 제거 + M3 잔존 18건 치환)                                                   | Phase 3 모놀리식 CSS 분리 (ADR-018 의존)                                                                                               |    P3    |
 
 ### 미구현
 
-| ADR                                         | 제목                                             | 상태     | 규모                                                                                               | 우선순위 |
-| ------------------------------------------- | ------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md)    | Quick Connect 데이터 바인딩                      | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                    |  **P2**  |
-| [015](015-sitemap-layout.md)                | Sitemap Hierarchy 워크플로우 엣지                | Proposed | 변경 대상 8파일, 코드 미생성                                                                       |    P5    |
-| [016](016-photoshop-ui-ux.md)               | Photoshop 벤치마크 기반 UI/UX (v2)               | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                             |    P5    |
-| [019](019-icon-system.md)                   | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가 | Proposed | 5 Phase — Skia 렌더링 인프라 존재(lucideIcons.ts, renderIconPath), IconPicker/독립 컴포넌트 미구현 |  **P2**  |
-| [020](020-design-kit-improvement.md)        | Design Kit 패널 분석 및 개선                     | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수           |    P4    |
-| [024](024-s2-css-variable-migration.md)     | CSS 변수명 S2 체계 전환                          | Proposed | 4 Phase, alias 점진 전환 → 60+ CSS 파일 변경                                                       |    P3    |
-| [025](025-s2-named-color-palette.md)        | S2 Named Color Palette 확장                      | Proposed | 4 Phase, 12색×2 = 24 토큰 추가 — Badge 12색은 ADR-023 Ph3 구현 완료                                |    P3    |
-| [026](026-responsive-constraint-ui.md)      | Responsive Constraint UI (Size Mode → CSS 매핑)  | Proposed | 4 Phase, Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio + 정렬                              |  **P2**  |
-| [028](028-builder-css-scope-isolation.md)   | Builder CSS 스코프 격리                          | Proposed | 2 Phase, `[data-context="builder"]` 단일 선택자 + ADR-018 시너지                                   |    P3    |
-| [029](029-builder-css-dead-code-cleanup.md) | Builder CSS Dead Code 정리                       | Proposed | 3 Phase, 유령 변수 120건 치환 + dead code 21건 제거 + 모놀리식 CSS 분리                            |    P3    |
+| ADR                                      | 제목                                             | 상태     | 규모                                                                                               | 우선순위 |
+| ---------------------------------------- | ------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                      | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                    |  **P2**  |
+| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                | Proposed | 변경 대상 8파일, 코드 미생성                                                                       |    P5    |
+| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)               | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                             |    P5    |
+| [019](019-icon-system.md)                | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가 | Proposed | 5 Phase — Skia 렌더링 인프라 존재(lucideIcons.ts, renderIconPath), IconPicker/독립 컴포넌트 미구현 |  **P2**  |
+| [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선                     | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수           |    P4    |
+| [024](024-s2-css-variable-migration.md)  | CSS 변수명 S2 체계 전환                          | Proposed | 4 Phase, alias 점진 전환 → 60+ CSS 파일 변경                                                       |    P3    |
+| [025](025-s2-named-color-palette.md)     | S2 Named Color Palette 확장                      | Proposed | 4 Phase, 12색×2 = 24 토큰 추가 — Badge 12색은 ADR-023 Ph3 구현 완료                                |    P3    |
+| [026](026-responsive-constraint-ui.md)   | Responsive Constraint UI (Size Mode → CSS 매핑)  | Proposed | 4 Phase, Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio + 정렬                              |  **P2**  |
 
 ---
 

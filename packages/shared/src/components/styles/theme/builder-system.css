@@ -1,10 +1,8 @@
 /* Builder System Tokens - XStudio Builder UI Only
- * These tokens are ONLY for Builder system UI (header, sidebar, inspector, modal-panel)
+ * These tokens are ONLY for Builder system UI
  * NOT affected by user theme changes in Preview
- * Independent dark mode support via [data-builder-theme="dark"]
- *
- * @updated 2026-02-11 - .modal-panel 선택자 추가 (React Aria className이 기본 클래스를 대체하여
- *   .react-aria-Modal 매칭 실패 → 모달 내부 CSS 변수 불일치 수정)
+ * Scoped via [data-context="builder"] on BuilderViewport (ADR-028)
+ * Independent dark mode support via [data-builder-theme="dark"] on <html>
  */
 
 @layer builder-system {
@@ -31,23 +29,13 @@
     zoom: calc(var(--ui-scale) / 100);
   }
 
-  /* ==================== Builder UI Scope Override ==================== */
-  /* Builder 영역에만 적용되는 변수 (Preview와 완전 분리)
-   * Inspector, Sidebar, Header + Builder body에 portal된 Popover 포함
-   * Preview iframe은 body[data-preview="true"]로 제외됨
-   *
-   * 이 섹션은 Preview 테마 변경이 Builder UI 컴포넌트에 영향을 주지 않도록
-   * React Aria 컴포넌트가 사용하는 모든 시맨틱 변수를 Builder 고정값으로 오버라이드 */
-  .inspector,
-  .sidebar,
-  .header,
-  .footer,
-  .overlay,
-  .bg,
-  .canvas,
-  body:not([data-preview="true"]) .react-aria-Popover,
-  body:not([data-preview="true"]) .react-aria-Modal,
-  .modal-panel {
+  /* ==================== Builder UI Scope Override (ADR-028) ==================== */
+  /* [data-context="builder"] 단일 선택자로 모든 Builder UI 영역을 커버.
+   * Preview iframe은 별도 document이므로 자동 격리.
+   * Fallback: body 직하 portal에도 builder 변수 적용 (UNSAFE_PortalProvider 안정화 전) */
+  [data-context="builder"],
+  body:not([data-preview="true"]) > .react-aria-Popover,
+  body:not([data-preview="true"]) > .react-aria-Modal {
     /* ===== Core Semantic Colors (Light Mode) ===== */
     --background-color: var(--gray-0);
     --text-color: var(--gray-750);
@@ -98,24 +86,15 @@
     --on-success-container: var(--green-700);
   }
 
-  /* ==================== Builder Dark Mode ==================== */
-  /* Independent of Preview dark mode - toggled via [data-builder-theme="dark"] on :root */
-  /* All builder variables are now replaced with M3 role variables in the override section */
-
-  /* ==================== Builder Dark Mode - Component Overrides ==================== */
-  /* Builder UI 영역의 React Aria 컴포넌트가 Dark Mode에서 Builder 테마를 따르도록 오버라이드 */
-  [data-builder-theme="dark"] .inspector,
-  [data-builder-theme="dark"] .sidebar,
-  [data-builder-theme="dark"] .header,
-  [data-builder-theme="dark"] .footer,
-  [data-builder-theme="dark"] .overlay,
-  [data-builder-theme="dark"] .bg,
-  [data-builder-theme="dark"] .canvas,
+  /* ==================== Builder Dark Mode (ADR-028) ==================== */
+  /* [data-builder-theme="dark"] on <html> + [data-context="builder"] on .app */
+  [data-builder-theme="dark"] [data-context="builder"],
   [data-builder-theme="dark"]
     body:not([data-preview="true"])
-    .react-aria-Popover,
-  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Modal,
-  [data-builder-theme="dark"] .modal-panel {
+    > .react-aria-Popover,
+  [data-builder-theme="dark"]
+    body:not([data-preview="true"])
+    > .react-aria-Modal {
     /* ===== Core Semantic Colors (Dark Mode) ===== */
     --background-color: var(--gray-900);
     --text-color: var(--gray-100);

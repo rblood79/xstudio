@@ -116,9 +116,9 @@
   position: fixed;
   bottom: var(--spacing-lg);
   right: var(--spacing-lg);
-  background: var(--builder-surface-bg);
-  color: var(--builder-text);
-  border: 1px solid var(--builder-border);
+  background: var(--overlay-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: var(--spacing) var(--spacing-md);
   font-family: var(--font-mono);
