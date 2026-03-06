@@ -938,6 +938,17 @@ function traversePostOrder(
       if (needsBlockChildFullWidth(childDisplays[ci], childStyle.width)) {
         const childBatchIdx = indexMap.get(childIds[ci]);
         if (childBatchIdx !== undefined) {
+          // enrichWithIntrinsicSize가 이미 numeric width를 주입한 경우 보존
+          // (Tag, Badge 등 INLINE_BLOCK_TAGS의 텍스트 기반 border-box 크기)
+          const existingW = batch[childBatchIdx].style.width;
+          if (
+            typeof existingW === "number" ||
+            (typeof existingW === "string" &&
+              existingW !== "auto" &&
+              existingW !== "100%")
+          ) {
+            continue;
+          }
           batch[childBatchIdx].style.width = "100%";
         }
       }

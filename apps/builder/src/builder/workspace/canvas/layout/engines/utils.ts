@@ -2498,6 +2498,8 @@ export function enrichWithIntrinsicSize(
 
   // Width 주입 (inline-block 태그의 fit-content / min-content / max-content 에뮬레이션)
   // childElements가 있으면 재계산 (ToggleButtonGroup 등 자식이 Element로 저장된 경우)
+  // childElements가 없어도 INLINE_BLOCK_TAGS(Tag, Badge 등)는 텍스트 기반 너비 계산 필요:
+  // box.contentWidth는 availableWidth 기반이므로 fit-content 시 부모 전체 너비를 차지하는 버그 발생
   const childResolvedWidth =
     childElements && childElements.length > 0
       ? calculateContentWidth(
@@ -2506,7 +2508,14 @@ export function enrichWithIntrinsicSize(
           getChildElements,
           _computedStyle,
         )
-      : box.contentWidth;
+      : INLINE_BLOCK_TAGS.has(tag) || hasExplicitIntrinsicWidthKeyword
+        ? calculateContentWidth(
+            element,
+            undefined,
+            getChildElements,
+            _computedStyle,
+          )
+        : box.contentWidth;
   const baseContentWidth = resolvedIntrinsicWidth ?? childResolvedWidth;
   if (needsWidth && baseContentWidth > 0) {
     let injectWidth = baseContentWidth;
