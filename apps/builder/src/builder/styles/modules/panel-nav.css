@@ -50,7 +50,7 @@
   }
 
   .nav-button:hover {
-    background-color: var(--highlight-foreground-pressed);
+    background-color: var(--overlay-background);
     border-radius: 6px;
   }
 

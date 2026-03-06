@@ -267,11 +267,11 @@
   }
 
   .dark-mode-toggle:hover:not(:disabled) {
-    background: var(--button-background-hover);
+    background: color-mix(in srgb, var(--button-background) 85%, black);
   }
 
   .dark-mode-toggle:active:not(:disabled) {
-    background: var(--button-background-pressed);
+    background: color-mix(in srgb, var(--button-background) 75%, black);
   }
 
   .dark-mode-toggle:disabled {
@@ -530,11 +530,8 @@
 
   /* Publish Button */
   .header_contents .publish {
-    background: linear-gradient(
-          var(--field-background),
-          var(--border-color)
-        )
-        padding-box,
+    background:
+      linear-gradient(var(--field-background), var(--border-color)) padding-box,
       linear-gradient(
           82.77deg,
           var(--info) 11.87%,

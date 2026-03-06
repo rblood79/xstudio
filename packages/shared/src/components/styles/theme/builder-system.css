@@ -49,41 +49,26 @@
     --border-color-disabled: var(--gray-75);
 
     /* ===== Button & Field Colors ===== */
+    /* hover/pressed auto-derived via color-mix() in consumers (ADR-028 Phase 1) */
     --button-background: var(--gray-50);
-    --button-background-hover: var(--gray-75);
-    --button-background-pressed: var(--gray-100);
     --field-background: var(--gray-0);
-    --field-text-color: var(--gray-1000);
     --overlay-background: var(--gray-0);
 
-    /* ===== Highlight Colors (Primary Blue) ===== */
+    /* ===== Highlight Colors ===== */
     --focus-ring-color: var(--blue-300);
     --highlight-background: var(--gray-900);
-    --highlight-background-hover: var(--gray-700);
     --highlight-background-pressed: var(--gray-600);
-    --highlight-background-invalid: var(--red-500);
     --highlight-foreground: var(--gray-0);
-    --highlight-foreground-pressed: var(--gray-50);
     --highlight-overlay: rgba(2, 133, 255, 0.15);
 
-    /* ===== Invalid/Error States ===== */
+    /* ===== Invalid/Error ===== */
     --invalid-color: var(--red-500);
-    --invalid-color-pressed: var(--red-600);
 
-    /* ===== Info States (Blue) ===== */
+    /* ===== Status Colors ===== */
     --info: var(--blue-500);
-    --info-container: var(--blue-50);
-    --on-info-container: var(--blue-700);
-
-    /* ===== Warning States (Orange) ===== */
-    --warning: var(--orange-500);
     --warning-container: var(--orange-50);
     --on-warning-container: var(--orange-700);
-
-    /* ===== Success States (Green) ===== */
     --success: var(--green-500);
-    --success-container: var(--green-50);
-    --on-success-container: var(--green-700);
   }
 
   /* ==================== Builder Dark Mode (ADR-028) ==================== */
@@ -109,40 +94,24 @@
 
     /* ===== Button & Field Colors (Dark) ===== */
     --button-background: var(--gray-800);
-    --button-background-hover: var(--gray-700);
-    --button-background-pressed: var(--gray-650);
     --field-background: var(--gray-850);
-    --field-text-color: var(--gray-100);
     --overlay-background: var(--gray-850);
 
     /* ===== Highlight Colors (Dark) ===== */
     --focus-ring-color: var(--blue-400);
     --highlight-background: var(--gray-100);
-    --highlight-background-hover: var(--gray-50);
     --highlight-background-pressed: var(--white);
-    --highlight-background-invalid: var(--red-400);
     --highlight-foreground: var(--gray-900);
-    --highlight-foreground-pressed: var(--gray-850);
     --highlight-overlay: rgba(2, 133, 255, 0.2);
 
-    /* ===== Invalid/Error States (Dark) ===== */
+    /* ===== Invalid/Error (Dark) ===== */
     --invalid-color: var(--red-400);
-    --invalid-color-pressed: var(--red-300);
 
-    /* ===== Info States (Dark - Blue) ===== */
+    /* ===== Status Colors (Dark) ===== */
     --info: var(--blue-400);
-    --info-container: rgba(2, 133, 255, 0.15);
-    --on-info-container: var(--blue-200);
-
-    /* ===== Warning States (Dark - Orange) ===== */
-    --warning: var(--orange-400);
     --warning-container: rgba(251, 106, 34, 0.15);
     --on-warning-container: var(--orange-200);
-
-    /* ===== Success States (Dark - Green) ===== */
     --success: var(--green-400);
-    --success-container: rgba(4, 184, 76, 0.15);
-    --on-success-container: var(--green-200);
   }
 
   /* ==================== Accessibility: High Contrast Mode ==================== */

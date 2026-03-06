@@ -21,18 +21,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: background-color 0.2s ease, outline 0s ease;
+  transition:
+    background-color 0.2s ease,
+    outline 0s ease;
   overflow: hidden;
 }
 
 .elementItem:hover {
-  background-color: var(--button-background-hover);
+  background-color: color-mix(in srgb, var(--button-background) 85%, black);
   outline: 1px solid var(--border-color-hover);
 }
 
 .elementItem.active {
   box-shadow: var(--inset-shadow-sm);
-  background-color: var(--button-background-pressed);
+  background-color: color-mix(in srgb, var(--button-background) 75%, black);
   outline: 1px solid var(--border-color-pressed);
   z-index: 1;
 }
@@ -427,7 +429,7 @@
 
 /* 선택 가능한 요소 시각적 피드백 */
 .react-aria-TreeItem[aria-selected="true"] .elementItem {
-  background-color: var(--button-background-pressed);
+  background-color: color-mix(in srgb, var(--button-background) 75%, black);
 }
 
 /* 펼침/접기 상태 표시 */
