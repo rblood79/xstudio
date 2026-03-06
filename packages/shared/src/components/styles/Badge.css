@@ -9,16 +9,15 @@
 @import "./base.css";
 
 @layer components {
-
   /* ========== Base Badge Styles ========== */
   .react-aria-Badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    line-height: 1;
+    line-height: var(--text-sm--line-height);
     white-space: nowrap;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-md);
     transition: all 200ms;
     background: var(--color-neutral-200);
     color: var(--text-color);
@@ -28,16 +27,22 @@
   /* ========== S2 Variant + Fill Style Colors ========== */
 
   /* ===== Accent Variant ===== */
-  .react-aria-Badge[data-variant="accent"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]),
+  .react-aria-Badge[data-variant="accent"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ),
   .react-aria-Badge[data-variant="accent"][data-fill-style="bold"] {
     background: var(--highlight-background);
     color: var(--highlight-foreground);
   }
 
   .react-aria-Badge[data-variant="accent"][data-fill-style="subtle"] {
-    background: var(--color-primary-100,
-        var(--color-tint-100,
-          color-mix(in srgb, var(--highlight-background) 15%, white)));
+    background: var(
+      --color-primary-100,
+      var(
+        --color-tint-100,
+        color-mix(in srgb, var(--highlight-background) 15%, white)
+      )
+    );
     color: var(--highlight-background);
     border-color: transparent;
   }
@@ -49,7 +54,9 @@
   }
 
   /* ===== Informative Variant ===== */
-  .react-aria-Badge[data-variant="informative"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]),
+  .react-aria-Badge[data-variant="informative"]:not(
+      [data-fill-style="subtle"]
+    ):not([data-fill-style="outline"]),
   .react-aria-Badge[data-variant="informative"][data-fill-style="bold"] {
     background: var(--color-info-600);
     color: var(--color-white);
@@ -68,7 +75,9 @@
   }
 
   /* ===== Neutral Variant ===== */
-  .react-aria-Badge[data-variant="neutral"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]),
+  .react-aria-Badge[data-variant="neutral"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ),
   .react-aria-Badge[data-variant="neutral"][data-fill-style="bold"] {
     background: var(--text-color);
     color: var(--color-white);
@@ -87,7 +96,9 @@
   }
 
   /* ===== Positive Variant ===== */
-  .react-aria-Badge[data-variant="positive"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]),
+  .react-aria-Badge[data-variant="positive"]:not(
+      [data-fill-style="subtle"]
+    ):not([data-fill-style="outline"]),
   .react-aria-Badge[data-variant="positive"][data-fill-style="bold"] {
     background: var(--color-green-600);
     color: var(--color-white);
@@ -106,7 +117,9 @@
   }
 
   /* ===== Notice Variant ===== */
-  .react-aria-Badge[data-variant="notice"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]),
+  .react-aria-Badge[data-variant="notice"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ),
   .react-aria-Badge[data-variant="notice"][data-fill-style="bold"] {
     background: var(--color-warning-600);
     color: var(--color-white);
@@ -125,7 +138,9 @@
   }
 
   /* ===== Negative Variant ===== */
-  .react-aria-Badge[data-variant="negative"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]),
+  .react-aria-Badge[data-variant="negative"]:not(
+      [data-fill-style="subtle"]
+    ):not([data-fill-style="outline"]),
   .react-aria-Badge[data-variant="negative"][data-fill-style="bold"] {
     background: var(--invalid-color);
     color: var(--color-white);
@@ -146,7 +161,9 @@
   /* ========== Named Color Variants (S2) ========== */
 
   /* ===== Gray Variant ===== */
-  .react-aria-Badge[data-variant="gray"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="gray"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: var(--color-neutral-500);
     color: var(--color-white);
   }
@@ -163,7 +180,9 @@
   }
 
   /* ===== Red Variant ===== */
-  .react-aria-Badge[data-variant="red"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="red"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: var(--color-red-600);
     color: var(--color-white);
   }
@@ -180,7 +199,9 @@
   }
 
   /* ===== Orange Variant ===== */
-  .react-aria-Badge[data-variant="orange"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="orange"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: var(--color-orange-600);
     color: var(--color-white);
   }
@@ -197,7 +218,9 @@
   }
 
   /* ===== Yellow Variant ===== */
-  .react-aria-Badge[data-variant="yellow"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="yellow"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: var(--color-yellow-500);
     color: var(--color-black);
   }
@@ -214,7 +237,9 @@
   }
 
   /* ===== Green Variant ===== */
-  .react-aria-Badge[data-variant="green"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="green"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: var(--color-green-600);
     color: var(--color-white);
   }
@@ -231,7 +256,9 @@
   }
 
   /* ===== Blue Variant ===== */
-  .react-aria-Badge[data-variant="blue"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="blue"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: var(--color-blue-600);
     color: var(--color-white);
   }
@@ -248,7 +275,9 @@
   }
 
   /* ===== Purple Variant ===== */
-  .react-aria-Badge[data-variant="purple"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="purple"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: var(--color-purple-600);
     color: var(--color-white);
   }
@@ -265,7 +294,9 @@
   }
 
   /* ===== Indigo Variant ===== */
-  .react-aria-Badge[data-variant="indigo"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="indigo"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: oklch(0.45 0.2 284);
     color: var(--color-white);
   }
@@ -282,7 +313,9 @@
   }
 
   /* ===== Cyan Variant ===== */
-  .react-aria-Badge[data-variant="cyan"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="cyan"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: oklch(0.5 0.14 220);
     color: var(--color-white);
   }
@@ -299,7 +332,9 @@
   }
 
   /* ===== Pink Variant ===== */
-  .react-aria-Badge[data-variant="pink"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="pink"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: oklch(0.6 0.18 348);
     color: var(--color-white);
   }
@@ -316,7 +351,9 @@
   }
 
   /* ===== Turquoise Variant ===== */
-  .react-aria-Badge[data-variant="turquoise"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="turquoise"]:not(
+      [data-fill-style="subtle"]
+    ):not([data-fill-style="outline"]) {
     background: oklch(0.55 0.1 195);
     color: var(--color-white);
   }
@@ -333,7 +370,9 @@
   }
 
   /* ===== Fuchsia Variant ===== */
-  .react-aria-Badge[data-variant="fuchsia"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="fuchsia"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: oklch(0.55 0.22 320);
     color: var(--color-white);
   }
@@ -350,7 +389,9 @@
   }
 
   /* ===== Magenta Variant ===== */
-  .react-aria-Badge[data-variant="magenta"]:not([data-fill-style="subtle"]):not([data-fill-style="outline"]) {
+  .react-aria-Badge[data-variant="magenta"]:not([data-fill-style="subtle"]):not(
+      [data-fill-style="outline"]
+    ) {
     background: oklch(0.55 0.2 335);
     color: var(--color-white);
   }
@@ -367,45 +408,46 @@
   }
 
   /* ========== Size Variants ========== */
+  /* @sync Button.css size variants — fontSize/lineHeight/padding 동일, border-radius: radius-md 고정 */
 
   /* ===== XS Size ===== */
   .react-aria-Badge[data-size="xs"] {
+    padding: var(--spacing-3xs) var(--spacing-sm);
     font-size: var(--text-2xs);
-    padding: var(--spacing-2xs) var(--spacing-sm);
-    min-width: 16px;
-    height: 16px;
+    line-height: var(--text-2xs--line-height);
+    border-radius: var(--radius-md);
   }
 
   /* ===== Small Size ===== */
   .react-aria-Badge[data-size="sm"] {
+    padding: var(--spacing-2xs) var(--spacing-md);
     font-size: var(--text-xs);
-    padding: var(--spacing-xs) var(--spacing-md);
-    min-width: 20px;
-    height: 20px;
+    line-height: var(--text-xs--line-height);
+    border-radius: var(--radius-md);
   }
 
   /* ===== Medium Size (Default) ===== */
   .react-aria-Badge[data-size="md"] {
+    padding: var(--spacing-xs) var(--spacing-lg);
     font-size: var(--text-sm);
-    padding: var(--spacing-sm) var(--spacing-lg);
-    min-width: 24px;
-    height: 24px;
+    line-height: var(--text-sm--line-height);
+    border-radius: var(--radius-md);
   }
 
   /* ===== Large Size ===== */
   .react-aria-Badge[data-size="lg"] {
-    font-size: var(--text-base);
     padding: var(--spacing-sm) var(--spacing-xl);
-    min-width: 28px;
-    height: 28px;
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    border-radius: var(--radius-md);
   }
 
   /* ===== XL Size ===== */
   .react-aria-Badge[data-size="xl"] {
-    font-size: var(--text-lg);
     padding: var(--spacing-md) var(--spacing-2xl);
-    min-width: 32px;
-    height: 32px;
+    font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
+    border-radius: var(--radius-md);
   }
 
   /* ========== Dot Badge (indicator only, no text) ========== */
@@ -437,7 +479,6 @@
   }
 
   @keyframes badge-pulse {
-
     0%,
     100% {
       opacity: 1;

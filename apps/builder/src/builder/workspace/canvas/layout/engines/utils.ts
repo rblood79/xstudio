@@ -531,56 +531,50 @@ const BADGE_SIZE_CONFIG: Record<
     paddingRight: number;
     paddingY: number;
     fontSize: number;
+    lineHeight: number;
     borderWidth: number;
-    minWidth: number;
-    height: number;
   }
 > = {
-  // @sync Badge.css [data-size] padding/fontSize 값과 일치해야 함
+  // @sync Button.css/BUTTON_SIZE_CONFIG — fontSize/lineHeight/padding 동일
   xs: {
-    paddingLeft: 4,
-    paddingRight: 4,
-    paddingY: 2,
-    fontSize: 10,
-    borderWidth: 0,
-    minWidth: 16,
-    height: 16,
-  },
-  sm: {
-    paddingLeft: 6,
-    paddingRight: 6,
-    paddingY: 2,
-    fontSize: 12,
-    borderWidth: 0,
-    minWidth: 20,
-    height: 20,
-  },
-  md: {
     paddingLeft: 8,
     paddingRight: 8,
-    paddingY: 2,
-    fontSize: 14,
-    borderWidth: 0,
-    minWidth: 24,
-    height: 24,
+    paddingY: 1, // --spacing-3xs
+    fontSize: 10,
+    lineHeight: 16,
+    borderWidth: 1,
   },
-  lg: {
-    paddingLeft: 10,
-    paddingRight: 10,
-    paddingY: 4,
-    fontSize: 16,
-    borderWidth: 0,
-    minWidth: 28,
-    height: 28,
-  },
-  xl: {
+  sm: {
     paddingLeft: 12,
     paddingRight: 12,
-    paddingY: 4,
+    paddingY: 2, // --spacing-2xs
+    fontSize: 12,
+    lineHeight: 16,
+    borderWidth: 1,
+  },
+  md: {
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingY: 4, // --spacing-xs
+    fontSize: 14,
+    lineHeight: 20,
+    borderWidth: 1,
+  },
+  lg: {
+    paddingLeft: 24,
+    paddingRight: 24,
+    paddingY: 8, // --spacing-sm
+    fontSize: 16,
+    lineHeight: 24,
+    borderWidth: 1,
+  },
+  xl: {
+    paddingLeft: 32,
+    paddingRight: 32,
+    paddingY: 12, // --spacing-md
     fontSize: 18,
-    borderWidth: 0,
-    minWidth: 32,
-    height: 32,
+    lineHeight: 28,
+    borderWidth: 1,
   },
 };
 

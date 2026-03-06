@@ -221,7 +221,23 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
         <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
           value={String(currentProps.size || "md")}
-          onChange={(value) => updateProp("size", value)}
+          scale="5"
+          onChange={(value) => {
+            // 부모 ToggleButtonGroup size 업데이트
+            const updatedProps = { ...currentProps, size: value };
+            // 자식 ToggleButton들의 size도 동기화
+            const { childrenMap } = useStore.getState();
+            const children = childrenMap.get(elementId);
+            const childUpdates = (children ?? [])
+              .filter((c) => c.tag === "ToggleButton")
+              .map((child) => ({
+                elementId: child.id,
+                props: { ...child.props, size: value },
+              }));
+            useStore
+              .getState()
+              .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+          }}
         />
 
         <PropertySelect
@@ -375,6 +391,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
                     isSelected: false,
                     defaultSelected: false,
                     children: `Toggle ${(toggleButtonChildren.length || 0) + 1}`,
+                    size: currentProps.size || "md",
                     style: {},
                     className: "",
                   },

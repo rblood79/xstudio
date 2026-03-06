@@ -1,6 +1,8 @@
 @layer components {
+
   /* Components Panel 전용 스타일 */
   .panel-wrapper[data-panel="components"] {
+
     /* 카테고리 헤더 스타일 */
     .category-info {
       display: flex;
@@ -100,6 +102,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        min-width: 24px;
       }
 
       &:hover {

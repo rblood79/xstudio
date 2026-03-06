@@ -99,6 +99,7 @@ export const ToggleButtonEditor = memo(function ToggleButtonEditor({
             label={PROPERTY_LABELS.SIZE}
             value={String(currentProps.size || "md")}
             onChange={(value) => updateProp("size", value)}
+            scale="5"
           />
         </PropertySection>
       )}
