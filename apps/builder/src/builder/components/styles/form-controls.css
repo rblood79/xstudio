@@ -1,0 +1,280 @@
+@layer builder-system {
+  .section {
+    .color-swatch-button {
+      padding: var(--spacing-xs);
+
+      .react-aria-ColorSwatch {
+        height: var(--text-xl);
+        border-radius: var(--radius-sm);
+      }
+    }
+
+    .react-aria-Group {
+      background-color: var(--border-color);
+      border-radius: var(--radius-md);
+      width: 100%;
+      min-width: 0;
+      padding: var(--spacing);
+      box-shadow: var(--inset-shadow-sm);
+
+      .react-aria-Select,
+      .react-aria-ComboBox {
+        width: 100%;
+        padding: 0;
+
+        .react-aria-Button {
+          span[aria-hidden] {
+            width: var(--text-xl);
+            height: var(--text-xl);
+            border-radius: var(--radius-sm);
+          }
+        }
+      }
+
+      .react-aria-UnitComboBox {
+        .react-aria-Button {
+          width: var(--text-xl);
+          height: var(--text-xl);
+          border-radius: var(--radius-sm);
+          margin: 0;
+          /* Layer 우선순위로 builder-system.css 값 사용
+           * 수정 불필요 - ComboBox.css와 동일한 변수명 */
+        }
+      }
+    }
+
+    .react-aria-control {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      /* Show focus ring on container when Switch is focused */
+      &:has(.react-aria-Switch:focus-visible),
+      &:has(.react-aria-Switch[data-focused]),
+      &:has(.react-aria-Switch[data-focus-visible]) {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: -2px;
+      }
+
+      .react-aria-Checkbox {
+        width: 100%;
+        /*justify-content: space-between;
+        flex-direction: row-reverse;
+        padding: 0;*/
+      }
+
+      .react-aria-Select {
+        width: 100%;
+        min-width: 0;
+
+        .react-aria-Button {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-xs);
+          padding: 0;
+          background-color: transparent;
+          border-width: 0;
+          min-width: 0;
+          width: 100%;
+
+          .control-label {
+            position: static;
+            flex-shrink: 0;
+          }
+
+          span[aria-hidden] {
+            width: var(--text-xl);
+            height: var(--text-xl);
+            border-radius: var(--radius-sm);
+            flex-shrink: 0;
+          }
+        }
+
+        .react-aria-SelectValue {
+          font-size: var(--text-xs);
+          color: var(--text-color);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+          text-align: left;
+        }
+      }
+
+      .react-aria-Switch {
+        width: 100%;
+        background-color: transparent;
+        border-width: 0;
+        border-radius: var(--border-radius);
+        font-size: var(--text-xs);
+        line-height: var(--text-xs--line-height);
+        padding: 0;
+        padding-inline-start: var(--spacing);
+        flex-direction: row-reverse;
+
+        /* Remove focus ring from Switch itself */
+        &[data-focused],
+        &[data-pressed],
+        &[data-focus-visible] {
+          outline: none !important;
+          box-shadow: none;
+        }
+
+        /* Remove focus ring from indicator */
+        .indicator {
+          outline: none !important;
+
+          &::before {
+            height: 100%;
+          }
+        }
+
+        &[data-focus-visible] .indicator {
+          outline: none !important;
+        }
+      }
+    }
+
+    .control-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-self: self-start;
+      padding: var(--spacing-2xs);
+      text-align: center;
+      background-color: transparent;
+      font-size: var(--text-xs);
+      color: var(--text-color-placeholder);
+    }
+
+    input.control-input {
+      height: var(--inspector-control-size);
+    }
+
+    .react-aria-Input,
+    .react-aria-TextArea {
+      background-color: transparent;
+      border: 1px solid transparent;
+      border-left-width: 0;
+      border-radius: var(--border-radius);
+      font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
+      padding: var(--spacing-3xs);
+      padding-inline-start: var(--spacing);
+
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+
+      /* 개별 Input 포커스 스타일 제거 - 부모 Group에서 처리 */
+      &:focus {
+        outline: none;
+      }
+    }
+
+    /* 포커스 스타일을 부모 Group에 적용
+     * Input/Button 사이 이동 시 깜빡임 방지 */
+    .react-aria-Group:focus-within {
+      outline: 2px solid var(--focus-ring-color);
+      outline-offset: -2px;
+    }
+
+    .react-aria-ToggleButtonGroup:not([data-indicator="true"]) {
+      width: 100%;
+      background-color: var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--inset-shadow-sm);
+      outline-width: 0;
+
+      /* 그룹 전체에 focus-within 스타일 적용 (클릭/탭 모두 표시) */
+      &:focus-within {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: -2px;
+      }
+
+      .react-aria-ToggleButton {
+        padding: var(--spacing);
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        border-color: transparent;
+
+        /* 그룹 내부 버튼은 개별 포커스 표시 제거 */
+        &[data-focus-visible] {
+          outline: none;
+        }
+
+        &[data-selected] {
+          background: var(--color-white);
+          border-radius: var(--radius-md);
+          border-color: var(--border-color-hover);
+          border-width: 1px;
+        }
+      }
+    }
+
+    .react-aria-CheckboxGroup {
+      background-color: var(--gray-200);
+      border-radius: var(--radius-md);
+      gap: 0;
+
+      .react-aria-Checkbox {
+        padding-left: calc(var(--spacing) * 1.5);
+
+        .checkbox {
+          width: var(--spacing-lg);
+          height: var(--spacing-lg);
+        }
+      }
+    }
+
+    /* Slider Component - Used by PropertySlider.tsx */
+    .react-aria-Slider {
+      width: 100%;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding-left: var(--inspector-label-width);
+      padding-right: var(--spacing-sm);
+    }
+
+    .slider-track {
+      flex: 1;
+      height: 4px;
+      background: var(--border-color-hover);
+      border-radius: var(--radius-full);
+      position: relative;
+    }
+
+    .slider-thumb {
+      width: 16px;
+      height: 16px;
+      background: var(--highlight-background);
+      border: 2px solid var(--color-white);
+      border-radius: var(--radius-full);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: background-color 200ms;
+
+      &[data-focused],
+      &[data-dragging] {
+        background: var(--highlight-background-pressed);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    .slider-output {
+      font-size: var(--text-xs);
+      color: var(--text-color);
+      min-width: 40px;
+      text-align: right;
+    }
+  }
+}

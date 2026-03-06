@@ -1,0 +1,491 @@
+@layer builder-system {
+  .section {
+    /* Styles Panel - Section-specific layouts */
+    &[data-section-id="layout"] .section-content {
+      display: grid;
+
+      .layout-direction {
+        display: grid;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-rows: auto auto auto;
+        grid-template-areas:
+          "flex-direction flex-alignment icon"
+          "justify-content flex-alignment ."
+          "flex-wrap displayGap .";
+        gap: var(--spacing-sm) var(--spacing-sm);
+
+        .flex-direction {
+          grid-area: flex-direction;
+        }
+
+        .flex-alignment {
+          grid-area: flex-alignment;
+
+          /* 3x3 alignment grid with indicator support */
+          .react-aria-ToggleButtonGroup {
+            display: grid;
+            grid-template-columns: repeat(3, var(--spacing-xl));
+            grid-template-rows: repeat(3, var(--spacing-xl));
+            gap: 4px;
+            justify-items: center;
+            border-radius: var(--radius-md);
+            padding: var(--spacing-2xs);
+            position: relative;
+            background: var(--border-color);
+            box-shadow: var(--inset-shadow-sm);
+            outline: 1px solid var(--border-color);
+            outline-offset: -1px;
+
+            /* focus-within style for entire group */
+            &:focus-within {
+              outline: 2px solid var(--focus-ring-color);
+              outline-offset: -2px;
+            }
+
+            .react-aria-ToggleButton {
+              position: relative;
+              margin-inline-start: 0;
+              width: var(--text-xl);
+              height: var(--text-xl);
+              background-color: transparent;
+              border-width: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+
+              /* React Aria 1.13.0: SelectionIndicator inside each button */
+              .react-aria-SelectionIndicator {
+                position: absolute;
+                inset: 0;
+                z-index: -1;
+                border-radius: var(--radius-sm);
+                background: var(--highlight-background);
+                box-shadow: var(--shadow-sm);
+                pointer-events: none;
+                transition:
+                  translate 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                  width 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                  height 200ms cubic-bezier(0.16, 1, 0.3, 1);
+
+                @media (prefers-reduced-motion: reduce) {
+                  transition: none;
+                }
+              }
+
+              .alignment-dot {
+                position: relative;
+                z-index: 1;
+                width: var(--spacing);
+                height: var(--spacing);
+                background-color: var(--color-gray-400);
+                border-radius: 50%;
+              }
+
+              &[data-selected] {
+                .alignment-dot {
+                  background-color: var(--highlight-foreground);
+                }
+              }
+            }
+          }
+        }
+
+        .justify-content {
+          grid-area: justify-content;
+        }
+
+        .flex-wrap {
+          grid-area: flex-wrap;
+        }
+
+        .displayGap {
+          grid-area: displayGap;
+        }
+
+        .fieldset-actions {
+          grid-area: icon;
+          display: flex;
+          flex-direction: column;
+          justify-content: end;
+
+          &::before {
+            content: "\00a0";
+            font-size: var(--text-2xs);
+            line-height: normal;
+            visibility: hidden;
+          }
+        }
+      }
+
+      .layout-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-rows: auto;
+        gap: var(--spacing-sm);
+        grid-template-areas: "padding margin actions-spacing";
+
+        > * {
+          min-width: 0;
+        }
+
+        .padding {
+          grid-area: padding;
+        }
+
+        .margin {
+          grid-area: margin;
+        }
+
+        .actions-spacing {
+          grid-area: actions-spacing;
+        }
+
+        /* 확장 모드: 4방향 그리드 */
+        &.layout-container-expanded {
+          grid-template-areas: "layout-padding layout-margin actions-spacing";
+
+          .layout-padding {
+            grid-area: layout-padding;
+          }
+
+          .layout-margin {
+            grid-area: layout-margin;
+          }
+        }
+      }
+
+      /* ========================================
+         * Layout Spacing Section (Figma-style expandable)
+         * Padding & Margin with 4-direction support
+         * ======================================== */
+      .layout-spacing {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-sm);
+        border-radius: var(--radius-md);
+
+        /* 4-way grid: 3x3 pattern (edges for padding/margin, corners for border-radius) */
+        .four-way-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(3, 1fr);
+          grid-template-areas:
+            ".    top    ."
+            "left .      right"
+            ".    bottom .";
+          gap: 3px;
+          border-radius: var(--radius-md);
+
+          .react-aria-Input {
+            margin: 2px;
+            background: var(--overlay-background);
+            border: none;
+            border-radius: var(--radius-sm);
+            width: 23px;
+            height: 23px;
+            box-shadow: var(--shadow-sm);
+            padding: var(--spacing-xs);
+            font-size: var(--text-xs);
+            text-align: center;
+            color: var(--border-color-hover);
+
+            &::placeholder {
+              color: var(--text-color-placeholder);
+              opacity: 0.5;
+            }
+
+            &:focus {
+              outline: 0px;
+            }
+          }
+
+          .four-way-top {
+            grid-area: top;
+          }
+
+          .four-way-right {
+            grid-area: right;
+          }
+
+          .four-way-bottom {
+            grid-area: bottom;
+          }
+
+          .four-way-left {
+            grid-area: left;
+          }
+        }
+      }
+    }
+
+    &[data-section-id="transform"] .section-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr var(--inspector-control-size);
+      grid-template-rows: auto;
+      gap: var(--spacing-sm);
+      grid-template-areas:
+        "size-mode-width size-mode-height ."
+        "width height actions-size"
+        "left top actions-position";
+
+      > * {
+        min-width: 0;
+      }
+
+      .size-mode-width {
+        grid-area: size-mode-width;
+      }
+
+      .size-mode-height {
+        grid-area: size-mode-height;
+      }
+
+      .width {
+        grid-area: width;
+      }
+
+      .height {
+        grid-area: height;
+
+        .react-aria-control .control-label svg {
+          transform: rotate(90deg);
+        }
+      }
+
+      .actions-size {
+        grid-area: actions-size;
+        align-self: end;
+      }
+
+      .left {
+        grid-area: left;
+      }
+
+      .top {
+        grid-area: top;
+      }
+
+      .actions-position {
+        grid-area: actions-position;
+        align-self: end;
+      }
+    }
+
+    &[data-section-id="appearance"] .section-content {
+      display: grid;
+
+      .style-background {
+        display: grid;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-rows: auto;
+        gap: var(--spacing-sm);
+        grid-template-areas: "background-color background-color icon";
+
+        > * {
+          min-width: 0;
+        }
+      }
+
+      .background-color {
+        grid-area: background-color;
+      }
+
+      .actions-icon {
+        grid-area: icon;
+        display: flex;
+        align-self: end;
+      }
+
+      .style-border {
+        display: grid;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-rows: auto;
+        gap: var(--spacing-sm);
+        grid-template-areas:
+          "border-style border-style border-color"
+          "border-width border-radius icon";
+
+        > * {
+          min-width: 0;
+        }
+
+        .actions-icon {
+          align-self: end;
+        }
+      }
+
+      .border-style {
+        grid-area: border-style;
+      }
+
+      .border-color {
+        grid-area: border-color;
+      }
+
+      .border-width {
+        grid-area: border-width;
+      }
+
+      .border-radius {
+        grid-area: border-radius;
+      }
+
+      .style-shadow {
+        display: grid;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-rows: auto;
+        gap: var(--spacing-sm);
+        grid-template-areas: "box-shadow box-shadow .";
+
+        > * {
+          min-width: 0;
+        }
+      }
+
+      .box-shadow {
+        grid-area: box-shadow;
+      }
+    }
+
+    &[data-section-id="typography"] .section-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr var(--inspector-control-size);
+      grid-template-rows: auto;
+      gap: var(--spacing-sm);
+      grid-template-areas:
+        "font-family font-family color"
+        "font-size line-height icon"
+        "font-weight letter-spacing ."
+        "text-align vertical-align ."
+        "font-style text-decoration ."
+        "text-transform . .";
+
+      /* 모든 grid 자식 요소에 min-width: 0 적용하여 1fr 균등 분할 보장 */
+      > * {
+        min-width: 0;
+      }
+
+      .font-family {
+        grid-area: font-family;
+      }
+
+      .color {
+        grid-area: color;
+      }
+
+      .font-size {
+        grid-area: font-size;
+      }
+
+      .line-height {
+        grid-area: line-height;
+      }
+
+      .letter-spacing {
+        grid-area: letter-spacing;
+      }
+
+      .font-weight {
+        grid-area: font-weight;
+      }
+
+      .text-align {
+        grid-area: text-align;
+      }
+
+      .vertical-align {
+        grid-area: vertical-align;
+      }
+
+      .text-decoration {
+        grid-area: text-decoration;
+      }
+
+      .font-style {
+        grid-area: font-style;
+      }
+
+      .fieldset-actions {
+        align-self: end;
+      }
+
+      .text-transform {
+        grid-area: text-transform;
+      }
+
+      .actions-font {
+        grid-area: icon;
+        display: flex;
+        align-self: end;
+      }
+    }
+
+    label,
+    legend {
+      font-size: var(--text-xs);
+      color: var(--text-color-placeholder);
+    }
+
+    .react-aria-ToggleButtonGroup[data-indicator="true"] {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing);
+      background: var(--border-color);
+      box-shadow: var(--inset-shadow-sm);
+      outline: 1px solid var(--border-color);
+      outline-offset: -1px;
+      border-radius: var(--radius-md);
+
+      /* focus-within style for entire group */
+      &:focus-within {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: -2px;
+      }
+
+      &::before {
+        top: 0px;
+        left: 0px;
+        width: var(--indicator-width);
+        height: var(--indicator-height);
+        border-radius: var(--radius-sm);
+        background: var(--overlay-background);
+      }
+
+      .react-aria-ToggleButton {
+        background-color: transparent;
+        border-width: 0;
+        width: var(--text-xl);
+        max-width: var(--text-xl);
+        height: var(--text-xl);
+        padding: var(--spacing-xs);
+        font-size: var(--text-xs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &[data-pressed] {
+          background: transparent;
+          color: var(--text-color);
+        }
+
+        &[data-selected] {
+          box-shadow: var(--shadow-sm);
+          background: transparent;
+          color: var(--color-white);
+
+          svg {
+            stroke: var(--text-color);
+          }
+
+          &[data-pressed] {
+            background: transparent;
+            color: var(--color-white);
+          }
+        }
+      }
+    }
+  }
+}

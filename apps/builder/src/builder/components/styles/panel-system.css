@@ -1,0 +1,300 @@
+@layer builder-system {
+  /* ========================================
+   * Panel System - 패널 공통 구조
+   * .panel-wrapper[data-panel="{name}"]
+   * +-- .panel
+   * |   +-- .panel-header
+   * |   |   +-- .panel-title
+   * |   |   +-- .panel-actions
+   * |   +-- .panel-contents (복수형: 상위 .panel-content와 구분)
+   * |       +-- .section (반복)
+   * |           +-- .section-header
+   * |           |   +-- .section-title
+   * |           |   +-- .section-actions
+   * |           +-- .section-content
+   * ======================================== */
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .panel-wrapper[data-panel="components"] .section .section-content {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  }
+
+  .panel-wrapper[data-panel="properties"] .section .section-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-contents {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+
+    /* Phase 11: 스크롤 영역 밖 섹션 렌더링 스킵 */
+    /* content-visibility: auto는 뷰포트 밖일 때 렌더링 스킵 */
+    content-visibility: auto;
+    /* contain-intrinsic-size: auto 150px; 평균 섹션 높이 힌트 */
+
+    &.empty,
+    &.loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+    }
+
+    .section-overview-help {
+      font-size: var(--text-xs);
+      color: var(--text-color-placeholder);
+      padding: var(--spacing-sm);
+      background: var(--gray-200);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--inset-shadow-sm);
+      outline: 1px solid var(--border-color);
+      outline-offset: -1px;
+    }
+
+    /* Section Header */
+    .section-header {
+      height: var(--header-height);
+
+      background-color: var(--gray-200);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-header .section-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm);
+      border-bottom: 0;
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
+    }
+
+    .section-header .section-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-color-placeholder);
+    }
+
+    .section-header .section-actions {
+      display: flex;
+    }
+
+    .section-header .iconButton {
+      padding: var(--spacing-sm);
+    }
+
+    .section-content {
+      background-color: var(--color-neutral-100);
+      padding: var(--spacing-sm);
+
+      gap: var(--spacing-sm);
+
+      .fieldset-actions {
+        grid-area: icon;
+        display: flex;
+
+        .react-aria-Button {
+          background-color: var(--gray-200);
+          border-color: transparent;
+          padding: var(--spacing);
+          height: var(--inspector-control-size);
+          width: var(--inspector-control-size);
+          box-shadow: var(--shadow-xs);
+        }
+      }
+    }
+
+    /* Section Content - styles/properties 패널 전용 */
+    /* components 패널은 ComponentList.css에서 별도 스타일 적용 */
+
+    .panel-wrapper[data-panel="styles"] .section-content,
+    .panel-wrapper[data-panel="properties"] .section-content {
+      padding: var(--spacing-sm);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      background: var(--color-neutral-100);
+
+      .properties-aria {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+
+        .react-aria-ListBoxItem {
+          flex-direction: row;
+          justify-content: space-between;
+        }
+      }
+
+      .component-fieldset {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+
+      .fieldset-legend {
+        grid-area: label;
+        font-size: var(--text-2xs);
+        color: var(--text-color-placeholder);
+      }
+
+      .layout-direction {
+        .direction-alignment-grid {
+          grid-area: input2;
+
+          /* 3x3 alignment grid */
+          .react-aria-ToggleButtonGroup {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 3px;
+            border-radius: var(--radius-md);
+
+            /* React Aria 1.13.0: 3x3 Grid SelectionIndicator for 2D movement */
+            .react-aria-SelectionIndicator {
+              border-radius: var(--radius-sm);
+              transition:
+                transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                width 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                height 200ms cubic-bezier(0.16, 1, 0.3, 1);
+
+              @media (prefers-reduced-motion: reduce) {
+                transition: none;
+              }
+            }
+
+            .react-aria-ToggleButton {
+              margin-inline-start: 0;
+              height: var(--inspector-control-size);
+
+              .alignment-dot {
+                width: var(--spacing);
+                height: var(--spacing);
+                background-color: var(--border-color-hover);
+              }
+            }
+          }
+        }
+
+        .justify-control {
+          grid-area: input3;
+          display: flex;
+          flex-direction: column;
+        }
+      }
+
+      /* ========================================
+       * Page Layout Selector
+       * Layout assignment info and clear button
+       * ======================================== */
+      .page-layout-info {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        background: var(--gray-200);
+        border-radius: var(--radius-sm);
+      }
+
+      .page-layout-description {
+        margin: 0;
+        font-size: var(--text-xs);
+        color: var(--text-color-placeholder);
+        line-height: 1.4;
+      }
+
+      .page-layout-clear {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs);
+        background: transparent;
+        border: 1px solid var(--border-color-hover);
+        border-radius: var(--radius-sm);
+        font-size: var(--text-xs);
+        color: var(--text-color-placeholder);
+        cursor: pointer;
+        transition: all 150ms;
+
+        &:hover {
+          background: var(--color-error-100);
+          border-color: var(--invalid-color);
+          color: var(--color-error-900);
+        }
+
+        &:active {
+          background: var(--invalid-color);
+          color: var(--color-white);
+        }
+      }
+    }
+
+    .loading-message,
+    .empty-message {
+      color: var(--text-color-placeholder);
+      font-size: var(--font-size-sm);
+    }
+
+    .section-placeholder {
+      padding: var(--spacing-4);
+      background: var(--warning-container);
+      border: 1px solid var(--warning-container);
+      border-radius: var(--radius-md);
+      color: var(--on-warning-container);
+      font-size: var(--font-size-sm);
+      margin-bottom: var(--spacing-4);
+    }
+
+    .section-info {
+      padding: var(--spacing-4);
+      background: var(--color-white);
+      border: 1px solid var(--border-color-hover);
+      border-radius: var(--radius-md);
+
+      h4 {
+        margin: 0 0 var(--spacing-2) 0;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+        color: var(--text-color);
+      }
+
+      pre {
+        margin: 0;
+        padding: var(--spacing-2);
+        background: var(--gray-200);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-xs);
+        font-family: var(--font-mono);
+        overflow-x: auto;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: var(--spacing-4);
+        font-size: var(--font-size-sm);
+        color: var(--text-color-placeholder);
+      }
+    }
+  }
+}
