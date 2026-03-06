@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 12     |
 | 부분 완료                              | 5      |
-| 미구현 (Proposed/계획)                 | 10     |
-| **합계**                               | **27** |
+| 미구현 (Proposed/계획)                 | 11     |
+| **합계**                               | **28** |
 
 ---
 
@@ -44,18 +44,19 @@
 
 ### 미구현
 
-| ADR                                      | 제목                                              | 상태     | 규모                                                                    | 우선순위 |
-| ---------------------------------------- | ------------------------------------------------- | -------- | ----------------------------------------------------------------------- | :------: |
-| [010](010-events-panel.md)               | Events Panel Smart Recommendations                | Proposed | P0~P2 3단계, 추천 이벤트/액션 + AI 생성                                 |    P5    |
-| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                       | Proposed | 5 Phase, 21파일                                                         |  **P2**  |
-| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                 | Proposed | 변경 대상 8파일, 코드 미생성                                            |    P5    |
-| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)                | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                  |    P5    |
-| [019](019-icon-system.md)                | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가  | Proposed | 5 Phase, Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링    |  **P2**  |
-| [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선                      | Proposed | 3 Phase, 13파일 — History 통합, Kit v2 스키마, Factory 연동             |    P4    |
-| [024](024-s2-css-variable-migration.md)  | CSS 변수명 S2 체계 전환                           | Proposed | 4 Phase, alias 점진 전환 → 60+ CSS 파일 변경                            |    P3    |
-| [025](025-s2-named-color-palette.md)     | S2 Named Color Palette 확장                       | Proposed | 4 Phase, 12색×2 = 24 토큰 추가 — Badge 부분은 ADR-023 Ph3에서 구현 완료 |    P3    |
-| [026](026-responsive-constraint-ui.md)   | Responsive Constraint UI (Size Mode → CSS 매핑)   | Proposed | 4 Phase, Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio + 정렬   |  **P2**  |
-| [027](027-inline-text-editing.md)        | Canvas Inline Text Editing (WebGL 위 텍스트 편집) | Proposed | 4 Phase (A~D), DOM Overlay + contenteditable, Pencil/Figma 패턴         |  **P2**  |
+| ADR                                       | 제목                                              | 상태     | 규모                                                                    | 우선순위 |
+| ----------------------------------------- | ------------------------------------------------- | -------- | ----------------------------------------------------------------------- | :------: |
+| [010](010-events-panel.md)                | Events Panel Smart Recommendations                | Proposed | P0~P2 3단계, 추천 이벤트/액션 + AI 생성                                 |    P5    |
+| [013](013-quick-connect-data-binding.md)  | Quick Connect 데이터 바인딩                       | Proposed | 5 Phase, 21파일                                                         |  **P2**  |
+| [015](015-sitemap-layout.md)              | Sitemap Hierarchy 워크플로우 엣지                 | Proposed | 변경 대상 8파일, 코드 미생성                                            |    P5    |
+| [016](016-photoshop-ui-ux.md)             | Photoshop 벤치마크 기반 UI/UX (v2)                | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                  |    P5    |
+| [019](019-icon-system.md)                 | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가  | Proposed | 5 Phase, Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링    |  **P2**  |
+| [020](020-design-kit-improvement.md)      | Design Kit 패널 분석 및 개선                      | Proposed | 3 Phase, 13파일 — History 통합, Kit v2 스키마, Factory 연동             |    P4    |
+| [024](024-s2-css-variable-migration.md)   | CSS 변수명 S2 체계 전환                           | Proposed | 4 Phase, alias 점진 전환 → 60+ CSS 파일 변경                            |    P3    |
+| [025](025-s2-named-color-palette.md)      | S2 Named Color Palette 확장                       | Proposed | 4 Phase, 12색×2 = 24 토큰 추가 — Badge 부분은 ADR-023 Ph3에서 구현 완료 |    P3    |
+| [026](026-responsive-constraint-ui.md)    | Responsive Constraint UI (Size Mode → CSS 매핑)   | Proposed | 4 Phase, Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio + 정렬   |  **P2**  |
+| [027](027-inline-text-editing.md)         | Canvas Inline Text Editing (WebGL 위 텍스트 편집) | Proposed | 4 Phase (A~D), DOM Overlay + contenteditable, Pencil/Figma 패턴         |  **P2**  |
+| [028](028-builder-css-scope-isolation.md) | Builder CSS 스코프 격리                           | Proposed | 2 Phase, `[data-context="builder"]` 단일 선택자 + ADR-018 시너지        |    P3    |
 
 ---
 
