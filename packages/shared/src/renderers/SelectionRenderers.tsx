@@ -27,6 +27,13 @@ import type {
  * - Slider
  */
 
+/** srcdoc iframe에서 origin이 'null'이 되므로 '*' fallback */
+function getTargetOrigin(): string {
+  const origin = window.location.origin;
+  if (!origin || origin === "null") return "*";
+  return origin;
+}
+
 // Field Elements 생성 요청 추적 (중복 방지)
 const fieldCreationRequestedRef = React.createRef<Set<string>>();
 if (!fieldCreationRequestedRef.current) {
@@ -731,7 +738,7 @@ export const renderSelect = (
             props: updatedProps,
             merge: false,
           },
-          window.location.origin,
+          getTargetOrigin(),
         );
       }}
     >
@@ -984,7 +991,7 @@ export const renderComboBox = (
             },
             merge: true,
           },
-          window.location.origin,
+          getTargetOrigin(),
         );
       }}
       onInputChange={(inputValue) => {

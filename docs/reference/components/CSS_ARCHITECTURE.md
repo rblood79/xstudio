@@ -357,7 +357,7 @@ color-mix(in srgb, var(--highlight-background) 75%, black)
 
 **기능:** React Aria `Button` 래퍼 + 내장 tooltip 지원 (`tooltip` prop: 텍스트, `shortcutId` prop: 단축키 표시)
 
-**사용 위치:** 패널 헤더 (StylesPanel, PropertiesPanel, HistoryPanel), 상단 바 (BuilderHeader undo/redo)
+**사용 위치:** 패널 헤더 (StylesPanel, PropertiesPanel, HistoryPanel), 상단 바 (BuilderHeader undo/redo), 사이드바 PanelNav (tooltip CSS 재사용)
 
 > **규칙:** builder 아이콘 버튼에는 공유 `Button variant="ghost"` 대신 `ActionIconButton` 사용 필수.
 
@@ -567,15 +567,15 @@ export default defineConfig({
 
 ## 🔄 Update History
 
-| Version | Date       | Changes                                                                                            |
-| ------- | ---------- | -------------------------------------------------------------------------------------------------- |
-| 3.2     | 2026-03-06 | ActionIconButton 도입 — builder 전용 아이콘 버튼 (`.button-base` 우회, tooltip/shortcut 내장)      |
-| 3.1     | 2026-03-04 | Tint Color System 도입 (oklch relative color), shared-tokens 팔레트 완성, Card.css/Button.css 수정 |
-| 3.0     | 2026-03-04 | ADR-017: M3 토큰 제거 + 시맨틱 토큰 카탈로그. ADR-018: utilities.css 도입, Best Practices 갱신     |
-| 2.2     | 2026-03-04 | Phase 5: CSS 중복 로딩 해결 — import chain 단일화, foundation.css, 1-theme/ 삭제                   |
-| 2.1     | 2026-02-19 | Phase 4 상태 명시 (보류/대체), 미존재 참조 문서 정리, 날짜 보정                                    |
-| 2.0     | 2025-11-08 | Phase 1-3 complete: Theme separation, hardcoded color removal, ITCSS structure                     |
-| 1.0     | 2025-11-08 | Initial baseline documentation                                                                     |
+| Version | Date       | Changes                                                                                                   |
+| ------- | ---------- | --------------------------------------------------------------------------------------------------------- |
+| 3.2     | 2026-03-06 | ActionIconButton 도입 + `.action-tooltip` CSS. PanelNav tooltip 추가 (React Aria Button + TooltipTrigger) |
+| 3.1     | 2026-03-04 | Tint Color System 도입 (oklch relative color), shared-tokens 팔레트 완성, Card.css/Button.css 수정        |
+| 3.0     | 2026-03-04 | ADR-017: M3 토큰 제거 + 시맨틱 토큰 카탈로그. ADR-018: utilities.css 도입, Best Practices 갱신            |
+| 2.2     | 2026-03-04 | Phase 5: CSS 중복 로딩 해결 — import chain 단일화, foundation.css, 1-theme/ 삭제                          |
+| 2.1     | 2026-02-19 | Phase 4 상태 명시 (보류/대체), 미존재 참조 문서 정리, 날짜 보정                                           |
+| 2.0     | 2025-11-08 | Phase 1-3 complete: Theme separation, hardcoded color removal, ITCSS structure                            |
+| 1.0     | 2025-11-08 | Initial baseline documentation                                                                            |
 
 ---
 

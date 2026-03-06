@@ -1,14 +1,14 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-06 (ADR-027 Proposed — Canvas Inline Text Editing)
+> **최종 업데이트**: 2026-03-06 (코드베이스 대조 검증 — ADR-010 미구현 이동, ADR-014 완료 이동, ADR-009 Phase 5 미구현 추가)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 11     |
-| 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 9      |
+| 완료 (Accepted/Implemented/Superseded) | 12     |
+| 부분 완료                              | 5      |
+| 미구현 (Proposed/계획)                 | 10     |
 | **합계**                               | **27** |
 
 ---
@@ -29,24 +29,24 @@
 | [008](008-layout-engine.md)               | 캔버스 레이아웃 엔진 전환 (전략 D) | Implemented | 2026-02-17 | Taffy WASM 단일 엔진 전환 완료                                             |
 | [017](017-css-override-ssot.md)           | React-Aria CSS Override SSOT       | Implemented | 2026-03-04 | M3 38개 제거, 107개 CSS 치환, Tint Color System 도입                       |
 | [022](022-s2-color-token-migration.md)    | React Spectrum S2 색상 토큰 전환   |  Accepted   | 2026-03-05 | Phase 1~5 완료, M3→S2 토큰 rename + CSS↔Skia 불일치 해소                   |
+| [014](014-fonts.md)                       | Fonts 실행 계획                    | Implemented | 2026-03-05 | Phase A+B+C+C2+D+E 전체 완료 (FontRegistryV2 + 멀티파일 Export)            |
 | [023](023-s2-component-variant-props.md)  | 컴포넌트 Variant Props S2 전환     |  Accepted   | 2026-03-05 | Phase 1+2+3 완료, Badge 19 variants, ToggleButton S2, Button premium/genai |
 
 ### 부분 완료
 
-| ADR                                               | 제목                                           | 완료 범위                                                                                                       | 미완료 범위                                                                     | 우선순위  |
-| ------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | :-------: |
-| [009](009-full-tree-wasm-layout.md)               | Figma-Class Rendering & Layout                 | Foundation + Phase 0~5 구현 완료 (Phase 2 TypedArray, Phase 3 Flat Render List, Phase 4 R-tree, Phase 5 Worker) | Phase 2 SharedArrayBuffer 미구현                                                |    P4     |
-| [010](010-events-panel.md)                        | Events Panel Smart Recommendations             | P0 + P1 전체 (추천 이벤트/액션, 배지, 경고, 25개 액션 타입)                                                     | P1.5 (UX 폴리싱), P2 (AI 생성 + 고급)                                           |    P5     |
-| [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)          | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화)                                                               | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스 도구)                  |    P5     |
-| [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝              | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                                      | P3-1 (Store-level Dirty Tracking) 미구현                                        |    P5     |
-| [014](014-fonts.md)                               | Fonts 실행 계획                                | Phase A+B+C+C2+D+E 전체 완료 (FontRegistryV2 + 멀티파일 Export)                                                 | —                                                                               | ~~P1~~ ✅ |
-| [018](018-component-css-restructure.md)           | 컴포넌트 CSS 구조 재작성                       | Phase 1 완료 (utilities.css 생성 + Button/Card 마이그레이션)                                                    | Phase 2~5 미착수 (컴포넌트별 utility 패턴 전환, CSS 줄수 삭감)                  |    P3     |
-| [021](021-theme-system-redesign.md)               | 테마 시스템 개편 — Tint + Tailwind 인라인 패널 | Phase A+B+C 완료 + Phase D 부분 완료(ThemeStudio 삭제, themeStore 축소, /theme 라우트 제거)                     | Phase D 잔여(Supabase 테마 서비스 정리), Phase E (컴포넌트별 accent 오버라이드) |  **P2**   |
+| ADR                                               | 제목                                           | 완료 범위                                                                                       | 미완료 범위                                                                     | 우선순위 |
+| ------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | :------: |
+| [009](009-full-tree-wasm-layout.md)               | Figma-Class Rendering & Layout                 | Foundation + Phase 0~4 구현 완료 (Phase 2 TypedArray, Phase 3 Flat Render List, Phase 4 R-tree) | Phase 2 SharedArrayBuffer + Phase 5 OffscreenCanvas Worker 미구현               |    P4    |
+| [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)          | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화)                                               | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스 도구)                  |    P5    |
+| [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝              | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                      | P3-1 (Store-level Dirty Tracking) 미구현                                        |    P5    |
+| [018](018-component-css-restructure.md)           | 컴포넌트 CSS 구조 재작성                       | Phase 1 완료 (utilities.css 생성 + Button/Card 마이그레이션)                                    | Phase 2~5 미착수 (컴포넌트별 utility 패턴 전환, CSS 줄수 삭감)                  |    P3    |
+| [021](021-theme-system-redesign.md)               | 테마 시스템 개편 — Tint + Tailwind 인라인 패널 | Phase A+B+C 완료 + Phase D 부분 완료(ThemeStudio 삭제, themeStore 축소, /theme 라우트 제거)     | Phase D 잔여(Supabase 테마 서비스 정리), Phase E (컴포넌트별 accent 오버라이드) |  **P2**  |
 
 ### 미구현
 
 | ADR                                      | 제목                                              | 상태     | 규모                                                                    | 우선순위 |
 | ---------------------------------------- | ------------------------------------------------- | -------- | ----------------------------------------------------------------------- | :------: |
+| [010](010-events-panel.md)               | Events Panel Smart Recommendations                | Proposed | P0~P2 3단계, 추천 이벤트/액션 + AI 생성                                 |    P5    |
 | [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩                       | Proposed | 5 Phase, 21파일                                                         |  **P2**  |
 | [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지                 | Proposed | 변경 대상 8파일, 코드 미생성                                            |    P5    |
 | [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2)                | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                  |    P5    |
@@ -59,7 +59,7 @@
 
 ---
 
-## 다음 진행 목표 (2026-03-05 기준)
+## 다음 진행 목표 (2026-03-06 기준)
 
 | 순서  | 대상                | 내용                                                                              | 규모 |   상태   |
 | :---: | ------------------- | --------------------------------------------------------------------------------- | :--: | :------: |
@@ -81,10 +81,10 @@
 
 ## 우선순위 근거
 
-### ~~P1: ADR-014 Fonts~~ ✅ 완료
+### ~~P1: ADR-014 Fonts~~ ✅ 완료 (Implemented 이동)
 
 - **근거**: 프로젝트 레벨 폰트 관리 부재 → 협업/배포 제약
-- **진행률**: Phase A+B+C+C2+D+E 전체 완료
+- **진행률**: Phase A+B+C+C2+D+E 전체 완료 — 코드베이스 검증 확인 (2026-03-06)
 - **영향 범위**: Builder/Preview/Publish 폰트 일관성
 
 ### ~~P2: ADR-023~~ ✅ 완료
@@ -111,11 +111,10 @@
 - **전제 조건**: Phase 2 Binary Protocol TypedArray 완료 (충족)
 - **영향 범위**: 5,000+ 요소 대규모 프로젝트 성능
 
-### P5: ADR-010 P1.5/P2 + ADR-011 A5 + ADR-012 P3 + ADR-015 + ADR-016
+### P5: ADR-010 + ADR-011 A5 + ADR-012 P3 + ADR-015 + ADR-016
 
 - **근거**: 핵심 기능 완료, 부가 기능/장기 계획
-- ADR-010 P1.5: UX 폴리싱 (제안 단계)
-- ADR-010 P2: AI 기반 이벤트 생성 (장기)
+- **ADR-010**: Events Panel 전체 미구현 — 코드베이스 검증 결과 P0 포함 구현 흔적 없음
 - **ADR-011 A5**: 캔버스 통합(CanvasKit 스키마 변환, 멀티모달, 인스턴스 도구) — AI 인프라 성숙 후 실행
 - **ADR-012 P3-1**: Store-level Dirty Tracking — P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 구현 완료, 잔여 1건
 - ADR-015: Sitemap 계층 시각화 (있으면 좋지만 필수 아님)
@@ -221,3 +220,4 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-05 | **ADR-023 Accepted** — Phase 2 완료: ToggleButton.spec.ts isEmphasized, Label.spec.ts 주석 S2 정리, NavigationComponents.ts Factory Pagination 버튼 S2 전환(variant: outline→secondary+fillStyle, default→accent). Partial→Accepted(완료) 이동. P2 우선순위 ADR-026→ADR-013→ADR-019으로 갱신                                                                                                                                                                                                 |
 | 2026-03-05 | **ADR-023 Phase 3 완료** — Button premium/genai variant 추가, ToggleButton S2 전환(variant 제거→isEmphasized/isQuiet boolean), ToggleButtonGroup default size S→M, Badge S2 named color 13종 추가(총 19 variants), Badge size padding S2 spacing 토큰 동기화, tokenResolver 13색 매핑, cssVariableReader S2 fallback 전환. ADR-025 Badge 부분 supersede 반영                                                                                                                                 |
 | 2026-03-06 | **ADR-027 Proposed** — Canvas Inline Text Editing (WebGL 위 텍스트 직접 편집). Pencil 앱 분석 기반, DOM Overlay + contenteditable 방식 채택. 4 Phase (A: MVP Text/Heading, B: 줌/팬/멀티페이지, C: Spec 컴포넌트 내부 텍스트, D: 리치 텍스트). P2 우선순위. 현황 카운트 갱신 (미구현 9, 합계 27)                                                                                                                                                                                             |
+| 2026-03-06 | **코드베이스 대조 검증** — ① ADR-010: Events Panel 구현 흔적 없음 확인, 부분 완료→미구현(Proposed) 이동 ② ADR-014: Phase A~E 전체 구현 확인, 부분 완료→완료(Implemented) 이동 ③ ADR-009: Phase 5(OffscreenCanvas Worker) 미구현 확인, 완료 범위 Phase 0~5→Phase 0~4 수정. 현황 카운트 갱신 (완료 12, 부분 5, 미구현 10)                                                                                                                                                                      |

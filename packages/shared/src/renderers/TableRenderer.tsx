@@ -1,6 +1,12 @@
 import React from "react";
 import Table, { type ColumnDefinition } from "../components/Table";
-import type { PreviewElement, RenderContext, ElementProps, DataBinding, ColumnMapping } from "../types";
+import type {
+  PreviewElement,
+  RenderContext,
+  ElementProps,
+  DataBinding,
+  ColumnMapping,
+} from "../types";
 import { generateId } from "../utils";
 
 /**
@@ -10,6 +16,13 @@ import { generateId } from "../utils";
  * - Column, Row, Cell (null 반환 - Table 내부에서 처리)
  * - ColumnGroup
  */
+
+/** srcdoc iframe에서 origin이 'null'이 되므로 '*' fallback */
+function getTargetOrigin(): string {
+  const origin = window.location.origin;
+  if (!origin || origin === "null") return "*";
+  return origin;
+}
 
 // Column Elements 생성 요청 추적 (중복 방지)
 const columnCreationRequestedRef = React.createRef<Set<string>>();
@@ -23,7 +36,7 @@ if (!columnCreationRequestedRef.current) {
  */
 export const renderTable = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { elements } = context;
 
@@ -33,7 +46,7 @@ export const renderTable = (
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   const tableHeaderElement = children.find(
-    (child) => child.tag === "TableHeader"
+    (child) => child.tag === "TableHeader",
   );
 
   // Column Elements 찾기
@@ -43,7 +56,7 @@ export const renderTable = (
           (el) =>
             el.parent_id === tableHeaderElement.id &&
             el.tag === "Column" &&
-            !el.deleted
+            !el.deleted,
         )
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
     : children.filter((child) => child.tag === "Column" && !child.deleted);
@@ -78,7 +91,7 @@ export const renderTable = (
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding =
     dataBinding &&
-    typeof dataBinding === 'object' &&
+    typeof dataBinding === "object" &&
     "source" in (dataBinding as object) &&
     "name" in (dataBinding as object) &&
     !("type" in (dataBinding as object));
@@ -187,7 +200,7 @@ export const renderTable = (
           align: (mapping.align || "left") as "left" | "center" | "right",
           elementId: generateId(),
         };
-      }
+      },
     );
   }
 
@@ -224,7 +237,7 @@ export const renderTable = (
           align: (mapping.align || "left") as "left" | "center" | "right",
           elementId: generateId(),
         };
-      }
+      },
     );
   }
 
@@ -270,7 +283,6 @@ export const renderTable = (
     const requestKey = `${element.id}_${dataSource}_${mappedColumns.map((c) => c.key).join("_")}`;
 
     if (!columnCreationRequestedRef.current?.has(requestKey)) {
-
       const columnElementsToCreate = mappedColumns.map((colDef, index) => ({
         id: colDef.elementId || `col_${Date.now()}_${index}`,
         tag: "Column",
@@ -299,7 +311,7 @@ export const renderTable = (
             columns: columnElementsToCreate,
           },
         },
-        window.location.origin
+        getTargetOrigin(),
       );
     }
   }
@@ -309,7 +321,7 @@ export const renderTable = (
     ? elements
         .filter(
           (el) =>
-            el.parent_id === tableHeaderElement.id && el.tag === "ColumnGroup"
+            el.parent_id === tableHeaderElement.id && el.tag === "ColumnGroup",
         )
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
         .map((groupEl) => {
@@ -376,7 +388,9 @@ export const renderTable = (
         (element.props.heightMode as "auto" | "fixed" | "viewport" | "full") ||
         "fixed"
       }
-      heightUnit={(element.props.heightUnit as "px" | "vh" | "rem" | "em") || "px"}
+      heightUnit={
+        (element.props.heightUnit as "px" | "vh" | "rem" | "em") || "px"
+      }
       viewportHeight={
         typeof element.props.viewportHeight === "number"
           ? element.props.viewportHeight
@@ -395,9 +409,7 @@ export const renderTable = (
         hasApiBinding && apiConfig.baseUrl ? apiConfig.baseUrl : undefined
       }
       customApiUrl={
-        hasApiBinding &&
-        apiConfig.baseUrl === "CUSTOM" &&
-        apiConfig.customUrl
+        hasApiBinding && apiConfig.baseUrl === "CUSTOM" && apiConfig.customUrl
           ? apiConfig.customUrl
           : undefined
       }
@@ -457,7 +469,7 @@ export const renderTable = (
               columns: columnElementsToCreate,
             },
           },
-          window.location.origin
+          getTargetOrigin(),
         );
       }}
     />

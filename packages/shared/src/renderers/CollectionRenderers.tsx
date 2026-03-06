@@ -26,6 +26,13 @@ import type {
  * - Menu, Toolbar
  */
 
+/** srcdoc iframe에서 origin이 'null'이 되므로 '*' fallback */
+function getTargetOrigin(): string {
+  const origin = window.location.origin;
+  if (!origin || origin === "null") return "*";
+  return origin;
+}
+
 /**
  * Tree 렌더링
  */
@@ -377,7 +384,7 @@ export const renderTagGroup = (
             },
             merge: true,
           },
-          window.location.origin,
+          getTargetOrigin(),
         );
       }}
       onRemove={async (keys) => {
@@ -443,7 +450,7 @@ export const renderTagGroup = (
               },
               merge: true,
             },
-            window.location.origin,
+            getTargetOrigin(),
           );
 
           return;
@@ -526,7 +533,7 @@ export const renderTagGroup = (
               type: "UPDATE_ELEMENTS",
               elements: updatedElements,
             },
-            window.location.origin,
+            getTargetOrigin(),
           );
         }, 0);
       }}

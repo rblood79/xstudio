@@ -5,9 +5,15 @@
  * 기존 sidebar-nav 디자인 재사용
  */
 
+import {
+  Button as RACButton,
+  Tooltip,
+  TooltipTrigger,
+} from "react-aria-components";
 import type { PanelSide, PanelId } from "../panels/core/types";
 import { PanelRegistry } from "../panels/core/PanelRegistry";
 import { iconProps, iconPropsOn } from "../../utils/ui/uiConstants";
+import "../components/ui/ActionIconButton.css";
 
 export interface PanelNavProps {
   /** 현재 사이드 (left/right) */
@@ -39,20 +45,39 @@ export function PanelNav({
           const Icon = panelConfig.icon;
           const isActive = activePanels.includes(panelId);
 
+          const tooltipPlacement = side === "left" ? "right" : "left";
+
           return (
             <li key={panelId}>
-              <button
-                className={`nav-button ${isActive ? "active" : ""}`}
-                onClick={() => onPanelClick(panelId)}
-                aria-pressed={isActive}
-                aria-label={panelConfig.name}
-              >
-                <Icon
-                  color={isActive ? iconPropsOn.color : iconProps.color}
-                  strokeWidth={isActive ? iconPropsOn.strokeWidth : iconProps.strokeWidth}
-                  size={isActive ? iconPropsOn.size : iconProps.size}
-                />
-              </button>
+              <TooltipTrigger delay={700}>
+                <RACButton
+                  className={`nav-button ${isActive ? "active" : ""}`}
+                  onPress={() => onPanelClick(panelId)}
+                  aria-pressed={isActive}
+                  aria-label={panelConfig.name}
+                >
+                  <Icon
+                    color={isActive ? iconPropsOn.color : iconProps.color}
+                    strokeWidth={
+                      isActive ? iconPropsOn.strokeWidth : iconProps.strokeWidth
+                    }
+                    size={isActive ? iconPropsOn.size : iconProps.size}
+                  />
+                </RACButton>
+                <Tooltip
+                  placement={tooltipPlacement}
+                  className="action-tooltip"
+                >
+                  <span className="action-tooltip-label">
+                    {panelConfig.name}
+                  </span>
+                  {panelConfig.shortcut && (
+                    <kbd className="action-tooltip-kbd">
+                      {panelConfig.shortcut}
+                    </kbd>
+                  )}
+                </Tooltip>
+              </TooltipTrigger>
             </li>
           );
         })}

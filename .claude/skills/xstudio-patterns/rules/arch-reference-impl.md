@@ -28,11 +28,12 @@ tags: [architecture, reference, patterns]
 
 ## 컴포넌트 패턴
 
-| 패턴                | 참조 파일                                       | 설명                                                     |
-| ------------------- | ----------------------------------------------- | -------------------------------------------------------- |
-| React-Aria 컴포넌트 | `builder/components/dialog/AddPageDialog.tsx`   | Modal + Form 조합                                        |
-| 복합 컴포넌트       | `builder/panels/properties/PropertiesPanel.tsx` | 다중 섹션 구성                                           |
-| Builder 아이콘 버튼 | `builder/components/ui/ActionIconButton.tsx`    | 공유 Button의 `.button-base` 우회, tooltip/shortcut 내장 |
+| 패턴                 | 참조 파일                                       | 설명                                                             |
+| -------------------- | ----------------------------------------------- | ---------------------------------------------------------------- |
+| React-Aria 컴포넌트  | `builder/components/dialog/AddPageDialog.tsx`   | Modal + Form 조합                                                |
+| 복합 컴포넌트        | `builder/panels/properties/PropertiesPanel.tsx` | 다중 섹션 구성                                                   |
+| Builder 아이콘 버튼  | `builder/components/ui/ActionIconButton.tsx`    | 공유 Button의 `.button-base` 우회, tooltip/shortcut 내장         |
+| 사이드바 Nav tooltip | `builder/layout/PanelNav.tsx`                   | React Aria Button + TooltipTrigger, `.action-tooltip` CSS 재사용 |
 
 ## Property Editor 패턴
 
