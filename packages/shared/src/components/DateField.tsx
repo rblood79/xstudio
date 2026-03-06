@@ -103,7 +103,9 @@ export function DateField<T extends DateValue>({
       maxValue={maxValue as T | undefined}
     >
       {label && <Label>{label}</Label>}
-      <DateInput>{(segment) => <DateSegment segment={segment} />}</DateInput>
+      <DateInput className="react-aria-DateInput inset">
+        {(segment) => <DateSegment segment={segment} />}
+      </DateInput>
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>
     </AriaDateField>

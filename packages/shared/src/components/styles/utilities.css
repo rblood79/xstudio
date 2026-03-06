@@ -116,21 +116,21 @@
       opacity: 0.6;
     }
 
-    &:where([data-hovered]:not([data-focused]):not([data-disabled])) {
+    &:where(
+      [data-hovered]:not([data-focused]):not([data-focus-within]):not(
+          [data-disabled]
+        )
+    ) {
       border-color: var(--inset-hover-border, var(--border-color-hover));
       background: var(--inset-hover-bg, var(--overlay-background));
     }
 
-    &:where([data-focused]) {
+    &:where([data-focused]),
+    &:where([data-focus-within]) {
       outline: 2px solid var(--inset-focus-color, var(--highlight-background));
       outline-offset: -1px;
       border-color: var(--inset-focus-color, var(--highlight-background));
       background: var(--inset-focus-bg, var(--overlay-background));
-    }
-
-    &:where([data-focus-within]) {
-      border-color: var(--inset-focus-color, var(--highlight-background));
-      outline: none;
     }
 
     &:where([data-invalid]) {

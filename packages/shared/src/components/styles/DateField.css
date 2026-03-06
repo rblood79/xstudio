@@ -74,57 +74,30 @@
     }
 
     /* ===== DateInput Container ===== */
+    /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
     .react-aria-DateInput {
       display: inline-flex;
       padding: var(--df-input-padding);
-      border: 1px solid var(--border-color);
+      border: 1px solid;
       border-radius: var(--border-radius);
-      background: var(--field-background);
-      color: var(--text-color);
       width: fit-content;
       min-width: var(--df-input-min-width);
       white-space: nowrap;
       forced-color-adjust: none;
       font-size: var(--df-input-size);
       transition: all 200ms ease;
-
-      &[data-focus-within] {
-        outline: 2px solid var(--highlight-background);
-        outline-offset: -1px;
-        border-color: var(--highlight-background);
-        background: var(--overlay-background);
-      }
-
-      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        border-color: var(--border-color-hover);
-        background: var(--overlay-background);
-      }
-
-      &[data-disabled] {
-        background: color-mix(in srgb, var(--text-color) 4%, transparent);
-        border-color: color-mix(in srgb, var(--text-color) 12%, transparent);
-        color: color-mix(in srgb, var(--text-color) 38%, transparent);
-        cursor: not-allowed;
-        opacity: 0.38;
-      }
     }
 
-    &[data-variant="primary"] .react-aria-DateInput,
-    &[data-variant="secondary"] .react-aria-DateInput,
-    &[data-variant="tertiary"] .react-aria-DateInput,
-    &[data-variant="error"] .react-aria-DateInput {
-      border-color: var(--field-accent);
-
-      &[data-focus-within] {
-        outline-color: var(--field-accent);
-        border-color: var(--field-accent);
-        background: var(--field-accent-container);
-      }
-
-      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--field-accent-container);
-        border-color: var(--field-accent);
-      }
+    /* Variant-accented: override --inset-* vars */
+    &[data-variant="primary"],
+    &[data-variant="secondary"],
+    &[data-variant="tertiary"],
+    &[data-variant="error"] {
+      --inset-border: var(--field-accent);
+      --inset-hover-border: var(--field-accent);
+      --inset-hover-bg: var(--field-accent-container);
+      --inset-focus-color: var(--field-accent);
+      --inset-focus-bg: var(--field-accent-container);
     }
 
     /* ===== Filled Variant ===== */
@@ -146,15 +119,7 @@
       }
     }
 
-    /* ===== Invalid State ===== */
-    &[data-invalid] .react-aria-DateInput {
-      border-color: var(--invalid-color);
-
-      &[data-focus-within] {
-        outline-color: var(--invalid-color);
-      }
-    }
-
+    /* Invalid: default handled by .inset; filled variant override */
     &[data-variant="filled"][data-invalid] .react-aria-DateInput {
       border-bottom-color: var(--invalid-color);
     }

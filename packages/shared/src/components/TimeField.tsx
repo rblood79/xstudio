@@ -69,7 +69,7 @@ export function TimeField<T extends TimeValue>({
       hourCycle={hourCycle}
     >
       {label && <Label>{label}</Label>}
-      <DateInput>
+      <DateInput className="react-aria-DateInput inset">
         {(segment) => (
           <DateSegment
             segment={segment}
