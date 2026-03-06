@@ -476,9 +476,13 @@ if (isDoubleClick) {
 
 **핵심 차이점 (XStudio 대비):**
 
-- Pencil은 **같은 상태 객체(IdleState)** 안에서 더블클릭을 감지 — SelectionBox 같은 별도 레이어가 이벤트를 가로채지 않음
+Pencil도 선택 영역 시각화(바운딩 박스, 핸들)가 있지만 이벤트 처리 방식이 근본적으로 다름:
+
+- **Pencil의 선택 영역 렌더링**: `guidesGraph`/`guidesManager`가 PixiJS로 **시각적으로만 렌더링**. 히트 테스팅은 PixiJS EventBoundary가 아닌 **직접 좌표 비교** (`getWorldspaceBounds().containsPoint()`)로 처리. 선택 영역이 포인터 이벤트를 가로채지 않음.
+- **Pencil의 이벤트 순서**: `onPointerDown` → (1) 더블클릭 판정(lastClickTime 300ms) → (2) `updateIntersection`(선택 영역 히트 판정) — 더블클릭 체크가 선택 영역 체크**보다 먼저** 실행됨
+- **XStudio의 차이**: SelectionBox moveArea가 PixiJS `eventMode="static"`으로 EventBoundary 히트 테스트를 가로챔 → 두 번째 pointerDown이 하위 TextSprite에 도달 못함
 - `lastClickTime`이 `SelectionManager`에 영속 보관 — 상태 전환/컴포넌트 마운트와 무관
-- XStudio는 PixiJS SelectionBox moveArea가 두 번째 클릭을 가로채므로 **DOM dblclick 이벤트**로 우회 필요
+- **결론**: XStudio는 PixiJS EventBoundary 기반이므로 Pencil 방식(직접 좌표 비교) 적용 불가 → **DOM dblclick 이벤트**로 우회
 
 ### Quill 에디터 통합 (index.txt:222036-222189)
 
@@ -618,18 +622,19 @@ return (
 
 ### XStudio 대비 Pencil 차이점 요약
 
-| 항목               | Pencil                                                         | XStudio (ADR-027)                                              |
-| ------------------ | -------------------------------------------------------------- | -------------------------------------------------------------- |
-| **에디터**         | Quill (리치 텍스트 지원)                                       | contenteditable div (플레인 텍스트)                            |
-| **더블클릭 감지**  | SelectionManager.lastClickTime 300ms (중앙 관리)               | DOM `dblclick` 이벤트 (브라우저 네이티브)                      |
-| **상태 머신**      | `EditingTextState` 전용 상태 (포인터 이벤트 전부 무시)         | `canvasStore.isEditing` 플래그                                 |
-| **이벤트 브릿지**  | EventEmitter (`startTextEdit`/`finishTextEdit`)                | Zustand subscribe (canvasStore)                                |
-| **포지셔닝**       | `camera.worldTransform × node.worldMatrix` → CSS `matrix()`    | `getElementBoundsSimple()` → absolute positioning              |
-| **Skia 숨김**      | `node.hideText()` / `showText()` (invalidateView)              | `setEditingElementId()` → renderText 스킵                      |
-| **Undo**           | beginUpdate → 실시간 반영(undo:false) → commitBlock(undo:true) | DOM 내부만 변경 → finishEdit 시 store 업데이트 (히스토리 자동) |
-| **실시간 동기화**  | Quill text-change → node.textContent 즉시 업데이트             | DOM 내부에서만 반영 (store 업데이트 없음)                      |
-| **빈 텍스트 처리** | 편집 완료 시 isEmpty → 노드 자동 삭제                          | 미구현                                                         |
-| **뷰포트 추적**    | eventEmitter.on("afterUpdate") → updateSize()                  | Phase B 범위                                                   |
+| 항목                 | Pencil                                                                                           | XStudio (ADR-027)                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| **에디터**           | Quill (리치 텍스트 지원)                                                                         | contenteditable div (플레인 텍스트)                                 |
+| **더블클릭 감지**    | SelectionManager.lastClickTime 300ms (중앙 관리, 선택 영역 히트 판정보다 먼저 실행)              | DOM `dblclick` 이벤트 (브라우저 네이티브)                           |
+| **선택 영역 이벤트** | 시각 전용 렌더링(`guidesGraph`), 히트 테스팅은 직접 좌표 비교(`containsPoint`) — 이벤트 비가로챔 | SelectionBox moveArea가 PixiJS EventBoundary로 포인터 이벤트 가로챔 |
+| **상태 머신**        | `EditingTextState` 전용 상태 (포인터 이벤트 전부 무시)                                           | `canvasStore.isEditing` 플래그                                      |
+| **이벤트 브릿지**    | EventEmitter (`startTextEdit`/`finishTextEdit`)                                                  | Zustand subscribe (canvasStore)                                     |
+| **포지셔닝**         | `camera.worldTransform × node.worldMatrix` → CSS `matrix()`                                      | `getElementBoundsSimple()` → absolute positioning                   |
+| **Skia 숨김**        | `node.hideText()` / `showText()` (invalidateView)                                                | `setEditingElementId()` → renderText 스킵                           |
+| **Undo**             | beginUpdate → 실시간 반영(undo:false) → commitBlock(undo:true)                                   | DOM 내부만 변경 → finishEdit 시 store 업데이트 (히스토리 자동)      |
+| **실시간 동기화**    | Quill text-change → node.textContent 즉시 업데이트                                               | DOM 내부에서만 반영 (store 업데이트 없음)                           |
+| **빈 텍스트 처리**   | 편집 완료 시 isEmpty → 노드 자동 삭제                                                            | 미구현                                                              |
+| **뷰포트 추적**      | eventEmitter.on("afterUpdate") → updateSize()                                                    | Phase B 범위                                                        |
 
 ---
 
