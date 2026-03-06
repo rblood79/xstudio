@@ -113,6 +113,7 @@ const styles = tv({ base: '...', variants: { ... } });
 - JSX에 인라인 Tailwind 클래스 금지
 - 복잡한 스타일은 CSS 파일 사용
 - React-Aria 컴포넌트 스타일에 `react-aria-*` CSS prefix 사용
+- Builder 아이콘 버튼에 공유 `Button variant="ghost"` 사용 금지 → `ActionIconButton` 사용 (`.button-base` 우회, tooltip/shortcut 내장). 위치: `builder/components/ui/ActionIconButton.tsx`
 
 ### React-Aria 컴포넌트
 

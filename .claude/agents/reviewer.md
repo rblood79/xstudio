@@ -27,6 +27,7 @@ maxTurns: 20
 - [ ] 인라인 Tailwind 클래스 없음 → tv() + CSS 파일 필수
 - [ ] React-Aria 컴포넌트에 react-aria-\* CSS prefix 사용
 - [ ] CSS 클래스 재사용, 중복 없음
+- [ ] Builder 아이콘 버튼에 공유 `Button variant="ghost"` 미사용 → `ActionIconButton` 사용
 
 ### 2. TypeScript
 

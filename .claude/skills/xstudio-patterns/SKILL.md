@@ -44,6 +44,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[style-no-inline-tailwind](rules/style-no-inline-tailwind.md)** - 인라인 Tailwind 클래스 금지
 - **[style-tv-variants](rules/style-tv-variants.md)** - tv() 사용 필수
 - **[style-react-aria-prefix](rules/style-react-aria-prefix.md)** - react-aria-\* CSS 접두사
+- **style-action-icon-button** - Builder 아이콘 버튼은 공유 `Button variant="ghost"` 대신 `ActionIconButton` 사용 (`.button-base` 우회, tooltip/shortcut 내장). 위치: `builder/components/ui/ActionIconButton.tsx`
 
 #### TypeScript (type-\*)
 
@@ -190,7 +191,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 ### Layout Engine
 
-**[reference/layout-engine.md](reference/layout-engine.md)** — 엔진 선택, DirectContainer 패턴, LayoutComputedSizeContext, enrichWithIntrinsicSize, Card Nested Tree 레이아웃, Tabs 높이 계산, Compositional Component 전환 체크리스트, enrichment filteredChildren 패턴, ElementSprite CSS keyword→pixel 해석, CSS min-width:auto 에뮬레이션(step 4.8), 레이아웃 엔진 개선 이력
+**[reference/layout-engine.md](reference/layout-engine.md)** — 엔진 선택, DirectContainer 패턴, LayoutComputedSizeContext, enrichWithIntrinsicSize, Card Nested Tree 레이아웃, Tabs 높이 계산, Compositional Component 전환 체크리스트, enrichment filteredChildren 패턴, ElementSprite CSS keyword→pixel 해석, CSS min-width:auto 에뮬레이션(step 4.8), Tag fit-content flex-row 레이아웃(block-child guard, parent-delegated size 상속, f32 정밀도 보정), 레이아웃 엔진 개선 이력
 
 ### Compositional Architecture
 

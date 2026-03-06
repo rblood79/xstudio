@@ -1,7 +1,7 @@
 # XStudio CSS Architecture - ITCSS
 
-**Date:** 2025-11-08 (초판) / 2026-03-04 (최종 갱신)
-**Version:** 3.1 (Tint Color System 도입 + shared-tokens 팔레트 완성)
+**Date:** 2025-11-08 (초판) / 2026-03-06 (최종 갱신)
+**Version:** 3.2 (ActionIconButton 도입 — builder 전용 아이콘 버튼)
 
 ---
 
@@ -329,6 +329,40 @@ color-mix(in srgb, var(--highlight-background) 75%, black)
 }
 ```
 
+### **ActionIconButton (Builder 전용 아이콘 버튼)**
+
+**Location:** `apps/builder/src/builder/components/ui/ActionIconButton.tsx` + `.css`
+**Purpose:** 패널 헤더, 툴바 등 builder UI 아이콘 버튼 전용 컴포넌트
+
+**배경:** 공유 `Button`(`packages/shared`)은 `.button-base` 클래스가 자동 적용되어 `color-mix()` hover/pressed 파생이 발생하지만, 아이콘 버튼은 투명 배경 + 미세한 tint만 필요. `variant="ghost"`는 Button.css에 미정의 → primary fallback 문제.
+
+**해결:** `.action-icon-button` 자체 클래스로 `.button-base` 우회:
+
+```css
+.action-icon-button {
+  background: transparent;
+  /* hover: text-color 8% tint, pressed: 12% tint */
+  &[data-hovered] {
+    background: color-mix(in srgb, var(--text-color) 8%, transparent);
+  }
+  &[data-pressed] {
+    background: color-mix(in srgb, var(--text-color) 12%, transparent);
+  }
+  &[data-disabled] {
+    opacity: 0.38;
+    pointer-events: none;
+  }
+}
+```
+
+**기능:** React Aria `Button` 래퍼 + 내장 tooltip 지원 (`tooltip` prop: 텍스트, `shortcutId` prop: 단축키 표시)
+
+**사용 위치:** 패널 헤더 (StylesPanel, PropertiesPanel, HistoryPanel), 상단 바 (BuilderHeader undo/redo)
+
+> **규칙:** builder 아이콘 버튼에는 공유 `Button variant="ghost"` 대신 `ActionIconButton` 사용 필수.
+
+---
+
 ### **React Aria Components**
 
 **Location:** `packages/shared/src/components/styles/`
@@ -535,6 +569,7 @@ export default defineConfig({
 
 | Version | Date       | Changes                                                                                            |
 | ------- | ---------- | -------------------------------------------------------------------------------------------------- |
+| 3.2     | 2026-03-06 | ActionIconButton 도입 — builder 전용 아이콘 버튼 (`.button-base` 우회, tooltip/shortcut 내장)      |
 | 3.1     | 2026-03-04 | Tint Color System 도입 (oklch relative color), shared-tokens 팔레트 완성, Card.css/Button.css 수정 |
 | 3.0     | 2026-03-04 | ADR-017: M3 토큰 제거 + 시맨틱 토큰 카탈로그. ADR-018: utilities.css 도입, Best Practices 갱신     |
 | 2.2     | 2026-03-04 | Phase 5: CSS 중복 로딩 해결 — import chain 단일화, foundation.css, 1-theme/ 삭제                   |
@@ -544,4 +579,4 @@ export default defineConfig({
 
 ---
 
-**현재 상태**: Phase 1-3 + Phase 5 + ADR-017 완료. Tint Color System 도입. ADR-018 Button/Card 완료, 나머지 보류 (기존 CSS custom property 패턴과 중복).
+**현재 상태**: Phase 1-3 + Phase 5 + ADR-017 완료. Tint Color System 도입. ADR-018 Button/Card 완료, 나머지 보류. ActionIconButton 도입으로 builder 패널/헤더 아이콘 버튼이 `.button-base` 우회.
