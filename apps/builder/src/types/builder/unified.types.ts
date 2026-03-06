@@ -137,7 +137,7 @@ export interface ButtonElementProps extends BaseElementProps {
     | "negative"
     | "premium"
     | "genai";
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   isDisabled?: boolean;
   onPress?: () => void;
 }
@@ -146,7 +146,7 @@ export interface LinkElementProps extends BaseElementProps {
   children?: React.ReactNode;
   href?: string;
   variant?: "primary" | "secondary";
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   isQuiet?: boolean;
   staticColor?: "auto" | "black" | "white";
   isDisabled?: boolean;
@@ -189,7 +189,7 @@ export interface RadioElementProps extends BaseElementProps {
 
 export interface ToggleButtonElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   isEmphasized?: boolean;
   isQuiet?: boolean;
   isSelected?: boolean;
@@ -200,7 +200,7 @@ export interface ToggleButtonElementProps extends BaseElementProps {
 
 export interface ToggleButtonGroupElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   isEmphasized?: boolean;
   isQuiet?: boolean;
   value?: string[];
@@ -364,7 +364,7 @@ export interface TableElementProps extends BaseElementProps {
   selectedKeys?: string[];
   onSelectionChange?: (keys: string[]) => void;
   variant?: "default" | "striped" | "bordered"; // Table variant 추가
-  size?: "S" | "M" | "L"; // Table size 추가
+  size?: "sm" | "md" | "lg"; // Table size 추가
   headerVariant?: "default" | "dark" | "accent"; // headerVariant 추가
   cellVariant?: "default" | "striped"; // cellVariant 추가
   enableAsyncLoading?: boolean; // 비동기 로딩 활성화 여부 추가
@@ -441,7 +441,7 @@ export interface CellElementProps extends BaseElementProps {
 export interface CardElementProps extends BaseElementProps {
   children?: React.ReactNode;
   variant?: "primary" | "secondary" | "tertiary" | "quiet";
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   density?: "compact" | "regular" | "spacious";
   orientation?: "horizontal" | "vertical";
   title?: string;
@@ -475,7 +475,7 @@ export interface BadgeElementProps extends BaseElementProps {
     | "fuchsia"
     | "magenta";
   fillStyle?: "bold" | "subtle" | "outline";
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   isDot?: boolean;
   isPulsing?: boolean;
 }
@@ -687,7 +687,7 @@ export function createDefaultButtonProps(): ButtonElementProps {
   return {
     children: "Button",
     variant: "primary",
-    size: "M",
+    size: "md",
     isDisabled: false,
     // CSS base rule: border: 1px solid var(--outline-variant)
     // 스타일 패널에서 borderWidth 값 정상 표시를 위해 기본값 설정
@@ -703,7 +703,7 @@ export function createDefaultLinkProps(): LinkElementProps {
     children: "Link",
     href: "#",
     variant: "default",
-    size: "M",
+    size: "md",
     isDisabled: false,
     isExternal: false,
     showExternalIcon: true,
@@ -728,7 +728,7 @@ export function createDefaultCheckboxProps(): CheckboxElementProps {
   return {
     children: "Checkbox",
     variant: "default",
-    size: "M",
+    size: "md",
     isSelected: false,
     isDisabled: false,
     style: {
@@ -742,7 +742,7 @@ export function createDefaultCheckboxProps(): CheckboxElementProps {
 export function createDefaultRadioProps(): RadioElementProps {
   return {
     variant: "default",
-    size: "M",
+    size: "md",
     isSelected: false,
     isDisabled: false,
     style: {
@@ -756,7 +756,7 @@ export function createDefaultRadioProps(): RadioElementProps {
 export function createDefaultToggleButtonProps(): ToggleButtonElementProps {
   return {
     children: "Toggle Button",
-    size: "M",
+    size: "md",
     isEmphasized: false,
     isQuiet: false,
     isSelected: false,
@@ -774,7 +774,7 @@ export function createDefaultToggleButtonProps(): ToggleButtonElementProps {
 
 export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementProps {
   return {
-    size: "M",
+    size: "md",
     isEmphasized: false,
     value: [],
     isDisabled: false,
@@ -971,7 +971,7 @@ export function createDefaultSwitchProps(): SwitchElementProps {
   return {
     children: "Switch",
     variant: "default",
-    size: "M",
+    size: "md",
     isSelected: false,
     isDisabled: false,
     style: {
@@ -989,7 +989,7 @@ export function createDefaultTableProps(): TableElementProps {
     selectionMode: "none",
     selectedKeys: [],
     variant: "default", // 기본값 추가
-    size: "S", // 기본값 추가
+    size: "sm", // 기본값 추가
     headerVariant: "default", // 기본값 추가
     cellVariant: "default", // 기본값 추가
     // 페이지네이션 모드 기본값
@@ -1064,7 +1064,7 @@ export function createDefaultCellProps(): CellElementProps {
 export function createDefaultCardProps(): CardElementProps {
   return {
     variant: "default",
-    size: "M",
+    size: "md",
     orientation: "vertical",
     title: "Card Title",
     description: "Card description text goes here.",
@@ -1084,7 +1084,7 @@ export function createDefaultBadgeProps(): BadgeElementProps {
   return {
     children: "Badge",
     variant: "default",
-    size: "S",
+    size: "sm",
     isDot: false,
     isPulsing: false,
     // CSS base: display:inline-flex; align-items:center; justify-content:center

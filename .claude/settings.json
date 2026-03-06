@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(*)",
       "Bash(node scripts/:*)",
       "Bash(npx playwright:*)",
       "Bash(pnpm run check:*)",

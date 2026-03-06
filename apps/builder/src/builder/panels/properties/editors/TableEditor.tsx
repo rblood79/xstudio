@@ -348,9 +348,9 @@ export const TableEditor = memo(
           {/* Table Size */}
           <PropertySizeToggle
             label={PROPERTY_LABELS.TABLE_SIZE}
-            value={(currentProps as TableElementProps)?.size || "M"}
+            value={(currentProps as TableElementProps)?.size || "md"}
             onChange={(key) =>
-              updateTableProps({ size: key as "S" | "M" | "L" })
+              updateTableProps({ size: key as "sm" | "md" | "lg" })
             }
           />
 

@@ -17,13 +17,13 @@
  * Full size scale for components
  * Used by: Button, and potentially other interactive components
  */
-export type ComponentSize = "XS" | "S" | "M" | "L" | "XL";
+export type ComponentSize = "xs" | "sm" | "md" | "lg" | "xl";
 
 /**
  * Subset of sizes (3 options)
  * Used by: Separator, and components with limited size variations
  */
-export type ComponentSizeSubset = "S" | "M" | "L";
+export type ComponentSizeSubset = "sm" | "md" | "lg";
 
 /**
  * Density-based sizing for layouts
@@ -147,11 +147,11 @@ export type TabsDensity = "compact" | "regular";
 // ============================================================================
 
 export type ConvertLegacySize<T extends LegacySize> = T extends "small"
-  ? "S"
+  ? "sm"
   : T extends "medium"
-    ? "M"
+    ? "md"
     : T extends "large"
-      ? "L"
+      ? "lg"
       : never;
 
 export interface VariantSizeProps<V = string, S = ComponentSize> {
@@ -165,7 +165,7 @@ export interface VariantSizeProps<V = string, S = ComponentSize> {
 
 export function isComponentSize(value: unknown): value is ComponentSize {
   return (
-    typeof value === "string" && ["XS", "S", "M", "L", "XL"].includes(value)
+    typeof value === "string" && ["xs", "sm", "md", "lg", "xl"].includes(value)
   );
 }
 
@@ -178,12 +178,12 @@ export function isLegacySize(value: unknown): value is LegacySize {
 export function convertLegacySize(size: LegacySize): ComponentSizeSubset {
   switch (size) {
     case "small":
-      return "S";
+      return "sm";
     case "medium":
-      return "M";
+      return "md";
     case "large":
-      return "L";
+      return "lg";
     default:
-      return "M";
+      return "md";
   }
 }

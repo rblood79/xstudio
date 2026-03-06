@@ -280,7 +280,7 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({
 
         <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
-          value={String(currentProps.size || "M")}
+          value={String(currentProps.size || "md")}
           onChange={(value) => updateProp("size", value)}
         />
 
