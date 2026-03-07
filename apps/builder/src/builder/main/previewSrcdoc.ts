@@ -6,6 +6,7 @@
  */
 
 import { loadFontRegistry, buildRegistryFontFaceCss } from "@xstudio/shared";
+import { buildGoogleFontsCssLink } from "../fonts/customFonts";
 
 // ============================================
 // Base HTML Template
@@ -62,6 +63,7 @@ export function generateDevSrcdoc(
   bootstrapNonce: string,
 ): string {
   const customFontStyleTag = getCustomFontStyleTag();
+  const googleFontsLink = buildGoogleFontsCssLink();
   // 개발 모드에서는 ESM import를 사용하여 HMR 지원
   // React Refresh preamble 전역 변수를 먼저 설정해야 함
   // ⭐ React가 document.body에 직접 마운트됨 (DOM/데이터 트리 일치)
@@ -75,6 +77,7 @@ export function generateDevSrcdoc(
   <base href="${typeof window !== "undefined" ? window.location.origin : "http://localhost:5173"}/" />
   <title>XStudio Preview</title>
   <style>${BASE_STYLES}</style>
+  ${googleFontsLink}
   ${customFontStyleTag}
 </head>
 <body data-preview="true" data-project-id="${projectId}">
@@ -152,6 +155,7 @@ export function generateProdSrcdoc(
   }
 
   const customFontStyleTag = getCustomFontStyleTag();
+  const googleFontsLink = buildGoogleFontsCssLink();
 
   // ⭐ React가 document.body에 직접 마운트됨 (DOM/데이터 트리 일치)
   return `
@@ -162,6 +166,7 @@ export function generateProdSrcdoc(
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XStudio Preview</title>
   <style>${BASE_STYLES}</style>
+  ${googleFontsLink}
   ${customFontStyleTag}
   ${previewCSS ? `<style>${previewCSS}</style>` : ""}
 </head>

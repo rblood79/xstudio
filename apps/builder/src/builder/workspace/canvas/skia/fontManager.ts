@@ -15,12 +15,14 @@ import type { FontMgr, Typeface } from "canvaskit-wasm";
 import { getCanvasKit } from "./initCanvasKit";
 
 const IDB_NAME = "xstudio-fonts";
-const IDB_VERSION = 1;
+const IDB_VERSION = 2; // v2: 이전 잘못된 서브셋 캐시 무효화
 const IDB_STORE = "fonts";
 
 interface FontCacheEntry {
   /** IDB keyPath — 복합키 "family::weight::style" */
   family: string;
+  /** 원본 URL — URL 변경 시 캐시 무효화에 사용 */
+  url?: string;
   buffer: ArrayBuffer;
   timestamp: number;
 }
@@ -75,7 +77,7 @@ export class SkiaFontManager {
     const key = makeKey(family, weight, style);
     if (this.typefaces.has(key)) return;
 
-    let buffer = await this.getFromCache(key);
+    let buffer = await this.getFromCache(key, url);
 
     if (!buffer) {
       const response = await fetch(url);
@@ -85,7 +87,7 @@ export class SkiaFontManager {
         );
       }
       buffer = await response.arrayBuffer();
-      await this.saveToCache(key, buffer);
+      await this.saveToCache(key, buffer, url);
     }
 
     const ck = getCanvasKit();
@@ -316,7 +318,10 @@ export class SkiaFontManager {
     return this.dbPromise;
   }
 
-  private async getFromCache(key: string): Promise<ArrayBuffer | null> {
+  private async getFromCache(
+    key: string,
+    expectedUrl?: string,
+  ): Promise<ArrayBuffer | null> {
     try {
       const db = await this.openDB();
       return new Promise((resolve) => {
@@ -326,7 +331,16 @@ export class SkiaFontManager {
 
         req.onsuccess = () => {
           const entry = req.result as FontCacheEntry | undefined;
-          resolve(entry?.buffer ?? null);
+          if (!entry?.buffer) {
+            resolve(null);
+            return;
+          }
+          // URL이 변경되었으면 캐시 무효화 (이전 CDN 소스의 잘못된 데이터 방지)
+          if (expectedUrl && entry.url && entry.url !== expectedUrl) {
+            resolve(null);
+            return;
+          }
+          resolve(entry.buffer);
         };
         req.onerror = () => resolve(null);
       });
@@ -336,13 +350,18 @@ export class SkiaFontManager {
     }
   }
 
-  private async saveToCache(key: string, buffer: ArrayBuffer): Promise<void> {
+  private async saveToCache(
+    key: string,
+    buffer: ArrayBuffer,
+    url?: string,
+  ): Promise<void> {
     try {
       const db = await this.openDB();
       const tx = db.transaction(IDB_STORE, "readwrite");
       const store = tx.objectStore(IDB_STORE);
       const entry: FontCacheEntry = {
         family: key,
+        url,
         buffer,
         timestamp: Date.now(),
       };

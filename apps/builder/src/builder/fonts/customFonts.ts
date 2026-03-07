@@ -292,13 +292,130 @@ export const DEFAULT_FONT_FAMILY = "Pretendard";
 export const DEFAULT_FONT_OPTIONS = [
   { value: "reset", label: "Reset" },
   { value: "Pretendard", label: "Pretendard" },
-  { value: "Arial", label: "Arial" },
-  { value: "Helvetica", label: "Helvetica" },
-  { value: "Times New Roman", label: "Times New Roman" },
-  { value: "Georgia", label: "Georgia" },
-  { value: "Courier New", label: "Courier New" },
-  { value: "Verdana", label: "Verdana" },
+  { value: "Inter", label: "Inter" },
+  { value: "Roboto", label: "Roboto" },
+  { value: "Open Sans", label: "Open Sans" },
+  { value: "Lora", label: "Lora" },
+  { value: "Roboto Mono", label: "Roboto Mono" },
 ];
+
+// ============================================
+// Google Fonts 정의
+// ============================================
+
+export interface GoogleFontDef {
+  family: string;
+  weights: string[];
+}
+
+/**
+ * Google Fonts 목록 + 가용 weight.
+ *
+ * Skia 로드 시 fontsource CDN(jsdelivr)에서 latin subset woff2를 직접 가져옴.
+ * CJK 글리프는 Pretendard fallback으로 처리.
+ *
+ * fontsource URL 패턴:
+ *   https://cdn.jsdelivr.net/npm/@fontsource/{slug}/files/{slug}-latin-{weight}-normal.woff2
+ *
+ * slug: family 소문자 + 공백→하이픈 (예: "Open Sans" → "open-sans")
+ */
+export const GOOGLE_FONT_DEFS: GoogleFontDef[] = [
+  {
+    family: "Inter",
+    weights: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  },
+  {
+    family: "Roboto",
+    weights: ["100", "300", "400", "500", "700", "900"],
+  },
+  {
+    family: "Open Sans",
+    weights: ["300", "400", "500", "600", "700", "800"],
+  },
+  {
+    family: "Lora",
+    weights: ["400", "500", "600", "700"],
+  },
+  {
+    family: "Roboto Mono",
+    weights: ["100", "200", "300", "400", "500", "600", "700"],
+  },
+];
+
+/** family → fontsource slug 변환 */
+function toFontsourceSlug(family: string): string {
+  return family.toLowerCase().replace(/\s+/g, "-");
+}
+
+/**
+ * fontsource CDN에서 특정 weight의 woff2 URL을 반환한다.
+ * latin subset — 전체 latin 글리프를 하나의 파일로 포함.
+ */
+export function getFontsourceUrl(family: string, weight: string): string {
+  const slug = toFontsourceSlug(family);
+  return `https://cdn.jsdelivr.net/npm/@fontsource/${slug}/files/${slug}-latin-${weight}-normal.woff2`;
+}
+
+/** Google Fonts family → weights 빠른 조회 */
+const GOOGLE_FONT_WEIGHT_MAP = new Map<string, string[]>(
+  GOOGLE_FONT_DEFS.map((d) => [d.family, d.weights]),
+);
+
+/**
+ * Google Fonts CSS API에서 weight별 woff2 URL을 추출한다.
+ * 브라우저에서 fetch하면 자동으로 woff2 포맷을 반환한다.
+ *
+ * @returns weight → woff2 URL 배열 (unicode-range subset별로 여러 URL)
+ */
+export async function fetchGoogleFontWoff2Urls(
+  family: string,
+  weights: string[],
+): Promise<Map<string, string[]>> {
+  const weightsParam = weights.join(";");
+  const url = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@${weightsParam}&display=swap`;
+
+  const response = await fetch(url);
+  if (!response.ok)
+    throw new Error(
+      `Google Fonts CSS fetch 실패: ${family} (${response.status})`,
+    );
+  const css = await response.text();
+
+  const result = new Map<string, string[]>();
+  // @font-face 블록별로 파싱
+  const blockRegex = /@font-face\s*\{([^}]+)\}/g;
+  let block;
+  while ((block = blockRegex.exec(css)) !== null) {
+    const content = block[1];
+    const weightMatch = content.match(/font-weight:\s*(\d+)/);
+    const urlMatch = content.match(/url\(([^)]+)\)\s*format\(['"]woff2['"]\)/);
+    if (weightMatch && urlMatch) {
+      const w = weightMatch[1];
+      const u = urlMatch[1];
+      if (!result.has(w)) result.set(w, []);
+      result.get(w)!.push(u);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Google Fonts CSS `<link>` 태그 HTML을 생성한다.
+ * Preview iframe에 삽입하여 CSS 측에서도 Google Fonts를 사용할 수 있게 한다.
+ */
+export function buildGoogleFontsCssLink(): string {
+  if (GOOGLE_FONT_DEFS.length === 0) return "";
+
+  const families = GOOGLE_FONT_DEFS.map((def) => {
+    const weights = def.weights.join(";");
+    return `family=${encodeURIComponent(def.family)}:wght@${weights}`;
+  }).join("&");
+
+  return `<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${families}&display=swap">`;
+}
 
 // ============================================
 // Font Weight 정보
@@ -316,38 +433,22 @@ const WEIGHT_LABELS: Record<string, string> = {
   "900": "900 - Black",
 };
 
-/** 빌트인 폰트의 가용 weight (Skia에 실제 로드되는 weight만) */
-const BUILTIN_FONT_WEIGHTS: Record<string, string[]> = {
-  Pretendard: ["400", "500", "600", "700"],
-};
-
-/** 시스템 폰트 — CSS가 처리하므로 모든 weight 허용 */
-const ALL_WEIGHTS = [
-  "100",
-  "200",
-  "300",
-  "400",
-  "500",
-  "600",
-  "700",
-  "800",
-  "900",
-];
-
 /**
  * 특정 폰트 패밀리의 가용 weight 옵션을 반환한다.
  *
- * - 빌트인 폰트: BUILTIN_FONT_WEIGHTS에 정의된 weight만
+ * - Pretendard: Skia에 실제 로드된 weight만
+ * - Google Fonts: GOOGLE_FONT_DEFS에 정의된 weight
  * - 커스텀 폰트: registry에서 해당 family의 face별 weight 수집
- * - 시스템 폰트 (Arial 등): 모든 weight 허용
  */
 export function getFontWeightOptions(
   family: string,
 ): Array<{ value: string; label: string }> {
   let weights: string[];
 
-  if (BUILTIN_FONT_WEIGHTS[family]) {
-    weights = BUILTIN_FONT_WEIGHTS[family];
+  if (family === "Pretendard") {
+    weights = ["400", "500", "600", "700"];
+  } else if (GOOGLE_FONT_WEIGHT_MAP.has(family)) {
+    weights = GOOGLE_FONT_WEIGHT_MAP.get(family)!;
   } else {
     // 커스텀 폰트 registry에서 weight 수집
     const registry = loadFontRegistry();
@@ -359,8 +460,7 @@ export function getFontWeightOptions(
       }
       weights = Array.from(weightSet).sort((a, b) => Number(a) - Number(b));
     } else {
-      // 시스템 폰트 — 모든 weight 허용
-      weights = ALL_WEIGHTS;
+      weights = ["400"];
     }
   }
 

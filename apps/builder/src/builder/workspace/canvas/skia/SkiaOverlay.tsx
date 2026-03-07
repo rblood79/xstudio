@@ -30,6 +30,7 @@ import { initAllWasm } from "../wasm-bindings/init";
 import { skiaFontManager } from "./fontManager";
 import {
   loadAllCustomFontsToSkia,
+  loadGoogleFontsToSkia,
   syncCustomFontsWithSkia,
 } from "../../../fonts/loadCustomFontsToSkia";
 import { registerImageLoadCallback } from "./imageCache";
@@ -798,6 +799,23 @@ export function SkiaOverlay({
         }
 
         if (cancelled) return;
+
+        // Google Fonts CDN에서 폰트 바이너리 로드
+        try {
+          const googleCount = await loadGoogleFontsToSkia();
+          if (googleCount > 0) {
+            console.info(
+              `[SkiaOverlay] Google Fonts ${googleCount}개 Skia 로드 완료`,
+            );
+          }
+        } catch (e) {
+          console.warn("[SkiaOverlay] Google Fonts Skia 로드 중 오류:", e);
+        }
+
+        if (cancelled) return;
+
+        // Google Fonts 로드 완료 → registryVersion 증가로 Skia 트리 캐시 무효화
+        notifyLayoutChange();
 
         // CanvasKit + 폰트 준비 완료 → TextMeasurer 초기화
         if (skiaFontManager.getFamilies().length > 0) {

@@ -179,6 +179,28 @@ function applyThemeConfig(themeConfig?: {
 // Font Registry Helper (ADR-014 Phase D)
 // ============================================
 
+const GOOGLE_FONTS_CSS_ID = "xstudio-publish-google-fonts";
+
+function injectGoogleFontsCss() {
+  if (document.getElementById(GOOGLE_FONTS_CSS_ID)) return;
+
+  const families = [
+    "Inter:wght@100;200;300;400;500;600;700;800;900",
+    "Roboto:wght@100;300;400;500;700;900",
+    "Open+Sans:wght@300;400;500;600;700;800",
+    "Lora:wght@400;500;600;700",
+    "Roboto+Mono:wght@100;200;300;400;500;600;700",
+  ];
+
+  const url = `https://fonts.googleapis.com/css2?${families.map((f) => `family=${f}`).join("&")}&display=swap`;
+
+  const link = document.createElement("link");
+  link.id = GOOGLE_FONTS_CSS_ID;
+  link.rel = "stylesheet";
+  link.href = url;
+  document.head.appendChild(link);
+}
+
 function injectFontRegistryFromData(fontRegistry?: FontRegistryV2) {
   if (!fontRegistry || !fontRegistry.faces?.length) return;
 
@@ -211,6 +233,9 @@ export function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // Google Fonts CSS 주입
+    injectGoogleFontsCss();
+
     try {
       // FontRegistryV2 기반 폰트 로드 (ADR-014 Phase D)
       const registry = loadFontRegistry();

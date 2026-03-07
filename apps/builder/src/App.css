@@ -359,12 +359,12 @@
   --drop-shadow-2xl: 0 25px 25px #00000026;
   --text-shadow-2xs: 0px 1px 0px #00000026;
   --text-shadow-xs: 0px 1px 1px #0003;
-  --text-shadow-sm: 0px 1px 0px #00000013, 0px 1px 1px #00000013,
-    0px 2px 2px #00000013;
-  --text-shadow-md: 0px 1px 1px #0000001a, 0px 1px 2px #0000001a,
-    0px 2px 4px #0000001a;
-  --text-shadow-lg: 0px 1px 2px #0000001a, 0px 3px 2px #0000001a,
-    0px 4px 8px #0000001a;
+  --text-shadow-sm:
+    0px 1px 0px #00000013, 0px 1px 1px #00000013, 0px 2px 2px #00000013;
+  --text-shadow-md:
+    0px 1px 1px #0000001a, 0px 1px 2px #0000001a, 0px 2px 4px #0000001a;
+  --text-shadow-lg:
+    0px 1px 2px #0000001a, 0px 3px 2px #0000001a, 0px 4px 8px #0000001a;
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
@@ -1061,13 +1061,15 @@
 }
 
 @utility pattern-bg {
-  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px !important;
+  background-size:
+    100px 100px,
+    100px 100px,
+    20px 20px,
+    20px 20px !important;
   background-position: calc(50% + 0.5px) !important;
   background-blend-mode: difference !important;
-  background-image: linear-gradient(
-      rgba(130, 130, 130, 0.25) 1px,
-      transparent 1px
-    ),
+  background-image:
+    linear-gradient(rgba(130, 130, 130, 0.25) 1px, transparent 1px),
     linear-gradient(90deg, rgba(130, 130, 130, 0.25) 1px, transparent 1px),
     linear-gradient(rgba(130, 130, 130, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(130, 130, 130, 0.05) 1px, transparent 1px) !important;
