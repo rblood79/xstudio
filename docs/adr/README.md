@@ -7,8 +7,8 @@
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 16     |
-| 부분 완료                              | 6      |
-| 미구현 (Proposed/계획)                 | 8      |
+| 부분 완료                              | 7      |
+| 미구현 (Proposed/계획)                 | 7      |
 | **합계**                               | **30** |
 
 ---
@@ -46,6 +46,7 @@
 | [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝               | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                                                       | P3-1 부분 구현 (dirtyElementIds 인프라만, 핵심 DFS 최적화 미구현)                                                                      |    P5    |
 | [021](021-theme-system-redesign.md)               | 테마 시스템 개편 — Tint + Tailwind 인라인 패널  | Phase A+B+C+D 완료 (ThemeStudio 삭제, Service 슬림화, useThemeManager 인라인)                                                    | Phase E (컴포넌트별 accent 오버라이드)                                                                                                 |    P4    |
 | [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-4 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment + Fill 비활성 힌트)                                          | 보류: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램                                                                                 |    P4    |
+| [019](019-icon-system.md)                         | 아이콘 시스템 — Icon 선택/변경/추가             | Phase A-C 완료 (1,688 아이콘 레지스트리 + IconPicker UI + Icon Spec/Factory/Editor)                                              | Phase D (Preview/Publish SVG 렌더링), Phase E (추가 라이브러리)                                                                        |    P3    |
 | [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B 구현 완료 (TextEditOverlay + Quill 통합 + 멀티페이지 좌표 보정 + subscribeBounds 이벤트 기반 추적)                     | Phase C (Spec 컴포넌트 텍스트), Phase D (리치 텍스트/툴바)                                                                             |  **P2**  |
 
 > **참고**: ADR-029에 동일 번호의 [Text Edit Overlay UX 개선](029-text-edit-overlay-improvements.md) 문서가 존재하며, ADR-027의 후속 개선으로 Phase 1-2 모두 구현 완료 (Accepted).
@@ -57,7 +58,6 @@
 | [013](013-quick-connect-data-binding.md)  | Quick Connect 데이터 바인딩                        | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                     |  **P2**  |
 | [015](015-sitemap-layout.md)              | Sitemap Hierarchy 워크플로우 엣지                  | Proposed | 변경 대상 8파일, 코드 미생성                                                                        |    P5    |
 | [016](016-photoshop-ui-ux.md)             | Photoshop 벤치마크 기반 UI/UX (v2)                 | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                              |    P5    |
-| [019](019-icon-system.md)                 | 아이콘 시스템 — Builder UI 아이콘 선택/변경/추가   | Proposed | 5 Phase — Skia 렌더링 인프라 존재(lucideIcons.ts, renderIconPath), IconPicker/독립 컴포넌트 미구현  |  **P2**  |
 | [020](020-design-kit-improvement.md)      | Design Kit 패널 분석 및 개선                       | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수            |    P4    |
 | [024](024-s2-css-variable-migration.md)   | CSS 변수명 S2 체계 전환                            | Proposed | 4 Phase, alias 점진 전환 → 60+ CSS 파일 변경                                                        |    P3    |
 | [030](030-s2-spectrum-only-components.md) | React Spectrum S2 전용 컴포넌트 WebGL 마이그레이션 | Proposed | 4 Phase, 22개 컴포넌트 — Phase 0 선행 조건 감사 진행 중 (Factory 13개 누락, S2 Props ~50% 커버리지) |    P3    |
@@ -83,7 +83,7 @@
 |   13   | ADR-021 Phase D-E     | 테마 시스템 — UnifiedThemeStore 정리 + 컴포넌트별 accent                          |  중  | 부분완료 |
 |   14   | ADR-026               | Responsive Constraint UI — Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio  |  대  | **완료** |
 |   15   | ADR-013               | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)  |  대  |          |
-|   16   | ADR-019               | 아이콘 시스템 — Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링       |  중  |          |
+|   16   | ADR-019               | 아이콘 시스템 — Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링       |  중  | **완료** |
 
 ---
 
