@@ -53,6 +53,8 @@ export interface TextStyleConfig {
   padding?: number;
   paddingTop?: number;
   letterSpacing?: number;
+  /** 수직 정렬 (Spec baseline: "middle" → "center") */
+  verticalAlign?: "top" | "center";
 }
 
 // ============================================
@@ -153,18 +155,32 @@ export function TextEditOverlay({
           ? `${style.lineHeight}px`
           : style.lineHeight;
     }
-    if (style.letterSpacing) {
+    if (style.letterSpacing != null) {
       root.style.letterSpacing = `${style.letterSpacing}px`;
     }
-    // paddingLeft/paddingTop: Skia 텍스트 오프셋과 일치
+    // Skia CanvasKit 텍스트 렌더링과 최대한 유사하게 CSS 렌더링 조정
+    root.style.textRendering = "geometricPrecision";
+    root.style.setProperty("-webkit-font-smoothing", "antialiased");
+    root.style.setProperty("-moz-osx-font-smoothing", "grayscale");
+    // paddingLeft/paddingRight/paddingTop: Skia 텍스트 오프셋과 일치
     root.style.paddingLeft = style.padding ? `${style.padding}px` : "0";
+    root.style.paddingRight = style.padding ? `${style.padding}px` : "0";
     root.style.paddingTop = style.paddingTop ? `${style.paddingTop}px` : "0";
+    root.style.paddingBottom = "0";
     root.style.margin = "0";
+    root.style.whiteSpace = "nowrap";
+    root.style.overflowWrap = "normal";
+    root.style.wordBreak = "normal";
     root.style.minWidth = initialValue ? "auto" : "1px";
+    // 수직 중앙 정렬: 컨테이너 flex + ql-editor align-self
+    if (style.verticalAlign === "center") {
+      root.style.alignSelf = "center";
+      root.style.height = "auto";
+    }
 
-    // 초기 텍스트 설정 + 전체 선택 (Pencil: setText → setSelection(0, length))
+    // 초기 텍스트 설정 + 커서를 끝에 배치 (Pencil: setText → setSelection(length))
     quill.setText(initialValue, "api");
-    quill.setSelection(0, initialValue.length);
+    quill.setSelection(initialValue.length, 0);
     quill.history.clear();
 
     // 텍스트 변경 이벤트 (Pencil: text-change → 노드 업데이트, undo 미기록)
@@ -177,8 +193,9 @@ export function TextEditOverlay({
       onChangeRef.current?.(elementId, text);
     });
 
-    // 키보드 핸들러 (Pencil: Cmd+Enter → 완료, Escape → 취소)
-    root.addEventListener("keydown", (e: KeyboardEvent) => {
+    // 키보드 핸들러 (capture phase: Quill보다 먼저 이벤트 처리)
+    // Quill이 Enter를 먼저 처리하면 줄바꿈이 삽입되므로 capture에서 차단
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
         e.stopPropagation();
         e.preventDefault();
@@ -198,7 +215,8 @@ export function TextEditOverlay({
         onCancelRef.current?.(elementId);
         return;
       }
-    });
+    };
+    container.addEventListener("keydown", handleKeyDown, true);
 
     // 휠 이벤트 차단 (Pencil: 편집 중 캔버스 줌 방지)
     container.addEventListener("wheel", (e: WheelEvent) => {
@@ -221,6 +239,7 @@ export function TextEditOverlay({
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      container.removeEventListener("keydown", handleKeyDown, true);
       quillRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -230,6 +249,7 @@ export function TextEditOverlay({
   // getBounds()는 스크린 좌표(줌 포함)를 반환.
   // CSS 텍스트는 자연 크기(fontSize px)로 렌더링 → scale(zoom)으로 Skia와 일치시킴.
   // 컨테이너 크기는 1/zoom으로 보정 → scale 후 스크린 크기와 일치.
+  const isVerticalCenter = style?.verticalAlign === "center";
   const containerStyle: React.CSSProperties = {
     position: "absolute",
     left: livePos.x,
@@ -246,6 +266,10 @@ export function TextEditOverlay({
     cursor: "text",
     overflow: "visible",
     WebkitFontSmoothing: "antialiased",
+    // 수직 중앙 정렬 (Button, Badge 등 baseline: "middle" 요소)
+    ...(isVerticalCenter
+      ? { display: "flex", alignItems: "center", justifyContent: "center" }
+      : {}),
   };
 
   return (

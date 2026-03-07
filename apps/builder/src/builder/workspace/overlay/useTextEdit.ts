@@ -15,6 +15,7 @@ import { useStore } from "../../stores";
 import type { TextStyleConfig } from "./TextEditOverlay";
 import { setEditingElementId } from "../canvas/skia/nodeRenderers";
 import { getSkiaNode, notifyLayoutChange } from "../canvas/skia/useSkiaNode";
+import { extractFullSpecTextStyle } from "./specTextStyleForOverlay";
 
 // ============================================
 // Types
@@ -98,6 +99,27 @@ const TEXT_ELEMENT_TAGS = new Set([
 // ============================================
 
 /**
+ * Store props를 히스토리 없이 업데이트 (편집 중 실시간 레이아웃 반영용)
+ * elements 배열 + _rebuildIndexes()로 elementsMap/childrenMap 동기화
+ */
+function silentUpdateTextProp(elementId: string, value: string): void {
+  const state = useStore.getState();
+  const element = state.elementsMap.get(elementId);
+  if (!element) return;
+  const props = element.props as Record<string, unknown> | undefined;
+  const propKey = getTextPropKey(element.tag, props);
+  const updatedElement = { ...element, props: { ...props, [propKey]: value } };
+  const newElements = state.elements.map((el) =>
+    el.id === elementId ? updatedElement : el,
+  );
+  useStore.setState({
+    elements: newElements,
+    layoutVersion: state.layoutVersion + 1,
+  });
+  useStore.getState()._rebuildIndexes();
+}
+
+/**
  * 요소에서 텍스트 추출
  */
 function extractText(props: Record<string, unknown> | undefined): string {
@@ -116,14 +138,34 @@ function extractText(props: Record<string, unknown> | undefined): string {
  * Skia 렌더 데이터에서 텍스트 스타일 추출 (가장 정확한 소스)
  * fallback: element.props.style
  */
+function findTextData(
+  node: ReturnType<typeof getSkiaNode>,
+): NonNullable<NonNullable<ReturnType<typeof getSkiaNode>>["text"]> | null {
+  if (!node) return null;
+  if (node.text) return node.text;
+  if (node.children) {
+    for (const child of node.children) {
+      const found = findTextData(child);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 function extractTextStyle(
+  tag: string,
   elementId: string,
+  props: Record<string, unknown> | undefined,
   style: Record<string, unknown> | undefined,
 ): TextStyleConfig {
-  // Skia 노드에서 실제 렌더링 스타일 추출
+  // 1. Spec shapes에서 추출 (CSS Preview와 동일한 소스 — Button, Badge 등)
+  const specStyle = extractFullSpecTextStyle(tag, props);
+  if (specStyle) return specStyle;
+
+  // 2. Skia 노드에서 추출 (비-Spec 텍스트 요소: p, h1, span 등)
   const skiaNode = getSkiaNode(elementId);
-  if (skiaNode?.text) {
-    const t = skiaNode.text;
+  const t = findTextData(skiaNode);
+  if (t) {
     // Float32Array color → CSS hex
     const r = Math.round((t.color[0] ?? 0) * 255);
     const g = Math.round((t.color[1] ?? 0) * 255);
@@ -152,7 +194,7 @@ function extractTextStyle(
     };
   }
 
-  // fallback: inline style
+  // 3. fallback: inline style
   return {
     fontFamily: String(style?.fontFamily || "Pretendard, sans-serif"),
     fontSize: Number(style?.fontSize) || 16,
@@ -241,16 +283,15 @@ export function useTextEdit(): UseTextEditReturn {
         value: text,
         position,
         size,
-        style: extractTextStyle(elementId, elStyle),
+        style: extractTextStyle(element.tag, elementId, props, elStyle),
       });
     },
     [],
   );
 
-  // 텍스트 변경 (실시간 — Quill 내부에서만 관리, store 미반영)
-  // Pencil 패턴: 편집 중에는 DOM(Quill)에서만 텍스트 관리
-  // Skia 텍스트는 숨겨진 상태이므로 store 업데이트 불필요
-  // completeEdit에서 최종 값으로 store 한 번만 업데이트 (히스토리 1건)
+  // 텍스트 변경 (실시간 — store props 업데이트, 히스토리 미기록)
+  // fit-content 버튼 등 텍스트 기반 크기 요소의 실시간 레이아웃 반영
+  // completeEdit에서 히스토리 1건만 기록
   const updateText = useCallback((elementId: string, newValue: string) => {
     if (editingIdRef.current !== elementId) return;
     currentValueRef.current = newValue;
@@ -258,6 +299,9 @@ export function useTextEdit(): UseTextEditReturn {
       if (!prev || prev.elementId !== elementId) return prev;
       return { ...prev, value: newValue };
     });
+
+    // store props 직접 업데이트 (히스토리 없이) → 레이아웃 재계산 트리거
+    silentUpdateTextProp(elementId, newValue);
   }, []);
 
   // 편집 완료 (Pencil: commitBlock with undo: true)
@@ -272,26 +316,33 @@ export function useTextEdit(): UseTextEditReturn {
     notifyLayoutChange();
     editingIdRef.current = null;
 
-    // 변경이 있으면 store 업데이트 (히스토리 1건 자동 기록)
+    // 변경이 있으면 히스토리 기록 + DB 저장
+    // updateText에서 이미 store props를 실시간 반영했으므로
+    // 원본으로 복원 → updateElementProps (히스토리 기록) → 최종값 반영
     if (finalValue !== originalValue) {
-      const state = useStore.getState();
-      const element = state.elementsMap.get(elementId);
+      const element = useStore.getState().elementsMap.get(elementId);
       if (element) {
         const props = element.props as Record<string, unknown> | undefined;
         const propKey = getTextPropKey(element.tag, props);
-        state.updateElementProps(elementId, {
+
+        // 원본 값으로 복원 (updateElementProps가 변경 감지하도록)
+        silentUpdateTextProp(elementId, originalValue);
+
+        // silentUpdateTextProp이 store를 변경했으므로 최신 state 재조회
+        const freshState = useStore.getState();
+        // updateElementProps: 히스토리 기록 + DB persist + layoutVersion
+        freshState.updateElementProps(elementId, {
           ...props,
           [propKey]: finalValue,
         });
-        // layoutVersion 증가 (텍스트 변경 → 레이아웃 재계산 필요)
-        state.invalidateLayout?.();
+        freshState.invalidateLayout?.();
       }
     }
 
     setEditState(null);
   }, []);
 
-  // 편집 취소 (Pencil: 원본 유지, store 변경 없음)
+  // 편집 취소 (Pencil: 원본 복원)
   const cancelEdit = useCallback((elementId: string) => {
     if (editingIdRef.current !== elementId) return;
 
@@ -300,7 +351,13 @@ export function useTextEdit(): UseTextEditReturn {
     notifyLayoutChange();
     editingIdRef.current = null;
 
-    // 편집 중 store를 변경하지 않으므로 복원 불필요 — 그냥 닫기
+    // updateText가 store를 실시간 반영했으므로 원본 복원 필요
+    const originalValue = originalValueRef.current;
+    const currentValue = currentValueRef.current;
+    if (currentValue !== originalValue) {
+      silentUpdateTextProp(elementId, originalValue);
+    }
+
     setEditState(null);
   }, []);
 

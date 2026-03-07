@@ -743,21 +743,42 @@ export function SkiaOverlay({
         if (cancelled) return;
 
         // 기본 폰트 로드 (텍스트 렌더링에 필수)
-        if (skiaFontManager.getFamilies().length === 0) {
-          try {
-            // Vite asset import로 woff2 URL 획득
-            const fontModule =
-              await import("pretendard/dist/web/static/woff2/Pretendard-Regular.woff2?url");
-            await skiaFontManager.loadFont("Pretendard", fontModule.default);
-          } catch (e) {
-            console.warn("[SkiaOverlay] 폰트 로드 실패, CDN 폴백 시도:", e);
+        // Pretendard 다중 weight 로드 — Spec fontWeight와 CanvasKit 폰트 매칭
+        {
+          // 정적 import — Vite가 각 woff2 파일을 asset URL로 변환
+          const fontWeights = [
+            {
+              url: (
+                await import("pretendard/dist/web/static/woff2/Pretendard-Regular.woff2?url")
+              ).default,
+              weight: "400",
+            },
+            {
+              url: (
+                await import("pretendard/dist/web/static/woff2/Pretendard-Medium.woff2?url")
+              ).default,
+              weight: "500",
+            },
+            {
+              url: (
+                await import("pretendard/dist/web/static/woff2/Pretendard-SemiBold.woff2?url")
+              ).default,
+              weight: "600",
+            },
+            {
+              url: (
+                await import("pretendard/dist/web/static/woff2/Pretendard-Bold.woff2?url")
+              ).default,
+              weight: "700",
+            },
+          ];
+
+          for (const { url, weight } of fontWeights) {
+            if (skiaFontManager.hasFont("Pretendard", weight)) continue;
             try {
-              await skiaFontManager.loadFont(
-                "Pretendard",
-                "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2",
-              );
-            } catch (e2) {
-              console.error("[SkiaOverlay] 폰트 로드 최종 실패:", e2);
+              await skiaFontManager.loadFont("Pretendard", url, weight);
+            } catch (e) {
+              console.warn(`[SkiaOverlay] Pretendard ${weight} 로드 실패:`, e);
             }
           }
         }

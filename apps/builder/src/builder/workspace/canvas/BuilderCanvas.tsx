@@ -2308,10 +2308,13 @@ export function BuilderCanvas({
       if (ev.__handled) return;
       ev.__handled = true;
 
-      // Pencil EditingTextState 패턴: 편집 중 외부 클릭 → 편집 종료 + return
-      // pointerdown에서 직접 completeEdit 호출 (mousedown handleClickOutside 의존 제거)
-      // startMove rAF 예약 방지 → dragState stuck 방지
+      // Pencil EditingTextState 패턴: 편집 중 클릭 처리
+      // 편집 영역 내 클릭 → Quill이 자체 처리 (커서 이동)
+      // 편집 영역 외 클릭 → 편집 종료 + return (startMove rAF 예약 방지)
       if (isEditingRef.current) {
+        const target = event.target as HTMLElement;
+        const overlay = target.closest("[data-text-edit-overlay]");
+        if (overlay) return; // 편집 영역 내 클릭 → Quill에 위임
         const editId = editingElementIdRef.current;
         if (editId) completeEditRef.current(editId);
         return;
