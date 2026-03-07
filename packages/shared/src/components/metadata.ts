@@ -37,7 +37,16 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "ButtonEditor",
       dataBindingType: null,
       // React Aria: onPress, onClick, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
-      supportedEvents: ["onPress", "onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
+      supportedEvents: [
+        "onPress",
+        "onClick",
+        "onMouseEnter",
+        "onMouseLeave",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+      ],
     },
   },
   {
@@ -50,7 +59,17 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "ToggleButtonEditor",
       dataBindingType: null,
       // React Aria: onChange, onPress, onClick, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
-      supportedEvents: ["onChange", "onPress", "onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
+      supportedEvents: [
+        "onChange",
+        "onPress",
+        "onClick",
+        "onMouseEnter",
+        "onMouseLeave",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+      ],
     },
   },
   {
@@ -76,7 +95,13 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "MenuEditor",
       dataBindingType: "collection",
       // React Aria: onAction, onSelectionChange, onClose, onOpenChange
-      supportedEvents: ["onAction", "onSelectionChange", "onOpenChange", "onFocus", "onBlur"],
+      supportedEvents: [
+        "onAction",
+        "onSelectionChange",
+        "onOpenChange",
+        "onFocus",
+        "onBlur",
+      ],
     },
   },
   {
@@ -102,7 +127,16 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "LinkEditor",
       dataBindingType: null,
       // React Aria: onPress, onClick, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
-      supportedEvents: ["onPress", "onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
+      supportedEvents: [
+        "onPress",
+        "onClick",
+        "onMouseEnter",
+        "onMouseLeave",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+      ],
     },
   },
 
@@ -117,7 +151,13 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "TextFieldEditor",
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
-      supportedEvents: ["onChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
+      supportedEvents: [
+        "onChange",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+      ],
     },
   },
   {
@@ -130,7 +170,13 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "NumberFieldEditor",
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
-      supportedEvents: ["onChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
+      supportedEvents: [
+        "onChange",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+      ],
     },
   },
   {
@@ -143,7 +189,14 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "SearchFieldEditor",
       dataBindingType: "value",
       // React Aria: onChange, onSubmit, onClear, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
-      supportedEvents: ["onChange", "onSubmit", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
+      supportedEvents: [
+        "onChange",
+        "onSubmit",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+      ],
     },
   },
   {
@@ -156,7 +209,15 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "CheckboxEditor",
       dataBindingType: "value",
       // React Aria: onChange, onPress, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
-      supportedEvents: ["onChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp", "onMouseEnter", "onMouseLeave"],
+      supportedEvents: [
+        "onChange",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+        "onMouseEnter",
+        "onMouseLeave",
+      ],
     },
   },
   {
@@ -182,7 +243,14 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "RadioEditor",
       dataBindingType: "value",
       // React Aria: onPress, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
-      supportedEvents: ["onFocus", "onBlur", "onKeyDown", "onKeyUp", "onMouseEnter", "onMouseLeave"],
+      supportedEvents: [
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+        "onMouseEnter",
+        "onMouseLeave",
+      ],
     },
   },
   {
@@ -208,7 +276,14 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "SelectEditor",
       dataBindingType: "collection",
       // React Aria: onSelectionChange, onOpenChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
-      supportedEvents: ["onSelectionChange", "onOpenChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
+      supportedEvents: [
+        "onSelectionChange",
+        "onOpenChange",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+      ],
     },
   },
   {
@@ -221,7 +296,14 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "ComboBoxEditor",
       dataBindingType: "collection",
       // React Aria: onSelectionChange, onInputChange, onOpenChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
-      supportedEvents: ["onSelectionChange", "onOpenChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
+      supportedEvents: [
+        "onSelectionChange",
+        "onOpenChange",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+      ],
     },
   },
   {
@@ -234,7 +316,15 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "SwitchEditor",
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
-      supportedEvents: ["onChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp", "onMouseEnter", "onMouseLeave"],
+      supportedEvents: [
+        "onChange",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+        "onMouseEnter",
+        "onMouseLeave",
+      ],
     },
   },
   {
@@ -247,7 +337,15 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "SliderEditor",
       dataBindingType: "value",
       // React Aria: onChange, onChangeEnd, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
-      supportedEvents: ["onChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp", "onMouseEnter", "onMouseLeave"],
+      supportedEvents: [
+        "onChange",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+        "onMouseEnter",
+        "onMouseLeave",
+      ],
     },
   },
   {
@@ -299,7 +397,12 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "AutocompleteEditor",
       dataBindingType: "collection",
       // React Aria: onInputChange, onSelectionChange, onFocus, onBlur
-      supportedEvents: ["onInputChange", "onSelectionChange", "onFocus", "onBlur"],
+      supportedEvents: [
+        "onInputChange",
+        "onSelectionChange",
+        "onFocus",
+        "onBlur",
+      ],
     },
   },
   {
@@ -511,6 +614,18 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
   {
+    type: "Icon",
+    label: "Icon",
+    category: "Structure",
+    icon: "🎨",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "IconEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
     type: "Toast",
     label: "Toast",
     category: "Feedback",
@@ -535,7 +650,13 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "PanelEditor",
       dataBindingType: null,
       // Custom container - supports basic mouse events
-      supportedEvents: ["onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur"],
+      supportedEvents: [
+        "onClick",
+        "onMouseEnter",
+        "onMouseLeave",
+        "onFocus",
+        "onBlur",
+      ],
     },
   },
   {
@@ -548,7 +669,13 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "CardEditor",
       dataBindingType: null,
       // Custom container - supports basic mouse events
-      supportedEvents: ["onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur"],
+      supportedEvents: [
+        "onClick",
+        "onMouseEnter",
+        "onMouseLeave",
+        "onFocus",
+        "onBlur",
+      ],
     },
   },
   {
@@ -667,7 +794,13 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "NavEditor",
       dataBindingType: null,
       // nav 태그: 내비게이션 링크 컨테이너 (접근성 landmark)
-      supportedEvents: ["onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur"],
+      supportedEvents: [
+        "onClick",
+        "onMouseEnter",
+        "onMouseLeave",
+        "onFocus",
+        "onBlur",
+      ],
     },
   },
   {
@@ -1023,7 +1156,6 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: ["onLoad", "onError", "onRefresh"],
     },
   },
-
 ];
 
 /**

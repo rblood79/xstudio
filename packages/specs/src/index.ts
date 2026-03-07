@@ -377,6 +377,9 @@ export type {
   DateSegmentType,
 } from "./components/DateSegment.spec";
 
+export { IconSpec } from "./components/Icon.spec";
+export type { IconProps } from "./components/Icon.spec";
+
 export { SelectTriggerSpec } from "./components/SelectTrigger.spec";
 export type { SelectTriggerProps } from "./components/SelectTrigger.spec";
 

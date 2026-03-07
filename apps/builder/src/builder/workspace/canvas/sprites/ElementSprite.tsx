@@ -119,6 +119,7 @@ import {
   SelectValueSpec,
   SelectIconSpec,
   TagSpec,
+  IconSpec,
 } from "@xstudio/specs";
 import {
   PixiButton,
@@ -699,6 +700,7 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   ToggleButtonGroup: ToggleButtonGroupSpec,
   ListBox: ListBoxSpec,
   Badge: BadgeSpec,
+  Icon: IconSpec,
   Tag: TagSpec,
   Chip: BadgeSpec,
   Meter: MeterSpec,

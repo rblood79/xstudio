@@ -1,0 +1,113 @@
+@layer builder-system {
+  .icon-picker-popover {
+    width: 296px;
+    background: var(--overlay-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+
+  .icon-picker-dialog {
+    outline: none;
+    padding: var(--spacing-sm);
+  }
+
+  .icon-picker-search {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .icon-picker-search-input {
+    width: 100%;
+    height: var(--inspector-control-size);
+    padding: 0 var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--field-background);
+    color: var(--text-color);
+    font-size: var(--text-xs);
+    outline: none;
+
+    &:focus {
+      border-color: var(--focus-ring-color);
+    }
+
+    &::placeholder {
+      color: var(--text-color-placeholder);
+    }
+  }
+
+  .icon-picker-count {
+    font-size: var(--text-2xs);
+    color: var(--text-color-placeholder);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .icon-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+  }
+
+  .icon-picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0;
+
+    &:hover {
+      background: var(--border-color);
+    }
+
+    &.selected {
+      background: var(--highlight-background);
+      color: var(--highlight-foreground);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--focus-ring-color);
+      outline-offset: -2px;
+    }
+  }
+
+  .icon-picker-trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    width: 100%;
+    height: var(--inspector-control-size);
+    padding: 0 var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--field-background);
+    color: var(--text-color);
+    font-size: var(--text-xs);
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--border-color-hover);
+    }
+
+    &[data-pressed] {
+      border-color: var(--focus-ring-color);
+    }
+  }
+
+  .icon-picker-trigger-name {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

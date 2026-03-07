@@ -39,6 +39,7 @@ import {
   Paintbrush,
   Layers,
   Box,
+  Smile,
 } from "lucide-react";
 import { PanelHeader } from "../../components";
 import { useEditModeStore } from "../../stores/editMode";
@@ -123,6 +124,7 @@ const overlaysComp = [
 
 const structureComp = [
   { tag: "Text", label: "text", icon: Text },
+  { tag: "Icon", label: "icon", icon: Smile },
   { tag: "Section", label: "section", icon: Square },
   { tag: "Div", label: "division", icon: Code },
 ] as const;
@@ -210,7 +212,7 @@ const ComponentList = memo(
         "structure",
         "other",
       ],
-      []
+      [],
     );
     const { isExpanded, toggleCategory, expandCategories } =
       useCategoryExpansion({
@@ -224,7 +226,7 @@ const ComponentList = memo(
         handleAddElement(tag, parentId);
         addRecentComponent(tag); // Recent에 추가
       },
-      [handleAddElement, addRecentComponent]
+      [handleAddElement, addRecentComponent],
     );
 
     // 컴포넌트 그룹을 메모이제이션 (8개 카테고리)
@@ -234,7 +236,7 @@ const ComponentList = memo(
         layout: isLayoutMode
           ? layoutComp
           : layoutComp.filter(
-              (comp) => !("layoutOnly" in comp && comp.layoutOnly)
+              (comp) => !("layoutOnly" in comp && comp.layoutOnly),
             ),
         inputs: inputsComp,
         actions: actionsComp,
@@ -245,7 +247,7 @@ const ComponentList = memo(
         structure: structureComp,
         other: otherComp,
       }),
-      [isLayoutMode]
+      [isLayoutMode],
     );
 
     // 검색용 모든 컴포넌트 배열 생성
@@ -259,7 +261,7 @@ const ComponentList = memo(
             category: config.label,
             categoryKey,
           }));
-        }
+        },
       );
     }, [componentGroups]);
 
@@ -303,7 +305,7 @@ const ComponentList = memo(
         // Multi-word matching
         const words = lowerQuery.split(" ").filter((w) => w.length > 0);
         const allWordsMatch = words.every(
-          (word) => lowerLabel.includes(word) || lowerTag.includes(word)
+          (word) => lowerLabel.includes(word) || lowerTag.includes(word),
         );
         if (allWordsMatch && words.length > 1) {
           score += 20;
@@ -346,7 +348,7 @@ const ComponentList = memo(
       return favoriteTags
         .map((tag) => allComponents.find((comp) => comp.tag === tag))
         .filter(
-          (comp): comp is (typeof allComponents)[0] => comp !== undefined
+          (comp): comp is (typeof allComponents)[0] => comp !== undefined,
         );
     }, [favoriteTags, allComponents]);
 
@@ -575,7 +577,7 @@ const ComponentList = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 
 ComponentList.displayName = "ComponentList";

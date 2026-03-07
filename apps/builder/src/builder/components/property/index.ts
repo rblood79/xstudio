@@ -15,3 +15,4 @@ export {
 } from "./PropertyDataBinding";
 export { PropertyListItem } from "./PropertyListItem";
 export { PropertySizeToggle } from "./PropertySizeToggle";
+export { PropertyIconPicker } from "./PropertyIconPicker";
