@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial (2026-03-08) — Phase 1-3 구현 완료, Phase 4 미구현
+Partial (2026-03-08) — Phase 1-4 구현 완료 (Phase 4 부분: Fill 비활성화 힌트)
 
 ## Context
 
@@ -298,7 +298,15 @@ width: auto / fit-content  → Fit
 - 부모가 flex/grid일 때만 Self-Alignment 그리드 표시 (block 부모에서는 숨김)
 - `handleSelfAlignment()`: 9방향 위치 → align-self/justify-self CSS 속성 변환
 - `inspector-layout.css`: grid-template-areas에 self-alignment 행 추가 + 3x3 그리드 스타일
-- Box Model 다이어그램은 P4로 보류 (핵심 가치 대비 복잡도 높음)
+- Box Model 다이어그램은 보류 (핵심 가치 대비 복잡도 높음)
+
+#### Phase 4 완료 (2026-03-08)
+
+- `SizeModeToggle`에 `fillDisabled`/`fillDisabledReason` props 추가
+- Block 부모에서 Height Fill 버튼 비활성화 + aria-label에 사유 표시
+- Width Fill은 모든 부모 컨텍스트에서 가능 (block: 100%, flex: flex-grow, grid: stretch)
+- 자동 CSS 재매핑(부모 display 변경 시)은 위험도 높아 보류 — 사용자가 수동으로 모드 재선택
+- 다중 선택 일괄 적용은 스타일 패널이 단일 selectedElementId만 지원하므로 보류
 
 ### 변경 파일 목록
 

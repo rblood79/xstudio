@@ -53,15 +53,20 @@ const ICON_STROKE = 1.5;
 /**
  * Size Mode 세그먼트 컨트롤 (ADR-026)
  * Fixed / Fill / Fit 3버튼 토글
+ * Phase 4: fillDisabled prop으로 Fill 버튼 비활성화 + 툴팁
  */
 const SizeModeToggle = memo(function SizeModeToggle({
   axis,
   mode,
   onChange,
+  fillDisabled,
+  fillDisabledReason,
 }: {
   axis: "width" | "height";
   mode: SizeMode;
   onChange: (mode: SizeMode) => void;
+  fillDisabled?: boolean;
+  fillDisabledReason?: string;
 }) {
   const handleSelectionChange = useCallback(
     (keys: Set<string>) => {
@@ -84,7 +89,13 @@ const SizeModeToggle = memo(function SizeModeToggle({
       <ToggleButton id="fixed" aria-label="Fixed">
         <Minus size={ICON_SIZE} strokeWidth={ICON_STROKE} />
       </ToggleButton>
-      <ToggleButton id="fill" aria-label="Fill">
+      <ToggleButton
+        id="fill"
+        aria-label={
+          fillDisabledReason ? `Fill (${fillDisabledReason})` : "Fill"
+        }
+        isDisabled={fillDisabled}
+      >
         <MoveHorizontal
           size={ICON_SIZE}
           strokeWidth={ICON_STROKE}
@@ -231,6 +242,15 @@ const TransformSectionContent = memo(function TransformSectionContent() {
     parentDisplay === "inline-grid";
   const showSelfAlignment = !styleValues.isBody && isFlexOrGridParent;
 
+  // ADR-026 Phase 4: Fill 비활성화 힌트
+  // Block 부모: Height Fill 불가 (Block은 높이 채우기 미지원)
+  const isBlockParent =
+    parentDisplay === "block" || parentDisplay === "inline-block";
+  const heightFillDisabled = isBlockParent;
+  const heightFillReason = isBlockParent ? "Block 부모에서 불가" : undefined;
+  // Width Fill은 모든 부모에서 가능 (block: 100%, flex: flex-grow, grid: stretch)
+  const widthFillDisabled = false;
+
   return (
     <>
       {showSizeMode && (
@@ -241,6 +261,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
               axis="width"
               mode={widthMode}
               onChange={handleWidthModeChange}
+              fillDisabled={widthFillDisabled}
             />
           </fieldset>
           <fieldset className="properties-aria size-mode-height">
@@ -249,6 +270,8 @@ const TransformSectionContent = memo(function TransformSectionContent() {
               axis="height"
               mode={heightMode}
               onChange={handleHeightModeChange}
+              fillDisabled={heightFillDisabled}
+              fillDisabledReason={heightFillReason}
             />
           </fieldset>
         </>
