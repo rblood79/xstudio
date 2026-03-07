@@ -299,3 +299,76 @@ export const DEFAULT_FONT_OPTIONS = [
   { value: "Courier New", label: "Courier New" },
   { value: "Verdana", label: "Verdana" },
 ];
+
+// ============================================
+// Font Weight 정보
+// ============================================
+
+const WEIGHT_LABELS: Record<string, string> = {
+  "100": "100 - Thin",
+  "200": "200 - Extra Light",
+  "300": "300 - Light",
+  "400": "400 - Normal",
+  "500": "500 - Medium",
+  "600": "600 - Semi Bold",
+  "700": "700 - Bold",
+  "800": "800 - Extra Bold",
+  "900": "900 - Black",
+};
+
+/** 빌트인 폰트의 가용 weight (Skia에 실제 로드되는 weight만) */
+const BUILTIN_FONT_WEIGHTS: Record<string, string[]> = {
+  Pretendard: ["400", "500", "600", "700"],
+};
+
+/** 시스템 폰트 — CSS가 처리하므로 모든 weight 허용 */
+const ALL_WEIGHTS = [
+  "100",
+  "200",
+  "300",
+  "400",
+  "500",
+  "600",
+  "700",
+  "800",
+  "900",
+];
+
+/**
+ * 특정 폰트 패밀리의 가용 weight 옵션을 반환한다.
+ *
+ * - 빌트인 폰트: BUILTIN_FONT_WEIGHTS에 정의된 weight만
+ * - 커스텀 폰트: registry에서 해당 family의 face별 weight 수집
+ * - 시스템 폰트 (Arial 등): 모든 weight 허용
+ */
+export function getFontWeightOptions(
+  family: string,
+): Array<{ value: string; label: string }> {
+  let weights: string[];
+
+  if (BUILTIN_FONT_WEIGHTS[family]) {
+    weights = BUILTIN_FONT_WEIGHTS[family];
+  } else {
+    // 커스텀 폰트 registry에서 weight 수집
+    const registry = loadFontRegistry();
+    const familyFaces = registry.faces.filter((f) => f.family === family);
+    if (familyFaces.length > 0) {
+      const weightSet = new Set<string>();
+      for (const face of familyFaces) {
+        weightSet.add(face.weight ?? "400");
+      }
+      weights = Array.from(weightSet).sort((a, b) => Number(a) - Number(b));
+    } else {
+      // 시스템 폰트 — 모든 weight 허용
+      weights = ALL_WEIGHTS;
+    }
+  }
+
+  return [
+    { value: "reset", label: "Reset" },
+    ...weights.map((w) => ({
+      value: w,
+      label: WEIGHT_LABELS[w] ?? w,
+    })),
+  ];
+}

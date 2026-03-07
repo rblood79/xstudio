@@ -42,6 +42,7 @@ import {
   DEFAULT_FONT_OPTIONS,
   FONT_REGISTRY_STORAGE_KEY,
   getCustomFonts,
+  getFontWeightOptions,
 } from "../../../fonts/customFonts";
 import { usePanelLayout } from "../../../hooks/usePanelLayout";
 
@@ -153,6 +154,11 @@ const TypographySectionContent = memo(function TypographySectionContent() {
     return [...DEFAULT_FONT_OPTIONS, ...dynamicOptions];
   }, [customFonts]);
 
+  const fontWeightOptions = useMemo(
+    () => getFontWeightOptions(styleValues?.fontFamily || ""),
+    [styleValues?.fontFamily, customFonts],
+  );
+
   if (!styleValues) return null;
 
   return (
@@ -223,20 +229,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         label="Font Weight"
         className="font-weight"
         value={styleValues.fontWeight}
-        options={[
-          { value: "reset", label: "Reset" },
-          { value: "100", label: "100 - Thin" },
-          { value: "200", label: "200 - Extra Light" },
-          { value: "300", label: "300 - Light" },
-          { value: "400", label: "400 - Normal" },
-          { value: "500", label: "500 - Medium" },
-          { value: "600", label: "600 - Semi Bold" },
-          { value: "700", label: "700 - Bold" },
-          { value: "800", label: "800 - Extra Bold" },
-          { value: "900", label: "900 - Black" },
-          { value: "normal", label: "Normal" },
-          { value: "bold", label: "Bold" },
-        ]}
+        options={fontWeightOptions}
         onChange={(value) => updateStyle("fontWeight", value)}
       />
       <PropertyUnitInput
