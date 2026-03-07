@@ -266,9 +266,8 @@ export function useTextEdit(): UseTextEditReturn {
       currentValueRef.current = text;
       editingIdRef.current = elementId;
 
-      // Pencil hideText: Skia 텍스트 렌더링 숨김 + 리렌더 트리거
-      setEditingElementId(elementId);
-      notifyLayoutChange();
+      // Skia 텍스트 숨김은 TextEditOverlay 마운트 후 수행 (깜빡임 방지)
+      // → TextEditOverlay useEffect에서 setEditingElementId 호출
 
       // 위치 결정 (layoutPosition = screen 좌표 from layoutBoundsRegistry)
       const position = layoutPosition

@@ -15,6 +15,8 @@ import { useEffect, useRef, useState } from "react";
 import Quill from "quill";
 import "quill/dist/quill.core.css";
 import { getSceneBounds, subscribeBounds } from "../canvas/skia/renderCommands";
+import { setEditingElementId } from "../canvas/skia/nodeRenderers";
+import { notifyLayoutChange } from "../canvas/skia/useSkiaNode";
 
 // ============================================
 // Types
@@ -55,20 +57,6 @@ export interface TextStyleConfig {
   letterSpacing?: number;
   /** 수직 정렬 (Spec baseline: "middle" → "center") */
   verticalAlign?: "top" | "center";
-}
-
-// ============================================
-// Fade-in keyframes (Skia→DOM 전환 점프 감춤)
-// ============================================
-
-if (
-  typeof document !== "undefined" &&
-  !document.getElementById("text-edit-fade")
-) {
-  const s = document.createElement("style");
-  s.id = "text-edit-fade";
-  s.textContent = `@keyframes text-edit-fade-in{to{opacity:1}}`;
-  document.head.appendChild(s);
 }
 
 // ============================================
@@ -204,6 +192,11 @@ export function TextEditOverlay({
     quill.setSelection(initialValue.length, 0);
     quill.history.clear();
 
+    // DOM 오버레이 준비 완료 → Skia 텍스트 숨김 + 오버레이 즉시 표시 (깜빡임 방지)
+    setEditingElementId(elementId);
+    notifyLayoutChange();
+    container.style.opacity = "1";
+
     // 텍스트 변경 이벤트 (Pencil: text-change → 노드 업데이트, undo 미기록)
     quill.on("text-change", () => {
       let text = quill.getText();
@@ -287,9 +280,8 @@ export function TextEditOverlay({
     cursor: "text",
     overflow: "visible",
     WebkitFontSmoothing: "antialiased",
-    // Skia→DOM 전환 페이드인 (1~2px 점프 감춤)
+    // 초기 숨김 — Quill 준비 완료 + Skia 텍스트 숨김 후 JS에서 opacity:1 설정
     opacity: 0,
-    animation: "text-edit-fade-in 50ms ease-out forwards",
     // 수직 중앙 정렬 (Button, Badge 등 baseline: "middle" 요소)
     ...(isVerticalCenter
       ? { display: "flex", alignItems: "center", justifyContent: "center" }
