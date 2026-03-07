@@ -53,7 +53,11 @@ export type {
 export { isValidTokenRef } from "./types";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
-export { LUCIDE_ICONS, getIconData } from "./icons/lucideIcons";
+export {
+  getIconData,
+  LUCIDE_ICON_NAMES,
+  LUCIDE_ALIASES,
+} from "./icons/lucideIcons";
 export type { LucideIconData } from "./icons/lucideIcons";
 
 // ─── Utils ──────────────────────────────────────────────────────────────────

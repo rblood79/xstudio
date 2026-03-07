@@ -569,6 +569,18 @@ export interface NavElementProps extends BaseElementProps {
   children?: React.ReactNode;
 }
 
+// === Icon Element Props (ADR-019) ===
+export interface IconElementProps extends BaseElementProps {
+  /** 아이콘 이름 (lucide 레지스트리 키, 예: 'home', 'search') */
+  iconName?: string;
+  /** 아이콘 라이브러리 (기본: 'lucide') */
+  iconFontFamily?: string;
+  /** 아이콘 크기 프리셋 */
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  /** 선 두께 (기본: 2) */
+  strokeWidth?: number;
+}
+
 // === Slot Element Props (Layout System) ===
 export interface SlotElementProps extends BaseElementProps {
   /** Slot 식별자 (예: "content", "sidebar", "navigation") */
@@ -623,6 +635,7 @@ export type ComponentElementProps =
   | DivElementProps
   | SectionElementProps
   | NavElementProps
+  | IconElementProps
   | SlotElementProps;
 
 // === 스토어 상태 타입 ===
@@ -1463,6 +1476,20 @@ export function createDefaultGroupProps(): BaseElementProps {
   };
 }
 
+// === Icon 기본 props (ADR-019) ===
+export function createDefaultIconProps(): IconElementProps {
+  return {
+    iconName: "circle",
+    iconFontFamily: "lucide",
+    size: "md",
+    strokeWidth: 2,
+    style: {
+      width: "24px",
+      height: "24px",
+    },
+  };
+}
+
 // === 통합된 기본 props 생성 함수 ===
 export function getDefaultProps(tag: string): ComponentElementProps {
   const defaultPropsMap: Record<string, () => ComponentElementProps> = {
@@ -1540,6 +1567,7 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Popover: createDefaultPopoverProps,
     Modal: createDefaultModalProps,
     Group: createDefaultGroupProps,
+    Icon: createDefaultIconProps,
   };
 
   const createProps = defaultPropsMap[tag];
