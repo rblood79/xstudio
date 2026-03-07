@@ -14,7 +14,7 @@ import { useState, useCallback, useRef } from "react";
 import { useStore } from "../../stores";
 import type { TextStyleConfig } from "./TextEditOverlay";
 import { setEditingElementId } from "../canvas/skia/nodeRenderers";
-import { notifyLayoutChange } from "../canvas/skia/useSkiaNode";
+import { getSkiaNode, notifyLayoutChange } from "../canvas/skia/useSkiaNode";
 
 // ============================================
 // Types
@@ -113,11 +113,46 @@ function extractText(props: Record<string, unknown> | undefined): string {
 }
 
 /**
- * 요소 스타일에서 텍스트 스타일 추출
+ * Skia 렌더 데이터에서 텍스트 스타일 추출 (가장 정확한 소스)
+ * fallback: element.props.style
  */
 function extractTextStyle(
+  elementId: string,
   style: Record<string, unknown> | undefined,
 ): TextStyleConfig {
+  // Skia 노드에서 실제 렌더링 스타일 추출
+  const skiaNode = getSkiaNode(elementId);
+  if (skiaNode?.text) {
+    const t = skiaNode.text;
+    // Float32Array color → CSS hex
+    const r = Math.round((t.color[0] ?? 0) * 255);
+    const g = Math.round((t.color[1] ?? 0) * 255);
+    const b = Math.round((t.color[2] ?? 0) * 255);
+    const hexColor = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+
+    // fontFamilies → CSS fontFamily
+    const fontFamily = t.fontFamilies.join(", ") || "Pretendard, sans-serif";
+
+    // align: EmbindEnumEntity | string → CSS textAlign
+    let textAlign: "left" | "center" | "right" = "left";
+    if (typeof t.align === "string") {
+      textAlign = t.align as "left" | "center" | "right";
+    }
+
+    return {
+      fontFamily,
+      fontSize: t.fontSize,
+      fontWeight: t.fontWeight ?? 400,
+      color: hexColor,
+      textAlign,
+      lineHeight: t.lineHeight,
+      padding: t.paddingLeft ?? 0,
+      letterSpacing: t.letterSpacing,
+      paddingTop: t.paddingTop ?? 0,
+    };
+  }
+
+  // fallback: inline style
   return {
     fontFamily: String(style?.fontFamily || "Pretendard, sans-serif"),
     fontSize: Number(style?.fontSize) || 16,
@@ -206,7 +241,7 @@ export function useTextEdit(): UseTextEditReturn {
         value: text,
         position,
         size,
-        style: extractTextStyle(elStyle),
+        style: extractTextStyle(elementId, elStyle),
       });
     },
     [],

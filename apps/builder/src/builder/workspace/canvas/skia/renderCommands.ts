@@ -98,6 +98,14 @@ export interface RenderCommandStream {
   boundsMap: Map<string, BoundingBox>;
 }
 
+/** 최신 boundsMap 캐시 (씬 좌표 — TextEditOverlay 위치 계산용) */
+let _lastBoundsMap: Map<string, BoundingBox> = new Map();
+
+/** 씬 좌표 기반 요소 bounds 조회 (카메라 변환 미포함) */
+export function getSceneBounds(elementId: string): BoundingBox | undefined {
+  return _lastBoundsMap.get(elementId);
+}
+
 // ── updateTextChildren (SkiaOverlay.tsx:91-129에서 이동) ──────────────
 
 function updateTextChildren(
@@ -230,6 +238,9 @@ export function buildRenderCommandStream(
   if (WASM_FLAGS.SPATIAL_INDEX) {
     syncSpatialIndex(boundsMap);
   }
+
+  // 최신 boundsMap 캐시 (TextEditOverlay 등 외부 접근용)
+  _lastBoundsMap = boundsMap;
 
   return { commands, boundsMap };
 }

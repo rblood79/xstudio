@@ -11,10 +11,10 @@
  * @updated 2026-03-07 Quill 에디터 전환 (Pencil nUt 패턴)
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Quill from "quill";
 import "quill/dist/quill.core.css";
-import { getElementContainer } from "../canvas/elementRegistry";
+import { getSceneBounds } from "../canvas/skia/renderCommands";
 
 // ============================================
 // Types
@@ -51,6 +51,8 @@ export interface TextStyleConfig {
   textAlign?: "left" | "center" | "right";
   lineHeight?: number | string;
   padding?: number;
+  paddingTop?: number;
+  letterSpacing?: number;
 }
 
 // ============================================
@@ -63,6 +65,7 @@ export function TextEditOverlay({
   position,
   size,
   zoom,
+  panOffset,
   style = {},
   onChange,
   onComplete,
@@ -70,30 +73,36 @@ export function TextEditOverlay({
 }: TextEditOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill | null>(null);
-  const activeRef = useRef(true);
 
-  // Pencil nUt.updateSize 패턴: PixiJS getBounds()로 실시간 카메라 좌표 추적
-  // layoutBoundsRegistry는 카메라 pan/zoom 시 갱신 안 됨 → getBounds() 직접 사용
+  // Pencil nUt.updateSize 패턴: getSceneBounds()로 장면 좌표 추적 + 카메라 변환
+  // boundsMap(scene 좌표)는 매 프레임 갱신됨 → zoom/pan 적용하여 screen 좌표 산출
+  const zoomRef = useRef(zoom);
+  const panOffsetRef = useRef(panOffset);
+  zoomRef.current = zoom;
+  panOffsetRef.current = panOffset;
+
   const [livePos, setLivePos] = useState(position);
   const [liveSize, setLiveSize] = useState(size);
   useEffect(() => {
     let rafId: number;
     const track = () => {
-      const container = getElementContainer(elementId);
-      if (container) {
-        try {
-          const b = container.getBounds();
-          setLivePos((prev) =>
-            prev.x !== b.x || prev.y !== b.y ? { x: b.x, y: b.y } : prev,
-          );
-          setLiveSize((prev) =>
-            prev.width !== b.width || prev.height !== b.height
-              ? { width: b.width, height: b.height }
-              : prev,
-          );
-        } catch {
-          // container가 destroyed된 경우 무시
-        }
+      const sceneBounds = getSceneBounds(elementId);
+      if (sceneBounds) {
+        const z = zoomRef.current;
+        const pan = panOffsetRef.current;
+        // scene → screen 변환
+        const sx = sceneBounds.x * z + pan.x;
+        const sy = sceneBounds.y * z + pan.y;
+        const sw = sceneBounds.width * z;
+        const sh = sceneBounds.height * z;
+        setLivePos((prev) =>
+          prev.x !== sx || prev.y !== sy ? { x: sx, y: sy } : prev,
+        );
+        setLiveSize((prev) =>
+          prev.width !== sw || prev.height !== sh
+            ? { width: sw, height: sh }
+            : prev,
+        );
       }
       rafId = requestAnimationFrame(track);
     };
@@ -108,12 +117,6 @@ export function TextEditOverlay({
   onCompleteRef.current = onComplete;
   onCancelRef.current = onCancel;
   onChangeRef.current = onChange;
-
-  const destroy = useCallback(() => {
-    if (!activeRef.current) return;
-    activeRef.current = false;
-    onCompleteRef.current?.(elementId);
-  }, [elementId]);
 
   // Initialize Quill editor (Pencil nUt constructor 패턴)
   useEffect(() => {
@@ -137,7 +140,7 @@ export function TextEditOverlay({
     root.classList.add("notranslate");
     root.setAttribute("translate", "no");
 
-    // 폰트 스타일 적용
+    // Skia 렌더링과 일치하는 폰트 스타일 적용
     const fontSize = style.fontSize ?? 16;
     root.style.fontFamily = style.fontFamily ?? "Pretendard, sans-serif";
     root.style.fontSize = `${fontSize}px`;
@@ -147,10 +150,15 @@ export function TextEditOverlay({
     if (style.lineHeight != null) {
       root.style.lineHeight =
         typeof style.lineHeight === "number"
-          ? String(style.lineHeight)
+          ? `${style.lineHeight}px`
           : style.lineHeight;
     }
-    root.style.padding = "0";
+    if (style.letterSpacing) {
+      root.style.letterSpacing = `${style.letterSpacing}px`;
+    }
+    // paddingLeft/paddingTop: Skia 텍스트 오프셋과 일치
+    root.style.paddingLeft = style.padding ? `${style.padding}px` : "0";
+    root.style.paddingTop = style.paddingTop ? `${style.paddingTop}px` : "0";
     root.style.margin = "0";
     root.style.minWidth = initialValue ? "auto" : "1px";
 
