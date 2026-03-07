@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed (2026-03-06)
+Partial (2026-03-08) — Phase A+B 구현 완료 (TextEditOverlay + Quill + 멀티페이지 좌표 보정), Phase C (Spec 컴포넌트 텍스트) + Phase D (리치 텍스트) 미구현
 
 ## Context
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed (2026-03-05)
+Accepted (2026-03-08) — Phase 1~3 구현 완료, Phase 4 (Inspector UI) 미구현
 
 ## Context
 

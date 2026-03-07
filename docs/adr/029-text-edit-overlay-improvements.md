@@ -1,6 +1,6 @@
 # ADR-029: Text Edit Overlay UX 개선
 
-> 상태: Proposed
+> 상태: Accepted (2026-03-08) — Phase 1 (전환 애니메이션) + Phase 2 (이벤트 기반 위치 추적) 구현 완료
 > 날짜: 2026-03-07
 > 관련: ADR-027 (Canvas Inline Text Editing)
 
