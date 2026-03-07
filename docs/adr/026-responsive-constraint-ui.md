@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Partial (2026-03-08) — Phase 1 구현 완료, Phase 2-4 미구현
 
 ## Context
 
@@ -274,6 +274,12 @@ width: auto / fit-content  → Fit
 - `inspectorActions.ts`: `updateSelectedStyle()` + `LAYOUT_AFFECTING_PROPS` 인프라 완성.
 
 **핵심 발견: Phase 1의 코어 로직(sizeModeResolver + Jotai atoms + TransformSection 세그먼트 UI)은 이미 구현 완료**. 남은 작업은 UI 폴리싱과 엣지 케이스 처리이다.
+
+#### Phase 1 완료 (2026-03-08)
+
+- `SelectedElement` 인터페이스에 `parentDisplay`, `parentFlexDirection` 필드 추가 (`inspector/types.ts`)
+- `styleAtoms.ts`의 타입 캐스팅 우회(`as Record<string, unknown>`) 제거 → 정식 타입 참조로 전환
+- `useZustandJotaiBridge.ts`에서 부모 display/flexDirection 주입 정상 동작 확인
 
 ### 변경 파일 목록
 

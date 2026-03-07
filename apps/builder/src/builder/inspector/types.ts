@@ -30,6 +30,10 @@ export interface SelectedElement {
   computedStyle?: Partial<React.CSSProperties>; // Computed styles (브라우저 계산값)
   computedLayout?: ComputedLayout; // 🚀 WebGL computed layout (실제 픽셀 크기)
 
+  // Size Mode (ADR-026) - 부모 레이아웃 컨텍스트
+  parentDisplay?: string;
+  parentFlexDirection?: string;
+
   // StyleSection - 의미 클래스 + CSS 변수 (deprecated - inline style로 마이그레이션 중)
   semanticClasses?: string[];
   cssVariables?: Record<string, string>;
@@ -210,7 +214,7 @@ export type {
   CustomConfig,
   ScrollToConfig,
   ToggleVisibilityConfig,
-  CopyToClipboardConfig
+  CopyToClipboardConfig,
 } from "../panels/events/types/eventTypes";
 
 /**
