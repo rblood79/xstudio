@@ -20,13 +20,14 @@
 
 ### 핵심 발견 사항
 
-|    심각도    | 발견 사항                                         | 영향                                         |
-| :----------: | ------------------------------------------------- | -------------------------------------------- |
-| **CRITICAL** | Button/Badge/Link/ProgressBar에 Factory 정의 없음 | 빌더에서 독립 컴포넌트로 생성 불가           |
-|   **HIGH**   | S2 대비 프로퍼티 커버리지 ~50%                    | variant/validation/form 지원 미흡            |
-|   **HIGH**   | 이벤트 패널의 React Aria 이벤트 미연동            | onPress/onSelectionChange 등 실행 불가       |
-|  **MEDIUM**  | Preview 컴포넌트 부재 (별도 .tsx 없음)            | Runtime 기반 렌더링이므로 구조적 문제는 아님 |
-|  **MEDIUM**  | Compositional 전환 불완전                         | 일부 컴포넌트 자식 구성 미지원               |
+|    심각도    | 발견 사항                                           | 영향                                   |
+| :----------: | --------------------------------------------------- | -------------------------------------- |
+| **CRITICAL** | Button/Badge/Link/ProgressBar에 Factory 정의 없음   | 빌더에서 독립 컴포넌트로 생성 불가     |
+|   **HIGH**   | S2 대비 프로퍼티 커버리지 ~50%                      | variant/validation/form 지원 미흡      |
+|   **HIGH**   | 이벤트 패널의 React Aria 이벤트 미연동              | onPress/onSelectionChange 등 실행 불가 |
+|   **HIGH**   | Preview 렌더러 일부 누락 (FileTrigger, DropZone 등) | 5+ 컴포넌트 Preview 렌더링 불가        |
+|  **MEDIUM**  | Select ID 변환 취약성 (react-aria-\* 내부 ID 파싱)  | React Aria 업데이트 시 깨질 수 있음    |
+|  **MEDIUM**  | Compositional 전환 불완전                           | 일부 컴포넌트 자식 구성 미지원         |
 
 ---
 
@@ -291,9 +292,49 @@ Preview iframe (postMessage)
 
 ---
 
-## 6. Compositional 전환 상태
+## 6. Preview 렌더러 현황
 
-### 6.1 Compositional 아키텍처 적용 현황
+### 6.1 렌더러 파일 구조
+
+Preview 컴포넌트는 `packages/shared/src/renderers/`에 7개 파일로 구현:
+
+| 렌더러 파일             | 컴포넌트 수 | 주요 컴포넌트                                               |
+| ----------------------- | :---------: | ----------------------------------------------------------- |
+| FormRenderers.tsx       |     13      | TextField, NumberField, Checkbox, Radio, Switch             |
+| SelectionRenderers.tsx  |      8      | ListBox, GridList, Select, ComboBox, Slider                 |
+| LayoutRenderers.tsx     |     20      | Tabs, Card, Button, Badge, Link, ProgressBar, Meter         |
+| DateRenderers.tsx       |      5      | Calendar, DatePicker, DateRangePicker, DateField, TimeField |
+| CollectionRenderers.tsx |      9      | Tree, TagGroup, ToggleButtonGroup, Menu, Toolbar            |
+| TableRenderer.tsx       |      6      | Table, Column, Row, Cell                                    |
+| DataRenderers.tsx       |      1      | DataTable (비시각적)                                        |
+| **합계**                |   **46**    | `rendererMap` 등록                                          |
+
+### 6.2 누락 렌더러
+
+| 컴포넌트    | Spec 존재 | Factory 존재 | 렌더러 | 영향                            |
+| ----------- | :-------: | :----------: | :----: | ------------------------------- |
+| FileTrigger |     O     |      X       | **X**  | Preview에서 파일 업로드 불가    |
+| DropZone    |     O     |      X       | **X**  | Preview에서 드래그앤드롭 불가   |
+| Pagination  |     O     |      O       | **X**  | Preview에서 페이지네이션 불가   |
+| Toast       |     O     |      O       | **X**  | Preview에서 토스트 알림 불가    |
+| ColorArea   |     O     |      X       | **X**  | Preview에서 색상 영역 선택 불가 |
+| ColorSlider |     O     |      X       | **X**  | Preview에서 색상 슬라이더 불가  |
+| ColorWheel  |     O     |      X       | **X**  | Preview에서 색상 휠 불가        |
+| Skeleton    |     O     |      X       | **X**  | Preview에서 스켈레톤 로딩 불가  |
+
+### 6.3 Preview 이슈
+
+|   심각도   | 이슈                         | 설명                                                      |
+| :--------: | ---------------------------- | --------------------------------------------------------- |
+|  **HIGH**  | Select react-aria-\* ID 파싱 | 내부 ID를 수동 변환 — React Aria 업데이트 시 깨질 수 있음 |
+| **MEDIUM** | DataBinding 감지 중복        | PropertyDataBinding 로직이 여러 렌더러에 반복             |
+|  **LOW**   | 에러 silent catch            | DataTable/Select DB 에러 시 사용자 알림 없음              |
+
+---
+
+## 7. Compositional 전환 상태
+
+### 7.1 Compositional 아키텍처 적용 현황
 
 |    상태    | 컴포넌트                                                                                                                                | 설명                                       |
 | :--------: | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
@@ -308,7 +349,7 @@ Preview iframe (postMessage)
 
 ---
 
-## 7. 우선 조치 사항 (ADR-030 선행 작업)
+## 8. 우선 조치 사항 (ADR-030 선행 작업)
 
 ### Priority 1: CRITICAL — Factory 누락 보완
 
@@ -352,7 +393,7 @@ Preview iframe (postMessage)
 
 ---
 
-## 8. ADR-030 진행 조건 (Gate)
+## 9. ADR-030 진행 조건 (Gate)
 
 ADR-030 Phase 1 착수 전 아래 조건 충족 필요:
 
@@ -366,7 +407,7 @@ ADR-030 Phase 1 착수 전 아래 조건 충족 필요:
 
 ---
 
-## 9. 참조
+## 10. 참조
 
 | 문서                     | 경로                                                                      |
 | ------------------------ | ------------------------------------------------------------------------- |
