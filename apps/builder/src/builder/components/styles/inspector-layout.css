@@ -227,6 +227,9 @@
       grid-template-areas:
         "size-mode-width size-mode-height ."
         "width height actions-size"
+        "min-width max-width actions-constraint-w"
+        "min-height max-height actions-constraint-h"
+        "aspect-ratio aspect-ratio aspect-ratio"
         "left top actions-position";
 
       > * {
@@ -256,6 +259,79 @@
       .actions-size {
         grid-area: actions-size;
         align-self: end;
+      }
+
+      .min-width {
+        grid-area: min-width;
+      }
+
+      .max-width {
+        grid-area: max-width;
+      }
+
+      .actions-constraint-w {
+        grid-area: actions-constraint-w;
+      }
+
+      .min-height {
+        grid-area: min-height;
+      }
+
+      .max-height {
+        grid-area: max-height;
+      }
+
+      .actions-constraint-h {
+        grid-area: actions-constraint-h;
+      }
+
+      .aspect-ratio-field {
+        grid-area: aspect-ratio;
+      }
+
+      .aspect-ratio-input {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+      }
+
+      .aspect-ratio-value {
+        flex: 1;
+        height: var(--inspector-control-size);
+        padding: 0 var(--spacing-sm);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--field-background);
+        color: var(--text-color);
+        font-size: var(--text-xs);
+        outline: none;
+
+        &:focus {
+          border-color: var(--focus-ring-color);
+        }
+
+        &::placeholder {
+          color: var(--text-color-placeholder);
+        }
+      }
+
+      .aspect-ratio-lock {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--inspector-control-size);
+        height: var(--inspector-control-size);
+        padding: 0;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--field-background);
+        color: var(--text-color-placeholder);
+        cursor: pointer;
+
+        &:hover {
+          border-color: var(--border-color-hover);
+          color: var(--text-color);
+        }
       }
 
       .left {

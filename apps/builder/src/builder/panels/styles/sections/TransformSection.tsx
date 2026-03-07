@@ -9,7 +9,7 @@
  * ADR-026 Phase 1: Size Mode (Fixed/Fill/Fit) 세그먼트 컨트롤
  */
 
-import { memo, useCallback } from "react";
+import { memo, useCallback, useState } from "react";
 import { PropertySection, PropertyUnitInput } from "../../../components";
 import {
   Button,
@@ -25,6 +25,9 @@ import {
   Minus,
   MoveHorizontal,
   Shrink,
+  ChevronsLeftRightEllipsis,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useTransformValuesJotai } from "../hooks/useTransformValuesJotai";
@@ -104,6 +107,14 @@ const TransformSectionContent = memo(function TransformSectionContent() {
     useOptimizedStyleActions();
   const styleValues = useTransformValuesJotai();
   const canvasSize = useCanvasSyncStore((state) => state.canvasSize);
+  const hasConstraints = !!(
+    styleValues?.minWidth ||
+    styleValues?.maxWidth ||
+    styleValues?.minHeight ||
+    styleValues?.maxHeight ||
+    styleValues?.aspectRatio
+  );
+  const [showConstraints, setShowConstraints] = useState(hasConstraints);
 
   // ADR-026: Size Mode atoms
   const widthMode = useAtomValue(widthSizeModeAtom);
@@ -143,6 +154,26 @@ const TransformSectionContent = memo(function TransformSectionContent() {
     (mode: SizeMode) => handleSizeModeChange("height", mode),
     [handleSizeModeChange],
   );
+
+  const handleAspectRatioLock = useCallback(() => {
+    if (styleValues?.aspectRatio && styleValues.aspectRatio !== "auto") {
+      updateStyleImmediate("aspectRatio", "");
+    } else {
+      // Calculate from current dimensions if available
+      const w = parseFloat(styleValues?.width ?? "0");
+      const h = parseFloat(styleValues?.height ?? "0");
+      if (w > 0 && h > 0) {
+        updateStyleImmediate("aspectRatio", `${w} / ${h}`);
+      } else {
+        updateStyleImmediate("aspectRatio", "1 / 1");
+      }
+    }
+  }, [
+    styleValues?.aspectRatio,
+    styleValues?.width,
+    styleValues?.height,
+    updateStyleImmediate,
+  ]);
 
   if (!styleValues) return null;
 
@@ -203,14 +234,98 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         max={9999}
       />
       <div className="fieldset-actions actions-size">
-        <Button>
-          <EllipsisVertical
+        <Button
+          aria-label="Toggle constraints"
+          onPress={() => setShowConstraints((v) => !v)}
+        >
+          <ChevronsLeftRightEllipsis
             color={iconProps.color}
             size={iconProps.size}
             strokeWidth={iconProps.strokeWidth}
           />
         </Button>
       </div>
+
+      {showConstraints && !styleValues.isBody && (
+        <>
+          <PropertyUnitInput
+            label="Min W"
+            className="min-width"
+            value={styleValues.minWidth}
+            units={["reset", "px", "%", "rem", "vw"]}
+            onChange={(value) => updateStyleImmediate("minWidth", value)}
+            onDrag={(value) => updateStylePreview("minWidth", value)}
+            min={0}
+            max={9999}
+          />
+          <PropertyUnitInput
+            label="Max W"
+            className="max-width"
+            value={styleValues.maxWidth}
+            units={["reset", "px", "%", "rem", "vw"]}
+            onChange={(value) => updateStyleImmediate("maxWidth", value)}
+            onDrag={(value) => updateStylePreview("maxWidth", value)}
+            min={0}
+            max={9999}
+          />
+          <div className="fieldset-actions actions-constraint-w" />
+          <PropertyUnitInput
+            label="Min H"
+            className="min-height"
+            value={styleValues.minHeight}
+            units={["reset", "px", "%", "rem", "vh"]}
+            onChange={(value) => updateStyleImmediate("minHeight", value)}
+            onDrag={(value) => updateStylePreview("minHeight", value)}
+            min={0}
+            max={9999}
+          />
+          <PropertyUnitInput
+            label="Max H"
+            className="max-height"
+            value={styleValues.maxHeight}
+            units={["reset", "px", "%", "rem", "vh"]}
+            onChange={(value) => updateStyleImmediate("maxHeight", value)}
+            onDrag={(value) => updateStylePreview("maxHeight", value)}
+            min={0}
+            max={9999}
+          />
+          <div className="fieldset-actions actions-constraint-h" />
+          <fieldset className="properties-aria aspect-ratio-field">
+            <legend className="fieldset-legend">Ratio</legend>
+            <div className="aspect-ratio-input">
+              <input
+                type="text"
+                className="aspect-ratio-value"
+                placeholder="auto"
+                value={
+                  styleValues.aspectRatio === "auto"
+                    ? ""
+                    : styleValues.aspectRatio
+                }
+                onChange={(e) => {
+                  const v = e.target.value.trim();
+                  updateStyleImmediate(
+                    "aspectRatio",
+                    v === "" || v === "auto" ? "" : v,
+                  );
+                }}
+                aria-label="Aspect ratio"
+              />
+              <button
+                className="aspect-ratio-lock"
+                aria-label="Lock aspect ratio"
+                onClick={handleAspectRatioLock}
+              >
+                {styleValues.aspectRatio ? (
+                  <Lock size={12} strokeWidth={1.5} />
+                ) : (
+                  <Unlock size={12} strokeWidth={1.5} />
+                )}
+              </button>
+            </div>
+          </fieldset>
+        </>
+      )}
 
       <PropertyUnitInput
         icon={ArrowRightFromLine}
@@ -267,6 +382,11 @@ export const TransformSection = memo(function TransformSection() {
       "flexBasis",
       "alignSelf",
       "justifySelf",
+      "minWidth",
+      "maxWidth",
+      "minHeight",
+      "maxHeight",
+      "aspectRatio",
     ]);
   };
 

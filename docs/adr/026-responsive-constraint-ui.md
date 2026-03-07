@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial (2026-03-08) — Phase 1 구현 완료, Phase 2-4 미구현
+Partial (2026-03-08) — Phase 1-2 구현 완료, Phase 3-4 미구현
 
 ## Context
 
@@ -280,6 +280,16 @@ width: auto / fit-content  → Fit
 - `SelectedElement` 인터페이스에 `parentDisplay`, `parentFlexDirection` 필드 추가 (`inspector/types.ts`)
 - `styleAtoms.ts`의 타입 캐스팅 우회(`as Record<string, unknown>`) 제거 → 정식 타입 참조로 전환
 - `useZustandJotaiBridge.ts`에서 부모 display/flexDirection 주입 정상 동작 확인
+
+#### Phase 2 완료 (2026-03-08)
+
+- `styleAtoms.ts`에 minWidth/maxWidth/minHeight/maxHeight/aspectRatio atom 5개 추가
+- `transformValuesAtom` 확장: 5개 constraint 값 포함 + equality 체크
+- `TransformSection.tsx`: Min/Max 4개 PropertyUnitInput + Aspect Ratio 입력/잠금 UI 추가
+- `inspector-layout.css`: grid-template-areas에 min/max/aspect-ratio 행 추가
+- 토글 버튼으로 constraint 패널 접기/펼치기 (기존 값 있으면 자동 펼침)
+- Taffy WASM이 minWidth/maxWidth/minHeight/maxHeight/aspectRatio 네이티브 지원 확인 — 추가 엔진 작업 불필요
+- Preview/Publish: 인라인 style 자동 변환으로 별도 작업 불필요
 
 ### 변경 파일 목록
 

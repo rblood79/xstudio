@@ -9,14 +9,20 @@
  * @since 2025-12-20 Phase 3 - Advanced State Management
  */
 
-import { useAtomValue } from 'jotai';
-import { transformValuesAtom } from '../atoms/styleAtoms';
+import { useAtomValue } from "jotai";
+import { transformValuesAtom } from "../atoms/styleAtoms";
 
 export interface TransformStyleValues {
   width: string;
   height: string;
   top: string;
   left: string;
+  // ADR-026 Phase 2: Min/Max + Aspect Ratio
+  minWidth: string;
+  maxWidth: string;
+  minHeight: string;
+  maxHeight: string;
+  aspectRatio: string;
 }
 
 /**

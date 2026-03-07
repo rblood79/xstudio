@@ -300,6 +300,12 @@ export const transformValuesAtom = selectAtom(
       top: String(element.style?.top ?? "auto"),
       left: String(element.style?.left ?? "auto"),
       isBody: element.type?.toLowerCase() === "body",
+      // ADR-026 Phase 2: Min/Max + Aspect Ratio
+      minWidth: String(element.style?.minWidth ?? ""),
+      maxWidth: String(element.style?.maxWidth ?? ""),
+      minHeight: String(element.style?.minHeight ?? ""),
+      maxHeight: String(element.style?.maxHeight ?? ""),
+      aspectRatio: String(element.style?.aspectRatio ?? ""),
     };
     return result;
   },
@@ -311,9 +317,48 @@ export const transformValuesAtom = selectAtom(
       a.height === b.height &&
       a.top === b.top &&
       a.left === b.left &&
-      a.isBody === b.isBody
+      a.isBody === b.isBody &&
+      a.minWidth === b.minWidth &&
+      a.maxWidth === b.maxWidth &&
+      a.minHeight === b.minHeight &&
+      a.maxHeight === b.maxHeight &&
+      a.aspectRatio === b.aspectRatio
     );
   },
+);
+
+// ============================================
+// ADR-026 Phase 2: Min/Max + Aspect Ratio Atoms
+// ============================================
+
+export const minWidthAtom = selectAtom(
+  selectedElementAtom,
+  (element) => String(element?.style?.minWidth ?? ""),
+  (a, b) => a === b,
+);
+
+export const maxWidthAtom = selectAtom(
+  selectedElementAtom,
+  (element) => String(element?.style?.maxWidth ?? ""),
+  (a, b) => a === b,
+);
+
+export const minHeightAtom = selectAtom(
+  selectedElementAtom,
+  (element) => String(element?.style?.minHeight ?? ""),
+  (a, b) => a === b,
+);
+
+export const maxHeightAtom = selectAtom(
+  selectedElementAtom,
+  (element) => String(element?.style?.maxHeight ?? ""),
+  (a, b) => a === b,
+);
+
+export const aspectRatioAtom = selectAtom(
+  selectedElementAtom,
+  (element) => String(element?.style?.aspectRatio ?? ""),
+  (a, b) => a === b,
 );
 
 // ============================================
