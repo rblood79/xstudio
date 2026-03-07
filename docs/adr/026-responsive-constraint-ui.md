@@ -258,6 +258,122 @@ width: auto / fit-content  → Fit
 
 ---
 
+---
+
+## 구현 계획: Phase 1 (2026-03-08)
+
+### 현황 분석
+
+핵심 인프라가 이미 구현되어 있다:
+
+- `sizeModeResolver.ts` **완성**: `inferSizeMode(style, axis, parentDisplay, parentFlexDirection)` + `resolveSizeMode(mode, axis, parentDisplay, parentFlexDirection, currentValue)` + `sizeModeToStyleUpdates(mode, axis, parentDisplay, parentFlexDirection, currentValue)` — 부모 컨텍스트별 CSS 분기 처리 완료
+- `styleAtoms.ts`: `widthSizeModeAtom` + `heightSizeModeAtom` + `parentDisplayAtom` + `parentFlexDirectionAtom` — Jotai atom 정의 완료. 현재 `inferSizeMode()` 호출로 CSS 역추론 동작 중.
+- `TransformSection.tsx`: Size Mode 세그먼트 컨트롤 **이미 구현** (ADR-026 Phase 1). `resolveSizeMode()` + `sizeModeToStyleUpdates()` 호출하여 모드 변경 → CSS 속성 업데이트 연동.
+- `LayoutSection.tsx`: direction/alignment/gap/padding/margin 편집. **width/height 입력 UI 없음** — 이는 TransformSection(Size 섹션)에서 담당.
+- `PropertyUnitInput`: px/%, rem, auto, fit-content 등 단위 입력 완성.
+- `inspectorActions.ts`: `updateSelectedStyle()` + `LAYOUT_AFFECTING_PROPS` 인프라 완성.
+
+**핵심 발견: Phase 1의 코어 로직(sizeModeResolver + Jotai atoms + TransformSection 세그먼트 UI)은 이미 구현 완료**. 남은 작업은 UI 폴리싱과 엣지 케이스 처리이다.
+
+### 변경 파일 목록
+
+| 파일                                            | 구분 | 변경 내용                                                                           |
+| ----------------------------------------------- | ---- | ----------------------------------------------------------------------------------- |
+| `panels/styles/sections/TransformSection.tsx`   | 수정 | Size Mode 세그먼트 UI 폴리싱 — 아이콘 교체, 비활성 상태 힌트, 현재값 표시 개선      |
+| `panels/styles/sections/TransformSection.css`   | 수정 | Size Mode 세그먼트 스타일 정리 (tv() 패턴 적용 확인)                                |
+| `stores/utils/sizeModeResolver.ts`              | 수정 | 엣지 케이스 보강 — `width: 50%`/`flex-basis: auto` 등 모호한 CSS 역추론 정확도 향상 |
+| `panels/styles/atoms/styleAtoms.ts`             | 수정 | parentDisplay/parentFlexDirection atom의 부모 요소 조회 로직 검증 및 보강           |
+| `builder/stores/utils/sizeModeResolver.test.ts` | 신규 | inferSizeMode + resolveSizeMode 단위 테스트 (부모 컨텍스트별 분기 검증)             |
+
+### 구현 순서
+
+#### Step 1: 현재 TransformSection Size Mode UI 감사
+
+**대상**: `TransformSection.tsx`
+
+현재 구현 상태를 검증:
+
+1. Fixed/Fill/Fit 3모드 세그먼트 컨트롤의 시각적 완성도 확인
+2. 모드 전환 → CSS 속성 업데이트 정상 동작 검증
+3. 현재 CSS에서 역추론된 모드가 세그먼트에 정확히 활성 표시되는지 확인
+4. PropertyUnitInput과 Size Mode 간 동기화 확인 (모드 변경 → 값 입력 필드 업데이트)
+
+#### Step 2: CSS 역추론 정확도 검증 및 보강
+
+**대상**: `sizeModeResolver.ts`
+
+`inferSizeMode()`의 엣지 케이스 검증:
+
+| CSS 값                        | 기대 모드           | 현재 동작 확인 필요                 |
+| ----------------------------- | ------------------- | ----------------------------------- |
+| `width: 50%`                  | Fixed (50% 값 표시) | `%` 값이 Fixed로 추론되는지         |
+| `flex-grow: 1; flex-basis: 0` | Fill                | flex-grow만 있고 flex-basis 누락 시 |
+| `width: auto`                 | Fit                 | auto가 Fit으로 정확히 매핑되는지    |
+| `width: fit-content`          | Fit                 | fit-content 키워드 처리             |
+| `width: 100%; flex-grow: 1`   | Fill                | 중복 속성 시 우선순위               |
+| `height: auto` (Block 자식)   | Fit                 | Block 컨텍스트에서 height auto 처리 |
+
+보강이 필요한 경우 `inferSizeMode()`에 분기 추가.
+
+#### Step 3: 부모 컨텍스트 감지 정확도 검증
+
+**대상**: `styleAtoms.ts`의 `parentDisplayAtom`, `parentFlexDirectionAtom`
+
+현재 atom이 선택 요소의 부모 display/flexDirection을 정확히 반영하는지 검증:
+
+1. 부모가 없는 root 요소 → Block 기본값
+2. 부모가 Flex Row → Fill Width = `flex-grow: 1`
+3. 부모가 Flex Column → Fill Height = `flex-grow: 1`
+4. 부모가 Grid → Fill = `stretch`
+5. 부모가 Block → Fill Width = `width: 100%`, Fill Height 비활성
+
+#### Step 4: 비활성 상태 힌트
+
+**대상**: `TransformSection.tsx`
+
+부모 컨텍스트에 따라 특정 모드가 의미 없는 경우 시각적 힌트 추가:
+
+- Block 부모의 자식: Height Fill 비활성 (Block은 높이 채우기 불가) → 세그먼트 disabled + 툴팁 "Block 부모에서는 높이 채우기 불가"
+- Root 요소(body 직접 자식): parentDisplay 기본값 적용
+
+#### Step 5: 단위 테스트 작성
+
+**대상**: `sizeModeResolver.test.ts` (신규)
+
+테스트 매트릭스:
+
+| 테스트 그룹                   | 케이스 수 | 내용                                                   |
+| ----------------------------- | --------- | ------------------------------------------------------ |
+| inferSizeMode (Block 부모)    | 6         | width: px/100%/auto/fit-content/%, height: px/auto     |
+| inferSizeMode (Flex Row 부모) | 8         | flex-grow/flex-basis 조합, width: px/auto/fit-content  |
+| inferSizeMode (Flex Col 부모) | 8         | flex-grow/flex-basis 조합, height: px/auto/fit-content |
+| inferSizeMode (Grid 부모)     | 4         | justify-self/align-self: stretch vs auto               |
+| resolveSizeMode (모든 부모)   | 12        | Fixed/Fill/Fit × Block/FlexRow/FlexCol/Grid            |
+| 왕복 테스트                   | 6         | infer → resolve → infer 결과 일치 확인                 |
+
+### Gate 검증 항목
+
+| Gate | 검증 내용                   | 통과 조건                                                                      |
+| ---- | --------------------------- | ------------------------------------------------------------------------------ |
+| G1-1 | Fixed 모드 동작             | 값 입력 → width/height CSS 직접 설정, Canvas + Preview 동일 렌더링             |
+| G1-2 | Fill 모드 동작 (Flex 부모)  | 세그먼트 선택 → `flex-grow: 1; flex-basis: 0` 설정, 요소가 남은 공간 채움      |
+| G1-3 | Fill 모드 동작 (Block 부모) | 세그먼트 선택 → `width: 100%` 설정, 부모 너비 채움                             |
+| G1-4 | Fit 모드 동작               | 세그먼트 선택 → `width: fit-content` 또는 `auto`, 콘텐츠에 맞춤                |
+| G1-5 | CSS 역추론 정확도           | 기존 프로젝트 열기 → Size Mode 세그먼트가 현재 CSS 값을 정확히 반영 (95% 이상) |
+| G1-6 | layoutVersion 계약          | Size Mode 변경 → `layoutVersion + 1` → Canvas 즉시 반영                        |
+| G1-7 | 히스토리 통합               | Size Mode 변경 → Undo/Redo 정상 동작                                           |
+
+### 예상 위험 및 대응
+
+| 위험                                 | 등급  | 설명                                                                       | 대응                                                                                                                                                |
+| ------------------------------------ | ----- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `%` 값의 모드 모호성                 | **M** | `width: 50%`가 Fixed인지 Fill인지 판단 어려움. 100%만 Fill? 기타 %도 Fill? | ADR 결정: **100%만 Fill, 기타 %는 Fixed(값 표시)**. sizeModeResolver에서 `100%` 특별 처리. 사용자가 직접 %를 입력하면 Fixed 모드에서 % 단위로 표시. |
+| PropertyUnitInput 동기화             | **L** | Size Mode 변경 시 PropertyUnitInput의 값/단위가 올바르게 업데이트되어야 함 | `sizeModeToStyleUpdates()`가 반환하는 CSS 속성을 `updateSelectedStyle()`에 일괄 전달. PropertyUnitInput은 style atom 구독으로 자동 반영.            |
+| 부모 display 변경 시 자식 CSS 불일치 | **L** | 부모를 block→flex로 변경하면 자식의 Fill 모드 CSS가 맞지 않을 수 있음      | Phase 1에서는 **사용자가 수동으로 모드 재선택**. Phase 4에서 자동 재매핑 구현 예정.                                                                 |
+| TransformSection 기존 동작 회귀      | **L** | Size Mode UI 폴리싱으로 기존 width/height 직접 입력이 깨질 수 있음         | PropertyUnitInput 직접 입력 경로는 변경하지 않음. Size Mode는 래핑 UI이며 내부적으로 동일한 `updateSelectedStyle()` 호출.                           |
+
+---
+
 **관련 문서:**
 
 - [ADR-008: Layout Engine](008-layout-engine.md) — Taffy WASM 단일 엔진

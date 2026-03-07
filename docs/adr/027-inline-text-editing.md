@@ -731,3 +731,112 @@ return (
 - Spec 텍스트 스타일: `apps/builder/src/builder/workspace/canvas/skia/specTextStyle.ts`
 - 멀티페이지: `docs/MULTIPAGE.md`
 - 카메라: `apps/builder/src/builder/workspace/canvas/hooks/useCamera.ts`
+
+---
+
+## 구현 계획: Phase C (2026-03-08)
+
+### 현황 분석
+
+Phase A+B 완료로 기본 인프라가 확립되어 있다:
+
+- `useTextEdit.ts`: TEXT_ELEMENT_TAGS에 Button, Badge, Tag, Link 등록 완료. 단 **ToggleButton 미포함**.
+- `specTextStyleForOverlay.ts`: `extractFullSpecTextStyle()` — TEXT_BEARING_SPECS에 Button, Badge, ToggleButton, Link, Checkbox, Radio, Switch, Input 등록 완료. Spec shapes에서 textShape.x/y/fontSize/fontWeight/fontFamily/fill 추출 가능 (Gate G4 통과).
+- `BuilderCanvas.tsx`: `handleElementDoubleClick`의 textTags에 Button, Badge, Tag 포함 완료.
+- `getTextPropKey()`: 현재 props 기반 키 탐색(value → children → text → label). Button/Badge의 `label` prop은 탐색 체인에 이미 포함.
+- `setEditingElementId()`: Skia 텍스트 숨김 처리 존재 (nodeRenderers.ts).
+- `getElementBoundsSimple()`: 요소 **전체** container bounds 반환. Spec 컴포넌트의 텍스트 shape 내부 offset(textShape.x/y)은 미반영.
+
+### 변경 파일 목록
+
+| 파일                                           | 구분 | 변경 내용                                                                    |
+| ---------------------------------------------- | ---- | ---------------------------------------------------------------------------- |
+| `workspace/overlay/useTextEdit.ts`             | 수정 | TEXT_ELEMENT_TAGS에 ToggleButton 추가, Spec 컴포넌트용 bounds 보정 로직      |
+| `workspace/overlay/TextEditOverlay.tsx`        | 수정 | Spec 컴포넌트 편집 시 padding/verticalAlign 오프셋 적용, 편집 중 크기 동기화 |
+| `workspace/overlay/specTextStyleForOverlay.ts` | 수정 | `extractSpecTextBounds()` 함수 추가 — textShape의 x/y/width/height 반환      |
+| `workspace/canvas/BuilderCanvas.tsx`           | 수정 | textTags에 ToggleButton, Link 추가 (더블클릭 대상 확장)                      |
+
+### 구현 순서
+
+#### Step 1: TEXT_ELEMENT_TAGS 및 textTags 확장
+
+**대상**: `useTextEdit.ts`, `BuilderCanvas.tsx`
+
+1. `useTextEdit.ts`의 `TEXT_ELEMENT_TAGS`에 `"ToggleButton"` 추가 (Link는 이미 존재)
+2. `BuilderCanvas.tsx`의 `handleElementDoubleClick` 내부 `textTags` Set에 `"ToggleButton"`, `"Link"` 추가 (Link = `"a"` 소문자는 이미 존재하나 PascalCase `"Link"` 확인 필요)
+
+검증: ToggleButton/Link 더블클릭 → useTextEdit.startEdit 호출 확인
+
+#### Step 2: Spec 텍스트 bounds 추출 함수 추가
+
+**대상**: `specTextStyleForOverlay.ts`
+
+`extractSpecTextBounds(tag, props)` 함수 신규 추가:
+
+```
+- Spec shapes에서 textShape 탐색
+- boxShape(컨테이너)와 textShape의 상대 위치 계산
+- 반환: { offsetX, offsetY, textWidth, textHeight } | null
+  - offsetX = textShape.x (= paddingLeft)
+  - offsetY = textShape.y (= paddingTop)
+  - textWidth = boxShape.width - textShape.x * 2 (좌우 대칭 가정)
+  - textHeight = textShape.lineHeight * textShape.fontSize (또는 boxShape 기준)
+```
+
+이미 `extractFullSpecTextStyle()`에서 textShape.x/y를 padding으로 추출하고 있으므로, bounds 계산은 이 데이터의 재활용이다.
+
+#### Step 3: TextEditOverlay Spec bounds 보정
+
+**대상**: `TextEditOverlay.tsx`
+
+현재 오버레이 위치는 `getElementBoundsSimple()` 전체 bounds 기준이다. Spec 컴포넌트 편집 시:
+
+1. `extractSpecTextBounds()`로 내부 텍스트 영역 offset 조회
+2. 오버레이 position에 offsetX/offsetY 가산, 크기를 textWidth/textHeight로 축소
+3. `verticalAlign: "center"` (Button 등 수직 중앙 정렬)일 때 Y 보정:
+   - `offsetY = (containerHeight - textHeight) / 2`
+
+이 보정으로 오버레이가 Button 내부의 텍스트 영역에 정확히 겹친다.
+
+#### Step 4: getTextPropKey 확장 (필요 시)
+
+**대상**: `useTextEdit.ts`
+
+현재 `getTextPropKey()`는 props 키 탐색 순서가 `value → children → text → label`이다.
+
+- Button: `label` prop 사용 → 탐색 체인에 포함 (OK)
+- Badge: `label` 또는 `children` → 포함 (OK)
+- ToggleButton: `label` prop → 포함 (OK)
+- Link: `children` 또는 `label` → 포함 (OK)
+
+**추가 필요 없음** (기존 탐색 체인이 모든 대상 컴포넌트를 커버). 만약 특정 태그에서 우선순위 역전이 발견되면 tag별 명시적 매핑 테이블로 전환.
+
+#### Step 5: 편집 완료 시 크기 재계산
+
+**대상**: `useTextEdit.ts`의 `completeEdit`
+
+현재 `silentUpdateTextProp()`이 `layoutVersion + 1`을 증가시키므로, 편집 중 실시간 레이아웃 갱신은 이미 동작한다.
+
+추가 확인 사항:
+
+- fit-content 요소(Badge 등): 텍스트 변경 → layoutVersion 증가 → Taffy 재계산 → 요소 크기 변동 → 오버레이 크기도 동기화 필요
+- `TextEditOverlay`에서 `subscribeBounds()` 또는 `layoutVersion` 구독을 통해 편집 중 오버레이 크기를 업데이트하는 로직 확인/추가
+
+### Gate 검증 항목
+
+| Gate | 검증 내용                                                 | 통과 조건                                                                 |
+| ---- | --------------------------------------------------------- | ------------------------------------------------------------------------- |
+| G4-1 | ToggleButton 더블클릭 → 텍스트 편집 모드 진입             | 인라인 오버레이 표시, 기존 텍스트 값 로드                                 |
+| G4-2 | Button label 편집 시 오버레이가 텍스트 영역에 정확히 겹침 | 오버레이 위치가 Button 내부 텍스트 shape bounds와 2px 이내 일치 (100% 줌) |
+| G4-3 | Badge 편집 후 fit-content 크기 변동                       | 텍스트 길이 변경 → Badge 크기 재계산 → 오버레이 크기 동기화               |
+| G4-4 | 편집 완료 시 히스토리 기록                                | Undo → 원본 텍스트 복원, Redo → 편집 텍스트 복원                          |
+| G4-5 | Spec 컴포넌트 텍스트 숨김                                 | 편집 중 Skia에서 텍스트 shape만 숨김, 배경/보더는 유지                    |
+
+### 예상 위험 및 대응
+
+| 위험                           | 등급  | 설명                                                                                                                     | 대응                                                                                                                                                  |
+| ------------------------------ | ----- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spec textShape bounds 정확도   | **M** | textShape.x/y가 실제 렌더링 위치와 미세 차이 가능 (Spec shapes의 좌표가 Skia paragraph 배치와 1:1 대응하지 않을 수 있음) | `extractSpecTextBounds()`의 offset에 보정 상수(fudge factor) 적용. Gate G4-2에서 검증 후 조정.                                                        |
+| fit-content 실시간 동기화      | **L** | 편집 중 텍스트 변경 → 요소 크기 변동 → 오버레이 위치/크기 재계산 타이밍 지연                                             | `silentUpdateTextProp`이 이미 layoutVersion 증가. `subscribeBounds` 콜백에서 오버레이 위치 업데이트.                                                  |
+| Skia 텍스트 부분 숨김          | **L** | `setEditingElementId()`가 요소 전체 텍스트를 숨기므로, 복수 textShape가 있는 Spec(현재 없음)에서 의도치 않은 숨김 가능   | 현재 대상 컴포넌트(Button, Badge, ToggleButton, Link)는 모두 단일 textShape. 복수 textShape 컴포넌트 추가 시 shape-level 숨김으로 확장.               |
+| ToggleButton pressed 상태 편집 | **L** | ToggleButton이 pressed 상태일 때 텍스트 색상이 다를 수 있음                                                              | `extractFullSpecTextStyle()`이 이미 variant/state 기반 shapes 생성. pressed 상태의 색상을 `"default"` 대신 현재 상태 전달로 확장 가능 (Phase C 이후). |

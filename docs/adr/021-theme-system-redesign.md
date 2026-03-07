@@ -689,6 +689,108 @@ function generateThemeCSS(config: ThemeConfig): string {
 
 ## References
 
+## 구현 계획: Phase D 잔여 정리 (2026-03-08)
+
+### 현황 분석
+
+Phase D 일부 완료:
+
+- `ThemeStudio.tsx` 삭제 완료, `/theme` 라우트 제거 완료
+- `themeStore.ts` (UnifiedThemeStore): Theme CRUD 메서드 제거 완료. 잔존 항목:
+  - **Token 상태**: `tokens: DesignToken[]`, `designVariables: DesignVariable[]`
+  - **Token 액션**: `loadTokens`, `createToken`, `updateToken`, `updateTokenValue`, `bulkUpsertTokens`, `loadActiveTheme`, `createTheme`
+  - **ThemeService 의존**: `import { ThemeService }` — IndexedDB 기반 Theme CRUD
+  - **TokenService 의존**: token CRUD 서비스
+  - **tokensToCSS, formatCSSVars**: CSS 변수 생성 유틸 (themeConfigStore의 generateThemeCSS와 중복 가능)
+- `ThemeService.ts`: IndexedDB 기반 Theme CRUD + Realtime 구독 활성 중
+- `themeConfigStore.ts`: Phase A-C 완료. tint/darkMode/neutral/radiusScale + localStorage 영속화가 실질적 SSOT
+- `types/theme/index.ts`: DesignTheme/DesignToken/DesignVariable 타입 정의 (~420줄)
+
+### 변경 파일 목록
+
+| 파일                                                         | 구분           | 변경 내용                                                                          |
+| ------------------------------------------------------------ | -------------- | ---------------------------------------------------------------------------------- |
+| `stores/themeStore.ts`                                       | 삭제 또는 축소 | token CRUD 사용처 없으면 전체 삭제. 사용처 있으면 최소 인터페이스로 축소           |
+| `services/theme/ThemeService.ts`                             | 삭제 또는 축소 | themeStore 제거 시 함께 제거. 참조 코드가 남아있으면 최소화                        |
+| `services/theme/TokenService.ts`                             | 삭제           | themeStore의 token CRUD와 함께 제거                                                |
+| `services/theme/index.ts`                                    | 수정           | 삭제된 서비스 export 정리                                                          |
+| `types/theme/index.ts`                                       | 수정           | DesignTheme/DesignToken/DesignVariable 미사용 시 제거, ThemeConfig 중심으로 간소화 |
+| `stores/index.ts`                                            | 수정           | themeStore export 제거                                                             |
+| `builder/stores/index.ts`                                    | 수정           | themeStore 참조 제거                                                               |
+| `utils/theme/tokenToCss.ts`                                  | 삭제           | generateThemeCSS.ts로 대체 완료 시 제거                                            |
+| `stores/designKitStore.ts`                                   | 수정           | themeStore 참조 확인 및 제거                                                       |
+| `builder/panels/styles/components/VariableBindingButton.tsx` | 수정           | themeStore 참조 확인 및 대체/제거                                                  |
+| `builder/workspace/canvas/sprites/useResolvedElement.ts`     | 수정           | themeStore 참조 확인 및 대체/제거                                                  |
+| `builder/hooks/useThemeManager.ts`                           | 삭제 또는 수정 | themeConfigStore로 대체 완료 시 제거                                               |
+| `builder/workspace/canvas/utils/cssVariableReader.ts`        | 수정           | `invalidateCSSVariableCache` 참조 확인 (themeStore에서 호출 중)                    |
+| `main/BuilderCore.tsx`                                       | 수정           | themeStore 관련 초기화/구독 코드 제거                                              |
+
+### 구현 순서
+
+#### Step 1: 사용처 전수 조사
+
+themeStore, ThemeService, TokenService의 실제 import/사용처를 검색하여 참조 그래프를 확정한다.
+
+조사 대상:
+
+1. `import.*themeStore` / `useThemeStore` — 직접 사용처
+2. `import.*ThemeService` — 서비스 직접 호출
+3. `import.*TokenService` — 토큰 서비스 직접 호출
+4. `DesignTheme` / `DesignToken` / `DesignVariable` 타입 참조
+5. `tokensToCSS` / `formatCSSVars` — CSS 변수 생성 유틸 사용처
+6. `designVariables` — 디자인 변수 기능 사용 여부
+
+**판정 기준**: themeConfigStore가 완전 대체하는 경우 → 삭제. 대체 불가 기능이 있으면 → 최소화 후 보존.
+
+#### Step 2: DesignVariable/Token 기능 분리 판정
+
+`VariableBindingButton.tsx`와 `useResolvedElement.ts`가 디자인 변수/토큰을 실제로 사용하는지 확인:
+
+- **미사용**: themeStore 전체 삭제 진행
+- **사용 중**: 디자인 변수 기능을 독립 모듈로 분리하거나, themeConfigStore에 통합 검토
+
+#### Step 3: 안전 삭제 순서
+
+참조 그래프 역순으로 삭제 (leaf → root):
+
+1. `TokenService.ts` 삭제 (themeStore만 import)
+2. `tokenToCss.ts` 삭제 (themeStore만 import, generateThemeCSS.ts로 대체)
+3. `ThemeService.ts` 삭제 (themeStore만 import)
+4. `themeStore.ts` 삭제
+5. `useThemeManager.ts` 삭제
+6. `types/theme/index.ts` 간소화 — ThemeConfig 관련 타입만 보존
+7. 참조 파일들(stores/index.ts, BuilderCore.tsx 등)에서 import 정리
+
+각 삭제 후 `pnpm type-check`로 참조 누락 없음을 검증한다.
+
+#### Step 4: Supabase design_themes/design_tokens 참조 정리
+
+IndexedDB 스키마(`lib/db.ts`)에서 themes/tokens 테이블 참조 확인:
+
+- themeStore 삭제 후에도 IDB 스키마에 테이블 정의가 남아있을 수 있음
+- 미사용 테이블 정의 제거 (데이터는 자연 소멸 — 새 프로젝트에서 미생성)
+- Supabase design_themes/design_tokens 테이블은 대시보드 연동 범위이므로 이 Phase에서 DB 마이그레이션 불필요
+
+### Gate 검증 항목
+
+| Gate | 검증 내용                    | 통과 조건                                                      |
+| ---- | ---------------------------- | -------------------------------------------------------------- |
+| D-1  | themeStore 삭제 후 빌드 성공 | `pnpm type-check` + `pnpm build` 통과                          |
+| D-2  | 테마 기능 정상 동작          | Tint 변경 → CSS Preview + Skia 동시 반영 (Phase A-C 회귀 없음) |
+| D-3  | 새로고침 후 테마 복원        | localStorage에서 ThemeConfig 복원 → CSS/Skia 적용              |
+| D-4  | VariableBindingButton 동작   | 디자인 변수 기능이 있었다면 대체 경로 정상 동작 확인           |
+
+### 예상 위험 및 대응
+
+| 위험                     | 등급  | 설명                                                                               | 대응                                                                                                       |
+| ------------------------ | ----- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 숨겨진 themeStore 사용처 | **M** | 동적 import나 간접 참조로 전수 조사에서 누락될 수 있음                             | Step 1에서 grep 외에 `pnpm type-check`로 컴파일 타임 검증. 런타임은 수동 테스트(테마 변경, 프로젝트 로드). |
+| DesignVariable 기능 의존 | **M** | VariableBindingButton이 디자인 변수를 실제 사용 중이면 삭제 불가                   | Step 2에서 판정 후, 사용 중이면 독립 모듈로 분리하여 themeStore 없이 동작하도록 리팩토링.                  |
+| IDB 스키마 호환성        | **L** | 기존 프로젝트의 IDB에 themes/tokens 데이터 잔존 → 스키마 변경 시 마이그레이션 필요 | 테이블 정의만 제거, 데이터는 자연 소멸. IDB 버전 업그레이드 불필요 (미참조 테이블은 무해).                 |
+| 삭제 범위 과대           | **L** | 약 10개 파일 삭제/수정으로 diff가 커짐                                             | leaf → root 순서로 하나씩 삭제 + 중간 type-check. 커밋을 step별로 분리하여 롤백 용이하게 유지.             |
+
+---
+
 ### 내부 문서
 
 - [ADR-017: CSS Override SSOT — M3 제거 + Tint System](017-css-override-ssot.md)
