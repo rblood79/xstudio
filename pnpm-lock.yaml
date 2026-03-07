@@ -386,6 +386,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.4
+      '@xstudio/specs':
+        specifier: workspace:*
+        version: link:../specs
       clsx:
         specifier: ^2.1.1
         version: 2.1.1

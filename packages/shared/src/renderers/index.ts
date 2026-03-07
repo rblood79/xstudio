@@ -9,6 +9,7 @@ import * as DateRenderers from "./DateRenderers";
 import * as CollectionRenderers from "./CollectionRenderers";
 import * as TableRenderer from "./TableRenderer";
 import * as DataRenderers from "./DataRenderers";
+import * as IconRenderers from "./IconRenderers";
 import type { PreviewElement, RenderContext } from "../types";
 
 /**
@@ -93,6 +94,9 @@ export const rendererMap: Record<
 
   // Data 컴포넌트
   DataTable: DataRenderers.renderDataTable,
+
+  // Icon 컴포넌트
+  Icon: IconRenderers.renderIcon,
 };
 
 export {
@@ -103,4 +107,5 @@ export {
   CollectionRenderers,
   TableRenderer,
   DataRenderers,
+  IconRenderers,
 };

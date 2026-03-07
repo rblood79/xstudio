@@ -2,13 +2,14 @@
 
 ## Status
 
-Partial (2026-03-08) — Phase A-C 구현 완료
+Partial (2026-03-08) — Phase A-D 구현 완료, Phase E 향후
 
 ### 구현 이력
 
 - **Phase A** (2026-03-08): Lucide 아이콘 레지스트리 확장 (~1,688개) + IconElementProps + defaultPropsMap
 - **Phase B** (2026-03-08): IconPicker UI — IconPreview, IconPickerPopover, useIconSearch, PropertyIconPicker
 - **Phase C** (2026-03-08): Icon.spec.ts + TAG_SPEC_MAP + ComponentList + IconEditor + metadata 등록
+- **Phase D** (2026-03-08): Preview/Publish SVG 아이콘 렌더링 — IconRenderers, Icon 컴포넌트, rendererMap/ComponentRegistry 등록
 
 ## Context
 

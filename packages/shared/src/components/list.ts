@@ -56,4 +56,6 @@ export * from "./DisclosureGroup";
 
 // Metadata exports
 export * from "./metadata";
+// Icon
+export * from "./Icon";
 // 추가 컴포넌트는 여기에 계속 export
