@@ -45,7 +45,7 @@
 | [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)           | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화) + G.3 시각 피드백                                                              | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스/변수 도구)                                                                    |    P5    |
 | [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝               | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                                                       | P3-1 부분 구현 (dirtyElementIds 인프라만, 핵심 DFS 최적화 미구현)                                                                      |    P5    |
 | [021](021-theme-system-redesign.md)               | 테마 시스템 개편 — Tint + Tailwind 인라인 패널  | Phase A+B+C+D 완료 (ThemeStudio 삭제, Service 슬림화, useThemeManager 인라인)                                                    | Phase E (컴포넌트별 accent 오버라이드)                                                                                                 |    P4    |
-| [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-2 완료 (sizeModeResolver + Jotai atoms + Size Mode 세그먼트 UI + Min/Max 4입력 + Aspect Ratio)                           | Phase 3 (정렬 컨트롤 + Box Model 다이어그램), Phase 4 (컨텍스트 인지 + 스마트 전환)                                                    |  **P2**  |
+| [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-3 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment 3x3 그리드)                                                  | Phase 4 (컨텍스트 인지 + 스마트 전환 + Box Model 다이어그램)                                                                           |  **P2**  |
 | [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B 구현 완료 (TextEditOverlay + Quill 통합 + 멀티페이지 좌표 보정 + subscribeBounds 이벤트 기반 추적)                     | Phase C (Spec 컴포넌트 텍스트), Phase D (리치 텍스트/툴바)                                                                             |  **P2**  |
 
 > **참고**: ADR-029에 동일 번호의 [Text Edit Overlay UX 개선](029-text-edit-overlay-improvements.md) 문서가 존재하며, ADR-027의 후속 개선으로 Phase 1-2 모두 구현 완료 (Accepted).
@@ -81,7 +81,7 @@
 | ~~11~~ | ~~ADR-028/029~~       | ~~Builder CSS 스코프 격리 + Dead Code 정리~~                                      |  중  |    **완료**    |
 |   12   | ADR-027 Phase C       | Canvas Inline Text Editing — Spec 컴포넌트 텍스트 (Button/Badge label 편집)       |  중  |    부분완료    |
 |   13   | ADR-021 Phase D-E     | 테마 시스템 — UnifiedThemeStore 정리 + 컴포넌트별 accent                          |  중  |    부분완료    |
-|   14   | ADR-026               | Responsive Constraint UI — Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio  |  대  | Phase 1-2 완료 |
+|   14   | ADR-026               | Responsive Constraint UI — Framer식 Fixed/Fill/Fit 모드 + Min/Max + Aspect Ratio  |  대  | Phase 1-3 완료 |
 |   15   | ADR-013               | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)  |  대  |                |
 |   16   | ADR-019               | 아이콘 시스템 — Icon 독립 컴포넌트 + IconPicker UI + Preview/Publish 렌더링       |  중  |                |
 
@@ -97,7 +97,7 @@
 
 - **ADR-027**: Canvas Inline Text Editing — Phase A+B+C 완료 (Quill 통합, 멀티페이지, Spec 텍스트)
 - **ADR-021**: 테마 시스템 — Phase A-D 완료, Phase E (컴포넌트별 accent) P4 보류
-- **ADR-026**: Responsive Constraint UI — Phase 1-2 완료 (sizeModeResolver + Min/Max + Aspect Ratio), Phase 3-4 남음
+- **ADR-026**: Responsive Constraint UI — Phase 1-3 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment), Phase 4 남음
 - **ADR-013**: Collection 컴포넌트 데이터 바인딩 1클릭 자동화 — 초보자 학습 곡선 완화
 - **ADR-019**: Icon 독립 컴포넌트 + IconPicker UI — 디자인 완성도 (Skia 렌더링 인프라 기반 존재)
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial (2026-03-08) — Phase 1-2 구현 완료, Phase 3-4 미구현
+Partial (2026-03-08) — Phase 1-3 구현 완료, Phase 4 미구현
 
 ## Context
 
@@ -290,6 +290,15 @@ width: auto / fit-content  → Fit
 - 토글 버튼으로 constraint 패널 접기/펼치기 (기존 값 있으면 자동 펼침)
 - Taffy WASM이 minWidth/maxWidth/minHeight/maxHeight/aspectRatio 네이티브 지원 확인 — 추가 엔진 작업 불필요
 - Preview/Publish: 인라인 style 자동 변환으로 별도 작업 불필요
+
+#### Phase 3 완료 (2026-03-08)
+
+- `styleAtoms.ts`에 `selfAlignmentKeysAtom` 추가 (align-self + justify-self → 9방향 매핑)
+- `TransformSection.tsx`: Self-Alignment 3x3 그리드 UI 추가 (9개 ToggleButton + alignment-dot)
+- 부모가 flex/grid일 때만 Self-Alignment 그리드 표시 (block 부모에서는 숨김)
+- `handleSelfAlignment()`: 9방향 위치 → align-self/justify-self CSS 속성 변환
+- `inspector-layout.css`: grid-template-areas에 self-alignment 행 추가 + 3x3 그리드 스타일
+- Box Model 다이어그램은 P4로 보류 (핵심 가치 대비 복잡도 높음)
 
 ### 변경 파일 목록
 

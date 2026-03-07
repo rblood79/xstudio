@@ -39,6 +39,7 @@ import {
   heightSizeModeAtom,
   parentDisplayAtom,
   parentFlexDirectionAtom,
+  selfAlignmentKeysAtom,
 } from "../atoms/styleAtoms";
 import {
   resolveSizeMode,
@@ -121,6 +122,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
   const heightMode = useAtomValue(heightSizeModeAtom);
   const parentDisplay = useAtomValue(parentDisplayAtom);
   const parentFlexDirection = useAtomValue(parentFlexDirectionAtom);
+  const selfAlignmentKeys = useAtomValue(selfAlignmentKeysAtom);
 
   const handleSizeModeChange = useCallback(
     (axis: "width" | "height", mode: SizeMode) => {
@@ -153,6 +155,38 @@ const TransformSectionContent = memo(function TransformSectionContent() {
   const handleHeightModeChange = useCallback(
     (mode: SizeMode) => handleSizeModeChange("height", mode),
     [handleSizeModeChange],
+  );
+
+  const handleSelfAlignment = useCallback(
+    (keys: Set<string>) => {
+      const value = Array.from(keys)[0] as string | undefined;
+      if (!value) {
+        updateStylesImmediate({ alignSelf: "", justifySelf: "" });
+        return;
+      }
+      const positionMap: Record<
+        string,
+        { horizontal: string; vertical: string }
+      > = {
+        leftTop: { horizontal: "start", vertical: "start" },
+        centerTop: { horizontal: "center", vertical: "start" },
+        rightTop: { horizontal: "end", vertical: "start" },
+        leftCenter: { horizontal: "start", vertical: "center" },
+        centerCenter: { horizontal: "center", vertical: "center" },
+        rightCenter: { horizontal: "end", vertical: "center" },
+        leftBottom: { horizontal: "start", vertical: "end" },
+        centerBottom: { horizontal: "center", vertical: "end" },
+        rightBottom: { horizontal: "end", vertical: "end" },
+      };
+      const pos = positionMap[value];
+      if (pos) {
+        updateStylesImmediate({
+          alignSelf: pos.vertical,
+          justifySelf: pos.horizontal,
+        });
+      }
+    },
+    [updateStylesImmediate],
   );
 
   const handleAspectRatioLock = useCallback(() => {
@@ -188,6 +222,14 @@ const TransformSectionContent = memo(function TransformSectionContent() {
 
   // Body 요소에서는 Size Mode 비표시
   const showSizeMode = !styleValues.isBody;
+
+  // Self-alignment: 부모가 flex/grid일 때만 표시
+  const isFlexOrGridParent =
+    parentDisplay === "flex" ||
+    parentDisplay === "inline-flex" ||
+    parentDisplay === "grid" ||
+    parentDisplay === "inline-grid";
+  const showSelfAlignment = !styleValues.isBody && isFlexOrGridParent;
 
   return (
     <>
@@ -325,6 +367,47 @@ const TransformSectionContent = memo(function TransformSectionContent() {
             </div>
           </fieldset>
         </>
+      )}
+
+      {showSelfAlignment && (
+        <div className="direction-alignment-grid self-alignment">
+          <legend className="fieldset-legend">Self Align</legend>
+          <ToggleButtonGroup
+            aria-label="Self alignment"
+            indicator
+            selectionMode="single"
+            selectedKeys={selfAlignmentKeys}
+            onSelectionChange={handleSelfAlignment}
+          >
+            <ToggleButton id="leftTop">
+              <span className="alignment-dot" />
+            </ToggleButton>
+            <ToggleButton id="centerTop">
+              <span className="alignment-dot" />
+            </ToggleButton>
+            <ToggleButton id="rightTop">
+              <span className="alignment-dot" />
+            </ToggleButton>
+            <ToggleButton id="leftCenter">
+              <span className="alignment-dot" />
+            </ToggleButton>
+            <ToggleButton id="centerCenter">
+              <span className="alignment-dot" />
+            </ToggleButton>
+            <ToggleButton id="rightCenter">
+              <span className="alignment-dot" />
+            </ToggleButton>
+            <ToggleButton id="leftBottom">
+              <span className="alignment-dot" />
+            </ToggleButton>
+            <ToggleButton id="centerBottom">
+              <span className="alignment-dot" />
+            </ToggleButton>
+            <ToggleButton id="rightBottom">
+              <span className="alignment-dot" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </div>
       )}
 
       <PropertyUnitInput

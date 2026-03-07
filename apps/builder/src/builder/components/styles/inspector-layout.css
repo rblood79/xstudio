@@ -230,6 +230,7 @@
         "min-width max-width actions-constraint-w"
         "min-height max-height actions-constraint-h"
         "aspect-ratio aspect-ratio aspect-ratio"
+        "self-alignment self-alignment self-alignment"
         "left top actions-position";
 
       > * {
@@ -287,6 +288,53 @@
 
       .aspect-ratio-field {
         grid-area: aspect-ratio;
+      }
+
+      .self-alignment {
+        grid-area: self-alignment;
+
+        .react-aria-ToggleButtonGroup {
+          display: grid;
+          grid-template-columns: repeat(3, var(--spacing-xl));
+          grid-template-rows: repeat(3, var(--spacing-xl));
+          gap: 4px;
+          justify-items: center;
+          border-radius: var(--radius-md);
+          padding: var(--spacing-2xs);
+          position: relative;
+          background: var(--border-color);
+          box-shadow: var(--inset-shadow-sm);
+          outline: 1px solid var(--border-color);
+          outline-offset: -1px;
+
+          .react-aria-ToggleButton {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: var(--spacing-xl);
+            height: var(--spacing-xl);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            padding: 0;
+            border: none;
+            background: transparent;
+
+            .alignment-dot {
+              position: relative;
+              z-index: 1;
+              width: var(--spacing);
+              height: var(--spacing);
+              background-color: var(--color-gray-400);
+              border-radius: 50%;
+            }
+
+            &[data-selected] {
+              .alignment-dot {
+                background-color: var(--highlight-foreground);
+              }
+            }
+          }
+        }
       }
 
       .aspect-ratio-input {

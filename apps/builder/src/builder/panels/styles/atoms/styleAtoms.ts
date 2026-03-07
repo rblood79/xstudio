@@ -362,6 +362,59 @@ export const aspectRatioAtom = selectAtom(
 );
 
 // ============================================
+// ADR-026 Phase 3: Self-Alignment Atom
+// ============================================
+
+/**
+ * Self-Alignment 9-grid 토글 키
+ * align-self/justify-self 조합을 9방향 위치로 매핑
+ * 부모가 flex/grid일 때만 유효
+ */
+export const selfAlignmentKeysAtom = selectAtom(
+  selectedElementAtom,
+  (element): string[] => {
+    if (!element) return [];
+
+    const parentDisplay = element.parentDisplay ?? "block";
+    const isFlexOrGrid =
+      parentDisplay === "flex" ||
+      parentDisplay === "inline-flex" ||
+      parentDisplay === "grid" ||
+      parentDisplay === "inline-grid";
+
+    if (!isFlexOrGrid) return [];
+
+    const style = element.style ?? {};
+    const alignSelf = String(style.alignSelf ?? "");
+    const justifySelf = String(style.justifySelf ?? "");
+
+    const verticalMap: Record<string, string> = {
+      "flex-start": "Top",
+      start: "Top",
+      center: "Center",
+      "flex-end": "Bottom",
+      end: "Bottom",
+      stretch: "",
+    };
+    const horizontalMap: Record<string, string> = {
+      "flex-start": "left",
+      start: "left",
+      center: "center",
+      "flex-end": "right",
+      end: "right",
+      stretch: "",
+    };
+
+    const vertical = verticalMap[alignSelf] ?? "";
+    const horizontal = horizontalMap[justifySelf] ?? "";
+
+    if (!vertical && !horizontal) return [];
+    return [`${horizontal}${vertical}`];
+  },
+  (a, b) => a.length === b.length && a.every((v, i) => v === b[i]),
+);
+
+// ============================================
 // ADR-026: Size Mode Atoms
 // ============================================
 
