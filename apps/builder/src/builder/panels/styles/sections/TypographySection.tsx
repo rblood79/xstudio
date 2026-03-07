@@ -138,10 +138,17 @@ const TypographySectionContent = memo(function TypographySectionContent() {
   }, []);
 
   const fontOptions = useMemo(() => {
-    const dynamicOptions = customFonts.map((font) => ({
-      value: font.family,
-      label: `${font.family} (Custom)`,
-    }));
+    const seenFamilies = new Set<string>();
+    const dynamicOptions: Array<{ value: string; label: string }> = [];
+    for (const font of customFonts) {
+      if (!seenFamilies.has(font.family)) {
+        seenFamilies.add(font.family);
+        dynamicOptions.push({
+          value: font.family,
+          label: `${font.family} (Custom)`,
+        });
+      }
+    }
 
     return [...DEFAULT_FONT_OPTIONS, ...dynamicOptions];
   }, [customFonts]);
