@@ -64,9 +64,6 @@ interface UnifiedThemeState {
   bulkUpsertTokens: (tokens: Partial<DesignToken>[]) => Promise<void>;
   saveAllTokens: () => Promise<void>;
 
-  // ===== Design Variable Actions =====
-  loadDesignVariables: (projectId: string) => Promise<void>;
-
   // ===== CSS Injection =====
   injectThemeCSS: () => void;
 
@@ -88,18 +85,6 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
       loading: false,
       error: null,
       dirty: false,
-
-      // ===== Design Variable Actions =====
-
-      loadDesignVariables: async (projectId: string) => {
-        try {
-          // DB adapter가 연결되면 여기서 로드
-          // 현재는 빈 배열 유지 (DB adapter 연결 전)
-          void projectId;
-        } catch (err) {
-          console.error("[UnifiedThemeStore] loadDesignVariables failed:", err);
-        }
-      },
 
       // ===== Theme Actions =====
 

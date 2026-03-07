@@ -87,6 +87,7 @@ const TEXT_ELEMENT_TAGS = new Set([
   "Badge",
   // Input 관련
   "Button",
+  "ToggleButton",
   "Input",
   "TextField",
   "TextInput",

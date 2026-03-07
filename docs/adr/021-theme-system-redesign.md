@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial (2026-03-05) — Phase A+B+C 구현 완료, Phase D 부분 완료(ThemeStudio.tsx 삭제, UnifiedThemeStore 축소, /theme 라우트 제거), Phase E 미구현
+Partial (2026-03-08) — Phase A+B+C+D 구현 완료, Phase E 미구현
 
 ## Scope
 
@@ -689,7 +689,34 @@ function generateThemeCSS(config: ThemeConfig): string {
 
 ## References
 
-## 구현 계획: Phase D 잔여 정리 (2026-03-08)
+### Phase D: 구현 완료 (2026-03-08)
+
+#### 1차 (이전): ThemeStudio + 라우트 제거
+
+- `ThemeStudio.tsx` + 7개 서브 컴포넌트 삭제
+- `/theme/:projectId` 라우트 제거
+- `themeStore.ts` Theme CRUD 메서드 제거
+
+#### 2차 (2026-03-08): 레거시 서비스 슬림화
+
+| 파일                      | 변경     | 상세                                                                             |
+| ------------------------- | -------- | -------------------------------------------------------------------------------- |
+| `useThemeManager.ts`      | **삭제** | BuilderCore에 직접 인라인 (loadActiveTheme, injectThemeCSS)                      |
+| `hooks/index.ts`          | 수정     | useThemeManager export 제거                                                      |
+| `BuilderCore.tsx`         | 수정     | useThemeManager → useUnifiedThemeStore 직접 사용                                 |
+| `ThemeService.ts`         | 슬림화   | 14개 → 2개 메서드 (getActiveTheme, createTheme). Realtime/Supabase RPC/캐싱 제거 |
+| `TokenService.ts`         | 슬림화   | 16개 → 6개 메서드. Realtime/검색/통계/W3C Import-Export 제거                     |
+| `services/theme/index.ts` | 수정     | UpdateThemeInput export 제거                                                     |
+
+**보존된 이유 (전체 삭제 불가)**:
+
+- `themeStore.ts`: DesignToken/DesignVariable CRUD가 VariableBindingButton, designKitStore, useResolvedElement에서 활성 사용
+- `tokenToCss.ts`: themeStore.injectThemeCSS + useThemeMessenger에서 사용
+- `types/theme/index.ts`: 19+ 파일에서 타입 참조
+
+---
+
+## 구현 계획: Phase D 잔여 정리 (이전 계획 — 참조용)
 
 ### 현황 분석
 

@@ -2677,8 +2677,21 @@ export function BuilderCanvas({
         "Em",
         "Code",
         "Button",
+        "ToggleButton",
         "Tag",
         "Badge",
+        // 소문자 HTML 태그 (useTextEdit TEXT_ELEMENT_TAGS와 동기화)
+        "p",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "span",
+        "a",
+        "label",
+        "button",
       ]);
       if (textTags.has(resolvedElement.tag)) {
         const layoutPosition = getElementBoundsSimple(resolvedTarget);

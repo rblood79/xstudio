@@ -26,9 +26,7 @@ import {
   useAutoRecovery,
   useToast,
   useIframeMessenger,
-  useThemeManager,
   useValidation,
-  useThemeMessenger,
   useGlobalKeyboardShortcuts,
 } from "@/builder/hooks";
 // import { projectsApi, type Project } from "../../services/api";  // Supabase 동기화는 대시보드에서만 처리
@@ -154,9 +152,8 @@ export const BuilderCore: React.FC = () => {
     initializeProject,
     // pageList,  // 사용하지 않음
   } = usePageManager({ requestAutoSelectAfterUpdate });
-  const { applyThemeTokens, loadProjectTheme } = useThemeManager();
+  const loadProjectTheme = useUnifiedThemeStore((s) => s.loadActiveTheme);
   const { validateOrderNumbers } = useValidation();
-  const { sendThemeTokens } = useThemeMessenger();
 
   // 🚀 Phase 5: 페이지 Lazy Loading 통합
   const { isLoading: isPageLoading, stats: pageLoaderStats } = usePageLoader();
@@ -324,45 +321,6 @@ export const BuilderCore: React.FC = () => {
 
   // 🔧 FIX: 프리뷰 요소 전송은 PREVIEW_READY 핸들러에서 처리
   // (BuilderCore에서 중복 전송하지 않음 - useIframeMessenger.ts:178-201 참고)
-
-  // 테마 토큰 적용
-  useEffect(() => {
-    applyThemeTokens();
-  }, [applyThemeTokens]);
-
-  // Preview iframe에 테마 토큰 전송 (초기 로드 + 토큰 변경 시)
-  // ✅ 개선: dynamic import 제거, useThemeMessenger 사용
-  // ✅ sendThemeTokens를 Ref에 저장하여 최신 함수 참조
-  const sendThemeTokensRef = React.useRef(sendThemeTokens);
-  React.useEffect(() => {
-    sendThemeTokensRef.current = sendThemeTokens;
-  }, [sendThemeTokens]);
-
-  useEffect(() => {
-    if (iframeReadyState !== "ready") return;
-
-    // 즉시 전송 (이미 로드된 경우)
-    const { tokens } = useUnifiedThemeStore.getState();
-    if (tokens.length > 0) {
-      sendThemeTokensRef.current(tokens);
-    }
-
-    // 토큰 변경 구독 (전체 store 구독 방식)
-    // ⚠️ Selector 방식이 아닌 전체 상태 구독으로 변경 (타이밍 이슈 방지)
-    let prevTokensLength = tokens.length;
-    const unsubscribe = useUnifiedThemeStore.subscribe((state) => {
-      const currentTokensLength = state.tokens.length;
-
-      if (currentTokensLength > 0 && prevTokensLength !== currentTokensLength) {
-        sendThemeTokensRef.current(state.tokens);
-        prevTokensLength = currentTokensLength;
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [iframeReadyState]); // ✅ sendThemeTokens 의존성 제거 (subscribe 재등록 방지)
 
   // ADR-021: Tint/Neutral/Radius/DarkMode → Preview에 CSS 변수 + 다크모드 전송
   useEffect(() => {

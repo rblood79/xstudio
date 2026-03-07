@@ -6,4 +6,4 @@
 export { ThemeService } from "./ThemeService";
 export { TokenService } from "./TokenService";
 
-export type { CreateThemeInput, UpdateThemeInput } from "./ThemeService";
+export type { CreateThemeInput } from "./ThemeService";

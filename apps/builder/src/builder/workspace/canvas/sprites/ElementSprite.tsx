@@ -1683,6 +1683,7 @@ export const ElementSprite = memo(function ElementSprite({
                 skiaTheme,
                 finalWidth,
                 specHeight,
+                elementId,
               );
 
               // Phantom indicator 레이아웃 보정: Switch/Checkbox/Radio의 indicator는

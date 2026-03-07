@@ -136,6 +136,7 @@ export function specShapesToSkia(
   theme: "light" | "dark",
   containerWidth: number,
   containerHeight: number,
+  elementId?: string,
 ): SkiaNodeData {
   // Collect converted nodes and track IDs for border/shadow targeting
   const nodeById = new Map<string, SkiaNodeData>();
@@ -685,6 +686,8 @@ export function specShapesToSkia(
           width: containerWidth,
           height: containerHeight,
           visible: true,
+          // 편집 중 Skia 텍스트 숨김용 (nodeRenderers의 _editingElementId 검사)
+          elementId,
           text: {
             content: textContent,
             fontFamilies,
@@ -745,6 +748,7 @@ export function specShapesToSkia(
           shape.height === "auto"
             ? containerHeight
             : (shape.height ?? containerHeight),
+          elementId,
         );
         containerNode.x = shape.x;
         containerNode.y = shape.y;
