@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import Quill from "quill";
 import "quill/dist/quill.core.css";
-import { getSceneBounds } from "../canvas/skia/renderCommands";
+import { getSceneBounds, subscribeBounds } from "../canvas/skia/renderCommands";
 
 // ============================================
 // Types
@@ -58,6 +58,20 @@ export interface TextStyleConfig {
 }
 
 // ============================================
+// Fade-in keyframes (Skia→DOM 전환 점프 감춤)
+// ============================================
+
+if (
+  typeof document !== "undefined" &&
+  !document.getElementById("text-edit-fade")
+) {
+  const s = document.createElement("style");
+  s.id = "text-edit-fade";
+  s.textContent = `@keyframes text-edit-fade-in{to{opacity:1}}`;
+  document.head.appendChild(s);
+}
+
+// ============================================
 // Component
 // ============================================
 
@@ -85,32 +99,39 @@ export function TextEditOverlay({
 
   const [livePos, setLivePos] = useState(position);
   const [liveSize, setLiveSize] = useState(size);
+
+  // scene→screen 변환 헬퍼 (subscribeBounds 콜백 + zoom/pan 변경에서 공유)
+  const applyTransform = useRef(
+    (sceneBounds: { x: number; y: number; width: number; height: number }) => {
+      const z = zoomRef.current;
+      const pan = panOffsetRef.current;
+      const sx = sceneBounds.x * z + pan.x;
+      const sy = sceneBounds.y * z + pan.y;
+      const sw = sceneBounds.width * z;
+      const sh = sceneBounds.height * z;
+      setLivePos((prev) =>
+        prev.x !== sx || prev.y !== sy ? { x: sx, y: sy } : prev,
+      );
+      setLiveSize((prev) =>
+        prev.width !== sw || prev.height !== sh
+          ? { width: sw, height: sh }
+          : prev,
+      );
+    },
+  ).current;
+
+  // boundsMap 변경 시 구독 (rAF 폴링 대체 — 이벤트 기반)
   useEffect(() => {
-    let rafId: number;
-    const track = () => {
-      const sceneBounds = getSceneBounds(elementId);
-      if (sceneBounds) {
-        const z = zoomRef.current;
-        const pan = panOffsetRef.current;
-        // scene → screen 변환
-        const sx = sceneBounds.x * z + pan.x;
-        const sy = sceneBounds.y * z + pan.y;
-        const sw = sceneBounds.width * z;
-        const sh = sceneBounds.height * z;
-        setLivePos((prev) =>
-          prev.x !== sx || prev.y !== sy ? { x: sx, y: sy } : prev,
-        );
-        setLiveSize((prev) =>
-          prev.width !== sw || prev.height !== sh
-            ? { width: sw, height: sh }
-            : prev,
-        );
-      }
-      rafId = requestAnimationFrame(track);
-    };
-    rafId = requestAnimationFrame(track);
-    return () => cancelAnimationFrame(rafId);
-  }, [elementId]);
+    return subscribeBounds(elementId, (_id, bounds) => {
+      applyTransform(bounds);
+    });
+  }, [elementId, applyTransform]);
+
+  // zoom/pan 변경 시 기존 bounds로 재변환
+  useEffect(() => {
+    const sceneBounds = getSceneBounds(elementId);
+    if (sceneBounds) applyTransform(sceneBounds);
+  }, [elementId, zoom, panOffset, applyTransform]);
 
   // Stable refs for callbacks (avoid stale closures)
   const onCompleteRef = useRef(onComplete);
@@ -266,6 +287,9 @@ export function TextEditOverlay({
     cursor: "text",
     overflow: "visible",
     WebkitFontSmoothing: "antialiased",
+    // Skia→DOM 전환 페이드인 (1~2px 점프 감춤)
+    opacity: 0,
+    animation: "text-edit-fade-in 50ms ease-out forwards",
     // 수직 중앙 정렬 (Button, Badge 등 baseline: "middle" 요소)
     ...(isVerticalCenter
       ? { display: "flex", alignItems: "center", justifyContent: "center" }

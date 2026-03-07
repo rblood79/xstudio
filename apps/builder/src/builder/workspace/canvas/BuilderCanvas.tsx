@@ -2428,10 +2428,49 @@ export function BuilderCanvas({
       }
 
       if (!hitElementId) {
-        // selectionBounds 밖 + 요소 없음 → lasso 또는 선택 해제
+        // selectionBounds 밖 + 요소 없음 → body 선택 또는 선택 해제
         lastClickTargetRef.current = null;
         if (!event.shiftKey) {
-          setSelectedElements([]);
+          // 빈 영역 클릭 → 클릭 좌표가 속한 페이지의 body 선택 + 페이지 전환
+          const st = useStore.getState();
+          const pp = st.pagePositions;
+          let hitPageId: string | null = null;
+
+          // canvasPos(씬 좌표)로 어떤 페이지 영역에 속하는지 판별
+          for (const pg of st.pages) {
+            const pos = pp[pg.id];
+            if (!pos) continue;
+            if (
+              canvasPos.x >= pos.x &&
+              canvasPos.x <= pos.x + pageWidth &&
+              canvasPos.y >= pos.y &&
+              canvasPos.y <= pos.y + pageHeight
+            ) {
+              hitPageId = pg.id;
+              break;
+            }
+          }
+
+          let bodySelected = false;
+          if (hitPageId) {
+            const pageEids = st.pageIndex.elementsByPage.get(hitPageId);
+            if (pageEids) {
+              for (const eid of pageEids) {
+                const el = st.elementsMap.get(eid);
+                if (el && el.tag === "body") {
+                  if (hitPageId !== st.currentPageId) {
+                    setCurrentPageId(hitPageId);
+                  }
+                  setSelectedElement(el.id);
+                  bodySelected = true;
+                  break;
+                }
+              }
+            }
+          }
+          if (!bodySelected) {
+            setSelectedElements([]);
+          }
         }
         // CanvasBackground의 lasso 시작은 PixiJS 이벤트로 유지
         return;

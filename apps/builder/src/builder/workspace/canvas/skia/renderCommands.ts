@@ -106,6 +106,39 @@ export function getSceneBounds(elementId: string): BoundingBox | undefined {
   return _lastBoundsMap.get(elementId);
 }
 
+// ── Bounds 구독 (TextEditOverlay 이벤트 기반 위치 추적) ──────────────
+
+type BoundsListener = (elementId: string, bounds: BoundingBox) => void;
+const _boundsListeners = new Map<string, Set<BoundsListener>>();
+
+/** 특정 요소의 bounds 변경을 구독한다. 해제 함수를 반환한다. */
+export function subscribeBounds(
+  elementId: string,
+  listener: BoundsListener,
+): () => void {
+  let set = _boundsListeners.get(elementId);
+  if (!set) {
+    set = new Set();
+    _boundsListeners.set(elementId, set);
+  }
+  set.add(listener);
+  return () => {
+    set!.delete(listener);
+    if (set!.size === 0) _boundsListeners.delete(elementId);
+  };
+}
+
+/** boundsMap 갱신 후 구독자에게 알림 */
+function _notifyBoundsListeners(boundsMap: Map<string, BoundingBox>): void {
+  if (_boundsListeners.size === 0) return;
+  for (const [id, listeners] of _boundsListeners) {
+    const bounds = boundsMap.get(id);
+    if (bounds) {
+      for (const fn of listeners) fn(id, bounds);
+    }
+  }
+}
+
 // ── updateTextChildren (SkiaOverlay.tsx:91-129에서 이동) ──────────────
 
 function updateTextChildren(
@@ -241,6 +274,7 @@ export function buildRenderCommandStream(
 
   // 최신 boundsMap 캐시 (TextEditOverlay 등 외부 접근용)
   _lastBoundsMap = boundsMap;
+  _notifyBoundsListeners(boundsMap);
 
   return { commands, boundsMap };
 }
