@@ -4,7 +4,7 @@
     flex-direction: column;
     gap: 2px;
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   .react-aria-TagList {
@@ -15,9 +15,9 @@
 
   .react-aria-Tag {
     /* Local color variables — variant overrides only these */
-    --tag-color: var(--overlay-background);
-    --tag-text: var(--text-color);
-    --tag-border: var(--border-color);
+    --tag-color: var(--bg-overlay);
+    --tag-text: var(--fg);
+    --tag-border: var(--border);
 
     color: var(--tag-text);
     background: var(--tag-color);
@@ -34,19 +34,19 @@
     transition: all 200ms;
 
     &[data-hovered] {
-      border-color: var(--border-color-hover);
+      border-color: var(--border-hover);
       background: color-mix(in srgb, var(--tag-color) 92%, black);
     }
 
     &[data-focus-visible] {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--accent);
       outline-offset: 2px;
     }
 
     &[data-selected] {
-      --tag-color: var(--highlight-background);
-      --tag-text: var(--highlight-foreground);
-      --tag-border: var(--highlight-background);
+      --tag-color: var(--accent);
+      --tag-text: var(--fg-on-accent);
+      --tag-border: var(--accent);
     }
 
     /* Remove button styling */
@@ -55,7 +55,7 @@
       border: none;
       padding: 0;
       margin-left: var(--spacing-2xs);
-      color: var(--text-color-base);
+      color: var(--fg-base);
       transition: color 200ms;
       outline: none;
       font-size: var(--text-sm);
@@ -64,11 +64,11 @@
       height: 100%;
 
       &[data-hovered] {
-        color: var(--text-color-hover);
+        color: var(--fg-emphasis);
       }
 
       &[data-focus-visible] {
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--focus-ring);
         outline-offset: -1px;
       }
     }
@@ -88,8 +88,8 @@
   .react-aria-TagList {
     .react-aria-Tag {
       &[data-disabled] {
-        border-color: var(--border-color-disabled);
-        color: var(--text-color-disabled);
+        border-color: var(--border-disabled);
+        color: var(--fg-disabled);
       }
     }
   }
@@ -97,15 +97,15 @@
   /* ===== Parent-delegated Color Variants ===== */
 
   .react-aria-TagGroup[data-tag-variant="primary"] .react-aria-Tag {
-    --tag-color: var(--highlight-background);
-    --tag-text: var(--highlight-foreground);
-    --tag-border: var(--highlight-background);
+    --tag-color: var(--accent);
+    --tag-text: var(--fg-on-accent);
+    --tag-border: var(--accent);
   }
 
   .react-aria-TagGroup[data-tag-variant="secondary"] .react-aria-Tag {
-    --tag-color: var(--button-background);
+    --tag-color: var(--bg-inset);
     --tag-text: var(--color-white);
-    --tag-border: var(--button-background);
+    --tag-border: var(--bg-inset);
   }
 
   .react-aria-TagGroup[data-tag-variant="tertiary"] .react-aria-Tag {
@@ -115,15 +115,15 @@
   }
 
   .react-aria-TagGroup[data-tag-variant="error"] .react-aria-Tag {
-    --tag-color: var(--invalid-color);
+    --tag-color: var(--negative);
     --tag-text: var(--color-white);
-    --tag-border: var(--invalid-color);
+    --tag-border: var(--negative);
   }
 
   .react-aria-TagGroup[data-tag-variant="surface"] .react-aria-Tag {
-    --tag-color: var(--highlight-overlay);
-    --tag-text: var(--text-color);
-    --tag-border: var(--border-color);
+    --tag-color: var(--accent-subtle);
+    --tag-text: var(--fg);
+    --tag-border: var(--border);
   }
 
   /* ===== Parent-delegated Size Variants ===== */
@@ -173,7 +173,7 @@
 
     [slot="errorMessage"] {
       font-size: var(--text-sm);
-      color: var(--invalid-color);
+      color: var(--negative);
     }
   }
 }

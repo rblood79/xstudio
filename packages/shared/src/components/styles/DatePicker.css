@@ -1,16 +1,16 @@
 @layer components {
   .react-aria-DatePicker {
-    color: var(--text-color);
+    color: var(--fg);
 
     /* Accent locals */
-    --field-accent: var(--highlight-background);
+    --field-accent: var(--accent);
     --field-accent-container: color-mix(
       in srgb,
       var(--field-accent) 15%,
       white
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
-    --dp-pressed-bg: var(--highlight-overlay);
+    --dp-pressed-bg: var(--accent-subtle);
 
     /* Size locals (md default) */
     --dp-input-padding: 8px 2.5rem 8px 14px;
@@ -22,18 +22,18 @@
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
-      --field-accent: var(--button-background);
+      --field-accent: var(--bg-inset);
     }
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
     &[data-variant="error"] {
-      --field-accent: var(--invalid-color);
+      --field-accent: var(--negative);
     }
     &[data-variant="filled"] {
-      --field-accent-container: var(--highlight-overlay);
-      --field-on-accent: var(--text-color);
-      --dp-pressed-bg: var(--overlay-background);
+      --field-accent-container: var(--accent-subtle);
+      --field-on-accent: var(--fg);
+      --dp-pressed-bg: var(--bg-overlay);
     }
 
     /* Pressed bg for non-filled variants */
@@ -147,12 +147,12 @@
     /* ===== FieldError / Description ===== */
     .react-aria-FieldError {
       font-size: var(--dp-hint-size);
-      color: var(--invalid-color);
+      color: var(--negative);
     }
 
     [slot="description"] {
       font-size: var(--dp-hint-size);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
   }
 

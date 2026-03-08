@@ -5,7 +5,7 @@
    * ======================================== */
 
   :root {
-    --hover-bg: var(--button-background);
+    --hover-bg: var(--bg-inset);
     --sidebar-width: 240px;
     --panel-nav-width: 48px;
   }
@@ -20,7 +20,7 @@
     width: var(--panel-nav-width);
     height: 100%;
     justify-content: space-between;
-    background-color: var(--field-background);
+    background-color: var(--bg-raised);
   }
 
   .nav-list {
@@ -41,7 +41,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    stroke: var(--text-color-placeholder);
+    stroke: var(--fg-muted);
     border-radius: 6px;
 
     svg {
@@ -50,13 +50,13 @@
   }
 
   .nav-button:hover {
-    background-color: var(--overlay-background);
+    background-color: var(--bg-overlay);
     border-radius: 6px;
   }
 
   .nav-button.active {
-    background-color: var(--highlight-background);
-    stroke: var(--field-background);
+    background-color: var(--accent);
+    stroke: var(--bg-raised);
   }
 
   /* Panel Slot */

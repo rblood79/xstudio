@@ -69,7 +69,7 @@ export function SmartSelection({
     return (
       <div className={`smart-selection empty ${className}`.trim()}>
         <div className="empty-state">
-          <Sparkles size={iconLarge.size} color="var(--text-color-disabled)" />
+          <Sparkles size={iconLarge.size} color="var(--fg-disabled)" />
           <p className="empty-text">No smart selection suggestions available</p>
           <p className="empty-hint">
             Select an element with siblings, children, or similar elements to see suggestions

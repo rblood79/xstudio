@@ -2,11 +2,11 @@
   min-height: 100vh;
 }
 :root[data-theme="dark"] {
-  background-color: var(--highlight-background);
+  background-color: var(--accent);
 }
 
 :root[data-theme="light"] {
-  background-color: var(--field-background);
+  background-color: var(--bg-raised);
 }
 
 .main {
@@ -43,7 +43,7 @@
     font-size: var(--text-6xl);
     font-weight: var(--font-weight-extrabold);
     line-height: var(--leading-normal);
-    color: var(--field-background);
+    color: var(--bg-raised);
     user-select: none;
   }
 
@@ -52,7 +52,7 @@
     font-weight: var(--font-weight-normal);
     line-height: var(--leading-normal);
     letter-spacing: var(--tracking-wide);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     user-select: none;
   }
 }
@@ -69,7 +69,7 @@
   button {
     background-color: transparent;
     padding: var(--spacing-sm);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     user-select: none;
   }
 }

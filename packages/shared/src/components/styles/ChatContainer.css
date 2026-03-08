@@ -12,7 +12,7 @@
     overflow-y: auto;
     gap: var(--gap);
     padding: 0;
-    background-color: var(--button-background);
+    background-color: var(--bg-inset);
   }
 
   /* Header styles are now inherited from global .panel-header */
@@ -32,16 +32,16 @@
   }
 
   .chat-content::-webkit-scrollbar-track {
-    background: var(--field-background);
+    background: var(--bg-raised);
   }
 
   .chat-content::-webkit-scrollbar-thumb {
-    background: var(--text-color-placeholder);
+    background: var(--fg-muted);
     border-radius: var(--radius-full);
   }
 
   .chat-content::-webkit-scrollbar-thumb:hover {
-    background: var(--text-color-placeholder);
+    background: var(--fg-muted);
   }
 
   .chat-content-empty {
@@ -50,7 +50,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     text-align: center;
     padding: var(--spacing-8);
   }
@@ -70,7 +70,7 @@
 
   .chat-content-empty-description {
     font-size: var(--text-sm);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
   }
 
   .chat-content-suggestions {
@@ -82,18 +82,18 @@
 
   .chat-content-suggestion {
     padding: var(--spacing-2) var(--spacing-3);
-    background-color: var(--field-background);
-    border: 1px solid var(--border-color);
+    background-color: var(--bg-raised);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--fg);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .chat-content-suggestion:hover {
-    background-color: color-mix(in srgb, var(--highlight-background) 85%, black);
-    border-color: var(--highlight-background);
-    color: var(--highlight-foreground);
+    background-color: color-mix(in srgb, var(--accent) 85%, black);
+    border-color: var(--accent);
+    color: var(--fg-on-accent);
   }
 }

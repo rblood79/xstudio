@@ -2,7 +2,7 @@
   /* ========== Base Calendar Styles ========== */
   .react-aria-Calendar {
     /* 기본 variant 변수 */
-    --cal-accent: var(--highlight-background);
+    --cal-accent: var(--accent);
     --cal-accent-container: var(--color-primary-100);
     --cal-on-accent-container: var(--color-primary-900);
 
@@ -17,7 +17,7 @@
 
     .react-aria-CalendarCell {
       &[data-focus-visible] {
-        outline: 2px solid var(--highlight-background);
+        outline: 2px solid var(--accent);
         outline-offset: 2px;
       }
     }
@@ -25,8 +25,8 @@
 
   /* ========== Color Variants ========== */
   .react-aria-Calendar[data-variant="secondary"] {
-    --cal-accent: var(--button-background);
-    --cal-accent-container: var(--button-background);
+    --cal-accent: var(--bg-inset);
+    --cal-accent-container: var(--bg-inset);
     --cal-on-accent-container: var(--color-neutral-900);
   }
 

@@ -6,33 +6,33 @@
     display: flex;
     flex-direction: column;
     padding: var(--spacing-xs);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: var(--border-radius);
-    background: var(--field-background);
-    color: var(--text-color);
+    background: var(--bg-raised);
+    color: var(--fg);
     outline: none;
     max-height: 300px;
     overflow: auto;
     gap: var(--spacing-2xs);
 
     /* 기본 variant 변수 */
-    --gl-accent: var(--border-color);
+    --gl-accent: var(--border);
     --gl-accent-container: var(--color-primary-100);
     --gl-on-accent-container: var(--color-primary-900);
     --gl-drop-bg: color-mix(
       in srgb,
-      var(--highlight-background) 8%,
+      var(--accent) 8%,
       transparent
     );
     --gl-drop-bg-item: color-mix(
       in srgb,
-      var(--highlight-background) 12%,
+      var(--accent) 12%,
       transparent
     );
 
     /* 기본 Checkbox 변수 */
-    --gl-cb-selected: var(--highlight-background);
-    --gl-cb-checkmark: var(--highlight-foreground);
+    --gl-cb-selected: var(--accent);
+    --gl-cb-checkmark: var(--fg-on-accent);
     --gl-cb-bg: var(--color-primary-100);
     --gl-cb-selected-on: var(--color-primary-900);
     --gl-cb-checkmark-on: var(--color-primary-100);
@@ -48,7 +48,7 @@
     --gl-drag-width: 15px;
 
     &[data-focus-visible] {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--accent);
       outline-offset: -1px;
     }
 
@@ -56,7 +56,7 @@
       align-items: center;
       justify-content: center;
       font-style: italic;
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
   }
 
@@ -67,7 +67,7 @@
     min-height: 40px;
     padding: var(--spacing) var(--spacing-md);
     border-radius: var(--radius-xs);
-    color: var(--text-color);
+    color: var(--fg);
     cursor: pointer;
     outline: none;
     transition: all 150ms ease;
@@ -75,19 +75,19 @@
     forced-color-adjust: none;
 
     &[data-hovered] {
-      background: var(--overlay-background);
+      background: var(--bg-overlay);
     }
 
     &[data-pressed] {
       background: color-mix(
         in srgb,
-        var(--text-color) 8%,
-        var(--field-background)
+        var(--fg) 8%,
+        var(--bg-raised)
       );
     }
 
     &[data-focus-visible] {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--accent);
       outline-offset: -2px;
     }
 
@@ -97,7 +97,7 @@
       font-weight: 500;
 
       &[data-focus-visible] {
-        outline-color: var(--highlight-background);
+        outline-color: var(--accent);
         outline-offset: -4px;
       }
 
@@ -107,7 +107,7 @@
     }
 
     &[data-disabled] {
-      color: color-mix(in srgb, var(--text-color) 38%, transparent);
+      color: color-mix(in srgb, var(--fg) 38%, transparent);
       cursor: not-allowed;
       opacity: 0.38;
     }
@@ -140,11 +140,11 @@
       forced-color-adjust: none;
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--text-color) 8%, transparent);
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
       }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--text-color) 12%, transparent);
+        background: color-mix(in srgb, var(--fg) 12%, transparent);
         box-shadow: none;
       }
     }
@@ -153,12 +153,12 @@
       all: unset;
       width: 15px;
       text-align: center;
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
       cursor: grab;
 
       &[data-focus-visible] {
         border-radius: 4px;
-        outline: 2px solid var(--highlight-background);
+        outline: 2px solid var(--accent);
       }
 
       &:active {
@@ -206,7 +206,7 @@
   /* ========== Drag and Drop Styles ========== */
   .react-aria-DropIndicator {
     &[data-drop-target] {
-      outline: 1px solid var(--highlight-background);
+      outline: 1px solid var(--accent);
     }
 
     @supports not selector(:has(.foo)) {
@@ -215,52 +215,52 @@
   }
 
   .react-aria-GridList[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
+    outline: 2px solid var(--accent);
     outline-offset: -1px;
-    background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
   }
 
   .react-aria-GridListItem[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
+    outline: 2px solid var(--accent);
     background: color-mix(
       in srgb,
-      var(--highlight-background) 12%,
+      var(--accent) 12%,
       transparent
     );
   }
 
   /* ========== Color Variants ========== */
   .react-aria-GridList[data-variant="primary"] {
-    --gl-accent: var(--highlight-background);
+    --gl-accent: var(--accent);
     --gl-accent-container: var(--color-primary-100);
     --gl-on-accent-container: var(--color-primary-900);
     --gl-drop-bg: color-mix(
       in srgb,
-      var(--highlight-background) 8%,
+      var(--accent) 8%,
       transparent
     );
     --gl-drop-bg-item: color-mix(
       in srgb,
-      var(--highlight-background) 12%,
+      var(--accent) 12%,
       transparent
     );
   }
 
   .react-aria-GridList[data-variant="secondary"] {
-    --gl-accent: var(--button-background);
-    --gl-accent-container: var(--button-background);
+    --gl-accent: var(--bg-inset);
+    --gl-accent-container: var(--bg-inset);
     --gl-on-accent-container: var(--color-neutral-900);
-    --gl-drop-bg: color-mix(in srgb, var(--button-background) 8%, transparent);
+    --gl-drop-bg: color-mix(in srgb, var(--bg-inset) 8%, transparent);
     --gl-drop-bg-item: color-mix(
       in srgb,
-      var(--button-background) 12%,
+      var(--bg-inset) 12%,
       transparent
     );
-    --gl-cb-selected: var(--button-background);
+    --gl-cb-selected: var(--bg-inset);
     --gl-cb-checkmark: var(--color-white);
-    --gl-cb-bg: var(--button-background);
+    --gl-cb-bg: var(--bg-inset);
     --gl-cb-selected-on: var(--color-neutral-900);
-    --gl-cb-checkmark-on: var(--button-background);
+    --gl-cb-checkmark-on: var(--bg-inset);
   }
 
   .react-aria-GridList[data-variant="tertiary"] {
@@ -281,16 +281,16 @@
   }
 
   .react-aria-GridList[data-variant="error"] {
-    --gl-accent: var(--invalid-color);
+    --gl-accent: var(--negative);
     --gl-accent-container: var(--color-error-100);
     --gl-on-accent-container: var(--color-error-900);
-    --gl-drop-bg: color-mix(in srgb, var(--invalid-color) 8%, transparent);
+    --gl-drop-bg: color-mix(in srgb, var(--negative) 8%, transparent);
     --gl-drop-bg-item: color-mix(
       in srgb,
-      var(--invalid-color) 12%,
+      var(--negative) 12%,
       transparent
     );
-    --gl-cb-selected: var(--invalid-color);
+    --gl-cb-selected: var(--negative);
     --gl-cb-checkmark: var(--color-white);
     --gl-cb-bg: var(--color-error-100);
     --gl-cb-selected-on: var(--color-error-900);
@@ -339,12 +339,12 @@
 
   /* ===== Filled Variant ===== */
   .react-aria-GridList[data-variant="filled"] {
-    background: var(--highlight-overlay);
+    background: var(--accent-subtle);
     border-color: transparent;
 
     .react-aria-GridListItem {
       &[data-hovered] {
-        background: var(--overlay-background);
+        background: var(--bg-overlay);
       }
 
       &[data-selected] {

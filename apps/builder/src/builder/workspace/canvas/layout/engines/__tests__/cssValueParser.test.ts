@@ -632,7 +632,7 @@ describe("resolveVar - W3-7 DOM fallback", () => {
   it("domFallback=true + domResolver 주입: 인메모리에 없는 변수를 DOM에서 조회", () => {
     const mockResolver = (varName: string): string => {
       const tokens: Record<string, string> = {
-        "--highlight-background": "#3b82f6",
+        "--accent": "#3b82f6",
         "--spacing-md": "16px",
       };
       return tokens[varName] ?? "";
@@ -644,7 +644,7 @@ describe("resolveVar - W3-7 DOM fallback", () => {
       domResolver: mockResolver,
     };
 
-    expect(resolveVar("var(--highlight-background)", scope)).toBe("#3b82f6");
+    expect(resolveVar("var(--accent)", scope)).toBe("#3b82f6");
     expect(resolveVar("var(--spacing-md)", scope)).toBe("16px");
   });
 

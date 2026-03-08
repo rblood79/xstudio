@@ -3,7 +3,7 @@
 @layer components {
   .react-aria-Link {
     /* Local color variable — variant overrides only this */
-    --link-color: var(--highlight-background);
+    --link-color: var(--accent);
 
     position: relative;
     display: inline-flex;
@@ -15,7 +15,7 @@
     transition: all 200ms;
     border-radius: var(--radius-sm);
     outline: none;
-    color: var(--link-color);
+    color: var(--link);
 
     /* External icon spacing */
     & .link-external-icon {
@@ -26,25 +26,25 @@
     }
 
     &[data-hovered] {
-      color: color-mix(in srgb, var(--link-color) 85%, black);
+      color: color-mix(in srgb, var(--link) 85%, black);
       text-decoration: underline;
       text-decoration-thickness: 2px;
       text-underline-offset: 4px;
     }
 
     &[data-pressed] {
-      color: color-mix(in srgb, var(--link-color) 75%, black);
+      color: color-mix(in srgb, var(--link) 75%, black);
     }
 
     &[data-disabled] {
-      color: color-mix(in srgb, var(--text-color) 38%, transparent);
+      color: color-mix(in srgb, var(--fg) 38%, transparent);
       cursor: not-allowed;
       pointer-events: none;
       opacity: 0.38;
     }
 
     &[data-focus-visible] {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--accent);
       outline-offset: 2px;
     }
 
@@ -58,12 +58,12 @@
 
     /* primary (기본): accent 계열 */
     &[data-variant="primary"] {
-      --link-color: var(--highlight-background);
+      --link-color: var(--accent);
     }
 
     /* secondary: neutral 텍스트 색상 */
     &[data-variant="secondary"] {
-      --link-color: var(--text-color);
+      --link-color: var(--fg);
     }
 
     /* ===== Size Variants ===== */

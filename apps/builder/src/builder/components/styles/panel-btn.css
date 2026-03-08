@@ -3,12 +3,12 @@
     /* Inspector 전용 크기 토큰은 builder-system.css에서 정의 */
 
     /* Panel Button 공통 스타일 변수 */
-    --panel-btn-bg: var(--field-background);
+    --panel-btn-bg: var(--bg-raised);
     --panel-btn-bg-hover: var(--color-white);
-    --panel-btn-bg-pressed: var(--field-background);
+    --panel-btn-bg-pressed: var(--bg-raised);
     --panel-btn-border: transparent;
-    --panel-btn-border-hover: var(--border-color-hover);
-    --panel-btn-color: var(--text-color);
+    --panel-btn-border-hover: var(--border-hover);
+    --panel-btn-color: var(--fg);
     --panel-btn-font-size: var(--text-xs);
     --panel-btn-radius: var(--radius-sm);
     --panel-btn-transition: all 200ms;

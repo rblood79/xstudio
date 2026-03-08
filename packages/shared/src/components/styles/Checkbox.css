@@ -5,13 +5,13 @@
 @layer components {
   .react-aria-Checkbox {
     /* Default (non-emphasized): neutral color when selected */
-    --selected-color: var(--text-color);
+    --selected-color: var(--fg);
     --checkmark-color: var(--color-white);
 
     /* Emphasized: accent color when selected */
     &[data-emphasized] {
-      --selected-color: var(--highlight-background);
-      --checkmark-color: var(--highlight-foreground);
+      --selected-color: var(--accent);
+      --checkmark-color: var(--fg-on-accent);
     }
 
     display: flex;
@@ -19,7 +19,7 @@
     align-items: center;
     gap: var(--spacing-sm);
     font-size: var(--text-base);
-    color: var(--text-color);
+    color: var(--fg);
     forced-color-adjust: none;
     padding: var(--spacing) 0;
 
@@ -59,7 +59,7 @@
     .checkbox {
       width: var(--text-lg);
       height: var(--text-lg);
-      border: 2px solid var(--border-color);
+      border: 2px solid var(--border);
       border-radius: var(--radius-sm);
       transition: all 0.2s ease;
       display: flex;
@@ -77,11 +77,11 @@
     }
 
     &[data-pressed] .checkbox {
-      border-color: var(--border-color-pressed);
+      border-color: var(--border-pressed);
     }
 
     &[data-focus-visible] .checkbox {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--focus-ring);
       outline-offset: 2px;
     }
 
@@ -110,30 +110,30 @@
     &[data-invalid] {
       .checkbox {
         --checkmark-color: var(--color-white);
-        border-color: var(--invalid-color);
+        border-color: var(--negative);
       }
 
       &[data-pressed] .checkbox {
-        border-color: color-mix(in srgb, var(--invalid-color) 75%, black);
+        border-color: color-mix(in srgb, var(--negative) 75%, black);
       }
 
       &[data-selected],
       &[data-indeterminate] {
         .checkbox {
-          background: var(--invalid-color);
+          background: var(--negative);
         }
 
         &[data-pressed] .checkbox {
-          background: color-mix(in srgb, var(--invalid-color) 75%, black);
+          background: color-mix(in srgb, var(--negative) 75%, black);
         }
       }
     }
 
     &[data-disabled] {
-      color: var(--text-color-disabled);
+      color: var(--fg-disabled);
 
       .checkbox {
-        border-color: var(--border-color-disabled);
+        border-color: var(--border-disabled);
       }
     }
   }
@@ -141,8 +141,8 @@
   /* ===== Parent CheckboxGroup delegation ===== */
 
   .react-aria-CheckboxGroup[data-checkbox-emphasized] .react-aria-Checkbox {
-    --selected-color: var(--highlight-background);
-    --checkmark-color: var(--highlight-foreground);
+    --selected-color: var(--accent);
+    --checkmark-color: var(--fg-on-accent);
   }
 
   /* ===== Size delegation from CheckboxGroup ===== */

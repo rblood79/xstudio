@@ -85,7 +85,7 @@
 
   /* Panel Content */
   .panel-content {
-    background-color: var(--overlay-background);
+    background-color: var(--bg-overlay);
 
     display: flex;
     flex-direction: row;
@@ -172,22 +172,22 @@
 
   .sidebar {
     .panel-nav {
-      border-right: 1px solid var(--border-color);
+      border-right: 1px solid var(--border);
     }
     .panel-content {
       .panel-wrapper[data-active="true"] {
-        border-right: 1px solid var(--border-color);
+        border-right: 1px solid var(--border);
       }
     }
   }
 
   .inspector {
     .panel-nav {
-      border-left: 1px solid var(--border-color);
+      border-left: 1px solid var(--border);
     }
     .panel-content {
       .panel-wrapper[data-active="true"] {
-        border-left: 1px solid var(--border-color);
+        border-left: 1px solid var(--border);
       }
     }
   }
@@ -211,7 +211,7 @@
     justify-content: center;
     align-items: center;
     height: 100px;
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     font-size: var(--text-sm);
   }
 }

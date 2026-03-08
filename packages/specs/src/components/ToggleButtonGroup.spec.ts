@@ -75,7 +75,7 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
 
   states: {
     focusVisible: {
-      outline: "2px solid var(--highlight-background)",
+      outline: "2px solid var(--accent)",
       outlineOffset: "2px",
     },
   },

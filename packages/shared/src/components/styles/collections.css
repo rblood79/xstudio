@@ -5,9 +5,9 @@
   .react-aria-GridList {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: var(--border-radius);
-    background: var(--overlay-background);
+    background: var(--bg-overlay);
     forced-color-adjust: none;
     width: 100%;
     outline: none;
@@ -16,11 +16,11 @@
     padding: var(--spacing);
 
     &[data-focus-visible] {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--focus-ring);
       outline-offset: -1px;
     }
     &[data-focus-within] {
-      outline: 1px solid var(--focus-ring-color);
+      outline: 1px solid var(--focus-ring);
 
     }
   }
@@ -34,21 +34,21 @@
     padding: var(--spacing) var(--spacing-md);
     border-radius: var(--border-radius);
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--fg);
 
     &[data-focused] {
       outline: 0px solid;
       outline-offset: -2px;
-      outline-color: var(--focus-ring-color);
+      outline-color: var(--focus-ring);
     }
 
     &[data-selected] {
-      background: var(--highlight-background);
-      color: var(--highlight-foreground);
+      background: var(--accent);
+      color: var(--fg-on-accent);
     }
 
     &[data-disabled] {
-      color: var(--text-color-disabled);
+      color: var(--fg-disabled);
     }
   }
 
@@ -75,9 +75,9 @@
     border-radius: var(--radius-xs);
     background: linear-gradient(
       90deg,
-      var(--overlay-background) 25%,
-      var(--highlight-overlay) 50%,
-      var(--overlay-background) 75%
+      var(--bg-overlay) 25%,
+      var(--accent-subtle) 50%,
+      var(--bg-overlay) 75%
     );
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s ease-in-out infinite;

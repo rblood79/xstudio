@@ -25,14 +25,14 @@
     align-items: center;
     flex-grow: 1;
     position: relative;
-    background-color: var(--field-background);
+    background-color: var(--bg-raised);
   }
 
   /* Canvas */
   .app .canvas {
     padding: 0;
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
+    background: var(--bg);
+    border: 1px solid var(--border);
     will-change: transform;
   }
 
@@ -65,8 +65,8 @@
   /* Panel Header */
   .app aside .panel-header {
     height: var(--header-height);
-    background-color: var(--field-background);
-    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-raised);
+    border-bottom: 1px solid var(--border);
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -91,14 +91,14 @@
     border-bottom: 0px;
     line-height: var(--text-xs--line-height);
     font-size: var(--text-xs);
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   .panel-header .panel-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
   }
 
   /* Component Search */
@@ -111,8 +111,8 @@
     border-width: 0px;
     border-radius: 0px;
     outline: none;
-    background-color: var(--button-background);
-    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-inset);
+    border-bottom: 1px solid var(--border);
   }
 
   /* Header Actions */

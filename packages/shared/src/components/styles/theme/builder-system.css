@@ -3,6 +3,14 @@
  * NOT affected by user theme changes in Preview
  * Scoped via [data-context="builder"] on BuilderViewport (ADR-028)
  * Independent dark mode support via [data-builder-theme="dark"] on <html>
+ *
+ * Naming: S2 + React Aria hybrid pattern
+ *   --bg[-variant]       Surface/background
+ *   --fg[-variant]       Foreground/text
+ *   --border[-state]     Border
+ *   --accent[-state]     Accent/highlight
+ *   --focus-ring         Focus indicator
+ *   --negative/positive/informative/notice  Status colors
  */
 
 @layer builder-system {
@@ -34,44 +42,52 @@
    * Preview iframe은 별도 document이므로 자동 격리.
    * Fallback: body 직하 portal에도 builder 변수 적용 (UNSAFE_PortalProvider 안정화 전)
    *
-   * Light: Tailwind gray (쿨 블루 언더톤) → 빌더 변수
-   * Dark: Tailwind zinc (웜 다크, Apple HIG 기반) → 빌더 변수 */
+   * Light: Tailwind gray (쿨 블루 언더톤)
+   * Dark: Tailwind zinc (웜 다크, Apple HIG 기반)
+   *
+   * Elevation (Light): bg(gray-100) → raised(gray-100) → overlay(white) → inset(gray-50)
+   * Elevation (Dark):  bg(zinc-900) → raised(zinc-850) → overlay(zinc-800) → inset(zinc-900) */
   [data-context="builder"],
   body:not([data-preview="true"]) > .react-aria-Popover,
   body:not([data-preview="true"]) > .react-aria-Modal {
-    /* ===== Light Gray (Tailwind gray → 빌더 변수) ===== */
-    --background-color: var(--color-gray-100);
-    --text-color: var(--color-gray-800);
-    --text-color-base: var(--color-gray-800);
-    --text-color-hover: var(--color-gray-900);
-    --text-color-disabled: var(--color-gray-400);
-    --text-color-placeholder: var(--color-gray-500);
-    --border-color: var(--color-gray-200);
-    --border-color-hover: var(--color-gray-300);
-    --border-color-pressed: var(--color-gray-300);
-    --border-color-disabled: var(--color-gray-100);
+    /* ===== Surface (Light) ===== */
+    --bg: var(--color-gray-100);
+    --bg-raised: var(--color-gray-100);
+    --bg-overlay: var(--color-white);
+    --bg-inset: var(--color-gray-50);
 
-    --button-background: var(--color-gray-50);
-    --field-background: var(--color-gray-50);
-    --overlay-background: var(--color-white);
+    /* ===== Foreground (Light) ===== */
+    --fg: var(--color-gray-800);
+    --fg-base: var(--color-gray-800);
+    --fg-emphasis: var(--color-gray-900);
+    --fg-muted: var(--color-gray-500);
+    --fg-disabled: var(--color-gray-400);
+    --fg-on-accent: var(--color-white);
 
-    --focus-ring-color: var(--color-blue-400);
-    --highlight-background: var(--color-gray-700);
-    --highlight-background-pressed: var(--color-gray-600);
-    --highlight-foreground: var(--color-white);
-    --highlight-overlay: rgba(107, 114, 128, 0.15);
+    /* ===== Border (Light) ===== */
+    --border: var(--color-gray-200);
+    --border-hover: var(--color-gray-300);
+    --border-pressed: var(--color-gray-300);
+    --border-disabled: var(--color-gray-100);
 
-    --invalid-color: var(--color-red-500);
+    /* ===== Accent (Light) ===== */
+    --accent: var(--color-gray-700);
+    --accent-pressed: var(--color-gray-600);
+    --accent-subtle: rgba(107, 114, 128, 0.15);
 
-    --info: var(--color-blue-500);
-    --warning-container: var(--color-orange-50);
-    --on-warning-container: var(--color-orange-700);
-    --success: var(--color-green-500);
+    /* ===== Focus ===== */
+    --focus-ring: var(--color-blue-400);
+
+    /* ===== Status (Light) ===== */
+    --negative: var(--color-red-500);
+    --informative: var(--color-blue-500);
+    --notice-subtle: var(--color-orange-50);
+    --fg-on-notice: var(--color-orange-700);
+    --positive: var(--color-green-500);
   }
 
   /* ==================== Builder Dark Mode (ADR-028) ==================== */
-  /* Dark Gray: Tailwind zinc → 빌더 변수
-   * Elevation: bg(zinc-900) → field/button(zinc-800) → border(zinc-700) */
+  /* Elevation (Dark): bg(zinc-900) → raised(zinc-850) → overlay(zinc-800) → inset(zinc-900) */
   [data-builder-theme="dark"] [data-context="builder"],
   [data-builder-theme="dark"]
     body:not([data-preview="true"])
@@ -79,34 +95,40 @@
   [data-builder-theme="dark"]
     body:not([data-preview="true"])
     > .react-aria-Modal {
-    /* ===== Dark Gray (Tailwind zinc → 빌더 변수) ===== */
-    --background-color: var(--color-zinc-900);
-    --text-color: var(--color-zinc-100);
-    --text-color-base: var(--color-zinc-100);
-    --text-color-hover: var(--color-white);
-    --text-color-disabled: var(--color-zinc-500);
-    --text-color-placeholder: var(--color-zinc-400);
-    --border-color: var(--color-zinc-700);
-    --border-color-hover: var(--color-zinc-600);
-    --border-color-pressed: var(--color-zinc-600);
-    --border-color-disabled: var(--color-zinc-800);
+    /* ===== Surface (Dark) ===== */
+    --bg: var(--color-zinc-900);
+    --bg-raised: var(--color-zinc-850);
+    --bg-overlay: var(--color-zinc-800);
+    --bg-inset: var(--color-zinc-900);
 
-    --button-background: var(--color-zinc-800);
-    --field-background: var(--color-zinc-800);
-    --overlay-background: var(--color-zinc-800);
+    /* ===== Foreground (Dark) ===== */
+    --fg: var(--color-zinc-100);
+    --fg-base: var(--color-zinc-100);
+    --fg-emphasis: var(--color-white);
+    --fg-muted: var(--color-zinc-400);
+    --fg-disabled: var(--color-zinc-500);
+    --fg-on-accent: var(--color-zinc-900);
 
-    --focus-ring-color: var(--color-blue-400);
-    --highlight-background: var(--color-zinc-200);
-    --highlight-background-pressed: var(--color-zinc-100);
-    --highlight-foreground: var(--color-zinc-900);
-    --highlight-overlay: rgba(161, 161, 170, 0.2);
+    /* ===== Border (Dark) ===== */
+    --border: var(--color-zinc-700);
+    --border-hover: var(--color-zinc-600);
+    --border-pressed: var(--color-zinc-600);
+    --border-disabled: var(--color-zinc-800);
 
-    --invalid-color: var(--color-red-400);
+    /* ===== Accent (Dark) ===== */
+    --accent: var(--color-zinc-200);
+    --accent-pressed: var(--color-zinc-100);
+    --accent-subtle: rgba(161, 161, 170, 0.2);
 
-    --info: var(--color-blue-400);
-    --warning-container: rgba(251, 106, 34, 0.15);
-    --on-warning-container: var(--color-orange-200);
-    --success: var(--color-green-400);
+    /* ===== Focus ===== */
+    --focus-ring: var(--color-blue-400);
+
+    /* ===== Status (Dark) ===== */
+    --negative: var(--color-red-400);
+    --informative: var(--color-blue-400);
+    --notice-subtle: rgba(251, 106, 34, 0.15);
+    --fg-on-notice: var(--color-orange-200);
+    --positive: var(--color-green-400);
   }
 
   /* ==================== Accessibility: High Contrast Mode ==================== */

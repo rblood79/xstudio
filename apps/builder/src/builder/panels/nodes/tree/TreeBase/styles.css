@@ -5,7 +5,7 @@
   display: block;
   height: 2px;
   margin: 4px var(--spacing-sm);
-  background: var(--border-color-pressed);
+  background: var(--border-pressed);
   border-radius: 999px;
   pointer-events: none;
 }
@@ -20,7 +20,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-xl);
-  color: var(--text-color-placeholder);
+  color: var(--fg-muted);
   font-size: var(--text-sm);
 }
 
@@ -30,6 +30,6 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-xl);
-  color: var(--text-color-placeholder);
+  color: var(--fg-muted);
   font-size: var(--text-sm);
 }

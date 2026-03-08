@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--overlay-background);
+  background: var(--bg-overlay);
 }
 
 .themes-panel .section-content {
@@ -39,15 +39,15 @@
 }
 
 .tint-swatch:hover {
-  box-shadow: 0 0 0 2px var(--field-background);
+  box-shadow: 0 0 0 2px var(--bg-raised);
 }
 
 .tint-swatch:focus-visible {
-  box-shadow: 0 0 0 2px var(--focus-ring-color);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .tint-swatch[data-selected] {
-  box-shadow: 0 0 0 2px var(--field-background);
+  box-shadow: 0 0 0 2px var(--bg-raised);
 }
 
 .tint-swatch-check {
@@ -79,7 +79,7 @@
   padding: 4px 12px;
   border-radius: var(--mp-radius, 6px);
   background: var(--mp-highlight-bg);
-  color: var(--highlight-foreground);
+  color: var(--fg-on-accent);
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;

@@ -116,7 +116,7 @@ export const RadioEditor = memo(function RadioEditor({ elementId, currentProps, 
             </PropertySection>
 
             {isChildOfRadioGroup && (
-                <p style={{ fontSize: '12px', color: 'var(--text-color-secondary)', marginTop: '8px' }}>
+                <p style={{ fontSize: '12px', color: 'var(--fg-muted)', marginTop: '8px' }}>
                     💡 Variant and size are controlled by the parent RadioGroup
                 </p>
             )}

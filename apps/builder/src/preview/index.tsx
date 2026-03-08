@@ -5,20 +5,20 @@
  * Builder의 main.tsx와 완전히 분리된 별도의 React 앱입니다.
  */
 
-import { createRoot } from 'react-dom/client';
-import { App } from './App';
+import { createRoot } from "react-dom/client";
+import { App } from "./App";
 
 // React Aria 컴포넌트 스타일 (srcdoc에서 필요)
 // ⭐ 모노레포 구조에서는 @xstudio/shared alias 사용
-import '@xstudio/shared/components/styles/index.css';
+import "@xstudio/shared/components/styles/index.css";
 
 // ============================================
 // Styles (인라인으로 포함되거나 별도 CSS 파일)
 // ============================================
 
 const injectBaseStyles = () => {
-  const style = document.createElement('style');
-  style.id = 'canvas-base-styles';
+  const style = document.createElement("style");
+  style.id = "canvas-base-styles";
   style.textContent = `
     * {
       box-sizing: border-box;
@@ -35,8 +35,8 @@ const injectBaseStyles = () => {
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       line-height: 1.5;
-      color: var(--text-color, #1a1a1a);
-      background: var(--background-color, #ffffff);
+      color: var(--fg, #1a1a1a);
+      background: var(--bg, #ffffff);
     }
 
     .canvas-empty {
@@ -87,8 +87,8 @@ function initCanvasRuntime() {
   injectBaseStyles();
 
   // Canvas 마커 설정 (legacy: data-preview도 유지)
-  document.body.setAttribute('data-canvas', 'true');
-  document.body.setAttribute('data-preview', 'true');
+  document.body.setAttribute("data-canvas", "true");
+  document.body.setAttribute("data-preview", "true");
 
   // ⭐ 원천적 해결: React를 document.body에 직접 마운트
   // - DOM 트리와 데이터 트리가 완벽히 일치
@@ -102,8 +102,8 @@ function initCanvasRuntime() {
 // Auto-initialize when DOM is ready
 // ============================================
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initCanvasRuntime);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initCanvasRuntime);
 } else {
   initCanvasRuntime();
 }
@@ -112,11 +112,14 @@ if (document.readyState === 'loading') {
 // Exports (번들 시 사용)
 // ============================================
 
-export { App } from './App';
-export { getRuntimeStore, useRuntimeStore } from './store';
-export { navigateInCanvas } from './router';
-export { messageSender } from './messaging';
+export { App } from "./App";
+export { getRuntimeStore, useRuntimeStore } from "./store";
+export { navigateInCanvas } from "./router";
+export { messageSender } from "./messaging";
 
 // Legacy exports for backward compatibility
-export { getRuntimeStore as getPreviewStore, useRuntimeStore as usePreviewStore } from './store';
-export { navigateInCanvas as navigateInPreview } from './router';
+export {
+  getRuntimeStore as getPreviewStore,
+  useRuntimeStore as usePreviewStore,
+} from "./store";
+export { navigateInCanvas as navigateInPreview } from "./router";

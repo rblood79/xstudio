@@ -439,13 +439,13 @@ const PARENT_VARIANT_TO_LABEL_COLOR: Record<string, string> = {
 
 /**
  * CSS outline shorthand → Skia outline 속성 파싱
- * "2px solid var(--highlight-background)" → { width, color (Float32Array), offset }
+ * "2px solid var(--accent)" → { width, color (Float32Array), offset }
  */
 function parseOutlineShorthand(
   outline: string,
   outlineOffset?: string | number,
 ): { width: number; color: Float32Array; offset: number } | null {
-  // "2px solid #6750A4" or "2px solid var(--highlight-background)"
+  // "2px solid #6750A4" or "2px solid var(--accent)"
   const parts = outline.trim().split(/\s+/);
   if (parts.length < 2) return null;
 

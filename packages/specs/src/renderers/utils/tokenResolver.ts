@@ -71,24 +71,24 @@ export function resolveColor(
  */
 const COLOR_TOKEN_TO_CSS: Record<string, string> = {
   // --- Accent ---
-  accent: "var(--highlight-background)",
-  "accent-hover": "color-mix(in srgb, var(--highlight-background) 85%, black)",
+  accent: "var(--accent)",
+  "accent-hover": "color-mix(in srgb, var(--accent) 85%, black)",
   "accent-pressed":
-    "color-mix(in srgb, var(--highlight-background) 75%, black)",
-  "on-accent": "var(--highlight-foreground)",
+    "color-mix(in srgb, var(--accent) 75%, black)",
+  "on-accent": "var(--fg-on-accent)",
   "accent-subtle": "var(--color-primary-100)",
 
   // --- Neutral ---
-  neutral: "var(--text-color)",
-  "neutral-subdued": "var(--text-color-placeholder)",
+  neutral: "var(--fg)",
+  "neutral-subdued": "var(--fg-muted)",
   "neutral-subtle": "var(--color-neutral-200)",
   "neutral-hover": "color-mix(in srgb, var(--color-neutral-200) 85%, black)",
   "neutral-pressed": "color-mix(in srgb, var(--color-neutral-200) 75%, black)",
 
   // --- Negative ---
-  negative: "var(--invalid-color)",
-  "negative-hover": "color-mix(in srgb, var(--invalid-color) 85%, black)",
-  "negative-pressed": "color-mix(in srgb, var(--invalid-color) 75%, black)",
+  negative: "var(--negative)",
+  "negative-hover": "color-mix(in srgb, var(--negative) 85%, black)",
+  "negative-pressed": "color-mix(in srgb, var(--negative) 75%, black)",
   "on-negative": "var(--color-white)",
   "negative-subtle": "var(--color-error-100)",
 
@@ -101,16 +101,16 @@ const COLOR_TOKEN_TO_CSS: Record<string, string> = {
   "notice-subtle": "var(--color-warning-100)",
 
   // --- Surface / Layer ---
-  base: "var(--background-color)",
-  "layer-1": "var(--overlay-background)",
-  "layer-2": "var(--field-background)",
+  base: "var(--bg)",
+  "layer-1": "var(--bg-overlay)",
+  "layer-2": "var(--bg-raised)",
   elevated: "var(--color-white)",
   disabled: "var(--color-neutral-200)",
 
   // --- Border ---
-  border: "var(--border-color)",
-  "border-hover": "var(--border-color-hover)",
-  "border-disabled": "var(--border-color-disabled)",
+  border: "var(--border)",
+  "border-hover": "var(--border-hover)",
+  "border-disabled": "var(--border-disabled)",
 
   // --- Special ---
   transparent: "transparent",
@@ -170,7 +170,7 @@ const NAMED_COLOR_TO_CSS: Record<string, string> = {
  * CSS 변수명으로 변환
  */
 export function tokenToCSSVar(ref: TokenRef): string {
-  // '{color.accent}' → 'var(--highlight-background)'
+  // '{color.accent}' → 'var(--accent)'
   // '{spacing.md}' → 'var(--spacing-md)'
   const match = ref.match(/^\{(\w+)\.(.+)\}$/);
   if (!match) return ref;

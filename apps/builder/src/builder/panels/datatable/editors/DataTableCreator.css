@@ -15,8 +15,8 @@
   display: flex;
   gap: var(--spacing-lg);
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-bottom: 1px solid var(--border-color);
-  background: var(--field-background);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
   height: var(--header-height);
 }
 
@@ -26,7 +26,7 @@
   gap: var(--spacing-sm);
   cursor: pointer;
   font-size: var(--text-xs);
-  color: var(--text-color);
+  color: var(--fg);
 }
 
 .panel-option input[type="radio"] {
@@ -48,16 +48,16 @@
   gap: var(--spacing-xs);
   font-size: var(--text-sm);
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--fg);
 }
 
 .creator-form-input {
   padding: var(--spacing-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
-  background: var(--overlay-background);
-  color: var(--text-color);
+  background: var(--bg-overlay);
+  color: var(--fg);
 }
 
 .creator-form-input:focus {
@@ -69,7 +69,7 @@
 .creator-form-hint {
   margin-top: var(--spacing-sm);
   font-size: var(--text-xs);
-  color: var(--text-color-placeholder);
+  color: var(--fg-muted);
   line-height: 1.5;
 }
 
@@ -81,8 +81,8 @@
   display: flex;
   gap: 0;
   padding: var(--spacing-2xs) var(--spacing-sm);
-  border-bottom: 1px solid var(--border-color);
-  background: var(--field-background);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
   overflow-x: auto;
 }
 
@@ -95,20 +95,20 @@
   background: transparent;
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
-  color: var(--text-color-placeholder);
+  color: var(--fg-muted);
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 150ms, color 150ms;
 }
 
 .section-tab:hover {
-  background: var(--button-background);
-  color: var(--text-color);
+  background: var(--bg-inset);
+  color: var(--fg);
 }
 
 .section-tab.active {
-  background: var(--highlight-background);
-  color: var(--highlight-foreground);
+  background: var(--accent);
+  color: var(--fg-on-accent);
 }
 
 /* ============================================
@@ -126,14 +126,14 @@
 
 /* Preset Card selected state extension */
 .section[data-section-id="table-creator"] .list-item.selected {
-  border-color: var(--highlight-background-pressed);
-  background: var(--highlight-background);
-  color: var(--highlight-foreground);
+  border-color: var(--accent-pressed);
+  background: var(--accent);
+  color: var(--fg-on-accent);
   box-shadow: var(--shadow-sm);
 }
 
 .section[data-section-id="table-creator"] .list-item.selected .list-item-name {
-  color: var(--highlight-foreground);
+  color: var(--fg-on-accent);
 }
 
 /* ============================================
@@ -141,8 +141,8 @@
    ============================================ */
 
 .section[data-section-id="schema-preview"] {
-  border-top: 1px solid var(--border-color);
-  background: var(--button-background);
+  border-top: 1px solid var(--border);
+  background: var(--bg-inset);
   max-height: 180px;
   display: flex;
   flex-direction: column;
@@ -153,15 +153,15 @@
   align-items: center;
   gap: var(--spacing-xs);
   font-size: var(--text-xs);
-  color: var(--text-color-placeholder);
+  color: var(--fg-muted);
   padding-right: var(--spacing-sm);
 }
 
 .creator-sample-count input {
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   font-size: var(--text-xs);
   text-align: center;
-  background-color: var(--border-color);
+  background-color: var(--border);
   border-radius: var(--radius-sm);
   min-width: 0;
   padding: var(--spacing-2xs);
@@ -170,7 +170,7 @@
 
 .creator-sample-count input:focus {
   outline: none;
-  border-color: var(--focus-ring-color);
+  border-color: var(--focus-ring);
 }
 
 .section[data-section-id="schema-preview"] .section-content {
@@ -188,7 +188,7 @@
   gap: var(--spacing-sm);
   padding: var(--spacing-xs) 0;
   font-size: var(--text-xs);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 }
 
 .creator-schema-field:last-child {
@@ -197,7 +197,7 @@
 
 .schema-field-name {
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--fg);
   font-family: var(--font-mono);
 }
 
@@ -217,7 +217,7 @@
 }
 
 .schema-field-label {
-  color: var(--text-color-placeholder);
+  color: var(--fg-muted);
 }
 
 /* ============================================
@@ -229,6 +229,6 @@
   justify-content: flex-end;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
-  border-top: 1px solid var(--border-color);
-  background: var(--field-background);
+  border-top: 1px solid var(--border);
+  background: var(--bg-raised);
 }

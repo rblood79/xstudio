@@ -27,15 +27,15 @@
     align-items: center;
     gap: var(--spacing-3);
     padding: var(--spacing-3);
-    background: var(--field-background);
-    border: 1px solid var(--border-color);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     transition: all 200ms;
     width: 100%;
   }
 
   .action-card:hover {
-    border-color: var(--highlight-background);
+    border-color: var(--accent);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
   }
 
@@ -45,8 +45,8 @@
   }
 
   .action-card.editing {
-    border-color: var(--highlight-background);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight-background) 12%, transparent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
   }
 
   /* Drag Handle */
@@ -56,14 +56,14 @@
     justify-content: center;
     width: 24px;
     height: 100%;
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     cursor: grab;
     transition: color 200ms;
     flex-shrink: 0;
   }
 
   .action-drag-handle:hover {
-    color: var(--text-color-secondary);
+    color: var(--fg-muted);
   }
 
   .action-drag-handle:active {
@@ -107,18 +107,18 @@
   .action-label {
     font-size: var(--text-sm);
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   .action-index {
     font-size: var(--text-xs);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     font-weight: 500;
   }
 
   .action-config-summary {
     font-size: var(--text-xs);
-    color: var(--text-color-secondary);
+    color: var(--fg-muted);
     line-height: 1.4;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -135,7 +135,7 @@
   .action-control-button {
     padding: var(--spacing-1) var(--spacing-2);
     background: transparent;
-    border: 1px solid var(--border-color-hover);
+    border: 1px solid var(--border-hover);
     border-radius: var(--radius-sm);
     font-size: var(--text-sm);
     cursor: pointer;
@@ -144,13 +144,13 @@
   }
 
   .action-control-button:hover {
-    background: var(--overlay-background);
-    border-color: var(--text-color-placeholder);
+    background: var(--bg-overlay);
+    border-color: var(--fg-muted);
   }
 
   .action-delete-button:hover {
     background: var(--color-error-100);
-    border-color: var(--invalid-color);
+    border-color: var(--negative);
   }
 
   /* Inline Action Editor */
@@ -159,8 +159,8 @@
     flex-direction: column;
     gap: var(--spacing-3);
     padding: var(--spacing-4);
-    background: var(--button-background);
-    border: 1px solid var(--highlight-background);
+    background: var(--bg-inset);
+    border: 1px solid var(--accent);
     border-radius: var(--radius-md);
     width: 100%;
   }
@@ -170,7 +170,7 @@
     align-items: center;
     justify-content: space-between;
     padding-bottom: var(--spacing-2);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border);
   }
 
   .editor-title {
@@ -186,7 +186,7 @@
   .editor-label {
     font-size: var(--text-base);
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   /* Editor Fields */
@@ -205,11 +205,11 @@
   .field-label {
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   .required-indicator {
-    color: var(--invalid-color);
+    color: var(--negative);
     margin-left: 2px;
   }
 
@@ -221,19 +221,19 @@
   .editor-field .react-aria-TextField textarea {
     width: 100%;
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--field-background);
-    border: 1px solid var(--border-color);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--fg);
     transition: all 200ms;
   }
 
   .editor-field .react-aria-TextField input:focus,
   .editor-field .react-aria-TextField textarea:focus {
     outline: none;
-    border-color: var(--highlight-background);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight-background) 12%, transparent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
   }
 
   .editor-field .react-aria-TextField textarea {
@@ -244,26 +244,26 @@
   .field-select {
     width: 100%;
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--field-background);
-    border: 1px solid var(--border-color);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--fg);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .field-select:focus {
     outline: none;
-    border-color: var(--highlight-background);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--highlight-background) 12%, transparent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
   }
 
   .no-config-message {
     padding: var(--spacing-4);
     text-align: center;
     font-size: var(--text-sm);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
   }
 
   /* Editor Actions */
@@ -272,41 +272,41 @@
     gap: var(--spacing-2);
     justify-content: flex-end;
     padding-top: var(--spacing-2);
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border);
   }
 
   .editor-cancel-button {
     padding: var(--spacing-2) var(--spacing-4);
-    background: var(--field-background);
-    border: 1px solid var(--border-color-hover);
+    background: var(--bg-raised);
+    border: 1px solid var(--border-hover);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--text-color);
+    color: var(--fg);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .editor-cancel-button:hover {
-    background: var(--overlay-background);
-    border-color: var(--text-color-placeholder);
+    background: var(--bg-overlay);
+    border-color: var(--fg-muted);
   }
 
   .editor-save-button {
     padding: var(--spacing-2) var(--spacing-4);
-    background: var(--highlight-background);
-    border: 1px solid var(--highlight-background);
+    background: var(--accent);
+    border: 1px solid var(--accent);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 600;
-    color: var(--highlight-foreground);
+    color: var(--fg-on-accent);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .editor-save-button:hover {
-    background: color-mix(in srgb, var(--highlight-background) 85%, black);
-    border-color: color-mix(in srgb, var(--highlight-background) 85%, black);
+    background: color-mix(in srgb, var(--accent) 85%, black);
+    border-color: color-mix(in srgb, var(--accent) 85%, black);
   }
 
   /* Empty State */
@@ -318,8 +318,8 @@
     gap: var(--spacing-3);
     padding: var(--spacing-8) var(--spacing-4);
     text-align: center;
-    background: var(--button-background);
-    border: 1px dashed var(--border-color);
+    background: var(--bg-inset);
+    border: 1px dashed var(--border);
     border-radius: var(--radius-md);
   }
 
@@ -330,7 +330,7 @@
 
   .empty-message {
     font-size: var(--text-sm);
-    color: var(--text-color-secondary);
+    color: var(--fg-muted);
     margin: 0;
   }
 
@@ -339,7 +339,7 @@
     width: 100%;
     padding: var(--spacing-3);
     background: var(--color-primary-100);
-    border: 1px dashed var(--highlight-background);
+    border: 1px dashed var(--accent);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 600;
@@ -350,7 +350,7 @@
 
   .add-action-button:hover {
     background: color-mix(in srgb, var(--color-primary-100) 92%, black);
-    border-color: var(--highlight-background);
+    border-color: var(--accent);
     border-style: solid;
   }
 

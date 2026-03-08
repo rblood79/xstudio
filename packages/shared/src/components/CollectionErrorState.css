@@ -13,9 +13,9 @@
   gap: var(--spacing-sm);
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
-  background: var(--field-background);
-  border: 1px solid var(--border-color);
-  color: var(--text-color-placeholder);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
   min-height: 80px;
 }
 
@@ -41,7 +41,7 @@
 
 /* 로딩 상태 */
 .collection-loading {
-  background: var(--button-background);
+  background: var(--bg-inset);
 }
 
 .collection-state-spinner {
@@ -59,7 +59,7 @@
 }
 
 .collection-state-text {
-  color: var(--text-color-placeholder);
+  color: var(--fg-muted);
 }
 
 /* 에러 상태 */
@@ -113,7 +113,7 @@
 
 /* 빈 상태 */
 .collection-empty {
-  background: var(--field-background);
+  background: var(--bg-raised);
   border-style: dashed;
 }
 

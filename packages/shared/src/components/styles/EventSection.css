@@ -12,37 +12,37 @@
     align-items: center;
     justify-content: space-between;
     padding-bottom: var(--spacing-2);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border);
   }
 
   .section-subtitle {
     font-size: var(--text-base);
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--fg);
     margin: 0;
   }
 
   .add-event-button-header {
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--highlight-background);
-    border: 1px solid var(--highlight-background);
+    background: var(--accent);
+    border: 1px solid var(--accent);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 600;
-    color: var(--highlight-foreground);
+    color: var(--fg-on-accent);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .add-event-button-header:hover {
-    background: color-mix(in srgb, var(--highlight-background) 85%, black);
-    border-color: color-mix(in srgb, var(--highlight-background) 85%, black);
+    background: color-mix(in srgb, var(--accent) 85%, black);
+    border-color: color-mix(in srgb, var(--accent) 85%, black);
   }
 
   /* Add Event Container */
   .add-event-container {
-    background: var(--button-background);
-    border: 1px solid var(--border-color);
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: var(--spacing-4);
   }
@@ -56,8 +56,8 @@
     gap: var(--spacing-2);
     padding: var(--spacing-8) var(--spacing-4);
     text-align: center;
-    background: var(--button-background);
-    border: 2px dashed var(--border-color);
+    background: var(--bg-inset);
+    border: 2px dashed var(--border);
     border-radius: var(--radius-md);
   }
 
@@ -69,13 +69,13 @@
   .event-section .empty-message {
     font-size: var(--text-base);
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--fg);
     margin: 0;
   }
 
   .event-section .empty-hint {
     font-size: var(--text-sm);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     margin: 0;
   }
 
@@ -92,15 +92,15 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing);
-    background: var(--field-background);
-    border: 1px solid var(--border-color);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .handler-item:hover {
-    border-color: var(--highlight-background);
+    border-color: var(--accent);
     transform: translateX(0px);
   }
 
@@ -112,23 +112,23 @@
 
   .handler-type {
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   .handler-action-count {
     font-size: var(--text-xs);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
   }
 
   .handler-arrow {
     font-size: var(--text-lg);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     transition: transform 200ms;
   }
 
   .handler-item:hover .handler-arrow {
     transform: translateX(4px);
-    color: var(--highlight-background);
+    color: var(--accent);
   }
 
   /* Selected Handler Container */
@@ -143,8 +143,8 @@
     align-items: center;
     gap: var(--gap);
     padding: var(--spacing);
-    background: var(--button-background);
-    border: 1px solid var(--border-color);
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
 
     .react-aria-Button {
@@ -154,42 +154,42 @@
 
   .back-button {
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--field-background);
-    border: 1px solid var(--border-color-hover);
+    background: var(--bg-raised);
+    border: 1px solid var(--border-hover);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--text-color);
+    color: var(--fg);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .back-button:hover {
-    background: var(--overlay-background);
-    border-color: var(--text-color-placeholder);
+    background: var(--bg-overlay);
+    border-color: var(--fg-muted);
   }
 
   .selected-handler-type {
     flex: 1;
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   .remove-handler-button {
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--field-background);
-    border: 1px solid var(--invalid-color);
+    background: var(--bg-raised);
+    border: 1px solid var(--negative);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--invalid-color);
+    color: var(--negative);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .remove-handler-button:hover {
     background: var(--color-error-100);
-    border-color: var(--invalid-color);
+    border-color: var(--negative);
   }
 
   /* Responsive adjustments */

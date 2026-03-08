@@ -14,7 +14,7 @@
 
   .gradient-controls__label {
     font-size: var(--text-xs);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     white-space: nowrap;
   }
 
@@ -23,16 +23,16 @@
     padding: 2px 4px;
     font-size: var(--text-xs);
     font-family: var(--font-mono);
-    background: var(--overlay-background);
-    border: 1px solid var(--border-color);
+    background: var(--bg-overlay);
+    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    color: var(--text-color);
+    color: var(--fg);
     text-align: center;
 
     &:focus {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--accent);
       outline-offset: -2px;
-      border-color: var(--highlight-background);
+      border-color: var(--accent);
     }
   }
 
@@ -48,22 +48,22 @@
     padding: 2px 4px;
     font-size: var(--text-xs);
     font-family: var(--font-mono);
-    background: var(--overlay-background);
-    border: 1px solid var(--border-color);
+    background: var(--bg-overlay);
+    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    color: var(--text-color);
+    color: var(--fg);
     text-align: center;
 
     &:focus {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--accent);
       outline-offset: -2px;
-      border-color: var(--highlight-background);
+      border-color: var(--accent);
     }
   }
 
   .gradient-controls__suffix {
     font-size: var(--text-xs);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     flex-shrink: 0;
   }
 

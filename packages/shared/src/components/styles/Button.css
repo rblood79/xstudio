@@ -10,9 +10,9 @@
     border: 1px solid;
 
     /* Default variant: primary */
-    --button-color: var(--text-color);
-    --button-text: var(--background-color);
-    --button-border: var(--text-color);
+    --button-color: var(--fg);
+    --button-text: var(--bg);
+    --button-border: var(--fg);
 
     /* Default sizing (md) */
     border-radius: var(--radius-md);
@@ -27,27 +27,27 @@
     /* ===== S2 Color Variants ===== */
 
     &[data-variant="accent"] {
-      --button-color: var(--highlight-background);
-      --button-text: var(--highlight-foreground);
-      --button-border: var(--highlight-background);
+      --button-color: var(--accent);
+      --button-text: var(--fg-on-accent);
+      --button-border: var(--accent);
     }
 
     &[data-variant="primary"] {
-      --button-color: var(--text-color);
-      --button-text: var(--background-color);
-      --button-border: var(--text-color);
+      --button-color: var(--fg);
+      --button-text: var(--bg);
+      --button-border: var(--fg);
     }
 
     &[data-variant="secondary"] {
-      --button-color: var(--overlay-background);
-      --button-text: var(--text-color);
-      --button-border: var(--border-color);
+      --button-color: var(--bg-overlay);
+      --button-text: var(--fg);
+      --button-border: var(--border);
     }
 
     &[data-variant="negative"] {
-      --button-color: var(--invalid-color);
+      --button-color: var(--negative);
       --button-text: var(--color-white);
-      --button-border: var(--invalid-color);
+      --button-border: var(--negative);
     }
 
     &[data-variant="premium"] {
@@ -72,19 +72,19 @@
 
     &[data-fill-style="outline"] {
       --button-color: transparent;
-      --button-border: var(--border-color-hover);
+      --button-border: var(--border-hover);
     }
 
     &[data-variant="accent"][data-fill-style="outline"] {
-      --button-text: var(--highlight-background);
+      --button-text: var(--accent);
     }
 
     &[data-variant="primary"][data-fill-style="outline"] {
-      --button-text: var(--text-color);
+      --button-text: var(--fg);
     }
 
     &[data-variant="negative"][data-fill-style="outline"] {
-      --button-text: var(--invalid-color);
+      --button-text: var(--negative);
     }
 
     &[data-variant="premium"][data-fill-style="outline"] {

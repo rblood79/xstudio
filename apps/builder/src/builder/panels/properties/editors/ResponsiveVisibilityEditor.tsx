@@ -170,8 +170,8 @@ export const ResponsiveVisibilityEditor = memo(
           align-items: center;
           gap: var(--spacing-sm);
           padding: var(--spacing-sm) var(--spacing-md);
-          background: var(--field-background);
-          border: 1px solid var(--border-color);
+          background: var(--bg-raised);
+          border: 1px solid var(--border);
           border-radius: var(--radius-sm);
           cursor: pointer;
           transition: all 0.2s ease;
@@ -179,7 +179,7 @@ export const ResponsiveVisibilityEditor = memo(
         }
 
         .responsive-visibility-btn:hover:not(:disabled) {
-          background: var(--overlay-background);
+          background: var(--bg-overlay);
         }
 
         .responsive-visibility-btn.visible {
@@ -211,8 +211,8 @@ export const ResponsiveVisibilityEditor = memo(
         .responsive-visibility-action {
           flex: 1;
           padding: var(--spacing-xs) var(--spacing-sm);
-          background: var(--field-background);
-          border: 1px solid var(--border-color);
+          background: var(--bg-raised);
+          border: 1px solid var(--border);
           border-radius: var(--radius-sm);
           cursor: pointer;
           font-size: var(--text-2xs);
@@ -220,7 +220,7 @@ export const ResponsiveVisibilityEditor = memo(
         }
 
         .responsive-visibility-action:hover:not(:disabled) {
-          background: var(--overlay-background);
+          background: var(--bg-overlay);
         }
 
         .responsive-visibility-action:disabled {

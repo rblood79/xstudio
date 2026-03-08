@@ -26,7 +26,7 @@
 
   .react-aria-Separator {
     align-self: stretch;
-    background-color: var(--border-color);
+    background-color: var(--border);
 
     &[aria-orientation=vertical] {
       width: 1px;

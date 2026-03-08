@@ -19,8 +19,8 @@
     white-space: nowrap;
     border-radius: var(--radius-md);
     transition: all 200ms;
-    background: var(--highlight-overlay);
-    color: var(--text-color);
+    background: var(--accent-subtle);
+    color: var(--fg);
     border: 1px solid transparent;
   }
 
@@ -31,8 +31,8 @@
       [data-fill-style="outline"]
     ),
   .react-aria-Badge[data-variant="accent"][data-fill-style="bold"] {
-    background: var(--highlight-background);
-    color: var(--highlight-foreground);
+    background: var(--accent);
+    color: var(--fg-on-accent);
   }
 
   .react-aria-Badge[data-variant="accent"][data-fill-style="subtle"] {
@@ -40,17 +40,17 @@
       --color-primary-100,
       var(
         --color-tint-100,
-        color-mix(in srgb, var(--highlight-background) 15%, white)
+        color-mix(in srgb, var(--accent) 15%, white)
       )
     );
-    color: var(--highlight-background);
+    color: var(--accent);
     border-color: transparent;
   }
 
   .react-aria-Badge[data-variant="accent"][data-fill-style="outline"] {
     background: transparent;
-    color: var(--highlight-background);
-    border-color: var(--highlight-background);
+    color: var(--accent);
+    border-color: var(--accent);
   }
 
   /* ===== Informative Variant ===== */
@@ -79,20 +79,20 @@
       [data-fill-style="outline"]
     ),
   .react-aria-Badge[data-variant="neutral"][data-fill-style="bold"] {
-    background: var(--text-color);
+    background: var(--fg);
     color: var(--color-white);
   }
 
   .react-aria-Badge[data-variant="neutral"][data-fill-style="subtle"] {
-    background: var(--highlight-overlay);
-    color: var(--text-color);
+    background: var(--accent-subtle);
+    color: var(--fg);
     border-color: transparent;
   }
 
   .react-aria-Badge[data-variant="neutral"][data-fill-style="outline"] {
     background: transparent;
-    color: var(--text-color);
-    border-color: var(--text-color);
+    color: var(--fg);
+    border-color: var(--fg);
   }
 
   /* ===== Positive Variant ===== */
@@ -142,20 +142,20 @@
       [data-fill-style="subtle"]
     ):not([data-fill-style="outline"]),
   .react-aria-Badge[data-variant="negative"][data-fill-style="bold"] {
-    background: var(--invalid-color);
+    background: var(--negative);
     color: var(--color-white);
   }
 
   .react-aria-Badge[data-variant="negative"][data-fill-style="subtle"] {
     background: var(--color-error-100);
-    color: var(--invalid-color);
+    color: var(--negative);
     border-color: transparent;
   }
 
   .react-aria-Badge[data-variant="negative"][data-fill-style="outline"] {
     background: transparent;
-    color: var(--invalid-color);
-    border-color: var(--invalid-color);
+    color: var(--negative);
+    border-color: var(--negative);
   }
 
   /* ========== Named Color Variants (S2) ========== */
@@ -169,7 +169,7 @@
   }
 
   .react-aria-Badge[data-variant="gray"][data-fill-style="subtle"] {
-    background: var(--highlight-overlay);
+    background: var(--accent-subtle);
     color: var(--color-neutral-700);
   }
 

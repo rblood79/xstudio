@@ -34,7 +34,7 @@
   }
 
   .react-aria-ColorThumb {
-    border: 4px solid var(--field-background);
+    border: 4px solid var(--bg-raised);
     box-shadow: var(--shadow-sm);
     width: 16px;
     height: 16px;

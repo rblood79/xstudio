@@ -91,7 +91,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   states: {
     hover: {},
     focusVisible: {
-      outline: '2px solid var(--highlight-background)',
+      outline: '2px solid var(--accent)',
       outlineOffset: '-2px',
     },
   },

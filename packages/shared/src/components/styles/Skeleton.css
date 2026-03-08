@@ -14,8 +14,8 @@
 
   .react-aria-Skeleton,
   .react-aria-Skeleton-group {
-    --skeleton-bg: var(--field-background);
-    --skeleton-highlight: var(--highlight-overlay);
+    --skeleton-bg: var(--bg-raised);
+    --skeleton-highlight: var(--accent-subtle);
     --skeleton-border-radius: var(--radius-sm);
     --skeleton-animation-duration: 1.5s;
     --skeleton-animation-timing: ease-in-out;
@@ -249,7 +249,7 @@
     height: var(--skeleton-height, 40px);
     background: var(--skeleton-bg);
     border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
   }
 
   /* Apply shimmer to inner elements */
@@ -495,7 +495,7 @@
     display: flex;
     gap: var(--spacing-md);
     padding: var(--spacing) var(--spacing-md);
-    border-bottom: 1px solid var(--border-color-light);
+    border-bottom: 1px solid var(--border);
   }
 
   .react-aria-Skeleton.table-row .skeleton-cell {
@@ -573,7 +573,7 @@
     gap: var(--spacing-md);
     padding: var(--spacing-lg);
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color-light);
+    border: 1px solid var(--border);
   }
 
   .react-aria-Skeleton.card .skeleton-header {
@@ -625,7 +625,7 @@
     display: flex;
     flex-direction: column;
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color-light);
+    border: 1px solid var(--border);
     overflow: hidden;
   }
 
@@ -675,7 +675,7 @@
     display: flex;
     flex-direction: row;
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color-light);
+    border: 1px solid var(--border);
     overflow: hidden;
   }
 
@@ -741,7 +741,7 @@
   .react-aria-Skeleton.tabs .skeleton-tab-list {
     display: flex;
     gap: var(--spacing-sm);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border);
     padding-bottom: var(--spacing-sm);
   }
 
@@ -1172,8 +1172,8 @@
 
   [data-theme="dark"] .react-aria-Skeleton,
   [data-theme="dark"] .react-aria-Skeleton-group {
-    --skeleton-bg: var(--overlay-background);
-    --skeleton-highlight: var(--highlight-overlay);
+    --skeleton-bg: var(--bg-overlay);
+    --skeleton-highlight: var(--accent-subtle);
   }
 
   /* ========================================================================

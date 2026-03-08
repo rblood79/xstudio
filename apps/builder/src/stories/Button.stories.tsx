@@ -78,7 +78,7 @@ export const AllVariants: Story = {
             style={{
               width: 80,
               fontSize: 12,
-              color: "var(--text-color)",
+              color: "var(--fg)",
             }}
           >
             {variant}
@@ -106,7 +106,7 @@ export const AllVariantsDisabled: Story = {
             style={{
               width: 80,
               fontSize: 12,
-              color: "var(--text-color)",
+              color: "var(--fg)",
             }}
           >
             {variant}

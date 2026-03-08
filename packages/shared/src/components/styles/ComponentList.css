@@ -11,15 +11,15 @@
     }
 
     .category-icon-small {
-      color: var(--highlight-background);
+      color: var(--accent);
       flex-shrink: 0;
     }
 
     .category-count {
       font-size: var(--text-xs);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
       padding: var(--spacing-2xs);
-      background: var(--button-background);
+      background: var(--bg-inset);
       border-radius: var(--radius-sm);
       box-shadow: var(--inset-shadow-sm);
       min-width: var(--text-2xl);
@@ -49,10 +49,10 @@
       gap: var(--gap);
       padding: var(--spacing-xs);
       font-size: var(--text-xs);
-      background-color: var(--background-color);
-      border: 1px solid var(--border-color);
+      background-color: var(--bg);
+      border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      color: var(--text-color);
+      color: var(--fg);
       transition: all 0.2s ease;
       cursor: pointer;
       aspect-ratio: 1 / 1;
@@ -60,8 +60,8 @@
       .list-item-icon {
         position: relative;
         border: none;
-        border: 1px solid var(--border-color);
-        background: var(--button-background);
+        border: 1px solid var(--border);
+        background: var(--bg-inset);
         padding: var(--spacing-sm);
         cursor: pointer;
         z-index: 1;
@@ -69,7 +69,7 @@
         align-items: center;
         justify-content: center;
         transition: all 0.2s ease;
-        stroke: var(--text-color-placeholder);
+        stroke: var(--fg-muted);
         border-radius: var(--spacing-sm);
       }
 
@@ -82,7 +82,7 @@
         white-space: nowrap;
         padding: 0 var(--spacing-2xs);
         text-align: center;
-        color: var(--highlight-background);
+        color: var(--accent);
       }
 
       .react-aria-Badge {
@@ -90,7 +90,7 @@
         top: 0;
         right: 0;
         translate: 33% -33%;
-        background-color: var(--invalid-color);
+        background-color: var(--negative);
         color: var(--color-white);
         border-radius: 48px;
         font-size: var(--text-xs);
@@ -106,9 +106,9 @@
       }
 
       &:hover {
-        border-color: color-mix(in srgb, var(--highlight-background) 85%, black);
+        border-color: color-mix(in srgb, var(--accent) 85%, black);
         background-color: var(--color-primary-100);
-        color: var(--text-color-hover);
+        color: var(--fg-emphasis);
       }
     }
 
@@ -126,13 +126,13 @@
       margin: 0;
       font-size: var(--text-sm);
       font-weight: 500;
-      color: var(--text-color);
+      color: var(--fg);
     }
 
     .no-results-hint {
       margin: 0;
       font-size: var(--text-xs);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
   }
 }

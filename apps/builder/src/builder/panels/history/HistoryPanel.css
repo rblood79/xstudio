@@ -17,8 +17,8 @@
 
   .history-count {
     font-size: var(--text-xs);
-    color: var(--text-color-placeholder);
-    background: var(--border-color-hover);
+    color: var(--fg-muted);
+    background: var(--border-hover);
     padding: var(--spacing-2xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
   }
@@ -30,15 +30,15 @@
   }
 
   .history-item {
-    border: 1px solid var(--border-color-hover);
+    border: 1px solid var(--border-hover);
     border-radius: var(--radius-sm);
     background: transparent;
     transition: all 150ms;
   }
 
   .history-item[data-active="true"] {
-    border-color: var(--highlight-background);
-    background: var(--field-background);
+    border-color: var(--accent);
+    background: var(--bg-raised);
     box-shadow: var(--shadow-sm);
   }
 
@@ -65,7 +65,7 @@
   .history-label {
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   .history-meta {
@@ -73,12 +73,12 @@
     align-items: center;
     gap: var(--spacing-2xs);
     font-size: var(--text-xs);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
   }
 
   .history-index {
     font-size: var(--text-xs);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     font-variant-numeric: tabular-nums;
   }
 }

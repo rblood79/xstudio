@@ -143,7 +143,7 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
                     </div>
                 </div>
 
-                <p style={{ fontSize: '12px', color: 'var(--text-color-secondary)', marginTop: '8px' }}>
+                <p style={{ fontSize: '12px', color: 'var(--fg-muted)', marginTop: '8px' }}>
                     💡 Variant and size are controlled by the parent TagGroup
                 </p>
             </>
@@ -262,7 +262,7 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
                 </div>
             </div>
 
-            <p style={{ fontSize: '12px', color: 'var(--text-color-secondary)', marginTop: '8px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--fg-muted)', marginTop: '8px' }}>
                 💡 Variant and size are controlled by the parent TagGroup
             </p>
         </>

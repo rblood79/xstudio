@@ -6,13 +6,13 @@
     padding: var(--spacing);
     min-width: 150px;
     outline: none;
-    background: var(--field-background);
+    background: var(--bg-raised);
     border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
+    border: 1px solid var(--border);
+    color: var(--fg);
 
     /* 기본 variant 변수 */
-    --menu-accent: var(--border-color);
+    --menu-accent: var(--border);
     --menu-focused-bg: var(--color-primary-100);
     --menu-focused-color: var(--color-primary-900);
   }
@@ -24,7 +24,7 @@
     border-radius: var(--radius-xs);
     outline: none;
     cursor: default;
-    color: var(--text-color);
+    color: var(--fg);
     font-size: var(--text-base);
     position: relative;
     display: grid;
@@ -42,7 +42,7 @@
     }
 
     &[data-disabled] {
-      color: color-mix(in srgb, var(--text-color) 38%, transparent);
+      color: color-mix(in srgb, var(--fg) 38%, transparent);
       cursor: not-allowed;
       opacity: 0.38;
     }
@@ -63,7 +63,7 @@
         position: absolute;
         left: var(--spacing);
         font-weight: 600;
-        color: var(--highlight-background);
+        color: var(--accent);
       }
 
       &[data-selection-mode="multiple"][data-selected]::before {
@@ -89,14 +89,14 @@
     .react-aria-Header {
       font-size: var(--text-sm);
       font-weight: 700;
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
       padding: 0 var(--spacing-sm);
       margin-bottom: var(--spacing-xs);
     }
 
     .react-aria-Separator {
       height: 1px;
-      background: var(--border-color);
+      background: var(--border);
       margin: var(--spacing) var(--spacing-sm);
     }
   }
@@ -106,13 +106,13 @@
     [slot="label"] {
       font-weight: 600;
       grid-area: label;
-      color: var(--text-color);
+      color: var(--fg);
     }
 
     [slot="description"] {
       font-size: var(--text-xs);
       grid-area: desc;
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
 
     kbd {
@@ -120,10 +120,10 @@
       font-family: var(--font-mono);
       font-size: var(--text-xs);
       text-align: end;
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
       padding: 2px 6px;
       border-radius: var(--radius-xs);
-      background: color-mix(in srgb, var(--text-color) 8%, transparent);
+      background: color-mix(in srgb, var(--fg) 8%, transparent);
     }
 
     &[data-focused] {
@@ -150,7 +150,7 @@
     gap: var(--spacing-md);
     grid-area: label;
     width: 100%;
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   .menu-item-icon {
@@ -168,15 +168,15 @@
     font-size: var(--text-xs);
     padding: 2px 6px;
     border-radius: var(--radius-xs);
-    background: color-mix(in srgb, var(--text-color) 8%, transparent);
-    color: var(--text-color-placeholder);
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+    color: var(--fg-muted);
     margin-left: auto;
   }
 
   .menu-item-description {
     grid-area: desc;
     font-size: var(--text-xs);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
   }
 
   .react-aria-MenuItem[data-focused] {
@@ -203,7 +203,7 @@
     stroke-linecap: round;
     stroke-linejoin: round;
     margin-left: var(--spacing-md);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
   }
 
   .react-aria-MenuItem[data-focused] .chevron {
@@ -254,14 +254,14 @@
 
   /* ========== Color Variants ========== */
   .react-aria-Menu[data-variant="primary"] {
-    --menu-accent: var(--highlight-background);
+    --menu-accent: var(--accent);
     --menu-focused-bg: var(--color-primary-100);
     --menu-focused-color: var(--color-primary-900);
   }
 
   .react-aria-Menu[data-variant="secondary"] {
-    --menu-accent: var(--button-background);
-    --menu-focused-bg: var(--button-background);
+    --menu-accent: var(--bg-inset);
+    --menu-focused-bg: var(--bg-inset);
     --menu-focused-color: var(--color-neutral-900);
   }
 
@@ -272,7 +272,7 @@
   }
 
   .react-aria-Menu[data-variant="error"] {
-    --menu-accent: var(--invalid-color);
+    --menu-accent: var(--negative);
     --menu-focused-bg: var(--color-error-100);
     --menu-focused-color: var(--color-error-900);
   }
@@ -302,12 +302,12 @@
 
   /* ===== Filled Variant ===== */
   .react-aria-Menu[data-variant="filled"] {
-    background: var(--highlight-overlay);
+    background: var(--accent-subtle);
     border-color: transparent;
 
     .react-aria-MenuItem {
       &[data-focused] {
-        background: var(--overlay-background);
+        background: var(--bg-overlay);
       }
     }
   }

@@ -92,7 +92,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       pointerEvents: 'none',
     },
     focusVisible: {
-      outline: '2px solid var(--highlight-background)',
+      outline: '2px solid var(--accent)',
       outlineOffset: '2px',
     },
   },

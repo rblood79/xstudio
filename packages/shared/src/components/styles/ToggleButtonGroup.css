@@ -3,7 +3,7 @@
     display: flex;
 
     &:focus-within {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--focus-ring);
       outline-offset: 2px;
       border-radius: var(--radius-lg);
     }
@@ -30,8 +30,8 @@
 
     &[data-indicator="true"] {
       /* Local color variable — variant overrides only this */
-      --indicator-bg: var(--overlay-background);
-      --indicator-text: var(--highlight-foreground);
+      --indicator-bg: var(--bg-overlay);
+      --indicator-text: var(--fg-on-accent);
 
       .react-aria-ToggleButton .react-aria-SelectionIndicator {
         position: absolute;
@@ -55,13 +55,13 @@
       &[data-togglebutton-variant="primary"]
         .react-aria-ToggleButton
         .react-aria-SelectionIndicator {
-        background: var(--highlight-background);
+        background: var(--accent);
       }
 
       &[data-togglebutton-variant="secondary"]
         .react-aria-ToggleButton
         .react-aria-SelectionIndicator {
-        background: var(--button-background);
+        background: var(--bg-inset);
       }
 
       &[data-togglebutton-variant="tertiary"]
@@ -73,13 +73,13 @@
       &[data-togglebutton-variant="error"]
         .react-aria-ToggleButton
         .react-aria-SelectionIndicator {
-        background: var(--invalid-color);
+        background: var(--negative);
       }
 
       &[data-togglebutton-variant="surface"]
         .react-aria-ToggleButton
         .react-aria-SelectionIndicator {
-        background: var(--highlight-overlay);
+        background: var(--accent-subtle);
       }
 
       .react-aria-ToggleButton {
@@ -89,7 +89,7 @@
 
         &[data-pressed] {
           background: transparent;
-          color: var(--text-color);
+          color: var(--fg);
         }
 
         &[data-selected] {
@@ -98,7 +98,7 @@
 
           &[data-pressed] {
             background: transparent;
-            color: var(--text-color);
+            color: var(--fg);
           }
         }
       }
@@ -115,7 +115,7 @@
 
       &[data-togglebutton-variant="surface"]
         .react-aria-ToggleButton[data-selected] {
-        color: var(--text-color);
+        color: var(--fg);
       }
     }
   }

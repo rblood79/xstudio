@@ -47,17 +47,17 @@
     /* Visual indication in builder mode (when element has data-element-id) */
     &[data-element-id] {
       /* Subtle border to indicate grouping boundary in builder */
-      outline: 1px dashed var(--border-color);
+      outline: 1px dashed var(--border);
       outline-offset: 2px;
 
       /* Hover state in builder */
       &:hover {
-        outline-color: var(--highlight-background);
+        outline-color: var(--accent);
       }
 
       /* Focus within in builder */
       &[data-focus-within] {
-        outline-color: var(--highlight-background);
+        outline-color: var(--accent);
         outline-width: 2px;
       }
     }
@@ -69,11 +69,11 @@
       top: -20px;
       left: 0;
       font-size: var(--text-2xs);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
       background: var(--color-white);
       padding: 2px 6px;
       border-radius: var(--radius-xs);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border);
       pointer-events: none;
       z-index: 1;
     }

@@ -56,13 +56,13 @@
 
     .section-overview-help {
       font-size: var(--text-xs);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
       padding: var(--spacing-sm);
-      background: var(--field-background);
+      background: var(--bg-raised);
       border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border);
       box-shadow: var(--inset-shadow-sm);
-      outline: 1px solid var(--border-color);
+      outline: 1px solid var(--border);
       outline-offset: -1px;
     }
 
@@ -70,8 +70,8 @@
     .section-header {
       height: var(--header-height);
 
-      background-color: var(--field-background);
-      border-bottom: 1px solid var(--border-color);
+      background-color: var(--bg-raised);
+      border-bottom: 1px solid var(--border);
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -87,14 +87,14 @@
       font-weight: var(--font-weight-semibold);
       font-size: var(--text-xs);
       line-height: var(--text-xs--line-height);
-      color: var(--text-color);
+      color: var(--fg);
     }
 
     .section-header .section-icon {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
 
     .section-header .section-actions {
@@ -106,7 +106,7 @@
     }
 
     .section-content {
-      background-color: var(--button-background);
+      background-color: var(--bg-inset);
       padding: var(--spacing-sm);
 
       gap: var(--spacing-sm);
@@ -116,7 +116,7 @@
         display: flex;
 
         .react-aria-Button {
-          background-color: var(--field-background);
+          background-color: var(--bg-raised);
           border-color: transparent;
           padding: var(--spacing);
           height: var(--inspector-control-size);
@@ -135,7 +135,7 @@
       display: flex;
       flex-direction: column;
       gap: var(--spacing-sm);
-      background: var(--button-background);
+      background: var(--bg-inset);
 
       .properties-aria {
         flex: 1;
@@ -158,7 +158,7 @@
       .fieldset-legend {
         grid-area: label;
         font-size: var(--text-2xs);
-        color: var(--text-color-placeholder);
+        color: var(--fg-muted);
       }
 
       .layout-direction {
@@ -193,7 +193,7 @@
               .alignment-dot {
                 width: var(--spacing);
                 height: var(--spacing);
-                background-color: var(--border-color-hover);
+                background-color: var(--border-hover);
               }
             }
           }
@@ -214,14 +214,14 @@
         display: flex;
         flex-direction: column;
         gap: var(--spacing-sm);
-        background: var(--field-background);
+        background: var(--bg-raised);
         border-radius: var(--radius-sm);
       }
 
       .page-layout-description {
         margin: 0;
         font-size: var(--text-xs);
-        color: var(--text-color-placeholder);
+        color: var(--fg-muted);
         line-height: 1.4;
       }
 
@@ -231,21 +231,21 @@
         gap: var(--spacing-xs);
         padding: var(--spacing-xs);
         background: transparent;
-        border: 1px solid var(--border-color-hover);
+        border: 1px solid var(--border-hover);
         border-radius: var(--radius-sm);
         font-size: var(--text-xs);
-        color: var(--text-color-placeholder);
+        color: var(--fg-muted);
         cursor: pointer;
         transition: all 150ms;
 
         &:hover {
           background: var(--color-error-100);
-          border-color: var(--invalid-color);
+          border-color: var(--negative);
           color: var(--color-error-900);
         }
 
         &:active {
-          background: var(--invalid-color);
+          background: var(--negative);
           color: var(--color-white);
         }
       }
@@ -253,37 +253,37 @@
 
     .loading-message,
     .empty-message {
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
       font-size: var(--font-size-sm);
     }
 
     .section-placeholder {
       padding: var(--spacing-4);
-      background: var(--warning-container);
-      border: 1px solid var(--warning-container);
+      background: var(--notice-subtle);
+      border: 1px solid var(--notice-subtle);
       border-radius: var(--radius-md);
-      color: var(--on-warning-container);
+      color: var(--fg-on-notice);
       font-size: var(--font-size-sm);
       margin-bottom: var(--spacing-4);
     }
 
     .section-info {
       padding: var(--spacing-4);
-      background: var(--overlay-background);
-      border: 1px solid var(--border-color-hover);
+      background: var(--bg-overlay);
+      border: 1px solid var(--border-hover);
       border-radius: var(--radius-md);
 
       h4 {
         margin: 0 0 var(--spacing-2) 0;
         font-size: var(--font-size-sm);
         font-weight: var(--font-weight-semibold);
-        color: var(--text-color);
+        color: var(--fg);
       }
 
       pre {
         margin: 0;
         padding: var(--spacing-2);
-        background: var(--field-background);
+        background: var(--bg-raised);
         border-radius: var(--radius-sm);
         font-size: var(--font-size-xs);
         font-family: var(--font-mono);
@@ -294,7 +294,7 @@
         margin: 0;
         padding-left: var(--spacing-4);
         font-size: var(--font-size-sm);
-        color: var(--text-color-placeholder);
+        color: var(--fg-muted);
       }
     }
   }

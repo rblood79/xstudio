@@ -2,11 +2,11 @@
   .react-aria-ColorField {
     display: flex;
     flex-direction: column;
-    color: var(--text-color);
+    color: var(--fg);
 
     /* Accent locals */
-    --field-accent: var(--highlight-background);
-    --field-accent-bg: var(--field-background);
+    --field-accent: var(--accent);
+    --field-accent-bg: var(--bg-raised);
 
     /* Size locals (md default) */
     --cf-input-padding: 6px 10px;
@@ -16,17 +16,17 @@
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
-      --field-accent: var(--button-background);
+      --field-accent: var(--bg-inset);
     }
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
     &[data-variant="error"] {
-      --field-accent: var(--invalid-color);
+      --field-accent: var(--negative);
     }
     &[data-variant="filled"] {
-      --field-accent: var(--text-color);
-      --field-accent-bg: var(--highlight-overlay);
+      --field-accent: var(--fg);
+      --field-accent-bg: var(--accent-subtle);
     }
 
     /* ===== Size ===== */
@@ -71,7 +71,7 @@
     }
 
     &[data-variant="error"] {
-      --inset-border: var(--invalid-color);
+      --inset-border: var(--negative);
     }
 
     /* ===== Filled Variant ===== */
@@ -84,12 +84,12 @@
     /* ===== FieldError / Description ===== */
     .react-aria-FieldError {
       font-size: var(--cf-hint-size);
-      color: var(--invalid-color);
+      color: var(--negative);
     }
 
     [slot="description"] {
       font-size: var(--cf-hint-size);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
   }
 

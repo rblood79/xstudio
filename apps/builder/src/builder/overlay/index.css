@@ -3,7 +3,7 @@
   position: absolute;
   pointer-events: none;
   z-index: 1;
-  outline: 1px solid var(--highlight-background);
+  outline: 1px solid var(--accent);
   outline-offset: 0;
 }
 
@@ -21,8 +21,8 @@
   font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
   padding: var(--spacing) var(--spacing-sm);
-  background-color: var(--highlight-background);
-  color: var(--highlight-foreground);
+  background-color: var(--accent);
+  color: var(--fg-on-accent);
   cursor: default;
   -webkit-user-select: none;
   user-select: none;
@@ -30,7 +30,7 @@
 
 .overlay-tag-parent {
   padding: var(--spacing);
-  background: color-mix(in srgb, var(--highlight-background) 85%, black);
+  background: color-mix(in srgb, var(--accent) 85%, black);
   margin-left: -25px;
 }
 
@@ -39,7 +39,7 @@
   z-index: 1;
   height: 100%;
   width: 100%;
-  background-color: var(--highlight-background);
+  background-color: var(--accent);
   opacity: 0.05;
   box-shadow: var(--inset-shadow-sm);
 }
@@ -70,7 +70,7 @@
   right: 0;
   width: 2px;
   height: 100%;
-  background: var(--highlight-background);
+  background: var(--accent);
   top: 50%;
   transform: translateY(-50%);
   left: 100%;
@@ -81,33 +81,33 @@
 
 /* ⭐ Multi-select mode styles */
 .overlay-element.multi-select {
-  outline: 1px solid var(--highlight-background);
+  outline: 1px solid var(--accent);
   outline-offset: 0;
   z-index: 2;
 }
 
 /* ⭐ Primary selection (first selected element, shown in Inspector) */
 .overlay-element.multi-select.primary {
-  outline: 1px solid var(--highlight-background);
+  outline: 1px solid var(--accent);
   z-index: 3;
 }
 
 /* ⭐ Secondary selections (additional selected elements) */
 .overlay-element.multi-select.secondary {
-  outline: 1px dashed var(--highlight-background);
+  outline: 1px dashed var(--accent);
   z-index: 2;
 }
 
 /* ⭐ Multi-select background with blue tint */
 .overlay-element.multi-select .overlay-background {
-  background-color: var(--highlight-background);
+  background-color: var(--accent);
   opacity: 0.1;
 }
 
 /* ⭐ Lasso selection box (rendered inline in Preview) */
 .lasso-selection-box {
   /* Styles are applied inline in Preview/index.tsx */
-  /* border: 2px dashed var(--highlight-background); */
+  /* border: 2px dashed var(--accent); */
   /* background: rgba(59, 130, 246, 0.1); */
 }
 
@@ -116,9 +116,9 @@
   position: fixed;
   bottom: var(--spacing-lg);
   right: var(--spacing-lg);
-  background: var(--overlay-background);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: var(--spacing) var(--spacing-md);
   font-family: var(--font-mono);

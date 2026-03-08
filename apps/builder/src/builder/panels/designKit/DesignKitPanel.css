@@ -26,7 +26,7 @@
 .design-kit-error {
   padding: 8px 12px;
   border-radius: 6px;
-  background: var(--warning-container);
+  background: var(--notice-subtle);
   color: var(--color-danger, #dc2626);
   font-size: 12px;
   line-height: 1.4;
@@ -34,10 +34,10 @@
 
 /* Kit Preview */
 .design-kit-preview {
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
-  background: var(--field-background);
+  background: var(--bg-raised);
 }
 
 .design-kit-preview-header {
@@ -50,12 +50,12 @@
 .design-kit-preview-name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--fg);
 }
 
 .design-kit-preview-version {
   font-size: 11px;
-  color: var(--text-color-disabled);
+  color: var(--fg-disabled);
 }
 
 .design-kit-preview-stats {
@@ -63,7 +63,7 @@
   gap: 12px;
   margin-bottom: 12px;
   font-size: 12px;
-  color: var(--text-color-placeholder);
+  color: var(--fg-muted);
 }
 
 .design-kit-preview-stat {
@@ -74,7 +74,7 @@
 
 .design-kit-preview-stat-value {
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--fg);
 }
 
 .design-kit-preview-actions {
@@ -89,14 +89,14 @@
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  border: 1px solid var(--border-color);
-  background: var(--overlay-background);
-  color: var(--text-color-placeholder);
+  border: 1px solid var(--border);
+  background: var(--bg-overlay);
+  color: var(--fg-muted);
   transition: background 0.15s;
 }
 
 .design-kit-preview-actions button:hover {
-  background: var(--field-background);
+  background: var(--bg-raised);
 }
 
 .design-kit-preview-actions button.primary {
@@ -126,14 +126,14 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-color-disabled);
+  color: var(--fg-disabled);
   padding: 4px 0;
 }
 
 .design-kit-browser-empty {
   text-align: center;
   padding: 24px 16px;
-  color: var(--text-color-disabled);
+  color: var(--fg-disabled);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -150,7 +150,7 @@
 }
 
 .design-kit-card:hover {
-  background: var(--field-background);
+  background: var(--bg-raised);
 }
 
 .design-kit-card[data-selected="true"] {
@@ -166,7 +166,7 @@
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  background: var(--field-background);
+  background: var(--bg-raised);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -181,7 +181,7 @@
 .design-kit-card-name {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -189,7 +189,7 @@
 
 .design-kit-card-meta {
   font-size: 11px;
-  color: var(--text-color-disabled);
+  color: var(--fg-disabled);
 }
 
 .design-kit-card-badge {

@@ -3,7 +3,7 @@
   .react-aria-RangeCalendar {
     .react-aria-CalendarCell {
       &[data-focus-visible] {
-        outline: 2px solid var(--highlight-background);
+        outline: 2px solid var(--accent);
         outline-offset: -2px;
       }
 
@@ -12,7 +12,7 @@
         border-radius: 0; /* Override for continuous range */
 
         &[data-focus-visible] {
-          outline-color: var(--highlight-foreground);
+          outline-color: var(--fg-on-accent);
           outline-offset: -3px;
         }
       }

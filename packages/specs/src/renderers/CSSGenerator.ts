@@ -217,7 +217,7 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
     if (states.focusVisible.outline) {
       lines.push(`    outline: ${states.focusVisible.outline};`);
     } else {
-      lines.push(`    outline: 2px solid var(--highlight-background);`);
+      lines.push(`    outline: 2px solid var(--accent);`);
     }
     if (states.focusVisible.outlineOffset) {
       lines.push(`    outline-offset: ${states.focusVisible.outlineOffset};`);
@@ -230,7 +230,7 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
       );
     }
   } else {
-    lines.push(`    outline: 2px solid var(--highlight-background);`);
+    lines.push(`    outline: 2px solid var(--accent);`);
     lines.push(`    outline-offset: 2px;`);
   }
   lines.push(`  }`);

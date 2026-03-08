@@ -16,7 +16,7 @@
       "header header header"
       "sidebar main inspector"
       "bottom bottom bottom";
-    background-color: var(--overlay-background);
+    background-color: var(--bg-overlay);
   }
 
   /* ========================================
@@ -25,9 +25,9 @@
 
   .app nav.header {
     grid-area: header;
-    background-color: var(--field-background);
-    border-bottom: 1px solid var(--border-color);
-    color: var(--text-color);
+    background-color: var(--bg-raised);
+    border-bottom: 1px solid var(--border);
+    color: var(--fg);
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -74,7 +74,7 @@
   .header_contents:first-child [aria-label="menu"] {
     position: relative;
     border: none;
-    background: var(--border-color);
+    background: var(--border);
     padding: var(--spacing-sm);
     cursor: pointer;
     z-index: 1;
@@ -82,7 +82,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    stroke: var(--text-color-placeholder);
+    stroke: var(--fg-muted);
     border-radius: 6px;
   }
 
@@ -95,12 +95,12 @@
 
   .header_contents .project-name {
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   .header_contents .project-id {
     font-size: var(--text-xs);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     opacity: 0.8;
   }
 
@@ -109,7 +109,7 @@
     gap: var(--spacing-sm);
 
     .react-aria-ToggleButtonGroup[data-indicator="true"] {
-      background-color: var(--border-color);
+      background-color: var(--border);
       box-shadow: var(--inset-shadow-sm);
       border-radius: var(--radius-lg);
       gap: var(--spacing-xs);
@@ -121,7 +121,7 @@
         width: var(--indicator-width);
         height: var(--indicator-height);
         border-radius: var(--radius-md);
-        background: var(--overlay-background);
+        background: var(--bg-overlay);
       }
 
       .react-aria-ToggleButton {
@@ -134,7 +134,7 @@
 
         &[data-pressed] {
           background: transparent;
-          color: var(--text-color);
+          color: var(--fg);
         }
 
         &[data-selected] {
@@ -174,17 +174,17 @@
   .theme-selector .react-aria-Select .react-aria-Label {
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--text-color);
+    color: var(--fg);
     white-space: nowrap;
   }
 
   .theme-selector .react-aria-Select .react-aria-Button {
     padding: var(--spacing-xs) var(--spacing);
     font-size: var(--text-sm);
-    border: 1px solid var(--border-color-hover);
+    border: 1px solid var(--border-hover);
     border-radius: var(--radius-md);
-    background: var(--field-background);
-    color: var(--text-color);
+    background: var(--bg-raised);
+    color: var(--fg);
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
@@ -194,14 +194,14 @@
   }
 
   .theme-selector .react-aria-Button[data-hovered] {
-    border-color: var(--focus-ring-color);
-    background: var(--border-color-hover);
+    border-color: var(--focus-ring);
+    background: var(--border-hover);
   }
 
   .theme-selector .react-aria-Button[data-focus-visible] {
-    outline: 2px solid var(--focus-ring-color);
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
-    border-color: var(--focus-ring-color);
+    border-color: var(--focus-ring);
   }
 
   .theme-selector .react-aria-Button[data-disabled] {
@@ -217,8 +217,8 @@
 
   /* Theme Selector Popover */
   .theme-selector .react-aria-Popover {
-    background: var(--field-background);
-    border: 1px solid var(--border-color-hover);
+    background: var(--bg-raised);
+    border: 1px solid var(--border-hover);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
     margin-top: var(--spacing-sm);
@@ -232,24 +232,24 @@
   .theme-selector .react-aria-ListBoxItem {
     padding: var(--spacing-sm) var(--spacing);
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--fg);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: background-color 0.2s;
   }
 
   .theme-selector .react-aria-ListBoxItem[data-hovered] {
-    background: var(--border-color-hover);
+    background: var(--border-hover);
   }
 
   .theme-selector .react-aria-ListBoxItem[data-selected] {
-    background: var(--focus-ring-color);
-    color: var(--highlight-foreground);
+    background: var(--focus-ring);
+    color: var(--fg-on-accent);
     font-weight: 500;
   }
 
   .theme-selector .react-aria-ListBoxItem[data-focused] {
-    outline: 2px solid var(--focus-ring-color);
+    outline: 2px solid var(--focus-ring);
     outline-offset: -2px;
   }
 
@@ -267,11 +267,11 @@
   }
 
   .dark-mode-toggle:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--button-background) 85%, black);
+    background: color-mix(in srgb, var(--bg-inset) 85%, black);
   }
 
   .dark-mode-toggle:active:not(:disabled) {
-    background: color-mix(in srgb, var(--button-background) 75%, black);
+    background: color-mix(in srgb, var(--bg-inset) 75%, black);
   }
 
   .dark-mode-toggle:disabled {
@@ -287,13 +287,13 @@
 
   .header_contents:last-child button:not(.publish) {
     border-radius: var(--radius-md);
-    background-color: var(--highlight-foreground);
+    background-color: var(--fg-on-accent);
     padding: var(--spacing-xs);
   }
 
   .header_contents:last-child
     .react-aria-ToggleButtonGroup[data-indicator="true"] {
-    background-color: var(--border-color);
+    background-color: var(--border);
     box-shadow: var(--inset-shadow-sm);
     border-radius: var(--radius-lg);
     gap: var(--spacing-xs);
@@ -304,7 +304,7 @@
     .react-aria-ToggleButtonGroup[data-indicator="true"]
     .react-aria-ToggleButton[data-selected]
     svg {
-    stroke: var(--text-color);
+    stroke: var(--fg);
   }
 
   .header_contents:last-child button:disabled {
@@ -326,7 +326,7 @@
     display: flex;
     align-items: center;
     gap: 0;
-    background: var(--border-color);
+    background: var(--border);
     box-shadow: var(--inset-shadow-sm);
     border: none;
     border-radius: var(--radius-lg);
@@ -341,7 +341,7 @@
     padding-right: 0;
     background: transparent;
     border: none;
-    color: var(--text-color);
+    color: var(--fg);
     font-size: var(--text-xs);
     line-height: var(--text-xs--line-height);
     font-weight: 500;
@@ -363,24 +363,24 @@
     padding-left: 0;
     background: transparent;
     border: none;
-    color: var(--text-color);
+    color: var(--fg);
     cursor: pointer;
   }
 
   .header_contents .zoom-controls .zoom-trigger-button:hover {
-    background: var(--highlight-overlay);
+    background: var(--accent-subtle);
   }
 
   /* 포커스 링: 컨테이너에 적용 */
   .header_contents .zoom-controls .zoom-trigger-button:focus-within {
-    outline: 2px solid var(--focus-ring-color);
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
   }
 
   /* Zoom Menu Popover */
   .zoom-menu-popover {
-    background: var(--field-background);
-    border: 1px solid var(--border-color);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     z-index: 1000;
@@ -438,7 +438,7 @@
     justify-content: space-between;
     padding: var(--spacing-sm);
     font-size: var(--text-xs);
-    color: var(--text-color);
+    color: var(--fg);
     border-radius: var(--radius-md);
     cursor: pointer;
     outline: none;
@@ -449,19 +449,19 @@
 
   .zoom-menu-item[data-focused],
   .zoom-menu-item[data-hovered] {
-    background: var(--border-color);
+    background: var(--border);
   }
 
   .zoom-menu-item[data-pressed],
   .zoom-menu-item[data-selected] {
-    background: var(--highlight-overlay);
+    background: var(--accent-subtle);
   }
 
   /* Keyboard Shortcut */
   .zoom-menu-item kbd {
     font-family: inherit;
     font-size: var(--text-xs);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     background: transparent;
     border: none;
     padding: 0;
@@ -478,14 +478,14 @@
     justify-content: center;
     padding: var(--spacing-xs);
     background: transparent;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: background-color 0.15s;
   }
 
   .workflow-sub-toggle-trigger:hover:not([data-disabled]) {
-    background: var(--highlight-overlay);
+    background: var(--accent-subtle);
   }
 
   .workflow-sub-toggle-trigger[data-disabled] {
@@ -507,7 +507,7 @@
     align-items: center;
     gap: var(--spacing-sm);
     font-size: var(--text-xs);
-    color: var(--text-color);
+    color: var(--fg);
     cursor: pointer;
     white-space: nowrap;
     padding: var(--spacing-xs) 0;
@@ -515,7 +515,7 @@
   }
 
   .workflow-sub-toggles .react-aria-Checkbox[data-focused] {
-    outline: 2px solid var(--focus-ring-color);
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
@@ -531,18 +531,18 @@
   /* Publish Button */
   .header_contents .publish {
     background:
-      linear-gradient(var(--field-background), var(--border-color)) padding-box,
+      linear-gradient(var(--bg-raised), var(--border)) padding-box,
       linear-gradient(
           82.77deg,
-          var(--info) 11.87%,
-          var(--info) 38.42%,
-          var(--text-color-placeholder) 64.19%,
-          var(--invalid-color) 89.96%
+          var(--informative) 11.87%,
+          var(--informative) 38.42%,
+          var(--fg-muted) 64.19%,
+          var(--negative) 89.96%
         )
         border-box;
     border: 2px solid transparent;
     border-radius: var(--radius-md);
-    color: var(--text-color);
+    color: var(--fg);
     line-height: var(--text-sm--line-height);
     font-size: var(--text-sm);
     padding: var(--spacing-xs) var(--spacing-lg);

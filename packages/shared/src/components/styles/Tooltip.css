@@ -24,10 +24,10 @@
 
   /* ========== Base Tooltip Styles ========== */
   .react-aria-Tooltip {
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--text-color) 12%, transparent);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--fg) 12%, transparent);
     border-radius: var(--radius-sm);
     background: var(--color-neutral-800);
-    color: var(--button-background);
+    color: var(--bg-inset);
     forced-color-adjust: none;
     outline: none;
     padding: 6px 10px;
@@ -111,20 +111,20 @@
 
   /* ========== Color Variants ========== */
   .react-aria-Tooltip[data-variant="primary"] {
-    background: var(--highlight-background);
-    color: var(--highlight-foreground);
+    background: var(--accent);
+    color: var(--fg-on-accent);
 
     & .react-aria-OverlayArrow svg {
-      fill: var(--highlight-background);
+      fill: var(--accent);
     }
   }
 
   .react-aria-Tooltip[data-variant="secondary"] {
-    background: var(--button-background);
+    background: var(--bg-inset);
     color: var(--color-white);
 
     & .react-aria-OverlayArrow svg {
-      fill: var(--button-background);
+      fill: var(--bg-inset);
     }
   }
 
@@ -138,21 +138,21 @@
   }
 
   .react-aria-Tooltip[data-variant="error"] {
-    background: var(--invalid-color);
+    background: var(--negative);
     color: var(--color-white);
 
     & .react-aria-OverlayArrow svg {
-      fill: var(--invalid-color);
+      fill: var(--negative);
     }
   }
 
   /* ===== Filled Variant ===== */
   .react-aria-Tooltip[data-variant="filled"] {
-    background: var(--highlight-overlay);
-    color: var(--text-color);
+    background: var(--accent-subtle);
+    color: var(--fg);
 
     & .react-aria-OverlayArrow svg {
-      fill: var(--highlight-overlay);
+      fill: var(--accent-subtle);
     }
   }
 

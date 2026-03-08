@@ -10,7 +10,7 @@
 @layer components {
   .react-aria-Separator {
     border: none;
-    background-color: var(--border-color);
+    background-color: var(--border);
     flex-shrink: 0;
   }
 
@@ -77,25 +77,25 @@
   /* Dashed variant */
   .react-aria-Separator.dashed {
     background-color: transparent;
-    border-top: 1px dashed var(--border-color);
+    border-top: 1px dashed var(--border);
   }
 
   .react-aria-Separator.vertical.dashed,
   .react-aria-Separator[aria-orientation='vertical'].dashed {
     border-top: none;
-    border-left: 1px dashed var(--border-color);
+    border-left: 1px dashed var(--border);
   }
 
   /* Dotted variant */
   .react-aria-Separator.dotted {
     background-color: transparent;
-    border-top: 1px dotted var(--border-color);
+    border-top: 1px dotted var(--border);
   }
 
   .react-aria-Separator.vertical.dotted,
   .react-aria-Separator[aria-orientation='vertical'].dotted {
     border-top: none;
-    border-left: 1px dotted var(--border-color);
+    border-left: 1px dotted var(--border);
   }
 
   /* Large dashed/dotted thickness */

@@ -5,13 +5,13 @@
 @layer components {
   .react-aria-Switch {
     /* Default (non-emphasized): neutral color when selected */
-    --switch-color: var(--text-color);
+    --switch-color: var(--fg);
     --switch-thumb-color: var(--color-white);
 
     /* Emphasized: accent color when selected */
     &[data-emphasized] {
-      --switch-color: var(--highlight-background);
-      --switch-thumb-color: var(--highlight-foreground);
+      --switch-color: var(--accent);
+      --switch-thumb-color: var(--fg-on-accent);
     }
 
     display: flex;
@@ -19,7 +19,7 @@
     align-items: center;
     gap: 10px;
     font-size: var(--text-base);
-    color: var(--text-color);
+    color: var(--fg);
     forced-color-adjust: none;
     padding: var(--spacing) 0;
 
@@ -27,8 +27,8 @@
       width: calc(var(--text-4xl) + 4px);
       height: calc(var(--text-lg) + 2px);
       border-radius: var(--text-xl);
-      border: 2px solid var(--border-color-hover);
-      background: var(--highlight-overlay);
+      border: 2px solid var(--border-hover);
+      background: var(--accent-subtle);
       transition: all 200ms;
 
       &:before {
@@ -38,16 +38,16 @@
         height: 100% !important;
         border-radius: var(--text-lg);
         margin: 0px;
-        background: var(--border-color-hover);
+        background: var(--border-hover);
         transition: all 200ms;
       }
     }
 
     &[data-pressed] .indicator {
-      border-color: var(--border-color-hover);
+      border-color: var(--border-hover);
 
       &:before {
-        background: var(--text-color-placeholder);
+        background: var(--fg-muted);
       }
     }
 
@@ -69,18 +69,18 @@
     }
 
     &[data-focus-visible] .indicator {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--focus-ring);
       outline-offset: 2px;
     }
 
     &[data-disabled] {
-      color: var(--text-color-disabled);
+      color: var(--fg-disabled);
 
       .indicator {
-        border-color: var(--border-color-disabled);
+        border-color: var(--border-disabled);
 
         &:before {
-          background: var(--border-color-disabled);
+          background: var(--border-disabled);
         }
       }
     }

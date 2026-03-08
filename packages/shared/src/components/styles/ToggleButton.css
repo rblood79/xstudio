@@ -1,13 +1,13 @@
 @layer components {
   .react-aria-ToggleButton {
     /* Unselected: neutral fill — button-base reads these vars */
-    --button-color: var(--highlight-overlay);
-    --button-text: var(--text-color);
+    --button-color: var(--accent-subtle);
+    --button-text: var(--fg);
     --button-border: transparent;
 
     /* S2 Default (non-emphasized): dark bg + white text when selected */
-    --tb-selected-bg: var(--text-color);
-    --tb-selected-text: var(--background-color);
+    --tb-selected-bg: var(--fg);
+    --tb-selected-text: var(--bg);
 
     /* Structure */
     box-sizing: border-box;
@@ -32,8 +32,8 @@
 
     /* Unselected pressed — custom (differs from button-base 75% pattern) */
     &:not([data-selected])[data-pressed] {
-      background: color-mix(in srgb, var(--overlay-background) 92%, black);
-      border-color: var(--border-color-hover);
+      background: color-mix(in srgb, var(--bg-overlay) 92%, black);
+      border-color: var(--border-hover);
     }
 
     /* Selected: switch --button-* vars → button-base auto-derives hover/pressed */
@@ -46,8 +46,8 @@
     /* ===== Emphasized Variant ===== */
 
     &[data-emphasized] {
-      --tb-selected-bg: var(--highlight-background);
-      --tb-selected-text: var(--highlight-foreground);
+      --tb-selected-bg: var(--accent);
+      --tb-selected-text: var(--fg-on-accent);
     }
 
     /* ===== Quiet Variant ===== */
@@ -100,8 +100,8 @@
 
   .react-aria-ToggleButtonGroup[data-togglebutton-emphasized]
     .react-aria-ToggleButton {
-    --tb-selected-bg: var(--highlight-background);
-    --tb-selected-text: var(--highlight-foreground);
+    --tb-selected-bg: var(--accent);
+    --tb-selected-text: var(--fg-on-accent);
   }
 
   .react-aria-ToggleButtonGroup[data-togglebutton-size="xs"]

@@ -8,15 +8,15 @@
   }
 
   .react-aria-Form [role=alert] {
-    border: 2px solid var(--invalid-color);
-    background: var(--overlay-background);
+    border: 2px solid var(--negative);
+    background: var(--bg-overlay);
     border-radius: var(--radius-lg);
     padding: 12px;
     max-width: 250px;
     outline: none;
   
     &:focus-visible {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--focus-ring);
       outline-offset: 2px;
     }
   

@@ -1,17 +1,17 @@
 @layer components {
   .react-aria-DateRangePicker {
-    color: var(--text-color);
+    color: var(--fg);
 
     /* Accent locals */
-    --field-accent: var(--highlight-background);
+    --field-accent: var(--accent);
     --field-accent-container: color-mix(
       in srgb,
       var(--field-accent) 15%,
       white
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
-    --drp-pressed-bg: var(--field-background);
-    --drp-group-bg: var(--field-background);
+    --drp-pressed-bg: var(--bg-raised);
+    --drp-group-bg: var(--bg-raised);
 
     /* Size locals (md default) */
     --drp-group-min-width: 220px;
@@ -25,17 +25,17 @@
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
-      --field-accent: var(--button-background);
+      --field-accent: var(--bg-inset);
     }
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
     &[data-variant="error"] {
-      --field-accent: var(--invalid-color);
+      --field-accent: var(--negative);
     }
     &[data-variant="filled"] {
-      --drp-group-bg: var(--highlight-overlay);
-      --drp-pressed-bg: var(--field-background);
+      --drp-group-bg: var(--accent-subtle);
+      --drp-pressed-bg: var(--bg-raised);
     }
 
     /* Pressed bg for non-filled variants */
@@ -111,14 +111,14 @@
       overflow: auto;
       position: relative;
       padding: var(--drp-group-padding);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border);
       border-radius: var(--radius-md);
       background: var(--drp-group-bg);
       white-space: nowrap;
 
       &[data-pressed] {
         box-shadow: none;
-        background: var(--overlay-background);
+        background: var(--bg-overlay);
       }
     }
 
@@ -152,7 +152,7 @@
     /* ===== Slot separators ===== */
     [slot="start"] + span {
       padding: 0 4px;
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
 
     [slot="end"] {
@@ -205,12 +205,12 @@
     /* ===== FieldError / Description ===== */
     .react-aria-FieldError {
       font-size: var(--drp-hint-size);
-      color: var(--invalid-color);
+      color: var(--negative);
     }
 
     [slot="description"] {
       font-size: var(--drp-hint-size);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
   }
 

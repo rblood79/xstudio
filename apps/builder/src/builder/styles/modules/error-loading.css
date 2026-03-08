@@ -46,7 +46,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--overlay-background);
+    background-color: var(--bg-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -54,7 +54,7 @@
   }
 
   .loading-spinner {
-    background-color: var(--overlay-background);
+    background-color: var(--bg-overlay);
     padding: 20px 40px;
     border-radius: 8px;
     font-size: 16px;
@@ -67,8 +67,8 @@
     display: inline-block;
     width: 20px;
     height: 20px;
-    border: 2px solid var(--border-color);
-    border-top: 2px solid var(--highlight-background);
+    border: 2px solid var(--border);
+    border-top: 2px solid var(--accent);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-right: 10px;

@@ -10,11 +10,11 @@
 @layer components {
   .react-aria-Slider {
     /* Default (non-emphasized): neutral color for track fill */
-    --slider-color: var(--text-color);
+    --slider-color: var(--fg);
 
     /* Emphasized: accent color for track fill */
     &[data-emphasized] {
-      --slider-color: var(--highlight-background);
+      --slider-color: var(--accent);
     }
 
     display: grid;
@@ -23,7 +23,7 @@
       "track track";
     grid-template-columns: 1fr auto;
     max-width: 300px;
-    color: var(--text-color);
+    color: var(--fg);
     gap: var(--spacing-sm);
 
     /* ===== Label ===== */
@@ -49,7 +49,7 @@
         content: "";
         display: block;
         position: absolute;
-        background: var(--overlay-background);
+        background: var(--bg-overlay);
         border-radius: var(--radius-full, 9999px);
       }
     }
@@ -128,11 +128,11 @@
       cursor: not-allowed;
 
       .react-aria-SliderTrack:before {
-        background: var(--text-color-placeholder);
+        background: var(--fg-muted);
       }
 
       .react-aria-SliderThumb {
-        background: var(--text-color-placeholder);
+        background: var(--fg-muted);
         cursor: not-allowed;
       }
     }

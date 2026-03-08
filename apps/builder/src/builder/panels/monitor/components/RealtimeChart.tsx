@@ -144,12 +144,12 @@ export function RealtimeChart({
             >
               <stop
                 offset="0%"
-                stopColor="var(--highlight-background)"
+                stopColor="var(--accent)"
                 stopOpacity="0.3"
               />
               <stop
                 offset="100%"
-                stopColor="var(--highlight-background)"
+                stopColor="var(--accent)"
                 stopOpacity="0.05"
               />
             </linearGradient>

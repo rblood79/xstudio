@@ -17,7 +17,7 @@
       --fill-color: var(--color-warning-600);
     }
     &[data-variant="negative"] {
-      --fill-color: var(--invalid-color);
+      --fill-color: var(--negative);
     }
 
     display: grid;
@@ -27,12 +27,12 @@
     grid-template-columns: 1fr auto;
     gap: var(--spacing-xs);
     width: 240px;
-    color: var(--text-color);
+    color: var(--fg);
 
     .value {
       grid-area: value;
       font-size: var(--text-sm);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
 
     .bar {
@@ -42,7 +42,7 @@
       height: 8px;
       border-radius: var(--radius-sm);
       overflow: hidden;
-      background: var(--highlight-overlay);
+      background: var(--accent-subtle);
     }
 
     .fill {

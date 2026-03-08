@@ -10,7 +10,7 @@
     }
 
     .react-aria-Group {
-      background-color: var(--border-color);
+      background-color: var(--border);
       border-radius: var(--radius-md);
       width: 100%;
       min-width: 0;
@@ -53,7 +53,7 @@
       &:has(.react-aria-Switch:focus-visible),
       &:has(.react-aria-Switch[data-focused]),
       &:has(.react-aria-Switch[data-focus-visible]) {
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--focus-ring);
         outline-offset: -2px;
       }
 
@@ -93,7 +93,7 @@
 
         .react-aria-SelectValue {
           font-size: var(--text-xs);
-          color: var(--text-color);
+          color: var(--fg);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -146,7 +146,7 @@
       text-align: center;
       background-color: transparent;
       font-size: var(--text-xs);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
 
     input.control-input {
@@ -177,20 +177,20 @@
     /* 포커스 스타일을 부모 Group에 적용
      * Input/Button 사이 이동 시 깜빡임 방지 */
     .react-aria-Group:focus-within {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--focus-ring);
       outline-offset: -2px;
     }
 
     .react-aria-ToggleButtonGroup:not([data-indicator="true"]) {
       width: 100%;
-      background-color: var(--border-color);
+      background-color: var(--border);
       border-radius: var(--radius-md);
       box-shadow: var(--inset-shadow-sm);
       outline-width: 0;
 
       /* 그룹 전체에 focus-within 스타일 적용 (클릭/탭 모두 표시) */
       &:focus-within {
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--focus-ring);
         outline-offset: -2px;
       }
 
@@ -209,16 +209,16 @@
         }
 
         &[data-selected] {
-          background: var(--overlay-background);
+          background: var(--bg-overlay);
           border-radius: var(--radius-md);
-          border-color: var(--border-color-hover);
+          border-color: var(--border-hover);
           border-width: 1px;
         }
       }
     }
 
     .react-aria-CheckboxGroup {
-      background-color: var(--field-background);
+      background-color: var(--bg-raised);
       border-radius: var(--radius-md);
       gap: 0;
 
@@ -248,7 +248,7 @@
     .slider-track {
       flex: 1;
       height: 4px;
-      background: var(--border-color-hover);
+      background: var(--border-hover);
       border-radius: var(--radius-full);
       position: relative;
     }
@@ -256,7 +256,7 @@
     .slider-thumb {
       width: 16px;
       height: 16px;
-      background: var(--highlight-background);
+      background: var(--accent);
       border: 2px solid var(--color-white);
       border-radius: var(--radius-full);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
@@ -265,14 +265,14 @@
 
       &[data-focused],
       &[data-dragging] {
-        background: var(--highlight-background-pressed);
+        background: var(--accent-pressed);
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       }
     }
 
     .slider-output {
       font-size: var(--text-xs);
-      color: var(--text-color);
+      color: var(--fg);
       min-width: 40px;
       text-align: right;
     }

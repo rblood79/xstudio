@@ -8,7 +8,7 @@
   .color-input-mode-selector {
     display: flex;
     gap: 2px;
-    background: var(--overlay-background);
+    background: var(--bg-overlay);
     border-radius: var(--radius-sm);
     padding: 2px;
   }
@@ -18,7 +18,7 @@
     padding: var(--spacing-2xs) var(--spacing-xs);
     font-size: var(--text-2xs);
     font-family: var(--font-mono);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     background: transparent;
     border: none;
     border-radius: var(--radius-sm);
@@ -28,16 +28,16 @@
     transition: background 0.15s ease, color 0.15s ease;
 
     &:hover {
-      background: var(--highlight-overlay);
+      background: var(--accent-subtle);
     }
 
     &[data-active] {
-      background: var(--highlight-background);
-      color: var(--highlight-foreground);
+      background: var(--accent);
+      color: var(--fg-on-accent);
     }
 
     &:focus-visible {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--accent);
       outline-offset: -2px;
     }
   }

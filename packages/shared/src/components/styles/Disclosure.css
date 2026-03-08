@@ -2,14 +2,14 @@
   /* ========== Base Disclosure Container ========== */
   .react-aria-Disclosure {
     width: 100%;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    background: var(--field-background);
-    color: var(--text-color);
+    background: var(--bg-raised);
+    color: var(--fg);
     padding: var(--spacing-md);
 
     /* 기본 variant 변수 */
-    --disc-accent: var(--border-color);
+    --disc-accent: var(--border);
 
     .react-aria-Button[slot="trigger"] {
       all: unset;
@@ -20,7 +20,7 @@
       padding: var(--spacing-sm);
       font-weight: 500;
       font-size: var(--text-base);
-      color: var(--text-color);
+      color: var(--fg);
       background: transparent;
       border-radius: var(--radius-sm);
       cursor: pointer;
@@ -41,20 +41,20 @@
       }
 
       &[data-hovered] {
-        background: color-mix(in srgb, var(--text-color) 8%, transparent);
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
       }
 
       &[data-pressed] {
-        background: color-mix(in srgb, var(--text-color) 12%, transparent);
+        background: color-mix(in srgb, var(--fg) 12%, transparent);
       }
 
       &[data-focus-visible] {
-        outline: 2px solid var(--highlight-background);
+        outline: 2px solid var(--accent);
         outline-offset: 2px;
       }
 
       &[data-disabled] {
-        color: color-mix(in srgb, var(--text-color) 38%, transparent);
+        color: color-mix(in srgb, var(--fg) 38%, transparent);
         cursor: not-allowed;
         pointer-events: none;
       }
@@ -70,7 +70,7 @@
     margin-left: calc(16px + var(--spacing-sm) + var(--spacing-sm));
     margin-top: var(--spacing-sm);
     padding: var(--spacing);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
 
     overflow: hidden;
 
@@ -130,16 +130,16 @@
 
   /* ========== Color Variants ========== */
   .react-aria-Disclosure[data-variant="primary"] {
-    --disc-accent: var(--highlight-background);
-    border-color: var(--highlight-background);
+    --disc-accent: var(--accent);
+    border-color: var(--accent);
 
     .react-aria-Button[slot="trigger"] {
-      color: var(--highlight-background);
+      color: var(--accent);
 
       &[data-hovered] {
         background: color-mix(
           in srgb,
-          var(--highlight-background) 8%,
+          var(--accent) 8%,
           transparent
         );
       }
@@ -147,36 +147,36 @@
       &[data-pressed] {
         background: color-mix(
           in srgb,
-          var(--highlight-background) 12%,
+          var(--accent) 12%,
           transparent
         );
       }
 
       &[data-focus-visible] {
-        outline-color: var(--highlight-background);
+        outline-color: var(--accent);
       }
     }
 
     &[data-expanded] {
       background: color-mix(
         in srgb,
-        var(--highlight-background) 4%,
+        var(--accent) 4%,
         transparent
       );
     }
   }
 
   .react-aria-Disclosure[data-variant="secondary"] {
-    --disc-accent: var(--button-background);
-    border-color: var(--button-background);
+    --disc-accent: var(--bg-inset);
+    border-color: var(--bg-inset);
 
     .react-aria-Button[slot="trigger"] {
-      color: var(--button-background);
+      color: var(--bg-inset);
 
       &[data-hovered] {
         background: color-mix(
           in srgb,
-          var(--button-background) 8%,
+          var(--bg-inset) 8%,
           transparent
         );
       }
@@ -184,18 +184,18 @@
       &[data-pressed] {
         background: color-mix(
           in srgb,
-          var(--button-background) 12%,
+          var(--bg-inset) 12%,
           transparent
         );
       }
 
       &[data-focus-visible] {
-        outline-color: var(--button-background);
+        outline-color: var(--bg-inset);
       }
     }
 
     &[data-expanded] {
-      background: color-mix(in srgb, var(--button-background) 4%, transparent);
+      background: color-mix(in srgb, var(--bg-inset) 4%, transparent);
     }
   }
 

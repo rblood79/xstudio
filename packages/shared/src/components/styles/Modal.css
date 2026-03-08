@@ -49,7 +49,7 @@
     left: 0;
     width: 100vw;
     height: var(--visual-viewport-height);
-    background: color-mix(in srgb, var(--text-color) 32%, transparent);
+    background: color-mix(in srgb, var(--fg) 32%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -67,11 +67,11 @@
   /* ========== Base Modal Styles ========== */
   .react-aria-Modal {
     box-shadow: 0 8px 24px
-      color-mix(in srgb, var(--text-color) 15%, transparent);
+      color-mix(in srgb, var(--fg) 15%, transparent);
     border-radius: var(--radius-xl);
-    background: var(--overlay-background);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
+    background: var(--bg-overlay);
+    color: var(--fg);
+    border: 1px solid var(--border);
     outline: none;
     max-width: 300px;
 
@@ -86,11 +86,11 @@
 
   /* ========== Color Variants ========== */
   .react-aria-Modal[data-variant="primary"] {
-    border-color: var(--highlight-background);
+    border-color: var(--accent);
   }
 
   .react-aria-Modal[data-variant="secondary"] {
-    border-color: var(--button-background);
+    border-color: var(--bg-inset);
   }
 
   .react-aria-Modal[data-variant="tertiary"] {
@@ -98,12 +98,12 @@
   }
 
   .react-aria-Modal[data-variant="error"] {
-    border-color: var(--invalid-color);
+    border-color: var(--negative);
   }
 
   /* ===== Filled Variant ===== */
   .react-aria-Modal[data-variant="filled"] {
-    background: var(--highlight-overlay);
+    background: var(--accent-subtle);
     border: none;
   }
 

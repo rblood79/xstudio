@@ -3,8 +3,8 @@
   min-height: 100vh;
   background: linear-gradient(
     48deg,
-    var(--highlight-background) 0%,
-    var(--highlight-overlay) 100%
+    var(--accent) 0%,
+    var(--accent-subtle) 100%
   );
   display: flex;
   align-items: center;
@@ -15,7 +15,7 @@
 .auth-card {
   width: 100%;
   max-width: var(--container-xs);
-  background: var(--overlay-background);
+  background: var(--bg-overlay);
   border-radius: var(--radius-4xl);
   display: flex;
   flex-direction: column;

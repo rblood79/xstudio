@@ -114,78 +114,68 @@
       from var(--tint) var(--lightness-1600) var(--chroma-1600) h
     );
 
-    /* ===== Semantic Tokens ===== */
+    /* ===== Semantic Tokens (S2 + React Aria hybrid naming) ===== */
     /* ThemeStudio overrides (--color-*) take priority, tint-based fallbacks below */
 
-    --background-color: var(--color-background-base, var(--color-white));
-    --focus-ring-color: var(--color-focus-ring, var(--tint-1000));
-    --text-color: var(--color-text-primary, var(--color-neutral-900));
-    --text-color-base: var(--color-text-base, var(--color-neutral-900));
-    --text-color-hover: var(--color-text-hover, var(--color-neutral-950));
-    --text-color-disabled: var(--color-text-disabled, var(--color-neutral-500));
-    --text-color-placeholder: var(
-      --color-text-placeholder,
-      var(--color-neutral-700)
-    );
-    --link-color: var(--color-link, var(--tint-1200));
-    --link-color-secondary: var(
-      --color-link-secondary,
-      var(--color-neutral-900)
-    );
-    --link-color-pressed: var(--color-link-pressed, var(--tint-1300));
-    --border-color: var(--color-border-base, var(--color-neutral-300));
-    --border-color-hover: var(--color-border-hover, var(--color-neutral-400));
-    --border-color-pressed: var(
-      --color-border-pressed,
-      var(--color-neutral-500)
-    );
-    --border-color-disabled: var(
-      --color-border-disabled,
-      var(--color-neutral-100)
-    );
-    --button-background: var(
-      --color-button-background,
-      var(--color-neutral-50)
-    );
-    --button-background-pressed: var(
+    /* Surface */
+    --bg: var(--color-background-base, var(--color-white));
+    --bg-raised: var(--color-background-base, var(--color-white));
+    --bg-overlay: var(--color-overlay-background, var(--color-neutral-50));
+    --bg-inset: var(--color-field-background, var(--color-neutral-50));
+    --bg-inset-pressed: var(
       --color-button-background-pressed,
       var(--color-neutral-100)
     );
-    --field-background: var(--color-field-background, var(--color-neutral-50));
-    --field-text-color: var(--color-field-text, var(--color-neutral-900));
-    --overlay-background: var(
-      --color-overlay-background,
-      var(--color-neutral-50)
-    );
 
-    /* Highlight colors — fixed oklch lightness ensures contrast with foreground
-     * These are the same in light and dark modes */
-    --highlight-background: var(
-      --color-highlight-background,
-      oklch(from var(--tint) 55% c h)
-    );
-    --highlight-background-pressed: var(
-      --color-highlight-background-pressed,
-      oklch(from var(--tint) 50% c h)
-    );
-    --highlight-background-invalid: var(
-      --color-highlight-background-invalid,
-      var(--color-error-600)
-    );
-    --highlight-foreground: var(--color-highlight-foreground, white);
-    --highlight-foreground-pressed: var(
+    /* Foreground */
+    --fg: var(--color-text-primary, var(--color-neutral-900));
+    --fg-base: var(--color-text-base, var(--color-neutral-900));
+    --fg-emphasis: var(--color-text-hover, var(--color-neutral-950));
+    --fg-disabled: var(--color-text-disabled, var(--color-neutral-500));
+    --fg-muted: var(--color-text-placeholder, var(--color-neutral-700));
+    --fg-field: var(--color-field-text, var(--color-neutral-900));
+    --fg-on-accent: var(--color-highlight-foreground, white);
+    --fg-on-accent-pressed: var(
       --color-highlight-foreground-pressed,
       var(--color-neutral-100)
     );
-    --highlight-overlay: var(
+
+    /* Link */
+    --link: var(--color-link, var(--tint-1200));
+    --link-secondary: var(--color-link-secondary, var(--color-neutral-900));
+    --link-pressed: var(--color-link-pressed, var(--tint-1300));
+
+    /* Border */
+    --border: var(--color-border-base, var(--color-neutral-300));
+    --border-hover: var(--color-border-hover, var(--color-neutral-400));
+    --border-pressed: var(--color-border-pressed, var(--color-neutral-500));
+    --border-disabled: var(--color-border-disabled, var(--color-neutral-100));
+
+    /* Accent — fixed oklch lightness ensures contrast with foreground
+     * These are the same in light and dark modes */
+    --accent: var(
+      --color-highlight-background,
+      oklch(from var(--tint) 55% c h)
+    );
+    --accent-pressed: var(
+      --color-highlight-background-pressed,
+      oklch(from var(--tint) 50% c h)
+    );
+    --accent-negative: var(
+      --color-highlight-background-invalid,
+      var(--color-error-600)
+    );
+    --accent-subtle: var(
       --color-highlight-overlay,
       oklch(from var(--tint-1000) l c h / 15%)
     );
-    --invalid-color: var(--color-invalid, var(--color-error-400));
-    --invalid-color-pressed: var(
-      --color-invalid-pressed,
-      var(--color-error-500)
-    );
+
+    /* Focus */
+    --focus-ring: var(--color-focus-ring, var(--tint-1000));
+
+    /* Status */
+    --negative: var(--color-invalid, var(--color-error-400));
+    --negative-pressed: var(--color-invalid-pressed, var(--color-error-500));
 
     /* Shadow System - AI Theme Integration Ready */
     --shadow-sm: var(--box-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
@@ -255,65 +245,52 @@
     --lightness-1500: 95.2045%;
     --lightness-1600: 100%;
 
-    --background-color: var(--color-background-base, var(--color-neutral-900));
-    --focus-ring-color: var(--color-focus-ring, var(--tint-1000));
-    --text-color: var(--color-text-primary, var(--color-neutral-100));
-    --text-color-base: var(--color-text-base, var(--color-neutral-100));
-    --text-color-hover: var(--color-text-hover, var(--color-neutral-50));
-    --text-color-disabled: var(--color-text-disabled, var(--color-neutral-500));
-    --text-color-placeholder: var(
-      --color-text-placeholder,
-      var(--color-neutral-400)
-    );
-    --link-color: var(--color-link, var(--tint-1200));
-    --link-color-secondary: var(
-      --color-link-secondary,
-      var(--color-neutral-100)
-    );
-    --link-color-pressed: var(--color-link-pressed, var(--tint-1300));
-    --border-color: var(--color-border-base, var(--color-neutral-700));
-    --border-color-hover: var(--color-border-hover, var(--color-neutral-600));
-    --border-color-pressed: var(
-      --color-border-pressed,
-      var(--color-neutral-500)
-    );
-    --border-color-disabled: var(
-      --color-border-disabled,
-      var(--color-neutral-800)
-    );
-    --button-background: var(
-      --color-button-background,
-      var(--color-neutral-800)
-    );
-    --button-background-pressed: var(
+    /* Surface (Dark) */
+    --bg: var(--color-background-base, var(--color-neutral-900));
+    --bg-raised: var(--color-background-base, var(--color-neutral-900));
+    --bg-overlay: var(--color-overlay-background, var(--color-neutral-800));
+    --bg-inset: var(--color-field-background, var(--color-neutral-800));
+    --bg-inset-pressed: var(
       --color-button-background-pressed,
       var(--color-neutral-700)
     );
-    --field-background: var(--color-field-background, var(--color-neutral-800));
-    --field-text-color: var(--color-field-text, var(--color-neutral-100));
-    --overlay-background: var(
-      --color-overlay-background,
-      var(--color-neutral-800)
-    );
 
-    /* highlight-background uses fixed oklch — same formula as light mode,
-     * no override needed here since 55%/50% lightness works for both modes */
-    --highlight-background-invalid: var(
-      --color-highlight-background-invalid,
-      var(--color-error-500)
-    );
-    --highlight-foreground: var(
-      --color-highlight-foreground,
-      var(--color-neutral-900)
-    );
-    --highlight-foreground-pressed: var(
+    /* Foreground (Dark) */
+    --fg: var(--color-text-primary, var(--color-neutral-100));
+    --fg-base: var(--color-text-base, var(--color-neutral-100));
+    --fg-emphasis: var(--color-text-hover, var(--color-neutral-50));
+    --fg-disabled: var(--color-text-disabled, var(--color-neutral-500));
+    --fg-muted: var(--color-text-placeholder, var(--color-neutral-400));
+    --fg-field: var(--color-field-text, var(--color-neutral-100));
+    --fg-on-accent: var(--color-highlight-foreground, var(--color-neutral-900));
+    --fg-on-accent-pressed: var(
       --color-highlight-foreground-pressed,
       var(--color-neutral-800)
     );
-    --highlight-overlay: var(
+
+    /* Link (Dark) */
+    --link: var(--color-link, var(--tint-1200));
+    --link-secondary: var(--color-link-secondary, var(--color-neutral-100));
+    --link-pressed: var(--color-link-pressed, var(--tint-1300));
+
+    /* Border (Dark) */
+    --border: var(--color-border-base, var(--color-neutral-700));
+    --border-hover: var(--color-border-hover, var(--color-neutral-600));
+    --border-pressed: var(--color-border-pressed, var(--color-neutral-500));
+    --border-disabled: var(--color-border-disabled, var(--color-neutral-800));
+
+    /* Accent (Dark) — oklch same formula as light mode */
+    --accent-negative: var(
+      --color-highlight-background-invalid,
+      var(--color-error-500)
+    );
+    --accent-subtle: var(
       --color-highlight-overlay,
       oklch(from var(--tint-1000) l c h / 15%)
     );
+
+    /* Focus (Dark) */
+    --focus-ring: var(--color-focus-ring, var(--tint-1000));
 
     /* Shadow System - Dark mode (increased opacity for visibility) */
     --shadow-sm: var(--box-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.2));
@@ -341,32 +318,33 @@
   /* Windows high contrast mode overrides */
   @media (forced-colors: active) {
     :root {
-      --background-color: Canvas;
-      --focus-ring-color: Highlight;
-      --text-color: ButtonText;
-      --text-color-base: ButtonText;
-      --text-color-hover: ButtonText;
-      --text-color-disabled: GrayText;
-      --text-color-placeholder: ButtonText;
-      --link-color: LinkText;
-      --link-color-secondary: LinkText;
-      --link-color-pressed: LinkText;
-      --border-color: ButtonBorder;
-      --border-color-hover: ButtonBorder;
-      --border-color-pressed: ButtonBorder;
-      --border-color-disabled: GrayText;
-      --field-background: Field;
-      --field-text-color: FieldText;
-      --overlay-background: Canvas;
-      --button-background: ButtonFace;
-      --button-background-pressed: ButtonFace;
-      --highlight-background: Highlight;
-      --highlight-background-pressed: Highlight;
-      --highlight-background-invalid: LinkText;
-      --highlight-foreground: HighlightText;
-      --highlight-foreground-pressed: HighlightText;
-      --invalid-color: LinkText;
-      --invalid-color-pressed: LinkText;
+      --bg: Canvas;
+      --bg-raised: Canvas;
+      --bg-overlay: Canvas;
+      --bg-inset: Field;
+      --focus-ring: Highlight;
+      --fg: ButtonText;
+      --fg-base: ButtonText;
+      --fg-emphasis: ButtonText;
+      --fg-disabled: GrayText;
+      --fg-muted: ButtonText;
+      --fg-field: FieldText;
+      --link: LinkText;
+      --link-secondary: LinkText;
+      --link-pressed: LinkText;
+      --border: ButtonBorder;
+      --border-hover: ButtonBorder;
+      --border-pressed: ButtonBorder;
+      --border-disabled: GrayText;
+      --bg-inset-pressed: ButtonFace;
+      --accent: Highlight;
+      --accent-pressed: Highlight;
+      --accent-negative: LinkText;
+      --accent-subtle: Highlight;
+      --fg-on-accent: HighlightText;
+      --fg-on-accent-pressed: HighlightText;
+      --negative: LinkText;
+      --negative-pressed: LinkText;
     }
   }
 }

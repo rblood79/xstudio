@@ -5,7 +5,7 @@
     gap: var(--spacing-xs);
 
     /* Accent locals */
-    --field-accent: var(--highlight-background);
+    --field-accent: var(--accent);
     --field-accent-container: color-mix(
       in srgb,
       var(--field-accent) 15%,
@@ -25,13 +25,13 @@
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
-      --field-accent: var(--button-background);
+      --field-accent: var(--bg-inset);
     }
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
     &[data-variant="error"] {
-      --field-accent: var(--invalid-color);
+      --field-accent: var(--negative);
     }
 
     /* ===== Size ===== */
@@ -70,7 +70,7 @@
     .react-aria-Label {
       font-size: var(--nf-label-size);
       font-weight: 500;
-      color: var(--text-color);
+      color: var(--fg);
       margin-bottom: var(--spacing-xs);
     }
 
@@ -89,7 +89,7 @@
       transition: all 200ms ease;
 
       &[data-focus-within] {
-        outline: 2px solid var(--highlight-background);
+        outline: 2px solid var(--accent);
         outline-offset: -1px;
 
         .react-aria-Input,
@@ -114,9 +114,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--overlay-background);
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
+      background: var(--bg-overlay);
+      border: 1px solid var(--border);
+      color: var(--fg);
       cursor: pointer;
       transition: all 200ms ease;
 
@@ -135,18 +135,18 @@
       }
 
       &[data-hovered]:not([data-disabled]) {
-        background: var(--highlight-overlay);
-        border-color: var(--border-color-hover);
+        background: var(--accent-subtle);
+        border-color: var(--border-hover);
       }
 
       &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--overlay-background) 88%, black);
+        background: color-mix(in srgb, var(--bg-overlay) 88%, black);
       }
 
       &[data-disabled] {
-        background: color-mix(in srgb, var(--text-color) 4%, transparent);
-        border-color: color-mix(in srgb, var(--text-color) 12%, transparent);
-        color: color-mix(in srgb, var(--text-color) 38%, transparent);
+        background: color-mix(in srgb, var(--fg) 4%, transparent);
+        border-color: color-mix(in srgb, var(--fg) 12%, transparent);
+        color: color-mix(in srgb, var(--fg) 38%, transparent);
         cursor: not-allowed;
         opacity: 0.38;
       }
@@ -205,38 +205,38 @@
       }
 
       .react-aria-Button {
-        background: var(--highlight-overlay);
+        background: var(--accent-subtle);
         border: none;
-        border-bottom: 2px solid var(--border-color);
+        border-bottom: 2px solid var(--border);
 
         &[data-hovered]:not([data-disabled]) {
-          background: var(--overlay-background);
-          border-bottom-color: var(--border-color-hover);
+          background: var(--bg-overlay);
+          border-bottom-color: var(--border-hover);
         }
       }
 
       .react-aria-Input {
-        background: var(--highlight-overlay);
+        background: var(--accent-subtle);
         border: none;
-        border-bottom: 2px solid var(--border-color);
+        border-bottom: 2px solid var(--border);
       }
     }
 
     /* ===== Invalid State ===== */
     &[data-invalid] {
       .react-aria-Group {
-        outline-color: var(--invalid-color);
+        outline-color: var(--negative);
       }
 
       .react-aria-Input,
       .react-aria-Button {
-        border-color: var(--invalid-color);
+        border-color: var(--negative);
       }
 
       &:focus-within {
         .react-aria-Input,
         .react-aria-Button {
-          border-color: var(--invalid-color);
+          border-color: var(--negative);
         }
       }
     }
@@ -244,12 +244,12 @@
     /* ===== Description / FieldError ===== */
     [slot="description"] {
       font-size: var(--nf-hint-size);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
 
     .react-aria-FieldError {
       font-size: var(--nf-hint-size);
-      color: var(--invalid-color);
+      color: var(--negative);
       margin-top: var(--spacing-xs);
     }
   }

@@ -4,7 +4,7 @@
 
 @layer components {
   .react-aria-ProgressBar {
-    --fill-color: var(--highlight-background);
+    --fill-color: var(--accent);
 
     display: grid;
     grid-template-areas:
@@ -13,12 +13,12 @@
     grid-template-columns: 1fr auto;
     gap: var(--spacing-xs);
     width: 240px;
-    color: var(--text-color);
+    color: var(--fg);
 
     .value {
       grid-area: value;
       font-size: var(--text-sm);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
 
     .bar {
@@ -29,7 +29,7 @@
       border-radius: var(--radius-sm);
       overflow: hidden;
       will-change: transform;
-      background: var(--highlight-overlay);
+      background: var(--accent-subtle);
     }
 
     .fill {

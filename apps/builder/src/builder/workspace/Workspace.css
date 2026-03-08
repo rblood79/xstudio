@@ -28,8 +28,8 @@
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: var(--warning-container);
-  color: var(--on-warning-container);
+  background-color: var(--notice-subtle);
+  color: var(--fg-on-notice);
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 14px;

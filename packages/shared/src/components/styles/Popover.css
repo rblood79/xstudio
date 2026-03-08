@@ -24,12 +24,12 @@
 
   /* ========== Base Popover Styles ========== */
   .react-aria-Popover {
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     box-shadow: 0 4px 12px
-      color-mix(in srgb, var(--text-color) 15%, transparent);
+      color-mix(in srgb, var(--fg) 15%, transparent);
     border-radius: var(--radius-lg);
-    background: var(--field-background);
-    color: var(--text-color);
+    background: var(--bg-raised);
+    color: var(--fg);
     outline: none;
     max-width: 250px;
     transition:
@@ -47,8 +47,8 @@
 
     .react-aria-OverlayArrow svg {
       display: block;
-      fill: var(--field-background);
-      stroke: var(--border-color);
+      fill: var(--bg-raised);
+      stroke: var(--border);
       stroke-width: 1px;
     }
 
@@ -133,18 +133,18 @@
 
   /* ========== Color Variants ========== */
   .react-aria-Popover[data-variant="primary"] {
-    border-color: var(--highlight-background);
+    border-color: var(--accent);
 
     .react-aria-OverlayArrow svg {
-      stroke: var(--highlight-background);
+      stroke: var(--accent);
     }
   }
 
   .react-aria-Popover[data-variant="secondary"] {
-    border-color: var(--button-background);
+    border-color: var(--bg-inset);
 
     .react-aria-OverlayArrow svg {
-      stroke: var(--button-background);
+      stroke: var(--bg-inset);
     }
   }
 
@@ -157,22 +157,22 @@
   }
 
   .react-aria-Popover[data-variant="error"] {
-    border-color: var(--invalid-color);
+    border-color: var(--negative);
 
     .react-aria-OverlayArrow svg {
-      stroke: var(--invalid-color);
+      stroke: var(--negative);
     }
   }
 
   /* ===== Filled Variant ===== */
   .react-aria-Popover[data-variant="filled"] {
-    background: var(--highlight-overlay);
+    background: var(--accent-subtle);
     border: none;
     box-shadow: 0 4px 12px
-      color-mix(in srgb, var(--text-color) 15%, transparent);
+      color-mix(in srgb, var(--fg) 15%, transparent);
 
     .react-aria-OverlayArrow svg {
-      fill: var(--highlight-overlay);
+      fill: var(--accent-subtle);
       stroke: none;
     }
   }

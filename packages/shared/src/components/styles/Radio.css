@@ -6,7 +6,7 @@
 
 @layer components {
   .react-aria-Radio {
-    --radio-color: var(--highlight-background);
+    --radio-color: var(--accent);
 
     display: flex;
     position: relative;
@@ -14,7 +14,7 @@
     gap: var(--spacing-sm);
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
-    color: var(--text-color);
+    color: var(--fg);
     forced-color-adjust: none;
     padding: var(--spacing) 0;
     width: fit-content;
@@ -25,14 +25,14 @@
       width: var(--text-lg);
       height: var(--text-lg);
       box-sizing: border-box;
-      border: 2px solid var(--border-color-hover);
+      border: 2px solid var(--border-hover);
       background: var(--color-white);
       border-radius: var(--text-lg);
       transition: all 0.2s ease;
     }
 
     &[data-pressed]:before {
-      border-color: var(--border-color-hover);
+      border-color: var(--border-hover);
     }
 
     &[data-selected] {
@@ -53,19 +53,19 @@
 
     &[data-invalid] {
       &:before {
-        border-color: var(--invalid-color);
+        border-color: var(--negative);
       }
 
       &[data-selected]:before {
-        border-color: var(--invalid-color);
+        border-color: var(--negative);
       }
     }
 
     &[data-disabled] {
-      color: var(--text-color-disabled);
+      color: var(--fg-disabled);
 
       &:before {
-        border-color: var(--border-color-disabled);
+        border-color: var(--border-disabled);
       }
     }
   }
@@ -73,7 +73,7 @@
   /* ===== Parent RadioGroup variant delegation ===== */
 
   .react-aria-RadioGroup[data-radio-variant="secondary"] .react-aria-Radio {
-    --radio-color: var(--button-background);
+    --radio-color: var(--bg-inset);
   }
 
   .react-aria-RadioGroup[data-radio-variant="tertiary"] .react-aria-Radio {
@@ -81,14 +81,14 @@
   }
 
   .react-aria-RadioGroup[data-radio-variant="error"] .react-aria-Radio {
-    --radio-color: var(--invalid-color);
+    --radio-color: var(--negative);
   }
 
   .react-aria-RadioGroup[data-radio-variant="surface"] .react-aria-Radio {
-    --radio-color: var(--highlight-overlay);
+    --radio-color: var(--accent-subtle);
 
     &[data-focus-visible]:before {
-      outline-color: var(--text-color);
+      outline-color: var(--fg);
     }
   }
 

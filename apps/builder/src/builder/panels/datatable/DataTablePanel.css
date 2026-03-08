@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--overlay-background);
+  background: var(--bg-overlay);
   max-width: var(--panel-width);
   min-width: var(--panel-width);
 }
@@ -21,8 +21,8 @@
   display: flex;
   gap: 0;
   padding: var(--spacing-2xs) var(--spacing-sm);
-  border-bottom: 1px solid var(--border-color);
-  background: var(--field-background);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
   height: var(--header-height);
 }
 
@@ -32,7 +32,7 @@
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--text-xs);
-  color: var(--text-color-placeholder);
+  color: var(--fg-muted);
   background: transparent;
   border: none;
   border-radius: var(--radius-sm);
@@ -41,20 +41,20 @@
 }
 
 .panel-tab:hover {
-  background: var(--field-background);
-  color: var(--text-color);
+  background: var(--bg-raised);
+  color: var(--fg);
 }
 
 .panel-tab.active {
-  background: var(--highlight-background);
-  color: var(--highlight-foreground);
+  background: var(--accent);
+  color: var(--fg-on-accent);
 }
 
 /* DataTable-specific list count */
 .datatable-list-count {
   font-size: var(--text-xs);
   line-height: var(--text-xs--line-height);
-  color: var(--text-color-disabled);
+  color: var(--fg-disabled);
   padding: var(--spacing-sm);
 }
 
@@ -74,7 +74,7 @@
 
 .datatable-panel .list-subgroup-count {
   font-size: var(--text-xs);
-  color: var(--text-color-disabled);
+  color: var(--fg-disabled);
 }
 
 /* Item Card extension */
@@ -95,7 +95,7 @@
   font-size: var(--text-sm);
   color: var(--color-primary-600);
   background: transparent;
-  border: 1px dashed var(--border-color);
+  border: 1px dashed var(--border);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 150ms ease;
@@ -117,13 +117,13 @@
 }
 
 .datatable-empty-icon {
-  color: var(--text-color-disabled);
+  color: var(--fg-disabled);
   margin-bottom: var(--spacing-sm);
 }
 
 .datatable-empty-text {
   font-size: var(--text-sm);
-  color: var(--text-color-placeholder);
+  color: var(--fg-muted);
   margin-bottom: var(--spacing-md);
 }
 
@@ -171,8 +171,8 @@
 
 /* DataTable Source Badge */
 .datatable-panel .list-item-badge.local {
-  background: var(--field-background);
-  color: var(--text-color-placeholder);
+  background: var(--bg-raised);
+  color: var(--fg-muted);
 }
 
 .datatable-panel .list-item-badge.api {

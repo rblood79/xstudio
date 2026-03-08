@@ -26,9 +26,9 @@
     border-radius: var(--radius-md);
     outline: none;
     box-shadow: var(--drop-shadow-md);
-    background: var(--overlay-background);
-    color: var(--text-color);
-    border: 1px solid var(--border-color-hover);
+    background: var(--bg-overlay);
+    color: var(--fg);
+    border: 1px solid var(--border-hover);
     max-width: 300px;
 
     &[data-entering] {
@@ -55,8 +55,8 @@
 
   .react-aria-Popover {
     outline: none;
-    background: var(--overlay-background);
-    border: 1px solid var(--border-color);
+    background: var(--bg-overlay);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     box-shadow: var(--drop-shadow-md);
 

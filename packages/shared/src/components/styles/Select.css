@@ -3,10 +3,10 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    color: var(--text-color);
+    color: var(--fg);
 
     /* Accent locals */
-    --field-accent: var(--highlight-background);
+    --field-accent: var(--accent);
     --field-accent-container: color-mix(
       in srgb,
       var(--field-accent) 15%,
@@ -24,13 +24,13 @@
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
-      --field-accent: var(--button-background);
+      --field-accent: var(--bg-inset);
     }
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
     &[data-variant="error"] {
-      --field-accent: var(--invalid-color);
+      --field-accent: var(--negative);
     }
 
     /* ===== Size ===== */
@@ -63,7 +63,7 @@
     .react-aria-Label {
       font-size: var(--select-label-size);
       font-weight: 500;
-      color: var(--text-color);
+      color: var(--fg);
       margin-bottom: var(--spacing-xs);
     }
 
@@ -81,40 +81,40 @@
       align-items: center;
       justify-content: space-between;
       padding: var(--select-btn-padding);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border);
       border-radius: var(--border-radius);
-      background: var(--field-background);
-      color: var(--text-color);
+      background: var(--bg-raised);
+      color: var(--fg);
       font-size: var(--select-btn-font-size);
       cursor: pointer;
       transition: all 200ms ease;
       forced-color-adjust: none;
 
       &[data-hovered]:not([data-pressed]):not([data-disabled]) {
-        border-color: var(--border-color-hover);
-        background: var(--overlay-background);
+        border-color: var(--border-hover);
+        background: var(--bg-overlay);
       }
 
       &[data-pressed]:not([data-disabled]) {
-        background: var(--highlight-overlay);
-        border-color: var(--highlight-background);
+        background: var(--accent-subtle);
+        border-color: var(--accent);
       }
 
       &[data-focus-visible] {
-        outline: 2px solid var(--highlight-background);
+        outline: 2px solid var(--accent);
         outline-offset: -1px;
       }
 
       &[data-disabled] {
-        background: color-mix(in srgb, var(--text-color) 4%, transparent);
-        border-color: color-mix(in srgb, var(--text-color) 12%, transparent);
-        color: color-mix(in srgb, var(--text-color) 38%, transparent);
+        background: color-mix(in srgb, var(--fg) 4%, transparent);
+        border-color: color-mix(in srgb, var(--fg) 12%, transparent);
+        color: color-mix(in srgb, var(--fg) 38%, transparent);
         cursor: not-allowed;
         opacity: 0.38;
 
         .select-chevron {
-          background: color-mix(in srgb, var(--text-color) 12%, transparent);
-          color: color-mix(in srgb, var(--text-color) 38%, transparent);
+          background: color-mix(in srgb, var(--fg) 12%, transparent);
+          color: color-mix(in srgb, var(--fg) 38%, transparent);
         }
       }
     }
@@ -143,45 +143,45 @@
 
     /* ===== Filled Variant ===== */
     &[data-variant="filled"] .react-aria-Button {
-      background: var(--highlight-overlay);
+      background: var(--accent-subtle);
       border-color: transparent;
-      border-bottom: 2px solid var(--border-color);
+      border-bottom: 2px solid var(--border);
       border-radius: var(--border-radius) var(--border-radius) 0 0;
 
       &[data-hovered]:not([data-pressed]):not([data-disabled]) {
-        background: var(--overlay-background);
-        border-bottom-color: var(--border-color-hover);
+        background: var(--bg-overlay);
+        border-bottom-color: var(--border-hover);
       }
 
       &[data-pressed]:not([data-disabled]) {
-        border-bottom-color: var(--highlight-background);
+        border-bottom-color: var(--accent);
       }
 
       &[data-focus-visible] {
         outline: none;
-        border-bottom-color: var(--highlight-background);
+        border-bottom-color: var(--accent);
       }
     }
 
     /* ===== Invalid State ===== */
     &[data-invalid] .react-aria-Button {
-      border-color: var(--invalid-color);
+      border-color: var(--negative);
     }
 
     &[data-variant="filled"][data-invalid] .react-aria-Button {
-      border-bottom-color: var(--invalid-color);
+      border-bottom-color: var(--negative);
     }
 
     /* ===== SelectValue ===== */
     .react-aria-SelectValue {
       font-size: var(--select-btn-font-size);
-      color: var(--text-color);
+      color: var(--fg);
       flex: 1;
       display: flex;
 
       &[data-placeholder] {
         font-style: italic;
-        color: var(--text-color-placeholder);
+        color: var(--fg-muted);
         opacity: 0.6;
       }
 
@@ -199,8 +199,8 @@
       height: var(--select-chevron-size);
       margin-left: var(--select-chevron-margin);
       border-radius: var(--radius-xs);
-      background: var(--overlay-background);
-      color: var(--text-color);
+      background: var(--bg-overlay);
+      color: var(--fg);
       transition: all 150ms ease;
       forced-color-adjust: none;
       box-shadow: var(--shadow-sm);
@@ -209,12 +209,12 @@
     /* ===== Description / FieldError ===== */
     [slot="description"] {
       font-size: var(--select-hint-size);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
 
     .react-aria-FieldError {
       font-size: var(--select-hint-size);
-      color: var(--invalid-color);
+      color: var(--negative);
       margin-top: var(--spacing-xs);
     }
   }
@@ -224,9 +224,9 @@
     min-width: var(--trigger-width);
     max-height: 300px;
     overflow: auto;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: var(--border-radius);
-    background: var(--field-background);
+    background: var(--bg-raised);
     box-shadow: var(--shadow-lg);
     contain: layout style paint;
 
@@ -240,7 +240,7 @@
       .react-aria-ListBoxItem {
         padding: var(--spacing) var(--spacing-md);
         border-radius: var(--radius-xs);
-        color: var(--text-color);
+        color: var(--fg);
         cursor: pointer;
         outline: none;
         transition: all 150ms ease;
@@ -251,11 +251,11 @@
         justify-content: flex-start;
 
         &[data-hovered] {
-          background: var(--overlay-background);
+          background: var(--bg-overlay);
         }
 
         &[data-focused] {
-          background: var(--overlay-background);
+          background: var(--bg-overlay);
         }
 
         &[data-selected] {
@@ -265,7 +265,7 @@
         }
 
         &[data-disabled] {
-          color: color-mix(in srgb, var(--text-color) 38%, transparent);
+          color: color-mix(in srgb, var(--fg) 38%, transparent);
           cursor: not-allowed;
         }
 
@@ -306,7 +306,7 @@
         transform: translateY(-50%);
         width: 16px;
         height: 16px;
-        border: 2px solid var(--border-color-hover);
+        border: 2px solid var(--border-hover);
         border-radius: var(--radius-xs);
         background: transparent;
         transition: all 150ms ease;
@@ -314,8 +314,8 @@
 
       &[data-selected] {
         &::before {
-          background: var(--highlight-background);
-          border-color: var(--highlight-background);
+          background: var(--accent);
+          border-color: var(--accent);
         }
 
         &::after {
@@ -326,13 +326,13 @@
           transform: translateY(-60%) rotate(45deg);
           width: 5px;
           height: 9px;
-          border: solid var(--highlight-foreground);
+          border: solid var(--fg-on-accent);
           border-width: 0 2px 2px 0;
         }
       }
 
       &[data-hovered]::before {
-        border-color: var(--highlight-background);
+        border-color: var(--accent);
       }
     }
   }

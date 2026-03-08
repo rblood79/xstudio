@@ -9,8 +9,8 @@
     grid-area: bottom;
     display: flex;
     flex-direction: column;
-    background-color: var(--field-background);
-    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-raised);
+    border-top: 1px solid var(--border);
     position: relative;
     overflow: hidden;
     min-height: 150px;
@@ -31,18 +31,18 @@
     background: transparent;
     transition: background-color 150ms ease;
     z-index: 10;
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     opacity: 0.5;
   }
 
   .bottom-panel-resize-handle:hover,
   .bottom-panel-slot[data-dragging="true"] .bottom-panel-resize-handle {
-    background-color: var(--border-color);
+    background-color: var(--border);
     opacity: 1;
   }
 
   .bottom-panel-resize-handle:focus-visible {
-    outline: 2px solid var(--focus-ring-color);
+    outline: 2px solid var(--focus-ring);
     outline-offset: -2px;
   }
 
@@ -53,8 +53,8 @@
     justify-content: space-between;
     padding: var(--spacing-xs) var(--spacing-sm);
     padding-top: calc(var(--spacing-xs) + 8px); /* Account for resize handle */
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--field-background);
+    border-bottom: 1px solid var(--border);
+    background-color: var(--bg-raised);
     flex-shrink: 0;
   }
 
@@ -69,20 +69,20 @@
     gap: var(--spacing-xs);
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--text-sm);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: background-color 150ms ease, color 150ms ease;
   }
 
   .bottom-panel-tab:hover {
-    background-color: var(--overlay-background);
-    color: var(--text-color);
+    background-color: var(--bg-overlay);
+    color: var(--fg);
   }
 
   .bottom-panel-tab.active {
-    background-color: var(--highlight-overlay);
-    color: var(--text-color);
+    background-color: var(--accent-subtle);
+    color: var(--fg);
     font-weight: 500;
   }
 
@@ -98,17 +98,17 @@
     background: transparent;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     transition: background-color 150ms ease, color 150ms ease;
   }
 
   .bottom-panel-close:hover {
-    background-color: var(--overlay-background);
-    color: var(--text-color);
+    background-color: var(--bg-overlay);
+    color: var(--fg);
   }
 
   .bottom-panel-close:focus-visible {
-    outline: 2px solid var(--focus-ring-color);
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
   }
 

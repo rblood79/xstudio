@@ -49,7 +49,7 @@
   align-items: flex-start;
   gap: var(--spacing-sm, 8px);
   padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
-  background-color: var(--overlay-background);
+  background-color: var(--bg-overlay);
   border-radius: var(--radius-md, 6px);
   box-shadow: var(
     --shadow-md,
@@ -76,14 +76,14 @@
 .react-aria-Toast[data-variant="info"] {
   background-color: color-mix(
     in srgb,
-    var(--highlight-background) 12%,
-    var(--overlay-background)
+    var(--accent) 12%,
+    var(--bg-overlay)
   );
-  color: var(--text-color);
+  color: var(--fg);
 }
 
 .react-aria-Toast[data-variant="info"] .toast-icon {
-  color: var(--highlight-background);
+  color: var(--accent);
 }
 
 /* Variant: success */
@@ -91,9 +91,9 @@
   background-color: color-mix(
     in srgb,
     var(--color-green-500, #4caf50) 12%,
-    var(--overlay-background)
+    var(--bg-overlay)
   );
-  color: var(--text-color);
+  color: var(--fg);
 }
 
 .react-aria-Toast[data-variant="success"] .toast-icon {
@@ -102,8 +102,8 @@
 
 /* Variant: warning */
 .react-aria-Toast[data-variant="warning"] {
-  background-color: color-mix(in srgb, #ff9800 12%, var(--overlay-background));
-  color: var(--text-color);
+  background-color: color-mix(in srgb, #ff9800 12%, var(--bg-overlay));
+  color: var(--fg);
 }
 
 .react-aria-Toast[data-variant="warning"] .toast-icon {
@@ -114,14 +114,14 @@
 .react-aria-Toast[data-variant="error"] {
   background-color: color-mix(
     in srgb,
-    var(--invalid-color) 12%,
-    var(--overlay-background)
+    var(--negative) 12%,
+    var(--bg-overlay)
   );
-  color: var(--text-color);
+  color: var(--fg);
 }
 
 .react-aria-Toast[data-variant="error"] .toast-icon {
-  color: var(--invalid-color);
+  color: var(--negative);
 }
 
 /* Toast content */

@@ -15,12 +15,12 @@
   .react-aria-Label {
     cursor: default;
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--fg);
   }
 
   .react-aria-FieldError {
     font-size: var(--text-xs);
-    color: var(--invalid-color);
+    color: var(--negative);
   }
 
   [slot="description"] {

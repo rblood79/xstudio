@@ -2,10 +2,10 @@
   /* ========== Base Table Styles ========== */
   .react-aria-Table {
     padding: 0;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: var(--border-radius);
-    background: var(--field-background);
-    color: var(--text-color);
+    background: var(--bg-raised);
+    color: var(--fg);
     outline: none;
     border-spacing: 0;
     min-height: 40px;
@@ -17,13 +17,13 @@
     overflow: hidden;
 
     /* 기본 variant 변수 */
-    --tbl-accent: var(--highlight-background);
+    --tbl-accent: var(--accent);
     --tbl-selected-bg: var(--color-primary-100);
     --tbl-selected-color: var(--color-primary-900);
 
     /* 기본 Checkbox 변수 */
-    --tbl-cb-selected: var(--highlight-background);
-    --tbl-cb-checkmark: var(--highlight-foreground);
+    --tbl-cb-selected: var(--accent);
+    --tbl-cb-checkmark: var(--fg-on-accent);
     --tbl-cb-bg: var(--color-primary-100);
     --tbl-cb-selected-on: var(--color-primary-900);
     --tbl-cb-checkmark-on: var(--color-primary-100);
@@ -33,7 +33,7 @@
     }
 
     &[data-focus-visible] {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--accent);
       outline-offset: -1px;
     }
   }
@@ -55,16 +55,16 @@
   /* ========== Table Header ========== */
   .react-aria-TableHeader {
     font-size: var(--text-base);
-    color: var(--text-color-placeholder);
-    background: var(--field-background);
+    color: var(--fg-muted);
+    background: var(--bg-raised);
 
     & tr:last-child .react-aria-Column {
-      border-bottom: 1px solid var(--border-color-hover);
+      border-bottom: 1px solid var(--border-hover);
       cursor: default;
     }
 
     .react-aria-Column {
-      border-right: 1px solid var(--border-color-hover);
+      border-right: 1px solid var(--border-hover);
 
       &:last-child {
         border-right: none;
@@ -92,7 +92,7 @@
       top: 10%;
       bottom: 10%;
       width: 4px;
-      background-color: var(--highlight-background);
+      background-color: var(--accent);
       height: 80%;
       flex: 0 0 auto;
       touch-action: none;
@@ -104,11 +104,11 @@
       cursor: col-resize;
 
       &[data-focus-visible] {
-        background-color: var(--highlight-background);
+        background-color: var(--accent);
       }
 
       &[data-resizing] {
-        border-color: var(--highlight-background);
+        border-color: var(--accent);
         background-color: transparent;
       }
     }
@@ -119,18 +119,18 @@
     display: flex;
     outline: none;
     cursor: default;
-    color: var(--text-color);
+    color: var(--fg);
     font-size: var(--text-base);
     position: relative;
     transform: scale(1);
 
     &[data-focus-visible] {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--accent);
       outline-offset: -2px;
     }
 
     &[data-pressed] {
-      background: var(--overlay-background);
+      background: var(--bg-overlay);
     }
 
     &[data-selected] {
@@ -139,13 +139,13 @@
 
       &[data-focus-visible],
       .react-aria-Cell[data-focus-visible] {
-        outline-color: var(--highlight-background);
+        outline-color: var(--accent);
         outline-offset: -4px;
       }
     }
 
     &[data-disabled] {
-      color: color-mix(in srgb, var(--text-color) 38%, transparent);
+      color: color-mix(in srgb, var(--fg) 38%, transparent);
       opacity: 0.38;
     }
   }
@@ -162,7 +162,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 
-    border-right: 1px solid var(--border-color);
+    border-right: 1px solid var(--border);
 
     &:last-child {
       flex: 1;
@@ -170,7 +170,7 @@
     }
 
     &[data-focus-visible] {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--accent);
       outline-offset: -2px;
     }
   }
@@ -240,7 +240,7 @@
     &[data-empty] {
       text-align: center;
       font-style: italic;
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
 
     .react-aria-Row {
@@ -250,7 +250,7 @@
       width: 100%;
       top: 0;
       left: 0;
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border);
     }
   }
 
@@ -265,12 +265,12 @@
       all: unset;
       width: 15px;
       text-align: center;
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
       cursor: grab;
 
       &[data-focus-visible] {
         border-radius: 4px;
-        outline: 2px solid var(--highlight-background);
+        outline: 2px solid var(--accent);
       }
 
       &:active {
@@ -280,21 +280,21 @@
   }
 
   .react-aria-DropIndicator[data-drop-target] {
-    outline: 1px solid var(--highlight-background);
+    outline: 1px solid var(--accent);
     transform: translateZ(0);
   }
 
   .react-aria-Table[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
+    outline: 2px solid var(--accent);
     outline-offset: -1px;
-    background: color-mix(in srgb, var(--highlight-background) 8%, transparent);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
   }
 
   .react-aria-Row[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
+    outline: 2px solid var(--accent);
     background: color-mix(
       in srgb,
-      var(--highlight-background) 12%,
+      var(--accent) 12%,
       transparent
     );
   }
@@ -324,13 +324,13 @@
   }
 
   .react-aria-PageSizeLabel {
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     white-space: nowrap;
   }
 
   .react-aria-PageSizeSelect {
-    background-color: var(--field-background);
-    color: var(--text-color);
+    background-color: var(--bg-raised);
+    color: var(--fg);
 
     &:focus {
       outline: none;
@@ -338,7 +338,7 @@
   }
 
   .react-aria-PageSizeText {
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     white-space: nowrap;
   }
 
@@ -367,7 +367,7 @@
     &:hover:not(:disabled) {
       background-color: color-mix(
         in srgb,
-        var(--highlight-background) 12%,
+        var(--accent) 12%,
         transparent
       );
     }
@@ -399,26 +399,26 @@
 
   .react-aria-GoToPageLabel {
     white-space: nowrap;
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
   }
 
   .react-aria-GoToPageInput {
     width: 48px;
     text-align: center;
-    background-color: var(--field-background);
-    color: var(--text-color);
+    background-color: var(--bg-raised);
+    color: var(--fg);
 
     &:focus {
       outline: none;
-      border-color: var(--highlight-background);
-      box-shadow: 0 0 0 1px var(--highlight-background);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
     }
   }
 
   .react-aria-GoToPageButton:hover:not(:disabled) {
     background-color: color-mix(
       in srgb,
-      var(--highlight-background) 12%,
+      var(--accent) 12%,
       transparent
     );
   }
@@ -429,27 +429,27 @@
   }
 
   .react-aria-PageInfo {
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     white-space: nowrap;
     font-size: var(--text-xs);
   }
 
   .react-aria-LoadingText {
     font-size: var(--text-sm);
-    color: var(--text-color-placeholder);
+    color: var(--fg-muted);
     font-style: italic;
   }
 
   /* ========== Color Variants ========== */
   .react-aria-Table[data-variant="secondary"] {
-    --tbl-accent: var(--button-background);
-    --tbl-selected-bg: var(--button-background);
+    --tbl-accent: var(--bg-inset);
+    --tbl-selected-bg: var(--bg-inset);
     --tbl-selected-color: var(--color-neutral-900);
-    --tbl-cb-selected: var(--button-background);
+    --tbl-cb-selected: var(--bg-inset);
     --tbl-cb-checkmark: var(--color-white);
-    --tbl-cb-bg: var(--button-background);
+    --tbl-cb-bg: var(--bg-inset);
     --tbl-cb-selected-on: var(--color-neutral-900);
-    --tbl-cb-checkmark-on: var(--button-background);
+    --tbl-cb-checkmark-on: var(--bg-inset);
   }
 
   .react-aria-Table[data-variant="tertiary"] {
@@ -464,10 +464,10 @@
   }
 
   .react-aria-Table[data-variant="error"] {
-    --tbl-accent: var(--invalid-color);
+    --tbl-accent: var(--negative);
     --tbl-selected-bg: var(--color-error-100);
     --tbl-selected-color: var(--color-error-900);
-    --tbl-cb-selected: var(--invalid-color);
+    --tbl-cb-selected: var(--negative);
     --tbl-cb-checkmark: var(--color-white);
     --tbl-cb-bg: var(--color-error-100);
     --tbl-cb-selected-on: var(--color-error-900);
@@ -574,16 +574,16 @@
 
   /* ===== Filled Variant ===== */
   .react-aria-Table[data-variant="filled"] {
-    background: var(--highlight-overlay);
+    background: var(--accent-subtle);
     border-color: transparent;
 
     .react-aria-TableHeader {
-      background: var(--highlight-overlay);
+      background: var(--accent-subtle);
     }
 
     .react-aria-Row {
       &[data-pressed] {
-        background: var(--overlay-background);
+        background: var(--bg-overlay);
       }
 
       &[data-selected] {

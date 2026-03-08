@@ -5,7 +5,7 @@
     gap: var(--spacing-xs);
 
     /* Accent locals */
-    --field-accent: var(--highlight-background);
+    --field-accent: var(--accent);
     --field-accent-container: color-mix(
       in srgb,
       var(--field-accent) 15%,
@@ -23,13 +23,13 @@
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
-      --field-accent: var(--button-background);
+      --field-accent: var(--bg-inset);
     }
     &[data-variant="tertiary"] {
       --field-accent: var(--color-purple-600);
     }
     &[data-variant="error"] {
-      --field-accent: var(--invalid-color);
+      --field-accent: var(--negative);
     }
 
     /* ===== Size ===== */
@@ -62,7 +62,7 @@
     .react-aria-Label {
       font-size: var(--df-label-size);
       font-weight: 500;
-      color: var(--text-color);
+      color: var(--fg);
       margin-bottom: var(--spacing-xs);
     }
 
@@ -102,26 +102,26 @@
 
     /* ===== Filled Variant ===== */
     &[data-variant="filled"] .react-aria-DateInput {
-      background: var(--highlight-overlay);
+      background: var(--accent-subtle);
       border-color: transparent;
-      border-bottom: 2px solid var(--border-color);
+      border-bottom: 2px solid var(--border);
       border-radius: var(--border-radius) var(--border-radius) 0 0;
 
       &[data-focus-within] {
         outline: none;
-        border-bottom-color: var(--highlight-background);
-        background: var(--overlay-background);
+        border-bottom-color: var(--accent);
+        background: var(--bg-overlay);
       }
 
       &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--overlay-background);
-        border-bottom-color: var(--border-color-hover);
+        background: var(--bg-overlay);
+        border-bottom-color: var(--border-hover);
       }
     }
 
     /* Invalid: default handled by .inset; filled variant override */
     &[data-variant="filled"][data-invalid] .react-aria-DateInput {
-      border-bottom-color: var(--invalid-color);
+      border-bottom-color: var(--negative);
     }
 
     /* ===== Date Segments ===== */
@@ -129,7 +129,7 @@
       padding: 0 2px;
       font-variant-numeric: tabular-nums;
       text-align: end;
-      color: var(--text-color);
+      color: var(--fg);
       border-radius: var(--radius-xs);
       font-size: var(--df-segment-size);
       transition: all 150ms ease;
@@ -139,7 +139,7 @@
       }
 
       &[data-placeholder] {
-        color: var(--text-color-placeholder);
+        color: var(--fg-muted);
         font-style: italic;
         opacity: 0.6;
       }
@@ -153,7 +153,7 @@
       }
 
       &[data-invalid] {
-        color: var(--invalid-color);
+        color: var(--negative);
 
         &:focus {
           background: var(--color-error-100);
@@ -162,7 +162,7 @@
       }
 
       &[data-disabled] {
-        color: color-mix(in srgb, var(--text-color) 38%, transparent);
+        color: color-mix(in srgb, var(--fg) 38%, transparent);
         cursor: not-allowed;
       }
     }
@@ -178,12 +178,12 @@
     /* ===== Description / FieldError ===== */
     [slot="description"] {
       font-size: var(--df-hint-size);
-      color: var(--text-color-placeholder);
+      color: var(--fg-muted);
     }
 
     .react-aria-FieldError {
       font-size: var(--df-hint-size);
-      color: var(--invalid-color);
+      color: var(--negative);
       margin-top: var(--spacing-xs);
     }
   }
