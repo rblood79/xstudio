@@ -61,22 +61,38 @@ interface ComponentListProps {
   selectedElementId?: string | null;
 }
 
-// 컴포넌트 정의를 메모이제이션 (8개 카테고리)
+// 컴포넌트 정의 (React Aria / Spectrum 공식 분류 기준, 실용적 병합)
+const contentComp = [
+  { tag: "Text", label: "text", icon: Text },
+  { tag: "Icon", label: "icon", icon: Smile },
+  { tag: "Separator", label: "separator", icon: SeparatorHorizontal },
+  { tag: "Badge", label: "badge", icon: Star },
+  { tag: "ProgressBar", label: "progress bar", icon: BarChart3 },
+  { tag: "Meter", label: "meter", icon: Gauge },
+  { tag: "Skeleton", label: "skeleton", icon: Loader },
+] as const;
+
 const layoutComp = [
   { tag: "Panel", label: "panel", icon: InspectionPanel },
   { tag: "Card", label: "card", icon: AppWindowMac },
+  { tag: "Group", label: "group", icon: GroupIcon },
   { tag: "Tabs", label: "tabs", icon: AppWindow },
   { tag: "Breadcrumbs", label: "breadcrumbs", icon: ChevronRight },
   { tag: "Link", label: "link", icon: Link },
-  { tag: "Separator", label: "separator", icon: SeparatorHorizontal },
   { tag: "Nav", label: "navigation", icon: Menu },
   { tag: "ScrollBox", label: "scroll box", icon: ScrollText },
   { tag: "MaskedFrame", label: "masked frame", icon: Frame },
   { tag: "Slot", label: "slot", icon: Layers, layoutOnly: true },
-  { tag: "Group", label: "group", icon: GroupIcon },
 ] as const;
 
-const inputsComp = [
+const buttonsComp = [
+  { tag: "Button", label: "button", icon: MousePointer },
+  { tag: "ToggleButton", label: "toggle button", icon: ToggleLeft },
+  { tag: "ToggleButtonGroup", label: "toggle button group", icon: GroupIcon },
+  { tag: "Toolbar", label: "toolbar", icon: Settings },
+] as const;
+
+const formsComp = [
   { tag: "TextField", label: "text field", icon: RectangleEllipsis },
   { tag: "NumberField", label: "number field", icon: Hash },
   { tag: "SearchField", label: "search field", icon: Search },
@@ -90,14 +106,8 @@ const inputsComp = [
   { tag: "TailSwatch", label: "color picker", icon: Paintbrush },
   { tag: "DropZone", label: "drop zone", icon: Upload },
   { tag: "FileTrigger", label: "file trigger", icon: FileUp },
-] as const;
-
-const actionsComp = [
-  { tag: "Button", label: "button", icon: MousePointer },
-  { tag: "ToggleButton", label: "toggle button", icon: ToggleLeft },
-  { tag: "ToggleButtonGroup", label: "toggle button group", icon: GroupIcon },
-  { tag: "Menu", label: "menu", icon: Menu },
-  { tag: "Toolbar", label: "toolbar", icon: Settings },
+  { tag: "Form", label: "form", icon: GroupIcon },
+  { tag: "Field", label: "field", icon: GroupIcon },
 ] as const;
 
 const collectionsComp = [
@@ -106,15 +116,8 @@ const collectionsComp = [
   { tag: "GridList", label: "grid list", icon: Grid },
   { tag: "Tree", label: "tree", icon: ListTree },
   { tag: "TagGroup", label: "tag group", icon: Tag },
-  { tag: "Field", label: "field", icon: GroupIcon },
-] as const;
-
-const feedbackComp = [
-  { tag: "Tooltip", label: "tooltip", icon: MessageSquare },
-  { tag: "ProgressBar", label: "progress bar", icon: BarChart3 },
-  { tag: "Meter", label: "meter", icon: Gauge },
-  { tag: "Badge", label: "badge", icon: Star },
-  { tag: "Skeleton", label: "skeleton", icon: Loader },
+  { tag: "Menu", label: "menu", icon: Menu },
+  { tag: "Section", label: "section", icon: Square },
 ] as const;
 
 const dateTimeComp = [
@@ -132,25 +135,15 @@ const overlaysComp = [
   { tag: "Tooltip", label: "tooltip", icon: MessageSquare },
 ] as const;
 
-const structureComp = [
-  { tag: "Text", label: "text", icon: Text },
-  { tag: "Icon", label: "icon", icon: Smile },
-  { tag: "Section", label: "section", icon: Square },
-] as const;
-
-const otherComp = [{ tag: "Form", label: "form", icon: GroupIcon }] as const;
-
 // 카테고리 설정 (레이블 및 설명)
 const categoryConfig = {
-  layout: { label: "Layout", description: "Containers and structure" },
-  inputs: { label: "Inputs", description: "Form controls" },
-  actions: { label: "Actions", description: "Buttons and interactions" },
+  content: { label: "Content", description: "Display and indicators" },
+  layout: { label: "Layout", description: "Containers and navigation" },
+  buttons: { label: "Buttons", description: "Actions and triggers" },
+  forms: { label: "Forms", description: "Inputs and controls" },
   collections: { label: "Collections", description: "Lists and data display" },
-  feedback: { label: "Feedback", description: "Status indicators" },
-  dateTime: { label: "Date & Time", description: "Date pickers" },
-  overlays: { label: "Overlays", description: "Dialogs and modals" },
-  structure: { label: "Structure", description: "Basic elements" },
-  other: { label: "Other", description: "Item components" },
+  dateTime: { label: "Date & Time", description: "Date and time pickers" },
+  overlays: { label: "Overlays", description: "Dialogs and popups" },
 } as const;
 
 // 개별 컴포넌트 아이템을 메모이제이션
@@ -211,15 +204,13 @@ const ComponentList = memo(
     // 카테고리 펼치기/접기 상태 관리 (모든 카테고리 기본 펼침)
     const allCategoryKeys = useMemo(
       () => [
+        "content",
         "layout",
-        "inputs",
-        "actions",
+        "buttons",
+        "forms",
         "collections",
-        "feedback",
         "dateTime",
         "overlays",
-        "structure",
-        "other",
       ],
       [],
     );
@@ -238,23 +229,21 @@ const ComponentList = memo(
       [handleAddElement, addRecentComponent],
     );
 
-    // 컴포넌트 그룹을 메모이제이션 (8개 카테고리)
+    // 컴포넌트 그룹을 메모이제이션 (7개 카테고리)
     // Layout 모드가 아닐 때는 layoutOnly 컴포넌트(Slot)를 필터링
     const componentGroups = useMemo(
       () => ({
+        content: contentComp,
         layout: isLayoutMode
           ? layoutComp
           : layoutComp.filter(
               (comp) => !("layoutOnly" in comp && comp.layoutOnly),
             ),
-        inputs: inputsComp,
-        actions: actionsComp,
+        buttons: buttonsComp,
+        forms: formsComp,
         collections: collectionsComp,
-        feedback: feedbackComp,
         dateTime: dateTimeComp,
         overlays: overlaysComp,
-        structure: structureComp,
-        other: otherComp,
       }),
       [isLayoutMode],
     );

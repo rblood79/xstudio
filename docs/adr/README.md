@@ -1,14 +1,14 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-08 (ADR-019 버그 수정 — Skia 렌더링 + Publish export 누락 해결)
+> **최종 업데이트**: 2026-03-09 (ADR-024 Superseded + ADR-030 Phase 0 완료)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 16     |
+| 완료 (Accepted/Implemented/Superseded) | 17     |
 | 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 7      |
+| 미구현 (Proposed/계획)                 | 6      |
 | **합계**                               | **30** |
 
 ---
@@ -34,6 +34,7 @@
 | [023](023-s2-component-variant-props.md)    | 컴포넌트 Variant Props S2 전환     |  Accepted   | 2026-03-05 | Phase 1+2+3 완료, Badge 19 variants, ToggleButton S2, Button premium/genai     |
 | [025](025-s2-named-color-palette.md)        | S2 Named Color Palette 확장        |  Accepted   | 2026-03-08 | Phase 1~3 완료 (12색x2=24토큰, tokenResolver, Badge 19 variants), Phase 4 잔여 |
 | [028](028-builder-css-scope-isolation.md)   | Builder CSS 스코프 격리            | Implemented | 2026-03-07 | Phase 0+1 완료 (`[data-context="builder"]` 전환 + 변수 30→21 축소)             |
+| [024](024-s2-css-variable-migration.md)     | CSS 변수명 S2 체계 전환            | Superseded  | 2026-03-09 | ADR-022/028/029에서 `--bg`/`--fg`/`--accent`/`--border` 4축 체계로 전환 완료   |
 | [029](029-builder-css-dead-code-cleanup.md) | Builder CSS Dead Code 정리         |  Complete   | 2026-03-07 | Phase 1-3 완료 (유령변수 138건 치환 + dead code 24건 + 모놀리식 CSS 분리)      |
 
 ### 부분 완료
@@ -59,7 +60,6 @@
 | [015](015-sitemap-layout.md)              | Sitemap Hierarchy 워크플로우 엣지                  | Proposed | 변경 대상 8파일, 코드 미생성                                                                        |    P5    |
 | [016](016-photoshop-ui-ux.md)             | Photoshop 벤치마크 기반 UI/UX (v2)                 | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                              |    P5    |
 | [020](020-design-kit-improvement.md)      | Design Kit 패널 분석 및 개선                       | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수            |    P4    |
-| [024](024-s2-css-variable-migration.md)   | CSS 변수명 S2 체계 전환                            | Proposed | 4 Phase, alias 점진 전환 → 60+ CSS 파일 변경                                                        |    P3    |
 | [030](030-s2-spectrum-only-components.md) | React Spectrum S2 전용 컴포넌트 WebGL 마이그레이션 | Proposed | 4 Phase, 22개 컴포넌트 — Phase 0 선행 조건 감사 진행 중 (Factory 13개 누락, S2 Props ~50% 커버리지) |    P3    |
 
 ---
@@ -100,10 +100,10 @@
 - ~~**ADR-019**: Icon 시스템 — Phase A+B+C+D 완료 (C2 simple element 확인, C4+C5 Spec 연동)~~
 - **ADR-013**: Collection 컴포넌트 데이터 바인딩 1클릭 자동화 — 초보자 학습 곡선 완화 (대규모)
 
-### P3: ADR-024 + ADR-030 CSS/컴포넌트 체계
+### P3: ADR-030 S2 컴포넌트 체계
 
-- **ADR-024**: CSS 변수명 S2 체계 전환 (alias 점진 전환)
-- **ADR-030**: React Spectrum S2 전용 컴포넌트 마이그레이션 — Phase 0 선행 작업 진행 중
+- ~~**ADR-024**: CSS 변수명 S2 체계 전환~~ — Superseded (ADR-022/028/029에서 4축 체계로 전환 완료)
+- **ADR-030**: React Spectrum S2 전용 컴포넌트 마이그레이션 — Phase 0 완료 (G0-1~G0-6)
 
 ### P4: ADR-021 Phase E + ADR-009 Phase 2 잔여 + ADR-020 + ADR-026 잔여
 
@@ -226,3 +226,4 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-08 | **전수 코드베이스 대조 검증 (4개 병렬 에이전트)** — ① ADR-018 Complete 확인 → 부분완료→완료 승격 ② ADR-025 Phase 1~3 구현 확인 (12색x24토큰+tokenResolver+Badge) → Proposed→Accepted 완료 승격 ③ ADR-027 Phase A+B 구현 확인 (TextEditOverlay+Quill+멀티페이지+subscribeBounds) → Proposed→Partial 승격 ④ ADR-028 Phase 0+1 완료 확인 → 부분완료→완료 승격 ⑤ ADR-029(CSS) Phase 1-3 완료 확인 → 부분완료→완료 승격 ⑥ ADR-029(text-edit) Phase 1-2 완료 확인 → Proposed→Accepted ⑦ ADR-006: ElementSprite.tsx COMPLEX_COMPONENT_TAGS 체크 누락(Phase 5 Known Issues) 확인 ⑧ ADR-010: 템플릿 18개 정합 확인. 현황 카운트 갱신 (완료 12→16, 부분완료 9→6, 미구현 9→8)                                                                                                                  |
 | 2026-03-08 | **전수 코드베이스 재대조 (5개 병렬 에이전트, 30개 ADR 전수)** — ① ADR-019: Phase C 부분 미구현 발견 (C2 Icon Factory 미등록 — 캔버스 드래그 불가, C4 기존 Spec iconName prop 연동 6개 미구현) → "Phase A-D 완료"→"Phase A+B+D + C 부분" 정정 ② ADR-027: Phase C 70% 진행 중 확인 (TEXT_ELEMENT_TAGS에 Button/Badge/ToggleButton 등록 + extractFullSpecTextStyle 완성, extractSpecTextBounds 잔여) → 미완료 범위 갱신 ③ ADR-009/010/011/012: 문서-코드 일치 확인 ④ ADR-021/026: 문서-코드 일치 확인 ⑤ ADR-030/024/013: 미구현 0% 확인 ⑥ ADR-014/018/025/028/029/006: 완료 상태 재확인                                                                                                                                                                                                |
 | 2026-03-08 | **ADR-019 버그 수정 2건** — ① Skia 렌더링 미표시: `IMAGE_TAGS`에 `Icon` 포함 → `spriteType=image` → Spec shapes 경로 진입 불가. `IMAGE_TAGS`에서 제거 + `UI_BADGE_TAGS`에 추가 ② Publish export 누락: `components/Icon.tsx` 존재했으나 `index.tsx`에 export 미등록 → ComponentRegistry import 에러. `export { Icon }` 추가. 색상 변경은 스타일 패널 `color` 속성으로 지원 (추가 UI 불필요)                                                                                                                                                                                                                                                                                                                                                                                          |
+| 2026-03-09 | **ADR-024 Superseded** — 코드 대조 결과 ADR-022/028/029에서 구 변수(`--highlight-background` 등) → 새 4축 체계(`--bg`/`--fg`/`--accent`/`--border`) 전환 이미 완료 확인. `--s2-` 접두사 방식은 미채택. 잔존 구 변수 3건은 React Aria Checkbox 내부 로컬 변수(변경 불가). 미구현→완료 이동, 현황 카운트 갱신 (완료 17, 미구현 6). **ADR-030 Phase 0 완료** — G0-2(S2 Props 렌더러 전달) + G0-4(Factory `name` 기본값) + G0-5(Toast/Pagination 렌더러 추가) 구현. G0-3(이벤트) 스킵 (이벤트 엔진 미성숙으로 리스크 없음)                                                                                                                                                                                                                                                              |

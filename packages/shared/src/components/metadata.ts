@@ -26,11 +26,11 @@ export interface ComponentMeta {
  * 컴포넌트 메타데이터 레지스트리
  */
 export const componentMetadata: ComponentMeta[] = [
-  // Actions
+  // Buttons
   {
     type: "Button",
     label: "Button",
-    category: "Actions",
+    category: "Buttons",
     icon: "🔘",
     inspector: {
       hasCustomEditor: true,
@@ -52,7 +52,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "ToggleButton",
     label: "Toggle Button",
-    category: "Actions",
+    category: "Buttons",
     icon: "🔘",
     inspector: {
       hasCustomEditor: true,
@@ -75,7 +75,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "ToggleButtonGroup",
     label: "Toggle Button Group",
-    category: "Actions",
+    category: "Buttons",
     icon: "🔘",
     inspector: {
       hasCustomEditor: true,
@@ -88,7 +88,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Menu",
     label: "Menu",
-    category: "Actions",
+    category: "Collections",
     icon: "📋",
     inspector: {
       hasCustomEditor: true,
@@ -107,7 +107,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Toolbar",
     label: "Toolbar",
-    category: "Actions",
+    category: "Buttons",
     icon: "🛠️",
     inspector: {
       hasCustomEditor: true,
@@ -120,7 +120,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Link",
     label: "Link",
-    category: "Actions",
+    category: "Layout",
     icon: "🔗",
     inspector: {
       hasCustomEditor: true,
@@ -140,11 +140,11 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
 
-  // Inputs
+  // Forms
   {
     type: "TextField",
     label: "Text Field",
-    category: "Inputs",
+    category: "Forms",
     icon: "📝",
     inspector: {
       hasCustomEditor: true,
@@ -163,7 +163,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "NumberField",
     label: "Number Field",
-    category: "Inputs",
+    category: "Forms",
     icon: "#️⃣",
     inspector: {
       hasCustomEditor: true,
@@ -182,7 +182,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "SearchField",
     label: "Search Field",
-    category: "Inputs",
+    category: "Forms",
     icon: "🔍",
     inspector: {
       hasCustomEditor: true,
@@ -202,7 +202,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Checkbox",
     label: "Checkbox",
-    category: "Inputs",
+    category: "Forms",
     icon: "☑️",
     inspector: {
       hasCustomEditor: true,
@@ -223,7 +223,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "CheckboxGroup",
     label: "Checkbox Group",
-    category: "Inputs",
+    category: "Forms",
     icon: "☑️",
     inspector: {
       hasCustomEditor: true,
@@ -236,7 +236,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Radio",
     label: "Radio",
-    category: "Inputs",
+    category: "Forms",
     icon: "🔘",
     inspector: {
       hasCustomEditor: true,
@@ -256,7 +256,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "RadioGroup",
     label: "Radio Group",
-    category: "Inputs",
+    category: "Forms",
     icon: "🔘",
     inspector: {
       hasCustomEditor: true,
@@ -269,7 +269,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Select",
     label: "Select",
-    category: "Inputs",
+    category: "Forms",
     icon: "🔽",
     inspector: {
       hasCustomEditor: true,
@@ -289,7 +289,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "ComboBox",
     label: "Combo Box",
-    category: "Inputs",
+    category: "Forms",
     icon: "🔽",
     inspector: {
       hasCustomEditor: true,
@@ -309,7 +309,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Switch",
     label: "Switch",
-    category: "Inputs",
+    category: "Forms",
     icon: "🎚️",
     inspector: {
       hasCustomEditor: true,
@@ -330,7 +330,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Slider",
     label: "Slider",
-    category: "Inputs",
+    category: "Forms",
     icon: "🎚️",
     inspector: {
       hasCustomEditor: true,
@@ -351,7 +351,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "TailSwatch",
     label: "Color Picker",
-    category: "Inputs",
+    category: "Forms",
     icon: "🎨",
     inspector: {
       hasCustomEditor: true,
@@ -364,7 +364,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "FileTrigger",
     label: "File Trigger",
-    category: "Inputs",
+    category: "Forms",
     icon: "📁",
     inspector: {
       hasCustomEditor: true,
@@ -377,7 +377,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "DropZone",
     label: "Drop Zone",
-    category: "Inputs",
+    category: "Forms",
     icon: "📥",
     inspector: {
       hasCustomEditor: true,
@@ -390,7 +390,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Autocomplete",
     label: "Autocomplete",
-    category: "Inputs",
+    category: "Forms",
     icon: "🔍",
     inspector: {
       hasCustomEditor: true,
@@ -496,11 +496,11 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
 
-  // Data Display
+  // Collections
   {
     type: "Table",
     label: "Table",
-    category: "Data Display",
+    category: "Collections",
     icon: "📊",
     inspector: {
       hasCustomEditor: true,
@@ -513,7 +513,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "ListBox",
     label: "List Box",
-    category: "Data Display",
+    category: "Collections",
     icon: "📋",
     inspector: {
       hasCustomEditor: true,
@@ -526,7 +526,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "GridList",
     label: "Grid List",
-    category: "Data Display",
+    category: "Collections",
     icon: "🎛️",
     inspector: {
       hasCustomEditor: true,
@@ -539,7 +539,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Tree",
     label: "Tree",
-    category: "Data Display",
+    category: "Collections",
     icon: "🌳",
     inspector: {
       hasCustomEditor: true,
@@ -552,7 +552,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "TagGroup",
     label: "Tag Group",
-    category: "Data Display",
+    category: "Collections",
     icon: "🏷️",
     inspector: {
       hasCustomEditor: true,
@@ -563,11 +563,11 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
 
-  // Feedback
+  // Content
   {
     type: "Tooltip",
     label: "Tooltip",
-    category: "Feedback",
+    category: "Overlays",
     icon: "💬",
     inspector: {
       hasCustomEditor: true,
@@ -580,7 +580,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "ProgressBar",
     label: "Progress Bar",
-    category: "Feedback",
+    category: "Content",
     icon: "📊",
     inspector: {
       hasCustomEditor: true,
@@ -592,7 +592,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Meter",
     label: "Meter",
-    category: "Feedback",
+    category: "Content",
     icon: "📏",
     inspector: {
       hasCustomEditor: true,
@@ -604,7 +604,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Badge",
     label: "Badge",
-    category: "Feedback",
+    category: "Content",
     icon: "🏷️",
     inspector: {
       hasCustomEditor: true,
@@ -616,7 +616,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Icon",
     label: "Icon",
-    category: "Structure",
+    category: "Content",
     icon: "🎨",
     inspector: {
       hasCustomEditor: true,
@@ -628,7 +628,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Toast",
     label: "Toast",
-    category: "Feedback",
+    category: "Content",
     icon: "🔔",
     inspector: {
       hasCustomEditor: true,
@@ -707,7 +707,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Separator",
     label: "Separator",
-    category: "Layout",
+    category: "Content",
     icon: "➖",
     inspector: {
       hasCustomEditor: true,
@@ -733,7 +733,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Form",
     label: "Form",
-    category: "Layout",
+    category: "Forms",
     icon: "📝",
     inspector: {
       hasCustomEditor: true,
@@ -1133,7 +1133,7 @@ export const componentMetadata: ComponentMeta[] = [
   {
     type: "Field",
     label: "Field",
-    category: "Data Display",
+    category: "Collections",
     icon: "",
     inspector: {
       hasCustomEditor: true,
@@ -1143,11 +1143,11 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
 
-  // Data Management
+  // Collections (Data)
   {
     type: "DataTable",
     label: "DataTable",
-    category: "Data",
+    category: "Collections",
     icon: "📊",
     inspector: {
       hasCustomEditor: true,

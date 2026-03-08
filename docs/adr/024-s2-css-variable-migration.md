@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed (2026-03-05)
+Superseded (2026-03-09) — ADR-022/028/029에서 `--bg`/`--fg`/`--accent`/`--border` 4축 체계로 전환 완료. `--s2-` 접두사 대신 S2 + React Aria 혼합 네이밍 채택 (`.claude/rules/css-tokens.md` 참조).
 
 ## Context
 
