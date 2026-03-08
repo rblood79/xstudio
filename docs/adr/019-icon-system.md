@@ -6,7 +6,7 @@ Implemented (2026-03-08) — Phase A+B+C+D 완료, Phase E 향후
 
 ### 구현 이력
 
-- **Phase A** (2026-03-08): Lucide 아이콘 레지스트리 확장 (~1,688개) + IconElementProps + defaultPropsMap
+- **Phase A** (2026-03-08): Lucide 아이콘 레지스트리 확장 (~1,170개) + IconElementProps + defaultPropsMap
 - **Phase B** (2026-03-08): IconPicker UI — IconPreview, IconPickerPopover, useIconSearch, PropertyIconPicker
 - **Phase C1+C3** (2026-03-08): Icon.spec.ts + TAG_SPEC_MAP + ComponentList + IconEditor + metadata 등록
 - **Phase C2** (2026-03-08): Icon은 simple element 경로 (defaultPropsMap + ComponentList 등록) — COMPLEX_COMPONENT_TAGS 불필요, 캔버스 드래그 배치 정상 동작
@@ -14,6 +14,12 @@ Implemented (2026-03-08) — Phase A+B+C+D 완료, Phase E 향후
 - **Phase C5** (2026-03-08): ComboBoxEditor에 PropertyIconPicker 추가 (트리거 아이콘 변경 UI)
 - **Phase C4 보류**: CalendarHeader(prev/next 2개 prop 필요), ListBox/Tree(상태 기반 아이콘) — 복잡도 대비 효용 낮아 보류
 - **Phase D** (2026-03-08): Preview/Publish SVG 아이콘 렌더링 — IconRenderers, Icon 컴포넌트, rendererMap/ComponentRegistry 등록
+
+### 버그 수정 이력
+
+- **Skia 렌더링 미표시 수정** (2026-03-08): `Icon`이 `IMAGE_TAGS`에 포함되어 `spriteType === "image"` → Spec shapes 경로 진입 불가. `IMAGE_TAGS`에서 제거 + `UI_BADGE_TAGS`에 추가하여 `isUIComponent === true` 경로 활성화
+- **Publish export 누락 수정** (2026-03-08): `packages/shared/src/components/Icon.tsx` 존재했으나 `index.tsx`에 export 누락 → ComponentRegistry import 에러. `export { Icon } from "./Icon"` 추가
+- **색상 변경**: 스타일 패널의 `color` 속성으로 변경 (Icon.spec.ts가 `props.style?.color ?? variant.text` 참조, Preview/Publish는 `currentColor` fallback)
 
 ## Context
 
@@ -30,17 +36,18 @@ XStudio의 WebGL/Skia 렌더링 파이프라인에는 아이콘 렌더링 기능
 
 ### 현재 상태
 
-| 영역                        | 상태    | 비고                                        |
-| --------------------------- | ------- | ------------------------------------------- |
-| **Skia 렌더링**             | ✅ 완료 | `renderIconPath()` — SVG path + circle 지원 |
-| **PixiJS 이벤트**           | ✅ 스킵 | 부모 frame hitArea 사용 (정상)              |
-| **Spec 시스템**             | ✅ 완료 | `IconFontShape` 타입, 6개 Spec 사용 중      |
-| **아이콘 데이터**           | ✅ 부분 | `lucideIcons.ts` — 12개 아이콘만 하드코딩   |
-| **Element `iconName` prop** | ❌ 없음 | `unified.types.ts`에 아이콘 관련 prop 없음  |
-| **아이콘 피커 UI**          | ❌ 없음 | 검색/선택 팔레트 미존재                     |
-| **프로퍼티 에디터 연동**    | ❌ 없음 | SelectEditor 등에 아이콘 편집 필드 없음     |
-| **독립 Icon 컴포넌트**      | ❌ 없음 | `Icon` 태그 + Factory 미존재                |
-| **Preview/Publish 렌더링**  | ❌ 없음 | HTML에서 아이콘 렌더링 미구현               |
+| 영역                        | 상태    | 비고                                                                   |
+| --------------------------- | ------- | ---------------------------------------------------------------------- |
+| **Skia 렌더링**             | ✅ 완료 | `renderIconPath()` — SVG path + circle 지원                            |
+| **PixiJS 이벤트**           | ✅ 완료 | `UI_BADGE_TAGS` 분류, 부모 frame hitArea 사용                          |
+| **Spec 시스템**             | ✅ 완료 | `Icon.spec.ts` + `IconFontShape` 타입, 7개 Spec 사용 중                |
+| **아이콘 데이터**           | ✅ 완료 | `lucideIconData.generated.ts` — 1,170개 아이콘 등록                    |
+| **Element `iconName` prop** | ✅ 완료 | `IconElementProps` (iconName, iconFontFamily, size, strokeWidth)       |
+| **아이콘 피커 UI**          | ✅ 완료 | `IconPickerPopover` + `useIconSearch` (fuzzy match + useDeferredValue) |
+| **프로퍼티 에디터 연동**    | ✅ 완료 | `IconEditor` + `ComboBoxEditor` PropertyIconPicker 통합                |
+| **독립 Icon 컴포넌트**      | ✅ 완료 | `Icon` 태그 + ComponentList + defaultPropsMap 등록                     |
+| **Preview/Publish 렌더링**  | ✅ 완료 | `Icon.tsx` React 컴포넌트 + `IconRenderers.tsx` + rendererMap 등록     |
+| **색상 변경**               | ✅ 완료 | 스타일 패널 `color` 속성 → `props.style?.color` 참조                   |
 
 ### 제약 조건 (Hard Constraints)
 

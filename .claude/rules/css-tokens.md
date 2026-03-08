@@ -87,7 +87,7 @@ Spec TokenRef: {color.primary}, {color.secondary}, {color.tertiary},
 --border-color → --border           --border-color-hover → --border-hover
 --highlight-background → --accent   --highlight-foreground → --fg-on-accent
 --highlight-overlay → --accent-subtle
---overlay-background → --bg-overlay --field-background → --bg-raised
+--overlay-background → --bg-overlay --field-background → --bg-inset
 --button-background → --bg-inset    --focus-ring-color → --focus-ring
 --invalid-color → --negative        --info → --informative
 --warning-container → --notice-subtle  --on-warning-container → --fg-on-notice
@@ -102,7 +102,7 @@ Spec TokenRef: {color.primary}, {color.secondary}, {color.tertiary},
 | `{color.accent-hover}`       | `color-mix(--accent 85%, black)`   | accent hover         |
 | `{color.accent-pressed}`     | `color-mix(--accent 75%, black)`   | accent pressed       |
 | `{color.on-accent}`          | `--fg-on-accent`                   | accent 위 텍스트     |
-| `{color.accent-subtle}`      | `--color-primary-100`              | 연한 accent 배경     |
+| `{color.accent-subtle}`      | `--accent-subtle`                  | 연한 accent 배경     |
 | `{color.neutral}`            | `--fg`                             | 기본 텍스트          |
 | `{color.neutral-subdued}`    | `--fg-muted`                       | 보조 텍스트          |
 | `{color.neutral-subtle}`     | `--bg-muted`                       | 연한 중립 배경       |

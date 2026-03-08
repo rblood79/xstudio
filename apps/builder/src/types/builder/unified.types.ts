@@ -137,8 +137,22 @@ export interface ButtonElementProps extends BaseElementProps {
     | "negative"
     | "premium"
     | "genai";
+  fillStyle?: "bold" | "subtle" | "outline";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   isDisabled?: boolean;
+  isPending?: boolean;
+  autoFocus?: boolean;
+  type?: "button" | "submit" | "reset";
+  name?: string;
+  value?: string;
+  form?: string;
+  formAction?: string;
+  formMethod?: string;
+  formNoValidate?: boolean;
+  formTarget?: string;
+  href?: string;
+  target?: string;
+  rel?: string;
   onPress?: () => void;
 }
 
@@ -168,15 +182,43 @@ export interface TextFieldElementProps extends BaseElementProps {
   isRequired?: boolean;
   isDisabled?: boolean;
   isReadOnly?: boolean;
+  autoFocus?: boolean;
+  autoComplete?: string;
+  autoCorrect?: string;
+  inputMode?:
+    | "none"
+    | "text"
+    | "tel"
+    | "url"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search";
+  name?: string;
+  form?: string;
+  pattern?: string;
+  maxLength?: number;
+  minLength?: number;
+  spellCheck?: boolean;
+  validationBehavior?: "native" | "aria";
   onChange?: (value: string) => void;
 }
 
 export interface CheckboxElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  size?: "sm" | "md" | "lg";
   isSelected?: boolean;
   defaultSelected?: boolean;
   isIndeterminate?: boolean;
   isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  isInvalid?: boolean;
+  isEmphasized?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  value?: string;
+  form?: string;
   onChange?: (isSelected: boolean) => void;
 }
 
@@ -196,6 +238,11 @@ export interface ToggleButtonElementProps extends BaseElementProps {
   isSelected?: boolean;
   defaultSelected?: boolean;
   isDisabled?: boolean;
+  isReadOnly?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  value?: string;
+  form?: string;
   onChange?: (isSelected: boolean) => void;
 }
 
@@ -214,54 +261,111 @@ export interface ToggleButtonGroupElementProps extends BaseElementProps {
 
 export interface CheckboxGroupElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  size?: "sm" | "md" | "lg";
+  label?: string;
+  description?: string;
+  errorMessage?: string;
   value?: string[];
   defaultValue?: string[];
-  onChange?: (value: string[]) => void;
   isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  isInvalid?: boolean;
+  isEmphasized?: boolean;
+  name?: string;
   orientation?: "horizontal" | "vertical";
+  validationBehavior?: "native" | "aria";
+  onChange?: (value: string[]) => void;
 }
 
 export interface RadioGroupElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  size?: "sm" | "md" | "lg";
+  label?: string;
+  description?: string;
+  errorMessage?: string;
   value?: string;
   defaultValue?: string;
-  onChange?: (value: string) => void;
   isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  isInvalid?: boolean;
+  isEmphasized?: boolean;
+  name?: string;
   orientation?: "horizontal" | "vertical";
+  validationBehavior?: "native" | "aria";
+  onChange?: (value: string) => void;
 }
 
 export interface SelectElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  size?: "sm" | "md" | "lg";
+  label?: string;
+  description?: string;
+  errorMessage?: string;
+  placeholder?: string;
   selectedKey?: string;
   defaultSelectedKey?: string;
-  onSelectionChange?: (key: string) => void;
+  selectedValue?: string;
   isDisabled?: boolean;
-  placeholder?: string;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  selectionMode?: "single" | "multiple";
+  multipleDisplayMode?: "tags" | "count";
+  disallowEmptySelection?: boolean;
+  menuTrigger?: "input" | "focus" | "manual";
+  validationBehavior?: "native" | "aria";
+  dataBinding?: DataBinding;
+  onSelectionChange?: (key: string) => void;
 }
 
 export interface ComboBoxElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "quiet";
+  label?: string;
+  description?: string;
+  errorMessage?: string;
+  placeholder?: string;
   inputValue?: string;
   defaultInputValue?: string;
-  onInputChange?: (value: string) => void;
   selectedKey?: string;
   defaultSelectedKey?: string;
-  onSelectionChange?: (key: string) => void;
+  selectedValue?: string;
   isDisabled?: boolean;
-  placeholder?: string;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  autoFocus?: boolean;
+  name?: string;
   allowsCustomValue?: boolean;
+  menuTrigger?: "input" | "focus" | "manual";
+  iconName?: string;
+  validationBehavior?: "native" | "aria";
+  dataBinding?: DataBinding;
+  onInputChange?: (value: string) => void;
+  onSelectionChange?: (key: string) => void;
 }
 
 export interface SliderElementProps extends BaseElementProps {
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "filled";
   label?: string;
   value?: number;
   defaultValue?: number;
-  onChange?: (value: number) => void;
   minValue?: number;
   maxValue?: number;
   step?: number;
   isDisabled?: boolean;
   orientation?: "horizontal" | "vertical";
+  showValue?: boolean;
+  name?: string;
+  form?: string;
+  locale?: string;
+  unit?: string;
+  valueFormat?: string;
+  onChange?: (value: number) => void;
 }
 
 export interface TailSwatchElementProps extends BaseElementProps {
@@ -317,43 +421,96 @@ export interface TreeItemElementProps extends BaseElementProps {
 }
 
 export interface CalendarElementProps extends BaseElementProps {
-  value?: unknown; // DateValue 타입 (런타임에서 처리)
-  defaultValue?: unknown; // DateValue 타입 (런타임에서 처리)
-  onChange?: (value: unknown) => void; // DateValue 타입 (런타임에서 처리)
+  value?: unknown;
+  defaultValue?: unknown;
   isDisabled?: boolean;
   isReadOnly?: boolean;
+  isInvalid?: boolean;
+  autoFocus?: boolean;
   minValue?: Date;
   maxValue?: Date;
+  minDate?: string;
+  maxDate?: string;
+  defaultToday?: boolean;
+  firstDayOfWeek?: "sun" | "mon" | "sat";
+  pageBehavior?: "single" | "visible";
+  errorMessage?: string;
+  onChange?: (value: unknown) => void;
 }
 
 export interface DatePickerElementProps extends BaseElementProps {
+  label?: string;
+  description?: string;
+  errorMessage?: string;
   value?: Date;
   defaultValue?: Date;
-  onChange?: (value: Date) => void;
   isDisabled?: boolean;
   isReadOnly?: boolean;
+  isRequired?: boolean;
+  isInvalid?: boolean;
+  autoFocus?: boolean;
+  autoComplete?: string;
+  name?: string;
+  form?: string;
   minValue?: Date;
   maxValue?: Date;
+  minDate?: string;
+  maxDate?: string;
   placeholder?: string;
+  placeholderValue?: string;
+  defaultToday?: boolean;
+  granularity?: "day" | "hour" | "minute" | "second";
+  hourCycle?: 12 | 24;
+  hideTimeZone?: boolean;
+  timezone?: string;
+  firstDayOfWeek?: "sun" | "mon" | "sat";
+  pageBehavior?: "single" | "visible";
+  shouldCloseOnSelect?: boolean;
+  shouldForceLeadingZeros?: boolean;
+  validationBehavior?: "native" | "aria";
+  onChange?: (value: Date) => void;
 }
 
 export interface DateRangePickerElementProps extends BaseElementProps {
+  label?: string;
+  description?: string;
+  errorMessage?: string;
   value?: { start: Date; end: Date };
   defaultValue?: { start: Date; end: Date };
-  onChange?: (value: { start: Date; end: Date }) => void;
   isDisabled?: boolean;
   isReadOnly?: boolean;
+  isRequired?: boolean;
+  isInvalid?: boolean;
+  autoFocus?: boolean;
   minValue?: Date;
   maxValue?: Date;
+  minDate?: string;
+  maxDate?: string;
   placeholder?: string;
+  defaultToday?: boolean;
+  allowClear?: boolean;
+  firstDayOfWeek?: "sun" | "mon" | "sat";
+  highlightToday?: boolean;
+  showWeekNumbers?: boolean;
+  timezone?: string;
+  onChange?: (value: { start: Date; end: Date }) => void;
 }
 
 export interface SwitchElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  size?: "sm" | "md" | "lg";
   isSelected?: boolean;
   defaultSelected?: boolean;
-  onChange?: (isSelected: boolean) => void;
   isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  isInvalid?: boolean;
+  isEmphasized?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  value?: string;
+  form?: string;
+  onChange?: (isSelected: boolean) => void;
 }
 
 export interface TableElementProps extends BaseElementProps {
@@ -451,6 +608,12 @@ export interface CardElementProps extends BaseElementProps {
   isSelectable?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
+  isQuiet?: boolean;
+  href?: string;
+  target?: string;
+  asset?: string;
+  assetSrc?: string;
+  preview?: string;
 }
 
 export interface BadgeElementProps extends BaseElementProps {
@@ -591,6 +754,253 @@ export interface SlotElementProps extends BaseElementProps {
   description?: string;
 }
 
+// === NumberField Element Props ===
+export interface NumberFieldElementProps extends BaseElementProps {
+  size?: "sm" | "md" | "lg";
+  label?: string;
+  description?: string;
+  errorMessage?: string;
+  placeholder?: string;
+  value?: number;
+  defaultValue?: number;
+  minValue?: number;
+  maxValue?: number;
+  step?: number;
+  isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  isWheelDisabled?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  form?: string;
+  decimals?: number;
+  formatStyle?: "decimal" | "percent" | "currency" | "unit";
+  currency?: string;
+  unit?: string;
+  notation?: "standard" | "scientific" | "engineering" | "compact";
+  locale?: string;
+  showGroupSeparator?: boolean;
+  formatOptions?: Record<string, unknown>;
+  validationBehavior?: "native" | "aria";
+}
+
+// === SearchField Element Props ===
+export interface SearchFieldElementProps extends BaseElementProps {
+  size?: "sm" | "md" | "lg";
+  label?: string;
+  description?: string;
+  errorMessage?: string;
+  placeholder?: string;
+  value?: string;
+  defaultValue?: string;
+  isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  form?: string;
+  inputMode?:
+    | "none"
+    | "text"
+    | "tel"
+    | "url"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search";
+  pattern?: string;
+  maxLength?: number;
+  minLength?: number;
+  validationBehavior?: "native" | "aria";
+}
+
+// === ProgressBar Element Props ===
+export interface ProgressBarElementProps extends BaseElementProps {
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "accent";
+  label?: string;
+  value?: number;
+  minValue?: number;
+  maxValue?: number;
+  isIndeterminate?: boolean;
+  showValue?: boolean;
+  locale?: string;
+  valueFormat?: string;
+}
+
+// === Meter Element Props ===
+export interface MeterElementProps extends BaseElementProps {
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "accent";
+  label?: string;
+  value?: number;
+  minValue?: number;
+  maxValue?: number;
+  showValue?: boolean;
+  locale?: string;
+  valueFormat?: string;
+}
+
+// === Form Element Props ===
+export interface FormElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  action?: string;
+  method?: "get" | "post";
+  encType?: string;
+  target?: string;
+  autoFocus?: boolean;
+  restoreFocus?: boolean;
+  validationBehavior?: "native" | "aria";
+}
+
+// === Disclosure Element Props ===
+export interface DisclosureElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "quiet";
+  title?: string;
+  isExpanded?: boolean;
+  defaultExpanded?: boolean;
+  isDisabled?: boolean;
+}
+
+// === DisclosureGroup Element Props ===
+export interface DisclosureGroupElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  allowsMultipleExpanded?: boolean;
+  isDisabled?: boolean;
+}
+
+// === DropZone Element Props ===
+export interface DropZoneElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "illustrated";
+  label?: string;
+  description?: string;
+  isDisabled?: boolean;
+}
+
+// === FileTrigger Element Props ===
+export interface FileTriggerElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  acceptedFileTypes?: string[];
+  allowsMultiple?: boolean;
+  acceptDirectory?: boolean;
+  defaultCamera?: "user" | "environment";
+}
+
+// === Separator Element Props ===
+export interface SeparatorElementProps extends BaseElementProps {
+  orientation?: "horizontal" | "vertical";
+}
+
+// === Toolbar Element Props ===
+export interface ToolbarElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  orientation?: "horizontal" | "vertical";
+}
+
+// === Breadcrumbs Element Props ===
+export interface BreadcrumbsElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  isDisabled?: boolean;
+}
+
+// === Dialog Element Props ===
+export interface DialogElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  isDismissable?: boolean;
+  role?: "dialog" | "alertdialog";
+}
+
+// === Popover Element Props ===
+export interface PopoverElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  placement?:
+    | "bottom"
+    | "bottom start"
+    | "bottom end"
+    | "top"
+    | "top start"
+    | "top end"
+    | "left"
+    | "right";
+  offset?: number;
+}
+
+// === Modal Element Props ===
+export interface ModalElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  isDismissable?: boolean;
+}
+
+// === Tooltip Element Props ===
+export interface TooltipElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  placement?:
+    | "bottom"
+    | "bottom start"
+    | "bottom end"
+    | "top"
+    | "top start"
+    | "top end"
+    | "left"
+    | "right";
+  offset?: number;
+}
+
+// === Menu Element Props ===
+export interface MenuElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  selectionMode?: "none" | "single" | "multiple";
+  disallowEmptySelection?: boolean;
+  isDisabled?: boolean;
+}
+
+// === Group Element Props ===
+export interface GroupElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  isDisabled?: boolean;
+}
+
+// === RangeCalendar Element Props ===
+export interface RangeCalendarElementProps extends BaseElementProps {
+  isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isInvalid?: boolean;
+  autoFocus?: boolean;
+  minDate?: string;
+  maxDate?: string;
+  defaultToday?: boolean;
+  firstDayOfWeek?: "sun" | "mon" | "sat";
+  errorMessage?: string;
+}
+
+// === Color Component Element Props ===
+export interface ColorFieldElementProps extends BaseElementProps {
+  label?: string;
+  description?: string;
+  errorMessage?: string;
+  value?: string;
+  defaultValue?: string;
+  isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  channel?: string;
+  colorSpace?: "rgb" | "hsl" | "hsb";
+}
+
+export interface ColorPickerElementProps extends BaseElementProps {
+  value?: string;
+  defaultValue?: string;
+}
+
+export interface ColorSwatchElementProps extends BaseElementProps {
+  value?: string;
+  colorSpace?: "rgb" | "hsl" | "hsb";
+}
+
 // === 통합된 ComponentElementProps ===
 export type ComponentElementProps =
   | ButtonElementProps
@@ -636,7 +1046,29 @@ export type ComponentElementProps =
   | SectionElementProps
   | NavElementProps
   | IconElementProps
-  | SlotElementProps;
+  | SlotElementProps
+  | NumberFieldElementProps
+  | SearchFieldElementProps
+  | ProgressBarElementProps
+  | MeterElementProps
+  | FormElementProps
+  | DisclosureElementProps
+  | DisclosureGroupElementProps
+  | DropZoneElementProps
+  | FileTriggerElementProps
+  | SeparatorElementProps
+  | ToolbarElementProps
+  | BreadcrumbsElementProps
+  | DialogElementProps
+  | PopoverElementProps
+  | ModalElementProps
+  | TooltipElementProps
+  | MenuElementProps
+  | GroupElementProps
+  | RangeCalendarElementProps
+  | ColorFieldElementProps
+  | ColorPickerElementProps
+  | ColorSwatchElementProps;
 
 // === 스토어 상태 타입 ===
 export interface ElementsState {
@@ -1245,7 +1677,7 @@ export function createDefaultSlotProps(): SlotElementProps {
 
 // === 전용 타입 없는 컴포넌트 기본 props (BaseElementProps) ===
 
-export function createDefaultToolbarProps(): BaseElementProps {
+export function createDefaultToolbarProps(): ToolbarElementProps {
   return {
     // CSS base: display:flex; flex-wrap:wrap; gap:5px; width:fit-content
     // orientation=horizontal → flex-direction:row
@@ -1259,7 +1691,7 @@ export function createDefaultToolbarProps(): BaseElementProps {
   };
 }
 
-export function createDefaultBreadcrumbsProps(): BaseElementProps {
+export function createDefaultBreadcrumbsProps(): BreadcrumbsElementProps {
   return {
     // CSS base: display:flex; align-items:center (implicit row)
     style: {
@@ -1270,7 +1702,7 @@ export function createDefaultBreadcrumbsProps(): BaseElementProps {
   };
 }
 
-export function createDefaultSeparatorProps(): BaseElementProps {
+export function createDefaultSeparatorProps(): SeparatorElementProps {
   return {
     // CSS base: width:100%; height:1px (horizontal)
     // orientation=vertical → height:100%; width:1px
@@ -1281,7 +1713,7 @@ export function createDefaultSeparatorProps(): BaseElementProps {
   };
 }
 
-export function createDefaultDisclosureProps(): BaseElementProps {
+export function createDefaultDisclosureProps(): DisclosureElementProps {
   return {
     // CSS base: width:100%
     style: {
@@ -1290,7 +1722,7 @@ export function createDefaultDisclosureProps(): BaseElementProps {
   };
 }
 
-export function createDefaultDisclosureGroupProps(): BaseElementProps {
+export function createDefaultDisclosureGroupProps(): DisclosureGroupElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; width:100%
     style: {
@@ -1301,7 +1733,7 @@ export function createDefaultDisclosureGroupProps(): BaseElementProps {
   };
 }
 
-export function createDefaultDialogProps(): BaseElementProps {
+export function createDefaultDialogProps(): DialogElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; max-height:inherit
     style: {
@@ -1311,7 +1743,7 @@ export function createDefaultDialogProps(): BaseElementProps {
   };
 }
 
-export function createDefaultFormProps(): BaseElementProps {
+export function createDefaultFormProps(): FormElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; gap:var(--spacing-md)
     style: {
@@ -1322,7 +1754,7 @@ export function createDefaultFormProps(): BaseElementProps {
   };
 }
 
-export function createDefaultMenuProps(): BaseElementProps {
+export function createDefaultMenuProps(): MenuElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; outline:none
     style: {
@@ -1332,7 +1764,7 @@ export function createDefaultMenuProps(): BaseElementProps {
   };
 }
 
-export function createDefaultNumberFieldProps(): BaseElementProps {
+export function createDefaultNumberFieldProps(): NumberFieldElementProps {
   return {
     // CSS base: display:grid; Group 내부에 border:1px solid var(--outline-variant)
     style: {
@@ -1341,7 +1773,7 @@ export function createDefaultNumberFieldProps(): BaseElementProps {
   };
 }
 
-export function createDefaultSearchFieldProps(): BaseElementProps {
+export function createDefaultSearchFieldProps(): SearchFieldElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; Group border:1px solid var(--outline-variant)
     style: {
@@ -1351,7 +1783,7 @@ export function createDefaultSearchFieldProps(): BaseElementProps {
   };
 }
 
-export function createDefaultProgressBarProps(): BaseElementProps {
+export function createDefaultProgressBarProps(): ProgressBarElementProps {
   return {
     // CSS base: display:grid; gap:4px; width:100%
     style: {
@@ -1361,7 +1793,7 @@ export function createDefaultProgressBarProps(): BaseElementProps {
   };
 }
 
-export function createDefaultMeterProps(): BaseElementProps {
+export function createDefaultMeterProps(): MeterElementProps {
   return {
     // CSS base: display:grid; gap:4px; width:100%
     style: {
@@ -1391,7 +1823,7 @@ export function createDefaultTimeFieldProps(): BaseElementProps {
   };
 }
 
-export function createDefaultColorFieldProps(): BaseElementProps {
+export function createDefaultColorFieldProps(): ColorFieldElementProps {
   return {
     // CSS base: Group border:1px solid var(--outline-variant)
     style: {
@@ -1401,7 +1833,7 @@ export function createDefaultColorFieldProps(): BaseElementProps {
   };
 }
 
-export function createDefaultColorPickerProps(): BaseElementProps {
+export function createDefaultColorPickerProps(): ColorPickerElementProps {
   return {
     style: {
       display: "flex",
@@ -1411,7 +1843,7 @@ export function createDefaultColorPickerProps(): BaseElementProps {
   };
 }
 
-export function createDefaultColorSwatchProps(): BaseElementProps {
+export function createDefaultColorSwatchProps(): ColorSwatchElementProps {
   return {
     // CSS base: display:inline-block; border:1px solid var(--outline-variant); border-radius:var(--radius-sm)
     style: {
@@ -1421,7 +1853,7 @@ export function createDefaultColorSwatchProps(): BaseElementProps {
   };
 }
 
-export function createDefaultDropZoneProps(): BaseElementProps {
+export function createDefaultDropZoneProps(): DropZoneElementProps {
   return {
     // CSS base: display:flex; flex-direction:column; border:2px dashed var(--outline-variant)
     style: {
@@ -1434,7 +1866,7 @@ export function createDefaultDropZoneProps(): BaseElementProps {
   };
 }
 
-export function createDefaultFileTriggerProps(): BaseElementProps {
+export function createDefaultFileTriggerProps(): FileTriggerElementProps {
   return {
     style: {
       display: "inline-flex",
@@ -1442,13 +1874,13 @@ export function createDefaultFileTriggerProps(): BaseElementProps {
   };
 }
 
-export function createDefaultTooltipProps(): BaseElementProps {
+export function createDefaultTooltipProps(): TooltipElementProps {
   return {
     style: {},
   };
 }
 
-export function createDefaultPopoverProps(): BaseElementProps {
+export function createDefaultPopoverProps(): PopoverElementProps {
   return {
     // CSS base: border:1px solid var(--outline-variant)
     style: {
@@ -1457,7 +1889,7 @@ export function createDefaultPopoverProps(): BaseElementProps {
   };
 }
 
-export function createDefaultModalProps(): BaseElementProps {
+export function createDefaultModalProps(): ModalElementProps {
   return {
     // CSS base: border:1px solid var(--outline-variant)
     style: {
@@ -1466,7 +1898,7 @@ export function createDefaultModalProps(): BaseElementProps {
   };
 }
 
-export function createDefaultGroupProps(): BaseElementProps {
+export function createDefaultGroupProps(): GroupElementProps {
   return {
     style: {
       display: "flex",

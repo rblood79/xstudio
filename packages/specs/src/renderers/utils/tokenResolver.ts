@@ -73,17 +73,16 @@ const COLOR_TOKEN_TO_CSS: Record<string, string> = {
   // --- Accent ---
   accent: "var(--accent)",
   "accent-hover": "color-mix(in srgb, var(--accent) 85%, black)",
-  "accent-pressed":
-    "color-mix(in srgb, var(--accent) 75%, black)",
+  "accent-pressed": "color-mix(in srgb, var(--accent) 75%, black)",
   "on-accent": "var(--fg-on-accent)",
-  "accent-subtle": "var(--color-primary-100)",
+  "accent-subtle": "var(--accent-subtle)",
 
   // --- Neutral ---
   neutral: "var(--fg)",
   "neutral-subdued": "var(--fg-muted)",
-  "neutral-subtle": "var(--color-neutral-200)",
-  "neutral-hover": "color-mix(in srgb, var(--color-neutral-200) 85%, black)",
-  "neutral-pressed": "color-mix(in srgb, var(--color-neutral-200) 75%, black)",
+  "neutral-subtle": "var(--bg-muted)",
+  "neutral-hover": "color-mix(in srgb, var(--bg-muted) 85%, black)",
+  "neutral-pressed": "color-mix(in srgb, var(--bg-muted) 75%, black)",
 
   // --- Negative ---
   negative: "var(--negative)",
@@ -103,7 +102,7 @@ const COLOR_TOKEN_TO_CSS: Record<string, string> = {
   // --- Surface / Layer ---
   base: "var(--bg)",
   "layer-1": "var(--bg-overlay)",
-  "layer-2": "var(--bg-raised)",
+  "layer-2": "var(--bg-inset)",
   elevated: "var(--color-white)",
   disabled: "var(--color-neutral-200)",
 
