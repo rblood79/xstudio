@@ -150,7 +150,7 @@
     }
 
     &:where([data-readonly]) {
-      background: var(--color-neutral-50);
+      background: var(--button-background);
       border-color: var(--border-color);
       cursor: default;
     }

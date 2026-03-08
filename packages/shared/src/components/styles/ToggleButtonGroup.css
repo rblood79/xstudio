@@ -79,7 +79,7 @@
       &[data-togglebutton-variant="surface"]
         .react-aria-ToggleButton
         .react-aria-SelectionIndicator {
-        background: var(--color-neutral-200);
+        background: var(--highlight-overlay);
       }
 
       .react-aria-ToggleButton {

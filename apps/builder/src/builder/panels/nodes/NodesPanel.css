@@ -145,7 +145,7 @@
   border-radius: 0;
   margin: 0px;
   margin-left:0px;
-  background-color: #fff;
+  background-color: var(--overlay-background);
   background-size: 8px 8px;
   background-image: repeating-linear-gradient(45deg,
       var(--focus-ring-color) 0,
@@ -249,13 +249,13 @@
 }
 
 .nodes-panel-tab:hover {
-  background-color: var(--color-neutral-200);
+  background-color: var(--highlight-overlay);
   color: var(--text-primary);
 }
 
 .nodes-panel-tab.active {
   color: var(--text-primary);
-  background-color: var(--gray-200);
+  background-color: var(--field-background);
 }
 
 .nodes-panel-tab.active .nodes-panel-tab-label {
@@ -352,7 +352,7 @@
   margin-left: var(--spacing-sm);
   font-size: var(--text-2xs);
   font-family: var(--font-mono);
-  background-color: var(--gray-200);
+  background-color: var(--field-background);
   color: var(--text-color-placeholder);
   border-radius: var(--radius-sm);
   max-width: 80px;

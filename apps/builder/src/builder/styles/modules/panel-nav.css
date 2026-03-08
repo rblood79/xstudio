@@ -5,7 +5,7 @@
    * ======================================== */
 
   :root {
-    --hover-bg: var(--color-neutral-50);
+    --hover-bg: var(--button-background);
     --sidebar-width: 240px;
     --panel-nav-width: 48px;
   }

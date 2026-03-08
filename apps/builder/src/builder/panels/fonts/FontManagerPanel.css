@@ -17,7 +17,7 @@
   /* Upload wrapper */
   .font-upload-wrapper {
     padding: var(--spacing-sm);
-    background-color: var(--color-neutral-100);
+    background-color: var(--button-background);
     border-bottom: 1px solid var(--border-color);
   }
 
@@ -31,7 +31,7 @@
     padding: var(--spacing-sm);
     border: 2px dashed var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--color-white);
+    background: var(--overlay-background);
     transition: all 150ms;
     cursor: pointer;
   }

@@ -1,7 +1,7 @@
 @layer components {
   .react-aria-ToggleButton {
     /* Unselected: neutral fill — button-base reads these vars */
-    --button-color: var(--color-neutral-200);
+    --button-color: var(--highlight-overlay);
     --button-text: var(--text-color);
     --button-border: transparent;
 

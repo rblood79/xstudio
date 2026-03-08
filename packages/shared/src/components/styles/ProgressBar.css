@@ -29,7 +29,7 @@
       border-radius: var(--radius-sm);
       overflow: hidden;
       will-change: transform;
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
     }
 
     .fill {

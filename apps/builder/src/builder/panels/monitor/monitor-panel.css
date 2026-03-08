@@ -108,7 +108,7 @@
   }
 
   .memory-chart svg {
-    background-color: var(--color-neutral-50);
+    background-color: var(--button-background);
     border-radius: var(--radius-md);
   }
 
@@ -190,7 +190,7 @@
     justify-content: space-between;
     gap: var(--spacing-md);
     padding: var(--spacing-sm);
-    background-color: var(--color-neutral-50);
+    background-color: var(--button-background);
     border-radius: var(--radius-md);
     flex: 1;
   }
@@ -259,7 +259,7 @@
     align-items: flex-start;
     gap: var(--spacing-sm);
     padding: var(--spacing-sm);
-    background-color: var(--color-neutral-50);
+    background-color: var(--button-background);
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     transition: border-color 150ms ease;
@@ -441,7 +441,7 @@
 
   /* Realtime Chart */
   .realtime-chart {
-    background-color: var(--color-neutral-50);
+    background-color: var(--button-background);
     border-radius: var(--radius-md);
   }
 
@@ -485,7 +485,7 @@
 
   /* FPS Meter */
   .fps-meter {
-    background: var(--color-neutral-50);
+    background: var(--button-background);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: var(--spacing-sm);
@@ -602,7 +602,7 @@
 
   /* Web Vitals Card */
   .web-vitals-card {
-    background: var(--color-neutral-50);
+    background: var(--button-background);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: var(--spacing-sm);
@@ -800,7 +800,7 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing-xs) var(--spacing-sm);
-    background: var(--color-neutral-50);
+    background: var(--button-background);
     border-radius: var(--radius-sm);
     font-size: var(--text-xs);
   }
@@ -824,7 +824,7 @@
 
   .component-memory-item {
     padding: var(--spacing-xs) var(--spacing-sm);
-    background: var(--color-neutral-50);
+    background: var(--button-background);
     border-radius: var(--radius-sm);
     border-left: 3px solid var(--border-color);
   }

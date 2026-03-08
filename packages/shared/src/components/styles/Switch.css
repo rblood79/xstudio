@@ -28,7 +28,7 @@
       height: calc(var(--text-lg) + 2px);
       border-radius: var(--text-xl);
       border: 2px solid var(--border-color-hover);
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
       transition: all 200ms;
 
       &:before {

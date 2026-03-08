@@ -58,7 +58,7 @@
       font-size: var(--text-xs);
       color: var(--text-color-placeholder);
       padding: var(--spacing-sm);
-      background: var(--gray-200);
+      background: var(--field-background);
       border-radius: var(--radius-md);
       border: 1px solid var(--border-color);
       box-shadow: var(--inset-shadow-sm);
@@ -70,7 +70,7 @@
     .section-header {
       height: var(--header-height);
 
-      background-color: var(--gray-200);
+      background-color: var(--field-background);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       flex-direction: row;
@@ -87,6 +87,7 @@
       font-weight: var(--font-weight-semibold);
       font-size: var(--text-xs);
       line-height: var(--text-xs--line-height);
+      color: var(--text-color);
     }
 
     .section-header .section-icon {
@@ -105,7 +106,7 @@
     }
 
     .section-content {
-      background-color: var(--color-neutral-100);
+      background-color: var(--button-background);
       padding: var(--spacing-sm);
 
       gap: var(--spacing-sm);
@@ -115,7 +116,7 @@
         display: flex;
 
         .react-aria-Button {
-          background-color: var(--gray-200);
+          background-color: var(--field-background);
           border-color: transparent;
           padding: var(--spacing);
           height: var(--inspector-control-size);
@@ -134,7 +135,7 @@
       display: flex;
       flex-direction: column;
       gap: var(--spacing-sm);
-      background: var(--color-neutral-100);
+      background: var(--button-background);
 
       .properties-aria {
         flex: 1;
@@ -213,7 +214,7 @@
         display: flex;
         flex-direction: column;
         gap: var(--spacing-sm);
-        background: var(--gray-200);
+        background: var(--field-background);
         border-radius: var(--radius-sm);
       }
 
@@ -268,7 +269,7 @@
 
     .section-info {
       padding: var(--spacing-4);
-      background: var(--color-white);
+      background: var(--overlay-background);
       border: 1px solid var(--border-color-hover);
       border-radius: var(--radius-md);
 
@@ -282,7 +283,7 @@
       pre {
         margin: 0;
         padding: var(--spacing-2);
-        background: var(--gray-200);
+        background: var(--field-background);
         border-radius: var(--radius-sm);
         font-size: var(--font-size-xs);
         font-family: var(--font-mono);

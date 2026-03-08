@@ -30,7 +30,7 @@
   }
 
   .panel-sidebar {
-    background: var(--color-neutral-50);
+    background: var(--button-background);
   }
 
   .panel-card {

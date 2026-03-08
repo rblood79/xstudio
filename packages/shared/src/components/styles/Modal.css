@@ -103,7 +103,7 @@
 
   /* ===== Filled Variant ===== */
   .react-aria-Modal[data-variant="filled"] {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
     border: none;
   }
 

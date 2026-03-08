@@ -10,7 +10,7 @@
       white
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
-    --dp-pressed-bg: var(--color-neutral-200);
+    --dp-pressed-bg: var(--highlight-overlay);
 
     /* Size locals (md default) */
     --dp-input-padding: 8px 2.5rem 8px 14px;
@@ -31,7 +31,7 @@
       --field-accent: var(--invalid-color);
     }
     &[data-variant="filled"] {
-      --field-accent-container: var(--color-neutral-200);
+      --field-accent-container: var(--highlight-overlay);
       --field-on-accent: var(--text-color);
       --dp-pressed-bg: var(--overlay-background);
     }

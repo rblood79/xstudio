@@ -54,7 +54,7 @@
   }
 
   .loading-spinner {
-    background-color: var(--color-white);
+    background-color: var(--overlay-background);
     padding: 20px 40px;
     border-radius: 8px;
     font-size: 16px;

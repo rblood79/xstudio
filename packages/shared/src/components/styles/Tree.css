@@ -278,7 +278,7 @@
       }
 
       &[data-selected] {
-        background: var(--color-neutral-100);
+        background: var(--button-background);
         color: var(--color-neutral-900);
       }
 

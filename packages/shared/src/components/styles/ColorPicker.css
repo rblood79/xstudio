@@ -158,7 +158,7 @@
     }
 
     &[data-pressed] {
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
     }
 
     &[data-focus-visible] {

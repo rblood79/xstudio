@@ -12,7 +12,7 @@
 
   .chat-message[data-role="user"] {
     flex-direction: row-reverse;
-    background-color: var(--color-neutral-50);
+    background-color: var(--button-background);
   }
 
   .chat-message[data-role="assistant"] {

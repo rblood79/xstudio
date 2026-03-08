@@ -299,7 +299,7 @@
 
   .react-aria-ListBox[data-variant="secondary"] {
     --lb-accent: var(--button-background);
-    --lb-accent-container: var(--color-neutral-100);
+    --lb-accent-container: var(--button-background);
     --lb-on-accent-container: var(--color-neutral-900);
   }
 
@@ -339,7 +339,7 @@
 
   /* ===== Filled Variant ===== */
   .react-aria-ListBox[data-variant="filled"] {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
     border-color: transparent;
 
     .react-aria-ListBoxItem {

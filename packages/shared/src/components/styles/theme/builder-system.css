@@ -32,47 +32,46 @@
   /* ==================== Builder UI Scope Override (ADR-028) ==================== */
   /* [data-context="builder"] 단일 선택자로 모든 Builder UI 영역을 커버.
    * Preview iframe은 별도 document이므로 자동 격리.
-   * Fallback: body 직하 portal에도 builder 변수 적용 (UNSAFE_PortalProvider 안정화 전) */
+   * Fallback: body 직하 portal에도 builder 변수 적용 (UNSAFE_PortalProvider 안정화 전)
+   *
+   * Light: Tailwind gray (쿨 블루 언더톤) → 빌더 변수
+   * Dark: Tailwind zinc (웜 다크, Apple HIG 기반) → 빌더 변수 */
   [data-context="builder"],
   body:not([data-preview="true"]) > .react-aria-Popover,
   body:not([data-preview="true"]) > .react-aria-Modal {
-    /* ===== Core Semantic Colors (Light Mode) ===== */
-    --background-color: var(--gray-0);
-    --text-color: var(--gray-750);
-    --text-color-base: var(--gray-750);
-    --text-color-hover: var(--gray-1000);
-    --text-color-disabled: var(--gray-400);
-    --text-color-placeholder: var(--gray-500);
-    --border-color: var(--gray-300);
-    --border-color-hover: var(--gray-100);
-    --border-color-pressed: var(--gray-150);
-    --border-color-disabled: var(--gray-75);
+    /* ===== Light Gray (Tailwind gray → 빌더 변수) ===== */
+    --background-color: var(--color-gray-100);
+    --text-color: var(--color-gray-800);
+    --text-color-base: var(--color-gray-800);
+    --text-color-hover: var(--color-gray-900);
+    --text-color-disabled: var(--color-gray-400);
+    --text-color-placeholder: var(--color-gray-500);
+    --border-color: var(--color-gray-200);
+    --border-color-hover: var(--color-gray-300);
+    --border-color-pressed: var(--color-gray-300);
+    --border-color-disabled: var(--color-gray-100);
 
-    /* ===== Button & Field Colors ===== */
-    /* hover/pressed auto-derived via color-mix() in consumers (ADR-028 Phase 1) */
-    --button-background: var(--gray-50);
-    --field-background: var(--gray-0);
-    --overlay-background: var(--gray-0);
+    --button-background: var(--color-gray-50);
+    --field-background: var(--color-gray-50);
+    --overlay-background: var(--color-white);
 
-    /* ===== Highlight Colors ===== */
-    --focus-ring-color: var(--blue-300);
-    --highlight-background: var(--gray-900);
-    --highlight-background-pressed: var(--gray-600);
-    --highlight-foreground: var(--gray-0);
-    --highlight-overlay: rgba(2, 133, 255, 0.15);
+    --focus-ring-color: var(--color-blue-400);
+    --highlight-background: var(--color-gray-700);
+    --highlight-background-pressed: var(--color-gray-600);
+    --highlight-foreground: var(--color-white);
+    --highlight-overlay: rgba(107, 114, 128, 0.15);
 
-    /* ===== Invalid/Error ===== */
-    --invalid-color: var(--red-500);
+    --invalid-color: var(--color-red-500);
 
-    /* ===== Status Colors ===== */
-    --info: var(--blue-500);
-    --warning-container: var(--orange-50);
-    --on-warning-container: var(--orange-700);
-    --success: var(--green-500);
+    --info: var(--color-blue-500);
+    --warning-container: var(--color-orange-50);
+    --on-warning-container: var(--color-orange-700);
+    --success: var(--color-green-500);
   }
 
   /* ==================== Builder Dark Mode (ADR-028) ==================== */
-  /* [data-builder-theme="dark"] on <html> + [data-context="builder"] on .app */
+  /* Dark Gray: Tailwind zinc → 빌더 변수
+   * Elevation: bg(zinc-900) → field/button(zinc-800) → border(zinc-700) */
   [data-builder-theme="dark"] [data-context="builder"],
   [data-builder-theme="dark"]
     body:not([data-preview="true"])
@@ -80,38 +79,34 @@
   [data-builder-theme="dark"]
     body:not([data-preview="true"])
     > .react-aria-Modal {
-    /* ===== Core Semantic Colors (Dark Mode) ===== */
-    --background-color: var(--gray-900);
-    --text-color: var(--gray-100);
-    --text-color-base: var(--gray-100);
-    --text-color-hover: var(--white);
-    --text-color-disabled: var(--gray-500);
-    --text-color-placeholder: var(--gray-400);
-    --border-color: var(--gray-700);
-    --border-color-hover: var(--gray-600);
-    --border-color-pressed: var(--gray-550);
-    --border-color-disabled: var(--gray-750);
+    /* ===== Dark Gray (Tailwind zinc → 빌더 변수) ===== */
+    --background-color: var(--color-zinc-900);
+    --text-color: var(--color-zinc-100);
+    --text-color-base: var(--color-zinc-100);
+    --text-color-hover: var(--color-white);
+    --text-color-disabled: var(--color-zinc-500);
+    --text-color-placeholder: var(--color-zinc-400);
+    --border-color: var(--color-zinc-700);
+    --border-color-hover: var(--color-zinc-600);
+    --border-color-pressed: var(--color-zinc-600);
+    --border-color-disabled: var(--color-zinc-800);
 
-    /* ===== Button & Field Colors (Dark) ===== */
-    --button-background: var(--gray-800);
-    --field-background: var(--gray-850);
-    --overlay-background: var(--gray-850);
+    --button-background: var(--color-zinc-800);
+    --field-background: var(--color-zinc-800);
+    --overlay-background: var(--color-zinc-800);
 
-    /* ===== Highlight Colors (Dark) ===== */
-    --focus-ring-color: var(--blue-400);
-    --highlight-background: var(--gray-100);
-    --highlight-background-pressed: var(--white);
-    --highlight-foreground: var(--gray-900);
-    --highlight-overlay: rgba(2, 133, 255, 0.2);
+    --focus-ring-color: var(--color-blue-400);
+    --highlight-background: var(--color-zinc-200);
+    --highlight-background-pressed: var(--color-zinc-100);
+    --highlight-foreground: var(--color-zinc-900);
+    --highlight-overlay: rgba(161, 161, 170, 0.2);
 
-    /* ===== Invalid/Error (Dark) ===== */
-    --invalid-color: var(--red-400);
+    --invalid-color: var(--color-red-400);
 
-    /* ===== Status Colors (Dark) ===== */
-    --info: var(--blue-400);
+    --info: var(--color-blue-400);
     --warning-container: rgba(251, 106, 34, 0.15);
-    --on-warning-container: var(--orange-200);
-    --success: var(--green-400);
+    --on-warning-container: var(--color-orange-200);
+    --success: var(--color-green-400);
   }
 
   /* ==================== Accessibility: High Contrast Mode ==================== */

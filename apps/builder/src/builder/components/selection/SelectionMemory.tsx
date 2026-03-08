@@ -85,7 +85,7 @@ export function SelectionMemory({
     return (
       <div className={`selection-memory empty ${className}`.trim()}>
         <div className="empty-state">
-          <History size={iconLarge.size} color="var(--color-text-tertiary)" />
+          <History size={iconLarge.size} color="var(--text-color-disabled)" />
           <p className="empty-text">No selection history</p>
           <p className="empty-hint">
             Previous selections will appear here for quick access

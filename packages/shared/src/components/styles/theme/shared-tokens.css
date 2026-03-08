@@ -300,6 +300,32 @@
     --color-purple-800: #6b21a8;
     --color-purple-900: #581c87;
 
+    /* Tailwind Gray (cool blue undertone) — Builder Light Mode용 */
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1f2937;
+    --color-gray-900: #111827;
+    --color-gray-950: #030712;
+
+    /* Tailwind Zinc (warm dark tone) — Builder Dark Mode용 */
+    --color-zinc-50: #fafafa;
+    --color-zinc-100: #f4f4f5;
+    --color-zinc-200: #e4e4e7;
+    --color-zinc-300: #d4d4d8;
+    --color-zinc-400: #a1a1aa;
+    --color-zinc-500: #71717a;
+    --color-zinc-600: #52525b;
+    --color-zinc-700: #3f3f46;
+    --color-zinc-800: #27272a;
+    --color-zinc-900: #18181b;
+    --color-zinc-950: #09090b;
+
     /* Status Semantic Colors */
     --status-success: var(--color-success-600);
     --status-warning: var(--color-warning-600);
@@ -340,26 +366,6 @@
     --gray-950: var(--color-neutral-950);
     --gray-975: var(--color-black);
     --gray-1000: var(--color-black);
-
-    /* Semantic Colors - Light Mode */
-    --color-text: var(--gray-750);
-    --color-text-secondary: var(--gray-500);
-    --color-text-tertiary: var(--gray-400);
-    --color-text-emphasis: var(--gray-1000);
-    --color-text-inverse: var(--gray-0);
-    --color-text-disabled: var(--gray-400);
-
-    /* Surface Colors - Light Mode */
-    --color-surface: var(--gray-0);
-    --color-surface-secondary: var(--gray-50);
-    --color-surface-tertiary: var(--gray-75);
-    --color-surface-elevated: var(--gray-0);
-    --color-surface-elevated-secondary: var(--gray-50);
-
-    /* Border Colors - Light Mode */
-    --color-border-subtle: rgba(13, 13, 13, 0.05);
-    --color-border: rgba(13, 13, 13, 0.1);
-    --color-border-strong: rgba(13, 13, 13, 0.15);
 
     /* Green Scale - Reference Tailwind green colors */
     --green-25: var(--color-green-50);

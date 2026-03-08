@@ -34,7 +34,7 @@
       --field-accent: var(--invalid-color);
     }
     &[data-variant="filled"] {
-      --drp-group-bg: var(--color-neutral-200);
+      --drp-group-bg: var(--highlight-overlay);
       --drp-pressed-bg: var(--field-background);
     }
 

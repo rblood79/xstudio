@@ -28,7 +28,7 @@
     transition: background 0.15s ease, color 0.15s ease;
 
     &:hover {
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
     }
 
     &[data-active] {

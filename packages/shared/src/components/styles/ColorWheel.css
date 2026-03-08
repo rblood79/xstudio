@@ -1,6 +1,6 @@
 @layer components {
   .react-aria-ColorThumb {
-    border: 4px solid var(--gray-200);
+    border: 4px solid var(--field-background);
     box-shadow: var(--shadow-sm);
     width: 16px;
     height: 16px;

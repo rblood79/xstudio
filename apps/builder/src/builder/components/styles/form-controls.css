@@ -209,7 +209,7 @@
         }
 
         &[data-selected] {
-          background: var(--color-white);
+          background: var(--overlay-background);
           border-radius: var(--radius-md);
           border-color: var(--border-color-hover);
           border-width: 1px;
@@ -218,7 +218,7 @@
     }
 
     .react-aria-CheckboxGroup {
-      background-color: var(--gray-200);
+      background-color: var(--field-background);
       border-radius: var(--radius-md);
       gap: 0;
 

@@ -159,7 +159,7 @@
     flex-direction: column;
     gap: var(--spacing-3);
     padding: var(--spacing-4);
-    background: var(--color-neutral-50);
+    background: var(--button-background);
     border: 1px solid var(--highlight-background);
     border-radius: var(--radius-md);
     width: 100%;
@@ -318,7 +318,7 @@
     gap: var(--spacing-3);
     padding: var(--spacing-8) var(--spacing-4);
     text-align: center;
-    background: var(--color-neutral-50);
+    background: var(--button-background);
     border: 1px dashed var(--border-color);
     border-radius: var(--radius-md);
   }

@@ -118,7 +118,7 @@
 
     /* ===== Filled Variant ===== */
     &[data-variant="filled"] .react-aria-Input {
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
       border-color: transparent;
       border-bottom: 2px solid var(--border-color);
       border-radius: var(--border-radius) var(--border-radius) 0 0;
@@ -161,7 +161,7 @@
       box-shadow: var(--shadow-sm);
 
       &[data-hovered]:not([data-disabled]) {
-        background: var(--color-neutral-200);
+        background: var(--highlight-overlay);
       }
 
       &[data-pressed]:not([data-disabled]) {

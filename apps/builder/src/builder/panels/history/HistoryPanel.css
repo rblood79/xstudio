@@ -38,7 +38,7 @@
 
   .history-item[data-active="true"] {
     border-color: var(--highlight-background);
-    background: var(--gray-200);
+    background: var(--field-background);
     box-shadow: var(--shadow-sm);
   }
 

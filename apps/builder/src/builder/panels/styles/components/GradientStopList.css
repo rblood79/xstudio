@@ -20,11 +20,11 @@
     border-radius: var(--radius-sm);
 
     &:hover {
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
     }
 
     &[data-active] {
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
     }
   }
 
@@ -82,7 +82,7 @@
     transition: opacity 0.15s ease;
 
     &:hover {
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
     }
 
     &:disabled {
@@ -115,7 +115,7 @@
     transition: background 0.15s ease;
 
     &:hover {
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
     }
 
     &:focus-visible {

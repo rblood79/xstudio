@@ -12,7 +12,7 @@
     overflow-y: auto;
     gap: var(--gap);
     padding: 0;
-    background-color: var(--color-neutral-50);
+    background-color: var(--button-background);
   }
 
   /* Header styles are now inherited from global .panel-header */

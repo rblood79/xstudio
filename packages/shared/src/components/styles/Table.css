@@ -443,13 +443,13 @@
   /* ========== Color Variants ========== */
   .react-aria-Table[data-variant="secondary"] {
     --tbl-accent: var(--button-background);
-    --tbl-selected-bg: var(--color-neutral-100);
+    --tbl-selected-bg: var(--button-background);
     --tbl-selected-color: var(--color-neutral-900);
     --tbl-cb-selected: var(--button-background);
     --tbl-cb-checkmark: var(--color-white);
-    --tbl-cb-bg: var(--color-neutral-100);
+    --tbl-cb-bg: var(--button-background);
     --tbl-cb-selected-on: var(--color-neutral-900);
-    --tbl-cb-checkmark-on: var(--color-neutral-100);
+    --tbl-cb-checkmark-on: var(--button-background);
   }
 
   .react-aria-Table[data-variant="tertiary"] {
@@ -574,11 +574,11 @@
 
   /* ===== Filled Variant ===== */
   .react-aria-Table[data-variant="filled"] {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
     border-color: transparent;
 
     .react-aria-TableHeader {
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
     }
 
     .react-aria-Row {

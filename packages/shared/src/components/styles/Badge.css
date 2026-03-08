@@ -19,7 +19,7 @@
     white-space: nowrap;
     border-radius: var(--radius-md);
     transition: all 200ms;
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
     color: var(--text-color);
     border: 1px solid transparent;
   }
@@ -84,7 +84,7 @@
   }
 
   .react-aria-Badge[data-variant="neutral"][data-fill-style="subtle"] {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
     color: var(--text-color);
     border-color: transparent;
   }
@@ -169,7 +169,7 @@
   }
 
   .react-aria-Badge[data-variant="gray"][data-fill-style="subtle"] {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
     color: var(--color-neutral-700);
   }
 

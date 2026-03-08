@@ -38,7 +38,7 @@
     transition: background 0.15s ease;
 
     &:hover:not(:disabled) {
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
     }
 
     &:disabled {

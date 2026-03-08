@@ -15,7 +15,7 @@
   .react-aria-Skeleton,
   .react-aria-Skeleton-group {
     --skeleton-bg: var(--field-background);
-    --skeleton-highlight: var(--color-neutral-200);
+    --skeleton-highlight: var(--highlight-overlay);
     --skeleton-border-radius: var(--radius-sm);
     --skeleton-animation-duration: 1.5s;
     --skeleton-animation-timing: ease-in-out;
@@ -1173,7 +1173,7 @@
   [data-theme="dark"] .react-aria-Skeleton,
   [data-theme="dark"] .react-aria-Skeleton-group {
     --skeleton-bg: var(--overlay-background);
-    --skeleton-highlight: var(--color-neutral-200);
+    --skeleton-highlight: var(--highlight-overlay);
   }
 
   /* ========================================================================

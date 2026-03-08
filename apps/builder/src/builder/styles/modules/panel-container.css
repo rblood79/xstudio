@@ -85,7 +85,7 @@
 
   /* Panel Content */
   .panel-content {
-    background-color: var(--color-white);
+    background-color: var(--overlay-background);
 
     display: flex;
     flex-direction: row;

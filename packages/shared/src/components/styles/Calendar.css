@@ -26,7 +26,7 @@
   /* ========== Color Variants ========== */
   .react-aria-Calendar[data-variant="secondary"] {
     --cal-accent: var(--button-background);
-    --cal-accent-container: var(--color-neutral-100);
+    --cal-accent-container: var(--button-background);
     --cal-on-accent-container: var(--color-neutral-900);
   }
 

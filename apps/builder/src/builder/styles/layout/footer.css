@@ -81,7 +81,7 @@
   }
 
   .bottom-panel-tab.active {
-    background-color: var(--color-neutral-200);
+    background-color: var(--highlight-overlay);
     color: var(--text-color);
     font-weight: 500;
   }

@@ -26,7 +26,7 @@
     }
     &[data-variant="filled"] {
       --field-accent: var(--text-color);
-      --field-accent-bg: var(--color-neutral-200);
+      --field-accent-bg: var(--highlight-overlay);
     }
 
     /* ===== Size ===== */

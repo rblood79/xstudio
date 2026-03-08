@@ -135,7 +135,7 @@
       }
 
       &[data-hovered]:not([data-disabled]) {
-        background: var(--color-neutral-200);
+        background: var(--highlight-overlay);
         border-color: var(--border-color-hover);
       }
 
@@ -205,7 +205,7 @@
       }
 
       .react-aria-Button {
-        background: var(--color-neutral-200);
+        background: var(--highlight-overlay);
         border: none;
         border-bottom: 2px solid var(--border-color);
 
@@ -216,7 +216,7 @@
       }
 
       .react-aria-Input {
-        background: var(--color-neutral-200);
+        background: var(--highlight-overlay);
         border: none;
         border-bottom: 2px solid var(--border-color);
       }

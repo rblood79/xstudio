@@ -16,7 +16,7 @@
       "header header header"
       "sidebar main inspector"
       "bottom bottom bottom";
-    background-color: var(--color-white);
+    background-color: var(--overlay-background);
   }
 
   /* ========================================
@@ -368,7 +368,7 @@
   }
 
   .header_contents .zoom-controls .zoom-trigger-button:hover {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
   }
 
   /* 포커스 링: 컨테이너에 적용 */
@@ -454,7 +454,7 @@
 
   .zoom-menu-item[data-pressed],
   .zoom-menu-item[data-selected] {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
   }
 
   /* Keyboard Shortcut */
@@ -485,7 +485,7 @@
   }
 
   .workflow-sub-toggle-trigger:hover:not([data-disabled]) {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
   }
 
   .workflow-sub-toggle-trigger[data-disabled] {

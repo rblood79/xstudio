@@ -166,13 +166,13 @@
 
   /* ===== Filled Variant ===== */
   .react-aria-Popover[data-variant="filled"] {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
     border: none;
     box-shadow: 0 4px 12px
       color-mix(in srgb, var(--text-color) 15%, transparent);
 
     .react-aria-OverlayArrow svg {
-      fill: var(--color-neutral-200);
+      fill: var(--highlight-overlay);
       stroke: none;
     }
   }

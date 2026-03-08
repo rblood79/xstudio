@@ -102,7 +102,7 @@
 
     /* ===== Filled Variant ===== */
     &[data-variant="filled"] .react-aria-DateInput {
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
       border-color: transparent;
       border-bottom: 2px solid var(--border-color);
       border-radius: var(--border-radius) var(--border-radius) 0 0;

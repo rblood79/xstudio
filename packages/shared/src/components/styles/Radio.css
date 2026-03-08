@@ -85,7 +85,7 @@
   }
 
   .react-aria-RadioGroup[data-radio-variant="surface"] .react-aria-Radio {
-    --radio-color: var(--color-neutral-200);
+    --radio-color: var(--highlight-overlay);
 
     &[data-focus-visible]:before {
       outline-color: var(--text-color);

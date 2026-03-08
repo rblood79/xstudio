@@ -248,7 +248,7 @@
 
   .react-aria-GridList[data-variant="secondary"] {
     --gl-accent: var(--button-background);
-    --gl-accent-container: var(--color-neutral-100);
+    --gl-accent-container: var(--button-background);
     --gl-on-accent-container: var(--color-neutral-900);
     --gl-drop-bg: color-mix(in srgb, var(--button-background) 8%, transparent);
     --gl-drop-bg-item: color-mix(
@@ -258,9 +258,9 @@
     );
     --gl-cb-selected: var(--button-background);
     --gl-cb-checkmark: var(--color-white);
-    --gl-cb-bg: var(--color-neutral-100);
+    --gl-cb-bg: var(--button-background);
     --gl-cb-selected-on: var(--color-neutral-900);
-    --gl-cb-checkmark-on: var(--color-neutral-100);
+    --gl-cb-checkmark-on: var(--button-background);
   }
 
   .react-aria-GridList[data-variant="tertiary"] {
@@ -339,7 +339,7 @@
 
   /* ===== Filled Variant ===== */
   .react-aria-GridList[data-variant="filled"] {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
     border-color: transparent;
 
     .react-aria-GridListItem {

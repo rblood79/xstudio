@@ -261,7 +261,7 @@
 
   .react-aria-Menu[data-variant="secondary"] {
     --menu-accent: var(--button-background);
-    --menu-focused-bg: var(--color-neutral-100);
+    --menu-focused-bg: var(--button-background);
     --menu-focused-color: var(--color-neutral-900);
   }
 
@@ -302,7 +302,7 @@
 
   /* ===== Filled Variant ===== */
   .react-aria-Menu[data-variant="filled"] {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
     border-color: transparent;
 
     .react-aria-MenuItem {

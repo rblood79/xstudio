@@ -132,7 +132,7 @@
   }
 
   .toast-dismiss:hover {
-    background-color: var(--color-neutral-200);
+    background-color: var(--highlight-overlay);
     color: var(--text-color);
   }
 

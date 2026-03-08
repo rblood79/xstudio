@@ -2,11 +2,11 @@
   min-height: 100vh;
 }
 :root[data-theme="dark"] {
-  background-color: #1a1a1a;
+  background-color: var(--highlight-background);
 }
 
 :root[data-theme="light"] {
-  background-color: #efefef;
+  background-color: var(--field-background);
 }
 
 .main {
@@ -43,7 +43,7 @@
     font-size: var(--text-6xl);
     font-weight: var(--font-weight-extrabold);
     line-height: var(--leading-normal);
-    color: var(--color-surface-secondary);
+    color: var(--field-background);
     user-select: none;
   }
 
@@ -52,7 +52,7 @@
     font-weight: var(--font-weight-normal);
     line-height: var(--leading-normal);
     letter-spacing: var(--tracking-wide);
-    color: var(--color-text-secondary);
+    color: var(--text-color-placeholder);
     user-select: none;
   }
 }
@@ -69,7 +69,7 @@
   button {
     background-color: transparent;
     padding: var(--spacing-sm);
-    color: var(--color-text-secondary);
+    color: var(--text-color-placeholder);
     user-select: none;
   }
 }

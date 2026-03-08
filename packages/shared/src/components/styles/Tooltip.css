@@ -27,7 +27,7 @@
     box-shadow: 0 2px 8px color-mix(in srgb, var(--text-color) 12%, transparent);
     border-radius: var(--radius-sm);
     background: var(--color-neutral-800);
-    color: var(--color-neutral-100);
+    color: var(--button-background);
     forced-color-adjust: none;
     outline: none;
     padding: 6px 10px;
@@ -148,11 +148,11 @@
 
   /* ===== Filled Variant ===== */
   .react-aria-Tooltip[data-variant="filled"] {
-    background: var(--color-neutral-200);
+    background: var(--highlight-overlay);
     color: var(--text-color);
 
     & .react-aria-OverlayArrow svg {
-      fill: var(--color-neutral-200);
+      fill: var(--highlight-overlay);
     }
   }
 

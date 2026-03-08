@@ -34,7 +34,7 @@
 
   .particle-button-ghost {
     background: transparent;
-    color: var(--color-text-secondary);
+    color: var(--text-color-placeholder);
     border-radius: var(--radius-md);
   }
 

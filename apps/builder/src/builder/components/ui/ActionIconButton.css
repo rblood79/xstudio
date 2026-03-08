@@ -35,7 +35,7 @@
 .action-tooltip {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: var(--radius-sm);
-  background: var(--color-gray-900, #1a1a1a);
+  background: var(--highlight-background);
   color: var(--color-white, #fff);
   forced-color-adjust: none;
   outline: none;
@@ -93,7 +93,7 @@
 
   & .react-aria-OverlayArrow svg {
     display: block;
-    fill: var(--color-gray-900, #1a1a1a);
+    fill: var(--highlight-background);
   }
 }
 

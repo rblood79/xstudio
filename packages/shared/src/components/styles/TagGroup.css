@@ -121,7 +121,7 @@
   }
 
   .react-aria-TagGroup[data-tag-variant="surface"] .react-aria-Tag {
-    --tag-color: var(--color-neutral-200);
+    --tag-color: var(--highlight-overlay);
     --tag-text: var(--text-color);
     --tag-border: var(--border-color);
   }

@@ -15,7 +15,7 @@
 .auth-card {
   width: 100%;
   max-width: var(--container-xs);
-  background: var(--color-white);
+  background: var(--overlay-background);
   border-radius: var(--radius-4xl);
   display: flex;
   flex-direction: column;

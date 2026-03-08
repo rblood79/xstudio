@@ -42,7 +42,7 @@
       height: 8px;
       border-radius: var(--radius-sm);
       overflow: hidden;
-      background: var(--color-neutral-200);
+      background: var(--highlight-overlay);
     }
 
     .fill {
