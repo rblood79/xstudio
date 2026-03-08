@@ -60,6 +60,8 @@ export const renderTextField = (
       isDisabled={Boolean(element.props.isDisabled || false)}
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
+      isInvalid={Boolean(element.props.isInvalid || false)}
+      name={element.props.name ? String(element.props.name) : undefined}
       onChange={(value) => {
         const updatedProps = {
           ...element.props,
@@ -109,6 +111,8 @@ export const renderNumberField = (
       isDisabled={Boolean(element.props.isDisabled || false)}
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
+      isInvalid={Boolean(element.props.isInvalid || false)}
+      name={element.props.name ? String(element.props.name) : undefined}
       onChange={(value) => {
         const updatedProps = {
           ...element.props,
@@ -144,6 +148,8 @@ export const renderSearchField = (
       isDisabled={Boolean(element.props.isDisabled || false)}
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
+      isInvalid={Boolean(element.props.isInvalid || false)}
+      name={element.props.name ? String(element.props.name) : undefined}
       onChange={(value) => {
         const updatedProps = {
           ...element.props,
@@ -199,6 +205,7 @@ export const renderInput = (
       defaultValue={String(element.props.value || "")}
       disabled={Boolean(element.props.isDisabled || false)}
       readOnly={Boolean(element.props.isReadOnly || false)}
+      name={element.props.name ? String(element.props.name) : undefined}
       onChange={(value) => {
         const updatedProps = {
           ...element.props,
@@ -318,6 +325,11 @@ export const renderCheckbox = (
       defaultSelected={Boolean(element.props.isSelected)}
       isIndeterminate={Boolean(element.props.isIndeterminate)}
       isDisabled={Boolean(element.props.isDisabled)}
+      isInvalid={Boolean(element.props.isInvalid)}
+      isReadOnly={Boolean(element.props.isReadOnly)}
+      isRequired={Boolean(element.props.isRequired)}
+      name={element.props.name ? String(element.props.name) : undefined}
+      value={element.props.value ? String(element.props.value) : undefined}
       style={element.props.style}
       className={element.props.className}
       isEmphasized={Boolean(element.props.isEmphasized)}
@@ -387,6 +399,11 @@ export const renderCheckboxGroup = (
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
       }
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      isDisabled={Boolean(element.props.isDisabled)}
+      isInvalid={Boolean(element.props.isInvalid)}
+      isReadOnly={Boolean(element.props.isReadOnly)}
+      isRequired={Boolean(element.props.isRequired)}
+      name={element.props.name ? String(element.props.name) : undefined}
       onChange={async (newSelectedValues) => {
         // CheckboxGroup의 onChange: 전체 value 배열 업데이트
         const updatedProps = {
@@ -526,6 +543,11 @@ export const renderRadioGroup = (
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
       }
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      isDisabled={Boolean(element.props.isDisabled)}
+      isInvalid={Boolean(element.props.isInvalid)}
+      isReadOnly={Boolean(element.props.isReadOnly)}
+      isRequired={Boolean(element.props.isRequired)}
+      name={element.props.name ? String(element.props.name) : undefined}
       onChange={(selectedValue) => {
         const updatedProps = {
           ...element.props,
@@ -566,6 +588,8 @@ export const renderSwitch = (
       data-element-id={element.id}
       defaultSelected={Boolean(element.props.isSelected)}
       isDisabled={Boolean(element.props.isDisabled)}
+      isReadOnly={Boolean(element.props.isReadOnly)}
+      name={element.props.name ? String(element.props.name) : undefined}
       style={element.props.style}
       className={element.props.className}
       isEmphasized={Boolean(element.props.isEmphasized)}

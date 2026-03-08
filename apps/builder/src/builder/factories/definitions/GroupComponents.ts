@@ -197,8 +197,10 @@ export function createCheckboxGroupDefinition(
       props: {
         tag: "CheckboxGroup",
         label: "Checkbox Group",
+        name: "",
         orientation: "vertical",
         value: [],
+        isInvalid: false,
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -284,8 +286,10 @@ export function createRadioGroupDefinition(
       tag: "RadioGroup",
       props: {
         label: "Radio Group",
+        name: "",
         orientation: "vertical",
         value: "",
+        isInvalid: false,
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -515,9 +519,11 @@ export function createCheckboxDefinition(
       tag: "Checkbox",
       props: {
         children: "Checkbox",
+        name: "",
         isSelected: false,
         isDisabled: false,
         isIndeterminate: false,
+        isInvalid: false,
         style: {
           display: "flex",
           flexDirection: "row",
@@ -633,6 +639,7 @@ export function createSwitchDefinition(
       tag: "Switch",
       props: {
         children: "Switch",
+        name: "",
         isSelected: false,
         isDisabled: false,
         style: {

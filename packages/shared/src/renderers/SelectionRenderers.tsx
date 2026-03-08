@@ -677,6 +677,8 @@ export const renderSelect = (
       }
       isDisabled={Boolean(elementProps.isDisabled)}
       isRequired={Boolean(elementProps.isRequired)}
+      isInvalid={Boolean(elementProps.isInvalid)}
+      name={elementProps.name ? String(elementProps.name) : undefined}
       autoFocus={Boolean(elementProps.autoFocus)}
       dataBinding={
         (element.dataBinding || element.props.dataBinding) as
@@ -890,6 +892,8 @@ export const renderComboBox = (
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
+      isInvalid={Boolean(element.props.isInvalid)}
+      name={element.props.name ? String(element.props.name) : undefined}
       dataBinding={
         (element.dataBinding || element.props.dataBinding) as
           | DataBinding
@@ -1034,6 +1038,7 @@ export const renderSlider = (
         (element.props.orientation as "horizontal" | "vertical") || "horizontal"
       }
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      isDisabled={Boolean(element.props.isDisabled)}
       isEmphasized={Boolean(element.props.isEmphasized)}
       onChange={(value) => {
         const updatedProps = {

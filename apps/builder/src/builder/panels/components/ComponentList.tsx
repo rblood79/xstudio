@@ -4,7 +4,6 @@ import {
   SeparatorHorizontal,
   ChevronUp,
   Square,
-  Code,
   Text,
   ToggleLeft,
   AppWindow,
@@ -74,6 +73,7 @@ const layoutComp = [
   { tag: "ScrollBox", label: "scroll box", icon: ScrollText },
   { tag: "MaskedFrame", label: "masked frame", icon: Frame },
   { tag: "Slot", label: "slot", icon: Layers, layoutOnly: true },
+  { tag: "Group", label: "group", icon: GroupIcon },
 ] as const;
 
 const inputsComp = [
@@ -136,7 +136,6 @@ const structureComp = [
   { tag: "Text", label: "text", icon: Text },
   { tag: "Icon", label: "icon", icon: Smile },
   { tag: "Section", label: "section", icon: Square },
-  { tag: "Div", label: "division", icon: Code },
 ] as const;
 
 const otherComp = [{ tag: "Form", label: "form", icon: GroupIcon }] as const;

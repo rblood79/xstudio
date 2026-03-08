@@ -6,7 +6,7 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
  * Select 컴포넌트 정의
  */
 export function createSelectDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -23,11 +23,13 @@ export function createSelectDefinition(
       tag: "Select",
       props: {
         label: "Select",
+        name: "",
         placeholder: "Choose an option...",
         selectedKey: undefined,
+        isInvalid: false,
         style: {
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 8,
         },
       } as ComponentElementProps,
@@ -40,7 +42,7 @@ export function createSelectDefinition(
         tag: "Label",
         props: {
           children: "Select",
-          style: { fontSize: 14, fontWeight: 500, width: 'fit-content' },
+          style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 0,
@@ -49,9 +51,9 @@ export function createSelectDefinition(
         tag: "SelectTrigger",
         props: {
           style: {
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -95,7 +97,7 @@ export function createSelectDefinition(
  * ComboBox 컴포넌트 정의
  */
 export function createComboBoxDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -112,13 +114,15 @@ export function createComboBoxDefinition(
       tag: "ComboBox",
       props: {
         label: "Combo Box",
+        name: "",
         placeholder: "Type or select...",
         inputValue: "",
         allowsCustomValue: true,
         selectedKey: undefined,
+        isInvalid: false,
         style: {
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: 8,
         },
       } as ComponentElementProps,
@@ -131,7 +135,7 @@ export function createComboBoxDefinition(
         tag: "Label",
         props: {
           children: "Combo Box",
-          style: { fontSize: 14, fontWeight: 500, width: 'fit-content' },
+          style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 0,
@@ -140,9 +144,9 @@ export function createComboBoxDefinition(
         tag: "ComboBoxWrapper",
         props: {
           style: {
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -187,7 +191,7 @@ export function createComboBoxDefinition(
  * ListBox 컴포넌트 정의
  */
 export function createListBoxDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -249,7 +253,7 @@ export function createListBoxDefinition(
  * GridList 컴포넌트 정의
  */
 export function createGridListDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -320,7 +324,7 @@ export function createGridListDefinition(
  * List 컴포넌트 정의
  */
 export function createListDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;

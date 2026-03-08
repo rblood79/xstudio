@@ -1132,9 +1132,11 @@ export interface Store extends ElementsState, ThemeState, SelectionState {
 export function createDefaultButtonProps(): ButtonElementProps {
   return {
     children: "Button",
+    name: "",
     variant: "primary",
     size: "md",
     isDisabled: false,
+    isPending: false,
     // CSS base rule: border: 1px solid var(--outline-variant)
     // 스타일 패널에서 borderWidth 값 정상 표시를 위해 기본값 설정
     style: {
@@ -1163,21 +1165,25 @@ export function createDefaultLinkProps(): LinkElementProps {
 
 export function createDefaultTextFieldProps(): TextFieldElementProps {
   return {
+    name: "",
     size: "md",
     type: "text",
     isRequired: false,
     isDisabled: false,
     isReadOnly: false,
+    isInvalid: false,
   };
 }
 
 export function createDefaultCheckboxProps(): CheckboxElementProps {
   return {
     children: "Checkbox",
+    name: "",
     variant: "default",
     size: "md",
     isSelected: false,
     isDisabled: false,
+    isInvalid: false,
     style: {
       display: "flex",
       flexDirection: "row",
@@ -1188,6 +1194,7 @@ export function createDefaultCheckboxProps(): CheckboxElementProps {
 
 export function createDefaultRadioProps(): RadioElementProps {
   return {
+    name: "",
     variant: "default",
     size: "md",
     isSelected: false,
@@ -1238,8 +1245,10 @@ export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementP
 
 export function createDefaultCheckboxGroupProps(): CheckboxGroupElementProps {
   return {
+    name: "",
     value: [],
     isDisabled: false,
+    isInvalid: false,
     orientation: "horizontal",
     // CSS base: display:flex; flex-direction:column; gap:var(--gap)
     // orientation=horizontal → flex-direction:row; align-items:center
@@ -1254,8 +1263,10 @@ export function createDefaultCheckboxGroupProps(): CheckboxGroupElementProps {
 
 export function createDefaultRadioGroupProps(): RadioGroupElementProps {
   return {
+    name: "",
     value: "",
     isDisabled: false,
+    isInvalid: false,
     orientation: "horizontal",
     // CSS base: display:flex; flex-direction:column; gap:var(--gap)
     // orientation=horizontal → flex-direction:row; align-items:center
@@ -1270,7 +1281,9 @@ export function createDefaultRadioGroupProps(): RadioGroupElementProps {
 
 export function createDefaultSelectProps(): SelectElementProps {
   return {
+    name: "",
     isDisabled: false,
+    isInvalid: false,
     // CSS base: display:flex; flex-direction:column; gap:var(--spacing-xs)
     style: {
       display: "flex",
@@ -1282,7 +1295,9 @@ export function createDefaultSelectProps(): SelectElementProps {
 
 export function createDefaultComboBoxProps(): ComboBoxElementProps {
   return {
+    name: "",
     isDisabled: false,
+    isInvalid: false,
     allowsCustomValue: false,
     // CSS base: display:flex; flex-direction:column; gap:var(--spacing-xs)
     style: {
@@ -1402,8 +1417,10 @@ export function createDefaultCalendarGridProps(): BaseElementProps {
 
 export function createDefaultDatePickerProps(): DatePickerElementProps {
   return {
+    name: "",
     isDisabled: false,
     isReadOnly: false,
+    isInvalid: false,
   };
 }
 
@@ -1411,12 +1428,14 @@ export function createDefaultDateRangePickerProps(): DateRangePickerElementProps
   return {
     isDisabled: false,
     isReadOnly: false,
+    isInvalid: false,
   };
 }
 
 export function createDefaultSwitchProps(): SwitchElementProps {
   return {
     children: "Switch",
+    name: "",
     variant: "default",
     size: "md",
     isSelected: false,

@@ -460,6 +460,8 @@ export const renderButton = (
       size={element.props.size as "xs" | "sm" | "md" | "lg" | "xl"}
       type={(element.props.type as "button" | "submit" | "reset") || "button"}
       isDisabled={Boolean(element.props.isDisabled as boolean)}
+      isPending={Boolean(element.props.isPending)}
+      name={element.props.name ? String(element.props.name) : undefined}
       style={element.props.style}
       className={element.props.className}
       onPress={handlePress as unknown as () => void}
@@ -901,5 +903,74 @@ export const renderSlot = (
     >
       {children.map((child) => renderElement(child, child.id))}
     </Slot>
+  );
+};
+
+/**
+ * Toast 렌더링
+ *
+ * Toast(div 컨테이너)
+ *   ├─ Heading
+ *   └─ Description
+ */
+export const renderToast = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+  const eventHandlers =
+    context.services?.createEventHandlerMap?.(element, context) ?? {};
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <div
+      key={element.id}
+      data-element-id={element.id}
+      data-custom-id={element.customId}
+      role="alert"
+      style={element.props.style}
+      className={element.props.className}
+      onClick={eventHandlers.onClick as unknown as () => void}
+    >
+      {children.map((child) => renderElement(child, child.id))}
+    </div>
+  );
+};
+
+/**
+ * Pagination 렌더링
+ *
+ * Pagination(nav 컨테이너)
+ *   ├─ Button (Prev)
+ *   ├─ Button (1, 2, 3...)
+ *   └─ Button (Next)
+ */
+export const renderPagination = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+  const eventHandlers =
+    context.services?.createEventHandlerMap?.(element, context) ?? {};
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <nav
+      key={element.id}
+      data-element-id={element.id}
+      data-custom-id={element.customId}
+      aria-label="Pagination"
+      style={element.props.style}
+      className={element.props.className}
+      onClick={eventHandlers.onClick as unknown as () => void}
+    >
+      {children.map((child) => renderElement(child, child.id))}
+    </nav>
   );
 };

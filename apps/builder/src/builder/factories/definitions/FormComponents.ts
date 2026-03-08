@@ -29,6 +29,7 @@ export function createTextFieldDefinition(
       tag: "TextField",
       props: {
         label: "Text Field",
+        name: "",
         description: "",
         errorMessage: "",
         placeholder: "Enter text...",
@@ -38,6 +39,7 @@ export function createTextFieldDefinition(
         isRequired: false,
         isDisabled: false,
         isReadOnly: false,
+        isInvalid: false,
         style: {
           display: "flex",
           flexDirection: "column",
@@ -120,6 +122,7 @@ export function createTextAreaDefinition(
       tag: "TextArea",
       props: {
         label: "Text Area",
+        name: "",
         description: "",
         errorMessage: "",
         placeholder: "Enter text...",
@@ -128,6 +131,7 @@ export function createTextAreaDefinition(
         isRequired: false,
         isDisabled: false,
         isReadOnly: false,
+        isInvalid: false,
         style: {
           display: "flex",
           flexDirection: "column",
@@ -440,11 +444,13 @@ export function createNumberFieldDefinition(
       tag: "NumberField",
       props: {
         label: "Number",
+        name: "",
         defaultValue: 0,
         minValue: 0,
         maxValue: 100,
         step: 1,
         isDisabled: false,
+        isInvalid: false,
         style: {
           display: "flex",
           flexDirection: "column",
@@ -563,8 +569,10 @@ export function createSearchFieldDefinition(
       tag: "SearchField",
       props: {
         label: "Search",
+        name: "",
         placeholder: "Search...",
         isDisabled: false,
+        isInvalid: false,
         style: {
           display: "flex",
           flexDirection: "column",
@@ -645,6 +653,7 @@ export function createSliderDefinition(
       tag: "Slider",
       props: {
         label: "Slider",
+        name: "",
         value: 50,
         minValue: 0,
         maxValue: 100,

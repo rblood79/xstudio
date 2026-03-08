@@ -23,7 +23,7 @@ import { today, getLocalTimeZone, Time } from "@internationalized/date";
  */
 export const renderCalendar = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -50,7 +50,11 @@ export const renderCalendar = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      aria-label={typeof element.props["aria-label"] === 'string' ? element.props["aria-label"] : "Calendar"}
+      aria-label={
+        typeof element.props["aria-label"] === "string"
+          ? element.props["aria-label"]
+          : "Calendar"
+      }
       isDisabled={Boolean(element.props.isDisabled)}
       visibleDuration={getVisibleDuration()}
       pageBehavior={getPageBehavior() as "visible" | "single"}
@@ -72,7 +76,7 @@ export const renderCalendar = (
  */
 export const renderDatePicker = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -106,11 +110,16 @@ export const renderDatePicker = (
       label={String(element.props.label || "Date Picker")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
-      placeholder={typeof element.props.placeholder === 'string' ? element.props.placeholder : undefined}
+      placeholder={
+        typeof element.props.placeholder === "string"
+          ? element.props.placeholder
+          : undefined
+      }
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
+      name={element.props.name ? String(element.props.name) : undefined}
       defaultValue={today(getLocalTimeZone())}
       granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
       firstDayOfWeek={
@@ -145,7 +154,7 @@ export const renderDatePicker = (
  */
 export const renderDateRangePicker = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -201,7 +210,7 @@ export const renderDateRangePicker = (
       shouldForceLeadingZeros={element.props.shouldForceLeadingZeros !== false}
       shouldCloseOnSelect={element.props.shouldCloseOnSelect !== false}
       allowsNonContiguousRanges={Boolean(
-        element.props.allowsNonContiguousRanges
+        element.props.allowsNonContiguousRanges,
       )}
       includeTime={Boolean(element.props.includeTime)}
       timeFormat={(element.props.timeFormat as "12h" | "24h") || "24h"}
@@ -223,7 +232,7 @@ export const renderDateRangePicker = (
  */
 export const renderDateField = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -246,6 +255,7 @@ export const renderDateField = (
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
+      name={element.props.name ? String(element.props.name) : undefined}
       defaultValue={today(getLocalTimeZone())}
       granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
       onChange={(date) => {
@@ -264,7 +274,7 @@ export const renderDateField = (
  */
 export const renderTimeField = (
   element: PreviewElement,
-  context: RenderContext
+  context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
@@ -287,6 +297,7 @@ export const renderTimeField = (
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
+      name={element.props.name ? String(element.props.name) : undefined}
       defaultValue={new Time(9, 0)}
       granularity={getGranularity() as "hour" | "minute" | "second"}
       onChange={(time) => {
