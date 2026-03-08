@@ -86,7 +86,7 @@
     font-size: var(--text-xs);
     color: var(--fg-muted);
     padding: var(--spacing);
-    background: var(--border);
+    background: var(--bg-muted);
     border-radius: var(--radius-md);
   }
 

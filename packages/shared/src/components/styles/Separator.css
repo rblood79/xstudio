@@ -10,7 +10,7 @@
 @layer components {
   .react-aria-Separator {
     border: none;
-    background-color: var(--border);
+    background-color: var(--bg-muted);
     flex-shrink: 0;
   }
 

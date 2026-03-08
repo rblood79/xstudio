@@ -185,7 +185,7 @@
 }
 
 .filter-clear-btn:hover {
-  background: var(--border);
+  background: var(--bg-muted);
   color: var(--fg);
 }
 

@@ -70,6 +70,6 @@
 
   .mesh-gradient-editor__divider {
     height: 1px;
-    background: var(--border);
+    background: var(--bg-muted);
   }
 }

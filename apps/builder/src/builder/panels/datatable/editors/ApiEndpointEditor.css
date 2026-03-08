@@ -33,7 +33,7 @@
 
 .section-divider {
   height: 1px;
-  background: var(--border);
+  background: var(--bg-muted);
   margin: var(--spacing-md) 0;
 }
 

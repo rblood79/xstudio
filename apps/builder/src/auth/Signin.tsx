@@ -141,6 +141,8 @@ const Signin = () => {
             type="submit"
             className="react-aria-Button"
             isDisabled={loading}
+            data-size="md"
+            data-variant="primary"
           >
             {loading
               ? isSignUp
@@ -152,12 +154,17 @@ const Signin = () => {
           </Button>
 
           <div className="helper-text">
-            <Button className="react-aria-Button" onPress={toggleMode}>
+            <Button
+              className="react-aria-Button"
+              data-size="md"
+              onPress={toggleMode}
+            >
               {isSignUp ? "Log In" : "Sign Up"}
             </Button>
             {!isSignUp ? (
               <Button
                 className="react-aria-Button"
+                data-size="md"
                 onPress={() => navigate("/forgot-password")}
               >
                 Forgot Password?

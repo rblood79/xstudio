@@ -37,7 +37,7 @@
 
   .bottom-panel-resize-handle:hover,
   .bottom-panel-slot[data-dragging="true"] .bottom-panel-resize-handle {
-    background-color: var(--border);
+    background-color: var(--bg-muted);
     opacity: 1;
   }
 

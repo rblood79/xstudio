@@ -235,7 +235,7 @@
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   border: none;
-  background: var(--border);
+  background: var(--bg-muted);
   cursor: pointer;
   font-size: var(--text-xs);
   line-height: var(--text-xs);
@@ -429,7 +429,7 @@
 
 /* 선택 가능한 요소 시각적 피드백 */
 .react-aria-TreeItem[aria-selected="true"] .elementItem {
-  background-color: var(--border);
+  background-color: var(--bg-muted);
 }
 
 /* 펼침/접기 상태 표시 */

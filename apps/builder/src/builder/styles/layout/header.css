@@ -74,7 +74,7 @@
   .header_contents:first-child [aria-label="menu"] {
     position: relative;
     border: none;
-    background: var(--border);
+    background: var(--bg-muted);
     padding: var(--spacing-sm);
     cursor: pointer;
     z-index: 1;
@@ -109,7 +109,7 @@
     gap: var(--spacing-sm);
 
     .react-aria-ToggleButtonGroup[data-indicator="true"] {
-      background-color: var(--border);
+      background-color: var(--bg-muted);
       box-shadow: var(--inset-shadow-sm);
       border-radius: var(--radius-lg);
       gap: var(--spacing-xs);
@@ -293,7 +293,7 @@
 
   .header_contents:last-child
     .react-aria-ToggleButtonGroup[data-indicator="true"] {
-    background-color: var(--border);
+    background-color: var(--bg-muted);
     box-shadow: var(--inset-shadow-sm);
     border-radius: var(--radius-lg);
     gap: var(--spacing-xs);
@@ -326,7 +326,7 @@
     display: flex;
     align-items: center;
     gap: 0;
-    background: var(--border);
+    background: var(--bg-muted);
     box-shadow: var(--inset-shadow-sm);
     border: none;
     border-radius: var(--radius-lg);
@@ -449,7 +449,7 @@
 
   .zoom-menu-item[data-focused],
   .zoom-menu-item[data-hovered] {
-    background: var(--border);
+    background: var(--bg-muted);
   }
 
   .zoom-menu-item[data-pressed],

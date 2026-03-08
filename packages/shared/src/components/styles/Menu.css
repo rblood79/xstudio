@@ -96,7 +96,7 @@
 
     .react-aria-Separator {
       height: 1px;
-      background: var(--border);
+      background: var(--bg-muted);
       margin: var(--spacing) var(--spacing-sm);
     }
   }

@@ -54,6 +54,7 @@
     --bg: var(--color-gray-100);
     --bg-raised: var(--color-gray-100);
     --bg-overlay: var(--color-white);
+    --bg-muted: var(--color-gray-200);
     --bg-inset: var(--color-gray-50);
 
     /* ===== Foreground (Light) ===== */
@@ -99,6 +100,7 @@
     --bg: var(--color-zinc-900);
     --bg-raised: var(--color-zinc-850);
     --bg-overlay: var(--color-zinc-800);
+    --bg-muted: var(--color-zinc-700);
     --bg-inset: var(--color-zinc-900);
 
     /* ===== Foreground (Dark) ===== */

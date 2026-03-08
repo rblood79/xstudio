@@ -121,6 +121,7 @@
     --bg: var(--color-background-base, var(--color-white));
     --bg-raised: var(--color-background-base, var(--color-white));
     --bg-overlay: var(--color-overlay-background, var(--color-neutral-50));
+    --bg-muted: var(--color-neutral-200);
     --bg-inset: var(--color-field-background, var(--color-neutral-50));
     --bg-inset-pressed: var(
       --color-button-background-pressed,
@@ -249,6 +250,7 @@
     --bg: var(--color-background-base, var(--color-neutral-900));
     --bg-raised: var(--color-background-base, var(--color-neutral-900));
     --bg-overlay: var(--color-overlay-background, var(--color-neutral-800));
+    --bg-muted: var(--color-neutral-700);
     --bg-inset: var(--color-field-background, var(--color-neutral-800));
     --bg-inset-pressed: var(
       --color-button-background-pressed,

@@ -10,7 +10,7 @@
     }
 
     .react-aria-Group {
-      background-color: var(--border);
+      background-color: var(--bg-muted);
       border-radius: var(--radius-md);
       width: 100%;
       min-width: 0;
@@ -183,7 +183,7 @@
 
     .react-aria-ToggleButtonGroup:not([data-indicator="true"]) {
       width: 100%;
-      background-color: var(--border);
+      background-color: var(--bg-muted);
       border-radius: var(--radius-md);
       box-shadow: var(--inset-shadow-sm);
       outline-width: 0;

@@ -161,7 +161,7 @@
   border: 1px solid var(--border);
   font-size: var(--text-xs);
   text-align: center;
-  background-color: var(--border);
+  background-color: var(--bg-muted);
   border-radius: var(--radius-sm);
   min-width: 0;
   padding: var(--spacing-2xs);
