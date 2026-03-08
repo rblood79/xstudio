@@ -23,6 +23,7 @@ export {
   type DataBindingValue,
   PropertyListItem,
   PropertySizeToggle,
+  PropertyIconPicker,
 } from "./property";
 
 // Panel 컴포넌트

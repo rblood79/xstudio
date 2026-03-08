@@ -23,6 +23,7 @@ import {
   PropertySection,
   PropertyDataBinding,
   PropertySizeToggle,
+  PropertyIconPicker,
   type DataBindingValue,
 } from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
@@ -348,13 +349,22 @@ export const ComboBoxEditor = memo(
             value={String(currentProps.size || "md")}
             onChange={handleSizeChange}
           />
+
+          <PropertyIconPicker
+            label="Trigger Icon"
+            value={String(currentProps.iconName || "chevron-down")}
+            onChange={(value) => onUpdate({ ...currentProps, iconName: value })}
+          />
         </PropertySection>
       ),
       [
         currentProps.variant,
         currentProps.size,
+        currentProps.iconName,
         handleVariantChange,
         handleSizeChange,
+        onUpdate,
+        currentProps,
       ],
     );
 

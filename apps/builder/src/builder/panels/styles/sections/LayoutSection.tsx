@@ -8,11 +8,12 @@
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
-import React, { useState, useMemo, memo } from 'react';
-import { PropertySection, PropertyUnitInput } from '../../../components';
-import { ToggleButton, ToggleButtonGroup, Button } from "@xstudio/shared/components";
-import { Input } from 'react-aria-components';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import React, { useState, useMemo, memo } from "react";
+import { PropertySection, PropertyUnitInput } from "../../../components";
+import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
+import { Input } from "react-aria-components";
+import { SwatchIconButton } from "../../../components/ui";
+import { iconProps } from "../../../../utils/ui/uiConstants";
 import {
   Square,
   Maximize2,
@@ -27,18 +28,18 @@ import {
   WrapText,
   CornerDownLeft,
   ArrowRightToLine,
-} from 'lucide-react';
-import { useStyleActions } from '../hooks/useStyleActions';
-import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
-import { useLayoutValuesJotai } from '../hooks/useLayoutValuesJotai';
-import { useResetStyles } from '../hooks/useResetStyles';
-import { useAtomValue } from 'jotai';
+} from "lucide-react";
+import { useStyleActions } from "../hooks/useStyleActions";
+import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
+import { useLayoutValuesJotai } from "../hooks/useLayoutValuesJotai";
+import { useResetStyles } from "../hooks/useResetStyles";
+import { useAtomValue } from "jotai";
 import {
   flexDirectionKeysAtom,
   flexAlignmentKeysAtom,
   justifyContentSpacingKeysAtom,
   flexWrapKeysAtom,
-} from '../atoms/styleAtoms';
+} from "../atoms/styleAtoms";
 
 // 4방향 값 추출은 이제 useLayoutValues 훅에서 처리됨
 
@@ -48,24 +49,33 @@ import {
  */
 interface FourWayGridProps {
   values: { top: string; right: string; bottom: string; left: string };
-  onChange: (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => void;
+  onChange: (
+    direction: "Top" | "Right" | "Bottom" | "Left",
+    value: string,
+  ) => void;
   /** 타이핑 중 실시간 캔버스 프리뷰 (RAF-throttled) */
-  onPreview?: (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => void;
+  onPreview?: (
+    direction: "Top" | "Right" | "Bottom" | "Left",
+    value: string,
+  ) => void;
   allowNegative?: boolean;
 }
 
 function getDisplayValue(value: string): string {
-  return value.replace('px', '');
+  return value.replace("px", "");
 }
 
 function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
   // useMemo로 외부 값에서 표시값 파생
-  const derivedValues = useMemo(() => ({
-    top: getDisplayValue(values.top),
-    right: getDisplayValue(values.right),
-    bottom: getDisplayValue(values.bottom),
-    left: getDisplayValue(values.left),
-  }), [values.top, values.right, values.bottom, values.left]);
+  const derivedValues = useMemo(
+    () => ({
+      top: getDisplayValue(values.top),
+      right: getDisplayValue(values.right),
+      bottom: getDisplayValue(values.bottom),
+      left: getDisplayValue(values.left),
+    }),
+    [values.top, values.right, values.bottom, values.left],
+  );
 
   // Local state로 입력값을 관리하여 controlled input 즉시 반영
   const [localValues, setLocalValues] = useState(derivedValues);
@@ -82,25 +92,28 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
     setLocalValues(derivedValues);
   }
 
-  const handleChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', inputValue: string) => {
-    const key = direction.toLowerCase() as 'top' | 'right' | 'bottom' | 'left';
-    setLocalValues(prev => ({ ...prev, [key]: inputValue }));
+  const handleChange = (
+    direction: "Top" | "Right" | "Bottom" | "Left",
+    inputValue: string,
+  ) => {
+    const key = direction.toLowerCase() as "top" | "right" | "bottom" | "left";
+    setLocalValues((prev) => ({ ...prev, [key]: inputValue }));
 
     // 타이핑 중 실시간 캔버스 프리뷰
     if (onPreview) {
-      const numericValue = inputValue.replace(/[^0-9.-]/g, '');
-      if (numericValue !== '' && numericValue !== '-') {
+      const numericValue = inputValue.replace(/[^0-9.-]/g, "");
+      if (numericValue !== "" && numericValue !== "-") {
         onPreview(direction, `${numericValue}px`);
       }
     }
   };
 
-  const commitValue = (direction: 'Top' | 'Right' | 'Bottom' | 'Left') => {
-    const key = direction.toLowerCase() as 'top' | 'right' | 'bottom' | 'left';
+  const commitValue = (direction: "Top" | "Right" | "Bottom" | "Left") => {
+    const key = direction.toLowerCase() as "top" | "right" | "bottom" | "left";
     const inputValue = localValues[key];
-    const numericValue = inputValue.replace(/[^0-9.-]/g, '');
-    if (numericValue === '' || numericValue === '-') {
-      onChange(direction, '');
+    const numericValue = inputValue.replace(/[^0-9.-]/g, "");
+    if (numericValue === "" || numericValue === "-") {
+      onChange(direction, "");
     } else {
       onChange(direction, `${numericValue}px`);
     }
@@ -108,9 +121,9 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
 
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
-    direction: 'Top' | 'Right' | 'Bottom' | 'Left',
+    direction: "Top" | "Right" | "Bottom" | "Left",
   ) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       commitValue(direction);
       (e.target as HTMLInputElement).blur();
@@ -122,36 +135,36 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
       <Input
         className="react-aria-Input four-way-top"
         value={localValues.top}
-        onChange={(e) => handleChange('Top', e.target.value)}
-        onBlur={() => commitValue('Top')}
-        onKeyDown={(e) => handleKeyDown(e, 'Top')}
+        onChange={(e) => handleChange("Top", e.target.value)}
+        onBlur={() => commitValue("Top")}
+        onKeyDown={(e) => handleKeyDown(e, "Top")}
         placeholder="T"
         aria-label="Top"
       />
       <Input
         className="react-aria-Input four-way-left"
         value={localValues.left}
-        onChange={(e) => handleChange('Left', e.target.value)}
-        onBlur={() => commitValue('Left')}
-        onKeyDown={(e) => handleKeyDown(e, 'Left')}
+        onChange={(e) => handleChange("Left", e.target.value)}
+        onBlur={() => commitValue("Left")}
+        onKeyDown={(e) => handleKeyDown(e, "Left")}
         placeholder="L"
         aria-label="Left"
       />
       <Input
         className="react-aria-Input four-way-right"
         value={localValues.right}
-        onChange={(e) => handleChange('Right', e.target.value)}
-        onBlur={() => commitValue('Right')}
-        onKeyDown={(e) => handleKeyDown(e, 'Right')}
+        onChange={(e) => handleChange("Right", e.target.value)}
+        onBlur={() => commitValue("Right")}
+        onKeyDown={(e) => handleKeyDown(e, "Right")}
         placeholder="R"
         aria-label="Right"
       />
       <Input
         className="react-aria-Input four-way-bottom"
         value={localValues.bottom}
-        onChange={(e) => handleChange('Bottom', e.target.value)}
-        onBlur={() => commitValue('Bottom')}
-        onKeyDown={(e) => handleKeyDown(e, 'Bottom')}
+        onChange={(e) => handleChange("Bottom", e.target.value)}
+        onBlur={() => commitValue("Bottom")}
+        onKeyDown={(e) => handleKeyDown(e, "Bottom")}
         placeholder="B"
         aria-label="Bottom"
       />
@@ -176,7 +189,8 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
     updateStyles,
   } = useStyleActions();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
-  const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
+  const { updateStyleImmediate, updateStylePreview } =
+    useOptimizedStyleActions();
 
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useLayoutValuesJotai();
@@ -188,20 +202,32 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
   const flexWrapKeys = useAtomValue(flexWrapKeysAtom);
 
   // FourWayGrid는 local state + blur 커밋이므로 즉시 업데이트
-  const handlePaddingChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
+  const handlePaddingChange = (
+    direction: "Top" | "Right" | "Bottom" | "Left",
+    value: string,
+  ) => {
     updateStyleImmediate(`padding${direction}`, value);
   };
 
-  const handleMarginChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
+  const handleMarginChange = (
+    direction: "Top" | "Right" | "Bottom" | "Left",
+    value: string,
+  ) => {
     updateStyleImmediate(`margin${direction}`, value);
   };
 
   // 타이핑 중 실시간 캔버스 프리뷰 (히스토리/DB 저장 없음)
-  const handlePaddingPreview = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
+  const handlePaddingPreview = (
+    direction: "Top" | "Right" | "Bottom" | "Left",
+    value: string,
+  ) => {
     updateStylePreview(`padding${direction}`, value);
   };
 
-  const handleMarginPreview = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
+  const handleMarginPreview = (
+    direction: "Top" | "Right" | "Bottom" | "Left",
+    value: string,
+  ) => {
     updateStylePreview(`margin${direction}`, value);
   };
 
@@ -272,7 +298,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
                 handleFlexAlignment(value, styleValues.flexDirection);
               } else {
                 // 활성화된 토글 재클릭 → alignment 스타일 제거
-                updateStyles({ alignItems: '', justifyContent: '' });
+                updateStyles({ alignItems: "", justifyContent: "" });
               }
             }}
           >
@@ -306,13 +332,13 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
           </ToggleButtonGroup>
         </div>
         <div className="fieldset-actions">
-          <Button>
+          <SwatchIconButton aria-label="Layout grid">
             <LayoutGrid
               color={iconProps.color}
               size={iconProps.size}
               strokeWidth={iconProps.strokeWidth}
             />
-          </Button>
+          </SwatchIconButton>
         </div>
         <div className="justify-control justify-content">
           <legend className="fieldset-legend">Justify</legend>
@@ -327,7 +353,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
                 handleJustifyContentSpacing(value);
               } else {
                 // 활성화된 토글 재클릭 → justifyContent 스타일 제거
-                updateStyles({ justifyContent: '' });
+                updateStyles({ justifyContent: "" });
               }
             }}
           >
@@ -367,7 +393,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
                 handleFlexWrap(value);
               } else {
                 // 활성화된 토글 재클릭 → flexWrap 스타일 제거
-                updateStyles({ flexWrap: '' });
+                updateStyles({ flexWrap: "" });
               }
             }}
           >
@@ -399,9 +425,9 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
           label="Gap"
           className="displayGap"
           value={styleValues.gap}
-          units={['reset', 'px']}
-          onChange={(value) => updateStyleImmediate('gap', value)}
-          onDrag={(value) => updateStylePreview('gap', value)}
+          units={["reset", "px"]}
+          onChange={(value) => updateStyleImmediate("gap", value)}
+          onDrag={(value) => updateStylePreview("gap", value)}
           min={0}
           max={500}
         />
@@ -416,9 +442,9 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
             label="Padding"
             className="padding"
             value={styleValues.padding}
-            units={['reset', 'px']}
-            onChange={(value) => updateStyleImmediate('padding', value)}
-            onDrag={(value) => updateStylePreview('padding', value)}
+            units={["reset", "px"]}
+            onChange={(value) => updateStyleImmediate("padding", value)}
+            onDrag={(value) => updateStylePreview("padding", value)}
             min={0}
             max={500}
           />
@@ -427,14 +453,14 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
             label="Margin"
             className="margin"
             value={styleValues.margin}
-            units={['reset', 'px']}
-            onChange={(value) => updateStyleImmediate('margin', value)}
-            onDrag={(value) => updateStylePreview('margin', value)}
+            units={["reset", "px"]}
+            onChange={(value) => updateStyleImmediate("margin", value)}
+            onDrag={(value) => updateStylePreview("margin", value)}
             min={0}
             max={500}
           />
           <div className="fieldset-actions actions-spacing">
-            <Button
+            <SwatchIconButton
               onPress={() => setIsSpacingExpanded(true)}
               aria-label="Expand spacing to 4-way input"
             >
@@ -443,7 +469,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
                 size={iconProps.size}
                 strokeWidth={iconProps.strokeWidth}
               />
-            </Button>
+            </SwatchIconButton>
           </div>
         </div>
       ) : (
@@ -471,7 +497,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
             </div>
           </fieldset>
           <div className="fieldset-actions actions-spacing">
-            <Button
+            <SwatchIconButton
               onPress={() => setIsSpacingExpanded(false)}
               aria-label="Collapse spacing to single input"
             >
@@ -480,7 +506,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
                 size={iconProps.size}
                 strokeWidth={iconProps.strokeWidth}
               />
-            </Button>
+            </SwatchIconButton>
           </div>
         </div>
       )}
@@ -499,9 +525,22 @@ export const LayoutSection = memo(function LayoutSection() {
 
   const handleReset = () => {
     resetStyles([
-      'display', 'flexDirection', 'flexWrap', 'alignItems', 'justifyContent', 'gap',
-      'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
-      'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+      "display",
+      "flexDirection",
+      "flexWrap",
+      "alignItems",
+      "justifyContent",
+      "gap",
+      "padding",
+      "paddingTop",
+      "paddingRight",
+      "paddingBottom",
+      "paddingLeft",
+      "margin",
+      "marginTop",
+      "marginRight",
+      "marginBottom",
+      "marginLeft",
     ]);
   };
 

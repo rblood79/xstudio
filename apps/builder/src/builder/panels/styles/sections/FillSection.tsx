@@ -11,7 +11,7 @@
  * @updated 2026-02-10 Gradient Phase 2
  */
 
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from "react";
 import {
   DndContext,
   closestCenter,
@@ -19,33 +19,34 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
   useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import {
-  DialogTrigger,
-  Button as AriaButton,
-} from 'react-aria-components';
-import { Plus } from 'lucide-react';
-import { ColorSwatch } from '@xstudio/shared/components/ColorSwatch';
-import { Popover } from '@xstudio/shared/components/Popover';
-import { PropertySection } from '../../../components';
-import { Button } from '@xstudio/shared/components';
-import { iconProps, iconSmall } from '../../../../utils/ui/uiConstants';
-import { useFillValuesJotai } from '../hooks/useFillValuesJotai';
-import { useFillActions } from '../hooks/useFillActions';
-import type { FillItem, ColorFillItem, GradientStop } from '../../../../types/builder/fill.types';
-import { FillType } from '../../../../types/builder/fill.types';
-import { FillLayerRow } from '../components/FillLayerRow';
-import { FillDetailPopover } from '../components/FillDetailPopover';
-import { gradientStopsToCss, normalizeToHex8 } from '../utils/colorUtils';
-import { useAppearanceValuesJotai } from '../hooks/useAppearanceValuesJotai';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { DialogTrigger, Button as AriaButton } from "react-aria-components";
+import { Plus } from "lucide-react";
+import { ColorSwatch } from "@xstudio/shared/components/ColorSwatch";
+import { Popover } from "@xstudio/shared/components/Popover";
+import { PropertySection } from "../../../components";
+import { SwatchIconButton } from "../../../components/ui";
+import { iconProps, iconSmall } from "../../../../utils/ui/uiConstants";
+import { useFillValuesJotai } from "../hooks/useFillValuesJotai";
+import { useFillActions } from "../hooks/useFillActions";
+import type {
+  FillItem,
+  ColorFillItem,
+  GradientStop,
+} from "../../../../types/builder/fill.types";
+import { FillType } from "../../../../types/builder/fill.types";
+import { FillLayerRow } from "../components/FillLayerRow";
+import { FillDetailPopover } from "../components/FillDetailPopover";
+import { gradientStopsToCss, normalizeToHex8 } from "../utils/colorUtils";
+import { useAppearanceValuesJotai } from "../hooks/useAppearanceValuesJotai";
 
-import './FillSection.css';
+import "./FillSection.css";
 
 /** Sortable 래퍼 - 각 FillLayerRow를 sortable로 만듦 */
 function SortableFillRow({
@@ -63,9 +64,10 @@ function SortableFillRow({
   onRemove: (id: string) => void;
   onTypeChange: (fillId: string, newType: FillType) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: fill.id,
-  });
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: fill.id,
+    });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -92,8 +94,14 @@ function SortableFillRow({
  */
 const FillSectionContent = memo(function FillSectionContent() {
   const { fills } = useFillValuesJotai();
-  const { removeFill, reorderFill, toggleFill, updateFill, updateFillPreviewThrottled, changeFillType } =
-    useFillActions();
+  const {
+    removeFill,
+    reorderFill,
+    toggleFill,
+    updateFill,
+    updateFillPreviewThrottled,
+    changeFillType,
+  } = useFillActions();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -129,7 +137,10 @@ const FillSectionContent = memo(function FillSectionContent() {
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext items={fillIds} strategy={verticalListSortingStrategy}>
+          <SortableContext
+            items={fillIds}
+            strategy={verticalListSortingStrategy}
+          >
             {fills.map((fill) => (
               <SortableFillRow
                 key={fill.id}
@@ -210,21 +221,25 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
 
   // fills가 없을 때 표시할 기본 색상: 현재 요소의 backgroundColor 또는 #FFFFFF
   // computedStyle이 color(srgb ...) 형식을 반환할 수 있으므로 정규화 필요
-  const placeholderColor = normalizeToHex8(styleValues?.backgroundColor || '#FFFFFF');
+  const placeholderColor = normalizeToHex8(
+    styleValues?.backgroundColor || "#FFFFFF",
+  );
   // hex6 → hex8 변환 (addFill에 전달용)
-  const placeholderColorHex8 = placeholderColor.length === 7
-    ? `${placeholderColor}FF`
-    : placeholderColor;
+  const placeholderColorHex8 =
+    placeholderColor.length === 7 ? `${placeholderColor}FF` : placeholderColor;
 
   // fills가 없을 때 popover에 전달할 가상 fill 객체 (store에 저장되지 않음, 표시 전용)
-  const virtualFill = useMemo<ColorFillItem>(() => ({
-    id: '__virtual__',
-    type: FillType.Color,
-    color: placeholderColorHex8,
-    enabled: true,
-    opacity: 1,
-    blendMode: 'normal',
-  }), [placeholderColorHex8]);
+  const virtualFill = useMemo<ColorFillItem>(
+    () => ({
+      id: "__virtual__",
+      type: FillType.Color,
+      color: placeholderColorHex8,
+      enabled: true,
+      opacity: 1,
+      blendMode: "normal",
+    }),
+    [placeholderColorHex8],
+  );
 
   // popover에 전달할 fill: 실제 fill이 있으면 그것, 없으면 가상 fill
   const popoverFill = firstFill ?? virtualFill;
@@ -262,7 +277,9 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
   const handleColorChange = useCallback(
     (color: string) => {
       if (firstFill && firstFill.type === FillType.Color) {
-        updateFillPreviewThrottled(firstFill.id, { color } as Partial<ColorFillItem>);
+        updateFillPreviewThrottled(firstFill.id, {
+          color,
+        } as Partial<ColorFillItem>);
       } else if (!firstFill) {
         // 가상 fill 상태 → 실제 fill 생성 (사용자가 색상을 변경한 순간)
         addFill(FillType.Color, color);
@@ -311,7 +328,8 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
   // swatch에 표시할 색상
   const swatchColor = useMemo(() => {
     if (!firstFill) return placeholderColor;
-    if (firstFill.type === FillType.Color) return (firstFill as ColorFillItem).color;
+    if (firstFill.type === FillType.Color)
+      return (firstFill as ColorFillItem).color;
     return undefined;
   }, [firstFill, placeholderColor]);
 
@@ -325,10 +343,15 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
       firstFill.type === FillType.AngularGradient
     ) {
       const stops = (firstFill as { stops: GradientStop[] }).stops;
-      return { background: `linear-gradient(90deg, ${gradientStopsToCss(stops)})` };
+      return {
+        background: `linear-gradient(90deg, ${gradientStopsToCss(stops)})`,
+      };
     }
     if (firstFill.type === FillType.MeshGradient) {
-      return { background: 'conic-gradient(#FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF0000)' };
+      return {
+        background:
+          "conic-gradient(#FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF0000)",
+      };
     }
     return undefined;
   }, [firstFill]);
@@ -352,9 +375,7 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
               className="react-aria-Group color-swatch-button"
               aria-label="Edit background fill"
             >
-              {isColor && (
-                <ColorSwatch color={swatchColor!} />
-              )}
+              {isColor && <ColorSwatch color={swatchColor!} />}
               {isGradient && (
                 <div
                   className="fill-background-gradient-swatch"
@@ -385,16 +406,13 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
           </DialogTrigger>
         </fieldset>
         <div className="fieldset-actions actions-icon">
-          <Button
-            onPress={handleAdd}
-            aria-label="Add background"
-          >
+          <SwatchIconButton onPress={handleAdd} aria-label="Add background">
             <Plus
               color={iconProps.color}
               size={iconProps.size}
               strokeWidth={iconProps.strokeWidth}
             />
-          </Button>
+          </SwatchIconButton>
         </div>
       </div>
 
@@ -405,7 +423,10 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext items={extraFillIds} strategy={verticalListSortingStrategy}>
+            <SortableContext
+              items={extraFillIds}
+              strategy={verticalListSortingStrategy}
+            >
               {extraFills.map((fill) => (
                 <SortableFillRow
                   key={fill.id}

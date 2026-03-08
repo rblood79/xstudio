@@ -15,6 +15,7 @@ import {
   PropertySelect,
 } from "../../../components";
 import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
+import { SwatchIconButton } from "../../../components/ui";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import {
   Type,
@@ -182,21 +183,16 @@ const TypographySectionContent = memo(function TypographySectionContent() {
       />
 
       <div className="fieldset-actions actions-font">
-        <button
-          className="react-aria-Button"
-          data-variant="default"
-          data-size="sm"
-          type="button"
-          title="폰트 관리"
-          style={{ cursor: "pointer", borderRadius: 4 }}
-          onClick={() => togglePanel("right", "fonts")}
+        <SwatchIconButton
+          aria-label="폰트 관리"
+          onPress={() => togglePanel("right", "fonts")}
         >
           <Type
             color={iconProps.color}
             size={iconProps.size}
             strokeWidth={iconProps.strokeWidth}
           />
-        </button>
+        </SwatchIconButton>
       </div>
 
       <PropertyUnitInput

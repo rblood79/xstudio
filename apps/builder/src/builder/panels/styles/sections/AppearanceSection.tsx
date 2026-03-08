@@ -8,10 +8,15 @@
  * 🎨 Color Picker Phase 1: isFillV2Enabled() → FillSectionContent 분기
  */
 
-import { memo, lazy, Suspense } from 'react';
-import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../../components';
-import { Button } from "@xstudio/shared/components";
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import { memo, lazy, Suspense } from "react";
+import {
+  PropertySection,
+  PropertyUnitInput,
+  PropertyColor,
+  PropertySelect,
+} from "../../../components";
+import { SwatchIconButton } from "../../../components/ui";
+import { iconProps } from "../../../../utils/ui/uiConstants";
 import {
   Square,
   SquareDashed,
@@ -19,37 +24,37 @@ import {
   SquareDashedBottom,
   EllipsisVertical,
   Eclipse,
-} from 'lucide-react';
-import { shadows } from '@xstudio/specs';
-import { useStyleActions } from '../hooks/useStyleActions';
-import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
-import { useAppearanceValuesJotai } from '../hooks/useAppearanceValuesJotai';
-import { useResetStyles } from '../hooks/useResetStyles';
-import { isFillV2Enabled } from '../../../../utils/featureFlags';
-import { useStore } from '../../../stores';
+} from "lucide-react";
+import { shadows } from "@xstudio/specs";
+import { useStyleActions } from "../hooks/useStyleActions";
+import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
+import { useAppearanceValuesJotai } from "../hooks/useAppearanceValuesJotai";
+import { useResetStyles } from "../hooks/useResetStyles";
+import { isFillV2Enabled } from "../../../../utils/featureFlags";
+import { useStore } from "../../../stores";
 
 const LazyFillBackgroundInline = lazy(() =>
-  import('./FillSection').then((m) => ({ default: m.FillBackgroundInline }))
+  import("./FillSection").then((m) => ({ default: m.FillBackgroundInline })),
 );
 
 /** Shadow 프리셋 옵션 */
 const SHADOW_PRESET_OPTIONS = [
-  { value: 'reset', label: 'Reset' },
-  { value: 'none', label: 'none' },
-  { value: 'sm', label: 'sm' },
-  { value: 'md', label: 'md' },
-  { value: 'lg', label: 'lg' },
-  { value: 'xl', label: 'xl' },
-  { value: 'inset', label: 'inset' },
+  { value: "reset", label: "Reset" },
+  { value: "none", label: "none" },
+  { value: "sm", label: "sm" },
+  { value: "md", label: "md" },
+  { value: "lg", label: "lg" },
+  { value: "xl", label: "xl" },
+  { value: "inset", label: "inset" },
 ];
 
 /** CSS box-shadow 값 → 프리셋 키 역매핑 */
 const cssToPresetMap = new Map(
-  Object.entries(shadows).map(([key, val]) => [val, key])
+  Object.entries(shadows).map(([key, val]) => [val, key]),
 );
 
 function boxShadowToPresetKey(cssValue: string): string {
-  if (!cssValue || cssValue === 'none') return 'none';
+  if (!cssValue || cssValue === "none") return "none";
   return cssToPresetMap.get(cssValue) ?? cssValue;
 }
 
@@ -61,7 +66,8 @@ function boxShadowToPresetKey(cssValue: string): string {
 const AppearanceSectionContent = memo(function AppearanceSectionContent() {
   const { updateStyle } = useStyleActions();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
-  const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
+  const { updateStyleImmediate, updateStylePreview } =
+    useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useAppearanceValuesJotai();
 
@@ -81,17 +87,17 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
             label="Background Color"
             className="background-color"
             value={styleValues.backgroundColor}
-            onChange={(value) => updateStyle('backgroundColor', value)}
+            onChange={(value) => updateStyle("backgroundColor", value)}
             placeholder="#FFFFFF"
           />
           <div className="fieldset-actions actions-icon">
-            <Button>
+            <SwatchIconButton aria-label="More background options">
               <EllipsisVertical
                 color={iconProps.color}
                 size={iconProps.size}
                 strokeWidth={iconProps.strokeWidth}
               />
-            </Button>
+            </SwatchIconButton>
           </div>
         </div>
       )}
@@ -103,7 +109,7 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           label="Color"
           className="border-color"
           value={styleValues.borderColor}
-          onChange={(value) => updateStyle('borderColor', value)}
+          onChange={(value) => updateStyle("borderColor", value)}
           placeholder="#000000"
         />
         <PropertyUnitInput
@@ -111,9 +117,9 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           label="Border Width"
           className="border-width"
           value={styleValues.borderWidth}
-          units={['reset', 'px']}
-          onChange={(value) => updateStyleImmediate('borderWidth', value)}
-          onDrag={(value) => updateStylePreview('borderWidth', value)}
+          units={["reset", "px"]}
+          onChange={(value) => updateStyleImmediate("borderWidth", value)}
+          onDrag={(value) => updateStylePreview("borderWidth", value)}
           min={0}
           max={100}
         />
@@ -122,9 +128,9 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           label="Border Radius"
           className="border-radius"
           value={styleValues.borderRadius}
-          units={['reset', 'px']}
-          onChange={(value) => updateStyleImmediate('borderRadius', value)}
-          onDrag={(value) => updateStylePreview('borderRadius', value)}
+          units={["reset", "px"]}
+          onChange={(value) => updateStyleImmediate("borderRadius", value)}
+          onDrag={(value) => updateStylePreview("borderRadius", value)}
           min={0}
           max={500}
         />
@@ -134,27 +140,27 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           className="border-style"
           value={styleValues.borderStyle}
           options={[
-            { value: 'reset', label: 'Reset' },
-            { value: 'none', label: 'none' },
-            { value: 'solid', label: 'solid' },
-            { value: 'dashed', label: 'dashed' },
-            { value: 'dotted', label: 'dotted' },
-            { value: 'double', label: 'double' },
-            { value: 'groove', label: 'groove' },
-            { value: 'ridge', label: 'ridge' },
-            { value: 'inset', label: 'inset' },
-            { value: 'outset', label: 'outset' },
+            { value: "reset", label: "Reset" },
+            { value: "none", label: "none" },
+            { value: "solid", label: "solid" },
+            { value: "dashed", label: "dashed" },
+            { value: "dotted", label: "dotted" },
+            { value: "double", label: "double" },
+            { value: "groove", label: "groove" },
+            { value: "ridge", label: "ridge" },
+            { value: "inset", label: "inset" },
+            { value: "outset", label: "outset" },
           ]}
-          onChange={(value) => updateStyle('borderStyle', value)}
+          onChange={(value) => updateStyle("borderStyle", value)}
         />
         <div className="fieldset-actions actions-icon">
-          <Button>
+          <SwatchIconButton aria-label="More border options">
             <EllipsisVertical
               color={iconProps.color}
               size={iconProps.size}
               strokeWidth={iconProps.strokeWidth}
             />
-          </Button>
+          </SwatchIconButton>
         </div>
       </div>
 
@@ -167,11 +173,11 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           value={boxShadowToPresetKey(styleValues.boxShadow)}
           options={SHADOW_PRESET_OPTIONS}
           onChange={(value) => {
-            if (value === '' || value === 'none') {
-              updateStyle('boxShadow', 'none');
+            if (value === "" || value === "none") {
+              updateStyle("boxShadow", "none");
             } else {
               const cssValue = shadows[value as keyof typeof shadows];
-              updateStyle('boxShadow', cssValue ?? value);
+              updateStyle("boxShadow", cssValue ?? value);
             }
           }}
         />
@@ -190,7 +196,14 @@ export const AppearanceSection = memo(function AppearanceSection() {
   const resetStyles = useResetStyles();
 
   const handleReset = () => {
-    resetStyles(['backgroundColor', 'borderColor', 'borderWidth', 'borderRadius', 'borderStyle', 'boxShadow']);
+    resetStyles([
+      "backgroundColor",
+      "borderColor",
+      "borderWidth",
+      "borderRadius",
+      "borderStyle",
+      "boxShadow",
+    ]);
     // V2: fills 배열도 초기화
     if (isFillV2Enabled()) {
       useStore.getState().updateSelectedFills([]);

@@ -11,11 +11,8 @@
 
 import { memo, useCallback, useState } from "react";
 import { PropertySection, PropertyUnitInput } from "../../../components";
-import {
-  Button,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@xstudio/shared/components";
+import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
+import { SwatchIconButton } from "../../../components/ui";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import {
   EllipsisVertical,
@@ -299,7 +296,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         max={9999}
       />
       <div className="fieldset-actions actions-size">
-        <Button
+        <SwatchIconButton
           aria-label="Toggle constraints"
           onPress={() => setShowConstraints((v) => !v)}
         >
@@ -308,7 +305,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
             size={iconProps.size}
             strokeWidth={iconProps.strokeWidth}
           />
-        </Button>
+        </SwatchIconButton>
       </div>
 
       {showConstraints && !styleValues.isBody && (
@@ -456,13 +453,13 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         max={9999}
       />
       <div className="fieldset-actions actions-position">
-        <Button>
+        <SwatchIconButton aria-label="More position options">
           <EllipsisVertical
             color={iconProps.color}
             size={iconProps.size}
             strokeWidth={iconProps.strokeWidth}
           />
-        </Button>
+        </SwatchIconButton>
       </div>
     </>
   );

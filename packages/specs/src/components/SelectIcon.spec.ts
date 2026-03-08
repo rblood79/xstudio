@@ -13,6 +13,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 export interface SelectIconProps {
   variant?: "default";
   size?: "sm" | "md" | "lg";
+  iconName?: string;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -112,7 +113,7 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
         },
         {
           type: "icon_font" as const,
-          iconName: "chevron-down",
+          iconName: props.iconName ?? "chevron-down",
           x: effectiveSize / 2,
           y: effectiveSize / 2,
           fontSize: effectiveSize,

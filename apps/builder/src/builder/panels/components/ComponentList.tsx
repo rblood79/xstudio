@@ -40,6 +40,11 @@ import {
   Layers,
   Box,
   Smile,
+  ScrollText,
+  Frame,
+  Loader,
+  Upload,
+  FileUp,
 } from "lucide-react";
 import { PanelHeader } from "../../components";
 import { useEditModeStore } from "../../stores/editMode";
@@ -66,6 +71,8 @@ const layoutComp = [
   { tag: "Link", label: "link", icon: Link },
   { tag: "Separator", label: "separator", icon: SeparatorHorizontal },
   { tag: "Nav", label: "navigation", icon: Menu },
+  { tag: "ScrollBox", label: "scroll box", icon: ScrollText },
+  { tag: "MaskedFrame", label: "masked frame", icon: Frame },
   { tag: "Slot", label: "slot", icon: Layers, layoutOnly: true },
 ] as const;
 
@@ -81,6 +88,8 @@ const inputsComp = [
   { tag: "Switch", label: "switch", icon: ToggleRight },
   { tag: "Slider", label: "slider", icon: SlidersHorizontal },
   { tag: "TailSwatch", label: "color picker", icon: Paintbrush },
+  { tag: "DropZone", label: "drop zone", icon: Upload },
+  { tag: "FileTrigger", label: "file trigger", icon: FileUp },
 ] as const;
 
 const actionsComp = [
@@ -105,6 +114,7 @@ const feedbackComp = [
   { tag: "ProgressBar", label: "progress bar", icon: BarChart3 },
   { tag: "Meter", label: "meter", icon: Gauge },
   { tag: "Badge", label: "badge", icon: Star },
+  { tag: "Skeleton", label: "skeleton", icon: Loader },
 ] as const;
 
 const dateTimeComp = [

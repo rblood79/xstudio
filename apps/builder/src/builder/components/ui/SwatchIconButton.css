@@ -1,0 +1,43 @@
+.swatch-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing);
+  background: var(--border-color);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: var(--inset-shadow-sm);
+  height: var(--inspector-control-size);
+  width: var(--inspector-control-size);
+  color: var(--text-color-placeholder);
+
+  .swatch-icon-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--text-xl);
+    height: var(--text-xl);
+    border-radius: var(--radius-sm);
+    background: var(--overlay-background);
+  }
+
+  &[data-hovered] {
+    background: var(--overlay-background);
+    color: var(--text-color);
+  }
+
+  &[data-pressed] {
+    background: var(--color-neutral-200);
+  }
+
+  &[data-focus-visible] {
+    outline: 2px solid var(--highlight-background);
+    outline-offset: -2px;
+  }
+
+  &[data-disabled] {
+    opacity: 0.38;
+    pointer-events: none;
+  }
+}

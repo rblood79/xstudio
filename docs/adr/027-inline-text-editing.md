@@ -2,7 +2,16 @@
 
 ## Status
 
-Partial (2026-03-08) — Phase A+B 구현 완료 (TextEditOverlay + Quill + 멀티페이지 좌표 보정), Phase C (Spec 컴포넌트 텍스트) + Phase D (리치 텍스트) 미구현
+Partial (2026-03-08) — Phase A+B+C 구현 완료 (TextEditOverlay + Quill + 멀티페이지 좌표 보정 + Spec 컴포넌트 텍스트 편집), Phase D (리치 텍스트) 미구현
+
+### Phase C 완료 근거 (2026-03-08)
+
+- TEXT_ELEMENT_TAGS: Button, ToggleButton, Tag, Badge, Link 등 14개 태그 등록 완료
+- BuilderCanvas textTags: 동기화 완료 (더블클릭 → startEdit 진입)
+- extractFullSpecTextStyle: 14개 Spec 지원, padding/paddingTop/verticalAlign/fontWeight/color 추출
+- TextEditOverlay: 전체 요소 bounds + Quill 내부 padding 방식으로 텍스트 영역 정확히 맞춤
+- subscribeBounds: 편집 중 크기 변동 시 오버레이 동기화 (fit-content Badge 등)
+- `extractSpecTextBounds()` 별도 함수 불필요: padding 기반 접근이 기능적으로 동등하며 클릭 영역이 넓어 UX 우수
 
 ## Context
 

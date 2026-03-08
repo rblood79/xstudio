@@ -1490,6 +1490,42 @@ export function createDefaultIconProps(): IconElementProps {
   };
 }
 
+export function createDefaultScrollBoxProps(): BaseElementProps {
+  return {
+    // CSS base: overflow:auto, 컨테이너
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      width: "100%",
+      height: "200px",
+      overflow: "auto",
+    },
+  };
+}
+
+export function createDefaultMaskedFrameProps(): BaseElementProps {
+  return {
+    // CSS base: overflow:hidden, 클리핑 마스크 컨테이너
+    style: {
+      width: "200px",
+      height: "200px",
+      overflow: "hidden",
+      borderRadius: "8px",
+    },
+  };
+}
+
+export function createDefaultSkeletonProps(): BaseElementProps {
+  return {
+    // CSS base: 로딩 플레이스홀더
+    style: {
+      width: "100%",
+      height: "20px",
+      borderRadius: "4px",
+    },
+  };
+}
+
 // === 통합된 기본 props 생성 함수 ===
 export function getDefaultProps(tag: string): ComponentElementProps {
   const defaultPropsMap: Record<string, () => ComponentElementProps> = {
@@ -1568,6 +1604,9 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Modal: createDefaultModalProps,
     Group: createDefaultGroupProps,
     Icon: createDefaultIconProps,
+    ScrollBox: createDefaultScrollBoxProps,
+    MaskedFrame: createDefaultMaskedFrameProps,
+    Skeleton: createDefaultSkeletonProps,
   };
 
   const createProps = defaultPropsMap[tag];

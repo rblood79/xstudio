@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed (2026-03-07) → **Updated (2026-03-08)** — 전수 조사 결과 반영, Phase 0 부분 진행 중
+Proposed (2026-03-07) → **Updated (2026-03-08)** — Phase 0-1 완료 (G0-1 게이트 통과)
 
 ## Context
 
@@ -88,14 +88,14 @@ XStudio는 React Aria Components 기반으로 76개 Spec과 관련 인프라를 
 
 ### G0: Phase 0 선행 조건 (ADR-030 착수 전 필수)
 
-| Gate | 조건                                                 | 현재 상태 | 검증 방법                              |
-| :--: | ---------------------------------------------------- | :-------: | -------------------------------------- |
-| G0-1 | Button/Badge/Link/ProgressBar/Separator Factory 완료 |     X     | Factory 등록 + 빌더 팔레트 생성 확인   |
-| G0-2 | S2 프로퍼티 커버리지 70%+ (핵심 14개 컴포넌트)       |   ~50%    | S2 Skill 문서 대비 props 비교          |
-| G0-3 | 이벤트 패널 React Aria 이벤트 실행 검증              |  미검증   | onPress/onSelectionChange 동작 확인    |
-| G0-4 | Form 제출 props (name/value) 추가 완료               |     X     | 폼 컴포넌트 전체 name/value 속성 존재  |
-| G0-5 | 누락 Preview 렌더러 보완 (최소 Pagination, Toast)    |     X     | rendererMap 등록 + Preview 렌더링 확인 |
-| G0-6 | `pnpm type-check` 통과                               |     O     | CI                                     |
+| Gate | 조건                                                 | 현재 상태 | 검증 방법                                              |
+| :--: | ---------------------------------------------------- | :-------: | ------------------------------------------------------ |
+| G0-1 | Button/Badge/Link/ProgressBar/Separator Factory 완료 |     O     | 중앙 defaultPropsMap 통합 + 빌더 팔레트 13개 등록 완료 |
+| G0-2 | S2 프로퍼티 커버리지 70%+ (핵심 14개 컴포넌트)       |   ~50%    | S2 Skill 문서 대비 props 비교                          |
+| G0-3 | 이벤트 패널 React Aria 이벤트 실행 검증              |  미검증   | onPress/onSelectionChange 동작 확인                    |
+| G0-4 | Form 제출 props (name/value) 추가 완료               |     X     | 폼 컴포넌트 전체 name/value 속성 존재                  |
+| G0-5 | 누락 Preview 렌더러 보완 (최소 Pagination, Toast)    |     X     | rendererMap 등록 + Preview 렌더링 확인                 |
+| G0-6 | `pnpm type-check` 통과                               |     O     | CI                                                     |
 
 ### G1~G4: Phase별 진행 조건
 
