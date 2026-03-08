@@ -1,7 +1,9 @@
 docs/react-aria-starter
 docs/react-aria
-docs/photoshop
 node_modules
+
+# macOS
+.DS_Store
 dist
 /.cache
 /build

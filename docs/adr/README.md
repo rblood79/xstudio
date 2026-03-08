@@ -54,17 +54,17 @@
 
 ### 미구현
 
-| ADR                                       | 제목                                               | 상태     | 규모                                                                                                | 우선순위 |
-| ----------------------------------------- | -------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md)  | Quick Connect 데이터 바인딩                        | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                     |  **P2**  |
-| [015](015-sitemap-layout.md)              | Sitemap Hierarchy 워크플로우 엣지                  | Proposed | 변경 대상 8파일, 코드 미생성                                                                        |    P5    |
-| [016](016-photoshop-ui-ux.md)             | Photoshop 벤치마크 기반 UI/UX (v2)                 | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                              |    P5    |
-| [020](020-design-kit-improvement.md)      | Design Kit 패널 분석 및 개선                       | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수            |    P4    |
-| [030](030-s2-spectrum-only-components.md) | React Spectrum S2 전용 컴포넌트 WebGL 마이그레이션 | Proposed | 4 Phase, 22개 컴포넌트 — Phase 0 선행 조건 감사 진행 중 (Factory 13개 누락, S2 Props ~50% 커버리지) |    P3    |
+| ADR                                       | 제목                                               | 상태     | 규모                                                                                     | 우선순위 |
+| ----------------------------------------- | -------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------- | :------: |
+| [030](030-s2-spectrum-only-components.md) | React Spectrum S2 전용 컴포넌트 WebGL 마이그레이션 | Proposed | 4 Phase, 22개 컴포넌트 — Phase 0 완료, Phase 1부터 실제 구현                             |  **P2**  |
+| [013](013-quick-connect-data-binding.md)  | Quick Connect 데이터 바인딩                        | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                          |  **P3**  |
+| [020](020-design-kit-improvement.md)      | Design Kit 패널 분석 및 개선                       | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수 |    P4    |
+| [015](015-sitemap-layout.md)              | Sitemap Hierarchy 워크플로우 엣지                  | Proposed | 변경 대상 8파일, 코드 미생성                                                             |    P5    |
+| [016](016-photoshop-ui-ux.md)             | Photoshop 벤치마크 기반 UI/UX (v2)                 | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                   |    P5    |
 
 ---
 
-## 다음 진행 목표 (2026-03-08 기준)
+## 다음 진행 목표 (2026-03-09 기준)
 
 |  순서  | 대상                    | 내용                                                                                                    | 규모 |   상태   |
 | :----: | ----------------------- | ------------------------------------------------------------------------------------------------------- | :--: | :------: |
@@ -83,8 +83,9 @@
 | ~~13~~ | ~~ADR-027 Phase C~~     | ~~Canvas Inline Text Editing — Spec 컴포넌트 텍스트 편집 (코드 대조 결과 이미 완료)~~                   |  소  | **완료** |
 | ~~14~~ | ~~ADR-019 Phase C2+C4~~ | ~~아이콘 시스템 — C2 simple element 확인 + C4 SelectIcon/ComboBox 연동 + C5 ComboBoxEditor IconPicker~~ |  소  | **완료** |
 | ~~15~~ | ~~ADR-030 Phase 0-1~~   | ~~Factory 누락 13개 컴포넌트 — 중앙 defaultPropsMap 통합 + ComponentList 등록~~                         |  소  | **완료** |
-|   16   | ADR-013                 | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                        |  대  |          |
-| ~~17~~ | ~~ADR-021 Phase E~~     | ~~테마 시스템 — 컴포넌트별 accent 오버라이드 (Radix data-accent 패턴)~~                                 |  소  | **완료** |
+| ~~16~~ | ~~ADR-021 Phase E~~     | ~~테마 시스템 — 컴포넌트별 accent 오버라이드 (Radix data-accent 패턴)~~                                 |  소  | **완료** |
+|   17   | ADR-030 Phase 1+        | S2 전용 컴포넌트 마이그레이션 — Phase 0 완료, Phase 1부터 실제 구현 (22개 컴포넌트)                     |  대  |          |
+|   18   | ADR-013                 | Quick Connect 데이터 바인딩 — 컴포넌트 체계 확정(030) 후 바인딩 연결 (5 Phase, 21파일)                  |  대  |          |
 
 ---
 
@@ -94,16 +95,17 @@
 
 - ~~ADR-014 Fonts~~, ~~ADR-023 Variant Props~~, ~~ADR-017/018 CSS~~, ~~ADR-022 S2 토큰~~, ~~ADR-025 Named Color~~, ~~ADR-028/029 CSS 정리~~ 모두 완료
 
-### P2: ADR-013
+### P2: ADR-030 S2 컴포넌트 체계
 
 - ~~**ADR-027**: Canvas Inline Text Editing — Phase A+B+C 완료~~
 - ~~**ADR-019**: Icon 시스템 — Phase A+B+C+D 완료 (C2 simple element 확인, C4+C5 Spec 연동)~~
-- **ADR-013**: Collection 컴포넌트 데이터 바인딩 1클릭 자동화 — 초보자 학습 곡선 완화 (대규모)
+- **ADR-030**: React Spectrum S2 전용 컴포넌트 마이그레이션 — Phase 0 완료, Phase 1부터 실제 구현
+- **근거**: 컴포넌트 체계가 확정되어야 데이터 바인딩(013) 재작업 없이 진행 가능
 
-### P3: ADR-030 S2 컴포넌트 체계
+### P3: ADR-013 데이터 바인딩
 
 - ~~**ADR-024**: CSS 변수명 S2 체계 전환~~ — Superseded (ADR-022/028/029에서 4축 체계로 전환 완료)
-- **ADR-030**: React Spectrum S2 전용 컴포넌트 마이그레이션 — Phase 0 완료 (G0-1~G0-6)
+- **ADR-013**: Collection 컴포넌트 데이터 바인딩 1클릭 자동화 — ADR-030 컴포넌트 확정 후 실행
 
 ### P4: ADR-009 Phase 2 잔여 + ADR-020 + ADR-026 잔여
 
