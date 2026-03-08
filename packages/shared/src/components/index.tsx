@@ -83,6 +83,9 @@ export { Disclosure } from "./Disclosure";
 export { DisclosurePanel } from "react-aria-components";
 export { DisclosureGroup } from "./DisclosureGroup";
 
+// Icon Component
+export { Icon } from "./Icon";
+
 // Feedback Components
 export { Badge } from "./Badge";
 export { ProgressBar } from "./ProgressBar";

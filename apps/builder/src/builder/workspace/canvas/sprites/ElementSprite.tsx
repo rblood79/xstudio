@@ -270,7 +270,7 @@ const TEXT_TAGS = new Set([
 /**
  * 이미지 관련 태그들
  */
-const IMAGE_TAGS = new Set(["Image", "Avatar", "Logo", "Icon", "Thumbnail"]);
+const IMAGE_TAGS = new Set(["Image", "Avatar", "Logo", "Thumbnail"]);
 
 /**
  * UI 컴포넌트 태그들 (Phase 11 B2.4)
@@ -309,7 +309,7 @@ const UI_MASKEDFRAME_TAGS = new Set([
 const UI_TOGGLEBUTTON_TAGS = new Set(["ToggleButton"]);
 const UI_TOGGLEBUTTONGROUP_TAGS = new Set(["ToggleButtonGroup"]);
 const UI_LISTBOX_TAGS = new Set(["ListBox"]);
-const UI_BADGE_TAGS = new Set(["Badge", "Tag", "Chip"]);
+const UI_BADGE_TAGS = new Set(["Badge", "Tag", "Chip", "Icon"]);
 const UI_METER_TAGS = new Set(["Meter", "Gauge"]);
 
 /**
