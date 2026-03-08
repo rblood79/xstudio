@@ -193,8 +193,8 @@
 }
 
 .type-badge.type-complex {
-  background: var(--color-gray-100);
-  color: var(--color-gray-700);
+  background: var(--bg);
+  color: var(--fg);
 }
 
 /* Sample Value */

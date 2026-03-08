@@ -90,7 +90,7 @@
   }
 
   .react-aria-Modal[data-variant="secondary"] {
-    border-color: var(--bg-inset);
+    border-color: var(--border);
   }
 
   .react-aria-Modal[data-variant="tertiary"] {

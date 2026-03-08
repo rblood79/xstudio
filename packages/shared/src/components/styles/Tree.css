@@ -279,7 +279,7 @@
 
       &[data-selected] {
         background: var(--bg-inset);
-        color: var(--color-neutral-900);
+        color: var(--fg-emphasis);
       }
 
       &[data-drop-target] {

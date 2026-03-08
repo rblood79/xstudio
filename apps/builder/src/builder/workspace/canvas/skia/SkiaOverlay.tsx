@@ -142,6 +142,34 @@ interface SkiaOverlayProps {
 }
 
 /**
+ * DOM 요소에서 CSS --bg 변수를 resolved sRGB hex로 읽는다.
+ * Canvas 2D fillStyle로 oklch/lab 등 모든 CSS 색공간을 sRGB 변환.
+ */
+function readCssBgColor(el: HTMLElement): number | null {
+  const tmp = document.createElement("div");
+  tmp.style.backgroundColor = "var(--bg)";
+  tmp.style.display = "none";
+  el.appendChild(tmp);
+  const resolved = getComputedStyle(tmp).backgroundColor;
+  el.removeChild(tmp);
+  if (
+    !resolved ||
+    resolved === "transparent" ||
+    resolved === "rgba(0, 0, 0, 0)"
+  )
+    return null;
+  const cvs = document.createElement("canvas");
+  cvs.width = 1;
+  cvs.height = 1;
+  const ctx = cvs.getContext("2d");
+  if (!ctx) return null;
+  ctx.fillStyle = resolved;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return (r << 16) | (g << 8) | b;
+}
+
+/**
  * Camera 컨테이너를 찾아 줌/팬 상태를 추출한다.
  */
 function findCameraContainer(stage: Container): Container | null {
@@ -526,7 +554,7 @@ function buildSelectionRenderData(
  */
 export function SkiaOverlay({
   containerEl,
-  backgroundColor = 0xf8fafc,
+  backgroundColor = 0xf3f4f6,
   app,
   dragStateRef,
   pageFrames,
@@ -891,15 +919,38 @@ export function SkiaOverlay({
     skiaCanvas.style.width = `${rect.width}px`;
     skiaCanvas.style.height = `${rect.height}px`;
 
-    // 배경색 변환 (hex → Float32Array)
-    const r = ((backgroundColor >> 16) & 0xff) / 255;
-    const g = ((backgroundColor >> 8) & 0xff) / 255;
-    const b = (backgroundColor & 0xff) / 255;
+    // 배경색: CSS --bg 변수 우선 (oklch 등 모든 색공간 호환), fallback으로 props
+    const resolvedBg = readCssBgColor(containerEl) ?? backgroundColor;
+    const r = ((resolvedBg >> 16) & 0xff) / 255;
+    const g = ((resolvedBg >> 8) & 0xff) / 255;
+    const b = (resolvedBg & 0xff) / 255;
     const bgColor = ck.Color4f(r, g, b, 1);
 
-    // SkiaRenderer 생성 (DPR 전달)
+    // SkiaRenderer 생성 (opaque 배경 — alpha compositing 비용 제거)
     const renderer = new SkiaRenderer(ck, skiaCanvas, bgColor, dpr);
     rendererRef.current = renderer;
+
+    // 빌더 테마 변경 시 배경색 동기화
+    const syncBgColor = () => {
+      requestAnimationFrame(() => {
+        const hex = readCssBgColor(containerEl);
+        if (hex == null) return;
+        const rv = ((hex >> 16) & 0xff) / 255;
+        const gv = ((hex >> 8) & 0xff) / 255;
+        const bv = (hex & 0xff) / 255;
+        renderer.setBackgroundColor(ck.Color4f(rv, gv, bv, 1));
+        renderer.invalidateContent();
+      });
+    };
+    // data-builder-theme 속성 변경 감지
+    const themeObserver = new MutationObserver(syncBgColor);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-builder-theme"],
+    });
+    // OS 다크모드 전환 감지 (빌더 테마 "system" 모드)
+    const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModeQuery.addEventListener("change", syncBgColor);
 
     // Skia 렌더 루프: PixiJS ticker에 통합
     // UTILITY priority (-50): Application.render() (LOW=-25) 이후에 실행.
@@ -1684,6 +1735,8 @@ export function SkiaOverlay({
     );
 
     return () => {
+      themeObserver.disconnect();
+      darkModeQuery.removeEventListener("change", syncBgColor);
       unwatchContext();
       if (minimapFadeTimerRef.current)
         clearTimeout(minimapFadeTimerRef.current);

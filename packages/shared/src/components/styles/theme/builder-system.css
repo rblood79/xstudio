@@ -52,9 +52,10 @@
   body:not([data-preview="true"]) > .react-aria-Modal {
     /* ===== Surface (Light) ===== */
     --bg: var(--color-gray-100);
-    --bg-raised: var(--color-gray-100);
+    --bg-raised: var(--color-gray-50);
     --bg-overlay: var(--color-white);
     --bg-muted: var(--color-gray-200);
+    --bg-emphasis: var(--color-gray-300);
     --bg-inset: var(--color-gray-50);
 
     /* ===== Foreground (Light) ===== */
@@ -82,9 +83,11 @@
     /* ===== Status (Light) ===== */
     --negative: var(--color-red-500);
     --informative: var(--color-blue-500);
+    --notice: var(--color-orange-500);
     --notice-subtle: var(--color-orange-50);
     --fg-on-notice: var(--color-orange-700);
     --positive: var(--color-green-500);
+    --positive-subtle: var(--color-green-50);
   }
 
   /* ==================== Builder Dark Mode (ADR-028) ==================== */
@@ -101,6 +104,7 @@
     --bg-raised: var(--color-zinc-850);
     --bg-overlay: var(--color-zinc-800);
     --bg-muted: var(--color-zinc-700);
+    --bg-emphasis: var(--color-zinc-600);
     --bg-inset: var(--color-zinc-900);
 
     /* ===== Foreground (Dark) ===== */
@@ -128,9 +132,11 @@
     /* ===== Status (Dark) ===== */
     --negative: var(--color-red-400);
     --informative: var(--color-blue-400);
+    --notice: var(--color-orange-400);
     --notice-subtle: rgba(251, 106, 34, 0.15);
     --fg-on-notice: var(--color-orange-200);
     --positive: var(--color-green-400);
+    --positive-subtle: rgba(34, 197, 94, 0.15);
   }
 
   /* ==================== Accessibility: High Contrast Mode ==================== */

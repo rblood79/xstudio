@@ -194,8 +194,8 @@
   }
 
   .theme-selector .react-aria-Button[data-hovered] {
-    border-color: var(--focus-ring);
-    background: var(--border-hover);
+    border-color: var(--border-hover);
+    background: var(--bg-muted);
   }
 
   .theme-selector .react-aria-Button[data-focus-visible] {
@@ -239,11 +239,11 @@
   }
 
   .theme-selector .react-aria-ListBoxItem[data-hovered] {
-    background: var(--border-hover);
+    background: var(--bg-muted);
   }
 
   .theme-selector .react-aria-ListBoxItem[data-selected] {
-    background: var(--focus-ring);
+    background: var(--informative);
     color: var(--fg-on-accent);
     font-weight: 500;
   }
@@ -287,7 +287,7 @@
 
   .header_contents:last-child button:not(.publish) {
     border-radius: var(--radius-md);
-    background-color: var(--fg-on-accent);
+    background-color: var(--bg-overlay);
     padding: var(--spacing-xs);
   }
 

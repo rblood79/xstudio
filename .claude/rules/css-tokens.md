@@ -22,11 +22,12 @@ S2 + React Aria 혼합 패턴. 모든 컴포넌트 CSS에서 시맨틱 변수만
 --bg-raised   패널 헤더, section-header (bg 위에 올라온 영역)
 --bg-overlay  section-content, 모달, 카드 (가장 밝은/높은 레벨)
 --bg-muted    중립 강조 배경 (swatch, hover row, 구분선 배경)
+--bg-emphasis 컨트롤 fill (switch track, slider track, scrollbar thumb)
 --bg-inset    입력필드, 검색바 (안으로 들어간 영역)
 ```
 
-Light: `bg(gray-100) → raised(gray-100) → overlay(white) → muted(gray-200) → inset(gray-50)`
-Dark: `bg(zinc-900) → raised(zinc-850) → overlay(zinc-800) → muted(zinc-700) → inset(zinc-900)`
+Light: `bg(gray-100) → raised(gray-100) → overlay(white) → muted(gray-200) → emphasis(gray-300) → inset(gray-50)`
+Dark: `bg(zinc-900) → raised(zinc-850) → overlay(zinc-800) → muted(zinc-700) → emphasis(zinc-600) → inset(zinc-900)`
 
 ### 금지 패턴 (CRITICAL)
 
@@ -44,12 +45,27 @@ Dark: `bg(zinc-900) → raised(zinc-850) → overlay(zinc-800) → muted(zinc-70
 
 ### 카테고리-속성 대응 규칙
 
-| CSS 속성                          | 사용 가능 변수 카테고리                          |
-| --------------------------------- | ------------------------------------------------ |
-| `background` / `background-color` | `--bg-*`, `--accent-*`, `--notice-subtle`        |
-| `color`                           | `--fg-*`, `--accent`, `--negative`, `--positive` |
-| `border-color` / `border`         | `--border-*`                                     |
-| `outline` / `box-shadow (focus)`  | `--focus-ring`                                   |
+| CSS 속성                          | 사용 가능 변수 카테고리                                                       |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| `background` / `background-color` | `--bg-*`, `--accent-*`, `--notice-subtle`, `--negative/positive/informative`¹ |
+| `color`                           | `--fg-*`, `--accent`, `--negative`, `--positive`, `--informative`             |
+| `border-color` / `border`         | `--border-*`, `--accent`², `--focus-ring`³                                    |
+| `outline` / `box-shadow (focus)`  | `--focus-ring`                                                                |
+
+¹ 상태 색상을 배경에 사용: badge, indicator, drop-indicator 등 소규모 강조 요소에 허용
+² `--accent`를 border에 사용: active/selected 상태 테두리 (예: 선택된 카드, editing 상태)
+³ `--focus-ring`을 border에 사용: `:focus` 상태에서 outline 대신 border로 포커스 표시할 때
+
+### 의도적 예외 (카테고리 교차 허용)
+
+아래는 시각적/기술적 이유로 카테고리 교차 사용이 의도된 패턴:
+
+| 패턴                                       | 위치                  | 이유                                 |
+| ------------------------------------------ | --------------------- | ------------------------------------ |
+| `background: var(--fg-on-accent)`          | 정렬 dot (inspector)  | CSS로 렌더링하는 작은 시각 indicator |
+| `border-color: var(--bg-raised)`           | ColorPicker thumb     | 배경색과 동일한 cutout 효과          |
+| `border-color: var(--fg-on-accent)`        | Select checkmark      | CSS border로 체크 아이콘 렌더링      |
+| `background: var(--fg-muted)` (source dot) | `.source-dot.default` | 상태 표시 색상 indicator             |
 
 ## 금지된 M3 토큰
 

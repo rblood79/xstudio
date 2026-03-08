@@ -219,7 +219,7 @@
 
 .toolbar-btn:hover:not(:disabled) {
   background: var(--bg-inset);
-  border-color: var(--fg-disabled);
+  border-color: var(--border-disabled);
   color: var(--fg);
 }
 
@@ -334,7 +334,7 @@
 
 .add-row-btn:hover {
   background: var(--bg-inset);
-  border-color: var(--fg-disabled);
+  border-color: var(--border-disabled);
   color: var(--fg);
 }
 

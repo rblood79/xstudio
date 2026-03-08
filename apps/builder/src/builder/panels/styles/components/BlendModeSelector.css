@@ -32,7 +32,7 @@
     appearance: auto;
 
     &:hover {
-      border-color: var(--fg-muted);
+      border-color: var(--border-hover);
     }
 
     &:focus-visible {

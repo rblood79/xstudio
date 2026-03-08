@@ -14,11 +14,10 @@
  * @see docs/RENDERING_ARCHITECTURE.md §5.10, §6.1, §6.2
  */
 
-import type { CanvasKit, Canvas, Surface, Image } from 'canvaskit-wasm';
-import type { SkiaRenderable, FrameType, CameraState } from './types';
-import { createGPUSurface } from './createSurface';
-import { recordWasmMetric, flushWasmMetrics } from '../utils/gpuProfilerCore';
-
+import type { CanvasKit, Canvas, Surface, Image } from "canvaskit-wasm";
+import type { SkiaRenderable, FrameType, CameraState } from "./types";
+import { createGPUSurface } from "./createSurface";
+import { recordWasmMetric, flushWasmMetrics } from "../utils/gpuProfilerCore";
 
 export class SkiaRenderer {
   private ck: CanvasKit;
@@ -88,12 +87,14 @@ export class SkiaRenderer {
   ) {
     this.ck = ck;
     this.dpr = dpr ?? (window.devicePixelRatio || 1);
-    this.contentPaddingDevicePx = Math.round(this.contentPaddingCssPx * this.dpr);
+    this.contentPaddingDevicePx = Math.round(
+      this.contentPaddingCssPx * this.dpr,
+    );
     this.mainSurface = createGPUSurface(ck, htmlCanvas);
     this.mainCanvas = this.mainSurface.getCanvas();
     this.backgroundColor = backgroundColor ?? ck.Color4f(1, 1, 1, 1);
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       this.devContentRenderWindowStartMs = performance.now();
       this.devFrameWindowStartMs = this.devContentRenderWindowStartMs;
     }
@@ -146,28 +147,29 @@ export class SkiaRenderer {
     overlayVersion: number,
     screenOverlayVersion: number,
   ): FrameType {
-    if (this.contentDirty) return 'full';
+    if (this.contentDirty) return "full";
 
     // Cleanup render — 모션 종료 후 200ms 디바운스 full quality 재렌더링
     if (this.needsCleanupRender) {
       this.needsCleanupRender = false;
-      return 'full';
+      return "full";
     }
 
     const registryChanged = registryVersion !== this.lastRegistryVersion;
     const overlayChanged = overlayVersion !== this.lastOverlayVersion;
-    const screenOverlayChanged = screenOverlayVersion !== this.lastScreenOverlayVersion;
+    const screenOverlayChanged =
+      screenOverlayVersion !== this.lastScreenOverlayVersion;
     const cameraChanged =
       camera.zoom !== this.lastCamera.zoom ||
       camera.panX !== this.lastCamera.panX ||
       camera.panY !== this.lastCamera.panY;
 
     if (registryChanged) {
-      return 'content';
+      return "content";
     }
     if (cameraChanged) {
       if (!this.contentSnapshot) {
-        return 'content';
+        return "content";
       }
 
       // Pencil 모델: 팬/줌 중에는 snapshot blit(camera-only)으로 즉시 응답한다.
@@ -180,22 +182,22 @@ export class SkiaRenderer {
       const zoomTooLarge = camera.zoom > this.snapshotCamera.zoom * 3;
       const outOfCoverage = !this.canBlitWithCameraTransform(camera);
       if (zoomTooLarge || outOfCoverage) {
-        return 'content';
+        return "content";
       }
 
       // 모션 종료 후 200ms에 1회 full render로 최종 품질을 정리한다.
       // (zoom mismatch 보간, 서브픽셀 이동에 대한 cleanup)
       this.scheduleCleanupRender();
-      return 'camera-only';
+      return "camera-only";
     }
     if (overlayChanged || screenOverlayChanged) {
-      return 'present';
+      return "present";
     }
-    return 'idle';
+    return "idle";
   }
 
   private tickDevMetrics(nowMs: number): void {
-    if (process.env.NODE_ENV !== 'development') return;
+    if (process.env.NODE_ENV !== "development") return;
 
     if (this.devContentRenderWindowStartMs <= 0) {
       this.devContentRenderWindowStartMs = nowMs;
@@ -207,7 +209,7 @@ export class SkiaRenderer {
     if (elapsed < 1000) return;
 
     const perSec = this.devContentRenderCount / (elapsed / 1000);
-    recordWasmMetric('contentRendersPerSec', perSec);
+    recordWasmMetric("contentRendersPerSec", perSec);
     // CanvasSync 스토어로 플러시하여 dev overlay/monitor에서 확인 가능하게 한다.
     flushWasmMetrics();
 
@@ -294,13 +296,11 @@ export class SkiaRenderer {
   /**
    * Content Surface에 씬을 렌더링한다.
    */
-  private renderContent(
-    cullingBounds: DOMRect,
-    camera: CameraState,
-  ): void {
-    if (!this.contentCanvas || !this.contentSurface || !this.contentNode) return;
+  private renderContent(cullingBounds: DOMRect, camera: CameraState): void {
+    if (!this.contentCanvas || !this.contentSurface || !this.contentNode)
+      return;
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       this.devContentRenderCount++;
     }
 
@@ -338,7 +338,7 @@ export class SkiaRenderer {
     this.snapshotCamera = { ...camera }; // camera-only blit 델타 기준점 갱신
     this.contentDirty = false;
 
-    recordWasmMetric('contentRenderTime', performance.now() - start);
+    recordWasmMetric("contentRenderTime", performance.now() - start);
   }
 
   /**
@@ -348,7 +348,11 @@ export class SkiaRenderer {
     if (!this.contentSnapshot) return;
 
     // clear는 present()에서 수행 (그리드가 콘텐츠 아래에 위치하도록)
-    this.mainCanvas.drawImage(this.contentSnapshot, -this.contentPaddingDevicePx, -this.contentPaddingDevicePx);
+    this.mainCanvas.drawImage(
+      this.contentSnapshot,
+      -this.contentPaddingDevicePx,
+      -this.contentPaddingDevicePx,
+    );
   }
 
   /**
@@ -393,7 +397,7 @@ export class SkiaRenderer {
       ) => void;
     };
 
-    if (shouldUseCubic && typeof anyCanvas.drawImageCubic === 'function') {
+    if (shouldUseCubic && typeof anyCanvas.drawImageCubic === "function") {
       const { b, c } = this.snapshotCubicResampler;
       anyCanvas.drawImageCubic(this.contentSnapshot, x, y, b, c);
     } else {
@@ -409,7 +413,10 @@ export class SkiaRenderer {
    * DPR 스케일 + 카메라 pan/zoom을 적용하여
    * 요소와 동일한 좌표계에서 동작하도록 한다.
    */
-  private renderScreenOverlay(cullingBounds: DOMRect, camera: CameraState): void {
+  private renderScreenOverlay(
+    cullingBounds: DOMRect,
+    camera: CameraState,
+  ): void {
     if (!this.screenOverlayNode) return;
     this.mainCanvas.save();
     this.mainCanvas.scale(this.dpr, this.dpr);
@@ -419,10 +426,7 @@ export class SkiaRenderer {
     this.mainCanvas.restore();
   }
 
-  private renderOverlay(
-    cullingBounds: DOMRect,
-    camera: CameraState,
-  ): void {
+  private renderOverlay(cullingBounds: DOMRect, camera: CameraState): void {
     if (!this.overlayNode) return;
 
     this.mainCanvas.save();
@@ -433,10 +437,7 @@ export class SkiaRenderer {
     this.mainCanvas.restore();
   }
 
-  private present(
-    cullingBounds: DOMRect,
-    camera: CameraState,
-  ): void {
+  private present(cullingBounds: DOMRect, camera: CameraState): void {
     // 렌더링 순서: 배경 → 그리드 → 콘텐츠 → 오버레이
     // 그리드가 콘텐츠 아래에 위치하도록 content surface는 투명 배경을 사용하고,
     // main canvas에서 배경색 → 그리드(씬 좌표계) → 콘텐츠 블릿 순서로 합성한다.
@@ -454,7 +455,7 @@ export class SkiaRenderer {
     } else {
       this.blitWithCameraTransformNoFlush(camera);
     }
-    recordWasmMetric('blitTime', performance.now() - blitStart);
+    recordWasmMetric("blitTime", performance.now() - blitStart);
     this.renderOverlay(cullingBounds, camera);
     this.mainSurface.flush();
   }
@@ -479,7 +480,7 @@ export class SkiaRenderer {
 
     this.tickDevMetrics(performance.now());
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       if (this.devFrameWindowStartMs <= 0) {
         this.devFrameWindowStartMs = performance.now();
         this.devFrameCount = 0;
@@ -499,47 +500,52 @@ export class SkiaRenderer {
     }
 
     const frameStart = performance.now();
-    const frameType = this.classifyFrame(registryVersion, camera, overlayVersion, screenOverlayVersion);
+    const frameType = this.classifyFrame(
+      registryVersion,
+      camera,
+      overlayVersion,
+      screenOverlayVersion,
+    );
 
     switch (frameType) {
-      case 'idle':
-        if (process.env.NODE_ENV === 'development') {
+      case "idle":
+        if (process.env.NODE_ENV === "development") {
           this.devIdleFrameCount++;
         }
         break;
 
-      case 'present':
+      case "present":
         this.present(cullingBounds, camera);
         break;
 
-      case 'camera-only':
+      case "camera-only":
         this.present(cullingBounds, camera);
         break;
 
-      case 'content':
+      case "content":
         this.renderContent(cullingBounds, camera);
         this.present(cullingBounds, camera);
         break;
 
-      case 'full':
+      case "full":
         this.renderContent(cullingBounds, camera);
         this.present(cullingBounds, camera);
         break;
     }
 
-    if (frameType !== 'idle') {
-      recordWasmMetric('skiaFrameTime', performance.now() - frameStart);
+    if (frameType !== "idle") {
+      recordWasmMetric("skiaFrameTime", performance.now() - frameStart);
     }
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       const now = performance.now();
       const elapsed = now - this.devFrameWindowStartMs;
       if (elapsed >= 1000 && this.devFrameCount > 0) {
         const ratio = this.devIdleFrameCount / this.devFrameCount;
         const nonIdle = this.devFrameCount - this.devIdleFrameCount;
         const presentsPerSec = nonIdle / (elapsed / 1000);
-        recordWasmMetric('idleFrameRatio', ratio);
-        recordWasmMetric('presentFramesPerSec', presentsPerSec);
+        recordWasmMetric("idleFrameRatio", ratio);
+        recordWasmMetric("presentFramesPerSec", presentsPerSec);
         flushWasmMetrics();
         this.devFrameWindowStartMs = now;
         this.devFrameCount = 0;
@@ -580,7 +586,7 @@ export class SkiaRenderer {
     this.mainCanvas.restore();
     this.mainSurface.flush();
 
-    recordWasmMetric('skiaFrameTime', performance.now() - start);
+    recordWasmMetric("skiaFrameTime", performance.now() - start);
   }
 
   /**
@@ -596,7 +602,13 @@ export class SkiaRenderer {
     overlayVersion: number,
     screenOverlayVersion = 0,
   ): void {
-    this.renderDualSurface(cullingBounds, registryVersion, camera, overlayVersion, screenOverlayVersion);
+    this.renderDualSurface(
+      cullingBounds,
+      registryVersion,
+      camera,
+      overlayVersion,
+      screenOverlayVersion,
+    );
   }
 
   // ============================================
@@ -611,7 +623,9 @@ export class SkiaRenderer {
 
     // DPR 갱신 — 외부 모니터 이동 등으로 변경될 수 있음 (I-H4)
     this.dpr = window.devicePixelRatio || 1;
-    this.contentPaddingDevicePx = Math.round(this.contentPaddingCssPx * this.dpr);
+    this.contentPaddingDevicePx = Math.round(
+      this.contentPaddingCssPx * this.dpr,
+    );
 
     // Content surface 정리
     this.disposeContentSurface();

@@ -105,7 +105,7 @@
   .react-aria-TagGroup[data-tag-variant="secondary"] .react-aria-Tag {
     --tag-color: var(--bg-inset);
     --tag-text: var(--color-white);
-    --tag-border: var(--bg-inset);
+    --tag-border: var(--border);
   }
 
   .react-aria-TagGroup[data-tag-variant="tertiary"] .react-aria-Tag {

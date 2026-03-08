@@ -203,7 +203,7 @@
     }
 
     .react-aria-Slot-icon {
-      background: var(--fg-muted);
+      background: var(--bg-emphasis);
     }
 
     .react-aria-Slot-required-badge {

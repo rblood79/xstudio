@@ -39,14 +39,14 @@
   background: transparent;
   border: none;
   border-radius: var(--radius-sm);
-  color: var(--color-gray-500);
+  color: var(--fg-muted);
   cursor: pointer;
   transition: all 150ms;
 }
 
 .binding-clear:hover {
   background: var(--bg-raised);
-  color: var(--color-gray-700);
+  color: var(--fg);
 }
 
 /* 바인딩 행 */

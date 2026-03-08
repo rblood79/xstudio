@@ -248,7 +248,7 @@
     .slider-track {
       flex: 1;
       height: 4px;
-      background: var(--border-hover);
+      background: var(--bg-muted);
       border-radius: var(--radius-full);
       position: relative;
     }

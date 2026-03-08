@@ -444,11 +444,11 @@
   .react-aria-Table[data-variant="secondary"] {
     --tbl-accent: var(--bg-inset);
     --tbl-selected-bg: var(--bg-inset);
-    --tbl-selected-color: var(--color-neutral-900);
+    --tbl-selected-color: var(--fg-emphasis);
     --tbl-cb-selected: var(--bg-inset);
     --tbl-cb-checkmark: var(--color-white);
     --tbl-cb-bg: var(--bg-inset);
-    --tbl-cb-selected-on: var(--color-neutral-900);
+    --tbl-cb-selected-on: var(--fg-emphasis);
     --tbl-cb-checkmark-on: var(--bg-inset);
   }
 

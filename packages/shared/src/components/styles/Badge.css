@@ -38,10 +38,7 @@
   .react-aria-Badge[data-variant="accent"][data-fill-style="subtle"] {
     background: var(
       --color-primary-100,
-      var(
-        --color-tint-100,
-        color-mix(in srgb, var(--accent) 15%, white)
-      )
+      var(--color-tint-100, color-mix(in srgb, var(--accent) 15%, white))
     );
     color: var(--accent);
     border-color: transparent;
@@ -164,19 +161,19 @@
   .react-aria-Badge[data-variant="gray"]:not([data-fill-style="subtle"]):not(
       [data-fill-style="outline"]
     ) {
-    background: var(--color-neutral-500);
+    background: var(--fg-muted);
     color: var(--color-white);
   }
 
   .react-aria-Badge[data-variant="gray"][data-fill-style="subtle"] {
     background: var(--accent-subtle);
-    color: var(--color-neutral-700);
+    color: var(--fg);
   }
 
   .react-aria-Badge[data-variant="gray"][data-fill-style="outline"] {
     background: transparent;
-    color: var(--color-neutral-600);
-    border-color: var(--color-neutral-400);
+    color: var(--fg-muted);
+    border-color: var(--border-hover);
   }
 
   /* ===== Red Variant ===== */

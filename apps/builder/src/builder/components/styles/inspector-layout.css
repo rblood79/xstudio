@@ -77,7 +77,7 @@
                 z-index: 1;
                 width: var(--spacing);
                 height: var(--spacing);
-                background-color: var(--color-gray-400);
+                background-color: var(--fg-disabled);
                 border-radius: 50%;
               }
 
@@ -188,7 +188,7 @@
             padding: var(--spacing-xs);
             font-size: var(--text-xs);
             text-align: center;
-            color: var(--border-hover);
+            color: var(--fg-muted);
 
             &::placeholder {
               color: var(--fg-muted);
@@ -324,7 +324,7 @@
               z-index: 1;
               width: var(--spacing);
               height: var(--spacing);
-              background-color: var(--color-gray-400);
+              background-color: var(--fg-disabled);
               border-radius: 50%;
             }
 

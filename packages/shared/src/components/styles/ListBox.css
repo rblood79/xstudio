@@ -300,7 +300,7 @@
   .react-aria-ListBox[data-variant="secondary"] {
     --lb-accent: var(--bg-inset);
     --lb-accent-container: var(--bg-inset);
-    --lb-on-accent-container: var(--color-neutral-900);
+    --lb-on-accent-container: var(--fg-emphasis);
   }
 
   .react-aria-ListBox[data-variant="tertiary"] {

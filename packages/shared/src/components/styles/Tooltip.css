@@ -26,8 +26,8 @@
   .react-aria-Tooltip {
     box-shadow: 0 2px 8px color-mix(in srgb, var(--fg) 12%, transparent);
     border-radius: var(--radius-sm);
-    background: var(--color-neutral-800);
-    color: var(--bg-inset);
+    background: var(--accent);
+    color: var(--fg-on-accent);
     forced-color-adjust: none;
     outline: none;
     padding: 6px 10px;
@@ -97,7 +97,7 @@
 
     & .react-aria-OverlayArrow svg {
       display: block;
-      fill: var(--color-neutral-800);
+      fill: var(--accent);
     }
   }
 

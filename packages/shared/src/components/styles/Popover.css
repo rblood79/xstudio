@@ -141,7 +141,7 @@
   }
 
   .react-aria-Popover[data-variant="secondary"] {
-    border-color: var(--bg-inset);
+    border-color: var(--border);
 
     .react-aria-OverlayArrow svg {
       stroke: var(--bg-inset);

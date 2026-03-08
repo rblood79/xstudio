@@ -166,7 +166,7 @@
 
   .back-button:hover {
     background: var(--bg-overlay);
-    border-color: var(--fg-muted);
+    border-color: var(--border-hover);
   }
 
   .selected-handler-type {

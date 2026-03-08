@@ -193,7 +193,7 @@
               .alignment-dot {
                 width: var(--spacing);
                 height: var(--spacing);
-                background-color: var(--border-hover);
+                background-color: var(--bg-muted);
               }
             }
           }

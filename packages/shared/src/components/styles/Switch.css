@@ -38,7 +38,7 @@
         height: 100% !important;
         border-radius: var(--text-lg);
         margin: 0px;
-        background: var(--border-hover);
+        background: var(--bg-muted);
         transition: all 200ms;
       }
     }
@@ -47,7 +47,7 @@
       border-color: var(--border-hover);
 
       &:before {
-        background: var(--fg-muted);
+        background: var(--bg-emphasis);
       }
     }
 
@@ -80,7 +80,7 @@
         border-color: var(--border-disabled);
 
         &:before {
-          background: var(--border-disabled);
+          background: var(--bg-muted);
         }
       }
     }

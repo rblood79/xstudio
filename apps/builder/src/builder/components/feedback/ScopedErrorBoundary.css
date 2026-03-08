@@ -46,7 +46,7 @@
     background: transparent;
     border: none;
     border-radius: var(--radius-sm, 4px);
-    color: var(--color-gray-500, #6b7280);
+    color: var(--fg-muted);
     cursor: pointer;
     transition: background-color 150ms;
   }
@@ -81,7 +81,7 @@
   .scoped-error-retry-count {
     margin: 0;
     font-size: var(--text-xs, 12px);
-    color: var(--color-gray-500, #6b7280);
+    color: var(--fg-muted);
   }
 
   .scoped-error-boundary-actions {
@@ -128,21 +128,21 @@
 
   .scoped-error-details summary {
     cursor: pointer;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--fg-muted);
     user-select: none;
   }
 
   .scoped-error-details summary:hover {
-    color: var(--color-gray-700, #374151);
+    color: var(--fg);
   }
 
   .scoped-error-details pre {
     margin: var(--spacing-xs, 4px) 0 0;
     padding: var(--spacing-sm, 8px);
-    background: var(--color-gray-100, #f3f4f6);
+    background: var(--bg-muted);
     border-radius: var(--radius-sm, 4px);
     font-size: var(--text-xs, 12px);
-    color: var(--color-gray-700, #374151);
+    color: var(--fg);
     overflow-x: auto;
     white-space: pre-wrap;
     word-break: break-all;

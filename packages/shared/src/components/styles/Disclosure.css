@@ -168,10 +168,10 @@
 
   .react-aria-Disclosure[data-variant="secondary"] {
     --disc-accent: var(--bg-inset);
-    border-color: var(--bg-inset);
+    border-color: var(--fg-on-accent);
 
     .react-aria-Button[slot="trigger"] {
-      color: var(--bg-inset);
+      color: var(--fg-on-accent);
 
       &[data-hovered] {
         background: color-mix(
@@ -190,7 +190,7 @@
       }
 
       &[data-focus-visible] {
-        outline-color: var(--bg-inset);
+        outline-color: var(--fg-on-accent);
       }
     }
 

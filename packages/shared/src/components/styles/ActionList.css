@@ -145,7 +145,7 @@
 
   .action-control-button:hover {
     background: var(--bg-overlay);
-    border-color: var(--fg-muted);
+    border-color: var(--border-hover);
   }
 
   .action-delete-button:hover {
@@ -289,7 +289,7 @@
 
   .editor-cancel-button:hover {
     background: var(--bg-overlay);
-    border-color: var(--fg-muted);
+    border-color: var(--border-hover);
   }
 
   .editor-save-button {

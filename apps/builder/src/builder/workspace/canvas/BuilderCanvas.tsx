@@ -114,7 +114,7 @@ export interface BuilderCanvasProps {
 
 const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
-const DEFAULT_BACKGROUND = 0xf8fafc; // slate-50
+const DEFAULT_BACKGROUND = 0xf3f4f6; // gray-100 (PixiJS용, Skia는 opaque + MutationObserver로 --bg 동기화)
 const DRAG_DISTANCE_THRESHOLD = 4;
 const PAGE_STACK_GAP = 80;
 const PAGE_TITLE_HIT_HEIGHT = 24;

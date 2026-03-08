@@ -128,11 +128,11 @@
       cursor: not-allowed;
 
       .react-aria-SliderTrack:before {
-        background: var(--fg-muted);
+        background: var(--bg-emphasis);
       }
 
       .react-aria-SliderThumb {
-        background: var(--fg-muted);
+        background: var(--bg-emphasis);
         cursor: not-allowed;
       }
     }

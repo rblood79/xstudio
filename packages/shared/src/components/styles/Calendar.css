@@ -27,7 +27,7 @@
   .react-aria-Calendar[data-variant="secondary"] {
     --cal-accent: var(--bg-inset);
     --cal-accent-container: var(--bg-inset);
-    --cal-on-accent-container: var(--color-neutral-900);
+    --cal-on-accent-container: var(--fg-emphasis);
   }
 
   .react-aria-Calendar[data-variant="tertiary"] {

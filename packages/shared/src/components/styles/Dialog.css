@@ -29,10 +29,10 @@
   }
 
   .react-aria-Dialog[data-variant="secondary"] {
-    border: 1px solid var(--bg-inset);
+    border: 1px solid var(--border);
 
     .react-aria-Heading[slot="title"] {
-      color: var(--bg-inset);
+      color: var(--fg-on-accent);
     }
   }
 

@@ -36,12 +36,12 @@
   }
 
   .chat-content::-webkit-scrollbar-thumb {
-    background: var(--fg-muted);
+    background: var(--bg-emphasis);
     border-radius: var(--radius-full);
   }
 
   .chat-content::-webkit-scrollbar-thumb:hover {
-    background: var(--fg-muted);
+    background: var(--bg-emphasis);
   }
 
   .chat-content-empty {

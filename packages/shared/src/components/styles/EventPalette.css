@@ -371,7 +371,7 @@
   }
 
   .add-event-button:disabled {
-    background: var(--border-hover);
+    background: var(--bg-muted);
     color: var(--fg-muted);
     cursor: not-allowed;
   }

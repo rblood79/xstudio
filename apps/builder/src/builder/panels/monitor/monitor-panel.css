@@ -583,7 +583,7 @@
   .fps-bar {
     flex: 1;
     min-width: 2px;
-    background: var(--fg-muted);
+    background: var(--bg-emphasis);
     border-radius: 1px 1px 0 0;
     transition: height 100ms ease;
   }

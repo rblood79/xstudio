@@ -99,7 +99,7 @@
     }
 
     &[data-pressed] {
-      border-color: var(--focus-ring);
+      border-color: var(--border-pressed);
     }
   }
 

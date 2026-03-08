@@ -126,7 +126,7 @@
 
 /* Preset Card selected state extension */
 .section[data-section-id="table-creator"] .list-item.selected {
-  border-color: var(--accent-pressed);
+  border-color: var(--accent);
   background: var(--accent);
   color: var(--fg-on-accent);
   box-shadow: var(--shadow-sm);

@@ -118,5 +118,5 @@
 }
 
 .collection-empty svg {
-  color: var(--color-gray-400);
+  color: var(--fg-disabled);
 }

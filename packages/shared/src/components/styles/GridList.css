@@ -249,7 +249,7 @@
   .react-aria-GridList[data-variant="secondary"] {
     --gl-accent: var(--bg-inset);
     --gl-accent-container: var(--bg-inset);
-    --gl-on-accent-container: var(--color-neutral-900);
+    --gl-on-accent-container: var(--fg-emphasis);
     --gl-drop-bg: color-mix(in srgb, var(--bg-inset) 8%, transparent);
     --gl-drop-bg-item: color-mix(
       in srgb,
@@ -259,7 +259,7 @@
     --gl-cb-selected: var(--bg-inset);
     --gl-cb-checkmark: var(--color-white);
     --gl-cb-bg: var(--bg-inset);
-    --gl-cb-selected-on: var(--color-neutral-900);
+    --gl-cb-selected-on: var(--fg-emphasis);
     --gl-cb-checkmark-on: var(--bg-inset);
   }
 

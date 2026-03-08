@@ -27,7 +27,7 @@
   padding: 8px 12px;
   border-radius: 6px;
   background: var(--notice-subtle);
-  color: var(--color-danger, #dc2626);
+  color: var(--negative);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -100,13 +100,13 @@
 }
 
 .design-kit-preview-actions button.primary {
-  background: var(--color-primary, #3b82f6);
-  color: white;
-  border-color: var(--color-primary, #3b82f6);
+  background: var(--accent);
+  color: var(--fg-on-accent);
+  border-color: var(--accent);
 }
 
 .design-kit-preview-actions button.primary:hover {
-  background: var(--color-primary-hover, #2563eb);
+  background: var(--accent-pressed);
 }
 
 .design-kit-preview-actions button:disabled {
@@ -146,7 +146,9 @@
   border-radius: 6px;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .design-kit-card:hover {
@@ -154,8 +156,8 @@
 }
 
 .design-kit-card[data-selected="true"] {
-  border-color: var(--color-primary, #3b82f6);
-  background: var(--color-primary-subtle, #eff6ff);
+  border-color: var(--accent);
+  background: var(--accent-subtle);
 }
 
 .design-kit-card[data-applied="true"] {
@@ -196,8 +198,8 @@
   font-size: 10px;
   padding: 2px 6px;
   border-radius: 4px;
-  background: var(--color-success-subtle, #f0fdf4);
-  color: var(--color-success, #16a34a);
+  background: var(--positive-subtle);
+  color: var(--positive);
   font-weight: 500;
   flex-shrink: 0;
 }

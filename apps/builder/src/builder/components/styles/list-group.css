@@ -91,7 +91,7 @@
 
 /* Applied (LayoutPreset 전용) */
 .list-item.applied {
-  border-color: var(--accent-pressed);
+  border-color: var(--accent);
   background: var(--accent);
   color: var(--fg-on-accent);
 }
@@ -309,14 +309,14 @@
 }
 
 .list-subgroup-icon {
-  color: var(--color-gray-500);
+  color: var(--fg-muted);
   flex-shrink: 0;
 }
 
 .list-subgroup-title {
   font-size: var(--text-xs);
   font-weight: 500;
-  color: var(--color-gray-600);
+  color: var(--fg-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

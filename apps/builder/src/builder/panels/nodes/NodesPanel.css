@@ -160,7 +160,7 @@
     content: "";
     height: 1px;
     width: 100%;
-    background-color: var(--focus-ring);
+    background-color: var(--informative);
     position: absolute;
     top: 0;
     left: 0;

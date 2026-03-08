@@ -262,7 +262,7 @@
   .react-aria-Menu[data-variant="secondary"] {
     --menu-accent: var(--bg-inset);
     --menu-focused-bg: var(--bg-inset);
-    --menu-focused-color: var(--color-neutral-900);
+    --menu-focused-color: var(--fg-emphasis);
   }
 
   .react-aria-Menu[data-variant="tertiary"] {
