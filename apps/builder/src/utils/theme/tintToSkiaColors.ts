@@ -148,3 +148,75 @@ function applyAccentColors(
   const subtleC = c * 0.3;
   colors["accent-subtle"] = oklchToHex(subtleL, subtleC, h);
 }
+
+// ============================================================================
+// Per-element accent override (ADR-021 Phase E)
+// ============================================================================
+
+/** accent 5개 토큰 스냅샷 */
+interface AccentSnapshot {
+  accent: string;
+  "accent-hover": string;
+  "accent-pressed": string;
+  "on-accent": string;
+  "accent-subtle": string;
+}
+
+const ACCENT_KEYS: (keyof AccentSnapshot)[] = [
+  "accent",
+  "accent-hover",
+  "accent-pressed",
+  "on-accent",
+  "accent-subtle",
+];
+
+/** 현재 accent 토큰을 스냅샷 */
+function snapshotAccent(colors: typeof lightColors): AccentSnapshot {
+  return {
+    accent: colors.accent,
+    "accent-hover": colors["accent-hover"],
+    "accent-pressed": colors["accent-pressed"],
+    "on-accent": colors["on-accent"],
+    "accent-subtle": colors["accent-subtle"],
+  };
+}
+
+/** 스냅샷에서 accent 토큰 복원 */
+function restoreAccent(
+  colors: typeof lightColors,
+  snapshot: AccentSnapshot,
+): void {
+  for (const key of ACCENT_KEYS) {
+    (colors as Record<string, string>)[key] = snapshot[key];
+  }
+}
+
+/**
+ * 요소별 accent 오버라이드를 적용한 상태에서 콜백을 실행하고 원래 상태로 복원.
+ * Skia 렌더링은 동기적이므로 mutation → 실행 → 복원이 안전.
+ *
+ * @param accentTint - 오버라이드할 Tint 프리셋 (없으면 콜백만 실행)
+ * @param fn - accent가 적용된 상태에서 실행할 함수
+ * @returns fn의 반환값
+ */
+export function withAccentOverride<T>(
+  accentTint: TintPreset | undefined,
+  fn: () => T,
+): T {
+  if (!accentTint || !(accentTint in TINT_PRESETS)) {
+    return fn();
+  }
+
+  const lightSnapshot = snapshotAccent(lightColors);
+  const darkSnapshot = snapshotAccent(darkColors);
+
+  try {
+    const { h, c } = TINT_PRESETS[accentTint];
+    applyAccentColors(lightColors, c, h, "light");
+    applyAccentColors(darkColors, c, h, "dark");
+    return fn();
+  } finally {
+    restoreAccent(lightColors, lightSnapshot);
+    restoreAccent(darkColors, darkSnapshot);
+  }
+}

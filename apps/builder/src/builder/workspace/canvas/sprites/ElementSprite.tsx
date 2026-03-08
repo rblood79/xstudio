@@ -36,6 +36,8 @@ import { BoxSprite } from "./BoxSprite";
 import { TextSprite } from "./TextSprite";
 import { ImageSprite } from "./ImageSprite";
 import { specShapesToSkia } from "../skia/specShapeConverter";
+import { withAccentOverride } from "../../../../utils/theme/tintToSkiaColors";
+import type { TintPreset } from "../../../../utils/theme/tintToSkiaColors";
 import type {
   ComponentSpec,
   ComponentState,
@@ -1680,12 +1682,34 @@ export const ElementSprite = memo(function ElementSprite({
                 }
               }
 
-              const specNode = specShapesToSkia(
-                shapes,
-                skiaTheme,
-                finalWidth,
-                specHeight,
-                elementId,
+              // Per-element accent override (ADR-021 Phase E)
+              // 요소 자체 또는 부모 체인에서 accentColor 탐색
+              const elementAccent = specProps.accentColor as
+                | TintPreset
+                | undefined;
+              const resolvedAccent: TintPreset | undefined =
+                elementAccent ||
+                (() => {
+                  let pid = element.parent_id;
+                  while (pid) {
+                    const p = useStore.getState().elementsMap.get(pid);
+                    if (!p) break;
+                    const ac = (p.props as Record<string, unknown> | undefined)
+                      ?.accentColor;
+                    if (ac) return ac as TintPreset;
+                    pid = p.parent_id;
+                  }
+                  return undefined;
+                })();
+
+              const specNode = withAccentOverride(resolvedAccent, () =>
+                specShapesToSkia(
+                  shapes,
+                  skiaTheme,
+                  finalWidth,
+                  specHeight,
+                  elementId,
+                ),
               );
 
               // Phantom indicator 레이아웃 보정: Switch/Checkbox/Radio의 indicator는

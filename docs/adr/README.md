@@ -1,13 +1,13 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-09 (ADR-024 Superseded + ADR-030 Phase 0 완료)
+> **최종 업데이트**: 2026-03-09 (ADR-021 Phase E 완료 + ADR-024 Superseded + ADR-030 Phase 0 완료)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 17     |
-| 부분 완료                              | 7      |
+| 완료 (Accepted/Implemented/Superseded) | 18     |
+| 부분 완료                              | 6      |
 | 미구현 (Proposed/계획)                 | 6      |
 | **합계**                               | **30** |
 
@@ -17,25 +17,26 @@
 
 ### 완료
 
-| ADR                                         | 제목                               |    상태     | 완료일     | 비고                                                                           |
-| ------------------------------------------- | ---------------------------------- | :---------: | ---------- | ------------------------------------------------------------------------------ |
-| [001](001-state-management.md)              | Zustand State Management           |  Accepted   | 2024-01    | 기반 아키텍처                                                                  |
-| [002](002-styling-approach.md)              | ITCSS + tailwind-variants          |  Accepted   | 2024-01    | 기반 아키텍처                                                                  |
-| [003](003-canvas-rendering.md)              | PixiJS Canvas Rendering            | Superseded  | 2026-02-05 | CanvasKit/Skia 메인 렌더러 전환 완료, PixiJS 이벤트 전용                       |
-| [004](004-preview-isolation.md)             | iframe Preview Isolation           |  Accepted   | 2024-01    | 기반 아키텍처                                                                  |
-| [005](005-css-text-wrapping.md)             | CSS Text Wrapping                  | Implemented | 2026-03-03 | Phase 1~3 전체 완료                                                            |
-| [006](006-child-composition-remaining.md)   | Child Composition Pattern          | Implemented | 2026-02-24 | 49/62 spec 완료, Table/Tree 2개 보류, Phase 5 Known Issues 잔존                |
-| [007](007-project-export.md)                | Project Export/Import              | Implemented | 2026-01-02 | 100% 완성                                                                      |
-| [008](008-layout-engine.md)                 | 캔버스 레이아웃 엔진 전환 (전략 D) | Implemented | 2026-02-17 | Taffy WASM 단일 엔진 전환 완료                                                 |
-| [014](014-fonts.md)                         | Fonts 실행 계획                    | Implemented | 2026-03-05 | Phase A+B+C+C2+D+E 전체 완료 (FontRegistryV2 + 멀티파일 Export)                |
-| [017](017-css-override-ssot.md)             | React-Aria CSS Override SSOT       | Implemented | 2026-03-04 | M3 38개 제거, 107개 CSS 치환, Tint Color System 도입                           |
-| [018](018-component-css-restructure.md)     | 컴포넌트 CSS 구조 재작성           |  Complete   | 2026-03-07 | Phase 1~3 완료 (utilities.css + button-base + inset -249줄), Phase 4 스킵      |
-| [022](022-s2-color-token-migration.md)      | React Spectrum S2 색상 토큰 전환   |  Accepted   | 2026-03-05 | Phase 1~5 완료, M3→S2 토큰 rename + CSS↔Skia 불일치 해소                       |
-| [023](023-s2-component-variant-props.md)    | 컴포넌트 Variant Props S2 전환     |  Accepted   | 2026-03-05 | Phase 1+2+3 완료, Badge 19 variants, ToggleButton S2, Button premium/genai     |
-| [025](025-s2-named-color-palette.md)        | S2 Named Color Palette 확장        |  Accepted   | 2026-03-08 | Phase 1~3 완료 (12색x2=24토큰, tokenResolver, Badge 19 variants), Phase 4 잔여 |
-| [028](028-builder-css-scope-isolation.md)   | Builder CSS 스코프 격리            | Implemented | 2026-03-07 | Phase 0+1 완료 (`[data-context="builder"]` 전환 + 변수 30→21 축소)             |
-| [024](024-s2-css-variable-migration.md)     | CSS 변수명 S2 체계 전환            | Superseded  | 2026-03-09 | ADR-022/028/029에서 `--bg`/`--fg`/`--accent`/`--border` 4축 체계로 전환 완료   |
-| [029](029-builder-css-dead-code-cleanup.md) | Builder CSS Dead Code 정리         |  Complete   | 2026-03-07 | Phase 1-3 완료 (유령변수 138건 치환 + dead code 24건 + 모놀리식 CSS 분리)      |
+| ADR                                                   | 제목                               |    상태     | 완료일     | 비고                                                                           |
+| ----------------------------------------------------- | ---------------------------------- | :---------: | ---------- | ------------------------------------------------------------------------------ |
+| [001](completed/001-state-management.md)              | Zustand State Management           |  Accepted   | 2024-01    | 기반 아키텍처                                                                  |
+| [002](completed/002-styling-approach.md)              | ITCSS + tailwind-variants          |  Accepted   | 2024-01    | 기반 아키텍처                                                                  |
+| [003](completed/003-canvas-rendering.md)              | PixiJS Canvas Rendering            | Superseded  | 2026-02-05 | CanvasKit/Skia 메인 렌더러 전환 완료, PixiJS 이벤트 전용                       |
+| [004](completed/004-preview-isolation.md)             | iframe Preview Isolation           |  Accepted   | 2024-01    | 기반 아키텍처                                                                  |
+| [005](completed/005-css-text-wrapping.md)             | CSS Text Wrapping                  | Implemented | 2026-03-03 | Phase 1~3 전체 완료                                                            |
+| [006](completed/006-child-composition-remaining.md)   | Child Composition Pattern          | Implemented | 2026-02-24 | 49/62 spec 완료, Table/Tree 2개 보류, Phase 5 Known Issues 잔존                |
+| [007](completed/007-project-export.md)                | Project Export/Import              | Implemented | 2026-01-02 | 100% 완성                                                                      |
+| [008](completed/008-layout-engine.md)                 | 캔버스 레이아웃 엔진 전환 (전략 D) | Implemented | 2026-02-17 | Taffy WASM 단일 엔진 전환 완료                                                 |
+| [014](completed/014-fonts.md)                         | Fonts 실행 계획                    | Implemented | 2026-03-05 | Phase A+B+C+C2+D+E 전체 완료 (FontRegistryV2 + 멀티파일 Export)                |
+| [017](completed/017-css-override-ssot.md)             | React-Aria CSS Override SSOT       | Implemented | 2026-03-04 | M3 38개 제거, 107개 CSS 치환, Tint Color System 도입                           |
+| [018](completed/018-component-css-restructure.md)     | 컴포넌트 CSS 구조 재작성           |  Complete   | 2026-03-07 | Phase 1~3 완료 (utilities.css + button-base + inset -249줄), Phase 4 스킵      |
+| [022](completed/022-s2-color-token-migration.md)      | React Spectrum S2 색상 토큰 전환   |  Accepted   | 2026-03-05 | Phase 1~5 완료, M3→S2 토큰 rename + CSS↔Skia 불일치 해소                       |
+| [023](completed/023-s2-component-variant-props.md)    | 컴포넌트 Variant Props S2 전환     |  Accepted   | 2026-03-05 | Phase 1+2+3 완료, Badge 19 variants, ToggleButton S2, Button premium/genai     |
+| [025](completed/025-s2-named-color-palette.md)        | S2 Named Color Palette 확장        |  Accepted   | 2026-03-08 | Phase 1~3 완료 (12색x2=24토큰, tokenResolver, Badge 19 variants), Phase 4 잔여 |
+| [028](completed/028-builder-css-scope-isolation.md)   | Builder CSS 스코프 격리            | Implemented | 2026-03-07 | Phase 0+1 완료 (`[data-context="builder"]` 전환 + 변수 30→21 축소)             |
+| [024](completed/024-s2-css-variable-migration.md)     | CSS 변수명 S2 체계 전환            | Superseded  | 2026-03-09 | ADR-022/028/029에서 `--bg`/`--fg`/`--accent`/`--border` 4축 체계로 전환 완료   |
+| [029](completed/029-builder-css-dead-code-cleanup.md) | Builder CSS Dead Code 정리         |  Complete   | 2026-03-07 | Phase 1-3 완료 (유령변수 138건 치환 + dead code 24건 + 모놀리식 CSS 분리)      |
+| [021](completed/021-theme-system-redesign.md)         | 테마 시스템 개편 — Tint + Tailwind |  Accepted   | 2026-03-09 | Phase A+B+C+D+E 전체 완료 (Radix accent 오버라이드 포함)                       |
 
 ### 부분 완료
 
@@ -45,12 +46,11 @@
 | [010](010-events-panel.md)                        | Events Panel Smart Recommendations              | EventsPanel 기본 UI 완성 (Block WHEN→IF→THEN/ELSE) + P0/P1 완료 (추천 이벤트/액션 chips, 호환성 배지, 누락 경고, 18개 템플릿)    | P1.5 (UX 폴리싱) + P2 (AI 이벤트 생성) 미구현                                                                                          |    P5    |
 | [011](011-ai-assistant-design.md)                 | AI Assistant 설계 (Groq Tool Calling)           | Phase A1~A4 전체 + A5a (styleAdapter 단위 정규화) + G.3 시각 피드백                                                              | Phase A5 잔여 (CanvasKit 스키마 변환, 멀티모달, 인스턴스/변수 도구)                                                                    |    P5    |
 | [012](012-rendering-layout-pipeline-hardening.md) | 렌더링/레이아웃 파이프라인 하드닝               | P0~P2 전체 + P3-2(Viewport Culling) + P3-3(PersistentTaffyTree) 완료 (93%)                                                       | P3-1 부분 구현 (dirtyElementIds 인프라만, 핵심 DFS 최적화 미구현)                                                                      |    P5    |
-| [021](021-theme-system-redesign.md)               | 테마 시스템 개편 — Tint + Tailwind 인라인 패널  | Phase A+B+C+D 완료 (ThemeStudio 삭제, Service 슬림화, useThemeManager 인라인)                                                    | Phase E (컴포넌트별 accent 오버라이드)                                                                                                 |    P4    |
 | [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-4 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment + Fill 비활성 힌트)                                          | 보류: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램                                                                                 |    P4    |
 | [019](019-icon-system.md)                         | 아이콘 시스템 — Icon 선택/변경/추가             | Phase A+B+C+D 완료 (C2 simple element 경로, C4 SelectIcon+ComboBox 연동, C5 ComboBoxEditor IconPicker)                           | Phase E (추가 라이브러리)                                                                                                              |    P4    |
 | [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B+C 완료 (TextEditOverlay + Quill + 멀티페이지 + Spec 컴포넌트 텍스트 편집)                                              | Phase D (리치 텍스트/툴바)                                                                                                             |    P4    |
 
-> **참고**: ADR-029에 동일 번호의 [Text Edit Overlay UX 개선](029-text-edit-overlay-improvements.md) 문서가 존재하며, ADR-027의 후속 개선으로 Phase 1-2 모두 구현 완료 (Accepted).
+> **참고**: ADR-029에 동일 번호의 [Text Edit Overlay UX 개선](completed/029-text-edit-overlay-improvements.md) 문서가 존재하며, ADR-027의 후속 개선으로 Phase 1-2 모두 구현 완료 (Accepted).
 
 ### 미구현
 
@@ -84,7 +84,7 @@
 | ~~14~~ | ~~ADR-019 Phase C2+C4~~ | ~~아이콘 시스템 — C2 simple element 확인 + C4 SelectIcon/ComboBox 연동 + C5 ComboBoxEditor IconPicker~~ |  소  | **완료** |
 | ~~15~~ | ~~ADR-030 Phase 0-1~~   | ~~Factory 누락 13개 컴포넌트 — 중앙 defaultPropsMap 통합 + ComponentList 등록~~                         |  소  | **완료** |
 |   16   | ADR-013                 | Quick Connect 데이터 바인딩 — Collection 컴포넌트 1클릭 자동화 (5 Phase, 21파일)                        |  대  |          |
-|   17   | ADR-021 Phase E         | 테마 시스템 — 컴포넌트별 accent 오버라이드 (Phase D 완료, E만 잔여)                                     |  소  |    P4    |
+| ~~17~~ | ~~ADR-021 Phase E~~     | ~~테마 시스템 — 컴포넌트별 accent 오버라이드 (Radix data-accent 패턴)~~                                 |  소  | **완료** |
 
 ---
 
@@ -105,9 +105,9 @@
 - ~~**ADR-024**: CSS 변수명 S2 체계 전환~~ — Superseded (ADR-022/028/029에서 4축 체계로 전환 완료)
 - **ADR-030**: React Spectrum S2 전용 컴포넌트 마이그레이션 — Phase 0 완료 (G0-1~G0-6)
 
-### P4: ADR-021 Phase E + ADR-009 Phase 2 잔여 + ADR-020 + ADR-026 잔여
+### P4: ADR-009 Phase 2 잔여 + ADR-020 + ADR-026 잔여
 
-- **ADR-021 Phase E**: 컴포넌트별 accent 오버라이드 (`data-accent` 속성) — Phase A-D 완료
+- ~~**ADR-021 Phase E**: 컴포넌트별 accent 오버라이드~~ — 완료
 - **ADR-026 잔여**: 자동 CSS 재매핑 (부모 display 변경 시), 다중 선택, Box Model 다이어그램 — Phase 1-4 완료
 - **ADR-009**: Phase 0~4 + Layout Worker 구현 완료로 대부분 성능 확보. SharedArrayBuffer + OffscreenCanvas Worker 잔여
 - **ADR-020**: Design Kit 패널 — 기존 인프라(DesignKitPanel/Store) 완성, ADR 범위 개선(Kit v2/Factory/History) 미착수
@@ -227,3 +227,5 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-08 | **전수 코드베이스 재대조 (5개 병렬 에이전트, 30개 ADR 전수)** — ① ADR-019: Phase C 부분 미구현 발견 (C2 Icon Factory 미등록 — 캔버스 드래그 불가, C4 기존 Spec iconName prop 연동 6개 미구현) → "Phase A-D 완료"→"Phase A+B+D + C 부분" 정정 ② ADR-027: Phase C 70% 진행 중 확인 (TEXT_ELEMENT_TAGS에 Button/Badge/ToggleButton 등록 + extractFullSpecTextStyle 완성, extractSpecTextBounds 잔여) → 미완료 범위 갱신 ③ ADR-009/010/011/012: 문서-코드 일치 확인 ④ ADR-021/026: 문서-코드 일치 확인 ⑤ ADR-030/024/013: 미구현 0% 확인 ⑥ ADR-014/018/025/028/029/006: 완료 상태 재확인                                                                                                                                                                                                |
 | 2026-03-08 | **ADR-019 버그 수정 2건** — ① Skia 렌더링 미표시: `IMAGE_TAGS`에 `Icon` 포함 → `spriteType=image` → Spec shapes 경로 진입 불가. `IMAGE_TAGS`에서 제거 + `UI_BADGE_TAGS`에 추가 ② Publish export 누락: `components/Icon.tsx` 존재했으나 `index.tsx`에 export 미등록 → ComponentRegistry import 에러. `export { Icon }` 추가. 색상 변경은 스타일 패널 `color` 속성으로 지원 (추가 UI 불필요)                                                                                                                                                                                                                                                                                                                                                                                          |
 | 2026-03-09 | **ADR-024 Superseded** — 코드 대조 결과 ADR-022/028/029에서 구 변수(`--highlight-background` 등) → 새 4축 체계(`--bg`/`--fg`/`--accent`/`--border`) 전환 이미 완료 확인. `--s2-` 접두사 방식은 미채택. 잔존 구 변수 3건은 React Aria Checkbox 내부 로컬 변수(변경 불가). 미구현→완료 이동, 현황 카운트 갱신 (완료 17, 미구현 6). **ADR-030 Phase 0 완료** — G0-2(S2 Props 렌더러 전달) + G0-4(Factory `name` 기본값) + G0-5(Toast/Pagination 렌더러 추가) 구현. G0-3(이벤트) 스킵 (이벤트 엔진 미성숙으로 리스크 없음)                                                                                                                                                                                                                                                              |
+| 2026-03-09 | **ADR 디렉토리 정리** — 완료된 ADR 19건(17건 완료 + audit report + text-edit overlay)을 `completed/` 하위 디렉토리로 이동. 루트에는 진행 중/미구현 ADR만 유지. README.md 링크 갱신. **컴포넌트 패널 카테고리 재구성** — React Aria/Spectrum 공식 분류 기준 + 실용적 병합으로 9개→7개 카테고리 (Content, Layout, Buttons, Forms, Collections, Date&Time, Overlays). metadata.ts 카테고리명 동기화. Div(division) 제거, Group은 Layout에 배치                                                                                                                                                                                                                                                                                                                                         |
+| 2026-03-09 | **ADR-021 Phase E 완료** — Radix Themes `color` prop 패턴 도입. CSS `[data-accent]` 10개 규칙 + Preview 7개 컨테이너 렌더러 + Publish ElementRenderer `data-accent` 속성 + Skia `withAccentOverride()` 동기 mutation 패턴 + ElementSprite 부모 체인 accent 탐색 + PanelEditor/CardEditor "Accent Color" PropertySelect UI. ADR-021 부분완료→완료 승격 (완료 18, 부분완료 6)                                                                                                                                                                                                                                                                                                                                                                                                         |

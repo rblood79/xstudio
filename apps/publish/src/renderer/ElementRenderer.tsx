@@ -8,11 +8,11 @@
  * @since 2026-01-02 Phase 3 Event Handling
  */
 
-import { memo, useMemo } from 'react';
-import type { Element } from '@xstudio/shared';
-import { getComponent } from '../registry/ComponentRegistry';
-import { ActionExecutor } from '@xstudio/shared';
-import type { EventRuntimeContext } from '@xstudio/shared';
+import { memo, useMemo } from "react";
+import type { Element } from "@xstudio/shared";
+import { getComponent } from "../registry/ComponentRegistry";
+import { ActionExecutor } from "@xstudio/shared";
+import type { EventRuntimeContext } from "@xstudio/shared";
 
 // 이벤트 타입 정의
 interface ElementEvent {
@@ -30,7 +30,7 @@ function createDefaultContext(): EventRuntimeContext {
       window.location.hash = `page-${pageId}`;
     },
     state: new Map<string, unknown>(),
-    currentPageId: window.location.hash.replace('#page-', '') || null,
+    currentPageId: window.location.hash.replace("#page-", "") || null,
   };
 }
 
@@ -82,7 +82,7 @@ export const ElementRenderer = memo(function ElementRenderer({
             await actionExecutor.execute({
               type: action.type,
               config: action.payload || {},
-            } as import('@xstudio/shared').Action);
+            } as import("@xstudio/shared").Action);
           } catch (error) {
             console.error(`[Event] Action ${action.type} failed:`, error);
           }
@@ -121,10 +121,12 @@ export const ElementRenderer = memo(function ElementRenderer({
   const Component = componentEntry.component;
 
   // Props 추출 (style 제외한 나머지)
-  const { style, children: propsChildren, ...restProps } = element.props as Record<
-    string,
-    unknown
-  >;
+  const {
+    style,
+    children: propsChildren,
+    accentColor,
+    ...restProps
+  } = element.props as Record<string, unknown>;
 
   // 자식이 있으면 재귀 렌더링, 없으면 props.children 사용
   const renderedChildren =
@@ -144,6 +146,7 @@ export const ElementRenderer = memo(function ElementRenderer({
       {...restProps}
       {...eventHandlers}
       data-element-id={element.id}
+      data-accent={accentColor ? String(accentColor) : undefined}
       style={style as React.CSSProperties}
     >
       {renderedChildren}

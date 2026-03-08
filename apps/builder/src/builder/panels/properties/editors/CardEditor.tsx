@@ -10,6 +10,7 @@ import {
   Link as LinkIcon,
   ArrowUpDown,
   CheckSquare,
+  Palette,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -149,6 +150,13 @@ export const CardEditor = memo(
     const handleOrientationChange = useCallback(
       (value: string) => {
         onUpdate({ ...currentProps, orientation: value });
+      },
+      [currentProps, onUpdate],
+    );
+
+    const handleAccentColorChange = useCallback(
+      (value: string) => {
+        onUpdate({ ...currentProps, accentColor: value || undefined });
       },
       [currentProps, onUpdate],
     );
@@ -322,15 +330,37 @@ export const CardEditor = memo(
             ]}
             icon={ArrowUpDown}
           />
+
+          <PropertySelect
+            label="Accent Color"
+            value={String(currentProps.accentColor || "")}
+            onChange={handleAccentColorChange}
+            options={[
+              { value: "", label: "Default" },
+              { value: "red", label: "Red" },
+              { value: "orange", label: "Orange" },
+              { value: "yellow", label: "Yellow" },
+              { value: "green", label: "Green" },
+              { value: "turquoise", label: "Turquoise" },
+              { value: "cyan", label: "Cyan" },
+              { value: "blue", label: "Blue" },
+              { value: "indigo", label: "Indigo" },
+              { value: "purple", label: "Purple" },
+              { value: "pink", label: "Pink" },
+            ]}
+            icon={Palette}
+          />
         </PropertySection>
       ),
       [
         currentProps.variant,
         currentProps.size,
         currentProps.orientation,
+        currentProps.accentColor,
         handleVariantChange,
         handleSizeChange,
         handleOrientationChange,
+        handleAccentColorChange,
       ],
     );
 

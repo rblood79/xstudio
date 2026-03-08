@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Type, Layout, ToggleLeft, X } from "lucide-react";
+import { Type, Layout, ToggleLeft, X, Palette } from "lucide-react";
 import {
   PropertyInput,
   PropertySelect,
@@ -64,7 +64,7 @@ export const PanelEditor = memo(function PanelEditor({
           onChange={(value) =>
             updateProp(
               "variant",
-              value as "tab" | "card" | "bordered" | "shadow"
+              value as "tab" | "card" | "bordered" | "shadow",
             )
           }
           options={[
@@ -77,6 +77,26 @@ export const PanelEditor = memo(function PanelEditor({
             { value: "shadow", label: PROPERTY_LABELS.PANEL_VARIANT_SHADOW },
           ]}
           icon={Layout}
+        />
+
+        <PropertySelect
+          label="Accent Color"
+          value={String(currentProps.accentColor || "")}
+          onChange={(value) => updateProp("accentColor", value || undefined)}
+          options={[
+            { value: "", label: "Default" },
+            { value: "red", label: "Red" },
+            { value: "orange", label: "Orange" },
+            { value: "yellow", label: "Yellow" },
+            { value: "green", label: "Green" },
+            { value: "turquoise", label: "Turquoise" },
+            { value: "cyan", label: "Cyan" },
+            { value: "blue", label: "Blue" },
+            { value: "indigo", label: "Indigo" },
+            { value: "purple", label: "Purple" },
+            { value: "pink", label: "Pink" },
+          ]}
+          icon={Palette}
         />
       </PropertySection>
 

@@ -223,6 +223,11 @@ export const renderPanel = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
+      data-accent={
+        element.props.accentColor
+          ? String(element.props.accentColor)
+          : undefined
+      }
       variant={
         (element.props.variant as
           | "default"
@@ -272,6 +277,11 @@ export const renderCard = (
         key={element.id}
         id={element.customId}
         data-element-id={element.id}
+        data-accent={
+          element.props.accentColor
+            ? String(element.props.accentColor)
+            : undefined
+        }
         variant={
           (element.props.variant as "default" | "elevated" | "outlined") ||
           "default"
@@ -301,6 +311,11 @@ export const renderCard = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
+      data-accent={
+        element.props.accentColor
+          ? String(element.props.accentColor)
+          : undefined
+      }
       heading={
         typeof element.props.heading === "string"
           ? element.props.heading
@@ -653,6 +668,11 @@ export const renderGroup = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
+      data-accent={
+        element.props.accentColor
+          ? String(element.props.accentColor)
+          : undefined
+      }
       label={element.props.label as string | undefined}
       isDisabled={Boolean(element.props.isDisabled)}
       isInvalid={Boolean(element.props.isInvalid)}
@@ -700,6 +720,11 @@ export const renderModal = (
       id={resolvedId}
       data-element-id={element.id}
       data-custom-id={element.customId}
+      data-accent={
+        element.props.accentColor
+          ? String(element.props.accentColor)
+          : undefined
+      }
       role="dialog"
       aria-modal="true"
       className={element.props.className}
@@ -930,6 +955,11 @@ export const renderToast = (
       key={element.id}
       data-element-id={element.id}
       data-custom-id={element.customId}
+      data-accent={
+        element.props.accentColor
+          ? String(element.props.accentColor)
+          : undefined
+      }
       role="alert"
       style={element.props.style}
       className={element.props.className}
@@ -964,6 +994,11 @@ export const renderPagination = (
     <nav
       key={element.id}
       data-element-id={element.id}
+      data-accent={
+        element.props.accentColor
+          ? String(element.props.accentColor)
+          : undefined
+      }
       data-custom-id={element.customId}
       aria-label="Pagination"
       style={element.props.style}

@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial (2026-03-08) — Phase A+B+C+D 구현 완료, Phase E 미구현
+Accepted (2026-03-09) — Phase A+B+C+D+E 구현 완료
 
 ## Scope
 
@@ -592,7 +592,7 @@ function generateThemeCSS(config: ThemeConfig): string {
 
 ---
 
-## Implementation Status (2026-03-05)
+## Implementation Status (2026-03-09)
 
 ### Phase A: 구현 완료 ✅
 
@@ -652,6 +652,20 @@ function generateThemeCSS(config: ThemeConfig): string {
 | `main/BuilderCore.tsx`               | iframe 동기화 + Publish/Preview 통합                                 |
 | `sprites/ElementSprite.tsx`          | `skiaTheme` 전달 (`specShapesToSkia` 두 번째 인자)                   |
 | `layers/BodyLayer.tsx`               | Dark mode 시 Body 배경 `{color.base}` 토큰 기반 전환                 |
+
+### Phase E: 구현 완료 ✅
+
+**목표**: Radix Themes `color` prop 패턴 — 컴포넌트/섹션별 accent 오버라이드
+
+| 파일                               | 작업     | 설명                                                                  |
+| ---------------------------------- | -------- | --------------------------------------------------------------------- |
+| `preview-system.css`               | **수정** | `[data-accent="xxx"]` 10개 규칙 추가 (CSS cascade로 자식 자동 상속)   |
+| `LayoutRenderers.tsx`              | **수정** | 7개 컨테이너 렌더러에 `data-accent` 속성 추가                         |
+| `apps/publish/ElementRenderer.tsx` | **수정** | `accentColor` prop → `data-accent` 속성 렌더링                        |
+| `utils/theme/tintToSkiaColors.ts`  | **수정** | `withAccentOverride()` — 동기 mutation+restore 패턴 (Skia 서브트리용) |
+| `sprites/ElementSprite.tsx`        | **수정** | 부모 체인 accent 탐색 + `withAccentOverride` 래핑                     |
+| `editors/PanelEditor.tsx`          | **수정** | "Accent Color" PropertySelect 추가 (10 tint + Default)                |
+| `editors/CardEditor.tsx`           | **수정** | "Accent Color" PropertySelect 추가 (10 tint + Default)                |
 
 ---
 
