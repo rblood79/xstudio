@@ -599,6 +599,7 @@ export interface CellElementProps extends BaseElementProps {
 export interface CardElementProps extends BaseElementProps {
   children?: React.ReactNode;
   variant?: "primary" | "secondary" | "tertiary" | "quiet";
+  cardType?: "default" | "asset" | "user" | "product";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   density?: "compact" | "regular" | "spacious";
   orientation?: "horizontal" | "vertical";
@@ -1529,7 +1530,7 @@ export function createDefaultCellProps(): CellElementProps {
 
 export function createDefaultCardProps(): CardElementProps {
   return {
-    variant: "default",
+    variant: "primary",
     size: "md",
     orientation: "vertical",
     title: "Card Title",
@@ -1804,9 +1805,7 @@ export function createDefaultSearchFieldProps(): SearchFieldElementProps {
 
 export function createDefaultProgressBarProps(): ProgressBarElementProps {
   return {
-    // CSS base: display:grid; gap:4px; width:100%
     style: {
-      display: "grid",
       width: "100%",
     },
   };
@@ -1814,9 +1813,7 @@ export function createDefaultProgressBarProps(): ProgressBarElementProps {
 
 export function createDefaultMeterProps(): MeterElementProps {
   return {
-    // CSS base: display:grid; gap:4px; width:100%
     style: {
-      display: "grid",
       width: "100%",
     },
   };
@@ -1966,6 +1963,19 @@ export function createDefaultMaskedFrameProps(): BaseElementProps {
   };
 }
 
+export function createDefaultImageProps(): BaseElementProps {
+  return {
+    src: "",
+    alt: "Image",
+    objectFit: "cover",
+    style: {
+      width: "100%",
+      height: 200,
+      borderRadius: 8,
+    },
+  };
+}
+
 export function createDefaultSkeletonProps(): BaseElementProps {
   return {
     // CSS base: 로딩 플레이스홀더
@@ -2054,6 +2064,7 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Popover: createDefaultPopoverProps,
     Modal: createDefaultModalProps,
     Group: createDefaultGroupProps,
+    Image: createDefaultImageProps,
     Icon: createDefaultIconProps,
     ScrollBox: createDefaultScrollBoxProps,
     MaskedFrame: createDefaultMaskedFrameProps,

@@ -168,6 +168,16 @@ export const renderListBox = (
             selectedKeys: Array.from(selectedKeys),
           };
           updateElementProps(element.id, updatedProps);
+
+          // 사용자 정의 onSelectionChange 이벤트 핸들러 실행
+          const eventHandlerMap = context.services?.createEventHandlerMap?.(
+            element,
+            context,
+          );
+          const customHandler = eventHandlerMap?.["onSelectionChange"] as
+            | ((value: unknown) => void)
+            | undefined;
+          customHandler?.(selectedKeys);
         }}
       >
         {renderItemFunction}
@@ -211,6 +221,16 @@ export const renderListBox = (
           selectedKeys: Array.from(selectedKeys),
         };
         updateElementProps(element.id, updatedProps);
+
+        // 사용자 정의 onSelectionChange 이벤트 핸들러 실행
+        const eventHandlerMap = context.services?.createEventHandlerMap?.(
+          element,
+          context,
+        );
+        const customHandler = eventHandlerMap?.["onSelectionChange"] as
+          | ((value: unknown) => void)
+          | undefined;
+        customHandler?.(selectedKeys);
       }}
     >
       {staticChildren}
@@ -467,6 +487,16 @@ export const renderGridList = (
           selectedKeys: Array.from(selectedKeys),
         };
         updateElementProps(element.id, updatedProps);
+
+        // 사용자 정의 onSelectionChange 이벤트 핸들러 실행
+        const eventHandlerMap = context.services?.createEventHandlerMap?.(
+          element,
+          context,
+        );
+        const customHandler = eventHandlerMap?.["onSelectionChange"] as
+          | ((value: unknown) => void)
+          | undefined;
+        customHandler?.(selectedKeys);
       }}
     >
       {renderChildren}
@@ -742,6 +772,27 @@ export const renderSelect = (
           },
           getTargetOrigin(),
         );
+
+        // 사용자 정의 onSelectionChange 이벤트 핸들러 실행
+        const eventHandlerMap = context.services?.createEventHandlerMap?.(
+          element,
+          context,
+        );
+        const customHandler = eventHandlerMap?.["onSelectionChange"] as
+          | ((value: unknown) => void)
+          | undefined;
+        customHandler?.(selectedKey);
+      }}
+      onOpenChange={(isOpen) => {
+        // 사용자 정의 onOpenChange 이벤트 핸들러 실행
+        const eventHandlerMap = context.services?.createEventHandlerMap?.(
+          element,
+          context,
+        );
+        const customHandler = eventHandlerMap?.["onOpenChange"] as
+          | ((value: unknown) => void)
+          | undefined;
+        customHandler?.(isOpen);
       }}
     >
       {renderChildren}
@@ -997,6 +1048,27 @@ export const renderComboBox = (
           },
           getTargetOrigin(),
         );
+
+        // 사용자 정의 onSelectionChange 이벤트 핸들러 실행
+        const eventHandlerMap = context.services?.createEventHandlerMap?.(
+          element,
+          context,
+        );
+        const customHandler = eventHandlerMap?.["onSelectionChange"] as
+          | ((value: unknown) => void)
+          | undefined;
+        customHandler?.(selectedKey);
+      }}
+      onOpenChange={(isOpen) => {
+        // 사용자 정의 onOpenChange 이벤트 핸들러 실행
+        const eventHandlerMap = context.services?.createEventHandlerMap?.(
+          element,
+          context,
+        );
+        const customHandler = eventHandlerMap?.["onOpenChange"] as
+          | ((value: unknown) => void)
+          | undefined;
+        customHandler?.(isOpen);
       }}
       onInputChange={(inputValue) => {
         const updatedProps = {

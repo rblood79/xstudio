@@ -232,6 +232,8 @@ export interface SkiaNodeData {
     contentY: number;
     contentWidth: number;
     contentHeight: number;
+    /** 이미지 미로드 시 placeholder에 표시할 alt 텍스트 */
+    altText?: string;
   };
   /** Line 전용 */
   line?: {
@@ -411,7 +413,7 @@ function renderNodeInternal(
         renderText(ck, canvas, node, fontMgr);
       break;
     case "image":
-      renderImage(ck, canvas, node);
+      renderImage(ck, canvas, node, fontMgr);
       break;
     case "line":
       renderLine(ck, canvas, node);
@@ -1781,6 +1783,7 @@ export function renderImage(
   ck: CanvasKit,
   canvas: Canvas,
   node: SkiaNodeData,
+  fontMgr?: FontMgr | null,
 ): void {
   const scope = new SkiaDisposable();
   try {
@@ -1827,8 +1830,54 @@ export function renderImage(
           placeholderPaint,
         );
       }
+      // alt 텍스트 표시 (이미지 미등록 시)
+      const altText = node.image?.altText;
+      if (altText && fontMgr) {
+        const altFontSize = Math.max(11, Math.min(14, node.width * 0.06));
+        const paraStyle = new ck.ParagraphStyle({
+          textAlign: ck.TextAlign.Center,
+          maxLines: 2,
+          ellipsis: "…",
+        });
+        const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+        builder.pushStyle(
+          new ck.TextStyle({
+            color: ck.Color(156, 163, 175, 1), // gray-400
+            fontSize: altFontSize,
+            fontFamilies: ["Pretendard", "sans-serif"],
+          }),
+        );
+        builder.addText(altText);
+        const para = builder.build();
+        const maxW = node.width * 0.8;
+        para.layout(maxW);
+        const paraH = para.getHeight();
+        const paraX = (node.width - maxW) / 2;
+        // 하단 영역에 표시 (아이콘 아래)
+        const paraY = Math.max(node.height * 0.65, node.height - paraH - 8);
+        canvas.drawParagraph(para, paraX, paraY);
+        para.delete();
+        builder.delete();
+      }
       if (hasRadius) canvas.restore();
       return;
+    }
+
+    // object-fit cover/none 시 이미지가 컨테이너를 초과할 수 있으므로 클리핑 필수
+    // (hasRadius 클리핑은 이미 위에서 적용됨 — 추가 클리핑은 borderRadius 없을 때만)
+    const needsOverflowClip =
+      !hasRadius &&
+      (node.image.contentWidth > node.width ||
+        node.image.contentHeight > node.height ||
+        node.image.contentX < 0 ||
+        node.image.contentY < 0);
+    if (needsOverflowClip) {
+      canvas.save();
+      canvas.clipRect(
+        ck.LTRBRect(0, 0, node.width, node.height),
+        ck.ClipOp.Intersect,
+        true,
+      );
     }
 
     // 이미지 렌더링 (object-fit 계산 결과 기반 src/dst rect)
@@ -1850,6 +1899,7 @@ export function renderImage(
 
     canvas.drawImageRect(node.image.skImage, srcRect, dstRect, paint);
 
+    if (needsOverflowClip) canvas.restore();
     if (hasRadius) canvas.restore();
   } finally {
     scope.dispose();

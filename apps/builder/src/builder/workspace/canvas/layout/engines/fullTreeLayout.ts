@@ -597,6 +597,29 @@ function traversePostOrder(
     return;
   }
 
+  // ProgressBar/Meter: leaf spec 컴포넌트 — display:grid 정규화
+  // 이전 기본값에서 display:"grid"가 주입된 기존 요소를 block으로 정규화
+  // grid+자식없음 → Taffy height=0 문제 방지
+  {
+    const rawTag = (rawElement.tag ?? "").toLowerCase();
+    if (
+      (rawTag === "progressbar" ||
+        rawTag === "progress" ||
+        rawTag === "loadingbar" ||
+        rawTag === "meter" ||
+        rawTag === "gauge") &&
+      (rawElement.props?.style as Record<string, unknown> | undefined)
+        ?.display === "grid"
+    ) {
+      const { display: _, ...restStyle } = (rawElement.props?.style ??
+        {}) as Record<string, unknown>;
+      rawElement = {
+        ...rawElement,
+        props: { ...rawElement.props, style: restStyle },
+      };
+    }
+  }
+
   // Tag → TagGroup 부모 size 상속 (CSS data-tag-size parent delegation 에뮬레이션)
   // DFS 진입 시 element에 size를 주입하면 이후 calculateContentHeight/parseBoxModel 등에서 자연스럽게 사용
   if (rawElement.tag === "Tag") {
@@ -925,6 +948,42 @@ function traversePostOrder(
           props: {
             ...enriched.props,
             style: { ...enrichedStyle, height: borderBoxHeight },
+          },
+        };
+      }
+    }
+  }
+
+  // 4.7.1. ProgressBar/Meter: spec shapes leaf 안전망
+  // enrichWithIntrinsicSize가 height를 주입했어야 하지만,
+  // 어떤 이유로 누락된 경우 calculateContentHeight로 보정
+  {
+    const enrichedStyle = (enriched.props?.style ?? {}) as Record<
+      string,
+      unknown
+    >;
+    const enrichedTag = (rawElement.tag ?? "").toLowerCase();
+    if (
+      !enrichedStyle.height &&
+      (enrichedTag === "progressbar" ||
+        enrichedTag === "progress" ||
+        enrichedTag === "loadingbar" ||
+        enrichedTag === "meter" ||
+        enrichedTag === "gauge")
+    ) {
+      const fallbackHeight = calculateContentHeight(
+        rawElement,
+        availableWidth,
+        filteredChildren,
+        getChildElements,
+        computedStyle,
+      );
+      if (fallbackHeight > 0) {
+        enriched = {
+          ...enriched,
+          props: {
+            ...enriched.props,
+            style: { ...enrichedStyle, height: fallbackHeight },
           },
         };
       }

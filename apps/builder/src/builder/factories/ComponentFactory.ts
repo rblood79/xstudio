@@ -58,10 +58,7 @@ import {
   createDisclosureDefinition,
   createDisclosureGroupDefinition,
 } from "./definitions/NavigationComponents";
-import {
-  createTable,
-  createColumnGroup,
-} from "./definitions/TableComponents";
+import { createTable, createColumnGroup } from "./definitions/TableComponents";
 import {
   createDataTableDefinition,
   createSlotDefinition,
@@ -76,6 +73,30 @@ import {
   createColorFieldDefinition,
   createColorSwatchPickerDefinition,
 } from "./definitions/DateColorComponents";
+import {
+  createAvatarDefinition,
+  createAvatarGroupDefinition,
+  createStatusLightDefinition,
+  createInlineAlertDefinition,
+  createDividerDefinition,
+  createLinkButtonDefinition,
+  createContextualHelpDefinition,
+  createActionButtonDefinition,
+  createActionButtonGroupDefinition,
+  createButtonGroupDefinition,
+  createActionMenuDefinition,
+  createAccordionDefinition,
+  createRangeSliderDefinition,
+  createProgressCircleDefinition,
+  createImageDefinition,
+  createPickerDefinition,
+  createRangeCalendarDefinition,
+  createSegmentedControlDefinition,
+  createIllustratedMessageDefinition,
+  createCardViewDefinition,
+  createTableViewDefinition,
+  createSelectBoxGroupDefinition,
+} from "./definitions/DisplayComponents";
 
 /**
  * 통합 컴포넌트 팩토리
@@ -136,6 +157,32 @@ export class ComponentFactory {
     TimeField: ComponentFactory.createTimeField,
     ColorField: ComponentFactory.createColorField,
     ColorSwatchPicker: ComponentFactory.createColorSwatchPicker,
+    // ⭐ Display Components (Phase 1)
+    Avatar: ComponentFactory.createAvatar,
+    AvatarGroup: ComponentFactory.createAvatarGroup,
+    StatusLight: ComponentFactory.createStatusLight,
+    InlineAlert: ComponentFactory.createInlineAlert,
+    Divider: ComponentFactory.createDivider,
+    LinkButton: ComponentFactory.createLinkButton,
+    ContextualHelp: ComponentFactory.createContextualHelp,
+    // ⭐ Display Components (Phase 2)
+    ActionButton: ComponentFactory.createActionButton,
+    ActionButtonGroup: ComponentFactory.createActionButtonGroup,
+    ButtonGroup: ComponentFactory.createButtonGroup,
+    ActionMenu: ComponentFactory.createActionMenu,
+    Accordion: ComponentFactory.createAccordion,
+    // ⭐ Display Components (Phase 3)
+    RangeSlider: ComponentFactory.createRangeSlider,
+    ProgressCircle: ComponentFactory.createProgressCircle,
+    Image: ComponentFactory.createImage,
+    Picker: ComponentFactory.createPicker,
+    RangeCalendar: ComponentFactory.createRangeCalendar,
+    // ⭐ Display Components (Phase 4)
+    SegmentedControl: ComponentFactory.createSegmentedControl,
+    IllustratedMessage: ComponentFactory.createIllustratedMessage,
+    CardView: ComponentFactory.createCardView,
+    TableView: ComponentFactory.createTableView,
+    SelectBoxGroup: ComponentFactory.createSelectBoxGroup,
   };
 
   /**
@@ -147,7 +194,7 @@ export class ComponentFactory {
     parentElement: Element | null,
     pageId: string,
     elements: Element[],
-    layoutId?: string | null
+    layoutId?: string | null,
   ): Promise<ComponentCreationResult> {
     const creator = this.creators[tag];
     if (!creator) {
@@ -169,8 +216,10 @@ export class ComponentFactory {
    * ⭐ Layout/Slot System: layoutId 우선, 없으면 pageId 사용
    */
   private static async createComponent(
-    definitionCreator: (context: ComponentCreationContext) => ComponentDefinition,
-    context: ComponentCreationContext
+    definitionCreator: (
+      context: ComponentCreationContext,
+    ) => ComponentDefinition,
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     const { parentElement, pageId, elements, layoutId } = context;
     let parentId = parentElement?.id || null;
@@ -178,9 +227,13 @@ export class ComponentFactory {
     // parent_id가 없으면 body 요소를 parent로 설정
     // ⭐ Layout/Slot System: layoutId 우선, 없으면 pageId 사용
     if (!parentId) {
-      parentId = ElementUtils.findBodyByContext(elements, pageId || null, layoutId || null);
+      parentId = ElementUtils.findBodyByContext(
+        elements,
+        pageId || null,
+        layoutId || null,
+      );
       // body element를 찾아서 context 업데이트
-      const bodyElement = elements.find(el => el.id === parentId);
+      const bodyElement = elements.find((el) => el.id === parentId);
       if (bodyElement) {
         context = { ...context, parentElement: bodyElement };
       }
@@ -209,13 +262,13 @@ export class ComponentFactory {
   // ==================== 각 컴포넌트 생성 메서드 ====================
 
   private static async createTextField(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createTextFieldDefinition, context);
   }
 
   private static async createTextArea(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createTextAreaDefinition, context);
   }
@@ -223,145 +276,145 @@ export class ComponentFactory {
   // ==================== Form Components ====================
 
   private static async createForm(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createFormDefinition, context);
   }
 
   private static async createToast(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createToastDefinition, context);
   }
 
   private static async createToolbar(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createToolbarDefinition, context);
   }
 
   private static async createNumberField(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createNumberFieldDefinition, context);
   }
 
   private static async createSearchField(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createSearchFieldDefinition, context);
   }
 
   private static async createGroup(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createGroupDefinition, context);
   }
 
   private static async createToggleButtonGroup(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createToggleButtonGroupDefinition, context);
   }
 
   private static async createSwitcher(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createSwitcherDefinition, context);
   }
 
   private static async createCheckboxGroup(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createCheckboxGroupDefinition, context);
   }
 
   private static async createRadioGroup(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createRadioGroupDefinition, context);
   }
 
   private static async createCheckbox(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createCheckboxDefinition, context);
   }
 
   private static async createRadio(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createRadioDefinition, context);
   }
 
   private static async createSwitch(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createSwitchDefinition, context);
   }
 
   private static async createSelect(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createSelectDefinition, context);
   }
 
   private static async createComboBox(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createComboBoxDefinition, context);
   }
 
   private static async createSlider(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createSliderDefinition, context);
   }
 
   private static async createCard(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createCardDefinition, context);
   }
 
   private static async createTabs(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createTabsDefinition, context);
   }
 
   private static async createTree(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createTreeDefinition, context);
   }
 
   private static async createTagGroup(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createTagGroupDefinition, context);
   }
 
   private static async createBreadcrumbs(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createBreadcrumbsDefinition, context);
   }
 
   private static async createListBox(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createListBoxDefinition, context);
   }
 
   private static async createGridList(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createGridListDefinition, context);
   }
 
   private static async createList(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createListDefinition, context);
   }
@@ -369,25 +422,25 @@ export class ComponentFactory {
   // ==================== Navigation Components ====================
 
   private static async createMenu(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createMenuDefinition, context);
   }
 
   private static async createPagination(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createPaginationDefinition, context);
   }
 
   private static async createDisclosure(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createDisclosureDefinition, context);
   }
 
   private static async createDisclosureGroup(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createDisclosureGroupDefinition, context);
   }
@@ -395,19 +448,19 @@ export class ComponentFactory {
   // ==================== Overlay Components ====================
 
   private static async createDialog(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createDialogDefinition, context);
   }
 
   private static async createPopover(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createPopoverDefinition, context);
   }
 
   private static async createTooltip(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createTooltipDefinition, context);
   }
@@ -418,7 +471,7 @@ export class ComponentFactory {
    * DataTable 컴포넌트 (비시각적, 데이터 관리용)
    */
   private static async createDataTable(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createDataTableDefinition, context);
   }
@@ -427,7 +480,7 @@ export class ComponentFactory {
    * Slot 컴포넌트 (Layout 전용, Page 콘텐츠 삽입 위치)
    */
   private static async createSlot(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createSlotDefinition, context);
   }
@@ -435,51 +488,191 @@ export class ComponentFactory {
   // ==================== Date & Color Components ====================
 
   private static async createDatePicker(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createDatePickerDefinition, context);
   }
 
   private static async createDateRangePicker(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createDateRangePickerDefinition, context);
   }
 
   private static async createCalendar(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createCalendarDefinition, context);
   }
 
   private static async createColorPicker(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createColorPickerDefinition, context);
   }
 
   private static async createDateField(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createDateFieldDefinition, context);
   }
 
   private static async createTimeField(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createTimeFieldDefinition, context);
   }
 
   private static async createColorField(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createColorFieldDefinition, context);
   }
 
   private static async createColorSwatchPicker(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createColorSwatchPickerDefinition, context);
+  }
+
+  // ==================== Display Components (Phase 1) ====================
+
+  private static async createAvatar(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createAvatarDefinition, context);
+  }
+
+  private static async createAvatarGroup(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createAvatarGroupDefinition, context);
+  }
+
+  private static async createStatusLight(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createStatusLightDefinition, context);
+  }
+
+  private static async createInlineAlert(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createInlineAlertDefinition, context);
+  }
+
+  private static async createDivider(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createDividerDefinition, context);
+  }
+
+  private static async createLinkButton(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createLinkButtonDefinition, context);
+  }
+
+  private static async createContextualHelp(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createContextualHelpDefinition, context);
+  }
+
+  // ==================== Display Components (Phase 2) ====================
+
+  private static async createActionButton(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createActionButtonDefinition, context);
+  }
+
+  private static async createActionButtonGroup(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createActionButtonGroupDefinition, context);
+  }
+
+  private static async createButtonGroup(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createButtonGroupDefinition, context);
+  }
+
+  private static async createActionMenu(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createActionMenuDefinition, context);
+  }
+
+  private static async createAccordion(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createAccordionDefinition, context);
+  }
+
+  // ==================== Display Components (Phase 3) ====================
+
+  private static async createRangeSlider(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createRangeSliderDefinition, context);
+  }
+
+  private static async createProgressCircle(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createProgressCircleDefinition, context);
+  }
+
+  private static async createImage(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createImageDefinition, context);
+  }
+
+  private static async createPicker(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createPickerDefinition, context);
+  }
+
+  private static async createRangeCalendar(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createRangeCalendarDefinition, context);
+  }
+
+  // ==================== Display Components (Phase 4) ====================
+
+  private static async createSegmentedControl(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createSegmentedControlDefinition, context);
+  }
+
+  private static async createIllustratedMessage(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createIllustratedMessageDefinition, context);
+  }
+
+  private static async createCardView(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createCardViewDefinition, context);
+  }
+
+  private static async createTableView(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createTableViewDefinition, context);
+  }
+
+  private static async createSelectBoxGroup(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createSelectBoxGroupDefinition, context);
   }
 
   // ==================== Table Components ====================
@@ -488,7 +681,7 @@ export class ComponentFactory {
    * Table 컴포넌트 (특수 처리)
    */
   private static async createTable(
-    context: ComponentCreationContext
+    context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return await createTable(context);
   }
@@ -499,7 +692,7 @@ export class ComponentFactory {
   static async createColumnGroup(
     parentElement: Element | null,
     pageId: string,
-    elements: Element[] = []
+    elements: Element[] = [],
   ): Promise<ComponentCreationResult> {
     const context: ComponentCreationContext = {
       parentElement,

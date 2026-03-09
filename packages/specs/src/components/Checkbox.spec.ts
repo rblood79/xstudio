@@ -20,10 +20,14 @@ export interface CheckboxProps {
   children?: string;
   label?: string;
   text?: string;
+  name?: string;
+  value?: string;
   isSelected?: boolean;
   isIndeterminate?: boolean;
   isDisabled?: boolean;
   isInvalid?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 

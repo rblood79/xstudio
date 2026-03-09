@@ -12,6 +12,8 @@ import {
   Radio,
   RadioGroup,
   Switch,
+  FileTrigger,
+  DropZone,
 } from "../components/list";
 import { MyColorSwatches } from "../components/TailSwatch";
 import { parseColor, type Color } from "react-aria-components";
@@ -606,6 +608,97 @@ export const renderSwitch = (
         ? element.props.children
         : null}
     </Switch>
+  );
+};
+
+/**
+ * FileTrigger 렌더링
+ *
+ * 파일 선택 트리거 컴포넌트. 자식 요소(Button 등)를 클릭하면 파일 선택 다이얼로그 열림.
+ */
+export const renderFileTrigger = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <FileTrigger
+      key={element.id}
+      acceptedFileTypes={
+        element.props.acceptedFileTypes as string[] | undefined
+      }
+      allowsMultiple={Boolean(element.props.allowsMultiple)}
+      acceptDirectory={Boolean(element.props.acceptDirectory)}
+      defaultCamera={
+        element.props.defaultCamera as "user" | "environment" | undefined
+      }
+      onSelect={(files) => {
+        if (files) {
+          const fileList = Array.from(files).map((f) => f.name);
+          context.updateElementProps(element.id, {
+            ...element.props,
+            selectedFiles: fileList,
+          });
+        }
+      }}
+    >
+      {children.length > 0
+        ? children.map((child) => renderElement(child, child.id))
+        : null}
+    </FileTrigger>
+  );
+};
+
+/**
+ * DropZone 렌더링
+ *
+ * 드래그앤드롭 파일 업로드 영역.
+ */
+export const renderDropZone = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+  const eventHandlers =
+    context.services?.createEventHandlerMap?.(element, context) ?? {};
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <DropZone
+      key={element.id}
+      data-element-id={element.id}
+      data-custom-id={element.customId}
+      variant={
+        (element.props.variant as "default" | "primary" | "dashed") || "default"
+      }
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      label={
+        typeof element.props.label === "string"
+          ? element.props.label
+          : undefined
+      }
+      description={
+        typeof element.props.description === "string"
+          ? element.props.description
+          : undefined
+      }
+      isDisabled={Boolean(element.props.isDisabled)}
+      style={element.props.style}
+      className={element.props.className}
+      onDrop={eventHandlers.onDrop as unknown as (e: unknown) => void}
+    >
+      {children.length > 0
+        ? children.map((child) => renderElement(child, child.id))
+        : undefined}
+    </DropZone>
   );
 };
 

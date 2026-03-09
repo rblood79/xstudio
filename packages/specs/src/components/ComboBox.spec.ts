@@ -19,6 +19,7 @@ export interface ComboBoxProps {
   size?: "S" | "M" | "L";
   label?: string;
   placeholder?: string;
+  name?: string;
   inputValue?: string;
   selectedText?: string;
   description?: string;
@@ -26,6 +27,7 @@ export interface ComboBoxProps {
   isOpen?: boolean;
   isDisabled?: boolean;
   isInvalid?: boolean;
+  isReadOnly?: boolean;
   isRequired?: boolean;
   /** 트리거 아이콘 이름 */
   iconName?: string;

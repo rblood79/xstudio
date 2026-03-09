@@ -14,6 +14,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
  */
 export interface CardProps {
   variant?: "primary" | "secondary" | "tertiary" | "quiet";
+  cardType?: "default" | "asset" | "user" | "product";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   density?: "compact" | "regular" | "spacious";
   orientation?: "vertical" | "horizontal";

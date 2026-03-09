@@ -36,8 +36,13 @@ export const IMPLEMENTED_EVENT_TYPES = [
   "onKeyDown",
   "onKeyUp",
 
+  // React Aria Events (구현됨)
+  "onPress", // React Aria 전용 (Button, Link 등)
+  "onSelectionChange", // 리스트/선택 컴포넌트 (ListBox, Select, ComboBox 등)
+  "onAction", // 메뉴 아이템 (Menu)
+  "onOpenChange", // 드롭다운/모달 (Select, ComboBox, Dialog 등)
+
   // 향후 구현 예정:
-  // 'onPress',          // React Aria 전용
   // 'onDoubleClick',    // 더블클릭
   // 'onInput',          // 입력 중
   // 'onScroll',         // 스크롤
@@ -118,16 +123,16 @@ export const IMPLEMENTED_ACTION_TYPES = [
   "clearSelection", // alias for clear_selection
 
   // Data Panel Integration (구현됨)
-  "fetchDataTable",      // DataTable 데이터 fetch
-  "refreshDataTable",    // DataTable 데이터 새로고침
-  "executeApi",          // API Endpoint 실행
-  "setVariable",         // Variable 값 설정
-  "getVariable",         // Variable 값 가져오기
+  "fetchDataTable", // DataTable 데이터 fetch
+  "refreshDataTable", // DataTable 데이터 새로고침
+  "executeApi", // API Endpoint 실행
+  "setVariable", // Variable 값 설정
+  "getVariable", // Variable 값 가져오기
 
   // DataTable Actions (Phase 3 추가)
-  "loadDataTable",       // DataTable 로드 (alias for fetchDataTable with options)
-  "syncComponent",       // 컴포넌트 간 데이터 동기화
-  "saveToDataTable",     // API 응답을 DataTable에 저장
+  "loadDataTable", // DataTable 로드 (alias for fetchDataTable with options)
+  "syncComponent", // 컴포넌트 간 데이터 동기화
+  "saveToDataTable", // API 응답을 DataTable에 저장
 
   // 향후 구현 예정:
   // 'update_props',        // 요소 props 업데이트
@@ -148,7 +153,7 @@ export type ActionType = (typeof IMPLEMENTED_ACTION_TYPES)[number];
  * 이벤트 타입이 구현되어 있는지 확인
  */
 export function isImplementedEventType(
-  eventType: string
+  eventType: string,
 ): eventType is EventType {
   return (IMPLEMENTED_EVENT_TYPES as readonly string[]).includes(eventType);
 }
@@ -157,7 +162,7 @@ export function isImplementedEventType(
  * 액션 타입이 구현되어 있는지 확인
  */
 export function isImplementedActionType(
-  actionType: string
+  actionType: string,
 ): actionType is ActionType {
   return (IMPLEMENTED_ACTION_TYPES as readonly string[]).includes(actionType);
 }
@@ -176,6 +181,15 @@ export const EVENT_CATEGORIES = {
   keyboard: {
     label: "Keyboard Events",
     events: ["onKeyDown", "onKeyUp"] as const,
+  },
+  interaction: {
+    label: "Interaction Events",
+    events: [
+      "onPress",
+      "onSelectionChange",
+      "onAction",
+      "onOpenChange",
+    ] as const,
   },
 } as const;
 
@@ -218,7 +232,16 @@ export const ACTION_CATEGORIES = {
   },
   dataPanel: {
     label: "Data Panel",
-    actions: ["fetchDataTable", "refreshDataTable", "executeApi", "setVariable", "getVariable", "loadDataTable", "syncComponent", "saveToDataTable"] as const,
+    actions: [
+      "fetchDataTable",
+      "refreshDataTable",
+      "executeApi",
+      "setVariable",
+      "getVariable",
+      "loadDataTable",
+      "syncComponent",
+      "saveToDataTable",
+    ] as const,
   },
   custom: {
     label: "Custom",

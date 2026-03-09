@@ -154,6 +154,13 @@ export const CardEditor = memo(
       [currentProps, onUpdate],
     );
 
+    const handleCardTypeChange = useCallback(
+      (value: string) => {
+        onUpdate({ ...currentProps, cardType: value || undefined });
+      },
+      [currentProps, onUpdate],
+    );
+
     const handleAccentColorChange = useCallback(
       (value: string) => {
         onUpdate({ ...currentProps, accentColor: value || undefined });
@@ -304,14 +311,28 @@ export const CardEditor = memo(
         <PropertySection title="Design">
           <PropertySelect
             label={PROPERTY_LABELS.VARIANT}
-            value={String(currentProps.variant || "filled")}
+            value={String(currentProps.variant || "primary")}
             onChange={handleVariantChange}
             options={[
-              { value: "filled", label: "Filled" },
-              { value: "elevated", label: "Elevated" },
-              { value: "outlined", label: "Outlined" },
+              { value: "primary", label: "Primary" },
+              { value: "secondary", label: "Secondary" },
+              { value: "tertiary", label: "Tertiary" },
+              { value: "quiet", label: "Quiet" },
             ]}
             icon={Layout}
+          />
+
+          <PropertySelect
+            label="Card Type"
+            value={String(currentProps.cardType || "default")}
+            onChange={handleCardTypeChange}
+            options={[
+              { value: "default", label: "Default" },
+              { value: "asset", label: "Asset" },
+              { value: "user", label: "User" },
+              { value: "product", label: "Product" },
+            ]}
+            icon={PencilRuler}
           />
 
           <PropertySizeToggle
@@ -354,10 +375,12 @@ export const CardEditor = memo(
       ),
       [
         currentProps.variant,
+        currentProps.cardType,
         currentProps.size,
         currentProps.orientation,
         currentProps.accentColor,
         handleVariantChange,
+        handleCardTypeChange,
         handleSizeChange,
         handleOrientationChange,
         handleAccentColorChange,

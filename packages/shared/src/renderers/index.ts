@@ -10,6 +10,7 @@ import * as CollectionRenderers from "./CollectionRenderers";
 import * as TableRenderer from "./TableRenderer";
 import * as DataRenderers from "./DataRenderers";
 import * as IconRenderers from "./IconRenderers";
+import * as ColorRenderers from "./ColorRenderers";
 import type { PreviewElement, RenderContext } from "../types";
 
 /**
@@ -33,6 +34,8 @@ export const rendererMap: Record<
   RadioGroup: FormRenderers.renderRadioGroup,
   Switch: FormRenderers.renderSwitch,
   TailSwatch: FormRenderers.renderTailSwatch,
+  FileTrigger: FormRenderers.renderFileTrigger,
+  DropZone: FormRenderers.renderDropZone,
 
   // Selection 컴포넌트
   ListBox: SelectionRenderers.renderListBox,
@@ -52,6 +55,8 @@ export const rendererMap: Record<
   Card: LayoutRenderers.renderCard,
   CardHeader: LayoutRenderers.renderCardHeader,
   CardContent: LayoutRenderers.renderCardContent,
+  CardPreview: LayoutRenderers.renderCardPreview,
+  CardFooter: LayoutRenderers.renderCardFooter,
   Button: LayoutRenderers.renderButton,
   Text: LayoutRenderers.renderText,
   Tooltip: LayoutRenderers.renderTooltip,
@@ -67,6 +72,35 @@ export const rendererMap: Record<
   Slot: LayoutRenderers.renderSlot,
   Toast: LayoutRenderers.renderToast,
   Pagination: LayoutRenderers.renderPagination,
+  Skeleton: LayoutRenderers.renderSkeleton,
+  // Phase 1: Display/Feedback
+  Avatar: LayoutRenderers.renderAvatar,
+  AvatarGroup: LayoutRenderers.renderAvatarGroup,
+  StatusLight: LayoutRenderers.renderStatusLight,
+  InlineAlert: LayoutRenderers.renderInlineAlert,
+  Divider: LayoutRenderers.renderDivider,
+  LinkButton: LayoutRenderers.renderLinkButton,
+  ContextualHelp: LayoutRenderers.renderContextualHelp,
+  // Phase 2: Action/Group/Accordion (ADR-030)
+  ActionButton: LayoutRenderers.renderActionButton,
+  ActionButtonGroup: LayoutRenderers.renderActionButtonGroup,
+  ButtonGroup: LayoutRenderers.renderButtonGroup,
+  ActionMenu: LayoutRenderers.renderActionMenu,
+  Accordion: LayoutRenderers.renderAccordion,
+  // Phase 3: Extended Controls (ADR-030)
+  RangeSlider: LayoutRenderers.renderRangeSlider,
+  ProgressCircle: LayoutRenderers.renderProgressCircle,
+  Image: LayoutRenderers.renderImage,
+  Picker: LayoutRenderers.renderPicker,
+  RangeCalendar: LayoutRenderers.renderRangeCalendar,
+  // Phase 4: Advanced Components (ADR-030)
+  SegmentedControl: LayoutRenderers.renderSegmentedControl,
+  SegmentedControlItem: LayoutRenderers.renderSegmentedControlItem,
+  IllustratedMessage: LayoutRenderers.renderIllustratedMessage,
+  CardView: LayoutRenderers.renderCardView,
+  TableView: LayoutRenderers.renderTableView,
+  SelectBoxGroup: LayoutRenderers.renderSelectBoxGroup,
+  SelectBoxItem: LayoutRenderers.renderSelectBoxItem,
 
   // Date 컴포넌트
   Calendar: DateRenderers.renderCalendar,
@@ -99,6 +133,11 @@ export const rendererMap: Record<
 
   // Icon 컴포넌트
   Icon: IconRenderers.renderIcon,
+
+  // Color 컴포넌트
+  ColorArea: ColorRenderers.renderColorArea,
+  ColorSlider: ColorRenderers.renderColorSlider,
+  ColorWheel: ColorRenderers.renderColorWheel,
 };
 
 export {
@@ -110,4 +149,5 @@ export {
   TableRenderer,
   DataRenderers,
   IconRenderers,
+  ColorRenderers,
 };

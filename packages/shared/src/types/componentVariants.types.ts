@@ -171,11 +171,26 @@ export type TabsDensity = "compact" | "regular";
  * Card visual variants (S2)
  * Used by: Card component
  *
- * - default: 기본 카드 (테두리 없음)
- * - outlined: 테두리 있는 카드
- * - elevated: 그림자로 높이감 표현
+ * - primary: 기본 카드 (배경 + 미니멀 border)
+ * - secondary: 테두리 강조 카드
+ * - tertiary: 흰색 배경 + 그림자로 높이감 표현
+ * - quiet: 투명 배경
  */
-export type CardVariant = "default" | "outlined" | "elevated";
+export type CardVariant = "primary" | "secondary" | "tertiary" | "quiet";
+
+/**
+ * Normalize legacy Card variant values to S2 naming
+ * Handles backward compatibility for existing project data
+ */
+export function normalizeCardVariant(variant?: string): CardVariant {
+  const LEGACY_MAP: Record<string, CardVariant> = {
+    default: "primary",
+    filled: "primary",
+    outlined: "secondary",
+    elevated: "tertiary",
+  };
+  return LEGACY_MAP[variant ?? ""] ?? (variant as CardVariant) ?? "primary";
+}
 
 /**
  * Panel visual variants

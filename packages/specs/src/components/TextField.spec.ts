@@ -25,11 +25,13 @@ export interface TextFieldProps {
   size?: "sm" | "md" | "lg";
   label?: string;
   placeholder?: string;
+  name?: string;
   value?: string;
   description?: string;
   errorMessage?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
+  isReadOnly?: boolean;
   isRequired?: boolean;
   children?: string;
   style?: Record<string, string | number | undefined>;

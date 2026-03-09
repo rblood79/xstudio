@@ -451,6 +451,8 @@ export function createNumberFieldDefinition(
         step: 1,
         isDisabled: false,
         isInvalid: false,
+        isReadOnly: false,
+        isRequired: false,
         style: {
           display: "flex",
           flexDirection: "column",
@@ -573,6 +575,8 @@ export function createSearchFieldDefinition(
         placeholder: "Search...",
         isDisabled: false,
         isInvalid: false,
+        isReadOnly: false,
+        isRequired: false,
         style: {
           display: "flex",
           flexDirection: "column",
@@ -659,6 +663,7 @@ export function createSliderDefinition(
         maxValue: 100,
         step: 1,
         isDisabled: false,
+        isRequired: false,
         orientation: "horizontal",
         showValue: true,
         style: {

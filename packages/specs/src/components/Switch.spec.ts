@@ -19,8 +19,10 @@ export interface SwitchProps {
   size?: "sm" | "md" | "lg";
   children?: string;
   label?: string;
+  name?: string;
   isSelected?: boolean;
   isDisabled?: boolean;
+  isReadOnly?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 

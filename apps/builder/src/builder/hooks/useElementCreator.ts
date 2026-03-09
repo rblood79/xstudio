@@ -167,6 +167,35 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                   layoutId || null,
                 );
               }
+
+              // Card + action component → CardFooter 자동 라우팅
+              const parentEl = parentId
+                ? elements.find((el) => el.id === parentId)
+                : null;
+              if (parentEl?.tag === "Card") {
+                const ACTION_TAGS = new Set([
+                  "Button",
+                  "ToggleButton",
+                  "Link",
+                  "ActionButtonGroup",
+                  "ButtonGroup",
+                ]);
+                if (ACTION_TAGS.has(tag)) {
+                  const cardFooter = elements.find(
+                    (el) =>
+                      el.parent_id === parentId &&
+                      el.tag === "CardFooter" &&
+                      !el.deleted,
+                  );
+                  if (cardFooter) {
+                    parentId = cardFooter.id;
+                    console.log(
+                      `📎 Card action routing: ${tag} → CardFooter (${cardFooter.id})`,
+                    );
+                  }
+                }
+              }
+
               const orderNum = HierarchyManager.calculateNextOrderNum(
                 parentId,
                 elements,

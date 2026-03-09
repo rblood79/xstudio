@@ -5,6 +5,26 @@ All notable changes to XStudio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [ADR-030 S2 전용 컴포넌트 Phase 0~4 완료] - 2026-03-09
+
+### Features
+
+- **22개 S2 전용 컴포넌트 구현** (ADR-030 Phase 1~4):
+  - Phase 1 (Display/Feedback): Avatar, AvatarGroup, StatusLight, InlineAlert, Divider, LinkButton, ContextualHelp
+  - Phase 2 (Button/Menu): ActionButton, ActionButtonGroup, ButtonGroup, ActionMenu, Accordion
+  - Phase 3 (Extended Controls): RangeSlider, ProgressCircle, Image, Picker, RangeCalendar
+  - Phase 4 (Advanced): SegmentedControl (+Item), SelectBoxGroup (+Item), IllustratedMessage, CardView, TableView
+- **23개 Property Editor 생성**: 모든 ADR-030 컴포넌트에 대한 Inspector 편집 UI
+- **23개 ComponentMeta 등록**: `metadata.ts`에 `hasCustomEditor`, `editorName`, `dataBindingType`, `supportedEvents` 정의
+- **Spec Props 보강**: SegmentedControl(`isJustified`), CardView(`variant`/`selectionMode`/`selectionStyle`), TableView(`selectionMode`) 추가
+- **SelectBoxGroup/SelectBoxItem 전체 통합**: Spec + Factory + Renderer + Publish + ComponentList + TAG_SPEC_MAP + COMPLEX_COMPONENT_TAGS
+
+### Infrastructure
+
+- **COMPLEX_COMPONENT_TAGS 확장**: Phase 4 컴포넌트 4개 추가 (SegmentedControl, CardView, TableView, SelectBoxGroup)
+- **Preview 렌더러**: 22개 컴포넌트 rendererMap 등록 완료
+- **Publish 레지스트리**: 22개 컴포넌트 ComponentRegistry 등록 완료 (RangeCalendar 누락 수정 포함)
+
 ## [ADR-017 M3 제거 + Tint Color System + ADR-018 Phase 1] - 2026-03-04
 
 ### Breaking Changes

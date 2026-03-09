@@ -54,6 +54,15 @@ export * from "./Pagination";
 export * from "./Disclosure";
 export * from "./DisclosureGroup";
 
+// Color 컴포넌트
+export * from "./ColorArea";
+export * from "./ColorSlider";
+export * from "./ColorWheel";
+
+// File/Drop 컴포넌트
+export * from "./FileTrigger";
+export * from "./DropZone";
+
 // Metadata exports
 export * from "./metadata";
 // Icon

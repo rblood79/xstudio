@@ -17,6 +17,8 @@ import {
   fontFamily as specFontFamily,
   InputSpec,
   resolveToken,
+  PROGRESSBAR_DIMENSIONS,
+  METER_DIMENSIONS,
 } from "@xstudio/specs";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
@@ -38,6 +40,7 @@ import { resolveStyle, ROOT_COMPUTED_STYLE } from "./cssResolver";
 import type { ComputedStyle } from "./cssResolver";
 import type { LayoutContext } from "./LayoutEngine";
 import { applyTextTransform } from "../../sprites/styleConverter";
+import { getImageNaturalDimensions } from "../../skia/imageCache";
 
 // ─── Phantom Indicator 설정 (단일 소스) ─────────────────────────────────
 // Switch/Checkbox/Radio: Preview DOM에는 [indicator + label] 구조이지만
@@ -434,6 +437,7 @@ const DEFAULT_ELEMENT_WIDTHS: Record<string, number> = {
   textarea: 200,
   // 미디어 계열
   img: 150,
+  image: 280,
   video: 300,
   canvas: 200,
   iframe: 300,
@@ -1191,11 +1195,21 @@ export function calculateContentWidth(
     return Math.ceil(baseWidth) + generalCompensation;
   }
 
-  // 4. 태그별 기본 너비 사용
+  // 4. Image: 자연 치수 캐시에서 로드된 이미지의 실제 너비 사용 (fit-content/auto)
+  if (tag === "image") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const src = String(props?.src || props?.source || "");
+    if (src) {
+      const dims = getImageNaturalDimensions(src);
+      if (dims) return dims.width;
+    }
+  }
+
+  // 5. 태그별 기본 너비 사용
   const defaultWidth = DEFAULT_ELEMENT_WIDTHS[tag];
   if (defaultWidth !== undefined) return defaultWidth;
 
-  // 5. 알 수 없는 태그는 기본값 사용
+  // 6. 알 수 없는 태그는 기본값 사용
   return DEFAULT_WIDTH;
 }
 
@@ -1233,6 +1247,7 @@ const DEFAULT_ELEMENT_HEIGHTS: Record<string, number> = {
   main: 0,
   // 미디어 계열
   img: 150,
+  image: 200,
   video: 200,
   canvas: 150,
   // 리스트 계열
@@ -1426,6 +1441,36 @@ export function calculateContentHeight(
     const configLineHeight = BUTTON_SIZE_CONFIG[sizeName]?.lineHeight;
     const effectiveLineHeight = resolvedLineHeight ?? configLineHeight;
     return estimateTextHeight(fontSize, effectiveLineHeight);
+  }
+
+  // 2.6. ProgressBar/Meter: spec shapes 기반 높이 계산
+  // label/showValue가 있으면 fontSize + gap + barHeight, 없으면 barHeight만
+  if (
+    tag === "progressbar" ||
+    tag === "progress" ||
+    tag === "loadingbar" ||
+    tag === "meter" ||
+    tag === "gauge"
+  ) {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = String(props?.size ?? "md");
+    const isMeter = tag === "meter" || tag === "gauge";
+    const dims = isMeter
+      ? (METER_DIMENSIONS[sizeName] ?? METER_DIMENSIONS.md)
+      : (PROGRESSBAR_DIMENSIONS[sizeName] ?? PROGRESSBAR_DIMENSIONS.md);
+    const barHeight = dims.barHeight;
+
+    // label 또는 showValue가 있으면 텍스트 행 높이 추가
+    const hasLabel = !!props?.label;
+    const hasValue = isMeter
+      ? props?.showValue !== false // Meter: 기본 true
+      : !!props?.showValue; // ProgressBar: 기본 false
+    if (hasLabel || hasValue) {
+      const fontSize = parseNumericValue(style?.fontSize) ?? 14;
+      const gap = isMeter ? 8 : 8; // spec sizes[*].gap
+      return Math.ceil(fontSize * 1.2) + gap + barHeight;
+    }
+    return barHeight;
   }
 
   // 3. CardHeader/CardContent/SelectTrigger: 투명 컨테이너 — 자식 높이 합산/max
@@ -2128,7 +2173,17 @@ export function calculateContentHeight(
     return resolvedLineHeight;
   }
 
-  // 6. 태그별 기본 높이 사용
+  // 6. Image: 자연 치수 캐시에서 로드된 이미지의 실제 높이 사용 (fit-content/auto)
+  if (tag === "image") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const src = String(props?.src || props?.source || "");
+    if (src) {
+      const dims = getImageNaturalDimensions(src);
+      if (dims) return dims.height;
+    }
+  }
+
+  // 7. 태그별 기본 높이 사용
   const defaultHeight = DEFAULT_ELEMENT_HEIGHTS[tag];
   if (defaultHeight !== undefined) return defaultHeight;
 
@@ -2412,13 +2467,23 @@ export function enrichWithIntrinsicSize(
   // Flex 자식인 TEXT_LEAF_TAGS(Label, Description 등)도 intrinsic width 필요:
   // Block layout에서는 자동 stretch되지만, Flex layout에서는 Taffy가 content size를
   // 알 수 없어 width=0으로 처리함 (Checkbox/Radio/Switch 내부 Label 세로 출력 버그)
+  // Image: replaced element — auto/fit-content 시 자연 치수 사용 필요
+  const IMAGE_INTRINSIC_TAGS = new Set([
+    "image",
+    "avatar",
+    "logo",
+    "thumbnail",
+  ]);
   const needsWidth =
     hasExplicitIntrinsicWidthKeyword ||
     (INLINE_BLOCK_TAGS.has(tag) &&
       (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string))) ||
     (isFlexChild &&
       TEXT_LEAF_TAGS.has(tag) &&
-      (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string)));
+      (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string))) ||
+    (IMAGE_INTRINSIC_TAGS.has(tag) &&
+      typeof rawWidth === "string" &&
+      INTRINSIC_WIDTH_KEYWORDS.has(rawWidth));
 
   if (!needsHeight && !needsWidth) return element;
 
@@ -2454,11 +2519,21 @@ export function enrichWithIntrinsicSize(
   // 또한, childElements가 있는 컨테이너(CardHeader/CardContent 등)도 예외:
   // 자체 텍스트는 없지만 자식 요소의 높이를 합산해야 하므로 calculateContentHeight가 필요함
   // Select: Compositional Architecture — Card와 동일하게 자식 기반 높이 + padding 경로
-  const SPEC_SHAPES_INPUT_TAGS = new Set(["dropdown", "breadcrumbs"]);
+  const SPEC_SHAPES_INPUT_TAGS = new Set([
+    "dropdown",
+    "breadcrumbs",
+    // ProgressBar/Meter: spec shapes가 track+fill 렌더링, height 미설정 시 0이 됨
+    "progressbar",
+    "progress",
+    "loadingbar",
+    "meter",
+    "gauge",
+  ]);
   if (
     box.contentHeight <= 0 &&
     !needsWidth &&
     !SPEC_SHAPES_INPUT_TAGS.has(tag) &&
+    !IMAGE_INTRINSIC_TAGS.has(tag) &&
     !(childElements && childElements.length > 0)
   ) {
     return element;
@@ -2474,6 +2549,7 @@ export function enrichWithIntrinsicSize(
 
   // Height 주입
   // childElements가 있으면 재계산 (CheckboxGroup 등 자식 기반 높이 필요)
+  // Image: 자식은 없지만 자연 치수가 필요하므로 calculateContentHeight 호출
   const childResolvedHeight =
     childElements && childElements.length > 0
       ? calculateContentHeight(
@@ -2483,7 +2559,15 @@ export function enrichWithIntrinsicSize(
           getChildElements,
           _computedStyle,
         )
-      : box.contentHeight;
+      : IMAGE_INTRINSIC_TAGS.has(tag) || SPEC_SHAPES_INPUT_TAGS.has(tag)
+        ? calculateContentHeight(
+            element,
+            availableWidth,
+            undefined,
+            getChildElements,
+            _computedStyle,
+          )
+        : box.contentHeight;
   if (needsHeight && childResolvedHeight > 0) {
     let injectHeight = childResolvedHeight;
     // ComboBox/Select: calculateContentHeight가 전체 시각적 높이(label+input/trigger)를 반환

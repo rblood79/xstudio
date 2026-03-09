@@ -215,6 +215,44 @@ function createHtmlElement(
   return HtmlElement;
 }
 
+/**
+ * HTML 요소 + 고정 className 팩토리
+ * Card 구조 자식(CardHeader, CardContent 등)에 CSS 클래스를 주입
+ */
+function createHtmlElementWithClass(
+  tag: string,
+  className: string,
+): ComponentType<Record<string, unknown>> {
+  const HtmlElement = (props: Record<string, unknown>) => {
+    const { children, className: propClass, ...rest } = props;
+    const merged = propClass ? `${className} ${propClass}` : className;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Tag = tag as any;
+    return (
+      <Tag className={merged} {...rest}>
+        {children}
+      </Tag>
+    );
+  };
+  HtmlElement.displayName = `Html${tag.charAt(0).toUpperCase() + tag.slice(1)}WithClass`;
+  return HtmlElement;
+}
+
+/**
+ * Heading 요소 컴포넌트 팩토리 (level prop → h1~h6)
+ */
+function createHeadingElement(): ComponentType<Record<string, unknown>> {
+  const HeadingElement = (props: Record<string, unknown>) => {
+    const { children, level, ...rest } = props;
+    const tag = `h${Math.min(Math.max(Number(level) || 3, 1), 6)}`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Tag = tag as any;
+    return <Tag {...rest}>{children}</Tag>;
+  };
+  HeadingElement.displayName = "Heading";
+  return HeadingElement;
+}
+
 // Auto-register default components
 registerDefaultComponents();
 
@@ -445,6 +483,166 @@ export function registerSharedComponents(): void {
     component: Icon as ComponentType<Record<string, unknown>>,
     displayName: "Icon",
     category: "display",
+  });
+
+  // Phase 1: Display/Feedback (ADR-030)
+  registerComponent("Avatar", {
+    component: createHtmlElement("div"),
+    displayName: "Avatar",
+    category: "display",
+  });
+  registerComponent("AvatarGroup", {
+    component: createHtmlElement("div"),
+    displayName: "AvatarGroup",
+    category: "display",
+  });
+  registerComponent("StatusLight", {
+    component: createHtmlElement("div"),
+    displayName: "StatusLight",
+    category: "display",
+  });
+  registerComponent("InlineAlert", {
+    component: createHtmlElement("div"),
+    displayName: "InlineAlert",
+    category: "display",
+  });
+  registerComponent("Divider", {
+    component: Separator as ComponentType<Record<string, unknown>>,
+    displayName: "Divider",
+    category: "layout",
+  });
+  registerComponent("LinkButton", {
+    component: createHtmlElement("a"),
+    displayName: "LinkButton",
+    category: "input",
+  });
+  registerComponent("ContextualHelp", {
+    component: Button as ComponentType<Record<string, unknown>>,
+    displayName: "ContextualHelp",
+    category: "input",
+  });
+
+  // Phase 2: Action/Group (ADR-030)
+  registerComponent("ActionButton", {
+    component: Button as ComponentType<Record<string, unknown>>,
+    displayName: "ActionButton",
+    category: "input",
+  });
+  registerComponent("ActionButtonGroup", {
+    component: createHtmlElement("div"),
+    displayName: "ActionButtonGroup",
+    category: "input",
+  });
+  registerComponent("ButtonGroup", {
+    component: createHtmlElement("div"),
+    displayName: "ButtonGroup",
+    category: "input",
+  });
+  registerComponent("ActionMenu", {
+    component: Button as ComponentType<Record<string, unknown>>,
+    displayName: "ActionMenu",
+    category: "input",
+  });
+  registerComponent("Accordion", {
+    component: DisclosureGroup as ComponentType<Record<string, unknown>>,
+    displayName: "Accordion",
+    category: "layout",
+  });
+
+  // Phase 3: Extended Controls (ADR-030)
+  registerComponent("RangeSlider", {
+    component: createHtmlElement("div"),
+    displayName: "RangeSlider",
+    category: "input",
+  });
+  registerComponent("ProgressCircle", {
+    component: createHtmlElement("div"),
+    displayName: "ProgressCircle",
+    category: "display",
+  });
+  registerComponent("Image", {
+    component: createHtmlElement("img"),
+    displayName: "Image",
+    category: "display",
+  });
+  registerComponent("Picker", {
+    component: Select as ComponentType<Record<string, unknown>>,
+    displayName: "Picker",
+    category: "input",
+  });
+  registerComponent("RangeCalendar", {
+    component: RangeCalendar as ComponentType<Record<string, unknown>>,
+    displayName: "RangeCalendar",
+    category: "input",
+  });
+
+  // Phase 4: Advanced Components (ADR-030)
+  registerComponent("SegmentedControl", {
+    component: createHtmlElement("div"),
+    displayName: "SegmentedControl",
+    category: "input",
+  });
+  registerComponent("SegmentedControlItem", {
+    component: createHtmlElement("button"),
+    displayName: "SegmentedControlItem",
+    category: "input",
+  });
+  registerComponent("SelectBoxGroup", {
+    component: createHtmlElement("div"),
+    displayName: "SelectBoxGroup",
+    category: "input",
+  });
+  registerComponent("SelectBoxItem", {
+    component: createHtmlElement("div"),
+    displayName: "SelectBoxItem",
+    category: "input",
+  });
+  registerComponent("IllustratedMessage", {
+    component: createHtmlElement("div"),
+    displayName: "IllustratedMessage",
+    category: "display",
+  });
+  registerComponent("CardView", {
+    component: createHtmlElement("div"),
+    displayName: "CardView",
+    category: "layout",
+  });
+  registerComponent("TableView", {
+    component: createHtmlElement("div"),
+    displayName: "TableView",
+    category: "collection",
+  });
+
+  // Content Components (Card 등 복합 컴포넌트 자식)
+  registerComponent("Heading", {
+    component: createHeadingElement(),
+    displayName: "Heading",
+    category: "display",
+  });
+  registerComponent("Description", {
+    component: createHtmlElement("p"),
+    displayName: "Description",
+    category: "display",
+  });
+  registerComponent("CardHeader", {
+    component: createHtmlElementWithClass("div", "card-header"),
+    displayName: "CardHeader",
+    category: "layout",
+  });
+  registerComponent("CardContent", {
+    component: createHtmlElementWithClass("div", "card-content"),
+    displayName: "CardContent",
+    category: "layout",
+  });
+  registerComponent("CardPreview", {
+    component: createHtmlElementWithClass("div", "card-preview"),
+    displayName: "CardPreview",
+    category: "layout",
+  });
+  registerComponent("CardFooter", {
+    component: createHtmlElementWithClass("div", "card-footer"),
+    displayName: "CardFooter",
+    category: "layout",
   });
 
   // Overlay Components

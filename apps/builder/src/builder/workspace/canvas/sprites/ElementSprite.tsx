@@ -122,6 +122,22 @@ import {
   SelectIconSpec,
   TagSpec,
   IconSpec,
+  AvatarSpec,
+  AvatarGroupSpec,
+  StatusLightSpec,
+  InlineAlertSpec,
+  ContextualHelpSpec,
+  ActionButtonGroupSpec,
+  ButtonGroupSpec,
+  ProgressCircleSpec,
+  // ImageSpec removed — ImageSprite handles rendering directly
+  SegmentedControlSpec,
+  SegmentedControlItemSpec,
+  IllustratedMessageSpec,
+  CardViewSpec,
+  TableViewSpec,
+  SelectBoxGroupSpec,
+  SelectBoxItemSpec,
 } from "@xstudio/specs";
 import {
   PixiButton,
@@ -769,6 +785,30 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   ColorSwatchPicker: ColorSwatchPickerSpec,
   Group: GroupSpec,
   Slot: SlotSpec,
+  // Phase 1: Display/Feedback
+  Avatar: AvatarSpec,
+  AvatarGroup: AvatarGroupSpec,
+  StatusLight: StatusLightSpec,
+  InlineAlert: InlineAlertSpec,
+  LinkButton: ButtonSpec,
+  ContextualHelp: ContextualHelpSpec,
+  // Phase 2: Action/Group components (ADR-030)
+  ActionButton: ButtonSpec,
+  ActionButtonGroup: ActionButtonGroupSpec,
+  ButtonGroup: ButtonGroupSpec,
+  ActionMenu: ButtonSpec,
+  // Phase 3: Extended Controls (ADR-030)
+  ProgressCircle: ProgressCircleSpec,
+  // Image: ImageSprite handles rendering directly (not spec-based)
+  Picker: SelectSpec,
+  // Phase 4: Advanced Components (ADR-030)
+  SegmentedControl: SegmentedControlSpec,
+  SegmentedControlItem: SegmentedControlItemSpec,
+  IllustratedMessage: IllustratedMessageSpec,
+  CardView: CardViewSpec,
+  TableView: TableViewSpec,
+  SelectBoxGroup: SelectBoxGroupSpec,
+  SelectBoxItem: SelectBoxItemSpec,
   // child specs (compound 컴포넌트 하위 요소)
   Label: LabelSpec,
   FieldError: FieldErrorSpec,
@@ -1330,6 +1370,12 @@ export const ElementSprite = memo(function ElementSprite({
       "RadioGroup",
       "Switch",
       "Toggle",
+      // ProgressBar/Meter: spec shapes가 track+fill 렌더링 → 컨테이너 투명 필수
+      "ProgressBar",
+      "Progress",
+      "LoadingBar",
+      "Meter",
+      "Gauge",
     ]);
     const isTransparentContainer =
       isUIComponent && TRANSPARENT_CONTAINER_TAGS.has(tag);
@@ -1639,13 +1685,19 @@ export const ElementSprite = memo(function ElementSprite({
                   string,
                   unknown
                 >;
+                // spec shapes는 width/height를 숫자로 기대 — CSS 키워드/% 문자열은 pixel로 해석
+                const existingW = existingStyle.width;
+                const resolvedWidth =
+                  typeof existingW === "number"
+                    ? existingW
+                    : finalWidth > 0
+                      ? finalWidth
+                      : undefined;
                 specProps = {
                   ...specProps,
                   style: {
                     ...existingStyle,
-                    width:
-                      existingStyle.width ??
-                      (finalWidth > 0 ? finalWidth : undefined),
+                    width: resolvedWidth,
                     height:
                       existingStyle.height ??
                       (finalHeight > 0 ? finalHeight : undefined),
@@ -2006,6 +2058,7 @@ export const ElementSprite = memo(function ElementSprite({
   const hasOwnSprite =
     spriteType === "box" ||
     spriteType === "text" ||
+    spriteType === "image" ||
     spriteType === "flex" ||
     spriteType === "grid";
 

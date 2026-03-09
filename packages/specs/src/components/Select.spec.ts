@@ -7,18 +7,19 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Select Props
  */
 export interface SelectProps {
-  variant?: 'default' | 'accent' | 'negative';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent" | "negative";
+  size?: "S" | "M" | "L";
   label?: string;
   placeholder?: string;
+  name?: string;
   value?: string;
   selectedText?: string;
   description?: string;
@@ -26,6 +27,7 @@ export interface SelectProps {
   isOpen?: boolean;
   isDisabled?: boolean;
   isInvalid?: boolean;
+  isReadOnly?: boolean;
   isRequired?: boolean;
   /** 드롭다운 아이템 목록 */
   items?: string[];
@@ -41,37 +43,37 @@ export interface SelectProps {
  * Select Component Spec
  */
 export const SelectSpec: ComponentSpec<SelectProps> = {
-  name: 'Select',
-  description: 'React Aria 기반 드롭다운 셀렉트 컴포넌트',
-  element: 'div',
+  name: "Select",
+  description: "React Aria 기반 드롭다운 셀렉트 컴포넌트",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-2}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border-hover}' as TokenRef,
-      borderHover: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-2}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border-hover}" as TokenRef,
+      borderHover: "{color.accent}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-2}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border-hover}' as TokenRef,
-      borderHover: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-2}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border-hover}" as TokenRef,
+      borderHover: "{color.accent}" as TokenRef,
     },
     negative: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.negative-subtle}' as TokenRef,
-      backgroundPressed: '{color.negative-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.negative}' as TokenRef,
-      borderHover: '{color.negative-hover}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.negative-subtle}" as TokenRef,
+      backgroundPressed: "{color.negative-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.negative}" as TokenRef,
+      borderHover: "{color.negative-hover}" as TokenRef,
     },
   },
 
@@ -80,8 +82,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       height: 32,
       paddingX: 10,
       paddingY: 4,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 4,
     },
@@ -89,8 +91,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       height: 40,
       paddingX: 14,
       paddingY: 8,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 18,
       gap: 6,
     },
@@ -98,8 +100,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       height: 48,
       paddingX: 16,
       paddingY: 12,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 22,
       gap: 8,
     },
@@ -110,50 +112,61 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      cursor: 'not-allowed',
-      pointerEvents: 'none',
+      cursor: "not-allowed",
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       const width = (props.style?.width as number) || 200;
       const chevronSize = size.iconSize ?? 18;
 
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius as unknown as number;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : (size.borderRadius as unknown as number);
 
-      const bgColor = props.style?.backgroundColor
-                    ?? (state === 'hover' ? variant.backgroundHover
-                    : state === 'pressed' ? variant.backgroundPressed
-                    : variant.background);
+      const bgColor =
+        props.style?.backgroundColor ??
+        (state === "hover"
+          ? variant.backgroundHover
+          : state === "pressed"
+            ? variant.backgroundPressed
+            : variant.background);
 
-      const borderColor = props.style?.borderColor
-                        ?? ((state === 'hover' && variant.borderHover)
-                            ? variant.borderHover
-                            : variant.border);
+      const borderColor =
+        props.style?.borderColor ??
+        (state === "hover" && variant.borderHover
+          ? variant.borderHover
+          : variant.border);
 
       const styleBw = props.style?.borderWidth;
       const defaultBw = props.isInvalid ? 2 : 1;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : defaultBw;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : defaultBw;
 
       // size.fontSize는 TokenRef 문자열('{typography.text-md}')일 수 있으므로
       // resolveToken으로 숫자 변환 후 산술 연산에 사용
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 14;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
 
       // CSS 정합성: React-Aria Select 실제 렌더링 기준
       // .react-aria-Label: fontSize=14, lineHeight=1.5 → height=21
@@ -166,21 +179,30 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
       const triggerY = props.label ? labelOffset : 0;
 
       const fwRaw = props.style?.fontWeight;
-      const fontWeight = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
-        : 500;
+      const fontWeight =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 500
+          : 500;
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const textColor = props.style?.color
-                      ?? variant.text;
+      const textColor = props.style?.color ?? variant.text;
 
-      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
-      const paddingX = stylePx != null
-        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
-        : size.paddingX;
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
 
       const shapes: Shape[] = [];
       // Compositional Architecture: 자식 Element가 있으면
@@ -192,7 +214,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         // fallback: 자식이 없는 레거시 데이터 → 전체 렌더링
         if (props.label) {
           shapes.push({
-            type: 'text' as const,
+            type: "text" as const,
             x: 0,
             y: 0,
             text: props.label,
@@ -201,13 +223,13 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             fontWeight,
             fill: textColor,
             align: textAlign,
-            baseline: 'top' as const,
+            baseline: "top" as const,
           });
         }
 
         shapes.push({
-          id: 'trigger',
-          type: 'roundRect' as const,
+          id: "trigger",
+          type: "roundRect" as const,
           x: 0,
           y: triggerY,
           width,
@@ -218,86 +240,96 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
         if (borderColor) {
           shapes.push({
-            type: 'border' as const,
-            target: 'trigger',
+            type: "border" as const,
+            target: "trigger",
             borderWidth,
-            color: props.isInvalid ? ('{color.negative}' as TokenRef) : borderColor,
+            color: props.isInvalid
+              ? ("{color.negative}" as TokenRef)
+              : borderColor,
             radius: borderRadius,
           });
         }
 
-        const displayText = props.selectedText || props.value || props.placeholder || '';
+        const displayText =
+          props.selectedText || props.value || props.placeholder || "";
         if (displayText) {
           shapes.push({
-            type: 'text' as const,
+            type: "text" as const,
             x: paddingX,
             y: triggerY + triggerHeight / 2,
             text: displayText,
             fontSize,
             fontFamily: ff,
-            fill: (props.selectedText || props.value)
-              ? textColor
-              : ('{color.neutral-subdued}' as TokenRef),
+            fill:
+              props.selectedText || props.value
+                ? textColor
+                : ("{color.neutral-subdued}" as TokenRef),
             align: textAlign,
-            baseline: 'middle' as const,
+            baseline: "middle" as const,
           });
         }
 
         const chevX = width - paddingX - chevronSize / 2;
         const chevY = triggerY + triggerHeight / 2;
         shapes.push({
-          type: 'icon_font' as const,
-          iconName: 'chevron-down',
+          type: "icon_font" as const,
+          iconName: "chevron-down",
           x: chevX,
           y: chevY,
           fontSize: chevronSize,
-          fill: '{color.neutral-subdued}' as TokenRef,
+          fill: "{color.neutral-subdued}" as TokenRef,
           strokeWidth: 2,
         });
       }
 
       // 드롭다운 패널 (열린 상태) — hasChildren 여부와 무관하게 렌더링
       if (props.isOpen) {
-        const dropdownItems = props.items ?? ['Option 1', 'Option 2', 'Option 3'];
+        const dropdownItems = props.items ?? [
+          "Option 1",
+          "Option 2",
+          "Option 3",
+        ];
         const itemH = 36;
         const dropdownPaddingY = 4;
-        const dropdownHeight = dropdownItems.length * itemH + dropdownPaddingY * 2;
+        const dropdownHeight =
+          dropdownItems.length * itemH + dropdownPaddingY * 2;
         const dropdownY = triggerY + triggerHeight + 4;
 
         shapes.push({
-          type: 'shadow' as const,
-          target: 'dropdown',
+          type: "shadow" as const,
+          target: "dropdown",
           offsetX: 0,
           offsetY: 4,
           blur: 8,
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: "rgba(0, 0, 0, 0.1)",
           alpha: 0.1,
         });
         shapes.push({
-          id: 'dropdown',
-          type: 'roundRect' as const,
+          id: "dropdown",
+          type: "roundRect" as const,
           x: 0,
           y: dropdownY,
           width,
           height: dropdownHeight,
           radius: borderRadius,
-          fill: '{color.layer-2}' as TokenRef,
+          fill: "{color.layer-2}" as TokenRef,
         });
         shapes.push({
-          type: 'border' as const,
-          target: 'dropdown',
+          type: "border" as const,
+          target: "dropdown",
           borderWidth: 1,
-          color: '{color.border}' as TokenRef,
+          color: "{color.border}" as TokenRef,
           radius: borderRadius,
         });
 
         // 드롭다운 아이템 렌더링
-        const selectedIdx = props.selectedIndex
-          ?? (props.value != null
-              ? dropdownItems.indexOf(props.value)
-              : props.selectedText != null
-                ? dropdownItems.indexOf(props.selectedText)
-                : -1);
+        const selectedIdx =
+          props.selectedIndex ??
+          (props.value != null
+            ? dropdownItems.indexOf(props.value)
+            : props.selectedText != null
+              ? dropdownItems.indexOf(props.selectedText)
+              : -1);
 
         dropdownItems.forEach((item, i) => {
           const itemY = dropdownY + dropdownPaddingY + i * itemH;
@@ -306,19 +338,19 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           // 선택된 아이템 하이라이트 배경
           if (isSelected) {
             shapes.push({
-              type: 'roundRect' as const,
+              type: "roundRect" as const,
               x: 4,
               y: itemY + 2,
               width: width - 8,
               height: itemH - 4,
               radius: borderRadius,
-              fill: '{color.accent-subtle}' as TokenRef,
+              fill: "{color.accent-subtle}" as TokenRef,
             });
           }
 
           // 아이템 텍스트
           shapes.push({
-            type: 'text' as const,
+            type: "text" as const,
             x: paddingX,
             y: itemY + itemH / 2,
             text: String(item),
@@ -326,31 +358,40 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             fontFamily: ff,
             fontWeight: isSelected ? 600 : 400,
             fill: isSelected
-              ? ('{color.neutral}' as TokenRef)
-              : ('{color.neutral}' as TokenRef),
+              ? ("{color.neutral}" as TokenRef)
+              : ("{color.neutral}" as TokenRef),
             align: textAlign,
-            baseline: 'middle' as const,
+            baseline: "middle" as const,
           });
         });
       }
 
       // 설명 / 에러 메시지
-      const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
+      const descText =
+        props.isInvalid && props.errorMessage
+          ? props.errorMessage
+          : props.description;
       if (descText) {
         const descY = props.isOpen
-          ? triggerY + triggerHeight + 4
-              + (props.items ?? ['Option 1', 'Option 2', 'Option 3']).length * 36 + 8 + 4
+          ? triggerY +
+            triggerHeight +
+            4 +
+            (props.items ?? ["Option 1", "Option 2", "Option 3"]).length * 36 +
+            8 +
+            4
           : triggerY + triggerHeight + 4;
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: 0,
           y: descY,
           text: descText,
           fontSize: fontSize - 2,
           fontFamily: ff,
-          fill: props.isInvalid ? ('{color.negative}' as TokenRef) : ('{color.neutral-subdued}' as TokenRef),
+          fill: props.isInvalid
+            ? ("{color.negative}" as TokenRef)
+            : ("{color.neutral-subdued}" as TokenRef),
           align: textAlign,
-          baseline: 'top' as const,
+          baseline: "top" as const,
         });
       }
 
@@ -358,15 +399,15 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
     },
 
     react: (props) => ({
-      'data-open': props.isOpen || undefined,
-      'data-invalid': props.isInvalid || undefined,
-      'data-disabled': props.isDisabled || undefined,
-      'data-required': props.isRequired || undefined,
+      "data-open": props.isOpen || undefined,
+      "data-invalid": props.isInvalid || undefined,
+      "data-disabled": props.isDisabled || undefined,
+      "data-required": props.isRequired || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: 'static' as const,
-      cursor: props.isDisabled ? 'not-allowed' : 'pointer',
+      eventMode: "static" as const,
+      cursor: props.isDisabled ? "not-allowed" : "pointer",
     }),
   },
 };

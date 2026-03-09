@@ -618,16 +618,22 @@ export function specShapesToSkia(
         // baseline='top' → paddingTop = y (already)
 
         // Calculate paddingLeft based on align
-        const paddingLeft = shape.x;
+        // align="right" + x>0: x는 우측 경계 → paddingLeft=0, maxWidth=x
+        // align="left"/"center" + x>0: x는 좌측 오프셋 → paddingLeft=x
+        let paddingLeft = shape.x;
         let maxWidth = shape.maxWidth ?? containerWidth;
 
-        // Auto-reduce maxWidth when text has padding offset (shape.x > 0) and no explicit maxWidth
-        if (shape.x > 0 && shape.maxWidth == null) {
+        if (shape.align === "right" && shape.x > 0 && shape.maxWidth == null) {
+          // Right-aligned: x는 텍스트 우측 끝 위치 → [0, x] 영역 내 우측 정렬
+          paddingLeft = 0;
+          maxWidth = shape.x;
+        } else if (shape.x > 0 && shape.maxWidth == null) {
+          // Auto-reduce maxWidth when text has padding offset
           if (shape.align === "center") {
             // Center-aligned: symmetric padding (subtract from both sides)
             maxWidth = containerWidth - shape.x * 2;
           } else {
-            // Left/right-aligned: subtract left padding only
+            // Left-aligned: subtract left padding only
             maxWidth = containerWidth - shape.x;
           }
           // Clamp to prevent negative maxWidth when container is smaller than padding

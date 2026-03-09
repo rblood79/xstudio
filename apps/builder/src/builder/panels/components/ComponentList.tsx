@@ -44,6 +44,16 @@ import {
   Loader,
   Upload,
   FileUp,
+  CircleUser,
+  Users,
+  CircleDot,
+  AlertTriangle,
+  Minus,
+  ExternalLink,
+  HelpCircle,
+  CircleDashed,
+  ImageIcon,
+  ChevronsUpDown,
 } from "lucide-react";
 import { PanelHeader } from "../../components";
 import { useEditModeStore } from "../../stores/editMode";
@@ -70,6 +80,14 @@ const contentComp = [
   { tag: "ProgressBar", label: "progress bar", icon: BarChart3 },
   { tag: "Meter", label: "meter", icon: Gauge },
   { tag: "Skeleton", label: "skeleton", icon: Loader },
+  { tag: "Avatar", label: "avatar", icon: CircleUser },
+  { tag: "AvatarGroup", label: "avatar group", icon: Users },
+  { tag: "StatusLight", label: "status light", icon: CircleDot },
+  { tag: "InlineAlert", label: "inline alert", icon: AlertTriangle },
+  { tag: "Divider", label: "divider", icon: Minus },
+  { tag: "ProgressCircle", label: "progress circle", icon: CircleDashed },
+  { tag: "Image", label: "image", icon: ImageIcon },
+  { tag: "IllustratedMessage", label: "illustrated message", icon: ImageIcon },
 ] as const;
 
 const layoutComp = [
@@ -82,6 +100,8 @@ const layoutComp = [
   { tag: "Nav", label: "navigation", icon: Menu },
   { tag: "ScrollBox", label: "scroll box", icon: ScrollText },
   { tag: "MaskedFrame", label: "masked frame", icon: Frame },
+  { tag: "Accordion", label: "accordion", icon: ChevronDown },
+  { tag: "CardView", label: "card view", icon: Grid },
   { tag: "Slot", label: "slot", icon: Layers, layoutOnly: true },
 ] as const;
 
@@ -90,6 +110,14 @@ const buttonsComp = [
   { tag: "ToggleButton", label: "toggle button", icon: ToggleLeft },
   { tag: "ToggleButtonGroup", label: "toggle button group", icon: GroupIcon },
   { tag: "Toolbar", label: "toolbar", icon: Settings },
+  { tag: "LinkButton", label: "link button", icon: ExternalLink },
+  { tag: "ContextualHelp", label: "contextual help", icon: HelpCircle },
+  { tag: "ActionButton", label: "action button", icon: MousePointer },
+  { tag: "ActionButtonGroup", label: "action button group", icon: GroupIcon },
+  { tag: "ButtonGroup", label: "button group", icon: GroupIcon },
+  { tag: "ActionMenu", label: "action menu", icon: Menu },
+  { tag: "SegmentedControl", label: "segmented control", icon: ToggleLeft },
+  { tag: "SelectBoxGroup", label: "select box group", icon: GroupIcon },
 ] as const;
 
 const formsComp = [
@@ -103,6 +131,8 @@ const formsComp = [
   { tag: "ComboBox", label: "combo box", icon: ChevronDown },
   { tag: "Switch", label: "switch", icon: ToggleRight },
   { tag: "Slider", label: "slider", icon: SlidersHorizontal },
+  { tag: "RangeSlider", label: "range slider", icon: SlidersHorizontal },
+  { tag: "Picker", label: "picker", icon: ChevronsUpDown },
   { tag: "TailSwatch", label: "color picker", icon: Paintbrush },
   { tag: "DropZone", label: "drop zone", icon: Upload },
   { tag: "FileTrigger", label: "file trigger", icon: FileUp },
@@ -118,6 +148,7 @@ const collectionsComp = [
   { tag: "TagGroup", label: "tag group", icon: Tag },
   { tag: "Menu", label: "menu", icon: Menu },
   { tag: "Section", label: "section", icon: Square },
+  { tag: "TableView", label: "table view", icon: TableProperties },
 ] as const;
 
 const dateTimeComp = [
@@ -126,6 +157,7 @@ const dateTimeComp = [
   { tag: "DateRangePicker", label: "date range picker", icon: CalendarDays },
   { tag: "DateField", label: "date field", icon: CalendarCheck },
   { tag: "TimeField", label: "time field", icon: ChevronDown },
+  { tag: "RangeCalendar", label: "range calendar", icon: CalendarDays },
 ] as const;
 
 const overlaysComp = [

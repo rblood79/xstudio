@@ -7,7 +7,7 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
  * Tabs 컴포넌트 정의
  */
 export function createTabsDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -114,7 +114,7 @@ export function createTabsDefinition(
  * → 더블클릭으로 자식 선택, 레이어 트리에서 계층 구조 확인 가능
  */
 export function createCardDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -130,8 +130,8 @@ export function createCardDefinition(
     parent: {
       tag: "Card",
       props: {
-        variant: "default",
-        size: "M",
+        variant: "primary",
+        size: "md",
         orientation: "vertical",
         title: "Card Title",
         description: "Card description text goes here.",
@@ -150,6 +150,36 @@ export function createCardDefinition(
     },
     children: [
       {
+        tag: "CardPreview",
+        props: {
+          style: {
+            display: "flex",
+            width: "100%",
+            height: "fit-content",
+            overflow: "hidden",
+            borderRadius: "8px 8px 0 0",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+        children: [
+          {
+            tag: "Image",
+            props: {
+              src: "https://placehold.co/600x340/e2e8f0/64748b?text=Preview",
+              alt: "Card preview",
+              style: {
+                width: "100%",
+                height: 200,
+                objectFit: "cover",
+              },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
+      },
+      {
         tag: "CardHeader",
         props: {
           style: {
@@ -161,7 +191,7 @@ export function createCardDefinition(
           },
         } as ComponentElementProps,
         ...ownerFields,
-        order_num: 1,
+        order_num: 2,
         children: [
           {
             tag: "Heading",
@@ -194,7 +224,7 @@ export function createCardDefinition(
           },
         } as ComponentElementProps,
         ...ownerFields,
-        order_num: 2,
+        order_num: 3,
         children: [
           {
             tag: "Description",
@@ -213,6 +243,22 @@ export function createCardDefinition(
           },
         ],
       },
+      {
+        tag: "CardFooter",
+        props: {
+          style: {
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: "8px",
+            width: "100%",
+            paddingTop: "8px",
+            borderTopWidth: "1px",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 4,
+      },
     ],
   };
 }
@@ -221,7 +267,7 @@ export function createCardDefinition(
  * Tree 컴포넌트 정의
  */
 export function createTreeDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;

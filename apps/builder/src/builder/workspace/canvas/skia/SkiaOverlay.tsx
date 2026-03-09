@@ -1765,6 +1765,8 @@ export function SkiaOverlay({
 
     const unregister = registerImageLoadCallback(() => {
       rendererRef.current?.invalidateContent();
+      // 이미지 로드 완료 시 레이아웃도 재계산 (fit-content/auto 사이징용)
+      useStore.getState().invalidateLayout();
     });
 
     return unregister;

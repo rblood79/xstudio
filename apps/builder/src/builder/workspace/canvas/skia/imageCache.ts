@@ -12,8 +12,8 @@
  * @see docs/RENDERING_ARCHITECTURE.md §5.11 이미지 렌더링
  */
 
-import type { CanvasKit, Image as SkImage } from 'canvaskit-wasm';
-import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
+import type { CanvasKit, Image as SkImage } from "canvaskit-wasm";
+import { isCanvasKitInitialized, getCanvasKit } from "./initCanvasKit";
 
 // ============================================
 // 재렌더 트리거 콜백 레지스트리
@@ -52,6 +52,49 @@ interface CacheEntry {
   refCount: number;
   /** 마지막 접근 시각 (LRU 퇴거용) */
   lastAccess: number;
+}
+
+// ============================================
+// 이미지 자연 치수 캐시 (레이아웃 엔진용)
+// ============================================
+
+export interface ImageNaturalDimensions {
+  width: number;
+  height: number;
+}
+
+/** URL → 자연 치수 캐시 (이미지 로드 후 동기적 조회용)
+ * HMR-resilient: window 전역에 저장하여 모듈 리로드 시에도 유지 */
+const dimensionsCache: Map<string, ImageNaturalDimensions> =
+  ((globalThis as Record<string, unknown>).__xstudio_imageDimsCache as Map<
+    string,
+    ImageNaturalDimensions
+  >) ??
+  ((globalThis as Record<string, unknown>).__xstudio_imageDimsCache = new Map<
+    string,
+    ImageNaturalDimensions
+  >());
+
+/**
+ * 이미지의 자연 치수를 동기적으로 조회한다.
+ * 레이아웃 엔진에서 fit-content/auto 사이징에 사용.
+ * dimensionsCache에 없으면 CanvasKit cache에서 복구 시도.
+ */
+export function getImageNaturalDimensions(
+  url: string,
+): ImageNaturalDimensions | null {
+  const cached = dimensionsCache.get(url);
+  if (cached) return cached;
+
+  // CanvasKit cache에 이미지가 있으면 거기서 dimensions 복구
+  const entry = cache.get(url);
+  if (entry) {
+    const dims = { width: entry.image.width(), height: entry.image.height() };
+    dimensionsCache.set(url, dims);
+    return dims;
+  }
+
+  return null;
 }
 
 /** URL → CanvasKit Image 캐시 */
@@ -118,6 +161,11 @@ export async function loadSkImage(url: string): Promise<SkImage | null> {
         evictLRU();
       }
       cache.set(url, { image, refCount: 1, lastAccess: performance.now() });
+      // 자연 치수 캐시 저장 (레이아웃 엔진 fit-content/auto용)
+      dimensionsCache.set(url, {
+        width: image.width(),
+        height: image.height(),
+      });
       // 이미지 로딩 완료 → Canvas 재렌더 트리거 (specShapeConverter 연동)
       notifyImageLoaded();
     }
@@ -163,6 +211,7 @@ export function clearImageCache(): void {
   }
   cache.clear();
   pending.clear();
+  dimensionsCache.clear();
 }
 
 /** 캐시 크기 (디버그용) */
@@ -207,8 +256,8 @@ async function fetchAndDecode(url: string): Promise<SkImage | null> {
 
     // CORS 모드: 외부 이미지(CDN, 사용자 업로드)도 로드 가능하도록 설정
     const response = await fetch(url, {
-      mode: 'cors',
-      credentials: 'same-origin',
+      mode: "cors",
+      credentials: "same-origin",
     });
     if (!response.ok) {
       console.warn(`[imageCache] Fetch failed: ${url} (${response.status})`);

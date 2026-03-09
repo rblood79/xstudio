@@ -7,16 +7,17 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { resolveStateColors } from '../utils/stateEffect';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { resolveStateColors } from "../utils/stateEffect";
 
 /**
  * Dialog Props
  */
 export interface DialogProps {
-  variant?: 'accent' | 'negative';
-  size?: 'S' | 'M' | 'L';
+  variant?: "accent" | "negative";
+  size?: "S" | "M" | "L";
   title?: string;
+  isDismissible?: boolean;
 }
 
 /**
@@ -27,35 +28,35 @@ export interface DialogProps {
  * Modal 내부에서 사용 — Modal이 backdrop과 focus management 담당
  */
 export const DialogSpec: ComponentSpec<DialogProps> = {
-  name: 'Dialog',
-  description: 'React Aria 기반 다이얼로그 컴포넌트',
-  element: 'div',
+  name: "Dialog",
+  description: "React Aria 기반 다이얼로그 컴포넌트",
+  element: "div",
 
-  defaultVariant: 'accent',
-  defaultSize: 'M',
+  defaultVariant: "accent",
+  defaultSize: "M",
 
   overlay: {
     usePortal: true,
-    type: 'modal',
+    type: "modal",
     hasBackdrop: true,
     closeOnBackdropClick: true,
     closeOnEscape: true,
     trapFocus: true,
-    pixiLayer: 'modal',
+    pixiLayer: "modal",
   },
 
   variants: {
     accent: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
     negative: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.negative}' as TokenRef,
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.negative}" as TokenRef,
     },
   },
 
@@ -64,24 +65,24 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
       height: 0,
       paddingX: 16,
       paddingY: 16,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 16,
     },
     md: {
       height: 0,
       paddingX: 24,
       paddingY: 24,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.xl}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
       gap: 20,
     },
     lg: {
       height: 0,
       paddingX: 32,
       paddingY: 32,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.xl}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
       gap: 24,
     },
   },
@@ -89,7 +90,7 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
       const borderRadius = size.borderRadius;
@@ -97,33 +98,33 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
       const shapes: Shape[] = [
         // Phase F: Backdrop (반투명 배경 오버레이)
         {
-          type: 'rect' as const,
+          type: "rect" as const,
           x: -9999,
           y: -9999,
           width: 99999,
           height: 99999,
-          fill: 'rgba(0, 0, 0, 0.5)' as unknown as TokenRef,
+          fill: "rgba(0, 0, 0, 0.5)" as unknown as TokenRef,
           fillAlpha: 0.5,
         },
         // Shadow
         {
-          type: 'shadow' as const,
-          target: 'bg',
+          type: "shadow" as const,
+          target: "bg",
           offsetX: 0,
           offsetY: 8,
           blur: 24,
           spread: 0,
-          color: 'rgba(0, 0, 0, 0.2)',
+          color: "rgba(0, 0, 0, 0.2)",
           alpha: 0.2,
         },
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
-          width: 'auto',
-          height: 'auto',
+          width: "auto",
+          height: "auto",
           radius: borderRadius as unknown as number,
           fill: resolveStateColors(variant, state).background,
         },
@@ -132,15 +133,15 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
 
       // 콘텐츠 컨테이너 (standalone 전용)
       shapes.push({
-        type: 'container' as const,
+        type: "container" as const,
         x: 0,
         y: 0,
-        width: 'auto',
-        height: 'auto',
+        width: "auto",
+        height: "auto",
         children: [],
         layout: {
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           gap: size.gap,
           padding: size.paddingY,
         },
@@ -150,13 +151,13 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
     },
 
     react: (props) => ({
-      role: 'dialog',
-      'aria-modal': true,
-      'aria-label': props.title,
+      role: "dialog",
+      "aria-modal": true,
+      "aria-label": props.title,
     }),
 
     pixi: () => ({
-      eventMode: 'static' as const,
+      eventMode: "static" as const,
     }),
   },
 };

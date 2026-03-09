@@ -1,15 +1,15 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-09 (ADR-021 Phase E 완료 + ADR-024 Superseded + ADR-030 Phase 0 완료)
+> **최종 업데이트**: 2026-03-09 (ADR-031 Card S2 마이그레이션 Phase 1~3 완료)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 18     |
+| 완료 (Accepted/Implemented/Superseded) | 20     |
 | 부분 완료                              | 6      |
-| 미구현 (Proposed/계획)                 | 6      |
-| **합계**                               | **30** |
+| 미구현 (Proposed/계획)                 | 5      |
+| **합계**                               | **31** |
 
 ---
 
@@ -37,6 +37,8 @@
 | [024](completed/024-s2-css-variable-migration.md)     | CSS 변수명 S2 체계 전환            | Superseded  | 2026-03-09 | ADR-022/028/029에서 `--bg`/`--fg`/`--accent`/`--border` 4축 체계로 전환 완료   |
 | [029](completed/029-builder-css-dead-code-cleanup.md) | Builder CSS Dead Code 정리         |  Complete   | 2026-03-07 | Phase 1-3 완료 (유령변수 138건 치환 + dead code 24건 + 모놀리식 CSS 분리)      |
 | [021](completed/021-theme-system-redesign.md)         | 테마 시스템 개편 — Tint + Tailwind |  Accepted   | 2026-03-09 | Phase A+B+C+D+E 전체 완료 (Radix accent 오버라이드 포함)                       |
+| [030](completed/030-s2-spectrum-only-components.md)   | S2 전용 컴포넌트 마이그레이션      | Implemented | 2026-03-09 | Phase 0~4 전체 완료 (22개 컴포넌트 + 23 Property Editor + metadata 통합)       |
+| [031](031-card-s2-migration.md)                       | Card S2 마이그레이션               | Implemented | 2026-03-09 | Phase 1~3 완료 (Variant 통일 + CardPreview/Footer + cardType 변형)             |
 
 ### 부분 완료
 
@@ -54,13 +56,12 @@
 
 ### 미구현
 
-| ADR                                       | 제목                                               | 상태     | 규모                                                                                     | 우선순위 |
-| ----------------------------------------- | -------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------- | :------: |
-| [030](030-s2-spectrum-only-components.md) | React Spectrum S2 전용 컴포넌트 WebGL 마이그레이션 | Proposed | 4 Phase, 22개 컴포넌트 — Phase 0 완료, Phase 1부터 실제 구현                             |  **P2**  |
-| [013](013-quick-connect-data-binding.md)  | Quick Connect 데이터 바인딩                        | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                          |  **P3**  |
-| [020](020-design-kit-improvement.md)      | Design Kit 패널 분석 및 개선                       | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수 |    P4    |
-| [015](015-sitemap-layout.md)              | Sitemap Hierarchy 워크플로우 엣지                  | Proposed | 변경 대상 8파일, 코드 미생성                                                             |    P5    |
-| [016](016-photoshop-ui-ux.md)             | Photoshop 벤치마크 기반 UI/UX (v2)                 | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                   |    P5    |
+| ADR                                      | 제목                               | 상태     | 규모                                                                                     | 우선순위 |
+| ---------------------------------------- | ---------------------------------- | -------- | ---------------------------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md) | Quick Connect 데이터 바인딩        | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                          |  **P3**  |
+| [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선       | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수 |    P4    |
+| [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                                                             |    P5    |
+| [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                   |    P5    |
 
 ---
 
@@ -84,8 +85,9 @@
 | ~~14~~ | ~~ADR-019 Phase C2+C4~~ | ~~아이콘 시스템 — C2 simple element 확인 + C4 SelectIcon/ComboBox 연동 + C5 ComboBoxEditor IconPicker~~ |  소  | **완료** |
 | ~~15~~ | ~~ADR-030 Phase 0-1~~   | ~~Factory 누락 13개 컴포넌트 — 중앙 defaultPropsMap 통합 + ComponentList 등록~~                         |  소  | **완료** |
 | ~~16~~ | ~~ADR-021 Phase E~~     | ~~테마 시스템 — 컴포넌트별 accent 오버라이드 (Radix data-accent 패턴)~~                                 |  소  | **완료** |
-|   17   | ADR-030 Phase 1+        | S2 전용 컴포넌트 마이그레이션 — Phase 0 완료, Phase 1부터 실제 구현 (22개 컴포넌트)                     |  대  |          |
-|   18   | ADR-013                 | Quick Connect 데이터 바인딩 — 컴포넌트 체계 확정(030) 후 바인딩 연결 (5 Phase, 21파일)                  |  대  |          |
+| ~~17~~ | ~~ADR-030 Phase 1-4~~   | ~~S2 전용 컴포넌트 마이그레이션 — Phase 0~4 전체 완료 (22개 컴포넌트 + 23 Property Editor + metadata)~~ |  대  | **완료** |
+| ~~18~~ | ~~ADR-031~~             | ~~Card S2 마이그레이션 — Variant 통일 + CardPreview/Footer + cardType 변형 (3 Phase 완료)~~             |  중  | **완료** |
+|   19   | ADR-013                 | Quick Connect 데이터 바인딩 — 컴포넌트 체계 확정(030) 후 바인딩 연결 (5 Phase, 21파일)                  |  대  |          |
 
 ---
 
@@ -99,8 +101,9 @@
 
 - ~~**ADR-027**: Canvas Inline Text Editing — Phase A+B+C 완료~~
 - ~~**ADR-019**: Icon 시스템 — Phase A+B+C+D 완료 (C2 simple element 확인, C4+C5 Spec 연동)~~
-- **ADR-030**: React Spectrum S2 전용 컴포넌트 마이그레이션 — Phase 0 완료, Phase 1부터 실제 구현
-- **근거**: 컴포넌트 체계가 확정되어야 데이터 바인딩(013) 재작업 없이 진행 가능
+- ~~**ADR-030**: React Spectrum S2 전용 컴포넌트 마이그레이션~~ — Phase 0~4 전체 완료 (22개 컴포넌트, 23 Property Editor, metadata 통합)
+- ~~**ADR-031**: Card S2 마이그레이션~~ — Phase 1~3 완료 (Variant 통일 + CardPreview/Footer + cardType 변형)
+- **근거**: Card variant 불일치 버그 해소 완료, 컴포넌트 체계가 확정되어 데이터 바인딩(013) 진행 가능
 
 ### P3: ADR-013 데이터 바인딩
 
@@ -231,3 +234,4 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-09 | **ADR-024 Superseded** — 코드 대조 결과 ADR-022/028/029에서 구 변수(`--highlight-background` 등) → 새 4축 체계(`--bg`/`--fg`/`--accent`/`--border`) 전환 이미 완료 확인. `--s2-` 접두사 방식은 미채택. 잔존 구 변수 3건은 React Aria Checkbox 내부 로컬 변수(변경 불가). 미구현→완료 이동, 현황 카운트 갱신 (완료 17, 미구현 6). **ADR-030 Phase 0 완료** — G0-2(S2 Props 렌더러 전달) + G0-4(Factory `name` 기본값) + G0-5(Toast/Pagination 렌더러 추가) 구현. G0-3(이벤트) 스킵 (이벤트 엔진 미성숙으로 리스크 없음)                                                                                                                                                                                                                                                              |
 | 2026-03-09 | **ADR 디렉토리 정리** — 완료된 ADR 19건(17건 완료 + audit report + text-edit overlay)을 `completed/` 하위 디렉토리로 이동. 루트에는 진행 중/미구현 ADR만 유지. README.md 링크 갱신. **컴포넌트 패널 카테고리 재구성** — React Aria/Spectrum 공식 분류 기준 + 실용적 병합으로 9개→7개 카테고리 (Content, Layout, Buttons, Forms, Collections, Date&Time, Overlays). metadata.ts 카테고리명 동기화. Div(division) 제거, Group은 Layout에 배치                                                                                                                                                                                                                                                                                                                                         |
 | 2026-03-09 | **ADR-021 Phase E 완료** — Radix Themes `color` prop 패턴 도입. CSS `[data-accent]` 10개 규칙 + Preview 7개 컨테이너 렌더러 + Publish ElementRenderer `data-accent` 속성 + Skia `withAccentOverride()` 동기 mutation 패턴 + ElementSprite 부모 체인 accent 탐색 + PanelEditor/CardEditor "Accent Color" PropertySelect UI. ADR-021 부분완료→완료 승격 (완료 18, 부분완료 6)                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 2026-03-09 | **ADR-030 Phase 0~4 전체 완료 (Implemented)** — 22개 S2 전용 컴포넌트 구현 완료. 23개 Property Editor 생성, 23개 ComponentMeta(metadata.ts) 등록. Spec Props 보강 3건(SegmentedControl isJustified, CardView variant/selectionMode/selectionStyle, TableView selectionMode). SelectBoxGroup/SelectBoxItem 전체 통합 (Spec+Factory+Renderer+Publish+TAG_SPEC_MAP+COMPLEX_COMPONENT_TAGS). RangeCalendar Publish 누락 수정. 미구현→완료 이동 (완료 19, 미구현 5)                                                                                                                                                                                                                                                                                                                      |

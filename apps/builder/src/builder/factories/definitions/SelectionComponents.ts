@@ -26,7 +26,10 @@ export function createSelectDefinition(
         name: "",
         placeholder: "Choose an option...",
         selectedKey: undefined,
+        isDisabled: false,
         isInvalid: false,
+        isReadOnly: false,
+        isRequired: false,
         style: {
           display: "flex",
           flexDirection: "column",
@@ -119,7 +122,10 @@ export function createComboBoxDefinition(
         inputValue: "",
         allowsCustomValue: true,
         selectedKey: undefined,
+        isDisabled: false,
         isInvalid: false,
+        isReadOnly: false,
+        isRequired: false,
         style: {
           display: "flex",
           flexDirection: "column",

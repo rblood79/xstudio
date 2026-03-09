@@ -41,9 +41,12 @@ export const METER_DIMENSIONS: Record<
   string,
   { barHeight: number; width: number }
 > = {
-  S: { barHeight: 6, width: 200 },
+  S: { barHeight: 4, width: 200 },
+  sm: { barHeight: 4, width: 200 },
   M: { barHeight: 8, width: 240 },
+  md: { barHeight: 8, width: 240 },
   L: { barHeight: 12, width: 320 },
+  lg: { barHeight: 12, width: 320 },
 };
 
 /**
@@ -86,7 +89,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
 
   sizes: {
     sm: {
-      height: 6,
+      height: 4,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,

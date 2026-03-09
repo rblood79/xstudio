@@ -313,3 +313,78 @@ export type { DateSegmentProps, DateSegmentType } from "./DateSegment.spec";
 // Icon (ADR-019)
 export { IconSpec } from "./Icon.spec";
 export type { IconProps } from "./Icon.spec";
+
+// Avatar
+export { AvatarSpec } from "./Avatar.spec";
+export type { AvatarProps } from "./Avatar.spec";
+
+// AvatarGroup
+export { AvatarGroupSpec } from "./AvatarGroup.spec";
+export type { AvatarGroupProps } from "./AvatarGroup.spec";
+
+// StatusLight
+export { StatusLightSpec } from "./StatusLight.spec";
+export type { StatusLightProps } from "./StatusLight.spec";
+
+// InlineAlert
+export { InlineAlertSpec } from "./InlineAlert.spec";
+export type { InlineAlertProps } from "./InlineAlert.spec";
+
+// ContextualHelp
+export { ContextualHelpSpec } from "./ContextualHelp.spec";
+export type { ContextualHelpProps } from "./ContextualHelp.spec";
+
+// ActionButtonGroup
+export { ActionButtonGroupSpec } from "./ActionButtonGroup.spec";
+export type { ActionButtonGroupProps } from "./ActionButtonGroup.spec";
+
+// ButtonGroup
+export { ButtonGroupSpec } from "./ButtonGroup.spec";
+export type { ButtonGroupProps } from "./ButtonGroup.spec";
+
+// ─── Phase 3: ADR-030 Extended Controls ──────────────────────────────────────
+
+// ProgressCircle
+export {
+  ProgressCircleSpec,
+  PROGRESSCIRCLE_FILL_COLORS,
+  PROGRESSCIRCLE_DIMENSIONS,
+} from "./ProgressCircle.spec";
+export type { ProgressCircleProps } from "./ProgressCircle.spec";
+
+// Image
+export { ImageSpec, IMAGE_DIMENSIONS } from "./Image.spec";
+export type { ImageProps } from "./Image.spec";
+
+// ─── Phase 4: ADR-030 Advanced Components ─────────────────────────────────────
+
+// SegmentedControl
+export { SegmentedControlSpec } from "./SegmentedControl.spec";
+export type { SegmentedControlProps } from "./SegmentedControl.spec";
+
+// SegmentedControlItem
+export { SegmentedControlItemSpec } from "./SegmentedControlItem.spec";
+export type { SegmentedControlItemProps } from "./SegmentedControlItem.spec";
+
+// IllustratedMessage
+export {
+  IllustratedMessageSpec,
+  ILLUSTRATION_DIMENSIONS,
+} from "./IllustratedMessage.spec";
+export type { IllustratedMessageProps } from "./IllustratedMessage.spec";
+
+// CardView
+export { CardViewSpec, CARDVIEW_DENSITY_GAP } from "./CardView.spec";
+export type { CardViewProps } from "./CardView.spec";
+
+// TableView
+export { TableViewSpec, TABLEVIEW_ROW_HEIGHTS } from "./TableView.spec";
+export type { TableViewProps } from "./TableView.spec";
+
+// SelectBoxGroup
+export { SelectBoxGroupSpec } from "./SelectBoxGroup.spec";
+export type { SelectBoxGroupProps } from "./SelectBoxGroup.spec";
+
+// SelectBoxItem
+export { SelectBoxItemSpec } from "./SelectBoxItem.spec";
+export type { SelectBoxItemProps } from "./SelectBoxItem.spec";

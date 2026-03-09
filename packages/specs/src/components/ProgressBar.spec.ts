@@ -20,6 +20,7 @@ export interface ProgressBarProps {
   label?: string;
   value?: number;
   showValue?: boolean;
+  valueFormat?: "number" | "percent";
   isIndeterminate?: boolean;
   isDisabled?: boolean;
   children?: string;
@@ -37,8 +38,11 @@ export const PROGRESSBAR_DIMENSIONS: Record<
   { barHeight: number; width: number }
 > = {
   S: { barHeight: 4, width: 200 },
-  M: { barHeight: 6, width: 240 },
-  L: { barHeight: 8, width: 320 },
+  sm: { barHeight: 4, width: 200 },
+  M: { barHeight: 8, width: 240 },
+  md: { barHeight: 8, width: 240 },
+  L: { barHeight: 12, width: 320 },
+  lg: { barHeight: 12, width: 320 },
 };
 
 /**
@@ -71,7 +75,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       gap: 6,
     },
     md: {
-      height: 6,
+      height: 8,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
@@ -79,7 +83,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       gap: 8,
     },
     lg: {
-      height: 8,
+      height: 12,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-md}" as TokenRef,
@@ -164,11 +168,15 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
           });
         }
         if (props.showValue) {
+          const formattedValue =
+            props.valueFormat === "number"
+              ? String(Math.round(value))
+              : `${Math.round(value)}%`;
           shapes.push({
             type: "text" as const,
             x: width,
             y: 0,
-            text: `${Math.round(value)}%`,
+            text: formattedValue,
             fontSize,
             fontFamily: ff,
             fill: textColor,

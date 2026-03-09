@@ -64,10 +64,28 @@ export const ImageSprite = memo(function ImageSprite({
     [transform.width, transform.height, padding],
   );
 
-  // Image source
+  // Image source, objectFit, alt
   const src = useMemo(() => {
     const props = element.props as Record<string, unknown> | undefined;
     return String(props?.src || props?.source || "");
+  }, [element.props]);
+
+  const objectFit = useMemo(() => {
+    const props = element.props as Record<string, unknown> | undefined;
+    const fit = props?.objectFit as string | undefined;
+    if (
+      fit === "contain" ||
+      fit === "cover" ||
+      fit === "fill" ||
+      fit === "none"
+    )
+      return fit;
+    return "cover"; // 기본값
+  }, [element.props]);
+
+  const altText = useMemo(() => {
+    const props = element.props as Record<string, unknown> | undefined;
+    return String(props?.alt || "");
   }, [element.props]);
 
   // Texture state
@@ -227,6 +245,43 @@ export const ImageSprite = memo(function ImageSprite({
   // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
   const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
 
+  // object-fit 적용 이미지 콘텐츠 영역 계산
+  const imageContent = useMemo(() => {
+    if (!skImage || objectFit === "fill") {
+      // fill: 콘텐츠 영역 전체에 늘리기
+      return contentBounds;
+    }
+    const imgW = skImage.width();
+    const imgH = skImage.height();
+    const cw = contentBounds.width;
+    const ch = contentBounds.height;
+
+    if (objectFit === "none") {
+      // 원본 크기, 콘텐츠 영역 내 중앙 정렬
+      return {
+        x: contentBounds.x + (cw - imgW) / 2,
+        y: contentBounds.y + (ch - imgH) / 2,
+        width: imgW,
+        height: imgH,
+      };
+    }
+    // contain / cover
+    const scaleX = cw / imgW;
+    const scaleY = ch / imgH;
+    const scale =
+      objectFit === "contain"
+        ? Math.min(scaleX, scaleY)
+        : Math.max(scaleX, scaleY);
+    const w = imgW * scale;
+    const h = imgH * scale;
+    return {
+      x: contentBounds.x + (cw - w) / 2,
+      y: contentBounds.y + (ch - h) / 2,
+      width: w,
+      height: h,
+    };
+  }, [skImage, objectFit, contentBounds]);
+
   // Skia 렌더 데이터
   const skiaNodeData = useMemo(() => {
     return {
@@ -241,19 +296,27 @@ export const ImageSprite = memo(function ImageSprite({
         style?.visibility !== "collapse",
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
       ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
+      // placeholder 렌더링용 box (skImage 미로드 시 fillColor로 배경 표시)
+      box: {
+        fillColor: Float32Array.of(0.898, 0.906, 0.922, 1), // gray-200 (#e5e7eb)
+        borderRadius: borderRadius ?? 0,
+      },
       image: {
         skImage: skImage,
-        contentX: contentBounds.x,
-        contentY: contentBounds.y,
-        contentWidth: contentBounds.width,
-        contentHeight: contentBounds.height,
+        contentX: imageContent.x,
+        contentY: imageContent.y,
+        contentWidth: imageContent.width,
+        contentHeight: imageContent.height,
+        ...(altText && !skImage ? { altText } : {}),
       },
     };
   }, [
     transform,
-    contentBounds,
+    imageContent,
     skImage,
     skiaEffects,
+    borderRadius,
+    altText,
     style?.display,
     style?.visibility,
   ]);

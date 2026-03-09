@@ -39,7 +39,7 @@
       grid-area: bar;
       box-shadow: var(--inset-shadow-xs);
       forced-color-adjust: none;
-      height: 8px;
+      height: var(--spacing-sm);
       border-radius: var(--radius-sm);
       overflow: hidden;
       background: var(--accent-subtle);
@@ -58,7 +58,7 @@
     width: 200px;
 
     .bar {
-      height: 6px;
+      height: var(--spacing-xs);
       border-radius: var(--radius-sm);
     }
 
@@ -71,7 +71,7 @@
     width: 240px;
 
     .bar {
-      height: 8px;
+      height: var(--spacing-sm);
       border-radius: var(--radius-sm);
     }
 
@@ -84,7 +84,7 @@
     width: 300px;
 
     .bar {
-      height: 14px;
+      height: var(--spacing-md);
       border-radius: var(--radius-lg);
     }
 

@@ -4,12 +4,12 @@
 
 모든 Pixi 컴포넌트가 A 또는 B+ 등급으로 전환 완료됐습니다.
 
-| 등급 | 의미 | 예시 |
-|------|------|------|
-| A | Taffy/Dropflow 레이아웃 위임 + 자식 분리 | Button, Badge, ProgressBar, TagGroup, Breadcrumbs |
-| B+ | Context 우선 + fallback, 일부 자체 계산 | Checkbox, Radio, Switch, Input |
-| B | 엔진 위임하나 자체 텍스트 배치 | Card, Meter |
-| D | 캔버스 상호작용 불필요 (프리뷰 전용) | Calendar, DatePicker, ColorPicker |
+| 등급 | 의미                                     | 예시                                              |
+| ---- | ---------------------------------------- | ------------------------------------------------- |
+| A    | Taffy/Dropflow 레이아웃 위임 + 자식 분리 | Button, Badge, ProgressBar, TagGroup, Breadcrumbs |
+| B+   | Context 우선 + fallback, 일부 자체 계산  | Checkbox, Radio, Switch, Input                    |
+| B    | 엔진 위임하나 자체 텍스트 배치           | Card, Meter                                       |
+| D    | 캔버스 상호작용 불필요 (프리뷰 전용)     | Calendar, DatePicker, ColorPicker                 |
 
 > C등급 (자체 렌더링 + 수동 배치)은 Wave 4에서 전부 제거됐습니다.
 > `SELF_PADDING_TAGS`, `renderWithPixiLayout()` 등 구 패턴도 삭제 완료.
@@ -27,39 +27,72 @@
 // apps/builder/src/builder/factories/constants.ts
 export const COMPLEX_COMPONENT_TAGS = new Set([
   // Form Input
-  'TextField', 'TextArea', 'NumberField', 'SearchField',
-  'DateField', 'TimeField', 'ColorField',
+  "TextField",
+  "TextArea",
+  "NumberField",
+  "SearchField",
+  "DateField",
+  "TimeField",
+  "ColorField",
   // Selection
-  'Select', 'ComboBox', 'ListBox', 'GridList', 'List',
+  "Select",
+  "ComboBox",
+  "ListBox",
+  "GridList",
+  "List",
   // Control
-  'Checkbox', 'Radio', 'Switch', 'Slider',
-  'ToggleButtonGroup', 'Switcher',
+  "Checkbox",
+  "Radio",
+  "Switch",
+  "Slider",
+  "ToggleButtonGroup",
+  "Switcher",
   // Group
-  'CheckboxGroup', 'RadioGroup',
+  "CheckboxGroup",
+  "RadioGroup",
   // Layout
-  'Card',
+  "Card",
   // Navigation
-  'Menu', 'Disclosure', 'DisclosureGroup', 'Pagination',
+  "Menu",
+  "Disclosure",
+  "DisclosureGroup",
+  "Pagination",
   // Overlay
-  'Dialog', 'Popover', 'Tooltip',
+  "Dialog",
+  "Popover",
+  "Tooltip",
   // Feedback
-  'Form', 'Toast', 'Toolbar',
+  "Form",
+  "Toast",
+  "Toolbar",
   // Date & Color
-  'DatePicker', 'DateRangePicker', 'Calendar', 'ColorPicker', 'ColorSwatchPicker',
+  "DatePicker",
+  "DateRangePicker",
+  "Calendar",
+  "ColorPicker",
+  "ColorSwatchPicker",
+  // Phase 4 (ADR-030)
+  "SegmentedControl",
+  "CardView",
+  "TableView",
+  "SelectBoxGroup",
   // CHILD_COMPOSITION_EXCLUDE_TAGS 소속 (synthetic prop 메커니즘 사용)
   // ElementSprite에서 EXCLUDE 가드가 먼저 평가되므로 _hasChildren 주입 차단 — 안전
   // useElementCreator의 Factory 경로 분기 목적으로만 등록
-  'Tabs', 'Tree', 'TagGroup', 'Table',
+  "Tabs",
+  "Tree",
+  "TagGroup",
+  "Table",
 ]);
 ```
 
 **버그 수정 맥락 (2026-02-24)**: 이전에는 `useElementCreator.ts`에 로컬 `complexComponents` 배열이 있었고, `ElementSprite.tsx`는 `childElements.length > 0`만 체크했습니다. TextField 등에서 자식을 모두 삭제하면 `_hasChildren=false`가 되어 standalone label+input spec shapes가 재활성화되는 버그가 있었습니다. `COMPLEX_COMPONENT_TAGS` 공유 상수 도입으로 두 파일이 동일한 목록을 참조하고, `ElementSprite.tsx`는 complex component에 항상 `_hasChildren=true`를 주입하여 버그를 수정했습니다.
 
-| 컴포넌트 | DOM 구조 | factory 정의 파일 |
-|----------|---------|-----------------|
-| `Select` | Select > Label, SelectTrigger > SelectValue, SelectIcon | `FormComponents.ts` |
-| `ComboBox` | ComboBox > Label, ComboBoxWrapper > ComboBoxInput, ComboBoxTrigger | `FormComponents.ts` |
-| `Slider` | Slider > Label, SliderOutput, SliderTrack > SliderThumb | `FormComponents.ts → createSliderDefinition()` |
+| 컴포넌트   | DOM 구조                                                           | factory 정의 파일                              |
+| ---------- | ------------------------------------------------------------------ | ---------------------------------------------- |
+| `Select`   | Select > Label, SelectTrigger > SelectValue, SelectIcon            | `FormComponents.ts`                            |
+| `ComboBox` | ComboBox > Label, ComboBoxWrapper > ComboBoxInput, ComboBoxTrigger | `FormComponents.ts`                            |
+| `Slider`   | Slider > Label, SliderOutput, SliderTrack > SliderThumb            | `FormComponents.ts → createSliderDefinition()` |
 
 **Slider factory 참조**: `FormComponents.ts`의 `createSliderDefinition()`
 
@@ -75,15 +108,16 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
 **기본 원칙**: 모든 컴포넌트에 자식이 있으면(또는 `COMPLEX_COMPONENT_TAGS`에 속하면) `_hasChildren: true`가 주입됩니다.
 아래 컴포넌트만 예외적으로 주입을 건너뜁니다.
 
-| 컴포넌트 | 제외 이유 | 대체 메커니즘 |
-|---------|---------|-------------|
-| `Tabs` | `_tabLabels` synthetic prop 사용 | `effectiveElementWithTabs`로 탭 레이블 주입 |
-| `Breadcrumbs` | `_crumbs` synthetic prop 사용 | 자식 Breadcrumb 텍스트 수집 → `_crumbs` 배열 주입 |
-| `TagGroup` | `_tagItems` synthetic prop 사용 | 자식 Tag 정보 수집 → `_tagItems` 배열 주입 |
-| `Table` | 다단계 중첩 구조 | 별도 구현 예정 |
-| `Tree` | 다단계 중첩 구조 | 별도 구현 예정 |
+| 컴포넌트      | 제외 이유                        | 대체 메커니즘                                     |
+| ------------- | -------------------------------- | ------------------------------------------------- |
+| `Tabs`        | `_tabLabels` synthetic prop 사용 | `effectiveElementWithTabs`로 탭 레이블 주입       |
+| `Breadcrumbs` | `_crumbs` synthetic prop 사용    | 자식 Breadcrumb 텍스트 수집 → `_crumbs` 배열 주입 |
+| `TagGroup`    | `_tagItems` synthetic prop 사용  | 자식 Tag 정보 수집 → `_tagItems` 배열 주입        |
+| `Table`       | 다단계 중첩 구조                 | 별도 구현 예정                                    |
+| `Tree`        | 다단계 중첩 구조                 | 별도 구현 예정                                    |
 
 **새 컴포넌트를 `CHILD_COMPOSITION_EXCLUDE_TAGS`에 추가하는 경우**:
+
 - synthetic prop 메커니즘(`_crumbs`, `_tabLabels` 등)을 별도로 사용하는 경우
 - 자식 조합이 아닌 복잡한 다단계 중첩이 필요한 경우
 
@@ -92,17 +126,18 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
 `BuilderCanvas.tsx`에서 자식 Element를 내부에 렌더링하지 않는 태그 목록입니다.
 **기본 원칙**: 모든 컴포넌트가 컨테이너로 처리됩니다. 아래 카테고리만 제외됩니다.
 
-| 카테고리 | 설명 | 예시 |
-|---------|------|------|
-| TEXT_TAGS | TextSprite로 렌더링, 자식 배치 불가 | `Text`, `Heading`, `Description`, `Label`, `Paragraph`, `Link`, `Strong`, `Em`, `Code`, `Pre`, `Blockquote` |
-| Void 요소 | 자식이 없는 단일 요소 | `Input`, `Textarea`, `Hr`, `Br`, `Img` 등 |
-| Color Sub 컴포넌트 | 상위 컨테이너가 렌더링 담당 | `ColorSwatch`, `ColorThumb`, `ColorSlider` 등 |
+| 카테고리           | 설명                                | 예시                                                                                                        |
+| ------------------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| TEXT_TAGS          | TextSprite로 렌더링, 자식 배치 불가 | `Text`, `Heading`, `Description`, `Label`, `Paragraph`, `Link`, `Strong`, `Em`, `Code`, `Pre`, `Blockquote` |
+| Void 요소          | 자식이 없는 단일 요소               | `Input`, `Textarea`, `Hr`, `Br`, `Img` 등                                                                   |
+| Color Sub 컴포넌트 | 상위 컨테이너가 렌더링 담당         | `ColorSwatch`, `ColorThumb`, `ColorSlider` 등                                                               |
 
 **이전 컨테이너 태그 목록 (구 opt-in 방식)**:
 구 아키텍처에서는 `CONTAINER_TAGS`(화이트리스트)에 등록된 컴포넌트만 자식을 내부에 렌더링했습니다.
 현재는 opt-out 방식으로 전환되어, `NON_CONTAINER_TAGS`에 없으면 자동으로 컨테이너로 처리됩니다.
 
 특별 처리가 필요한 컨테이너:
+
 - **Tabs**: Tab bar(spec shapes) + 활성 Panel(container) 렌더링
   - Tab 요소는 spec shapes가 렌더링 (`isSkippedChild` 처리)
   - Panel 요소는 컨테이너 시스템으로 내부 렌더링
@@ -138,9 +173,15 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
 // SPEC_RENDERS_ALL_TAGS_SET: spec shapes가 자체 세로 레이아웃을 포함하는 컴포넌트
 // 이 컴포넌트들은 rearrangeShapesForColumn 재배치를 스킵
 const SPEC_RENDERS_ALL_TAGS_SET = new Set([
-  'TextField', 'NumberField', 'SearchField',
-  'DateField', 'TimeField', 'ColorField', 'TextArea',
-  'Slider', 'RangeSlider',
+  "TextField",
+  "NumberField",
+  "SearchField",
+  "DateField",
+  "TimeField",
+  "ColorField",
+  "TextArea",
+  "Slider",
+  "RangeSlider",
 ]);
 
 // ✅ SPEC_RENDERS_ALL_TAGS_SET 가드 적용
@@ -158,15 +199,16 @@ if (isColumn) {
 ```
 
 **등록 기준**: 다음 조건 중 하나라도 해당하면 `SPEC_RENDERS_ALL_TAGS_SET`에 추가:
+
 - spec shapes 내부에서 `labelOffset`을 계산하여 y 좌표를 직접 배치하는 컴포넌트
 - spec shapes 내부에서 복수의 서브 컴포넌트(label + input + button 등)를 세로로 직접 배치하는 컴포넌트
 
 **연관 Set 비교**:
 
-| Set 이름 | 위치 | 목적 |
-|---------|------|------|
-| `SPEC_RENDERS_ALL_TAGS_SET` | `ElementSprite.tsx` (로컬) | `rearrangeShapesForColumn` 재배치 스킵 |
-| `SPEC_RENDERS_ALL_TAGS` | `BuilderCanvas.tsx` (로컬) | 자식 이중 렌더링 억제 (자식 sprite 렌더링 건너뜀) |
-| `SPEC_SHAPES_INPUT_TAGS` | `engines/utils.ts` | `enrichWithIntrinsicSize`의 contentHeight ≤ 0 early return 우회 |
+| Set 이름                    | 위치                       | 목적                                                            |
+| --------------------------- | -------------------------- | --------------------------------------------------------------- |
+| `SPEC_RENDERS_ALL_TAGS_SET` | `ElementSprite.tsx` (로컬) | `rearrangeShapesForColumn` 재배치 스킵                          |
+| `SPEC_RENDERS_ALL_TAGS`     | `BuilderCanvas.tsx` (로컬) | 자식 이중 렌더링 억제 (자식 sprite 렌더링 건너뜀)               |
+| `SPEC_SHAPES_INPUT_TAGS`    | `engines/utils.ts`         | `enrichWithIntrinsicSize`의 contentHeight ≤ 0 early return 우회 |
 
 > 세 Set은 비슷한 컴포넌트 목록을 가지지만 목적이 다릅니다. 새 컴포넌트 추가 시 세 곳 모두 확인해야 합니다.

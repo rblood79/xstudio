@@ -29,6 +29,7 @@ export interface ButtonProps {
   label?: string;
   isDisabled?: boolean;
   isLoading?: boolean;
+  isPending?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 

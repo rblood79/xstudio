@@ -19,12 +19,14 @@ export interface SliderProps {
   variant?: "default" | "accent" | "neutral";
   size?: "sm" | "md" | "lg";
   label?: string;
+  name?: string;
   value?: number;
   minValue?: number;
   maxValue?: number;
   step?: number;
   showValue?: boolean;
   isDisabled?: boolean;
+  isRequired?: boolean;
   children?: string;
   style?: Record<string, string | number | undefined>;
 }

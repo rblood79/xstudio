@@ -99,6 +99,19 @@ export const ElementRenderer = memo(function ElementRenderer({
   // 등록되지 않은 컴포넌트는 div로 fallback
   if (!componentEntry) {
     console.warn(`[ElementRenderer] Unknown component: ${element.tag}`);
+    // 자식 Element가 있으면 재귀 렌더링, 없으면 props.children(텍스트 등) 사용
+    const fallbackContent =
+      children.length > 0
+        ? children.map((child) => (
+            <ElementRenderer
+              key={child.id}
+              element={child}
+              elements={elements}
+              depth={depth + 1}
+            />
+          ))
+        : ((element.props as Record<string, unknown>)
+            ?.children as React.ReactNode);
     return (
       <div
         data-element-id={element.id}
@@ -106,14 +119,7 @@ export const ElementRenderer = memo(function ElementRenderer({
         style={element.props?.style as React.CSSProperties}
         {...eventHandlers}
       >
-        {children.map((child) => (
-          <ElementRenderer
-            key={child.id}
-            element={child}
-            elements={elements}
-            depth={depth + 1}
-          />
-        ))}
+        {fallbackContent}
       </div>
     );
   }
@@ -127,6 +133,20 @@ export const ElementRenderer = memo(function ElementRenderer({
     accentColor,
     ...restProps
   } = element.props as Record<string, unknown>;
+
+  // Card: structural children 감지 (Preview renderCard와 동일 로직)
+  const STRUCTURAL_CARD_TAGS = new Set([
+    "CardHeader",
+    "CardContent",
+    "CardPreview",
+    "CardFooter",
+  ]);
+  if (
+    element.tag === "Card" &&
+    children.some((c) => STRUCTURAL_CARD_TAGS.has(c.tag))
+  ) {
+    (restProps as Record<string, unknown>).structuralChildren = true;
+  }
 
   // 자식이 있으면 재귀 렌더링, 없으면 props.children 사용
   const renderedChildren =

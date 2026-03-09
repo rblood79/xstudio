@@ -1143,6 +1143,290 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
 
+  // Phase 1: Display/Feedback (ADR-030)
+  {
+    type: "Avatar",
+    label: "Avatar",
+    category: "Content",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "AvatarEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "AvatarGroup",
+    label: "Avatar Group",
+    category: "Content",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "AvatarGroupEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "StatusLight",
+    label: "Status Light",
+    category: "Content",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "StatusLightEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "InlineAlert",
+    label: "Inline Alert",
+    category: "Content",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "InlineAlertEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "Divider",
+    label: "Divider",
+    category: "Layout",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "DividerEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "LinkButton",
+    label: "Link Button",
+    category: "Buttons",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "LinkButtonEditor",
+      dataBindingType: null,
+      supportedEvents: ["onPress"],
+    },
+  },
+  {
+    type: "ContextualHelp",
+    label: "Contextual Help",
+    category: "Buttons",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ContextualHelpEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+
+  // Phase 2: Action/Group (ADR-030)
+  {
+    type: "ActionButton",
+    label: "Action Button",
+    category: "Buttons",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ActionButtonEditor",
+      dataBindingType: null,
+      supportedEvents: ["onPress"],
+    },
+  },
+  {
+    type: "ActionButtonGroup",
+    label: "Action Button Group",
+    category: "Buttons",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ActionButtonGroupEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "ButtonGroup",
+    label: "Button Group",
+    category: "Buttons",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ButtonGroupEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "ActionMenu",
+    label: "Action Menu",
+    category: "Buttons",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ActionMenuEditor",
+      dataBindingType: null,
+      supportedEvents: ["onAction", "onOpenChange"],
+    },
+  },
+  {
+    type: "Accordion",
+    label: "Accordion",
+    category: "Layout",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "AccordionEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+
+  // Phase 3: Extended Controls (ADR-030)
+  {
+    type: "RangeSlider",
+    label: "Range Slider",
+    category: "Forms",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "RangeSliderEditor",
+      dataBindingType: "value",
+      supportedEvents: ["onChange", "onChangeEnd"],
+    },
+  },
+  {
+    type: "ProgressCircle",
+    label: "Progress Circle",
+    category: "Content",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ProgressCircleEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "Image",
+    label: "Image",
+    category: "Content",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ImageEditor",
+      dataBindingType: null,
+      supportedEvents: ["onLoad", "onError"],
+    },
+  },
+  {
+    type: "Picker",
+    label: "Picker",
+    category: "Forms",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "PickerEditor",
+      dataBindingType: "value",
+      supportedEvents: ["onSelectionChange"],
+    },
+  },
+
+  // Phase 4: Advanced Components (ADR-030)
+  {
+    type: "SegmentedControl",
+    label: "Segmented Control",
+    category: "Buttons",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "SegmentedControlEditor",
+      dataBindingType: null,
+      supportedEvents: ["onSelectionChange"],
+    },
+  },
+  {
+    type: "SegmentedControlItem",
+    label: "Segmented Control Item",
+    category: "Buttons",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "SegmentedControlItemEditor",
+      dataBindingType: null,
+      supportedEvents: ["onPress"],
+    },
+  },
+  {
+    type: "SelectBoxGroup",
+    label: "Select Box Group",
+    category: "Forms",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "SelectBoxGroupEditor",
+      dataBindingType: null,
+      supportedEvents: ["onSelectionChange"],
+    },
+  },
+  {
+    type: "SelectBoxItem",
+    label: "Select Box Item",
+    category: "Forms",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "SelectBoxItemEditor",
+      dataBindingType: null,
+      supportedEvents: ["onPress"],
+    },
+  },
+  {
+    type: "IllustratedMessage",
+    label: "Illustrated Message",
+    category: "Content",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "IllustratedMessageEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "CardView",
+    label: "Card View",
+    category: "Collections",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "CardViewEditor",
+      dataBindingType: null,
+      supportedEvents: ["onSelectionChange", "onAction"],
+    },
+  },
+  {
+    type: "TableView",
+    label: "Table View",
+    category: "Collections",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "TableViewEditor",
+      dataBindingType: null,
+      supportedEvents: ["onSelectionChange", "onSortChange", "onAction"],
+    },
+  },
+
   // Collections (Data)
   {
     type: "DataTable",

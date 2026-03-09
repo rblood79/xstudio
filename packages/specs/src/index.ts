@@ -388,3 +388,65 @@ export type { SelectValueProps } from "./components/SelectValue.spec";
 
 export { SelectIconSpec } from "./components/SelectIcon.spec";
 export type { SelectIconProps } from "./components/SelectIcon.spec";
+
+// ─── Phase 6: ADR-030 New Components ────────────────────────────────────────
+export { AvatarSpec } from "./components/Avatar.spec";
+export type { AvatarProps } from "./components/Avatar.spec";
+
+export { AvatarGroupSpec } from "./components/AvatarGroup.spec";
+export type { AvatarGroupProps } from "./components/AvatarGroup.spec";
+
+export { StatusLightSpec } from "./components/StatusLight.spec";
+export type { StatusLightProps } from "./components/StatusLight.spec";
+
+export { InlineAlertSpec } from "./components/InlineAlert.spec";
+export type { InlineAlertProps } from "./components/InlineAlert.spec";
+
+export { ContextualHelpSpec } from "./components/ContextualHelp.spec";
+export type { ContextualHelpProps } from "./components/ContextualHelp.spec";
+
+// ─── Phase 6: ADR-030 Phase 2 Components ────────────────────────────────────
+export { ActionButtonGroupSpec } from "./components/ActionButtonGroup.spec";
+export type { ActionButtonGroupProps } from "./components/ActionButtonGroup.spec";
+
+export { ButtonGroupSpec } from "./components/ButtonGroup.spec";
+export type { ButtonGroupProps } from "./components/ButtonGroup.spec";
+
+// ─── Phase 7: ADR-030 Phase 3 Extended Controls ─────────────────────────────
+export {
+  ProgressCircleSpec,
+  PROGRESSCIRCLE_FILL_COLORS,
+  PROGRESSCIRCLE_DIMENSIONS,
+} from "./components/ProgressCircle.spec";
+export type { ProgressCircleProps } from "./components/ProgressCircle.spec";
+
+export { ImageSpec, IMAGE_DIMENSIONS } from "./components/Image.spec";
+export type { ImageProps } from "./components/Image.spec";
+
+// ─── Phase 8: ADR-030 Phase 4 Advanced Components ────────────────────────────
+export { SegmentedControlSpec } from "./components/SegmentedControl.spec";
+export type { SegmentedControlProps } from "./components/SegmentedControl.spec";
+
+export { SegmentedControlItemSpec } from "./components/SegmentedControlItem.spec";
+export type { SegmentedControlItemProps } from "./components/SegmentedControlItem.spec";
+
+export {
+  IllustratedMessageSpec,
+  ILLUSTRATION_DIMENSIONS,
+} from "./components/IllustratedMessage.spec";
+export type { IllustratedMessageProps } from "./components/IllustratedMessage.spec";
+
+export { CardViewSpec, CARDVIEW_DENSITY_GAP } from "./components/CardView.spec";
+export type { CardViewProps } from "./components/CardView.spec";
+
+export {
+  TableViewSpec,
+  TABLEVIEW_ROW_HEIGHTS,
+} from "./components/TableView.spec";
+export type { TableViewProps } from "./components/TableView.spec";
+
+export { SelectBoxGroupSpec } from "./components/SelectBoxGroup.spec";
+export type { SelectBoxGroupProps } from "./components/SelectBoxGroup.spec";
+
+export { SelectBoxItemSpec } from "./components/SelectBoxItem.spec";
+export type { SelectBoxItemProps } from "./components/SelectBoxItem.spec";

@@ -1,0 +1,1449 @@
+import { ComponentElementProps } from "../../../types/core/store.types";
+import { HierarchyManager } from "../../utils/HierarchyManager";
+import { ComponentDefinition, ComponentCreationContext } from "../types";
+
+/**
+ * Avatar 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * Avatar (parent, tag="Avatar", circle shape)
+ */
+export function createAvatarDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Avatar",
+    parent: {
+      tag: "Avatar",
+      props: {
+        src: "",
+        alt: "Avatar",
+        initials: "A",
+        size: "md",
+        isDisabled: false,
+        style: {
+          width: 32,
+          height: 32,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
+
+/**
+ * AvatarGroup 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * AvatarGroup (parent, tag="AvatarGroup", flex row)
+ *   ├─ Avatar (initials="A")
+ *   ├─ Avatar (initials="B")
+ *   └─ Avatar (initials="C")
+ */
+export function createAvatarGroupDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "AvatarGroup",
+    parent: {
+      tag: "AvatarGroup",
+      props: {
+        size: "md",
+        label: "Team",
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Avatar",
+        props: {
+          initials: "A",
+          size: "md",
+          style: {
+            width: 32,
+            height: 32,
+            marginLeft: -8,
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "Avatar",
+        props: {
+          initials: "B",
+          size: "md",
+          style: {
+            width: 32,
+            height: 32,
+            marginLeft: -8,
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+      {
+        tag: "Avatar",
+        props: {
+          initials: "C",
+          size: "md",
+          style: {
+            width: 32,
+            height: 32,
+            marginLeft: -8,
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
+      },
+    ],
+  };
+}
+
+/**
+ * StatusLight 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * StatusLight (parent, tag="StatusLight", flex row with dot + label)
+ */
+export function createStatusLightDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "StatusLight",
+    parent: {
+      tag: "StatusLight",
+      props: {
+        variant: "positive",
+        children: "Available",
+        size: "M",
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
+
+/**
+ * InlineAlert 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * InlineAlert (parent, tag="InlineAlert", flex column)
+ *   ├─ Heading (tag="Heading", children="Alert Title")
+ *   └─ Description (tag="Description", children="Alert description text.")
+ */
+export function createInlineAlertDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "InlineAlert",
+    parent: {
+      tag: "InlineAlert",
+      props: {
+        variant: "informative",
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          paddingTop: 12,
+          paddingBottom: 12,
+          paddingLeft: 16,
+          paddingRight: 16,
+          width: "100%",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Heading",
+        props: {
+          children: "Alert Title",
+          level: 3,
+          style: {
+            fontSize: 14,
+            fontWeight: 600,
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "Description",
+        props: {
+          children: "Alert description text.",
+          style: {
+            fontSize: 14,
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+/**
+ * Divider 컴포넌트 정의 (Separator Spec 재사용)
+ *
+ * CSS DOM 구조:
+ * Divider (parent, tag="Divider", horizontal separator)
+ */
+export function createDividerDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Divider",
+    parent: {
+      tag: "Divider",
+      props: {
+        orientation: "horizontal",
+        size: "M",
+        style: {
+          width: "100%",
+          height: 1,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
+
+/**
+ * LinkButton 컴포넌트 정의 (Button Spec 재사용)
+ *
+ * CSS DOM 구조:
+ * LinkButton (parent, tag="LinkButton", anchor element with button style)
+ */
+export function createLinkButtonDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "LinkButton",
+    parent: {
+      tag: "LinkButton",
+      props: {
+        children: "Link Button",
+        variant: "accent",
+        fillStyle: "fill",
+        size: "md",
+        href: "#",
+        target: "_self",
+        isDisabled: false,
+        style: {},
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
+
+/**
+ * ActionButton 컴포넌트 정의 (Button Spec 재사용, quiet 기본)
+ *
+ * CSS DOM 구조:
+ * ActionButton (parent, tag="ActionButton", quiet action button)
+ */
+export function createActionButtonDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "ActionButton",
+    parent: {
+      tag: "ActionButton",
+      props: {
+        children: "Action",
+        variant: "secondary",
+        fillStyle: "outline",
+        size: "md",
+        isQuiet: true,
+        isDisabled: false,
+        style: {},
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
+
+/**
+ * ActionButtonGroup 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * ActionButtonGroup (parent, tag="ActionButtonGroup", flex row)
+ *   ├─ ActionButton (children="Action 1")
+ *   └─ ActionButton (children="Action 2")
+ */
+export function createActionButtonGroupDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "ActionButtonGroup",
+    parent: {
+      tag: "ActionButtonGroup",
+      props: {
+        size: "md",
+        orientation: "horizontal",
+        density: "regular",
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 4,
+          width: "fit-content",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "ActionButton",
+        props: {
+          children: "Action 1",
+          isQuiet: true,
+          size: "md",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "ActionButton",
+        props: {
+          children: "Action 2",
+          isQuiet: true,
+          size: "md",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+/**
+ * ButtonGroup 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * ButtonGroup (parent, tag="ButtonGroup", flex row)
+ *   ├─ Button ("Cancel", outline)
+ *   └─ Button ("Save", accent fill)
+ */
+export function createButtonGroupDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "ButtonGroup",
+    parent: {
+      tag: "ButtonGroup",
+      props: {
+        size: "md",
+        orientation: "horizontal",
+        align: "end",
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          gap: 8,
+          width: "fit-content",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Button",
+        props: {
+          children: "Cancel",
+          variant: "secondary",
+          fillStyle: "outline",
+          size: "md",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "Button",
+        props: {
+          children: "Save",
+          variant: "accent",
+          fillStyle: "fill",
+          size: "md",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+/**
+ * ActionMenu 컴포넌트 정의 (Button Spec 재사용, 트리거만)
+ *
+ * CSS DOM 구조:
+ * ActionMenu (parent, tag="ActionMenu", trigger button)
+ * 메뉴는 오버레이이므로 트리거만 캔버스에 배치
+ */
+export function createActionMenuDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "ActionMenu",
+    parent: {
+      tag: "ActionMenu",
+      props: {
+        children: "More",
+        size: "md",
+        align: "start",
+        style: {},
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
+
+/**
+ * Accordion 컴포넌트 정의 (DisclosureGroup 확장)
+ *
+ * CSS DOM 구조:
+ * Accordion (parent, tag="Accordion", flex column)
+ *   ├─ Disclosure (tag="Disclosure", isExpanded=false)
+ *   └─ Disclosure (tag="Disclosure", isExpanded=false)
+ */
+export function createAccordionDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Accordion",
+    parent: {
+      tag: "Accordion",
+      props: {
+        allowsMultipleExpanded: false,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Disclosure",
+        props: {
+          children: "Section 1",
+          isExpanded: false,
+          style: {
+            display: "block",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+        children: [
+          {
+            tag: "DisclosureHeader",
+            props: {
+              children: "Section 1",
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "DisclosureContent",
+            props: {
+              children: "Section 1 content goes here.",
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 2,
+          },
+        ],
+      },
+      {
+        tag: "Disclosure",
+        props: {
+          children: "Section 2",
+          isExpanded: false,
+          style: {
+            display: "block",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+        children: [
+          {
+            tag: "DisclosureHeader",
+            props: {
+              children: "Section 2",
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "DisclosureContent",
+            props: {
+              children: "Section 2 content goes here.",
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 2,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * RangeSlider 컴포넌트 정의 (SliderSpec 재사용, 두 개의 Thumb)
+ *
+ * CSS DOM 구조:
+ * RangeSlider (parent, tag="RangeSlider", grid layout)
+ *   ├─ Label (tag="Label")
+ *   ├─ SliderOutput (tag="SliderOutput")
+ *   └─ SliderTrack (tag="SliderTrack")
+ *        ├─ SliderThumb (start thumb)
+ *        └─ SliderThumb (end thumb)
+ */
+export function createRangeSliderDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "RangeSlider",
+    parent: {
+      tag: "RangeSlider",
+      props: {
+        label: "Range Slider",
+        name: "",
+        value: [20, 80],
+        minValue: 0,
+        maxValue: 100,
+        step: 1,
+        isDisabled: false,
+        showValue: true,
+        style: {
+          display: "grid",
+          width: 200,
+          height: 45,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Range Slider",
+          style: {
+            fontSize: 14,
+            fontWeight: 500,
+            width: "fit-content",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "SliderOutput",
+        props: {
+          children: "20 – 80",
+          style: {
+            fontSize: 14,
+            width: "fit-content",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "SliderTrack",
+        props: {
+          style: {
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+            height: 24,
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+        children: [
+          {
+            tag: "SliderThumb",
+            props: {
+              style: {
+                width: 18,
+                height: 18,
+                borderRadius: "50%",
+              },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "SliderThumb",
+            props: {
+              style: {
+                width: 18,
+                height: 18,
+                borderRadius: "50%",
+              },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * ProgressCircle 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * ProgressCircle (parent, tag="ProgressCircle", circular progress indicator)
+ */
+export function createProgressCircleDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "ProgressCircle",
+    parent: {
+      tag: "ProgressCircle",
+      props: {
+        value: 75,
+        size: "M",
+        isIndeterminate: false,
+        isDisabled: false,
+        style: {
+          width: 32,
+          height: 32,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
+
+/**
+ * Image 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * Image (parent, tag="Image", responsive image)
+ */
+export function createImageDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Image",
+    parent: {
+      tag: "Image",
+      props: {
+        src: "",
+        alt: "Image",
+        objectFit: "cover",
+        style: {
+          width: "100%",
+          height: 200,
+          borderRadius: 8,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
+
+/**
+ * Picker 컴포넌트 정의 (SelectSpec 재사용, quiet 트리거 변형)
+ *
+ * CSS DOM 구조:
+ * Picker (parent, tag="Picker", flex column)
+ *   ├─ Label (tag="Label")
+ *   ├─ SelectTrigger (tag="SelectTrigger")
+ *   │    ├─ SelectValue (tag="SelectValue")
+ *   │    └─ SelectIcon (tag="SelectIcon")
+ *   └─ SelectItem (tag="SelectItem")
+ */
+export function createPickerDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Picker",
+    parent: {
+      tag: "Picker",
+      props: {
+        label: "Picker",
+        name: "",
+        placeholder: "Select an option...",
+        isQuiet: false,
+        selectedKey: undefined,
+        isDisabled: false,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Picker",
+          style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "SelectTrigger",
+        props: {
+          style: {
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+        children: [
+          {
+            tag: "SelectValue",
+            props: {
+              children: "Select an option...",
+              style: { flex: 1, fontSize: 14 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "SelectIcon",
+            props: {
+              children: "",
+              style: { width: 18, height: 18, flexShrink: 0 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
+      },
+      {
+        tag: "SelectItem",
+        props: {
+          label: "Option 1",
+          value: "option1",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+/**
+ * RangeCalendar 컴포넌트 정의 (CalendarSpec 재사용)
+ *
+ * CSS DOM 구조:
+ * RangeCalendar (parent, tag="RangeCalendar", flex column)
+ *   ├─ CalendarHeader (tag="CalendarHeader")
+ *   └─ CalendarGrid (tag="CalendarGrid")
+ */
+export function createRangeCalendarDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  const now = new Date();
+  const calYear = now.getFullYear();
+  const calMonth = now.getMonth();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const calTotalDays = new Date(calYear, calMonth + 1, 0).getDate();
+
+  return {
+    tag: "RangeCalendar",
+    parent: {
+      tag: "RangeCalendar",
+      props: {
+        isDisabled: false,
+        isReadOnly: false,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: "6px",
+          padding: "12px",
+          width: "284px",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "CalendarHeader",
+        props: {
+          variant: "default",
+          size: "M",
+          children: new Intl.DateTimeFormat(navigator.language || "ko-KR", {
+            year: "numeric",
+            month: "long",
+          }).format(now),
+          style: {
+            display: "block",
+            width: "100%",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "CalendarGrid",
+        props: {
+          variant: "default",
+          size: "M",
+          defaultToday: true,
+          dayOffset: firstDay,
+          totalDays: calTotalDays,
+          todayDate: now.getDate(),
+          style: {
+            display: "block",
+            width: "100%",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+// ==================== Phase 4: Advanced Components (ADR-030) ====================
+
+/**
+ * SegmentedControl 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * SegmentedControl (parent, tag="SegmentedControl", flex row container)
+ *   ├─ SegmentedControlItem (children="Tab 1", isSelected=true)
+ *   ├─ SegmentedControlItem (children="Tab 2")
+ *   └─ SegmentedControlItem (children="Tab 3")
+ */
+export function createSegmentedControlDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "SegmentedControl",
+    parent: {
+      tag: "SegmentedControl",
+      props: {
+        selectedKey: "tab1",
+        size: "md",
+        isDisabled: false,
+        style: {
+          display: "flex",
+          flexDirection: "row",
+          gap: 2,
+          padding: 3,
+          width: "fit-content",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "SegmentedControlItem",
+        props: {
+          id: "tab1",
+          children: "Tab 1",
+          isSelected: true,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "SegmentedControlItem",
+        props: {
+          id: "tab2",
+          children: "Tab 2",
+          isSelected: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "SegmentedControlItem",
+        props: {
+          id: "tab3",
+          children: "Tab 3",
+          isSelected: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+/**
+ * IllustratedMessage 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * IllustratedMessage (parent, tag="IllustratedMessage", flex column centered)
+ */
+export function createIllustratedMessageDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "IllustratedMessage",
+    parent: {
+      tag: "IllustratedMessage",
+      props: {
+        size: "M",
+        heading: "No results",
+        description: "Try another search term.",
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+          padding: 24,
+          width: 320,
+          height: 280,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
+
+/**
+ * CardView 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * CardView (parent, tag="CardView", grid container)
+ *   ├─ Card (variant="primary")
+ *   ├─ Card (variant="primary")
+ *   └─ Card (variant="primary")
+ */
+export function createCardViewDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "CardView",
+    parent: {
+      tag: "CardView",
+      props: {
+        layout: "grid",
+        size: "md",
+        density: "regular",
+        columns: 3,
+        gap: 16,
+        style: {
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 16,
+          width: "100%",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Card",
+        props: {
+          variant: "primary",
+          children: "Card 1",
+          style: {
+            width: 200,
+            height: 160,
+            padding: 16,
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "Card",
+        props: {
+          variant: "primary",
+          children: "Card 2",
+          style: {
+            width: 200,
+            height: 160,
+            padding: 16,
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "Card",
+        props: {
+          variant: "primary",
+          children: "Card 3",
+          style: {
+            width: 200,
+            height: 160,
+            padding: 16,
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+/**
+ * TableView 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * TableView (parent, tag="TableView", flex column)
+ *   └─ Table 자식 구조 재사용
+ */
+export function createTableViewDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "TableView",
+    parent: {
+      tag: "TableView",
+      props: {
+        density: "regular",
+        isStriped: false,
+        isQuiet: false,
+        allowsSorting: true,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "TableHeader",
+        props: {
+          style: {
+            display: "flex",
+            flexDirection: "row",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+        children: [
+          {
+            tag: "Column",
+            props: {
+              children: "Name",
+              style: { flex: 1, padding: 8, fontWeight: 600 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "Column",
+            props: {
+              children: "Type",
+              style: { flex: 1, padding: 8, fontWeight: 600 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "Column",
+            props: {
+              children: "Status",
+              style: { flex: 1, padding: 8, fontWeight: 600 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 2,
+          },
+        ],
+      },
+      {
+        tag: "TableBody",
+        props: {
+          style: {
+            display: "flex",
+            flexDirection: "column",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+        children: [
+          {
+            tag: "Row",
+            props: {
+              style: { display: "flex", flexDirection: "row" },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+            children: [
+              {
+                tag: "Cell",
+                props: {
+                  children: "Item 1",
+                  style: { flex: 1, padding: 8 },
+                } as ComponentElementProps,
+                ...ownerFields,
+                order_num: 0,
+              },
+              {
+                tag: "Cell",
+                props: {
+                  children: "File",
+                  style: { flex: 1, padding: 8 },
+                } as ComponentElementProps,
+                ...ownerFields,
+                order_num: 1,
+              },
+              {
+                tag: "Cell",
+                props: {
+                  children: "Active",
+                  style: { flex: 1, padding: 8 },
+                } as ComponentElementProps,
+                ...ownerFields,
+                order_num: 2,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * SelectBoxGroup 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * SelectBoxGroup (parent, tag="SelectBoxGroup", flex container)
+ *   ├─ SelectBoxItem (label="Option A", value="a")
+ *   ├─ SelectBoxItem (label="Option B", value="b")
+ *   └─ SelectBoxItem (label="Option C", value="c")
+ */
+export function createSelectBoxGroupDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "SelectBoxGroup",
+    parent: {
+      tag: "SelectBoxGroup",
+      props: {
+        orientation: "vertical",
+        selectionMode: "single",
+        size: "md",
+        isDisabled: false,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          width: "100%",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "SelectBoxItem",
+        props: {
+          label: "Option A",
+          description: "First option description",
+          value: "a",
+          isSelected: true,
+          style: {},
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "SelectBoxItem",
+        props: {
+          label: "Option B",
+          description: "Second option description",
+          value: "b",
+          isSelected: false,
+          style: {},
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "SelectBoxItem",
+        props: {
+          label: "Option C",
+          description: "Third option description",
+          value: "c",
+          isSelected: false,
+          style: {},
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+    ],
+  };
+}
+
+/**
+ * ContextualHelp 컴포넌트 정의
+ *
+ * CSS DOM 구조:
+ * ContextualHelp (parent, tag="ContextualHelp", circular icon button)
+ */
+export function createContextualHelpDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "ContextualHelp",
+    parent: {
+      tag: "ContextualHelp",
+      props: {
+        variant: "help",
+        size: "md",
+        isDisabled: false,
+        style: {
+          width: 28,
+          height: 28,
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
