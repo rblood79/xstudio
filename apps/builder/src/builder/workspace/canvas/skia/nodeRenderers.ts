@@ -145,6 +145,7 @@ export interface SkiaNodeData {
     | "image"
     | "container"
     | "line"
+    | "arc"
     | "icon_path"
     | "partial_border";
   /** 이 노드를 소유한 element의 ID (AI 이펙트 타겟팅용) */
@@ -245,6 +246,17 @@ export interface SkiaNodeData {
     strokeWidth: number;
     /** dash/dot 패턴 (CanvasKit PathEffect.MakeDash 인자, [on, off] 형식) */
     strokeDasharray?: number[];
+  };
+  /** Arc 전용 (원형 진행률 등) */
+  arc?: {
+    cx: number;
+    cy: number;
+    radius: number;
+    startAngle: number;
+    sweepAngle: number;
+    strokeColor: Float32Array;
+    strokeWidth: number;
+    strokeCap?: "butt" | "round" | "square";
   };
   /** M-6: Partial Border 전용 (radius 있는 변별 테두리) */
   partialBorder?: PartialBorderData;
@@ -417,6 +429,9 @@ function renderNodeInternal(
       break;
     case "line":
       renderLine(ck, canvas, node);
+      break;
+    case "arc":
+      renderArc(ck, canvas, node);
       break;
     case "icon_path":
       renderIconPath(ck, canvas, node);
@@ -1122,6 +1137,53 @@ export function renderLine(
     paint.setPathEffect(null);
     dashEffect.delete();
   }
+  paint.delete();
+}
+
+/**
+ * Arc 렌더링 (원형 진행률 등)
+ *
+ * CanvasKit의 addArc로 stroke 기반 부분 원호를 그린다.
+ */
+export function renderArc(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+): void {
+  if (!node.arc) return;
+  const {
+    cx,
+    cy,
+    radius,
+    startAngle,
+    sweepAngle,
+    strokeColor,
+    strokeWidth,
+    strokeCap,
+  } = node.arc;
+
+  const paint = new ck.Paint();
+  paint.setAntiAlias(true);
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setStrokeWidth(strokeWidth);
+  paint.setColor(strokeColor);
+
+  // strokeCap 설정
+  if (strokeCap === "round") {
+    paint.setStrokeCap(ck.StrokeCap.Round);
+  } else if (strokeCap === "square") {
+    paint.setStrokeCap(ck.StrokeCap.Square);
+  } else {
+    paint.setStrokeCap(ck.StrokeCap.Butt);
+  }
+
+  const path = new ck.Path();
+  const oval = ck.LTRBRect(cx - radius, cy - radius, cx + radius, cy + radius);
+  path.addArc(oval, startAngle, sweepAngle);
+
+  canvas.drawPath(path, paint);
+
+  path.delete();
   paint.delete();
 }
 

@@ -18,6 +18,7 @@ import {
   InputSpec,
   resolveToken,
   PROGRESSBAR_DIMENSIONS,
+  PROGRESSCIRCLE_DIMENSIONS,
   METER_DIMENSIONS,
 } from "@xstudio/specs";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
@@ -879,6 +880,15 @@ export function calculateContentWidth(
   const explicitWidth = parseNumericValue(style?.width);
   if (explicitWidth !== undefined) return explicitWidth;
 
+  // 1.1. ProgressCircle: diameter 기반 고정 크기
+  if (tag === "progresscircle") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = String(props?.size ?? "M");
+    const dims =
+      PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.M;
+    return dims.diameter;
+  }
+
   // 🚀 ToggleButtonGroup: 자식 버튼 텍스트 크기 합산
   // PixiToggleButtonGroup.tsx의 buttonSizes/contentWidth와 동일한 공식
   if (tag === "togglebuttongroup") {
@@ -1443,6 +1453,15 @@ export function calculateContentHeight(
     return estimateTextHeight(fontSize, effectiveLineHeight);
   }
 
+  // 2.6a. ProgressCircle: diameter 기반 고정 크기
+  if (tag === "progresscircle") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = String(props?.size ?? "M");
+    const dims =
+      PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.M;
+    return dims.diameter;
+  }
+
   // 2.6. ProgressBar/Meter: spec shapes 기반 높이 계산
   // label/showValue가 있으면 fontSize + gap + barHeight, 없으면 barHeight만
   if (
@@ -1462,9 +1481,7 @@ export function calculateContentHeight(
 
     // label 또는 showValue가 있으면 텍스트 행 높이 추가
     const hasLabel = !!props?.label;
-    const hasValue = isMeter
-      ? props?.showValue !== false // Meter: 기본 true
-      : !!props?.showValue; // ProgressBar: 기본 false
+    const hasValue = props?.showValue !== false; // ProgressBar/Meter 모두 기본 true
     if (hasLabel || hasValue) {
       const fontSize = parseNumericValue(style?.fontSize) ?? 14;
       const gap = isMeter ? 8 : 8; // spec sizes[*].gap
@@ -2522,10 +2539,11 @@ export function enrichWithIntrinsicSize(
   const SPEC_SHAPES_INPUT_TAGS = new Set([
     "dropdown",
     "breadcrumbs",
-    // ProgressBar/Meter: spec shapes가 track+fill 렌더링, height 미설정 시 0이 됨
+    // ProgressBar/Meter/ProgressCircle: spec shapes가 렌더링, height 미설정 시 0이 됨
     "progressbar",
     "progress",
     "loadingbar",
+    "progresscircle",
     "meter",
     "gauge",
   ]);

@@ -322,6 +322,34 @@ export function specShapesToSkia(
         break;
       }
 
+      case "arc": {
+        const arcStrokeColor = colorValueToFloat32(shape.stroke, theme);
+        const arcDiameter = shape.radius * 2 + shape.strokeWidth;
+        const arcNode: SkiaNodeData = {
+          type: "arc",
+          x: shape.x - shape.radius - shape.strokeWidth / 2,
+          y: shape.y - shape.radius - shape.strokeWidth / 2,
+          width: arcDiameter,
+          height: arcDiameter,
+          visible: true,
+          arc: {
+            // canvas.translate(node.x, node.y) 후 로컬 좌표
+            cx: shape.radius + shape.strokeWidth / 2,
+            cy: shape.radius + shape.strokeWidth / 2,
+            radius: shape.radius,
+            startAngle: shape.startAngle,
+            sweepAngle: shape.sweepAngle,
+            strokeColor: arcStrokeColor,
+            strokeWidth: shape.strokeWidth,
+            strokeCap: shape.strokeCap,
+          },
+        };
+        children.push(arcNode);
+        if (shape.id) nodeById.set(shape.id, arcNode);
+        lastNode = arcNode;
+        break;
+      }
+
       case "line": {
         const strokeColor = colorValueToFloat32(shape.stroke, theme);
 

@@ -150,8 +150,9 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       // Child Composition: 자식 Element가 있으면 label/value text를 스킵하고 track+fill만 반환
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
-      // 라벨 + 값 행
-      const hasLabelRow = !hasChildren && (props.label || props.showValue);
+      // 라벨 + 값 행 (showValue 기본값 true — Meter와 동일)
+      const showValue = props.showValue !== false;
+      const hasLabelRow = !hasChildren && (props.label || showValue);
       if (hasLabelRow) {
         if (props.label) {
           shapes.push({
@@ -167,7 +168,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             baseline: "top" as const,
           });
         }
-        if (props.showValue) {
+        if (showValue) {
           const formattedValue =
             props.valueFormat === "number"
               ? String(Math.round(value))

@@ -1805,6 +1805,8 @@ export function createDefaultSearchFieldProps(): SearchFieldElementProps {
 
 export function createDefaultProgressBarProps(): ProgressBarElementProps {
   return {
+    showValue: true,
+    value: 50,
     style: {
       width: "100%",
     },
@@ -1813,6 +1815,8 @@ export function createDefaultProgressBarProps(): ProgressBarElementProps {
 
 export function createDefaultMeterProps(): MeterElementProps {
   return {
+    showValue: true,
+    value: 50,
     style: {
       width: "100%",
     },

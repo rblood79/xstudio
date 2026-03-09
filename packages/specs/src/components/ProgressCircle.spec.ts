@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from "../types";
+import type { ComponentSpec, Shape, ArcShape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 
@@ -139,57 +139,68 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
       }
 
       const shapes: Shape[] = [];
+      const trackRadius = radius - dims.strokeWidth / 2;
 
-      // 트랙 배경 원
+      // 트랙 배경 링 (360° stroke arc)
       shapes.push({
         id: "track",
-        type: "circle" as const,
+        type: "arc" as const,
         x: cx,
         y: cy,
-        radius,
-        fill: bgColor,
-      });
+        radius: trackRadius,
+        startAngle: 0,
+        sweepAngle: 360,
+        strokeWidth: dims.strokeWidth,
+        stroke: bgColor,
+      } as ArcShape & { id: string });
 
-      // 내부 빈 원 (도넛 효과를 위한 컷아웃 - 단순 구현으로 내부 원을 배경색으로)
-      const innerRadius = radius - dims.strokeWidth;
-      if (innerRadius > 0) {
-        shapes.push({
-          id: "inner",
-          type: "circle" as const,
-          x: cx,
-          y: cy,
-          radius: innerRadius,
-          fill: "{color.layer-1}" as TokenRef,
-        });
-      }
-
-      // value 텍스트 (determinate 모드, L 사이즈에만 표시)
-      if (!props.isIndeterminate && sizeName === "L") {
-        shapes.push({
-          id: "value-text",
-          type: "text" as const,
-          x: cx,
-          y: cy,
-          text: `${Math.round(value)}%`,
-          fontSize,
-          fontFamily: ff,
-          fill: textColor,
-          align: "center" as const,
-          baseline: "middle" as const,
-        });
-      }
-
-      // Indeterminate: 강조 원 표시 (정적 표현, arc 구현은 CSS에서 처리)
       if (props.isIndeterminate) {
+        // Indeterminate: 75% arc (정적 표현, CSS에서 회전 애니메이션)
         shapes.push({
           id: "indeterminate-arc",
-          type: "circle" as const,
+          type: "arc" as const,
           x: cx,
           y: cy,
-          radius: radius - dims.strokeWidth,
-          fill: fillColor,
-          fillAlpha: 0.3,
-        });
+          radius: trackRadius,
+          startAngle: -90,
+          sweepAngle: 270,
+          strokeWidth: dims.strokeWidth,
+          stroke: fillColor,
+          strokeCap: "round" as const,
+        } as ArcShape & { id: string });
+      } else {
+        // Determinate: value에 해당하는 arc
+        const sweepAngle = (value / 100) * 360;
+        if (sweepAngle > 0) {
+          shapes.push({
+            id: "value-arc",
+            type: "arc" as const,
+            x: cx,
+            y: cy,
+            radius: trackRadius,
+            startAngle: -90,
+            sweepAngle,
+            strokeWidth: dims.strokeWidth,
+            stroke: fillColor,
+            strokeCap: "round" as const,
+          } as ArcShape & { id: string });
+        }
+
+        // value 텍스트 (L 사이즈에만 표시)
+        if (sizeName === "L") {
+          shapes.push({
+            id: "value-text",
+            type: "text" as const,
+            x: cx,
+            y: cy,
+            text: `${Math.round(value)}%`,
+            fontSize,
+            fontFamily: ff,
+            fill: textColor,
+            align: "center" as const,
+            baseline: "middle" as const,
+          });
+        }
       }
 
       return shapes;

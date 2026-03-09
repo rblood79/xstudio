@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import type { TokenRef } from './token.types';
+import type { TokenRef } from "./token.types";
 
 /**
  * 색상 값 (토큰 참조 또는 직접 값)
@@ -31,6 +31,7 @@ export type Shape =
   | (RectShape & ShapeBase)
   | (RoundRectShape & ShapeBase)
   | (CircleShape & ShapeBase)
+  | (ArcShape & ShapeBase)
   | (TextShape & ShapeBase)
   | (ShadowShape & ShapeBase)
   | (BorderShape & ShapeBase)
@@ -44,11 +45,11 @@ export type Shape =
  * 사각형
  */
 export interface RectShape {
-  type: 'rect';
+  type: "rect";
   x: number;
   y: number;
-  width: number | 'auto';
-  height: number | 'auto';
+  width: number | "auto";
+  height: number | "auto";
   fill?: ColorValue;
   fillAlpha?: number;
 }
@@ -57,11 +58,11 @@ export interface RectShape {
  * 둥근 사각형
  */
 export interface RoundRectShape {
-  type: 'roundRect';
+  type: "roundRect";
   x: number;
   y: number;
-  width: number | 'auto';
-  height: number | 'auto';
+  width: number | "auto";
+  height: number | "auto";
   radius: number | [number, number, number, number]; // [tl, tr, br, bl]
   fill?: ColorValue;
   fillAlpha?: number;
@@ -71,7 +72,7 @@ export interface RoundRectShape {
  * 원
  */
 export interface CircleShape {
-  type: 'circle';
+  type: "circle";
   x: number;
   y: number;
   radius: number;
@@ -80,20 +81,46 @@ export interface CircleShape {
 }
 
 /**
+ * 호 (Arc) — 원형 진행률 표시 등에 사용
+ *
+ * stroke 기반 부분 원호를 그린다.
+ * startAngle/sweepAngle은 도(degree) 단위, 12시 방향 = -90°.
+ */
+export interface ArcShape {
+  type: "arc";
+  /** 중심 X */
+  x: number;
+  /** 중심 Y */
+  y: number;
+  /** 외부 반지름 */
+  radius: number;
+  /** 호 시작 각도 (degree, 3시 방향 = 0°) */
+  startAngle: number;
+  /** 호 스윕 각도 (degree, 양수 = 시계방향) */
+  sweepAngle: number;
+  /** 선 두께 */
+  strokeWidth: number;
+  /** 선 색상 */
+  stroke: ColorValue;
+  /** 선 끝 모양 */
+  strokeCap?: "butt" | "round" | "square";
+}
+
+/**
  * 텍스트
  */
 export interface TextShape {
-  type: 'text';
+  type: "text";
   x: number;
   y: number;
   text: string;
   fontSize: number;
   fontFamily: string;
   fontWeight?: string | number;
-  fontStyle?: 'normal' | 'italic';
+  fontStyle?: "normal" | "italic";
   fill?: ColorValue;
-  align?: 'left' | 'center' | 'right';
-  baseline?: 'top' | 'middle' | 'bottom';
+  align?: "left" | "center" | "right";
+  baseline?: "top" | "middle" | "bottom";
 
   /** 줄 높이 (배수, 예: 1.5) */
   lineHeight?: number;
@@ -102,16 +129,16 @@ export interface TextShape {
   letterSpacing?: number;
 
   /** 텍스트 장식 */
-  textDecoration?: 'none' | 'underline' | 'line-through';
+  textDecoration?: "none" | "underline" | "line-through";
 
   /** 텍스트 변환 */
-  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
 
   /** 최대 너비 (말줄임 처리) */
   maxWidth?: number;
 
   /** 오버플로우 처리 */
-  overflow?: 'visible' | 'ellipsis' | 'clip';
+  overflow?: "visible" | "ellipsis" | "clip";
 
   /** 줄 수 제한 (multiline 텍스트) */
   maxLines?: number;
@@ -125,7 +152,7 @@ export interface TextShape {
  * - target이 있으면: 해당 id를 가진 도형에 적용
  */
 export interface ShadowShape {
-  type: 'shadow';
+  type: "shadow";
 
   /** 적용 대상 shape의 id (없으면 이전 shape에 적용) */
   target?: string;
@@ -133,8 +160,8 @@ export interface ShadowShape {
   /** 그림자가 적용될 영역 (target 없이 직접 지정 시) */
   x?: number;
   y?: number;
-  width?: number | 'auto';
-  height?: number | 'auto';
+  width?: number | "auto";
+  height?: number | "auto";
   radius?: number | [number, number, number, number];
 
   /** 그림자 오프셋 */
@@ -165,7 +192,7 @@ export interface ShadowShape {
  * - target이 있으면: 해당 id를 가진 도형에 적용
  */
 export interface BorderShape {
-  type: 'border';
+  type: "border";
 
   /** 적용 대상 shape의 id (없으면 이전 shape에 적용) */
   target?: string;
@@ -173,8 +200,8 @@ export interface BorderShape {
   /** 테두리가 적용될 영역 (target 없이 직접 지정 시) */
   x?: number;
   y?: number;
-  width?: number | 'auto';
-  height?: number | 'auto';
+  width?: number | "auto";
+  height?: number | "auto";
 
   /** 테두리 두께 */
   borderWidth: number;
@@ -183,7 +210,7 @@ export interface BorderShape {
   color: ColorValue;
 
   /** 테두리 스타일 */
-  style?: 'solid' | 'dashed' | 'dotted';
+  style?: "solid" | "dashed" | "dotted";
 
   /** 모서리 반경 */
   radius?: number | [number, number, number, number];
@@ -202,10 +229,10 @@ export interface BorderShape {
  */
 export interface ContainerLayout {
   /** 레이아웃 타입 */
-  display?: 'flex' | 'block' | 'grid' | 'none';
+  display?: "flex" | "block" | "grid" | "none";
 
   /** 포지션 타입 */
-  position?: 'relative' | 'absolute';
+  position?: "relative" | "absolute";
 
   /** absolute 포지션일 때 위치 */
   top?: number;
@@ -217,17 +244,29 @@ export interface ContainerLayout {
   zIndex?: number;
 
   // ─── Flex 레이아웃 ───
-  flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
-  flexWrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
-  justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly';
-  alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline';
-  alignContent?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'space-between' | 'space-around';
+  flexDirection?: "row" | "column" | "row-reverse" | "column-reverse";
+  flexWrap?: "nowrap" | "wrap" | "wrap-reverse";
+  justifyContent?:
+    | "flex-start"
+    | "center"
+    | "flex-end"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
+  alignItems?: "flex-start" | "center" | "flex-end" | "stretch" | "baseline";
+  alignContent?:
+    | "flex-start"
+    | "center"
+    | "flex-end"
+    | "stretch"
+    | "space-between"
+    | "space-around";
 
   // ─── Grid 레이아웃 ───
   gridTemplateColumns?: string; // "1fr 1fr" | "repeat(3, 100px)"
   gridTemplateRows?: string;
   gridGap?: number | [number, number]; // [rowGap, columnGap]
-  gridAutoFlow?: 'row' | 'column' | 'dense';
+  gridAutoFlow?: "row" | "column" | "dense";
 
   // ─── 공통 ───
   gap?: number;
@@ -239,19 +278,19 @@ export interface ContainerLayout {
   // ─── 자식 요소용 (flex item) ───
   flexGrow?: number;
   flexShrink?: number;
-  flexBasis?: number | 'auto';
-  alignSelf?: 'auto' | 'flex-start' | 'center' | 'flex-end' | 'stretch';
+  flexBasis?: number | "auto";
+  alignSelf?: "auto" | "flex-start" | "center" | "flex-end" | "stretch";
 }
 
 /**
  * 컨테이너 (자식 요소 그룹)
  */
 export interface ContainerShape {
-  type: 'container';
+  type: "container";
   x: number;
   y: number;
-  width?: number | 'auto';
-  height?: number | 'auto';
+  width?: number | "auto";
+  height?: number | "auto";
   children: Shape[];
   clip?: boolean;
 
@@ -263,14 +302,14 @@ export interface ContainerShape {
  * 그라디언트 (ColorPicker, Slider 등에서 사용)
  */
 export interface GradientShape {
-  type: 'gradient';
+  type: "gradient";
   x: number;
   y: number;
-  width: number | 'auto';
-  height: number | 'auto';
+  width: number | "auto";
+  height: number | "auto";
   radius?: number | [number, number, number, number];
   gradient: {
-    type: 'linear' | 'radial' | 'conic';
+    type: "linear" | "radial" | "conic";
     angle?: number; // linear/conic gradient 각도 (0-360)
     stops: Array<{
       offset: number; // 0-1
@@ -283,13 +322,13 @@ export interface GradientShape {
  * 이미지
  */
 export interface ImageShape {
-  type: 'image';
+  type: "image";
   x: number;
   y: number;
-  width: number | 'auto';
-  height: number | 'auto';
+  width: number | "auto";
+  height: number | "auto";
   src: string;
-  fit?: 'contain' | 'cover' | 'fill' | 'none';
+  fit?: "contain" | "cover" | "fill" | "none";
   radius?: number | [number, number, number, number];
 }
 
@@ -297,7 +336,7 @@ export interface ImageShape {
  * 선
  */
 export interface LineShape {
-  type: 'line';
+  type: "line";
   x1: number;
   y1: number;
   x2: number;
@@ -314,7 +353,7 @@ export interface LineShape {
  * CanvasKit Path로 렌더링. 원본 viewBox는 24x24 기준.
  */
 export interface IconFontShape {
-  type: 'icon_font';
+  type: "icon_font";
   /** 아이콘 이름 (lucideIcons 레지스트리에서 조회) */
   iconName: string;
   /** 아이콘 라이브러리 (기본: 'lucide') */

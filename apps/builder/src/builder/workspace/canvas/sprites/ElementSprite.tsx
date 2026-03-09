@@ -306,7 +306,12 @@ const UI_RADIO_ITEM_TAGS = new Set(["Radio"]); // Radio 개별 아이템 (투명
 const UI_SLIDER_TAGS = new Set(["Slider", "RangeSlider"]);
 const UI_INPUT_TAGS = new Set(["Input"]); // TextField/TextInput은 UI_TEXTFIELD_TAGS, SearchField는 UI_SEARCHFIELD_TAGS로 분리
 const UI_SELECT_TAGS = new Set(["Select", "Dropdown"]); // ComboBox는 UI_COMBOBOX_TAGS로 분리
-const UI_PROGRESS_TAGS = new Set(["ProgressBar", "Progress", "LoadingBar"]);
+const UI_PROGRESS_TAGS = new Set([
+  "ProgressBar",
+  "Progress",
+  "LoadingBar",
+  "ProgressCircle",
+]);
 const UI_SWITCHER_TAGS = new Set(["Switcher", "SegmentedControl", "TabBar"]);
 const UI_SCROLLBOX_TAGS = new Set([
   "ScrollBox",
