@@ -1099,6 +1099,37 @@ export function renderBox(
         canvas.drawRect(ck.LTRBRect(ox, oy, ox + ow2, oy + oh2), outlinePaint);
       }
     }
+
+    // Arc overlay: box 위에 부분 원호 렌더링 (ProgressCircle 등)
+    if (node.arc) {
+      const arcPaint = new ck.Paint();
+      arcPaint.setAntiAlias(true);
+      arcPaint.setStyle(ck.PaintStyle.Stroke);
+      arcPaint.setStrokeWidth(node.arc.strokeWidth);
+      arcPaint.setColor(node.arc.strokeColor);
+
+      if (node.arc.strokeCap === "round") {
+        arcPaint.setStrokeCap(ck.StrokeCap.Round);
+      } else if (node.arc.strokeCap === "square") {
+        arcPaint.setStrokeCap(ck.StrokeCap.Square);
+      } else {
+        arcPaint.setStrokeCap(ck.StrokeCap.Butt);
+      }
+
+      const { cx, cy, radius, startAngle, sweepAngle } = node.arc;
+      const arcPath = new ck.Path();
+      const oval = ck.LTRBRect(
+        cx - radius,
+        cy - radius,
+        cx + radius,
+        cy + radius,
+      );
+      arcPath.addArc(oval, startAngle, sweepAngle);
+      canvas.drawPath(arcPath, arcPaint);
+
+      arcPath.delete();
+      arcPaint.delete();
+    }
   } finally {
     scope.dispose();
   }

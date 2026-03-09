@@ -78,6 +78,10 @@ export interface CircleShape {
   radius: number;
   fill?: ColorValue;
   fillAlpha?: number;
+  /** 테두리 색상 (stroke 기반 링 표현용) */
+  stroke?: ColorValue;
+  /** 테두리 두께 */
+  strokeWidth?: number;
 }
 
 /**

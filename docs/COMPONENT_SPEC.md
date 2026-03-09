@@ -2328,8 +2328,8 @@ jobs:
 
 ### 서명
 
-- 기술 리드: ******\_\_\_******
-- QA 담당: ******\_\_\_******
+- 기술 리드: **\*\***\_\_\_**\*\***
+- QA 담당: **\*\***\_\_\_**\*\***
 ```
 
 ---
@@ -3323,24 +3323,25 @@ export function smoothRoundRect(
 
 ### 5.1 대상 컴포넌트 (16개)
 
-| #   | 컴포넌트      | 현재 상태                                  | 복잡도 |
-| --- | ------------- | ------------------------------------------ | ------ |
-| 1   | TextField     | ✅ 정상                                    | 중간   |
-| 2   | TextArea      | ✅ 정상                                    | 중간   |
-| 3   | NumberField   | ✅ 정상                                    | 중간   |
-| 4   | SearchField   | ✅ 정상                                    | 중간   |
-| 5   | Checkbox      | ⚠️ 부분                                    | 중간   |
-| 6   | CheckboxGroup | ✅ 정상                                    | 높음   |
-| 7   | Radio         | ⚠️ 부분                                    | 중간   |
-| 8   | Switch        | ✅ 정상                                    | 중간   |
-| 9   | Select        | ✅ 정상                                    | 높음   |
-| 10  | ComboBox      | ✅ 정상                                    | 높음   |
-| 11  | ListBox       | ✅ 정상                                    | 높음   |
-| 12  | Slider        | ✅ 완전 지원 (Complex Component 전환 완료) | 높음   |
-| 13  | Meter         | ⚠️ 부분                                    | 중간   |
-| 14  | ProgressBar   | ⚠️ 부분                                    | 중간   |
-| 15  | Form          | ⚠️ 부분                                    | 낮음   |
-| 16  | Autocomplete  | ❌ 미구현                                  | 높음   |
+| #   | 컴포넌트       | 현재 상태                                  | 복잡도 |
+| --- | -------------- | ------------------------------------------ | ------ |
+| 1   | TextField      | ✅ 정상                                    | 중간   |
+| 2   | TextArea       | ✅ 정상                                    | 중간   |
+| 3   | NumberField    | ✅ 정상                                    | 중간   |
+| 4   | SearchField    | ✅ 정상                                    | 중간   |
+| 5   | Checkbox       | ⚠️ 부분                                    | 중간   |
+| 6   | CheckboxGroup  | ✅ 정상                                    | 높음   |
+| 7   | Radio          | ⚠️ 부분                                    | 중간   |
+| 8   | Switch         | ✅ 정상                                    | 중간   |
+| 9   | Select         | ✅ 정상                                    | 높음   |
+| 10  | ComboBox       | ✅ 정상                                    | 높음   |
+| 11  | ListBox        | ✅ 정상                                    | 높음   |
+| 12  | Slider         | ✅ 완전 지원 (Complex Component 전환 완료) | 높음   |
+| 13  | Meter          | ⚠️ 부분                                    | 중간   |
+| 14  | ProgressBar    | ⚠️ 부분                                    | 중간   |
+| 14b | ProgressCircle | ✅ 정상 (Arc 기반 Skia 렌더링 완료)        | 중간   |
+| 15  | Form           | ⚠️ 부분                                    | 낮음   |
+| 16  | Autocomplete   | ❌ 미구현                                  | 높음   |
 
 ### 5.2 TextField Spec 예시
 

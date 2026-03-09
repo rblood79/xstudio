@@ -86,6 +86,18 @@ Spec 기반 컴포넌트(Button, Badge 등)의 텍스트 폭 측정 시 `extract
 - `tintToSkiaColors.ts`의 `mixWithBlackSrgb()` 사용 (oklch lightness 근사 금지)
 - light/dark 모드 무관하게 동일 연산 (CSS `color-mix`는 모드별 분기 없음)
 
+## Arc Shape 렌더링 (ProgressCircle 등)
+
+- Spec `arc` shape → specShapeConverter에서 `type: "box"` + `arc` 데이터로 변환
+  - 별도 `type: "arc"` 사용 금지 — `React.lazy()` import 체인으로 `renderNodeInternal` switch 미도달 (HMR 이슈)
+- `renderBox`에서 `node.arc` 감지 시 `CanvasKit.Path.addArc()` 로 부분 원호 렌더링
+- **트랙/인디케이터 정렬 (CRITICAL)**: 트랙 링에 `circle` + stroke 사용 금지
+  - `renderSolidBorder`는 `inset = sw/2` 적용 → 스트로크 중심 반지름이 `sw/2` 만큼 안쪽으로 밀림
+  - `addArc`는 정확한 반지름에 그림 → 트랙과 인디케이터 `sw/2` 만큼 어긋남
+  - **해결**: 트랙도 `arc`(sweepAngle=360°)로 동일 렌더링 경로 사용
+- Spec text 중앙 배치: `x: 0, y: 0` + `align: "center"` + `baseline: "middle"` 사용
+  - `x: cx, y: cy` 사용 시 specShapeConverter가 paddingLeft/maxWidth를 오계산하여 텍스트 치우침
+
 ## registryVersion 캐싱
 
 - LayoutContainer 'layout' 이벤트에서 `notifyLayoutChange()` 무조건 호출

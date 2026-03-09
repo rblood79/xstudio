@@ -4,10 +4,15 @@
  * React Aria 기반 원형 진행률 표시 컴포넌트
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
+ * Skia 렌더링: circle + stroke 방식으로 도넛 링 표현
+ * - 외부 링: circle (fill=transparent, stroke=bgColor) → 트랙
+ * - 내부 링: circle (fill=transparent, stroke=accentColor) → 진행 표시 (전체 원)
+ * - 내부 채우기: circle (fill=bgFill) → 도넛 구멍 효과
+ *
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, ArcShape, TokenRef } from "../types";
+import type { ComponentSpec, ArcShape, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 
@@ -107,10 +112,10 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
       const sizeName = props.size ?? "M";
       const dims =
         PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.M;
-      const diameter = (props.style?.width as number) || dims.diameter;
-      const radius = diameter / 2;
-      const cx = radius;
-      const cy = radius;
+      const diameter = dims.diameter;
+      const outerRadius = diameter / 2;
+      const cx = outerRadius;
+      const cy = outerRadius;
 
       const variantName = props.variant ?? "default";
       const fillColor =
@@ -139,9 +144,12 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
       }
 
       const shapes: Shape[] = [];
-      const trackRadius = radius - dims.strokeWidth / 2;
 
-      // 트랙 배경 링 (360° stroke arc)
+      // 트랙 링: 외부 원에 stroke로 링 표현
+      // strokeWidth만큼 안쪽으로 반지름을 줄여 외곽에 걸치지 않도록 보정
+      const trackRadius = outerRadius - dims.strokeWidth / 2;
+
+      // 트랙 배경 링 — arc(360°)로 렌더링하여 indicator arc와 동일 경로 사용
       shapes.push({
         id: "track",
         type: "arc" as const,
@@ -152,12 +160,13 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
         sweepAngle: 360,
         strokeWidth: dims.strokeWidth,
         stroke: bgColor,
-      } as ArcShape & { id: string });
+        strokeCap: "butt",
+      } satisfies ArcShape & { id: string });
 
       if (props.isIndeterminate) {
-        // Indeterminate: 75% arc (정적 표현, CSS에서 회전 애니메이션)
+        // Indeterminate: accent 색상 75% 호 (CSS에서 회전 애니메이션 처리)
         shapes.push({
-          id: "indeterminate-arc",
+          id: "indicator",
           type: "arc" as const,
           x: cx,
           y: cy,
@@ -166,24 +175,24 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
           sweepAngle: 270,
           strokeWidth: dims.strokeWidth,
           stroke: fillColor,
-          strokeCap: "round" as const,
-        } as ArcShape & { id: string });
+          strokeCap: "round",
+        } satisfies ArcShape & { id: string });
       } else {
-        // Determinate: value에 해당하는 arc
-        const sweepAngle = (value / 100) * 360;
-        if (sweepAngle > 0) {
+        // Determinate: value 비율만큼 호(arc)로 진행률 표현
+        if (value > 0) {
+          const sweepAngle = (value / 100) * 360;
           shapes.push({
-            id: "value-arc",
+            id: "indicator",
             type: "arc" as const,
             x: cx,
             y: cy,
             radius: trackRadius,
-            startAngle: -90,
+            startAngle: -90, // 12시 방향 시작
             sweepAngle,
             strokeWidth: dims.strokeWidth,
             stroke: fillColor,
-            strokeCap: "round" as const,
-          } as ArcShape & { id: string });
+            strokeCap: "round",
+          } satisfies ArcShape & { id: string });
         }
 
         // value 텍스트 (L 사이즈에만 표시)
@@ -191,8 +200,8 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
           shapes.push({
             id: "value-text",
             type: "text" as const,
-            x: cx,
-            y: cy,
+            x: 0,
+            y: 0,
             text: `${Math.round(value)}%`,
             fontSize,
             fontFamily: ff,

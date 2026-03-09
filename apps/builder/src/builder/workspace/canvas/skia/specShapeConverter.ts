@@ -182,8 +182,8 @@ export function specShapesToSkia(
   }
 
   // Build the top-level container
-  return {
-    type: "box",
+  const result = {
+    type: "box" as const,
     x: 0,
     y: 0,
     width: containerWidth,
@@ -192,6 +192,8 @@ export function specShapesToSkia(
     box: bgBox ?? { fillColor: TRANSPARENT, borderRadius: 0 },
     children: children.length > 0 ? children : undefined,
   };
+
+  return result;
 
   // ===== Shape processor (shared by both passes) =====
   function processShape(shape: Shape): void {
@@ -306,6 +308,22 @@ export function specShapesToSkia(
           ? colorValueToFloat32(shape.fill, theme, shape.fillAlpha ?? 1)
           : TRANSPARENT;
 
+        const circleBox: SkiaNodeData["box"] = {
+          fillColor,
+          borderRadius: shape.radius,
+        };
+
+        // stroke 속성이 있으면 strokeColor/strokeWidth 추가 (링 표현용)
+        if (shape.stroke && shape.strokeWidth) {
+          circleBox.strokeColor = colorValueToFloat32(
+            shape.stroke,
+            theme,
+            shape.fillAlpha ?? 1,
+          );
+          circleBox.strokeWidth = shape.strokeWidth;
+          circleBox.strokeStyle = "solid";
+        }
+
         const node: SkiaNodeData = {
           type: "box",
           x: shape.x - shape.radius, // center → top-left
@@ -313,7 +331,7 @@ export function specShapesToSkia(
           width: diameter,
           height: diameter,
           visible: true,
-          box: { fillColor, borderRadius: shape.radius },
+          box: circleBox,
         };
 
         children.push(node);
@@ -325,13 +343,16 @@ export function specShapesToSkia(
       case "arc": {
         const arcStrokeColor = colorValueToFloat32(shape.stroke, theme);
         const arcDiameter = shape.radius * 2 + shape.strokeWidth;
+        // Arc를 box 타입으로 변환 — renderBox에서 node.arc를 감지하여 렌더링
+        // (별도 "arc" 타입은 renderNodeInternal switch 도달 문제로 사용하지 않음)
         const arcNode: SkiaNodeData = {
-          type: "arc",
+          type: "box",
           x: shape.x - shape.radius - shape.strokeWidth / 2,
           y: shape.y - shape.radius - shape.strokeWidth / 2,
           width: arcDiameter,
           height: arcDiameter,
           visible: true,
+          box: { fillColor: TRANSPARENT, borderRadius: 0 },
           arc: {
             // canvas.translate(node.x, node.y) 후 로컬 좌표
             cx: shape.radius + shape.strokeWidth / 2,

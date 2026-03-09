@@ -2412,6 +2412,7 @@ export const INLINE_BLOCK_TAGS = new Set([
   "fancybutton",
   "togglebutton",
   "badge",
+  "progresscircle",
   "tag",
   "chip",
   "checkbox",
