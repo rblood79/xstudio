@@ -180,8 +180,7 @@
 
 .workspace--compare-mode {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
+  grid-template-columns: var(--compare-split, 50%) 4px 1fr;
   background-color: var(--border);
 }
 
@@ -191,6 +190,21 @@
   flex-direction: column;
   background-color: var(--bg);
   overflow: hidden;
+}
+
+.workspace-compare-resizer {
+  width: 4px;
+  cursor: col-resize;
+  background-color: var(--border);
+  position: relative;
+  z-index: 10;
+  touch-action: none;
+  transition: background-color 150ms;
+}
+
+.workspace-compare-resizer:hover,
+.workspace-compare-resizer:active {
+  background-color: var(--accent);
 }
 
 .workspace-compare-label {

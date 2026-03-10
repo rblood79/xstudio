@@ -108,10 +108,14 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
       // Phase C: 브레드크럼 아이템 생성
       let x = 0;
       const height = size.height || 24;
+      // 간이 문자 폭 추정 계수 (Pretendard 평균)
+      const charWidthFactor = resolvedFontSize * 0.55;
       for (let i = 0; i < crumbs.length; i++) {
         const isLast = i === crumbs.length - 1;
+        const estimatedTextWidth = crumbs[i].length * charWidthFactor;
 
-        // 크럼 텍스트
+        // 크럼 텍스트 — maxWidth 명시하여 specShapeConverter의
+        // containerWidth - shape.x 자동 축소 방지 (줄바꿈 원인 제거)
         shapes.push({
           type: "text" as const,
           x,
@@ -123,14 +127,15 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
           fill: isLast ? variant.text : ("{color.neutral-subdued}" as TokenRef),
           align: "left" as const,
           baseline: "middle" as const,
+          maxWidth: estimatedTextWidth + resolvedFontSize,
         });
 
-        // 글자 수 기반 간이 폭 추정 (정확한 측정은 런타임에서)
-        x += crumbs[i].length * (resolvedFontSize * 0.55);
+        x += estimatedTextWidth;
 
         // 구분자 (CSS: padding 0 4px)
         if (!isLast) {
           x += separatorPadding;
+          const sepEstimate = resolvedFontSize * 0.35;
           shapes.push({
             type: "text" as const,
             x,
@@ -142,8 +147,9 @@ export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
             fill: "{color.neutral-subdued}" as TokenRef,
             align: "left" as const,
             baseline: "middle" as const,
+            maxWidth: sepEstimate + resolvedFontSize,
           });
-          x += separatorPadding + resolvedFontSize * 0.35;
+          x += separatorPadding + sepEstimate;
         }
       }
 

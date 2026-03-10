@@ -198,6 +198,10 @@ export function Workspace({
   const useWebGL = isWebGLCanvas();
   const compareMode = isCanvasCompareMode();
 
+  // 비교 모드: 드래그 가능한 분할 바 상태
+  const [compareSplit, setCompareSplit] = useState(50); // 왼쪽 패널 비율 (%)
+  const isDraggingRef = useRef(false);
+
   // 🚀 줌 단축키는 useGlobalKeyboardShortcuts로 통합됨 (BuilderCore.tsx)
 
   // ============================================
@@ -290,9 +294,9 @@ export function Workspace({
     const containerSize = containerSizeRef.current;
     if (containerSize.width <= 0 || containerSize.height <= 0) return false;
 
-    // 비교 모드에서는 WebGL 패널이 절반 너비만 차지
+    // 비교 모드에서는 WebGL 패널이 분할 비율에 따라 너비 축소
     const effectiveWidth = compareMode
-      ? containerSize.width / 2
+      ? containerSize.width * ((100 - compareSplit) / 100)
       : containerSize.width;
 
     const scaleX = effectiveWidth / canvasSize.width;
@@ -305,16 +309,23 @@ export function Workspace({
       y: (containerSize.height - canvasSize.height * fitZoom) / 2,
     });
     return true;
-  }, [canvasSize.width, canvasSize.height, compareMode, setZoom, setPanOffset]);
+  }, [
+    canvasSize.width,
+    canvasSize.height,
+    compareMode,
+    compareSplit,
+    setZoom,
+    setPanOffset,
+  ]);
 
   // 100% 줌으로 캔버스 중앙 배치 (초기 로드용)
   const centerCanvasAt100 = useCallback(() => {
     const containerSize = containerSizeRef.current;
     if (containerSize.width <= 0 || containerSize.height <= 0) return false;
 
-    // 비교 모드에서는 WebGL 패널이 절반 너비만 차지
+    // 비교 모드에서는 WebGL 패널이 분할 비율에 따라 너비 축소
     const effectiveWidth = compareMode
-      ? containerSize.width / 2
+      ? containerSize.width * ((100 - compareSplit) / 100)
       : containerSize.width;
 
     const zoom100 = 1; // 100%
@@ -324,7 +335,14 @@ export function Workspace({
       y: (containerSize.height - canvasSize.height * zoom100) / 2,
     });
     return true;
-  }, [canvasSize.width, canvasSize.height, compareMode, setZoom, setPanOffset]);
+  }, [
+    canvasSize.width,
+    canvasSize.height,
+    compareMode,
+    compareSplit,
+    setZoom,
+    setPanOffset,
+  ]);
 
   // ref 동기화 (useEffect에서 stale closure 방지)
   const centerCanvasAt100Ref = useRef<() => boolean>(() => false);
@@ -459,15 +477,57 @@ export function Workspace({
   // Render
   // ============================================
 
+  const handleResizeStart = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      isDraggingRef.current = true;
+      const target = e.currentTarget;
+      target.setPointerCapture(e.pointerId);
+    },
+    [],
+  );
+
+  const handleResizeMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isDraggingRef.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const pct = Math.min(80, Math.max(20, (x / rect.width) * 100));
+      setCompareSplit(pct);
+    },
+    [],
+  );
+
+  const handleResizeEnd = useCallback(() => {
+    isDraggingRef.current = false;
+  }, []);
+
   // 비교 모드: iframe + PixiJS 동시 표시
   if (compareMode && fallbackCanvas) {
     return (
-      <div ref={containerRef} className="workspace workspace--compare-mode">
+      <div
+        ref={containerRef}
+        className="workspace workspace--compare-mode"
+        style={
+          {
+            "--compare-split": `${compareSplit}%`,
+          } as React.CSSProperties
+        }
+      >
         {/* 왼쪽: iframe Canvas */}
         <div className="workspace-compare-panel workspace-compare-panel--left">
           <div className="workspace-compare-label">CSS</div>
           <div className="workspace-compare-content">{fallbackCanvas}</div>
         </div>
+
+        {/* 드래그 가능한 분할 바 */}
+        <div
+          className="workspace-compare-resizer"
+          onPointerDown={handleResizeStart}
+          onPointerMove={handleResizeMove}
+          onPointerUp={handleResizeEnd}
+          onPointerCancel={handleResizeEnd}
+        />
 
         {/* 오른쪽: WebGL Canvas */}
         <div className="workspace-compare-panel workspace-compare-panel--right">
