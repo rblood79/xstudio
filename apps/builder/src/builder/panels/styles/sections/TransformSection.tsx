@@ -375,7 +375,28 @@ const TransformSectionContent = memo(function TransformSectionContent() {
               className="aspect-ratio-select"
               value={styleValues.aspectRatio || ""}
               options={ASPECT_RATIO_OPTIONS}
-              onChange={(value) => updateStyleImmediate("aspectRatio", value)}
+              onChange={(value) => {
+                if (value === "reset" || value === "") {
+                  updateStyleImmediate("aspectRatio", "");
+                } else {
+                  // aspectRatio가 설정되면 height를 auto로 변경하여 적용 가능하게 함
+                  // CSS aspect-ratio는 width 또는 height 중 하나가 auto일 때만 적용됨
+                  const updates: Record<string, string> = {
+                    aspectRatio: value,
+                  };
+                  // height가 고정값이면 auto로 변경 (width는 유지)
+                  if (
+                    styleValues.height &&
+                    styleValues.height !== "auto" &&
+                    styleValues.height !== "fit-content" &&
+                    styleValues.height !== "min-content" &&
+                    styleValues.height !== "max-content"
+                  ) {
+                    updates.height = "auto";
+                  }
+                  updateStylesImmediate(updates);
+                }
+              }}
             />
             <SwatchIconButton
               aria-label="Lock aspect ratio"

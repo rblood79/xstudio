@@ -26,6 +26,7 @@ import {
   parseBoxModel,
   parseCSSPropWithContext,
   measureTextWidth,
+  parseAspectRatio,
 } from "./utils";
 import { resolveStyle, ROOT_COMPUTED_STYLE } from "./cssResolver";
 import type { ComputedStyle } from "./cssResolver";
@@ -363,8 +364,14 @@ function taffyStyleToRecord(style: TaffyStyle): Record<string, unknown> {
   if (style.columnGap !== undefined) result.columnGap = dim(style.columnGap);
   if (style.rowGap !== undefined) result.rowGap = dim(style.rowGap);
 
-  // Aspect ratio
-  if (style.aspectRatio !== undefined) result.aspectRatio = style.aspectRatio;
+  // Aspect ratio — TaffyStyle.aspectRatio는 이미 숫자이므로 그대로 전달
+  if (
+    style.aspectRatio !== undefined &&
+    typeof style.aspectRatio === "number" &&
+    style.aspectRatio > 0
+  ) {
+    result.aspectRatio = style.aspectRatio;
+  }
 
   return result;
 }
@@ -1324,7 +1331,7 @@ export function calculateFullTreeLayout(
         {}) as Record<string, unknown>;
       const margin = parseMargin(elementStyle);
 
-      result.set(node.elementId, {
+      const computedLayout: ComputedLayout = {
         elementId: node.elementId,
         x: sanitizeLayoutValue(layoutResult.x),
         y: sanitizeLayoutValue(layoutResult.y),
@@ -1336,7 +1343,29 @@ export function calculateFullTreeLayout(
           bottom: sanitizeLayoutValue(margin.bottom),
           left: sanitizeLayoutValue(margin.left),
         },
-      });
+      };
+
+      // 디버깅: aspectRatio가 설정된 요소의 레이아웃 결과 확인
+      if (import.meta.env.DEV) {
+        const elementStyle = (elementsMap.get(node.elementId)?.props?.style ??
+          {}) as Record<string, unknown>;
+        if (
+          elementStyle.aspectRatio &&
+          elementStyle.aspectRatio !== "" &&
+          elementStyle.aspectRatio !== "reset"
+        ) {
+          console.log(
+            `[fullTreeLayout] aspectRatio element ${node.elementId}:`,
+            `style.aspectRatio=${elementStyle.aspectRatio}`,
+            `style.width=${elementStyle.width}`,
+            `style.height=${elementStyle.height}`,
+            `computed: width=${computedLayout.width}, height=${computedLayout.height}`,
+            `ratio=${computedLayout.width / computedLayout.height}`,
+          );
+        }
+      }
+
+      result.set(node.elementId, computedLayout);
     }
 
     if (sanitizeStats.count > 0 && import.meta.env.DEV) {

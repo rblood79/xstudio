@@ -3290,8 +3290,110 @@ export function applyCommonTaffyStyle(
   if (style.overflowX) result.overflowX = style.overflowX;
   if (style.overflowY) result.overflowY = style.overflowY;
 
-  // Aspect ratio
-  if (style.aspectRatio !== undefined) result.aspectRatio = style.aspectRatio;
+  // Aspect ratio — CSS 형식("16 / 9")을 숫자로 변환
+  if (
+    style.aspectRatio !== undefined &&
+    style.aspectRatio !== "" &&
+    style.aspectRatio !== "reset"
+  ) {
+    const ratio = parseAspectRatio(style.aspectRatio);
+    if (ratio !== undefined && ratio > 0) {
+      result.aspectRatio = ratio;
+
+      // CSS aspect-ratio는 width 또는 height 중 하나가 auto일 때만 적용됨
+      // height가 undefined이면 명시적으로 "auto"로 설정하여 Taffy가 aspectRatio를 적용하도록 함
+      const rawHeight = style.height;
+      const rawWidth = style.width;
+
+      // height가 undefined/null/빈 문자열이면 명시적으로 "auto"로 설정
+      if (
+        (rawHeight === undefined || rawHeight === null || rawHeight === "") &&
+        result.height === undefined
+      ) {
+        result.height = "auto";
+      }
+      // width와 height가 모두 고정값(숫자 또는 px 문자열)이면 height를 auto로 변경
+      else if (
+        rawHeight !== undefined &&
+        rawHeight !== null &&
+        rawHeight !== "" &&
+        rawHeight !== "auto" &&
+        rawHeight !== "fit-content" &&
+        rawHeight !== "min-content" &&
+        rawHeight !== "max-content" &&
+        rawWidth !== undefined &&
+        rawWidth !== null &&
+        rawWidth !== "" &&
+        rawWidth !== "auto" &&
+        rawWidth !== "fit-content" &&
+        rawWidth !== "min-content" &&
+        rawWidth !== "max-content"
+      ) {
+        // width와 height가 모두 고정값이면 height를 auto로 변경하여 aspectRatio 적용
+        result.height = "auto";
+      }
+
+      if (import.meta.env.DEV) {
+        console.log(
+          `[applyCommonTaffyStyle] aspectRatio: "${style.aspectRatio}" → ${ratio}, rawWidth=${rawWidth}, rawHeight=${rawHeight}, result.height=${result.height}`,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * CSS aspect-ratio 값을 숫자로 파싱
+ *
+ * @param value - CSS aspect-ratio 값 ("16 / 9", "1 / 1", "1.777", 등)
+ * @returns 숫자 비율 또는 undefined
+ *
+ * @example
+ * parseAspectRatio("16 / 9") // 1.777...
+ * parseAspectRatio("1 / 1") // 1.0
+ * parseAspectRatio("1.777") // 1.777
+ * parseAspectRatio("reset") // undefined
+ * parseAspectRatio("") // undefined
+ */
+export function parseAspectRatio(value: unknown): number | undefined {
+  if (
+    value === undefined ||
+    value === null ||
+    value === "" ||
+    value === "reset" ||
+    value === "auto"
+  ) {
+    return undefined;
+  }
+
+  // 이미 숫자인 경우
+  if (typeof value === "number") {
+    return value > 0 ? value : undefined;
+  }
+
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+
+  // "16 / 9" 형식 파싱
+  const ratioMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+  if (ratioMatch) {
+    const numerator = parseFloat(ratioMatch[1]);
+    const denominator = parseFloat(ratioMatch[2]);
+    if (!isNaN(numerator) && !isNaN(denominator) && denominator > 0) {
+      return numerator / denominator;
+    }
+  }
+
+  // 순수 숫자 문자열인 경우
+  const num = parseFloat(trimmed);
+  if (!isNaN(num) && num > 0) {
+    return num;
+  }
+
+  return undefined;
 }
 
 /**

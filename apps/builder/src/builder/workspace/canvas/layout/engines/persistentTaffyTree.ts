@@ -24,10 +24,13 @@
  * @see taffyLayout.ts — TaffyLayout.updateStyleRaw(), TaffyLayout.createNodeRaw()
  */
 
-import { TaffyLayout } from '../../wasm-bindings/taffyLayout';
-import type { TaffyNodeHandle, LayoutResult } from '../../wasm-bindings/taffyLayout';
-import { encodeBatchBinary } from '../../wasm-bindings/binaryProtocol';
-import type { BinaryBatchInput } from '../../wasm-bindings/binaryProtocol';
+import { TaffyLayout } from "../../wasm-bindings/taffyLayout";
+import type {
+  TaffyNodeHandle,
+  LayoutResult,
+} from "../../wasm-bindings/taffyLayout";
+import { encodeBatchBinary } from "../../wasm-bindings/binaryProtocol";
+import type { BinaryBatchInput } from "../../wasm-bindings/binaryProtocol";
 
 // ─── 타입 정의 ────────────────────────────────────────────────────────
 
@@ -122,14 +125,17 @@ export class PersistentTaffyTree {
     // 1. WASM 호출 — binary protocol 사용 가능 시 TypedArray, 아니면 JSON fallback
     let handles: number[];
     if (this.taffy.hasBinaryProtocol()) {
-      const binaryInput: BinaryBatchInput[] = batch.map(n => ({
+      const binaryInput: BinaryBatchInput[] = batch.map((n) => ({
         style: n.style,
         children: n.children,
       }));
       const binaryData = encodeBatchBinary(binaryInput);
       handles = this.taffy.buildTreeBatchBinary(binaryData);
     } else {
-      const batchPayload = batch.map(n => ({ style: n.style, children: n.children }));
+      const batchPayload = batch.map((n) => ({
+        style: n.style,
+        children: n.children,
+      }));
       handles = this.taffy.buildTreeBatch(JSON.stringify(batchPayload));
     }
 
@@ -153,7 +159,8 @@ export class PersistentTaffyTree {
 
       // childrenHashMap: filteredChildIds 기준 (implicit style 적용 후 실제 자식)
       const childIds = filteredChildIds.get(node.elementId);
-      const childHash = (childIds && childIds.length > 0) ? childIds.join(',') : '';
+      const childHash =
+        childIds && childIds.length > 0 ? childIds.join(",") : "";
       this.childrenHashMap.set(node.elementId, childHash);
     }
 
@@ -164,7 +171,7 @@ export class PersistentTaffyTree {
       const rootNode = batch[batch.length - 1];
       if (rootNode && rootNode.elementId !== rootElementId) {
         console.warn(
-          '[PersistentTaffyTree] buildFull: batch 마지막 요소가 rootElementId와 불일치.',
+          "[PersistentTaffyTree] buildFull: batch 마지막 요소가 rootElementId와 불일치.",
           { expected: rootElementId, actual: rootNode.elementId },
         );
       }
@@ -206,6 +213,15 @@ export class PersistentTaffyTree {
     const json = JSON.stringify(styleRecord);
     const existingJson = this._lastJsonMap.get(elementId);
 
+    if (import.meta.env.DEV && styleRecord.aspectRatio !== undefined) {
+      console.log(
+        `[PersistentTaffyTree.updateNodeStyle] ${elementId} aspectRatio:`,
+        styleRecord.aspectRatio,
+        "JSON:",
+        json.substring(0, 200),
+      );
+    }
+
     if (existingJson === json) {
       return false;
     }
@@ -234,12 +250,12 @@ export class PersistentTaffyTree {
     const parentHandle = this.handleMap.get(parentId);
     if (parentHandle === undefined) return false;
 
-    const hash = childIds.join(',');
+    const hash = childIds.join(",");
     if (this.childrenHashMap.get(parentId) === hash) return false; // 변경 없음 → 스킵
 
     // handleMap에 존재하는 자식만 포함 (미등록 ID 방어)
     const childHandles = childIds
-      .map(id => this.handleMap.get(id))
+      .map((id) => this.handleMap.get(id))
       .filter((h): h is TaffyNodeHandle => h !== undefined);
 
     this.taffy.setChildren(parentHandle, childHandles);
@@ -261,7 +277,10 @@ export class PersistentTaffyTree {
    * @param styleRecord - taffyStyleToRecord() 결과 (이미 정규화된 Record)
    * @returns 생성된 Taffy node handle
    */
-  addNode(elementId: string, styleRecord: Record<string, unknown>): TaffyNodeHandle {
+  addNode(
+    elementId: string,
+    styleRecord: Record<string, unknown>,
+  ): TaffyNodeHandle {
     const json = JSON.stringify(styleRecord);
     // normalizeStyle() 이중 변환 방지를 위해 createNodeRaw() 사용
     const handle = this.taffy.createNodeRaw(json);
@@ -306,7 +325,9 @@ export class PersistentTaffyTree {
    */
   computeLayout(availableWidth: number, availableHeight: number): void {
     if (this.rootHandle === null) {
-      throw new Error('[PersistentTaffyTree] computeLayout: 트리가 초기화되지 않았습니다. buildFull()을 먼저 호출하세요.');
+      throw new Error(
+        "[PersistentTaffyTree] computeLayout: 트리가 초기화되지 않았습니다. buildFull()을 먼저 호출하세요.",
+      );
     }
     this.taffy.computeLayout(this.rootHandle, availableWidth, availableHeight);
   }
