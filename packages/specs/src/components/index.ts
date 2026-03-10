@@ -323,7 +323,7 @@ export { AvatarGroupSpec } from "./AvatarGroup.spec";
 export type { AvatarGroupProps } from "./AvatarGroup.spec";
 
 // StatusLight
-export { StatusLightSpec } from "./StatusLight.spec";
+export { StatusLightSpec, STATUSLIGHT_DIMENSIONS } from "./StatusLight.spec";
 export type { StatusLightProps } from "./StatusLight.spec";
 
 // InlineAlert

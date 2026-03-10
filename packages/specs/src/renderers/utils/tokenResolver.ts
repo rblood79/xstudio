@@ -163,6 +163,12 @@ const NAMED_COLOR_TO_CSS: Record<string, string> = {
   // Magenta
   magenta: "oklch(0.55 0.2 335)",
   "magenta-subtle": "oklch(0.93 0.04 335)",
+  // Celery
+  celery: "oklch(0.62 0.16 130)",
+  "celery-subtle": "oklch(0.93 0.04 130)",
+  // Chartreuse
+  chartreuse: "oklch(0.65 0.18 115)",
+  "chartreuse-subtle": "oklch(0.93 0.04 115)",
 };
 
 /**

@@ -8,6 +8,8 @@ import {
   FileText,
   Hash,
   Tag,
+  Image,
+  PenLine,
 } from "lucide-react";
 import { PropertyEditorProps } from "../types/editorTypes";
 import {
@@ -17,6 +19,7 @@ import {
   PropertySizeToggle,
   PropertyCustomId,
   PropertySection,
+  PropertyIconPicker,
 } from "../../../components";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
@@ -66,6 +69,40 @@ export const ButtonEditor = memo(function ButtonEditor({
     },
     [currentProps, onUpdate],
   );
+
+  const handleIconNameChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, iconName: value || undefined });
+    },
+    [currentProps, onUpdate],
+  );
+
+  const handleIconPositionChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...currentProps, iconPosition: value });
+    },
+    [currentProps, onUpdate],
+  );
+
+  const handleIconStrokeWidthChange = useCallback(
+    (value: string) => {
+      const num = parseFloat(value);
+      onUpdate({
+        ...currentProps,
+        iconStrokeWidth: isNaN(num) ? undefined : num,
+      });
+    },
+    [currentProps, onUpdate],
+  );
+
+  const handleIconClear = useCallback(() => {
+    onUpdate({
+      ...currentProps,
+      iconName: undefined,
+      iconPosition: undefined,
+      iconStrokeWidth: undefined,
+    });
+  }, [currentProps, onUpdate]);
 
   const handleTypeChange = useCallback(
     (value: string) => {
@@ -255,6 +292,49 @@ export const ButtonEditor = memo(function ButtonEditor({
       handleVariantChange,
       handleFillStyleChange,
       handleSizeChange,
+    ],
+  );
+
+  const iconSection = useMemo(
+    () => (
+      <PropertySection title="Icon">
+        <PropertyIconPicker
+          label="Icon"
+          value={currentProps.iconName as string | undefined}
+          onChange={handleIconNameChange}
+          onClear={handleIconClear}
+        />
+
+        {currentProps.iconName && (
+          <>
+            <PropertySelect
+              label="Position"
+              value={String(currentProps.iconPosition || "start")}
+              onChange={handleIconPositionChange}
+              options={[
+                { value: "start", label: "Start" },
+                { value: "end", label: "End" },
+              ]}
+              icon={Image}
+            />
+            <PropertyInput
+              label="Stroke Width"
+              value={String(currentProps.iconStrokeWidth ?? 2)}
+              onChange={handleIconStrokeWidthChange}
+              icon={PenLine}
+            />
+          </>
+        )}
+      </PropertySection>
+    ),
+    [
+      currentProps.iconName,
+      currentProps.iconPosition,
+      currentProps.iconStrokeWidth,
+      handleIconNameChange,
+      handleIconClear,
+      handleIconPositionChange,
+      handleIconStrokeWidthChange,
     ],
   );
 
@@ -456,6 +536,7 @@ export const ButtonEditor = memo(function ButtonEditor({
       {basicSection}
       {contentSection}
       {designSection}
+      {iconSection}
       {behaviorSection}
       {linkSection}
       {formSection}

@@ -12,8 +12,15 @@
  */
 
 import { StateCreator } from "zustand";
-import type { Element, ComponentElementProps } from "../../types/core/store.types";
-import type { SelectedElement, DataBinding, EventHandler } from "../inspector/types";
+import type {
+  Element,
+  ComponentElementProps,
+} from "../../types/core/store.types";
+import type {
+  SelectedElement,
+  DataBinding,
+  EventHandler,
+} from "../inspector/types";
 import type { ElementEvent } from "../../types/events/events.types";
 import type { FillItem } from "../../types/builder/fill.types";
 import { fillsToCssBackground } from "../panels/styles/utils/fillMigration";
@@ -40,7 +47,7 @@ export interface InspectorActionsState {
   /** 부모+자식 props를 단일 batch 히스토리로 atomic 업데이트 (Child Composition Pattern) */
   updateSelectedPropertiesWithChildren: (
     properties: Record<string, unknown>,
-    childUpdates: BatchPropsUpdate[]
+    childUpdates: BatchPropsUpdate[],
   ) => void;
   updateSelectedCustomId: (customId: string) => void;
   updateSelectedDataBinding: (dataBinding: DataBinding | undefined) => void;
@@ -66,7 +73,10 @@ interface RequiredState {
   elementsMap: Map<string, Element>;
   elements: Element[];
   currentPageId: string | null;
-  updateElement: (elementId: string, updates: Partial<Element>) => Promise<void>;
+  updateElement: (
+    elementId: string,
+    updates: Partial<Element>,
+  ) => Promise<void>;
   _rebuildIndexes: () => void;
   _cancelHydrateSelectedProps: () => void;
   batchUpdateElementProps: (updates: BatchPropsUpdate[]) => Promise<void>;
@@ -114,7 +124,7 @@ export const createInspectorActionsSlice: StateCreator<
     propsUpdate: Partial<ComponentElementProps>,
     additionalUpdates?: Partial<Element>,
     /** 프리뷰 → 커밋 시 히스토리 정확성을 위한 원본 요소 */
-    prevElementOverride?: Element
+    prevElementOverride?: Element,
   ) => {
     const { elementsMap, elements, selectedElementId, currentPageId } = get();
     const {
@@ -175,7 +185,9 @@ export const createInspectorActionsSlice: StateCreator<
     newElementsMap.set(elementId, updatedElement);
 
     // 🚀 elements 배열도 업데이트 (findIndex로 위치 찾아서 직접 교체)
-    const elementIndex = normalizedElements.findIndex((el) => el.id === elementId);
+    const elementIndex = normalizedElements.findIndex(
+      (el) => el.id === elementId,
+    );
     let newElements = normalizedElements;
     if (elementIndex !== -1) {
       newElements = [...normalizedElements];
@@ -185,8 +197,21 @@ export const createInspectorActionsSlice: StateCreator<
     // 🚀 단일 set() 호출 - 배칭으로 리렌더링 최소화
     // ADR-006 P3-1: 레이아웃 영향 prop 변경 시 layoutVersion 증가 → fullTreeLayoutMap 재계산 트리거
     // style 변경 외에도 size, label, children, text 등 레이아웃에 영향을 미치는 prop 포함
-    const LAYOUT_AFFECTING_PROPS = new Set(['style', 'size', 'label', 'children', 'text', 'placeholder', 'orientation', 'items']);
-    const hasLayoutChange = Object.keys(propsUpdate).some(key => LAYOUT_AFFECTING_PROPS.has(key));
+    const LAYOUT_AFFECTING_PROPS = new Set([
+      "style",
+      "size",
+      "label",
+      "children",
+      "text",
+      "placeholder",
+      "orientation",
+      "items",
+      "iconName",
+      "iconPosition",
+    ]);
+    const hasLayoutChange = Object.keys(propsUpdate).some((key) =>
+      LAYOUT_AFFECTING_PROPS.has(key),
+    );
     set((prevState) => {
       const stateUpdate: Partial<CombinedState> = {
         elements: newElements,
@@ -195,12 +220,14 @@ export const createInspectorActionsSlice: StateCreator<
 
       // selectedElementProps 동시 업데이트
       if (selectedElementId === elementId) {
-        (stateUpdate as Record<string, unknown>).selectedElementProps = newProps;
+        (stateUpdate as Record<string, unknown>).selectedElementProps =
+          newProps;
       }
 
       // 레이아웃 영향 prop 변경 시 layoutVersion 증가 (PersistentTaffyTree JSON 비교로 불필요 WASM 호출 방지)
       if (hasLayoutChange) {
-        (stateUpdate as Record<string, unknown>).layoutVersion = prevState.layoutVersion + 1;
+        (stateUpdate as Record<string, unknown>).layoutVersion =
+          prevState.layoutVersion + 1;
       }
 
       return stateUpdate;
@@ -235,7 +262,7 @@ export const createInspectorActionsSlice: StateCreator<
             source: "inspector",
             allowPreviewSaves: true,
             validateSerialization: true,
-          }
+          },
         );
       } catch (error) {
         console.error("❌ Inspector action DB save failed:", error);
@@ -262,19 +289,41 @@ export const createInspectorActionsSlice: StateCreator<
       const savedPrePreview = prePreviewElement;
       prePreviewElement = null;
 
-      const baseElement = (savedPrePreview && savedPrePreview.id === element.id)
-        ? savedPrePreview : element;
-      const currentStyle = { ...((baseElement.props?.style as Record<string, string>) || {}) };
+      const baseElement =
+        savedPrePreview && savedPrePreview.id === element.id
+          ? savedPrePreview
+          : element;
+      const currentStyle = {
+        ...((baseElement.props?.style as Record<string, string>) || {}),
+      };
 
       if (value === "" || value === null || value === undefined) {
         delete currentStyle[property];
       } else {
         // Canvas spec shapes는 fontSize/fontWeight 등을 숫자로 기대
         // '10px' → 10, '14' → 14 등 순수 숫자 CSS 속성은 숫자로 변환
-        const NUMERIC_STYLE_PROPS = new Set(['fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'opacity']);
+        const NUMERIC_STYLE_PROPS = new Set([
+          "fontSize",
+          "fontWeight",
+          "lineHeight",
+          "letterSpacing",
+          "opacity",
+          "padding",
+          "paddingTop",
+          "paddingRight",
+          "paddingBottom",
+          "paddingLeft",
+          "gap",
+          "rowGap",
+          "columnGap",
+          "borderWidth",
+          "borderRadius",
+        ]);
         if (NUMERIC_STYLE_PROPS.has(property)) {
           const num = parseFloat(value);
-          (currentStyle as Record<string, unknown>)[property] = !isNaN(num) ? num : value;
+          (currentStyle as Record<string, unknown>)[property] = !isNaN(num)
+            ? num
+            : value;
         } else {
           currentStyle[property] = value;
         }
@@ -284,7 +333,9 @@ export const createInspectorActionsSlice: StateCreator<
         element.id,
         { style: currentStyle },
         undefined,
-        savedPrePreview && savedPrePreview.id === element.id ? savedPrePreview : undefined,
+        savedPrePreview && savedPrePreview.id === element.id
+          ? savedPrePreview
+          : undefined,
       );
     },
 
@@ -300,15 +351,35 @@ export const createInspectorActionsSlice: StateCreator<
         prePreviewElement = structuredClone(element);
       }
 
-      const currentStyle = { ...((element.props?.style as Record<string, string>) || {}) };
+      const currentStyle = {
+        ...((element.props?.style as Record<string, string>) || {}),
+      };
 
       if (value === "" || value === null || value === undefined) {
         delete currentStyle[property];
       } else {
-        const NUMERIC_STYLE_PROPS = new Set(['fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'opacity']);
+        const NUMERIC_STYLE_PROPS = new Set([
+          "fontSize",
+          "fontWeight",
+          "lineHeight",
+          "letterSpacing",
+          "opacity",
+          "padding",
+          "paddingTop",
+          "paddingRight",
+          "paddingBottom",
+          "paddingLeft",
+          "gap",
+          "rowGap",
+          "columnGap",
+          "borderWidth",
+          "borderRadius",
+        ]);
         if (NUMERIC_STYLE_PROPS.has(property)) {
           const num = parseFloat(value);
-          (currentStyle as Record<string, unknown>)[property] = !isNaN(num) ? num : value;
+          (currentStyle as Record<string, unknown>)[property] = !isNaN(num)
+            ? num
+            : value;
         } else {
           currentStyle[property] = value;
         }
@@ -325,7 +396,7 @@ export const createInspectorActionsSlice: StateCreator<
       newElementsMap.set(selectedElementId, updatedElement);
 
       const elementIndex = (get() as CombinedState).elements.findIndex(
-        (el) => el.id === selectedElementId
+        (el) => el.id === selectedElementId,
       );
       let newElements = (get() as CombinedState).elements;
       if (elementIndex !== -1) {
@@ -334,11 +405,14 @@ export const createInspectorActionsSlice: StateCreator<
       }
 
       // ADR-006 P3-1: style 프리뷰도 layoutVersion 증가 → 캔버스 레이아웃 즉시 반영
-      set((prevState) => ({
-        elements: newElements,
-        elementsMap: newElementsMap,
-        layoutVersion: prevState.layoutVersion + 1,
-      } as Partial<CombinedState>));
+      set(
+        (prevState) =>
+          ({
+            elements: newElements,
+            elementsMap: newElementsMap,
+            layoutVersion: prevState.layoutVersion + 1,
+          }) as Partial<CombinedState>,
+      );
     },
 
     updateSelectedStyles: (styles) => {
@@ -349,9 +423,13 @@ export const createInspectorActionsSlice: StateCreator<
       const savedPrePreview = prePreviewElement;
       prePreviewElement = null;
 
-      const baseElement = (savedPrePreview && savedPrePreview.id === element.id)
-        ? savedPrePreview : element;
-      const currentStyle = { ...((baseElement.props?.style as Record<string, string>) || {}) };
+      const baseElement =
+        savedPrePreview && savedPrePreview.id === element.id
+          ? savedPrePreview
+          : element;
+      const currentStyle = {
+        ...((baseElement.props?.style as Record<string, string>) || {}),
+      };
 
       Object.entries(styles).forEach(([property, value]) => {
         if (value === "" || value === null || value === undefined) {
@@ -365,7 +443,9 @@ export const createInspectorActionsSlice: StateCreator<
         element.id,
         { style: currentStyle },
         undefined,
-        savedPrePreview && savedPrePreview.id === element.id ? savedPrePreview : undefined,
+        savedPrePreview && savedPrePreview.id === element.id
+          ? savedPrePreview
+          : undefined,
       );
     },
 
@@ -423,7 +503,11 @@ export const createInspectorActionsSlice: StateCreator<
       const element = getSelectedElement();
       if (!element) return;
 
-      updateAndSave(element.id, {}, { dataBinding: dataBinding as Element["dataBinding"] });
+      updateAndSave(
+        element.id,
+        {},
+        { dataBinding: dataBinding as Element["dataBinding"] },
+      );
     },
 
     // ============================================
@@ -434,33 +518,41 @@ export const createInspectorActionsSlice: StateCreator<
       const element = getSelectedElement();
       if (!element) return;
 
-      updateAndSave(element.id, { events: events as unknown as ElementEvent[] });
+      updateAndSave(element.id, {
+        events: events as unknown as ElementEvent[],
+      });
     },
 
     addSelectedEvent: (event) => {
       const element = getSelectedElement();
       if (!element) return;
 
-      const currentEvents = ((element.props?.events as EventHandler[]) || []);
-      updateAndSave(element.id, { events: [...currentEvents, event] as unknown as ElementEvent[] });
+      const currentEvents = (element.props?.events as EventHandler[]) || [];
+      updateAndSave(element.id, {
+        events: [...currentEvents, event] as unknown as ElementEvent[],
+      });
     },
 
     updateSelectedEvent: (id, event) => {
       const element = getSelectedElement();
       if (!element) return;
 
-      const currentEvents = ((element.props?.events as EventHandler[]) || []);
+      const currentEvents = (element.props?.events as EventHandler[]) || [];
       const updatedEvents = currentEvents.map((e) => (e.id === id ? event : e));
-      updateAndSave(element.id, { events: updatedEvents as unknown as ElementEvent[] });
+      updateAndSave(element.id, {
+        events: updatedEvents as unknown as ElementEvent[],
+      });
     },
 
     removeSelectedEvent: (id) => {
       const element = getSelectedElement();
       if (!element) return;
 
-      const currentEvents = ((element.props?.events as EventHandler[]) || []);
+      const currentEvents = (element.props?.events as EventHandler[]) || [];
       const updatedEvents = currentEvents.filter((e) => e.id !== id);
-      updateAndSave(element.id, { events: updatedEvents as unknown as ElementEvent[] });
+      updateAndSave(element.id, {
+        events: updatedEvents as unknown as ElementEvent[],
+      });
     },
 
     // ============================================
@@ -475,12 +567,16 @@ export const createInspectorActionsSlice: StateCreator<
       const savedPrePreview = prePreviewElement;
       prePreviewElement = null;
 
-      const baseElement = (savedPrePreview && savedPrePreview.id === element.id)
-        ? savedPrePreview : element;
+      const baseElement =
+        savedPrePreview && savedPrePreview.id === element.id
+          ? savedPrePreview
+          : element;
 
       // fills → CSS background 동기화 (Color → backgroundColor, Gradient → backgroundImage)
       const cssBg = fillsToCssBackground(fills);
-      const currentStyle = { ...((baseElement.props?.style as Record<string, string>) || {}) };
+      const currentStyle = {
+        ...((baseElement.props?.style as Record<string, string>) || {}),
+      };
 
       // 이전 background 관련 속성 정리
       delete currentStyle.backgroundColor;
@@ -501,7 +597,9 @@ export const createInspectorActionsSlice: StateCreator<
         element.id,
         { style: currentStyle },
         { fills },
-        savedPrePreview && savedPrePreview.id === element.id ? savedPrePreview : undefined,
+        savedPrePreview && savedPrePreview.id === element.id
+          ? savedPrePreview
+          : undefined,
       );
     },
 
@@ -519,7 +617,9 @@ export const createInspectorActionsSlice: StateCreator<
 
       // fills → CSS background 동기화 (Color → backgroundColor, Gradient → backgroundImage)
       const cssBg = fillsToCssBackground(fills);
-      const currentStyle = { ...((element.props?.style as Record<string, string>) || {}) };
+      const currentStyle = {
+        ...((element.props?.style as Record<string, string>) || {}),
+      };
 
       // 이전 background 관련 속성 정리
       delete currentStyle.backgroundColor;
@@ -545,7 +645,7 @@ export const createInspectorActionsSlice: StateCreator<
       newElementsMap.set(selectedElementId, updatedElement);
 
       const elementIndex = (get() as CombinedState).elements.findIndex(
-        (el) => el.id === selectedElementId
+        (el) => el.id === selectedElementId,
       );
       let newElements = (get() as CombinedState).elements;
       if (elementIndex !== -1) {
@@ -595,17 +695,21 @@ export const createInspectorActionsSlice: StateCreator<
 
       // selectedElementProps만 업데이트 (UI 반영)
       // DB 저장 없음 - computedStyle은 런타임 값
-      const currentState = get() as CombinedState & { selectedElementProps: ComponentElementProps };
+      const currentState = get() as CombinedState & {
+        selectedElementProps: ComponentElementProps;
+      };
       const currentProps = currentState.selectedElementProps || {};
 
       // 변경 없으면 스킵
-      const prevComputedStyle = currentProps.computedStyle as Record<string, string> | undefined;
+      const prevComputedStyle = currentProps.computedStyle as
+        | Record<string, string>
+        | undefined;
       if (prevComputedStyle) {
         const prevKeys = Object.keys(prevComputedStyle);
         const newKeys = Object.keys(computedStyle);
         if (prevKeys.length === newKeys.length) {
           const isSame = prevKeys.every(
-            (key) => prevComputedStyle[key] === computedStyle[key]
+            (key) => prevComputedStyle[key] === computedStyle[key],
           );
           if (isSame) return; // 변경 없음
         }
@@ -630,7 +734,8 @@ export const createInspectorActionsSlice: StateCreator<
  * Used by panels to get selected element in Inspector-compatible format
  */
 export function mapElementToSelectedElement(element: Element): SelectedElement {
-  const { style, computedStyle, events, ...otherProps } = element.props as Record<string, unknown>;
+  const { style, computedStyle, events, ...otherProps } =
+    element.props as Record<string, unknown>;
 
   return {
     id: element.id,

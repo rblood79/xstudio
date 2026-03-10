@@ -23,7 +23,7 @@
     /* Default sizing (md) — @sync Button.css */
     font-size: var(--text-sm);
     line-height: var(--text-sm--line-height);
-    padding: var(--spacing-xs) var(--spacing-lg);
+    padding: var(--spacing-xs) var(--spacing-md);
 
     /* All pressed: inset shadow */
     &[data-pressed] {
@@ -66,31 +66,31 @@
     /* @sync Button.css size variants — padding/line-height 동일 */
 
     &[data-size="xs"] {
-      padding: var(--spacing-3xs) var(--spacing-sm);
+      padding: var(--spacing-3xs) var(--spacing-xs);
       font-size: var(--text-2xs);
       line-height: var(--text-2xs--line-height);
     }
 
     &[data-size="sm"] {
-      padding: var(--spacing-2xs) var(--spacing-md);
+      padding: var(--spacing-2xs) var(--spacing-sm);
       font-size: var(--text-xs);
       line-height: var(--text-xs--line-height);
     }
 
     &[data-size="md"] {
-      padding: var(--spacing-xs) var(--spacing-lg);
+      padding: var(--spacing-xs) var(--spacing-md);
       font-size: var(--text-sm);
       line-height: var(--text-sm--line-height);
     }
 
     &[data-size="lg"] {
-      padding: var(--spacing-sm) var(--spacing-xl);
+      padding: var(--spacing-sm) var(--spacing-lg);
       font-size: var(--text-base);
       line-height: var(--text-base--line-height);
     }
 
     &[data-size="xl"] {
-      padding: var(--spacing-md) var(--spacing-2xl);
+      padding: var(--spacing-md) var(--spacing-xl);
       font-size: var(--text-lg);
       line-height: var(--text-lg--line-height);
     }
@@ -106,35 +106,35 @@
 
   .react-aria-ToggleButtonGroup[data-togglebutton-size="xs"]
     .react-aria-ToggleButton {
-    padding: var(--spacing-3xs) var(--spacing-sm);
+    padding: var(--spacing-3xs) var(--spacing-xs);
     font-size: var(--text-2xs);
     line-height: var(--text-2xs--line-height);
   }
 
   .react-aria-ToggleButtonGroup[data-togglebutton-size="sm"]
     .react-aria-ToggleButton {
-    padding: var(--spacing-2xs) var(--spacing-md);
+    padding: var(--spacing-2xs) var(--spacing-sm);
     font-size: var(--text-xs);
     line-height: var(--text-xs--line-height);
   }
 
   .react-aria-ToggleButtonGroup[data-togglebutton-size="md"]
     .react-aria-ToggleButton {
-    padding: var(--spacing-xs) var(--spacing-lg);
+    padding: var(--spacing-xs) var(--spacing-md);
     font-size: var(--text-sm);
     line-height: var(--text-sm--line-height);
   }
 
   .react-aria-ToggleButtonGroup[data-togglebutton-size="lg"]
     .react-aria-ToggleButton {
-    padding: var(--spacing-sm) var(--spacing-xl);
+    padding: var(--spacing-sm) var(--spacing-lg);
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
   }
 
   .react-aria-ToggleButtonGroup[data-togglebutton-size="xl"]
     .react-aria-ToggleButton {
-    padding: var(--spacing-md) var(--spacing-2xl);
+    padding: var(--spacing-md) var(--spacing-xl);
     font-size: var(--text-lg);
     line-height: var(--text-lg--line-height);
   }

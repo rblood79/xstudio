@@ -10,7 +10,11 @@
  */
 
 import { memo, useCallback, useState } from "react";
-import { PropertySection, PropertyUnitInput } from "../../../components";
+import {
+  PropertySection,
+  PropertyUnitInput,
+  PropertySelect,
+} from "../../../components";
 import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
 import { SwatchIconButton } from "../../../components/ui";
 import { iconProps } from "../../../../utils/ui/uiConstants";
@@ -23,6 +27,7 @@ import {
   MoveHorizontal,
   Shrink,
   ChevronsLeftRightEllipsis,
+  Ratio,
   Lock,
   Unlock,
 } from "lucide-react";
@@ -46,6 +51,17 @@ import type { SizeMode } from "../../../stores/utils/sizeModeResolver";
 
 const ICON_SIZE = 14;
 const ICON_STROKE = 1.5;
+
+const ASPECT_RATIO_OPTIONS = [
+  { value: "reset", label: "Auto" },
+  { value: "1 / 1", label: "1:1 Square" },
+  { value: "16 / 9", label: "16:9 Video" },
+  { value: "4 / 3", label: "4:3 Classic" },
+  { value: "3 / 2", label: "3:2 Photo" },
+  { value: "21 / 9", label: "21:9 Ultra" },
+  { value: "9 / 16", label: "9:16 Portrait" },
+  { value: "3 / 4", label: "3:4 Portrait" },
+];
 
 /**
  * Size Mode 세그먼트 컨트롤 (ADR-026)
@@ -352,40 +368,34 @@ const TransformSectionContent = memo(function TransformSectionContent() {
             max={9999}
           />
           <div className="fieldset-actions actions-constraint-h" />
-          <fieldset className="properties-aria aspect-ratio-field">
-            <legend className="fieldset-legend">Ratio</legend>
-            <div className="aspect-ratio-input">
-              <input
-                type="text"
-                className="aspect-ratio-value"
-                placeholder="auto"
-                value={
-                  styleValues.aspectRatio === "auto"
-                    ? ""
-                    : styleValues.aspectRatio
-                }
-                onChange={(e) => {
-                  const v = e.target.value.trim();
-                  updateStyleImmediate(
-                    "aspectRatio",
-                    v === "" || v === "auto" ? "" : v,
-                  );
-                }}
-                aria-label="Aspect ratio"
-              />
-              <button
-                className="aspect-ratio-lock"
-                aria-label="Lock aspect ratio"
-                onClick={handleAspectRatioLock}
-              >
-                {styleValues.aspectRatio ? (
-                  <Lock size={12} strokeWidth={1.5} />
-                ) : (
-                  <Unlock size={12} strokeWidth={1.5} />
-                )}
-              </button>
-            </div>
-          </fieldset>
+          <div className="aspect-ratio-field">
+            <PropertySelect
+              icon={Ratio}
+              label="Ratio"
+              className="aspect-ratio-select"
+              value={styleValues.aspectRatio || ""}
+              options={ASPECT_RATIO_OPTIONS}
+              onChange={(value) => updateStyleImmediate("aspectRatio", value)}
+            />
+            <SwatchIconButton
+              aria-label="Lock aspect ratio"
+              onPress={handleAspectRatioLock}
+            >
+              {styleValues.aspectRatio ? (
+                <Lock
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              ) : (
+                <Unlock
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              )}
+            </SwatchIconButton>
+          </div>
         </>
       )}
 

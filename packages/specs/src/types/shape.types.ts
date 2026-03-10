@@ -372,4 +372,8 @@ export interface IconFontShape {
   strokeWidth?: number;
   /** 채우기 색상 (stroke 색상으로 사용) */
   fill?: ColorValue;
+  /** 수평 정렬: "center" 시 containerWidth 기준 중앙 배치 */
+  align?: "left" | "center" | "right";
+  /** 수직 정렬: "middle" 시 containerHeight 기준 수직 중앙 배치 */
+  baseline?: "top" | "middle" | "bottom";
 }

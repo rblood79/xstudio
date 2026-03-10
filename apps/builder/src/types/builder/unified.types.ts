@@ -139,6 +139,12 @@ export interface ButtonElementProps extends BaseElementProps {
     | "genai";
   fillStyle?: "bold" | "subtle" | "outline";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
+  /** Lucide 아이콘 이름 */
+  iconName?: string;
+  /** 아이콘 위치: start(왼쪽) / end(오른쪽) */
+  iconPosition?: "start" | "end";
+  /** 아이콘 선 두께 (기본: 2) */
+  iconStrokeWidth?: number;
   isDisabled?: boolean;
   isPending?: boolean;
   autoFocus?: boolean;
@@ -1143,6 +1149,7 @@ export function createDefaultButtonProps(): ButtonElementProps {
     style: {
       width: "fit-content",
       borderWidth: "1px",
+      gap: 8,
     },
   };
 }
@@ -1805,6 +1812,7 @@ export function createDefaultSearchFieldProps(): SearchFieldElementProps {
 
 export function createDefaultProgressBarProps(): ProgressBarElementProps {
   return {
+    label: "Progress Bar",
     showValue: true,
     value: 50,
     style: {
@@ -1815,6 +1823,7 @@ export function createDefaultProgressBarProps(): ProgressBarElementProps {
 
 export function createDefaultMeterProps(): MeterElementProps {
   return {
+    label: "Meter",
     showValue: true,
     value: 50,
     style: {

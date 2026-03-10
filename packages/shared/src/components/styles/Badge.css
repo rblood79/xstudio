@@ -409,7 +409,7 @@
 
   /* ===== XS Size ===== */
   .react-aria-Badge[data-size="xs"] {
-    padding: var(--spacing-3xs) var(--spacing-sm);
+    padding: var(--spacing-3xs) var(--spacing-xs);
     font-size: var(--text-2xs);
     line-height: var(--text-2xs--line-height);
     border-radius: var(--radius-md);
@@ -417,7 +417,7 @@
 
   /* ===== Small Size ===== */
   .react-aria-Badge[data-size="sm"] {
-    padding: var(--spacing-2xs) var(--spacing-md);
+    padding: var(--spacing-2xs) var(--spacing-sm);
     font-size: var(--text-xs);
     line-height: var(--text-xs--line-height);
     border-radius: var(--radius-md);
@@ -425,7 +425,7 @@
 
   /* ===== Medium Size (Default) ===== */
   .react-aria-Badge[data-size="md"] {
-    padding: var(--spacing-xs) var(--spacing-lg);
+    padding: var(--spacing-xs) var(--spacing-md);
     font-size: var(--text-sm);
     line-height: var(--text-sm--line-height);
     border-radius: var(--radius-md);
@@ -433,7 +433,7 @@
 
   /* ===== Large Size ===== */
   .react-aria-Badge[data-size="lg"] {
-    padding: var(--spacing-sm) var(--spacing-xl);
+    padding: var(--spacing-sm) var(--spacing-lg);
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
     border-radius: var(--radius-md);
@@ -441,7 +441,7 @@
 
   /* ===== XL Size ===== */
   .react-aria-Badge[data-size="xl"] {
-    padding: var(--spacing-md) var(--spacing-2xl);
+    padding: var(--spacing-md) var(--spacing-xl);
     font-size: var(--text-lg);
     line-height: var(--text-lg--line-height);
     border-radius: var(--radius-md);

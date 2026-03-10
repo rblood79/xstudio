@@ -5,7 +5,7 @@
     .react-aria-ToggleButton {
       background-color: transparent;
       &[data-selected] {
-        color: var(--fg-on-accent);
+        color: var(--fg);
       }
     }
   }

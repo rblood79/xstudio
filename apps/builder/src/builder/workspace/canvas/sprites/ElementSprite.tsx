@@ -334,12 +334,13 @@ const UI_TOGGLEBUTTONGROUP_TAGS = new Set(["ToggleButtonGroup"]);
 const UI_LISTBOX_TAGS = new Set(["ListBox"]);
 const UI_BADGE_TAGS = new Set(["Badge", "Tag", "Chip", "Icon"]);
 const UI_METER_TAGS = new Set(["Meter", "Gauge"]);
+const UI_STATUSLIGHT_TAGS = new Set(["StatusLight"]);
 
 /**
  * Phase 2 WebGL Migration 컴포넌트 태그들
  */
 const UI_SEPARATOR_TAGS = new Set(["Separator", "Divider", "Hr"]);
-const UI_LINK_TAGS = new Set(["Link", "Anchor", "A"]);
+const UI_LINK_TAGS = new Set(["Link", "Anchor", "A", "LinkButton"]);
 const UI_BREADCRUMBS_TAGS = new Set(["Breadcrumbs"]);
 const UI_CARD_TAGS = new Set(["Card", "Box"]);
 const UI_PANEL_TAGS = new Set(["Panel"]);
@@ -579,7 +580,8 @@ type SpriteType =
   | "colorSwatchPicker"
   | "group"
   | "slot"
-  | "selectChild";
+  | "selectChild"
+  | "statusLight";
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -606,6 +608,7 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_LISTBOX_TAGS.has(tag)) return "listBox";
   if (UI_BADGE_TAGS.has(tag)) return "badge";
   if (UI_METER_TAGS.has(tag)) return "meter";
+  if (UI_STATUSLIGHT_TAGS.has(tag)) return "statusLight";
 
   // Phase 2 WebGL Migration 컴포넌트
   if (UI_SEPARATOR_TAGS.has(tag)) return "separator";
@@ -795,7 +798,7 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   AvatarGroup: AvatarGroupSpec,
   StatusLight: StatusLightSpec,
   InlineAlert: InlineAlertSpec,
-  LinkButton: ButtonSpec,
+  LinkButton: LinkSpec,
   ContextualHelp: ContextualHelpSpec,
   // Phase 2: Action/Group components (ADR-030)
   ActionButton: ButtonSpec,
@@ -1356,6 +1359,7 @@ export const ElementSprite = memo(function ElementSprite({
 
     // 복합 form 컴포넌트: CSS 컨테이너가 transparent → WebGL 컨테이너도 transparent
     const tag = effectiveElementWithTabs.tag;
+
     const TRANSPARENT_CONTAINER_TAGS = new Set([
       "TextField",
       "NumberField",
@@ -1381,6 +1385,8 @@ export const ElementSprite = memo(function ElementSprite({
       "LoadingBar",
       "Meter",
       "Gauge",
+      // StatusLight: 배경 없이 dot + text만 렌더링 → 컨테이너 투명 필수
+      "StatusLight",
     ]);
     const isTransparentContainer =
       isUIComponent && TRANSPARENT_CONTAINER_TAGS.has(tag);

@@ -286,10 +286,6 @@
         grid-area: actions-constraint-h;
       }
 
-      .aspect-ratio-field {
-        grid-area: aspect-ratio;
-      }
-
       .self-alignment {
         grid-area: self-alignment;
 
@@ -337,49 +333,19 @@
         }
       }
 
-      .aspect-ratio-input {
+      .aspect-ratio-field {
+        grid-area: aspect-ratio;
         display: flex;
-        align-items: center;
-        gap: var(--spacing-xs);
-      }
+        align-items: end;
+        gap: var(--spacing-sm);
 
-      .aspect-ratio-value {
-        flex: 1;
-        height: var(--inspector-control-size);
-        padding: 0 var(--spacing-sm);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        background: var(--bg-raised);
-        color: var(--fg);
-        font-size: var(--text-xs);
-        outline: none;
-
-        &:focus {
-          border-color: var(--focus-ring);
-        }
-
-        &::placeholder {
-          color: var(--fg-muted);
+        .aspect-ratio-select {
+          flex: 1;
         }
       }
 
-      .aspect-ratio-lock {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: var(--inspector-control-size);
-        height: var(--inspector-control-size);
-        padding: 0;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        background: var(--bg-raised);
-        color: var(--fg-muted);
-        cursor: pointer;
-
-        &:hover {
-          border-color: var(--border-hover);
-          color: var(--fg);
-        }
+      .aspect-ratio-field > .swatch-icon-button {
+        flex-shrink: 0;
       }
 
       .left {
@@ -586,6 +552,7 @@
         height: var(--text-xl);
         padding: var(--spacing-xs);
         font-size: var(--text-xs);
+        line-height: var(--text-xs--line-height);
         display: flex;
         align-items: center;
         justify-content: center;

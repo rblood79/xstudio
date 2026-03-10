@@ -157,7 +157,7 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
           fill: textColor,
           align: textAlign,
           baseline: "top" as const,
-          textDecoration: state === "hover" ? "underline" : "none",
+          textDecoration: "underline",
         });
       }
 

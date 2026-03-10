@@ -526,8 +526,17 @@ export const justifyContentAtom = selectAtom(
 
 export const gapAtom = selectAtom(
   selectedElementAtom,
-  (element) =>
-    String(element?.style?.gap ?? element?.computedStyle?.gap ?? "0px"),
+  (element) => {
+    const inline = element?.style?.gap;
+    if (inline !== undefined && inline !== null && inline !== "")
+      return String(inline);
+    const computed = element?.computedStyle?.gap;
+    if (computed !== undefined && computed !== null && computed !== "")
+      return String(computed);
+    const synthetic = computeSyntheticStyle(element);
+    if (synthetic.gap) return synthetic.gap;
+    return "0px";
+  },
   (a, b) => a === b,
 );
 
@@ -680,7 +689,7 @@ export const layoutValuesAtom = selectAtom(
       justifyContent: String(
         style.justifyContent ?? computed.justifyContent ?? "",
       ),
-      gap: String(style.gap ?? computed.gap ?? "0px"),
+      gap: String(style.gap ?? computed.gap ?? synthetic.gap ?? "0px"),
       flexWrap: String(style.flexWrap ?? computed.flexWrap ?? "nowrap"),
       padding: String(style.padding ?? computed.padding ?? "0px"),
       paddingTop: String(

@@ -48,6 +48,7 @@ export interface SyntheticComputedStyle {
   paddingLeft?: string;
   borderRadius?: string;
   lineHeight?: string;
+  gap?: string;
 }
 
 // ============================================
@@ -169,8 +170,19 @@ function fromBarPreset(preset: {
 function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
   switch (tag) {
     // Button 계열
-    case "Button":
-      return fromButtonPreset(getSizePreset(size));
+    case "Button": {
+      const base = fromButtonPreset(getSizePreset(size));
+      // ButtonSpec sizes gap: xs:4, sm:6, md:8, lg:10, xl:12
+      const gapMap: Record<string, number> = {
+        xs: 4,
+        sm: 6,
+        md: 8,
+        lg: 10,
+        xl: 12,
+      };
+      base.gap = px(gapMap[size.toLowerCase()] ?? 8);
+      return base;
+    }
     case "ToggleButton":
       return fromButtonPreset(getToggleButtonSizePreset(size));
 

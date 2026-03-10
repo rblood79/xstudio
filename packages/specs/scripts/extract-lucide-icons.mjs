@@ -25,6 +25,21 @@ const OUTPUT_FILE = resolve(
 );
 
 /**
+ * SVG points 속성을 path d 문자열로 변환
+ * points 형식: "x1,y1 x2,y2" 또는 "x1 y1 x2 y2"
+ */
+function pointsToPathD(pts) {
+  // 쉼표와 공백을 모두 분리자로 처리하여 개별 숫자 추출
+  const nums = pts.trim().split(/[\s,]+/).filter(Boolean);
+  if (nums.length < 4) return null; // 최소 2좌표(x,y 2쌍)
+  const pairs = [];
+  for (let i = 0; i < nums.length - 1; i += 2) {
+    pairs.push(`${nums[i]} ${nums[i + 1]}`);
+  }
+  return "M" + pairs[0] + pairs.slice(1).map((p) => " L" + p).join("");
+}
+
+/**
  * ESM 아이콘 파일에서 __iconNode 배열을 추출
  * 형식: const __iconNode = [ ["path", { d: "...", key: "..." }], ["circle", { cx: "11", cy: "11", r: "8", key: "..." }] ];
  */
@@ -126,18 +141,14 @@ function parseIconFile(content, fileName) {
 
   // Polylines → path
   for (const pts of polylines) {
-    const coords = pts.trim().split(/\s+/);
-    if (coords.length >= 2) {
-      paths.push("M" + coords.join(" L"));
-    }
+    const d = pointsToPathD(pts);
+    if (d) paths.push(d);
   }
 
   // Polygons → path (closed)
   for (const pts of polygons) {
-    const coords = pts.trim().split(/\s+/);
-    if (coords.length >= 2) {
-      paths.push("M" + coords.join(" L") + " Z");
-    }
+    const d = pointsToPathD(pts);
+    if (d) paths.push(d + " Z");
   }
 
   // Rects → path

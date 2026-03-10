@@ -178,6 +178,17 @@ export function specShapesToSkia(
         child.text.maxWidth -= bgBorderWidth * 2;
         if (child.text.maxWidth < 1) child.text.maxWidth = containerWidth;
       }
+      // icon_path border-box 보정: 절대 좌표(padding 기준) 아이콘만 오프셋
+      // align="center"/baseline="middle"로 계산된 중앙 배치 아이콘은 보정 불필요
+      // (containerWidth/2가 이미 border-box 전체 기준 정확한 중앙)
+      if (child.type === "icon_path" && child.iconPath) {
+        const halfW = containerWidth / 2;
+        const halfH = containerHeight / 2;
+        const isCenteredX = Math.abs(child.iconPath.cx - halfW) < 0.5;
+        const isCenteredY = Math.abs(child.iconPath.cy - halfH) < 0.5;
+        if (!isCenteredX) child.iconPath.cx += bgBorderWidth;
+        if (!isCenteredY) child.iconPath.cy += bgBorderWidth;
+      }
     }
   }
 
@@ -421,6 +432,27 @@ export function specShapesToSkia(
           : Float32Array.of(0, 0, 0, 1);
         const size = resolveNum(shape.fontSize ?? 16, theme, 16);
 
+        // align="center" → containerWidth 기준 중앙 배치 (icon-only 버튼 등)
+        // 음수 x → 우측에서 오프셋 (Button icon end 등)
+        let cx: number;
+        if (shape.align === "center") {
+          cx = containerWidth / 2;
+        } else if (shape.align === "right") {
+          cx = containerWidth - shape.x;
+        } else {
+          cx = shape.x < 0 ? containerWidth + shape.x : shape.x;
+        }
+        // baseline="middle" → containerHeight 기준 수직 중앙 배치
+        // 음수 y → 하단에서 오프셋
+        let cy: number;
+        if (shape.baseline === "middle") {
+          cy = containerHeight / 2;
+        } else if (shape.baseline === "bottom") {
+          cy = containerHeight - shape.y;
+        } else {
+          cy = shape.y < 0 ? containerHeight + shape.y : shape.y;
+        }
+
         const node: SkiaNodeData = {
           type: "icon_path",
           x: 0,
@@ -431,8 +463,8 @@ export function specShapesToSkia(
           iconPath: {
             paths: iconData.paths,
             circles: iconData.circles,
-            cx: shape.x,
-            cy: shape.y,
+            cx,
+            cy,
             size,
             strokeColor,
             strokeWidth: shape.strokeWidth ?? 2,

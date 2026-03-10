@@ -19,6 +19,7 @@ import {
   Skeleton,
 } from "../components/list";
 import { Slot } from "../components/Slot";
+import { getIconData } from "@xstudio/specs";
 import type {
   PreviewElement,
   RenderContext,
@@ -27,6 +28,47 @@ import type {
   ButtonVariant,
   BadgeVariant,
 } from "../types";
+
+/** Button 내부 아이콘 SVG 렌더링 (Preview용) */
+const BUTTON_ICON_SIZE_MAP: Record<string, number> = {
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 20,
+  xl: 24,
+};
+
+function renderButtonIcon(
+  iconName: string,
+  size?: string,
+  strokeWidth?: number,
+): React.ReactNode | null {
+  const data = getIconData(iconName);
+  if (!data) return null;
+  const s = BUTTON_ICON_SIZE_MAP[size || "md"] ?? 16;
+  return (
+    <svg
+      width={s}
+      height={s}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth ?? 2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ flexShrink: 0 }}
+    >
+      {data.paths.map((d: string, i: number) => (
+        <path key={i} d={d} />
+      ))}
+      {data.circles?.map(
+        (c: { cx: number; cy: number; r: number }, i: number) => (
+          <circle key={`c${i}`} cx={c.cx} cy={c.cy} r={c.r} />
+        ),
+      )}
+    </svg>
+  );
+}
 
 /**
  * Layout 관련 컴포넌트 렌더러
@@ -550,12 +592,35 @@ export const renderButton = (
       onBlur={eventHandlers.onBlur as unknown as (e: unknown) => void}
       onKeyDown={eventHandlers.onKeyDown as unknown as (e: unknown) => void}
       onKeyUp={eventHandlers.onKeyUp as unknown as (e: unknown) => void}
+      {...(element.props.iconName && !element.props.children
+        ? { "data-icon-only": true }
+        : {})}
     >
-      {typeof element.props.children === "string"
-        ? element.props.children
-        : children.length === 0
-          ? "Button"
-          : null}
+      {(() => {
+        const iconName = element.props.iconName as string | undefined;
+        const iconPos = (element.props.iconPosition as string) || "start";
+        const iconSvg = iconName
+          ? renderButtonIcon(
+              iconName,
+              element.props.size as string,
+              element.props.iconStrokeWidth as number | undefined,
+            )
+          : null;
+        const textContent =
+          typeof element.props.children === "string"
+            ? element.props.children
+            : children.length === 0 && !iconName
+              ? "Button"
+              : null;
+
+        return (
+          <>
+            {iconSvg && iconPos === "start" && iconSvg}
+            {textContent}
+            {iconSvg && iconPos === "end" && iconSvg}
+          </>
+        );
+      })()}
       {children.map((child) => renderElement(child, child.id))}
     </Button>
   );
@@ -645,6 +710,12 @@ export const renderProgressBar = (
       }
       isIndeterminate={Boolean(element.props.isIndeterminate || false)}
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      showValue={element.props.showValue !== false}
+      valueFormat={
+        (element.props.valueFormat as "number" | "percent" | "custom") ||
+        undefined
+      }
+      locale={(element.props.locale as string) || undefined}
     />
   );
 };
@@ -683,6 +754,12 @@ export const renderMeter = (
           | "negative") || "informative"
       }
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      showValue={element.props.showValue !== false}
+      valueFormat={
+        (element.props.valueFormat as "number" | "percent" | "custom") ||
+        undefined
+      }
+      locale={(element.props.locale as string) || undefined}
     />
   );
 };

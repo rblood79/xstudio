@@ -35,6 +35,16 @@ export interface StatusLightProps {
   style?: Record<string, string | number | undefined>;
 }
 
+/** StatusLight size dimensions (layout engine 공유) */
+export const STATUSLIGHT_DIMENSIONS: Record<
+  string,
+  { height: number; dotSize: number; gap: number; fontSize: number }
+> = {
+  S: { height: 20, dotSize: 8, gap: 8, fontSize: 12 },
+  M: { height: 24, dotSize: 10, gap: 8, fontSize: 14 },
+  L: { height: 28, dotSize: 12, gap: 8, fontSize: 16 },
+};
+
 /**
  * StatusLight Component Spec
  */
@@ -168,17 +178,19 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
       const dotSize = (size as unknown as { dotSize: number }).dotSize ?? 10;
       const dotRadius = dotSize / 2;
       const gap = size.gap ?? 8;
+      const h = size.height ?? 24;
+      const centerY = h / 2;
 
       const dotColor = props.style?.backgroundColor ?? variant.background;
       const textColor = props.style?.color ?? variant.text;
 
       const shapes: Shape[] = [
-        // 상태 표시 dot
+        // 상태 표시 dot (수직 중앙 정렬)
         {
           id: "dot",
           type: "circle" as const,
           x: dotRadius,
-          y: dotRadius,
+          y: centerY,
           radius: dotRadius,
           fill: dotColor,
         },
@@ -211,7 +223,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
         shapes.push({
           type: "text" as const,
           x: dotSize + gap,
-          y: dotRadius,
+          y: centerY,
           text,
           fontSize,
           fontFamily: ff,

@@ -7,6 +7,7 @@ import {
   PropertySelect,
   PropertyCustomId,
   PropertySection,
+  PropertySizeToggle,
 } from "../../../components";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
@@ -69,16 +70,15 @@ export const StatusLightEditor = memo(function StatusLightEditor({
           icon={Parentheses}
         />
 
-        <PropertySelect
+        <PropertySizeToggle
           label={PROPERTY_LABELS.SIZE}
           value={String(currentProps.size || "M")}
           onChange={(value) => updateProp("size", value)}
           options={[
-            { value: "S", label: "Small" },
-            { value: "M", label: "Medium" },
-            { value: "L", label: "Large" },
+            { id: "S", label: "S" },
+            { id: "M", label: "M" },
+            { id: "L", label: "L" },
           ]}
-          icon={Parentheses}
         />
       </PropertySection>
 

@@ -2,6 +2,10 @@
   .react-aria-Button {
     /* Structure */
     appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
     vertical-align: middle;
     text-align: center;
     margin: 0;
@@ -17,7 +21,7 @@
     /* Default sizing (md) */
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
-    padding: var(--spacing-sm) var(--spacing-lg);
+    padding: var(--spacing-xs) var(--spacing-md);
 
     /* Pressed shadow (all variants) */
     &[data-pressed] {
@@ -57,14 +61,18 @@
     }
 
     &[data-variant="genai"] {
-      --button-color: linear-gradient(135deg,
-          var(--color-purple-600, #7c3aed),
-          var(--color-info-600, #2563eb));
+      --button-color: linear-gradient(
+        135deg,
+        var(--color-purple-600, #7c3aed),
+        var(--color-info-600, #2563eb)
+      );
       --button-text: var(--color-white);
       --button-border: var(--color-purple-600, #7c3aed);
-      background: linear-gradient(135deg,
-          var(--color-purple-600, #7c3aed),
-          var(--color-info-600, #2563eb));
+      background: linear-gradient(
+        135deg,
+        var(--color-purple-600, #7c3aed),
+        var(--color-info-600, #2563eb)
+      );
       color: var(--color-white);
     }
 
@@ -99,38 +107,63 @@
     /* ===== Size Variants ===== */
 
     &[data-size="xs"] {
-      padding: var(--spacing-3xs) var(--spacing-sm);
+      padding: var(--spacing-3xs) var(--spacing-xs);
       font-size: var(--text-2xs);
       line-height: var(--text-2xs--line-height);
       border-radius: var(--radius-sm);
+      gap: var(--spacing-xs);
     }
 
     &[data-size="sm"] {
-      padding: var(--spacing-2xs) var(--spacing-md);
+      padding: var(--spacing-2xs) var(--spacing-sm);
       font-size: var(--text-xs);
       line-height: var(--text-xs--line-height);
       border-radius: var(--radius-sm);
+      gap: 6px;
     }
 
     &[data-size="md"] {
-      padding: var(--spacing-xs) var(--spacing-lg);
+      padding: var(--spacing-xs) var(--spacing-md);
       font-size: var(--text-sm);
       line-height: var(--text-sm--line-height);
       border-radius: var(--radius-md);
+      gap: var(--spacing-sm);
     }
 
     &[data-size="lg"] {
-      padding: var(--spacing-sm) var(--spacing-xl);
+      padding: var(--spacing-sm) var(--spacing-lg);
       font-size: var(--text-base);
       line-height: var(--text-base--line-height);
       border-radius: var(--radius-lg);
+      gap: 10px;
     }
 
     &[data-size="xl"] {
-      padding: var(--spacing-md) var(--spacing-2xl);
+      padding: var(--spacing-md) var(--spacing-xl);
       font-size: var(--text-lg);
       line-height: var(--text-lg--line-height);
       border-radius: var(--radius-xl);
+      gap: var(--spacing-md);
+    }
+
+    /* ===== Icon-only: square padding (paddingX = paddingY) ===== */
+
+    &[data-icon-only] {
+      &[data-size="xs"] {
+        padding: var(--spacing-3xs);
+      }
+      &[data-size="sm"] {
+        padding: var(--spacing-2xs);
+      }
+      &[data-size="md"] {
+        padding: var(--spacing-xs);
+      }
+      &[data-size="lg"] {
+        padding: var(--spacing-sm);
+      }
+      &[data-size="xl"] {
+        padding: var(--spacing-md);
+      }
     }
   }
 }

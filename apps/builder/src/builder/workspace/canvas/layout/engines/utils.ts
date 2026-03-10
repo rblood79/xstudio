@@ -20,6 +20,7 @@ import {
   PROGRESSBAR_DIMENSIONS,
   PROGRESSCIRCLE_DIMENSIONS,
   METER_DIMENSIONS,
+  STATUSLIGHT_DIMENSIONS,
 } from "@xstudio/specs";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
@@ -470,6 +471,8 @@ const BUTTON_SIZE_CONFIG: Record<
     fontSize: number;
     lineHeight: number;
     borderWidth: number;
+    iconSize: number;
+    iconGap: number;
   }
 > = {
   // @sync Button.css [data-size] padding/fontSize/line-height 값과 일치해야 함
@@ -478,45 +481,56 @@ const BUTTON_SIZE_CONFIG: Record<
   // @sync shared-tokens.css line-height: text-sm=1.25/0.875, text-base=1.5/1, etc.
   // CSS Button은 명시적 height를 설정하지 않음 → line-height + padding + border로 자동 결정
   // lineHeight는 CSS line-height를 px로 환산한 값 (fontSize × ratio)
+  // @sync ButtonSpec.sizes — iconSize/gap 값 동기화
   xs: {
-    paddingLeft: 8,
-    paddingRight: 8,
+    paddingLeft: 4,
+    paddingRight: 4,
     paddingY: 1, // --spacing-3xs
     fontSize: 10,
     lineHeight: 16, // 10 * (1/0.625) = 16
     borderWidth: 1,
+    iconSize: 12,
+    iconGap: 4,
   },
   sm: {
-    paddingLeft: 12,
-    paddingRight: 12,
+    paddingLeft: 8,
+    paddingRight: 8,
     paddingY: 2, // --spacing-2xs
     fontSize: 12,
     lineHeight: 16, // 12 * (1/0.75) = 16
     borderWidth: 1,
+    iconSize: 14,
+    iconGap: 6,
   },
   md: {
-    paddingLeft: 16,
-    paddingRight: 16,
+    paddingLeft: 12,
+    paddingRight: 12,
     paddingY: 4, // --spacing-xs
     fontSize: 14,
     lineHeight: 20, // 14 * (1.25/0.875) = 20
     borderWidth: 1,
+    iconSize: 16,
+    iconGap: 8,
   },
   lg: {
-    paddingLeft: 24,
-    paddingRight: 24,
+    paddingLeft: 16,
+    paddingRight: 16,
     paddingY: 8, // --spacing-sm
     fontSize: 16,
     lineHeight: 24, // 16 * (1.5/1) = 24
     borderWidth: 1,
+    iconSize: 20,
+    iconGap: 10,
   },
   xl: {
-    paddingLeft: 32,
-    paddingRight: 32,
+    paddingLeft: 24,
+    paddingRight: 24,
     paddingY: 12, // --spacing-md
     fontSize: 18,
     lineHeight: 28, // 18 * (1.75/1.125) = 28
     borderWidth: 1,
+    iconSize: 24,
+    iconGap: 12,
   },
 };
 
@@ -542,40 +556,40 @@ const BADGE_SIZE_CONFIG: Record<
 > = {
   // @sync Button.css/BUTTON_SIZE_CONFIG — fontSize/lineHeight/padding 동일
   xs: {
-    paddingLeft: 8,
-    paddingRight: 8,
+    paddingLeft: 4,
+    paddingRight: 4,
     paddingY: 1, // --spacing-3xs
     fontSize: 10,
     lineHeight: 16,
     borderWidth: 1,
   },
   sm: {
-    paddingLeft: 12,
-    paddingRight: 12,
+    paddingLeft: 8,
+    paddingRight: 8,
     paddingY: 2, // --spacing-2xs
     fontSize: 12,
     lineHeight: 16,
     borderWidth: 1,
   },
   md: {
-    paddingLeft: 16,
-    paddingRight: 16,
+    paddingLeft: 12,
+    paddingRight: 12,
     paddingY: 4, // --spacing-xs
     fontSize: 14,
     lineHeight: 20,
     borderWidth: 1,
   },
   lg: {
-    paddingLeft: 24,
-    paddingRight: 24,
+    paddingLeft: 16,
+    paddingRight: 16,
     paddingY: 8, // --spacing-sm
     fontSize: 16,
     lineHeight: 24,
     borderWidth: 1,
   },
   xl: {
-    paddingLeft: 32,
-    paddingRight: 32,
+    paddingLeft: 24,
+    paddingRight: 24,
     paddingY: 12, // --spacing-md
     fontSize: 18,
     lineHeight: 28,
@@ -603,40 +617,40 @@ const TOGGLEBUTTON_SIZE_CONFIG: Record<
   // @sync ToggleButton.css [data-size] padding 값과 일치해야 함 (Button.css와 동일)
   // @sync shared-tokens.css spacing/line-height 토큰
   xs: {
-    paddingLeft: 8,
-    paddingRight: 8,
+    paddingLeft: 4,
+    paddingRight: 4,
     paddingY: 1, // --spacing-3xs
     fontSize: 10,
     lineHeight: 16, // 10 * (1/0.625)
     borderWidth: 1,
   },
   sm: {
-    paddingLeft: 12,
-    paddingRight: 12,
+    paddingLeft: 8,
+    paddingRight: 8,
     paddingY: 2, // --spacing-2xs
     fontSize: 12,
     lineHeight: 16, // 12 * (1/0.75)
     borderWidth: 1,
   },
   md: {
-    paddingLeft: 16,
-    paddingRight: 16,
+    paddingLeft: 12,
+    paddingRight: 12,
     paddingY: 4, // --spacing-xs
     fontSize: 14,
     lineHeight: 20, // 14 * (1.25/0.875)
     borderWidth: 1,
   },
   lg: {
-    paddingLeft: 24,
-    paddingRight: 24,
+    paddingLeft: 16,
+    paddingRight: 16,
     paddingY: 8, // --spacing-sm
     fontSize: 16,
     lineHeight: 24, // 16 * (1.5/1)
     borderWidth: 1,
   },
   xl: {
-    paddingLeft: 32,
-    paddingRight: 32,
+    paddingLeft: 24,
+    paddingRight: 24,
     paddingY: 12, // --spacing-md
     fontSize: 18,
     lineHeight: 28, // 18 * (1.75/1.125)
@@ -880,7 +894,39 @@ export function calculateContentWidth(
   const explicitWidth = parseNumericValue(style?.width);
   if (explicitWidth !== undefined) return explicitWidth;
 
-  // 1.1. ProgressCircle: diameter 기반 고정 크기
+  // 1.1. StatusLight: dot + gap + text width
+  if (tag === "statuslight") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = String(props?.size ?? "M");
+    const dims = STATUSLIGHT_DIMENSIONS[sizeName] ?? STATUSLIGHT_DIMENSIONS.M;
+    const text = String(props?.children ?? "");
+    if (!text) return dims.dotSize;
+    const specStyle = extractSpecTextStyle("statuslight", props ?? {});
+    const fontSize = specStyle?.fontSize ?? dims.fontSize;
+    const fontWeight = specStyle?.fontWeight ?? 400;
+    const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
+    const measurer = getTextMeasurer();
+    const textWidth = measurer
+      ? measurer.measureWidth(text, fontSize, fontWeight, ffamily)
+      : text.length * fontSize * 0.6;
+    return Math.ceil(dims.dotSize + dims.gap + textWidth);
+  }
+
+  // 1.15. Link: padding/border 없는 텍스트 전용 인라인 요소
+  if (tag === "link") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const text = String(props?.children ?? props?.text ?? "");
+    if (!text) return 0;
+    const specStyle = extractSpecTextStyle("link", props ?? {});
+    const fontSize =
+      parseNumericValue(style?.fontSize) ?? specStyle?.fontSize ?? 14;
+    const fontWeight = specStyle?.fontWeight ?? 500;
+    const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
+    const textWidth = measureTextWidth(text, fontSize, ffamily, fontWeight);
+    return Math.ceil(textWidth);
+  }
+
+  // 1.2. ProgressCircle: diameter 기반 고정 크기
   if (tag === "progresscircle") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = String(props?.size ?? "M");
@@ -903,8 +949,10 @@ export function calculateContentWidth(
     const gap = parseNumericValue(style?.gap) ?? 0; // CSS gap (0 = default -1px overlap)
 
     // Spec에서 ToggleButton의 실제 text style 추출 (fontWeight/fontFamily 정합성)
+    // children prop을 전달해야 Spec이 text shape를 생성하여 fontWeight 등을 반환함
     const tbSpecStyle = extractSpecTextStyle("togglebutton", {
       size: sizeName,
+      children: "x",
     });
     const tbFontSize = tbSpecStyle?.fontSize ?? sizeConfig.fontSize;
     const tbFontWeight = tbSpecStyle?.fontWeight ?? 400;
@@ -940,17 +988,22 @@ export function calculateContentWidth(
           tbFontFamily,
           tbFontWeight,
         );
-        return Math.max(
+        // Math.ceil: enrichWithIntrinsicSize와 동일하게 반올림하여
+        // 그룹 폭과 자식 개별 폭 합계의 정합성 유지 (Taffy f32 정밀도)
+        const bw = Math.max(
           40,
-          borderWidth + paddingX + textWidth + paddingX + borderWidth,
+          Math.ceil(
+            borderWidth + paddingX + textWidth + paddingX + borderWidth,
+          ),
         );
+        return bw;
       });
       if (isHorizontal) {
-        // horizontal: 버튼 너비 합 + gap * (n-1) - margin overlap(1px * (n-1))
+        // horizontal: 버튼 너비 합 + gap * (n-1)
+        // CSS는 margin-inline-start:-1px 오버랩이 있지만 Taffy 자식에는 해당 마진이 없으므로
+        // 오버랩 차감 없이 자식 border-box 합계와 일치시켜 Taffy 축소 방지
         return (
-          buttonWidths.reduce((sum, w) => sum + w, 0) +
-          gap * (items.length - 1) -
-          (items.length - 1)
+          buttonWidths.reduce((sum, w) => sum + w, 0) + gap * (items.length - 1)
         );
       }
       // vertical: 가장 넓은 버튼
@@ -1025,6 +1078,23 @@ export function calculateContentWidth(
         );
       }
       return Math.max(...childWidths, phantomW, 0);
+    }
+  }
+
+  // 2.5. Button icon-only: text 없이 iconName만 있는 경우 icon 크기 반환
+  if (tag === "button" || tag === "submitbutton" || tag === "fancybutton") {
+    const btnProps = element.props as Record<string, unknown> | undefined;
+    const iconName = btnProps?.iconName as string | undefined;
+    const btnText = extractTextContent(btnProps ?? {});
+    if (iconName && !btnText) {
+      const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? "md";
+      const size = (btnProps?.size as string) ?? defaultSize;
+      const sizeConfig =
+        BUTTON_SIZE_CONFIG[size] ??
+        BUTTON_SIZE_CONFIG[defaultSize] ??
+        Object.values(BUTTON_SIZE_CONFIG)[0];
+      const btnConfig = sizeConfig as { iconSize?: number };
+      return btnConfig.iconSize ?? 16;
     }
   }
 
@@ -1124,16 +1194,38 @@ export function calculateContentWidth(
           : undefined,
       );
 
+      // Button icon 너비 반영: iconName이 있으면 iconSize + gap 추가
+      let iconExtra = 0;
+      if (tag === "button" || tag === "submitbutton" || tag === "fancybutton") {
+        const iconName = props?.iconName as string | undefined;
+        if (iconName) {
+          const btnConfig = sizeConfig as {
+            iconSize?: number;
+            iconGap?: number;
+          };
+          const iconSize = btnConfig.iconSize ?? 16;
+          const iconGap =
+            parseNumericValue(style?.gap) ?? btnConfig.iconGap ?? 8;
+          if (text) {
+            // icon + gap + text
+            iconExtra = iconSize + iconGap;
+          } else {
+            // icon-only: iconSize만 반환
+            return iconSize;
+          }
+        }
+      }
+
       // minWidth 적용: totalWidth = contentWidth + padding >= minWidth
       // PixiBadge와 동일한 너비 계산 (cssVariableReader.ts BADGE_FALLBACKS 참조)
       const minWidth = (sizeConfig as { minWidth?: number }).minWidth;
       if (minWidth !== undefined) {
         const padding = sizeConfig.paddingLeft + sizeConfig.paddingRight;
         const minContentWidth = Math.max(0, minWidth - padding);
-        return Math.max(minContentWidth, textWidth);
+        return Math.max(minContentWidth, textWidth + iconExtra);
       }
 
-      return textWidth;
+      return textWidth + iconExtra;
     }
 
     // 일반 요소: computedStyle 기준으로 font 속성을 해소
@@ -1322,7 +1414,25 @@ export function calculateContentHeight(
   const explicitHeight = parseNumericValue(style?.height);
   if (explicitHeight !== undefined) return explicitHeight;
 
-  // 1.5. ToggleButtonGroup: 자식 ToggleButton의 border-box 높이 기반 계산
+  // 1.5. StatusLight: spec sizes에 정의된 고정 높이
+  const tag1 = (element.tag ?? "").toLowerCase();
+  if (tag1 === "statuslight") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = String(props?.size ?? "M");
+    const dims = STATUSLIGHT_DIMENSIONS[sizeName] ?? STATUSLIGHT_DIMENSIONS.M;
+    return dims.height;
+  }
+
+  // 1.55. Link: padding/border 없는 텍스트 전용 인라인 요소 — fontSize 기반 높이
+  if (tag1 === "link") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const specStyle = extractSpecTextStyle("link", props ?? {});
+    const fontSize =
+      parseNumericValue(style?.fontSize) ?? specStyle?.fontSize ?? 14;
+    return estimateTextHeight(fontSize, undefined);
+  }
+
+  // 1.6. ToggleButtonGroup: 자식 ToggleButton의 border-box 높이 기반 계산
   // ToggleButtonGroup 자체는 padding/border 없는 flex 컨테이너이므로
   // content-box height = 자식 ToggleButton의 border-box height
   const tag0 = (element.tag ?? "").toLowerCase();
@@ -2302,11 +2412,22 @@ export function parseBoxModel(
       style?.paddingBottom !== undefined ||
       style?.paddingLeft !== undefined;
     if (!hasInlinePadding) {
+      // Icon-only 버튼: paddingX = paddingY (정사각형 패딩)
+      const isIconOnlyButton =
+        isFormElement &&
+        !!(props?.iconName as string) &&
+        !extractTextContent(props ?? {});
+      const effectivePaddingLeft = isIconOnlyButton
+        ? sizeConfig.paddingY
+        : sizeConfig.paddingLeft;
+      const effectivePaddingRight = isIconOnlyButton
+        ? sizeConfig.paddingY
+        : sizeConfig.paddingRight;
       padding = {
         top: sizeConfig.paddingY,
-        right: sizeConfig.paddingRight,
+        right: effectivePaddingRight,
         bottom: sizeConfig.paddingY,
-        left: sizeConfig.paddingLeft,
+        left: effectivePaddingLeft,
       };
     }
 
@@ -2419,6 +2540,9 @@ export const INLINE_BLOCK_TAGS = new Set([
   "radio",
   "switch",
   "togglebuttongroup",
+  "statuslight",
+  "link",
+  "linkbutton",
 ]);
 
 /**
@@ -2578,7 +2702,9 @@ export function enrichWithIntrinsicSize(
           getChildElements,
           _computedStyle,
         )
-      : IMAGE_INTRINSIC_TAGS.has(tag) || SPEC_SHAPES_INPUT_TAGS.has(tag)
+      : IMAGE_INTRINSIC_TAGS.has(tag) ||
+          SPEC_SHAPES_INPUT_TAGS.has(tag) ||
+          INLINE_BLOCK_TAGS.has(tag)
         ? calculateContentHeight(
             element,
             availableWidth,

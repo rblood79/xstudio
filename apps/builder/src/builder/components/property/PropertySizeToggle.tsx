@@ -7,6 +7,8 @@ interface PropertySizeToggleProps {
   onChange: (value: string) => void;
   /** Size options: "3" = S/M/L, "5" = XS/S/M/L/XL */
   scale?: "3" | "5";
+  /** Custom options override (scale 무시) */
+  options?: { id: string; label: string }[];
 }
 
 const SIZE_3 = [
@@ -28,8 +30,9 @@ export const PropertySizeToggle = memo(function PropertySizeToggle({
   value,
   onChange,
   scale = "3",
+  options,
 }: PropertySizeToggleProps) {
-  const items = scale === "5" ? SIZE_5 : SIZE_3;
+  const items = options ?? (scale === "5" ? SIZE_5 : SIZE_3);
 
   const handleChange = useCallback(
     (keys: Set<string>) => {

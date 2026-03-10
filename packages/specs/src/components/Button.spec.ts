@@ -27,6 +27,12 @@ export interface ButtonProps {
   children?: string;
   text?: string;
   label?: string;
+  /** Lucide 아이콘 이름 (예: "arrow-right", "plus") */
+  iconName?: string;
+  /** 아이콘 위치: start(텍스트 왼쪽) / end(텍스트 오른쪽) */
+  iconPosition?: "start" | "end";
+  /** 아이콘 선 두께 (기본: 2) */
+  iconStrokeWidth?: number;
   isDisabled?: boolean;
   isLoading?: boolean;
   isPending?: boolean;
@@ -97,7 +103,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
   sizes: {
     xs: {
       height: 20,
-      paddingX: 8,
+      paddingX: 4,
       paddingY: 1,
       fontSize: "{typography.text-2xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
@@ -106,7 +112,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     sm: {
       height: 22,
-      paddingX: 12,
+      paddingX: 8,
       paddingY: 2,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
@@ -115,7 +121,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     md: {
       height: 30,
-      paddingX: 16,
+      paddingX: 12,
       paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
@@ -124,7 +130,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     lg: {
       height: 42,
-      paddingX: 24,
+      paddingX: 16,
       paddingY: 8,
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
@@ -133,7 +139,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     xl: {
       height: 54,
-      paddingX: 32,
+      paddingX: 24,
       paddingY: 12,
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.xl}" as TokenRef,
@@ -182,28 +188,45 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
             : parseFloat(String(styleBw)) || 0
           : 1;
 
+      const isOutline = props.fillStyle === "outline";
+
+      // outline 시 variant별 텍스트 색상 매핑 (CSS `[data-fill-style="outline"]` 정합)
+      const outlineTextMap: Record<string, TokenRef | string> = {
+        accent: "{color.accent}" as TokenRef,
+        primary: "{color.neutral}" as TokenRef,
+        secondary: "{color.neutral}" as TokenRef,
+        negative: "{color.negative}" as TokenRef,
+        premium: "{color.purple}" as TokenRef,
+        genai: "{color.purple}" as TokenRef,
+      };
+
       // 상태에 따른 배경색 선택 (사용자 스타일 우선)
-      const bgColor =
-        props.style?.backgroundColor ??
-        (state === "hover"
-          ? variant.backgroundHover
-          : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+      const bgColor = isOutline
+        ? (props.style?.backgroundColor ?? ("{color.transparent}" as TokenRef))
+        : (props.style?.backgroundColor ??
+          (state === "hover"
+            ? variant.backgroundHover
+            : state === "pressed"
+              ? variant.backgroundPressed
+              : variant.background));
 
       // 상태에 따른 텍스트색 선택 (사용자 스타일 우선)
-      const textColor =
-        props.style?.color ??
-        (state === "hover" && variant.textHover
-          ? variant.textHover
-          : variant.text);
+      const textColor = isOutline
+        ? (props.style?.color ??
+          outlineTextMap[props.variant ?? "primary"] ??
+          variant.text)
+        : (props.style?.color ??
+          (state === "hover" && variant.textHover
+            ? variant.textHover
+            : variant.text));
 
       // 상태에 따른 테두리색 선택 (사용자 스타일 우선)
-      const borderColor =
-        props.style?.borderColor ??
-        (state === "hover" && variant.borderHover
-          ? variant.borderHover
-          : variant.border);
+      const borderColor = isOutline
+        ? (props.style?.borderColor ?? ("{color.border-hover}" as TokenRef))
+        : (props.style?.borderColor ??
+          (state === "hover" && variant.borderHover
+            ? variant.borderHover
+            : variant.border));
 
       const shapes: Shape[] = [
         // 배경 (height: 'auto' → 실제 레이아웃 높이에 맞춤)
@@ -235,38 +258,125 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return shapes;
 
-      // 텍스트
+      // 아이콘 + 텍스트 렌더링
+      const iconName = props.iconName;
+      const iconPos = props.iconPosition ?? "start";
+      const iconSize = (size as unknown as { iconSize: number }).iconSize ?? 16;
+      // 사용자 스타일 gap 우선, 없으면 spec 기본값
+      const styleGap = props.style?.gap;
+      const gap =
+        styleGap != null
+          ? typeof styleGap === "number"
+            ? styleGap
+            : parseFloat(String(styleGap)) || 0
+          : (size.gap ?? 8);
       const text = props.children || props.text || props.label;
-      if (text) {
-        // 사용자 스타일 padding 우선, 없으면 spec 기본값
-        const stylePx =
-          props.style?.paddingLeft ??
-          props.style?.paddingRight ??
-          props.style?.padding;
-        const paddingX =
-          stylePx != null
-            ? typeof stylePx === "number"
-              ? stylePx
-              : parseFloat(String(stylePx)) || 0
-            : size.paddingX;
 
-        // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
-        const rawFontSize = props.style?.fontSize ?? size.fontSize;
-        const resolvedFs =
-          typeof rawFontSize === "number"
-            ? rawFontSize
-            : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-              ? resolveToken(rawFontSize as TokenRef)
-              : rawFontSize;
-        const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
-        const fwRaw = props.style?.fontWeight;
-        const fw =
-          fwRaw != null
-            ? typeof fwRaw === "number"
-              ? fwRaw
-              : parseInt(String(fwRaw), 10) || 500
-            : 500;
-        const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      // 사용자 스타일 padding 우선, 없으면 spec 기본값
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
+
+      // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
+      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
+            ? resolveToken(rawFontSize as TokenRef)
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
+      const fwRaw = props.style?.fontWeight;
+      const fw =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 500
+          : 500;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+
+      const iconSw = props.iconStrokeWidth ?? 2;
+
+      // Icon-only 모드: 아이콘만, 텍스트 없음 → 컨테이너 중앙 배치
+      if (iconName && !text) {
+        shapes.push({
+          type: "icon_font" as const,
+          iconName,
+          x: 0,
+          y: 0,
+          fontSize: iconSize,
+          fill: textColor,
+          strokeWidth: iconSw,
+          align: "center" as const,
+          baseline: "middle" as const,
+        });
+        return shapes;
+      }
+
+      // Icon + Text 모드
+      if (iconName && text) {
+        if (iconPos === "end") {
+          // Text → Icon: 텍스트 좌측, 아이콘 우측
+          shapes.push({
+            type: "text" as const,
+            x: paddingX,
+            y: 0,
+            text,
+            fontSize,
+            fontFamily: ff,
+            fontWeight: fw,
+            fill: textColor,
+            align: "left" as const,
+            baseline: "middle" as const,
+          });
+          // 아이콘: 음수 x = 우측에서 오프셋 (specShapeConverter 처리)
+          shapes.push({
+            type: "icon_font" as const,
+            iconName,
+            x: -(paddingX + iconSize / 2),
+            y: 0,
+            fontSize: iconSize,
+            fill: textColor,
+            strokeWidth: iconSw,
+            baseline: "middle" as const,
+          });
+        } else {
+          // Icon → Text (기본: start)
+          shapes.push({
+            type: "icon_font" as const,
+            iconName,
+            x: paddingX + iconSize / 2,
+            y: 0,
+            fontSize: iconSize,
+            fill: textColor,
+            strokeWidth: iconSw,
+            baseline: "middle" as const,
+          });
+          shapes.push({
+            type: "text" as const,
+            x: paddingX + iconSize + gap,
+            y: 0,
+            text,
+            fontSize,
+            fontFamily: ff,
+            fontWeight: fw,
+            fill: textColor,
+            align: "left" as const,
+            baseline: "middle" as const,
+          });
+        }
+        return shapes;
+      }
+
+      // Text-only 모드 (기존)
+      if (text) {
         const textAlign =
           (props.style?.textAlign as "left" | "center" | "right") || "center";
 

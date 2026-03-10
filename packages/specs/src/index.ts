@@ -396,7 +396,10 @@ export type { AvatarProps } from "./components/Avatar.spec";
 export { AvatarGroupSpec } from "./components/AvatarGroup.spec";
 export type { AvatarGroupProps } from "./components/AvatarGroup.spec";
 
-export { StatusLightSpec } from "./components/StatusLight.spec";
+export {
+  StatusLightSpec,
+  STATUSLIGHT_DIMENSIONS,
+} from "./components/StatusLight.spec";
 export type { StatusLightProps } from "./components/StatusLight.spec";
 
 export { InlineAlertSpec } from "./components/InlineAlert.spec";

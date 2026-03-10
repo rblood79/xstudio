@@ -112,6 +112,32 @@ export interface ColorTokens {
   transparent: string;
   white: string;
   black: string;
+
+  // --- Named Colors (StatusLight, Badge 등) ---
+  purple: string;
+  "purple-subtle": string;
+  yellow: string;
+  "yellow-subtle": string;
+  red: string;
+  "red-subtle": string;
+  orange: string;
+  "orange-subtle": string;
+  blue: string;
+  "blue-subtle": string;
+  indigo: string;
+  "indigo-subtle": string;
+  cyan: string;
+  "cyan-subtle": string;
+  pink: string;
+  "pink-subtle": string;
+  fuchsia: string;
+  "fuchsia-subtle": string;
+  magenta: string;
+  "magenta-subtle": string;
+  celery: string;
+  "celery-subtle": string;
+  chartreuse: string;
+  "chartreuse-subtle": string;
 }
 
 /**

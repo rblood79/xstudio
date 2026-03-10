@@ -181,6 +181,63 @@
       outline-offset: -2px;
     }
 
+    /* IconPicker: input-style trigger + clear button */
+    .icon-picker-input-trigger {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      flex: 1;
+      min-width: 0;
+      min-height: var(--text-xl);
+      padding: 0;
+      background-color: transparent;
+      border: none;
+      font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
+      color: var(--fg);
+      cursor: pointer;
+
+      .control-label {
+        position: static;
+        flex-shrink: 0;
+      }
+
+      .icon-picker-value {
+        flex: 1;
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--fg);
+      }
+
+      &:not(:has(.control-label)) .icon-picker-value {
+        padding-inline-start: var(--spacing);
+        color: var(--fg-muted);
+      }
+    }
+
+    .icon-picker-clear {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: var(--text-xl);
+      height: var(--text-xl);
+      padding: 0;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--bg-overlay);
+      box-shadow: var(--shadow-sm);
+      color: var(--fg-muted);
+      cursor: pointer;
+
+      &:hover {
+        color: var(--fg);
+        background: var(--bg-overlay);
+      }
+    }
+
     .react-aria-ToggleButtonGroup:not([data-indicator="true"]) {
       width: 100%;
       background-color: var(--bg-muted);
