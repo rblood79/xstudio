@@ -32,7 +32,6 @@ export const ColorFieldEditor = memo(function ColorFieldEditor({
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

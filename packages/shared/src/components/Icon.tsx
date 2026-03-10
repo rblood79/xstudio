@@ -2,16 +2,17 @@
  * Icon Component — Lucide 아이콘 SVG 렌더링
  *
  * ADR-019: Preview/Publish용 React 컴포넌트
+ * div 래핑: data-element-id, 스타일, 레이아웃 지원
  */
 
 import { memo } from "react";
 import { getIconData } from "@xstudio/specs";
 
 const ICON_SIZE_MAP: Record<string, number> = {
-  xs: 12,
-  sm: 16,
+  xs: 16,
+  sm: 18,
   md: 24,
-  lg: 32,
+  lg: 36,
   xl: 48,
 };
 
@@ -34,7 +35,14 @@ export const Icon = memo(function Icon({
   className,
   ...rest
 }: IconComponentProps) {
-  const pxSize = ICON_SIZE_MAP[size] ?? 24;
+  // fontSize 오버라이드 시 iconSize = fontSize
+  const styleFontSize =
+    style?.fontSize != null
+      ? typeof style.fontSize === "number"
+        ? style.fontSize
+        : parseFloat(String(style.fontSize)) || undefined
+      : undefined;
+  const pxSize = styleFontSize ?? ICON_SIZE_MAP[size] ?? 24;
   const color = style?.color ?? "currentColor";
 
   const data = getIconData(iconName);
@@ -49,27 +57,30 @@ export const Icon = memo(function Icon({
   }
 
   return (
-    <svg
-      width={pxSize}
-      height={pxSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <div
       style={style}
-      className={className}
+      className={`react-aria-Icon${className ? ` ${className}` : ""}`}
       {...dataProps}
     >
-      {data.paths.map((d: string, i: number) => (
-        <path key={i} d={d} />
-      ))}
-      {data.circles?.map(
-        (c: { cx: number; cy: number; r: number }, i: number) => (
-          <circle key={`c${i}`} cx={c.cx} cy={c.cy} r={c.r} />
-        ),
-      )}
-    </svg>
+      <svg
+        width={pxSize}
+        height={pxSize}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {data.paths.map((d: string, i: number) => (
+          <path key={i} d={d} />
+        ))}
+        {data.circles?.map(
+          (c: { cx: number; cy: number; r: number }, i: number) => (
+            <circle key={`c${i}`} cx={c.cx} cy={c.cy} r={c.r} />
+          ),
+        )}
+      </svg>
+    </div>
   );
 });

@@ -24,7 +24,6 @@ export const ColorPickerEditor = memo(function ColorPickerEditor({
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

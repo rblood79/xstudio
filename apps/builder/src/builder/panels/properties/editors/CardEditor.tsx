@@ -92,7 +92,7 @@ export const CardEditor = memo(
     // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
     const handleTitleChange = useCallback(
       (value: string) => {
-        const updatedProps = { ...currentProps, title: value };
+        const updatedProps = { title: value };
         const childUpdates = buildDeepChildUpdates([
           {
             wrapperTag: "CardHeader",
@@ -105,12 +105,12 @@ export const CardEditor = memo(
           .getState()
           .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
       },
-      [currentProps, buildDeepChildUpdates],
+      [buildDeepChildUpdates],
     );
 
     const handleDescriptionChange = useCallback(
       (value: string) => {
-        const updatedProps = { ...currentProps, description: value };
+        const updatedProps = { description: value };
         const childUpdates = buildDeepChildUpdates([
           {
             wrapperTag: "CardContent",
@@ -123,112 +123,112 @@ export const CardEditor = memo(
           .getState()
           .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
       },
-      [currentProps, buildDeepChildUpdates],
+      [buildDeepChildUpdates],
     );
 
     const handleFooterChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, footer: value });
+        onUpdate({ footer: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleVariantChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, variant: value });
+        onUpdate({ variant: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleSizeChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, size: value });
+        onUpdate({ size: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleOrientationChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, orientation: value });
+        onUpdate({ orientation: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleCardTypeChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, cardType: value || undefined });
+        onUpdate({ cardType: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleAccentColorChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, accentColor: value || undefined });
+        onUpdate({ accentColor: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleAssetChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, asset: value || undefined });
+        onUpdate({ asset: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleAssetSrcChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, assetSrc: value });
+        onUpdate({ assetSrc: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handlePreviewChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, preview: value });
+        onUpdate({ preview: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleHrefChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, href: value });
+        onUpdate({ href: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleTargetChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, target: value });
+        onUpdate({ target: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsSelectableChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isSelectable: checked });
+        onUpdate({ isSelectable: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsSelectedChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isSelected: checked });
+        onUpdate({ isSelected: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsQuietChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isQuiet: checked });
+        onUpdate({ isQuiet: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsDisabledChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isDisabled: checked });
+        onUpdate({ isDisabled: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     // ⭐ 최적화: 조건부 렌더링을 위한 값들을 useMemo로 캐싱

@@ -45,7 +45,6 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, cu
 
     const updateProps = (newProps: Partial<TableHeaderElementProps>) => {
         onUpdate({
-            ...currentProps,
             ...newProps
         });
     };

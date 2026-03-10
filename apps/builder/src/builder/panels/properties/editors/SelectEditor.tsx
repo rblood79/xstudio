@@ -80,7 +80,7 @@ export const SelectEditor = memo(
     // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
     const handleLabelChange = useCallback(
       (value: string) => {
-        const updatedProps = { ...currentProps, label: value || undefined };
+        const updatedProps = { label: value || undefined };
         const childUpdates = buildChildUpdates([
           { childTag: "Label", propKey: "children", value },
         ]);
@@ -88,27 +88,26 @@ export const SelectEditor = memo(
           .getState()
           .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
       },
-      [currentProps, buildChildUpdates],
+      [buildChildUpdates],
     );
 
     const handleDescriptionChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, description: value || undefined });
+        onUpdate({ description: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleErrorMessageChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, errorMessage: value || undefined });
+        onUpdate({ errorMessage: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handlePlaceholderChange = useCallback(
       (value: string) => {
         const updatedProps = {
-          ...currentProps,
           placeholder: value || undefined,
         };
         const childUpdates = buildGrandchildUpdates([
@@ -123,118 +122,116 @@ export const SelectEditor = memo(
           .getState()
           .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
       },
-      [currentProps, buildGrandchildUpdates],
+      [buildGrandchildUpdates],
     );
 
     const handleSelectedValueChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, selectedValue: value || undefined });
+        onUpdate({ selectedValue: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleDefaultSelectedKeyChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, defaultSelectedKey: value || undefined });
+        onUpdate({ defaultSelectedKey: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleDisallowEmptySelectionChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, disallowEmptySelection: checked });
+        onUpdate({ disallowEmptySelection: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsRequiredChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isRequired: checked });
+        onUpdate({ isRequired: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsDisabledChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isDisabled: checked });
+        onUpdate({ isDisabled: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsReadOnlyChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isReadOnly: checked });
+        onUpdate({ isReadOnly: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleAutoFocusChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, autoFocus: checked });
+        onUpdate({ autoFocus: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleVariantChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, variant: value });
+        onUpdate({ variant: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleSizeChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, size: value });
+        onUpdate({ size: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleMenuTriggerChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, menuTrigger: value });
+        onUpdate({ menuTrigger: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleNameChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, name: value || undefined });
+        onUpdate({ name: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleValidationBehaviorChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, validationBehavior: value });
+        onUpdate({ validationBehavior: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleDataBindingChange = useCallback(
       (binding: DataBindingValue | null) => {
-        onUpdate({ ...currentProps, dataBinding: binding || undefined });
+        onUpdate({ dataBinding: binding || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleSelectionModeChange = useCallback(
       (value: string) => {
         onUpdate({
-          ...currentProps,
           selectionMode: value as "single" | "multiple",
         });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleMultipleDisplayModeChange = useCallback(
       (value: string) => {
         onUpdate({
-          ...currentProps,
           multipleDisplayMode: value as "count" | "list" | "custom",
         });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     // ⭐ 최적화: 옵션 편집 핸들러들

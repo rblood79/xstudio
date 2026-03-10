@@ -147,9 +147,29 @@ const PropertyEditorWrapper = memo(
     }, [selectedElement.type, elementContext.editMode]);
 
     // handleUpdate는 항상 안정적인 함수 (getState 사용)
+    // ⚠️ 에디터들이 { ...currentProps, [key]: value } 패턴으로 전체 props를 보내는데,
+    // useDeferredValue로 인해 currentProps가 stale할 수 있음.
+    // 최신 element.props와 비교하여 실제 변경된 prop만 전달하여 stale 값 덮어쓰기 방지.
     const handleUpdate = useCallback(
       (updatedProps: Record<string, unknown>) => {
-        useStore.getState().updateSelectedProperties(updatedProps);
+        const state = useStore.getState();
+        const element = state.elementsMap.get(state.selectedElementId ?? "");
+        if (!element) return;
+
+        const changedProps: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(updatedProps)) {
+          // style/computedStyle/events는 properties에 포함되지 않으므로 스킵
+          if (key === "style" || key === "computedStyle" || key === "events")
+            continue;
+          // 현재 element.props와 다른 값만 포함
+          if ((element.props as Record<string, unknown>)[key] !== value) {
+            changedProps[key] = value;
+          }
+        }
+
+        if (Object.keys(changedProps).length > 0) {
+          state.updateSelectedProperties(changedProps);
+        }
       },
       [],
     );

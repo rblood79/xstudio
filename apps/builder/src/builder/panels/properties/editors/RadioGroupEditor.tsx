@@ -65,93 +65,93 @@ export const RadioGroupEditor = memo(
     // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
     const handleLabelChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, label: value });
+        onUpdate({ label: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleDescriptionChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, description: value });
+        onUpdate({ description: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleErrorMessageChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, errorMessage: value });
+        onUpdate({ errorMessage: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsEmphasizedChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isEmphasized: checked });
+        onUpdate({ isEmphasized: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleSizeChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, size: value });
+        onUpdate({ size: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleOrientationChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, orientation: value });
+        onUpdate({ orientation: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleValueChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, value: value });
+        onUpdate({ value: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleDefaultValueChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, defaultValue: value });
+        onUpdate({ defaultValue: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsRequiredChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isRequired: checked });
+        onUpdate({ isRequired: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsInvalidChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isInvalid: checked });
+        onUpdate({ isInvalid: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsDisabledChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isDisabled: checked });
+        onUpdate({ isDisabled: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsReadOnlyChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isReadOnly: checked });
+        onUpdate({ isReadOnly: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleNameChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, name: value || undefined });
+        onUpdate({ name: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const updateCustomId = useCallback(

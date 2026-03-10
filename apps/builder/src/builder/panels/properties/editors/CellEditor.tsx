@@ -37,7 +37,6 @@ export const CellEditor = memo(function CellEditor({ elementId, currentProps, on
 
     const updateProps = (newProps: Partial<CellElementProps>) => {
         onUpdate({
-            ...currentProps,
             ...newProps
         });
     };

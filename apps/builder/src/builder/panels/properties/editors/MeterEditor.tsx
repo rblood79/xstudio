@@ -35,7 +35,6 @@ export const MeterEditor = memo(function MeterEditor({
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

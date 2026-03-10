@@ -15,7 +15,6 @@ export const ToolbarEditor = memo(function ToolbarEditor({ elementId, currentPro
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

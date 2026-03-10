@@ -42,10 +42,15 @@ function renderButtonIcon(
   iconName: string,
   size?: string,
   strokeWidth?: number,
+  overrideFontSize?: number,
 ): React.ReactNode | null {
   const data = getIconData(iconName);
   if (!data) return null;
-  const s = BUTTON_ICON_SIZE_MAP[size || "md"] ?? 16;
+  // fontSize 오버라이드 시 iconSize = fontSize
+  const s =
+    overrideFontSize != null
+      ? overrideFontSize
+      : (BUTTON_ICON_SIZE_MAP[size || "md"] ?? 16);
   return (
     <svg
       width={s}
@@ -599,11 +604,18 @@ export const renderButton = (
       {(() => {
         const iconName = element.props.iconName as string | undefined;
         const iconPos = (element.props.iconPosition as string) || "start";
+        const styleFontSize =
+          element.props.style?.fontSize != null
+            ? typeof element.props.style.fontSize === "number"
+              ? element.props.style.fontSize
+              : parseFloat(String(element.props.style.fontSize)) || undefined
+            : undefined;
         const iconSvg = iconName
           ? renderButtonIcon(
               iconName,
               element.props.size as string,
               element.props.iconStrokeWidth as number | undefined,
+              styleFontSize,
             )
           : null;
         const textContent =

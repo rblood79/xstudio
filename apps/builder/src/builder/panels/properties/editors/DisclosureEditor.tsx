@@ -25,7 +25,6 @@ export const DisclosureEditor = memo(function DisclosureEditor({
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

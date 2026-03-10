@@ -34,7 +34,6 @@ export const TableBodyEditor = memo(function TableBodyEditor({ elementId, curren
 
     const updateProps = (newProps: Partial<TableBodyElementProps>) => {
         onUpdate({
-            ...currentProps,
             ...newProps
         });
     };

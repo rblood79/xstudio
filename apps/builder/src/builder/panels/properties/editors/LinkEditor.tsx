@@ -33,7 +33,6 @@ export const LinkEditor = memo(function LinkEditor({
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

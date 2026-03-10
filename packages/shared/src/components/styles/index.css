@@ -53,6 +53,7 @@
 @import "./Group.css";
 
 /* Standalone Components (no imports) */
+@import "./Icon.css";
 @import "./ChatContainer.css";
 @import "./ChatInput.css";
 @import "./ChatMessage.css";

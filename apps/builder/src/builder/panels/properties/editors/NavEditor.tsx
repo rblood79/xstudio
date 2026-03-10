@@ -27,7 +27,7 @@ export const NavEditor = memo(function NavEditor({ elementId, currentProps, onUp
         <PropertyInput
           label="aria-label"
           value={String(currentProps["aria-label"] || "")}
-          onChange={(value) => onUpdate({ ...currentProps, "aria-label": value || undefined })}
+          onChange={(value) => onUpdate({ "aria-label": value || undefined })}
           placeholder="Main navigation"
           icon={Tag}
         />

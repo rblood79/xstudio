@@ -41,16 +41,17 @@ export const SliderEditor = memo(function SliderEditor({
 
   const { buildChildUpdates } = useSyncChildProp(elementId);
 
+  // 변경된 key만 전달 — updateAndSave가 element.props와 merge하므로 stale props 전파 방지
   const updateProp = useCallback(
     (key: string, value: unknown) => {
-      onUpdate({ ...currentProps, [key]: value });
+      onUpdate({ [key]: value });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleLabelChange = useCallback(
     (value: string) => {
-      const updatedProps = { ...currentProps, label: value };
+      const updatedProps = { label: value };
       const childUpdates = buildChildUpdates([
         { childTag: "Label", propKey: "children", value },
       ]);
@@ -58,7 +59,7 @@ export const SliderEditor = memo(function SliderEditor({
         .getState()
         .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
     },
-    [currentProps, buildChildUpdates],
+    [buildChildUpdates],
   );
 
   const updateCustomId = (newCustomId: string) => {

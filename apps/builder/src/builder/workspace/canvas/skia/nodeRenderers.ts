@@ -1385,7 +1385,8 @@ export function renderIconPath(
   const paint = new ck.Paint();
   paint.setAntiAlias(true);
   paint.setStyle(ck.PaintStyle.Stroke);
-  paint.setStrokeWidth(strokeWidth * scale);
+  // canvas.scale(scale)이 stroke width에도 적용되므로 여기서 scale 곱하면 이중 스케일링
+  paint.setStrokeWidth(strokeWidth);
   paint.setStrokeCap(ck.StrokeCap.Round);
   paint.setStrokeJoin(ck.StrokeJoin.Round);
   paint.setColor(strokeColor);

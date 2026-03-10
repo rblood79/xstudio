@@ -23,7 +23,6 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

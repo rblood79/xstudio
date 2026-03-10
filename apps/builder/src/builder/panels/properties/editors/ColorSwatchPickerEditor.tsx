@@ -13,7 +13,6 @@ export const ColorSwatchPickerEditor = memo(function ColorSwatchPickerEditor({ e
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

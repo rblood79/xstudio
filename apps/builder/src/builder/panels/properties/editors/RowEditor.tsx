@@ -36,7 +36,6 @@ export const RowEditor = memo(function RowEditor({ elementId, currentProps, onUp
 
     const updateProps = (newProps: Partial<RowElementProps>) => {
         onUpdate({
-            ...currentProps,
             ...newProps
         });
     };

@@ -14,7 +14,6 @@ export const MenuItemEditor = memo(function MenuItemEditor({ elementId, currentP
   }, [elementId]);
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

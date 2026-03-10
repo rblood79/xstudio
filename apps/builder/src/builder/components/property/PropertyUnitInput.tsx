@@ -141,7 +141,69 @@ export const PropertyUnitInput = memo(
     };
 
     // ⭐ ComboBox 컨테이너 ref - 내부 포커스 이동 감지용
+    const comboBoxContainerRef = useRef<HTMLDivElement>(null);
     const comboBoxRef = useRef<HTMLDivElement>(null);
+    const groupRef = useRef<HTMLDivElement>(null);
+    const [popoverMetrics, setPopoverMetrics] = useState({
+      width: 0,
+      offset: 0,
+    });
+
+    useEffect(() => {
+      const updatePopoverMetrics = () => {
+        const groupElement = groupRef.current;
+        const comboBoxElement = comboBoxRef.current;
+
+        if (!groupElement || !comboBoxElement) return;
+
+        const groupRect = groupElement.getBoundingClientRect();
+        const comboBoxRect = comboBoxElement.getBoundingClientRect();
+        const nextMetrics = {
+          width: Math.round(groupRect.width),
+          offset: Math.round(groupRect.left - comboBoxRect.left),
+        };
+
+        setPopoverMetrics((prev) => {
+          if (
+            prev.width === nextMetrics.width &&
+            prev.offset === nextMetrics.offset
+          ) {
+            return prev;
+          }
+
+          return nextMetrics;
+        });
+      };
+
+      updatePopoverMetrics();
+
+      if (typeof ResizeObserver === "undefined") {
+        window.addEventListener("resize", updatePopoverMetrics);
+
+        return () => {
+          window.removeEventListener("resize", updatePopoverMetrics);
+        };
+      }
+
+      const resizeObserver = new ResizeObserver(() => {
+        updatePopoverMetrics();
+      });
+
+      if (groupRef.current) {
+        resizeObserver.observe(groupRef.current);
+      }
+
+      if (comboBoxRef.current) {
+        resizeObserver.observe(comboBoxRef.current);
+      }
+
+      window.addEventListener("resize", updatePopoverMetrics);
+
+      return () => {
+        resizeObserver.disconnect();
+        window.removeEventListener("resize", updatePopoverMetrics);
+      };
+    }, []);
 
     const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       // ⭐ Skip save if we just saved via Enter key (useRef는 즉시 반영됨!)
@@ -163,7 +225,10 @@ export const PropertyUnitInput = memo(
       // ⭐ ComboBox 내부로 포커스 이동 시 blur 처리 스킵
       // Input → Button 이동 시 불필요한 onChange 방지
       const relatedTarget = e.relatedTarget as HTMLElement | null;
-      if (relatedTarget && comboBoxRef.current?.contains(relatedTarget)) {
+      if (
+        relatedTarget &&
+        comboBoxContainerRef.current?.contains(relatedTarget)
+      ) {
         return;
       }
 
@@ -336,7 +401,7 @@ export const PropertyUnitInput = memo(
         className={`properties-aria property-unit-input ${className || ""}`}
       >
         {label && <legend className="fieldset-legend">{label}</legend>}
-        <div className="react-aria-control react-aria-Group">
+        <div className="react-aria-control react-aria-Group" ref={groupRef}>
           {Icon && (
             <label className="control-label">
               <Icon
@@ -348,6 +413,7 @@ export const PropertyUnitInput = memo(
           )}
           <AriaComboBox
             className="react-aria-ComboBox react-aria-UnitComboBox"
+            ref={comboBoxRef}
             inputValue={unit === "" ? "—" : unit}
             onSelectionChange={(key) => {
               if (key !== null) {
@@ -364,7 +430,7 @@ export const PropertyUnitInput = memo(
             }
             aria-label="Unit"
           >
-            <div className="combobox-container" ref={comboBoxRef}>
+            <div className="combobox-container" ref={comboBoxContainerRef}>
               <Input
                 className="react-aria-Input"
                 type="text"
@@ -380,7 +446,17 @@ export const PropertyUnitInput = memo(
                 <ChevronDown size={iconProps.size} />
               </Button>
             </div>
-            <Popover className="react-aria-Popover">
+            <Popover
+              className="react-aria-Popover property-unit-input-popover"
+              style={{
+                width:
+                  popoverMetrics.width > 0 ? `${popoverMetrics.width}px` : undefined,
+                marginLeft:
+                  popoverMetrics.offset !== 0
+                    ? `${popoverMetrics.offset}px`
+                    : undefined,
+              }}
+            >
               <ListBox className="react-aria-ListBox">
                 {units.map((u) => (
                   <ListBoxItem

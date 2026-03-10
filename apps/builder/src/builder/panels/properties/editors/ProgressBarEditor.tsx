@@ -36,7 +36,6 @@ export const ProgressBarEditor = memo(function ProgressBarEditor({
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

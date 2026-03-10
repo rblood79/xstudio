@@ -42,7 +42,7 @@ export const SwitchEditor = memo(
     // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
     const handleChildrenChange = useCallback(
       (value: string) => {
-        const updatedProps = { ...currentProps, children: value };
+        const updatedProps = { children: value };
         const childUpdates = buildChildUpdates([
           { childTag: "Label", propKey: "children", value },
         ]);
@@ -50,84 +50,84 @@ export const SwitchEditor = memo(
           .getState()
           .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
       },
-      [currentProps, buildChildUpdates],
+      [buildChildUpdates],
     );
 
     const handleIsEmphasizedChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isEmphasized: checked });
+        onUpdate({ isEmphasized: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleSizeChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, size: value });
+        onUpdate({ size: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsSelectedChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isSelected: checked });
+        onUpdate({ isSelected: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsRequiredChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isRequired: checked });
+        onUpdate({ isRequired: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsInvalidChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isInvalid: checked });
+        onUpdate({ isInvalid: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleAutoFocusChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, autoFocus: checked });
+        onUpdate({ autoFocus: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsDisabledChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isDisabled: checked });
+        onUpdate({ isDisabled: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsReadOnlyChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isReadOnly: checked });
+        onUpdate({ isReadOnly: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleNameChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, name: value || undefined });
+        onUpdate({ name: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleValueChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, value: value || undefined });
+        onUpdate({ value: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleFormChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, form: value || undefined });
+        onUpdate({ form: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const updateCustomId = useCallback(

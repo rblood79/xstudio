@@ -15,7 +15,6 @@ export const DatePickerEditor = memo(function DatePickerEditor({ elementId, curr
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

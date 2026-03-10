@@ -41,6 +41,16 @@
            * 수정 불필요 - ComboBox.css와 동일한 변수명 */
         }
       }
+
+      .property-unit-input-popover {
+        box-sizing: border-box;
+        min-width: 100%;
+      }
+
+      .property-select-popover {
+        box-sizing: border-box;
+        min-width: 100%;
+      }
     }
 
     .react-aria-control {

@@ -127,10 +127,28 @@ function CanvasContent() {
 
       // body element의 style 적용 및 추적
       if (bodyElement.props?.style) {
-        const style = bodyElement.props.style as Record<string, string>;
+        // unitless CSS properties (숫자 그대로 사용하는 속성)
+        const CSS_UNITLESS = new Set([
+          "opacity",
+          "fontWeight",
+          "zIndex",
+          "lineHeight",
+          "flexGrow",
+          "flexShrink",
+          "order",
+        ]);
+        const style = bodyElement.props.style as Record<
+          string,
+          string | number
+        >;
         Object.entries(style).forEach(([key, value]) => {
           const cssKey = key.replace(/([A-Z])/g, "-$1").toLowerCase(); // camelCase → kebab-case
-          document.body.style.setProperty(cssKey, value);
+          // 숫자 값에 px 단위 추가 (unitless 속성 제외)
+          const cssValue =
+            typeof value === "number" && !CSS_UNITLESS.has(key)
+              ? `${value}px`
+              : String(value);
+          document.body.style.setProperty(cssKey, cssValue);
           appliedStyleKeysRef.current.add(cssKey);
         });
       }

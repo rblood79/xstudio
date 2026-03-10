@@ -45,18 +45,17 @@ export const DataTableEditor = memo(function DataTableEditor({
   // DataTable Store에서 현재 DataTable 상태 가져오기
   const dataTableId = String(currentProps.id || "");
   const dataTableState = useDataTableStore((state) =>
-    dataTableId ? state.dataTableStates.get(dataTableId) : undefined
+    dataTableId ? state.dataTableStates.get(dataTableId) : undefined,
   );
   const loadDataTable = useDataTableStore((state) => state.loadDataTable);
   const refreshDataTable = useDataTableStore((state) => state.refreshDataTable);
 
-  // Update prop helper
+  // 변경된 key만 전달 — updateAndSave가 element.props와 merge하므로 stale props 전파 방지
   const updateProp = useCallback(
     (key: string, value: unknown) => {
-      const updatedProps = { ...currentProps, [key]: value };
-      onUpdate(updatedProps);
+      onUpdate({ [key]: value });
     },
-    [currentProps, onUpdate]
+    [onUpdate],
   );
 
   // Update customId helper
@@ -67,7 +66,7 @@ export const DataTableEditor = memo(function DataTableEditor({
         updateElement(elementId, { customId: newCustomId });
       }
     },
-    [elementId]
+    [elementId],
   );
 
   // DataBinding change handler
@@ -75,7 +74,7 @@ export const DataTableEditor = memo(function DataTableEditor({
     (binding: DataBindingValue | null) => {
       updateProp("dataBinding", binding || undefined);
     },
-    [updateProp]
+    [updateProp],
   );
 
   // Refresh handler
@@ -100,7 +99,9 @@ export const DataTableEditor = memo(function DataTableEditor({
       case "loading":
         return <Loader2 size={iconEditProps.size} className="spin" />;
       case "success":
-        return <CheckCircle2 size={iconEditProps.size} className="text-success" />;
+        return (
+          <CheckCircle2 size={iconEditProps.size} className="text-success" />
+        );
       case "error":
         return <AlertCircle size={iconEditProps.size} className="text-error" />;
       default:
@@ -261,7 +262,8 @@ export const DataTableEditor = memo(function DataTableEditor({
           </p>
           <ul className="datatable-editor-info-list">
             <li>
-              Set a unique DataTable ID (e.g., "users-datatable", "products-api")
+              Set a unique DataTable ID (e.g., "users-datatable",
+              "products-api")
             </li>
             <li>Configure data source using Data Binding</li>
             <li>

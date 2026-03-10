@@ -13,7 +13,6 @@ export const ColorAreaEditor = memo(function ColorAreaEditor({ elementId, curren
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

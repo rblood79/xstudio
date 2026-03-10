@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback } from 'react';
+import React, { memo, useState, useCallback, useEffect, useRef } from 'react';
 import {
     Select as AriaSelect,
     Button,
@@ -22,6 +22,7 @@ interface PropertySelectProps {
     }>;
     className?: string;
     description?: string; // Optional description (not displayed)
+    popoverWidthMode?: "width" | "min-width";
 }
 
 // 🚀 Phase 21: memo + 커스텀 비교 함수 적용
@@ -31,12 +32,75 @@ export const PropertySelect = memo(function PropertySelect({
     onChange,
     options,
     icon: Icon,
-    className
+    className,
+    popoverWidthMode = "width",
 }: PropertySelectProps) {
     // 🚀 Fix: 명시적 isOpen 관리로 "reset" 선택 시 팝업 닫힘 보장
     // React Aria의 controlled Select에서 onSelectionChange 내 onChange("") 호출이
     // 상태 변경을 유발하여 팝업 자동 닫힘을 방해하는 문제 해결
     const [isOpen, setIsOpen] = useState(false);
+    const groupRef = useRef<HTMLDivElement>(null);
+    const selectRef = useRef<HTMLDivElement>(null);
+    const [popoverMetrics, setPopoverMetrics] = useState({
+        width: 0,
+        offset: 0,
+    });
+
+    useEffect(() => {
+        const updatePopoverMetrics = () => {
+            const groupElement = groupRef.current;
+            const selectElement = selectRef.current;
+
+            if (!groupElement || !selectElement) return;
+
+            const groupRect = groupElement.getBoundingClientRect();
+            const selectRect = selectElement.getBoundingClientRect();
+            const nextMetrics = {
+                width: Math.round(groupRect.width),
+                offset: Math.round(groupRect.left - selectRect.left),
+            };
+
+            setPopoverMetrics((prev) => {
+                if (
+                    prev.width === nextMetrics.width &&
+                    prev.offset === nextMetrics.offset
+                ) {
+                    return prev;
+                }
+
+                return nextMetrics;
+            });
+        };
+
+        updatePopoverMetrics();
+
+        if (typeof ResizeObserver === "undefined") {
+            window.addEventListener("resize", updatePopoverMetrics);
+
+            return () => {
+                window.removeEventListener("resize", updatePopoverMetrics);
+            };
+        }
+
+        const resizeObserver = new ResizeObserver(() => {
+            updatePopoverMetrics();
+        });
+
+        if (groupRef.current) {
+            resizeObserver.observe(groupRef.current);
+        }
+
+        if (selectRef.current) {
+            resizeObserver.observe(selectRef.current);
+        }
+
+        window.addEventListener("resize", updatePopoverMetrics);
+
+        return () => {
+            resizeObserver.disconnect();
+            window.removeEventListener("resize", updatePopoverMetrics);
+        };
+    }, []);
 
     const handleChange = useCallback((key: React.Key | null) => {
         const selectedValue = key as string;
@@ -51,9 +115,10 @@ export const PropertySelect = memo(function PropertySelect({
     return (
         <fieldset className={`properties-aria ${className || ''}`}>
             <legend className='fieldset-legend'>{label}</legend>
-            <div className='react-aria-control react-aria-Group'>
+            <div className='react-aria-control react-aria-Group' ref={groupRef}>
                 <AriaSelect
                     className='react-aria-Select'
+                    ref={selectRef}
                     isOpen={isOpen}
                     onOpenChange={setIsOpen}
                     selectedKey={value === "" ? (options.some(opt => opt.value === "reset") ? "reset" : null) : value}
@@ -75,7 +140,18 @@ export const PropertySelect = memo(function PropertySelect({
                             <ChevronDown size={iconProps.size} />
                         </span>
                     </Button>
-                    <Popover className="react-aria-Popover">
+                    <Popover
+                        className="react-aria-Popover property-select-popover"
+                        style={{
+                            width: popoverWidthMode === "width" && popoverMetrics.width > 0
+                                ? `${popoverMetrics.width}px`
+                                : undefined,
+                            minWidth: popoverWidthMode === "min-width" && popoverMetrics.width > 0
+                                ? `${popoverMetrics.width}px`
+                                : undefined,
+                            marginLeft: popoverMetrics.offset !== 0 ? `${popoverMetrics.offset}px` : undefined,
+                        }}
+                    >
                         <ListBox className="react-aria-ListBox">
                             {options.map((option) => (
                                 <ListBoxItem
@@ -100,6 +176,7 @@ export const PropertySelect = memo(function PropertySelect({
         prevProps.value === nextProps.value &&
         prevProps.className === nextProps.className &&
         prevProps.icon === nextProps.icon &&
-        prevProps.options === nextProps.options
+        prevProps.options === nextProps.options &&
+        prevProps.popoverWidthMode === nextProps.popoverWidthMode
     );
 });

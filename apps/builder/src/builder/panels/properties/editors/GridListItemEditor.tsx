@@ -14,7 +14,6 @@ export const GridListItemEditor = memo(function GridListItemEditor({ elementId, 
   }, [elementId]);
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

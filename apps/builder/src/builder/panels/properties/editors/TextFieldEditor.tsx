@@ -44,7 +44,7 @@ export const TextFieldEditor = memo(
 
     const handleLabelChange = useCallback(
       (value: string) => {
-        const updatedProps = { ...currentProps, label: value };
+        const updatedProps = { label: value };
         const childUpdates = buildChildUpdates([
           { childTag: "Label", propKey: "children", value },
         ]);
@@ -52,19 +52,19 @@ export const TextFieldEditor = memo(
           .getState()
           .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
       },
-      [currentProps, buildChildUpdates],
+      [buildChildUpdates],
     );
 
     const handleValueChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, value: value });
+        onUpdate({ value: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handlePlaceholderChange = useCallback(
       (value: string) => {
-        const updatedProps = { ...currentProps, placeholder: value };
+        const updatedProps = { placeholder: value };
         const childUpdates = buildChildUpdates([
           { childTag: "Input", propKey: "placeholder", value },
         ]);
@@ -72,125 +72,123 @@ export const TextFieldEditor = memo(
           .getState()
           .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
       },
-      [currentProps, buildChildUpdates],
+      [buildChildUpdates],
     );
 
     const handleDescriptionChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, description: value });
+        onUpdate({ description: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleTypeChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, type: value });
+        onUpdate({ type: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleInputModeChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, inputMode: value || undefined });
+        onUpdate({ inputMode: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleAutoCompleteChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, autoComplete: value || undefined });
+        onUpdate({ autoComplete: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleErrorMessageChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, errorMessage: value });
+        onUpdate({ errorMessage: value });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handlePatternChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, pattern: value || undefined });
+        onUpdate({ pattern: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleMinLengthChange = useCallback(
       (value: string) => {
         onUpdate({
-          ...currentProps,
           minLength: value ? Number(value) : undefined,
         });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleMaxLengthChange = useCallback(
       (value: string) => {
         onUpdate({
-          ...currentProps,
           maxLength: value ? Number(value) : undefined,
         });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsRequiredChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isRequired: checked });
+        onUpdate({ isRequired: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleAutoFocusChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, autoFocus: checked });
+        onUpdate({ autoFocus: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsDisabledChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isDisabled: checked });
+        onUpdate({ isDisabled: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleIsReadOnlyChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isReadOnly: checked });
+        onUpdate({ isReadOnly: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleSpellCheckChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, spellCheck: checked });
+        onUpdate({ spellCheck: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleAutoCorrectChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, autoCorrect: checked });
+        onUpdate({ autoCorrect: checked });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleNameChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, name: value || undefined });
+        onUpdate({ name: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const handleFormChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, form: value || undefined });
+        onUpdate({ form: value || undefined });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
@@ -217,7 +215,7 @@ export const TextFieldEditor = memo(
 
     const handleSizeChange = useCallback(
       (value: string) => {
-        const updatedProps = { ...currentProps, size: value };
+        const updatedProps = { size: value };
         // Input: size prop 동기화
         const childUpdates = buildChildUpdates([
           { childTag: "Input", propKey: "size", value },
@@ -245,7 +243,7 @@ export const TextFieldEditor = memo(
           .getState()
           .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
       },
-      [currentProps, buildChildUpdates, elementId],
+      [buildChildUpdates, elementId],
     );
 
     const designSection = useMemo(

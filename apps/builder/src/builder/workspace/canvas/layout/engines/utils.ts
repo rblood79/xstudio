@@ -898,6 +898,23 @@ export function calculateContentWidth(
   const explicitWidth = parseNumericValue(style?.width);
   if (explicitWidth !== undefined) return explicitWidth;
 
+  // 1.05. Icon: iconSize 기반 intrinsic width (fit-content)
+  if (tag === "icon") {
+    const props = element.props as Record<string, unknown> | undefined;
+    // fontSize 오버라이드 시 iconSize = fontSize
+    const overrideFs = parseNumericValue(style?.fontSize);
+    if (overrideFs != null) return overrideFs;
+    const ICON_SIZE_MAP: Record<string, number> = {
+      xs: 16,
+      sm: 18,
+      md: 24,
+      lg: 36,
+      xl: 48,
+    };
+    const sizeName = String(props?.size ?? "md");
+    return ICON_SIZE_MAP[sizeName] ?? 18;
+  }
+
   // 1.1. StatusLight: dot + gap + text width
   if (tag === "statuslight") {
     const props = element.props as Record<string, unknown> | undefined;
@@ -1179,7 +1196,10 @@ export function calculateContentWidth(
         BUTTON_SIZE_CONFIG[defaultSize] ??
         Object.values(BUTTON_SIZE_CONFIG)[0];
       const btnConfig = sizeConfig as { iconSize?: number };
-      return btnConfig.iconSize ?? 16;
+      const baseIconSize = btnConfig.iconSize ?? 16;
+      // fontSize 오버라이드 시 iconSize = fontSize
+      const overrideFs = parseNumericValue(style?.fontSize);
+      return overrideFs != null ? overrideFs : baseIconSize;
     }
   }
 
@@ -1288,7 +1308,12 @@ export function calculateContentWidth(
             iconSize?: number;
             iconGap?: number;
           };
-          const iconSize = btnConfig.iconSize ?? 16;
+          let iconSize = btnConfig.iconSize ?? 16;
+          // fontSize 오버라이드 시 iconSize = fontSize
+          const overrideFs = parseNumericValue(style?.fontSize);
+          if (overrideFs != null) {
+            iconSize = overrideFs;
+          }
           const iconGap =
             parseNumericValue(style?.gap) ?? btnConfig.iconGap ?? 8;
           if (text) {
@@ -1499,8 +1524,25 @@ export function calculateContentHeight(
   const explicitHeight = parseNumericValue(style?.height);
   if (explicitHeight !== undefined) return explicitHeight;
 
-  // 1.5. StatusLight: spec sizes에 정의된 고정 높이
+  // 1.45. Icon: iconSize 기반 intrinsic height (fit-content)
   const tag1 = (element.tag ?? "").toLowerCase();
+  if (tag1 === "icon") {
+    const props = element.props as Record<string, unknown> | undefined;
+    // fontSize 오버라이드 시 iconSize = fontSize
+    const overrideFs = parseNumericValue(style?.fontSize);
+    if (overrideFs != null) return overrideFs;
+    const ICON_SIZE_MAP: Record<string, number> = {
+      xs: 16,
+      sm: 18,
+      md: 24,
+      lg: 36,
+      xl: 48,
+    };
+    const sizeName = String(props?.size ?? "md");
+    return ICON_SIZE_MAP[sizeName] ?? 18;
+  }
+
+  // 1.5. StatusLight: spec sizes에 정의된 고정 높이
   if (tag1 === "statuslight") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = String(props?.size ?? "M");
@@ -2629,6 +2671,7 @@ export const INLINE_BLOCK_TAGS = new Set([
   "link",
   "linkbutton",
   "breadcrumbs",
+  "icon",
 ]);
 
 /**

@@ -39,7 +39,6 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

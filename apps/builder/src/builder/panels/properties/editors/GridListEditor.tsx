@@ -40,7 +40,6 @@ export const GridListEditor = memo(function GridListEditor({ elementId, currentP
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);
@@ -56,7 +55,6 @@ export const GridListEditor = memo(function GridListEditor({ elementId, currentP
 
     const handleDataBindingChange = (binding: DataBindingValue | null) => {
         const updatedProps = {
-            ...currentProps,
             dataBinding: binding || undefined
         };
         onUpdate(updatedProps);

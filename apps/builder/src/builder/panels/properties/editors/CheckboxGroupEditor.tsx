@@ -63,7 +63,6 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

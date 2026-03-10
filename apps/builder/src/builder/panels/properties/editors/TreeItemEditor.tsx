@@ -21,7 +21,6 @@ export const TreeItemEditor = memo(function TreeItemEditor({ elementId, currentP
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

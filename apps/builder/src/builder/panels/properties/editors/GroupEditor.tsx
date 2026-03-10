@@ -24,7 +24,6 @@ export const GroupEditor = memo(function GroupEditor({ elementId, currentProps, 
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

@@ -20,6 +20,9 @@ export const typography: TypographyTokens = {
   "text-lg": 18,
   "text-xl": 20,
   "text-2xl": 24,
+  "text-3xl": 30,
+  "text-4xl": 36,
+  "text-5xl": 48,
 };
 
 /**

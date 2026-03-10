@@ -164,6 +164,9 @@ export interface TypographyTokens {
   "text-lg": number; // 18
   "text-xl": number; // 20
   "text-2xl": number; // 24
+  "text-3xl": number; // 30
+  "text-4xl": number; // 36
+  "text-5xl": number; // 48
 }
 
 /**

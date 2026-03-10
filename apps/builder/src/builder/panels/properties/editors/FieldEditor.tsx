@@ -44,7 +44,7 @@ export const FieldEditor = memo(function FieldEditor({
   const fieldProps = currentProps as FieldElementProps;
 
   const updateProps = (newProps: Partial<FieldElementProps>) => {
-    const merged = { ...currentProps, ...newProps };
+    const merged = { ...newProps };
     onUpdate(merged);
   };
 

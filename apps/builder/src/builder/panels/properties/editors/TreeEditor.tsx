@@ -35,7 +35,6 @@ export const TreeEditor = memo(function TreeEditor({ elementId, currentProps, on
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);
@@ -43,7 +42,6 @@ export const TreeEditor = memo(function TreeEditor({ elementId, currentProps, on
 
     const handleDataBindingChange = (binding: DataBindingValue | null) => {
         const updatedProps = {
-            ...currentProps,
             dataBinding: binding || undefined
         };
         onUpdate(updatedProps);

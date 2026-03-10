@@ -12,7 +12,6 @@ export const FileTriggerEditor = memo(function FileTriggerEditor({ elementId, cu
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

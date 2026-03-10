@@ -21,7 +21,6 @@ export const MenuEditor = memo(function MenuEditor({ elementId, currentProps, on
   }, [elementId]);
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);
@@ -29,7 +28,6 @@ export const MenuEditor = memo(function MenuEditor({ elementId, currentProps, on
 
     const handleDataBindingChange = (binding: DataBindingValue | null) => {
         const updatedProps = {
-            ...currentProps,
             dataBinding: binding || undefined
         };
         onUpdate(updatedProps);

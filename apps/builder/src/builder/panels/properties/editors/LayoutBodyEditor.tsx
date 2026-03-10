@@ -37,9 +37,9 @@ export const LayoutBodyEditor = memo(
     // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
     const handleClassNameChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, className: value || undefined });
+        onUpdate({ className: value || undefined });
       },
-      [currentProps, onUpdate]
+      [onUpdate]
     );
 
     return (

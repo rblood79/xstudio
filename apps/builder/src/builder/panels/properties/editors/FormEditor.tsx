@@ -14,7 +14,6 @@ export const FormEditor = memo(function FormEditor({ elementId, currentProps, on
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

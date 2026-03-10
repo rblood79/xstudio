@@ -15,7 +15,6 @@ export const TooltipEditor = memo(function TooltipEditor({ elementId, currentPro
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

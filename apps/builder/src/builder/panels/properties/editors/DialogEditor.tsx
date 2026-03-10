@@ -14,7 +14,6 @@ export const DialogEditor = memo(function DialogEditor({ elementId, currentProps
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

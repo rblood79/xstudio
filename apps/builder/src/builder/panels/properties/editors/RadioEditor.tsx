@@ -25,20 +25,19 @@ export const RadioEditor = memo(function RadioEditor({ elementId, currentProps, 
     const { buildChildUpdates } = useSyncChildProp(elementId);
 
     const handleChildrenChange = useCallback((value: string) => {
-        const updatedProps = { ...currentProps, children: value };
+        const updatedProps = { children: value };
         const childUpdates = buildChildUpdates([
             { childTag: 'Label', propKey: 'children', value },
         ]);
         useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
-    }, [currentProps, buildChildUpdates]);
+    }, [buildChildUpdates]);
 
     const updateProp = useCallback((key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);
-    }, [currentProps, onUpdate]);
+    }, [onUpdate]);
 
     const updateCustomId = useCallback((newCustomId: string) => {
         // Update customId in store (not in props)

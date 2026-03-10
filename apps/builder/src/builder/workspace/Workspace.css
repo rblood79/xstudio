@@ -180,7 +180,7 @@
 
 .workspace--compare-mode {
   display: grid;
-  grid-template-columns: var(--compare-split, 50%) 4px 1fr;
+  grid-template-columns: var(--compare-split, 50%) 2px 1fr;
   background-color: var(--border);
 }
 
@@ -193,7 +193,7 @@
 }
 
 .workspace-compare-resizer {
-  width: 4px;
+  width: 2px;
   cursor: col-resize;
   background-color: var(--border);
   position: relative;

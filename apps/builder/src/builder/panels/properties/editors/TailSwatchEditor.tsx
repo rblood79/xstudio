@@ -15,7 +15,6 @@ export const TailSwatchEditor = memo(function TailSwatchEditor({ elementId, curr
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

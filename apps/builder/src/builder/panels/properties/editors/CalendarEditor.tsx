@@ -15,7 +15,6 @@ export const CalendarEditor = memo(function CalendarEditor({ elementId, currentP
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

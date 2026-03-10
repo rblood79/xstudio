@@ -41,7 +41,6 @@ export const ToggleButtonEditor = memo(function ToggleButtonEditor({
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);

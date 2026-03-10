@@ -30,7 +30,6 @@ export const ColumnEditor = memo(function ColumnEditor({ elementId, currentProps
 
     const updateProps = (newProps: Partial<ColumnElementProps>) => {
         onUpdate({
-            ...currentProps,
             ...newProps
         });
     };

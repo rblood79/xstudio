@@ -63,7 +63,6 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
 
@@ -224,7 +223,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
           scale="5"
           onChange={(value) => {
             // 부모 ToggleButtonGroup size 업데이트
-            const updatedProps = { ...currentProps, size: value };
+            const updatedProps = { size: value };
             // 자식 ToggleButton들의 size도 동기화
             const { childrenMap } = useStore.getState();
             const children = childrenMap.get(elementId);
@@ -249,7 +248,6 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
             const currentStyle =
               (currentProps.style as Record<string, unknown>) || {};
             const updatedProps = {
-              ...currentProps,
               orientation: value,
               style: {
                 ...currentStyle,

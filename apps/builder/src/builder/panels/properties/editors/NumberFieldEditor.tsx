@@ -19,7 +19,6 @@ export const NumberFieldEditor = memo(function NumberFieldEditor({ elementId, cu
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);
@@ -28,20 +27,20 @@ export const NumberFieldEditor = memo(function NumberFieldEditor({ elementId, cu
     const { buildChildUpdates } = useSyncChildProp(elementId);
 
     const handleLabelChange = useCallback((value: string) => {
-        const updatedProps = { ...currentProps, label: value };
+        const updatedProps = { label: value };
         const childUpdates = buildChildUpdates([
             { childTag: 'Label', propKey: 'children', value },
         ]);
         useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
-    }, [currentProps, buildChildUpdates]);
+    }, [buildChildUpdates]);
 
     const handlePlaceholderChange = useCallback((value: string) => {
-        const updatedProps = { ...currentProps, placeholder: value };
+        const updatedProps = { placeholder: value };
         const childUpdates = buildChildUpdates([
             { childTag: 'Input', propKey: 'placeholder', value },
         ]);
         useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
-    }, [currentProps, buildChildUpdates]);
+    }, [buildChildUpdates]);
 
     // formatOptions 업데이트 헬퍼
     const updateFormatOption = (key: string, value: unknown) => {

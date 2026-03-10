@@ -229,44 +229,44 @@ export const ListBoxEditor = memo(function ListBoxEditor({
 
   // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
   const handleLabelChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, label: value || undefined });
-  }, [currentProps, onUpdate]);
+    onUpdate({ label: value || undefined });
+  }, [onUpdate]);
 
   const handleDescriptionChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, description: value || undefined });
-  }, [currentProps, onUpdate]);
+    onUpdate({ description: value || undefined });
+  }, [onUpdate]);
 
   const handleErrorMessageChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, errorMessage: value || undefined });
-  }, [currentProps, onUpdate]);
+    onUpdate({ errorMessage: value || undefined });
+  }, [onUpdate]);
 
   const handleSelectionModeChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, selectionMode: value });
-  }, [currentProps, onUpdate]);
+    onUpdate({ selectionMode: value });
+  }, [onUpdate]);
 
   const handleDisallowEmptySelectionChange = useCallback((checked: boolean) => {
-    onUpdate({ ...currentProps, disallowEmptySelection: checked });
-  }, [currentProps, onUpdate]);
+    onUpdate({ disallowEmptySelection: checked });
+  }, [onUpdate]);
 
   const handleIsRequiredChange = useCallback((checked: boolean) => {
-    onUpdate({ ...currentProps, isRequired: checked });
-  }, [currentProps, onUpdate]);
+    onUpdate({ isRequired: checked });
+  }, [onUpdate]);
 
   const handleIsDisabledChange = useCallback((checked: boolean) => {
-    onUpdate({ ...currentProps, isDisabled: checked });
-  }, [currentProps, onUpdate]);
+    onUpdate({ isDisabled: checked });
+  }, [onUpdate]);
 
   const handleAutoFocusChange = useCallback((checked: boolean) => {
-    onUpdate({ ...currentProps, autoFocus: checked });
-  }, [currentProps, onUpdate]);
+    onUpdate({ autoFocus: checked });
+  }, [onUpdate]);
 
   const handleNameChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, name: value || undefined });
-  }, [currentProps, onUpdate]);
+    onUpdate({ name: value || undefined });
+  }, [onUpdate]);
 
   const handleValidationBehaviorChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, validationBehavior: value });
-  }, [currentProps, onUpdate]);
+    onUpdate({ validationBehavior: value });
+  }, [onUpdate]);
 
   const handleDataBindingChange = useCallback(async (binding: DataBindingValue | null) => {
     // 이전 DataTable과 새 DataTable 비교
@@ -293,32 +293,32 @@ export const ListBoxEditor = memo(function ListBoxEditor({
     }
 
     // dataBinding 업데이트
-    onUpdate({ ...currentProps, dataBinding: binding || undefined });
-  }, [currentProps, onUpdate, existingFields, removeElement]);
+    onUpdate({ dataBinding: binding || undefined });
+  }, [onUpdate, existingFields, removeElement]);
 
   // 가상화 관련 핸들러
   const handleEnableVirtualizationChange = useCallback((checked: boolean) => {
-    onUpdate({ ...currentProps, enableVirtualization: checked });
-  }, [currentProps, onUpdate]);
+    onUpdate({ enableVirtualization: checked });
+  }, [onUpdate]);
 
   const handleVirtualHeightChange = useCallback((value: string) => {
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue > 0) {
-      onUpdate({ ...currentProps, height: numValue });
+      onUpdate({ height: numValue });
     }
-  }, [currentProps, onUpdate]);
+  }, [onUpdate]);
 
   const handleOverscanChange = useCallback((value: string) => {
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue >= 0) {
-      onUpdate({ ...currentProps, overscan: numValue });
+      onUpdate({ overscan: numValue });
     }
-  }, [currentProps, onUpdate]);
+  }, [onUpdate]);
 
   // 필터링 관련 핸들러 (React Aria 1.13.0)
   const handleFilterTextChange = useCallback((value: string) => {
-    onUpdate({ ...currentProps, filterText: value || undefined });
-  }, [currentProps, onUpdate]);
+    onUpdate({ filterText: value || undefined });
+  }, [onUpdate]);
 
   const handleFilterFieldsChange = useCallback((value: string) => {
     // 콤마로 구분된 필드 목록을 배열로 변환
@@ -326,8 +326,8 @@ export const ListBoxEditor = memo(function ListBoxEditor({
       .split(',')
       .map(f => f.trim())
       .filter(f => f.length > 0);
-    onUpdate({ ...currentProps, filterFields: fields.length > 0 ? fields : undefined });
-  }, [currentProps, onUpdate]);
+    onUpdate({ filterFields: fields.length > 0 ? fields : undefined });
+  }, [onUpdate]);
 
   const updateCustomId = useCallback((newCustomId: string) => {
     const updateElement = useStore.getState().updateElement;

@@ -6,13 +6,14 @@ import type { PreviewElement, RenderContext } from "../types";
  * Icon 컴포넌트 렌더러
  *
  * ADR-019: Lucide 아이콘을 SVG로 렌더링
+ * div 래핑: data-element-id, 스타일, 레이아웃 지원
  */
 
 const ICON_SIZE_MAP: Record<string, number> = {
-  xs: 12,
-  sm: 16,
+  xs: 16,
+  sm: 18,
   md: 24,
-  lg: 32,
+  lg: 36,
   xl: 48,
 };
 
@@ -22,7 +23,16 @@ export const renderIcon = (
 ): React.ReactNode => {
   const props = element.props || {};
   const iconName = String(props.iconName || "circle");
-  const size = ICON_SIZE_MAP[String(props.size || "md")] ?? 24;
+  // fontSize 오버라이드 시 iconSize = fontSize
+  const styleFontSize = (props.style as Record<string, unknown> | undefined)
+    ?.fontSize;
+  const overrideFs =
+    styleFontSize != null
+      ? typeof styleFontSize === "number"
+        ? styleFontSize
+        : parseFloat(String(styleFontSize)) || undefined
+      : undefined;
+  const size = overrideFs ?? ICON_SIZE_MAP[String(props.size || "md")] ?? 24;
   const strokeWidth = Number(props.strokeWidth) || 2;
   const color =
     (props.style as Record<string, string> | undefined)?.color ??
@@ -32,26 +42,32 @@ export const renderIcon = (
   if (!data) return null;
 
   return (
-    <svg
+    <div
       key={element.id}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      className="react-aria-Icon"
+      data-element-id={element.id}
+      data-original-tag="Icon"
       style={props.style as React.CSSProperties | undefined}
     >
-      {data.paths.map((d: string, i: number) => (
-        <path key={i} d={d} />
-      ))}
-      {data.circles?.map(
-        (c: { cx: number; cy: number; r: number }, i: number) => (
-          <circle key={`c${i}`} cx={c.cx} cy={c.cy} r={c.r} />
-        ),
-      )}
-    </svg>
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {data.paths.map((d: string, i: number) => (
+          <path key={i} d={d} />
+        ))}
+        {data.circles?.map(
+          (c: { cx: number; cy: number; r: number }, i: number) => (
+            <circle key={`c${i}`} cx={c.cx} cy={c.cy} r={c.r} />
+          ),
+        )}
+      </svg>
+    </div>
   );
 };

@@ -110,30 +110,30 @@ export const TabsEditor = memo(
     // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
     const handleDefaultSelectedKeyChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, defaultSelectedKey: value || undefined });
+        onUpdate({ defaultSelectedKey: value || undefined });
       },
-      [currentProps, onUpdate]
+      [onUpdate]
     );
 
     const handleIsDisabledChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, isDisabled: checked });
+        onUpdate({ isDisabled: checked });
       },
-      [currentProps, onUpdate]
+      [onUpdate]
     );
 
     const handleOrientationChange = useCallback(
       (value: string) => {
-        onUpdate({ ...currentProps, orientation: value });
+        onUpdate({ orientation: value });
       },
-      [currentProps, onUpdate]
+      [onUpdate]
     );
 
     const handleShowIndicatorChange = useCallback(
       (checked: boolean) => {
-        onUpdate({ ...currentProps, showIndicator: checked });
+        onUpdate({ showIndicator: checked });
       },
-      [currentProps, onUpdate]
+      [onUpdate]
     );
 
     // 실제 Tab 자식 요소들을 찾기 (Dual Lookup: 직속 → TabList 내부)
@@ -400,7 +400,6 @@ async function createNewTab(
 
     // Tabs props 업데이트 (defaultSelectedKey만, children 제거)
     const updatedProps = {
-      ...currentProps,
       defaultSelectedKey: (tabChildren.length === 0
         ? tabId
         : currentProps.defaultSelectedKey) as string | undefined,

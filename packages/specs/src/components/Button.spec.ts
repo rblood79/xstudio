@@ -304,6 +304,10 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
 
       const iconSw = props.iconStrokeWidth ?? 2;
 
+      // fontSize 오버라이드 시 iconSize도 동일하게 적용
+      const effectiveIconSize =
+        props.style?.fontSize != null ? fontSize : iconSize;
+
       // Icon-only 모드: 아이콘만, 텍스트 없음 → 컨테이너 중앙 배치
       if (iconName && !text) {
         shapes.push({
@@ -311,7 +315,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
           iconName,
           x: 0,
           y: 0,
-          fontSize: iconSize,
+          fontSize: effectiveIconSize,
           fill: textColor,
           strokeWidth: iconSw,
           align: "center" as const,
@@ -340,9 +344,9 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
           shapes.push({
             type: "icon_font" as const,
             iconName,
-            x: -(paddingX + iconSize / 2),
+            x: -(paddingX + effectiveIconSize / 2),
             y: 0,
-            fontSize: iconSize,
+            fontSize: effectiveIconSize,
             fill: textColor,
             strokeWidth: iconSw,
             baseline: "middle" as const,
@@ -352,16 +356,16 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
           shapes.push({
             type: "icon_font" as const,
             iconName,
-            x: paddingX + iconSize / 2,
+            x: paddingX + effectiveIconSize / 2,
             y: 0,
-            fontSize: iconSize,
+            fontSize: effectiveIconSize,
             fill: textColor,
             strokeWidth: iconSw,
             baseline: "middle" as const,
           });
           shapes.push({
             type: "text" as const,
-            x: paddingX + iconSize + gap,
+            x: paddingX + effectiveIconSize + gap,
             y: 0,
             text,
             fontSize,

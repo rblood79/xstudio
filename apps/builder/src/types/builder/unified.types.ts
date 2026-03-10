@@ -1944,10 +1944,7 @@ export function createDefaultIconProps(): IconElementProps {
     iconFontFamily: "lucide",
     size: "md",
     strokeWidth: 2,
-    style: {
-      width: "24px",
-      height: "24px",
-    },
+    style: {},
   };
 }
 

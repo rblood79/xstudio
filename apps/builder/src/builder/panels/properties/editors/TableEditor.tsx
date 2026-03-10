@@ -63,11 +63,10 @@ export const TableEditor = memo(
     const updateTableProps = useCallback(
       (newProps: Partial<TableElementProps>) => {
         onUpdate({
-          ...currentProps,
           ...newProps,
         });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     const updateCustomId = (newCustomId: string) => {
@@ -81,11 +80,10 @@ export const TableEditor = memo(
     const handleDataBindingChange = useCallback(
       (binding: DataBindingValue | null) => {
         onUpdate({
-          ...currentProps,
           dataBinding: binding || undefined,
         });
       },
-      [currentProps, onUpdate],
+      [onUpdate],
     );
 
     // element가 없는 경우 빈 화면 반환

@@ -12,7 +12,6 @@ export const ColorSwatchEditor = memo(function ColorSwatchEditor({ elementId, cu
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
-            ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);

@@ -21,8 +21,9 @@ export const RangeSliderEditor = memo(function RangeSliderEditor({
     return element?.customId || "";
   }, [elementId]);
 
+  // 변경된 key만 전달 — updateAndSave가 element.props와 merge하므로 stale props 전파 방지
   const updateProp = (key: string, value: unknown) => {
-    onUpdate({ ...currentProps, [key]: value });
+    onUpdate({ [key]: value });
   };
 
   const updateNumberProp = (key: string, value: string, fallback?: number) => {

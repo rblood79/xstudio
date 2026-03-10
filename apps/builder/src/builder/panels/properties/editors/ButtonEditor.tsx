@@ -44,162 +44,160 @@ export const ButtonEditor = memo(function ButtonEditor({
   // 실제 value/isSelected가 변경될 때만 리렌더링됨
   const handleChildrenChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, children: value });
+      onUpdate({ children: value });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleVariantChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, variant: value });
+      onUpdate({ variant: value });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleFillStyleChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, fillStyle: value });
+      onUpdate({ fillStyle: value });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleSizeChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, size: value });
+      onUpdate({ size: value });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleIconNameChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, iconName: value || undefined });
+      onUpdate({ iconName: value || undefined });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleIconPositionChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, iconPosition: value });
+      onUpdate({ iconPosition: value });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleIconStrokeWidthChange = useCallback(
     (value: string) => {
       const num = parseFloat(value);
       onUpdate({
-        ...currentProps,
         iconStrokeWidth: isNaN(num) ? undefined : num,
       });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleIconClear = useCallback(() => {
     onUpdate({
-      ...currentProps,
       iconName: undefined,
       iconPosition: undefined,
       iconStrokeWidth: undefined,
     });
-  }, [currentProps, onUpdate]);
+  }, [onUpdate]);
 
   const handleTypeChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, type: value });
+      onUpdate({ type: value });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleAutoFocusChange = useCallback(
     (checked: boolean) => {
-      onUpdate({ ...currentProps, autoFocus: checked });
+      onUpdate({ autoFocus: checked });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleIsPendingChange = useCallback(
     (checked: boolean) => {
-      onUpdate({ ...currentProps, isPending: checked });
+      onUpdate({ isPending: checked });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleIsDisabledChange = useCallback(
     (checked: boolean) => {
-      onUpdate({ ...currentProps, isDisabled: checked });
+      onUpdate({ isDisabled: checked });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleHrefChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, href: value || undefined });
+      onUpdate({ href: value || undefined });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleTargetChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, target: value });
+      onUpdate({ target: value });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleRelChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, rel: value || undefined });
+      onUpdate({ rel: value || undefined });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleFormChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, form: value || undefined });
+      onUpdate({ form: value || undefined });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleNameChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, name: value || undefined });
+      onUpdate({ name: value || undefined });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleValueChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, value: value || undefined });
+      onUpdate({ value: value || undefined });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleFormActionChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, formAction: value || undefined });
+      onUpdate({ formAction: value || undefined });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleFormMethodChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, formMethod: value });
+      onUpdate({ formMethod: value });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleFormNoValidateChange = useCallback(
     (checked: boolean) => {
-      onUpdate({ ...currentProps, formNoValidate: checked });
+      onUpdate({ formNoValidate: checked });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   const handleFormTargetChange = useCallback(
     (value: string) => {
-      onUpdate({ ...currentProps, formTarget: value });
+      onUpdate({ formTarget: value });
     },
-    [currentProps, onUpdate],
+    [onUpdate],
   );
 
   // ⭐ 최적화: 조건부 렌더링을 위한 값들을 useMemo로 캐싱

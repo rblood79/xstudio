@@ -61,11 +61,10 @@ export const SlotEditor = memo(function SlotEditor({
 
   const updateProp = useCallback((key: string, value: unknown) => {
     const updatedProps = {
-      ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);
-  }, [currentProps, onUpdate]);
+  }, [onUpdate]);
 
   const updateCustomId = useCallback((newCustomId: string) => {
     const updateElement = useStore.getState().updateElement;
