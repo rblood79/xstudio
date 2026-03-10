@@ -100,7 +100,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-width: 24px;
+        width: var(--text-xl);
+        height: var(--text-xl);
       }
 
       &:hover {

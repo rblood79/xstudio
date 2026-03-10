@@ -26,7 +26,6 @@ import {
   parseBoxModel,
   parseCSSPropWithContext,
   measureTextWidth,
-  parseAspectRatio,
 } from "./utils";
 import { resolveStyle, ROOT_COMPUTED_STYLE } from "./cssResolver";
 import type { ComputedStyle } from "./cssResolver";
@@ -892,12 +891,18 @@ function traversePostOrder(
     }
   }
 
+  // Breadcrumbs: filteredChildren=[]로 Taffy 자식 노드를 만들지 않지만,
+  // enrichWithIntrinsicSize에는 원본 자식(rawChildren)을 전달하여
+  // calculateContentWidth가 각 Breadcrumb 텍스트로 fit-content 폭을 산출하도록 함
+  const enrichChildren =
+    containerTag === "breadcrumbs" ? rawChildren : filteredChildren;
+
   let enriched: Element = enrichWithIntrinsicSize(
     element,
     availableWidth,
     availableHeight,
     computedStyle,
-    filteredChildren,
+    enrichChildren,
     effectiveGetChildElements,
     isFlexChild,
   );
@@ -1331,7 +1336,7 @@ export function calculateFullTreeLayout(
         {}) as Record<string, unknown>;
       const margin = parseMargin(elementStyle);
 
-      const computedLayout: ComputedLayout = {
+      result.set(node.elementId, {
         elementId: node.elementId,
         x: sanitizeLayoutValue(layoutResult.x),
         y: sanitizeLayoutValue(layoutResult.y),
@@ -1343,29 +1348,7 @@ export function calculateFullTreeLayout(
           bottom: sanitizeLayoutValue(margin.bottom),
           left: sanitizeLayoutValue(margin.left),
         },
-      };
-
-      // 디버깅: aspectRatio가 설정된 요소의 레이아웃 결과 확인
-      if (import.meta.env.DEV) {
-        const elementStyle = (elementsMap.get(node.elementId)?.props?.style ??
-          {}) as Record<string, unknown>;
-        if (
-          elementStyle.aspectRatio &&
-          elementStyle.aspectRatio !== "" &&
-          elementStyle.aspectRatio !== "reset"
-        ) {
-          console.log(
-            `[fullTreeLayout] aspectRatio element ${node.elementId}:`,
-            `style.aspectRatio=${elementStyle.aspectRatio}`,
-            `style.width=${elementStyle.width}`,
-            `style.height=${elementStyle.height}`,
-            `computed: width=${computedLayout.width}, height=${computedLayout.height}`,
-            `ratio=${computedLayout.width / computedLayout.height}`,
-          );
-        }
-      }
-
-      result.set(node.elementId, computedLayout);
+      });
     }
 
     if (sanitizeStats.count > 0 && import.meta.env.DEV) {

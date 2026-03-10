@@ -18,6 +18,7 @@ import {
   RadioSpec,
   SwitchSpec,
   InputSpec,
+  BreadcrumbsSpec,
 } from "@xstudio/specs";
 
 /** Spec shapes에서 추출한 텍스트 스타일 */
@@ -48,6 +49,7 @@ const TEXT_BEARING_SPECS: Record<
   radio: { spec: RadioSpec, defaultSize: "md" },
   switch: { spec: SwitchSpec, defaultSize: "md" },
   input: { spec: InputSpec, defaultSize: "sm" },
+  breadcrumbs: { spec: BreadcrumbsSpec, defaultSize: "md" },
 };
 
 /**

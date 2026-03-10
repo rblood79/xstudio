@@ -213,15 +213,6 @@ export class PersistentTaffyTree {
     const json = JSON.stringify(styleRecord);
     const existingJson = this._lastJsonMap.get(elementId);
 
-    if (import.meta.env.DEV && styleRecord.aspectRatio !== undefined) {
-      console.log(
-        `[PersistentTaffyTree.updateNodeStyle] ${elementId} aspectRatio:`,
-        styleRecord.aspectRatio,
-        "JSON:",
-        json.substring(0, 200),
-      );
-    }
-
     if (existingJson === json) {
       return false;
     }

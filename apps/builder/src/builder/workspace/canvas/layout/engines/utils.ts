@@ -43,6 +43,10 @@ import type { ComputedStyle } from "./cssResolver";
 import type { LayoutContext } from "./LayoutEngine";
 import { applyTextTransform } from "../../sprites/styleConverter";
 import { getImageNaturalDimensions } from "../../skia/imageCache";
+import {
+  parseAspectRatio,
+  shouldSetAutoHeightForAspectRatio,
+} from "../../../../utils/aspectRatio";
 
 // ─── Phantom Indicator 설정 (단일 소스) ─────────────────────────────────
 // Switch/Checkbox/Radio: Preview DOM에는 [indicator + label] 구조이지만
@@ -926,7 +930,88 @@ export function calculateContentWidth(
     return Math.ceil(textWidth);
   }
 
-  // 1.2. ProgressCircle: diameter 기반 고정 크기
+  // 1.2. Breadcrumbs: ToggleButtonGroup과 동일 패턴 — 자식 Breadcrumb 텍스트 실측 합산
+  // fullTreeLayout.ts에서 rawChildren을 enrichChildren으로 전달하여 자식 기반 계산 가능
+  if (tag === "breadcrumbs") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? "md";
+    const separator = (props?.separator as string) ?? "›";
+
+    // Spec에서 실제 font style 추출 (children prop 전달 필수)
+    const specStyle = extractSpecTextStyle("breadcrumbs", {
+      size: sizeName,
+      _crumbs: ["x"],
+    });
+    const fontSize = specStyle?.fontSize ?? 14;
+    const fontWeight = specStyle?.fontWeight ?? 400;
+    const ffamily = specStyle?.fontFamily ?? specFontFamily.sans;
+
+    // 자식 Breadcrumb 요소에서 레이블 추출 (ToggleButtonGroup 패턴)
+    const crumbs: string[] = [];
+    if (childElements && childElements.length > 0) {
+      for (const child of childElements) {
+        const childProps = child.props as Record<string, unknown> | undefined;
+        const label = String(
+          childProps?.children ?? childProps?.label ?? childProps?.title ?? "",
+        );
+        if (label) crumbs.push(label);
+      }
+    }
+    // 자식이 없으면 기본값
+    if (crumbs.length === 0) {
+      crumbs.push("Home", "Products", "Detail");
+    }
+
+    // Spec shapes의 separatorPadding (Breadcrumbs.spec.ts line 106)
+    const separatorPadding = 4;
+
+    // 1) 실측 기반 폭 (모든 텍스트를 measureTextWidth로 계산)
+    let measuredWidth = 0;
+    for (let i = 0; i < crumbs.length; i++) {
+      const isLast = i === crumbs.length - 1;
+      const crumbWeight = isLast ? 600 : fontWeight;
+      measuredWidth += measureTextWidth(
+        crumbs[i],
+        fontSize,
+        ffamily,
+        crumbWeight,
+      );
+      if (!isLast) {
+        const sepWidth = measureTextWidth(separator, fontSize, ffamily, 400);
+        measuredWidth += separatorPadding + sepWidth + separatorPadding;
+      }
+    }
+
+    // 2) Spec shapes 간이 추정 폭 (specShapeConverter가 사용하는 x좌표 기준)
+    // specShapeConverter: maxWidth = containerWidth - shape.x
+    // → containerWidth가 Spec의 마지막 crumb x + 마지막 crumb 실측 폭보다 작으면 줄바꿈 발생
+    // Spec 간이 공식: crumbs[i].length * (fontSize * 0.55), sep: separatorPadding + fontSize * 0.35
+    let specX = 0;
+    for (let i = 0; i < crumbs.length; i++) {
+      const isLast = i === crumbs.length - 1;
+      specX += crumbs[i].length * (fontSize * 0.55);
+      if (!isLast) {
+        specX += separatorPadding;
+        specX += separatorPadding + fontSize * 0.35;
+      }
+    }
+    // Spec의 총 x는 마지막 crumb 끝까지의 간이 추정 (마지막 crumb 폭 포함)
+    // 마지막 crumb 실측 폭으로 교체: specX - 간이마지막 + 실측마지막
+    const lastCrumbEstimate =
+      crumbs[crumbs.length - 1].length * (fontSize * 0.55);
+    const lastCrumbMeasured = measureTextWidth(
+      crumbs[crumbs.length - 1],
+      fontSize,
+      ffamily,
+      600,
+    );
+    const specRenderWidth = specX - lastCrumbEstimate + lastCrumbMeasured;
+
+    // 둘 중 더 큰 값 사용: Spec x좌표 기반 렌더링이 containerWidth 안에 들어오도록 보장
+    return Math.ceil(Math.max(measuredWidth, specRenderWidth));
+  }
+
+  // 1.3. ProgressCircle: diameter 기반 고정 크기
   if (tag === "progresscircle") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = String(props?.size ?? "M");
@@ -2543,6 +2628,7 @@ export const INLINE_BLOCK_TAGS = new Set([
   "statuslight",
   "link",
   "linkbutton",
+  "breadcrumbs",
 ]);
 
 /**
@@ -3299,101 +3385,16 @@ export function applyCommonTaffyStyle(
     const ratio = parseAspectRatio(style.aspectRatio);
     if (ratio !== undefined && ratio > 0) {
       result.aspectRatio = ratio;
-
-      // CSS aspect-ratio는 width 또는 height 중 하나가 auto일 때만 적용됨
-      // height가 undefined이면 명시적으로 "auto"로 설정하여 Taffy가 aspectRatio를 적용하도록 함
       const rawHeight = style.height;
       const rawWidth = style.width;
 
-      // height가 undefined/null/빈 문자열이면 명시적으로 "auto"로 설정
       if (
-        (rawHeight === undefined || rawHeight === null || rawHeight === "") &&
-        result.height === undefined
+        shouldSetAutoHeightForAspectRatio(rawWidth, rawHeight, result.height)
       ) {
         result.height = "auto";
       }
-      // width와 height가 모두 고정값(숫자 또는 px 문자열)이면 height를 auto로 변경
-      else if (
-        rawHeight !== undefined &&
-        rawHeight !== null &&
-        rawHeight !== "" &&
-        rawHeight !== "auto" &&
-        rawHeight !== "fit-content" &&
-        rawHeight !== "min-content" &&
-        rawHeight !== "max-content" &&
-        rawWidth !== undefined &&
-        rawWidth !== null &&
-        rawWidth !== "" &&
-        rawWidth !== "auto" &&
-        rawWidth !== "fit-content" &&
-        rawWidth !== "min-content" &&
-        rawWidth !== "max-content"
-      ) {
-        // width와 height가 모두 고정값이면 height를 auto로 변경하여 aspectRatio 적용
-        result.height = "auto";
-      }
-
-      if (import.meta.env.DEV) {
-        console.log(
-          `[applyCommonTaffyStyle] aspectRatio: "${style.aspectRatio}" → ${ratio}, rawWidth=${rawWidth}, rawHeight=${rawHeight}, result.height=${result.height}`,
-        );
-      }
     }
   }
-}
-
-/**
- * CSS aspect-ratio 값을 숫자로 파싱
- *
- * @param value - CSS aspect-ratio 값 ("16 / 9", "1 / 1", "1.777", 등)
- * @returns 숫자 비율 또는 undefined
- *
- * @example
- * parseAspectRatio("16 / 9") // 1.777...
- * parseAspectRatio("1 / 1") // 1.0
- * parseAspectRatio("1.777") // 1.777
- * parseAspectRatio("reset") // undefined
- * parseAspectRatio("") // undefined
- */
-export function parseAspectRatio(value: unknown): number | undefined {
-  if (
-    value === undefined ||
-    value === null ||
-    value === "" ||
-    value === "reset" ||
-    value === "auto"
-  ) {
-    return undefined;
-  }
-
-  // 이미 숫자인 경우
-  if (typeof value === "number") {
-    return value > 0 ? value : undefined;
-  }
-
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-
-  // "16 / 9" 형식 파싱
-  const ratioMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
-  if (ratioMatch) {
-    const numerator = parseFloat(ratioMatch[1]);
-    const denominator = parseFloat(ratioMatch[2]);
-    if (!isNaN(numerator) && !isNaN(denominator) && denominator > 0) {
-      return numerator / denominator;
-    }
-  }
-
-  // 순수 숫자 문자열인 경우
-  const num = parseFloat(trimmed);
-  if (!isNaN(num) && num > 0) {
-    return num;
-  }
-
-  return undefined;
 }
 
 /**
