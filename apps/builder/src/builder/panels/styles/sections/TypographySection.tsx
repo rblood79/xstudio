@@ -434,7 +434,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         label="Wrap"
         className="text-behavior"
         value={styleValues.textBehaviorPreset}
-        popoverWidthMode="min-width"
+        popoverWidthMode="fit-content"
         options={[
           { value: "normal", label: "Normal" },
           { value: "nowrap", label: "No Wrap" },

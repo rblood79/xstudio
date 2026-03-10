@@ -449,7 +449,8 @@ export const PropertyUnitInput = memo(
             <Popover
               className="react-aria-Popover property-unit-input-popover"
               style={{
-                width:
+                width: "max-content",
+                minWidth:
                   popoverMetrics.width > 0 ? `${popoverMetrics.width}px` : undefined,
                 marginLeft:
                   popoverMetrics.offset !== 0

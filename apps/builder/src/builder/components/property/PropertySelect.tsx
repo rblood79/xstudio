@@ -22,7 +22,7 @@ interface PropertySelectProps {
     }>;
     className?: string;
     description?: string; // Optional description (not displayed)
-    popoverWidthMode?: "width" | "min-width";
+    popoverWidthMode?: "width" | "min-width" | "fit-content";
 }
 
 // 🚀 Phase 21: memo + 커스텀 비교 함수 적용
@@ -33,7 +33,7 @@ export const PropertySelect = memo(function PropertySelect({
     options,
     icon: Icon,
     className,
-    popoverWidthMode = "width",
+    popoverWidthMode = "fit-content",
 }: PropertySelectProps) {
     // 🚀 Fix: 명시적 isOpen 관리로 "reset" 선택 시 팝업 닫힘 보장
     // React Aria의 controlled Select에서 onSelectionChange 내 onChange("") 호출이
@@ -145,9 +145,13 @@ export const PropertySelect = memo(function PropertySelect({
                         style={{
                             width: popoverWidthMode === "width" && popoverMetrics.width > 0
                                 ? `${popoverMetrics.width}px`
-                                : undefined,
-                            minWidth: popoverWidthMode === "min-width" && popoverMetrics.width > 0
+                                : popoverWidthMode === "fit-content"
+                                    ? "max-content"
+                                    : undefined,
+                            minWidth: popoverWidthMode === "fit-content" && popoverMetrics.width > 0
                                 ? `${popoverMetrics.width}px`
+                                : popoverWidthMode === "min-width" && popoverMetrics.width > 0
+                                    ? `${popoverMetrics.width}px`
                                 : undefined,
                             marginLeft: popoverMetrics.offset !== 0 ? `${popoverMetrics.offset}px` : undefined,
                         }}
