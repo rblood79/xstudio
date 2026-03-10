@@ -284,7 +284,7 @@ export function TextEditOverlay({
     opacity: 0,
     // 수직 중앙 정렬 (Button, Badge 등 baseline: "middle" 요소)
     ...(isVerticalCenter
-      ? { display: "flex", alignItems: "center", justifyContent: "center" }
+      ? { display: "flex", alignItems: "center", justifyContent: "flex-start" }
       : {}),
   };
 
