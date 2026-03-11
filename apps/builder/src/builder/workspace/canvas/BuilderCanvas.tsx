@@ -1016,10 +1016,13 @@ const ElementsLayer = memo(function ElementsLayer({
           }
         }
 
-        // ComboBox 자식(ComboBoxWrapper/ComboBoxInput/ComboBoxTrigger)은 Compositional — 자체 spec으로 렌더링
-        // Select 자식(SelectTrigger/SelectValue/SelectIcon)과 동일 패턴
-        // factory backgroundColor:'transparent' 방어: 존재하면 제거하여 spec variant 배경 사용
+        // Select/ComboBox compositional 자식은 자체 spec으로 렌더링
+        // factory 또는 legacy 데이터의 transparent inline style 방어:
+        // 존재하면 제거하여 spec 기본 배경/텍스트 색상을 사용한다.
         if (
+          effectiveChildEl.tag === "SelectTrigger" ||
+          effectiveChildEl.tag === "SelectValue" ||
+          effectiveChildEl.tag === "SelectIcon" ||
           effectiveChildEl.tag === "ComboBoxWrapper" ||
           effectiveChildEl.tag === "ComboBoxInput" ||
           effectiveChildEl.tag === "ComboBoxTrigger"
@@ -1028,8 +1031,16 @@ const ElementsLayer = memo(function ElementsLayer({
             string,
             unknown
           >;
-          if (existingStyle.backgroundColor === "transparent") {
-            const { backgroundColor: _, ...restStyle } = existingStyle;
+          const shouldStripTransparentBg =
+            existingStyle.backgroundColor === "transparent";
+          const shouldStripTransparentColor = existingStyle.color === "transparent";
+
+          if (shouldStripTransparentBg || shouldStripTransparentColor) {
+            const {
+              backgroundColor: _bg,
+              color: _color,
+              ...restStyle
+            } = existingStyle;
             effectiveChildEl = {
               ...effectiveChildEl,
               props: { ...effectiveChildEl.props, style: restStyle },

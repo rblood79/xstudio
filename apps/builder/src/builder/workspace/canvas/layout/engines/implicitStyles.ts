@@ -47,6 +47,24 @@ const SPEC_TRIGGER_GAP: Record<string, number> = {
   xl: 10,
 };
 
+/** SelectIcon / ComboBoxTrigger icon 크기 — SelectIconSpec.sizes.iconSize 동기 */
+const SPEC_ICON_SIZE: Record<string, number> = {
+  xs: 10,
+  sm: 14,
+  md: 18,
+  lg: 22,
+  xl: 28,
+};
+
+/** SelectTrigger / ComboBoxWrapper 높이 — SelectTriggerSpec.sizes.height 동기 */
+const SPEC_TRIGGER_HEIGHT: Record<string, number> = {
+  xs: 20,
+  sm: 22,
+  md: 30,
+  lg: 42,
+  xl: 54,
+};
+
 /** Checkbox/Radio indicator 크기 (spec shapes 렌더링, Taffy 트리 밖) */
 const INDICATOR_SIZES: Record<string, { box: number; gap: number }> = {
   sm: { box: 16, gap: 6 },
@@ -100,6 +118,35 @@ function withParentStyle(el: Element, style: Record<string, unknown>): Element {
     ...el,
     props: { ...el.props, style },
   };
+}
+
+function getDelegatedSize(
+  el: Element,
+  elementById: Map<string, Element>,
+): string {
+  const ownSize = (el.props as Record<string, unknown> | undefined)?.size;
+  if (typeof ownSize === "string" && ownSize.trim()) {
+    return ownSize;
+  }
+
+  const parent = el.parent_id ? elementById.get(el.parent_id) : undefined;
+  const parentSize = (parent?.props as Record<string, unknown> | undefined)
+    ?.size;
+  if (typeof parentSize === "string" && parentSize.trim()) {
+    return parentSize;
+  }
+
+  const grandParent = parent?.parent_id
+    ? elementById.get(parent.parent_id)
+    : undefined;
+  const grandParentSize = (
+    grandParent?.props as Record<string, unknown> | undefined
+  )?.size;
+  if (typeof grandParentSize === "string" && grandParentSize.trim()) {
+    return grandParentSize;
+  }
+
+  return "md";
 }
 
 // ─── 공개 API ────────────────────────────────────────────────────────
@@ -229,8 +276,7 @@ export function applyImplicitStyles(
     filteredChildren = filteredChildren.map((child) => {
       if (child.tag === wrapperChildTag) {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
-        const wrapperProps = child.props as Record<string, unknown> | undefined;
-        const sizeName = (wrapperProps?.size as string) ?? "md";
+        const sizeName = getDelegatedSize(containerEl, elementById);
         const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
         return {
           ...child,
@@ -259,7 +305,7 @@ export function applyImplicitStyles(
 
   // ── SelectTrigger ──────────────────────────────────────────────────
   if (containerTag === "selecttrigger") {
-    const sizeName = (containerProps?.size as string) ?? "md";
+    const sizeName = getDelegatedSize(containerEl, elementById);
     const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
     effectiveParent = withParentStyle(
       containerEl,
@@ -272,6 +318,11 @@ export function applyImplicitStyles(
           gap: parentStyle.gap ?? specGap,
           // CSS .react-aria-Button: border: 1px solid
           borderWidth: parentStyle.borderWidth ?? 1,
+          // Spec height로 CSS와 정확히 일치 (Taffy auto 계산 시 ceil로 1px 오차 방지)
+          height:
+            parentStyle.height ??
+            SPEC_TRIGGER_HEIGHT[sizeName] ??
+            SPEC_TRIGGER_HEIGHT.md,
         },
         sizeName,
       ),
@@ -286,14 +337,15 @@ export function applyImplicitStyles(
         } as Element;
       }
       if (child.tag === "SelectIcon") {
+        const iconSz = SPEC_ICON_SIZE[sizeName] ?? SPEC_ICON_SIZE.md;
         return {
           ...child,
           props: {
             ...child.props,
             style: {
               ...cs,
-              width: cs.width ?? 18,
-              height: cs.height ?? 18,
+              width: iconSz,
+              height: iconSz,
               flexShrink: cs.flexShrink ?? 0,
             },
           },
@@ -305,7 +357,7 @@ export function applyImplicitStyles(
 
   // ── ComboBoxWrapper ────────────────────────────────────────────────
   if (containerTag === "comboboxwrapper") {
-    const sizeName = (containerProps?.size as string) ?? "md";
+    const sizeName = getDelegatedSize(containerEl, elementById);
     const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
     effectiveParent = withParentStyle(
       containerEl,
@@ -318,6 +370,11 @@ export function applyImplicitStyles(
           gap: parentStyle.gap ?? specGap,
           // CSS .combobox-container: border: 1px solid
           borderWidth: parentStyle.borderWidth ?? 1,
+          // Spec height로 CSS와 정확히 일치
+          height:
+            parentStyle.height ??
+            SPEC_TRIGGER_HEIGHT[sizeName] ??
+            SPEC_TRIGGER_HEIGHT.md,
         },
         sizeName,
       ),
@@ -342,14 +399,15 @@ export function applyImplicitStyles(
         } as Element;
       }
       if (child.tag === "ComboBoxTrigger") {
+        const iconSz = SPEC_ICON_SIZE[sizeName] ?? SPEC_ICON_SIZE.md;
         return {
           ...child,
           props: {
             ...child.props,
             style: {
               ...cs,
-              width: cs.width ?? 18,
-              height: cs.height ?? 18,
+              width: iconSz,
+              height: iconSz,
               flexShrink: cs.flexShrink ?? 0,
             },
           },

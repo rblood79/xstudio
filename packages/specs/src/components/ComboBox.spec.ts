@@ -87,7 +87,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
       paddingY: 1,
       fontSize: "{typography.text-2xs}" as TokenRef,
       borderRadius: "{radius.xs}" as TokenRef,
-      iconSize: 14,
+      iconSize: 10,
       gap: 2,
     },
     sm: {
@@ -96,7 +96,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
       paddingY: 2,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
-      iconSize: 16,
+      iconSize: 14,
       gap: 4,
     },
     md: {

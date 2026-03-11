@@ -1080,6 +1080,43 @@ export const ElementSprite = memo(function ElementSprite({
     );
   });
 
+  // Select/ComboBox → SelectTrigger/ComboBoxWrapper/SelectValue 조상 size 상속
+  // Store에는 부모 Select/ComboBox에만 size prop이 있고,
+  // 자식 wrapper/value element에는 없으므로 부모에서 읽어 전파
+  const PARENT_SIZE_DELEGATION_TAGS = new Set([
+    "SelectTrigger",
+    "ComboBoxWrapper",
+    "SelectValue",
+    "SelectIcon",
+    "ComboBoxInput",
+    "ComboBoxTrigger",
+  ]);
+  const SIZE_DELEGATION_PARENT_TAGS = new Set(["Select", "ComboBox"]);
+  const parentDelegatedSize = useStore((state) => {
+    if (!PARENT_SIZE_DELEGATION_TAGS.has(element.tag) || !element.parent_id)
+      return null;
+    // 직접 부모 확인
+    const parent = state.elementsMap.get(element.parent_id);
+    if (!parent) return null;
+    if (SIZE_DELEGATION_PARENT_TAGS.has(parent.tag)) {
+      return (
+        ((parent.props as Record<string, unknown> | undefined)
+          ?.size as string) ?? null
+      );
+    }
+    // 2단계 상위 (SelectValue → SelectTrigger → Select)
+    if (parent.parent_id) {
+      const grandParent = state.elementsMap.get(parent.parent_id);
+      if (grandParent && SIZE_DELEGATION_PARENT_TAGS.has(grandParent.tag)) {
+        return (
+          ((grandParent.props as Record<string, unknown> | undefined)
+            ?.size as string) ?? null
+        );
+      }
+    }
+    return null;
+  });
+
   // 🚀 ToggleButtonGroup 내 ToggleButton의 위치 정보 (borderRadius 계산용)
   // CSS에서는 그룹 내 첫/끝 버튼만 외곽 모서리에 borderRadius 적용
   // 개별 selector로 분리하여 primitive 비교 (useShallow 대체)
@@ -1479,7 +1516,9 @@ export const ElementSprite = memo(function ElementSprite({
       style?.borderRadius !== null &&
       style?.borderRadius !== "";
     const size = isUIComponent
-      ? String(props?.size || tagGroupAncestorSize || "md")
+      ? String(
+          props?.size || parentDelegatedSize || tagGroupAncestorSize || "md",
+        )
       : "";
     const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
     let effectiveBorderRadius: number | [number, number, number, number] =
@@ -2060,6 +2099,7 @@ export const ElementSprite = memo(function ElementSprite({
     previewState,
     themeVersion,
     skiaTheme,
+    parentDelegatedSize,
   ]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로

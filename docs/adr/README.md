@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-09 (ADR-031 Card S2 마이그레이션 Phase 1~3 완료)
+> **최종 업데이트**: 2026-03-12 (ADR-032 Events Panel 전면 개편 재작성, ADR-033 완료 추가)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 21     |
 | 부분 완료                              | 6      |
-| 미구현 (Proposed/계획)                 | 5      |
-| **합계**                               | **32** |
+| 미구현 (Proposed/계획)                 | 6      |
+| **합계**                               | **33** |
 
 ---
 
@@ -63,6 +63,7 @@
 | [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선       | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수 |    P4    |
 | [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                                                             |    P5    |
 | [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                   |    P5    |
+| [032](032-events-data-integration.md)    | Events Panel 전면 개편 + Data 통합 | Proposed | Phase 0~5, 기반 정리(중복 77% 제거) + Spec-Driven + Quick Connect 통합                   |  **P3**  |
 
 ---
 

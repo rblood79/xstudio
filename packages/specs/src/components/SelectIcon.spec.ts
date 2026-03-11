@@ -34,12 +34,22 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
     },
   },
 
+  // @sync Select.spec.ts sizes.iconSize — Select/ComboBox 동일 아이콘 크기
   sizes: {
+    xs: {
+      height: 10,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
+      iconSize: 10,
+      gap: 0,
+    },
     sm: {
       height: 14,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-sm}" as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       iconSize: 14,
       gap: 0,
@@ -60,6 +70,15 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       iconSize: 22,
+      gap: 0,
+    },
+    xl: {
+      height: 28,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-xl}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
+      iconSize: 28,
       gap: 0,
     },
   },

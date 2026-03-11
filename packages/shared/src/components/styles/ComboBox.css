@@ -45,13 +45,14 @@
     }
 
     /* ===== Size ===== */
+    /* @sync Select.css size variants — 동일한 font-size, chevron-size */
     &[data-size="xs"] {
       --combo-label-size: var(--text-2xs);
       --combo-input-padding: var(--spacing-3xs) var(--spacing-xs);
       --combo-input-padding-right: calc(var(--spacing-lg) + var(--spacing-xs));
       --combo-input-font-size: var(--text-2xs);
       --combo-input-line-height: var(--text-2xs--line-height);
-      --combo-btn-size: 14px;
+      --combo-btn-size: 10px;
       --combo-btn-right: var(--spacing-3xs);
       --combo-hint-size: var(--text-2xs);
     }
@@ -61,7 +62,7 @@
       --combo-input-padding-right: calc(var(--spacing-lg) + var(--spacing));
       --combo-input-font-size: var(--text-xs);
       --combo-input-line-height: var(--text-xs--line-height);
-      --combo-btn-size: 20px;
+      --combo-btn-size: 14px;
       --combo-btn-right: var(--spacing-2xs);
       --combo-hint-size: var(--text-xs);
     }
@@ -81,7 +82,7 @@
       --combo-input-padding-right: calc(var(--spacing-3xl) + var(--spacing));
       --combo-input-font-size: var(--text-base);
       --combo-input-line-height: var(--text-base--line-height);
-      --combo-btn-size: 28px;
+      --combo-btn-size: 22px;
       --combo-btn-right: var(--spacing-sm);
       --combo-hint-size: var(--text-sm);
     }
@@ -91,7 +92,7 @@
       --combo-input-padding-right: calc(var(--spacing-3xl) + var(--spacing-md));
       --combo-input-font-size: var(--text-lg);
       --combo-input-line-height: var(--text-lg--line-height);
-      --combo-btn-size: 32px;
+      --combo-btn-size: 28px;
       --combo-btn-right: var(--spacing-md);
       --combo-hint-size: var(--text-base);
     }
@@ -124,10 +125,8 @@
     }
 
     &:has(
-        .react-aria-Input[data-hovered]:not([data-focused]):not(
-            [data-disabled]
-          )
-      ),
+      .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
+    ),
     &:has(.react-aria-Button[data-hovered]:not([data-disabled])) {
       .combobox-container {
         border-color: var(--border-hover);
@@ -178,17 +177,15 @@
     }
 
     &[data-variant="primary"]:has(
-        .react-aria-Input[data-hovered]:not([data-focused]):not(
-            [data-disabled]
-          )
+        .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
       )
       .combobox-container,
-    &[data-variant="primary"]:has(.react-aria-Button[data-hovered]:not([data-disabled]))
+    &[data-variant="primary"]:has(
+        .react-aria-Button[data-hovered]:not([data-disabled])
+      )
       .combobox-container,
     &[data-variant="secondary"]:has(
-        .react-aria-Input[data-hovered]:not([data-focused]):not(
-            [data-disabled]
-          )
+        .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
       )
       .combobox-container,
     &[data-variant="secondary"]:has(
@@ -196,9 +193,7 @@
       )
       .combobox-container,
     &[data-variant="tertiary"]:has(
-        .react-aria-Input[data-hovered]:not([data-focused]):not(
-            [data-disabled]
-          )
+        .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
       )
       .combobox-container,
     &[data-variant="tertiary"]:has(
@@ -206,12 +201,12 @@
       )
       .combobox-container,
     &[data-variant="error"]:has(
-        .react-aria-Input[data-hovered]:not([data-focused]):not(
-            [data-disabled]
-          )
+        .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
       )
       .combobox-container,
-    &[data-variant="error"]:has(.react-aria-Button[data-hovered]:not([data-disabled]))
+    &[data-variant="error"]:has(
+        .react-aria-Button[data-hovered]:not([data-disabled])
+      )
       .combobox-container {
       background: var(--field-accent-container);
       border-color: var(--field-accent);
@@ -236,12 +231,12 @@
     }
 
     &[data-variant="filled"]:has(
-        .react-aria-Input[data-hovered]:not([data-focused]):not(
-            [data-disabled]
-          )
+        .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
       )
       .combobox-container,
-    &[data-variant="filled"]:has(.react-aria-Button[data-hovered]:not([data-disabled]))
+    &[data-variant="filled"]:has(
+        .react-aria-Button[data-hovered]:not([data-disabled])
+      )
       .combobox-container {
       background: var(--bg-overlay);
       border-bottom-color: var(--border-hover);

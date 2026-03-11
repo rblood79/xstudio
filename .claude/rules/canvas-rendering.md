@@ -105,6 +105,17 @@ Spec 기반 컴포넌트(Button, Badge 등)의 텍스트 폭 측정 시 `extract
 - Spec text 중앙 배치: `x: 0, y: 0` + `align: "center"` + `baseline: "middle"` 사용
   - `x: cx, y: cy` 사용 시 specShapeConverter가 paddingLeft/maxWidth를 오계산하여 텍스트 치우침
 
+## Compositional Component Size Delegation (Skia 경로)
+
+- Select/ComboBox 등 합성 컴포넌트에서 **부모의 size prop을 자식이 직접 참조** 필수
+- Store에는 부모(Select/ComboBox)에만 `size` 저장 → 자식(SelectTrigger, ComboBoxWrapper 등)은 size 없음
+- **ElementSprite.tsx `parentDelegatedSize` selector**: 부모/조부모 2단계 탐색으로 size 읽기
+  - `PARENT_SIZE_DELEGATION_TAGS`: SelectTrigger, ComboBoxWrapper, SelectValue, SelectIcon, ComboBoxInput, ComboBoxTrigger
+  - `SIZE_DELEGATION_PARENT_TAGS`: Select, ComboBox
+- **useMemo deps에 `parentDelegatedSize` 포함 필수** — 누락 시 size 변경이 Skia 트리에 전파 안 됨
+- size 우선순위: `props.size || parentDelegatedSize || tagGroupAncestorSize || "md"`
+- Layout 경로(`fullTreeLayout.ts`)의 `effectiveGetChildElements`도 동일하게 size 주입 (L894-912)
+
 ## registryVersion 캐싱
 
 - LayoutContainer 'layout' 이벤트에서 `notifyLayoutChange()` 무조건 호출

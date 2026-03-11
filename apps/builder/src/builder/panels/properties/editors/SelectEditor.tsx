@@ -38,6 +38,7 @@ import { useCollectionItemManager } from "@/builder/hooks";
 import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 import { useSyncGrandchildProp } from "../../../hooks/useSyncGrandchildProp";
 import { supabase } from "../../../../env/supabase.client";
+import type { BatchPropsUpdate } from "../../../stores/utils/elementUpdate";
 
 export const SelectEditor = memo(
   function SelectEditor({
@@ -45,6 +46,14 @@ export const SelectEditor = memo(
     currentProps,
     onUpdate,
   }: PropertyEditorProps) {
+    const SELECT_VALUE_FONT_SIZE_BY_SIZE: Record<string, number> = {
+      xs: 10,
+      sm: 12,
+      md: 14,
+      lg: 16,
+      xl: 18,
+    };
+
     // Collection Item 관리 훅
     const {
       children,
@@ -183,9 +192,36 @@ export const SelectEditor = memo(
 
     const handleSizeChange = useCallback(
       (value: string) => {
-        onUpdate({ size: value });
+        const childUpdates: BatchPropsUpdate[] = [];
+        const { childrenMap } = useStore.getState();
+        const directChildren = childrenMap.get(elementId) ?? [];
+        const trigger = directChildren.find((child) => child.tag === "SelectTrigger");
+
+        if (trigger) {
+          const grandchildren = childrenMap.get(trigger.id) ?? [];
+          const selectValue = grandchildren.find((child) => child.tag === "SelectValue");
+
+          if (selectValue) {
+            const currentStyle =
+              (selectValue.props?.style as Record<string, unknown> | undefined) || {};
+            childUpdates.push({
+              elementId: selectValue.id,
+              props: {
+                ...selectValue.props,
+                style: {
+                  ...currentStyle,
+                  fontSize: SELECT_VALUE_FONT_SIZE_BY_SIZE[value] ?? 14,
+                },
+              },
+            });
+          }
+        }
+
+        useStore
+          .getState()
+          .updateSelectedPropertiesWithChildren({ size: value }, childUpdates);
       },
-      [onUpdate],
+      [elementId],
     );
 
     const handleMenuTriggerChange = useCallback(
