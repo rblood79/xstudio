@@ -5,7 +5,7 @@
  * Sizes: sm, md, lg
  */
 
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Button,
   ComboBox as AriaComboBox,
@@ -88,6 +88,22 @@ export function ComboBox<T extends object>({
     ],
   });
 
+  const comboBoxRef = useRef<HTMLDivElement>(null);
+  const [popoverWidth, setPopoverWidth] = useState(0);
+
+  useEffect(() => {
+    const el = comboBoxRef.current;
+    if (!el) return;
+    const update = () => {
+      const nextWidth = Math.round(el.getBoundingClientRect().width);
+      setPopoverWidth((prev) => (prev === nextWidth ? prev : nextWidth));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // External loading state (from isLoading prop) - show skeleton
   if (externalLoading) {
     return (
@@ -142,6 +158,7 @@ export function ComboBox<T extends object>({
       return (
         <AriaComboBox
           {...props}
+          ref={comboBoxRef}
           className={comboBoxClassName}
           data-variant={variant}
           data-size={size}
@@ -156,7 +173,15 @@ export function ComboBox<T extends object>({
             </Button>
           </div>
           {description && <Text slot="description">{description}</Text>}
-          <Popover className={popoverClassName}>
+          <Popover
+            className={popoverClassName}
+            triggerRef={comboBoxRef}
+            placement="bottom start"
+            offset={4}
+            style={
+              popoverWidth > 0 ? { width: `${popoverWidth}px` } : undefined
+            }
+          >
             <ListBox className="react-aria-ListBox">
               <ListBoxItem key="loading" textValue="Loading">
                 ⏳ 데이터 로딩 중...
@@ -172,6 +197,7 @@ export function ComboBox<T extends object>({
       return (
         <AriaComboBox
           {...props}
+          ref={comboBoxRef}
           className={comboBoxClassName}
           data-variant={variant}
           data-size={size}
@@ -186,7 +212,15 @@ export function ComboBox<T extends object>({
             </Button>
           </div>
           <FieldError>❌ 오류: {error}</FieldError>
-          <Popover className={popoverClassName}>
+          <Popover
+            className={popoverClassName}
+            triggerRef={comboBoxRef}
+            placement="bottom start"
+            offset={4}
+            style={
+              popoverWidth > 0 ? { width: `${popoverWidth}px` } : undefined
+            }
+          >
             <ListBox className="react-aria-ListBox">
               <ListBoxItem key="error" textValue="Error">
                 ❌ 오류: {error}
@@ -209,6 +243,7 @@ export function ComboBox<T extends object>({
       return (
         <AriaComboBox
           {...props}
+          ref={comboBoxRef}
           inputValue={inputValue}
           onInputChange={onInputChange}
           className={comboBoxClassName}
@@ -225,7 +260,15 @@ export function ComboBox<T extends object>({
           </div>
           {description && <Text slot="description">{description}</Text>}
           {errorMessage && <FieldError>{errorMessage}</FieldError>}
-          <Popover className={popoverClassName}>
+          <Popover
+            className={popoverClassName}
+            triggerRef={comboBoxRef}
+            placement="bottom start"
+            offset={4}
+            style={
+              popoverWidth > 0 ? { width: `${popoverWidth}px` } : undefined
+            }
+          >
             <ListBox className="react-aria-ListBox" items={items}>
               {children}
             </ListBox>

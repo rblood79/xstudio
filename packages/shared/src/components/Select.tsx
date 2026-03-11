@@ -5,7 +5,7 @@
  * Sizes: sm, md, lg
  */
 
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Button,
   FieldError,
@@ -91,6 +91,20 @@ export function Select<T extends object>({
   isLoading: externalLoading,
   ...props
 }: SelectProps<T>) {
+  const selectRef = useRef<HTMLDivElement>(null);
+  const [popoverWidth, setPopoverWidth] = useState(0);
+
+  useEffect(() => {
+    const el = selectRef.current;
+    if (!el) return;
+    const update = () =>
+      setPopoverWidth(Math.round(el.getBoundingClientRect().width));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // 다중 선택 기능 구현 예정 (현재는 미사용)
   void _multipleDisplayMode;
   void _renderMultipleValue;
@@ -261,6 +275,7 @@ export function Select<T extends object>({
   return (
     <AriaSelect
       {...props}
+      ref={selectRef}
       data-variant={variant}
       data-size={size}
       className={composeRenderProps(props.className, (cls) =>
@@ -315,8 +330,12 @@ export function Select<T extends object>({
 
           <Popover
             className="react-aria-Popover"
+            triggerRef={selectRef}
             placement="bottom start"
             offset={4}
+            style={
+              popoverWidth > 0 ? { width: `${popoverWidth}px` } : undefined
+            }
           >
             <ListBox
               items={selectItems}
