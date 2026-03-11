@@ -143,171 +143,31 @@ export function ComboBox<T extends object>({
   const comboBoxClassName = baseClassName
     ? `react-aria-ComboBox ${baseClassName}`
     : "react-aria-ComboBox";
+  const popoverStyle =
+    popoverWidth > 0 ? { width: `${popoverWidth}px` } : undefined;
+  const isLoadingState = hasDataBinding && loading;
+  const isErrorState = hasDataBinding && !!error;
+  const isTemplateMode = hasDataBinding && !!columnMapping;
+  const hasBoundItems = hasDataBinding && boundData.length > 0;
+  const shouldRenderPopover = !isLoadingState && !isErrorState;
+  const comboBoxDisabled = Boolean(props.isDisabled) || isLoadingState || isErrorState;
 
-  // ColumnMapping이 있으면 각 데이터 항목마다 ListBoxItem 렌더링
-  // ListBox와 동일한 패턴: Element tree의 ComboBoxItem 템플릿 + Field 자식 사용
-  if (hasDataBinding && columnMapping) {
-    console.log("🎯 ComboBox: columnMapping 감지 - 데이터로 아이템 렌더링", {
-      columnMapping,
-      hasChildren: !!children,
-      dataCount: boundData.length,
-    });
-
-    // Loading 상태
-    if (loading) {
-      return (
-        <AriaComboBox
-          {...props}
-          ref={comboBoxRef}
-          className={comboBoxClassName}
-          data-variant={variant}
-          data-size={size}
-          aria-label={ariaLabel}
-          isDisabled
-        >
-          {hasVisibleLabel && <Label>{String(label)}</Label>}
-          <div className="combobox-container">
-            <Input placeholder={placeholder} />
-            <Button>
-              <ChevronDown size={16} />
-            </Button>
-          </div>
-          {description && <Text slot="description">{description}</Text>}
-          <Popover
-            className={popoverClassName}
-            triggerRef={comboBoxRef}
-            placement="bottom start"
-            offset={4}
-            style={
-              popoverWidth > 0 ? { width: `${popoverWidth}px` } : undefined
-            }
-          >
-            <ListBox className="react-aria-ListBox">
-              <ListBoxItem key="loading" textValue="Loading">
-                ⏳ 데이터 로딩 중...
-              </ListBoxItem>
-            </ListBox>
-          </Popover>
-        </AriaComboBox>
-      );
+  const comboBoxItems = React.useMemo(() => {
+    if (!hasBoundItems) {
+      return undefined;
     }
 
-    // Error 상태
-    if (error) {
-      return (
-        <AriaComboBox
-          {...props}
-          ref={comboBoxRef}
-          className={comboBoxClassName}
-          data-variant={variant}
-          data-size={size}
-          aria-label={ariaLabel}
-          isDisabled
-        >
-          {hasVisibleLabel && <Label>{String(label)}</Label>}
-          <div className="combobox-container">
-            <Input placeholder={placeholder} />
-            <Button>
-              <ChevronDown size={16} />
-            </Button>
-          </div>
-          <FieldError>❌ 오류: {error}</FieldError>
-          <Popover
-            className={popoverClassName}
-            triggerRef={comboBoxRef}
-            placement="bottom start"
-            offset={4}
-            style={
-              popoverWidth > 0 ? { width: `${popoverWidth}px` } : undefined
-            }
-          >
-            <ListBox className="react-aria-ListBox">
-              <ListBoxItem key="error" textValue="Error">
-                ❌ 오류: {error}
-              </ListBoxItem>
-            </ListBox>
-          </Popover>
-        </AriaComboBox>
-      );
-    }
-
-    // 데이터가 있을 때: items prop 사용
-    if (boundData.length > 0) {
+    if (isTemplateMode) {
       const items = boundData.map((item, index) => ({
         id: String(item.id || index),
         ...item,
       })) as T[];
 
       console.log("✅ ComboBox with columnMapping - items:", items);
-
-      return (
-        <AriaComboBox
-          {...props}
-          ref={comboBoxRef}
-          inputValue={inputValue}
-          onInputChange={onInputChange}
-          className={comboBoxClassName}
-          data-variant={variant}
-          data-size={size}
-          aria-label={ariaLabel}
-        >
-          {hasVisibleLabel && <Label>{String(label)}</Label>}
-          <div className="combobox-container">
-            <Input placeholder={placeholder} />
-            <Button>
-              <ChevronDown size={16} />
-            </Button>
-          </div>
-          {description && <Text slot="description">{description}</Text>}
-          {errorMessage && <FieldError>{errorMessage}</FieldError>}
-          <Popover
-            className={popoverClassName}
-            triggerRef={comboBoxRef}
-            placement="bottom start"
-            offset={4}
-            style={
-              popoverWidth > 0 ? { width: `${popoverWidth}px` } : undefined
-            }
-          >
-            <ListBox className="react-aria-ListBox" items={items}>
-              {children}
-            </ListBox>
-          </Popover>
-        </AriaComboBox>
-      );
+      return items;
     }
 
-    // 데이터 없음
-    return (
-      <AriaComboBox
-        {...props}
-        inputValue={inputValue}
-        onInputChange={onInputChange}
-        className={comboBoxClassName}
-        data-variant={variant}
-        data-size={size}
-        aria-label={ariaLabel}
-      >
-        {hasVisibleLabel && <Label>{String(label)}</Label>}
-        <div className="combobox-container">
-          <Input placeholder={placeholder} />
-          <Button>
-            <ChevronDown size={16} />
-          </Button>
-        </div>
-        {description && <Text slot="description">{description}</Text>}
-        {errorMessage && <FieldError>{errorMessage}</FieldError>}
-        <Popover className={popoverClassName}>
-          <ListBox className="react-aria-ListBox">{children}</ListBox>
-        </Popover>
-      </AriaComboBox>
-    );
-  }
-
-  // Dynamic Collection: items prop 사용 (columnMapping 없을 때)
-  if (hasDataBinding && !loading && !error && boundData.length > 0) {
-    const config = (dataBinding as { config?: Record<string, unknown> })
-      ?.config as
+    const config = (dataBinding as { config?: Record<string, unknown> })?.config as
       | {
           columnMapping?: {
             id: string;
@@ -327,104 +187,60 @@ export function ComboBox<T extends object>({
       config?.dataMapping?.labelField ||
       "label";
 
-    const comboBoxItems = boundData.map((item, index) => ({
+    const items = boundData.map((item, index) => ({
       id: String(item[idField] || item.id || index),
       label: String(
         item[labelField] || item.label || item.name || `Item ${index + 1}`,
       ),
       ...item,
-    }));
+    })) as T[];
 
-    console.log("✅ ComboBox Dynamic Collection - items:", comboBoxItems);
+    console.log("✅ ComboBox Dynamic Collection - items:", items);
+    return items;
+  }, [boundData, dataBinding, hasBoundItems, isTemplateMode]);
 
-    return (
-      <AriaComboBox
-        {...props}
-        inputValue={inputValue}
-        onInputChange={onInputChange}
-        className={comboBoxClassName}
-        data-variant={variant}
-        data-size={size}
-        aria-label={ariaLabel}
-      >
-        {hasVisibleLabel && <Label>{String(label)}</Label>}
-        <div className="combobox-container">
-          <Input placeholder={placeholder} />
-          <Button>
-            <ChevronDown size={16} />
-          </Button>
-        </div>
-        {description && <Text slot="description">{description}</Text>}
-        {errorMessage && <FieldError>{errorMessage}</FieldError>}
-        <Popover className={popoverClassName}>
-          <ListBox className="react-aria-ListBox" items={comboBoxItems}>
-            {(item) => (
-              <ListBoxItem key={item.id} id={item.id} textValue={item.label}>
-                {item.label}
-              </ListBoxItem>
-            )}
-          </ListBox>
-        </Popover>
-      </AriaComboBox>
-    );
-  }
+  const listBoxChildren: React.ReactNode | ((item: T) => React.ReactNode) =
+    React.useMemo(() => {
+      if (isTemplateMode) {
+        console.log("🎯 ComboBox: columnMapping 감지 - 데이터로 아이템 렌더링", {
+          columnMapping,
+          hasChildren: !!children,
+          dataCount: boundData.length,
+        });
 
-  // Loading 상태
-  if (hasDataBinding && loading) {
-    return (
-      <AriaComboBox
-        {...props}
-        className={comboBoxClassName}
-        data-variant={variant}
-        data-size={size}
-        aria-label={ariaLabel}
-        isDisabled
-      >
-        {hasVisibleLabel && <Label>{String(label)}</Label>}
-        <div className="combobox-container">
-          <Input placeholder={placeholder} />
-          <Button>
-            <ChevronDown size={16} />
-          </Button>
-        </div>
-        <Text slot="description">⏳ 데이터 로딩 중...</Text>
-      </AriaComboBox>
-    );
-  }
+        if (!hasBoundItems) {
+          return children;
+        }
 
-  // Error 상태
-  if (hasDataBinding && error) {
-    return (
-      <AriaComboBox
-        {...props}
-        className={comboBoxClassName}
-        data-variant={variant}
-        data-size={size}
-        aria-label={ariaLabel}
-        isDisabled
-      >
-        {hasVisibleLabel && <Label>{String(label)}</Label>}
-        <div className="combobox-container">
-          <Input placeholder={placeholder} />
-          <Button>
-            <ChevronDown size={16} />
-          </Button>
-        </div>
-        <FieldError>❌ 오류: {error}</FieldError>
-      </AriaComboBox>
-    );
-  }
+        return children;
+      }
 
-  // Static Children (기존 방식)
+      if (hasBoundItems) {
+        return ((item: Record<string, unknown>) => (
+          <ListBoxItem
+            key={String(item.id)}
+            id={String(item.id)}
+            textValue={String(item.label)}
+          >
+            {String(item.label)}
+          </ListBoxItem>
+        )) as (item: T) => React.ReactNode;
+      }
+
+      return children;
+    }, [boundData.length, children, columnMapping, hasBoundItems, isTemplateMode]);
+
   return (
     <AriaComboBox
       {...props}
+      ref={comboBoxRef}
       inputValue={inputValue}
       onInputChange={onInputChange}
       className={comboBoxClassName}
       data-variant={variant}
       data-size={size}
       aria-label={ariaLabel}
+      isDisabled={comboBoxDisabled}
     >
       {hasVisibleLabel && <Label>{String(label)}</Label>}
       <div className="combobox-container">
@@ -434,10 +250,27 @@ export function ComboBox<T extends object>({
         </Button>
       </div>
       {description && <Text slot="description">{description}</Text>}
-      {errorMessage && <FieldError>{errorMessage}</FieldError>}
-      <Popover className={popoverClassName}>
-        <ListBox className="react-aria-ListBox">{children}</ListBox>
-      </Popover>
+      {isLoadingState && (
+        <Text slot="description">⏳ 데이터 로딩 중...</Text>
+      )}
+      {isErrorState && <FieldError>❌ 오류: {error}</FieldError>}
+      {errorMessage && !isErrorState && <FieldError>{errorMessage}</FieldError>}
+      {shouldRenderPopover && (
+        <Popover
+          className={popoverClassName}
+          triggerRef={comboBoxRef}
+          placement="bottom start"
+          offset={4}
+          style={popoverStyle}
+        >
+          <ListBox
+            className="react-aria-ListBox"
+            items={comboBoxItems}
+          >
+            {listBoxChildren}
+          </ListBox>
+        </Popover>
+      )}
     </AriaComboBox>
   );
 }

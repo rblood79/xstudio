@@ -234,8 +234,10 @@
   /* ========== Popover ========== */
   .react-aria-Popover[data-trigger="ComboBox"] {
     width: var(--trigger-width);
+    max-width: none;
     max-height: 300px;
     overflow: auto;
+    box-sizing: border-box;
     border: 1px solid var(--border);
     border-radius: var(--border-radius);
     background: var(--bg-raised);
