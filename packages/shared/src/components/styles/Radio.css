@@ -2,8 +2,6 @@
  * Radio Component Styles
  */
 
-@import "./base.css";
-
 @layer components {
   .react-aria-Radio {
     --radio-color: var(--accent);

@@ -13,15 +13,23 @@
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
 
-    /* Size locals (md default) */
+    /* Size locals (md default) — @sync Button.css size variants */
     --nf-label-size: var(--text-sm);
     --nf-btn-size: var(--text-sm);
     --nf-btn-width: 32px;
     --nf-btn-padding: var(--spacing);
-    --nf-input-padding: var(--spacing-sm) 14px;
-    --nf-input-size: var(--text-base);
+    --nf-input-padding: var(--spacing-xs) var(--spacing-md);
+    --nf-input-size: var(--text-sm);
+    --nf-input-line-height: var(--text-sm--line-height);
     --nf-input-width: 120px;
     --nf-hint-size: var(--text-xs);
+
+    /* Button variable overrides */
+    --btn-display: flex;
+    --btn-justify: center;
+    --btn-font-size: var(--nf-btn-size);
+    --btn-cursor: pointer;
+    --btn-transition: all 200ms ease;
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
@@ -35,23 +43,36 @@
     }
 
     /* ===== Size ===== */
+    &[data-size="xs"] {
+      --nf-label-size: var(--text-2xs);
+      --nf-btn-size: var(--text-2xs);
+      --nf-btn-width: 24px;
+      --nf-btn-padding: var(--spacing-xs);
+      --nf-input-padding: var(--spacing-3xs) var(--spacing-xs);
+      --nf-input-size: var(--text-2xs);
+      --nf-input-line-height: var(--text-2xs--line-height);
+      --nf-input-width: 60px;
+      --nf-hint-size: var(--text-2xs);
+    }
     &[data-size="sm"] {
       --nf-label-size: var(--text-xs);
       --nf-btn-size: var(--text-xs);
       --nf-btn-width: 28px;
       --nf-btn-padding: var(--spacing-sm);
-      --nf-input-padding: var(--spacing-sm) var(--spacing);
+      --nf-input-padding: var(--spacing-2xs) var(--spacing-sm);
       --nf-input-size: var(--text-xs);
+      --nf-input-line-height: var(--text-xs--line-height);
       --nf-input-width: 80px;
-      --nf-hint-size: 10px;
+      --nf-hint-size: var(--text-xs);
     }
     &[data-size="md"] {
       --nf-label-size: var(--text-sm);
       --nf-btn-size: var(--text-sm);
       --nf-btn-width: 32px;
       --nf-btn-padding: var(--spacing);
-      --nf-input-padding: var(--spacing-sm) 14px;
-      --nf-input-size: var(--text-base);
+      --nf-input-padding: var(--spacing-xs) var(--spacing-md);
+      --nf-input-size: var(--text-sm);
+      --nf-input-line-height: var(--text-sm--line-height);
       --nf-input-width: 120px;
       --nf-hint-size: var(--text-xs);
     }
@@ -60,25 +81,34 @@
       --nf-btn-size: var(--text-base);
       --nf-btn-width: 40px;
       --nf-btn-padding: var(--spacing-md);
-      --nf-input-padding: var(--spacing-md) var(--spacing-lg);
+      --nf-input-padding: var(--spacing-sm) var(--spacing-lg);
       --nf-input-size: var(--text-base);
+      --nf-input-line-height: var(--text-base--line-height);
       --nf-input-width: 160px;
       --nf-hint-size: var(--text-sm);
     }
-
-    /* ===== Label ===== */
-    .react-aria-Label {
-      font-size: var(--nf-label-size);
-      font-weight: 500;
-      color: var(--fg);
-      margin-bottom: var(--spacing-xs);
+    &[data-size="xl"] {
+      --nf-label-size: var(--text-lg);
+      --nf-btn-size: var(--text-lg);
+      --nf-btn-width: 48px;
+      --nf-btn-padding: var(--spacing-lg);
+      --nf-input-padding: var(--spacing-md) var(--spacing-xl);
+      --nf-input-size: var(--text-lg);
+      --nf-input-line-height: var(--text-lg--line-height);
+      --nf-input-width: 200px;
+      --nf-hint-size: var(--text-base);
     }
 
-    &[data-variant="primary"] .react-aria-Label,
-    &[data-variant="secondary"] .react-aria-Label,
-    &[data-variant="tertiary"] .react-aria-Label,
-    &[data-variant="error"] .react-aria-Label {
-      color: var(--field-accent);
+    /* ===== Label ===== */
+    --label-font-size: var(--nf-label-size);
+    --label-font-weight: 500;
+    --label-margin: var(--spacing-xs);
+
+    &[data-variant="primary"],
+    &[data-variant="secondary"],
+    &[data-variant="tertiary"],
+    &[data-variant="error"] {
+      --label-color: var(--field-accent);
     }
 
     /* ===== Group Container ===== */
@@ -108,17 +138,11 @@
 
     /* ===== Buttons ===== */
     .react-aria-Button {
-      font-size: var(--nf-btn-size);
       width: var(--nf-btn-width);
       padding: var(--nf-btn-padding);
-      display: flex;
-      align-items: center;
-      justify-content: center;
       background: var(--bg-overlay);
       border: 1px solid var(--border);
       color: var(--fg);
-      cursor: pointer;
-      transition: all 200ms ease;
 
       &[slot="decrement"] {
         border-start-end-radius: 0;
@@ -173,18 +197,18 @@
 
     /* ===== Input ===== */
     /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
+    --input-padding: var(--nf-input-padding);
+    --input-font-size: var(--nf-input-size);
+    --input-line-height: var(--nf-input-line-height);
+
     .react-aria-Input {
-      border: 1px solid;
       border-radius: 0;
       margin: 0 -1px;
       z-index: 1;
-      font-size: var(--nf-input-size);
-      padding: var(--nf-input-padding);
       outline: none;
       width: var(--nf-input-width);
       flex: 1;
       text-align: center;
-      transition: all 200ms ease;
     }
 
     &[data-variant="primary"] .react-aria-Input,
@@ -247,10 +271,7 @@
       color: var(--fg-muted);
     }
 
-    .react-aria-FieldError {
-      font-size: var(--nf-hint-size);
-      color: var(--negative);
-      margin-top: var(--spacing-xs);
-    }
+    --error-font-size: var(--nf-hint-size);
+    --error-margin: var(--spacing-xs);
   }
 }

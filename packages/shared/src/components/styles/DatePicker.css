@@ -145,10 +145,7 @@
     }
 
     /* ===== FieldError / Description ===== */
-    .react-aria-FieldError {
-      font-size: var(--dp-hint-size);
-      color: var(--negative);
-    }
+    --error-font-size: var(--dp-hint-size);
 
     [slot="description"] {
       font-size: var(--dp-hint-size);

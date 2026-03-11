@@ -163,16 +163,19 @@
       height: var(--inspector-control-size);
     }
 
+    --input-border: 1px solid transparent;
+    --input-padding: var(--spacing-3xs);
+    --input-font-size: var(--text-xs);
+    --input-line-height: var(--text-xs--line-height);
+
     .react-aria-Input,
     .react-aria-TextArea {
-      background-color: transparent;
-      border: 1px solid transparent;
-      border-left-width: 0;
-      border-radius: var(--border-radius);
       font-size: var(--text-xs);
-      line-height: var(--text-xs--line-height);
-      padding: var(--spacing-3xs);
+      background-color: transparent;
+      border-left-width: 0;
       padding-inline-start: var(--spacing);
+      padding-top: 0;
+      padding-bottom: 0;
 
       white-space: nowrap;
       text-overflow: ellipsis;

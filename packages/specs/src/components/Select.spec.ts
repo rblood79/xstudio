@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface SelectProps {
   variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "XS" | "S" | "M" | "L" | "XL";
   label?: string;
   placeholder?: string;
   name?: string;
@@ -77,33 +77,53 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
     },
   },
 
+  // @sync BUTTON_SIZE_CONFIG (utils.ts) — Select trigger height = Button height
+  // CSS height = lineHeight + paddingY×2 + borderWidth×2 (명시적 height 없음)
   sizes: {
+    xs: {
+      height: 20,
+      paddingX: 4,
+      paddingY: 1,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.xs}" as TokenRef,
+      iconSize: 10,
+      gap: 2,
+    },
     sm: {
-      height: 32,
-      paddingX: 10,
-      paddingY: 4,
-      fontSize: "{typography.text-sm}" as TokenRef,
+      height: 22,
+      paddingX: 8,
+      paddingY: 2,
+      fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 4,
     },
     md: {
-      height: 40,
-      paddingX: 14,
-      paddingY: 8,
-      fontSize: "{typography.text-md}" as TokenRef,
+      height: 30,
+      paddingX: 12,
+      paddingY: 4,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 18,
       gap: 6,
     },
     lg: {
-      height: 48,
+      height: 42,
       paddingX: 16,
-      paddingY: 12,
-      fontSize: "{typography.text-lg}" as TokenRef,
-      borderRadius: "{radius.md}" as TokenRef,
+      paddingY: 8,
+      fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 22,
       gap: 8,
+    },
+    xl: {
+      height: 54,
+      paddingX: 24,
+      paddingY: 12,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
+      iconSize: 28,
+      gap: 10,
     },
   },
 

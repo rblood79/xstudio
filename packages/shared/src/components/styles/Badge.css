@@ -6,8 +6,6 @@
  * Sizes: sm, md, lg
  */
 
-@import "./base.css";
-
 @layer components {
   /* ========== Base Badge Styles ========== */
   .react-aria-Badge {

@@ -13,12 +13,13 @@
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
 
-    /* Size locals (md default) */
+    /* Size locals (md default) — @sync Button.css size variants */
     --df-label-size: var(--text-sm);
-    --df-input-padding: var(--spacing-sm) 14px;
-    --df-input-size: var(--text-base);
+    --df-input-padding: var(--spacing-xs) var(--spacing-md);
+    --df-input-size: var(--text-sm);
+    --df-input-line-height: var(--text-sm--line-height);
     --df-input-min-width: 150px;
-    --df-segment-size: var(--text-base);
+    --df-segment-size: var(--text-sm);
     --df-hint-size: var(--text-xs);
 
     /* ===== Variant ===== */
@@ -33,44 +34,62 @@
     }
 
     /* ===== Size ===== */
+    &[data-size="xs"] {
+      --df-label-size: var(--text-2xs);
+      --df-input-padding: var(--spacing-3xs) var(--spacing-xs);
+      --df-input-size: var(--text-2xs);
+      --df-input-line-height: var(--text-2xs--line-height);
+      --df-input-min-width: 100px;
+      --df-segment-size: var(--text-2xs);
+      --df-hint-size: var(--text-2xs);
+    }
     &[data-size="sm"] {
       --df-label-size: var(--text-xs);
-      --df-input-padding: var(--spacing-sm) var(--spacing);
+      --df-input-padding: var(--spacing-2xs) var(--spacing-sm);
       --df-input-size: var(--text-xs);
+      --df-input-line-height: var(--text-xs--line-height);
       --df-input-min-width: 120px;
       --df-segment-size: var(--text-xs);
-      --df-hint-size: 10px;
+      --df-hint-size: var(--text-xs);
     }
     &[data-size="md"] {
       --df-label-size: var(--text-sm);
-      --df-input-padding: var(--spacing-sm) 14px;
-      --df-input-size: var(--text-base);
+      --df-input-padding: var(--spacing-xs) var(--spacing-md);
+      --df-input-size: var(--text-sm);
+      --df-input-line-height: var(--text-sm--line-height);
       --df-input-min-width: 150px;
-      --df-segment-size: var(--text-base);
+      --df-segment-size: var(--text-sm);
       --df-hint-size: var(--text-xs);
     }
     &[data-size="lg"] {
       --df-label-size: var(--text-base);
-      --df-input-padding: var(--spacing-md) var(--spacing-lg);
+      --df-input-padding: var(--spacing-sm) var(--spacing-lg);
       --df-input-size: var(--text-base);
+      --df-input-line-height: var(--text-base--line-height);
       --df-input-min-width: 180px;
       --df-segment-size: var(--text-base);
       --df-hint-size: var(--text-sm);
     }
-
-    /* ===== Label ===== */
-    .react-aria-Label {
-      font-size: var(--df-label-size);
-      font-weight: 500;
-      color: var(--fg);
-      margin-bottom: var(--spacing-xs);
+    &[data-size="xl"] {
+      --df-label-size: var(--text-lg);
+      --df-input-padding: var(--spacing-md) var(--spacing-xl);
+      --df-input-size: var(--text-lg);
+      --df-input-line-height: var(--text-lg--line-height);
+      --df-input-min-width: 220px;
+      --df-segment-size: var(--text-lg);
+      --df-hint-size: var(--text-base);
     }
 
-    &[data-variant="primary"] .react-aria-Label,
-    &[data-variant="secondary"] .react-aria-Label,
-    &[data-variant="tertiary"] .react-aria-Label,
-    &[data-variant="error"] .react-aria-Label {
-      color: var(--field-accent);
+    /* ===== Label ===== */
+    --label-font-size: var(--df-label-size);
+    --label-font-weight: 500;
+    --label-margin: var(--spacing-xs);
+
+    &[data-variant="primary"],
+    &[data-variant="secondary"],
+    &[data-variant="tertiary"],
+    &[data-variant="error"] {
+      --label-color: var(--field-accent);
     }
 
     /* ===== DateInput Container ===== */
@@ -85,6 +104,7 @@
       white-space: nowrap;
       forced-color-adjust: none;
       font-size: var(--df-input-size);
+      line-height: var(--df-input-line-height);
       transition: all 200ms ease;
     }
 
@@ -181,10 +201,7 @@
       color: var(--fg-muted);
     }
 
-    .react-aria-FieldError {
-      font-size: var(--df-hint-size);
-      color: var(--negative);
-      margin-top: var(--spacing-xs);
-    }
+    --error-font-size: var(--df-hint-size);
+    --error-margin: var(--spacing-xs);
   }
 }

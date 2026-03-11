@@ -14,15 +14,24 @@
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
 
-    /* Size locals (md default) */
+    /* Size locals (md default) — @sync Button.css size variants */
     --combo-label-size: var(--text-sm);
-    --combo-input-padding: var(--spacing-sm) 14px;
+    --combo-input-padding: var(--spacing-xs) var(--spacing-md);
     --combo-input-padding-right: 30px;
-    --combo-input-font-size: var(--text-base);
+    --combo-input-font-size: var(--text-sm);
+    --combo-input-line-height: var(--text-sm--line-height);
     --combo-btn-size: 18px;
-    --combo-btn-margin-left: -26px;
-    --combo-btn-margin-right: var(--spacing);
+    --combo-btn-right: var(--spacing-xs);
     --combo-hint-size: var(--text-xs);
+
+    /* Button variable overrides */
+    --btn-display: flex;
+    --btn-justify: center;
+    --btn-radius: var(--radius-xs);
+    --btn-border: none;
+    --btn-padding: 0;
+    --btn-cursor: pointer;
+    --btn-transition: all 150ms ease;
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
@@ -36,50 +45,67 @@
     }
 
     /* ===== Size ===== */
+    &[data-size="xs"] {
+      --combo-label-size: var(--text-2xs);
+      --combo-input-padding: var(--spacing-3xs) var(--spacing-xs);
+      --combo-input-padding-right: calc(var(--spacing-lg) + var(--spacing-xs));
+      --combo-input-font-size: var(--text-2xs);
+      --combo-input-line-height: var(--text-2xs--line-height);
+      --combo-btn-size: 14px;
+      --combo-btn-right: var(--spacing-3xs);
+      --combo-hint-size: var(--text-2xs);
+    }
     &[data-size="sm"] {
       --combo-label-size: var(--text-xs);
-      --combo-input-padding: var(--spacing-sm) var(--spacing);
+      --combo-input-padding: var(--spacing-2xs) var(--spacing-sm);
       --combo-input-padding-right: calc(var(--spacing-lg) + var(--spacing));
       --combo-input-font-size: var(--text-xs);
+      --combo-input-line-height: var(--text-xs--line-height);
       --combo-btn-size: 20px;
-      --combo-btn-margin-left: calc(var(--spacing-lg) * -1);
-      --combo-btn-margin-right: var(--spacing-sm);
-      --combo-hint-size: 10px;
+      --combo-btn-right: var(--spacing-2xs);
+      --combo-hint-size: var(--text-xs);
     }
     &[data-size="md"] {
       --combo-label-size: var(--text-sm);
-      --combo-input-padding: var(--spacing-sm) 14px;
+      --combo-input-padding: var(--spacing-xs) var(--spacing-md);
       --combo-input-padding-right: 30px;
-      --combo-input-font-size: var(--text-base);
+      --combo-input-font-size: var(--text-sm);
+      --combo-input-line-height: var(--text-sm--line-height);
       --combo-btn-size: 18px;
-      --combo-btn-margin-left: -26px;
-      --combo-btn-margin-right: var(--spacing);
+      --combo-btn-right: var(--spacing-xs);
       --combo-hint-size: var(--text-xs);
     }
     &[data-size="lg"] {
       --combo-label-size: var(--text-base);
-      --combo-input-padding: var(--spacing-md) var(--spacing-lg);
+      --combo-input-padding: var(--spacing-sm) var(--spacing-lg);
       --combo-input-padding-right: calc(var(--spacing-3xl) + var(--spacing));
       --combo-input-font-size: var(--text-base);
+      --combo-input-line-height: var(--text-base--line-height);
       --combo-btn-size: 28px;
-      --combo-btn-margin-left: calc(var(--spacing-3xl) * -1);
-      --combo-btn-margin-right: var(--spacing-md);
+      --combo-btn-right: var(--spacing-sm);
       --combo-hint-size: var(--text-sm);
+    }
+    &[data-size="xl"] {
+      --combo-label-size: var(--text-lg);
+      --combo-input-padding: var(--spacing-md) var(--spacing-xl);
+      --combo-input-padding-right: calc(var(--spacing-3xl) + var(--spacing-md));
+      --combo-input-font-size: var(--text-lg);
+      --combo-input-line-height: var(--text-lg--line-height);
+      --combo-btn-size: 32px;
+      --combo-btn-right: var(--spacing-md);
+      --combo-hint-size: var(--text-base);
     }
 
     /* ===== Label ===== */
-    .react-aria-Label {
-      font-size: var(--combo-label-size);
-      font-weight: 500;
-      color: var(--fg);
-      margin-bottom: var(--spacing-xs);
-    }
+    --label-font-size: var(--combo-label-size);
+    --label-font-weight: 500;
+    --label-margin: var(--spacing-xs);
 
-    &[data-variant="primary"] .react-aria-Label,
-    &[data-variant="secondary"] .react-aria-Label,
-    &[data-variant="tertiary"] .react-aria-Label,
-    &[data-variant="error"] .react-aria-Label {
-      color: var(--field-accent);
+    &[data-variant="primary"],
+    &[data-variant="secondary"],
+    &[data-variant="tertiary"],
+    &[data-variant="error"] {
+      --label-color: var(--field-accent);
     }
 
     /* ===== Container ===== */
@@ -91,16 +117,14 @@
 
     /* ===== Input ===== */
     /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
+    --input-padding: var(--combo-input-padding);
+    --input-font-size: var(--combo-input-font-size);
+    --input-line-height: var(--combo-input-line-height);
+
     .react-aria-Input {
-      flex: 1;
-      padding: var(--combo-input-padding);
+      width: 100%;
       padding-right: var(--combo-input-padding-right);
-      margin: 0;
-      border: 1px solid;
-      border-radius: var(--border-radius);
-      font-size: var(--combo-input-font-size);
       outline: none;
-      transition: all 200ms ease;
       forced-color-adjust: none;
     }
 
@@ -142,21 +166,14 @@
 
     /* ===== Chevron Button ===== */
     .react-aria-Button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute;
+      right: var(--combo-btn-right);
+      top: 50%;
+      transform: translateY(-50%);
       width: var(--combo-btn-size);
       height: var(--combo-btn-size);
-      margin-left: var(--combo-btn-margin-left);
-      margin-right: var(--combo-btn-margin-right);
-      border-radius: var(--radius-xs);
       background: var(--bg-overlay);
       color: var(--fg);
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: all 150ms ease;
       forced-color-adjust: none;
       box-shadow: var(--shadow-sm);
 
@@ -165,11 +182,7 @@
       }
 
       &[data-pressed]:not([data-disabled]) {
-        background: color-mix(
-          in srgb,
-          var(--fg) 12%,
-          var(--bg-overlay)
-        );
+        background: color-mix(in srgb, var(--fg) 12%, var(--bg-overlay));
       }
 
       &[data-focus-visible] {
@@ -214,11 +227,8 @@
       color: var(--fg-muted);
     }
 
-    .react-aria-FieldError {
-      font-size: var(--combo-hint-size);
-      color: var(--negative);
-      margin-top: var(--spacing-xs);
-    }
+    --error-font-size: var(--combo-hint-size);
+    --error-margin: var(--spacing-xs);
   }
 
   /* ========== Popover ========== */

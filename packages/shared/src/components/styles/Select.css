@@ -14,13 +14,25 @@
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
 
-    /* Size locals (md default) */
+    /* Size locals (md default) — @sync Button.css size variants */
     --select-label-size: var(--text-sm);
-    --select-btn-padding: var(--spacing-sm) 14px;
-    --select-btn-font-size: var(--text-base);
+    /* padding: top right bottom left — right = top (paddingY) */
+    --select-btn-padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs)
+      var(--spacing-md);
+    --select-btn-font-size: var(--text-sm);
+    --select-btn-line-height: var(--text-sm--line-height);
     --select-chevron-size: 18px;
     --select-chevron-margin: var(--spacing);
     --select-hint-size: var(--text-xs);
+
+    /* Button variable overrides */
+    --btn-display: flex;
+    --btn-justify: space-between;
+    --btn-padding: var(--select-btn-padding);
+    --btn-font-size: var(--select-btn-font-size);
+    --btn-line-height: var(--select-btn-line-height);
+    --btn-cursor: pointer;
+    --btn-transition: all 200ms ease;
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
@@ -34,60 +46,77 @@
     }
 
     /* ===== Size ===== */
+    /* padding: top right bottom left — right = top (paddingY) */
+    &[data-size="xs"] {
+      --select-label-size: var(--text-2xs);
+      --select-btn-padding: var(--spacing-3xs) var(--spacing-3xs)
+        var(--spacing-3xs) var(--spacing-xs);
+      --select-btn-font-size: var(--text-2xs);
+      --select-btn-line-height: var(--text-2xs--line-height);
+      --select-chevron-size: 14px;
+      --select-chevron-margin: var(--spacing-xs);
+      --select-hint-size: var(--text-2xs);
+    }
     &[data-size="sm"] {
       --select-label-size: var(--text-xs);
-      --select-btn-padding: var(--spacing-sm) var(--spacing);
+      --select-btn-padding: var(--spacing-2xs) var(--spacing-2xs)
+        var(--spacing-2xs) var(--spacing-sm);
       --select-btn-font-size: var(--text-xs);
-      --select-chevron-size: 20px;
+      --select-btn-line-height: var(--text-xs--line-height);
+      --select-chevron-size: 16px;
       --select-chevron-margin: var(--spacing-sm);
-      --select-hint-size: 10px;
+      --select-hint-size: var(--text-2xs);
     }
     &[data-size="md"] {
       --select-label-size: var(--text-sm);
-      --select-btn-padding: var(--spacing-sm) 14px;
-      --select-btn-font-size: var(--text-base);
+      --select-btn-padding: var(--spacing-xs) var(--spacing-xs)
+        var(--spacing-xs) var(--spacing-md);
+      --select-btn-font-size: var(--text-sm);
+      --select-btn-line-height: var(--text-sm--line-height);
       --select-chevron-size: 18px;
       --select-chevron-margin: var(--spacing);
       --select-hint-size: var(--text-xs);
     }
     &[data-size="lg"] {
       --select-label-size: var(--text-base);
-      --select-btn-padding: var(--spacing-md) var(--spacing-lg);
+      --select-btn-padding: var(--spacing-sm) var(--spacing-sm)
+        var(--spacing-sm) var(--spacing-lg);
       --select-btn-font-size: var(--text-base);
-      --select-chevron-size: 28px;
+      --select-btn-line-height: var(--text-base--line-height);
+      --select-chevron-size: 22px;
       --select-chevron-margin: var(--spacing-md);
       --select-hint-size: var(--text-sm);
     }
-
-    /* ===== Label ===== */
-    .react-aria-Label {
-      font-size: var(--select-label-size);
-      font-weight: 500;
-      color: var(--fg);
-      margin-bottom: var(--spacing-xs);
+    &[data-size="xl"] {
+      --select-label-size: var(--text-lg);
+      --select-btn-padding: var(--spacing-md) var(--spacing-md)
+        var(--spacing-md) var(--spacing-xl);
+      --select-btn-font-size: var(--text-lg);
+      --select-btn-line-height: var(--text-lg--line-height);
+      --select-chevron-size: 28px;
+      --select-chevron-margin: var(--spacing-lg);
+      --select-hint-size: var(--text-base);
     }
 
-    &[data-variant="primary"] .react-aria-Label,
-    &[data-variant="secondary"] .react-aria-Label,
-    &[data-variant="tertiary"] .react-aria-Label,
-    &[data-variant="error"] .react-aria-Label {
-      color: var(--field-accent);
+    /* ===== Label ===== */
+    --label-font-size: var(--select-label-size);
+    --label-font-weight: 500;
+    --label-margin: var(--spacing-xs);
+
+    &[data-variant="primary"],
+    &[data-variant="secondary"],
+    &[data-variant="tertiary"],
+    &[data-variant="error"] {
+      --label-color: var(--field-accent);
     }
 
     /* ===== Button (Trigger) ===== */
     .react-aria-Button {
       text-align: left;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: var(--select-btn-padding);
       border: 1px solid var(--border);
       border-radius: var(--border-radius);
       background: var(--bg-raised);
       color: var(--fg);
-      font-size: var(--select-btn-font-size);
-      cursor: pointer;
-      transition: all 200ms ease;
       forced-color-adjust: none;
 
       &[data-hovered]:not([data-pressed]):not([data-disabled]) {
@@ -212,11 +241,8 @@
       color: var(--fg-muted);
     }
 
-    .react-aria-FieldError {
-      font-size: var(--select-hint-size);
-      color: var(--negative);
-      margin-top: var(--spacing-xs);
-    }
+    --error-font-size: var(--select-hint-size);
+    --error-margin: var(--spacing-xs);
   }
 
   /* ========== Popover ========== */

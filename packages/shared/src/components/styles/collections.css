@@ -1,5 +1,3 @@
-@import './base.css';
-
 @layer components {
   .react-aria-ListBox,
   .react-aria-GridList {
@@ -21,7 +19,6 @@
     }
     &[data-focus-within] {
       outline: 1px solid var(--focus-ring);
-
     }
   }
 

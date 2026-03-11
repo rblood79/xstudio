@@ -1,5 +1,3 @@
-@import "./base.css";
-
 @layer components {
   .component-search {
     z-index: 1;

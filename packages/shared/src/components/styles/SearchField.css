@@ -15,17 +15,27 @@
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
 
-    /* Size locals (md default) */
+    /* Size locals (md default) — @sync Button.css size variants */
     --sf-label-size: var(--text-sm);
-    --sf-input-padding: var(--spacing-sm) var(--spacing-xl) var(--spacing-sm)
-      14px;
-    --sf-input-size: var(--text-base);
+    --sf-input-padding: var(--spacing-xs) var(--spacing-xl) var(--spacing-xs)
+      var(--spacing-md);
+    --sf-input-size: var(--text-sm);
+    --sf-input-line-height: var(--text-sm--line-height);
     --sf-btn-width: 24px;
     --sf-btn-height: 24px;
     --sf-btn-margin-left: -32px;
     --sf-btn-margin-right: var(--spacing);
     --sf-btn-size: var(--text-xs);
     --sf-hint-size: var(--text-xs);
+
+    /* Button variable overrides */
+    --btn-radius: 50%;
+    --btn-font-size: var(--sf-btn-size);
+    --btn-line-height: 1;
+    --btn-border: none;
+    --btn-padding: 0;
+    --btn-cursor: pointer;
+    --btn-transition: all 150ms ease;
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
@@ -39,23 +49,38 @@
     }
 
     /* ===== Size ===== */
+    &[data-size="xs"] {
+      --sf-label-size: var(--text-2xs);
+      --sf-input-padding: var(--spacing-3xs) var(--spacing-lg)
+        var(--spacing-3xs) var(--spacing-xs);
+      --sf-input-size: var(--text-2xs);
+      --sf-input-line-height: var(--text-2xs--line-height);
+      --sf-btn-width: 16px;
+      --sf-btn-height: 16px;
+      --sf-btn-margin-left: -24px;
+      --sf-btn-margin-right: var(--spacing-xs);
+      --sf-btn-size: 8px;
+      --sf-hint-size: var(--text-2xs);
+    }
     &[data-size="sm"] {
       --sf-label-size: var(--text-xs);
-      --sf-input-padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-sm)
-        var(--spacing);
+      --sf-input-padding: var(--spacing-2xs) var(--spacing-lg)
+        var(--spacing-2xs) var(--spacing-sm);
       --sf-input-size: var(--text-xs);
+      --sf-input-line-height: var(--text-xs--line-height);
       --sf-btn-width: 20px;
       --sf-btn-height: 20px;
       --sf-btn-margin-left: -28px;
       --sf-btn-margin-right: var(--spacing-sm);
       --sf-btn-size: 10px;
-      --sf-hint-size: 10px;
+      --sf-hint-size: var(--text-xs);
     }
     &[data-size="md"] {
       --sf-label-size: var(--text-sm);
-      --sf-input-padding: var(--spacing-sm) var(--spacing-xl) var(--spacing-sm)
-        14px;
-      --sf-input-size: var(--text-base);
+      --sf-input-padding: var(--spacing-xs) var(--spacing-xl) var(--spacing-xs)
+        var(--spacing-md);
+      --sf-input-size: var(--text-sm);
+      --sf-input-line-height: var(--text-sm--line-height);
       --sf-btn-width: 24px;
       --sf-btn-height: 24px;
       --sf-btn-margin-left: -32px;
@@ -65,9 +90,10 @@
     }
     &[data-size="lg"] {
       --sf-label-size: var(--text-base);
-      --sf-input-padding: var(--spacing-md) var(--spacing-2xl) var(--spacing-md)
+      --sf-input-padding: var(--spacing-sm) var(--spacing-2xl) var(--spacing-sm)
         var(--spacing-lg);
       --sf-input-size: var(--text-base);
+      --sf-input-line-height: var(--text-base--line-height);
       --sf-btn-width: 28px;
       --sf-btn-height: 28px;
       --sf-btn-margin-left: -36px;
@@ -75,33 +101,44 @@
       --sf-btn-size: var(--text-sm);
       --sf-hint-size: var(--text-sm);
     }
-
-    /* ===== Label ===== */
-    .react-aria-Label {
-      grid-area: label;
-      font-size: var(--sf-label-size);
-      font-weight: 500;
-      color: var(--fg);
-      margin-bottom: var(--spacing-xs);
+    &[data-size="xl"] {
+      --sf-label-size: var(--text-lg);
+      --sf-input-padding: var(--spacing-md) var(--spacing-3xl) var(--spacing-md)
+        var(--spacing-xl);
+      --sf-input-size: var(--text-lg);
+      --sf-input-line-height: var(--text-lg--line-height);
+      --sf-btn-width: 32px;
+      --sf-btn-height: 32px;
+      --sf-btn-margin-left: -40px;
+      --sf-btn-margin-right: var(--spacing-lg);
+      --sf-btn-size: var(--text-base);
+      --sf-hint-size: var(--text-base);
     }
 
-    &[data-variant="primary"] .react-aria-Label,
-    &[data-variant="secondary"] .react-aria-Label,
-    &[data-variant="tertiary"] .react-aria-Label,
-    &[data-variant="error"] .react-aria-Label {
-      color: var(--field-accent);
+    /* ===== Label ===== */
+    --label-font-size: var(--sf-label-size);
+    --label-font-weight: 500;
+    --label-margin: var(--spacing-xs);
+
+    .react-aria-Label {
+      grid-area: label;
+    }
+
+    &[data-variant="primary"],
+    &[data-variant="secondary"],
+    &[data-variant="tertiary"],
+    &[data-variant="error"] {
+      --label-color: var(--field-accent);
     }
 
     /* ===== Input ===== */
     /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
+    --input-padding: var(--sf-input-padding);
+    --input-font-size: var(--sf-input-size);
+    --input-line-height: var(--sf-input-line-height);
+
     .react-aria-Input {
       grid-area: input;
-      width: 100%;
-      padding: var(--sf-input-padding);
-      margin: 0;
-      border: 1px solid;
-      border-radius: var(--border-radius);
-      font-size: var(--sf-input-size);
       outline: none;
       transition:
         border-color 200ms ease,
@@ -154,19 +191,10 @@
       grid-area: button;
       width: var(--sf-btn-width);
       height: var(--sf-btn-height);
-      border-radius: 50%;
       margin-left: var(--sf-btn-margin-left);
       margin-right: var(--sf-btn-margin-right);
-      font-size: var(--sf-btn-size);
-      line-height: 1;
-      vertical-align: middle;
-      text-align: center;
       background: var(--bg-overlay);
       color: var(--fg);
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      transition: all 150ms ease;
       forced-color-adjust: none;
 
       &[data-hovered]:not([data-disabled]) {
@@ -174,11 +202,7 @@
       }
 
       &[data-pressed]:not([data-disabled]) {
-        background: color-mix(
-          in srgb,
-          var(--fg) 12%,
-          var(--bg-overlay)
-        );
+        background: color-mix(in srgb, var(--fg) 12%, var(--bg-overlay));
       }
 
       &[data-focus-visible] {
@@ -223,11 +247,11 @@
       color: var(--fg-muted);
     }
 
+    --error-font-size: var(--sf-hint-size);
+    --error-margin: var(--spacing-xs);
+
     .react-aria-FieldError {
       grid-area: help;
-      font-size: var(--sf-hint-size);
-      color: var(--negative);
-      margin-top: var(--spacing-xs);
     }
   }
 }

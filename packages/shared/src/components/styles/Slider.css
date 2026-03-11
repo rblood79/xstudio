@@ -27,11 +27,11 @@
     gap: var(--spacing-sm);
 
     /* ===== Label ===== */
+    --label-font-weight: 500;
+
     .react-aria-Label {
       grid-area: label;
       text-align: left;
-      font-size: var(--text-sm);
-      font-weight: 500;
     }
 
     /* ===== Output ===== */
@@ -141,6 +141,8 @@
   /* ===== Size Variants ===== */
 
   .react-aria-Slider[data-size="sm"] {
+    --label-font-size: var(--text-xs);
+
     &[data-orientation="horizontal"] {
       .react-aria-SliderTrack {
         height: 20px;
@@ -161,10 +163,6 @@
       }
     }
 
-    .react-aria-Label {
-      font-size: var(--text-xs);
-    }
-
     .react-aria-SliderOutput {
       font-size: var(--text-xs);
     }
@@ -176,6 +174,8 @@
   }
 
   .react-aria-Slider[data-size="md"] {
+    --label-font-size: var(--text-sm);
+
     &[data-orientation="horizontal"] {
       .react-aria-SliderTrack {
         height: 24px;
@@ -196,10 +196,6 @@
       }
     }
 
-    .react-aria-Label {
-      font-size: var(--text-sm);
-    }
-
     .react-aria-SliderOutput {
       font-size: var(--text-sm);
     }
@@ -211,6 +207,8 @@
   }
 
   .react-aria-Slider[data-size="lg"] {
+    --label-font-size: var(--text-base);
+
     &[data-orientation="horizontal"] {
       .react-aria-SliderTrack {
         height: 28px;
@@ -229,10 +227,6 @@
           width: 8px;
         }
       }
-    }
-
-    .react-aria-Label {
-      font-size: var(--text-base);
     }
 
     .react-aria-SliderOutput {

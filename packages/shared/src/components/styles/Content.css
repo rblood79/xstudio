@@ -1,5 +1,3 @@
-@import './base.css';
-
 @layer components {
   /* Heading component */
   .react-aria-Heading {

@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface InputProps {
   variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "XS" | "S" | "M" | "L" | "XL";
   value?: string;
   placeholder?: string;
   label?: string;
@@ -66,11 +66,20 @@ export const InputSpec: ComponentSpec<InputProps> = {
 
   // @sync BUTTON_SIZE_CONFIG (utils.ts) — Input height = Button height
   // CSS height = lineHeight + paddingY×2 + borderWidth×2 (명시적 height 없음)
-  // sm: 16 + 2×2 + 1×2 = 22, md: 20 + 4×2 + 1×2 = 30, lg: 24 + 8×2 + 1×2 = 42
+  // xs: 16 + 1×2 + 1×2 = 20, sm: 16 + 2×2 + 1×2 = 22, md: 20 + 4×2 + 1×2 = 30
+  // lg: 24 + 8×2 + 1×2 = 42, xl: 28 + 12×2 + 1×2 = 54
   sizes: {
+    xs: {
+      height: 20,
+      paddingX: 4,
+      paddingY: 1,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.xs}" as TokenRef,
+      gap: 2,
+    },
     sm: {
       height: 22,
-      paddingX: 12,
+      paddingX: 8,
       paddingY: 2,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
@@ -78,7 +87,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
     },
     md: {
       height: 30,
-      paddingX: 16,
+      paddingX: 12,
       paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
@@ -86,11 +95,19 @@ export const InputSpec: ComponentSpec<InputProps> = {
     },
     lg: {
       height: 42,
-      paddingX: 24,
+      paddingX: 16,
       paddingY: 8,
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 8,
+    },
+    xl: {
+      height: 54,
+      paddingX: 24,
+      paddingY: 12,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
+      gap: 10,
     },
   },
 

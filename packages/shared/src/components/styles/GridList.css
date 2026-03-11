@@ -17,25 +17,17 @@
 
     /* 기본 variant 변수 */
     --gl-accent: var(--border);
-    --gl-accent-container: var(--color-primary-100);
-    --gl-on-accent-container: var(--color-primary-900);
-    --gl-drop-bg: color-mix(
-      in srgb,
-      var(--accent) 8%,
-      transparent
-    );
-    --gl-drop-bg-item: color-mix(
-      in srgb,
-      var(--accent) 12%,
-      transparent
-    );
+    --gl-accent-container: var(--accent-subtle);
+    --gl-on-accent-container: var(--fg-on-accent);
+    --gl-drop-bg: color-mix(in srgb, var(--accent) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--accent) 12%, transparent);
 
     /* 기본 Checkbox 변수 */
     --gl-cb-selected: var(--accent);
     --gl-cb-checkmark: var(--fg-on-accent);
-    --gl-cb-bg: var(--color-primary-100);
-    --gl-cb-selected-on: var(--color-primary-900);
-    --gl-cb-checkmark-on: var(--color-primary-100);
+    --gl-cb-bg: var(--accent-subtle);
+    --gl-cb-selected-on: var(--accent);
+    --gl-cb-checkmark-on: var(--fg-on-accent);
 
     /* 기본 size 변수 (md) */
     --gl-list-padding: var(--spacing-xs);
@@ -79,11 +71,7 @@
     }
 
     &[data-pressed] {
-      background: color-mix(
-        in srgb,
-        var(--fg) 8%,
-        var(--bg-raised)
-      );
+      background: color-mix(in srgb, var(--fg) 8%, var(--bg-raised));
     }
 
     &[data-focus-visible] {
@@ -92,8 +80,8 @@
     }
 
     &[data-selected] {
-      background: var(--color-primary-100);
-      color: var(--color-primary-900);
+      background: var(--accent-subtle);
+      color: var(--fg-on-accent);
       font-weight: 500;
 
       &[data-focus-visible] {
@@ -102,7 +90,7 @@
       }
 
       .react-aria-Button {
-        color: var(--color-primary-900);
+        color: var(--fg-on-accent);
       }
     }
 
@@ -222,28 +210,16 @@
 
   .react-aria-GridListItem[data-drop-target] {
     outline: 2px solid var(--accent);
-    background: color-mix(
-      in srgb,
-      var(--accent) 12%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
   }
 
   /* ========== Color Variants ========== */
   .react-aria-GridList[data-variant="primary"] {
     --gl-accent: var(--accent);
-    --gl-accent-container: var(--color-primary-100);
-    --gl-on-accent-container: var(--color-primary-900);
-    --gl-drop-bg: color-mix(
-      in srgb,
-      var(--accent) 8%,
-      transparent
-    );
-    --gl-drop-bg-item: color-mix(
-      in srgb,
-      var(--accent) 12%,
-      transparent
-    );
+    --gl-accent-container: var(--accent-subtle);
+    --gl-on-accent-container: var(--fg-on-accent);
+    --gl-drop-bg: color-mix(in srgb, var(--accent) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--accent) 12%, transparent);
   }
 
   .react-aria-GridList[data-variant="secondary"] {
@@ -251,11 +227,7 @@
     --gl-accent-container: var(--bg-inset);
     --gl-on-accent-container: var(--fg-emphasis);
     --gl-drop-bg: color-mix(in srgb, var(--bg-inset) 8%, transparent);
-    --gl-drop-bg-item: color-mix(
-      in srgb,
-      var(--bg-inset) 12%,
-      transparent
-    );
+    --gl-drop-bg-item: color-mix(in srgb, var(--bg-inset) 12%, transparent);
     --gl-cb-selected: var(--bg-inset);
     --gl-cb-checkmark: var(--color-white);
     --gl-cb-bg: var(--bg-inset);
@@ -265,8 +237,8 @@
 
   .react-aria-GridList[data-variant="tertiary"] {
     --gl-accent: var(--color-purple-600);
-    --gl-accent-container: var(--color-tertiary-100);
-    --gl-on-accent-container: var(--color-tertiary-900);
+    --gl-accent-container: var(--color-purple-100);
+    --gl-on-accent-container: var(--color-purple-900);
     --gl-drop-bg: color-mix(in srgb, var(--color-purple-600) 8%, transparent);
     --gl-drop-bg-item: color-mix(
       in srgb,
@@ -275,9 +247,9 @@
     );
     --gl-cb-selected: var(--color-purple-600);
     --gl-cb-checkmark: var(--color-white);
-    --gl-cb-bg: var(--color-tertiary-100);
-    --gl-cb-selected-on: var(--color-tertiary-900);
-    --gl-cb-checkmark-on: var(--color-tertiary-100);
+    --gl-cb-bg: var(--color-purple-100);
+    --gl-cb-selected-on: var(--color-purple-900);
+    --gl-cb-checkmark-on: var(--color-purple-100);
   }
 
   .react-aria-GridList[data-variant="error"] {
@@ -285,11 +257,7 @@
     --gl-accent-container: var(--color-error-100);
     --gl-on-accent-container: var(--color-error-900);
     --gl-drop-bg: color-mix(in srgb, var(--negative) 8%, transparent);
-    --gl-drop-bg-item: color-mix(
-      in srgb,
-      var(--negative) 12%,
-      transparent
-    );
+    --gl-drop-bg-item: color-mix(in srgb, var(--negative) 12%, transparent);
     --gl-cb-selected: var(--negative);
     --gl-cb-checkmark: var(--color-white);
     --gl-cb-bg: var(--color-error-100);
@@ -348,8 +316,8 @@
       }
 
       &[data-selected] {
-        background: var(--color-primary-100);
-        color: var(--color-primary-900);
+        background: var(--accent-subtle);
+        color: var(--fg-on-accent);
       }
     }
   }

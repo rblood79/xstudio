@@ -17,6 +17,12 @@
     width: fit-content;
     max-width: 100%;
     color: var(--fg);
+
+    /* Button variable overrides */
+    --btn-display: flex;
+    --btn-justify: center;
+    --btn-radius: var(--radius-sm);
+    --btn-padding: 0;
   }
 
   /* ========== Header Layout ========== */
@@ -40,11 +46,6 @@
   .react-aria-RangeCalendar .react-aria-Button {
     width: var(--text-3xl);
     height: var(--text-3xl);
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
   }
 
   .react-aria-CalendarGridHeader th {

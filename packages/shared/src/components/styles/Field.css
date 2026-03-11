@@ -1,5 +1,3 @@
-@import './base.css';
-
 @layer components {
   /* FieldGroup for grouping form elements */
   .react-aria-FieldGroup {

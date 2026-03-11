@@ -203,10 +203,7 @@
     }
 
     /* ===== FieldError / Description ===== */
-    .react-aria-FieldError {
-      font-size: var(--drp-hint-size);
-      color: var(--negative);
-    }
+    --error-font-size: var(--drp-hint-size);
 
     [slot="description"] {
       font-size: var(--drp-hint-size);
