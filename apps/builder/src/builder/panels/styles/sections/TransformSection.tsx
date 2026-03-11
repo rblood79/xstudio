@@ -277,7 +277,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
   return (
     <>
       {showSizeMode && (
-        <>
+        <div className="transform-row">
           <fieldset className="properties-aria size-mode-width">
             <legend className="fieldset-legend">W Sizing</legend>
             <SizeModeToggle
@@ -297,45 +297,47 @@ const TransformSectionContent = memo(function TransformSectionContent() {
               fillDisabledReason={heightFillReason}
             />
           </fieldset>
-        </>
+        </div>
       )}
-      <PropertyUnitInput
-        icon={RulerDimensionLine}
-        label="Width"
-        className="width"
-        value={displayWidth}
-        units={["reset", "fit-content", "px", "%", "vh", "vw"]}
-        onChange={(value) => updateStyleImmediate("width", value)}
-        onDrag={(value) => updateStylePreview("width", value)}
-        min={0}
-        max={9999}
-      />
-      <PropertyUnitInput
-        icon={RulerDimensionLine}
-        label="Height"
-        className="height"
-        value={displayHeight}
-        units={["reset", "fit-content", "px", "%", "vh", "vw"]}
-        onChange={(value) => updateStyleImmediate("height", value)}
-        onDrag={(value) => updateStylePreview("height", value)}
-        min={0}
-        max={9999}
-      />
-      <div className="fieldset-actions actions-size">
-        <SwatchIconButton
-          aria-label="Toggle constraints"
-          onPress={() => setShowConstraints((v) => !v)}
-        >
-          <ChevronsLeftRightEllipsis
-            color={iconProps.color}
-            size={iconProps.size}
-            strokeWidth={iconProps.strokeWidth}
-          />
-        </SwatchIconButton>
+      <div className="transform-row">
+        <PropertyUnitInput
+          icon={RulerDimensionLine}
+          label="Width"
+          className="width"
+          value={displayWidth}
+          units={["reset", "fit-content", "px", "%", "vh", "vw"]}
+          onChange={(value) => updateStyleImmediate("width", value)}
+          onDrag={(value) => updateStylePreview("width", value)}
+          min={0}
+          max={9999}
+        />
+        <PropertyUnitInput
+          icon={RulerDimensionLine}
+          label="Height"
+          className="height"
+          value={displayHeight}
+          units={["reset", "fit-content", "px", "%", "vh", "vw"]}
+          onChange={(value) => updateStyleImmediate("height", value)}
+          onDrag={(value) => updateStylePreview("height", value)}
+          min={0}
+          max={9999}
+        />
+        <div className="fieldset-actions actions-size">
+          <SwatchIconButton
+            aria-label="Toggle constraints"
+            onPress={() => setShowConstraints((v) => !v)}
+          >
+            <ChevronsLeftRightEllipsis
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.strokeWidth}
+            />
+          </SwatchIconButton>
+        </div>
       </div>
 
       {showConstraints && !styleValues.isBody && (
-        <>
+        <div className="transform-constraints">
           <PropertyUnitInput
             label="Min W"
             className="min-width"
@@ -413,7 +415,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
               )}
             </SwatchIconButton>
           </div>
-        </>
+        </div>
       )}
 
       {showSelfAlignment && (
@@ -457,36 +459,38 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         </div>
       )}
 
-      <PropertyUnitInput
-        icon={ArrowRightFromLine}
-        label="Left"
-        className="left"
-        value={styleValues.left}
-        units={["reset", "px", "%", "vh", "vw"]}
-        onChange={(value) => updateStyleImmediate("left", value)}
-        onDrag={(value) => updateStylePreview("left", value)}
-        min={-9999}
-        max={9999}
-      />
-      <PropertyUnitInput
-        icon={ArrowDownFromLine}
-        label="Top"
-        className="top"
-        value={styleValues.top}
-        units={["reset", "px", "%", "vh", "vw"]}
-        onChange={(value) => updateStyleImmediate("top", value)}
-        onDrag={(value) => updateStylePreview("top", value)}
-        min={-9999}
-        max={9999}
-      />
-      <div className="fieldset-actions actions-position">
-        <SwatchIconButton aria-label="More position options">
-          <EllipsisVertical
-            color={iconProps.color}
-            size={iconProps.size}
-            strokeWidth={iconProps.strokeWidth}
-          />
-        </SwatchIconButton>
+      <div className="transform-row">
+        <PropertyUnitInput
+          icon={ArrowRightFromLine}
+          label="Left"
+          className="left"
+          value={styleValues.left}
+          units={["reset", "px", "%", "vh", "vw"]}
+          onChange={(value) => updateStyleImmediate("left", value)}
+          onDrag={(value) => updateStylePreview("left", value)}
+          min={-9999}
+          max={9999}
+        />
+        <PropertyUnitInput
+          icon={ArrowDownFromLine}
+          label="Top"
+          className="top"
+          value={styleValues.top}
+          units={["reset", "px", "%", "vh", "vw"]}
+          onChange={(value) => updateStyleImmediate("top", value)}
+          onDrag={(value) => updateStylePreview("top", value)}
+          min={-9999}
+          max={9999}
+        />
+        <div className="fieldset-actions actions-position">
+          <SwatchIconButton aria-label="More position options">
+            <EllipsisVertical
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.strokeWidth}
+            />
+          </SwatchIconButton>
+        </div>
       </div>
     </>
   );
