@@ -90,6 +90,7 @@ selection/workflow/AI overlay 계산이 `SkiaOverlay`에 밀집되어 있다.
 - 프레임 경로에서 CPU 비용이 크다.
 - invalidation reason 추적이 어렵다.
 - 캐시 무효화 규칙이 분산된다.
+- 단계 분리 시 잘못 설계하면 같은 입력을 여러 번 순회하는 중복 계산 위험이 있다.
 
 ### 문제 4. invalidation 모델이 암묵적이다
 
@@ -393,17 +394,57 @@ type InvalidationReason =
 - 상위 파일은 orchestration만 담당
 - 실제 알고리즘과 렌더 함수는 하위 모듈로 이동
 
-### D5. DOM watcher는 runtime service로 분리한다
+### D5. Frame Build Pipeline은 "단계 분리"가 아니라 "공용 중간 산출물 재사용"을 전제로 한다
+
+이 ADR에서 말하는 pipeline 분리는
+단순히 함수를 여러 개로 나누는 것을 의미하지 않는다.
+
+핵심 원칙:
+
+1. 프레임 입력 snapshot은 한 번만 만든다.
+2. 큰 입력 맵(`elementsMap`, `layoutMap`, `boundsMap`, tree/stream`)은 가능한 한 한 번만 만든다.
+3. selection/workflow/AI overlay 단계는 content 단계의 공용 산출물을 재사용한다.
+4. 단계별 재계산은 invalidation reason이 허용할 때만 수행한다.
+
+즉 다음과 같은 구조를 지향한다.
+
+```ts
+FrameInputSnapshot
+  -> SharedSceneDerivedData
+  -> ContentBuildResult
+       - commandStream
+       - boundsMap
+  -> SelectionOverlayBuildResult   // boundsMap 재사용
+  -> WorkflowOverlayBuildResult    // shared scene data 재사용
+  -> AIBuildResult                 // boundsMap 재사용
+```
+
+금지하는 구조:
+
+- content 단계가 `layoutMap`을 순회
+- selection 단계가 다시 `layoutMap`을 순회
+- workflow 단계가 다시 `elementsMap`을 순회
+- ai 단계가 다시 bounds를 독립 계산
+
+허용하는 구조:
+
+- content 단계에서 만든 `boundsMap`을 selection/AI가 재사용
+- 공용 `FrameInputSnapshot`과 `SharedSceneDerivedData`를 모든 단계가 공유
+
+성능 목표는 "단계를 더 많이 만든다"가 아니라
+"같은 프레임에서 큰 계산을 한 번만 한다"이다.
+
+### D6. DOM watcher는 runtime service로 분리한다
 
 theme observer, resize observer, DPR change, context loss, image/font callback은
 렌더러 lifecycle 내부에 직접 섞지 않고 watcher service 또는 hook으로 분리한다.
 
-### D6. CanvasScrollbar는 layout shell 입력을 직접 받는다
+### D7. CanvasScrollbar는 layout shell 입력을 직접 받는다
 
 `querySelector('aside...')` 기반 측정은 제거 대상이다.
 패널 inset은 shell/layout store가 계산해서 전달해야 한다.
 
-### D7. generated artifact는 source tree에서 분리한다
+### D8. generated artifact는 source tree에서 분리한다
 
 `wasm-pkg`, `target`, 생성 JS/WASM 파일은
 source review와 static analysis를 방해하지 않도록 격리한다.
@@ -499,6 +540,7 @@ source review와 static analysis를 방해하지 않도록 격리한다.
 목표:
 
 - `SkiaOverlay`를 canvas lifecycle 중심으로 축소
+- frame build 단계 분리와 동시에 중복 계산을 제거
 
 분리 대상:
 
@@ -514,6 +556,13 @@ source review와 static analysis를 방해하지 않도록 격리한다.
 - `buildSelectionOverlayData()`
 - `buildWorkflowOverlayData()`
 - `buildFrameCaches()`
+
+추가 원칙:
+
+- `FrameInputSnapshot`은 프레임당 1회 생성
+- `SharedSceneDerivedData`는 프레임당 1회 생성
+- `boundsMap`은 가능한 한 content 단계에서 1회 생성 후 재사용
+- overlay 단계는 공용 산출물 소비만 담당
 
 ### Phase 5. Node Renderer 분해
 
@@ -601,6 +650,7 @@ source review와 static analysis를 방해하지 않도록 격리한다.
 3. content render와 overlay render의 invalidation 구분
 4. 텍스트/테마/resource 계산의 비프레임화
 5. DOM 측정과 렌더 경로 분리
+6. 같은 프레임에서 큰 맵/트리/바운드 계산은 최대 1회만 수행
 
 측정 지표:
 
@@ -669,6 +719,8 @@ source review와 static analysis를 방해하지 않도록 격리한다.
 - `SkiaOverlay`가 frame pipeline orchestration만 담당한다.
 - frame build 단계가 독립 모듈로 분리된다.
 - 성능 수치가 baseline 대비 악화되지 않는다.
+- `layoutMap`, `elementsMap`, `boundsMap`의 중복 순회가 증가하지 않는다.
+- selection/workflow/AI 단계가 content 공용 산출물을 재사용한다.
 
 ### G5. Node Renderer Decomposition
 
