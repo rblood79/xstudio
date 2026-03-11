@@ -689,6 +689,7 @@ export const renderSelect = (
       data-element-id={element.id}
       style={elementProps.style}
       className={element.props.className}
+      size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       label={processedLabel}
       description={
         elementProps.description
@@ -927,6 +928,7 @@ export const renderComboBox = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
       label={String(element.props.label || "")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}

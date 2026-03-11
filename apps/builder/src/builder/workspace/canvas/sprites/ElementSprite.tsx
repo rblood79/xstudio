@@ -1479,7 +1479,7 @@ export const ElementSprite = memo(function ElementSprite({
       style?.borderRadius !== null &&
       style?.borderRadius !== "";
     const size = isUIComponent
-      ? String(props?.size || tagGroupAncestorSize || "M")
+      ? String(props?.size || tagGroupAncestorSize || "md")
       : "";
     const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
     let effectiveBorderRadius: number | [number, number, number, number] =

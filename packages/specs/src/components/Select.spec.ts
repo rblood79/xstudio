@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface SelectProps {
   variant?: "default" | "accent" | "negative";
-  size?: "XS" | "S" | "M" | "L" | "XL";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   label?: string;
   placeholder?: string;
   name?: string;
@@ -48,27 +48,27 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      background: "{color.elevated}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
-      borderHover: "{color.accent}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+      borderHover: "{color.border-hover}" as TokenRef,
     },
     accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      background: "{color.elevated}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
       borderHover: "{color.accent}" as TokenRef,
     },
     negative: {
-      background: "{color.base}" as TokenRef,
+      background: "{color.elevated}" as TokenRef,
       backgroundHover: "{color.negative-subtle}" as TokenRef,
       backgroundPressed: "{color.negative-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
@@ -177,7 +177,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             : parseFloat(String(styleBw)) || 0
           : defaultBw;
 
-      // size.fontSize는 TokenRef 문자열('{typography.text-md}')일 수 있으므로
+      // size.fontSize는 TokenRef 문자열('{typography.text-sm}')일 수 있으므로
       // resolveToken으로 숫자 변환 후 산술 연산에 사용
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
       const resolvedFs =
@@ -188,14 +188,11 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             : rawFontSize;
       const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
 
-      // CSS 정합성: React-Aria Select 실제 렌더링 기준
-      // .react-aria-Label: fontSize=14, lineHeight=1.5 → height=21
-      // gap: 8px (flex gap)
-      // button: height = fontSize + paddingY*2 + 4 = 34px (md 기준, Select 버튼은 input보다 4px 높음)
+      // CSS 정합성: size.height는 CSS와 동기화된 값 (lineHeight + paddingY*2 + borderWidth*2)
       const labelLineHeight = Math.ceil(fontSize * 1.5);
       const labelGap = 8;
-      const labelOffset = labelLineHeight + labelGap; // 29px for md
-      const triggerHeight = fontSize + (size.paddingY as number) * 2 + 4; // 34px for md
+      const labelOffset = labelLineHeight + labelGap;
+      const triggerHeight = size.height as number;
       const triggerY = props.label ? labelOffset : 0;
 
       const fwRaw = props.style?.fontWeight;
@@ -273,6 +270,8 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
         const displayText =
           props.selectedText || props.value || props.placeholder || "";
         if (displayText) {
+          const isPlaceholder =
+            !props.selectedText && !props.value && !!props.placeholder;
           shapes.push({
             type: "text" as const,
             x: paddingX,
@@ -280,10 +279,9 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             text: displayText,
             fontSize,
             fontFamily: ff,
-            fill:
-              props.selectedText || props.value
-                ? textColor
-                : ("{color.neutral-subdued}" as TokenRef),
+            fill: isPlaceholder
+              ? ("{color.neutral-subdued}" as TokenRef)
+              : textColor,
             align: textAlign,
             baseline: "middle" as const,
           });
@@ -332,7 +330,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
           width,
           height: dropdownHeight,
           radius: borderRadius,
-          fill: "{color.layer-2}" as TokenRef,
+          fill: "{color.layer-1}" as TokenRef,
         });
         shapes.push({
           type: "border" as const,

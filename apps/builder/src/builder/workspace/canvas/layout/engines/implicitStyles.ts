@@ -24,18 +24,27 @@ export interface ImplicitStyleResult {
 
 // ─── 내부 상수 ──────────────────────────────────────────────────────
 
-/** ComboBox/Select/SelectTrigger/ComboBoxWrapper 공통 spec padding */
-const SPEC_PADDING: Record<string, { x: number; y: number }> = {
-  sm: { x: 10, y: 4 },
-  md: { x: 14, y: 8 },
-  lg: { x: 16, y: 12 },
-};
+/**
+ * ComboBox/Select/SelectTrigger/ComboBoxWrapper 공통 spec padding
+ * @sync Select.css / ComboBox.css size variants
+ * CSS padding: top right bottom left — right = top (paddingY), left = paddingLeft
+ */
+const SPEC_PADDING: Record<string, { left: number; right: number; y: number }> =
+  {
+    xs: { left: 4, right: 1, y: 1 },
+    sm: { left: 8, right: 2, y: 2 },
+    md: { left: 12, right: 4, y: 4 },
+    lg: { left: 16, right: 8, y: 8 },
+    xl: { left: 24, right: 12, y: 12 },
+  };
 
 /** SelectTrigger/ComboBoxWrapper spec gap (SelectValue ↔ SelectIcon 간격) */
 const SPEC_TRIGGER_GAP: Record<string, number> = {
+  xs: 2,
   sm: 4,
   md: 6,
   lg: 8,
+  xl: 10,
 };
 
 /** Checkbox/Radio indicator 크기 (spec shapes 렌더링, Taffy 트리 밖) */
@@ -76,8 +85,8 @@ function withSpecPadding(
   const userPad = hasUserPadding(style) ? parsePadding(style) : null;
   return {
     ...style,
-    paddingLeft: userPad ? userPad.left : specPad.x,
-    paddingRight: userPad ? userPad.right : specPad.x,
+    paddingLeft: userPad ? userPad.left : specPad.left,
+    paddingRight: userPad ? userPad.right : specPad.right,
     paddingTop: userPad ? userPad.top : specPad.y,
     paddingBottom: userPad ? userPad.bottom : specPad.y,
   };
@@ -261,6 +270,8 @@ export function applyImplicitStyles(
           flexDirection: "row",
           alignItems: "center",
           gap: parentStyle.gap ?? specGap,
+          // CSS .react-aria-Button: border: 1px solid
+          borderWidth: parentStyle.borderWidth ?? 1,
         },
         sizeName,
       ),
@@ -305,6 +316,8 @@ export function applyImplicitStyles(
           flexDirection: "row",
           alignItems: "center",
           gap: parentStyle.gap ?? specGap,
+          // CSS .combobox-container: border: 1px solid
+          borderWidth: parentStyle.borderWidth ?? 1,
         },
         sizeName,
       ),

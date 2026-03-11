@@ -16,7 +16,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface ComboBoxProps {
   variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   label?: string;
   placeholder?: string;
   name?: string;
@@ -50,27 +50,27 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      background: "{color.elevated}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
-      borderHover: "{color.accent}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+      borderHover: "{color.border-hover}" as TokenRef,
     },
     accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      background: "{color.elevated}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
       borderHover: "{color.accent}" as TokenRef,
     },
     negative: {
-      background: "{color.base}" as TokenRef,
+      background: "{color.elevated}" as TokenRef,
       backgroundHover: "{color.negative-subtle}" as TokenRef,
       backgroundPressed: "{color.negative-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
@@ -79,33 +79,52 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
     },
   },
 
+  // @sync Select.spec.ts sizes — CSS height = lineHeight + paddingY×2 + borderWidth×2
   sizes: {
-    sm: {
-      height: 32,
-      paddingX: 10,
-      paddingY: 4,
-      fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: "{radius.sm}" as TokenRef,
+    xs: {
+      height: 20,
+      paddingX: 4,
+      paddingY: 1,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.xs}" as TokenRef,
       iconSize: 14,
+      gap: 2,
+    },
+    sm: {
+      height: 22,
+      paddingX: 8,
+      paddingY: 2,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
+      iconSize: 16,
       gap: 4,
     },
     md: {
-      height: 40,
-      paddingX: 14,
-      paddingY: 8,
-      fontSize: "{typography.text-md}" as TokenRef,
+      height: 30,
+      paddingX: 12,
+      paddingY: 4,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 18,
       gap: 6,
     },
     lg: {
-      height: 48,
+      height: 42,
       paddingX: 16,
-      paddingY: 12,
-      fontSize: "{typography.text-lg}" as TokenRef,
-      borderRadius: "{radius.md}" as TokenRef,
+      paddingY: 8,
+      fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 22,
       gap: 8,
+    },
+    xl: {
+      height: 54,
+      paddingX: 24,
+      paddingY: 12,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
+      iconSize: 28,
+      gap: 10,
     },
   },
 
@@ -162,7 +181,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             : parseFloat(String(styleBw)) || 0
           : defaultBw;
 
-      // size.fontSize는 TokenRef 문자열('{typography.text-md}')일 수 있으므로
+      // size.fontSize는 TokenRef 문자열('{typography.text-sm}')일 수 있으므로
       // resolveToken으로 숫자 변환 후 산술 연산에 사용
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
       const resolvedFs =
@@ -173,14 +192,11 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             : rawFontSize;
       const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
 
-      // CSS 정합성: React-Aria ComboBox 실제 렌더링 기준
-      // .react-aria-Label: fontSize=14, lineHeight=1.5 → height=21
-      // gap: 8px (flex gap)
-      // input: height = fontSize + paddingY*2 = 30px (md 기준)
+      // CSS 정합성: size.height는 CSS와 동기화된 값 (lineHeight + paddingY*2 + borderWidth*2)
       const labelLineHeight = Math.ceil(fontSize * 1.5);
       const labelGap = 8;
-      const labelOffset = labelLineHeight + labelGap; // 29px for md
-      const inputHeight = fontSize + (size.paddingY as number) * 2; // 30px for md
+      const labelOffset = labelLineHeight + labelGap;
+      const inputHeight = size.height as number;
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight =
@@ -232,7 +248,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           });
         }
 
-        // 입력 영역 배경 — CSS 정합: y=labelOffset(29), height=inputHeight(30)
+        // 입력 영역 배경
         shapes.push({
           id: "input",
           type: "roundRect" as const,
@@ -257,9 +273,10 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           });
         }
 
-        // 입력 텍스트
+        // 입력 텍스트 또는 placeholder
         const displayText = props.inputValue || props.placeholder || "";
         if (displayText) {
+          const isPlaceholder = !props.inputValue && !!props.placeholder;
           shapes.push({
             type: "text" as const,
             x: paddingX,
@@ -267,15 +284,15 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
             text: displayText,
             fontSize,
             fontFamily: ff,
-            fill: props.inputValue
-              ? textColor
-              : ("{color.neutral-subdued}" as TokenRef),
+            fill: isPlaceholder
+              ? ("{color.neutral-subdued}" as TokenRef)
+              : textColor,
             align: textAlign,
             baseline: "middle" as const,
           });
         }
 
-        // 쉐브론 아이콘 (Lucide chevron-down SVG 경로)
+        // 쉐브론 아이콘
         const chevX = width - paddingX - chevronSize / 2;
         const chevY = inputY + inputHeight / 2;
         shapes.push({
@@ -323,7 +340,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
           width,
           height: dropdownHeight,
           radius: borderRadius,
-          fill: "{color.layer-2}" as TokenRef,
+          fill: "{color.layer-1}" as TokenRef,
         });
         shapes.push({
           type: "border" as const,

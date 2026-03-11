@@ -65,7 +65,7 @@ export function createSelectDefinition(
           {
             tag: "SelectValue",
             props: {
-              children: "Choose an option...",
+              placeholder: "Choose an option...",
               style: { flex: 1, fontSize: 14 },
             } as ComponentElementProps,
             ...ownerFields,

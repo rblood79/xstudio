@@ -891,6 +891,27 @@ function traversePostOrder(
     }
   }
 
+  // Select/ComboBox: 부모 size를 SelectTrigger/ComboBoxWrapper 자식에 위임
+  // calculateContentHeight에서 trigger/wrapper 높이를 size별로 정확히 계산하기 위해 필요
+  if (containerTag === "select" || containerTag === "combobox") {
+    const parentSize = (rawElement.props as Record<string, unknown> | undefined)
+      ?.size as string | undefined;
+    if (parentSize) {
+      const wrapperTag =
+        containerTag === "select" ? "SelectTrigger" : "ComboBoxWrapper";
+      const prevGetChildElements = effectiveGetChildElements;
+      effectiveGetChildElements = (id: string) => {
+        const children = prevGetChildElements(id);
+        return children.map((child) => {
+          if (child.tag !== wrapperTag) return child;
+          const cp = child.props as Record<string, unknown> | undefined;
+          if (cp?.size) return child;
+          return { ...child, props: { ...child.props, size: parentSize } };
+        });
+      };
+    }
+  }
+
   // Breadcrumbs: filteredChildren=[]로 Taffy 자식 노드를 만들지 않지만,
   // enrichWithIntrinsicSize에는 원본 자식(rawChildren)을 전달하여
   // calculateContentWidth가 각 Breadcrumb 텍스트로 fit-content 폭을 산출하도록 함

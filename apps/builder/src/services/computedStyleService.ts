@@ -297,7 +297,7 @@ export function computeSyntheticStyle(
   if (!element) return {};
 
   const tag = element.type;
-  const size = (element.properties?.size as string) ?? "M";
+  const size = (element.properties?.size as string) ?? "md";
   const variant = (element.properties?.variant as string) ?? "default";
 
   // 캐시 확인

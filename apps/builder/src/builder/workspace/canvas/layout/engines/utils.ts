@@ -89,7 +89,7 @@ export function getPhantomIndicatorSpace(
 ): { width: number; height: number; gap: number } | null {
   const config = PHANTOM_INDICATOR_CONFIGS[tag];
   if (!config) return null;
-  const s = (size ?? "M") as "sm" | "md" | "lg";
+  const s = (size ?? "md") as "sm" | "md" | "lg";
   const w = config.widths[s] ?? config.widths.md;
   const h = config.heights[s] ?? config.heights.md;
   const gap = config.gaps[s] ?? config.gaps.md;
@@ -1727,16 +1727,31 @@ export function calculateContentHeight(
     return barHeight;
   }
 
-  // 3. CardHeader/CardContent/SelectTrigger: 투명 컨테이너 — 자식 높이 합산/max
+  // 3. SelectTrigger/ComboBoxWrapper: content-box 높이 반환
+  // CSS border-box 높이 = lineHeight + paddingY*2 + borderWidth*2
+  // calculateContentHeight는 content-box만 반환 → enrichWithIntrinsicSize에서 padding/border 추가
+  // content-box = border-box - paddingY*2 (border는 SelectTrigger에 없고 부모 Button에 있음)
+  if (tag === "selecttrigger" || tag === "comboboxwrapper") {
+    const parentProps = element.props as Record<string, unknown> | undefined;
+    const parentSize = (parentProps?.size as string) ?? "md";
+    // @sync Select.spec.ts / ComboBox.spec.ts sizes
+    // content-box = border-box - paddingY*2 - borderWidth*2
+    // borderWidth=1 (CSS .react-aria-Button / .combobox-container)
+    const TRIGGER_CONTENT_HEIGHTS: Record<string, number> = {
+      xs: 16, // 20 - 1*2 - 1*2
+      sm: 16, // 22 - 2*2 - 1*2
+      md: 20, // 30 - 4*2 - 1*2
+      lg: 24, // 42 - 8*2 - 1*2
+      xl: 28, // 54 - 12*2 - 1*2
+    };
+    return TRIGGER_CONTENT_HEIGHTS[parentSize] ?? 20;
+  }
+
+  // 3b. CardHeader/CardContent: 투명 컨테이너 — 자식 높이 합산/max
   // Card의 새 트리 구조(Card → CardHeader → Heading, Card → CardContent → Description)에서
   // 각 래퍼가 자신의 자식 높이를 올바르게 반환해야 Card 전체 높이 계산이 정확해짐
-  // SelectTrigger: Compositional Architecture — flex row 자식(SelectValue, SelectIcon) max 높이
   // flexDirection에 따라: column → 합산+gap, row → max (일반 flex 컨테이너와 동일)
-  if (
-    tag === "cardheader" ||
-    tag === "cardcontent" ||
-    tag === "selecttrigger"
-  ) {
+  if (tag === "cardheader" || tag === "cardcontent") {
     if (childElements && childElements.length > 0) {
       const gapValue = parseNumericValue(style?.gap) ?? 8;
       const flexDir = (style?.flexDirection as string) || "column";
@@ -1953,10 +1968,13 @@ export function calculateContentHeight(
   // 3.6c. ComboBox/Select: 자식 기반 동적 높이 계산 (Card 패턴)
   // Select/ComboBox: 실제 visible 자식들의 높이 합산 + gap (flexDirection:column)
   // Dropdown: 레거시 spec shapes 기반 계산
+  // @sync Select.spec.ts / ComboBox.spec.ts sizes.height
   const COMBOBOX_INPUT_HEIGHTS: Record<string, number> = {
-    sm: 20,
+    xs: 20,
+    sm: 22,
     md: 30,
-    lg: 40,
+    lg: 42,
+    xl: 54,
   };
   // SelectItem 등 드롭다운 전용 자식은 collapsed 상태에서 비표시
   const SELECT_HIDDEN_CHILDREN = new Set([
@@ -2000,38 +2018,10 @@ export function calculateContentHeight(
         let childH: number;
 
         if (child.tag === wrapperTag) {
-          // SelectTrigger/ComboBoxWrapper: 자식 높이(row max) + padding
-          const wrapperChildren = getChildElements?.(child.id);
-          let wrapperContentH = 0;
-          if (wrapperChildren && wrapperChildren.length > 0) {
-            for (const wc of wrapperChildren) {
-              const wcStyle = (wc.props?.style || {}) as Record<
-                string,
-                unknown
-              >;
-              const wcH =
-                typeof wcStyle.height === "number"
-                  ? wcStyle.height
-                  : Math.ceil(
-                      (parseFloat(String(wcStyle.fontSize ?? 14)) || 14) * 1.5,
-                    );
-              if (wcH > wrapperContentH) wrapperContentH = wcH;
-            }
-          } else {
-            wrapperContentH = Math.ceil(14 * 1.5);
-          }
-          // Wrapper padding (store 값 또는 spec 기본값)
-          const hasWrapperPadding =
-            childStyle.padding !== undefined ||
-            childStyle.paddingTop !== undefined ||
-            childStyle.paddingBottom !== undefined;
-          if (hasWrapperPadding) {
-            const wrapperPad = parsePadding(childStyle);
-            childH = wrapperContentH + wrapperPad.top + wrapperPad.bottom;
-          } else {
-            const specPadY: Record<string, number> = { sm: 8, md: 16, lg: 24 };
-            childH = wrapperContentH + (specPadY[sizeName] ?? 16);
-          }
+          // SelectTrigger/ComboBoxWrapper: spec size.height를 직접 사용
+          // CSS에서 trigger/wrapper 높이 = lineHeight + paddingY*2 + borderWidth*2
+          // 이 값은 spec sizes.height에 이미 반영되어 있음
+          childH = COMBOBOX_INPUT_HEIGHTS[sizeName] ?? 30;
         } else if (
           childTag === "label" ||
           childTag === "description" ||

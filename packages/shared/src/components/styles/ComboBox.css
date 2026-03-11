@@ -112,64 +112,150 @@
     .combobox-container {
       display: flex;
       align-items: center;
-      position: relative;
+      gap: var(--btn-gap, var(--spacing-sm));
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius);
+      background: var(--bg-raised);
+      overflow: hidden;
+      transition: all 200ms ease;
+      padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs)
+        var(--spacing-md);
+    }
+
+    &:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not(
+            [data-disabled]
+          )
+      ),
+    &:has(.react-aria-Button[data-hovered]:not([data-disabled])) {
+      .combobox-container {
+        border-color: var(--border-hover);
+        background: var(--bg-overlay);
+      }
+    }
+
+    &:has(.react-aria-Input[data-focused]),
+    &:has(.react-aria-Input[data-focus-within]),
+    &:has(.react-aria-Button[data-focus-visible]) {
+      .combobox-container {
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+      }
+    }
+
+    &[data-invalid] .combobox-container {
+      border-color: var(--negative);
+    }
+
+    &[data-disabled] .combobox-container {
+      background: color-mix(in srgb, var(--fg) 4%, transparent);
+      border-color: color-mix(in srgb, var(--fg) 12%, transparent);
+      opacity: 0.38;
     }
 
     /* ===== Input ===== */
-    /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
     --input-padding: var(--combo-input-padding);
     --input-font-size: var(--combo-input-font-size);
     --input-line-height: var(--combo-input-line-height);
 
     .react-aria-Input {
-      width: 100%;
-      padding-right: var(--combo-input-padding-right);
+      flex: 1 1 auto;
+      min-width: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
       outline: none;
       forced-color-adjust: none;
+      padding: 0;
     }
 
-    /* Variant-accented: override --inset-* vars for accent styling */
-    &[data-variant="primary"],
-    &[data-variant="secondary"],
-    &[data-variant="tertiary"],
-    &[data-variant="error"] {
-      --inset-border: var(--field-accent);
-      --inset-hover-border: var(--field-accent);
-      --inset-hover-bg: var(--field-accent-container);
-      --inset-focus-color: var(--field-accent);
-      --inset-focus-bg: var(--field-accent-container);
+    &[data-variant="primary"] .combobox-container,
+    &[data-variant="secondary"] .combobox-container,
+    &[data-variant="tertiary"] .combobox-container,
+    &[data-variant="error"] .combobox-container {
+      border-color: var(--field-accent);
     }
 
-    /* ===== Filled Variant ===== */
-    &[data-variant="filled"] .react-aria-Input {
+    &[data-variant="primary"]:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not(
+            [data-disabled]
+          )
+      )
+      .combobox-container,
+    &[data-variant="primary"]:has(.react-aria-Button[data-hovered]:not([data-disabled]))
+      .combobox-container,
+    &[data-variant="secondary"]:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not(
+            [data-disabled]
+          )
+      )
+      .combobox-container,
+    &[data-variant="secondary"]:has(
+        .react-aria-Button[data-hovered]:not([data-disabled])
+      )
+      .combobox-container,
+    &[data-variant="tertiary"]:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not(
+            [data-disabled]
+          )
+      )
+      .combobox-container,
+    &[data-variant="tertiary"]:has(
+        .react-aria-Button[data-hovered]:not([data-disabled])
+      )
+      .combobox-container,
+    &[data-variant="error"]:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not(
+            [data-disabled]
+          )
+      )
+      .combobox-container,
+    &[data-variant="error"]:has(.react-aria-Button[data-hovered]:not([data-disabled]))
+      .combobox-container {
+      background: var(--field-accent-container);
+      border-color: var(--field-accent);
+    }
+
+    &[data-variant="filled"] .combobox-container {
       background: var(--accent-subtle);
-      border-color: transparent;
       border-bottom: 2px solid var(--border);
       border-radius: var(--border-radius) var(--border-radius) 0 0;
-
-      &[data-focused] {
-        outline: none;
-        border-bottom-color: var(--accent);
-        background: var(--bg-overlay);
-      }
-
-      &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        background: var(--bg-overlay);
-        border-bottom-color: var(--border-hover);
-      }
+      border-color: transparent;
     }
 
-    /* Invalid: default handled by .inset; filled variant override */
-    &[data-variant="filled"][data-invalid] .react-aria-Input {
+    &[data-variant="filled"]:has(.react-aria-Input[data-focused])
+      .combobox-container,
+    &[data-variant="filled"]:has(.react-aria-Input[data-focus-within])
+      .combobox-container,
+    &[data-variant="filled"]:has(.react-aria-Button[data-focus-visible])
+      .combobox-container {
+      outline: none;
+      border-bottom-color: var(--accent);
+      background: var(--bg-overlay);
+    }
+
+    &[data-variant="filled"]:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not(
+            [data-disabled]
+          )
+      )
+      .combobox-container,
+    &[data-variant="filled"]:has(.react-aria-Button[data-hovered]:not([data-disabled]))
+      .combobox-container {
+      background: var(--bg-overlay);
+      border-bottom-color: var(--border-hover);
+    }
+
+    /* Invalid: filled variant override */
+    &[data-variant="filled"][data-invalid] .combobox-container {
       border-bottom-color: var(--negative);
     }
 
     /* ===== Chevron Button ===== */
     .react-aria-Button {
-      position: absolute;
-      right: var(--combo-btn-right);
-      top: 50%;
-      transform: translateY(-50%);
+      position: static;
+      flex: 0 0 auto;
       width: var(--combo-btn-size);
       height: var(--combo-btn-size);
       background: var(--bg-overlay);
