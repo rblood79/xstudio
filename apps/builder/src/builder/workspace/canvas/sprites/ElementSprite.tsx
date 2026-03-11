@@ -1117,6 +1117,27 @@ export const ElementSprite = memo(function ElementSprite({
     return null;
   });
 
+  // 🚀 Select/ComboBox → SelectIcon/ComboBoxTrigger: 부모의 iconName 전파
+  const ICON_DELEGATION_TAGS = new Set(["SelectIcon", "ComboBoxTrigger"]);
+  const parentDelegatedIconName = useStore((state) => {
+    if (!ICON_DELEGATION_TAGS.has(element.tag) || !element.parent_id)
+      return null;
+    // SelectIcon → SelectTrigger → Select (2단계)
+    // ComboBoxTrigger → ComboBoxWrapper → ComboBox (2단계)
+    const parent = state.elementsMap.get(element.parent_id);
+    if (!parent) return null;
+    const parentProps = parent.props as Record<string, unknown> | undefined;
+    if (parentProps?.iconName) return parentProps.iconName as string;
+    if (parent.parent_id) {
+      const grandParent = state.elementsMap.get(parent.parent_id);
+      if (grandParent) {
+        const gp = grandParent.props as Record<string, unknown> | undefined;
+        if (gp?.iconName) return gp.iconName as string;
+      }
+    }
+    return null;
+  });
+
   // 🚀 ToggleButtonGroup 내 ToggleButton의 위치 정보 (borderRadius 계산용)
   // CSS에서는 그룹 내 첫/끝 버튼만 외곽 모서리에 borderRadius 적용
   // 개별 selector로 분리하여 primitive 비교 (useShallow 대체)
@@ -1718,6 +1739,11 @@ export const ElementSprite = memo(function ElementSprite({
               // _hasLabelChild 패턴 제거 완료: CHILD_COMPOSITION_TAGS로 통합됨
               // Checkbox/Radio/Switch/ComboBox/Select/Slider → _hasChildren 단일 패턴
 
+              // SelectIcon/ComboBoxTrigger: 부모의 iconName 전파 (specProps에 없으면 주입)
+              if (parentDelegatedIconName && !specProps.iconName) {
+                specProps = { ...specProps, iconName: parentDelegatedIconName };
+              }
+
               // 동적 컴포넌트 상태: preview > disabled prop > default
               // selectAtom으로 자신의 elementId만 구독 → previewState는 이미 필터됨
               const componentState: ComponentState = (() => {
@@ -2100,6 +2126,7 @@ export const ElementSprite = memo(function ElementSprite({
     themeVersion,
     skiaTheme,
     parentDelegatedSize,
+    parentDelegatedIconName,
   ]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로

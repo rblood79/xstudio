@@ -333,15 +333,34 @@ export function applyImplicitStyles(
       if (child.tag === "SelectValue") {
         return {
           ...child,
-          props: { ...child.props, style: { ...cs, flex: cs.flex ?? 1 } },
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              flex: cs.flex ?? 1,
+              minWidth: cs.minWidth ?? 0,
+              whiteSpace: cs.whiteSpace ?? "nowrap",
+              overflow: cs.overflow ?? "hidden",
+              textOverflow: cs.textOverflow ?? "ellipsis",
+            },
+          },
         } as Element;
       }
       if (child.tag === "SelectIcon") {
+        // Select → SelectTrigger → SelectIcon: 조부모(Select)의 iconName 전파
+        const selectEl = elementById.get(containerEl.parent_id ?? "");
+        const selectProps = selectEl?.props as
+          | Record<string, unknown>
+          | undefined;
+        const iconName =
+          (child.props as Record<string, unknown> | undefined)?.iconName ??
+          selectProps?.iconName;
         const iconSz = SPEC_ICON_SIZE[sizeName] ?? SPEC_ICON_SIZE.md;
         return {
           ...child,
           props: {
             ...child.props,
+            ...(iconName != null ? { iconName } : {}),
             style: {
               ...cs,
               width: iconSz,
@@ -394,16 +413,32 @@ export function applyImplicitStyles(
           props: {
             ...child.props,
             placeholder,
-            style: { ...cs, flex: cs.flex ?? 1 },
+            style: {
+              ...cs,
+              flex: cs.flex ?? 1,
+              minWidth: cs.minWidth ?? 0,
+              whiteSpace: cs.whiteSpace ?? "nowrap",
+              overflow: cs.overflow ?? "hidden",
+              textOverflow: cs.textOverflow ?? "ellipsis",
+            },
           },
         } as Element;
       }
       if (child.tag === "ComboBoxTrigger") {
+        // ComboBox → ComboBoxWrapper → ComboBoxTrigger: 조부모(ComboBox)의 iconName 전파
+        const comboBoxEl = elementById.get(containerEl.parent_id ?? "");
+        const comboBoxProps = comboBoxEl?.props as
+          | Record<string, unknown>
+          | undefined;
+        const iconName =
+          (child.props as Record<string, unknown> | undefined)?.iconName ??
+          comboBoxProps?.iconName;
         const iconSz = SPEC_ICON_SIZE[sizeName] ?? SPEC_ICON_SIZE.md;
         return {
           ...child,
           props: {
             ...child.props,
+            ...(iconName != null ? { iconName } : {}),
             style: {
               ...cs,
               width: iconSz,

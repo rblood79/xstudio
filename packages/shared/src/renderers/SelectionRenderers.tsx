@@ -690,6 +690,9 @@ export const renderSelect = (
       style={elementProps.style}
       className={element.props.className}
       size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
+      iconName={
+        elementProps.iconName ? String(elementProps.iconName) : undefined
+      }
       label={processedLabel}
       description={
         elementProps.description
@@ -929,6 +932,9 @@ export const renderComboBox = (
       style={element.props.style}
       className={element.props.className}
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      iconName={
+        element.props.iconName ? String(element.props.iconName) : undefined
+      }
       label={String(element.props.label || "")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}

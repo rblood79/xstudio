@@ -21,7 +21,7 @@ import {
   ValidationResult,
   composeRenderProps,
 } from "react-aria-components";
-import { ChevronDown } from "lucide-react";
+import { getIconData } from "@xstudio/specs";
 import type {
   ComponentSize,
   DataBinding,
@@ -66,6 +66,8 @@ export interface SelectProps<T extends object> extends Omit<
    * 다중 선택 시 커스텀 렌더러
    */
   renderMultipleValue?: (selectedItems: T[]) => React.ReactNode;
+  /** 트리거 아이콘 이름 (Lucide 아이콘) */
+  iconName?: string;
   /**
    * Show loading skeleton instead of select
    * @default false
@@ -84,6 +86,7 @@ export function Select<T extends object>({
   columnMapping,
   variant = "primary",
   size = "md",
+  iconName,
   selectionMode = "single",
   // Note: 다중 선택 관련 기능은 현재 미구현 상태
   multipleDisplayMode: _multipleDisplayMode = "count",
@@ -295,7 +298,53 @@ export function Select<T extends object>({
           <Button className="react-aria-Button">
             <SelectValue />
             <span aria-hidden="true" className="select-chevron">
-              <ChevronDown size={16} />
+              {(() => {
+                const data = iconName ? getIconData(iconName) : null;
+                if (data) {
+                  return (
+                    <svg
+                      width={16}
+                      height={16}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      {data.paths.map((d: string, i: number) => (
+                        <path key={i} d={d} />
+                      ))}
+                      {data.circles?.map(
+                        (
+                          c: { cx: number; cy: number; r: number },
+                          i: number,
+                        ) => (
+                          <circle key={`c${i}`} cx={c.cx} cy={c.cy} r={c.r} />
+                        ),
+                      )}
+                    </svg>
+                  );
+                }
+                // Default: chevron-down
+                const defaultData = getIconData("chevron-down");
+                return defaultData ? (
+                  <svg
+                    width={16}
+                    height={16}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {defaultData.paths.map((d: string, i: number) => (
+                      <path key={i} d={d} />
+                    ))}
+                  </svg>
+                ) : null;
+              })()}
             </span>
           </Button>
 

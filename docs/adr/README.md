@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-12 (ADR-032 Events Panel 전면 개편 재작성, ADR-033 완료 추가)
+> **최종 업데이트**: 2026-03-12 (ADR-032 v2 재작성, ADR-034 추가, Events Panel 상세 설계 문서군 추가)
 
 ## 현황 요약
 
@@ -63,7 +63,18 @@
 | [020](020-design-kit-improvement.md)     | Design Kit 패널 분석 및 개선       | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수 |    P4    |
 | [015](015-sitemap-layout.md)             | Sitemap Hierarchy 워크플로우 엣지  | Proposed | 변경 대상 8파일, 코드 미생성                                                             |    P5    |
 | [016](016-photoshop-ui-ux.md)            | Photoshop 벤치마크 기반 UI/UX (v2) | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                   |    P5    |
-| [032](032-events-data-integration.md)    | Events Panel 전면 개편 + Data 통합 | Proposed | Phase 0~5, 기반 정리(중복 77% 제거) + Spec-Driven + Quick Connect 통합                   |  **P3**  |
+| [032](032-events-data-integration.md)    | Events Platform 재설계 + Data 통합 | Proposed | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동   |  **P3**  |
+| [034](034-events-panel-renovation.md)    | Events Panel Renovation            | Proposed | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                |  **P3**  |
+
+## Events Panel 설계 문서군
+
+- [ADR-032](032-events-data-integration.md): 이벤트 플랫폼 상위 아키텍처
+- [ADR-034](034-events-panel-renovation.md): Events Panel 전면 UX 개편 결정
+- [events-panel-wireframe.md](/Users/admin/work/xstudio/docs/design/events-panel-wireframe.md): 화면 구조 와이어프레임
+- [events-panel-state-model.md](/Users/admin/work/xstudio/docs/design/events-panel-state-model.md): 패널 상태 모델
+- [events-panel-recipe-system.md](/Users/admin/work/xstudio/docs/design/events-panel-recipe-system.md): recipe 시스템 상세 설계
+- [events-panel-binding-diagnostics.md](/Users/admin/work/xstudio/docs/design/events-panel-binding-diagnostics.md): binding diagnostics 설계
+- [events-panel-review-checklist.md](/Users/admin/work/xstudio/docs/design/events-panel-review-checklist.md): 설계 리뷰 체크리스트
 
 ---
 

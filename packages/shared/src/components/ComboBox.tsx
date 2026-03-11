@@ -20,7 +20,7 @@ import {
   Text,
   ValidationResult,
 } from "react-aria-components";
-import { ChevronDown } from "lucide-react";
+import { getIconData } from "@xstudio/specs";
 import type { ComponentSize } from "../types";
 import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
@@ -51,6 +51,8 @@ export interface ComboBoxProps<T extends object> extends Omit<
   // M3 props
   variant?: string;
   size?: ComponentSize;
+  /** 트리거 아이콘 이름 (Lucide 아이콘) */
+  iconName?: string;
   /**
    * Show loading skeleton instead of combobox
    * @default false
@@ -71,6 +73,7 @@ export function ComboBox<T extends object>({
   popoverClassName,
   variant = "primary",
   size = "md",
+  iconName,
   isLoading: externalLoading,
   ...props
 }: ComboBoxProps<T>) {
@@ -150,7 +153,8 @@ export function ComboBox<T extends object>({
   const isTemplateMode = hasDataBinding && !!columnMapping;
   const hasBoundItems = hasDataBinding && boundData.length > 0;
   const shouldRenderPopover = !isLoadingState && !isErrorState;
-  const comboBoxDisabled = Boolean(props.isDisabled) || isLoadingState || isErrorState;
+  const comboBoxDisabled =
+    Boolean(props.isDisabled) || isLoadingState || isErrorState;
 
   const comboBoxItems = React.useMemo(() => {
     if (!hasBoundItems) {
@@ -167,7 +171,8 @@ export function ComboBox<T extends object>({
       return items;
     }
 
-    const config = (dataBinding as { config?: Record<string, unknown> })?.config as
+    const config = (dataBinding as { config?: Record<string, unknown> })
+      ?.config as
       | {
           columnMapping?: {
             id: string;
@@ -202,11 +207,14 @@ export function ComboBox<T extends object>({
   const listBoxChildren: React.ReactNode | ((item: T) => React.ReactNode) =
     React.useMemo(() => {
       if (isTemplateMode) {
-        console.log("🎯 ComboBox: columnMapping 감지 - 데이터로 아이템 렌더링", {
-          columnMapping,
-          hasChildren: !!children,
-          dataCount: boundData.length,
-        });
+        console.log(
+          "🎯 ComboBox: columnMapping 감지 - 데이터로 아이템 렌더링",
+          {
+            columnMapping,
+            hasChildren: !!children,
+            dataCount: boundData.length,
+          },
+        );
 
         if (!hasBoundItems) {
           return children;
@@ -228,7 +236,13 @@ export function ComboBox<T extends object>({
       }
 
       return children;
-    }, [boundData.length, children, columnMapping, hasBoundItems, isTemplateMode]);
+    }, [
+      boundData.length,
+      children,
+      columnMapping,
+      hasBoundItems,
+      isTemplateMode,
+    ]);
 
   return (
     <AriaComboBox
@@ -246,13 +260,36 @@ export function ComboBox<T extends object>({
       <div className="combobox-container">
         <Input placeholder={placeholder} />
         <Button>
-          <ChevronDown size={16} />
+          {(() => {
+            const name = iconName || "chevron-down";
+            const data = getIconData(name);
+            if (!data) return null;
+            return (
+              <svg
+                width={16}
+                height={16}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {data.paths.map((d: string, i: number) => (
+                  <path key={i} d={d} />
+                ))}
+                {data.circles?.map(
+                  (c: { cx: number; cy: number; r: number }, i: number) => (
+                    <circle key={`c${i}`} cx={c.cx} cy={c.cy} r={c.r} />
+                  ),
+                )}
+              </svg>
+            );
+          })()}
         </Button>
       </div>
       {description && <Text slot="description">{description}</Text>}
-      {isLoadingState && (
-        <Text slot="description">⏳ 데이터 로딩 중...</Text>
-      )}
+      {isLoadingState && <Text slot="description">⏳ 데이터 로딩 중...</Text>}
       {isErrorState && <FieldError>❌ 오류: {error}</FieldError>}
       {errorMessage && !isErrorState && <FieldError>{errorMessage}</FieldError>}
       {shouldRenderPopover && (
@@ -263,10 +300,7 @@ export function ComboBox<T extends object>({
           offset={4}
           style={popoverStyle}
         >
-          <ListBox
-            className="react-aria-ListBox"
-            items={comboBoxItems}
-          >
+          <ListBox className="react-aria-ListBox" items={comboBoxItems}>
             {listBoxChildren}
           </ListBox>
         </Popover>

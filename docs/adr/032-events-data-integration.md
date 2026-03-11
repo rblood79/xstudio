@@ -48,6 +48,7 @@ XStudio Team
 | Quick Connect 후 핸들러 즉시 생성 | recipe 적용으로 생성 이유와 재생성 경로 보존 |
 | `tableName`, `fieldName` 문자열 참조 | stable id 기반 `BindingRef` 참조 |
 | JS 문자열 조건식 | 제한된 DSL 또는 AST 기반 조건 |
+| 단일 거대 `EventsPanel`에서 혼합 편집 | 목적별 섹션과 단계형 UX로 재구성 |
 
 ---
 
@@ -128,6 +129,23 @@ camelCase와 snake_case alias를 함께 허용한다.
 - 타입 어서션 증가
 - 마이그레이션 비용 증가
 - 런타임/에디터 불일치 가능성 증가
+
+### 문제 6: 현재 Events Panel UX가 너무 어렵고 복잡하다
+
+현재 [EventsPanel.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/EventsPanel.tsx)는
+추천, 핸들러 목록, 블록 편집, 액션 추가, 디버깅, Quick Connect 성격의 안내가
+한 화면 안에서 뒤섞여 있다.
+
+사용자 관점의 문제:
+
+- "무엇부터 해야 하는지"가 보이지 않는다.
+- 이벤트를 추가한 뒤 다음 액션을 어떻게 이어야 하는지 흐름이 약하다.
+- 추천과 수동 편집이 같은 위계에 있어 초보자에게 부담이 크다.
+- 데이터가 연결된 상태와 아닌 상태의 차이가 직관적으로 드러나지 않는다.
+- 깨진 바인딩, 자동 생성 핸들러, 수동 핸들러를 구별하기 어렵다.
+
+즉 현재 패널은 기능은 많지만,
+"설정 UI"가 아니라 "내부 구조를 직접 노출한 편집기"에 가깝다.
 
 ---
 
@@ -339,6 +357,49 @@ type ConditionNode =
 - UI는 최대한 registry를 렌더링만 한다.
 - 카테고리, 기본값, 설명, 추천은 하드코딩하지 않는다.
 
+### Events Panel Renovation
+
+`EventsPanel`은 단순히 기존 컴포넌트를 쪼개는 수준이 아니라,
+사용자 목표 중심의 단계형 패널로 전면 재구성한다.
+
+핵심 원칙:
+
+- 처음 진입한 사용자는 "추천 recipe 적용"부터 시작할 수 있어야 한다.
+- 숙련 사용자는 바로 handler/effect 편집으로 내려갈 수 있어야 한다.
+- 데이터 연결 상태, 자동 생성 상태, 진단 상태가 항상 눈에 보여야 한다.
+- 패널은 하나의 거대한 편집기가 아니라 여러 목적별 섹션의 조합이어야 한다.
+
+목표 구조:
+
+1. `PanelHeader`
+2. `ConnectionStatusSection`
+3. `RecommendedRecipesSection`
+4. `HandlersListSection`
+5. `HandlerEditorSection`
+6. `DiagnosticsSection`
+7. `PreviewSection`
+
+각 섹션의 역할:
+
+- `ConnectionStatusSection`: 현재 데이터 연결, 변수 연결, recipe 적용 상태 요약
+- `RecommendedRecipesSection`: 추천 이벤트가 아니라 추천 recipe를 먼저 제안
+- `HandlersListSection`: 생성된 핸들러를 manual/recipe/broken 상태와 함께 목록화
+- `HandlerEditorSection`: WHEN/IF/THEN/ELSE 블록 편집 전담
+- `DiagnosticsSection`: broken binding, invalid condition, drift 경고 표시
+- `PreviewSection`: 생성될 동작 또는 recipe 결과 미리보기
+
+편집 흐름:
+
+1. 연결 상태 확인
+2. 추천 recipe 적용 또는 빈 handler 생성
+3. handler 선택
+4. 조건/효과 편집
+5. diagnostics 확인
+6. 필요 시 recipe 재적용 또는 수동 override
+
+이 구조에서 [EventsPanel.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/panels/events/EventsPanel.tsx)는
+상태 조합과 섹션 배치만 담당하는 얇은 shell이 된다.
+
 ### Runtime Layer
 
 이 레이어는 실행만 담당한다.
@@ -444,6 +505,20 @@ Quick Connect 후 생성된 핸들러는 단순 산출물이 아니라
 - 지원되지 않는 event/effect 조합
 - recipe drift 경고
 
+### D6. 추천 중심 패널에서 작업 흐름 중심 패널로 전환한다
+
+현재 패널은 "무엇을 편집할 수 있는가"는 많이 보여주지만
+"지금 무엇을 해야 하는가"는 잘 안내하지 못한다.
+
+따라서 v2 패널은 다음 우선순위를 따른다.
+
+1. 연결 상태와 추천을 먼저 보여준다.
+2. 생성된 핸들러 목록을 두 번째로 보여준다.
+3. 상세 블록 편집은 선택된 핸들러에만 집중해서 보여준다.
+4. 오류와 수리 제안은 별도 diagnostics 영역에서 즉시 보여준다.
+
+즉 정보 구조를 "기능별 나열"에서 "작업 흐름"으로 바꾼다.
+
 ---
 
 ## Example Flows
@@ -488,7 +563,21 @@ Quick Connect 후 생성된 핸들러는 단순 산출물이 아니라
 2. 패널 타입 파일은 registry re-export 중심으로 축소
 3. unsupported event 노출 제거
 
-### Phase 1: EffectRegistry 도입
+### Phase 1: Events Panel Information Architecture 개편
+
+목표:
+
+- 현재의 거대한 단일 패널을 목적별 섹션 구조로 해체
+- 추천, 연결 상태, 편집, 진단의 정보 위계를 재정의
+
+작업:
+
+1. `EventsPanel.tsx`를 shell 역할로 축소
+2. `ConnectionStatusSection`, `RecommendedRecipesSection`, `HandlersListSection`, `HandlerEditorSection`, `DiagnosticsSection`, `PreviewSection` 분리
+3. 수동 핸들러와 recipe 생성 핸들러 상태 배지 정의
+4. 데이터 연결 유무에 따른 empty state / next step UX 정의
+
+### Phase 2: EffectRegistry 도입
 
 목표:
 
@@ -502,7 +591,7 @@ Quick Connect 후 생성된 핸들러는 단순 산출물이 아니라
 3. `DynamicActionEditor` 구축
 4. action picker를 effect registry 기반으로 전환
 
-### Phase 2: Runtime 통합
+### Phase 3: Runtime 통합
 
 목표:
 
@@ -514,7 +603,7 @@ Quick Connect 후 생성된 핸들러는 단순 산출물이 아니라
 2. 실제 실행은 `EffectRunner`로 통합
 3. `eventEngine.ts`의 actionHandlers를 registry 기반 실행으로 전환
 
-### Phase 3: CapabilityRegistry + RecipeRegistry 도입
+### Phase 4: CapabilityRegistry + RecipeRegistry 도입
 
 목표:
 
@@ -527,7 +616,7 @@ Quick Connect 후 생성된 핸들러는 단순 산출물이 아니라
 3. Quick Connect에 recipe 적용 연결
 4. 추천 UI를 recipe 기반으로 교체
 
-### Phase 4: BindingRef / Condition DSL 전환
+### Phase 5: BindingRef / Condition DSL 전환
 
 목표:
 
@@ -539,7 +628,7 @@ Quick Connect 후 생성된 핸들러는 단순 산출물이 아니라
 2. 구형 문자열 포맷은 read 시 변환
 3. 저장 시 canonical 포맷 유지
 
-### Phase 5: Diagnostics / Repair UX
+### Phase 6: Diagnostics / Repair UX
 
 목표:
 
@@ -563,12 +652,14 @@ Quick Connect 후 생성된 핸들러는 단순 산출물이 아니라
 3. Quick Connect가 일회성 생성이 아니라 재적용 가능한 recipe 시스템이 된다.
 4. 데이터 리네임, 스키마 변경, 삭제에 더 강해진다.
 5. 이벤트 패널이 단순 편집 UI를 넘어 이벤트 플랫폼의 관리 콘솔이 된다.
+6. 현재보다 훨씬 덜 복잡한 단계형 패널 UX를 제공할 수 있다.
 
 ### Negative
 
 1. v1보다 추상화 수준이 높아 초기 이해 비용이 증가한다.
 2. Condition DSL과 BindingRef 마이그레이션 작업이 필요하다.
 3. Effect registry 전환 전까지는 과도기 코드가 일시적으로 생긴다.
+4. 패널 정보 구조를 다시 잡는 과정에서 UI 리그레션 점검이 필요하다.
 
 ### Tradeoff
 
@@ -585,19 +676,25 @@ Quick Connect 후 생성된 핸들러는 단순 산출물이 아니라
 - snake_case alias가 신규 저장 데이터에 남지 않는다.
 - UI에 노출되는 이벤트/액션이 런타임 지원 집합과 일치한다.
 
-### G1. Effect Registry
+### G1. Events Panel Renovation
+
+- `EventsPanel`이 shell + section 구조로 분리된다.
+- 첫 진입 사용자가 다음 행동을 1단계 안에서 이해할 수 있는 empty state를 가진다.
+- manual / recipe / broken 상태가 목록에서 즉시 구분된다.
+
+### G2. Effect Registry
 
 - 1개 effect 추가 시 registry 1개 항목 추가만으로 picker와 editor에 노출된다.
 - effect config 검증이 registry 기반으로 동작한다.
 - 런타임 실행도 같은 registry를 참조한다.
 
-### G2. Capability / Recipe
+### G3. Capability / Recipe
 
 - 추천 이벤트가 하드코딩 컴포넌트 맵 없이 계산된다.
 - Quick Connect 결과물에 `recipeId`가 기록된다.
 - recipe 기반 재생성 또는 update suggestion이 가능하다.
 
-### G3. Binding / Diagnostics
+### G4. Binding / Diagnostics
 
 - broken data reference를 저장 직후 감지할 수 있다.
 - schema rename 시 영향 범위를 계산할 수 있다.
