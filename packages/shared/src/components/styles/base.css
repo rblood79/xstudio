@@ -18,13 +18,13 @@
     font-size: var(--label-font-size, var(--text-sm));
     font-weight: var(--label-font-weight, normal);
     color: var(--label-color, var(--fg));
-    margin-bottom: var(--label-margin, 0);
+    /* margin-bottom: var(--label-margin, 0); */
   }
 
   .react-aria-FieldError {
     font-size: var(--error-font-size, var(--text-xs));
     color: var(--negative);
-    margin-top: var(--error-margin, 0);
+    /* margin-top: var(--error-margin, 0); */
   }
 
   [slot="description"] {

@@ -20,6 +20,7 @@ import {
   InputSpec,
   BreadcrumbsSpec,
   StatusLightSpec,
+  SelectValueSpec,
 } from "@xstudio/specs";
 
 /** Spec shapes에서 추출한 텍스트 스타일 */
@@ -52,6 +53,7 @@ const TEXT_BEARING_SPECS: Record<
   input: { spec: InputSpec, defaultSize: "sm" },
   breadcrumbs: { spec: BreadcrumbsSpec, defaultSize: "md" },
   statuslight: { spec: StatusLightSpec, defaultSize: "md" },
+  selectvalue: { spec: SelectValueSpec, defaultSize: "md" },
 };
 
 /**

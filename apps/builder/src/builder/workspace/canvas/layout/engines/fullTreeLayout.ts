@@ -38,6 +38,7 @@ import {
 import { elementToTaffyBlockStyle } from "./TaffyBlockEngine";
 import { elementToTaffyStyle } from "./TaffyFlexEngine";
 import { applyImplicitStyles } from "./implicitStyles";
+import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import { useScrollState } from "../../../../stores/scrollState";
 
 // ─── 모듈 수준 상수 ──────────────────────────────────────────────────
@@ -1048,7 +1049,22 @@ function traversePostOrder(
           parseFloat(
             String(enrichedStyle.fontSize ?? computedStyle?.fontSize ?? 14),
           ) || 14;
-        const maxContentW = measureTextWidth(textContent, fontSize);
+        // Spec 기반 font 속성 추출 — 렌더러와 동일한 fontWeight/fontFamily 보장
+        // (Button 공백 텍스트 줄바꿈 방지 패턴: docs/bug/skia-button-text-linebreak.md)
+        const specStyle = extractSpecTextStyle(
+          rawElement.tag,
+          props as Record<string, unknown>,
+        );
+        const fontFamily =
+          (enrichedStyle.fontFamily as string | undefined) ??
+          specStyle?.fontFamily;
+        const fontWeight = specStyle?.fontWeight ?? 400;
+        const maxContentW = measureTextWidth(
+          textContent,
+          fontSize,
+          fontFamily,
+          fontWeight,
+        );
         if (maxContentW > 0) {
           const box = parseBoxModel(
             rawElement,
