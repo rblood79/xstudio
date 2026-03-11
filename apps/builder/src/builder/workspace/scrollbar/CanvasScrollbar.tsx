@@ -14,9 +14,16 @@
 
 import { useRef, useEffect } from 'react';
 import { getViewportController } from '../canvas/viewport/ViewportController';
+import { applyViewportState } from '../canvas/viewport/viewportActions';
 import { useCanvasSyncStore } from '../canvas/canvasSync';
-import { useStore } from '../../stores';
-import { calculateWorldBounds } from './calculateWorldBounds';
+import {
+  measureWorkspacePanelInsets,
+  subscribeToPanelLayoutChanges,
+} from '../utils/panelLayoutRuntime';
+import {
+  getScrollbarAxisMetrics,
+  getScrollbarViewportMetrics,
+} from './viewportMetrics';
 import './CanvasScrollbar.css';
 
 // ============================================
@@ -52,15 +59,9 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
     // ========================================
 
     const measurePanelInsets = () => {
-      const { panelLayout } = useStore.getState();
-      const leftWidth = panelLayout.showLeft
-        ? (document.querySelector('aside.sidebar') as HTMLElement)?.offsetWidth ?? 0
-        : 0;
-      const rightWidth = panelLayout.showRight
-        ? (document.querySelector('aside.inspector') as HTMLElement)?.offsetWidth ?? 0
-        : 0;
-      panelInsetRef.current = { left: leftWidth, right: rightWidth };
-      return { left: leftWidth, right: rightWidth };
+      const insets = measureWorkspacePanelInsets();
+      panelInsetRef.current = insets;
+      return insets;
     };
 
     const updatePanelOffset = () => {
@@ -78,49 +79,24 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
     // ========================================
 
     const updateThumb = () => {
-      const vc = getViewportController();
-      const state = vc.getState();
-      const { canvasSize, containerSize } = useCanvasSyncStore.getState();
-
-      if (containerSize.width === 0 || containerSize.height === 0) return;
-
-      const scale = state.scale;
-      const { left: leftInset, right: rightInset } = panelInsetRef.current;
-
-      // Visible Viewport → World 좌표 변환
-      const visibleWidth = containerSize.width - leftInset - rightInset;
-      const visibleHeight = containerSize.height;
-
-      const vpX = (leftInset - state.x) / scale;
-      const vpY = -state.y / scale;
-      const vpW = visibleWidth / scale;
-      const vpH = visibleHeight / scale;
-
-      const world = calculateWorldBounds(
-        canvasSize,
-        { x: vpX, y: vpY, width: vpW, height: vpH },
-        state,
-      );
-
       const trackLength = isHorizontal ? track.clientWidth : track.clientHeight;
-      if (trackLength <= 0) return;
+      const metrics = getScrollbarViewportMetrics(panelInsetRef.current);
+      if (!metrics) return;
 
-      const worldSize = isHorizontal ? world.width : world.height;
-      const vpStart = isHorizontal ? vpX - world.minX : vpY - world.minY;
-      const vpSize = isHorizontal ? vpW : vpH;
+      const axis = getScrollbarAxisMetrics(metrics, direction, trackLength);
+      if (!axis) return;
 
-      // Thumb 크기 (최소 30px)
-      const thumbSize = Math.max(30, (vpSize / worldSize) * trackLength);
-      // Thumb 위치
-      const scrollableWorld = worldSize - vpSize;
-      const ratio = scrollableWorld > 0 ? vpStart / scrollableWorld : 0;
-      const thumbPos = ratio * (trackLength - thumbSize);
+      const ratio =
+        axis.scrollableWorld > 0
+          ? axis.viewportStart / axis.scrollableWorld
+          : 0;
+      const thumbPos = ratio * axis.scrollableTrack;
 
       if (isHorizontal) {
-        thumb.style.width = `${thumbSize}px`;
+        thumb.style.width = `${axis.thumbSize}px`;
         thumb.style.transform = `translateX(${thumbPos}px)`;
       } else {
-        thumb.style.height = `${thumbSize}px`;
+        thumb.style.height = `${axis.thumbSize}px`;
         thumb.style.transform = `translateY(${thumbPos}px)`;
       }
     };
@@ -173,27 +149,11 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
     trackResizeObserver.observe(track);
 
     // 패널 상태 구독 (showLeft/Right + activeLeftPanels/activeRightPanels)
-    let prevShowLeft = useStore.getState().panelLayout.showLeft;
-    let prevShowRight = useStore.getState().panelLayout.showRight;
-    let prevActiveLeftCount = useStore.getState().panelLayout.activeLeftPanels?.length ?? 0;
-    let prevActiveRightCount = useStore.getState().panelLayout.activeRightPanels?.length ?? 0;
-    const unsubPanel = useStore.subscribe((state) => {
-      const { showLeft, showRight, activeLeftPanels, activeRightPanels } = state.panelLayout;
-      const activeLeftCount = activeLeftPanels?.length ?? 0;
-      const activeRightCount = activeRightPanels?.length ?? 0;
-      if (
-        showLeft !== prevShowLeft ||
-        showRight !== prevShowRight ||
-        activeLeftCount !== prevActiveLeftCount ||
-        activeRightCount !== prevActiveRightCount
-      ) {
-        prevShowLeft = showLeft;
-        prevShowRight = showRight;
-        prevActiveLeftCount = activeLeftCount;
-        prevActiveRightCount = activeRightCount;
-        // 패널 애니메이션(0.3s) 이후 재측정
-        setTimeout(updatePanelOffset, 350);
-      }
+    const unsubPanel = subscribeToPanelLayoutChanges({
+      onLayoutChange: () => {
+        updatePanelOffset();
+        scheduleUpdate();
+      },
     });
 
     // ========================================
@@ -211,48 +171,47 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
       const startPos = isHorizontal ? e.clientX : e.clientY;
       const vc = getViewportController();
       const startState = vc.getState();
-      const { left: leftInset, right: rightInset } = panelInsetRef.current;
+      const startMetrics = getScrollbarViewportMetrics(
+        panelInsetRef.current,
+        startState,
+      );
+      if (!startMetrics) {
+        return;
+      }
 
       const onMove = (me: PointerEvent) => {
         const delta = (isHorizontal ? me.clientX : me.clientY) - startPos;
         const trackLength = isHorizontal ? track.clientWidth : track.clientHeight;
-        const { canvasSize, containerSize } = useCanvasSyncStore.getState();
-        const scale = startState.scale;
-
-        const visibleWidth = containerSize.width - leftInset - rightInset;
-        const visibleHeight = containerSize.height;
-        const vpW = visibleWidth / scale;
-        const vpH = visibleHeight / scale;
-        const vpX = (leftInset - startState.x) / scale;
-        const vpY = -startState.y / scale;
-
-        const world = calculateWorldBounds(
-          canvasSize,
-          { x: vpX, y: vpY, width: vpW, height: vpH },
-          startState,
+        const axis = getScrollbarAxisMetrics(
+          startMetrics,
+          direction,
+          trackLength,
         );
-        const worldSize = isHorizontal ? world.width : world.height;
-        const vpSize = isHorizontal ? vpW : vpH;
-        const thumbSize = Math.max(30, (vpSize / worldSize) * trackLength);
-        const scrollableTrack = trackLength - thumbSize;
-        const scrollableWorld = worldSize - vpSize;
+        if (!axis || axis.scrollableTrack <= 0) return;
 
-        if (scrollableTrack <= 0) return;
-
-        const worldDelta = (delta / scrollableTrack) * scrollableWorld;
+        const worldDelta =
+          (delta / axis.scrollableTrack) * axis.scrollableWorld;
 
         let newX: number;
         let newY: number;
         if (isHorizontal) {
-          newX = leftInset - (vpX + worldDelta) * scale;
+          newX =
+            panelInsetRef.current.left -
+            (startMetrics.visibleViewport.x + worldDelta) *
+              startMetrics.viewportState.scale;
           newY = startState.y;
         } else {
           newX = startState.x;
-          newY = -(vpY + worldDelta) * scale;
+          newY =
+            -(startMetrics.visibleViewport.y + worldDelta) *
+            startMetrics.viewportState.scale;
         }
 
-        vc.setPosition(newX, newY, scale);
-        useCanvasSyncStore.getState().setPanOffset({ x: newX, y: newY });
+        applyViewportState({
+          scale: startMetrics.viewportState.scale,
+          x: newX,
+          y: newY,
+        });
       };
 
       const onUp = () => {
@@ -286,49 +245,40 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
       const trackLength = isHorizontal ? track.clientWidth : track.clientHeight;
 
       const vc = getViewportController();
-      const state = vc.getState();
-      const { canvasSize, containerSize } = useCanvasSyncStore.getState();
-      const scale = state.scale;
-      const { left: leftInset, right: rightInset } = panelInsetRef.current;
-
-      const visibleWidth = containerSize.width - leftInset - rightInset;
-      const visibleHeight = containerSize.height;
-      const vpW = visibleWidth / scale;
-      const vpH = visibleHeight / scale;
-      const vpX = (leftInset - state.x) / scale;
-      const vpY = -state.y / scale;
-
-      const world = calculateWorldBounds(
-        canvasSize,
-        { x: vpX, y: vpY, width: vpW, height: vpH },
-        state,
+      const metrics = getScrollbarViewportMetrics(
+        panelInsetRef.current,
+        vc.getState(),
       );
-      const worldSize = isHorizontal ? world.width : world.height;
-      const vpSize = isHorizontal ? vpW : vpH;
-      const thumbSize = Math.max(30, (vpSize / worldSize) * trackLength);
-      const scrollableTrack = trackLength - thumbSize;
-      const scrollableWorld = worldSize - vpSize;
+      if (!metrics) return;
 
-      if (scrollableTrack <= 0) return;
+      const axis = getScrollbarAxisMetrics(metrics, direction, trackLength);
+      if (!axis || axis.scrollableTrack <= 0) return;
 
       // 클릭 위치를 thumb 중앙으로
-      const targetThumbStart = clickPos - thumbSize / 2;
-      const ratio = Math.max(0, Math.min(1, targetThumbStart / scrollableTrack));
+      const targetThumbStart = clickPos - axis.thumbSize / 2;
+      const ratio = Math.max(
+        0,
+        Math.min(1, targetThumbStart / axis.scrollableTrack),
+      );
       const targetWorldStart =
-        (isHorizontal ? world.minX : world.minY) + ratio * scrollableWorld;
+        axis.worldMin + ratio * axis.scrollableWorld;
 
       let newX: number;
       let newY: number;
       if (isHorizontal) {
-        newX = leftInset - targetWorldStart * scale;
-        newY = state.y;
+        newX =
+          panelInsetRef.current.left - targetWorldStart * metrics.viewportState.scale;
+        newY = metrics.viewportState.y;
       } else {
-        newX = state.x;
-        newY = -targetWorldStart * scale;
+        newX = metrics.viewportState.x;
+        newY = -targetWorldStart * metrics.viewportState.scale;
       }
 
-      vc.setPosition(newX, newY, scale);
-      useCanvasSyncStore.getState().setPanOffset({ x: newX, y: newY });
+      applyViewportState({
+        scale: metrics.viewportState.scale,
+        x: newX,
+        y: newY,
+      });
     };
 
     track.addEventListener('click', handleTrackClick);

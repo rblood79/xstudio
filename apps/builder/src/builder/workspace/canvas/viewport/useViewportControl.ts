@@ -15,7 +15,12 @@ import { useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
 import { useApplication } from '@pixi/react';
 import type { Container } from 'pixi.js';
 import { type ViewportState, type ViewportController, getViewportController } from './ViewportController';
-import { useCanvasSyncStore } from '../canvasSync';
+import {
+  isCanvasViewportSnapshotEqual,
+  selectCanvasViewportSnapshot,
+  useCanvasSyncStore,
+} from '../canvasSync';
+import { offsetViewportStateX } from './viewportActions';
 import { useKeyboardShortcutsRegistry } from '@/builder/hooks';
 import { useScrollState, isScrollable } from '../../../stores/scrollState';
 import { useStore } from '../../../stores';
@@ -87,16 +92,19 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
   });
 
   // Zustand store actions
-  const setZoom = useCanvasSyncStore((state) => state.setZoom);
-  const setPanOffset = useCanvasSyncStore((state) => state.setPanOffset);
+  const setViewportSnapshot = useCanvasSyncStore(
+    (state) => state.setViewportSnapshot
+  );
 
   // React state로 동기화하는 콜백
   const handleStateSync = useCallback(
     (state: ViewportState) => {
-      setZoom(state.scale);
-      setPanOffset({ x: state.x, y: state.y });
+      setViewportSnapshot({
+        panOffset: { x: state.x, y: state.y },
+        zoom: state.scale,
+      });
     },
-    [setZoom, setPanOffset]
+    [setViewportSnapshot]
   );
 
   const controller = useMemo(() => {
@@ -172,15 +180,33 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     controller.attach(cameraContainer);
 
     // 초기 상태 적용 (Zustand에서 읽어서 Container에 적용)
-    const { zoom, panOffset, setPanOffset } = useCanvasSyncStore.getState();
-    // initialPanOffsetX가 있으면 적용 (비교 모드 등)
-    const finalX = initialPanOffsetX !== undefined ? panOffset.x + initialPanOffsetX : panOffset.x;
-    controller.setPosition(finalX, panOffset.y, zoom);
+    const { zoom, panOffset, setViewportSnapshot } = useCanvasSyncStore.getState();
+    const initialViewport =
+      initialPanOffsetX !== undefined
+        ? offsetViewportStateX(
+            { scale: zoom, x: panOffset.x, y: panOffset.y },
+            initialPanOffsetX,
+          )
+        : { scale: zoom, x: panOffset.x, y: panOffset.y };
+
+    controller.setPosition(
+      initialViewport.x,
+      initialViewport.y,
+      initialViewport.scale,
+    );
     // Store도 동기화 (다른 컴포넌트에서 panOffset을 읽을 때 반영되도록)
     if (initialPanOffsetX !== undefined) {
-      setPanOffset({ x: finalX, y: panOffset.y });
+      setViewportSnapshot({
+        panOffset: { x: initialViewport.x, y: initialViewport.y },
+        zoom: initialViewport.scale,
+      });
     }
-    console.log('[useViewportControl] Initial position applied:', { x: finalX, y: panOffset.y, scale: zoom, initialPanOffsetX });
+    console.log('[useViewportControl] Initial position applied:', {
+      x: initialViewport.x,
+      y: initialViewport.y,
+      scale: initialViewport.scale,
+      initialPanOffsetX,
+    });
 
     return () => {
       controller.detach();
@@ -308,7 +334,11 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         if (rafPanRef.current === null) {
           rafPanRef.current = requestAnimationFrame(() => {
             if (pendingPanRef.current) {
-              setPanOffset(pendingPanRef.current);
+              const latestZoom = useCanvasSyncStore.getState().zoom;
+              setViewportSnapshot({
+                panOffset: pendingPanRef.current,
+                zoom: latestZoom,
+              });
               pendingPanRef.current = null;
             }
             rafPanRef.current = null;
@@ -331,36 +361,46 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         cancelAnimationFrame(rafPanRef.current);
         // 마지막 누적값 반영 (언마운트 전 최종 상태 동기화)
         if (pendingPanRef.current) {
-          setPanOffset(pendingPanRef.current);
+          const { zoom } = useCanvasSyncStore.getState();
+          setViewportSnapshot({
+            panOffset: pendingPanRef.current,
+            zoom,
+          });
           pendingPanRef.current = null;
         }
         rafPanRef.current = null;
       }
     };
-  }, [containerEl, controller, setPanOffset]);
+  }, [containerEl, controller, setViewportSnapshot]);
 
   // 외부 React state 변경 시 Controller에 반영
   useEffect(() => {
     if (!controller || controller.isPanningActive()) return;
 
-    const { zoom, panOffset } = useCanvasSyncStore.getState();
-    controller.setPosition(panOffset.x, panOffset.y, zoom);
+    const viewport = selectCanvasViewportSnapshot(useCanvasSyncStore.getState());
+    controller.setPosition(
+      viewport.panOffset.x,
+      viewport.panOffset.y,
+      viewport.zoom,
+    );
   }, [controller]);
 
   // Zustand store 변경 구독 (외부에서 줌/팬 변경 시)
   useEffect(() => {
     if (!controller) return;
 
-    const unsubscribe = useCanvasSyncStore.subscribe((state, prevState) => {
-      if (!controller || controller.isPanningActive()) return;
-
-      // 외부에서 상태가 변경된 경우에만 동기화
-      if (state.zoom !== prevState.zoom ||
-          state.panOffset.x !== prevState.panOffset.x ||
-          state.panOffset.y !== prevState.panOffset.y) {
-        controller.setPosition(state.panOffset.x, state.panOffset.y, state.zoom);
-      }
-    });
+    const unsubscribe = useCanvasSyncStore.subscribe(
+      selectCanvasViewportSnapshot,
+      (viewport) => {
+        if (!controller || controller.isPanningActive()) return;
+        controller.setPosition(
+          viewport.panOffset.x,
+          viewport.panOffset.y,
+          viewport.zoom,
+        );
+      },
+      { equalityFn: isCanvasViewportSnapshotEqual }
+    );
 
     return unsubscribe;
   }, [controller]);

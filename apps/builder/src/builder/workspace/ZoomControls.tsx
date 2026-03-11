@@ -22,6 +22,12 @@ import {
 } from "react-aria-components";
 import { ChevronDown } from "lucide-react";
 import { useCanvasSyncStore } from "./canvas/canvasSync";
+import {
+  applyViewportState,
+  computeFillViewport,
+  computeFitViewport,
+  zoomViewportAtContainerCenter,
+} from "./canvas/viewport/viewportActions";
 import { iconProps } from "../../utils/ui/uiConstants";
 
 // ============================================
@@ -69,25 +75,8 @@ export const ZoomControls = memo(function ZoomControls({
   // ============================================
 
   const zoomTo = useCallback((level: number) => {
-    const state = useCanvasSyncStore.getState();
-    const { containerSize, panOffset, zoom: currentZoom, setZoom, setPanOffset } = state;
-
     isFitModeRef.current = false;
-
-    if (containerSize.width === 0 || containerSize.height === 0) {
-      setZoom(level);
-      return;
-    }
-
-    const centerX = containerSize.width / 2;
-    const centerY = containerSize.height / 2;
-    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, level));
-    const zoomRatio = newZoom / currentZoom;
-    const newPanX = centerX - (centerX - panOffset.x) * zoomRatio;
-    const newPanY = centerY - (centerY - panOffset.y) * zoomRatio;
-
-    setZoom(newZoom);
-    setPanOffset({ x: newPanX, y: newPanY });
+    zoomViewportAtContainerCenter(level);
   }, []);
 
   const zoomIn = useCallback(() => {
@@ -102,40 +91,23 @@ export const ZoomControls = memo(function ZoomControls({
 
   const zoomToFit = useCallback(() => {
     const state = useCanvasSyncStore.getState();
-    const { containerSize, canvasSize, setZoom, setPanOffset } = state;
+    const { containerSize, canvasSize } = state;
 
     if (containerSize.width === 0 || containerSize.height === 0) return;
 
     isFitModeRef.current = true;
-
-    const scaleX = containerSize.width / canvasSize.width;
-    const scaleY = containerSize.height / canvasSize.height;
-    const fitZoom = Math.min(scaleX, scaleY) * 0.9;
-
-    setZoom(fitZoom);
-    setPanOffset({
-      x: (containerSize.width - canvasSize.width * fitZoom) / 2,
-      y: (containerSize.height - canvasSize.height * fitZoom) / 2,
-    });
+    applyViewportState(computeFitViewport({ canvasSize, containerSize }));
   }, []);
 
   const zoomToFill = useCallback(() => {
     const state = useCanvasSyncStore.getState();
-    const { containerSize, canvasSize, setZoom, setPanOffset } = state;
+    const { containerSize, canvasSize } = state;
 
     if (containerSize.width === 0 || containerSize.height === 0) return;
 
     isFitModeRef.current = false;
 
-    const scaleX = containerSize.width / canvasSize.width;
-    const scaleY = containerSize.height / canvasSize.height;
-    const fillZoom = Math.max(scaleX, scaleY);
-
-    setZoom(fillZoom);
-    setPanOffset({
-      x: (containerSize.width - canvasSize.width * fillZoom) / 2,
-      y: (containerSize.height - canvasSize.height * fillZoom) / 2,
-    });
+    applyViewportState(computeFillViewport({ canvasSize, containerSize }));
   }, []);
 
   // ============================================

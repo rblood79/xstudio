@@ -10,6 +10,7 @@
 import { useStore } from '../../../stores';
 import { useCanvasSyncStore } from '../canvasSync';
 import { getViewportController } from './ViewportController';
+import { applyViewportState } from './viewportActions';
 
 const ANIMATE_DURATION_MS = 300;
 
@@ -27,7 +28,7 @@ export function panToPage(pageId: string): void {
   const vc = getViewportController();
   if (!vc.isAttached()) return;
 
-  const { zoom, panOffset, containerSize, canvasSize, setPanOffset } = useCanvasSyncStore.getState();
+  const { zoom, panOffset, containerSize, canvasSize } = useCanvasSyncStore.getState();
 
   // 페이지 중심 계산
   const pageCenterX = pos.x + canvasSize.width / 2;
@@ -55,8 +56,7 @@ export function panToPage(pageId: string): void {
     const x = startX + (targetX - startX) * eased;
     const y = startY + (targetY - startY) * eased;
 
-    vc.setPosition(x, y, zoom);
-    setPanOffset({ x, y });
+    applyViewportState({ x, y, scale: zoom });
 
     if (progress < 1) {
       animationRafId = requestAnimationFrame(animate);

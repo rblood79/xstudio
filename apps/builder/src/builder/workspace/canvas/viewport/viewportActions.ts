@@ -1,0 +1,123 @@
+import { useCanvasSyncStore } from "../canvasSync";
+import { getViewportController, type ViewportState } from "./ViewportController";
+
+export interface ViewportCanvasSize {
+  height: number;
+  width: number;
+}
+
+export interface ViewportContainerSize {
+  height: number;
+  width: number;
+}
+
+export interface ComputeCenteredViewportOptions {
+  canvasSize: ViewportCanvasSize;
+  containerSize: ViewportContainerSize;
+  zoom: number;
+}
+
+export interface ComputeFitViewportOptions {
+  canvasSize: ViewportCanvasSize;
+  containerSize: ViewportContainerSize;
+  fitPaddingRatio?: number;
+}
+
+export interface ComputeFillViewportOptions {
+  canvasSize: ViewportCanvasSize;
+  containerSize: ViewportContainerSize;
+}
+
+export function clampViewportZoom(zoom: number): number {
+  return Math.max(0.1, Math.min(5, zoom));
+}
+
+export function computeCenteredViewport({
+  canvasSize,
+  containerSize,
+  zoom,
+}: ComputeCenteredViewportOptions): ViewportState {
+  return {
+    scale: zoom,
+    x: (containerSize.width - canvasSize.width * zoom) / 2,
+    y: (containerSize.height - canvasSize.height * zoom) / 2,
+  };
+}
+
+export function computeFitViewport({
+  canvasSize,
+  containerSize,
+  fitPaddingRatio = 0.9,
+}: ComputeFitViewportOptions): ViewportState {
+  const scaleX = containerSize.width / canvasSize.width;
+  const scaleY = containerSize.height / canvasSize.height;
+  const zoom = clampViewportZoom(Math.min(scaleX, scaleY) * fitPaddingRatio);
+
+  return computeCenteredViewport({
+    canvasSize,
+    containerSize,
+    zoom,
+  });
+}
+
+export function computeFillViewport({
+  canvasSize,
+  containerSize,
+}: ComputeFillViewportOptions): ViewportState {
+  const scaleX = containerSize.width / canvasSize.width;
+  const scaleY = containerSize.height / canvasSize.height;
+  const zoom = clampViewportZoom(Math.max(scaleX, scaleY));
+
+  return computeCenteredViewport({
+    canvasSize,
+    containerSize,
+    zoom,
+  });
+}
+
+export function offsetViewportStateX(
+  state: ViewportState,
+  offsetX: number,
+): ViewportState {
+  return {
+    ...state,
+    x: state.x + offsetX,
+  };
+}
+
+export function applyViewportState(nextState: ViewportState): void {
+  const controller = getViewportController();
+  if (controller.isAttached()) {
+    controller.setPosition(nextState.x, nextState.y, nextState.scale);
+  }
+
+  const { setViewportSnapshot } = useCanvasSyncStore.getState();
+  setViewportSnapshot({
+    panOffset: { x: nextState.x, y: nextState.y },
+    zoom: nextState.scale,
+  });
+}
+
+export function zoomViewportAtContainerCenter(nextZoom: number): void {
+  const state = useCanvasSyncStore.getState();
+  const zoom = clampViewportZoom(nextZoom);
+
+  if (state.containerSize.width === 0 || state.containerSize.height === 0) {
+    applyViewportState({
+      scale: zoom,
+      x: state.panOffset.x,
+      y: state.panOffset.y,
+    });
+    return;
+  }
+
+  const centerX = state.containerSize.width / 2;
+  const centerY = state.containerSize.height / 2;
+  const zoomRatio = zoom / state.zoom;
+
+  applyViewportState({
+    scale: zoom,
+    x: centerX - (centerX - state.panOffset.x) * zoomRatio,
+    y: centerY - (centerY - state.panOffset.y) * zoomRatio,
+  });
+}

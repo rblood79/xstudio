@@ -1,33 +1,17 @@
 /**
- * Settings Panel Styles
+ * Settings Panel Styles — Modal + Dialog based
  */
 
-.settings-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--accent-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.settings-panel {
-  max-width: 600px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+/* Hide the trigger button (controlled externally via isOpen) */
+.settings-trigger-hidden {
+  display: none;
 }
 
 .settings-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-lg);
-  border-bottom: 1px solid var(--border);
+  padding: var(--spacing-md) var(--spacing-lg);
 }
 
 .settings-title {
@@ -38,69 +22,54 @@
 
 .settings-title h2 {
   margin: 0;
-  font-size: var(--text-xl);
+  font-size: var(--text-base);
   font-weight: var(--font-weight-bold);
 }
 
 .settings-content {
-  flex: 1;
-  overflow-y: auto;
   padding: var(--spacing-lg);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-lg);
 }
 
 .setting-item {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
-.setting-item label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2xs);
-}
-
-.setting-description {
-  font-size: var(--text-sm);
-  color: var(--color-gray-600);
-  margin: 0;
-}
-
-.select-option {
+.setting-label {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.select-option strong {
-  font-size: var(--text-base);
+.setting-label strong {
+  font-size: var(--text-sm);
 }
 
-.select-option p {
+.setting-description {
   font-size: var(--text-xs);
-  color: var(--color-gray-600);
+  color: var(--fg-muted);
   margin: 0;
 }
 
 .settings-info {
-  padding: var(--spacing-md);
-  background: var(--color-blue-50);
-  border-left: 3px solid var(--color-primary-600);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-}
-
-.settings-info p {
-  margin: var(--spacing-xs) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--accent-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--fg-muted);
 }
 
 .settings-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  padding: var(--spacing-lg);
-  border-top: 1px solid var(--border);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
 }

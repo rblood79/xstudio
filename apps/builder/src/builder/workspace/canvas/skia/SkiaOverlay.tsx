@@ -49,7 +49,6 @@ import {
   renderLasso,
   renderPageTitle,
 } from "./selectionRenderer";
-import type { LassoRenderData } from "./selectionRenderer";
 import {
   computeWorkflowEdges,
   computeDataSourceEdges,
@@ -65,13 +64,11 @@ import {
   renderPageFrameHighlight,
   type PageFrame,
   type ElementBounds,
-  type WorkflowHighlightState,
 } from "./workflowRenderer";
 import {
   buildEdgeGeometryCache,
   type CachedEdgeGeometry,
 } from "./workflowHitTest";
-import { computeConnectedEdges } from "./workflowGraphUtils";
 import {
   useWorkflowInteraction,
   type WorkflowHoverState,
@@ -88,17 +85,10 @@ import {
 import {
   renderWorkflowMinimap,
   DEFAULT_MINIMAP_CONFIG,
-  MINIMAP_CANVAS_RATIO,
-  MINIMAP_MIN_WIDTH,
-  MINIMAP_MAX_WIDTH,
-  MINIMAP_MIN_HEIGHT,
-  MINIMAP_MAX_HEIGHT,
   type MinimapConfig,
 } from "./workflowMinimap";
 import { useStore } from "../../../stores";
 import { useLayoutsStore } from "../../../stores/layouts";
-import { getElementBoundsSimple } from "../elementRegistry";
-import { calculateCombinedBounds } from "../selection/types";
 import type { BoundingBox, DragState } from "../selection/types";
 import { watchContextLoss } from "./createSurface";
 import { flushWasmMetrics, recordWasmMetric } from "../utils/gpuProfilerCore";
@@ -113,6 +103,26 @@ import {
   executeRenderCommands,
   buildAIBoundsFromStream,
 } from "./renderCommands";
+import {
+  buildElementBoundsMapFromTreeBounds,
+  buildPageFrameMap,
+  buildTreeBoundsMap,
+} from "./skiaFrameHelpers";
+import {
+  buildHoverHighlightTargets,
+  buildMinimapConfig,
+  buildMinimapRenderData,
+  buildMinimapViewportBounds,
+  buildGridRenderInput,
+  buildPageTitleRenderItems,
+  shouldRenderWorkflowMinimap,
+} from "./skiaOverlayHelpers";
+import {
+  buildSelectionRenderData,
+  buildWorkflowHighlightState,
+  collectHighlightedWorkflowPageIds,
+  filterRenderableWorkflowEdges,
+} from "./skiaWorkflowSelection";
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -401,147 +411,6 @@ function getCachedTreeBoundsMap(
   return map;
 }
 
-/** Selection 렌더 데이터 결과 */
-interface SelectionRenderResult {
-  bounds: BoundingBox | null;
-  showHandles: boolean;
-  lasso: LassoRenderData | null;
-}
-
-/**
- * Skia 렌더 트리에서 각 element의 씬-로컬 절대 바운드를 추출한다.
- *
- * 계층 트리에서 부모 오프셋을 누적하여 절대 좌표를 복원한다.
- * 컨텐츠 렌더링과 동일한 좌표 소스(worldTransform 기반)를 사용하므로
- * Selection 오버레이와 컨텐츠가 항상 동기화된다.
- */
-function buildTreeBoundsMap(tree: SkiaNodeData): Map<string, BoundingBox> {
-  const boundsMap = new Map<string, BoundingBox>();
-
-  function traverse(
-    node: SkiaNodeData,
-    parentX: number,
-    parentY: number,
-  ): void {
-    const absX = parentX + node.x;
-    const absY = parentY + node.y;
-
-    if (node.elementId) {
-      boundsMap.set(node.elementId, {
-        x: absX,
-        y: absY,
-        width: node.width,
-        height: node.height,
-      });
-    }
-
-    if (node.children) {
-      for (const child of node.children) {
-        traverse(child, absX, absY);
-      }
-    }
-  }
-
-  traverse(tree, 0, 0);
-  return boundsMap;
-}
-
-/**
- * Selection 렌더 데이터를 수집한다.
- *
- * Skia 트리의 절대 바운드를 사용하여 컨텐츠 렌더링과 동일한 좌표 소스를 참조한다.
- * 이전 방식(elementRegistry/하드코딩 좌표)은 팬 시 worldTransform 타이밍 불일치로
- * Selection이 컨텐츠와 분리되는 문제가 있었다.
- */
-function buildSelectionRenderData(
-  cameraX: number,
-  cameraY: number,
-  cameraZoom: number,
-  treeBoundsMap: Map<string, BoundingBox>,
-  dragStateRef?: RefObject<DragState | null>,
-  pageFrames?: SkiaOverlayProps["pageFrames"],
-): SelectionRenderResult {
-  const state = useStore.getState();
-  const selectedIds = state.selectedElementIds;
-
-  let selectionBounds: BoundingBox | null = null;
-  let showHandles = false;
-
-  if (selectedIds.length > 0) {
-    const currentPageId = state.currentPageId;
-    const boxes: BoundingBox[] = [];
-
-    for (const id of selectedIds) {
-      const el = state.elementsMap.get(id);
-      if (!el || el.page_id !== currentPageId) continue;
-
-      // Skia 트리에서 바운드 조회 (컨텐츠 렌더링과 동일한 worldTransform 기반 좌표)
-      // tree bounds는 이미 씬-로컬 좌표이므로 zoom 보정 불필요
-      const treeBounds = treeBoundsMap.get(id);
-      if (treeBounds) {
-        boxes.push({
-          x: treeBounds.x,
-          y: treeBounds.y,
-          width: treeBounds.width,
-          height: treeBounds.height,
-        });
-        continue;
-      }
-
-      // 트리에 없는 요소는 elementRegistry 폴백
-      const globalBounds = getElementBoundsSimple(id);
-      if (globalBounds) {
-        boxes.push({
-          x: (globalBounds.x - cameraX) / cameraZoom,
-          y: (globalBounds.y - cameraY) / cameraZoom,
-          width: globalBounds.width / cameraZoom,
-          height: globalBounds.height / cameraZoom,
-        });
-        continue;
-      }
-
-      // Body 요소 폴백: 페이지 프레임에서 바운드 계산
-      if (el.tag.toLowerCase() === "body" && pageFrames) {
-        const pageFrame = pageFrames.find((frame) => frame.id === el.page_id);
-        if (pageFrame) {
-          boxes.push({
-            x: pageFrame.x,
-            y: pageFrame.y,
-            width: pageFrame.width,
-            height: pageFrame.height,
-          });
-        }
-      }
-    }
-
-    selectionBounds = calculateCombinedBounds(boxes);
-    showHandles = selectedIds.length === 1;
-  }
-
-  // 라쏘 상태
-  let lasso: LassoRenderData | null = null;
-  const dragState = dragStateRef?.current;
-  if (
-    dragState?.isDragging &&
-    dragState.operation === "lasso" &&
-    dragState.startPosition &&
-    dragState.currentPosition
-  ) {
-    const sx = dragState.startPosition.x;
-    const sy = dragState.startPosition.y;
-    const cx = dragState.currentPosition.x;
-    const cy = dragState.currentPosition.y;
-    lasso = {
-      x: Math.min(sx, cx),
-      y: Math.min(sy, cy),
-      width: Math.abs(cx - sx),
-      height: Math.abs(cy - sy),
-    };
-  }
-
-  return { bounds: selectionBounds, showHandles, lasso };
-}
-
 /**
  * CanvasKit 오버레이 (Pencil 방식 단일 캔버스).
  *
@@ -655,8 +524,6 @@ export function SkiaOverlay({
     const version = useStore.getState().pagePositionsVersion;
     pagePosVersionRef.current = version;
   });
-
-  const emptyTreeBoundsMapRef = useRef<Map<string, BoundingBox>>(new Map());
 
   // Dev-only: registryVersion 변화율(Content rerender 원인 추적)
   const devRegistryWindowStartMs = useRef(0);
@@ -1185,6 +1052,7 @@ export function SkiaOverlay({
 
       let treeBoundsMap: Map<string, BoundingBox>;
       let nodeBoundsMap: Map<string, AIEffectNodeBounds> | null = null;
+      let workflowElementBoundsMap: Map<string, ElementBounds> | null = null;
       const currentAiState = useAIVisualFeedbackStore.getState();
       const hasAIEffects =
         currentAiState.generatingNodes.size > 0 ||
@@ -1363,31 +1231,21 @@ export function SkiaOverlay({
 
       // Phase 3: 히트테스트 캐시를 renderFrame 상위 레벨에서 빌드 (overlay renderSkia 콜백 이전)
       if (showWorkflowOverlay) {
-        const pfMap = new Map<string, PageFrame>();
         const frames = pageFramesRef.current ?? [];
-        for (const frame of frames) {
-          pfMap.set(frame.id, frame);
-        }
+        const pfMap = buildPageFrameMap(frames);
         pageFrameMapRef.current = pfMap;
+        workflowElementBoundsMap =
+          buildElementBoundsMapFromTreeBounds(treeBoundsMap);
 
         if (workflowEdgesRef.current.length > 0) {
           const { workflowStraightEdges } = useStore.getState();
           // 버전 기반 캐싱: edges/pagePos/straightEdges 변경 시에만 재계산
           const cacheKey = `${workflowEdgesVersionRef.current}:${pagePosVersion}:${workflowStraightEdges}`;
           if (cacheKey !== edgeGeometryCacheKeyRef.current) {
-            const elMap = new Map<string, ElementBounds>();
-            for (const [id, bbox] of treeBoundsMap) {
-              elMap.set(id, {
-                x: bbox.x,
-                y: bbox.y,
-                width: bbox.width,
-                height: bbox.height,
-              });
-            }
             edgeGeometryCacheRef.current = buildEdgeGeometryCache(
               workflowEdgesRef.current,
               pfMap,
-              elMap,
+              workflowElementBoundsMap,
               workflowStraightEdges,
             );
             edgeGeometryCacheKeyRef.current = cacheKey;
@@ -1424,20 +1282,22 @@ export function SkiaOverlay({
           const frames = pageFramesRef.current ?? [];
           if (frames.length > 0) {
             const state = useStore.getState();
-            const activePageId = state.currentPageId;
-            const hasSelection = state.selectedElementIds.length > 0;
-            for (const frame of frames) {
-              if (!frame.title) continue;
+            const pageTitleItems = buildPageTitleRenderItems(
+              frames,
+              state.currentPageId,
+              state.selectedElementIds.length > 0,
+            );
+            for (const item of pageTitleItems) {
               canvas.save();
-              canvas.translate(frame.x, frame.y);
+              canvas.translate(item.x, item.y);
               renderPageTitle(
                 ck,
                 canvas,
-                frame.title,
+                item.title,
                 cameraZoom,
                 fontMgr,
-                hasSelection && frame.id === activePageId,
-                frame.elementCount,
+                item.highlighted,
+                item.elementCount,
               );
               canvas.restore();
             }
@@ -1447,17 +1307,7 @@ export function SkiaOverlay({
           if (showWorkflowOverlay) {
             // pageFrameMap/edgeGeometryCache는 renderFrame 상위 레벨에서 이미 빌드됨
             const pageFrameMap = pageFrameMapRef.current;
-
-            // treeBoundsMap에서 ElementBounds 맵 구성 (요소 레벨 앵커링)
-            const elBoundsMap = new Map<string, ElementBounds>();
-            for (const [id, bbox] of treeBoundsMap) {
-              elBoundsMap.set(id, {
-                x: bbox.x,
-                y: bbox.y,
-                width: bbox.width,
-                height: bbox.height,
-              });
-            }
+            const elBoundsMap = workflowElementBoundsMap ?? new Map();
 
             // 서브 토글 상태 읽기
             const wfState = useStore.getState();
@@ -1469,33 +1319,19 @@ export function SkiaOverlay({
             // Phase 3: highlightState 구성
             const hoveredEdgeId = workflowHoverStateRef.current.hoveredEdgeId;
             const focusedPageId = wfState.workflowFocusedPageId;
-            let highlightState: WorkflowHighlightState | undefined;
-            if (hoveredEdgeId || focusedPageId) {
-              const connected = focusedPageId
-                ? computeConnectedEdges(focusedPageId, workflowEdgesRef.current)
-                : {
-                    directEdgeIds: new Set<string>(),
-                    secondaryEdgeIds: new Set<string>(),
-                  };
-              highlightState = {
-                hoveredEdgeId,
-                focusedPageId,
-                directEdgeIds: connected.directEdgeIds,
-                secondaryEdgeIds: connected.secondaryEdgeIds,
-              };
-            }
+            const highlightState = buildWorkflowHighlightState(
+              hoveredEdgeId,
+              focusedPageId,
+              workflowEdgesRef.current,
+            );
 
             // Phase 3: 포커스/호버 연결 페이지 프레임 하이라이트 (엣지 아래에 렌더)
             if (highlightState && focusedPageId) {
-              // 직접 연결 페이지 수집
-              const connectedPageIds = new Set<string>();
-              connectedPageIds.add(focusedPageId);
-              for (const edge of workflowEdgesRef.current) {
-                if (highlightState.directEdgeIds.has(edge.id)) {
-                  connectedPageIds.add(edge.sourcePageId);
-                  connectedPageIds.add(edge.targetPageId);
-                }
-              }
+              const connectedPageIds = collectHighlightedWorkflowPageIds(
+                focusedPageId,
+                highlightState,
+                workflowEdgesRef.current,
+              );
               renderPageFrameHighlight(
                 ck,
                 canvas,
@@ -1524,11 +1360,11 @@ export function SkiaOverlay({
               workflowEdgesRef.current.length > 0 &&
               (showNav || showEvents)
             ) {
-              const filteredEdges = workflowEdgesRef.current.filter((e) => {
-                if (e.type === "navigation") return showNav;
-                if (e.type === "event-navigation") return showEvents;
-                return false;
-              });
+              const filteredEdges = filterRenderableWorkflowEdges(
+                workflowEdgesRef.current,
+                showNav,
+                showEvents,
+              );
               if (filteredEdges.length > 0) {
                 const straightEdges = useStore.getState().workflowStraightEdges;
                 renderWorkflowEdges(
@@ -1572,22 +1408,20 @@ export function SkiaOverlay({
             hoveredLeafIds,
             isGroupHover,
           } = elementHoverStateRef.current;
-
-          // 대상(context 히트) 자체: 실선 (리프든 그룹이든 항상 표시)
-          if (hoveredCtxId) {
-            const ctxBounds = treeBoundsMap.get(hoveredCtxId);
-            if (ctxBounds) {
-              renderHoverHighlight(ck, canvas, ctxBounds, cameraZoom, false);
-            }
-          }
-
-          // 그룹 내부 리프: 점선 (그룹 호버일 때만 추가)
-          if (isGroupHover && hoveredLeafIds.length > 0) {
-            for (const leafId of hoveredLeafIds) {
-              const hoverBounds = treeBoundsMap.get(leafId);
-              if (!hoverBounds) continue;
-              renderHoverHighlight(ck, canvas, hoverBounds, cameraZoom, true);
-            }
+          const hoverTargets = buildHoverHighlightTargets(
+            treeBoundsMap,
+            hoveredCtxId,
+            hoveredLeafIds,
+            isGroupHover,
+          );
+          for (const target of hoverTargets) {
+            renderHoverHighlight(
+              ck,
+              canvas,
+              target.bounds,
+              cameraZoom,
+              target.dashed,
+            );
           }
 
           if (selectionData.bounds) {
@@ -1614,56 +1448,31 @@ export function SkiaOverlay({
 
           // Phase 4: 미니맵 (최상위 레이어, 스크린 고정) — 캔버스 이동 시에만 표시
           if (
-            showWorkflowOverlay &&
-            minimapVisibleRef.current &&
-            pageFrameMapRef.current.size > 0
+            shouldRenderWorkflowMinimap(
+              showWorkflowOverlay,
+              minimapVisibleRef.current,
+              pageFrameMapRef.current.size,
+            )
           ) {
             const mmScreenW = skiaCanvas.width / dpr;
             const mmScreenH = skiaCanvas.height / dpr;
-
-            // 캔버스 크기에 비례하여 미니맵 크기 결정
-            const mmWidth = Math.max(
-              MINIMAP_MIN_WIDTH,
-              Math.min(
-                MINIMAP_MAX_WIDTH,
-                Math.round(mmScreenW * MINIMAP_CANVAS_RATIO),
-              ),
-            );
-            const mmHeight = Math.max(
-              MINIMAP_MIN_HEIGHT,
-              Math.min(
-                MINIMAP_MAX_HEIGHT,
-                Math.round(mmScreenH * MINIMAP_CANVAS_RATIO),
-              ),
-            );
-
-            // inspector 패널 너비를 DOM에서 측정하여 미니맵 위치 보정
-            const { panelLayout } = useStore.getState();
-            const inspectorWidth = panelLayout.showRight
-              ? ((document.querySelector("aside.inspector") as HTMLElement)
-                  ?.offsetWidth ?? 0)
-              : 0;
-            minimapConfigRef.current = {
-              ...DEFAULT_MINIMAP_CONFIG,
-              width: mmWidth,
-              height: mmHeight,
-              screenRight: inspectorWidth + DEFAULT_MINIMAP_CONFIG.screenRight,
-            };
+            minimapConfigRef.current = buildMinimapConfig(mmScreenW, mmScreenH);
 
             renderWorkflowMinimap(
               ck,
               canvas,
-              {
-                pageFrames: pageFrameMapRef.current,
-                edges: workflowEdgesRef.current,
-                focusedPageId: useStore.getState().workflowFocusedPageId,
-                viewportBounds: {
-                  x: -cameraX / cameraZoom,
-                  y: -cameraY / cameraZoom,
-                  width: mmScreenW / cameraZoom,
-                  height: mmScreenH / cameraZoom,
-                },
-              },
+              buildMinimapRenderData(
+                pageFrameMapRef.current,
+                workflowEdgesRef.current,
+                useStore.getState().workflowFocusedPageId,
+                buildMinimapViewportBounds(
+                  cameraX,
+                  cameraY,
+                  cameraZoom,
+                  mmScreenW,
+                  mmScreenH,
+                ),
+              ),
               minimapConfigRef.current,
               { zoom: cameraZoom, panX: cameraX, panY: cameraY },
               { width: mmScreenW, height: mmScreenH },
@@ -1680,12 +1489,15 @@ export function SkiaOverlay({
         gridVisible
           ? {
               renderSkia(canvas, cullingBounds) {
-                renderGrid(ck, canvas, {
-                  cullingBounds,
-                  gridSize: currentGridSz,
-                  zoom: cameraZoom,
-                  showGrid: true,
-                });
+                renderGrid(
+                  ck,
+                  canvas,
+                  buildGridRenderInput(
+                    cullingBounds,
+                    currentGridSz,
+                    cameraZoom,
+                  ),
+                );
               },
             }
           : null,

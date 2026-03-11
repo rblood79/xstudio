@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import {
   projectsApi,
@@ -10,7 +10,18 @@ import { getDB } from "../lib/db";
 import { ElementProps } from "../types/integrations/supabase.types";
 import { getDefaultProps } from "../types/builder/unified.types";
 import { ElementUtils } from "../utils/element/elementUtils";
-import { Button, TextField, Input } from "react-aria-components";
+import {
+  Button,
+  TextField,
+  Badge,
+  Card,
+  Skeleton,
+  Separator,
+  Tooltip,
+  ToggleButtonGroup,
+  ToggleButton,
+} from "@xstudio/shared/components";
+import { TooltipTrigger } from "react-aria-components";
 import { useAsyncQuery } from "../builder/hooks/useAsyncQuery";
 import { useAsyncMutation } from "../builder/hooks/useAsyncMutation";
 import {
@@ -21,9 +32,10 @@ import {
   Settings,
   Plus,
   Package,
-  CloudAlert,
   CloudUpload,
   Trash,
+  FolderOpen,
+  Layers,
 } from "lucide-react";
 import {
   mergeProjects,
@@ -45,6 +57,152 @@ interface CreateProjectRequest {
   name: string;
 }
 
+/** Badge variant 매핑 */
+function getBadgeVariant(
+  className: string,
+): "informative" | "positive" | "accent" | "notice" | "neutral" {
+  switch (className) {
+    case "badge-local":
+      return "informative";
+    case "badge-cloud":
+      return "positive";
+    case "badge-synced":
+      return "accent";
+    case "badge-conflict":
+      return "notice";
+    default:
+      return "neutral";
+  }
+}
+
+/** 프로젝트 카드 컴포넌트 */
+function ProjectCard({
+  project,
+  loading,
+  onOpen,
+  onSync,
+  onDownload,
+  onDelete,
+}: {
+  project: ProjectListItem;
+  loading: boolean;
+  onOpen: (id: string) => void;
+  onSync: (id: string) => void;
+  onDownload: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const badge = getStorageBadge(project);
+  const actions = getAvailableActions(project);
+
+  return (
+    <Card
+      orientation="horizontal"
+      variant="secondary"
+      size="sm"
+      className="project-card"
+      structuralChildren
+    >
+      <div className="project-card-icon">
+        <Layers size={16} />
+      </div>
+
+      <div className="project-card-content">
+        <div className="project-card-header">
+          <span className="project-card-title">{project.name}</span>
+          <Badge
+            variant={getBadgeVariant(badge.className)}
+            size="sm"
+            fillStyle="subtle"
+          >
+            {badge.label}
+          </Badge>
+        </div>
+
+        <span className="project-card-meta">
+          {formatRelativeTime(project.lastModified)}
+          {project.sync.lastSyncAt && (
+            <> &middot; Synced {formatRelativeTime(project.sync.lastSyncAt)}</>
+          )}
+        </span>
+      </div>
+
+      <div className="project-card-actions">
+        {actions.canOpen && (
+          <TooltipTrigger delay={300}>
+            <Button
+              variant="primary"
+              size="xs"
+              onPress={() => onOpen(project.id)}
+              isDisabled={loading}
+              aria-label="Open project"
+            >
+              <Package size={14} />
+            </Button>
+            <Tooltip>Open</Tooltip>
+          </TooltipTrigger>
+        )}
+
+        {actions.canSync && (
+          <TooltipTrigger delay={300}>
+            <Button
+              variant="secondary"
+              fillStyle="outline"
+              size="xs"
+              onPress={() => onSync(project.id)}
+              isDisabled={loading}
+              aria-label="Sync to cloud"
+            >
+              <CloudUpload size={14} />
+            </Button>
+            <Tooltip>Sync to Cloud</Tooltip>
+          </TooltipTrigger>
+        )}
+
+        {actions.canDownload && (
+          <TooltipTrigger delay={300}>
+            <Button
+              variant="secondary"
+              fillStyle="outline"
+              size="xs"
+              onPress={() => onDownload(project.id)}
+              isDisabled={loading}
+              aria-label="Download from cloud"
+            >
+              <Download size={14} />
+            </Button>
+            <Tooltip>Download</Tooltip>
+          </TooltipTrigger>
+        )}
+
+        <TooltipTrigger delay={300}>
+          <Button
+            variant="negative"
+            fillStyle="outline"
+            size="xs"
+            onPress={() => onDelete(project.id)}
+            isDisabled={loading}
+            aria-label="Delete project"
+          >
+            <Trash size={14} />
+          </Button>
+          <Tooltip>Delete</Tooltip>
+        </TooltipTrigger>
+      </div>
+    </Card>
+  );
+}
+
+/** 로딩 스켈레톤 */
+function ProjectCardSkeleton() {
+  return (
+    <div className="project-card-skeleton">
+      <Skeleton componentVariant="card-horizontal" size="sm" />
+      <Skeleton componentVariant="card-horizontal" size="sm" />
+      <Skeleton componentVariant="card-horizontal" size="sm" />
+    </div>
+  );
+}
+
 function Dashboard() {
   const navigate = useNavigate();
   const [newProjectName, setNewProjectName] = useState("");
@@ -52,10 +210,9 @@ function Dashboard() {
   const [mergedProjects, setMergedProjects] = useState<ProjectListItem[]>([]);
   const [showSettings, setShowSettings] = useState(false);
 
-  // 설정 가져오기
   const projectCreation = useSettingsStore((state) => state.projectCreation);
 
-  // Fetch cloud projects with useAsyncQuery
+  // Fetch cloud projects
   const cloudProjectsQuery = useAsyncQuery<Project>(
     async () => await projectsApi.fetchProjects(),
   );
@@ -64,31 +221,20 @@ function Dashboard() {
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        // 1. IndexedDB에서 로컬 프로젝트 로드
         const db = await getDB();
         const localProjectsRaw = await db.projects.getAll();
 
-        // 타입 변환: src/lib/db/types.ts의 Project → src/services/api/ProjectsApiService.ts의 Project
         const localProjects: Project[] = localProjectsRaw.map((p) => ({
           id: p.id,
           name: p.name,
-          created_by: p.created_by || "", // optional → required
+          created_by: p.created_by || "",
           created_at: p.created_at || new Date().toISOString(),
           updated_at: p.updated_at || new Date().toISOString(),
         }));
 
-        console.log("[Dashboard] 로컬 프로젝트 로드:", localProjects.length);
-
-        // 2. 클라우드 프로젝트 (이미 useAsyncQuery로 로드됨)
         const cloudProjects = cloudProjectsQuery.data || [];
-
-        console.log("[Dashboard] 클라우드 프로젝트:", cloudProjects.length);
-
-        // 3. 병합
         const merged = mergeProjects(localProjects, cloudProjects);
         setMergedProjects(merged);
-
-        console.log("[Dashboard] 병합 완료:", merged.length);
       } catch (error) {
         console.error("[Dashboard] 프로젝트 로드 실패:", error);
       }
@@ -105,11 +251,9 @@ function Dashboard() {
       const db = await getDB();
       const user = await projectsApi.getCurrentUser();
 
-      // 프로젝트 생성 모드에 따라 처리
       let newProject: Project;
 
       if (projectCreation === "local") {
-        // 1️⃣ 로컬(IndexedDB)에만 생성
         newProject = {
           id: ElementUtils.generateId(),
           name: name.trim(),
@@ -117,32 +261,26 @@ function Dashboard() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
-
         await db.projects.insert(newProject);
-        console.log("[Dashboard] 로컬 프로젝트 생성:", newProject.id);
       } else if (projectCreation === "cloud") {
-        // 2️⃣ 클라우드(Supabase)에만 생성
         newProject = await projectsApi.createProject({
           name: name.trim(),
           created_by: user.id,
         });
-        console.log("[Dashboard] 클라우드 프로젝트 생성:", newProject.id);
       } else {
-        // 3️⃣ 양쪽 모두 생성 (both)
         newProject = await projectsApi.createProject({
           name: name.trim(),
           created_by: user.id,
         });
         await db.projects.insert(newProject);
-        console.log("[Dashboard] 로컬+클라우드 프로젝트 생성:", newProject.id);
       }
 
-      // 기본 페이지 생성
+      // 기본 페이지 + body 요소 생성
       const homePageId = ElementUtils.generateId();
       const homePage = {
         id: homePageId,
         project_id: newProject.id,
-        title: "Home", // Page 타입은 'title' 사용
+        title: "Home",
         slug: "/",
         parent_id: null,
         order_num: 0,
@@ -150,7 +288,6 @@ function Dashboard() {
         updated_at: new Date().toISOString(),
       };
 
-      // 기본 body 요소 생성
       const bodyElement = {
         id: ElementUtils.generateId(),
         tag: "body",
@@ -162,23 +299,19 @@ function Dashboard() {
         updated_at: new Date().toISOString(),
       };
 
-      // 설정에 따라 저장
       if (projectCreation === "local") {
-        // 로컬에만 저장
         await db.pages.insert(homePage);
         await db.elements.insert(bodyElement);
       } else if (projectCreation === "cloud") {
-        // 클라우드에만 저장
         await pagesApi.createPage({
           id: homePageId,
           project_id: newProject.id,
-          title: "Home", // API uses 'title'
+          title: "Home",
           slug: "/",
           order_num: 0,
         });
         await elementsApi.createElement(bodyElement);
       } else {
-        // 양쪽 모두 저장
         await db.pages.insert(homePage);
         await db.elements.insert(bodyElement);
         await pagesApi.createPage({
@@ -195,7 +328,7 @@ function Dashboard() {
     },
     {
       onSuccess: (newProject) => {
-        cloudProjectsQuery.reload(); // 목록 갱신
+        cloudProjectsQuery.reload();
         setNewProjectName("");
         navigate(`/builder/${newProject.id}`);
       },
@@ -205,171 +338,111 @@ function Dashboard() {
   // Delete project mutation
   const deleteProjectMutation = useAsyncMutation<void, string>(
     async (id) => {
-      // 필터에 따라 삭제 범위 결정
       let deleteLocation: "local" | "cloud" | "both";
 
       if (filter === "local") {
         deleteLocation = "local";
-        console.log("[Dashboard] 로컬 프로젝트만 삭제:", id);
       } else if (filter === "cloud") {
         deleteLocation = "cloud";
-        console.log("[Dashboard] 클라우드 프로젝트만 삭제:", id);
       } else {
         deleteLocation = "both";
-        console.log("[Dashboard] 로컬 + 클라우드 프로젝트 삭제:", id);
       }
 
-      // 로컬 삭제 (local 또는 both)
+      // 로컬 삭제
       if (deleteLocation === "local" || deleteLocation === "both") {
         const db = await getDB();
-
-        // 1. 프로젝트의 모든 페이지 찾기
         const pages = await db.pages.getByProject(id);
-        console.log("[Dashboard] 삭제할 페이지:", pages.length);
 
-        // 2. 각 페이지의 요소들과 히스토리 삭제
         for (const page of pages) {
           const elements = await db.elements.getByPage(page.id);
-          console.log(
-            "[Dashboard] 페이지",
-            page.title,
-            "의 요소:",
-            elements.length,
-          );
-
           for (const element of elements) {
             await db.elements.delete(element.id);
           }
-
-          // 페이지의 히스토리 삭제 (xstudio IndexedDB)
           await db.history.clear(page.id);
-
-          // 페이지의 히스토리 삭제 (xstudio-history IndexedDB)
           await historyIndexedDB.clearPageHistory(page.id);
         }
 
-        // 3. 페이지 삭제
         for (const page of pages) {
           await db.pages.delete(page.id);
         }
-        console.log("[Dashboard] 페이지 및 히스토리 삭제 완료");
 
-        // 4. 프로젝트의 디자인 토큰 삭제
         const tokens = await db.designTokens.getByProject(id);
-        console.log("[Dashboard] 삭제할 디자인 토큰:", tokens.length);
-
         for (const token of tokens) {
           await db.designTokens.delete(token.id);
         }
 
-        // 4-1. 프로젝트의 디자인 테마 삭제
         const themes = await db.themes.getByProject(id);
-        console.log("[Dashboard] 삭제할 디자인 테마:", themes.length);
-
         for (const theme of themes) {
           await db.themes.delete(theme.id as string);
         }
 
-        // ⭐ 5. Layout/Slot System: 프로젝트의 레이아웃과 레이아웃 요소 삭제
         const layouts = await db.layouts.getByProject(id);
-        console.log("[Dashboard] 삭제할 레이아웃:", layouts.length);
-
         for (const layout of layouts) {
-          // 레이아웃의 요소들 삭제 (layout_id로 조회)
           const layoutElements = await db.elements.getByLayout(layout.id);
-          console.log(
-            "[Dashboard] 레이아웃",
-            layout.name,
-            "의 요소:",
-            layoutElements.length,
-          );
-
           for (const element of layoutElements) {
             await db.elements.delete(element.id);
           }
-
-          // 레이아웃 삭제
           await db.layouts.delete(layout.id);
         }
 
-        // 6. Data Panel 테이블들 삭제 (data_tables, api_endpoints, variables, transformers)
         const dataTables = await db.data_tables.getByProject(id);
         for (const dataTable of dataTables) {
           await db.data_tables.delete(dataTable.id);
         }
-        console.log(`[Dashboard] DataTables ${dataTables.length}개 삭제 완료`);
 
         const apiEndpoints = await db.api_endpoints.getByProject(id);
         for (const endpoint of apiEndpoints) {
           await db.api_endpoints.delete(endpoint.id);
         }
-        console.log(
-          `[Dashboard] API Endpoints ${apiEndpoints.length}개 삭제 완료`,
-        );
 
         const variables = await db.variables.getByProject(id);
         for (const variable of variables) {
           await db.variables.delete(variable.id);
         }
-        console.log(`[Dashboard] Variables ${variables.length}개 삭제 완료`);
 
         const transformers = await db.transformers.getByProject(id);
         for (const transformer of transformers) {
           await db.transformers.delete(transformer.id);
         }
-        console.log(
-          `[Dashboard] Transformers ${transformers.length}개 삭제 완료`,
-        );
 
-        // 7. 프로젝트 삭제 (IndexedDB)
         await db.projects.delete(id);
-        console.log("✅ [Dashboard] 로컬 프로젝트 삭제 완료");
       }
 
-      // 클라우드 삭제 (cloud 또는 both)
+      // 클라우드 삭제
       if (deleteLocation === "cloud" || deleteLocation === "both") {
         try {
           await projectsApi.deleteProject(id);
-          console.log("✅ [Dashboard] 클라우드 프로젝트 삭제 완료");
         } catch (error) {
-          console.warn(
-            "[Dashboard] Supabase 삭제 실패 (프로젝트가 클라우드에 없을 수 있음):",
-            error,
-          );
+          console.warn("[Dashboard] Supabase 삭제 실패:", error);
         }
       }
-
-      console.log(`✅ [Dashboard] 프로젝트 삭제 완료 (${deleteLocation}):`, id);
     },
     {
       onSuccess: () => {
-        cloudProjectsQuery.reload(); // 목록 갱신
+        cloudProjectsQuery.reload();
       },
     },
   );
 
-  // Sync project mutation (local → cloud)
+  // Sync project mutation
   const syncProjectMutation = useAsyncMutation<void, string>(
     async (projectId) => {
       await syncProjectToCloud(projectId);
-      console.log("[Dashboard] 프로젝트 동기화 완료:", projectId);
     },
     {
       onSuccess: () => {
-        cloudProjectsQuery.reload(); // 목록 갱신
+        cloudProjectsQuery.reload();
       },
     },
   );
 
-  // Download project mutation (cloud → local)
+  // Download project mutation
   const downloadProjectMutation = useAsyncMutation<void, string>(
     async (projectId) => {
       await downloadProjectFromCloud(projectId);
-      console.log("[Dashboard] 프로젝트 다운로드 완료:", projectId);
     },
     {
       onSuccess: () => {
-        // 로컬 프로젝트가 추가되었으므로 목록 갱신
         cloudProjectsQuery.reload();
       },
     },
@@ -377,11 +450,7 @@ function Dashboard() {
 
   const handleAddProject = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!newProjectName.trim()) {
-      alert("프로젝트 이름을 입력해주세요.");
-      return;
-    }
+    if (!newProjectName.trim()) return;
 
     try {
       await createProjectMutation.execute({ name: newProjectName });
@@ -391,9 +460,7 @@ function Dashboard() {
   };
 
   const handleDeleteProject = async (id: string) => {
-    if (!confirm("정말로 이 프로젝트를 삭제하시겠습니까?")) {
-      return;
-    }
+    if (!confirm("정말로 이 프로젝트를 삭제하시겠습니까?")) return;
 
     try {
       await deleteProjectMutation.execute(id);
@@ -402,12 +469,32 @@ function Dashboard() {
     }
   };
 
-  // 필터링된 프로젝트 목록
-  const filteredProjects = mergedProjects.filter((project) => {
-    if (filter === "local") return project.storage.local;
-    if (filter === "cloud") return project.storage.cloud;
-    return true; // 'all'
-  });
+  const handleSyncProject = async (id: string) => {
+    try {
+      await syncProjectMutation.execute(id);
+    } catch (err) {
+      console.error("[Dashboard] Sync 에러:", err);
+    }
+  };
+
+  const handleDownloadProject = async (id: string) => {
+    try {
+      await downloadProjectMutation.execute(id);
+    } catch (err) {
+      console.error("[Dashboard] Download 에러:", err);
+    }
+  };
+
+  // 필터링
+  const filteredProjects = useMemo(
+    () =>
+      mergedProjects.filter((project) => {
+        if (filter === "local") return project.storage.local;
+        if (filter === "cloud") return project.storage.cloud;
+        return true;
+      }),
+    [mergedProjects, filter],
+  );
 
   const loading =
     cloudProjectsQuery.isLoading ||
@@ -415,6 +502,7 @@ function Dashboard() {
     deleteProjectMutation.isLoading ||
     syncProjectMutation.isLoading ||
     downloadProjectMutation.isLoading;
+
   const error =
     cloudProjectsQuery.error ||
     createProjectMutation.error ||
@@ -422,15 +510,6 @@ function Dashboard() {
     syncProjectMutation.error ||
     downloadProjectMutation.error;
 
-  if (cloudProjectsQuery.isLoading && mergedProjects.length === 0) {
-    return (
-      <div className="dashboard">
-        <div className="loading">프로젝트를 불러오는 중...</div>
-      </div>
-    );
-  }
-
-  // 필터별 개수
   const counts = {
     all: mergedProjects.length,
     local: mergedProjects.filter((p) => p.storage.local).length,
@@ -439,190 +518,117 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
-      <header className="header">
-        <h1>XStudio Dashboard</h1>
+      {/* Header */}
+      <header className="dashboard-header">
+        <div className="dashboard-header-left">
+          <SquarePlus size={18} />
+          <h1>XStudio</h1>
+        </div>
 
-        {/* 필터 버튼 + Settings */}
-        <div className="filter">
-          <Button
-            className={`react-aria-Button ${
-              filter === "all" ? "primary" : "default"
-            }`}
-            onPress={() => setFilter("all")}
+        <div className="dashboard-header-right">
+          <ToggleButtonGroup
+            selectionMode="single"
+            selectedKeys={new Set([filter])}
+            onSelectionChange={(keys) => {
+              const selected = [...keys][0] as ProjectFilter;
+              if (selected) setFilter(selected);
+            }}
+            size="sm"
           >
-            All ({counts.all})
-          </Button>
-          <Button
-            className={`react-aria-Button ${
-              filter === "local" ? "primary" : "default"
-            }`}
-            onPress={() => setFilter("local")}
-          >
-            <HardDrive size={14} /> Local ({counts.local})
-          </Button>
-          <Button
-            className={`react-aria-Button ${
-              filter === "cloud" ? "primary" : "default"
-            }`}
-            onPress={() => setFilter("cloud")}
-          >
-            <Cloud size={14} /> Cloud ({counts.cloud})
-          </Button>
+            <ToggleButton id="all" size="sm">
+              All ({counts.all})
+            </ToggleButton>
+            <ToggleButton id="local" size="sm">
+              <HardDrive size={12} /> Local ({counts.local})
+            </ToggleButton>
+            <ToggleButton id="cloud" size="sm">
+              <Cloud size={12} /> Cloud ({counts.cloud})
+            </ToggleButton>
+          </ToggleButtonGroup>
 
-          {/* Settings 버튼 */}
-          <Button
-            className="react-aria-Button ghost"
-            onPress={() => setShowSettings(true)}
-            aria-label="Open settings"
-          >
-            <Settings size={16} />
-          </Button>
+          <Separator orientation="vertical" />
+
+          <TooltipTrigger delay={300}>
+            <Button
+              variant="secondary"
+              fillStyle="outline"
+              size="sm"
+              onPress={() => setShowSettings(true)}
+              aria-label="Settings"
+            >
+              <Settings size={14} />
+            </Button>
+            <Tooltip>Settings</Tooltip>
+          </TooltipTrigger>
         </div>
       </header>
 
-      {error && <div className="error-message">{error.message}</div>}
+      <Separator />
 
-      <main className="main">
-        <form onSubmit={handleAddProject} className="add-project-form">
+      {/* Error */}
+      {error && (
+        <div className="dashboard-error">
+          <Badge variant="negative" size="md" fillStyle="subtle">
+            {error.message}
+          </Badge>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <main className="dashboard-main">
+        {/* New Project Form */}
+        <form onSubmit={handleAddProject} className="new-project-form">
           <TextField
             value={newProjectName}
-            onChange={(value) => setNewProjectName(value)}
+            onChange={setNewProjectName}
             isDisabled={loading}
+            placeholder="New project name..."
+            size="sm"
             aria-label="New project name"
-          >
-            <Input type="text" placeholder="New Project" />
-          </TextField>
+          />
           <Button
             type="submit"
-            className="react-aria-Button primary add-project-button"
+            variant="primary"
+            size="sm"
             isDisabled={loading || !newProjectName.trim()}
+            isLoading={createProjectMutation.isLoading}
           >
-            {createProjectMutation.isLoading ? (
-              "Creating..."
-            ) : (
-              <Plus size={16} />
-            )}
+            <Plus size={14} />
+            Create
           </Button>
         </form>
 
-        <div className="projects-grid">
-          {filteredProjects.map((project) => {
-            const badge = getStorageBadge(project);
-            const actions = getAvailableActions(project);
-
-            return (
-              <div key={project.id} className="project-card">
-                <div className="icon">
-                  <SquarePlus size={16} color="var(--color-primary-600)" />
-                </div>
-                <div className="content">
-                  <h3 className="title">{project.name}</h3>
-
-                  {/* 저장 위치 뱃지 */}
-                  <div className="badges">
-                    <span className={`badge ${badge.className}`}>
-                      {badge.icon} {badge.label}
-                    </span>
-                  </div>
-
-                  <p className="description">
-                    {formatRelativeTime(project.lastModified)}
-                  </p>
-
-                  {/* 동기화 정보 */}
-                  {project.sync.lastSyncAt && (
-                    <p className="sync-info">
-                      Last sync: {formatRelativeTime(project.sync.lastSyncAt)}
-                    </p>
-                  )}
-                </div>
-
-                <div className="project-actions">
-                  {/* Open 버튼 */}
-                  {actions.canOpen && (
-                    <Button
-                      className="react-aria-Button primary"
-                      onPress={() => navigate(`/builder/${project.id}`)}
-                      isDisabled={loading}
-                    >
-                      <Package size={16} />
-                    </Button>
-                  )}
-
-                  {/* Sync 버튼 */}
-                  {actions.canSync && (
-                    <Button
-                      className="react-aria-Button default"
-                      onPress={async () => {
-                        try {
-                          await syncProjectMutation.execute(project.id);
-                          alert(
-                            "✅ 동기화 완료! 프로젝트가 클라우드에 업로드되었습니다.",
-                          );
-                        } catch (err) {
-                          console.error("[Dashboard] Sync 에러:", err);
-                          alert("❌ 동기화 실패: " + (err as Error).message);
-                        }
-                      }}
-                      isDisabled={loading}
-                    >
-                      {syncProjectMutation.isLoading ? (
-                        <CloudAlert size={16} />
-                      ) : (
-                        <CloudUpload size={16} />
-                      )}
-                    </Button>
-                  )}
-
-                  {/* Download 버튼 */}
-                  {actions.canDownload && (
-                    <Button
-                      className="react-aria-Button secondary"
-                      onPress={async () => {
-                        try {
-                          await downloadProjectMutation.execute(project.id);
-                          alert(
-                            "✅ 다운로드 완료! 프로젝트가 로컬에 저장되었습니다.",
-                          );
-                        } catch (err) {
-                          console.error("[Dashboard] Download 에러:", err);
-                          alert("❌ 다운로드 실패: " + (err as Error).message);
-                        }
-                      }}
-                      isDisabled={loading}
-                    >
-                      <Download size={14} />{" "}
-                      {downloadProjectMutation.isLoading
-                        ? "Downloading..."
-                        : "Download"}
-                    </Button>
-                  )}
-
-                  {/* Delete 버튼 */}
-                  <Button
-                    className="react-aria-Button default"
-                    onPress={() => handleDeleteProject(project.id)}
-                    isDisabled={loading}
-                  >
-                    <Trash size={16} />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* 빈 상태 */}
-        {filteredProjects.length === 0 && !loading && (
-          <div className="empty-state">
-            <p>프로젝트가 없습니다.</p>
-            <p>위에서 새 프로젝트를 만들어보세요!</p>
+        {/* Projects Grid */}
+        {cloudProjectsQuery.isLoading && mergedProjects.length === 0 ? (
+          <ProjectCardSkeleton />
+        ) : filteredProjects.length === 0 ? (
+          <div className="dashboard-empty">
+            <FolderOpen size={48} strokeWidth={1} />
+            <p className="dashboard-empty-title">No projects yet</p>
+            <p className="dashboard-empty-description">
+              Create your first project to get started
+            </p>
+          </div>
+        ) : (
+          <div className="projects-grid">
+            {filteredProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                loading={loading}
+                onOpen={(id) => navigate(`/builder/${id}`)}
+                onSync={handleSyncProject}
+                onDownload={handleDownloadProject}
+                onDelete={handleDeleteProject}
+              />
+            ))}
           </div>
         )}
       </main>
 
-      <footer className="footer">
-        <p>XStudio - Local-first Web Builder</p>
+      {/* Footer */}
+      <footer className="dashboard-footer">
+        <span>XStudio — Local-first Web Builder</span>
       </footer>
 
       {/* Settings Panel */}

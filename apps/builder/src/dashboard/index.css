@@ -1,122 +1,5 @@
-/* Dashboard styles - scoped to avoid conflicts with Builder system */
+/* Dashboard styles */
 @layer dashboard {
-  .add-project-button {
-    background: var(--builder-button-bg);
-    color: var(--builder-button-text);
-    border-color: var(--builder-button-border);
-    padding: var(--spacing-2xs);
-    width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: -26px;
-    margin-top: 4px;
-
-    &:hover {
-      background: var(--builder-button-hover-bg);
-      color: var(--builder-button-text);
-      border-color: var(--builder-button-border);
-    }
-    &:active {
-      background: var(--builder-button-active-bg);
-      color: var(--builder-button-text);
-      border-color: var(--builder-button-border);
-    }
-  }
-  .projects {
-    width: calc(240px * 3);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex-wrap: wrap;
-    flex-flow: row;
-    flex-wrap: wrap;
-  }
-
-  .project-item {
-    border: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 16px;
-    border-radius: 8px;
-    background-color: var(--bg-inset);
-    width: 240px;
-    height: 240px;
-  }
-
-  .open-builder {
-    background-color: var(--color-gray-900);
-    color: var(--color-white);
-  }
-
-  .close-builder {
-    background-color: var(--color-gray-900);
-    color: var(--color-white);
-  }
-
-  .overlay-background {
-    position: relative;
-    z-index: 1;
-    height: 100%;
-    width: 100%;
-  }
-
-  .overlay-pattern {
-    position: absolute;
-    inset: 0;
-  }
-
-  .overlay-pattern-inner {
-    height: 100%;
-    color: var(--color-gray-200);
-    background-size: 8px 8px;
-    background-position: left top;
-    background-image: repeating-linear-gradient(
-      315deg,
-      currentColor 0,
-      currentColor 1px,
-      transparent 0,
-      transparent 50%
-    );
-  }
-
-  .dashboard-contents {
-    height: 100vh;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-template-rows: auto 1fr auto;
-    grid-template-areas:
-      "header header header"
-      "main main main"
-      "footer footer footer";
-  }
-
-  .dashboard-header {
-    grid-area: header;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .dashboard-left-sidebar {
-    grid-area: left-sidebar;
-  }
-
-  .dashboard-main {
-    grid-area: main;
-  }
-
-  .dashboard-right-sidebar {
-    grid-area: right-sidebar;
-  }
-
-  .dashboard-footer {
-    grid-area: footer;
-  }
-
   body {
     min-height: 100vh;
     min-height: 100dvh;
@@ -130,209 +13,183 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    background: var(--bg);
+    color: var(--fg);
+  }
+
+  /* ── Header ── */
+  .dashboard-header {
+    display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--bg-raised);
+    flex-shrink: 0;
+  }
 
-    .header {
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0;
+  .dashboard-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
 
-      h1 {
-        font-size: var(--text-sm);
-        font-weight: var(--font-weight-medium);
-        padding-left: var(--spacing-lg);
-        margin: 0;
-      }
-
-      .filter {
-        display: flex;
-        flex-direction: row;
-        gap: var(--spacing-xs);
-        border-bottom-width: 0px;
-
-        .react-aria-Button {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-2xs);
-        }
-      }
-    }
-
-    .main {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      max-width: var(--container-6xl);
-      min-width: var(--container-3xl);
-
-      gap: var(--spacing-md);
-
-      .add-project-form {
-        width: var(--container-xs);
-        display: grid;
-        grid-template-columns: 1fr auto;
-        .react-aria-TextField {
-          width: inherit;
-        }
-      }
-
-      .projects-grid {
-        width: 100%;
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        gap: var(--spacing-md);
-
-        .project-card {
-          width: var(--container-xs);
-          border: 1px solid var(--border);
-          border-radius: var(--radius-xl);
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: space-between;
-          gap: var(--spacing-sm);
-
-          .icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            width: 32px;
-            height: 32px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-3xl);
-          }
-
-          .content {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            gap: var(--spacing-2xs);
-
-            .title {
-              font-size: var(--text-sm);
-              line-height: var(--text-sm--line-height);
-              font-weight: var(--font-weight-medium);
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-
-            .badges {
-              display: flex;
-              gap: var(--spacing-2xs);
-
-              .badge {
-                display: inline-flex;
-                align-items: center;
-                gap: 2px;
-                padding: 2px 8px;
-                border-radius: var(--radius-sm);
-                font-size: var(--text-2xs);
-                line-height: 1;
-                font-weight: var(--font-weight-medium);
-              }
-
-              .badge-local {
-                background: var(--color-blue-100);
-                color: var(--color-blue-700);
-              }
-
-              .badge-cloud {
-                background: var(--color-green-100);
-                color: var(--color-green-700);
-              }
-
-              .badge-synced {
-                background: var(--color-purple-100);
-                color: var(--color-purple-700);
-              }
-
-              .badge-conflict {
-                background: var(--color-orange-100);
-                color: var(--color-orange-700);
-              }
-
-              .badge-unknown {
-                background: var(--color-gray-100);
-                color: var(--color-gray-700);
-              }
-            }
-
-            .description {
-              font-size: var(--text-xs);
-              line-height: var(--text-xs--line-height);
-              color: var(--color-gray-500);
-            }
-
-            .sync-info {
-              font-size: var(--text-2xs);
-              line-height: var(--text-2xs--line-height);
-              color: var(--color-gray-400);
-            }
-          }
-
-          .project-actions {
-            display: flex;
-            flex-direction: row;
-            gap: var(--spacing-2xs);
-            flex-shrink: 0;
-
-            button {
-              padding: var(--spacing-sm);
-              border: none;
-            }
-          }
-        }
-      }
-
-      .empty-state {
-        text-align: center;
-        padding: var(--spacing-2xl);
-        color: var(--color-gray-500);
-
-        p {
-          margin: var(--spacing-xs) 0;
-        }
-      }
-
-      .loading {
-        text-align: center;
-        padding: var(--spacing-2xl);
-        color: var(--color-gray-500);
-      }
-
-      .error-message {
-        padding: var(--spacing-md);
-        background: var(--color-red-100);
-        color: var(--color-red-700);
-        border-radius: var(--radius-md);
-        border: 1px solid var(--color-red-300);
-        margin-bottom: var(--spacing-md);
-      }
-    }
-
-    .footer {
-      width: 100%;
-      text-align: center;
-      padding: var(--spacing-md);
-      border-top: 1px solid var(--border);
-      color: var(--color-gray-500);
+    h1 {
       font-size: var(--text-sm);
-
-      p {
-        margin: 0;
-      }
+      font-weight: var(--font-weight-bold);
+      margin: 0;
     }
+  }
+
+  .dashboard-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+
+    .react-aria-Separator[data-orientation="vertical"] {
+      height: 20px;
+    }
+  }
+
+  /* ── Error ── */
+  .dashboard-error {
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  /* ── Main ── */
+  .dashboard-main {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
+
+  /* ── New Project Form ── */
+  .new-project-form {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--spacing-sm);
+    width: 100%;
+    max-width: 400px;
+
+    .react-aria-TextField {
+      flex: 1;
+    }
+  }
+
+  /* ── Projects Grid ── */
+  .projects-grid {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  /* ── Project Card ── */
+  .project-card.react-aria-Card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+
+    &:hover {
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+
+  .project-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: var(--accent-subtle);
+    color: var(--accent);
+  }
+
+  .project-card-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .project-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .project-card-title {
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .project-card-meta {
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    color: var(--fg-muted);
+  }
+
+  .project-card-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2xs);
+    flex-shrink: 0;
+  }
+
+  /* ── Skeleton ── */
+  .project-card-skeleton {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  /* ── Empty State ── */
+  .dashboard-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-3xl) var(--spacing-lg);
+    color: var(--fg-muted);
+  }
+
+  .dashboard-empty-title {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    margin: 0;
+    color: var(--fg);
+  }
+
+  .dashboard-empty-description {
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  /* ── Footer ── */
+  .dashboard-footer {
+    flex-shrink: 0;
+    text-align: center;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-top: 1px solid var(--border);
+    color: var(--fg-muted);
+    font-size: var(--text-xs);
   }
 }

@@ -19,6 +19,7 @@ import { hitTestEdges, hitTestPageFrame, type CachedEdgeGeometry } from '../skia
 import type { PageFrame } from '../skia/workflowRenderer';
 import { getViewportController } from '../viewport/ViewportController';
 import { panToPage, cancelPanToPage } from '../viewport/panToPage';
+import { applyViewportState } from '../viewport/viewportActions';
 import { isPointInMinimap, minimapScreenToWorld, computeMinimapTransform, type MinimapConfig } from '../skia/workflowMinimap';
 
 // ============================================
@@ -102,8 +103,11 @@ export function useWorkflowInteraction({
     const targetPanX = containerSize.width / 2 - worldX * zoom;
     const targetPanY = containerSize.height / 2 - worldY * zoom;
 
-    vc.setPosition(targetPanX, targetPanY, zoom);
-    useCanvasSyncStore.getState().setPanOffset({ x: targetPanX, y: targetPanY });
+    applyViewportState({
+      scale: zoom,
+      x: targetPanX,
+      y: targetPanY,
+    });
     overlayVersionRef.current++;
   }, [minimapConfigRef, pageFrameMapRef, overlayVersionRef]);
 

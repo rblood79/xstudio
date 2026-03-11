@@ -49,6 +49,16 @@ export type { LassoSelectionProps } from "./LassoSelection";
 export { SelectionLayer } from "./SelectionLayer";
 export { findElementsInLasso } from "./SelectionLayer.utils";
 export type { SelectionLayerProps } from "./SelectionLayer";
+export {
+  findBodySelectionAtCanvasPoint,
+  pickTopmostHitElementId,
+} from "./selectionHitTest";
+export type {
+  BodySelectionResult,
+  CanvasPoint,
+  PageLike,
+  PagePositionMap,
+} from "./selectionHitTest";
 
 // Hooks
 export { useDragInteraction } from "./useDragInteraction";

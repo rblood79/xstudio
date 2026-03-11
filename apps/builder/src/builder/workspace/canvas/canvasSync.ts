@@ -119,6 +119,8 @@ export interface CanvasSyncState {
   setZoom: (zoom: number) => void;
   /** 팬 오프셋 설정 */
   setPanOffset: (offset: { x: number; y: number }) => void;
+  /** viewport 스냅샷 일괄 설정 */
+  setViewportSnapshot: (viewport: CanvasViewportSnapshot) => void;
   /** 컨테이너 크기 설정 */
   setContainerSize: (size: { width: number; height: number }) => void;
   /** 캔버스 크기 설정 */
@@ -127,6 +129,11 @@ export interface CanvasSyncState {
   updateGPUMetrics: (metrics: Partial<GPUMetrics>) => void;
   /** 상태 리셋 */
   reset: () => void;
+}
+
+export interface CanvasViewportSnapshot {
+  panOffset: { x: number; y: number };
+  zoom: number;
 }
 
 // ============================================
@@ -217,6 +224,13 @@ export const useCanvasSyncStore = create<CanvasSyncState>()(
       set({ panOffset: offset });
     },
 
+    setViewportSnapshot: (viewport) => {
+      set({
+        panOffset: viewport.panOffset,
+        zoom: Math.max(0.1, Math.min(5, viewport.zoom)),
+      });
+    },
+
     setContainerSize: (size) => {
       set({ containerSize: size });
     },
@@ -248,6 +262,21 @@ export const selectIsSyncMismatch = (state: CanvasSyncState) =>
 /** 캔버스 사용 가능 여부 */
 export const selectIsCanvasUsable = (state: CanvasSyncState) =>
   state.isCanvasReady && !state.isContextLost;
+
+/** viewport 스냅샷 */
+export const selectCanvasViewportSnapshot = (
+  state: CanvasSyncState
+): CanvasViewportSnapshot => ({
+  panOffset: state.panOffset,
+  zoom: state.zoom,
+});
+
+export function isCanvasViewportSnapshotEqual(
+  a: CanvasViewportSnapshot,
+  b: CanvasViewportSnapshot
+): boolean {
+  return a.zoom === b.zoom && a.panOffset.x === b.panOffset.x && a.panOffset.y === b.panOffset.y;
+}
 
 // ============================================
 // Utilities
