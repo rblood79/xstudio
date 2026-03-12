@@ -134,6 +134,16 @@ selection/workflow/AI overlay 계산이 `SkiaOverlay`에 밀집되어 있다.
 4. **기존 저장 포맷 무영향**: element/store 데이터 구조는 바꾸지 않는다.
 5. **성능 회귀 금지**: 리팩토링 단계 중 frame time/FPS가 악화되면 phase 통과 불가.
 
+### Execution Guardrails
+
+본 ADR의 잔여 phase는 아래 운영 규칙을 강제한다.
+
+1. **Phase 0 선행 완료 필수**: baseline 성능 수치와 수동 시각 비교 체크리스트 없이 후속 phase 진행 금지
+2. **Phase 단위 gate 검증 필수**: 각 phase 완료 후 `pnpm -F @xstudio/builder type-check`와 수동 렌더링 비교를 모두 통과해야 다음 phase 진행 가능
+3. **Phase당 1커밋 원칙**: 문제 발생 시 해당 phase만 즉시 rollback/revert 가능해야 함
+4. **동작 변경과 구조 변경 분리**: 구조 분해 phase에서 동작 개선이나 최적화 로직을 섞지 않음
+5. **Hot path 후순위 배치**: `nodeRenderers.ts` 분해는 모든 저위험/중위험 phase 이후 마지막에 수행
+
 ---
 
 ## Alternatives Considered
@@ -209,6 +219,43 @@ selection/workflow/AI overlay 계산이 `SkiaOverlay`에 밀집되어 있다.
 
 이번 ADR은 “새 엔진 도입”이 아니라
 **현재 엔진을 유지한 상태에서 구조를 최적화하는 설계 문서**다.
+
+### Recommended Execution Order
+
+잔여 작업은 아래 순서를 권장한다.
+
+1. **Phase 0** — baseline 성능 수치, 시각 비교 체크리스트, 수동 검증 경로 완성
+2. **Phase 3** — `InvalidationReason` enum 도입 및 캐시 무효화 규칙 명시화
+3. **Phase 6** — `cssVariableReader.ts` 축소 + Theme/Resource 서비스 분리
+4. **Phase 8** — generated artifact/source tree 격리
+5. **Phase 7** — DOM 의존 유틸 제거 (`CanvasScrollbar`의 `querySelector` 등)
+6. **Phase 5** — `nodeRenderers.ts` 도형별 분해
+
+이 순서의 목적은 다음과 같다.
+
+- 먼저 관측 가능성과 invalidation 규칙을 정리해 회귀 원인을 추적 가능하게 만든다.
+- 그 다음 shell/runtime 경계와 source tree를 정리해 탐색 비용과 결합도를 낮춘다.
+- 가장 마지막에 hot path인 `nodeRenderers.ts`를 분해해, 성능/시각 회귀의 원인 범위를 최소화한다.
+
+### Phase 5 Special Constraint
+
+`Phase 5`는 본 ADR에서 가장 위험한 phase로 간주한다.
+
+특히 `nodeRenderers.ts`는 매 프레임 실행되는 hot path이며,
+paragraph cache, strutStyle, fontFamilies, text/image render path의 정합성이 미묘하게 연결되어 있다.
+
+따라서 `Phase 5`는 아래 조건을 모두 만족할 때만 진행한다.
+
+1. `Phase 0`, `Phase 3`, `Phase 6`, `Phase 8` 완료
+2. 시각 스냅샷 비교 기준과 수동 비교 체크리스트 확보
+3. 작업 범위를 **extract-only**로 제한
+
+여기서 **extract-only**란 다음을 의미한다.
+
+- 로직 변경 없이 파일 분리만 수행
+- 함수 이동/파일 분해 외의 알고리즘 수정 금지
+- 캐시 정책 변경, 텍스트 측정 방식 변경, paragraph 생성 타이밍 변경 금지
+- cleanup/rename/최적화는 별도 후속 phase 또는 후속 ADR로 분리
 
 ---
 

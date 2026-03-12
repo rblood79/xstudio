@@ -16,18 +16,19 @@
 
 리팩토링은 아래 원칙으로 진행한다.
 
-1. 먼저 giant file을 orchestration 파일과 구현 파일로 분리한다.
-2. 그 다음 state source와 invalidation을 정리한다.
-3. 마지막에 frame build pipeline과 runtime service를 재구성한다.
+1. `Phase 0`을 먼저 완료해 baseline 성능 수치와 수동 시각 비교 기준을 확보한다.
+2. 저위험/중위험 phase부터 진행해 invalidation, runtime service, source tree를 먼저 정리한다.
+3. hot path인 `nodeRenderers.ts` 분해는 가장 마지막에 수행한다.
+4. 각 phase는 1커밋으로 끝내고, phase 종료 시 gate 검증을 통과해야 한다.
 
 즉 순서는 다음과 같다.
 
-1. `Workspace.tsx`
-2. `BuilderCanvas.tsx`
-3. `canvas/viewport/*` + `scrollbar/*`
-4. `canvas/skia/SkiaOverlay.tsx`
-5. `canvas/skia/nodeRenderers.ts`
-6. `canvas/utils/cssVariableReader.ts`
+1. `Phase 0` baseline 완성
+2. `Phase 3` invalidation 모델 정리
+3. `Phase 6` theme/resource runtime 정리
+4. `Phase 8` generated artifact 격리
+5. `Phase 7` DOM 의존 유틸 제거
+6. `Phase 5` node renderer 분해
 
 ---
 
@@ -126,14 +127,16 @@ workspace/
 
 ### 작업
 
-- invalidation reason 정의
+- `InvalidationReason` enum 정의
 - 캐시 무효화 표 작성
 - version 조합 규칙 명시
+- content/layout/overlay/theme/resource별 invalidation ownership 문서화
 
 ### 검증 포인트
 
 - stale frame 없음
 - 불필요한 content rebuild 감소
+- invalidation reason 추적 가능
 
 ---
 
@@ -169,6 +172,25 @@ workspace/
 
 - box/text/image/shape/effect/overflow/scrollbar/text cache 분리
 
+### 제약
+
+- 이 phase는 **extract-only**로 제한
+- 함수 이동/파일 분리 외 로직 변경 금지
+- paragraph cache, strutStyle, fontFamilies 동기화 규칙 변경 금지
+- 성능 최적화나 렌더 수정은 후속 phase로 분리
+
+### 진입 조건
+
+- `Phase 0`, `Phase 3`, `Phase 6`, `Phase 8` 완료
+- baseline 수치와 수동 시각 비교 기준 확보
+- 직전 phase까지 gate 검증 연속 통과
+
+### 검증 포인트
+
+- 동일 scene에서 렌더 결과 차이 없음
+- text/image/box rendering 회귀 없음
+- frame time/FPS 악화 없음
+
 ---
 
 ## Phase 6. Theme / Resource Runtime 정리
@@ -183,9 +205,33 @@ workspace/
 - theme snapshot service
 - font/image watcher service
 
+### 검증 포인트
+
+- theme 변경 반영 경로 동일
+- font/image resource 갱신 타이밍 동일
+
 ---
 
-## Phase 7. Source Tree Hygiene
+## Phase 7. DOM 의존 유틸 제거
+
+### 목표
+
+- UI shell과 runtime 경계 명확화
+
+### 작업
+
+- `CanvasScrollbar`의 `querySelector` 제거
+- shell 측 측정값 전달 경로 명시
+- DOM 측정 책임을 runtime 외부로 이동
+
+### 검증 포인트
+
+- scrollbar 동작 동일
+- shell 레이아웃 변경에 대한 취약성 감소
+
+---
+
+## Phase 8. Source Tree Hygiene
 
 ### 목표
 
@@ -195,15 +241,28 @@ workspace/
 
 - `wasm-pkg`, `target`, generated JS/WASM 정리
 
+### 검증 포인트
+
+- source tree 탐색성 개선
+- handwritten source와 generated output 경계 명확화
+
 ---
 
-## Immediate Implementation Scope
+## Phase Gate
 
-이번 실행에서는 다음까지만 수행한다.
+모든 phase는 아래 gate를 통과해야 완료로 간주한다.
 
-1. Phase 1 실행 시작
-2. `Workspace.tsx`에서 시각 섹션 분리
-3. compare-mode 렌더 블록 분리
+1. `pnpm -F @xstudio/builder type-check`
+2. 핵심 수동 렌더링 비교 통과
+3. 성능 baseline 대비 회귀 없음
+4. phase 범위가 1커밋으로 rollback 가능
 
-이 단계는 동작 보존 리스크가 낮고,
-이후 hook 분리 작업의 기반이 된다.
+수동 렌더링 비교 최소 체크리스트:
+
+- breakpoint 변경
+- compare mode
+- zoom/pan
+- lasso/selection/resize
+- text edit
+- workflow overlay
+- image/font/theme 변경
