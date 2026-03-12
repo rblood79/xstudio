@@ -72,6 +72,7 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useAppearanceValuesJotai();
   const isCompact = useSectionCollapse((s) => s.isCompact("appearance"));
+  const toggleCompact = useSectionCollapse((s) => s.toggleCompact);
 
   if (!styleValues) return null;
 
@@ -158,7 +159,10 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           />
         )}
         <div className="fieldset-actions actions-icon">
-          <SwatchIconButton aria-label="More border options">
+          <SwatchIconButton
+            aria-label={isCompact ? "더 많은 속성 보기" : "간편 보기"}
+            onPress={() => toggleCompact("appearance")}
+          >
             <EllipsisVertical
               color={iconProps.color}
               size={iconProps.size}
@@ -217,12 +221,7 @@ export const AppearanceSection = memo(function AppearanceSection() {
   };
 
   return (
-    <PropertySection
-      id="appearance"
-      title="Appearance"
-      onReset={handleReset}
-      hasCompactMode
-    >
+    <PropertySection id="appearance" title="Appearance" onReset={handleReset}>
       <AppearanceSectionContent />
     </PropertySection>
   );

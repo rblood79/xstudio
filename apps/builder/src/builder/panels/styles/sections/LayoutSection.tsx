@@ -28,6 +28,7 @@ import {
   WrapText,
   CornerDownLeft,
   ArrowRightToLine,
+  EllipsisVertical,
 } from "lucide-react";
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useSectionCollapse } from "../hooks/useSectionCollapse";
@@ -182,6 +183,7 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
 const LayoutSectionContent = memo(function LayoutSectionContent() {
   const [isSpacingExpanded, setIsSpacingExpanded] = useState(false);
   const isCompact = useSectionCollapse((s) => s.isCompact("layout"));
+  const toggleCompact = useSectionCollapse((s) => s.toggleCompact);
 
   const {
     handleFlexDirection,
@@ -334,8 +336,11 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
           </ToggleButtonGroup>
         </div>
         <div className="fieldset-actions">
-          <SwatchIconButton aria-label="Layout grid">
-            <LayoutGrid
+          <SwatchIconButton
+            aria-label={isCompact ? "더 많은 속성 보기" : "간편 보기"}
+            onPress={() => toggleCompact("layout")}
+          >
+            <EllipsisVertical
               color={iconProps.color}
               size={iconProps.size}
               strokeWidth={iconProps.strokeWidth}
@@ -551,12 +556,7 @@ export const LayoutSection = memo(function LayoutSection() {
   };
 
   return (
-    <PropertySection
-      id="layout"
-      title="Layout"
-      onReset={handleReset}
-      hasCompactMode
-    >
+    <PropertySection id="layout" title="Layout" onReset={handleReset}>
       <LayoutSectionContent />
     </PropertySection>
   );

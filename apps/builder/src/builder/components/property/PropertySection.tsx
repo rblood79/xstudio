@@ -12,7 +12,7 @@
  */
 
 import React, { memo, useTransition } from "react";
-import { ChevronUp, RotateCcw, ListCollapse, List } from "lucide-react";
+import { ChevronUp, RotateCcw } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useSectionCollapse } from "../../panels/styles/hooks/useSectionCollapse";
 
@@ -25,7 +25,6 @@ interface PropertySectionProps {
   id?: string; // Section ID for collapse state persistence
   defaultExpanded?: boolean;
   onReset?: () => void; // Reset button handler
-  hasCompactMode?: boolean; // Compact/Full 모드 토글 활성화
   icon?: React.ComponentType<{
     size?: number;
     strokeWidth?: number;
@@ -40,11 +39,9 @@ export const PropertySection = memo(
     id,
     defaultExpanded = true,
     onReset,
-    hasCompactMode,
   }: PropertySectionProps) {
     // Use persistent collapse state if ID provided, otherwise use local state
-    const { isCollapsed, toggleSection, isCompact, toggleCompact } =
-      useSectionCollapse();
+    const { isCollapsed, toggleSection } = useSectionCollapse();
     const [localExpanded, setLocalExpanded] = React.useState(defaultExpanded);
     // 🚀 Phase 4.2: startTransition으로 섹션 열기 우선순위 낮춤
     const [isPending, startTransition] = useTransition();
@@ -72,35 +69,6 @@ export const PropertySection = memo(
         <div className="section-header">
           <div className="section-title">{title}</div>
           <div className="section-actions">
-            {/* Compact/Full toggle */}
-            {hasCompactMode && id && (
-              <button
-                className="iconButton"
-                type="button"
-                onClick={() => toggleCompact(id)}
-                aria-label={
-                  isCompact(id)
-                    ? "Show all properties"
-                    : "Show essential properties only"
-                }
-                title={isCompact(id) ? "전체 속성 보기" : "간편 보기"}
-              >
-                {isCompact(id) ? (
-                  <List
-                    color={iconProps.color}
-                    strokeWidth={iconProps.strokeWidth}
-                    size={iconProps.size}
-                  />
-                ) : (
-                  <ListCollapse
-                    color={iconProps.color}
-                    strokeWidth={iconProps.strokeWidth}
-                    size={iconProps.size}
-                  />
-                )}
-              </button>
-            )}
-
             {/* Reset button */}
             {onReset && (
               <button
@@ -153,7 +121,6 @@ export const PropertySection = memo(
       prevProps.title === nextProps.title &&
       prevProps.id === nextProps.id &&
       prevProps.defaultExpanded === nextProps.defaultExpanded &&
-      prevProps.hasCompactMode === nextProps.hasCompactMode &&
       prevProps.children === nextProps.children // React 요소는 참조 비교
     );
   },

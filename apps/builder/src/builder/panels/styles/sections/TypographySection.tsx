@@ -35,6 +35,7 @@ import {
   CaseUpper,
   Baseline,
   TextWrap,
+  EllipsisVertical,
 } from "lucide-react";
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
@@ -62,6 +63,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useTypographyValuesJotai();
   const isCompact = useSectionCollapse((s) => s.isCompact("typography"));
+  const toggleCompact = useSectionCollapse((s) => s.toggleCompact);
   const [customFonts, setCustomFonts] = useState(() => getCustomFonts());
 
   // ADR-008: Text Behavior 프리셋 변경 핸들러
@@ -253,6 +255,19 @@ const TypographySectionContent = memo(function TypographySectionContent() {
           </ToggleButton>
         </ToggleButtonGroup>
       </fieldset>
+
+      <div className="fieldset-actions actions-more">
+        <SwatchIconButton
+          aria-label={isCompact ? "더 많은 속성 보기" : "간편 보기"}
+          onPress={() => toggleCompact("typography")}
+        >
+          <EllipsisVertical
+            color={iconProps.color}
+            size={iconProps.size}
+            strokeWidth={iconProps.strokeWidth}
+          />
+        </SwatchIconButton>
+      </div>
 
       {!isCompact && (
         <>
@@ -489,12 +504,7 @@ export const TypographySection = memo(function TypographySection() {
   };
 
   return (
-    <PropertySection
-      id="typography"
-      title="Typography"
-      onReset={handleReset}
-      hasCompactMode
-    >
+    <PropertySection id="typography" title="Typography" onReset={handleReset}>
       <TypographySectionContent />
     </PropertySection>
   );
