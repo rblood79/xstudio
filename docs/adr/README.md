@@ -137,6 +137,11 @@ ADR-032 (Events Platform 재설계)
 2. **ADR-034**: 재설계된 이벤트 모델을 조작할 패널 UX (recipe 중심 + diagnostics/preview). 이벤트 모델 없이 UI 구현 불가
 3. **ADR-013**: 이벤트 플랫폼 + 패널 UI 위에 Collection 데이터 바인딩 1클릭 자동화 레이어 구축
 
+**P3 실행 시 병행되는 Property Editor 구조 변경**:
+
+- **Child Item Management 제거 (10개 에디터)**: Select, ComboBox, RadioGroup, Tabs, Tag, Table, ListBox, GridList, Breadcrumbs 등의 Property Editor에 개별 구현된 자식 아이템 관리 UI를 제거. React Aria Components의 `items` data-driven Collection 패턴으로 전환하면 프로퍼티 에디터 내 자식 추가/삭제/정렬 관리가 불필요해짐
+- **이벤트 설정 제거 (108개 에디터)**: onClick, onChange, onPress 등 이벤트 바인딩이 각 Property Editor에 산재 → Events Panel(ADR-034)로 중앙 집중. 프로퍼티 패널은 시각적 속성만 담당, 동작/이벤트는 Events Panel이 전담
+
 ### P4: ADR-009 Phase 2 잔여 + ADR-020 + ADR-026 잔여
 
 - ~~**ADR-021 Phase E**: 컴포넌트별 accent 오버라이드~~ — 완료

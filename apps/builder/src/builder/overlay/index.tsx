@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useStore } from "../stores";
 import { MessageService } from "../../utils/messaging";
 import { isValidPreviewMessage } from "../../utils/messageValidation";
@@ -22,12 +23,14 @@ interface OverlayData {
 }
 
 export default function SelectionOverlay() {
-  const selectedElementId = useStore((state) => state.selectedElementId);
-  // ⭐ Multi-select state
-  const selectedElementIds = useStore(
-    (state) => state.selectedElementIds || [],
+  // 🚀 Performance: 3개 개별 구독 → 1개 shallow selector로 통합 (단일 set() 시 리렌더 1회)
+  const { selectedElementId, selectedElementIds, multiSelectMode } = useStore(
+    useShallow((state) => ({
+      selectedElementId: state.selectedElementId,
+      selectedElementIds: state.selectedElementIds || [],
+      multiSelectMode: state.multiSelectMode || false,
+    })),
   );
-  const multiSelectMode = useStore((state) => state.multiSelectMode || false);
 
   // 🔍 Debug: Track rapid remounts (only in dev)
   useOverlayDebug("SelectionOverlay", selectedElementId || "none");

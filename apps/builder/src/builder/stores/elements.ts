@@ -451,9 +451,11 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       const hasExternalProps = Boolean(props || style || computedStyle);
 
       // WebGL Canvas 기본 선택 경로: elementId만 전달됨
-      // - createCompleteProps는 가벼운 연산 (object spread)이므로 동기 실행
-      // - computeCanvasElementStyle만 백그라운드 hydration으로 분리
-      // - 즉시 inline style을 포함하여 스타일 패널 플리커 방지
+      // 🚀 Performance: 2단계 set()으로 분리하여 paint 차단 최소화
+      // - Phase 1 (즉시): 캔버스 하이라이트용 상태 (selectedElementId, Ids, IdsSet)
+      // - Phase 2 (RAF): 인스펙터용 상태 (selectedElementProps)
+      //   → useZustandJotaiBridge의 useLayoutEffect가 Phase 1에서 element.props fallback으로
+      //     기본값을 사용하고, Phase 2에서 완전한 props로 갱신
       if (elementId && !hasExternalProps) {
         let selectedElementIds: string[];
         let selectedElementIdsSet: Set<string>;
@@ -469,18 +471,27 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           selectedElementIdsSet = new Set([elementId]);
         }
 
-        // 즉시 element.props 기반 props 채우기 (플리커 방지)
-        const element =
-          currentState.elementsMap.get(elementId) ??
-          findElementById(currentState.elements, elementId);
-        const initialProps = element ? createCompleteProps(element) : {};
-
+        // Phase 1: 캔버스 하이라이트 즉시 반영 (selectedElementProps는 빈 객체)
         set({
           selectedElementId: elementId,
-          selectedElementProps: initialProps,
+          selectedElementProps: {},
           selectedElementIds,
           selectedElementIdsSet,
           multiSelectMode: false,
+        });
+
+        // Phase 2: 인스펙터용 props를 다음 프레임에서 설정
+        requestAnimationFrame(() => {
+          const latestState = get();
+          // 선택이 이미 변경되었으면 스킵
+          if (latestState.selectedElementId !== elementId) return;
+
+          const element =
+            latestState.elementsMap.get(elementId) ??
+            findElementById(latestState.elements, elementId);
+          const initialProps = element ? createCompleteProps(element) : {};
+
+          set({ selectedElementProps: initialProps });
         });
 
         // computedStyle만 백그라운드 hydration으로 분리

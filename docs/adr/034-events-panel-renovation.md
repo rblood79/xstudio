@@ -139,6 +139,59 @@ broken binding, invalid condition, drift는
 
 ---
 
+## Property Editor 역할 재정의
+
+Events Panel이 이벤트/동작을 전담하게 되면, Property Editor의 역할이 **시각적 속성 전담**으로 축소된다.
+현재 Property Editor에 혼재된 두 가지 책임을 분리해야 한다.
+
+### 1. Child Item Management 제거 → React Aria `items` Collection 패턴
+
+현재 10개 에디터에 자식 아이템 관리 UI(추가/삭제/정렬)가 개별 구현되어 있다.
+
+| 에디터            | 관리 대상          |
+| ----------------- | ------------------ |
+| SelectEditor      | Select options     |
+| ComboBoxEditor    | ComboBox options   |
+| RadioGroupEditor  | Radio items        |
+| TabsEditor        | Tab items          |
+| TagEditor         | Tag items          |
+| TableEditor       | Table columns/rows |
+| ListBoxEditor     | ListBox items      |
+| ListBoxItemEditor | Nested items       |
+| GridListEditor    | GridList items     |
+| BreadcrumbsEditor | Breadcrumb items   |
+
+React Aria Components의 `items` prop 기반 data-driven Collection 패턴으로 전환하면,
+자식 아이템은 **데이터 소스에서 자동 생성**되므로 Property Editor 내 수동 관리 UI가 불필요해진다.
+
+- **현재**: Property Editor에서 아이템 추가/삭제/정렬 → Store에 자식 Element 생성
+- **목표**: 데이터 소스(ADR-032 BindingRef) → Collection `items` → 자동 렌더링
+
+### 2. 이벤트 설정 제거 → Events Panel 중앙 집중
+
+현재 108개 에디터에 onClick, onChange, onPress 등 이벤트 핸들러 설정이 산재되어 있다.
+
+- **현재**: 각 Property Editor에서 이벤트 바인딩 설정 (에디터마다 개별 구현)
+- **목표**: Property Editor는 시각적 속성(size, variant, label, placeholder 등)만 담당.
+  이벤트/동작은 Events Panel(본 ADR)이 전담
+
+### 역할 경계 정리
+
+```
+Property Panel (시각적 속성 전담)
+├── 컴포넌트 props: label, placeholder, size, variant, isDisabled 등
+├── 스타일 props: color, spacing, typography 등
+└── 데이터 표시: 바인딩된 데이터의 미리보기 (읽기 전용)
+
+Events Panel (동작/이벤트 전담) — 본 ADR
+├── 이벤트 핸들러: onPress, onChange, onSelectionChange 등
+├── 데이터 바인딩: BindingRef 연결/해제
+├── 자식 아이템 데이터 소스: Collection items 바인딩
+└── 진단: broken binding, invalid condition 등
+```
+
+---
+
 ## Acceptance Criteria
 
 1. 사용자는 패널을 열고 5초 안에 다음 행동을 이해할 수 있다.

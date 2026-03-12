@@ -7,6 +7,7 @@
  */
 
 import { useCallback } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useStore } from "../stores";
 import type {
   PanelId,
@@ -20,11 +21,14 @@ import type { UsePanelLayoutReturn } from "../layout/types";
 /**
  * 패널 레이아웃 관리 훅
  *
+ * 성능 최적화: panelLayout 전체 객체 대신 필요한 필드만 shallow 비교로 구독.
+ * 패널 하나 토글 시 해당 필드를 실제로 사용하는 소비자만 리렌더됨.
+ *
  * @returns 레이아웃 상태 및 액션
  */
 export function usePanelLayout(): UsePanelLayoutReturn {
-  // Zustand store에서 상태 가져오기
-  const layout = useStore((state) => state.panelLayout);
+  // 필요한 필드만 shallow 비교로 구독 — 전체 panelLayout 객체 구독 금지
+  const layout = useStore(useShallow((state) => state.panelLayout));
   const setPanelLayout = useStore((state) => state.setPanelLayout);
 
   /**
@@ -34,34 +38,39 @@ export function usePanelLayout(): UsePanelLayoutReturn {
     (panelId: PanelId, from: PanelSide, to: PanelSide) => {
       if (from === to) return;
 
+      // stale closure 방지: 최신 상태를 getState()로 읽음
+      const currentLayout = useStore.getState().panelLayout;
+
       const fromKey = from === "left" ? "leftPanels" : "rightPanels";
       const toKey = to === "left" ? "leftPanels" : "rightPanels";
       const fromActiveKey =
         from === "left" ? "activeLeftPanels" : "activeRightPanels";
 
-      const fromPanels = layout[fromKey];
-      const toPanels = layout[toKey];
+      const fromPanels = currentLayout[fromKey];
+      const toPanels = currentLayout[toKey];
 
       // 패널이 from에 없으면 무시
       if (!fromPanels.includes(panelId)) {
         console.warn(
-          `[usePanelLayout] Panel "${panelId}" not found in ${from} side`
+          `[usePanelLayout] Panel "${panelId}" not found in ${from} side`,
         );
         return;
       }
 
       // from에서 제거, to에 추가
       const newLayout: PanelLayoutState = {
-        ...layout,
+        ...currentLayout,
         [fromKey]: fromPanels.filter((id) => id !== panelId),
         [toKey]: [...toPanels, panelId],
         // 활성 패널에서도 제거
-        [fromActiveKey]: layout[fromActiveKey].filter((id) => id !== panelId),
+        [fromActiveKey]: currentLayout[fromActiveKey].filter(
+          (id) => id !== panelId,
+        ),
       };
 
       setPanelLayout(newLayout);
     },
-    [layout, setPanelLayout]
+    [setPanelLayout],
   );
 
   /**
@@ -74,20 +83,23 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const togglePanel = useCallback(
     (side: PanelSide, panelId: PanelId) => {
+      // stale closure 방지: 최신 상태를 getState()로 읽음
+      const currentLayout = useStore.getState().panelLayout;
+
       const panelsKey = side === "left" ? "leftPanels" : "rightPanels";
       const activeKey =
         side === "left" ? "activeLeftPanels" : "activeRightPanels";
       const showKey = side === "left" ? "showLeft" : "showRight";
 
       // 패널이 해당 사이드에 없으면 무시
-      if (!layout[panelsKey].includes(panelId)) {
+      if (!currentLayout[panelsKey].includes(panelId)) {
         console.warn(
-          `[usePanelLayout] Panel "${panelId}" not available on ${side} side`
+          `[usePanelLayout] Panel "${panelId}" not available on ${side} side`,
         );
         return;
       }
 
-      const currentActive = layout[activeKey];
+      const currentActive = currentLayout[activeKey];
       const isActive = currentActive.includes(panelId);
 
       // 이미 활성화된 패널이면 제거, 아니면 추가
@@ -97,15 +109,15 @@ export function usePanelLayout(): UsePanelLayoutReturn {
 
       // 패널을 열 때는 사이드바도 자동으로 열림
       // 패널을 닫을 때는 사이드바 상태 유지 (다른 패널이 열려있을 수 있으므로)
-      const newShow = isActive ? layout[showKey] : true;
+      const newShow = isActive ? currentLayout[showKey] : true;
 
       setPanelLayout({
-        ...layout,
+        ...currentLayout,
         [activeKey]: newActive,
         [showKey]: newShow,
       });
     },
-    [layout, setPanelLayout]
+    [setPanelLayout],
   );
 
   /**
@@ -125,7 +137,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
     (newLayout: PanelLayoutState) => {
       setPanelLayout(newLayout);
     },
-    [setPanelLayout]
+    [setPanelLayout],
   );
 
   /**
@@ -133,23 +145,26 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const toggleBottomPanel = useCallback(
     (panelId: PanelId) => {
+      // stale closure 방지: 최신 상태를 getState()로 읽음
+      const currentLayout = useStore.getState().panelLayout;
+
       // 패널이 bottom에 없으면 무시
-      if (!layout.bottomPanels.includes(panelId)) {
+      if (!currentLayout.bottomPanels.includes(panelId)) {
         console.warn(
-          `[usePanelLayout] Panel "${panelId}" not available on bottom`
+          `[usePanelLayout] Panel "${panelId}" not available on bottom`,
         );
         return;
       }
 
-      const isActive = layout.activeBottomPanels.includes(panelId);
+      const isActive = currentLayout.activeBottomPanels.includes(panelId);
 
       setPanelLayout({
-        ...layout,
+        ...currentLayout,
         activeBottomPanels: isActive ? [] : [panelId],
         showBottom: !isActive,
       });
     },
-    [layout, setPanelLayout]
+    [setPanelLayout],
   );
 
   /**
@@ -158,24 +173,26 @@ export function usePanelLayout(): UsePanelLayoutReturn {
   const setBottomHeight = useCallback(
     (height: number) => {
       const clampedHeight = Math.max(150, Math.min(600, height));
+      const currentLayout = useStore.getState().panelLayout;
       setPanelLayout({
-        ...layout,
+        ...currentLayout,
         bottomHeight: clampedHeight,
       });
     },
-    [layout, setPanelLayout]
+    [setPanelLayout],
   );
 
   /**
    * 하단 패널 닫기
    */
   const closeBottomPanel = useCallback(() => {
+    const currentLayout = useStore.getState().panelLayout;
     setPanelLayout({
-      ...layout,
+      ...currentLayout,
       activeBottomPanels: [],
       showBottom: false,
     });
-  }, [layout, setPanelLayout]);
+  }, [setPanelLayout]);
 
   /**
    * 위치 경계 검사 (화면 밖으로 나가지 않도록 clamp)
@@ -185,7 +202,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
       x: Math.max(0, Math.min(x, window.innerWidth - width)),
       y: Math.max(0, Math.min(y, window.innerHeight - height)),
     }),
-    []
+    [],
   );
 
   /**
@@ -193,20 +210,27 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const openPanelAsModal = useCallback(
     (panelId: PanelId) => {
+      // stale closure 방지: 최신 상태를 getState()로 읽음
+      const currentLayout = useStore.getState().panelLayout;
+
       // 이미 열려있으면 포커스만
-      const existing = layout.modalPanels.find((p) => p.panelId === panelId);
+      const existing = currentLayout.modalPanels.find(
+        (p) => p.panelId === panelId,
+      );
       if (existing) {
         // focusModalPanel 대신 직접 z-index 업데이트 (순환 참조 방지)
-        const maxZIndex = Math.max(...layout.modalPanels.map((p) => p.zIndex));
+        const maxZIndex = Math.max(
+          ...currentLayout.modalPanels.map((p) => p.zIndex),
+        );
         if (existing.zIndex !== maxZIndex) {
           setPanelLayout({
-            ...layout,
-            modalPanels: layout.modalPanels.map((p) =>
+            ...currentLayout,
+            modalPanels: currentLayout.modalPanels.map((p) =>
               p.panelId === panelId
-                ? { ...p, zIndex: layout.nextModalZIndex }
-                : p
+                ? { ...p, zIndex: currentLayout.nextModalZIndex }
+                : p,
             ),
-            nextModalZIndex: layout.nextModalZIndex + 1,
+            nextModalZIndex: currentLayout.nextModalZIndex + 1,
           });
         }
         return;
@@ -215,13 +239,17 @@ export function usePanelLayout(): UsePanelLayoutReturn {
       // 패널 설정 가져오기
       const panelConfig = PanelRegistry.getPanel(panelId);
       if (!panelConfig) {
-        console.warn(`[usePanelLayout] Panel "${panelId}" not found in registry`);
+        console.warn(
+          `[usePanelLayout] Panel "${panelId}" not found in registry`,
+        );
         return;
       }
 
       // Modal 모드 지원 여부 확인
       if (!PanelRegistry.supportsDisplayMode(panelId, "modal")) {
-        console.warn(`[usePanelLayout] Panel "${panelId}" does not support modal mode`);
+        console.warn(
+          `[usePanelLayout] Panel "${panelId}" does not support modal mode`,
+        );
         return;
       }
 
@@ -241,16 +269,16 @@ export function usePanelLayout(): UsePanelLayoutReturn {
         mode: "modal",
         position: { x: clamped.x, y: clamped.y },
         size: { width, height },
-        zIndex: layout.nextModalZIndex,
+        zIndex: currentLayout.nextModalZIndex,
       };
 
       setPanelLayout({
-        ...layout,
-        modalPanels: [...layout.modalPanels, newPanel],
-        nextModalZIndex: layout.nextModalZIndex + 1,
+        ...currentLayout,
+        modalPanels: [...currentLayout.modalPanels, newPanel],
+        nextModalZIndex: currentLayout.nextModalZIndex + 1,
       });
     },
-    [layout, setPanelLayout, clampPosition]
+    [setPanelLayout, clampPosition],
   );
 
   /**
@@ -258,12 +286,15 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const closeModalPanel = useCallback(
     (panelId: PanelId) => {
+      const currentLayout = useStore.getState().panelLayout;
       setPanelLayout({
-        ...layout,
-        modalPanels: layout.modalPanels.filter((p) => p.panelId !== panelId),
+        ...currentLayout,
+        modalPanels: currentLayout.modalPanels.filter(
+          (p) => p.panelId !== panelId,
+        ),
       });
     },
-    [layout, setPanelLayout]
+    [setPanelLayout],
   );
 
   /**
@@ -271,24 +302,29 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const focusModalPanel = useCallback(
     (panelId: PanelId) => {
-      const panel = layout.modalPanels.find((p) => p.panelId === panelId);
+      const currentLayout = useStore.getState().panelLayout;
+      const panel = currentLayout.modalPanels.find(
+        (p) => p.panelId === panelId,
+      );
       if (!panel) return;
 
       // 이미 최상위면 무시
-      const maxZIndex = Math.max(...layout.modalPanels.map((p) => p.zIndex));
+      const maxZIndex = Math.max(
+        ...currentLayout.modalPanels.map((p) => p.zIndex),
+      );
       if (panel.zIndex === maxZIndex) return;
 
       setPanelLayout({
-        ...layout,
-        modalPanels: layout.modalPanels.map((p) =>
+        ...currentLayout,
+        modalPanels: currentLayout.modalPanels.map((p) =>
           p.panelId === panelId
-            ? { ...p, zIndex: layout.nextModalZIndex }
-            : p
+            ? { ...p, zIndex: currentLayout.nextModalZIndex }
+            : p,
         ),
-        nextModalZIndex: layout.nextModalZIndex + 1,
+        nextModalZIndex: currentLayout.nextModalZIndex + 1,
       });
     },
-    [layout, setPanelLayout]
+    [setPanelLayout],
   );
 
   /**
@@ -296,7 +332,10 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const updateModalPanelPosition = useCallback(
     (panelId: PanelId, position: { x: number; y: number }) => {
-      const panel = layout.modalPanels.find((p) => p.panelId === panelId);
+      const currentLayout = useStore.getState().panelLayout;
+      const panel = currentLayout.modalPanels.find(
+        (p) => p.panelId === panelId,
+      );
       if (!panel) return;
 
       // 위치 경계 검사
@@ -304,17 +343,17 @@ export function usePanelLayout(): UsePanelLayoutReturn {
         position.x,
         position.y,
         panel.size.width,
-        panel.size.height
+        panel.size.height,
       );
 
       setPanelLayout({
-        ...layout,
-        modalPanels: layout.modalPanels.map((p) =>
-          p.panelId === panelId ? { ...p, position: clamped } : p
+        ...currentLayout,
+        modalPanels: currentLayout.modalPanels.map((p) =>
+          p.panelId === panelId ? { ...p, position: clamped } : p,
         ),
       });
     },
-    [layout, setPanelLayout, clampPosition]
+    [setPanelLayout, clampPosition],
   );
 
   /**
@@ -322,7 +361,10 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const updateModalPanelSize = useCallback(
     (panelId: PanelId, size: { width: number; height: number }) => {
-      const panel = layout.modalPanels.find((p) => p.panelId === panelId);
+      const currentLayout = useStore.getState().panelLayout;
+      const panel = currentLayout.modalPanels.find(
+        (p) => p.panelId === panelId,
+      );
       if (!panel) return;
 
       // 패널 설정에서 min/max 제약 가져오기
@@ -339,24 +381,25 @@ export function usePanelLayout(): UsePanelLayoutReturn {
       };
 
       setPanelLayout({
-        ...layout,
-        modalPanels: layout.modalPanels.map((p) =>
-          p.panelId === panelId ? { ...p, size: clampedSize } : p
+        ...currentLayout,
+        modalPanels: currentLayout.modalPanels.map((p) =>
+          p.panelId === panelId ? { ...p, size: clampedSize } : p,
         ),
       });
     },
-    [layout, setPanelLayout]
+    [setPanelLayout],
   );
 
   /**
    * 모든 Modal 패널 닫기
    */
   const closeAllModalPanels = useCallback(() => {
+    const currentLayout = useStore.getState().panelLayout;
     setPanelLayout({
-      ...layout,
+      ...currentLayout,
       modalPanels: [],
     });
-  }, [layout, setPanelLayout]);
+  }, [setPanelLayout]);
 
   return {
     layout,
