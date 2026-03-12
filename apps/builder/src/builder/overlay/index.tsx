@@ -24,11 +24,12 @@ interface OverlayData {
 
 export default function SelectionOverlay() {
   // 🚀 Performance: 3개 개별 구독 → 1개 shallow selector로 통합 (단일 set() 시 리렌더 1회)
+  // NOTE: fallback (|| []) 사용 금지 — 매 호출마다 새 레퍼런스 생성되어 useShallow 비교 무효화
   const { selectedElementId, selectedElementIds, multiSelectMode } = useStore(
     useShallow((state) => ({
       selectedElementId: state.selectedElementId,
-      selectedElementIds: state.selectedElementIds || [],
-      multiSelectMode: state.multiSelectMode || false,
+      selectedElementIds: state.selectedElementIds,
+      multiSelectMode: state.multiSelectMode,
     })),
   );
 

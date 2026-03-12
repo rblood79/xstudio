@@ -21,10 +21,9 @@
  */
 
 import { useState, useMemo, useCallback, memo } from "react";
-import { ToggleButton } from "react-aria-components";
 import type { PanelProps } from "../core/types";
 import { useDebouncedSelectedElementData } from "../../stores";
-import { ActionIconButton } from "../../components/ui";
+import { ActionIconButton, ActionIconToggleButton } from "../../components/ui";
 import { Copy, ClipboardPaste, PencilRuler, Palette } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { EmptyState } from "../../components";
@@ -210,23 +209,24 @@ function StylesPanelContent() {
     <div className="panel">
       <div className="panel-header">
         <div className="panel-actions">
-          <ToggleButton
-            className="iconButton"
+          <ActionIconToggleButton
             isSelected={filter === "all"}
             onChange={() => setFilter("all")}
             aria-label="Style"
+            tooltip="전체 스타일"
           >
             <Palette
               color={iconProps.color}
               size={iconProps.size}
               strokeWidth={iconProps.strokeWidth}
             />
-          </ToggleButton>
-          <ToggleButton
-            className="iconButton panel-title"
+          </ActionIconToggleButton>
+          <ActionIconToggleButton
+            className="panel-title"
             isSelected={filter === "modified"}
             onChange={() => setFilter("modified")}
             aria-label="Modify"
+            tooltip="수정된 스타일"
           >
             <PencilRuler
               color={iconProps.color}
@@ -234,7 +234,7 @@ function StylesPanelContent() {
               strokeWidth={iconProps.strokeWidth}
             />
             {modifiedCount > 0 && `modify ${modifiedCount}`}
-          </ToggleButton>
+          </ActionIconToggleButton>
         </div>
         <div className="panel-actions">
           <ActionIconButton

@@ -178,16 +178,23 @@ function loadLayoutFromStorage():
 }
 
 /**
- * LocalStorage에 레이아웃 저장
+ * LocalStorage에 레이아웃 저장 (디바운스 300ms)
+ * 패널 드래그/리사이즈 등 고빈도 호출 시 마지막 상태만 저장
  */
-function saveLayoutToStorage(
+let _saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function debouncedSaveLayoutToStorage(
   layout: import("../panels/core/types").PanelLayoutState,
 ): void {
-  try {
-    localStorage.setItem(PANEL_LAYOUT_STORAGE_KEY, JSON.stringify(layout));
-  } catch (error) {
-    console.error("[PanelLayout] Failed to save to localStorage:", error);
-  }
+  if (_saveTimer !== null) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    _saveTimer = null;
+    try {
+      localStorage.setItem(PANEL_LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+    } catch (error) {
+      console.error("[PanelLayout] Failed to save to localStorage:", error);
+    }
+  }, 300);
 }
 
 /**
@@ -207,8 +214,7 @@ export const createPanelLayoutSlice: StateCreator<
    */
   setPanelLayout: (layout: import("../panels/core/types").PanelLayoutState) => {
     set({ panelLayout: layout });
-    // localStorage I/O를 현재 렌더 사이클 밖으로 밀어내어 상태 업데이트를 블로킹하지 않음
-    queueMicrotask(() => saveLayoutToStorage(layout));
+    debouncedSaveLayoutToStorage(layout);
   },
 
   /**
@@ -216,15 +222,27 @@ export const createPanelLayoutSlice: StateCreator<
    */
   resetPanelLayout: () => {
     set({ panelLayout: DEFAULT_PANEL_LAYOUT });
-    queueMicrotask(() => saveLayoutToStorage(DEFAULT_PANEL_LAYOUT));
+    debouncedSaveLayoutToStorage(DEFAULT_PANEL_LAYOUT);
   },
 
   /**
-   * 현재 레이아웃을 localStorage에 저장
+   * 현재 레이아웃을 localStorage에 저장 (즉시)
    */
   savePanelLayoutToStorage: () => {
     const { panelLayout } = _get();
-    saveLayoutToStorage(panelLayout);
+    // 명시적 호출은 즉시 저장 (디바운스 타이머 취소)
+    if (_saveTimer !== null) {
+      clearTimeout(_saveTimer);
+      _saveTimer = null;
+    }
+    try {
+      localStorage.setItem(
+        PANEL_LAYOUT_STORAGE_KEY,
+        JSON.stringify(panelLayout),
+      );
+    } catch (error) {
+      console.error("[PanelLayout] Failed to save to localStorage:", error);
+    }
   },
 
   /**

@@ -18,16 +18,19 @@ import type {
 import { PanelRegistry } from "../panels/core/PanelRegistry";
 import type { UsePanelLayoutReturn } from "../layout/types";
 
+/** stale closure 방지: callback 내부에서 최신 panelLayout 읽기 */
+const getLayout = () => useStore.getState().panelLayout;
+
 /**
  * 패널 레이아웃 관리 훅
  *
- * 성능 최적화: panelLayout 전체 객체 대신 필요한 필드만 shallow 비교로 구독.
- * 패널 하나 토글 시 해당 필드를 실제로 사용하는 소비자만 리렌더됨.
+ * panelLayout 최상위 필드(showLeft, activeLeftPanels 등)를 shallow 비교하여
+ * 변경되지 않은 필드만 사용하는 소비자의 불필요한 리렌더를 방지한다.
  *
  * @returns 레이아웃 상태 및 액션
  */
 export function usePanelLayout(): UsePanelLayoutReturn {
-  // 필요한 필드만 shallow 비교로 구독 — 전체 panelLayout 객체 구독 금지
+  // useShallow: panelLayout 객체의 최상위 키를 개별 비교
   const layout = useStore(useShallow((state) => state.panelLayout));
   const setPanelLayout = useStore((state) => state.setPanelLayout);
 
@@ -38,8 +41,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
     (panelId: PanelId, from: PanelSide, to: PanelSide) => {
       if (from === to) return;
 
-      // stale closure 방지: 최신 상태를 getState()로 읽음
-      const currentLayout = useStore.getState().panelLayout;
+      const currentLayout = getLayout();
 
       const fromKey = from === "left" ? "leftPanels" : "rightPanels";
       const toKey = to === "left" ? "leftPanels" : "rightPanels";
@@ -83,8 +85,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const togglePanel = useCallback(
     (side: PanelSide, panelId: PanelId) => {
-      // stale closure 방지: 최신 상태를 getState()로 읽음
-      const currentLayout = useStore.getState().panelLayout;
+      const currentLayout = getLayout();
 
       const panelsKey = side === "left" ? "leftPanels" : "rightPanels";
       const activeKey =
@@ -145,8 +146,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const toggleBottomPanel = useCallback(
     (panelId: PanelId) => {
-      // stale closure 방지: 최신 상태를 getState()로 읽음
-      const currentLayout = useStore.getState().panelLayout;
+      const currentLayout = getLayout();
 
       // 패널이 bottom에 없으면 무시
       if (!currentLayout.bottomPanels.includes(panelId)) {
@@ -173,7 +173,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
   const setBottomHeight = useCallback(
     (height: number) => {
       const clampedHeight = Math.max(150, Math.min(600, height));
-      const currentLayout = useStore.getState().panelLayout;
+      const currentLayout = getLayout();
       setPanelLayout({
         ...currentLayout,
         bottomHeight: clampedHeight,
@@ -186,7 +186,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    * 하단 패널 닫기
    */
   const closeBottomPanel = useCallback(() => {
-    const currentLayout = useStore.getState().panelLayout;
+    const currentLayout = getLayout();
     setPanelLayout({
       ...currentLayout,
       activeBottomPanels: [],
@@ -210,8 +210,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const openPanelAsModal = useCallback(
     (panelId: PanelId) => {
-      // stale closure 방지: 최신 상태를 getState()로 읽음
-      const currentLayout = useStore.getState().panelLayout;
+      const currentLayout = getLayout();
 
       // 이미 열려있으면 포커스만
       const existing = currentLayout.modalPanels.find(
@@ -286,7 +285,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const closeModalPanel = useCallback(
     (panelId: PanelId) => {
-      const currentLayout = useStore.getState().panelLayout;
+      const currentLayout = getLayout();
       setPanelLayout({
         ...currentLayout,
         modalPanels: currentLayout.modalPanels.filter(
@@ -302,7 +301,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const focusModalPanel = useCallback(
     (panelId: PanelId) => {
-      const currentLayout = useStore.getState().panelLayout;
+      const currentLayout = getLayout();
       const panel = currentLayout.modalPanels.find(
         (p) => p.panelId === panelId,
       );
@@ -332,7 +331,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const updateModalPanelPosition = useCallback(
     (panelId: PanelId, position: { x: number; y: number }) => {
-      const currentLayout = useStore.getState().panelLayout;
+      const currentLayout = getLayout();
       const panel = currentLayout.modalPanels.find(
         (p) => p.panelId === panelId,
       );
@@ -361,7 +360,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const updateModalPanelSize = useCallback(
     (panelId: PanelId, size: { width: number; height: number }) => {
-      const currentLayout = useStore.getState().panelLayout;
+      const currentLayout = getLayout();
       const panel = currentLayout.modalPanels.find(
         (p) => p.panelId === panelId,
       );
@@ -394,7 +393,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    * 모든 Modal 패널 닫기
    */
   const closeAllModalPanels = useCallback(() => {
-    const currentLayout = useStore.getState().panelLayout;
+    const currentLayout = getLayout();
     setPanelLayout({
       ...currentLayout,
       modalPanels: [],

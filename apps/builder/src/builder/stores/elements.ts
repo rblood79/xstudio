@@ -42,7 +42,10 @@ import { ElementUtils } from "../../utils/element/elementUtils";
 import { createInstance as createInstanceAction } from "./utils/instanceActions";
 import { elementsApi } from "../../services/api";
 import { longTaskMonitor } from "../../utils/longTaskMonitor";
-import { scheduleCancelableBackgroundTask } from "../utils/scheduleTask";
+import {
+  scheduleCancelableBackgroundTask,
+  scheduleNextFrame,
+} from "../utils/scheduleTask";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";
 import {
   type PageElementIndex,
@@ -471,17 +474,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           selectedElementIdsSet = new Set([elementId]);
         }
 
-        // Phase 1: 캔버스 하이라이트 즉시 반영 (selectedElementProps는 빈 객체)
+        // Phase 1: 캔버스 하이라이트 즉시 반영 (selectedElementProps 미변경 — hydrate가 담당)
         set({
           selectedElementId: elementId,
-          selectedElementProps: {},
           selectedElementIds,
           selectedElementIdsSet,
           multiSelectMode: false,
         });
 
         // Phase 2: 인스펙터용 props를 다음 프레임에서 설정
-        requestAnimationFrame(() => {
+        scheduleNextFrame(() => {
           const latestState = get();
           // 선택이 이미 변경되었으면 스킵
           if (latestState.selectedElementId !== elementId) return;

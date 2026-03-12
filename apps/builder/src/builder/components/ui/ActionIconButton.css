@@ -25,6 +25,11 @@
     outline-offset: 2px;
   }
 
+  &[data-selected] {
+    background: color-mix(in srgb, var(--fg) 10%, transparent);
+    color: var(--fg);
+  }
+
   &[data-disabled] {
     opacity: 0.38;
     pointer-events: none;
