@@ -51,6 +51,25 @@ export function renderImage(
           ck.LTRBRect(0, 0, node.width, node.height),
           placeholderPaint,
         );
+
+        // 산/해 placeholder 아이콘
+        const iconSize = Math.min(node.width, node.height) * 0.3;
+        const iconX = (node.width - iconSize) / 2;
+        const iconY = (node.height - iconSize) / 2;
+        const iconPaint = scope.track(new ck.Paint());
+        iconPaint.setAntiAlias(true);
+        iconPaint.setStyle(ck.PaintStyle.Fill);
+        iconPaint.setColor(ck.Color(156, 163, 175, 1)); // gray-400
+
+        // 산 모양
+        const mountainPath = scope.track(new ck.Path());
+        mountainPath.moveTo(iconX, iconY + iconSize);
+        mountainPath.lineTo(iconX + iconSize * 0.3, iconY + iconSize * 0.5);
+        mountainPath.lineTo(iconX + iconSize * 0.5, iconY + iconSize * 0.7);
+        mountainPath.lineTo(iconX + iconSize * 0.7, iconY + iconSize * 0.3);
+        mountainPath.lineTo(iconX + iconSize, iconY + iconSize);
+        mountainPath.close();
+        canvas.drawPath(mountainPath, iconPaint);
       }
       const altText = node.image?.altText;
       if (altText && fontMgr) {

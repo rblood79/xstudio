@@ -166,7 +166,7 @@ export function createCardDefinition(
           {
             tag: "Image",
             props: {
-              src: "https://placehold.co/600x340/e2e8f0/64748b?text=Preview",
+              src: "",
               alt: "Card preview",
               style: {
                 width: "100%",
