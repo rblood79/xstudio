@@ -94,7 +94,7 @@ export function buildSkiaFrameContent(
     currentAiState.flashAnimations.size > 0;
 
   let treeBoundsMap: Map<string, BoundingBox>;
-  let nodeBoundsMap: Map<string, AIEffectNodeBounds> | null = null;
+  let nodeBoundsMap: Map<string, AIEffectNodeBounds> | null;
   let contentNode: SkiaRenderable;
 
   if (useCommandStream) {

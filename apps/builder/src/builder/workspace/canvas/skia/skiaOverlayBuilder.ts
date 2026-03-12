@@ -17,11 +17,7 @@ import type {
   DataSourceEdge,
   LayoutGroup,
 } from "./workflowEdges";
-import type {
-  PageFrame,
-  ElementBounds,
-  WorkflowHighlightState,
-} from "./workflowRenderer";
+import type { PageFrame, ElementBounds } from "./workflowRenderer";
 import type { CachedEdgeGeometry } from "./workflowHitTest";
 import type { SelectionRenderResult } from "./skiaWorkflowSelection";
 import type { ElementHoverState } from "../hooks/useElementHoverInteraction";
