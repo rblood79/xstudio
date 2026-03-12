@@ -31,15 +31,6 @@ import {
 import { registerImageLoadCallback } from "./imageCache";
 import { useAIVisualFeedbackStore } from "../../../stores/aiVisualFeedback";
 import { renderGrid } from "./gridRenderer";
-import { renderGeneratingEffects, renderFlashes } from "./aiEffects";
-import type { AIEffectNodeBounds } from "./types";
-import {
-  renderSelectionBox,
-  renderTransformHandles,
-  renderDimensionLabels,
-  renderLasso,
-  renderPageTitle,
-} from "./selectionRenderer";
 import {
   computeWorkflowEdges,
   computeDataSourceEdges,
@@ -58,22 +49,9 @@ import {
   setPagePosStaleFrames,
   tickPagePosStaleFrames,
 } from "./skiaTreeBuilder";
-import {
-  buildFrameContent,
-  buildWorkflowElementBounds,
-} from "./skiaFramePipeline";
-import {
-  renderWorkflowEdges,
-  renderDataSourceEdges,
-  renderLayoutGroups,
-  renderPageFrameHighlight,
-  type PageFrame,
-  type ElementBounds,
-} from "./workflowRenderer";
-import {
-  buildEdgeGeometryCache,
-  type CachedEdgeGeometry,
-} from "./workflowHitTest";
+import { buildFrameContent } from "./skiaFramePipeline";
+import { type PageFrame, type ElementBounds } from "./workflowRenderer";
+import { type CachedEdgeGeometry } from "./workflowHitTest";
 import {
   useWorkflowInteraction,
   type WorkflowHoverState,
@@ -83,38 +61,19 @@ import {
   type ElementHoverState,
 } from "../hooks/useElementHoverInteraction";
 import { useScrollWheelInteraction } from "../hooks/useScrollWheelInteraction";
-import {
-  renderHoverHighlight,
-  renderEditingContextBorder,
-} from "./hoverRenderer";
-import {
-  renderWorkflowMinimap,
-  DEFAULT_MINIMAP_CONFIG,
-  type MinimapConfig,
-} from "./workflowMinimap";
+import { DEFAULT_MINIMAP_CONFIG, type MinimapConfig } from "./workflowMinimap";
 import { useStore } from "../../../stores";
 import { useLayoutsStore } from "../../../stores/layouts";
 import type { BoundingBox, DragState } from "../selection/types";
 import { watchContextLoss } from "./createSurface";
 import { flushWasmMetrics, recordWasmMetric } from "../utils/gpuProfilerCore";
-// getSharedLayoutMap/Version/FilteredChildrenMap → skiaFramePipeline.ts로 이동 (ADR-035 Phase 4)
-// getCachedCommandStream/executeRenderCommands/buildAIBoundsFromStream → skiaFramePipeline.ts로 이동
-import { buildPageFrameMap } from "./skiaFrameHelpers";
+import { buildGridRenderInput } from "./skiaOverlayHelpers";
+import { buildSelectionRenderData } from "./skiaWorkflowSelection";
 import {
-  buildHoverHighlightTargets,
-  buildMinimapConfig,
-  buildMinimapRenderData,
-  buildMinimapViewportBounds,
-  buildGridRenderInput,
-  buildPageTitleRenderItems,
-  shouldRenderWorkflowMinimap,
-} from "./skiaOverlayHelpers";
-import {
-  buildSelectionRenderData,
-  buildWorkflowHighlightState,
-  collectHighlightedWorkflowPageIds,
-  filterRenderableWorkflowEdges,
-} from "./skiaWorkflowSelection";
+  buildWorkflowOverlayData,
+  buildFrameCaches,
+  buildOverlayNode,
+} from "./skiaOverlayBuilder";
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -818,9 +777,6 @@ export function SkiaOverlay({
       treeBoundsMapRef.current = treeBoundsMap;
       renderer.setContentNode(contentNode);
 
-      let workflowElementBoundsMap: Map<string, ElementBounds> | null = null;
-      const currentAiState = useAIVisualFeedbackStore.getState();
-
       const selectionData = buildSelectionRenderData(
         cameraX,
         cameraY,
@@ -830,257 +786,59 @@ export function SkiaOverlay({
         pageFramesRef.current,
       );
 
-      // Phase 3: 히트테스트 캐시를 renderFrame 상위 레벨에서 빌드 (overlay renderSkia 콜백 이전)
+      // ── ADR-035 Phase 4: Workflow data + frame caches (skiaOverlayBuilder.ts) ──
+      let workflowElementBoundsMap: Map<string, ElementBounds> | null = null;
       if (showWorkflowOverlay) {
-        const frames = pageFramesRef.current ?? [];
-        const pfMap = buildPageFrameMap(frames);
-        pageFrameMapRef.current = pfMap;
-        workflowElementBoundsMap = buildWorkflowElementBounds(treeBoundsMap);
+        const wfData = buildWorkflowOverlayData(
+          treeBoundsMap,
+          pageFramesRef.current ?? [],
+        );
+        pageFrameMapRef.current = wfData.pageFrameMap;
+        workflowElementBoundsMap = wfData.workflowElementBoundsMap;
 
-        if (workflowEdgesRef.current.length > 0) {
-          const { workflowStraightEdges } = useStore.getState();
-          // 버전 기반 캐싱: edges/pagePos/straightEdges 변경 시에만 재계산
-          const cacheKey = `${workflowEdgesVersionRef.current}:${pagePosVersion}:${workflowStraightEdges}`;
-          if (cacheKey !== edgeGeometryCacheKeyRef.current) {
-            edgeGeometryCacheRef.current = buildEdgeGeometryCache(
-              workflowEdgesRef.current,
-              pfMap,
-              workflowElementBoundsMap,
-              workflowStraightEdges,
-            );
-            edgeGeometryCacheKeyRef.current = cacheKey;
-          }
-        } else {
-          edgeGeometryCacheRef.current = [];
-          edgeGeometryCacheKeyRef.current = "";
-        }
+        const { workflowStraightEdges } = useStore.getState();
+        const cacheResult = buildFrameCaches(
+          workflowEdgesRef.current,
+          wfData.pageFrameMap,
+          workflowElementBoundsMap,
+          workflowEdgesVersionRef.current,
+          pagePosVersion,
+          workflowStraightEdges,
+          edgeGeometryCacheKeyRef.current,
+          edgeGeometryCacheRef.current,
+        );
+        edgeGeometryCacheRef.current = cacheResult.edgeGeometryCache;
+        edgeGeometryCacheKeyRef.current = cacheResult.edgeGeometryCacheKey;
       }
 
-      renderer.setOverlayNode({
-        renderSkia(canvas) {
-          if (hasAIEffects && nodeBoundsMap) {
-            const now = performance.now();
-            renderGeneratingEffects(
-              ck,
-              canvas,
-              now,
-              currentAiState.generatingNodes,
-              nodeBoundsMap,
-            );
-            renderFlashes(
-              ck,
-              canvas,
-              now,
-              currentAiState.flashAnimations,
-              nodeBoundsMap,
-            );
-            if (currentAiState.flashAnimations.size > 0) {
-              currentAiState.cleanupExpiredFlashes(now);
-            }
-          }
-
-          const frames = pageFramesRef.current ?? [];
-          if (frames.length > 0) {
-            const state = useStore.getState();
-            const pageTitleItems = buildPageTitleRenderItems(
-              frames,
-              state.currentPageId,
-              state.selectedElementIds.length > 0,
-            );
-            for (const item of pageTitleItems) {
-              canvas.save();
-              canvas.translate(item.x, item.y);
-              renderPageTitle(
-                ck,
-                canvas,
-                item.title,
-                cameraZoom,
-                fontMgr,
-                item.highlighted,
-                item.elementCount,
-              );
-              canvas.restore();
-            }
-          }
-
-          // Workflow 오버레이 렌더링 (서브 토글 기반)
-          if (showWorkflowOverlay) {
-            // pageFrameMap/edgeGeometryCache는 renderFrame 상위 레벨에서 이미 빌드됨
-            const pageFrameMap = pageFrameMapRef.current;
-            const elBoundsMap = workflowElementBoundsMap ?? new Map();
-
-            // 서브 토글 상태 읽기
-            const wfState = useStore.getState();
-            const showNav = wfState.showWorkflowNavigation;
-            const showEvents = wfState.showWorkflowEvents;
-            const showDS = wfState.showWorkflowDataSources;
-            const showLG = wfState.showWorkflowLayoutGroups;
-
-            // Phase 3: highlightState 구성
-            const hoveredEdgeId = workflowHoverStateRef.current.hoveredEdgeId;
-            const focusedPageId = wfState.workflowFocusedPageId;
-            const highlightState = buildWorkflowHighlightState(
-              hoveredEdgeId,
-              focusedPageId,
-              workflowEdgesRef.current,
-            );
-
-            // Phase 3: 포커스/호버 연결 페이지 프레임 하이라이트 (엣지 아래에 렌더)
-            if (highlightState && focusedPageId) {
-              const connectedPageIds = collectHighlightedWorkflowPageIds(
-                focusedPageId,
-                highlightState,
-                workflowEdgesRef.current,
-              );
-              renderPageFrameHighlight(
-                ck,
-                canvas,
-                connectedPageIds,
-                pageFrameMap,
-                cameraZoom,
-                [0x3b / 255, 0x82 / 255, 0xf6 / 255], // blue-500
-                0.8,
-              );
-            }
-
-            // Layout 그룹 (엣지/선 아래에 그려지도록 먼저 렌더)
-            if (showLG && layoutGroupsRef.current.length > 0) {
-              renderLayoutGroups(
-                ck,
-                canvas,
-                layoutGroupsRef.current,
-                pageFrameMap,
-                cameraZoom,
-                fontMgr,
-              );
-            }
-
-            // Navigation/Event 엣지 (서브 토글로 필터)
-            if (
-              workflowEdgesRef.current.length > 0 &&
-              (showNav || showEvents)
-            ) {
-              const filteredEdges = filterRenderableWorkflowEdges(
-                workflowEdgesRef.current,
-                showNav,
-                showEvents,
-              );
-              if (filteredEdges.length > 0) {
-                const straightEdges = useStore.getState().workflowStraightEdges;
-                renderWorkflowEdges(
-                  ck,
-                  canvas,
-                  filteredEdges,
-                  pageFrameMap,
-                  cameraZoom,
-                  fontMgr,
-                  elBoundsMap,
-                  highlightState,
-                  straightEdges,
-                );
-              }
-            }
-
-            // 데이터 소스 엣지
-            if (showDS && dataSourceEdgesRef.current.length > 0) {
-              renderDataSourceEdges(
-                ck,
-                canvas,
-                dataSourceEdgesRef.current,
-                pageFrameMap,
-                elBoundsMap,
-                cameraZoom,
-                fontMgr,
-              );
-            }
-          }
-
-          // Phase 4: editingContext 경계 표시
-          const editingContextId = useStore.getState().editingContextId;
-          if (editingContextId && treeBoundsMap.has(editingContextId)) {
-            const contextBounds = treeBoundsMap.get(editingContextId)!;
-            renderEditingContextBorder(ck, canvas, contextBounds, cameraZoom);
-          }
-
-          // Phase 4: 호버 하이라이트 — Selection Box 아래, Handles 아래에 렌더링
-          const {
-            hoveredElementId: hoveredCtxId,
-            hoveredLeafIds,
-            isGroupHover,
-          } = elementHoverStateRef.current;
-          const hoverTargets = buildHoverHighlightTargets(
-            treeBoundsMap,
-            hoveredCtxId,
-            hoveredLeafIds,
-            isGroupHover,
-          );
-          for (const target of hoverTargets) {
-            renderHoverHighlight(
-              ck,
-              canvas,
-              target.bounds,
-              cameraZoom,
-              target.dashed,
-            );
-          }
-
-          if (selectionData.bounds) {
-            renderSelectionBox(ck, canvas, selectionData.bounds, cameraZoom);
-            if (selectionData.showHandles) {
-              renderTransformHandles(
-                ck,
-                canvas,
-                selectionData.bounds,
-                cameraZoom,
-              );
-            }
-            renderDimensionLabels(
-              ck,
-              canvas,
-              selectionData.bounds,
-              cameraZoom,
-              fontMgr,
-            );
-          }
-          if (selectionData.lasso) {
-            renderLasso(ck, canvas, selectionData.lasso, cameraZoom);
-          }
-
-          // Phase 4: 미니맵 (최상위 레이어, 스크린 고정) — 캔버스 이동 시에만 표시
-          if (
-            shouldRenderWorkflowMinimap(
-              showWorkflowOverlay,
-              minimapVisibleRef.current,
-              pageFrameMapRef.current.size,
-            )
-          ) {
-            const mmScreenW = skiaCanvas.width / dpr;
-            const mmScreenH = skiaCanvas.height / dpr;
-            minimapConfigRef.current = buildMinimapConfig(mmScreenW, mmScreenH);
-
-            renderWorkflowMinimap(
-              ck,
-              canvas,
-              buildMinimapRenderData(
-                pageFrameMapRef.current,
-                workflowEdgesRef.current,
-                useStore.getState().workflowFocusedPageId,
-                buildMinimapViewportBounds(
-                  cameraX,
-                  cameraY,
-                  cameraZoom,
-                  mmScreenW,
-                  mmScreenH,
-                ),
-              ),
-              minimapConfigRef.current,
-              { zoom: cameraZoom, panX: cameraX, panY: cameraY },
-              { width: mmScreenW, height: mmScreenH },
-              cameraZoom,
-            );
-          }
-        },
-      });
+      // ── ADR-035 Phase 4: Overlay node (skiaOverlayBuilder.ts) ──
+      renderer.setOverlayNode(
+        buildOverlayNode({
+          ck,
+          fontMgr,
+          treeBoundsMap,
+          cameraX,
+          cameraY,
+          cameraZoom,
+          hasAIEffects,
+          nodeBoundsMap,
+          selectionData,
+          showWorkflowOverlay,
+          workflowEdges: workflowEdgesRef.current,
+          dataSourceEdges: dataSourceEdgesRef.current,
+          layoutGroups: layoutGroupsRef.current,
+          pageFrameMap: pageFrameMapRef.current,
+          workflowElementBoundsMap,
+          workflowHoveredEdgeId: workflowHoverStateRef.current.hoveredEdgeId,
+          elementHoverState: elementHoverStateRef.current,
+          pageFrames: pageFramesRef.current,
+          minimapVisible: minimapVisibleRef.current,
+          minimapConfig: minimapConfigRef.current,
+          skiaCanvasWidth: skiaCanvas.width,
+          skiaCanvasHeight: skiaCanvas.height,
+          dpr,
+        }),
+      );
 
       // Grid 렌더링 (씬 좌표계, 카메라 변환은 SkiaRenderer에서 적용)
       const { showGrid: gridVisible, gridSize: currentGridSz } =

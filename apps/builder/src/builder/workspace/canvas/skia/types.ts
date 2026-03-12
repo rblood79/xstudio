@@ -269,6 +269,22 @@ export interface ContentBuildOutput {
   aiBoundsMap: Map<string, AIEffectNodeBounds> | null;
 }
 
+/**
+ * 프레임 공유 산출물 (ADR-035 Phase 4).
+ * content 빌드에서 1회 생성, selection/workflow/AI overlay가 소비.
+ */
+export interface SharedSceneDerivedData {
+  /** element → bounding box (content 빌드에서 생성, 모든 overlay가 재사용) */
+  treeBoundsMap: Map<
+    string,
+    { x: number; y: number; width: number; height: number }
+  >;
+  /** 카메라 상태 */
+  cameraX: number;
+  cameraY: number;
+  cameraZoom: number;
+}
+
 // ============================================
 // Utility Functions
 // ============================================
