@@ -7,18 +7,21 @@
  * - Alt/Option + Shift + S: Focus Mode 토글
  */
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface SectionCollapseState {
   // State
   collapsedSections: Set<string>;
+  compactSections: Set<string>; // Compact Mode: 자주 쓰는 속성만 표시
   focusMode: boolean; // Focus Mode: 한 번에 한 섹션만 펼침
   activeFocusSection: string | null; // Focus Mode에서 현재 활성 섹션
 
   // Actions
   toggleSection: (sectionId: string) => void;
+  toggleCompact: (sectionId: string) => void;
   isCollapsed: (sectionId: string) => boolean;
+  isCompact: (sectionId: string) => boolean;
   expandAll: () => void;
   collapseAll: () => void;
   toggleFocusMode: () => void;
@@ -28,8 +31,9 @@ interface SectionCollapseState {
 export const useSectionCollapse = create<SectionCollapseState>()(
   persist(
     (set, get) => ({
-      // Initial state: all sections expanded
+      // Initial state: all sections expanded, compact mode on by default
       collapsedSections: new Set<string>(),
+      compactSections: new Set<string>(["layout", "appearance", "typography"]),
       focusMode: false,
       activeFocusSection: null,
 
@@ -63,6 +67,23 @@ export const useSectionCollapse = create<SectionCollapseState>()(
         }
       },
 
+      // Toggle compact mode for a section
+      toggleCompact: (sectionId: string) =>
+        set((state) => {
+          const newSet = new Set(state.compactSections);
+          if (newSet.has(sectionId)) {
+            newSet.delete(sectionId);
+          } else {
+            newSet.add(sectionId);
+          }
+          return { compactSections: newSet };
+        }),
+
+      // Check if a section is in compact mode
+      isCompact: (sectionId: string) => {
+        return get().compactSections.has(sectionId);
+      },
+
       // Expand all sections
       expandAll: () => set({ collapsedSections: new Set() }),
 
@@ -70,10 +91,10 @@ export const useSectionCollapse = create<SectionCollapseState>()(
       collapseAll: () =>
         set({
           collapsedSections: new Set([
-            'transform',
-            'layout',
-            'appearance',
-            'typography',
+            "transform",
+            "layout",
+            "appearance",
+            "typography",
           ]),
         }),
 
@@ -84,7 +105,7 @@ export const useSectionCollapse = create<SectionCollapseState>()(
           return {
             focusMode: newFocusMode,
             // Focus Mode 활성화 시 첫 번째 섹션만 펼침
-            activeFocusSection: newFocusMode ? 'transform' : null,
+            activeFocusSection: newFocusMode ? "transform" : null,
           };
         }),
 
@@ -96,19 +117,21 @@ export const useSectionCollapse = create<SectionCollapseState>()(
         }),
     }),
     {
-      name: 'styles-panel-collapse', // localStorage key
+      name: "styles-panel-collapse", // localStorage key
       // Custom serialization for Set
       partialize: (state) => ({
         collapsedSections: Array.from(state.collapsedSections),
+        compactSections: Array.from(state.compactSections),
         focusMode: state.focusMode,
         activeFocusSection: state.activeFocusSection,
       }),
       merge: (
         persistedState: unknown,
-        currentState: SectionCollapseState
+        currentState: SectionCollapseState,
       ): SectionCollapseState => {
         const stored = persistedState as Partial<{
           collapsedSections: string[];
+          compactSections: string[];
           focusMode: boolean;
           activeFocusSection: string | null;
         }>;
@@ -116,10 +139,13 @@ export const useSectionCollapse = create<SectionCollapseState>()(
         return {
           ...currentState,
           collapsedSections: new Set(stored?.collapsedSections || []),
+          compactSections: new Set(
+            stored?.compactSections || ["layout", "appearance", "typography"],
+          ),
           focusMode: stored?.focusMode || false,
           activeFocusSection: stored?.activeFocusSection || null,
         };
       },
-    }
-  )
+    },
+  ),
 );

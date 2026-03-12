@@ -8,6 +8,7 @@
  */
 
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { useSectionCollapse } from "../hooks/useSectionCollapse";
 import {
   PropertySection,
   PropertyUnitInput,
@@ -60,6 +61,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
     useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useTypographyValuesJotai();
+  const isCompact = useSectionCollapse((s) => s.isCompact("typography"));
   const [customFonts, setCustomFonts] = useState(() => getCustomFonts());
 
   // ADR-008: Text Behavior 프리셋 변경 핸들러
@@ -207,18 +209,6 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         min={8}
         max={200}
       />
-      <PropertyUnitInput
-        icon={Type}
-        label="Line Height"
-        className="line-height"
-        value={styleValues.lineHeight}
-        units={["reset", "px"]}
-        onChange={(value) => updateStyleImmediate("lineHeight", value)}
-        onDrag={(value) => updateStylePreview("lineHeight", value)}
-        min={0}
-        max={10}
-        allowKeywords
-      />
 
       <PropertySelect
         icon={Type}
@@ -227,18 +217,6 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         value={styleValues.fontWeight}
         options={fontWeightOptions}
         onChange={(value) => updateStyle("fontWeight", value)}
-      />
-      <PropertyUnitInput
-        icon={Type}
-        label="Letter Spacing"
-        className="letter-spacing"
-        value={styleValues.letterSpacing}
-        units={["reset", "px"]}
-        onChange={(value) => updateStyleImmediate("letterSpacing", value)}
-        onDrag={(value) => updateStylePreview("letterSpacing", value)}
-        min={-10}
-        max={10}
-        allowKeywords
       />
 
       <fieldset className="properties-aria text-align">
@@ -276,177 +254,206 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         </ToggleButtonGroup>
       </fieldset>
 
-      <fieldset className="properties-aria vertical-align">
-        <legend className="fieldset-legend">Vertical Align</legend>
-        <ToggleButtonGroup
-          aria-label="Vertical alignment"
-          indicator
-          selectedKeys={[styleValues.verticalAlign]}
-          onSelectionChange={(keys) => {
-            const value = Array.from(keys)[0] as string;
-            if (value) updateStyle("verticalAlign", value);
-          }}
-        >
-          <ToggleButton id="top">
-            <AlignVerticalJustifyStart
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </ToggleButton>
-          <ToggleButton id="middle">
-            <AlignVerticalJustifyCenter
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </ToggleButton>
-          <ToggleButton id="bottom">
-            <AlignVerticalJustifyEnd
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </fieldset>
+      {!isCompact && (
+        <>
+          <PropertyUnitInput
+            icon={Type}
+            label="Line Height"
+            className="line-height"
+            value={styleValues.lineHeight}
+            units={["reset", "px"]}
+            onChange={(value) => updateStyleImmediate("lineHeight", value)}
+            onDrag={(value) => updateStylePreview("lineHeight", value)}
+            min={0}
+            max={10}
+            allowKeywords
+          />
+          <PropertyUnitInput
+            icon={Type}
+            label="Letter Spacing"
+            className="letter-spacing"
+            value={styleValues.letterSpacing}
+            units={["reset", "px"]}
+            onChange={(value) => updateStyleImmediate("letterSpacing", value)}
+            onDrag={(value) => updateStylePreview("letterSpacing", value)}
+            min={-10}
+            max={10}
+            allowKeywords
+          />
 
-      <fieldset className="properties-aria text-decoration">
-        <legend className="fieldset-legend">Text Decoration</legend>
-        <ToggleButtonGroup
-          aria-label="Text decoration"
-          indicator
-          selectedKeys={
-            styleValues.textDecoration === "none"
-              ? []
-              : [styleValues.textDecoration]
-          }
-          onSelectionChange={(keys) => {
-            const value = Array.from(keys)[0] as string;
-            // 선택 해제 시 'none'으로 초기화
-            updateStyle("textDecoration", value || "none");
-          }}
-        >
-          <ToggleButton id="overline">
-            <Baseline
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-              style={{ transform: "rotate(180deg)" }}
-            />
-          </ToggleButton>
-          <ToggleButton id="underline">
-            <Underline
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </ToggleButton>
-          <ToggleButton id="line-through">
-            <Strikethrough
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </fieldset>
+          <fieldset className="properties-aria vertical-align">
+            <legend className="fieldset-legend">Vertical Align</legend>
+            <ToggleButtonGroup
+              aria-label="Vertical alignment"
+              indicator
+              selectedKeys={[styleValues.verticalAlign]}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                if (value) updateStyle("verticalAlign", value);
+              }}
+            >
+              <ToggleButton id="top">
+                <AlignVerticalJustifyStart
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              </ToggleButton>
+              <ToggleButton id="middle">
+                <AlignVerticalJustifyCenter
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              </ToggleButton>
+              <ToggleButton id="bottom">
+                <AlignVerticalJustifyEnd
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </fieldset>
 
-      <fieldset className="properties-aria font-style">
-        <legend className="fieldset-legend">Font Style</legend>
-        <ToggleButtonGroup
-          aria-label="Font style"
-          indicator
-          selectedKeys={[styleValues.fontStyle]}
-          onSelectionChange={(keys) => {
-            const value = Array.from(keys)[0] as string;
-            if (value) updateStyle("fontStyle", value);
-          }}
-        >
-          <ToggleButton id="normal">
-            <RemoveFormatting
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </ToggleButton>
-          <ToggleButton id="italic">
-            <Italic
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </ToggleButton>
-          <ToggleButton id="oblique">
-            <Type
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-              style={{ fontStyle: "oblique", transform: "skewX(-10deg)" }}
-            />
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </fieldset>
+          <fieldset className="properties-aria text-decoration">
+            <legend className="fieldset-legend">Text Decoration</legend>
+            <ToggleButtonGroup
+              aria-label="Text decoration"
+              indicator
+              selectedKeys={
+                styleValues.textDecoration === "none"
+                  ? []
+                  : [styleValues.textDecoration]
+              }
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                // 선택 해제 시 'none'으로 초기화
+                updateStyle("textDecoration", value || "none");
+              }}
+            >
+              <ToggleButton id="overline">
+                <Baseline
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                  style={{ transform: "rotate(180deg)" }}
+                />
+              </ToggleButton>
+              <ToggleButton id="underline">
+                <Underline
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              </ToggleButton>
+              <ToggleButton id="line-through">
+                <Strikethrough
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </fieldset>
 
-      <fieldset className="properties-aria text-transform">
-        <legend className="fieldset-legend">Text Transform</legend>
-        <ToggleButtonGroup
-          aria-label="Text transform"
-          indicator
-          selectedKeys={
-            styleValues.textTransform === "none"
-              ? []
-              : [styleValues.textTransform]
-          }
-          onSelectionChange={(keys) => {
-            const value = Array.from(keys)[0] as string;
-            // 선택 해제 시 'none'으로 초기화
-            updateStyle("textTransform", value || "none");
-          }}
-        >
-          <ToggleButton id="uppercase">
-            <CaseUpper
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </ToggleButton>
-          <ToggleButton id="lowercase">
-            <CaseLower
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </ToggleButton>
-          <ToggleButton id="capitalize">
-            <CaseSensitive
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </fieldset>
+          <fieldset className="properties-aria font-style">
+            <legend className="fieldset-legend">Font Style</legend>
+            <ToggleButtonGroup
+              aria-label="Font style"
+              indicator
+              selectedKeys={[styleValues.fontStyle]}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                if (value) updateStyle("fontStyle", value);
+              }}
+            >
+              <ToggleButton id="normal">
+                <RemoveFormatting
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              </ToggleButton>
+              <ToggleButton id="italic">
+                <Italic
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              </ToggleButton>
+              <ToggleButton id="oblique">
+                <Type
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                  style={{ fontStyle: "oblique", transform: "skewX(-10deg)" }}
+                />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </fieldset>
 
-      {/* ADR-008: Text Behavior Preset */}
-      <PropertySelect
-        icon={TextWrap}
-        label="Wrap"
-        className="text-behavior"
-        value={styleValues.textBehaviorPreset}
-        popoverWidthMode="fit-content"
-        options={[
-          { value: "normal", label: "Normal" },
-          { value: "nowrap", label: "No Wrap" },
-          { value: "truncate", label: "Truncate (...)" },
-          { value: "break-words", label: "Break Words" },
-          { value: "break-all", label: "Break All" },
-          { value: "keep-all", label: "Keep All (CJK)" },
-          { value: "preserve", label: "Preserve" },
-          { value: "custom", label: "Custom..." },
-        ]}
-        onChange={handleTextBehaviorChange}
-      />
+          <fieldset className="properties-aria text-transform">
+            <legend className="fieldset-legend">Text Transform</legend>
+            <ToggleButtonGroup
+              aria-label="Text transform"
+              indicator
+              selectedKeys={
+                styleValues.textTransform === "none"
+                  ? []
+                  : [styleValues.textTransform]
+              }
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                // 선택 해제 시 'none'으로 초기화
+                updateStyle("textTransform", value || "none");
+              }}
+            >
+              <ToggleButton id="uppercase">
+                <CaseUpper
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              </ToggleButton>
+              <ToggleButton id="lowercase">
+                <CaseLower
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              </ToggleButton>
+              <ToggleButton id="capitalize">
+                <CaseSensitive
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </fieldset>
+
+          {/* ADR-008: Text Behavior Preset */}
+          <PropertySelect
+            icon={TextWrap}
+            label="Wrap"
+            className="text-behavior"
+            value={styleValues.textBehaviorPreset}
+            popoverWidthMode="fit-content"
+            options={[
+              { value: "normal", label: "Normal" },
+              { value: "nowrap", label: "No Wrap" },
+              { value: "truncate", label: "Truncate (...)" },
+              { value: "break-words", label: "Break Words" },
+              { value: "break-all", label: "Break All" },
+              { value: "keep-all", label: "Keep All (CJK)" },
+              { value: "preserve", label: "Preserve" },
+              { value: "custom", label: "Custom..." },
+            ]}
+            onChange={handleTextBehaviorChange}
+          />
+        </>
+      )}
     </>
   );
 });
@@ -482,7 +489,12 @@ export const TypographySection = memo(function TypographySection() {
   };
 
   return (
-    <PropertySection id="typography" title="Typography" onReset={handleReset}>
+    <PropertySection
+      id="typography"
+      title="Typography"
+      onReset={handleReset}
+      hasCompactMode
+    >
       <TypographySectionContent />
     </PropertySection>
   );

@@ -30,6 +30,7 @@ import {
   ArrowRightToLine,
 } from "lucide-react";
 import { useStyleActions } from "../hooks/useStyleActions";
+import { useSectionCollapse } from "../hooks/useSectionCollapse";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useLayoutValuesJotai } from "../hooks/useLayoutValuesJotai";
 import { useResetStyles } from "../hooks/useResetStyles";
@@ -180,6 +181,7 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
  */
 const LayoutSectionContent = memo(function LayoutSectionContent() {
   const [isSpacingExpanded, setIsSpacingExpanded] = useState(false);
+  const isCompact = useSectionCollapse((s) => s.isCompact("layout"));
 
   const {
     handleFlexDirection,
@@ -340,86 +342,90 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
             />
           </SwatchIconButton>
         </div>
-        <div className="justify-control justify-content">
-          <legend className="fieldset-legend">Justify</legend>
-          <ToggleButtonGroup
-            aria-label="Justify content alignment"
-            indicator
-            selectionMode="single"
-            selectedKeys={justifyContentSpacingKeys}
-            onSelectionChange={(keys) => {
-              const value = Array.from(keys)[0] as string;
-              if (value) {
-                handleJustifyContentSpacing(value);
-              } else {
-                // 활성화된 토글 재클릭 → justifyContent 스타일 제거
-                updateStyles({ justifyContent: "" });
-              }
-            }}
-          >
-            <ToggleButton id="space-around">
-              <AlignHorizontalSpaceAround
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.strokeWidth}
-              />
-            </ToggleButton>
-            <ToggleButton id="space-between">
-              <GalleryHorizontal
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.strokeWidth}
-              />
-            </ToggleButton>
-            <ToggleButton id="space-evenly">
-              <AlignHorizontalSpaceAround
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.strokeWidth}
-              />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </div>
-        <div className="justify-control flex-wrap">
-          <legend className="fieldset-legend">Wrap</legend>
-          <ToggleButtonGroup
-            aria-label="Flex wrap"
-            indicator
-            selectionMode="single"
-            selectedKeys={flexWrapKeys}
-            onSelectionChange={(keys) => {
-              const value = Array.from(keys)[0] as string;
-              if (value) {
-                handleFlexWrap(value);
-              } else {
-                // 활성화된 토글 재클릭 → flexWrap 스타일 제거
-                updateStyles({ flexWrap: "" });
-              }
-            }}
-          >
-            <ToggleButton id="wrap">
-              <WrapText
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.strokeWidth}
-              />
-            </ToggleButton>
-            <ToggleButton id="wrap-reverse">
-              <CornerDownLeft
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.strokeWidth}
-              />
-            </ToggleButton>
-            <ToggleButton id="nowrap">
-              <ArrowRightToLine
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.strokeWidth}
-              />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </div>
+        {!isCompact && (
+          <>
+            <div className="justify-control justify-content">
+              <legend className="fieldset-legend">Justify</legend>
+              <ToggleButtonGroup
+                aria-label="Justify content alignment"
+                indicator
+                selectionMode="single"
+                selectedKeys={justifyContentSpacingKeys}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0] as string;
+                  if (value) {
+                    handleJustifyContentSpacing(value);
+                  } else {
+                    // 활성화된 토글 재클릭 → justifyContent 스타일 제거
+                    updateStyles({ justifyContent: "" });
+                  }
+                }}
+              >
+                <ToggleButton id="space-around">
+                  <AlignHorizontalSpaceAround
+                    color={iconProps.color}
+                    size={iconProps.size}
+                    strokeWidth={iconProps.strokeWidth}
+                  />
+                </ToggleButton>
+                <ToggleButton id="space-between">
+                  <GalleryHorizontal
+                    color={iconProps.color}
+                    size={iconProps.size}
+                    strokeWidth={iconProps.strokeWidth}
+                  />
+                </ToggleButton>
+                <ToggleButton id="space-evenly">
+                  <AlignHorizontalSpaceAround
+                    color={iconProps.color}
+                    size={iconProps.size}
+                    strokeWidth={iconProps.strokeWidth}
+                  />
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </div>
+            <div className="justify-control flex-wrap">
+              <legend className="fieldset-legend">Wrap</legend>
+              <ToggleButtonGroup
+                aria-label="Flex wrap"
+                indicator
+                selectionMode="single"
+                selectedKeys={flexWrapKeys}
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0] as string;
+                  if (value) {
+                    handleFlexWrap(value);
+                  } else {
+                    // 활성화된 토글 재클릭 → flexWrap 스타일 제거
+                    updateStyles({ flexWrap: "" });
+                  }
+                }}
+              >
+                <ToggleButton id="wrap">
+                  <WrapText
+                    color={iconProps.color}
+                    size={iconProps.size}
+                    strokeWidth={iconProps.strokeWidth}
+                  />
+                </ToggleButton>
+                <ToggleButton id="wrap-reverse">
+                  <CornerDownLeft
+                    color={iconProps.color}
+                    size={iconProps.size}
+                    strokeWidth={iconProps.strokeWidth}
+                  />
+                </ToggleButton>
+                <ToggleButton id="nowrap">
+                  <ArrowRightToLine
+                    color={iconProps.color}
+                    size={iconProps.size}
+                    strokeWidth={iconProps.strokeWidth}
+                  />
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </div>
+          </>
+        )}
         <PropertyUnitInput
           icon={LayoutGrid}
           label="Gap"
@@ -545,7 +551,12 @@ export const LayoutSection = memo(function LayoutSection() {
   };
 
   return (
-    <PropertySection id="layout" title="Layout" onReset={handleReset}>
+    <PropertySection
+      id="layout"
+      title="Layout"
+      onReset={handleReset}
+      hasCompactMode
+    >
       <LayoutSectionContent />
     </PropertySection>
   );

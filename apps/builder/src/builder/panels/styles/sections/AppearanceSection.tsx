@@ -9,6 +9,7 @@
  */
 
 import { memo, lazy, Suspense } from "react";
+import { useSectionCollapse } from "../hooks/useSectionCollapse";
 import {
   PropertySection,
   PropertyUnitInput,
@@ -70,6 +71,7 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
     useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useAppearanceValuesJotai();
+  const isCompact = useSectionCollapse((s) => s.isCompact("appearance"));
 
   if (!styleValues) return null;
 
@@ -134,25 +136,27 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           min={0}
           max={500}
         />
-        <PropertySelect
-          icon={SquareDashedBottom}
-          label="Border Style"
-          className="border-style"
-          value={styleValues.borderStyle}
-          options={[
-            { value: "reset", label: "Reset" },
-            { value: "none", label: "none" },
-            { value: "solid", label: "solid" },
-            { value: "dashed", label: "dashed" },
-            { value: "dotted", label: "dotted" },
-            { value: "double", label: "double" },
-            { value: "groove", label: "groove" },
-            { value: "ridge", label: "ridge" },
-            { value: "inset", label: "inset" },
-            { value: "outset", label: "outset" },
-          ]}
-          onChange={(value) => updateStyle("borderStyle", value)}
-        />
+        {!isCompact && (
+          <PropertySelect
+            icon={SquareDashedBottom}
+            label="Border Style"
+            className="border-style"
+            value={styleValues.borderStyle}
+            options={[
+              { value: "reset", label: "Reset" },
+              { value: "none", label: "none" },
+              { value: "solid", label: "solid" },
+              { value: "dashed", label: "dashed" },
+              { value: "dotted", label: "dotted" },
+              { value: "double", label: "double" },
+              { value: "groove", label: "groove" },
+              { value: "ridge", label: "ridge" },
+              { value: "inset", label: "inset" },
+              { value: "outset", label: "outset" },
+            ]}
+            onChange={(value) => updateStyle("borderStyle", value)}
+          />
+        )}
         <div className="fieldset-actions actions-icon">
           <SwatchIconButton aria-label="More border options">
             <EllipsisVertical
@@ -165,23 +169,25 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
       </div>
 
       {/* Box Shadow */}
-      <div className="style-shadow">
-        <PropertySelect
-          icon={Eclipse}
-          label="Box Shadow"
-          className="box-shadow"
-          value={boxShadowToPresetKey(styleValues.boxShadow)}
-          options={SHADOW_PRESET_OPTIONS}
-          onChange={(value) => {
-            if (value === "" || value === "none") {
-              updateStyle("boxShadow", "none");
-            } else {
-              const cssValue = shadows[value as keyof typeof shadows];
-              updateStyle("boxShadow", cssValue ?? value);
-            }
-          }}
-        />
-      </div>
+      {!isCompact && (
+        <div className="style-shadow">
+          <PropertySelect
+            icon={Eclipse}
+            label="Box Shadow"
+            className="box-shadow"
+            value={boxShadowToPresetKey(styleValues.boxShadow)}
+            options={SHADOW_PRESET_OPTIONS}
+            onChange={(value) => {
+              if (value === "" || value === "none") {
+                updateStyle("boxShadow", "none");
+              } else {
+                const cssValue = shadows[value as keyof typeof shadows];
+                updateStyle("boxShadow", cssValue ?? value);
+              }
+            }}
+          />
+        </div>
+      )}
     </>
   );
 });
@@ -211,7 +217,12 @@ export const AppearanceSection = memo(function AppearanceSection() {
   };
 
   return (
-    <PropertySection id="appearance" title="Appearance" onReset={handleReset}>
+    <PropertySection
+      id="appearance"
+      title="Appearance"
+      onReset={handleReset}
+      hasCompactMode
+    >
       <AppearanceSectionContent />
     </PropertySection>
   );
