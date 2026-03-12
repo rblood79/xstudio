@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Implemented (2026-03-13) — Phase 0~6 구현 완료
 
 ## Date
 
@@ -46,7 +46,7 @@ XStudio Team
 ### 문제 2. Scene 파생 데이터가 React 렌더 시점에 재계산됨
 
 [ElementsLayer.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/components/ElementsLayer.tsx),
-[useMultiPageCanvasData.ts](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/hooks/useMultiPageCanvasData.ts),
+legacy page data memo 경로,
 [SelectionLayer.tsx](/Users/admin/work/xstudio/apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx)에서는
 각각 다음 계산이 분산되어 있다.
 
@@ -434,6 +434,21 @@ apps/builder/src/builder/workspace/
 
 ---
 
+## Implementation Status
+
+2026-03-13 기준으로 `ADR-037`의 Phase 0~6은 모두 구현 완료되었다.
+
+- `SceneSnapshot`/`SceneIndex`/`visiblePageIds` 파생 경로를 `scene/` 계층으로 이관
+- `SelectionModel`/`PointerSession` 도입으로 selection bounds, hit test, pointer session 분리
+- renderer 입력을 `rendererInput`/`invalidationPacket`으로 단일화하고 Skia 직접 store 조회 제거
+- `layoutCache`/`cullingCache`/`subtreeInvalidation`으로 page dirty skip, top-level group culling, dirty subtree scope 연결
+- `canvasSync`를 `viewportSyncStore`/`canvasLifecycleStore`/`canvasMetricsStore`로 분리
+- legacy helper와 compatibility usage를 정리해 workspace 내부의 split store 전환 완료
+
+본 문서의 Migration Plan은 설계 시점 기준 계획이었으며, 아래 항목은 모두 실행된 이력으로 간주한다.
+
+---
+
 ## Migration Plan
 
 ### Phase 0. Baseline & Budget
@@ -441,40 +456,47 @@ apps/builder/src/builder/workspace/
 - `ADR-037 Phase 0` 문서 작성
 - 현행 시나리오 기준 성능 예산 수립
 - `ADR-035` 수치와 비교 가능한 체크리스트 확보
+- 완료 (2026-03-13)
 
 ### Phase 1. SceneSnapshot Foundation
 
 - `buildSceneSnapshot()` 도입
 - `pageFrames`, `visiblePageIds`, `selectionBounds`를 snapshot으로 이동
 - `BuilderCanvas`는 snapshot builder 호출만 담당
+- 완료 (2026-03-13)
 
 ### Phase 2. SelectionModel / PointerSession
 
 - selection 관련 계산 단일화
 - 중앙 pointerdown effect를 session 기반 router로 치환
 - drag/resize/lasso ownership 분리
+- 완료 (2026-03-13)
 
 ### Phase 3. Renderer Input Contract
 
 - `SkiaOverlay`와 `ElementsLayer`가 store 직접 접근하지 않고 snapshot만 읽도록 전환
 - renderer invalidation packet 정의
+- 완료 (2026-03-13)
 
 ### Phase 4. Incremental Layout & Multi-Level Culling
 
 - layout dirty subtree 계산 강화
 - page/group/element 3단계 컬링 도입
 - `ElementsLayer` full page recompute 범위 축소
+- 완료 (2026-03-13)
 
 ### Phase 5. canvasSync Split
 
 - viewport/lifecycle/metrics store 분리
 - deprecated mirror setter 제거
+- 완료 (2026-03-13)
 
 ### Phase 6. Legacy Path Cleanup
 
 - 중복 selection bounds 계산 제거
 - `useStore.getState()` ticker 직접 조회 경로 제거
 - legacy helper 정리
+- 완료 (2026-03-13)
 
 ---
 

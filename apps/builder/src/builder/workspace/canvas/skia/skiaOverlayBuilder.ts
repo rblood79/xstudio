@@ -11,18 +11,13 @@
 
 import type { CanvasKit, Canvas, FontMgr } from "canvaskit-wasm";
 import type { BoundingBox } from "../selection/types";
+import type { RendererInvalidationPacket } from "../renderers";
 import type { AIEffectNodeBounds, SkiaRenderable } from "./types";
-import type {
-  WorkflowEdge,
-  DataSourceEdge,
-  LayoutGroup,
-} from "./workflowEdges";
+import type { WorkflowEdge } from "./workflowEdges";
 import type { PageFrame, ElementBounds } from "./workflowRenderer";
 import type { CachedEdgeGeometry } from "./workflowHitTest";
 import type { SelectionRenderResult } from "./skiaWorkflowSelection";
 import type { ElementHoverState } from "../hooks/useElementHoverInteraction";
-import { useStore } from "../../../stores";
-import { useAIVisualFeedbackStore } from "../../../stores/aiVisualFeedback";
 import { renderGeneratingEffects, renderFlashes } from "./aiEffects";
 import {
   renderSelectionBox,
@@ -104,7 +99,7 @@ export function buildFrameCaches(
   workflowEdges: WorkflowEdge[],
   pageFrameMap: Map<string, PageFrame>,
   workflowElementBoundsMap: Map<string, ElementBounds> | null,
-  workflowEdgesVersion: number,
+  workflowGraphSignature: string,
   pagePosVersion: number,
   workflowStraightEdges: boolean,
   prevCacheKey: string,
@@ -114,7 +109,7 @@ export function buildFrameCaches(
     return { edgeGeometryCache: [], edgeGeometryCacheKey: "" };
   }
 
-  const cacheKey = `${workflowEdgesVersion}:${pagePosVersion}:${workflowStraightEdges}`;
+  const cacheKey = `${workflowGraphSignature}:${pagePosVersion}:${workflowStraightEdges}`;
   if (cacheKey === prevCacheKey) {
     return { edgeGeometryCache: prevCache, edgeGeometryCacheKey: prevCacheKey };
   }
@@ -144,11 +139,8 @@ export interface OverlayBuildInput {
   nodeBoundsMap: Map<string, AIEffectNodeBounds> | null;
   // Selection
   selectionData: SelectionRenderResult;
+  invalidationPacket: RendererInvalidationPacket;
   // Workflow
-  showWorkflowOverlay: boolean;
-  workflowEdges: WorkflowEdge[];
-  dataSourceEdges: DataSourceEdge[];
-  layoutGroups: LayoutGroup[];
   pageFrameMap: Map<string, PageFrame>;
   workflowElementBoundsMap: Map<string, ElementBounds> | null;
   workflowHoveredEdgeId: string | null;
@@ -188,10 +180,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
     hasAIEffects,
     nodeBoundsMap,
     selectionData,
-    showWorkflowOverlay,
-    workflowEdges,
-    dataSourceEdges,
-    layoutGroups,
+    invalidationPacket,
     pageFrameMap,
     workflowElementBoundsMap,
     workflowHoveredEdgeId,
@@ -203,8 +192,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
     dpr,
   } = input;
 
-  // AI 상태를 빌드 시점에 캡처
-  const currentAiState = useAIVisualFeedbackStore.getState();
+  const { ai, selection, workflow } = invalidationPacket;
 
   return {
     renderSkia(canvas: Canvas) {
@@ -215,29 +203,28 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           ck,
           canvas,
           now,
-          currentAiState.generatingNodes,
+          ai.generatingNodes,
           nodeBoundsMap,
         );
         renderFlashes(
           ck,
           canvas,
           now,
-          currentAiState.flashAnimations,
+          ai.flashAnimations,
           nodeBoundsMap,
         );
-        if (currentAiState.flashAnimations.size > 0) {
-          currentAiState.cleanupExpiredFlashes(now);
+        if (ai.flashAnimations.size > 0) {
+          ai.cleanupExpiredFlashes(now);
         }
       }
 
       // ── Page Titles ──
       const frames = pageFrames ?? [];
       if (frames.length > 0) {
-        const state = useStore.getState();
         const pageTitleItems = buildPageTitleRenderItems(
           frames,
-          state.currentPageId,
-          state.selectedElementIds.length > 0,
+          selection.currentPageId,
+          selection.selectedElementIds.length > 0,
         );
         for (const item of pageTitleItems) {
           canvas.save();
@@ -256,19 +243,17 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
       }
 
       // ── Workflow Overlay ──
-      if (showWorkflowOverlay) {
+      if (workflow.showOverlay) {
         const elBoundsMap = workflowElementBoundsMap ?? new Map();
-        const wfState = useStore.getState();
-        const showNav = wfState.showWorkflowNavigation;
-        const showEvents = wfState.showWorkflowEvents;
-        const showDS = wfState.showWorkflowDataSources;
-        const showLG = wfState.showWorkflowLayoutGroups;
-
-        const focusedPageId = wfState.workflowFocusedPageId;
+        const showNav = workflow.showNavigation;
+        const showEvents = workflow.showEvents;
+        const showDS = workflow.showDataSources;
+        const showLG = workflow.showLayoutGroups;
+        const focusedPageId = workflow.focusedPageId;
         const highlightState = buildWorkflowHighlightState(
           workflowHoveredEdgeId,
           focusedPageId,
-          workflowEdges,
+          workflow.workflowEdges,
         );
 
         // Page frame highlight (엣지 아래에 렌더)
@@ -276,7 +261,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           const connectedPageIds = collectHighlightedWorkflowPageIds(
             focusedPageId,
             highlightState,
-            workflowEdges,
+            workflow.workflowEdges,
           );
           renderPageFrameHighlight(
             ck,
@@ -294,7 +279,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           renderLayoutGroups(
             ck,
             canvas,
-            layoutGroups,
+            workflow.layoutGroups,
             pageFrameMap,
             cameraZoom,
             fontMgr,
@@ -302,14 +287,13 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
         }
 
         // Navigation/Event edges
-        if (workflowEdges.length > 0 && (showNav || showEvents)) {
+        if (workflow.workflowEdges.length > 0 && (showNav || showEvents)) {
           const filteredEdges = filterRenderableWorkflowEdges(
-            workflowEdges,
+            workflow.workflowEdges,
             showNav,
             showEvents,
           );
           if (filteredEdges.length > 0) {
-            const straightEdges = useStore.getState().workflowStraightEdges;
             renderWorkflowEdges(
               ck,
               canvas,
@@ -319,17 +303,17 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
               fontMgr,
               elBoundsMap,
               highlightState,
-              straightEdges,
+              workflow.straightEdges,
             );
           }
         }
 
         // Data source edges
-        if (showDS && dataSourceEdges.length > 0) {
+        if (showDS && workflow.dataSourceEdges.length > 0) {
           renderDataSourceEdges(
             ck,
             canvas,
-            dataSourceEdges,
+            workflow.dataSourceEdges,
             pageFrameMap,
             elBoundsMap,
             cameraZoom,
@@ -339,7 +323,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
       }
 
       // ── Editing Context Border ──
-      const editingContextId = useStore.getState().editingContextId;
+      const editingContextId = selection.editingContextId;
       if (editingContextId && treeBoundsMap.has(editingContextId)) {
         const contextBounds = treeBoundsMap.get(editingContextId)!;
         renderEditingContextBorder(ck, canvas, contextBounds, cameraZoom);
@@ -390,7 +374,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
       const mmScreenH = skiaCanvasHeight / dpr;
       if (
         shouldRenderWorkflowMinimap(
-          showWorkflowOverlay,
+          workflow.showOverlay,
           minimapVisible,
           pageFrameMap.size,
         )
@@ -401,8 +385,8 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           canvas,
           buildMinimapRenderData(
             pageFrameMap,
-            workflowEdges,
-            useStore.getState().workflowFocusedPageId,
+            workflow.workflowEdges,
+            workflow.focusedPageId,
             buildMinimapViewportBounds(
               cameraX,
               cameraY,

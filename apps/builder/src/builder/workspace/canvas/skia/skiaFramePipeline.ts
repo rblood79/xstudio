@@ -15,6 +15,10 @@
 import type { CanvasKit, FontMgr } from "canvaskit-wasm";
 import type { Container } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
+import type {
+  RendererAIInvalidation,
+  SkiaRendererInput,
+} from "../renderers";
 import type { BoundingBox } from "../selection/types";
 import type {
   AIEffectNodeBounds,
@@ -23,7 +27,6 @@ import type {
   SharedSceneDerivedData,
 } from "./types";
 import type { ElementBounds } from "./workflowRenderer";
-import { useStore } from "../../../stores";
 import {
   getSharedLayoutMap,
   getSharedLayoutVersion,
@@ -42,13 +45,13 @@ import { buildNodeBoundsMap } from "./aiEffects";
 import { renderNode } from "./nodeRenderers";
 import { buildElementBoundsMapFromTreeBounds } from "./skiaFrameHelpers";
 import { recordWasmMetric } from "../utils/gpuProfilerCore";
-import { useAIVisualFeedbackStore } from "../../../stores/aiVisualFeedback";
 
 // ============================================
 // Content Build — 입력/출력 타입
 // ============================================
 
 export interface ContentBuildInput {
+  aiState: RendererAIInvalidation;
   registryVersion: number;
   pagePosVersion: number;
   cameraContainer: Container | null;
@@ -57,6 +60,7 @@ export interface ContentBuildInput {
   cameraZoom: number;
   ck: CanvasKit;
   fontMgr: FontMgr | undefined;
+  rendererInput: SkiaRendererInput;
 }
 
 // ============================================
@@ -75,6 +79,7 @@ export function buildSkiaFrameContent(
   input: ContentBuildInput,
 ): ContentBuildResult | null {
   const {
+    aiState,
     registryVersion,
     pagePosVersion,
     cameraContainer,
@@ -83,15 +88,14 @@ export function buildSkiaFrameContent(
     cameraZoom,
     ck,
     fontMgr,
+    rendererInput,
   } = input;
 
   const sharedLayoutMap = getSharedLayoutMap();
   const useCommandStream = sharedLayoutMap !== null;
 
-  const currentAiState = useAIVisualFeedbackStore.getState();
   const hasAIEffects =
-    currentAiState.generatingNodes.size > 0 ||
-    currentAiState.flashAnimations.size > 0;
+    aiState.generatingNodes.size > 0 || aiState.flashAnimations.size > 0;
 
   let treeBoundsMap: Map<string, BoundingBox>;
   let nodeBoundsMap: Map<string, AIEffectNodeBounds> | null;
@@ -103,7 +107,8 @@ export function buildSkiaFrameContent(
       registryVersion,
       pagePosVersion,
       hasAIEffects,
-      currentAiState,
+      aiState,
+      rendererInput,
       ck,
       fontMgr,
     );
@@ -120,7 +125,7 @@ export function buildSkiaFrameContent(
       cameraZoom,
       pagePosVersion,
       hasAIEffects,
-      currentAiState,
+      aiState,
       ck,
       fontMgr,
     );
@@ -191,25 +196,29 @@ function buildViaCommandStream(
   registryVersion: number,
   pagePosVersion: number,
   hasAIEffects: boolean,
-  currentAiState: ReturnType<typeof useAIVisualFeedbackStore.getState>,
+  aiState: RendererAIInvalidation,
+  rendererInput: SkiaRendererInput,
   ck: CanvasKit,
   fontMgr: FontMgr | undefined,
 ): InternalBuildResult | null {
   const treeBuildStart =
     process.env.NODE_ENV === "development" ? performance.now() : 0;
 
-  const storeState = useStore.getState();
-  const pagePositions = storeState.pagePositions;
+  const pagePositions = rendererInput.pagePositions;
   const layoutVersion = getSharedLayoutVersion();
 
   // rootElementIds: 각 페이지의 body element ID
   // bodyPagePositions: bodyId → pagePosition
   const rootElementIds: string[] = [];
   const bodyPagePositions: Record<string, { x: number; y: number }> = {};
-  for (const page of storeState.pages) {
-    const pageElements = storeState.getPageElements(page.id);
-    for (const el of pageElements) {
-      if (el.tag.toLowerCase() === "body") {
+  for (const page of rendererInput.pages) {
+    const pageElementIds = rendererInput.pageIndex.elementsByPage.get(page.id);
+    if (!pageElementIds) {
+      continue;
+    }
+    for (const elementId of pageElementIds) {
+      const el = rendererInput.elementsMap.get(elementId);
+      if (el?.tag.toLowerCase() === "body") {
         rootElementIds.push(el.id);
         const pos = pagePositions[page.id];
         if (pos) bodyPagePositions[el.id] = pos;
@@ -226,13 +235,13 @@ function buildViaCommandStream(
     for (const [parentId, childIds] of filteredChildIds) {
       const children: Element[] = [];
       for (const cid of childIds) {
-        const el = storeState.elementsMap.get(cid);
+        const el = rendererInput.elementsMap.get(cid);
         if (el) children.push(el);
       }
       commandChildrenMap.set(parentId, children);
     }
   } else {
-    commandChildrenMap = storeState.childrenMap;
+    commandChildrenMap = rendererInput.childrenMap;
   }
 
   const stream = getCachedCommandStream(
@@ -268,8 +277,8 @@ function buildViaCommandStream(
     const aiBuildStart =
       process.env.NODE_ENV === "development" ? performance.now() : 0;
     const targetIds = new Set<string>();
-    for (const id of currentAiState.generatingNodes.keys()) targetIds.add(id);
-    for (const id of currentAiState.flashAnimations.keys()) targetIds.add(id);
+    for (const id of aiState.generatingNodes.keys()) targetIds.add(id);
+    for (const id of aiState.flashAnimations.keys()) targetIds.add(id);
     nodeBoundsMap = buildAIBoundsFromStream(stream.boundsMap, targetIds);
     if (process.env.NODE_ENV === "development") {
       recordWasmMetric("aiBoundsBuildTime", performance.now() - aiBuildStart);
@@ -297,7 +306,7 @@ function buildViaTree(
   cameraZoom: number,
   pagePosVersion: number,
   hasAIEffects: boolean,
-  currentAiState: ReturnType<typeof useAIVisualFeedbackStore.getState>,
+  aiState: RendererAIInvalidation,
   ck: CanvasKit,
   fontMgr: FontMgr | undefined,
 ): InternalBuildResult | null {
@@ -336,7 +345,7 @@ function buildViaTree(
   if (hasAIEffects) {
     const aiBuildStart =
       process.env.NODE_ENV === "development" ? performance.now() : 0;
-    nodeBoundsMap = buildNodeBoundsMap(tree, currentAiState);
+    nodeBoundsMap = buildNodeBoundsMap(tree, aiState);
     if (process.env.NODE_ENV === "development") {
       recordWasmMetric("aiBoundsBuildTime", performance.now() - aiBuildStart);
     }

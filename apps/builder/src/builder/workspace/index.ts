@@ -14,6 +14,15 @@ export { BuilderCanvas, BuilderCanvasWithFlag } from './canvas/BuilderCanvas';
 // Stores
 export { useCanvasSyncStore, type CanvasSyncState, type GPUMetrics } from './canvas/canvasSync';
 export {
+  useViewportSyncStore,
+  useCanvasLifecycleStore,
+  useCanvasMetricsStore,
+  type ViewportSyncState,
+  type CanvasLifecycleState,
+  type CanvasMetricsState,
+  type CanvasViewportSnapshot,
+} from './canvas/stores';
+export {
   useCanvasStore,
   useCanvasGridSettings,
   useCanvasSetGridSettings,

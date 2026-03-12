@@ -5,7 +5,7 @@ import { type Page as ApiPage } from '../../services/api/PagesApiService';
 import { type Page, getDefaultProps } from '../../types/builder/unified.types';
 import { getDB } from '../../lib/db';
 import { useStore } from '../stores';
-import { useCanvasSyncStore } from '../workspace/canvas/canvasSync';
+import { useViewportSyncStore } from '../workspace/canvas/stores';
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { ElementUtils } from '../../utils/element/elementUtils';
 
@@ -223,7 +223,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
 
             // 🆕 Multi-page: 새 페이지 위치 추가 (기존 페이지 오른쪽 끝)
             const { pagePositions } = useStore.getState();
-            const currentCanvasWidth = useCanvasSyncStore.getState().canvasSize.width;
+            const currentCanvasWidth = useViewportSyncStore.getState().canvasSize.width;
             let maxX = 0;
             for (const pos of Object.values(pagePositions)) {
                 const endX = pos.x + currentCanvasWidth + PAGE_STACK_GAP;
@@ -405,7 +405,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             setPages(storePages);
 
             // 🆕 Multi-page: 페이지 위치 초기화 (현재 방향 + canvasSize 기반)
-            const currentCanvasSize = useCanvasSyncStore.getState().canvasSize;
+            const currentCanvasSize = useViewportSyncStore.getState().canvasSize;
             const currentDirection = useStore.getState().pageLayoutDirection;
             initializePagePositions(storePages, currentCanvasSize.width, currentCanvasSize.height, PAGE_STACK_GAP, currentDirection);
 

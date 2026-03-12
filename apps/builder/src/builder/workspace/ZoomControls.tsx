@@ -21,7 +21,7 @@ import {
   ListBoxItem,
 } from "react-aria-components";
 import { ChevronDown } from "lucide-react";
-import { useCanvasSyncStore } from "./canvas/canvasSync";
+import { useViewportSyncStore } from "./canvas/stores";
 import {
   applyViewportState,
   computeFillViewport,
@@ -56,7 +56,7 @@ export const ZoomControls = memo(function ZoomControls({
 }: ZoomControlsProps) {
   // 🚀 Performance: zoom만 구독 (UI 표시용)
   // 나머지 값들은 액션 실행 시 getState()로 가져옴
-  const zoom = useCanvasSyncStore((state) => state.zoom);
+  const zoom = useViewportSyncStore((state) => state.zoom);
 
   // Fit 모드 추적
   const isFitModeRef = useRef(true);
@@ -80,17 +80,17 @@ export const ZoomControls = memo(function ZoomControls({
   }, []);
 
   const zoomIn = useCallback(() => {
-    const currentZoom = useCanvasSyncStore.getState().zoom;
+    const currentZoom = useViewportSyncStore.getState().zoom;
     zoomTo(currentZoom + ZOOM_STEP);
   }, [zoomTo]);
 
   const zoomOut = useCallback(() => {
-    const currentZoom = useCanvasSyncStore.getState().zoom;
+    const currentZoom = useViewportSyncStore.getState().zoom;
     zoomTo(currentZoom - ZOOM_STEP);
   }, [zoomTo]);
 
   const zoomToFit = useCallback(() => {
-    const state = useCanvasSyncStore.getState();
+    const state = useViewportSyncStore.getState();
     const { containerSize, canvasSize } = state;
 
     if (containerSize.width === 0 || containerSize.height === 0) return;
@@ -100,7 +100,7 @@ export const ZoomControls = memo(function ZoomControls({
   }, []);
 
   const zoomToFill = useCallback(() => {
-    const state = useCanvasSyncStore.getState();
+    const state = useViewportSyncStore.getState();
     const { containerSize, canvasSize } = state;
 
     if (containerSize.width === 0 || containerSize.height === 0) return;

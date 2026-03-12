@@ -14,7 +14,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import type { RefObject, MutableRefObject } from 'react';
 import { useStore } from '../../../stores';
-import { useCanvasSyncStore } from '../canvasSync';
+import { useViewportSyncStore } from '../stores';
 import { hitTestEdges, hitTestPageFrame, type CachedEdgeGeometry } from '../skia/workflowHitTest';
 import type { PageFrame } from '../skia/workflowRenderer';
 import { getViewportController } from '../viewport/ViewportController';
@@ -83,7 +83,7 @@ export function useWorkflowInteraction({
     const vc = getViewportController();
     if (!vc.isAttached()) return;
 
-    const { zoom, containerSize } = useCanvasSyncStore.getState();
+    const { zoom, containerSize } = useViewportSyncStore.getState();
 
     // 미니맵 좌표 → 씬(월드) 좌표
     const transform = computeMinimapTransform(
@@ -147,7 +147,7 @@ export function useWorkflowInteraction({
 
       // 스크린 → 씬-로컬 좌표 변환
       const rect = containerEl.getBoundingClientRect();
-      const { zoom, panOffset } = useCanvasSyncStore.getState();
+      const { zoom, panOffset } = useViewportSyncStore.getState();
       const sceneX = (e.clientX - rect.left - panOffset.x) / zoom;
       const sceneY = (e.clientY - rect.top - panOffset.y) / zoom;
 
@@ -174,7 +174,7 @@ export function useWorkflowInteraction({
 
     // 스크린 → 씬-로컬 좌표 변환
     const rect = containerEl.getBoundingClientRect();
-    const { zoom, panOffset, containerSize } = useCanvasSyncStore.getState();
+    const { zoom, panOffset, containerSize } = useViewportSyncStore.getState();
     const localX = e.clientX - rect.left;
     const localY = e.clientY - rect.top;
     const sceneX = (localX - panOffset.x) / zoom;

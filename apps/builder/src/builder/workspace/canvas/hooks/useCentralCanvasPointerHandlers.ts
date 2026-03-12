@@ -1,15 +1,15 @@
 import { useEffect, type MutableRefObject, type RefObject } from "react";
 import { useStore } from "../../../stores";
+import type { BoundingBox } from "../selection";
 import {
-  findBodySelectionAtCanvasPoint,
-  hitTestHandle,
-  hitTestSelectionBounds,
-  pickTopmostHitElementId,
-  type BoundingBox,
-} from "../selection";
+  commitPointerClick,
+  isPointerDoubleClick,
+  resetPointerClick,
+  resolveBodySelection,
+  resolveSelectionHit,
+  resolveTopmostHitElementId,
+} from "../interaction";
 import { hitTestPoint } from "../wasm-bindings/spatialIndex";
-
-const DOUBLE_CLICK_THRESHOLD = 300;
 
 interface ModifierState {
   ctrlKey: boolean;
@@ -121,27 +121,24 @@ export function useCentralCanvasPointerHandlers({
         y: event.clientY - rect.top,
       });
 
-      const now = Date.now();
-      const isDoubleClick =
-        now - lastClickTimeRef.current < DOUBLE_CLICK_THRESHOLD;
-      lastClickTimeRef.current = now;
-
-      if (isDoubleClick && lastClickTargetRef.current) {
-        lastClickTimeRef.current = 0;
-        handleElementDoubleClickRef.current(lastClickTargetRef.current);
-        return;
-      }
-
       const selectionBounds = computeSelectionBoundsForHitTest();
       selectionBoundsRef.current = selectionBounds;
 
       const state = useStore.getState();
       const selectedIds = state.selectedElementIds;
       const isSingleSelection = selectedIds.length === 1;
+      const now = Date.now();
 
       if (isSingleSelection && selectionBounds) {
-        const hitHandle = hitTestHandle(canvasPos, selectionBounds, zoom);
+        const { hitHandle } = resolveSelectionHit(
+          canvasPos,
+          selectionBounds,
+          zoom,
+        );
         if (hitHandle) {
+          const resetState = resetPointerClick();
+          lastClickTargetRef.current = resetState.lastClickTargetId;
+          lastClickTimeRef.current = resetState.lastClickTime;
           dragPointerRef.current = canvasPos;
           startResize(
             selectedIds[0],
@@ -153,16 +150,38 @@ export function useCentralCanvasPointerHandlers({
         }
       }
 
-      const inSelectionBounds = hitTestSelectionBounds(
+      const { inSelectionBounds } = resolveSelectionHit(
         canvasPos,
         selectionBounds,
+        zoom,
       );
-      const hitElementId = pickTopmostHitElementId(
+      const hitElementId = resolveTopmostHitElementId(
         hitTestPoint(canvasPos.x, canvasPos.y),
         state.elementsMap,
       );
 
       if (!inSelectionBounds && hitElementId) {
+        if (
+          isPointerDoubleClick(
+            {
+              lastClickTargetId: lastClickTargetRef.current,
+              lastClickTime: lastClickTimeRef.current,
+            },
+            hitElementId,
+            now,
+          )
+        ) {
+          const resetState = resetPointerClick();
+          lastClickTargetRef.current = resetState.lastClickTargetId;
+          lastClickTimeRef.current = resetState.lastClickTime;
+          handleElementDoubleClickRef.current(hitElementId);
+          return;
+        }
+
+        const session = commitPointerClick(hitElementId, now);
+        lastClickTargetRef.current = session.lastClickTargetId;
+        lastClickTimeRef.current = session.lastClickTime;
+
         const modifiers = {
           ctrlKey: event.ctrlKey,
           metaKey: event.metaKey,
@@ -171,8 +190,6 @@ export function useCentralCanvasPointerHandlers({
         const isMultiSelectKey = modifiers.metaKey || modifiers.ctrlKey;
 
         handleElementClickRef.current(hitElementId, modifiers);
-        lastClickTargetRef.current = hitElementId;
-
         if (!isMultiSelectKey) {
           requestAnimationFrame(() => {
             const newBounds = computeSelectionBoundsForHitTest();
@@ -188,14 +205,56 @@ export function useCentralCanvasPointerHandlers({
 
       if (inSelectionBounds) {
         if (hitElementId && !new Set(selectedIds).has(hitElementId)) {
+          if (
+            isPointerDoubleClick(
+              {
+                lastClickTargetId: lastClickTargetRef.current,
+                lastClickTime: lastClickTimeRef.current,
+              },
+              hitElementId,
+              now,
+            )
+          ) {
+            const resetState = resetPointerClick();
+            lastClickTargetRef.current = resetState.lastClickTargetId;
+            lastClickTimeRef.current = resetState.lastClickTime;
+            handleElementDoubleClickRef.current(hitElementId);
+            return;
+          }
+
+          const session = commitPointerClick(hitElementId, now);
+          lastClickTargetRef.current = session.lastClickTargetId;
+          lastClickTimeRef.current = session.lastClickTime;
+
           handleElementClickRef.current(hitElementId, {
             ctrlKey: event.ctrlKey,
             metaKey: event.metaKey,
             shiftKey: event.shiftKey,
           });
-          lastClickTargetRef.current = hitElementId;
         } else if (selectedIds.length > 0 && selectionBounds) {
-          lastClickTargetRef.current = selectedIds[0];
+          const targetId = selectedIds[0] ?? null;
+          if (
+            isPointerDoubleClick(
+              {
+                lastClickTargetId: lastClickTargetRef.current,
+                lastClickTime: lastClickTimeRef.current,
+              },
+              targetId,
+              now,
+            )
+          ) {
+            const resetState = resetPointerClick();
+            lastClickTargetRef.current = resetState.lastClickTargetId;
+            lastClickTimeRef.current = resetState.lastClickTime;
+            if (targetId) {
+              handleElementDoubleClickRef.current(targetId);
+            }
+            return;
+          }
+
+          const session = commitPointerClick(targetId, now);
+          lastClickTargetRef.current = session.lastClickTargetId;
+          lastClickTimeRef.current = session.lastClickTime;
           dragPointerRef.current = canvasPos;
           startMove(selectedIds[0], selectionBounds, canvasPos);
         }
@@ -203,9 +262,11 @@ export function useCentralCanvasPointerHandlers({
       }
 
       if (!hitElementId) {
-        lastClickTargetRef.current = null;
+        const resetState = resetPointerClick();
+        lastClickTargetRef.current = resetState.lastClickTargetId;
+        lastClickTimeRef.current = resetState.lastClickTime;
         if (!event.shiftKey) {
-          const bodySelection = findBodySelectionAtCanvasPoint({
+          const bodySelection = resolveBodySelection({
             canvasPoint: canvasPos,
             currentPageId: state.currentPageId,
             elementsMap: state.elementsMap,
@@ -249,7 +310,7 @@ export function useCentralCanvasPointerHandlers({
       if (isSingleSelection) {
         const selectionBounds =
           selectionBoundsRef.current ?? computeSelectionBoundsForHitTest();
-        const hitHandle = hitTestHandle(canvasPos, selectionBounds, zoom);
+        const { hitHandle } = resolveSelectionHit(canvasPos, selectionBounds, zoom);
         if (hitHandle) {
           setCursor(hitHandle.cursor);
           return;

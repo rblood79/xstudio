@@ -1,6 +1,6 @@
 import type { Key } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useCanvasSyncStore } from "../canvas/canvasSync";
+import { useViewportSyncStore } from "../canvas/stores";
 import {
   applyViewportState,
   computeCenteredViewport,
@@ -100,7 +100,7 @@ export function useWorkspaceCanvasSizing({
   }, [containerSizeForPercent, selectedBreakpoint, usesPercentBreakpoint]);
 
   useEffect(() => {
-    useCanvasSyncStore.getState().setCanvasSize(canvasSize);
+    useViewportSyncStore.getState().setCanvasSize(canvasSize);
   }, [canvasSize]);
 
   const lastCenteredKeyRef = useRef<string | null>(null);
@@ -227,7 +227,7 @@ export function useWorkspaceCanvasSizing({
           return;
         }
 
-        useCanvasSyncStore.getState().setContainerSize({ height, width });
+        useViewportSyncStore.getState().setContainerSize({ height, width });
 
         if (usesPercentBreakpointRef.current) {
           setContainerSizeForPercent({ height, width });
@@ -250,7 +250,7 @@ export function useWorkspaceCanvasSizing({
         height: initialHeight,
         width: initialWidth,
       };
-      useCanvasSyncStore
+      useViewportSyncStore
         .getState()
         .setContainerSize({ height: initialHeight, width: initialWidth });
 

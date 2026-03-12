@@ -17,7 +17,7 @@
 
 import { useCallback, useMemo } from "react";
 import { useStore } from "../stores";
-import { useCanvasSyncStore } from "../workspace/canvas/canvasSync";
+import { useViewportSyncStore } from "../workspace/canvas/stores";
 import {
   useKeyboardShortcutsRegistry,
   type KeyboardShortcut,
@@ -119,17 +119,17 @@ export function useGlobalKeyboardShortcuts() {
   }, []);
 
   const handleZoomIn = useCallback(() => {
-    const { zoom } = useCanvasSyncStore.getState();
+    const { zoom } = useViewportSyncStore.getState();
     zoomTo(zoom + ZOOM_STEP);
   }, [zoomTo]);
 
   const handleZoomOut = useCallback(() => {
-    const { zoom } = useCanvasSyncStore.getState();
+    const { zoom } = useViewportSyncStore.getState();
     zoomTo(zoom - ZOOM_STEP);
   }, [zoomTo]);
 
   const handleZoomToFit = useCallback(() => {
-    const { containerSize, canvasSize } = useCanvasSyncStore.getState();
+    const { containerSize, canvasSize } = useViewportSyncStore.getState();
     if (containerSize.width === 0 || containerSize.height === 0) return;
 
     const fitState = computeFitViewport({ canvasSize, containerSize });

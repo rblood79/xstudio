@@ -17,6 +17,7 @@
 import { useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 import { getElementContainer } from '../elementRegistry';
+import { getCachedCullingResult } from '../scene';
 import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
 import { queryVisibleElements } from '../wasm-bindings/spatialIndex';
 
@@ -262,6 +263,8 @@ function crossValidateCulling(
 // ============================================
 
 export interface UseViewportCullingOptions {
+  /** culling 결과 캐시 키 */
+  cacheKey?: string;
   /** 요소 목록 */
   elements: Element[];
   /** 현재 줌 레벨 */
@@ -301,6 +304,7 @@ export interface UseViewportCullingOptions {
  * ```
  */
 export function useViewportCulling({
+  cacheKey,
   elements,
   zoom,
   panOffset,
@@ -310,42 +314,63 @@ export function useViewportCulling({
   version = 0,
 }: UseViewportCullingOptions): CullingResult {
   return useMemo(() => {
-    // 컬링 비활성화 시 모든 요소 반환
-    if (!enabled || elements.length === 0) {
-      return {
-        visibleElements: elements,
-        culledCount: 0,
-        totalCount: elements.length,
-        cullingRatio: 0,
-      };
-    }
-
-    // ── Fast path: SpatialIndex 씬 좌표 쿼리 ──────────────────────────────
-    // SPATIAL_INDEX 플래그가 활성화된 경우, renderCommands.ts가 매 프레임
-    // boundsMap → batchUpdate()로 SpatialIndex를 씬 좌표 기준으로 최신화한다.
-    // 따라서 pan/zoom 변환만으로 항상 정확한 결과를 보장한다.
-    if (WASM_FLAGS.SPATIAL_INDEX) {
-      const sceneBounds = calculateViewportBoundsScene(
-        screenWidth,
-        screenHeight,
-        zoom,
-        panOffset,
-      );
-      const visibleIds = new Set(
-        queryVisibleElements(sceneBounds.left, sceneBounds.top, sceneBounds.right, sceneBounds.bottom),
-      );
-
-      // SpatialIndex에 미등록된 요소(아직 레이아웃 전)는 포함
-      const visibleElements = elements.filter(
-        (el) => !visibleIds.size || visibleIds.has(el.id) || !getElementContainer(el.id),
-      );
-
-      const culledCount = elements.length - visibleElements.length;
-
-      // DEV 교차 검증: 1% 확률로 SpatialIndex vs getBounds() 결과 비교
-      if (import.meta.env.DEV && Math.random() < 0.01) {
-        crossValidateCulling(elements, visibleElements, screenWidth, screenHeight, zoom, panOffset);
+    const computeResult = () => {
+      if (!enabled || elements.length === 0) {
+        return {
+          visibleElements: elements,
+          culledCount: 0,
+          totalCount: elements.length,
+          cullingRatio: 0,
+        };
       }
+
+      if (WASM_FLAGS.SPATIAL_INDEX) {
+        const sceneBounds = calculateViewportBoundsScene(
+          screenWidth,
+          screenHeight,
+          zoom,
+          panOffset,
+        );
+        const visibleIds = new Set(
+          queryVisibleElements(
+            sceneBounds.left,
+            sceneBounds.top,
+            sceneBounds.right,
+            sceneBounds.bottom,
+          ),
+        );
+
+        const visibleElements = elements.filter(
+          (el) =>
+            !visibleIds.size ||
+            visibleIds.has(el.id) ||
+            !getElementContainer(el.id),
+        );
+
+        const culledCount = elements.length - visibleElements.length;
+
+        if (import.meta.env.DEV && Math.random() < 0.01) {
+          crossValidateCulling(
+            elements,
+            visibleElements,
+            screenWidth,
+            screenHeight,
+            zoom,
+            panOffset,
+          );
+        }
+
+        return {
+          visibleElements,
+          culledCount,
+          totalCount: elements.length,
+          cullingRatio: elements.length > 0 ? culledCount / elements.length : 0,
+        };
+      }
+
+      const viewport = calculateViewportBounds(screenWidth, screenHeight);
+      const visibleElements = getBoundsVisibleElements(elements, viewport);
+      const culledCount = elements.length - visibleElements.length;
 
       return {
         visibleElements,
@@ -353,30 +378,16 @@ export function useViewportCulling({
         totalCount: elements.length,
         cullingRatio: elements.length > 0 ? culledCount / elements.length : 0,
       };
+    };
+
+    if (!cacheKey) {
+      return computeResult();
     }
 
-    // ── Fallback: 실시간 getBounds() O(N) 스크린 좌표 culling ─────────────
-    // container.getBounds()는 현재 프레임의 스크린 좌표를 반환하므로
-    // pan/zoom 시에도 항상 정확하다.
-    //
-    // 부모-자식 관계 고려:
-    // - 자식이 부모보다 클 수 있음 (overflow: visible 기본)
-    // - 요소가 culled → unmount → unregister → 다음 체크에서 재포함 → render → cull → 무한 cycle
-    // - 부모가 화면에 있으면 자식은 overflow 가능성이 있으므로 cull하지 않음
-    const viewport = calculateViewportBounds(screenWidth, screenHeight);
-    const visibleElements = getBoundsVisibleElements(elements, viewport);
-
-    const culledCount = elements.length - visibleElements.length;
-
-    return {
-      visibleElements,
-      culledCount,
-      totalCount: elements.length,
-      cullingRatio: elements.length > 0 ? culledCount / elements.length : 0,
-    };
+    return getCachedCullingResult(cacheKey, computeResult);
   // zoom/panOffset은 getBounds()에 간접 반영되지만, 뷰 변경 시 재계산 트리거 필요
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elements, zoom, panOffset, screenWidth, screenHeight, enabled, version]);
+  }, [cacheKey, elements, zoom, panOffset, screenWidth, screenHeight, enabled, version]);
 }
 
 // ============================================

@@ -7,7 +7,9 @@
 
 import type { RefObject } from "react";
 import type { CanvasKit, FontMgr, Canvas } from "canvaskit-wasm";
+import type { Element } from "../../../../types/core/store.types";
 import type { BoundingBox, DragState } from "../selection/types";
+import type { RendererInvalidationPacket } from "../renderers";
 import type {
   AIEffectNodeBounds,
   SharedSceneDerivedData,
@@ -17,16 +19,10 @@ import type {
   WorkflowOverlayBuildResult,
   SkiaRenderable,
 } from "./types";
-import type {
-  WorkflowEdge,
-  DataSourceEdge,
-  LayoutGroup,
-} from "./workflowEdges";
 import type { PageFrame } from "./workflowRenderer";
 import type { CachedEdgeGeometry } from "./workflowHitTest";
 import type { WorkflowHoverState } from "../hooks/useWorkflowInteraction";
 import type { ElementHoverState } from "../hooks/useElementHoverInteraction";
-import { useStore } from "../../../stores";
 import { renderGrid } from "./gridRenderer";
 import { buildGridRenderInput } from "./skiaOverlayHelpers";
 import { buildSelectionRenderData } from "./skiaWorkflowSelection";
@@ -67,6 +63,8 @@ export interface BuildFrameRenderPlanInput {
   hasAIEffects: boolean;
   contentNode: SkiaRenderable;
   dragStateRef?: RefObject<DragState | null>;
+  elementsMap: Map<string, Element>;
+  invalidationPacket: RendererInvalidationPacket;
   pageFrames?: Array<{
     id: string;
     title: string;
@@ -76,11 +74,6 @@ export interface BuildFrameRenderPlanInput {
     height: number;
     elementCount: number;
   }>;
-  showWorkflowOverlay: boolean;
-  workflowEdges: WorkflowEdge[];
-  workflowEdgesVersion: number;
-  dataSourceEdges: DataSourceEdge[];
-  layoutGroups: LayoutGroup[];
   workflowHoverState: WorkflowHoverState;
   elementHoverState: ElementHoverState;
   minimapVisible: boolean;
@@ -104,12 +97,9 @@ export function buildFrameRenderPlan(
     hasAIEffects,
     contentNode,
     dragStateRef,
+    elementsMap,
+    invalidationPacket,
     pageFrames,
-    showWorkflowOverlay,
-    workflowEdges,
-    workflowEdgesVersion,
-    dataSourceEdges,
-    layoutGroups,
     workflowHoverState,
     elementHoverState,
     minimapVisible,
@@ -124,17 +114,20 @@ export function buildFrameRenderPlan(
   const selection = buildSelectionOverlayData(
     snapshot,
     sharedScene,
+    invalidationPacket,
+    elementsMap,
     dragStateRef,
     pageFrames,
   );
 
-  const workflow = showWorkflowOverlay
+  const workflow = invalidationPacket.workflow.showOverlay
     ? buildWorkflowOverlayBuildResult({
         treeBoundsMap: sharedScene.treeBoundsMap,
         pageFrames: pageFrames ?? [],
-        workflowEdges,
-        workflowEdgesVersion,
+        workflowEdges: invalidationPacket.workflow.workflowEdges,
+        workflowGraphSignature: invalidationPacket.workflow.graphSignature,
         pagePosVersion: snapshot.pagePosVersion,
+        workflowStraightEdges: invalidationPacket.workflow.straightEdges,
         prevEdgeGeometryCache,
         prevEdgeGeometryCacheKey,
       })
@@ -150,10 +143,7 @@ export function buildFrameRenderPlan(
     hasAIEffects,
     nodeBoundsMap,
     selectionData: selection,
-    showWorkflowOverlay,
-    workflowEdges,
-    dataSourceEdges,
-    layoutGroups,
+    invalidationPacket,
     pageFrameMap: workflow?.pageFrameMap ?? new Map<string, PageFrame>(),
     workflowElementBoundsMap: workflow?.workflowElementBoundsMap ?? null,
     workflowHoveredEdgeId: workflowHoverState.hoveredEdgeId,
@@ -166,7 +156,12 @@ export function buildFrameRenderPlan(
     dpr,
   });
 
-  const screenOverlayNode = buildGridScreenOverlayNode(ck, snapshot.cameraZoom);
+  const screenOverlayNode = buildGridScreenOverlayNode(
+    ck,
+    snapshot.cameraZoom,
+    invalidationPacket.grid.showGrid,
+    invalidationPacket.grid.gridSize,
+  );
 
   return {
     sharedScene,
@@ -189,6 +184,8 @@ export function buildFrameRenderPlan(
 export function buildSelectionOverlayData(
   snapshot: FrameInputSnapshot,
   sharedScene: SharedSceneDerivedData,
+  invalidationPacket: RendererInvalidationPacket,
+  elementsMap: Map<string, Element>,
   dragStateRef?: RefObject<DragState | null>,
   pageFrames?: Array<{
     id: string;
@@ -205,6 +202,8 @@ export function buildSelectionOverlayData(
     sharedScene.cameraY,
     sharedScene.cameraZoom,
     sharedScene.treeBoundsMap,
+    invalidationPacket.selection,
+    elementsMap,
     dragStateRef,
     pageFrames,
   );
@@ -221,9 +220,10 @@ interface BuildWorkflowOverlayBuildResultInput {
     height: number;
     elementCount?: number;
   }>;
-  workflowEdges: WorkflowEdge[];
-  workflowEdgesVersion: number;
+  workflowEdges: RendererInvalidationPacket["workflow"]["workflowEdges"];
+  workflowGraphSignature: string;
   pagePosVersion: number;
+  workflowStraightEdges: boolean;
   prevEdgeGeometryCache: CachedEdgeGeometry[];
   prevEdgeGeometryCacheKey: string;
 }
@@ -235,14 +235,13 @@ function buildWorkflowOverlayBuildResult(
     input.treeBoundsMap,
     input.pageFrames,
   );
-  const { workflowStraightEdges } = useStore.getState();
   const cacheResult = buildFrameCaches(
     input.workflowEdges,
     wfData.pageFrameMap,
     wfData.workflowElementBoundsMap,
-    input.workflowEdgesVersion,
+    input.workflowGraphSignature,
     input.pagePosVersion,
-    workflowStraightEdges,
+    input.workflowStraightEdges,
     input.prevEdgeGeometryCacheKey,
     input.prevEdgeGeometryCache,
   );
@@ -258,8 +257,9 @@ function buildWorkflowOverlayBuildResult(
 function buildGridScreenOverlayNode(
   ck: CanvasKit,
   cameraZoom: number,
+  showGrid: boolean,
+  gridSize: number,
 ): SkiaRenderable | null {
-  const { showGrid, gridSize } = useStore.getState();
   if (!showGrid) {
     return null;
   }

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useCanvasSyncStore } from "../canvasSync";
+import { useCanvasMetricsStore } from "../stores";
 
 // ============================================
 // Types
@@ -86,7 +86,7 @@ class GPUProfiler {
 
     const fps = 1000 / avgFrameTime;
 
-    useCanvasSyncStore.getState().updateGPUMetrics({
+    useCanvasMetricsStore.getState().updateGPUMetrics({
       lastFrameTime: avgFrameTime,
       // rAF 기반 FPS는 모니터 주사율을 반영한다(렌더링된 프레임 수와는 별개).
       // 정밀도를 유지하기 위해 clamp/round를 하지 않는다.
@@ -137,15 +137,15 @@ export const gpuProfiler = new GPUProfiler();
 // ============================================
 
 export function updateTextureCount(count: number): void {
-  useCanvasSyncStore.getState().updateGPUMetrics({ textureCount: count });
+  useCanvasMetricsStore.getState().updateGPUMetrics({ textureCount: count });
 }
 
 export function updateSpriteCount(count: number): void {
-  useCanvasSyncStore.getState().updateGPUMetrics({ spriteCount: count });
+  useCanvasMetricsStore.getState().updateGPUMetrics({ spriteCount: count });
 }
 
 export function updateVRAMUsage(bytes: number): void {
-  useCanvasSyncStore.getState().updateGPUMetrics({ vramUsed: bytes });
+  useCanvasMetricsStore.getState().updateGPUMetrics({ vramUsed: bytes });
 }
 
 // ============================================
@@ -222,7 +222,7 @@ export function measureWasm<T>(
 
 /** 현재 WASM 메트릭을 canvasSync 스토어에 플러시 */
 export function flushWasmMetrics(): void {
-  useCanvasSyncStore.getState().updateGPUMetrics({
+  useCanvasMetricsStore.getState().updateGPUMetrics({
     boundsLookupAvgMs: wasmTrackers.boundsLookup.getAverage(),
     cullingFilterAvgMs: wasmTrackers.cullingFilter.getAverage(),
     blockLayoutAvgMs: wasmTrackers.blockLayout.getAverage(),
@@ -242,7 +242,7 @@ export function flushWasmMetrics(): void {
 }
 
 export function updateElementCount(count: number): void {
-  useCanvasSyncStore.getState().updateGPUMetrics({ elementCount: count });
+  useCanvasMetricsStore.getState().updateGPUMetrics({ elementCount: count });
 }
 
 // ============================================

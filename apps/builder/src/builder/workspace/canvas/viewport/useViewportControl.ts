@@ -22,8 +22,8 @@ import {
 import {
   isCanvasViewportSnapshotEqual,
   selectCanvasViewportSnapshot,
-  useCanvasSyncStore,
-} from "../canvasSync";
+  useViewportSyncStore,
+} from "../stores";
 import { offsetViewportStateX } from "./viewportActions";
 import { useKeyboardShortcutsRegistry } from "@/builder/hooks";
 import { useScrollState, isScrollable } from "../../../stores/scrollState";
@@ -98,7 +98,7 @@ export function useViewportControl(
   });
 
   // Zustand store actions
-  const setViewportSnapshot = useCanvasSyncStore(
+  const setViewportSnapshot = useViewportSyncStore(
     (state) => state.setViewportSnapshot,
   );
 
@@ -189,7 +189,7 @@ export function useViewportControl(
 
     // 초기 상태 적용 (Zustand에서 읽어서 Container에 적용)
     const { zoom, panOffset, setViewportSnapshot } =
-      useCanvasSyncStore.getState();
+      useViewportSyncStore.getState();
     const initialViewport =
       initialPanOffsetX !== undefined
         ? offsetViewportStateX(
@@ -330,8 +330,8 @@ export function useViewportControl(
         // Fix 6: 동일 프레임 내 다중 wheel 이벤트 누적 처리.
         // pendingPanRef가 있으면 이전 누적값 기준, 없으면 Zustand 현재값 기준.
         const current =
-          pendingPanRef.current ?? useCanvasSyncStore.getState().panOffset;
-        const { zoom } = useCanvasSyncStore.getState();
+          pendingPanRef.current ?? useViewportSyncStore.getState().panOffset;
+        const { zoom } = useViewportSyncStore.getState();
         const newX = current.x - rawDeltaX;
         const newY = current.y - rawDeltaY;
 
@@ -343,7 +343,7 @@ export function useViewportControl(
         if (rafPanRef.current === null) {
           rafPanRef.current = requestAnimationFrame(() => {
             if (pendingPanRef.current) {
-              const latestZoom = useCanvasSyncStore.getState().zoom;
+              const latestZoom = useViewportSyncStore.getState().zoom;
               setViewportSnapshot({
                 panOffset: pendingPanRef.current,
                 zoom: latestZoom,
@@ -373,7 +373,7 @@ export function useViewportControl(
         cancelAnimationFrame(rafPanRef.current);
         // 마지막 누적값 반영 (언마운트 전 최종 상태 동기화)
         if (pendingPanRef.current) {
-          const { zoom } = useCanvasSyncStore.getState();
+          const { zoom } = useViewportSyncStore.getState();
           setViewportSnapshot({
             panOffset: pendingPanRef.current,
             zoom,
@@ -390,7 +390,7 @@ export function useViewportControl(
     if (!controller || controller.isPanningActive()) return;
 
     const viewport = selectCanvasViewportSnapshot(
-      useCanvasSyncStore.getState(),
+      useViewportSyncStore.getState(),
     );
     controller.setPosition(
       viewport.panOffset.x,
@@ -403,7 +403,7 @@ export function useViewportControl(
   useEffect(() => {
     if (!controller) return;
 
-    const unsubscribe = useCanvasSyncStore.subscribe(
+    const unsubscribe = useViewportSyncStore.subscribe(
       selectCanvasViewportSnapshot,
       (viewport) => {
         if (!controller || controller.isPanningActive()) return;

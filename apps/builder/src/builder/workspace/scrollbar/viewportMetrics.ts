@@ -1,4 +1,4 @@
-import { useCanvasSyncStore } from "../canvas/canvasSync";
+import { useViewportSyncStore } from "../canvas/stores";
 import {
   getViewportController,
   type ViewportState,
@@ -42,7 +42,7 @@ export function getViewportAuthoritativeState(): ViewportState {
     return controller.getState();
   }
 
-  const { panOffset, zoom } = useCanvasSyncStore.getState();
+  const { panOffset, zoom } = useViewportSyncStore.getState();
   return {
     scale: zoom,
     x: panOffset.x,
@@ -54,7 +54,7 @@ export function getScrollbarViewportMetrics(
   insets: ViewportInsets,
   viewportState = getViewportAuthoritativeState(),
 ): ScrollbarViewportMetrics | null {
-  const { canvasSize, containerSize } = useCanvasSyncStore.getState();
+  const { canvasSize, containerSize } = useViewportSyncStore.getState();
   if (containerSize.width <= 0 || containerSize.height <= 0) {
     return null;
   }

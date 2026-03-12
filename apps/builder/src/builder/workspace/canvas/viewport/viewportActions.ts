@@ -1,4 +1,4 @@
-import { useCanvasSyncStore } from "../canvasSync";
+import { useViewportSyncStore } from "../stores";
 import { getViewportController, type ViewportState } from "./ViewportController";
 
 export interface ViewportCanvasSize {
@@ -91,7 +91,7 @@ export function applyViewportState(nextState: ViewportState): void {
     controller.setPosition(nextState.x, nextState.y, nextState.scale);
   }
 
-  const { setViewportSnapshot } = useCanvasSyncStore.getState();
+  const { setViewportSnapshot } = useViewportSyncStore.getState();
   setViewportSnapshot({
     panOffset: { x: nextState.x, y: nextState.y },
     zoom: nextState.scale,
@@ -99,7 +99,7 @@ export function applyViewportState(nextState: ViewportState): void {
 }
 
 export function zoomViewportAtContainerCenter(nextZoom: number): void {
-  const state = useCanvasSyncStore.getState();
+  const state = useViewportSyncStore.getState();
   const zoom = clampViewportZoom(nextZoom);
 
   if (state.containerSize.width === 0 || state.containerSize.height === 0) {

@@ -34,7 +34,7 @@ import {
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useTransformValuesJotai } from "../hooks/useTransformValuesJotai";
 import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
-import { useCanvasSyncStore } from "../../../workspace/canvas/canvasSync";
+import { useViewportSyncStore } from "../../../workspace/canvas/stores";
 import { useAtomValue } from "jotai";
 import {
   widthSizeModeAtom,
@@ -135,7 +135,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
   const { updateStyleImmediate, updateStylePreview, updateStylesImmediate } =
     useOptimizedStyleActions();
   const styleValues = useTransformValuesJotai();
-  const canvasSize = useCanvasSyncStore((state) => state.canvasSize);
+  const canvasSize = useViewportSyncStore((state) => state.canvasSize);
   const hasConstraints = !!(
     styleValues?.minWidth ||
     styleValues?.maxWidth ||

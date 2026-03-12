@@ -1170,6 +1170,7 @@ function incrementalUpdate(
   tree: PersistentTaffyTree,
   batch: PersistentBatchNode[],
   filteredChildIdsMap: Map<string, string[]>,
+  affectedNodeIds?: Set<string>,
 ): {
   stylesUpdated: number;
   childrenUpdated: number;
@@ -1194,6 +1195,13 @@ function incrementalUpdate(
   //    변경 감지: PersistentTaffyTree._lastJsonMap JSON 비교로 처리 (12차 정정)
   for (const node of batch) {
     if (tree.hasNode(node.elementId)) {
+      if (
+        affectedNodeIds &&
+        affectedNodeIds.size > 0 &&
+        !affectedNodeIds.has(node.elementId)
+      ) {
+        continue;
+      }
       if (tree.updateNodeStyle(node.elementId, node.style)) {
         stats.stylesUpdated++;
       }
@@ -1205,6 +1213,13 @@ function incrementalUpdate(
 
   // 3. 자식 구조 갱신 (변경 감지는 PersistentTaffyTree 내부 hash 비교)
   for (const node of batch) {
+    if (
+      affectedNodeIds &&
+      affectedNodeIds.size > 0 &&
+      !affectedNodeIds.has(node.elementId)
+    ) {
+      continue;
+    }
     const childIds = filteredChildIdsMap.get(node.elementId) ?? [];
     if (tree.updateChildren(node.elementId, childIds)) {
       stats.childrenUpdated++;
@@ -1251,6 +1266,7 @@ export function calculateFullTreeLayout(
   availableWidth: number,
   availableHeight: number,
   getChildElements: (id: string) => Element[],
+  affectedNodeIds?: Set<string>,
 ): Map<string, ComputedLayout> | null {
   // WASM 가용성 확인
   if (!isRustWasmReady()) return null;
@@ -1335,7 +1351,12 @@ export function calculateFullTreeLayout(
     } else {
       // Path B: 증분 갱신 (변경된 노드만 WASM 호출)
       // 변경 감지: PersistentTaffyTree._lastJsonMap JSON 비교 (12차 정정)
-      incrementalUpdate(persistentTree, batch, filteredChildIdsMap);
+      incrementalUpdate(
+        persistentTree,
+        batch,
+        filteredChildIdsMap,
+        affectedNodeIds,
+      );
     }
 
     // ── Step 4: 레이아웃 계산 ─────────────────────────────────────────

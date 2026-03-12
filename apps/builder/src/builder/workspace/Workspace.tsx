@@ -19,7 +19,7 @@
 
 import { useRef } from "react";
 import { BuilderCanvas } from "./canvas/BuilderCanvas";
-import { useCanvasSyncStore } from "./canvas/canvasSync";
+import { useCanvasLifecycleStore } from "./canvas/stores";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { CanvasScrollbar } from "./scrollbar";
 import { WorkflowCanvasToggles } from "./components/WorkflowCanvasToggles";
@@ -54,8 +54,12 @@ export function Workspace({
   });
 
   // Canvas sync store
-  const isCanvasReady = useCanvasSyncStore((state) => state.isCanvasReady);
-  const isContextLost = useCanvasSyncStore((state) => state.isContextLost);
+  const isCanvasReady = useCanvasLifecycleStore(
+    (state) => state.isCanvasReady,
+  );
+  const isContextLost = useCanvasLifecycleStore(
+    (state) => state.isContextLost,
+  );
 
   // 비교 모드: iframe + PixiJS 동시 표시
   if (compareMode && fallbackCanvas) {

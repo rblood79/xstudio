@@ -29,15 +29,7 @@ import {
   syncCustomFontsWithSkia,
 } from "../../../fonts/loadCustomFontsToSkia";
 import { registerImageLoadCallback } from "./imageCache";
-import { useAIVisualFeedbackStore } from "../../../stores/aiVisualFeedback";
-import {
-  computeWorkflowEdges,
-  computeDataSourceEdges,
-  computeLayoutGroups,
-  type WorkflowEdge,
-  type DataSourceEdge,
-  type LayoutGroup,
-} from "./workflowEdges";
+import type { RendererInvalidationPacket, SkiaRendererInput } from "../renderers";
 import { recordInvalidation } from "./renderInvalidation";
 import {
   readCssBgColor,
@@ -61,8 +53,6 @@ import {
 } from "../hooks/useElementHoverInteraction";
 import { useScrollWheelInteraction } from "../hooks/useScrollWheelInteraction";
 import { DEFAULT_MINIMAP_CONFIG, type MinimapConfig } from "./workflowMinimap";
-import { useStore } from "../../../stores";
-import { useLayoutsStore } from "../../../stores/layouts";
 import type { BoundingBox, DragState } from "../selection/types";
 import { watchContextLoss } from "./createSurface";
 import { flushWasmMetrics, recordWasmMetric } from "../utils/gpuProfilerCore";
@@ -80,22 +70,9 @@ interface SkiaOverlayProps {
   app: Application;
   /** 드래그 상태 Ref (라쏘 렌더링용) */
   dragStateRef?: RefObject<DragState | null>;
-  /** 페이지 너비 (타이틀 렌더링용) */
-  pageWidth?: number;
-  /** 페이지 높이 (타이틀 렌더링용) */
-  pageHeight?: number;
-  /** 캔버스에 표시할 페이지 프레임들 */
-  pageFrames?: Array<{
-    id: string;
-    title: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    elementCount: number;
-  }>;
-  /** 현재 활성 페이지 ID */
-  currentPageId?: string | null;
+  invalidateLayout: () => void;
+  invalidationPacket: RendererInvalidationPacket;
+  rendererInput: SkiaRendererInput;
 }
 
 // readCssBgColor → themeWatcher.ts로 추출 (ADR-035 Phase 6)
@@ -129,8 +106,9 @@ export function SkiaOverlay({
   backgroundColor = 0xf3f4f6,
   app,
   dragStateRef,
-  pageFrames,
-  currentPageId,
+  invalidateLayout,
+  invalidationPacket,
+  rendererInput,
 }: SkiaOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SkiaRenderer | null>(null);
@@ -140,24 +118,20 @@ export function SkiaOverlay({
 
   // Phase 6: Selection/AI 상태 변경 감지용 ref (idle 프레임 스킵 방지)
   const overlayVersionRef = useRef(0);
-  const lastSelectedIdsRef = useRef<string[]>([]);
-  const lastSelectedIdRef = useRef<string | null>(null);
+  const lastSelectionSignatureRef = useRef("");
   const lastAIActiveRef = useRef(0);
   const lastPageFramesSignatureRef = useRef("");
-  const pageFramesRef = useRef<SkiaOverlayProps["pageFrames"]>(undefined);
+  const pageFramesRef = useRef(rendererInput.sceneSnapshot.pageFrames);
   // 🚀 페이지 위치 변경 감지용 ref (매 프레임 store 읽기 대신 React lifecycle에서 갱신)
-  const pagePosVersionRef = useRef(0);
+  const pagePosVersionRef = useRef(rendererInput.pagePositionsVersion);
   const lastPagePosVersionRef = useRef(0);
 
   // Workflow 오버레이 캐시
-  const workflowEdgesRef = useRef<WorkflowEdge[]>([]);
-  const workflowEdgesVersionRef = useRef(-1);
-  const lastShowWorkflowRef = useRef(false);
-  const lastWorkflowElementsRef = useRef<unknown>(null);
+  const invalidationPacketRef = useRef(invalidationPacket);
+  const rendererInputRef = useRef(rendererInput);
+  const lastWorkflowOverlaySignatureRef = useRef("");
+  const lastWorkflowGraphSignatureRef = useRef("");
 
-  // Phase 2: 데이터 소스 엣지 & 레이아웃 그룹 캐시
-  const dataSourceEdgesRef = useRef<DataSourceEdge[]>([]);
-  const layoutGroupsRef = useRef<LayoutGroup[]>([]);
   // Phase 2: 서브 토글 변경 감지용
   const lastWfSubTogglesRef = useRef("");
 
@@ -181,8 +155,7 @@ export function SkiaOverlay({
   const lastFocusedPageRef = useRef<string | null>(null);
 
   // Grid 상태 변경 감지용 ref
-  const lastShowGridRef = useRef(false);
-  const lastGridSizeRef = useRef(0);
+  const lastGridSignatureRef = useRef("");
 
   // Phase 4: 미니맵 config ref (inspector 패널 너비 반영)
   const minimapConfigRef = useRef<MinimapConfig>(DEFAULT_MINIMAP_CONFIG);
@@ -195,8 +168,10 @@ export function SkiaOverlay({
 
   // 페이지 프레임/현재 페이지 ref 갱신
   useEffect(() => {
-    pageFramesRef.current = pageFrames;
-  }, [pageFrames]);
+    pageFramesRef.current = rendererInput.sceneSnapshot.pageFrames;
+    rendererInputRef.current = rendererInput;
+    pagePosVersionRef.current = rendererInput.pagePositionsVersion;
+  }, [rendererInput]);
 
   // Phase 3: 워크플로우 인터랙션 훅
   useWorkflowInteraction({
@@ -222,11 +197,9 @@ export function SkiaOverlay({
     treeBoundsMapRef,
   });
 
-  // 🚀 페이지 위치 버전 React lifecycle에서 ref로 전파 (매 프레임 store.getState() 호출 제거)
   useEffect(() => {
-    const version = useStore.getState().pagePositionsVersion;
-    pagePosVersionRef.current = version;
-  });
+    invalidationPacketRef.current = invalidationPacket;
+  }, [invalidationPacket]);
 
   // Dev-only: registryVersion 변화율(Content rerender 원인 추적)
   const devRegistryWindowStartMs = useRef(0);
@@ -317,7 +290,8 @@ export function SkiaOverlay({
 
   // 페이지 프레임 변경 감지 → 오버레이 리렌더 트리거
   useEffect(() => {
-    const frames = pageFrames ?? [];
+    const frames = rendererInput.sceneSnapshot.pageFrames;
+    const currentPageId = rendererInput.sceneSnapshot.currentPageId;
     const signature = frames
       .map((frame) => {
         const isActiveFrame = frame.id === (currentPageId ?? "");
@@ -330,7 +304,7 @@ export function SkiaOverlay({
       recordInvalidation("overlay", "pageFrames");
       lastPageFramesSignatureRef.current = signature;
     }
-  }, [pageFrames, currentPageId]);
+  }, [rendererInput.sceneSnapshot.currentPageId, rendererInput.sceneSnapshot.pageFrames]);
 
   // CanvasKit + 폰트 초기화
   useEffect(() => {
@@ -420,7 +394,7 @@ export function SkiaOverlay({
             setTextMeasurer(new CanvasKitTextMeasurer());
             // CanvasKit 측정기로 교체 후 레이아웃 재계산 트리거
             // Canvas2D → CanvasKit 폰트 메트릭 차이 보정
-            useStore.getState().invalidateLayout();
+            invalidateLayout();
           } catch (e) {
             console.warn(
               "[SkiaOverlay] CanvasKit TextMeasurer 초기화 실패:",
@@ -439,7 +413,7 @@ export function SkiaOverlay({
     return () => {
       cancelled = true;
     };
-  }, [isActive]);
+  }, [invalidateLayout, isActive]);
 
   // Phase C: 커스텀 폰트 동적 업데이트 핸들러
   useEffect(() => {
@@ -450,7 +424,7 @@ export function SkiaOverlay({
         await syncCustomFontsWithSkia();
         // registryVersion 증가 → Skia 트리 캐시 무효화 + 콘텐츠 재렌더
         notifyLayoutChange();
-        useStore.getState().invalidateLayout();
+        invalidateLayout();
         window.dispatchEvent(new CustomEvent("xstudio:fonts-ready"));
       } catch (e) {
         console.warn("[SkiaOverlay] 동적 커스텀 폰트 동기화 실패:", e);
@@ -467,7 +441,7 @@ export function SkiaOverlay({
         handleCustomFontsUpdated,
       );
     };
-  }, [ready, isActive]);
+  }, [ready, isActive, invalidateLayout]);
 
   // CanvasKit Surface 생성 + 이벤트 브리징
   useEffect(() => {
@@ -527,6 +501,8 @@ export function SkiaOverlay({
 
       const registryVersion = getRegistryVersion();
       const pagePosVersion = pagePosVersionRef.current;
+      const packet = invalidationPacketRef.current;
+      const currentRendererInput = rendererInputRef.current;
 
       // Phase 4: 미니맵 가시성 — 캔버스 이동(pan/zoom) 시에만 표시 (스크롤바 패턴)
       const lastMmCam = lastMinimapCameraRef.current;
@@ -575,25 +551,20 @@ export function SkiaOverlay({
         }
       }
 
-      // Selection 상태 변경 감지 — selectedElementIds 참조 변경 시 version 증가
-      const currentSelectedIds = useStore.getState().selectedElementIds;
-      const currentSelectedId = useStore.getState().selectedElementId;
-      if (
-        currentSelectedIds !== lastSelectedIdsRef.current ||
-        currentSelectedId !== lastSelectedIdRef.current
-      ) {
+      // Selection 상태 변경 감지 — packet 기반
+      const currentSelectionSignature = packet.selection.selectionSignature;
+      if (currentSelectionSignature !== lastSelectionSignatureRef.current) {
         overlayVersionRef.current++;
         recordInvalidation("overlay", "selection");
-        lastSelectedIdsRef.current = currentSelectedIds;
-        lastSelectedIdRef.current = currentSelectedId;
+        lastSelectionSignatureRef.current = currentSelectionSignature;
       }
 
       // editingContext 변경 감지
-      const currentEditingContext = useStore.getState().editingContextId;
-      if (currentEditingContext !== lastEditingContextRef.current) {
+      const currentEditingSignature = packet.selection.editingSignature;
+      if (currentEditingSignature !== lastEditingContextRef.current) {
         overlayVersionRef.current++;
         recordInvalidation("overlay", "editingContext");
-        lastEditingContextRef.current = currentEditingContext;
+        lastEditingContextRef.current = currentEditingSignature;
       }
 
       // AI 상태 변경 감지
@@ -602,7 +573,7 @@ export function SkiaOverlay({
       //
       // Phase 2 최적화: flash만 활성이고 모든 flash progress >= 0.9이면
       // version 증가를 스킵하여 불필요한 리렌더를 방지한다.
-      const aiState = useAIVisualFeedbackStore.getState();
+      const aiState = packet.ai;
       const currentAIActive =
         aiState.generatingNodes.size + aiState.flashAnimations.size;
       if (currentAIActive > 0) {
@@ -636,73 +607,40 @@ export function SkiaOverlay({
       lastAIActiveRef.current = currentAIActive;
 
       // Grid 상태 변경 감지
-      const { showGrid: currentShowGrid, gridSize: currentGridSize } =
-        useStore.getState();
-      if (
-        currentShowGrid !== lastShowGridRef.current ||
-        currentGridSize !== lastGridSizeRef.current
-      ) {
+      const currentGridSignature = packet.grid.signature;
+      if (currentGridSignature !== lastGridSignatureRef.current) {
         overlayVersionRef.current++;
         recordInvalidation("overlay", "grid");
-        lastShowGridRef.current = currentShowGrid;
-        lastGridSizeRef.current = currentGridSize;
+        lastGridSignatureRef.current = currentGridSignature;
       }
 
       // 드래그 중(라쏘/리사이즈/이동)에는 매 프레임 오버레이 갱신
-      const dragState = dragStateRef?.current;
-      if (dragState?.isDragging) {
+      if (packet.dragActive) {
         overlayVersionRef.current++;
         recordInvalidation("overlay", "drag");
       }
 
-      // Workflow 오버레이 상태 감지 및 엣지 계산
-      const showWorkflowOverlay = useStore.getState().showWorkflowOverlay;
-      if (showWorkflowOverlay !== lastShowWorkflowRef.current) {
-        lastShowWorkflowRef.current = showWorkflowOverlay;
+      // Workflow 오버레이 상태 감지
+      const workflowOverlaySignature = packet.workflow.overlaySignature;
+      if (
+        workflowOverlaySignature !== lastWorkflowOverlaySignatureRef.current
+      ) {
+        lastWorkflowOverlaySignatureRef.current = workflowOverlaySignature;
         overlayVersionRef.current++;
         recordInvalidation("workflow", "toggleOverlay");
       }
-      // Phase 2: 서브 토글 변경 감지
-      if (showWorkflowOverlay) {
-        const {
-          showWorkflowNavigation: sn,
-          showWorkflowEvents: se,
-          showWorkflowDataSources: sd,
-          showWorkflowLayoutGroups: sl,
-          workflowStraightEdges: wse,
-        } = useStore.getState();
-        const subKey = `${sn}-${se}-${sd}-${sl}-${wse}`;
+
+      if (packet.workflow.showOverlay) {
+        const subKey = packet.workflow.subToggleSignature;
         if (subKey !== lastWfSubTogglesRef.current) {
           lastWfSubTogglesRef.current = subKey;
           overlayVersionRef.current++;
           recordInvalidation("workflow", "subToggles");
         }
-      }
-      if (showWorkflowOverlay) {
-        const storeState = useStore.getState();
-        // elements 참조 변경 감지 (이벤트/href 변경은 registryVersion에 반영되지 않으므로)
-        const elementsChanged =
-          storeState.elements !== lastWorkflowElementsRef.current;
-        if (
-          registryVersion !== workflowEdgesVersionRef.current ||
-          elementsChanged
-        ) {
-          workflowEdgesRef.current = computeWorkflowEdges(
-            storeState.pages,
-            storeState.elements as Parameters<typeof computeWorkflowEdges>[1],
-          );
-          // Phase 2: 데이터 소스 엣지 계산
-          dataSourceEdgesRef.current = computeDataSourceEdges(
-            storeState.elements as Parameters<typeof computeDataSourceEdges>[0],
-          );
-          // Phase 2: 레이아웃 그룹 계산
-          const layouts = useLayoutsStore.getState().layouts;
-          layoutGroupsRef.current = computeLayoutGroups(
-            storeState.pages,
-            layouts,
-          );
-          workflowEdgesVersionRef.current = registryVersion;
-          lastWorkflowElementsRef.current = storeState.elements;
+
+        const workflowGraphSignature = packet.workflow.graphSignature;
+        if (workflowGraphSignature !== lastWorkflowGraphSignatureRef.current) {
+          lastWorkflowGraphSignatureRef.current = workflowGraphSignature;
           overlayVersionRef.current++;
           recordInvalidation("workflow", "edgesRecalc");
         }
@@ -714,7 +652,7 @@ export function SkiaOverlay({
           overlayVersionRef.current++;
           recordInvalidation("workflow", "hoverEdge");
         }
-        const focusedPageId = storeState.workflowFocusedPageId;
+        const focusedPageId = packet.workflow.focusedPageId;
         if (focusedPageId !== lastFocusedPageRef.current) {
           lastFocusedPageRef.current = focusedPageId;
           overlayVersionRef.current++;
@@ -747,6 +685,7 @@ export function SkiaOverlay({
 
       // ── ADR-035 Phase 4: Frame Content Build (skiaFramePipeline.ts) ──
       const contentResult = buildSkiaFrameContent({
+        aiState: packet.ai,
         registryVersion,
         pagePosVersion,
         cameraContainer,
@@ -755,6 +694,7 @@ export function SkiaOverlay({
         cameraZoom,
         ck,
         fontMgr,
+        rendererInput: currentRendererInput,
       });
 
       if (!contentResult) {
@@ -775,7 +715,9 @@ export function SkiaOverlay({
       });
       const framePlan = buildFrameRenderPlan({
         ck,
+        elementsMap: currentRendererInput.elementsMap,
         fontMgr,
+        invalidationPacket: packet,
         snapshot,
         sharedScene,
         nodeBoundsMap,
@@ -783,11 +725,6 @@ export function SkiaOverlay({
         contentNode,
         dragStateRef,
         pageFrames: pageFramesRef.current,
-        showWorkflowOverlay,
-        workflowEdges: workflowEdgesRef.current,
-        workflowEdgesVersion: workflowEdgesVersionRef.current,
-        dataSourceEdges: dataSourceEdgesRef.current,
-        layoutGroups: layoutGroupsRef.current,
         workflowHoverState: workflowHoverStateRef.current,
         elementHoverState: elementHoverStateRef.current,
         minimapVisible: minimapVisibleRef.current,
@@ -862,15 +799,16 @@ export function SkiaOverlay({
 
   // 🆕 Multi-page: 모든 페이지가 동시 마운트되므로 페이지 전환 시
   // 레지스트리/캐시 초기화 불필요. 선택 하이라이트 갱신만 수행.
-  const prevPageIdRef = useRef(currentPageId);
+  const prevPageIdRef = useRef(rendererInput.sceneSnapshot.currentPageId);
 
   useEffect(() => {
+    const currentPageId = rendererInput.sceneSnapshot.currentPageId;
     if (prevPageIdRef.current !== currentPageId) {
       prevPageIdRef.current = currentPageId;
       rendererRef.current?.invalidateContent();
       recordInvalidation("content", "pageSwitch");
     }
-  }, [currentPageId]);
+  }, [rendererInput.sceneSnapshot.currentPageId]);
 
   // 이미지 로딩 완료 시 Canvas 재렌더 트리거
   // specShapeConverter에서 loadSkImage()를 호출하면 이미지가 비동기로 로딩되고,
@@ -881,12 +819,12 @@ export function SkiaOverlay({
     const unregister = registerImageLoadCallback(() => {
       rendererRef.current?.invalidateContent();
       // 이미지 로드 완료 시 레이아웃도 재계산 (fit-content/auto 사이징용)
-      useStore.getState().invalidateLayout();
+      invalidateLayout();
       recordInvalidation("resource", "imageLoaded");
     });
 
     return unregister;
-  }, [ready, isActive]);
+  }, [ready, isActive, invalidateLayout]);
 
   // 리사이즈 대응 (디바운싱 150ms — surface 재생성은 비용이 크므로)
   useEffect(() => {

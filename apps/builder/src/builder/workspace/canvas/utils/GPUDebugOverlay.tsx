@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { enableDebugLogs } from '../../../../utils/featureFlags';
-import { useCanvasSyncStore } from '../canvasSync';
+import { useCanvasMetricsStore } from '../stores';
 
 const overlayStyle: CSSProperties = {
   position: 'absolute',
@@ -21,7 +21,7 @@ const overlayStyle: CSSProperties = {
  * 개발 환경에서만 표시
  */
 export function GPUDebugOverlay() {
-  const gpuMetrics = useCanvasSyncStore((state) => state.gpuMetrics);
+  const gpuMetrics = useCanvasMetricsStore((state) => state.gpuMetrics);
 
   if (!enableDebugLogs()) return null;
 

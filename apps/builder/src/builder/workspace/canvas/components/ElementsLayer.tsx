@@ -1,16 +1,29 @@
 import { memo, useEffect, useMemo } from "react";
 import type { Element } from "../../../../types/core/store.types";
 import {
-  calculateFullTreeLayout,
   parseBorder,
-  parsePadding,
   publishLayoutMap,
+  parsePadding,
   type ComputedLayout,
 } from "../layout";
 import { applyImplicitStyles } from "../layout/engines/implicitStyles";
+import type { PixiPageRendererInput } from "../renderers";
+import {
+  buildPageChildrenMap,
+  buildChildrenIdMap,
+  buildPageDirtyState,
+  createPageElementsSignature,
+  createPageLayoutSignature,
+  getCachedPageLayout,
+  getCachedRenderIdSet,
+  getCachedTopLevelCandidateIds,
+} from "../scene";
 import { updateElementCount } from "../utils/gpuProfilerCore";
 import { ElementSprite } from "../sprites";
-import { useViewportCulling } from "../hooks/useViewportCulling";
+import {
+  calculateViewportBounds,
+  useViewportCulling,
+} from "../hooks/useViewportCulling";
 import { DirectContainer } from "./DirectContainer";
 
 const NON_CONTAINER_TAGS = new Set([
@@ -49,74 +62,51 @@ const NON_CONTAINER_TAGS = new Set([
 ]);
 
 export interface ElementsLayerProps {
-  bodyElement: Element | null;
-  depthMap: Map<string, number>;
-  elementById: Map<string, Element>;
-  layoutVersion?: number;
-  pageElements: Element[];
-  pageHeight: number;
-  pagePositionVersion?: number;
-  pageWidth: number;
-  panOffset: { x: number; y: number };
-  wasmLayoutReady?: boolean;
-  zoom: number;
+  rendererInput: PixiPageRendererInput;
 }
 
 export const ElementsLayer = memo(function ElementsLayer({
-  pageElements,
-  bodyElement,
-  elementById,
-  depthMap,
-  pageWidth,
-  pageHeight,
-  zoom,
-  panOffset,
-  pagePositionVersion = 0,
-  wasmLayoutReady = false,
-  layoutVersion = 0,
+  rendererInput,
 }: ElementsLayerProps) {
+  const {
+    pageElements,
+    bodyElement,
+    elementById,
+    dirtyElementIds,
+    depthMap,
+    pageWidth,
+    pageHeight,
+    zoom,
+    panOffset,
+    pagePositionVersion = 0,
+    wasmLayoutReady = false,
+    layoutVersion = 0,
+  } = rendererInput;
+
   const pageChildrenMap = useMemo(() => {
-    const map = new Map<string | null, Element[]>();
-    const bodyId = bodyElement?.id ?? null;
-
-    const isContentsElement = (element: Element): boolean => {
-      const style = element.props?.style as Record<string, unknown> | undefined;
-      return style?.display === "contents";
-    };
-
-    const getLayoutParentId = (parentId: string | null): string | null => {
-      let currentId = parentId;
-      while (currentId) {
-        const parentElement = elementById.get(currentId);
-        if (!parentElement || !isContentsElement(parentElement)) {
-          break;
-        }
-        currentId = parentElement.parent_id ?? bodyId;
-      }
-      return currentId;
-    };
-
-    for (const element of pageElements) {
-      if (isContentsElement(element)) {
-        continue;
-      }
-
-      const rawParentId = element.parent_id ?? bodyId;
-      const key = getLayoutParentId(rawParentId);
-      const list = map.get(key);
-      if (list) {
-        list.push(element);
-      } else {
-        map.set(key, [element]);
-      }
-    }
-
-    for (const list of map.values()) {
-      list.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-    }
-
-    return map;
+    return buildPageChildrenMap({
+      bodyElement,
+      elementById,
+      pageElements,
+    });
   }, [bodyElement?.id, elementById, pageElements]);
+  const pageDirtyState = useMemo(() => {
+    return buildPageDirtyState({
+      bodyElement,
+      dirtyElementIds,
+      elementsMap: elementById,
+      pageChildrenMap,
+    });
+  }, [bodyElement, dirtyElementIds, elementById, pageChildrenMap]);
+  const pageElementsSignature = useMemo(() => {
+    return createPageElementsSignature(pageElements);
+  }, [pageElements]);
+  const pageLayoutSignature = useMemo(() => {
+    return createPageLayoutSignature(bodyElement, pageElements);
+  }, [bodyElement, pageElements]);
+  const childrenIdMap = useMemo(() => {
+    return buildChildrenIdMap(pageChildrenMap);
+  }, [pageChildrenMap]);
 
   const sortedElements = useMemo(() => {
     return [...pageElements].sort((a, b) => {
@@ -129,8 +119,53 @@ export const ElementsLayer = memo(function ElementsLayer({
     });
   }, [depthMap, pageElements]);
 
+  const cullingCacheKey = useMemo(() => {
+    return [
+      bodyElement?.page_id ?? "page",
+      pageElementsSignature,
+      zoom,
+      panOffset.x,
+      panOffset.y,
+      pagePositionVersion,
+    ].join(":");
+  }, [
+    bodyElement?.page_id,
+    pageElementsSignature,
+    zoom,
+    panOffset.x,
+    panOffset.y,
+    pagePositionVersion,
+  ]);
+
+  const topLevelViewport = useMemo(() => {
+    const screenWidth =
+      typeof window !== "undefined" ? window.innerWidth : pageWidth;
+    const screenHeight =
+      typeof window !== "undefined" ? window.innerHeight : pageHeight;
+
+    return calculateViewportBounds(screenWidth, screenHeight);
+  }, [pageHeight, pageWidth, pagePositionVersion, panOffset.x, panOffset.y, zoom]);
+
+  const topLevelCandidateIds = useMemo(() => {
+    return getCachedTopLevelCandidateIds({
+      bodyElementId: bodyElement?.id ?? null,
+      cacheKey: `${cullingCacheKey}:top-level`,
+      pageChildrenMap,
+      viewport: topLevelViewport,
+    });
+  }, [bodyElement?.id, cullingCacheKey, pageChildrenMap, topLevelViewport]);
+
+  const cullingCandidates = useMemo(() => {
+    if (topLevelCandidateIds.size === 0) {
+      return sortedElements;
+    }
+
+    return sortedElements.filter((element) => topLevelCandidateIds.has(element.id));
+  }, [sortedElements, topLevelCandidateIds]);
+
   const { visibleElements } = useViewportCulling({
-    elements: sortedElements,
+    cacheKey: cullingCacheKey,
+    elements: cullingCandidates,
     zoom,
     panOffset,
     enabled: true,
@@ -138,74 +173,36 @@ export const ElementsLayer = memo(function ElementsLayer({
   });
 
   const renderIdSet = useMemo(() => {
-    const ids = new Set<string>();
-
-    for (const element of visibleElements) {
-      let current: Element | undefined = element;
-      while (current) {
-        if (ids.has(current.id)) {
-          break;
-        }
-        ids.add(current.id);
-        if (!current.parent_id) {
-          break;
-        }
-        current = elementById.get(current.parent_id);
-      }
-    }
-
-    return ids;
-  }, [elementById, visibleElements]);
+    return getCachedRenderIdSet({
+      cacheKey: `${cullingCacheKey}:renderIdSet`,
+      elementById,
+      visibleElements,
+    });
+  }, [cullingCacheKey, elementById, visibleElements]);
 
   const fullTreeLayoutMap = useMemo(() => {
-    if (!bodyElement || !wasmLayoutReady) {
-      return null;
-    }
     void layoutVersion;
-
-    const childrenIdMap = new Map<string, string[]>();
-    for (const [key, elements] of pageChildrenMap) {
-      if (key != null) {
-        childrenIdMap.set(
-          key,
-          elements.map((element) => element.id),
-        );
-      }
-    }
-
-    const bodyStyle = bodyElement.props?.style as
-      | Record<string, unknown>
-      | undefined;
-    const bodyBorderVal = parseBorder(bodyStyle);
-    const bodyPaddingVal = parsePadding(bodyStyle, pageWidth);
-    const availableWidth =
-      pageWidth -
-      bodyBorderVal.left -
-      bodyBorderVal.right -
-      bodyPaddingVal.left -
-      bodyPaddingVal.right;
-    const availableHeight =
-      pageHeight -
-      bodyBorderVal.top -
-      bodyBorderVal.bottom -
-      bodyPaddingVal.top -
-      bodyPaddingVal.bottom;
-
-    const result = calculateFullTreeLayout(
-      bodyElement.id,
-      elementById,
+    return getCachedPageLayout({
+      bodyElement,
       childrenIdMap,
-      availableWidth,
-      availableHeight,
-      (id: string) => pageChildrenMap.get(id) ?? [],
-    );
-
-    return result;
+      elementById,
+      pageChildrenMap,
+      pageDirtyState,
+      pageElementsSignature,
+      pageLayoutSignature,
+      pageHeight,
+      pageWidth,
+      wasmLayoutReady,
+    });
   }, [
     bodyElement,
+    childrenIdMap,
     elementById,
     layoutVersion,
     pageChildrenMap,
+    pageDirtyState,
+    pageElementsSignature,
+    pageLayoutSignature,
     pageHeight,
     pageWidth,
     wasmLayoutReady,

@@ -24,6 +24,8 @@ import {
 } from "react";
 import { Application } from "@pixi/react";
 import { useStore } from "../../stores";
+import { useLayoutsStore } from "../../stores/layouts";
+import { useAIVisualFeedbackStore } from "../../stores/aiVisualFeedback";
 
 // P4: useExtend 훅으로 메모이제이션된 컴포넌트 등록
 // 🚀 Phase 5: 동적 해상도 및 저사양 기기 감지
@@ -33,7 +35,7 @@ import {
   isLowEndDevice,
   getDynamicResolution,
 } from "./pixiSetup";
-import { useCanvasSyncStore } from "./canvasSync";
+import { useCanvasLifecycleStore, useViewportSyncStore } from "./stores";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
 import { ClickableBackground } from "./components/ClickableBackground";
 import { ElementsLayer } from "./components/ElementsLayer";
@@ -45,25 +47,40 @@ import {
   type BoundingBox,
   type SelectionBoxHandle,
   type DragState,
-  calculateCombinedBounds,
 } from "./selection";
 // GridLayer는 Skia gridRenderer로 대체됨
 import { ViewportControlBridge } from "./viewport";
-import {
-  screenToViewportPoint,
-  screenToViewportSize,
-} from "./viewport/viewportTransforms";
+import { screenToViewportPoint } from "./viewport/viewportTransforms";
 import { TextEditOverlay, useTextEdit } from "../overlay";
-import { getElementBoundsSimple } from "./elementRegistry";
+import {
+  computeSelectionBounds,
+  resolveSelectedElementsForPage,
+} from "./interaction";
+import {
+  buildPixiPageRendererInput,
+  createRendererInvalidationPacket,
+  createSkiaRendererInput,
+  type RendererInvalidationPacket,
+  type SkiaRendererInput,
+} from "./renderers";
+import {
+  getElementBoundsSimple,
+  getElementContainer,
+} from "./elementRegistry";
 import { GPUDebugOverlay } from "./utils/GPUDebugOverlay";
 import { useCanvasElementSelectionHandlers } from "./hooks/useCanvasElementSelectionHandlers";
 import { useCanvasBackgroundInteraction } from "./hooks/useCanvasBackgroundInteraction";
 import { useCanvasDragDropHelpers } from "./hooks/useCanvasDragDropHelpers";
 import { useCentralCanvasPointerHandlers } from "./hooks/useCentralCanvasPointerHandlers";
-import { useMultiPageCanvasData } from "./hooks/useMultiPageCanvasData";
 import { useCanvasRuntimeBootstrap } from "./hooks/useCanvasRuntimeBootstrap";
 import { useCanvasSurfaceLifecycle } from "./hooks/useCanvasSurfaceLifecycle";
 import { usePageDrag } from "./hooks/usePageDrag";
+import { buildSceneSnapshot } from "./scene";
+import {
+  computeWorkflowEdges,
+  computeDataSourceEdges,
+  computeLayoutGroups,
+} from "./skia/workflowEdges";
 
 import { useGPUProfiler } from "./utils/gpuProfilerCore";
 
@@ -112,18 +129,9 @@ function SkiaOverlayLazy(props: {
   backgroundColor?: number;
   app: PixiApplication;
   dragStateRef?: RefObject<DragState | null>;
-  pageWidth?: number;
-  pageHeight?: number;
-  pageFrames?: Array<{
-    id: string;
-    title: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    elementCount: number;
-  }>;
-  currentPageId?: string | null;
+  invalidateLayout: () => void;
+  invalidationPacket: RendererInvalidationPacket;
+  rendererInput: SkiaRendererInput;
 }) {
   return (
     <Suspense fallback={null}>
@@ -175,7 +183,7 @@ export function BuilderCanvas({
   // 🚀 Phase 5 + 6.2: 저사양 기기 감지 (모듈 레벨 캐싱으로 useMemo 불필요)
   const isLowEnd = isLowEndDevice();
 
-  const containerSize = useCanvasSyncStore((state) => state.containerSize);
+  const containerSize = useViewportSyncStore((state) => state.containerSize);
 
   // 🚀 Phase 5 + 6.1: 동적 해상도 (드래그/줌/팬 중에는 낮춤)
   // dragState가 active일 때 해상도 낮춤
@@ -203,14 +211,44 @@ export function BuilderCanvas({
   const updateElementProps = useStore((state) => state.updateElementProps);
   const batchUpdateElements = useStore((state) => state.batchUpdateElements);
   const currentPageId = useStore((state) => state.currentPageId);
+  const selectedElementId = useStore((state) => state.selectedElementId);
+  const selectedElementIds = useStore((state) => state.selectedElementIds);
   const setCurrentPageId = useStore((state) => state.setCurrentPageId);
+  const editingContextId = useStore((state) => state.editingContextId);
+  const invalidateLayout = useStore((state) => state.invalidateLayout);
 
   // Settings state (SettingsPanel 연동)
   const snapToGrid = useStore((state) => state.snapToGrid);
+  const showGrid = useStore((state) => state.showGrid);
   const gridSize = useStore((state) => state.gridSize);
+  const showWorkflowOverlay = useStore((state) => state.showWorkflowOverlay);
+  const showWorkflowNavigation = useStore(
+    (state) => state.showWorkflowNavigation,
+  );
+  const showWorkflowEvents = useStore((state) => state.showWorkflowEvents);
+  const showWorkflowDataSources = useStore(
+    (state) => state.showWorkflowDataSources,
+  );
+  const showWorkflowLayoutGroups = useStore(
+    (state) => state.showWorkflowLayoutGroups,
+  );
+  const workflowStraightEdges = useStore((state) => state.workflowStraightEdges);
+  const workflowFocusedPageId = useStore((state) => state.workflowFocusedPageId);
+  const childrenMap = useStore((state) => state.childrenMap);
+  const dirtyElementIds = useStore((state) => state.dirtyElementIds);
+  const layouts = useLayoutsStore((state) => state.layouts);
+  const aiGeneratingNodes = useAIVisualFeedbackStore(
+    (state) => state.generatingNodes,
+  );
+  const aiFlashAnimations = useAIVisualFeedbackStore(
+    (state) => state.flashAnimations,
+  );
+  const cleanupExpiredFlashes = useAIVisualFeedbackStore(
+    (state) => state.cleanupExpiredFlashes,
+  );
 
-  const zoom = useCanvasSyncStore((state) => state.zoom);
-  const panOffset = useCanvasSyncStore(
+  const zoom = useViewportSyncStore((state) => state.zoom);
+  const panOffset = useViewportSyncStore(
     (state) => state.panOffset,
     (a, b) => a.x === b.x && a.y === b.y,
   );
@@ -219,10 +257,18 @@ export function BuilderCanvas({
   const { startDrag: startPageDrag } = usePageDrag(zoom);
 
   // Canvas sync actions
-  const setCanvasReady = useCanvasSyncStore((state) => state.setCanvasReady);
-  const setContextLost = useCanvasSyncStore((state) => state.setContextLost);
-  const syncPixiVersion = useCanvasSyncStore((state) => state.syncPixiVersion);
-  const renderVersion = useCanvasSyncStore((state) => state.renderVersion);
+  const setCanvasReady = useCanvasLifecycleStore(
+    (state) => state.setCanvasReady,
+  );
+  const setContextLost = useCanvasLifecycleStore(
+    (state) => state.setContextLost,
+  );
+  const syncPixiVersion = useCanvasLifecycleStore(
+    (state) => state.syncPixiVersion,
+  );
+  const renderVersion = useCanvasLifecycleStore(
+    (state) => state.renderVersion,
+  );
 
   // elementsMap을 직접 사용 (elements로부터 중복 Map 생성 제거)
   const elementsMap = useStore((state) => state.elementsMap);
@@ -239,50 +285,7 @@ export function BuilderCanvas({
     }
   }, [layoutVersion, clearDirtyElementIds]);
 
-  const depthMap = useMemo(() => {
-    const cache = new Map<string, number>();
-
-    const computeDepth = (id: string | null): number => {
-      if (!id) return 0;
-      const cached = cache.get(id);
-      if (cached !== undefined) return cached;
-
-      const el = elementById.get(id);
-      if (!el || el.tag.toLowerCase() === "body") {
-        cache.set(id, 0);
-        return 0;
-      }
-
-      // display:contents 요소는 레이아웃 트리에서 투명 — 깊이 증가 없이 부모를 따라감
-      const parentStyle = el.props?.style as
-        | Record<string, unknown>
-        | undefined;
-      if (parentStyle?.display === "contents") {
-        const depth = computeDepth(el.parent_id as string | null);
-        cache.set(id, depth);
-        return depth;
-      }
-
-      const depth = 1 + computeDepth(el.parent_id as string | null);
-      cache.set(id, depth);
-      return depth;
-    };
-
-    elements.forEach((el) => {
-      cache.set(el.id, computeDepth(el.id));
-    });
-
-    return cache;
-  }, [elements, elementById]);
-
   // Zoom/Pan은 ViewportControlBridge에서 처리 (Application 내부에서 Container 직접 조작)
-
-  // 현재 페이지 요소 필터링 (Body 제외)
-  const pageElements = useMemo(() => {
-    return elements.filter(
-      (el) => el.page_id === currentPageId && el.tag.toLowerCase() !== "body",
-    );
-  }, [elements, currentPageId]);
 
   // 🆕 Multi-page: 모든 페이지의 데이터 (body + elements) 사전 계산
   const pagePositions = useStore((state) => state.pagePositions);
@@ -291,24 +294,103 @@ export function BuilderCanvas({
     (state) => state.initializePagePositions,
   );
   const pageLayoutDirection = useStore((state) => state.pageLayoutDirection);
+  const previousLayoutKeyRef = useRef(
+    `${pageWidth}:${pageHeight}:${pageLayoutDirection}`,
+  );
 
-  // 🆕 Multi-page: pageWidth/pageHeight/pageLayoutDirection 변경 시 페이지 위치 재계산
-  // 🚀 O(1) pageIndex 기반 조회 (elements.find/filter O(N*M) 제거)
   const pageIndex = useStore((state) => state.pageIndex);
-  const { allPageData, pageFrames, visiblePageIds } = useMultiPageCanvasData({
-    containerSize,
-    elementsMap,
+
+  useEffect(() => {
+    const layoutKey = `${pageWidth}:${pageHeight}:${pageLayoutDirection}`;
+    if (previousLayoutKeyRef.current === layoutKey || pages.length === 0) {
+      return;
+    }
+
+    previousLayoutKeyRef.current = layoutKey;
+    initializePagePositions(
+      pages,
+      pageWidth,
+      pageHeight,
+      PAGE_STACK_GAP,
+      pageLayoutDirection,
+    );
+  }, [
     initializePagePositions,
     pageHeight,
-    pageIndex,
     pageLayoutDirection,
+    pageWidth,
+    pages,
+  ]);
+
+  const sceneSnapshot = useMemo(() => {
+    return buildSceneSnapshot({
+      containerSize,
+      currentPageId,
+      elements,
+      elementsMap,
+      layoutVersion,
+      pageHeight,
+      pageIndex,
+      pagePositions,
+      pagePositionsVersion,
+      pageWidth,
+      pages,
+      panOffset,
+      selectedElementIds,
+      zoom,
+    });
+  }, [
+    containerSize,
+    currentPageId,
+    elements,
+    elementsMap,
+    layoutVersion,
+    pageHeight,
+    pageIndex,
     pagePositions,
-    pageStackGap: PAGE_STACK_GAP,
+    pagePositionsVersion,
     pageWidth,
     pages,
     panOffset,
+    selectedElementIds,
     zoom,
-  });
+  ]);
+
+  const depthMap = sceneSnapshot.depthMap;
+  const visiblePageIds = sceneSnapshot.visiblePageIds;
+  const pageElements = sceneSnapshot.currentPageData?.pageElements ?? [];
+  const workflowEdges = useMemo(() => {
+    return computeWorkflowEdges(pages, elements);
+  }, [pages, elements]);
+  const dataSourceEdges = useMemo(() => {
+    return computeDataSourceEdges(elements);
+  }, [elements]);
+  const layoutGroups = useMemo(() => {
+    return computeLayoutGroups(pages, layouts);
+  }, [pages, layouts]);
+  const skiaRendererInput = useMemo(() => {
+    return createSkiaRendererInput({
+      childrenMap,
+      dirtyElementIds,
+      elements,
+      elementsMap,
+      pageIndex,
+      pagePositions,
+      pagePositionsVersion,
+      pages,
+      sceneSnapshot,
+    });
+  }, [
+    childrenMap,
+    dirtyElementIds,
+    elements,
+    elementsMap,
+    pageIndex,
+    pagePositions,
+    pagePositionsVersion,
+    pages,
+    sceneSnapshot,
+  ]);
 
   const screenToCanvasPoint = useCallback(
     (position: { x: number; y: number }) => {
@@ -528,6 +610,62 @@ export function BuilderCanvas({
     dragStateRef.current = dragState;
   }, [dragState]);
 
+  const rendererInvalidationPacket = useMemo(() => {
+    return createRendererInvalidationPacket({
+      ai: {
+        cleanupExpiredFlashes,
+        flashAnimations: aiFlashAnimations,
+        generatingNodes: aiGeneratingNodes,
+      },
+      dragActive: dragState.isDragging,
+      grid: {
+        gridSize,
+        showGrid,
+      },
+      selection: {
+        currentPageId,
+        editingContextId,
+        selectedElementId,
+        selectedElementIds,
+      },
+      workflow: {
+        dataSourceEdges,
+        focusedPageId: workflowFocusedPageId,
+        layoutGroups,
+        layouts,
+        showDataSources: showWorkflowDataSources,
+        showEvents: showWorkflowEvents,
+        showLayoutGroups: showWorkflowLayoutGroups,
+        showNavigation: showWorkflowNavigation,
+        showOverlay: showWorkflowOverlay,
+        straightEdges: workflowStraightEdges,
+        workflowEdges,
+      },
+    });
+  }, [
+    aiFlashAnimations,
+    aiGeneratingNodes,
+    cleanupExpiredFlashes,
+    currentPageId,
+    dataSourceEdges,
+    dragState.isDragging,
+    editingContextId,
+    gridSize,
+    layoutGroups,
+    layouts,
+    selectedElementId,
+    selectedElementIds,
+    showGrid,
+    showWorkflowDataSources,
+    showWorkflowEvents,
+    showWorkflowLayoutGroups,
+    showWorkflowNavigation,
+    showWorkflowOverlay,
+    workflowEdges,
+    workflowFocusedPageId,
+    workflowStraightEdges,
+  ]);
+
   // ============================================
   // Pencil-style 중앙 pointerdown 핸들러
   // ============================================
@@ -537,52 +675,24 @@ export function BuilderCanvas({
   // SelectionLayer의 selectionBounds를 ref로 저장 (중앙 핸들러에서 접근)
   const selectionBoundsRef = useRef<BoundingBox | null>(null);
 
-  // selectionBounds 동기화: SelectionLayer가 bounds를 계산하면 ref에 저장
-  // SelectionLayer 내부의 computeSelectionBounds와 동일 로직이지만,
-  // BuilderCanvas에서 직접 접근 가능하도록 별도 계산
   const computeSelectionBoundsForHitTest = useCallback(() => {
     const state = useStore.getState();
-    const selectedIds = state.selectedElementIds;
-    if (selectedIds.length === 0) return null;
+    const selectedElements = resolveSelectedElementsForPage({
+      currentPageId: state.currentPageId,
+      elementsMap: state.elementsMap,
+      selectedElementIds: state.selectedElementIds,
+    });
 
-    const boxes: BoundingBox[] = [];
-
-    for (const id of selectedIds) {
-      const el = state.elementsMap.get(id);
-      if (!el || el.page_id !== state.currentPageId) continue;
-
-      if (el.tag.toLowerCase() === "body") {
-        const pos = el.page_id ? pagePositions?.[el.page_id] : undefined;
-        boxes.push({
-          x: pos?.x ?? 0,
-          y: pos?.y ?? 0,
-          width: pageWidth,
-          height: pageHeight,
-        });
-        continue;
-      }
-
-      const bounds = getElementBoundsSimple(id);
-      if (bounds) {
-        // screen 좌표를 canvas 좌표로 변환
-        const localPosition = screenToViewportPoint(
-          { x: bounds.x, y: bounds.y },
-          zoom,
-          panOffset,
-        );
-        const localSize = screenToViewportSize(
-          { width: bounds.width, height: bounds.height },
-          zoom,
-        );
-        boxes.push({
-          x: localPosition.x,
-          y: localPosition.y,
-          width: localSize.width,
-          height: localSize.height,
-        });
-      }
-    }
-    return calculateCombinedBounds(boxes);
+    return computeSelectionBounds({
+      getBounds: getElementBoundsSimple,
+      getContainer: getElementContainer,
+      pageHeight,
+      pagePositions,
+      pageWidth,
+      panOffset,
+      selectedElements,
+      zoom,
+    });
   }, [pageWidth, pageHeight, zoom, panOffset, pagePositions]);
 
   // selectionBounds를 프레임마다 갱신하지 않고, pointerdown 시점에 계산
@@ -831,8 +941,19 @@ export function BuilderCanvas({
             {/* 🆕 Multi-page: 메모이제이션된 페이지 컨테이너 (뷰포트 컬링 적용) */}
             {pages.map((page) => {
               const pos = pagePositions[page.id];
-              const data = allPageData.get(page.id);
-              if (!pos || !data) return null;
+              const rendererInput = buildPixiPageRendererInput({
+                elementById,
+                dirtyElementIds,
+                pageHeight,
+                pageId: page.id,
+                pagePositionVersion: pagePositionsVersion,
+                pageWidth,
+                panOffset,
+                sceneSnapshot,
+                wasmLayoutReady,
+                zoom,
+              });
+              if (!pos || !rendererInput) return null;
               return (
                 <PageContainer
                   key={page.id}
@@ -845,22 +966,10 @@ export function BuilderCanvas({
                   isVisible={visiblePageIds.has(page.id)}
                   appReady={appReady}
                   wasmLayoutReady={wasmLayoutReady}
-                  bodyElement={data.bodyElement}
+                  bodyElement={rendererInput.bodyElement}
                   onTitleDragStart={startPageDrag}
                 >
-                  <ElementsLayer
-                    pageElements={data.pageElements}
-                    bodyElement={data.bodyElement}
-                    elementById={elementById}
-                    depthMap={depthMap}
-                    pageWidth={pageWidth}
-                    pageHeight={pageHeight}
-                    zoom={zoom}
-                    panOffset={panOffset}
-                    wasmLayoutReady={wasmLayoutReady}
-                    layoutVersion={layoutVersion}
-                    pagePositionVersion={pagePositionsVersion}
-                  />
+                  <ElementsLayer rendererInput={rendererInput} />
                 </PageContainer>
               );
             })}
@@ -887,10 +996,9 @@ export function BuilderCanvas({
           backgroundColor={backgroundColor}
           app={pixiApp}
           dragStateRef={dragStateRef}
-          pageWidth={pageWidth}
-          pageHeight={pageHeight}
-          pageFrames={pageFrames}
-          currentPageId={currentPageId}
+          invalidateLayout={invalidateLayout}
+          invalidationPacket={rendererInvalidationPacket}
+          rendererInput={skiaRendererInput}
         />
       )}
 

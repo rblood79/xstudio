@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
-import { useStore } from "../../../stores";
+import type { Element } from "../../../../types/core/store.types";
 import { getElementBoundsSimple } from "../elementRegistry";
+import type { RendererSelectionInvalidation } from "../renderers";
 import { calculateCombinedBounds } from "../selection/types";
 import type { BoundingBox, DragState } from "../selection/types";
 import type { LassoRenderData } from "./selectionRenderer";
@@ -85,21 +86,22 @@ export function buildSelectionRenderData(
   cameraY: number,
   cameraZoom: number,
   treeBoundsMap: Map<string, BoundingBox>,
+  selection: RendererSelectionInvalidation,
+  elementsMap: Map<string, Element>,
   dragStateRef?: RefObject<DragState | null>,
   pageFrames?: PageFrameLike[],
 ): SelectionRenderResult {
-  const state = useStore.getState();
-  const selectedIds = state.selectedElementIds;
+  const selectedIds = selection.selectedElementIds;
 
   let selectionBounds: BoundingBox | null = null;
   let showHandles = false;
 
   if (selectedIds.length > 0) {
-    const currentPageId = state.currentPageId;
+    const currentPageId = selection.currentPageId;
     const boxes: BoundingBox[] = [];
 
     for (const id of selectedIds) {
-      const element = state.elementsMap.get(id);
+      const element = elementsMap.get(id);
       if (!element || element.page_id !== currentPageId) {
         continue;
       }

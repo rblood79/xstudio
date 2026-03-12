@@ -18,7 +18,7 @@
 import { useCallback, useEffect } from 'react';
 import type { MutableRefObject } from 'react';
 import { useStore } from '../../../stores';
-import { useCanvasSyncStore } from '../canvasSync';
+import { useViewportSyncStore } from '../stores';
 import { useScrollState } from '../../../stores/scrollState';
 import { notifyLayoutChange } from '../skia/useSkiaNode';
 import type { BoundingBox } from '../selection/types';
@@ -61,7 +61,7 @@ export function useScrollWheelInteraction({
       }
 
       // 스크린 → 씬-로컬 좌표 변환
-      const { zoom, panOffset } = useCanvasSyncStore.getState();
+      const { zoom, panOffset } = useViewportSyncStore.getState();
       const sceneX = (mouseX - rect.left - panOffset.x) / zoom;
       const sceneY = (mouseY - rect.top - panOffset.y) / zoom;
 

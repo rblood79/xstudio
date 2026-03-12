@@ -16,7 +16,7 @@ import { useCallback, useMemo, memo } from 'react';
 import { Graphics as PixiGraphics } from 'pixi.js';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCanvasSyncStore } from '../canvasSync';
+import { useViewportSyncStore } from '../stores';
 
 // ============================================
 // Types
@@ -95,7 +95,7 @@ export const GridLayer = memo(function GridLayer({
   useExtend(PIXI_COMPONENTS);
 
   // 🚀 자체 구독: BuilderCanvas 리렌더링 없이 GridLayer만 독립적으로 업데이트
-  const containerSize = useCanvasSyncStore((state) => state.containerSize);
+  const containerSize = useViewportSyncStore((state) => state.containerSize);
   const { width, height } = containerSize;
 
   // 줌 레벨에 따른 그리드 간격 계산

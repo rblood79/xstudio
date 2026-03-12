@@ -8,7 +8,7 @@
  */
 
 import { useStore } from '../../../stores';
-import { useCanvasSyncStore } from '../canvasSync';
+import { useViewportSyncStore } from '../stores';
 import { getViewportController } from './ViewportController';
 import { applyViewportState } from './viewportActions';
 
@@ -28,7 +28,8 @@ export function panToPage(pageId: string): void {
   const vc = getViewportController();
   if (!vc.isAttached()) return;
 
-  const { zoom, panOffset, containerSize, canvasSize } = useCanvasSyncStore.getState();
+  const { zoom, panOffset, containerSize, canvasSize } =
+    useViewportSyncStore.getState();
 
   // 페이지 중심 계산
   const pageCenterX = pos.x + canvasSize.width / 2;

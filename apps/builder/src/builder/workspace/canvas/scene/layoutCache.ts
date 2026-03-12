@@ -1,0 +1,319 @@
+import type { Element } from "../../../../types/core/store.types";
+import type { ComputedLayout } from "../layout/engines/LayoutEngine";
+import { calculateFullTreeLayout } from "../layout/engines/fullTreeLayout";
+import {
+  parseBorder,
+  parsePadding,
+} from "../layout/engines/utils";
+import type { PageDirtyState } from "./subtreeInvalidation";
+
+interface BuildPageChildrenMapInput {
+  bodyElement: Element | null;
+  elementById: Map<string, Element>;
+  pageElements: Element[];
+}
+
+interface CachedPageLayoutEntry {
+  bodyId: string;
+  fullTreeLayoutMap: Map<string, ComputedLayout> | null;
+  pageElementsSignature: string;
+  pageLayoutSignature: string;
+  pageHeight: number;
+  pageWidth: number;
+  wasmLayoutReady: boolean;
+}
+
+const pageLayoutCache = new Map<string, CachedPageLayoutEntry>();
+
+function isContentsElement(element: Element | undefined): boolean {
+  const style = element?.props?.style as Record<string, unknown> | undefined;
+  return style?.display === "contents";
+}
+
+export function createPageElementsSignature(elements: Element[]): string {
+  return elements
+    .map((element) => {
+      return `${element.id}:${element.parent_id ?? "root"}:${element.order_num ?? 0}`;
+    })
+    .join("|");
+}
+
+const LAYOUT_STYLE_KEYS = [
+  "display",
+  "position",
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+  "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  "padding",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "border",
+  "borderWidth",
+  "borderTopWidth",
+  "borderRightWidth",
+  "borderBottomWidth",
+  "borderLeftWidth",
+  "boxSizing",
+  "flex",
+  "flexBasis",
+  "flexGrow",
+  "flexShrink",
+  "flexDirection",
+  "flexWrap",
+  "justifyContent",
+  "alignItems",
+  "alignContent",
+  "alignSelf",
+  "gap",
+  "rowGap",
+  "columnGap",
+  "gridTemplateColumns",
+  "gridTemplateRows",
+  "gridAutoFlow",
+  "gridColumn",
+  "gridRow",
+  "overflow",
+  "whiteSpace",
+  "wordBreak",
+  "fontFamily",
+  "fontSize",
+  "fontWeight",
+  "fontStyle",
+  "lineHeight",
+  "letterSpacing",
+  "textTransform",
+  "aspectRatio",
+  "objectFit",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "transform",
+];
+
+const LAYOUT_PROP_KEYS = [
+  "children",
+  "text",
+  "label",
+  "title",
+  "description",
+  "placeholder",
+  "value",
+  "size",
+  "orientation",
+  "items",
+  "options",
+  "rows",
+  "columns",
+  "src",
+];
+
+function serializeLayoutRelevantValue(value: unknown): string {
+  if (value == null) {
+    return "";
+  }
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return String(value);
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "";
+  }
+}
+
+function createElementLayoutSignature(element: Element): string {
+  const props = (element.props ?? {}) as Record<string, unknown>;
+  const style = (props.style ?? {}) as Record<string, unknown>;
+
+  const styleSignature = LAYOUT_STYLE_KEYS.map(
+    (key) => `${key}=${serializeLayoutRelevantValue(style[key])}`,
+  ).join(";");
+  const propSignature = LAYOUT_PROP_KEYS.map(
+    (key) => `${key}=${serializeLayoutRelevantValue(props[key])}`,
+  ).join(";");
+
+  return [
+    element.id,
+    element.tag,
+    element.parent_id ?? "root",
+    element.order_num ?? 0,
+    styleSignature,
+    propSignature,
+  ].join("|");
+}
+
+export function createPageLayoutSignature(
+  bodyElement: Element | null,
+  elements: Element[],
+): string {
+  const signatureParts: string[] = [];
+
+  if (bodyElement) {
+    signatureParts.push(createElementLayoutSignature(bodyElement));
+  }
+
+  for (const element of elements) {
+    signatureParts.push(createElementLayoutSignature(element));
+  }
+
+  return signatureParts.join("||");
+}
+
+export function buildPageChildrenMap({
+  bodyElement,
+  elementById,
+  pageElements,
+}: BuildPageChildrenMapInput): Map<string | null, Element[]> {
+  const map = new Map<string | null, Element[]>();
+  const bodyId = bodyElement?.id ?? null;
+
+  const getLayoutParentId = (parentId: string | null): string | null => {
+    let currentId = parentId;
+    while (currentId) {
+      const parentElement = elementById.get(currentId);
+      if (!isContentsElement(parentElement)) {
+        break;
+      }
+      currentId = parentElement?.parent_id ?? bodyId;
+    }
+    return currentId;
+  };
+
+  for (const element of pageElements) {
+    if (isContentsElement(element)) {
+      continue;
+    }
+
+    const rawParentId = element.parent_id ?? bodyId;
+    const key = getLayoutParentId(rawParentId);
+    const list = map.get(key);
+    if (list) {
+      list.push(element);
+    } else {
+      map.set(key, [element]);
+    }
+  }
+
+  for (const list of map.values()) {
+    list.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  }
+
+  return map;
+}
+
+export function buildChildrenIdMap(
+  pageChildrenMap: Map<string | null, Element[]>,
+): Map<string, string[]> {
+  const childrenIdMap = new Map<string, string[]>();
+
+  for (const [key, elements] of pageChildrenMap) {
+    if (key != null) {
+      childrenIdMap.set(
+        key,
+        elements.map((element) => element.id),
+      );
+    }
+  }
+
+  return childrenIdMap;
+}
+
+interface GetCachedPageLayoutInput {
+  bodyElement: Element | null;
+  childrenIdMap: Map<string, string[]>;
+  elementById: Map<string, Element>;
+  pageChildrenMap: Map<string | null, Element[]>;
+  pageDirtyState: PageDirtyState;
+  pageElementsSignature: string;
+  pageLayoutSignature: string;
+  pageHeight: number;
+  pageWidth: number;
+  wasmLayoutReady: boolean;
+}
+
+export function getCachedPageLayout({
+  bodyElement,
+  childrenIdMap,
+  elementById,
+  pageChildrenMap,
+  pageDirtyState,
+  pageElementsSignature,
+  pageLayoutSignature,
+  pageHeight,
+  pageWidth,
+  wasmLayoutReady,
+}: GetCachedPageLayoutInput): Map<string, ComputedLayout> | null {
+  if (!bodyElement || !wasmLayoutReady) {
+    return null;
+  }
+
+  const cacheKey = bodyElement.page_id ?? bodyElement.id;
+  const cachedEntry = pageLayoutCache.get(cacheKey);
+
+  if (
+    cachedEntry &&
+    cachedEntry.bodyId === bodyElement.id &&
+    cachedEntry.pageElementsSignature === pageElementsSignature &&
+    cachedEntry.pageLayoutSignature === pageLayoutSignature &&
+    cachedEntry.pageWidth === pageWidth &&
+    cachedEntry.pageHeight === pageHeight &&
+    cachedEntry.wasmLayoutReady === wasmLayoutReady
+  ) {
+    return cachedEntry.fullTreeLayoutMap;
+  }
+
+  const bodyStyle = bodyElement.props?.style as Record<string, unknown> | undefined;
+  const bodyBorderVal = parseBorder(bodyStyle);
+  const bodyPaddingVal = parsePadding(bodyStyle, pageWidth);
+  const availableWidth =
+    pageWidth -
+    bodyBorderVal.left -
+    bodyBorderVal.right -
+    bodyPaddingVal.left -
+    bodyPaddingVal.right;
+  const availableHeight =
+    pageHeight -
+    bodyBorderVal.top -
+    bodyBorderVal.bottom -
+    bodyPaddingVal.top -
+    bodyPaddingVal.bottom;
+
+  const fullTreeLayoutMap = calculateFullTreeLayout(
+    bodyElement.id,
+    elementById,
+    childrenIdMap,
+    availableWidth,
+    availableHeight,
+    (id: string) => pageChildrenMap.get(id) ?? [],
+    pageDirtyState.hasDirty ? pageDirtyState.affectedLayoutNodeIds : undefined,
+  );
+
+  pageLayoutCache.set(cacheKey, {
+    bodyId: bodyElement.id,
+    fullTreeLayoutMap,
+    pageElementsSignature,
+    pageLayoutSignature,
+    pageHeight,
+    pageWidth,
+    wasmLayoutReady,
+  });
+
+  return fullTreeLayoutMap;
+}

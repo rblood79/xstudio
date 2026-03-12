@@ -25,45 +25,17 @@ import {
 import { useExtend } from "@pixi/react";
 import { PIXI_COMPONENTS } from "../pixiSetup";
 import { useStore } from "../../../stores";
-import { SelectionBox, type SelectionBoxHandle } from "./SelectionBox";
-import { LassoSelection } from "./LassoSelection";
-import type { BoundingBox, DragState } from "./types";
-import { calculateCombinedBounds } from "./types";
 import {
   getElementBoundsSimple,
   getElementContainer,
 } from "../elementRegistry";
-import { getViewportController } from "../viewport/ViewportController";
-import type { Container } from "pixi.js";
-import type { Element } from "../../../../types/core/store.types";
-
-// ============================================
-// Camera-local 좌표 헬퍼
-// ============================================
-
-/**
- * PixiJS 부모 체인을 탐색하여 Camera-local 좌표를 직접 계산
- *
- * panOffset(React state)에 의존하지 않아 팬 중에도 항상 정확.
- * DirectContainer가 x/y를 직접 설정하므로 각 노드의 position을 합산하면
- * Camera 기준 로컬 좌표가 된다.
- */
-function getCameraLocalPosition(
-  container: Container,
-): { x: number; y: number } | null {
-  let x = 0,
-    y = 0;
-  let node: Container | null = container;
-  while (node) {
-    if (node.label === "Camera") {
-      return { x, y };
-    }
-    x += node.position.x;
-    y += node.position.y;
-    node = node.parent as Container | null;
-  }
-  return null; // Camera 바깥 요소
-}
+import {
+  computeSelectionBounds as computeSelectionBoundsModel,
+  resolveSelectedElementsForPage,
+} from "../interaction";
+import { SelectionBox, type SelectionBoxHandle } from "./SelectionBox";
+import { LassoSelection } from "./LassoSelection";
+import type { BoundingBox, DragState } from "./types";
 
 // ============================================
 // Types
@@ -125,71 +97,24 @@ export const SelectionLayer = memo(function SelectionLayer({
   // 선택된 요소들 (Body 포함)
   // 🚀 최적화: getState()로 elementsMap 조회 (구독 없음)
   const selectedElements = useMemo(() => {
-    if (!currentPageId || selectedElementIds.length === 0) return [];
-    const elementsMap = getElementsMap();
-    const resolved: Element[] = [];
-    for (const id of selectedElementIds) {
-      const el = elementsMap.get(id);
-      if (el && el.page_id === currentPageId) {
-        resolved.push(el);
-      }
-    }
-    return resolved;
+    return resolveSelectedElementsForPage({
+      currentPageId,
+      elementsMap: getElementsMap(),
+      selectedElementIds,
+    });
   }, [currentPageId, selectedElementIds, getElementsMap]);
 
-  // 🚀 Phase 2: ElementRegistry의 getBounds() 사용으로 전환
-  // 🚀 Phase 7: Camera 로컬 좌표 계산
-  // 개선: PixiJS 부모 체인을 직접 탐색하여 Camera-local 좌표 계산
-  // panOffset(React state)에 의존하지 않아 팬/줌 중에도 항상 정확
   const computeSelectionBounds = useCallback(() => {
-    if (selectedElements.length === 0) return null;
-
-    // 실시간 zoom 조회 (ViewportController > prop fallback)
-    const controller = getViewportController();
-    const currentZoom = controller?.getState()?.scale ?? zoom;
-
-    const boxes = selectedElements.map((el) => {
-      // Body 요소는 페이지 전체 크기로 설정 (이미 Camera 로컬 좌표)
-      if (el.tag.toLowerCase() === "body") {
-        const pos = el.page_id ? pagePositions?.[el.page_id] : undefined;
-        return {
-          x: pos?.x ?? 0,
-          y: pos?.y ?? 0,
-          width: pageWidth,
-          height: pageHeight,
-        };
-      }
-
-      // 우선: PixiJS 부모 체인에서 Camera-local 좌표 직접 계산
-      // panOffset 불필요 → 팬 중에도 정확
-      const container = getElementContainer(el.id);
-      if (container) {
-        const localPos = getCameraLocalPosition(container);
-        if (localPos) {
-          const bounds = getElementBoundsSimple(el.id);
-          return {
-            x: localPos.x,
-            y: localPos.y,
-            width: (bounds?.width ?? 100) / currentZoom,
-            height: (bounds?.height ?? 40) / currentZoom,
-          };
-        }
-      }
-
-      // fallback: 기존 panOffset 기반 변환
-      const bounds = getElementBoundsSimple(el.id);
-      if (bounds) {
-        const localX = (bounds.x - panOffset.x) / currentZoom;
-        const localY = (bounds.y - panOffset.y) / currentZoom;
-        const localWidth = bounds.width / currentZoom;
-        const localHeight = bounds.height / currentZoom;
-        return { x: localX, y: localY, width: localWidth, height: localHeight };
-      }
-      // fallback: 기본값
-      return { x: 0, y: 0, width: 100, height: 40 };
+    return computeSelectionBoundsModel({
+      getBounds: getElementBoundsSimple,
+      getContainer: getElementContainer,
+      pageHeight,
+      pagePositions,
+      pageWidth,
+      panOffset,
+      selectedElements,
+      zoom,
     });
-
-    return calculateCombinedBounds(boxes);
   }, [selectedElements, pageWidth, pageHeight, zoom, panOffset, pagePositions]);
 
   // 🚀 Phase 2: 선택 변경 시 bounds 계산
