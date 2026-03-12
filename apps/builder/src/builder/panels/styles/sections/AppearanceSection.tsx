@@ -29,7 +29,7 @@ import { shadows } from "@xstudio/specs";
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useAppearanceValuesJotai } from "../hooks/useAppearanceValuesJotai";
-import { useResetStyles } from "../hooks/useResetStyles";
+import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
 import { isFillV2Enabled } from "../../../../utils/featureFlags";
 import { useStore } from "../../../stores";
 
@@ -192,18 +192,21 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
  * - 🚀 Phase 3: Jotai 기반 - props 불필요
  * - 🚀 Phase 4.2c: useResetStyles 경량 훅 사용
  */
+const APPEARANCE_PROPS = [
+  "backgroundColor",
+  "borderColor",
+  "borderWidth",
+  "borderRadius",
+  "borderStyle",
+  "boxShadow",
+];
+
 export const AppearanceSection = memo(function AppearanceSection() {
   const resetStyles = useResetStyles();
+  const hasDirty = useHasDirtyStyles(APPEARANCE_PROPS);
 
   const handleReset = () => {
-    resetStyles([
-      "backgroundColor",
-      "borderColor",
-      "borderWidth",
-      "borderRadius",
-      "borderStyle",
-      "boxShadow",
-    ]);
+    resetStyles(APPEARANCE_PROPS);
     // V2: fills 배열도 초기화
     if (isFillV2Enabled()) {
       useStore.getState().updateSelectedFills([]);
@@ -211,7 +214,11 @@ export const AppearanceSection = memo(function AppearanceSection() {
   };
 
   return (
-    <PropertySection id="appearance" title="Appearance" onReset={handleReset}>
+    <PropertySection
+      id="appearance"
+      title="Appearance"
+      onReset={hasDirty ? handleReset : undefined}
+    >
       <AppearanceSectionContent />
     </PropertySection>
   );

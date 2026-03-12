@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+In Progress (Phase 2/4/5/6 완료, ESLint 정리 완료)
 
 ## Date
 
@@ -234,17 +234,17 @@ Phase 0 ─┬─→ Phase 1 (trivial)
                                  └──→ Phase 5 (all prior phases 완료 후)
 ```
 
-| 순서 | Phase   | 잔여 작업                                                                      | 완성도 | 위험 |
-| :--: | ------- | ------------------------------------------------------------------------------ | :----: | :--: |
-|  1   | Phase 0 | baseline 문서 작성, 성능 수치 수집, debug logging 표준화                       |  30%   |  L   |
-|  2   | Phase 1 | Workspace.tsx 책임 주석 + 문서화 (코드 변경 거의 없음)                         |  90%   |  L   |
-|  3   | Phase 8 | Rust target/ gitignore 확인, IDE 탐색 제외 설정                                |  80%   |  L   |
-|  4   | Phase 3 | `InvalidationReason` enum, 무효화 규칙 표, 캐시 우회 정리                      |   0%   |  L   |
-|  5   | Phase 2 | canvasSync mirror 검증, 이중 동기화 경로 제거                                  |  70%   |  M   |
-|  6   | Phase 6 | cssVariableReader 4분할, theme watcher 서비스 분리                             |  40%   |  M   |
-|  7   | Phase 4 | SkiaOverlay 함수 추출, `FrameInputSnapshot`/`SharedSceneDerivedData` 타입 정의 |  60%   |  M   |
-|  8   | Phase 7 | CanvasScrollbar querySelector 제거, shell state 기반 전환                      |  20%   |  M   |
-|  9   | Phase 5 | nodeRenderers.ts extract-only 분해                                             |   0%   |  H   |
+| 순서 | Phase   | 잔여 작업                                                                 |  완성도  | 위험 | 상태      |
+| :--: | ------- | ------------------------------------------------------------------------- | :------: | :--: | --------- |
+|  1   | Phase 0 | baseline 문서 작성 완료, 성능 수치 수집 (런타임 측정 대기)                |   70%    |  L   | 문서 완료 |
+|  2   | Phase 1 | Workspace.tsx 책임 주석 + 문서화                                          |   90%    |  L   | 거의 완료 |
+|  3   | Phase 8 | Rust target/ gitignore 확인, IDE 탐색 제외 설정                           |   80%    |  L   | 거의 완료 |
+|  4   | Phase 3 | `InvalidationReason` enum, 무효화 규칙 표, 캐시 우회 정리                 |    0%    |  L   | 미착수    |
+|  5   | Phase 2 | canvasSync deprecation 완료, viewport 단일 원천 확립                      | **100%** |  M   | **완료**  |
+|  6   | Phase 6 | cssVariableReader 4분할 완료 (barrel re-export)                           | **100%** |  M   | **완료**  |
+|  7   | Phase 4 | SkiaOverlay 분해, skiaOverlayBuilder/skiaFramePlan/skiaFramePipeline 추출 | **100%** |  M   | **완료**  |
+|  8   | Phase 7 | CanvasScrollbar querySelector 제거, shell state 기반 전환                 |   20%    |  M   | 미착수    |
+|  9   | Phase 5 | nodeRenderers.ts extract-only 분해 (8파일 barrel 구조)                    | **100%** |  H   | **완료**  |
 
 이 순서의 원칙은 다음과 같다.
 
@@ -839,6 +839,105 @@ source review와 static analysis를 방해하지 않도록 격리한다.
 2. command stream 경로와 tree 경로를 얼마나 오래 병행 유지할지 결정 필요
 3. generated wasm/pkg 산출물의 최종 위치를 빌드 시스템 차원에서 어떻게 다룰지 결정 필요
 4. text edit overlay가 장기적으로 Skia runtime service와 어떤 경계로 묶일지 결정 필요
+
+---
+
+## Progress Log
+
+### 2026-03-12: Phase 2/4/5/6 완료 + 프로젝트 전체 ESLint/TypeScript 정리
+
+#### Phase 2 완료 — Viewport Runtime 정리
+
+- `canvasSync.ts`의 `setZoom`/`setPanOffset`에 런타임 deprecation 경고 추가
+- `ViewportController`가 authoritative state로 확립됨
+- `useCanvasSyncStore`는 UI 표시용 mirror snapshot으로 축소
+
+#### Phase 4 완료 — Skia Frame Build Pipeline 분리
+
+`SkiaOverlay.tsx`에서 3개 모듈 추출:
+
+| 파일                    | 역할                                      | 규모      |
+| ----------------------- | ----------------------------------------- | --------- |
+| `skiaOverlayBuilder.ts` | overlay build 로직 (workflow/cache)       | ~426줄    |
+| `skiaFramePlan.ts`      | FrameInputSnapshot + FrameRenderPlan 조합 | 신규      |
+| `skiaFramePipeline.ts`  | buildSkiaFrameContent 파이프라인          | 기존 추출 |
+
+타입 정의:
+
+- `SharedSceneDerivedData` — 프레임당 1회 계산, 모든 오버레이 공유
+- `FrameRenderPlan` — content + overlay + screen overlay 통합
+- `ContentBuildResult`, `SelectionOverlayBuildResult`, `WorkflowOverlayBuildResult`
+
+`SkiaOverlay.tsx`: 1268줄 → ~1026줄 (orchestration 중심으로 축소)
+
+#### Phase 5 완료 — Node Renderer 분해
+
+`nodeRenderers.ts`를 extract-only 원칙으로 8파일 barrel 구조로 분해:
+
+| 파일                     | 역할              |
+| ------------------------ | ----------------- |
+| `nodeRenderers.ts`       | 14줄 barrel       |
+| `nodeRendererTypes.ts`   | 타입 정의         |
+| `nodeRendererState.ts`   | 상태/캐시 관리    |
+| `nodeRendererTree.ts`    | 트리 순회/빌드    |
+| `nodeRendererText.ts`    | 텍스트 렌더링     |
+| `nodeRendererBorders.ts` | 테두리 렌더링     |
+| `nodeRendererShapes.ts`  | Spec shapes 렌더  |
+| `nodeRendererImage.ts`   | 이미지 렌더링     |
+| `nodeRendererClip.ts`    | 클리핑/오버플로우 |
+
+#### Phase 6 완료 — Theme & Resource Runtime 분해
+
+`cssVariableReader.ts` (7502줄) → 16줄 barrel + 4개 모듈:
+
+| 파일                     | 역할                     |
+| ------------------------ | ------------------------ |
+| `cssVariableCore.ts`     | CSS 변수 읽기/변환 기본  |
+| `cssLabelPresets.ts`     | 라벨 프리셋              |
+| `cssComponentColors.ts`  | 컴포넌트별 색상 프리셋   |
+| `cssComponentPresets.ts` | 컴포넌트별 사이즈 프리셋 |
+
+#### 프로젝트 전체 ESLint/TypeScript 정리
+
+TypeScript: **0 에러** (전체 통과)
+
+ESLint 수정 내역:
+
+| 카테고리              | 수정 수 | 상세                                                            |
+| --------------------- | :-----: | --------------------------------------------------------------- |
+| unused imports/vars   |   ~20   | 전체 패키지 (builder, shared, publish)                          |
+| `any` 타입 제거       |    2    | `ComponentSpec<any>` → `ComponentSpec<Record<string, unknown>>` |
+| set-state-in-effect   |    8    | `queueMicrotask()` 래핑 (ScrubInput, PropertyUnitInput 등)      |
+| refs-during-render    |    7    | ref 할당을 useEffect 내부로 이동                                |
+| rules-of-hooks        |    1    | ComboBox early return 위치 수정                                 |
+| no-useless-assignment |    2    | skiaFramePipeline, ThemeService                                 |
+| let→const             |    1    | export.utils.ts                                                 |
+| eslint-disable 정리   |    2    | 불필요한 suppress 지시문 제거                                   |
+
+##### 잔존 ESLint 에러 5개 (React Compiler 한계 — 수정 불필요)
+
+| 파일                | 줄   | 에러                                                             | 횟수 |
+| ------------------- | ---- | ---------------------------------------------------------------- | :--: |
+| `ElementSprite.tsx` | 1364 | Compilation Skipped: Existing memoization could not be preserved |  x4  |
+| `TextSprite.tsx`    | 292  | Compilation Skipped: Existing memoization could not be preserved |  x1  |
+
+**분석 결과: 리팩터링 불필요**
+
+- React Compiler가 복잡한 수동 `useMemo` (770줄/200줄)를 자동 보존하지 못할 때 발생
+- 수동 메모이제이션이 **그대로 유지**되므로 런타임 동작/성능에 영향 없음
+- "graceful degradation" — 컴파일러가 스킵하면 기존 수동 최적화가 계속 작동
+- 분할 시 위험(캔버스 렌더링 핵심 경로, 회귀 범위 넓음) 대비 이익(lint 에러 제거뿐) 불균형
+- 필요 시 별도 ADR로 "Sprite 렌더 데이터 파이프라인 분할" 계획 권장
+
+### 남은 Phase
+
+| Phase   | 완성도 | 다음 작업                                      |
+| ------- | :----: | ---------------------------------------------- |
+| Phase 0 |  70%   | 런타임 성능 수치 수집 (브라우저 측정 필요)     |
+| Phase 1 |  90%   | Workspace.tsx 책임 주석 마무리                 |
+| Phase 3 |   0%   | `InvalidationReason` enum, 무효화 규칙 표 설계 |
+| Phase 7 |  20%   | CanvasScrollbar querySelector 제거             |
+| Phase 8 |  80%   | generated artifact 격리 확인                   |
 
 ---
 

@@ -76,12 +76,8 @@ export const ComponentStateSection = memo(function ComponentStateSection({
 }: ComponentStateSectionProps) {
   if (!hasSpec) return null;
 
-  const handleReset = () => {
-    // State는 리셋 시 default로 복귀
-  };
-
   return (
-    <PropertySection id="state" title="State" onReset={handleReset}>
+    <PropertySection id="state" title="State">
       <ComponentStateSectionContent />
     </PropertySection>
   );

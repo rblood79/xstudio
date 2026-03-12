@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useTransformValuesJotai } from "../hooks/useTransformValuesJotai";
-import { useResetStyles } from "../hooks/useResetStyles";
+import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
 import { useCanvasSyncStore } from "../../../workspace/canvas/canvasSync";
 import { useAtomValue } from "jotai";
 import {
@@ -502,30 +502,37 @@ const TransformSectionContent = memo(function TransformSectionContent() {
  * - Phase 3: Jotai 기반 - props 불필요
  * - Phase 4.2c: useResetStyles 경량 훅 사용
  */
+const TRANSFORM_PROPS = [
+  "width",
+  "height",
+  "top",
+  "left",
+  "flexGrow",
+  "flexShrink",
+  "flexBasis",
+  "alignSelf",
+  "justifySelf",
+  "minWidth",
+  "maxWidth",
+  "minHeight",
+  "maxHeight",
+  "aspectRatio",
+];
+
 export const TransformSection = memo(function TransformSection() {
   const resetStyles = useResetStyles();
+  const hasDirty = useHasDirtyStyles(TRANSFORM_PROPS);
 
   const handleReset = () => {
-    resetStyles([
-      "width",
-      "height",
-      "top",
-      "left",
-      "flexGrow",
-      "flexShrink",
-      "flexBasis",
-      "alignSelf",
-      "justifySelf",
-      "minWidth",
-      "maxWidth",
-      "minHeight",
-      "maxHeight",
-      "aspectRatio",
-    ]);
+    resetStyles(TRANSFORM_PROPS);
   };
 
   return (
-    <PropertySection id="transform" title="Transform" onReset={handleReset}>
+    <PropertySection
+      id="transform"
+      title="Transform"
+      onReset={hasDirty ? handleReset : undefined}
+    >
       <TransformSectionContent />
     </PropertySection>
   );

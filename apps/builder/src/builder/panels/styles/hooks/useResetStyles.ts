@@ -9,19 +9,16 @@
  * 🚀 Body 기본값 보존: Reset 시 컴포넌트 기본값으로 복원
  */
 
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { useStore } from "../../../stores";
 import { getDefaultProps } from "../../../../types/builder/unified.types";
-import { shallow } from "zustand/shallow";
 
 /**
  * 선택된 요소의 특정 속성들이 기본값과 다른지 확인하는 훅
  * 리셋 버튼 조건부 표시용
  */
 export function useHasDirtyStyles(properties: string[]): boolean {
-  const prevRef = useRef(false);
-
-  const hasDirty = useStore((state) => {
+  return useStore((state) => {
     const selectedId = state.selectedElementId;
     if (!selectedId) return false;
 
@@ -39,13 +36,6 @@ export function useHasDirtyStyles(properties: string[]): boolean {
     }
     return false;
   });
-
-  // shallow 비교로 불필요한 리렌더 방지
-  if (hasDirty !== prevRef.current) {
-    prevRef.current = hasDirty;
-  }
-
-  return prevRef.current;
 }
 
 /**

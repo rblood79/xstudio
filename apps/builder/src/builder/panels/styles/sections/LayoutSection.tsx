@@ -32,7 +32,7 @@ import {
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useLayoutValuesJotai } from "../hooks/useLayoutValuesJotai";
-import { useResetStyles } from "../hooks/useResetStyles";
+import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
 import { useAtomValue } from "jotai";
 import { useStore } from "../../../stores";
 import {
@@ -543,32 +543,39 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
  * - 🚀 Phase 3: Jotai 기반 - props 불필요
  * - 🚀 Phase 4.2c: useResetStyles 경량 훅 사용
  */
+const LAYOUT_PROPS = [
+  "display",
+  "flexDirection",
+  "flexWrap",
+  "alignItems",
+  "justifyContent",
+  "gap",
+  "padding",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+];
+
 export const LayoutSection = memo(function LayoutSection() {
   const resetStyles = useResetStyles();
+  const hasDirty = useHasDirtyStyles(LAYOUT_PROPS);
 
   const handleReset = () => {
-    resetStyles([
-      "display",
-      "flexDirection",
-      "flexWrap",
-      "alignItems",
-      "justifyContent",
-      "gap",
-      "padding",
-      "paddingTop",
-      "paddingRight",
-      "paddingBottom",
-      "paddingLeft",
-      "margin",
-      "marginTop",
-      "marginRight",
-      "marginBottom",
-      "marginLeft",
-    ]);
+    resetStyles(LAYOUT_PROPS);
   };
 
   return (
-    <PropertySection id="layout" title="Layout" onReset={handleReset}>
+    <PropertySection
+      id="layout"
+      title="Layout"
+      onReset={hasDirty ? handleReset : undefined}
+    >
       <LayoutSectionContent />
     </PropertySection>
   );

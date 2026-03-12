@@ -38,7 +38,7 @@ import {
 import { useStyleActions } from "../hooks/useStyleActions";
 import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useTypographyValuesJotai } from "../hooks/useTypographyValuesJotai";
-import { useResetStyles } from "../hooks/useResetStyles";
+import { useResetStyles, useHasDirtyStyles } from "../hooks/useResetStyles";
 import {
   DEFAULT_FONT_OPTIONS,
   FONT_REGISTRY_STORAGE_KEY,
@@ -457,32 +457,39 @@ const TypographySectionContent = memo(function TypographySectionContent() {
  * - 🚀 Phase 3: Jotai 기반 - props 불필요
  * - 🚀 Phase 4.2c: useResetStyles 경량 훅 사용
  */
+const TYPOGRAPHY_PROPS = [
+  "fontFamily",
+  "fontSize",
+  "fontWeight",
+  "fontStyle",
+  "lineHeight",
+  "letterSpacing",
+  "color",
+  "textAlign",
+  "textDecoration",
+  "textTransform",
+  "verticalAlign",
+  "whiteSpace",
+  "wordBreak",
+  "overflowWrap",
+  "textOverflow",
+  "overflow",
+];
+
 export const TypographySection = memo(function TypographySection() {
   const resetStyles = useResetStyles();
+  const hasDirty = useHasDirtyStyles(TYPOGRAPHY_PROPS);
 
   const handleReset = () => {
-    resetStyles([
-      "fontFamily",
-      "fontSize",
-      "fontWeight",
-      "fontStyle",
-      "lineHeight",
-      "letterSpacing",
-      "color",
-      "textAlign",
-      "textDecoration",
-      "textTransform",
-      "verticalAlign",
-      "whiteSpace",
-      "wordBreak",
-      "overflowWrap",
-      "textOverflow",
-      "overflow",
-    ]);
+    resetStyles(TYPOGRAPHY_PROPS);
   };
 
   return (
-    <PropertySection id="typography" title="Typography" onReset={handleReset}>
+    <PropertySection
+      id="typography"
+      title="Typography"
+      onReset={hasDirty ? handleReset : undefined}
+    >
       <TypographySectionContent />
     </PropertySection>
   );
