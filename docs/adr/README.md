@@ -121,10 +121,21 @@
 - **ADR-035**: Workspace Canvas Runtime 리팩토링 — Phase 2/4/5/6 완료 (4/9 Phase), Phase 0/1/3/7/8 잔여
 - **근거**: 핵심 런타임 구조 개선이 향후 기능 추가(데이터 바인딩 등)의 기반. Phase 2 viewport 단일 원천 확립, Phase 4 SkiaOverlay 3모듈 분해, Phase 5 nodeRenderers 8파일 barrel, Phase 6 cssVariableReader 4분할 완료. 프로젝트 전체 ESLint ~43건 수정 (unused vars, any 타입, set-state-in-effect, rules-of-hooks 등). 잔존 5개 에러는 React Compiler 한계 (Compilation Skipped — 수동 useMemo 정상 작동)
 
-### P3: ADR-013 데이터 바인딩
+### P3: ADR-032 → ADR-034 → ADR-013 (이벤트 + 데이터 바인딩)
 
 - ~~**ADR-024**: CSS 변수명 S2 체계 전환~~ — Superseded (ADR-022/028/029에서 4축 체계로 전환 완료)
-- **ADR-013**: Collection 컴포넌트 데이터 바인딩 1클릭 자동화 — ADR-030 컴포넌트 확정 후 실행
+
+**의존 체인** (순서 필수):
+
+```
+ADR-032 (Events Platform 재설계)
+  → ADR-034 (Events Panel Renovation)
+    → ADR-013 (Quick Connect 데이터 바인딩)
+```
+
+1. **ADR-032**: 현재 이벤트 엔진(Trigger/Effect 단순 구조) → Capability/Recipe 모델 + BindingRef + Condition DSL 재설계. 데이터 바인딩이 이벤트 시스템 위에서 동작하므로 **선행 필수**
+2. **ADR-034**: 재설계된 이벤트 모델을 조작할 패널 UX (recipe 중심 + diagnostics/preview). 이벤트 모델 없이 UI 구현 불가
+3. **ADR-013**: 이벤트 플랫폼 + 패널 UI 위에 Collection 데이터 바인딩 1클릭 자동화 레이어 구축
 
 ### P4: ADR-009 Phase 2 잔여 + ADR-020 + ADR-026 잔여
 
