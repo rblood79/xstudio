@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Globe, Plus, Trash2, Edit2, Play } from "lucide-react";
 import { useDataStore, useApiEndpoints } from "../../../stores/data";
 import { useDataTableEditorStore } from "../stores/dataTableEditorStore";
-import { SectionHeader } from "../../../components";
+import { Section } from "../../../components";
 import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface ApiEndpointListProps {
@@ -27,10 +27,13 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
   const openApiEditor = useDataTableEditorStore((state) => state.openApiEditor);
 
   // 현재 편집 중인 API ID (하이라이트용)
-  const editingApiId = editorMode?.type === "api-edit" ? editorMode.endpointId : null;
+  const editingApiId =
+    editorMode?.type === "api-edit" ? editorMode.endpointId : null;
 
   const handleCreate = async () => {
-    const url = prompt("API URL을 입력하세요 (예: https://pokeapi.co/api/v2/pokemon):");
+    const url = prompt(
+      "API URL을 입력하세요 (예: https://pokeapi.co/api/v2/pokemon):",
+    );
     if (!url) return;
 
     // URL 파싱하여 baseUrl과 path 분리
@@ -85,85 +88,83 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
   };
 
   return (
-    <div className="section">
-      <SectionHeader
-        title="API List"
-        actions={
-          <span className="datatable-list-count">{apiEndpoints.length}개</span>
-        }
-      />
-      <div className="section-content">
-        {apiEndpoints.length === 0 ? (
-          <div className="datatable-empty">
-            <Globe size={32} className="datatable-empty-icon" />
-            <p className="datatable-empty-text">
-              API Endpoint가 없습니다.
-              <br />
-              새 API를 추가하세요.
-            </p>
-          </div>
-        ) : (
-          <div className="list-group" role="list">
-            {apiEndpoints.map((endpoint) => (
-              <div
-                key={endpoint.id}
-                role="listitem"
-                className={`list-item ${selectedId === endpoint.id ? "selected" : ""} ${editingApiId === endpoint.id ? "editing" : ""}`}
-                onClick={() => setSelectedId(endpoint.id)}
-              >
-                <div className="list-item-icon">
-                  <Globe {...iconProps} />
-                </div>
-                <div className="list-item-content">
-                  <div className="list-item-name">{endpoint.name}</div>
-                  <div className="list-item-meta">
-                    {endpoint.baseUrl}
-                    {endpoint.path}
-                  </div>
-                </div>
-                <span className={`list-item-badge method ${endpoint.method}`}>
-                  {endpoint.method}
-                </span>
-                <div className="list-item-actions">
-                  <button
-                    type="button"
-                    className="iconButton"
-                    onClick={(e) => handleExecute(endpoint.id, e)}
-                    title="테스트"
-                  >
-                    <Play {...iconEditProps} />
-                  </button>
-                  <button
-                    type="button"
-                    className="iconButton"
-                    onClick={(e) => handleEdit(endpoint.id, e)}
-                    title="편집"
-                  >
-                    <Edit2 {...iconEditProps} />
-                  </button>
-                  <button
-                    type="button"
-                    className="iconButton"
-                    onClick={(e) => handleDelete(endpoint.id, e)}
-                    title="삭제"
-                  >
-                    <Trash2 {...iconEditProps} />
-                  </button>
+    <Section
+      id="api-list"
+      title="API List"
+      badge={
+        <span className="datatable-list-count">{apiEndpoints.length}개</span>
+      }
+      collapsible={false}
+    >
+      {apiEndpoints.length === 0 ? (
+        <div className="datatable-empty">
+          <Globe size={32} className="datatable-empty-icon" />
+          <p className="datatable-empty-text">
+            API Endpoint가 없습니다.
+            <br />새 API를 추가하세요.
+          </p>
+        </div>
+      ) : (
+        <div className="list-group" role="list">
+          {apiEndpoints.map((endpoint) => (
+            <div
+              key={endpoint.id}
+              role="listitem"
+              className={`list-item ${selectedId === endpoint.id ? "selected" : ""} ${editingApiId === endpoint.id ? "editing" : ""}`}
+              onClick={() => setSelectedId(endpoint.id)}
+            >
+              <div className="list-item-icon">
+                <Globe {...iconProps} />
+              </div>
+              <div className="list-item-content">
+                <div className="list-item-name">{endpoint.name}</div>
+                <div className="list-item-meta">
+                  {endpoint.baseUrl}
+                  {endpoint.path}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+              <span className={`list-item-badge method ${endpoint.method}`}>
+                {endpoint.method}
+              </span>
+              <div className="list-item-actions">
+                <button
+                  type="button"
+                  className="iconButton"
+                  onClick={(e) => handleExecute(endpoint.id, e)}
+                  title="테스트"
+                >
+                  <Play {...iconEditProps} />
+                </button>
+                <button
+                  type="button"
+                  className="iconButton"
+                  onClick={(e) => handleEdit(endpoint.id, e)}
+                  title="편집"
+                >
+                  <Edit2 {...iconEditProps} />
+                </button>
+                <button
+                  type="button"
+                  className="iconButton"
+                  onClick={(e) => handleDelete(endpoint.id, e)}
+                  title="삭제"
+                >
+                  <Trash2 {...iconEditProps} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-        <button
-          type="button"
-          className="datatable-add-btn"
-          onClick={handleCreate}
-        >
-          <Plus {...iconProps} />
-          <span>API 추가</span>
-        </button>
-      </div>
-    </div>
+      <button
+        type="button"
+        className="datatable-add-btn"
+        onClick={handleCreate}
+      >
+        <Plus {...iconProps} />
+        <span>API 추가</span>
+      </button>
+    </Section>
   );
 }

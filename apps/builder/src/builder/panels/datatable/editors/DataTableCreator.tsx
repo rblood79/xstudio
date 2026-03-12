@@ -29,7 +29,7 @@ import {
   Factory,
 } from "lucide-react";
 import { useDataStore } from "../../../stores/data";
-import { SectionHeader } from "../../../components";
+import { Section } from "../../../components";
 import type { DataTablePreset, PresetCategory } from "../presets/types";
 import { PRESET_CATEGORIES } from "../presets/types";
 import { getPresetsByCategory } from "../presets/dataTablePresets";
@@ -97,7 +97,7 @@ export function DataTableCreator({
   const [selectedCategory, setSelectedCategory] =
     useState<PresetCategory>("users-auth");
   const [selectedPreset, setSelectedPreset] = useState<DataTablePreset | null>(
-    null
+    null,
   );
   const [sampleCount, setSampleCount] = useState(10);
   const [tableName, setTableName] = useState("");
@@ -105,7 +105,7 @@ export function DataTableCreator({
   // 카테고리별 Preset 목록
   const presetsInCategory = useMemo(
     () => getPresetsByCategory(selectedCategory),
-    [selectedCategory]
+    [selectedCategory],
   );
 
   // 카테고리 변경 핸들러
@@ -249,46 +249,44 @@ export function DataTableCreator({
 
       {/* Schema Preview - table-creator의 형제로 위치 */}
       {mode === "preset" && selectedPreset && (
-        <div className="section" data-section-id="schema-preview">
-          <SectionHeader
-            icon={renderIcon(selectedPreset.icon, 16)}
-            title={`${selectedPreset.name} Schema`}
-            actions={
-              <div className="creator-sample-count">
-                <label htmlFor="sample-count">row count</label>
-                <input
-                  id="sample-count"
-                  aria-label="row count"
-                  aria-required="true"
-                  aria-invalid="false"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={sampleCount}
-                  onChange={(e) =>
-                    setSampleCount(
-                      Math.max(0, Math.min(100, parseInt(e.target.value) || 0))
-                    )
-                  }
-                />
-              </div>
-            }
-          />
-          <div className="section-content">
-            {selectedPreset.schema.map((field) => (
-              <div key={field.key} className="creator-schema-field">
-                <span className="schema-field-name">
-                  {field.key}
-                  {field.required && (
-                    <span className="schema-field-required">*</span>
-                  )}
-                </span>
-                <span className="schema-field-type">{field.type}</span>
-                <span className="schema-field-label">{field.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Section
+          id="schema-preview"
+          title={`${selectedPreset.name} Schema`}
+          actions={
+            <div className="creator-sample-count">
+              <label htmlFor="sample-count">row count</label>
+              <input
+                id="sample-count"
+                aria-label="row count"
+                aria-required="true"
+                aria-invalid="false"
+                type="number"
+                min="0"
+                max="100"
+                value={sampleCount}
+                onChange={(e) =>
+                  setSampleCount(
+                    Math.max(0, Math.min(100, parseInt(e.target.value) || 0)),
+                  )
+                }
+              />
+            </div>
+          }
+          collapsible={false}
+        >
+          {selectedPreset.schema.map((field) => (
+            <div key={field.key} className="creator-schema-field">
+              <span className="schema-field-name">
+                {field.key}
+                {field.required && (
+                  <span className="schema-field-required">*</span>
+                )}
+              </span>
+              <span className="schema-field-type">{field.type}</span>
+              <span className="schema-field-label">{field.label}</span>
+            </div>
+          ))}
+        </Section>
       )}
 
       {/* Footer */}

@@ -8,7 +8,7 @@
 import { Variable, Plus, Trash2, Edit2 } from "lucide-react";
 import { useDataStore, useVariables } from "../../../stores/data";
 import { useDataTableEditorStore } from "../stores/dataTableEditorStore";
-import { SectionHeader } from "../../../components";
+import { Section } from "../../../components";
 import type { Variable as VariableType } from "../../../../types/builder/data.types";
 import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
@@ -23,10 +23,13 @@ export function VariableList({ projectId }: VariableListProps) {
 
   // Editor Store 액션
   const editorMode = useDataTableEditorStore((state) => state.mode);
-  const openVariableEditor = useDataTableEditorStore((state) => state.openVariableEditor);
+  const openVariableEditor = useDataTableEditorStore(
+    (state) => state.openVariableEditor,
+  );
 
   // 현재 편집 중인 Variable ID (하이라이트용)
-  const editingVariableId = editorMode?.type === "variable-edit" ? editorMode.variableId : null;
+  const editingVariableId =
+    editorMode?.type === "variable-edit" ? editorMode.variableId : null;
 
   // Group by scope
   const globalVariables = variables.filter((v) => v.scope === "global");
@@ -108,62 +111,62 @@ export function VariableList({ projectId }: VariableListProps) {
   );
 
   return (
-    <div className="section">
-      <SectionHeader
-        title="Variable List"
-        actions={
-          <span className="datatable-list-count">{variables.length}개</span>
-        }
-      />
-      <div className="section-content">
-        {variables.length === 0 ? (
-          <div className="datatable-empty">
-            <Variable size={32} className="datatable-empty-icon" />
-            <p className="datatable-empty-text">
-              변수가 없습니다.
-              <br />
-              새 변수를 추가하세요.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Global Variables */}
-            {globalVariables.length > 0 && (
-              <div className="list-subgroup">
-                <div className="list-subgroup-header">
-                  <span className="list-subgroup-title">Global</span>
-                  <span className="list-subgroup-count">{globalVariables.length}개</span>
-                </div>
-                <div className="list-group" role="list">
-                  {globalVariables.map(renderVariableItem)}
-                </div>
+    <Section
+      id="variable-list"
+      title="Variable List"
+      badge={<span className="datatable-list-count">{variables.length}개</span>}
+      collapsible={false}
+    >
+      {variables.length === 0 ? (
+        <div className="datatable-empty">
+          <Variable size={32} className="datatable-empty-icon" />
+          <p className="datatable-empty-text">
+            변수가 없습니다.
+            <br />새 변수를 추가하세요.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Global Variables */}
+          {globalVariables.length > 0 && (
+            <div className="list-subgroup">
+              <div className="list-subgroup-header">
+                <span className="list-subgroup-title">Global</span>
+                <span className="list-subgroup-count">
+                  {globalVariables.length}개
+                </span>
               </div>
-            )}
-
-            {/* Page Variables */}
-            {pageVariables.length > 0 && (
-              <div className="list-subgroup">
-                <div className="list-subgroup-header">
-                  <span className="list-subgroup-title">Page</span>
-                  <span className="list-subgroup-count">{pageVariables.length}개</span>
-                </div>
-                <div className="list-group" role="list">
-                  {pageVariables.map(renderVariableItem)}
-                </div>
+              <div className="list-group" role="list">
+                {globalVariables.map(renderVariableItem)}
               </div>
-            )}
-          </>
-        )}
+            </div>
+          )}
 
-        <button
-          type="button"
-          className="datatable-add-btn"
-          onClick={handleCreate}
-        >
-          <Plus {...iconProps} />
-          <span>Variable 추가</span>
-        </button>
-      </div>
-    </div>
+          {/* Page Variables */}
+          {pageVariables.length > 0 && (
+            <div className="list-subgroup">
+              <div className="list-subgroup-header">
+                <span className="list-subgroup-title">Page</span>
+                <span className="list-subgroup-count">
+                  {pageVariables.length}개
+                </span>
+              </div>
+              <div className="list-group" role="list">
+                {pageVariables.map(renderVariableItem)}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <button
+        type="button"
+        className="datatable-add-btn"
+        onClick={handleCreate}
+      >
+        <Plus {...iconProps} />
+        <span>Variable 추가</span>
+      </button>
+    </Section>
   );
 }

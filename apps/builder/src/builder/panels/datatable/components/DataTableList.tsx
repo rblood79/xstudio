@@ -10,7 +10,7 @@ import { useMemo } from "react";
 import { Table2, Plus, Trash2, Edit2, Link } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useDataStore } from "../../../stores/data";
-import { SectionHeader } from "../../../components";
+import { Section } from "../../../components";
 import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface DataTableListProps {
@@ -34,11 +34,11 @@ export function DataTableList({
   // useMemo로 배열 변환 캐싱 (Map 참조가 변경될 때만 재계산)
   const dataTables = useMemo(
     () => Array.from(dataTablesMap.values()),
-    [dataTablesMap]
+    [dataTablesMap],
   );
   const apiEndpoints = useMemo(
     () => Array.from(apiEndpointsMap.values()),
-    [apiEndpointsMap]
+    [apiEndpointsMap],
   );
 
   // Silence unused variable warning
@@ -49,7 +49,7 @@ export function DataTableList({
     () => (tableName: string) => {
       return apiEndpoints.find((api) => api.targetDataTable === tableName);
     },
-    [apiEndpoints]
+    [apiEndpoints],
   );
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -72,28 +72,27 @@ export function DataTableList({
   };
 
   return (
-    <div className="section">
-      <SectionHeader
-        title="Table List"
-        actions={
-          <span className="datatable-list-count">{dataTables.length}개</span>
-        }
-      />
-      <div className="section-content">
-        {dataTables.length === 0 ? (
-          <div className="datatable-empty">
-            <Table2 size={32} className="datatable-empty-icon" />
-            <p className="datatable-empty-text">
-              데이터 테이블이 없습니다.
-              <br />
-              새 테이블을 추가하세요.
-            </p>
-          </div>
-        ) : (
-          <div className="list-group" role="list">
-            {dataTables.map((table) => {
-              const linkedApi = getLinkedApi(table.name);
-              return (
+    <Section
+      id="datatable-list"
+      title="Table List"
+      badge={
+        <span className="datatable-list-count">{dataTables.length}개</span>
+      }
+      collapsible={false}
+    >
+      {dataTables.length === 0 ? (
+        <div className="datatable-empty">
+          <Table2 size={32} className="datatable-empty-icon" />
+          <p className="datatable-empty-text">
+            데이터 테이블이 없습니다.
+            <br />새 테이블을 추가하세요.
+          </p>
+        </div>
+      ) : (
+        <div className="list-group" role="list">
+          {dataTables.map((table) => {
+            const linkedApi = getLinkedApi(table.name);
+            return (
               <div
                 key={table.id}
                 role="listitem"
@@ -106,11 +105,13 @@ export function DataTableList({
                 <div className="list-item-content">
                   <div className="list-item-name">{table.name}</div>
                   <div className="list-item-meta">
-                    {table.schema.length}개 필드 ·{" "}
-                    {table.mockData?.length || 0}개 행
+                    {table.schema.length}개 필드 · {table.mockData?.length || 0}
+                    개 행
                     {linkedApi && (
                       <>
-                        {" "}· <Link size={10} className="linked-api-icon" /> {linkedApi.name}
+                        {" "}
+                        · <Link size={10} className="linked-api-icon" />{" "}
+                        {linkedApi.name}
                       </>
                     )}
                   </div>
@@ -140,15 +141,14 @@ export function DataTableList({
                 </div>
               </div>
             );
-            })}
-          </div>
-        )}
+          })}
+        </div>
+      )}
 
-        <Button className="datatable-add-btn" onPress={onCreateClick}>
-          <Plus {...iconProps} />
-          <span>Table 추가</span>
-        </Button>
-      </div>
-    </div>
+      <Button className="datatable-add-btn" onPress={onCreateClick}>
+        <Plus {...iconProps} />
+        <span>Table 추가</span>
+      </Button>
+    </Section>
   );
 }
