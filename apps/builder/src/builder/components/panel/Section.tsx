@@ -11,10 +11,9 @@
  * - 자유 액션 슬롯 (actions)
  * - Badge (count 등)
  * - React.memo + 커스텀 비교
- * - useTransition (낮은 우선순위 토글)
  */
 
-import React, { memo, useTransition } from "react";
+import React, { memo } from "react";
 import { ChevronUp, RotateCcw } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useSectionCollapse } from "../../panels/styles/hooks/useSectionCollapse";
@@ -54,32 +53,35 @@ export const Section = memo(
     collapsible = true,
     className,
   }: SectionProps) {
-    const { isCollapsed, toggleSection } = useSectionCollapse();
+    // 이 섹션의 collapsed 여부만 구독 (primitive boolean → 다른 섹션 toggle에 무반응)
+    const persistedCollapsed = useSectionCollapse((s) => {
+      if (!id) return false;
+      if (s.focusMode) return s.activeFocusSection !== id;
+      return s.collapsedSections.has(id);
+    });
+    const toggleSection = useSectionCollapse((s) => s.toggleSection);
+
     const [localExpanded, setLocalExpanded] = React.useState(defaultExpanded);
-    const [isPending, startTransition] = useTransition();
 
     const hasPersistedState = id !== undefined;
     const isExpanded = collapsible
       ? hasPersistedState
-        ? !isCollapsed(id)
+        ? !persistedCollapsed
         : localExpanded
       : true;
 
     const handleToggle = () => {
-      startTransition(() => {
-        if (hasPersistedState && id) {
-          toggleSection(id);
-        } else {
-          setLocalExpanded(!localExpanded);
-        }
-      });
+      if (hasPersistedState && id) {
+        toggleSection(id);
+      } else {
+        setLocalExpanded(!localExpanded);
+      }
     };
 
     return (
       <div
         className={className ? `section ${className}` : "section"}
         data-section-id={id}
-        style={isPending ? { opacity: 0.7 } : undefined}
       >
         <div className="section-header">
           <div className="section-title">
