@@ -256,17 +256,41 @@ export interface FrameInputSnapshot {
 }
 
 /**
- * Content 빌드 결과.
- * buildSkiaTreeHierarchical 또는 getCachedCommandStream의 출력을 통합.
+ * Selection 오버레이 빌드 결과.
+ * 선택 박스/핸들/라쏘 렌더링 입력을 구조화한다.
  */
-export interface ContentBuildOutput {
-  /** element → bounding box 매핑 (selection/workflow에서 재사용) */
-  treeBoundsMap: Map<
+export interface SelectionOverlayBuildResult {
+  bounds: import("../selection/types").BoundingBox | null;
+  lasso: import("./selectionRenderer").LassoRenderData | null;
+  showHandles: boolean;
+}
+
+/**
+ * Workflow 오버레이 빌드 결과.
+ * 페이지 프레임, 워크플로우 바운드, 엣지 캐시를 함께 전달한다.
+ */
+export interface WorkflowOverlayBuildResult {
+  pageFrameMap: Map<string, import("./workflowRenderer").PageFrame>;
+  workflowElementBoundsMap: Map<
     string,
-    { x: number; y: number; width: number; height: number }
-  >;
-  /** AI 이펙트용 노드 바운드 (AI 활성 시에만 존재) */
-  aiBoundsMap: Map<string, AIEffectNodeBounds> | null;
+    import("./workflowRenderer").ElementBounds
+  > | null;
+  edgeGeometryCache: import("./workflowHitTest").CachedEdgeGeometry[];
+  edgeGeometryCacheKey: string;
+}
+
+/**
+ * 한 프레임의 렌더 플랜.
+ * content build 이후 overlay/screen overlay/culling bounds를 한 번에 조합한다.
+ */
+export interface FrameRenderPlan {
+  sharedScene: SharedSceneDerivedData;
+  contentNode: SkiaRenderable;
+  overlayNode: SkiaRenderable;
+  screenOverlayNode: SkiaRenderable | null;
+  cullingBounds: DOMRect;
+  selection: SelectionOverlayBuildResult;
+  workflow: WorkflowOverlayBuildResult | null;
 }
 
 /**
@@ -275,14 +299,32 @@ export interface ContentBuildOutput {
  */
 export interface SharedSceneDerivedData {
   /** element → bounding box (content 빌드에서 생성, 모든 overlay가 재사용) */
-  treeBoundsMap: Map<
-    string,
-    { x: number; y: number; width: number; height: number }
-  >;
+  treeBoundsMap: Map<string, import("../selection/types").BoundingBox>;
   /** 카메라 상태 */
   cameraX: number;
   cameraY: number;
   cameraZoom: number;
+}
+
+/**
+ * Content 빌드 결과.
+ * command stream/tree build 결과와 공용 scene 산출물을 함께 담는다.
+ */
+export interface ContentBuildResult {
+  sharedScene: SharedSceneDerivedData;
+  /** AI 이펙트용 노드 바운드 (AI 활성 시에만 존재) */
+  nodeBoundsMap: Map<string, AIEffectNodeBounds> | null;
+  /** 워크플로우용 요소 바운드 */
+  workflowElementBoundsMap: Map<
+    string,
+    import("./workflowRenderer").ElementBounds
+  > | null;
+  /** 렌더러에 설정할 content node */
+  contentNode: SkiaRenderable;
+  /** AI 이펙트 활성 여부 */
+  hasAIEffects: boolean;
+  /** 빈 트리 여부 (빈 경우 렌더링 스킵) */
+  empty: boolean;
 }
 
 // ============================================

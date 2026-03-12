@@ -49,7 +49,7 @@ import {
   setPagePosStaleFrames,
   tickPagePosStaleFrames,
 } from "./skiaTreeBuilder";
-import { buildFrameContent } from "./skiaFramePipeline";
+import { buildSkiaFrameContent } from "./skiaFramePipeline";
 import { type PageFrame, type ElementBounds } from "./workflowRenderer";
 import { type CachedEdgeGeometry } from "./workflowHitTest";
 import {
@@ -67,13 +67,10 @@ import { useLayoutsStore } from "../../../stores/layouts";
 import type { BoundingBox, DragState } from "../selection/types";
 import { watchContextLoss } from "./createSurface";
 import { flushWasmMetrics, recordWasmMetric } from "../utils/gpuProfilerCore";
-import { buildGridRenderInput } from "./skiaOverlayHelpers";
-import { buildSelectionRenderData } from "./skiaWorkflowSelection";
 import {
-  buildWorkflowOverlayData,
-  buildFrameCaches,
-  buildOverlayNode,
-} from "./skiaOverlayBuilder";
+  createFrameInputSnapshot,
+  buildFrameRenderPlan,
+} from "./skiaFramePlan";
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -755,7 +752,7 @@ export function SkiaOverlay({
           : undefined;
 
       // ── ADR-035 Phase 4: Frame Content Build (skiaFramePipeline.ts) ──
-      const contentResult = buildFrameContent({
+      const contentResult = buildSkiaFrameContent({
         registryVersion,
         pagePosVersion,
         cameraContainer,
@@ -772,111 +769,63 @@ export function SkiaOverlay({
         return;
       }
 
-      const { treeBoundsMap, nodeBoundsMap, hasAIEffects, contentNode } =
+      const { sharedScene, nodeBoundsMap, hasAIEffects, contentNode } =
         contentResult;
-      treeBoundsMapRef.current = treeBoundsMap;
-      renderer.setContentNode(contentNode);
-
-      const selectionData = buildSelectionRenderData(
+      const snapshot = createFrameInputSnapshot({
+        registryVersion,
+        pagePosVersion,
         cameraX,
         cameraY,
         cameraZoom,
-        treeBoundsMap,
+        overlayVersion: overlayVersionRef.current,
+      });
+      const framePlan = buildFrameRenderPlan({
+        ck,
+        fontMgr,
+        snapshot,
+        sharedScene,
+        nodeBoundsMap,
+        hasAIEffects,
+        contentNode,
         dragStateRef,
-        pageFramesRef.current,
-      );
+        pageFrames: pageFramesRef.current,
+        showWorkflowOverlay,
+        workflowEdges: workflowEdgesRef.current,
+        workflowEdgesVersion: workflowEdgesVersionRef.current,
+        dataSourceEdges: dataSourceEdgesRef.current,
+        layoutGroups: layoutGroupsRef.current,
+        workflowHoverState: workflowHoverStateRef.current,
+        elementHoverState: elementHoverStateRef.current,
+        minimapVisible: minimapVisibleRef.current,
+        minimapConfig: minimapConfigRef.current,
+        skiaCanvasWidth: skiaCanvas.width,
+        skiaCanvasHeight: skiaCanvas.height,
+        dpr,
+        prevEdgeGeometryCache: edgeGeometryCacheRef.current,
+        prevEdgeGeometryCacheKey: edgeGeometryCacheKeyRef.current,
+      });
 
-      // ── ADR-035 Phase 4: Workflow data + frame caches (skiaOverlayBuilder.ts) ──
-      let workflowElementBoundsMap: Map<string, ElementBounds> | null = null;
-      if (showWorkflowOverlay) {
-        const wfData = buildWorkflowOverlayData(
-          treeBoundsMap,
-          pageFramesRef.current ?? [],
-        );
-        pageFrameMapRef.current = wfData.pageFrameMap;
-        workflowElementBoundsMap = wfData.workflowElementBoundsMap;
+      treeBoundsMapRef.current = framePlan.sharedScene.treeBoundsMap;
+      renderer.setContentNode(framePlan.contentNode);
+      renderer.setOverlayNode(framePlan.overlayNode);
+      renderer.setScreenOverlayNode(framePlan.screenOverlayNode);
 
-        const { workflowStraightEdges } = useStore.getState();
-        const cacheResult = buildFrameCaches(
-          workflowEdgesRef.current,
-          wfData.pageFrameMap,
-          workflowElementBoundsMap,
-          workflowEdgesVersionRef.current,
-          pagePosVersion,
-          workflowStraightEdges,
-          edgeGeometryCacheKeyRef.current,
-          edgeGeometryCacheRef.current,
-        );
-        edgeGeometryCacheRef.current = cacheResult.edgeGeometryCache;
-        edgeGeometryCacheKeyRef.current = cacheResult.edgeGeometryCacheKey;
+      if (framePlan.workflow) {
+        pageFrameMapRef.current = framePlan.workflow.pageFrameMap;
+        edgeGeometryCacheRef.current = framePlan.workflow.edgeGeometryCache;
+        edgeGeometryCacheKeyRef.current = framePlan.workflow.edgeGeometryCacheKey;
+      } else {
+        pageFrameMapRef.current = new Map<string, PageFrame>();
+        edgeGeometryCacheRef.current = [];
+        edgeGeometryCacheKeyRef.current = "";
       }
-
-      // ── ADR-035 Phase 4: Overlay node (skiaOverlayBuilder.ts) ──
-      renderer.setOverlayNode(
-        buildOverlayNode({
-          ck,
-          fontMgr,
-          treeBoundsMap,
-          cameraX,
-          cameraY,
-          cameraZoom,
-          hasAIEffects,
-          nodeBoundsMap,
-          selectionData,
-          showWorkflowOverlay,
-          workflowEdges: workflowEdgesRef.current,
-          dataSourceEdges: dataSourceEdgesRef.current,
-          layoutGroups: layoutGroupsRef.current,
-          pageFrameMap: pageFrameMapRef.current,
-          workflowElementBoundsMap,
-          workflowHoveredEdgeId: workflowHoverStateRef.current.hoveredEdgeId,
-          elementHoverState: elementHoverStateRef.current,
-          pageFrames: pageFramesRef.current,
-          minimapVisible: minimapVisibleRef.current,
-          minimapConfig: minimapConfigRef.current,
-          skiaCanvasWidth: skiaCanvas.width,
-          skiaCanvasHeight: skiaCanvas.height,
-          dpr,
-        }),
-      );
-
-      // Grid 렌더링 (씬 좌표계, 카메라 변환은 SkiaRenderer에서 적용)
-      const { showGrid: gridVisible, gridSize: currentGridSz } =
-        useStore.getState();
-      renderer.setScreenOverlayNode(
-        gridVisible
-          ? {
-              renderSkia(canvas, cullingBounds) {
-                renderGrid(
-                  ck,
-                  canvas,
-                  buildGridRenderInput(
-                    cullingBounds,
-                    currentGridSz,
-                    cameraZoom,
-                  ),
-                );
-              },
-            }
-          : null,
-      );
-
-      // 씬-로컬 좌표계에서의 가시 영역 (컬링용)
-      const screenW = skiaCanvas.width / dpr;
-      const screenH = skiaCanvas.height / dpr;
-      const cullingBounds = new DOMRect(
-        -cameraX / cameraZoom,
-        -cameraY / cameraZoom,
-        screenW / cameraZoom,
-        screenH / cameraZoom,
-      );
 
       // Phase 6: 이중 Surface 캐싱 — SkiaRenderer가 classifyFrame()으로 최적 경로 결정
       // idle: 변경 없음 → 렌더링 스킵
       // content/full: renderContent() + blitToMain()
       // pagePosVersion을 합산하여 페이지 위치 변경 시 content layer 재렌더 트리거
       renderer.render(
-        cullingBounds,
+        framePlan.cullingBounds,
         registryVersion,
         camera,
         overlayVersionRef.current,

@@ -16,7 +16,12 @@ import type { CanvasKit, FontMgr } from "canvaskit-wasm";
 import type { Container } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { BoundingBox } from "../selection/types";
-import type { AIEffectNodeBounds, SkiaRenderable } from "./types";
+import type {
+  AIEffectNodeBounds,
+  SkiaRenderable,
+  ContentBuildResult,
+  SharedSceneDerivedData,
+} from "./types";
 import type { ElementBounds } from "./workflowRenderer";
 import { useStore } from "../../../stores";
 import {
@@ -54,21 +59,6 @@ export interface ContentBuildInput {
   fontMgr: FontMgr | undefined;
 }
 
-export interface ContentBuildResult {
-  /** 요소별 바운딩 박스 (selection/workflow/AI에서 재사용) */
-  treeBoundsMap: Map<string, BoundingBox>;
-  /** AI 이펙트용 바운드 (AI 활성 시에만 존재) */
-  nodeBoundsMap: Map<string, AIEffectNodeBounds> | null;
-  /** 워크플로우용 요소 바운드 */
-  workflowElementBoundsMap: Map<string, ElementBounds> | null;
-  /** 렌더러에 설정할 content node */
-  contentNode: SkiaRenderable;
-  /** AI 이펙트 활성 여부 */
-  hasAIEffects: boolean;
-  /** 빈 트리 여부 (빈 경우 렌더링 스킵) */
-  empty: boolean;
-}
-
 // ============================================
 // Content Build — 메인 함수
 // ============================================
@@ -81,7 +71,7 @@ export interface ContentBuildResult {
  *
  * @returns null — 빈 씬인 경우 (caller가 clearFrame 처리)
  */
-export function buildFrameContent(
+export function buildSkiaFrameContent(
   input: ContentBuildInput,
 ): ContentBuildResult | null {
   const {
@@ -141,12 +131,34 @@ export function buildFrameContent(
   }
 
   return {
-    treeBoundsMap,
+    sharedScene: buildSharedSceneDerivedData(
+      treeBoundsMap,
+      cameraX,
+      cameraY,
+      cameraZoom,
+    ),
     nodeBoundsMap,
     workflowElementBoundsMap: null, // workflow 단계에서 필요 시 빌드
     contentNode,
     hasAIEffects,
     empty: false,
+  };
+}
+
+// 하위 호환성 유지
+export const buildFrameContent = buildSkiaFrameContent;
+
+export function buildSharedSceneDerivedData(
+  treeBoundsMap: Map<string, BoundingBox>,
+  cameraX: number,
+  cameraY: number,
+  cameraZoom: number,
+): SharedSceneDerivedData {
+  return {
+    treeBoundsMap,
+    cameraX,
+    cameraY,
+    cameraZoom,
   };
 }
 
