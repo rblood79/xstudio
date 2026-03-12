@@ -11,7 +11,7 @@
  * @since 2026-02-10 Color Picker Phase 1
  */
 
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { useAtomValue } from 'jotai';
 import { colorInputModeAtom } from '../atoms/fillAtoms';
 import type { ColorInputMode } from '../../../../types/builder/fill.types';
@@ -27,6 +27,7 @@ import {
   normalizeToHex8,
 } from '../utils/colorUtils';
 import { ScrubInput } from './ScrubInput';
+import { useStore } from '../../../stores';
 
 import './ColorInputFields.css';
 
@@ -79,16 +80,27 @@ function TextField({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const selectedElementId = useStore((state) => state.selectedElementId);
   const [localValue, setLocalValue] = useState(value);
   const [isFocused, setIsFocused] = useState(false);
+  const focusedElementIdRef = useRef<string | null>(null);
 
-  // 포커스가 아닐 때 외부 value 변경 추적 (ColorArea 드래그 등)
-  if (!isFocused && localValue !== value) {
-    setLocalValue(value);
-  }
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalValue(value);
+    }
+    focusedElementIdRef.current = null;
+  }, [value, isFocused, selectedElementId]);
 
   const handleBlur = useCallback(() => {
+    const currentElementId = useStore.getState().selectedElementId ?? null;
     setIsFocused(false);
+    if (
+      focusedElementIdRef.current !== null &&
+      currentElementId !== focusedElementIdRef.current
+    ) {
+      return;
+    }
     onChange(localValue);
   }, [localValue, onChange]);
 
@@ -111,6 +123,7 @@ function TextField({
         onFocus={(e) => {
           setIsFocused(true);
           setLocalValue(value);
+          focusedElementIdRef.current = selectedElementId ?? null;
           e.target.select();
         }}
         onBlur={handleBlur}

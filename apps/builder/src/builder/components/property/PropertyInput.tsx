@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { PropertyFieldset } from './PropertyFieldset';
+import { useStore } from '../../stores';
 
 
 interface PropertyInputProps {
@@ -34,25 +35,29 @@ export const PropertyInput = memo(function PropertyInput({
     max,
     disabled
 }: PropertyInputProps) {
+    const selectedElementId = useStore((state) => state.selectedElementId);
     // Local state for input value (debounced save)
     const [inputValue, setInputValue] = useState<string>(String(value || ''));
     
     // ⭐ useRef로 변경: 즉시 반영되는 플래그 (useState는 비동기!)
     const justSavedViaEnterRef = useRef(false);
+    const focusedElementIdRef = useRef<string | null>(null);
 
-    // Sync local state with prop value when it changes externally
+    // Sync local state with prop value / selection when it changes externally
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setInputValue(String(value || ''));
         // Reset the flag when value changes from parent
         justSavedViaEnterRef.current = false;
-    }, [value]);
+        focusedElementIdRef.current = null;
+    }, [value, selectedElementId]);
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         // Select all text on focus for easier editing
         e.target.select();
         // Reset flag on focus (new editing session)
         justSavedViaEnterRef.current = false;
+        focusedElementIdRef.current = selectedElementId ?? null;
     };
 
     const handleChange = (newValue: string) => {
@@ -64,6 +69,14 @@ export const PropertyInput = memo(function PropertyInput({
         // ⭐ Skip save if we just saved via Enter key (useRef는 즉시 반영됨!)
         if (justSavedViaEnterRef.current) {
             justSavedViaEnterRef.current = false;
+            return;
+        }
+
+        const currentElementId = useStore.getState().selectedElementId ?? null;
+        if (
+            focusedElementIdRef.current !== null &&
+            currentElementId !== focusedElementIdRef.current
+        ) {
             return;
         }
         
@@ -133,5 +146,4 @@ export const PropertyInput = memo(function PropertyInput({
         prevProps.icon === nextProps.icon
     );
 });
-
 

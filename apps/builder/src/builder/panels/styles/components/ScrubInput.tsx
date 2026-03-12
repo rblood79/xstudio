@@ -12,6 +12,7 @@
  */
 
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
+import { useStore } from '../../../stores';
 
 import './ScrubInput.css';
 
@@ -46,6 +47,7 @@ export const ScrubInput = memo(function ScrubInput({
   label,
   className,
 }: ScrubInputProps) {
+  const selectedElementId = useStore((state) => state.selectedElementId);
   const [editing, setEditing] = useState(false);
   const [displayValue, setDisplayValue] = useState(String(Math.round(value)));
   const [isDraggingState, setIsDraggingState] = useState(false);
@@ -59,15 +61,23 @@ export const ScrubInput = memo(function ScrubInput({
   const accumulator = useRef(0);
   const currentValue = useRef(value);
   const hasMoved = useRef(false);
+  const focusedElementIdRef = useRef<string | null>(null);
 
-  // 외부 value 변경 시 display 동기화
-  const [prevValue, setPrevValue] = useState(value);
-  if (prevValue !== value) {
-    setPrevValue(value);
+  useEffect(() => {
     if (!editing) {
       setDisplayValue(String(Math.round(value)));
     }
-  }
+  }, [value, editing]);
+
+  useEffect(() => {
+    setEditing(false);
+    setIsDraggingState(false);
+    isDragging.current = false;
+    hasMoved.current = false;
+    focusedElementIdRef.current = null;
+    setDisplayValue(String(Math.round(value)));
+    cleanupRef.current?.();
+  }, [selectedElementId, value]);
 
   const clamp = useCallback(
     (v: number) => {
@@ -101,8 +111,17 @@ export const ScrubInput = memo(function ScrubInput({
   );
 
   const handleInputBlur = useCallback(() => {
+    const currentElementId = useStore.getState().selectedElementId ?? null;
+    if (
+      focusedElementIdRef.current !== null &&
+      currentElementId !== focusedElementIdRef.current
+    ) {
+      setEditing(false);
+      setDisplayValue(String(Math.round(value)));
+      return;
+    }
     commitInputValue();
-  }, [commitInputValue]);
+  }, [commitInputValue, value]);
 
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -228,6 +247,9 @@ export const ScrubInput = memo(function ScrubInput({
           className="scrub-input__field scrub-input__field--editing"
           value={displayValue}
           onChange={handleInputChange}
+          onFocus={() => {
+            focusedElementIdRef.current = selectedElementId ?? null;
+          }}
           onBlur={handleInputBlur}
           onKeyDown={handleInputKeyDown}
           aria-label={label}

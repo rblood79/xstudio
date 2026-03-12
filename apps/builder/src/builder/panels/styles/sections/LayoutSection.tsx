@@ -8,7 +8,7 @@
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
-import React, { useState, useMemo, memo } from "react";
+import React, { useState, useMemo, useEffect, useRef, memo } from "react";
 import { PropertySection, PropertyUnitInput } from "../../../components";
 import { ToggleButton, ToggleButtonGroup } from "@xstudio/shared/components";
 import { Input } from "react-aria-components";
@@ -34,6 +34,7 @@ import { useOptimizedStyleActions } from "../hooks/useOptimizedStyleActions";
 import { useLayoutValuesJotai } from "../hooks/useLayoutValuesJotai";
 import { useResetStyles } from "../hooks/useResetStyles";
 import { useAtomValue } from "jotai";
+import { useStore } from "../../../stores";
 import {
   flexDirectionKeysAtom,
   flexAlignmentKeysAtom,
@@ -66,6 +67,7 @@ function getDisplayValue(value: string): string {
 }
 
 function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
+  const selectedElementId = useStore((state) => state.selectedElementId);
   // useMemo로 외부 값에서 표시값 파생
   const derivedValues = useMemo(
     () => ({
@@ -79,18 +81,19 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
 
   // Local state로 입력값을 관리하여 controlled input 즉시 반영
   const [localValues, setLocalValues] = useState(derivedValues);
+  const focusedElementIdRef = useRef<string | null>(null);
 
-  // 외부 값 변경 시 동기화 (prev state 패턴)
-  const [prevValues, setPrevValues] = useState(values);
-  if (
-    prevValues.top !== values.top ||
-    prevValues.right !== values.right ||
-    prevValues.bottom !== values.bottom ||
-    prevValues.left !== values.left
-  ) {
-    setPrevValues(values);
+  // 선택 요소나 외부 값이 바뀌면 로컬 편집 세션을 새 대상 기준으로 리셋
+  useEffect(() => {
     setLocalValues(derivedValues);
-  }
+    focusedElementIdRef.current = null;
+  }, [
+    derivedValues.top,
+    derivedValues.right,
+    derivedValues.bottom,
+    derivedValues.left,
+    selectedElementId,
+  ]);
 
   const handleChange = (
     direction: "Top" | "Right" | "Bottom" | "Left",
@@ -109,6 +112,13 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
   };
 
   const commitValue = (direction: "Top" | "Right" | "Bottom" | "Left") => {
+    if (
+      focusedElementIdRef.current !== null &&
+      selectedElementId !== focusedElementIdRef.current
+    ) {
+      return;
+    }
+
     const key = direction.toLowerCase() as "top" | "right" | "bottom" | "left";
     const inputValue = localValues[key];
     const numericValue = inputValue.replace(/[^0-9.-]/g, "");
@@ -136,6 +146,9 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
         className="react-aria-Input four-way-top"
         value={localValues.top}
         onChange={(e) => handleChange("Top", e.target.value)}
+        onFocus={() => {
+          focusedElementIdRef.current = selectedElementId ?? null;
+        }}
         onBlur={() => commitValue("Top")}
         onKeyDown={(e) => handleKeyDown(e, "Top")}
         placeholder="T"
@@ -145,6 +158,9 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
         className="react-aria-Input four-way-left"
         value={localValues.left}
         onChange={(e) => handleChange("Left", e.target.value)}
+        onFocus={() => {
+          focusedElementIdRef.current = selectedElementId ?? null;
+        }}
         onBlur={() => commitValue("Left")}
         onKeyDown={(e) => handleKeyDown(e, "Left")}
         placeholder="L"
@@ -154,6 +170,9 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
         className="react-aria-Input four-way-right"
         value={localValues.right}
         onChange={(e) => handleChange("Right", e.target.value)}
+        onFocus={() => {
+          focusedElementIdRef.current = selectedElementId ?? null;
+        }}
         onBlur={() => commitValue("Right")}
         onKeyDown={(e) => handleKeyDown(e, "Right")}
         placeholder="R"
@@ -163,6 +182,9 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
         className="react-aria-Input four-way-bottom"
         value={localValues.bottom}
         onChange={(e) => handleChange("Bottom", e.target.value)}
+        onFocus={() => {
+          focusedElementIdRef.current = selectedElementId ?? null;
+        }}
         onBlur={() => commitValue("Bottom")}
         onKeyDown={(e) => handleKeyDown(e, "Bottom")}
         placeholder="B"

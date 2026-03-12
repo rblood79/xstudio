@@ -11,6 +11,7 @@ import { ColorSwatch } from "@xstudio/shared/components/ColorSwatch";
 import { ColorArea } from "@xstudio/shared/components/ColorArea";
 import { ColorSlider } from "@xstudio/shared/components/ColorSlider";
 import { Popover } from "@xstudio/shared/components/Popover";
+import { useStore } from "../../stores";
 
 interface PropertyColorProps {
   label?: string;
@@ -39,9 +40,18 @@ function ColorPickerInner({
   onChange: (value: string) => void;
   label?: string;
 }) {
+  const selectedElementId = useStore((state) => state.selectedElementId);
   const [localColor, setLocalColor] = React.useState<string>(initialValue);
   const [inputValue, setInputValue] = React.useState<string>(initialValue);
   const lastSavedValue = useRef<string>(initialValue);
+  const focusedElementIdRef = useRef<string | null>(null);
+
+  React.useEffect(() => {
+    setLocalColor(initialValue);
+    setInputValue(initialValue);
+    lastSavedValue.current = initialValue;
+    focusedElementIdRef.current = null;
+  }, [initialValue, selectedElementId]);
 
   // 드래그 중: 로컬 상태만 업데이트 (UI 실시간 반영)
   const handleChange = useCallback((color: Color | null) => {
@@ -65,6 +75,14 @@ function ColorPickerInner({
   }, []);
 
   const handleBlur = useCallback(() => {
+    const currentElementId = useStore.getState().selectedElementId ?? null;
+    if (
+      focusedElementIdRef.current !== null &&
+      currentElementId !== focusedElementIdRef.current
+    ) {
+      return;
+    }
+
     if (inputValue !== lastSavedValue.current) {
       lastSavedValue.current = inputValue;
       setLocalColor(inputValue);
@@ -111,6 +129,9 @@ function ColorPickerInner({
                 className="react-aria-Input"
                 value={inputValue}
                 onChange={handleInputChange}
+                onFocus={() => {
+                  focusedElementIdRef.current = selectedElementId ?? null;
+                }}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
               />
@@ -130,11 +151,12 @@ export const PropertyColor = memo(function PropertyColor({
   onChange,
   className,
 }: PropertyColorProps) {
+  const selectedElementId = useStore((state) => state.selectedElementId);
   return (
     <fieldset className={`properties-aria property-color-input ${className || ''}`}>
       {label && <legend className="fieldset-legend">{label}</legend>}
       <ColorPickerInner
-        key={value}
+        key={`${selectedElementId ?? "none"}:${value}`}
         initialValue={value}
         onChange={onChange}
         label={label}

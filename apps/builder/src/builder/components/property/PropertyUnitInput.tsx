@@ -91,6 +91,7 @@ export const PropertyUnitInput = memo(
     min = 0,
     max = 9999,
   }: PropertyUnitInputProps) {
+    const selectedElementId = useStore((state) => state.selectedElementId);
     // useMemo로 value prop에서 파생값 계산 (useLayoutEffect + setState 대체)
     const parsed = useMemo(() => parseUnitValue(value), [value]);
     const numericValue = parsed.numericValue;
@@ -109,22 +110,17 @@ export const PropertyUnitInput = memo(
     // ⭐ focus 시점의 selectedElementId 캡처 — blur 시 요소 전환 감지용
     const focusedElementIdRef = useRef<string | null>(null);
 
-    // 외부 value 변경 시 inputValue 동기화 (prev state 패턴)
-    const [prevValue, setPrevValue] = useState(value);
-    if (prevValue !== value) {
-      setPrevValue(value);
+    // 외부 value 또는 선택 요소 변경 시 편집 세션 리셋
+    useEffect(() => {
+      justSavedViaEnterRef.current = false;
+      lastSavedValueRef.current = value;
+      focusedElementIdRef.current = null;
       setInputValue(
         parsed.numericValue !== null
           ? String(parsed.numericValue)
           : (INPUT_DISPLAY_LABELS[parsed.unit] ?? parsed.unit),
       );
-    }
-
-    // 외부 value 변경 시 refs 동기화 (렌더 중 ref 쓰기 금지이므로 effect 사용)
-    useEffect(() => {
-      justSavedViaEnterRef.current = false;
-      lastSavedValueRef.current = value;
-    }, [value]);
+    }, [value, selectedElementId, parsed.numericValue, parsed.unit]);
 
     const handleInputChange = (newValue: string) => {
       setInputValue(newValue);

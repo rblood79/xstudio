@@ -9,9 +9,10 @@
  * @since 2026-02-11 Phase 4
  */
 
-import { memo, useState, useCallback, useRef } from 'react';
+import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { ImagePlus } from 'lucide-react';
 import type { ImageFillItem, FillItem } from '../../../../types/builder/fill.types';
+import { useStore } from '../../../stores';
 
 import './ImageFillEditor.css';
 
@@ -33,11 +34,26 @@ export const ImageFillEditor = memo(function ImageFillEditor({
   fill,
   onUpdateEnd,
 }: ImageFillEditorProps) {
+  const selectedElementId = useStore((state) => state.selectedElementId);
   const [urlInput, setUrlInput] = useState(fill.url);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const focusedElementIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    setUrlInput(fill.url);
+    focusedElementIdRef.current = null;
+  }, [fill.url, selectedElementId]);
 
   const handleUrlCommit = useCallback(() => {
+    const currentElementId = useStore.getState().selectedElementId ?? null;
+    if (
+      focusedElementIdRef.current !== null &&
+      currentElementId !== focusedElementIdRef.current
+    ) {
+      return;
+    }
+
     const trimmed = urlInput.trim();
     if (trimmed !== fill.url) {
       onUpdateEnd({ url: trimmed } as Partial<ImageFillItem>);
@@ -153,6 +169,9 @@ export const ImageFillEditor = memo(function ImageFillEditor({
           className="image-fill-editor__url-input"
           value={urlInput}
           onChange={(e) => setUrlInput(e.target.value)}
+          onFocus={() => {
+            focusedElementIdRef.current = selectedElementId ?? null;
+          }}
           onBlur={handleUrlCommit}
           onKeyDown={handleUrlKeyDown}
           placeholder="https://..."
