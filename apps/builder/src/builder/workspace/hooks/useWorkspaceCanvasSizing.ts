@@ -161,8 +161,7 @@ export function useWorkspaceCanvasSizing({
 
   useEffect(() => {
     const unsubscribe = subscribeToPanelLayoutChanges({
-      animationDelayMs: 300,
-      onBeforeDelay: () => {
+      onToggle: () => {
         isPanelResizingRef.current = true;
       },
       onLayoutChange: () => {

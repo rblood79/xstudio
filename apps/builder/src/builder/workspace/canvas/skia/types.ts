@@ -6,7 +6,7 @@
  * @see docs/RENDERING_ARCHITECTURE.md §5.3 renderSkia() 패턴 도입
  */
 
-import type { CanvasKit, Canvas } from 'canvaskit-wasm';
+import type { CanvasKit, Canvas } from "canvaskit-wasm";
 
 // ============================================
 // Core Interfaces
@@ -36,12 +36,12 @@ export interface SkiaRenderContext {
 // ============================================
 
 export interface ColorFill {
-  type: 'color';
+  type: "color";
   rgba: [number, number, number, number]; // [r, g, b, a] 0-1 범위
 }
 
 export interface LinearGradientFill {
-  type: 'linear-gradient';
+  type: "linear-gradient";
   start: [number, number];
   end: [number, number];
   colors: Float32Array[];
@@ -49,7 +49,7 @@ export interface LinearGradientFill {
 }
 
 export interface RadialGradientFill {
-  type: 'radial-gradient';
+  type: "radial-gradient";
   center: [number, number];
   startRadius: number;
   endRadius: number;
@@ -58,7 +58,7 @@ export interface RadialGradientFill {
 }
 
 export interface AngularGradientFill {
-  type: 'angular-gradient';
+  type: "angular-gradient";
   cx: number;
   cy: number;
   colors: Float32Array[];
@@ -68,7 +68,7 @@ export interface AngularGradientFill {
 }
 
 export interface ImageFill {
-  type: 'image';
+  type: "image";
   image: unknown; // CanvasKit.Image
   /** X축 TileMode (repeat-x 등 축별 분리 지원) */
   tileModeX: unknown; // CanvasKit.TileMode
@@ -81,7 +81,7 @@ export interface ImageFill {
 }
 
 export interface MeshGradientFill {
-  type: 'mesh-gradient';
+  type: "mesh-gradient";
   /** 그리드 행 수 (최소 2) */
   rows: number;
   /** 그리드 열 수 (최소 2) */
@@ -107,17 +107,17 @@ export type FillStyle =
 // ============================================
 
 export interface OpacityEffect {
-  type: 'opacity';
+  type: "opacity";
   value: number; // 0-1
 }
 
 export interface BackgroundBlurEffect {
-  type: 'background-blur';
+  type: "background-blur";
   sigma: number;
 }
 
 export interface DropShadowEffect {
-  type: 'drop-shadow';
+  type: "drop-shadow";
   dx: number;
   dy: number;
   sigmaX: number;
@@ -129,7 +129,7 @@ export interface DropShadowEffect {
 }
 
 export interface LayerBlurEffect {
-  type: 'layer-blur';
+  type: "layer-blur";
   /** 가우시안 블러 시그마 (전경 콘텐츠에 적용) */
   sigma: number;
 }
@@ -148,7 +148,7 @@ export interface LayerBlurEffect {
  * m4, m9, m14, m19 는 오프셋 열 (0-255 범위 / 255 정규화)
  */
 export interface ColorMatrixEffect {
-  type: 'color-matrix';
+  type: "color-matrix";
   matrix: Float32Array; // 4x5 = 20개 요소
 }
 
@@ -225,17 +225,48 @@ export interface DirtyRect {
 
 /** 렌더 프레임 분류 */
 export type FrameType =
-  | 'idle'        // 변경 없음 → 렌더링 스킵
-  | 'present'     // 오버레이만 변경 → 캐시 blit + 오버레이 렌더링
-  | 'camera-only' // 카메라만 변경 → 캐시 blit + 아핀 변환 (~1ms)
-  | 'content'     // 요소 변경 → 컨텐츠 재렌더링 후 블리팅
-  | 'full';       // 리사이즈/첫 프레임/cleanup → 전체 재렌더링
+  | "idle" // 변경 없음 → 렌더링 스킵
+  | "present" // 오버레이만 변경 → 캐시 blit + 오버레이 렌더링
+  | "camera-only" // 카메라만 변경 → 캐시 blit + 아핀 변환 (~1ms)
+  | "content" // 요소 변경 → 컨텐츠 재렌더링 후 블리팅
+  | "full"; // 리사이즈/첫 프레임/cleanup → 전체 재렌더링
 
 /** 카메라 상태 스냅샷 (블리팅 변환용) */
 export interface CameraState {
   zoom: number;
   panX: number;
   panY: number;
+}
+
+// ============================================
+// ADR-035 Phase 4: Frame Build Pipeline Types
+// ============================================
+
+/**
+ * 렌더 프레임의 입력 스냅샷.
+ * renderFrame() 루프에서 매 프레임 수집하는 상태를 구조화.
+ */
+export interface FrameInputSnapshot {
+  registryVersion: number;
+  pagePosVersion: number;
+  cameraX: number;
+  cameraY: number;
+  cameraZoom: number;
+  overlayVersion: number;
+}
+
+/**
+ * Content 빌드 결과.
+ * buildSkiaTreeHierarchical 또는 getCachedCommandStream의 출력을 통합.
+ */
+export interface ContentBuildOutput {
+  /** element → bounding box 매핑 (selection/workflow에서 재사용) */
+  treeBoundsMap: Map<
+    string,
+    { x: number; y: number; width: number; height: number }
+  >;
+  /** AI 이펙트용 노드 바운드 (AI 활성 시에만 존재) */
+  aiBoundsMap: Map<string, AIEffectNodeBounds> | null;
 }
 
 // ============================================
@@ -257,9 +288,15 @@ export function toSkMatrix(m: {
   ty: number;
 }): Float32Array {
   return Float32Array.of(
-    m.a, m.c, m.tx,  // row 0: scaleX, skewX, transX
-    m.b, m.d, m.ty,  // row 1: skewY, scaleY, transY
-    0,   0,   1,     // row 2: perspective (항상 identity)
+    m.a,
+    m.c,
+    m.tx, // row 0: scaleX, skewX, transX
+    m.b,
+    m.d,
+    m.ty, // row 1: skewY, scaleY, transY
+    0,
+    0,
+    1, // row 2: perspective (항상 identity)
   );
 }
 

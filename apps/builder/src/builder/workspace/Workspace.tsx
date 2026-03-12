@@ -1,18 +1,20 @@
 /**
- * Workspace Container
+ * Workspace Shell (ADR-035 Layer 1)
  *
- * 🚀 Phase 10 B1.1: 캔버스와 오버레이를 포함하는 메인 워크스페이스
+ * Shell orchestration만 담당하며 canvas runtime 세부 구현을 모른다.
  *
- * 구조:
- * ```
- * <Workspace>
- *   ├── <BuilderCanvas />       (WebGL Layer)
- *   └── <Overlay>               (DOM Layer - B1.5에서 구현)
- *       └── <TextEditOverlay />
- * </Workspace>
- * ```
+ * 책임:
+ * - Feature flag 기반 렌더 경로 선택 (WebGL / fallback / compare)
+ * - Breakpoint → canvas size 계산 위임 (useWorkspaceCanvasSizing)
+ * - Compare mode split 관리 위임 (useWorkspaceCompareSplit)
+ * - Canvas ready/context lost 상태 구독 (UI 표시용)
  *
- * @since 2025-12-11 Phase 10 B1.1
+ * 위임 대상:
+ * - BuilderCanvas — viewport, render, interaction runtime
+ * - CanvasScrollbar — scroll UI
+ * - WorkflowCanvasToggles — workflow overlay 토글
+ * - WorkspaceCompareMode — 비교 모드 레이아웃
+ * - WorkspaceStatusIndicator — 상태 표시
  */
 
 import { useRef } from "react";
@@ -39,14 +41,10 @@ export function Workspace({
   const useWebGL = isWebGLCanvas();
   const compareMode = isCanvasCompareMode();
 
-  const {
-    compareSplit,
-    handleResizeEnd,
-    handleResizeMove,
-    handleResizeStart,
-  } = useWorkspaceCompareSplit({
-    containerRef,
-  });
+  const { compareSplit, handleResizeEnd, handleResizeMove, handleResizeStart } =
+    useWorkspaceCompareSplit({
+      containerRef,
+    });
   const { canvasSize } = useWorkspaceCanvasSizing({
     breakpoint,
     breakpoints,

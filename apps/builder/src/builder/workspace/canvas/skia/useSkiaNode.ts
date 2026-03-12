@@ -16,9 +16,9 @@
  * @see docs/RENDERING_ARCHITECTURE.md §5.11 renderSkia() React 컴포넌트 통합
  */
 
-import { useLayoutEffect } from 'react';
-import type { SkiaNodeData } from './nodeRenderers';
-
+import { useLayoutEffect } from "react";
+import type { SkiaNodeData } from "./nodeRenderers";
+import { recordInvalidation } from "./renderInvalidation";
 
 // ============================================
 // 전역 레지스트리
@@ -64,6 +64,7 @@ export function getSkiaRegistrySize(): number {
 export function clearSkiaRegistry(): void {
   skiaNodeRegistry.clear();
   registryVersion++;
+  recordInvalidation("content", "clearSkiaRegistry");
 }
 
 /** 현재 레지스트리 변경 버전 (O(1)) */
@@ -79,6 +80,7 @@ export function getRegistryVersion(): number {
  */
 export function notifyLayoutChange(): void {
   registryVersion++;
+  recordInvalidation("content", "notifyLayoutChange");
 }
 
 // ============================================

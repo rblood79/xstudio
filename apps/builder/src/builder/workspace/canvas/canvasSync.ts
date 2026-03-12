@@ -11,8 +11,8 @@
  * @since 2025-12-11 Phase 10 B1.1
  */
 
-import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
 
 // ============================================
 // Types
@@ -87,9 +87,17 @@ export interface CanvasSyncState {
   isCanvasReady: boolean;
   /** WebGL 컨텍스트 유실 상태 */
   isContextLost: boolean;
-  /** 현재 줌 레벨 */
+  /**
+   * 현재 줌 레벨 (ViewportController mirror — 읽기 전용으로 취급)
+   * 쓰기는 applyViewportState() 또는 setViewportSnapshot()만 사용.
+   * @see viewportActions.ts applyViewportState
+   */
   zoom: number;
-  /** 팬 오프셋 */
+  /**
+   * 팬 오프셋 (ViewportController mirror — 읽기 전용으로 취급)
+   * 쓰기는 applyViewportState() 또는 setViewportSnapshot()만 사용.
+   * @see viewportActions.ts applyViewportState
+   */
   panOffset: { x: number; y: number };
   /** 컨테이너 크기 (패널 토글 최적화용) */
   containerSize: { width: number; height: number };
@@ -115,9 +123,17 @@ export interface CanvasSyncState {
   setCanvasReady: (ready: boolean) => void;
   /** WebGL 컨텍스트 상태 설정 */
   setContextLost: (lost: boolean) => void;
-  /** 줌 레벨 설정 */
+  /**
+   * 줌 레벨 설정 (내부 mirror 전용)
+   * 외부에서 직접 호출하지 말 것 — applyViewportState() 또는 setViewportSnapshot() 사용
+   * @deprecated 외부 호출 금지, applyViewportState() 사용
+   */
   setZoom: (zoom: number) => void;
-  /** 팬 오프셋 설정 */
+  /**
+   * 팬 오프셋 설정 (내부 mirror 전용)
+   * 외부에서 직접 호출하지 말 것 — applyViewportState() 또는 setViewportSnapshot() 사용
+   * @deprecated 외부 호출 금지, applyViewportState() 사용
+   */
   setPanOffset: (offset: { x: number; y: number }) => void;
   /** viewport 스냅샷 일괄 설정 */
   setViewportSnapshot: (viewport: CanvasViewportSnapshot) => void;
@@ -195,7 +211,7 @@ export const useCanvasSyncStore = create<CanvasSyncState>()(
       const { renderVersion } = get();
       if (renderVersion - version > 2) {
         console.warn(
-          `[CanvasSync] Mismatch detected: store=${renderVersion}, pixi=${version}`
+          `[CanvasSync] Mismatch detected: store=${renderVersion}, pixi=${version}`,
         );
       }
     },
@@ -203,24 +219,34 @@ export const useCanvasSyncStore = create<CanvasSyncState>()(
     setCanvasReady: (ready) => {
       set({ isCanvasReady: ready });
       if (ready) {
-        console.log('🎮 [CanvasSync] Canvas ready');
+        console.log("🎮 [CanvasSync] Canvas ready");
       }
     },
 
     setContextLost: (lost) => {
       set({ isContextLost: lost });
       if (lost) {
-        console.warn('⚠️ [CanvasSync] WebGL context lost');
+        console.warn("⚠️ [CanvasSync] WebGL context lost");
       } else {
-        console.log('✅ [CanvasSync] WebGL context restored');
+        console.log("✅ [CanvasSync] WebGL context restored");
       }
     },
 
     setZoom: (zoom) => {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "[CanvasSync] setZoom is deprecated — use applyViewportState()",
+        );
+      }
       set({ zoom: Math.max(0.1, Math.min(5, zoom)) });
     },
 
     setPanOffset: (offset) => {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "[CanvasSync] setPanOffset is deprecated — use applyViewportState()",
+        );
+      }
       set({ panOffset: offset });
     },
 
@@ -248,7 +274,7 @@ export const useCanvasSyncStore = create<CanvasSyncState>()(
     reset: () => {
       set(initialState);
     },
-  }))
+  })),
 );
 
 // ============================================
@@ -265,7 +291,7 @@ export const selectIsCanvasUsable = (state: CanvasSyncState) =>
 
 /** viewport 스냅샷 */
 export const selectCanvasViewportSnapshot = (
-  state: CanvasSyncState
+  state: CanvasSyncState,
 ): CanvasViewportSnapshot => ({
   panOffset: state.panOffset,
   zoom: state.zoom,
@@ -273,9 +299,13 @@ export const selectCanvasViewportSnapshot = (
 
 export function isCanvasViewportSnapshotEqual(
   a: CanvasViewportSnapshot,
-  b: CanvasViewportSnapshot
+  b: CanvasViewportSnapshot,
 ): boolean {
-  return a.zoom === b.zoom && a.panOffset.x === b.panOffset.x && a.panOffset.y === b.panOffset.y;
+  return (
+    a.zoom === b.zoom &&
+    a.panOffset.x === b.panOffset.x &&
+    a.panOffset.y === b.panOffset.y
+  );
 }
 
 // ============================================
@@ -286,12 +316,13 @@ export function isCanvasViewportSnapshotEqual(
  * 불일치 감지 로그 (개발 환경)
  */
 export function detectSyncMismatch(): void {
-  if (process.env.NODE_ENV !== 'development') return;
+  if (process.env.NODE_ENV !== "development") return;
 
-  const { renderVersion, lastPixiRenderVersion } = useCanvasSyncStore.getState();
+  const { renderVersion, lastPixiRenderVersion } =
+    useCanvasSyncStore.getState();
   if (renderVersion - lastPixiRenderVersion > 2) {
     console.warn(
-      `🔄 [CanvasSync] Sync mismatch: store=${renderVersion}, pixi=${lastPixiRenderVersion}`
+      `🔄 [CanvasSync] Sync mismatch: store=${renderVersion}, pixi=${lastPixiRenderVersion}`,
     );
   }
 }
@@ -300,10 +331,10 @@ export function detectSyncMismatch(): void {
  * GPU 메트릭 로깅 (개발 환경)
  */
 export function logGPUMetrics(): void {
-  if (process.env.NODE_ENV !== 'development') return;
+  if (process.env.NODE_ENV !== "development") return;
 
   const { gpuMetrics } = useCanvasSyncStore.getState();
-  console.log('📊 [CanvasSync] GPU Metrics:', {
+  console.log("📊 [CanvasSync] GPU Metrics:", {
     vram: `${(gpuMetrics.vramUsed / 1024 / 1024).toFixed(1)}MB`,
     textures: gpuMetrics.textureCount,
     sprites: gpuMetrics.spriteCount,

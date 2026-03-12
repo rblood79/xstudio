@@ -15,25 +15,31 @@
  * @updated Phase 6 - Copy/Paste/Delete 스코프 기반 통합 (2025-12-29)
  */
 
-import { useCallback, useMemo } from 'react';
-import { useStore } from '../stores';
-import { useCanvasSyncStore } from '../workspace/canvas/canvasSync';
+import { useCallback, useMemo } from "react";
+import { useStore } from "../stores";
+import { useCanvasSyncStore } from "../workspace/canvas/canvasSync";
 import {
   useKeyboardShortcutsRegistry,
   type KeyboardShortcut,
-} from './useKeyboardShortcutsRegistry';
+} from "./useKeyboardShortcutsRegistry";
 import {
   SHORTCUT_DEFINITIONS,
   type ShortcutId,
-} from '../config/keyboardShortcuts';
-import { useActiveScope } from './useActiveScope';
+} from "../config/keyboardShortcuts";
+import { useActiveScope } from "./useActiveScope";
+import {
+  applyViewportState,
+  computeFitViewport,
+  zoomViewportAtContainerCenter,
+  clampViewportZoom,
+} from "../workspace/canvas/viewport/viewportActions";
 import {
   copyMultipleElements,
   pasteMultipleElements,
   serializeCopiedElements,
   deserializeCopiedElements,
-} from '../utils/multiElementCopy';
-import { useCopyPaste } from './useCopyPaste';
+} from "../utils/multiElementCopy";
+import { useCopyPaste } from "./useCopyPaste";
 
 // ============================================
 // Constants
@@ -58,7 +64,7 @@ type ShortcutHandlers = Partial<Record<ShortcutId, () => void>>;
  */
 function bindHandlersToDefinitions(
   ids: ShortcutId[],
-  handlers: ShortcutHandlers
+  handlers: ShortcutHandlers,
 ): KeyboardShortcut[] {
   return ids
     .filter((id) => handlers[id] !== undefined)
@@ -96,13 +102,13 @@ export function useGlobalKeyboardShortcuts() {
   // ----------------------------------------
 
   const handleUndo = useCallback(async () => {
-    console.log('[Keyboard] Undo triggered');
+    console.log("[Keyboard] Undo triggered");
     const { undo } = useStore.getState();
     await undo();
   }, []);
 
   const handleRedo = useCallback(async () => {
-    console.log('[Keyboard] Redo triggered');
+    console.log("[Keyboard] Redo triggered");
     const { redo } = useStore.getState();
     await redo();
   }, []);
@@ -112,20 +118,7 @@ export function useGlobalKeyboardShortcuts() {
   // ----------------------------------------
 
   const zoomTo = useCallback((targetZoom: number) => {
-    const state = useCanvasSyncStore.getState();
-    const { zoom, containerSize, panOffset, setZoom, setPanOffset } = state;
-
-    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
-    if (containerSize.width > 0 && containerSize.height > 0) {
-      const centerX = containerSize.width / 2;
-      const centerY = containerSize.height / 2;
-      const zoomRatio = newZoom / zoom;
-      setPanOffset({
-        x: centerX - (centerX - panOffset.x) * zoomRatio,
-        y: centerY - (centerY - panOffset.y) * zoomRatio,
-      });
-    }
-    setZoom(newZoom);
+    zoomViewportAtContainerCenter(targetZoom);
   }, []);
 
   const handleZoomIn = useCallback(() => {
@@ -139,20 +132,11 @@ export function useGlobalKeyboardShortcuts() {
   }, [zoomTo]);
 
   const handleZoomToFit = useCallback(() => {
-    const state = useCanvasSyncStore.getState();
-    const { containerSize, canvasSize, setZoom, setPanOffset } = state;
-
+    const { containerSize, canvasSize } = useCanvasSyncStore.getState();
     if (containerSize.width === 0 || containerSize.height === 0) return;
 
-    const scaleX = containerSize.width / canvasSize.width;
-    const scaleY = containerSize.height / canvasSize.height;
-    const fitZoom = Math.min(scaleX, scaleY) * 0.9;
-
-    setZoom(fitZoom);
-    setPanOffset({
-      x: (containerSize.width - canvasSize.width * fitZoom) / 2,
-      y: (containerSize.height - canvasSize.height * fitZoom) / 2,
-    });
+    const fitState = computeFitViewport({ canvasSize, containerSize });
+    applyViewportState(fitState);
   }, []);
 
   const handleZoom100 = useCallback(() => zoomTo(1), [zoomTo]);
@@ -168,17 +152,18 @@ export function useGlobalKeyboardShortcuts() {
    */
   const { copyText, pasteText } = useCopyPaste({
     onPaste: () => {}, // pasteText 사용으로 직접 처리
-    name: 'elements',
+    name: "elements",
   });
 
   /**
    * Canvas Copy - 선택된 요소들 복사
    */
   const handleCanvasCopy = useCallback(async () => {
-    const { selectedElementIds, elementsMap, currentPageId } = useStore.getState();
+    const { selectedElementIds, elementsMap, currentPageId } =
+      useStore.getState();
 
     if (selectedElementIds.length === 0 || !currentPageId) {
-      console.log('[Keyboard] Copy: No elements selected');
+      console.log("[Keyboard] Copy: No elements selected");
       return;
     }
 
@@ -189,7 +174,7 @@ export function useGlobalKeyboardShortcuts() {
     if (success) {
       console.log(`[Keyboard] Copied ${copiedData.elements.length} elements`);
     } else {
-      console.error('[Keyboard] Copy failed');
+      console.error("[Keyboard] Copy failed");
     }
   }, [copyText]);
 
@@ -200,19 +185,19 @@ export function useGlobalKeyboardShortcuts() {
     const { currentPageId, addElement } = useStore.getState();
 
     if (!currentPageId) {
-      console.log('[Keyboard] Paste: No page selected');
+      console.log("[Keyboard] Paste: No page selected");
       return;
     }
 
     const text = await pasteText();
     if (!text) {
-      console.log('[Keyboard] Paste: Failed to read clipboard');
+      console.log("[Keyboard] Paste: Failed to read clipboard");
       return;
     }
 
     const copiedData = deserializeCopiedElements(text);
     if (!copiedData) {
-      console.log('[Keyboard] Paste: No valid element data in clipboard');
+      console.log("[Keyboard] Paste: No valid element data in clipboard");
       return;
     }
 
@@ -229,21 +214,26 @@ export function useGlobalKeyboardShortcuts() {
    * Canvas Delete - 선택된 요소들 삭제
    */
   const handleCanvasDelete = useCallback(async () => {
-    const { selectedElementIds, elementsMap, removeElements, setSelectedElement } = useStore.getState();
+    const {
+      selectedElementIds,
+      elementsMap,
+      removeElements,
+      setSelectedElement,
+    } = useStore.getState();
 
     if (selectedElementIds.length === 0) {
-      console.log('[Keyboard] Delete: No elements selected');
+      console.log("[Keyboard] Delete: No elements selected");
       return;
     }
 
     // Body 요소는 키보드로 삭제 불가 (페이지 삭제 시에만 함께 삭제)
     const deletableIds = selectedElementIds.filter((id) => {
       const el = elementsMap.get(id);
-      return el && el.tag.toLowerCase() !== 'body';
+      return el && el.tag.toLowerCase() !== "body";
     });
 
     if (deletableIds.length === 0) {
-      console.log('[Keyboard] Delete: Only body elements selected, skipping');
+      console.log("[Keyboard] Delete: Only body elements selected, skipping");
       return;
     }
 
@@ -261,7 +251,7 @@ export function useGlobalKeyboardShortcuts() {
    * (현재는 placeholder - Events panel에서 구체적 구현 필요)
    */
   const handleEventsCopy = useCallback(() => {
-    console.log('[Keyboard] Events Copy: placeholder');
+    console.log("[Keyboard] Events Copy: placeholder");
     // TODO: Events panel과 연동 필요
     // eventsClipboardRef.current = JSON.stringify(selectedActions);
   }, []);
@@ -270,7 +260,7 @@ export function useGlobalKeyboardShortcuts() {
    * Events Panel Paste - 클립보드에서 액션 붙여넣기
    */
   const handleEventsPaste = useCallback(() => {
-    console.log('[Keyboard] Events Paste: placeholder');
+    console.log("[Keyboard] Events Paste: placeholder");
     // TODO: Events panel과 연동 필요
   }, []);
 
@@ -278,7 +268,7 @@ export function useGlobalKeyboardShortcuts() {
    * Events Panel Delete - 선택된 액션들 삭제
    */
   const handleEventsDelete = useCallback(() => {
-    console.log('[Keyboard] Events Delete: placeholder');
+    console.log("[Keyboard] Events Delete: placeholder");
     // TODO: Events panel과 연동 필요
   }, []);
 
@@ -287,19 +277,24 @@ export function useGlobalKeyboardShortcuts() {
    * (텍스트 편집 중 Escape는 TextEditOverlay가 자체 처리)
    */
   const handleEscape = useCallback(() => {
-    const { editingContextId, exitEditingContext, setSelectedElement, selectedElementIds } = useStore.getState();
+    const {
+      editingContextId,
+      exitEditingContext,
+      setSelectedElement,
+      selectedElementIds,
+    } = useStore.getState();
 
     // 1. editingContext 진입 상태 → 한 단계 위로 복귀
     if (editingContextId !== null) {
       exitEditingContext();
-      console.log('[Keyboard] Exited editing context');
+      console.log("[Keyboard] Exited editing context");
       return;
     }
 
     // 2. 요소 선택 상태 → 선택 해제
     if (selectedElementIds.length > 0) {
       setSelectedElement(null);
-      console.log('[Keyboard] Selection cleared');
+      console.log("[Keyboard] Selection cleared");
     }
   }, []);
 
@@ -309,14 +304,14 @@ export function useGlobalKeyboardShortcuts() {
   const getScopedHandler = useCallback(
     (canvasHandler: () => void, eventsHandler: () => void) => {
       return () => {
-        if (activeScope === 'panel:events') {
+        if (activeScope === "panel:events") {
           eventsHandler();
         } else {
           canvasHandler();
         }
       };
     },
-    [activeScope]
+    [activeScope],
   );
 
   // ----------------------------------------
@@ -361,7 +356,7 @@ export function useGlobalKeyboardShortcuts() {
       handleEventsPaste,
       handleEventsDelete,
       handleEscape,
-    ]
+    ],
   );
 
   // ----------------------------------------
@@ -371,21 +366,21 @@ export function useGlobalKeyboardShortcuts() {
   const shortcuts: KeyboardShortcut[] = useMemo(() => {
     const shortcutIds: ShortcutId[] = [
       // System
-      'undo',
-      'redo',
+      "undo",
+      "redo",
       // Navigation
-      'zoomIn',
-      'zoomInNumpad',
-      'zoomOut',
-      'zoomToFit',
-      'zoom100',
-      'zoom200',
+      "zoomIn",
+      "zoomInNumpad",
+      "zoomOut",
+      "zoomToFit",
+      "zoom100",
+      "zoom200",
       // Canvas (Phase 6)
-      'copy',
-      'paste',
-      'delete',
-      'deleteAlt',
-      'escape',
+      "copy",
+      "paste",
+      "delete",
+      "deleteAlt",
+      "escape",
     ];
 
     return bindHandlersToDefinitions(shortcutIds, handlers);
@@ -400,7 +395,7 @@ export function useGlobalKeyboardShortcuts() {
   // Phase 4: activeScope 전달로 스코프 기반 필터링
   useKeyboardShortcutsRegistry(shortcuts, [shortcuts, activeScope], {
     capture: true,
-    target: 'document',
+    target: "document",
     activeScope,
   });
 }

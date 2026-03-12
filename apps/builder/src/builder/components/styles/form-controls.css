@@ -34,10 +34,12 @@
       .react-aria-UnitComboBox {
         .combobox-container {
           background-color: transparent;
+          border-radius: var(--radius-sm);
           padding: 0;
           outline: none;
           border: none;
         }
+
         .react-aria-Button {
           width: var(--text-xl);
           height: var(--text-xl);

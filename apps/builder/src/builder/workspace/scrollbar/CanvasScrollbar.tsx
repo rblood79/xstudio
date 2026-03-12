@@ -4,34 +4,33 @@
  * Figma 스타일 캔버스 스크롤바.
  * React 리렌더 0회 설계 — mount 후 DOM 직접 조작만 수행.
  *
- * 변경 감지 소스:
- *  1. ViewportController.addUpdateListener() — pan/zoom/setPosition
- *  2. useCanvasSyncStore.subscribe() — 외부 zoom/pan 변경 (버튼, fit-to-screen)
- *  3. ResizeObserver(track) — 창 리사이즈, 패널 애니메이션
+ * 변경 감지 소스 (ADR-035 Phase 2: ViewportController 단일 권한):
+ *  1. ViewportController.addUpdateListener() — pan/zoom/setPosition (단일 소스)
+ *  2. ResizeObserver(track) — 창 리사이즈, 패널 애니메이션
+ *  3. subscribeToPanelLayoutChanges() — 패널 토글
  *
  * @since 2026-01-30
  */
 
-import { useRef, useEffect } from 'react';
-import { getViewportController } from '../canvas/viewport/ViewportController';
-import { applyViewportState } from '../canvas/viewport/viewportActions';
-import { useCanvasSyncStore } from '../canvas/canvasSync';
+import { useRef, useEffect } from "react";
+import { getViewportController } from "../canvas/viewport/ViewportController";
+import { applyViewportState } from "../canvas/viewport/viewportActions";
 import {
   measureWorkspacePanelInsets,
   subscribeToPanelLayoutChanges,
-} from '../utils/panelLayoutRuntime';
+} from "../utils/panelLayoutRuntime";
 import {
   getScrollbarAxisMetrics,
   getScrollbarViewportMetrics,
-} from './viewportMetrics';
-import './CanvasScrollbar.css';
+} from "./viewportMetrics";
+import "./CanvasScrollbar.css";
 
 // ============================================
 // Types
 // ============================================
 
 interface CanvasScrollbarProps {
-  direction: 'horizontal' | 'vertical';
+  direction: "horizontal" | "vertical";
 }
 
 // ============================================
@@ -42,7 +41,9 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef(0);
-  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   const isDraggingRef = useRef(false);
   // 패널 inset 캐시 (viewport 계산에서 재사용)
   const panelInsetRef = useRef({ left: 0, right: 0 });
@@ -52,7 +53,7 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
     const thumb = thumbRef.current;
     if (!track || !thumb) return;
 
-    const isHorizontal = direction === 'horizontal';
+    const isHorizontal = direction === "horizontal";
 
     // ========================================
     // 패널 오프셋 측정
@@ -106,11 +107,11 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
     // ========================================
 
     const showScrollbar = () => {
-      track.classList.add('canvas-scrollbar--visible');
+      track.classList.add("canvas-scrollbar--visible");
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
       fadeTimerRef.current = setTimeout(() => {
         if (!isDraggingRef.current) {
-          track.classList.remove('canvas-scrollbar--visible');
+          track.classList.remove("canvas-scrollbar--visible");
         }
       }, 1000);
     };
@@ -132,15 +133,10 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
     // 리스너 연결
     // ========================================
 
-    // 소스 1: ViewportController (pan/zoom/setPosition)
-    const removeVCListener = getViewportController().addUpdateListener(scheduleUpdate);
-
-    // 소스 2: Zustand store (외부 zoom/pan 변경)
-    const unsubSync = useCanvasSyncStore.subscribe(
-      (state) => ({ zoom: state.zoom, panOffset: state.panOffset }),
-      () => scheduleUpdate(),
-      { equalityFn: (a, b) => a.zoom === b.zoom && a.panOffset === b.panOffset },
-    );
+    // ViewportController가 단일 권한 소유자 (ADR-035 Phase 2)
+    // Zustand store의 zoom/panOffset은 mirror이므로 이중 구독하지 않는다.
+    const removeVCListener =
+      getViewportController().addUpdateListener(scheduleUpdate);
 
     // 소스 3: ResizeObserver (track 크기 변경)
     const trackResizeObserver = new ResizeObserver(() => {
@@ -165,8 +161,8 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
       e.stopPropagation();
       thumb.setPointerCapture(e.pointerId);
       isDraggingRef.current = true;
-      thumb.classList.add('canvas-scrollbar__thumb--dragging');
-      track.classList.add('canvas-scrollbar--visible');
+      thumb.classList.add("canvas-scrollbar__thumb--dragging");
+      track.classList.add("canvas-scrollbar--visible");
 
       const startPos = isHorizontal ? e.clientX : e.clientY;
       const vc = getViewportController();
@@ -181,7 +177,9 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
 
       const onMove = (me: PointerEvent) => {
         const delta = (isHorizontal ? me.clientX : me.clientY) - startPos;
-        const trackLength = isHorizontal ? track.clientWidth : track.clientHeight;
+        const trackLength = isHorizontal
+          ? track.clientWidth
+          : track.clientHeight;
         const axis = getScrollbarAxisMetrics(
           startMetrics,
           direction,
@@ -216,19 +214,19 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
 
       const onUp = () => {
         isDraggingRef.current = false;
-        thumb.classList.remove('canvas-scrollbar__thumb--dragging');
-        thumb.removeEventListener('pointermove', onMove);
-        thumb.removeEventListener('pointerup', onUp);
-        thumb.removeEventListener('lostpointercapture', onUp);
+        thumb.classList.remove("canvas-scrollbar__thumb--dragging");
+        thumb.removeEventListener("pointermove", onMove);
+        thumb.removeEventListener("pointerup", onUp);
+        thumb.removeEventListener("lostpointercapture", onUp);
         showScrollbar();
       };
 
-      thumb.addEventListener('pointermove', onMove);
-      thumb.addEventListener('pointerup', onUp);
-      thumb.addEventListener('lostpointercapture', onUp);
+      thumb.addEventListener("pointermove", onMove);
+      thumb.addEventListener("pointerup", onUp);
+      thumb.addEventListener("lostpointercapture", onUp);
     };
 
-    thumb.addEventListener('pointerdown', handlePointerDown);
+    thumb.addEventListener("pointerdown", handlePointerDown);
 
     // ========================================
     // Track 클릭
@@ -260,14 +258,14 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
         0,
         Math.min(1, targetThumbStart / axis.scrollableTrack),
       );
-      const targetWorldStart =
-        axis.worldMin + ratio * axis.scrollableWorld;
+      const targetWorldStart = axis.worldMin + ratio * axis.scrollableWorld;
 
       let newX: number;
       let newY: number;
       if (isHorizontal) {
         newX =
-          panelInsetRef.current.left - targetWorldStart * metrics.viewportState.scale;
+          panelInsetRef.current.left -
+          targetWorldStart * metrics.viewportState.scale;
         newY = metrics.viewportState.y;
       } else {
         newX = metrics.viewportState.x;
@@ -281,7 +279,7 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
       });
     };
 
-    track.addEventListener('click', handleTrackClick);
+    track.addEventListener("click", handleTrackClick);
 
     // ========================================
     // 초기화
@@ -296,11 +294,10 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
 
     return () => {
       removeVCListener();
-      unsubSync();
       unsubPanel();
       trackResizeObserver.disconnect();
-      thumb.removeEventListener('pointerdown', handlePointerDown);
-      track.removeEventListener('click', handleTrackClick);
+      thumb.removeEventListener("pointerdown", handlePointerDown);
+      track.removeEventListener("click", handleTrackClick);
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
     };

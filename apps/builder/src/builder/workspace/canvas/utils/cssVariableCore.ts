@@ -1,0 +1,158 @@
+/**
+ * CSS Variable Core (ADR-035 Phase 6)
+ *
+ * CSS 변수 읽기, 캐시, 색상 변환 기초 유틸리티.
+ * cssVariableReader.ts에서 추출된 핵심 모듈.
+ */
+
+import { cssColorToPixiHex } from "../../../../utils/color";
+
+// ============================================
+// CSS Variable Reading + Cache
+// ============================================
+
+/**
+ * M-4: CSS 변수 메모리 캐시
+ *
+ * getComputedStyle()은 매 호출마다 레이아웃 스타일 재계산을 트리거할 수 있다.
+ * 동일 프레임/렌더 사이클 내에서 같은 변수를 반복 조회하는 비용을 제거한다.
+ * 테마 전환 시 invalidateCSSVariableCache()로 무효화한다.
+ */
+const cssVarCache = new Map<string, string>();
+
+/**
+ * M-4: CSS 변수 캐시 무효화
+ *
+ * 테마 전환, 페이지 전환, 또는 Preview iframe 교체 시 호출한다.
+ */
+export function invalidateCSSVariableCache(): void {
+  cssVarCache.clear();
+}
+
+/**
+ * CSS 변수 값을 읽어옴 (M-4: 캐시 적용)
+ */
+export function getCSSVariable(name: string): string {
+  const cached = cssVarCache.get(name);
+  if (cached !== undefined) return cached;
+
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  cssVarCache.set(name, value);
+  return value;
+}
+
+/**
+ * W3-7: DOM에서 CSS 변수를 조회하는 fallback 함수 (M-4: 캐시 적용)
+ */
+export function resolveVariableFromDOM(varName: string): string {
+  if (typeof document === "undefined") return "";
+  return getCSSVariable(varName);
+}
+
+// ============================================
+// Color Conversion
+// ============================================
+
+/**
+ * CSS 색상 문자열을 hex 숫자로 변환
+ */
+export function cssColorToHex(color: string, fallback: number): number {
+  if (!color) return fallback;
+
+  if (color.startsWith("color-mix")) {
+    return resolveColorMix(color, fallback);
+  }
+
+  return cssColorToPixiHex(color, fallback);
+}
+
+/**
+ * color-mix() 값을 실제 색상으로 변환
+ */
+function resolveColorMix(colorMix: string, fallback: number): number {
+  try {
+    const tempDiv = document.createElement("div");
+    tempDiv.style.color = colorMix;
+    tempDiv.style.display = "none";
+    document.body.appendChild(tempDiv);
+
+    const computedColor = getComputedStyle(tempDiv).color;
+    document.body.removeChild(tempDiv);
+
+    return cssColorToHex(computedColor, fallback);
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * 색상을 어둡게 (black과 mix)
+ * @param color hex 색상
+ * @param percent 원본 색상 비율 (92 = 92% 원본 + 8% black)
+ */
+export function mixWithBlack(color: number, percent: number): number {
+  const ratio = percent / 100;
+  const r = Math.round(((color >> 16) & 0xff) * ratio);
+  const g = Math.round(((color >> 8) & 0xff) * ratio);
+  const b = Math.round((color & 0xff) * ratio);
+  return (r << 16) | (g << 8) | b;
+}
+
+/**
+ * 색상을 밝게 (white와 mix)
+ * @param color hex 색상
+ * @param percent primary 색상 비율 (8 = 8% primary + 92% white)
+ */
+export function mixWithWhite(color: number, percent: number): number {
+  const ratio = percent / 100;
+  const whiteRatio = 1 - ratio;
+  const r = Math.round(((color >> 16) & 0xff) * ratio + 255 * whiteRatio);
+  const g = Math.round(((color >> 8) & 0xff) * ratio + 255 * whiteRatio);
+  const b = Math.round((color & 0xff) * ratio + 255 * whiteRatio);
+  return (r << 16) | (g << 8) | b;
+}
+
+// ============================================
+// Fallback Colors (M3 Light Mode)
+// ============================================
+
+export const FALLBACK_COLORS = {
+  primary: 0x6750a4,
+  onPrimary: 0xffffff,
+  secondary: 0x625b71,
+  onSecondary: 0xffffff,
+  tertiary: 0x7d5260,
+  onTertiary: 0xffffff,
+  error: 0xb3261e,
+  onError: 0xffffff,
+  surfaceContainer: 0xf3edf7,
+  surfaceContainerHigh: 0xece6f0,
+  surfaceContainerHighest: 0xe6e0e9,
+  onSurface: 0x1d1b20,
+  outline: 0x79747e,
+  outlineVariant: 0xcac4d0,
+};
+
+/**
+ * CSS 변수에서 px 값 파싱
+ * rem → px 변환 (1rem = 16px 기준)
+ */
+export function parseCSSValue(value: string, fallback: number): number {
+  if (!value) return fallback;
+
+  const trimmed = value.trim();
+
+  if (trimmed.endsWith("px")) {
+    return parseFloat(trimmed) || fallback;
+  }
+
+  if (trimmed.endsWith("rem")) {
+    const remValue = parseFloat(trimmed);
+    return remValue ? remValue * 16 : fallback;
+  }
+
+  const num = parseFloat(trimmed);
+  return isNaN(num) ? fallback : num;
+}

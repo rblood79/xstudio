@@ -8,6 +8,7 @@ import {
   type ComputedLayout,
 } from "../layout";
 import { applyImplicitStyles } from "../layout/engines/implicitStyles";
+import { recordWasmMetric, updateElementCount } from "../utils/gpuProfilerCore";
 import { ElementSprite } from "../sprites";
 import { useViewportCulling } from "../hooks/useViewportCulling";
 import { DirectContainer } from "./DirectContainer";
@@ -190,6 +191,8 @@ export const ElementsLayer = memo(function ElementsLayer({
       bodyPaddingVal.top -
       bodyPaddingVal.bottom;
 
+    const layoutStart = import.meta.env.DEV ? performance.now() : 0;
+
     const result = calculateFullTreeLayout(
       bodyElement.id,
       elementById,
@@ -198,6 +201,13 @@ export const ElementsLayer = memo(function ElementsLayer({
       availableHeight,
       (id: string) => pageChildrenMap.get(id) ?? [],
     );
+
+    if (import.meta.env.DEV && layoutStart) {
+      recordWasmMetric("blockLayout", performance.now() - layoutStart);
+      if (result) {
+        updateElementCount(result.size);
+      }
+    }
 
     publishLayoutMap(result, bodyElement.page_id);
 
@@ -428,8 +438,8 @@ export const ElementsLayer = memo(function ElementsLayer({
             "TextArea",
           ].includes(containerTag)
         ) {
-          const existingStyle = (effectiveChildElement.props?.style || {}) as
-            Record<string, unknown>;
+          const existingStyle = (effectiveChildElement.props?.style ||
+            {}) as Record<string, unknown>;
           if (existingStyle.backgroundColor === "transparent") {
             const { backgroundColor, ...restStyle } = existingStyle;
             void backgroundColor;
@@ -448,8 +458,8 @@ export const ElementsLayer = memo(function ElementsLayer({
           effectiveChildElement.tag === "ComboBoxInput" ||
           effectiveChildElement.tag === "ComboBoxTrigger"
         ) {
-          const existingStyle = (effectiveChildElement.props?.style || {}) as
-            Record<string, unknown>;
+          const existingStyle = (effectiveChildElement.props?.style ||
+            {}) as Record<string, unknown>;
           const shouldStripTransparentBg =
             existingStyle.backgroundColor === "transparent";
           const shouldStripTransparentColor =
@@ -510,10 +520,8 @@ export const ElementsLayer = memo(function ElementsLayer({
               };
               const size = (elementProps?.size as string) ?? "md";
               const box = indicatorBoxes[size] ?? 20;
-              const elementStyle = (elementProps?.style as Record<
-                string,
-                unknown
-              >) ?? { };
+              const elementStyle =
+                (elementProps?.style as Record<string, unknown>) ?? {};
               const parsedGap = parseFloat(String(elementStyle.gap ?? ""));
               const gap = !Number.isNaN(parsedGap)
                 ? parsedGap
@@ -653,7 +661,9 @@ export const ElementsLayer = memo(function ElementsLayer({
               tabsRenderChildren = activePanel ? [activePanel] : [];
               if (
                 activePanel &&
-                !childElements.some((candidate) => candidate.id === activePanel.id)
+                !childElements.some(
+                  (candidate) => candidate.id === activePanel.id,
+                )
               ) {
                 childElements = [...childElements, activePanel];
               }

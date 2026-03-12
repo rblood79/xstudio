@@ -17,6 +17,7 @@ import { Workspace } from "../workspace";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot, ModalPanelContainer } from "../layout";
 import { ToastContainer, CommandPalette } from "../components";
+import { registerPanelElement } from "../workspace/utils/panelLayoutRuntime";
 
 import {
   useErrorHandler,
@@ -947,8 +948,26 @@ export const BuilderCore: React.FC = () => {
       {/* 로딩 표시 (초기화 또는 페이지 로딩) */}
       {(isLoading || isPageLoading) && (
         <div className="loading-overlay">
-          <div className="loading-spinner">
-            {isLoading ? "Initializing..." : "Loading page..."}
+          <div className="loading-content">
+            <div className="loading-cube-wrapper">
+              <div className="loading-cube">
+                <div className="loading-cube-face loading-cube-front">
+                  <img src="/appIcon.svg" alt="" width={54} height={54} />
+                </div>
+                <div className="loading-cube-face loading-cube-right">
+                  <img src="/appIcon.svg" alt="" width={54} height={54} />
+                </div>
+                <div className="loading-cube-face loading-cube-back">
+                  <img src="/appIcon.svg" alt="" width={54} height={54} />
+                </div>
+                <div className="loading-cube-face loading-cube-left">
+                  <img src="/appIcon.svg" alt="" width={54} height={54} />
+                </div>
+              </div>
+            </div>
+            <div className="loading-text">
+              {isLoading ? "Initializing..." : "Loading page..."}
+            </div>
           </div>
         </div>
       )}
@@ -1000,11 +1019,14 @@ export const BuilderCore: React.FC = () => {
         />
       )}
 
-      <aside className="sidebar">
+      <aside className="sidebar" ref={(el) => registerPanelElement("left", el)}>
         <PanelSlot side="left" />
       </aside>
 
-      <aside className="inspector">
+      <aside
+        className="inspector"
+        ref={(el) => registerPanelElement("right", el)}
+      >
         <PanelSlot side="right" />
       </aside>
 
