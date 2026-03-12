@@ -102,6 +102,10 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **CRITICAL**: Child Spec 추가 시 반드시 `packages/specs/src/index.ts` (빌드 엔트리) + `packages/specs/src/components/index.ts` 양쪽에 export 추가 후 `pnpm build:specs` 실행 필수
 - **CRITICAL**: 자식 Element가 독립 렌더링하려면 `ElementSprite.tsx`의 `TAG_SPEC_MAP`에 해당 태그의 Spec을 등록해야 함
 
+#### Panel Section (domain-\*)
+
+- **[domain-section-component](rules/domain-section-component.md)** - 모든 패널 섹션은 `Section` 컴포넌트 사용 필수. 수동 `.section` 마크업 금지. `PropertySection`은 `Section`의 re-export alias.
+
 ### HIGH (강력 권장)
 
 #### Architecture (arch-\*)

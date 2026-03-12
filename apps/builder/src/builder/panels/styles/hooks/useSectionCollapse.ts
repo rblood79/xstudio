@@ -7,8 +7,8 @@
  * - Alt/Option + Shift + S: Focus Mode 토글
  */
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface SectionCollapseState {
   // State
@@ -19,6 +19,7 @@ interface SectionCollapseState {
   // Actions
   toggleSection: (sectionId: string) => void;
   isCollapsed: (sectionId: string) => boolean;
+  expandSections: (sectionIds: string[]) => void;
   expandAll: () => void;
   collapseAll: () => void;
   toggleFocusMode: () => void;
@@ -63,6 +64,14 @@ export const useSectionCollapse = create<SectionCollapseState>()(
         }
       },
 
+      // Expand specific sections (remove from collapsed set)
+      expandSections: (sectionIds: string[]) =>
+        set((state) => {
+          const newSet = new Set(state.collapsedSections);
+          sectionIds.forEach((id) => newSet.delete(id));
+          return { collapsedSections: newSet };
+        }),
+
       // Expand all sections
       expandAll: () => set({ collapsedSections: new Set() }),
 
@@ -70,10 +79,10 @@ export const useSectionCollapse = create<SectionCollapseState>()(
       collapseAll: () =>
         set({
           collapsedSections: new Set([
-            'transform',
-            'layout',
-            'appearance',
-            'typography',
+            "transform",
+            "layout",
+            "appearance",
+            "typography",
           ]),
         }),
 
@@ -84,7 +93,7 @@ export const useSectionCollapse = create<SectionCollapseState>()(
           return {
             focusMode: newFocusMode,
             // Focus Mode 활성화 시 첫 번째 섹션만 펼침
-            activeFocusSection: newFocusMode ? 'transform' : null,
+            activeFocusSection: newFocusMode ? "transform" : null,
           };
         }),
 
@@ -96,7 +105,7 @@ export const useSectionCollapse = create<SectionCollapseState>()(
         }),
     }),
     {
-      name: 'styles-panel-collapse', // localStorage key
+      name: "styles-panel-collapse", // localStorage key
       // Custom serialization for Set
       partialize: (state) => ({
         collapsedSections: Array.from(state.collapsedSections),
@@ -105,7 +114,7 @@ export const useSectionCollapse = create<SectionCollapseState>()(
       }),
       merge: (
         persistedState: unknown,
-        currentState: SectionCollapseState
+        currentState: SectionCollapseState,
       ): SectionCollapseState => {
         const stored = persistedState as Partial<{
           collapsedSections: string[];
@@ -120,6 +129,6 @@ export const useSectionCollapse = create<SectionCollapseState>()(
           activeFocusSection: stored?.activeFocusSection || null,
         };
       },
-    }
-  )
+    },
+  ),
 );

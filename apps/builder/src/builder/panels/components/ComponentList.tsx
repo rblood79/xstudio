@@ -2,7 +2,6 @@ import { useMemo, useCallback, memo, useState, useEffect } from "react";
 import {
   AppWindowMac,
   SeparatorHorizontal,
-  ChevronUp,
   Square,
   Text,
   ToggleLeft,
@@ -55,13 +54,13 @@ import {
   ImageIcon,
   ChevronsUpDown,
 } from "lucide-react";
-import { PanelHeader } from "../../components";
+import { PanelHeader, Section } from "../../components";
 import { useEditModeStore } from "../../stores/editMode";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { ComponentSearch } from "./ComponentSearch";
 import { useRecentComponents } from "../../hooks/useRecentComponents";
 import { useFavoriteComponents } from "../../hooks/useFavoriteComponents";
-import { useCategoryExpansion } from "../../hooks/useCategoryExpansion";
+import { useSectionCollapse } from "../styles/hooks/useSectionCollapse";
 import "@xstudio/shared/components/styles/ComponentList.css";
 import { Badge } from "@xstudio/shared/components/Badge";
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
@@ -233,24 +232,8 @@ const ComponentList = memo(
     const editMode = useEditModeStore((state) => state.mode);
     const isLayoutMode = editMode === "layout";
 
-    // 카테고리 펼치기/접기 상태 관리 (모든 카테고리 기본 펼침)
-    const allCategoryKeys = useMemo(
-      () => [
-        "content",
-        "layout",
-        "buttons",
-        "forms",
-        "collections",
-        "dateTime",
-        "overlays",
-      ],
-      [],
-    );
-    const { isExpanded, toggleCategory, expandCategories } =
-      useCategoryExpansion({
-        initialExpanded: allCategoryKeys,
-        persist: true,
-      });
+    // 검색 시 카테고리 자동 펼치기 (Section 컴포넌트가 collapse 상태 자체를 관리)
+    const expandSections = useSectionCollapse((s) => s.expandSections);
 
     // 이벤트 핸들러를 메모이제이션
     const handleComponentAdd = useCallback(
@@ -385,10 +368,12 @@ const ComponentList = memo(
     // 검색 시 검색 결과가 있는 카테고리 자동 펼치기
     useEffect(() => {
       if (searchQuery && filteredGroups) {
-        const categoriesToExpand = Object.keys(filteredGroups);
-        expandCategories(categoriesToExpand);
+        const sectionIds = Object.keys(filteredGroups).map(
+          (key) => `comp-${key}`,
+        );
+        expandSections(sectionIds);
       }
-    }, [searchQuery, filteredGroups, expandCategories]);
+    }, [searchQuery, filteredGroups, expandSections]);
 
     return (
       <div className="panel">
@@ -412,129 +397,96 @@ const ComponentList = memo(
         <div className="panel-contents">
           {/* Recent 컴포넌트 - 검색 시 숨김 */}
           {!searchQuery && recentComponents.length > 0 && (
-            <div className="section">
-              <div className="section-header">
-                <div className="category-info">
-                  <h3 className="section-title">Recently Used</h3>
-                  <span className="category-count">
-                    {recentComponents.length}
-                  </span>
-                </div>
-                <div className="section-actions">
-                  <button
-                    className="iconButton"
-                    aria-label="Clear Recent History"
-                    onClick={clearRecentComponents}
-                  >
-                    <Trash2
-                      color={iconProps.color}
-                      strokeWidth={iconProps.strokeWidth}
-                      size={iconProps.size}
-                    />
-                  </button>
-                </div>
+            <Section
+              title="Recently Used"
+              badge={
+                <span className="category-count">
+                  {recentComponents.length}
+                </span>
+              }
+              actions={
+                <button
+                  className="iconButton"
+                  aria-label="Clear Recent History"
+                  onClick={clearRecentComponents}
+                >
+                  <Trash2
+                    color={iconProps.color}
+                    strokeWidth={iconProps.strokeWidth}
+                    size={iconProps.size}
+                  />
+                </button>
+              }
+              collapsible={false}
+            >
+              <div className="list-group" role="list">
+                {recentComponents.map((component) => (
+                  <ComponentItem
+                    key={component.tag}
+                    component={component}
+                    onAdd={handleComponentAdd}
+                    selectedElementId={selectedElementId}
+                    isRecent={true}
+                    count={getComponentCount(component.tag)}
+                  />
+                ))}
               </div>
-              <div className="section-content">
-                <div className="list-group" role="list">
-                  {recentComponents.map((component) => (
-                    <ComponentItem
-                      key={component.tag}
-                      component={component}
-                      onAdd={handleComponentAdd}
-                      selectedElementId={selectedElementId}
-                      isRecent={true}
-                      count={getComponentCount(component.tag)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+            </Section>
           )}
 
           {/* Favorites 컴포넌트 - 항상 표시 */}
           {favoriteComponents.length > 0 && (
-            <div className="section">
-              <div className="section-header">
-                <div className="category-info">
-                  <Star size={14} className="category-icon-small" />
-                  <h3 className="section-title">Favorites</h3>
-                  <span className="category-count">
-                    {favoriteComponents.length}
-                  </span>
-                </div>
+            <Section
+              title="Favorites"
+              badge={
+                <span className="category-count">
+                  {favoriteComponents.length}
+                </span>
+              }
+              collapsible={false}
+            >
+              <div className="list-group" role="list">
+                {favoriteComponents.map((component) => (
+                  <ComponentItem
+                    key={component.tag}
+                    component={component}
+                    onAdd={handleComponentAdd}
+                    selectedElementId={selectedElementId}
+                  />
+                ))}
               </div>
-              <div className="section-content">
-                <div className="list-group" role="list">
-                  {favoriteComponents.map((component) => (
-                    <ComponentItem
-                      key={component.tag}
-                      component={component}
-                      onAdd={handleComponentAdd}
-                      selectedElementId={selectedElementId}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+            </Section>
           )}
 
           {/* 카테고리별 컴포넌트 */}
           {searchQuery && filteredGroups ? (
-            // 검색 모드: 필터링된 카테고리만 표시 (검색 결과가 있는 카테고리는 자동 펼침)
+            // 검색 모드: 필터링된 카테고리만 표시
             Object.entries(filteredGroups).map(([groupName, components]) => {
               const categoryKey = groupName as keyof typeof categoryConfig;
               const config = categoryConfig[categoryKey];
-              // 검색 모드에서는 항상 펼쳐진 상태로 표시 (사용자가 수동으로 접을 수도 있음)
-              const expanded = isExpanded(categoryKey);
 
               if (!components || components.length === 0) return null;
 
               return (
-                <div key={groupName} className="section">
-                  <div className="section-header">
-                    <div className="category-info">
-                      <h3 className="section-title">{config.label}</h3>
-                      <span className="category-count">
-                        {components.length}
-                      </span>
-                    </div>
-                    <div className="section-actions">
-                      <button
-                        className="iconButton"
-                        aria-label={`Toggle ${config.label}`}
-                        onClick={() => toggleCategory(categoryKey)}
-                      >
-                        {expanded ? (
-                          <ChevronUp
-                            color={iconProps.color}
-                            strokeWidth={iconProps.strokeWidth}
-                            size={iconProps.size}
-                          />
-                        ) : (
-                          <ChevronDown
-                            color={iconProps.color}
-                            strokeWidth={iconProps.strokeWidth}
-                            size={iconProps.size}
-                          />
-                        )}
-                      </button>
-                    </div>
+                <Section
+                  key={groupName}
+                  id={`comp-${categoryKey}`}
+                  title={config.label}
+                  badge={
+                    <span className="category-count">{components.length}</span>
+                  }
+                >
+                  <div className="list-group" role="list">
+                    {components.map((component) => (
+                      <ComponentItem
+                        key={component.tag}
+                        component={component}
+                        onAdd={handleComponentAdd}
+                        selectedElementId={selectedElementId}
+                      />
+                    ))}
                   </div>
-                  {expanded && (
-                    <div className="section-content">
-                      <div className="list-group" role="list">
-                        {components.map((component) => (
-                          <ComponentItem
-                            key={component.tag}
-                            component={component}
-                            onAdd={handleComponentAdd}
-                            selectedElementId={selectedElementId}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                </Section>
               );
             })
           ) : !searchQuery ? (
@@ -542,54 +494,27 @@ const ComponentList = memo(
             Object.entries(componentGroups).map(([groupName, components]) => {
               const categoryKey = groupName as keyof typeof categoryConfig;
               const config = categoryConfig[categoryKey];
-              const expanded = isExpanded(categoryKey);
 
               return (
-                <div key={groupName} className="section">
-                  <div className="section-header">
-                    <div className="category-info">
-                      <h3 className="section-title">{config.label}</h3>
-                      <span className="category-count">
-                        {components.length}
-                      </span>
-                    </div>
-                    <div className="section-actions">
-                      <button
-                        className="iconButton"
-                        aria-label={`Toggle ${config.label}`}
-                        onClick={() => toggleCategory(categoryKey)}
-                      >
-                        {expanded ? (
-                          <ChevronUp
-                            color={iconProps.color}
-                            strokeWidth={iconProps.strokeWidth}
-                            size={iconProps.size}
-                          />
-                        ) : (
-                          <ChevronDown
-                            color={iconProps.color}
-                            strokeWidth={iconProps.strokeWidth}
-                            size={iconProps.size}
-                          />
-                        )}
-                      </button>
-                    </div>
+                <Section
+                  key={groupName}
+                  id={`comp-${categoryKey}`}
+                  title={config.label}
+                  badge={
+                    <span className="category-count">{components.length}</span>
+                  }
+                >
+                  <div className="list-group" role="list">
+                    {components.map((component) => (
+                      <ComponentItem
+                        key={component.tag}
+                        component={component}
+                        onAdd={handleComponentAdd}
+                        selectedElementId={selectedElementId}
+                      />
+                    ))}
                   </div>
-                  {expanded && (
-                    <div className="section-content">
-                      <div className="list-group" role="list">
-                        {components.map((component) => (
-                          <ComponentItem
-                            key={component.tag}
-                            component={component}
-                            onAdd={handleComponentAdd}
-                            selectedElementId={selectedElementId}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                </Section>
               );
             })
           ) : (

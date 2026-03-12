@@ -30,6 +30,7 @@ export { useComponentMeta } from "./useComponentMeta";
 export { usePanelLayout } from "./usePanelLayout";
 
 // UI State
+/** @deprecated useSectionCollapse 사용 권장 */
 export { useCategoryExpansion } from "./useCategoryExpansion";
 export { useCopyPaste } from "./useCopyPaste";
 export { useFavoriteComponents } from "./useFavoriteComponents";
