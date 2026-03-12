@@ -7,12 +7,12 @@
 /**
  * Supported locales
  */
-export type SupportedLocale = 'ko-KR' | 'en-US' | 'ja-JP' | 'zh-CN';
+export type SupportedLocale = "ko-KR" | "en-US" | "ja-JP" | "zh-CN";
 
 /**
  * Direction for text layout
  */
-export type Direction = 'ltr' | 'rtl';
+export type Direction = "ltr" | "rtl";
 
 /**
  * Locale configuration
@@ -78,33 +78,93 @@ export interface TranslationKeys {
     settings: string;
   };
   components: {
+    // Content
+    text: string;
+    icon: string;
+    separator: string;
+    badge: string;
+    progressBar: string;
+    meter: string;
+    skeleton: string;
+    avatar: string;
+    avatarGroup: string;
+    statusLight: string;
+    inlineAlert: string;
+    divider: string;
+    progressCircle: string;
+    image: string;
+    illustratedMessage: string;
+    // Layout
+    panel: string;
+    card: string;
+    group: string;
+    tabs: string;
+    breadcrumbs: string;
+    link: string;
+    nav: string;
+    scrollBox: string;
+    maskedFrame: string;
+    accordion: string;
+    cardView: string;
+    slot: string;
+    // Buttons
     button: string;
-    input: string;
-    select: string;
+    toggleButton: string;
+    toggleButtonGroup: string;
+    toolbar: string;
+    linkButton: string;
+    contextualHelp: string;
+    actionButton: string;
+    actionButtonGroup: string;
+    buttonGroup: string;
+    actionMenu: string;
+    segmentedControl: string;
+    selectBoxGroup: string;
+    // Forms
+    textField: string;
+    numberField: string;
+    searchField: string;
     checkbox: string;
-    radio: string;
+    checkboxGroup: string;
+    radioGroup: string;
+    select: string;
+    comboBox: string;
     switch: string;
     slider: string;
-    datePicker: string;
-    timePicker: string;
+    rangeSlider: string;
+    picker: string;
     colorPicker: string;
-    fileUpload: string;
-    table: string;
+    dropZone: string;
+    fileTrigger: string;
     form: string;
+    field: string;
+    // Collections
+    table: string;
+    listBox: string;
+    gridList: string;
+    tree: string;
+    tagGroup: string;
+    menu: string;
+    section: string;
+    tableView: string;
+    // Date & Time
+    calendar: string;
+    datePicker: string;
+    dateRangePicker: string;
+    dateField: string;
+    timeField: string;
+    rangeCalendar: string;
+    // Overlays
     dialog: string;
     modal: string;
     popover: string;
     tooltip: string;
-    menu: string;
-    tabs: string;
-    accordion: string;
-    card: string;
-    badge: string;
+    // Legacy (backward compatibility)
+    input: string;
+    radio: string;
+    timePicker: string;
+    fileUpload: string;
     tag: string;
-    progressBar: string;
-    meter: string;
-    calendar: string;
-    tree: string;
   };
   validation: {
     required: string;

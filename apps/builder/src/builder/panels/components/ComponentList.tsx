@@ -1,4 +1,5 @@
 import { useMemo, useCallback, memo, useState, useEffect } from "react";
+import { translations } from "../../../i18n";
 import {
   AppWindowMac,
   SeparatorHorizontal,
@@ -278,7 +279,31 @@ const ComponentList = memo(
       );
     }, [componentGroups]);
 
-    // Fuzzy search results
+    // Tag → i18n key 매핑 (모든 locale 번역으로 검색 가능)
+    const i18nLabelsMap = useMemo(() => {
+      const map = new Map<string, string[]>();
+      const specialTagMap: Record<string, string> = {
+        TailSwatch: "colorPicker",
+      };
+      const allLocales = Object.values(translations);
+
+      for (const comp of allComponents) {
+        const i18nKey =
+          specialTagMap[comp.tag] ??
+          comp.tag[0].toLowerCase() + comp.tag.slice(1);
+        const labels: string[] = [];
+        for (const locale of allLocales) {
+          const label = (
+            locale.components as Record<string, string | undefined>
+          )[i18nKey];
+          if (label) labels.push(label.toLowerCase());
+        }
+        map.set(comp.tag, labels);
+      }
+      return map;
+    }, [allComponents]);
+
+    // Fuzzy search results (다국어 지원)
     const searchResults = useMemo(() => {
       if (!searchQuery.trim()) return null;
 
@@ -288,15 +313,21 @@ const ComponentList = memo(
         const lowerLabel = comp.label.toLowerCase();
         const lowerTag = comp.tag.toLowerCase();
         const lowerCategory = comp.category.toLowerCase();
+        const i18nLabels = i18nLabelsMap.get(comp.tag) ?? [];
 
         let score = 0;
 
-        // Exact match
+        // Exact match (English)
         if (lowerLabel === lowerQuery || lowerTag === lowerQuery) {
           score += 100;
         }
 
-        // Starts with query
+        // Exact match (i18n)
+        if (i18nLabels.some((l) => l === lowerQuery)) {
+          score += 100;
+        }
+
+        // Starts with query (English)
         if (
           lowerLabel.startsWith(lowerQuery) ||
           lowerTag.startsWith(lowerQuery)
@@ -304,7 +335,12 @@ const ComponentList = memo(
           score += 50;
         }
 
-        // Contains query
+        // Starts with query (i18n)
+        if (i18nLabels.some((l) => l.startsWith(lowerQuery))) {
+          score += 50;
+        }
+
+        // Contains query (English)
         if (lowerLabel.includes(lowerQuery)) {
           score += 30;
         }
@@ -315,10 +351,18 @@ const ComponentList = memo(
           score += 10;
         }
 
+        // Contains query (i18n)
+        if (i18nLabels.some((l) => l.includes(lowerQuery))) {
+          score += 30;
+        }
+
         // Multi-word matching
         const words = lowerQuery.split(" ").filter((w) => w.length > 0);
         const allWordsMatch = words.every(
-          (word) => lowerLabel.includes(word) || lowerTag.includes(word),
+          (word) =>
+            lowerLabel.includes(word) ||
+            lowerTag.includes(word) ||
+            i18nLabels.some((l) => l.includes(word)),
         );
         if (allWordsMatch && words.length > 1) {
           score += 20;
@@ -330,7 +374,7 @@ const ComponentList = memo(
       return scored
         .filter((item) => item.score > 0)
         .sort((a, b) => b.score - a.score);
-    }, [searchQuery, allComponents]);
+    }, [searchQuery, allComponents, i18nLabelsMap]);
 
     // Group search results by category
     const filteredGroups = useMemo(() => {
