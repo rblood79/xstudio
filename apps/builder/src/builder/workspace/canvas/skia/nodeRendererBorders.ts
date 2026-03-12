@@ -1,0 +1,483 @@
+import type { CanvasKit, Canvas, Paint } from "canvaskit-wasm";
+import { colord } from "colord";
+import { applyFill } from "./fills";
+import { SkiaDisposable } from "./disposable";
+import { createRoundRectPath } from "./nodeRendererClip";
+import type { SkiaNodeData } from "./nodeRendererTypes";
+
+type BorderRadius = number | [number, number, number, number];
+type SkiaPaint = Paint;
+
+function parseSkiaColor(color: Float32Array): string {
+  const r = Math.round(color[0] * 255);
+  const g = Math.round(color[1] * 255);
+  const b = Math.round(color[2] * 255);
+  return `rgb(${r},${g},${b})`;
+}
+
+function hexToSkiaColor(hex: string, alpha: number): Float32Array {
+  const c = colord(hex);
+  const rgb = c.toRgb();
+  return Float32Array.of(rgb.r / 255, rgb.g / 255, rgb.b / 255, alpha);
+}
+
+function drawStrokeShape(
+  ck: CanvasKit,
+  canvas: Canvas,
+  paint: SkiaPaint,
+  inset: number,
+  width: number,
+  height: number,
+  br: BorderRadius,
+  hasRadius: boolean,
+  isArrayRadius: boolean,
+): void {
+  const strokeRect = ck.LTRBRect(inset, inset, width - inset, height - inset);
+  if (hasRadius) {
+    if (isArrayRadius) {
+      const radii = br as [number, number, number, number];
+      const innerRadii: [number, number, number, number] = [
+        Math.max(0, radii[0] - inset),
+        Math.max(0, radii[1] - inset),
+        Math.max(0, radii[2] - inset),
+        Math.max(0, radii[3] - inset),
+      ];
+      const path = createRoundRectPath(
+        ck,
+        inset,
+        inset,
+        width - inset * 2,
+        height - inset * 2,
+        innerRadii,
+      );
+      canvas.drawPath(path, paint);
+      path.delete();
+    } else {
+      const adjustedRadius = Math.max(0, (br as number) - inset);
+      const rrect = ck.RRectXY(strokeRect, adjustedRadius, adjustedRadius);
+      canvas.drawRRect(rrect, paint);
+    }
+  } else {
+    canvas.drawRect(strokeRect, paint);
+  }
+}
+
+function renderSolidBorder(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  paint: SkiaPaint,
+  sw: number,
+  br: BorderRadius,
+  hasRadius: boolean,
+  isArrayRadius: boolean,
+  strokeStyle: "solid" | "dashed" | "dotted" | undefined,
+): void {
+  const inset = sw / 2;
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setStrokeWidth(sw);
+  paint.setColor(node.box!.strokeColor!);
+
+  let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
+  if (strokeStyle === "dashed") {
+    const dashLen = Math.max(sw * 3, 4);
+    const gapLen = Math.max(sw * 2, 3);
+    dashEffect = ck.PathEffect.MakeDash([dashLen, gapLen]);
+    paint.setPathEffect(dashEffect);
+  } else if (strokeStyle === "dotted") {
+    dashEffect = ck.PathEffect.MakeDash([sw, sw * 1.5]);
+    paint.setPathEffect(dashEffect);
+    paint.setStrokeCap(ck.StrokeCap.Round);
+  }
+
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    inset,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
+
+  if (dashEffect) {
+    paint.setPathEffect(null);
+    dashEffect.delete();
+  }
+}
+
+function renderDoubleBorder(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  paint: SkiaPaint,
+  sw: number,
+  br: BorderRadius,
+  hasRadius: boolean,
+  isArrayRadius: boolean,
+): void {
+  if (sw < 3) {
+    renderSolidBorder(
+      ck,
+      canvas,
+      node,
+      paint,
+      sw,
+      br,
+      hasRadius,
+      isArrayRadius,
+      "solid",
+    );
+    return;
+  }
+
+  const lineW = sw / 3;
+  const color = node.box!.strokeColor!;
+
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setColor(color);
+  paint.setStrokeWidth(lineW);
+
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    lineW / 2,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    sw - lineW / 2,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
+}
+
+function renderGrooveRidgeBorder(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  paint: SkiaPaint,
+  sw: number,
+  br: BorderRadius,
+  hasRadius: boolean,
+  isArrayRadius: boolean,
+  style: "groove" | "ridge",
+): void {
+  const halfSw = sw / 2;
+  const color = node.box!.strokeColor!;
+  const alpha = color[3];
+  const baseHex = parseSkiaColor(color);
+
+  const darkColor = hexToSkiaColor(colord(baseHex).darken(0.3).toHex(), alpha);
+  const lightColor = hexToSkiaColor(
+    colord(baseHex).lighten(0.3).toHex(),
+    alpha,
+  );
+
+  const outerColor = style === "groove" ? darkColor : lightColor;
+  const innerColor = style === "groove" ? lightColor : darkColor;
+
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setStrokeWidth(halfSw);
+
+  paint.setColor(outerColor);
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    halfSw / 2,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
+
+  paint.setColor(innerColor);
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    halfSw + halfSw / 2,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
+}
+
+function renderInsetOutsetBorder(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  paint: SkiaPaint,
+  sw: number,
+  br: BorderRadius,
+  hasRadius: boolean,
+  isArrayRadius: boolean,
+  style: "inset" | "outset",
+): void {
+  const color = node.box!.strokeColor!;
+  const alpha = color[3];
+  const baseHex = parseSkiaColor(color);
+
+  const darkColor = hexToSkiaColor(colord(baseHex).darken(0.3).toHex(), alpha);
+  const lightColor = hexToSkiaColor(
+    colord(baseHex).lighten(0.3).toHex(),
+    alpha,
+  );
+
+  const tlColor = style === "inset" ? darkColor : lightColor;
+  const brColor = style === "inset" ? lightColor : darkColor;
+  const inset = sw / 2;
+
+  canvas.save();
+  const tlClipPath = new ck.Path();
+  tlClipPath.moveTo(0, 0);
+  tlClipPath.lineTo(node.width, 0);
+  tlClipPath.lineTo(node.width - sw, sw);
+  tlClipPath.lineTo(sw, sw);
+  tlClipPath.lineTo(sw, node.height - sw);
+  tlClipPath.lineTo(0, node.height);
+  tlClipPath.close();
+  canvas.clipPath(tlClipPath, ck.ClipOp.Intersect, true);
+  tlClipPath.delete();
+
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setStrokeWidth(sw);
+  paint.setColor(tlColor);
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    inset,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
+  canvas.restore();
+
+  canvas.save();
+  const brClipPath = new ck.Path();
+  brClipPath.moveTo(node.width, node.height);
+  brClipPath.lineTo(0, node.height);
+  brClipPath.lineTo(sw, node.height - sw);
+  brClipPath.lineTo(node.width - sw, node.height - sw);
+  brClipPath.lineTo(node.width - sw, sw);
+  brClipPath.lineTo(node.width, 0);
+  brClipPath.close();
+  canvas.clipPath(brClipPath, ck.ClipOp.Intersect, true);
+  brClipPath.delete();
+
+  paint.setColor(brColor);
+  drawStrokeShape(
+    ck,
+    canvas,
+    paint,
+    inset,
+    node.width,
+    node.height,
+    br,
+    hasRadius,
+    isArrayRadius,
+  );
+  canvas.restore();
+}
+
+export function renderBox(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+): void {
+  if (!node.box) return;
+
+  const scope = new SkiaDisposable();
+  try {
+    const paint = scope.track(new ck.Paint());
+    paint.setAntiAlias(true);
+    paint.setStyle(ck.PaintStyle.Fill);
+
+    let fillShader: { delete(): void } | null = null;
+    if (node.box.fill) {
+      fillShader = applyFill(ck, paint, node.box.fill);
+      if (!fillShader) {
+        paint.setColor(node.box.fillColor);
+      }
+    } else {
+      paint.setColor(node.box.fillColor);
+    }
+
+    const rect = ck.LTRBRect(0, 0, node.width, node.height);
+    const br = node.box.borderRadius;
+    const isArrayRadius = Array.isArray(br);
+    const hasRadius = isArrayRadius ? br.some((r) => r > 0) : br > 0;
+
+    if (hasRadius) {
+      if (isArrayRadius) {
+        const path = createRoundRectPath(ck, 0, 0, node.width, node.height, br);
+        canvas.drawPath(path, paint);
+        path.delete();
+      } else {
+        const rrect = ck.RRectXY(rect, br, br);
+        canvas.drawRRect(rrect, paint);
+      }
+    } else {
+      canvas.drawRect(rect, paint);
+    }
+
+    if (fillShader) {
+      paint.setShader(null);
+      fillShader.delete();
+    }
+
+    if (node.box.strokeColor && node.box.strokeWidth) {
+      const sw = node.box.strokeWidth;
+      const strokeStyle = node.box.strokeStyle;
+      paint.setShader(null);
+
+      if (strokeStyle === "double") {
+        renderDoubleBorder(
+          ck,
+          canvas,
+          node,
+          paint,
+          sw,
+          br,
+          hasRadius,
+          isArrayRadius,
+        );
+      } else if (strokeStyle === "groove" || strokeStyle === "ridge") {
+        renderGrooveRidgeBorder(
+          ck,
+          canvas,
+          node,
+          paint,
+          sw,
+          br,
+          hasRadius,
+          isArrayRadius,
+          strokeStyle,
+        );
+      } else if (strokeStyle === "inset" || strokeStyle === "outset") {
+        renderInsetOutsetBorder(
+          ck,
+          canvas,
+          node,
+          paint,
+          sw,
+          br,
+          hasRadius,
+          isArrayRadius,
+          strokeStyle,
+        );
+      } else {
+        renderSolidBorder(
+          ck,
+          canvas,
+          node,
+          paint,
+          sw,
+          br,
+          hasRadius,
+          isArrayRadius,
+          strokeStyle,
+        );
+      }
+    }
+
+    if (
+      node.box.outlineColor &&
+      node.box.outlineWidth &&
+      node.box.outlineWidth > 0
+    ) {
+      const ow = node.box.outlineWidth;
+      const oo = node.box.outlineOffset ?? 0;
+      const expansion = oo + ow / 2;
+      const ox = -expansion;
+      const oy = -expansion;
+      const ow2 = node.width + expansion * 2;
+      const oh2 = node.height + expansion * 2;
+
+      const outlinePaint = scope.track(new ck.Paint());
+      outlinePaint.setAntiAlias(true);
+      outlinePaint.setStyle(ck.PaintStyle.Stroke);
+      outlinePaint.setStrokeWidth(ow);
+      outlinePaint.setColor(node.box.outlineColor);
+
+      const outlineRadius = node.box.borderRadius;
+      const isArrayBr = Array.isArray(outlineRadius);
+      const hasBr = isArrayBr ? outlineRadius.some((r) => r > 0) : outlineRadius > 0;
+
+      if (hasBr) {
+        if (isArrayBr) {
+          const radii = outlineRadius as [number, number, number, number];
+          const expanded: [number, number, number, number] = [
+            Math.max(0, radii[0] + oo),
+            Math.max(0, radii[1] + oo),
+            Math.max(0, radii[2] + oo),
+            Math.max(0, radii[3] + oo),
+          ];
+          const path = createRoundRectPath(ck, ox, oy, ow2, oh2, expanded);
+          canvas.drawPath(path, outlinePaint);
+          path.delete();
+        } else {
+          const expandedR = Math.max(0, (outlineRadius as number) + oo);
+          const outlineRect = ck.LTRBRect(ox, oy, ox + ow2, oy + oh2);
+          canvas.drawRRect(
+            ck.RRectXY(outlineRect, expandedR, expandedR),
+            outlinePaint,
+          );
+        }
+      } else {
+        canvas.drawRect(ck.LTRBRect(ox, oy, ox + ow2, oy + oh2), outlinePaint);
+      }
+    }
+
+    if (node.arc) {
+      const arcPaint = new ck.Paint();
+      arcPaint.setAntiAlias(true);
+      arcPaint.setStyle(ck.PaintStyle.Stroke);
+      arcPaint.setStrokeWidth(node.arc.strokeWidth);
+      arcPaint.setColor(node.arc.strokeColor);
+
+      if (node.arc.strokeCap === "round") {
+        arcPaint.setStrokeCap(ck.StrokeCap.Round);
+      } else if (node.arc.strokeCap === "square") {
+        arcPaint.setStrokeCap(ck.StrokeCap.Square);
+      } else {
+        arcPaint.setStrokeCap(ck.StrokeCap.Butt);
+      }
+
+      const { cx, cy, radius, startAngle, sweepAngle } = node.arc;
+      const arcPath = new ck.Path();
+      const oval = ck.LTRBRect(
+        cx - radius,
+        cy - radius,
+        cx + radius,
+        cy + radius,
+      );
+      arcPath.addArc(oval, startAngle, sweepAngle);
+      canvas.drawPath(arcPath, arcPaint);
+
+      arcPath.delete();
+      arcPaint.delete();
+    }
+  } finally {
+    scope.dispose();
+  }
+}
