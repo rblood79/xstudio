@@ -37,29 +37,16 @@ export function useCanvasRuntimeBootstrap(): CanvasRuntimeBootstrapResult {
     let delay = 200;
     const maxTotalWait = 15_000;
     let totalWait = 0;
-    let attempts = 0;
     let retried = false;
     let timeoutId: ReturnType<typeof setTimeout>;
 
     const poll = () => {
       if (isRustWasmReady()) {
-        if (import.meta.env.DEV) {
-          console.log(
-            `[BuilderCanvas] WASM 로드 완료 (${attempts}회 폴링, ${totalWait}ms 경과)`,
-          );
-        }
         setWasmLayoutReady(true);
         return;
       }
 
       totalWait += delay;
-      attempts += 1;
-
-      if (import.meta.env.DEV) {
-        console.log(
-          `[BuilderCanvas] WASM 폴링 #${attempts} (${totalWait}ms/${maxTotalWait}ms, 다음 ${Math.min(delay * 2, 3200)}ms)`,
-        );
-      }
 
       if (!retried && totalWait >= 5_000) {
         retried = true;

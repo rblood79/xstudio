@@ -6,9 +6,9 @@
  * @since 2026-01-02 Phase 2
  */
 
-import { useCallback, useRef, type KeyboardEvent } from 'react';
-import type { Page } from '@xstudio/shared';
-import './PageNav.css';
+import { useCallback, useRef, type KeyboardEvent } from "react";
+import type { Page } from "@xstudio/shared";
+import "./PageNav.css";
 
 interface PageNavProps {
   pages: Page[];
@@ -26,7 +26,6 @@ interface PageTreeNode {
  * 페이지를 트리 구조로 변환
  */
 function buildPageTree(pages: Page[]): PageTreeNode[] {
-  const pageMap = new Map(pages.map((p) => [p.id, p]));
   const childrenMap = new Map<string | null, Page[]>();
 
   // 부모별로 자식 페이지 그룹화
@@ -81,53 +80,59 @@ export function PageNav({ pages, currentPageId, onPageChange }: PageNavProps) {
   const flatPages = flattenTree(pageTree);
 
   // 버튼 ref 저장
-  const setButtonRef = useCallback((pageId: string, el: HTMLButtonElement | null) => {
-    if (el) {
-      buttonRefs.current.set(pageId, el);
-    } else {
-      buttonRefs.current.delete(pageId);
-    }
-  }, []);
+  const setButtonRef = useCallback(
+    (pageId: string, el: HTMLButtonElement | null) => {
+      if (el) {
+        buttonRefs.current.set(pageId, el);
+      } else {
+        buttonRefs.current.delete(pageId);
+      }
+    },
+    [],
+  );
 
   // 특정 페이지로 포커스 이동
-  const focusPage = useCallback((index: number) => {
-    const targetPage = flatPages[index];
-    if (targetPage) {
-      const button = buttonRefs.current.get(targetPage.page.id);
-      button?.focus();
-    }
-  }, [flatPages]);
+  const focusPage = useCallback(
+    (index: number) => {
+      const targetPage = flatPages[index];
+      if (targetPage) {
+        const button = buttonRefs.current.get(targetPage.page.id);
+        button?.focus();
+      }
+    },
+    [flatPages],
+  );
 
   // 키보드 네비게이션
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLButtonElement>, pageId: string, index: number) => {
       switch (e.key) {
-        case 'ArrowDown':
-        case 'ArrowRight':
+        case "ArrowDown":
+        case "ArrowRight":
           e.preventDefault();
           focusPage(Math.min(index + 1, flatPages.length - 1));
           break;
-        case 'ArrowUp':
-        case 'ArrowLeft':
+        case "ArrowUp":
+        case "ArrowLeft":
           e.preventDefault();
           focusPage(Math.max(index - 1, 0));
           break;
-        case 'Enter':
-        case ' ':
+        case "Enter":
+        case " ":
           e.preventDefault();
           onPageChange(pageId);
           break;
-        case 'Home':
+        case "Home":
           e.preventDefault();
           focusPage(0);
           break;
-        case 'End':
+        case "End":
           e.preventDefault();
           focusPage(flatPages.length - 1);
           break;
       }
     },
-    [flatPages, focusPage, onPageChange]
+    [flatPages, focusPage, onPageChange],
   );
 
   // 단일 페이지면 네비게이션 숨김
@@ -146,9 +151,9 @@ export function PageNav({ pages, currentPageId, onPageChange }: PageNavProps) {
           ref={(el) => setButtonRef(page.id, el)}
           role="tab"
           aria-selected={isActive}
-          aria-current={isActive ? 'page' : undefined}
+          aria-current={isActive ? "page" : undefined}
           tabIndex={isActive ? 0 : -1}
-          className={`page-nav-item ${isActive ? 'active' : ''}`}
+          className={`page-nav-item ${isActive ? "active" : ""}`}
           style={{ paddingLeft: `${12 + level * 16}px` }}
           onClick={() => onPageChange(page.id)}
           onKeyDown={(e) => handleKeyDown(e, page.id, index)}

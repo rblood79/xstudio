@@ -3,7 +3,11 @@ import { create } from "zustand";
 // 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
 // import { produce } from "immer"; // REMOVED
 import { StateCreator } from "zustand";
-import { Element, ComponentElementProps, ComputedLayout } from "../../types/core/store.types";
+import {
+  Element,
+  ComponentElementProps,
+  ComputedLayout,
+} from "../../types/core/store.types";
 import { Page } from "../../types/builder/unified.types";
 import type { PageLayoutDirection } from "./canvasSettings";
 import { historyManager } from "./history";
@@ -13,8 +17,15 @@ import {
   findElementById,
   computeCanvasElementStyle,
 } from "./utils/elementHelpers";
-import { createUndoAction, createRedoAction, createGoToHistoryIndexAction } from "./history/historyActions";
-import { createRemoveElementAction, createRemoveElementsAction } from "./utils/elementRemoval";
+import {
+  createUndoAction,
+  createRedoAction,
+  createGoToHistoryIndexAction,
+} from "./history/historyActions";
+import {
+  createRemoveElementAction,
+  createRemoveElementsAction,
+} from "./utils/elementRemoval";
 import {
   createAddElementAction,
   createAddComplexElementAction,
@@ -45,74 +56,6 @@ import {
   rebuildVariableUsageIndex,
   getPageElements as getPageElementsFromIndex,
 } from "./utils/elementIndexer";
-
-// ─── Dirty Tracking 유틸리티 ─────────────────────────────────────────
-
-/**
- * 레이아웃에 영향을 주지 않는 CSS 속성 집합.
- * 이 속성만 변경되면 layoutVersion을 증가시키지 않는다.
- */
-const NON_LAYOUT_PROPS = new Set([
-  'color', 'backgroundColor', 'background', 'backgroundImage',
-  'backgroundSize', 'backgroundPosition', 'backgroundRepeat',
-  'opacity', 'visibility',
-  'boxShadow', 'textShadow', 'filter', 'backdropFilter',
-  'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
-  'borderStyle', 'borderTopStyle', 'borderRightStyle', 'borderBottomStyle', 'borderLeftStyle',
-  'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius',
-  'borderBottomLeftRadius', 'borderBottomRightRadius',
-  'outlineColor', 'outlineStyle',
-  'cursor', 'pointerEvents', 'userSelect',
-  'transition', 'transitionProperty', 'transitionDuration',
-  'animation', 'animationName', 'animationDuration',
-  'textDecoration', 'textDecorationColor', 'textDecorationStyle',
-  'zIndex',
-  'objectFit', 'objectPosition', 'mixBlendMode',
-  'clipPath', 'mask', 'maskImage',
-  'transformOrigin',
-]);
-
-/**
- * 자식에게 상속되어 레이아웃에 영향을 주는 CSS 속성 집합.
- * 이 속성이 변경되면 하위 요소 전체를 dirty로 표시한다.
- */
-const INHERITED_LAYOUT_PROPS = new Set([
-  'fontSize', 'fontFamily', 'fontWeight', 'fontStyle',
-  'lineHeight', 'letterSpacing', 'wordSpacing',
-  'whiteSpace', 'wordBreak', 'overflowWrap',
-  'textAlign', 'direction', 'writingMode',
-]);
-
-/**
- * 변경된 props 중 레이아웃에 영향을 주는 속성이 있는지 확인.
- */
-function isLayoutAffecting(changedProps: Record<string, unknown>): boolean {
-  return Object.keys(changedProps).some(k => !NON_LAYOUT_PROPS.has(k));
-}
-
-/**
- * elementId와 그 자식(상속 속성 변경 시)을 dirty 집합에 추가.
- */
-function markDirtyWithDescendants(
-  elementId: string,
-  changedProps: Record<string, unknown>,
-  childrenMap: Map<string, Element[]>,
-  dirtySet: Set<string>,
-): void {
-  dirtySet.add(elementId);
-  const hasInheritedChange = Object.keys(changedProps).some(k => INHERITED_LAYOUT_PROPS.has(k));
-  if (hasInheritedChange) {
-    const queue = [elementId];
-    while (queue.length > 0) {
-      const parentId = queue.pop()!;
-      const children = childrenMap.get(parentId) ?? [];
-      for (const child of children) {
-        dirtySet.add(child.id);
-        queue.push(child.id);
-      }
-    }
-  }
-}
 
 export interface ElementsState {
   elements: Element[];
@@ -163,22 +106,22 @@ export interface ElementsState {
   addElement: (element: Element) => Promise<void>;
   updateElementProps: (
     elementId: string,
-    props: ComponentElementProps
+    props: ComponentElementProps,
   ) => Promise<void>;
   updateElement: (
     elementId: string,
-    updates: Partial<Element>
+    updates: Partial<Element>,
   ) => Promise<void>;
   setSelectedElement: (
     elementId: string | null,
     props?: ComponentElementProps,
     style?: React.CSSProperties,
-    computedStyle?: Partial<React.CSSProperties>
+    computedStyle?: Partial<React.CSSProperties>,
   ) => void;
   selectTabElement: (
     elementId: string,
     props: ComponentElementProps,
-    tabIndex: number
+    tabIndex: number,
   ) => void;
   setPages: (pages: Page[]) => void;
   setCurrentPageId: (pageId: string) => void;
@@ -189,10 +132,12 @@ export interface ElementsState {
   removeElements: (elementIds: string[]) => Promise<void>;
   addComplexElement: (
     parentElement: Element,
-    childElements: Element[]
+    childElements: Element[],
   ) => Promise<void>;
   updateElementOrder: (elementId: string, orderNum: number) => void;
-  batchUpdateElementOrders: (updates: Array<{ id: string; order_num: number }>) => void;
+  batchUpdateElementOrders: (
+    updates: Array<{ id: string; order_num: number }>,
+  ) => void;
 
   // 다중 선택 관련 액션
   toggleElementInSelection: (elementId: string) => void;
@@ -203,14 +148,27 @@ export interface ElementsState {
   batchUpdateElements: (updates: BatchElementUpdate[]) => Promise<void>;
 
   // 🆕 Multi-page: 페이지 위치 관리
-  initializePagePositions: (pages: Page[], pageWidth: number, pageHeight: number, gap: number, direction?: PageLayoutDirection) => void;
+  initializePagePositions: (
+    pages: Page[],
+    pageWidth: number,
+    pageHeight: number,
+    gap: number,
+    direction?: PageLayoutDirection,
+  ) => void;
   updatePagePosition: (pageId: string, x: number, y: number) => void;
 
   // 🚀 WebGL computed layout 동기화
-  updateSelectedElementLayout: (elementId: string, layout: ComputedLayout) => void;
+  updateSelectedElementLayout: (
+    elementId: string,
+    layout: ComputedLayout,
+  ) => void;
 
   // G.1: Instance 생성 액션
-  createInstance: (masterId: string, parentId: string, pageId: string) => Element | null;
+  createInstance: (
+    masterId: string,
+    parentId: string,
+    pageId: string,
+  ) => Element | null;
 
   // ADR-006: 외부 트리거(텍스트 측정기 교체, 폰트 로딩 등)에서 레이아웃 재계산 요청
   invalidateLayout: () => void;
@@ -245,7 +203,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
     elements.forEach((el) => {
       elementsMap.set(el.id, el);
-      const parentId = el.parent_id || 'root';
+      const parentId = el.parent_id || "root";
       if (!childrenMap.has(parentId)) {
         childrenMap.set(parentId, []);
       }
@@ -256,7 +214,13 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     const componentIndex = rebuildComponentIndex(elements);
     const variableUsageIndex = rebuildVariableUsageIndex(elements);
 
-    return { elementsMap, childrenMap, pageIndex, componentIndex, variableUsageIndex };
+    return {
+      elementsMap,
+      childrenMap,
+      pageIndex,
+      componentIndex,
+      variableUsageIndex,
+    };
   };
 
   // 인덱스 재구축 함수 (Phase 2: 페이지 인덱스 포함)
@@ -293,7 +257,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       if (!element) return;
       // 🚀 WebGL 요소의 computedStyle 포함 (borderRadius 등)
       const computedStyle = computeCanvasElementStyle(element);
-      set({ selectedElementProps: { ...createCompleteProps(element), computedStyle } });
+      set({
+        selectedElementProps: {
+          ...createCompleteProps(element),
+          computedStyle,
+        },
+      });
       return;
     }
 
@@ -302,33 +271,45 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // 🚀 Phase 4.3: scheduler.postTask('background') 또는 requestIdleCallback 사용
     // - 캔버스 렌더링보다 낮은 우선순위
     // - 브라우저 유휴 시간에 실행되어 Long Task 분할
-    cancelHydrateTask = scheduleCancelableBackgroundTask(() => {
-      cancelHydrateTask = null;
+    cancelHydrateTask = scheduleCancelableBackgroundTask(
+      () => {
+        cancelHydrateTask = null;
 
-      const state = get();
-      if (state.selectedElementId !== elementId) return; // stale update 방지
+        const state = get();
+        if (state.selectedElementId !== elementId) return; // stale update 방지
 
-      const element =
-        state.elementsMap.get(elementId) ??
-        findElementById(state.elements, elementId);
-      if (!element) return;
+        const element =
+          state.elementsMap.get(elementId) ??
+          findElementById(state.elements, elementId);
+        if (!element) return;
 
-      longTaskMonitor.measure("interaction.select:hydrate-selected-props", () => {
-        // 🚀 WebGL 요소의 computedStyle만 추가 (borderRadius 등)
-        // 기본 props는 setSelectedElement에서 이미 동기적으로 설정됨
-        const computedStyle = computeCanvasElementStyle(element);
-        const currentProps = state.selectedElementProps;
-        const hasValidProps = currentProps && Object.keys(currentProps).length > 0;
+        longTaskMonitor.measure(
+          "interaction.select:hydrate-selected-props",
+          () => {
+            // 🚀 WebGL 요소의 computedStyle만 추가 (borderRadius 등)
+            // 기본 props는 setSelectedElement에서 이미 동기적으로 설정됨
+            const computedStyle = computeCanvasElementStyle(element);
+            const currentProps = state.selectedElementProps;
+            const hasValidProps =
+              currentProps && Object.keys(currentProps).length > 0;
 
-        if (hasValidProps) {
-          // props가 이미 있으면 computedStyle만 병합 (불필요한 리렌더 방지)
-          set({ selectedElementProps: { ...currentProps, computedStyle } });
-        } else {
-          // fallback: 전체 props 재구성
-          set({ selectedElementProps: { ...createCompleteProps(element), computedStyle } });
-        }
-      });
-    }, { timeout: 50 }); // 50ms 내에 실행 보장
+            if (hasValidProps) {
+              // props가 이미 있으면 computedStyle만 병합 (불필요한 리렌더 방지)
+              set({ selectedElementProps: { ...currentProps, computedStyle } });
+            } else {
+              // fallback: 전체 props 재구성
+              set({
+                selectedElementProps: {
+                  ...createCompleteProps(element),
+                  computedStyle,
+                },
+              });
+            }
+          },
+        );
+      },
+      { timeout: 50 },
+    ); // 50ms 내에 실행 보장
   };
 
   return {
@@ -365,103 +346,179 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     _cancelHydrateSelectedProps: cancelHydrateSelectedProps,
     getPageElements,
 
-  // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
-  // setElements는 내부 상태 관리용이므로 히스토리 기록하지 않음
-  // 실제 요소 변경은 addElement, updateElementProps, removeElement에서 처리
-  setElements: (elements) => {
-    const { elements: normalizedElements } = normalizeElementTags(elements);
-    set((state) => ({ elements: normalizedElements, layoutVersion: state.layoutVersion + 1 }));
-    // 인덱스 자동 재구축
-    get()._rebuildIndexes();
-  },
+    // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
+    // setElements는 내부 상태 관리용이므로 히스토리 기록하지 않음
+    // 실제 요소 변경은 addElement, updateElementProps, removeElement에서 처리
+    setElements: (elements) => {
+      const { elements: normalizedElements } = normalizeElementTags(elements);
+      set((state) => ({
+        elements: normalizedElements,
+        layoutVersion: state.layoutVersion + 1,
+      }));
+      // 인덱스 자동 재구축
+      get()._rebuildIndexes();
+    },
 
-  // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
-  loadPageElements: (elements, pageId) => {
-    // 레거시 태그(section)를 canonical 태그(Section)로 정규화
-    const {
-      elements: normalizedElements,
-      updatedElements: normalizedTagElements,
-    } = normalizeElementTags(elements);
+    // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
+    loadPageElements: (elements, pageId) => {
+      // 레거시 태그(section)를 canonical 태그(Section)로 정규화
+      const {
+        elements: normalizedElements,
+        updatedElements: normalizedTagElements,
+      } = normalizeElementTags(elements);
 
-    // orphan 요소들을 body로 마이그레이션
-    const {
-      elements: migratedElements,
-      updatedElements: orphanMigratedElements,
-    } = ElementUtils.migrateOrphanElementsToBody(normalizedElements, pageId);
+      // orphan 요소들을 body로 마이그레이션
+      const {
+        elements: migratedElements,
+        updatedElements: orphanMigratedElements,
+      } = ElementUtils.migrateOrphanElementsToBody(normalizedElements, pageId);
 
-    // 페이지 변경 시 히스토리 초기화
-    historyManager.setCurrentPage(pageId);
-    set((state) => ({ elements: migratedElements, currentPageId: pageId, layoutVersion: state.layoutVersion + 1 }));
+      // 페이지 변경 시 히스토리 초기화
+      historyManager.setCurrentPage(pageId);
+      set((state) => ({
+        elements: migratedElements,
+        currentPageId: pageId,
+        layoutVersion: state.layoutVersion + 1,
+      }));
 
-    // 인덱스 자동 재구축
-    get()._rebuildIndexes();
+      // 인덱스 자동 재구축
+      get()._rebuildIndexes();
 
-    // 정규화/마이그레이션으로 변경된 요소가 있으면 DB에도 저장 (백그라운드)
-    const changedElementIds = new Set<string>([
-      ...normalizedTagElements.map((el) => el.id),
-      ...orphanMigratedElements.map((el) => el.id),
-    ]);
+      // 정규화/마이그레이션으로 변경된 요소가 있으면 DB에도 저장 (백그라운드)
+      const changedElementIds = new Set<string>([
+        ...normalizedTagElements.map((el) => el.id),
+        ...orphanMigratedElements.map((el) => el.id),
+      ]);
 
-    if (changedElementIds.size > 0) {
-      const elementById = new Map(migratedElements.map((el) => [el.id, el]));
-      const elementsToPersist = Array.from(changedElementIds)
-        .map((id) => elementById.get(id))
-        .filter((el): el is Element => Boolean(el));
+      if (changedElementIds.size > 0) {
+        const elementById = new Map(migratedElements.map((el) => [el.id, el]));
+        const elementsToPersist = Array.from(changedElementIds)
+          .map((id) => elementById.get(id))
+          .filter((el): el is Element => Boolean(el));
 
-      Promise.all(
-        elementsToPersist.map((el) => elementsApi.updateElement(el.id, el))
-      )
-        .then(() => {
-          console.log(
-            `✅ ${elementsToPersist.length}개 요소 정규화/마이그레이션 DB 업데이트 완료`
-          );
-        })
-        .catch((error) => {
-          console.warn("⚠️ 요소 정규화/마이그레이션 DB 업데이트 실패:", error);
+        Promise.all(
+          elementsToPersist.map((el) => elementsApi.updateElement(el.id, el)),
+        )
+          .then(() => {
+            console.log(
+              `✅ ${elementsToPersist.length}개 요소 정규화/마이그레이션 DB 업데이트 완료`,
+            );
+          })
+          .catch((error) => {
+            console.warn(
+              "⚠️ 요소 정규화/마이그레이션 DB 업데이트 실패:",
+              error,
+            );
+          });
+      }
+
+      // 페이지 로드 직후 즉시 order_num 재정렬 (검증보다 먼저 실행)
+      // ⚡ setTimeout(50) → queueMicrotask: 초기 로드와 reorder 사이의 타이밍 갭 제거
+      // 50ms 지연은 불필요한 재렌더링과 Skia 캐시 무효화를 유발함
+      queueMicrotask(() => {
+        const { elements: latestElements, batchUpdateElementOrders } = get();
+        reorderElements(latestElements, pageId, batchUpdateElementOrders);
+      });
+    },
+
+    // Factory 함수로 생성된 addElement 사용
+    addElement,
+
+    // Factory 함수로 생성된 updateElementProps 사용
+    updateElementProps,
+
+    // Factory 함수로 생성된 updateElement 사용
+    updateElement,
+
+    // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
+    // 🚀 Phase 6.3: 참조 안정성 최적화 - 불필요한 상태 업데이트 방지
+    setSelectedElement: (elementId, props, style, computedStyle) => {
+      cancelHydrateSelectedProps();
+
+      const currentState = get();
+
+      // 🚀 Early Return: 동일한 요소 선택 시 (props/style/computedStyle 없는 경우)
+      // - 같은 요소를 클릭해도 불필요한 리렌더 방지
+      if (
+        elementId === currentState.selectedElementId &&
+        !props &&
+        !style &&
+        !computedStyle
+      ) {
+        return; // 변경 없음
+      }
+
+      const hasExternalProps = Boolean(props || style || computedStyle);
+
+      // WebGL Canvas 기본 선택 경로: elementId만 전달됨
+      // - createCompleteProps는 가벼운 연산 (object spread)이므로 동기 실행
+      // - computeCanvasElementStyle만 백그라운드 hydration으로 분리
+      // - 즉시 inline style을 포함하여 스타일 패널 플리커 방지
+      if (elementId && !hasExternalProps) {
+        let selectedElementIds: string[];
+        let selectedElementIdsSet: Set<string>;
+
+        if (
+          elementId === currentState.selectedElementId &&
+          currentState.selectedElementIds.length === 1
+        ) {
+          selectedElementIds = currentState.selectedElementIds;
+          selectedElementIdsSet = currentState.selectedElementIdsSet;
+        } else {
+          selectedElementIds = [elementId];
+          selectedElementIdsSet = new Set([elementId]);
+        }
+
+        // 즉시 element.props 기반 props 채우기 (플리커 방지)
+        const element =
+          currentState.elementsMap.get(elementId) ??
+          findElementById(currentState.elements, elementId);
+        const initialProps = element ? createCompleteProps(element) : {};
+
+        set({
+          selectedElementId: elementId,
+          selectedElementProps: initialProps,
+          selectedElementIds,
+          selectedElementIdsSet,
+          multiSelectMode: false,
         });
-    }
 
-    // 페이지 로드 직후 즉시 order_num 재정렬 (검증보다 먼저 실행)
-    // ⚡ setTimeout(50) → queueMicrotask: 초기 로드와 reorder 사이의 타이밍 갭 제거
-    // 50ms 지연은 불필요한 재렌더링과 Skia 캐시 무효화를 유발함
-    queueMicrotask(() => {
-      const { elements: latestElements, batchUpdateElementOrders } = get();
-      reorderElements(latestElements, pageId, batchUpdateElementOrders);
-    });
-  },
+        // computedStyle만 백그라운드 hydration으로 분리
+        scheduleHydrateSelectedProps(elementId);
+        return;
+      }
 
-  // Factory 함수로 생성된 addElement 사용
-  addElement,
+      let resolvedProps = props;
 
-  // Factory 함수로 생성된 updateElementProps 사용
-  updateElementProps,
+      if (elementId && !resolvedProps) {
+        const { elementsMap, elements } = currentState;
+        const element =
+          elementsMap.get(elementId) ?? findElementById(elements, elementId);
+        if (element) {
+          resolvedProps = createCompleteProps(element);
+        }
+      }
 
-  // Factory 함수로 생성된 updateElement 사용
-  updateElement,
+      // 🚀 Phase 6.3: 상태 업데이트 최소화
+      // - style/computedStyle이 없으면 기존 객체 재사용 시도
+      let selectedElementProps: ComponentElementProps;
+      if (elementId && resolvedProps) {
+        if (!style && !computedStyle) {
+          // style/computedStyle 없으면 resolvedProps 그대로 사용 (새 객체 생성 X)
+          selectedElementProps = resolvedProps;
+        } else {
+          selectedElementProps = {
+            ...resolvedProps,
+            ...(style ? { style } : {}),
+            ...(computedStyle ? { computedStyle } : {}),
+          };
+        }
+      } else {
+        selectedElementProps = {};
+      }
 
-  // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
-  // 🚀 Phase 6.3: 참조 안정성 최적화 - 불필요한 상태 업데이트 방지
-  setSelectedElement: (elementId, props, style, computedStyle) => {
-    cancelHydrateSelectedProps();
-
-    const currentState = get();
-
-    // 🚀 Early Return: 동일한 요소 선택 시 (props/style/computedStyle 없는 경우)
-    // - 같은 요소를 클릭해도 불필요한 리렌더 방지
-    if (
-      elementId === currentState.selectedElementId &&
-      !props && !style && !computedStyle
-    ) {
-      return; // 변경 없음
-    }
-
-    const hasExternalProps = Boolean(props || style || computedStyle);
-
-    // WebGL Canvas 기본 선택 경로: elementId만 전달됨
-    // - createCompleteProps는 가벼운 연산 (object spread)이므로 동기 실행
-    // - computeCanvasElementStyle만 백그라운드 hydration으로 분리
-    // - 즉시 inline style을 포함하여 스타일 패널 플리커 방지
-    if (elementId && !hasExternalProps) {
+      // ⭐ SelectionState와 동기화
+      // 🚀 Phase 6.3: 동일한 요소면 배열/Set 재생성 스킵
       let selectedElementIds: string[];
       let selectedElementIdsSet: Set<string>;
 
@@ -469,159 +526,172 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         elementId === currentState.selectedElementId &&
         currentState.selectedElementIds.length === 1
       ) {
+        // 같은 요소 선택 - 기존 배열/Set 재사용
         selectedElementIds = currentState.selectedElementIds;
         selectedElementIdsSet = currentState.selectedElementIdsSet;
       } else {
-        selectedElementIds = [elementId];
-        selectedElementIdsSet = new Set([elementId]);
+        selectedElementIds = elementId ? [elementId] : [];
+        selectedElementIdsSet = elementId
+          ? new Set([elementId])
+          : new Set<string>();
       }
-
-      // 즉시 element.props 기반 props 채우기 (플리커 방지)
-      const element = currentState.elementsMap.get(elementId)
-        ?? findElementById(currentState.elements, elementId);
-      const initialProps = element
-        ? createCompleteProps(element)
-        : {};
 
       set({
         selectedElementId: elementId,
-        selectedElementProps: initialProps,
+        selectedElementProps,
         selectedElementIds,
         selectedElementIdsSet,
         multiSelectMode: false,
       });
+    },
 
-      // computedStyle만 백그라운드 hydration으로 분리
-      scheduleHydrateSelectedProps(elementId);
-      return;
-    }
+    // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
+    selectTabElement: (elementId, props, tabIndex) =>
+      set({
+        selectedElementId: elementId,
+        selectedElementProps: props,
+        selectedTab: { parentId: elementId, tabIndex },
+      }),
 
-    let resolvedProps = props;
+    // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
+    setPages: (pages) => set({ pages }),
 
-    if (elementId && !resolvedProps) {
-      const { elementsMap, elements } = currentState;
-      const element = elementsMap.get(elementId) ?? findElementById(elements, elementId);
-      if (element) {
-        resolvedProps = createCompleteProps(element);
-      }
-    }
+    // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
+    setCurrentPageId: (pageId) => {
+      historyManager.setCurrentPage(pageId);
+      // 페이지 전환 시 editingContext 리셋
+      set({ currentPageId: pageId, editingContextId: null });
+    },
 
-    // 🚀 Phase 6.3: 상태 업데이트 최소화
-    // - style/computedStyle이 없으면 기존 객체 재사용 시도
-    let selectedElementProps: ComponentElementProps;
-    if (elementId && resolvedProps) {
-      if (!style && !computedStyle) {
-        // style/computedStyle 없으면 resolvedProps 그대로 사용 (새 객체 생성 X)
-        selectedElementProps = resolvedProps;
+    undo,
+
+    redo,
+
+    goToHistoryIndex,
+
+    removeElement,
+    removeElements,
+
+    // Factory 함수로 생성된 addComplexElement 사용
+    addComplexElement,
+
+    // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)
+    updateElementOrder: (elementId, orderNum) => {
+      const { elements } = get();
+      const updatedElements = elements.map((el) =>
+        el.id === elementId ? { ...el, order_num: orderNum } : el,
+      );
+      set((state) => ({
+        elements: updatedElements,
+        layoutVersion: state.layoutVersion + 1,
+      }));
+      get()._rebuildIndexes();
+    },
+
+    // 배치 order_num 업데이트 (단일 set() + _rebuildIndexes())
+    batchUpdateElementOrders: (updates) => {
+      if (updates.length === 0) return;
+      const { elements } = get();
+      const updateMap = new Map(updates.map((u) => [u.id, u.order_num]));
+      const updatedElements = elements.map((el) => {
+        const newOrder = updateMap.get(el.id);
+        return newOrder !== undefined ? { ...el, order_num: newOrder } : el;
+      });
+      set((state) => ({
+        elements: updatedElements,
+        layoutVersion: state.layoutVersion + 1,
+      }));
+      get()._rebuildIndexes();
+    },
+
+    // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)
+    // ⭐ 다중 선택: 요소를 선택 목록에서 추가/제거 (토글)
+    toggleElementInSelection: (elementId: string) => {
+      const state = get();
+      const { elementsMap, elements, selectedElementIdsSet } = state;
+
+      const resolveCompleteProps = (id: string) => {
+        const element = elementsMap.get(id) ?? findElementById(elements, id);
+        return element ? createCompleteProps(element) : null;
+      };
+
+      // 🚀 O(1) 검색용 Set 사용
+      const isAlreadySelected = selectedElementIdsSet.has(elementId);
+
+      if (isAlreadySelected) {
+        // 이미 선택됨 → 제거
+        const newSet = new Set(selectedElementIdsSet);
+        newSet.delete(elementId);
+        const newSelectedIds = Array.from(newSet);
+
+        if (newSelectedIds.length === 0) {
+          // 선택이 비어있으면 다중 선택 모드 해제
+          set({
+            selectedElementIds: [],
+            selectedElementIdsSet: new Set<string>(),
+            multiSelectMode: false,
+            selectedElementId: null,
+            selectedElementProps: {},
+          });
+        } else {
+          // 첫 번째 요소를 primary selection으로 유지
+          const nextProps = resolveCompleteProps(newSelectedIds[0]);
+          set({
+            selectedElementIds: newSelectedIds,
+            selectedElementIdsSet: newSet,
+            selectedElementId: newSelectedIds[0],
+            selectedElementProps: nextProps || {},
+          });
+        }
       } else {
-        selectedElementProps = {
-          ...resolvedProps,
-          ...(style ? { style } : {}),
-          ...(computedStyle ? { computedStyle } : {}),
-        };
+        // 선택 안 됨 → 추가
+        const newSet = new Set(selectedElementIdsSet);
+        newSet.add(elementId);
+        const newSelectedIds = Array.from(newSet);
+
+        if (newSelectedIds.length === 1) {
+          // 첫 번째로 추가되는 경우 primary selection 설정
+          const nextProps = resolveCompleteProps(elementId);
+          set({
+            selectedElementIds: newSelectedIds,
+            selectedElementIdsSet: newSet,
+            multiSelectMode: true,
+            selectedElementId: elementId,
+            selectedElementProps: nextProps || {},
+          });
+        } else {
+          set({
+            selectedElementIds: newSelectedIds,
+            selectedElementIdsSet: newSet,
+            multiSelectMode: true,
+          });
+        }
       }
-    } else {
-      selectedElementProps = {};
-    }
+    },
 
-    // ⭐ SelectionState와 동기화
-    // 🚀 Phase 6.3: 동일한 요소면 배열/Set 재생성 스킵
-    let selectedElementIds: string[];
-    let selectedElementIdsSet: Set<string>;
+    // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
+    // ⭐ 다중 선택: 여러 요소를 한 번에 선택 (드래그 선택용)
+    setSelectedElements: (elementIds: string[]) => {
+      const { elementsMap, elements } = get();
 
-    if (elementId === currentState.selectedElementId && currentState.selectedElementIds.length === 1) {
-      // 같은 요소 선택 - 기존 배열/Set 재사용
-      selectedElementIds = currentState.selectedElementIds;
-      selectedElementIdsSet = currentState.selectedElementIdsSet;
-    } else {
-      selectedElementIds = elementId ? [elementId] : [];
-      selectedElementIdsSet = elementId ? new Set([elementId]) : new Set<string>();
-    }
+      const resolveCompleteProps = (id: string) => {
+        const element = elementsMap.get(id) ?? findElementById(elements, id);
+        return element ? createCompleteProps(element) : null;
+      };
 
-    set({
-      selectedElementId: elementId,
-      selectedElementProps,
-      selectedElementIds,
-      selectedElementIdsSet,
-      multiSelectMode: false,
-    });
-  },
-
-  // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
-  selectTabElement: (elementId, props, tabIndex) =>
-    set({
-      selectedElementId: elementId,
-      selectedElementProps: props,
-      selectedTab: { parentId: elementId, tabIndex },
-    }),
-
-  // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
-  setPages: (pages) => set({ pages }),
-
-  // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
-  setCurrentPageId: (pageId) => {
-    historyManager.setCurrentPage(pageId);
-    // 페이지 전환 시 editingContext 리셋
-    set({ currentPageId: pageId, editingContextId: null });
-  },
-
-  undo,
-
-  redo,
-
-  goToHistoryIndex,
-
-  removeElement,
-  removeElements,
-
-  // Factory 함수로 생성된 addComplexElement 사용
-  addComplexElement,
-
-  // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)
-  updateElementOrder: (elementId, orderNum) => {
-    const { elements } = get();
-    const updatedElements = elements.map((el) =>
-      el.id === elementId ? { ...el, order_num: orderNum } : el
-    );
-    set((state) => ({ elements: updatedElements, layoutVersion: state.layoutVersion + 1 }));
-    get()._rebuildIndexes();
-  },
-
-  // 배치 order_num 업데이트 (단일 set() + _rebuildIndexes())
-  batchUpdateElementOrders: (updates) => {
-    if (updates.length === 0) return;
-    const { elements } = get();
-    const updateMap = new Map(updates.map(u => [u.id, u.order_num]));
-    const updatedElements = elements.map((el) => {
-      const newOrder = updateMap.get(el.id);
-      return newOrder !== undefined ? { ...el, order_num: newOrder } : el;
-    });
-    set((state) => ({ elements: updatedElements, layoutVersion: state.layoutVersion + 1 }));
-    get()._rebuildIndexes();
-  },
-
-  // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)
-  // ⭐ 다중 선택: 요소를 선택 목록에서 추가/제거 (토글)
-  toggleElementInSelection: (elementId: string) => {
-    const state = get();
-    const { elementsMap, elements, selectedElementIdsSet } = state;
-
-    const resolveCompleteProps = (id: string) => {
-      const element = elementsMap.get(id) ?? findElementById(elements, id);
-      return element ? createCompleteProps(element) : null;
-    };
-
-    // 🚀 O(1) 검색용 Set 사용
-    const isAlreadySelected = selectedElementIdsSet.has(elementId);
-
-    if (isAlreadySelected) {
-      // 이미 선택됨 → 제거
-      const newSet = new Set(selectedElementIdsSet);
-      newSet.delete(elementId);
-      const newSelectedIds = Array.from(newSet);
-
-      if (newSelectedIds.length === 0) {
-        // 선택이 비어있으면 다중 선택 모드 해제
+      if (elementIds.length > 0) {
+        // 첫 번째 요소를 primary selection으로 설정
+        const nextProps = resolveCompleteProps(elementIds[0]);
+        set({
+          selectedElementIds: elementIds,
+          // 🚀 O(1) 검색용 Set 동기화
+          selectedElementIdsSet: new Set(elementIds),
+          multiSelectMode: elementIds.length > 1,
+          selectedElementId: elementIds[0],
+          selectedElementProps: nextProps || {},
+        });
+      } else {
+        // 선택 없음
         set({
           selectedElementIds: [],
           selectedElementIdsSet: new Set<string>(),
@@ -629,156 +699,101 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           selectedElementId: null,
           selectedElementProps: {},
         });
-      } else {
-        // 첫 번째 요소를 primary selection으로 유지
-        const nextProps = resolveCompleteProps(newSelectedIds[0]);
-        set({
-          selectedElementIds: newSelectedIds,
-          selectedElementIdsSet: newSet,
-          selectedElementId: newSelectedIds[0],
-          selectedElementProps: nextProps || {},
-        });
       }
-    } else {
-      // 선택 안 됨 → 추가
-      const newSet = new Set(selectedElementIdsSet);
-      newSet.add(elementId);
-      const newSelectedIds = Array.from(newSet);
+    },
 
-      if (newSelectedIds.length === 1) {
-        // 첫 번째로 추가되는 경우 primary selection 설정
-        const nextProps = resolveCompleteProps(elementId);
-        set({
-          selectedElementIds: newSelectedIds,
-          selectedElementIdsSet: newSet,
-          multiSelectMode: true,
-          selectedElementId: elementId,
-          selectedElementProps: nextProps || {},
-        });
-      } else {
-        set({
-          selectedElementIds: newSelectedIds,
-          selectedElementIdsSet: newSet,
-          multiSelectMode: true,
-        });
+    // 🚀 배치 업데이트 (Factory 함수로 생성)
+    batchUpdateElementProps,
+    batchUpdateElements,
+
+    // 🚀 WebGL computed layout 동기화
+    // Canvas에서 layout 계산 완료 시 호출하여 stylePanel과 동기화
+    updateSelectedElementLayout: (
+      elementId: string,
+      layout: ComputedLayout,
+    ) => {
+      const state = get();
+
+      // 현재 선택된 요소만 업데이트 (성능 최적화)
+      if (state.selectedElementId !== elementId) return;
+
+      // computedLayout이 변경되었는지 확인
+      const currentLayout = state.selectedElementProps?.computedLayout;
+      if (
+        currentLayout?.width === layout.width &&
+        currentLayout?.height === layout.height
+      ) {
+        return; // 변경 없음
       }
-    }
-  },
 
-  // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
-  // ⭐ 다중 선택: 여러 요소를 한 번에 선택 (드래그 선택용)
-  setSelectedElements: (elementIds: string[]) => {
-    const { elementsMap, elements } = get();
-
-    const resolveCompleteProps = (id: string) => {
-      const element = elementsMap.get(id) ?? findElementById(elements, id);
-      return element ? createCompleteProps(element) : null;
-    };
-
-    if (elementIds.length > 0) {
-      // 첫 번째 요소를 primary selection으로 설정
-      const nextProps = resolveCompleteProps(elementIds[0]);
+      // selectedElementProps에 computedLayout 추가/업데이트
       set({
-        selectedElementIds: elementIds,
-        // 🚀 O(1) 검색용 Set 동기화
-        selectedElementIdsSet: new Set(elementIds),
-        multiSelectMode: elementIds.length > 1,
-        selectedElementId: elementIds[0],
-        selectedElementProps: nextProps || {},
+        selectedElementProps: {
+          ...state.selectedElementProps,
+          computedLayout: layout,
+        },
       });
-    } else {
-      // 선택 없음
-      set({
-        selectedElementIds: [],
-        selectedElementIdsSet: new Set<string>(),
-        multiSelectMode: false,
-        selectedElementId: null,
-        selectedElementProps: {},
-      });
-    }
-  },
+    },
 
-  // 🚀 배치 업데이트 (Factory 함수로 생성)
-  batchUpdateElementProps,
-  batchUpdateElements,
+    // 🆕 Multi-page: 페이지 위치 초기화 (order_num 정렬 → 수평 스택)
+    initializePagePositions: (
+      pages: Page[],
+      pageWidth: number,
+      pageHeight: number,
+      gap: number,
+      direction: PageLayoutDirection = "horizontal",
+    ) => {
+      const sorted = [...pages].sort(
+        (a, b) => (a.order_num ?? 0) - (b.order_num ?? 0),
+      );
+      const positions: Record<string, { x: number; y: number }> = {};
 
-  // 🚀 WebGL computed layout 동기화
-  // Canvas에서 layout 계산 완료 시 호출하여 stylePanel과 동기화
-  updateSelectedElementLayout: (elementId: string, layout: ComputedLayout) => {
-    const state = get();
-
-    // 현재 선택된 요소만 업데이트 (성능 최적화)
-    if (state.selectedElementId !== elementId) return;
-
-    // computedLayout이 변경되었는지 확인
-    const currentLayout = state.selectedElementProps?.computedLayout;
-    if (
-      currentLayout?.width === layout.width &&
-      currentLayout?.height === layout.height
-    ) {
-      return; // 변경 없음
-    }
-
-    // selectedElementProps에 computedLayout 추가/업데이트
-    set({
-      selectedElementProps: {
-        ...state.selectedElementProps,
-        computedLayout: layout,
-      },
-    });
-  },
-
-  // 🆕 Multi-page: 페이지 위치 초기화 (order_num 정렬 → 수평 스택)
-  initializePagePositions: (pages: Page[], pageWidth: number, pageHeight: number, gap: number, direction: PageLayoutDirection = "horizontal") => {
-    const sorted = [...pages].sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
-    const positions: Record<string, { x: number; y: number }> = {};
-
-    if (direction === "vertical") {
-      let currentY = 0;
-      for (const page of sorted) {
-        positions[page.id] = { x: 0, y: currentY };
-        currentY += pageHeight + gap;
+      if (direction === "vertical") {
+        let currentY = 0;
+        for (const page of sorted) {
+          positions[page.id] = { x: 0, y: currentY };
+          currentY += pageHeight + gap;
+        }
+      } else if (direction === "zigzag") {
+        for (let i = 0; i < sorted.length; i++) {
+          const col = i % 2;
+          const row = Math.floor(i / 2);
+          positions[sorted[i].id] = {
+            x: col * (pageWidth + gap),
+            y: row * (pageHeight + gap),
+          };
+        }
+      } else {
+        // horizontal (기본)
+        let currentX = 0;
+        for (const page of sorted) {
+          positions[page.id] = { x: currentX, y: 0 };
+          currentX += pageWidth + gap;
+        }
       }
-    } else if (direction === "zigzag") {
-      for (let i = 0; i < sorted.length; i++) {
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        positions[sorted[i].id] = {
-          x: col * (pageWidth + gap),
-          y: row * (pageHeight + gap),
-        };
-      }
-    } else {
-      // horizontal (기본)
-      let currentX = 0;
-      for (const page of sorted) {
-        positions[page.id] = { x: currentX, y: 0 };
-        currentX += pageWidth + gap;
-      }
-    }
 
-    set((state) => ({
-      pagePositions: positions,
-      pagePositionsVersion: state.pagePositionsVersion + 1,
-    }));
-  },
+      set((state) => ({
+        pagePositions: positions,
+        pagePositionsVersion: state.pagePositionsVersion + 1,
+      }));
+    },
 
-  // 🆕 Multi-page: 단일 페이지 위치 업데이트 (드래그용)
-  updatePagePosition: (pageId: string, x: number, y: number) => {
-    set((state) => ({
-      pagePositions: { ...state.pagePositions, [pageId]: { x, y } },
-      pagePositionsVersion: state.pagePositionsVersion + 1,
-    }));
-  },
+    // 🆕 Multi-page: 단일 페이지 위치 업데이트 (드래그용)
+    updatePagePosition: (pageId: string, x: number, y: number) => {
+      set((state) => ({
+        pagePositions: { ...state.pagePositions, [pageId]: { x, y } },
+        pagePositionsVersion: state.pagePositionsVersion + 1,
+      }));
+    },
 
-  // G.1: Instance 생성 액션
-  createInstance: (masterId: string, parentId: string, pageId: string) => {
-    return createInstanceAction(get, set, masterId, parentId, pageId);
-  },
+    // G.1: Instance 생성 액션
+    createInstance: (masterId: string, parentId: string, pageId: string) => {
+      return createInstanceAction(get, set, masterId, parentId, pageId);
+    },
 
-  invalidateLayout: () => {
-    set((state) => ({ layoutVersion: state.layoutVersion + 1 }));
-  },
+    invalidateLayout: () => {
+      set((state) => ({ layoutVersion: state.layoutVersion + 1 }));
+    },
   };
 };
 
@@ -826,7 +841,9 @@ export const useCurrentPageElements = (): Element[] => {
  * @param elementId - 조회할 요소 ID
  * @returns 요소 또는 undefined
  */
-export const useElementById = (elementId: string | null): Element | undefined => {
+export const useElementById = (
+  elementId: string | null,
+): Element | undefined => {
   return useStore((state) => {
     if (!elementId) return undefined;
     return state.elementsMap.get(elementId);
@@ -841,7 +858,7 @@ export const useElementById = (elementId: string | null): Element | undefined =>
  */
 export const useChildElements = (parentId: string | null): Element[] => {
   return useStore((state) => {
-    const key = parentId || 'root';
+    const key = parentId || "root";
     // 안정적인 빈 배열 참조 반환 (새 배열 생성 방지)
     return state.childrenMap.get(key) ?? EMPTY_ELEMENTS;
   });

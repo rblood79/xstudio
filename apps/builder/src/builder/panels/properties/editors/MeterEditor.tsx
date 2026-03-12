@@ -3,7 +3,6 @@ import {
   Tag,
   Gauge,
   Layout,
-  PencilRuler,
   ArrowDown,
   ArrowUp,
   Globe,

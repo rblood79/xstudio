@@ -7,10 +7,10 @@
  * @see docs/RENDERING_ARCHITECTURE.md §5.2 CanvasKit WASM 로드 및 Surface 생성
  */
 
-import type { CanvasKit } from 'canvaskit-wasm';
+import type { CanvasKit } from "canvaskit-wasm";
 
-const CK_GLOBAL_KEY = '__XSTUDIO_CANVASKIT_INSTANCE__';
-const CK_PROMISE_KEY = '__XSTUDIO_CANVASKIT_PROMISE__';
+const CK_GLOBAL_KEY = "__XSTUDIO_CANVASKIT_INSTANCE__";
+const CK_PROMISE_KEY = "__XSTUDIO_CANVASKIT_PROMISE__";
 
 declare global {
   interface Window {
@@ -48,13 +48,12 @@ export async function initCanvasKit(): Promise<CanvasKit> {
 
   // 4. 새로 초기화
   const promise = (async () => {
-    const CanvasKitInit = (await import('canvaskit-wasm')).default;
+    const CanvasKitInit = (await import("canvaskit-wasm")).default;
 
     // .wasm 파일 경로: apps/builder/public/wasm/canvaskit.wasm
     // Vite의 BASE_URL이 배포 환경에 맞는 prefix를 제공한다.
     const ck = await CanvasKitInit({
-      locateFile: (file: string) =>
-        `${import.meta.env.BASE_URL}wasm/${file}`,
+      locateFile: (file: string) => `${import.meta.env.BASE_URL}wasm/${file}`,
     });
 
     return ck;
@@ -66,19 +65,15 @@ export async function initCanvasKit(): Promise<CanvasKit> {
     canvasKit = await promise;
     window[CK_GLOBAL_KEY] = canvasKit;
 
-    if (import.meta.env.DEV) {
-      console.log('[CanvasKit] 초기화 완료');
-    }
-
     return canvasKit;
   } catch (error) {
     // Promise 캐시 제거하여 재시도 가능하게 함
     delete window[CK_PROMISE_KEY];
     throw new Error(
       `CanvasKit 초기화 실패. canvaskit.wasm 파일이 존재하는지 확인하세요.\n` +
-      `pnpm run prepare:wasm 또는 pnpm install을 실행하세요.\n` +
-      `원인: ${error instanceof Error ? error.message : String(error)}`,
-      { cause: error }
+        `pnpm run prepare:wasm 또는 pnpm install을 실행하세요.\n` +
+        `원인: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 }
@@ -91,7 +86,7 @@ export async function initCanvasKit(): Promise<CanvasKit> {
 export function getCanvasKit(): CanvasKit {
   if (!canvasKit) {
     throw new Error(
-      'CanvasKit이 초기화되지 않았습니다. initCanvasKit()을 먼저 호출하세요.'
+      "CanvasKit이 초기화되지 않았습니다. initCanvasKit()을 먼저 호출하세요.",
     );
   }
   return canvasKit;

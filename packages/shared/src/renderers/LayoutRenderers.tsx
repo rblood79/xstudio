@@ -25,7 +25,6 @@ import type {
   RenderContext,
   DataBinding,
   ColumnMapping,
-  ButtonVariant,
   BadgeVariant,
 } from "../types";
 
@@ -1736,7 +1735,7 @@ export const renderRangeSlider = (
  */
 export const renderProgressCircle = (
   element: PreviewElement,
-  context: RenderContext,
+  _context: RenderContext,
 ): React.ReactNode => {
   const size =
     element.props.size === "S" ? 24 : element.props.size === "L" ? 64 : 32;
@@ -1797,7 +1796,7 @@ export const renderProgressCircle = (
  */
 export const renderImage = (
   element: PreviewElement,
-  context: RenderContext,
+  _context: RenderContext,
 ): React.ReactNode => {
   const src = element.props.src ? String(element.props.src) : "";
   const alt = String(element.props.alt || "Image");

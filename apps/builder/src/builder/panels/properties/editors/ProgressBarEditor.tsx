@@ -4,7 +4,6 @@ import {
   BarChart3,
   ToggleLeft,
   Layout,
-  PencilRuler,
   ArrowDown,
   ArrowUp,
   Globe,

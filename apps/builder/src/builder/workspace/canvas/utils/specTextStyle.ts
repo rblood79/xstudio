@@ -32,10 +32,9 @@ export interface SpecTextStyle {
 }
 
 /** tag → Spec + 기본 size 매핑 (텍스트 폭 측정이 필요한 inline 컴포넌트만) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TEXT_BEARING_SPECS: Record<
   string,
-  { spec: ComponentSpec<any>; defaultSize: string }
+  { spec: ComponentSpec<Record<string, unknown>>; defaultSize: string }
 > = {
   button: { spec: ButtonSpec, defaultSize: "md" },
   submitbutton: { spec: ButtonSpec, defaultSize: "md" },

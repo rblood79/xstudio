@@ -707,7 +707,7 @@ function rewriteRegistryForExport(registry: FontRegistryV2): {
     const ext = face.format
       ? `.${face.format === "truetype" ? "ttf" : face.format === "opentype" ? "otf" : face.format}`
       : ".woff2";
-    let baseName = face.source.originalFileName
+    const baseName = face.source.originalFileName
       ? sanitizeFileName(face.source.originalFileName.replace(/\.[^.]+$/, ""))
       : sanitizeFileName(`${face.family}-${face.weight || "400"}`);
 
@@ -803,7 +803,7 @@ export async function exportProject(
 async function exportToDirectory(
   html: string,
   fontAssets: FontAssetFile[],
-  projectName: string,
+  _projectName: string,
 ): Promise<void> {
   const dirHandle = await (
     window as unknown as {

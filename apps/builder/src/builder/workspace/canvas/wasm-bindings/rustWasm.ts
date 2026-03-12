@@ -24,20 +24,22 @@ export async function initRustWasm(): Promise<void> {
   try {
     // wasm-pack --target bundler 출력을 Vite가 처리하도록 직접 경로 사용
     // vite-plugin-wasm이 .wasm 바이너리 서빙을 담당
-    const mod = await import(/* @vite-ignore */ './pkg/xstudio_wasm');
+    const mod = await import(/* @vite-ignore */ "./pkg/xstudio_wasm");
 
     // wasm-pack bundler 타겟은 import만으로 내부 wasm 바인딩이 초기화되지 않음
     // default export(__wbg_init)를 명시적으로 호출하여 .wasm 바이너리를
     // fetch → instantiate → __wbg_finalize_init 순서로 초기화해야 함
-    if (typeof mod.default === 'function') {
+    if (typeof mod.default === "function") {
       await (mod.default as unknown as () => Promise<void>)();
     }
 
     // 모듈 유효성 검증: WASM 바이너리가 완전히 초기화되었는지 확인
-    if (!mod || typeof mod.TaffyLayoutEngine !== 'function') {
+    if (!mod || typeof mod.TaffyLayoutEngine !== "function") {
       wasmModule = null;
       if (import.meta.env.DEV) {
-        console.warn('[RustWasm] WASM 모듈 불완전 — TaffyLayoutEngine 미포함, JS 폴백 사용');
+        console.warn(
+          "[RustWasm] WASM 모듈 불완전 — TaffyLayoutEngine 미포함, JS 폴백 사용",
+        );
       }
       return;
     }
@@ -46,13 +48,12 @@ export async function initRustWasm(): Promise<void> {
 
     if (import.meta.env.DEV) {
       // 파이프라인 검증: ping/pong 테스트
-      const result = mod.ping();
-      console.log(`[RustWasm] 초기화 완료 — ping() = "${result}"`);
+      mod.ping();
     }
   } catch (err) {
     wasmModule = null; // HMR 잔류 방지
     if (import.meta.env.DEV) {
-      console.warn('[RustWasm] WASM 초기화 실패, JS 폴백 사용:', err);
+      console.warn("[RustWasm] WASM 초기화 실패, JS 폴백 사용:", err);
     }
   }
 }

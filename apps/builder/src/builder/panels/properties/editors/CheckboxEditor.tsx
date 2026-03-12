@@ -6,7 +6,6 @@ import {
   PenOff,
   Minus,
   Layout,
-  PencilRuler,
   Focus,
   Hash,
   AlertCircle,
@@ -16,7 +15,6 @@ import {
   PropertyInput,
   PropertySwitch,
   PropertyCustomId,
-  PropertySelect,
   PropertySection,
   PropertySizeToggle,
 } from "../../../components";

@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import type { Element } from "../../../../types/core/store.types";
 import {
   calculateFullTreeLayout,
@@ -8,7 +8,7 @@ import {
   type ComputedLayout,
 } from "../layout";
 import { applyImplicitStyles } from "../layout/engines/implicitStyles";
-import { recordWasmMetric, updateElementCount } from "../utils/gpuProfilerCore";
+import { updateElementCount } from "../utils/gpuProfilerCore";
 import { ElementSprite } from "../sprites";
 import { useViewportCulling } from "../hooks/useViewportCulling";
 import { DirectContainer } from "./DirectContainer";
@@ -191,8 +191,6 @@ export const ElementsLayer = memo(function ElementsLayer({
       bodyPaddingVal.top -
       bodyPaddingVal.bottom;
 
-    const layoutStart = import.meta.env.DEV ? performance.now() : 0;
-
     const result = calculateFullTreeLayout(
       bodyElement.id,
       elementById,
@@ -201,21 +199,6 @@ export const ElementsLayer = memo(function ElementsLayer({
       availableHeight,
       (id: string) => pageChildrenMap.get(id) ?? [],
     );
-
-    if (import.meta.env.DEV && layoutStart) {
-      recordWasmMetric("blockLayout", performance.now() - layoutStart);
-      if (result) {
-        updateElementCount(result.size);
-      }
-    }
-
-    publishLayoutMap(result, bodyElement.page_id);
-
-    if (import.meta.env.DEV && !result) {
-      console.warn(
-        "[Phase1] Full-tree layout failed, falling back to per-level",
-      );
-    }
 
     return result;
   }, [
@@ -227,6 +210,23 @@ export const ElementsLayer = memo(function ElementsLayer({
     pageWidth,
     wasmLayoutReady,
   ]);
+
+  // 레이아웃 결과 사이드 이펙트: publish + 성능 측정
+  useEffect(() => {
+    if (!bodyElement) return;
+
+    if (import.meta.env.DEV && !fullTreeLayoutMap) {
+      console.warn(
+        "[Phase1] Full-tree layout failed, falling back to per-level",
+      );
+    }
+
+    if (import.meta.env.DEV && fullTreeLayoutMap) {
+      updateElementCount(fullTreeLayoutMap.size);
+    }
+
+    publishLayoutMap(fullTreeLayoutMap, bodyElement.page_id);
+  }, [fullTreeLayoutMap, bodyElement]);
 
   const renderedTree = useMemo(() => {
     function isContainerTagForLayout(

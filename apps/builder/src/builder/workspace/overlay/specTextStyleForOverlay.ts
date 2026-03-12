@@ -21,10 +21,9 @@ import {
 } from "@xstudio/specs";
 import type { TextStyleConfig } from "./TextEditOverlay";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TEXT_BEARING_SPECS: Record<
   string,
-  { spec: ComponentSpec<any>; defaultSize: string }
+  { spec: ComponentSpec<Record<string, unknown>>; defaultSize: string }
 > = {
   button: { spec: ButtonSpec, defaultSize: "md" },
   submitbutton: { spec: ButtonSpec, defaultSize: "md" },

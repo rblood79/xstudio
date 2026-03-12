@@ -1335,21 +1335,7 @@ export function calculateFullTreeLayout(
     } else {
       // Path B: 증분 갱신 (변경된 노드만 WASM 호출)
       // 변경 감지: PersistentTaffyTree._lastJsonMap JSON 비교 (12차 정정)
-      const stats = incrementalUpdate(
-        persistentTree,
-        batch,
-        filteredChildIdsMap,
-      );
-
-      if (
-        import.meta.env.DEV &&
-        stats.stylesUpdated + stats.added + stats.removed > 0
-      ) {
-        console.log(
-          `[fullTreeLayout] Incremental: styles=${stats.stylesUpdated}, ` +
-            `children=${stats.childrenUpdated}, added=${stats.added}, removed=${stats.removed}`,
-        );
-      }
+      incrementalUpdate(persistentTree, batch, filteredChildIdsMap);
     }
 
     // ── Step 4: 레이아웃 계산 ─────────────────────────────────────────

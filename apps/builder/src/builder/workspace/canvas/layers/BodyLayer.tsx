@@ -13,11 +13,7 @@ import { Graphics as PixiGraphics } from "pixi.js";
 import { useExtend } from "@pixi/react";
 import { PIXI_COMPONENTS } from "../pixiSetup";
 import { useStore } from "../../../stores";
-import {
-  cssColorToHex,
-  cssColorToAlpha,
-  parseCSSSize,
-} from "../sprites/styleConverter";
+import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { drawBox, parseBorderConfig } from "../utils";
 import { useSkiaNode } from "../skia/useSkiaNode";
@@ -79,7 +75,6 @@ export const BodyLayer = memo(function BodyLayer({
 
   // Body 스타일
   const bodyStyle = bodyElement?.props?.style as CSSStyle | undefined;
-  const backgroundColorCss = bodyStyle?.backgroundColor;
 
   // 스타일 값 추출 — 테마 base 색상을 1순위로 사용
   const backgroundColor = useMemo(() => {

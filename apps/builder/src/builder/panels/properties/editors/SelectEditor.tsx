@@ -18,7 +18,6 @@ import {
   Database,
   List,
   LayoutList,
-  Parentheses,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -183,27 +182,26 @@ export const SelectEditor = memo(
       [onUpdate],
     );
 
-    const handleVariantChange = useCallback(
-      (value: string) => {
-        onUpdate({ variant: value });
-      },
-      [onUpdate],
-    );
-
     const handleSizeChange = useCallback(
       (value: string) => {
         const childUpdates: BatchPropsUpdate[] = [];
         const { childrenMap } = useStore.getState();
         const directChildren = childrenMap.get(elementId) ?? [];
-        const trigger = directChildren.find((child) => child.tag === "SelectTrigger");
+        const trigger = directChildren.find(
+          (child) => child.tag === "SelectTrigger",
+        );
 
         if (trigger) {
           const grandchildren = childrenMap.get(trigger.id) ?? [];
-          const selectValue = grandchildren.find((child) => child.tag === "SelectValue");
+          const selectValue = grandchildren.find(
+            (child) => child.tag === "SelectValue",
+          );
 
           if (selectValue) {
             const currentStyle =
-              (selectValue.props?.style as Record<string, unknown> | undefined) || {};
+              (selectValue.props?.style as
+                | Record<string, unknown>
+                | undefined) || {};
             childUpdates.push({
               elementId: selectValue.id,
               props: {

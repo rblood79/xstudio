@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Minus, PencilRuler, Layout } from "lucide-react";
+import { Minus, Layout } from "lucide-react";
 import {
   PropertySelect,
   PropertyCustomId,

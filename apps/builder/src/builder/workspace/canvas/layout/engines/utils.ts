@@ -837,29 +837,6 @@ function extractFromValue(value: unknown): string {
   return "";
 }
 
-/**
- * 텍스트 기반 너비 계산
- *
- * Canvas 2D measureText()를 사용하여 정확한 텍스트 너비 측정
- * PixiButton의 measureTextSize()와 동일한 결과
- *
- * @param text - 텍스트 콘텐츠
- * @param fontSize - 폰트 크기 (기본 14px)
- * @param padding - 좌우 패딩 합계
- */
-function calculateTextWidth(
-  text: string,
-  fontSize: number = 14,
-  padding: number = 0,
-): number {
-  if (!text) return 0;
-
-  const textWidth = measureTextWidth(text, fontSize);
-  // float 정밀도 유지: Skia paragraph.layout(maxWidth)와 getMaxIntrinsicWidth() 간
-  // 정확한 일치를 보장하여 마지막 글자 줄바꿈 방지
-  return textWidth + padding;
-}
-
 /** 컴포넌트별 기본 size prop 값 */
 const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
   // Badge 계열: 'md' 기본값 (CSS TagGroup 기본 size=md와 동기화)

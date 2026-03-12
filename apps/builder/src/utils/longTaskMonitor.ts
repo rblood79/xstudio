@@ -58,16 +58,16 @@ const DEFAULT_THRESHOLDS: ThresholdConfig = {
   default: 50, // 50ms 기본 임계값
   custom: {
     // 시나리오별 SLO
-    'click-select': 50,
-    'multi-select': 80,
-    'property-edit': 50,
-    'undo-redo': 50,
-    'page-switch': 100,
-    'element-add': 50,
-    'element-remove': 50,
-    'drag-move': 16, // 60fps 유지
-    'overlay-update': 16,
-    'message-handler': 50,
+    "click-select": 50,
+    "multi-select": 80,
+    "property-edit": 50,
+    "undo-redo": 50,
+    "page-switch": 100,
+    "element-add": 50,
+    "element-remove": 50,
+    "drag-move": 16, // 60fps 유지
+    "overlay-update": 16,
+    "message-handler": 50,
   },
 };
 
@@ -134,8 +134,8 @@ class LongTaskMonitor {
    * Long Task: 50ms 이상 걸리는 작업 (브라우저 정의)
    */
   private setupLongTaskObserver(): void {
-    if (typeof PerformanceObserver === 'undefined') {
-      console.warn('[LongTaskMonitor] PerformanceObserver not supported');
+    if (typeof PerformanceObserver === "undefined") {
+      console.warn("[LongTaskMonitor] PerformanceObserver not supported");
       return;
     }
 
@@ -151,10 +151,10 @@ class LongTaskMonitor {
         }
       });
 
-      this.observer.observe({ entryTypes: ['longtask'] });
+      this.observer.observe({ entryTypes: ["longtask"] });
     } catch {
       // longtask가 지원되지 않는 브라우저
-      console.warn('[LongTaskMonitor] longtask observation not supported');
+      console.warn("[LongTaskMonitor] longtask observation not supported");
     }
   }
 
@@ -250,7 +250,7 @@ class LongTaskMonitor {
       const threshold = this.thresholds.custom[name] ?? this.thresholds.default;
       if (duration > threshold) {
         console.warn(
-          `[Perf] ${name}: ${duration.toFixed(1)}ms (> ${threshold}ms threshold)`
+          `[Perf] ${name}: ${duration.toFixed(1)}ms (> ${threshold}ms threshold)`,
         );
       }
     }
@@ -276,7 +276,7 @@ class LongTaskMonitor {
       console.log(
         `[postMessage] count: ${this.postMessageCount}, ` +
           `total: ${(this.postMessageTotalSize / 1024).toFixed(1)}KB, ` +
-          `avg: ${(this.postMessageTotalSize / this.postMessageCount).toFixed(0)}B`
+          `avg: ${(this.postMessageTotalSize / this.postMessageCount).toFixed(0)}B`,
       );
     }
   }
@@ -304,8 +304,10 @@ class LongTaskMonitor {
         avg: sum / values.length,
         max: sorted[sorted.length - 1],
         min: sorted[0],
-        p95: sorted[Math.floor(sorted.length * 0.95)] ?? sorted[sorted.length - 1],
-        p99: sorted[Math.floor(sorted.length * 0.99)] ?? sorted[sorted.length - 1],
+        p95:
+          sorted[Math.floor(sorted.length * 0.95)] ?? sorted[sorted.length - 1],
+        p99:
+          sorted[Math.floor(sorted.length * 0.99)] ?? sorted[sorted.length - 1],
         total: sum,
       };
     }
@@ -335,16 +337,18 @@ class LongTaskMonitor {
   printReport(): void {
     const report = this.report();
 
-    console.group('📊 Long Task Monitor Report');
+    console.group("📊 Long Task Monitor Report");
     console.log(`Duration: ${report.durationSeconds.toFixed(1)}s`);
-    console.log(`Long Tasks: ${report.longTaskCount} (total: ${report.longTaskTotalDuration.toFixed(0)}ms)`);
+    console.log(
+      `Long Tasks: ${report.longTaskCount} (total: ${report.longTaskTotalDuration.toFixed(0)}ms)`,
+    );
     console.log(
       `postMessage: ${report.postMessageStats.count} calls, ` +
-        `${report.postMessageStats.totalSizeKB.toFixed(1)}KB total`
+        `${report.postMessageStats.totalSizeKB.toFixed(1)}KB total`,
     );
 
     if (Object.keys(report.metrics).length > 0) {
-      console.log('\nMetrics:');
+      console.log("\nMetrics:");
       console.table(
         Object.fromEntries(
           Object.entries(report.metrics).map(([name, stats]) => [
@@ -355,8 +359,8 @@ class LongTaskMonitor {
               max: `${stats.max.toFixed(1)}ms`,
               p95: `${stats.p95.toFixed(1)}ms`,
             },
-          ])
-        )
+          ]),
+        ),
       );
     }
 
@@ -409,8 +413,10 @@ class LongTaskMonitor {
       avg: sum / values.length,
       max: sorted[sorted.length - 1],
       min: sorted[0],
-      p95: sorted[Math.floor(sorted.length * 0.95)] ?? sorted[sorted.length - 1],
-      p99: sorted[Math.floor(sorted.length * 0.99)] ?? sorted[sorted.length - 1],
+      p95:
+        sorted[Math.floor(sorted.length * 0.95)] ?? sorted[sorted.length - 1],
+      p99:
+        sorted[Math.floor(sorted.length * 0.99)] ?? sorted[sorted.length - 1],
       total: sum,
     };
   }
@@ -418,11 +424,18 @@ class LongTaskMonitor {
   /**
    * Long Task 통계만 조회
    */
-  getLongTaskStats(): { count: number; totalDuration: number; avgDuration: number } {
+  getLongTaskStats(): {
+    count: number;
+    totalDuration: number;
+    avgDuration: number;
+  } {
     return {
       count: this.longTaskCount,
       totalDuration: this.longTaskTotalDuration,
-      avgDuration: this.longTaskCount > 0 ? this.longTaskTotalDuration / this.longTaskCount : 0,
+      avgDuration:
+        this.longTaskCount > 0
+          ? this.longTaskTotalDuration / this.longTaskCount
+          : 0,
     };
   }
 
@@ -462,7 +475,10 @@ export function measure<T>(name: string, fn: () => T): T {
 /**
  * 비동기 함수 측정 (단축 함수)
  */
-export function measureAsync<T>(name: string, fn: () => Promise<T>): Promise<T> {
+export function measureAsync<T>(
+  name: string,
+  fn: () => Promise<T>,
+): Promise<T> {
   return longTaskMonitor.measureAsync(name, fn);
 }
 
@@ -478,12 +494,7 @@ export function startMeasure(name: string): () => void {
 // ============================================
 
 // 개발 모드에서 전역 접근 가능하게 설정
-if (import.meta.env.DEV && typeof window !== 'undefined') {
-  (window as unknown as { longTaskMonitor: LongTaskMonitor }).longTaskMonitor = longTaskMonitor;
-
-  // 콘솔 명령어 안내
-  console.log(
-    '%c[LongTaskMonitor] Ready - Commands: longTaskMonitor.report(), longTaskMonitor.printReport(), longTaskMonitor.reset()',
-    'color: #4CAF50; font-weight: bold'
-  );
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  (window as unknown as { longTaskMonitor: LongTaskMonitor }).longTaskMonitor =
+    longTaskMonitor;
 }

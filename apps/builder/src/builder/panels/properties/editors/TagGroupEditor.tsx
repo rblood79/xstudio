@@ -12,7 +12,6 @@ import {
   ToggleLeft,
   ToggleRight,
   Layout,
-  PencilRuler,
   FormInput,
   CheckSquare,
   Database,

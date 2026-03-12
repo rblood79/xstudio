@@ -26,7 +26,6 @@ import {
   renderPartialBorder,
   renderScrollbar,
   buildClipPath,
-  sortByStackingOrder,
   getEditingElementId,
 } from "./nodeRenderers";
 import { beginRenderEffects, endRenderEffects } from "./effects";

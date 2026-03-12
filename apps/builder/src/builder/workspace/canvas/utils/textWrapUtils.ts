@@ -7,6 +7,8 @@
  * @since 2026-03-02
  */
 
+import type { CanvasKit, ParagraphStyle, FontMgr } from "canvaskit-wasm";
+
 // ============================================
 // CanvasKit 단어 폭 측정 헬퍼
 // ============================================
@@ -20,11 +22,10 @@
  * @param token - 측정할 텍스트 토큰
  * @returns 토큰의 intrinsic width (px)
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function measureTokenWidth(
-  ck: any,
-  paraStyle: any,
-  fontMgr: any,
+  ck: CanvasKit,
+  paraStyle: ParagraphStyle,
+  fontMgr: FontMgr,
   token: string,
 ): number {
   const b = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
@@ -42,11 +43,10 @@ export function measureTokenWidth(
  *
  * 'x x'와 'xx'의 폭 차이로 계산 (단독 공백은 trailing space로 잘릴 수 있음).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function measureSpaceWidth(
-  ck: any,
-  paraStyle: any,
-  fontMgr: any,
+  ck: CanvasKit,
+  paraStyle: ParagraphStyle,
+  fontMgr: FontMgr,
 ): number {
   const bs = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
   bs.addText("x x");
@@ -88,11 +88,10 @@ export function measureSpaceWidth(
  * @param maxWidth - 컨테이너 최대 너비 (px)
  * @returns 줄바꿈 삽입된 텍스트와 effectiveWidth
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function cssNormalBreakProcess(
-  ck: any,
-  paraStyle: any,
-  fontMgr: any,
+  ck: CanvasKit,
+  paraStyle: ParagraphStyle,
+  fontMgr: FontMgr,
   text: string,
   maxWidth: number,
 ): { text: string; effectiveWidth: number } {
@@ -170,11 +169,10 @@ export function cssNormalBreakProcess(
  * @param allowOverflowBreak - true면 단어가 maxWidth 초과 시 CanvasKit 기본 분할 허용
  * @returns effectiveWidth (px)
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function computeKeepAllWidth(
-  ck: any,
-  paraStyle: any,
-  fontMgr: any,
+  ck: CanvasKit,
+  paraStyle: ParagraphStyle,
+  fontMgr: FontMgr,
   text: string,
   maxWidth: number,
   allowOverflowBreak: boolean,
@@ -209,11 +207,10 @@ export function computeKeepAllWidth(
  * @param maxWidth - 컨테이너 최대 너비 (px)
  * @returns ZWS/\n 전처리된 텍스트
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function preprocessBreakWordText(
-  ck: any,
-  paraStyle: any,
-  fontMgr: any,
+  ck: CanvasKit,
+  paraStyle: ParagraphStyle,
+  fontMgr: FontMgr,
   text: string,
   maxWidth: number,
 ): string {

@@ -11,10 +11,10 @@
  * @see docs/COLOR_PICKER.md Section 5.2
  */
 
-import { memo, useState, useCallback, useRef, useEffect } from 'react';
-import { useStore } from '../../../stores';
+import { memo, useState, useCallback, useRef, useEffect } from "react";
+import { useStore } from "../../../stores";
 
-import './ScrubInput.css';
+import "./ScrubInput.css";
 
 export interface ScrubInputProps {
   value: number;
@@ -65,18 +65,26 @@ export const ScrubInput = memo(function ScrubInput({
 
   useEffect(() => {
     if (!editing) {
-      setDisplayValue(String(Math.round(value)));
+      queueMicrotask(() => setDisplayValue(String(Math.round(value))));
     }
   }, [value, editing]);
 
   useEffect(() => {
-    setEditing(false);
-    setIsDraggingState(false);
+    if (!isDragging.current) {
+      currentValue.current = value;
+    }
+  }, [value]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setEditing(false);
+      setIsDraggingState(false);
+    });
     isDragging.current = false;
     hasMoved.current = false;
     focusedElementIdRef.current = null;
-    setDisplayValue(String(Math.round(value)));
-    cleanupRef.current?.();
+    currentValue.current = value;
+    queueMicrotask(() => setDisplayValue(String(Math.round(value))));
   }, [selectedElementId, value]);
 
   const clamp = useCallback(
@@ -125,9 +133,9 @@ export const ScrubInput = memo(function ScrubInput({
 
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
+      if (e.key === "Enter") {
         (e.target as HTMLInputElement).blur();
-      } else if (e.key === 'Escape') {
+      } else if (e.key === "Escape") {
         setDisplayValue(String(Math.round(value)));
         setEditing(false);
       }
@@ -136,13 +144,30 @@ export const ScrubInput = memo(function ScrubInput({
   );
 
   // ---- 드래그 (Scrub) 모드 ----
-  // 이벤트 핸들러 cleanup 함수 ref (self-reference 회피)
-  const cleanupRef = useRef<(() => void) | null>(null);
+  // React Compiler 호환: useEffect 내에서만 ref.current를 변경
+  const editingRef = useRef(editing);
+  const stepRef = useRef(step);
+  const stepMultiplierRef = useRef(stepMultiplier);
+  const clampRef = useRef(clamp);
+  const onScrubRef = useRef(onScrub);
+  const onCommitRef = useRef(onCommit);
 
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
+  useEffect(() => {
+    editingRef.current = editing;
+    stepRef.current = step;
+    stepMultiplierRef.current = stepMultiplier;
+    clampRef.current = clamp;
+    onScrubRef.current = onScrub;
+    onCommitRef.current = onCommit;
+  });
+
+  useEffect(() => {
+    const el = scrubRef.current;
+    if (!el) return;
+
+    const onPointerDown = (e: PointerEvent) => {
       // 이미 편집 중이면 드래그 시작하지 않음
-      if (editing) return;
+      if (editingRef.current) return;
       // 왼쪽 클릭만
       if (e.button !== 0) return;
 
@@ -150,9 +175,8 @@ export const ScrubInput = memo(function ScrubInput({
       setIsDraggingState(true);
       hasMoved.current = false;
       dragStartX.current = e.clientX;
-      dragStartValue.current = value;
+      dragStartValue.current = currentValue.current;
       accumulator.current = 0;
-      currentValue.current = value;
 
       const onPointerMove = (ev: PointerEvent) => {
         if (!isDragging.current) return;
@@ -167,7 +191,9 @@ export const ScrubInput = memo(function ScrubInput({
           scrubRef.current?.requestPointerLock?.();
         }
 
-        const effectiveStep = ev.shiftKey ? step / stepMultiplier : step;
+        const effectiveStep = ev.shiftKey
+          ? stepRef.current / stepMultiplierRef.current
+          : stepRef.current;
 
         // movementX 기반이면 직접 누적
         if (document.pointerLockElement) {
@@ -177,13 +203,18 @@ export const ScrubInput = memo(function ScrubInput({
         }
 
         const delta = accumulator.current * effectiveStep;
-        const newVal = clamp(dragStartValue.current + delta);
+        const newVal = clampRef.current(dragStartValue.current + delta);
 
         if (newVal !== currentValue.current) {
           currentValue.current = newVal;
           setDisplayValue(String(newVal));
-          onScrub?.(newVal);
+          onScrubRef.current?.(newVal);
         }
+      };
+
+      const removeListeners = () => {
+        document.removeEventListener("pointermove", onPointerMove);
+        document.removeEventListener("pointerup", onPointerUp);
       };
 
       const onPointerUp = () => {
@@ -196,13 +227,11 @@ export const ScrubInput = memo(function ScrubInput({
           document.exitPointerLock();
         }
 
-        document.removeEventListener('pointermove', onPointerMove);
-        document.removeEventListener('pointerup', onPointerUp);
-        cleanupRef.current = null;
+        removeListeners();
 
         if (wasDragging) {
           // 드래그 완료 → 값 커밋
-          onCommit(currentValue.current);
+          onCommitRef.current(currentValue.current);
         } else {
           // 클릭 → 편집 모드 전환
           setEditing(true);
@@ -214,32 +243,22 @@ export const ScrubInput = memo(function ScrubInput({
         }
       };
 
-      // 이전 리스너 정리
-      cleanupRef.current?.();
-
       // 전역 이벤트 등록 (pointer capture 대신 — pointerLock과 호환)
-      document.addEventListener('pointermove', onPointerMove);
-      document.addEventListener('pointerup', onPointerUp);
-      cleanupRef.current = () => {
-        document.removeEventListener('pointermove', onPointerMove);
-        document.removeEventListener('pointerup', onPointerUp);
-      };
+      document.addEventListener("pointermove", onPointerMove);
+      document.addEventListener("pointerup", onPointerUp);
 
       e.preventDefault();
-    },
-    [editing, value, step, stepMultiplier, clamp, onScrub, onCommit],
-  );
+    };
 
-  // cleanup
-  useEffect(() => {
+    el.addEventListener("pointerdown", onPointerDown);
     return () => {
-      cleanupRef.current?.();
+      el.removeEventListener("pointerdown", onPointerDown);
     };
   }, []);
 
   if (editing) {
     return (
-      <div className={`scrub-input ${className ?? ''}`}>
+      <div className={`scrub-input ${className ?? ""}`}>
         <input
           ref={inputRef}
           type="text"
@@ -262,8 +281,7 @@ export const ScrubInput = memo(function ScrubInput({
   return (
     <div
       ref={scrubRef}
-      className={`scrub-input ${className ?? ''}`}
-      onPointerDown={handlePointerDown}
+      className={`scrub-input ${className ?? ""}`}
       data-dragging={isDraggingState || undefined}
     >
       <span className="scrub-input__display" aria-label={label}>

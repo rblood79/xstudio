@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useCanvasSyncStore } from '../canvasSync';
+import { useEffect } from "react";
+import { useCanvasSyncStore } from "../canvasSync";
 
 // ============================================
 // Types
@@ -49,10 +49,6 @@ class GPUProfiler {
     if (this.config.autoUpdate) {
       this.tick();
     }
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📊 [GPUProfiler] Started');
-    }
   }
 
   stop(): void {
@@ -61,8 +57,8 @@ class GPUProfiler {
       this.rafId = null;
     }
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📊 [GPUProfiler] Stopped');
+    if (process.env.NODE_ENV === "development") {
+      console.log("📊 [GPUProfiler] Stopped");
     }
   }
 

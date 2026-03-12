@@ -31,7 +31,6 @@ import {
   applyViewportState,
   computeFitViewport,
   zoomViewportAtContainerCenter,
-  clampViewportZoom,
 } from "../workspace/canvas/viewport/viewportActions";
 import {
   copyMultipleElements,
@@ -45,8 +44,6 @@ import { useCopyPaste } from "./useCopyPaste";
 // Constants
 // ============================================
 
-const MIN_ZOOM = 0.1;
-const MAX_ZOOM = 5;
 const ZOOM_STEP = 0.1;
 
 // ============================================

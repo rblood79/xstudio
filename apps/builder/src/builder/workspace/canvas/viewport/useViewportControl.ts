@@ -11,19 +11,23 @@
  * @since 2025-12-12 Phase 12 B3.2
  */
 
-import { useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
-import { useApplication } from '@pixi/react';
-import type { Container } from 'pixi.js';
-import { type ViewportState, type ViewportController, getViewportController } from './ViewportController';
+import { useEffect, useRef, useCallback, useMemo, type RefObject } from "react";
+import { useApplication } from "@pixi/react";
+import type { Container } from "pixi.js";
+import {
+  type ViewportState,
+  type ViewportController,
+  getViewportController,
+} from "./ViewportController";
 import {
   isCanvasViewportSnapshotEqual,
   selectCanvasViewportSnapshot,
   useCanvasSyncStore,
-} from '../canvasSync';
-import { offsetViewportStateX } from './viewportActions';
-import { useKeyboardShortcutsRegistry } from '@/builder/hooks';
-import { useScrollState, isScrollable } from '../../../stores/scrollState';
-import { useStore } from '../../../stores';
+} from "../canvasSync";
+import { offsetViewportStateX } from "./viewportActions";
+import { useKeyboardShortcutsRegistry } from "@/builder/hooks";
+import { useScrollState, isScrollable } from "../../../stores/scrollState";
+import { useStore } from "../../../stores";
 
 // ============================================
 // Types
@@ -58,9 +62,11 @@ export interface UseViewportControlReturn {
 // Hook
 // ============================================
 
-export function useViewportControl(options: UseViewportControlOptions): UseViewportControlReturn {
+export function useViewportControl(
+  options: UseViewportControlOptions,
+): UseViewportControlReturn {
   const {
-    cameraLabel = 'Camera',
+    cameraLabel = "Camera",
     minZoom = 0.1,
     maxZoom = 5,
     containerEl,
@@ -93,7 +99,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
 
   // Zustand store actions
   const setViewportSnapshot = useCanvasSyncStore(
-    (state) => state.setViewportSnapshot
+    (state) => state.setViewportSnapshot,
   );
 
   // React state로 동기화하는 콜백
@@ -104,7 +110,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         zoom: state.scale,
       });
     },
-    [setViewportSnapshot]
+    [setViewportSnapshot],
   );
 
   const controller = useMemo(() => {
@@ -127,7 +133,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
   // 팬 모드 커서 스타일 (자식 요소 포함 !important)
   const panCursorStyleRef = useRef<HTMLStyleElement | null>(null);
 
-  const applyPanCursor = useCallback((cursor: 'grab' | 'grabbing' | null) => {
+  const applyPanCursor = useCallback((cursor: "grab" | "grabbing" | null) => {
     // 기존 스타일 제거
     if (panCursorStyleRef.current) {
       panCursorStyleRef.current.remove();
@@ -136,8 +142,8 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
 
     if (cursor && containerElRef.current) {
       // 동적 스타일 태그 생성 (자식 요소 포함 !important)
-      const style = document.createElement('style');
-      const containerId = containerElRef.current.id || 'viewport-container';
+      const style = document.createElement("style");
+      const containerId = containerElRef.current.id || "viewport-container";
       if (!containerElRef.current.id) {
         containerElRef.current.id = containerId;
       }
@@ -169,18 +175,21 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
 
     // Camera Container 찾기
     const cameraContainer = app.stage.children.find(
-      (child) => (child as Container).label === cameraLabel
+      (child) => (child as Container).label === cameraLabel,
     ) as Container | undefined;
 
     if (!cameraContainer) {
-      console.warn(`[useViewportControl] Camera container with label "${cameraLabel}" not found`);
+      console.warn(
+        `[useViewportControl] Camera container with label "${cameraLabel}" not found`,
+      );
       return;
     }
 
     controller.attach(cameraContainer);
 
     // 초기 상태 적용 (Zustand에서 읽어서 Container에 적용)
-    const { zoom, panOffset, setViewportSnapshot } = useCanvasSyncStore.getState();
+    const { zoom, panOffset, setViewportSnapshot } =
+      useCanvasSyncStore.getState();
     const initialViewport =
       initialPanOffsetX !== undefined
         ? offsetViewportStateX(
@@ -201,12 +210,6 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         zoom: initialViewport.scale,
       });
     }
-    console.log('[useViewportControl] Initial position applied:', {
-      x: initialViewport.x,
-      y: initialViewport.y,
-      scale: initialViewport.scale,
-      initialPanOffsetX,
-    });
 
     return () => {
       controller.detach();
@@ -225,7 +228,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         onInteractionStartRef.current?.();
         controller.startPan(e.clientX, e.clientY);
         isPanningRef.current = true;
-        applyPanCursorRef.current('grabbing');
+        applyPanCursorRef.current("grabbing");
       }
     };
 
@@ -239,20 +242,20 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         controller.endPan();
         isPanningRef.current = false;
         // Space가 여전히 눌려있으면 grab, 아니면 null
-        applyPanCursorRef.current(isSpacePressedRef.current ? 'grab' : null);
+        applyPanCursorRef.current(isSpacePressedRef.current ? "grab" : null);
         // 🚀 Phase 6.1: 인터랙션 종료 알림 (ref 사용)
         onInteractionEndRef.current?.();
       }
     };
 
-    containerEl.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    containerEl.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
 
     return () => {
-      containerEl.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      containerEl.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [containerEl, controller]);
 
@@ -306,8 +309,13 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         if (selectedIds.length === 1) {
           const selectedId = selectedIds[0];
           const el = storeState.elementsMap.get(selectedId);
-          const overflow = (el?.props?.style as Record<string, unknown> | undefined)?.overflow;
-          if ((overflow === 'scroll' || overflow === 'auto') && isScrollable(selectedId)) {
+          const overflow = (
+            el?.props?.style as Record<string, unknown> | undefined
+          )?.overflow;
+          if (
+            (overflow === "scroll" || overflow === "auto") &&
+            isScrollable(selectedId)
+          ) {
             const deltaX = e.shiftKey ? e.deltaY : e.deltaX;
             const deltaY = e.shiftKey ? 0 : e.deltaY;
             useScrollState.getState().scrollBy(selectedId, deltaX, deltaY);
@@ -321,7 +329,8 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
 
         // Fix 6: 동일 프레임 내 다중 wheel 이벤트 누적 처리.
         // pendingPanRef가 있으면 이전 누적값 기준, 없으면 Zustand 현재값 기준.
-        const current = pendingPanRef.current ?? useCanvasSyncStore.getState().panOffset;
+        const current =
+          pendingPanRef.current ?? useCanvasSyncStore.getState().panOffset;
         const { zoom } = useCanvasSyncStore.getState();
         const newX = current.x - rawDeltaX;
         const newY = current.y - rawDeltaY;
@@ -347,10 +356,13 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
       }
     };
 
-    containerEl.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+    containerEl.addEventListener("wheel", handleWheel, {
+      passive: false,
+      capture: true,
+    });
 
     return () => {
-      containerEl.removeEventListener('wheel', handleWheel, { capture: true });
+      containerEl.removeEventListener("wheel", handleWheel, { capture: true });
       // cleanup 시 타임아웃 정리
       if (zoomEndTimeoutRef.current) {
         clearTimeout(zoomEndTimeoutRef.current);
@@ -377,7 +389,9 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
   useEffect(() => {
     if (!controller || controller.isPanningActive()) return;
 
-    const viewport = selectCanvasViewportSnapshot(useCanvasSyncStore.getState());
+    const viewport = selectCanvasViewportSnapshot(
+      useCanvasSyncStore.getState(),
+    );
     controller.setPosition(
       viewport.panOffset.x,
       viewport.panOffset.y,
@@ -399,38 +413,37 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
           viewport.zoom,
         );
       },
-      { equalityFn: isCanvasViewportSnapshotEqual }
+      { equalityFn: isCanvasViewportSnapshotEqual },
     );
 
     return unsubscribe;
   }, [controller]);
 
-
   // 스페이스바 팬 모드 (cursor만 변경)
   useKeyboardShortcutsRegistry(
     [
       {
-        key: 'Space',
-        code: 'Space',
-        modifier: 'none',
+        key: "Space",
+        code: "Space",
+        modifier: "none",
         preventDefault: false,
         disabled: !containerEl,
         handler: () => {
           if (isSpacePressedRef.current) return;
           isSpacePressedRef.current = true;
-          applyPanCursor('grab');
+          applyPanCursor("grab");
         },
       },
     ],
-    [containerEl, applyPanCursor]
+    [containerEl, applyPanCursor],
   );
 
   useKeyboardShortcutsRegistry(
     [
       {
-        key: 'Space',
-        code: 'Space',
-        modifier: 'none',
+        key: "Space",
+        code: "Space",
+        modifier: "none",
         preventDefault: false,
         disabled: !containerEl,
         handler: () => {
@@ -442,7 +455,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
       },
     ],
     [containerEl, applyPanCursor],
-    { eventType: 'keyup' }
+    { eventType: "keyup" },
   );
 
   return {

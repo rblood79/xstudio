@@ -9,9 +9,44 @@
  * 🚀 Body 기본값 보존: Reset 시 컴포넌트 기본값으로 복원
  */
 
-import { useCallback } from 'react';
-import { useStore } from '../../../stores';
-import { getDefaultProps } from '../../../../types/builder/unified.types';
+import { useCallback, useRef } from "react";
+import { useStore } from "../../../stores";
+import { getDefaultProps } from "../../../../types/builder/unified.types";
+import { shallow } from "zustand/shallow";
+
+/**
+ * 선택된 요소의 특정 속성들이 기본값과 다른지 확인하는 훅
+ * 리셋 버튼 조건부 표시용
+ */
+export function useHasDirtyStyles(properties: string[]): boolean {
+  const prevRef = useRef(false);
+
+  const hasDirty = useStore((state) => {
+    const selectedId = state.selectedElementId;
+    if (!selectedId) return false;
+
+    const element = state.elementsMap.get(selectedId);
+    if (!element) return false;
+
+    const defaultProps = getDefaultProps(element.tag);
+    const defaultStyle = (defaultProps?.style || {}) as Record<string, string>;
+    const currentStyle = (element.props?.style as Record<string, string>) || {};
+
+    for (const prop of properties) {
+      const resetValue = defaultStyle[prop] ?? "";
+      const currentValue = currentStyle[prop] ?? "";
+      if (currentValue !== resetValue) return true;
+    }
+    return false;
+  });
+
+  // shallow 비교로 불필요한 리렌더 방지
+  if (hasDirty !== prevRef.current) {
+    prevRef.current = hasDirty;
+  }
+
+  return prevRef.current;
+}
 
 /**
  * resetStyles 함수만 반환하는 경량 훅
@@ -32,13 +67,13 @@ export function useResetStyles() {
     const tag = element.tag;
     const defaultProps = getDefaultProps(tag);
     const defaultStyle = (defaultProps?.style || {}) as Record<string, string>;
-    const currentStyle = ((element.props?.style as Record<string, string>) || {});
+    const currentStyle = (element.props?.style as Record<string, string>) || {};
 
     // 실제로 변경이 필요한 속성만 포함 (dirty check)
     const resetObj: Record<string, string> = {};
     properties.forEach((prop) => {
-      const resetValue = defaultStyle[prop] ?? '';
-      const currentValue = currentStyle[prop] ?? '';
+      const resetValue = defaultStyle[prop] ?? "";
+      const currentValue = currentStyle[prop] ?? "";
       if (currentValue !== resetValue) {
         resetObj[prop] = resetValue;
       }

@@ -12,6 +12,12 @@ import type {
   TextMeasureStyle,
   TextMeasureResult,
 } from "./textMeasure";
+import type {
+  CanvasKit,
+  FontWeight,
+  ParagraphStyle,
+  FontMgr,
+} from "canvaskit-wasm";
 import { getCanvasKit, isCanvasKitInitialized } from "../skia/initCanvasKit";
 import { skiaFontManager } from "../skia/fontManager";
 import {
@@ -21,7 +27,6 @@ import {
 import {
   cssNormalBreakProcess,
   computeKeepAllWidth,
-  measureTokenWidth,
   preprocessBreakWordText,
 } from "./textWrapUtils";
 
@@ -47,7 +52,7 @@ function resolveWeight(ck: any, fw?: number | string): any {
       ? fw
       : (namedWeights[String(fw).toLowerCase()] ??
         (parseInt(String(fw), 10) || 400));
-  const map: Record<number, any> = {
+  const map: Record<number, FontWeight> = {
     100: ck.FontWeight.Thin,
     200: ck.FontWeight.ExtraLight,
     300: ck.FontWeight.Light,
@@ -59,15 +64,6 @@ function resolveWeight(ck: any, fw?: number | string): any {
     900: ck.FontWeight.Black,
   };
   return map[w] ?? ck.FontWeight.Normal;
-}
-
-/**
- * fontFamily CSS 문자열 → 첫 번째 폰트명 추출
- * TextSprite.tsx와 동일: fontFamily.split(',')[0].trim()
- * CSS fallback 체인 전체를 단일 폰트명으로 전달하면 CanvasKit이 매칭 실패
- */
-function resolveFontFamily(family: string): string {
-  return family.split(",")[0].trim();
 }
 
 /**
@@ -448,11 +444,10 @@ export class CanvasKitTextMeasurer implements TextMeasurer {
    * | keep-all  | normal              | max(maxWidth, ceil(maxWordWidth_keepall))      |
    * | keep-all  | break-word          | 넘침 시 maxWidth, 아니면 keep-all               |
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private computeEffectiveMaxWidth(
-    ck: any,
-    paraStyle: any,
-    fontMgr: any,
+    ck: CanvasKit,
+    paraStyle: ParagraphStyle,
+    fontMgr: FontMgr,
     text: string,
     maxWidth: number,
     wordBreak: string,

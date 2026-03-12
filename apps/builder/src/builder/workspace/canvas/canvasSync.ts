@@ -218,9 +218,6 @@ export const useCanvasSyncStore = create<CanvasSyncState>()(
 
     setCanvasReady: (ready) => {
       set({ isCanvasReady: ready });
-      if (ready) {
-        console.log("🎮 [CanvasSync] Canvas ready");
-      }
     },
 
     setContextLost: (lost) => {

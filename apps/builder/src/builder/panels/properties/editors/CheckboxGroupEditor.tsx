@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   PenOff,
   Layout,
-  Ruler,
   FormInput,
 } from "lucide-react";
 import {

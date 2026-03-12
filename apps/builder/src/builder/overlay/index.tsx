@@ -38,7 +38,7 @@ export default function SelectionOverlay() {
 
   // ⭐ Single select state (backward compatibility)
   const [overlayRect, setOverlayRect] = useState<Rect | null>(null);
-  const [selectedTag, setSelectedTag] = useState<string>("");
+  const [, setSelectedTag] = useState<string>("");
 
   // ⭐ Multi-select state: Map of elementId -> overlay data
   const [multiOverlays, setMultiOverlays] = useState<Map<string, OverlayData>>(
@@ -189,7 +189,7 @@ export default function SelectionOverlay() {
   // ⭐ Multi-select mode: Update overlays when selectedElementIds changes
   useEffect(() => {
     if (multiSelectMode && selectedElementIds.length > 0) {
-      scheduleMultiOverlayUpdate();
+      queueMicrotask(() => scheduleMultiOverlayUpdate());
     }
   }, [multiSelectMode, selectedElementIds, scheduleMultiOverlayUpdate]);
 
@@ -317,9 +317,9 @@ export default function SelectionOverlay() {
 
     // 위치 업데이트 요청
     if (multiSelectMode) {
-      scheduleMultiOverlayUpdate();
+      queueMicrotask(() => scheduleMultiOverlayUpdate());
     } else {
-      updatePosition();
+      queueMicrotask(() => updatePosition());
     }
   }, [
     selectedElementId,

@@ -9,8 +9,7 @@
  * @since 2025-12-12 Phase 12 B3.2
  */
 
-import { useEffect } from 'react';
-import { useViewportControl } from './useViewportControl';
+import { useViewportControl } from "./useViewportControl";
 
 export interface ViewportControlBridgeProps {
   /** HTML 컨테이너 요소 (이벤트 바인딩용) */
@@ -37,7 +36,7 @@ export interface ViewportControlBridgeProps {
  */
 export function ViewportControlBridge({
   containerEl,
-  cameraLabel = 'Camera',
+  cameraLabel = "Camera",
   minZoom = 0.1,
   maxZoom = 5,
   // 🚀 Phase 6.1: 인터랙션 콜백
@@ -46,7 +45,7 @@ export function ViewportControlBridge({
   initialPanOffsetX,
 }: ViewportControlBridgeProps): null {
   // ViewportController 연결 및 이벤트 핸들링
-  const { controller } = useViewportControl({
+  useViewportControl({
     containerEl,
     cameraLabel,
     minZoom,
@@ -56,18 +55,6 @@ export function ViewportControlBridge({
     onInteractionEnd,
     initialPanOffsetX,
   });
-
-  // 디버그 로깅 (개발 모드에서만)
-  useEffect(() => {
-    if (controller && process.env.NODE_ENV === 'development') {
-      console.log('[ViewportControlBridge] Controller attached');
-    }
-    return () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[ViewportControlBridge] Controller detached');
-      }
-    };
-  }, [controller]);
 
   // 렌더링 출력 없음
   return null;

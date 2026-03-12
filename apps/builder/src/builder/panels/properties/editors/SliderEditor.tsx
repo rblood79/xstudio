@@ -3,7 +3,6 @@ import {
   Type,
   Layout,
   NotebookTabs,
-  Ruler,
   Ratio,
   ArrowDown,
   ArrowUp,

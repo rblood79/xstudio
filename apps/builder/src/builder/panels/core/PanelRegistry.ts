@@ -5,7 +5,13 @@
  * 싱글톤 패턴으로 구현
  */
 
-import type { PanelConfig, PanelId, PanelCategory, PanelFilter, PanelDisplayMode } from "./types";
+import type {
+  PanelConfig,
+  PanelId,
+  PanelCategory,
+  PanelFilter,
+  PanelDisplayMode,
+} from "./types";
 
 /**
  * PanelRegistry 클래스
@@ -22,7 +28,7 @@ class PanelRegistryClass {
   register(config: PanelConfig): void {
     if (this.panels.has(config.id)) {
       console.warn(
-        `[PanelRegistry] Panel "${config.id}" is already registered. Overwriting.`
+        `[PanelRegistry] Panel "${config.id}" is already registered. Overwriting.`,
       );
     }
     this.panels.set(config.id, config);
@@ -68,7 +74,7 @@ class PanelRegistryClass {
    */
   getPanelsByDefaultPosition(position: "left" | "right"): PanelConfig[] {
     return this.getAllPanels().filter(
-      (panel) => panel.defaultPosition === position
+      (panel) => panel.defaultPosition === position,
     );
   }
 
@@ -88,7 +94,7 @@ class PanelRegistryClass {
         (panel) =>
           panel.name.toLowerCase().includes(searchLower) ||
           panel.nameEn?.toLowerCase().includes(searchLower) ||
-          panel.description?.toLowerCase().includes(searchLower)
+          panel.description?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -149,15 +155,6 @@ class PanelRegistryClass {
    */
   markInitialized(): void {
     this.initialized = true;
-
-    if (import.meta.env.DEV) {
-      console.log(
-        `[PanelRegistry] Initialized with ${this.count} panels:`,
-        this.getAllPanels()
-          .map((p) => p.id)
-          .join(", ")
-      );
-    }
   }
 
   /**
@@ -193,13 +190,13 @@ class PanelRegistryClass {
       "  left:",
       this.getPanelsByDefaultPosition("left")
         .map((p) => p.id)
-        .join(", ")
+        .join(", "),
     );
     console.log(
       "  right:",
       this.getPanelsByDefaultPosition("right")
         .map((p) => p.id)
-        .join(", ")
+        .join(", "),
     );
 
     console.groupEnd();

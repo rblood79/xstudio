@@ -126,10 +126,6 @@ export const useElementCreator = (): UseElementCreatorReturn => {
 
           const operation = async () => {
             if (COMPLEX_COMPONENT_TAGS.has(tag)) {
-              console.log(
-                `🏗️ 복합 컴포넌트 생성 시작: ${tag}`,
-                layoutId ? `(Layout: ${layoutId})` : "",
-              );
               // ComponentFactory를 사용하여 복합 컴포넌트 생성
               const result = await ComponentFactory.createComplexComponent(
                 tag,
@@ -138,10 +134,6 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 elements,
                 layoutId, // ⭐ Layout/Slot System: layoutId 전달
               );
-              console.log(
-                `✅ 복합 컴포넌트 생성 완료: ${tag}, 총 ${result.allElements.length}개 요소 생성`,
-              );
-
               // 증분 업데이트로 캐시 최적화
               const updatedElements = [...elements, ...result.allElements];
               HierarchyManager.incrementalUpdate(
@@ -152,10 +144,6 @@ export const useElementCreator = (): UseElementCreatorReturn => {
               // iframe에 업데이트된 요소들 전송
               sendElementsToIframe(updatedElements);
             } else {
-              console.log(
-                `🔧 단순 컴포넌트 생성: ${tag}`,
-                layoutId ? `(Layout: ${layoutId})` : "",
-              );
               // 단순 컴포넌트 생성 (캐시 활용)
               // parent_id가 없으면 body 요소를 parent로 설정
               // ⭐ Layout/Slot System: layoutId 우선, 없으면 pageId 사용

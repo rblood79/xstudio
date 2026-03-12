@@ -115,11 +115,11 @@ export const PropertyUnitInput = memo(
       justSavedViaEnterRef.current = false;
       lastSavedValueRef.current = value;
       focusedElementIdRef.current = null;
-      setInputValue(
+      const nextDisplay =
         parsed.numericValue !== null
           ? String(parsed.numericValue)
-          : (INPUT_DISPLAY_LABELS[parsed.unit] ?? parsed.unit),
-      );
+          : (INPUT_DISPLAY_LABELS[parsed.unit] ?? parsed.unit);
+      queueMicrotask(() => setInputValue(nextDisplay));
     }, [value, selectedElementId, parsed.numericValue, parsed.unit]);
 
     const handleInputChange = (newValue: string) => {
@@ -447,7 +447,9 @@ export const PropertyUnitInput = memo(
               style={{
                 width: "max-content",
                 minWidth:
-                  popoverMetrics.width > 0 ? `${popoverMetrics.width}px` : undefined,
+                  popoverMetrics.width > 0
+                    ? `${popoverMetrics.width}px`
+                    : undefined,
                 marginLeft:
                   popoverMetrics.offset !== 0
                     ? `${popoverMetrics.offset}px`

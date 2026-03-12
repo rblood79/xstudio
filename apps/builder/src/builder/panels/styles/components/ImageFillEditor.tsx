@@ -9,12 +9,15 @@
  * @since 2026-02-11 Phase 4
  */
 
-import { memo, useState, useCallback, useRef, useEffect } from 'react';
-import { ImagePlus } from 'lucide-react';
-import type { ImageFillItem, FillItem } from '../../../../types/builder/fill.types';
-import { useStore } from '../../../stores';
+import { memo, useState, useCallback, useRef, useEffect } from "react";
+import { ImagePlus } from "lucide-react";
+import type {
+  ImageFillItem,
+  FillItem,
+} from "../../../../types/builder/fill.types";
+import { useStore } from "../../../stores";
 
-import './ImageFillEditor.css';
+import "./ImageFillEditor.css";
 
 interface ImageFillEditorProps {
   fill: ImageFillItem;
@@ -22,12 +25,12 @@ interface ImageFillEditorProps {
   onUpdateEnd: (updates: Partial<FillItem>) => void;
 }
 
-type ImageMode = 'stretch' | 'fill' | 'fit';
+type ImageMode = "stretch" | "fill" | "fit";
 
 const IMAGE_MODES: { value: ImageMode; label: string }[] = [
-  { value: 'fill', label: 'Fill' },
-  { value: 'fit', label: 'Fit' },
-  { value: 'stretch', label: 'Stretch' },
+  { value: "fill", label: "Fill" },
+  { value: "fit", label: "Fit" },
+  { value: "stretch", label: "Stretch" },
 ];
 
 export const ImageFillEditor = memo(function ImageFillEditor({
@@ -41,8 +44,9 @@ export const ImageFillEditor = memo(function ImageFillEditor({
   const focusedElementIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setUrlInput(fill.url);
     focusedElementIdRef.current = null;
+    const nextUrl = fill.url;
+    queueMicrotask(() => setUrlInput(nextUrl));
   }, [fill.url, selectedElementId]);
 
   const handleUrlCommit = useCallback(() => {
@@ -62,7 +66,7 @@ export const ImageFillEditor = memo(function ImageFillEditor({
 
   const handleUrlKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
+      if (e.key === "Enter") {
         (e.target as HTMLInputElement).blur();
       }
     },
@@ -78,7 +82,7 @@ export const ImageFillEditor = memo(function ImageFillEditor({
 
   const handleFileSelect = useCallback(
     (file: File) => {
-      if (!file.type.startsWith('image/')) return;
+      if (!file.type.startsWith("image/")) return;
 
       const reader = new FileReader();
       reader.onload = () => {
@@ -119,7 +123,7 @@ export const ImageFillEditor = memo(function ImageFillEditor({
       const file = e.target.files?.[0];
       if (file) handleFileSelect(file);
       // 같은 파일 재선택 가능하도록 값 초기화
-      e.target.value = '';
+      e.target.value = "";
     },
     [handleFileSelect],
   );
@@ -143,7 +147,14 @@ export const ImageFillEditor = memo(function ImageFillEditor({
             className="image-fill-editor__image"
             src={fill.url}
             alt="Fill preview"
-            style={{ objectFit: fill.mode === 'stretch' ? 'fill' : fill.mode === 'fit' ? 'contain' : 'cover' }}
+            style={{
+              objectFit:
+                fill.mode === "stretch"
+                  ? "fill"
+                  : fill.mode === "fit"
+                    ? "contain"
+                    : "cover",
+            }}
           />
         ) : (
           <div className="image-fill-editor__placeholder">
@@ -182,7 +193,11 @@ export const ImageFillEditor = memo(function ImageFillEditor({
       {/* 모드 선택 */}
       <div className="image-fill-editor__mode-row">
         <span className="image-fill-editor__label">Mode</span>
-        <div className="image-fill-editor__mode-group" role="radiogroup" aria-label="Image sizing mode">
+        <div
+          className="image-fill-editor__mode-group"
+          role="radiogroup"
+          aria-label="Image sizing mode"
+        >
           {IMAGE_MODES.map(({ value, label }) => (
             <button
               key={value}

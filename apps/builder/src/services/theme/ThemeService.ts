@@ -41,7 +41,7 @@ export class ThemeService {
     const db = await getDB();
 
     // 1. Project 존재 확인 (없으면 자동 생성)
-    let project = await db.projects.getById(input.project_id);
+    const project = await db.projects.getById(input.project_id);
     if (!project) {
       console.warn(
         "[ThemeService] Project not found, creating temp project:",
@@ -54,7 +54,7 @@ export class ThemeService {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      project = await db.projects.insert(tempProject);
+      await db.projects.insert(tempProject);
     }
 
     // 2. IndexedDB에 테마 생성

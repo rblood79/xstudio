@@ -7,10 +7,9 @@
  * @see docs/RENDERING_ARCHITECTURE.md §1.3 TypeScript 바인딩
  */
 
-
-import { idMapper } from './idMapper';
-import { getRustWasm } from './rustWasm';
-import type { SpatialIndex as SpatialIndexWasm } from './pkg/xstudio_wasm';
+import { idMapper } from "./idMapper";
+import { getRustWasm } from "./rustWasm";
+import type { SpatialIndex as SpatialIndexWasm } from "./pkg/xstudio_wasm";
 
 const SPATIAL_CELL_SIZE = 256;
 
@@ -22,15 +21,11 @@ export function initSpatialIndex(): void {
 
   const wasm = getRustWasm();
   if (!wasm) {
-    console.warn('[SpatialIndex] Rust WASM 미초기화, 생성 스킵');
+    console.warn("[SpatialIndex] Rust WASM 미초기화, 생성 스킵");
     return;
   }
 
   spatialIndex = new wasm.SpatialIndex(SPATIAL_CELL_SIZE);
-
-  if (import.meta.env.DEV) {
-    console.log(`[SpatialIndex] 초기화 완료 (cellSize=${SPATIAL_CELL_SIZE})`);
-  }
 }
 
 /** 요소 삽입/갱신 (씬 좌표) */

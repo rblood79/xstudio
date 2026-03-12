@@ -107,18 +107,6 @@ export function ComboBox<T extends object>({
     return () => ro.disconnect();
   }, []);
 
-  // External loading state (from isLoading prop) - show skeleton
-  if (externalLoading) {
-    return (
-      <Skeleton
-        componentVariant="input"
-        size={size}
-        className={props.className as string}
-        aria-label="Loading combobox..."
-      />
-    );
-  }
-
   // Label 처리
   const hasVisibleLabel = label && String(label).trim();
   const ariaLabel = hasVisibleLabel
@@ -243,6 +231,19 @@ export function ComboBox<T extends object>({
       hasBoundItems,
       isTemplateMode,
     ]);
+
+  // External loading state (from isLoading prop) - show skeleton
+  // NOTE: early return은 모든 훅 호출 이후에 위치해야 함 (Rules of Hooks)
+  if (externalLoading) {
+    return (
+      <Skeleton
+        componentVariant="input"
+        size={size}
+        className={props.className as string}
+        aria-label="Loading combobox..."
+      />
+    );
+  }
 
   return (
     <AriaComboBox

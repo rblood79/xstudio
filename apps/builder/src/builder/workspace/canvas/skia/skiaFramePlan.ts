@@ -22,10 +22,7 @@ import type {
   DataSourceEdge,
   LayoutGroup,
 } from "./workflowEdges";
-import type {
-  PageFrame,
-  ElementBounds,
-} from "./workflowRenderer";
+import type { PageFrame } from "./workflowRenderer";
 import type { CachedEdgeGeometry } from "./workflowHitTest";
 import type { WorkflowHoverState } from "../hooks/useWorkflowInteraction";
 import type { ElementHoverState } from "../hooks/useElementHoverInteraction";
@@ -169,10 +166,7 @@ export function buildFrameRenderPlan(
     dpr,
   });
 
-  const screenOverlayNode = buildGridScreenOverlayNode(
-    ck,
-    snapshot.cameraZoom,
-  );
+  const screenOverlayNode = buildGridScreenOverlayNode(ck, snapshot.cameraZoom);
 
   return {
     sharedScene,
@@ -237,7 +231,10 @@ interface BuildWorkflowOverlayBuildResultInput {
 function buildWorkflowOverlayBuildResult(
   input: BuildWorkflowOverlayBuildResultInput,
 ): WorkflowOverlayBuildResult {
-  const wfData = buildWorkflowOverlayData(input.treeBoundsMap, input.pageFrames);
+  const wfData = buildWorkflowOverlayData(
+    input.treeBoundsMap,
+    input.pageFrames,
+  );
   const { workflowStraightEdges } = useStore.getState();
   const cacheResult = buildFrameCaches(
     input.workflowEdges,
@@ -269,7 +266,11 @@ function buildGridScreenOverlayNode(
 
   return {
     renderSkia(canvas: Canvas, cullingBounds: DOMRect) {
-      renderGrid(ck, canvas, buildGridRenderInput(cullingBounds, gridSize, cameraZoom));
+      renderGrid(
+        ck,
+        canvas,
+        buildGridRenderInput(cullingBounds, gridSize, cameraZoom),
+      );
     },
   };
 }

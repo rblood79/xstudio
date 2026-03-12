@@ -10,9 +10,10 @@ import { sanitizeElement } from "../../stores/utils/elementSanitizer";
  * 컴포넌트 정의로부터 실제 Element 데이터 생성
  * 재귀적 중첩 children 지원 (TagGroup → TagList → Tag 등 3레벨 이상)
  */
-export function createElementsFromDefinition(
-  definition: ComponentDefinition
-): { parent: Element; children: Element[] } {
+export function createElementsFromDefinition(definition: ComponentDefinition): {
+  parent: Element;
+  children: Element[];
+} {
   // 현재 페이지의 모든 요소 가져오기 (customId 생성용)
   const store = useStore.getState();
   const currentElements = store.elements;
@@ -30,7 +31,10 @@ export function createElementsFromDefinition(
   const allElementsSoFar = [...currentElements, parent];
   const allChildren: Element[] = [];
 
-  function processChildren(childDefs: ChildDefinition[], parentId: string): void {
+  function processChildren(
+    childDefs: ChildDefinition[],
+    parentId: string,
+  ): void {
     childDefs.forEach((childDef) => {
       const { children: nestedChildren, ...elementDef } = childDef;
       const child: Element = {
@@ -62,7 +66,7 @@ export function createElementsFromDefinition(
  */
 export function addElementsToStore(
   parent: Element,
-  children: Element[]
+  children: Element[],
 ): Element[] {
   const store = useStore.getState();
   const currentElements = store.elements;
@@ -85,16 +89,10 @@ export function addElementsToStore(
     try {
       const db = await getDB();
       await db.elements.insertMany(
-        allElements.map((el) => sanitizeElement(el))
-      );
-      console.log(
-        `✅ [IndexedDB] 복합 컴포넌트 저장 완료: ${parent.tag} + 자식 ${children.length}개`
+        allElements.map((el) => sanitizeElement(el)),
       );
     } catch (error) {
-      console.warn(
-        "⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):",
-        error
-      );
+      console.warn("⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):", error);
     }
   }, 0);
 
@@ -107,7 +105,7 @@ export function addElementsToStore(
 export function updateElementId(oldId: string, newId: string): void {
   const store = useStore.getState();
   const updatedElements = store.elements.map((el) =>
-    el.id === oldId ? { ...el, id: newId } : el
+    el.id === oldId ? { ...el, id: newId } : el,
   );
   store.setElements(updatedElements);
 }

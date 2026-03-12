@@ -30,7 +30,6 @@ import {
 } from "../../../fonts/loadCustomFontsToSkia";
 import { registerImageLoadCallback } from "./imageCache";
 import { useAIVisualFeedbackStore } from "../../../stores/aiVisualFeedback";
-import { renderGrid } from "./gridRenderer";
 import {
   computeWorkflowEdges,
   computeDataSourceEdges,
@@ -50,7 +49,7 @@ import {
   tickPagePosStaleFrames,
 } from "./skiaTreeBuilder";
 import { buildSkiaFrameContent } from "./skiaFramePipeline";
-import { type PageFrame, type ElementBounds } from "./workflowRenderer";
+import { type PageFrame } from "./workflowRenderer";
 import { type CachedEdgeGeometry } from "./workflowHitTest";
 import {
   useWorkflowInteraction,
@@ -402,12 +401,7 @@ export function SkiaOverlay({
 
         // Google Fonts CDN에서 폰트 바이너리 로드
         try {
-          const googleCount = await loadGoogleFontsToSkia();
-          if (googleCount > 0) {
-            console.info(
-              `[SkiaOverlay] Google Fonts ${googleCount}개 Skia 로드 완료`,
-            );
-          }
+          await loadGoogleFontsToSkia();
         } catch (e) {
           console.warn("[SkiaOverlay] Google Fonts Skia 로드 중 오류:", e);
         }
@@ -813,7 +807,8 @@ export function SkiaOverlay({
       if (framePlan.workflow) {
         pageFrameMapRef.current = framePlan.workflow.pageFrameMap;
         edgeGeometryCacheRef.current = framePlan.workflow.edgeGeometryCache;
-        edgeGeometryCacheKeyRef.current = framePlan.workflow.edgeGeometryCacheKey;
+        edgeGeometryCacheKeyRef.current =
+          framePlan.workflow.edgeGeometryCacheKey;
       } else {
         pageFrameMapRef.current = new Map<string, PageFrame>();
         edgeGeometryCacheRef.current = [];

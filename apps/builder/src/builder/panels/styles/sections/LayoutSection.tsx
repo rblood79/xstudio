@@ -85,8 +85,9 @@ function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
 
   // 선택 요소나 외부 값이 바뀌면 로컬 편집 세션을 새 대상 기준으로 리셋
   useEffect(() => {
-    setLocalValues(derivedValues);
     focusedElementIdRef.current = null;
+    const next = derivedValues;
+    queueMicrotask(() => setLocalValues(next));
   }, [
     derivedValues.top,
     derivedValues.right,

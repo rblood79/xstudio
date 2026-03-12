@@ -14,7 +14,7 @@
 
 import { useExtend } from "@pixi/react";
 import { PIXI_COMPONENTS } from "../pixiSetup";
-import { useCallback, useMemo, memo, useContext, useRef } from "react";
+import { useCallback, useMemo, memo, useContext } from "react";
 import { Graphics as PixiGraphics, TextStyle } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import {

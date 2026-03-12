@@ -219,10 +219,7 @@ export function getFeatureFlags(): FeatureFlags {
  * 개발 환경에서 Feature Flags 로그 출력
  */
 export function logFeatureFlags(): void {
-  if (import.meta.env.DEV) {
-    const flags = getFeatureFlags();
-    console.log("[FeatureFlags]", flags);
-  }
+  // no-op: flags available via getFeatureFlags()
 }
 
 // 개발 환경에서 자동 로그

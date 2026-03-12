@@ -7,7 +7,6 @@ import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "./elementSanitizer";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
-import { HierarchyManager } from "../../utils/HierarchyManager";
 import { normalizeElementTagInElement } from "./elementTagNormalizer";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
@@ -41,15 +40,27 @@ export const createAddElementAction =
     let elementToAdd = normalizedElement;
     set((prevState) => {
       // atomic order_num 계산: prevState.elements 기반으로 중복 방지
-      const siblings = prevState.elements.filter(el => el.parent_id === normalizedElement.parent_id);
-      const hasConflict = siblings.some(sibling => sibling.order_num === normalizedElement.order_num);
-      if (hasConflict || normalizedElement.order_num === undefined || normalizedElement.order_num === null) {
-        const maxOrder = siblings.length > 0
-          ? Math.max(...siblings.map(el => el.order_num || 0))
-          : -1;
+      const siblings = prevState.elements.filter(
+        (el) => el.parent_id === normalizedElement.parent_id,
+      );
+      const hasConflict = siblings.some(
+        (sibling) => sibling.order_num === normalizedElement.order_num,
+      );
+      if (
+        hasConflict ||
+        normalizedElement.order_num === undefined ||
+        normalizedElement.order_num === null
+      ) {
+        const maxOrder =
+          siblings.length > 0
+            ? Math.max(...siblings.map((el) => el.order_num || 0))
+            : -1;
         elementToAdd = { ...normalizedElement, order_num: maxOrder + 1 };
       }
-      return { elements: [...prevState.elements, elementToAdd], layoutVersion: prevState.layoutVersion + 1 };
+      return {
+        elements: [...prevState.elements, elementToAdd],
+        layoutVersion: prevState.layoutVersion + 1,
+      };
     });
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
@@ -72,10 +83,7 @@ export const createAddElementAction =
     try {
       const db = await getDB();
       const sanitized = sanitizeElement(elementToAdd);
-      console.log(`💾 [IndexedDB] 저장 전: ${elementToAdd.tag} layout_id=${elementToAdd.layout_id} page_id=${elementToAdd.page_id}`);
-      console.log(`💾 [IndexedDB] sanitized: layout_id=${sanitized.layout_id} page_id=${sanitized.page_id}`);
       await db.elements.insert(sanitized);
-      console.log("✅ [IndexedDB] 요소 저장 완료:", elementToAdd.id);
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):", error);
     }
@@ -94,9 +102,15 @@ export const createAddElementAction =
     else if (elementToAdd.layout_id) {
       queueMicrotask(() => {
         const { elements, batchUpdateElementOrders } = get();
-        const layoutElements = elements.filter(el => el.layout_id === elementToAdd.layout_id);
+        const layoutElements = elements.filter(
+          (el) => el.layout_id === elementToAdd.layout_id,
+        );
         if (layoutElements.length > 0) {
-          reorderElements(elements, elementToAdd.layout_id!, batchUpdateElementOrders);
+          reorderElements(
+            elements,
+            elementToAdd.layout_id!,
+            batchUpdateElementOrders,
+          );
         }
       });
     }
@@ -127,16 +141,28 @@ export const createAddComplexElementAction =
     // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
     // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
     set((prevState) => {
-      const siblings = prevState.elements.filter(el => el.parent_id === normalizedParent.parent_id);
-      const hasConflict = siblings.some(sibling => sibling.order_num === normalizedParent.order_num);
-      if (hasConflict || normalizedParent.order_num === undefined || normalizedParent.order_num === null) {
-        const maxOrder = siblings.length > 0
-          ? Math.max(...siblings.map(el => el.order_num || 0))
-          : -1;
+      const siblings = prevState.elements.filter(
+        (el) => el.parent_id === normalizedParent.parent_id,
+      );
+      const hasConflict = siblings.some(
+        (sibling) => sibling.order_num === normalizedParent.order_num,
+      );
+      if (
+        hasConflict ||
+        normalizedParent.order_num === undefined ||
+        normalizedParent.order_num === null
+      ) {
+        const maxOrder =
+          siblings.length > 0
+            ? Math.max(...siblings.map((el) => el.order_num || 0))
+            : -1;
         parentToAdd = { ...normalizedParent, order_num: maxOrder + 1 };
       }
       const allElements = [parentToAdd, ...normalizedChildren];
-      return { elements: [...prevState.elements, ...allElements], layoutVersion: prevState.layoutVersion + 1 };
+      return {
+        elements: [...prevState.elements, ...allElements],
+        layoutVersion: prevState.layoutVersion + 1,
+      };
     });
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
@@ -162,10 +188,10 @@ export const createAddComplexElementAction =
     try {
       const db = await getDB();
       await db.elements.insertMany(
-        allElements.map((el) => sanitizeElement(el))
+        allElements.map((el) => sanitizeElement(el)),
       );
       console.log(
-        `✅ [IndexedDB] 복합 컴포넌트 저장 완료: ${parentToAdd.tag} + 자식 ${normalizedChildren.length}개`
+        `✅ [IndexedDB] 복합 컴포넌트 저장 완료: ${parentToAdd.tag} + 자식 ${normalizedChildren.length}개`,
       );
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):", error);

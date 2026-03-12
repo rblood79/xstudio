@@ -9,8 +9,6 @@ import {
   getCSSVariable,
   cssColorToHex,
   parseCSSValue,
-  FALLBACK_COLORS,
-  mixWithBlack,
   mixWithWhite,
 } from "./cssVariableCore";
 

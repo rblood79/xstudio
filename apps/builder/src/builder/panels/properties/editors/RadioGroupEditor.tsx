@@ -12,7 +12,6 @@ import {
   Binary,
   Ratio,
   Layout,
-  Ruler,
   FormInput,
 } from "lucide-react";
 import {

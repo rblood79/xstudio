@@ -7,7 +7,6 @@ import {
   PropertyCustomId,
   PropertySection,
 } from "../../../components";
-import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 
 export const TableViewEditor = memo(function TableViewEditor({

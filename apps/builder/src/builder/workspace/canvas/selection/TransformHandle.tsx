@@ -62,9 +62,9 @@ export const TransformHandle = memo(function TransformHandle({
   boundsWidth,
   boundsHeight,
   zoom = 1,
-  onDragStart,
-  onHoverStart,
-  onHoverEnd,
+  onDragStart: _onDragStart,
+  onHoverStart: _onHoverStart,
+  onHoverEnd: _onHoverEnd,
 }: TransformHandleProps) {
   useExtend(PIXI_COMPONENTS);
 
