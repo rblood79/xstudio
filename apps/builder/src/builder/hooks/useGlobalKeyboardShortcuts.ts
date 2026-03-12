@@ -234,8 +234,6 @@ export function useGlobalKeyboardShortcuts() {
       return;
     }
 
-    console.log(`[Keyboard] Deleting ${deletableIds.length} elements`);
-
     // 선택 해제 먼저
     setSelectedElement(null);
 

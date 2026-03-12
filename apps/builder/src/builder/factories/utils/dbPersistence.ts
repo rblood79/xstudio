@@ -13,7 +13,7 @@ import { getDB } from "../../../lib/db";
 async function validateReferences(
   pageId: string,
   parentId: string | null,
-  layoutId?: string | null
+  layoutId?: string | null,
 ): Promise<boolean> {
   try {
     // ⭐ Layout/Slot System: Layout 모드 검증
@@ -26,14 +26,17 @@ async function validateReferences(
         .maybeSingle();
 
       if (layoutError) {
-        console.warn(`[dbPersistence] Error checking layout ${layoutId}:`, layoutError);
+        console.warn(
+          `[dbPersistence] Error checking layout ${layoutId}:`,
+          layoutError,
+        );
         return false;
       }
 
       if (!layout) {
         // Supabase에 레이아웃이 없으면 로컬 개발 환경으로 간주하고 스킵
         console.log(
-          `[dbPersistence] ⏭️ Layout ${layoutId} not in Supabase - skipping cloud save (local-only mode)`
+          `[dbPersistence] ⏭️ Layout ${layoutId} not in Supabase - skipping cloud save (local-only mode)`,
         );
         return false;
       }
@@ -46,20 +49,22 @@ async function validateReferences(
         .maybeSingle();
 
       if (pageError) {
-        console.warn(`[dbPersistence] Error checking page ${pageId}:`, pageError);
+        console.warn(
+          `[dbPersistence] Error checking page ${pageId}:`,
+          pageError,
+        );
         return false;
       }
 
       if (!page) {
         // Supabase에 페이지가 없으면 로컬 개발 환경으로 간주하고 스킵
-        console.log(
-          `[dbPersistence] ⏭️ Page ${pageId} not in Supabase - skipping cloud save (local-only mode)`
-        );
         return false;
       }
     } else {
       // pageId와 layoutId 둘 다 없으면 저장 스킵
-      console.warn("[dbPersistence] Neither pageId nor layoutId provided - skipping save");
+      console.warn(
+        "[dbPersistence] Neither pageId nor layoutId provided - skipping save",
+      );
       return false;
     }
 
@@ -74,7 +79,7 @@ async function validateReferences(
       if (parentError) {
         console.warn(
           `[dbPersistence] Error checking parent element ${parentId}:`,
-          parentError
+          parentError,
         );
         // 에러가 있어도 IndexedDB 확인 계속 진행
       }
@@ -86,19 +91,19 @@ async function validateReferences(
           const indexedDbParent = await db.elements.getById(parentId);
           if (indexedDbParent) {
             console.log(
-              `[dbPersistence] Parent element ${parentId} found in IndexedDB (not in Supabase yet) - allowing save`
+              `[dbPersistence] Parent element ${parentId} found in IndexedDB (not in Supabase yet) - allowing save`,
             );
             // IndexedDB에 있으면 저장 허용
           } else {
             console.warn(
-              `[dbPersistence] Parent element ${parentId} not found in DB or IndexedDB - skipping save`
+              `[dbPersistence] Parent element ${parentId} not found in DB or IndexedDB - skipping save`,
             );
             return false;
           }
         } catch (indexedDbError) {
           console.warn(
             `[dbPersistence] Error checking IndexedDB for parent element ${parentId}:`,
-            indexedDbError
+            indexedDbError,
           );
           return false;
         }
@@ -122,16 +127,13 @@ export async function saveElementsToDb(
   children: Element[],
   parentId: string | null,
   pageId: string,
-  layoutId?: string | null
+  layoutId?: string | null,
 ): Promise<void> {
   try {
     // ⭐ Supabase 참조 무결성 검증 (외래 키 위반 방지)
     const isValid = await validateReferences(pageId, parentId, layoutId);
     if (!isValid) {
       // 로컬 전용 모드: Supabase 저장 스킵 (IndexedDB에는 이미 저장됨)
-      console.log(
-        "[dbPersistence] ⏭️ Skipping Supabase save (local-only mode) - element saved in IndexedDB only"
-      );
       return;
     }
 
@@ -146,7 +148,7 @@ export async function saveElementsToDb(
       parent_id: parentId,
       order_num: HierarchyManager.calculateNextOrderNum(
         parentId,
-        existingElements
+        existingElements,
       ),
     };
 
@@ -168,7 +170,7 @@ export async function saveElementsToDb(
     }
 
     console.log(
-      `[dbPersistence] Successfully saved parent ${savedParent.id} and ${children.length} children${layoutId ? ` (Layout: ${layoutId})` : ''}`
+      `[dbPersistence] Successfully saved parent ${savedParent.id} and ${children.length} children${layoutId ? ` (Layout: ${layoutId})` : ""}`,
     );
   } catch (error) {
     console.error("Background save failed:", error);
@@ -184,7 +186,7 @@ export function saveElementsInBackground(
   children: Element[],
   parentId: string | null,
   pageId: string,
-  layoutId?: string | null
+  layoutId?: string | null,
 ): void {
   setTimeout(async () => {
     await saveElementsToDb(parent, children, parentId, pageId, layoutId);

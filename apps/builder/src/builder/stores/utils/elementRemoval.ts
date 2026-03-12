@@ -13,7 +13,10 @@ import {
   rebuildVariableUsageIndex,
 } from "./elementIndexer";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
-import { isWebGLCanvas, isCanvasCompareMode } from "../../../utils/featureFlags";
+import {
+  isWebGLCanvas,
+  isCanvasCompareMode,
+} from "../../../utils/featureFlags";
 // 🚀 Skia 레지스트리 동기화 — React useEffect cleanup 지연 문제 해결
 import { unregisterSkiaNode } from "../../workspace/canvas/skia/useSkiaNode";
 
@@ -21,8 +24,15 @@ type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
 
 const COLLECTION_ITEM_TAGS = new Set([
-  "Tab", "Panel", "ListBoxItem", "GridListItem",
-  "MenuItem", "ComboBoxItem", "SelectItem", "TreeItem", "ToggleButton",
+  "Tab",
+  "Panel",
+  "ListBoxItem",
+  "GridListItem",
+  "MenuItem",
+  "ComboBoxItem",
+  "SelectItem",
+  "TreeItem",
+  "ToggleButton",
 ]);
 
 /**
@@ -40,7 +50,7 @@ function collectElementsToRemove(
 ): { rootElement: Element; allElements: Element[] } | null {
   const element = getElementById(elementsMap, elementId);
   if (!element) return null;
-  if (element.tag.toLowerCase() === 'body') return null;
+  if (element.tag.toLowerCase() === "body") return null;
 
   // 자식 요소들 찾기 (재귀적으로) — O(1) childrenMap 사용
   const findChildren = (parentId: string): Element[] => {
@@ -59,7 +69,7 @@ function collectElementsToRemove(
   if (element.tag === "Column") {
     const tableElement = elements.find((el) => {
       const tableHeader = elements.find(
-        (header) => header.id === element.parent_id
+        (header) => header.id === element.parent_id,
       );
       return (
         tableHeader && el.id === tableHeader.parent_id && el.tag === "Table"
@@ -68,19 +78,19 @@ function collectElementsToRemove(
 
     if (tableElement) {
       const tableBody = elements.find(
-        (el) => el.parent_id === tableElement.id && el.tag === "TableBody"
+        (el) => el.parent_id === tableElement.id && el.tag === "TableBody",
       );
       if (tableBody) {
         const rows = elements.filter(
-          (el) => el.parent_id === tableBody.id && el.tag === "Row"
+          (el) => el.parent_id === tableBody.id && el.tag === "Row",
         );
         const cellsToRemove = rows.flatMap((row) =>
           elements.filter(
             (cell) =>
               cell.parent_id === row.id &&
               cell.tag === "Cell" &&
-              cell.order_num === element.order_num
-          )
+              cell.order_num === element.order_num,
+          ),
         );
         childElements = [...childElements, ...cellsToRemove];
       }
@@ -94,23 +104,23 @@ function collectElementsToRemove(
       const tableBody = elements.find((el) => el.id === row.parent_id);
       if (tableBody && tableBody.tag === "TableBody") {
         const tableElement = elements.find(
-          (el) => el.id === tableBody.parent_id && el.tag === "Table"
+          (el) => el.id === tableBody.parent_id && el.tag === "Table",
         );
         if (tableElement) {
           const tableHeader = elements.find(
             (el) =>
-              el.parent_id === tableElement.id && el.tag === "TableHeader"
+              el.parent_id === tableElement.id && el.tag === "TableHeader",
           );
           if (tableHeader) {
             const columnToRemove = elements.find(
               (col) =>
                 col.parent_id === tableHeader.id &&
                 col.tag === "Column" &&
-                col.order_num === element.order_num
+                col.order_num === element.order_num,
             );
             if (columnToRemove) {
               const allRows = elements.filter(
-                (el) => el.parent_id === tableBody.id && el.tag === "Row"
+                (el) => el.parent_id === tableBody.id && el.tag === "Row",
               );
               const otherCellsToRemove = allRows.flatMap((r) =>
                 elements.filter(
@@ -118,8 +128,8 @@ function collectElementsToRemove(
                     cell.parent_id === r.id &&
                     cell.tag === "Cell" &&
                     cell.order_num === element.order_num &&
-                    cell.id !== element.id
-                )
+                    cell.id !== element.id,
+                ),
               );
               childElements = [
                 ...childElements,
@@ -146,7 +156,7 @@ function collectElementsToRemove(
           (el) =>
             el.parent_id === parentElement.id &&
             el.tag !== element.tag &&
-            (el.props as { tabId?: string }).tabId === tabId
+            (el.props as { tabId?: string }).tabId === tabId,
         );
       }
 
@@ -156,7 +166,7 @@ function collectElementsToRemove(
           (el) =>
             el.parent_id === parentElement.id &&
             el.tag !== element.tag &&
-            Math.abs((el.order_num || 0) - (element.order_num || 0)) === 1
+            Math.abs((el.order_num || 0) - (element.order_num || 0)) === 1,
         );
       }
 
@@ -190,8 +200,6 @@ async function executeRemoval(
 ) {
   const elementIdsToRemove = allUniqueElements.map((el) => el.id);
 
-  console.log(`🗑️ 배치 삭제: ${rootElements.length}개 루트, 총 ${allUniqueElements.length}개 요소`);
-
   // IndexedDB 삭제
   try {
     const db = await getDB();
@@ -219,16 +227,18 @@ async function executeRemoval(
   // 요소 필터링
   const removeSet = new Set(elementIdsToRemove);
   const filteredElements = currentState.elements.filter(
-    (el) => !removeSet.has(el.id)
+    (el) => !removeSet.has(el.id),
   );
 
   // 선택 상태 정리
   const isSelectedRemoved = removeSet.has(currentState.selectedElementId || "");
   const filteredSelectedIds = currentState.selectedElementIds.filter(
-    (id: string) => !removeSet.has(id)
+    (id: string) => !removeSet.has(id),
   );
-  const hasSelectedIdsChanged = filteredSelectedIds.length !== currentState.selectedElementIds.length;
-  const isEditingContextRemoved = currentState.editingContextId != null &&
+  const hasSelectedIdsChanged =
+    filteredSelectedIds.length !== currentState.selectedElementIds.length;
+  const isEditingContextRemoved =
+    currentState.editingContextId != null &&
     removeSet.has(currentState.editingContextId);
 
   // Skia 레지스트리 즉시 정리
@@ -241,7 +251,7 @@ async function executeRemoval(
   const newChildrenMap = new Map<string, Element[]>();
   filteredElements.forEach((el) => {
     newElementsMap.set(el.id, el);
-    const parentId = el.parent_id || 'root';
+    const parentId = el.parent_id || "root";
     if (!newChildrenMap.has(parentId)) {
       newChildrenMap.set(parentId, []);
     }
@@ -275,14 +285,16 @@ async function executeRemoval(
   if (!isWebGLOnly && typeof window !== "undefined" && window.parent) {
     window.parent.postMessage(
       { type: "ELEMENT_REMOVED", payload: { elementId: elementIdsToRemove } },
-      "*"
+      "*",
     );
   }
 
   // order_num 재정렬
   const currentPageId = get().currentPageId;
   if (currentPageId) {
-    const hasCollectionItem = rootElements.some((el) => COLLECTION_ITEM_TAGS.has(el.tag));
+    const hasCollectionItem = rootElements.some((el) =>
+      COLLECTION_ITEM_TAGS.has(el.tag),
+    );
     if (!hasCollectionItem) {
       setTimeout(() => {
         const { elements, batchUpdateElementOrders } = get();
@@ -298,10 +310,17 @@ async function executeRemoval(
 export const createRemoveElementAction =
   (set: SetState, get: GetState) => async (elementId: string) => {
     const state = get();
-    const result = collectElementsToRemove(elementId, state.elements, state.elementsMap, state.childrenMap);
+    const result = collectElementsToRemove(
+      elementId,
+      state.elements,
+      state.elementsMap,
+      state.childrenMap,
+    );
     if (!result) {
       if (import.meta.env.DEV) {
-        console.debug("⚠️ removeElement: 삭제 불가 (미존재 또는 Body)", { elementId });
+        console.debug("⚠️ removeElement: 삭제 불가 (미존재 또는 Body)", {
+          elementId,
+        });
       }
       return;
     }
@@ -328,7 +347,12 @@ export const createRemoveElementsAction =
 
     // 각 요소에 대해 삭제 대상 수집
     for (const id of elementIds) {
-      const result = collectElementsToRemove(id, state.elements, state.elementsMap, state.childrenMap);
+      const result = collectElementsToRemove(
+        id,
+        state.elements,
+        state.elementsMap,
+        state.childrenMap,
+      );
       if (!result) continue;
 
       rootElements.push(result.rootElement);

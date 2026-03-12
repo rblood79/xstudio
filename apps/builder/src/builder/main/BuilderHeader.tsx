@@ -1,6 +1,5 @@
-import React from "react";
 import {
-  Menu,
+  Menu as MenuIcon,
   Eye,
   Undo,
   Redo,
@@ -12,8 +11,23 @@ import {
   Activity,
   GitBranch,
   Settings,
+  FolderOpen,
+  Download,
+  Upload,
+  Trash2,
+  HelpCircle,
+  Info,
 } from "lucide-react";
-import { Key } from "react-aria-components";
+import {
+  Key,
+  MenuTrigger,
+  Menu,
+  MenuItem,
+  Popover,
+  Separator,
+  Keyboard,
+  Button,
+} from "react-aria-components";
 import { ToggleButtonGroup, ToggleButton } from "@xstudio/shared/components";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { usePanelLayout } from "../layout";
@@ -74,9 +88,50 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   return (
     <nav className="header">
       <div className="header_contents header_left">
-        <button aria-label="menu">
-          <Menu strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
-        </button>
+        <MenuTrigger>
+          <Button aria-label="menu">
+            <MenuIcon
+              strokeWidth={iconProps.strokeWidth}
+              size={iconProps.size}
+            />
+          </Button>
+          <Popover
+            className="header-menu-popover"
+            placement="bottom start"
+            offset={8}
+            containerPadding={0}
+          >
+            <Menu className="header-menu" onAction={(key) => console.log(key)}>
+              <MenuItem id="open" className="header-menu-item">
+                <FolderOpen size={14} />
+                <span>Open Project</span>
+                <Keyboard>⌘O</Keyboard>
+              </MenuItem>
+              <MenuItem id="import" className="header-menu-item">
+                <Download size={14} />
+                <span>Import</span>
+              </MenuItem>
+              <MenuItem id="export" className="header-menu-item">
+                <Upload size={14} />
+                <span>Export</span>
+              </MenuItem>
+              <Separator className="header-menu-separator" />
+              <MenuItem id="delete" className="header-menu-item">
+                <Trash2 size={14} />
+                <span>Delete Project</span>
+              </MenuItem>
+              <Separator className="header-menu-separator" />
+              <MenuItem id="help" className="header-menu-item">
+                <HelpCircle size={14} />
+                <span>Help</span>
+              </MenuItem>
+              <MenuItem id="about" className="header-menu-item">
+                <Info size={14} />
+                <span>About</span>
+              </MenuItem>
+            </Menu>
+          </Popover>
+        </MenuTrigger>
         <div className="logo-container">
           <img src="/appIcon.svg" alt="logo" />
         </div>

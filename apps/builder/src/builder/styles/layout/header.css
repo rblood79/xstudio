@@ -86,6 +86,110 @@
     border-radius: 6px;
   }
 
+  /* Header Menu Button (React Aria) */
+  .header_contents:first-child .react-aria-Button[aria-label="menu"] {
+    position: relative;
+    border: none;
+    background: var(--bg-muted);
+    padding: var(--spacing-sm);
+    cursor: pointer;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    stroke: var(--fg-muted);
+    border-radius: 6px;
+  }
+
+  .header_contents:first-child
+    .react-aria-Button[aria-label="menu"][data-hovered] {
+    background: var(--accent-subtle);
+  }
+
+  .header_contents:first-child
+    .react-aria-Button[aria-label="menu"][data-pressed] {
+    background: color-mix(in srgb, var(--bg-muted) 75%, black);
+  }
+
+  .header_contents:first-child
+    .react-aria-Button[aria-label="menu"][data-focus-visible] {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* Header Menu Popover */
+  .header-menu-popover {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    overflow: hidden;
+    min-width: 200px;
+    contain: layout style paint;
+  }
+
+  .header-menu-popover[data-entering] {
+    animation: zoom-menu-enter 0.1s ease-out;
+  }
+
+  .header-menu-popover[data-exiting] {
+    animation: zoom-menu-exit 0.08s ease-in;
+  }
+
+  /* Header Menu */
+  .header-menu {
+    padding: var(--spacing-xs);
+    outline: none;
+  }
+
+  /* Header Menu Item */
+  .header-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    font-size: var(--text-xs);
+    color: var(--fg);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.1s;
+  }
+
+  .header-menu-item[data-focused],
+  .header-menu-item[data-hovered] {
+    background: var(--bg-muted);
+  }
+
+  .header-menu-item[data-pressed] {
+    background: var(--accent-subtle);
+  }
+
+  .header-menu-item kbd {
+    font-family: inherit;
+    font-size: var(--text-xs);
+    color: var(--fg-muted);
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-left: auto;
+  }
+
+  .header-menu-item svg {
+    flex-shrink: 0;
+    color: var(--fg-muted);
+  }
+
+  /* Header Menu Separator */
+  .header-menu-separator {
+    height: 1px;
+    background: var(--border);
+    margin: var(--spacing-xs) 0;
+    border: none;
+  }
+
   /* Project Info */
   .header_contents .project-info {
     display: flex;

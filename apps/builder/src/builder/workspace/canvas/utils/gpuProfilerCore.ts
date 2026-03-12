@@ -56,10 +56,6 @@ class GPUProfiler {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
-
-    if (process.env.NODE_ENV === "development") {
-      console.log("📊 [GPUProfiler] Stopped");
-    }
   }
 
   private tick = (): void => {

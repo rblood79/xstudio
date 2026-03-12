@@ -1,26 +1,36 @@
-import { Element, ComponentElementProps } from "../../../types/core/store.types";
+import {
+  Element,
+  ComponentElementProps,
+} from "../../../types/core/store.types";
 import { supabase } from "../../../env/supabase.client";
 
 /**
  * Helper function to safely get a string property from element props
  */
-function getPropValue(props: ComponentElementProps | Record<string, unknown>, key: string): string {
+function getPropValue(
+  props: ComponentElementProps | Record<string, unknown>,
+  key: string,
+): string {
   const value = (props as Record<string, unknown>)[key];
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number') return String(value);
-  if (value != null && typeof value === 'object' && 'toString' in value) {
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (value != null && typeof value === "object" && "toString" in value) {
     return String(value);
   }
-  return '';
+  return "";
 }
 
 /**
  * Helper function to get text content for sorting (children, title, or label)
  */
-function getTextContent(props: ComponentElementProps | Record<string, unknown>): string {
-  return getPropValue(props, 'children') ||
-         getPropValue(props, 'title') ||
-         getPropValue(props, 'label');
+function getTextContent(
+  props: ComponentElementProps | Record<string, unknown>,
+): string {
+  return (
+    getPropValue(props, "children") ||
+    getPropValue(props, "title") ||
+    getPropValue(props, "label")
+  );
 }
 
 /**
@@ -36,17 +46,20 @@ function getTextContent(props: ComponentElementProps | Record<string, unknown>):
  */
 export function computeReorderUpdates(
   elements: Element[],
-  pageId: string
+  pageId: string,
 ): Array<{ id: string; order_num: number }> {
   // 페이지별, 부모별로 그룹화
   const groups = elements
     .filter((el) => el.page_id === pageId)
-    .reduce((acc, element) => {
-      const key = element.parent_id || "root";
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(element);
-      return acc;
-    }, {} as Record<string, Element[]>);
+    .reduce(
+      (acc, element) => {
+        const key = element.parent_id || "root";
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(element);
+        return acc;
+      },
+      {} as Record<string, Element[]>,
+    );
 
   const updates: Array<{ id: string; order_num: number }> = [];
 
@@ -56,7 +69,7 @@ export function computeReorderUpdates(
 
     // 부모 요소 확인
     const parentElement = elements.find(
-      (el) => el.id === (parentKey === "root" ? null : parentKey)
+      (el) => el.id === (parentKey === "root" ? null : parentKey),
     );
     const parentTag = parentElement?.tag;
 
@@ -78,8 +91,8 @@ export function computeReorderUpdates(
         .sort((a, b) => {
           const orderDiff = (a.order_num || 0) - (b.order_num || 0);
           if (orderDiff === 0) {
-            const titleA = getPropValue(a.props, 'title');
-            const titleB = getPropValue(b.props, 'title');
+            const titleA = getPropValue(a.props, "title");
+            const titleB = getPropValue(b.props, "title");
             return titleA.localeCompare(titleB);
           }
           return orderDiff;
@@ -90,8 +103,8 @@ export function computeReorderUpdates(
         .sort((a, b) => {
           const orderDiff = (a.order_num || 0) - (b.order_num || 0);
           if (orderDiff === 0) {
-            const titleA = getPropValue(a.props, 'title');
-            const titleB = getPropValue(b.props, 'title');
+            const titleA = getPropValue(a.props, "title");
+            const titleB = getPropValue(b.props, "title");
             return titleA.localeCompare(titleB);
           }
           return orderDiff;
@@ -102,10 +115,10 @@ export function computeReorderUpdates(
 
       tabs.forEach((tab) => {
         sorted.push(tab);
-        const tabId = getPropValue(tab.props, 'tabId');
+        const tabId = getPropValue(tab.props, "tabId");
         if (tabId) {
           const matchingPanel = panels.find((panel) => {
-            const panelTabId = getPropValue(panel.props, 'tabId');
+            const panelTabId = getPropValue(panel.props, "tabId");
             return panelTabId === tabId && !usedPanelIds.has(panel.id);
           });
           if (matchingPanel) {
@@ -125,8 +138,8 @@ export function computeReorderUpdates(
       sorted = [...children].sort((a, b) => {
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);
         if (orderDiff === 0) {
-          const labelA = getPropValue(a.props, 'label');
-          const labelB = getPropValue(b.props, 'label');
+          const labelA = getPropValue(a.props, "label");
+          const labelB = getPropValue(b.props, "label");
           const comparison = labelA.localeCompare(labelB);
           if (comparison === 0) {
             return a.id.localeCompare(b.id);
@@ -190,7 +203,9 @@ export function computeReorderUpdates(
 export const reorderElements = async (
   elements: Element[],
   pageId: string,
-  batchUpdateElementOrders: (updates: Array<{ id: string; order_num: number }>) => void
+  batchUpdateElementOrders: (
+    updates: Array<{ id: string; order_num: number }>,
+  ) => void,
 ): Promise<void> => {
   const updates = computeReorderUpdates(elements, pageId);
 
@@ -199,15 +214,13 @@ export const reorderElements = async (
   // 1. 메모리 일괄 업데이트 (단일 set())
   batchUpdateElementOrders(updates);
 
-  console.log(`📊 order_num 재정렬 완료: ${updates.length}개 요소`);
-
   // 2. 데이터베이스 일괄 업데이트 (백그라운드)
   try {
     const updatePromises = updates.map((update) =>
       supabase
         .from("elements")
         .update({ order_num: update.order_num })
-        .eq("id", update.id)
+        .eq("id", update.id),
     );
 
     const results = await Promise.all(updatePromises);
@@ -216,7 +229,7 @@ export const reorderElements = async (
     if (errors.length > 0) {
       console.error(
         "order_num 재정렬 DB 실패:",
-        errors.map((e) => e.error)
+        errors.map((e) => e.error),
       );
     }
   } catch (error) {

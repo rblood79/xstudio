@@ -107,7 +107,7 @@ export function generateDevSrcdoc(
         // 3. preview runtime 로드 (React가 body에 직접 마운트됨)
         await import('/src/preview/index.tsx');
 
-        console.log('[Preview] Runtime loaded successfully');
+
       } catch (err) {
         console.error('[Preview] Failed to load preview:', err);
         document.body.innerHTML =

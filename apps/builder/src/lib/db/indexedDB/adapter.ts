@@ -12,19 +12,23 @@ import type {
   Project,
   HistoryEntry,
   SyncMetadata,
-} from '../types';
-import type { Element, Page } from '../../../types/core/store.types';
-import type { DesignToken, DesignTheme, DesignVariable } from '../../../types/theme';
-import type { Layout } from '../../../types/builder/layout.types';
+} from "../types";
+import type { Element, Page } from "../../../types/core/store.types";
+import type {
+  DesignToken,
+  DesignTheme,
+  DesignVariable,
+} from "../../../types/theme";
+import type { Layout } from "../../../types/builder/layout.types";
 import type {
   DataTable,
   ApiEndpoint,
   Variable,
   Transformer,
-} from '../../../types/builder/data.types';
-import { LRUCache } from './LRUCache';
+} from "../../../types/builder/data.types";
+import { LRUCache } from "./LRUCache";
 
-const DB_NAME = 'xstudio';
+const DB_NAME = "xstudio";
 const DB_VERSION = 7; // ✅ 버전 7: Data Panel 테이블 추가 (data_tables, api_endpoints, variables, transformers)
 
 export class IndexedDBAdapter implements DatabaseAdapter {
@@ -42,7 +46,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        reject(new Error('Failed to open IndexedDB'));
+        reject(new Error("Failed to open IndexedDB"));
       };
 
       request.onsuccess = () => {
@@ -54,144 +58,198 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         const db = (event.target as IDBOpenDBRequest).result;
 
         // Projects store
-        if (!db.objectStoreNames.contains('projects')) {
-          db.createObjectStore('projects', { keyPath: 'id' });
-          console.log('[IndexedDB] Created store: projects');
+        if (!db.objectStoreNames.contains("projects")) {
+          db.createObjectStore("projects", { keyPath: "id" });
+          console.log("[IndexedDB] Created store: projects");
         }
 
         // Pages store
-        if (!db.objectStoreNames.contains('pages')) {
-          const pagesStore = db.createObjectStore('pages', { keyPath: 'id' });
-          pagesStore.createIndex('project_id', 'project_id', { unique: false });
-          pagesStore.createIndex('order_num', 'order_num', { unique: false });
-          console.log('[IndexedDB] Created store: pages');
+        if (!db.objectStoreNames.contains("pages")) {
+          const pagesStore = db.createObjectStore("pages", { keyPath: "id" });
+          pagesStore.createIndex("project_id", "project_id", { unique: false });
+          pagesStore.createIndex("order_num", "order_num", { unique: false });
+          console.log("[IndexedDB] Created store: pages");
         }
 
         // Elements store (가장 중요!)
-        if (!db.objectStoreNames.contains('elements')) {
-          const elementsStore = db.createObjectStore('elements', { keyPath: 'id' });
-          elementsStore.createIndex('page_id', 'page_id', { unique: false });
-          elementsStore.createIndex('parent_id', 'parent_id', { unique: false });
-          elementsStore.createIndex('order_num', 'order_num', { unique: false });
-          elementsStore.createIndex('layout_id', 'layout_id', { unique: false }); // ✅ Layout/Slot System
-          console.log('[IndexedDB] Created store: elements');
+        if (!db.objectStoreNames.contains("elements")) {
+          const elementsStore = db.createObjectStore("elements", {
+            keyPath: "id",
+          });
+          elementsStore.createIndex("page_id", "page_id", { unique: false });
+          elementsStore.createIndex("parent_id", "parent_id", {
+            unique: false,
+          });
+          elementsStore.createIndex("order_num", "order_num", {
+            unique: false,
+          });
+          elementsStore.createIndex("layout_id", "layout_id", {
+            unique: false,
+          }); // ✅ Layout/Slot System
+          console.log("[IndexedDB] Created store: elements");
         } else {
           // ✅ 버전 5: 기존 스토어에 layout_id 인덱스 추가
           const transaction = (event.target as IDBOpenDBRequest).transaction;
           if (transaction) {
-            const elementsStore = transaction.objectStore('elements');
-            if (!elementsStore.indexNames.contains('layout_id')) {
-              elementsStore.createIndex('layout_id', 'layout_id', { unique: false });
-              console.log('[IndexedDB] Added index: elements.layout_id');
+            const elementsStore = transaction.objectStore("elements");
+            if (!elementsStore.indexNames.contains("layout_id")) {
+              elementsStore.createIndex("layout_id", "layout_id", {
+                unique: false,
+              });
+              console.log("[IndexedDB] Added index: elements.layout_id");
             }
           }
         }
 
         // Design tokens store
-        if (!db.objectStoreNames.contains('design_tokens')) {
-          const tokensStore = db.createObjectStore('design_tokens', { keyPath: 'id' });
-          tokensStore.createIndex('project_id', 'project_id', { unique: false });
-          tokensStore.createIndex('theme_id', 'theme_id', { unique: false });
-          console.log('[IndexedDB] Created store: design_tokens');
+        if (!db.objectStoreNames.contains("design_tokens")) {
+          const tokensStore = db.createObjectStore("design_tokens", {
+            keyPath: "id",
+          });
+          tokensStore.createIndex("project_id", "project_id", {
+            unique: false,
+          });
+          tokensStore.createIndex("theme_id", "theme_id", { unique: false });
+          console.log("[IndexedDB] Created store: design_tokens");
         } else {
           // ✅ 버전 3: 기존 스토어에 theme_id 인덱스 추가
           const transaction = (event.target as IDBOpenDBRequest).transaction;
           if (transaction) {
-            const tokensStore = transaction.objectStore('design_tokens');
-            if (!tokensStore.indexNames.contains('theme_id')) {
-              tokensStore.createIndex('theme_id', 'theme_id', { unique: false });
-              console.log('[IndexedDB] Added index: design_tokens.theme_id');
+            const tokensStore = transaction.objectStore("design_tokens");
+            if (!tokensStore.indexNames.contains("theme_id")) {
+              tokensStore.createIndex("theme_id", "theme_id", {
+                unique: false,
+              });
+              console.log("[IndexedDB] Added index: design_tokens.theme_id");
             }
           }
         }
 
         // History store
-        if (!db.objectStoreNames.contains('history')) {
-          const historyStore = db.createObjectStore('history', { keyPath: 'id' });
-          historyStore.createIndex('page_id', 'page_id', { unique: false });
-          historyStore.createIndex('created_at', 'created_at', { unique: false });
-          console.log('[IndexedDB] Created store: history');
+        if (!db.objectStoreNames.contains("history")) {
+          const historyStore = db.createObjectStore("history", {
+            keyPath: "id",
+          });
+          historyStore.createIndex("page_id", "page_id", { unique: false });
+          historyStore.createIndex("created_at", "created_at", {
+            unique: false,
+          });
+          console.log("[IndexedDB] Created store: history");
         }
 
         // Design themes store
-        if (!db.objectStoreNames.contains('design_themes')) {
-          const themesStore = db.createObjectStore('design_themes', { keyPath: 'id' });
-          themesStore.createIndex('project_id', 'project_id', { unique: false });
-          themesStore.createIndex('status', 'status', { unique: false });
-          console.log('[IndexedDB] Created store: design_themes');
+        if (!db.objectStoreNames.contains("design_themes")) {
+          const themesStore = db.createObjectStore("design_themes", {
+            keyPath: "id",
+          });
+          themesStore.createIndex("project_id", "project_id", {
+            unique: false,
+          });
+          themesStore.createIndex("status", "status", { unique: false });
+          console.log("[IndexedDB] Created store: design_themes");
         }
 
         // Metadata store (sync 상태 저장)
-        if (!db.objectStoreNames.contains('metadata')) {
-          db.createObjectStore('metadata', { keyPath: 'project_id' });
-          console.log('[IndexedDB] Created store: metadata');
+        if (!db.objectStoreNames.contains("metadata")) {
+          db.createObjectStore("metadata", { keyPath: "project_id" });
+          console.log("[IndexedDB] Created store: metadata");
         }
 
         // ✅ 버전 4: Layouts store (Layout/Slot System)
         // ✅ 버전 6: order_num, slug 인덱스 추가 (Nested Routes)
-        if (!db.objectStoreNames.contains('layouts')) {
-          const layoutsStore = db.createObjectStore('layouts', { keyPath: 'id' });
-          layoutsStore.createIndex('project_id', 'project_id', { unique: false });
-          layoutsStore.createIndex('name', 'name', { unique: false });
-          layoutsStore.createIndex('order_num', 'order_num', { unique: false });
-          layoutsStore.createIndex('slug', 'slug', { unique: false });
-          console.log('[IndexedDB] Created store: layouts with order_num, slug indexes');
+        if (!db.objectStoreNames.contains("layouts")) {
+          const layoutsStore = db.createObjectStore("layouts", {
+            keyPath: "id",
+          });
+          layoutsStore.createIndex("project_id", "project_id", {
+            unique: false,
+          });
+          layoutsStore.createIndex("name", "name", { unique: false });
+          layoutsStore.createIndex("order_num", "order_num", { unique: false });
+          layoutsStore.createIndex("slug", "slug", { unique: false });
+          console.log(
+            "[IndexedDB] Created store: layouts with order_num, slug indexes",
+          );
         } else {
           // ✅ 버전 6: 기존 layouts 스토어에 order_num, slug 인덱스 추가
           const transaction = (event.target as IDBOpenDBRequest).transaction;
           if (transaction) {
-            const layoutsStore = transaction.objectStore('layouts');
-            if (!layoutsStore.indexNames.contains('order_num')) {
-              layoutsStore.createIndex('order_num', 'order_num', { unique: false });
-              console.log('[IndexedDB] Added index: layouts.order_num');
+            const layoutsStore = transaction.objectStore("layouts");
+            if (!layoutsStore.indexNames.contains("order_num")) {
+              layoutsStore.createIndex("order_num", "order_num", {
+                unique: false,
+              });
+              console.log("[IndexedDB] Added index: layouts.order_num");
             }
-            if (!layoutsStore.indexNames.contains('slug')) {
-              layoutsStore.createIndex('slug', 'slug', { unique: false });
-              console.log('[IndexedDB] Added index: layouts.slug');
+            if (!layoutsStore.indexNames.contains("slug")) {
+              layoutsStore.createIndex("slug", "slug", { unique: false });
+              console.log("[IndexedDB] Added index: layouts.slug");
             }
           }
         }
 
         // ✅ 버전 7: Data Panel 스토어들 추가
         // DataTables store
-        if (!db.objectStoreNames.contains('data_tables')) {
-          const dataTablesStore = db.createObjectStore('data_tables', { keyPath: 'id' });
-          dataTablesStore.createIndex('project_id', 'project_id', { unique: false });
-          dataTablesStore.createIndex('name', 'name', { unique: false });
-          console.log('[IndexedDB] Created store: data_tables');
+        if (!db.objectStoreNames.contains("data_tables")) {
+          const dataTablesStore = db.createObjectStore("data_tables", {
+            keyPath: "id",
+          });
+          dataTablesStore.createIndex("project_id", "project_id", {
+            unique: false,
+          });
+          dataTablesStore.createIndex("name", "name", { unique: false });
+          console.log("[IndexedDB] Created store: data_tables");
         }
 
         // ApiEndpoints store
-        if (!db.objectStoreNames.contains('api_endpoints')) {
-          const apiEndpointsStore = db.createObjectStore('api_endpoints', { keyPath: 'id' });
-          apiEndpointsStore.createIndex('project_id', 'project_id', { unique: false });
-          apiEndpointsStore.createIndex('name', 'name', { unique: false });
-          apiEndpointsStore.createIndex('targetDataTable', 'targetDataTable', { unique: false });
-          console.log('[IndexedDB] Created store: api_endpoints');
+        if (!db.objectStoreNames.contains("api_endpoints")) {
+          const apiEndpointsStore = db.createObjectStore("api_endpoints", {
+            keyPath: "id",
+          });
+          apiEndpointsStore.createIndex("project_id", "project_id", {
+            unique: false,
+          });
+          apiEndpointsStore.createIndex("name", "name", { unique: false });
+          apiEndpointsStore.createIndex("targetDataTable", "targetDataTable", {
+            unique: false,
+          });
+          console.log("[IndexedDB] Created store: api_endpoints");
         }
 
         // Variables store
-        if (!db.objectStoreNames.contains('variables')) {
-          const variablesStore = db.createObjectStore('variables', { keyPath: 'id' });
-          variablesStore.createIndex('project_id', 'project_id', { unique: false });
-          variablesStore.createIndex('name', 'name', { unique: false });
-          variablesStore.createIndex('scope', 'scope', { unique: false });
-          variablesStore.createIndex('page_id', 'page_id', { unique: false });
-          console.log('[IndexedDB] Created store: variables');
+        if (!db.objectStoreNames.contains("variables")) {
+          const variablesStore = db.createObjectStore("variables", {
+            keyPath: "id",
+          });
+          variablesStore.createIndex("project_id", "project_id", {
+            unique: false,
+          });
+          variablesStore.createIndex("name", "name", { unique: false });
+          variablesStore.createIndex("scope", "scope", { unique: false });
+          variablesStore.createIndex("page_id", "page_id", { unique: false });
+          console.log("[IndexedDB] Created store: variables");
         }
 
         // Transformers store
-        if (!db.objectStoreNames.contains('transformers')) {
-          const transformersStore = db.createObjectStore('transformers', { keyPath: 'id' });
-          transformersStore.createIndex('project_id', 'project_id', { unique: false });
-          transformersStore.createIndex('name', 'name', { unique: false });
-          transformersStore.createIndex('level', 'level', { unique: false });
-          transformersStore.createIndex('inputDataTable', 'inputDataTable', { unique: false });
-          transformersStore.createIndex('outputDataTable', 'outputDataTable', { unique: false });
-          console.log('[IndexedDB] Created store: transformers');
+        if (!db.objectStoreNames.contains("transformers")) {
+          const transformersStore = db.createObjectStore("transformers", {
+            keyPath: "id",
+          });
+          transformersStore.createIndex("project_id", "project_id", {
+            unique: false,
+          });
+          transformersStore.createIndex("name", "name", { unique: false });
+          transformersStore.createIndex("level", "level", { unique: false });
+          transformersStore.createIndex("inputDataTable", "inputDataTable", {
+            unique: false,
+          });
+          transformersStore.createIndex("outputDataTable", "outputDataTable", {
+            unique: false,
+          });
+          console.log("[IndexedDB] Created store: transformers");
         }
 
-        console.log('[IndexedDB] Schema upgrade completed');
+        console.log("[IndexedDB] Schema upgrade completed");
       };
     });
   }
@@ -206,7 +264,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       this.pageCache.clear();
       this.projectCache.clear();
 
-      console.log('[IndexedDB] Database closed and caches cleared');
+      console.log("[IndexedDB] Database closed and caches cleared");
     }
   }
 
@@ -214,15 +272,18 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   private ensureDB(): IDBDatabase {
     if (!this.db) {
-      throw new Error('Database not initialized. Call init() first.');
+      throw new Error("Database not initialized. Call init() first.");
     }
     return this.db;
   }
 
-  private async getFromStore<T>(storeName: string, id: string): Promise<T | null> {
+  private async getFromStore<T>(
+    storeName: string,
+    id: string,
+  ): Promise<T | null> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readonly');
+      const tx = db.transaction(storeName, "readonly");
       const store = tx.objectStore(storeName);
       const request = store.get(id);
 
@@ -234,7 +295,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
   private async putToStore<T>(storeName: string, data: T): Promise<T> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
+      const tx = db.transaction(storeName, "readwrite");
       const store = tx.objectStore(storeName);
       const request = store.put(data);
 
@@ -246,7 +307,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
   private async deleteFromStore(storeName: string, id: string): Promise<void> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
+      const tx = db.transaction(storeName, "readwrite");
       const store = tx.objectStore(storeName);
       const request = store.delete(id);
 
@@ -258,7 +319,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
   private async getAllFromStore<T>(storeName: string): Promise<T[]> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readonly');
+      const tx = db.transaction(storeName, "readonly");
       const store = tx.objectStore(storeName);
       const request = store.getAll();
 
@@ -270,11 +331,11 @@ export class IndexedDBAdapter implements DatabaseAdapter {
   private async getAllByIndex<T>(
     storeName: string,
     indexName: string,
-    value: string
+    value: string,
   ): Promise<T[]> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readonly');
+      const tx = db.transaction(storeName, "readonly");
       const store = tx.objectStore(storeName);
       const index = store.index(indexName);
       const request = index.getAll(value);
@@ -288,7 +349,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   projects = {
     insert: async (project: Project): Promise<Project> => {
-      const result = await this.putToStore('projects', project);
+      const result = await this.putToStore("projects", project);
       this.projectCache.set(project.id, result);
       return result;
     },
@@ -297,21 +358,25 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       let existing = this.projectCache.get(id);
 
       if (!existing) {
-        existing = await this.getFromStore<Project>('projects', id);
+        existing = await this.getFromStore<Project>("projects", id);
       }
 
       if (!existing) {
         throw new Error(`Project not found: ${id}`);
       }
 
-      const updated = { ...existing, ...data, updated_at: new Date().toISOString() };
-      const result = await this.putToStore('projects', updated);
+      const updated = {
+        ...existing,
+        ...data,
+        updated_at: new Date().toISOString(),
+      };
+      const result = await this.putToStore("projects", updated);
       this.projectCache.set(id, result);
       return result;
     },
 
     delete: async (id: string): Promise<void> => {
-      await this.deleteFromStore('projects', id);
+      await this.deleteFromStore("projects", id);
       this.projectCache.delete(id);
     },
 
@@ -322,7 +387,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         return cached;
       }
 
-      const project = await this.getFromStore<Project>('projects', id);
+      const project = await this.getFromStore<Project>("projects", id);
 
       if (project) {
         this.projectCache.set(id, project);
@@ -332,7 +397,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     },
 
     getAll: async (): Promise<Project[]> => {
-      return this.getAllFromStore<Project>('projects');
+      return this.getAllFromStore<Project>("projects");
     },
   };
 
@@ -340,7 +405,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   pages = {
     insert: async (page: Page): Promise<Page> => {
-      const result = await this.putToStore('pages', page);
+      const result = await this.putToStore("pages", page);
       this.pageCache.set(page.id, result);
       return result;
     },
@@ -352,8 +417,8 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       const db = this.ensureDB();
       return new Promise((resolve, reject) => {
-        const tx = db.transaction('pages', 'readwrite');
-        const store = tx.objectStore('pages');
+        const tx = db.transaction("pages", "readwrite");
+        const store = tx.objectStore("pages");
 
         // Queue all operations - single transaction commit
         pages.forEach((page) => {
@@ -364,17 +429,22 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         tx.oncomplete = () => {
           // Cache all inserted pages
           this.pageCache.setMany(
-            pages.map((page) => ({ key: page.id, value: page }))
+            pages.map((page) => ({ key: page.id, value: page })),
           );
 
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`✅ [IndexedDB] pages.insertMany completed: ${pages.length} pages (cached)`);
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              `✅ [IndexedDB] pages.insertMany completed: ${pages.length} pages (cached)`,
+            );
           }
           resolve(pages);
         };
 
         tx.onerror = () => {
-          console.error('❌ [IndexedDB] pages.insertMany transaction failed:', tx.error);
+          console.error(
+            "❌ [IndexedDB] pages.insertMany transaction failed:",
+            tx.error,
+          );
           reject(tx.error);
         };
       });
@@ -384,21 +454,25 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       let existing = this.pageCache.get(id);
 
       if (!existing) {
-        existing = await this.getFromStore<Page>('pages', id);
+        existing = await this.getFromStore<Page>("pages", id);
       }
 
       if (!existing) {
         throw new Error(`Page not found: ${id}`);
       }
 
-      const updated = { ...existing, ...data, updated_at: new Date().toISOString() };
-      const result = await this.putToStore('pages', updated);
+      const updated = {
+        ...existing,
+        ...data,
+        updated_at: new Date().toISOString(),
+      };
+      const result = await this.putToStore("pages", updated);
       this.pageCache.set(id, result);
       return result;
     },
 
     delete: async (id: string): Promise<void> => {
-      await this.deleteFromStore('pages', id);
+      await this.deleteFromStore("pages", id);
       this.pageCache.delete(id);
     },
 
@@ -409,7 +483,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         return cached;
       }
 
-      const page = await this.getFromStore<Page>('pages', id);
+      const page = await this.getFromStore<Page>("pages", id);
 
       if (page) {
         this.pageCache.set(id, page);
@@ -419,11 +493,11 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     },
 
     getByProject: async (projectId: string): Promise<Page[]> => {
-      return this.getAllByIndex<Page>('pages', 'project_id', projectId);
+      return this.getAllByIndex<Page>("pages", "project_id", projectId);
     },
 
     getAll: async (): Promise<Page[]> => {
-      return this.getAllFromStore<Page>('pages');
+      return this.getAllFromStore<Page>("pages");
     },
   };
 
@@ -431,7 +505,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   elements = {
     insert: async (element: Element): Promise<Element> => {
-      const result = await this.putToStore('elements', element);
+      const result = await this.putToStore("elements", element);
       // Cache the inserted element
       this.elementCache.set(element.id, result);
       return result;
@@ -444,8 +518,8 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       const db = this.ensureDB();
       return new Promise((resolve, reject) => {
-        const tx = db.transaction('elements', 'readwrite');
-        const store = tx.objectStore('elements');
+        const tx = db.transaction("elements", "readwrite");
+        const store = tx.objectStore("elements");
 
         // Queue all operations - single transaction commit
         elements.forEach((element) => {
@@ -456,24 +530,24 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         tx.oncomplete = () => {
           // Cache all inserted elements
           this.elementCache.setMany(
-            elements.map((el) => ({ key: el.id, value: el }))
+            elements.map((el) => ({ key: el.id, value: el })),
           );
 
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`✅ [IndexedDB] insertMany completed: ${elements.length} elements (cached)`);
-          }
           resolve(elements);
         };
 
         tx.onerror = () => {
-          console.error('❌ [IndexedDB] insertMany transaction failed:', tx.error);
+          console.error(
+            "❌ [IndexedDB] insertMany transaction failed:",
+            tx.error,
+          );
           reject(tx.error);
         };
       });
     },
 
     put: async (element: Element): Promise<Element> => {
-      const result = await this.putToStore('elements', element);
+      const result = await this.putToStore("elements", element);
       this.elementCache.set(element.id, result);
       return result;
     },
@@ -484,15 +558,19 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       if (!existing) {
         // Cache miss - read from IndexedDB
-        existing = await this.getFromStore<Element>('elements', id);
+        existing = await this.getFromStore<Element>("elements", id);
       }
 
       if (!existing) {
         throw new Error(`Element not found: ${id}`);
       }
 
-      const updated = { ...existing, ...data, updated_at: new Date().toISOString() };
-      const result = await this.putToStore('elements', updated);
+      const updated = {
+        ...existing,
+        ...data,
+        updated_at: new Date().toISOString(),
+      };
+      const result = await this.putToStore("elements", updated);
 
       // Update cache
       this.elementCache.set(id, result);
@@ -501,7 +579,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     },
 
     updateMany: async (
-      updates: Array<{ id: string; data: Partial<Element> }>
+      updates: Array<{ id: string; data: Partial<Element> }>,
     ): Promise<Element[]> => {
       if (updates.length === 0) {
         return [];
@@ -509,8 +587,8 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       const db = this.ensureDB();
       return new Promise((resolve, reject) => {
-        const tx = db.transaction('elements', 'readwrite');
-        const store = tx.objectStore('elements');
+        const tx = db.transaction("elements", "readwrite");
+        const store = tx.objectStore("elements");
 
         const results: Element[] = [];
 
@@ -521,7 +599,11 @@ export class IndexedDBAdapter implements DatabaseAdapter {
           getRequest.onsuccess = () => {
             const existing = getRequest.result;
             if (existing) {
-              const updated = { ...existing, ...data, updated_at: new Date().toISOString() };
+              const updated = {
+                ...existing,
+                ...data,
+                updated_at: new Date().toISOString(),
+              };
               store.put(updated);
               results.push(updated);
             }
@@ -532,24 +614,29 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         tx.oncomplete = () => {
           // Update cache with all updated elements
           this.elementCache.setMany(
-            results.map((el) => ({ key: el.id, value: el }))
+            results.map((el) => ({ key: el.id, value: el })),
           );
 
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`✅ [IndexedDB] updateMany completed: ${results.length} elements (cached)`);
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              `✅ [IndexedDB] updateMany completed: ${results.length} elements (cached)`,
+            );
           }
           resolve(results);
         };
 
         tx.onerror = () => {
-          console.error('❌ [IndexedDB] updateMany transaction failed:', tx.error);
+          console.error(
+            "❌ [IndexedDB] updateMany transaction failed:",
+            tx.error,
+          );
           reject(tx.error);
         };
       });
     },
 
     delete: async (id: string): Promise<void> => {
-      await this.deleteFromStore('elements', id);
+      await this.deleteFromStore("elements", id);
       // Remove from cache
       this.elementCache.delete(id);
     },
@@ -561,8 +648,8 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       const db = this.ensureDB();
       return new Promise((resolve, reject) => {
-        const tx = db.transaction('elements', 'readwrite');
-        const store = tx.objectStore('elements');
+        const tx = db.transaction("elements", "readwrite");
+        const store = tx.objectStore("elements");
 
         // Queue all delete operations - single transaction commit
         ids.forEach((id) => {
@@ -574,14 +661,14 @@ export class IndexedDBAdapter implements DatabaseAdapter {
           // Remove from cache
           this.elementCache.deleteMany(ids);
 
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`✅ [IndexedDB] deleteMany completed: ${ids.length} elements (cache cleared)`);
-          }
           resolve();
         };
 
         tx.onerror = () => {
-          console.error('❌ [IndexedDB] deleteMany transaction failed:', tx.error);
+          console.error(
+            "❌ [IndexedDB] deleteMany transaction failed:",
+            tx.error,
+          );
           reject(tx.error);
         };
       });
@@ -596,7 +683,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       }
 
       // Cache miss - read from IndexedDB
-      const element = await this.getFromStore<Element>('elements', id);
+      const element = await this.getFromStore<Element>("elements", id);
 
       if (element) {
         // Cache for future access
@@ -607,23 +694,27 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     },
 
     getByPage: async (pageId: string): Promise<Element[]> => {
-      return this.getAllByIndex<Element>('elements', 'page_id', pageId);
+      return this.getAllByIndex<Element>("elements", "page_id", pageId);
     },
 
     // ✅ Layout/Slot System: 레이아웃별 요소 조회
     getByLayout: async (layoutId: string): Promise<Element[]> => {
       console.log(`📥 [IndexedDB] getByLayout 호출: layoutId=${layoutId}`);
-      const elements = await this.getAllByIndex<Element>('elements', 'layout_id', layoutId);
+      const elements = await this.getAllByIndex<Element>(
+        "elements",
+        "layout_id",
+        layoutId,
+      );
       console.log(`📥 [IndexedDB] getByLayout 결과: ${elements.length}개 요소`);
       return elements;
     },
 
     getChildren: async (parentId: string): Promise<Element[]> => {
-      return this.getAllByIndex<Element>('elements', 'parent_id', parentId);
+      return this.getAllByIndex<Element>("elements", "parent_id", parentId);
     },
 
     getAll: async (): Promise<Element[]> => {
-      return this.getAllFromStore<Element>('elements');
+      return this.getAllFromStore<Element>("elements");
     },
   };
 
@@ -631,11 +722,11 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   designTokens = {
     getById: async (id: string): Promise<DesignToken | null> => {
-      return this.getFromStore<DesignToken>('design_tokens', id);
+      return this.getFromStore<DesignToken>("design_tokens", id);
     },
 
     insert: async (token: DesignToken): Promise<DesignToken> => {
-      return this.putToStore('design_tokens', token);
+      return this.putToStore("design_tokens", token);
     },
 
     insertMany: async (tokens: DesignToken[]): Promise<DesignToken[]> => {
@@ -645,8 +736,8 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       const db = this.ensureDB();
       return new Promise((resolve, reject) => {
-        const tx = db.transaction('design_tokens', 'readwrite');
-        const store = tx.objectStore('design_tokens');
+        const tx = db.transaction("design_tokens", "readwrite");
+        const store = tx.objectStore("design_tokens");
 
         // Queue all operations - single transaction commit
         tokens.forEach((token) => {
@@ -655,42 +746,61 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
         // Resolve when entire transaction completes
         tx.oncomplete = () => {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`✅ [IndexedDB] designTokens.insertMany completed: ${tokens.length} tokens`);
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              `✅ [IndexedDB] designTokens.insertMany completed: ${tokens.length} tokens`,
+            );
           }
           resolve(tokens);
         };
 
         tx.onerror = () => {
-          console.error('❌ [IndexedDB] designTokens.insertMany transaction failed:', tx.error);
+          console.error(
+            "❌ [IndexedDB] designTokens.insertMany transaction failed:",
+            tx.error,
+          );
           reject(tx.error);
         };
       });
     },
 
-    update: async (id: string, data: Partial<DesignToken>): Promise<DesignToken> => {
-      const existing = await this.getFromStore<DesignToken>('design_tokens', id);
+    update: async (
+      id: string,
+      data: Partial<DesignToken>,
+    ): Promise<DesignToken> => {
+      const existing = await this.getFromStore<DesignToken>(
+        "design_tokens",
+        id,
+      );
       if (!existing) {
         throw new Error(`Design token not found: ${id}`);
       }
       const updated = { ...existing, ...data };
-      return this.putToStore('design_tokens', updated);
+      return this.putToStore("design_tokens", updated);
     },
 
     delete: async (id: string): Promise<void> => {
-      return this.deleteFromStore('design_tokens', id);
+      return this.deleteFromStore("design_tokens", id);
     },
 
     getByProject: async (projectId: string): Promise<DesignToken[]> => {
-      return this.getAllByIndex<DesignToken>('design_tokens', 'project_id', projectId);
+      return this.getAllByIndex<DesignToken>(
+        "design_tokens",
+        "project_id",
+        projectId,
+      );
     },
 
     getByTheme: async (themeId: string): Promise<DesignToken[]> => {
-      return this.getAllByIndex<DesignToken>('design_tokens', 'theme_id', themeId);
+      return this.getAllByIndex<DesignToken>(
+        "design_tokens",
+        "theme_id",
+        themeId,
+      );
     },
 
     getAll: async (): Promise<DesignToken[]> => {
-      return this.getAllFromStore<DesignToken>('design_tokens');
+      return this.getAllFromStore<DesignToken>("design_tokens");
     },
   };
 
@@ -698,20 +808,24 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   history = {
     insert: async (entry: HistoryEntry): Promise<HistoryEntry> => {
-      return this.putToStore('history', entry);
+      return this.putToStore("history", entry);
     },
 
     getByPage: async (pageId: string, limit = 50): Promise<HistoryEntry[]> => {
       const db = this.ensureDB();
       return new Promise((resolve, reject) => {
-        const tx = db.transaction('history', 'readonly');
-        const store = tx.objectStore('history');
-        const index = store.index('page_id');
+        const tx = db.transaction("history", "readonly");
+        const store = tx.objectStore("history");
+        const index = store.index("page_id");
         const request = index.getAll(pageId);
 
         request.onsuccess = () => {
           const results = request.result
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .sort(
+              (a, b) =>
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime(),
+            )
             .slice(0, limit);
           resolve(results);
         };
@@ -719,14 +833,17 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       });
     },
 
-    deleteOldEntries: async (pageId: string, keepCount: number): Promise<void> => {
+    deleteOldEntries: async (
+      pageId: string,
+      keepCount: number,
+    ): Promise<void> => {
       const entries = await this.history.getByPage(pageId, 1000);
       const toDelete = entries.slice(keepCount);
 
       const db = this.ensureDB();
       return new Promise((resolve, reject) => {
-        const tx = db.transaction('history', 'readwrite');
-        const store = tx.objectStore('history');
+        const tx = db.transaction("history", "readwrite");
+        const store = tx.objectStore("history");
 
         let completed = 0;
         toDelete.forEach((entry) => {
@@ -751,8 +868,8 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       const db = this.ensureDB();
       return new Promise((resolve, reject) => {
-        const tx = db.transaction('history', 'readwrite');
-        const store = tx.objectStore('history');
+        const tx = db.transaction("history", "readwrite");
+        const store = tx.objectStore("history");
 
         let completed = 0;
         entries.forEach((entry) => {
@@ -777,52 +894,60 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   themes = {
     getAll: async (): Promise<DesignTheme[]> => {
-      return this.getAllFromStore<DesignTheme>('design_themes');
+      return this.getAllFromStore<DesignTheme>("design_themes");
     },
 
     getById: async (id: string): Promise<DesignTheme | null> => {
-      return this.getFromStore<DesignTheme>('design_themes', id);
+      return this.getFromStore<DesignTheme>("design_themes", id);
     },
 
     getByProject: async (projectId: string): Promise<DesignTheme[]> => {
       const db = this.ensureDB();
       return new Promise<DesignTheme[]>((resolve, reject) => {
-        const tx = db.transaction('design_themes', 'readonly');
-        const store = tx.objectStore('design_themes');
-        const index = store.index('project_id');
+        const tx = db.transaction("design_themes", "readonly");
+        const store = tx.objectStore("design_themes");
+        const index = store.index("project_id");
         const request = index.getAll(projectId);
 
-        request.onsuccess = () => resolve((request.result || []) as DesignTheme[]);
+        request.onsuccess = () =>
+          resolve((request.result || []) as DesignTheme[]);
         request.onerror = () => reject(request.error);
       });
     },
 
     getActiveTheme: async (projectId: string): Promise<DesignTheme | null> => {
       const themes = await this.themes.getByProject(projectId);
-      const activeTheme = themes.find((t) => t.status === 'active');
+      const activeTheme = themes.find((t) => t.status === "active");
       return activeTheme || themes[0] || null;
     },
 
     insert: async (theme: DesignTheme): Promise<DesignTheme> => {
-      await this.putToStore('design_themes', theme);
+      await this.putToStore("design_themes", theme);
       return theme;
     },
 
-    update: async (id: string, updates: Partial<DesignTheme>): Promise<DesignTheme> => {
+    update: async (
+      id: string,
+      updates: Partial<DesignTheme>,
+    ): Promise<DesignTheme> => {
       const existing = await this.themes.getById(id);
       if (!existing) {
         throw new Error(`Theme ${id} not found`);
       }
-      const updated = { ...existing, ...updates, updated_at: new Date().toISOString() };
-      await this.putToStore('design_themes', updated);
+      const updated = {
+        ...existing,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      await this.putToStore("design_themes", updated);
       return updated;
     },
 
     delete: async (id: string) => {
       const db = this.ensureDB();
       return new Promise<void>((resolve, reject) => {
-        const tx = db.transaction('design_themes', 'readwrite');
-        const store = tx.objectStore('design_themes');
+        const tx = db.transaction("design_themes", "readwrite");
+        const store = tx.objectStore("design_themes");
         const request = store.delete(id);
 
         request.onsuccess = () => resolve();
@@ -841,19 +966,21 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         created_at: variable.created_at || now,
         updated_at: variable.updated_at || now,
       };
-      await this.putToStore('design_variables', variableWithTimestamps);
+      await this.putToStore("design_variables", variableWithTimestamps);
       return variableWithTimestamps;
     },
 
-    insertMany: async (variables: DesignVariable[]): Promise<DesignVariable[]> => {
+    insertMany: async (
+      variables: DesignVariable[],
+    ): Promise<DesignVariable[]> => {
       if (variables.length === 0) {
         return [];
       }
       const db = this.ensureDB();
       const now = new Date().toISOString();
       return new Promise((resolve, reject) => {
-        const tx = db.transaction('design_variables', 'readwrite');
-        const store = tx.objectStore('design_variables');
+        const tx = db.transaction("design_variables", "readwrite");
+        const store = tx.objectStore("design_variables");
 
         const variablesWithTimestamps = variables.map((v) => ({
           ...v,
@@ -870,35 +997,49 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       });
     },
 
-    update: async (id: string, updates: Partial<DesignVariable>): Promise<DesignVariable> => {
+    update: async (
+      id: string,
+      updates: Partial<DesignVariable>,
+    ): Promise<DesignVariable> => {
       const existing = await this.designVariables.getById(id);
       if (!existing) {
         throw new Error(`DesignVariable ${id} not found`);
       }
-      const updated: DesignVariable = { ...existing, ...updates, updated_at: new Date().toISOString() };
-      await this.putToStore('design_variables', updated);
+      const updated: DesignVariable = {
+        ...existing,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      await this.putToStore("design_variables", updated);
       return updated;
     },
 
     delete: async (id: string): Promise<void> => {
-      await this.deleteFromStore('design_variables', id);
+      await this.deleteFromStore("design_variables", id);
     },
 
     getById: async (id: string): Promise<DesignVariable | null> => {
-      return this.getFromStore<DesignVariable>('design_variables', id);
+      return this.getFromStore<DesignVariable>("design_variables", id);
     },
 
     getByProject: async (projectId: string): Promise<DesignVariable[]> => {
-      return this.getAllByIndex<DesignVariable>('design_variables', 'project_id', projectId);
+      return this.getAllByIndex<DesignVariable>(
+        "design_variables",
+        "project_id",
+        projectId,
+      );
     },
 
-    getByName: async (projectId: string, name: string): Promise<DesignVariable | null> => {
+    getByName: async (
+      projectId: string,
+      name: string,
+    ): Promise<DesignVariable | null> => {
       const variables = await this.designVariables.getByProject(projectId);
       return variables.find((v) => v.name === name) || null;
     },
 
     getAll: async (): Promise<DesignVariable[]> => {
-      return this.getAllFromStore<DesignVariable>('design_variables');
+      return this.getAllFromStore<DesignVariable>("design_variables");
     },
   };
 
@@ -912,7 +1053,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         created_at: layout.created_at || now,
         updated_at: layout.updated_at || now,
       };
-      await this.putToStore('layouts', layoutWithTimestamps);
+      await this.putToStore("layouts", layoutWithTimestamps);
       return layoutWithTimestamps;
     },
 
@@ -921,25 +1062,29 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       if (!existing) {
         throw new Error(`Layout ${id} not found`);
       }
-      const updated: Layout = { ...existing, ...updates, updated_at: new Date().toISOString() };
-      await this.putToStore('layouts', updated);
+      const updated: Layout = {
+        ...existing,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      await this.putToStore("layouts", updated);
       return updated;
     },
 
     delete: async (id: string): Promise<void> => {
-      await this.deleteFromStore('layouts', id);
+      await this.deleteFromStore("layouts", id);
     },
 
     getById: async (id: string): Promise<Layout | null> => {
-      return this.getFromStore<Layout>('layouts', id);
+      return this.getFromStore<Layout>("layouts", id);
     },
 
     getByProject: async (projectId: string): Promise<Layout[]> => {
-      return this.getAllByIndex<Layout>('layouts', 'project_id', projectId);
+      return this.getAllByIndex<Layout>("layouts", "project_id", projectId);
     },
 
     getAll: async (): Promise<Layout[]> => {
-      return this.getAllFromStore<Layout>('layouts');
+      return this.getAllFromStore<Layout>("layouts");
     },
   };
 
@@ -953,39 +1098,54 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         created_at: dataTable.created_at || now,
         updated_at: dataTable.updated_at || now,
       };
-      await this.putToStore('data_tables', dataTableWithTimestamps);
+      await this.putToStore("data_tables", dataTableWithTimestamps);
       return dataTableWithTimestamps;
     },
 
-    update: async (id: string, updates: Partial<DataTable>): Promise<DataTable> => {
+    update: async (
+      id: string,
+      updates: Partial<DataTable>,
+    ): Promise<DataTable> => {
       const existing = await this.data_tables.getById(id);
       if (!existing) {
         throw new Error(`DataTable ${id} not found`);
       }
-      const updated: DataTable = { ...existing, ...updates, updated_at: new Date().toISOString() };
-      await this.putToStore('data_tables', updated);
+      const updated: DataTable = {
+        ...existing,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      await this.putToStore("data_tables", updated);
       return updated;
     },
 
     delete: async (id: string): Promise<void> => {
-      await this.deleteFromStore('data_tables', id);
+      await this.deleteFromStore("data_tables", id);
     },
 
     getById: async (id: string): Promise<DataTable | null> => {
-      return this.getFromStore<DataTable>('data_tables', id);
+      return this.getFromStore<DataTable>("data_tables", id);
     },
 
     getByProject: async (projectId: string): Promise<DataTable[]> => {
-      return this.getAllByIndex<DataTable>('data_tables', 'project_id', projectId);
+      return this.getAllByIndex<DataTable>(
+        "data_tables",
+        "project_id",
+        projectId,
+      );
     },
 
     getByName: async (name: string): Promise<DataTable | null> => {
-      const results = await this.getAllByIndex<DataTable>('data_tables', 'name', name);
+      const results = await this.getAllByIndex<DataTable>(
+        "data_tables",
+        "name",
+        name,
+      );
       return results[0] || null;
     },
 
     getAll: async (): Promise<DataTable[]> => {
-      return this.getAllFromStore<DataTable>('data_tables');
+      return this.getAllFromStore<DataTable>("data_tables");
     },
   };
 
@@ -999,43 +1159,62 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         created_at: apiEndpoint.created_at || now,
         updated_at: apiEndpoint.updated_at || now,
       };
-      await this.putToStore('api_endpoints', apiEndpointWithTimestamps);
+      await this.putToStore("api_endpoints", apiEndpointWithTimestamps);
       return apiEndpointWithTimestamps;
     },
 
-    update: async (id: string, updates: Partial<ApiEndpoint>): Promise<ApiEndpoint> => {
+    update: async (
+      id: string,
+      updates: Partial<ApiEndpoint>,
+    ): Promise<ApiEndpoint> => {
       const existing = await this.api_endpoints.getById(id);
       if (!existing) {
         throw new Error(`ApiEndpoint ${id} not found`);
       }
-      const updated: ApiEndpoint = { ...existing, ...updates, updated_at: new Date().toISOString() };
-      await this.putToStore('api_endpoints', updated);
+      const updated: ApiEndpoint = {
+        ...existing,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      await this.putToStore("api_endpoints", updated);
       return updated;
     },
 
     delete: async (id: string): Promise<void> => {
-      await this.deleteFromStore('api_endpoints', id);
+      await this.deleteFromStore("api_endpoints", id);
     },
 
     getById: async (id: string): Promise<ApiEndpoint | null> => {
-      return this.getFromStore<ApiEndpoint>('api_endpoints', id);
+      return this.getFromStore<ApiEndpoint>("api_endpoints", id);
     },
 
     getByProject: async (projectId: string): Promise<ApiEndpoint[]> => {
-      return this.getAllByIndex<ApiEndpoint>('api_endpoints', 'project_id', projectId);
+      return this.getAllByIndex<ApiEndpoint>(
+        "api_endpoints",
+        "project_id",
+        projectId,
+      );
     },
 
     getByName: async (name: string): Promise<ApiEndpoint | null> => {
-      const results = await this.getAllByIndex<ApiEndpoint>('api_endpoints', 'name', name);
+      const results = await this.getAllByIndex<ApiEndpoint>(
+        "api_endpoints",
+        "name",
+        name,
+      );
       return results[0] || null;
     },
 
     getByTargetDataTable: async (tableName: string): Promise<ApiEndpoint[]> => {
-      return this.getAllByIndex<ApiEndpoint>('api_endpoints', 'targetDataTable', tableName);
+      return this.getAllByIndex<ApiEndpoint>(
+        "api_endpoints",
+        "targetDataTable",
+        tableName,
+      );
     },
 
     getAll: async (): Promise<ApiEndpoint[]> => {
-      return this.getAllFromStore<ApiEndpoint>('api_endpoints');
+      return this.getAllFromStore<ApiEndpoint>("api_endpoints");
     },
   };
 
@@ -1049,47 +1228,58 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         created_at: variable.created_at || now,
         updated_at: variable.updated_at || now,
       };
-      await this.putToStore('variables', variableWithTimestamps);
+      await this.putToStore("variables", variableWithTimestamps);
       return variableWithTimestamps;
     },
 
-    update: async (id: string, updates: Partial<Variable>): Promise<Variable> => {
+    update: async (
+      id: string,
+      updates: Partial<Variable>,
+    ): Promise<Variable> => {
       const existing = await this.variables.getById(id);
       if (!existing) {
         throw new Error(`Variable ${id} not found`);
       }
-      const updated: Variable = { ...existing, ...updates, updated_at: new Date().toISOString() };
-      await this.putToStore('variables', updated);
+      const updated: Variable = {
+        ...existing,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      await this.putToStore("variables", updated);
       return updated;
     },
 
     delete: async (id: string): Promise<void> => {
-      await this.deleteFromStore('variables', id);
+      await this.deleteFromStore("variables", id);
     },
 
     getById: async (id: string): Promise<Variable | null> => {
-      return this.getFromStore<Variable>('variables', id);
+      return this.getFromStore<Variable>("variables", id);
     },
 
     getByProject: async (projectId: string): Promise<Variable[]> => {
-      return this.getAllByIndex<Variable>('variables', 'project_id', projectId);
+      return this.getAllByIndex<Variable>("variables", "project_id", projectId);
     },
 
     getByName: async (name: string): Promise<Variable | null> => {
-      const results = await this.getAllByIndex<Variable>('variables', 'name', name);
+      const results = await this.getAllByIndex<Variable>(
+        "variables",
+        "name",
+        name,
+      );
       return results[0] || null;
     },
 
     getByScope: async (scope: string): Promise<Variable[]> => {
-      return this.getAllByIndex<Variable>('variables', 'scope', scope);
+      return this.getAllByIndex<Variable>("variables", "scope", scope);
     },
 
     getByPage: async (pageId: string): Promise<Variable[]> => {
-      return this.getAllByIndex<Variable>('variables', 'page_id', pageId);
+      return this.getAllByIndex<Variable>("variables", "page_id", pageId);
     },
 
     getAll: async (): Promise<Variable[]> => {
-      return this.getAllFromStore<Variable>('variables');
+      return this.getAllFromStore<Variable>("variables");
     },
   };
 
@@ -1103,51 +1293,74 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         created_at: transformer.created_at || now,
         updated_at: transformer.updated_at || now,
       };
-      await this.putToStore('transformers', transformerWithTimestamps);
+      await this.putToStore("transformers", transformerWithTimestamps);
       return transformerWithTimestamps;
     },
 
-    update: async (id: string, updates: Partial<Transformer>): Promise<Transformer> => {
+    update: async (
+      id: string,
+      updates: Partial<Transformer>,
+    ): Promise<Transformer> => {
       const existing = await this.transformers.getById(id);
       if (!existing) {
         throw new Error(`Transformer ${id} not found`);
       }
-      const updated: Transformer = { ...existing, ...updates, updated_at: new Date().toISOString() };
-      await this.putToStore('transformers', updated);
+      const updated: Transformer = {
+        ...existing,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      await this.putToStore("transformers", updated);
       return updated;
     },
 
     delete: async (id: string): Promise<void> => {
-      await this.deleteFromStore('transformers', id);
+      await this.deleteFromStore("transformers", id);
     },
 
     getById: async (id: string): Promise<Transformer | null> => {
-      return this.getFromStore<Transformer>('transformers', id);
+      return this.getFromStore<Transformer>("transformers", id);
     },
 
     getByProject: async (projectId: string): Promise<Transformer[]> => {
-      return this.getAllByIndex<Transformer>('transformers', 'project_id', projectId);
+      return this.getAllByIndex<Transformer>(
+        "transformers",
+        "project_id",
+        projectId,
+      );
     },
 
     getByName: async (name: string): Promise<Transformer | null> => {
-      const results = await this.getAllByIndex<Transformer>('transformers', 'name', name);
+      const results = await this.getAllByIndex<Transformer>(
+        "transformers",
+        "name",
+        name,
+      );
       return results[0] || null;
     },
 
     getByLevel: async (level: string): Promise<Transformer[]> => {
-      return this.getAllByIndex<Transformer>('transformers', 'level', level);
+      return this.getAllByIndex<Transformer>("transformers", "level", level);
     },
 
     getByInputDataTable: async (tableName: string): Promise<Transformer[]> => {
-      return this.getAllByIndex<Transformer>('transformers', 'inputDataTable', tableName);
+      return this.getAllByIndex<Transformer>(
+        "transformers",
+        "inputDataTable",
+        tableName,
+      );
     },
 
     getByOutputDataTable: async (tableName: string): Promise<Transformer[]> => {
-      return this.getAllByIndex<Transformer>('transformers', 'outputDataTable', tableName);
+      return this.getAllByIndex<Transformer>(
+        "transformers",
+        "outputDataTable",
+        tableName,
+      );
     },
 
     getAll: async (): Promise<Transformer[]> => {
-      return this.getAllFromStore<Transformer>('transformers');
+      return this.getAllFromStore<Transformer>("transformers");
     },
   };
 
@@ -1155,21 +1368,21 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   metadata = {
     get: async (): Promise<SyncMetadata | null> => {
-      const all = await this.getAllFromStore<SyncMetadata>('metadata');
+      const all = await this.getAllFromStore<SyncMetadata>("metadata");
       return all[0] || null;
     },
 
     set: async (data: SyncMetadata): Promise<void> => {
-      await this.putToStore('metadata', data);
+      await this.putToStore("metadata", data);
     },
 
     update: async (data: Partial<SyncMetadata>): Promise<void> => {
       const existing = await this.metadata.get();
       if (!existing) {
-        throw new Error('Metadata not found. Call set() first.');
+        throw new Error("Metadata not found. Call set() first.");
       }
       const updated = { ...existing, ...data };
-      await this.putToStore('metadata', updated);
+      await this.putToStore("metadata", updated);
     },
   };
 
@@ -1188,14 +1401,14 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       this.elementCache.clear();
       this.pageCache.clear();
       this.projectCache.clear();
-      console.log('[IndexedDB] All caches cleared');
+      console.log("[IndexedDB] All caches cleared");
     },
 
     resetStats: () => {
       this.elementCache.resetStats();
       this.pageCache.resetStats();
       this.projectCache.resetStats();
-      console.log('[IndexedDB] Cache statistics reset');
+      console.log("[IndexedDB] Cache statistics reset");
     },
   };
 
@@ -1203,13 +1416,14 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   batch = {
     export: async () => {
-      const [project, pages, elements, designTokens, metadata] = await Promise.all([
-        this.projects.getAll().then((projects) => projects[0] || null),
-        this.pages.getAll(),
-        this.elements.getAll(),
-        this.designTokens.getAll(),
-        this.metadata.get(),
-      ]);
+      const [project, pages, elements, designTokens, metadata] =
+        await Promise.all([
+          this.projects.getAll().then((projects) => projects[0] || null),
+          this.pages.getAll(),
+          this.elements.getAll(),
+          this.designTokens.getAll(),
+          this.metadata.get(),
+        ]);
 
       return {
         project,
@@ -1247,7 +1461,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         await this.metadata.set(data.metadata);
       }
 
-      console.log('[IndexedDB] Import completed:', {
+      console.log("[IndexedDB] Import completed:", {
         pages: data.pages?.length || 0,
         elements: data.elements?.length || 0,
         designTokens: data.designTokens?.length || 0,
@@ -1258,12 +1472,21 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       const db = this.ensureDB();
       return new Promise<void>((resolve, reject) => {
         const stores = [
-          'projects', 'pages', 'elements', 'design_tokens', 'design_themes',
-          'history', 'metadata', 'layouts',
+          "projects",
+          "pages",
+          "elements",
+          "design_tokens",
+          "design_themes",
+          "history",
+          "metadata",
+          "layouts",
           // ✅ 버전 7: Data Panel 스토어들 추가
-          'data_tables', 'api_endpoints', 'variables', 'transformers'
+          "data_tables",
+          "api_endpoints",
+          "variables",
+          "transformers",
         ];
-        const tx = db.transaction(stores, 'readwrite');
+        const tx = db.transaction(stores, "readwrite");
 
         let completed = 0;
 
@@ -1272,7 +1495,7 @@ export class IndexedDBAdapter implements DatabaseAdapter {
           request.onsuccess = () => {
             completed++;
             if (completed === stores.length) {
-              console.log('[IndexedDB] All stores cleared');
+              console.log("[IndexedDB] All stores cleared");
               resolve();
             }
           };
