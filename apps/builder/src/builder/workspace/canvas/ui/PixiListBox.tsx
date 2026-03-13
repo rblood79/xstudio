@@ -16,6 +16,8 @@ import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { useStore } from "../../../stores";
 
+const EMPTY_CHILDREN: Element[] = [];
+
 // ============================================
 // Types
 // ============================================
@@ -106,9 +108,8 @@ export const PixiListBox = memo(function PixiListBox({
   const props = element.props as Record<string, unknown> | undefined;
 
   // ADR-040: childrenMap O(1) 조회
-  const rawChildren = useStore(
-    (state) => state.childrenMap.get(element.id) ?? [],
-  );
+  const rawChildren =
+    useStore((state) => state.childrenMap.get(element.id)) ?? EMPTY_CHILDREN;
   const childItems = useMemo(() => {
     return rawChildren.filter((el) => el.tag === "ListBoxItem");
   }, [rawChildren]);

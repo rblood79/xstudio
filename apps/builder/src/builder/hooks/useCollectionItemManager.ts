@@ -24,6 +24,8 @@ import { ElementUtils } from "../../utils/element/elementUtils";
 import { supabase } from "../../env/supabase.client";
 import type { Element } from "../../types/core/store.types";
 
+const EMPTY_CHILDREN: Element[] = [];
+
 export interface UseCollectionItemManagerOptions {
   /** 부모 Collection 요소 ID (ListBox, GridList, Select, ComboBox 등) */
   elementId: string;
@@ -75,9 +77,8 @@ export function useCollectionItemManager(
   const removeElement = useStore((state) => state.removeElement);
   const currentPageId = useStore((state) => state.currentPageId);
   // ADR-040: childrenMap O(1) 조회 (전체 elements 배열 순회 제거)
-  const rawChildren = useStore(
-    (state) => state.childrenMap.get(elementId) ?? [],
-  );
+  const rawChildren =
+    useStore((state) => state.childrenMap.get(elementId)) ?? EMPTY_CHILDREN;
 
   /**
    * 자식 Item 필터링 및 정렬 (useMemo로 최적화)

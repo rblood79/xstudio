@@ -265,6 +265,8 @@ export interface ElementSpriteProps {
 // Tag to Sprite Mapping
 // ============================================
 
+const EMPTY_CHILDREN: Element[] = [];
+
 /**
  * 텍스트 관련 태그들
  */
