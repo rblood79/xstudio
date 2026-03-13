@@ -22,6 +22,8 @@ import { getDB } from "../../../../lib/db";
 import { generateCustomId } from "../../../utils/idGeneration";
 import type { Element } from "../../../../types/core/store.types";
 
+const EMPTY_CHILDREN: Element[] = [];
+
 export const ListBoxItemEditor = memo(function ListBoxItemEditor({
   elementId,
   currentProps,
@@ -33,9 +35,8 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
   const setSelectedElement = useStore((state) => state.setSelectedElement);
   // ADR-040: elementsMap/childrenMap O(1) 조회
   const element = useStore((state) => state.elementsMap.get(elementId));
-  const rawChildren = useStore(
-    (state) => state.childrenMap.get(elementId) ?? [],
-  );
+  const rawChildren =
+    useStore((state) => state.childrenMap.get(elementId)) ?? EMPTY_CHILDREN;
 
   // Get customId from element in store
   const customId = element?.customId || "";

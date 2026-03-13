@@ -1,5 +1,7 @@
 import { memo } from "react";
-import { CellElementProps } from "../../../../types/core/store.types";
+import { CellElementProps, Element } from "../../../../types/core/store.types";
+
+const EMPTY_CHILDREN: Element[] = [];
 import { useStore } from "../../../stores";
 import {
   PropertyInput,
@@ -30,9 +32,8 @@ export const RowEditor = memo(function RowEditor({
   // ADR-040: elementsMap O(1) 조회
   const element = useStore((state) => state.elementsMap.get(elementId));
   // ADR-040: childrenMap O(1) 조회
-  const rawChildren = useStore(
-    (state) => state.childrenMap.get(elementId) ?? [],
-  );
+  const rawChildren =
+    useStore((state) => state.childrenMap.get(elementId)) ?? EMPTY_CHILDREN;
 
   // Get customId from element in store
   const customId = element?.customId || "";

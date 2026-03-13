@@ -3,6 +3,8 @@ import {
   ColumnElementProps,
   Element,
 } from "../../../../types/core/store.types";
+
+const EMPTY_CHILDREN: Element[] = [];
 import { useStore } from "../../../stores";
 import {
   PropertySelect,
@@ -36,9 +38,8 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({
   // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
   // ADR-040: elementsMap/childrenMap O(1) 조회
   const element = useStore((state) => state.elementsMap.get(elementId));
-  const rawChildren = useStore(
-    (state) => state.childrenMap.get(elementId) ?? [],
-  );
+  const rawChildren =
+    useStore((state) => state.childrenMap.get(elementId)) ?? EMPTY_CHILDREN;
   const tableElement = useStore((state) =>
     element?.parent_id ? state.elementsMap.get(element.parent_id) : undefined,
   );

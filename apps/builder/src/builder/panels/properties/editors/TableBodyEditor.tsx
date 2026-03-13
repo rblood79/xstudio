@@ -8,6 +8,9 @@ import {
 import { PropertyEditorProps } from "../types/editorTypes";
 import { Table, Grid } from "lucide-react";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
+import type { Element } from "../../../../types/core/store.types";
+
+const EMPTY_CHILDREN: Element[] = [];
 
 interface TableBodyElementProps {
   variant?: "default" | "striped" | "bordered" | "hover";
@@ -26,9 +29,8 @@ export const TableBodyEditor = memo(function TableBodyEditor({
 }: PropertyEditorProps) {
   // ADR-040: elementsMap/childrenMap O(1) 조회
   const element = useStore((state) => state.elementsMap.get(elementId));
-  const rawChildren = useStore(
-    (state) => state.childrenMap.get(elementId) ?? [],
-  );
+  const rawChildren =
+    useStore((state) => state.childrenMap.get(elementId)) ?? EMPTY_CHILDREN;
   const childrenMap = useStore((state) => state.childrenMap);
 
   // Get customId from element in store

@@ -28,6 +28,9 @@ import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { getDB } from "../../../../lib/db";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
+import type { Element } from "../../../../types/core/store.types";
+
+const EMPTY_CHILDREN: Element[] = [];
 
 interface SelectedButtonState {
   parentId: string;
@@ -47,9 +50,8 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
   const updateElementProps = useStore((state) => state.updateElementProps);
   const removeElement = useStore((state) => state.removeElement);
   // ADR-040: childrenMap O(1) 조회
-  const rawChildren = useStore(
-    (state) => state.childrenMap.get(elementId) ?? [],
-  );
+  const rawChildren =
+    useStore((state) => state.childrenMap.get(elementId)) ?? EMPTY_CHILDREN;
 
   // Get customId from element in store
   // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)

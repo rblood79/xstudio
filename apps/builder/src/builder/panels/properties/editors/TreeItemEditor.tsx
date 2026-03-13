@@ -13,6 +13,9 @@ import { useStore } from "../../../stores";
 import { getDB } from "../../../../lib/db";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
 import { generateCustomId } from "../../../utils/idGeneration";
+import type { Element } from "../../../../types/core/store.types";
+
+const EMPTY_CHILDREN: Element[] = [];
 
 export const TreeItemEditor = memo(function TreeItemEditor({
   elementId,
@@ -23,9 +26,8 @@ export const TreeItemEditor = memo(function TreeItemEditor({
   const addElement = useStore((state) => state.addElement);
   // ADR-040: elementsMap/childrenMap O(1) 조회
   const element = useStore((state) => state.elementsMap.get(elementId));
-  const rawChildren = useStore(
-    (state) => state.childrenMap.get(elementId) ?? [],
-  );
+  const rawChildren =
+    useStore((state) => state.childrenMap.get(elementId)) ?? EMPTY_CHILDREN;
   const [localPageId, setLocalPageId] = useState<string>("");
 
   // Get customId from element in store

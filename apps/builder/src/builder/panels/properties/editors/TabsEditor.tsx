@@ -19,6 +19,8 @@ import { getDB } from "../../../../lib/db";
 import { useStore } from "../../../stores";
 import type { Element } from "../../../../types/core/store.types"; // 통합된 타입 사용
 import { ElementUtils } from "../../../../utils/element/elementUtils";
+
+const EMPTY_CHILDREN: Element[] = [];
 import { generateCustomId } from "../../../utils/idGeneration";
 
 // 상수 정의
@@ -105,9 +107,8 @@ export const TabsEditor = memo(
     // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
     const addElement = useStore((state) => state.addElement);
     // ADR-040: childrenMap O(1) 조회
-    const rawChildren = useStore(
-      (state) => state.childrenMap.get(elementId) ?? [],
-    );
+    const rawChildren =
+      useStore((state) => state.childrenMap.get(elementId)) ?? EMPTY_CHILDREN;
     const childrenMap = useStore((state) => state.childrenMap);
     const { localPageId, storePageId } = usePageId();
 

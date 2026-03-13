@@ -28,6 +28,9 @@ import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { supabase } from "../../../../env/supabase.client";
 import { useStore } from "../../../stores";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
+import type { Element } from "../../../../types/core/store.types";
+
+const EMPTY_CHILDREN: Element[] = [];
 
 interface SelectedRadioState {
   parentId: string;
@@ -49,9 +52,8 @@ export const RadioGroupEditor = memo(
     const removeElement = useStore((state) => state.removeElement);
     // ADR-040: elementsMap/childrenMap O(1) 조회
     const element = useStore((state) => state.elementsMap.get(elementId));
-    const rawChildren = useStore(
-      (state) => state.childrenMap.get(elementId) ?? [],
-    );
+    const rawChildren =
+      useStore((state) => state.childrenMap.get(elementId)) ?? EMPTY_CHILDREN;
 
     // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
     const customId = useMemo(() => {
