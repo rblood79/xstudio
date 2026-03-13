@@ -15,7 +15,7 @@ import {
   type WorkerResponse,
 } from './protocol';
 
-type WasmModule = typeof import('../wasm-bindings/pkg/xstudio_wasm');
+type WasmModule = typeof import('../../../../../wasm-bindings/pkg/xstudio_wasm');
 
 let wasm: WasmModule | null = null;
 
@@ -52,7 +52,9 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
 
 async function handleInit(requestId: number): Promise<void> {
   if (!wasm) {
-    const mod = await import(/* @vite-ignore */ '../wasm-bindings/pkg/xstudio_wasm');
+    const mod = await import(
+      /* @vite-ignore */ '../../../../../wasm-bindings/pkg/xstudio_wasm'
+    );
     wasm = mod;
   }
   respond({ type: WorkerResponseType.INIT_OK, requestId });

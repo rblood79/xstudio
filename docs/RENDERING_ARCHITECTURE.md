@@ -197,8 +197,8 @@ lto = true
 ```json
 {
   "scripts": {
-    "wasm:build": "wasm-pack build apps/builder/src/builder/workspace/canvas/wasm --target bundler --out-dir ../wasm-bindings/pkg",
-    "wasm:dev": "wasm-pack build apps/builder/src/builder/workspace/canvas/wasm --target bundler --dev --out-dir ../wasm-bindings/pkg",
+    "wasm:build": "wasm-pack build apps/builder/src/builder/workspace/canvas/wasm --target bundler --out-dir ../../../../../wasm-bindings/pkg",
+    "wasm:dev": "wasm-pack build apps/builder/src/builder/workspace/canvas/wasm --target bundler --dev --out-dir ../../../../../wasm-bindings/pkg",
     "wasm:test": "wasm-pack test --node apps/builder/src/builder/workspace/canvas/wasm"
   }
 }
@@ -1946,7 +1946,7 @@ type WorkerResponse =
 import init, {
   BlockLayoutEngine,
   GridLayoutEngine,
-} from "../wasm-bindings/pkg/xstudio_wasm";
+} from "../../../../../wasm-bindings/pkg/xstudio_wasm";
 // SpatialIndex는 메인 스레드 전용 — Worker에서는 사용하지 않음 (4.7절 참조)
 
 let blockEngine: BlockLayoutEngine;

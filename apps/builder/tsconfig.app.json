@@ -15,6 +15,6 @@
   "include": ["src"],
   "exclude": [
     "src/builder/workspace/canvas/wasm/target",
-    "src/builder/workspace/canvas/wasm-bindings/pkg"
+    "wasm-bindings/pkg"
   ]
 }

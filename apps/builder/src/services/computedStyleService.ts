@@ -242,6 +242,7 @@ function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
         paddingRight: px(p.paddingX),
         paddingBottom: px(p.paddingY),
         paddingLeft: px(p.paddingX),
+        borderRadius: px(Math.round(p.height / 2)),
       };
     }
 

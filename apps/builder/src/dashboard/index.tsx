@@ -583,18 +583,17 @@ function Dashboard() {
             onChange={setNewProjectName}
             isDisabled={loading}
             placeholder="New project name..."
-            size="sm"
+            size="md"
             aria-label="New project name"
           />
           <Button
             type="submit"
             variant="primary"
-            size="sm"
+            size="md"
             isDisabled={loading || !newProjectName.trim()}
             isLoading={createProjectMutation.isLoading}
           >
             <Plus size={14} />
-            Create
           </Button>
         </form>
 

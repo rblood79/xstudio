@@ -71,11 +71,11 @@ function createMockElement(
  * xl={fontSize:20, paddingX:40, paddingY:16, borderRadius:8}
  */
 const BUTTON_FALLBACKS = {
-  xs: { fontSize: '10px', paddingTop: '2px',  paddingRight: '8px',  paddingBottom: '2px',  paddingLeft: '8px',  borderRadius: '4px' },
-  sm: { fontSize: '14px', paddingTop: '4px',  paddingRight: '12px', paddingBottom: '4px',  paddingLeft: '12px', borderRadius: '4px' },
-  md: { fontSize: '16px', paddingTop: '8px',  paddingRight: '24px', paddingBottom: '8px',  paddingLeft: '24px', borderRadius: '6px' },
-  lg: { fontSize: '18px', paddingTop: '12px', paddingRight: '32px', paddingBottom: '12px', paddingLeft: '32px', borderRadius: '8px' },
-  xl: { fontSize: '20px', paddingTop: '16px', paddingRight: '40px', paddingBottom: '16px', paddingLeft: '40px', borderRadius: '8px' },
+  xs: { fontSize: '10px', paddingTop: '2px',  paddingRight: '8px',  paddingBottom: '2px',  paddingLeft: '8px',  borderRadius: '4px', fontWeight: '500', gap: '4px' },
+  sm: { fontSize: '14px', paddingTop: '4px',  paddingRight: '12px', paddingBottom: '4px',  paddingLeft: '12px', borderRadius: '4px', fontWeight: '500', gap: '6px' },
+  md: { fontSize: '16px', paddingTop: '8px',  paddingRight: '24px', paddingBottom: '8px',  paddingLeft: '24px', borderRadius: '6px', fontWeight: '500', gap: '8px' },
+  lg: { fontSize: '18px', paddingTop: '12px', paddingRight: '32px', paddingBottom: '12px', paddingLeft: '32px', borderRadius: '8px', fontWeight: '500', gap: '10px' },
+  xl: { fontSize: '20px', paddingTop: '16px', paddingRight: '40px', paddingBottom: '16px', paddingLeft: '40px', borderRadius: '8px', fontWeight: '500', gap: '12px' },
 };
 
 /**
@@ -846,9 +846,12 @@ describe('에지 케이스 및 경계 조건', () => {
     // Act
     const result = computeSyntheticStyle(element);
 
-    // Assert: 모든 값이 "Npx" 형식
-    const values = Object.values(result) as string[];
-    for (const value of values) {
+    // Assert: 길이 값은 "Npx", fontWeight는 숫자 문자열
+    for (const [key, value] of Object.entries(result) as Array<[string, string]>) {
+      if (key === 'fontWeight') {
+        expect(value).toMatch(/^\d+$/);
+        continue;
+      }
       expect(value).toMatch(/^\d+(\.\d+)?px$/);
     }
   });

@@ -1,13 +1,13 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-13 (ADR-038 Proposed — Figma 디자인 임포트 시스템; 현황 카운트 수정 — 완료 22, 미구현 8, 합계 38)
+> **최종 업데이트**: 2026-03-13 (ADR-035 완료 처리 — 완료 23, 부분 완료 7, 미구현 8, 합계 38)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 22     |
-| 부분 완료                              | 8      |
+| 완료 (Accepted/Implemented/Superseded) | 23     |
+| 부분 완료                              | 7      |
 | 미구현 (Proposed/계획)                 | 8      |
 | **합계**                               | **38** |
 
@@ -41,6 +41,7 @@
 | [031](completed/031-card-s2-migration.md)               | Card S2 마이그레이션               | Implemented | 2026-03-09 | Phase 1~3 완료 (Variant 통일 + CardPreview/Footer + cardType 변형)               |
 | [033](completed/033-css-property-ssot-consolidation.md) | CSS 속성 SSOT 통합 — 구조 변수화   | Implemented | 2026-03-11 | Phase 0~3 완료 (M3 잔여 제거 + Input/Button/Label/FieldError 변수화)             |
 | [037](037-workspace-scene-runtime-rearchitecture.md)    | Workspace Scene Runtime 재구성     | Implemented | 2026-03-13 | Phase 0~6 완료 (SceneSnapshot, SelectionModel, invalidation packet, store split) |
+| [035](035-workspace-canvas-refactor.md)                 | Workspace Canvas Runtime 리팩토링  | Implemented | 2026-03-13 | Phase 0~8 완료 (baseline 수집, invalidation/panel runtime test gate, WASM 분리)  |
 
 ### 부분 완료
 
@@ -53,8 +54,6 @@
 | [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-4 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment + Fill 비활성 힌트)                                                                                                                                                             | 보류: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램                                                                                 |    P4    |
 | [019](019-icon-system.md)                         | 아이콘 시스템 — Icon 선택/변경/추가             | Phase A+B+C+D 완료 (C2 simple element 경로, C4 SelectIcon+ComboBox 연동, C5 ComboBoxEditor IconPicker)                                                                                                                                              | Phase E (추가 라이브러리)                                                                                                              |    P4    |
 | [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B+C 완료 (TextEditOverlay + Quill + 멀티페이지 + Spec 컴포넌트 텍스트 편집)                                                                                                                                                                 | Phase D (리치 텍스트/툴바)                                                                                                             |    P4    |
-| [035](035-workspace-canvas-refactor.md)           | Workspace Canvas Runtime 리팩토링               | Phase 2 완료 (viewport 단일 원천), Phase 4 완료 (SkiaOverlay 분해 → skiaOverlayBuilder/skiaFramePlan/skiaFramePipeline), Phase 5 완료 (nodeRenderers 8파일 barrel), Phase 6 완료 (cssVariableReader 4분할) + 프로젝트 전체 ESLint 정리 (~43건 수정) | Phase 0 런타임 측정, Phase 1 문서화 마무리, Phase 3 (InvalidationReason enum), Phase 7 (DOM 의존 제거), Phase 8 (Artifact 격리)        |  **P2**  |
-
 > **참고**: ADR-029에 동일 번호의 [Text Edit Overlay UX 개선](completed/029-text-edit-overlay-improvements.md) 문서가 존재하며, ADR-027의 후속 개선으로 Phase 1-2 모두 구현 완료 (Accepted).
 
 ### 미구현
@@ -113,7 +112,7 @@
 | ~~16~~ | ~~ADR-021 Phase E~~     | ~~테마 시스템 — 컴포넌트별 accent 오버라이드 (Radix data-accent 패턴)~~                                          |  소  | **완료** |
 | ~~17~~ | ~~ADR-030 Phase 1-4~~   | ~~S2 전용 컴포넌트 마이그레이션 — Phase 0~4 전체 완료 (22개 컴포넌트 + 23 Property Editor + metadata)~~          |  대  | **완료** |
 | ~~18~~ | ~~ADR-031~~             | ~~Card S2 마이그레이션 — Variant 통일 + CardPreview/Footer + cardType 변형 (3 Phase 완료)~~                      |  중  | **완료** |
-|   19   | ADR-035                 | Workspace Canvas Runtime 리팩토링 — Phase 2/4/5/6 완료. 남은: Phase 0 측정 + Phase 1/3/7/8                       |  대  | 진행 중  |
+| ~~19~~ | ~~ADR-035~~             | ~~Workspace Canvas Runtime 리팩토링 — Phase 0~8 완료 (baseline 수집 + invalidation/panel runtime gate + WASM 분리)~~ |  대  | **완료** |
 | ~~20~~ | ~~ADR-037~~             | ~~Workspace Scene Runtime 재구성 — ADR-035 후속. Scene Snapshot + SelectionModel + PointerSession + store 분리~~ |  대  | **완료** |
 |   21   | ADR-036                 | Spec-First Single Source — CSS 자동 생성 기반 이중 렌더링 통합 (4 Phase, CSSGenerator 확장)                      |  중  |          |
 |   22   | ADR-013                 | Quick Connect 데이터 바인딩 — 컴포넌트 체계 확정(030) 후 바인딩 연결 (5 Phase, 21파일)                           |  대  |          |
@@ -132,7 +131,7 @@
 - ~~**ADR-019**: Icon 시스템 — Phase A+B+C+D 완료 (C2 simple element 확인, C4+C5 Spec 연동)~~
 - ~~**ADR-030**: React Spectrum S2 전용 컴포넌트 마이그레이션~~ — Phase 0~4 전체 완료 (22개 컴포넌트, 23 Property Editor, metadata 통합)
 - ~~**ADR-031**: Card S2 마이그레이션~~ — Phase 1~3 완료 (Variant 통일 + CardPreview/Footer + cardType 변형)
-- **ADR-035**: Workspace Canvas Runtime 리팩토링 — Phase 2/4/5/6 완료 (4/9 Phase), Phase 0/1/3/7/8 잔여
+- ~~**ADR-035**: Workspace Canvas Runtime 리팩토링~~ — 2026-03-13 Phase 0~8 완료
 - ~~**ADR-037**: Workspace Scene Runtime 재구성~~ — 2026-03-13 구현 완료. `SceneSnapshot`, `SelectionModel`, `PointerSession`, renderer input contract, `canvasSync` split 반영
 
 ### P3: ADR-036 + ADR-032 → ADR-034 → ADR-013 (스타일 통합 + 이벤트 + 데이터 바인딩)
@@ -284,6 +283,7 @@ Proposed | Accepted | Deprecated | Superseded
 | 2026-03-09 | **ADR-030 Phase 0~4 전체 완료 (Implemented)** — 22개 S2 전용 컴포넌트 구현 완료. 23개 Property Editor 생성, 23개 ComponentMeta(metadata.ts) 등록. Spec Props 보강 3건(SegmentedControl isJustified, CardView variant/selectionMode/selectionStyle, TableView selectionMode). SelectBoxGroup/SelectBoxItem 전체 통합 (Spec+Factory+Renderer+Publish+TAG_SPEC_MAP+COMPLEX_COMPONENT_TAGS). RangeCalendar Publish 누락 수정. 미구현→완료 이동 (완료 19, 미구현 5)                                                                                                                                                                                                                                                                                                                      |
 | 2026-03-12 | **ADR-035 추가 + 부분 완료 확인** — Workspace Canvas Runtime 리팩토링 (9 Phase). 코드 대조 결과: Phase 0~2 부분 구현 (GPUMetrics, Workspace hooks 분리, ViewportController 단일 원천), Phase 4~5 부분 구현 (renderCommands.ts, skiaFrameHelpers.ts, boundsMap 재사용). Phase 3 InvalidationReason enum 미구현, Phase 5 nodeRenderers 도형별 분해 미완, Phase 6~8 미구현. ADR-031 링크 `completed/` 경로로 수정. 현황 카운트 갱신 (부분완료 6→7, 합계 33→34). 우선순위 P2로 배치 (핵심 런타임 구조 개선)                                                                                                                                                                                                                                                                             |
 | 2026-03-12 | **ADR-035 Phase 2/4/5/6 완료 + 프로젝트 전체 ESLint 정리** — Phase 2: canvasSync deprecation, viewport 단일 원천 확립. Phase 4: SkiaOverlay → skiaOverlayBuilder.ts(426줄)/skiaFramePlan.ts/skiaFramePipeline.ts 추출, SharedSceneDerivedData/FrameRenderPlan 타입 정의, SkiaOverlay 1268→1026줄. Phase 5: nodeRenderers.ts → 8파일 barrel (extract-only). Phase 6: cssVariableReader.ts(7502줄) → 4모듈 barrel. ESLint: builder 27에러→5에러(React Compiler 한계), shared 7에러→0에러, publish 2에러→0에러. 수정 ~43건 (unused vars ~20, set-state-in-effect 8, refs-during-render 7, any→Record 2, rules-of-hooks 1 등). 잔존 5개 Compilation Skipped는 ElementSprite/TextSprite 수동 useMemo 정상 작동 확인, 리팩터링 불필요 판정                                                |
+| 2026-03-13 | **ADR-035 Phase 6 key normalization + 상태 문서 정리** — `cssComponentPresets.ts`의 size preset getter에 `xs/sm/md/lg/xl` ↔ `XS/S/M/L/XL` 정규화 레이어 추가. `computedStyleService`가 읽는 Button/Input/Radio/ProgressBar/Badge/Card/TextField/TextArea 등 공용 preset 경로에서 lower/upper key 계약 불일치 제거. ADR-035/README 상태를 실제 코드 기준으로 갱신: Phase 3/7은 부분 구현, Phase 8은 격리 규칙 반영 후 gate 대기 상태로 정정. |
 | 2026-03-13 | **ADR-037 Implemented** — Workspace Scene Runtime 재구성 Phase 0~6 전체 완료. `SceneSnapshot`/`SceneIndex` 도입, `SelectionModel`/`PointerSession` 분리, `rendererInput`/`invalidationPacket`로 renderer 입력 단일화, `layoutCache`/`cullingCache`/`subtreeInvalidation` 연결, `canvasSync`를 viewport/lifecycle/metrics store로 분리, legacy helper 및 compatibility usage 정리. 완료 섹션 이동, 현황 카운트 갱신 (완료 22, 미구현 7)                                                                                                                                                                                                                                                                                                                                              |
 | 2026-03-13 | **ADR-036 Proposed** — Spec-First Single Source: CSS 자동 생성 기반 이중 렌더링 통합. 3중 동기화 문제(CSS 13K줄 + Spec 19K줄 + SIZE_CONFIG) 해결 방안. 대안 C 채택: Spec `variants`/`sizes`/`states` 메타데이터를 Single Source로 승격, `CSSGenerator.ts`(기존 276줄 POC) 확장하여 CSS 자동 생성. 4 Phase 로드맵 (Phase 0: SIZE_CONFIG 제거, Phase 1: CSSGenerator 확장, Phase 2: 단순 ~40개 전환, Phase 3: 복합 ~30개 2-layer 분리). 현황 카운트 수정 (부분완료 7→8, 합계 36→37). P3 우선순위 배치, 다음 진행 목표 #21 추가                                                                                                                                                                                                                                                        |
 | 2026-03-13 | **ADR-038 Proposed** — Figma 디자인 임포트 시스템. Figma REST API → XStudio Element 변환 엔진. 4 Phase: Core Structure(MVP ~60% 재현) → Visual Fidelity(~80%) → Component System(~90%) → Edge Cases(~95%). 하이브리드 아키텍처: Supabase Edge Function(API 프록시+이미지) + 클라이언트(변환 엔진). Auto Layout→flex 직접 매핑, Component/Instance→master/instance, Pencil(.pen) 호환 파이프라인 공유 가능. 미구현→8, 합계→38                                                                                                                                                                                                                                                                                                                                                        |

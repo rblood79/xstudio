@@ -275,7 +275,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
         }
 
         // Layout groups
-        if (showLG && layoutGroups.length > 0) {
+        if (showLG && workflow.layoutGroups.length > 0) {
           renderLayoutGroups(
             ck,
             canvas,

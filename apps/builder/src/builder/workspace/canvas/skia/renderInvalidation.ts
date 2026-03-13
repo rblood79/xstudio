@@ -16,14 +16,17 @@ import { canvasDebug } from "../utils/canvasDebug";
 // InvalidationReason — 무효화 이유 분류
 // ---------------------------------------------------------------------------
 
-export type InvalidationReason =
-  | "content" // 요소 구조/속성 변경 → Skia 트리 재빌드
-  | "layout" // 레이아웃 속성 변경 → fullTreeLayout 재계산
-  | "viewport" // zoom/pan/pagePosition 변경 → 좌표 재계산
-  | "overlay" // selection/workflow/AI 상태 변경 → 오버레이만 재렌더
-  | "theme" // 테마/다크모드 변경 → 전체 색상 재계산
-  | "resource" // 폰트/이미지 로드 완료 → 해당 노드 재렌더
-  | "workflow"; // 워크플로우 엣지/상태 변경 → 워크플로우 오버레이
+export const INVALIDATION_REASONS = [
+  "content",
+  "layout",
+  "viewport",
+  "overlay",
+  "theme",
+  "resource",
+  "workflow",
+] as const;
+
+export type InvalidationReason = (typeof INVALIDATION_REASONS)[number];
 
 // ---------------------------------------------------------------------------
 // Version → Reason → Cache 매핑
@@ -58,7 +61,7 @@ export type InvalidationReason =
 // Invalidation Tracker — 런타임 추적
 // ---------------------------------------------------------------------------
 
-interface InvalidationEntry {
+export interface InvalidationEntry {
   reason: InvalidationReason;
   timestamp: number;
   source: string;
@@ -66,6 +69,12 @@ interface InvalidationEntry {
 
 const HISTORY_LIMIT = 100;
 const recentInvalidations: InvalidationEntry[] = [];
+
+function shouldTrackInvalidation(): boolean {
+  return (
+    process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test"
+  );
+}
 
 /**
  * 무효화 이유를 기록한다.
@@ -75,7 +84,7 @@ export function recordInvalidation(
   reason: InvalidationReason,
   source: string,
 ): void {
-  if (process.env.NODE_ENV !== "development") return;
+  if (!shouldTrackInvalidation()) return;
 
   const entry: InvalidationEntry = {
     reason,
@@ -115,10 +124,14 @@ export function countRecentInvalidations(
   return count;
 }
 
+export function resetInvalidationHistory(): void {
+  recentInvalidations.length = 0;
+}
+
 // 개발 콘솔에서 접근
 if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
-  (window as Record<string, unknown>).__invalidationHistory =
+  (window as unknown as Record<string, unknown>).__invalidationHistory =
     getInvalidationHistory;
-  (window as Record<string, unknown>).__countInvalidations =
+  (window as unknown as Record<string, unknown>).__countInvalidations =
     countRecentInvalidations;
 }

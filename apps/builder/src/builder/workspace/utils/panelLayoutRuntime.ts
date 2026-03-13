@@ -175,3 +175,13 @@ export function subscribeToPanelLayoutChanges({
     unsubscribe();
   };
 }
+
+export function resetPanelLayoutRuntimeForTests(): void {
+  sidebarObserver?.disconnect();
+  inspectorObserver?.disconnect();
+  sidebarObserver = null;
+  inspectorObserver = null;
+  cachedLeftWidth = 0;
+  cachedRightWidth = 0;
+  resizeListeners.clear();
+}

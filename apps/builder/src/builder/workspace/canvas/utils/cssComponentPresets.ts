@@ -12,6 +12,50 @@ import {
   mixWithWhite,
 } from "./cssVariableCore";
 
+type PresetSizeName = "xs" | "sm" | "md" | "lg" | "xl";
+type PresetSizeKey = "XS" | "S" | "M" | "L" | "XL";
+
+const PRESET_SIZE_ENTRIES: Record<PresetSizeName, { key: PresetSizeKey }> = {
+  xs: { key: "XS" },
+  sm: { key: "S" },
+  md: { key: "M" },
+  lg: { key: "L" },
+  xl: { key: "XL" },
+};
+
+function normalizePresetSizeName(
+  size: string | undefined,
+  fallback: PresetSizeName = "md",
+): PresetSizeName {
+  const normalized = size?.trim().toLowerCase();
+  if (!normalized) return fallback;
+
+  switch (normalized) {
+    case "xs":
+      return "xs";
+    case "s":
+    case "sm":
+      return "sm";
+    case "m":
+    case "md":
+      return "md";
+    case "l":
+    case "lg":
+      return "lg";
+    case "xl":
+      return "xl";
+    default:
+      return fallback;
+  }
+}
+
+function normalizePresetSizeKey(
+  size: string | undefined,
+  fallback: PresetSizeName = "md",
+): PresetSizeKey {
+  return PRESET_SIZE_ENTRIES[normalizePresetSizeName(size, fallback)].key;
+}
+
 // ============================================
 // Size Preset Reading (Dynamic CSS Variables)
 // ============================================
@@ -97,8 +141,9 @@ const SIZE_FALLBACKS: Record<string, SizePreset> = {
  * // { fontSize: 16, paddingX: 24, paddingY: 8, borderRadius: 6 }
  */
 export function getSizePreset(size: string): SizePreset {
-  const mapping = SIZE_CSS_MAPPING[size];
-  const fallback = SIZE_FALLBACKS[size] || SIZE_FALLBACKS.S;
+  const sizeKey = normalizePresetSizeKey(size, "sm");
+  const mapping = SIZE_CSS_MAPPING[sizeKey];
+  const fallback = SIZE_FALLBACKS[sizeKey] || SIZE_FALLBACKS.S;
 
   if (!mapping) {
     return fallback;
@@ -170,8 +215,9 @@ const CHECKBOX_FALLBACKS: Record<string, CheckboxSizePreset> = {
  * Checkbox/Radio 사이즈 프리셋 읽기
  */
 export function getCheckboxSizePreset(size: string): CheckboxSizePreset {
-  const mapping = CHECKBOX_SIZE_MAPPING[size];
-  const fallback = CHECKBOX_FALLBACKS[size] || CHECKBOX_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = CHECKBOX_SIZE_MAPPING[sizeKey];
+  const fallback = CHECKBOX_FALLBACKS[sizeKey] || CHECKBOX_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -179,7 +225,7 @@ export function getCheckboxSizePreset(size: string): CheckboxSizePreset {
 
   // CSS 변수에서 읽되, md의 경우 특수 처리 (20px 고정)
   const boxSize =
-    size === "M"
+    sizeKey === "M"
       ? 20
       : parseCSSValue(getCSSVariable(mapping.boxSize), fallback.boxSize);
   const fontSize = parseCSSValue(
@@ -225,8 +271,9 @@ const SLIDER_FALLBACKS: Record<string, SliderSizePreset> = {
  * Slider 사이즈 프리셋 읽기
  */
 export function getSliderSizePreset(size: string): SliderSizePreset {
-  const mapping = SLIDER_SIZE_MAPPING[size];
-  const fallback = SLIDER_FALLBACKS[size] || SLIDER_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = SLIDER_SIZE_MAPPING[sizeKey];
+  const fallback = SLIDER_FALLBACKS[sizeKey] || SLIDER_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -305,8 +352,9 @@ const RADIO_FALLBACKS: Record<string, RadioSizePreset> = {
  * Radio 사이즈 프리셋 읽기
  */
 export function getRadioSizePreset(size: string): RadioSizePreset {
-  const mapping = RADIO_SIZE_MAPPING[size];
-  const fallback = RADIO_FALLBACKS[size] || RADIO_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = RADIO_SIZE_MAPPING[sizeKey];
+  const fallback = RADIO_FALLBACKS[sizeKey] || RADIO_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -369,8 +417,9 @@ const PROGRESSBAR_FALLBACKS: Record<string, ProgressBarSizePreset> = {
  * ProgressBar 사이즈 프리셋 읽기
  */
 export function getProgressBarSizePreset(size: string): ProgressBarSizePreset {
-  const mapping = PROGRESSBAR_SIZE_MAPPING[size];
-  const fallback = PROGRESSBAR_FALLBACKS[size] || PROGRESSBAR_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = PROGRESSBAR_SIZE_MAPPING[sizeKey];
+  const fallback = PROGRESSBAR_FALLBACKS[sizeKey] || PROGRESSBAR_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -465,8 +514,9 @@ const INPUT_FALLBACKS: Record<string, InputSizePreset> = {
  * Input 사이즈 프리셋 읽기
  */
 export function getInputSizePreset(size: string): InputSizePreset {
-  const mapping = INPUT_SIZE_MAPPING[size];
-  const fallback = INPUT_FALLBACKS[size] || INPUT_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = INPUT_SIZE_MAPPING[sizeKey];
+  const fallback = INPUT_FALLBACKS[sizeKey] || INPUT_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -572,8 +622,9 @@ const SELECT_FALLBACKS: Record<string, SelectSizePreset> = {
  * Select 사이즈 프리셋 읽기
  */
 export function getSelectSizePreset(size: string): SelectSizePreset {
-  const mapping = SELECT_SIZE_MAPPING[size];
-  const fallback = SELECT_FALLBACKS[size] || SELECT_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = SELECT_SIZE_MAPPING[sizeKey];
+  const fallback = SELECT_FALLBACKS[sizeKey] || SELECT_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -667,8 +718,10 @@ const TOGGLE_BUTTON_FALLBACKS: Record<string, ToggleButtonSizePreset> = {
 export function getToggleButtonSizePreset(
   size: string,
 ): ToggleButtonSizePreset {
-  const mapping = TOGGLE_BUTTON_SIZE_MAPPING[size];
-  const fallback = TOGGLE_BUTTON_FALLBACKS[size] || TOGGLE_BUTTON_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = TOGGLE_BUTTON_SIZE_MAPPING[sizeKey];
+  const fallback =
+    TOGGLE_BUTTON_FALLBACKS[sizeKey] || TOGGLE_BUTTON_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -849,8 +902,9 @@ const LISTBOX_FALLBACKS: Record<string, ListBoxSizePreset> = {
  * ListBox 사이즈 프리셋 읽기
  */
 export function getListBoxSizePreset(size: string): ListBoxSizePreset {
-  const mapping = LISTBOX_SIZE_MAPPING[size];
-  const fallback = LISTBOX_FALLBACKS[size] || LISTBOX_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = LISTBOX_SIZE_MAPPING[sizeKey];
+  const fallback = LISTBOX_FALLBACKS[sizeKey] || LISTBOX_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1026,8 +1080,9 @@ const BADGE_FALLBACKS: Record<string, BadgeSizePreset> = {
  * Badge 사이즈 프리셋 읽기
  */
 export function getBadgeSizePreset(size: string): BadgeSizePreset {
-  const mapping = BADGE_SIZE_MAPPING[size];
-  const fallback = BADGE_FALLBACKS[size] || BADGE_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = BADGE_SIZE_MAPPING[sizeKey];
+  const fallback = BADGE_FALLBACKS[sizeKey] || BADGE_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1134,8 +1189,9 @@ const METER_FALLBACKS: Record<string, MeterSizePreset> = {
  * Meter 사이즈 프리셋 읽기
  */
 export function getMeterSizePreset(size: string): MeterSizePreset {
-  const mapping = METER_SIZE_MAPPING[size];
-  const fallback = METER_FALLBACKS[size] || METER_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = METER_SIZE_MAPPING[sizeKey];
+  const fallback = METER_FALLBACKS[sizeKey] || METER_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1252,8 +1308,9 @@ const SEPARATOR_FALLBACKS: Record<string, SeparatorSizePreset> = {
  * Separator 사이즈 프리셋 읽기
  */
 export function getSeparatorSizePreset(size: string): SeparatorSizePreset {
-  const mapping = SEPARATOR_SIZE_MAPPING[size];
-  const fallback = SEPARATOR_FALLBACKS[size] || SEPARATOR_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = SEPARATOR_SIZE_MAPPING[sizeKey];
+  const fallback = SEPARATOR_FALLBACKS[sizeKey] || SEPARATOR_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1322,8 +1379,9 @@ const LINK_FALLBACKS: Record<string, LinkSizePreset> = {
  * Link 사이즈 프리셋 읽기
  */
 export function getLinkSizePreset(size: string): LinkSizePreset {
-  const mapping = LINK_SIZE_MAPPING[size];
-  const fallback = LINK_FALLBACKS[size] || LINK_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = LINK_SIZE_MAPPING[sizeKey];
+  const fallback = LINK_FALLBACKS[sizeKey] || LINK_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1393,8 +1451,9 @@ const BREADCRUMBS_FALLBACKS: Record<string, BreadcrumbsSizePreset> = {
  * Breadcrumbs 사이즈 프리셋 읽기
  */
 export function getBreadcrumbsSizePreset(size: string): BreadcrumbsSizePreset {
-  const mapping = BREADCRUMBS_SIZE_MAPPING[size];
-  const fallback = BREADCRUMBS_FALLBACKS[size] || BREADCRUMBS_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = BREADCRUMBS_SIZE_MAPPING[sizeKey];
+  const fallback = BREADCRUMBS_FALLBACKS[sizeKey] || BREADCRUMBS_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -1496,8 +1555,9 @@ const CARD_FALLBACKS: Record<string, CardSizePreset> = {
  * Card 사이즈 프리셋 읽기
  */
 export function getCardSizePreset(size: string): CardSizePreset {
-  const mapping = CARD_SIZE_MAPPING[size];
-  const fallback = CARD_FALLBACKS[size] || CARD_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = CARD_SIZE_MAPPING[sizeKey];
+  const fallback = CARD_FALLBACKS[sizeKey] || CARD_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -2116,8 +2176,9 @@ const NUMBERFIELD_FALLBACKS: Record<string, NumberFieldSizePreset> = {
  * NumberField 사이즈 프리셋 읽기
  */
 export function getNumberFieldSizePreset(size: string): NumberFieldSizePreset {
-  const mapping = NUMBERFIELD_SIZE_MAPPING[size];
-  const fallback = NUMBERFIELD_FALLBACKS[size] || NUMBERFIELD_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = NUMBERFIELD_SIZE_MAPPING[sizeKey];
+  const fallback = NUMBERFIELD_FALLBACKS[sizeKey] || NUMBERFIELD_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -2307,8 +2368,9 @@ const SEARCHFIELD_FALLBACKS: Record<string, SearchFieldSizePreset> = {
  * SearchField 사이즈 프리셋 읽기
  */
 export function getSearchFieldSizePreset(size: string): SearchFieldSizePreset {
-  const mapping = SEARCHFIELD_SIZE_MAPPING[size];
-  const fallback = SEARCHFIELD_FALLBACKS[size] || SEARCHFIELD_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = SEARCHFIELD_SIZE_MAPPING[sizeKey];
+  const fallback = SEARCHFIELD_FALLBACKS[sizeKey] || SEARCHFIELD_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -2526,8 +2588,9 @@ const COMBOBOX_FALLBACKS: Record<string, ComboBoxSizePreset> = {
  * ComboBox 사이즈 프리셋 읽기
  */
 export function getComboBoxSizePreset(size: string): ComboBoxSizePreset {
-  const mapping = COMBOBOX_SIZE_MAPPING[size];
-  const fallback = COMBOBOX_FALLBACKS[size] || COMBOBOX_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  const mapping = COMBOBOX_SIZE_MAPPING[sizeKey];
+  const fallback = COMBOBOX_FALLBACKS[sizeKey] || COMBOBOX_FALLBACKS.M;
 
   if (!mapping) {
     return fallback;
@@ -5413,13 +5476,15 @@ const TEXT_FIELD_SIZE_FALLBACKS: Record<string, TextFieldSizePreset> = {
  * .react-aria-TextField / .react-aria-Input 클래스에서 사이즈 스타일 읽기
  */
 export function getTextFieldSizePreset(size: string): TextFieldSizePreset {
+  const sizeName = normalizePresetSizeName(size);
+  const sizeKey = normalizePresetSizeKey(size);
   const fallback =
-    TEXT_FIELD_SIZE_FALLBACKS[size] || TEXT_FIELD_SIZE_FALLBACKS.M;
+    TEXT_FIELD_SIZE_FALLBACKS[sizeKey] || TEXT_FIELD_SIZE_FALLBACKS.M;
 
   try {
     // 임시 DOM 요소 생성
     const textField = document.createElement("div");
-    textField.className = `react-aria-TextField ${size}`;
+    textField.className = `react-aria-TextField ${sizeName}`;
     textField.style.position = "absolute";
     textField.style.visibility = "hidden";
     textField.style.pointerEvents = "none";
@@ -5691,7 +5756,8 @@ const SWITCH_FALLBACKS: Record<string, SwitchSizePreset> = {
 };
 
 export function getSwitchSizePreset(size: string): SwitchSizePreset {
-  return SWITCH_FALLBACKS[size] || SWITCH_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  return SWITCH_FALLBACKS[sizeKey] || SWITCH_FALLBACKS.M;
 }
 
 /**
@@ -5817,7 +5883,8 @@ const TEXT_AREA_FALLBACKS: Record<string, TextAreaSizePreset> = {
 };
 
 export function getTextAreaSizePreset(size: string): TextAreaSizePreset {
-  return TEXT_AREA_FALLBACKS[size] || TEXT_AREA_FALLBACKS.M;
+  const sizeKey = normalizePresetSizeKey(size);
+  return TEXT_AREA_FALLBACKS[sizeKey] || TEXT_AREA_FALLBACKS.M;
 }
 
 /**

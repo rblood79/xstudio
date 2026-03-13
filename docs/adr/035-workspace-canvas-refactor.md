@@ -2,11 +2,11 @@
 
 ## Status
 
-In Progress (Phase 2/4/5/6 완료, ESLint 정리 완료)
+Implemented (Phase 0~8 완료, baseline 수집 + invalidation/panel runtime gate + WASM artifact 분리 완료)
 
 ## Date
 
-2026-03-12
+2026-03-13
 
 ## Decision Makers
 
@@ -222,8 +222,8 @@ selection/workflow/AI overlay 계산이 `SkiaOverlay`에 밀집되어 있다.
 
 ### Recommended Execution Order
 
-코드 대조 결과, Phase 1/2/4는 부분 구현 상태이고 Phase 8은 거의 완료 상태다.
-의존 관계와 위험도를 고려하여 아래 순서를 권장한다.
+최종 구현 기준으로 Phase 0~8이 모두 완료됐다.
+아래 순서는 실제 수행 시 사용한 gate 순서를 보존하기 위해 남겨둔다.
 
 ```
 Phase 0 ─┬─→ Phase 1 (trivial)
@@ -236,20 +236,20 @@ Phase 0 ─┬─→ Phase 1 (trivial)
 
 | 순서 | Phase   | 잔여 작업                                                                 |  완성도  | 위험 | 상태      |
 | :--: | ------- | ------------------------------------------------------------------------- | :------: | :--: | --------- |
-|  1   | Phase 0 | baseline 문서 작성 완료, 성능 수치 수집 (런타임 측정 대기)                |   70%    |  L   | 문서 완료 |
-|  2   | Phase 1 | Workspace.tsx 책임 주석 + 문서화                                          |   90%    |  L   | 거의 완료 |
-|  3   | Phase 8 | Rust target/ gitignore 확인, IDE 탐색 제외 설정                           |   80%    |  L   | 거의 완료 |
-|  4   | Phase 3 | `InvalidationReason` enum, 무효화 규칙 표, 캐시 우회 정리                 |    0%    |  L   | 미착수    |
+|  1   | Phase 0 | baseline 문서 작성 + 실측값 수집 + authenticated builder smoke 확보       | **100%** |  L   | **완료**  |
+|  2   | Phase 1 | Workspace.tsx 책임 주석 + 문서화                                          | **100%** |  L   | **완료**  |
+|  3   | Phase 8 | WASM pkg를 `apps/builder/wasm-bindings/pkg`로 이동, script/import 정리    | **100%** |  L   | **완료**  |
+|  4   | Phase 3 | `renderInvalidation.ts` 추적 유틸 보강 + unit test gate 추가              | **100%** |  L   | **완료**  |
 |  5   | Phase 2 | canvasSync deprecation 완료, viewport 단일 원천 확립                      | **100%** |  M   | **완료**  |
-|  6   | Phase 6 | cssVariableReader 4분할 완료 (barrel re-export)                           | **100%** |  M   | **완료**  |
+|  6   | Phase 6 | cssVariableReader 4분할 완료 + size key 정규화 (`xs/sm/md/lg/xl` 호환)    | **100%** |  M   | **완료**  |
 |  7   | Phase 4 | SkiaOverlay 분해, skiaOverlayBuilder/skiaFramePlan/skiaFramePipeline 추출 | **100%** |  M   | **완료**  |
-|  8   | Phase 7 | CanvasScrollbar querySelector 제거, shell state 기반 전환                 |   20%    |  M   | 미착수    |
+|  8   | Phase 7 | CanvasScrollbar querySelector 제거, panel runtime test gate 추가          | **100%** |  M   | **완료**  |
 |  9   | Phase 5 | nodeRenderers.ts extract-only 분해 (8파일 barrel 구조)                    | **100%** |  H   | **완료**  |
 
 이 순서의 원칙은 다음과 같다.
 
 1. **Phase 0으로 관측 가능성 확보** — 회귀 원인을 추적 가능하게 만든다.
-2. **완성도 높은 phase 우선** — Phase 1(90%), Phase 8(80%)을 조기에 gate 통과시킨다.
+2. **저위험 phase 우선** — 문서/격리/관측 가능성 확보를 먼저 끝낸다.
 3. **의존 관계 준수** — Phase 3 → Phase 4, Phase 2+6 → Phase 7 순서를 보장한다.
 4. **hot path 최후순위** — Phase 5(nodeRenderers)를 가장 마지막에 배치한다.
 
@@ -844,6 +844,32 @@ source review와 static analysis를 방해하지 않도록 격리한다.
 
 ## Progress Log
 
+### 2026-03-13: Phase 0/3/7/8 완료 + ADR-035 종료
+
+#### Phase 0 완료 — Baseline 측정 확정
+
+- `docs/adr/035-phase-0-baseline.md`에 authenticated builder URL 기준 baseline 수치 기록
+- headless Chrome 임시 프로필에서 `ADR035 Baseline` 13요소 페이지를 생성/선택하고 6초 안정화 후 수집
+- 수집 결과: `averageFps 59.99`, `lastFrameTime 16.67ms`, `skiaFrameTimeAvgMs 17.75ms`
+
+#### Phase 3 완료 — Invalidation gate 고정
+
+- `renderInvalidation.ts`에 `INVALIDATION_REASONS`, `resetInvalidationHistory()` 추가
+- 개발 환경뿐 아니라 test 환경에서도 invalidation history를 검증 가능하도록 gate 보강
+- `renderInvalidation.test.ts`로 history limit(100개)와 recent count 동작 고정
+
+#### Phase 7 완료 — Panel Runtime gate 고정
+
+- `panelLayoutRuntime.ts`에 test reset helper 추가
+- 등록 기반 `ResizeObserver` 캐시가 panel visibility/store toggle과 함께 동작하는지 unit test 추가
+- `panelLayoutRuntime.test.ts`로 querySelector 제거 이후 계약을 회귀 테스트로 고정
+
+#### Phase 8 완료 — Generated Artifact Isolation
+
+- `apps/builder/src/.../wasm-bindings/pkg` → `apps/builder/wasm-bindings/pkg` 이동
+- wasm-pack out-dir, Vite dynamic import, tsconfig exclude, gitignore 규칙을 새 경로에 맞게 정렬
+- hand-written source와 generated artifact 경계 분리 완료
+
 ### 2026-03-12: Phase 2/4/5/6 완료 + 프로젝트 전체 ESLint/TypeScript 정리
 
 #### Phase 2 완료 — Viewport Runtime 정리
@@ -897,6 +923,11 @@ source review와 static analysis를 방해하지 않도록 격리한다.
 | `cssComponentColors.ts`  | 컴포넌트별 색상 프리셋   |
 | `cssComponentPresets.ts` | 컴포넌트별 사이즈 프리셋 |
 
+추가 보정:
+
+- size preset getter가 `xs/sm/md/lg/xl`와 `XS/S/M/L/XL` 양쪽 입력을 모두 수용하도록 정규화
+- `computedStyleService`와 Skia/WebGL preset reader 간 size key 계약 불일치 제거
+
 #### 프로젝트 전체 ESLint/TypeScript 정리
 
 TypeScript: **0 에러** (전체 통과)
@@ -929,15 +960,19 @@ ESLint 수정 내역:
 - 분할 시 위험(캔버스 렌더링 핵심 경로, 회귀 범위 넓음) 대비 이익(lint 에러 제거뿐) 불균형
 - 필요 시 별도 ADR로 "Sprite 렌더 데이터 파이프라인 분할" 계획 권장
 
-### 남은 Phase
+### 종료 상태
 
-| Phase   | 완성도 | 다음 작업                                      |
-| ------- | :----: | ---------------------------------------------- |
-| Phase 0 |  70%   | 런타임 성능 수치 수집 (브라우저 측정 필요)     |
-| Phase 1 |  90%   | Workspace.tsx 책임 주석 마무리                 |
-| Phase 3 |   0%   | `InvalidationReason` enum, 무효화 규칙 표 설계 |
-| Phase 7 |  20%   | CanvasScrollbar querySelector 제거             |
-| Phase 8 |  80%   | generated artifact 격리 확인                   |
+| Phase   | 완성도 | 완료 근거                                                     |
+| ------- | :----: | ------------------------------------------------------------- |
+| Phase 0 |  100%  | baseline 문서 수치 확정 + authenticated builder smoke 확보    |
+| Phase 1 |  100%  | Workspace shell 책임 문서화 완료                              |
+| Phase 2 |  100%  | viewport single source of truth 정착                          |
+| Phase 3 |  100%  | invalidation model 구현 + unit test gate                      |
+| Phase 4 |  100%  | Skia frame pipeline 분리                                      |
+| Phase 5 |  100%  | node renderer extract-only 분해                               |
+| Phase 6 |  100%  | cssVariableReader 분리 + size key 정규화                      |
+| Phase 7 |  100%  | panel layout runtime 전환 + unit test gate                    |
+| Phase 8 |  100%  | generated WASM artifact source tree 외부 분리                 |
 
 ---
 
