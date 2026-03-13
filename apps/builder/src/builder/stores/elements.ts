@@ -64,6 +64,7 @@ import {
 
 export interface ElementsState {
   elements: Element[];
+  pageElementsSnapshot: Record<string, Element[]>;
   // 성능 최적화: O(1) 조회를 위한 Map 인덱스
   elementsMap: Map<string, Element>;
   childrenMap: Map<string, Element[]>;
@@ -107,6 +108,10 @@ export interface ElementsState {
   getPageElements: (pageId: string) => Element[];
 
   setElements: (elements: Element[]) => void;
+  hydrateProjectSnapshot: (elements: Element[]) => void;
+  recoverElementsSnapshot: (elements: Element[]) => void;
+  mergeElements: (elements: Element[]) => void;
+  replaceElementId: (oldId: string, newId: string) => void;
   loadPageElements: (elements: Element[], pageId: string) => void;
   addElement: (element: Element) => Promise<void>;
   updateElementProps: (
@@ -135,7 +140,11 @@ export interface ElementsState {
     position: { x: number; y: number },
     options?: { activate?: boolean },
   ) => void;
-  removePageLocal: (pageId: string) => void;
+  removePageLocal: (
+    pageId: string,
+    nextSelection?: { pageId: string | null; elementId: string | null },
+  ) => void;
+  activatePage: (pageId: string, elementId?: string | null) => void;
   setCurrentPageId: (pageId: string) => void;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
@@ -225,8 +234,18 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     const pageIndex = rebuildPageIndex(elements, elementsMap);
     const componentIndex = rebuildComponentIndex(elements);
     const variableUsageIndex = rebuildVariableUsageIndex(elements);
+    const pageElementsSnapshot: Record<string, Element[]> = {};
+
+    for (const [pageId, elementIds] of pageIndex.elementsByPage.entries()) {
+      const pageElements = Array.from(elementIds)
+        .map((id) => elementsMap.get(id))
+        .filter((element): element is Element => Boolean(element))
+        .sort((left, right) => (left.order_num ?? 0) - (right.order_num ?? 0));
+      pageElementsSnapshot[pageId] = pageElements;
+    }
 
     return {
+      pageElementsSnapshot,
       elementsMap,
       childrenMap,
       pageIndex,
@@ -245,6 +264,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   const getPageElements = (pageId: string): Element[] => {
     const { pageIndex, elementsMap } = get();
     return getPageElementsFromIndex(pageIndex, pageId, elementsMap);
+  };
+
+  const applyFullSnapshot = (elements: Element[]) => {
+    const { elements: normalizedElements } = normalizeElementTags(elements);
+    const nextIndexes = buildIndexes(normalizedElements);
+    set((state) => ({
+      elements: normalizedElements,
+      ...nextIndexes,
+      layoutVersion: state.layoutVersion + 1,
+    }));
   };
 
   const clonePageIndex = (pageIndex: PageElementIndex): PageElementIndex => ({
@@ -436,6 +465,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
   return {
     elements: [],
+    pageElementsSnapshot: {},
     elementsMap: new Map(),
     childrenMap: new Map(),
     // 🆕 Phase 2: 페이지 인덱스 초기값
@@ -472,13 +502,101 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // setElements는 내부 상태 관리용이므로 히스토리 기록하지 않음
     // 실제 요소 변경은 addElement, updateElementProps, removeElement에서 처리
     setElements: (elements) => {
+      applyFullSnapshot(elements);
+    },
+
+    hydrateProjectSnapshot: (elements) => {
+      applyFullSnapshot(elements);
+    },
+
+    recoverElementsSnapshot: (elements) => {
+      applyFullSnapshot(elements);
+    },
+
+    mergeElements: (elements) => {
+      if (elements.length === 0) {
+        return;
+      }
+
       const { elements: normalizedElements } = normalizeElementTags(elements);
-      set((state) => ({
-        elements: normalizedElements,
-        layoutVersion: state.layoutVersion + 1,
-      }));
-      // 인덱스 자동 재구축
-      get()._rebuildIndexes();
+      set((state) => {
+        const mergedMap = new Map(state.elementsMap);
+        let changed = false;
+
+        normalizedElements.forEach((element) => {
+          const previous = mergedMap.get(element.id);
+          if (previous !== element) {
+            changed = true;
+          }
+          mergedMap.set(element.id, element);
+        });
+
+        if (!changed) {
+          return state;
+        }
+
+        const mergedElements = Array.from(mergedMap.values());
+        const nextIndexes = buildIndexes(mergedElements);
+
+        return {
+          ...state,
+          elements: mergedElements,
+          ...nextIndexes,
+          layoutVersion: state.layoutVersion + 1,
+        };
+      });
+    },
+
+    replaceElementId: (oldId, newId) => {
+      if (!oldId || !newId || oldId === newId) {
+        return;
+      }
+
+      set((state) => {
+        const targetElement = state.elementsMap.get(oldId);
+        if (!targetElement) {
+          return state;
+        }
+
+        const updatedElements = state.elements.map((element) => {
+          if (element.id === oldId) {
+            return { ...element, id: newId };
+          }
+          if (element.parent_id === oldId) {
+            return { ...element, parent_id: newId };
+          }
+          return element;
+        });
+        const nextIndexes = buildIndexes(updatedElements);
+
+        const nextSelectedElementId =
+          state.selectedElementId === oldId ? newId : state.selectedElementId;
+        const nextSelectedElementIds = state.selectedElementIds.map((id) =>
+          id === oldId ? newId : id,
+        );
+        const nextEditingContextId =
+          state.editingContextId === oldId ? newId : state.editingContextId;
+        const nextSelectedTab =
+          state.selectedTab?.parentId === oldId
+            ? { ...state.selectedTab, parentId: newId }
+            : state.selectedTab;
+
+        return {
+          ...state,
+          elements: updatedElements,
+          ...nextIndexes,
+          selectedElementId: nextSelectedElementId,
+          selectedElementIds: nextSelectedElementIds,
+          selectedElementIdsSet: new Set(nextSelectedElementIds),
+          selectedElementProps:
+            nextSelectedElementId === newId
+              ? createCompleteProps({ ...targetElement, id: newId })
+              : state.selectedElementProps,
+          editingContextId: nextEditingContextId,
+          selectedTab: nextSelectedTab,
+          layoutVersion: state.layoutVersion + 1,
+        };
+      });
     },
 
     // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
@@ -497,14 +615,13 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
       // 페이지 변경 시 히스토리 초기화
       historyManager.setCurrentPage(pageId);
+      const nextIndexes = buildIndexes(migratedElements);
       set((state) => ({
         elements: migratedElements,
         currentPageId: pageId,
+        ...nextIndexes,
         layoutVersion: state.layoutVersion + 1,
       }));
-
-      // 인덱스 자동 재구축
-      get()._rebuildIndexes();
 
       // 정규화/마이그레이션으로 변경된 요소가 있으면 DB에도 저장 (백그라운드)
       const changedElementIds = new Set<string>([
@@ -731,6 +848,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           state.variableUsageIndex,
         );
         indexVariableUsageElement(nextVariableUsageIndex, bodyElement);
+        const nextPageElementsSnapshot = {
+          ...state.pageElementsSnapshot,
+          [page.id]: [bodyElement],
+        };
 
         return {
           pages: nextPages,
@@ -738,6 +859,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           elements: nextElements,
           elementsMap: nextElementsMap,
           childrenMap: nextChildrenMap,
+          pageElementsSnapshot: nextPageElementsSnapshot,
           pageIndex: nextPageIndex,
           componentIndex: nextComponentIndex,
           variableUsageIndex: nextVariableUsageIndex,
@@ -773,7 +895,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       }
     },
 
-    removePageLocal: (pageId) => {
+    removePageLocal: (pageId, nextSelection) => {
       const startTime = performance.now();
       set((state) => {
         const removedElements =
@@ -816,13 +938,20 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
         const nextPagePositions = { ...state.pagePositions };
         delete nextPagePositions[pageId];
+        const nextPageElementsSnapshot = { ...state.pageElementsSnapshot };
+        delete nextPageElementsSnapshot[pageId];
 
-        const nextSelectedElementIds = state.selectedElementIds.filter((id) =>
-          nextElementsMap.has(id),
-        );
-        const nextSelectedElementId =
-          state.selectedElementId &&
-          nextElementsMap.has(state.selectedElementId)
+        const requestedElementId = nextSelection?.elementId ?? null;
+        const requestedPageId = nextSelection?.pageId ?? null;
+        const requestedElementIsValid =
+          requestedElementId !== null && nextElementsMap.has(requestedElementId);
+        const nextSelectedElementIds = requestedElementIsValid
+          ? [requestedElementId]
+          : state.selectedElementIds.filter((id) => nextElementsMap.has(id));
+        const nextSelectedElementId = requestedElementIsValid
+          ? requestedElementId
+          : state.selectedElementId &&
+              nextElementsMap.has(state.selectedElementId)
             ? state.selectedElementId
             : nextSelectedElementIds[0] ?? null;
         const nextEditingContextId =
@@ -830,19 +959,25 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           nextElementsMap.has(state.editingContextId)
             ? state.editingContextId
             : null;
+        const nextCurrentPageId =
+          requestedPageId !== null
+            ? requestedPageId
+            : state.currentPageId === pageId
+              ? null
+              : state.currentPageId;
 
         return {
           pages: nextPages,
           elements: nextElements,
           elementsMap: nextElementsMap,
           childrenMap: nextChildrenMap,
+          pageElementsSnapshot: nextPageElementsSnapshot,
           pageIndex: nextPageIndex,
           componentIndex: nextComponentIndex,
           variableUsageIndex: nextVariableUsageIndex,
           pagePositions: nextPagePositions,
           pagePositionsVersion: state.pagePositionsVersion + 1,
-          currentPageId:
-            state.currentPageId === pageId ? null : state.currentPageId,
+          currentPageId: nextCurrentPageId,
           selectedElementId: nextSelectedElementId,
           selectedElementIds: nextSelectedElementIds,
           selectedElementIdsSet: new Set(nextSelectedElementIds),
@@ -860,6 +995,44 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         console.log("[perf] store.remove-page-local", {
           durationMs: Number(duration.toFixed(1)),
           pageId,
+        });
+      }
+    },
+
+    activatePage: (pageId, elementId = null) => {
+      const startTime = performance.now();
+      historyManager.setCurrentPage(pageId);
+      set((state) => {
+        const targetElement =
+          (elementId ? state.elementsMap.get(elementId) : undefined) ??
+          (state.pageElementsSnapshot[pageId] ?? []).find(
+            (element) => element.order_num === 0,
+          ) ??
+          null;
+        const nextSelectedElementId = targetElement?.id ?? null;
+
+        return {
+          currentPageId: pageId,
+          selectedElementId: nextSelectedElementId,
+          selectedElementIds: nextSelectedElementId ? [nextSelectedElementId] : [],
+          selectedElementIdsSet: nextSelectedElementId
+            ? new Set([nextSelectedElementId])
+            : new Set<string>(),
+          multiSelectMode: false,
+          selectedElementProps: targetElement
+            ? createCompleteProps(targetElement)
+            : {},
+          editingContextId: null,
+          selectedTab: null,
+        };
+      });
+
+      const duration = performance.now() - startTime;
+      if (duration >= 8) {
+        console.log("[perf] store.activate-page", {
+          durationMs: Number(duration.toFixed(1)),
+          pageId,
+          elementId,
         });
       }
     },
@@ -1138,17 +1311,16 @@ const EMPTY_ELEMENTS: Element[] = [];
  * ```
  */
 export const useCurrentPageElements = (): Element[] => {
-  // 개별 구독으로 무한 루프 방지
   const currentPageId = useStore((state) => state.currentPageId);
-  const pageIndex = useStore((state) => state.pageIndex);
-  const elementsMap = useStore((state) => state.elementsMap);
+  const currentPageElements = useStore((state) => {
+    if (!state.currentPageId) return EMPTY_ELEMENTS;
+    return state.pageElementsSnapshot[state.currentPageId] ?? EMPTY_ELEMENTS;
+  });
 
-  // useMemo로 안정적인 참조 유지 (pageIndex/elementsMap/currentPageId가 변경될 때만 재계산)
   return useMemo(() => {
     if (!currentPageId) return EMPTY_ELEMENTS;
-    // 🆕 O(1) 인덱스 기반 조회 (캐시 포함)
-    return getPageElementsFromIndex(pageIndex, currentPageId, elementsMap);
-  }, [pageIndex, elementsMap, currentPageId]);
+    return currentPageElements;
+  }, [currentPageElements, currentPageId]);
 };
 
 /**

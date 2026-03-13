@@ -50,7 +50,7 @@ export const TagGroupEditor = memo(function TagGroupEditor({
   const addElement = useStore((state) => state.addElement);
   const currentPageId = useStore((state) => state.currentPageId);
   const updateElementProps = useStore((state) => state.updateElementProps);
-  const setElements = useStore((state) => state.setElements);
+  const removeElement = useStore((state) => state.removeElement);
   const storeElements = useStore((state) => state.elements);
 
   // Get customId from element in store
@@ -135,10 +135,7 @@ export const TagGroupEditor = memo(function TagGroupEditor({
                   const db = await getDB();
                   await db.elements.delete(currentTag.id);
 
-                  const updatedElements = storeElements.filter(
-                    (el) => el.id !== currentTag.id,
-                  );
-                  setElements(updatedElements);
+                  await removeElement(currentTag.id);
                   setSelectedTag(null);
                 } catch (error) {
                   console.error("Tag 삭제 중 오류:", error);

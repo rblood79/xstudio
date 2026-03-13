@@ -10,7 +10,6 @@ import {
   createInspectorActionsSlice,
   InspectorActionsState,
 } from "./inspectorActions";
-import { getPageElements } from "./utils/elementIndexer";
 import type { SelectedElement } from "../inspector/types";
 
 // ✅ ThemeState removed - now using unified theme store (themeStore.unified.ts)
@@ -245,17 +244,16 @@ const EMPTY_ELEMENTS: Element[] = [];
  * - 무한 루프 방지: useMemo로 getSnapshot 결과 캐싱
  */
 export const useCurrentPageElements = (): Element[] => {
-  // 개별 구독으로 무한 루프 방지
   const currentPageId = useStore((state) => state.currentPageId);
-  const pageIndex = useStore((state) => state.pageIndex);
-  const elementsMap = useStore((state) => state.elementsMap);
+  const currentPageElements = useStore((state) => {
+    if (!state.currentPageId) return EMPTY_ELEMENTS;
+    return state.pageElementsSnapshot[state.currentPageId] ?? EMPTY_ELEMENTS;
+  });
 
-  // useMemo로 안정적인 참조 유지 (pageIndex/elementsMap/currentPageId가 변경될 때만 재계산)
   return useMemo(() => {
     if (!currentPageId) return EMPTY_ELEMENTS;
-    // 🆕 O(1) 인덱스 기반 조회 (캐시 포함)
-    return getPageElements(pageIndex, currentPageId, elementsMap);
-  }, [pageIndex, elementsMap, currentPageId]);
+    return currentPageElements;
+  }, [currentPageElements, currentPageId]);
 };
 
 /**

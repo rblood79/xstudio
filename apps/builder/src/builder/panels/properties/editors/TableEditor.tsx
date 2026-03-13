@@ -46,7 +46,7 @@ export const TableEditor = memo(
     onUpdate,
   }: PropertyEditorProps) {
     const elements = useStore((state) => state.elements);
-    const setElements = useStore((state) => state.setElements);
+    const mergeElements = useStore((state) => state.mergeElements);
 
     // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
     const customId = useMemo(() => {
@@ -186,8 +186,7 @@ export const TableEditor = memo(
         }
 
         // 메모리 상태 업데이트
-        const updatedElements = [...elements, newRowElement, ...cellsToCreate];
-        setElements(updatedElements);
+        mergeElements([newRowElement, ...cellsToCreate]);
 
         console.log("✅ 테이블 행 추가 완료");
       } catch (error) {
@@ -256,8 +255,7 @@ export const TableEditor = memo(
         }
 
         // 메모리 상태 업데이트
-        const updatedElements = [...elements, newGroupElement];
-        setElements(updatedElements);
+        mergeElements([newGroupElement]);
 
         console.log("✅ Column Group 추가 완료");
       } catch (error) {

@@ -70,7 +70,7 @@ export function useCollectionItemManager(
   // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
   const addElement = useStore((state) => state.addElement);
   const updateElementProps = useStore((state) => state.updateElementProps);
-  const setElements = useStore((state) => state.setElements);
+  const removeElement = useStore((state) => state.removeElement);
   const currentPageId = useStore((state) => state.currentPageId);
   const storeElements = useStore((state) => state.elements);
 
@@ -163,8 +163,7 @@ export function useCollectionItemManager(
         }
 
         // Zustand store에서 제거
-        const updatedElements = storeElements.filter((el) => el.id !== itemId);
-        setElements(updatedElements);
+        await removeElement(itemId);
 
         // 선택 상태 해제
         setSelectedItemIndex(null);
@@ -174,7 +173,7 @@ export function useCollectionItemManager(
         console.error(`${childTag} 삭제 중 오류:`, error);
       }
     },
-    [childTag, storeElements, setElements]
+    [childTag, removeElement]
   );
 
   /**

@@ -17,7 +17,7 @@ import ComponentList from "./ComponentList";
 import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";
-import { useElementCreator, useIframeMessenger } from "@/builder/hooks";
+import { useElementCreator } from "@/builder/hooks";
 
 /**
  * ComponentsPanel - Gateway 컴포넌트
@@ -47,7 +47,6 @@ function ComponentsPanelContent() {
   const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
 
   const { handleAddElement: rawHandleAddElement } = useElementCreator();
-  const { sendElementsToIframe } = useIframeMessenger();
 
   // handleAddElement wrapper - 필요한 모든 데이터 자동 전달
   // ⭐ Layout/Slot System: Page 모드와 Layout 모드 분기 처리
@@ -80,7 +79,6 @@ function ComponentsPanelContent() {
         parentId || validSelectedElementId,
         layoutElements,
         addElement,
-        sendElementsToIframe,
         currentLayoutId // layoutId 전달
       );
       return;
@@ -100,9 +98,8 @@ function ComponentsPanelContent() {
       parentId || selectedElementId,
       pageElements,
       addElement,
-      sendElementsToIframe
     );
-  }, [currentPageId, currentLayoutId, editMode, selectedElementId, addElement, rawHandleAddElement, sendElementsToIframe]);
+  }, [currentPageId, currentLayoutId, editMode, selectedElementId, addElement, rawHandleAddElement]);
 
   return (
     <ComponentList

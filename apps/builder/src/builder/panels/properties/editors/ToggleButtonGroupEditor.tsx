@@ -45,7 +45,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
   const addElement = useStore((state) => state.addElement);
   const currentPageId = useStore((state) => state.currentPageId);
   const updateElementProps = useStore((state) => state.updateElementProps);
-  const setElements = useStore((state) => state.setElements);
+  const removeElement = useStore((state) => state.removeElement);
   // 스토어에서 elements를 직접 구독하여 실시간 업데이트
   const storeElements = useStore((state) => state.elements);
 
@@ -131,10 +131,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
                   await db.elements.delete(currentButton.id);
 
                   // 스토어에서도 제거
-                  const updatedElements = storeElements.filter(
-                    (el) => el.id !== currentButton.id,
-                  );
-                  setElements(updatedElements);
+                  await removeElement(currentButton.id);
                   setSelectedButton(null);
                 } catch (error) {
                   console.error("ToggleButton 삭제 중 오류:", error);

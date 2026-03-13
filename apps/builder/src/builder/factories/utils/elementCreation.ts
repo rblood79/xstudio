@@ -73,7 +73,7 @@ export function addElementsToStore(
   const newElements = [...currentElements, parent, ...children];
 
   // 1. 메모리 스토어 업데이트 (UI 즉시 반영)
-  store.setElements(newElements);
+  store.mergeElements([parent, ...children]);
 
   // 2. 히스토리 기록
   const { saveSnapshot } = store as unknown as {
@@ -104,8 +104,5 @@ export function addElementsToStore(
  */
 export function updateElementId(oldId: string, newId: string): void {
   const store = useStore.getState();
-  const updatedElements = store.elements.map((el) =>
-    el.id === oldId ? { ...el, id: newId } : el,
-  );
-  store.setElements(updatedElements);
+  store.replaceElementId(oldId, newId);
 }

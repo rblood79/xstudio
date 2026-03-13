@@ -20,7 +20,6 @@ export interface UseElementCreatorReturn {
     selectedElementId: string | null,
     elements: Element[],
     addElement: (element: Element) => void,
-    sendElementsToIframe: (elements: Element[]) => void,
     layoutId?: string | null, // Layout 모드용 - page_id 대신 layout_id 사용
   ) => Promise<void>;
   getPerformanceStats: () => {
@@ -87,7 +86,6 @@ export const useElementCreator = (): UseElementCreatorReturn => {
       selectedElementId: string | null,
       elements: Element[],
       addElement: (element: Element) => void,
-      sendElementsToIframe: (elements: Element[]) => void,
       layoutId?: string | null, // Layout 모드용
     ) => {
       if (isProcessingRef.current) return;
@@ -140,9 +138,6 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 updatedElements,
                 result.parent.id,
               );
-
-              // iframe에 업데이트된 요소들 전송
-              sendElementsToIframe(updatedElements);
             } else {
               // 단순 컴포넌트 생성 (캐시 활용)
               // parent_id가 없으면 body 요소를 parent로 설정
@@ -212,9 +207,6 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 updatedElements,
                 newElement.id,
               );
-
-              // iframe에 업데이트된 요소들 전송
-              sendElementsToIframe(updatedElements);
             }
           };
 

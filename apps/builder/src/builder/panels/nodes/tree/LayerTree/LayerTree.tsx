@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import type { Key } from "react-stately";
-import { TreeBase } from "../TreeBase";
+import { TreeBase, VirtualizedTree } from "../TreeBase";
 import type { TreeItemState } from "../TreeBase/types";
 import type { LayerTreeNode, LayerTreeProps } from "./types";
 import { useLayerTreeData } from "./useLayerTreeData";
@@ -28,25 +28,11 @@ export function LayerTree({
   onItemDelete,
   onSelectTabElement,
 }: LayerTreeProps) {
-  const { tree, treeNodes, syncToStore } = useLayerTreeData(elements);
+  const { tree, treeNodes, nodeMap, focusNodeMap, disabledKeys, syncToStore } =
+    useLayerTreeData(elements);
   const [internalExpandedKeys, setInternalExpandedKeys] = useState<Set<Key>>(
     new Set()
   );
-
-  // 포커스 관리용 nodeMap 생성
-  const focusNodeMap = useMemo(() => {
-    const map = new Map<string, { parentId: string | null; children?: unknown[] }>();
-    const stack = [...treeNodes];
-    while (stack.length > 0) {
-      const node = stack.shift();
-      if (!node) continue;
-      map.set(node.id, { parentId: node.parentId, children: node.children });
-      if (node.children && node.children.length > 0) {
-        stack.unshift(...node.children);
-      }
-    }
-    return map;
-  }, [treeNodes]);
 
   // 포커스 관리 훅
   const { focusedKey, handleAfterMove } = useFocusManagement({
@@ -54,30 +40,13 @@ export function LayerTree({
     onSelectionChange: (keys) => {
       const key = [...keys][0] as string;
       if (key) {
-        const node = treeNodes.find((n) => n.id === key);
+        const node = nodeMap.get(key);
         if (node && !node.virtualChildType) {
           onItemClick(node.element);
         }
       }
     },
   });
-
-  // VirtualChild 노드들을 disabled로 처리
-  const disabledKeys = useMemo(() => {
-    const keys = new Set<Key>();
-    const stack = [...treeNodes];
-    while (stack.length > 0) {
-      const node = stack.shift();
-      if (!node) continue;
-      if (node.virtualChildType) {
-        keys.add(node.id);
-      }
-      if (node.children && node.children.length > 0) {
-        stack.unshift(...node.children);
-      }
-    }
-    return keys;
-  }, [treeNodes]);
 
   const resolvedExpandedKeys = expandedKeys ?? internalExpandedKeys;
 
@@ -96,23 +65,11 @@ export function LayerTree({
       const key = [...keys][0] as string;
       if (!key) return;
 
-      // treeNodes에서 노드 찾기
-      const findNode = (nodes: LayerTreeNode[]): LayerTreeNode | undefined => {
-        for (const node of nodes) {
-          if (node.id === key) return node;
-          if (node.children) {
-            const found = findNode(node.children);
-            if (found) return found;
-          }
-        }
-        return undefined;
-      };
-
-      const node = findNode(treeNodes);
+      const node = nodeMap.get(key);
       if (!node || node.virtualChildType) return;
       onItemClick(node.element);
     },
-    [treeNodes, onItemClick]
+    [nodeMap, onItemClick]
   );
 
   // DnD 유효성 검사 (클로저로 tree 캡처)
@@ -170,27 +127,42 @@ export function LayerTree({
     [onItemDelete, selectedTab, onSelectTabElement]
   );
 
+  const sharedTreeProps = {
+    "aria-label": "Layers" as const,
+    items: treeNodes,
+    getKey: (node: LayerTreeNode) => node.id,
+    getTextValue: (node: LayerTreeNode) => node.name,
+    renderContent,
+    selectedKeys: selectedElementId
+      ? new Set([selectedElementId])
+      : new Set<Key>(),
+    expandedKeys: resolvedExpandedKeys,
+    disabledKeys,
+    focusedKey,
+    onSelectionChange: handleSelectionChange,
+    onExpandedChange: handleExpandedChange,
+    dnd: {
+      canDrag,
+      isValidDrop: handleIsValidDrop,
+      onMove: handleMove,
+      dragType: "application/x-layer-tree-item",
+    },
+  };
+
+  if (treeNodes.length >= 12) {
+    return (
+      <VirtualizedTree<LayerTreeNode>
+        {...sharedTreeProps}
+        itemHeight={32}
+        overscan={8}
+        className="layer-tree layer-tree--virtualized"
+      />
+    );
+  }
+
   return (
     <TreeBase<LayerTreeNode>
-      aria-label="Layers"
-      items={treeNodes}
-      getKey={(node) => node.id}
-      getTextValue={(node) => node.name}
-      renderContent={renderContent}
-      selectedKeys={
-        selectedElementId ? new Set([selectedElementId]) : new Set()
-      }
-      expandedKeys={resolvedExpandedKeys}
-      disabledKeys={disabledKeys}
-      focusedKey={focusedKey}
-      onSelectionChange={handleSelectionChange}
-      onExpandedChange={handleExpandedChange}
-      dnd={{
-        canDrag,
-        isValidDrop: handleIsValidDrop,
-        onMove: handleMove,
-        dragType: "application/x-layer-tree-item",
-      }}
+      {...sharedTreeProps}
       dropIndicatorClassName="layer-drop-indicator"
     />
   );

@@ -256,18 +256,27 @@ export function createElementLoaderSlice(
         set((s) => {
           const newElementsMap = new Map(s.elementsMap);
           const newElements = [...s.elements];
+          const existingPageSnapshot = s.pageElementsSnapshot[pageId] ?? [];
+          const nextPageSnapshot = [...existingPageSnapshot];
 
           elements!.forEach((el) => {
             // 중복 체크
             if (!newElementsMap.has(el.id)) {
               newElementsMap.set(el.id, el);
               newElements.push(el);
+              nextPageSnapshot.push(el);
             }
           });
 
           return {
             elements: newElements,
             elementsMap: newElementsMap,
+            pageElementsSnapshot: {
+              ...s.pageElementsSnapshot,
+              [pageId]: nextPageSnapshot.sort(
+                (left, right) => (left.order_num ?? 0) - (right.order_num ?? 0),
+              ),
+            },
           };
         });
 
@@ -340,6 +349,11 @@ export function createElementLoaderSlice(
       return {
         elements: newElements,
         elementsMap: newElementsMap,
+        pageElementsSnapshot: Object.fromEntries(
+          Object.entries(s.pageElementsSnapshot).filter(
+            ([cachedPageId]) => cachedPageId !== pageId,
+          ),
+        ),
         loadedPages: new Set([...s.loadedPages].filter((id) => id !== pageId)),
       };
     });

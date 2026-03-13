@@ -43,18 +43,39 @@ export function useLayerTreeData(elements: Element[]) {
   }, [elementTree, elements]);
 
   // nodeMap: treeNodes 기반 O(1) 조회용 맵
-  const nodeMap = useMemo(() => {
-    const map = new Map<string, LayerTreeNode>();
+  const { nodeMap, focusNodeMap, disabledKeys } = useMemo(() => {
+    const nodes = new Map<string, LayerTreeNode>();
+    const focusNodes = new Map<
+      string,
+      { parentId: string | null; children?: unknown[] }
+    >();
+    const disabled = new Set<string>();
     const stack = [...treeNodes];
+
     while (stack.length > 0) {
       const node = stack.shift();
       if (!node) continue;
-      map.set(node.id, node);
+
+      nodes.set(node.id, node);
+      focusNodes.set(node.id, {
+        parentId: node.parentId,
+        children: node.children,
+      });
+
+      if (node.virtualChildType) {
+        disabled.add(node.id);
+      }
+
       if (node.children && node.children.length > 0) {
         stack.unshift(...node.children);
       }
     }
-    return map;
+
+    return {
+      nodeMap: nodes,
+      focusNodeMap: focusNodes,
+      disabledKeys: disabled,
+    };
   }, [treeNodes]);
 
   // useTreeData 대신 직접 tree 객체 생성
@@ -83,7 +104,7 @@ export function useLayerTreeData(elements: Element[]) {
     [batchUpdateElements]
   );
 
-  return { tree, treeNodes, syncToStore };
+  return { tree, treeNodes, nodeMap, focusNodeMap, disabledKeys, syncToStore };
 }
 
 

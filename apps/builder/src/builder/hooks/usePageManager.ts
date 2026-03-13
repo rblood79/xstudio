@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { startTransition, useState, useRef, useCallback } from 'react';
 import { useListData } from 'react-stately';
 import { Element } from '../../types/core/store.types';
 import { type Page as ApiPage } from '../../services/api/PagesApiService';
@@ -99,9 +99,11 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     const pendingActivationPageIdRef = useRef<string | null>(null);
 
     const pages = useStore((state) => state.pages);
+    const activatePage = useStore((state) => state.activatePage);
     const setCurrentPageId = useStore((state) => state.setCurrentPageId);
     const setPages = useStore((state) => state.setPages);
-    const setElements = useStore((state) => state.setElements);
+    const hydrateProjectSnapshot = useStore((state) => state.hydrateProjectSnapshot);
+    const mergeElements = useStore((state) => state.mergeElements);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
     const appendPageShell = useStore((state) => state.appendPageShell);
     const setLazyLoadingEnabled = useStore((state) => state.setLazyLoadingEnabled);
@@ -126,7 +128,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         pendingActivationPageIdRef.current = null;
     }, []);
 
-    const schedulePageActivation = useCallback((pageId: string) => {
+    const schedulePageActivation = useCallback((pageId: string, elementId?: string | null) => {
         cancelPendingActivation();
         pendingActivationPageIdRef.current = pageId;
 
@@ -139,12 +141,14 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             }
 
             pendingActivationPageIdRef.current = null;
-            setCurrentPageId(pageId);
+            startTransition(() => {
+                activatePage(pageId, elementId);
+            });
             logPerf('pages.add.activate-next-frame', activateStart, {
                 currentPageId: pageId,
             });
         });
-    }, [cancelPendingActivation, setCurrentPageId]);
+    }, [activatePage, cancelPendingActivation]);
 
     const runWithPageCreationLock = useCallback(
         async <T>(createPage: () => Promise<ApiResult<T>>): Promise<ApiResult<T>> => {
@@ -230,7 +234,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 mergedElements = Array.from(mergedMap.values());
                 loadedPageElements = elementsData;
 
-                setElements(mergedElements);
+                mergeElements(allElements);
             }
 
             // 페이지 선택 상태 업데이트 (setCurrentPageId는 호출자에서 처리)
@@ -256,7 +260,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         }
         // setCurrentPageId is stable function from store
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [requestAutoSelectAfterUpdate]);
+    }, [mergeElements, requestAutoSelectAfterUpdate]);
 
     /**
      * addPage - 새 페이지 추가
@@ -331,7 +335,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                     pageCountAfter: useStore.getState().pages.length,
                 });
 
-                schedulePageActivation(newPage.id);
+                schedulePageActivation(newPage.id, bodyElement.id);
                 enqueuePagePersistence(async () => {
                     const persistenceDb = await getDB();
                     if (persistenceDb.pages.insertWithBody) {
@@ -420,7 +424,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                     appendPageShell(newPage, bodyElement, nextPosition, {
                         activate: false,
                     });
-                    schedulePageActivation(newPage.id);
+                    schedulePageActivation(newPage.id, bodyElement.id);
                     enqueuePagePersistence(async () => {
                         const persistenceDb = await getDB();
                         if (persistenceDb.pages.insertWithBody) {
@@ -544,7 +548,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             layoutElements.forEach((el) => mergedMap.set(el.id, el));
             const mergedElements = Array.from(mergedMap.values());
 
-            setElements(mergedElements);
+            hydrateProjectSnapshot(mergedElements);
 
             // 4. order_num이 0인 페이지(Home)를 우선 선택, 없으면 첫 번째 페이지 선택
             if (apiPages.length > 0) {
@@ -574,7 +578,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         }
         // pageList, setCurrentPageId, setPages, initializePagePositions are stable
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fetchElements, setElements, setLazyLoadingEnabled, setSelectedElement, initializePagePositions]);
+    }, [fetchElements, hydrateProjectSnapshot, setLazyLoadingEnabled, setSelectedElement, initializePagePositions]);
 
     /**
      * loadPageIfNeeded - 페이지가 로드되지 않았으면 로드

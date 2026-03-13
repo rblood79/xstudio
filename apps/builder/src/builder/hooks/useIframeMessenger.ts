@@ -94,6 +94,8 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
     const lastAckTimestampRef = useRef<number>(0); // ✅ 마지막 ACK 시점
     const isSendingRef = useRef(false); // ✅ 전송 중 플래그
     const lastSentElementsRef = useRef<Element[] | null>(null); // ✅ 마지막 전송된 elements (중복 전송 방지)
+    const previewGeneratedElementsRef = useRef<Map<string, Element>>(new Map());
+    const previewGeneratedElementsFlushIdRef = useRef<number | null>(null);
 
     // 🚀 최적화: elements 구독 제거 - iframe 동기화는 BuilderCore에서 store.subscribe로 처리
     // const elements = useStore((state) => state.elements);  // REMOVED
@@ -124,6 +126,46 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
     // iframe이 준비되었는지 계산된 값
     const isIframeReady = iframeReadyState === 'ready';
 
+    const flushPreviewGeneratedElements = useCallback(() => {
+        previewGeneratedElementsFlushIdRef.current = null;
+
+        const queuedElements = Array.from(previewGeneratedElementsRef.current.values());
+        previewGeneratedElementsRef.current.clear();
+
+        if (queuedElements.length === 0) {
+            return;
+        }
+
+        const { mergeElements } = useStore.getState();
+        mergeElements(queuedElements);
+
+        void (async () => {
+            try {
+                await elementsApi.createMultipleElements(queuedElements);
+            } catch (error) {
+                console.error("❌ Preview generated elements DB 저장 실패:", error);
+            }
+        })();
+    }, []);
+
+    const enqueuePreviewGeneratedElements = useCallback((elements: Element[]) => {
+        if (elements.length === 0) {
+            return;
+        }
+
+        for (const element of elements) {
+            previewGeneratedElementsRef.current.set(element.id, element);
+        }
+
+        if (previewGeneratedElementsFlushIdRef.current !== null) {
+            return;
+        }
+
+        previewGeneratedElementsFlushIdRef.current = scheduleNextFrame(() => {
+            flushPreviewGeneratedElements();
+        });
+    }, [flushPreviewGeneratedElements]);
+
     // 요소들을 iframe에 전송 (상태에 따라 큐잉)
     // ⭐ Layout/Slot System: pageInfo도 함께 전송 (초기 로드 시 Layout 렌더링용)
     const sendElementsToIframe = useCallback((elementsToSend: Element[]) => {
@@ -137,6 +179,10 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
         const layoutStoreLayoutId = useLayoutsStore.getState().currentLayoutId;
         const { currentPageId, pages } = useStore.getState();
         const currentPage = pages.find((p) => p.id === currentPageId);
+        const scopedElements =
+            currentEditMode === 'layout' || !currentPageId
+                ? elementsToSend
+                : elementsToSend.filter((element) => element.page_id === currentPageId);
 
         // Layout 편집 모드: pageId=null, layoutId=currentLayoutId
         // Page 모드: pageId=currentPageId, layoutId=page.layout_id (Page에 적용된 Layout)
@@ -148,12 +194,12 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
         if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
             messageQueueRef.current.push({
                 type: "UPDATE_ELEMENTS",
-                payload: { elements: elementsToSend, pageInfo }
+                payload: { elements: scopedElements, pageInfo }
             });
             return;
         }
 
-        const message = { type: "UPDATE_ELEMENTS", elements: elementsToSend, pageInfo };
+        const message = { type: "UPDATE_ELEMENTS", elements: scopedElements, pageInfo };
         iframe.contentWindow.postMessage(message, window.location.origin);
     }, []); // ✅ 의존성 제거 (Ref 사용)
 
@@ -531,11 +577,11 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
 
         // Preview에서 Column Elements 일괄 추가 요청
         if (event.data.type === "ADD_COLUMN_ELEMENTS" && event.data.payload?.columns) {
-            const { elements } = useStore.getState();
+            const { elementsMap } = useStore.getState();
             const newColumns = event.data.payload.columns;
 
             // 🚀 Phase 3: O(n²) → Set 기반 O(n+m) 조회
-            const existingIds = new Set(elements.map(el => el.id));
+            const existingIds = new Set(elementsMap.keys());
             const columnsToAdd = newColumns.filter((col: Element) =>
                 !existingIds.has(col.id)
             );
@@ -544,30 +590,17 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
                 return;
             }
 
-            // 1. Store에 일괄 추가
-            useStore.setState(state => ({
-                elements: [...state.elements, ...columnsToAdd]
-            }));
-
-            // 2. DB에도 저장
-            (async () => {
-                try {
-                    await elementsApi.createMultipleElements(columnsToAdd);
-                } catch (error) {
-                    console.error("❌ Column Elements DB 저장 실패:", error);
-                }
-            })();
-
+            enqueuePreviewGeneratedElements(columnsToAdd);
             return;
         }
 
         // Preview에서 Field Elements 일괄 추가 요청 (ListBox column detection)
         if (event.data.type === "ADD_FIELD_ELEMENTS" && event.data.payload?.fields) {
-            const { elements } = useStore.getState();
+            const { elementsMap } = useStore.getState();
             const newFields = event.data.payload.fields;
 
             // 🚀 Phase 3: O(n²) → Set 기반 O(n+m) 조회
-            const existingIds = new Set(elements.map(el => el.id));
+            const existingIds = new Set(elementsMap.keys());
             const fieldsToAdd = newFields.filter((field: Element) =>
                 !existingIds.has(field.id)
             );
@@ -576,27 +609,25 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
                 return;
             }
 
-            // 1. Store에 일괄 추가
-            useStore.setState(state => ({
-                elements: [...state.elements, ...fieldsToAdd]
-            }));
-
-            // 2. DB에도 저장
-            (async () => {
-                try {
-                    await elementsApi.createMultipleElements(fieldsToAdd);
-                } catch (error) {
-                    console.error("❌ Field Elements DB 저장 실패:", error);
-                }
-            })();
-
+            enqueuePreviewGeneratedElements(fieldsToAdd);
             return;
         }
 
         if (event.data.type === "UPDATE_ELEMENTS" && event.data.elements) {
-            const { setElements } = useStore.getState();
-            // 히스토리 기록을 방지하기 위해 skipHistory 옵션 사용
-            setElements(event.data.elements as Element[]);
+            const isRecoverySync =
+                event.data.source === "preview-recovery" ||
+                event.data.syncMode === "recovery" ||
+                event.data.reason === "hard-resync";
+
+            if (!isRecoverySync) {
+                console.warn(
+                    "[ADR-040] Ignored interactive UPDATE_ELEMENTS from preview; recovery sync only",
+                );
+                return;
+            }
+
+            const { recoverElementsSnapshot } = useStore.getState();
+            recoverElementsSnapshot(event.data.elements as Element[]);
         }
 
         if (event.data.type === "UPDATE_THEME_TOKENS") {
@@ -730,7 +761,13 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
         if (event.data.type === "element-hover" && event.data.elementId) {
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [bootstrapNonce, setSelectedElement, elementsMap, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe, sendApiEndpointsToIframe, sendVariablesToIframe]);
+    }, [bootstrapNonce, enqueuePreviewGeneratedElements, flushPreviewGeneratedElements, setSelectedElement, elementsMap, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe, sendApiEndpointsToIframe, sendVariablesToIframe]);
+
+    useEffect(() => {
+        return () => {
+            cancelScheduledFrame(previewGeneratedElementsFlushIdRef.current);
+        };
+    }, []);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;

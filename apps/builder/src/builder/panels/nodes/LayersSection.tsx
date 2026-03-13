@@ -4,7 +4,15 @@
  * NodesPanel에서 분리하여 elements 변경 시에만 리렌더링되도록 최적화
  */
 
-import React, { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
 import { Minimize } from "lucide-react";
@@ -13,6 +21,10 @@ import { PanelHeader } from "../../components";
 import { LayerTree } from "./tree/LayerTree";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { resolveEditingContextForTreeSelection } from "../../utils/hierarchicalSelection";
+import {
+  scheduleCancelableBackgroundTask,
+  scheduleNextFrame,
+} from "../../utils/scheduleTask";
 
 interface LayersSectionProps {
   currentPageId: string;
@@ -23,8 +35,31 @@ export const LayersSection = memo(function LayersSection({
 }: LayersSectionProps) {
   const renderStartRef = useRef(performance.now());
   renderStartRef.current = performance.now();
-  void currentPageId;
+  const [isTreeVisible, setIsTreeVisible] = useState(true);
   const currentPageElements = useCurrentPageElements();
+  const currentPageElementsMap = useMemo(
+    () => new Map(currentPageElements.map((element) => [element.id, element])),
+    [currentPageElements],
+  );
+
+  useEffect(() => {
+    setIsTreeVisible(false);
+    let cancelBackgroundTask: (() => void) | undefined;
+    const taskId = scheduleNextFrame(() => {
+      cancelBackgroundTask = scheduleCancelableBackgroundTask(() => {
+        setIsTreeVisible(true);
+      });
+    });
+
+    return () => {
+      cancelBackgroundTask?.();
+      if (typeof cancelAnimationFrame !== "undefined") {
+        cancelAnimationFrame(taskId);
+      } else {
+        clearTimeout(taskId);
+      }
+    };
+  }, [currentPageId]);
 
   // 🚀 selectedElementId만 구독 - pages 변경 시 리렌더링 안됨
   const selectedElementId = useStore((state) => state.selectedElementId);
@@ -40,9 +75,7 @@ export const LayersSection = memo(function LayersSection({
   const autoExpandedParents = useMemo(() => {
     if (!selectedElementId) return new Set<Key>();
 
-    const selectedElement = currentPageElements.find(
-      (el) => el.id === selectedElementId
-    );
+    const selectedElement = currentPageElementsMap.get(selectedElementId);
     if (!selectedElement) return new Set<Key>();
 
     const parents = new Set<Key>();
@@ -50,13 +83,11 @@ export const LayersSection = memo(function LayersSection({
 
     while (currentParentId) {
       parents.add(currentParentId);
-      const parentElement = currentPageElements.find(
-        (el) => el.id === currentParentId
-      );
+      const parentElement = currentPageElementsMap.get(currentParentId);
       currentParentId = parentElement?.parent_id ?? null;
     }
     return parents;
-  }, [selectedElementId, currentPageElements]);
+  }, [selectedElementId, currentPageElementsMap]);
 
   // 🚀 최종 expandedKeys = (사용자 조작 + 자동 펼침) - 사용자가 닫은 키
   const expandedKeys = useMemo(() => {
@@ -163,14 +194,22 @@ export const LayersSection = memo(function LayersSection({
         }
       />
       <div className="section-content">
-        <LayerTree
-          elements={currentPageElements}
-          selectedElementId={selectedElementId}
-          expandedKeys={expandedKeys}
-          onExpandedChange={handleExpandedChange}
-          onItemClick={handleItemClick}
-          onItemDelete={handleItemDelete}
-        />
+        {isTreeVisible ? (
+          <LayerTree
+            elements={currentPageElements}
+            selectedElementId={selectedElementId}
+            expandedKeys={expandedKeys}
+            onExpandedChange={handleExpandedChange}
+            onItemClick={handleItemClick}
+            onItemDelete={handleItemDelete}
+          />
+        ) : (
+          <div
+            className="layer-tree-placeholder"
+            aria-hidden="true"
+            style={{ minHeight: 32 }}
+          />
+        )}
       </div>
     </div>
   );

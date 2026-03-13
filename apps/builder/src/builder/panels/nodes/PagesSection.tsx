@@ -4,7 +4,7 @@
  * NodesPanel에서 분리하여 pages 변경 시에만 리렌더링되도록 최적화
  */
 
-import React, { memo, useCallback, useState } from "react";
+import React, { memo, startTransition, useCallback, useState } from "react";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
 import { CirclePlus } from "lucide-react";
@@ -13,11 +13,11 @@ import { useStore } from "../../stores";
 import { useIframeMessenger, usePageManager } from "@/builder/hooks";
 import { PanelHeader } from "../../components";
 import { PageTree } from "./tree/PageTree";
-import { pagesApi } from "../../../services/api/PagesApiService";
 import { getDB } from "../../../lib/db";
 import type { Page } from "../../../types/builder/unified.types";
 import { panToPage } from "../../workspace/canvas/viewport/panToPage";
 import { enqueuePagePersistence } from "../../utils/pagePersistenceQueue";
+import { scheduleNextFrame } from "../../utils/scheduleTask";
 import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 
 interface PagesSectionProps {
@@ -40,8 +40,7 @@ export const PagesSection = memo(function PagesSection({
   // 🚀 Pages만 구독 - elements 변경 시 리렌더링 안됨
   const pages = useStore((state) => state.pages);
   const currentPageId = useStore((state) => state.currentPageId);
-  const setCurrentPageId = useStore((state) => state.setCurrentPageId);
-  const setSelectedElement = useStore((state) => state.setSelectedElement);
+  const activatePage = useStore((state) => state.activatePage);
   const removePageLocal = useStore((state) => state.removePageLocal);
 
   // Hooks
@@ -71,16 +70,22 @@ export const PagesSection = memo(function PagesSection({
 
   // 페이지 선택 핸들러
   const handlePageSelect = useCallback(
-    (page: Page, options?: { pan?: boolean }) => {
+    async (page: Page, options?: { pan?: boolean }) => {
       if (options?.pan !== false) {
         panToPage(page.id);
       }
       if (currentPageId !== page.id) {
-        setCurrentPageId(page.id);
+        await loadPageIfNeeded(page.id);
+        const pageBodyElement =
+          (useStore.getState().pageElementsSnapshot[page.id] ?? []).find(
+            (element) => element.order_num === 0,
+          ) ?? null;
+        startTransition(() => {
+          activatePage(page.id, pageBodyElement?.id ?? null);
+        });
       }
-      loadPageIfNeeded(page.id);
     },
-    [currentPageId, loadPageIfNeeded, setCurrentPageId]
+    [activatePage, currentPageId, loadPageIfNeeded]
   );
 
   // 페이지 삭제 핸들러
@@ -115,8 +120,38 @@ export const PagesSection = memo(function PagesSection({
         `🗑️ Page "${page.title}" 삭제 시작: ${elementIds.length}개 요소 포함`
       );
 
-      // 1. UI는 즉시 반영
-      removePageLocal(page.id);
+      if (deletingCurrentPage && pageToSelect) {
+        await loadPageIfNeeded(pageToSelect.id);
+      }
+
+      const loadedNextBodyElement =
+        pageToSelect
+          ? (useStore.getState().pageElementsSnapshot[pageToSelect.id] ?? []).find(
+              (element) => element.order_num === 0,
+            ) ?? nextBodyElement
+          : null;
+
+      // 1. UI는 즉시 반영하되, 현재 페이지 삭제 시 fallback activation은 다음 프레임으로 분리
+      startTransition(() => {
+        removePageLocal(
+          page.id,
+          deletingCurrentPage && pageToSelect
+            ? {
+                pageId: pageToSelect.id,
+                elementId: null,
+              }
+            : undefined,
+        );
+      });
+
+      if (deletingCurrentPage && pageToSelect) {
+        scheduleNextFrame(() => {
+          startTransition(() => {
+            activatePage(pageToSelect.id, loadedNextBodyElement?.id ?? null);
+          });
+        });
+      }
+
       logPerf("pages.delete-remove-local", startTime, {
         deletingCurrentPage,
         pageCountBefore: pages.length,
@@ -125,18 +160,7 @@ export const PagesSection = memo(function PagesSection({
 
       console.log("✅ 페이지 삭제 완료:", page.title);
 
-      // 2. 남은 페이지가 있으면 자동으로 선택
-      if (deletingCurrentPage && remainingPages.length > 0) {
-        if (pageToSelect) {
-          setCurrentPageId(pageToSelect.id);
-          if (nextBodyElement) {
-            setSelectedElement(nextBodyElement.id);
-          }
-          void loadPageIfNeeded(pageToSelect.id);
-        }
-      }
-
-      // 3. 영속화는 백그라운드에서 직렬 처리
+      // 2. 영속화는 백그라운드에서 직렬 처리
       enqueuePagePersistence(async () => {
         try {
           const db = await getDB();
@@ -149,9 +173,6 @@ export const PagesSection = memo(function PagesSection({
             await db.pages.delete(page.id);
           }
           console.log(`✅ [IndexedDB] Page "${page.title}" 삭제 완료`);
-
-          await pagesApi.deletePage(page.id);
-          console.log(`✅ [Supabase] Page "${page.title}" 삭제 완료`);
         } catch (error) {
           console.error("페이지 삭제 에러:", error);
         }
@@ -162,7 +183,7 @@ export const PagesSection = memo(function PagesSection({
         remainingPages: remainingPages.length,
       });
     },
-    [loadPageIfNeeded, pages, removePageLocal, setCurrentPageId, setSelectedElement]
+    [activatePage, loadPageIfNeeded, pages, removePageLocal]
   );
 
   return (

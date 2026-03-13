@@ -86,7 +86,7 @@ export function LayoutsTab({
   // Elements store - Layout에 속한 요소들
   const allElements = useStore((state) => state.elements);
   const removeElement = useStore((state) => state.removeElement);
-  const setElements = useStore((state) => state.setElements);
+  const mergeElements = useStore((state) => state.mergeElements);
 
   // 🚀 Phase 11: WebGL-only 모드 체크
   const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
@@ -413,12 +413,7 @@ export function LayoutsTab({
         );
 
         // 기존 요소들 중 해당 레이아웃 요소가 아닌 것들 유지 + 새 레이아웃 요소 추가
-        const currentElements = useStore.getState().elements;
-        const otherElements = currentElements.filter(
-          (el) => el.layout_id !== layout.id
-        );
-        const mergedElements = [...otherElements, ...layoutElements];
-        setElements(mergedElements);
+        mergeElements(layoutElements);
 
         // 로드 완료 표시 (useEffect에서 중복 로드 방지)
         loadedLayoutIdsRef.current.add(layout.id);
@@ -434,7 +429,7 @@ export function LayoutsTab({
         setEditModeLayoutId(layout.id);
       }
     },
-    [setCurrentLayoutInStore, setEditModeLayoutId, currentLayoutId, setElements]
+    [setCurrentLayoutInStore, setEditModeLayoutId, currentLayoutId, mergeElements]
   );
 
   // Layout 삭제 핸들러

@@ -112,8 +112,8 @@ export const createCreateLayoutAction =
       await db.elements.insert(bodyElement);
 
       // ⭐ Layout/Slot System: body 요소를 elements 스토어에도 추가
-      const { elements, setElements } = useStore.getState();
-      setElements([...elements, bodyElement]);
+      const { mergeElements } = useStore.getState();
+      mergeElements([bodyElement]);
 
       // 메모리 상태 업데이트
       const { layouts } = get();
@@ -204,9 +204,8 @@ export const createDeleteLayoutAction =
         );
 
         // 메모리 상태의 elements도 업데이트
-        const { elements, setElements } = useStore.getState();
-        const filteredElements = elements.filter((el) => el.layout_id !== id);
-        setElements(filteredElements);
+        const { removeElements } = useStore.getState();
+        await removeElements(layoutElements.map((el) => el.id));
       }
 
       // 3. Layout 삭제

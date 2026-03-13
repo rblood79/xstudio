@@ -46,7 +46,7 @@ export const RadioGroupEditor = memo(
     const addElement = useStore((state) => state.addElement);
     const currentPageId = useStore((state) => state.currentPageId);
     const updateElementProps = useStore((state) => state.updateElementProps);
-    const setElements = useStore((state) => state.setElements);
+    const removeElement = useStore((state) => state.removeElement);
     const storeElements = useStore((state) => state.elements);
 
     // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
@@ -225,16 +225,13 @@ export const RadioGroupEditor = memo(
             return;
           }
 
-          const updatedElements = storeElements.filter(
-            (el) => el.id !== radioId,
-          );
-          setElements(updatedElements);
+          await removeElement(radioId);
           setSelectedRadio(null);
         } catch (error) {
           console.error("Radio 삭제 중 오류:", error);
         }
       },
-      [storeElements, setElements],
+      [removeElement],
     );
 
     // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지

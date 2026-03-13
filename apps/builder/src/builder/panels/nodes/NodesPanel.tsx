@@ -5,7 +5,15 @@
  * 🚀 Performance: PagesSection/LayersSection 분리로 리렌더링 범위 최소화
  */
 
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
 import "./NodesPanel.css";
@@ -17,6 +25,10 @@ import { LayoutsTab } from "./LayoutsTab/LayoutsTab";
 // 🚀 Performance: 분리된 섹션 컴포넌트
 import { PagesSection } from "./PagesSection";
 import { LayersSection } from "./LayersSection";
+import {
+  scheduleCancelableBackgroundTask,
+  scheduleNextFrame,
+} from "../../utils/scheduleTask";
 
 export function NodesPanel({ isActive }: PanelProps) {
   const renderStartRef = useRef(performance.now());
@@ -25,17 +37,14 @@ export function NodesPanel({ isActive }: PanelProps) {
   // URL params
   const { projectId } = useParams<{ projectId: string }>();
 
-  // 🚀 Performance: 최소한의 상태만 구독
   const currentPageId = useStore((state) => state.currentPageId);
   const pageCount = useStore((state) => state.pages.length);
-  const selectedElementId = useStore((state) => state.selectedElementId);
-  const setSelectedElement = useStore((state) => state.setSelectedElement);
 
   // Edit Mode state
   const editMode = useEditModeStore((state) => state.mode);
 
   // Hooks
-  const { requestAutoSelectAfterUpdate, sendElementSelectedMessage } = useIframeMessenger();
+  const { requestAutoSelectAfterUpdate } = useIframeMessenger();
   const { initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
 
   // 프로젝트 초기화 - pages가 비어있으면 초기화
@@ -100,22 +109,79 @@ export function NodesPanel({ isActive }: PanelProps) {
 
       <div className="nodes-panel-content">
         {activeTab === "pages" ? (
-          // Pages 탭 콘텐츠 - PagesSection/LayersSection 분리로 독립 리렌더링
-          <>
-            <PagesSection projectId={projectId} />
-            {currentPageId && <LayersSection currentPageId={currentPageId} />}
-          </>
+          <PagesTabContent projectId={projectId} />
         ) : (
-          // Layouts 탭 콘텐츠
-          <LayoutsTab
-            selectedElementId={selectedElementId}
-            setSelectedElement={setSelectedElement}
-            sendElementSelectedMessage={sendElementSelectedMessage}
-            requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
+          <LayoutsTabContent
             projectId={projectId}
+            requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
           />
         )}
       </div>
     </div>
   );
 }
+
+const PagesTabContent = memo(function PagesTabContent({
+  projectId,
+}: {
+  projectId: string | undefined;
+}) {
+  const currentPageId = useStore((state) => state.currentPageId);
+  const deferredCurrentPageId = useDeferredValue(currentPageId);
+  const [visibleLayerPageId, setVisibleLayerPageId] = useState<string | null>(
+    deferredCurrentPageId,
+  );
+
+  useEffect(() => {
+    if (!deferredCurrentPageId) {
+      return;
+    }
+
+    let cancelBackgroundTask: (() => void) | undefined;
+    const taskId = scheduleNextFrame(() => {
+      cancelBackgroundTask = scheduleCancelableBackgroundTask(() => {
+        setVisibleLayerPageId(deferredCurrentPageId);
+      });
+    });
+
+    return () => {
+      cancelBackgroundTask?.();
+      if (typeof cancelAnimationFrame !== "undefined") {
+        cancelAnimationFrame(taskId);
+      } else {
+        clearTimeout(taskId);
+      }
+    };
+  }, [deferredCurrentPageId]);
+
+  return (
+    <>
+      <PagesSection projectId={projectId} />
+      {visibleLayerPageId && (
+        <LayersSection currentPageId={visibleLayerPageId} />
+      )}
+    </>
+  );
+});
+
+const LayoutsTabContent = memo(function LayoutsTabContent({
+  projectId,
+  requestAutoSelectAfterUpdate,
+}: {
+  projectId: string | undefined;
+  requestAutoSelectAfterUpdate?: (elementId: string) => void;
+}) {
+  const selectedElementId = useStore((state) => state.selectedElementId);
+  const setSelectedElement = useStore((state) => state.setSelectedElement);
+  const { sendElementSelectedMessage } = useIframeMessenger();
+
+  return (
+    <LayoutsTab
+      selectedElementId={selectedElementId}
+      setSelectedElement={setSelectedElement}
+      sendElementSelectedMessage={sendElementSelectedMessage}
+      requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
+      projectId={projectId}
+    />
+  );
+});

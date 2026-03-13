@@ -44,7 +44,7 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({
   const addElement = useStore((state) => state.addElement);
   const currentPageId = useStore((state) => state.currentPageId);
   const updateElementProps = useStore((state) => state.updateElementProps);
-  const setElements = useStore((state) => state.setElements);
+  const removeElement = useStore((state) => state.removeElement);
   const storeElements = useStore((state) => state.elements);
 
   // Get customId from element in store
@@ -196,10 +196,7 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({
                   }
 
                   // 스토어에서도 제거
-                  const updatedElements = storeElements.filter(
-                    (el) => el.id !== currentCheckbox.id,
-                  );
-                  setElements(updatedElements);
+                  await removeElement(currentCheckbox.id);
                   setSelectedCheckbox(null);
                 } catch (error) {
                   console.error("Checkbox 삭제 중 오류:", error);
