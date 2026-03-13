@@ -4,7 +4,13 @@
  * NodesPanel에서 분리하여 pages 변경 시에만 리렌더링되도록 최적화
  */
 
-import React, { memo, startTransition, useCallback, useState } from "react";
+import React, {
+  memo,
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useState,
+} from "react";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
 import { CirclePlus } from "lucide-react";
@@ -17,7 +23,10 @@ import { getDB } from "../../../lib/db";
 import type { Page } from "../../../types/builder/unified.types";
 import { panToPage } from "../../workspace/canvas/viewport/panToPage";
 import { enqueuePagePersistence } from "../../utils/pagePersistenceQueue";
-import { scheduleNextFrame } from "../../utils/scheduleTask";
+import {
+  scheduleBackgroundTask,
+  scheduleNextFrame,
+} from "../../utils/scheduleTask";
 import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 
 interface PagesSectionProps {
@@ -40,6 +49,7 @@ export const PagesSection = memo(function PagesSection({
   // 🚀 Pages만 구독 - elements 변경 시 리렌더링 안됨
   const pages = useStore((state) => state.pages);
   const currentPageId = useStore((state) => state.currentPageId);
+  const deferredSelectedPageId = useDeferredValue(currentPageId);
   const activatePage = useStore((state) => state.activatePage);
   const removePageLocal = useStore((state) => state.removePageLocal);
 
@@ -50,6 +60,7 @@ export const PagesSection = memo(function PagesSection({
   });
 
   const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());
+  const [isFallbackTransitioning, setIsFallbackTransitioning] = useState(false);
 
   // 페이지 추가 핸들러
   const handleAddPage = useCallback(async () => {
@@ -120,10 +131,6 @@ export const PagesSection = memo(function PagesSection({
         `🗑️ Page "${page.title}" 삭제 시작: ${elementIds.length}개 요소 포함`
       );
 
-      if (deletingCurrentPage && pageToSelect) {
-        await loadPageIfNeeded(pageToSelect.id);
-      }
-
       const loadedNextBodyElement =
         pageToSelect
           ? (useStore.getState().pageElementsSnapshot[pageToSelect.id] ?? []).find(
@@ -132,6 +139,10 @@ export const PagesSection = memo(function PagesSection({
           : null;
 
       // 1. UI는 즉시 반영하되, 현재 페이지 삭제 시 fallback activation은 다음 프레임으로 분리
+      if (deletingCurrentPage && pageToSelect) {
+        setIsFallbackTransitioning(true);
+      }
+
       startTransition(() => {
         removePageLocal(
           page.id,
@@ -145,11 +156,63 @@ export const PagesSection = memo(function PagesSection({
       });
 
       if (deletingCurrentPage && pageToSelect) {
+        const fallbackScheduleStart = performance.now();
         scheduleNextFrame(() => {
+          logPerf("pages.delete-fallback.schedule", fallbackScheduleStart, {
+            pageId: pageToSelect.id,
+            hadBodyElement: !!loadedNextBodyElement,
+          });
+
+          const fallbackActivateStart = performance.now();
           startTransition(() => {
             activatePage(pageToSelect.id, loadedNextBodyElement?.id ?? null);
           });
+          logPerf("pages.delete-fallback.activate", fallbackActivateStart, {
+            pageId: pageToSelect.id,
+            bodyElementId: loadedNextBodyElement?.id ?? null,
+          });
+          scheduleBackgroundTask(() => {
+            setIsFallbackTransitioning(false);
+          });
         });
+
+        if (!loadedNextBodyElement) {
+          scheduleBackgroundTask(() => {
+            const hydrateStart = performance.now();
+            void loadPageIfNeeded(pageToSelect.id).then(() => {
+              logPerf("pages.delete-fallback.load-page", hydrateStart, {
+                pageId: pageToSelect.id,
+              });
+
+              const hydratedBodyElement =
+                (useStore.getState().pageElementsSnapshot[pageToSelect.id] ?? []).find(
+                  (element) => element.order_num === 0,
+                ) ?? null;
+
+              if (!hydratedBodyElement) {
+                return;
+              }
+
+              const hydratedActivateStart = performance.now();
+              startTransition(() => {
+                activatePage(pageToSelect.id, hydratedBodyElement.id);
+              });
+              logPerf("pages.delete-fallback.activate-hydrated", hydratedActivateStart, {
+                pageId: pageToSelect.id,
+                bodyElementId: hydratedBodyElement.id,
+              });
+              scheduleBackgroundTask(() => {
+                setIsFallbackTransitioning(false);
+              });
+            });
+          });
+        } else {
+          scheduleBackgroundTask(() => {
+            setIsFallbackTransitioning(false);
+          });
+        }
+      } else {
+        setIsFallbackTransitioning(false);
       }
 
       logPerf("pages.delete-remove-local", startTime, {
@@ -206,14 +269,18 @@ export const PagesSection = memo(function PagesSection({
         }
       />
       <div className="section-content">
-        <PageTree
-          pages={pages}
-          selectedPageId={currentPageId}
-          expandedKeys={expandedKeys}
-          onExpandedChange={setExpandedKeys}
-          onPageSelect={handlePageSelect}
-          onPageDelete={handlePageDelete}
-        />
+        {isFallbackTransitioning ? (
+          <div aria-hidden="true" style={{ minHeight: 120 }} />
+        ) : (
+          <PageTree
+            pages={pages}
+            selectedPageId={deferredSelectedPageId}
+            expandedKeys={expandedKeys}
+            onExpandedChange={setExpandedKeys}
+            onPageSelect={handlePageSelect}
+            onPageDelete={handlePageDelete}
+          />
+        )}
       </div>
     </div>
   );

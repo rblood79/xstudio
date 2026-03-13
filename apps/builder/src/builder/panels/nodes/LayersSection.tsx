@@ -13,10 +13,11 @@ import React, {
   useRef,
   useState,
 } from "react";
+import type { Element } from "../../../types/builder/unified.types";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
 import { Minimize } from "lucide-react";
-import { useCurrentPageElements, useStore } from "../../stores";
+import { useStore } from "../../stores";
 import { PanelHeader } from "../../components";
 import { LayerTree } from "./tree/LayerTree";
 import { iconProps } from "../../../utils/ui/uiConstants";
@@ -30,13 +31,20 @@ interface LayersSectionProps {
   currentPageId: string;
 }
 
+const EMPTY_ELEMENTS: Element[] = [];
+
 export const LayersSection = memo(function LayersSection({
   currentPageId,
 }: LayersSectionProps) {
   const renderStartRef = useRef(performance.now());
   renderStartRef.current = performance.now();
   const [isTreeVisible, setIsTreeVisible] = useState(true);
-  const currentPageElements = useCurrentPageElements();
+  const currentPageElements = useStore(
+    useCallback(
+      (state) => state.pageElementsSnapshot[currentPageId] ?? EMPTY_ELEMENTS,
+      [currentPageId],
+    ),
+  );
   const currentPageElementsMap = useMemo(
     () => new Map(currentPageElements.map((element) => [element.id, element])),
     [currentPageElements],

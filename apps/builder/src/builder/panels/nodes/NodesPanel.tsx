@@ -131,6 +131,17 @@ const PagesTabContent = memo(function PagesTabContent({
   const [visibleLayerPageId, setVisibleLayerPageId] = useState<string | null>(
     deferredCurrentPageId,
   );
+  const visibleLayerElementCount = useStore(
+    useCallback(
+      (state) =>
+        visibleLayerPageId
+          ? (state.pageElementsSnapshot[visibleLayerPageId] ?? []).length
+          : 0,
+      [visibleLayerPageId],
+    ),
+  );
+  const shouldShowLayersSection =
+    !!visibleLayerPageId && visibleLayerElementCount > 0;
 
   useEffect(() => {
     if (!deferredCurrentPageId) {
@@ -157,8 +168,14 @@ const PagesTabContent = memo(function PagesTabContent({
   return (
     <>
       <PagesSection projectId={projectId} />
-      {visibleLayerPageId && (
+      {shouldShowLayersSection ? (
         <LayersSection currentPageId={visibleLayerPageId} />
+      ) : (
+        <div
+          className="section"
+          aria-hidden="true"
+          style={{ minHeight: 72 }}
+        />
       )}
     </>
   );
