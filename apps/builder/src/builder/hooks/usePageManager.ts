@@ -13,6 +13,16 @@ import { scheduleNextFrame } from '../utils/scheduleTask';
 
 const PAGE_STACK_GAP = 80;
 
+function logPerf(name: string, startTime: number, extra?: Record<string, unknown>) {
+    const duration = performance.now() - startTime;
+    if (duration < 8) return;
+
+    console.log(`[perf] ${name}`, {
+        durationMs: Number(duration.toFixed(1)),
+        ...extra,
+    });
+}
+
 /**
  * API 응답 타입 (에러를 throw하지 않고 return)
  */
@@ -85,6 +95,8 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     // 3. 중복 초기화 방지
     const initializingRef = useRef<string | null>(null);
     const creatingPageRef = useRef(false);
+    const pendingActivationFrameRef = useRef<number | null>(null);
+    const pendingActivationPageIdRef = useRef<string | null>(null);
 
     const pages = useStore((state) => state.pages);
     const setCurrentPageId = useStore((state) => state.setCurrentPageId);
@@ -99,6 +111,40 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     const lazyLoadPageElements = useStore((state) => state.lazyLoadPageElements);
     const isPageLoaded = useStore((state) => state.isPageLoaded);
     const lazyLoadingEnabled = useStore((state) => state.lazyLoadingEnabled);
+
+    const cancelPendingActivation = useCallback(() => {
+        const taskId = pendingActivationFrameRef.current;
+        if (taskId === null) return;
+
+        if (typeof cancelAnimationFrame !== 'undefined') {
+            cancelAnimationFrame(taskId);
+        } else {
+            clearTimeout(taskId);
+        }
+
+        pendingActivationFrameRef.current = null;
+        pendingActivationPageIdRef.current = null;
+    }, []);
+
+    const schedulePageActivation = useCallback((pageId: string) => {
+        cancelPendingActivation();
+        pendingActivationPageIdRef.current = pageId;
+
+        const activateStart = performance.now();
+        pendingActivationFrameRef.current = scheduleNextFrame(() => {
+            pendingActivationFrameRef.current = null;
+
+            if (pendingActivationPageIdRef.current !== pageId) {
+                return;
+            }
+
+            pendingActivationPageIdRef.current = null;
+            setCurrentPageId(pageId);
+            logPerf('pages.add.activate-next-frame', activateStart, {
+                currentPageId: pageId,
+            });
+        });
+    }, [cancelPendingActivation, setCurrentPageId]);
 
     const runWithPageCreationLock = useCallback(
         async <T>(createPage: () => Promise<ApiResult<T>>): Promise<ApiResult<T>> => {
@@ -222,6 +268,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     ): Promise<ApiResult<ApiPage>> => {
         return runWithPageCreationLock(async () => {
             try {
+                const totalStart = performance.now();
                 // Zustand store의 pages를 사용하여 최대 order_num을 찾기
                 const currentPages = useStore.getState().pages;
 
@@ -270,13 +317,21 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 };
                 setSelectedPageId(newPage.id);
 
+                const positionStart = performance.now();
                 const nextPosition = computeNextPagePosition();
+                logPerf('pages.add.compute-position', positionStart, {
+                    pageCount: currentPages.length,
+                });
+
+                const appendStart = performance.now();
                 appendPageShell(newPage, bodyElement, nextPosition, {
                     activate: false,
                 });
-                scheduleNextFrame(() => {
-                    setCurrentPageId(newPage.id);
+                logPerf('pages.add.append-shell', appendStart, {
+                    pageCountAfter: useStore.getState().pages.length,
                 });
+
+                schedulePageActivation(newPage.id);
                 enqueuePagePersistence(async () => {
                     const persistenceDb = await getDB();
                     if (persistenceDb.pages.insertWithBody) {
@@ -287,6 +342,9 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                     }
                 });
 
+                logPerf('pages.add.sync-total', totalStart, {
+                    pageCountAfter: useStore.getState().pages.length,
+                });
                 console.log('✅ 페이지 추가 완료:', newPage.title);
                 return { success: true, data: newPage };
             } catch (error) {
@@ -362,9 +420,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                     appendPageShell(newPage, bodyElement, nextPosition, {
                         activate: false,
                     });
-                    scheduleNextFrame(() => {
-                        setCurrentPageId(newPage.id);
-                    });
+                    schedulePageActivation(newPage.id);
                     enqueuePagePersistence(async () => {
                         const persistenceDb = await getDB();
                         if (persistenceDb.pages.insertWithBody) {
@@ -375,6 +431,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                         }
                     });
                 } else {
+                    cancelPendingActivation();
                     setCurrentPageId(newPage.id);
                     setPages([...currentPages, newPage]);
                     enqueuePagePersistence(async () => {

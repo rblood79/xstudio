@@ -555,6 +555,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
     // 🚀 Phase 6.3: 참조 안정성 최적화 - 불필요한 상태 업데이트 방지
     setSelectedElement: (elementId, props, style, computedStyle) => {
+      const startTime = performance.now();
       cancelHydrateSelectedProps();
 
       const currentState = get();
@@ -617,6 +618,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
         // computedStyle만 백그라운드 hydration으로 분리
         scheduleHydrateSelectedProps(elementId);
+        const duration = performance.now() - startTime;
+        if (duration >= 8) {
+          console.log("[perf] store.set-selected-element.sync", {
+            durationMs: Number(duration.toFixed(1)),
+            elementId,
+            mode: "deferred-props",
+          });
+        }
         return;
       }
 
@@ -675,6 +684,15 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         selectedElementIdsSet,
         multiSelectMode: false,
       });
+
+      const duration = performance.now() - startTime;
+      if (duration >= 8) {
+        console.log("[perf] store.set-selected-element.sync", {
+          durationMs: Number(duration.toFixed(1)),
+          elementId,
+          mode: hasExternalProps ? "external-props" : "resolved-props",
+        });
+      }
     },
 
     // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
@@ -694,6 +712,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         historyManager.setCurrentPage(page.id);
       }
 
+      const startTime = performance.now();
       set((state) => {
         const nextElements = [...state.elements, bodyElement];
         const nextPages = [...state.pages, page];
@@ -744,9 +763,18 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           layoutVersion: state.layoutVersion + 1,
         };
       });
+
+      const duration = performance.now() - startTime;
+      if (duration >= 8) {
+        console.log("[perf] store.append-page-shell", {
+          durationMs: Number(duration.toFixed(1)),
+          pageId: page.id,
+        });
+      }
     },
 
     removePageLocal: (pageId) => {
+      const startTime = performance.now();
       set((state) => {
         const removedElements =
           getPageElementsFromIndex(state.pageIndex, pageId, state.elementsMap) ??
@@ -826,13 +854,29 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           layoutVersion: state.layoutVersion + 1,
         };
       });
+
+      const duration = performance.now() - startTime;
+      if (duration >= 8) {
+        console.log("[perf] store.remove-page-local", {
+          durationMs: Number(duration.toFixed(1)),
+          pageId,
+        });
+      }
     },
 
     // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
     setCurrentPageId: (pageId) => {
+      const startTime = performance.now();
       historyManager.setCurrentPage(pageId);
       // 페이지 전환 시 editingContext 리셋
       set({ currentPageId: pageId, editingContextId: null });
+      const duration = performance.now() - startTime;
+      if (duration >= 8) {
+        console.log("[perf] store.set-current-page", {
+          durationMs: Number(duration.toFixed(1)),
+          pageId,
+        });
+      }
     },
 
     undo,

@@ -4,7 +4,7 @@
  * NodesPanel에서 분리하여 elements 변경 시에만 리렌더링되도록 최적화
  */
 
-import React, { memo, useCallback, useMemo, useState } from "react";
+import React, { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
 import { Minimize } from "lucide-react";
@@ -21,6 +21,8 @@ interface LayersSectionProps {
 export const LayersSection = memo(function LayersSection({
   currentPageId,
 }: LayersSectionProps) {
+  const renderStartRef = useRef(performance.now());
+  renderStartRef.current = performance.now();
   void currentPageId;
   const currentPageElements = useCurrentPageElements();
 
@@ -130,6 +132,17 @@ export const LayersSection = memo(function LayersSection({
     },
     [expandedKeys]
   );
+
+  useLayoutEffect(() => {
+    const duration = performance.now() - renderStartRef.current;
+    if (duration >= 8) {
+      console.log("[perf] panel.layers.render", {
+        durationMs: Number(duration.toFixed(1)),
+        currentPageId,
+        elementCount: currentPageElements.length,
+      });
+    }
+  });
 
   return (
     <div className="section">

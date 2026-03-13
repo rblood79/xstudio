@@ -30,6 +30,10 @@ export function PageTree({
   const [internalExpandedKeys, setInternalExpandedKeys] = useState<Set<Key>>(
     new Set()
   );
+  const selectedKeys = useMemo(
+    () => (selectedPageId ? new Set<Key>([selectedPageId]) : new Set<Key>()),
+    [selectedPageId]
+  );
 
   // 포커스 관리용 nodeMap 생성
   const focusNodeMap = useMemo(() => {
@@ -43,15 +47,6 @@ export function PageTree({
   // 포커스 관리 훅
   const { focusedKey, handleAfterMove } = useFocusManagement({
     nodeMap: focusNodeMap,
-    onSelectionChange: (keys) => {
-      const key = [...keys][0] as string;
-      if (key) {
-        const node = nodeMap.get(key);
-        if (node) {
-          onPageSelect(node.page);
-        }
-      }
-    },
   });
 
   const resolvedExpandedKeys = expandedKeys ?? internalExpandedKeys;
@@ -70,13 +65,14 @@ export function PageTree({
     (keys: Set<Key>) => {
       const key = [...keys][0] as string;
       if (!key) return;
+      if (key === selectedPageId) return;
 
       const node = nodeMap.get(key);
       if (node) {
         onPageSelect(node.page);
       }
     },
-    [nodeMap, onPageSelect]
+    [nodeMap, onPageSelect, selectedPageId]
   );
 
   // DnD 유효성 검사 (클로저로 tree 캡처)
@@ -140,7 +136,7 @@ export function PageTree({
       getKey={(node) => node.id}
       getTextValue={(node) => node.name}
       renderContent={renderContent}
-      selectedKeys={selectedPageId ? new Set([selectedPageId]) : new Set()}
+      selectedKeys={selectedKeys}
       expandedKeys={resolvedExpandedKeys}
       focusedKey={focusedKey}
       onSelectionChange={handleSelectionChange}

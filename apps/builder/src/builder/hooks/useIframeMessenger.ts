@@ -159,6 +159,7 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
 
     // ⭐ Layout/Slot System: Page 정보를 iframe에 전송
     const sendPageInfoToIframe = useCallback((pageId: string | null, layoutId: string | null) => {
+        const startTime = performance.now();
         const iframe = MessageService.getIframe();
 
         // 🔧 FIX: Ref를 사용하여 최신 상태 확인
@@ -176,10 +177,26 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
                 type: "UPDATE_PAGE_INFO",
                 payload: message
             });
+            const duration = performance.now() - startTime;
+            if (duration >= 8) {
+                console.log("[perf] iframe.send-page-info.queue", {
+                    durationMs: Number(duration.toFixed(1)),
+                    pageId,
+                    layoutId,
+                });
+            }
             return;
         }
 
         iframe.contentWindow.postMessage(message, window.location.origin);
+        const duration = performance.now() - startTime;
+        if (duration >= 8) {
+            console.log("[perf] iframe.send-page-info", {
+                durationMs: Number(duration.toFixed(1)),
+                pageId,
+                layoutId,
+            });
+        }
     }, []); // ✅ 의존성 제거 (Ref 사용)
 
     // ⭐ Nested Routes & Slug System: Layouts를 iframe에 전송
@@ -781,6 +798,7 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
         cancelScheduledFrame(pendingPageInfoFrameRef.current);
 
         pendingPageInfoFrameRef.current = scheduleNextFrame(() => {
+            const frameStart = performance.now();
             pendingPageInfoFrameRef.current = null;
 
             if (iframeReadyStateRef.current !== 'ready') {
@@ -789,6 +807,14 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
 
             lastSentPageInfoRef.current = { pageId: currentPageId, layoutId };
             sendPageInfoToIframe(currentPageId, layoutId);
+            const duration = performance.now() - frameStart;
+            if (duration >= 8) {
+                console.log("[perf] iframe.page-info.effect", {
+                    durationMs: Number(duration.toFixed(1)),
+                    pageId: currentPageId,
+                    layoutId,
+                });
+            }
         });
 
         return () => {

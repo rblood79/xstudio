@@ -15,15 +15,32 @@ import {
 import type { LayerTreeNode, VirtualChildType } from "./types";
 
 export function useLayerTreeData(elements: Element[]) {
-  const elementTree = useMemo(
-    () => buildTreeFromElements(elements),
-    [elements]
-  );
+  const elementTree = useMemo(() => {
+    const startTime = performance.now();
+    const result = buildTreeFromElements(elements);
+    const duration = performance.now() - startTime;
+    if (duration >= 8) {
+      console.log("[perf] layer-tree.build-elements", {
+        durationMs: Number(duration.toFixed(1)),
+        elementCount: elements.length,
+      });
+    }
+    return result;
+  }, [elements]);
 
-  const treeNodes = useMemo(
-    () => convertToLayerTreeNodes(elementTree, elements),
-    [elementTree, elements]
-  );
+  const treeNodes = useMemo(() => {
+    const startTime = performance.now();
+    const result = convertToLayerTreeNodes(elementTree, elements);
+    const duration = performance.now() - startTime;
+    if (duration >= 8) {
+      console.log("[perf] layer-tree.build-nodes", {
+        durationMs: Number(duration.toFixed(1)),
+        elementCount: elements.length,
+        nodeCount: result.length,
+      });
+    }
+    return result;
+  }, [elementTree, elements]);
 
   // nodeMap: treeNodes 기반 O(1) 조회용 맵
   const nodeMap = useMemo(() => {

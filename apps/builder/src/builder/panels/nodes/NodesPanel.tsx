@@ -5,7 +5,7 @@
  * 🚀 Performance: PagesSection/LayersSection 분리로 리렌더링 범위 최소화
  */
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
 import "./NodesPanel.css";
@@ -19,12 +19,15 @@ import { PagesSection } from "./PagesSection";
 import { LayersSection } from "./LayersSection";
 
 export function NodesPanel({ isActive }: PanelProps) {
+  const renderStartRef = useRef(performance.now());
+  renderStartRef.current = performance.now();
+
   // URL params
   const { projectId } = useParams<{ projectId: string }>();
 
   // 🚀 Performance: 최소한의 상태만 구독
   const currentPageId = useStore((state) => state.currentPageId);
-  const pages = useStore((state) => state.pages);
+  const pageCount = useStore((state) => state.pages.length);
   const selectedElementId = useStore((state) => state.selectedElementId);
   const setSelectedElement = useStore((state) => state.setSelectedElement);
 
@@ -37,10 +40,10 @@ export function NodesPanel({ isActive }: PanelProps) {
 
   // 프로젝트 초기화 - pages가 비어있으면 초기화
   useEffect(() => {
-    if (projectId && pages.length === 0 && isActive) {
+    if (projectId && pageCount === 0 && isActive) {
       initializeProject(projectId);
     }
-  }, [projectId, pages.length, isActive, initializeProject]);
+  }, [projectId, pageCount, isActive, initializeProject]);
 
   // 🚀 Performance: 탭 관련 상태만 구독
   const setEditMode = useEditModeStore((state) => state.setMode);
@@ -64,6 +67,18 @@ export function NodesPanel({ isActive }: PanelProps) {
     [setEditMode, setEditModeCurrentPageId, setEditModeCurrentLayoutId]
   );
 
+  useLayoutEffect(() => {
+    const duration = performance.now() - renderStartRef.current;
+    if (duration >= 8) {
+      console.log("[perf] panel.nodes.render", {
+        durationMs: Number(duration.toFixed(1)),
+        currentPageId,
+        pageCount,
+        isActive,
+      });
+    }
+  });
+
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
     return null;
@@ -71,7 +86,7 @@ export function NodesPanel({ isActive }: PanelProps) {
 
   // Page 모드에서 페이지가 없으면 빈 상태 표시
   // Layout 모드에서는 Sidebar를 렌더링해야 사용자가 레이아웃을 선택/생성할 수 있음
-  if (editMode === "page" && !currentPageId && pages.length === 0) {
+  if (editMode === "page" && !currentPageId && pageCount === 0) {
     return (
       <div className="panel-empty-state">
         <p className="empty-message">페이지를 선택하세요</p>

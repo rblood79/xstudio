@@ -18,9 +18,20 @@ import { getDB } from "../../../lib/db";
 import type { Page } from "../../../types/builder/unified.types";
 import { panToPage } from "../../workspace/canvas/viewport/panToPage";
 import { enqueuePagePersistence } from "../../utils/pagePersistenceQueue";
+import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 
 interface PagesSectionProps {
   projectId: string | undefined;
+}
+
+function logPerf(name: string, startTime: number, extra?: Record<string, unknown>) {
+  const duration = performance.now() - startTime;
+  if (duration < 8) {
+    return;
+  }
+
+  const payload = extra ? { durationMs: Number(duration.toFixed(1)), ...extra } : duration;
+  console.log(`[perf] ${name}`, payload);
 }
 
 export const PagesSection = memo(function PagesSection({
@@ -47,7 +58,15 @@ export const PagesSection = memo(function PagesSection({
       console.error("프로젝트 ID가 없습니다");
       return;
     }
-    await addPage(projectId);
+    await longTaskMonitor.measureAsync("perf:pages.add-click", async () => {
+      const startTime = performance.now();
+      const result = await addPage(projectId);
+      logPerf("pages.add-click", startTime, {
+        pageCount: useStore.getState().pages.length,
+        success: result.success,
+      });
+      return result;
+    });
   }, [projectId, addPage]);
 
   // 페이지 선택 핸들러
@@ -67,6 +86,7 @@ export const PagesSection = memo(function PagesSection({
   // 페이지 삭제 핸들러
   const handlePageDelete = useCallback(
     async (page: Page) => {
+      const startTime = performance.now();
       const currentState = useStore.getState();
       const deletingCurrentPage = currentState.currentPageId === page.id;
       const pageIndex = pages.findIndex((candidate) => candidate.id === page.id);
@@ -97,6 +117,11 @@ export const PagesSection = memo(function PagesSection({
 
       // 1. UI는 즉시 반영
       removePageLocal(page.id);
+      logPerf("pages.delete-remove-local", startTime, {
+        deletingCurrentPage,
+        pageCountBefore: pages.length,
+        pageCountAfter: useStore.getState().pages.length,
+      });
 
       console.log("✅ 페이지 삭제 완료:", page.title);
 
@@ -130,6 +155,11 @@ export const PagesSection = memo(function PagesSection({
         } catch (error) {
           console.error("페이지 삭제 에러:", error);
         }
+      });
+
+      logPerf("pages.delete-click.total", startTime, {
+        deletingCurrentPage,
+        remainingPages: remainingPages.length,
       });
     },
     [loadPageIfNeeded, pages, removePageLocal, setCurrentPageId, setSelectedElement]

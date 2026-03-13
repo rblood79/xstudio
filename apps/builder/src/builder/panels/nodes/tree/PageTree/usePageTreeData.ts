@@ -4,7 +4,18 @@ import type { PageTreeNode } from "./types";
 import { useStore } from "../../../../stores";
 
 export function usePageTreeData(pages: Page[]) {
-  const { treeNodes, nodeMap } = useMemo(() => buildPageTree(pages), [pages]);
+  const { treeNodes, nodeMap } = useMemo(() => {
+    const startTime = performance.now();
+    const result = buildPageTree(pages);
+    const duration = performance.now() - startTime;
+    if (duration >= 8) {
+      console.log("[perf] page-tree.build", {
+        durationMs: Number(duration.toFixed(1)),
+        pageCount: pages.length,
+      });
+    }
+    return result;
+  }, [pages]);
 
   // useTreeData 대신 직접 tree 객체 생성
   // getItem은 nodeMap 기반으로 구현
