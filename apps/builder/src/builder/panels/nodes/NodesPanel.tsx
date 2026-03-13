@@ -37,9 +37,6 @@ export function NodesPanel({ isActive }: PanelProps) {
   // URL params
   const { projectId } = useParams<{ projectId: string }>();
 
-  const currentPageId = useStore((state) => state.currentPageId);
-  const pageCount = useStore((state) => state.pages.length);
-
   // Edit Mode state
   const editMode = useEditModeStore((state) => state.mode);
 
@@ -48,12 +45,6 @@ export function NodesPanel({ isActive }: PanelProps) {
   const { initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
 
   // 프로젝트 초기화 - pages가 비어있으면 초기화
-  useEffect(() => {
-    if (projectId && pageCount === 0 && isActive) {
-      initializeProject(projectId);
-    }
-  }, [projectId, pageCount, isActive, initializeProject]);
-
   // 🚀 Performance: 탭 관련 상태만 구독
   const setEditMode = useEditModeStore((state) => state.setMode);
   const setEditModeCurrentPageId = useEditModeStore((state) => state.setCurrentPageId);
@@ -77,12 +68,13 @@ export function NodesPanel({ isActive }: PanelProps) {
   );
 
   useLayoutEffect(() => {
+    const { currentPageId, pages } = useStore.getState();
     const duration = performance.now() - renderStartRef.current;
     if (duration >= 8) {
       console.log("[perf] panel.nodes.render", {
         durationMs: Number(duration.toFixed(1)),
         currentPageId,
-        pageCount,
+        pageCount: pages.length,
         isActive,
       });
     }
@@ -91,16 +83,6 @@ export function NodesPanel({ isActive }: PanelProps) {
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
     return null;
-  }
-
-  // Page 모드에서 페이지가 없으면 빈 상태 표시
-  // Layout 모드에서는 Sidebar를 렌더링해야 사용자가 레이아웃을 선택/생성할 수 있음
-  if (editMode === "page" && !currentPageId && pageCount === 0) {
-    return (
-      <div className="panel-empty-state">
-        <p className="empty-message">페이지를 선택하세요</p>
-      </div>
-    );
   }
 
   return (
@@ -126,8 +108,11 @@ const PagesTabContent = memo(function PagesTabContent({
 }: {
   projectId: string | undefined;
 }) {
+  const pageCount = useStore((state) => state.pages.length);
   const currentPageId = useStore((state) => state.currentPageId);
   const deferredCurrentPageId = useDeferredValue(currentPageId);
+  const { requestAutoSelectAfterUpdate } = useIframeMessenger();
+  const { initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
   const [visibleLayerPageId, setVisibleLayerPageId] = useState<string | null>(
     deferredCurrentPageId,
   );
@@ -142,6 +127,12 @@ const PagesTabContent = memo(function PagesTabContent({
   );
   const shouldShowLayersSection =
     !!visibleLayerPageId && visibleLayerElementCount > 0;
+
+  useEffect(() => {
+    if (projectId && pageCount === 0) {
+      initializeProject(projectId);
+    }
+  }, [initializeProject, pageCount, projectId]);
 
   useEffect(() => {
     if (!deferredCurrentPageId) {
@@ -164,6 +155,14 @@ const PagesTabContent = memo(function PagesTabContent({
       }
     };
   }, [deferredCurrentPageId]);
+
+  if (!currentPageId && pageCount === 0) {
+    return (
+      <div className="panel-empty-state">
+        <p className="empty-message">페이지를 선택하세요</p>
+      </div>
+    );
+  }
 
   return (
     <>

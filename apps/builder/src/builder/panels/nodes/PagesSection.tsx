@@ -13,7 +13,7 @@ import React, {
 } from "react";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
-import { CirclePlus } from "lucide-react";
+import { CirclePlus, Home } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useStore } from "../../stores";
 import { useIframeMessenger, usePageManager } from "@/builder/hooks";
@@ -61,6 +61,7 @@ export const PagesSection = memo(function PagesSection({
 
   const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());
   const [isFallbackTransitioning, setIsFallbackTransitioning] = useState(false);
+  const singlePage = pages.length === 1 ? pages[0] ?? null : null;
 
   // 페이지 추가 핸들러
   const handleAddPage = useCallback(async () => {
@@ -271,6 +272,21 @@ export const PagesSection = memo(function PagesSection({
       <div className="section-content">
         {isFallbackTransitioning ? (
           <div aria-hidden="true" style={{ minHeight: 120 }} />
+        ) : singlePage ? (
+          <div className="elementItem active">
+            <div className="elementItemIndent" style={{ width: "0px" }} />
+            <div className="elementItemIcon">
+              <Home
+                color={iconProps.color}
+                strokeWidth={iconProps.strokeWidth}
+                size={iconProps.size}
+                style={{ padding: "2px" }}
+              />
+            </div>
+            <div className="elementItemLabel">
+              {singlePage.title || "Untitled"}
+            </div>
+          </div>
         ) : (
           <PageTree
             pages={pages}
