@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-13 (ADR-035 완료 처리 — 완료 23, 부분 완료 7, 미구현 8, 합계 38)
+> **최종 업데이트**: 2026-03-13 (ADR-039 Proposed — multi-page page-scoped rendering; 현황 카운트 수정 — 완료 23, 부분 완료 7, 미구현 9, 합계 39)
 
 ## 현황 요약
 
@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 23     |
 | 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 8      |
-| **합계**                               | **38** |
+| 미구현 (Proposed/계획)                 | 9      |
+| **합계**                               | **39** |
 
 ---
 
@@ -68,6 +68,7 @@
 | [032](032-events-data-integration.md)    | Events Platform 재설계 + Data 통합       | Proposed | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동   |  **P3**  |
 | [034](034-events-panel-renovation.md)    | Events Panel Renovation                  | Proposed | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                |  **P3**  |
 | [038](038-figma-import.md)               | Figma 디자인 임포트 시스템               | Proposed | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                |  **P3**  |
+| [039](039-page-scoped-rendering.md)      | Multi-page Canvas Page-Scoped Rendering  | Proposed | 6 Phase — visible page 중심 렌더링, 페이지별 캐시, 페이지 단위 invalidation              |  **P2**  |
 
 ## Events Panel 설계 문서군
 
