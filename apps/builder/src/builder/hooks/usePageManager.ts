@@ -35,6 +35,7 @@ export interface UsePageManagerReturn {
     pages: ApiPage[];
     selectedPageId: string | null;
     setSelectedPageId: (id: string | null) => void;
+    isCreatingPage: boolean;
     fetchElements: (pageId: string) => Promise<ApiResult<Element[]>>;
     addPage: (projectId: string) => Promise<ApiResult<ApiPage>>;
     addPageWithParams: (params: AddPageParams) => Promise<ApiResult<ApiPage>>;
@@ -77,9 +78,11 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
 
     // 2. selectedPageId: 단순 state
     const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+    const [isCreatingPage, setIsCreatingPage] = useState(false);
 
     // 3. 중복 초기화 방지
     const initializingRef = useRef<string | null>(null);
+    const creatingPageRef = useRef(false);
 
     const setCurrentPageId = useStore((state) => state.setCurrentPageId);
     const setPages = useStore((state) => state.setPages);
@@ -92,6 +95,28 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     const lazyLoadPageElements = useStore((state) => state.lazyLoadPageElements);
     const isPageLoaded = useStore((state) => state.isPageLoaded);
     const lazyLoadingEnabled = useStore((state) => state.lazyLoadingEnabled);
+
+    const runWithPageCreationLock = useCallback(
+        async <T>(createPage: () => Promise<ApiResult<T>>): Promise<ApiResult<T>> => {
+            if (creatingPageRef.current) {
+                return {
+                    success: false,
+                    error: new Error('페이지 생성이 이미 진행 중입니다'),
+                };
+            }
+
+            creatingPageRef.current = true;
+            setIsCreatingPage(true);
+
+            try {
+                return await createPage();
+            } finally {
+                creatingPageRef.current = false;
+                setIsCreatingPage(false);
+            }
+        },
+        []
+    );
 
     /**
      * fetchElements - 페이지 요소 로드
@@ -176,88 +201,90 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     const addPage = async (
         projectId: string
     ): Promise<ApiResult<ApiPage>> => {
-        try {
-            // Zustand store의 pages를 사용하여 최대 order_num을 찾기
-            const currentPages = useStore.getState().pages;
+        return runWithPageCreationLock(async () => {
+            try {
+                // Zustand store의 pages를 사용하여 최대 order_num을 찾기
+                const currentPages = useStore.getState().pages;
 
-            // 현재 페이지들의 최대 order_num을 찾아서 +1
-            const maxOrderNum = currentPages.reduce((max, page) =>
-                Math.max(max, page.order_num || 0), -1
-            );
-            const nextOrderNum = maxOrderNum + 1;
+                // 현재 페이지들의 최대 order_num을 찾아서 +1
+                const maxOrderNum = currentPages.reduce((max, page) =>
+                    Math.max(max, page.order_num || 0), -1
+                );
+                const nextOrderNum = maxOrderNum + 1;
 
-            // IndexedDB에 새 페이지 저장
-            const db = await getDB();
-            const newPageData: Page = {
-                id: ElementUtils.generateId(),
-                project_id: projectId,
-                title: `Page ${nextOrderNum + 1}`,
-                slug: `/page-${nextOrderNum + 1}`,
-                parent_id: null,
-                order_num: nextOrderNum,
-                layout_id: null, // ⭐ Layout/Slot System: 페이지 생성 시 layout_id 초기화
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            };
+                // IndexedDB에 새 페이지 저장
+                const db = await getDB();
+                const newPageData: Page = {
+                    id: ElementUtils.generateId(),
+                    project_id: projectId,
+                    title: `Page ${nextOrderNum + 1}`,
+                    slug: `/page-${nextOrderNum + 1}`,
+                    parent_id: null,
+                    order_num: nextOrderNum,
+                    layout_id: null, // ⭐ Layout/Slot System: 페이지 생성 시 layout_id 초기화
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
 
-            const newPage = await db.pages.insert(newPageData);
+                const newPage = await db.pages.insert(newPageData);
 
-            // useListData에 추가 (ApiPage 타입으로 변환)
-            const apiPage: ApiPage = {
-                id: newPage.id,
-                project_id: newPage.project_id,
-                title: newPage.title,
-                slug: newPage.slug,
-                parent_id: newPage.parent_id ?? null,
-                order_num: newPage.order_num ?? 0,
-                created_at: newPage.created_at ?? new Date().toISOString(),
-                updated_at: newPage.updated_at ?? new Date().toISOString()
-            };
-            pageList.append(apiPage);
-            setSelectedPageId(newPage.id);
-            setCurrentPageId(newPage.id);
+                // useListData에 추가 (ApiPage 타입으로 변환)
+                const apiPage: ApiPage = {
+                    id: newPage.id,
+                    project_id: newPage.project_id,
+                    title: newPage.title,
+                    slug: newPage.slug,
+                    parent_id: newPage.parent_id ?? null,
+                    order_num: newPage.order_num ?? 0,
+                    created_at: newPage.created_at ?? new Date().toISOString(),
+                    updated_at: newPage.updated_at ?? new Date().toISOString()
+                };
+                pageList.append(apiPage);
+                setSelectedPageId(newPage.id);
+                setCurrentPageId(newPage.id);
 
-            // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
-            const updatedPages = [...currentPages, newPage];
-            setPages(updatedPages);
+                // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
+                const updatedPages = [...currentPages, newPage];
+                setPages(updatedPages);
 
-            // 🆕 Multi-page: 새 페이지 위치 추가 (기존 페이지 오른쪽 끝)
-            const { pagePositions } = useStore.getState();
-            const currentCanvasWidth = useViewportSyncStore.getState().canvasSize.width;
-            let maxX = 0;
-            for (const pos of Object.values(pagePositions)) {
-                const endX = pos.x + currentCanvasWidth + PAGE_STACK_GAP;
-                if (endX > maxX) maxX = endX;
+                // 🆕 Multi-page: 새 페이지 위치 추가 (기존 페이지 오른쪽 끝)
+                const { pagePositions } = useStore.getState();
+                const currentCanvasWidth = useViewportSyncStore.getState().canvasSize.width;
+                let maxX = 0;
+                for (const pos of Object.values(pagePositions)) {
+                    const endX = pos.x + currentCanvasWidth + PAGE_STACK_GAP;
+                    if (endX > maxX) maxX = endX;
+                }
+                useStore.getState().updatePagePosition(newPage.id, maxX, 0);
+
+                // 새 페이지에 기본 body 요소 생성
+                const bodyElement: Element = {
+                    id: ElementUtils.generateId(),
+                    tag: 'body',
+                    props: getDefaultProps('body') as ElementProps,
+                    parent_id: null,
+                    page_id: newPage.id,
+                    order_num: 0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+
+                // IndexedDB에 저장 (store 업데이트 건너뛰기)
+                // store를 업데이트하면 이전 페이지의 모든 요소가 함께 Preview에 전송되므로
+                // DB에만 저장하고 fetchElements로 새 페이지의 요소만 로드
+                await db.elements.insert(bodyElement);
+                console.log('✅ [IndexedDB] body 요소 생성:', bodyElement.id);
+
+                // 새 페이지의 요소들을 로드 (Preview 업데이트 + body 자동 선택)
+                await fetchElements(newPage.id);
+
+                console.log('✅ 페이지 추가 완료:', newPage.title);
+                return { success: true, data: newPage };
+            } catch (error) {
+                console.error('페이지 생성 에러:', error);
+                return { success: false, error: error as Error };
             }
-            useStore.getState().updatePagePosition(newPage.id, maxX, 0);
-
-            // 새 페이지에 기본 body 요소 생성
-            const bodyElement: Element = {
-                id: ElementUtils.generateId(),
-                tag: 'body',
-                props: getDefaultProps('body') as ElementProps,
-                parent_id: null,
-                page_id: newPage.id,
-                order_num: 0,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            };
-
-            // IndexedDB에 저장 (store 업데이트 건너뛰기)
-            // store를 업데이트하면 이전 페이지의 모든 요소가 함께 Preview에 전송되므로
-            // DB에만 저장하고 fetchElements로 새 페이지의 요소만 로드
-            await db.elements.insert(bodyElement);
-            console.log('✅ [IndexedDB] body 요소 생성:', bodyElement.id);
-
-            // 새 페이지의 요소들을 로드 (Preview 업데이트 + body 자동 선택)
-            await fetchElements(newPage.id);
-
-            console.log('✅ 페이지 추가 완료:', newPage.title);
-            return { success: true, data: newPage };
-        } catch (error) {
-            console.error('페이지 생성 에러:', error);
-            return { success: false, error: error as Error };
-        }
+        });
     };
 
     /**
@@ -271,75 +298,77 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     ): Promise<ApiResult<ApiPage>> => {
         const { projectId, title, slug, layoutId = null, parentId = null } = params;
 
-        try {
-            // Zustand store의 pages를 사용하여 최대 order_num을 찾기
-            const currentPages = useStore.getState().pages;
+        return runWithPageCreationLock(async () => {
+            try {
+                // Zustand store의 pages를 사용하여 최대 order_num을 찾기
+                const currentPages = useStore.getState().pages;
 
-            // 현재 페이지들의 최대 order_num을 찾아서 +1
-            const maxOrderNum = currentPages.reduce((max, page) =>
-                Math.max(max, page.order_num || 0), -1
-            );
-            const nextOrderNum = maxOrderNum + 1;
+                // 현재 페이지들의 최대 order_num을 찾아서 +1
+                const maxOrderNum = currentPages.reduce((max, page) =>
+                    Math.max(max, page.order_num || 0), -1
+                );
+                const nextOrderNum = maxOrderNum + 1;
 
-            // IndexedDB에 새 페이지 저장
-            const db = await getDB();
-            const newPageData: Page = {
-                id: ElementUtils.generateId(),
-                project_id: projectId,
-                title: title,
-                slug: slug,
-                parent_id: parentId,
-                order_num: nextOrderNum,
-                layout_id: layoutId,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            };
+                // IndexedDB에 새 페이지 저장
+                const db = await getDB();
+                const newPageData: Page = {
+                    id: ElementUtils.generateId(),
+                    project_id: projectId,
+                    title: title,
+                    slug: slug,
+                    parent_id: parentId,
+                    order_num: nextOrderNum,
+                    layout_id: layoutId,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
 
-            const newPage = await db.pages.insert(newPageData);
+                const newPage = await db.pages.insert(newPageData);
 
-            // useListData에 추가 (ApiPage 타입으로 변환)
-            const apiPage: ApiPage = {
-                id: newPage.id,
-                project_id: newPage.project_id,
-                title: newPage.title,
-                slug: newPage.slug,
-                parent_id: newPage.parent_id ?? null,
-                order_num: newPage.order_num ?? 0,
-                created_at: newPage.created_at ?? new Date().toISOString(),
-                updated_at: newPage.updated_at ?? new Date().toISOString()
-            };
-            pageList.append(apiPage);
-            setSelectedPageId(newPage.id);
-            setCurrentPageId(newPage.id);
+                // useListData에 추가 (ApiPage 타입으로 변환)
+                const apiPage: ApiPage = {
+                    id: newPage.id,
+                    project_id: newPage.project_id,
+                    title: newPage.title,
+                    slug: newPage.slug,
+                    parent_id: newPage.parent_id ?? null,
+                    order_num: newPage.order_num ?? 0,
+                    created_at: newPage.created_at ?? new Date().toISOString(),
+                    updated_at: newPage.updated_at ?? new Date().toISOString()
+                };
+                pageList.append(apiPage);
+                setSelectedPageId(newPage.id);
+                setCurrentPageId(newPage.id);
 
-            // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
-            setPages([...currentPages, newPage]);
+                // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
+                setPages([...currentPages, newPage]);
 
-            // 새 페이지에 기본 body 요소 생성
-            const bodyElement: Element = {
-                id: ElementUtils.generateId(),
-                tag: 'body',
-                props: getDefaultProps('body') as ElementProps,
-                parent_id: null,
-                page_id: newPage.id,
-                order_num: 0,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            };
+                // 새 페이지에 기본 body 요소 생성
+                const bodyElement: Element = {
+                    id: ElementUtils.generateId(),
+                    tag: 'body',
+                    props: getDefaultProps('body') as ElementProps,
+                    parent_id: null,
+                    page_id: newPage.id,
+                    order_num: 0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
 
-            // IndexedDB에 저장
-            await db.elements.insert(bodyElement);
-            console.log('✅ [IndexedDB] body 요소 생성:', bodyElement.id);
+                // IndexedDB에 저장
+                await db.elements.insert(bodyElement);
+                console.log('✅ [IndexedDB] body 요소 생성:', bodyElement.id);
 
-            // 새 페이지의 요소들을 로드 (Preview 업데이트 + body 자동 선택)
-            await fetchElements(newPage.id);
+                // 새 페이지의 요소들을 로드 (Preview 업데이트 + body 자동 선택)
+                await fetchElements(newPage.id);
 
-            console.log('✅ 페이지 추가 완료 (with params):', newPage.title, 'slug:', newPage.slug);
-            return { success: true, data: apiPage };
-        } catch (error) {
-            console.error('페이지 생성 에러 (with params):', error);
-            return { success: false, error: error as Error };
-        }
+                console.log('✅ 페이지 추가 완료 (with params):', newPage.title, 'slug:', newPage.slug);
+                return { success: true, data: apiPage };
+            } catch (error) {
+                console.error('페이지 생성 에러 (with params):', error);
+                return { success: false, error: error as Error };
+            }
+        });
     };
 
     /**
@@ -492,6 +521,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         pages: pageList.items,
         selectedPageId,
         setSelectedPageId,
+        isCreatingPage,
         fetchElements,
         addPage,
         addPageWithParams,

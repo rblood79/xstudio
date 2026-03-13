@@ -33,7 +33,7 @@ export const PagesSection = memo(function PagesSection({
 
   // Hooks
   const { requestAutoSelectAfterUpdate } = useIframeMessenger();
-  const { pageList, addPage, fetchElements } = usePageManager({
+  const { pageList, addPage, fetchElements, isCreatingPage } = usePageManager({
     requestAutoSelectAfterUpdate,
   });
 
@@ -128,6 +128,7 @@ export const PagesSection = memo(function PagesSection({
           <Button
             className="iconButton"
             aria-label="Add Page"
+            isDisabled={isCreatingPage}
             onPress={handleAddPage}
           >
             <CirclePlus
