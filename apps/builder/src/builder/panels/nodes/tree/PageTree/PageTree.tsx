@@ -26,7 +26,7 @@ export function PageTree({
   onPageDelete,
   onPageSettings,
 }: PageTreeProps) {
-  const { tree, treeNodes, syncToStore } = usePageTreeData(pages);
+  const { tree, treeNodes, nodeMap, syncToStore } = usePageTreeData(pages);
   const [internalExpandedKeys, setInternalExpandedKeys] = useState<Set<Key>>(
     new Set()
   );
@@ -34,17 +34,11 @@ export function PageTree({
   // 포커스 관리용 nodeMap 생성
   const focusNodeMap = useMemo(() => {
     const map = new Map<string, { parentId: string | null; children?: unknown[] }>();
-    const stack = [...treeNodes];
-    while (stack.length > 0) {
-      const node = stack.shift();
-      if (!node) continue;
+    for (const node of nodeMap.values()) {
       map.set(node.id, { parentId: node.parentId, children: node.children });
-      if (node.children && node.children.length > 0) {
-        stack.unshift(...node.children);
-      }
     }
     return map;
-  }, [treeNodes]);
+  }, [nodeMap]);
 
   // 포커스 관리 훅
   const { focusedKey, handleAfterMove } = useFocusManagement({
@@ -52,17 +46,7 @@ export function PageTree({
     onSelectionChange: (keys) => {
       const key = [...keys][0] as string;
       if (key) {
-        const findNode = (nodes: PageTreeNode[]): PageTreeNode | undefined => {
-          for (const node of nodes) {
-            if (node.id === key) return node;
-            if (node.children) {
-              const found = findNode(node.children);
-              if (found) return found;
-            }
-          }
-          return undefined;
-        };
-        const node = findNode(treeNodes);
+        const node = nodeMap.get(key);
         if (node) {
           onPageSelect(node.page);
         }
@@ -87,24 +71,12 @@ export function PageTree({
       const key = [...keys][0] as string;
       if (!key) return;
 
-      // treeNodes에서 노드 찾기
-      const findNode = (nodes: PageTreeNode[]): PageTreeNode | undefined => {
-        for (const node of nodes) {
-          if (node.id === key) return node;
-          if (node.children) {
-            const found = findNode(node.children);
-            if (found) return found;
-          }
-        }
-        return undefined;
-      };
-
-      const node = findNode(treeNodes);
+      const node = nodeMap.get(key);
       if (node) {
         onPageSelect(node.page);
       }
     },
-    [treeNodes, onPageSelect]
+    [nodeMap, onPageSelect]
   );
 
   // DnD 유효성 검사 (클로저로 tree 캡처)

@@ -8,7 +8,7 @@ import React, { memo, useCallback, useMemo, useState } from "react";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
 import { Minimize } from "lucide-react";
-import { useStore } from "../../stores";
+import { useCurrentPageElements, useStore } from "../../stores";
 import { PanelHeader } from "../../components";
 import { LayerTree } from "./tree/LayerTree";
 import { iconProps } from "../../../utils/ui/uiConstants";
@@ -21,12 +21,8 @@ interface LayersSectionProps {
 export const LayersSection = memo(function LayersSection({
   currentPageId,
 }: LayersSectionProps) {
-  // 🚀 elements 전체 구독 후 useMemo로 필터링 (useCallback in useStore는 무한루프 유발)
-  const elements = useStore((state) => state.elements);
-  const currentPageElements = useMemo(
-    () => elements.filter((el) => el.page_id === currentPageId),
-    [elements, currentPageId]
-  );
+  void currentPageId;
+  const currentPageElements = useCurrentPageElements();
 
   // 🚀 selectedElementId만 구독 - pages 변경 시 리렌더링 안됨
   const selectedElementId = useStore((state) => state.selectedElementId);

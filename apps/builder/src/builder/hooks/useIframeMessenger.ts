@@ -32,6 +32,7 @@ import { canvasDeltaMessenger } from '../utils/canvasDeltaMessenger';
 import { isWebGLCanvas, isCanvasCompareMode } from '../../utils/featureFlags';
 // ADR-006 P2-2: postMessage 보안 검증
 import { isValidBootstrapMessage, isValidPreviewMessage } from '../../utils/messageValidation';
+import { scheduleNextFrame } from '../utils/scheduleTask';
 
 export type IframeReadyState = 'not_initialized' | 'loading' | 'ready' | 'error';
 
@@ -62,6 +63,19 @@ export interface UseIframeMessengerReturn {
 
 // 🚀 Phase 11: No-op debounced functions for WebGL-only mode
 const noopDebouncedAsync = debounce(() => Promise.resolve(), 0);
+
+function cancelScheduledFrame(taskId: number | null): void {
+    if (taskId === null) {
+        return;
+    }
+
+    if (typeof cancelAnimationFrame !== 'undefined') {
+        cancelAnimationFrame(taskId);
+        return;
+    }
+
+    clearTimeout(taskId);
+}
 
 export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIframeMessengerReturn => {
     const bootstrapNonce = options?.bootstrapNonce;
@@ -744,6 +758,7 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
         pageId: null,
         layoutId: null,
     });
+    const pendingPageInfoFrameRef = useRef<number | null>(null);
 
     useEffect(() => {
         // iframe이 준비되지 않았으면 스킵
@@ -763,9 +778,23 @@ export const useIframeMessenger = (options?: UseIframeMessengerOptions): UseIfra
             return;
         }
 
-        // 값 저장 후 전송
-        lastSentPageInfoRef.current = { pageId: currentPageId, layoutId };
-        sendPageInfoToIframe(currentPageId, layoutId);
+        cancelScheduledFrame(pendingPageInfoFrameRef.current);
+
+        pendingPageInfoFrameRef.current = scheduleNextFrame(() => {
+            pendingPageInfoFrameRef.current = null;
+
+            if (iframeReadyStateRef.current !== 'ready') {
+                return;
+            }
+
+            lastSentPageInfoRef.current = { pageId: currentPageId, layoutId };
+            sendPageInfoToIframe(currentPageId, layoutId);
+        });
+
+        return () => {
+            cancelScheduledFrame(pendingPageInfoFrameRef.current);
+            pendingPageInfoFrameRef.current = null;
+        };
     }, [currentPageId, pages, sendPageInfoToIframe]);
 
     // ⭐ Nested Routes & Slug System: Layouts가 변경될 때마다 iframe에 전송

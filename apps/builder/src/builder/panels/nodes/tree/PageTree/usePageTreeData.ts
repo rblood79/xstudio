@@ -4,23 +4,7 @@ import type { PageTreeNode } from "./types";
 import { useStore } from "../../../../stores";
 
 export function usePageTreeData(pages: Page[]) {
-  // 1. 페이지 → 트리 노드 변환
-  const treeNodes = useMemo(() => convertToPageTreeNodes(pages), [pages]);
-
-  // nodeMap: treeNodes 기반 O(1) 조회용 맵
-  const nodeMap = useMemo(() => {
-    const map = new Map<string, PageTreeNode>();
-    const stack = [...treeNodes];
-    while (stack.length > 0) {
-      const node = stack.shift();
-      if (!node) continue;
-      map.set(node.id, node);
-      if (node.children && node.children.length > 0) {
-        stack.unshift(...node.children);
-      }
-    }
-    return map;
-  }, [treeNodes]);
+  const { treeNodes, nodeMap } = useMemo(() => buildPageTree(pages), [pages]);
 
   // useTreeData 대신 직접 tree 객체 생성
   // getItem은 nodeMap 기반으로 구현
@@ -68,22 +52,42 @@ export function usePageTreeData(pages: Page[]) {
     [currentPages, setPages]
   );
 
-  return { tree, treeNodes, syncToStore };
+  return { tree, treeNodes, nodeMap, syncToStore };
 }
 
-function convertToPageTreeNodes(
-  pages: Page[],
-  parentId: string | null = null,
-  depth = 0
-): PageTreeNode[] {
-  return pages
-    .filter((p) => (p.parent_id ?? null) === parentId)
-    .sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0))
-    .map((page) => {
-      const children = convertToPageTreeNodes(pages, page.id, depth + 1);
+function buildPageTree(pages: Page[]): {
+  treeNodes: PageTreeNode[];
+  nodeMap: Map<string, PageTreeNode>;
+} {
+  const childrenByParent = new Map<string | null, Page[]>();
+
+  for (const page of pages) {
+    const parentId = page.parent_id ?? null;
+    const siblings = childrenByParent.get(parentId);
+    if (siblings) {
+      siblings.push(page);
+    } else {
+      childrenByParent.set(parentId, [page]);
+    }
+  }
+
+  for (const siblings of childrenByParent.values()) {
+    siblings.sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
+  }
+
+  const nodeMap = new Map<string, PageTreeNode>();
+
+  const buildChildren = (
+    parentId: string | null,
+    depth: number,
+  ): PageTreeNode[] => {
+    const siblings = childrenByParent.get(parentId) ?? [];
+
+    return siblings.map((page) => {
+      const children = buildChildren(page.id, depth + 1);
       const isRoot = page.parent_id === null && (page.order_num ?? 0) === 0;
 
-      return {
+      const node: PageTreeNode = {
         id: page.id,
         name: page.title || "Untitled",
         slug: page.slug ?? null,
@@ -98,5 +102,12 @@ function convertToPageTreeNodes(
         isDraggable: !isRoot,
         isDroppable: true,
       };
+
+      nodeMap.set(node.id, node);
+      return node;
     });
+  };
+
+  const treeNodes = buildChildren(null, 0);
+  return { treeNodes, nodeMap };
 }

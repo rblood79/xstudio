@@ -56,6 +56,7 @@ import {
   createEmptyVariableUsageIndex,
   rebuildPageIndex,
   indexElement,
+  unindexElement,
   rebuildComponentIndex,
   rebuildVariableUsageIndex,
   getPageElements as getPageElementsFromIndex,
@@ -132,6 +133,7 @@ export interface ElementsState {
     page: Page,
     bodyElement: Element,
     position: { x: number; y: number },
+    options?: { activate?: boolean },
   ) => void;
   removePageLocal: (pageId: string) => void;
   setCurrentPageId: (pageId: string) => void;
@@ -259,6 +261,101 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       ]),
     ),
   });
+
+  const cloneComponentIndex = (
+    componentIndex: ComponentIndex,
+  ): ComponentIndex => ({
+    masterToInstances: new Map(
+      Array.from(componentIndex.masterToInstances.entries(), ([masterId, ids]) => [
+        masterId,
+        new Set(ids),
+      ]),
+    ),
+    masterComponents: new Map(componentIndex.masterComponents),
+  });
+
+  const cloneVariableUsageIndex = (
+    variableUsageIndex: VariableUsageIndex,
+  ): VariableUsageIndex => ({
+    variableToElements: new Map(
+      Array.from(
+        variableUsageIndex.variableToElements.entries(),
+        ([variableName, ids]) => [variableName, new Set(ids)],
+      ),
+    ),
+  });
+
+  const indexComponentElement = (
+    componentIndex: ComponentIndex,
+    element: Element,
+  ) => {
+    if (element.componentRole === "master") {
+      componentIndex.masterComponents.set(element.id, element);
+    }
+
+    if (element.componentRole === "instance" && element.masterId) {
+      if (!componentIndex.masterToInstances.has(element.masterId)) {
+        componentIndex.masterToInstances.set(element.masterId, new Set());
+      }
+      componentIndex.masterToInstances.get(element.masterId)!.add(element.id);
+    }
+  };
+
+  const unindexComponentElement = (
+    componentIndex: ComponentIndex,
+    element: Element,
+  ) => {
+    if (element.componentRole === "master") {
+      componentIndex.masterComponents.delete(element.id);
+      componentIndex.masterToInstances.delete(element.id);
+    }
+
+    if (element.componentRole === "instance" && element.masterId) {
+      const instanceIds = componentIndex.masterToInstances.get(element.masterId);
+      if (instanceIds) {
+        instanceIds.delete(element.id);
+        if (instanceIds.size === 0) {
+          componentIndex.masterToInstances.delete(element.masterId);
+        }
+      }
+    }
+  };
+
+  const indexVariableUsageElement = (
+    variableUsageIndex: VariableUsageIndex,
+    element: Element,
+  ) => {
+    if (!element.variableBindings || element.variableBindings.length === 0) {
+      return;
+    }
+
+    for (const variableName of element.variableBindings) {
+      if (!variableUsageIndex.variableToElements.has(variableName)) {
+        variableUsageIndex.variableToElements.set(variableName, new Set());
+      }
+      variableUsageIndex.variableToElements.get(variableName)!.add(element.id);
+    }
+  };
+
+  const unindexVariableUsageElement = (
+    variableUsageIndex: VariableUsageIndex,
+    element: Element,
+  ) => {
+    if (!element.variableBindings || element.variableBindings.length === 0) {
+      return;
+    }
+
+    for (const variableName of element.variableBindings) {
+      const elementIds = variableUsageIndex.variableToElements.get(variableName);
+      if (!elementIds) {
+        continue;
+      }
+      elementIds.delete(element.id);
+      if (elementIds.size === 0) {
+        variableUsageIndex.variableToElements.delete(variableName);
+      }
+    }
+  };
 
   // 🚀 Phase 4.3: 인스펙터 props hydration을 백그라운드 우선순위로 분리
   // WebGL Canvas의 pointerdown task를 짧게 유지하기 위해,
@@ -591,8 +688,11 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
     setPages: (pages) => set({ pages }),
 
-    appendPageShell: (page, bodyElement, position) => {
-      historyManager.setCurrentPage(page.id);
+    appendPageShell: (page, bodyElement, position, options) => {
+      const activate = options?.activate ?? true;
+      if (activate) {
+        historyManager.setCurrentPage(page.id);
+      }
 
       set((state) => {
         const nextElements = [...state.elements, bodyElement];
@@ -606,20 +706,36 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
         const nextPageIndex = clonePageIndex(state.pageIndex);
         indexElement(nextPageIndex, bodyElement, nextElementsMap);
+        const nextComponentIndex = cloneComponentIndex(state.componentIndex);
+        indexComponentElement(nextComponentIndex, bodyElement);
+        const nextVariableUsageIndex = cloneVariableUsageIndex(
+          state.variableUsageIndex,
+        );
+        indexVariableUsageElement(nextVariableUsageIndex, bodyElement);
 
         return {
           pages: nextPages,
-          currentPageId: page.id,
+          currentPageId: activate ? page.id : state.currentPageId,
           elements: nextElements,
           elementsMap: nextElementsMap,
           childrenMap: nextChildrenMap,
           pageIndex: nextPageIndex,
-          selectedElementId: bodyElement.id,
-          selectedElementIds: [bodyElement.id],
-          selectedElementIdsSet: new Set([bodyElement.id]),
-          multiSelectMode: false,
-          selectedElementProps: createCompleteProps(bodyElement),
-          editingContextId: null,
+          componentIndex: nextComponentIndex,
+          variableUsageIndex: nextVariableUsageIndex,
+          selectedElementId: activate
+            ? bodyElement.id
+            : state.selectedElementId,
+          selectedElementIds: activate
+            ? [bodyElement.id]
+            : state.selectedElementIds,
+          selectedElementIdsSet: activate
+            ? new Set([bodyElement.id])
+            : state.selectedElementIdsSet,
+          multiSelectMode: activate ? false : state.multiSelectMode,
+          selectedElementProps: activate
+            ? createCompleteProps(bodyElement)
+            : state.selectedElementProps,
+          editingContextId: activate ? null : state.editingContextId,
           pagePositions: {
             ...state.pagePositions,
             [page.id]: position,
@@ -632,32 +748,69 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
     removePageLocal: (pageId) => {
       set((state) => {
+        const removedElements =
+          getPageElementsFromIndex(state.pageIndex, pageId, state.elementsMap) ??
+          state.elements.filter((element) => element.page_id === pageId);
+        const removedElementIds = new Set(
+          removedElements.map((element) => element.id),
+        );
         const nextPages = state.pages.filter((page) => page.id !== pageId);
         const nextElements = state.elements.filter(
-          (element) => element.page_id !== pageId,
+          (element) => !removedElementIds.has(element.id),
         );
-        const nextIndexes = buildIndexes(nextElements);
+        const nextElementsMap = new Map(state.elementsMap);
+        const nextChildrenMap = new Map(state.childrenMap);
+        const nextPageIndex = clonePageIndex(state.pageIndex);
+        const nextComponentIndex = cloneComponentIndex(state.componentIndex);
+        const nextVariableUsageIndex = cloneVariableUsageIndex(
+          state.variableUsageIndex,
+        );
+
+        removedElements.forEach((element) => {
+          nextElementsMap.delete(element.id);
+          nextChildrenMap.delete(element.id);
+
+          const parentId = element.parent_id || "root";
+          const siblings = nextChildrenMap.get(parentId);
+          if (siblings) {
+            const nextSiblings = siblings.filter((child) => child.id !== element.id);
+            if (nextSiblings.length > 0) {
+              nextChildrenMap.set(parentId, nextSiblings);
+            } else {
+              nextChildrenMap.delete(parentId);
+            }
+          }
+
+          unindexElement(nextPageIndex, element);
+          unindexComponentElement(nextComponentIndex, element);
+          unindexVariableUsageElement(nextVariableUsageIndex, element);
+        });
+
         const nextPagePositions = { ...state.pagePositions };
         delete nextPagePositions[pageId];
 
         const nextSelectedElementIds = state.selectedElementIds.filter((id) =>
-          nextIndexes.elementsMap.has(id),
+          nextElementsMap.has(id),
         );
         const nextSelectedElementId =
           state.selectedElementId &&
-          nextIndexes.elementsMap.has(state.selectedElementId)
+          nextElementsMap.has(state.selectedElementId)
             ? state.selectedElementId
             : nextSelectedElementIds[0] ?? null;
         const nextEditingContextId =
           state.editingContextId &&
-          nextIndexes.elementsMap.has(state.editingContextId)
+          nextElementsMap.has(state.editingContextId)
             ? state.editingContextId
             : null;
 
         return {
           pages: nextPages,
           elements: nextElements,
-          ...nextIndexes,
+          elementsMap: nextElementsMap,
+          childrenMap: nextChildrenMap,
+          pageIndex: nextPageIndex,
+          componentIndex: nextComponentIndex,
+          variableUsageIndex: nextVariableUsageIndex,
           pagePositions: nextPagePositions,
           pagePositionsVersion: state.pagePositionsVersion + 1,
           currentPageId:
@@ -667,7 +820,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           selectedElementIdsSet: new Set(nextSelectedElementIds),
           multiSelectMode: nextSelectedElementIds.length > 1,
           selectedElementProps: nextSelectedElementId
-            ? createCompleteProps(nextIndexes.elementsMap.get(nextSelectedElementId)!)
+            ? createCompleteProps(nextElementsMap.get(nextSelectedElementId)!)
             : {},
           editingContextId: nextEditingContextId,
           layoutVersion: state.layoutVersion + 1,

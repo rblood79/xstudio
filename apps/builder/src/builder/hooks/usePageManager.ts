@@ -8,6 +8,8 @@ import { useStore } from '../stores';
 import { useViewportSyncStore } from '../workspace/canvas/stores';
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { ElementUtils } from '../../utils/element/elementUtils';
+import { enqueuePagePersistence } from '../utils/pagePersistenceQueue';
+import { scheduleNextFrame } from '../utils/scheduleTask';
 
 const PAGE_STACK_GAP = 80;
 
@@ -84,6 +86,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     const initializingRef = useRef<string | null>(null);
     const creatingPageRef = useRef(false);
 
+    const pages = useStore((state) => state.pages);
     const setCurrentPageId = useStore((state) => state.setCurrentPageId);
     const setPages = useStore((state) => state.setPages);
     const setElements = useStore((state) => state.setElements);
@@ -228,8 +231,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 );
                 const nextOrderNum = maxOrderNum + 1;
 
-                // IndexedDB에 새 페이지 저장
-                const db = await getDB();
                 const newPageData: Page = {
                     id: ElementUtils.generateId(),
                     project_id: projectId,
@@ -254,13 +255,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                     updated_at: new Date().toISOString(),
                 };
 
-                const insertResult = db.pages.insertWithBody
-                    ? await db.pages.insertWithBody(newPageData, bodyElement)
-                    : {
-                        page: await db.pages.insert(newPageData),
-                        bodyElement: await db.elements.insert(bodyElement),
-                    };
-                const newPage = insertResult.page;
+                const newPage = newPageData;
 
                 // useListData에 추가 (ApiPage 타입으로 변환)
                 const apiPage: ApiPage = {
@@ -273,14 +268,24 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                     created_at: newPage.created_at ?? new Date().toISOString(),
                     updated_at: newPage.updated_at ?? new Date().toISOString()
                 };
-                pageList.append(apiPage);
                 setSelectedPageId(newPage.id);
 
                 const nextPosition = computeNextPagePosition();
-                if (requestAutoSelectAfterUpdate) {
-                    requestAutoSelectAfterUpdate(bodyElement.id);
-                }
-                appendPageShell(newPage, bodyElement, nextPosition);
+                appendPageShell(newPage, bodyElement, nextPosition, {
+                    activate: false,
+                });
+                scheduleNextFrame(() => {
+                    setCurrentPageId(newPage.id);
+                });
+                enqueuePagePersistence(async () => {
+                    const persistenceDb = await getDB();
+                    if (persistenceDb.pages.insertWithBody) {
+                        await persistenceDb.pages.insertWithBody(newPageData, bodyElement);
+                    } else {
+                        await persistenceDb.pages.insert(newPageData);
+                        await persistenceDb.elements.insert(bodyElement);
+                    }
+                });
 
                 console.log('✅ 페이지 추가 완료:', newPage.title);
                 return { success: true, data: newPage };
@@ -313,8 +318,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 );
                 const nextOrderNum = maxOrderNum + 1;
 
-                // IndexedDB에 새 페이지 저장
-                const db = await getDB();
                 const newPageData: Page = {
                     id: ElementUtils.generateId(),
                     project_id: projectId,
@@ -339,14 +342,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                     updated_at: new Date().toISOString(),
                 };
 
-                const insertResult =
-                    !layoutId && db.pages.insertWithBody
-                        ? await db.pages.insertWithBody(newPageData, bodyElement)
-                        : {
-                            page: await db.pages.insert(newPageData),
-                            bodyElement: await db.elements.insert(bodyElement),
-                        };
-                const newPage = insertResult.page;
+                const newPage = newPageData;
 
                 // useListData에 추가 (ApiPage 타입으로 변환)
                 const apiPage: ApiPage = {
@@ -359,19 +355,34 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                     created_at: newPage.created_at ?? new Date().toISOString(),
                     updated_at: newPage.updated_at ?? new Date().toISOString()
                 };
-                pageList.append(apiPage);
                 setSelectedPageId(newPage.id);
 
                 if (!layoutId) {
                     const nextPosition = computeNextPagePosition();
-                    if (requestAutoSelectAfterUpdate) {
-                        requestAutoSelectAfterUpdate(bodyElement.id);
-                    }
-                    appendPageShell(newPage, bodyElement, nextPosition);
+                    appendPageShell(newPage, bodyElement, nextPosition, {
+                        activate: false,
+                    });
+                    scheduleNextFrame(() => {
+                        setCurrentPageId(newPage.id);
+                    });
+                    enqueuePagePersistence(async () => {
+                        const persistenceDb = await getDB();
+                        if (persistenceDb.pages.insertWithBody) {
+                            await persistenceDb.pages.insertWithBody(newPageData, bodyElement);
+                        } else {
+                            await persistenceDb.pages.insert(newPageData);
+                            await persistenceDb.elements.insert(bodyElement);
+                        }
+                    });
                 } else {
                     setCurrentPageId(newPage.id);
                     setPages([...currentPages, newPage]);
-                    await fetchElements(newPage.id);
+                    enqueuePagePersistence(async () => {
+                        const persistenceDb = await getDB();
+                        await persistenceDb.pages.insert(newPageData);
+                        await persistenceDb.elements.insert(bodyElement);
+                        await fetchElements(newPage.id);
+                    });
                 }
 
                 console.log('✅ 페이지 추가 완료 (with params):', newPage.title, 'slug:', newPage.slug);
@@ -530,7 +541,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     }, [isPageLoaded, lazyLoadPageElements, lazyLoadingEnabled]);
 
     return {
-        pages: pageList.items,
+        pages,
         selectedPageId,
         setSelectedPageId,
         isCreatingPage,

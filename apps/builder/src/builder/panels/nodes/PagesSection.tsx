@@ -17,6 +17,7 @@ import { pagesApi } from "../../../services/api/PagesApiService";
 import { getDB } from "../../../lib/db";
 import type { Page } from "../../../types/builder/unified.types";
 import { panToPage } from "../../workspace/canvas/viewport/panToPage";
+import { enqueuePagePersistence } from "../../utils/pagePersistenceQueue";
 
 interface PagesSectionProps {
   projectId: string | undefined;
@@ -29,11 +30,12 @@ export const PagesSection = memo(function PagesSection({
   const pages = useStore((state) => state.pages);
   const currentPageId = useStore((state) => state.currentPageId);
   const setCurrentPageId = useStore((state) => state.setCurrentPageId);
+  const setSelectedElement = useStore((state) => state.setSelectedElement);
   const removePageLocal = useStore((state) => state.removePageLocal);
 
   // Hooks
   const { requestAutoSelectAfterUpdate } = useIframeMessenger();
-  const { pageList, addPage, fetchElements, isCreatingPage } = usePageManager({
+  const { addPage, loadPageIfNeeded, isCreatingPage } = usePageManager({
     requestAutoSelectAfterUpdate,
   });
 
@@ -50,68 +52,87 @@ export const PagesSection = memo(function PagesSection({
 
   // 페이지 선택 핸들러
   const handlePageSelect = useCallback(
-    (page: Page) => {
-      panToPage(page.id);
-      setCurrentPageId(page.id);
-      fetchElements(page.id);
+    (page: Page, options?: { pan?: boolean }) => {
+      if (options?.pan !== false) {
+        panToPage(page.id);
+      }
+      if (currentPageId !== page.id) {
+        setCurrentPageId(page.id);
+      }
+      loadPageIfNeeded(page.id);
     },
-    [setCurrentPageId, fetchElements]
+    [currentPageId, loadPageIfNeeded, setCurrentPageId]
   );
 
   // 페이지 삭제 핸들러
   const handlePageDelete = useCallback(
     async (page: Page) => {
-      try {
-        // 1. IndexedDB에서 해당 페이지의 모든 요소 조회 및 삭제
-        const db = await getDB();
-        const pageElements = await db.elements.getByPage(page.id);
-        const elementIds = pageElements.map((el) => el.id);
-
-        console.log(
-          `🗑️ Page "${page.title}" 삭제 시작: ${elementIds.length}개 요소 포함`
-        );
-
-        // 2. IndexedDB에서 페이지 + 요소를 단일 transaction으로 삭제
-        if (db.pages.deleteWithElements) {
-          await db.pages.deleteWithElements(page.id, elementIds);
-        } else {
-          if (elementIds.length > 0) {
-            await db.elements.deleteMany(elementIds);
-            console.log(`✅ [IndexedDB] ${elementIds.length}개 요소 삭제 완료`);
-          }
-          await db.pages.delete(page.id);
-        }
-        console.log(`✅ [IndexedDB] Page "${page.title}" 삭제 완료`);
-
-        // 3. Supabase에서 삭제 (캐시 무효화 포함)
-        await pagesApi.deletePage(page.id);
-        console.log(`✅ [Supabase] Page "${page.title}" 삭제 완료`);
-      } catch (error) {
-        console.error("페이지 삭제 에러:", error);
-        return;
-      }
-
-      // 4. pageList에서 제거
-      if (pageList?.remove) {
-        pageList.remove(page.id);
-      }
-
-      // 5. 남은 페이지 목록 계산
+      const currentState = useStore.getState();
+      const deletingCurrentPage = currentState.currentPageId === page.id;
+      const pageIndex = pages.findIndex((candidate) => candidate.id === page.id);
+      const pageElements = currentState.elements.filter(
+        (element) => element.page_id === page.id,
+      );
+      const elementIds = pageElements.map((element) => element.id);
       const remainingPages = pages.filter((p) => p.id !== page.id);
+      const previousPage =
+        pageIndex > 0 ? pages[pageIndex - 1] ?? null : null;
+      const nextPage =
+        pageIndex >= 0 ? pages[pageIndex + 1] ?? null : null;
+      const pageToSelect =
+        remainingPages.find((candidate) => candidate.id === previousPage?.id) ??
+        remainingPages.find((candidate) => candidate.id === nextPage?.id) ??
+        remainingPages[0] ??
+        null;
+      const nextBodyElement = pageToSelect
+        ? currentState.elements.find(
+            (element) =>
+              element.page_id === pageToSelect.id && element.order_num === 0,
+          ) ?? null
+        : null;
 
-      // 6. Zustand store에서도 제거
+      console.log(
+        `🗑️ Page "${page.title}" 삭제 시작: ${elementIds.length}개 요소 포함`
+      );
+
+      // 1. UI는 즉시 반영
       removePageLocal(page.id);
 
       console.log("✅ 페이지 삭제 완료:", page.title);
 
-      // 7. 남은 페이지가 있으면 자동으로 선택
-      if (remainingPages.length > 0) {
-        const homePage = remainingPages.find((p) => p.order_num === 0);
-        const pageToSelect = homePage || remainingPages[0];
-        handlePageSelect(pageToSelect);
+      // 2. 남은 페이지가 있으면 자동으로 선택
+      if (deletingCurrentPage && remainingPages.length > 0) {
+        if (pageToSelect) {
+          setCurrentPageId(pageToSelect.id);
+          if (nextBodyElement) {
+            setSelectedElement(nextBodyElement.id);
+          }
+          void loadPageIfNeeded(pageToSelect.id);
+        }
       }
+
+      // 3. 영속화는 백그라운드에서 직렬 처리
+      enqueuePagePersistence(async () => {
+        try {
+          const db = await getDB();
+          if (db.pages.deleteWithElements) {
+            await db.pages.deleteWithElements(page.id, elementIds);
+          } else {
+            if (elementIds.length > 0) {
+              await db.elements.deleteMany(elementIds);
+            }
+            await db.pages.delete(page.id);
+          }
+          console.log(`✅ [IndexedDB] Page "${page.title}" 삭제 완료`);
+
+          await pagesApi.deletePage(page.id);
+          console.log(`✅ [Supabase] Page "${page.title}" 삭제 완료`);
+        } catch (error) {
+          console.error("페이지 삭제 에러:", error);
+        }
+      });
     },
-    [handlePageSelect, pageList, pages, removePageLocal]
+    [loadPageIfNeeded, pages, removePageLocal, setCurrentPageId, setSelectedElement]
   );
 
   return (
