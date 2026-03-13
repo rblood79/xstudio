@@ -18,11 +18,11 @@
  * ```
  */
 
-import { useState, useMemo, useCallback } from 'react';
-import { useStore } from '../stores';
-import { ElementUtils } from '../../utils/element/elementUtils';
-import { supabase } from '../../env/supabase.client';
-import type { Element } from '../../types/core/store.types';
+import { useState, useMemo, useCallback } from "react";
+import { useStore } from "../stores";
+import { ElementUtils } from "../../utils/element/elementUtils";
+import { supabase } from "../../env/supabase.client";
+import type { Element } from "../../types/core/store.types";
 
 export interface UseCollectionItemManagerOptions {
   /** 부모 Collection 요소 ID (ListBox, GridList, Select, ComboBox 등) */
@@ -61,27 +61,32 @@ export interface UseCollectionItemManagerResult {
  * - Item CRUD 작업 (추가, 삭제, 업데이트)
  */
 export function useCollectionItemManager(
-  options: UseCollectionItemManagerOptions
+  options: UseCollectionItemManagerOptions,
 ): UseCollectionItemManagerResult {
   const { elementId, childTag, defaultItemProps } = options;
 
-  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(
+    null,
+  );
 
   // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
   const addElement = useStore((state) => state.addElement);
   const updateElementProps = useStore((state) => state.updateElementProps);
   const removeElement = useStore((state) => state.removeElement);
   const currentPageId = useStore((state) => state.currentPageId);
-  const storeElements = useStore((state) => state.elements);
+  // ADR-040: childrenMap O(1) 조회 (전체 elements 배열 순회 제거)
+  const rawChildren = useStore(
+    (state) => state.childrenMap.get(elementId) ?? [],
+  );
 
   /**
    * 자식 Item 필터링 및 정렬 (useMemo로 최적화)
    */
   const children = useMemo(() => {
-    return storeElements
-      .filter((child) => child.parent_id === elementId && child.tag === childTag)
+    return rawChildren
+      .filter((child) => child.tag === childTag)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }, [storeElements, elementId, childTag]);
+  }, [rawChildren, childTag]);
 
   /**
    * 특정 인덱스의 Item 선택
@@ -115,13 +120,13 @@ export function useCollectionItemManager(
 
       const newItem = {
         id: ElementUtils.generateId(),
-        page_id: currentPageId || '1',
+        page_id: currentPageId || "1",
         tag: childTag,
         props: {
           ...defaultProps,
           isDisabled: false,
           style: {},
-          className: '',
+          className: "",
         },
         parent_id: elementId,
         order_num: currentIndex + 1,
@@ -130,20 +135,27 @@ export function useCollectionItemManager(
       // ElementUtils.createChildElementWithParentCheck was removed
       // Use Supabase directly
       const { data, error } = await supabase
-        .from('elements')
+        .from("elements")
         .insert(newItem)
         .select()
         .single();
 
       if (error) throw error;
-      if (!data) throw new Error('Failed to create element');
+      if (!data) throw new Error("Failed to create element");
 
       addElement(data as Element);
       console.log(`새 ${childTag} 추가됨:`, data);
     } catch (error) {
       console.error(`${childTag} 추가 중 오류:`, error);
     }
-  }, [children.length, childTag, elementId, currentPageId, defaultItemProps, addElement]);
+  }, [
+    children.length,
+    childTag,
+    elementId,
+    currentPageId,
+    defaultItemProps,
+    addElement,
+  ]);
 
   /**
    * 특정 Item 삭제
@@ -155,7 +167,10 @@ export function useCollectionItemManager(
     async (itemId: string) => {
       try {
         // Supabase에서 삭제
-        const { error } = await supabase.from('elements').delete().eq('id', itemId);
+        const { error } = await supabase
+          .from("elements")
+          .delete()
+          .eq("id", itemId);
 
         if (error) {
           console.error(`${childTag} 삭제 에러:`, error);
@@ -173,7 +188,7 @@ export function useCollectionItemManager(
         console.error(`${childTag} 삭제 중 오류:`, error);
       }
     },
-    [childTag, removeElement]
+    [childTag, removeElement],
   );
 
   /**
@@ -184,7 +199,7 @@ export function useCollectionItemManager(
     (itemId: string, props: Record<string, unknown>) => {
       updateElementProps(itemId, props);
     },
-    [updateElementProps]
+    [updateElementProps],
   );
 
   return {

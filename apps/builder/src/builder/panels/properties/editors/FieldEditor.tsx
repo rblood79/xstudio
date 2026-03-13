@@ -25,10 +25,8 @@ export const FieldEditor = memo(function FieldEditor({
   currentProps,
   onUpdate,
 }: PropertyEditorProps) {
-  const elements = useStore((state) => state.elements);
-
-  // elementId를 사용하여 현재 Element를 찾음
-  const element = elements.find((el) => el.id === elementId);
+  // ADR-040: elementsMap O(1) 조회
+  const element = useStore((state) => state.elementsMap.get(elementId));
 
   // Get customId from element in store
   const customId = element?.customId || "";

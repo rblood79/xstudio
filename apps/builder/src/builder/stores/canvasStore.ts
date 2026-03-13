@@ -13,9 +13,13 @@
  * @moved 2024-12-29 workspace/canvas/store/ → builder/stores/
  */
 
-import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
-import { useStore } from '.';
+import { useMemo } from "react";
+import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
+import { useStore } from ".";
+import type { Element } from "../../types";
+
+const EMPTY_ELEMENTS: Element[] = [];
 
 // ============================================
 // Types
@@ -60,7 +64,7 @@ export const useCanvasStore = create<CanvasState>()(
       set({ isEditing, editingElementId: elementId }),
 
     resetView: () => set({ zoom: 1, panX: 0, panY: 0 }),
-  }))
+  })),
 );
 
 // ============================================
@@ -99,11 +103,16 @@ export function useCanvasSetGridSettings() {
  * postMessage 없이 직접 접근
  */
 export function useCanvasElements() {
-  const currentPageId = useStore((state) => state.currentPageId);
-  const elements = useStore((state) => state.elements);
-
-  return elements.filter(
-    (el) => el.page_id === currentPageId && !el.deleted
+  // ADR-040: pageElementsSnapshot O(1) 조회
+  const pageElements =
+    useStore((state) =>
+      state.currentPageId
+        ? state.pageElementsSnapshot[state.currentPageId]
+        : undefined,
+    ) ?? EMPTY_ELEMENTS;
+  return useMemo(
+    () => pageElements.filter((el) => !el.deleted),
+    [pageElements],
   );
 }
 
@@ -111,11 +120,12 @@ export function useCanvasElements() {
  * Builder 스토어에서 선택된 요소 가져오기
  */
 export function useCanvasSelectedElement() {
-  const selectedElementId = useStore((state) => state.selectedElementId);
-  const elements = useStore((state) => state.elements);
-
-  if (!selectedElementId) return null;
-  return elements.find((el) => el.id === selectedElementId) || null;
+  // ADR-040: elementsMap O(1) 조회
+  return useStore((state) =>
+    state.selectedElementId
+      ? (state.elementsMap.get(state.selectedElementId) ?? null)
+      : null,
+  );
 }
 
 /**
@@ -149,7 +159,7 @@ export function useCanvasSetSelectedElement() {
  */
 export function getElementsFromStore() {
   console.warn(
-    '[DEPRECATED] getElementsFromStore() is deprecated. Use useCanvasElements() hook instead.'
+    "[DEPRECATED] getElementsFromStore() is deprecated. Use useCanvasElements() hook instead.",
   );
   return useStore.getState().elements;
 }

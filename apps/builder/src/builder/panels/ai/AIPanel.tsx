@@ -26,7 +26,10 @@ import type {
   BuilderContext,
   ChatMessage as ChatMessageType,
 } from "../../../types/integrations/chat.types";
+import type { Element } from "../../../types";
 import "./AIPanel.css";
+
+const EMPTY_ELEMENTS: Element[] = [];
 
 /**
  * ChatMessage - 개별 메시지 표시
@@ -210,9 +213,15 @@ function AIPanelContent() {
     stopAgent,
   } = useAgentLoop();
 
-  const elements = useStore((state) => state.elements);
-  const selectedElementId = useStore((state) => state.selectedElementId);
+  // ADR-040: 현재 페이지 요소만 구독 (전체 elements 배열 구독 제거)
   const currentPageId = useStore((state) => state.currentPageId);
+  const pageElements =
+    useStore((state) =>
+      state.currentPageId
+        ? state.pageElementsSnapshot[state.currentPageId]
+        : undefined,
+    ) ?? EMPTY_ELEMENTS;
+  const selectedElementId = useStore((state) => state.selectedElementId);
 
   const { updateContext, clearConversation } = useConversationStore();
 
@@ -223,7 +232,7 @@ function AIPanelContent() {
     const context: BuilderContext = {
       currentPageId: currentPageId || "default",
       selectedElementId: selectedElementId || undefined,
-      elements: elements.map((el) => ({
+      elements: pageElements.map((el) => ({
         id: el.id,
         tag: el.tag,
         props: el.props as Record<string, unknown>,
@@ -233,7 +242,7 @@ function AIPanelContent() {
     };
 
     updateContext(context);
-  }, [elements, selectedElementId, currentPageId, updateContext]);
+  }, [pageElements, selectedElementId, currentPageId, updateContext]);
 
   const isDisabled = isStreaming || isAgentRunning;
 

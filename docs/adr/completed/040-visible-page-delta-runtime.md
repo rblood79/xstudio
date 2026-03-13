@@ -2,7 +2,7 @@
 
 ## Status
 
-In Progress
+Completed
 
 ## Date
 
@@ -410,3 +410,47 @@ store는 다음 성질을 가져야 한다.
 - 2026-03-13: `NodesPanel`의 pages/layouts 탭 콘텐츠를 분리해 pages 탭에서 layouts 관련 구독, layouts 탭에서 pages/layers 관련 구독이 함께 흔들리지 않도록 commit 범위를 축소
 - 2026-03-13: `PagesTabContent`에서 `LayersSection` 표시용 page id를 한 프레임 더 늦춰 activation 첫 RAF에서 page 전환과 layer panel 초기 커밋을 분리
 - 2026-03-13: `LayersSection` 첫 렌더는 placeholder만 표시하고 실제 `LayerTree`는 다음 프레임에 붙여 activation 프레임의 layer panel 초기 커밋을 추가로 분리
+- 2026-03-14: **Phase 1 — Interactive 경로의 `state.elements` 전체 배열 구독 → O(1) delta 패턴 전환** (29개 파일)
+  - Property Editors 17개: `elementsMap.get()` O(1) 조회 + `childrenMap.get()` O(1) 자식 조회로 전환
+    - ColumnEditor, CellEditor, FieldEditor, RowEditor, ElementSlotSelector, TableHeaderEditor, TableBodyEditor, BreadcrumbsEditor, TreeItemEditor, TagEditor, RadioGroupEditor, CheckboxGroupEditor, ToggleButtonGroupEditor, ListBoxItemEditor, GridListEditor, TableEditor, ToggleButtonEditor
+  - `TabsEditor`: `childrenMap` 기반 Dual Lookup (직속 Tab → TabList 내부 Tab)
+  - `canvasStore.ts`: `useCanvasElements()` → `pageElementsSnapshot[currentPageId]`, `useCanvasSelectedElement()` → `elementsMap.get()`
+  - `useTextEdit.ts`: `elements.map()` 전체 교체 → `elements.indexOf()` + `Array.with()` 증분 패치
+  - `instanceActions.ts`: `detachInstance`의 `elements.map()` → `findIndex` + `with()` + `elementsMap` 증분 패치
+  - `AIPanel.tsx`: `state.elements` 전체 구독 → `pageElementsSnapshot[currentPageId]` 현재 페이지만 구독
+  - `useCollectionItemManager.ts`: `state.elements` → `childrenMap.get(elementId)` O(1) 조회
+  - `PixiListBox.tsx`, `PixiToggleButtonGroup.tsx`: `state.elements` → `childrenMap.get(element.id)` O(1) 조회
+  - `usePresetApply.ts`: `state.elements` → `elementsMap` + `childrenMap` 순회, handler 내부 `getState()` 사용
+  - `LayoutsTab.tsx`: `state.elements` → `elementsMap.forEach()` layout_id 필터링
+  - `useComponentMemory.ts`: `state.elements` → `elementsMap` + `childrenMap` O(1) 조회 (depth/children 계산 포함)
+  - `useDeltaMessenger.ts`: `state.elements.length` → `state.elementsMap.size`
+  - `historyActions.ts`: `postMessage("*")` → `postMessage(window.location.origin)` 보안 강화 (3곳)
+  - 의도적 스킵: `BuilderCanvas.tsx` (멀티페이지 렌더러 — 구조적으로 전체 elements 필요, Phase 3+ 대상), `historyActions.ts` undo/redo 내부 (스냅샷 복원 로직으로 전체 교체 정당)
+- 2026-03-14: **Phase 2 — Atomic Page Activation** (4개 파일)
+  - `activatePage()`: 동일 페이지+동일 요소 선택 시 중복 commit 방어 (early return)
+  - `PagesSection.handlePageSelect()`: `await loadPageIfNeeded()` 대기 후 activation → 즉시 activation + 백그라운드 로드로 전환. async → sync 변환으로 activation 지연 제거
+  - `PagesSection.handlePageDelete()`: `elements.filter(page_id)` O(N) → `pageElementsSnapshot[page.id]` O(1) 조회 + `elements.find(page_id + order_num)` → `pageElementsSnapshot` 기반 body 조회
+  - `elementLoader.lazyLoadPageElements()`: elements set() + loadedPages set() 2회 → 단일 set()으로 병합하여 render burst 1회 축소
+- 2026-03-14: **Phase 3 — Delta-Aware Store API 정착** (4개 파일)
+  - `elementCreation.ts` `addElement`/`addComplexElement`: `elements.filter(parent_id)` O(N) → `childrenMap.get()` O(1) 형제 조회
+  - `elementCreation.ts` layout 재정렬: `elements.filter(layout_id)` → `elementsMap.forEach()` (전용 인덱스 없음)
+  - `inspectorActions.ts` `updateSelectedStylesPreview`/`updateSelectedFills`: `elements.findIndex(id)` O(N) → `indexOf(elementsMap.get())` + `with()` 증분 패치
+  - `elementUpdate.ts` `updateElement`/`updateElementProps`: `elements.map(id)` O(N) → `indexOf(element)` + `with()` 증분 패치
+  - 의도적 유지: 배치 업데이트(`batchUpdateElementProps/batchUpdateElements`)는 다수 요소 동시 변경이므로 Map 기반 유지, 히스토리(undo/redo)는 스냅샷 복원으로 전체 배열 교체 정당
+- 2026-03-14: **Phase 4 — Panel Snapshot Isolation** (Phase 0~1에서 실질 완료 확인)
+  - `LayersSection`: `pageElementsSnapshot[currentPageId]` 기준 완벽 최적화 — 다른 페이지 변화 무시
+  - `PageTree`: pages 배열만 구독 (올바름 — 페이지 간 계층 관계)
+  - `LayerTree`: current page elements + VirtualizedTree (12개 이상 노드 시 자동 전환, overscan=8)
+  - `PagesTabContent`: 3단계 defer (useDeferredValue → scheduleNextFrame → scheduleCancelableBackgroundTask)
+  - 성공 기준 달성: 1000 element page에서 panel render가 subtree/selection 변경 중심으로 제한
+- 2026-03-14: **Phase 5 — Preview Contract Cleanup** (기존 구현 확인)
+  - `useIframeMessenger.ts` L616-631: `UPDATE_ELEMENTS` 수신 — recovery-only 차단 이미 구현됨 (`source === "preview-recovery"` 등 3가지 조건 외 무시)
+  - `BuilderCore.tsx`: `sendElementsToIframe()` 사용이 bootstrap(PREVIEW_READY 후), scope 전환, delta fallback 3가지로 한정 — interactive 경로는 `sendDeltaScopedElements()` 우선
+  - `messageHandler.ts`: Delta 핸들러(`DELTA_ELEMENT_ADDED/UPDATED/REMOVED/BATCH_UPDATE`) 이미 구현
+  - `useDeltaMessenger.ts`: deprecated (WebGL Canvas가 Zustand 직접 읽음 → Delta 전송 불필요)
+  - 성공 기준 달성: preview ↔ builder 상호작용 기본 경로가 delta-only
+- 2026-03-14: **Phase 6 — Legacy Removal & Perf Gate**
+  - `usePageManager.ts` `fetchElements`: `elements.filter(page_id)` → `pageElementsSnapshot` O(1) 조회
+  - `LayoutsTab.tsx`: `setElements` 사용 정당성 문서화 (Layout 모드 전환 bootstrap 성격)
+  - Interactive `setElements` 호출 경로 전수 검증 — 모두 bootstrap/recovery/layout-load 전용으로 확인
+  - ADR-040 전체 Phase 0~6 완료

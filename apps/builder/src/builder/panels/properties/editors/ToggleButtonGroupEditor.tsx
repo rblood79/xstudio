@@ -46,8 +46,10 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
   const currentPageId = useStore((state) => state.currentPageId);
   const updateElementProps = useStore((state) => state.updateElementProps);
   const removeElement = useStore((state) => state.removeElement);
-  // 스토어에서 elements를 직접 구독하여 실시간 업데이트
-  const storeElements = useStore((state) => state.elements);
+  // ADR-040: childrenMap O(1) 조회
+  const rawChildren = useStore(
+    (state) => state.childrenMap.get(elementId) ?? [],
+  );
 
   // Get customId from element in store
   // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
@@ -71,13 +73,10 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
 
   // 실제 ToggleButton 자식 요소들을 찾기 (useMemo로 최적화)
   const toggleButtonChildren = useMemo(() => {
-    return storeElements
-      .filter(
-        (child) =>
-          child.parent_id === elementId && child.tag === "ToggleButton",
-      )
+    return rawChildren
+      .filter((child) => child.tag === "ToggleButton")
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }, [storeElements, elementId]);
+  }, [rawChildren]);
 
   // 선택된 토글 버튼이 있고, 현재 ToggleButtonGroup 컴포넌트의 버튼인 경우 개별 버튼 편집 UI 표시
   if (selectedButton && selectedButton.parentId === elementId) {

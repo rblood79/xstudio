@@ -39,10 +39,9 @@ export const createAddElementAction =
     // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
     let elementToAdd = normalizedElement;
     set((prevState) => {
-      // atomic order_num 계산: prevState.elements 기반으로 중복 방지
-      const siblings = prevState.elements.filter(
-        (el) => el.parent_id === normalizedElement.parent_id,
-      );
+      // ADR-040 Phase 3: childrenMap O(1) 조회 (elements.filter 배열 순회 제거)
+      const siblings =
+        prevState.childrenMap.get(normalizedElement.parent_id || "root") ?? [];
       const hasConflict = siblings.some(
         (sibling) => sibling.order_num === normalizedElement.order_num,
       );
@@ -101,11 +100,15 @@ export const createAddElementAction =
     // Layout 요소인 경우 - layout_id로 재정렬
     else if (elementToAdd.layout_id) {
       queueMicrotask(() => {
-        const { elements, batchUpdateElementOrders } = get();
-        const layoutElements = elements.filter(
-          (el) => el.layout_id === elementToAdd.layout_id,
-        );
-        if (layoutElements.length > 0) {
+        const { elements, elementsMap, batchUpdateElementOrders } = get();
+        // ADR-040 Phase 3: elementsMap.forEach로 layout_id 필터 (전용 인덱스 없음)
+        let hasLayoutElements = false;
+        elementsMap.forEach((el) => {
+          if (el.layout_id === elementToAdd.layout_id) {
+            hasLayoutElements = true;
+          }
+        });
+        if (hasLayoutElements) {
           reorderElements(
             elements,
             elementToAdd.layout_id!,
@@ -141,9 +144,9 @@ export const createAddComplexElementAction =
     // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
     // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가
     set((prevState) => {
-      const siblings = prevState.elements.filter(
-        (el) => el.parent_id === normalizedParent.parent_id,
-      );
+      // ADR-040 Phase 3: childrenMap O(1) 조회 (elements.filter 배열 순회 제거)
+      const siblings =
+        prevState.childrenMap.get(normalizedParent.parent_id || "root") ?? [];
       const hasConflict = siblings.some(
         (sibling) => sibling.order_num === normalizedParent.order_num,
       );

@@ -1,7 +1,10 @@
 // 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
 // import { produce } from "immer"; // REMOVED
 import type { StateCreator } from "zustand";
-import { ComponentElementProps, Element } from "../../../types/core/store.types";
+import {
+  ComponentElementProps,
+  Element,
+} from "../../../types/core/store.types";
 import { historyManager } from "../history";
 import { getElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
@@ -14,35 +17,79 @@ import { globalToast } from "../toast";
 
 /** 레이아웃에 영향 없는 CSS 속성 집합 (elementUpdate 전용) */
 const NON_LAYOUT_PROPS_UPDATE = new Set([
-  'color', 'backgroundColor', 'background', 'backgroundImage',
-  'backgroundSize', 'backgroundPosition', 'backgroundRepeat',
-  'opacity', 'visibility',
-  'boxShadow', 'textShadow', 'filter', 'backdropFilter',
-  'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
-  'borderStyle', 'borderTopStyle', 'borderRightStyle', 'borderBottomStyle', 'borderLeftStyle',
-  'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius',
-  'borderBottomLeftRadius', 'borderBottomRightRadius',
-  'outlineColor', 'outlineStyle',
-  'cursor', 'pointerEvents', 'userSelect',
-  'transition', 'transitionProperty', 'transitionDuration',
-  'animation', 'animationName', 'animationDuration',
-  'textDecoration', 'textDecorationColor', 'textDecorationStyle',
-  'zIndex',
-  'objectFit', 'objectPosition', 'mixBlendMode',
-  'clipPath', 'mask', 'maskImage',
-  'transformOrigin',
+  "color",
+  "backgroundColor",
+  "background",
+  "backgroundImage",
+  "backgroundSize",
+  "backgroundPosition",
+  "backgroundRepeat",
+  "opacity",
+  "visibility",
+  "boxShadow",
+  "textShadow",
+  "filter",
+  "backdropFilter",
+  "borderColor",
+  "borderTopColor",
+  "borderRightColor",
+  "borderBottomColor",
+  "borderLeftColor",
+  "borderStyle",
+  "borderTopStyle",
+  "borderRightStyle",
+  "borderBottomStyle",
+  "borderLeftStyle",
+  "borderRadius",
+  "borderTopLeftRadius",
+  "borderTopRightRadius",
+  "borderBottomLeftRadius",
+  "borderBottomRightRadius",
+  "outlineColor",
+  "outlineStyle",
+  "cursor",
+  "pointerEvents",
+  "userSelect",
+  "transition",
+  "transitionProperty",
+  "transitionDuration",
+  "animation",
+  "animationName",
+  "animationDuration",
+  "textDecoration",
+  "textDecorationColor",
+  "textDecorationStyle",
+  "zIndex",
+  "objectFit",
+  "objectPosition",
+  "mixBlendMode",
+  "clipPath",
+  "mask",
+  "maskImage",
+  "transformOrigin",
 ]);
 
 /** 자식에게 상속되어 레이아웃에 영향을 주는 CSS 속성 (elementUpdate 전용) */
 const INHERITED_LAYOUT_PROPS_UPDATE = new Set([
-  'fontSize', 'fontFamily', 'fontWeight', 'fontStyle',
-  'lineHeight', 'letterSpacing', 'wordSpacing',
-  'whiteSpace', 'wordBreak', 'overflowWrap',
-  'textAlign', 'direction', 'writingMode',
+  "fontSize",
+  "fontFamily",
+  "fontWeight",
+  "fontStyle",
+  "lineHeight",
+  "letterSpacing",
+  "wordSpacing",
+  "whiteSpace",
+  "wordBreak",
+  "overflowWrap",
+  "textAlign",
+  "direction",
+  "writingMode",
 ]);
 
-function isLayoutAffectingUpdate(changedStyle: Record<string, unknown>): boolean {
-  return Object.keys(changedStyle).some(k => !NON_LAYOUT_PROPS_UPDATE.has(k));
+function isLayoutAffectingUpdate(
+  changedStyle: Record<string, unknown>,
+): boolean {
+  return Object.keys(changedStyle).some((k) => !NON_LAYOUT_PROPS_UPDATE.has(k));
 }
 
 function markDirtyWithDescendantsUpdate(
@@ -52,7 +99,9 @@ function markDirtyWithDescendantsUpdate(
   dirtySet: Set<string>,
 ): void {
   dirtySet.add(elementId);
-  const hasInheritedChange = Object.keys(changedStyle).some(k => INHERITED_LAYOUT_PROPS_UPDATE.has(k));
+  const hasInheritedChange = Object.keys(changedStyle).some((k) =>
+    INHERITED_LAYOUT_PROPS_UPDATE.has(k),
+  );
   if (hasInheritedChange) {
     const queue = [elementId];
     while (queue.length > 0) {
@@ -107,7 +156,7 @@ function cloneForHistory<T>(value: T): T {
 
 function hasShallowPatchChanges(
   prev: Record<string, unknown>,
-  patch: Record<string, unknown>
+  patch: Record<string, unknown>,
 ): boolean {
   for (const key of Object.keys(patch)) {
     if (prev[key] !== patch[key]) return true;
@@ -140,16 +189,28 @@ export const createUpdateElementPropsAction =
 
     const patch = (props ?? {}) as Record<string, unknown>;
     if (Object.keys(patch).length === 0) return;
-    if (!hasShallowPatchChanges(element.props as Record<string, unknown>, patch)) return;
+    if (
+      !hasShallowPatchChanges(element.props as Record<string, unknown>, patch)
+    )
+      return;
 
     const shouldRecordHistory = Boolean(currentState.currentPageId);
-    const prevPropsClone = shouldRecordHistory ? cloneForHistory(element.props) : null;
+    const prevPropsClone = shouldRecordHistory
+      ? cloneForHistory(element.props)
+      : null;
     const newPropsClone = shouldRecordHistory ? cloneForHistory(props) : null;
-    const prevElementClone = shouldRecordHistory ? cloneForHistory(element) : null;
+    const prevElementClone = shouldRecordHistory
+      ? cloneForHistory(element)
+      : null;
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
     // 1. 히스토리 추가 (상태 변경 전에 기록)
-    if (currentState.currentPageId && prevPropsClone && newPropsClone && prevElementClone) {
+    if (
+      currentState.currentPageId &&
+      prevPropsClone &&
+      newPropsClone &&
+      prevElementClone
+    ) {
       historyManager.addEntry({
         type: "update",
         elementId: elementId,
@@ -161,15 +222,20 @@ export const createUpdateElementPropsAction =
       });
     }
 
-    // 2. 메모리 상태 업데이트 (불변 업데이트)
-    const updatedElements = currentState.elements.map((el) =>
-      el.id === elementId ? { ...el, props: { ...el.props, ...props } } : el
-    );
+    // ADR-040 Phase 3: indexOf + with() 증분 패치 (elements.map/find O(N) 제거)
+    const updatedElement = {
+      ...element,
+      props: { ...element.props, ...props },
+    };
+    const idx = currentState.elements.indexOf(element);
+    const updatedElements =
+      idx !== -1
+        ? currentState.elements.with(idx, updatedElement)
+        : currentState.elements;
 
     // 선택된 요소가 업데이트된 경우 selectedElementProps도 업데이트
-    const updatedElement = updatedElements.find((el) => el.id === elementId);
     const selectedElementProps =
-      currentState.selectedElementId === elementId && updatedElement
+      currentState.selectedElementId === elementId
         ? createCompleteProps(updatedElement, props)
         : currentState.selectedElementProps;
 
@@ -179,7 +245,7 @@ export const createUpdateElementPropsAction =
     const hasStyleChange = Object.keys(changedStyle).length > 0;
     const isLayoutChange = hasStyleChange
       ? isLayoutAffectingUpdate(changedStyle)
-      : Object.keys(patch).some(k => k !== 'style'); // style 외 props 변경은 레이아웃 영향으로 간주
+      : Object.keys(patch).some((k) => k !== "style"); // style 외 props 변경은 레이아웃 영향으로 간주
 
     // updateElementProps는 element 구조(parent_id/page_id/tag/variableBindings 등)를 바꾸지 않으므로,
     // 전체 인덱스 재구축(O(n)) 대신 변경된 요소만 O(1)로 갱신한다.
@@ -188,7 +254,12 @@ export const createUpdateElementPropsAction =
       elementsMap.set(elementId, updatedElement);
       if (isLayoutChange) {
         const dirtyIds = new Set(currentState.dirtyElementIds);
-        markDirtyWithDescendantsUpdate(elementId, changedStyle, currentState.childrenMap, dirtyIds);
+        markDirtyWithDescendantsUpdate(
+          elementId,
+          changedStyle,
+          currentState.childrenMap,
+          dirtyIds,
+        );
         set((state) => ({
           elements: updatedElements,
           elementsMap,
@@ -218,7 +289,10 @@ export const createUpdateElementPropsAction =
         const db = await getDB();
         await db.elements.update(elementId, { props });
       } catch (error) {
-        console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
+        console.warn(
+          "⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):",
+          error,
+        );
         // 🚀 Phase 7: Toast + Undo 버튼
         globalToast.error("저장에 실패했습니다.", {
           duration: 8000,
@@ -247,7 +321,10 @@ export const createUpdateElementPropsAction =
  */
 export const createUpdateElementAction =
   (set: SetState, get: GetState) =>
-  async (elementId: string, updates: Partial<import("../../../types/core/store.types").Element>) => {
+  async (
+    elementId: string,
+    updates: Partial<import("../../../types/core/store.types").Element>,
+  ) => {
     if (Object.keys(updates).length === 0) return;
 
     const currentState = get();
@@ -255,17 +332,27 @@ export const createUpdateElementAction =
     const element = getElementById(currentState.elementsMap, elementId);
     if (!element) return;
 
-    const shouldRecordHistory = Boolean(currentState.currentPageId) && Boolean(updates.props);
-    const prevPropsClone =
-      shouldRecordHistory ? cloneForHistory(element.props) : null;
-    const newPropsClone =
-      shouldRecordHistory ? cloneForHistory(updates.props) : null;
-    const prevElementClone =
-      shouldRecordHistory ? cloneForHistory(element) : null;
+    const shouldRecordHistory =
+      Boolean(currentState.currentPageId) && Boolean(updates.props);
+    const prevPropsClone = shouldRecordHistory
+      ? cloneForHistory(element.props)
+      : null;
+    const newPropsClone = shouldRecordHistory
+      ? cloneForHistory(updates.props)
+      : null;
+    const prevElementClone = shouldRecordHistory
+      ? cloneForHistory(element)
+      : null;
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
     // 1. 히스토리 추가 (상태 변경 전에 기록)
-    if (currentState.currentPageId && updates.props && prevPropsClone && newPropsClone && prevElementClone) {
+    if (
+      currentState.currentPageId &&
+      updates.props &&
+      prevPropsClone &&
+      newPropsClone &&
+      prevElementClone
+    ) {
       historyManager.addEntry({
         type: "update",
         elementId: elementId,
@@ -277,20 +364,25 @@ export const createUpdateElementAction =
       });
     }
 
-    // 2. 메모리 상태 업데이트 (불변 업데이트)
-    const updatedElements = currentState.elements.map((el) =>
-      el.id === elementId ? { ...el, ...updates } : el
-    );
-
-    // 선택된 요소가 업데이트된 경우 props도 업데이트
-    const updatedElement = updatedElements.find((el) => el.id === elementId);
+    // ADR-040 Phase 3: indexOf + with() 증분 패치 (elements.map O(N) 제거)
+    const idx = currentState.elements.indexOf(element);
+    const updatedElement = { ...element, ...updates };
+    const updatedElements =
+      idx !== -1
+        ? currentState.elements.with(idx, updatedElement)
+        : currentState.elements;
     const selectedElementProps =
-      currentState.selectedElementId === elementId && updates.props && updatedElement
+      currentState.selectedElementId === elementId &&
+      updates.props &&
+      updatedElement
         ? createCompleteProps(updatedElement, updates.props)
         : currentState.selectedElementProps;
 
     // ADR-006 P3-1: props.style 변경 시 dirty tracking
-    const changedStyle = (updates.props?.style ?? {}) as Record<string, unknown>;
+    const changedStyle = (updates.props?.style ?? {}) as Record<
+      string,
+      unknown
+    >;
     const hasStyleChange = Object.keys(changedStyle).length > 0;
     const isLayoutChange = hasStyleChange
       ? isLayoutAffectingUpdate(changedStyle)
@@ -298,7 +390,12 @@ export const createUpdateElementAction =
 
     if (isLayoutChange) {
       const dirtyIds = new Set(currentState.dirtyElementIds);
-      markDirtyWithDescendantsUpdate(elementId, changedStyle, currentState.childrenMap, dirtyIds);
+      markDirtyWithDescendantsUpdate(
+        elementId,
+        changedStyle,
+        currentState.childrenMap,
+        dirtyIds,
+      );
       set((state) => ({
         elements: updatedElements,
         selectedElementProps,
@@ -322,7 +419,10 @@ export const createUpdateElementAction =
         const db = await getDB();
         await db.elements.update(elementId, updates);
       } catch (error) {
-        console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
+        console.warn(
+          "⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):",
+          error,
+        );
         // 🚀 Phase 7: Toast + Undo 버튼
         globalToast.error("저장에 실패했습니다.", {
           duration: 8000,
@@ -356,13 +456,12 @@ export const createUpdateElementAction =
  * @returns batchUpdateElementProps 액션 함수
  */
 export const createBatchUpdateElementPropsAction =
-  (set: SetState, get: GetState) =>
-  async (updates: BatchPropsUpdate[]) => {
+  (set: SetState, get: GetState) => async (updates: BatchPropsUpdate[]) => {
     if (updates.length === 0) return;
 
     const state = get();
     const validUpdates = updates.filter(
-      (u) => getElementById(state.elementsMap, u.elementId) !== undefined
+      (u) => getElementById(state.elementsMap, u.elementId) !== undefined,
     );
 
     if (validUpdates.length === 0) return;
@@ -398,16 +497,21 @@ export const createBatchUpdateElementPropsAction =
     }
 
     // 2. 단일 메모리 상태 업데이트 (불변)
-    const updatedElements = state.elements.map((el) => updatedElementMap.get(el.id) ?? el);
+    const updatedElements = state.elements.map(
+      (el) => updatedElementMap.get(el.id) ?? el,
+    );
 
     // 선택된 요소 props 업데이트
     const selectedId = state.selectedElementId;
-    const selectedProps = selectedId && updateMap.has(selectedId)
-      ? (() => {
-          const el = updatedElementMap.get(selectedId);
-          return el ? createCompleteProps(el, updateMap.get(selectedId)!) : state.selectedElementProps;
-        })()
-      : state.selectedElementProps;
+    const selectedProps =
+      selectedId && updateMap.has(selectedId)
+        ? (() => {
+            const el = updatedElementMap.get(selectedId);
+            return el
+              ? createCompleteProps(el, updateMap.get(selectedId)!)
+              : state.selectedElementProps;
+          })()
+        : state.selectedElementProps;
 
     // ADR-006 P3-1: batch props 변경 시 dirty tracking
     // 업데이트 중 하나라도 레이아웃 영향이 있으면 layoutVersion 증가
@@ -418,10 +522,17 @@ export const createBatchUpdateElementPropsAction =
       const hasStyleChange = Object.keys(changedStyle).length > 0;
       const isLayoutChange = hasStyleChange
         ? isLayoutAffectingUpdate(changedStyle)
-        : Object.keys(props as Record<string, unknown>).some(k => k !== 'style');
+        : Object.keys(props as Record<string, unknown>).some(
+            (k) => k !== "style",
+          );
       if (isLayoutChange) {
         hasAnyLayoutChange = true;
-        markDirtyWithDescendantsUpdate(elementId, changedStyle, state.childrenMap, dirtyIds);
+        markDirtyWithDescendantsUpdate(
+          elementId,
+          changedStyle,
+          state.childrenMap,
+          dirtyIds,
+        );
       }
     }
 
@@ -463,11 +574,14 @@ export const createBatchUpdateElementPropsAction =
         const db = await getDB();
         await Promise.all(
           validUpdates.map(({ elementId, props }) =>
-            db.elements.update(elementId, { props })
-          )
+            db.elements.update(elementId, { props }),
+          ),
         );
       } catch (error) {
-        console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
+        console.warn(
+          "⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):",
+          error,
+        );
         // 🚀 Phase 7: Toast + Undo 버튼
         globalToast.error("저장에 실패했습니다.", {
           duration: 8000,
@@ -491,13 +605,12 @@ export const createBatchUpdateElementPropsAction =
  * @returns batchUpdateElements 액션 함수
  */
 export const createBatchUpdateElementsAction =
-  (set: SetState, get: GetState) =>
-  async (updates: BatchElementUpdate[]) => {
+  (set: SetState, get: GetState) => async (updates: BatchElementUpdate[]) => {
     if (updates.length === 0) return;
 
     const state = get();
     const validUpdates = updates.filter(
-      (u) => getElementById(state.elementsMap, u.elementId) !== undefined
+      (u) => getElementById(state.elementsMap, u.elementId) !== undefined,
     );
 
     if (validUpdates.length === 0) return;
@@ -535,19 +648,22 @@ export const createBatchUpdateElementsAction =
     // 선택된 요소 props 업데이트
     const selectedId = state.selectedElementId;
     const selectedUpdate = selectedId ? updateMap.get(selectedId) : undefined;
-    const selectedProps = selectedId && selectedUpdate?.props
-      ? (() => {
-          const el = updatedElements.find((e) => e.id === selectedId);
-          return el ? createCompleteProps(el, selectedUpdate.props!) : state.selectedElementProps;
-        })()
-      : state.selectedElementProps;
+    const selectedProps =
+      selectedId && selectedUpdate?.props
+        ? (() => {
+            const el = updatedElements.find((e) => e.id === selectedId);
+            return el
+              ? createCompleteProps(el, selectedUpdate.props!)
+              : state.selectedElementProps;
+          })()
+        : state.selectedElementProps;
 
     // Fix 3: 단일 atomic set() — elements + indexes 동시 갱신 (transient 불일치 방지)
     const elementsMap = new Map<string, Element>();
     const newChildrenMap = new Map<string, Element[]>();
     updatedElements.forEach((el) => {
       elementsMap.set(el.id, el);
-      const parentId = el.parent_id || 'root';
+      const parentId = el.parent_id || "root";
       if (!newChildrenMap.has(parentId)) {
         newChildrenMap.set(parentId, []);
       }
@@ -562,14 +678,22 @@ export const createBatchUpdateElementsAction =
     let hasAnyLayoutChange = false;
     for (const { elementId, updates: elementUpdates } of validUpdates) {
       if (!elementUpdates.props) continue;
-      const changedStyle = (elementUpdates.props.style ?? {}) as Record<string, unknown>;
+      const changedStyle = (elementUpdates.props.style ?? {}) as Record<
+        string,
+        unknown
+      >;
       const hasStyleChange = Object.keys(changedStyle).length > 0;
       const isLayoutChange = hasStyleChange
         ? isLayoutAffectingUpdate(changedStyle)
         : true; // props 변경 → 레이아웃 영향 간주
       if (isLayoutChange) {
         hasAnyLayoutChange = true;
-        markDirtyWithDescendantsUpdate(elementId, changedStyle, newChildrenMap, dirtyIds);
+        markDirtyWithDescendantsUpdate(
+          elementId,
+          changedStyle,
+          newChildrenMap,
+          dirtyIds,
+        );
       }
     }
 
@@ -596,7 +720,9 @@ export const createBatchUpdateElementsAction =
         data: {
           batchUpdates: prevStates.map((ps, i) => ({
             elementId: ps.elementId,
-            newProps: cloneForHistory(validUpdates[i]?.updates.props ?? {}) as ComponentElementProps,
+            newProps: cloneForHistory(
+              validUpdates[i]?.updates.props ?? {},
+            ) as ComponentElementProps,
             prevProps: ps.prevProps,
           })),
         },
@@ -608,8 +734,8 @@ export const createBatchUpdateElementsAction =
       const db = await getDB();
       await Promise.all(
         validUpdates.map(({ elementId, updates: elementUpdates }) =>
-          db.elements.update(elementId, elementUpdates)
-        )
+          db.elements.update(elementId, elementUpdates),
+        ),
       );
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);

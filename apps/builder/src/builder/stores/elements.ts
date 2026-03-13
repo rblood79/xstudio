@@ -295,10 +295,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     componentIndex: ComponentIndex,
   ): ComponentIndex => ({
     masterToInstances: new Map(
-      Array.from(componentIndex.masterToInstances.entries(), ([masterId, ids]) => [
-        masterId,
-        new Set(ids),
-      ]),
+      Array.from(
+        componentIndex.masterToInstances.entries(),
+        ([masterId, ids]) => [masterId, new Set(ids)],
+      ),
     ),
     masterComponents: new Map(componentIndex.masterComponents),
   });
@@ -340,7 +340,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     }
 
     if (element.componentRole === "instance" && element.masterId) {
-      const instanceIds = componentIndex.masterToInstances.get(element.masterId);
+      const instanceIds = componentIndex.masterToInstances.get(
+        element.masterId,
+      );
       if (instanceIds) {
         instanceIds.delete(element.id);
         if (instanceIds.size === 0) {
@@ -375,7 +377,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     }
 
     for (const variableName of element.variableBindings) {
-      const elementIds = variableUsageIndex.variableToElements.get(variableName);
+      const elementIds =
+        variableUsageIndex.variableToElements.get(variableName);
       if (!elementIds) {
         continue;
       }
@@ -899,8 +902,11 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       const startTime = performance.now();
       set((state) => {
         const removedElements =
-          getPageElementsFromIndex(state.pageIndex, pageId, state.elementsMap) ??
-          state.elements.filter((element) => element.page_id === pageId);
+          getPageElementsFromIndex(
+            state.pageIndex,
+            pageId,
+            state.elementsMap,
+          ) ?? state.elements.filter((element) => element.page_id === pageId);
         const removedElementIds = new Set(
           removedElements.map((element) => element.id),
         );
@@ -923,7 +929,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           const parentId = element.parent_id || "root";
           const siblings = nextChildrenMap.get(parentId);
           if (siblings) {
-            const nextSiblings = siblings.filter((child) => child.id !== element.id);
+            const nextSiblings = siblings.filter(
+              (child) => child.id !== element.id,
+            );
             if (nextSiblings.length > 0) {
               nextChildrenMap.set(parentId, nextSiblings);
             } else {
@@ -944,7 +952,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         const requestedElementId = nextSelection?.elementId ?? null;
         const requestedPageId = nextSelection?.pageId ?? null;
         const requestedElementIsValid =
-          requestedElementId !== null && nextElementsMap.has(requestedElementId);
+          requestedElementId !== null &&
+          nextElementsMap.has(requestedElementId);
         const nextSelectedElementIds = requestedElementIsValid
           ? [requestedElementId]
           : state.selectedElementIds.filter((id) => nextElementsMap.has(id));
@@ -953,10 +962,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           : state.selectedElementId &&
               nextElementsMap.has(state.selectedElementId)
             ? state.selectedElementId
-            : nextSelectedElementIds[0] ?? null;
+            : (nextSelectedElementIds[0] ?? null);
         const nextEditingContextId =
-          state.editingContextId &&
-          nextElementsMap.has(state.editingContextId)
+          state.editingContextId && nextElementsMap.has(state.editingContextId)
             ? state.editingContextId
             : null;
         const nextCurrentPageId =
@@ -999,13 +1007,24 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       }
     },
 
+    // ADR-040 Phase 2: Atomic Page Activation — 중복 activation 방어 + 단일 commit
     activatePage: (pageId, elementId = null) => {
+      const state = get();
+      // 동일 페이지 + 동일 요소 선택이면 중복 commit 방지
+      if (
+        state.currentPageId === pageId &&
+        elementId != null &&
+        state.selectedElementId === elementId
+      ) {
+        return;
+      }
+
       const startTime = performance.now();
       historyManager.setCurrentPage(pageId);
-      set((state) => {
+      set((prevState) => {
         const targetElement =
-          (elementId ? state.elementsMap.get(elementId) : undefined) ??
-          (state.pageElementsSnapshot[pageId] ?? []).find(
+          (elementId ? prevState.elementsMap.get(elementId) : undefined) ??
+          (prevState.pageElementsSnapshot[pageId] ?? []).find(
             (element) => element.order_num === 0,
           ) ??
           null;
@@ -1014,7 +1033,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         return {
           currentPageId: pageId,
           selectedElementId: nextSelectedElementId,
-          selectedElementIds: nextSelectedElementId ? [nextSelectedElementId] : [],
+          selectedElementIds: nextSelectedElementId
+            ? [nextSelectedElementId]
+            : [],
           selectedElementIdsSet: nextSelectedElementId
             ? new Set([nextSelectedElementId])
             : new Set<string>(),

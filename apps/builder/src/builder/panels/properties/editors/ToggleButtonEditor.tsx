@@ -34,8 +34,9 @@ export const ToggleButtonEditor = memo(function ToggleButtonEditor({
   }, [element?.customId]);
 
   // Check if this ToggleButton is a child of ToggleButtonGroup
+  // ADR-040: elementsMap O(1) 조회
   const parentElement = useStore((state) =>
-    state.elements.find((el) => el.id === element?.parent_id),
+    element?.parent_id ? state.elementsMap.get(element.parent_id) : undefined,
   );
   const isChildOfToggleButtonGroup = parentElement?.tag === "ToggleButtonGroup";
 

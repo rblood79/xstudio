@@ -60,7 +60,7 @@ export function LayoutsTab({
   const layouts = useLayoutsStore((state) => state.layouts);
   const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
   const setCurrentLayoutInStore = useLayoutsStore(
-    (state) => state.setCurrentLayout
+    (state) => state.setCurrentLayout,
   );
   const createLayout = useLayoutsStore((state) => state.createLayout);
   const deleteLayout = useLayoutsStore((state) => state.deleteLayout);
@@ -72,19 +72,19 @@ export function LayoutsTab({
     console.log(
       `📌 [currentLayout] 계산: currentLayoutId=${currentLayoutId?.slice(
         0,
-        8
-      )}, found=${found?.name}`
+        8,
+      )}, found=${found?.name}`,
     );
     return found;
   }, [layouts, currentLayoutId]);
 
   // Edit Mode store
   const setEditModeLayoutId = useEditModeStore(
-    (state) => state.setCurrentLayoutId
+    (state) => state.setCurrentLayoutId,
   );
 
-  // Elements store - Layout에 속한 요소들
-  const allElements = useStore((state) => state.elements);
+  // ADR-040: elementsMap O(1) 조회 (전체 elements 배열 구독 제거)
+  const elementsMap = useStore((state) => state.elementsMap);
   const removeElement = useStore((state) => state.removeElement);
   const mergeElements = useStore((state) => state.mergeElements);
 
@@ -117,8 +117,8 @@ export function LayoutsTab({
       console.log(
         `📥 [LayoutsTab] Layout ${currentLayoutId.slice(
           0,
-          8
-        )} 이미 로드됨 - 스킵`
+          8,
+        )} 이미 로드됨 - 스킵`,
       );
       return;
     }
@@ -126,21 +126,22 @@ export function LayoutsTab({
     const loadLayoutElements = async () => {
       try {
         console.log(
-          `📥 [LayoutsTab] Layout ${currentLayoutId} 요소 로드 시작... (fallback)`
+          `📥 [LayoutsTab] Layout ${currentLayoutId} 요소 로드 시작... (fallback)`,
         );
         const db = await getDB();
         const layoutElements = await db.elements.getByLayout(currentLayoutId);
         console.log(
-          `📥 [LayoutsTab] IndexedDB에서 ${layoutElements.length}개 요소 조회됨`
+          `📥 [LayoutsTab] IndexedDB에서 ${layoutElements.length}개 요소 조회됨`,
         );
 
-        // 최신 elements 상태 가져오기 (stale closure 방지)
+        // ADR-040: Layout 모드 전환 시 DB 로드 — bootstrap 성격이므로 setElements 사용 정당
+        // (기존 layout 요소를 완전 교체해야 하므로 mergeElements 부적합)
         const currentElements = useStore.getState().elements;
         const storeSetElements = useStore.getState().setElements;
 
         // 기존 요소들 중 해당 레이아웃 요소가 아닌 것들 유지
         const otherElements = currentElements.filter(
-          (el) => el.layout_id !== currentLayoutId
+          (el) => el.layout_id !== currentLayoutId,
         );
         // 새로 로드한 레이아웃 요소들과 병합
         const mergedElements = [...otherElements, ...layoutElements];
@@ -149,7 +150,7 @@ export function LayoutsTab({
         // 로드 완료 표시
         loadedLayoutIdsRef.current.add(currentLayoutId);
         console.log(
-          `📥 [LayoutsTab] Layout ${currentLayoutId} 요소 ${layoutElements.length}개 로드 완료 (전체: ${mergedElements.length})`
+          `📥 [LayoutsTab] Layout ${currentLayoutId} 요소 ${layoutElements.length}개 로드 완료 (전체: ${mergedElements.length})`,
         );
       } catch (error) {
         console.error("[LayoutsTab] Layout 요소 로드 실패:", error);
@@ -159,30 +160,27 @@ export function LayoutsTab({
     loadLayoutElements();
   }, [currentLayoutId]); // useStore.getState()를 사용하므로 다른 의존성 불필요
 
-  // 현재 Layout의 요소들만 필터링
+  // ADR-040: elementsMap 순회로 layout_id 필터링 (전체 elements 배열 구독 제거)
   const layoutElements = useMemo(() => {
-    console.log(
-      `🎯 [layoutElements] 필터링: currentLayout=${currentLayout?.id?.slice(
-        0,
-        8
-      )}, allElements=${allElements.length}개`
-    );
     if (!currentLayout) return [];
-    const filtered = allElements.filter(
-      (el) => el.layout_id === currentLayout.id
-    );
+    const filtered: Element[] = [];
+    elementsMap.forEach((el) => {
+      if (el.layout_id === currentLayout.id) {
+        filtered.push(el);
+      }
+    });
     console.log(
       `🎯 [layoutElements] 필터 결과: ${filtered.length}개 (${filtered
         .map((el) => el.tag)
-        .join(", ")})`
+        .join(", ")})`,
     );
     return filtered;
-  }, [allElements, currentLayout]);
+  }, [elementsMap, currentLayout]);
 
   // Layout 요소 트리 빌드
   const layoutElementTree = useMemo(() => {
     console.log(
-      `🌳 [layoutElementTree] 트리 빌드: ${layoutElements.length}개 요소`
+      `🌳 [layoutElementTree] 트리 빌드: ${layoutElements.length}개 요소`,
     );
     return buildTreeFromElements(layoutElements);
   }, [layoutElements]);
@@ -212,8 +210,8 @@ export function LayoutsTab({
       console.log(
         `📂 [LayoutsTab] Layout 전환: ${prevLayoutIdRef.current?.slice(
           0,
-          8
-        )} → ${currentLayout.id.slice(0, 8)}`
+          8,
+        )} → ${currentLayout.id.slice(0, 8)}`,
       );
       prevLayoutIdRef.current = currentLayout.id;
       // ⭐ Layout 변경 시 body 자동 선택 플래그 초기화
@@ -233,8 +231,8 @@ export function LayoutsTab({
         console.log(
           `📂 [LayoutsTab] body 자동 펼치기 + 선택: ${bodyElement.id.slice(
             0,
-            8
-          )}`
+            8,
+          )}`,
         );
         expandKey(bodyElement.id);
         // ⭐ Store 업데이트
@@ -261,12 +259,12 @@ export function LayoutsTab({
       tree: ElementTreeItem[],
       onClick: (item: Element) => void,
       onDelete: (item: Element) => Promise<void>,
-      depth: number = 0
+      depth: number = 0,
     ): React.ReactNode => {
       // 재귀 호출을 위한 내부 헬퍼 함수
       const renderTree = (
         items: ElementTreeItem[],
-        currentDepth: number
+        currentDepth: number,
       ): React.ReactNode => {
         if (items.length === 0) return null;
 
@@ -392,7 +390,7 @@ export function LayoutsTab({
 
       return renderTree(tree, depth);
     },
-    [expandedKeys, toggleKey, selectedElementId, currentLayout?.id]
+    [expandedKeys, toggleKey, selectedElementId, currentLayout?.id],
   );
 
   // Layout 선택 핸들러
@@ -409,7 +407,7 @@ export function LayoutsTab({
         console.log(
           `📥 [LayoutsTab] Layout ${layout.id.slice(0, 8)} 요소 ${
             layoutElements.length
-          }개 선 로드`
+          }개 선 로드`,
         );
 
         // 기존 요소들 중 해당 레이아웃 요소가 아닌 것들 유지 + 새 레이아웃 요소 추가
@@ -429,7 +427,12 @@ export function LayoutsTab({
         setEditModeLayoutId(layout.id);
       }
     },
-    [setCurrentLayoutInStore, setEditModeLayoutId, currentLayoutId, mergeElements]
+    [
+      setCurrentLayoutInStore,
+      setEditModeLayoutId,
+      currentLayoutId,
+      mergeElements,
+    ],
   );
 
   // Layout 삭제 핸들러
@@ -455,7 +458,7 @@ export function LayoutsTab({
       handleSelectLayout,
       setCurrentLayoutInStore,
       setEditModeLayoutId,
-    ]
+    ],
   );
 
   // 새 Layout 생성 핸들러
@@ -490,7 +493,7 @@ export function LayoutsTab({
         }
       }
     },
-    [removeElement, selectedElementId, setSelectedElement, isWebGLOnly]
+    [removeElement, selectedElementId, setSelectedElement, isWebGLOnly],
   );
 
   return (
@@ -599,10 +602,10 @@ export function LayoutsTab({
               (el) => {
                 setSelectedElement(el.id, el.props as ElementProps);
                 requestAnimationFrame(() =>
-                  sendElementSelectedMessage(el.id, el.props as ElementProps)
+                  sendElementSelectedMessage(el.id, el.props as ElementProps),
                 );
               },
-              handleDeleteElement
+              handleDeleteElement,
             )
           )}
         </div>

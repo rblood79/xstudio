@@ -15,12 +15,12 @@
  * @since 2025-12-10 Phase 5 Lazy Loading + LRU Cache
  */
 
-import type { StateCreator } from 'zustand';
-import type { Element } from '../../types/core/store.types';
-import { getDB } from '../../lib/db';
-import { supabase } from '../../env/supabase.client';
-import { pageCache, type LRUCacheStats } from '../utils/LRUPageCache';
-import { normalizeElementTags } from './utils/elementTagNormalizer';
+import type { StateCreator } from "zustand";
+import type { Element } from "../../types/core/store.types";
+import { getDB } from "../../lib/db";
+import { supabase } from "../../env/supabase.client";
+import { pageCache, type LRUCacheStats } from "../utils/LRUPageCache";
+import { normalizeElementTags } from "./utils/elementTagNormalizer";
 
 // ============================================
 // Types
@@ -92,8 +92,12 @@ interface ElementsStateMinimal {
   _rebuildIndexes: () => void;
 }
 
-type SetState = Parameters<StateCreator<ElementLoaderSlice & ElementsStateMinimal>>[0];
-type GetState = Parameters<StateCreator<ElementLoaderSlice & ElementsStateMinimal>>[1];
+type SetState = Parameters<
+  StateCreator<ElementLoaderSlice & ElementsStateMinimal>
+>[0];
+type GetState = Parameters<
+  StateCreator<ElementLoaderSlice & ElementsStateMinimal>
+>[1];
 
 // ============================================
 // Element Loader Factory
@@ -104,7 +108,7 @@ type GetState = Parameters<StateCreator<ElementLoaderSlice & ElementsStateMinima
  */
 export function createElementLoaderSlice(
   set: SetState,
-  get: GetState
+  get: GetState,
 ): ElementLoaderSlice {
   // ============================================
   // 내부 헬퍼 함수
@@ -113,7 +117,9 @@ export function createElementLoaderSlice(
   /**
    * IndexedDB에서 페이지 요소 로드
    */
-  const loadFromIndexedDB = async (pageId: string): Promise<Element[] | null> => {
+  const loadFromIndexedDB = async (
+    pageId: string,
+  ): Promise<Element[] | null> => {
     try {
       const db = await getDB();
       // 🔧 FIX: DatabaseAdapter 인터페이스 사용 (Dexie API 대신)
@@ -126,7 +132,7 @@ export function createElementLoaderSlice(
 
       return null;
     } catch (error) {
-      console.warn('[Loader] IndexedDB load failed:', error);
+      console.warn("[Loader] IndexedDB load failed:", error);
       return null;
     }
   };
@@ -137,16 +143,16 @@ export function createElementLoaderSlice(
   const loadFromSupabase = async (pageId: string): Promise<Element[]> => {
     try {
       const { data, error } = await supabase
-        .from('elements')
-        .select('*')
-        .eq('page_id', pageId)
-        .order('order_num');
+        .from("elements")
+        .select("*")
+        .eq("page_id", pageId)
+        .order("order_num");
 
       if (error) throw error;
 
       return (data as Element[]) ?? [];
     } catch (error) {
-      console.error('[Loader] Supabase load failed:', error);
+      console.error("[Loader] Supabase load failed:", error);
       return [];
     }
   };
@@ -159,7 +165,7 @@ export function createElementLoaderSlice(
       const db = await getDB();
       await db.elements.insertMany(elements);
     } catch (error) {
-      console.warn('[Loader] IndexedDB cache failed:', error);
+      console.warn("[Loader] IndexedDB cache failed:", error);
     }
   };
 
@@ -251,7 +257,7 @@ export function createElementLoaderSlice(
         }
       }
 
-      // Store에 추가
+      // ADR-040 Phase 2: elements + loadedPages를 단일 set()으로 병합 (render burst 축소)
       if (elements.length > 0) {
         set((s) => {
           const newElementsMap = new Map(s.elementsMap);
@@ -277,11 +283,24 @@ export function createElementLoaderSlice(
                 (left, right) => (left.order_num ?? 0) - (right.order_num ?? 0),
               ),
             },
+            // 로딩 상태도 동일 commit에 포함
+            loadedPages: new Set([...s.loadedPages, pageId]),
+            loadingPages: new Set(
+              [...s.loadingPages].filter((id) => id !== pageId),
+            ),
           };
         });
 
         // 인덱스 재구축
         get()._rebuildIndexes();
+      } else {
+        // 요소 없어도 로딩 상태 업데이트
+        set((s) => ({
+          loadedPages: new Set([...s.loadedPages, pageId]),
+          loadingPages: new Set(
+            [...s.loadingPages].filter((id) => id !== pageId),
+          ),
+        }));
       }
 
       // LRU 체크 - 초과 시 오래된 페이지 언로드
@@ -293,19 +312,15 @@ export function createElementLoaderSlice(
         }
       }
 
-      // 로딩 완료
-      set((s) => ({
-        loadedPages: new Set([...s.loadedPages, pageId]),
-        loadingPages: new Set([...s.loadingPages].filter((id) => id !== pageId)),
-      }));
-
       return elements;
     } catch (error) {
-      console.error('[Loader] Failed to load page:', error);
+      console.error("[Loader] Failed to load page:", error);
 
       // 로딩 실패
       set((s) => ({
-        loadingPages: new Set([...s.loadingPages].filter((id) => id !== pageId)),
+        loadingPages: new Set(
+          [...s.loadingPages].filter((id) => id !== pageId),
+        ),
       }));
 
       return [];
@@ -428,8 +443,10 @@ export function createElementLoaderSlice(
     }
 
     // 백그라운드에서 로드 (requestIdleCallback 사용)
-    if ('requestIdleCallback' in window) {
-      (window as Window & { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(() => {
+    if ("requestIdleCallback" in window) {
+      (
+        window as Window & { requestIdleCallback: (cb: () => void) => void }
+      ).requestIdleCallback(() => {
         lazyLoadPageElements(pageId);
       });
     } else {
@@ -478,7 +495,7 @@ export function createElementLoaderSlice(
  */
 export function usePageLoadingState(
   store: { getState: () => ElementLoaderSlice },
-  pageId: string
+  pageId: string,
 ): { isLoading: boolean; isLoaded: boolean } {
   const state = store.getState();
   return {

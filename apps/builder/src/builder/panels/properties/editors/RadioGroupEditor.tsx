@@ -47,7 +47,11 @@ export const RadioGroupEditor = memo(
     const currentPageId = useStore((state) => state.currentPageId);
     const updateElementProps = useStore((state) => state.updateElementProps);
     const removeElement = useStore((state) => state.removeElement);
-    const storeElements = useStore((state) => state.elements);
+    // ADR-040: elementsMap/childrenMap O(1) 조회
+    const element = useStore((state) => state.elementsMap.get(elementId));
+    const rawChildren = useStore(
+      (state) => state.childrenMap.get(elementId) ?? [],
+    );
 
     // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
     const customId = useMemo(() => {
@@ -165,12 +169,10 @@ export const RadioGroupEditor = memo(
 
     // ⭐ 최적화: Radio 자식 요소들을 먼저 계산 (콜백들이 이것을 사용하므로)
     const radioChildren = useMemo(() => {
-      return storeElements
-        .filter(
-          (child) => child.parent_id === elementId && child.tag === "Radio",
-        )
+      return rawChildren
+        .filter((child) => child.tag === "Radio")
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-    }, [storeElements, elementId]);
+    }, [rawChildren]);
 
     // ⭐ 최적화: 라디오 편집 핸들러들
     const handleRadioChildrenChange = useCallback(

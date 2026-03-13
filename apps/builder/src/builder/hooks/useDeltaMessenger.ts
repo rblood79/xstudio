@@ -16,17 +16,20 @@
  * @see src/builder/stores/canvasStore.ts
  */
 
-import { useCallback, useRef, useEffect } from 'react';
-import { useStore } from '../stores';
-import { MessageService } from '../../utils/messaging';
+import { useCallback, useRef, useEffect } from "react";
+import { useStore } from "../stores";
+import { MessageService } from "../../utils/messaging";
 import {
   canvasDeltaMessenger,
   extractPropsChanges,
   shouldUseDelta,
-} from '../utils/canvasDeltaMessenger';
-import type { Element } from '../../types/core/store.types';
+} from "../utils/canvasDeltaMessenger";
+import type { Element } from "../../types/core/store.types";
 // ADR-006 P2-2: postMessage 보안 검증
-import { isValidBootstrapMessage, isValidPreviewMessage } from '../../utils/messageValidation';
+import {
+  isValidBootstrapMessage,
+  isValidPreviewMessage,
+} from "../../utils/messageValidation";
 
 // Delta 전송 통계
 interface DeltaStats {
@@ -44,7 +47,10 @@ export interface UseDeltaMessengerReturn {
   /**
    * 요소 추가 Delta 전송
    */
-  sendDeltaElementAdded: (element: Element, childElements?: Element[]) => boolean;
+  sendDeltaElementAdded: (
+    element: Element,
+    childElements?: Element[],
+  ) => boolean;
 
   /**
    * 요소 업데이트 Delta 전송
@@ -53,13 +59,16 @@ export interface UseDeltaMessengerReturn {
     elementId: string,
     prevProps: Record<string, unknown>,
     nextProps: Record<string, unknown>,
-    options?: { parentId?: string | null; orderNum?: number }
+    options?: { parentId?: string | null; orderNum?: number },
   ) => boolean;
 
   /**
    * 요소 삭제 Delta 전송
    */
-  sendDeltaElementRemoved: (elementId: string, childElementIds?: string[]) => boolean;
+  sendDeltaElementRemoved: (
+    elementId: string,
+    childElementIds?: string[],
+  ) => boolean;
 
   /**
    * 배치 업데이트 Delta 전송
@@ -71,7 +80,7 @@ export interface UseDeltaMessengerReturn {
       nextProps?: Record<string, unknown>;
       parentId?: string | null;
       orderNum?: number;
-    }>
+    }>,
   ) => boolean;
 
   /**
@@ -80,7 +89,7 @@ export interface UseDeltaMessengerReturn {
   sendOptimalUpdate: (
     prevElements: Element[],
     nextElements: Element[],
-    changedIds: string[]
+    changedIds: string[],
   ) => void;
 
   /**
@@ -94,7 +103,9 @@ export interface UseDeltaMessengerOptions {
   bootstrapNonce?: string;
 }
 
-export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaMessengerReturn => {
+export const useDeltaMessenger = (
+  options?: UseDeltaMessengerOptions,
+): UseDeltaMessengerReturn => {
   const bootstrapNonce = options?.bootstrapNonce;
   const statsRef = useRef<DeltaStats>({
     deltaSent: 0,
@@ -105,8 +116,8 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const isReadyRef = useRef(false);
 
-  // Store에서 요소 개수 가져오기 (Delta 사용 여부 판단용)
-  const elementsCount = useStore((state) => state.elements.length);
+  // ADR-040: elementsMap.size O(1) 조회 (elements.length 배열 구독 제거)
+  const elementsCount = useStore((state) => state.elementsMap.size);
 
   /**
    * Delta 메신저 초기화
@@ -118,12 +129,12 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
 
       if (iframe) {
         isReadyRef.current = true;
-        console.log('🚀 [Delta] Messenger initialized');
+        console.log("🚀 [Delta] Messenger initialized");
       } else {
         isReadyRef.current = false;
       }
     },
-    []
+    [],
   );
 
   /**
@@ -132,14 +143,14 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       // ADR-006 P2-2: PREVIEW_READY는 nonce 포함 부트스트랩 검증, 그 외는 source+origin 이중 검증
-      const isBootstrap = event.data?.type === 'PREVIEW_READY';
+      const isBootstrap = event.data?.type === "PREVIEW_READY";
       if (isBootstrap) {
         if (!isValidBootstrapMessage(event, bootstrapNonce)) return;
       } else {
         if (!isValidPreviewMessage(event)) return;
       }
 
-      if (event.data.type === 'PREVIEW_READY') {
+      if (event.data.type === "PREVIEW_READY") {
         isReadyRef.current = true;
 
         // iframe 재확인
@@ -150,15 +161,15 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
       }
 
       // Delta ACK 처리
-      if (event.data.type === 'DELTA_ACK') {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🚀 [Delta] ACK received:', event.data.operation);
+      if (event.data.type === "DELTA_ACK") {
+        if (process.env.NODE_ENV === "development") {
+          console.log("🚀 [Delta] ACK received:", event.data.operation);
         }
       }
     };
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, [bootstrapNonce]);
 
   /**
@@ -167,11 +178,14 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
   const sendDeltaElementAdded = useCallback(
     (element: Element, childElements?: Element[]): boolean => {
       if (!isReadyRef.current) {
-        console.warn('🚀 [Delta] Not ready, skipping element add');
+        console.warn("🚀 [Delta] Not ready, skipping element add");
         return false;
       }
 
-      const success = canvasDeltaMessenger.sendElementAdded(element, childElements);
+      const success = canvasDeltaMessenger.sendElementAdded(
+        element,
+        childElements,
+      );
 
       if (success) {
         statsRef.current.deltaSent++;
@@ -181,7 +195,7 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
 
       return success;
     },
-    [elementsCount]
+    [elementsCount],
   );
 
   /**
@@ -192,10 +206,10 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
       elementId: string,
       prevProps: Record<string, unknown>,
       nextProps: Record<string, unknown>,
-      options?: { parentId?: string | null; orderNum?: number }
+      options?: { parentId?: string | null; orderNum?: number },
     ): boolean => {
       if (!isReadyRef.current) {
-        console.warn('🚀 [Delta] Not ready, skipping element update');
+        console.warn("🚀 [Delta] Not ready, skipping element update");
         return false;
       }
 
@@ -203,14 +217,18 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
       const propsChanges = extractPropsChanges(prevProps, nextProps);
 
       // 변경사항이 없으면 스킵
-      if (Object.keys(propsChanges).length === 0 && !options?.parentId && !options?.orderNum) {
+      if (
+        Object.keys(propsChanges).length === 0 &&
+        !options?.parentId &&
+        !options?.orderNum
+      ) {
         return false;
       }
 
       const success = canvasDeltaMessenger.sendElementUpdated(
         elementId,
         propsChanges,
-        options
+        options,
       );
 
       if (success) {
@@ -221,7 +239,7 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
 
       return success;
     },
-    [elementsCount]
+    [elementsCount],
   );
 
   /**
@@ -230,11 +248,14 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
   const sendDeltaElementRemoved = useCallback(
     (elementId: string, childElementIds?: string[]): boolean => {
       if (!isReadyRef.current) {
-        console.warn('🚀 [Delta] Not ready, skipping element remove');
+        console.warn("🚀 [Delta] Not ready, skipping element remove");
         return false;
       }
 
-      const success = canvasDeltaMessenger.sendElementRemoved(elementId, childElementIds);
+      const success = canvasDeltaMessenger.sendElementRemoved(
+        elementId,
+        childElementIds,
+      );
 
       if (success) {
         statsRef.current.deltaSent++;
@@ -243,7 +264,7 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
 
       return success;
     },
-    [elementsCount]
+    [elementsCount],
   );
 
   /**
@@ -257,10 +278,10 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
         nextProps?: Record<string, unknown>;
         parentId?: string | null;
         orderNum?: number;
-      }>
+      }>,
     ): boolean => {
       if (!isReadyRef.current) {
-        console.warn('🚀 [Delta] Not ready, skipping batch update');
+        console.warn("🚀 [Delta] Not ready, skipping batch update");
         return false;
       }
 
@@ -288,14 +309,18 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
 
       return success;
     },
-    [elementsCount]
+    [elementsCount],
   );
 
   /**
    * Delta 사용 여부 판단 후 최적 전송 방식 선택
    */
   const sendOptimalUpdate = useCallback(
-    (prevElements: Element[], nextElements: Element[], changedIds: string[]) => {
+    (
+      prevElements: Element[],
+      nextElements: Element[],
+      changedIds: string[],
+    ) => {
       const iframe = MessageService.getIframe();
       if (!iframe?.contentWindow) return;
 
@@ -322,10 +347,14 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
               nextEl.props as Record<string, unknown>,
               {
                 parentId:
-                  prevEl.parent_id !== nextEl.parent_id ? nextEl.parent_id : undefined,
+                  prevEl.parent_id !== nextEl.parent_id
+                    ? nextEl.parent_id
+                    : undefined,
                 orderNum:
-                  prevEl.order_num !== nextEl.order_num ? nextEl.order_num : undefined,
-              }
+                  prevEl.order_num !== nextEl.order_num
+                    ? nextEl.order_num
+                    : undefined,
+              },
             );
           }
         });
@@ -334,16 +363,18 @@ export const useDeltaMessenger = (options?: UseDeltaMessengerOptions): UseDeltaM
       } else {
         // 전체 전송 (기존 방식)
         const message = {
-          type: 'UPDATE_ELEMENTS',
+          type: "UPDATE_ELEMENTS",
           elements: nextElements,
         };
         iframe.contentWindow.postMessage(message, window.location.origin);
 
         statsRef.current.fullUpdateSent++;
-        console.log(`🚀 [Delta] Sent full update (${nextElements.length} elements)`);
+        console.log(
+          `🚀 [Delta] Sent full update (${nextElements.length} elements)`,
+        );
       }
     },
-    [sendDeltaElementAdded, sendDeltaElementRemoved, sendDeltaElementUpdated]
+    [sendDeltaElementAdded, sendDeltaElementRemoved, sendDeltaElementUpdated],
   );
 
   /**

@@ -45,19 +45,14 @@ export const TableEditor = memo(
     currentProps,
     onUpdate,
   }: PropertyEditorProps) {
-    const elements = useStore((state) => state.elements);
+    // ADR-040: elementsMap O(1) 조회
+    const element = useStore((state) => state.elementsMap.get(elementId));
     const mergeElements = useStore((state) => state.mergeElements);
 
     // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
     const customId = useMemo(() => {
-      const element = useStore.getState().elementsMap.get(elementId);
       return element?.customId || "";
-    }, [elementId]);
-
-    // elementId를 사용하여 현재 Element를 찾음
-    const element = useMemo(() => {
-      return elements.find((el) => el.id === elementId);
-    }, [elements, elementId]);
+    }, [element?.customId]);
 
     // Table 속성 업데이트 함수들
     const updateTableProps = useCallback(

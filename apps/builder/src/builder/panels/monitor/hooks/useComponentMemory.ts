@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useStore } from "../../../stores";
+import type { Element } from "../../../../types/core/store.types";
 
 export interface ComponentMemoryInfo {
   elementId: string;
@@ -46,63 +47,67 @@ function estimateObjectSize(obj: unknown): number {
   return 0;
 }
 
-// 요소의 깊이 계산
+// ADR-040: elementsMap O(1) 조회로 깊이 계산
 function getElementDepth(
   elementId: string,
-  elements: { id: string; parent_id?: string | null }[]
+  elementsMap: Map<string, Element>,
 ): number {
   let depth = 0;
-  let current = elements.find((el) => el.id === elementId);
+  let current = elementsMap.get(elementId);
 
   while (current?.parent_id) {
     depth++;
-    current = elements.find((el) => el.id === current!.parent_id);
+    current = elementsMap.get(current.parent_id);
     if (depth > 100) break; // 무한 루프 방지
   }
 
   return depth;
 }
 
-// 자식 요소 수 계산
+// ADR-040: childrenMap O(1) 조회로 자식 수 계산
 function countChildren(
   elementId: string,
-  elements: { id: string; parent_id?: string | null }[]
+  childrenMap: Map<string, Element[]>,
 ): number {
-  const directChildren = elements.filter((el) => el.parent_id === elementId);
+  const directChildren = childrenMap.get(elementId) ?? [];
   return directChildren.reduce(
-    (sum, child) => sum + 1 + countChildren(child.id, elements),
-    0
+    (sum, child) => sum + 1 + countChildren(child.id, childrenMap),
+    0,
   );
 }
 
 export function useComponentMemory(options: UseComponentMemoryOptions = {}) {
   const { enabled = true, sortBy = "memory", limit = 20 } = options;
-  const elements = useStore((state) => state.elements);
+  // ADR-040: elementsMap + childrenMap O(1) 조회
+  const elementsMap = useStore((state) => state.elementsMap);
+  const childrenMap = useStore((state) => state.childrenMap);
   const [componentMemory, setComponentMemory] = useState<ComponentMemoryInfo[]>(
-    []
+    [],
   );
   const [totalMemory, setTotalMemory] = useState(0);
 
   const analyze = useCallback(() => {
-    if (!enabled || elements.length === 0) {
+    if (!enabled || elementsMap.size === 0) {
       setComponentMemory([]);
       setTotalMemory(0);
       return;
     }
 
     // 각 요소별 메모리 계산
-    const memoryInfos: ComponentMemoryInfo[] = elements.map((el) => {
+    const memoryInfos: ComponentMemoryInfo[] = [];
+    elementsMap.forEach((el) => {
       const propsSize = estimateObjectSize(el.props);
       const baseSize = 100; // 기본 객체 오버헤드
       const idSize = (el.id?.length ?? 0) * 2;
       const customIdSize = (el.customId?.length ?? 0) * 2;
       const tagSize = (el.tag?.length ?? 0) * 2;
 
-      const memoryBytes = baseSize + idSize + customIdSize + tagSize + propsSize;
-      const childCount = countChildren(el.id, elements);
-      const depth = getElementDepth(el.id, elements);
+      const memoryBytes =
+        baseSize + idSize + customIdSize + tagSize + propsSize;
+      const childCount = countChildren(el.id, childrenMap);
+      const depth = getElementDepth(el.id, elementsMap);
 
-      return {
+      memoryInfos.push({
         elementId: el.id,
         customId: el.customId,
         tag: el.tag,
@@ -111,7 +116,7 @@ export function useComponentMemory(options: UseComponentMemoryOptions = {}) {
         childCount,
         propsSize,
         percentage: 0, // 후처리에서 계산
-      };
+      });
     });
 
     // 전체 메모리 계산
@@ -139,7 +144,7 @@ export function useComponentMemory(options: UseComponentMemoryOptions = {}) {
 
     // 상위 N개만
     setComponentMemory(memoryInfos.slice(0, limit));
-  }, [enabled, elements, sortBy, limit]);
+  }, [enabled, elementsMap, childrenMap, sortBy, limit]);
 
   useEffect(() => {
     // 다음 프레임에서 분석 실행하여 cascading render 방지

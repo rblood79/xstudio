@@ -8,8 +8,8 @@
  * @since 2025-12-16 Phase 1 WebGL Migration
  */
 
-import { useExtend } from '@pixi/react';
-import { PIXI_COMPONENTS } from '../pixiSetup';
+import { useExtend } from "@pixi/react";
+import { PIXI_COMPONENTS } from "../pixiSetup";
 import { memo, useCallback, useMemo } from "react";
 import { Graphics as PixiGraphics } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
@@ -51,7 +51,13 @@ function parseListBoxItemsFromChildren(childItems: Element[]): ListBoxItem[] {
       return {
         id: item.id,
         value: String(props?.value || props?.id || item.id || index),
-        label: String(props?.children || props?.textValue || props?.label || props?.text || `Item ${index + 1}`),
+        label: String(
+          props?.children ||
+            props?.textValue ||
+            props?.label ||
+            props?.text ||
+            `Item ${index + 1}`,
+        ),
         isDisabled: Boolean(props?.isDisabled),
       };
     });
@@ -60,7 +66,9 @@ function parseListBoxItemsFromChildren(childItems: Element[]): ListBoxItem[] {
 /**
  * props.items에서 아이템 파싱
  */
-function parseListBoxItemsFromProps(props: Record<string, unknown> | undefined): ListBoxItem[] | null {
+function parseListBoxItemsFromProps(
+  props: Record<string, unknown> | undefined,
+): ListBoxItem[] | null {
   if (!props || !Array.isArray(props.items) || props.items.length === 0) {
     return null;
   }
@@ -74,7 +82,9 @@ function parseListBoxItemsFromProps(props: Record<string, unknown> | undefined):
       return {
         id: String(itemObj.id || index),
         value: String(itemObj.value || itemObj.id || index),
-        label: String(itemObj.label || itemObj.name || itemObj.text || `Item ${index + 1}`),
+        label: String(
+          itemObj.label || itemObj.name || itemObj.text || `Item ${index + 1}`,
+        ),
         isDisabled: Boolean(itemObj.isDisabled),
       };
     }
@@ -95,13 +105,13 @@ export const PixiListBox = memo(function PixiListBox({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // Store에서 자식 ListBoxItem 요소들 가져오기
-  const elements = useStore((state) => state.elements);
+  // ADR-040: childrenMap O(1) 조회
+  const rawChildren = useStore(
+    (state) => state.childrenMap.get(element.id) ?? [],
+  );
   const childItems = useMemo(() => {
-    return elements.filter(
-      (el) => el.parent_id === element.id && el.tag === "ListBoxItem"
-    );
-  }, [elements, element.id]);
+    return rawChildren.filter((el) => el.tag === "ListBoxItem");
+  }, [rawChildren]);
 
   // 아이템들: 자식 요소 > props.items > 기본값
   const items = useMemo(() => {
@@ -125,7 +135,8 @@ export const PixiListBox = memo(function PixiListBox({
 
   // 선택된 키들
   const selectedKeys = useMemo(() => {
-    const keys = props?.selectedKeys || props?.value || props?.defaultSelectedKeys;
+    const keys =
+      props?.selectedKeys || props?.value || props?.defaultSelectedKeys;
 
     if (Array.isArray(keys)) {
       return keys.map(String);
@@ -150,11 +161,17 @@ export const PixiListBox = memo(function PixiListBox({
     }
 
     return [];
-  }, [props?.selectedKeys, props?.value, props?.defaultSelectedKeys, childItems]);
+  }, [
+    props?.selectedKeys,
+    props?.value,
+    props?.defaultSelectedKeys,
+    childItems,
+  ]);
 
   // 크기 계산
-  const containerWidth = typeof style?.width === 'number' ? style.width : 200;
-  const containerHeight = typeof style?.height === 'number' ? style.height : 200;
+  const containerWidth = typeof style?.width === "number" ? style.width : 200;
+  const containerHeight =
+    typeof style?.height === "number" ? style.height : 200;
 
   // 그룹 클릭 핸들러
   const handleContainerClick = useCallback(() => {
@@ -184,7 +201,7 @@ export const PixiListBox = memo(function PixiListBox({
 
       onChange?.(element.id, newSelectedKeys);
     },
-    [element.id, onClick, onChange, selectionMode, selectedKeys]
+    [element.id, onClick, onChange, selectionMode, selectedKeys],
   );
 
   // 투명 히트 영역 그리기
@@ -194,7 +211,7 @@ export const PixiListBox = memo(function PixiListBox({
       g.rect(0, 0, containerWidth, containerHeight);
       g.fill({ color: 0xffffff, alpha: 0.001 });
     },
-    [containerWidth, containerHeight]
+    [containerWidth, containerHeight],
   );
 
   // 아이템별 히트 영역 그리기
@@ -208,21 +225,13 @@ export const PixiListBox = memo(function PixiListBox({
       g.rect(0, 0, itemWidth, itemHeight);
       g.fill({ color: 0xffffff, alpha: 0.001 });
     },
-    [containerWidth]
+    [containerWidth],
   );
 
   return (
-    <pixiContainer
-      eventMode="static"
-      onPointerDown={handleContainerClick}
-    >
+    <pixiContainer eventMode="static" onPointerDown={handleContainerClick}>
       {/* 컨테이너 히트 영역 */}
-      <pixiGraphics
-        draw={drawHitArea}
-        x={0}
-        y={0}
-        eventMode="none"
-      />
+      <pixiGraphics draw={drawHitArea} x={0} y={0} eventMode="none" />
 
       {/* 아이템별 히트 영역 */}
       {items.map((item) => (

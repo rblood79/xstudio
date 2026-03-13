@@ -48,38 +48,49 @@ export function usePresetApply({
   const [isApplying, setIsApplying] = useState(false);
 
   // Store actions
-  const elements = useStore((state) => state.elements);
+  // ADR-040: elementsMap O(1) 조회 (전체 elements 배열 구독 제거)
+  const elementsMap = useStore((state) => state.elementsMap);
+  const childrenMap = useStore((state) => state.childrenMap);
   const addComplexElement = useStore((state) => state.addComplexElement);
   const removeElement = useStore((state) => state.removeElement);
   const updateElementProps = useStore((state) => state.updateElementProps);
 
-  // 현재 Layout의 기존 Slot 목록
+  // 현재 Layout의 기존 Slot 목록 (layout_id 인덱스 없으므로 elementsMap 순회)
   const existingSlots = useMemo((): ExistingSlotInfo[] => {
-    return elements
-      .filter((el) => el.layout_id === layoutId && el.tag === "Slot")
-      .map((slot) => {
-        // Slot의 자식 요소 확인
-        const hasChildren = elements.some(
-          (el) =>
-            el.parent_id === slot.id ||
-            (el.props as { slot_name?: string })?.slot_name ===
-              (slot.props as { name?: string })?.name
-        );
-        return {
-          slotName:
-            ((slot.props as { name?: string })?.name as string) || "unnamed",
-          elementId: slot.id,
-          hasChildren,
-        };
-      });
-  }, [elements, layoutId]);
+    const slots: ExistingSlotInfo[] = [];
+    elementsMap.forEach((el) => {
+      if (el.layout_id === layoutId && el.tag === "Slot") {
+        const slotChildren = childrenMap.get(el.id) ?? [];
+        const slotName =
+          ((el.props as { name?: string })?.name as string) || "unnamed";
+        const hasChildren =
+          slotChildren.length > 0 ||
+          // slot_name 매칭도 확인
+          (() => {
+            let found = false;
+            elementsMap.forEach((other) => {
+              if (
+                (other.props as { slot_name?: string })?.slot_name === slotName
+              ) {
+                found = true;
+              }
+            });
+            return found;
+          })();
+        slots.push({ slotName, elementId: el.id, hasChildren });
+      }
+    });
+    return slots;
+  }, [elementsMap, childrenMap, layoutId]);
 
   // ⭐ 현재 적용된 프리셋 감지 (body element의 appliedPreset prop에서 읽기)
   const currentPresetKey = useMemo((): string | null => {
-    const body = elements.find((el) => el.id === bodyElementId);
+    // ADR-040: elementsMap O(1) 조회
+    const body = elementsMap.get(bodyElementId);
     if (!body) return null;
 
-    const appliedPreset = (body.props as { appliedPreset?: string })?.appliedPreset;
+    const appliedPreset = (body.props as { appliedPreset?: string })
+      ?.appliedPreset;
 
     // appliedPreset이 있고, 해당 프리셋이 존재하며, 현재 slots과 일치하는지 검증
     if (appliedPreset && LAYOUT_PRESETS[appliedPreset]) {
@@ -97,7 +108,7 @@ export function usePresetApply({
     }
 
     return null;
-  }, [elements, bodyElementId, existingSlots]);
+  }, [elementsMap, bodyElementId, existingSlots]);
 
   // 프리셋 적용 함수
   const applyPreset = useCallback(
@@ -111,7 +122,7 @@ export function usePresetApply({
       }
 
       console.log(
-        `[Preset] Applying "${preset.name}" to layout ${layoutId.slice(0, 8)}...`
+        `[Preset] Applying "${preset.name}" to layout ${layoutId.slice(0, 8)}...`,
       );
 
       setIsApplying(true);
@@ -122,23 +133,23 @@ export function usePresetApply({
         // ============================================
         if (mode === "replace" && existingSlots.length > 0) {
           console.log(
-            `[Preset] Removing ${existingSlots.length} existing slots...`
+            `[Preset] Removing ${existingSlots.length} existing slots...`,
           );
 
           // 삭제 실행
           await Promise.all(
-            existingSlots.map((slot) => removeElement(slot.elementId))
+            existingSlots.map((slot) => removeElement(slot.elementId)),
           );
 
-          console.log(`[Preset] Removed ${existingSlots.length} existing slots`);
+          console.log(
+            `[Preset] Removed ${existingSlots.length} existing slots`,
+          );
         }
 
         // ============================================
         // Step 2: 새 Slot 생성 준비
         // ============================================
-        const existingSlotNames = new Set(
-          existingSlots.map((s) => s.slotName)
-        );
+        const existingSlotNames = new Set(existingSlots.map((s) => s.slotName));
         const slotsToCreate: SlotDefinition[] =
           mode === "merge"
             ? preset.slots.filter((s) => !existingSlotNames.has(s.name))
@@ -170,19 +181,18 @@ export function usePresetApply({
             layout_id: layoutId,
             page_id: null,
             order_num: orderNum++,
-          })
+          }),
         );
 
         // ============================================
         // Step 4: Body에 containerStyle 및 appliedPreset 저장
         // ============================================
-        const body = elements.find((el) => el.id === bodyElementId);
+        // ADR-040: elementsMap O(1) 조회 (handler 내부 → getState 최신값)
+        const body = useStore.getState().elementsMap.get(bodyElementId);
         if (body) {
           const currentStyle =
-            ((body.props as { style?: Record<string, unknown> })?.style as Record<
-              string,
-              unknown
-            >) || {};
+            ((body.props as { style?: Record<string, unknown> })
+              ?.style as Record<string, unknown>) || {};
 
           // containerStyle이 있으면 병합, 없으면 기존 스타일 유지
           const mergedStyle = preset.containerStyle
@@ -207,7 +217,7 @@ export function usePresetApply({
           await addComplexElement(firstSlot, restSlots);
 
           console.log(
-            `[Preset] Created ${slotElements.length} slots with single history entry`
+            `[Preset] Created ${slotElements.length} slots with single history entry`,
           );
         }
 
@@ -223,11 +233,10 @@ export function usePresetApply({
       layoutId,
       bodyElementId,
       existingSlots,
-      elements,
       addComplexElement,
       removeElement,
       updateElementProps,
-    ]
+    ],
   );
 
   return {

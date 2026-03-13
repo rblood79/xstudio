@@ -33,13 +33,19 @@ interface PagesSectionProps {
   projectId: string | undefined;
 }
 
-function logPerf(name: string, startTime: number, extra?: Record<string, unknown>) {
+function logPerf(
+  name: string,
+  startTime: number,
+  extra?: Record<string, unknown>,
+) {
   const duration = performance.now() - startTime;
   if (duration < 8) {
     return;
   }
 
-  const payload = extra ? { durationMs: Number(duration.toFixed(1)), ...extra } : duration;
+  const payload = extra
+    ? { durationMs: Number(duration.toFixed(1)), ...extra }
+    : duration;
   console.log(`[perf] ${name}`, payload);
 }
 
@@ -61,7 +67,7 @@ export const PagesSection = memo(function PagesSection({
 
   const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());
   const [isFallbackTransitioning, setIsFallbackTransitioning] = useState(false);
-  const singlePage = pages.length === 1 ? pages[0] ?? null : null;
+  const singlePage = pages.length === 1 ? (pages[0] ?? null) : null;
 
   // 페이지 추가 핸들러
   const handleAddPage = useCallback(async () => {
@@ -80,14 +86,14 @@ export const PagesSection = memo(function PagesSection({
     });
   }, [projectId, addPage]);
 
-  // 페이지 선택 핸들러
+  // ADR-040 Phase 2: 페이지 선택 — 즉시 activation + 백그라운드 로드
   const handlePageSelect = useCallback(
-    async (page: Page, options?: { pan?: boolean }) => {
+    (page: Page, options?: { pan?: boolean }) => {
       if (options?.pan !== false) {
         panToPage(page.id);
       }
       if (currentPageId !== page.id) {
-        await loadPageIfNeeded(page.id);
+        // 현재 snapshot에서 body 조회 (로드 대기 없이 즉시 activation)
         const pageBodyElement =
           (useStore.getState().pageElementsSnapshot[page.id] ?? []).find(
             (element) => element.order_num === 0,
@@ -95,9 +101,11 @@ export const PagesSection = memo(function PagesSection({
         startTransition(() => {
           activatePage(page.id, pageBodyElement?.id ?? null);
         });
+        // 백그라운드: 미로드 페이지면 lazy load (activation 후 snapshot 보강)
+        loadPageIfNeeded(page.id);
       }
     },
-    [activatePage, currentPageId, loadPageIfNeeded]
+    [activatePage, currentPageId, loadPageIfNeeded],
   );
 
   // 페이지 삭제 핸들러
@@ -106,38 +114,36 @@ export const PagesSection = memo(function PagesSection({
       const startTime = performance.now();
       const currentState = useStore.getState();
       const deletingCurrentPage = currentState.currentPageId === page.id;
-      const pageIndex = pages.findIndex((candidate) => candidate.id === page.id);
-      const pageElements = currentState.elements.filter(
-        (element) => element.page_id === page.id,
+      const pageIndex = pages.findIndex(
+        (candidate) => candidate.id === page.id,
       );
+      // ADR-040 Phase 2: pageElementsSnapshot O(1) 조회 (elements.filter 배열 순회 제거)
+      const pageElements = currentState.pageElementsSnapshot[page.id] ?? [];
       const elementIds = pageElements.map((element) => element.id);
       const remainingPages = pages.filter((p) => p.id !== page.id);
       const previousPage =
-        pageIndex > 0 ? pages[pageIndex - 1] ?? null : null;
-      const nextPage =
-        pageIndex >= 0 ? pages[pageIndex + 1] ?? null : null;
+        pageIndex > 0 ? (pages[pageIndex - 1] ?? null) : null;
+      const nextPage = pageIndex >= 0 ? (pages[pageIndex + 1] ?? null) : null;
       const pageToSelect =
         remainingPages.find((candidate) => candidate.id === previousPage?.id) ??
         remainingPages.find((candidate) => candidate.id === nextPage?.id) ??
         remainingPages[0] ??
         null;
       const nextBodyElement = pageToSelect
-        ? currentState.elements.find(
-            (element) =>
-              element.page_id === pageToSelect.id && element.order_num === 0,
-          ) ?? null
+        ? ((currentState.pageElementsSnapshot[pageToSelect.id] ?? []).find(
+            (element) => element.order_num === 0,
+          ) ?? null)
         : null;
 
       console.log(
-        `🗑️ Page "${page.title}" 삭제 시작: ${elementIds.length}개 요소 포함`
+        `🗑️ Page "${page.title}" 삭제 시작: ${elementIds.length}개 요소 포함`,
       );
 
-      const loadedNextBodyElement =
-        pageToSelect
-          ? (useStore.getState().pageElementsSnapshot[pageToSelect.id] ?? []).find(
-              (element) => element.order_num === 0,
-            ) ?? nextBodyElement
-          : null;
+      const loadedNextBodyElement = pageToSelect
+        ? ((
+            useStore.getState().pageElementsSnapshot[pageToSelect.id] ?? []
+          ).find((element) => element.order_num === 0) ?? nextBodyElement)
+        : null;
 
       // 1. UI는 즉시 반영하되, 현재 페이지 삭제 시 fallback activation은 다음 프레임으로 분리
       if (deletingCurrentPage && pageToSelect) {
@@ -186,9 +192,10 @@ export const PagesSection = memo(function PagesSection({
               });
 
               const hydratedBodyElement =
-                (useStore.getState().pageElementsSnapshot[pageToSelect.id] ?? []).find(
-                  (element) => element.order_num === 0,
-                ) ?? null;
+                (
+                  useStore.getState().pageElementsSnapshot[pageToSelect.id] ??
+                  []
+                ).find((element) => element.order_num === 0) ?? null;
 
               if (!hydratedBodyElement) {
                 return;
@@ -198,10 +205,14 @@ export const PagesSection = memo(function PagesSection({
               startTransition(() => {
                 activatePage(pageToSelect.id, hydratedBodyElement.id);
               });
-              logPerf("pages.delete-fallback.activate-hydrated", hydratedActivateStart, {
-                pageId: pageToSelect.id,
-                bodyElementId: hydratedBodyElement.id,
-              });
+              logPerf(
+                "pages.delete-fallback.activate-hydrated",
+                hydratedActivateStart,
+                {
+                  pageId: pageToSelect.id,
+                  bodyElementId: hydratedBodyElement.id,
+                },
+              );
               scheduleBackgroundTask(() => {
                 setIsFallbackTransitioning(false);
               });
@@ -247,7 +258,7 @@ export const PagesSection = memo(function PagesSection({
         remainingPages: remainingPages.length,
       });
     },
-    [activatePage, loadPageIfNeeded, pages, removePageLocal]
+    [activatePage, loadPageIfNeeded, pages, removePageLocal],
   );
 
   return (

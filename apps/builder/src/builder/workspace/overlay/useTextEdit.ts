@@ -101,7 +101,10 @@ const TEXT_ELEMENT_TAGS = new Set([
 
 /**
  * Store props를 히스토리 없이 업데이트 (편집 중 실시간 레이아웃 반영용)
- * elements 배열 + _rebuildIndexes()로 elementsMap/childrenMap 동기화
+ *
+ * Delta 경로: 텍스트 변경은 구조(계층) 변경이 없으므로
+ * elementsMap만 증분 갱신하고 전체 _rebuildIndexes() 재구축을 생략한다.
+ * childrenMap/pageIndex는 구조 불변이므로 갱신 불필요.
  */
 function silentUpdateTextProp(elementId: string, value: string): void {
   const state = useStore.getState();
@@ -110,14 +113,23 @@ function silentUpdateTextProp(elementId: string, value: string): void {
   const props = element.props as Record<string, unknown> | undefined;
   const propKey = getTextPropKey(element.tag, props);
   const updatedElement = { ...element, props: { ...props, [propKey]: value } };
-  const newElements = state.elements.map((el) =>
-    el.id === elementId ? updatedElement : el,
-  );
+
+  // elementsMap 증분 패치 (새 Map — 불변성 보장)
+  const nextElementsMap = new Map(state.elementsMap);
+  nextElementsMap.set(elementId, updatedElement);
+
+  // ADR-040: 텍스트 변경은 구조 불변 → elementsMap 증분 패치만으로 충분
+  // elements 배열도 동기화 (index 일관성)
+  const idx = state.elements.indexOf(element);
+  const nextElements =
+    idx >= 0 ? state.elements.with(idx, updatedElement) : state.elements;
+
+  // 단일 set() — _rebuildIndexes() 전체 재구축 불필요 (구조 불변)
   useStore.setState({
-    elements: newElements,
+    elements: nextElements,
+    elementsMap: nextElementsMap,
     layoutVersion: state.layoutVersion + 1,
   });
-  useStore.getState()._rebuildIndexes();
 }
 
 /**

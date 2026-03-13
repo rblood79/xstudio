@@ -1,5 +1,11 @@
 import { useMemo, useState, useEffect, useCallback, memo } from "react";
-import { AppWindow, Plus, Ratio, PointerOff, MousePointer2 } from "lucide-react";
+import {
+  AppWindow,
+  Plus,
+  Ratio,
+  PointerOff,
+  MousePointer2,
+} from "lucide-react";
 import {
   PropertySelect,
   PropertySwitch,
@@ -52,7 +58,7 @@ function usePageId() {
         console.error("❌ [IndexedDB] Failed to fetch current page ID:", err);
       }
     },
-    [setCurrentPageId]
+    [setCurrentPageId],
   );
 
   useEffect(() => {
@@ -98,7 +104,11 @@ export const TabsEditor = memo(
   }: PropertyEditorProps) {
     // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
     const addElement = useStore((state) => state.addElement);
-    const storeElements = useStore((state) => state.elements);
+    // ADR-040: childrenMap O(1) 조회
+    const rawChildren = useStore(
+      (state) => state.childrenMap.get(elementId) ?? [],
+    );
+    const childrenMap = useStore((state) => state.childrenMap);
     const { localPageId, storePageId } = usePageId();
 
     // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
@@ -112,49 +122,47 @@ export const TabsEditor = memo(
       (value: string) => {
         onUpdate({ defaultSelectedKey: value || undefined });
       },
-      [onUpdate]
+      [onUpdate],
     );
 
     const handleIsDisabledChange = useCallback(
       (checked: boolean) => {
         onUpdate({ isDisabled: checked });
       },
-      [onUpdate]
+      [onUpdate],
     );
 
     const handleOrientationChange = useCallback(
       (value: string) => {
         onUpdate({ orientation: value });
       },
-      [onUpdate]
+      [onUpdate],
     );
 
     const handleShowIndicatorChange = useCallback(
       (checked: boolean) => {
         onUpdate({ showIndicator: checked });
       },
-      [onUpdate]
+      [onUpdate],
     );
 
     // 실제 Tab 자식 요소들을 찾기 (Dual Lookup: 직속 → TabList 내부)
     const tabChildren = useMemo(() => {
       // 1단계: 직속 자식에서 Tab 검색 (기존 flat 구조)
-      const directTabs = storeElements
-        .filter((child) => child.parent_id === elementId && child.tag === "Tab")
+      const directTabs = rawChildren
+        .filter((child) => child.tag === "Tab")
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
       if (directTabs.length > 0) return directTabs;
 
       // 2단계: TabList 아래에서 Tab 검색 (새 구조)
-      const tabListEl = storeElements.find(
-        (child) => child.parent_id === elementId && child.tag === "TabList"
-      );
+      const tabListEl = rawChildren.find((child) => child.tag === "TabList");
       if (tabListEl) {
-        return storeElements
-          .filter((child) => child.parent_id === tabListEl.id && child.tag === "Tab")
+        return (childrenMap.get(tabListEl.id) ?? [])
+          .filter((child) => child.tag === "Tab")
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
       }
       return [];
-    }, [storeElements, elementId]);
+    }, [rawChildren, childrenMap]);
 
     // ⭐ 최적화: defaultSelectedKey 옵션 생성 (tabId prop 기준)
     const defaultTabOptions = useMemo(() => {
@@ -185,7 +193,7 @@ export const TabsEditor = memo(
           elementId,
           pageIdToUse,
           onUpdate,
-          addElement
+          addElement,
         );
       } catch (err) {
         console.error("Add tab error:", err);
@@ -213,7 +221,7 @@ export const TabsEditor = memo(
           />
         </PropertySection>
       ),
-      [customId, elementId]
+      [customId, elementId],
     );
 
     const stateSection = useMemo(
@@ -232,7 +240,7 @@ export const TabsEditor = memo(
         currentProps.defaultSelectedKey,
         defaultTabOptions,
         handleDefaultSelectedKeyChange,
-      ]
+      ],
     );
 
     const behaviorSection = useMemo(
@@ -246,7 +254,7 @@ export const TabsEditor = memo(
           />
         </PropertySection>
       ),
-      [currentProps.isDisabled, handleIsDisabledChange]
+      [currentProps.isDisabled, handleIsDisabledChange],
     );
 
     const designSection = useMemo(
@@ -267,7 +275,12 @@ export const TabsEditor = memo(
           />
         </PropertySection>
       ),
-      [currentProps.orientation, currentProps.showIndicator, handleOrientationChange, handleShowIndicatorChange]
+      [
+        currentProps.orientation,
+        currentProps.showIndicator,
+        handleOrientationChange,
+        handleShowIndicatorChange,
+      ],
     );
 
     const tabManagementSection = useMemo(
@@ -298,7 +311,7 @@ export const TabsEditor = memo(
           </div>
         </PropertySection>
       ),
-      [tabChildren.length, addNewTab, localPageId, storePageId]
+      [tabChildren.length, addNewTab, localPageId, storePageId],
     );
 
     // Tabs 컴포넌트 자체의 속성 편집 UI만 표시
@@ -319,7 +332,7 @@ export const TabsEditor = memo(
       JSON.stringify(prevProps.currentProps) ===
         JSON.stringify(nextProps.currentProps)
     );
-  }
+  },
 );
 
 // 유틸리티 함수들
@@ -329,7 +342,7 @@ async function createNewTab(
   elementId: string,
   pageId: string,
   onUpdate: (props: Record<string, unknown>) => void,
-  addElement: (element: Element) => void
+  addElement: (element: Element) => void,
 ) {
   const newTabIndex = tabChildren.length || 0;
 
@@ -340,10 +353,10 @@ async function createNewTab(
 
   // Dual Lookup: TabList/TabPanels 래퍼가 있으면 그 안에 추가
   const tabListEl = elements.find(
-    (el) => el.parent_id === elementId && el.tag === "TabList"
+    (el) => el.parent_id === elementId && el.tag === "TabList",
   );
   const tabPanelsEl = elements.find(
-    (el) => el.parent_id === elementId && el.tag === "TabPanels"
+    (el) => el.parent_id === elementId && el.tag === "TabPanels",
   );
 
   const tabParentId = tabListEl?.id || elementId;
@@ -352,8 +365,14 @@ async function createNewTab(
   // 부모별 자식의 max order_num 계산
   const tabSiblings = elements.filter((el) => el.parent_id === tabParentId);
   const panelSiblings = elements.filter((el) => el.parent_id === panelParentId);
-  const maxTabOrder = Math.max(0, ...tabSiblings.map((el) => el.order_num || 0));
-  const maxPanelOrder = Math.max(0, ...panelSiblings.map((el) => el.order_num || 0));
+  const maxTabOrder = Math.max(
+    0,
+    ...tabSiblings.map((el) => el.order_num || 0),
+  );
+  const maxPanelOrder = Math.max(
+    0,
+    ...panelSiblings.map((el) => el.order_num || 0),
+  );
 
   // 새로운 Tab 요소 생성
   const newTabElement = {
@@ -414,12 +433,12 @@ async function createNewTab(
         // 업데이트 실패해도 메모리 상태는 업데이트 (오프라인 작업 지속)
         console.warn(
           `⚠️ [IndexedDB] Failed to update Tabs element ${elementId}:`,
-          updateErr
+          updateErr,
         );
       }
     } else {
       console.warn(
-        `⚠️ [IndexedDB] Tabs element ${elementId} not found in memory, skipping IndexedDB update`
+        `⚠️ [IndexedDB] Tabs element ${elementId} not found in memory, skipping IndexedDB update`,
       );
     }
 

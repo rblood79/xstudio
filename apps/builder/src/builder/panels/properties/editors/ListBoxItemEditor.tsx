@@ -31,10 +31,13 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
   const addElement = useStore((state) => state.addElement);
   const currentPageId = useStore((state) => state.currentPageId);
   const setSelectedElement = useStore((state) => state.setSelectedElement);
-  const storeElements = useStore((state) => state.elements);
+  // ADR-040: elementsMap/childrenMap O(1) 조회
+  const element = useStore((state) => state.elementsMap.get(elementId));
+  const rawChildren = useStore(
+    (state) => state.childrenMap.get(elementId) ?? [],
+  );
 
   // Get customId from element in store
-  const element = storeElements.find((el) => el.id === elementId);
   const customId = element?.customId || "";
 
   const updateProp = (key: string, value: unknown) => {
@@ -46,10 +49,10 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
 
   // Field 자식 요소들을 찾기
   const fieldChildren = useMemo(() => {
-    return storeElements
-      .filter((child) => child.parent_id === elementId && child.tag === "Field")
+    return rawChildren
+      .filter((child) => child.tag === "Field")
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }, [storeElements, elementId]);
+  }, [rawChildren]);
 
   const hasFieldChildren = fieldChildren.length > 0;
 
@@ -88,7 +91,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
                         setSelectedElement(
                           field.id,
                           fieldProps,
-                          fieldProps.style as React.CSSProperties | undefined
+                          fieldProps.style as React.CSSProperties | undefined,
                         );
                       }}
                     >
@@ -108,7 +111,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
                 const pageIdToUse = currentPageId;
                 if (!pageIdToUse) {
                   alert(
-                    "페이지 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요."
+                    "페이지 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.",
                   );
                   return;
                 }
@@ -116,7 +119,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
                 const { elements } = useStore.getState();
                 const maxOrderNum = Math.max(
                   0,
-                  ...fieldChildren.map((el) => el.order_num || 0)
+                  ...fieldChildren.map((el) => el.order_num || 0),
                 );
 
                 const newField: Element = {
@@ -147,7 +150,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
                 } catch (err) {
                   console.error("❌ [IndexedDB] Failed to create Field:", err);
                   alert(
-                    "Field 추가 중 오류가 발생했습니다. 다시 시도해주세요."
+                    "Field 추가 중 오류가 발생했습니다. 다시 시도해주세요.",
                   );
                 }
               }}
@@ -245,7 +248,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
               const pageIdToUse = currentPageId;
               if (!pageIdToUse) {
                 alert(
-                  "페이지 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요."
+                  "페이지 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.",
                 );
                 return;
               }

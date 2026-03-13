@@ -10,10 +10,10 @@
  * @see docs/WASM_DOC_IMPACT_ANALYSIS.md §G.1
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import type { Element } from '../../../types/core/store.types';
-import type { ElementsState } from '../elements';
-import { resolveInstanceProps } from '../../../utils/component/instanceResolver';
+import { v4 as uuidv4 } from "uuid";
+import type { Element } from "../../../types/core/store.types";
+import type { ElementsState } from "../elements";
+import { resolveInstanceProps } from "../../../utils/component/instanceResolver";
 
 /**
  * Instance 요소 생성
@@ -30,14 +30,17 @@ export function createInstance(
 ): Element | null {
   const state = get();
   const master = state.elementsMap.get(masterId);
-  if (!master || master.componentRole !== 'master') {
-    console.warn('[Instance] master not found or not a master:', masterId);
+  if (!master || master.componentRole !== "master") {
+    console.warn("[Instance] master not found or not a master:", masterId);
     return null;
   }
 
   // 다음 order_num 계산
   const siblings = state.childrenMap.get(parentId) || [];
-  const maxOrder = siblings.reduce((max, el) => Math.max(max, el.order_num ?? 0), 0);
+  const maxOrder = siblings.reduce(
+    (max, el) => Math.max(max, el.order_num ?? 0),
+    0,
+  );
 
   const instanceElement: Element = {
     id: uuidv4(),
@@ -46,14 +49,17 @@ export function createInstance(
     parent_id: parentId,
     page_id: pageId,
     order_num: maxOrder + 1,
-    componentRole: 'instance',
+    componentRole: "instance",
     masterId: masterId,
     overrides: {},
     componentName: master.componentName,
   };
 
-  // elements 배열에 추가
-  set({ elements: [...state.elements, instanceElement] });
+  // ADR-040: elements 배열 추가 + 구조 변경이므로 _rebuildIndexes() 필수
+  set((prevState) => ({
+    elements: [...prevState.elements, instanceElement],
+    layoutVersion: prevState.layoutVersion + 1,
+  }));
   get()._rebuildIndexes();
 
   return instanceElement;
@@ -74,12 +80,14 @@ export function detachInstance(
 ): { previousState: Element } | null {
   const state = get();
   const instance = state.elementsMap.get(instanceId);
-  if (!instance || instance.componentRole !== 'instance') {
-    console.warn('[Instance] element is not an instance:', instanceId);
+  if (!instance || instance.componentRole !== "instance") {
+    console.warn("[Instance] element is not an instance:", instanceId);
     return null;
   }
 
-  const master = instance.masterId ? state.elementsMap.get(instance.masterId) : undefined;
+  const master = instance.masterId
+    ? state.elementsMap.get(instance.masterId)
+    : undefined;
 
   // 병합된 props로 독립 요소 변환
   let mergedProps: Record<string, unknown>;
@@ -102,12 +110,17 @@ export function detachInstance(
   // 이전 상태 저장 (undo용)
   const previousState = { ...instance };
 
-  // elements 배열 업데이트
-  const elements = state.elements.map(el =>
-    el.id === instanceId ? detachedElement : el
-  );
-  set({ elements });
-  get()._rebuildIndexes();
+  // ADR-040: props 변환만 → 구조 불변, elementsMap 증분 패치 + _rebuildIndexes() 생략
+  set((prevState) => {
+    const idx = prevState.elements.findIndex((el) => el.id === instanceId);
+    const nextElements =
+      idx >= 0
+        ? prevState.elements.with(idx, detachedElement)
+        : prevState.elements;
+    const nextElementsMap = new Map(prevState.elementsMap);
+    nextElementsMap.set(instanceId, detachedElement);
+    return { elements: nextElements, elementsMap: nextElementsMap };
+  });
 
   return { previousState };
 }

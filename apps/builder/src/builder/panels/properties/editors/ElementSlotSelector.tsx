@@ -22,10 +22,9 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
   currentSlotName,
   onSlotChange,
 }: ElementSlotSelectorProps) {
-  const element = useStore((state) =>
-    state.elements.find((el) => el.id === elementId)
-  );
-  const elements = useStore((state) => state.elements);
+  // ADR-040: elementsMap O(1) 조회
+  const element = useStore((state) => state.elementsMap.get(elementId));
+  const elementsMap = useStore((state) => state.elementsMap);
   const pages = useStore((state) => state.pages);
 
   // Element의 Page → Layout → Slots 찾기
@@ -35,10 +34,13 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
     const page = pages.find((p) => p.id === element.page_id);
     if (!page?.layout_id) return [];
 
-    // Layout의 Slot elements 찾기
-    const slotElements = elements.filter(
-      (el) => el.layout_id === page.layout_id && el.tag === "Slot"
-    );
+    // Layout의 Slot elements 찾기 (layout_id 기준)
+    const slotElements: (typeof element)[] = [];
+    elementsMap.forEach((el) => {
+      if (el.layout_id === page.layout_id && el.tag === "Slot") {
+        slotElements.push(el);
+      }
+    });
 
     return slotElements.map((el) => {
       const slotName = (el.props as { name?: string })?.name;
@@ -51,19 +53,20 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
         elementId: el.id,
       };
     });
-  }, [element, elements, pages]);
+  }, [element, elementsMap, pages]);
 
   // ⭐ React Hook 규칙: useMemo는 조기 리턴 전에 호출해야 함
   // Root element만 Slot 선택 가능
   // (parent_id가 null이거나 parent가 Page element가 아닌 경우)
   const isRootElement = useMemo(() => {
     if (!element?.parent_id) return true;
-    // parent가 Page element인지 확인
-    const parentIsPageElement = elements.some(
-      (el) => el.id === element.parent_id && el.page_id === element.page_id
-    );
+    // parent가 Page element인지 확인 (elementsMap O(1))
+    const parent = elementsMap.get(element.parent_id);
+    const parentIsPageElement = parent
+      ? parent.page_id === element.page_id
+      : false;
     return !parentIsPageElement;
-  }, [element, elements]);
+  }, [element, elementsMap]);
 
   // Layout이 없거나 Slot이 없으면 표시 안함
   if (slots.length === 0) return null;
