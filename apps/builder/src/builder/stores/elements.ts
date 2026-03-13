@@ -55,6 +55,7 @@ import {
   createEmptyComponentIndex,
   createEmptyVariableUsageIndex,
   rebuildPageIndex,
+  indexElement,
   rebuildComponentIndex,
   rebuildVariableUsageIndex,
   getPageElements as getPageElementsFromIndex,
@@ -127,6 +128,11 @@ export interface ElementsState {
     tabIndex: number,
   ) => void;
   setPages: (pages: Page[]) => void;
+  appendPageShell: (
+    page: Page,
+    bodyElement: Element,
+    position: { x: number; y: number },
+  ) => void;
   setCurrentPageId: (pageId: string) => void;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
@@ -237,6 +243,21 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     const { pageIndex, elementsMap } = get();
     return getPageElementsFromIndex(pageIndex, pageId, elementsMap);
   };
+
+  const clonePageIndex = (pageIndex: PageElementIndex): PageElementIndex => ({
+    elementsByPage: new Map(
+      Array.from(pageIndex.elementsByPage.entries(), ([pageId, ids]) => [
+        pageId,
+        new Set(ids),
+      ]),
+    ),
+    rootsByPage: new Map(
+      Array.from(pageIndex.rootsByPage.entries(), ([pageId, rootIds]) => [
+        pageId,
+        [...rootIds],
+      ]),
+    ),
+  });
 
   // 🚀 Phase 4.3: 인스펙터 props hydration을 백그라운드 우선순위로 분리
   // WebGL Canvas의 pointerdown task를 짧게 유지하기 위해,
@@ -568,6 +589,45 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
     // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
     setPages: (pages) => set({ pages }),
+
+    appendPageShell: (page, bodyElement, position) => {
+      historyManager.setCurrentPage(page.id);
+
+      set((state) => {
+        const nextElements = [...state.elements, bodyElement];
+        const nextPages = [...state.pages, page];
+        const nextElementsMap = new Map(state.elementsMap);
+        nextElementsMap.set(bodyElement.id, bodyElement);
+
+        const nextChildrenMap = new Map(state.childrenMap);
+        const rootChildren = nextChildrenMap.get("root") ?? [];
+        nextChildrenMap.set("root", [...rootChildren, bodyElement]);
+
+        const nextPageIndex = clonePageIndex(state.pageIndex);
+        indexElement(nextPageIndex, bodyElement, nextElementsMap);
+
+        return {
+          pages: nextPages,
+          currentPageId: page.id,
+          elements: nextElements,
+          elementsMap: nextElementsMap,
+          childrenMap: nextChildrenMap,
+          pageIndex: nextPageIndex,
+          selectedElementId: bodyElement.id,
+          selectedElementIds: [bodyElement.id],
+          selectedElementIdsSet: new Set([bodyElement.id]),
+          multiSelectMode: false,
+          selectedElementProps: createCompleteProps(bodyElement),
+          editingContextId: null,
+          pagePositions: {
+            ...state.pagePositions,
+            [page.id]: position,
+          },
+          pagePositionsVersion: state.pagePositionsVersion + 1,
+          layoutVersion: state.layoutVersion + 1,
+        };
+      });
+    },
 
     // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
     setCurrentPageId: (pageId) => {

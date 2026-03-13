@@ -88,6 +88,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     const setPages = useStore((state) => state.setPages);
     const setElements = useStore((state) => state.setElements);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
+    const appendPageShell = useStore((state) => state.appendPageShell);
     const setLazyLoadingEnabled = useStore((state) => state.setLazyLoadingEnabled);
     const initializePagePositions = useStore((state) => state.initializePagePositions);
 
@@ -117,6 +118,21 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         },
         []
     );
+
+    const computeNextPagePosition = useCallback(() => {
+        const { pagePositions } = useStore.getState();
+        const canvasSize = useViewportSyncStore.getState().canvasSize;
+        let maxX = 0;
+
+        for (const pos of Object.values(pagePositions)) {
+            const endX = pos.x + canvasSize.width + PAGE_STACK_GAP;
+            if (endX > maxX) {
+                maxX = endX;
+            }
+        }
+
+        return { x: maxX, y: 0 };
+    }, []);
 
     /**
      * fetchElements - 페이지 요소 로드
@@ -241,21 +257,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 };
                 pageList.append(apiPage);
                 setSelectedPageId(newPage.id);
-                setCurrentPageId(newPage.id);
-
-                // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
-                const updatedPages = [...currentPages, newPage];
-                setPages(updatedPages);
-
-                // 🆕 Multi-page: 새 페이지 위치 추가 (기존 페이지 오른쪽 끝)
-                const { pagePositions } = useStore.getState();
-                const currentCanvasWidth = useViewportSyncStore.getState().canvasSize.width;
-                let maxX = 0;
-                for (const pos of Object.values(pagePositions)) {
-                    const endX = pos.x + currentCanvasWidth + PAGE_STACK_GAP;
-                    if (endX > maxX) maxX = endX;
-                }
-                useStore.getState().updatePagePosition(newPage.id, maxX, 0);
 
                 // 새 페이지에 기본 body 요소 생성
                 const bodyElement: Element = {
@@ -275,8 +276,11 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 await db.elements.insert(bodyElement);
                 console.log('✅ [IndexedDB] body 요소 생성:', bodyElement.id);
 
-                // 새 페이지의 요소들을 로드 (Preview 업데이트 + body 자동 선택)
-                await fetchElements(newPage.id);
+                const nextPosition = computeNextPagePosition();
+                if (requestAutoSelectAfterUpdate) {
+                    requestAutoSelectAfterUpdate(bodyElement.id);
+                }
+                appendPageShell(newPage, bodyElement, nextPosition);
 
                 console.log('✅ 페이지 추가 완료:', newPage.title);
                 return { success: true, data: newPage };
@@ -338,10 +342,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 };
                 pageList.append(apiPage);
                 setSelectedPageId(newPage.id);
-                setCurrentPageId(newPage.id);
-
-                // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
-                setPages([...currentPages, newPage]);
 
                 // 새 페이지에 기본 body 요소 생성
                 const bodyElement: Element = {
@@ -359,8 +359,17 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 await db.elements.insert(bodyElement);
                 console.log('✅ [IndexedDB] body 요소 생성:', bodyElement.id);
 
-                // 새 페이지의 요소들을 로드 (Preview 업데이트 + body 자동 선택)
-                await fetchElements(newPage.id);
+                if (!layoutId) {
+                    const nextPosition = computeNextPagePosition();
+                    if (requestAutoSelectAfterUpdate) {
+                        requestAutoSelectAfterUpdate(bodyElement.id);
+                    }
+                    appendPageShell(newPage, bodyElement, nextPosition);
+                } else {
+                    setCurrentPageId(newPage.id);
+                    setPages([...currentPages, newPage]);
+                    await fetchElements(newPage.id);
+                }
 
                 console.log('✅ 페이지 추가 완료 (with params):', newPage.title, 'slug:', newPage.slug);
                 return { success: true, data: apiPage };
