@@ -242,7 +242,25 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                     updated_at: new Date().toISOString(),
                 };
 
-                const newPage = await db.pages.insert(newPageData);
+                // 새 페이지에 기본 body 요소 생성
+                const bodyElement: Element = {
+                    id: ElementUtils.generateId(),
+                    tag: 'body',
+                    props: getDefaultProps('body') as ElementProps,
+                    parent_id: null,
+                    page_id: newPageData.id,
+                    order_num: 0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+
+                const insertResult = db.pages.insertWithBody
+                    ? await db.pages.insertWithBody(newPageData, bodyElement)
+                    : {
+                        page: await db.pages.insert(newPageData),
+                        bodyElement: await db.elements.insert(bodyElement),
+                    };
+                const newPage = insertResult.page;
 
                 // useListData에 추가 (ApiPage 타입으로 변환)
                 const apiPage: ApiPage = {
@@ -257,24 +275,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 };
                 pageList.append(apiPage);
                 setSelectedPageId(newPage.id);
-
-                // 새 페이지에 기본 body 요소 생성
-                const bodyElement: Element = {
-                    id: ElementUtils.generateId(),
-                    tag: 'body',
-                    props: getDefaultProps('body') as ElementProps,
-                    parent_id: null,
-                    page_id: newPage.id,
-                    order_num: 0,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                };
-
-                // IndexedDB에 저장 (store 업데이트 건너뛰기)
-                // store를 업데이트하면 이전 페이지의 모든 요소가 함께 Preview에 전송되므로
-                // DB에만 저장하고 fetchElements로 새 페이지의 요소만 로드
-                await db.elements.insert(bodyElement);
-                console.log('✅ [IndexedDB] body 요소 생성:', bodyElement.id);
 
                 const nextPosition = computeNextPagePosition();
                 if (requestAutoSelectAfterUpdate) {
@@ -327,7 +327,26 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                     updated_at: new Date().toISOString(),
                 };
 
-                const newPage = await db.pages.insert(newPageData);
+                // 새 페이지에 기본 body 요소 생성
+                const bodyElement: Element = {
+                    id: ElementUtils.generateId(),
+                    tag: 'body',
+                    props: getDefaultProps('body') as ElementProps,
+                    parent_id: null,
+                    page_id: newPageData.id,
+                    order_num: 0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+
+                const insertResult =
+                    !layoutId && db.pages.insertWithBody
+                        ? await db.pages.insertWithBody(newPageData, bodyElement)
+                        : {
+                            page: await db.pages.insert(newPageData),
+                            bodyElement: await db.elements.insert(bodyElement),
+                        };
+                const newPage = insertResult.page;
 
                 // useListData에 추가 (ApiPage 타입으로 변환)
                 const apiPage: ApiPage = {
@@ -342,22 +361,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 };
                 pageList.append(apiPage);
                 setSelectedPageId(newPage.id);
-
-                // 새 페이지에 기본 body 요소 생성
-                const bodyElement: Element = {
-                    id: ElementUtils.generateId(),
-                    tag: 'body',
-                    props: getDefaultProps('body') as ElementProps,
-                    parent_id: null,
-                    page_id: newPage.id,
-                    order_num: 0,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                };
-
-                // IndexedDB에 저장
-                await db.elements.insert(bodyElement);
-                console.log('✅ [IndexedDB] body 요소 생성:', bodyElement.id);
 
                 if (!layoutId) {
                     const nextPosition = computeNextPagePosition();

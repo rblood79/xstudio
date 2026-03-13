@@ -133,6 +133,7 @@ export interface ElementsState {
     bodyElement: Element,
     position: { x: number; y: number },
   ) => void;
+  removePageLocal: (pageId: string) => void;
   setCurrentPageId: (pageId: string) => void;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
@@ -624,6 +625,51 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
             [page.id]: position,
           },
           pagePositionsVersion: state.pagePositionsVersion + 1,
+          layoutVersion: state.layoutVersion + 1,
+        };
+      });
+    },
+
+    removePageLocal: (pageId) => {
+      set((state) => {
+        const nextPages = state.pages.filter((page) => page.id !== pageId);
+        const nextElements = state.elements.filter(
+          (element) => element.page_id !== pageId,
+        );
+        const nextIndexes = buildIndexes(nextElements);
+        const nextPagePositions = { ...state.pagePositions };
+        delete nextPagePositions[pageId];
+
+        const nextSelectedElementIds = state.selectedElementIds.filter((id) =>
+          nextIndexes.elementsMap.has(id),
+        );
+        const nextSelectedElementId =
+          state.selectedElementId &&
+          nextIndexes.elementsMap.has(state.selectedElementId)
+            ? state.selectedElementId
+            : nextSelectedElementIds[0] ?? null;
+        const nextEditingContextId =
+          state.editingContextId &&
+          nextIndexes.elementsMap.has(state.editingContextId)
+            ? state.editingContextId
+            : null;
+
+        return {
+          pages: nextPages,
+          elements: nextElements,
+          ...nextIndexes,
+          pagePositions: nextPagePositions,
+          pagePositionsVersion: state.pagePositionsVersion + 1,
+          currentPageId:
+            state.currentPageId === pageId ? null : state.currentPageId,
+          selectedElementId: nextSelectedElementId,
+          selectedElementIds: nextSelectedElementIds,
+          selectedElementIdsSet: new Set(nextSelectedElementIds),
+          multiSelectMode: nextSelectedElementIds.length > 1,
+          selectedElementProps: nextSelectedElementId
+            ? createCompleteProps(nextIndexes.elementsMap.get(nextSelectedElementId)!)
+            : {},
+          editingContextId: nextEditingContextId,
           layoutVersion: state.layoutVersion + 1,
         };
       });

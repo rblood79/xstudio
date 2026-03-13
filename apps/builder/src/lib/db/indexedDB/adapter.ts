@@ -410,6 +410,32 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       return result;
     },
 
+    insertWithBody: async (
+      page: Page,
+      bodyElement: Element,
+    ): Promise<{ bodyElement: Element; page: Page }> => {
+      const db = this.ensureDB();
+
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(["pages", "elements"], "readwrite");
+        const pagesStore = tx.objectStore("pages");
+        const elementsStore = tx.objectStore("elements");
+
+        pagesStore.put(page);
+        elementsStore.put(bodyElement);
+
+        tx.oncomplete = () => {
+          this.pageCache.set(page.id, page);
+          this.elementCache.set(bodyElement.id, bodyElement);
+          resolve({ page, bodyElement });
+        };
+
+        tx.onerror = () => {
+          reject(tx.error);
+        };
+      });
+    },
+
     insertMany: async (pages: Page[]): Promise<Page[]> => {
       if (pages.length === 0) {
         return [];
@@ -474,6 +500,34 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     delete: async (id: string): Promise<void> => {
       await this.deleteFromStore("pages", id);
       this.pageCache.delete(id);
+    },
+
+    deleteWithElements: async (
+      pageId: string,
+      elementIds: string[],
+    ): Promise<void> => {
+      const db = this.ensureDB();
+
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(["pages", "elements"], "readwrite");
+        const pagesStore = tx.objectStore("pages");
+        const elementsStore = tx.objectStore("elements");
+
+        pagesStore.delete(pageId);
+        elementIds.forEach((elementId) => {
+          elementsStore.delete(elementId);
+        });
+
+        tx.oncomplete = () => {
+          this.pageCache.delete(pageId);
+          this.elementCache.deleteMany(elementIds);
+          resolve();
+        };
+
+        tx.onerror = () => {
+          reject(tx.error);
+        };
+      });
     },
 
     getById: async (id: string): Promise<Page | null> => {

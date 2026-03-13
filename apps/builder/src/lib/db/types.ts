@@ -85,9 +85,14 @@ export interface DatabaseAdapter {
   // Pages
   pages: {
     insert(page: Page): Promise<Page>;
+    insertWithBody?(page: Page, bodyElement: Element): Promise<{
+      bodyElement: Element;
+      page: Page;
+    }>;
     insertMany(pages: Page[]): Promise<Page[]>;
     update(id: string, data: Partial<Page>): Promise<Page>;
     delete(id: string): Promise<void>;
+    deleteWithElements?(pageId: string, elementIds: string[]): Promise<void>;
     getById(id: string): Promise<Page | null>;
     getByProject(projectId: string): Promise<Page[]>;
     getAll(): Promise<Page[]>;
