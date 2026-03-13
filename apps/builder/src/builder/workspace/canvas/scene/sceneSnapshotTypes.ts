@@ -17,23 +17,40 @@ export interface ScenePageData {
   pageElements: Element[];
 }
 
+export interface ScenePageSnapshot extends ScenePageData {
+  contentVersion: number;
+  frame: ScenePageFrame;
+  isVisible: boolean;
+  pageId: string;
+  positionVersion: number;
+}
+
+export interface SceneDocumentSnapshot {
+  allPageFrames: ScenePageFrame[];
+  allPageFrameVersion: number;
+  currentPageId: string | null;
+  currentPageSnapshot: ScenePageSnapshot | null;
+  pageCount: number;
+  visibleContentVersion: number;
+  visiblePageFrames: ScenePageFrame[];
+  visiblePageIds: Set<string>;
+  visiblePagePositionVersion: number;
+}
+
 export interface SelectionSnapshot {
   selectedIds: string[];
   selectionBounds: BoundingBox | null;
 }
 
 export interface SceneSnapshot {
-  allPageData: Map<string, ScenePageData>;
-  currentPageData: ScenePageData | null;
-  currentPageId: string | null;
   depthMap: Map<string, number>;
+  document: SceneDocumentSnapshot;
   layoutVersion: number;
-  pageFrames: ScenePageFrame[];
+  pageSnapshots: Map<string, ScenePageSnapshot>;
   selection: SelectionSnapshot;
   selectionVersion: number;
   sceneVersion: number;
   viewportVersion: number;
-  visiblePageIds: Set<string>;
 }
 
 export interface BuildSceneSnapshotInput {

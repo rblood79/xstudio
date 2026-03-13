@@ -357,8 +357,12 @@ export function BuilderCanvas({
   ]);
 
   const depthMap = sceneSnapshot.depthMap;
-  const visiblePageIds = sceneSnapshot.visiblePageIds;
-  const pageElements = sceneSnapshot.currentPageData?.pageElements ?? [];
+  const visiblePageIds = sceneSnapshot.document.visiblePageIds;
+  const pageElements =
+    sceneSnapshot.document.currentPageSnapshot?.pageElements ?? [];
+  const visiblePages = useMemo(() => {
+    return pages.filter((page) => visiblePageIds.has(page.id));
+  }, [pages, visiblePageIds]);
   const workflowEdges = useMemo(() => {
     return computeWorkflowEdges(pages, elements);
   }, [pages, elements]);
@@ -939,7 +943,7 @@ export function BuilderCanvas({
             interactiveChildren={true}
           >
             {/* 🆕 Multi-page: 메모이제이션된 페이지 컨테이너 (뷰포트 컬링 적용) */}
-            {pages.map((page) => {
+            {visiblePages.map((page) => {
               const pos = pagePositions[page.id];
               const rendererInput = buildPixiPageRendererInput({
                 elementById,

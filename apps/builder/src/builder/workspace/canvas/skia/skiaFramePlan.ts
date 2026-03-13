@@ -65,7 +65,16 @@ export interface BuildFrameRenderPlanInput {
   dragStateRef?: RefObject<DragState | null>;
   elementsMap: Map<string, Element>;
   invalidationPacket: RendererInvalidationPacket;
-  pageFrames?: Array<{
+  allPageFrames?: Array<{
+    id: string;
+    title: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    elementCount: number;
+  }>;
+  visiblePageFrames?: Array<{
     id: string;
     title: string;
     x: number;
@@ -99,7 +108,8 @@ export function buildFrameRenderPlan(
     dragStateRef,
     elementsMap,
     invalidationPacket,
-    pageFrames,
+    allPageFrames,
+    visiblePageFrames,
     workflowHoverState,
     elementHoverState,
     minimapVisible,
@@ -117,13 +127,13 @@ export function buildFrameRenderPlan(
     invalidationPacket,
     elementsMap,
     dragStateRef,
-    pageFrames,
+    visiblePageFrames,
   );
 
   const workflow = invalidationPacket.workflow.showOverlay
     ? buildWorkflowOverlayBuildResult({
         treeBoundsMap: sharedScene.treeBoundsMap,
-        pageFrames: pageFrames ?? [],
+        pageFrames: allPageFrames ?? [],
         workflowEdges: invalidationPacket.workflow.workflowEdges,
         workflowGraphSignature: invalidationPacket.workflow.graphSignature,
         pagePosVersion: snapshot.pagePosVersion,
@@ -148,7 +158,7 @@ export function buildFrameRenderPlan(
     workflowElementBoundsMap: workflow?.workflowElementBoundsMap ?? null,
     workflowHoveredEdgeId: workflowHoverState.hoveredEdgeId,
     elementHoverState,
-    pageFrames,
+    visiblePageFrames,
     minimapVisible,
     minimapConfig,
     skiaCanvasWidth,

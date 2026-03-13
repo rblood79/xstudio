@@ -1,6 +1,6 @@
 export { buildSceneSnapshot } from "./buildSceneSnapshot";
 export {
-  buildAllPageData,
+  buildPageDataMap,
   buildDepthMap,
   buildPageFrames,
 } from "./buildSceneIndex";
@@ -21,8 +21,10 @@ export {
 export { buildPageDirtyState } from "./subtreeInvalidation";
 export type {
   BuildSceneSnapshotInput,
+  SceneDocumentSnapshot,
   ScenePageData,
   ScenePageFrame,
+  ScenePageSnapshot,
   SceneSnapshot,
   SelectionSnapshot,
 } from "./sceneSnapshotTypes";

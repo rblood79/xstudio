@@ -121,10 +121,22 @@ export function SkiaOverlay({
   const lastSelectionSignatureRef = useRef("");
   const lastAIActiveRef = useRef(0);
   const lastPageFramesSignatureRef = useRef("");
-  const pageFramesRef = useRef(rendererInput.sceneSnapshot.pageFrames);
-  // 🚀 페이지 위치 변경 감지용 ref (매 프레임 store 읽기 대신 React lifecycle에서 갱신)
-  const pagePosVersionRef = useRef(rendererInput.pagePositionsVersion);
-  const lastPagePosVersionRef = useRef(0);
+  const allPageFramesRef = useRef(
+    rendererInput.sceneSnapshot.document.allPageFrames,
+  );
+  const visiblePageFramesRef = useRef(
+    rendererInput.sceneSnapshot.document.visiblePageFrames,
+  );
+  // 문서 전체 page frame 버전 (workflow/minimap overlay 캐시용)
+  const documentPageFrameVersionRef = useRef(
+    rendererInput.sceneSnapshot.document.allPageFrameVersion,
+  );
+  const lastVisibleContentVersionRef = useRef(
+    rendererInput.sceneSnapshot.document.visibleContentVersion,
+  );
+  const lastVisiblePagePositionVersionRef = useRef(
+    rendererInput.sceneSnapshot.document.visiblePagePositionVersion,
+  );
 
   // Workflow 오버레이 캐시
   const invalidationPacketRef = useRef(invalidationPacket);
@@ -168,9 +180,12 @@ export function SkiaOverlay({
 
   // 페이지 프레임/현재 페이지 ref 갱신
   useEffect(() => {
-    pageFramesRef.current = rendererInput.sceneSnapshot.pageFrames;
+    allPageFramesRef.current = rendererInput.sceneSnapshot.document.allPageFrames;
+    visiblePageFramesRef.current =
+      rendererInput.sceneSnapshot.document.visiblePageFrames;
     rendererInputRef.current = rendererInput;
-    pagePosVersionRef.current = rendererInput.pagePositionsVersion;
+    documentPageFrameVersionRef.current =
+      rendererInput.sceneSnapshot.document.allPageFrameVersion;
   }, [rendererInput]);
 
   // Phase 3: 워크플로우 인터랙션 훅
@@ -290,8 +305,8 @@ export function SkiaOverlay({
 
   // 페이지 프레임 변경 감지 → 오버레이 리렌더 트리거
   useEffect(() => {
-    const frames = rendererInput.sceneSnapshot.pageFrames;
-    const currentPageId = rendererInput.sceneSnapshot.currentPageId;
+    const frames = rendererInput.sceneSnapshot.document.allPageFrames;
+    const currentPageId = rendererInput.sceneSnapshot.document.currentPageId;
     const signature = frames
       .map((frame) => {
         const isActiveFrame = frame.id === (currentPageId ?? "");
@@ -304,7 +319,10 @@ export function SkiaOverlay({
       recordInvalidation("overlay", "pageFrames");
       lastPageFramesSignatureRef.current = signature;
     }
-  }, [rendererInput.sceneSnapshot.currentPageId, rendererInput.sceneSnapshot.pageFrames]);
+  }, [
+    rendererInput.sceneSnapshot.document.allPageFrames,
+    rendererInput.sceneSnapshot.document.currentPageId,
+  ]);
 
   // CanvasKit + 폰트 초기화
   useEffect(() => {
@@ -500,9 +518,12 @@ export function SkiaOverlay({
       const cameraZoom = Math.max(cameraContainer?.scale?.x ?? 1, 0.001);
 
       const registryVersion = getRegistryVersion();
-      const pagePosVersion = pagePosVersionRef.current;
       const packet = invalidationPacketRef.current;
       const currentRendererInput = rendererInputRef.current;
+      const sceneDocument = currentRendererInput.sceneSnapshot.document;
+      const contentPagePositionVersion =
+        sceneDocument.visiblePagePositionVersion;
+      const documentPageFrameVersion = documentPageFrameVersionRef.current;
 
       // Phase 4: 미니맵 가시성 — 캔버스 이동(pan/zoom) 시에만 표시 (스크롤바 패턴)
       const lastMmCam = lastMinimapCameraRef.current;
@@ -662,11 +683,26 @@ export function SkiaOverlay({
 
       const camera = { zoom: cameraZoom, panX: cameraX, panY: cameraY };
 
-      // 🚀 페이지 위치 변경 감지 — content 무효화 (registryVersion 합산 해킹 제거)
-      if (pagePosVersion !== lastPagePosVersionRef.current) {
-        lastPagePosVersionRef.current = pagePosVersion;
+      // visible page 집합/컨텐츠가 바뀐 경우에만 content를 다시 빌드한다.
+      if (
+        sceneDocument.visibleContentVersion !==
+        lastVisibleContentVersionRef.current
+      ) {
+        lastVisibleContentVersionRef.current =
+          sceneDocument.visibleContentVersion;
         renderer.invalidateContent();
-        recordInvalidation("viewport", "pagePosition");
+        recordInvalidation("content", "visiblePages");
+      }
+
+      // 페이지 위치 변경도 visible page에 영향이 있을 때만 content 무효화한다.
+      if (
+        sceneDocument.visiblePagePositionVersion !==
+        lastVisiblePagePositionVersionRef.current
+      ) {
+        lastVisiblePagePositionVersionRef.current =
+          sceneDocument.visiblePagePositionVersion;
+        renderer.invalidateContent();
+        recordInvalidation("viewport", "visiblePagePosition");
         // pagePositionsVersion 변경 직후에는 React 리렌더가 아직 PixiJS 컨테이너의
         // x/y props를 갱신하지 않아 worldTransform이 stale하다.
         // 3프레임간 캐시를 강제 무효화하여 올바른 좌표로 트리가 재빌드되도록 한다.
@@ -687,7 +723,7 @@ export function SkiaOverlay({
       const contentResult = buildSkiaFrameContent({
         aiState: packet.ai,
         registryVersion,
-        pagePosVersion,
+        pagePosVersion: contentPagePositionVersion,
         cameraContainer,
         cameraX,
         cameraY,
@@ -707,7 +743,7 @@ export function SkiaOverlay({
         contentResult;
       const snapshot = createFrameInputSnapshot({
         registryVersion,
-        pagePosVersion,
+        pagePosVersion: documentPageFrameVersion,
         cameraX,
         cameraY,
         cameraZoom,
@@ -724,7 +760,8 @@ export function SkiaOverlay({
         hasAIEffects,
         contentNode,
         dragStateRef,
-        pageFrames: pageFramesRef.current,
+        allPageFrames: allPageFramesRef.current,
+        visiblePageFrames: visiblePageFramesRef.current,
         workflowHoverState: workflowHoverStateRef.current,
         elementHoverState: elementHoverStateRef.current,
         minimapVisible: minimapVisibleRef.current,
@@ -755,7 +792,7 @@ export function SkiaOverlay({
       // Phase 6: 이중 Surface 캐싱 — SkiaRenderer가 classifyFrame()으로 최적 경로 결정
       // idle: 변경 없음 → 렌더링 스킵
       // content/full: renderContent() + blitToMain()
-      // pagePosVersion을 합산하여 페이지 위치 변경 시 content layer 재렌더 트리거
+      // content는 visible page 버전, overlay는 document page frame 버전 기준으로 분리한다.
       renderer.render(
         framePlan.cullingBounds,
         registryVersion,
@@ -799,16 +836,16 @@ export function SkiaOverlay({
 
   // 🆕 Multi-page: 모든 페이지가 동시 마운트되므로 페이지 전환 시
   // 레지스트리/캐시 초기화 불필요. 선택 하이라이트 갱신만 수행.
-  const prevPageIdRef = useRef(rendererInput.sceneSnapshot.currentPageId);
+  const prevPageIdRef = useRef(rendererInput.sceneSnapshot.document.currentPageId);
 
   useEffect(() => {
-    const currentPageId = rendererInput.sceneSnapshot.currentPageId;
+    const currentPageId = rendererInput.sceneSnapshot.document.currentPageId;
     if (prevPageIdRef.current !== currentPageId) {
       prevPageIdRef.current = currentPageId;
-      rendererRef.current?.invalidateContent();
-      recordInvalidation("content", "pageSwitch");
+      overlayVersionRef.current++;
+      recordInvalidation("overlay", "pageSwitch");
     }
-  }, [rendererInput.sceneSnapshot.currentPageId]);
+  }, [rendererInput.sceneSnapshot.document.currentPageId]);
 
   // 이미지 로딩 완료 시 Canvas 재렌더 트리거
   // specShapeConverter에서 loadSkImage()를 호출하면 이미지가 비동기로 로딩되고,

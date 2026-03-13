@@ -73,6 +73,7 @@ describe("renderer input builders", () => {
 
     expect(input?.bodyElement?.id).toBe("body-a");
     expect(input?.pageElements.map((element) => element.id)).toEqual(["text-a"]);
+    expect(input?.pageSnapshot.pageId).toBe("page-a");
     expect(input?.layoutVersion).toBe(2);
   });
 
@@ -141,6 +142,9 @@ describe("renderer input builders", () => {
     });
 
     expect(rendererInput.pagePositionsVersion).toBe(4);
+    expect(rendererInput.pageSnapshots.get("page-a")?.bodyElement?.id).toBe(
+      "body-a",
+    );
     expect(rendererInput.sceneSnapshot.sceneVersion).toBe(sceneSnapshot.sceneVersion);
     expect(packet.grid.showGrid).toBe(true);
     expect(packet.selection.currentPageId).toBe("page-a");

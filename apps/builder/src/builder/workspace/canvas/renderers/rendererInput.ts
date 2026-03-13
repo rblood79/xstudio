@@ -1,6 +1,6 @@
 import type { Element, Page } from "../../../../types/core/store.types";
 import type { PageElementIndex } from "../../../stores/utils/elementIndexer";
-import type { SceneSnapshot } from "../scene";
+import type { ScenePageSnapshot, SceneSnapshot } from "../scene";
 
 export interface PixiPageRendererInput {
   bodyElement: Element | null;
@@ -12,6 +12,7 @@ export interface PixiPageRendererInput {
   pageHeight: number;
   pageId: string;
   pagePositionVersion: number;
+  pageSnapshot: ScenePageSnapshot;
   pageWidth: number;
   panOffset: { x: number; y: number };
   wasmLayoutReady: boolean;
@@ -43,21 +44,22 @@ export function buildPixiPageRendererInput({
   wasmLayoutReady,
   zoom,
 }: BuildPixiPageRendererInputOptions): PixiPageRendererInput | null {
-  const pageData = sceneSnapshot.allPageData.get(pageId);
-  if (!pageData?.bodyElement) {
+  const pageSnapshot = sceneSnapshot.pageSnapshots.get(pageId);
+  if (!pageSnapshot?.bodyElement) {
     return null;
   }
 
   return {
-    bodyElement: pageData.bodyElement,
+    bodyElement: pageSnapshot.bodyElement,
     depthMap: sceneSnapshot.depthMap,
     dirtyElementIds,
     elementById,
     layoutVersion: sceneSnapshot.layoutVersion,
-    pageElements: pageData.pageElements,
+    pageElements: pageSnapshot.pageElements,
     pageHeight,
     pageId,
     pagePositionVersion,
+    pageSnapshot,
     pageWidth,
     panOffset,
     wasmLayoutReady,
@@ -73,6 +75,7 @@ export interface SkiaRendererInput {
   pageIndex: PageElementIndex;
   pagePositionsVersion: number;
   pagePositions: Record<string, { x: number; y: number } | undefined>;
+  pageSnapshots: Map<string, ScenePageSnapshot>;
   pages: Page[];
   sceneSnapshot: SceneSnapshot;
 }
@@ -100,6 +103,7 @@ export function createSkiaRendererInput(
     pageIndex: input.pageIndex,
     pagePositionsVersion: input.pagePositionsVersion,
     pagePositions: input.pagePositions,
+    pageSnapshots: input.sceneSnapshot.pageSnapshots,
     pages: input.pages,
     sceneSnapshot: input.sceneSnapshot,
   };

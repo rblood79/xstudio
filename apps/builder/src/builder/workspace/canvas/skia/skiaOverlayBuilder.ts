@@ -146,8 +146,8 @@ export interface OverlayBuildInput {
   workflowHoveredEdgeId: string | null;
   // Hover
   elementHoverState: ElementHoverState;
-  // Page frames
-  pageFrames?: Array<{
+  // Visible page frames (page title/selection 계층)
+  visiblePageFrames?: Array<{
     id: string;
     title: string;
     x: number;
@@ -185,7 +185,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
     workflowElementBoundsMap,
     workflowHoveredEdgeId,
     elementHoverState,
-    pageFrames,
+    visiblePageFrames,
     minimapVisible,
     skiaCanvasWidth,
     skiaCanvasHeight,
@@ -219,7 +219,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
       }
 
       // ── Page Titles ──
-      const frames = pageFrames ?? [];
+      const frames = visiblePageFrames ?? [];
       if (frames.length > 0) {
         const pageTitleItems = buildPageTitleRenderItems(
           frames,

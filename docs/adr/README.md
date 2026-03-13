@@ -1,14 +1,14 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-13 (ADR-039 Proposed — multi-page page-scoped rendering; 현황 카운트 수정 — 완료 23, 부분 완료 7, 미구현 9, 합계 39)
+> **최종 업데이트**: 2026-03-13 (ADR-039 Implemented — visible page 중심 page-scoped rendering 완료; 현황 카운트 수정 — 완료 24, 부분 완료 7, 미구현 8, 합계 39)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 23     |
+| 완료 (Accepted/Implemented/Superseded) | 24     |
 | 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 9      |
+| 미구현 (Proposed/계획)                 | 8      |
 | **합계**                               | **39** |
 
 ---
@@ -42,6 +42,7 @@
 | [033](completed/033-css-property-ssot-consolidation.md) | CSS 속성 SSOT 통합 — 구조 변수화   | Implemented | 2026-03-11 | Phase 0~3 완료 (M3 잔여 제거 + Input/Button/Label/FieldError 변수화)             |
 | [037](037-workspace-scene-runtime-rearchitecture.md)    | Workspace Scene Runtime 재구성     | Implemented | 2026-03-13 | Phase 0~6 완료 (SceneSnapshot, SelectionModel, invalidation packet, store split) |
 | [035](035-workspace-canvas-refactor.md)                 | Workspace Canvas Runtime 리팩토링  | Implemented | 2026-03-13 | Phase 0~8 완료 (baseline 수집, invalidation/panel runtime test gate, WASM 분리)  |
+| [039](039-page-scoped-rendering.md)                     | Multi-page Canvas Page-Scoped Rendering | Implemented | 2026-03-13 | Phase 0~6 완료 (document/page snapshot 분리, visible page Pixi/Skia 렌더링, page-scoped invalidation) |
 
 ### 부분 완료
 
@@ -68,7 +69,6 @@
 | [032](032-events-data-integration.md)    | Events Platform 재설계 + Data 통합       | Proposed | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동   |  **P3**  |
 | [034](034-events-panel-renovation.md)    | Events Panel Renovation                  | Proposed | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                |  **P3**  |
 | [038](038-figma-import.md)               | Figma 디자인 임포트 시스템               | Proposed | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                |  **P3**  |
-| [039](039-page-scoped-rendering.md)      | Multi-page Canvas Page-Scoped Rendering  | Proposed | 6 Phase — visible page 중심 렌더링, 페이지별 캐시, 페이지 단위 invalidation              |  **P2**  |
 
 ## Events Panel 설계 문서군
 
@@ -85,6 +85,8 @@
 - [ADR-035](035-workspace-canvas-refactor.md): 1차 runtime 구조 정리
 - [workspace-canvas-refactor-breakdown.md](/Users/admin/work/xstudio/docs/design/workspace-canvas-refactor-breakdown.md): ADR-035 작업 분해
 - [ADR-037](037-workspace-scene-runtime-rearchitecture.md): Scene Snapshot/Interaction Model 후속 구조 재구성 완료
+- [ADR-039](039-page-scoped-rendering.md): visible page 중심 page-scoped rendering 완료
+- [039-phase-0-baseline.md](039-phase-0-baseline.md): ADR-039 baseline 및 budget
 - [037-phase-0-baseline.md](037-phase-0-baseline.md): ADR-037 phase gate 기준
 - [workspace-scene-runtime-breakdown.md](/Users/admin/work/xstudio/docs/design/workspace-scene-runtime-breakdown.md): ADR-037 실행 분해
 - [workspace-scene-phase-1-scenesnapshot.md](/Users/admin/work/xstudio/docs/design/workspace-scene-phase-1-scenesnapshot.md): Phase 1 상세 구현 설계
@@ -126,7 +128,7 @@
 
 - ~~ADR-014 Fonts~~, ~~ADR-023 Variant Props~~, ~~ADR-017/018 CSS~~, ~~ADR-022 S2 토큰~~, ~~ADR-025 Named Color~~, ~~ADR-028/029 CSS 정리~~ 모두 완료
 
-### P2: ADR-035 Workspace Canvas Runtime 리팩토링
+### P2: Workspace Runtime (ADR-035 + ADR-037 + ADR-039)
 
 - ~~**ADR-027**: Canvas Inline Text Editing — Phase A+B+C 완료~~
 - ~~**ADR-019**: Icon 시스템 — Phase A+B+C+D 완료 (C2 simple element 확인, C4+C5 Spec 연동)~~
@@ -134,6 +136,7 @@
 - ~~**ADR-031**: Card S2 마이그레이션~~ — Phase 1~3 완료 (Variant 통일 + CardPreview/Footer + cardType 변형)
 - ~~**ADR-035**: Workspace Canvas Runtime 리팩토링~~ — 2026-03-13 Phase 0~8 완료
 - ~~**ADR-037**: Workspace Scene Runtime 재구성~~ — 2026-03-13 구현 완료. `SceneSnapshot`, `SelectionModel`, `PointerSession`, renderer input contract, `canvasSync` split 반영
+- ~~**ADR-039**: Multi-page Canvas Page-Scoped Rendering~~ — 2026-03-13 Phase 0~6 완료. visible page 중심 Pixi/Skia 렌더링, document/page snapshot 분리, page-scoped invalidation 반영
 
 ### P3: ADR-036 + ADR-032 → ADR-034 → ADR-013 (스타일 통합 + 이벤트 + 데이터 바인딩)
 

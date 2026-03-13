@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Implemented
 
 ## Date
 
@@ -158,6 +158,18 @@ Skia content build는 모든 페이지의 body를 root로 삼아 command stream/
 2. `SceneSnapshot`을 `document meta`와 `page content snapshot`으로 분리한다.
 3. Skia content build는 visible page만 대상으로 한다.
 4. invalidation version은 전역 숫자에서 page-scoped version 체계로 확장한다.
+
+## Implementation Summary
+
+2026-03-13 기준 Phase 0~6 구현 완료.
+
+- Phase 0: baseline을 [039-phase-0-baseline.md](039-phase-0-baseline.md)에 고정
+- Phase 1: `SceneSnapshot`을 `document` 메타와 `pageSnapshots` 맵으로 분리
+- Phase 2: Pixi는 visible page만 `PageContainer`와 `PixiPageRendererInput`을 생성
+- Phase 3: Skia command stream root를 visible page body로 제한하고 root signature를 캐시 키에 포함
+- Phase 4: `visibleContentVersion`, `visiblePagePositionVersion`, `allPageFrameVersion`으로 content/document overlay 무효화 범위를 분리
+- Phase 5: overlay 입력을 `visiblePageFrames`와 `allPageFrames`로 분리해 page title과 workflow/minimap 경계를 고정
+- Phase 6: legacy `allPageData/currentPageData` 경로 제거, 테스트와 문서 갱신
 
 ---
 

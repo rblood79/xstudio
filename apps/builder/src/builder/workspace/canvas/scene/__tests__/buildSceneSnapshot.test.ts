@@ -69,14 +69,21 @@ describe("buildSceneSnapshot", () => {
       zoom: 1,
     });
 
-    expect(snapshot.currentPageData?.bodyElement?.id).toBe("body-a");
-    expect(snapshot.currentPageData?.pageElements.map((element) => element.id)).toEqual([
-      "text-a",
+    expect(snapshot.document.currentPageSnapshot?.bodyElement?.id).toBe("body-a");
+    expect(
+      snapshot.document.currentPageSnapshot?.pageElements.map(
+        (element) => element.id,
+      ),
+    ).toEqual(["text-a"]);
+    expect(snapshot.document.allPageFrames).toHaveLength(2);
+    expect(snapshot.document.allPageFrames[0]?.elementCount).toBe(2);
+    expect(snapshot.document.visiblePageIds.has("page-a")).toBe(true);
+    expect(snapshot.document.visiblePageIds.has("page-b")).toBe(false);
+    expect(snapshot.pageSnapshots.get("page-a")?.isVisible).toBe(true);
+    expect(snapshot.pageSnapshots.get("page-b")?.isVisible).toBe(false);
+    expect(snapshot.document.visiblePageFrames.map((frame) => frame.id)).toEqual([
+      "page-a",
     ]);
-    expect(snapshot.pageFrames).toHaveLength(2);
-    expect(snapshot.pageFrames[0]?.elementCount).toBe(2);
-    expect(snapshot.visiblePageIds.has("page-a")).toBe(true);
-    expect(snapshot.visiblePageIds.has("page-b")).toBe(false);
     expect(snapshot.selection.selectedIds).toEqual(["text-a"]);
   });
 

@@ -42,7 +42,7 @@ export function buildDepthMap(
   return cache;
 }
 
-export function buildAllPageData(
+export function buildPageDataMap(
   pages: Page[],
   pageIndex: PageElementIndex,
   elementsMap: Map<string, Element>,

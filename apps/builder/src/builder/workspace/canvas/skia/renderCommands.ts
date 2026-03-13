@@ -187,6 +187,7 @@ let _cachedStream: RenderCommandStream | null = null;
 let _cacheRegVersion = -1;
 let _cachePagePosVersion = -1;
 let _cacheLayoutVersion = -1;
+let _cacheRootSignature = "";
 
 /**
  * 캐시 기반 커맨드 스트림 획득.
@@ -202,11 +203,13 @@ export function getCachedCommandStream(
   pagePosVersion: number,
   layoutVersion: number,
 ): RenderCommandStream {
+  const rootSignature = rootElementIds.join("|");
   if (
     _cachedStream &&
     registryVersion === _cacheRegVersion &&
     pagePosVersion === _cachePagePosVersion &&
-    layoutVersion === _cacheLayoutVersion
+    layoutVersion === _cacheLayoutVersion &&
+    rootSignature === _cacheRootSignature
   ) {
     return _cachedStream;
   }
@@ -222,6 +225,7 @@ export function getCachedCommandStream(
   _cacheRegVersion = registryVersion;
   _cachePagePosVersion = pagePosVersion;
   _cacheLayoutVersion = layoutVersion;
+  _cacheRootSignature = rootSignature;
 
   return stream;
 }
@@ -231,6 +235,7 @@ export function getCachedCommandStream(
  */
 export function invalidateCommandStreamCache(): void {
   _cachedStream = null;
+  _cacheRootSignature = "";
 }
 
 /**

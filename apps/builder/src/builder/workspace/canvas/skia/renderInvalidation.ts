@@ -41,14 +41,16 @@ export type InvalidationReason = (typeof INVALIDATION_REASONS)[number];
  * │ registryVersion       │ content   │ _cachedTree, commandStreamCache, contentNode  │
  * │ registryVersion       │ resource  │ (폰트/이미지 로드 → notifyLayoutChange)       │
  * │ layoutVersion         │ layout    │ fullTreeLayoutMap (useMemo)                   │
- * │ pagePositionsVersion  │ viewport  │ _cachedTree, commandStreamCache (3중 키)      │
+ * │ visibleContentVersion │ content   │ visible page contentNode + commandStreamCache │
+ * │ visiblePagePosition   │ viewport  │ visible page content cache + stale 보정        │
+ * │ allPageFrameVersion   │ workflow  │ document overlay(workflow/minimap/page frame)  │
  * │ overlayVersion        │ overlay   │ overlayNode (selection/pageFrames)            │
  * │ overlayVersion        │ workflow  │ overlayNode (workflow edges/hover/focus)      │
  * │ themeVersion          │ theme     │ 전체 Skia 트리 (색상 재계산)                  │
  * │ containerResize       │ content   │ Surface 재생성 + contentNode 무효화          │
  * │ dprChange             │ resource  │ Surface 재생성 (devicePixelRatio 변경)        │
  * │ contextRestored       │ resource  │ WebGL context loss → restore 후 전체 재렌더   │
- * │ pageSwitch            │ content   │ contentNode 무효화 (페이지 전환)              │
+ * │ pageSwitch            │ overlay   │ 페이지 타이틀/selection highlight 갱신        │
  * │ imageLoaded           │ resource  │ contentNode + layoutVersion (fit-content 용)  │
  * └───────────────────────┴───────────┴──────────────────────────────────────────────┘
  *

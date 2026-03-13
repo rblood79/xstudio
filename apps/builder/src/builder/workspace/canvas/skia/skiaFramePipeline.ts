@@ -45,6 +45,7 @@ import { buildNodeBoundsMap } from "./aiEffects";
 import { renderNode } from "./nodeRenderers";
 import { buildElementBoundsMapFromTreeBounds } from "./skiaFrameHelpers";
 import { recordWasmMetric } from "../utils/gpuProfilerCore";
+import { collectVisiblePageRoots } from "./visiblePageRoots";
 
 // ============================================
 // Content Build — 입력/출력 타입
@@ -204,28 +205,9 @@ function buildViaCommandStream(
   const treeBuildStart =
     process.env.NODE_ENV === "development" ? performance.now() : 0;
 
-  const pagePositions = rendererInput.pagePositions;
   const layoutVersion = getSharedLayoutVersion();
-
-  // rootElementIds: 각 페이지의 body element ID
-  // bodyPagePositions: bodyId → pagePosition
-  const rootElementIds: string[] = [];
-  const bodyPagePositions: Record<string, { x: number; y: number }> = {};
-  for (const page of rendererInput.pages) {
-    const pageElementIds = rendererInput.pageIndex.elementsByPage.get(page.id);
-    if (!pageElementIds) {
-      continue;
-    }
-    for (const elementId of pageElementIds) {
-      const el = rendererInput.elementsMap.get(elementId);
-      if (el?.tag.toLowerCase() === "body") {
-        rootElementIds.push(el.id);
-        const pos = pagePositions[page.id];
-        if (pos) bodyPagePositions[el.id] = pos;
-        break;
-      }
-    }
-  }
+  const { rootElementIds, bodyPagePositions } =
+    collectVisiblePageRoots(rendererInput);
 
   // Fix 1: filteredChildrenMap 사용 (layoutMap과 동일 트리 소스)
   const filteredChildIds = getSharedFilteredChildrenMap();
