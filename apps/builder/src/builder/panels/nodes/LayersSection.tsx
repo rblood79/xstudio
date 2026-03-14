@@ -4,15 +4,7 @@
  * NodesPanel에서 분리하여 elements 변경 시에만 리렌더링되도록 최적화
  */
 
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import type { Element } from "../../../types/builder/unified.types";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
@@ -36,8 +28,6 @@ const EMPTY_ELEMENTS: Element[] = [];
 export const LayersSection = memo(function LayersSection({
   currentPageId,
 }: LayersSectionProps) {
-  const renderStartRef = useRef(performance.now());
-  renderStartRef.current = performance.now();
   const [isTreeVisible, setIsTreeVisible] = useState(true);
   const currentPageElements = useStore(
     useCallback(
@@ -77,7 +67,9 @@ export const LayersSection = memo(function LayersSection({
   // 사용자가 직접 조작한 expandedKeys (collapse all, 수동 토글)
   const [userExpandedKeys, setUserExpandedKeys] = useState<Set<Key>>(new Set());
   // 사용자가 명시적으로 닫은 키 (자동 펼침을 오버라이드)
-  const [userCollapsedKeys, setUserCollapsedKeys] = useState<Set<Key>>(new Set());
+  const [userCollapsedKeys, setUserCollapsedKeys] = useState<Set<Key>>(
+    new Set(),
+  );
 
   // 🚀 선택된 요소의 부모 체인 계산 (파생 상태)
   const autoExpandedParents = useMemo(() => {
@@ -114,20 +106,23 @@ export const LayersSection = memo(function LayersSection({
   const handleItemClick = useCallback(
     (element: { id: string }) => {
       const state = useStore.getState();
-      const newContextId = resolveEditingContextForTreeSelection(element.id, state.elementsMap);
+      const newContextId = resolveEditingContextForTreeSelection(
+        element.id,
+        state.elementsMap,
+      );
       if (newContextId !== state.editingContextId) {
         state.setEditingContext(newContextId);
       }
       setSelectedElement(element.id);
     },
-    [setSelectedElement]
+    [setSelectedElement],
   );
 
   const handleItemDelete = useCallback(
     async (element: { id: string }) => {
       await removeElement(element.id);
     },
-    [removeElement]
+    [removeElement],
   );
 
   // Collapse All 기능
@@ -169,19 +164,8 @@ export const LayersSection = memo(function LayersSection({
       // userExpandedKeys 업데이트
       setUserExpandedKeys(newKeys);
     },
-    [expandedKeys]
+    [expandedKeys],
   );
-
-  useLayoutEffect(() => {
-    const duration = performance.now() - renderStartRef.current;
-    if (duration >= 8) {
-      console.log("[perf] panel.layers.render", {
-        durationMs: Number(duration.toFixed(1)),
-        currentPageId,
-        elementCount: currentPageElements.length,
-      });
-    }
-  });
 
   return (
     <div className="section">

@@ -33,22 +33,6 @@ interface PagesSectionProps {
   projectId: string | undefined;
 }
 
-function logPerf(
-  name: string,
-  startTime: number,
-  extra?: Record<string, unknown>,
-) {
-  const duration = performance.now() - startTime;
-  if (duration < 8) {
-    return;
-  }
-
-  const payload = extra
-    ? { durationMs: Number(duration.toFixed(1)), ...extra }
-    : duration;
-  console.log(`[perf] ${name}`, payload);
-}
-
 export const PagesSection = memo(function PagesSection({
   projectId,
 }: PagesSectionProps) {
@@ -76,13 +60,7 @@ export const PagesSection = memo(function PagesSection({
       return;
     }
     await longTaskMonitor.measureAsync("perf:pages.add-click", async () => {
-      const startTime = performance.now();
-      const result = await addPage(projectId);
-      logPerf("pages.add-click", startTime, {
-        pageCount: useStore.getState().pages.length,
-        success: result.success,
-      });
-      return result;
+      return await addPage(projectId);
     });
   }, [projectId, addPage]);
 
@@ -111,7 +89,6 @@ export const PagesSection = memo(function PagesSection({
   // 페이지 삭제 핸들러
   const handlePageDelete = useCallback(
     async (page: Page) => {
-      const startTime = performance.now();
       const currentState = useStore.getState();
       const deletingCurrentPage = currentState.currentPageId === page.id;
       const pageIndex = pages.findIndex(
@@ -134,10 +111,6 @@ export const PagesSection = memo(function PagesSection({
             (element) => element.order_num === 0,
           ) ?? null)
         : null;
-
-      console.log(
-        `🗑️ Page "${page.title}" 삭제 시작: ${elementIds.length}개 요소 포함`,
-      );
 
       const loadedNextBodyElement = pageToSelect
         ? ((
@@ -163,20 +136,9 @@ export const PagesSection = memo(function PagesSection({
       });
 
       if (deletingCurrentPage && pageToSelect) {
-        const fallbackScheduleStart = performance.now();
         scheduleNextFrame(() => {
-          logPerf("pages.delete-fallback.schedule", fallbackScheduleStart, {
-            pageId: pageToSelect.id,
-            hadBodyElement: !!loadedNextBodyElement,
-          });
-
-          const fallbackActivateStart = performance.now();
           startTransition(() => {
             activatePage(pageToSelect.id, loadedNextBodyElement?.id ?? null);
-          });
-          logPerf("pages.delete-fallback.activate", fallbackActivateStart, {
-            pageId: pageToSelect.id,
-            bodyElementId: loadedNextBodyElement?.id ?? null,
           });
           scheduleBackgroundTask(() => {
             setIsFallbackTransitioning(false);
@@ -185,12 +147,7 @@ export const PagesSection = memo(function PagesSection({
 
         if (!loadedNextBodyElement) {
           scheduleBackgroundTask(() => {
-            const hydrateStart = performance.now();
             void loadPageIfNeeded(pageToSelect.id).then(() => {
-              logPerf("pages.delete-fallback.load-page", hydrateStart, {
-                pageId: pageToSelect.id,
-              });
-
               const hydratedBodyElement =
                 (
                   useStore.getState().pageElementsSnapshot[pageToSelect.id] ??
@@ -201,18 +158,9 @@ export const PagesSection = memo(function PagesSection({
                 return;
               }
 
-              const hydratedActivateStart = performance.now();
               startTransition(() => {
                 activatePage(pageToSelect.id, hydratedBodyElement.id);
               });
-              logPerf(
-                "pages.delete-fallback.activate-hydrated",
-                hydratedActivateStart,
-                {
-                  pageId: pageToSelect.id,
-                  bodyElementId: hydratedBodyElement.id,
-                },
-              );
               scheduleBackgroundTask(() => {
                 setIsFallbackTransitioning(false);
               });
@@ -227,14 +175,6 @@ export const PagesSection = memo(function PagesSection({
         setIsFallbackTransitioning(false);
       }
 
-      logPerf("pages.delete-remove-local", startTime, {
-        deletingCurrentPage,
-        pageCountBefore: pages.length,
-        pageCountAfter: useStore.getState().pages.length,
-      });
-
-      console.log("✅ 페이지 삭제 완료:", page.title);
-
       // 2. 영속화는 백그라운드에서 직렬 처리
       enqueuePagePersistence(async () => {
         try {
@@ -247,15 +187,9 @@ export const PagesSection = memo(function PagesSection({
             }
             await db.pages.delete(page.id);
           }
-          console.log(`✅ [IndexedDB] Page "${page.title}" 삭제 완료`);
         } catch (error) {
           console.error("페이지 삭제 에러:", error);
         }
-      });
-
-      logPerf("pages.delete-click.total", startTime, {
-        deletingCurrentPage,
-        remainingPages: remainingPages.length,
       });
     },
     [activatePage, loadPageIfNeeded, pages, removePageLocal],

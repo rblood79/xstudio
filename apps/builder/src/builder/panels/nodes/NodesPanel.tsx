@@ -10,8 +10,6 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
-  useLayoutEffect,
-  useRef,
   useState,
 } from "react";
 import { useParams } from "react-router-dom";
@@ -31,9 +29,6 @@ import {
 } from "../../utils/scheduleTask";
 
 export function NodesPanel({ isActive }: PanelProps) {
-  const renderStartRef = useRef(performance.now());
-  renderStartRef.current = performance.now();
-
   // URL params
   const { projectId } = useParams<{ projectId: string }>();
 
@@ -42,16 +37,23 @@ export function NodesPanel({ isActive }: PanelProps) {
 
   // Hooks
   const { requestAutoSelectAfterUpdate } = useIframeMessenger();
-  const { initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
+  const { initializeProject } = usePageManager({
+    requestAutoSelectAfterUpdate,
+  });
 
   // 프로젝트 초기화 - pages가 비어있으면 초기화
   // 🚀 Performance: 탭 관련 상태만 구독
   const setEditMode = useEditModeStore((state) => state.setMode);
-  const setEditModeCurrentPageId = useEditModeStore((state) => state.setCurrentPageId);
-  const setEditModeCurrentLayoutId = useEditModeStore((state) => state.setCurrentLayoutId);
+  const setEditModeCurrentPageId = useEditModeStore(
+    (state) => state.setCurrentPageId,
+  );
+  const setEditModeCurrentLayoutId = useEditModeStore(
+    (state) => state.setCurrentLayoutId,
+  );
 
   // 현재 활성 탭 (Edit Mode에서 파생)
-  const activeTab: NodesPanelTabType = editMode === "layout" ? "layouts" : "pages";
+  const activeTab: NodesPanelTabType =
+    editMode === "layout" ? "layouts" : "pages";
 
   // 탭 변경 핸들러
   const handleTabChange = useCallback(
@@ -64,21 +66,8 @@ export function NodesPanel({ isActive }: PanelProps) {
         setEditModeCurrentPageId(null);
       }
     },
-    [setEditMode, setEditModeCurrentPageId, setEditModeCurrentLayoutId]
+    [setEditMode, setEditModeCurrentPageId, setEditModeCurrentLayoutId],
   );
-
-  useLayoutEffect(() => {
-    const { currentPageId, pages } = useStore.getState();
-    const duration = performance.now() - renderStartRef.current;
-    if (duration >= 8) {
-      console.log("[perf] panel.nodes.render", {
-        durationMs: Number(duration.toFixed(1)),
-        currentPageId,
-        pageCount: pages.length,
-        isActive,
-      });
-    }
-  });
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
@@ -112,7 +101,9 @@ const PagesTabContent = memo(function PagesTabContent({
   const currentPageId = useStore((state) => state.currentPageId);
   const deferredCurrentPageId = useDeferredValue(currentPageId);
   const { requestAutoSelectAfterUpdate } = useIframeMessenger();
-  const { initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
+  const { initializeProject } = usePageManager({
+    requestAutoSelectAfterUpdate,
+  });
   const [visibleLayerPageId, setVisibleLayerPageId] = useState<string | null>(
     deferredCurrentPageId,
   );
@@ -170,11 +161,7 @@ const PagesTabContent = memo(function PagesTabContent({
       {shouldShowLayersSection ? (
         <LayersSection currentPageId={visibleLayerPageId} />
       ) : (
-        <div
-          className="section"
-          aria-hidden="true"
-          style={{ minHeight: 72 }}
-        />
+        <div className="section" aria-hidden="true" style={{ minHeight: 72 }} />
       )}
     </>
   );

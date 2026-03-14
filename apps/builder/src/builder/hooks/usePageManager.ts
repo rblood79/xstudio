@@ -13,20 +13,6 @@ import { scheduleNextFrame } from "../utils/scheduleTask";
 
 const PAGE_STACK_GAP = 80;
 
-function logPerf(
-  name: string,
-  startTime: number,
-  extra?: Record<string, unknown>,
-) {
-  const duration = performance.now() - startTime;
-  if (duration < 8) return;
-
-  console.log(`[perf] ${name}`, {
-    durationMs: Number(duration.toFixed(1)),
-    ...extra,
-  });
-}
-
 /**
  * API 응답 타입 (에러를 throw하지 않고 return)
  */
