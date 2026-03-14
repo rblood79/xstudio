@@ -1,14 +1,14 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-14 (ADR-035/037/039 completed/ 이동, 다음 진행 목표 갱신, 우선순위 리스트 최신화)
+> **최종 업데이트**: 2026-03-14 (ADR-040 completed/ 이동, 완료 25개, 미구현 9개)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
-| 완료 (Accepted/Implemented/Superseded) | 24     |
+| 완료 (Accepted/Implemented/Superseded) | 25     |
 | 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 10     |
+| 미구현 (Proposed/계획)                 | 9      |
 | **합계**                               | **41** |
 
 ---
@@ -43,6 +43,7 @@
 | [037](completed/037-workspace-scene-runtime-rearchitecture.md) | Workspace Scene Runtime 재구성          | Implemented | 2026-03-13 | Phase 0~6 완료 (SceneSnapshot, SelectionModel, invalidation packet, store split)                      |
 | [035](completed/035-workspace-canvas-refactor.md)              | Workspace Canvas Runtime 리팩토링       | Implemented | 2026-03-13 | Phase 0~8 완료 (baseline 수집, invalidation/panel runtime test gate, WASM 분리)                       |
 | [039](completed/039-page-scoped-rendering.md)                  | Multi-page Canvas Page-Scoped Rendering | Implemented | 2026-03-13 | Phase 0~6 완료 (document/page snapshot 분리, visible page Pixi/Skia 렌더링, page-scoped invalidation) |
+| [040](completed/040-visible-page-delta-runtime.md)             | Visible Page + Delta Runtime 전환       | Implemented | 2026-03-14 | Phase 0~6 완료 (snapshot recovery 분리, atomic activation, delta-first store/preview 계약)            |
 
 ### 부분 완료
 
@@ -60,18 +61,17 @@
 
 ### 미구현
 
-| ADR                                       | 제목                                     | 상태        | 규모                                                                                     | 우선순위 |
-| ----------------------------------------- | ---------------------------------------- | ----------- | ---------------------------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md)  | Quick Connect 데이터 바인딩              | Proposed    | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                          |  **P3**  |
-| [036](036-spec-first-single-source.md)    | Spec-First Single Source — CSS 자동 생성 | Proposed    | 4 Phase — CSSGenerator 확장 + SIZE_CONFIG 제거 + 단순/복합 컴포넌트 CSS 전환 (~40+30개)  |  **P3**  |
-| [020](020-design-kit-improvement.md)      | Design Kit 패널 분석 및 개선             | Proposed    | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수 |    P4    |
-| [015](015-sitemap-layout.md)              | Sitemap Hierarchy 워크플로우 엣지        | Proposed    | 변경 대상 8파일, 코드 미생성                                                             |    P5    |
-| [016](016-photoshop-ui-ux.md)             | Photoshop 벤치마크 기반 UI/UX (v2)       | Proposed    | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                   |    P5    |
-| [032](032-events-data-integration.md)     | Events Platform 재설계 + Data 통합       | Proposed    | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동   |  **P3**  |
-| [034](034-events-panel-renovation.md)     | Events Panel Renovation                  | Proposed    | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                |  **P3**  |
-| [038](038-figma-import.md)                | Figma 디자인 임포트 시스템               | Proposed    | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                |  **P3**  |
-| [040](040-visible-page-delta-runtime.md)  | Visible Page + Delta Runtime 전환        | In Progress | 7 Phase — snapshot recovery 분리 + atomic activation + delta-first store/preview 계약    |  **P2**  |
-| [041](041-spec-driven-property-editor.md) | Spec-Driven Property Editor 자동 생성    | Proposed    | 107개 에디터 → Spec 기반 자동 생성 (ADR-036 후속)                                        |    P4    |
+| ADR                                       | 제목                                     | 상태     | 규모                                                                                     | 우선순위 |
+| ----------------------------------------- | ---------------------------------------- | -------- | ---------------------------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md)  | Quick Connect 데이터 바인딩              | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                          |  **P3**  |
+| [036](036-spec-first-single-source.md)    | Spec-First Single Source — CSS 자동 생성 | Proposed | 4 Phase — CSSGenerator 확장 + SIZE_CONFIG 제거 + 단순/복합 컴포넌트 CSS 전환 (~40+30개)  |  **P3**  |
+| [020](020-design-kit-improvement.md)      | Design Kit 패널 분석 및 개선             | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수 |    P4    |
+| [015](015-sitemap-layout.md)              | Sitemap Hierarchy 워크플로우 엣지        | Proposed | 변경 대상 8파일, 코드 미생성                                                             |    P5    |
+| [016](016-photoshop-ui-ux.md)             | Photoshop 벤치마크 기반 UI/UX (v2)       | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                   |    P5    |
+| [032](032-events-data-integration.md)     | Events Platform 재설계 + Data 통합       | Proposed | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동   |  **P3**  |
+| [034](034-events-panel-renovation.md)     | Events Panel Renovation                  | Proposed | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                |  **P3**  |
+| [038](038-figma-import.md)                | Figma 디자인 임포트 시스템               | Proposed | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                |  **P3**  |
+| [041](041-spec-driven-property-editor.md) | Spec-Driven Property Editor 자동 생성    | Proposed | 107개 에디터 → Spec 기반 자동 생성 (ADR-036 후속)                                        |    P4    |
 
 ## Events Panel 설계 문서군
 
@@ -89,7 +89,7 @@
 - [workspace-canvas-refactor-breakdown.md](/Users/admin/work/xstudio/docs/design/workspace-canvas-refactor-breakdown.md): ADR-035 작업 분해
 - [ADR-037](037-workspace-scene-runtime-rearchitecture.md): Scene Snapshot/Interaction Model 후속 구조 재구성 완료
 - [ADR-039](039-page-scoped-rendering.md): visible page 중심 page-scoped rendering 완료
-- [ADR-040](040-visible-page-delta-runtime.md): visible page + delta update 모델로 상태 동기화 계약 전환 계획
+- [ADR-040](completed/040-visible-page-delta-runtime.md): visible page + delta update 모델로 상태 동기화 계약 전환 완료
 - [039-phase-0-baseline.md](039-phase-0-baseline.md): ADR-039 baseline 및 budget
 - [037-phase-0-baseline.md](037-phase-0-baseline.md): ADR-037 phase gate 기준
 - [workspace-scene-runtime-breakdown.md](/Users/admin/work/xstudio/docs/design/workspace-scene-runtime-breakdown.md): ADR-037 실행 분해
@@ -99,17 +99,16 @@
 
 ## 다음 진행 목표 (2026-03-14 기준)
 
-| 순서 | 대상    | 내용                                                                                               | 규모 |  상태  |
-| :--: | ------- | -------------------------------------------------------------------------------------------------- | :--: | :----: |
-|  1   | ADR-040 | Visible Page + Delta Runtime — snapshot 전체 교체 제거, atomic activation + delta-first 계약 전환  |  대  | 진행중 |
-|  2   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL        |  대  |        |
-|  3   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)   |  중  |        |
-|  4   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                      |  대  |        |
-|  5   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                             |  대  |        |
-|  6   | ADR-036 | Spec-First Single Source — CSS 자동 생성 기반 이중 렌더링 통합 (CSSGenerator 확장, ~70개 컴포넌트) |  중  |        |
-|  7   | ADR-041 | Spec-Driven Property Editor — 107개 에디터 자동 생성 (ADR-036 선행)                                |  중  |        |
+| 순서 | 대상    | 내용                                                                                               | 규모 | 상태 |
+| :--: | ------- | -------------------------------------------------------------------------------------------------- | :--: | :--: |
+|  1   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL        |  대  |      |
+|  2   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)   |  중  |      |
+|  3   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                      |  대  |      |
+|  4   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                             |  대  |      |
+|  5   | ADR-036 | Spec-First Single Source — CSS 자동 생성 기반 이중 렌더링 통합 (CSSGenerator 확장, ~70개 컴포넌트) |  중  |      |
+|  6   | ADR-041 | Spec-Driven Property Editor — 107개 에디터 자동 생성 (ADR-036 선행)                                |  중  |      |
 
-> 완료된 #1~#20은 변경 이력 참조
+> 완료된 #1~#21은 변경 이력 참조
 
 ---
 
@@ -128,7 +127,7 @@
 - ~~**ADR-035**: Workspace Canvas Runtime 리팩토링~~ — 2026-03-13 Phase 0~8 완료
 - ~~**ADR-037**: Workspace Scene Runtime 재구성~~ — 2026-03-13 구현 완료. `SceneSnapshot`, `SelectionModel`, `PointerSession`, renderer input contract, `canvasSync` split 반영
 - ~~**ADR-039**: Multi-page Canvas Page-Scoped Rendering~~ — 2026-03-13 Phase 0~6 완료. visible page 중심 Pixi/Skia 렌더링, document/page snapshot 분리, page-scoped invalidation 반영
-- **ADR-040**: Visible Page + Delta Runtime — page-scoped rendering 위에서 상태 동기화 계약을 `delta-first`로 재정의. `setElements(...)` interactive 경로 제거, atomic page activation, preview/builder delta 계약 정착이 목표
+- ~~**ADR-040**: Visible Page + Delta Runtime~~ — 2026-03-14 Phase 0~6 완료. snapshot recovery 분리, atomic activation, delta-first store/preview 계약 정착
 
 ### P3: ADR-036 + ADR-032 → ADR-034 → ADR-013 (스타일 통합 + 이벤트 + 데이터 바인딩)
 
