@@ -83,6 +83,13 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
     },
   },
 
+  // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-sm)",
+    delegation: [],
+  },
+
   states: {
     hover: {},
     pressed: {},

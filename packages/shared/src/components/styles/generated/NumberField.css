@@ -113,6 +113,48 @@
   pointer-events: none;
 }
 
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-NumberField[data-size="sm"] .react-aria-Label {
+  --label-font-size: var(--text-xs);
+}
+
+.react-aria-NumberField[data-size="md"] .react-aria-Label {
+  --label-font-size: var(--text-sm);
+}
+
+.react-aria-NumberField[data-size="lg"] .react-aria-Label {
+  --label-font-size: var(--text-base);
+}
+
+.react-aria-NumberField[data-size="sm"] .react-aria-Input {
+  --nf-input-width: 80px;
+  --nf-input-padding: 0 var(--spacing-sm);
+}
+
+.react-aria-NumberField[data-size="md"] .react-aria-Input {
+  --nf-input-width: 120px;
+  --nf-input-padding: 0 var(--spacing-md);
+}
+
+.react-aria-NumberField[data-size="lg"] .react-aria-Input {
+  --nf-input-width: 160px;
+  --nf-input-padding: 0 var(--spacing-lg);
+}
+
+.react-aria-NumberField[data-size="sm"] .react-aria-FieldError {
+  --error-font-size: var(--text-2xs);
+}
+
+.react-aria-NumberField[data-size="md"] .react-aria-FieldError {
+  --error-font-size: var(--text-xs);
+}
+
+.react-aria-NumberField[data-size="lg"] .react-aria-FieldError {
+  --error-font-size: var(--text-sm);
+}
+
+
 @media (forced-colors: active) {
   .react-aria-NumberField {
     forced-color-adjust: auto;

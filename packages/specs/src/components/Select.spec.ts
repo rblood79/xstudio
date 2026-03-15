@@ -127,6 +127,56 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
     },
   },
 
+  // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        variables: {
+          sm: { "--select-label-size": "var(--text-xs)" },
+          md: { "--select-label-size": "var(--text-sm)" },
+          lg: { "--select-label-size": "var(--text-base)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-Button",
+        variables: {
+          sm: {
+            "--select-btn-padding": "var(--spacing-2xs) var(--spacing-sm)",
+            "--select-btn-font-size": "var(--text-xs)",
+          },
+          md: {
+            "--select-btn-padding": "var(--spacing-xs) var(--spacing-md)",
+            "--select-btn-font-size": "var(--text-sm)",
+          },
+          lg: {
+            "--select-btn-padding": "var(--spacing-sm) var(--spacing-lg)",
+            "--select-btn-font-size": "var(--text-base)",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-ListBox .react-aria-ListBoxItem",
+        variables: {
+          sm: {
+            padding: "var(--spacing-sm) var(--spacing)",
+            "font-size": "var(--text-xs)",
+          },
+          md: {
+            padding: "var(--spacing-sm) var(--spacing-md)",
+            "font-size": "var(--text-sm)",
+          },
+          lg: {
+            padding: "var(--spacing) var(--spacing-lg)",
+            "font-size": "var(--text-base)",
+          },
+        },
+      },
+    ],
+  },
+
   states: {
     hover: {},
     pressed: {},

@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * NumberField Props
  */
 export interface NumberFieldProps {
-  variant?: 'default' | 'accent' | 'negative';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent" | "negative";
+  size?: "S" | "M" | "L";
   label?: string;
   value?: number;
   minValue?: number;
@@ -35,37 +35,37 @@ export interface NumberFieldProps {
  * NumberField Component Spec
  */
 export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
-  name: 'NumberField',
-  description: 'React Aria 기반 숫자 입력 컴포넌트',
-  element: 'div',
+  name: "NumberField",
+  description: "React Aria 기반 숫자 입력 컴포넌트",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-2}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border-hover}' as TokenRef,
-      borderHover: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-2}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border-hover}" as TokenRef,
+      borderHover: "{color.accent}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-2}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border-hover}' as TokenRef,
-      borderHover: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-2}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border-hover}" as TokenRef,
+      borderHover: "{color.accent}" as TokenRef,
     },
     negative: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.negative-subtle}' as TokenRef,
-      backgroundPressed: '{color.negative-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.negative}' as TokenRef,
-      borderHover: '{color.negative-hover}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.negative-subtle}" as TokenRef,
+      backgroundPressed: "{color.negative-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.negative}" as TokenRef,
+      borderHover: "{color.negative-hover}" as TokenRef,
     },
   },
 
@@ -74,8 +74,8 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       height: 32,
       paddingX: 10,
       paddingY: 4,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 12,
       gap: 4,
     },
@@ -83,8 +83,8 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       height: 40,
       paddingX: 14,
       paddingY: 8,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 16,
       gap: 6,
     },
@@ -92,11 +92,52 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       height: 48,
       paddingX: 16,
       paddingY: 12,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 20,
       gap: 8,
     },
+  },
+
+  // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        variables: {
+          sm: { "--label-font-size": "var(--text-xs)" },
+          md: { "--label-font-size": "var(--text-sm)" },
+          lg: { "--label-font-size": "var(--text-base)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-Input",
+        variables: {
+          sm: {
+            "--nf-input-width": "80px",
+            "--nf-input-padding": "0 var(--spacing-sm)",
+          },
+          md: {
+            "--nf-input-width": "120px",
+            "--nf-input-padding": "0 var(--spacing-md)",
+          },
+          lg: {
+            "--nf-input-width": "160px",
+            "--nf-input-padding": "0 var(--spacing-lg)",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        variables: {
+          sm: { "--error-font-size": "var(--text-2xs)" },
+          md: { "--error-font-size": "var(--text-xs)" },
+          lg: { "--error-font-size": "var(--text-sm)" },
+        },
+      },
+    ],
   },
 
   states: {
@@ -104,61 +145,75 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      cursor: 'not-allowed',
-      pointerEvents: 'none',
+      cursor: "not-allowed",
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       const width = (props.style?.width as number) || 160;
       const height = size.height;
       const stepperWidth = height;
 
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius as unknown as number;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : (size.borderRadius as unknown as number);
 
-      const bgColor = props.style?.backgroundColor
-                    ?? (state === 'hover' ? variant.backgroundHover
-                    : state === 'pressed' ? variant.backgroundPressed
-                    : variant.background);
+      const bgColor =
+        props.style?.backgroundColor ??
+        (state === "hover"
+          ? variant.backgroundHover
+          : state === "pressed"
+            ? variant.backgroundPressed
+            : variant.background);
 
-      const borderColor = props.style?.borderColor
-                        ?? ((state === 'hover' && variant.borderHover)
-                            ? variant.borderHover
-                            : variant.border);
+      const borderColor =
+        props.style?.borderColor ??
+        (state === "hover" && variant.borderHover
+          ? variant.borderHover
+          : variant.border);
 
       const styleBw = props.style?.borderWidth;
       const defaultBw = props.isInvalid ? 2 : 1;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : defaultBw;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : defaultBw;
 
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
 
       const fwRaw = props.style?.fontWeight;
-      const fontWeight = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
-        : 500;
+      const fontWeight =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 500
+          : 500;
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const textColor = props.style?.color
-                      ?? variant.text;
+      const textColor = props.style?.color ?? variant.text;
 
       const shapes: Shape[] = [];
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
@@ -172,7 +227,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
 
       if (props.label) {
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: 0,
           y: 0,
           text: props.label,
@@ -181,14 +236,14 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
           fontWeight,
           fill: textColor,
           align: textAlign,
-          baseline: 'top' as const,
+          baseline: "top" as const,
         });
       }
 
       // 입력 필드 배경
       shapes.push({
-        id: 'bg',
-        type: 'roundRect' as const,
+        id: "bg",
+        type: "roundRect" as const,
         x: 0,
         y: labelOffset,
         width,
@@ -200,95 +255,102 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
       // 테두리
       if (borderColor) {
         shapes.push({
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
-          color: props.isInvalid ? ('{color.negative}' as TokenRef) : borderColor,
+          color: props.isInvalid
+            ? ("{color.negative}" as TokenRef)
+            : borderColor,
           radius: borderRadius,
         });
       }
 
       // 감소 버튼 (-)
       shapes.push({
-        id: 'decrement',
-        type: 'roundRect' as const,
+        id: "decrement",
+        type: "roundRect" as const,
         x: 0,
         y: labelOffset,
         width: stepperWidth,
         height,
         radius: [borderRadius, 0, 0, borderRadius],
-        fill: '{color.layer-2}' as TokenRef,
+        fill: "{color.layer-2}" as TokenRef,
       });
 
       // 감소 아이콘 (-)
       shapes.push({
-        type: 'text' as const,
+        type: "text" as const,
         x: 0,
-        y: (labelOffset) + height / 2,
-        text: '\u2212',
+        y: labelOffset + height / 2,
+        text: "\u2212",
         fontSize,
         fontFamily: ff,
         fontWeight,
         fill: textColor,
-        align: 'center' as const,
-        baseline: 'middle' as const,
+        align: "center" as const,
+        baseline: "middle" as const,
         maxWidth: stepperWidth,
       });
 
       // 증가 버튼 (+)
       shapes.push({
-        id: 'increment',
-        type: 'roundRect' as const,
+        id: "increment",
+        type: "roundRect" as const,
         x: width - stepperWidth,
         y: labelOffset,
         width: stepperWidth,
         height,
         radius: [0, borderRadius, borderRadius, 0],
-        fill: '{color.layer-2}' as TokenRef,
+        fill: "{color.layer-2}" as TokenRef,
       });
 
       // 증가 아이콘 (+)
       shapes.push({
-        type: 'text' as const,
+        type: "text" as const,
         x: width - stepperWidth,
-        y: (labelOffset) + height / 2,
-        text: '+',
+        y: labelOffset + height / 2,
+        text: "+",
         fontSize,
         fontFamily: ff,
         fontWeight,
         fill: textColor,
-        align: 'center' as const,
-        baseline: 'middle' as const,
+        align: "center" as const,
+        baseline: "middle" as const,
         maxWidth: stepperWidth,
       });
 
       // 숫자 값
       shapes.push({
-        type: 'text' as const,
+        type: "text" as const,
         x: stepperWidth,
-        y: (labelOffset) + height / 2,
+        y: labelOffset + height / 2,
         text: String(props.value ?? 0),
         fontSize,
         fontFamily: ff,
         fill: textColor,
-        align: 'center' as const,
-        baseline: 'middle' as const,
+        align: "center" as const,
+        baseline: "middle" as const,
         maxWidth: width - stepperWidth * 2,
       });
 
       // 에러 메시지
-      const descText = props.isInvalid && props.errorMessage ? props.errorMessage : props.description;
+      const descText =
+        props.isInvalid && props.errorMessage
+          ? props.errorMessage
+          : props.description;
       if (descText) {
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: 0,
-          y: (labelOffset) + height + 4,
+          y: labelOffset + height + 4,
           text: descText,
           fontSize: fontSize - 2,
           fontFamily: ff,
-          fill: props.isInvalid ? ('{color.negative}' as TokenRef) : ('{color.neutral-subdued}' as TokenRef),
+          fill: props.isInvalid
+            ? ("{color.negative}" as TokenRef)
+            : ("{color.neutral-subdued}" as TokenRef),
           align: textAlign,
-          baseline: 'top' as const,
+          baseline: "top" as const,
         });
       }
 
@@ -296,14 +358,14 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
     },
 
     react: (props) => ({
-      'data-invalid': props.isInvalid || undefined,
-      'data-disabled': props.isDisabled || undefined,
-      'data-required': props.isRequired || undefined,
+      "data-invalid": props.isInvalid || undefined,
+      "data-disabled": props.isDisabled || undefined,
+      "data-required": props.isRequired || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: 'static' as const,
-      cursor: props.isDisabled ? 'not-allowed' : 'default',
+      eventMode: "static" as const,
+      cursor: props.isDisabled ? "not-allowed" : "default",
     }),
   },
 };

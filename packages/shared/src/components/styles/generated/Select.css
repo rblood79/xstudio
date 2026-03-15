@@ -139,6 +139,51 @@
   pointer-events: none;
 }
 
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-Select[data-size="sm"] .react-aria-Label {
+  --select-label-size: var(--text-xs);
+}
+
+.react-aria-Select[data-size="md"] .react-aria-Label {
+  --select-label-size: var(--text-sm);
+}
+
+.react-aria-Select[data-size="lg"] .react-aria-Label {
+  --select-label-size: var(--text-base);
+}
+
+.react-aria-Select[data-size="sm"] .react-aria-Button {
+  --select-btn-padding: var(--spacing-2xs) var(--spacing-sm);
+  --select-btn-font-size: var(--text-xs);
+}
+
+.react-aria-Select[data-size="md"] .react-aria-Button {
+  --select-btn-padding: var(--spacing-xs) var(--spacing-md);
+  --select-btn-font-size: var(--text-sm);
+}
+
+.react-aria-Select[data-size="lg"] .react-aria-Button {
+  --select-btn-padding: var(--spacing-sm) var(--spacing-lg);
+  --select-btn-font-size: var(--text-base);
+}
+
+.react-aria-Select[data-size="sm"] .react-aria-ListBox .react-aria-ListBoxItem {
+  padding: var(--spacing-sm) var(--spacing);
+  font-size: var(--text-xs);
+}
+
+.react-aria-Select[data-size="md"] .react-aria-ListBox .react-aria-ListBoxItem {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+}
+
+.react-aria-Select[data-size="lg"] .react-aria-ListBox .react-aria-ListBoxItem {
+  padding: var(--spacing) var(--spacing-lg);
+  font-size: var(--text-base);
+}
+
+
 @media (forced-colors: active) {
   .react-aria-Select {
     forced-color-adjust: auto;

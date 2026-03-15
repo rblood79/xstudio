@@ -75,6 +75,21 @@
   pointer-events: none;
 }
 
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-ToggleButtonGroup[data-size="sm"] .react-aria-ToggleButton {
+  --btn-border-radius: var(--radius-sm);
+}
+
+.react-aria-ToggleButtonGroup[data-size="md"] .react-aria-ToggleButton {
+  --btn-border-radius: var(--radius-md);
+}
+
+.react-aria-ToggleButtonGroup[data-size="lg"] .react-aria-ToggleButton {
+  --btn-border-radius: var(--radius-lg);
+}
+
+
 @media (forced-colors: active) {
   .react-aria-ToggleButtonGroup {
     forced-color-adjust: auto;

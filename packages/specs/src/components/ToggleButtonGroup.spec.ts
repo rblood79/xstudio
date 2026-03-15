@@ -73,6 +73,21 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
     },
   },
 
+  // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
+  composition: {
+    layout: "flex-row",
+    delegation: [
+      {
+        childSelector: ".react-aria-ToggleButton",
+        variables: {
+          sm: { "--btn-border-radius": "var(--radius-sm)" },
+          md: { "--btn-border-radius": "var(--radius-md)" },
+          lg: { "--btn-border-radius": "var(--radius-lg)" },
+        },
+      },
+    ],
+  },
+
   states: {
     focusVisible: {
       outline: "2px solid var(--accent)",

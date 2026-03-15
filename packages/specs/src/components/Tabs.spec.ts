@@ -81,6 +81,30 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
     },
   },
 
+  // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
+  composition: {
+    layout: "flex-column",
+    delegation: [
+      {
+        childSelector: ".react-aria-Tab",
+        variables: {
+          sm: {
+            "--tab-padding": "var(--spacing-xs) var(--spacing-sm)",
+            "--tab-font-size": "var(--text-xs)",
+          },
+          md: {
+            "--tab-padding": "var(--spacing-sm) var(--spacing-md)",
+            "--tab-font-size": "var(--text-sm)",
+          },
+          lg: {
+            "--tab-padding": "var(--spacing-md) var(--spacing-lg)",
+            "--tab-font-size": "var(--text-base)",
+          },
+        },
+      },
+    ],
+  },
+
   states: {
     hover: {},
     disabled: {

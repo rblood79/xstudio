@@ -88,6 +88,9 @@
   pointer-events: none;
 }
 
+/* ── Tier 2: Composite Delegation ── */
+
+
 @media (forced-colors: active) {
   .react-aria-RadioGroup {
     forced-color-adjust: auto;

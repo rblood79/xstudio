@@ -10,6 +10,8 @@
     "build:all": "turbo run build:all",
     "build:specs": "pnpm -F @xstudio/specs build",
     "dev:specs": "pnpm -F @xstudio/specs dev",
+    "generate:css": "pnpm -F @xstudio/specs generate:css",
+    "validate:sync": "pnpm -F @xstudio/specs validate:sync",
     "type-check": "turbo run type-check",
     "codex:guard": "bash scripts/codex/protect-files.sh",
     "codex:format": "bash scripts/codex/format-changed.sh",
