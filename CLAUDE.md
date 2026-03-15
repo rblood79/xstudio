@@ -69,6 +69,7 @@ xstudio/
 7. **layoutVersion 증가 필수** → 레이아웃 영향 props 변경 시 `layoutVersion + 1` (누락 시 크기 고정 버그)
 8. **order_num 재정렬** → `batchUpdateElementOrders()` 단일 set() 사용, 개별 N회 호출 금지
 9. **Spec TokenRef 변환 필수** → shapes 내 숫자 연산에 TokenRef 직접 사용 금지, `resolveToken()` 필수
+10. **SIZE_CONFIG 수동 정의 금지** → `deriveSizeConfig(Spec.sizes)` 사용 (ADR-036)
 
 ## 상태 변경 파이프라인 (순서 필수 보존)
 
@@ -88,12 +89,13 @@ xstudio/
 
 ## 참조 체계
 
-| 용도           | 경로                                                                 | 설명                                                                       |
-| -------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 코드 패턴/규칙 | [SKILL.md](.claude/skills/xstudio-patterns/SKILL.md)                 | 전체 규칙 인덱스 (CRITICAL/HIGH/MEDIUM)                                    |
-| 도메인 규칙    | [.claude/rules/](.claude/rules/)                                     | Glob-scoped — 해당 파일 작업 시 자동 로드                                  |
-| Agent 가이드   | [.claude/agents/](.claude/agents/)                                   | architect, implementer, reviewer, debugger, documenter, refactorer, tester |
-| ADR            | [docs/adr/README.md](docs/adr/README.md)                             | 전체 ADR 현황 + Risk-First 템플릿                                          |
-| 렌더링 상세    | [RENDERING_ARCHITECTURE.md](docs/RENDERING_ARCHITECTURE.md)          | Dual Renderer, DirectContainer 패턴 상세                                   |
-| 컴포넌트 스펙  | [COMPONENT_SPEC.md](docs/COMPONENT_SPEC.md)                          | Spec 단일 소스 아키텍처                                                    |
-| CSS 상세       | [CSS_ARCHITECTURE.md](docs/reference/components/CSS_ARCHITECTURE.md) | ITCSS + tv() 스타일링 상세                                                 |
+| 용도           | 경로                                                                                 | 설명                                                                       |
+| -------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| 코드 패턴/규칙 | [SKILL.md](.claude/skills/xstudio-patterns/SKILL.md)                                 | 전체 규칙 인덱스 (CRITICAL/HIGH/MEDIUM)                                    |
+| 도메인 규칙    | [.claude/rules/](.claude/rules/)                                                     | Glob-scoped — 해당 파일 작업 시 자동 로드                                  |
+| Agent 가이드   | [.claude/agents/](.claude/agents/)                                                   | architect, implementer, reviewer, debugger, documenter, refactorer, tester |
+| ADR            | [docs/adr/README.md](docs/adr/README.md)                                             | 전체 ADR 현황 + Risk-First 템플릿                                          |
+| 렌더링 상세    | [RENDERING_ARCHITECTURE.md](docs/RENDERING_ARCHITECTURE.md)                          | Dual Renderer, DirectContainer 패턴 상세                                   |
+| 컴포넌트 스펙  | [COMPONENT_SPEC.md](docs/COMPONENT_SPEC.md)                                          | Spec 단일 소스 아키텍처                                                    |
+| CSS 상세       | [CSS_ARCHITECTURE.md](docs/reference/components/CSS_ARCHITECTURE.md)                 | ITCSS + tv() 스타일링 상세                                                 |
+| CSS 자동 생성  | [docs/adr/036-spec-first-single-source.md](docs/adr/036-spec-first-single-source.md) | Spec → CSS 자동 생성, Archetype, CompositionSpec                           |
