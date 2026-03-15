@@ -6,7 +6,7 @@ Proposed
 
 ## Date
 
-2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강)
+2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강 + 설계 리뷰 반영)
 
 ## Decision Makers
 
@@ -20,9 +20,9 @@ XStudio Team
 
 ## Context
 
-### 문제: 107개 에디터 파일의 반복 코드
+### 문제: 103개 에디터 파일의 반복 코드
 
-현재 컴포넌트별 프로퍼티 에디터가 **107개의 개별 파일**로 존재한다.
+현재 컴포넌트별 프로퍼티 에디터가 **103개의 개별 파일**로 존재한다.
 
 ```
 apps/builder/src/builder/panels/properties/editors/
@@ -32,7 +32,7 @@ apps/builder/src/builder/panels/properties/editors/
 ├── TextFieldEditor.tsx     (size/label/placeholder/type/disabled/readonly...)
 ├── CardEditor.tsx          (variant/size/density/orientation/selectable...)
 ├── SelectEditor.tsx        (variant/size/placeholder/disabled...)
-└── ... (101개 더)
+└── ... (97개 더)
 ```
 
 이 파일들의 **80% 이상이 동일한 패턴을 반복**한다:
@@ -55,7 +55,7 @@ apps/builder/src/builder/panels/properties/editors/
 | 기본값        | `ButtonSpec.defaultVariant = "primary"`                     | `currentProps.variant \|\| "primary"`  |
 | boolean props | `ButtonProps.isDisabled?: boolean`                          | `PropertySwitch label="Disabled"`      |
 
-ADR-036이 **Spec → CSS** 동기화를 해결한다면, 이 ADR은 **Spec → Editor UI** 동기화를 해결한다.
+ADR-036이 **Spec → CSS** 동기화를 해결했다면, 이 ADR은 **Spec → Editor UI** 동기화를 해결한다.
 
 ### 변경 비용
 
@@ -74,11 +74,11 @@ ADR-036이 **Spec → CSS** 동기화를 해결한다면, 이 ADR은 **Spec → 
 
 ## Alternatives Considered
 
-### 대안 A: 현행 유지 (107개 개별 에디터)
+### 대안 A: 현행 유지 (103개 개별 에디터)
 
 - 위험: 기술(L) / 유지보수(**H**) / 마이그레이션(L)
 - 장점: 변경 없음, 에디터별 완전한 자유도
-- 단점: 107개 파일 반복 코드, Spec ↔ Editor 이중 정의 영구 지속
+- 단점: 103개 파일 반복 코드, Spec ↔ Editor 이중 정의 영구 지속
 
 ### 대안 B: PropertySchema를 Spec에 추가 (채택)
 
@@ -110,7 +110,7 @@ ADR-036이 **Spec → CSS** 동기화를 해결한다면, 이 ADR은 **Spec → 
 
 ### Rationale
 
-> 107개 에디터 중 80% 이상이 5가지 필드 타입(variant, size, boolean, enum, string)의 조합이다. 이 패턴은 Spec의 `variants`/`sizes` + Props 인터페이스에서 완전히 유도 가능하다. 나머지 20%의 커스텀 로직(deep child sync, 조건부 표시, 특수 위젯)은 schema의 확장 필드로 처리한다.
+> 103개 에디터 중 80% 이상이 5가지 필드 타입(variant, size, boolean, enum, string)의 조합이다. 이 패턴은 Spec의 `variants`/`sizes` + Props 인터페이스에서 완전히 유도 가능하다. 나머지 20%의 커스텀 로직(deep child sync, 조건부 표시, 특수 위젯)은 schema의 확장 필드로 처리한다.
 
 **ADR-036과의 관계 — Spec이 4중 단일 소스로 확장:**
 
@@ -136,6 +136,8 @@ interface ComponentSpec<Props> {
 
 interface PropertySchema {
   sections: SectionDef[];
+  /** false로 설정 시 Basic 섹션(PropertyCustomId) 자동 생성을 억제. 기본값: true */
+  includeBasicSection?: boolean;
 }
 
 interface SectionDef {
@@ -144,6 +146,26 @@ interface SectionDef {
   visibleWhen?: VisibilityCondition; // 섹션 전체 조건부 표시
 }
 ```
+
+> **Built-in Basic 섹션**: 101/103개 에디터가 `PropertyCustomId`를 포함하는 "Basic" 섹션을 동일하게 사용한다. GenericPropertyEditor는 `includeBasicSection !== false`일 때 자동으로 "Basic" 섹션(PropertyCustomId)을 최상단에 렌더링한다. 개별 Spec의 `properties.sections`에 중복 정의할 필요 없다. `PropertyCustomId`의 placeholder는 `spec.name.toLowerCase() + "_1"` (예: `"button_1"`, `"badge_1"`)로 자동 생성한다.
+
+### FieldDef 공통 속성
+
+모든 FieldDef 타입은 아래 공통 속성을 상속한다:
+
+```typescript
+interface BaseFieldDef {
+  key: string; // prop 키
+  label?: string; // UI 레이블 (미지정 시 key에서 유추)
+  icon?: LucideIcon; // Lucide 아이콘 컴포넌트 참조 (예: Type, PointerOff)
+  visibleWhen?: VisibilityCondition;
+  /** true 시 빈 문자열("")을 undefined로 변환하여 전달. 기본값: false.
+   *  string/enum/number 등 여러 필드 타입에서 공통으로 사용. */
+  emptyToUndefined?: boolean;
+}
+```
+
+> **icon 필드**: Spec은 이미 `shapes()` 함수를 포함하는 런타임 객체이므로, Lucide 컴포넌트를 직접 참조해도 문제 없다. 실제 에디터에서 사용하는 아이콘은 ~30종 미만이며, Spec에서 import하는 아이콘만 번들에 포함되어 tree-shaking이 보존된다. 문자열 기반 `resolveIcon()` 레지스트리는 불필요하다.
 
 ### FieldDef 유니온 타입
 
@@ -160,77 +182,72 @@ type FieldDef =
   | ChildSyncField;
 
 // variant — Spec.variants에서 옵션 자동 추출
-interface VariantField {
-  key: string; // "variant"
+interface VariantField extends BaseFieldDef {
   type: "variant";
-  label?: string; // 미지정 시 "Variant"
 }
 
 // size — Spec.sizes에서 scale 자동 결정
-interface SizeField {
-  key: string; // "size"
+interface SizeField extends BaseFieldDef {
   type: "size";
-  label?: string;
 }
 
 // boolean — PropertySwitch
-interface BooleanField {
-  key: string; // "isDisabled"
+interface BooleanField extends BaseFieldDef {
   type: "boolean";
-  label?: string; // 미지정 시 key에서 유추 ("Disabled")
-  visibleWhen?: VisibilityCondition;
 }
 
 // enum — PropertySelect
-interface EnumField {
-  key: string; // "fillStyle"
+interface EnumField extends BaseFieldDef {
   type: "enum";
   options: Array<{ value: string; label: string }>;
-  label?: string;
-  visibleWhen?: VisibilityCondition;
+  /** 값 변환 함수명. "number" 시 선택값을 Number()로 변환. */
+  valueTransform?: "number";
 }
 
 // string — PropertyInput
-interface StringField {
-  key: string; // "children"
+interface StringField extends BaseFieldDef {
   type: "string";
-  label?: string;
   placeholder?: string;
   multiline?: boolean;
 }
 
 // number — PropertyInput type="number"
-interface NumberField {
-  key: string; // "iconStrokeWidth"
+interface NumberField extends BaseFieldDef {
   type: "number";
-  label?: string;
   min?: number;
   max?: number;
   step?: number;
 }
 
 // icon — PropertyIconPicker
-interface IconField {
-  key: string; // "iconName"
+interface IconField extends BaseFieldDef {
   type: "icon";
-  label?: string;
+  /** clear 시 함께 undefined로 리셋할 추가 prop 키 목록 (예: ["iconPosition", "iconStrokeWidth"]) */
+  clearKeys?: string[];
 }
 
 // custom — 수동 컴포넌트 참조
-interface CustomField {
-  key: string;
+interface CustomField extends BaseFieldDef {
   type: "custom";
   component: string; // "ColorPickerField", "ImageUploader" 등
 }
 
-// childSync — 부모 prop 변경 시 자식 자동 동기화
-interface ChildSyncField {
-  key: string; // "children" (부모 prop)
-  type: "string"; // 기본 UI 타입
-  label?: string;
+// childSync — 부모 prop 변경 시 자식 자동 동기화 (discriminated union을 위해 별도 type 사용)
+interface ChildSyncField extends BaseFieldDef {
+  type: "childSync";
+  /** UI 렌더링 타입. 기본값: "string" (PropertyInput). "size"이면 PropertySizeToggle. */
+  uiType?: "string" | "size";
+  placeholder?: string;
+  multiline?: boolean;
   childSync: {
-    path: string[]; // ["CardHeader", "Heading"] — 자식 트리 경로
+    path: string[]; // ["CardHeader", "Heading"] — 자식 트리 경로 (1-depth: ["Label"], 2-depth: ["CardHeader", "Heading"])
     propKey: string; // "children" — 동기화할 자식 prop
+    /** 부모 prop 변경 시 자식에 추가로 적용할 파생 값 계산 함수명.
+     *  등록된 함수가 context → ChildUpdate[] 반환. */
+    derivedUpdateFn?: string;
+    /** 2-depth 경로에서 wrapper가 없을 때 직계 자식에서 직접 찾기. 기본값: false.
+     *  CardEditor 등 flat→nested 구조 마이그레이션 하위 호환용. */
+    fallbackToDirectChild?: boolean;
   };
 }
 
@@ -240,8 +257,68 @@ interface VisibilityCondition {
   isNotEmpty?: boolean; // truthy 체크
   equals?: unknown; // 특정 값 비교
   notEquals?: unknown;
+  /** 부모 태그 기반 조건. 지정 시 부모의 tag가 일치할 때만 표시.
+   *  예: CheckboxEditor — 부모가 CheckboxGroup이면 Design 섹션 숨김.
+   *  `parentTagNot: "CheckboxGroup"` → 부모가 CheckboxGroup이 아닐 때만 표시. */
+  parentTag?: string;
+  parentTagNot?: string;
 }
 ```
+
+### derivedUpdateFn 레지스트리
+
+`ChildSyncField.childSync.derivedUpdateFn`은 **문자열 이름으로 등록된 함수**를 참조한다. 이는 Spec이 런타임 함수를 직접 포함하지 않도록 하기 위함이다.
+
+```typescript
+// derivedUpdateRegistry.ts
+
+/** derivedUpdateFn에 전달되는 컨텍스트 — store 접근 포함 */
+interface DerivedUpdateContext {
+  parentProps: Record<string, unknown>;
+  value: unknown;
+  elementId: string;
+  childrenMap: Map<string, Element[]>;
+  elementsMap: Map<string, Element>;
+}
+
+/** ChildUpdate 확장 — deep merge 지원 */
+interface ChildUpdate {
+  childTag: string;
+  propKey: string;
+  value: unknown;
+  /** "shallow": 1-depth 병합 (기본값). "deep": 중첩 객체 재귀 병합.
+   *  예: style 객체의 fontSize만 변경하면서 나머지 속성 보존 → "shallow" 사용. */
+  merge?: "shallow" | "deep";
+}
+
+type DerivedUpdateFn = (context: DerivedUpdateContext) => ChildUpdate[];
+
+const registry = new Map<string, DerivedUpdateFn>();
+
+export function registerDerivedUpdate(name: string, fn: DerivedUpdateFn) {
+  registry.set(name, fn);
+}
+
+// 예시: TextField size → Label fontSize + Input size 동기화
+registerDerivedUpdate("textFieldSizeSync", (ctx) => {
+  const LABEL_FONT_SIZE: Record<string, number> = { sm: 12, md: 14, lg: 16 };
+  return [
+    {
+      childTag: "Label",
+      propKey: "style",
+      value: { fontSize: LABEL_FONT_SIZE[ctx.value as string] ?? 14 },
+      merge: "shallow",
+    },
+    {
+      childTag: "Input",
+      propKey: "size",
+      value: ctx.value,
+    },
+  ];
+});
+```
+
+> **`DerivedUpdateContext`에 `elementId`/`childrenMap`/`elementsMap` 포함 근거**: 실제 TextFieldEditor/SelectEditor의 `handleSizeChange`는 `childrenMap`에서 자식을 조회하여 기존 style을 spread한 후 fontSize를 갱신한다. 단순 `(parentProps, value)` 시그니처로는 이 패턴을 커버할 수 없다.
 
 ### 적용 예시: ButtonSpec
 
@@ -258,7 +335,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
         title: "Content",
         fields: [
           { key: "children", type: "string", label: "Label", placeholder: "Button text" },
-          { key: "iconName", type: "icon" },
+          { key: "iconName", type: "icon", clearKeys: ["iconPosition", "iconStrokeWidth"] },
           { key: "iconPosition", type: "enum", label: "Icon Position",
             options: [{ value: "start", label: "Start" }, { value: "end", label: "End" }],
             visibleWhen: { key: "iconName", isNotEmpty: true } },
@@ -297,7 +374,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         fields: [
           {
             key: "children",
-            type: "string",
+            type: "childSync",
             label: "Label",
             childSync: { path: ["Label"], propKey: "children" },
           },
@@ -316,6 +393,31 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
           { key: "isSelected", type: "boolean", label: "Selected" },
           { key: "isDisabled", type: "boolean", label: "Disabled" },
           { key: "isReadOnly", type: "boolean", label: "Read Only" },
+          { key: "isRequired", type: "boolean", label: "Required" },
+          { key: "isInvalid", type: "boolean", label: "Invalid" },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            emptyToUndefined: true,
+          },
+          {
+            key: "value",
+            type: "string",
+            label: "Value",
+            emptyToUndefined: true,
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form ID",
+            emptyToUndefined: true,
+          },
         ],
       },
     ],
@@ -326,58 +428,178 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
 ### GenericPropertyEditor 구현
 
 ```typescript
-function GenericPropertyEditor({ elementId, currentProps, onUpdate, spec }: Props) {
+interface GenericPropertyEditorProps extends PropertyEditorProps {
+  spec: ComponentSpec<any>;
+  excludeSections?: string[]; // 하이브리드 패턴: 수동 섹션 제외
+}
+
+function GenericPropertyEditor({
+  elementId, currentProps, onUpdate, spec, excludeSections,
+}: GenericPropertyEditorProps) {
   const { buildChildUpdates } = useSyncChildProp(elementId);
+  const { buildDeepChildUpdates } = useSyncGrandchildProp(elementId);
+
+  // currentProps를 ref로 캡처 — handleFieldChange의 deps에서 제거하여 핸들러 안정성 보장
+  const currentPropsRef = useRef(currentProps);
+  currentPropsRef.current = currentProps;
 
   const handleFieldChange = useCallback((field: FieldDef, value: unknown) => {
-    const updatedProps = { [field.key]: value };
+    // emptyToUndefined 처리
+    const finalValue = (field.emptyToUndefined && value === "")
+      ? undefined : value;
+
+    // valueTransform 처리
+    const transformedValue = ('valueTransform' in field && field.valueTransform === "number")
+      ? (finalValue != null ? Number(finalValue) : undefined) : finalValue;
+
+    const updatedProps: Record<string, unknown> = { [field.key]: transformedValue };
+
+    // icon clearKeys 처리
+    if (field.type === "icon" && transformedValue === undefined && field.clearKeys) {
+      for (const clearKey of field.clearKeys) {
+        updatedProps[clearKey] = undefined;
+      }
+    }
 
     // childSync 처리
-    if ('childSync' in field && field.childSync) {
-      const childUpdates = buildChildUpdates([{
-        childTag: field.childSync.path[field.childSync.path.length - 1],
-        propKey: field.childSync.propKey,
-        value,
-      }]);
+    if (field.type === "childSync" && field.childSync) {
+      const { path, propKey, derivedUpdateFn, fallbackToDirectChild } = field.childSync;
+      const isDeep = path.length > 1;
+
+      let childUpdates;
+      if (isDeep) {
+        childUpdates = buildDeepChildUpdates([{
+          wrapperTag: path[0],
+          childTag: path[path.length - 1],
+          propKey,
+          value: transformedValue,
+          fallbackToDirectChild,
+        }]);
+      } else {
+        childUpdates = buildChildUpdates([{
+          childTag: path[0],
+          propKey,
+          value: transformedValue,
+        }]);
+      }
+
+      // derivedUpdateFn 처리 — currentPropsRef로 최신 props 참조 (stale closure 방지)
+      if (derivedUpdateFn) {
+        const derivedFn = getDerivedUpdate(derivedUpdateFn);
+        if (derivedFn) {
+          const { elementsMap, childrenMap } = useStore.getState();
+          childUpdates.push(...derivedFn({
+            parentProps: currentPropsRef.current,
+            value: transformedValue,
+            elementId,
+            childrenMap,
+            elementsMap,
+          }));
+        }
+      }
+
       useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
     } else {
       onUpdate(updatedProps);
     }
-  }, [onUpdate, buildChildUpdates]);
+  }, [onUpdate, buildChildUpdates, buildDeepChildUpdates, elementId]);
+
+  // --- 성능 최적화: 필드별 onChange 핸들러 캐싱 ---
+  const fieldHandlers = useMemo(() => {
+    const map = new Map<string, (v: unknown) => void>();
+    for (const section of spec.properties!.sections) {
+      for (const field of section.fields) {
+        map.set(field.key, (v: unknown) => handleFieldChange(field, v));
+      }
+    }
+    return map;
+  }, [spec, handleFieldChange]);
+
+  // excludeSections 필터링
+  const visibleSections = useMemo(() => {
+    const excluded = new Set(excludeSections);
+    return spec.properties!.sections
+      .filter(s => !excluded.has(s.title));
+  }, [spec, excludeSections]);
 
   return (
     <>
-      {spec.properties.sections
-        .filter(section => evaluateVisibility(section.visibleWhen, currentProps))
+      {/* Built-in Basic 섹션 (PropertyCustomId) */}
+      {spec.properties?.includeBasicSection !== false && (
+        <PropertySection title="Basic">
+          <PropertyCustomId elementId={elementId} />
+        </PropertySection>
+      )}
+
+      {/* Schema 기반 섹션 렌더링 — 섹션별 memo로 격리 */}
+      {visibleSections
+        .filter(section => evaluateVisibility(section.visibleWhen, currentProps, elementId))
         .map(section => (
-          <PropertySection key={section.title} title={section.title}>
-            {section.fields
-              .filter(field => evaluateVisibility(field.visibleWhen, currentProps))
-              .map(field => (
-                <SpecField
-                  key={field.key}
-                  field={field}
-                  spec={spec}
-                  value={currentProps[field.key]}
-                  onChange={(v) => handleFieldChange(field, v)}
-                />
-              ))}
-          </PropertySection>
+          <MemoizedSection
+            key={section.title}
+            section={section}
+            spec={spec}
+            currentProps={currentProps}
+            fieldHandlers={fieldHandlers}
+          />
         ))}
     </>
   );
 }
 ```
 
+### MemoizedSection (성능 격리)
+
+각 섹션을 `memo`로 격리하여, **variant 변경 시 Behavior 섹션이 리렌더되지 않도록** 한다.
+
+```typescript
+const MemoizedSection = memo(function MemoizedSection({
+  section, spec, currentProps, fieldHandlers,
+}: MemoizedSectionProps) {
+  // 이 섹션의 필드에 해당하는 값만 추출하여 비교 대상으로 사용
+  const relevantValues = useMemo(
+    () => section.fields.map(f => currentProps[f.key]),
+    [section.fields, currentProps],
+  );
+
+  return (
+    <PropertySection title={section.title}>
+      {section.fields
+        .filter(field => evaluateVisibility(field.visibleWhen, currentProps, elementId))
+        .map(field => (
+          <SpecField
+            key={field.key}
+            field={field}
+            spec={spec}
+            value={currentProps[field.key]}
+            onChange={fieldHandlers.get(field.key)!}
+          />
+        ))}
+    </PropertySection>
+  );
+}, (prev, next) => {
+  // 섹션의 관련 필드 값만 비교 — 다른 섹션 변경에 무반응
+  return prev.section === next.section
+    && prev.spec === next.spec
+    && prev.fieldHandlers === next.fieldHandlers
+    && prev.section.fields.every(f => prev.currentProps[f.key] === next.currentProps[f.key]);
+});
+```
+
+> **성능 보장**: `handleFieldChange`의 deps에서 `currentProps`를 제거하고 `currentPropsRef`로 대체. 이로써 `fieldHandlers` Map은 `spec` 변경 시에만 재생성되며, `MemoizedSection`의 커스텀 비교에서 `fieldHandlers` 참조가 안정적으로 유지된다. 기존 에디터의 (1) 개별 `useCallback` + (2) 섹션별 `useMemo`와 동등한 최적화를 달성한다. Gate G5("리렌더 횟수 ≤ 기존 에디터") 통과 가능.
+
 ### SpecField 렌더링
 
 ```typescript
-function SpecField({ field, spec, value, onChange }: SpecFieldProps) {
+const SpecField = memo(function SpecField({ field, spec, value, onChange }: SpecFieldProps) {
+  // field.icon은 LucideIcon 컴포넌트 직접 참조 — 별도 해석 불필요
+
   switch (field.type) {
     case "variant":
       return (
         <PropertySelect
           label={field.label ?? "Variant"}
+          icon={field.icon}
           value={String(value ?? spec.defaultVariant)}
           onChange={onChange}
           options={Object.keys(spec.variants).map(k => ({ value: k, label: capitalize(k) }))}
@@ -400,6 +622,7 @@ function SpecField({ field, spec, value, onChange }: SpecFieldProps) {
       return (
         <PropertySwitch
           label={field.label ?? inferLabel(field.key)}
+          icon={field.icon}
           isSelected={Boolean(value)}
           onChange={onChange}
         />
@@ -409,6 +632,7 @@ function SpecField({ field, spec, value, onChange }: SpecFieldProps) {
       return (
         <PropertySelect
           label={field.label ?? inferLabel(field.key)}
+          icon={field.icon}
           value={String(value ?? field.options[0]?.value)}
           onChange={onChange}
           options={field.options}
@@ -419,6 +643,33 @@ function SpecField({ field, spec, value, onChange }: SpecFieldProps) {
       return (
         <PropertyInput
           label={field.label ?? inferLabel(field.key)}
+          icon={field.icon}
+          value={String(value ?? "")}
+          onChange={onChange}
+          placeholder={field.placeholder}
+          multiline={field.multiline}
+        />
+      );
+
+    case "childSync":
+      // childSync는 UI 상으로는 string(PropertyInput) 또는 size(PropertySizeToggle)
+      // 값 변환/자식 동기화는 handleFieldChange에서 처리
+      if (field.uiType === "size") {
+        const sizeKeys = Object.keys(spec.sizes);
+        return (
+          <PropertySizeToggle
+            label={field.label ?? "Size"}
+            value={String(value ?? spec.defaultSize)}
+            onChange={onChange}
+            scale={String(sizeKeys.length) as "3" | "5"}
+            options={sizeKeys.map(k => ({ id: k, label: k.toUpperCase() }))}
+          />
+        );
+      }
+      return (
+        <PropertyInput
+          label={field.label ?? inferLabel(field.key)}
+          icon={field.icon}
           value={String(value ?? "")}
           onChange={onChange}
           placeholder={field.placeholder}
@@ -430,6 +681,7 @@ function SpecField({ field, spec, value, onChange }: SpecFieldProps) {
       return (
         <PropertyInput
           label={field.label ?? inferLabel(field.key)}
+          icon={field.icon}
           value={value ?? field.min ?? 0}
           onChange={(v) => onChange(Number(v))}
           type="number"
@@ -439,12 +691,23 @@ function SpecField({ field, spec, value, onChange }: SpecFieldProps) {
       );
 
     case "icon":
-      return <PropertyIconPicker label={field.label ?? "Icon"} value={value} onChange={onChange} />;
+      return (
+        <PropertyIconPicker
+          label={field.label ?? "Icon"}
+          value={value}
+          onChange={onChange}
+          onClear={field.clearKeys ? () => {
+            const reset: Record<string, undefined> = { [field.key]: undefined };
+            for (const k of field.clearKeys!) reset[k] = undefined;
+            onChange(undefined); // 개별 값은 handleFieldChange에서 clearKeys 처리
+          } : undefined}
+        />
+      );
 
     case "custom":
       return <CustomFieldRenderer component={field.component} value={value} onChange={onChange} />;
   }
-}
+});
 ```
 
 ### 에디터 레지스트리 변경
@@ -480,9 +743,11 @@ export async function getEditor(type: string, context?: EditorContext) {
 | G0     | PropertySchema 타입 추가 후 `pnpm type-check` 통과                                        | L         |
 | G1     | ButtonSpec에 properties 추가 → GenericPropertyEditor 렌더링 → 기존 ButtonEditor와 동일 UI | M         |
 | G2     | 등급 A (단순 에디터) 10개 전환 후 기능 동일 확인                                          | M         |
-| G3     | childSync 패턴: SwitchSpec properties → Label 자식 동기화 정상                            | M         |
-| G4     | visibleWhen: iconPosition이 iconName 존재 시에만 표시                                     | L         |
-| G5     | 성능: GenericPropertyEditor의 리렌더 횟수 ≤ 기존 에디터                                   | M         |
+| G3a    | 단순 childSync: SwitchSpec properties → Label 자식 동기화 정상                            | M         |
+| G3b    | derivedUpdateFn: TextFieldSpec size 변경 → Label fontSize + Input size 동시 갱신 정상     | H         |
+| G3c    | 2-depth childSync: CardSpec → CardHeader/Heading 동기화 + fallbackToDirectChild 정상      | H         |
+| G4     | visibleWhen: iconPosition이 iconName 존재 시에만 표시 + parentTagNot 조건 동작            | L         |
+| G5     | 성능: GenericPropertyEditor의 리렌더 횟수 ≤ 기존 에디터 (currentPropsRef 패턴 검증)       | M         |
 
 ---
 
@@ -494,49 +759,55 @@ export async function getEditor(type: string, context?: EditorContext) {
 
 **등급 분류 요약**:
 
-|     등급     |  개수  | 비율  | 조건                                                 |                 전환 대상                 |
-| :----------: | :----: | :---: | ---------------------------------------------------- | :---------------------------------------: |
-| **A (단순)** | **75** | 72.8% | Select/Switch/Input/Size/Icon만 사용, childSync 없음 |         ✅ GenericPropertyEditor          |
-| **B (중간)** | **8**  | 7.8%  | childSync(부모→자식 동기화) 또는 visibleWhen 필요    | ✅ GenericPropertyEditor + ChildSyncField |
-| **C (복잡)** | **20** | 19.4% | Collection 관리, DataBinding, Table 특수 UI          |               ❌ 수동 유지                |
+|     등급     |  개수  | 비율  | 조건                                                                     |                 전환 대상                 |
+| :----------: | :----: | :---: | ------------------------------------------------------------------------ | :---------------------------------------: |
+| **A (단순)** | **75** | 72.8% | Select/Switch/Input/Size/Icon + parentTagNot 조건만 사용, childSync 없음 |         ✅ GenericPropertyEditor          |
+| **B (중간)** | **8**  | 7.8%  | childSync(부모→자식 동기화) 또는 복합 visibleWhen (컬렉션 관리 없음)     | ✅ GenericPropertyEditor + ChildSyncField |
+| **C (복잡)** | **20** | 19.4% | Collection 동적 관리, DataBinding, 중첩 객체 프로퍼티, Table 특수 UI     |               ❌ 수동 유지                |
 
-**등급 B 대상 (8개 — childSync 패턴 사용)**:
+> **등급 A에 parentTagNot 포함 근거**: CheckboxEditor/RadioEditor/ToggleButtonEditor는 부모 태그 기반으로 섹션을 숨기는 패턴만 사용하며, 이는 `VisibilityCondition.parentTagNot`으로 완전히 표현 가능하다. childSync나 컬렉션 관리가 없으므로 등급 A에 잔류한다.
 
-| 에디터                | 줄수 | childSync 대상                    |
-| --------------------- | :--: | --------------------------------- |
-| CardEditor.tsx        | 541  | CardHeader → Heading, Description |
-| TextFieldEditor.tsx   | 539  | Label, Description, ErrorMessage  |
-| CheckboxEditor.tsx    | 352  | Label                             |
-| SwitchEditor.tsx      | 325  | Label                             |
-| NumberFieldEditor.tsx | 299  | Label, Description, ErrorMessage  |
-| SliderEditor.tsx      | 247  | Label                             |
-| SearchFieldEditor.tsx | 203  | Label, Description                |
-| RadioEditor.tsx       | 124  | Label                             |
+**등급 B 대상 (8개 — childSync 또는 복합 visibleWhen)**:
+
+| 에디터                | 줄수 | 전환 근거                                                            |
+| --------------------- | :--: | -------------------------------------------------------------------- |
+| ButtonEditor.tsx      | 544  | 복합 visibleWhen (Icon/Link/Form 섹션 조건부)                        |
+| CardEditor.tsx        | 541  | childSync: CardHeader → Heading, Description                         |
+| TextFieldEditor.tsx   | 539  | childSync + derivedUpdateFn: Label, Description, ErrorMessage, Input |
+| CheckboxEditor.tsx    | 352  | childSync: Label                                                     |
+| SwitchEditor.tsx      | 325  | childSync: Label                                                     |
+| SliderEditor.tsx      | 247  | childSync: Label                                                     |
+| SearchFieldEditor.tsx | 203  | childSync: Label, Description, Input placeholder                     |
+| RadioEditor.tsx       | 124  | childSync: Label                                                     |
+
+> **ButtonEditor 재분류 근거**: 컬렉션 관리/DataBinding 없음. Icon + Link + Form 속성은 모두 PropertyInput/Select/Switch/IconPicker + visibleWhen 조합으로 표현 가능하며, FieldDef의 기존 타입으로 완전히 커버된다.
+>
+> **NumberFieldEditor → 등급 C 재분류 근거**: `formatOptions` 중첩 객체 프로퍼티를 `updateFormatOption()` 헬퍼로 개별 키 갱신하며, `formatStyle` 값에 따라 currency/unit 필드가 조건부 표시되는 등 FieldDef로 표현 불가능한 중첩 객체 패턴을 사용한다.
 
 **등급 C 대상 (20개 — 수동 유지)**:
 
-| 에디터                      | 줄수 | 수동 유지 이유                    |
-| --------------------------- | :--: | --------------------------------- |
-| TableEditor.tsx             | 832  | 행/열 동적 추가/삭제, DataBinding |
-| ListBoxEditor.tsx           | 788  | ListBoxItem 컬렉션 관리           |
-| SelectEditor.tsx            | 703  | SelectItem 컬렉션 + DataBinding   |
-| ComboBoxEditor.tsx          | 685  | ComboBoxItem 컬렉션 + DataBinding |
-| RadioGroupEditor.tsx        | 604  | Radio 옵션 동적 관리              |
-| ButtonEditor.tsx            | 544  | Icon + Link + Form 속성 혼합      |
-| TagGroupEditor.tsx          | 469  | Tag 항목 동적 관리                |
-| TabsEditor.tsx              | 467  | Tab panel 동적 관리               |
-| CheckboxGroupEditor.tsx     | 444  | Checkbox 항목 동적 관리           |
-| GridListEditor.tsx          | 433  | GridListItem + DataBinding        |
-| ToggleButtonGroupEditor.tsx | 425  | ToggleButton 항목 관리            |
-| TableHeaderEditor.tsx       | 358  | Table header 컬럼 정의            |
-| ListBoxItemEditor.tsx       | 303  | ListBoxItem 세부 속성             |
-| TreeEditor.tsx              | 253  | Tree 재귀 구조 관리               |
-| TreeItemEditor.tsx          | 189  | TreeItem 세부 속성                |
-| SlotEditor.tsx              | 175  | 복합 상태 로직                    |
-| ColumnEditor.tsx            | 164  | Table 컬럼 정의                   |
-| TableBodyEditor.tsx         | 155  | Table body 관리                   |
-| RowEditor.tsx               | 145  | Table row 관리                    |
-| CellEditor.tsx              | 130  | Table cell 관리                   |
+| 에디터                      | 줄수 | 수동 유지 이유                      |
+| --------------------------- | :--: | ----------------------------------- |
+| TableEditor.tsx             | 832  | 행/열 동적 추가/삭제, DataBinding   |
+| ListBoxEditor.tsx           | 788  | ListBoxItem 컬렉션 관리             |
+| SelectEditor.tsx            | 703  | SelectItem 컬렉션 + DataBinding     |
+| ComboBoxEditor.tsx          | 685  | ComboBoxItem 컬렉션 + DataBinding   |
+| RadioGroupEditor.tsx        | 604  | Radio 옵션 동적 관리                |
+| NumberFieldEditor.tsx       | 299  | formatOptions 중첩 객체 + 조건부 UI |
+| TagGroupEditor.tsx          | 469  | Tag 항목 동적 관리                  |
+| TabsEditor.tsx              | 467  | Tab panel 동적 관리                 |
+| CheckboxGroupEditor.tsx     | 444  | Checkbox 항목 동적 관리             |
+| GridListEditor.tsx          | 433  | GridListItem + DataBinding          |
+| ToggleButtonGroupEditor.tsx | 425  | ToggleButton 항목 관리              |
+| TableHeaderEditor.tsx       | 358  | Table header 컬럼 정의              |
+| ListBoxItemEditor.tsx       | 303  | ListBoxItem 세부 속성               |
+| TreeEditor.tsx              | 253  | Tree 재귀 구조 관리                 |
+| TreeItemEditor.tsx          | 189  | TreeItem 세부 속성                  |
+| SlotEditor.tsx              | 175  | 복합 상태 로직                      |
+| ColumnEditor.tsx            | 164  | Table 컬럼 정의                     |
+| TableBodyEditor.tsx         | 155  | Table body 관리                     |
+| RowEditor.tsx               | 145  | Table row 관리                      |
+| CellEditor.tsx              | 130  | Table cell 관리                     |
 
 **필드 타입 사용 통계** (전체 에디터):
 
@@ -561,7 +832,7 @@ Phase 1 (GenericPropertyEditor + SpecField + CustomFieldRenderer)  [Gate G1]
   ↓
 Phase 2 (등급 A 에디터 전환 — 75개)  [Gate G2]
   ↓
-Phase 3 (등급 B 에디터 전환 — childSync 8개)  [Gate G3, G4]
+Phase 3 (등급 B 에디터 전환 — childSync/visibleWhen 8개)  [Gate G3a, G3b, G3c, G4]
   ↓
 Phase 4 (기존 에디터 파일 정리 + 롤백 체계)  [Gate G5]
 ```
@@ -575,7 +846,7 @@ ComponentSpec 인터페이스에 `properties?: PropertySchema` 필드 추가.
 
 - `GenericPropertyEditor.tsx` — schema 기반 동적 렌더링
 - `SpecField.tsx` — 필드 타입별 UI 매핑 (variant, size, boolean, enum, string, number, icon)
-- `evaluateVisibility()` — 조건부 표시 평가
+- `evaluateVisibility()` — 조건부 표시 평가 (props 기반 + parentTag/parentTagNot 기반)
 - `CustomFieldRenderer.tsx` — 커스텀 위젯 등록/해석 메커니즘
 - 성능 최적화: 필드별 onChange를 useCallback으로 메모이제이션
 
@@ -636,20 +907,20 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 
 ### Phase 3: 등급 B 에디터 전환 (8개)
 
-childSync 패턴이 필요한 에디터. GenericPropertyEditor의 ChildSyncField를 통해 처리.
+childSync 또는 복합 visibleWhen이 필요한 에디터. GenericPropertyEditor의 ChildSyncField(`type: "childSync"`) + VisibilityCondition으로 처리.
 
 **전환 대상**:
 
-| 에디터            | childSync 대상                          | 예시 properties                                                                            |
-| ----------------- | --------------------------------------- | ------------------------------------------------------------------------------------------ |
-| SwitchEditor      | Label                                   | `{ key: "children", type: "string", childSync: { path: ["Label"], propKey: "children" } }` |
-| CheckboxEditor    | Label                                   | 동일 패턴                                                                                  |
-| RadioEditor       | Label                                   | 동일 패턴                                                                                  |
-| SliderEditor      | Label                                   | 동일 패턴                                                                                  |
-| TextFieldEditor   | Label + Description + ErrorMessage      | 3개 childSync 필드                                                                         |
-| NumberFieldEditor | Label + Description + ErrorMessage      | 3개 childSync 필드                                                                         |
-| SearchFieldEditor | Label + Description                     | 2개 childSync 필드                                                                         |
-| CardEditor        | Heading + Description (CardHeader 중첩) | `{ path: ["CardHeader", "Heading"], propKey: "children" }`                                 |
+| 에디터            | 전환 근거                                                            | 예시 properties                                                                               |
+| ----------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| ButtonEditor      | 복합 visibleWhen (Icon/Link/Form 조건부)                             | `visibleWhen: { key: "iconName", isNotEmpty: true }` 등 다수                                  |
+| SwitchEditor      | childSync: Label                                                     | `{ key: "children", type: "childSync", childSync: { path: ["Label"], propKey: "children" } }` |
+| CheckboxEditor    | childSync: Label                                                     | 동일 패턴                                                                                     |
+| RadioEditor       | childSync: Label                                                     | 동일 패턴                                                                                     |
+| SliderEditor      | childSync: Label                                                     | 동일 패턴                                                                                     |
+| TextFieldEditor   | childSync + derivedUpdateFn: Label, Description, ErrorMessage, Input | 3개 childSync 필드 + size→fontSize 파생 값                                                    |
+| SearchFieldEditor | childSync: Label, Description, Input placeholder                     | 3개 childSync 필드                                                                            |
+| CardEditor        | childSync: Heading + Description (2-depth + fallbackToDirectChild)   | `{ path: ["CardHeader", "Heading"], ..., fallbackToDirectChild: true }`                       |
 
 ### Phase 4: 기존 에디터 파일 정리 + 에디터 레지스트리 전환 전략
 
@@ -719,7 +990,7 @@ function SelectEditor({ elementId, currentProps, onUpdate }: Props) {
 }
 ```
 
-이 하이브리드 패턴으로 등급 C 20개 에디터도 **50~70% 코드를 자동 생성**할 수 있다.
+이 하이브리드 패턴으로 등급 C 20개 에디터 중 **UI 모드 전환이 없는 에디터**(약 50%)는 Design/Behavior 섹션을 자동 생성하여 **30~50% 코드를 절감**할 수 있다. 단, SelectEditor처럼 선택 상태에 따라 전체 UI가 전환되는 에디터는 하이브리드 적용 효과가 제한적이다.
 
 ### 적용 예시: CardEditor (등급 B — 중첩 childSync)
 
@@ -732,21 +1003,23 @@ properties: {
       fields: [
         {
           key: "heading",
-          type: "string",
+          type: "childSync",
           label: "Heading",
           childSync: {
             path: ["CardHeader", "Heading"],
             propKey: "children",
+            fallbackToDirectChild: true,
           },
         },
         {
           key: "description",
-          type: "string",
+          type: "childSync",
           label: "Description",
           multiline: true,
           childSync: {
             path: ["CardHeader", "Description"],
             propKey: "children",
+            fallbackToDirectChild: true,
           },
         },
       ],
@@ -834,7 +1107,7 @@ properties: {
 | variant 추가 시 | 2곳 (Spec+Editor) | 1곳 | **1곳** (Spec만) | **1곳** |
 | 자동화율 | 0% | 72.8% | 80.6% | **80.6%** |
 
-> **산정 기준**: 103개 전체 에디터 중 GenericPropertyEditor 전환 대상 83개(등급 A 75 + 등급 B 8). 등급 C 20개는 수동 유지 (하이브리드 적용 시 코드량 50~70% 감소 가능).
+> **산정 기준**: 103개 전체 에디터 중 GenericPropertyEditor 전환 대상 83개(등급 A 75 + 등급 B 8). 등급 C 20개는 수동 유지 (UI 모드 전환이 없는 에디터에 한해 하이브리드 적용 시 코드량 30~50% 감소 가능).
 
 검증:
 
@@ -853,15 +1126,15 @@ properties: {
 ### Positive
 
 1. **Spec 4중 단일 소스**: Skia 렌더링 + CSS(ADR-036) + Editor UI + DOM 속성
-2. **에디터 파일 80% 자동화**: 103개 → 83개 자동 + 20개 수동 (하이브리드로 코드량 추가 감소 가능)
+2. **에디터 파일 80.6% 자동화**: 103개 → 83개 자동 + 20개 수동 (하이브리드로 코드량 추가 감소 가능)
 3. **새 컴포넌트 추가 비용 감소**: Spec 1개 파일에 properties 추가하면 에디터 자동 생성
 4. **variant/size 추가 시 자동 반영**: Spec.variants에 키 추가 → 에디터 옵션 자동 확장
 5. **일관된 UI**: 모든 에디터가 동일한 섹션 구조/스타일 보장
-6. **등급 C 하이브리드**: 수동 유지 에디터도 Design/Behavior 섹션은 자동 생성 가능 → 코드량 50~70% 절감
+6. **등급 C 하이브리드**: UI 모드 전환이 없는 수동 에디터의 Design/Behavior 섹션은 자동 생성 가능 → 코드량 30~50% 절감
 
 ### Negative
 
-1. **PropertySchema 설계 투자**: FieldDef 유니온 8개 타입 + visibility + childSync 구현
+1. **PropertySchema 설계 투자**: FieldDef 유니온 9개 타입 + visibility(parentTag 포함) + childSync + derivedUpdateFn 구현
 2. **CustomFieldRenderer 등록 체계**: 향후 커스텀 위젯 필요 시 registry 패턴 구축
 3. **기존 에디터 마이그레이션 작업**: 83개 Spec에 properties 추가 (등급 A는 기계적 작업)
 4. **디버깅 간접성**: 에디터 문제 시 Schema → GenericEditor → SpecField 체인 추적
@@ -871,7 +1144,7 @@ properties: {
 
 ## References
 
-- `apps/builder/src/builder/panels/properties/editors/` — 기존 107개 에디터
+- `apps/builder/src/builder/panels/properties/editors/` — 기존 103개 에디터
 - `apps/builder/src/builder/inspector/editors/registry.ts` — 에디터 동적 로딩
 - `apps/builder/src/builder/components/property/` — PropertyInput/Select/Switch/SizeToggle
 - `packages/specs/src/types/spec.types.ts` — ComponentSpec 타입 정의
