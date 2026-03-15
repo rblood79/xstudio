@@ -1,96 +1,114 @@
-/* Generated from ColorField.spec.ts */
-/* DO NOT EDIT MANUALLY */
+/* ============================================================
+ * AUTO-GENERATED from ColorFieldSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/ColorField.spec.ts
+ * Archetype: default
+ * ============================================================ */
 
-@layer components {
-  .react-aria-ColorField {
-  }
+.react-aria-ColorField {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
 
-  .react-aria-ColorField[data-variant="default"] {
+  /* Default variant */
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-hover);
+}
+
+.react-aria-ColorField[data-variant="default"] {
+  background: var(--bg);
+  color: var(--fg);
+  border-color: var(--border-hover);
+
+  &[data-hovered] {
     background: var(--bg);
-    color: var(--fg);
-    border-color: var(--border-hover);
-
-    &[data-hovered] {
-      background: var(--bg);
-      border-color: var(--border);
-    }
-
-    &[data-pressed] {
-      background: var(--bg);
-      border-color: var(--bg);
-    }
+    border-color: var(--border);
   }
 
-  .react-aria-ColorField[data-variant="accent"] {
+  &[data-pressed] {
     background: var(--bg);
-    color: var(--fg);
-    border-color: var(--accent);
-
-    &[data-hovered] {
-      background: var(--bg);
-      border-color: color-mix(in srgb, var(--accent) 85%, black);
-    }
-
-    &[data-pressed] {
-      background: var(--bg);
-      border-color: var(--bg);
-    }
+    border-color: var(--bg);
   }
+}
 
-  .react-aria-ColorField[data-variant="negative"] {
+.react-aria-ColorField[data-variant="accent"] {
+  background: var(--bg);
+  color: var(--fg);
+  border-color: var(--accent);
+
+  &[data-hovered] {
     background: var(--bg);
-    color: var(--fg);
-    border-color: var(--negative);
-
-    &[data-hovered] {
-      background: var(--bg);
-      border-color: color-mix(in srgb, var(--negative) 85%, black);
-    }
-
-    &[data-pressed] {
-      background: var(--bg);
-      border-color: var(--bg);
-    }
+    border-color: color-mix(in srgb, var(--accent) 85%, black);
   }
 
-  .react-aria-ColorField[data-size="sm"] {
-    height: 32px;
-    padding: 4px 8px;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-sm);
-    gap: 6px;
+  &[data-pressed] {
+    background: var(--bg);
+    border-color: var(--bg);
+  }
+}
+
+.react-aria-ColorField[data-variant="negative"] {
+  background: var(--bg);
+  color: var(--fg);
+  border-color: var(--negative);
+
+  &[data-hovered] {
+    background: var(--bg);
+    border-color: color-mix(in srgb, var(--negative) 85%, black);
   }
 
-  .react-aria-ColorField[data-size="md"] {
-    height: 40px;
-    padding: 6px 10px;
-    font-size: var(--text-md);
-    border-radius: var(--radius-md);
-    gap: 8px;
+  &[data-pressed] {
+    background: var(--bg);
+    border-color: var(--bg);
   }
+}
 
-  .react-aria-ColorField[data-size="lg"] {
-    height: 48px;
-    padding: 8px 12px;
-    font-size: var(--text-lg);
-    border-radius: var(--radius-lg);
-    gap: 10px;
-  }
+.react-aria-ColorField[data-size="sm"] {
+  height: 32px;
+  padding: 4px 8px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  gap: 6px;
+  --icon-size: 20px;
+}
 
-  .react-aria-ColorField[data-hovered] {
-  }
+.react-aria-ColorField[data-size="md"] {
+  height: 40px;
+  padding: 6px 10px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-md);
+  gap: 8px;
+  --icon-size: 26px;
+}
 
-  .react-aria-ColorField[data-focus-visible] {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+.react-aria-ColorField[data-size="lg"] {
+  height: 48px;
+  padding: 8px 12px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-lg);
+  gap: 10px;
+  --icon-size: 32px;
+}
 
-  .react-aria-ColorField[data-pressed] {
-  }
+.react-aria-ColorField[data-hovered] {
+}
 
-  .react-aria-ColorField[data-disabled] {
-    opacity: 0.38;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
+.react-aria-ColorField[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.react-aria-ColorField[data-pressed] {
+}
+
+.react-aria-ColorField[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
 }

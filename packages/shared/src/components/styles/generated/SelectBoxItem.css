@@ -1,9 +1,11 @@
-/* Generated from SelectBoxItem.spec.ts */
-/* DO NOT EDIT MANUALLY */
+/* ============================================================
+ * AUTO-GENERATED from SelectBoxItemSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/SelectBoxItem.spec.ts
+ * Archetype: default
+ * ============================================================ */
 
-@layer components {
-  .react-aria-SelectBoxItem {
-    /* Base styles */
+.react-aria-SelectBoxItem {
+  /* Base styles — archetype: default */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -13,88 +15,88 @@
     transition: background 0.15s ease, border-color 0.15s ease;
     font-family: var(--font-sans);
 
-    /* Default variant */
-    background: var(--bg-overlay);
-    color: var(--fg);
-    border: 1px solid var(--border);
+  /* Default variant */
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: 1px solid var(--border);
 
-    /* Default size */
-    height: auto;
-    padding: 12px 16px;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-lg);
+  /* Default size */
+  height: auto;
+  padding: 12px 16px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-lg);
+  gap: 4px;
+}
+
+.react-aria-SelectBoxItem[data-variant="default"] {
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border-color: var(--border);
+
+  &[data-hovered] {
+    background: color-mix(in srgb, var(--bg-muted) 85%, black);
+    border-color: color-mix(in srgb, var(--bg-muted) 85%, black);
   }
 
-  .react-aria-SelectBoxItem[data-variant="default"] {
-    background: var(--bg-overlay);
-    color: var(--fg);
-    border-color: var(--border);
+  &[data-pressed] {
+    background: color-mix(in srgb, var(--bg-muted) 75%, black);
+    border-color: color-mix(in srgb, var(--bg-muted) 75%, black);
+  }
+}
 
-    &[data-hovered] {
-      background: color-mix(in srgb, var(--bg-muted) 85%, black);
-      border-color: color-mix(in srgb, var(--bg-muted) 85%, black);
-    }
+.react-aria-SelectBoxItem[data-variant="selected"] {
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border-color: var(--accent);
 
-    &[data-pressed] {
-      background: color-mix(in srgb, var(--bg-muted) 75%, black);
-      border-color: color-mix(in srgb, var(--bg-muted) 75%, black);
-    }
+  &[data-hovered] {
+    background: color-mix(in srgb, var(--bg-muted) 85%, black);
+    border-color: color-mix(in srgb, var(--bg-muted) 85%, black);
   }
 
-  .react-aria-SelectBoxItem[data-variant="selected"] {
-    background: var(--bg-overlay);
-    color: var(--fg);
-    border-color: var(--accent);
-
-    &[data-hovered] {
-      background: color-mix(in srgb, var(--bg-muted) 85%, black);
-      border-color: color-mix(in srgb, var(--bg-muted) 85%, black);
-    }
-
-    &[data-pressed] {
-      background: color-mix(in srgb, var(--bg-muted) 75%, black);
-      border-color: color-mix(in srgb, var(--bg-muted) 75%, black);
-    }
+  &[data-pressed] {
+    background: color-mix(in srgb, var(--bg-muted) 75%, black);
+    border-color: color-mix(in srgb, var(--bg-muted) 75%, black);
   }
+}
 
-  .react-aria-SelectBoxItem[data-size="sm"] {
-    height: auto;
-    padding: 10px 12px;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-md);
-    gap: 4px;
-  }
+.react-aria-SelectBoxItem[data-size="sm"] {
+  height: auto;
+  padding: 10px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
 
-  .react-aria-SelectBoxItem[data-size="md"] {
-    height: auto;
-    padding: 12px 16px;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-lg);
-    gap: 4px;
-  }
+.react-aria-SelectBoxItem[data-size="md"] {
+  height: auto;
+  padding: 12px 16px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-lg);
+  gap: 4px;
+}
 
-  .react-aria-SelectBoxItem[data-size="lg"] {
-    height: auto;
-    padding: 16px 20px;
-    font-size: var(--text-md);
-    border-radius: var(--radius-lg);
-    gap: 6px;
-  }
+.react-aria-SelectBoxItem[data-size="lg"] {
+  height: auto;
+  padding: 16px 20px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-lg);
+  gap: 6px;
+}
 
-  .react-aria-SelectBoxItem[data-hovered] {
-  }
+.react-aria-SelectBoxItem[data-hovered] {
+}
 
-  .react-aria-SelectBoxItem[data-focus-visible] {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+.react-aria-SelectBoxItem[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
-  .react-aria-SelectBoxItem[data-pressed] {
-  }
+.react-aria-SelectBoxItem[data-pressed] {
+}
 
-  .react-aria-SelectBoxItem[data-disabled] {
-    opacity: 0.38;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
+.react-aria-SelectBoxItem[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
 }

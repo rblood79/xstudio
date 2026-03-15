@@ -1,80 +1,98 @@
-/* Generated from ColorSwatchPicker.spec.ts */
-/* DO NOT EDIT MANUALLY */
+/* ============================================================
+ * AUTO-GENERATED from ColorSwatchPickerSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/ColorSwatchPicker.spec.ts
+ * Archetype: default
+ * ============================================================ */
 
-@layer components {
-  .react-aria-ColorSwatchPicker {
-  }
+.react-aria-ColorSwatchPicker {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
 
-  .react-aria-ColorSwatchPicker[data-variant="default"] {
+  /* Default variant */
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+
+.react-aria-ColorSwatchPicker[data-variant="default"] {
+  background: var(--bg);
+  color: var(--fg);
+  border-color: var(--border);
+
+  &[data-hovered] {
     background: var(--bg);
-    color: var(--fg);
-    border-color: var(--border);
-
-    &[data-hovered] {
-      background: var(--bg);
-      border-color: var(--bg);
-    }
-
-    &[data-pressed] {
-      background: var(--bg);
-      border-color: var(--bg);
-    }
+    border-color: var(--bg);
   }
 
-  .react-aria-ColorSwatchPicker[data-variant="accent"] {
+  &[data-pressed] {
     background: var(--bg);
-    color: var(--fg);
-    border-color: var(--accent);
+    border-color: var(--bg);
+  }
+}
 
-    &[data-hovered] {
-      background: var(--bg);
-      border-color: var(--bg);
-    }
+.react-aria-ColorSwatchPicker[data-variant="accent"] {
+  background: var(--bg);
+  color: var(--fg);
+  border-color: var(--accent);
 
-    &[data-pressed] {
-      background: var(--bg);
-      border-color: var(--bg);
-    }
+  &[data-hovered] {
+    background: var(--bg);
+    border-color: var(--bg);
   }
 
-  .react-aria-ColorSwatchPicker[data-size="sm"] {
-    height: 0px;
-    padding: 4px 4px;
-    font-size: var(--text-xs);
-    border-radius: var(--radius-md);
-    gap: 4px;
+  &[data-pressed] {
+    background: var(--bg);
+    border-color: var(--bg);
   }
+}
 
-  .react-aria-ColorSwatchPicker[data-size="md"] {
-    height: 0px;
-    padding: 6px 6px;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-lg);
-    gap: 6px;
-  }
+.react-aria-ColorSwatchPicker[data-size="sm"] {
+  height: auto;
+  padding: 4px 4px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-md);
+  gap: 4px;
+  --icon-size: 20px;
+}
 
-  .react-aria-ColorSwatchPicker[data-size="lg"] {
-    height: 0px;
-    padding: 8px 8px;
-    font-size: var(--text-md);
-    border-radius: var(--radius-xl);
-    gap: 8px;
-  }
+.react-aria-ColorSwatchPicker[data-size="md"] {
+  height: auto;
+  padding: 6px 6px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-lg);
+  gap: 6px;
+  --icon-size: 28px;
+}
 
-  .react-aria-ColorSwatchPicker[data-hovered] {
-  }
+.react-aria-ColorSwatchPicker[data-size="lg"] {
+  height: auto;
+  padding: 8px 8px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-xl);
+  gap: 8px;
+  --icon-size: 36px;
+}
 
-  .react-aria-ColorSwatchPicker[data-focus-visible] {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+.react-aria-ColorSwatchPicker[data-hovered] {
+}
 
-  .react-aria-ColorSwatchPicker[data-pressed] {
-  }
+.react-aria-ColorSwatchPicker[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
-  .react-aria-ColorSwatchPicker[data-disabled] {
-    opacity: 0.38;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
+.react-aria-ColorSwatchPicker[data-pressed] {
+}
+
+.react-aria-ColorSwatchPicker[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
 }

@@ -1,74 +1,89 @@
-/* Generated from MaskedFrame.spec.ts */
-/* DO NOT EDIT MANUALLY */
+/* ============================================================
+ * AUTO-GENERATED from MaskedFrameSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/MaskedFrame.spec.ts
+ * Archetype: default
+ * ============================================================ */
 
-@layer components {
-  .react-aria-MaskedFrame {
+.react-aria-MaskedFrame {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+  /* Default variant */
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+
+.react-aria-MaskedFrame[data-variant="default"] {
+  background: var(--bg);
+  color: var(--fg);
+  border-color: var(--border);
+
+  &[data-hovered] {
+    background: var(--bg-inset);
+    border-color: var(--bg-inset);
   }
 
-  .react-aria-MaskedFrame[data-variant="default"] {
-    background: var(--bg);
-    color: var(--fg);
-    border-color: var(--border);
-
-    &[data-hovered] {
-      background: var(--bg-inset);
-      border-color: var(--bg-inset);
-    }
-
-    &[data-pressed] {
-      background: var(--bg-overlay);
-      border-color: var(--bg-overlay);
-    }
+  &[data-pressed] {
+    background: var(--bg-overlay);
+    border-color: var(--bg-overlay);
   }
+}
 
-  .react-aria-MaskedFrame[data-variant="accent"] {
+.react-aria-MaskedFrame[data-variant="accent"] {
+  background: var(--accent-subtle);
+  color: var(--fg);
+  border-color: var(--accent);
+
+  &[data-hovered] {
     background: var(--accent-subtle);
-    color: var(--fg);
-    border-color: var(--accent);
-
-    &[data-hovered] {
-      background: var(--accent-subtle);
-      border-color: var(--accent-subtle);
-    }
-
-    &[data-pressed] {
-      background: var(--accent-subtle);
-      border-color: var(--accent-subtle);
-    }
+    border-color: var(--accent-subtle);
   }
 
-  .react-aria-MaskedFrame[data-size="sm"] {
-    height: 80px;
-    padding: 0px 0px;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-md);
+  &[data-pressed] {
+    background: var(--accent-subtle);
+    border-color: var(--accent-subtle);
   }
+}
 
-  .react-aria-MaskedFrame[data-size="md"] {
-    height: 120px;
-    padding: 0px 0px;
-    font-size: var(--text-md);
-    border-radius: var(--radius-lg);
-  }
+.react-aria-MaskedFrame[data-size="sm"] {
+  height: 80px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
 
-  .react-aria-MaskedFrame[data-size="lg"] {
-    height: 200px;
-    padding: 0px 0px;
-    font-size: var(--text-lg);
-    border-radius: var(--radius-xl);
-  }
+.react-aria-MaskedFrame[data-size="md"] {
+  height: 120px;
+  padding: 0px 0px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-lg);
+}
 
-  .react-aria-MaskedFrame[data-hovered] {
-  }
+.react-aria-MaskedFrame[data-size="lg"] {
+  height: 200px;
+  padding: 0px 0px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+}
 
-  .react-aria-MaskedFrame[data-focus-visible] {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+.react-aria-MaskedFrame[data-hovered] {
+}
 
-  .react-aria-MaskedFrame[data-disabled] {
-    opacity: 0.38;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
+.react-aria-MaskedFrame[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.react-aria-MaskedFrame[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
 }

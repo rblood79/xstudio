@@ -6,6 +6,7 @@
 
 // Spec Types
 export type {
+  ArchetypeId,
   ComponentSpec,
   ComponentState,
   VariantSpec,

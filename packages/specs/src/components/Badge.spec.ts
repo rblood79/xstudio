@@ -52,6 +52,7 @@ export interface BadgeProps {
 export const BadgeSpec: ComponentSpec<BadgeProps> = {
   name: "Badge",
   description: "React Aria 기반 배지 컴포넌트",
+  archetype: "simple",
   element: "span",
 
   defaultVariant: "accent",

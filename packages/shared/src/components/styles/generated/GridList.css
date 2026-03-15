@@ -1,77 +1,92 @@
-/* Generated from GridList.spec.ts */
-/* DO NOT EDIT MANUALLY */
+/* ============================================================
+ * AUTO-GENERATED from GridListSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/GridList.spec.ts
+ * Archetype: default
+ * ============================================================ */
 
-@layer components {
-  .react-aria-GridList {
+.react-aria-GridList {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+  /* Default variant */
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+
+.react-aria-GridList[data-variant="default"] {
+  background: var(--bg);
+  color: var(--fg);
+  border-color: var(--border);
+
+  &[data-hovered] {
+    background: var(--bg-inset);
+    border-color: var(--bg-inset);
   }
 
-  .react-aria-GridList[data-variant="default"] {
-    background: var(--bg);
-    color: var(--fg);
-    border-color: var(--border);
+  &[data-pressed] {
+    background: var(--bg-overlay);
+    border-color: var(--bg-overlay);
+  }
+}
 
-    &[data-hovered] {
-      background: var(--bg-inset);
-      border-color: var(--bg-inset);
-    }
+.react-aria-GridList[data-variant="accent"] {
+  background: var(--bg);
+  color: var(--fg);
+  border-color: var(--border);
 
-    &[data-pressed] {
-      background: var(--bg-overlay);
-      border-color: var(--bg-overlay);
-    }
+  &[data-hovered] {
+    background: var(--accent-subtle);
+    border-color: var(--accent-subtle);
   }
 
-  .react-aria-GridList[data-variant="accent"] {
-    background: var(--bg);
-    color: var(--fg);
-    border-color: var(--border);
-
-    &[data-hovered] {
-      background: var(--accent-subtle);
-      border-color: var(--accent-subtle);
-    }
-
-    &[data-pressed] {
-      background: var(--accent-subtle);
-      border-color: var(--accent-subtle);
-    }
+  &[data-pressed] {
+    background: var(--accent-subtle);
+    border-color: var(--accent-subtle);
   }
+}
 
-  .react-aria-GridList[data-size="sm"] {
-    height: 0px;
-    padding: 8px 8px;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-md);
-    gap: 8px;
-  }
+.react-aria-GridList[data-size="sm"] {
+  height: auto;
+  padding: 8px 8px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  gap: 8px;
+}
 
-  .react-aria-GridList[data-size="md"] {
-    height: 0px;
-    padding: 12px 12px;
-    font-size: var(--text-md);
-    border-radius: var(--radius-md);
-    gap: 12px;
-  }
+.react-aria-GridList[data-size="md"] {
+  height: auto;
+  padding: 12px 12px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-md);
+  gap: 12px;
+}
 
-  .react-aria-GridList[data-size="lg"] {
-    height: 0px;
-    padding: 16px 16px;
-    font-size: var(--text-lg);
-    border-radius: var(--radius-lg);
-    gap: 16px;
-  }
+.react-aria-GridList[data-size="lg"] {
+  height: auto;
+  padding: 16px 16px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-lg);
+  gap: 16px;
+}
 
-  .react-aria-GridList[data-hovered] {
-  }
+.react-aria-GridList[data-hovered] {
+}
 
-  .react-aria-GridList[data-focus-visible] {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+.react-aria-GridList[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
-  .react-aria-GridList[data-disabled] {
-    opacity: 0.38;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
+.react-aria-GridList[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
 }

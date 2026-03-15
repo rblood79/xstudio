@@ -45,6 +45,7 @@ export interface ButtonProps {
 export const ButtonSpec: ComponentSpec<ButtonProps> = {
   name: "Button",
   description: "React Aria 기반 버튼 컴포넌트",
+  archetype: "button",
   element: "button",
 
   defaultVariant: "primary",

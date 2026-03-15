@@ -58,6 +58,7 @@ export const TOGGLE_SELECTED_COLORS = {
 export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
   name: "ToggleButton",
   description: "React Aria 기반 토글 버튼 컴포넌트",
+  archetype: "button",
   element: "button",
 
   defaultVariant: "default",

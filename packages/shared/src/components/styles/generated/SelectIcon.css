@@ -1,9 +1,11 @@
-/* Generated from SelectIcon.spec.ts */
-/* DO NOT EDIT MANUALLY */
+/* ============================================================
+ * AUTO-GENERATED from SelectIconSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/SelectIcon.spec.ts
+ * Archetype: default
+ * ============================================================ */
 
-@layer components {
-  .react-aria-SelectIcon {
-    /* Base styles */
+.react-aria-SelectIcon {
+  /* Base styles — archetype: default */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -13,80 +15,85 @@
     transition: background 0.15s ease, border-color 0.15s ease;
     font-family: var(--font-sans);
 
-    /* Default variant */
+  /* Default variant */
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  border: none;
+
+  /* Default size */
+  height: 18px;
+  padding: 0px 0px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-none);
+  --icon-size: 18px;
+}
+
+.react-aria-SelectIcon[data-variant="default"] {
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+
+  &[data-hovered] {
     background: var(--bg-inset);
-    color: var(--fg-muted);
-    border: none;
-
-    /* Default size */
-    height: 18px;
-    padding: 0px 0px;
-    font-size: var(--text-md);
-    border-radius: var(--radius-none);
   }
 
-  .react-aria-SelectIcon[data-variant="default"] {
+  &[data-pressed] {
     background: var(--bg-inset);
-    color: var(--fg-muted);
-
-    &[data-hovered] {
-      background: var(--bg-inset);
-    }
-
-    &[data-pressed] {
-      background: var(--bg-inset);
-    }
   }
+}
 
-  .react-aria-SelectIcon[data-size="xs"] {
-    height: 10px;
-    padding: 0px 0px;
-    font-size: var(--text-2xs);
-    border-radius: var(--radius-none);
-  }
+.react-aria-SelectIcon[data-size="xs"] {
+  height: 10px;
+  padding: 0px 0px;
+  font-size: var(--text-2xs);
+  border-radius: var(--radius-none);
+  --icon-size: 10px;
+}
 
-  .react-aria-SelectIcon[data-size="sm"] {
-    height: 14px;
-    padding: 0px 0px;
-    font-size: var(--text-xs);
-    border-radius: var(--radius-none);
-  }
+.react-aria-SelectIcon[data-size="sm"] {
+  height: 14px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
+  --icon-size: 14px;
+}
 
-  .react-aria-SelectIcon[data-size="md"] {
-    height: 18px;
-    padding: 0px 0px;
-    font-size: var(--text-md);
-    border-radius: var(--radius-none);
-  }
+.react-aria-SelectIcon[data-size="md"] {
+  height: 18px;
+  padding: 0px 0px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-none);
+  --icon-size: 18px;
+}
 
-  .react-aria-SelectIcon[data-size="lg"] {
-    height: 22px;
-    padding: 0px 0px;
-    font-size: var(--text-lg);
-    border-radius: var(--radius-none);
-  }
+.react-aria-SelectIcon[data-size="lg"] {
+  height: 22px;
+  padding: 0px 0px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-none);
+  --icon-size: 22px;
+}
 
-  .react-aria-SelectIcon[data-size="xl"] {
-    height: 28px;
-    padding: 0px 0px;
-    font-size: var(--text-xl);
-    border-radius: var(--radius-none);
-  }
+.react-aria-SelectIcon[data-size="xl"] {
+  height: 28px;
+  padding: 0px 0px;
+  font-size: var(--text-xl);
+  border-radius: var(--radius-none);
+  --icon-size: 28px;
+}
 
-  .react-aria-SelectIcon[data-hovered] {
-  }
+.react-aria-SelectIcon[data-hovered] {
+}
 
-  .react-aria-SelectIcon[data-focus-visible] {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+.react-aria-SelectIcon[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
-  .react-aria-SelectIcon[data-pressed] {
-  }
+.react-aria-SelectIcon[data-pressed] {
+}
 
-  .react-aria-SelectIcon[data-disabled] {
-    opacity: 0.38;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
+.react-aria-SelectIcon[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
 }

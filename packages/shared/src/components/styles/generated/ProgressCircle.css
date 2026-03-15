@@ -1,9 +1,11 @@
-/* Generated from ProgressCircle.spec.ts */
-/* DO NOT EDIT MANUALLY */
+/* ============================================================
+ * AUTO-GENERATED from ProgressCircleSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/ProgressCircle.spec.ts
+ * Archetype: default
+ * ============================================================ */
 
-@layer components {
-  .react-aria-ProgressCircle {
-    /* Base styles */
+.react-aria-ProgressCircle {
+  /* Base styles — archetype: default */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -13,66 +15,65 @@
     transition: background 0.15s ease, border-color 0.15s ease;
     font-family: var(--font-sans);
 
-    /* Default variant */
+  /* Default variant */
+  background: var(--bg-muted);
+  color: var(--fg);
+  border: none;
+
+  /* Default size */
+  height: 32px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+}
+
+.react-aria-ProgressCircle[data-variant="default"] {
+  background: var(--bg-muted);
+  color: var(--fg);
+
+  &[data-hovered] {
     background: var(--bg-muted);
-    color: var(--fg);
-    border: none;
-
-    /* Default size */
-    height: 32px;
-    padding: 0px 0px;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-full);
   }
 
-  .react-aria-ProgressCircle[data-variant="default"] {
+  &[data-pressed] {
     background: var(--bg-muted);
-    color: var(--fg);
-
-    &[data-hovered] {
-      background: var(--bg-muted);
-    }
-
-    &[data-pressed] {
-      background: var(--bg-muted);
-    }
   }
+}
 
-  .react-aria-ProgressCircle[data-size="sm"] {
-    height: 24px;
-    padding: 0px 0px;
-    font-size: var(--text-xs);
-    border-radius: var(--radius-full);
-  }
+.react-aria-ProgressCircle[data-size="sm"] {
+  height: 24px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-full);
+}
 
-  .react-aria-ProgressCircle[data-size="md"] {
-    height: 32px;
-    padding: 0px 0px;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-full);
-  }
+.react-aria-ProgressCircle[data-size="md"] {
+  height: 32px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+}
 
-  .react-aria-ProgressCircle[data-size="lg"] {
-    height: 64px;
-    padding: 0px 0px;
-    font-size: var(--text-md);
-    border-radius: var(--radius-full);
-  }
+.react-aria-ProgressCircle[data-size="lg"] {
+  height: 64px;
+  padding: 0px 0px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-full);
+}
 
-  .react-aria-ProgressCircle[data-hovered] {
-  }
+.react-aria-ProgressCircle[data-hovered] {
+}
 
-  .react-aria-ProgressCircle[data-focus-visible] {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+.react-aria-ProgressCircle[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
-  .react-aria-ProgressCircle[data-pressed] {
-  }
+.react-aria-ProgressCircle[data-pressed] {
+}
 
-  .react-aria-ProgressCircle[data-disabled] {
-    opacity: 0.38;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
+.react-aria-ProgressCircle[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
 }

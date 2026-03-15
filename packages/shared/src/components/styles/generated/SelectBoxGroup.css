@@ -1,9 +1,11 @@
-/* Generated from SelectBoxGroup.spec.ts */
-/* DO NOT EDIT MANUALLY */
+/* ============================================================
+ * AUTO-GENERATED from SelectBoxGroupSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/SelectBoxGroup.spec.ts
+ * Archetype: default
+ * ============================================================ */
 
-@layer components {
-  .react-aria-SelectBoxGroup {
-    /* Base styles */
+.react-aria-SelectBoxGroup {
+  /* Base styles — archetype: default */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -13,69 +15,69 @@
     transition: background 0.15s ease, border-color 0.15s ease;
     font-family: var(--font-sans);
 
-    /* Default variant */
+  /* Default variant */
+  background: transparent;
+  color: var(--fg);
+  border: none;
+
+  /* Default size */
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: 0;
+  gap: 12px;
+}
+
+.react-aria-SelectBoxGroup[data-variant="default"] {
+  background: transparent;
+  color: var(--fg);
+
+  &[data-hovered] {
     background: transparent;
-    color: var(--fg);
-    border: none;
-
-    /* Default size */
-    height: auto;
-    padding: 0px 0px;
-    font-size: var(--text-sm);
-    border-radius: 0;
   }
 
-  .react-aria-SelectBoxGroup[data-variant="default"] {
+  &[data-pressed] {
     background: transparent;
-    color: var(--fg);
-
-    &[data-hovered] {
-      background: transparent;
-    }
-
-    &[data-pressed] {
-      background: transparent;
-    }
   }
+}
 
-  .react-aria-SelectBoxGroup[data-size="sm"] {
-    height: auto;
-    padding: 0px 0px;
-    font-size: var(--text-sm);
-    border-radius: 0;
-    gap: 8px;
-  }
+.react-aria-SelectBoxGroup[data-size="sm"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: 0;
+  gap: 8px;
+}
 
-  .react-aria-SelectBoxGroup[data-size="md"] {
-    height: auto;
-    padding: 0px 0px;
-    font-size: var(--text-sm);
-    border-radius: 0;
-    gap: 12px;
-  }
+.react-aria-SelectBoxGroup[data-size="md"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: 0;
+  gap: 12px;
+}
 
-  .react-aria-SelectBoxGroup[data-size="lg"] {
-    height: auto;
-    padding: 0px 0px;
-    font-size: var(--text-md);
-    border-radius: 0;
-    gap: 16px;
-  }
+.react-aria-SelectBoxGroup[data-size="lg"] {
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-md);
+  border-radius: 0;
+  gap: 16px;
+}
 
-  .react-aria-SelectBoxGroup[data-hovered] {
-  }
+.react-aria-SelectBoxGroup[data-hovered] {
+}
 
-  .react-aria-SelectBoxGroup[data-focus-visible] {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+.react-aria-SelectBoxGroup[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
-  .react-aria-SelectBoxGroup[data-pressed] {
-  }
+.react-aria-SelectBoxGroup[data-pressed] {
+}
 
-  .react-aria-SelectBoxGroup[data-disabled] {
-    opacity: 0.38;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
+.react-aria-SelectBoxGroup[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
 }

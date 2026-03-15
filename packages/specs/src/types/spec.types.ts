@@ -29,6 +29,21 @@ export type ComponentState =
   | "disabled";
 
 /**
+ * ADR-036: CSS 생성 시 Archetype 템플릿 선택에 사용
+ */
+export type ArchetypeId =
+  | "simple" // Badge, Tag, Separator, Skeleton, ColorSwatch, Icon
+  | "button" // Button, ToggleButton, Link
+  | "input-base" // Input (TextField, ColorField 등 내부)
+  | "toggle-indicator" // Switch, Checkbox, Radio
+  | "progress" // ProgressBar, ProgressCircle, Meter
+  | "slider" // Slider (+ Track/Thumb)
+  | "tabs-indicator" // Tab (+ SelectionIndicator)
+  | "collection" // ListBox/Item, Menu/Item
+  | "overlay" // Popover, Dialog, Toast
+  | "calendar"; // Calendar/Cell
+
+/**
  * 컴포넌트 스펙 - 단일 소스
  */
 export interface ComponentSpec<Props = Record<string, unknown>> {
@@ -37,6 +52,9 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
 
   /** 컴포넌트 설명 */
   description?: string;
+
+  /** ADR-036: CSS 생성 시 Archetype 템플릿 선택 */
+  archetype?: ArchetypeId;
 
   /** 기본 HTML 태그 (React용) */
   element: keyof HTMLElementTagNameMap | "fragment";
