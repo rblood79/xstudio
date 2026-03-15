@@ -6,7 +6,7 @@ Proposed
 
 ## Date
 
-2026-03-13 (2026-03-14 재검토 + 코드베이스 대조 검증 반영)
+2026-03-13 (2026-03-14 재검토 + 코드베이스 대조 검증 반영, 2026-03-15 구현 완성도 보강)
 
 ## Decision Makers
 
@@ -328,6 +328,55 @@ interface SizeSpec {
 
 원칙: Skia TextShape에도 존재하는 속성만 공통 속성으로 추가. `whiteSpace`, `overflow` 등 Skia 대응물이 없는 속성은 제외. Phase 0-pre 조사에서 발견된 SIZE_CONFIG 전용 필드(`paddingLeft`/`paddingRight`/`iconGap`)도 SizeSpec에 명시적으로 추가하여 `any` 제거 시 타입 안전성을 보장한다.
 
+#### `*_DIMENSIONS` 데이터 → SizeSpec 통합 결정
+
+**결정: SizeSpec에 통합하지 않고, Archetype 전용 `dimensions` 필드로 분리한다.**
+
+현재 Archetype별 치수 데이터(`SWITCH_DIMENSIONS`, `CHECKBOX_BOX_SIZES`, `RADIO_DIMENSIONS`, `PROGRESSBAR_DIMENSIONS`, `SLIDER_DIMENSIONS`)는 SizeSpec의 공통 필드(height/paddingX/fontSize 등)와 성격이 다르다:
+
+| 데이터             | 성격                                     | 예시                                      |
+| ------------------ | ---------------------------------------- | ----------------------------------------- |
+| SizeSpec 공통 필드 | **모든 컴포넌트**에 적용 가능한 CSS 속성 | height, paddingX, fontSize                |
+| `*_DIMENSIONS`     | **특정 Archetype 전용** 기하학적 치수    | trackWidth, thumbSize, boxSize, barHeight |
+
+SizeSpec에 `trackWidth?: number`, `thumbSize?: number` 등을 모두 추가하면 타입이 비대해지고, Badge에서 `trackWidth`가 자동완성에 노출되는 등 의미적 오염이 발생한다.
+
+**해결**: `ComponentSpec`에 Archetype 전용 치수를 별도 타입으로 선언:
+
+```typescript
+// spec.types.ts
+interface ComponentSpec<Props> {
+  // ... 기존 필드 ...
+  archetype?: ArchetypeId;
+  // Archetype 전용 치수 (SizeSpec과 별도)
+  dimensions?: Record<string, Record<string, number>>;
+  //           └ size key   └ dimension key → value
+}
+
+// 사용 예: Switch
+const SwitchSpec: ComponentSpec<SwitchProps> = {
+  archetype: "toggle-indicator",
+  sizes: {
+    sm: {
+      height: 20,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-sm}",
+      gap: 8,
+    },
+    // ...
+  },
+  dimensions: {
+    sm: { trackWidth: 36, trackHeight: 20, thumbSize: 14, thumbOffset: 3 },
+    md: { trackWidth: 44, trackHeight: 24, thumbSize: 18, thumbOffset: 3 },
+    lg: { trackWidth: 52, trackHeight: 28, thumbSize: 22, thumbOffset: 3 },
+  },
+  // ...
+};
+```
+
+**마이그레이션**: 기존 Spec 파일의 `SWITCH_DIMENSIONS` 등 모듈 레벨 상수를 `ComponentSpec.dimensions` 필드로 이동. shapes() 함수 내부에서 `this.dimensions[sizeKey]` 대신 인자로 전달받도록 시그니처 조정. CSSGenerator는 `spec.dimensions`를 Archetype 템플릿에 전달하여 CSS 변수 생성에 사용한다.
+
 ### Phase 0b: SIZE_CONFIG 제거 (Gate G0b, G1)
 
 - `BUTTON_SIZE_CONFIG` → `ButtonSpec.sizes` import
@@ -361,6 +410,79 @@ Summary: 0 warnings, 0 errors
 - `ComponentSpec.archetype` 필드에 따라 base styles를 분기 (예: `simple` → `display: inline-flex`만, `button` → 현재 전체, `toggle-indicator` → `position: relative` 등)
 - 무음 실패 방지: `spec.sizes`에 키가 없을 때 `console.warn` → 에러 throw로 변경
 
+#### `ComponentSpec.archetype` 타입 정의
+
+```typescript
+// spec.types.ts — ComponentSpec 인터페이스 확장
+type ArchetypeId =
+  | "simple" // Badge, Tag, Separator, Skeleton, ColorSwatch, Icon, Tooltip, Breadcrumbs, Disclosure
+  | "button" // Button, ToggleButton, Link
+  | "input-base" // Input (TextField, ColorField 등 내부)
+  | "toggle-indicator" // Switch, Checkbox, Radio
+  | "progress" // ProgressBar, ProgressCircle, Meter
+  | "slider" // Slider (+ Track/Thumb)
+  | "tabs-indicator" // Tab (+ SelectionIndicator)
+  | "collection" // ListBox/Item, Menu/Item
+  | "overlay" // Popover, Dialog, Toast
+  | "calendar"; // Calendar/Cell
+
+interface ComponentSpec<Props> {
+  name: string;
+  element: keyof HTMLElementTagNameMap | "fragment";
+  archetype?: ArchetypeId; // CSS 생성 시 Archetype 템플릿 선택에 사용
+  variants: Record<string, VariantSpec>;
+  sizes: Record<string, SizeSpec>;
+  states: StateStyles;
+  dimensions?: Record<string, Record<string, number>>; // Archetype 전용 치수 (Phase 0a)
+  composition?: CompositionSpec; // Tier 2 Composite 전용 (Phase 3a)
+  render: RenderSpec<Props>;
+  overlay?: OverlaySpec;
+}
+```
+
+#### 93개 Spec에 `archetype` 필드 일괄 부여 마이그레이션
+
+**전략**: Phase 2-pre에서 93개 Spec 전체에 `archetype` 필드를 추가한다. 대부분은 기계적 작업이다.
+
+**작업 순서**:
+
+1. `spec.types.ts`에 `ArchetypeId` 타입 + `archetype?` 필드 추가 (타입만 — 기존 빌드 영향 없음)
+2. Archetype별 Spec 목록 (Phase 2c Tier 1 테이블 기반)으로 grep → 일괄 `archetype: "..."` 추가
+3. `pnpm build:specs` + `pnpm type-check` 통과 확인
+
+**예상 분포** (Phase 2c Tier 1 테이블 기반):
+
+| ArchetypeId        | 대상 Spec 수 | 대표                                                                                 |
+| ------------------ | :----------: | ------------------------------------------------------------------------------------ |
+| `simple`           |     ~12      | Badge, Tag, Separator, Skeleton, ColorSwatch, Icon, Tooltip, Breadcrumbs, Disclosure |
+| `button`           |      ~3      | Button, ToggleButton, Link                                                           |
+| `input-base`       |      ~1      | Input                                                                                |
+| `toggle-indicator` |      ~3      | Switch, Checkbox, Radio                                                              |
+| `progress`         |      ~3      | ProgressBar, ProgressCircle, Meter                                                   |
+| `slider`           |      ~1      | Slider                                                                               |
+| `tabs-indicator`   |      ~1      | Tab                                                                                  |
+| `collection`       |      ~2      | ListBox, Menu                                                                        |
+| `overlay`          |      ~3      | Popover, Dialog, Toast                                                               |
+| `calendar`         |      ~2      | Calendar, RangeCalendar                                                              |
+| **(미지정)**       |     ~62      | child spec, Composite 전용 Spec 등 — archetype 불필요                                |
+
+> **미지정 Spec**: Label, FieldError, Description, SliderTrack, SliderThumb 등 **child spec**과 Select, ComboBox 등 **Composite 전용 Spec**은 독립 CSS 생성 대상이 아니므로 `archetype` 미지정 (undefined)으로 유지한다. CSSGenerator는 `archetype`이 없는 Spec은 CSS 생성을 건너뛴다.
+
+#### Archetype별 base styles 매핑
+
+| ArchetypeId        | base styles                                                                            | 비고                   |
+| ------------------ | -------------------------------------------------------------------------------------- | ---------------------- |
+| `simple`           | `display: inline-flex; align-items: center;`                                           | cursor 없음            |
+| `button`           | `display: inline-flex; align-items: center; justify-content: center; cursor: pointer;` | `.button-base` 참조    |
+| `input-base`       | `display: flex; align-items: center;`                                                  | `.inset` 참조          |
+| `toggle-indicator` | `display: inline-flex; align-items: center; cursor: pointer;`                          | indicator + label 구조 |
+| `progress`         | `display: flex; flex-direction: column;`                                               | 세로 스택              |
+| `slider`           | `display: grid;`                                                                       | grid 레이아웃          |
+| `tabs-indicator`   | `display: flex; position: relative;`                                                   | indicator 절대 배치    |
+| `collection`       | `display: flex; flex-direction: column;`                                               | 리스트 구조            |
+| `overlay`          | `position: fixed;`                                                                     | 포털 배치              |
+| `calendar`         | `display: grid;`                                                                       | 날짜 그리드            |
+
 ### Phase 2a: CSSGenerator Level 1 확장 (Gate G3)
 
 현재 지원 중: base styles (Phase 2-pre에서 Archetype 분기 완료), variant 색상, size 물리 속성, state 효과, token→CSS 변수 변환.
@@ -382,6 +504,99 @@ VariantSpec에 `outlineBackground`/`outlineText`/`outlineBorder` 추가 (fillSty
 VariantSpec.background를 `TokenRef | string`으로 확장 (CSS gradient 직접 전달).
 SizeSpec에 `iconOnlyPadding` 추가.
 
+#### `AnimationSpec` 타입 정의
+
+`ComponentSpec.animations` 및 `CompositionSpec.animations`에서 사용하는 `@keyframes` 정의 타입:
+
+```typescript
+// spec.types.ts
+interface AnimationSpec {
+  name: string; // @keyframes 이름 (예: "progress-indeterminate", "checkmark")
+  duration: string; // CSS duration (예: "200ms", "1.5s")
+  timingFunction: string; // CSS easing (예: "ease", "ease-in-out", "cubic-bezier(0.4, 0, 0.2, 1)")
+  iterationCount?: string; // "infinite" | 숫자 (기본: "1")
+  keyframes: AnimationKeyframe[];
+}
+
+interface AnimationKeyframe {
+  offset: string; // "0%", "50%", "100%", "from", "to"
+  properties: Record<string, string>; // CSS 속성 → 값
+}
+
+// 사용 예: ProgressBar indeterminate 애니메이션
+const progressAnimation: AnimationSpec = {
+  name: "progress-indeterminate",
+  duration: "1.5s",
+  timingFunction: "ease",
+  iterationCount: "infinite",
+  keyframes: [
+    { offset: "0%", properties: { transform: "translateX(-100%)" } },
+    { offset: "100%", properties: { transform: "translateX(200%)" } },
+  ],
+};
+
+// 사용 예: Checkbox 체크마크 애니메이션
+const checkmarkAnimation: AnimationSpec = {
+  name: "checkmark",
+  duration: "200ms",
+  timingFunction: "ease",
+  keyframes: [
+    { offset: "from", properties: { "stroke-dashoffset": "44" } },
+    { offset: "to", properties: { "stroke-dashoffset": "0" } },
+  ],
+};
+```
+
+CSSGenerator는 `spec.animations`를 순회하며 Phase 3b에서 `@keyframes` 블록을 자동 생성한다.
+
+#### 생성 CSS 출력 형식 규칙
+
+CSSGenerator가 출력하는 CSS의 형식을 통일한다:
+
+**파일명 규칙**:
+
+```
+packages/shared/src/components/styles/generated/{ComponentName}.css
+```
+
+- 기존 수동 CSS와 동일 디렉토리의 `generated/` 서브디렉토리에 출력
+- 파일명은 PascalCase로 Spec name과 일치 (예: `ButtonSpec.name = "Button"` → `generated/Button.css`)
+
+**헤더 주석**:
+
+```css
+/* ============================================================
+ * AUTO-GENERATED from ButtonSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/Button.spec.ts
+ * Generator: packages/specs/scripts/generate-css.ts
+ * Archetype: button
+ * Generated: 2026-03-15T12:00:00Z
+ * ============================================================ */
+```
+
+**CSS 구조 규칙**:
+
+| 규칙                 | 설정                                   | 근거                                                                                                        |
+| -------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `@layer`             | 사용하지 않음                          | 기존 수동 CSS가 `@layer` 미사용, 혼합 기간 cascade 충돌 방지                                                |
+| CSS 변수 fallback    | 포함                                   | `var(--btn-height, 30px)` — utility CSS가 fallback 패턴 사용 (ADR-033)                                      |
+| Prettier 포맷        | 적용                                   | PostToolUse hook이 자동 포맷, `.prettierrc` 설정 준수                                                       |
+| 선택자 순서          | base → variant → size → state → @media | 기존 수동 CSS 관례 준수                                                                                     |
+| `data-*` 선택자 래핑 | `:where()` 미사용                      | specificity 유지 — 기존 CSS와 동일 (`:where([data-hovered])` 패턴은 `.button-base` utility 내부에서만 사용) |
+| 중복 선언            | 금지                                   | `validate:sync`가 생성 CSS↔Spec 1:1 대응 검증                                                               |
+
+**import 전환 규칙**:
+
+```typescript
+// packages/shared/src/components/styles/index.css
+// 전환 전
+@import "./Button.css";
+// 전환 후
+@import "./generated/Button.css";
+// 롤백 시
+@import "./Button.css";  // generated/ 경로만 제거
+```
+
 ### Phase 2c: Tier 1 — Primitive CSS 전환
 
 React Aria Primitive 단위로 CSS를 생성한다. **Composite 내부에서 재사용되는 Primitive가 먼저 전환되어야** Tier 2(Composite) 전환이 가능하다.
@@ -394,6 +609,50 @@ React Aria Primitive 단위로 CSS를 생성한다. **Composite 내부에서 재
 3. 시각 검증 통과 → 기존 Button.css 삭제
 4. 실패 시 → import 경로만 되돌리면 즉시 롤백
 ```
+
+#### 대규모 전환 롤백 전략
+
+39개 파일을 한 번에 전환하지 않는다. **배치 단위 전환 + 혼합 상태 관리** 전략:
+
+**배치 전환 순서** (의존성 역순):
+
+| 배치 | 대상                                                                                                          | 전제 조건                 | 롤백 단위           |
+| :--: | ------------------------------------------------------------------------------------------------------------- | ------------------------- | ------------------- |
+|  1   | simple Archetype (~9개): Badge, Tag, Separator, Skeleton, ColorSwatch, Icon, Tooltip, Breadcrumbs, Disclosure | Phase 2a Level 1 완료     | 개별 파일           |
+|  2   | button Archetype (3개): Button, ToggleButton, Link                                                            | 배치 1 검증 완료          | 개별 파일           |
+|  3   | 나머지 Tier 1 (~10개): Input, ListBox, Popover, Checkbox, Radio, Switch, Slider, Tab, ProgressBar, Menu       | 배치 2 검증 + G4-pre 통과 | Archetype 단위      |
+|  4   | Tier 2 Composite (~17개)                                                                                      | Tier 1 전체 완료          | 패턴 단위 (A/B/C/D) |
+
+**혼합 상태 관리**:
+
+전환 기간 중 `index.css`에서 수동 CSS와 생성 CSS가 공존한다:
+
+```css
+/* index.css — 혼합 상태 */
+/* 배치 1 완료: generated */
+@import "./generated/Badge.css";
+@import "./generated/Tag.css";
+@import "./generated/Separator.css";
+
+/* 배치 2 진행중: 수동 유지 */
+@import "./Button.css";
+@import "./ToggleButton.css";
+
+/* 미전환: 수동 유지 */
+@import "./Select.css";
+@import "./DatePicker.css";
+```
+
+**롤백 시나리오**:
+
+| 상황                                 | 조치                                                              | 영향 범위   |
+| ------------------------------------ | ----------------------------------------------------------------- | ----------- |
+| 개별 파일 시각 불일치                | `index.css`에서 해당 1줄을 수동 CSS 경로로 되돌림                 | 1개 파일    |
+| Archetype 전체 실패 (G4-pre 실패 등) | 해당 Archetype 파일들을 일괄 수동 경로로 되돌림                   | 3~9개 파일  |
+| CSSGenerator 근본 결함               | `generated/` 디렉토리 전체 무시, 모든 import를 수동 경로로 되돌림 | 전체        |
+| Tier 2 delegation 오류               | 해당 Composite만 수동 CSS로 롤백 (Tier 1은 유지)                  | 1~17개 파일 |
+
+> **핵심**: 기존 수동 CSS 파일은 **생성 CSS 검증 완료 후에만 삭제**한다. 검증 전까지 수동 CSS와 생성 CSS가 양립하며, `index.css`의 import 경로 1줄 변경만으로 즉시 롤백할 수 있다. git에서 `index.css` 파일 1개만 revert하면 어떤 시점으로든 되돌릴 수 있다.
 
 **Tier 1 Primitive 전체 목록 (코드베이스 실측 기반):**
 
@@ -444,6 +703,565 @@ React Aria Primitive 단위로 CSS를 생성한다. **Composite 내부에서 재
 | **overlay**            | Popover, Dialog, Toast                                                               | 애니메이션 + placement                              | sizes 없이 variant/state 기반                     |
 | **calendar**           | Calendar/Cell                                                                        | grid + date state                                   | sizes 없음, 상태 기반                             |
 
+#### Archetype 템플릿 구현 상세 (코드베이스 실측 기반)
+
+각 Archetype의 **Spec shapes → CSS 변환 로직**을 코드베이스 실측 데이터로 기술한다. CSSGenerator가 Archetype을 인식하면 해당 템플릿의 CSS 구조를 출력한다.
+
+##### 1. `simple` Archetype (Badge, Tag, Separator, Skeleton, ColorSwatch, Icon 등)
+
+**Spec 데이터 구조** (Badge.spec.ts 실측):
+
+```typescript
+// sizes
+xs: { height: 16, paddingX: 8, paddingY: 2, fontSize: "{typography.text-2xs}", gap: 2 }
+sm: { height: 20, paddingX: 12, paddingY: 4, fontSize: "{typography.text-xs}", gap: 4 }
+md: { height: 24, paddingX: 16, paddingY: 8, fontSize: "{typography.text-sm}", gap: 4 }
+lg: { height: 28, paddingX: 24, paddingY: 8, fontSize: "{typography.text-base}", gap: 6 }
+xl: { height: 32, paddingX: 32, paddingY: 12, fontSize: "{typography.text-lg}", gap: 8 }
+
+// shapes → roundRect(bg) + text (width/height: "auto" 패턴)
+```
+
+**생성 CSS 구조**:
+
+```css
+/* Level 1: variant + size + state → data-* 선택자 */
+.react-aria-Badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* variant — VariantSpec에서 직접 매핑 */
+.react-aria-Badge[data-variant="accent"] {
+  background: var(--accent);
+  color: var(--fg-on-accent);
+}
+.react-aria-Badge[data-variant="informative"] {
+  background: var(--color-info-100);
+  color: var(--color-info-600);
+}
+
+/* size — SizeSpec에서 직접 매핑 */
+.react-aria-Badge[data-size="xs"] {
+  height: 16px;
+  padding: 2px 8px;
+  font-size: var(--text-2xs);
+  gap: 2px;
+  border-radius: var(--radius-full);
+}
+.react-aria-Badge[data-size="md"] {
+  height: 24px;
+  padding: 8px 16px;
+  font-size: var(--text-sm);
+  gap: 4px;
+  border-radius: var(--radius-full);
+}
+```
+
+**변환 규칙**: SizeSpec 필드 → CSS 속성 1:1 매핑. 추가 로직 불필요.
+
+| SizeSpec 필드          | CSS 속성        | 변환                          |
+| ---------------------- | --------------- | ----------------------------- |
+| `height`               | `height`        | `${value}px`                  |
+| `paddingX`, `paddingY` | `padding`       | `${paddingY}px ${paddingX}px` |
+| `fontSize`             | `font-size`     | `tokenToCSSVar(value)`        |
+| `borderRadius`         | `border-radius` | `tokenToCSSVar(value)`        |
+| `gap`                  | `gap`           | `${value}px`                  |
+| `iconSize`             | `--icon-size`   | `${value}px`                  |
+
+##### 2. `button` Archetype (Button, ToggleButton, Link)
+
+**Spec 데이터 구조** (Button.spec.ts 실측):
+
+```typescript
+// sizes
+xs: { height: 20, paddingX: 4, paddingY: 1, fontSize: "{typography.text-2xs}", iconSize: 12, gap: 4 }
+sm: { height: 22, paddingX: 8, paddingY: 2, fontSize: "{typography.text-xs}", iconSize: 14, gap: 6 }
+md: { height: 30, paddingX: 12, paddingY: 4, fontSize: "{typography.text-sm}", iconSize: 16, gap: 8 }
+lg: { height: 42, paddingX: 16, paddingY: 8, fontSize: "{typography.text-base}", iconSize: 20, gap: 10 }
+xl: { height: 54, paddingX: 24, paddingY: 12, fontSize: "{typography.text-lg}", iconSize: 24, gap: 12 }
+
+// shapes → roundRect(bg) + border + icon_font + text (icon-only / icon+text / text-only 3모드)
+```
+
+**생성 CSS 구조**:
+
+```css
+/* ADR-018 .button-base utility 참조 — 자동 hover/pressed 파생 */
+.react-aria-Button {
+  /* base styles from .button-base */
+  --btn-height: 30px;
+  --btn-padding: 4px 12px;
+  --btn-font-size: var(--text-sm);
+  --btn-line-height: var(--text-sm--line-height);
+  --btn-icon-size: 16px;
+  --btn-gap: 8px;
+  --btn-radius: var(--radius-md);
+}
+
+/* variant — fillStyle 분기 */
+.react-aria-Button[data-variant="accent"][data-fill-style="fill"] {
+  --button-color: var(--accent); /* VariantSpec.background */
+  --button-text: var(--fg-on-accent); /* VariantSpec.text */
+}
+.react-aria-Button[data-variant="accent"][data-fill-style="outline"] {
+  --button-color: transparent;
+  --button-text: var(--accent);
+  --button-border: var(--accent);
+}
+
+/* size — SizeSpec → CSS 변수 위임 */
+.react-aria-Button[data-size="xs"] {
+  --btn-height: 20px;
+  --btn-padding: 1px 4px;
+  --btn-font-size: var(--text-2xs);
+  --btn-icon-size: 12px;
+  --btn-gap: 4px;
+}
+
+/* icon-only — SizeSpec.iconOnlyPadding (Phase 2b 확장) */
+.react-aria-Button[data-icon-only] {
+  --btn-padding: 0;
+  aspect-ratio: 1;
+}
+```
+
+**변환 규칙**: SizeSpec → `--btn-*` CSS 변수 매핑. `.button-base` utility가 hover/pressed 파생을 자동 처리.
+
+| SizeSpec 필드          | CSS 변수            | 비고                                              |
+| ---------------------- | ------------------- | ------------------------------------------------- |
+| `height`               | `--btn-height`      | `.button-base`가 `height: var(--btn-height)` 적용 |
+| `paddingX`, `paddingY` | `--btn-padding`     | `${paddingY}px ${paddingX}px`                     |
+| `fontSize`             | `--btn-font-size`   | `tokenToCSSVar()`                                 |
+| `iconSize`             | `--btn-icon-size`   | 아이콘 크기                                       |
+| `gap`                  | `--btn-gap`         | 아이콘-텍스트 간격                                |
+| `borderRadius`         | `--btn-radius`      | `tokenToCSSVar()`                                 |
+| `lineHeight`           | `--btn-line-height` | Phase 0a SizeSpec 확장                            |
+| `fontWeight`           | `--btn-font-weight` | Phase 0a SizeSpec 확장                            |
+
+##### 3. `toggle-indicator` Archetype (Switch, Checkbox, Radio) — G4-pre POC 대상
+
+3개 Primitive가 모두 **indicator + label** 구조를 공유하지만, indicator의 기하학적 관계가 컴포넌트마다 다르다.
+
+**Switch — Spec DIMENSIONS 실측**:
+
+```typescript
+SWITCH_DIMENSIONS = {
+  S: { trackWidth: 36, trackHeight: 20, thumbSize: 14, thumbOffset: 3 },
+  M: { trackWidth: 44, trackHeight: 24, thumbSize: 18, thumbOffset: 3 },
+  L: { trackWidth: 52, trackHeight: 28, thumbSize: 22, thumbOffset: 3 },
+};
+// shapes: track(roundRect) + thumb(circle) + border + label(text)
+```
+
+**CSS 생성 목표** (Switch.css 실측 기반):
+
+```css
+.react-aria-Switch {
+  display: flex;
+  align-items: center;
+  gap: var(--switch-gap);
+}
+
+/* indicator 컨테이너 */
+.react-aria-Switch .indicator {
+  position: relative;
+  width: var(--switch-track-width);
+  height: var(--switch-track-height);
+  border-radius: var(--switch-track-height); /* pill shape: height/2 */
+  background: var(--bg-emphasis);
+  transition: background 200ms;
+}
+
+/* thumb — 기하학적 관계 (G4-pre 핵심) */
+.react-aria-Switch .indicator::before {
+  content: "";
+  position: absolute;
+  width: var(--switch-thumb-size);
+  height: var(--switch-thumb-size);
+  border-radius: 50%;
+  top: var(--switch-thumb-offset);
+  left: var(--switch-thumb-offset);
+  background: white;
+  transition: transform 200ms;
+}
+
+/* checked 상태 — translateX 기하학 */
+.react-aria-Switch[data-selected] .indicator::before {
+  /* 이동 거리 = trackWidth - thumbSize - (thumbOffset × 2) */
+  transform: translateX(
+    calc(
+      var(--switch-track-width) - var(--switch-thumb-size) -
+        var(--switch-thumb-offset) * 2
+    )
+  );
+}
+
+/* size 매핑 — SWITCH_DIMENSIONS에서 직접 추출 */
+.react-aria-Switch[data-size="sm"] {
+  --switch-track-width: 36px;
+  --switch-track-height: 20px;
+  --switch-thumb-size: 14px;
+  --switch-thumb-offset: 3px;
+  --switch-gap: 8px;
+}
+.react-aria-Switch[data-size="md"] {
+  --switch-track-width: 44px;
+  --switch-track-height: 24px;
+  --switch-thumb-size: 18px;
+  --switch-thumb-offset: 3px;
+  --switch-gap: 10px;
+}
+```
+
+**Checkbox — Spec DIMENSIONS 실측**:
+
+```typescript
+CHECKBOX_BOX_SIZES = { sm: 16, md: 20, lg: 24 };
+// shapes: box(roundRect) + border + checkmark(line×2) + indeterminate(line×1) + label(text)
+```
+
+**CSS 생성 목표** (Checkbox.css 실측 기반):
+
+```css
+.react-aria-Checkbox .checkbox {
+  width: var(--cb-box-size);
+  height: var(--cb-box-size);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* 체크마크 — Spec line shape → SVG stroke CSS (G4-pre 핵심) */
+.react-aria-Checkbox[data-selected] .checkbox svg {
+  stroke: var(--fg-on-accent);
+  stroke-width: 2.5px;
+  stroke-dasharray: 22;
+  stroke-dashoffset: 44;
+  animation: checkmark 200ms ease forwards;
+}
+
+/* size 매핑 */
+.react-aria-Checkbox[data-size="sm"] {
+  --cb-box-size: 16px;
+  --cb-font-size: var(--text-sm);
+}
+.react-aria-Checkbox[data-size="md"] {
+  --cb-box-size: 20px;
+  --cb-font-size: var(--text-base);
+}
+.react-aria-Checkbox[data-size="lg"] {
+  --cb-box-size: 24px;
+  --cb-font-size: var(--text-lg);
+}
+```
+
+**Radio — Spec DIMENSIONS 실측**:
+
+```typescript
+RADIO_DIMENSIONS = {
+  S: { outer: 16, inner: 6 },
+  M: { outer: 20, inner: 8 },
+  L: { outer: 24, inner: 10 },
+};
+// shapes: ring(circle, fillAlpha:0) + border + inner(circle, selected만) + label(text)
+```
+
+**CSS 생성 목표**:
+
+```css
+/* 외곽 원 */
+.react-aria-Radio .radio-circle {
+  width: var(--radio-outer);
+  height: var(--radio-outer);
+  border: 2px solid var(--border);
+  border-radius: 50%;
+}
+
+/* 내부 원 — selected 시만 표시 */
+.react-aria-Radio[data-selected] .radio-circle::before {
+  content: "";
+  width: var(--radio-inner);
+  height: var(--radio-inner);
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* size 매핑 */
+.react-aria-Radio[data-size="sm"] {
+  --radio-outer: 16px;
+  --radio-inner: 6px;
+}
+.react-aria-Radio[data-size="md"] {
+  --radio-outer: 20px;
+  --radio-inner: 8px;
+}
+.react-aria-Radio[data-size="lg"] {
+  --radio-outer: 24px;
+  --radio-inner: 10px;
+}
+```
+
+**toggle-indicator 공통 변환 규칙**:
+
+| Spec 데이터                    | CSS 변환                      | 비고              |
+| ------------------------------ | ----------------------------- | ----------------- |
+| `DIMENSIONS[size].trackWidth`  | `--switch-track-width`        | Switch 전용       |
+| `DIMENSIONS[size].thumbSize`   | `--switch-thumb-size`         | Switch 전용       |
+| `DIMENSIONS[size].thumbOffset` | `--switch-thumb-offset`       | Switch 전용       |
+| `BOX_SIZES[size]`              | `--cb-box-size`               | Checkbox 전용     |
+| `DIMENSIONS[size].outer/inner` | `--radio-outer/inner`         | Radio 전용        |
+| `SizeSpec.gap`                 | `gap` (indicator–label 간격)  | 공통              |
+| `SizeSpec.fontSize`            | `font-size` (label)           | 공통              |
+| Spec `line` shape              | SVG `stroke` + `stroke-width` | Checkbox 체크마크 |
+| Spec `circle` shape (selected) | `::before` pseudo-element     | Radio inner dot   |
+
+> **G4-pre 검증 포인트**: (1) Switch `translateX(calc(...))` 기하학이 DIMENSIONS 데이터로 완전 기술 가능한가, (2) Checkbox `line` shape 좌표 → SVG `stroke-dasharray`/`stroke-dashoffset` 자동 변환이 가능한가, (3) 세 컴포넌트의 공통 패턴(indicator + label + gap + fontSize)을 단일 템플릿 분기로 처리 가능한가.
+
+##### 4. `progress` Archetype (ProgressBar, ProgressCircle, Meter)
+
+**Spec 데이터 구조** (ProgressBar.spec.ts 실측):
+
+```typescript
+PROGRESSBAR_DIMENSIONS = {
+  S: { barHeight: 4, width: 200 },
+  M: { barHeight: 8, width: 240 },
+  L: { barHeight: 12, width: 320 },
+};
+// shapes: label+value 텍스트 행 + track(roundRect) + fill(roundRect) + indeterminate-fill
+// hasLabelRow → offsetY = fontSize + gap
+```
+
+**생성 CSS 구조**:
+
+```css
+.react-aria-ProgressBar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--progress-gap);
+  width: var(--progress-width);
+}
+
+/* 라벨+값 행 */
+.react-aria-ProgressBar .label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--progress-font-size);
+}
+
+/* 트랙 */
+.react-aria-ProgressBar .track {
+  height: var(--progress-bar-height);
+  border-radius: calc(var(--progress-bar-height) / 2); /* pill */
+  background: var(--bg-muted);
+  overflow: hidden;
+}
+
+/* 채우기 */
+.react-aria-ProgressBar .fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 200ms;
+}
+
+/* indeterminate */
+.react-aria-ProgressBar[data-indeterminate] .fill {
+  width: 50%;
+  animation: progress-indeterminate 1.5s ease infinite;
+}
+
+/* size 매핑 — PROGRESSBAR_DIMENSIONS 직접 추출 */
+.react-aria-ProgressBar[data-size="sm"] {
+  --progress-bar-height: 4px;
+  --progress-width: 200px;
+  --progress-font-size: var(--text-xs);
+  --progress-gap: 6px;
+}
+.react-aria-ProgressBar[data-size="md"] {
+  --progress-bar-height: 8px;
+  --progress-width: 240px;
+  --progress-font-size: var(--text-sm);
+  --progress-gap: 8px;
+}
+```
+
+**변환 규칙**:
+
+| Spec 데이터                  | CSS 변환                 | 비고                   |
+| ---------------------------- | ------------------------ | ---------------------- |
+| `DIMENSIONS[size].barHeight` | `--progress-bar-height`  | track + fill 높이      |
+| `DIMENSIONS[size].width`     | `--progress-width`       | 컨테이너 폭            |
+| `SizeSpec.fontSize`          | `--progress-font-size`   | 라벨/값 텍스트         |
+| `SizeSpec.gap`               | `--progress-gap`         | 라벨 행–트랙 간격      |
+| `@keyframes`                 | `progress-indeterminate` | Phase 3b에서 공통 생성 |
+
+##### 5. `slider` Archetype (Slider + Track/Thumb)
+
+**Spec 데이터 구조** (Slider.spec.ts 실측):
+
+```typescript
+SLIDER_DIMENSIONS = {
+  S: { trackHeight: 4, thumbSize: 14 },
+  M: { trackHeight: 6, thumbSize: 18 },
+  L: { trackHeight: 8, thumbSize: 22 },
+};
+// shapes: label+value + track(roundRect) + fill(roundRect) + thumb(circle) + thumb-border
+// child spec: SliderTrack, SliderThumb, SliderOutput
+```
+
+**생성 CSS 구조**:
+
+```css
+.react-aria-Slider {
+  display: grid;
+  grid-template-areas:
+    "label output"
+    "track track";
+  grid-template-columns: 1fr auto;
+}
+
+.react-aria-SliderTrack {
+  grid-area: track;
+  height: var(--slider-track-height);
+  border-radius: calc(var(--slider-track-height) / 2);
+  background: var(--bg-muted);
+  position: relative;
+}
+
+.react-aria-SliderThumb {
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid white;
+  /* top 계산: track 중심에 thumb 배치 */
+  top: calc(50% - var(--slider-thumb-size) / 2);
+}
+
+/* size — 부모 Slider sizes에서 위임 (Track/Thumb에 sizes 없음) */
+.react-aria-Slider[data-size="sm"] {
+  --slider-track-height: 4px;
+  --slider-thumb-size: 14px;
+  font-size: var(--text-xs);
+}
+.react-aria-Slider[data-size="md"] {
+  --slider-track-height: 6px;
+  --slider-thumb-size: 18px;
+  font-size: var(--text-sm);
+}
+```
+
+**특수 사항**: Track/Thumb는 독립 SizeSpec이 없으므로 부모 Slider의 DIMENSIONS에서 CSS 변수를 위임받는다. 이는 Tier 2 Composite의 delegation 패턴과 동일한 구조이지만, Tier 1 내부에서 발생하는 예외 케이스다.
+
+##### 6. `tabs-indicator` Archetype (Tab + SelectionIndicator)
+
+**Spec 데이터** (CSS 실측 기반 — Tab.spec.ts는 TabsSpec 내부에 포함):
+
+```css
+/* SelectionIndicator — orientation별 indicator */
+.react-aria-Tabs[data-orientation="horizontal"] .selection-indicator {
+  height: 3px;
+  bottom: 0;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+  transition:
+    left 200ms ease-out,
+    width 200ms ease-out;
+}
+
+.react-aria-Tabs[data-orientation="vertical"] .selection-indicator {
+  width: 3px;
+  right: 0;
+  border-radius: 3px 0 0 3px;
+  transition:
+    top 200ms ease-out,
+    height 200ms ease-out;
+}
+```
+
+**변환 규칙**: Tab size는 `data-size` 속성으로 font-size/padding을 결정하고, SelectionIndicator는 JS로 위치/크기를 동적 계산 (CSS transition만 정의). Archetype 템플릿은 orientation 분기 + transition 정의를 자동 생성한다.
+
+##### 7. `collection` Archetype (ListBox/Item, Menu/Item)
+
+**CSS 핵심 패턴** (ListBox.css 실측):
+
+```css
+.react-aria-ListBoxItem {
+  padding: var(--item-padding);
+  font-size: var(--item-font-size);
+  cursor: pointer;
+  outline: none;
+}
+
+/* state — data-* 선택자 */
+.react-aria-ListBoxItem[data-hovered] {
+  background: var(--bg-muted);
+}
+.react-aria-ListBoxItem[data-selected] {
+  background: var(--accent-subtle);
+}
+.react-aria-ListBoxItem[data-focused] {
+  outline: 2px solid var(--focus-ring);
+}
+.react-aria-ListBoxItem[data-disabled] {
+  opacity: 0.38;
+}
+
+/* selection-mode="multiple" — checkmark 표시 */
+.react-aria-ListBox[data-selection-mode="multiple"] .react-aria-ListBoxItem {
+  padding-left: calc(var(--item-padding) + 20px);
+}
+```
+
+**변환 규칙**: VariantSpec → `data-*` state 색상 + SizeSpec → padding/font-size. `selection-mode` 분기는 Archetype 템플릿이 자동 생성.
+
+##### 8. `overlay` Archetype (Popover, Dialog, Toast)
+
+sizes가 없으므로 Level 1 size 생성 불필요. 핵심은 placement 기반 방향 + entering/exiting 애니메이션:
+
+```css
+.react-aria-Popover {
+  --popover-offset: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-overlay);
+  box-shadow: var(--shadow-lg);
+}
+
+/* placement 방향 */
+.react-aria-Popover[data-placement="bottom"] {
+  margin-top: var(--popover-offset);
+}
+.react-aria-Popover[data-placement="top"] {
+  margin-bottom: var(--popover-offset);
+}
+
+/* entering/exiting 애니메이션 */
+.react-aria-Popover[data-entering] {
+  animation: popover-enter 200ms ease-out;
+}
+.react-aria-Popover[data-exiting] {
+  animation: popover-exit 150ms ease-in;
+}
+```
+
+**변환 규칙**: VariantSpec → 배경/테두리/그림자 + StateStyles → entering/exiting 애니메이션. `ComponentSpec.animations`에서 `@keyframes` 자동 생성 (Phase 3b).
+
+##### Archetype 템플릿 복잡도 요약
+
+| Archetype            | 변환 복잡도 |     SizeSpec → CSS     |      추가 데이터 소스      | G4-pre 필요 |
+| -------------------- | :---------: | :--------------------: | :------------------------: | :---------: |
+| **simple**           |    낮음     |        1:1 매핑        |             —              |      X      |
+| **button**           |    낮음     |     `--btn-*` 변수     |   `.button-base` utility   |      X      |
+| **toggle-indicator** |  **높음**   |      1:1 + 기하학      |       `*_DIMENSIONS`       |    **O**    |
+| **progress**         |    중간     |   1:1 + `@keyframes`   |       `*_DIMENSIONS`       |      X      |
+| **slider**           |    중간     |      grid + 위임       |       `*_DIMENSIONS`       |      X      |
+| **tabs-indicator**   |    중간     |    orientation 분기    |        JS 동적 위치        |      X      |
+| **collection**       |    낮음     | state + selection-mode |             —              |      X      |
+| **overlay**          |    낮음     | placement + animation  | `ComponentSpec.animations` |      X      |
+| **calendar**         |    중간     |   grid + date state    |             —              |      X      |
+
 ### G4-pre: toggle-indicator Archetype POC (Phase 3 착수 전 독립 검증)
 
 Phase 3 착수 전에 가장 불확실한 archetype인 toggle-indicator의 실현 가능성을 검증한다.
@@ -483,6 +1301,12 @@ interface CompositionSpec {
   // CSS Variable Delegation — size별 자식 변수 override
   // ToggleButtonGroup, Select, DatePicker 모두 동일한 이 구조로 기술
   delegation: DelegationSpec[];
+  // variant 위임 — 부모 variant/attribute → 자식 CSS 변수 (패턴 A/C에서 사용)
+  variantDelegation?: VariantDelegationSpec[];
+  // mode 분기 — 부모 data-* 속성 기반 자식 CSS 조건부 적용 (Select multi-select 등)
+  modeDelegation?: ModeDelegationSpec[];
+  // orientation 분기 — horizontal/vertical CSS 분기 (Tabs 등)
+  orientationCSS?: Record<string, Record<string, string>>;
   // 애니메이션 (optional)
   animations?: AnimationSpec[];
 }
@@ -496,6 +1320,19 @@ interface PrimitiveRef {
 interface DelegationSpec {
   childSelector: string; // '.react-aria-Button'
   variables: Record<string, Record<string, string>>; // size → { varName → value }
+}
+
+interface VariantDelegationSpec {
+  childSelector: string; // '.react-aria-Checkbox'
+  attribute: string; // 'data-checkbox-emphasized', 'data-variant'
+  variables: Record<string, Record<string, string>>; // attrValue → { varName → value }
+}
+
+interface ModeDelegationSpec {
+  attribute: string; // 'data-selection-mode'
+  value: string; // 'multiple'
+  childSelector: string; // '.react-aria-ListBoxItem'
+  css: Record<string, string>; // { 'padding-left': 'calc(...)' }
 }
 
 // 예: Select와 ToggleButtonGroup은 동일한 구조
@@ -520,6 +1357,718 @@ interface DelegationSpec {
 //   }]
 // }
 ```
+
+#### CompositionSpec 구현 예시 — 4가지 패턴 유형 (코드베이스 실측)
+
+모든 Composite가 `Container(layout) + Primitive[] + --var override`인 것은 동일하지만, **delegation 복잡도와 자식 구조**에 따라 4가지 패턴 유형으로 분류된다. 아래 예시는 Factory 정의 + CSS 변수 위임을 실측하여 작성했다.
+
+##### 패턴 A: 동종 Primitive 반복 (delegation 0~1)
+
+가장 단순한 패턴. 동일한 Primitive를 반복 배치하며, CSS 변수 override가 거의 없다.
+
+```typescript
+// RadioGroup — delegation 0 (자식이 자체 size 처리)
+const RadioGroupComposition: CompositionSpec = {
+  layout: "flex-column",
+  primitives: [{ selector: ".react-aria-Radio", role: "item" }],
+  delegation: [],
+  // RadioGroup[data-radio-size] → Radio에 직접 data-size 전달 (CSS 변수 불필요)
+};
+
+// CheckboxGroup — delegation 0 + variant 위임
+const CheckboxGroupComposition: CompositionSpec = {
+  layout: "flex-column",
+  primitives: [{ selector: ".react-aria-Checkbox", role: "item" }],
+  delegation: [],
+  // data-checkbox-emphasized → Checkbox의 --selected-color 위임 (variant 레벨)
+  variantDelegation: [
+    {
+      childSelector: ".react-aria-Checkbox",
+      attribute: "data-checkbox-emphasized",
+      variables: {
+        "--selected-color": "var(--accent)",
+        "--checkmark-color": "var(--fg-on-accent)",
+      },
+    },
+  ],
+};
+```
+
+**생성 CSS** (RadioGroup):
+
+```css
+.react-aria-RadioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--field-gap);
+}
+/* delegation 없음 → size 블록 불필요 */
+```
+
+##### 패턴 B: Label + Control + FieldError (delegation 3~5)
+
+폼 필드의 표준 패턴. Label/Input/FieldError 3개 자식에 각각 CSS 변수를 위임한다.
+
+```typescript
+// TextField — delegation 3 (CSS 실측: --tf-label-size, --tf-input-*, --tf-error-size)
+const TextFieldComposition: CompositionSpec = {
+  layout: "flex-column",
+  primitives: [
+    { selector: ".react-aria-Label", role: "label" },
+    { selector: ".react-aria-Input", role: "input" },
+    { selector: ".react-aria-FieldError", role: "error" },
+  ],
+  delegation: [
+    {
+      childSelector: ".react-aria-Label",
+      variables: {
+        xs: { "--label-font-size": "var(--text-2xs)" },
+        sm: { "--label-font-size": "var(--text-xs)" },
+        md: { "--label-font-size": "var(--text-sm)" },
+        lg: { "--label-font-size": "var(--text-base)" },
+        xl: { "--label-font-size": "var(--text-lg)" },
+      },
+    },
+    {
+      childSelector: ".react-aria-Input",
+      variables: {
+        xs: {
+          "--input-padding": "var(--spacing-3xs) var(--spacing-xs)",
+          "--input-font-size": "var(--text-2xs)",
+          "--input-height": "20px",
+        },
+        sm: {
+          "--input-padding": "var(--spacing-2xs) var(--spacing-sm)",
+          "--input-font-size": "var(--text-xs)",
+          "--input-height": "22px",
+        },
+        md: {
+          "--input-padding": "var(--spacing-xs) var(--spacing-md)",
+          "--input-font-size": "var(--text-sm)",
+          "--input-height": "30px",
+        },
+        lg: {
+          "--input-padding": "var(--spacing-sm) var(--spacing-lg)",
+          "--input-font-size": "var(--text-base)",
+          "--input-height": "42px",
+        },
+        xl: {
+          "--input-padding": "var(--spacing-md) var(--spacing-xl)",
+          "--input-font-size": "var(--text-lg)",
+          "--input-height": "54px",
+        },
+      },
+    },
+    {
+      childSelector: ".react-aria-FieldError",
+      variables: {
+        xs: { "--error-font-size": "var(--text-2xs)" },
+        sm: { "--error-font-size": "var(--text-2xs)" },
+        md: { "--error-font-size": "var(--text-xs)" },
+        lg: { "--error-font-size": "var(--text-sm)" },
+        xl: { "--error-font-size": "var(--text-base)" },
+      },
+    },
+  ],
+};
+
+// NumberField — delegation 5 (CSS 실측: --nf-btn-width, --nf-input-*, --nf-btn-*)
+const NumberFieldComposition: CompositionSpec = {
+  layout: "flex-column",
+  primitives: [
+    { selector: ".react-aria-Label", role: "label" },
+    { selector: ".react-aria-Group", role: "group" }, // Button(-) + Input + Button(+) 래퍼
+    { selector: ".react-aria-Input", role: "input" },
+    { selector: ".react-aria-Button", role: "stepper", slot: "increment" },
+    { selector: ".react-aria-Button", role: "stepper", slot: "decrement" },
+    { selector: ".react-aria-FieldError", role: "error" },
+  ],
+  delegation: [
+    {
+      childSelector: ".react-aria-Label",
+      variables: {
+        xs: { "--label-font-size": "var(--text-2xs)" },
+        md: { "--label-font-size": "var(--text-sm)" },
+        lg: { "--label-font-size": "var(--text-base)" },
+      },
+    },
+    {
+      childSelector: ".react-aria-Input",
+      variables: {
+        xs: {
+          "--nf-input-width": "60px",
+          "--nf-input-padding": "0 var(--spacing-xs)",
+        },
+        md: {
+          "--nf-input-width": "120px",
+          "--nf-input-padding": "0 var(--spacing-md)",
+        },
+        lg: {
+          "--nf-input-width": "160px",
+          "--nf-input-padding": "0 var(--spacing-lg)",
+        },
+      },
+    },
+    {
+      childSelector: ".react-aria-Button",
+      variables: {
+        xs: { "--nf-btn-width": "24px", "--btn-font-size": "var(--text-xs)" },
+        md: { "--nf-btn-width": "32px", "--btn-font-size": "var(--text-sm)" },
+        lg: { "--nf-btn-width": "40px", "--btn-font-size": "var(--text-base)" },
+      },
+    },
+    {
+      childSelector: ".react-aria-Group",
+      variables: {
+        xs: {
+          "--nf-group-height": "20px",
+          "--nf-group-radius": "var(--radius-sm)",
+        },
+        md: {
+          "--nf-group-height": "30px",
+          "--nf-group-radius": "var(--radius-md)",
+        },
+        lg: {
+          "--nf-group-height": "42px",
+          "--nf-group-radius": "var(--radius-lg)",
+        },
+      },
+    },
+    {
+      childSelector: ".react-aria-FieldError",
+      variables: {
+        xs: { "--error-font-size": "var(--text-2xs)" },
+        md: { "--error-font-size": "var(--text-xs)" },
+        lg: { "--error-font-size": "var(--text-sm)" },
+      },
+    },
+  ],
+};
+```
+
+**NumberField 생성 CSS** (delegation 5 → 5개 자식 블록):
+
+```css
+.react-aria-NumberField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--field-gap);
+}
+
+/* Label */
+.react-aria-NumberField[data-size="md"] .react-aria-Label {
+  font-size: var(--text-sm);
+}
+
+/* Group (Button + Input 래퍼) */
+.react-aria-NumberField[data-size="md"] .react-aria-Group {
+  height: 30px;
+  border-radius: var(--radius-md);
+}
+
+/* Input */
+.react-aria-NumberField[data-size="md"] .react-aria-Input {
+  width: 120px;
+  padding: 0 var(--spacing-md);
+}
+
+/* Stepper Buttons */
+.react-aria-NumberField[data-size="md"] .react-aria-Button {
+  width: 32px;
+  font-size: var(--text-sm);
+}
+
+/* FieldError */
+.react-aria-NumberField[data-size="md"] .react-aria-FieldError {
+  font-size: var(--text-xs);
+}
+```
+
+##### 패턴 C: Trigger + Popup + Content (delegation 5~6)
+
+Select/ComboBox/DatePicker가 해당하는 패턴. Trigger → Popup → Content 3단 구조에 각각 CSS 변수를 위임한다.
+
+```typescript
+// Select — delegation 5 (CSS 실측: --select-btn-padding, --select-btn-font-size,
+//   --select-chevron-size, --select-label-size, --select-hint-size)
+const SelectComposition: CompositionSpec = {
+  layout: "flex-column",
+  primitives: [
+    { selector: ".react-aria-Label", role: "label" },
+    { selector: ".react-aria-Button", role: "trigger" },
+    { selector: ".react-aria-SelectValue", role: "value" },
+    { selector: ".react-aria-Popover", role: "popup" },
+    { selector: ".react-aria-ListBox", role: "content" },
+  ],
+  delegation: [
+    {
+      childSelector: ".react-aria-Label",
+      variables: {
+        xs: { "--select-label-size": "var(--text-2xs)" },
+        sm: { "--select-label-size": "var(--text-xs)" },
+        md: { "--select-label-size": "var(--text-sm)" },
+        lg: { "--select-label-size": "var(--text-base)" },
+        xl: { "--select-label-size": "var(--text-lg)" },
+      },
+    },
+    {
+      childSelector: ".react-aria-Button",
+      variables: {
+        xs: {
+          "--select-btn-padding":
+            "var(--spacing-3xs) var(--spacing-3xs) var(--spacing-3xs) var(--spacing-xs)",
+          "--select-btn-font-size": "var(--text-2xs)",
+          "--select-chevron-size": "14px",
+        },
+        sm: {
+          "--select-btn-padding":
+            "var(--spacing-2xs) var(--spacing-2xs) var(--spacing-2xs) var(--spacing-sm)",
+          "--select-btn-font-size": "var(--text-xs)",
+          "--select-chevron-size": "16px",
+        },
+        md: {
+          "--select-btn-padding":
+            "var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-md)",
+          "--select-btn-font-size": "var(--text-sm)",
+          "--select-chevron-size": "18px",
+        },
+        lg: {
+          "--select-btn-padding":
+            "var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) var(--spacing-lg)",
+          "--select-btn-font-size": "var(--text-base)",
+          "--select-chevron-size": "20px",
+        },
+        xl: {
+          "--select-btn-padding":
+            "var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-xl)",
+          "--select-btn-font-size": "var(--text-lg)",
+          "--select-chevron-size": "24px",
+        },
+      },
+    },
+    {
+      childSelector: ".react-aria-ListBox .react-aria-ListBoxItem",
+      variables: {
+        xs: {
+          padding: "var(--spacing-2xs) var(--spacing-xs)",
+          "font-size": "var(--text-2xs)",
+        },
+        sm: {
+          padding: "var(--spacing-sm) var(--spacing)",
+          "font-size": "var(--text-xs)",
+        },
+        md: {
+          padding: "var(--spacing-sm) var(--spacing-md)",
+          "font-size": "var(--text-base)",
+        },
+        lg: {
+          padding: "var(--spacing) var(--spacing-lg)",
+          "font-size": "var(--text-lg)",
+        },
+        xl: {
+          padding: "var(--spacing-md) var(--spacing-xl)",
+          "font-size": "var(--text-xl)",
+        },
+      },
+    },
+  ],
+  // variant 위임: --field-accent 변수로 Trigger border 색상 결정
+  variantDelegation: [
+    {
+      childSelector: ".react-aria-Button",
+      attribute: "data-variant",
+      variables: {
+        primary: { "--field-accent": "var(--accent)" },
+        secondary: { "--field-accent": "var(--bg-inset)" },
+        error: { "--field-accent": "var(--negative)" },
+      },
+    },
+  ],
+  // selection-mode="multiple" 분기
+  modeDelegation: [
+    {
+      attribute: "data-selection-mode",
+      value: "multiple",
+      childSelector: ".react-aria-ListBoxItem",
+      css: { "padding-left": "calc(var(--item-padding) + 20px)" },
+    },
+  ],
+};
+
+// DatePicker — delegation 6 (CSS 실측: --dp-input-*, --dp-btn-*, --dp-label-*,
+//   --dp-segment-*, --dp-calendar-*, --dp-hint-*)
+const DatePickerComposition: CompositionSpec = {
+  layout: "flex-column",
+  primitives: [
+    { selector: ".react-aria-Label", role: "label" },
+    { selector: ".react-aria-DateInput", role: "input" },
+    { selector: ".date-segment", role: "segment" },
+    { selector: ".react-aria-Button", role: "trigger" },
+    { selector: ".react-aria-Popover", role: "popup" },
+    { selector: ".react-aria-Calendar", role: "content" },
+  ],
+  delegation: [
+    {
+      childSelector: ".react-aria-Label",
+      variables: {
+        sm: { "--dp-label-size": "var(--text-xs)" },
+        md: { "--dp-label-size": "var(--text-sm)" },
+        lg: { "--dp-label-size": "var(--text-base)" },
+      },
+    },
+    {
+      childSelector: ".react-aria-DateInput",
+      variables: {
+        sm: {
+          "--dp-input-height": "22px",
+          "--dp-input-padding": "0 var(--spacing-sm)",
+          "--dp-input-font-size": "var(--text-xs)",
+        },
+        md: {
+          "--dp-input-height": "30px",
+          "--dp-input-padding": "0 var(--spacing-md)",
+          "--dp-input-font-size": "var(--text-sm)",
+        },
+        lg: {
+          "--dp-input-height": "42px",
+          "--dp-input-padding": "0 var(--spacing-lg)",
+          "--dp-input-font-size": "var(--text-base)",
+        },
+      },
+    },
+    {
+      childSelector: ".date-segment",
+      variables: {
+        sm: {
+          "--dp-segment-padding": "0 1px",
+          "--dp-segment-font-size": "var(--text-xs)",
+        },
+        md: {
+          "--dp-segment-padding": "0 2px",
+          "--dp-segment-font-size": "var(--text-sm)",
+        },
+        lg: {
+          "--dp-segment-padding": "0 4px",
+          "--dp-segment-font-size": "var(--text-base)",
+        },
+      },
+    },
+    {
+      childSelector: ".react-aria-Button",
+      variables: {
+        sm: { "--dp-btn-size": "18px" },
+        md: { "--dp-btn-size": "22px" },
+        lg: { "--dp-btn-size": "28px" },
+      },
+    },
+    {
+      childSelector: ".react-aria-Calendar",
+      variables: {
+        sm: {
+          "--dp-calendar-cell-size": "28px",
+          "--dp-calendar-font-size": "var(--text-xs)",
+        },
+        md: {
+          "--dp-calendar-cell-size": "36px",
+          "--dp-calendar-font-size": "var(--text-sm)",
+        },
+        lg: {
+          "--dp-calendar-cell-size": "44px",
+          "--dp-calendar-font-size": "var(--text-base)",
+        },
+      },
+    },
+    {
+      childSelector: ".react-aria-FieldError",
+      variables: {
+        sm: { "--error-font-size": "var(--text-2xs)" },
+        md: { "--error-font-size": "var(--text-xs)" },
+        lg: { "--error-font-size": "var(--text-sm)" },
+      },
+    },
+  ],
+};
+```
+
+**DatePicker 생성 CSS** (delegation 6 — 가장 복잡한 Composite):
+
+```css
+.react-aria-DatePicker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--field-gap);
+}
+
+/* 6개 자식 × 3개 size = 18개 규칙 블록 */
+/* 그러나 패턴은 동일: parent[data-size] child { --var: value } */
+
+.react-aria-DatePicker[data-size="md"] .react-aria-Label {
+  font-size: var(--text-sm);
+}
+.react-aria-DatePicker[data-size="md"] .react-aria-DateInput {
+  height: 30px;
+  padding: 0 var(--spacing-md);
+  font-size: var(--text-sm);
+}
+.react-aria-DatePicker[data-size="md"] .date-segment {
+  padding: 0 2px;
+  font-size: var(--text-sm);
+}
+.react-aria-DatePicker[data-size="md"] .react-aria-Button {
+  width: 22px;
+  height: 22px;
+}
+.react-aria-DatePicker[data-size="md"] .react-aria-Calendar .calendar-cell {
+  width: 36px;
+  height: 36px;
+  font-size: var(--text-sm);
+}
+.react-aria-DatePicker[data-size="md"] .react-aria-FieldError {
+  font-size: var(--text-xs);
+}
+```
+
+> **핵심 관찰**: DatePicker(delegation 6)와 RadioGroup(delegation 0)의 **생성 로직은 동일하다**. 차이는 `delegation[]` 배열의 길이뿐이다. CSSGenerator는 배열을 순회하며 `parent[data-size="${size}"] ${childSelector} { ${variables} }` 규칙을 기계적으로 출력한다.
+
+##### 패턴 C 추가 예시: ComboBox / SearchField
+
+Select와 구조적으로 동일하지만, Trigger가 **Input + Button 래퍼**인 점이 다르다:
+
+```typescript
+// ComboBox — delegation 5 (CSS 실측: --combo-input-*, --combo-btn-*, --combo-label-*)
+// Select와의 차이: Trigger가 Button이 아닌 ComboBoxWrapper(Input + Button)
+const ComboBoxComposition: CompositionSpec = {
+  layout: "flex-column",
+  primitives: [
+    { selector: ".react-aria-Label", role: "label" },
+    { selector: ".combo-box-wrapper", role: "wrapper" }, // Input + Button 래퍼
+    { selector: ".react-aria-Input", role: "input" },
+    { selector: ".react-aria-Button", role: "trigger" },
+    { selector: ".react-aria-Popover", role: "popup" },
+    { selector: ".react-aria-ListBox", role: "content" },
+  ],
+  delegation: [
+    {
+      childSelector: ".react-aria-Label",
+      variables: {
+        xs: { "--combo-label-size": "var(--text-2xs)" },
+        sm: { "--combo-label-size": "var(--text-xs)" },
+        md: { "--combo-label-size": "var(--text-sm)" },
+        lg: { "--combo-label-size": "var(--text-base)" },
+        xl: { "--combo-label-size": "var(--text-lg)" },
+      },
+    },
+    {
+      childSelector: ".combo-box-wrapper",
+      variables: {
+        xs: {
+          "--combo-wrapper-height": "20px",
+          "--combo-wrapper-radius": "var(--radius-sm)",
+        },
+        sm: {
+          "--combo-wrapper-height": "22px",
+          "--combo-wrapper-radius": "var(--radius-sm)",
+        },
+        md: {
+          "--combo-wrapper-height": "30px",
+          "--combo-wrapper-radius": "var(--radius-md)",
+        },
+        lg: {
+          "--combo-wrapper-height": "42px",
+          "--combo-wrapper-radius": "var(--radius-lg)",
+        },
+        xl: {
+          "--combo-wrapper-height": "54px",
+          "--combo-wrapper-radius": "var(--radius-xl)",
+        },
+      },
+    },
+    {
+      childSelector: ".react-aria-Input",
+      variables: {
+        xs: {
+          "--combo-input-padding": "0 var(--spacing-xs)",
+          "--combo-input-font-size": "var(--text-2xs)",
+        },
+        sm: {
+          "--combo-input-padding": "0 var(--spacing-sm)",
+          "--combo-input-font-size": "var(--text-xs)",
+        },
+        md: {
+          "--combo-input-padding": "0 var(--spacing-md)",
+          "--combo-input-font-size": "var(--text-sm)",
+        },
+        lg: {
+          "--combo-input-padding": "0 var(--spacing-lg)",
+          "--combo-input-font-size": "var(--text-base)",
+        },
+        xl: {
+          "--combo-input-padding": "0 var(--spacing-xl)",
+          "--combo-input-font-size": "var(--text-lg)",
+        },
+      },
+    },
+    {
+      childSelector: ".react-aria-Button",
+      variables: {
+        xs: { "--combo-btn-size": "16px" },
+        sm: { "--combo-btn-size": "18px" },
+        md: { "--combo-btn-size": "22px" },
+        lg: { "--combo-btn-size": "28px" },
+        xl: { "--combo-btn-size": "32px" },
+      },
+    },
+    {
+      childSelector: ".react-aria-ListBox .react-aria-ListBoxItem",
+      variables: {
+        xs: {
+          padding: "var(--spacing-2xs) var(--spacing-xs)",
+          "font-size": "var(--text-2xs)",
+        },
+        md: {
+          padding: "var(--spacing-sm) var(--spacing-md)",
+          "font-size": "var(--text-base)",
+        },
+        lg: {
+          padding: "var(--spacing) var(--spacing-lg)",
+          "font-size": "var(--text-lg)",
+        },
+      },
+    },
+  ],
+};
+
+// SearchField — delegation 4 (패턴 B와 C의 하이브리드)
+// Label + Control + FieldError (패턴 B) + clear Button (패턴 C적 요소)
+const SearchFieldComposition: CompositionSpec = {
+  layout: "grid", // grid: Input이 전체 폭, clear Button이 Input 내부 우측에 절대 배치
+  primitives: [
+    { selector: ".react-aria-Label", role: "label" },
+    { selector: ".react-aria-Input", role: "input" },
+    { selector: ".react-aria-Button", role: "clear" },
+    { selector: ".react-aria-FieldError", role: "error" },
+  ],
+  delegation: [
+    {
+      childSelector: ".react-aria-Label",
+      variables: {
+        xs: { "--label-font-size": "var(--text-2xs)" },
+        md: { "--label-font-size": "var(--text-sm)" },
+        lg: { "--label-font-size": "var(--text-base)" },
+      },
+    },
+    {
+      childSelector: ".react-aria-Input",
+      variables: {
+        xs: {
+          "--input-height": "20px",
+          "--input-padding": "0 var(--spacing-xs)",
+          "--input-font-size": "var(--text-2xs)",
+        },
+        md: {
+          "--input-height": "30px",
+          "--input-padding": "0 var(--spacing-md)",
+          "--input-font-size": "var(--text-sm)",
+        },
+        lg: {
+          "--input-height": "42px",
+          "--input-padding": "0 var(--spacing-lg)",
+          "--input-font-size": "var(--text-base)",
+        },
+      },
+    },
+    {
+      childSelector: ".react-aria-Button",
+      variables: {
+        xs: { "--clear-btn-size": "14px" },
+        md: { "--clear-btn-size": "18px" },
+        lg: { "--clear-btn-size": "22px" },
+      },
+    },
+    {
+      childSelector: ".react-aria-FieldError",
+      variables: {
+        xs: { "--error-font-size": "var(--text-2xs)" },
+        md: { "--error-font-size": "var(--text-xs)" },
+        lg: { "--error-font-size": "var(--text-sm)" },
+      },
+    },
+  ],
+};
+```
+
+> **SearchField 분류 근거**: grid 레이아웃 + clear Button 절대 배치로 패턴 B(폼 필드)와 C(Trigger+Content)의 하이브리드다. 그러나 **생성 로직은 동일** — delegation 배열 순회 + size별 규칙 출력. 패턴 분류는 이해를 위한 것이지 코드 분기를 위한 것이 아니다.
+
+##### 패턴 D: 구조 컨테이너 (delegation 0~2, layout 중심)
+
+Tabs, Card, Form처럼 자식 Primitive에 대한 CSS 변수 위임이 거의 없고, 컨테이너 layout이 핵심인 패턴.
+
+```typescript
+// Tabs — delegation 2 (accent + layout 중심)
+const TabsComposition: CompositionSpec = {
+  layout: "flex-column",
+  primitives: [
+    { selector: ".react-aria-TabList", role: "list" },
+    { selector: ".react-aria-Tab", role: "item" },
+    { selector: ".react-aria-TabPanel", role: "panel" },
+    { selector: ".selection-indicator", role: "indicator" },
+  ],
+  delegation: [
+    {
+      childSelector: ".react-aria-Tab",
+      variables: {
+        sm: {
+          "--tab-padding": "var(--spacing-xs) var(--spacing-sm)",
+          "--tab-font-size": "var(--text-xs)",
+        },
+        md: {
+          "--tab-padding": "var(--spacing-sm) var(--spacing-md)",
+          "--tab-font-size": "var(--text-sm)",
+        },
+        lg: {
+          "--tab-padding": "var(--spacing-md) var(--spacing-lg)",
+          "--tab-font-size": "var(--text-base)",
+        },
+      },
+    },
+    {
+      childSelector: ".selection-indicator",
+      variables: {
+        sm: { "--indicator-height": "2px" },
+        md: { "--indicator-height": "3px" },
+        lg: { "--indicator-height": "4px" },
+      },
+    },
+  ],
+  // orientation 분기는 layout이 아닌 CSS 규칙으로 처리
+  orientationCSS: {
+    horizontal: { "flex-direction": "column" },
+    vertical: { "flex-direction": "row" },
+  },
+};
+
+// Card — delegation 0 (순수 layout 컨테이너)
+const CardComposition: CompositionSpec = {
+  layout: "flex-column",
+  primitives: [
+    { selector: ".react-aria-Heading", role: "heading" },
+    { selector: "[slot='description']", role: "description" },
+  ],
+  delegation: [],
+  // 자식이 자체 스타일을 완전히 관리 → 변수 위임 불필요
+};
+```
+
+#### CompositionSpec 패턴 요약
+
+| 패턴                         | delegation 수 | 대표 Composite                                             | 생성 복잡도 | 비고                   |
+| ---------------------------- | :-----------: | ---------------------------------------------------------- | :---------: | ---------------------- |
+| **A: 동종 반복**             |      0–1      | RadioGroup, CheckboxGroup, ToggleButtonGroup               |    최소     | 자식이 자체 size 처리  |
+| **B: Label+Control+Error**   |      3–5      | TextField, NumberField, SearchField, ColorField            |    중간     | 폼 필드 표준 패턴      |
+| **C: Trigger+Popup+Content** |      5–6      | Select, ComboBox, DatePicker, DateRangePicker, ColorPicker |    최대     | Popup cascade 포함     |
+| **D: 구조 컨테이너**         |      0–2      | Tabs, Card, Form, Disclosure                               |    최소     | layout 중심, 위임 최소 |
+
+> **CSSGenerator 구현 함의**: 4가지 패턴이 존재하지만, 생성 알고리즘은 **단일 루프**다. `for (delegation of spec.composition.delegation) { for (size of Object.keys(spec.sizes)) { emit(rule) } }`. 패턴 간 차이는 배열 길이뿐이므로 분기 로직이 불필요하다.
 
 **Tier 2 Composite 전체 목록 (Factory 정의 + CSS 실측 기반):**
 
@@ -639,6 +2188,141 @@ ActionList, ChatContainer, ChatInput, ChatMessage, ComponentList, ComponentSearc
 4. Table/GridList/Tree만 수동 CSS + `validate:sync`
 5. CI에서 `validate:sync` 자동 실행 → 불일치 PR 차단
 
+#### 빌드 파이프라인 통합 상세
+
+**디렉토리 구조** (Phase 4 완료 후):
+
+```
+packages/shared/src/components/styles/
+├── index.css                    # 모든 CSS import 진입점
+├── generated/                   # CSSGenerator 출력 (git tracked)
+│   ├── Badge.css                # Tier 1 simple
+│   ├── Button.css               # Tier 1 button
+│   ├── Switch.css               # Tier 1 toggle-indicator
+│   ├── ProgressBar.css          # Tier 1 progress
+│   ├── Select.css               # Tier 2 composite
+│   ├── DatePicker.css           # Tier 2 composite
+│   └── ...                      # 총 ~39개
+├── Table.css                    # Tier 3 수동 유지
+├── GridList.css                 # Tier 3 수동 유지
+├── Tree.css                     # Tier 3 수동 유지
+├── utilities.css                # Foundation (ADR-018)
+├── base.css                     # Foundation
+├── foundation.css               # Foundation
+├── animations.css               # Foundation (@keyframes)
+├── forms.css                    # Foundation
+├── collections.css              # Foundation
+├── overlays.css                 # Foundation
+└── ...                          # Foundation + 구조적 유틸리티
+```
+
+> **`generated/` git tracked 근거**: CI에서 `generate-css.ts` 실행 후 diff가 있으면 PR 차단 (`validate:sync`와 동일). 빌드 시 별도 생성 단계 불필요 — `pnpm build:specs`에 통합.
+
+**`package.json` scripts 등록**:
+
+```jsonc
+// packages/specs/package.json
+{
+  "scripts": {
+    "build": "tsup && pnpm generate:css",     // 기존 빌드에 CSS 생성 추가
+    "generate:css": "tsx scripts/generate-css.ts",
+    "validate:sync": "tsx scripts/validate-sync.ts"
+  }
+}
+
+// 루트 package.json
+{
+  "scripts": {
+    "build:specs": "pnpm --filter @xstudio/specs build",
+    "validate:sync": "pnpm --filter @xstudio/specs validate:sync",
+    "precommit": "pnpm type-check && pnpm validate:sync"  // CI + pre-commit
+  }
+}
+```
+
+**빌드 파이프라인 흐름**:
+
+```
+[개발자가 Spec 수정]
+      ↓
+pnpm build:specs
+      ↓
+┌─────────────────────────────────────┐
+│ 1. tsup: Spec TS → JS 빌드         │
+│ 2. generate-css.ts 실행:            │
+│    - 모든 archetype 있는 Spec 순회  │
+│    - Tier 1: Archetype 템플릿 적용  │
+│    - Tier 2: CompositionSpec 적용   │
+│    - generated/*.css 출력           │
+│ 3. Prettier 자동 포맷               │
+└─────────────────────────────────────┘
+      ↓
+pnpm validate:sync
+      ↓
+┌─────────────────────────────────────┐
+│ Tier 3 수동 CSS ↔ Spec 값 비교     │
+│ - Table.css ↔ TableSpec             │
+│ - GridList.css ↔ GridListSpec       │
+│ - Tree.css ↔ TreeSpec               │
+│ → diff 0건이면 통과                 │
+└─────────────────────────────────────┘
+      ↓
+pnpm type-check
+      ↓
+[커밋 / PR 생성]
+```
+
+**CI 파이프라인** (GitHub Actions):
+
+```yaml
+# .github/workflows/validate.yml (개략)
+steps:
+  - run: pnpm build:specs
+  - run: git diff --exit-code packages/shared/src/components/styles/generated/
+    # generated CSS에 uncommitted 변경이 있으면 실패
+    # → "Spec을 수정했으나 generate:css를 실행하지 않음" 감지
+  - run: pnpm validate:sync
+    # Tier 3 수동 CSS ↔ Spec 값 불일치 감지
+  - run: pnpm type-check
+```
+
+**새 Primitive 추가 워크플로우** (Phase 4 이후):
+
+```
+1. packages/specs/src/components/NewComponent.spec.ts 작성
+   → archetype: "simple", variants, sizes, states, shapes 정의
+
+2. pnpm build:specs
+   → generated/NewComponent.css 자동 생성
+
+3. packages/shared/src/components/styles/index.css에 import 추가
+   → @import "./generated/NewComponent.css";
+
+4. packages/shared/src/components/NewComponent.tsx 작성
+   → React Aria Component + generated CSS 적용
+
+5. 빌더 Spec 등록
+   → TAG_SPEC_MAP에 추가, Factory 정의 작성
+
+6. pnpm type-check + pnpm validate:sync → 커밋
+```
+
+**새 Composite 추가 워크플로우** (Phase 4 이후):
+
+```
+1. 자식 Primitive CSS가 generated/에 이미 존재하는지 확인
+   (없으면 Primitive 먼저 추가)
+
+2. 기존 Spec에 composition 필드 추가 또는 새 Spec 작성
+   → composition: { layout, primitives, delegation }
+
+3. pnpm build:specs
+   → generated/NewComposite.css 자동 생성
+   (delegation의 size별 --child-var override가 CSS 규칙으로 출력)
+
+4. 나머지는 Primitive 워크플로우와 동일
+```
+
 ---
 
 ## Metrics / Verification
@@ -754,6 +2438,28 @@ ActionList, ChatContainer, ChatInput, ChatMessage, ComponentList, ComponentSearc
 10. **ADR-038 연계 표현 조정** — Proposed 상태를 반영하여 "파이프라인 강화" → "잠재적 강화"로 수정
 11. **Metrics 테이블 이중 분기** — G4-pre 통과/실패에 따른 두 가지 시나리오 병기
 12. **SIZE_CONFIG 규모 정정** — "~수백 줄" → "3,530줄 파일 내 5+ config 객체" (실측)
+
+### 구현 완성도 보강 (2026-03-15)
+
+코드베이스 실측 데이터를 기반으로 7건의 미흡 사항을 보강했다.
+
+**타입 시스템 보강:**
+
+1. **`ArchetypeId` 타입 + `ComponentSpec.archetype` 필드 정의** — 10개 archetype 유니온 타입, ComponentSpec 인터페이스 확장, 93개 Spec 마이그레이션 계획 (Phase 2-pre)
+2. **`ComponentSpec.dimensions` 필드 결정** — `*_DIMENSIONS` 데이터를 SizeSpec에 통합하지 않고 별도 `dimensions` 필드로 분리. 근거: SizeSpec 비대화 방지 + 의미적 오염 회피 (Phase 0a)
+3. **`AnimationSpec` 인터페이스 정의** — `@keyframes` 생성용 타입 (`name`/`duration`/`timingFunction`/`keyframes`), ProgressBar + Checkbox 사용 예시 (Phase 2b/3b)
+
+**구현 상세 보강:**
+
+4. **Archetype별 base styles 매핑 테이블** — 10개 archetype × base CSS 속성 매핑 (Phase 2-pre)
+5. **생성 CSS 출력 형식 규칙** — 파일명 규칙, 헤더 주석 형식, `@layer`/fallback/Prettier/선택자 순서/specificity 등 6개 규칙 + import 전환 규칙 (Phase 2a)
+6. **대규모 전환 롤백 전략** — 4단계 배치 전환 순서, 혼합 상태 관리(`index.css` 공존), 4가지 롤백 시나리오 (Phase 2c)
+7. **빌드 파이프라인 통합 상세** — 디렉토리 구조, `package.json` scripts, CI 파이프라인 YAML, Primitive/Composite 추가 워크플로우 (Phase 4)
+
+**CompositionSpec 예시 추가:**
+
+8. **ComboBox** (패턴 C, delegation 5) — Select와의 구조 차이(Input+Button 래퍼), 5개 자식 × 5 size 변수 매핑
+9. **SearchField** (패턴 B/C 하이브리드, delegation 4) — grid 레이아웃 + clear Button 절대 배치, 패턴 분류가 코드 분기와 무관함을 명시
 
 ### 변경하지 않은 것
 
