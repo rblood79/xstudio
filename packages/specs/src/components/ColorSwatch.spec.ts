@@ -7,14 +7,14 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
  * ColorSwatch Props
  */
 export interface ColorSwatchProps {
-  variant?: 'default' | 'selected';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "selected";
+  size?: "S" | "M" | "L";
   color?: string;
   isDisabled?: boolean;
   isSelected?: boolean;
@@ -25,27 +25,28 @@ export interface ColorSwatchProps {
  * ColorSwatch Component Spec
  */
 export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
-  name: 'ColorSwatch',
-  description: 'React Aria 기반 색상 프리뷰 스와치',
-  element: 'div',
+  name: "ColorSwatch",
+  description: "React Aria 기반 색상 프리뷰 스와치",
+  archetype: "simple",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     selected: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -54,24 +55,24 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
       height: 20,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 0,
     },
     md: {
       height: 28,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 0,
     },
     lg: {
       height: 36,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 0,
     },
   },
@@ -81,61 +82,68 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, _state = "default") => {
       const swatchSize = size.height;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
-      const borderColor = props.style?.borderColor
-        ?? (props.isSelected
-            ? '{color.accent}' as TokenRef
-            : variant.border ?? ('{color.border}' as TokenRef));
+      const borderColor =
+        props.style?.borderColor ??
+        (props.isSelected
+          ? ("{color.accent}" as TokenRef)
+          : (variant.border ?? ("{color.border}" as TokenRef)));
       const styleBw = props.style?.borderWidth;
       const defaultBw = props.isSelected ? 2 : 1;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : defaultBw;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : defaultBw;
 
       const shapes: Shape[] = [
         // 체크 패턴 배경 (투명도 표시용)
         {
-          id: 'checker',
-          type: 'roundRect' as const,
+          id: "checker",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width: swatchSize,
           height: swatchSize,
           radius: borderRadius as unknown as number,
-          fill: '{color.layer-2}' as TokenRef,
+          fill: "{color.layer-2}" as TokenRef,
         },
         // 색상 채우기
         {
-          id: 'color',
-          type: 'roundRect' as const,
+          id: "color",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width: swatchSize,
           height: swatchSize,
           radius: borderRadius as unknown as number,
-          fill: props.color || '#3B82F6',
+          fill: props.color || "#3B82F6",
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'color',
+          type: "border" as const,
+          target: "color",
           borderWidth,
           color: borderColor,
           radius: borderRadius as unknown as number,
@@ -146,15 +154,15 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
     },
 
     react: (props) => ({
-      role: 'option',
-      'aria-selected': props.isSelected || undefined,
-      'data-color': props.color,
-      'data-disabled': props.isDisabled || undefined,
+      role: "option",
+      "aria-selected": props.isSelected || undefined,
+      "data-color": props.color,
+      "data-disabled": props.isDisabled || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: props.isDisabled ? ('none' as const) : ('static' as const),
-      cursor: props.isDisabled ? 'not-allowed' : 'pointer',
+      eventMode: props.isDisabled ? ("none" as const) : ("static" as const),
+      cursor: props.isDisabled ? "not-allowed" : "pointer",
     }),
   },
 };

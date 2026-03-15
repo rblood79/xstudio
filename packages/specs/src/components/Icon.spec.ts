@@ -25,6 +25,7 @@ export interface IconProps {
 export const IconSpec: ComponentSpec<IconProps> = {
   name: "Icon",
   description: "독립 아이콘 컴포넌트",
+  archetype: "simple",
   element: "span",
 
   defaultVariant: "default",

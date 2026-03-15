@@ -33,6 +33,7 @@ export interface TagProps {
 export const TagSpec: ComponentSpec<TagProps> = {
   name: "Tag",
   description: "TagGroup 내부 개별 태그 컴포넌트",
+  archetype: "simple",
   element: "div",
 
   defaultVariant: "default",
