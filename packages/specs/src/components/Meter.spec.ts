@@ -52,6 +52,7 @@ export const METER_DIMENSIONS: Record<
 export const MeterSpec: ComponentSpec<MeterProps> = {
   name: "Meter",
   description: "React Aria 기반 미터 컴포넌트",
+  archetype: "progress",
   element: "div",
 
   defaultVariant: "informative",

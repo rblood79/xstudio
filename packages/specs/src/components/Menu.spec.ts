@@ -7,17 +7,17 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveStateColors } from '../utils/stateEffect';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveStateColors } from "../utils/stateEffect";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Menu Props
  */
 export interface MenuProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -27,37 +27,38 @@ export interface MenuProps {
  * overlay: popover (포털, 배경 클릭으로 닫기)
  */
 export const MenuSpec: ComponentSpec<MenuProps> = {
-  name: 'Menu',
-  description: 'React Aria 기반 드롭다운 메뉴 컴포넌트',
-  element: 'div',
+  name: "Menu",
+  description: "React Aria 기반 드롭다운 메뉴 컴포넌트",
+  archetype: "collection",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   overlay: {
     usePortal: true,
-    type: 'popover',
+    type: "popover",
     hasBackdrop: false,
     closeOnBackdropClick: true,
     closeOnEscape: true,
     trapFocus: true,
-    pixiLayer: 'overlay',
+    pixiLayer: "overlay",
   },
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.accent-subtle}' as TokenRef,
-      backgroundPressed: '{color.accent-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.accent-subtle}" as TokenRef,
+      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
   },
 
@@ -66,24 +67,24 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       height: 0,
       paddingX: 8,
       paddingY: 4,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 2,
     },
     md: {
       height: 0,
       paddingX: 12,
       paddingY: 6,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 4,
     },
     lg: {
       height: 0,
       paddingX: 16,
       paddingY: 8,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 6,
     },
   },
@@ -91,43 +92,44 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
   states: {
     hover: {},
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '-2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "-2px",
     },
   },
 
   render: {
-    shapes: (_props, variant, size, state = 'default') => {
+    shapes: (_props, variant, size, state = "default") => {
       const borderRadius = size.borderRadius;
       const width = 180;
       const ff = fontFamily.sans;
 
       const rawFontSize = size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
 
       // Phase C: 기본 메뉴 아이템
-      const menuItems = ['Edit', 'Copy', 'Paste', '---', 'Delete'];
+      const menuItems = ["Edit", "Copy", "Paste", "---", "Delete"];
       const itemHeight = 36;
-      const paddingY = size.paddingY as unknown as number || 6;
+      const paddingY = (size.paddingY as unknown as number) || 6;
       let itemY = paddingY;
       let totalHeight = paddingY;
 
       const itemShapes: Shape[] = [];
       for (const item of menuItems) {
-        if (item === '---') {
+        if (item === "---") {
           // 구분선
           itemShapes.push({
-            type: 'line' as const,
+            type: "line" as const,
             x1: 0,
             y1: itemY + 4,
             x2: width,
             y2: itemY + 4,
-            stroke: '{color.border}' as TokenRef,
+            stroke: "{color.border}" as TokenRef,
             strokeWidth: 1,
           });
           itemY += 9;
@@ -137,7 +139,7 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
 
         // 아이템 텍스트
         itemShapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: size.paddingX,
           y: itemY + itemHeight / 2,
           text: item,
@@ -145,8 +147,8 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
           fontFamily: ff,
           fontWeight: 400,
           fill: variant.text,
-          align: 'left' as const,
-          baseline: 'middle' as const,
+          align: "left" as const,
+          baseline: "middle" as const,
         });
 
         itemY += itemHeight;
@@ -158,19 +160,19 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
       const shapes: Shape[] = [
         // 그림자
         {
-          type: 'shadow' as const,
-          target: 'bg',
+          type: "shadow" as const,
+          target: "bg",
           offsetX: 0,
           offsetY: 4,
           blur: 12,
           spread: 0,
-          color: 'rgba(0, 0, 0, 0.12)',
+          color: "rgba(0, 0, 0, 0.12)",
           alpha: 0.12,
         },
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width,
@@ -180,10 +182,10 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth: 1,
-          color: variant.border || ('{color.border}' as TokenRef),
+          color: variant.border || ("{color.border}" as TokenRef),
           radius: borderRadius as unknown as number,
         },
       ];
@@ -196,11 +198,11 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
     },
 
     react: () => ({
-      role: 'menu',
+      role: "menu",
     }),
 
     pixi: () => ({
-      eventMode: 'static' as const,
+      eventMode: "static" as const,
     }),
   },
 };

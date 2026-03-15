@@ -1,19 +1,16 @@
 /* ============================================================
  * AUTO-GENERATED from CheckboxSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/Checkbox.spec.ts
- * Archetype: default
+ * Archetype: toggle-indicator
  * ============================================================ */
 
 .react-aria-Checkbox {
-  /* Base styles — archetype: default */
+  /* Base styles — archetype: toggle-indicator */
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
     cursor: pointer;
+    box-sizing: border-box;
     user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    font-family: var(--font-sans);
 
   /* Default variant */
   background: var(--bg);

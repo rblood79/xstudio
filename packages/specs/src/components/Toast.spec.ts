@@ -7,17 +7,17 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveStateColors } from '../utils/stateEffect';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveStateColors } from "../utils/stateEffect";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Toast Props
  */
 export interface ToastProps {
-  variant?: 'default' | 'accent' | 'negative' | 'positive';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent" | "negative" | "positive";
+  size?: "S" | "M" | "L";
   message?: string;
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -29,50 +29,51 @@ export interface ToastProps {
  * overlay: toast (포털, 화면 하단에 표시)
  */
 export const ToastSpec: ComponentSpec<ToastProps> = {
-  name: 'Toast',
-  description: 'React Aria 기반 토스트 알림 컴포넌트',
-  element: 'div',
+  name: "Toast",
+  description: "React Aria 기반 토스트 알림 컴포넌트",
+  archetype: "overlay",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   overlay: {
     usePortal: true,
-    type: 'toast',
+    type: "toast",
     hasBackdrop: false,
     closeOnEscape: true,
     trapFocus: false,
-    pixiLayer: 'toast',
+    pixiLayer: "toast",
   },
 
   variants: {
     default: {
-      background: '{color.neutral-subtle}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.neutral-subtle}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.accent-subtle}' as TokenRef,
-      backgroundHover: '{color.accent-subtle}' as TokenRef,
-      backgroundPressed: '{color.accent-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.accent-subtle}" as TokenRef,
+      backgroundHover: "{color.accent-subtle}" as TokenRef,
+      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
     negative: {
-      background: '{color.negative-subtle}' as TokenRef,
-      backgroundHover: '{color.negative-subtle}' as TokenRef,
-      backgroundPressed: '{color.negative-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.negative}' as TokenRef,
+      background: "{color.negative-subtle}" as TokenRef,
+      backgroundHover: "{color.negative-subtle}" as TokenRef,
+      backgroundPressed: "{color.negative-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.negative}" as TokenRef,
     },
     positive: {
-      background: '{color.purple-subtle}' as TokenRef,
-      backgroundHover: '{color.purple-subtle}' as TokenRef,
-      backgroundPressed: '{color.purple-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.purple}' as TokenRef,
+      background: "{color.purple-subtle}" as TokenRef,
+      backgroundHover: "{color.purple-subtle}" as TokenRef,
+      backgroundPressed: "{color.purple-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.purple}" as TokenRef,
     },
   },
 
@@ -81,8 +82,8 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       height: 40,
       paddingX: 12,
       paddingY: 8,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 16,
       gap: 8,
     },
@@ -90,8 +91,8 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       height: 48,
       paddingX: 16,
       paddingY: 12,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 20,
       gap: 10,
     },
@@ -99,8 +100,8 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
       height: 56,
       paddingX: 20,
       paddingY: 16,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 24,
       gap: 12,
     },
@@ -109,94 +110,114 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
-      const message = props.message || props.children || 'Notification';
+      const message = props.message || props.children || "Notification";
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 1;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 1;
 
-      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
-      const borderColor = props.style?.borderColor
-                        ?? (variant.border || ('{color.border}' as TokenRef));
+      const bgColor =
+        props.style?.backgroundColor ??
+        resolveStateColors(variant, state).background;
+      const borderColor =
+        props.style?.borderColor ??
+        (variant.border || ("{color.border}" as TokenRef));
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
-      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
-      const paddingX = stylePx != null
-        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
-        : size.paddingX;
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
 
       // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
-      const fw = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
-        : 400;
+      const fw =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 400
+          : 400;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "left";
       const textColor = props.style?.color ?? variant.text;
 
       const shapes: Shape[] = [
         // 그림자
         {
-          type: 'shadow' as const,
-          target: 'bg',
+          type: "shadow" as const,
+          target: "bg",
           offsetX: 0,
           offsetY: 4,
           blur: 12,
           spread: 0,
-          color: 'rgba(0, 0, 0, 0.15)',
+          color: "rgba(0, 0, 0, 0.15)",
           alpha: 0.15,
         },
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
-          width: 'auto',
+          width: "auto",
           height: size.height,
           radius: borderRadius as unknown as number,
           fill: bgColor,
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
           color: borderColor,
           radius: borderRadius as unknown as number,
         },
         // 좌측 액센트 바
         {
-          type: 'rect' as const,
+          type: "rect" as const,
           x: 0,
           y: 0,
           width: 3,
           height: size.height,
-          fill: variant.border || ('{color.accent}' as TokenRef),
+          fill: variant.border || ("{color.accent}" as TokenRef),
         },
       ];
       if (hasChildren) return shapes;
 
       // 메시지 텍스트 (standalone 전용)
       shapes.push({
-        type: 'text' as const,
+        type: "text" as const,
         x: paddingX + (size.iconSize || 20) + (size.gap || 10),
         y: size.height / 2,
         text: message,
@@ -204,7 +225,7 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
         fontFamily: ff,
         fontWeight: fw,
         fill: textColor,
-        baseline: 'middle' as const,
+        baseline: "middle" as const,
         align: textAlign,
       });
 
@@ -212,12 +233,12 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
     },
 
     react: () => ({
-      role: 'alert',
-      'aria-live': 'polite',
+      role: "alert",
+      "aria-live": "polite",
     }),
 
     pixi: () => ({
-      eventMode: 'static' as const,
+      eventMode: "static" as const,
     }),
   },
 };

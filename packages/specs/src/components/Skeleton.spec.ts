@@ -7,15 +7,15 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
  * Skeleton Props
  */
 export interface SkeletonProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
-  skeletonVariant?: 'text' | 'avatar' | 'card' | 'list';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
+  skeletonVariant?: "text" | "avatar" | "card" | "list";
   width?: number;
   height?: number;
   style?: Record<string, string | number | undefined>;
@@ -25,25 +25,26 @@ export interface SkeletonProps {
  * Skeleton Component Spec
  */
 export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
-  name: 'Skeleton',
-  description: 'React Aria 기반 스켈레톤 로딩 플레이스홀더 컴포넌트',
-  element: 'div',
+  name: "Skeleton",
+  description: "React Aria 기반 스켈레톤 로딩 플레이스홀더 컴포넌트",
+  archetype: "simple",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-2}' as TokenRef,
-      text: '{color.neutral-subdued}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-2}" as TokenRef,
+      text: "{color.neutral-subdued}" as TokenRef,
     },
     accent: {
-      background: '{color.accent-subtle}' as TokenRef,
-      backgroundHover: '{color.accent-subtle}' as TokenRef,
-      backgroundPressed: '{color.accent-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+      background: "{color.accent-subtle}" as TokenRef,
+      backgroundHover: "{color.accent-subtle}" as TokenRef,
+      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
   },
 
@@ -52,58 +53,61 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
       height: 16,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
     },
     md: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
     },
     lg: {
       height: 24,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
     },
   },
 
   states: {},
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
-      const skeletonType = props.skeletonVariant || 'text';
+    shapes: (props, variant, size, _state = "default") => {
+      const skeletonType = props.skeletonVariant || "text";
       const width = props.width || 200;
       const height = props.height || size.height;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
       const shapes: Shape[] = [];
 
-      if (skeletonType === 'avatar') {
+      if (skeletonType === "avatar") {
         // 원형 아바타 스켈레톤
         const avatarSize = height;
         shapes.push({
-          type: 'circle' as const,
+          type: "circle" as const,
           x: avatarSize / 2,
           y: avatarSize / 2,
           radius: avatarSize / 2,
           fill: bgColor,
         });
-      } else if (skeletonType === 'card') {
+      } else if (skeletonType === "card") {
         // 카드 스켈레톤
         shapes.push({
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width,
@@ -113,30 +117,30 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
         });
         // 이미지 영역
         shapes.push({
-          type: 'rect' as const,
+          type: "rect" as const,
           x: 0,
           y: 0,
           width,
           height: height * 0.5,
-          fill: '{color.layer-1}' as TokenRef,
+          fill: "{color.layer-1}" as TokenRef,
         });
         // 제목 라인
         shapes.push({
-          type: 'roundRect' as const,
+          type: "roundRect" as const,
           x: 12,
           y: height * 0.55,
           width: width * 0.7,
           height: size.height * 0.8,
           radius: 4,
-          fill: '{color.layer-1}' as TokenRef,
+          fill: "{color.layer-1}" as TokenRef,
         });
-      } else if (skeletonType === 'list') {
+      } else if (skeletonType === "list") {
         // 리스트 스켈레톤 (3행)
         for (let i = 0; i < 3; i++) {
           const rowY = i * (size.height + 12);
           // 아바타
           shapes.push({
-            type: 'circle' as const,
+            type: "circle" as const,
             x: size.height / 2,
             y: rowY + size.height / 2,
             radius: size.height / 2,
@@ -144,7 +148,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
           });
           // 텍스트 라인
           shapes.push({
-            type: 'roundRect' as const,
+            type: "roundRect" as const,
             x: size.height + 12,
             y: rowY + 2,
             width: width * 0.5,
@@ -156,8 +160,8 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
       } else {
         // 텍스트 스켈레톤 (기본)
         shapes.push({
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width,
@@ -171,12 +175,12 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
     },
 
     react: () => ({
-      'aria-hidden': true,
-      role: 'presentation',
+      "aria-hidden": true,
+      role: "presentation",
     }),
 
     pixi: () => ({
-      eventMode: 'none' as const,
+      eventMode: "none" as const,
     }),
   },
 };

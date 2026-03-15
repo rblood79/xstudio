@@ -1,11 +1,11 @@
 /* ============================================================
  * AUTO-GENERATED from LinkSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/Link.spec.ts
- * Archetype: default
+ * Archetype: button
  * ============================================================ */
 
 .react-aria-Link {
-  /* Base styles — archetype: default */
+  /* Base styles — archetype: button */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -55,6 +55,11 @@
   &[data-pressed] {
     background: var(--bg);
   }
+}
+
+.react-aria-Link[data-icon-only] {
+  padding: 0;
+  aspect-ratio: 1;
 }
 
 .react-aria-Link[data-size="xs"] {

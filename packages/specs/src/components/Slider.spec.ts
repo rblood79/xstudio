@@ -66,6 +66,7 @@ export const SLIDER_DIMENSIONS: Record<
 export const SliderSpec: ComponentSpec<SliderProps> = {
   name: "Slider",
   description: "React Aria 기반 슬라이더 컴포넌트",
+  archetype: "slider",
   element: "div",
 
   defaultVariant: "default",

@@ -48,6 +48,7 @@ export const PROGRESSBAR_DIMENSIONS: Record<
 export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   name: "ProgressBar",
   description: "React Aria 기반 프로그레스바 컴포넌트",
+  archetype: "progress",
   element: "div",
 
   defaultVariant: "default",

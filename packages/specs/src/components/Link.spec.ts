@@ -35,6 +35,7 @@ export interface LinkProps {
 export const LinkSpec: ComponentSpec<LinkProps> = {
   name: "Link",
   description: "React Aria 기반 링크 컴포넌트",
+  archetype: "button",
   element: "a",
 
   defaultVariant: "primary",

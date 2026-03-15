@@ -50,6 +50,7 @@ export const PROGRESSCIRCLE_DIMENSIONS: Record<
 export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
   name: "ProgressCircle",
   description: "React Aria 기반 원형 진행률 표시 컴포넌트",
+  archetype: "progress",
   element: "div",
 
   defaultVariant: "default",

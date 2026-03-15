@@ -66,6 +66,7 @@ export const RADIO_DIMENSIONS: Record<
 export const RadioSpec: ComponentSpec<RadioProps> = {
   name: "Radio",
   description: "React Aria 기반 라디오 버튼 컴포넌트",
+  archetype: "toggle-indicator",
   element: "label",
 
   defaultVariant: "default",

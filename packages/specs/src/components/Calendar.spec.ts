@@ -7,17 +7,17 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveStateColors } from '../utils/stateEffect';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveStateColors } from "../utils/stateEffect";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Calendar Props
  */
 export interface CalendarProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
   value?: string;
   isDisabled?: boolean;
   isReadOnly?: boolean;
@@ -30,27 +30,28 @@ export interface CalendarProps {
  * height: 0 = auto (그리드 행 수에 따라 결정)
  */
 export const CalendarSpec: ComponentSpec<CalendarProps> = {
-  name: 'Calendar',
-  description: 'React Aria 기반 캘린더 (월 그리드 + 네비게이션)',
-  element: 'div',
+  name: "Calendar",
+  description: "React Aria 기반 캘린더 (월 그리드 + 네비게이션)",
+  archetype: "calendar",
+  element: "div",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -59,8 +60,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       height: 0,
       paddingX: 8,
       paddingY: 8,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 24,
       gap: 4,
     },
@@ -68,8 +69,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       height: 0,
       paddingX: 12,
       paddingY: 12,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 28,
       gap: 6,
     },
@@ -77,8 +78,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       height: 0,
       paddingX: 16,
       paddingY: 16,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.xl}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
       iconSize: 32,
       gap: 8,
     },
@@ -89,28 +90,29 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (_props, variant, size, state = 'default') => {
+    shapes: (_props, variant, size, state = "default") => {
       const borderRadius = size.borderRadius;
       const cellSize = (size.iconSize ?? 28) + 4;
-      const gap = size.gap as unknown as number || 6;
-      const paddingX = size.paddingX as unknown as number || 12;
-      const paddingY = size.paddingY as unknown as number || 12;
+      const gap = (size.gap as unknown as number) || 6;
+      const paddingX = (size.paddingX as unknown as number) || 12;
+      const paddingY = (size.paddingY as unknown as number) || 12;
       const rawFontSize = size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 14;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
       const calendarWidth = cellSize * 7 + gap * 6 + paddingX * 2;
       const ff = fontFamily.sans;
 
@@ -126,7 +128,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       const today = 15; // 선택/today 표시용 예시
 
       const totalRows = Math.ceil((totalDays + dayOffset) / 7);
-      const totalHeight = gridStartY + totalRows * (cellSize + gap) - gap + paddingY;
+      const totalHeight =
+        gridStartY + totalRows * (cellSize + gap) - gap + paddingY;
 
       // Compositional Architecture: 자식이 있으면 shell(bg+border)만 반환
       const hasChildren = !!(_props as Record<string, unknown>)._hasChildren;
@@ -134,21 +137,21 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       const shapes: Shape[] = [
         // 배경 — Card 패턴: hasChildren 시 'auto'(element bounds), standalone 시 계산값
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
-          width: hasChildren ? 'auto' as unknown as number : calendarWidth,
-          height: hasChildren ? 'auto' as unknown as number : totalHeight,
+          width: hasChildren ? ("auto" as unknown as number) : calendarWidth,
+          height: hasChildren ? ("auto" as unknown as number) : totalHeight,
           radius: borderRadius as unknown as number,
           fill: resolveStateColors(variant, state).background,
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth: 1,
-          color: variant.border ?? ('{color.border}' as TokenRef),
+          color: variant.border ?? ("{color.border}" as TokenRef),
           radius: borderRadius as unknown as number,
         },
       ];
@@ -159,8 +162,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       shapes.push(
         // 네비게이션: 이전 화살표
         {
-          type: 'icon_font' as const,
-          iconName: 'chevron-left',
+          type: "icon_font" as const,
+          iconName: "chevron-left",
           x: paddingX + cellSize / 2,
           y: navRowY + headerHeight / 2,
           fontSize: fontSize + 2,
@@ -169,22 +172,22 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
         },
         // 헤더 텍스트 (월/년)
         {
-          type: 'text' as const,
+          type: "text" as const,
           x: paddingX + cellSize,
           y: navRowY + headerHeight / 2,
-          text: '2024년 1월',
+          text: "2024년 1월",
           fontSize,
           fontFamily: ff,
           fontWeight: 600,
           fill: variant.text,
-          align: 'center' as const,
-          baseline: 'middle' as const,
+          align: "center" as const,
+          baseline: "middle" as const,
           maxWidth: calendarWidth - (paddingX + cellSize) * 2,
         },
         // 네비게이션: 다음 화살표
         {
-          type: 'icon_font' as const,
-          iconName: 'chevron-right',
+          type: "icon_font" as const,
+          iconName: "chevron-right",
           x: calendarWidth - paddingX - cellSize / 2,
           y: navRowY + headerHeight / 2,
           fontSize: fontSize + 2,
@@ -194,20 +197,20 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       );
 
       // 요일 헤더 (Sun ~ Sat)
-      const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+      const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
       for (let col = 0; col < 7; col++) {
         const cellLeft = paddingX + col * (cellSize + gap);
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: cellLeft,
           y: weekdayY + cellSize / 2,
           text: weekdays[col],
           fontSize: fontSize - 2,
           fontFamily: ff,
           fontWeight: 500,
-          fill: '{color.neutral-subdued}' as TokenRef,
-          align: 'center' as const,
-          baseline: 'middle' as const,
+          fill: "{color.neutral-subdued}" as TokenRef,
+          align: "center" as const,
+          baseline: "middle" as const,
           maxWidth: cellSize,
         });
       }
@@ -224,25 +227,26 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
         // today 강조 배경
         if (day === today) {
           shapes.push({
-            type: 'circle' as const,
+            type: "circle" as const,
             x: cx,
             y: cy,
             radius: cellSize / 2,
-            fill: '{color.accent}' as TokenRef,
+            fill: "{color.accent}" as TokenRef,
           });
         }
 
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: cellLeft,
           y: cy,
           text: String(day),
           fontSize,
           fontFamily: ff,
           fontWeight: day === today ? 600 : 400,
-          fill: day === today ? ('{color.on-accent}' as TokenRef) : variant.text,
-          align: 'center' as const,
-          baseline: 'middle' as const,
+          fill:
+            day === today ? ("{color.on-accent}" as TokenRef) : variant.text,
+          align: "center" as const,
+          baseline: "middle" as const,
           maxWidth: cellSize,
         });
       }
@@ -251,14 +255,14 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
     },
 
     react: (props) => ({
-      role: 'grid',
-      'aria-readonly': props.isReadOnly || undefined,
-      'data-disabled': props.isDisabled || undefined,
+      role: "grid",
+      "aria-readonly": props.isReadOnly || undefined,
+      "data-disabled": props.isDisabled || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: props.isDisabled ? ('none' as const) : ('static' as const),
-      cursor: 'pointer',
+      eventMode: props.isDisabled ? ("none" as const) : ("static" as const),
+      cursor: "pointer",
     }),
   },
 };

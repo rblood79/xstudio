@@ -30,6 +30,7 @@ export interface DialogProps {
 export const DialogSpec: ComponentSpec<DialogProps> = {
   name: "Dialog",
   description: "React Aria 기반 다이얼로그 컴포넌트",
+  archetype: "overlay",
   element: "div",
 
   defaultVariant: "accent",

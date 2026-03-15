@@ -29,6 +29,7 @@ export interface BreadcrumbsProps {
 export const BreadcrumbsSpec: ComponentSpec<BreadcrumbsProps> = {
   name: "Breadcrumbs",
   description: "React Aria 기반 브레드크럼 네비게이션 컴포넌트",
+  archetype: "simple",
   element: "nav",
 
   defaultVariant: "default",

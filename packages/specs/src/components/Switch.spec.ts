@@ -53,6 +53,7 @@ export const SWITCH_DIMENSIONS: Record<
 export const SwitchSpec: ComponentSpec<SwitchProps> = {
   name: "Switch",
   description: "React Aria 기반 스위치(토글) 컴포넌트",
+  archetype: "toggle-indicator",
   element: "label",
 
   defaultVariant: "default",

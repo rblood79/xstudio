@@ -17,6 +17,7 @@ import type {
 } from "../types";
 import type { ShadowTokenRef, TokenRef } from "../types/token.types";
 import { tokenToCSSVar } from "./utils/tokenResolver";
+import { SWITCH_DIMENSIONS } from "../components/Switch.spec";
 
 // ─── Archetype별 base styles ────────────────────────────────────────────────
 
@@ -87,8 +88,17 @@ const DEFAULT_BASE_STYLES = [
  * ComponentSpec에서 CSS 파일 내용 생성
  */
 export function generateCSS<Props>(spec: ComponentSpec<Props>): string {
-  const lines: string[] = [];
   const archetype = spec.archetype;
+
+  // G4-pre: toggle-indicator archetype 전용 생성
+  if (archetype === "toggle-indicator" && spec.name === "Switch") {
+    return generateSwitchCSS(
+      spec as unknown as ComponentSpec<unknown>,
+      SWITCH_DIMENSIONS,
+    );
+  }
+
+  const lines: string[] = [];
 
   // 파일 헤더
   lines.push(`/* ============================================================`);
@@ -460,6 +470,161 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
   lines.push("}");
 
   return lines;
+}
+
+// ─── G4-pre: Toggle-Indicator Archetype (Switch) ────────────────────────────
+
+/**
+ * Switch 전용 CSS 생성 — SWITCH_DIMENSIONS에서 기하학적 관계를 자동 생성
+ *
+ * G4-pre POC: toggle-indicator archetype의 핵심 검증
+ * - translateX(calc(...)) 기하학이 DIMENSIONS 데이터로 표현 가능한가?
+ * - indicator + ::before + data-selected 패턴을 자동 생성 가능한가?
+ */
+function generateSwitchCSS(
+  spec: ComponentSpec<unknown>,
+  dimensions: Record<
+    string,
+    {
+      trackWidth: number;
+      trackHeight: number;
+      thumbSize: number;
+      thumbOffset: number;
+    }
+  >,
+): string {
+  const sel = `.react-aria-${spec.name}`;
+  const lines: string[] = [];
+
+  // 헤더
+  lines.push(`/* ============================================================`);
+  lines.push(` * AUTO-GENERATED from ${spec.name}Spec — DO NOT EDIT MANUALLY`);
+  lines.push(` * Source: packages/specs/src/components/${spec.name}.spec.ts`);
+  lines.push(` * Archetype: toggle-indicator (G4-pre POC)`);
+  lines.push(
+    ` * ============================================================ */`,
+  );
+  lines.push("");
+
+  // default size dimensions
+  const defaultDims = dimensions[spec.defaultSize] ?? dimensions.md;
+
+  // Base styles
+  lines.push(`${sel} {`);
+  lines.push("  --switch-color: var(--fg);");
+  lines.push("  --switch-thumb-color: var(--color-white);");
+  lines.push("");
+  lines.push("  &[data-emphasized] {");
+  lines.push("    --switch-color: var(--accent);");
+  lines.push("    --switch-thumb-color: var(--fg-on-accent);");
+  lines.push("  }");
+  lines.push("");
+  lines.push("  display: flex;");
+  lines.push("  position: relative;");
+  lines.push("  align-items: center;");
+  lines.push(`  gap: ${spec.sizes[spec.defaultSize]?.gap ?? 10}px;`);
+  lines.push(
+    `  font-size: ${tokenToCSSVar(spec.sizes[spec.defaultSize]?.fontSize)};`,
+  );
+  lines.push("  color: var(--fg);");
+  lines.push("  forced-color-adjust: none;");
+  lines.push("");
+
+  // indicator
+  lines.push("  .indicator {");
+  lines.push(`    width: ${defaultDims.trackWidth}px;`);
+  lines.push(`    height: ${defaultDims.trackHeight}px;`);
+  lines.push(`    border-radius: ${defaultDims.trackHeight}px;`);
+  lines.push("    border: 2px solid var(--border-hover);");
+  lines.push("    background: var(--accent-subtle);");
+  lines.push("    transition: all 200ms;");
+  lines.push("");
+
+  // thumb (::before)
+  lines.push("    &:before {");
+  lines.push(`      content: "";`);
+  lines.push("      display: block;");
+  lines.push(`      width: ${defaultDims.thumbSize}px;`);
+  lines.push("      height: 100% !important;");
+  lines.push(`      border-radius: ${defaultDims.thumbSize}px;`);
+  lines.push(`      margin: 0px;`);
+  lines.push("      background: var(--bg-muted);");
+  lines.push("      transition: all 200ms;");
+  lines.push("    }");
+  lines.push("  }");
+  lines.push("");
+
+  // pressed
+  lines.push("  &[data-pressed] .indicator {");
+  lines.push("    border-color: var(--border-hover);");
+  lines.push("    &:before { background: var(--bg-emphasis); }");
+  lines.push("  }");
+  lines.push("");
+
+  // selected — G4-pre 핵심: translateX(100%)
+  lines.push("  &[data-selected] {");
+  lines.push("    .indicator {");
+  lines.push("      border-color: var(--switch-color);");
+  lines.push("      background: var(--switch-color);");
+  lines.push("      &:before {");
+  lines.push("        background: var(--switch-thumb-color);");
+  lines.push("        transform: translateX(100%);");
+  lines.push("      }");
+  lines.push("    }");
+  lines.push("    &[data-pressed] .indicator {");
+  lines.push(
+    "      border-color: color-mix(in srgb, var(--switch-color) 75%, black);",
+  );
+  lines.push(
+    "      background: color-mix(in srgb, var(--switch-color) 75%, black);",
+  );
+  lines.push("    }");
+  lines.push("  }");
+  lines.push("");
+
+  // focus-visible
+  lines.push("  &[data-focus-visible] .indicator {");
+  lines.push("    outline: 2px solid var(--focus-ring);");
+  lines.push("    outline-offset: 2px;");
+  lines.push("  }");
+  lines.push("");
+
+  // disabled
+  lines.push("  &[data-disabled] {");
+  lines.push("    color: var(--fg-disabled);");
+  lines.push("    .indicator {");
+  lines.push("      border-color: var(--border-disabled);");
+  lines.push("      &:before { background: var(--bg-muted); }");
+  lines.push("    }");
+  lines.push("  }");
+  lines.push("}");
+  lines.push("");
+
+  // Size variants — DIMENSIONS에서 자동 생성
+  for (const [sizeName, dims] of Object.entries(dimensions)) {
+    const sizeSpec = spec.sizes[sizeName];
+    if (!sizeSpec) continue;
+
+    lines.push(`${sel}[data-size="${sizeName}"] {`);
+    lines.push(`  font-size: ${tokenToCSSVar(sizeSpec.fontSize)};`);
+    lines.push("");
+    lines.push("  .indicator {");
+    lines.push(`    width: ${dims.trackWidth}px;`);
+    lines.push(`    height: ${dims.trackHeight}px;`);
+    lines.push(`    border-radius: ${dims.trackHeight}px;`);
+    lines.push("");
+    lines.push("    &:before {");
+    lines.push(`      width: ${dims.thumbSize}px;`);
+    lines.push(`      height: ${dims.thumbSize}px;`);
+    lines.push(`      border-radius: ${dims.thumbSize}px;`);
+    lines.push("      margin: 0px;");
+    lines.push("    }");
+    lines.push("  }");
+    lines.push("}");
+    lines.push("");
+  }
+
+  return lines.join("\n");
 }
 
 // ─── Batch Generator ────────────────────────────────────────────────────────

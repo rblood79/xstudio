@@ -59,6 +59,7 @@ export const CHECKBOX_BOX_SIZES: Record<string, number> = {
 export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
   name: "Checkbox",
   description: "React Aria 기반 체크박스 컴포넌트",
+  archetype: "toggle-indicator",
   element: "label",
 
   defaultVariant: "default",
