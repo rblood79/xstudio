@@ -131,7 +131,6 @@ export const usePageManager = ({
       cancelPendingActivation();
       pendingActivationPageIdRef.current = pageId;
 
-      const activateStart = performance.now();
       pendingActivationFrameRef.current = scheduleNextFrame(() => {
         pendingActivationFrameRef.current = null;
 
@@ -142,9 +141,6 @@ export const usePageManager = ({
         pendingActivationPageIdRef.current = null;
         startTransition(() => {
           activatePage(pageId, elementId);
-        });
-        logPerf("pages.add.activate-next-frame", activateStart, {
-          currentPageId: pageId,
         });
       });
     },
@@ -281,7 +277,6 @@ export const usePageManager = ({
   const addPage = async (projectId: string): Promise<ApiResult<ApiPage>> => {
     return runWithPageCreationLock(async () => {
       try {
-        const totalStart = performance.now();
         // Zustand store의 pages를 사용하여 최대 order_num을 찾기
         const currentPages = useStore.getState().pages;
 
@@ -331,18 +326,10 @@ export const usePageManager = ({
         };
         setSelectedPageId(newPage.id);
 
-        const positionStart = performance.now();
         const nextPosition = computeNextPagePosition();
-        logPerf("pages.add.compute-position", positionStart, {
-          pageCount: currentPages.length,
-        });
 
-        const appendStart = performance.now();
         appendPageShell(newPage, bodyElement, nextPosition, {
           activate: false,
-        });
-        logPerf("pages.add.append-shell", appendStart, {
-          pageCountAfter: useStore.getState().pages.length,
         });
 
         schedulePageActivation(newPage.id, bodyElement.id);
@@ -356,9 +343,6 @@ export const usePageManager = ({
           }
         });
 
-        logPerf("pages.add.sync-total", totalStart, {
-          pageCountAfter: useStore.getState().pages.length,
-        });
         console.log("✅ 페이지 추가 완료:", newPage.title);
         return { success: true, data: newPage };
       } catch (error) {
