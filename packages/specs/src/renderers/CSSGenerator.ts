@@ -15,7 +15,7 @@ import type {
   VariantSpec,
   SizeSpec,
 } from "../types";
-import type { ShadowTokenRef } from "../types/token.types";
+import type { ShadowTokenRef, TokenRef } from "../types/token.types";
 import { tokenToCSSVar } from "./utils/tokenResolver";
 
 // ─── Archetype별 base styles ────────────────────────────────────────────────
@@ -143,6 +143,51 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string {
       );
     }
     lines.push("  }");
+    lines.push("}");
+    lines.push("");
+
+    // ─── Phase 2b: fillStyle outline 변형 ───
+    if (variantSpec.outlineBackground || variantSpec.outlineBorder) {
+      lines.push(
+        `.react-aria-${spec.name}[data-variant="${variantName}"][data-fill-style="outline"] {`,
+      );
+      lines.push(
+        `  background: ${tokenToCSSVar(variantSpec.outlineBackground ?? ("{color.transparent}" as TokenRef))};`,
+      );
+      if (variantSpec.outlineText) {
+        lines.push(`  color: ${tokenToCSSVar(variantSpec.outlineText)};`);
+      }
+      if (variantSpec.outlineBorder) {
+        lines.push(
+          `  border-color: ${tokenToCSSVar(variantSpec.outlineBorder)};`,
+        );
+      }
+      lines.push("}");
+      lines.push("");
+    }
+
+    // ─── Phase 2b: fillStyle subtle 변형 ───
+    if (variantSpec.subtleBackground) {
+      lines.push(
+        `.react-aria-${spec.name}[data-variant="${variantName}"][data-fill-style="subtle"] {`,
+      );
+      lines.push(
+        `  background: ${tokenToCSSVar(variantSpec.subtleBackground)};`,
+      );
+      if (variantSpec.subtleText) {
+        lines.push(`  color: ${tokenToCSSVar(variantSpec.subtleText)};`);
+      }
+      lines.push("  border: none;");
+      lines.push("}");
+      lines.push("");
+    }
+  }
+
+  // icon-only 지원 (archetype: button에만)
+  if (spec.archetype === "button") {
+    lines.push(`.react-aria-${spec.name}[data-icon-only] {`);
+    lines.push("  padding: 0;");
+    lines.push("  aspect-ratio: 1;");
     lines.push("}");
     lines.push("");
   }

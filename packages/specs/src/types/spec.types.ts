@@ -143,6 +143,23 @@ export interface VariantSpec {
 
   /** 배경 투명도 (optional, 0-1) */
   backgroundAlpha?: number;
+
+  // ─── ADR-036 Phase 2b: fillStyle 확장 ───
+
+  /** outline fillStyle — 배경색 (optional, 기본: transparent) */
+  outlineBackground?: TokenRef;
+
+  /** outline fillStyle — 텍스트 색상 (optional) */
+  outlineText?: TokenRef;
+
+  /** outline fillStyle — 테두리 색상 (optional) */
+  outlineBorder?: TokenRef;
+
+  /** subtle fillStyle — 배경색 (optional) */
+  subtleBackground?: TokenRef;
+
+  /** subtle fillStyle — 텍스트 색상 (optional) */
+  subtleText?: TokenRef;
 }
 
 /**

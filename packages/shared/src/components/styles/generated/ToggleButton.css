@@ -46,6 +46,11 @@
   }
 }
 
+.react-aria-ToggleButton[data-icon-only] {
+  padding: 0;
+  aspect-ratio: 1;
+}
+
 .react-aria-ToggleButton[data-size="xs"] {
   height: 20px;
   padding: 1px 4px;
