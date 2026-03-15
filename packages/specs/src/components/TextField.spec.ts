@@ -127,6 +127,57 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
     },
   },
 
+  // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        variables: {
+          xs: { "--tf-label-size": "var(--text-2xs)" },
+          sm: { "--tf-label-size": "var(--text-xs)" },
+          md: { "--tf-label-size": "var(--text-sm)" },
+          lg: { "--tf-label-size": "var(--text-base)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-Input",
+        variables: {
+          xs: {
+            "--tf-input-padding": "var(--spacing-3xs) var(--spacing-xs)",
+            "--tf-input-size": "var(--text-2xs)",
+            "--tf-input-line-height": "var(--text-2xs--line-height)",
+          },
+          sm: {
+            "--tf-input-padding": "var(--spacing-2xs) var(--spacing-sm)",
+            "--tf-input-size": "var(--text-xs)",
+            "--tf-input-line-height": "var(--text-xs--line-height)",
+          },
+          md: {
+            "--tf-input-padding": "var(--spacing-xs) var(--spacing-md)",
+            "--tf-input-size": "var(--text-sm)",
+            "--tf-input-line-height": "var(--text-sm--line-height)",
+          },
+          lg: {
+            "--tf-input-padding": "var(--spacing-sm) var(--spacing-lg)",
+            "--tf-input-size": "var(--text-base)",
+            "--tf-input-line-height": "var(--text-base--line-height)",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-FieldError",
+        variables: {
+          xs: { "--tf-hint-size": "var(--text-2xs)" },
+          sm: { "--tf-hint-size": "var(--text-xs)" },
+          md: { "--tf-hint-size": "var(--text-xs)" },
+          lg: { "--tf-hint-size": "var(--text-sm)" },
+        },
+      },
+    ],
+  },
+
   states: {
     hover: {},
     pressed: {},

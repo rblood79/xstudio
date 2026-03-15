@@ -118,3 +118,15 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-ToggleButton {
+    forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-ToggleButton {
+    transition-duration: 0s !important;
+  }
+}

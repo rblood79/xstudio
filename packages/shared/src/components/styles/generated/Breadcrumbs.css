@@ -88,3 +88,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-Breadcrumbs {
+    forced-color-adjust: auto;
+  }
+}

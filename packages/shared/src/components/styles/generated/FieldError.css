@@ -71,3 +71,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-FieldError {
+    forced-color-adjust: auto;
+  }
+}

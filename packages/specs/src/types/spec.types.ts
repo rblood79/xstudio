@@ -104,8 +104,39 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
   /** 상태별 스타일 (hover, pressed, disabled 등) */
   states: StateStyles;
 
+  /** ADR-036 Phase 3a: Tier 2 Composite CSS 생성용 메타데이터 */
+  composition?: CompositionSpec;
+
   /** 렌더링 정의 */
   render: RenderSpec<Props>;
+}
+
+// ─── ADR-036: Tier 2 Composite CSS 타입 ─────────────────────────────────────
+
+/**
+ * Composite 컴포넌트의 CSS 생성 메타데이터
+ * 모든 Composite는 동일 패턴: Container(layout) + Primitive[] + --var override
+ */
+export interface CompositionSpec {
+  /** container layout 규칙 */
+  layout: "flex-column" | "flex-row" | "grid" | "inline-flex";
+
+  /** gap (optional) */
+  gap?: string;
+
+  /** CSS Variable Delegation — size별 자식 변수 override */
+  delegation: DelegationSpec[];
+}
+
+/**
+ * 자식 Primitive에 대한 CSS 변수 위임
+ */
+export interface DelegationSpec {
+  /** 자식 CSS 선택자 (예: '.react-aria-Button', '.react-aria-Input') */
+  childSelector: string;
+
+  /** size → { CSS변수명 → 값 } 매핑 */
+  variables: Record<string, Record<string, string>>;
 }
 
 /**

@@ -109,3 +109,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-DateField {
+    forced-color-adjust: auto;
+  }
+}

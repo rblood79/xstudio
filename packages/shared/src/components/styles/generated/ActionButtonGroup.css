@@ -94,3 +94,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-ActionButtonGroup {
+    forced-color-adjust: auto;
+  }
+}

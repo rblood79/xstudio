@@ -103,3 +103,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-SliderTrack {
+    forced-color-adjust: auto;
+  }
+}

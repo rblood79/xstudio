@@ -164,3 +164,68 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* ── Tier 2: Composite Delegation ── */
+
+.react-aria-TextField[data-size="xs"] .react-aria-Label {
+  --tf-label-size: var(--text-2xs);
+}
+
+.react-aria-TextField[data-size="sm"] .react-aria-Label {
+  --tf-label-size: var(--text-xs);
+}
+
+.react-aria-TextField[data-size="md"] .react-aria-Label {
+  --tf-label-size: var(--text-sm);
+}
+
+.react-aria-TextField[data-size="lg"] .react-aria-Label {
+  --tf-label-size: var(--text-base);
+}
+
+.react-aria-TextField[data-size="xs"] .react-aria-Input {
+  --tf-input-padding: var(--spacing-3xs) var(--spacing-xs);
+  --tf-input-size: var(--text-2xs);
+  --tf-input-line-height: var(--text-2xs--line-height);
+}
+
+.react-aria-TextField[data-size="sm"] .react-aria-Input {
+  --tf-input-padding: var(--spacing-2xs) var(--spacing-sm);
+  --tf-input-size: var(--text-xs);
+  --tf-input-line-height: var(--text-xs--line-height);
+}
+
+.react-aria-TextField[data-size="md"] .react-aria-Input {
+  --tf-input-padding: var(--spacing-xs) var(--spacing-md);
+  --tf-input-size: var(--text-sm);
+  --tf-input-line-height: var(--text-sm--line-height);
+}
+
+.react-aria-TextField[data-size="lg"] .react-aria-Input {
+  --tf-input-padding: var(--spacing-sm) var(--spacing-lg);
+  --tf-input-size: var(--text-base);
+  --tf-input-line-height: var(--text-base--line-height);
+}
+
+.react-aria-TextField[data-size="xs"] .react-aria-FieldError {
+  --tf-hint-size: var(--text-2xs);
+}
+
+.react-aria-TextField[data-size="sm"] .react-aria-FieldError {
+  --tf-hint-size: var(--text-xs);
+}
+
+.react-aria-TextField[data-size="md"] .react-aria-FieldError {
+  --tf-hint-size: var(--text-xs);
+}
+
+.react-aria-TextField[data-size="lg"] .react-aria-FieldError {
+  --tf-hint-size: var(--text-sm);
+}
+
+
+@media (forced-colors: active) {
+  .react-aria-TextField {
+    forced-color-adjust: auto;
+  }
+}

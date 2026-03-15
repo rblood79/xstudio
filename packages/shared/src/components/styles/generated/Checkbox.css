@@ -97,3 +97,15 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-Checkbox {
+    forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-Checkbox {
+    transition-duration: 0s !important;
+  }
+}

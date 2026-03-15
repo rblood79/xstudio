@@ -84,3 +84,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-DisclosureGroup {
+    forced-color-adjust: auto;
+  }
+}

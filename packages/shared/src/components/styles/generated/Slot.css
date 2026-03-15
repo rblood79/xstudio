@@ -71,3 +71,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-Slot {
+    forced-color-adjust: auto;
+  }
+}

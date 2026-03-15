@@ -90,3 +90,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-ContextualHelp {
+    forced-color-adjust: auto;
+  }
+}

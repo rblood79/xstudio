@@ -213,6 +213,18 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string {
   // 상태 스타일
   lines.push(...generateStateStyles(spec));
 
+  // ─── Phase 3a: Tier 2 Composite CSS (CompositionSpec) ───
+  if (spec.composition) {
+    lines.push("");
+    lines.push(`/* ── Tier 2: Composite Delegation ── */`);
+    lines.push("");
+    lines.push(...generateCompositionCSS(spec));
+  }
+
+  // ─── Phase 3b: @media 공통 패턴 ───
+  lines.push("");
+  lines.push(...generateMediaQueries(spec));
+
   return lines.join("\n");
 }
 
@@ -468,6 +480,67 @@ function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
     lines.push("  pointer-events: none;");
   }
   lines.push("}");
+
+  return lines;
+}
+
+// ─── Phase 3a: Tier 2 Composite CSS Generation ─────────────────────────────
+
+function generateCompositionCSS<Props>(spec: ComponentSpec<Props>): string[] {
+  const comp = spec.composition;
+  if (!comp) return [];
+
+  const sel = `.react-aria-${spec.name}`;
+  const lines: string[] = [];
+
+  // delegation: size별 자식 변수 override
+  for (const delegation of comp.delegation) {
+    const { childSelector, variables } = delegation;
+
+    for (const [sizeName, vars] of Object.entries(variables)) {
+      const entries = Object.entries(vars);
+      if (entries.length === 0) continue;
+
+      lines.push(`${sel}[data-size="${sizeName}"] ${childSelector} {`);
+      for (const [varName, value] of entries) {
+        lines.push(`  ${varName}: ${value};`);
+      }
+      lines.push("}");
+      lines.push("");
+    }
+  }
+
+  return lines;
+}
+
+// ─── Phase 3b: @media 공통 패턴 ─────────────────────────────────────────────
+
+function generateMediaQueries<Props>(spec: ComponentSpec<Props>): string[] {
+  const sel = `.react-aria-${spec.name}`;
+  const lines: string[] = [];
+
+  // forced-colors (접근성)
+  lines.push("@media (forced-colors: active) {");
+  lines.push(`  ${sel} {`);
+  lines.push("    forced-color-adjust: auto;");
+  lines.push("  }");
+  lines.push("}");
+  lines.push("");
+
+  // prefers-reduced-motion (transition 있는 컴포넌트만)
+  const hasTransition =
+    spec.archetype === "button" ||
+    spec.archetype === "toggle-indicator" ||
+    spec.archetype === "overlay" ||
+    spec.archetype === "progress";
+
+  if (hasTransition) {
+    lines.push("@media (prefers-reduced-motion: reduce) {");
+    lines.push(`  ${sel} {`);
+    lines.push("    transition-duration: 0s !important;");
+    lines.push("  }");
+    lines.push("}");
+  }
 
   return lines;
 }

@@ -76,3 +76,15 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-ProgressBar {
+    forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-ProgressBar {
+    transition-duration: 0s !important;
+  }
+}

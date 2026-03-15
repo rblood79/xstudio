@@ -12,6 +12,8 @@ export type {
   VariantSpec,
   SizeSpec,
   RenderSpec,
+  CompositionSpec,
+  DelegationSpec,
 } from "./spec.types";
 
 // Shape Types

@@ -74,3 +74,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-ToggleButtonGroup {
+    forced-color-adjust: auto;
+  }
+}

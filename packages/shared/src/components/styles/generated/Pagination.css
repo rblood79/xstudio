@@ -90,3 +90,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-Pagination {
+    forced-color-adjust: auto;
+  }
+}

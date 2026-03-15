@@ -72,3 +72,15 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-ProgressCircle {
+    forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-ProgressCircle {
+    transition-duration: 0s !important;
+  }
+}

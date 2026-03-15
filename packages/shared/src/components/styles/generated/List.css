@@ -96,3 +96,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-List {
+    forced-color-adjust: auto;
+  }
+}

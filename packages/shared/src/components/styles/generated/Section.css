@@ -143,3 +143,9 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+@media (forced-colors: active) {
+  .react-aria-Section {
+    forced-color-adjust: auto;
+  }
+}
