@@ -128,6 +128,59 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
     },
   },
 
+  // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
+  composition: {
+    layout: "flex-column",
+    gap: "var(--spacing-xs)",
+    delegation: [
+      {
+        childSelector: ".react-aria-Label",
+        variables: {
+          xs: { "--combo-label-size": "var(--text-2xs)" },
+          sm: { "--combo-label-size": "var(--text-xs)" },
+          md: { "--combo-label-size": "var(--text-sm)" },
+          lg: { "--combo-label-size": "var(--text-base)" },
+          xl: { "--combo-label-size": "var(--text-lg)" },
+        },
+      },
+      {
+        childSelector: ".react-aria-Input",
+        variables: {
+          xs: {
+            "--combo-input-padding": "0 var(--spacing-xs)",
+            "--combo-input-font-size": "var(--text-2xs)",
+          },
+          sm: {
+            "--combo-input-padding": "0 var(--spacing-sm)",
+            "--combo-input-font-size": "var(--text-xs)",
+          },
+          md: {
+            "--combo-input-padding": "0 var(--spacing-md)",
+            "--combo-input-font-size": "var(--text-sm)",
+          },
+          lg: {
+            "--combo-input-padding": "0 var(--spacing-lg)",
+            "--combo-input-font-size": "var(--text-base)",
+          },
+          xl: {
+            "--combo-input-padding": "0 var(--spacing-xl)",
+            "--combo-input-font-size": "var(--text-lg)",
+          },
+        },
+      },
+      {
+        childSelector: ".react-aria-Button",
+        variables: {
+          xs: { "--combo-btn-size": "16px" },
+          sm: { "--combo-btn-size": "18px" },
+          md: { "--combo-btn-size": "22px" },
+          lg: { "--combo-btn-size": "28px" },
+          xl: { "--combo-btn-size": "32px" },
+        },
+      },
+    ],
+  },
+
   states: {
     hover: {},
     pressed: {},
