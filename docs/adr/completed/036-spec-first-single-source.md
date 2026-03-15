@@ -14,14 +14,14 @@ XStudio Team
 
 ## Related ADRs
 
-- [ADR-017](completed/017-css-token-architecture.md): CSS 토큰 아키텍처
-- [ADR-018](completed/018-css-utility-classes.md): CSS Utility 클래스 체계
-- [ADR-021](completed/021-theme-system-redesign.md): Theme System 재설계
-- [ADR-022](completed/022-s2-color-token.md): S2 색상 토큰 전환
-- [ADR-023](completed/023-s2-variant-props.md): S2 Variant Props
-- [ADR-038](038-figma-import.md): Figma 디자인 임포트 시스템
-- [ADR-033](completed/033-css-property-ssot-consolidation.md): CSS 속성 SSOT 통합 — 구조 변수화
-- [ADR-041](041-spec-driven-property-editor.md): Spec 기반 프로퍼티 에디터 자동 생성
+- [ADR-017](017-css-token-architecture.md): CSS 토큰 아키텍처
+- [ADR-018](018-css-utility-classes.md): CSS Utility 클래스 체계
+- [ADR-021](021-theme-system-redesign.md): Theme System 재설계
+- [ADR-022](022-s2-color-token.md): S2 색상 토큰 전환
+- [ADR-023](023-s2-variant-props.md): S2 Variant Props
+- [ADR-038](../038-figma-import.md): Figma 디자인 임포트 시스템
+- [ADR-033](033-css-property-ssot-consolidation.md): CSS 속성 SSOT 통합 — 구조 변수화
+- [ADR-041](../041-spec-driven-property-editor.md): Spec 기반 프로퍼티 에디터 자동 생성
 
 ---
 
@@ -2381,10 +2381,10 @@ steps:
 - `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` — SIZE_CONFIG (Phase 0 제거 대상)
 - `packages/specs/scripts/generate-css.ts` — CSS 생성 스크립트 (기존)
 - `packages/shared/src/components/styles/utilities.css` — `.button-base`, `.inset`, `.indicator` utility (ADR-018)
-- [ADR-022](completed/022-s2-color-token.md) — S2 색상 토큰 (tokenToCSSVar 체계)
-- [ADR-021](completed/021-theme-system-redesign.md) — Theme System (tint/darkMode 통합)
-- [ADR-033](completed/033-css-property-ssot-consolidation.md) — CSS 변수 위임 패턴 (`--input-*`, `--btn-*`, `--label-*`)
-- [ADR-038](038-figma-import.md) — Figma 디자인 임포트 (Spec shapes ↔ Figma 레이어 매핑 연계)
+- [ADR-022](022-s2-color-token.md) — S2 색상 토큰 (tokenToCSSVar 체계)
+- [ADR-021](021-theme-system-redesign.md) — Theme System (tint/darkMode 통합)
+- [ADR-033](033-css-property-ssot-consolidation.md) — CSS 변수 위임 패턴 (`--input-*`, `--btn-*`, `--label-*`)
+- [ADR-038](../038-figma-import.md) — Figma 디자인 임포트 (Spec shapes ↔ Figma 레이어 매핑 연계)
 
 ---
 

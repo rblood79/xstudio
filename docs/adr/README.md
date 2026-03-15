@@ -44,7 +44,7 @@
 | [035](completed/035-workspace-canvas-refactor.md)              | Workspace Canvas Runtime 리팩토링        | Implemented | 2026-03-13 | Phase 0~8 완료 (baseline 수집, invalidation/panel runtime test gate, WASM 분리)                       |
 | [039](completed/039-page-scoped-rendering.md)                  | Multi-page Canvas Page-Scoped Rendering  | Implemented | 2026-03-13 | Phase 0~6 완료 (document/page snapshot 분리, visible page Pixi/Skia 렌더링, page-scoped invalidation) |
 | [040](completed/040-visible-page-delta-runtime.md)             | Visible Page + Delta Runtime 전환        | Implemented | 2026-03-14 | Phase 0~6 완료 (snapshot recovery 분리, atomic activation, delta-first store/preview 계약)            |
-| [036](036-spec-first-single-source.md)                         | Spec-First Single Source — CSS 자동 생성 | Implemented | 2026-03-16 | Phase 1~4 완료 (CSSGenerator 확장 + SIZE_CONFIG 제거 + 단순/복합 컴포넌트 CSS 전환)                   |
+| [036](completed/036-spec-first-single-source.md)               | Spec-First Single Source — CSS 자동 생성 | Implemented | 2026-03-16 | Phase 1~4 완료 (CSSGenerator 확장 + SIZE_CONFIG 제거 + 단순/복합 컴포넌트 CSS 전환)                   |
 
 ### 부분 완료
 

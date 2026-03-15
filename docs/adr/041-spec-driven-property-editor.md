@@ -14,7 +14,7 @@ XStudio Team
 
 ## Related ADRs
 
-- [ADR-036](036-spec-first-single-source.md): Spec-First Single Source (CSS 자동 생성)
+- [ADR-036](completed/036-spec-first-single-source.md): Spec-First Single Source (CSS 자동 생성)
 
 ---
 
@@ -587,4 +587,4 @@ childSync, visibleWhen, enum 필드가 필요한 에디터.
 - `apps/builder/src/builder/components/property/` — PropertyInput/Select/Switch/SizeToggle
 - `packages/specs/src/types/spec.types.ts` — ComponentSpec 타입 정의
 - `packages/shared/src/components/metadata.ts` — 컴포넌트 메타데이터
-- [ADR-036](036-spec-first-single-source.md) — Spec-First Single Source (CSS 자동 생성)
+- [ADR-036](completed/036-spec-first-single-source.md) — Spec-First Single Source (CSS 자동 생성)
