@@ -1,0 +1,81 @@
+/* Generated from FileTrigger.spec.ts */
+/* DO NOT EDIT MANUALLY */
+
+@layer components {
+  .react-aria-FileTrigger {
+  }
+
+  .react-aria-FileTrigger[data-variant="default"] {
+    background: var(--bg-overlay);
+    color: var(--fg);
+    border-color: var(--border);
+
+    &[data-hovered] {
+      background: var(--bg-muted);
+      border-color: var(--bg-muted);
+    }
+
+    &[data-pressed] {
+      background: var(--bg-muted);
+      border-color: var(--bg-muted);
+    }
+  }
+
+  .react-aria-FileTrigger[data-variant="accent"] {
+    background: var(--accent);
+    color: var(--fg-on-accent);
+    border-color: var(--accent);
+
+    &[data-hovered] {
+      background: color-mix(in srgb, var(--accent) 85%, black);
+      border-color: color-mix(in srgb, var(--accent) 85%, black);
+    }
+
+    &[data-pressed] {
+      background: color-mix(in srgb, var(--accent) 75%, black);
+      border-color: color-mix(in srgb, var(--accent) 75%, black);
+    }
+  }
+
+  .react-aria-FileTrigger[data-size="sm"] {
+    height: 32px;
+    padding: 4px 12px;
+    font-size: var(--text-sm);
+    border-radius: var(--radius-sm);
+    gap: 6px;
+  }
+
+  .react-aria-FileTrigger[data-size="md"] {
+    height: 40px;
+    padding: 8px 24px;
+    font-size: var(--text-md);
+    border-radius: var(--radius-md);
+    gap: 8px;
+  }
+
+  .react-aria-FileTrigger[data-size="lg"] {
+    height: 48px;
+    padding: 12px 32px;
+    font-size: var(--text-lg);
+    border-radius: var(--radius-lg);
+    gap: 10px;
+  }
+
+  .react-aria-FileTrigger[data-hovered] {
+  }
+
+  .react-aria-FileTrigger[data-focus-visible] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .react-aria-FileTrigger[data-pressed] {
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  }
+
+  .react-aria-FileTrigger[data-disabled] {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}

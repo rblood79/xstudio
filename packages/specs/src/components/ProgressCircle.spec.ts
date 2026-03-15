@@ -21,7 +21,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface ProgressCircleProps {
   variant?: "default";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   value?: number;
   isIndeterminate?: boolean;
   isDisabled?: boolean;
@@ -39,9 +39,9 @@ export const PROGRESSCIRCLE_DIMENSIONS: Record<
   string,
   { diameter: number; strokeWidth: number }
 > = {
-  S: { diameter: 24, strokeWidth: 3 },
-  M: { diameter: 32, strokeWidth: 3 },
-  L: { diameter: 64, strokeWidth: 4 },
+  sm: { diameter: 24, strokeWidth: 3 },
+  md: { diameter: 32, strokeWidth: 3 },
+  lg: { diameter: 64, strokeWidth: 4 },
 };
 
 /**
@@ -53,7 +53,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -65,7 +65,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 24,
       width: 24,
       strokeWidth: 3,
@@ -75,7 +75,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 0,
     },
-    M: {
+    md: {
       height: 32,
       width: 32,
       strokeWidth: 3,
@@ -85,7 +85,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
       borderRadius: "{radius.full}" as TokenRef,
       gap: 0,
     },
-    L: {
+    lg: {
       height: 64,
       width: 64,
       strokeWidth: 4,
@@ -109,9 +109,9 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
 
   render: {
     shapes: (props, variant, size, _state = "default") => {
-      const sizeName = props.size ?? "M";
+      const sizeName = props.size ?? "md";
       const dims =
-        PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.M;
+        PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.md;
       const diameter = dims.diameter;
       const outerRadius = diameter / 2;
       const cx = outerRadius;
@@ -196,7 +196,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
         }
 
         // value 텍스트 (L 사이즈에만 표시)
-        if (sizeName === "L") {
+        if (sizeName === "lg") {
           shapes.push({
             id: "value-text",
             type: "text" as const,

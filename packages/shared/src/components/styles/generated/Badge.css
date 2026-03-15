@@ -1,0 +1,325 @@
+/* Generated from Badge.spec.ts */
+/* DO NOT EDIT MANUALLY */
+
+@layer components {
+  .react-aria-Badge {
+    /* Base styles */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+    /* Default variant */
+    background: var(--accent);
+    color: var(--fg-on-accent);
+    border: none;
+
+    /* Default size */
+    height: 20px;
+    padding: 4px 12px;
+    font-size: var(--text-xs);
+    border-radius: var(--radius-full);
+  }
+
+  .react-aria-Badge[data-variant="accent"] {
+    background: var(--accent);
+    color: var(--fg-on-accent);
+
+    &[data-hovered] {
+      background: var(--accent);
+    }
+
+    &[data-pressed] {
+      background: var(--accent);
+    }
+  }
+
+  .react-aria-Badge[data-variant="informative"] {
+    background: var(--color-info-600);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--color-info-600);
+    }
+
+    &[data-pressed] {
+      background: var(--color-info-600);
+    }
+  }
+
+  .react-aria-Badge[data-variant="neutral"] {
+    background: var(--fg);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--fg);
+    }
+
+    &[data-pressed] {
+      background: var(--fg);
+    }
+  }
+
+  .react-aria-Badge[data-variant="positive"] {
+    background: var(--color-green-600);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--color-green-600);
+    }
+
+    &[data-pressed] {
+      background: var(--color-green-600);
+    }
+  }
+
+  .react-aria-Badge[data-variant="notice"] {
+    background: var(--color-warning-600);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--color-warning-600);
+    }
+
+    &[data-pressed] {
+      background: var(--color-warning-600);
+    }
+  }
+
+  .react-aria-Badge[data-variant="negative"] {
+    background: var(--negative);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--negative);
+    }
+
+    &[data-pressed] {
+      background: var(--negative);
+    }
+  }
+
+  .react-aria-Badge[data-variant="gray"] {
+    background: var(--color-neutral-500);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--color-neutral-500);
+    }
+
+    &[data-pressed] {
+      background: var(--color-neutral-500);
+    }
+  }
+
+  .react-aria-Badge[data-variant="red"] {
+    background: var(--color-red-600);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--color-red-600);
+    }
+
+    &[data-pressed] {
+      background: var(--color-red-600);
+    }
+  }
+
+  .react-aria-Badge[data-variant="orange"] {
+    background: var(--color-orange-600);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--color-orange-600);
+    }
+
+    &[data-pressed] {
+      background: var(--color-orange-600);
+    }
+  }
+
+  .react-aria-Badge[data-variant="yellow"] {
+    background: var(--color-yellow-500);
+    color: var(--color-black);
+
+    &[data-hovered] {
+      background: var(--color-yellow-500);
+    }
+
+    &[data-pressed] {
+      background: var(--color-yellow-500);
+    }
+  }
+
+  .react-aria-Badge[data-variant="green"] {
+    background: var(--color-green-600);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--color-green-600);
+    }
+
+    &[data-pressed] {
+      background: var(--color-green-600);
+    }
+  }
+
+  .react-aria-Badge[data-variant="blue"] {
+    background: var(--color-blue-600);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--color-blue-600);
+    }
+
+    &[data-pressed] {
+      background: var(--color-blue-600);
+    }
+  }
+
+  .react-aria-Badge[data-variant="purple"] {
+    background: var(--color-purple-600);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: var(--color-purple-600);
+    }
+
+    &[data-pressed] {
+      background: var(--color-purple-600);
+    }
+  }
+
+  .react-aria-Badge[data-variant="indigo"] {
+    background: oklch(0.45 0.2 284);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: oklch(0.45 0.2 284);
+    }
+
+    &[data-pressed] {
+      background: oklch(0.45 0.2 284);
+    }
+  }
+
+  .react-aria-Badge[data-variant="cyan"] {
+    background: oklch(0.5 0.14 220);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: oklch(0.5 0.14 220);
+    }
+
+    &[data-pressed] {
+      background: oklch(0.5 0.14 220);
+    }
+  }
+
+  .react-aria-Badge[data-variant="pink"] {
+    background: oklch(0.6 0.18 348);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: oklch(0.6 0.18 348);
+    }
+
+    &[data-pressed] {
+      background: oklch(0.6 0.18 348);
+    }
+  }
+
+  .react-aria-Badge[data-variant="turquoise"] {
+    background: oklch(0.55 0.1 195);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: oklch(0.55 0.1 195);
+    }
+
+    &[data-pressed] {
+      background: oklch(0.55 0.1 195);
+    }
+  }
+
+  .react-aria-Badge[data-variant="fuchsia"] {
+    background: oklch(0.55 0.22 320);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: oklch(0.55 0.22 320);
+    }
+
+    &[data-pressed] {
+      background: oklch(0.55 0.22 320);
+    }
+  }
+
+  .react-aria-Badge[data-variant="magenta"] {
+    background: oklch(0.55 0.2 335);
+    color: var(--color-white);
+
+    &[data-hovered] {
+      background: oklch(0.55 0.2 335);
+    }
+
+    &[data-pressed] {
+      background: oklch(0.55 0.2 335);
+    }
+  }
+
+  .react-aria-Badge[data-size="xs"] {
+    height: 16px;
+    padding: 2px 8px;
+    font-size: var(--text-2xs);
+    border-radius: var(--radius-full);
+    gap: 2px;
+  }
+
+  .react-aria-Badge[data-size="sm"] {
+    height: 20px;
+    padding: 4px 12px;
+    font-size: var(--text-xs);
+    border-radius: var(--radius-full);
+    gap: 4px;
+  }
+
+  .react-aria-Badge[data-size="md"] {
+    height: 24px;
+    padding: 8px 16px;
+    font-size: var(--text-sm);
+    border-radius: var(--radius-full);
+    gap: 4px;
+  }
+
+  .react-aria-Badge[data-size="lg"] {
+    height: 28px;
+    padding: 8px 24px;
+    font-size: var(--text-base);
+    border-radius: var(--radius-full);
+    gap: 6px;
+  }
+
+  .react-aria-Badge[data-size="xl"] {
+    height: 32px;
+    padding: 12px 32px;
+    font-size: var(--text-lg);
+    border-radius: var(--radius-full);
+    gap: 8px;
+  }
+
+  .react-aria-Badge[data-focus-visible] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .react-aria-Badge[data-disabled] {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}

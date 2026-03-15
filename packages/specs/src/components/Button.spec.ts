@@ -109,6 +109,9 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 12,
       gap: 4,
+      lineHeight: 16,
+      borderWidth: 1,
+      iconGap: 4,
     },
     sm: {
       height: 22,
@@ -118,6 +121,9 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 6,
+      lineHeight: 16,
+      borderWidth: 1,
+      iconGap: 6,
     },
     md: {
       height: 30,
@@ -127,6 +133,9 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 16,
       gap: 8,
+      lineHeight: 20,
+      borderWidth: 1,
+      iconGap: 8,
     },
     lg: {
       height: 42,
@@ -136,6 +145,9 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 20,
       gap: 10,
+      lineHeight: 24,
+      borderWidth: 1,
+      iconGap: 10,
     },
     xl: {
       height: 54,
@@ -145,6 +157,9 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       borderRadius: "{radius.xl}" as TokenRef,
       iconSize: 24,
       gap: 12,
+      lineHeight: 28,
+      borderWidth: 1,
+      iconGap: 12,
     },
   },
 

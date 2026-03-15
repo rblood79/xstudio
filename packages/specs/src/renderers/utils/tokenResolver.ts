@@ -175,6 +175,8 @@ const NAMED_COLOR_TO_CSS: Record<string, string> = {
  * CSS 변수명으로 변환
  */
 export function tokenToCSSVar(ref: TokenRef): string {
+  // ADR-036: number(0 as unknown as TokenRef 패턴) 방어
+  if (typeof ref !== "string") return String(ref);
   // '{color.accent}' → 'var(--accent)'
   // '{spacing.md}' → 'var(--spacing-md)'
   const match = ref.match(/^\{(\w+)\.(.+)\}$/);

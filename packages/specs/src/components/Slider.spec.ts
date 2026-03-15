@@ -55,9 +55,9 @@ export const SLIDER_DIMENSIONS: Record<
   string,
   { trackHeight: number; thumbSize: number }
 > = {
-  S: { trackHeight: 4, thumbSize: 14 },
-  M: { trackHeight: 6, thumbSize: 18 },
-  L: { trackHeight: 8, thumbSize: 22 },
+  sm: { trackHeight: 4, thumbSize: 14 },
+  md: { trackHeight: 6, thumbSize: 18 },
+  lg: { trackHeight: 8, thumbSize: 22 },
 };
 
 /**
@@ -136,8 +136,8 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   render: {
     shapes: (props, variant, size, state = "default") => {
       const variantName = props.variant ?? "default";
-      const sizeName = props.size ?? "M";
-      const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.M;
+      const sizeName = props.size ?? "md";
+      const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.md;
       const fillColors =
         SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
       const width = (props.style?.width as number) || 200;

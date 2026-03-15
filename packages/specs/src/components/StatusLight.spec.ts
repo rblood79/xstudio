@@ -29,7 +29,7 @@ export interface StatusLightProps {
     | "magenta"
     | "purple"
     | "yellow";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   children?: string;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -40,9 +40,9 @@ export const STATUSLIGHT_DIMENSIONS: Record<
   string,
   { height: number; dotSize: number; gap: number; fontSize: number }
 > = {
-  S: { height: 20, dotSize: 8, gap: 8, fontSize: 12 },
-  M: { height: 24, dotSize: 10, gap: 8, fontSize: 14 },
-  L: { height: 28, dotSize: 12, gap: 8, fontSize: 16 },
+  sm: { height: 20, dotSize: 8, gap: 8, fontSize: 12 },
+  md: { height: 24, dotSize: 10, gap: 8, fontSize: 14 },
+  lg: { height: 28, dotSize: 12, gap: 8, fontSize: 16 },
 };
 
 /**
@@ -54,7 +54,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
   element: "div",
 
   defaultVariant: "neutral",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     neutral: {
@@ -138,7 +138,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: 20,
       dotSize: 8,
       paddingX: 0,
@@ -147,7 +147,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
     },
-    M: {
+    md: {
       height: 24,
       dotSize: 10,
       paddingX: 0,
@@ -156,7 +156,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
       borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
     },
-    L: {
+    lg: {
       height: 28,
       dotSize: 12,
       paddingX: 0,
@@ -175,7 +175,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
 
   render: {
     shapes: (props, variant, size, _state = "default") => {
-      const dotSize = (size as unknown as { dotSize: number }).dotSize ?? 10;
+      const dotSize = size.dotSize ?? 10;
       const dotRadius = dotSize / 2;
       const gap = size.gap ?? 8;
       const h = size.height ?? 24;

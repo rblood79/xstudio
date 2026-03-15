@@ -1,0 +1,100 @@
+/* Generated from Checkbox.spec.ts */
+/* DO NOT EDIT MANUALLY */
+
+@layer components {
+  .react-aria-Checkbox {
+    /* Base styles */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+    /* Default variant */
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+
+    /* Default size */
+    height: 24px;
+    padding: 0px 0px;
+    font-size: var(--text-md);
+    border-radius: var(--radius-sm);
+  }
+
+  .react-aria-Checkbox[data-variant="default"] {
+    background: var(--bg);
+    color: var(--fg);
+    border-color: var(--border);
+
+    &[data-hovered] {
+      background: var(--bg-inset);
+      border-color: var(--bg-inset);
+    }
+
+    &[data-pressed] {
+      background: var(--bg-overlay);
+      border-color: var(--bg-overlay);
+    }
+  }
+
+  .react-aria-Checkbox[data-variant="emphasized"] {
+    background: var(--bg);
+    color: var(--fg);
+    border-color: var(--border);
+
+    &[data-hovered] {
+      background: var(--accent-subtle);
+      border-color: var(--accent-subtle);
+    }
+
+    &[data-pressed] {
+      background: var(--accent-subtle);
+      border-color: var(--accent-subtle);
+    }
+  }
+
+  .react-aria-Checkbox[data-size="sm"] {
+    height: 20px;
+    padding: 0px 0px;
+    font-size: var(--text-sm);
+    border-radius: var(--radius-sm);
+    gap: 6px;
+  }
+
+  .react-aria-Checkbox[data-size="md"] {
+    height: 24px;
+    padding: 0px 0px;
+    font-size: var(--text-md);
+    border-radius: var(--radius-sm);
+    gap: 8px;
+  }
+
+  .react-aria-Checkbox[data-size="lg"] {
+    height: 28px;
+    padding: 0px 0px;
+    font-size: var(--text-lg);
+    border-radius: var(--radius-sm);
+    gap: 10px;
+  }
+
+  .react-aria-Checkbox[data-hovered] {
+  }
+
+  .react-aria-Checkbox[data-focus-visible] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .react-aria-Checkbox[data-pressed] {
+  }
+
+  .react-aria-Checkbox[data-disabled] {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}

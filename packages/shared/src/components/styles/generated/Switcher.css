@@ -1,0 +1,80 @@
+/* Generated from Switcher.spec.ts */
+/* DO NOT EDIT MANUALLY */
+
+@layer components {
+  .react-aria-Switcher {
+  }
+
+  .react-aria-Switcher[data-variant="default"] {
+    background: var(--bg-inset);
+    color: var(--fg-muted);
+    border-color: var(--border);
+
+    &[data-hovered] {
+      background: var(--bg-overlay);
+      border-color: var(--bg-overlay);
+    }
+
+    &[data-pressed] {
+      background: var(--bg-muted);
+      border-color: var(--bg-muted);
+    }
+  }
+
+  .react-aria-Switcher[data-variant="accent"] {
+    background: var(--bg-inset);
+    color: var(--fg-muted);
+    border-color: var(--accent);
+
+    &[data-hovered] {
+      background: var(--bg-overlay);
+      border-color: var(--bg-overlay);
+    }
+
+    &[data-pressed] {
+      background: var(--bg-muted);
+      border-color: var(--bg-muted);
+    }
+  }
+
+  .react-aria-Switcher[data-size="sm"] {
+    height: 32px;
+    padding: 4px 4px;
+    font-size: var(--text-sm);
+    border-radius: var(--radius-md);
+    gap: 2px;
+  }
+
+  .react-aria-Switcher[data-size="md"] {
+    height: 40px;
+    padding: 4px 4px;
+    font-size: var(--text-md);
+    border-radius: var(--radius-lg);
+    gap: 2px;
+  }
+
+  .react-aria-Switcher[data-size="lg"] {
+    height: 48px;
+    padding: 6px 6px;
+    font-size: var(--text-lg);
+    border-radius: var(--radius-xl);
+    gap: 4px;
+  }
+
+  .react-aria-Switcher[data-hovered] {
+  }
+
+  .react-aria-Switcher[data-focus-visible] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .react-aria-Switcher[data-pressed] {
+  }
+
+  .react-aria-Switcher[data-disabled] {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}

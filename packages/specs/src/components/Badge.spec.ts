@@ -183,6 +183,8 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       fontSize: "{typography.text-2xs}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 2,
+      lineHeight: 16,
+      borderWidth: 1,
     },
     sm: {
       height: 20,
@@ -191,6 +193,8 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
+      lineHeight: 16,
+      borderWidth: 1,
     },
     md: {
       height: 24,
@@ -199,6 +203,8 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 4,
+      lineHeight: 20,
+      borderWidth: 1,
     },
     lg: {
       height: 28,
@@ -207,6 +213,8 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 6,
+      lineHeight: 24,
+      borderWidth: 1,
     },
     xl: {
       height: 32,
@@ -215,6 +223,8 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 8,
+      lineHeight: 28,
+      borderWidth: 1,
     },
   },
 

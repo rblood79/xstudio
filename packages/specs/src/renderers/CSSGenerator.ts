@@ -113,10 +113,10 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
       : `    border: none;`,
     ``,
     `    /* Default size */`,
-    `    height: ${defaultSize.height}px;`,
+    `    height: ${typeof defaultSize.height === "number" ? `${defaultSize.height}px` : "auto"};`,
     `    padding: ${defaultSize.paddingY}px ${defaultSize.paddingX}px;`,
     `    font-size: ${tokenToCSSVar(defaultSize.fontSize)};`,
-    `    border-radius: ${tokenToCSSVar(defaultSize.borderRadius)};`,
+    `    border-radius: ${tokenToCSSVar(defaultSize.borderRadius) === "0" ? "0" : tokenToCSSVar(defaultSize.borderRadius)};`,
   ];
 }
 
@@ -138,11 +138,14 @@ function generateVariantStyles(variant: VariantSpec): string[] {
 }
 
 function generateSizeStyles(size: SizeSpec): string[] {
+  const heightValue =
+    typeof size.height === "number" ? `${size.height}px` : "auto";
+  const radiusValue = tokenToCSSVar(size.borderRadius);
   return [
-    `    height: ${size.height}px;`,
+    `    height: ${heightValue};`,
     `    padding: ${size.paddingY}px ${size.paddingX}px;`,
     `    font-size: ${tokenToCSSVar(size.fontSize)};`,
-    `    border-radius: ${tokenToCSSVar(size.borderRadius)};`,
+    `    border-radius: ${radiusValue === "0" ? "0" : radiusValue};`,
     ...(size.gap ? [`    gap: ${size.gap}px;`] : []),
   ];
 }

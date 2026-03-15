@@ -16,12 +16,17 @@ import type { Element } from "../../../../../types/core/store.types";
 import {
   fontFamily as specFontFamily,
   InputSpec,
+  ButtonSpec,
+  BadgeSpec,
+  ToggleButtonSpec,
+  CardSpec,
   resolveToken,
   PROGRESSBAR_DIMENSIONS,
   PROGRESSCIRCLE_DIMENSIONS,
   METER_DIMENSIONS,
   STATUSLIGHT_DIMENSIONS,
 } from "@xstudio/specs";
+import type { SizeSpec } from "@xstudio/specs";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import {
   measureWrappedTextHeight,
@@ -465,214 +470,66 @@ const DEFAULT_WIDTH = 80;
  * max(paddingY*2 + textHeight, MIN_HEIGHT) 공식으로 계산되어 불일치 발생.
  * 동일 공식을 사용하여 CSS/WebGL 정합성 보장.
  */
-const BUTTON_SIZE_CONFIG: Record<
-  string,
-  {
-    height?: number;
-    paddingLeft: number;
-    paddingRight: number;
-    paddingY: number;
-    fontSize: number;
-    lineHeight: number;
-    borderWidth: number;
-    iconSize: number;
-    iconGap: number;
+// ─── ADR-036: SIZE_CONFIG → Spec.sizes 파생 ────────────────────────────────
+// SizeSpec의 TokenRef fontSize를 resolved number로 변환하는 헬퍼
+interface ResolvedSizeConfig {
+  height?: number;
+  paddingLeft: number;
+  paddingRight: number;
+  paddingY: number;
+  fontSize: number;
+  lineHeight: number;
+  borderWidth: number;
+  iconSize: number;
+  iconGap: number;
+}
+
+function deriveSizeConfig(
+  sizes: Record<string, SizeSpec>,
+): Record<string, ResolvedSizeConfig> {
+  const result: Record<string, ResolvedSizeConfig> = {};
+  for (const [key, s] of Object.entries(sizes)) {
+    const rawFs = s.fontSize;
+    const fontSize =
+      typeof rawFs === "number"
+        ? rawFs
+        : typeof rawFs === "string" && rawFs.startsWith("{")
+          ? (resolveToken(rawFs) ?? 14)
+          : 14;
+    result[key] = {
+      paddingLeft: s.paddingLeft ?? s.paddingX,
+      paddingRight: s.paddingRight ?? s.paddingX,
+      paddingY: s.paddingY,
+      fontSize,
+      lineHeight: typeof s.lineHeight === "number" ? s.lineHeight : 20,
+      borderWidth: s.borderWidth ?? 1,
+      iconSize: s.iconSize ?? 16,
+      iconGap: s.iconGap ?? s.gap ?? 8,
+    };
   }
-> = {
-  // @sync Button.css [data-size] padding/fontSize/line-height 값과 일치해야 함
-  // @sync Button.css base: border: 1px solid (all variants, all sizes)
-  // @sync shared-tokens.css spacing: 3xs=1, 2xs=2, xs=4, sm=8, md=12, lg=16, xl=24, 2xl=32
-  // @sync shared-tokens.css line-height: text-sm=1.25/0.875, text-base=1.5/1, etc.
-  // CSS Button은 명시적 height를 설정하지 않음 → line-height + padding + border로 자동 결정
-  // lineHeight는 CSS line-height를 px로 환산한 값 (fontSize × ratio)
-  // @sync ButtonSpec.sizes — iconSize/gap 값 동기화
-  xs: {
-    paddingLeft: 4,
-    paddingRight: 4,
-    paddingY: 1, // --spacing-3xs
-    fontSize: 10,
-    lineHeight: 16, // 10 * (1/0.625) = 16
-    borderWidth: 1,
-    iconSize: 12,
-    iconGap: 4,
-  },
-  sm: {
-    paddingLeft: 8,
-    paddingRight: 8,
-    paddingY: 2, // --spacing-2xs
-    fontSize: 12,
-    lineHeight: 16, // 12 * (1/0.75) = 16
-    borderWidth: 1,
-    iconSize: 14,
-    iconGap: 6,
-  },
-  md: {
-    paddingLeft: 12,
-    paddingRight: 12,
-    paddingY: 4, // --spacing-xs
-    fontSize: 14,
-    lineHeight: 20, // 14 * (1.25/0.875) = 20
-    borderWidth: 1,
-    iconSize: 16,
-    iconGap: 8,
-  },
-  lg: {
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingY: 8, // --spacing-sm
-    fontSize: 16,
-    lineHeight: 24, // 16 * (1.5/1) = 24
-    borderWidth: 1,
-    iconSize: 20,
-    iconGap: 10,
-  },
-  xl: {
-    paddingLeft: 24,
-    paddingRight: 24,
-    paddingY: 12, // --spacing-md
-    fontSize: 18,
-    lineHeight: 28, // 18 * (1.75/1.125) = 28
-    borderWidth: 1,
-    iconSize: 24,
-    iconGap: 12,
-  },
-};
+  return result;
+}
+
+// ADR-036: Spec이 단일 소스 — SIZE_CONFIG 수동 동기화 불필요
+const BUTTON_SIZE_CONFIG = deriveSizeConfig(ButtonSpec.sizes);
 
 /** PixiButton MIN_BUTTON_HEIGHT과 동일 */
 const MIN_BUTTON_HEIGHT = 24;
 
-/**
- * Badge/Tag/Chip size별 설정
- *
- * cssVariableReader.ts의 BADGE_FALLBACKS와 1:1 동기화
- * PixiBadge 렌더링과 동일한 레이아웃 크기 보장
- */
-const BADGE_SIZE_CONFIG: Record<
-  string,
-  {
-    paddingLeft: number;
-    paddingRight: number;
-    paddingY: number;
-    fontSize: number;
-    lineHeight: number;
-    borderWidth: number;
-  }
-> = {
-  // @sync Button.css/BUTTON_SIZE_CONFIG — fontSize/lineHeight/padding 동일
-  xs: {
-    paddingLeft: 4,
-    paddingRight: 4,
-    paddingY: 1, // --spacing-3xs
-    fontSize: 10,
-    lineHeight: 16,
-    borderWidth: 1,
-  },
-  sm: {
-    paddingLeft: 8,
-    paddingRight: 8,
-    paddingY: 2, // --spacing-2xs
-    fontSize: 12,
-    lineHeight: 16,
-    borderWidth: 1,
-  },
-  md: {
-    paddingLeft: 12,
-    paddingRight: 12,
-    paddingY: 4, // --spacing-xs
-    fontSize: 14,
-    lineHeight: 20,
-    borderWidth: 1,
-  },
-  lg: {
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingY: 8, // --spacing-sm
-    fontSize: 16,
-    lineHeight: 24,
-    borderWidth: 1,
-  },
-  xl: {
-    paddingLeft: 24,
-    paddingRight: 24,
-    paddingY: 12, // --spacing-md
-    fontSize: 18,
-    lineHeight: 28,
-    borderWidth: 1,
-  },
-};
+// ADR-036: BadgeSpec.sizes에서 파생
+const BADGE_SIZE_CONFIG = deriveSizeConfig(BadgeSpec.sizes);
 
-/**
- * ToggleButton size별 설정
- *
- * @sync ToggleButton.css [data-size] padding 값과 일치해야 함
- * Button.css와 동일한 padding 사용
- */
-const TOGGLEBUTTON_SIZE_CONFIG: Record<
-  string,
-  {
-    paddingLeft: number;
-    paddingRight: number;
-    paddingY: number;
-    fontSize: number;
-    lineHeight: number;
-    borderWidth: number;
-  }
-> = {
-  // @sync ToggleButton.css [data-size] padding 값과 일치해야 함 (Button.css와 동일)
-  // @sync shared-tokens.css spacing/line-height 토큰
-  xs: {
-    paddingLeft: 4,
-    paddingRight: 4,
-    paddingY: 1, // --spacing-3xs
-    fontSize: 10,
-    lineHeight: 16, // 10 * (1/0.625)
-    borderWidth: 1,
-  },
-  sm: {
-    paddingLeft: 8,
-    paddingRight: 8,
-    paddingY: 2, // --spacing-2xs
-    fontSize: 12,
-    lineHeight: 16, // 12 * (1/0.75)
-    borderWidth: 1,
-  },
-  md: {
-    paddingLeft: 12,
-    paddingRight: 12,
-    paddingY: 4, // --spacing-xs
-    fontSize: 14,
-    lineHeight: 20, // 14 * (1.25/0.875)
-    borderWidth: 1,
-  },
-  lg: {
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingY: 8, // --spacing-sm
-    fontSize: 16,
-    lineHeight: 24, // 16 * (1.5/1)
-    borderWidth: 1,
-  },
-  xl: {
-    paddingLeft: 24,
-    paddingRight: 24,
-    paddingY: 12, // --spacing-md
-    fontSize: 18,
-    lineHeight: 28, // 18 * (1.75/1.125)
-    borderWidth: 1,
-  },
-};
+// ADR-036: ToggleButtonSpec.sizes에서 파생
+const TOGGLEBUTTON_SIZE_CONFIG = deriveSizeConfig(ToggleButtonSpec.sizes);
 
-/**
- * Card size별 설정
- *
- * cssVariableReader.ts의 CARD_FALLBACKS와 1:1 동기화
- * PixiCard 렌더링과 동일한 내부 패딩 보장
- */
-const CARD_SIZE_CONFIG: Record<string, { padding: number }> = {
-  sm: { padding: 8 },
-  md: { padding: 12 },
-  lg: { padding: 16 },
-};
+// ADR-036: CardSpec.sizes에서 파생
+const CARD_SIZE_CONFIG: Record<string, { padding: number }> =
+  Object.fromEntries(
+    Object.entries(CardSpec.sizes).map(([key, s]) => [
+      key,
+      { padding: s.paddingX },
+    ]),
+  );
 
 /** inline-level UI 컴포넌트 태그 → size config 매핑 */
 const INLINE_UI_SIZE_CONFIGS: Record<
@@ -895,8 +752,8 @@ export function calculateContentWidth(
   // 1.1. StatusLight: dot + gap + text width
   if (tag === "statuslight") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = String(props?.size ?? "M");
-    const dims = STATUSLIGHT_DIMENSIONS[sizeName] ?? STATUSLIGHT_DIMENSIONS.M;
+    const sizeName = String(props?.size ?? "md");
+    const dims = STATUSLIGHT_DIMENSIONS[sizeName] ?? STATUSLIGHT_DIMENSIONS.md;
     const text = String(props?.children ?? "");
     if (!text) return dims.dotSize;
     const specStyle = extractSpecTextStyle("statuslight", props ?? {});
@@ -1008,9 +865,9 @@ export function calculateContentWidth(
   // 1.3. ProgressCircle: diameter 기반 고정 크기
   if (tag === "progresscircle") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = String(props?.size ?? "M");
+    const sizeName = String(props?.size ?? "md");
     const dims =
-      PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.M;
+      PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.md;
     return dims.diameter;
   }
 
@@ -1522,8 +1379,8 @@ export function calculateContentHeight(
   // 1.5. StatusLight: spec sizes에 정의된 고정 높이
   if (tag1 === "statuslight") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = String(props?.size ?? "M");
-    const dims = STATUSLIGHT_DIMENSIONS[sizeName] ?? STATUSLIGHT_DIMENSIONS.M;
+    const sizeName = String(props?.size ?? "md");
+    const dims = STATUSLIGHT_DIMENSIONS[sizeName] ?? STATUSLIGHT_DIMENSIONS.md;
     return dims.height;
   }
 
@@ -1670,9 +1527,9 @@ export function calculateContentHeight(
   // 2.6a. ProgressCircle: diameter 기반 고정 크기
   if (tag === "progresscircle") {
     const props = element.props as Record<string, unknown> | undefined;
-    const sizeName = String(props?.size ?? "M");
+    const sizeName = String(props?.size ?? "md");
     const dims =
-      PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.M;
+      PROGRESSCIRCLE_DIMENSIONS[sizeName] ?? PROGRESSCIRCLE_DIMENSIONS.md;
     return dims.diameter;
   }
 

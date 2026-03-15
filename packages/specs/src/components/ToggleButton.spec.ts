@@ -82,6 +82,8 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       fontSize: "{typography.text-2xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 4,
+      lineHeight: 16,
+      borderWidth: 1,
     },
     sm: {
       height: 22,
@@ -90,6 +92,8 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 6,
+      lineHeight: 16,
+      borderWidth: 1,
     },
     md: {
       height: 32,
@@ -98,6 +102,8 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
+      lineHeight: 20,
+      borderWidth: 1,
     },
     lg: {
       height: 42,
@@ -106,6 +112,8 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 10,
+      lineHeight: 24,
+      borderWidth: 1,
     },
     xl: {
       height: 52,
@@ -114,6 +122,8 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 12,
+      lineHeight: 28,
+      borderWidth: 1,
     },
   },
 

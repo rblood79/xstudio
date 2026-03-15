@@ -15,7 +15,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  * IllustratedMessage Props
  */
 export interface IllustratedMessageProps {
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   orientation?: "horizontal" | "vertical";
   heading?: string;
   description?: string;
@@ -27,9 +27,9 @@ export const ILLUSTRATION_DIMENSIONS: Record<
   string,
   { width: number; height: number; iconSize: number }
 > = {
-  S: { width: 80, height: 80, iconSize: 40 },
-  M: { width: 120, height: 120, iconSize: 56 },
-  L: { width: 160, height: 160, iconSize: 72 },
+  sm: { width: 80, height: 80, iconSize: 40 },
+  md: { width: 120, height: 120, iconSize: 56 },
+  lg: { width: 160, height: 160, iconSize: 72 },
 };
 
 /**
@@ -41,7 +41,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -53,7 +53,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
   },
 
   sizes: {
-    S: {
+    sm: {
       height: "auto" as unknown as number,
       paddingX: 16,
       paddingY: 16,
@@ -62,7 +62,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
       gap: 8,
       headingFontSize: "{typography.text-md}" as TokenRef,
     },
-    M: {
+    md: {
       height: "auto" as unknown as number,
       paddingX: 24,
       paddingY: 24,
@@ -71,7 +71,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
       gap: 12,
       headingFontSize: "{typography.text-lg}" as TokenRef,
     },
-    L: {
+    lg: {
       height: "auto" as unknown as number,
       paddingX: 32,
       paddingY: 32,
@@ -87,9 +87,9 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const textColor = props.style?.color ?? variant.text;
-      const sizeName = props.size ?? "M";
+      const sizeName = props.size ?? "md";
       const dims =
-        ILLUSTRATION_DIMENSIONS[sizeName] ?? ILLUSTRATION_DIMENSIONS.M;
+        ILLUSTRATION_DIMENSIONS[sizeName] ?? ILLUSTRATION_DIMENSIONS.md;
 
       const rawFs = props.style?.fontSize ?? size.fontSize;
       const resolvedFs =
@@ -100,7 +100,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
             : rawFs;
       const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
 
-      const headingFsRaw = (size as Record<string, unknown>).headingFontSize;
+      const headingFsRaw = size.headingFontSize;
       const headingFsResolved =
         typeof headingFsRaw === "number"
           ? headingFsRaw

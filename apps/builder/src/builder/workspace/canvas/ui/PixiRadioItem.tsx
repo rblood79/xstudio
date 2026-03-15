@@ -56,9 +56,7 @@ export const PixiRadioItem = memo(function PixiRadioItem({
   // 스타일
   // 🚀 Spec Migration: RADIO_DIMENSIONS 사용
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
-  const sizeKey = size === "sm" ? "S" : size === "lg" ? "L" : "M";
-  const radioSize =
-    RADIO_DIMENSIONS[sizeKey]?.outer ?? RADIO_DIMENSIONS.M.outer;
+  const radioSize = RADIO_DIMENSIONS[size]?.outer ?? RADIO_DIMENSIONS.md.outer;
   const fontSize = typeof style?.fontSize === "number" ? style.fontSize : 14;
 
   // 크기 (LayoutEngine에서 계산된 크기 우선 사용)

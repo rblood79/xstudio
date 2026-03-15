@@ -7,9 +7,9 @@
  * @packageDocumentation
  */
 
-import type { Shape } from './shape.types';
-import type { TokenRef } from './token.types';
-import type { StateStyles } from './state.types';
+import type { Shape } from "./shape.types";
+import type { TokenRef } from "./token.types";
+import type { StateStyles } from "./state.types";
 
 /**
  * 컴포넌트 상태
@@ -20,7 +20,13 @@ import type { StateStyles } from './state.types';
  * - focusVisible: 키보드 포커스 (접근성)
  * - disabled: 비활성화
  */
-export type ComponentState = 'default' | 'hover' | 'pressed' | 'focused' | 'focusVisible' | 'disabled';
+export type ComponentState =
+  | "default"
+  | "hover"
+  | "pressed"
+  | "focused"
+  | "focusVisible"
+  | "disabled";
 
 /**
  * 컴포넌트 스펙 - 단일 소스
@@ -33,7 +39,7 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
   description?: string;
 
   /** 기본 HTML 태그 (React용) */
-  element: keyof HTMLElementTagNameMap | 'fragment';
+  element: keyof HTMLElementTagNameMap | "fragment";
 
   /**
    * 포털/오버레이 설정 (Dialog, Tooltip, Popover 등)
@@ -47,7 +53,7 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
     portalContainer?: string;
 
     /** 오버레이 타입 */
-    type: 'modal' | 'popover' | 'tooltip' | 'drawer' | 'toast';
+    type: "modal" | "popover" | "tooltip" | "drawer" | "toast";
 
     /** 백드롭 표시 여부 */
     hasBackdrop?: boolean;
@@ -62,7 +68,7 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
     trapFocus?: boolean;
 
     /** PIXI에서의 렌더링 레이어 (z-index 개념) */
-    pixiLayer?: 'content' | 'overlay' | 'modal' | 'toast';
+    pixiLayer?: "content" | "overlay" | "modal" | "toast";
   };
 
   /** Variant 정의 */
@@ -123,12 +129,15 @@ export interface VariantSpec {
 
 /**
  * Size 스펙
+ *
+ * ADR-036: SizeSpec은 Skia+CSS 공통 속성만 포함한다.
+ * Archetype 전용 치수(trackWidth, thumbSize 등)는 ComponentSpec.dimensions에 별도 정의.
  */
 export interface SizeSpec {
   /** 높이 (px) */
   height: number;
 
-  /** 가로 패딩 (px) */
+  /** 가로 패딩 (px) — 대칭 패딩 */
   paddingX: number;
 
   /** 세로 패딩 (px) */
@@ -146,9 +155,52 @@ export interface SizeSpec {
   /** 간격 (optional) */
   gap?: number;
 
-  /** 컴포넌트별 추가 속성 */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
+  /** CSS line-height + Skia strutStyle (optional) — TokenRef 또는 resolved px number */
+  lineHeight?: TokenRef | number;
+
+  /** CSS font-weight + Skia TextStyle.fontWeight (optional) */
+  fontWeight?: number;
+
+  /** CSS letter-spacing + Skia TextStyle.letterSpacing (optional) */
+  letterSpacing?: number;
+
+  /** CSS border-width + Skia BorderShape.borderWidth (optional) */
+  borderWidth?: number;
+
+  /** 최소 너비 (optional, px) */
+  minWidth?: number;
+
+  /** 최소 높이 (optional, px) */
+  minHeight?: number;
+
+  /** 비대칭 좌측 패딩 — paddingX 대신 사용 (optional, px) */
+  paddingLeft?: number;
+
+  /** 비대칭 우측 패딩 — paddingX 대신 사용 (optional, px) */
+  paddingRight?: number;
+
+  /** 아이콘-텍스트 간격 — gap과 구분 (optional, px) */
+  iconGap?: number;
+
+  /** 아이콘 전용 패딩 — icon-only 모드 (optional, px) */
+  iconOnlyPadding?: number;
+
+  // --- 컴포넌트별 확장 속성 (ADR-036: [key: string]: any 제거 후 명시적 선언) ---
+
+  /** 너비 (optional, px) — Avatar, Image, ContextualHelp, ProgressCircle 등 */
+  width?: number;
+
+  /** 도트 크기 (optional, px) — StatusLight */
+  dotSize?: number;
+
+  /** 헤딩 폰트 크기 (optional, TokenRef) — IllustratedMessage */
+  headingFontSize?: TokenRef;
+
+  /** 액센트 바 너비 (optional, px) — InlineAlert */
+  accentWidth?: number;
+
+  /** 스트로크 너비 (optional, px) — ProgressCircle 등 원형/호 도형 */
+  strokeWidth?: number;
 }
 
 /**
@@ -165,7 +217,12 @@ export interface RenderSpec<Props> {
    * @param state - 현재 상태 (default, hover, pressed, focused, focusVisible, disabled)
    * @returns 렌더링할 도형 배열
    */
-  shapes: (props: Props, variant: VariantSpec, size: SizeSpec, state: ComponentState) => Shape[];
+  shapes: (
+    props: Props,
+    variant: VariantSpec,
+    size: SizeSpec,
+    state: ComponentState,
+  ) => Shape[];
 
   /**
    * React 특화 속성

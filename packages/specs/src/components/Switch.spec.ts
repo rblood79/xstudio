@@ -42,9 +42,9 @@ export const SWITCH_DIMENSIONS: Record<
     thumbOffset: number;
   }
 > = {
-  S: { trackWidth: 36, trackHeight: 20, thumbSize: 14, thumbOffset: 3 },
-  M: { trackWidth: 44, trackHeight: 24, thumbSize: 18, thumbOffset: 3 },
-  L: { trackWidth: 52, trackHeight: 28, thumbSize: 22, thumbOffset: 3 },
+  sm: { trackWidth: 36, trackHeight: 20, thumbSize: 14, thumbOffset: 3 },
+  md: { trackWidth: 44, trackHeight: 24, thumbSize: 18, thumbOffset: 3 },
+  lg: { trackWidth: 52, trackHeight: 28, thumbSize: 22, thumbOffset: 3 },
 };
 
 /**
@@ -119,8 +119,8 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";
-      const sizeName = props.size ?? "M";
-      const switchSize = SWITCH_DIMENSIONS[sizeName] ?? SWITCH_DIMENSIONS.M;
+      const sizeName = props.size ?? "md";
+      const switchSize = SWITCH_DIMENSIONS[sizeName] ?? SWITCH_DIMENSIONS.md;
       const gap = size.gap ?? 10;
 
       const isChecked = props.isSelected;

@@ -1,0 +1,58 @@
+/* Generated from FieldError.spec.ts */
+/* DO NOT EDIT MANUALLY */
+
+@layer components {
+  .react-aria-FieldError {
+  }
+
+  .react-aria-FieldError[data-variant="default"] {
+    background: transparent;
+    color: var(--negative);
+
+    &[data-hovered] {
+      background: transparent;
+    }
+
+    &[data-pressed] {
+      background: transparent;
+    }
+  }
+
+  .react-aria-FieldError[data-size="sm"] {
+    height: 14px;
+    padding: 0px 0px;
+    font-size: var(--text-xs);
+    border-radius: var(--radius-none);
+  }
+
+  .react-aria-FieldError[data-size="md"] {
+    height: 16px;
+    padding: 0px 0px;
+    font-size: var(--text-xs);
+    border-radius: var(--radius-none);
+  }
+
+  .react-aria-FieldError[data-size="lg"] {
+    height: 20px;
+    padding: 0px 0px;
+    font-size: var(--text-sm);
+    border-radius: var(--radius-none);
+  }
+
+  .react-aria-FieldError[data-hovered] {
+  }
+
+  .react-aria-FieldError[data-focus-visible] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .react-aria-FieldError[data-pressed] {
+  }
+
+  .react-aria-FieldError[data-disabled] {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}

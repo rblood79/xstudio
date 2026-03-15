@@ -1,0 +1,164 @@
+/* Generated from TextField.spec.ts */
+/* DO NOT EDIT MANUALLY */
+
+@layer components {
+  .react-aria-TextField {
+    /* Base styles */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+    /* Default variant */
+    background: var(--bg-inset);
+    color: var(--fg);
+    border: 1px solid var(--border);
+
+    /* Default size */
+    height: 30px;
+    padding: 4px 16px;
+    font-size: var(--text-sm);
+    border-radius: var(--radius-md);
+  }
+
+  .react-aria-TextField[data-variant="default"] {
+    background: var(--bg-inset);
+    color: var(--fg);
+    border-color: var(--border);
+
+    &[data-hovered] {
+      background: var(--bg-overlay);
+      border-color: var(--accent);
+    }
+
+    &[data-pressed] {
+      background: var(--bg-overlay);
+      border-color: var(--bg-overlay);
+    }
+  }
+
+  .react-aria-TextField[data-variant="accent"] {
+    background: var(--bg-inset);
+    color: var(--fg);
+    border-color: var(--border);
+
+    &[data-hovered] {
+      background: var(--bg-overlay);
+      border-color: var(--accent);
+    }
+
+    &[data-pressed] {
+      background: var(--bg-overlay);
+      border-color: var(--bg-overlay);
+    }
+  }
+
+  .react-aria-TextField[data-variant="neutral"] {
+    background: var(--bg-inset);
+    color: var(--fg);
+    border-color: var(--border);
+
+    &[data-hovered] {
+      background: var(--bg-overlay);
+      border-color: var(--bg-muted);
+    }
+
+    &[data-pressed] {
+      background: var(--bg-overlay);
+      border-color: var(--bg-overlay);
+    }
+  }
+
+  .react-aria-TextField[data-variant="purple"] {
+    background: var(--bg-inset);
+    color: var(--fg);
+    border-color: var(--border);
+
+    &[data-hovered] {
+      background: var(--bg-overlay);
+      border-color: var(--color-purple-600);
+    }
+
+    &[data-pressed] {
+      background: var(--bg-overlay);
+      border-color: var(--bg-overlay);
+    }
+  }
+
+  .react-aria-TextField[data-variant="negative"] {
+    background: var(--bg-inset);
+    color: var(--fg);
+    border-color: var(--negative);
+
+    &[data-hovered] {
+      background: var(--color-error-100);
+      border-color: color-mix(in srgb, var(--negative) 85%, black);
+    }
+
+    &[data-pressed] {
+      background: var(--color-error-100);
+      border-color: var(--color-error-100);
+    }
+  }
+
+  .react-aria-TextField[data-variant="positive"] {
+    background: var(--bg-inset);
+    color: var(--fg);
+    border-color: var(--accent);
+
+    &[data-hovered] {
+      background: var(--bg-overlay);
+      border-color: color-mix(in srgb, var(--accent) 85%, black);
+    }
+
+    &[data-pressed] {
+      background: var(--bg-overlay);
+      border-color: var(--bg-overlay);
+    }
+  }
+
+  .react-aria-TextField[data-size="sm"] {
+    height: 22px;
+    padding: 2px 12px;
+    font-size: var(--text-xs);
+    border-radius: var(--radius-sm);
+    gap: 4px;
+  }
+
+  .react-aria-TextField[data-size="md"] {
+    height: 30px;
+    padding: 4px 16px;
+    font-size: var(--text-sm);
+    border-radius: var(--radius-md);
+    gap: 6px;
+  }
+
+  .react-aria-TextField[data-size="lg"] {
+    height: 42px;
+    padding: 8px 24px;
+    font-size: var(--text-base);
+    border-radius: var(--radius-lg);
+    gap: 8px;
+  }
+
+  .react-aria-TextField[data-hovered] {
+  }
+
+  .react-aria-TextField[data-focus-visible] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .react-aria-TextField[data-pressed] {
+  }
+
+  .react-aria-TextField[data-disabled] {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}

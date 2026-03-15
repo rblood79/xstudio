@@ -37,11 +37,8 @@ export const PROGRESSBAR_DIMENSIONS: Record<
   string,
   { barHeight: number; width: number }
 > = {
-  S: { barHeight: 4, width: 200 },
   sm: { barHeight: 4, width: 200 },
-  M: { barHeight: 8, width: 240 },
   md: { barHeight: 8, width: 240 },
-  L: { barHeight: 12, width: 320 },
   lg: { barHeight: 12, width: 320 },
 };
 
@@ -105,9 +102,9 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";
-      const sizeName = props.size ?? "M";
+      const sizeName = props.size ?? "md";
       const barDims =
-        PROGRESSBAR_DIMENSIONS[sizeName] ?? PROGRESSBAR_DIMENSIONS.M;
+        PROGRESSBAR_DIMENSIONS[sizeName] ?? PROGRESSBAR_DIMENSIONS.md;
       const fillColor =
         PROGRESSBAR_FILL_COLORS[variantName] ?? PROGRESSBAR_FILL_COLORS.default;
       const width = (props.style?.width as number) || barDims.width;

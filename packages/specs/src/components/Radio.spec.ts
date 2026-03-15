@@ -55,9 +55,9 @@ export const RADIO_DIMENSIONS: Record<
   string,
   { outer: number; inner: number }
 > = {
-  S: { outer: 16, inner: 6 },
-  M: { outer: 20, inner: 8 },
-  L: { outer: 24, inner: 10 },
+  sm: { outer: 16, inner: 6 },
+  md: { outer: 20, inner: 8 },
+  lg: { outer: 24, inner: 10 },
 };
 
 /**
@@ -146,8 +146,8 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
   render: {
     shapes: (props, variant, size, state = "default") => {
       const variantName = props.variant ?? "default";
-      const sizeName = props.size ?? "M";
-      const radioSize = RADIO_DIMENSIONS[sizeName] ?? RADIO_DIMENSIONS.M;
+      const sizeName = props.size ?? "md";
+      const radioSize = RADIO_DIMENSIONS[sizeName] ?? RADIO_DIMENSIONS.md;
       const selectedColors =
         RADIO_SELECTED_COLORS[variantName] ?? RADIO_SELECTED_COLORS.default;
       const gap = size.gap ?? 8;
