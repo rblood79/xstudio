@@ -60,27 +60,27 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
 
   variants: {
     informative: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
     positive: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
     notice: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
     negative: {
-      background: "{color.neutral-subtle}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
   },
@@ -148,7 +148,8 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
             : parseFloat(String(styleBr)) || 0
           : size.borderRadius;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor =
+        props.style?.backgroundColor ?? ("{color.neutral-subtle}" as TokenRef);
       const textColor = props.style?.color ?? variant.text;
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
       const resolvedFs =
@@ -175,12 +176,15 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
 
       const shapes: Shape[] = [];
 
-      // Child Composition: 자식 Element가 있으면 label/value text를 스킵하고 track+fill만 반환
+      // Child Composition: 자식 Element가 있으면 모든 shapes 스킵 (child가 담당)
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
-      // 라벨 + 값 행
-      const hasLabelRow =
-        !hasChildren && (props.label || props.showValue !== false);
+      if (hasChildren) {
+        return shapes; // empty
+      }
+
+      // Standalone 모드: 라벨 + 값 행
+      const hasLabelRow = props.label || props.showValue !== false;
       if (hasLabelRow) {
         if (props.label) {
           shapes.push({

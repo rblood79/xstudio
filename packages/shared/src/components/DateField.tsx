@@ -68,7 +68,7 @@ export function DateField<T extends DateValue>({
   defaultToday = false,
   minDate,
   maxDate,
-  variant = "primary",
+  variant = "default",
   size = "md",
   ...props
 }: DateFieldProps<T>) {

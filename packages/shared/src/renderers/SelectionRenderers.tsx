@@ -589,9 +589,28 @@ export const renderSelect = (
 
   // props를 안전하게 보존
   const elementProps = { ...element.props };
-  const labelValue = elementProps.label;
+
+  // Child element에서 props 읽기 (compositional 패턴)
+  const allSelectChildren = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const selectLabelEl = allSelectChildren.find((c) => c.tag === "Label");
+  const triggerEl = allSelectChildren.find((c) => c.tag === "SelectTrigger");
+  const triggerChildren = triggerEl
+    ? elements
+        .filter((c) => c.parent_id === triggerEl.id)
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+    : [];
+  const selectValueEl = triggerChildren.find((c) => c.tag === "SelectValue");
+
+  // child element props 우선 → parent props fallback
+  const labelValue = selectLabelEl
+    ? (selectLabelEl.props?.children as string)
+    : elementProps.label;
   const processedLabel = labelValue ? String(labelValue).trim() : undefined;
-  const placeholderValue = elementProps.placeholder;
+  const placeholderValue = selectValueEl
+    ? (selectValueEl.props?.children as string)
+    : elementProps.placeholder;
   const processedPlaceholder = placeholderValue
     ? String(placeholderValue).trim()
     : undefined;
@@ -924,6 +943,27 @@ export const renderComboBox = (
         );
       });
 
+  // Child element에서 props 읽기 (compositional 패턴)
+  const allChildren = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const labelEl = allChildren.find((c) => c.tag === "Label");
+  const wrapperEl = allChildren.find((c) => c.tag === "ComboBoxWrapper");
+  const wrapperChildren = wrapperEl
+    ? elements
+        .filter((c) => c.parent_id === wrapperEl.id)
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+    : [];
+  const inputEl = wrapperChildren.find((c) => c.tag === "ComboBoxInput");
+
+  // child element props 우선 → parent props fallback
+  const comboLabel = labelEl
+    ? String(labelEl.props?.children || "")
+    : String(element.props.label || "");
+  const comboPlaceholder = inputEl
+    ? String(inputEl.props?.placeholder || "")
+    : String(element.props.placeholder || "");
+
   return (
     <ComboBox
       key={element.id}
@@ -935,10 +975,10 @@ export const renderComboBox = (
       iconName={
         element.props.iconName ? String(element.props.iconName) : undefined
       }
-      label={String(element.props.label || "")}
+      label={comboLabel}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
-      placeholder={String(element.props.placeholder || "")}
+      placeholder={comboPlaceholder}
       {...(element.props.selectedKey || element.props.selectedValue
         ? {
             defaultSelectedKey: String(

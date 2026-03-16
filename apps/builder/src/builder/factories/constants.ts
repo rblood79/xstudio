@@ -62,6 +62,9 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
   "Tree",
   "TagGroup",
   "Table",
+  // Feedback (Hybrid)
+  "ProgressBar",
+  "Meter",
   // Phase 4: Advanced Components (ADR-030)
   "SegmentedControl",
   "CardView",

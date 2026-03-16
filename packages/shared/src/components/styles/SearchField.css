@@ -1,9 +1,15 @@
+/**
+ * SearchField Component Styles
+ *
+ * ComboBox와 동일한 구조: Label + .searchfield-container(Icon + Input + ClearButton)
+ */
+
 @layer components {
   .react-aria-SearchField {
-    display: grid;
-    grid-template-areas: "input button";
-    grid-template-columns: 1fr auto;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
     width: fit-content;
 
     /* Accent locals */
@@ -15,27 +21,9 @@
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
 
-    /* Size locals (md default) — @sync Button.css size variants */
+    /* Size locals (md default) */
     --sf-label-size: var(--text-sm);
-    --sf-input-padding: var(--spacing-xs) var(--spacing-xl) var(--spacing-xs)
-      var(--spacing-md);
-    --sf-input-size: var(--text-sm);
-    --sf-input-line-height: var(--text-sm--line-height);
-    --sf-btn-width: 24px;
-    --sf-btn-height: 24px;
-    --sf-btn-margin-left: -32px;
-    --sf-btn-margin-right: var(--spacing);
-    --sf-btn-size: var(--text-xs);
     --sf-hint-size: var(--text-xs);
-
-    /* Button variable overrides */
-    --btn-radius: 50%;
-    --btn-font-size: var(--sf-btn-size);
-    --btn-line-height: 1;
-    --btn-border: none;
-    --btn-padding: 0;
-    --btn-cursor: pointer;
-    --btn-transition: all 150ms ease;
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
@@ -48,80 +36,48 @@
       --field-accent: var(--negative);
     }
 
-    /* ===== Size ===== */
+    /* ===== Size (@sync ComboBox.css size variants) ===== */
+    --sf-btn-size: 18px;
+    --sf-icon-size: 16px;
+
     &[data-size="xs"] {
       --sf-label-size: var(--text-2xs);
-      --sf-input-padding: var(--spacing-3xs) var(--spacing-lg)
-        var(--spacing-3xs) var(--spacing-xs);
-      --sf-input-size: var(--text-2xs);
-      --sf-input-line-height: var(--text-2xs--line-height);
-      --sf-btn-width: 16px;
-      --sf-btn-height: 16px;
-      --sf-btn-margin-left: -24px;
-      --sf-btn-margin-right: var(--spacing-xs);
-      --sf-btn-size: 8px;
       --sf-hint-size: var(--text-2xs);
+      --sf-btn-size: 10px;
+      --sf-icon-size: 10px;
     }
     &[data-size="sm"] {
       --sf-label-size: var(--text-xs);
-      --sf-input-padding: var(--spacing-2xs) var(--spacing-lg)
-        var(--spacing-2xs) var(--spacing-sm);
-      --sf-input-size: var(--text-xs);
-      --sf-input-line-height: var(--text-xs--line-height);
-      --sf-btn-width: 20px;
-      --sf-btn-height: 20px;
-      --sf-btn-margin-left: -28px;
-      --sf-btn-margin-right: var(--spacing-sm);
-      --sf-btn-size: 10px;
       --sf-hint-size: var(--text-xs);
+      --sf-btn-size: 14px;
+      --sf-icon-size: 12px;
     }
     &[data-size="md"] {
       --sf-label-size: var(--text-sm);
-      --sf-input-padding: var(--spacing-xs) var(--spacing-xl) var(--spacing-xs)
-        var(--spacing-md);
-      --sf-input-size: var(--text-sm);
-      --sf-input-line-height: var(--text-sm--line-height);
-      --sf-btn-width: 24px;
-      --sf-btn-height: 24px;
-      --sf-btn-margin-left: -32px;
-      --sf-btn-margin-right: var(--spacing);
-      --sf-btn-size: var(--text-xs);
       --sf-hint-size: var(--text-xs);
+      --sf-btn-size: 18px;
+      --sf-icon-size: 16px;
     }
     &[data-size="lg"] {
       --sf-label-size: var(--text-base);
-      --sf-input-padding: var(--spacing-sm) var(--spacing-2xl) var(--spacing-sm)
-        var(--spacing-lg);
-      --sf-input-size: var(--text-base);
-      --sf-input-line-height: var(--text-base--line-height);
-      --sf-btn-width: 28px;
-      --sf-btn-height: 28px;
-      --sf-btn-margin-left: -36px;
-      --sf-btn-margin-right: var(--spacing-md);
-      --sf-btn-size: var(--text-sm);
       --sf-hint-size: var(--text-sm);
+      --sf-btn-size: 22px;
+      --sf-icon-size: 18px;
     }
     &[data-size="xl"] {
       --sf-label-size: var(--text-lg);
-      --sf-input-padding: var(--spacing-md) var(--spacing-3xl) var(--spacing-md)
-        var(--spacing-xl);
-      --sf-input-size: var(--text-lg);
-      --sf-input-line-height: var(--text-lg--line-height);
-      --sf-btn-width: 32px;
-      --sf-btn-height: 32px;
-      --sf-btn-margin-left: -40px;
-      --sf-btn-margin-right: var(--spacing-lg);
-      --sf-btn-size: var(--text-base);
       --sf-hint-size: var(--text-base);
+      --sf-btn-size: 28px;
+      --sf-icon-size: 22px;
     }
 
     /* ===== Label ===== */
     --label-font-size: var(--sf-label-size);
     --label-font-weight: 500;
-    --label-margin: var(--spacing-xs);
+    --label-margin: 0;
 
     .react-aria-Label {
-      grid-area: label;
+      font-size: inherit;
     }
 
     &[data-variant="primary"],
@@ -131,19 +87,74 @@
       --label-color: var(--field-accent);
     }
 
-    /* ===== Input ===== */
-    /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
-    --input-padding: var(--sf-input-padding);
-    --input-font-size: var(--sf-input-size);
-    --input-line-height: var(--sf-input-line-height);
-
-    .react-aria-Input {
-      grid-area: input;
-      outline: none;
+    /* ===== Container (ComboBox .combobox-container 동일) ===== */
+    .searchfield-container {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      width: 100%;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs)
+        var(--spacing-md);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg-inset);
       transition:
         border-color 200ms ease,
         background-color 200ms ease;
-      forced-color-adjust: none;
+      cursor: text;
+
+      &:hover:not(:has([data-disabled])) {
+        border-color: var(--border-hover);
+        background: var(--bg-overlay);
+      }
+
+      &:has([data-focused]) {
+        border-color: var(--accent);
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+        background: var(--bg-overlay);
+      }
+
+      &:has([data-invalid]) {
+        border-color: var(--negative);
+      }
+
+      &:has([data-disabled]) {
+        opacity: 0.38;
+        cursor: not-allowed;
+        background: var(--bg-muted);
+      }
+    }
+
+    /* ===== Search Icon ===== */
+    .search-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--fg-muted);
+
+      svg {
+        width: var(--sf-icon-size);
+        height: var(--sf-icon-size);
+      }
+    }
+
+    /* ===== Input ===== */
+    .react-aria-Input {
+      flex: 1;
+      min-width: 0;
+      padding: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--fg);
+      font-size: var(--sf-label-size);
+
+      &::placeholder {
+        color: var(--fg-muted);
+      }
 
       &::-webkit-search-cancel-button,
       &::-webkit-search-decoration {
@@ -151,51 +162,24 @@
       }
     }
 
-    /* Variant-accented: override --inset-* vars for accent styling */
-    &[data-variant="primary"],
-    &[data-variant="secondary"],
-    &[data-variant="tertiary"],
-    &[data-variant="error"] {
-      --inset-border: var(--field-accent);
-      --inset-hover-border: var(--field-accent);
-      --inset-hover-bg: var(--field-accent-container);
-      --inset-focus-color: var(--field-accent);
-      --inset-focus-bg: var(--field-accent-container);
-    }
-
-    /* ===== Filled Variant ===== */
-    &[data-variant="filled"] .react-aria-Input {
-      background: var(--accent-subtle);
-      border-color: transparent;
-      border-bottom: 2px solid var(--border);
-      border-radius: var(--border-radius) var(--border-radius) 0 0;
-
-      &[data-focused] {
-        outline: none;
-        border-bottom-color: var(--accent);
-        background: var(--bg-overlay);
-      }
-
-      &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        background: var(--bg-overlay);
-        border-bottom-color: var(--border-hover);
-      }
-    }
-
-    &[data-variant="filled"][data-invalid] .react-aria-Input {
-      border-bottom-color: var(--negative);
-    }
-
-    /* ===== Clear Button ===== */
+    /* ===== Clear Button (@sync ComboBox.css .react-aria-Button) ===== */
     .react-aria-Button {
-      grid-area: button;
-      width: var(--sf-btn-width);
-      height: var(--sf-btn-height);
-      margin-left: var(--sf-btn-margin-left);
-      margin-right: var(--sf-btn-margin-right);
+      position: static;
+      flex: 0 0 auto;
+      width: var(--sf-btn-size);
+      height: var(--sf-btn-size);
+      padding: 0;
+      border: none;
       background: var(--bg-overlay);
       color: var(--fg);
       forced-color-adjust: none;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+
+      svg {
+        width: var(--sf-icon-size);
+        height: var(--sf-icon-size);
+      }
 
       &[data-hovered]:not([data-disabled]) {
         background: var(--accent-subtle);
@@ -211,27 +195,9 @@
       }
 
       &[data-disabled] {
-        background: color-mix(in srgb, var(--fg) 4%, transparent);
+        background: color-mix(in srgb, var(--fg) 12%, transparent);
         color: color-mix(in srgb, var(--fg) 38%, transparent);
         cursor: not-allowed;
-      }
-    }
-
-    &[data-variant="primary"] .react-aria-Button,
-    &[data-variant="secondary"] .react-aria-Button,
-    &[data-variant="tertiary"] .react-aria-Button,
-    &[data-variant="error"] .react-aria-Button {
-      &[data-hovered]:not([data-disabled]) {
-        background: var(--field-accent-container);
-        color: var(--field-on-accent);
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: color-mix(
-          in srgb,
-          var(--field-accent) 12%,
-          var(--field-accent-container)
-        );
       }
     }
 
@@ -240,18 +206,130 @@
       display: none;
     }
 
+    /* ===== Variant-accented (@sync ComboBox.css variant styles) ===== */
+    &[data-variant="primary"],
+    &[data-variant="secondary"],
+    &[data-variant="tertiary"],
+    &[data-variant="error"] {
+      .searchfield-container {
+        border-color: var(--field-accent);
+
+        &:hover:not(:has([data-disabled])) {
+          background: var(--field-accent-container);
+          border-color: var(--field-accent);
+        }
+
+        &:has([data-focused]) {
+          border-color: var(--field-accent);
+          outline-color: var(--field-accent);
+          background: var(--field-accent-container);
+        }
+      }
+
+      .react-aria-Button {
+        background: var(--field-accent-container);
+        color: var(--field-on-accent);
+
+        &[data-hovered]:not([data-disabled]) {
+          background: color-mix(
+            in srgb,
+            var(--field-accent) 12%,
+            var(--field-accent-container)
+          );
+        }
+
+        &[data-pressed]:not([data-disabled]) {
+          background: color-mix(
+            in srgb,
+            var(--field-accent) 16%,
+            var(--field-accent-container)
+          );
+        }
+      }
+    }
+
     /* ===== Description / FieldError ===== */
     [slot="description"] {
-      grid-area: help;
       font-size: var(--sf-hint-size);
       color: var(--fg-muted);
     }
 
-    --error-font-size: var(--sf-hint-size);
-    --error-margin: var(--spacing-xs);
-
     .react-aria-FieldError {
-      grid-area: help;
+      font-size: var(--sf-hint-size);
+      color: var(--negative);
     }
   }
+}
+
+/* ===== Generated CSS override (layer 밖 = 동일 우선도) ===== */
+
+.react-aria-SearchField {
+  align-items: flex-start;
+}
+
+/* ===== Size-specific Button/Icon (@sync ComboBox generated CSS) ===== */
+
+.react-aria-SearchField[data-size="xs"] .react-aria-Button {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: none;
+}
+.react-aria-SearchField[data-size="xs"] .search-icon svg {
+  width: 10px;
+  height: 10px;
+}
+
+.react-aria-SearchField[data-size="sm"] .react-aria-Button {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: none;
+}
+.react-aria-SearchField[data-size="sm"] .search-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.react-aria-SearchField[data-size="md"] .react-aria-Button {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: none;
+}
+.react-aria-SearchField[data-size="md"] .search-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.react-aria-SearchField[data-size="lg"] .react-aria-Button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: none;
+}
+.react-aria-SearchField[data-size="lg"] .search-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.react-aria-SearchField[data-size="xl"] .react-aria-Button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: none;
+}
+.react-aria-SearchField[data-size="xl"] .search-icon svg {
+  width: 22px;
+  height: 22px;
 }

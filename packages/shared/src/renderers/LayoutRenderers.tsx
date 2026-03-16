@@ -698,8 +698,18 @@ export const renderTooltip = (
  */
 export const renderProgressBar = (
   element: PreviewElement,
-  _context: RenderContext,
+  context: RenderContext,
 ): React.ReactNode => {
+  const { elements } = context;
+
+  // Child element에서 label 읽기 (compositional 패턴)
+  const labelEl = elements.find(
+    (c) => c.parent_id === element.id && c.tag === "Label",
+  );
+  const label = labelEl
+    ? String(labelEl.props?.children || "")
+    : String(element.props.label || "");
+
   return (
     <ProgressBar
       key={element.id}
@@ -707,7 +717,7 @@ export const renderProgressBar = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      label={String(element.props.label || "")}
+      label={label}
       value={Number(element.props.value || 0)}
       minValue={
         element.props.minValue !== undefined
@@ -736,8 +746,18 @@ export const renderProgressBar = (
  */
 export const renderMeter = (
   element: PreviewElement,
-  _context: RenderContext,
+  context: RenderContext,
 ): React.ReactNode => {
+  const { elements } = context;
+
+  // Child element에서 label 읽기 (compositional 패턴)
+  const meterLabelEl = elements.find(
+    (c) => c.parent_id === element.id && c.tag === "Label",
+  );
+  const meterLabel = meterLabelEl
+    ? String(meterLabelEl.props?.children || "")
+    : String(element.props.label || "");
+
   return (
     <Meter
       key={element.id}
@@ -745,7 +765,7 @@ export const renderMeter = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      label={String(element.props.label || "")}
+      label={meterLabel}
       value={Number(element.props.value || 0)}
       minValue={
         element.props.minValue !== undefined

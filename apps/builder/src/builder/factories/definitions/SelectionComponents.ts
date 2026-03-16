@@ -45,7 +45,7 @@ export function createSelectDefinition(
         tag: "Label",
         props: {
           children: "Select",
-          variant: "accent",
+          variant: "default",
           style: {
             fontSize: 14,
             fontWeight: 500,
@@ -146,7 +146,7 @@ export function createComboBoxDefinition(
         tag: "Label",
         props: {
           children: "Combo Box",
-          variant: "accent",
+          variant: "default",
           style: {
             fontSize: 14,
             fontWeight: 500,

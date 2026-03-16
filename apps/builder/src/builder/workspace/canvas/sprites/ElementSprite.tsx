@@ -114,6 +114,10 @@ import {
   FieldErrorSpec,
   DescriptionSpec,
   SliderTrackSpec,
+  ProgressBarTrackSpec,
+  ProgressBarValueSpec,
+  MeterTrackSpec,
+  MeterValueSpec,
   SliderThumbSpec,
   SliderOutputSpec,
   DateSegmentSpec,
@@ -812,6 +816,10 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   FieldError: FieldErrorSpec,
   Description: DescriptionSpec,
   SliderTrack: SliderTrackSpec,
+  ProgressBarTrack: ProgressBarTrackSpec,
+  ProgressBarValue: ProgressBarValueSpec,
+  MeterTrack: MeterTrackSpec,
+  MeterValue: MeterValueSpec,
   SliderThumb: SliderThumbSpec,
   SliderOutput: SliderOutputSpec,
   DateSegment: DateSegmentSpec,
@@ -822,6 +830,10 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   ComboBoxWrapper: SelectTriggerSpec,
   ComboBoxInput: SelectValueSpec,
   ComboBoxTrigger: SelectIconSpec,
+  SearchFieldWrapper: SelectTriggerSpec,
+  SearchInput: SelectValueSpec,
+  SearchIcon: SelectIconSpec,
+  SearchClearButton: SelectIconSpec,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1085,8 +1097,23 @@ export const ElementSprite = memo(function ElementSprite({
     "SelectIcon",
     "ComboBoxInput",
     "ComboBoxTrigger",
+    "ProgressBarTrack",
+    "ProgressBarValue",
+    "MeterTrack",
+    "MeterValue",
+    "SearchFieldWrapper",
+    "SearchIcon",
+    "SearchInput",
+    "SearchClearButton",
+    "Label",
   ]);
-  const SIZE_DELEGATION_PARENT_TAGS = new Set(["Select", "ComboBox"]);
+  const SIZE_DELEGATION_PARENT_TAGS = new Set([
+    "Select",
+    "ComboBox",
+    "SearchField",
+    "ProgressBar",
+    "Meter",
+  ]);
   const parentDelegatedSize = useStore((state) => {
     if (!PARENT_SIZE_DELEGATION_TAGS.has(element.tag) || !element.parent_id)
       return null;
@@ -1131,6 +1158,80 @@ export const ElementSprite = memo(function ElementSprite({
       }
     }
     return null;
+  });
+
+  // 🚀 ProgressBar/Meter → Track/Value: 부모의 value/isIndeterminate/variant/size 전파
+  // Zustand v5: 객체 반환 → 매번 새 ref → 무한 루프. primitive string으로 직렬화.
+  const isProgressBarTrack =
+    element.tag === "ProgressBarTrack" || element.tag === "MeterTrack";
+  const isProgressBarValue =
+    element.tag === "ProgressBarValue" || element.tag === "MeterValue";
+  const isProgressBarChild = isProgressBarTrack || isProgressBarValue;
+  const parentProgressValue = useStore((state) => {
+    if (!isProgressBarChild || !element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    return (
+      ((parent?.props as Record<string, unknown> | undefined)?.value as
+        | number
+        | undefined) ?? null
+    );
+  });
+  const parentProgressIndeterminate = useStore((state) => {
+    if (!isProgressBarChild || !element.parent_id) return false;
+    const parent = state.elementsMap.get(element.parent_id);
+    return !!(parent?.props as Record<string, unknown> | undefined)
+      ?.isIndeterminate;
+  });
+  const parentProgressVariant = useStore((state) => {
+    if (!isProgressBarChild || !element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    return (
+      ((parent?.props as Record<string, unknown> | undefined)?.variant as
+        | string
+        | undefined) ?? null
+    );
+  });
+  const parentProgressSize = useStore((state) => {
+    if (!isProgressBarChild || !element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    return (
+      ((parent?.props as Record<string, unknown> | undefined)?.size as
+        | string
+        | undefined) ?? null
+    );
+  });
+  const parentProgressValueFormat = useStore((state) => {
+    if (!isProgressBarValue || !element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    return (
+      ((parent?.props as Record<string, unknown> | undefined)?.valueFormat as
+        | string
+        | undefined) ?? null
+    );
+  });
+  const parentProgressShowValue = useStore((state) => {
+    if (!isProgressBarValue || !element.parent_id) return true;
+    const parent = state.elementsMap.get(element.parent_id);
+    const pp = parent?.props as Record<string, unknown> | undefined;
+    return pp?.showValue !== false;
+  });
+  const parentProgressMinValue = useStore((state) => {
+    if (!isProgressBarChild || !element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    return (
+      ((parent?.props as Record<string, unknown> | undefined)?.minValue as
+        | number
+        | undefined) ?? null
+    );
+  });
+  const parentProgressMaxValue = useStore((state) => {
+    if (!isProgressBarChild || !element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    return (
+      ((parent?.props as Record<string, unknown> | undefined)?.maxValue as
+        | number
+        | undefined) ?? null
+    );
   });
 
   // 🚀 ToggleButtonGroup 내 ToggleButton의 위치 정보 (borderRadius 계산용)
@@ -1444,8 +1545,8 @@ export const ElementSprite = memo(function ElementSprite({
     // Label child variant 상속: spec shapes 경로
     // Label은 isUIComponent=true → 부모 variant에서 색상 상속
     const PARENT_VARIANT_TO_LABEL: Record<string, string> = {
-      default: "accent",
-      primary: "accent",
+      default: "default",
+      primary: "default",
       secondary: "neutral",
       tertiary: "purple",
       error: "negative",
@@ -1459,7 +1560,7 @@ export const ElementSprite = memo(function ElementSprite({
               (parentElement.props as Record<string, unknown> | undefined)
                 ?.variant || "default",
             )
-          ] ?? "accent")
+          ] ?? "default")
         : String(props?.variant || "default")
       : "";
 
@@ -1708,6 +1809,58 @@ export const ElementSprite = memo(function ElementSprite({
               // SelectIcon/ComboBoxTrigger: 부모의 iconName 전파 (specProps에 없으면 주입)
               if (parentDelegatedIconName && !specProps.iconName) {
                 specProps = { ...specProps, iconName: parentDelegatedIconName };
+              }
+
+              // ProgressBarTrack: 부모 ProgressBar의 value/isIndeterminate/variant/size 전파
+              // min/max를 0-100 퍼센트로 정규화하여 전달
+              if (isProgressBarTrack) {
+                const rawVal = parentProgressValue ?? 0;
+                const minV = parentProgressMinValue ?? 0;
+                const maxV = parentProgressMaxValue ?? 100;
+                const normalizedValue =
+                  maxV > minV
+                    ? Math.max(
+                        0,
+                        Math.min(100, ((rawVal - minV) / (maxV - minV)) * 100),
+                      )
+                    : 0;
+                specProps = {
+                  ...specProps,
+                  value: specProps.value ?? normalizedValue,
+                  isIndeterminate:
+                    specProps.isIndeterminate || parentProgressIndeterminate,
+                  variant:
+                    specProps.variant ?? parentProgressVariant ?? undefined,
+                  size: specProps.size ?? parentProgressSize ?? undefined,
+                };
+              }
+
+              // ProgressBarValue: 부모 ProgressBar의 value를 포맷팅하여 children에 주입
+              // delegation 값이 항상 우선 (factory의 초기 "50%"보다 부모의 실시간 value 우선)
+              if (isProgressBarValue && parentProgressShowValue) {
+                const rawVal = parentProgressValue ?? 0;
+                const minV = parentProgressMinValue ?? 0;
+                const maxV = parentProgressMaxValue ?? 100;
+                const percent =
+                  maxV > minV ? ((rawVal - minV) / (maxV - minV)) * 100 : 0;
+                const clampedPercent = Math.max(0, Math.min(100, percent));
+                const formatted =
+                  parentProgressValueFormat === "number"
+                    ? String(Math.round(rawVal))
+                    : `${Math.round(clampedPercent)}%`;
+                const existingStyle = (specProps.style || {}) as Record<
+                  string,
+                  unknown
+                >;
+                specProps = {
+                  ...specProps,
+                  children: formatted,
+                  size: specProps.size ?? parentProgressSize ?? undefined,
+                  style: {
+                    ...existingStyle,
+                    fontSize: undefined, // sizeSpec.fontSize가 결정하도록 제거
+                  },
+                };
               }
 
               // 동적 컴포넌트 상태: preview > disabled prop > default
@@ -2093,20 +2246,28 @@ export const ElementSprite = memo(function ElementSprite({
     skiaTheme,
     parentDelegatedSize,
     parentDelegatedIconName,
+    parentProgressValue,
+    parentProgressIndeterminate,
+    parentProgressVariant,
+    parentProgressSize,
+    parentProgressValueFormat,
+    parentProgressShowValue,
+    parentProgressMinValue,
+    parentProgressMaxValue,
   ]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로
   // ElementSprite의 이중 등록을 방지한다. (effects, blendMode, 올바른 fillColor 포함)
   // text 타입은 TextSprite가 자체적으로 텍스트 Skia 데이터를 등록하므로
   // ElementSprite에서 box 데이터로 덮어쓰지 않도록 방지한다.
-  // 단, TAG_SPEC_MAP에 등록된 "box" 태그(Label 등)는 spec shapes로 렌더링하므로 제외
+  // 단, TAG_SPEC_MAP에 등록된 태그(Label, ProgressBar 등)는 spec shapes로 렌더링하므로 제외
   const hasSpecShapes = getSpecForTag(element.tag) != null;
   const hasOwnSprite =
     (spriteType === "box" && !hasSpecShapes) ||
     spriteType === "text" ||
     spriteType === "image" ||
-    spriteType === "flex" ||
-    spriteType === "grid";
+    (spriteType === "flex" && !hasSpecShapes) ||
+    (spriteType === "grid" && !hasSpecShapes);
 
   // 렌더링 단계에서 skip될 요소는 Skia node도 등록하지 않음
   // (Tab in Tabs, Breadcrumb in Breadcrumbs, display:contents)

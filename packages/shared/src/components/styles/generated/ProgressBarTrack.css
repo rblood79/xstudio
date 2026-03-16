@@ -1,0 +1,85 @@
+/* ============================================================
+ * AUTO-GENERATED from ProgressBarTrackSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/ProgressBarTrack.spec.ts
+ * Archetype: default
+ * ============================================================ */
+
+.react-aria-ProgressBarTrack {
+  /* Base styles — archetype: default */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: var(--font-sans);
+
+  /* Default variant */
+  background: transparent;
+  color: var(--fg);
+  border: none;
+
+  /* Default size */
+  height: 8px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-ProgressBarTrack[data-variant="default"] {
+  background: transparent;
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: transparent;
+  }
+
+  &[data-pressed] {
+    background: transparent;
+  }
+}
+
+.react-aria-ProgressBarTrack[data-size="sm"] {
+  height: 4px;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-ProgressBarTrack[data-size="md"] {
+  height: 8px;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-ProgressBarTrack[data-size="lg"] {
+  height: 12px;
+  padding: 0px 0px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-none);
+}
+
+.react-aria-ProgressBarTrack[data-hovered] {
+}
+
+.react-aria-ProgressBarTrack[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.react-aria-ProgressBarTrack[data-pressed] {
+}
+
+.react-aria-ProgressBarTrack[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-ProgressBarTrack {
+    forced-color-adjust: auto;
+  }
+}

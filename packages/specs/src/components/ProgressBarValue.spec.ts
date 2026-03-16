@@ -1,9 +1,8 @@
 /**
- * Label Component Spec
+ * ProgressBarValue Component Spec
  *
- * React Aria 기반 라벨 컴포넌트
- * TextField, NumberField 등 compound 컴포넌트의 child 요소
- * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
+ * ProgressBar compound 컴포넌트의 child 요소 (현재 값 텍스트 표시)
+ * 부모에서 value/valueFormat을 delegation 받아 표시
  *
  * @packageDocumentation
  */
@@ -13,64 +12,33 @@ import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
- * Label Props
+ * ProgressBarValue Props
  */
-export interface LabelProps {
-  /** Label 자체 variant 또는 parent field의 --field-accent 매핑 */
-  variant?: "default" | "accent" | "neutral" | "purple" | "negative";
+export interface ProgressBarValueProps {
+  variant?: "default";
   size?: "sm" | "md" | "lg";
+  /** 표시할 값 텍스트 (부모에서 delegation) */
   children?: string;
-  label?: string;
-  isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
 /**
- * Label Component Spec
+ * ProgressBarValue Component Spec
  */
-export const LabelSpec: ComponentSpec<LabelProps> = {
-  name: "Label",
-  description: "compound 컴포넌트의 라벨 텍스트 렌더링",
-  element: "label",
+export const ProgressBarValueSpec: ComponentSpec<ProgressBarValueProps> = {
+  name: "ProgressBarValue",
+  description: "프로그레스바 현재 값 텍스트 렌더링",
+  element: "output",
 
   defaultVariant: "default",
   defaultSize: "md",
 
   variants: {
-    // standalone Label (parent가 field가 아닐 때)
     default: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-    },
-    // accent — 기본 텍스트 색상 (S2 accent 색상 대신 neutral 사용)
-    accent: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-    },
-    // S2 neutral — 보조 필드 라벨 (neutral-subdued)
-    neutral: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral-subdued}" as TokenRef,
-    },
-    // S2 purple — Named Color 라벨 (purple-600)
-    purple: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.purple}" as TokenRef,
-    },
-    // S2 negative — 에러 필드 라벨 (invalid-color)
-    negative: {
-      background: "{color.transparent}" as TokenRef,
-      backgroundHover: "{color.transparent}" as TokenRef,
-      backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.negative}" as TokenRef,
     },
   },
 
@@ -104,20 +72,14 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
   states: {
     hover: {},
     pressed: {},
-    disabled: {
-      opacity: 0.38,
-      cursor: "not-allowed",
-      pointerEvents: "none",
-    },
+    disabled: { opacity: 0.38 },
     focusVisible: {},
   },
 
   render: {
     shapes: (props, variant, size) => {
-      const text = props.children ?? props.label ?? "";
+      const text = props.children ?? "";
       if (!text) return [];
-
-      const width = (props.style?.width as number) || "auto";
 
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
       const resolvedFs =
@@ -137,11 +99,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
           : 500;
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-
       const textColor = props.style?.color ?? variant.text;
-
-      const textAlign =
-        (props.style?.textAlign as "left" | "center" | "right") || "left";
 
       const shapes: Shape[] = [
         {
@@ -153,17 +111,16 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
           fontFamily: ff,
           fontWeight,
           fill: textColor,
-          align: textAlign,
+          align: "right" as const,
           baseline: "top" as const,
-          maxWidth: typeof width === "number" ? width : undefined,
         },
       ];
 
       return shapes;
     },
 
-    react: (props) => ({
-      "data-disabled": props.isDisabled || undefined,
+    react: () => ({
+      "aria-live": "off",
     }),
 
     pixi: () => ({

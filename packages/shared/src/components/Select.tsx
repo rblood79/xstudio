@@ -84,7 +84,7 @@ export function Select<T extends object>({
   placeholder,
   dataBinding,
   columnMapping,
-  variant = "primary",
+  variant = "default",
   size = "md",
   iconName,
   selectionMode = "single",

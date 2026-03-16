@@ -72,8 +72,48 @@ const INDICATOR_SIZES: Record<string, { box: number; gap: number }> = {
   lg: { box: 24, gap: 10 },
 };
 
+/** ProgressBar/Meter 사이즈별 gap (ProgressBarSpec.sizes.gap 동기) */
+const PROGRESSBAR_GAP: Record<string, number> = {
+  sm: 6,
+  md: 8,
+  lg: 10,
+};
+
+/** ProgressBar/Meter 사이즈별 barHeight (PROGRESSBAR_DIMENSIONS 동기) */
+const PROGRESSBAR_BAR_HEIGHT: Record<string, number> = {
+  sm: 4,
+  md: 8,
+  lg: 12,
+};
+
+/** ProgressBar/Meter 사이즈별 fontSize (ProgressBarSpec.sizes.fontSize resolved) */
+const PROGRESSBAR_FONT_SIZE: Record<string, number> = {
+  sm: 12,
+  md: 14,
+  lg: 16,
+};
+
+/** ProgressBar/Meter 태그 집합 */
+const PROGRESSBAR_TAGS = new Set([
+  "progressbar",
+  "progress",
+  "loadingbar",
+  "meter",
+  "gauge",
+]);
+
 /** Synthetic Label을 생성하는 태그 */
-const SYNTHETIC_LABEL_TAGS = new Set(["radio", "checkbox", "switch", "toggle"]);
+const SYNTHETIC_LABEL_TAGS = new Set([
+  "radio",
+  "checkbox",
+  "switch",
+  "toggle",
+  "progressbar",
+  "progress",
+  "loadingbar",
+  "meter",
+  "gauge",
+]);
 
 // ─── 내부 헬퍼 ──────────────────────────────────────────────────────
 
@@ -260,19 +300,29 @@ export function applyImplicitStyles(
     });
   }
 
-  // ── ComboBox / Select ──────────────────────────────────────────────
-  if (containerTag === "combobox" || containerTag === "select") {
+  // ── ComboBox / Select / SearchField ───────────────────────────────
+  if (
+    containerTag === "combobox" ||
+    containerTag === "select" ||
+    containerTag === "searchfield"
+  ) {
     const hasLabel = !!containerProps?.label;
+    const WRAPPER_TAGS = new Set([
+      "SelectTrigger",
+      "ComboBoxWrapper",
+      "SearchFieldWrapper",
+    ]);
     filteredChildren = children.filter(
-      (c) =>
-        (c.tag === "Label" ? hasLabel : false) ||
-        c.tag === "SelectTrigger" ||
-        c.tag === "ComboBoxWrapper",
+      (c) => (c.tag === "Label" ? hasLabel : false) || WRAPPER_TAGS.has(c.tag),
     );
 
-    // SelectTrigger/ComboBoxWrapper에 padding + gap 주입
+    // Wrapper에 padding + gap 주입
     const wrapperChildTag =
-      containerTag === "select" ? "SelectTrigger" : "ComboBoxWrapper";
+      containerTag === "select"
+        ? "SelectTrigger"
+        : containerTag === "searchfield"
+          ? "SearchFieldWrapper"
+          : "ComboBoxWrapper";
     filteredChildren = filteredChildren.map((child) => {
       if (child.tag === wrapperChildTag) {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
@@ -449,6 +499,146 @@ export function applyImplicitStyles(
         } as Element;
       }
       return child;
+    });
+  }
+
+  // ── SearchFieldWrapper ────────────────────────────────────────────────
+  // ComboBoxWrapper와 동일 패턴: border + height + padding + 자식 스타일 주입
+  if (containerTag === "searchfieldwrapper") {
+    const sizeName = getDelegatedSize(containerEl, elementById);
+    const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
+    effectiveParent = withParentStyle(
+      containerEl,
+      withSpecPadding(
+        {
+          ...parentStyle,
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: parentStyle.gap ?? specGap,
+          borderWidth: parentStyle.borderWidth ?? 1,
+          height:
+            parentStyle.height ??
+            SPEC_TRIGGER_HEIGHT[sizeName] ??
+            SPEC_TRIGGER_HEIGHT.md,
+        },
+        sizeName,
+      ),
+    );
+
+    filteredChildren = filteredChildren.map((child) => {
+      const cs = (child.props?.style || {}) as Record<string, unknown>;
+      if (child.tag === "SearchInput") {
+        const searchEl = elementById.get(containerEl.parent_id ?? "");
+        const searchProps = searchEl?.props as
+          | Record<string, unknown>
+          | undefined;
+        const placeholder =
+          searchProps?.placeholder ?? child.props?.placeholder;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            placeholder,
+            style: {
+              ...cs,
+              flex: cs.flex ?? 1,
+              minWidth: cs.minWidth ?? 0,
+              whiteSpace: cs.whiteSpace ?? "nowrap",
+              overflow: cs.overflow ?? "hidden",
+              textOverflow: cs.textOverflow ?? "ellipsis",
+            },
+          },
+        } as Element;
+      }
+      if (child.tag === "SearchIcon" || child.tag === "SearchClearButton") {
+        const iconSz = SPEC_ICON_SIZE[sizeName] ?? SPEC_ICON_SIZE.md;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              width: iconSz,
+              height: iconSz,
+              flexShrink: cs.flexShrink ?? 0,
+            },
+          },
+        } as Element;
+      }
+      return child;
+    });
+  }
+
+  // ── ProgressBar / Meter ───────────────────────────────────────────────
+  // 완전 compositional: Label + ProgressBarValue + ProgressBarTrack이 child Element.
+  // flex row wrap: Label(flex:1) + Output(auto) → 1행, Track(width:100%) → 2행(강제 줄바꿈)
+  if (PROGRESSBAR_TAGS.has(containerTag)) {
+    const hasLabel = !!containerProps?.label;
+    const showValue = containerProps?.showValue !== false;
+    const sizeName = (containerProps?.size as string) ?? "md";
+    const specGap = PROGRESSBAR_GAP[sizeName] ?? PROGRESSBAR_GAP.md;
+
+    // Label/Output 필터: hasLabel이 false면 Label 제외, showValue false면 Output 제외
+    filteredChildren = children.filter((c) => {
+      if (c.tag === "Label") return hasLabel;
+      if (c.tag === "ProgressBarValue" || c.tag === "MeterValue")
+        return showValue;
+      return true;
+    });
+
+    // Label: flex:1로 나머지 공간 차지, Output: width:fit-content로 오른쪽 배치
+    // Track: width:100%로 2행 강제
+    filteredChildren = filteredChildren.map((child) => {
+      const cs = (child.props?.style || {}) as Record<string, unknown>;
+      if (child.tag === "Label") {
+        const labelFontSize =
+          PROGRESSBAR_FONT_SIZE[sizeName] ?? PROGRESSBAR_FONT_SIZE.md;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: { ...cs, flex: cs.flex ?? 1, fontSize: labelFontSize },
+          },
+        } as Element;
+      }
+      if (child.tag === "ProgressBarTrack" || child.tag === "MeterTrack") {
+        const barHeight =
+          PROGRESSBAR_BAR_HEIGHT[sizeName] ?? PROGRESSBAR_BAR_HEIGHT.md;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            size: sizeName,
+            style: {
+              ...cs,
+              width: cs.width ?? "100%",
+              height: barHeight,
+            },
+          },
+        } as Element;
+      }
+      if (child.tag === "ProgressBarValue" || child.tag === "MeterValue") {
+        const valueFontSize =
+          PROGRESSBAR_FONT_SIZE[sizeName] ?? PROGRESSBAR_FONT_SIZE.md;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            size: sizeName,
+            style: { ...cs, fontSize: valueFontSize },
+          },
+        } as Element;
+      }
+      return child;
+    });
+
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: parentStyle.display ?? "flex",
+      flexDirection: parentStyle.flexDirection ?? "row",
+      flexWrap: parentStyle.flexWrap ?? "wrap",
+      gap: parentStyle.gap ?? specGap,
     });
   }
 

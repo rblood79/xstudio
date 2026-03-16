@@ -6,76 +6,80 @@
 
 .react-aria-SearchField {
   /* Base styles — archetype: default */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    font-family: var(--font-sans);
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+  font-family: var(--font-sans);
 
   /* Default variant */
-  background: var(--bg-inset);
+  background: transparent;
   color: var(--fg);
-  border: 1px solid var(--border);
+  border: none;
+
+  /* Default size */
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-none);
+  gap: 8px;
+  --icon-size: 18px;
 }
 
 .react-aria-SearchField[data-variant="default"] {
-  background: var(--bg-inset);
+  background: transparent;
   color: var(--fg);
-  border-color: var(--border);
 
   &[data-hovered] {
-    background: var(--bg-overlay);
-    border-color: var(--accent);
+    background: transparent;
   }
 
   &[data-pressed] {
-    background: var(--bg-overlay);
-    border-color: var(--bg-overlay);
+    background: transparent;
   }
 }
 
 .react-aria-SearchField[data-variant="accent"] {
-  background: var(--bg-inset);
+  background: transparent;
   color: var(--fg);
-  border-color: var(--border);
 
   &[data-hovered] {
-    background: var(--bg-overlay);
-    border-color: var(--accent);
+    background: transparent;
   }
 
   &[data-pressed] {
-    background: var(--bg-overlay);
-    border-color: var(--bg-overlay);
+    background: transparent;
   }
 }
 
 .react-aria-SearchField[data-size="sm"] {
-  height: 32px;
-  padding: 4px 10px;
+  height: auto;
+  padding: 0px 0px;
   font-size: var(--text-sm);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-none);
   gap: 6px;
   --icon-size: 14px;
 }
 
 .react-aria-SearchField[data-size="md"] {
-  height: 40px;
-  padding: 8px 14px;
+  height: auto;
+  padding: 0px 0px;
   font-size: var(--text-md);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-none);
   gap: 8px;
   --icon-size: 18px;
 }
 
 .react-aria-SearchField[data-size="lg"] {
-  height: 48px;
-  padding: 12px 16px;
+  height: auto;
+  padding: 0px 0px;
   font-size: var(--text-lg);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-none);
   gap: 10px;
   --icon-size: 22px;
 }

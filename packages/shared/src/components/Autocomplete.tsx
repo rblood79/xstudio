@@ -3,15 +3,17 @@ import {
   AutocompleteProps as AriaAutocompleteProps,
   Key,
   Menu,
-  useFilter
-} from 'react-aria-components';
+  useFilter,
+} from "react-aria-components";
 
-import {MySearchField} from './SearchField';
+import { SearchField } from "./SearchField";
 
-import './styles/Autocomplete.css';
+import "./styles/Autocomplete.css";
 
-export interface AutocompleteProps<T extends object>
-  extends Omit<AriaAutocompleteProps, 'children'> {
+export interface AutocompleteProps<T extends object> extends Omit<
+  AriaAutocompleteProps,
+  "children"
+> {
   label?: string;
   placeholder?: string;
   items?: Iterable<T>;
@@ -19,15 +21,19 @@ export interface AutocompleteProps<T extends object>
   onAction?: (id: Key) => void;
 }
 
-export function Autocomplete<T extends object>(
-  { label, placeholder, items, children, onAction, ...props }:
-    AutocompleteProps<T>
-) {
-  const { contains } = useFilter({ sensitivity: 'base' });
+export function Autocomplete<T extends object>({
+  label,
+  placeholder,
+  items,
+  children,
+  onAction,
+  ...props
+}: AutocompleteProps<T>) {
+  const { contains } = useFilter({ sensitivity: "base" });
   return (
     <div className="my-autocomplete">
       <AriaAutocomplete filter={contains} {...props}>
-        <MySearchField label={label} placeholder={placeholder} />
+        <SearchField label={label} placeholder={placeholder} />
         <Menu items={items} onAction={onAction}>
           {children}
         </Menu>

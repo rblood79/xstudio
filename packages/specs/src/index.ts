@@ -216,12 +216,24 @@ export {
 } from "./components/Meter.spec";
 export type { MeterProps } from "./components/Meter.spec";
 
+export { MeterTrackSpec } from "./components/MeterTrack.spec";
+export type { MeterTrackProps } from "./components/MeterTrack.spec";
+
+export { MeterValueSpec } from "./components/MeterValue.spec";
+export type { MeterValueProps } from "./components/MeterValue.spec";
+
 export {
   ProgressBarSpec,
   PROGRESSBAR_FILL_COLORS,
   PROGRESSBAR_DIMENSIONS,
 } from "./components/ProgressBar.spec";
 export type { ProgressBarProps } from "./components/ProgressBar.spec";
+
+export { ProgressBarTrackSpec } from "./components/ProgressBarTrack.spec";
+export type { ProgressBarTrackProps } from "./components/ProgressBarTrack.spec";
+
+export { ProgressBarValueSpec } from "./components/ProgressBarValue.spec";
+export type { ProgressBarValueProps } from "./components/ProgressBarValue.spec";
 
 // ─── Phase 3: Composite Components ──────────────────────────────────────────
 export { TableSpec } from "./components/Table.spec";

@@ -16,7 +16,7 @@
     .bar { grid-area: track; }
 
   /* Default variant */
-  background: var(--bg-muted);
+  background: transparent;
   color: var(--fg);
   border: none;
 
@@ -28,15 +28,15 @@
 }
 
 .react-aria-ProgressBar[data-variant="default"] {
-  background: var(--bg-muted);
+  background: transparent;
   color: var(--fg);
 
   &[data-hovered] {
-    background: var(--bg-muted);
+    background: transparent;
   }
 
   &[data-pressed] {
-    background: var(--bg-muted);
+    background: transparent;
   }
 }
 

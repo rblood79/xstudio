@@ -29,6 +29,11 @@
     width: 240px;
     color: var(--fg);
 
+    .react-aria-Label {
+      grid-area: label;
+      font-size: inherit;
+    }
+
     .value {
       grid-area: value;
       font-size: var(--text-sm);
@@ -56,6 +61,7 @@
 
   .react-aria-Meter[data-size="sm"] {
     width: 200px;
+    font-size: var(--text-xs);
 
     .bar {
       height: var(--spacing-xs);
@@ -63,12 +69,13 @@
     }
 
     .value {
-      font-size: var(--text-sm);
+      font-size: var(--text-xs);
     }
   }
 
   .react-aria-Meter[data-size="md"] {
     width: 240px;
+    font-size: var(--text-sm);
 
     .bar {
       height: var(--spacing-sm);
@@ -82,6 +89,7 @@
 
   .react-aria-Meter[data-size="lg"] {
     width: 300px;
+    font-size: var(--text-md);
 
     .bar {
       height: var(--spacing-md);
@@ -89,7 +97,7 @@
     }
 
     .value {
-      font-size: var(--text-lg);
+      font-size: var(--text-md);
     }
   }
 

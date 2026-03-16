@@ -664,7 +664,7 @@ export function createRangeSliderDefinition(
         tag: "Label",
         props: {
           children: "Range Slider",
-          variant: "accent",
+          variant: "default",
           style: {
             fontSize: 14,
             fontWeight: 500,
@@ -724,6 +724,160 @@ export function createRangeSliderDefinition(
             order_num: 1,
           },
         ],
+      },
+    ],
+  };
+}
+
+/**
+ * ProgressBar 컴포넌트 정의 (하이브리드 패턴)
+ *
+ * CSS DOM 구조:
+ * ProgressBar (parent, flex column, track+fill은 spec shapes)
+ *   └─ Label (child element, optional)
+ *
+ * track/fill은 spec shapes(paddingBottom 영역)에서 렌더링,
+ * Label은 child Element로 분리하여 padding/gap이 Taffy를 통해 자연 적용.
+ */
+export function createProgressBarDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "ProgressBar",
+    parent: {
+      tag: "ProgressBar",
+      props: {
+        label: "Progress",
+        value: 50,
+        showValue: true,
+        size: "md",
+        style: {
+          width: "100%",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Progress",
+          variant: "default",
+          style: {
+            backgroundColor: "transparent",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "ProgressBarValue",
+        props: {
+          children: "50%",
+          style: {
+            width: "fit-content",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+      {
+        tag: "ProgressBarTrack",
+        props: {
+          style: {
+            width: "100%",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
+      },
+    ],
+  };
+}
+
+/**
+ * Meter 컴포넌트 정의 (하이브리드 패턴 — ProgressBar와 동일 구조)
+ *
+ * CSS DOM 구조:
+ * Meter (parent, flex row wrap)
+ *   ├─ Label (child element, optional)
+ *   ├─ MeterValue (child element, value 텍스트)
+ *   └─ MeterTrack (child element, track + fill bar)
+ */
+export function createMeterDefinition(
+  context: ComponentCreationContext,
+): ComponentDefinition {
+  const { parentElement, pageId, elements, layoutId } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+
+  return {
+    tag: "Meter",
+    parent: {
+      tag: "Meter",
+      props: {
+        label: "Storage",
+        value: 75,
+        minValue: 0,
+        maxValue: 100,
+        showValue: true,
+        variant: "informative",
+        size: "md",
+        style: {
+          width: "100%",
+        },
+      } as ComponentElementProps,
+      ...ownerFields,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Storage",
+          variant: "default",
+          style: {
+            backgroundColor: "transparent",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 1,
+      },
+      {
+        tag: "MeterValue",
+        props: {
+          children: "75%",
+          style: {
+            width: "fit-content",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
+      },
+      {
+        tag: "MeterTrack",
+        props: {
+          style: {
+            width: "100%",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
       },
     ],
   };
@@ -855,7 +1009,7 @@ export function createPickerDefinition(
         tag: "Label",
         props: {
           children: "Picker",
-          variant: "accent",
+          variant: "default",
           style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
         } as ComponentElementProps,
         ...ownerFields,

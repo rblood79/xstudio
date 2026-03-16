@@ -56,7 +56,7 @@ export function createTextFieldDefinition(
         tag: "Label",
         props: {
           children: "Text Field",
-          variant: "accent",
+          variant: "default",
           size: "md",
           style: {
             width: "fit-content",
@@ -149,7 +149,7 @@ export function createTextAreaDefinition(
         tag: "Label",
         props: {
           children: "Text Area",
-          variant: "accent",
+          variant: "default",
           style: {
             width: "fit-content",
             fontSize: 14,
@@ -277,7 +277,7 @@ export function createFormDefinition(
             tag: "Label",
             props: {
               children: "Field Label",
-              variant: "accent",
+              variant: "default",
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -315,7 +315,7 @@ export function createFormDefinition(
             tag: "Label",
             props: {
               children: "Another Field",
-              variant: "accent",
+              variant: "default",
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -472,7 +472,7 @@ export function createNumberFieldDefinition(
         tag: "Label",
         props: {
           children: "Number",
-          variant: "accent",
+          variant: "default",
           style: {
             display: "block",
             fontSize: "14px",
@@ -559,6 +559,17 @@ export function createNumberFieldDefinition(
  *   ├─ Input (tag="Input", type="search")
  *   └─ Button (tag="Button", children="✕", slot="clear")
  */
+/**
+ * SearchField 컴포넌트 정의 (ComboBox 동일 패턴)
+ *
+ * CSS DOM 구조:
+ * SearchField (parent, flex column)
+ *   ├─ Label (tag="Label")
+ *   └─ SearchFieldWrapper (tag="SearchFieldWrapper", flex row)
+ *        ├─ SearchIcon (tag="SearchIcon", 🔍)
+ *        ├─ SearchInput (tag="SearchInput", flex:1)
+ *        └─ SearchClearButton (tag="SearchClearButton", ✕)
+ */
 export function createSearchFieldDefinition(
   context: ComponentCreationContext,
 ): ComponentDefinition {
@@ -585,7 +596,7 @@ export function createSearchFieldDefinition(
         style: {
           display: "flex",
           flexDirection: "column",
-          gap: "4px",
+          gap: 8,
         },
       } as ComponentElementProps,
       ...ownerFields,
@@ -597,40 +608,58 @@ export function createSearchFieldDefinition(
         tag: "Label",
         props: {
           children: "Search",
-          variant: "accent",
+          variant: "default",
           style: {
-            display: "block",
-            fontSize: "14px",
-            fontWeight: "500",
+            fontWeight: 500,
+            width: "fit-content",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "SearchFieldWrapper",
+        props: {
+          style: {
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
           },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
-      },
-      {
-        tag: "Input",
-        props: {
-          type: "search",
-          placeholder: "Search...",
-          style: {
-            display: "block",
-            width: "100%",
+        children: [
+          {
+            tag: "SearchIcon",
+            props: {
+              iconName: "search",
+              children: "",
+              style: { width: 18, height: 18, flexShrink: 0 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
           },
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 2,
-      },
-      {
-        tag: "Button",
-        props: {
-          children: "✕",
-          slot: "clear",
-          variant: "default",
-          size: "S",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 3,
+          {
+            tag: "SearchInput",
+            props: {
+              children: "",
+              placeholder: "Search...",
+              style: { flex: 1, fontSize: 14 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "SearchClearButton",
+            props: {
+              iconName: "x",
+              children: "",
+              style: { width: 18, height: 18, flexShrink: 0 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 2,
+          },
+        ],
       },
     ],
   };
@@ -688,7 +717,7 @@ export function createSliderDefinition(
         tag: "Label",
         props: {
           children: "Slider",
-          variant: "accent",
+          variant: "default",
           style: {
             fontSize: 14,
             fontWeight: 500,

@@ -607,9 +607,12 @@ function traversePostOrder(
   // ProgressBar/Meter: leaf spec 컴포넌트 — display:grid 정규화
   // 이전 기본값에서 display:"grid"가 주입된 기존 요소를 block으로 정규화
   // grid+자식없음 → Taffy height=0 문제 방지
+  // 하이브리드 모드 (자식 있음): grid 유지 — Label child가 Taffy 레이아웃 참여
   {
     const rawTag = (rawElement.tag ?? "").toLowerCase();
+    const hasChildren = getChildElements(rawElement.id).length > 0;
     if (
+      !hasChildren &&
       (rawTag === "progressbar" ||
         rawTag === "progress" ||
         rawTag === "loadingbar" ||
@@ -991,6 +994,7 @@ function traversePostOrder(
   // 4.7.1. ProgressBar/Meter: spec shapes leaf 안전망
   // enrichWithIntrinsicSize가 height를 주입했어야 하지만,
   // 어떤 이유로 누락된 경우 calculateContentHeight로 보정
+  // 하이브리드 모드 (자식 있음): Taffy가 자동 계산 → 이 안전망 스킵
   {
     const enrichedStyle = (enriched.props?.style ?? {}) as Record<
       string,
@@ -999,6 +1003,7 @@ function traversePostOrder(
     const enrichedTag = (rawElement.tag ?? "").toLowerCase();
     if (
       !enrichedStyle.height &&
+      !hasTaffyChildren &&
       (enrichedTag === "progressbar" ||
         enrichedTag === "progress" ||
         enrichedTag === "loadingbar" ||

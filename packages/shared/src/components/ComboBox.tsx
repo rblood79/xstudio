@@ -71,7 +71,7 @@ export function ComboBox<T extends object>({
   dataBinding,
   columnMapping,
   popoverClassName,
-  variant = "primary",
+  variant = "default",
   size = "md",
   iconName,
   isLoading: externalLoading,

@@ -84,6 +84,8 @@
     /* 48px */
 
     /* Border Radius - Tailwind v4 표준 (고정값, AI 생성 불필요) */
+    --radius-none: 0px;
+    /* 0px */
     --radius-xs: 0.125rem;
     /* 2px */
     --radius-sm: 0.25rem;
@@ -100,6 +102,8 @@
     /* 24px */
     --radius-4xl: 2rem;
     /* 32px */
+    --radius-full: 9999px;
+    /* pill */
 
     /* Tracking - Tailwind v4 표준 (고정값, AI 생성 불필요) */
     --tracking-tighter: -0.05em;

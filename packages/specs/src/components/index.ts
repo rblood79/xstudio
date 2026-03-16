@@ -126,6 +126,14 @@ export type { SliderProps } from "./Slider.spec";
 export { MeterSpec, METER_FILL_COLORS, METER_DIMENSIONS } from "./Meter.spec";
 export type { MeterProps } from "./Meter.spec";
 
+// MeterTrack
+export { MeterTrackSpec } from "./MeterTrack.spec";
+export type { MeterTrackProps } from "./MeterTrack.spec";
+
+// MeterValue
+export { MeterValueSpec } from "./MeterValue.spec";
+export type { MeterValueProps } from "./MeterValue.spec";
+
 // ProgressBar
 export {
   ProgressBarSpec,
@@ -133,6 +141,14 @@ export {
   PROGRESSBAR_DIMENSIONS,
 } from "./ProgressBar.spec";
 export type { ProgressBarProps } from "./ProgressBar.spec";
+
+// ProgressBarTrack
+export { ProgressBarTrackSpec } from "./ProgressBarTrack.spec";
+export type { ProgressBarTrackProps } from "./ProgressBarTrack.spec";
+
+// ProgressBarValue
+export { ProgressBarValueSpec } from "./ProgressBarValue.spec";
+export type { ProgressBarValueProps } from "./ProgressBarValue.spec";
 
 // Input
 export { InputSpec } from "./Input.spec";

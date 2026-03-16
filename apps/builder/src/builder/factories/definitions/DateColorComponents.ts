@@ -331,7 +331,7 @@ export function createDateFieldDefinition(
         tag: "Label",
         props: {
           children: "Date",
-          variant: "accent",
+          variant: "default",
           style: {
             display: "block",
             fontSize: "14px",
@@ -420,7 +420,7 @@ export function createTimeFieldDefinition(
         tag: "Label",
         props: {
           children: "Time",
-          variant: "accent",
+          variant: "default",
           style: {
             display: "block",
             fontSize: "14px",
@@ -507,7 +507,7 @@ export function createColorFieldDefinition(
         tag: "Label",
         props: {
           children: "Color",
-          variant: "accent",
+          variant: "default",
           style: {
             display: "block",
             fontSize: "14px",

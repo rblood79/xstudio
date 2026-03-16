@@ -1557,7 +1557,7 @@ export function createDefaultCardProps(): CardElementProps {
 export function createDefaultBadgeProps(): BadgeElementProps {
   return {
     children: "Badge",
-    variant: "default",
+    variant: "accent",
     size: "sm",
     isDot: false,
     isPulsing: false,

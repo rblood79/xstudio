@@ -53,7 +53,7 @@ export interface ColorFieldProps extends AriaColorFieldProps {
  * <ColorField variant="error" errorMessage="Invalid color" />
  */
 export function ColorField({
-  variant = "primary",
+  variant = "default",
   size = "md",
   label,
   description,

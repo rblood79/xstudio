@@ -230,7 +230,7 @@ export function createCheckboxGroupDefinition(
             tag: "Label",
             props: {
               children: "Option 1",
-              variant: "accent",
+              variant: "default",
               style: { fontSize: 14, backgroundColor: "transparent" },
             } as ComponentElementProps,
             ...ownerFields,
@@ -258,7 +258,7 @@ export function createCheckboxGroupDefinition(
             tag: "Label",
             props: {
               children: "Option 2",
-              variant: "accent",
+              variant: "default",
               style: { fontSize: 14, backgroundColor: "transparent" },
             } as ComponentElementProps,
             ...ownerFields,
@@ -323,7 +323,7 @@ export function createRadioGroupDefinition(
             tag: "Label",
             props: {
               children: "Option 1",
-              variant: "accent",
+              variant: "default",
               style: { fontSize: 14, backgroundColor: "transparent" },
             } as ComponentElementProps,
             ...ownerFields,
@@ -351,7 +351,7 @@ export function createRadioGroupDefinition(
             tag: "Label",
             props: {
               children: "Option 2",
-              variant: "accent",
+              variant: "default",
               style: { fontSize: 14, backgroundColor: "transparent" },
             } as ComponentElementProps,
             ...ownerFields,
@@ -403,7 +403,7 @@ export function createTagGroupDefinition(
         tag: "Label",
         props: {
           children: "Tag Group",
-          variant: "accent",
+          variant: "default",
           style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
         } as ComponentElementProps,
         ...ownerFields,
@@ -557,7 +557,7 @@ export function createCheckboxDefinition(
         tag: "Label",
         props: {
           children: "Checkbox",
-          variant: "accent",
+          variant: "default",
           style: {
             fontSize: 14,
             backgroundColor: "transparent",
@@ -617,7 +617,7 @@ export function createRadioDefinition(
         tag: "Label",
         props: {
           children: "Radio",
-          variant: "accent",
+          variant: "default",
           style: {
             fontSize: 14,
             backgroundColor: "transparent",
@@ -678,7 +678,7 @@ export function createSwitchDefinition(
         tag: "Label",
         props: {
           children: "Switch",
-          variant: "accent",
+          variant: "default",
           style: {
             fontSize: 14,
             backgroundColor: "transparent",

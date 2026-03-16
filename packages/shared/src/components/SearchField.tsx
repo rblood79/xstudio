@@ -1,8 +1,8 @@
 /**
- * SearchField Component - Material Design 3
+ * SearchField Component
  *
- * M3 Variants: primary, secondary, tertiary, error, filled
- * Sizes: sm, md, lg
+ * ComboBox와 동일한 구조: Label + Wrapper(SearchIcon + Input + ClearButton)
+ * React Aria SearchField 기반
  */
 
 import {
@@ -17,21 +17,15 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import type { ComponentSize } from "../types";
+import { getIconData } from "@xstudio/specs";
 
 import "./styles/SearchField.css";
-
-/**
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-variant, data-size 속성 사용
- */
 
 export interface SearchFieldProps extends AriaSearchFieldProps {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
   placeholder?: string;
-  // S2 props
   size?: ComponentSize;
 }
 
@@ -43,6 +37,9 @@ export function SearchField({
   size = "md",
   ...props
 }: SearchFieldProps) {
+  const searchIconData = getIconData("search");
+  const clearIconData = getIconData("x");
+
   return (
     <AriaSearchField
       {...props}
@@ -54,12 +51,50 @@ export function SearchField({
       data-size={size}
     >
       {label && <Label>{label}</Label>}
-      <Input placeholder={placeholder} />
-      <Button>✕</Button>
+      <div className="searchfield-container">
+        {searchIconData && (
+          <span className="search-icon" aria-hidden="true">
+            <svg
+              width={16}
+              height={16}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {searchIconData.paths.map((d, i) => (
+                <path key={i} d={d} />
+              ))}
+              {searchIconData.circles?.map((c, i) => (
+                <circle key={`c${i}`} cx={c.cx} cy={c.cy} r={c.r} />
+              ))}
+            </svg>
+          </span>
+        )}
+        <Input placeholder={placeholder} />
+        <Button>
+          {clearIconData && (
+            <svg
+              width={16}
+              height={16}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {clearIconData.paths.map((d, i) => (
+                <path key={i} d={d} />
+              ))}
+            </svg>
+          )}
+        </Button>
+      </div>
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>
     </AriaSearchField>
   );
 }
-
-export { SearchField as MySearchField };

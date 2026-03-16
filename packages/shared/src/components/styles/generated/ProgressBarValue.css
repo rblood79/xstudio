@@ -1,10 +1,10 @@
 /* ============================================================
- * AUTO-GENERATED from LabelSpec — DO NOT EDIT MANUALLY
- * Source: packages/specs/src/components/Label.spec.ts
+ * AUTO-GENERATED from ProgressBarValueSpec — DO NOT EDIT MANUALLY
+ * Source: packages/specs/src/components/ProgressBarValue.spec.ts
  * Archetype: default
  * ============================================================ */
 
-.react-aria-Label {
+.react-aria-ProgressBarValue {
   /* Base styles — archetype: default */
     display: inline-flex;
     align-items: center;
@@ -27,7 +27,7 @@
   border-radius: var(--radius-none);
 }
 
-.react-aria-Label[data-variant="default"] {
+.react-aria-ProgressBarValue[data-variant="default"] {
   background: transparent;
   color: var(--fg);
 
@@ -40,98 +40,46 @@
   }
 }
 
-.react-aria-Label[data-variant="accent"] {
-  background: transparent;
-  color: var(--fg);
-
-  &[data-hovered] {
-    background: transparent;
-  }
-
-  &[data-pressed] {
-    background: transparent;
-  }
-}
-
-.react-aria-Label[data-variant="neutral"] {
-  background: transparent;
-  color: var(--fg-muted);
-
-  &[data-hovered] {
-    background: transparent;
-  }
-
-  &[data-pressed] {
-    background: transparent;
-  }
-}
-
-.react-aria-Label[data-variant="purple"] {
-  background: transparent;
-  color: var(--color-purple-600);
-
-  &[data-hovered] {
-    background: transparent;
-  }
-
-  &[data-pressed] {
-    background: transparent;
-  }
-}
-
-.react-aria-Label[data-variant="negative"] {
-  background: transparent;
-  color: var(--negative);
-
-  &[data-hovered] {
-    background: transparent;
-  }
-
-  &[data-pressed] {
-    background: transparent;
-  }
-}
-
-.react-aria-Label[data-size="sm"] {
+.react-aria-ProgressBarValue[data-size="sm"] {
   height: 16px;
   padding: 0px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-none);
 }
 
-.react-aria-Label[data-size="md"] {
+.react-aria-ProgressBarValue[data-size="md"] {
   height: 20px;
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
 }
 
-.react-aria-Label[data-size="lg"] {
+.react-aria-ProgressBarValue[data-size="lg"] {
   height: 24px;
   padding: 0px 0px;
   font-size: var(--text-md);
   border-radius: var(--radius-none);
 }
 
-.react-aria-Label[data-hovered] {
+.react-aria-ProgressBarValue[data-hovered] {
 }
 
-.react-aria-Label[data-focus-visible] {
+.react-aria-ProgressBarValue[data-focus-visible] {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.react-aria-Label[data-pressed] {
+.react-aria-ProgressBarValue[data-pressed] {
 }
 
-.react-aria-Label[data-disabled] {
+.react-aria-ProgressBarValue[data-disabled] {
   opacity: 0.38;
   cursor: not-allowed;
   pointer-events: none;
 }
 
 @media (forced-colors: active) {
-  .react-aria-Label {
+  .react-aria-ProgressBarValue {
     forced-color-adjust: auto;
   }
 }

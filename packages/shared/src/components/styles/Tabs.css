@@ -19,6 +19,7 @@
 
   /* ========== Base TabList ========== */
   .react-aria-TabList {
+    width: 100%;
     display: flex;
     position: relative;
 
@@ -155,6 +156,7 @@
 
   /* ========== Base TabPanel ========== */
   .react-aria-TabPanel {
+    width: 100%;
     padding: var(--spacing-lg);
     border-radius: var(--radius-sm);
     outline: none;

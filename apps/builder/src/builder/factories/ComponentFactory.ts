@@ -87,6 +87,8 @@ import {
   createActionMenuDefinition,
   createAccordionDefinition,
   createRangeSliderDefinition,
+  createProgressBarDefinition,
+  createMeterDefinition,
   createProgressCircleDefinition,
   createImageDefinition,
   createPickerDefinition,
@@ -173,6 +175,8 @@ export class ComponentFactory {
     Accordion: ComponentFactory.createAccordion,
     // ⭐ Display Components (Phase 3)
     RangeSlider: ComponentFactory.createRangeSlider,
+    ProgressBar: ComponentFactory.createProgressBar,
+    Meter: ComponentFactory.createMeter,
     ProgressCircle: ComponentFactory.createProgressCircle,
     Image: ComponentFactory.createImage,
     Picker: ComponentFactory.createPicker,
@@ -617,6 +621,18 @@ export class ComponentFactory {
     context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createRangeSliderDefinition, context);
+  }
+
+  private static async createProgressBar(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createProgressBarDefinition, context);
+  }
+
+  private static async createMeter(
+    context: ComponentCreationContext,
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createMeterDefinition, context);
   }
 
   private static async createProgressCircle(

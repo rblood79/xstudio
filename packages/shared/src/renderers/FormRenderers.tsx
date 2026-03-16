@@ -133,7 +133,29 @@ export const renderSearchField = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { updateElementProps } = context;
+  const { elements, updateElementProps } = context;
+
+  // Child element에서 props 읽기 (compositional 패턴)
+  const childElements = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  const labelEl = childElements.find((c) => c.tag === "Label");
+  const wrapperEl = childElements.find((c) => c.tag === "SearchFieldWrapper");
+  const wrapperChildren = wrapperEl
+    ? elements
+        .filter((c) => c.parent_id === wrapperEl.id)
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+    : [];
+  const inputEl = wrapperChildren.find((c) => c.tag === "SearchInput");
+
+  // child element props 우선 → parent props fallback
+  const label = labelEl
+    ? String(labelEl.props?.children || "")
+    : String(element.props.label || "");
+  const placeholder = inputEl
+    ? String(inputEl.props?.placeholder || "")
+    : String(element.props.placeholder || "");
 
   return (
     <SearchField
@@ -142,16 +164,17 @@ export const renderSearchField = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      label={String(element.props.label || "")}
+      label={label}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
-      placeholder={String(element.props.placeholder || "")}
+      placeholder={placeholder}
       defaultValue={String(element.props.value || "")}
       isDisabled={Boolean(element.props.isDisabled || false)}
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
       isInvalid={Boolean(element.props.isInvalid || false)}
       name={element.props.name ? String(element.props.name) : undefined}
+      size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       onChange={(value) => {
         const updatedProps = {
           ...element.props,
@@ -237,6 +260,7 @@ export const renderLabel = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
+      data-variant={(element.props.variant as string) || "default"}
       style={element.props.style}
       className={element.props.className}
     >
