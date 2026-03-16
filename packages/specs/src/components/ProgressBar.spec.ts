@@ -110,7 +110,13 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
         PROGRESSBAR_FILL_COLORS[variantName] ?? PROGRESSBAR_FILL_COLORS.default;
       const width = (props.style?.width as number) || barDims.width;
       const barHeight = barDims.barHeight;
-      const gap = size.gap ?? 8;
+      const styleGap = props.style?.gap;
+      const gap =
+        styleGap != null
+          ? typeof styleGap === "number"
+            ? styleGap
+            : parseFloat(String(styleGap)) || 0
+          : (size.gap ?? 8);
 
       // 사용자 스타일 우선
       const styleBr = props.style?.borderRadius;

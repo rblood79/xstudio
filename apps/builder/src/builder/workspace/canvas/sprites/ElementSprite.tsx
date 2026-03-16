@@ -274,7 +274,6 @@ const TEXT_TAGS = new Set([
   "Text",
   "Heading",
   "Description",
-  "Label",
   "Paragraph",
   "Link",
   "Strong",
@@ -446,18 +445,6 @@ const FIELD_PARENT_TAGS = new Set([
   "DateRangePicker",
   "ColorField",
 ]);
-
-/**
- * parent variant → Label 텍스트 hex 색상 (lightColors 기준, Skia 렌더링용)
- * CSS: default variant → --text-color (no override), 나머지 → --field-accent
- * "default" 미포함: CSS에서 default Label은 --text-color 유지 (별도 override 없음)
- */
-const PARENT_VARIANT_TO_LABEL_COLOR: Record<string, string> = {
-  primary: "#2563eb", // --field-accent = --highlight-background (blue-600)
-  secondary: "#fafafa", // --field-accent = --button-background (neutral-50)
-  tertiary: "#9333ea", // --field-accent = --color-purple-600
-  error: "#ef4444", // --field-accent = --invalid-color
-};
 
 // ============================================
 // QW-3: Outline parsing helper for focus ring
@@ -1265,37 +1252,8 @@ export const ElementSprite = memo(function ElementSprite({
     return resolvedElement;
   }, [resolvedElement, layoutPosition, computedContainerSize]);
 
-  // ADR-022 Phase 5d: Label ← Field 부모 색상 상속 (TextSprite 경로)
-  // Label은 TEXT_TAGS → TextSprite 렌더링 → style.color로만 텍스트 색상 결정
-  // CSS의 --field-accent cascade를 Skia에서 재현하려면 style.color에 hex 직접 주입
-  const labelColorElement = useMemo(() => {
-    if (element.tag !== "Label") return effectiveElement;
-    if (!parentElement?.tag || !FIELD_PARENT_TAGS.has(parentElement.tag))
-      return effectiveElement;
-
-    const existingStyle = (effectiveElement.props?.style || {}) as Record<
-      string,
-      unknown
-    >;
-    // 사용자가 명시적으로 color를 설정한 경우 존중
-    if (existingStyle.color) return effectiveElement;
-
-    const parentVariant = String(
-      (parentElement.props as Record<string, unknown> | undefined)?.variant ||
-        "default",
-    );
-    const inheritedColor = PARENT_VARIANT_TO_LABEL_COLOR[parentVariant];
-    // default variant → CSS에서 --text-color 유지 (override 없음)
-    if (!inheritedColor) return effectiveElement;
-
-    return {
-      ...effectiveElement,
-      props: {
-        ...effectiveElement.props,
-        style: { ...existingStyle, color: inheritedColor },
-      },
-    } as Element;
-  }, [effectiveElement, element.tag, parentElement]);
+  // Label은 spec shapes 경로(isUIComponent=true)에서 variant.text로 색상 결정
+  // 부모 variant 상속은 L1489-1499의 PARENT_VARIANT_TO_LABEL에서 처리
 
   // Tabs/Breadcrumbs: 실제 자식 레이블을 spec shapes에 전달
   // 문제: childrenMap은 props 변경 시 갱신되지 않아 stale Element 참조
@@ -1367,11 +1325,12 @@ export const ElementSprite = memo(function ElementSprite({
     const style = elementStyle as CSSStyle | undefined;
 
     const isUIComponent =
-      spriteType !== "box" &&
-      spriteType !== "text" &&
-      spriteType !== "image" &&
-      spriteType !== "flex" &&
-      spriteType !== "grid";
+      (spriteType !== "box" &&
+        spriteType !== "text" &&
+        spriteType !== "image" &&
+        spriteType !== "flex" &&
+        spriteType !== "grid") ||
+      getSpecForTag(element.tag) != null;
 
     if (!style && !isUIComponent) return null;
 
@@ -1476,9 +1435,8 @@ export const ElementSprite = memo(function ElementSprite({
     };
 
     const props = elementProps as Record<string, unknown> | undefined;
-    // Label child variant 상속: UI 컴포넌트용 (spec shapes 경로)
-    // Note: Label은 TEXT_TAGS → isUIComponent=false이므로 이 분기를 타지 않음
-    // Label의 실제 색상 주입은 labelColorElement useMemo에서 처리 (TextSprite 경로)
+    // Label child variant 상속: spec shapes 경로
+    // Label은 isUIComponent=true → 부모 variant에서 색상 상속
     const PARENT_VARIANT_TO_LABEL: Record<string, string> = {
       default: "accent",
       primary: "accent",
@@ -2135,8 +2093,10 @@ export const ElementSprite = memo(function ElementSprite({
   // ElementSprite의 이중 등록을 방지한다. (effects, blendMode, 올바른 fillColor 포함)
   // text 타입은 TextSprite가 자체적으로 텍스트 Skia 데이터를 등록하므로
   // ElementSprite에서 box 데이터로 덮어쓰지 않도록 방지한다.
+  // 단, TAG_SPEC_MAP에 등록된 "box" 태그(Label 등)는 spec shapes로 렌더링하므로 제외
+  const hasSpecShapes = getSpecForTag(element.tag) != null;
   const hasOwnSprite =
-    spriteType === "box" ||
+    (spriteType === "box" && !hasSpecShapes) ||
     spriteType === "text" ||
     spriteType === "image" ||
     spriteType === "flex" ||
@@ -2726,7 +2686,7 @@ export const ElementSprite = memo(function ElementSprite({
       // 기본 타입
       case "text":
         return (
-          <TextSprite element={labelColorElement} isSelected={isSelected} />
+          <TextSprite element={effectiveElement} isSelected={isSelected} />
         );
 
       case "image":
@@ -2736,6 +2696,41 @@ export const ElementSprite = memo(function ElementSprite({
 
       case "box":
       default:
+        // spec shapes 경로를 타는 "box" 태그(Label, ProgressBar 등)는
+        // BoxSprite가 useSkiaNode를 덮어쓰므로 BoxSprite 렌더링 skip
+        if (hasSpecShapes) {
+          if (childElements && childElements.length > 0 && renderChildElement) {
+            return (
+              <>
+                <pixiGraphics
+                  draw={drawContainerHitRect}
+                  eventMode={containerIsPointerEventsNone ? "none" : "static"}
+                  cursor={containerPixiCursor}
+                  {...(!containerIsPointerEventsNone && {
+                    onPointerDown: handleContainerPointerDown,
+                    onPointerOver: handlePointerOver,
+                    onPointerUp: handlePointerUp,
+                    onPointerLeave: handlePointerLeave,
+                  })}
+                />
+                {childElements.map((childEl) => renderChildElement(childEl))}
+              </>
+            );
+          }
+          return (
+            <pixiGraphics
+              draw={drawContainerHitRect}
+              eventMode={containerIsPointerEventsNone ? "none" : "static"}
+              cursor={containerPixiCursor}
+              {...(!containerIsPointerEventsNone && {
+                onPointerDown: handleContainerPointerDown,
+                onPointerOver: handlePointerOver,
+                onPointerUp: handlePointerUp,
+                onPointerLeave: handlePointerLeave,
+              })}
+            />
+          );
+        }
         if (childElements && childElements.length > 0 && renderChildElement) {
           return (
             <>

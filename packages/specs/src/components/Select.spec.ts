@@ -126,14 +126,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
     layout: "flex-column",
     gap: "var(--spacing-xs)",
     delegation: [
-      {
-        childSelector: ".react-aria-Label",
-        variables: {
-          sm: { "--select-label-size": "var(--text-xs)" },
-          md: { "--select-label-size": "var(--text-sm)" },
-          lg: { "--select-label-size": "var(--text-base)" },
-        },
-      },
+      // Label은 LabelSpec에서 variant 기반으로 color/font-size 결정 (단일 소스)
       {
         childSelector: ".react-aria-Button",
         variables: {

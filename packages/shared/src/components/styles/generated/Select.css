@@ -72,18 +72,6 @@
 
 /* ── Tier 2: Composite Delegation ── */
 
-.react-aria-Select[data-size="sm"] .react-aria-Label {
-  --select-label-size: var(--text-xs);
-}
-
-.react-aria-Select[data-size="md"] .react-aria-Label {
-  --select-label-size: var(--text-sm);
-}
-
-.react-aria-Select[data-size="lg"] .react-aria-Label {
-  --select-label-size: var(--text-base);
-}
-
 .react-aria-Select[data-size="xs"] .react-aria-Button {
   height: auto;
   background: var(--bg);

@@ -5,6 +5,46 @@ All notable changes to XStudio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Label spec shapes 경로 전환 + Select/ComboBox CSS 정합성] - 2026-03-16
+
+### Breaking Changes
+
+- **Label 렌더링 경로 전환**: `TEXT_TAGS`에서 `"Label"` 제거 → TextSprite 경로에서 spec shapes 경로로 전환
+  - `labelColorElement` useMemo 해킹 제거
+  - `PARENT_VARIANT_TO_LABEL_TOKEN` (hex 하드코딩) 제거 → `LabelSpec.variants`가 색상 단일 소스
+  - `isUIComponent` 판정에 `getSpecForTag(element.tag) != null` 조건 추가
+  - `hasOwnSprite`에서 spec이 있는 "box" 태그 제외
+  - Factory에서 Label에 `variant: "accent"` 기본값 설정
+  - 부모 variant 상속: `PARENT_VARIANT_TO_LABEL` 매핑 (`isUIComponent` 분기에서 처리)
+  - Select/ComboBox delegation에서 Label override 제거
+
+### Features
+
+- **CSSGenerator Composite 컨테이너 개선**: `composition` 필드가 있는 Tier 2 Composite Spec(Select, ComboBox 등)의 CSS 생성 로직 개선
+  - `height` 출력 skip (자식이 높이 결정)
+  - `padding` 출력 skip (자식이 패딩 관리)
+  - `background`/`color`/`border` variant 출력 skip (자식이 시각적 속성 관리)
+  - base styles를 `composition.layout`에서 파생 (flex-column → `align-items: flex-start` 등)
+- **Select/ComboBox Preview CSS 정합성 개선**:
+  - Select: `.react-aria-Button`에 `height: auto`, 비대칭 padding, `background: var(--bg)`, `border: 1px solid var(--border-hover)` 위임
+  - Select: `.react-aria-SelectValue`에 `height: auto` 위임
+  - ComboBox: 동일 패턴 적용 — `.combobox-container`(컨테이너), `.react-aria-Input`(텍스트), `.react-aria-Button`(chevron)
+  - ComboBox chevron: `background: var(--bg-overlay)`, `color: var(--fg)`, size별 width/height
+- **Button `lineHeight` 토큰화**: `ButtonSpec.sizes`의 `lineHeight`를 고정 px → TokenRef (`"{typography.text-sm--line-height}"` 등)
+  - `deriveSizeConfig`에서 TokenRef `lineHeight`를 `resolveToken`으로 변환
+
+### Bug Fixes
+
+- **요소 삭제 시 레이어 트리 유령 항목 버그**: `elementRemoval.ts`의 `executeRemoval`에서 `pageElementsSnapshot` 갱신 누락 수정 → 삭제 후 레이어 트리에 삭제된 항목이 남는 현상 해결
+- **`batchUpdateElementProps` DB 저장 버그**: DB 저장 시 delta props(`{ size: value }`)가 아닌 merged 전체 props를 저장 → 새로고침 후 props 소실 방지
+- **Select/ComboBox size 변경 시 자식 fontSize 미동기화**: `handleSizeChange`에서 Label + SelectValue/ComboBoxInput의 `style.fontSize` 동기화, `elementsMap`에서 최신 props 조회 (childrenMap staleness 방지)
+
+### Infrastructure
+
+- **ADR-036 레거시 코드 정리**: `SliderThumb.spec.ts` `SLIDER_THUMB_SIZES` 키 정규화 (`S/M/L` → `sm/md/lg`)
+
+---
+
 ## [ADR-030 S2 전용 컴포넌트 Phase 0~4 완료] - 2026-03-09
 
 ### Features

@@ -664,6 +664,7 @@ export function createRangeSliderDefinition(
         tag: "Label",
         props: {
           children: "Range Slider",
+          variant: "accent",
           style: {
             fontSize: 14,
             fontWeight: 500,
@@ -854,6 +855,7 @@ export function createPickerDefinition(
         tag: "Label",
         props: {
           children: "Picker",
+          variant: "accent",
           style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
         } as ComponentElementProps,
         ...ownerFields,

@@ -127,16 +127,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
     layout: "flex-column",
     gap: "var(--spacing-xs)",
     delegation: [
-      {
-        childSelector: ".react-aria-Label",
-        variables: {
-          xs: { "--combo-label-size": "var(--text-2xs)" },
-          sm: { "--combo-label-size": "var(--text-xs)" },
-          md: { "--combo-label-size": "var(--text-sm)" },
-          lg: { "--combo-label-size": "var(--text-base)" },
-          xl: { "--combo-label-size": "var(--text-lg)" },
-        },
-      },
+      // Label은 LabelSpec에서 variant 기반으로 color/font-size 결정 (단일 소스)
       {
         // ComboBoxWrapper 대응 — 컨테이너 (bg/border/padding)
         // Select의 .react-aria-Button과 동일 역할

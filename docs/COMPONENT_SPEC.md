@@ -5131,14 +5131,14 @@ TextSprite 렌더링 파이프라인을 거치도록 합니다.
 export const TEXT_TAGS = new Set([
   "heading",
   "paragraph",
-  "label",
+  // "label" — 제거됨 (2026-03-16): spec shapes 경로로 전환, §9.11 참조
   "span",
   "text",
   "description", // v3.9 추가 — Card 내 텍스트 자식 렌더링
 ]);
 ```
 
-> **관련**: §9.3.1 nodeRenderers.ts TextShape 렌더링, §4.5 CanvasKit/Skia 렌더링 패턴
+> **관련**: §9.3.1 nodeRenderers.ts TextShape 렌더링, §4.5 CanvasKit/Skia 렌더링 패턴, §9.11 Label spec shapes 경로
 
 ### 9.10.3 높이 계산 흐름
 
@@ -5902,6 +5902,61 @@ Opt-out 전환 후, 75개 spec 중 49개가 `_hasChildren`를 지원한다.
    - **Factory 복합 컴포넌트인 경우**: `factories/constants.ts`의 `COMPLEX_COMPONENT_TAGS`에도 추가
      (자식 삭제 시 standalone 렌더링 복귀 방지)
 5. **검증**: `pnpm build` + `pnpm type-check` + Canvas 시각 확인 + Layer 트리 자식 선택 확인
+
+## 9.14 Label spec shapes 경로 전환 (2026-03-16)
+
+### 9.14.1 배경 및 동기
+
+기존 Label은 `TEXT_TAGS`에 포함되어 TextSprite 경로로 렌더링되었다.
+이 경로에서 부모 컴포넌트(Select, ComboBox 등)의 variant에 따라 Label 색상을 결정하려면
+`PARENT_VARIANT_TO_LABEL_TOKEN` 매핑(hex 하드코딩)이 필요했고, 이는 단일 소스 원칙에 위배된다.
+
+**문제점:**
+
+- `PARENT_VARIANT_TO_LABEL_TOKEN`: 색상값이 Spec 바깥 JS에 하드코딩 → Spec 변경 시 동기화 필요
+- `labelColorElement` useMemo 해킹: 색상을 적용하기 위해 임시 element 생성
+- TextSprite 경로에서 spec shapes API(`LabelSpec.variants`) 미사용
+
+### 9.14.2 전환 내용
+
+| 항목                 | 이전                                       | 이후                                                  |
+| -------------------- | ------------------------------------------ | ----------------------------------------------------- |
+| 렌더링 경로          | `TEXT_TAGS` → TextSprite                   | spec shapes 경로                                      |
+| 색상 소스            | `PARENT_VARIANT_TO_LABEL_TOKEN` (하드코딩) | `LabelSpec.variants` (단일 소스)                      |
+| `isUIComponent` 판정 | 별도 set 등록                              | `getSpecForTag(tag) != null` 조건                     |
+| `hasOwnSprite`       | spec 있는 "box" 태그 포함                  | spec 있는 "box" 태그 제외                             |
+| Factory 기본값       | variant 미설정                             | `variant: "accent"`                                   |
+| 부모 variant 상속    | delegation에서 직접 override               | `PARENT_VARIANT_TO_LABEL` 매핑 (`isUIComponent` 분기) |
+
+### 9.14.3 구현 원칙
+
+```typescript
+// 금지: TEXT_TAGS에 "Label" 재추가
+// TEXT_TAGS는 순수 텍스트 요소(heading, paragraph, span, description 등) 전용
+
+// 올바른 패턴: isUIComponent 판정
+function isUIComponent(tag: string): boolean {
+  return getSpecForTag(tag) != null; // LabelSpec 있으면 true
+}
+
+// 올바른 패턴: Label 색상은 LabelSpec.variants에서
+// 부모 variant → PARENT_VARIANT_TO_LABEL 매핑 → label variant 결정
+const PARENT_VARIANT_TO_LABEL = {
+  accent: "accent",
+  primary: "default",
+  // ...
+} as const;
+```
+
+**금지 패턴:**
+
+- `TEXT_TAGS`에 `"Label"` 재추가 (TextSprite + spec shapes 이중 렌더링)
+- `PARENT_VARIANT_TO_LABEL_TOKEN` 방식 부활 (hex 하드코딩)
+- Select/ComboBox delegation에서 Label color 직접 override
+
+> **관련**: `.claude/rules/canvas-rendering.md` §Label 렌더링 경로
+
+---
 
 ## 10. 기술 명세
 

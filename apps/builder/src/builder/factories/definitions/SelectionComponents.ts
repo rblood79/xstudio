@@ -45,7 +45,12 @@ export function createSelectDefinition(
         tag: "Label",
         props: {
           children: "Select",
-          style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
+          variant: "accent",
+          style: {
+            fontSize: 14,
+            fontWeight: 500,
+            width: "fit-content",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 0,
@@ -141,7 +146,12 @@ export function createComboBoxDefinition(
         tag: "Label",
         props: {
           children: "Combo Box",
-          style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
+          variant: "accent",
+          style: {
+            fontSize: 14,
+            fontWeight: 500,
+            width: "fit-content",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 0,

@@ -9,6 +9,7 @@
  */
 
 import type { SelectedElement } from "../builder/inspector/types";
+import { ProgressBarSpec, MeterSpec } from "@xstudio/specs";
 import {
   getSizePreset,
   getCheckboxSizePreset,
@@ -224,11 +225,20 @@ function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
     case "Switch":
       return { fontSize: px(getSwitchSizePreset(size).thumbSize) };
 
-    // Bar 계열
-    case "ProgressBar":
-      return fromBarPreset(getProgressBarSizePreset(size));
-    case "Meter":
-      return fromBarPreset(getMeterSizePreset(size));
+    // Bar 계열 — gap을 Spec 단일 소스에서 직접 읽기
+    case "ProgressBar": {
+      const specSize =
+        ProgressBarSpec.sizes[size] ?? ProgressBarSpec.sizes["md"];
+      const barPreset = fromBarPreset(getProgressBarSizePreset(size));
+      barPreset.gap = px(specSize?.gap ?? 8);
+      return barPreset;
+    }
+    case "Meter": {
+      const specSize = MeterSpec.sizes[size] ?? MeterSpec.sizes["md"];
+      const barPreset = fromBarPreset(getMeterSizePreset(size));
+      barPreset.gap = px(specSize?.gap ?? 8);
+      return barPreset;
+    }
     case "Slider":
       return { fontSize: px(getSliderSizePreset(size).thumbSize) };
 

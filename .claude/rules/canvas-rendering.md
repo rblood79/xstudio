@@ -116,6 +116,22 @@ Spec 기반 컴포넌트(Button, Badge 등)의 텍스트 폭 측정 시 `extract
 - size 우선순위: `props.size || parentDelegatedSize || tagGroupAncestorSize || "md"`
 - Layout 경로(`fullTreeLayout.ts`)의 `effectiveGetChildElements`도 동일하게 size 주입 (L894-912)
 
+## Label 렌더링 경로 (spec shapes)
+
+Label은 `TEXT_TAGS`에서 제외되어 TextSprite 경로가 아닌 **spec shapes 경로**로 렌더링된다.
+
+- `isUIComponent` 판정: `getSpecForTag(element.tag) != null` 조건으로 Label 포함
+- `hasOwnSprite`에서 spec이 있는 "box" 태그 제외 → spec shapes 경로 진입
+- Label의 색상은 `LabelSpec.variants`가 단일 소스 — 하드코딩된 `PARENT_VARIANT_TO_LABEL_TOKEN` 제거
+- 부모 variant 상속: `PARENT_VARIANT_TO_LABEL` 매핑으로 `isUIComponent` 분기에서 처리
+- Factory 기본값: Label에 `variant: "accent"` 설정
+- Select/ComboBox delegation에서 Label color override 제거 — LabelSpec.variants가 담당
+
+**금지 패턴**:
+
+- `TEXT_TAGS`에 `"Label"` 재추가 금지 (TextSprite 경로와 spec shapes 경로 중복 렌더링)
+- `PARENT_VARIANT_TO_LABEL_TOKEN` 방식(hex 하드코딩) 부활 금지 → LabelSpec.variants 수정
+
 ## registryVersion 캐싱
 
 - LayoutContainer 'layout' 이벤트에서 `notifyLayoutChange()` 무조건 호출

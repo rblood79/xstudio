@@ -42,6 +42,28 @@ globs:
 - setTimeout/queueMicrotask 안에서 반드시 `get()`으로 최신 상태 참조
 - 외부 캡처된 elements/updateElementOrder 사용 금지
 
+## batchUpdateElementProps DB 저장 패턴 (CRITICAL)
+
+DB 저장 시 delta props가 아닌 **merged 전체 props**를 저장해야 한다.
+
+```typescript
+// 잘못된 패턴 — delta만 저장 → 새로고침 후 나머지 props 소실
+await db.updateElement({ id, props: delta });
+
+// 올바른 패턴 — merged 전체 저장
+const merged = { ...existing.props, ...delta };
+await db.updateElement({ id, props: merged });
+```
+
+- 위반 시: 새로고침 후 delta에 포함되지 않은 props가 사라짐
+
+## pageElementsSnapshot 갱신 (CRITICAL)
+
+요소 삭제(`executeRemoval`) 후 `pageElementsSnapshot`을 반드시 갱신해야 한다.
+
+- 갱신 누락 시: 삭제된 요소가 레이어 트리(Layer Panel)에 유령 항목으로 남음
+- 위치: `elementRemoval.ts`의 `executeRemoval` — 삭제 완료 후 snapshot 업데이트 필수
+
 ## 스타일 패널 (Zustand → Jotai Bridge)
 
 ### PropertyUnitInput 요소 전환 보호

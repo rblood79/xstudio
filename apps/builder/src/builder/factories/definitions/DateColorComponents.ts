@@ -13,7 +13,7 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
  *         └─ CalendarGrid    (요일 + 날짜 셀)
  */
 export function createDatePickerDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -31,8 +31,8 @@ export function createDatePickerDefinition(
   const firstDay = new Date(calYear, calMonth, 1).getDay();
   const calTotalDays = new Date(calYear, calMonth + 1, 0).getDate();
   const monthText = new Intl.DateTimeFormat(
-    (typeof navigator !== 'undefined' && navigator.language) || 'ko-KR',
-    { year: 'numeric', month: 'long' }
+    (typeof navigator !== "undefined" && navigator.language) || "ko-KR",
+    { year: "numeric", month: "long" },
   ).format(now);
 
   return {
@@ -129,7 +129,7 @@ export function createDatePickerDefinition(
  *     └─ DateField  (tag="DateField", placeholder="End date",   display:block)
  */
 export function createDateRangePickerDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -208,7 +208,7 @@ export function createDateRangePickerDefinition(
  * (Compositional Architecture — 각 자식이 자체 spec shapes를 렌더링)
  */
 export function createCalendarDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -252,7 +252,10 @@ export function createCalendarDefinition(
         props: {
           variant: "default",
           size: "M",
-          children: new Intl.DateTimeFormat(navigator.language || 'ko-KR', { year: 'numeric', month: 'long' }).format(now),
+          children: new Intl.DateTimeFormat(navigator.language || "ko-KR", {
+            year: "numeric",
+            month: "long",
+          }).format(now),
           style: {
             display: "block",
             width: "100%",
@@ -295,7 +298,7 @@ export function createCalendarDefinition(
  *     └─ DateSegment (tag="DateSegment", segment="year")
  */
 export function createDateFieldDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -328,6 +331,7 @@ export function createDateFieldDefinition(
         tag: "Label",
         props: {
           children: "Date",
+          variant: "accent",
           style: {
             display: "block",
             fontSize: "14px",
@@ -383,7 +387,7 @@ export function createDateFieldDefinition(
  *     └─ TimeSegment (tag="TimeSegment", segment="second")
  */
 export function createTimeFieldDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -416,6 +420,7 @@ export function createTimeFieldDefinition(
         tag: "Label",
         props: {
           children: "Time",
+          variant: "accent",
           style: {
             display: "block",
             fontSize: "14px",
@@ -470,7 +475,7 @@ export function createTimeFieldDefinition(
  *     └─ ColorSwatch (tag="ColorSwatch", preview swatch)
  */
 export function createColorFieldDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -502,6 +507,7 @@ export function createColorFieldDefinition(
         tag: "Label",
         props: {
           children: "Color",
+          variant: "accent",
           style: {
             display: "block",
             fontSize: "14px",
@@ -551,7 +557,7 @@ export function createColorFieldDefinition(
  *     └─ ColorField  (tag="ColorField",  placeholder:"#000000", display:block)
  */
 export function createColorPickerDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -628,7 +634,7 @@ export function createColorPickerDefinition(
  *     └─ ColorSwatch (#00FFFF)
  */
 export function createColorSwatchPickerDefinition(
-  context: ComponentCreationContext
+  context: ComponentCreationContext,
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
@@ -638,7 +644,14 @@ export function createColorSwatchPickerDefinition(
     ? { page_id: null as null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null as null };
 
-  const defaultColors = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
+  const defaultColors = [
+    "#FF0000",
+    "#00FF00",
+    "#0000FF",
+    "#FFFF00",
+    "#FF00FF",
+    "#00FFFF",
+  ];
 
   return {
     tag: "ColorSwatchPicker",

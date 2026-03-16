@@ -244,7 +244,7 @@ interface ChildSyncField extends BaseFieldDef {
   placeholder?: string;
   multiline?: boolean;
   childSync: {
-    path: string[]; // ["CardHeader", "Heading"] — 자식 트리 경로 (1-depth: ["Label"], 2-depth: ["CardHeader", "Heading"])
+    path: [string, ...string[]]; // 최소 1개 요소 필수. 1-depth: ["Label"], 2-depth: ["CardHeader", "Heading"]
     propKey: string; // "children" — 동기화할 자식 prop
     /** 부모 prop 변경 시 자식에 추가로 적용할 파생 값 계산 함수.
      *  Spec은 shapes() 등 런타임 함수를 이미 포함하는 객체이므로 직접 참조 가능.
@@ -287,10 +287,12 @@ type DerivedUpdateFn = (context: DerivedUpdateContext) => ChildUpdate[];
 
 // 조건부 표시
 interface VisibilityCondition {
-  key: string; // 참조할 prop
-  isNotEmpty?: boolean; // truthy 체크
-  equals?: unknown; // 특정 값 비교
-  notEquals?: unknown;
+  /** 참조할 prop 키. props 기반 조건(isNotEmpty/equals/notEquals) 사용 시 필수.
+   *  parentTag/parentTagNot 단독 사용 시 생략 가능. */
+  key?: string;
+  isNotEmpty?: boolean; // truthy 체크 (key 필수)
+  equals?: unknown; // 특정 값 비교 (key 필수)
+  notEquals?: unknown; // (key 필수)
   /** 부모 태그 기반 조건. 지정 시 부모의 tag가 일치할 때만 표시.
    *  예: CheckboxEditor — 부모가 CheckboxGroup이면 Design 섹션 숨김.
    *  `parentTagNot: "CheckboxGroup"` → 부모가 CheckboxGroup이 아닐 때만 표시.
@@ -639,7 +641,7 @@ const SpecField = memo(function SpecField({ field, spec, value, onChange }: Spec
         />
       );
 
-    case "size":
+    case "size": {
       const sizeKeys = Object.keys(spec.sizes);
       return (
         <PropertySizeToggle
@@ -650,6 +652,7 @@ const SpecField = memo(function SpecField({ field, spec, value, onChange }: Spec
           options={sizeKeys.map(k => ({ id: k, label: k.toUpperCase() }))}
         />
       );
+    }
 
     case "boolean":
       return (
@@ -684,7 +687,7 @@ const SpecField = memo(function SpecField({ field, spec, value, onChange }: Spec
         />
       );
 
-    case "childSync":
+    case "childSync": {
       // childSync는 UI 상으로는 string(PropertyInput) 또는 size(PropertySizeToggle)
       // 값 변환/자식 동기화는 handleFieldChange에서 처리
       if (field.uiType === "size") {
@@ -709,6 +712,7 @@ const SpecField = memo(function SpecField({ field, spec, value, onChange }: Spec
           multiline={field.multiline}
         />
       );
+    }
 
     case "number":
       return (

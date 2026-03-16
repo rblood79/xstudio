@@ -56,6 +56,7 @@ export function createTextFieldDefinition(
         tag: "Label",
         props: {
           children: "Text Field",
+          variant: "accent",
           size: "md",
           style: {
             width: "fit-content",
@@ -148,6 +149,7 @@ export function createTextAreaDefinition(
         tag: "Label",
         props: {
           children: "Text Area",
+          variant: "accent",
           style: {
             width: "fit-content",
             fontSize: 14,
@@ -275,6 +277,7 @@ export function createFormDefinition(
             tag: "Label",
             props: {
               children: "Field Label",
+              variant: "accent",
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -312,6 +315,7 @@ export function createFormDefinition(
             tag: "Label",
             props: {
               children: "Another Field",
+              variant: "accent",
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -468,6 +472,7 @@ export function createNumberFieldDefinition(
         tag: "Label",
         props: {
           children: "Number",
+          variant: "accent",
           style: {
             display: "block",
             fontSize: "14px",
@@ -592,6 +597,7 @@ export function createSearchFieldDefinition(
         tag: "Label",
         props: {
           children: "Search",
+          variant: "accent",
           style: {
             display: "block",
             fontSize: "14px",
@@ -682,6 +688,7 @@ export function createSliderDefinition(
         tag: "Label",
         props: {
           children: "Slider",
+          variant: "accent",
           style: {
             fontSize: 14,
             fontWeight: 500,

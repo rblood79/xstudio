@@ -6,9 +6,14 @@
 
 .react-aria-Meter {
   /* Base styles — archetype: progress */
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-areas: "label value" "track track";
+    grid-template-columns: 1fr auto;
     box-sizing: border-box;
+
+    .react-aria-Label { grid-area: label; }
+    [slot="value"] { grid-area: value; }
+    .bar { grid-area: track; }
 
   /* Default variant */
   background: var(--bg-muted);
@@ -16,7 +21,6 @@
   border: none;
 
   /* Default size */
-  height: 8px;
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-sm);
@@ -76,7 +80,6 @@
 }
 
 .react-aria-Meter[data-size="sm"] {
-  height: 4px;
   padding: 0px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-sm);
@@ -84,7 +87,6 @@
 }
 
 .react-aria-Meter[data-size="md"] {
-  height: 8px;
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-sm);
@@ -92,7 +94,6 @@
 }
 
 .react-aria-Meter[data-size="lg"] {
-  height: 12px;
   padding: 0px 0px;
   font-size: var(--text-md);
   border-radius: var(--radius-md);

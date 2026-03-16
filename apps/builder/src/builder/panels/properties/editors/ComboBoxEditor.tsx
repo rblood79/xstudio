@@ -34,6 +34,7 @@ import { useCollectionItemManager } from "@/builder/hooks";
 import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 import { useSyncGrandchildProp } from "../../../hooks/useSyncGrandchildProp";
 import { supabase } from "../../../../env/supabase.client";
+import type { BatchPropsUpdate } from "../../../stores/utils/elementUpdate";
 
 export const ComboBoxEditor = memo(
   function ComboBoxEditor({
@@ -171,11 +172,66 @@ export const ComboBoxEditor = memo(
       [onUpdate],
     );
 
+    const COMBOBOX_FONT_SIZE_BY_SIZE: Record<string, number> = {
+      xs: 10,
+      sm: 12,
+      md: 14,
+      lg: 16,
+      xl: 18,
+    };
+
     const handleSizeChange = useCallback(
       (value: string) => {
-        onUpdate({ size: value });
+        const childUpdates: BatchPropsUpdate[] = [];
+        const { childrenMap, elementsMap } = useStore.getState();
+        const directChildren = childrenMap.get(elementId) ?? [];
+        const fontSize = COMBOBOX_FONT_SIZE_BY_SIZE[value] ?? 14;
+
+        // Label 자식의 fontSize 동기화 (WebGL 경로)
+        const label = directChildren.find((child) => child.tag === "Label");
+        if (label) {
+          const latestLabel = elementsMap.get(label.id);
+          const labelStyle =
+            ((latestLabel ?? label).props?.style as
+              | Record<string, unknown>
+              | undefined) || {};
+          childUpdates.push({
+            elementId: label.id,
+            props: {
+              style: { ...labelStyle, fontSize },
+            },
+          });
+        }
+
+        // ComboBoxInput 손자의 fontSize 동기화
+        const wrapper = directChildren.find(
+          (child) => child.tag === "ComboBoxWrapper",
+        );
+        if (wrapper) {
+          const grandchildren = childrenMap.get(wrapper.id) ?? [];
+          const comboInput = grandchildren.find(
+            (child) => child.tag === "ComboBoxInput",
+          );
+          if (comboInput) {
+            const latestInput = elementsMap.get(comboInput.id);
+            const inputStyle =
+              ((latestInput ?? comboInput).props?.style as
+                | Record<string, unknown>
+                | undefined) || {};
+            childUpdates.push({
+              elementId: comboInput.id,
+              props: {
+                style: { ...inputStyle, fontSize },
+              },
+            });
+          }
+        }
+
+        useStore
+          .getState()
+          .updateSelectedPropertiesWithChildren({ size: value }, childUpdates);
       },
-      [onUpdate],
+      [elementId],
     );
 
     const handleMenuTriggerChange = useCallback(

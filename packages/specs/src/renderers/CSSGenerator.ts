@@ -51,9 +51,14 @@ const ARCHETYPE_BASE_STYLES: Record<ArchetypeId, string[]> = {
     `    user-select: none;`,
   ],
   progress: [
-    `    display: flex;`,
-    `    flex-direction: column;`,
+    `    display: grid;`,
+    `    grid-template-areas: "label value" "track track";`,
+    `    grid-template-columns: 1fr auto;`,
     `    box-sizing: border-box;`,
+    ``,
+    `    .react-aria-Label { grid-area: label; }`,
+    `    [slot="value"] { grid-area: value; }`,
+    `    .bar { grid-area: track; }`,
   ],
   slider: [`    display: grid;`, `    box-sizing: border-box;`],
   "tabs-indicator": [
@@ -207,14 +212,12 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string {
 
   // Size 스타일
   const isComposite = !!spec.composition;
+  // progress archetype: sizes.height는 bar track 높이이며 컨테이너 height가 아님
+  const skipHeight = isComposite || spec.archetype === "progress";
+  const skipPadding = isComposite;
   for (const [sizeName, sizeSpec] of Object.entries(spec.sizes)) {
     lines.push(`.react-aria-${spec.name}[data-size="${sizeName}"] {`);
-    lines.push(
-      ...generateSizeStyles(sizeSpec, {
-        skipHeight: isComposite,
-        skipPadding: isComposite,
-      }),
-    );
+    lines.push(...generateSizeStyles(sizeSpec, { skipHeight, skipPadding }));
     lines.push("}");
     lines.push("");
   }
@@ -301,11 +304,12 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
   // default size 속성 (있으면)
   if (defaultSize) {
     const isComposite = !!spec.composition;
+    const skipDefaultHeight = isComposite || spec.archetype === "progress";
     lines.push("");
     lines.push("  /* Default size */");
     lines.push(
       ...generateSizeStyles(defaultSize, {
-        skipHeight: isComposite,
+        skipHeight: skipDefaultHeight,
         skipPadding: isComposite,
       }),
     );

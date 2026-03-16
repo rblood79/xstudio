@@ -131,7 +131,13 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
         METER_FILL_COLORS[variantName] ?? METER_FILL_COLORS.informative;
       const width = (props.style?.width as number) || meterDims.width;
       const barHeight = meterDims.barHeight;
-      const gap = size.gap ?? 8;
+      const styleGap = props.style?.gap;
+      const gap =
+        styleGap != null
+          ? typeof styleGap === "number"
+            ? styleGap
+            : parseFloat(String(styleGap)) || 0
+          : (size.gap ?? 8);
 
       // 사용자 스타일 우선
       const styleBr = props.style?.borderRadius;
