@@ -258,11 +258,24 @@ async function executeRemoval(
     newChildrenMap.get(parentId)!.push(el);
   });
 
+  const newPageIndex = rebuildPageIndex(filteredElements, newElementsMap);
+
+  // pageElementsSnapshot 재구축 — 레이어 트리가 이 스냅샷에 의존
+  const newPageElementsSnapshot: Record<string, Element[]> = {};
+  for (const [pageId, elementIds] of newPageIndex.elementsByPage.entries()) {
+    const pageElements = Array.from(elementIds)
+      .map((id) => newElementsMap.get(id))
+      .filter((element): element is Element => Boolean(element))
+      .sort((left, right) => (left.order_num ?? 0) - (right.order_num ?? 0));
+    newPageElementsSnapshot[pageId] = pageElements;
+  }
+
   set((state) => ({
     elements: filteredElements,
     elementsMap: newElementsMap,
     childrenMap: newChildrenMap,
-    pageIndex: rebuildPageIndex(filteredElements, newElementsMap),
+    pageIndex: newPageIndex,
+    pageElementsSnapshot: newPageElementsSnapshot,
     componentIndex: rebuildComponentIndex(filteredElements),
     variableUsageIndex: rebuildVariableUsageIndex(filteredElements),
     // ADR-006 P3-1: 구조 변경 → layoutVersion 무조건 증가

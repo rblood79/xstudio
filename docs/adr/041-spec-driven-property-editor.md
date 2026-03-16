@@ -6,7 +6,7 @@ Proposed
 
 ## Date
 
-2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강 + 설계 리뷰 반영)
+2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강 + 설계 리뷰 반영 + 타입 안전성·간접성 제거 11건 개선)
 
 ## Decision Makers
 
@@ -182,13 +182,15 @@ type FieldDef =
   | ChildSyncField;
 
 // variant — Spec.variants에서 옵션 자동 추출
-interface VariantField extends BaseFieldDef {
+interface VariantField extends Omit<BaseFieldDef, "key"> {
   type: "variant";
+  key?: string; // 기본값: "variant" — 대부분의 에디터에서 동일하므로 생략 가능
 }
 
 // size — Spec.sizes에서 scale 자동 결정
-interface SizeField extends BaseFieldDef {
+interface SizeField extends Omit<BaseFieldDef, "key"> {
   type: "size";
+  key?: string; // 기본값: "size" — 대부분의 에디터에서 동일하므로 생략 가능
 }
 
 // boolean — PropertySwitch
@@ -226,10 +228,12 @@ interface IconField extends BaseFieldDef {
   clearKeys?: string[];
 }
 
-// custom — 수동 컴포넌트 참조
+// custom — 수동 컴포넌트 직접 참조 (문자열 레지스트리 불필요)
 interface CustomField extends BaseFieldDef {
   type: "custom";
-  component: string; // "ColorPickerField", "ImageUploader" 등
+  /** React 컴포넌트 직접 참조. Spec은 런타임 객체이므로 icon과 동일하게 직접 import 가능.
+   *  전수 조사에서 커스텀 위젯 사용이 0개이므로 당장 사용되지 않으나, 확장 시 타입 안전성 보장. */
+  component: React.ComponentType<CustomFieldComponentProps>;
 }
 
 // childSync — 부모 prop 변경 시 자식 자동 동기화 (discriminated union을 위해 별도 type 사용)
@@ -242,14 +246,44 @@ interface ChildSyncField extends BaseFieldDef {
   childSync: {
     path: string[]; // ["CardHeader", "Heading"] — 자식 트리 경로 (1-depth: ["Label"], 2-depth: ["CardHeader", "Heading"])
     propKey: string; // "children" — 동기화할 자식 prop
-    /** 부모 prop 변경 시 자식에 추가로 적용할 파생 값 계산 함수명.
-     *  등록된 함수가 context → ChildUpdate[] 반환. */
-    derivedUpdateFn?: string;
+    /** 부모 prop 변경 시 자식에 추가로 적용할 파생 값 계산 함수.
+     *  Spec은 shapes() 등 런타임 함수를 이미 포함하는 객체이므로 직접 참조 가능.
+     *  문자열 레지스트리 대비 장점: 타입 안전성 보장, 디버깅 직관적, 인프라 코드 불필요. */
+    derivedUpdateFn?: DerivedUpdateFn;
     /** 2-depth 경로에서 wrapper가 없을 때 직계 자식에서 직접 찾기. 기본값: false.
      *  CardEditor 등 flat→nested 구조 마이그레이션 하위 호환용. */
     fallbackToDirectChild?: boolean;
   };
 }
+
+// custom 필드 컴포넌트 Props
+interface CustomFieldComponentProps {
+  value: unknown;
+  onChange: (value: unknown) => void;
+  fieldDef: CustomField;
+}
+
+// 파생 값 계산 함수 타입
+interface DerivedUpdateContext {
+  parentProps: Record<string, unknown>;
+  value: unknown;
+  elementId: string;
+  /** Store의 childrenMap — Record<string, Element[]> 형태 (Store 실제 타입과 일치) */
+  childrenMap: Record<string, Element[]>;
+  /** Store의 elementsMap — Record<string, Element> 형태 (Store 실제 타입과 일치) */
+  elementsMap: Record<string, Element>;
+}
+
+/** ChildUpdate 확장 — deep merge 지원 */
+interface ChildUpdate {
+  childTag: string;
+  propKey: string;
+  value: unknown;
+  /** "shallow": 1-depth 병합 (기본값). "deep": 중첩 객체 재귀 병합. */
+  merge?: "shallow" | "deep";
+}
+
+type DerivedUpdateFn = (context: DerivedUpdateContext) => ChildUpdate[];
 
 // 조건부 표시
 interface VisibilityCondition {
@@ -259,48 +293,26 @@ interface VisibilityCondition {
   notEquals?: unknown;
   /** 부모 태그 기반 조건. 지정 시 부모의 tag가 일치할 때만 표시.
    *  예: CheckboxEditor — 부모가 CheckboxGroup이면 Design 섹션 숨김.
-   *  `parentTagNot: "CheckboxGroup"` → 부모가 CheckboxGroup이 아닐 때만 표시. */
+   *  `parentTagNot: "CheckboxGroup"` → 부모가 CheckboxGroup이 아닐 때만 표시.
+   *
+   *  **Store 접근 필요**: parentTag/parentTagNot 평가 시 elementsMap에서 부모 조회가 필요하므로,
+   *  evaluateVisibility()는 내부에서 useStore.getState()를 호출한다.
+   *  React 렌더 함수 내에서 호출하는 것은 안전하지만, 이 함수는 순수 함수가 아님에 유의. */
   parentTag?: string;
   parentTagNot?: string;
 }
 ```
 
-### derivedUpdateFn 레지스트리
+### derivedUpdateFn — Spec 내 함수 직접 참조
 
-`ChildSyncField.childSync.derivedUpdateFn`은 **문자열 이름으로 등록된 함수**를 참조한다. 이는 Spec이 런타임 함수를 직접 포함하지 않도록 하기 위함이다.
+`ChildSyncField.childSync.derivedUpdateFn`은 **Spec 내에서 함수를 직접 참조**한다. Spec은 `shapes()` 등 런타임 함수를 이미 포함하는 객체이므로, 문자열 레지스트리 없이 함수를 직접 포함할 수 있다. 이로써 `registerDerivedUpdate` 인프라가 불필요하며, 타입 안전성이 보장된다.
 
 ```typescript
-// derivedUpdateRegistry.ts
-
-/** derivedUpdateFn에 전달되는 컨텍스트 — store 접근 포함 */
-interface DerivedUpdateContext {
-  parentProps: Record<string, unknown>;
-  value: unknown;
-  elementId: string;
-  childrenMap: Map<string, Element[]>;
-  elementsMap: Map<string, Element>;
-}
-
-/** ChildUpdate 확장 — deep merge 지원 */
-interface ChildUpdate {
-  childTag: string;
-  propKey: string;
-  value: unknown;
-  /** "shallow": 1-depth 병합 (기본값). "deep": 중첩 객체 재귀 병합.
-   *  예: style 객체의 fontSize만 변경하면서 나머지 속성 보존 → "shallow" 사용. */
-  merge?: "shallow" | "deep";
-}
-
-type DerivedUpdateFn = (context: DerivedUpdateContext) => ChildUpdate[];
-
-const registry = new Map<string, DerivedUpdateFn>();
-
-export function registerDerivedUpdate(name: string, fn: DerivedUpdateFn) {
-  registry.set(name, fn);
-}
+// DerivedUpdateFn, DerivedUpdateContext, ChildUpdate 타입은 위 FieldDef 유니온 타입 섹션에서 정의
 
 // 예시: TextField size → Label fontSize + Input size 동기화
-registerDerivedUpdate("textFieldSizeSync", (ctx) => {
+// TextFieldSpec 내부에서 직접 정의
+const textFieldSizeSync: DerivedUpdateFn = (ctx) => {
   const LABEL_FONT_SIZE: Record<string, number> = { sm: 12, md: 14, lg: 16 };
   return [
     {
@@ -315,10 +327,14 @@ registerDerivedUpdate("textFieldSizeSync", (ctx) => {
       value: ctx.value,
     },
   ];
-});
+};
+
+// TextFieldSpec.properties에서 사용:
+// { key: "size", type: "childSync", uiType: "size",
+//   childSync: { path: ["Input"], propKey: "size", derivedUpdateFn: textFieldSizeSync } }
 ```
 
-> **`DerivedUpdateContext`에 `elementId`/`childrenMap`/`elementsMap` 포함 근거**: 실제 TextFieldEditor/SelectEditor의 `handleSizeChange`는 `childrenMap`에서 자식을 조회하여 기존 style을 spread한 후 fontSize를 갱신한다. 단순 `(parentProps, value)` 시그니처로는 이 패턴을 커버할 수 없다.
+> **`DerivedUpdateContext`에 `elementId`/`childrenMap`/`elementsMap` 포함 근거**: 실제 TextFieldEditor/SelectEditor의 `handleSizeChange`는 `childrenMap`에서 자식을 조회하여 기존 style을 spread한 후 fontSize를 갱신한다. 단순 `(parentProps, value)` 시그니처로는 이 패턴을 커버할 수 없다. `childrenMap`/`elementsMap`은 Store의 실제 타입(`Record<string, Element[]>` / `Record<string, Element>`)과 일치시킨다.
 
 ### 적용 예시: ButtonSpec
 
@@ -344,10 +360,10 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       {
         title: "Design",
         fields: [
-          { key: "variant", type: "variant" },
+          { type: "variant" },  // key 생략 → 기본값 "variant"
           { key: "fillStyle", type: "enum", label: "Fill Style",
             options: [{ value: "fill", label: "Fill" }, { value: "outline", label: "Outline" }] },
-          { key: "size", type: "size" },
+          { type: "size" },     // key 생략 → 기본값 "size"
         ],
       },
       {
@@ -383,7 +399,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       {
         title: "Design",
         fields: [
-          { key: "size", type: "size" },
+          { type: "size" }, // key 생략 → 기본값 "size"
           { key: "isEmphasized", type: "boolean", label: "Emphasized" },
         ],
       },
@@ -428,9 +444,21 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
 ### GenericPropertyEditor 구현
 
 ```typescript
+/** VariantField/SizeField의 key 기본값 해석 */
+function resolveFieldKey(field: FieldDef): string {
+  if ('key' in field && field.key) return field.key;
+  if (field.type === "variant") return "variant";
+  if (field.type === "size") return "size";
+  throw new Error(`FieldDef requires 'key' for type "${field.type}"`);
+}
+
 interface GenericPropertyEditorProps extends PropertyEditorProps {
   spec: ComponentSpec<any>;
-  excludeSections?: string[]; // 하이브리드 패턴: 수동 섹션 제외
+  /** 하이브리드 패턴: 수동 섹션 제외.
+   *  오타 방지는 Spec 정의 시 sections 배열에서 title을 상수로 추출하여 활용.
+   *  예: const SECTION_TITLES = ["Content", "Design", "Behavior"] as const;
+   *      excludeSections={["Content"]} */
+  excludeSections?: string[];
 }
 
 function GenericPropertyEditor({
@@ -452,7 +480,8 @@ function GenericPropertyEditor({
     const transformedValue = ('valueTransform' in field && field.valueTransform === "number")
       ? (finalValue != null ? Number(finalValue) : undefined) : finalValue;
 
-    const updatedProps: Record<string, unknown> = { [field.key]: transformedValue };
+    const resolvedKey = resolveFieldKey(field);
+    const updatedProps: Record<string, unknown> = { [resolvedKey]: transformedValue };
 
     // icon clearKeys 처리
     if (field.type === "icon" && transformedValue === undefined && field.clearKeys) {
@@ -461,8 +490,8 @@ function GenericPropertyEditor({
       }
     }
 
-    // childSync 처리
-    if (field.type === "childSync" && field.childSync) {
+    // childSync 처리 (childSync는 ChildSyncField의 required 프로퍼티)
+    if (field.type === "childSync") {
       const { path, propKey, derivedUpdateFn, fallbackToDirectChild } = field.childSync;
       const isDeep = path.length > 1;
 
@@ -483,19 +512,17 @@ function GenericPropertyEditor({
         }]);
       }
 
-      // derivedUpdateFn 처리 — currentPropsRef로 최신 props 참조 (stale closure 방지)
+      // derivedUpdateFn 처리 — 함수 직접 참조 (레지스트리 불필요)
+      // currentPropsRef로 최신 props 참조 (stale closure 방지)
       if (derivedUpdateFn) {
-        const derivedFn = getDerivedUpdate(derivedUpdateFn);
-        if (derivedFn) {
-          const { elementsMap, childrenMap } = useStore.getState();
-          childUpdates.push(...derivedFn({
-            parentProps: currentPropsRef.current,
-            value: transformedValue,
-            elementId,
-            childrenMap,
-            elementsMap,
-          }));
-        }
+        const { elementsMap, childrenMap } = useStore.getState();
+        childUpdates.push(...derivedUpdateFn({
+          parentProps: currentPropsRef.current,
+          value: transformedValue,
+          elementId,
+          childrenMap,
+          elementsMap,
+        }));
       }
 
       useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
@@ -505,11 +532,15 @@ function GenericPropertyEditor({
   }, [onUpdate, buildChildUpdates, buildDeepChildUpdates, elementId]);
 
   // --- 성능 최적화: 필드별 onChange 핸들러 캐싱 ---
+  // **가정**: spec은 모듈 레벨 상수이므로 참조가 변경되지 않음 → fieldHandlers 재생성 없음.
+  // 동적으로 spec이 바뀌는 시나리오는 지원하지 않는다.
   const fieldHandlers = useMemo(() => {
     const map = new Map<string, (v: unknown) => void>();
     for (const section of spec.properties!.sections) {
       for (const field of section.fields) {
-        map.set(field.key, (v: unknown) => handleFieldChange(field, v));
+        // VariantField/SizeField는 key 생략 가능 → 기본값 적용
+        const resolvedKey = resolveFieldKey(field);
+        map.set(resolvedKey, (v: unknown) => handleFieldChange(field, v));
       }
     }
     return map;
@@ -541,6 +572,7 @@ function GenericPropertyEditor({
             spec={spec}
             currentProps={currentProps}
             fieldHandlers={fieldHandlers}
+            elementId={elementId}
           />
         ))}
     </>
@@ -554,27 +586,24 @@ function GenericPropertyEditor({
 
 ```typescript
 const MemoizedSection = memo(function MemoizedSection({
-  section, spec, currentProps, fieldHandlers,
+  section, spec, currentProps, fieldHandlers, elementId,
 }: MemoizedSectionProps) {
-  // 이 섹션의 필드에 해당하는 값만 추출하여 비교 대상으로 사용
-  const relevantValues = useMemo(
-    () => section.fields.map(f => currentProps[f.key]),
-    [section.fields, currentProps],
-  );
-
   return (
     <PropertySection title={section.title}>
       {section.fields
         .filter(field => evaluateVisibility(field.visibleWhen, currentProps, elementId))
-        .map(field => (
-          <SpecField
-            key={field.key}
-            field={field}
-            spec={spec}
-            value={currentProps[field.key]}
-            onChange={fieldHandlers.get(field.key)!}
-          />
-        ))}
+        .map(field => {
+          const key = resolveFieldKey(field);
+          return (
+            <SpecField
+              key={key}
+              field={field}
+              spec={spec}
+              value={currentProps[key]}
+              onChange={fieldHandlers.get(key)!}
+            />
+          );
+        })}
     </PropertySection>
   );
 }, (prev, next) => {
@@ -582,7 +611,11 @@ const MemoizedSection = memo(function MemoizedSection({
   return prev.section === next.section
     && prev.spec === next.spec
     && prev.fieldHandlers === next.fieldHandlers
-    && prev.section.fields.every(f => prev.currentProps[f.key] === next.currentProps[f.key]);
+    && prev.elementId === next.elementId
+    && prev.section.fields.every(f => {
+      const key = resolveFieldKey(f);
+      return prev.currentProps[key] === next.currentProps[key];
+    });
 });
 ```
 
@@ -687,25 +720,26 @@ const SpecField = memo(function SpecField({ field, spec, value, onChange }: Spec
           type="number"
           min={field.min}
           max={field.max}
+          step={field.step}
         />
       );
 
     case "icon":
+      // onClear는 단순히 onChange(undefined)만 호출.
+      // clearKeys 처리는 handleFieldChange에서 field.type === "icon" && value === undefined 분기가 담당.
+      // onClear에서 별도 reset 객체를 만들면 이중 처리됨.
       return (
         <PropertyIconPicker
           label={field.label ?? "Icon"}
           value={value}
           onChange={onChange}
-          onClear={field.clearKeys ? () => {
-            const reset: Record<string, undefined> = { [field.key]: undefined };
-            for (const k of field.clearKeys!) reset[k] = undefined;
-            onChange(undefined); // 개별 값은 handleFieldChange에서 clearKeys 처리
-          } : undefined}
+          onClear={() => onChange(undefined)}
         />
       );
 
     case "custom":
-      return <CustomFieldRenderer component={field.component} value={value} onChange={onChange} />;
+      // field.component는 React.ComponentType 직접 참조 — 레지스트리 조회 불필요
+      return <CustomFieldRenderer component={field.component} value={value} onChange={onChange} fieldDef={field} />;
   }
 });
 ```
@@ -713,21 +747,20 @@ const SpecField = memo(function SpecField({ field, spec, value, onChange }: Spec
 ### 에디터 레지스트리 변경
 
 ```typescript
-// registry.ts — 변경
-export async function getEditor(type: string, context?: EditorContext) {
-  const metadata = getComponentMeta(type);
-
-  // 1. 커스텀 에디터가 있으면 기존 방식
-  if (metadata?.inspector.hasCustomEditor) {
-    return importEditor(metadata.inspector.editorName);
-  }
-
-  // 2. Spec에 properties가 있으면 GenericPropertyEditor 사용
+// registry.ts — 최종 형태 (Spec properties 우선, 등급 C는 기존 에디터 폴백)
+export async function getEditor(type: string) {
+  // 1단계: Spec.properties 확인 → GenericPropertyEditor (등급 A/B)
   const spec = getSpecByTag(type);
   if (spec?.properties) {
     return (props: PropertyEditorProps) => (
       <GenericPropertyEditor {...props} spec={spec} />
     );
+  }
+
+  // 2단계: 기존 커스텀 에디터 (lazy import, 등급 C)
+  const metadata = getComponentMeta(type);
+  if (metadata?.inspector.hasCustomEditor) {
+    return importEditor(metadata.inspector.editorName);
   }
 
   return null;
@@ -847,36 +880,16 @@ ComponentSpec 인터페이스에 `properties?: PropertySchema` 필드 추가.
 - `GenericPropertyEditor.tsx` — schema 기반 동적 렌더링
 - `SpecField.tsx` — 필드 타입별 UI 매핑 (variant, size, boolean, enum, string, number, icon)
 - `evaluateVisibility()` — 조건부 표시 평가 (props 기반 + parentTag/parentTagNot 기반)
-- `CustomFieldRenderer.tsx` — 커스텀 위젯 등록/해석 메커니즘
+- `CustomFieldRenderer.tsx` — 커스텀 위젯 직접 렌더링 (컴포넌트 참조 기반, 레지스트리 불필요)
 - 성능 최적화: 필드별 onChange를 useCallback으로 메모이제이션
 
-#### CustomFieldRenderer 등록 메커니즘
+#### CustomFieldRenderer — 컴포넌트 직접 참조
+
+`CustomField.component`는 `React.ComponentType<CustomFieldComponentProps>`를 직접 참조한다. Spec이 런타임 객체이므로 `icon`과 동일하게 직접 import가 가능하며, 문자열 레지스트리가 불필요하다. 전수 조사에서 커스텀 위젯 사용이 0개이므로 당장 레지스트리 인프라를 구축할 필요가 없으며, 향후 필요 시에도 타입 안전한 직접 참조가 우선이다.
 
 ```typescript
-// customFieldRegistry.ts
-type CustomFieldComponent = React.ComponentType<{
-  value: unknown;
-  onChange: (value: unknown) => void;
-  fieldDef: CustomField;
-}>;
-
-const registry = new Map<string, CustomFieldComponent>();
-
-export function registerCustomField(name: string, component: CustomFieldComponent) {
-  registry.set(name, component);
-}
-
-export function getCustomField(name: string): CustomFieldComponent | undefined {
-  return registry.get(name);
-}
-
-// CustomFieldRenderer.tsx
-function CustomFieldRenderer({ component, value, onChange, fieldDef }: Props) {
-  const Component = getCustomField(component);
-  if (!Component) {
-    console.warn(`Custom field "${component}" not registered`);
-    return null;
-  }
+// CustomFieldRenderer.tsx — 레지스트리 없이 직접 렌더링
+function CustomFieldRenderer({ component: Component, value, onChange, fieldDef }: Props) {
   return <Component value={value} onChange={onChange} fieldDef={fieldDef} />;
 }
 ```
@@ -896,7 +909,7 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 6. 최종 확인 후 기존 에디터 파일 삭제
 ```
 
-**배치 순서** (의존성 없는 것부터):
+**배치 순서** (기준: 필드 타입 단순성 → 사용 빈도 역순 → 의존 컴포넌트 없는 leaf부터):
 
 | 배치 | 대상 수 | 대표 에디터                                                                                                                                                     |
 | :--: | :-----: | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -926,28 +939,7 @@ childSync 또는 복합 visibleWhen이 필요한 에디터. GenericPropertyEdito
 
 #### 에디터 레지스트리 전환 전략
 
-**공존 기간 관리**: registry.ts에서 Spec properties 확인 → 있으면 GenericPropertyEditor, 없으면 기존 lazy import 유지.
-
-```typescript
-// registry.ts — 전환 기간 하이브리드 로직
-export async function getEditor(type: string) {
-  // 1단계: Spec.properties 확인 (GenericPropertyEditor)
-  const spec = getSpecByTag(type);
-  if (spec?.properties) {
-    return (props: PropertyEditorProps) => (
-      <GenericPropertyEditor {...props} spec={spec} />
-    );
-  }
-
-  // 2단계: 기존 커스텀 에디터 (lazy import, 등급 C)
-  const metadata = getComponentMeta(type);
-  if (metadata?.inspector.hasCustomEditor) {
-    return importEditor(metadata.inspector.editorName);
-  }
-
-  return null;
-}
-```
+**공존 기간 관리**: 위 "에디터 레지스트리 변경" 섹션의 registry.ts 코드가 전환 기간에도 그대로 적용된다. Spec에 `properties`가 있으면 GenericPropertyEditor, 없으면 기존 lazy import로 폴백하므로 점진적 전환이 가능하다.
 
 **롤백 전략**:
 
@@ -1027,8 +1019,8 @@ properties: {
     {
       title: "Design",
       fields: [
-        { key: "variant", type: "variant" },
-        { key: "size", type: "size" },
+        { type: "variant" },
+        { type: "size" },
         {
           key: "orientation",
           type: "enum",
@@ -1068,8 +1060,8 @@ properties: {
     {
       title: "Design",
       fields: [
-        { key: "variant", type: "variant" },
-        { key: "size", type: "size" },
+        { type: "variant" },  // key 생략 → 기본값 "variant"
+        { type: "size" },     // key 생략 → 기본값 "size"
         {
           key: "granularity",
           type: "enum",
@@ -1094,18 +1086,19 @@ properties: {
     },
   ],
 }
+```
 
 ---
 
 ## Metrics / Verification
 
-| 메트릭 | Baseline (실측) | Phase 2 (A 전환) | Phase 3 (B 전환) | Phase 4 (정리) |
-|--------|:-:|:-:|:-:|:-:|
-| 개별 에디터 파일 | **103개** | ~28개 | ~**20개** | ~**20개** (등급 C) |
-| 자동 생성 에디터 | 0개 | 75개 | 83개 | **83개** |
-| 신규 컴포넌트 시 | 4개 (Spec+CSS+Editor+Meta) | 3개 | **1개** (Spec만) | **1개** |
-| variant 추가 시 | 2곳 (Spec+Editor) | 1곳 | **1곳** (Spec만) | **1곳** |
-| 자동화율 | 0% | 72.8% | 80.6% | **80.6%** |
+| 메트릭           |      Baseline (실측)       | Phase 2 (A 전환) | Phase 3 (B 전환) |   Phase 4 (정리)   |
+| ---------------- | :------------------------: | :--------------: | :--------------: | :----------------: |
+| 개별 에디터 파일 |         **103개**          |      ~28개       |    ~**20개**     | ~**20개** (등급 C) |
+| 자동 생성 에디터 |            0개             |       75개       |       83개       |      **83개**      |
+| 신규 컴포넌트 시 | 4개 (Spec+CSS+Editor+Meta) |       3개        | **1개** (Spec만) |      **1개**       |
+| variant 추가 시  |     2곳 (Spec+Editor)      |       1곳        | **1곳** (Spec만) |      **1곳**       |
+| 자동화율         |             0%             |      72.8%       |      80.6%       |     **80.6%**      |
 
 > **산정 기준**: 103개 전체 에디터 중 GenericPropertyEditor 전환 대상 83개(등급 A 75 + 등급 B 8). 등급 C 20개는 수동 유지 (UI 모드 전환이 없는 에디터에 한해 하이브리드 적용 시 코드량 30~50% 감소 가능).
 
@@ -1134,8 +1127,8 @@ properties: {
 
 ### Negative
 
-1. **PropertySchema 설계 투자**: FieldDef 유니온 9개 타입 + visibility(parentTag 포함) + childSync + derivedUpdateFn 구현
-2. **CustomFieldRenderer 등록 체계**: 향후 커스텀 위젯 필요 시 registry 패턴 구축
+1. **PropertySchema 설계 투자**: FieldDef 유니온 9개 타입 + visibility(parentTag 포함) + childSync + derivedUpdateFn 구현 (단, 문자열 레지스트리 제거로 인프라 코드 감소)
+2. **CustomField 확장 시 Spec import 체인**: 컴포넌트 직접 참조이므로 Spec → 커스텀 위젯 import 경로 관리 필요 (현재 사용 0개이므로 당장 영향 없음)
 3. **기존 에디터 마이그레이션 작업**: 83개 Spec에 properties 추가 (등급 A는 기계적 작업)
 4. **디버깅 간접성**: 에디터 문제 시 Schema → GenericEditor → SpecField 체인 추적
 5. **등급 C 하이브리드 복잡성**: 일부 섹션만 자동 + 나머지 수동 → 하이브리드 경계 관리 필요
@@ -1150,4 +1143,3 @@ properties: {
 - `packages/specs/src/types/spec.types.ts` — ComponentSpec 타입 정의
 - `packages/shared/src/components/metadata.ts` — 컴포넌트 메타데이터
 - [ADR-036](completed/036-spec-first-single-source.md) — Spec-First Single Source (CSS 자동 생성)
-```

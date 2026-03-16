@@ -501,7 +501,12 @@ function deriveSizeConfig(
       paddingRight: s.paddingRight ?? s.paddingX,
       paddingY: s.paddingY,
       fontSize,
-      lineHeight: typeof s.lineHeight === "number" ? s.lineHeight : 20,
+      lineHeight:
+        typeof s.lineHeight === "number"
+          ? s.lineHeight
+          : typeof s.lineHeight === "string" && s.lineHeight.startsWith("{")
+            ? (resolveToken(s.lineHeight) ?? 20)
+            : 20,
       borderWidth: s.borderWidth ?? 1,
       iconSize: s.iconSize ?? 16,
       iconGap: s.iconGap ?? s.gap ?? 8,

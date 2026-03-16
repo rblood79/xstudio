@@ -116,82 +116,85 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string {
   lines.push("}");
   lines.push("");
 
-  // Variant 스타일
-  for (const [variantName, variantSpec] of Object.entries(spec.variants)) {
-    lines.push(`.react-aria-${spec.name}[data-variant="${variantName}"] {`);
-    lines.push(...generateVariantStyles(variantSpec));
-    lines.push("");
+  // Variant 스타일 — Composite 컨테이너는 자식이 시각적 속성을 관리하므로 skip
+  if (spec.composition) {
+    // variant 출력 건너뜀
+  } else
+    for (const [variantName, variantSpec] of Object.entries(spec.variants)) {
+      lines.push(`.react-aria-${spec.name}[data-variant="${variantName}"] {`);
+      lines.push(...generateVariantStyles(variantSpec));
+      lines.push("");
 
-    // hover 상태
-    lines.push("  &[data-hovered] {");
-    lines.push(
-      `    background: ${tokenToCSSVar(variantSpec.backgroundHover)};`,
-    );
-    if (variantSpec.textHover) {
-      lines.push(`    color: ${tokenToCSSVar(variantSpec.textHover)};`);
-    }
-    if (variantSpec.borderHover) {
+      // hover 상태
+      lines.push("  &[data-hovered] {");
       lines.push(
-        `    border-color: ${tokenToCSSVar(variantSpec.borderHover)};`,
+        `    background: ${tokenToCSSVar(variantSpec.backgroundHover)};`,
       );
-    } else if (variantSpec.border) {
-      lines.push(
-        `    border-color: ${tokenToCSSVar(variantSpec.backgroundHover)};`,
-      );
-    }
-    lines.push("  }");
-    lines.push("");
-
-    // pressed 상태
-    lines.push("  &[data-pressed] {");
-    lines.push(
-      `    background: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
-    );
-    if (variantSpec.border) {
-      lines.push(
-        `    border-color: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
-      );
-    }
-    lines.push("  }");
-    lines.push("}");
-    lines.push("");
-
-    // ─── Phase 2b: fillStyle outline 변형 ───
-    if (variantSpec.outlineBackground || variantSpec.outlineBorder) {
-      lines.push(
-        `.react-aria-${spec.name}[data-variant="${variantName}"][data-fill-style="outline"] {`,
-      );
-      lines.push(
-        `  background: ${tokenToCSSVar(variantSpec.outlineBackground ?? ("{color.transparent}" as TokenRef))};`,
-      );
-      if (variantSpec.outlineText) {
-        lines.push(`  color: ${tokenToCSSVar(variantSpec.outlineText)};`);
+      if (variantSpec.textHover) {
+        lines.push(`    color: ${tokenToCSSVar(variantSpec.textHover)};`);
       }
-      if (variantSpec.outlineBorder) {
+      if (variantSpec.borderHover) {
         lines.push(
-          `  border-color: ${tokenToCSSVar(variantSpec.outlineBorder)};`,
+          `    border-color: ${tokenToCSSVar(variantSpec.borderHover)};`,
+        );
+      } else if (variantSpec.border) {
+        lines.push(
+          `    border-color: ${tokenToCSSVar(variantSpec.backgroundHover)};`,
         );
       }
-      lines.push("}");
+      lines.push("  }");
       lines.push("");
-    }
 
-    // ─── Phase 2b: fillStyle subtle 변형 ───
-    if (variantSpec.subtleBackground) {
+      // pressed 상태
+      lines.push("  &[data-pressed] {");
       lines.push(
-        `.react-aria-${spec.name}[data-variant="${variantName}"][data-fill-style="subtle"] {`,
+        `    background: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
       );
-      lines.push(
-        `  background: ${tokenToCSSVar(variantSpec.subtleBackground)};`,
-      );
-      if (variantSpec.subtleText) {
-        lines.push(`  color: ${tokenToCSSVar(variantSpec.subtleText)};`);
+      if (variantSpec.border) {
+        lines.push(
+          `    border-color: ${tokenToCSSVar(variantSpec.backgroundPressed)};`,
+        );
       }
-      lines.push("  border: none;");
+      lines.push("  }");
       lines.push("}");
       lines.push("");
+
+      // ─── Phase 2b: fillStyle outline 변형 ───
+      if (variantSpec.outlineBackground || variantSpec.outlineBorder) {
+        lines.push(
+          `.react-aria-${spec.name}[data-variant="${variantName}"][data-fill-style="outline"] {`,
+        );
+        lines.push(
+          `  background: ${tokenToCSSVar(variantSpec.outlineBackground ?? ("{color.transparent}" as TokenRef))};`,
+        );
+        if (variantSpec.outlineText) {
+          lines.push(`  color: ${tokenToCSSVar(variantSpec.outlineText)};`);
+        }
+        if (variantSpec.outlineBorder) {
+          lines.push(
+            `  border-color: ${tokenToCSSVar(variantSpec.outlineBorder)};`,
+          );
+        }
+        lines.push("}");
+        lines.push("");
+      }
+
+      // ─── Phase 2b: fillStyle subtle 변형 ───
+      if (variantSpec.subtleBackground) {
+        lines.push(
+          `.react-aria-${spec.name}[data-variant="${variantName}"][data-fill-style="subtle"] {`,
+        );
+        lines.push(
+          `  background: ${tokenToCSSVar(variantSpec.subtleBackground)};`,
+        );
+        if (variantSpec.subtleText) {
+          lines.push(`  color: ${tokenToCSSVar(variantSpec.subtleText)};`);
+        }
+        lines.push("  border: none;");
+        lines.push("}");
+        lines.push("");
+      }
     }
-  }
 
   // icon-only 지원 (archetype: button에만)
   if (spec.archetype === "button") {
@@ -203,9 +206,15 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string {
   }
 
   // Size 스타일
+  const isComposite = !!spec.composition;
   for (const [sizeName, sizeSpec] of Object.entries(spec.sizes)) {
     lines.push(`.react-aria-${spec.name}[data-size="${sizeName}"] {`);
-    lines.push(...generateSizeStyles(sizeSpec));
+    lines.push(
+      ...generateSizeStyles(sizeSpec, {
+        skipHeight: isComposite,
+        skipPadding: isComposite,
+      }),
+    );
     lines.push("}");
     lines.push("");
   }
@@ -230,11 +239,42 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string {
 
 // ─── Base Styles (Archetype 분기) ───────────────────────────────────────────
 
+// Composite layout → CSS display 매핑
+const COMPOSITION_LAYOUT_STYLES: Record<string, string[]> = {
+  "flex-column": [
+    `    display: flex;`,
+    `    flex-direction: column;`,
+    `    align-items: flex-start;`,
+    `    box-sizing: border-box;`,
+  ],
+  "flex-row": [
+    `    display: flex;`,
+    `    flex-direction: row;`,
+    `    align-items: center;`,
+    `    box-sizing: border-box;`,
+  ],
+  "inline-flex": [
+    `    display: inline-flex;`,
+    `    align-items: center;`,
+    `    box-sizing: border-box;`,
+  ],
+  grid: [`    display: grid;`, `    box-sizing: border-box;`],
+};
+
 function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
   const archetype = spec.archetype;
-  const baseStyles = archetype
-    ? (ARCHETYPE_BASE_STYLES[archetype] ?? DEFAULT_BASE_STYLES)
-    : DEFAULT_BASE_STYLES;
+
+  // Composite는 composition.layout에서 base styles 파생
+  let baseStyles: string[];
+  if (spec.composition) {
+    baseStyles =
+      COMPOSITION_LAYOUT_STYLES[spec.composition.layout] ??
+      COMPOSITION_LAYOUT_STYLES["flex-column"];
+  } else {
+    baseStyles = archetype
+      ? (ARCHETYPE_BASE_STYLES[archetype] ?? DEFAULT_BASE_STYLES)
+      : DEFAULT_BASE_STYLES;
+  }
 
   const defaultVariant = spec.variants[spec.defaultVariant];
   const defaultSize = spec.sizes[spec.defaultSize];
@@ -242,8 +282,8 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
   const lines = [`  /* Base styles — archetype: ${archetype ?? "default"} */`];
   lines.push(...baseStyles);
 
-  // default variant 색상 (있으면)
-  if (defaultVariant) {
+  // default variant 색상 — Composite 컨테이너는 자식이 관리하므로 skip
+  if (defaultVariant && !spec.composition) {
     lines.push("");
     lines.push("  /* Default variant */");
     lines.push(`  background: ${tokenToCSSVar(defaultVariant.background)};`);
@@ -260,9 +300,15 @@ function generateBaseStyles<Props>(spec: ComponentSpec<Props>): string[] {
 
   // default size 속성 (있으면)
   if (defaultSize) {
+    const isComposite = !!spec.composition;
     lines.push("");
     lines.push("  /* Default size */");
-    lines.push(...generateSizeStyles(defaultSize));
+    lines.push(
+      ...generateSizeStyles(defaultSize, {
+        skipHeight: isComposite,
+        skipPadding: isComposite,
+      }),
+    );
   }
 
   return lines;
@@ -289,18 +335,29 @@ function generateVariantStyles(variant: VariantSpec): string[] {
 
 // ─── Size Styles (Level 1 확장) ─────────────────────────────────────────────
 
-function generateSizeStyles(size: SizeSpec): string[] {
+function generateSizeStyles(
+  size: SizeSpec,
+  options?: { skipHeight?: boolean; skipPadding?: boolean },
+): string[] {
   const lines: string[] = [];
 
-  // height
-  const heightValue =
-    typeof size.height === "number" && size.height > 0
-      ? `${size.height}px`
-      : "auto";
-  lines.push(`  height: ${heightValue};`);
+  // height — Composite 컨테이너는 자식이 높이를 결정하므로 skip
+  if (!options?.skipHeight) {
+    const heightValue =
+      typeof size.height === "number" && size.height > 0
+        ? `${size.height}px`
+        : "auto";
+    lines.push(`  height: ${heightValue};`);
+  }
 
-  // padding (비대칭 지원)
-  if (size.paddingLeft !== undefined || size.paddingRight !== undefined) {
+  // padding — Composite 컨테이너는 자식이 패딩을 관리하므로 skip
+  if (options?.skipPadding) {
+    // padding 출력 건너뜀 — 아래 padding 블록 대신 여기서 조기 분기
+  } else if (
+    size.paddingLeft !== undefined ||
+    size.paddingRight !== undefined
+  ) {
+    // padding (비대칭 지원)
     const pl = size.paddingLeft ?? size.paddingX;
     const pr = size.paddingRight ?? size.paddingX;
     lines.push(

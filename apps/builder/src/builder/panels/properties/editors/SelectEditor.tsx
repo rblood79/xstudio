@@ -185,31 +185,47 @@ export const SelectEditor = memo(
     const handleSizeChange = useCallback(
       (value: string) => {
         const childUpdates: BatchPropsUpdate[] = [];
-        const { childrenMap } = useStore.getState();
+        const { childrenMap, elementsMap } = useStore.getState();
         const directChildren = childrenMap.get(elementId) ?? [];
+        const fontSize = SELECT_VALUE_FONT_SIZE_BY_SIZE[value] ?? 14;
+
+        // Label 자식의 fontSize 동기화 (WebGL 경로)
+        const label = directChildren.find((child) => child.tag === "Label");
+        if (label) {
+          // elementsMap에서 최신 props 조회 (childrenMap staleness 방지)
+          const latestLabel = elementsMap.get(label.id);
+          const labelStyle =
+            ((latestLabel ?? label).props?.style as
+              | Record<string, unknown>
+              | undefined) || {};
+          childUpdates.push({
+            elementId: label.id,
+            props: {
+              style: { ...labelStyle, fontSize },
+            },
+          });
+        }
+
+        // SelectValue 손자의 fontSize 동기화
         const trigger = directChildren.find(
           (child) => child.tag === "SelectTrigger",
         );
-
         if (trigger) {
           const grandchildren = childrenMap.get(trigger.id) ?? [];
           const selectValue = grandchildren.find(
             (child) => child.tag === "SelectValue",
           );
-
           if (selectValue) {
-            const currentStyle =
-              (selectValue.props?.style as
+            // elementsMap에서 최신 props 조회
+            const latestSV = elementsMap.get(selectValue.id);
+            const svStyle =
+              ((latestSV ?? selectValue).props?.style as
                 | Record<string, unknown>
                 | undefined) || {};
             childUpdates.push({
               elementId: selectValue.id,
               props: {
-                ...selectValue.props,
-                style: {
-                  ...currentStyle,
-                  fontSize: SELECT_VALUE_FONT_SIZE_BY_SIZE[value] ?? 14,
-                },
+                style: { ...svStyle, fontSize },
               },
             });
           }

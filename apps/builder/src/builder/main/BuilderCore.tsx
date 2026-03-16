@@ -44,11 +44,6 @@ import { useDataStore } from "../stores/data";
 import { MessageService } from "../../utils/messaging";
 import { isValidPreviewMessage } from "../../utils/messageValidation";
 import {
-  canvasDeltaMessenger,
-  extractPropsChanges,
-  shouldUseDelta,
-} from "../utils/canvasDeltaMessenger";
-import {
   getValueByPath,
   upsertData,
   appendData,
@@ -59,139 +54,6 @@ import { exportProject } from "@xstudio/shared/utils";
 import { loadFontRegistry } from "../fonts/customFonts";
 import { generateThemeCSS } from "../../utils/theme/generateThemeCSS";
 import { NEUTRAL_PALETTES } from "../../utils/theme/neutralToSkiaColors";
-
-interface IframeScopeSnapshot {
-  scopeKey: string;
-  elements: Element[];
-}
-
-function buildIframeScopeSnapshot(
-  state: ReturnType<typeof useStore.getState>,
-): IframeScopeSnapshot {
-  const editMode = useEditModeStore.getState().mode;
-  const currentLayoutId = useLayoutsStore.getState().currentLayoutId;
-
-  if (editMode === "layout" && currentLayoutId) {
-    return {
-      scopeKey: `layout:${currentLayoutId}`,
-      elements: state.elements.filter((el) => el.layout_id === currentLayoutId),
-    };
-  }
-
-  if (state.currentPageId) {
-    return {
-      scopeKey: `page:${state.currentPageId}`,
-      elements: state.pageElementsSnapshot[state.currentPageId] ?? [],
-    };
-  }
-
-  return {
-    scopeKey: "page:none",
-    elements: state.elements,
-  };
-}
-
-function sendDeltaScopedElements(
-  previousElements: Element[],
-  nextElements: Element[],
-): boolean {
-  const previousById = new Map(previousElements.map((element) => [element.id, element]));
-  const nextById = new Map(nextElements.map((element) => [element.id, element]));
-  const changedIds = new Set<string>();
-
-  for (const element of nextElements) {
-    const previous = previousById.get(element.id);
-    if (!previous) {
-      changedIds.add(element.id);
-      continue;
-    }
-
-    if (
-      previous.parent_id !== element.parent_id ||
-      previous.order_num !== element.order_num ||
-      previous.tag !== element.tag ||
-      previous.page_id !== element.page_id ||
-      previous.layout_id !== element.layout_id ||
-      JSON.stringify(previous.events ?? null) !== JSON.stringify(element.events ?? null) ||
-      JSON.stringify(previous.dataBinding ?? null) !==
-        JSON.stringify(element.dataBinding ?? null) ||
-      Object.keys(
-        extractPropsChanges(
-          (previous.props as Record<string, unknown>) ?? {},
-          (element.props as Record<string, unknown>) ?? {},
-        ),
-      ).length > 0
-    ) {
-      changedIds.add(element.id);
-    }
-  }
-
-  for (const element of previousElements) {
-    if (!nextById.has(element.id)) {
-      changedIds.add(element.id);
-    }
-  }
-
-  if (!shouldUseDelta(nextElements.length, changedIds.size)) {
-    return false;
-  }
-
-  for (const element of nextElements) {
-    if (!previousById.has(element.id)) {
-      if (!canvasDeltaMessenger.sendElementAdded(element)) {
-        return false;
-      }
-    }
-  }
-
-  for (const element of previousElements) {
-    if (!nextById.has(element.id)) {
-      if (!canvasDeltaMessenger.sendElementRemoved(element.id)) {
-        return false;
-      }
-    }
-  }
-
-  for (const element of nextElements) {
-    const previous = previousById.get(element.id);
-    if (!previous) {
-      continue;
-    }
-
-    const propsChanges = extractPropsChanges(
-      (previous.props as Record<string, unknown>) ?? {},
-      (element.props as Record<string, unknown>) ?? {},
-    );
-    const parentChanged = previous.parent_id !== element.parent_id;
-    const orderChanged = previous.order_num !== element.order_num;
-    const structuralChanged =
-      previous.tag !== element.tag ||
-      previous.page_id !== element.page_id ||
-      previous.layout_id !== element.layout_id ||
-      JSON.stringify(previous.events ?? null) !== JSON.stringify(element.events ?? null) ||
-      JSON.stringify(previous.dataBinding ?? null) !==
-        JSON.stringify(element.dataBinding ?? null);
-
-    if (structuralChanged) {
-      return false;
-    }
-
-    if (Object.keys(propsChanges).length === 0 && !parentChanged && !orderChanged) {
-      continue;
-    }
-
-    if (
-      !canvasDeltaMessenger.sendElementUpdated(element.id, propsChanges, {
-        parentId: parentChanged ? element.parent_id : undefined,
-        orderNum: orderChanged ? element.order_num : undefined,
-      })
-    ) {
-      return false;
-    }
-  }
-
-  return true;
-}
 
 export const BuilderCore: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -416,8 +278,12 @@ export const BuilderCore: React.FC = () => {
           const layoutElements = await db.elements.getByLayout(currentLayoutId);
 
           // 기존 요소들과 병합
-          const { mergeElements } = useStore.getState();
-          mergeElements(layoutElements);
+          const { elements, setElements } = useStore.getState();
+          const otherElements = elements.filter(
+            (el) => el.layout_id !== currentLayoutId,
+          );
+          const mergedElements = [...otherElements, ...layoutElements];
+          setElements(mergedElements);
 
           // ⭐ Layouts 목록도 로드 (LayoutsTab이 마운트되기 전에 필요)
           const { fetchLayouts } = useLayoutsStore.getState();
@@ -569,43 +435,39 @@ export const BuilderCore: React.FC = () => {
   // useIframeMessenger에서 elements 구독 제거 후, BuilderCore에서 직접 동기화
   // 🚀 Phase 11: WebGL-only 모드에서는 iframeReadyState='not_initialized'로 반환되어
   //    이 구독이 자동으로 스킵됨 (~3ms/변경 절감)
-  const lastSentScopeSnapshotRef = useRef<IframeScopeSnapshot | null>(null);
+  const lastSentElementsRef = useRef<Element[]>([]);
+  const lastSentEditModeRef = useRef<string>("page");
 
   useEffect(() => {
     // iframe이 준비되지 않았으면 구독하지 않음 (WebGL-only 모드 포함)
     if (iframeReadyState !== "ready") return;
 
-    lastSentScopeSnapshotRef.current = buildIframeScopeSnapshot(useStore.getState());
-
     const unsubscribe = useStore.subscribe((state, prevState) => {
-      const nextSnapshot = buildIframeScopeSnapshot(state);
-      const previousSnapshot = lastSentScopeSnapshotRef.current;
+      // elements가 변경되었는지 확인 (참조 비교)
+      if (state.elements === prevState.elements) return;
 
-      if (
-        previousSnapshot &&
-        previousSnapshot.scopeKey === nextSnapshot.scopeKey &&
-        previousSnapshot.elements === nextSnapshot.elements &&
-        state.elements === prevState.elements
-      ) {
-        return;
+      // editMode 가져오기
+      const editMode = useEditModeStore.getState().mode;
+      const currentLayoutId = useLayoutsStore.getState().currentLayoutId;
+
+      // editMode에 따라 필터링
+      let filteredElements = state.elements;
+      if (editMode === "layout" && currentLayoutId) {
+        filteredElements = state.elements.filter(
+          (el) => el.layout_id === currentLayoutId,
+        );
       }
 
-      if (!previousSnapshot || previousSnapshot.scopeKey !== nextSnapshot.scopeKey) {
-        lastSentScopeSnapshotRef.current = nextSnapshot;
-        sendElementsToIframe(nextSnapshot.elements);
-        return;
-      }
+      // 변경 확인 (editMode도 포함)
+      const editModeChanged = lastSentEditModeRef.current !== editMode;
+      const elementsChanged = lastSentElementsRef.current !== filteredElements;
 
-      const deltaSent = sendDeltaScopedElements(
-        previousSnapshot.elements,
-        nextSnapshot.elements,
-      );
+      if (!editModeChanged && !elementsChanged) return;
 
-      if (!deltaSent) {
-        sendElementsToIframe(nextSnapshot.elements);
-      }
-
-      lastSentScopeSnapshotRef.current = nextSnapshot;
+      // 전송
+      lastSentElementsRef.current = filteredElements;
+      lastSentEditModeRef.current = editMode;
+      sendElementsToIframe(filteredElements);
     });
 
     return () => {

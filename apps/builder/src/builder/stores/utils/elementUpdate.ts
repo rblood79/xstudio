@@ -569,13 +569,19 @@ export const createBatchUpdateElementPropsAction =
     }
 
     // 3. IndexedDB 병렬 저장 — UI 이벤트 핸들러를 블로킹하지 않도록 비동기 처리
+    // ⚠️ validUpdates.props는 delta(변경분)만 포함하므로,
+    // merged된 전체 props를 저장해야 새로고침 시 값 소실 방지
     void (async () => {
       try {
         const db = await getDB();
         await Promise.all(
-          validUpdates.map(({ elementId, props }) =>
-            db.elements.update(elementId, { props }),
-          ),
+          validUpdates.map(({ elementId }) => {
+            const mergedElement = nextElementsMap.get(elementId);
+            if (!mergedElement) return Promise.resolve();
+            return db.elements.update(elementId, {
+              props: mergedElement.props,
+            });
+          }),
         );
       } catch (error) {
         console.warn(

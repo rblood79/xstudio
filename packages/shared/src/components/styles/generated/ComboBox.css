@@ -6,80 +6,19 @@
 
 .react-aria-ComboBox {
   /* Base styles — archetype: default */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     box-sizing: border-box;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    font-family: var(--font-sans);
-
-  /* Default variant */
-  background: var(--color-white);
-  color: var(--fg);
-  border: 1px solid var(--border);
 
   /* Default size */
-  height: 30px;
-  padding: 4px 12px;
   font-size: var(--text-sm);
   border-radius: var(--radius-md);
   gap: 6px;
   --icon-size: 18px;
 }
 
-.react-aria-ComboBox[data-variant="default"] {
-  background: var(--color-white);
-  color: var(--fg);
-  border-color: var(--border);
-
-  &[data-hovered] {
-    background: var(--bg-overlay);
-    border-color: var(--border-hover);
-  }
-
-  &[data-pressed] {
-    background: var(--bg-overlay);
-    border-color: var(--bg-overlay);
-  }
-}
-
-.react-aria-ComboBox[data-variant="accent"] {
-  background: var(--color-white);
-  color: var(--fg);
-  border-color: var(--accent);
-
-  &[data-hovered] {
-    background: var(--bg-overlay);
-    border-color: var(--accent);
-  }
-
-  &[data-pressed] {
-    background: var(--bg-overlay);
-    border-color: var(--bg-overlay);
-  }
-}
-
-.react-aria-ComboBox[data-variant="negative"] {
-  background: var(--color-white);
-  color: var(--fg);
-  border-color: var(--negative);
-
-  &[data-hovered] {
-    background: var(--color-error-100);
-    border-color: color-mix(in srgb, var(--negative) 85%, black);
-  }
-
-  &[data-pressed] {
-    background: var(--color-error-100);
-    border-color: var(--color-error-100);
-  }
-}
-
 .react-aria-ComboBox[data-size="xs"] {
-  height: 20px;
-  padding: 1px 4px;
   font-size: var(--text-2xs);
   border-radius: var(--radius-xs);
   gap: 2px;
@@ -87,8 +26,6 @@
 }
 
 .react-aria-ComboBox[data-size="sm"] {
-  height: 22px;
-  padding: 2px 8px;
   font-size: var(--text-xs);
   border-radius: var(--radius-sm);
   gap: 4px;
@@ -96,8 +33,6 @@
 }
 
 .react-aria-ComboBox[data-size="md"] {
-  height: 30px;
-  padding: 4px 12px;
   font-size: var(--text-sm);
   border-radius: var(--radius-md);
   gap: 6px;
@@ -105,8 +40,6 @@
 }
 
 .react-aria-ComboBox[data-size="lg"] {
-  height: 42px;
-  padding: 8px 16px;
   font-size: var(--text-base);
   border-radius: var(--radius-lg);
   gap: 8px;
@@ -114,8 +47,6 @@
 }
 
 .react-aria-ComboBox[data-size="xl"] {
-  height: 54px;
-  padding: 12px 24px;
   font-size: var(--text-lg);
   border-radius: var(--radius-xl);
   gap: 10px;
@@ -161,49 +92,114 @@
   --combo-label-size: var(--text-lg);
 }
 
+.react-aria-ComboBox[data-size="xs"] .combobox-container {
+  height: auto;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-hover);
+  padding: 1px 1px 1px 4px;
+  font-size: var(--text-2xs);
+}
+
+.react-aria-ComboBox[data-size="sm"] .combobox-container {
+  height: auto;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-hover);
+  padding: 2px 2px 2px 8px;
+  font-size: var(--text-xs);
+}
+
+.react-aria-ComboBox[data-size="md"] .combobox-container {
+  height: auto;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-hover);
+  padding: 4px 4px 4px 12px;
+  font-size: var(--text-sm);
+}
+
+.react-aria-ComboBox[data-size="lg"] .combobox-container {
+  height: auto;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-hover);
+  padding: 8px 8px 8px 16px;
+  font-size: var(--text-base);
+}
+
+.react-aria-ComboBox[data-size="xl"] .combobox-container {
+  height: auto;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-hover);
+  padding: 12px 12px 12px 24px;
+  font-size: var(--text-lg);
+}
+
 .react-aria-ComboBox[data-size="xs"] .react-aria-Input {
-  --combo-input-padding: 0 var(--spacing-xs);
-  --combo-input-font-size: var(--text-2xs);
+  height: auto;
 }
 
 .react-aria-ComboBox[data-size="sm"] .react-aria-Input {
-  --combo-input-padding: 0 var(--spacing-sm);
-  --combo-input-font-size: var(--text-xs);
+  height: auto;
 }
 
 .react-aria-ComboBox[data-size="md"] .react-aria-Input {
-  --combo-input-padding: 0 var(--spacing-md);
-  --combo-input-font-size: var(--text-sm);
+  height: auto;
 }
 
 .react-aria-ComboBox[data-size="lg"] .react-aria-Input {
-  --combo-input-padding: 0 var(--spacing-lg);
-  --combo-input-font-size: var(--text-base);
+  height: auto;
 }
 
 .react-aria-ComboBox[data-size="xl"] .react-aria-Input {
-  --combo-input-padding: 0 var(--spacing-xl);
-  --combo-input-font-size: var(--text-lg);
+  height: auto;
 }
 
 .react-aria-ComboBox[data-size="xs"] .react-aria-Button {
-  --combo-btn-size: 16px;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: none;
 }
 
 .react-aria-ComboBox[data-size="sm"] .react-aria-Button {
-  --combo-btn-size: 18px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: none;
 }
 
 .react-aria-ComboBox[data-size="md"] .react-aria-Button {
-  --combo-btn-size: 22px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: none;
 }
 
 .react-aria-ComboBox[data-size="lg"] .react-aria-Button {
-  --combo-btn-size: 28px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: none;
 }
 
 .react-aria-ComboBox[data-size="xl"] .react-aria-Button {
-  --combo-btn-size: 32px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--bg-overlay);
+  color: var(--fg);
+  border: none;
 }
 
 

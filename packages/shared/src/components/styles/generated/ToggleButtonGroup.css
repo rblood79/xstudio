@@ -6,60 +6,27 @@
 
 .react-aria-ToggleButtonGroup {
   /* Base styles — archetype: default */
-    display: inline-flex;
+    display: flex;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
     box-sizing: border-box;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    font-family: var(--font-sans);
-
-  /* Default variant */
-  background: var(--bg-inset);
-  color: var(--fg);
-  border: 1px solid var(--border);
 
   /* Default size */
-  height: auto;
-  padding: 0px 0px;
   font-size: var(--text-md);
   border-radius: var(--radius-lg);
 }
 
-.react-aria-ToggleButtonGroup[data-variant="default"] {
-  background: var(--bg-inset);
-  color: var(--fg);
-  border-color: var(--border);
-
-  &[data-hovered] {
-    background: var(--bg-inset);
-    border-color: var(--bg-inset);
-  }
-
-  &[data-pressed] {
-    background: var(--bg-inset);
-    border-color: var(--bg-inset);
-  }
-}
-
 .react-aria-ToggleButtonGroup[data-size="sm"] {
-  height: auto;
-  padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-md);
 }
 
 .react-aria-ToggleButtonGroup[data-size="md"] {
-  height: auto;
-  padding: 0px 0px;
   font-size: var(--text-md);
   border-radius: var(--radius-lg);
 }
 
 .react-aria-ToggleButtonGroup[data-size="lg"] {
-  height: auto;
-  padding: 0px 0px;
   font-size: var(--text-lg);
   border-radius: var(--radius-xl);
 }

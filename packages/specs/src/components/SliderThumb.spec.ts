@@ -28,9 +28,9 @@ export interface SliderThumbProps {
 
 /** 사이즈별 썸 치수 */
 export const SLIDER_THUMB_SIZES: Record<string, { thumbSize: number }> = {
-  S: { thumbSize: 16 },
-  M: { thumbSize: 20 },
-  L: { thumbSize: 24 },
+  sm: { thumbSize: 16 },
+  md: { thumbSize: 20 },
+  lg: { thumbSize: 24 },
 };
 
 /**
@@ -108,9 +108,9 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
 
   render: {
     shapes: (props, _variant) => {
-      const sizeName = props.size ?? "M";
+      const sizeName = props.size ?? "md";
       // SLIDER_DIMENSIONS와 SLIDER_THUMB_SIZES 모두 참조해 일관성 유지
-      const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.M;
+      const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.md;
       const thumbSize = sliderDims.thumbSize;
       const thumbRadius = thumbSize / 2;
 
