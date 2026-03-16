@@ -585,7 +585,8 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_SLIDER_TAGS.has(tag)) return "slider";
   if (UI_INPUT_TAGS.has(tag)) return "input";
   if (UI_SELECT_TAGS.has(tag)) return "select";
-  if (UI_PROGRESS_TAGS.has(tag)) return "progressBar";
+  // ProgressBar/ProgressCircle: TAG_SPEC_MAP에 등록 → spriteType "box" + hasSpecShapes로 표준 경로 사용
+  // if (UI_PROGRESS_TAGS.has(tag)) return "progressBar";  // 제거: 전용 경로 대신 표준 spec shapes 경로
   if (UI_SWITCHER_TAGS.has(tag)) return "switcher";
   if (UI_SCROLLBOX_TAGS.has(tag)) return "scrollBox";
   if (UI_LIST_TAGS.has(tag)) return "list";
@@ -1027,6 +1028,11 @@ export const ElementSprite = memo(function ElementSprite({
   // layout이 적용된 Container를 등록해야 SelectionBox 위치가 일치함
   const elementId = element.id;
 
+  // 🚀 Store에서 최신 element 구독 — childrenMap/pageChildrenMap에서 전달된
+  // prop element는 stale할 수 있으므로 elementsMap에서 최신 참조 사용
+  const storeElement = useStore((state) => state.elementsMap.get(elementId));
+  const latestElement = storeElement ?? element;
+
   // 🚀 성능 최적화: 각 ElementSprite가 자신의 선택 상태만 구독
   // 기존: ElementsLayer가 selectedElementIds 구독 → 전체 리렌더 O(n)
   // 개선: 각 ElementSprite가 자신의 선택 여부만 구독 → 변경된 요소만 리렌더 O(2)
@@ -1183,7 +1189,7 @@ export const ElementSprite = memo(function ElementSprite({
 
   // layoutPosition이 있으면 style을 오버라이드한 새 element 생성
   // G.1/G.2: Instance resolution + Variable resolution
-  const resolvedElement = useResolvedElement(element);
+  const resolvedElement = useResolvedElement(latestElement);
 
   // 🚀 레이아웃 엔진(Taffy/Dropflow)이 계산한 pixel 크기 수신
   // 퍼센트 기반 width/height를 실제 pixel 값으로 해석하는 데 사용
@@ -2307,10 +2313,7 @@ export const ElementSprite = memo(function ElementSprite({
           />
         );
 
-      case "progressBar":
-        return (
-          <PixiProgressBar element={effectiveElement} isSelected={isSelected} />
-        );
+      // case "progressBar": 제거 — 표준 spec shapes 경로("box" + hasSpecShapes)로 통합
 
       case "switcher":
         return (

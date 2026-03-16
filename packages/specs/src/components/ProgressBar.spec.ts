@@ -117,7 +117,6 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             ? styleGap
             : parseFloat(String(styleGap)) || 0
           : (size.gap ?? 8);
-
       // 사용자 스타일 우선
       const styleBr = props.style?.borderRadius;
       const barRadius =
