@@ -60,6 +60,7 @@ export function createTextFieldDefinition(
           size: "md",
           style: {
             width: "fit-content",
+            height: "fit-content",
             fontSize: 14,
             fontWeight: 500,
           },
@@ -152,6 +153,7 @@ export function createTextAreaDefinition(
           variant: "default",
           style: {
             width: "fit-content",
+            height: "fit-content",
             fontSize: 14,
             fontWeight: 500,
           },
@@ -278,6 +280,7 @@ export function createFormDefinition(
             props: {
               children: "Field Label",
               variant: "default",
+              style: { width: "fit-content", height: "fit-content" },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -316,6 +319,7 @@ export function createFormDefinition(
             props: {
               children: "Another Field",
               variant: "default",
+              style: { width: "fit-content", height: "fit-content" },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -477,6 +481,8 @@ export function createNumberFieldDefinition(
             display: "block",
             fontSize: "14px",
             fontWeight: "500",
+            width: "fit-content",
+            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -612,6 +618,7 @@ export function createSearchFieldDefinition(
           style: {
             fontWeight: 500,
             width: "fit-content",
+            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -722,6 +729,7 @@ export function createSliderDefinition(
             fontSize: 14,
             fontWeight: 500,
             width: "fit-content",
+            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,

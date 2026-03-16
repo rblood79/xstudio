@@ -1,0 +1,12 @@
+/**
+ * Label Component Styles — generated CSS override
+ *
+ * Label은 텍스트 콘텐츠에 맞게 크기 결정 (fit-content)
+ * Generated CSS의 height: auto를 fit-content로 override
+ */
+
+.react-aria-Label {
+  width: fit-content;
+  height: fit-content;
+  white-space: nowrap;
+}

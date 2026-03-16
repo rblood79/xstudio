@@ -67,6 +67,8 @@
 @import "./SortIcon.css"; /* Table 부속 — 수동 유지 */
 
 /* Form Controls */
+@import "./generated/Label.css";
+@import "./Label.css";
 @import "./generated/Checkbox.css";
 @import "./generated/Radio.css";
 

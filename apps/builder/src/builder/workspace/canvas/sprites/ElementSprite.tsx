@@ -1234,6 +1234,22 @@ export const ElementSprite = memo(function ElementSprite({
     );
   });
 
+  // Checkbox/Radio/Switch 내부 Label: white-space: nowrap 동기화 (Skia 텍스트 렌더링용)
+  // primitive 값으로 useMemo deps에 포함 가능
+  const isLabelInNowrapParent = useStore((state) => {
+    if (element.tag !== "Label" || !element.parent_id) return false;
+    const parent = state.elementsMap.get(element.parent_id);
+    if (!parent) return false;
+    const NOWRAP_PARENTS = new Set([
+      "Checkbox",
+      "CheckBox",
+      "Radio",
+      "Switch",
+      "Toggle",
+    ]);
+    return NOWRAP_PARENTS.has(parent.tag);
+  });
+
   // 🚀 ToggleButtonGroup 내 ToggleButton의 위치 정보 (borderRadius 계산용)
   // CSS에서는 그룹 내 첫/끝 버튼만 외곽 모서리에 borderRadius 적용
   // 개별 selector로 분리하여 primitive 비교 (useShallow 대체)
@@ -2047,9 +2063,13 @@ export const ElementSprite = memo(function ElementSprite({
                 for (const child of specNode.children) {
                   if (child.type === "text" && child.text) {
                     // ADR-008: element style → spec text child에 텍스트 래핑 속성 주입
-                    if (style?.whiteSpace)
+                    // Checkbox/Radio/Switch 내부 Label: CSS white-space: nowrap 동기화
+                    const effectiveWhiteSpace =
+                      style?.whiteSpace ??
+                      (isLabelInNowrapParent ? "nowrap" : undefined);
+                    if (effectiveWhiteSpace)
                       child.text.whiteSpace =
-                        style.whiteSpace as typeof child.text.whiteSpace;
+                        effectiveWhiteSpace as typeof child.text.whiteSpace;
                     if (style?.wordBreak)
                       child.text.wordBreak =
                         style.wordBreak as typeof child.text.wordBreak;
@@ -2254,6 +2274,7 @@ export const ElementSprite = memo(function ElementSprite({
     parentProgressShowValue,
     parentProgressMinValue,
     parentProgressMaxValue,
+    isLabelInNowrapParent,
   ]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로

@@ -669,6 +669,7 @@ export function createRangeSliderDefinition(
             fontSize: 14,
             fontWeight: 500,
             width: "fit-content",
+            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -775,6 +776,8 @@ export function createProgressBarDefinition(
           variant: "default",
           style: {
             backgroundColor: "transparent",
+            width: "fit-content",
+            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -853,6 +856,8 @@ export function createMeterDefinition(
           variant: "default",
           style: {
             backgroundColor: "transparent",
+            width: "fit-content",
+            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -1010,7 +1015,12 @@ export function createPickerDefinition(
         props: {
           children: "Picker",
           variant: "default",
-          style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
+          style: {
+            fontSize: 14,
+            fontWeight: 500,
+            width: "fit-content",
+            height: "fit-content",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 0,

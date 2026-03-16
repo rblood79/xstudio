@@ -720,6 +720,7 @@ export function applyImplicitStyles(
             ...cs,
             marginLeft:
               (cs.marginLeft as number | undefined) ?? indicatorOffset,
+            whiteSpace: cs.whiteSpace ?? "nowrap",
           },
         },
       } as Element;
@@ -758,6 +759,7 @@ export function applyImplicitStyles(
             style: {
               fontSize: 14,
               backgroundColor: "transparent",
+              whiteSpace: "nowrap",
               ...(synLabelMargin > 0 ? { marginLeft: synLabelMargin } : {}),
             },
           },

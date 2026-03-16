@@ -76,7 +76,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
 
   sizes: {
     sm: {
-      height: 16,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
@@ -84,7 +84,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
       gap: 0,
     },
     md: {
-      height: 20,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
@@ -92,7 +92,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
       gap: 0,
     },
     lg: {
-      height: 24,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-md}" as TokenRef,
@@ -154,7 +154,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
           fontWeight,
           fill: textColor,
           align: textAlign,
-          baseline: "top" as const,
+          baseline: "middle" as const,
           maxWidth: typeof width === "number" ? width : undefined,
         },
       ];

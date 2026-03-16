@@ -21,7 +21,7 @@
   border: none;
 
   /* Default size */
-  height: 20px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
@@ -93,21 +93,21 @@
 }
 
 .react-aria-Label[data-size="sm"] {
-  height: 16px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-none);
 }
 
 .react-aria-Label[data-size="md"] {
-  height: 20px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
 }
 
 .react-aria-Label[data-size="lg"] {
-  height: 24px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-md);
   border-radius: var(--radius-none);

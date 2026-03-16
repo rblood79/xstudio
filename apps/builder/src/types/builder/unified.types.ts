@@ -1573,7 +1573,12 @@ export function createDefaultBadgeProps(): BadgeElementProps {
 export function createDefaultLabelProps(): BaseElementProps {
   return {
     children: "Tag Group",
-    style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
+    style: {
+      fontSize: 14,
+      fontWeight: 500,
+      width: "fit-content",
+      height: "fit-content",
+    },
   };
 }
 

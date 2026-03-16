@@ -124,13 +124,28 @@ Label은 `TEXT_TAGS`에서 제외되어 TextSprite 경로가 아닌 **spec shape
 - `hasOwnSprite`에서 spec이 있는 "box" 태그 제외 → spec shapes 경로 진입
 - Label의 색상은 `LabelSpec.variants`가 단일 소스 — 하드코딩된 `PARENT_VARIANT_TO_LABEL_TOKEN` 제거
 - 부모 variant 상속: `PARENT_VARIANT_TO_LABEL` 매핑으로 `isUIComponent` 분기에서 처리
-- Factory 기본값: Label에 `variant: "accent"` 설정
+- Factory 기본값: Label에 `variant: "default"` 설정
 - Select/ComboBox delegation에서 Label color override 제거 — LabelSpec.variants가 담당
+
+**Label 기본 크기: fit-content (3경로 동기화 필수)**:
+
+- **Spec**: `sizes.*.height: 0` → generated CSS `height: auto`, `baseline: "middle"` (세로 중앙 정렬)
+- **CSS**: `Label.css` (수동) — `width: fit-content; height: fit-content; white-space: nowrap;`
+- **Factory**: 모든 Label 자식에 `width: "fit-content", height: "fit-content"` 필수 (WebGL/Taffy 경로)
+- `createDefaultLabelProps()`: 독립 생성 시 기본값
+
+**Checkbox/Radio/Switch 내부 Label nowrap (3경로 동기화 필수)**:
+
+- **CSS**: `Checkbox.css`에 `white-space: nowrap`
+- **Taffy**: `implicitStyles.ts` — 자식 Label + Synthetic Label에 `whiteSpace: "nowrap"` 주입
+- **Skia**: `isLabelInNowrapParent` primitive selector → useMemo deps 포함 필수
+  - `parentElement`를 useMemo 내에서 직접 참조 금지 (deps에 없으므로 stale closure)
 
 **금지 패턴**:
 
 - `TEXT_TAGS`에 `"Label"` 재추가 금지 (TextSprite 경로와 spec shapes 경로 중복 렌더링)
 - `PARENT_VARIANT_TO_LABEL_TOKEN` 방식(hex 하드코딩) 부활 금지 → LabelSpec.variants 수정
+- Label factory 정의에 `width/height: "fit-content"` 누락 금지 → WebGL에서 auto와 다르게 동작
 
 ## registryVersion 캐싱
 

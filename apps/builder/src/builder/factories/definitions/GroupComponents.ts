@@ -231,7 +231,12 @@ export function createCheckboxGroupDefinition(
             props: {
               children: "Option 1",
               variant: "default",
-              style: { fontSize: 14, backgroundColor: "transparent" },
+              style: {
+                fontSize: 14,
+                backgroundColor: "transparent",
+                width: "fit-content",
+                height: "fit-content",
+              },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -259,7 +264,12 @@ export function createCheckboxGroupDefinition(
             props: {
               children: "Option 2",
               variant: "default",
-              style: { fontSize: 14, backgroundColor: "transparent" },
+              style: {
+                fontSize: 14,
+                backgroundColor: "transparent",
+                width: "fit-content",
+                height: "fit-content",
+              },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -324,7 +334,12 @@ export function createRadioGroupDefinition(
             props: {
               children: "Option 1",
               variant: "default",
-              style: { fontSize: 14, backgroundColor: "transparent" },
+              style: {
+                fontSize: 14,
+                backgroundColor: "transparent",
+                width: "fit-content",
+                height: "fit-content",
+              },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -352,7 +367,12 @@ export function createRadioGroupDefinition(
             props: {
               children: "Option 2",
               variant: "default",
-              style: { fontSize: 14, backgroundColor: "transparent" },
+              style: {
+                fontSize: 14,
+                backgroundColor: "transparent",
+                width: "fit-content",
+                height: "fit-content",
+              },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -404,7 +424,12 @@ export function createTagGroupDefinition(
         props: {
           children: "Tag Group",
           variant: "default",
-          style: { fontSize: 14, fontWeight: 500, width: "fit-content" },
+          style: {
+            fontSize: 14,
+            fontWeight: 500,
+            width: "fit-content",
+            height: "fit-content",
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -561,6 +586,8 @@ export function createCheckboxDefinition(
           style: {
             fontSize: 14,
             backgroundColor: "transparent",
+            width: "fit-content",
+            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -621,6 +648,8 @@ export function createRadioDefinition(
           style: {
             fontSize: 14,
             backgroundColor: "transparent",
+            width: "fit-content",
+            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -682,6 +711,8 @@ export function createSwitchDefinition(
           style: {
             fontSize: 14,
             backgroundColor: "transparent",
+            width: "fit-content",
+            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
