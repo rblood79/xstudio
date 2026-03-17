@@ -601,7 +601,7 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_STATUSLIGHT_TAGS.has(tag)) return "statusLight";
 
   // Phase 2 WebGL Migration 컴포넌트
-  if (UI_SEPARATOR_TAGS.has(tag)) return "separator";
+  // Separator: 전용 spriteType 제거 → "box" + hasSpecShapes 표준 경로 (ProgressBar와 동일)
   if (UI_LINK_TAGS.has(tag)) return "link";
   if (UI_BREADCRUMBS_TAGS.has(tag)) return "breadcrumbs";
   if (UI_CARD_TAGS.has(tag)) return "card";
@@ -1238,6 +1238,27 @@ export const ElementSprite = memo(function ElementSprite({
     return NOWRAP_PARENTS.has(parent.tag);
   });
 
+  // 🚀 InlineAlert 자식 Heading/Description: 부모 spec에서 font 스타일 위임
+  // 🚀 InlineAlert 자식 Heading/Description: 부모 spec에서 font 스타일 위임
+  const inlineAlertFontStyle = useStore((state) => {
+    const tag = element.tag;
+    if (tag !== "Heading" && tag !== "Description") return null;
+    if (!element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    if (parent?.tag !== "InlineAlert") return null;
+    const sizeName =
+      ((parent.props as Record<string, unknown> | undefined)?.size as string) ??
+      "md";
+    const specSize = (InlineAlertSpec.sizes[sizeName] ??
+      InlineAlertSpec.sizes[InlineAlertSpec.defaultSize]) as Record<
+      string,
+      unknown
+    >;
+    if (tag === "Heading")
+      return `${specSize.headingFontSize ?? 16}:${specSize.headingFontWeight ?? 700}`;
+    return `${specSize.descFontSize ?? 14}:${specSize.descFontWeight ?? 400}`;
+  });
+
   // 🚀 ToggleButtonGroup 내 ToggleButton의 위치 정보 (borderRadius 계산용)
   // CSS에서는 그룹 내 첫/끝 버튼만 외곽 모서리에 borderRadius 적용
   // 개별 selector로 분리하여 primitive 비교 (useShallow 대체)
@@ -1362,6 +1383,29 @@ export const ElementSprite = memo(function ElementSprite({
 
     return resolvedElement;
   }, [resolvedElement, layoutPosition, computedContainerSize]);
+
+  // 🚀 InlineAlert 자식: spec 기반 font 스타일 주입 (WebGL TextSprite용)
+  const effectiveElementForText = useMemo(() => {
+    if (!inlineAlertFontStyle) return effectiveElement;
+    const [fs, fw] = inlineAlertFontStyle.split(":").map(Number);
+    const currentStyle = (effectiveElement.props?.style || {}) as Record<
+      string,
+      unknown
+    >;
+    if (currentStyle.fontSize != null && currentStyle.fontWeight != null)
+      return effectiveElement;
+    return {
+      ...effectiveElement,
+      props: {
+        ...effectiveElement.props,
+        style: {
+          ...currentStyle,
+          fontSize: currentStyle.fontSize ?? fs,
+          fontWeight: currentStyle.fontWeight ?? fw,
+        },
+      },
+    } as Element;
+  }, [effectiveElement, inlineAlertFontStyle]);
 
   // Label은 spec shapes 경로(isUIComponent=true)에서 variant.text로 색상 결정
   // 부모 variant 상속은 L1489-1499의 PARENT_VARIANT_TO_LABEL에서 처리
@@ -2543,10 +2587,7 @@ export const ElementSprite = memo(function ElementSprite({
         return <PixiMeter element={effectiveElement} isSelected={isSelected} />;
 
       // Phase 2 WebGL Migration 컴포넌트
-      case "separator":
-        return (
-          <PixiSeparator element={effectiveElement} isSelected={isSelected} />
-        );
+      // Separator: "box" + hasSpecShapes 표준 경로로 이동 (case "box" default에서 처리)
 
       case "link":
         return <PixiLink element={effectiveElement} isSelected={isSelected} />;
@@ -2859,7 +2900,10 @@ export const ElementSprite = memo(function ElementSprite({
       // 기본 타입
       case "text":
         return (
-          <TextSprite element={effectiveElement} isSelected={isSelected} />
+          <TextSprite
+            element={effectiveElementForText}
+            isSelected={isSelected}
+          />
         );
 
       case "image":

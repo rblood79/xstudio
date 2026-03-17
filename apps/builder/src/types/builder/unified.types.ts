@@ -1144,13 +1144,6 @@ export function createDefaultButtonProps(): ButtonElementProps {
     size: "md",
     isDisabled: false,
     isPending: false,
-    // CSS base rule: border: 1px solid var(--outline-variant)
-    // 스타일 패널에서 borderWidth 값 정상 표시를 위해 기본값 설정
-    style: {
-      width: "fit-content",
-      borderWidth: "1px",
-      gap: 8,
-    },
   };
 }
 
@@ -1521,12 +1514,6 @@ export function createDefaultBadgeProps(): BadgeElementProps {
     size: "sm",
     isDot: false,
     isPulsing: false,
-    // CSS base: display:inline-flex; align-items:center; justify-content:center
-    style: {
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-    },
   };
 }
 
@@ -1681,11 +1668,8 @@ export function createDefaultBreadcrumbsProps(): BreadcrumbsElementProps {
 
 export function createDefaultSeparatorProps(): SeparatorElementProps {
   return {
-    // CSS base: width:100%; height:1px (horizontal)
-    // orientation=vertical → height:100%; width:1px
     style: {
-      width: "100%",
-      height: "1px",
+      height: 1,
     },
   };
 }
@@ -1705,6 +1689,22 @@ export function createDefaultDisclosureGroupProps(): DisclosureGroupElementProps
     style: {
       display: "flex",
       flexDirection: "column",
+      width: "100%",
+    },
+  };
+}
+
+export function createDefaultInlineAlertProps(): BaseElementProps {
+  return {
+    style: {
+      width: "100%",
+    },
+  };
+}
+
+export function createDefaultDescriptionProps(): BaseElementProps {
+  return {
+    style: {
       width: "100%",
     },
   };
@@ -1759,9 +1759,6 @@ export function createDefaultProgressBarProps(): ProgressBarElementProps {
     label: "Progress Bar",
     showValue: true,
     value: 50,
-    style: {
-      width: "100%",
-    },
   };
 }
 
@@ -1770,9 +1767,6 @@ export function createDefaultMeterProps(): MeterElementProps {
     label: "Meter",
     showValue: true,
     value: 50,
-    style: {
-      width: "100%",
-    },
   };
 }
 
@@ -1882,13 +1876,38 @@ export function createDefaultGroupProps(): GroupElementProps {
 }
 
 // === Icon 기본 props (ADR-019) ===
+// 인기 Lucide 아이콘 프리셋 (생성 시 랜덤 선택)
+const POPULAR_ICONS = [
+  "star",
+  "heart",
+  "home",
+  "settings",
+  "search",
+  "user",
+  "mail",
+  "bell",
+  "calendar",
+  "camera",
+  "cloud",
+  "coffee",
+  "globe",
+  "map-pin",
+  "music",
+  "phone",
+  "shield",
+  "zap",
+  "bookmark",
+  "compass",
+];
+
 export function createDefaultIconProps(): IconElementProps {
+  const randomIcon =
+    POPULAR_ICONS[Math.floor(Math.random() * POPULAR_ICONS.length)];
   return {
-    iconName: "circle",
+    iconName: randomIcon,
     iconFontFamily: "lucide",
     size: "md",
     strokeWidth: 2,
-    style: {},
   };
 }
 
@@ -1998,6 +2017,8 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Toolbar: createDefaultToolbarProps,
     Breadcrumbs: createDefaultBreadcrumbsProps,
     Separator: createDefaultSeparatorProps,
+    InlineAlert: createDefaultInlineAlertProps,
+    Description: createDefaultDescriptionProps,
     Disclosure: createDefaultDisclosureProps,
     DisclosureGroup: createDefaultDisclosureGroupProps,
     Dialog: createDefaultDialogProps,

@@ -39,6 +39,7 @@ import { elementToTaffyBlockStyle } from "./TaffyBlockEngine";
 import { elementToTaffyStyle } from "./TaffyFlexEngine";
 import { applyImplicitStyles } from "./implicitStyles";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
+import { InlineAlertSpec } from "@xstudio/specs";
 import { useScrollState } from "../../../../stores/scrollState";
 
 // ─── 모듈 수준 상수 ──────────────────────────────────────────────────
@@ -604,6 +605,40 @@ function traversePostOrder(
     return;
   }
 
+  // Heading/Description → InlineAlert 부모 spec에서 font 스타일 주입 (텍스트 폭 측정 정합성)
+  if (rawElement.tag === "Heading" || rawElement.tag === "Description") {
+    const parent = rawElement.parent_id
+      ? elementsMap.get(rawElement.parent_id)
+      : undefined;
+    if (parent?.tag === "InlineAlert") {
+      const parentSize =
+        ((parent.props as Record<string, unknown> | undefined)
+          ?.size as string) ?? "md";
+      const specSize = (InlineAlertSpec.sizes[parentSize] ??
+        InlineAlertSpec.sizes[
+          InlineAlertSpec.defaultSize
+        ]) as unknown as Record<string, unknown>;
+      const cs = (rawElement.props?.style ?? {}) as Record<string, unknown>;
+      const injected: Record<string, unknown> = { ...cs };
+      if (rawElement.tag === "Heading") {
+        if (injected.fontSize == null && specSize.headingFontSize != null)
+          injected.fontSize = specSize.headingFontSize;
+        if (injected.fontWeight == null && specSize.headingFontWeight != null)
+          injected.fontWeight = specSize.headingFontWeight;
+      } else {
+        if (injected.fontSize == null && specSize.descFontSize != null)
+          injected.fontSize = specSize.descFontSize;
+        if (injected.fontWeight == null && specSize.descFontWeight != null)
+          injected.fontWeight = specSize.descFontWeight;
+        if (injected.width == null) injected.width = "100%";
+      }
+      rawElement = {
+        ...rawElement,
+        props: { ...rawElement.props, style: injected },
+      };
+    }
+  }
+
   // ProgressBar/Meter: leaf spec 컴포넌트 — display:grid 정규화
   // 이전 기본값에서 display:"grid"가 주입된 기존 요소를 block으로 정규화
   // grid+자식없음 → Taffy height=0 문제 방지
@@ -1063,7 +1098,10 @@ function traversePostOrder(
         const fontFamily =
           (enrichedStyle.fontFamily as string | undefined) ??
           specStyle?.fontFamily;
-        const fontWeight = specStyle?.fontWeight ?? 400;
+        const fontWeight =
+          (parseFloat(String(enrichedStyle.fontWeight ?? "")) ||
+            specStyle?.fontWeight) ??
+          400;
         const maxContentW = measureTextWidth(
           textContent,
           fontSize,

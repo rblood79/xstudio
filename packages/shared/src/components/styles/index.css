@@ -35,6 +35,7 @@
 
 /* Standalone Components (theme.css only) */
 @import "./ActionList.css"; /* 빌더 전용 — Spec 없음 */
+@import "./generated/Badge.css";
 @import "./generated/Breadcrumbs.css";
 @import "./generated/Button.css";
 @import "./CalendarCommon.css"; /* Foundation 공유 — Spec 없음 */
@@ -67,6 +68,7 @@
 @import "./SortIcon.css"; /* Table 부속 — 수동 유지 */
 
 /* Form Controls */
+@import "./generated/Description.css";
 @import "./generated/Label.css";
 @import "./Label.css";
 @import "./generated/Checkbox.css";
@@ -94,6 +96,7 @@
 /* Simple Compositions */
 @import "./generated/Disclosure.css";
 @import "./generated/Form.css";
+@import "./generated/InlineAlert.css";
 @import "./generated/Tooltip.css";
 
 /* ============================================

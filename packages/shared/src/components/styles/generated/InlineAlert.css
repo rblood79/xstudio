@@ -1,18 +1,16 @@
 /* ============================================================
  * AUTO-GENERATED from InlineAlertSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/InlineAlert.spec.ts
- * Archetype: default
+ * Archetype: alert
  * ============================================================ */
 
 .react-aria-InlineAlert {
-  /* Base styles — archetype: default */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  /* Base styles — archetype: alert */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     box-sizing: border-box;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    width: 100%;
     font-family: var(--font-sans);
 
   /* Default variant */
@@ -22,10 +20,10 @@
 
   /* Default size */
   height: auto;
-  padding: 12px 16px;
-  font-size: var(--text-sm);
-  border-radius: var(--radius-md);
-  gap: 8px;
+  padding: 16px 16px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-lg);
+  gap: 12px;
 }
 
 .react-aria-InlineAlert[data-variant="neutral"] {
@@ -108,12 +106,75 @@
   }
 }
 
-.react-aria-InlineAlert[data-size="md"] {
+.react-aria-InlineAlert[data-size="sm"] {
   height: auto;
-  padding: 12px 16px;
+  padding: 8px 8px;
   font-size: var(--text-sm);
   border-radius: var(--radius-md);
   gap: 8px;
+}
+
+.react-aria-InlineAlert[data-size="md"] {
+  height: auto;
+  padding: 16px 16px;
+  font-size: var(--text-md);
+  border-radius: var(--radius-lg);
+  gap: 12px;
+}
+
+.react-aria-InlineAlert[data-size="lg"] {
+  height: auto;
+  padding: 24px 24px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+  gap: 16px;
+}
+
+/* Heading */
+.react-aria-InlineAlert .alert-heading {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* Description */
+.react-aria-InlineAlert .react-aria-Description {
+  margin: 0;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.react-aria-InlineAlert[data-size="sm"] .alert-heading {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.react-aria-InlineAlert[data-size="sm"] .react-aria-Description {
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.react-aria-InlineAlert[data-size="md"] .alert-heading {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.react-aria-InlineAlert[data-size="md"] .react-aria-Description {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.react-aria-InlineAlert[data-size="lg"] .alert-heading {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.react-aria-InlineAlert[data-size="lg"] .react-aria-Description {
+  font-size: 16px;
+  font-weight: 400;
 }
 
 .react-aria-InlineAlert[data-focus-visible] {

@@ -98,18 +98,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
             : parseFloat(String(styleBr)) || 0
           : size.borderRadius;
 
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
-
       const bgColor = props.style?.backgroundColor ?? variant.background;
-      const borderColor =
-        props.style?.borderColor ??
-        (variant.border || ("{color.border}" as TokenRef));
 
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       const shapes: Shape[] = [

@@ -385,13 +385,11 @@ export function specShapesToSkia(
       case "line": {
         const strokeColor = colorValueToFloat32(shape.stroke, theme);
 
-        // Resolve 'auto' values (used by Tabs, Panel line shapes)
-        const x1 = (shape.x1 as unknown) === "auto" ? containerWidth : shape.x1;
-        const y1 =
-          (shape.y1 as unknown) === "auto" ? containerHeight : shape.y1;
-        const x2 = (shape.x2 as unknown) === "auto" ? containerWidth : shape.x2;
-        const y2 =
-          (shape.y2 as unknown) === "auto" ? containerHeight : shape.y2;
+        // Resolve 'auto' values (used by Separator, Tabs, Panel line shapes)
+        const x1 = shape.x1 === "auto" ? containerWidth : shape.x1;
+        const y1 = shape.y1 === "auto" ? containerHeight : shape.y1;
+        const x2 = shape.x2 === "auto" ? containerWidth : shape.x2;
+        const y2 = shape.y2 === "auto" ? containerHeight : shape.y2;
 
         const node: SkiaNodeData = {
           type: "line",

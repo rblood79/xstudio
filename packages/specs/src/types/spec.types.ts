@@ -41,7 +41,8 @@ export type ArchetypeId =
   | "tabs-indicator" // Tab (+ SelectionIndicator)
   | "collection" // ListBox/Item, Menu/Item
   | "overlay" // Popover, Dialog, Toast
-  | "calendar"; // Calendar/Cell
+  | "calendar" // Calendar/Cell
+  | "alert"; // InlineAlert
 
 /**
  * 컴포넌트 스펙 - 단일 소스
@@ -259,8 +260,17 @@ export interface SizeSpec {
   /** 도트 크기 (optional, px) — StatusLight */
   dotSize?: number;
 
-  /** 헤딩 폰트 크기 (optional, TokenRef) — IllustratedMessage */
-  headingFontSize?: TokenRef;
+  /** 헤딩 폰트 크기 (optional) — IllustratedMessage, InlineAlert */
+  headingFontSize?: TokenRef | number;
+
+  /** 헤딩 폰트 굵기 (optional, px) — InlineAlert */
+  headingFontWeight?: number;
+
+  /** 설명 폰트 크기 (optional, px) — InlineAlert */
+  descFontSize?: number;
+
+  /** 설명 폰트 굵기 (optional, px) — InlineAlert */
+  descFontWeight?: number;
 
   /** 액센트 바 너비 (optional, px) — InlineAlert */
   accentWidth?: number;

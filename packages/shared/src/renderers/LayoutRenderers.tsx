@@ -1380,32 +1380,16 @@ export const renderInlineAlert = (
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  const variantBgMap: Record<string, string> = {
-    neutral: "var(--bg-muted)",
-    informative: "var(--color-info-100, #dbeafe)",
-    positive: "var(--color-green-100, #dcfce7)",
-    notice: "var(--color-warning-100, #fef3c7)",
-    negative: "var(--color-error-100, #fee2e2)",
-  };
-  const bg =
-    variantBgMap[(element.props.variant as string) || "informative"] ||
-    variantBgMap.informative;
-
   return (
     <div
       key={element.id}
       data-element-id={element.id}
       data-custom-id={element.customId}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-        padding: "12px 16px",
-        borderRadius: 8,
-        backgroundColor: bg,
-        ...element.props.style,
-      }}
-      className={element.props.className}
+      data-variant={(element.props.variant as string) || "informative"}
+      data-size={(element.props.size as string) || "md"}
+      role="alert"
+      className={`react-aria-InlineAlert ${element.props.className || ""}`}
+      style={element.props.style}
     >
       {children.map((child) => renderElement(child, child.id))}
     </div>

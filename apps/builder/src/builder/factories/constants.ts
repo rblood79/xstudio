@@ -49,6 +49,7 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
   "Form",
   "Toast",
   "Toolbar",
+  "InlineAlert",
   // Date & Color
   "DatePicker",
   "DateRangePicker",
@@ -66,7 +67,6 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
   "ProgressBar",
   "Meter",
   // Phase 4: Advanced Components (ADR-030)
-  "SegmentedControl",
   "CardView",
   "TableView",
   "SelectBoxGroup",

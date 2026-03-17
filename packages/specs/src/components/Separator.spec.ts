@@ -105,21 +105,21 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
     sm: {
       height: 1,
       paddingX: 0,
-      paddingY: 0,
+      paddingY: 4,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
     },
     md: {
       height: 1,
       paddingX: 0,
-      paddingY: 0,
+      paddingY: 8,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
     },
     lg: {
-      height: 2,
+      height: 1,
       paddingX: 0,
-      paddingY: 0,
+      paddingY: 16,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
     },
@@ -128,45 +128,22 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, variant, size) => {
       const isVertical = props.orientation === "vertical";
-      const strokeColor = variant.border ?? variant.text;
-      const strokeWidth = size.height;
-
-      // dashed/dotted 스타일 결정
-      const variantName = props.variant ?? "default";
-      const strokeDasharray =
-        variantName === "dashed"
-          ? [4, 4]
-          : variantName === "dotted"
-            ? [2, 2]
-            : undefined;
+      const fillColor = variant.border ?? variant.text;
+      const thickness = size.height;
 
       const shapes: Shape[] = [];
 
-      if (isVertical) {
-        shapes.push({
-          type: "line" as const,
-          x1: 0,
-          y1: 0,
-          x2: 0,
-          y2: 0, // auto: 렌더러에서 부모 높이로 확장
-          stroke: strokeColor,
-          strokeWidth,
-          ...(strokeDasharray && { strokeDasharray }),
-        });
-      } else {
-        shapes.push({
-          type: "line" as const,
-          x1: 0,
-          y1: 0,
-          x2: 0, // auto: 렌더러에서 부모 너비로 확장
-          y2: 0,
-          stroke: strokeColor,
-          strokeWidth,
-          ...(strokeDasharray && { strokeDasharray }),
-        });
-      }
+      // Separator를 얇은 rect로 렌더링 (line shape는 containerWidth=0일 때 안 보임)
+      shapes.push({
+        type: "rect" as const,
+        x: 0,
+        y: 0,
+        width: isVertical ? thickness : ("auto" as unknown as number),
+        height: isVertical ? ("auto" as unknown as number) : thickness,
+        fill: fillColor,
+      });
 
       return shapes;
     },

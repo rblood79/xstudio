@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-16 (ADR-036 구현 완료, 완료 26개, 미구현 8개)
+> **최종 업데이트**: 2026-03-17 (기반 안정화 진행 중 — CSS↔WebGL 정합성, 인라인 style 제거)
 
 ## 현황 요약
 
@@ -97,18 +97,20 @@
 
 ---
 
-## 다음 진행 목표 (2026-03-16 기준)
+## 다음 진행 목표 (2026-03-17 기준)
 
-| 순서 | 대상    | 내용                                                                                               | 규모 | 상태 |
-| :--: | ------- | -------------------------------------------------------------------------------------------------- | :--: | :--: |
-|  1   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL        |  대  |      |
-|  2   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)   |  중  |      |
-|  3   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                      |  대  |      |
-|  4   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                             |  대  |      |
-|  5   | ADR-036 | Spec-First Single Source — CSS 자동 생성 기반 이중 렌더링 통합 (CSSGenerator 확장, ~70개 컴포넌트) |  중  | 완료 |
-|  6   | ADR-041 | Spec-Driven Property Editor — 107개 에디터 자동 생성 (ADR-036 선행)                                |  중  |      |
+| 순서 | 대상        | 내용                                                                                             | 규모 | 상태 |
+| :--: | ----------- | ------------------------------------------------------------------------------------------------ | :--: | :--: |
+|  0   | 기반 안정화 | CSS↔WebGL 정합성 — 인라인 style 제거, height/padding/lineHeight 동기화, implicitStyles 통합      |  중  | 진행 |
+|  1   | ADR-041     | Spec-Driven Property Editor — 107개 에디터 자동 생성 (ADR-036 후속, 컨텍스트 연속성)             |  중  |      |
+|  2   | ADR-038     | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                           |  대  |      |
+|  3   | ADR-032     | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL      |  대  |      |
+|  4   | ADR-034     | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행) |  중  |      |
+|  5   | ADR-013     | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                    |  대  |      |
 
 > 완료된 #1~#21은 변경 이력 참조
+>
+> **2026-03-17 우선순위 변경**: ADR-036 완료 후 CSS↔WebGL 정합성 이슈 다수 발견 (Button/Badge/ToggleButton height 고정값, 인라인 style CSS override, typography lineHeight 토큰 누락, Toolbar 레이아웃). 기반 안정화를 최우선으로 승격하고, ADR-041(Spec-Driven Property Editor)을 ADR-032보다 앞으로 이동 (ADR-036 직후라 컨텍스트 연속성 확보). ADR-032는 기반 안정 후 착수.
 
 ---
 
@@ -129,10 +131,19 @@
 - ~~**ADR-039**: Multi-page Canvas Page-Scoped Rendering~~ — 2026-03-13 Phase 0~6 완료. visible page 중심 Pixi/Skia 렌더링, document/page snapshot 분리, page-scoped invalidation 반영
 - ~~**ADR-040**: Visible Page + Delta Runtime~~ — 2026-03-14 Phase 0~6 완료. snapshot recovery 분리, atomic activation, delta-first store/preview 계약 정착
 
-### P3: ADR-036 + ADR-032 → ADR-034 → ADR-013 (스타일 통합 + 이벤트 + 데이터 바인딩)
+### P3: 기반 안정화 → ADR-041 → ADR-038 → ADR-032 → ADR-034 → ADR-013
 
-- ~~**ADR-036**: Spec-First Single Source~~ — Spec `variants`/`sizes`/`states`를 Single Source로 승격, CSS 자동 생성. SIZE_CONFIG 제거 → CSSGenerator 확장 → 단순 컴포넌트 ~40개 전환 → 복합 컴포넌트 2-layer 분리. 2026-03-16 완료
+- ~~**ADR-036**: Spec-First Single Source~~ — 2026-03-16 완료
 - ~~**ADR-024**: CSS 변수명 S2 체계 전환~~ — Superseded (ADR-022/028/029에서 4축 체계로 전환 완료)
+- **기반 안정화** (2026-03-17 진행 중):
+  - Button/Badge/ToggleButton: spec height 고정값 제거 → padding + lineHeight 기반 동적 높이
+  - typography lineHeight 토큰 추가 (text-2xs~text-lg--line-height → px 값)
+  - MIN_BUTTON_HEIGHT 제거 (CSS에 min-height 없으므로)
+  - CSSGenerator: height: 0 → height 속성 미출력
+  - Button CSS: `text-box: trim-both cap alphabetic` (폰트 무관 수직 중앙)
+  - 인라인 style CSS override 해소: ToggleButtonGroup, CheckboxGroup, RadioGroup, Select, ComboBox, Tabs, TabList, TabPanels, Breadcrumbs, SearchField, Toolbar — defaultProps/factory에서 구조적 style 제거, CSS + implicitStyles로 이관
+  - Toolbar: INLINE_BLOCK_TAGS 등록, implicitStyles 추가, border/padding 제거, orientation/flexDirection CSS 제어
+  - ToggleButtonGroup: orientation별 border-radius를 generated CSS로 이관 (layer 밖 specificity)
 
 **의존 체인** (순서 필수):
 

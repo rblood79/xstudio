@@ -12,6 +12,7 @@
 
 import type { Element } from "../../../../../types/core/store.types";
 import { parsePadding, PHANTOM_INDICATOR_CONFIGS } from "./utils";
+import { InlineAlertSpec } from "@xstudio/specs";
 
 // ─── 인터페이스 ──────────────────────────────────────────────────────
 
@@ -812,6 +813,92 @@ export function applyImplicitStyles(
       }
     }
   }
+
+  // ── InlineAlert: spec size → padding/gap/자식 font 주입 (Taffy는 CSS 못 읽음) ──
+  if (containerTag === "inlinealert") {
+    const sizeName = (containerProps?.size as string) ?? "md";
+    const specSize = (InlineAlertSpec.sizes[sizeName] ??
+      InlineAlertSpec.sizes[InlineAlertSpec.defaultSize]) as Record<
+      string,
+      unknown
+    >;
+    const s = {
+      px: (specSize.paddingX as number) ?? 16,
+      py: (specSize.paddingY as number) ?? 16,
+      gap: (specSize.gap as number) ?? 12,
+      headingFontSize: (specSize.headingFontSize as number) ?? 16,
+      headingFontWeight: (specSize.headingFontWeight as number) ?? 700,
+      descFontSize: (specSize.descFontSize as number) ?? 14,
+      descFontWeight: (specSize.descFontWeight as number) ?? 400,
+    };
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: parentStyle.display ?? "flex",
+      flexDirection: parentStyle.flexDirection ?? "column",
+      paddingTop: parentStyle.paddingTop ?? s.py,
+      paddingBottom: parentStyle.paddingBottom ?? s.py,
+      paddingLeft: parentStyle.paddingLeft ?? s.px,
+      paddingRight: parentStyle.paddingRight ?? s.px,
+      gap: parentStyle.gap ?? s.gap,
+      width: parentStyle.width ?? "100%",
+    });
+
+    // 자식 Heading/Description에 spec 기반 font 스타일 주입
+    filteredChildren = filteredChildren.map((child) => {
+      const cs = (child.props?.style || {}) as Record<string, unknown>;
+      if (child.tag === "Heading") {
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              fontSize: cs.fontSize ?? s.headingFontSize,
+              fontWeight: cs.fontWeight ?? s.headingFontWeight,
+            },
+          },
+        } as Element;
+      }
+      if (child.tag === "Description") {
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              width: cs.width ?? "100%",
+              fontSize: cs.fontSize ?? s.descFontSize,
+              fontWeight: cs.fontWeight ?? s.descFontWeight,
+            },
+          },
+        } as Element;
+      }
+      return child;
+    });
+  }
+
+  // ── Separator: size → margin 주입 (Taffy는 CSS data-size 못 읽음) ──
+  filteredChildren = filteredChildren.map((child) => {
+    if (child.tag !== "Separator" && child.tag !== "Hr") return child;
+    const childProps = child.props as Record<string, unknown> | undefined;
+    const childStyle = (childProps?.style || {}) as Record<string, unknown>;
+    // 이미 인라인 margin이 있으면 스킵
+    if (childStyle.marginTop != null || childStyle.marginBottom != null)
+      return child;
+    const sep_size = (childProps?.size as string) ?? "md";
+    const sep_margin = sep_size === "sm" ? 4 : sep_size === "lg" ? 16 : 8;
+    return {
+      ...child,
+      props: {
+        ...childProps,
+        style: {
+          ...childStyle,
+          marginTop: sep_margin,
+          marginBottom: sep_margin,
+        },
+      },
+    } as Element;
+  });
 
   return { effectiveParent, filteredChildren };
 }

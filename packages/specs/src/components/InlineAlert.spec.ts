@@ -27,6 +27,7 @@ export interface InlineAlertProps {
 export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
   name: "InlineAlert",
   description: "인라인 알림 컴포넌트",
+  archetype: "alert",
   element: "div",
 
   defaultVariant: "informative",
@@ -71,14 +72,44 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
   },
 
   sizes: {
+    sm: {
+      height: "auto" as unknown as number,
+      paddingX: 8,
+      paddingY: 8,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
+      accentWidth: 3,
+      gap: 8,
+      headingFontSize: 14,
+      headingFontWeight: 700,
+      descFontSize: 13,
+      descFontWeight: 400,
+    },
     md: {
       height: "auto" as unknown as number,
       paddingX: 16,
-      paddingY: 12,
-      fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: "{radius.md}" as TokenRef,
+      paddingY: 16,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       accentWidth: 4,
-      gap: 8,
+      gap: 12,
+      headingFontSize: 16,
+      headingFontWeight: 700,
+      descFontSize: 14,
+      descFontWeight: 400,
+    },
+    lg: {
+      height: "auto" as unknown as number,
+      paddingX: 24,
+      paddingY: 24,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
+      accentWidth: 4,
+      gap: 16,
+      headingFontSize: 18,
+      headingFontWeight: 700,
+      descFontSize: 16,
+      descFontWeight: 400,
     },
   },
 
@@ -86,11 +117,7 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
 
   render: {
     shapes: (props, variant, size, _state = "default") => {
-      // variant.background = subtle 배경, variant.border = accent 색상
       const bgColor = props.style?.backgroundColor ?? variant.background;
-      const accentColor = variant.border ?? variant.text;
-      const accentWidth =
-        (size as unknown as { accentWidth: number }).accentWidth ?? 4;
 
       const styleBr = props.style?.borderRadius;
       const borderRadius =
@@ -106,7 +133,7 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
       const resolvedBr = typeof br === "number" ? br : 6;
 
       const shapes: Shape[] = [
-        // 배경 roundRect
+        // 배경 roundRect (accent border-left는 CSS에서 처리)
         {
           id: "bg",
           type: "roundRect" as const,
@@ -116,15 +143,6 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
           height: "auto" as unknown as number,
           radius: resolvedBr,
           fill: bgColor,
-        },
-        // 좌측 accent 라인 (border shape로 left side만)
-        {
-          type: "border" as const,
-          target: "bg",
-          borderWidth: accentWidth,
-          color: accentColor ?? variant.text,
-          radius: resolvedBr,
-          sides: { left: true, top: false, right: false, bottom: false },
         },
       ];
 

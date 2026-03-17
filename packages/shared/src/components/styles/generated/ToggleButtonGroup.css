@@ -6,23 +6,14 @@
 
 .react-aria-ToggleButtonGroup {
   /* Base styles — archetype: default */
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    box-sizing: border-box;
 
   /* Default size */
   font-size: var(--text-md);
   border-radius: var(--radius-lg);
-}
-
-.react-aria-ToggleButtonGroup[data-orientation="horizontal"] {
-  flex-direction: row;
-  width: fit-content;
-}
-
-.react-aria-ToggleButtonGroup[data-orientation="vertical"] {
-  flex-direction: column;
-  width: fit-content;
 }
 
 .react-aria-ToggleButtonGroup[data-size="sm"] {
@@ -64,6 +55,7 @@
 .react-aria-ToggleButtonGroup[data-size="lg"] .react-aria-ToggleButton {
   --btn-border-radius: var(--radius-lg);
 }
+
 
 @media (forced-colors: active) {
   .react-aria-ToggleButtonGroup {

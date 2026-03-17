@@ -65,6 +65,25 @@
   gap: 16px;
 }
 
+/* Heading */
+.react-aria-IllustratedMessage .alert-heading {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: 1.4;
+}
+
+.react-aria-IllustratedMessage[data-size="sm"] .alert-heading {
+  font-size: var(--text-md);
+}
+
+.react-aria-IllustratedMessage[data-size="md"] .alert-heading {
+  font-size: var(--text-lg);
+}
+
+.react-aria-IllustratedMessage[data-size="lg"] .alert-heading {
+  font-size: var(--text-xl);
+}
+
 .react-aria-IllustratedMessage[data-focus-visible] {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

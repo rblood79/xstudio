@@ -191,16 +191,6 @@ export function createInlineAlertDefinition(
       tag: "InlineAlert",
       props: {
         variant: "informative",
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
-          paddingTop: 12,
-          paddingBottom: 12,
-          paddingLeft: 16,
-          paddingRight: 16,
-          width: "100%",
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -210,12 +200,9 @@ export function createInlineAlertDefinition(
       {
         tag: "Heading",
         props: {
-          children: "Alert Title",
+          children: "Alert Heading",
           level: 3,
-          style: {
-            fontSize: 14,
-            fontWeight: 600,
-          },
+          className: "alert-heading",
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -223,10 +210,9 @@ export function createInlineAlertDefinition(
       {
         tag: "Description",
         props: {
-          children: "Alert description text.",
-          style: {
-            fontSize: 14,
-          },
+          children:
+            "There was an error processing your request. Please try again.",
+          className: "alert-description",
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
@@ -582,9 +568,6 @@ export function createProgressBarDefinition(
         value: 50,
         showValue: true,
         size: "md",
-        style: {
-          width: "100%",
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -662,9 +645,6 @@ export function createMeterDefinition(
         showValue: true,
         variant: "informative",
         size: "md",
-        style: {
-          width: "100%",
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,

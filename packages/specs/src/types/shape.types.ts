@@ -341,10 +341,10 @@ export interface ImageShape {
  */
 export interface LineShape {
   type: "line";
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+  x1: number | "auto";
+  y1: number | "auto";
+  x2: number | "auto";
+  y2: number | "auto";
   stroke: ColorValue;
   strokeWidth: number;
   strokeDasharray?: number[];
