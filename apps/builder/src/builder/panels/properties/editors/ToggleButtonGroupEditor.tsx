@@ -241,17 +241,14 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({
           label={PROPERTY_LABELS.ORIENTATION}
           value={String(currentProps.orientation || "horizontal")}
           onChange={(value) => {
-            // orientation 변경 시 style.flexDirection도 함께 업데이트
-            const flexDirection = value === "vertical" ? "column" : "row";
+            // orientation은 data-orientation으로 전달 → CSS가 flex-direction 제어
+            // 인라인 flexDirection이 있으면 제거 (CSS override 방지)
             const currentStyle =
               (currentProps.style as Record<string, unknown>) || {};
+            const { flexDirection: _removed, ...restStyle } = currentStyle;
             const updatedProps = {
               orientation: value,
-              style: {
-                ...currentStyle,
-                display: "flex",
-                flexDirection,
-              },
+              style: restStyle,
             };
             onUpdate(updatedProps);
           }}

@@ -167,6 +167,12 @@ export interface TypographyTokens {
   "text-3xl": number; // 30
   "text-4xl": number; // 36
   "text-5xl": number; // 48
+  // line-height (px): CSS calc(lineHeight / fontSize) × fontSize 결과
+  "text-2xs--line-height": number; // 16
+  "text-xs--line-height": number; // 16
+  "text-sm--line-height": number; // 20
+  "text-base--line-height": number; // 24
+  "text-lg--line-height": number; // 28
 }
 
 /**

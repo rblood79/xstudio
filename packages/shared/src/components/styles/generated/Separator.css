@@ -6,9 +6,9 @@
 
 .react-aria-Separator {
   /* Base styles — archetype: simple */
-    display: inline-flex;
-    align-items: center;
-    box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
 
   /* Default variant */
   background: var(--bg);
@@ -137,21 +137,18 @@
 
 .react-aria-Separator[data-size="sm"] {
   height: 1px;
-  padding: 4px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-none);
 }
 
 .react-aria-Separator[data-size="md"] {
   height: 1px;
-  padding: 8px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-none);
 }
 
 .react-aria-Separator[data-size="lg"] {
   height: 2px;
-  padding: 16px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-none);
 }

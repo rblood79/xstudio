@@ -417,13 +417,7 @@ export type { StatusLightProps } from "./components/StatusLight.spec";
 export { InlineAlertSpec } from "./components/InlineAlert.spec";
 export type { InlineAlertProps } from "./components/InlineAlert.spec";
 
-export { ContextualHelpSpec } from "./components/ContextualHelp.spec";
-export type { ContextualHelpProps } from "./components/ContextualHelp.spec";
-
 // ─── Phase 6: ADR-030 Phase 2 Components ────────────────────────────────────
-export { ActionButtonGroupSpec } from "./components/ActionButtonGroup.spec";
-export type { ActionButtonGroupProps } from "./components/ActionButtonGroup.spec";
-
 export { ButtonGroupSpec } from "./components/ButtonGroup.spec";
 export type { ButtonGroupProps } from "./components/ButtonGroup.spec";
 
@@ -439,12 +433,6 @@ export { ImageSpec, IMAGE_DIMENSIONS } from "./components/Image.spec";
 export type { ImageProps } from "./components/Image.spec";
 
 // ─── Phase 8: ADR-030 Phase 4 Advanced Components ────────────────────────────
-export { SegmentedControlSpec } from "./components/SegmentedControl.spec";
-export type { SegmentedControlProps } from "./components/SegmentedControl.spec";
-
-export { SegmentedControlItemSpec } from "./components/SegmentedControlItem.spec";
-export type { SegmentedControlItemProps } from "./components/SegmentedControlItem.spec";
-
 export {
   IllustratedMessageSpec,
   ILLUSTRATION_DIMENSIONS,

@@ -5,6 +5,7 @@
     align-items: center;
     vertical-align: middle;
     text-align: center;
+    text-box: trim-both cap alphabetic;
     margin: 0;
     outline: none;
     text-decoration: none;

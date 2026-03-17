@@ -1192,68 +1192,8 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: [],
     },
   },
-  {
-    type: "Divider",
-    label: "Divider",
-    category: "Layout",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "DividerEditor",
-      dataBindingType: null,
-      supportedEvents: [],
-    },
-  },
-  {
-    type: "LinkButton",
-    label: "Link Button",
-    category: "Buttons",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "LinkButtonEditor",
-      dataBindingType: null,
-      supportedEvents: ["onPress"],
-    },
-  },
-  {
-    type: "ContextualHelp",
-    label: "Contextual Help",
-    category: "Buttons",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "ContextualHelpEditor",
-      dataBindingType: null,
-      supportedEvents: [],
-    },
-  },
 
   // Phase 2: Action/Group (ADR-030)
-  {
-    type: "ActionButton",
-    label: "Action Button",
-    category: "Buttons",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "ActionButtonEditor",
-      dataBindingType: null,
-      supportedEvents: ["onPress"],
-    },
-  },
-  {
-    type: "ActionButtonGroup",
-    label: "Action Button Group",
-    category: "Buttons",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "ActionButtonGroupEditor",
-      dataBindingType: null,
-      supportedEvents: [],
-    },
-  },
   {
     type: "ButtonGroup",
     label: "Button Group",
@@ -1328,44 +1268,8 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: ["onLoad", "onError"],
     },
   },
-  {
-    type: "Picker",
-    label: "Picker",
-    category: "Forms",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "PickerEditor",
-      dataBindingType: "value",
-      supportedEvents: ["onSelectionChange"],
-    },
-  },
 
   // Phase 4: Advanced Components (ADR-030)
-  {
-    type: "SegmentedControl",
-    label: "Segmented Control",
-    category: "Buttons",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "SegmentedControlEditor",
-      dataBindingType: null,
-      supportedEvents: ["onSelectionChange"],
-    },
-  },
-  {
-    type: "SegmentedControlItem",
-    label: "Segmented Control Item",
-    category: "Buttons",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "SegmentedControlItemEditor",
-      dataBindingType: null,
-      supportedEvents: ["onPress"],
-    },
-  },
   {
     type: "SelectBoxGroup",
     label: "Select Box Group",

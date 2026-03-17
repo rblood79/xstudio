@@ -90,7 +90,6 @@ export interface TranslationKeys {
     avatarGroup: string;
     statusLight: string;
     inlineAlert: string;
-    divider: string;
     progressCircle: string;
     image: string;
     illustratedMessage: string;
@@ -112,13 +111,8 @@ export interface TranslationKeys {
     toggleButton: string;
     toggleButtonGroup: string;
     toolbar: string;
-    linkButton: string;
-    contextualHelp: string;
-    actionButton: string;
-    actionButtonGroup: string;
     buttonGroup: string;
     actionMenu: string;
-    segmentedControl: string;
     selectBoxGroup: string;
     // Forms
     textField: string;
@@ -132,7 +126,6 @@ export interface TranslationKeys {
     switch: string;
     slider: string;
     rangeSlider: string;
-    picker: string;
     colorPicker: string;
     dropZone: string;
     fileTrigger: string;

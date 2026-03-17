@@ -103,7 +103,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
 
   sizes: {
     xs: {
-      height: 20,
+      height: 0,
       paddingX: 4,
       paddingY: 1,
       fontSize: "{typography.text-2xs}" as TokenRef,
@@ -115,7 +115,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       iconGap: 4,
     },
     sm: {
-      height: 22,
+      height: 0,
       paddingX: 8,
       paddingY: 2,
       fontSize: "{typography.text-xs}" as TokenRef,
@@ -127,7 +127,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       iconGap: 6,
     },
     md: {
-      height: 30,
+      height: 0,
       paddingX: 12,
       paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
@@ -139,7 +139,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       iconGap: 8,
     },
     lg: {
-      height: 42,
+      height: 0,
       paddingX: 16,
       paddingY: 8,
       fontSize: "{typography.text-base}" as TokenRef,
@@ -151,7 +151,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       iconGap: 10,
     },
     xl: {
-      height: 54,
+      height: 0,
       paddingX: 24,
       paddingY: 12,
       fontSize: "{typography.text-lg}" as TokenRef,

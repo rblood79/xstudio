@@ -28,7 +28,6 @@ import {
   Hash,
   MessageSquare,
   Settings,
-  Gauge,
   BarChart3,
   Settings2,
   ChevronRight,
@@ -48,12 +47,8 @@ import {
   Users,
   CircleDot,
   AlertTriangle,
-  Minus,
-  ExternalLink,
-  HelpCircle,
   CircleDashed,
   ImageIcon,
-  ChevronsUpDown,
 } from "lucide-react";
 import { PanelHeader, Section } from "../../components";
 import { useEditModeStore } from "../../stores/editMode";
@@ -78,13 +73,11 @@ const contentComp = [
   { tag: "Separator", label: "separator", icon: SeparatorHorizontal },
   { tag: "Badge", label: "badge", icon: Star },
   { tag: "ProgressBar", label: "progress bar", icon: BarChart3 },
-  { tag: "Meter", label: "meter", icon: Gauge },
   { tag: "Skeleton", label: "skeleton", icon: Loader },
   { tag: "Avatar", label: "avatar", icon: CircleUser },
   { tag: "AvatarGroup", label: "avatar group", icon: Users },
   { tag: "StatusLight", label: "status light", icon: CircleDot },
   { tag: "InlineAlert", label: "inline alert", icon: AlertTriangle },
-  { tag: "Divider", label: "divider", icon: Minus },
   { tag: "ProgressCircle", label: "progress circle", icon: CircleDashed },
   { tag: "Image", label: "image", icon: ImageIcon },
   { tag: "IllustratedMessage", label: "illustrated message", icon: ImageIcon },
@@ -110,14 +103,8 @@ const buttonsComp = [
   { tag: "ToggleButton", label: "toggle button", icon: ToggleLeft },
   { tag: "ToggleButtonGroup", label: "toggle button group", icon: GroupIcon },
   { tag: "Toolbar", label: "toolbar", icon: Settings },
-  { tag: "LinkButton", label: "link button", icon: ExternalLink },
-  { tag: "ContextualHelp", label: "contextual help", icon: HelpCircle },
-  { tag: "ActionButton", label: "action button", icon: MousePointer },
-  { tag: "ActionButtonGroup", label: "action button group", icon: GroupIcon },
   { tag: "ButtonGroup", label: "button group", icon: GroupIcon },
   { tag: "ActionMenu", label: "action menu", icon: Menu },
-  { tag: "SegmentedControl", label: "segmented control", icon: ToggleLeft },
-  { tag: "SelectBoxGroup", label: "select box group", icon: GroupIcon },
 ] as const;
 
 const formsComp = [
@@ -132,10 +119,10 @@ const formsComp = [
   { tag: "Switch", label: "switch", icon: ToggleRight },
   { tag: "Slider", label: "slider", icon: SlidersHorizontal },
   { tag: "RangeSlider", label: "range slider", icon: SlidersHorizontal },
-  { tag: "Picker", label: "picker", icon: ChevronsUpDown },
   { tag: "TailSwatch", label: "color picker", icon: Paintbrush },
   { tag: "DropZone", label: "drop zone", icon: Upload },
   { tag: "FileTrigger", label: "file trigger", icon: FileUp },
+  { tag: "SelectBoxGroup", label: "select box group", icon: GroupIcon },
   { tag: "Form", label: "form", icon: GroupIcon },
   { tag: "Field", label: "field", icon: GroupIcon },
 ] as const;

@@ -6,9 +6,9 @@
 
 .react-aria-Badge {
   /* Base styles — archetype: simple */
-    display: inline-flex;
-    align-items: center;
-    box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
 
   /* Default variant */
   background: var(--accent);
@@ -16,7 +16,6 @@
   border: none;
 
   /* Default size */
-  height: 22px;
   padding: 2px 8px;
   font-size: var(--text-xs);
   border-radius: var(--radius-full);
@@ -273,7 +272,6 @@
 }
 
 .react-aria-Badge[data-size="xs"] {
-  height: 20px;
   padding: 1px 4px;
   font-size: var(--text-2xs);
   border-radius: var(--radius-full);
@@ -283,7 +281,6 @@
 }
 
 .react-aria-Badge[data-size="sm"] {
-  height: 22px;
   padding: 2px 8px;
   font-size: var(--text-xs);
   border-radius: var(--radius-full);
@@ -293,7 +290,6 @@
 }
 
 .react-aria-Badge[data-size="md"] {
-  height: 30px;
   padding: 4px 12px;
   font-size: var(--text-sm);
   border-radius: var(--radius-full);
@@ -303,7 +299,6 @@
 }
 
 .react-aria-Badge[data-size="lg"] {
-  height: 42px;
   padding: 8px 16px;
   font-size: var(--text-base);
   border-radius: var(--radius-full);
@@ -313,7 +308,6 @@
 }
 
 .react-aria-Badge[data-size="xl"] {
-  height: 54px;
   padding: 12px 24px;
   font-size: var(--text-lg);
   border-radius: var(--radius-full);

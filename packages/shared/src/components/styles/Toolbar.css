@@ -3,14 +3,13 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 6px 12px;
     width: fit-content;
 
-    &[data-orientation=horizontal] {
+    &[data-orientation="horizontal"] {
       flex-direction: row;
     }
 
-    &[data-orientation=vertical] {
+    &[data-orientation="vertical"] {
       flex-direction: column;
       align-items: start;
     }
@@ -28,12 +27,12 @@
     align-self: stretch;
     background-color: var(--bg-muted);
 
-    &[aria-orientation=vertical] {
+    &[aria-orientation="vertical"] {
       width: 1px;
       margin: 0px 10px;
     }
 
-    &:not([aria-orientation=vertical]) {
+    &:not([aria-orientation="vertical"]) {
       border: none;
       height: 1px;
       width: 100%;

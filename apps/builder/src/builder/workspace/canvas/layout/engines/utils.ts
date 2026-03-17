@@ -518,8 +518,8 @@ function deriveSizeConfig(
 // ADR-036: Spec이 단일 소스 — SIZE_CONFIG 수동 동기화 불필요
 const BUTTON_SIZE_CONFIG = deriveSizeConfig(ButtonSpec.sizes);
 
-/** PixiButton MIN_BUTTON_HEIGHT과 동일 */
-const MIN_BUTTON_HEIGHT = 24;
+/** CSS에 min-height 없음 → padding + line-height로 자연 결정 */
+const MIN_BUTTON_HEIGHT = 0;
 
 // ADR-036: BadgeSpec.sizes에서 파생
 const BADGE_SIZE_CONFIG = deriveSizeConfig(BadgeSpec.sizes);
@@ -1472,7 +1472,9 @@ export function calculateContentHeight(
           props?.children ?? props?.text ?? props?.label ?? "",
         );
         if (textContent) {
-          const ws = (style?.whiteSpace as string) ?? "normal";
+          // Button/Badge 등 inline-flex UI 컴포넌트는 CSS에서 텍스트 줄바꿈 안 함
+          // whiteSpace 기본값을 "nowrap"으로 설정 (CSS inline-flex 동작과 일치)
+          const ws = (style?.whiteSpace as string) ?? "nowrap";
           const fw = parseNumericValue(style?.fontWeight) ?? 500;
           const wbVal = (style?.wordBreak as string) ?? undefined;
           const owVal = (style?.overflowWrap as string) ?? undefined;
@@ -2496,6 +2498,7 @@ export const INLINE_BLOCK_TAGS = new Set([
   "radio",
   "switch",
   "togglebuttongroup",
+  "toolbar",
   "statuslight",
   "link",
   "linkbutton",

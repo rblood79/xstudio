@@ -62,12 +62,6 @@ export function createToggleButtonGroupDefinition(
         orientation: "horizontal",
         selectionMode: "single",
         value: [],
-        style: {
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          width: "fit-content",
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,

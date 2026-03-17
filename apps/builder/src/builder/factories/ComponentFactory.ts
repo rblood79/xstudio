@@ -78,11 +78,6 @@ import {
   createAvatarGroupDefinition,
   createStatusLightDefinition,
   createInlineAlertDefinition,
-  createDividerDefinition,
-  createLinkButtonDefinition,
-  createContextualHelpDefinition,
-  createActionButtonDefinition,
-  createActionButtonGroupDefinition,
   createButtonGroupDefinition,
   createActionMenuDefinition,
   createAccordionDefinition,
@@ -91,9 +86,7 @@ import {
   createMeterDefinition,
   createProgressCircleDefinition,
   createImageDefinition,
-  createPickerDefinition,
   createRangeCalendarDefinition,
-  createSegmentedControlDefinition,
   createIllustratedMessageDefinition,
   createCardViewDefinition,
   createTableViewDefinition,
@@ -164,12 +157,7 @@ export class ComponentFactory {
     AvatarGroup: ComponentFactory.createAvatarGroup,
     StatusLight: ComponentFactory.createStatusLight,
     InlineAlert: ComponentFactory.createInlineAlert,
-    Divider: ComponentFactory.createDivider,
-    LinkButton: ComponentFactory.createLinkButton,
-    ContextualHelp: ComponentFactory.createContextualHelp,
     // ⭐ Display Components (Phase 2)
-    ActionButton: ComponentFactory.createActionButton,
-    ActionButtonGroup: ComponentFactory.createActionButtonGroup,
     ButtonGroup: ComponentFactory.createButtonGroup,
     ActionMenu: ComponentFactory.createActionMenu,
     Accordion: ComponentFactory.createAccordion,
@@ -179,10 +167,8 @@ export class ComponentFactory {
     Meter: ComponentFactory.createMeter,
     ProgressCircle: ComponentFactory.createProgressCircle,
     Image: ComponentFactory.createImage,
-    Picker: ComponentFactory.createPicker,
     RangeCalendar: ComponentFactory.createRangeCalendar,
     // ⭐ Display Components (Phase 4)
-    SegmentedControl: ComponentFactory.createSegmentedControl,
     IllustratedMessage: ComponentFactory.createIllustratedMessage,
     CardView: ComponentFactory.createCardView,
     TableView: ComponentFactory.createTableView,
@@ -565,37 +551,7 @@ export class ComponentFactory {
     return this.createComponent(createInlineAlertDefinition, context);
   }
 
-  private static async createDivider(
-    context: ComponentCreationContext,
-  ): Promise<ComponentCreationResult> {
-    return this.createComponent(createDividerDefinition, context);
-  }
-
-  private static async createLinkButton(
-    context: ComponentCreationContext,
-  ): Promise<ComponentCreationResult> {
-    return this.createComponent(createLinkButtonDefinition, context);
-  }
-
-  private static async createContextualHelp(
-    context: ComponentCreationContext,
-  ): Promise<ComponentCreationResult> {
-    return this.createComponent(createContextualHelpDefinition, context);
-  }
-
   // ==================== Display Components (Phase 2) ====================
-
-  private static async createActionButton(
-    context: ComponentCreationContext,
-  ): Promise<ComponentCreationResult> {
-    return this.createComponent(createActionButtonDefinition, context);
-  }
-
-  private static async createActionButtonGroup(
-    context: ComponentCreationContext,
-  ): Promise<ComponentCreationResult> {
-    return this.createComponent(createActionButtonGroupDefinition, context);
-  }
 
   private static async createButtonGroup(
     context: ComponentCreationContext,
@@ -647,12 +603,6 @@ export class ComponentFactory {
     return this.createComponent(createImageDefinition, context);
   }
 
-  private static async createPicker(
-    context: ComponentCreationContext,
-  ): Promise<ComponentCreationResult> {
-    return this.createComponent(createPickerDefinition, context);
-  }
-
   private static async createRangeCalendar(
     context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
@@ -660,12 +610,6 @@ export class ComponentFactory {
   }
 
   // ==================== Display Components (Phase 4) ====================
-
-  private static async createSegmentedControl(
-    context: ComponentCreationContext,
-  ): Promise<ComponentCreationResult> {
-    return this.createComponent(createSegmentedControlDefinition, context);
-  }
 
   private static async createIllustratedMessage(
     context: ComponentCreationContext,

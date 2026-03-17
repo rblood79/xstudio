@@ -130,13 +130,9 @@ import {
   AvatarGroupSpec,
   StatusLightSpec,
   InlineAlertSpec,
-  ContextualHelpSpec,
-  ActionButtonGroupSpec,
   ButtonGroupSpec,
   ProgressCircleSpec,
   // ImageSpec removed — ImageSprite handles rendering directly
-  SegmentedControlSpec,
-  SegmentedControlItemSpec,
   IllustratedMessageSpec,
   CardViewSpec,
   TableViewSpec,
@@ -345,7 +341,7 @@ const UI_STATUSLIGHT_TAGS = new Set(["StatusLight"]);
  * Phase 2 WebGL Migration 컴포넌트 태그들
  */
 const UI_SEPARATOR_TAGS = new Set(["Separator", "Divider", "Hr"]);
-const UI_LINK_TAGS = new Set(["Link", "Anchor", "A", "LinkButton"]);
+const UI_LINK_TAGS = new Set(["Link", "Anchor", "A"]);
 const UI_BREADCRUMBS_TAGS = new Set(["Breadcrumbs"]);
 const UI_CARD_TAGS = new Set(["Card", "Box"]);
 const UI_PANEL_TAGS = new Set(["Panel"]);
@@ -726,7 +722,6 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   Meter: MeterSpec,
   Gauge: MeterSpec,
   Separator: SeparatorSpec,
-  Divider: SeparatorSpec,
   Hr: SeparatorSpec,
   Link: LinkSpec,
   Anchor: LinkSpec,
@@ -792,20 +787,13 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   AvatarGroup: AvatarGroupSpec,
   StatusLight: StatusLightSpec,
   InlineAlert: InlineAlertSpec,
-  LinkButton: LinkSpec,
-  ContextualHelp: ContextualHelpSpec,
   // Phase 2: Action/Group components (ADR-030)
-  ActionButton: ButtonSpec,
-  ActionButtonGroup: ActionButtonGroupSpec,
   ButtonGroup: ButtonGroupSpec,
   ActionMenu: ButtonSpec,
   // Phase 3: Extended Controls (ADR-030)
   ProgressCircle: ProgressCircleSpec,
   // Image: ImageSprite handles rendering directly (not spec-based)
-  Picker: SelectSpec,
   // Phase 4: Advanced Components (ADR-030)
-  SegmentedControl: SegmentedControlSpec,
-  SegmentedControlItem: SegmentedControlItemSpec,
   IllustratedMessage: IllustratedMessageSpec,
   CardView: CardViewSpec,
   TableView: TableViewSpec,

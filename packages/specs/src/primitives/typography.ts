@@ -23,6 +23,17 @@ export const typography: TypographyTokens = {
   "text-3xl": 30,
   "text-4xl": 36,
   "text-5xl": 48,
+  // line-height: CSS calc(lineHeight / fontSize) 결과와 동일한 px 값
+  // CSS: --text-2xs--line-height: calc(1 / 0.625) = 1.6 → 10 * 1.6 = 16
+  "text-2xs--line-height": 16,
+  // CSS: --text-xs--line-height: calc(1 / 0.75) ≈ 1.333 → 12 * 1.333 = 16
+  "text-xs--line-height": 16,
+  // CSS: --text-sm--line-height: calc(1.25 / 0.875) ≈ 1.4286 → 14 * 1.4286 = 20
+  "text-sm--line-height": 20,
+  // CSS: --text-base--line-height: calc(1.5 / 1) = 1.5 → 16 * 1.5 = 24
+  "text-base--line-height": 24,
+  // CSS: --text-lg--line-height: calc(1.75 / 1.125) ≈ 1.5556 → 18 * 1.5556 = 28
+  "text-lg--line-height": 28,
 };
 
 /**

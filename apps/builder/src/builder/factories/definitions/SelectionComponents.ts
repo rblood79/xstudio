@@ -30,11 +30,6 @@ export function createSelectDefinition(
         isInvalid: false,
         isReadOnly: false,
         isRequired: false,
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -132,11 +127,6 @@ export function createComboBoxDefinition(
         isInvalid: false,
         isReadOnly: false,
         isRequired: false,
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,

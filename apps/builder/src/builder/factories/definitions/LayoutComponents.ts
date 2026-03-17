@@ -40,12 +40,7 @@ export function createTabsDefinition(
     children: [
       {
         tag: "TabList",
-        props: {
-          style: {
-            display: "flex",
-            flexDirection: "row",
-          },
-        } as ComponentElementProps,
+        props: {} as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
         children: [
@@ -71,12 +66,7 @@ export function createTabsDefinition(
       },
       {
         tag: "TabPanels",
-        props: {
-          style: {
-            display: "flex",
-            flexDirection: "column",
-          },
-        } as ComponentElementProps,
+        props: {} as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
         children: [

@@ -506,33 +506,7 @@ export function registerSharedComponents(): void {
     displayName: "InlineAlert",
     category: "display",
   });
-  registerComponent("Divider", {
-    component: Separator as ComponentType<Record<string, unknown>>,
-    displayName: "Divider",
-    category: "layout",
-  });
-  registerComponent("LinkButton", {
-    component: createHtmlElement("a"),
-    displayName: "LinkButton",
-    category: "input",
-  });
-  registerComponent("ContextualHelp", {
-    component: Button as ComponentType<Record<string, unknown>>,
-    displayName: "ContextualHelp",
-    category: "input",
-  });
-
   // Phase 2: Action/Group (ADR-030)
-  registerComponent("ActionButton", {
-    component: Button as ComponentType<Record<string, unknown>>,
-    displayName: "ActionButton",
-    category: "input",
-  });
-  registerComponent("ActionButtonGroup", {
-    component: createHtmlElement("div"),
-    displayName: "ActionButtonGroup",
-    category: "input",
-  });
   registerComponent("ButtonGroup", {
     component: createHtmlElement("div"),
     displayName: "ButtonGroup",
@@ -565,11 +539,6 @@ export function registerSharedComponents(): void {
     displayName: "Image",
     category: "display",
   });
-  registerComponent("Picker", {
-    component: Select as ComponentType<Record<string, unknown>>,
-    displayName: "Picker",
-    category: "input",
-  });
   registerComponent("RangeCalendar", {
     component: RangeCalendar as ComponentType<Record<string, unknown>>,
     displayName: "RangeCalendar",
@@ -577,16 +546,6 @@ export function registerSharedComponents(): void {
   });
 
   // Phase 4: Advanced Components (ADR-030)
-  registerComponent("SegmentedControl", {
-    component: createHtmlElement("div"),
-    displayName: "SegmentedControl",
-    category: "input",
-  });
-  registerComponent("SegmentedControlItem", {
-    component: createHtmlElement("button"),
-    displayName: "SegmentedControlItem",
-    category: "input",
-  });
   registerComponent("SelectBoxGroup", {
     component: createHtmlElement("div"),
     displayName: "SelectBoxGroup",

@@ -248,6 +248,47 @@ export function applyImplicitStyles(
     });
   }
 
+  // ── ToggleButtonGroup ─────────────────────────────────────────────
+  if (containerTag === "togglebuttongroup") {
+    const orientation = containerProps?.orientation as string | undefined;
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: "flex",
+      flexDirection: orientation === "vertical" ? "column" : "row",
+      alignItems: "center",
+    });
+  }
+
+  // ── Toolbar ──────────────────────────────────────────────────────────
+  if (containerTag === "toolbar") {
+    const orientation = containerProps?.orientation as string | undefined;
+    const sizeName = (containerProps?.size as string) ?? "md";
+    const gap = sizeName === "sm" ? 4 : sizeName === "lg" ? 10 : 8;
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: "flex",
+      flexDirection: orientation === "vertical" ? "column" : "row",
+      alignItems: "center",
+      gap: parentStyle.gap ?? gap,
+      width: parentStyle.width ?? "fit-content",
+    });
+    // 자식 Button/ToggleButton: 축소 방지 + 텍스트 줄바꿈 방지
+    filteredChildren = filteredChildren.map((child) => {
+      const cs = (child.props?.style || {}) as Record<string, unknown>;
+      return {
+        ...child,
+        props: {
+          ...child.props,
+          style: {
+            ...cs,
+            flexShrink: cs.flexShrink ?? 0,
+            whiteSpace: cs.whiteSpace ?? "nowrap",
+          },
+        },
+      } as Element;
+    });
+  }
+
   // ── CheckboxGroup / RadioGroup ─────────────────────────────────────
   if (containerTag === "checkboxgroup" || containerTag === "radiogroup") {
     const sizeName = (containerProps?.size as string) ?? "md";

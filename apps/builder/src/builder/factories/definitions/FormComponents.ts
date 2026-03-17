@@ -599,11 +599,6 @@ export function createSearchFieldDefinition(
         isInvalid: false,
         isReadOnly: false,
         isRequired: false,
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -796,13 +791,6 @@ export function createToolbarDefinition(
       tag: "Toolbar",
       props: {
         "aria-label": "Toolbar",
-        style: {
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: "4px",
-          width: "fit-content",
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,

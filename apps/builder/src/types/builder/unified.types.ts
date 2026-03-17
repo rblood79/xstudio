@@ -1242,12 +1242,6 @@ export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementP
     isDisabled: false,
     selectionMode: "single",
     orientation: "horizontal",
-    style: {
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-      width: "fit-content",
-    },
   };
 }
 
@@ -1258,14 +1252,6 @@ export function createDefaultCheckboxGroupProps(): CheckboxGroupElementProps {
     isDisabled: false,
     isInvalid: false,
     orientation: "horizontal",
-    // CSS base: display:flex; flex-direction:column; gap:var(--gap)
-    // orientation=horizontal → flex-direction:row; align-items:center
-    style: {
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
   };
 }
 
@@ -1276,14 +1262,6 @@ export function createDefaultRadioGroupProps(): RadioGroupElementProps {
     isDisabled: false,
     isInvalid: false,
     orientation: "horizontal",
-    // CSS base: display:flex; flex-direction:column; gap:var(--gap)
-    // orientation=horizontal → flex-direction:row; align-items:center
-    style: {
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
   };
 }
 
@@ -1292,12 +1270,6 @@ export function createDefaultSelectProps(): SelectElementProps {
     name: "",
     isDisabled: false,
     isInvalid: false,
-    // CSS base: display:flex; flex-direction:column; gap:var(--spacing-xs)
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 4,
-    },
   };
 }
 
@@ -1307,12 +1279,6 @@ export function createDefaultComboBoxProps(): ComboBoxElementProps {
     isDisabled: false,
     isInvalid: false,
     allowsCustomValue: false,
-    // CSS base: display:flex; flex-direction:column; gap:var(--spacing-xs)
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 4,
-    },
   };
 }
 
@@ -1348,11 +1314,9 @@ export function createDefaultTailSwatchProps(): TailSwatchElementProps {
 export function createDefaultTabsProps(): TabsElementProps {
   return {
     orientation: "horizontal",
-    // CSS base: display:flex; width:100%
-    // orientation=horizontal → flex-direction:column (TabList 위 + TabPanel 아래)
+    // CSS base: display:flex; flex-direction:column (generated)
+    // width:100%는 CSS에 미포함이므로 유지
     style: {
-      display: "flex",
-      flexDirection: "column",
       width: "100%",
     },
   };
@@ -1365,15 +1329,11 @@ export function createDefaultTabProps(): TabElementProps {
 }
 
 export function createDefaultTabListProps(): BaseElementProps {
-  return {
-    style: { display: "flex", flexDirection: "row" },
-  };
+  return {};
 }
 
 export function createDefaultTabPanelsProps(): BaseElementProps {
-  return {
-    style: { display: "flex", flexDirection: "column" },
-  };
+  return {};
 }
 
 export function createDefaultPanelProps(): PanelElementProps {
@@ -1711,27 +1671,12 @@ export function createDefaultSlotProps(): SlotElementProps {
 
 export function createDefaultToolbarProps(): ToolbarElementProps {
   return {
-    // CSS base: display:flex; flex-wrap:wrap; gap:5px; width:fit-content
-    // orientation=horizontal → flex-direction:row
-    style: {
-      display: "flex",
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 5,
-      width: "fit-content",
-    },
+    // CSS + implicitStyles가 구조적 스타일 제어
   };
 }
 
 export function createDefaultBreadcrumbsProps(): BreadcrumbsElementProps {
-  return {
-    // CSS base: display:flex; align-items:center (implicit row)
-    style: {
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-    },
-  };
+  return {};
 }
 
 export function createDefaultSeparatorProps(): SeparatorElementProps {
@@ -1806,13 +1751,7 @@ export function createDefaultNumberFieldProps(): NumberFieldElementProps {
 }
 
 export function createDefaultSearchFieldProps(): SearchFieldElementProps {
-  return {
-    // CSS base: display:flex; flex-direction:column; Group border:1px solid var(--outline-variant)
-    style: {
-      display: "flex",
-      flexDirection: "column",
-    },
-  };
+  return {};
 }
 
 export function createDefaultProgressBarProps(): ProgressBarElementProps {
