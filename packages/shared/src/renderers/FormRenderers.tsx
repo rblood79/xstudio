@@ -261,8 +261,6 @@ export const renderLabel = (
       id={element.customId}
       data-element-id={element.id}
       data-variant={(element.props.variant as string) || "default"}
-      style={element.props.style}
-      className={element.props.className}
     >
       {typeof element.props.children === "string"
         ? element.props.children
@@ -356,8 +354,6 @@ export const renderCheckbox = (
       isRequired={Boolean(element.props.isRequired)}
       name={element.props.name ? String(element.props.name) : undefined}
       value={element.props.value ? String(element.props.value) : undefined}
-      style={element.props.style}
-      className={element.props.className}
       isEmphasized={Boolean(element.props.isEmphasized)}
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
       onChange={async (isSelected) => {
@@ -398,12 +394,26 @@ export const renderCheckboxGroup = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, updateElementProps } = context;
+  const { elements, updateElementProps, renderElement } = context;
 
-  // 실제 Checkbox 자식 요소들을 찾기
+  // Compositional: Label + CheckboxItems(중간 컨테이너) + Checkbox(레거시) 자식 분리
+  const allChildren = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  const labelChildren = allChildren.filter((child) => child.tag === "Label");
+  const checkboxItemsChild = allChildren.find(
+    (child) => child.tag === "CheckboxItems",
+  );
+
+  // CheckboxItems가 있으면 그 하위에서 Checkbox 검색, 없으면(레거시) 직접 자식에서 검색
+  const checkboxParentId = checkboxItemsChild
+    ? checkboxItemsChild.id
+    : element.id;
   const checkboxChildren = elements
     .filter(
-      (child) => child.parent_id === element.id && child.tag === "Checkbox",
+      (child) =>
+        child.parent_id === checkboxParentId && child.tag === "Checkbox",
     )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
@@ -419,7 +429,6 @@ export const renderCheckboxGroup = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      label={String(element.props.label || "")}
       value={selectedValues}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
@@ -431,14 +440,12 @@ export const renderCheckboxGroup = (
       isRequired={Boolean(element.props.isRequired)}
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={async (newSelectedValues) => {
-        // CheckboxGroup의 onChange: 전체 value 배열 업데이트
         const updatedProps = {
           ...element.props,
           value: newSelectedValues,
         };
         updateElementProps(element.id, updatedProps);
 
-        // 개별 체크박스의 isSelected도 동기화
         for (const checkbox of checkboxChildren) {
           const isSelected = newSelectedValues.includes(checkbox.id);
           if (checkbox.props.isSelected !== isSelected) {
@@ -450,28 +457,29 @@ export const renderCheckboxGroup = (
         }
       }}
     >
-      {checkboxChildren.map((checkbox) => (
-        <Checkbox
-          key={checkbox.id}
-          data-element-id={checkbox.id}
-          value={checkbox.id}
-          isIndeterminate={Boolean(checkbox.props.isIndeterminate)}
-          isDisabled={Boolean(checkbox.props.isDisabled)}
-          style={checkbox.props.style}
-          className={checkbox.props.className}
-          onChange={(isSelected: boolean) => {
-            const updatedProps = {
-              ...checkbox.props,
-              isSelected,
-            };
-            updateElementProps(checkbox.id, updatedProps);
-          }}
-        >
-          {typeof checkbox.props.children === "string"
-            ? checkbox.props.children
-            : null}
-        </Checkbox>
-      ))}
+      {labelChildren.map((lbl) => renderElement(lbl, lbl.id))}
+      <div className="checkbox-items">
+        {checkboxChildren.map((checkbox) => (
+          <Checkbox
+            key={checkbox.id}
+            data-element-id={checkbox.id}
+            value={checkbox.id}
+            isIndeterminate={Boolean(checkbox.props.isIndeterminate)}
+            isDisabled={Boolean(checkbox.props.isDisabled)}
+            onChange={(isSelected: boolean) => {
+              const updatedProps = {
+                ...checkbox.props,
+                isSelected,
+              };
+              updateElementProps(checkbox.id, updatedProps);
+            }}
+          >
+            {typeof checkbox.props.children === "string"
+              ? checkbox.props.children
+              : null}
+          </Checkbox>
+        ))}
+      </div>
     </CheckboxGroup>
   );
 };
@@ -502,8 +510,6 @@ export const renderRadio = (
         data-element-id={element.id}
         value={String(element.props.value || "")}
         isDisabled={Boolean(element.props.isDisabled || false)}
-        style={element.props.style}
-        className={element.props.className}
       >
         {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
         {typeof element.props.children === "string" &&
@@ -527,8 +533,6 @@ export const renderRadio = (
           data-element-id={element.id}
           value={String(element.props.value || "")}
           isDisabled={Boolean(element.props.isDisabled || false)}
-          style={element.props.style}
-          className={element.props.className}
         >
           {/* Label 자식이 있으면 props.children 텍스트 생략 (이중 렌더링 방지) */}
           {typeof element.props.children === "string" &&
@@ -551,9 +555,23 @@ export const renderRadioGroup = (
 ): React.ReactNode => {
   const { elements, updateElementProps, renderElement } = context;
 
-  // 실제 Radio 자식 요소들을 찾기
+  // Compositional: Label + RadioItems(중간 컨테이너) + Radio(레거시) 자식 분리
+  // TagGroup > TagList 패턴 참조
+  const allChildren = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  const labelChildren = allChildren.filter((child) => child.tag === "Label");
+  const radioItemsChild = allChildren.find(
+    (child) => child.tag === "RadioItems",
+  );
+
+  // RadioItems가 있으면 그 하위에서 Radio 검색, 없으면(레거시) 직접 자식에서 검색
+  const radioParentId = radioItemsChild ? radioItemsChild.id : element.id;
   const radioChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "Radio")
+    .filter(
+      (child) => child.parent_id === radioParentId && child.tag === "Radio",
+    )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   return (
@@ -563,7 +581,6 @@ export const renderRadioGroup = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      label={String(element.props.label || "")}
       defaultValue={String(element.props.value || "")}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
@@ -593,7 +610,10 @@ export const renderRadioGroup = (
         }
       }}
     >
-      {radioChildren.map((radio) => renderElement(radio))}
+      {labelChildren.map((lbl) => renderElement(lbl, lbl.id))}
+      <div className="radio-items">
+        {radioChildren.map((radio) => renderElement(radio))}
+      </div>
     </RadioGroup>
   );
 };

@@ -151,7 +151,7 @@ export function RadioGroup({
           data-radio-size={size}
         >
           {label && <Label>{label}</Label>}
-          {children}
+          <div className="radio-items">{children}</div>
           {description && <Text slot="description">{description}</Text>}
           <FieldError>{errorMessage}</FieldError>
         </AriaRadioGroup>
@@ -167,7 +167,7 @@ export function RadioGroup({
         data-radio-size={size}
       >
         {label && <Label>{label}</Label>}
-        {children}
+        <div className="radio-items">{children}</div>
         {description && <Text slot="description">{description}</Text>}
         <FieldError>{errorMessage}</FieldError>
       </AriaRadioGroup>
@@ -248,7 +248,7 @@ export function RadioGroup({
     }
   }
 
-  // Static Children (기존 방식)
+  // Static Children (Compositional: children에 Label + radio-items 포함)
   return (
     <AriaRadioGroup
       {...props}

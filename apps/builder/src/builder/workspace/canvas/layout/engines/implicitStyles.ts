@@ -224,9 +224,28 @@ export function applyImplicitStyles(
 
   // ── TagGroup ───────────────────────────────────────────────────────
   // CSS 구조: TagGroup(column) > Label + TagList(row wrap) > Tags
-  // TagList가 있으면 그대로 통과, 없으면(레거시) row wrap으로 보정
+  // TagList가 있으면 column 통과, 없으면(레거시) row wrap으로 보정
   if (containerTag === "taggroup") {
     const hasTagList = children.some((c) => c.tag === "TagList");
+
+    // Compositional Label: whiteSpace nowrap 주입 (줄바꿈 방지)
+    filteredChildren = children.map((child) => {
+      if (child.tag === "Label") {
+        const cs = (child.props?.style || {}) as Record<string, unknown>;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              whiteSpace: cs.whiteSpace ?? "nowrap",
+            },
+          },
+        } as Element;
+      }
+      return child;
+    });
+
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: "flex",
@@ -238,13 +257,19 @@ export function applyImplicitStyles(
   }
 
   // ── TagList ──────────────────────────────────────────────────────
-  // TagGroup 내부 TagList: Tag를 가로 배치 (flex row wrap)
+  // TagGroup 내부 TagList: 부모 orientation에 따라 row/column 전환
   if (containerTag === "taglist") {
+    const parentEl = containerEl.parent_id
+      ? elementById.get(containerEl.parent_id)
+      : undefined;
+    const parentProps = parentEl?.props as Record<string, unknown> | undefined;
+    const orientation = parentProps?.orientation as string | undefined;
+
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: "flex",
-      flexDirection: "row",
-      flexWrap: "wrap",
+      flexDirection: orientation === "vertical" ? "column" : "row",
+      flexWrap: orientation === "vertical" ? undefined : "wrap",
       gap: parentStyle.gap ?? 4,
     });
   }
@@ -291,19 +316,52 @@ export function applyImplicitStyles(
   }
 
   // ── CheckboxGroup / RadioGroup ─────────────────────────────────────
+  // CSS 구조: RadioGroup(column) > Label + RadioItems(row/column) > Radios
+  // RadioItems가 있으면 column 통과, 없으면(레거시) column 보정
   if (containerTag === "checkboxgroup" || containerTag === "radiogroup") {
-    const sizeName = (containerProps?.size as string) ?? "md";
+    // Compositional Label: whiteSpace nowrap 주입 (줄바꿈 방지)
+    filteredChildren = children.map((child) => {
+      if (child.tag === "Label") {
+        const cs = (child.props?.style || {}) as Record<string, unknown>;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              whiteSpace: cs.whiteSpace ?? "nowrap",
+            },
+          },
+        } as Element;
+      }
+      return child;
+    });
+
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+    });
+  }
+
+  // ── RadioItems / CheckboxItems ────────────────────────────────────
+  // RadioGroup 내부 RadioItems: 부모 orientation에 따라 row/column 전환
+  if (containerTag === "radioitems" || containerTag === "checkboxitems") {
+    const parentEl = containerEl.parent_id
+      ? elementById.get(containerEl.parent_id)
+      : undefined;
+    const parentProps = parentEl?.props as Record<string, unknown> | undefined;
+    const orientation = parentProps?.orientation as string | undefined;
+    const sizeName = (parentProps?.size as string) ?? "md";
     const gap = sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
-    const labelFontSize = sizeName === "sm" ? 14 : sizeName === "lg" ? 18 : 16;
-    const labelOffset = containerProps?.label ? labelFontSize + 8 : 0;
-    const orientation = containerProps?.orientation as string | undefined;
 
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: "flex",
       flexDirection: orientation === "horizontal" ? "row" : "column",
+      alignItems: orientation === "horizontal" ? "center" : undefined,
       gap,
-      paddingTop: labelOffset,
     });
   }
 

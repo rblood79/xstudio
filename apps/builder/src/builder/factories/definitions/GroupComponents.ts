@@ -190,7 +190,6 @@ export function createCheckboxGroupDefinition(
       tag: "CheckboxGroup",
       props: {
         tag: "CheckboxGroup",
-        label: "Checkbox Group",
         name: "",
         orientation: "vertical",
         value: [],
@@ -205,68 +204,85 @@ export function createCheckboxGroupDefinition(
     },
     children: [
       {
-        tag: "Checkbox",
+        tag: "Label",
         props: {
-          children: "Option 1",
-          isSelected: false,
-          isDisabled: false,
+          children: "Checkbox Group",
+          variant: "default",
+          style: {
+            fontSize: 14,
+            backgroundColor: "transparent",
+            width: "fit-content",
+            height: "fit-content",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "CheckboxItems",
+        props: {
           style: {
             display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
+            flexDirection: "column",
+            gap: 12,
           },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
         children: [
           {
-            tag: "Label",
+            tag: "Checkbox",
             props: {
               children: "Option 1",
-              variant: "default",
-              style: {
-                fontSize: 14,
-                backgroundColor: "transparent",
-                width: "fit-content",
-                height: "fit-content",
-              },
+              isSelected: false,
+              isDisabled: false,
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
+            children: [
+              {
+                tag: "Label",
+                props: {
+                  children: "Option 1",
+                  variant: "default",
+                  style: {
+                    fontSize: 14,
+                    backgroundColor: "transparent",
+                    width: "fit-content",
+                    height: "fit-content",
+                  },
+                } as ComponentElementProps,
+                ...ownerFields,
+                order_num: 1,
+              },
+            ],
           },
-        ],
-      },
-      {
-        tag: "Checkbox",
-        props: {
-          children: "Option 2",
-          isSelected: false,
-          isDisabled: false,
-          style: {
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-          },
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 2,
-        children: [
           {
-            tag: "Label",
+            tag: "Checkbox",
             props: {
               children: "Option 2",
-              variant: "default",
-              style: {
-                fontSize: 14,
-                backgroundColor: "transparent",
-                width: "fit-content",
-                height: "fit-content",
-              },
+              isSelected: false,
+              isDisabled: false,
             } as ComponentElementProps,
             ...ownerFields,
-            order_num: 1,
+            order_num: 2,
+            children: [
+              {
+                tag: "Label",
+                props: {
+                  children: "Option 2",
+                  variant: "default",
+                  style: {
+                    fontSize: 14,
+                    backgroundColor: "transparent",
+                    width: "fit-content",
+                    height: "fit-content",
+                  },
+                } as ComponentElementProps,
+                ...ownerFields,
+                order_num: 1,
+              },
+            ],
           },
         ],
       },
@@ -294,7 +310,6 @@ export function createRadioGroupDefinition(
     parent: {
       tag: "RadioGroup",
       props: {
-        label: "Radio Group",
         name: "",
         orientation: "vertical",
         value: "",
@@ -308,68 +323,85 @@ export function createRadioGroupDefinition(
     },
     children: [
       {
-        tag: "Radio",
+        tag: "Label",
         props: {
-          children: "Option 1",
-          value: "option1",
-          isDisabled: false,
+          children: "Radio Group",
+          variant: "default",
+          style: {
+            fontSize: 14,
+            backgroundColor: "transparent",
+            width: "fit-content",
+            height: "fit-content",
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
+      {
+        tag: "RadioItems",
+        props: {
           style: {
             display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
+            flexDirection: "column",
+            gap: 12,
           },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
         children: [
           {
-            tag: "Label",
+            tag: "Radio",
             props: {
               children: "Option 1",
-              variant: "default",
-              style: {
-                fontSize: 14,
-                backgroundColor: "transparent",
-                width: "fit-content",
-                height: "fit-content",
-              },
+              value: "option1",
+              isDisabled: false,
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
+            children: [
+              {
+                tag: "Label",
+                props: {
+                  children: "Option 1",
+                  variant: "default",
+                  style: {
+                    fontSize: 14,
+                    backgroundColor: "transparent",
+                    width: "fit-content",
+                    height: "fit-content",
+                  },
+                } as ComponentElementProps,
+                ...ownerFields,
+                order_num: 1,
+              },
+            ],
           },
-        ],
-      },
-      {
-        tag: "Radio",
-        props: {
-          children: "Option 2",
-          value: "option2",
-          isDisabled: false,
-          style: {
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-          },
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 2,
-        children: [
           {
-            tag: "Label",
+            tag: "Radio",
             props: {
               children: "Option 2",
-              variant: "default",
-              style: {
-                fontSize: 14,
-                backgroundColor: "transparent",
-                width: "fit-content",
-                height: "fit-content",
-              },
+              value: "option2",
+              isDisabled: false,
             } as ComponentElementProps,
             ...ownerFields,
-            order_num: 1,
+            order_num: 2,
+            children: [
+              {
+                tag: "Label",
+                props: {
+                  children: "Option 2",
+                  variant: "default",
+                  style: {
+                    fontSize: 14,
+                    backgroundColor: "transparent",
+                    width: "fit-content",
+                    height: "fit-content",
+                  },
+                } as ComponentElementProps,
+                ...ownerFields,
+                order_num: 1,
+              },
+            ],
           },
         ],
       },

@@ -1231,7 +1231,9 @@ export const ElementSprite = memo(function ElementSprite({
     const NOWRAP_PARENTS = new Set([
       "Checkbox",
       "CheckBox",
+      "CheckboxGroup",
       "Radio",
+      "RadioGroup",
       "Switch",
       "Toggle",
     ]);
