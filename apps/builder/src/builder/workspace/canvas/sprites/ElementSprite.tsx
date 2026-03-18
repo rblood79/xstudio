@@ -1115,6 +1115,9 @@ export const ElementSprite = memo(function ElementSprite({
     "SearchField",
     "ProgressBar",
     "Meter",
+    "Switch",
+    "Checkbox",
+    "Radio",
   ]);
   const parentDelegatedSize = useStore((state) => {
     if (!PARENT_SIZE_DELEGATION_TAGS.has(element.tag) || !element.parent_id)

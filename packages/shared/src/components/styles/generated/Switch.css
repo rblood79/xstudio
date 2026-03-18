@@ -1,132 +1,109 @@
 /* ============================================================
  * AUTO-GENERATED from SwitchSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/Switch.spec.ts
- * Archetype: toggle-indicator (G4-pre POC)
+ * Archetype: toggle-indicator
  * ============================================================ */
 
 @layer components {
 
 .react-aria-Switch {
-  --switch-color: var(--fg);
-  --switch-thumb-color: var(--color-white);
+  /* Base styles — archetype: toggle-indicator */
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    box-sizing: border-box;
+    user-select: none;
 
-  &[data-emphasized] {
-    --switch-color: var(--accent);
-    --switch-thumb-color: var(--fg-on-accent);
-  }
-
-  display: flex;
-  position: relative;
-  align-items: center;
-  gap: 10px;
-  font-size: var(--text-md);
+  /* Default variant */
+  background: transparent;
   color: var(--fg);
-  forced-color-adjust: none;
+  border: none;
 
-  .indicator {
-    width: 44px;
-    height: 24px;
-    border-radius: 24px;
-    border: 2px solid var(--border-hover);
-    background: var(--accent-subtle);
-    transition: all 200ms;
+  /* Default size */
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+  gap: 10px;
+}
 
-    &:before {
-      content: "";
-      display: block;
-      width: 18px;
-      height: 100% !important;
-      border-radius: 18px;
-      margin: 0px;
-      background: var(--bg-muted);
-      transition: all 200ms;
-    }
+.react-aria-Switch[data-variant="default"] {
+  background: transparent;
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: transparent;
   }
 
-  &[data-pressed] .indicator {
-    border-color: var(--border-hover);
-    &:before { background: var(--bg-emphasis); }
+  &[data-pressed] {
+    background: transparent;
+  }
+}
+
+.react-aria-Switch[data-variant="emphasized"] {
+  background: transparent;
+  color: var(--fg);
+
+  &[data-hovered] {
+    background: transparent;
   }
 
-  &[data-selected] {
-    .indicator {
-      border-color: var(--switch-color);
-      background: var(--switch-color);
-      &:before {
-        background: var(--switch-thumb-color);
-        transform: translateX(100%);
-      }
-    }
-    &[data-pressed] .indicator {
-      border-color: color-mix(in srgb, var(--switch-color) 75%, black);
-      background: color-mix(in srgb, var(--switch-color) 75%, black);
-    }
-  }
-
-  &[data-focus-visible] .indicator {
-    outline: 2px solid var(--focus-ring);
-    outline-offset: 2px;
-  }
-
-  &[data-disabled] {
-    color: var(--fg-disabled);
-    .indicator {
-      border-color: var(--border-disabled);
-      &:before { background: var(--bg-muted); }
-    }
+  &[data-pressed] {
+    background: transparent;
   }
 }
 
 .react-aria-Switch[data-size="sm"] {
-  font-size: var(--text-sm);
-
-  .indicator {
-    width: 36px;
-    height: 20px;
-    border-radius: 20px;
-
-    &:before {
-      width: 14px;
-      height: 14px;
-      border-radius: 14px;
-      margin: 0px;
-    }
-  }
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-full);
+  gap: 8px;
 }
 
 .react-aria-Switch[data-size="md"] {
-  font-size: var(--text-md);
-
-  .indicator {
-    width: 44px;
-    height: 24px;
-    border-radius: 24px;
-
-    &:before {
-      width: 18px;
-      height: 18px;
-      border-radius: 18px;
-      margin: 0px;
-    }
-  }
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
+  gap: 10px;
 }
 
 .react-aria-Switch[data-size="lg"] {
-  font-size: var(--text-lg);
+  height: auto;
+  padding: 0px 0px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-full);
+  gap: 12px;
+}
 
-  .indicator {
-    width: 52px;
-    height: 28px;
-    border-radius: 28px;
+.react-aria-Switch[data-hovered] {
+}
 
-    &:before {
-      width: 22px;
-      height: 22px;
-      border-radius: 22px;
-      margin: 0px;
-    }
+.react-aria-Switch[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.react-aria-Switch[data-pressed] {
+}
+
+.react-aria-Switch[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .react-aria-Switch {
+    forced-color-adjust: auto;
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-Switch {
+    transition-duration: 0s !important;
+  }
+}
 
 } /* @layer components */

@@ -109,7 +109,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
 
   sizes: {
     sm: {
-      height: 20,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
@@ -117,7 +117,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       gap: 6,
     },
     md: {
-      height: 24,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-md}" as TokenRef,
@@ -125,7 +125,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       gap: 8,
     },
     lg: {
-      height: 28,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-lg}" as TokenRef,

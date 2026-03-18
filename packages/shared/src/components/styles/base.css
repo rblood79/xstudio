@@ -1,5 +1,4 @@
 @layer components {
-
   /* 공통 Input structure — state styles delegated to .inset utility */
   .react-aria-Input,
   .react-aria-TextArea {
@@ -9,6 +8,7 @@
     border-radius: var(--border-radius);
     padding: var(--input-padding, var(--spacing));
     font-size: var(--input-font-size, var(--text-sm));
+    font-family: inherit;
     line-height: var(--input-line-height, var(--text-sm--line-height));
     transition: all 200ms ease;
   }

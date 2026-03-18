@@ -12,6 +12,7 @@
     gap: var(--spacing-sm);
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
+    --label-font-size: var(--text-base);
     color: var(--fg);
     forced-color-adjust: none;
     padding: var(--spacing) 0;
@@ -94,6 +95,8 @@
 
   .react-aria-RadioGroup[data-radio-size="sm"] .react-aria-Radio {
     font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    --label-font-size: var(--text-sm);
 
     &:before {
       width: var(--text-lg);
@@ -108,6 +111,8 @@
 
   .react-aria-RadioGroup[data-radio-size="md"] .react-aria-Radio {
     font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    --label-font-size: var(--text-base);
 
     &:before {
       width: var(--text-xl);
@@ -122,6 +127,8 @@
 
   .react-aria-RadioGroup[data-radio-size="lg"] .react-aria-Radio {
     font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
+    --label-font-size: var(--text-lg);
 
     &:before {
       width: var(--text-2xl);

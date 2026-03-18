@@ -19,6 +19,8 @@
     align-items: center;
     gap: var(--spacing-sm);
     font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    --label-font-size: var(--text-base);
     color: var(--fg);
     white-space: nowrap;
     forced-color-adjust: none;
@@ -31,16 +33,25 @@
     &[data-size="sm"] {
       --cb-font-size: var(--text-sm);
       --cb-box-size: var(--text-lg);
+      --label-font-size: var(--text-sm);
+      font-size: var(--text-sm);
+      line-height: var(--text-sm--line-height);
     }
 
     &[data-size="md"] {
       --cb-font-size: var(--text-base);
       --cb-box-size: var(--text-xl);
+      --label-font-size: var(--text-base);
+      font-size: var(--text-base);
+      line-height: var(--text-base--line-height);
     }
 
     &[data-size="lg"] {
       --cb-font-size: var(--text-lg);
       --cb-box-size: var(--text-2xl);
+      --label-font-size: var(--text-lg);
+      font-size: var(--text-lg);
+      line-height: var(--text-lg--line-height);
     }
 
     &[data-size] {

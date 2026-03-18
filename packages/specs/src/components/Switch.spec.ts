@@ -42,9 +42,9 @@ export const SWITCH_DIMENSIONS: Record<
     thumbOffset: number;
   }
 > = {
-  sm: { trackWidth: 36, trackHeight: 20, thumbSize: 14, thumbOffset: 3 },
-  md: { trackWidth: 44, trackHeight: 24, thumbSize: 18, thumbOffset: 3 },
-  lg: { trackWidth: 52, trackHeight: 28, thumbSize: 22, thumbOffset: 3 },
+  sm: { trackWidth: 32, trackHeight: 18, thumbSize: 14, thumbOffset: 2 },
+  md: { trackWidth: 36, trackHeight: 20, thumbSize: 16, thumbOffset: 2 },
+  lg: { trackWidth: 44, trackHeight: 24, thumbSize: 20, thumbOffset: 2 },
 };
 
 /**
@@ -61,43 +61,41 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
 
   variants: {
     default: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
     },
     emphasized: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.accent-subtle}" as TokenRef,
-      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
     },
   },
 
   sizes: {
     sm: {
-      height: 20,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-sm}" as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 8,
     },
     md: {
-      height: 24,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 10,
     },
     lg: {
-      height: 28,
+      height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: "{typography.text-lg}" as TokenRef,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
       gap: 12,
     },
@@ -128,25 +126,19 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       const defaultTrackColor = isChecked
         ? (SWITCH_SELECTED_TRACK_COLORS[variantName] ??
           SWITCH_SELECTED_TRACK_COLORS.default)
-        : variant.background;
+        : ("{color.accent-subtle}" as TokenRef);
 
       const thumbX = isChecked
         ? switchSize.trackWidth - switchSize.thumbSize - switchSize.thumbOffset
         : switchSize.thumbOffset;
       const trackRadius = switchSize.trackHeight / 2;
 
-      // 사용자 스타일 우선
-      const bgColor = props.style?.backgroundColor ?? defaultTrackColor;
+      // 트랙 색상: indicator 전용 — 사용자 backgroundColor는 라벨 영역이므로 트랙에 적용하지 않음
+      const bgColor = defaultTrackColor;
 
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 2;
-
-      const borderColor = props.style?.borderColor ?? variant.border!;
+      // 트랙 테두리: indicator 전용 — 사용자 border 스타일은 라벨 영역이므로 트랙에 적용하지 않음
+      const borderWidth = 2;
+      const borderColor = "{color.border-hover}" as TokenRef;
 
       const shapes: Shape[] = [];
 

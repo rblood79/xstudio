@@ -33,13 +33,10 @@ export const PROGRESSBAR_FILL_COLORS: Record<string, TokenRef> = {
 };
 
 /** 사이즈별 바 치수 */
-export const PROGRESSBAR_DIMENSIONS: Record<
-  string,
-  { barHeight: number; width: number }
-> = {
-  sm: { barHeight: 4, width: 200 },
-  md: { barHeight: 8, width: 240 },
-  lg: { barHeight: 12, width: 320 },
+export const PROGRESSBAR_DIMENSIONS: Record<string, { barHeight: number }> = {
+  sm: { barHeight: 4 },
+  md: { barHeight: 8 },
+  lg: { barHeight: 12 },
 };
 
 /**
@@ -49,6 +46,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   name: "ProgressBar",
   description: "React Aria 기반 프로그레스바 컴포넌트",
   archetype: "progress",
+  skipCSSGeneration: true,
   element: "div",
 
   defaultVariant: "default",
@@ -109,7 +107,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
         PROGRESSBAR_DIMENSIONS[sizeName] ?? PROGRESSBAR_DIMENSIONS.md;
       const fillColor =
         PROGRESSBAR_FILL_COLORS[variantName] ?? PROGRESSBAR_FILL_COLORS.default;
-      const width = (props.style?.width as number) || barDims.width;
+      const width = (props.style?.width as number) || 240;
       const barHeight = barDims.barHeight;
       const styleGap = props.style?.gap;
       const gap =

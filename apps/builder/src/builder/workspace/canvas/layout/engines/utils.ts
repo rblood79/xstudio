@@ -69,10 +69,10 @@ interface PhantomIndicatorConfig {
 export const PHANTOM_INDICATOR_CONFIGS: Record<string, PhantomIndicatorConfig> =
   {
     switch: {
-      widths: { sm: 36, md: 44, lg: 52 },
-      heights: { sm: 20, md: 24, lg: 28 },
+      widths: { sm: 32, md: 36, lg: 44 },
+      heights: { sm: 18, md: 20, lg: 24 },
       gaps: { sm: 8, md: 10, lg: 12 },
-      rowHeights: { sm: 20, md: 24, lg: 28 },
+      rowHeights: { sm: 18, md: 20, lg: 24 },
     },
     checkbox: {
       widths: { sm: 16, md: 20, lg: 24 },
@@ -2000,25 +2000,55 @@ export function calculateContentHeight(
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
     const s = sizeName as "sm" | "md" | "lg";
+    const indicatorH =
+      heightIndicatorConfig.heights[s] ?? heightIndicatorConfig.heights.md;
+    const specGap =
+      heightIndicatorConfig.gaps[s] ?? heightIndicatorConfig.gaps.md;
+    const hasCSSGapH = style?.gap !== undefined || style?.rowGap !== undefined;
+    const gap = hasCSSGapH
+      ? (parseNumericValue(style?.gap ?? style?.rowGap) ?? specGap)
+      : specGap;
+
+    // Label 자식의 fontSize로 높이 추정 (size delegation 반영)
+    let labelFs = 14;
+    if (childElements && childElements.length > 0) {
+      const labelChild = childElements.find((c) => c.tag === "Label");
+      if (labelChild) {
+        const labelStyle = (labelChild.props?.style || {}) as Record<
+          string,
+          unknown
+        >;
+        const explicitFs = parseNumericValue(labelStyle.fontSize);
+        if (explicitFs != null && explicitFs > 0) {
+          labelFs = explicitFs;
+        } else {
+          // Label에 인라인 fontSize 없으면 spec size delegation에서 결정
+          const specStyle = extractSpecTextStyle("Label", {
+            ...labelChild.props,
+            size: sizeName,
+            children: "x",
+          } as Record<string, unknown>);
+          if (specStyle?.fontSize) labelFs = specStyle.fontSize;
+        }
+      }
+    } else {
+      // 자식 없는 synthetic label: spec size에서 fontSize 추출
+      const specStyle = extractSpecTextStyle(tag, {
+        ...props,
+        children: "x",
+      } as Record<string, unknown>);
+      if (specStyle?.fontSize) labelFs = specStyle.fontSize;
+    }
+    // CSS line-height 토큰: text-xs(12)=16, text-sm(14)=20, text-base(16)=24, text-lg(18)=28
+    const LABEL_LH: Record<number, number> = { 12: 16, 14: 20, 16: 24, 18: 28 };
+    const labelLineH = LABEL_LH[labelFs] ?? Math.round(labelFs * 1.5);
+
     const flexDir = style?.flexDirection as string | undefined;
     const isColumn = flexDir === "column" || flexDir === "column-reverse";
     if (isColumn) {
-      const indicatorH =
-        heightIndicatorConfig.heights[s] ?? heightIndicatorConfig.heights.md;
-      const specGap =
-        heightIndicatorConfig.gaps[s] ?? heightIndicatorConfig.gaps.md;
-      // CSS gap이 설정되면 specGap 대신 CSS gap 사용
-      const hasCSSGapH =
-        style?.gap !== undefined || style?.rowGap !== undefined;
-      const gap = hasCSSGapH
-        ? (parseNumericValue(style?.gap ?? style?.rowGap) ?? specGap)
-        : specGap;
-      const fs = sizeName === "S" ? 14 : sizeName === "L" ? 18 : 16;
-      return indicatorH + gap + Math.round(fs * 1.4);
+      return indicatorH + gap + labelLineH;
     }
-    return (
-      heightIndicatorConfig.rowHeights[s] ?? heightIndicatorConfig.rowHeights.md
-    );
+    return Math.max(indicatorH, labelLineH);
   }
 
   // 4. Panel: spec shapes 기반 컴포넌트 — 자식 요소 없이 자체 렌더링

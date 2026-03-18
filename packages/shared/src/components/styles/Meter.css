@@ -1,5 +1,8 @@
 /**
  * Meter Component Styles
+ *
+ * skipCSSGeneration: true — 내부 slot(.bar, .fill)과 variant별 fill 색상이
+ * 수동 CSS를 필요로 하므로 generated CSS 대신 이 파일에서 전체 관리.
  */
 
 @layer components {
@@ -25,13 +28,15 @@
       "label value"
       "bar bar";
     grid-template-columns: 1fr auto;
+    box-sizing: border-box;
     gap: var(--spacing-xs);
-    width: 240px;
+    width: 100%;
     color: var(--fg);
+    font-size: var(--text-sm);
+    --label-font-size: var(--text-sm);
 
     .react-aria-Label {
       grid-area: label;
-      font-size: inherit;
     }
 
     .value {
@@ -60,8 +65,8 @@
   /* ===== Size Variants ===== */
 
   .react-aria-Meter[data-size="sm"] {
-    width: 200px;
     font-size: var(--text-xs);
+    --label-font-size: var(--text-xs);
 
     .bar {
       height: var(--spacing-xs);
@@ -74,8 +79,8 @@
   }
 
   .react-aria-Meter[data-size="md"] {
-    width: 240px;
     font-size: var(--text-sm);
+    --label-font-size: var(--text-sm);
 
     .bar {
       height: var(--spacing-sm);
@@ -88,8 +93,8 @@
   }
 
   .react-aria-Meter[data-size="lg"] {
-    width: 300px;
     font-size: var(--text-md);
+    --label-font-size: var(--text-md);
 
     .bar {
       height: var(--spacing-md);
@@ -101,9 +106,30 @@
     }
   }
 
+  /* ===== States ===== */
+
+  .react-aria-Meter[data-focus-visible] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .react-aria-Meter[data-disabled] {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* ===== Accessibility ===== */
+
   @media (forced-colors: active) {
     .react-aria-Meter .fill {
       background: Highlight;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .react-aria-Meter {
+      transition-duration: 0s !important;
     }
   }
 }

@@ -214,7 +214,7 @@
       overflow: hidden;
 
       &[data-placeholder] {
-        font-style: italic;
+        font-style: normal;
         color: var(--fg-muted);
         opacity: 0.6;
       }

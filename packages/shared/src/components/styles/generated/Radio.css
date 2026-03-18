@@ -20,7 +20,7 @@
   border: none;
 
   /* Default size */
-  height: 24px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-md);
   border-radius: var(--radius-none);
@@ -80,7 +80,7 @@
 }
 
 .react-aria-Radio[data-size="sm"] {
-  height: 20px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
@@ -88,7 +88,7 @@
 }
 
 .react-aria-Radio[data-size="md"] {
-  height: 24px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-md);
   border-radius: var(--radius-none);
@@ -96,7 +96,7 @@
 }
 
 .react-aria-Radio[data-size="lg"] {
-  height: 28px;
+  height: auto;
   padding: 0px 0px;
   font-size: var(--text-lg);
   border-radius: var(--radius-none);

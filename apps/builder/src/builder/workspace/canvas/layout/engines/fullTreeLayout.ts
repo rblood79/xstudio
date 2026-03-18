@@ -696,6 +696,59 @@ function traversePostOrder(
     }
   }
 
+  // Label → Switch/Checkbox/Radio 부모 size 상속 (DFS 진입 시 fontSize 주입)
+  // CSS는 --label-font-size 변수로 처리하지만, Taffy는 인라인 fontSize가 필요
+  if (rawElement.tag === "Label") {
+    const rawProps = rawElement.props as Record<string, unknown> | undefined;
+    const labelStyle = (rawProps?.style || {}) as Record<string, unknown>;
+    // 인라인 fontSize가 없을 때만 부모 size delegation 적용
+    if (labelStyle.fontSize == null && rawElement.parent_id) {
+      const parent = elementsMap.get(rawElement.parent_id);
+      if (
+        parent &&
+        (parent.tag === "Switch" ||
+          parent.tag === "Checkbox" ||
+          parent.tag === "Radio")
+      ) {
+        const parentProps = parent.props as Record<string, unknown> | undefined;
+        const parentSize = (parentProps?.size as string) ?? "md";
+        // Switch: sm=text-xs(12), md=text-sm(14), lg=text-base(16)
+        // Checkbox/Radio: sm=text-sm(14), md=text-base(16), lg=text-lg(18)
+        const SWITCH_LABEL_STYLE: Record<
+          string,
+          { fontSize: number; lineHeight: string }
+        > = {
+          sm: { fontSize: 12, lineHeight: "16px" },
+          md: { fontSize: 14, lineHeight: "20px" },
+          lg: { fontSize: 16, lineHeight: "24px" },
+        };
+        const TOGGLE_LABEL_STYLE: Record<
+          string,
+          { fontSize: number; lineHeight: string }
+        > = {
+          sm: { fontSize: 14, lineHeight: "20px" },
+          md: { fontSize: 16, lineHeight: "24px" },
+          lg: { fontSize: 18, lineHeight: "28px" },
+        };
+        const sizeMap =
+          parent.tag === "Switch" ? SWITCH_LABEL_STYLE : TOGGLE_LABEL_STYLE;
+        const delegated = sizeMap[parentSize] ?? sizeMap.md;
+        rawElement = {
+          ...rawElement,
+          props: {
+            ...rawElement.props,
+            size: parentSize,
+            style: {
+              ...labelStyle,
+              fontSize: delegated.fontSize,
+              lineHeight: delegated.lineHeight,
+            },
+          },
+        };
+      }
+    }
+  }
+
   // GAP 3: Implicit Style 통합 — 원본 자식 수집 후 applyImplicitStyles로 전처리
   const rawChildIds = childrenMap.get(elementId) ?? [];
   const rawChildren = rawChildIds
@@ -944,6 +997,46 @@ function traversePostOrder(
           return { ...child, props: { ...child.props, ...d } };
         });
       };
+    }
+  }
+
+  // Switch/Checkbox/Radio: 부모 size에 따른 Label fontSize 주입
+  // Label의 calculateContentHeight(TEXT_LEAF_TAGS 경로)는 style.fontSize를 참조하므로
+  // spec size delegation된 fontSize를 인라인으로 주입해야 함
+  if (
+    containerTag === "switch" ||
+    containerTag === "checkbox" ||
+    containerTag === "radio"
+  ) {
+    const parentSize = (rawElement.props as Record<string, unknown> | undefined)
+      ?.size as string | undefined;
+    if (parentSize) {
+      // Label spec sizes: sm=12(text-xs), md=14(text-sm), lg=16(text-md)
+      const LABEL_SIZE_FONTSIZE: Record<string, number> = {
+        sm: 12,
+        md: 14,
+        lg: 16,
+      };
+      const delegatedFs = LABEL_SIZE_FONTSIZE[parentSize];
+      if (delegatedFs) {
+        const prevGetChildElements2 = effectiveGetChildElements;
+        effectiveGetChildElements = (id: string) => {
+          const children = prevGetChildElements2(id);
+          return children.map((child) => {
+            if (child.tag !== "Label") return child;
+            const cs = (child.props?.style || {}) as Record<string, unknown>;
+            if (cs.fontSize != null) return child; // 인라인 fontSize가 이미 있으면 스킵
+            return {
+              ...child,
+              props: {
+                ...child.props,
+                size: parentSize,
+                style: { ...cs, fontSize: delegatedFs },
+              },
+            };
+          });
+        };
+      }
     }
   }
 

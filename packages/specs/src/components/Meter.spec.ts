@@ -37,13 +37,10 @@ export const METER_FILL_COLORS: Record<string, TokenRef> = {
 };
 
 /** 사이즈별 바 치수 */
-export const METER_DIMENSIONS: Record<
-  string,
-  { barHeight: number; width: number }
-> = {
-  sm: { barHeight: 4, width: 200 },
-  md: { barHeight: 8, width: 240 },
-  lg: { barHeight: 12, width: 320 },
+export const METER_DIMENSIONS: Record<string, { barHeight: number }> = {
+  sm: { barHeight: 4 },
+  md: { barHeight: 8 },
+  lg: { barHeight: 12 },
 };
 
 /**
@@ -51,6 +48,7 @@ export const METER_DIMENSIONS: Record<
  */
 export const MeterSpec: ComponentSpec<MeterProps> = {
   name: "Meter",
+  skipCSSGeneration: true,
   description: "React Aria 기반 미터 컴포넌트",
   archetype: "progress",
   element: "div",
@@ -129,7 +127,7 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
       const meterDims = METER_DIMENSIONS[sizeName] ?? METER_DIMENSIONS.md;
       const fillColor =
         METER_FILL_COLORS[variantName] ?? METER_FILL_COLORS.informative;
-      const width = (props.style?.width as number) || meterDims.width;
+      const width = (props.style?.width as number) || 240;
       const barHeight = meterDims.barHeight;
       const styleGap = props.style?.gap;
       const gap =
