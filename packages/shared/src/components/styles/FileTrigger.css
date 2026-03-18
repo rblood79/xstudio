@@ -6,20 +6,22 @@
  * The trigger button styling is handled by the child component.
  */
 
-/* FileTrigger container - no visual styling needed */
-.react-aria-FileTrigger {
-  display: inline-block;
-}
+@layer components {
+  /* FileTrigger container - no visual styling needed */
+  .react-aria-FileTrigger {
+    display: inline-block;
+  }
 
-/* File input is visually hidden but accessible */
-.react-aria-FileTrigger input[type="file"] {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+  /* File input is visually hidden but accessible */
+  .react-aria-FileTrigger input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }

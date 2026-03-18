@@ -1,11 +1,13 @@
-.react-aria-Icon {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  vertical-align: middle;
-  margin: 0;
-  padding: 0;
-  width: fit-content;
-  height: fit-content;
+@layer components {
+  .react-aria-Icon {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    margin: 0;
+    padding: 0;
+    width: fit-content;
+    height: fit-content;
+  }
 }

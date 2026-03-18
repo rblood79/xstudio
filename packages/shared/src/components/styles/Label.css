@@ -6,8 +6,10 @@
  * 이 파일에서 fit-content 크기 보정
  */
 
-.react-aria-Label {
-  width: fit-content;
-  height: fit-content;
-  white-space: nowrap;
+@layer components {
+  .react-aria-Label {
+    width: fit-content;
+    height: fit-content;
+    white-space: nowrap;
+  }
 }
