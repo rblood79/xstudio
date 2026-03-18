@@ -1,19 +1,19 @@
 /* ============================================================
  * AUTO-GENERATED from ProgressBarValueSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/ProgressBarValue.spec.ts
- * Archetype: default
+ * Archetype: progress
  * ============================================================ */
 
 .react-aria-ProgressBarValue {
-  /* Base styles — archetype: default */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  /* Base styles — archetype: progress */
+    display: grid;
+    grid-template-areas: "label value" "track track";
+    grid-template-columns: 1fr auto;
     box-sizing: border-box;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    font-family: var(--font-sans);
+
+    .react-aria-Label { grid-area: label; }
+    [slot="value"] { grid-area: value; }
+    .bar { grid-area: track; }
 
   /* Default variant */
   background: transparent;
@@ -21,7 +21,6 @@
   border: none;
 
   /* Default size */
-  height: 20px;
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
@@ -41,21 +40,18 @@
 }
 
 .react-aria-ProgressBarValue[data-size="sm"] {
-  height: 16px;
   padding: 0px 0px;
   font-size: var(--text-xs);
   border-radius: var(--radius-none);
 }
 
 .react-aria-ProgressBarValue[data-size="md"] {
-  height: 20px;
   padding: 0px 0px;
   font-size: var(--text-sm);
   border-radius: var(--radius-none);
 }
 
 .react-aria-ProgressBarValue[data-size="lg"] {
-  height: 24px;
   padding: 0px 0px;
   font-size: var(--text-md);
   border-radius: var(--radius-none);
@@ -81,5 +77,11 @@
 @media (forced-colors: active) {
   .react-aria-ProgressBarValue {
     forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-ProgressBarValue {
+    transition-duration: 0s !important;
   }
 }

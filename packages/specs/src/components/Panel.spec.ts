@@ -7,17 +7,17 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveStateColors } from '../utils/stateEffect';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveStateColors } from "../utils/stateEffect";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Panel Props
  */
 export interface PanelProps {
-  variant?: 'default' | 'accent' | 'surface';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent" | "surface";
+  size?: "S" | "M" | "L";
   title?: string;
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -27,34 +27,35 @@ export interface PanelProps {
  * Panel Component Spec
  */
 export const PanelSpec: ComponentSpec<PanelProps> = {
-  name: 'Panel',
-  description: 'React Aria 기반 패널 컨테이너 컴포넌트',
-  element: 'div',
+  name: "Panel",
+  description: "React Aria 기반 패널 컨테이너 컴포넌트",
+  element: "div",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.accent-subtle}' as TokenRef,
-      backgroundHover: '{color.accent-subtle}' as TokenRef,
-      backgroundPressed: '{color.accent-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.accent-subtle}" as TokenRef,
+      backgroundHover: "{color.accent-subtle}" as TokenRef,
+      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
     surface: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-1}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
   },
 
@@ -63,24 +64,24 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
       height: 0,
       paddingX: 12,
       paddingY: 8,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
     md: {
       height: 0,
       paddingX: 16,
       paddingY: 12,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 12,
     },
     lg: {
       height: 0,
       paddingX: 24,
       paddingY: 16,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 16,
     },
   },
@@ -89,59 +90,80 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
     hover: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       const title = props.title;
 
       // 사용자 스타일 우선
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 1;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 1;
 
-      const bgColor = props.style?.backgroundColor ?? resolveStateColors(variant, state).background;
-      const borderColor = props.style?.borderColor
-                        ?? (variant.border || ('{color.border}' as TokenRef));
+      const bgColor =
+        props.style?.backgroundColor ??
+        resolveStateColors(variant, state).background;
+      const borderColor =
+        props.style?.borderColor ??
+        (variant.border || ("{color.border}" as TokenRef));
 
-      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
-      const paddingX = stylePx != null
-        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
-        : size.paddingX;
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
 
-      const stylePy = props.style?.paddingTop ?? props.style?.paddingBottom ?? props.style?.padding;
-      const paddingY = stylePy != null
-        ? (typeof stylePy === 'number' ? stylePy : parseFloat(String(stylePy)) || 0)
-        : size.paddingY;
+      const stylePy =
+        props.style?.paddingTop ??
+        props.style?.paddingBottom ??
+        props.style?.padding;
+      const paddingY =
+        stylePy != null
+          ? typeof stylePy === "number"
+            ? stylePy
+            : parseFloat(String(stylePy)) || 0
+          : size.paddingY;
 
       const shapes: Shape[] = [
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
-          width: 'auto',
-          height: 'auto',
+          width: "auto",
+          height: "auto",
           radius: borderRadius as unknown as number,
           fill: bgColor,
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
           color: borderColor,
           radius: borderRadius as unknown as number,
@@ -156,21 +178,26 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
       if (title) {
         const textColor = props.style?.color ?? variant.text;
         const rawFontSize = props.style?.fontSize ?? size.fontSize;
-        const resolvedFs = typeof rawFontSize === 'number'
-          ? rawFontSize
-          : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+        const resolvedFs =
+          typeof rawFontSize === "number"
+            ? rawFontSize
+            : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
               ? resolveToken(rawFontSize as TokenRef)
-              : rawFontSize);
-        const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+              : rawFontSize;
+        const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
         const fwRaw = props.style?.fontWeight;
-        const fw = fwRaw != null
-          ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 600)
-          : 600;
+        const fw =
+          fwRaw != null
+            ? typeof fwRaw === "number"
+              ? fwRaw
+              : parseInt(String(fwRaw), 10) || 600
+            : 600;
         const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-        const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+        const textAlign =
+          (props.style?.textAlign as "left" | "center" | "right") || "left";
 
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: paddingX,
           y: paddingY,
           text: title,
@@ -178,15 +205,15 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
           fontFamily: ff,
           fontWeight: fw,
           fill: textColor,
-          baseline: 'top' as const,
+          baseline: "top" as const,
           align: textAlign,
         });
         // 타이틀 하단 구분선
         shapes.push({
-          type: 'line' as const,
+          type: "line" as const,
           x1: 0,
           y1: paddingY * 2 + fontSize,
-          x2: 'auto' as unknown as number,
+          x2: "auto" as unknown as number,
           y2: paddingY * 2 + fontSize,
           stroke: borderColor,
           strokeWidth: 1,
@@ -195,15 +222,15 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
 
       // 콘텐츠 컨테이너
       shapes.push({
-        type: 'container' as const,
+        type: "container" as const,
         x: 0,
         y: 0,
-        width: 'auto',
-        height: 'auto',
+        width: "auto",
+        height: "auto",
         children: [],
         layout: {
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
           padding: paddingY,
           gap: size.gap,
         },
@@ -215,7 +242,7 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
     react: () => ({}),
 
     pixi: () => ({
-      eventMode: 'static' as const,
+      eventMode: "static" as const,
     }),
   },
 };

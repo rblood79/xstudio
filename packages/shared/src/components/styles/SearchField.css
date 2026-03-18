@@ -261,13 +261,7 @@
   }
 }
 
-/* ===== Generated CSS override (layer 밖 = 동일 우선도) ===== */
-
-.react-aria-SearchField {
-  align-items: flex-start;
-}
-
-/* ===== Size-specific Button/Icon (@sync ComboBox generated CSS) ===== */
+/* ===== Size-specific Button/Icon (@sync ComboBox) ===== */
 
 .react-aria-SearchField[data-size="xs"] .react-aria-Button {
   width: 10px;

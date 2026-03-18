@@ -21,6 +21,7 @@ export const SelectIconSpec: ComponentSpec<SelectIconProps> = {
   name: "SelectIcon",
   description: "Select 드롭다운 쉐브론 아이콘",
   element: "span",
+  archetype: "simple",
 
   defaultVariant: "default",
   defaultSize: "md",

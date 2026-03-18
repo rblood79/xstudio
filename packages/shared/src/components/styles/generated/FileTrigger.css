@@ -1,11 +1,11 @@
 /* ============================================================
  * AUTO-GENERATED from FileTriggerSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/FileTrigger.spec.ts
- * Archetype: default
+ * Archetype: button
  * ============================================================ */
 
 .react-aria-FileTrigger {
-  /* Base styles — archetype: default */
+  /* Base styles — archetype: button */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -51,6 +51,11 @@
     background: color-mix(in srgb, var(--accent) 75%, black);
     border-color: color-mix(in srgb, var(--accent) 75%, black);
   }
+}
+
+.react-aria-FileTrigger[data-icon-only] {
+  padding: 0;
+  aspect-ratio: 1;
 }
 
 .react-aria-FileTrigger[data-size="sm"] {
@@ -101,5 +106,11 @@
 @media (forced-colors: active) {
   .react-aria-FileTrigger {
     forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-FileTrigger {
+    transition-duration: 0s !important;
   }
 }

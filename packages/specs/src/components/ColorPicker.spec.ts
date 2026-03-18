@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * ColorPicker Props
  */
 export interface ColorPickerProps {
-  variant?: 'default' | 'compact' | 'expanded';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "compact" | "expanded";
+  size?: "S" | "M" | "L";
   value?: string;
   hue?: number;
   saturation?: number;
@@ -32,44 +32,45 @@ export interface ColorPickerProps {
  * ColorArea + ColorSlider(hue/alpha) + ColorSwatch 구조
  */
 export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
-  name: 'ColorPicker',
-  description: 'React Aria 기반 색상 선택기 (area + sliders + swatches)',
-  element: 'div',
+  name: "ColorPicker",
+  description: "React Aria 기반 색상 선택기 (area + sliders + swatches)",
+  element: "div",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   overlay: {
     usePortal: true,
-    type: 'popover',
+    type: "popover",
     hasBackdrop: false,
     closeOnBackdropClick: true,
     closeOnEscape: true,
     trapFocus: true,
-    pixiLayer: 'overlay',
+    pixiLayer: "overlay",
   },
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     compact: {
-      background: '{color.layer-2}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-2}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-2}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     expanded: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border-hover}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border-hover}" as TokenRef,
     },
   },
 
@@ -78,24 +79,24 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       height: 0,
       paddingX: 10,
       paddingY: 10,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
     md: {
       height: 0,
       paddingX: 14,
       paddingY: 14,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 10,
     },
     lg: {
       height: 0,
       paddingX: 18,
       paddingY: 18,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.xl}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
       gap: 12,
     },
   },
@@ -105,45 +106,58 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, _state = "default") => {
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
-      const borderColor = props.style?.borderColor ?? variant.border ?? ('{color.border}' as TokenRef);
+      const borderColor =
+        props.style?.borderColor ??
+        variant.border ??
+        ("{color.border}" as TokenRef);
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 1;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 1;
 
       const textColor = props.style?.color ?? variant.text;
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
-      const fw = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
-        : 400;
+      const fw =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 400
+          : 400;
       const ff = (props.style?.fontFamily as string) || fontFamily.mono;
 
-      const areaSize = props.variant === 'compact' ? 120 : 180;
+      const areaSize = props.variant === "compact" ? 120 : 180;
       const sliderHeight = 14;
 
       const containerWidth = areaSize + size.paddingX * 2;
@@ -151,30 +165,30 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       const shapes: Shape[] = [
         // 섀도우
         {
-          type: 'shadow' as const,
-          target: 'bg',
+          type: "shadow" as const,
+          target: "bg",
           offsetX: 0,
           offsetY: 4,
           blur: 12,
           spread: 0,
-          color: 'rgba(0, 0, 0, 0.15)',
+          color: "rgba(0, 0, 0, 0.15)",
           alpha: 0.15,
         },
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width: containerWidth,
-          height: 'auto',
+          height: "auto",
           radius: borderRadius as unknown as number,
           fill: bgColor,
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
           color: borderColor,
           radius: borderRadius as unknown as number,
@@ -186,18 +200,18 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
 
       // Color area (2D gradient)
       shapes.push({
-        type: 'gradient' as const,
+        type: "gradient" as const,
         x: size.paddingX,
         y: size.paddingY,
         width: areaSize,
         height: areaSize,
         radius: 4,
         gradient: {
-          type: 'linear',
+          type: "linear",
           angle: 90,
           stops: [
-            { offset: 0, color: '{color.base}' as TokenRef },
-            { offset: 1, color: '{color.accent}' as TokenRef },
+            { offset: 0, color: "{color.base}" as TokenRef },
+            { offset: 1, color: "{color.accent}" as TokenRef },
           ],
         },
       });
@@ -206,33 +220,33 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       const thumbX = (props.saturation ?? 0.8) * areaSize + size.paddingX;
       const thumbY = (1 - (props.brightness ?? 0.7)) * areaSize + size.paddingY;
       shapes.push({
-        type: 'circle' as const,
+        type: "circle" as const,
         x: thumbX,
         y: thumbY,
         radius: 7,
-        fill: '{color.base}' as TokenRef,
+        fill: "{color.base}" as TokenRef,
       });
 
       // Hue slider
       const sliderY = size.paddingY + areaSize + (size.gap ?? 10);
       shapes.push({
-        type: 'gradient' as const,
+        type: "gradient" as const,
         x: size.paddingX,
         y: sliderY,
         width: areaSize,
         height: sliderHeight,
         radius: 4,
         gradient: {
-          type: 'linear',
+          type: "linear",
           angle: 0,
           stops: [
-            { offset: 0, color: '#FF0000' },
-            { offset: 0.17, color: '#FFFF00' },
-            { offset: 0.33, color: '#00FF00' },
-            { offset: 0.5, color: '#00FFFF' },
-            { offset: 0.67, color: '#0000FF' },
-            { offset: 0.83, color: '#FF00FF' },
-            { offset: 1, color: '#FF0000' },
+            { offset: 0, color: "#FF0000" },
+            { offset: 0.17, color: "#FFFF00" },
+            { offset: 0.33, color: "#00FF00" },
+            { offset: 0.5, color: "#00FFFF" },
+            { offset: 0.67, color: "#0000FF" },
+            { offset: 0.83, color: "#FF00FF" },
+            { offset: 1, color: "#FF0000" },
           ],
         },
       });
@@ -240,26 +254,26 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       // Alpha slider
       const alphaSliderY = sliderY + sliderHeight + (size.gap ?? 10);
       shapes.push({
-        type: 'gradient' as const,
+        type: "gradient" as const,
         x: size.paddingX,
         y: alphaSliderY,
         width: areaSize,
         height: sliderHeight,
         radius: 4,
         gradient: {
-          type: 'linear',
+          type: "linear",
           angle: 0,
           stops: [
-            { offset: 0, color: 'rgba(0, 0, 0, 0)' },
-            { offset: 1, color: '{color.accent}' as TokenRef },
+            { offset: 0, color: "rgba(0, 0, 0, 0)" },
+            { offset: 1, color: "{color.accent}" as TokenRef },
           ],
         },
       });
 
       // Hex value text
-      const hexValue = props.value || '#3B82F6';
+      const hexValue = props.value || "#3B82F6";
       shapes.push({
-        type: 'text' as const,
+        type: "text" as const,
         x: size.paddingX,
         y: alphaSliderY + sliderHeight + (size.gap ?? 10),
         text: hexValue.toUpperCase(),
@@ -267,21 +281,21 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
         fontFamily: ff,
         fontWeight: fw,
         fill: textColor,
-        align: 'left' as const,
-        baseline: 'top' as const,
+        align: "left" as const,
+        baseline: "top" as const,
       });
 
       return shapes;
     },
 
     react: (props) => ({
-      'data-disabled': props.isDisabled || undefined,
-      'aria-label': 'Color picker',
+      "data-disabled": props.isDisabled || undefined,
+      "aria-label": "Color picker",
     }),
 
     pixi: (props) => ({
-      eventMode: props.isDisabled ? ('none' as const) : ('static' as const),
-      cursor: 'pointer',
+      eventMode: props.isDisabled ? ("none" as const) : ("static" as const),
+      cursor: "pointer",
     }),
   },
 };

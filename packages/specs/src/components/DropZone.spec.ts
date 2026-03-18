@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * DropZone Props
  */
 export interface DropZoneProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
   label?: string;
   isDropTarget?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -26,27 +26,28 @@ export interface DropZoneProps {
  * DropZone Component Spec
  */
 export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
-  name: 'DropZone',
-  description: 'React Aria 기반 파일 드롭 존 컴포넌트',
-  element: 'div',
+  name: "DropZone",
+  description: "React Aria 기반 파일 드롭 존 컴포넌트",
+  element: "div",
+  archetype: "simple",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral-subdued}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral-subdued}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.accent-subtle}' as TokenRef,
-      backgroundPressed: '{color.accent-subtle}' as TokenRef,
-      text: '{color.accent}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.accent-subtle}" as TokenRef,
+      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      text: "{color.accent}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -55,8 +56,8 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       height: 80,
       paddingX: 16,
       paddingY: 16,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 24,
       gap: 8,
     },
@@ -64,8 +65,8 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       height: 120,
       paddingX: 24,
       paddingY: 24,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 32,
       gap: 12,
     },
@@ -73,8 +74,8 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
       height: 160,
       paddingX: 32,
       paddingY: 32,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.xl}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
       iconSize: 40,
       gap: 16,
     },
@@ -84,79 +85,99 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
     hover: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
-      const label = props.label || 'Drop files here';
-      const isActive = props.isDropTarget || state === 'hover';
+    shapes: (props, variant, size, state = "default") => {
+      const label = props.label || "Drop files here";
+      const isActive = props.isDropTarget || state === "hover";
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 2;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 2;
 
-      const bgColor = props.style?.backgroundColor
-                    ?? (isActive ? variant.backgroundHover : variant.background);
-      const borderColor = props.style?.borderColor
-                        ?? (isActive
-                            ? ('{color.accent}' as TokenRef)
-                            : variant.border || ('{color.border}' as TokenRef));
+      const bgColor =
+        props.style?.backgroundColor ??
+        (isActive ? variant.backgroundHover : variant.background);
+      const borderColor =
+        props.style?.borderColor ??
+        (isActive
+          ? ("{color.accent}" as TokenRef)
+          : variant.border || ("{color.border}" as TokenRef));
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
-      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
-      const paddingX = stylePx != null
-        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
-        : size.paddingX;
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
 
       // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
-      const fw = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
-        : 400;
+      const fw =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 400
+          : 400;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'center';
-      const textColor = props.style?.color
-                      ?? (isActive ? ('{color.accent}' as TokenRef) : variant.text);
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "center";
+      const textColor =
+        props.style?.color ??
+        (isActive ? ("{color.accent}" as TokenRef) : variant.text);
 
       const shapes: Shape[] = [
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
-          width: 'auto',
-          height: 'auto' as unknown as number,
+          width: "auto",
+          height: "auto" as unknown as number,
           radius: borderRadius as unknown as number,
           fill: bgColor,
         },
         // 점선 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
           color: borderColor,
-          style: 'dashed',
+          style: "dashed",
           radius: borderRadius as unknown as number,
         },
       ];
@@ -167,7 +188,7 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
 
       // 라벨 텍스트
       shapes.push({
-        type: 'text' as const,
+        type: "text" as const,
         x: paddingX,
         y: 0,
         text: label,
@@ -176,20 +197,20 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
         fontWeight: fw,
         fill: textColor,
         align: textAlign,
-        baseline: 'middle' as const,
+        baseline: "middle" as const,
       });
 
       return shapes;
     },
 
     react: (props) => ({
-      role: 'button',
-      'data-drop-target': props.isDropTarget || undefined,
+      role: "button",
+      "data-drop-target": props.isDropTarget || undefined,
     }),
 
     pixi: () => ({
-      eventMode: 'static' as const,
-      cursor: 'pointer',
+      eventMode: "static" as const,
+      cursor: "pointer",
     }),
   },
 };

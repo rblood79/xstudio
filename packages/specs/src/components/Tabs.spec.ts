@@ -36,6 +36,7 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
   name: "Tabs",
   description: "React Aria 기반 탭 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",

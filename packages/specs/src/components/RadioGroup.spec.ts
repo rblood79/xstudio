@@ -37,6 +37,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
   name: "RadioGroup",
   description: "React Aria 기반 라디오 그룹 컨테이너 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "M",

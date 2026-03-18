@@ -7,15 +7,15 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
  * ColorSlider Props
  */
 export interface ColorSliderProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
-  channel?: 'hue' | 'saturation' | 'lightness' | 'brightness' | 'alpha';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
+  channel?: "hue" | "saturation" | "lightness" | "brightness" | "alpha";
   value?: number;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -25,27 +25,28 @@ export interface ColorSliderProps {
  * ColorSlider Component Spec
  */
 export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
-  name: 'ColorSlider',
-  description: 'React Aria 기반 색상 슬라이더 (gradient track + thumb)',
-  element: 'div',
+  name: "ColorSlider",
+  description: "React Aria 기반 색상 슬라이더 (gradient track + thumb)",
+  element: "div",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -54,8 +55,8 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       height: 16,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 0,
     },
@@ -63,8 +64,8 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       height: 20,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 18,
       gap: 0,
     },
@@ -72,8 +73,8 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       height: 24,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 22,
       gap: 0,
     },
@@ -84,95 +85,98 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, _variant, size, _state = 'default') => {
+    shapes: (props, _variant, size, _state = "default") => {
       const width = (props.style?.width as number) || 200;
       const trackHeight = size.height;
       const thumbSize = size.iconSize ?? 18;
       const borderRadius = size.borderRadius;
 
       const value = props.value ?? 0.5;
-      const channel = props.channel ?? 'hue';
+      const channel = props.channel ?? "hue";
 
       // Gradient stops 결정
       let gradientStops: Array<{ offset: number; color: string }>;
-      if (channel === 'hue') {
+      if (channel === "hue") {
         gradientStops = [
-          { offset: 0, color: '#FF0000' },
-          { offset: 0.17, color: '#FFFF00' },
-          { offset: 0.33, color: '#00FF00' },
-          { offset: 0.5, color: '#00FFFF' },
-          { offset: 0.67, color: '#0000FF' },
-          { offset: 0.83, color: '#FF00FF' },
-          { offset: 1, color: '#FF0000' },
+          { offset: 0, color: "#FF0000" },
+          { offset: 0.17, color: "#FFFF00" },
+          { offset: 0.33, color: "#00FF00" },
+          { offset: 0.5, color: "#00FFFF" },
+          { offset: 0.67, color: "#0000FF" },
+          { offset: 0.83, color: "#FF00FF" },
+          { offset: 1, color: "#FF0000" },
         ];
-      } else if (channel === 'saturation') {
+      } else if (channel === "saturation") {
         gradientStops = [
-          { offset: 0, color: '#808080' },
-          { offset: 1, color: '#FF0000' },
+          { offset: 0, color: "#808080" },
+          { offset: 1, color: "#FF0000" },
         ];
-      } else if (channel === 'alpha') {
+      } else if (channel === "alpha") {
         gradientStops = [
-          { offset: 0, color: 'rgba(0,0,0,0)' },
-          { offset: 1, color: '#000000' },
+          { offset: 0, color: "rgba(0,0,0,0)" },
+          { offset: 1, color: "#000000" },
         ];
       } else {
         // lightness / brightness
         gradientStops = [
-          { offset: 0, color: '#000000' },
-          { offset: 1, color: '#FFFFFF' },
+          { offset: 0, color: "#000000" },
+          { offset: 1, color: "#FFFFFF" },
         ];
       }
 
       const shapes: Shape[] = [
         // Gradient track
         {
-          id: 'track',
-          type: 'gradient' as const,
+          id: "track",
+          type: "gradient" as const,
           x: 0,
           y: 0,
           width,
           height: trackHeight,
           radius: borderRadius as unknown as number,
           gradient: {
-            type: 'linear',
+            type: "linear",
             angle: 0,
-            stops: gradientStops.map(s => ({ offset: s.offset, color: s.color })),
+            stops: gradientStops.map((s) => ({
+              offset: s.offset,
+              color: s.color,
+            })),
           },
         },
         // Track 테두리
         {
-          type: 'border' as const,
-          target: 'track',
+          type: "border" as const,
+          target: "track",
           borderWidth: 1,
-          color: '{color.border}' as TokenRef,
+          color: "{color.border}" as TokenRef,
           radius: borderRadius as unknown as number,
         },
         // Thumb (원형)
         {
-          type: 'circle' as const,
+          type: "circle" as const,
           x: thumbSize / 2 + value * (width - thumbSize),
           y: trackHeight / 2,
           radius: thumbSize / 2,
-          fill: '{color.base}' as TokenRef,
+          fill: "{color.base}" as TokenRef,
         },
         // Thumb 테두리
         {
-          type: 'border' as const,
+          type: "border" as const,
           x: value * (width - thumbSize),
           y: (trackHeight - thumbSize) / 2,
           width: thumbSize,
           height: thumbSize,
           borderWidth: 2,
-          color: '{color.border}' as TokenRef,
+          color: "{color.border}" as TokenRef,
           radius: thumbSize / 2,
         },
       ];
@@ -181,17 +185,17 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
     },
 
     react: (props) => ({
-      role: 'slider',
-      'aria-valuemin': 0,
-      'aria-valuemax': 1,
-      'aria-valuenow': props.value ?? 0.5,
-      'data-channel': props.channel || 'hue',
-      'data-disabled': props.isDisabled || undefined,
+      role: "slider",
+      "aria-valuemin": 0,
+      "aria-valuemax": 1,
+      "aria-valuenow": props.value ?? 0.5,
+      "data-channel": props.channel || "hue",
+      "data-disabled": props.isDisabled || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: props.isDisabled ? ('none' as const) : ('static' as const),
-      cursor: props.isDisabled ? 'not-allowed' : 'pointer',
+      eventMode: props.isDisabled ? ("none" as const) : ("static" as const),
+      cursor: props.isDisabled ? "not-allowed" : "pointer",
     }),
   },
 };

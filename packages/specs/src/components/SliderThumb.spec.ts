@@ -40,6 +40,7 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
   name: "SliderThumb",
   description: "슬라이더 드래그 핸들 (원형) 렌더링",
   element: "div",
+  archetype: "slider",
 
   defaultVariant: "default",
   defaultSize: "md",

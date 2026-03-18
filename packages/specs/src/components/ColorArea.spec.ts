@@ -7,14 +7,14 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
  * ColorArea Props
  */
 export interface ColorAreaProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
   hue?: number;
   xValue?: number;
   yValue?: number;
@@ -26,27 +26,28 @@ export interface ColorAreaProps {
  * ColorArea Component Spec
  */
 export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
-  name: 'ColorArea',
-  description: 'React Aria 기반 2D 색상 선택 영역 (saturation/brightness)',
-  element: 'div',
+  name: "ColorArea",
+  description: "React Aria 기반 2D 색상 선택 영역 (saturation/brightness)",
+  element: "div",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -55,8 +56,8 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       height: 120,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 0,
     },
@@ -64,8 +65,8 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       height: 180,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 18,
       gap: 0,
     },
@@ -73,8 +74,8 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       height: 240,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 22,
       gap: 0,
     },
@@ -85,16 +86,16 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, _variant, size, _state = 'default') => {
+    shapes: (props, _variant, size, _state = "default") => {
       const areaSize = size.height; // 정사각형
       const borderRadius = size.borderRadius;
       const thumbSize = size.iconSize ?? 18;
@@ -105,47 +106,47 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       const shapes: Shape[] = [
         // Color area gradient (saturation x brightness)
         {
-          id: 'area',
-          type: 'gradient' as const,
+          id: "area",
+          type: "gradient" as const,
           x: 0,
           y: 0,
           width: areaSize,
           height: areaSize,
           radius: borderRadius as unknown as number,
           gradient: {
-            type: 'linear',
+            type: "linear",
             angle: 90,
             stops: [
-              { offset: 0, color: '#FFFFFF' },
-              { offset: 1, color: '#000000' },
+              { offset: 0, color: "#FFFFFF" },
+              { offset: 1, color: "#000000" },
             ],
           },
         },
         // Area 테두리
         {
-          type: 'border' as const,
-          target: 'area',
+          type: "border" as const,
+          target: "area",
           borderWidth: 1,
-          color: '{color.border}' as TokenRef,
+          color: "{color.border}" as TokenRef,
           radius: borderRadius as unknown as number,
         },
         // Thumb (원형)
         {
-          type: 'circle' as const,
+          type: "circle" as const,
           x: xValue * areaSize,
           y: (1 - yValue) * areaSize,
           radius: thumbSize / 2,
-          fill: '{color.base}' as TokenRef,
+          fill: "{color.base}" as TokenRef,
         },
         // Thumb 테두리
         {
-          type: 'border' as const,
+          type: "border" as const,
           x: xValue * areaSize - thumbSize / 2,
           y: (1 - yValue) * areaSize - thumbSize / 2,
           width: thumbSize,
           height: thumbSize,
           borderWidth: 2,
-          color: '{color.border}' as TokenRef,
+          color: "{color.border}" as TokenRef,
           radius: thumbSize / 2,
         },
       ];
@@ -154,14 +155,14 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
     },
 
     react: (props) => ({
-      role: 'slider',
-      'aria-label': 'Color area',
-      'data-disabled': props.isDisabled || undefined,
+      role: "slider",
+      "aria-label": "Color area",
+      "data-disabled": props.isDisabled || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: props.isDisabled ? ('none' as const) : ('static' as const),
-      cursor: props.isDisabled ? 'not-allowed' : 'crosshair',
+      eventMode: props.isDisabled ? ("none" as const) : ("static" as const),
+      cursor: props.isDisabled ? "not-allowed" : "crosshair",
     }),
   },
 };

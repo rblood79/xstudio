@@ -32,6 +32,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
   name: "Label",
   description: "compound 컴포넌트의 라벨 텍스트 렌더링",
   element: "label",
+  archetype: "simple",
 
   defaultVariant: "default",
   defaultSize: "md",

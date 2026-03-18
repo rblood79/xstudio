@@ -32,6 +32,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
   name: "SearchField",
   description: "React Aria 기반 검색 입력 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",

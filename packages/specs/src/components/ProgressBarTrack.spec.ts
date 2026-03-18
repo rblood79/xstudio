@@ -47,6 +47,7 @@ export const ProgressBarTrackSpec: ComponentSpec<ProgressBarTrackProps> = {
   name: "ProgressBarTrack",
   description: "프로그레스바 트랙 배경 + 채우기 바 렌더링",
   element: "div",
+  archetype: "progress",
 
   defaultVariant: "default",
   defaultSize: "md",

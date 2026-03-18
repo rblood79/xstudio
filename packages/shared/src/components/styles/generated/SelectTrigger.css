@@ -1,11 +1,11 @@
 /* ============================================================
  * AUTO-GENERATED from SelectTriggerSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/SelectTrigger.spec.ts
- * Archetype: default
+ * Archetype: button
  * ============================================================ */
 
 .react-aria-SelectTrigger {
-  /* Base styles — archetype: default */
+  /* Base styles — archetype: button */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -67,6 +67,11 @@
     background: var(--color-error-100);
     border-color: var(--color-error-100);
   }
+}
+
+.react-aria-SelectTrigger[data-icon-only] {
+  padding: 0;
+  aspect-ratio: 1;
 }
 
 .react-aria-SelectTrigger[data-size="xs"] {
@@ -134,5 +139,11 @@
 @media (forced-colors: active) {
   .react-aria-SelectTrigger {
     forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-SelectTrigger {
+    transition-duration: 0s !important;
   }
 }

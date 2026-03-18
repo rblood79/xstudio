@@ -35,6 +35,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
   name: "Card",
   description: "React Aria 기반 카드 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "primary",
   defaultSize: "md",

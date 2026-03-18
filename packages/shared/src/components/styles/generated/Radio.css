@@ -6,73 +6,86 @@
 
 .react-aria-Radio {
   /* Base styles — archetype: toggle-indicator */
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  box-sizing: border-box;
-  user-select: none;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    box-sizing: border-box;
+    user-select: none;
 
   /* Default variant */
   background: var(--bg);
   color: var(--fg);
-  border: none;
+  border: 1px solid var(--border-hover);
 
   /* Default size */
   height: 24px;
   padding: 0px 0px;
   font-size: var(--text-md);
+  border-radius: var(--radius-full);
   gap: 8px;
 }
 
 .react-aria-Radio[data-variant="default"] {
   background: var(--bg);
   color: var(--fg);
+  border-color: var(--border-hover);
 
   &[data-hovered] {
     background: var(--bg-inset);
+    border-color: var(--bg-inset);
   }
 
   &[data-pressed] {
     background: var(--bg-overlay);
+    border-color: var(--bg-overlay);
   }
 }
 
 .react-aria-Radio[data-variant="accent"] {
   background: var(--bg);
   color: var(--fg);
+  border-color: var(--border-hover);
 
   &[data-hovered] {
     background: var(--bg-inset);
+    border-color: var(--bg-inset);
   }
 
   &[data-pressed] {
     background: var(--bg-overlay);
+    border-color: var(--bg-overlay);
   }
 }
 
 .react-aria-Radio[data-variant="neutral"] {
   background: var(--bg);
   color: var(--fg);
+  border-color: var(--border-hover);
 
   &[data-hovered] {
     background: var(--bg-inset);
+    border-color: var(--bg-inset);
   }
 
   &[data-pressed] {
     background: var(--bg-overlay);
+    border-color: var(--bg-overlay);
   }
 }
 
 .react-aria-Radio[data-variant="negative"] {
   background: var(--bg);
   color: var(--fg);
+  border-color: var(--negative);
 
   &[data-hovered] {
     background: var(--color-error-100);
+    border-color: var(--color-error-100);
   }
 
   &[data-pressed] {
     background: var(--color-error-100);
+    border-color: var(--color-error-100);
   }
 }
 
@@ -80,6 +93,7 @@
   height: 20px;
   padding: 0px 0px;
   font-size: var(--text-sm);
+  border-radius: var(--radius-full);
   gap: 6px;
 }
 
@@ -87,6 +101,7 @@
   height: 24px;
   padding: 0px 0px;
   font-size: var(--text-md);
+  border-radius: var(--radius-full);
   gap: 8px;
 }
 
@@ -94,6 +109,7 @@
   height: 28px;
   padding: 0px 0px;
   font-size: var(--text-lg);
+  border-radius: var(--radius-full);
   gap: 10px;
 }
 

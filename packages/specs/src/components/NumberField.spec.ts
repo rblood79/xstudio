@@ -38,6 +38,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
   name: "NumberField",
   description: "React Aria 기반 숫자 입력 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "M",

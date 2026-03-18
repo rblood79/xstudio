@@ -7,14 +7,14 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
  * ColorSwatchPicker Props
  */
 export interface ColorSwatchPickerProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
   value?: string;
   colors?: string[];
   columns?: number;
@@ -26,27 +26,28 @@ export interface ColorSwatchPickerProps {
  * ColorSwatchPicker Component Spec
  */
 export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
-  name: 'ColorSwatchPicker',
-  description: 'React Aria 기반 색상 스와치 그리드 (swatch grid)',
-  element: 'div',
+  name: "ColorSwatchPicker",
+  description: "React Aria 기반 색상 스와치 그리드 (swatch grid)",
+  element: "div",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -55,8 +56,8 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       height: 0,
       paddingX: 4,
       paddingY: 4,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 20,
       gap: 4,
     },
@@ -64,8 +65,8 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       height: 0,
       paddingX: 6,
       paddingY: 6,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 28,
       gap: 6,
     },
@@ -73,8 +74,8 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       height: 0,
       paddingX: 8,
       paddingY: 8,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.xl}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
       iconSize: 36,
       gap: 8,
     },
@@ -85,28 +86,34 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, _state = "default") => {
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const stylePad = props.style?.padding;
-      const padding = stylePad != null
-        ? (typeof stylePad === 'number' ? stylePad : parseFloat(String(stylePad)) || 0)
-        : size.paddingY;
+      const padding =
+        stylePad != null
+          ? typeof stylePad === "number"
+            ? stylePad
+            : parseFloat(String(stylePad)) || 0
+          : size.paddingY;
 
       const swatchSize = size.iconSize ?? 28;
       const columns = props.columns ?? 6;
@@ -114,12 +121,12 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       const shapes: Shape[] = [
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
-          width: 'auto',
-          height: 'auto',
+          width: "auto",
+          height: "auto",
           radius: borderRadius as unknown as number,
           fill: bgColor,
         },
@@ -131,14 +138,14 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
 
       // 그리드 컨테이너
       shapes.push({
-        type: 'container' as const,
+        type: "container" as const,
         x: 0,
         y: 0,
-        width: 'auto',
-        height: 'auto',
+        width: "auto",
+        height: "auto",
         children: [],
         layout: {
-          display: 'grid',
+          display: "grid",
           gridTemplateColumns: `repeat(${columns}, ${swatchSize}px)`,
           gap: size.gap,
           padding,
@@ -149,14 +156,14 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
     },
 
     react: (props) => ({
-      role: 'listbox',
-      'aria-label': 'Color swatches',
-      'data-disabled': props.isDisabled || undefined,
+      role: "listbox",
+      "aria-label": "Color swatches",
+      "data-disabled": props.isDisabled || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: props.isDisabled ? ('none' as const) : ('static' as const),
-      cursor: 'default',
+      eventMode: props.isDisabled ? ("none" as const) : ("static" as const),
+      cursor: "default",
     }),
   },
 };

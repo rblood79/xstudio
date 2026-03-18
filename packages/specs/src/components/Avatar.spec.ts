@@ -30,6 +30,7 @@ export const AvatarSpec: ComponentSpec<AvatarProps> = {
   name: "Avatar",
   description: "사용자 아바타 컴포넌트",
   element: "div",
+  archetype: "simple",
 
   defaultVariant: "default",
   defaultSize: "md",

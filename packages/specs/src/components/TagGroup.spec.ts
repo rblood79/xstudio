@@ -32,6 +32,7 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   name: "TagGroup",
   description: "React Aria 기반 태그 그룹 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "M",

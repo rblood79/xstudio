@@ -1,19 +1,14 @@
 /* ============================================================
  * AUTO-GENERATED from MaskedFrameSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/MaskedFrame.spec.ts
- * Archetype: default
+ * Archetype: simple
  * ============================================================ */
 
 .react-aria-MaskedFrame {
-  /* Base styles — archetype: default */
+  /* Base styles — archetype: simple */
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     box-sizing: border-box;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    font-family: var(--font-sans);
 
   /* Default variant */
   background: var(--bg);

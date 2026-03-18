@@ -1,4 +1,5 @@
 @layer components {
+
   /* 공통 Input structure — state styles delegated to .inset utility */
   .react-aria-Input,
   .react-aria-TextArea {

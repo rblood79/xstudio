@@ -48,6 +48,7 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
   name: "ComboBox",
   description: "React Aria 기반 콤보박스 컴포넌트 (입력 + 드롭다운)",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",

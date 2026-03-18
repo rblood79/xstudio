@@ -24,6 +24,7 @@ export const SelectValueSpec: ComponentSpec<SelectValueProps> = {
   name: "SelectValue",
   description: "선택된 값 또는 placeholder 텍스트 렌더링",
   element: "span",
+  archetype: "simple",
 
   defaultVariant: "default",
   defaultSize: "md",

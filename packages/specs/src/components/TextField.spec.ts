@@ -44,6 +44,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   name: "TextField",
   description: "React Aria 기반 텍스트 입력 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",

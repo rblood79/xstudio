@@ -57,6 +57,15 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
   /** ADR-036: CSS 생성 시 Archetype 템플릿 선택 */
   archetype?: ArchetypeId;
 
+  /**
+   * CSS 자동 생성 건너뛰기
+   *
+   * Container/Composite 컴포넌트는 구조 레이아웃을 수동 CSS가 담당하고,
+   * Spec은 Skia 렌더링(render.shapes)용으로만 사용된다.
+   * true 시 CSSGenerator가 이 Spec의 CSS 파일을 생성하지 않음.
+   */
+  skipCSSGeneration?: boolean;
+
   /** 기본 HTML 태그 (React용) */
   element: keyof HTMLElementTagNameMap | "fragment";
 

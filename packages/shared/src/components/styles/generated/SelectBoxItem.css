@@ -1,11 +1,11 @@
 /* ============================================================
  * AUTO-GENERATED from SelectBoxItemSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/SelectBoxItem.spec.ts
- * Archetype: default
+ * Archetype: button
  * ============================================================ */
 
 .react-aria-SelectBoxItem {
-  /* Base styles — archetype: default */
+  /* Base styles — archetype: button */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -60,6 +60,11 @@
   }
 }
 
+.react-aria-SelectBoxItem[data-icon-only] {
+  padding: 0;
+  aspect-ratio: 1;
+}
+
 .react-aria-SelectBoxItem[data-size="sm"] {
   height: auto;
   padding: 10px 12px;
@@ -104,5 +109,11 @@
 @media (forced-colors: active) {
   .react-aria-SelectBoxItem {
     forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-aria-SelectBoxItem {
+    transition-duration: 0s !important;
   }
 }

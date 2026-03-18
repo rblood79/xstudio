@@ -7,15 +7,15 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
  * MaskedFrame Props
  */
 export interface MaskedFrameProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
-  maskShape?: 'rect' | 'circle' | 'roundRect';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
+  maskShape?: "rect" | "circle" | "roundRect";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -23,27 +23,28 @@ export interface MaskedFrameProps {
  * MaskedFrame Component Spec
  */
 export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
-  name: 'MaskedFrame',
-  description: 'React Aria 기반 마스크 프레임 컴포넌트',
-  element: 'div',
+  name: "MaskedFrame",
+  description: "React Aria 기반 마스크 프레임 컴포넌트",
+  element: "div",
+  archetype: "simple",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.accent-subtle}' as TokenRef,
-      backgroundHover: '{color.accent-subtle}' as TokenRef,
-      backgroundPressed: '{color.accent-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.accent-subtle}" as TokenRef,
+      backgroundHover: "{color.accent-subtle}" as TokenRef,
+      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -52,68 +53,69 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
       height: 80,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
     },
     md: {
       height: 120,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
     },
     lg: {
       height: 200,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.xl}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.xl}" as TokenRef,
     },
   },
 
   states: {
     hover: {},
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, _state = "default") => {
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;
 
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
-      const maskShape = props.maskShape || 'roundRect';
+      const maskShape = props.maskShape || "roundRect";
       // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
-      const width = 'auto' as const;
+      const width = "auto" as const;
       const height = size.height;
 
       const shapes: Shape[] = [];
 
       // 마스크 영역에 따라 다른 Shape 생성
-      if (maskShape === 'circle') {
-        const radius = Math.min(
-          typeof width === 'number' ? width : height,
-          height
-        ) / 2;
+      if (maskShape === "circle") {
+        const radius =
+          Math.min(typeof width === "number" ? width : height, height) / 2;
         shapes.push({
-          id: 'mask',
-          type: 'circle' as const,
+          id: "mask",
+          type: "circle" as const,
           x: radius,
           y: radius,
           radius,
           fill: bgColor,
         });
-      } else if (maskShape === 'rect') {
+      } else if (maskShape === "rect") {
         shapes.push({
-          id: 'mask',
-          type: 'rect' as const,
+          id: "mask",
+          type: "rect" as const,
           x: 0,
           y: 0,
           width,
@@ -123,8 +125,8 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
       } else {
         // roundRect (기본)
         shapes.push({
-          id: 'mask',
-          type: 'roundRect' as const,
+          id: "mask",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width,
@@ -137,16 +139,22 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
       // 테두리
       const borderColor = props.style?.borderColor ?? variant.border;
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 1;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 1;
       if (borderColor) {
         shapes.push({
-          type: 'border' as const,
-          target: 'mask',
+          type: "border" as const,
+          target: "mask",
           borderWidth,
           color: borderColor,
-          radius: maskShape === 'roundRect' ? borderRadius as unknown as number : undefined,
+          radius:
+            maskShape === "roundRect"
+              ? (borderRadius as unknown as number)
+              : undefined,
         });
       }
 
@@ -156,7 +164,7 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
 
       // 콘텐츠 컨테이너 (클리핑 적용)
       shapes.push({
-        type: 'container' as const,
+        type: "container" as const,
         x: 0,
         y: 0,
         width,
@@ -169,11 +177,11 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
     },
 
     react: (props) => ({
-      'data-mask-shape': props.maskShape || 'roundRect',
+      "data-mask-shape": props.maskShape || "roundRect",
     }),
 
     pixi: () => ({
-      eventMode: 'static' as const,
+      eventMode: "static" as const,
     }),
   },
 };

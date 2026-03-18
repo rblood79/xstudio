@@ -39,6 +39,7 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
   name: "Image",
   description: "반응형 이미지 컴포넌트",
   element: "img",
+  archetype: "simple",
 
   defaultVariant: "default",
   defaultSize: "md",

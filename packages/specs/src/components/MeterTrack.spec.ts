@@ -42,6 +42,7 @@ export const MeterTrackSpec: ComponentSpec<MeterTrackProps> = {
   name: "MeterTrack",
   description: "미터 트랙 배경 + 채우기 바 렌더링",
   element: "div",
+  archetype: "progress",
 
   defaultVariant: "informative",
   defaultSize: "md",

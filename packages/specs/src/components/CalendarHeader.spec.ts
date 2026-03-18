@@ -43,6 +43,7 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
   name: "CalendarHeader",
   description: "Calendar 네비게이션 헤더 (이전/다음 + 월/년 텍스트)",
   element: "header",
+  archetype: "calendar",
 
   defaultVariant: "default",
   defaultSize: "md",

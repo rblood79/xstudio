@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * FileTrigger Props
  */
 export interface FileTriggerProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
   children?: string;
   text?: string;
   label?: string;
@@ -30,27 +30,28 @@ export interface FileTriggerProps {
  * FileTrigger Component Spec
  */
 export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
-  name: 'FileTrigger',
-  description: 'React Aria 기반 파일 선택 트리거 컴포넌트',
-  element: 'button',
+  name: "FileTrigger",
+  description: "React Aria 기반 파일 선택 트리거 컴포넌트",
+  element: "button",
+  archetype: "button",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.layer-1}' as TokenRef,
-      backgroundHover: '{color.neutral-subtle}' as TokenRef,
-      backgroundPressed: '{color.neutral-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.neutral-subtle}" as TokenRef,
+      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.accent}' as TokenRef,
-      backgroundHover: '{color.accent-hover}' as TokenRef,
-      backgroundPressed: '{color.accent-pressed}' as TokenRef,
-      text: '{color.on-accent}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.accent}" as TokenRef,
+      backgroundHover: "{color.accent-hover}" as TokenRef,
+      backgroundPressed: "{color.accent-pressed}" as TokenRef,
+      text: "{color.on-accent}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -59,8 +60,8 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       height: 32,
       paddingX: 12,
       paddingY: 4,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 6,
     },
@@ -68,8 +69,8 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       height: 40,
       paddingX: 24,
       paddingY: 8,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 16,
       gap: 8,
     },
@@ -77,8 +78,8 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       height: 48,
       paddingX: 32,
       paddingY: 12,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 20,
       gap: 10,
     },
@@ -87,58 +88,68 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
   states: {
     hover: {},
     pressed: {
-      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)',
+      boxShadow: "inset 0 1px 2px rgba(0,0,0,0.1)",
     },
     disabled: {
       opacity: 0.38,
-      cursor: 'not-allowed',
-      pointerEvents: 'none',
+      cursor: "not-allowed",
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 1;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 1;
 
       // 상태에 따른 배경색 선택 (사용자 스타일 우선)
-      const bgColor = props.style?.backgroundColor
-                    ?? (state === 'hover' ? variant.backgroundHover
-                    : state === 'pressed' ? variant.backgroundPressed
-                    : variant.background);
+      const bgColor =
+        props.style?.backgroundColor ??
+        (state === "hover"
+          ? variant.backgroundHover
+          : state === "pressed"
+            ? variant.backgroundPressed
+            : variant.background);
 
       // 상태에 따른 테두리색 선택 (사용자 스타일 우선)
-      const borderColor = props.style?.borderColor
-                        ?? (variant.border || ('{color.border}' as TokenRef));
+      const borderColor =
+        props.style?.borderColor ??
+        (variant.border || ("{color.border}" as TokenRef));
 
       const shapes: Shape[] = [
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
-          width: 'auto',
-          height: 'auto' as unknown as number,
+          width: "auto",
+          height: "auto" as unknown as number,
           radius: borderRadius as unknown as number,
           fill: bgColor,
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
           color: borderColor,
           radius: borderRadius as unknown as number,
@@ -150,32 +161,43 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
       if (hasChildren) return shapes;
 
       // 텍스트
-      const text = props.children || props.text || props.label || 'Choose file';
+      const text = props.children || props.text || props.label || "Choose file";
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
-      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
-      const paddingX = stylePx != null
-        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
-        : size.paddingX;
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
 
       // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
-      const fw = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
-        : 500;
+      const fw =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 500
+          : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'center';
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "center";
       const textColor = props.style?.color ?? variant.text;
 
       shapes.push({
-        type: 'text' as const,
+        type: "text" as const,
         x: paddingX,
         y: 0,
         text,
@@ -184,20 +206,20 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
         fontWeight: fw,
         fill: textColor,
         align: textAlign,
-        baseline: 'middle' as const,
+        baseline: "middle" as const,
       });
 
       return shapes;
     },
 
     react: (props) => ({
-      'data-loading': undefined,
-      'aria-disabled': props.isDisabled || undefined,
+      "data-loading": undefined,
+      "aria-disabled": props.isDisabled || undefined,
     }),
 
     pixi: (props) => ({
-      eventMode: 'static' as const,
-      cursor: props.isDisabled ? 'not-allowed' : 'pointer',
+      eventMode: "static" as const,
+      cursor: props.isDisabled ? "not-allowed" : "pointer",
     }),
   },
 };

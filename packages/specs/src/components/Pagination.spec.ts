@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Pagination Props
  */
 export interface PaginationProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
   totalPages?: number;
   currentPage?: number;
   style?: Record<string, string | number | undefined>;
@@ -26,27 +26,28 @@ export interface PaginationProps {
  * Pagination Component Spec
  */
 export const PaginationSpec: ComponentSpec<PaginationProps> = {
-  name: 'Pagination',
-  description: 'React Aria 기반 페이지네이션 컴포넌트',
-  element: 'nav',
+  name: "Pagination",
+  description: "React Aria 기반 페이지네이션 컴포넌트",
+  element: "nav",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.accent}' as TokenRef,
-      backgroundHover: '{color.accent-hover}' as TokenRef,
-      backgroundPressed: '{color.accent-pressed}' as TokenRef,
-      text: '{color.on-accent}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.accent}" as TokenRef,
+      backgroundHover: "{color.accent-hover}" as TokenRef,
+      backgroundPressed: "{color.accent-pressed}" as TokenRef,
+      text: "{color.on-accent}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -55,24 +56,24 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
       height: 28,
       paddingX: 6,
       paddingY: 4,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 4,
     },
     md: {
       height: 36,
       paddingX: 10,
       paddingY: 6,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 6,
     },
     lg: {
       height: 44,
       paddingX: 14,
       paddingY: 8,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
   },
@@ -81,52 +82,57 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
     hover: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
+    shapes: (props, variant, size, _state = "default") => {
       const totalPages = props.totalPages || 5;
       const currentPage = props.currentPage || 1;
       const buttonSize = size.height;
 
       // 사용자 스타일 우선
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
       const textColor = props.style?.color ?? variant.text;
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'center';
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "center";
 
       const shapes: Shape[] = [];
 
       // 페이지네이션 컨테이너
       shapes.push({
-        type: 'container' as const,
+        type: "container" as const,
         x: 0,
         y: 0,
-        width: 'auto',
-        height: 'auto',
+        width: "auto",
+        height: "auto",
         children: [],
         layout: {
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
           gap: size.gap,
         },
       });
@@ -137,69 +143,74 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
 
       // 이전 버튼
       shapes.push({
-        type: 'roundRect' as const,
+        type: "roundRect" as const,
         x: 0,
         y: 0,
         width: buttonSize,
         height: buttonSize,
         radius: borderRadius as unknown as number,
-        fill: '{color.layer-2}' as TokenRef,
+        fill: "{color.layer-2}" as TokenRef,
       });
 
       // 페이지 버튼들
       for (let i = 1; i <= Math.min(totalPages, 5); i++) {
         const isActive = i === currentPage;
         shapes.push({
-          type: 'roundRect' as const,
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width: buttonSize,
           height: buttonSize,
           radius: borderRadius as unknown as number,
-          fill: isActive ? bgColor : ('{color.base}' as TokenRef),
+          fill: isActive ? bgColor : ("{color.base}" as TokenRef),
         });
 
         const fwRaw = props.style?.fontWeight;
-        const fw = fwRaw != null
-          ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || (isActive ? 600 : 400))
-          : (isActive ? 600 : 400);
+        const fw =
+          fwRaw != null
+            ? typeof fwRaw === "number"
+              ? fwRaw
+              : parseInt(String(fwRaw), 10) || (isActive ? 600 : 400)
+            : isActive
+              ? 600
+              : 400;
 
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: 0,
           y: 0,
           text: String(i),
           fontSize,
           fontFamily: ff,
           fontWeight: fw,
-          fill: isActive ? textColor : ('{color.neutral}' as TokenRef),
+          fill: isActive ? textColor : ("{color.neutral}" as TokenRef),
           align: textAlign,
-          baseline: 'middle' as const,
+          baseline: "middle" as const,
         });
       }
 
       // 다음 버튼
       shapes.push({
-        type: 'roundRect' as const,
+        type: "roundRect" as const,
         x: 0,
         y: 0,
         width: buttonSize,
         height: buttonSize,
         radius: borderRadius as unknown as number,
-        fill: '{color.layer-2}' as TokenRef,
+        fill: "{color.layer-2}" as TokenRef,
       });
 
       return shapes;
     },
 
     react: () => ({
-      role: 'navigation',
-      'aria-label': 'Pagination',
+      role: "navigation",
+      "aria-label": "Pagination",
     }),
 
     pixi: () => ({
-      eventMode: 'static' as const,
-      cursor: 'pointer',
+      eventMode: "static" as const,
+      cursor: "pointer",
     }),
   },
 };

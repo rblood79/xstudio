@@ -8,16 +8,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Description Props
  */
 export interface DescriptionProps {
-  variant?: 'default';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default";
+  size?: "S" | "M" | "L";
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -26,19 +26,20 @@ export interface DescriptionProps {
  * Description Component Spec
  */
 export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
-  name: 'Description',
-  description: 'compound 컴포넌트의 보조 설명 텍스트 렌더링',
-  element: 'p',
+  name: "Description",
+  description: "compound 컴포넌트의 보조 설명 텍스트 렌더링",
+  element: "p",
+  archetype: "simple",
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.transparent}' as TokenRef,
-      backgroundHover: '{color.transparent}' as TokenRef,
-      backgroundPressed: '{color.transparent}' as TokenRef,
-      text: '{color.neutral-subdued}' as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
+      text: "{color.neutral-subdued}" as TokenRef,
     },
   },
 
@@ -47,24 +48,24 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
       height: 14,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
     md: {
       height: 16,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
     lg: {
       height: 20,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
   },
@@ -78,34 +79,39 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
 
   render: {
     shapes: (props, variant, size) => {
-      const text = props.children ?? '';
+      const text = props.children ?? "";
       if (!text) return [];
 
-      const width = (props.style?.width as number) || 'auto';
+      const width = (props.style?.width as number) || "auto";
 
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 12;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 12;
 
       const fwRaw = props.style?.fontWeight;
-      const fontWeight = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
-        : 400;
+      const fontWeight =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 400
+          : 400;
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
       // on-surface-variant color 우선, style.color로 오버라이드 가능
       const textColor = props.style?.color ?? variant.text;
 
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "left";
 
       const shapes: Shape[] = [
         {
-          type: 'text' as const,
+          type: "text" as const,
           x: 0,
           y: 0,
           text,
@@ -114,8 +120,8 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
           fontWeight,
           fill: textColor,
           align: textAlign,
-          baseline: 'top' as const,
-          maxWidth: typeof width === 'number' ? width : undefined,
+          baseline: "top" as const,
+          maxWidth: typeof width === "number" ? width : undefined,
         },
       ];
 
@@ -125,7 +131,7 @@ export const DescriptionSpec: ComponentSpec<DescriptionProps> = {
     react: () => ({}),
 
     pixi: () => ({
-      eventMode: 'none' as const,
+      eventMode: "none" as const,
     }),
   },
 };

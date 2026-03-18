@@ -46,6 +46,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
   name: "Select",
   description: "React Aria 기반 드롭다운 셀렉트 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",

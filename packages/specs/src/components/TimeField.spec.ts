@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * TimeField Props
  */
 export interface TimeFieldProps {
-  variant?: 'default' | 'accent' | 'negative';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent" | "negative";
+  size?: "S" | "M" | "L";
   value?: string;
   placeholder?: string;
   label?: string;
@@ -30,37 +30,38 @@ export interface TimeFieldProps {
  * TimeField Component Spec
  */
 export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
-  name: 'TimeField',
-  description: 'React Aria 기반 시간 입력 필드 (hour:minute:second 세그먼트)',
-  element: 'div',
+  name: "TimeField",
+  description: "React Aria 기반 시간 입력 필드 (hour:minute:second 세그먼트)",
+  element: "div",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border-hover}' as TokenRef,
-      borderHover: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border-hover}" as TokenRef,
+      borderHover: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
-      borderHover: '{color.accent-hover}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
+      borderHover: "{color.accent-hover}" as TokenRef,
     },
     negative: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.negative}' as TokenRef,
-      borderHover: '{color.negative-hover}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.negative}" as TokenRef,
+      borderHover: "{color.negative-hover}" as TokenRef,
     },
   },
 
@@ -69,24 +70,24 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
       height: 32,
       paddingX: 10,
       paddingY: 4,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       gap: 4,
     },
     md: {
       height: 40,
       paddingX: 14,
       paddingY: 8,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 6,
     },
     lg: {
       height: 48,
       paddingX: 18,
       paddingY: 12,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 8,
     },
   },
@@ -96,68 +97,84 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      cursor: 'not-allowed',
-      pointerEvents: 'none',
+      cursor: "not-allowed",
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (props, variant, size, state = 'default') => {
+    shapes: (props, variant, size, state = "default") => {
       const width = (props.style?.width as number) || 160;
       const height = size.height;
 
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius as unknown as number;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : (size.borderRadius as unknown as number);
 
-      const bgColor = props.style?.backgroundColor
-                    ?? variant.background;
+      const bgColor = props.style?.backgroundColor ?? variant.background;
 
-      const borderColor = props.style?.borderColor
-                        ?? ((state === 'hover' && variant.borderHover)
-                            ? variant.borderHover
-                            : variant.border);
+      const borderColor =
+        props.style?.borderColor ??
+        (state === "hover" && variant.borderHover
+          ? variant.borderHover
+          : variant.border);
 
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 1;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 1;
 
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
 
       const fwRaw = props.style?.fontWeight;
-      const fontWeight = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
-        : 400;
+      const fontWeight =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 400
+          : 400;
 
       const ff = (props.style?.fontFamily as string) || fontFamily.mono;
 
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      const textColor = props.style?.color
-                      ?? variant.text;
+      const textColor = props.style?.color ?? variant.text;
 
-      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
-      const paddingX = stylePx != null
-        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
-        : size.paddingX;
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
 
       const shapes: Shape[] = [
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
           width,
@@ -167,10 +184,10 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
-          color: borderColor ?? '{color.border-hover}' as TokenRef,
+          color: borderColor ?? ("{color.border-hover}" as TokenRef),
           radius: borderRadius,
         },
       ];
@@ -178,12 +195,12 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
       if (hasChildren) return shapes;
 
       // 시간 세그먼트 텍스트 (HH : MM : SS)
-      const value = props.value || '09:30:00';
-      const parts = value.split(':');
-      const displayText = `${parts[0] || 'HH'} : ${parts[1] || 'MM'} : ${parts[2] || 'SS'}`;
+      const value = props.value || "09:30:00";
+      const parts = value.split(":");
+      const displayText = `${parts[0] || "HH"} : ${parts[1] || "MM"} : ${parts[2] || "SS"}`;
 
       shapes.push({
-        type: 'text' as const,
+        type: "text" as const,
         x: paddingX,
         y: 0,
         text: displayText,
@@ -192,21 +209,21 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
         fontWeight,
         fill: textColor,
         align: textAlign,
-        baseline: 'middle' as const,
+        baseline: "middle" as const,
       });
 
       return shapes;
     },
 
     react: (props) => ({
-      'aria-invalid': props.isInvalid || undefined,
-      'data-disabled': props.isDisabled || undefined,
-      role: 'group',
+      "aria-invalid": props.isInvalid || undefined,
+      "data-disabled": props.isDisabled || undefined,
+      role: "group",
     }),
 
     pixi: (props) => ({
-      eventMode: props.isDisabled ? ('none' as const) : ('static' as const),
-      cursor: props.isDisabled ? 'not-allowed' : 'text',
+      eventMode: props.isDisabled ? ("none" as const) : ("static" as const),
+      cursor: props.isDisabled ? "not-allowed" : "text",
     }),
   },
 };

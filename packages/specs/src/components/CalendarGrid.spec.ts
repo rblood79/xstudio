@@ -49,6 +49,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
   name: "CalendarGrid",
   description: "Calendar 요일 헤더 + 날짜 셀 그리드",
   element: "table",
+  archetype: "calendar",
 
   defaultVariant: "default",
   defaultSize: "md",

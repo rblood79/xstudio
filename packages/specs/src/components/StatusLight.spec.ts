@@ -52,6 +52,7 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
   name: "StatusLight",
   description: "상태 표시 라이트 컴포넌트",
   element: "div",
+  archetype: "simple",
 
   defaultVariant: "neutral",
   defaultSize: "md",

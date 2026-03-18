@@ -26,6 +26,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
   name: "Toolbar",
   description: "React Aria 기반 툴바 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "M",

@@ -29,6 +29,7 @@ export const ProgressBarValueSpec: ComponentSpec<ProgressBarValueProps> = {
   name: "ProgressBarValue",
   description: "프로그레스바 현재 값 텍스트 렌더링",
   element: "output",
+  archetype: "progress",
 
   defaultVariant: "default",
   defaultSize: "md",

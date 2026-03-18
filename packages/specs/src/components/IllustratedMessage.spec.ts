@@ -39,6 +39,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
   name: "IllustratedMessage",
   description: "빈 상태 표시 컴포넌트 (일러스트 + Heading + Description)",
   element: "div",
+  archetype: "alert",
 
   defaultVariant: "default",
   defaultSize: "md",

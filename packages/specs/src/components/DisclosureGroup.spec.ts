@@ -7,15 +7,15 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { resolveStateColors } from '../utils/stateEffect';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { resolveStateColors } from "../utils/stateEffect";
 
 /**
  * DisclosureGroup Props
  */
 export interface DisclosureGroupProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
   allowsMultipleExpanded?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -24,27 +24,28 @@ export interface DisclosureGroupProps {
  * DisclosureGroup Component Spec
  */
 export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
-  name: 'DisclosureGroup',
-  description: 'React Aria 기반 디스클로저 그룹 컴포넌트',
-  element: 'div',
+  name: "DisclosureGroup",
+  description: "React Aria 기반 디스클로저 그룹 컴포넌트",
+  element: "div",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.accent}" as TokenRef,
     },
   },
 
@@ -53,24 +54,24 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 0,
     },
     md: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 0,
     },
     lg: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 0,
     },
   },
@@ -78,37 +79,37 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
   states: {
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (_props, variant, size, state = 'default') => {
+    shapes: (_props, variant, size, state = "default") => {
       const borderRadius = size.borderRadius;
 
       const hasChildren = !!(_props as Record<string, unknown>)._hasChildren;
       const shapes: Shape[] = [
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
-          width: 'auto',
-          height: 'auto',
+          width: "auto",
+          height: "auto",
           radius: borderRadius as unknown as number,
           fill: resolveStateColors(variant, state).background,
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth: 1,
-          color: variant.border || ('{color.border}' as TokenRef),
+          color: variant.border || ("{color.border}" as TokenRef),
           radius: borderRadius as unknown as number,
         },
       ];
@@ -116,15 +117,15 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
 
       // 디스클로저 아이템 컨테이너 (standalone 전용)
       shapes.push({
-        type: 'container' as const,
+        type: "container" as const,
         x: 0,
         y: 0,
-        width: 'auto',
-        height: 'auto',
+        width: "auto",
+        height: "auto",
         children: [],
         layout: {
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
         },
       });
 
@@ -132,11 +133,11 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
     },
 
     react: () => ({
-      role: 'group',
+      role: "group",
     }),
 
     pixi: () => ({
-      eventMode: 'static' as const,
+      eventMode: "static" as const,
     }),
   },
 };

@@ -7,18 +7,18 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveStateColors } from '../utils/stateEffect';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveStateColors } from "../utils/stateEffect";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Tree Props
  */
 export interface TreeProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
-  selectionMode?: 'none' | 'single' | 'multiple';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
+  selectionMode?: "none" | "single" | "multiple";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -26,27 +26,28 @@ export interface TreeProps {
  * Tree Component Spec
  */
 export const TreeSpec: ComponentSpec<TreeProps> = {
-  name: 'Tree',
-  description: 'React Aria 기반 트리 컴포넌트',
-  element: 'div',
+  name: "Tree",
+  description: "React Aria 기반 트리 컴포넌트",
+  element: "div",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-1}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.accent-subtle}' as TokenRef,
-      backgroundPressed: '{color.accent-subtle}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.accent-subtle}" as TokenRef,
+      backgroundPressed: "{color.accent-subtle}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
   },
 
@@ -55,8 +56,8 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
       height: 28,
       paddingX: 8,
       paddingY: 4,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.sm}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
       gap: 2,
     },
@@ -64,8 +65,8 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
       height: 36,
       paddingX: 12,
       paddingY: 6,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 16,
       gap: 4,
     },
@@ -73,8 +74,8 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
       height: 44,
       paddingX: 16,
       paddingY: 8,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       iconSize: 20,
       gap: 6,
     },
@@ -85,16 +86,16 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
     pressed: {},
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     focusVisible: {
-      outline: '2px solid var(--accent)',
-      outlineOffset: '2px',
+      outline: "2px solid var(--accent)",
+      outlineOffset: "2px",
     },
   },
 
   render: {
-    shapes: (_props, variant, size, state = 'default') => {
+    shapes: (_props, variant, size, state = "default") => {
       const borderRadius = size.borderRadius;
 
       const ff = fontFamily.sans;
@@ -103,43 +104,44 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
 
       // Phase C: 기본 트리 아이템 (3레벨 중첩)
       const treeItems = [
-        { label: 'Root', level: 0, expanded: true },
-        { label: 'Documents', level: 1, expanded: true },
-        { label: 'file.txt', level: 2, expanded: false },
-        { label: 'readme.md', level: 2, expanded: false },
-        { label: 'Images', level: 1, expanded: false },
+        { label: "Root", level: 0, expanded: true },
+        { label: "Documents", level: 1, expanded: true },
+        { label: "file.txt", level: 2, expanded: false },
+        { label: "readme.md", level: 2, expanded: false },
+        { label: "Images", level: 1, expanded: false },
       ];
 
-      const paddingY = size.paddingY as unknown as number || 8;
+      const paddingY = (size.paddingY as unknown as number) || 8;
 
       const rawFontSize = size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 14;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
 
       const totalHeight = paddingY * 2 + treeItems.length * itemHeight;
 
       const shapes: Shape[] = [
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
-          width: 'auto',
+          width: "auto",
           height: totalHeight,
           radius: borderRadius as unknown as number,
           fill: resolveStateColors(variant, state).background,
         },
         // 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth: 1,
-          color: variant.border || ('{color.border}' as TokenRef),
+          color: variant.border || ("{color.border}" as TokenRef),
           radius: borderRadius as unknown as number,
         },
       ];
@@ -152,8 +154,8 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
         // expand/collapse 아이콘 (자식이 있는 경우)
         if (item.level < 2) {
           shapes.push({
-            type: 'icon_font' as const,
-            iconName: item.expanded ? 'chevron-down' : 'chevron-right',
+            type: "icon_font" as const,
+            iconName: item.expanded ? "chevron-down" : "chevron-right",
             x: x - 4,
             y: y + itemHeight / 2,
             fontSize: 14,
@@ -164,7 +166,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
 
         // 아이템 텍스트
         shapes.push({
-          type: 'text' as const,
+          type: "text" as const,
           x: x + 12,
           y: y + itemHeight / 2,
           text: item.label,
@@ -172,8 +174,8 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
           fontFamily: ff,
           fontWeight: item.level === 0 ? 600 : 400,
           fill: variant.text,
-          align: 'left' as const,
-          baseline: 'middle' as const,
+          align: "left" as const,
+          baseline: "middle" as const,
         });
 
         y += itemHeight;
@@ -183,12 +185,12 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
     },
 
     react: () => ({
-      role: 'tree',
+      role: "tree",
     }),
 
     pixi: () => ({
-      eventMode: 'static' as const,
-      cursor: 'default',
+      eventMode: "static" as const,
+      cursor: "default",
     }),
   },
 };

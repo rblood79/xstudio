@@ -32,6 +32,7 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
   name: "ToggleButtonGroup",
   description: "React Aria 기반 토글 버튼 그룹 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",

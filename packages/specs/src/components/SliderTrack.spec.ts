@@ -40,6 +40,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
   name: "SliderTrack",
   description: "슬라이더 트랙 배경 + 채우기 바 렌더링",
   element: "div",
+  archetype: "slider",
 
   defaultVariant: "default",
   defaultSize: "md",

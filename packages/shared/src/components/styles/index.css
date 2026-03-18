@@ -3,9 +3,10 @@
    ============================================
 
    ADR-036: Spec-First Single Source
-   - generated/ CSS: Spec에서 자동 생성 (pnpm build:specs)
-   - 수동 CSS: Foundation + 빌더 전용 + Tier 3 (Table/GridList/Tree)
-   - 롤백: generated/ 경로를 수동 CSS 경로로 되돌리면 즉시 복원
+   - generated/ CSS: Spec에서 자동 생성 (pnpm build:specs) — Leaf 컴포넌트 전용
+   - 수동 CSS: Container/Composite 구조 + Foundation + 빌더 전용
+   - Container/Composite는 skipCSSGeneration → 수동 CSS가 구조 담당
+   - Leaf 컴포넌트는 Spec → CSS 자동 생성 (시각 토큰 정합성)
 
    Import Order Strategy:
    1. Foundation (theme, base, utilities)
@@ -30,7 +31,7 @@
 @import "./collections.css"; /* depends on base.css */
 
 /* ============================================
-   CORE COMPONENTS — ADR-036 Spec → CSS 자동 생성
+   CORE COMPONENTS — Leaf: Spec 자동 생성 / Container: 수동
    ============================================ */
 
 /* Standalone Components (theme.css only) */
@@ -50,20 +51,20 @@
 @import "./generated/ToggleButton.css";
 
 /* Standalone Components (base.css only) */
-@import "./generated/Card.css";
+@import "./Card.css"; /* Container — skipCSSGeneration, 수동 CSS */
 @import "./Content.css"; /* 구조 유틸리티 — Spec 없음 */
 @import "./Field.css"; /* 구조 유틸리티 — Spec 없음 */
-@import "./generated/Group.css";
+@import "./Group.css"; /* Container — skipCSSGeneration, 수동 CSS */
 
 /* Standalone Components (no imports) */
 @import "./generated/Icon.css";
 @import "./ChatContainer.css"; /* 빌더 전용 */
 @import "./ChatInput.css"; /* 빌더 전용 */
 @import "./ChatMessage.css"; /* 빌더 전용 */
-@import "./generated/ColorSlider.css";
-@import "./generated/ColorWheel.css";
-@import "./generated/Pagination.css";
-@import "./generated/Panel.css";
+@import "./ColorSlider.css"; /* Container — skipCSSGeneration, 수동 CSS */
+@import "./ColorWheel.css"; /* Container — skipCSSGeneration, 수동 CSS */
+@import "./Pagination.css"; /* Container — skipCSSGeneration, 수동 CSS */
+@import "./Panel.css"; /* Container — skipCSSGeneration, 수동 CSS */
 @import "./generated/Separator.css";
 @import "./SortIcon.css"; /* Table 부속 — 수동 유지 */
 
@@ -75,40 +76,40 @@
 @import "./generated/Radio.css";
 
 /* ============================================
-   COMPOSED COMPONENTS — ADR-036 자동 생성
+   COMPOSED COMPONENTS — Container: 수동 CSS 주도
    ============================================ */
 
 /* Color Components */
 @import "./generated/ColorSwatch.css";
-@import "./generated/ColorArea.css";
+@import "./ColorArea.css"; /* Container — skipCSSGeneration, 수동 CSS */
 
 /* Calendar Components */
 @import "./generated/Calendar.css";
 @import "./RangeCalendar.css"; /* generated 없음 — 수동 유지 */
 
-/* Group Components */
-@import "./generated/CheckboxGroup.css";
-@import "./generated/RadioGroup.css";
-@import "./generated/TagGroup.css";
-@import "./generated/ToggleButtonGroup.css";
-@import "./generated/DisclosureGroup.css";
+/* Group Components — skipCSSGeneration, 수동 CSS */
+@import "./CheckboxGroup.css";
+@import "./RadioGroup.css";
+@import "./TagGroup.css";
+@import "./ToggleButtonGroup.css";
+@import "./DisclosureGroup.css";
 
-/* Simple Compositions */
-@import "./generated/Disclosure.css";
-@import "./generated/Form.css";
+/* Simple Compositions — skipCSSGeneration, 수동 CSS */
+@import "./Disclosure.css";
+@import "./Form.css";
 @import "./generated/InlineAlert.css";
 @import "./generated/Tooltip.css";
 
 /* ============================================
-   COMPLEX COMPONENTS — ADR-036 자동 생성
+   COMPLEX COMPONENTS — Composite: 수동 CSS 주도
    ============================================ */
 
-/* Text Input Components */
-@import "./generated/TextField.css";
-@import "./generated/NumberField.css";
-@import "./generated/SearchField.css";
-@import "./generated/DateField.css";
-@import "./generated/TimeField.css";
+/* Text Input Components — skipCSSGeneration, 수동 CSS */
+@import "./TextField.css";
+@import "./NumberField.css";
+@import "./SearchField.css";
+@import "./DateField.css";
+@import "./TimeField.css";
 
 /* Collection Components */
 @import "./generated/ListBox.css";
@@ -119,27 +120,27 @@
 @import "./generated/Dialog.css";
 @import "./generated/Popover.css";
 
-/* Advanced Color Components */
-@import "./generated/ColorField.css";
-@import "./generated/ColorSwatchPicker.css";
+/* Advanced Color Components — skipCSSGeneration, 수동 CSS */
+@import "./ColorField.css";
+@import "./ColorSwatchPicker.css";
 
 /* Menu Components */
 @import "./generated/Menu.css";
 @import "./Autocomplete.css"; /* generated 없음 — 수동 유지 */
 
-/* Selection Components */
-@import "./generated/Select.css";
-@import "./generated/ComboBox.css";
+/* Selection Components — skipCSSGeneration, 수동 CSS */
+@import "./Select.css";
+@import "./ComboBox.css";
 
-/* Complex Pickers */
-@import "./generated/ColorPicker.css";
-@import "./generated/DatePicker.css";
-@import "./generated/DateRangePicker.css";
+/* Complex Pickers — skipCSSGeneration, 수동 CSS */
+@import "./ColorPicker.css";
+@import "./DatePicker.css";
+@import "./DateRangePicker.css";
 
 /* Navigation & Layout */
-@import "./generated/Slot.css";
-@import "./generated/Tabs.css";
-@import "./generated/Toolbar.css";
+@import "./Slot.css"; /* Container — skipCSSGeneration, 수동 CSS */
+@import "./Tabs.css"; /* Composite — skipCSSGeneration, 수동 CSS */
+@import "./Toolbar.css"; /* Container — skipCSSGeneration, 수동 CSS */
 @import "./Tree.css"; /* Tier 3 — 수동 유지 (재귀 nesting, :has() 선택자) */
 
 /* Data Display */

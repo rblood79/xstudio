@@ -39,6 +39,7 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
   name: "TextArea",
   description: "React Aria 기반 멀티라인 텍스트 입력 컴포넌트",
   element: "div",
+  archetype: "input-base",
 
   defaultVariant: "default",
   defaultSize: "M",

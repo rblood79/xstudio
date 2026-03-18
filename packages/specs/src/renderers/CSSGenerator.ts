@@ -100,7 +100,10 @@ const DEFAULT_BASE_STYLES = [
 /**
  * ComponentSpec에서 CSS 파일 내용 생성
  */
-export function generateCSS<Props>(spec: ComponentSpec<Props>): string {
+export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
+  // Container/Composite 컴포넌트: 수동 CSS가 구조 담당, Spec은 Skia용
+  if (spec.skipCSSGeneration) return null;
+
   const archetype = spec.archetype;
 
   // G4-pre: toggle-indicator archetype 전용 생성
@@ -879,6 +882,10 @@ export async function generateAllCSS(
 
   for (const spec of specs) {
     const css = generateCSS(spec);
+    if (css === null) {
+      console.log(`  ⏭ Skipped: ${spec.name} (skipCSSGeneration)`);
+      continue;
+    }
     const filePath = path.join(outputDir, `${spec.name}.css`);
     await fs.writeFile(filePath, css, "utf-8");
     console.log(`Generated: ${filePath}`);

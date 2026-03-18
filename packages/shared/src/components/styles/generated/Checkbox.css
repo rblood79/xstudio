@@ -6,16 +6,16 @@
 
 .react-aria-Checkbox {
   /* Base styles — archetype: toggle-indicator */
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  box-sizing: border-box;
-  user-select: none;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    box-sizing: border-box;
+    user-select: none;
 
   /* Default variant */
   background: var(--bg);
   color: var(--fg);
-  border: none;
+  border: 1px solid var(--border);
 
   /* Default size */
   height: 24px;
@@ -28,26 +28,32 @@
 .react-aria-Checkbox[data-variant="default"] {
   background: var(--bg);
   color: var(--fg);
+  border-color: var(--border);
 
   &[data-hovered] {
     background: var(--bg-inset);
+    border-color: var(--bg-inset);
   }
 
   &[data-pressed] {
     background: var(--bg-overlay);
+    border-color: var(--bg-overlay);
   }
 }
 
 .react-aria-Checkbox[data-variant="emphasized"] {
   background: var(--bg);
   color: var(--fg);
+  border-color: var(--border);
 
   &[data-hovered] {
     background: var(--accent-subtle);
+    border-color: var(--accent-subtle);
   }
 
   &[data-pressed] {
     background: var(--accent-subtle);
+    border-color: var(--accent-subtle);
   }
 }
 

@@ -21,6 +21,7 @@ export const SelectTriggerSpec: ComponentSpec<SelectTriggerProps> = {
   name: "SelectTrigger",
   description: "Select 트리거 버튼 영역 (배경 + 보더)",
   element: "button",
+  archetype: "button",
 
   defaultVariant: "default",
   defaultSize: "M",

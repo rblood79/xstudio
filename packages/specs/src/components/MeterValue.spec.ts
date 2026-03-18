@@ -28,6 +28,7 @@ export const MeterValueSpec: ComponentSpec<MeterValueProps> = {
   name: "MeterValue",
   description: "미터 현재 값 텍스트 렌더링",
   element: "output",
+  archetype: "progress",
 
   defaultVariant: "informative",
   defaultSize: "md",

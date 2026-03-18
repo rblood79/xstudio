@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
-import { fontFamily } from '../primitives/typography';
-import { resolveToken } from '../renderers/utils/tokenResolver';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { fontFamily } from "../primitives/typography";
+import { resolveToken } from "../renderers/utils/tokenResolver";
 
 /**
  * Slot Props
  */
 export interface SlotProps {
-  variant?: 'default';
-  size?: 'S' | 'M' | 'L';
+  variant?: "default";
+  size?: "S" | "M" | "L";
   label?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -25,20 +25,21 @@ export interface SlotProps {
  * Slot Component Spec
  */
 export const SlotSpec: ComponentSpec<SlotProps> = {
-  name: 'Slot',
-  description: '플레이스홀더 슬롯 컨테이너 컴포넌트',
-  element: 'div',
+  name: "Slot",
+  description: "플레이스홀더 슬롯 컨테이너 컴포넌트",
+  element: "div",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.layer-2}' as TokenRef,
-      backgroundPressed: '{color.layer-2}' as TokenRef,
-      text: '{color.neutral-subdued}' as TokenRef,
-      border: '{color.border}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-2}" as TokenRef,
+      text: "{color.neutral-subdued}" as TokenRef,
+      border: "{color.border}" as TokenRef,
     },
   },
 
@@ -47,24 +48,24 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
       height: 40,
       paddingX: 8,
       paddingY: 8,
-      fontSize: '{typography.text-xs}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 4,
     },
     md: {
       height: 60,
       paddingX: 12,
       paddingY: 12,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.md}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
     lg: {
       height: 80,
       paddingX: 16,
       paddingY: 16,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.lg}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
       gap: 12,
     },
   },
@@ -72,66 +73,84 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
   states: {},
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
-      const label = props.label || 'Slot';
+    shapes: (props, variant, size, _state = "default") => {
+      const label = props.label || "Slot";
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;
-      const borderRadius = styleBr != null
-        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
-        : size.borderRadius;
+      const borderRadius =
+        styleBr != null
+          ? typeof styleBr === "number"
+            ? styleBr
+            : parseFloat(String(styleBr)) || 0
+          : size.borderRadius;
 
       const styleBw = props.style?.borderWidth;
-      const borderWidth = styleBw != null
-        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
-        : 1;
+      const borderWidth =
+        styleBw != null
+          ? typeof styleBw === "number"
+            ? styleBw
+            : parseFloat(String(styleBw)) || 0
+          : 1;
 
       const bgColor = props.style?.backgroundColor ?? variant.background;
-      const borderColor = props.style?.borderColor
-                        ?? (variant.border || ('{color.border}' as TokenRef));
+      const borderColor =
+        props.style?.borderColor ??
+        (variant.border || ("{color.border}" as TokenRef));
 
       // 사용자 스타일 padding 우선, 없으면 spec 기본값
-      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
-      const paddingX = stylePx != null
-        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
-        : size.paddingX;
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
 
       // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
-      const resolvedFs = typeof rawFontSize === 'number'
-        ? rawFontSize
-        : (typeof rawFontSize === 'string' && rawFontSize.startsWith('{')
+      const resolvedFs =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize);
-      const fontSize = typeof resolvedFs === 'number' ? resolvedFs : 16;
+            : rawFontSize;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
       const fwRaw = props.style?.fontWeight;
-      const fw = fwRaw != null
-        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
-        : 400;
+      const fw =
+        fwRaw != null
+          ? typeof fwRaw === "number"
+            ? fwRaw
+            : parseInt(String(fwRaw), 10) || 400
+          : 400;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'center';
+      const textAlign =
+        (props.style?.textAlign as "left" | "center" | "right") || "center";
       const textColor = props.style?.color ?? variant.text;
 
       const shapes: Shape[] = [
         // 배경
         {
-          id: 'bg',
-          type: 'roundRect' as const,
+          id: "bg",
+          type: "roundRect" as const,
           x: 0,
           y: 0,
-          width: 'auto',
-          height: 'auto' as unknown as number,
+          width: "auto",
+          height: "auto" as unknown as number,
           radius: borderRadius as unknown as number,
           fill: bgColor,
           fillAlpha: 0.5,
         },
         // 점선 테두리
         {
-          type: 'border' as const,
-          target: 'bg',
+          type: "border" as const,
+          target: "bg",
           borderWidth,
           color: borderColor,
-          style: 'dashed',
+          style: "dashed",
           radius: borderRadius as unknown as number,
         },
       ];
@@ -142,7 +161,7 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
 
       // 플레이스홀더 텍스트
       shapes.push({
-        type: 'text' as const,
+        type: "text" as const,
         x: paddingX,
         y: 0,
         text: label,
@@ -151,7 +170,7 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
         fontWeight: fw,
         fill: textColor,
         align: textAlign,
-        baseline: 'middle' as const,
+        baseline: "middle" as const,
       });
 
       return shapes;
@@ -160,7 +179,7 @@ export const SlotSpec: ComponentSpec<SlotProps> = {
     react: () => ({}),
 
     pixi: () => ({
-      eventMode: 'passive' as const,
+      eventMode: "passive" as const,
     }),
   },
 };

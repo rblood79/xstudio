@@ -34,6 +34,7 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
   name: "CheckboxGroup",
   description: "React Aria 기반 체크박스 그룹 컨테이너 컴포넌트",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "M",

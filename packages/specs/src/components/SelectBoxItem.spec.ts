@@ -30,6 +30,7 @@ export const SelectBoxItemSpec: ComponentSpec<SelectBoxItemProps> = {
   name: "SelectBoxItem",
   description: "카드형 선택 아이템 (라벨 + 설명)",
   element: "div",
+  archetype: "button",
 
   defaultVariant: "default",
   defaultSize: "md",

@@ -33,6 +33,7 @@ export const InputSpec: ComponentSpec<InputProps> = {
   name: "Input",
   description: "React Aria 기반 기본 입력 컴포넌트",
   element: "input",
+  archetype: "input-base",
 
   defaultVariant: "default",
   defaultSize: "M",

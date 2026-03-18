@@ -1,19 +1,13 @@
 /* ============================================================
  * AUTO-GENERATED from CalendarGridSpec — DO NOT EDIT MANUALLY
  * Source: packages/specs/src/components/CalendarGrid.spec.ts
- * Archetype: default
+ * Archetype: calendar
  * ============================================================ */
 
 .react-aria-CalendarGrid {
-  /* Base styles — archetype: default */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  /* Base styles — archetype: calendar */
+    display: grid;
     box-sizing: border-box;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    font-family: var(--font-sans);
 
   /* Default variant */
   background: var(--bg);

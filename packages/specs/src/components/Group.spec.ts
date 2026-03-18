@@ -7,15 +7,15 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from '../types';
+import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
  * Group Props
  */
 export interface GroupProps {
-  variant?: 'default' | 'accent';
-  size?: 'S' | 'M' | 'L';
-  orientation?: 'horizontal' | 'vertical';
+  variant?: "default" | "accent";
+  size?: "S" | "M" | "L";
+  orientation?: "horizontal" | "vertical";
   label?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -24,25 +24,26 @@ export interface GroupProps {
  * Group Component Spec
  */
 export const GroupSpec: ComponentSpec<GroupProps> = {
-  name: 'Group',
-  description: 'React Aria 기반 그룹 컨테이너 컴포넌트',
-  element: 'div',
+  name: "Group",
+  description: "React Aria 기반 그룹 컨테이너 컴포넌트",
+  element: "div",
+  skipCSSGeneration: true,
 
-  defaultVariant: 'default',
-  defaultSize: 'M',
+  defaultVariant: "default",
+  defaultSize: "M",
 
   variants: {
     default: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.neutral}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
     },
     accent: {
-      background: '{color.base}' as TokenRef,
-      backgroundHover: '{color.base}' as TokenRef,
-      backgroundPressed: '{color.base}' as TokenRef,
-      text: '{color.accent}' as TokenRef,
+      background: "{color.base}" as TokenRef,
+      backgroundHover: "{color.base}" as TokenRef,
+      backgroundPressed: "{color.base}" as TokenRef,
+      text: "{color.accent}" as TokenRef,
     },
   },
 
@@ -51,24 +52,24 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-sm}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 6,
     },
     md: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-md}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
     },
     lg: {
       height: 0,
       paddingX: 0,
       paddingY: 0,
-      fontSize: '{typography.text-lg}' as TokenRef,
-      borderRadius: '{radius.none}' as TokenRef,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 12,
     },
   },
@@ -76,13 +77,13 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
   states: {
     disabled: {
       opacity: 0.38,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
   },
 
   render: {
-    shapes: (props, _variant, size, _state = 'default') => {
-      const isVertical = props.orientation !== 'horizontal';
+    shapes: (props, _variant, size, _state = "default") => {
+      const isVertical = props.orientation !== "horizontal";
 
       // Child Composition: 자식 Element가 있으면 spec shapes 스킵 (TRANSPARENT)
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
@@ -91,15 +92,15 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
       const shapes: Shape[] = [
         // 그룹 컨테이너
         {
-          type: 'container' as const,
+          type: "container" as const,
           x: 0,
           y: 0,
-          width: 'auto',
-          height: 'auto',
+          width: "auto",
+          height: "auto",
           children: [],
           layout: {
-            display: 'flex',
-            flexDirection: isVertical ? 'column' : 'row',
+            display: "flex",
+            flexDirection: isVertical ? "column" : "row",
             gap: size.gap,
           },
         },
@@ -109,13 +110,13 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
     },
 
     react: (props) => ({
-      role: 'group',
-      'aria-label': props.label,
-      'aria-orientation': props.orientation,
+      role: "group",
+      "aria-label": props.label,
+      "aria-orientation": props.orientation,
     }),
 
     pixi: () => ({
-      eventMode: 'passive' as const,
+      eventMode: "passive" as const,
     }),
   },
 };
