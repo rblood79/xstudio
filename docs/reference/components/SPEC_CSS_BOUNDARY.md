@@ -139,6 +139,44 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
 
 `index.css`에서 자동 생성 CSS는 `@import "./generated/Component.css"`, 수동 CSS는 `@import "./Component.css"` 형태로 가져온다.
 
+### `@layer components` 래핑 (CRITICAL)
+
+`CSSGenerator.ts`는 generated CSS를 `@layer components { ... }`로 감싸서 출력한다.
+
+```css
+/* AUTO-GENERATED from ButtonSpec */
+@layer components {
+  .react-aria-Button { ... }
+}
+```
+
+**이유:** 수동 CSS(`Select.css`, `ComboBox.css` 등)는 `@layer components` 안에서 `.react-aria-Select .react-aria-Button` 같은 nested selector로 generated CSS의 스타일을 override한다. generated CSS가 unlayered이면, CSS cascade 규칙에 의해 **unlayered가 항상 layered를 이기므로** specificity와 무관하게 수동 CSS의 override가 실패한다.
+
+같은 `@layer components` 안에 있으면 정상적인 specificity 규칙이 적용된다:
+
+- `.react-aria-Select .react-aria-Button` (0,2,0) > `.react-aria-Button` (0,1,0) ✅
+
+### 수동 CSS에서 generated CSS override 패턴
+
+Container/Composite 컴포넌트의 수동 CSS가 자식의 generated CSS를 override해야 하는 경우:
+
+```css
+/* Select.css — 같은 @layer components 안에서 specificity로 override */
+.react-aria-Select {
+  .react-aria-Button {
+    padding: var(--select-btn-padding); /* generated Button padding override */
+  }
+}
+
+/* ComboBox.css — chevron Button은 padding/border 불필요 */
+.react-aria-ComboBox {
+  .react-aria-Button {
+    padding: 0;
+    border-width: 0;
+  }
+}
+```
+
 ### 빌드 명령
 
 ```bash

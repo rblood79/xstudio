@@ -171,6 +171,8 @@ src/builder/styles/
 
 **Note:** Later layers override earlier layers, regardless of source order.
 
+**Important:** 수동 CSS(`Select.css`, `ComboBox.css` 등)와 자동 생성 CSS(`generated/*.css`) 모두 `@layer components` 안에 있어야 한다. Unlayered CSS는 layered CSS를 항상 이기므로, generated CSS가 `@layer` 밖에 있으면 수동 CSS의 nested selector override(`.react-aria-Select .react-aria-Button`)가 specificity와 무관하게 실패한다.
+
 ---
 
 ## 🎨 Theme System Architecture

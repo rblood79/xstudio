@@ -76,10 +76,6 @@
     --label-font-weight: 500;
     --label-margin: 0;
 
-    .react-aria-Label {
-      font-size: inherit;
-    }
-
     &[data-variant="primary"],
     &[data-variant="secondary"],
     &[data-variant="tertiary"],

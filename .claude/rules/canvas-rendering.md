@@ -34,7 +34,16 @@ globs:
 - **Container/Composite** (32개): `skipCSSGeneration: true` — 수동 CSS가 구조 담당, Spec `render.shapes()`는 Skia 전용
 - 구조(flex/grid/slot)는 Store → CSS와 Store → Taffy가 독립 처리하므로 정합성 문제 없음
 - toggle-indicator(Checkbox/Radio/Switch): indicator 시각 속성은 전용 상수(`CHECKBOX_BOX_BORDER`, `RADIO_RING_BORDER` 등), VariantSpec `border`는 label용
+- Generated CSS는 `@layer components { ... }`로 래핑 — unlayered 시 수동 CSS의 nested selector override 실패
 - 상세: [SPEC_CSS_BOUNDARY.md](docs/reference/components/SPEC_CSS_BOUNDARY.md)
+
+## Select/ComboBox/SearchField gap 정합성
+
+`implicitStyles.ts`에서 이들 컴포넌트의 gap은 CSS `var(--spacing-xs)` = **4px**로 통일.
+
+- 부모 gap (Label ↔ Trigger/Container): `4`
+- 내부 gap (SelectTrigger/ComboBoxWrapper/SearchFieldWrapper): `4`
+- `SPEC_TRIGGER_GAP` 상수 제거됨 — 모든 경로에서 고정 4px 사용
 
 ## BUTTON_SIZE_CONFIG ↔ CSS 높이 정합성
 
