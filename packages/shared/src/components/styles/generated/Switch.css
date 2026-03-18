@@ -4,6 +4,8 @@
  * Archetype: toggle-indicator (G4-pre POC)
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Switch {
   --switch-color: var(--fg);
   --switch-thumb-color: var(--color-white);
@@ -125,3 +127,6 @@
     }
   }
 }
+
+
+} /* @layer components */

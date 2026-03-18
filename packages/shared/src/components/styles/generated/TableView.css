@@ -4,6 +4,8 @@
  * Archetype: default
  * ============================================================ */
 
+@layer components {
+
 .react-aria-TableView {
   /* Base styles — archetype: default */
     display: inline-flex;
@@ -88,3 +90,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

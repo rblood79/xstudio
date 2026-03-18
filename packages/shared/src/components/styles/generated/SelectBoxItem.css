@@ -4,6 +4,8 @@
  * Archetype: button
  * ============================================================ */
 
+@layer components {
+
 .react-aria-SelectBoxItem {
   /* Base styles — archetype: button */
     display: inline-flex;
@@ -117,3 +119,5 @@
     transition-duration: 0s !important;
   }
 }
+
+} /* @layer components */

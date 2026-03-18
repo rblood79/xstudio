@@ -31,6 +31,12 @@ export interface CheckboxProps {
   style?: Record<string, string | number | undefined>;
 }
 
+/** variant별 비체크 시 박스 테두리 색상 (Skia shapes 전용) */
+export const CHECKBOX_BOX_BORDER: Record<string, TokenRef> = {
+  default: "{color.border}" as TokenRef,
+  emphasized: "{color.border}" as TokenRef,
+};
+
 /** variant별 체크 시 색상 */
 export const CHECKBOX_CHECKED_COLORS: Record<
   string,
@@ -46,11 +52,14 @@ export const CHECKBOX_CHECKED_COLORS: Record<
   },
 };
 
-/** 사이즈별 박스 크기 */
-export const CHECKBOX_BOX_SIZES: Record<string, number> = {
-  sm: 16,
-  md: 20,
-  lg: 24,
+/** 사이즈별 박스 크기 및 radius (Skia shapes 전용) */
+export const CHECKBOX_BOX_SIZES: Record<
+  string,
+  { size: number; radius: number }
+> = {
+  sm: { size: 16, radius: 4 },
+  md: { size: 20, radius: 4 },
+  lg: { size: 24, radius: 6 },
 };
 
 /**
@@ -71,14 +80,12 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       backgroundHover: "{color.layer-2}" as TokenRef,
       backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
     },
     emphasized: {
       background: "{color.base}" as TokenRef,
       backgroundHover: "{color.accent-subtle}" as TokenRef,
       backgroundPressed: "{color.accent-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
     },
   },
 
@@ -88,7 +95,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: "{radius.sm}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 6,
     },
     md: {
@@ -96,7 +103,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-md}" as TokenRef,
-      borderRadius: "{radius.sm}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
     },
     lg: {
@@ -104,7 +111,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-lg}" as TokenRef,
-      borderRadius: "{radius.sm}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 10,
     },
   },
@@ -127,7 +134,8 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";
       const sizeName = props.size ?? "md";
-      const boxSize = CHECKBOX_BOX_SIZES[sizeName] ?? 20;
+      const boxDims = CHECKBOX_BOX_SIZES[sizeName] ?? CHECKBOX_BOX_SIZES.md;
+      const boxSize = boxDims.size;
       const gap = size.gap ?? 8;
 
       const isChecked = props.isSelected;
@@ -141,7 +149,7 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
           ? typeof styleBr === "number"
             ? styleBr
             : parseFloat(String(styleBr)) || 0
-          : size.borderRadius;
+          : boxDims.radius;
 
       const styleBw = props.style?.borderWidth;
       const borderWidth =
@@ -155,9 +163,11 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
         props.style?.backgroundColor ??
         (isChecked ? checkedColors.bg : variant.background);
 
+      const boxBorder =
+        CHECKBOX_BOX_BORDER[variantName] ?? CHECKBOX_BOX_BORDER.default;
       const borderColor =
         props.style?.borderColor ??
-        (isChecked ? checkedColors.border : variant.border!);
+        (isChecked ? checkedColors.border : boxBorder);
 
       const shapes: Shape[] = [];
 

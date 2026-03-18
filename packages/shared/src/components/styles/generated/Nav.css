@@ -4,6 +4,8 @@
  * Archetype: default
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Nav {
   /* Base styles — archetype: default */
     display: inline-flex;
@@ -93,3 +95,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

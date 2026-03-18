@@ -4,6 +4,8 @@
  * Archetype: alert
  * ============================================================ */
 
+@layer components {
+
 .react-aria-InlineAlert {
   /* Base styles — archetype: alert */
     display: flex;
@@ -193,3 +195,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

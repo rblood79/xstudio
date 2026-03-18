@@ -4,6 +4,8 @@
  * Archetype: slider
  * ============================================================ */
 
+@layer components {
+
 .react-aria-SliderTrack {
   /* Base styles — archetype: slider */
     display: grid;
@@ -103,3 +105,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

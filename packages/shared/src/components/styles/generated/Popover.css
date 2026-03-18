@@ -4,6 +4,8 @@
  * Archetype: overlay
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Popover {
   /* Base styles — archetype: overlay */
     position: fixed;
@@ -109,3 +111,5 @@
     transition-duration: 0s !important;
   }
 }
+
+} /* @layer components */

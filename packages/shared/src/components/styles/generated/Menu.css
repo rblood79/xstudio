@@ -4,6 +4,8 @@
  * Archetype: collection
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Menu {
   /* Base styles — archetype: collection */
     display: flex;
@@ -91,3 +93,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

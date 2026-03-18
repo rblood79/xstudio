@@ -28,6 +28,14 @@ globs:
 - Child Spec 추가 시 `packages/specs/src/index.ts` + `components/index.ts` 양쪽에 export 후 `pnpm build:specs`
 - `TAG_SPEC_MAP`에 해당 태그의 Spec 등록 필수
 
+## Spec ↔ CSS 경계 (skipCSSGeneration)
+
+- **Leaf 컴포넌트**: Spec이 CSS 자동 생성 — 시각 토큰(색상/크기/상태)의 Preview ↔ Canvas 정합성 보장
+- **Container/Composite** (32개): `skipCSSGeneration: true` — 수동 CSS가 구조 담당, Spec `render.shapes()`는 Skia 전용
+- 구조(flex/grid/slot)는 Store → CSS와 Store → Taffy가 독립 처리하므로 정합성 문제 없음
+- toggle-indicator(Checkbox/Radio/Switch): indicator 시각 속성은 전용 상수(`CHECKBOX_BOX_BORDER`, `RADIO_RING_BORDER` 등), VariantSpec `border`는 label용
+- 상세: [SPEC_CSS_BOUNDARY.md](docs/reference/components/SPEC_CSS_BOUNDARY.md)
+
 ## BUTTON_SIZE_CONFIG ↔ CSS 높이 정합성
 
 `BUTTON_SIZE_CONFIG` / `TOGGLEBUTTON_SIZE_CONFIG` (engines/utils.ts)는 `lineHeight` 필드를 필수로 포함해야 함.

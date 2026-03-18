@@ -4,6 +4,8 @@
  * Archetype: overlay
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Dialog {
   /* Base styles — archetype: overlay */
     position: fixed;
@@ -87,3 +89,5 @@
     transition-duration: 0s !important;
   }
 }
+
+} /* @layer components */

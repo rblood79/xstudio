@@ -2,7 +2,7 @@
   .react-aria-Select {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
     color: var(--fg);
 
     /* Accent locals */
@@ -113,6 +113,7 @@
     /* ===== Button (Trigger) ===== */
     .react-aria-Button {
       width: 100%;
+      padding: var(--select-btn-padding);
       text-align: left;
       border: 1px solid var(--border);
       border-radius: var(--border-radius);

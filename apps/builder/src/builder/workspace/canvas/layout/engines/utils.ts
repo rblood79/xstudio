@@ -18,6 +18,7 @@ import {
   InputSpec,
   ButtonSpec,
   BadgeSpec,
+  TagSpec,
   ToggleButtonSpec,
   CardSpec,
   resolveToken,
@@ -524,6 +525,9 @@ const MIN_BUTTON_HEIGHT = 0;
 // ADR-036: BadgeSpec.sizes에서 파생
 const BADGE_SIZE_CONFIG = deriveSizeConfig(BadgeSpec.sizes);
 
+// ADR-036: TagSpec.sizes에서 파생 (Badge와 paddingX가 다름)
+const TAG_SIZE_CONFIG = deriveSizeConfig(TagSpec.sizes);
+
 // ADR-036: ToggleButtonSpec.sizes에서 파생
 const TOGGLEBUTTON_SIZE_CONFIG = deriveSizeConfig(ToggleButtonSpec.sizes);
 
@@ -554,12 +558,60 @@ const INLINE_UI_SIZE_CONFIGS: Record<
   >
 > = {
   badge: BADGE_SIZE_CONFIG,
-  tag: BADGE_SIZE_CONFIG,
+  tag: TAG_SIZE_CONFIG,
   chip: BADGE_SIZE_CONFIG,
   togglebutton: TOGGLEBUTTON_SIZE_CONFIG,
   submitbutton: BUTTON_SIZE_CONFIG,
   fancybutton: BUTTON_SIZE_CONFIG,
 };
+
+// ── Layout pass 컨텍스트: TagGroup allowsRemoving 상태 ──
+// fullTreeLayout DFS 시작 시 설정, calculateContentWidth/parseBoxModel에서 조회
+// delegation 경로(DFS/flex engine/recursive)에 무관하게 일관된 값 제공
+let _tagGroupAllowsRemovingMap = new Map<string, boolean>();
+
+/** fullTreeLayout DFS 시작 전 호출 — TagGroup의 allowsRemoving 상태 수집 */
+export function setTagGroupAllowsRemovingContext(
+  elementsMap: Map<string, Element>,
+): void {
+  _tagGroupAllowsRemovingMap = new Map();
+  for (const el of elementsMap.values()) {
+    if (el.tag === "TagGroup") {
+      const ar = Boolean(
+        (el.props as Record<string, unknown> | undefined)?.allowsRemoving,
+      );
+      if (ar) {
+        // TagGroup ID + 자식 TagList ID 모두 등록
+        // Tag의 parent_id가 TagList이므로 TagList ID도 필요
+        _tagGroupAllowsRemovingMap.set(el.id, true);
+        for (const child of elementsMap.values()) {
+          if (child.parent_id === el.id && child.tag === "TagList") {
+            _tagGroupAllowsRemovingMap.set(child.id, true);
+          }
+        }
+      }
+    }
+  }
+}
+
+/** Tag element의 조상 TagGroup이 allowsRemoving인지 조회 */
+export function isTagAllowsRemoving(
+  element: Element,
+  elementsMap: Map<string, Element>,
+): boolean {
+  // props에 직접 있으면 (delegation된 경우)
+  if ((element.props as Record<string, unknown> | undefined)?.allowsRemoving)
+    return true;
+  // 조상 탐색: Tag → TagList → TagGroup
+  let ancestorId = element.parent_id;
+  for (let i = 0; i < 3 && ancestorId; i++) {
+    if (_tagGroupAllowsRemovingMap.has(ancestorId)) return true;
+    const ancestor = elementsMap.get(ancestorId);
+    if (!ancestor) break;
+    ancestorId = ancestor.parent_id;
+  }
+  return false;
+}
 
 /**
  * 버튼 계열 요소의 size config 조회 (단일 소스)
@@ -1165,16 +1217,41 @@ export function calculateContentWidth(
         }
       }
 
+      // Tag remove 버튼 너비: allowsRemoving 시 X 아이콘 + gap + padding 추가
+      let removeExtra = 0;
+      if (tag === "tag") {
+        // 모듈 레벨 컨텍스트로 TagGroup allowsRemoving 조회
+        // DFS/FlexEngine/재귀 등 모든 호출 경로에서 일관된 결과
+        let tagAllowsRemoving = Boolean(props?.allowsRemoving);
+        if (!tagAllowsRemoving && element.parent_id) {
+          let ancestorId: string | null | undefined = element.parent_id;
+          for (let i = 0; i < 3 && ancestorId; i++) {
+            if (_tagGroupAllowsRemovingMap.has(ancestorId)) {
+              tagAllowsRemoving = true;
+              break;
+            }
+            // parent_id 체인 탐색은 element 자체 정보만 사용
+            break; // parent_id만으로는 상위 탐색 불가 → Map 조회로 충분
+          }
+        }
+        if (tagAllowsRemoving) {
+          const removeIconSize = Math.round(fontSize * 0.75);
+          const removeGap = sizeConfig.paddingLeft > 0 ? 4 : 2;
+          const removePad = 2; // --spacing-2xs
+          removeExtra = removeGap + removePad * 2 + removeIconSize;
+        }
+      }
+
       // minWidth 적용: totalWidth = contentWidth + padding >= minWidth
       // PixiBadge와 동일한 너비 계산 (cssVariableReader.ts BADGE_FALLBACKS 참조)
       const minWidth = (sizeConfig as { minWidth?: number }).minWidth;
       if (minWidth !== undefined) {
         const padding = sizeConfig.paddingLeft + sizeConfig.paddingRight;
         const minContentWidth = Math.max(0, minWidth - padding);
-        return Math.max(minContentWidth, textWidth + iconExtra);
+        return Math.max(minContentWidth, textWidth + iconExtra + removeExtra);
       }
 
-      return textWidth + iconExtra;
+      return textWidth + iconExtra + removeExtra;
     }
 
     // 일반 요소: computedStyle 기준으로 font 속성을 해소
@@ -2378,9 +2455,19 @@ export function parseBoxModel(
       const effectivePaddingLeft = isIconOnlyButton
         ? sizeConfig.paddingY
         : sizeConfig.paddingLeft;
+      // Tag allowsRemoving: CSS padding-right = padding-top (remove 버튼 공간 확보)
+      // 모듈 레벨 컨텍스트로 TagGroup 조상의 allowsRemoving 조회
+      const isTagWithRemove =
+        tag === "tag" &&
+        (Boolean(props?.allowsRemoving) ||
+          (element.parent_id
+            ? _tagGroupAllowsRemovingMap.has(element.parent_id)
+            : false));
       const effectivePaddingRight = isIconOnlyButton
         ? sizeConfig.paddingY
-        : sizeConfig.paddingRight;
+        : isTagWithRemove
+          ? sizeConfig.paddingY
+          : sizeConfig.paddingRight;
       padding = {
         top: sizeConfig.paddingY,
         right: effectivePaddingRight,

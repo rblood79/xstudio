@@ -102,14 +102,16 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **CRITICAL**: Child Spec 추가 시 반드시 `packages/specs/src/index.ts` (빌드 엔트리) + `packages/specs/src/components/index.ts` 양쪽에 export 추가 후 `pnpm build:specs` 실행 필수
 - **CRITICAL**: 자식 Element가 독립 렌더링하려면 `ElementSprite.tsx`의 `TAG_SPEC_MAP`에 해당 태그의 Spec을 등록해야 함
 
-#### CSS Generator (ADR-036)
+#### CSS Generator (ADR-036) — Spec ↔ CSS 경계
 
-- **Spec → CSS 자동 생성**: `pnpm build:specs` 실행 시 `generate-css.ts`가 93개 Spec에서 CSS 자동 생성 → `generated/` 디렉토리에 출력
+- **경계 원칙**: Spec = "What"(시각 토큰: 색상/크기/상태), 수동 CSS = "How"(구조 레이아웃: flex/grid/slot/pseudo-element). 구조는 Store → CSS/Taffy 독립 경로이므로 Preview ↔ Canvas 정합성 문제 없음
+- **Leaf 컴포넌트** (61개): Spec에서 CSS 자동 생성 — `archetype` 필수 지정 (simple, button, input-base, toggle-indicator, progress, slider, tabs-indicator, collection, overlay, calendar, alert)
+- **Container/Composite** (32개): `skipCSSGeneration: true` — 수동 CSS가 구조 담당, Spec은 Skia 전용. `index.css`에서 `@import "./Component.css"` (generated/ 아님)
+- **toggle-indicator 특수 경계**: Checkbox/Radio/Switch의 indicator 시각(border/radius)은 전용 상수(`CHECKBOX_BOX_BORDER`, `RADIO_RING_BORDER` 등)로 관리. VariantSpec의 `border`/SizeSpec의 `borderRadius`는 label 요소용 — indicator는 수동 CSS `::before`
 - **SIZE_CONFIG 금지**: `BUTTON_SIZE_CONFIG` 등 수동 SIZE_CONFIG 상수 사용 금지 → `deriveSizeConfig(Spec.sizes)` 패턴 사용
-- **ArchetypeId 필수**: 독립 CSS 생성 대상 Spec에 `archetype` 필드 필수 (simple, button, toggle-indicator, progress, slider, tabs-indicator, collection, overlay, calendar)
-- **CompositionSpec**: Tier 2 Composite Spec에 `composition` 필드 필수 — `{ layout, delegation[] }` 구조로 자식 CSS 변수 위임 정의
 - **validate:sync**: `pnpm validate:sync`로 Spec ↔ Generated CSS 동기화 검증 — 0 errors 필수
-- **generated/ CSS import**: `index.css`에서 `@import "./generated/Component.css"` 사용, 수동 CSS 파일은 롤백용 보존
+- **새 컴포넌트 판단**: 자체 시각 표현 있고, slot/pseudo-element 불필요 → Spec CSS. 그 외 → `skipCSSGeneration: true` + 수동 CSS
+- **참조**: [SPEC_CSS_BOUNDARY.md](../../../docs/reference/components/SPEC_CSS_BOUNDARY.md) — 전체 분류표, archetype base styles, 결정 흐름도
 
 #### Panel Section (domain-\*)
 

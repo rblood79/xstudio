@@ -4,6 +4,8 @@
  * Archetype: overlay
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Toast {
   /* Base styles — archetype: overlay */
     position: fixed;
@@ -128,3 +130,5 @@
     transition-duration: 0s !important;
   }
 }
+
+} /* @layer components */

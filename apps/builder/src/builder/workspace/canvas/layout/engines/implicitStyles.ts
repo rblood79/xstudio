@@ -39,15 +39,6 @@ const SPEC_PADDING: Record<string, { left: number; right: number; y: number }> =
     xl: { left: 24, right: 12, y: 12 },
   };
 
-/** SelectTrigger/ComboBoxWrapper spec gap (SelectValue ↔ SelectIcon 간격) */
-const SPEC_TRIGGER_GAP: Record<string, number> = {
-  xs: 2,
-  sm: 4,
-  md: 6,
-  lg: 8,
-  xl: 10,
-};
-
 /** SelectIcon / ComboBoxTrigger icon 크기 — SelectIconSpec.sizes.iconSize 동기 */
 const SPEC_ICON_SIZE: Record<string, number> = {
   xs: 10,
@@ -252,12 +243,12 @@ export function applyImplicitStyles(
       flexDirection: hasTagList ? "column" : "row",
       flexWrap: hasTagList ? undefined : "wrap",
       gap: 4,
-      width: parentStyle.width ?? "fit-content",
     });
   }
 
   // ── TagList ──────────────────────────────────────────────────────
   // TagGroup 내부 TagList: 부모 orientation에 따라 row/column 전환
+  // width: 100% — 부모 TagGroup 전체 너비를 사용하여 Tag들이 가로 배치
   if (containerTag === "taglist") {
     const parentEl = containerEl.parent_id
       ? elementById.get(containerEl.parent_id)
@@ -427,7 +418,6 @@ export function applyImplicitStyles(
       if (child.tag === wrapperChildTag) {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
         const sizeName = getDelegatedSize(containerEl, elementById);
-        const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
         return {
           ...child,
           props: {
@@ -436,7 +426,7 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
-              gap: cs.gap ?? specGap,
+              gap: cs.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
               ...withSpecPadding(cs, sizeName),
             },
           },
@@ -449,14 +439,13 @@ export function applyImplicitStyles(
       ...parentStyle,
       display: parentStyle.display ?? "flex",
       flexDirection: parentStyle.flexDirection ?? "column",
-      gap: parentStyle.gap ?? 8,
+      gap: parentStyle.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
     });
   }
 
   // ── SelectTrigger ──────────────────────────────────────────────────
   if (containerTag === "selecttrigger") {
     const sizeName = getDelegatedSize(containerEl, elementById);
-    const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
     effectiveParent = withParentStyle(
       containerEl,
       withSpecPadding(
@@ -465,7 +454,7 @@ export function applyImplicitStyles(
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
-          gap: parentStyle.gap ?? specGap,
+          gap: parentStyle.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
           // CSS .react-aria-Button: border: 1px solid
           borderWidth: parentStyle.borderWidth ?? 1,
           // Spec height로 CSS와 정확히 일치 (Taffy auto 계산 시 ceil로 1px 오차 방지)
@@ -527,7 +516,6 @@ export function applyImplicitStyles(
   // ── ComboBoxWrapper ────────────────────────────────────────────────
   if (containerTag === "comboboxwrapper") {
     const sizeName = getDelegatedSize(containerEl, elementById);
-    const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
     effectiveParent = withParentStyle(
       containerEl,
       withSpecPadding(
@@ -536,7 +524,7 @@ export function applyImplicitStyles(
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
-          gap: parentStyle.gap ?? specGap,
+          gap: parentStyle.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
           // CSS .combobox-container: border: 1px solid
           borderWidth: parentStyle.borderWidth ?? 1,
           // Spec height로 CSS와 정확히 일치
@@ -606,7 +594,6 @@ export function applyImplicitStyles(
   // ComboBoxWrapper와 동일 패턴: border + height + padding + 자식 스타일 주입
   if (containerTag === "searchfieldwrapper") {
     const sizeName = getDelegatedSize(containerEl, elementById);
-    const specGap = SPEC_TRIGGER_GAP[sizeName] ?? SPEC_TRIGGER_GAP.md;
     effectiveParent = withParentStyle(
       containerEl,
       withSpecPadding(
@@ -615,7 +602,7 @@ export function applyImplicitStyles(
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
-          gap: parentStyle.gap ?? specGap,
+          gap: parentStyle.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
           borderWidth: parentStyle.borderWidth ?? 1,
           height:
             parentStyle.height ??

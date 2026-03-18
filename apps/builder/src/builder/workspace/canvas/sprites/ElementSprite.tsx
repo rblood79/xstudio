@@ -1054,14 +1054,12 @@ export const ElementSprite = memo(function ElementSprite({
     return state.elementsMap.get(element.parent_id) ?? null;
   });
 
-  // Tag → TagGroup 조상 size 상속 (CSS data-tag-size parent delegation 에뮬레이션)
-  // Tag > TagList > TagGroup 구조에서 TagGroup의 size를 Tag에 전파
+  // Tag → TagGroup 조상 size/allowsRemoving 상속 (CSS parent delegation 에뮬레이션)
+  // Tag > TagList > TagGroup 구조에서 TagGroup의 props를 Tag에 전파
   const tagGroupAncestorSize = useStore((state) => {
     if (element.tag !== "Tag" || !element.parent_id) return null;
-    // Tag의 부모 = TagList
     const tagList = state.elementsMap.get(element.parent_id);
     if (!tagList?.parent_id) return null;
-    // TagList의 부모 = TagGroup (또는 레거시: Tag의 부모가 직접 TagGroup)
     const ancestor =
       tagList.tag === "TagList"
         ? state.elementsMap.get(tagList.parent_id)
@@ -1072,6 +1070,22 @@ export const ElementSprite = memo(function ElementSprite({
     return (
       ((ancestor.props as Record<string, unknown> | undefined)
         ?.size as string) ?? null
+    );
+  });
+
+  const tagGroupAllowsRemoving = useStore((state) => {
+    if (element.tag !== "Tag" || !element.parent_id) return false;
+    const tagList = state.elementsMap.get(element.parent_id);
+    if (!tagList?.parent_id) return false;
+    const ancestor =
+      tagList.tag === "TagList"
+        ? state.elementsMap.get(tagList.parent_id)
+        : tagList.tag === "TagGroup"
+          ? tagList
+          : null;
+    if (!ancestor || ancestor.tag !== "TagGroup") return false;
+    return Boolean(
+      (ancestor.props as Record<string, unknown> | undefined)?.allowsRemoving,
     );
   });
 
@@ -1856,6 +1870,11 @@ export const ElementSprite = memo(function ElementSprite({
               // _hasLabelChild 패턴 제거 완료: CHILD_COMPOSITION_TAGS로 통합됨
               // Checkbox/Radio/Switch/ComboBox/Select/Slider → _hasChildren 단일 패턴
 
+              // Tag: TagGroup의 allowsRemoving 전파 → spec shapes에서 X 아이콘 렌더
+              if (tag === "Tag" && tagGroupAllowsRemoving) {
+                specProps = { ...specProps, allowsRemoving: true };
+              }
+
               // SelectIcon/ComboBoxTrigger: 부모의 iconName 전파 (specProps에 없으면 주입)
               if (parentDelegatedIconName && !specProps.iconName) {
                 specProps = { ...specProps, iconName: parentDelegatedIconName };
@@ -2309,6 +2328,8 @@ export const ElementSprite = memo(function ElementSprite({
     parentProgressMinValue,
     parentProgressMaxValue,
     isLabelInNowrapParent,
+    tagGroupAncestorSize,
+    tagGroupAllowsRemoving,
   ]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로

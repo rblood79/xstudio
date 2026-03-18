@@ -4,6 +4,8 @@
  * Archetype: toggle-indicator
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Checkbox {
   /* Base styles — archetype: toggle-indicator */
     display: inline-flex;
@@ -15,45 +17,39 @@
   /* Default variant */
   background: var(--bg);
   color: var(--fg);
-  border: 1px solid var(--border);
+  border: none;
 
   /* Default size */
   height: 24px;
   padding: 0px 0px;
   font-size: var(--text-md);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-none);
   gap: 8px;
 }
 
 .react-aria-Checkbox[data-variant="default"] {
   background: var(--bg);
   color: var(--fg);
-  border-color: var(--border);
 
   &[data-hovered] {
     background: var(--bg-inset);
-    border-color: var(--bg-inset);
   }
 
   &[data-pressed] {
     background: var(--bg-overlay);
-    border-color: var(--bg-overlay);
   }
 }
 
 .react-aria-Checkbox[data-variant="emphasized"] {
   background: var(--bg);
   color: var(--fg);
-  border-color: var(--border);
 
   &[data-hovered] {
     background: var(--accent-subtle);
-    border-color: var(--accent-subtle);
   }
 
   &[data-pressed] {
     background: var(--accent-subtle);
-    border-color: var(--accent-subtle);
   }
 }
 
@@ -61,7 +57,7 @@
   height: 20px;
   padding: 0px 0px;
   font-size: var(--text-sm);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-none);
   gap: 6px;
 }
 
@@ -69,7 +65,7 @@
   height: 24px;
   padding: 0px 0px;
   font-size: var(--text-md);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-none);
   gap: 8px;
 }
 
@@ -77,7 +73,7 @@
   height: 28px;
   padding: 0px 0px;
   font-size: var(--text-lg);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-none);
   gap: 10px;
 }
 
@@ -109,3 +105,5 @@
     transition-duration: 0s !important;
   }
 }
+
+} /* @layer components */

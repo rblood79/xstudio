@@ -17,6 +17,7 @@ import { PersistentTaffyTree } from "./persistentTaffyTree";
 import type { PersistentBatchNode } from "./persistentTaffyTree";
 import {
   enrichWithIntrinsicSize,
+  setTagGroupAllowsRemovingContext,
   applyCommonTaffyStyle,
   applyFlexItemProperties,
   parseMargin,
@@ -669,23 +670,28 @@ function traversePostOrder(
   // DFS 진입 시 element에 size를 주입하면 이후 calculateContentHeight/parseBoxModel 등에서 자연스럽게 사용
   if (rawElement.tag === "Tag") {
     const rawProps = rawElement.props as Record<string, unknown> | undefined;
-    if (!rawProps?.size) {
-      let ancestor = rawElement.parent_id
-        ? elementsMap.get(rawElement.parent_id)
-        : undefined;
-      if (ancestor?.tag === "TagList" && ancestor.parent_id) {
-        ancestor = elementsMap.get(ancestor.parent_id);
+    let ancestor = rawElement.parent_id
+      ? elementsMap.get(rawElement.parent_id)
+      : undefined;
+    if (ancestor?.tag === "TagList" && ancestor.parent_id) {
+      ancestor = elementsMap.get(ancestor.parent_id);
+    }
+    if (ancestor?.tag === "TagGroup") {
+      const groupProps = ancestor.props as Record<string, unknown> | undefined;
+      const delegated: Record<string, unknown> = {};
+      // size delegation
+      if (!rawProps?.size && groupProps?.size) {
+        delegated.size = groupProps.size;
       }
-      if (ancestor?.tag === "TagGroup") {
-        const groupSize = (
-          ancestor.props as Record<string, unknown> | undefined
-        )?.size as string | undefined;
-        if (groupSize) {
-          rawElement = {
-            ...rawElement,
-            props: { ...rawElement.props, size: groupSize },
-          };
-        }
+      // allowsRemoving delegation
+      if (groupProps?.allowsRemoving) {
+        delegated.allowsRemoving = true;
+      }
+      if (Object.keys(delegated).length > 0) {
+        rawElement = {
+          ...rawElement,
+          props: { ...rawElement.props, ...delegated },
+        };
       }
     }
   }
@@ -712,30 +718,35 @@ function traversePostOrder(
   // enrichWithIntrinsicSize → calculateContentWidth 재귀 시 올바른 크기를 산출한다.
   const containerTag = (rawElement.tag ?? "").toLowerCase();
   if (containerTag === "taglist" || containerTag === "taggroup") {
-    // TagGroup의 size 조회
+    // TagGroup의 size/allowsRemoving 조회
     let groupSize: string | undefined;
+    let groupAllowsRemoving = false;
     if (containerTag === "taggroup") {
-      groupSize = (rawElement.props as Record<string, unknown> | undefined)
-        ?.size as string | undefined;
+      const gp = rawElement.props as Record<string, unknown> | undefined;
+      groupSize = gp?.size as string | undefined;
+      groupAllowsRemoving = Boolean(gp?.allowsRemoving);
     } else {
-      // TagList → 부모 TagGroup에서 size 조회
+      // TagList → 부모 TagGroup에서 조회
       const parentEl = rawElement.parent_id
         ? elementsMap.get(rawElement.parent_id)
         : undefined;
       if (parentEl?.tag === "TagGroup") {
-        groupSize = (parentEl.props as Record<string, unknown> | undefined)
-          ?.size as string | undefined;
+        const gp = parentEl.props as Record<string, unknown> | undefined;
+        groupSize = gp?.size as string | undefined;
+        groupAllowsRemoving = Boolean(gp?.allowsRemoving);
       }
     }
-    if (groupSize) {
-      for (let i = 0; i < filteredChildren.length; i++) {
-        const child = filteredChildren[i];
-        if (child.tag !== "Tag") continue;
-        const childProps = child.props as Record<string, unknown> | undefined;
-        if (childProps?.size) continue; // 이미 명시적 size 있음
+    for (let i = 0; i < filteredChildren.length; i++) {
+      const child = filteredChildren[i];
+      if (child.tag !== "Tag") continue;
+      const childProps = child.props as Record<string, unknown> | undefined;
+      const delegated: Record<string, unknown> = {};
+      if (groupSize && !childProps?.size) delegated.size = groupSize;
+      if (groupAllowsRemoving) delegated.allowsRemoving = true;
+      if (Object.keys(delegated).length > 0) {
         filteredChildren[i] = {
           ...child,
-          props: { ...child.props, size: groupSize },
+          props: { ...child.props, ...delegated },
         };
       }
     }
@@ -905,26 +916,32 @@ function traversePostOrder(
   let effectiveGetChildElements = getChildElements;
   if (containerTag === "taggroup" || containerTag === "taglist") {
     let tagGroupSize: string | undefined;
+    let tagGroupAllowsRemoving = false;
     if (containerTag === "taggroup") {
-      tagGroupSize = (rawElement.props as Record<string, unknown> | undefined)
-        ?.size as string | undefined;
+      const gp = rawElement.props as Record<string, unknown> | undefined;
+      tagGroupSize = gp?.size as string | undefined;
+      tagGroupAllowsRemoving = Boolean(gp?.allowsRemoving);
     } else {
       const parentEl = rawElement.parent_id
         ? elementsMap.get(rawElement.parent_id)
         : undefined;
       if (parentEl?.tag === "TagGroup") {
-        tagGroupSize = (parentEl.props as Record<string, unknown> | undefined)
-          ?.size as string | undefined;
+        const gp = parentEl.props as Record<string, unknown> | undefined;
+        tagGroupSize = gp?.size as string | undefined;
+        tagGroupAllowsRemoving = Boolean(gp?.allowsRemoving);
       }
     }
-    if (tagGroupSize) {
+    if (tagGroupSize || tagGroupAllowsRemoving) {
       effectiveGetChildElements = (id: string) => {
         const children = getChildElements(id);
         return children.map((child) => {
           if (child.tag !== "Tag") return child;
           const cp = child.props as Record<string, unknown> | undefined;
-          if (cp?.size) return child;
-          return { ...child, props: { ...child.props, size: tagGroupSize } };
+          const d: Record<string, unknown> = {};
+          if (tagGroupSize && !cp?.size) d.size = tagGroupSize;
+          if (tagGroupAllowsRemoving) d.allowsRemoving = true;
+          if (Object.keys(d).length === 0) return child;
+          return { ...child, props: { ...child.props, ...d } };
         });
       };
     }
@@ -1333,6 +1350,9 @@ export function calculateFullTreeLayout(
   const indexMap = new Map<string, number>();
   // ADR-006 P0-4: per-call 사이클 감지용 visiting set (모듈 레벨 선언 금지)
   const visiting = new Set<string>();
+
+  // TagGroup allowsRemoving 컨텍스트 설정 (모든 DFS/FlexEngine/재귀 경로에서 조회)
+  setTagGroupAllowsRemovingContext(elementsMap);
 
   traversePostOrder(
     rootElementId,

@@ -4,6 +4,8 @@
  * Archetype: calendar
  * ============================================================ */
 
+@layer components {
+
 .react-aria-CalendarHeader {
   /* Base styles — archetype: calendar */
     display: grid;
@@ -94,3 +96,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

@@ -2,7 +2,7 @@
   .react-aria-ComboBox {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
     color: var(--fg);
 
     /* Accent locals */
@@ -113,7 +113,7 @@
     .combobox-container {
       display: flex;
       align-items: center;
-      gap: var(--btn-gap, var(--spacing-sm));
+      gap: var(--btn-gap, var(--spacing-xs));
       width: 100%;
       border: 1px solid var(--border);
       border-radius: var(--border-radius);
@@ -251,6 +251,8 @@
     .react-aria-Button {
       position: static;
       flex: 0 0 auto;
+      padding: 0;
+      border-width: 0;
       width: var(--combo-btn-size);
       height: var(--combo-btn-size);
       background: var(--bg-overlay);

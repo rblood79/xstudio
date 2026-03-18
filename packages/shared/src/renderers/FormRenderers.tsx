@@ -244,7 +244,12 @@ export const renderInput = (
 
 /**
  * Label 렌더링
+ *
+ * 부모가 <label> 요소(Checkbox, Radio, Switch)면 <span>으로 렌더
+ * HTML 규격상 <label> 중첩 금지
  */
+const LABEL_AS_SPAN_PARENTS = new Set(["Checkbox", "Radio", "Switch"]);
+
 export const renderLabel = (
   element: PreviewElement,
   context: RenderContext,
@@ -255,6 +260,33 @@ export const renderLabel = (
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+  const content = (
+    <>
+      {typeof element.props.children === "string"
+        ? element.props.children
+        : null}
+      {children.map((child) => renderElement(child, child.id))}
+    </>
+  );
+
+  // 부모가 <label> 요소면 <span>으로 렌더 (label 중첩 방지)
+  const parentTag = element.parent_id
+    ? elements.find((e) => e.id === element.parent_id)?.tag
+    : null;
+
+  if (parentTag && LABEL_AS_SPAN_PARENTS.has(parentTag)) {
+    return (
+      <span
+        key={element.id}
+        data-element-id={element.id}
+        data-variant={(element.props.variant as string) || "default"}
+        className="react-aria-Label"
+      >
+        {content}
+      </span>
+    );
+  }
+
   return (
     <Label
       key={element.id}
@@ -262,10 +294,7 @@ export const renderLabel = (
       data-element-id={element.id}
       data-variant={(element.props.variant as string) || "default"}
     >
-      {typeof element.props.children === "string"
-        ? element.props.children
-        : null}
-      {children.map((child) => renderElement(child, child.id))}
+      {content}
     </Label>
   );
 };
@@ -401,7 +430,7 @@ export const renderCheckboxGroup = (
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  const labelChildren = allChildren.filter((child) => child.tag === "Label");
+  const labelChild = allChildren.find((child) => child.tag === "Label");
   const checkboxItemsChild = allChildren.find(
     (child) => child.tag === "CheckboxItems",
   );
@@ -422,6 +451,12 @@ export const renderCheckboxGroup = (
     .filter((checkbox) => checkbox.props.isSelected)
     .map((checkbox) => checkbox.id);
 
+  // 그룹 라벨: Label 자식 Element의 텍스트 사용 (renderElement 호출 제거 — 이중 렌더링 방지)
+  const groupLabel =
+    (labelChild?.props?.children as string) ||
+    (element.props.label as string) ||
+    undefined;
+
   return (
     <CheckboxGroup
       key={element.id}
@@ -429,6 +464,7 @@ export const renderCheckboxGroup = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      label={groupLabel}
       value={selectedValues}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
@@ -457,28 +493,42 @@ export const renderCheckboxGroup = (
         }
       }}
     >
-      {labelChildren.map((lbl) => renderElement(lbl, lbl.id))}
       <div className="checkbox-items">
-        {checkboxChildren.map((checkbox) => (
-          <Checkbox
-            key={checkbox.id}
-            data-element-id={checkbox.id}
-            value={checkbox.id}
-            isIndeterminate={Boolean(checkbox.props.isIndeterminate)}
-            isDisabled={Boolean(checkbox.props.isDisabled)}
-            onChange={(isSelected: boolean) => {
-              const updatedProps = {
-                ...checkbox.props,
-                isSelected,
-              };
-              updateElementProps(checkbox.id, updatedProps);
-            }}
-          >
-            {typeof checkbox.props.children === "string"
-              ? checkbox.props.children
-              : null}
-          </Checkbox>
-        ))}
+        {checkboxChildren.map((checkbox) => {
+          // Checkbox의 자식 Label 요소 검색
+          const checkboxLabelChildren = elements
+            .filter(
+              (child) =>
+                child.parent_id === checkbox.id && child.tag === "Label",
+            )
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+          return (
+            <Checkbox
+              key={checkbox.id}
+              data-element-id={checkbox.id}
+              value={checkbox.id}
+              isIndeterminate={Boolean(checkbox.props.isIndeterminate)}
+              isDisabled={Boolean(checkbox.props.isDisabled)}
+              onChange={(isSelected: boolean) => {
+                const updatedProps = {
+                  ...checkbox.props,
+                  isSelected,
+                };
+                updateElementProps(checkbox.id, updatedProps);
+              }}
+            >
+              {/* Label 자식이 있으면 렌더, 없으면 props.children 텍스트 */}
+              {checkboxLabelChildren.length > 0
+                ? checkboxLabelChildren.map((child) =>
+                    renderElement(child, child.id),
+                  )
+                : typeof checkbox.props.children === "string"
+                  ? checkbox.props.children
+                  : null}
+            </Checkbox>
+          );
+        })}
       </div>
     </CheckboxGroup>
   );
@@ -497,12 +547,20 @@ export const renderRadio = (
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  // 부모가 RadioGroup인지 확인
+  // 부모 또는 조부모가 RadioGroup인지 확인
+  // Factory 구조: RadioGroup > RadioItems > Radio
   const parentElement = elements.find(
     (parent) => parent.id === element.parent_id,
   );
+  const grandparentElement = parentElement?.parent_id
+    ? elements.find((gp) => gp.id === parentElement.parent_id)
+    : null;
+  const isInsideRadioGroup =
+    parentElement?.tag === "RadioGroup" ||
+    parentElement?.tag === "RadioItems" ||
+    grandparentElement?.tag === "RadioGroup";
 
-  if (parentElement && parentElement.tag === "RadioGroup") {
+  if (isInsideRadioGroup) {
     return (
       <Radio
         key={element.id}
@@ -556,12 +614,11 @@ export const renderRadioGroup = (
   const { elements, updateElementProps, renderElement } = context;
 
   // Compositional: Label + RadioItems(중간 컨테이너) + Radio(레거시) 자식 분리
-  // TagGroup > TagList 패턴 참조
   const allChildren = elements
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-  const labelChildren = allChildren.filter((child) => child.tag === "Label");
+  const labelChild = allChildren.find((child) => child.tag === "Label");
   const radioItemsChild = allChildren.find(
     (child) => child.tag === "RadioItems",
   );
@@ -574,6 +631,12 @@ export const renderRadioGroup = (
     )
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+  // 그룹 라벨: Label 자식 Element의 텍스트 사용 (renderElement 호출 제거 — 이중 렌더링 방지)
+  const groupLabel =
+    (labelChild?.props?.children as string) ||
+    (element.props.label as string) ||
+    undefined;
+
   return (
     <RadioGroup
       key={element.id}
@@ -581,6 +644,7 @@ export const renderRadioGroup = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      label={groupLabel}
       defaultValue={String(element.props.value || "")}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
@@ -610,7 +674,6 @@ export const renderRadioGroup = (
         }
       }}
     >
-      {labelChildren.map((lbl) => renderElement(lbl, lbl.id))}
       <div className="radio-items">
         {radioChildren.map((radio) => renderElement(radio))}
       </div>

@@ -4,6 +4,8 @@
  * Archetype: collection
  * ============================================================ */
 
+@layer components {
+
 .react-aria-ListBox {
   /* Base styles — archetype: collection */
     display: flex;
@@ -94,3 +96,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

@@ -2,7 +2,7 @@
   .react-aria-TagGroup {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--spacing-xs);
     font-size: var(--text-sm);
     color: var(--fg);
   }
@@ -10,7 +10,7 @@
   .react-aria-TagList {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: var(--spacing-xs);
   }
 
   .react-aria-Tag {
@@ -24,13 +24,24 @@
     border: 1px solid var(--tag-border);
     forced-color-adjust: none;
     border-radius: var(--radius-md);
-    padding: var(--spacing-xs) var(--spacing-lg);
+    padding: var(--spacing-xs) var(--spacing-md);
     font-size: var(--text-sm);
     line-height: var(--text-sm--line-height);
     outline: none;
     cursor: default;
+
+    &:first-child {
+      display: flex;
+      flex-direction: row;
+    }
+
+    &[data-allows-removing] {
+      padding-right: var(--spacing-xs);
+    }
+
     display: flex;
     align-items: center;
+    white-space: nowrap;
     transition: all 200ms;
 
     &[data-hovered] {
@@ -50,10 +61,10 @@
     }
 
     /* Remove button styling */
-    [slot="remove"] {
+    .tag-remove-btn {
       background: none;
       border: none;
-      padding: 0;
+      padding: var(--spacing-2xs);
       margin-left: var(--spacing-2xs);
       color: var(--fg-base);
       transition: color 200ms;
@@ -62,6 +73,7 @@
       border-radius: 100%;
       aspect-ratio: 1/1;
       height: 100%;
+      cursor: pointer;
 
       &[data-hovered] {
         color: var(--fg-emphasis);
@@ -74,7 +86,7 @@
     }
 
     &[data-selected] {
-      [slot="remove"] {
+      .tag-remove-btn {
         color: inherit;
       }
     }
@@ -129,39 +141,61 @@
   /* ===== Parent-delegated Size Variants ===== */
   /* @sync Button.css size variants — padding/fontSize/lineHeight 동일 */
 
+  /* @sync ButtonSpec.sizes — padding 동일 */
+
   .react-aria-TagGroup[data-tag-size="xs"] .react-aria-Tag {
-    padding: var(--spacing-3xs) var(--spacing-sm);
+    padding: var(--spacing-3xs) var(--spacing-xs);
     font-size: var(--text-2xs);
     line-height: var(--text-2xs--line-height);
     border-radius: var(--radius-sm);
+
+    &[data-allows-removing] {
+      padding-right: var(--spacing-3xs);
+    }
   }
 
   .react-aria-TagGroup[data-tag-size="sm"] .react-aria-Tag {
-    padding: var(--spacing-2xs) var(--spacing-md);
+    padding: var(--spacing-2xs) var(--spacing-sm);
     font-size: var(--text-xs);
     line-height: var(--text-xs--line-height);
     border-radius: var(--radius-sm);
+
+    &[data-allows-removing] {
+      padding-right: var(--spacing-2xs);
+    }
   }
 
   .react-aria-TagGroup[data-tag-size="md"] .react-aria-Tag {
-    padding: var(--spacing-xs) var(--spacing-lg);
+    padding: var(--spacing-xs) var(--spacing-md);
     font-size: var(--text-sm);
     line-height: var(--text-sm--line-height);
     border-radius: var(--radius-md);
+
+    &[data-allows-removing] {
+      padding-right: var(--spacing-xs);
+    }
   }
 
   .react-aria-TagGroup[data-tag-size="lg"] .react-aria-Tag {
-    padding: var(--spacing-sm) var(--spacing-xl);
+    padding: var(--spacing-sm) var(--spacing-lg);
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
     border-radius: var(--radius-lg);
+
+    &[data-allows-removing] {
+      padding-right: var(--spacing-sm);
+    }
   }
 
   .react-aria-TagGroup[data-tag-size="xl"] .react-aria-Tag {
-    padding: var(--spacing-md) var(--spacing-2xl);
+    padding: var(--spacing-md) var(--spacing-xl);
     font-size: var(--text-lg);
     line-height: var(--text-lg--line-height);
     border-radius: var(--radius-lg);
+
+    &[data-allows-removing] {
+      padding-right: var(--spacing-md);
+    }
   }
 
   /* ===== Descriptions & Errors ===== */

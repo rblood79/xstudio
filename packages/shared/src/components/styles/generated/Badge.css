@@ -4,6 +4,8 @@
  * Archetype: simple
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Badge {
   /* Base styles — archetype: simple */
     display: inline-flex;
@@ -338,3 +340,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

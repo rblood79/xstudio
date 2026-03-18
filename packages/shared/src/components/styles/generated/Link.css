@@ -4,6 +4,8 @@
  * Archetype: button
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Link {
   /* Base styles — archetype: button */
     display: inline-flex;
@@ -122,3 +124,5 @@
     transition-duration: 0s !important;
   }
 }
+
+} /* @layer components */

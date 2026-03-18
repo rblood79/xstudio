@@ -125,6 +125,8 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
     ` * ============================================================ */`,
   );
   lines.push("");
+  lines.push("@layer components {");
+  lines.push("");
 
   // 기본 스타일
   lines.push(`.react-aria-${spec.name} {`);
@@ -250,6 +252,9 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string | null {
   // ─── Phase 3b: @media 공통 패턴 ───
   lines.push("");
   lines.push(...generateMediaQueries(spec));
+
+  lines.push("");
+  lines.push("} /* @layer components */");
 
   return lines.join("\n");
 }
@@ -746,6 +751,8 @@ function generateSwitchCSS(
     ` * ============================================================ */`,
   );
   lines.push("");
+  lines.push("@layer components {");
+  lines.push("");
 
   // default size dimensions
   const defaultDims = dimensions[spec.defaultSize] ?? dimensions.md;
@@ -864,6 +871,9 @@ function generateSwitchCSS(
     lines.push("}");
     lines.push("");
   }
+
+  lines.push("");
+  lines.push("} /* @layer components */");
 
   return lines.join("\n");
 }

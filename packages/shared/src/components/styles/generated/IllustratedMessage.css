@@ -4,6 +4,8 @@
  * Archetype: alert
  * ============================================================ */
 
+@layer components {
+
 .react-aria-IllustratedMessage {
   /* Base styles — archetype: alert */
     display: flex;
@@ -98,3 +100,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

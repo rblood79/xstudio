@@ -27,6 +27,14 @@ export interface RadioProps {
   style?: Record<string, string | number | undefined>;
 }
 
+/** variant별 비선택 시 ring 테두리 색상 (Skia shapes 전용) */
+export const RADIO_RING_BORDER: Record<string, TokenRef> = {
+  default: "{color.border-hover}" as TokenRef,
+  accent: "{color.border-hover}" as TokenRef,
+  neutral: "{color.border-hover}" as TokenRef,
+  negative: "{color.negative}" as TokenRef,
+};
+
 /** variant별 선택 시 색상 */
 export const RADIO_SELECTED_COLORS: Record<
   string,
@@ -78,28 +86,24 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       backgroundHover: "{color.layer-2}" as TokenRef,
       backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
     },
     accent: {
       background: "{color.base}" as TokenRef,
       backgroundHover: "{color.layer-2}" as TokenRef,
       backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
     },
     neutral: {
       background: "{color.base}" as TokenRef,
       backgroundHover: "{color.layer-2}" as TokenRef,
       backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
     },
     negative: {
       background: "{color.base}" as TokenRef,
       backgroundHover: "{color.negative-subtle}" as TokenRef,
       backgroundPressed: "{color.negative-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.negative}" as TokenRef,
     },
   },
 
@@ -109,7 +113,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: "{radius.full}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 6,
     },
     md: {
@@ -117,7 +121,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-md}" as TokenRef,
-      borderRadius: "{radius.full}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 8,
     },
     lg: {
@@ -125,7 +129,7 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-lg}" as TokenRef,
-      borderRadius: "{radius.full}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 10,
     },
   },
@@ -163,9 +167,11 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
             : parseFloat(String(styleBw)) || 0
           : 2;
 
+      const ringBorder =
+        RADIO_RING_BORDER[variantName] ?? RADIO_RING_BORDER.default;
       const borderColor =
         props.style?.borderColor ??
-        (props.isSelected ? selectedColors.ring : variant.border!);
+        (props.isSelected ? selectedColors.ring : ringBorder);
 
       const shapes: Shape[] = [];
 

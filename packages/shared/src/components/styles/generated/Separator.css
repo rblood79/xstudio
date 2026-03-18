@@ -4,6 +4,8 @@
  * Archetype: simple
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Separator {
   /* Base styles — archetype: simple */
     display: inline-flex;
@@ -172,3 +174,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

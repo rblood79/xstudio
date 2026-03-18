@@ -220,13 +220,7 @@ export function createCheckboxGroupDefinition(
       },
       {
         tag: "CheckboxItems",
-        props: {
-          style: {
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-          },
-        } as ComponentElementProps,
+        props: {} as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
         children: [
@@ -339,13 +333,7 @@ export function createRadioGroupDefinition(
       },
       {
         tag: "RadioItems",
-        props: {
-          style: {
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-          },
-        } as ComponentElementProps,
+        props: {} as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
         children: [
@@ -433,12 +421,6 @@ export function createTagGroupDefinition(
         label: "Tag Group",
         allowsRemoving: false,
         selectionMode: "multiple",
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          width: "fit-content",
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -462,14 +444,7 @@ export function createTagGroupDefinition(
       },
       {
         tag: "TagList",
-        props: {
-          style: {
-            display: "flex",
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 4,
-          },
-        } as ComponentElementProps,
+        props: {} as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
         children: [

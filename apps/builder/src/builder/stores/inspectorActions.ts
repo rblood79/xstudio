@@ -208,6 +208,7 @@ export const createInspectorActionsSlice: StateCreator<
       "items",
       "iconName",
       "iconPosition",
+      "allowsRemoving",
     ]);
     const hasLayoutChange = Object.keys(propsUpdate).some((key) =>
       LAYOUT_AFFECTING_PROPS.has(key),

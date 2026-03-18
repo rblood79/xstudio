@@ -4,6 +4,8 @@
  * Archetype: simple
  * ============================================================ */
 
+@layer components {
+
 .react-aria-MaskedFrame {
   /* Base styles — archetype: simple */
     display: inline-flex;
@@ -88,3 +90,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

@@ -4,6 +4,8 @@
  * Archetype: input-base
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Input {
   /* Base styles — archetype: input-base */
     display: flex;
@@ -127,3 +129,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

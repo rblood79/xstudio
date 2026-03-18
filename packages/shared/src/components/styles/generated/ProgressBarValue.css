@@ -4,6 +4,8 @@
  * Archetype: progress
  * ============================================================ */
 
+@layer components {
+
 .react-aria-ProgressBarValue {
   /* Base styles — archetype: progress */
     display: grid;
@@ -85,3 +87,5 @@
     transition-duration: 0s !important;
   }
 }
+
+} /* @layer components */

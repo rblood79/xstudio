@@ -4,6 +4,8 @@
  * Archetype: simple
  * ============================================================ */
 
+@layer components {
+
 .react-aria-Breadcrumbs {
   /* Base styles — archetype: simple */
     display: inline-flex;
@@ -94,3 +96,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */

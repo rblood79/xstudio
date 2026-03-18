@@ -360,7 +360,7 @@ export function TagGroup<T extends object>({
                   <>
                     {item.label}
                     {removing && (
-                      <Button slot="remove">
+                      <Button slot="remove" className="tag-remove-btn">
                         <X size={14} />
                       </Button>
                     )}
@@ -397,7 +397,7 @@ export function TagGroup<T extends object>({
                 <>
                   {tagContent}
                   {allowsRemoving && (
-                    <Button slot="remove">
+                    <Button slot="remove" className="tag-remove-btn">
                       <X size={14} />
                     </Button>
                   )}
@@ -443,7 +443,7 @@ export function Tag({ children, ...props }: TagProps): JSX.Element {
         <>
           {children}
           {allowsRemoving && (
-            <Button slot="remove">
+            <Button slot="remove" className="tag-remove-btn">
               <X size={14} />
             </Button>
           )}

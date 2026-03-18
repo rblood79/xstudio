@@ -24,6 +24,7 @@ export interface TagProps {
   children?: string;
   isDisabled?: boolean;
   isSelected?: boolean;
+  allowsRemoving?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -35,6 +36,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
   description: "TagGroup 내부 개별 태그 컴포넌트",
   archetype: "simple",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -62,7 +64,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
   sizes: {
     xs: {
       height: 18,
-      paddingX: 8,
+      paddingX: 4,
       paddingY: 1,
       fontSize: "{typography.text-2xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
@@ -70,7 +72,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
     },
     sm: {
       height: 20,
-      paddingX: 12,
+      paddingX: 8,
       paddingY: 2,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
@@ -78,7 +80,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
     },
     md: {
       height: 28,
-      paddingX: 16,
+      paddingX: 12,
       paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
@@ -86,7 +88,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
     },
     lg: {
       height: 40,
-      paddingX: 24,
+      paddingX: 16,
       paddingY: 8,
       fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
@@ -94,7 +96,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
     },
     xl: {
       height: 52,
-      paddingX: 32,
+      paddingX: 24,
       paddingY: 12,
       fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
@@ -189,6 +191,37 @@ export const TagSpec: ComponentSpec<TagProps> = {
           align: "left" as const,
           baseline: "middle" as const,
         });
+
+        // Remove 버튼 (X 아이콘) — allowsRemoving 시 텍스트 오른쪽에 표시
+        if (props.allowsRemoving) {
+          const iconSize = Math.round(fontSize * 0.75);
+          const gap = size.gap ?? 4;
+          const removeX = paddingX + fontSize * text.length * 0.55 + gap;
+          const removePad = 2; // --spacing-2xs
+          const centerY = size.height / 2;
+
+          // X 마크 (두 대각선) — 절대 좌표로 컨테이너 중앙에 배치
+          const cs = iconSize / 4;
+          const cx = removeX + removePad + iconSize / 2;
+          shapes.push({
+            type: "line" as const,
+            x1: cx - cs,
+            y1: centerY - cs,
+            x2: cx + cs,
+            y2: centerY + cs,
+            stroke: textColor,
+            strokeWidth: 1.5,
+          });
+          shapes.push({
+            type: "line" as const,
+            x1: cx + cs,
+            y1: centerY - cs,
+            x2: cx - cs,
+            y2: centerY + cs,
+            stroke: textColor,
+            strokeWidth: 1.5,
+          });
+        }
       }
 
       return shapes;

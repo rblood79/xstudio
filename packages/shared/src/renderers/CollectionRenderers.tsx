@@ -313,7 +313,6 @@ export const renderTagGroup = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      style={element.props.style}
       className={element.props.className}
       label={String(element.props.label || "")}
       description={String(element.props.description || "")}

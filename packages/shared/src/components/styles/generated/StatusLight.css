@@ -4,6 +4,8 @@
  * Archetype: simple
  * ============================================================ */
 
+@layer components {
+
 .react-aria-StatusLight {
   /* Base styles — archetype: simple */
     display: inline-flex;
@@ -232,3 +234,6 @@
     forced-color-adjust: auto;
   }
 }
+
+
+} /* @layer components */
