@@ -129,6 +129,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[spec-shape-rendering](rules/spec-shape-rendering.md)** - Shape 기반 렌더링
 - **[spec-token-usage](rules/spec-token-usage.md)** - 토큰 참조 형식
 - **spec-text-style**: Spec 기반 컴포넌트 텍스트 측정 시 `extractSpecTextStyle()` 사용 — fontSize/fontWeight/fontFamily 하드코딩 금지 (`specTextStyle.ts`)
+- **[spec-container-dimension-injection](rules/spec-container-dimension-injection.md)** - Spec shapes에 레이아웃 엔진 결과(containerWidth/Height)를 `_containerWidth`/`_containerHeight` props로 주입하는 패턴. 파이프라인 타이밍 수정 금지 — 데이터 흐름으로 해결
 
 #### Styling (style-\*)
 

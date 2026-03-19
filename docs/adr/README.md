@@ -62,16 +62,17 @@
 
 ### 미구현
 
-| ADR                                       | 제목                                  | 상태     | 규모                                                                                     | 우선순위 |
-| ----------------------------------------- | ------------------------------------- | -------- | ---------------------------------------------------------------------------------------- | :------: |
-| [013](013-quick-connect-data-binding.md)  | Quick Connect 데이터 바인딩           | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                          |  **P3**  |
-| [020](020-design-kit-improvement.md)      | Design Kit 패널 분석 및 개선          | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수 |    P4    |
-| [015](015-sitemap-layout.md)              | Sitemap Hierarchy 워크플로우 엣지     | Proposed | 변경 대상 8파일, 코드 미생성                                                             |    P5    |
-| [016](016-photoshop-ui-ux.md)             | Photoshop 벤치마크 기반 UI/UX (v2)    | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                   |    P5    |
-| [032](032-events-data-integration.md)     | Events Platform 재설계 + Data 통합    | Proposed | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동   |  **P3**  |
-| [034](034-events-panel-renovation.md)     | Events Panel Renovation               | Proposed | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                |  **P3**  |
-| [038](038-figma-import.md)                | Figma 디자인 임포트 시스템            | Proposed | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                |  **P3**  |
-| [041](041-spec-driven-property-editor.md) | Spec-Driven Property Editor 자동 생성 | Proposed | 107개 에디터 → Spec 기반 자동 생성 (ADR-036 후속)                                        |    P4    |
+| ADR                                       | 제목                                  | 상태     | 규모                                                                                           | 우선순위 |
+| ----------------------------------------- | ------------------------------------- | -------- | ---------------------------------------------------------------------------------------------- | :------: |
+| [013](013-quick-connect-data-binding.md)  | Quick Connect 데이터 바인딩           | Proposed | 5 Phase, 21파일 — 기반 Collection 렌더러 완성, 자동화 UI 미구현                                |  **P3**  |
+| [020](020-design-kit-improvement.md)      | Design Kit 패널 분석 및 개선          | Proposed | 3 Phase — 기존 DesignKitPanel/Store 완성, Kit v2 스키마/Factory 연동/History 통합 미착수       |    P4    |
+| [015](015-sitemap-layout.md)              | Sitemap Hierarchy 워크플로우 엣지     | Proposed | 변경 대상 8파일, 코드 미생성                                                                   |    P5    |
+| [016](016-photoshop-ui-ux.md)             | Photoshop 벤치마크 기반 UI/UX (v2)    | Proposed | P0~P2 3단계, Action Bar + Context Menu + AI Variations                                         |    P5    |
+| [032](032-events-data-integration.md)     | Events Platform 재설계 + Data 통합    | Proposed | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동         |  **P3**  |
+| [034](034-events-panel-renovation.md)     | Events Panel Renovation               | Proposed | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                      |  **P3**  |
+| [038](038-figma-import.md)                | Figma 디자인 임포트 시스템            | Proposed | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                      |  **P3**  |
+| [041](041-spec-driven-property-editor.md) | Spec-Driven Property Editor 자동 생성 | Proposed | 107개 에디터 → Spec 기반 자동 생성 (ADR-036 후속)                                              |    P4    |
+| [042](042-spec-dimension-injection.md)    | Spec Container Dimension Injection    | Proposed | Spec shapes에 레이아웃 엔진 결과 주입 — 9개 컴포넌트 텍스트 폭 추정/고정값 제거 (Phase 1 완료) |    P2    |
 
 ## Events Panel 설계 문서군
 

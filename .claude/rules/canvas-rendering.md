@@ -167,3 +167,14 @@ Label은 `TEXT_TAGS`에서 제외되어 TextSprite 경로가 아닌 **spec shape
 ## registryVersion 캐싱
 
 - LayoutContainer 'layout' 이벤트에서 `notifyLayoutChange()` 무조건 호출
+
+## Spec Container Dimension Injection (CRITICAL)
+
+Spec shapes가 레이아웃 엔진(Taffy) 결과(containerWidth/Height)를 필요로 할 때:
+
+- **`_containerWidth`/`_containerHeight` props 주입** — ElementSprite에서 `finalWidth`/`finalHeight`를 specProps에 전달
+- **우측 역산 배치**: `containerWidth - border - paddingRight - pad - iconSize/2` (텍스트 폭 추정 금지)
+- **정확한 세로 중앙**: `containerHeight / 2` (`size.height / 2` 사용 금지 — border 미포함)
+- **파이프라인 타이밍 수정 금지**: `publishLayoutMap` 동기화, `notifyLayoutChange()` 강제 호출 등 해킹 금지
+- **부모 delegation prop 변경 시**: `updateSelectedPropertiesWithChildren`으로 부모+자식 atomic batch update
+- 상세: `.claude/skills/xstudio-patterns/rules/spec-container-dimension-injection.md`

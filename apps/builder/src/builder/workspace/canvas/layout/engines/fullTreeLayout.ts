@@ -1000,13 +1000,14 @@ function traversePostOrder(
     }
   }
 
-  // Switch/Checkbox/Radio: 부모 size에 따른 Label fontSize 주입
+  // Switch/Checkbox/Radio/TagGroup: 부모 size에 따른 Label fontSize 주입
   // Label의 calculateContentHeight(TEXT_LEAF_TAGS 경로)는 style.fontSize를 참조하므로
   // spec size delegation된 fontSize를 인라인으로 주입해야 함
   if (
     containerTag === "switch" ||
     containerTag === "checkbox" ||
-    containerTag === "radio"
+    containerTag === "radio" ||
+    containerTag === "taggroup"
   ) {
     const parentSize = (rawElement.props as Record<string, unknown> | undefined)
       ?.size as string | undefined;

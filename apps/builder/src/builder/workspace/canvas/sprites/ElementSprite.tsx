@@ -1118,6 +1118,7 @@ export const ElementSprite = memo(function ElementSprite({
     "Switch",
     "Checkbox",
     "Radio",
+    "TagGroup",
   ]);
   const parentDelegatedSize = useStore((state) => {
     if (!PARENT_SIZE_DELEGATION_TAGS.has(element.tag) || !element.parent_id)

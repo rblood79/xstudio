@@ -143,6 +143,27 @@
 
   /* @sync ButtonSpec.sizes — padding 동일 */
 
+  /* Label font-size delegation (LabelSpec sizes: sm=text-xs, md=text-sm, lg=text-md) */
+  .react-aria-TagGroup[data-tag-size="xs"] {
+    --label-font-size: var(--text-2xs);
+  }
+
+  .react-aria-TagGroup[data-tag-size="sm"] {
+    --label-font-size: var(--text-xs);
+  }
+
+  .react-aria-TagGroup[data-tag-size="md"] {
+    --label-font-size: var(--text-sm);
+  }
+
+  .react-aria-TagGroup[data-tag-size="lg"] {
+    --label-font-size: var(--text-base);
+  }
+
+  .react-aria-TagGroup[data-tag-size="xl"] {
+    --label-font-size: var(--text-lg);
+  }
+
   .react-aria-TagGroup[data-tag-size="xs"] .react-aria-Tag {
     padding: var(--spacing-3xs) var(--spacing-xs);
     font-size: var(--text-2xs);
