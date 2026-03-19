@@ -565,6 +565,22 @@ const INLINE_UI_SIZE_CONFIGS: Record<
   fancybutton: BUTTON_SIZE_CONFIG,
 };
 
+function getTagRemoveAdjustedPaddingRight(
+  tag: string,
+  sizeConfig: {
+    paddingRight: number;
+    paddingY: number;
+  },
+  allowsRemoving: boolean,
+): number {
+  if (tag === "tag" && allowsRemoving) {
+    // CSS TagGroup.css: allowsRemoving 상태에서는 우측 패딩이 size별 paddingY 값으로 축소된다.
+    return sizeConfig.paddingY;
+  }
+
+  return sizeConfig.paddingRight;
+}
+
 // ── Layout pass 컨텍스트: TagGroup allowsRemoving 상태 ──
 // fullTreeLayout DFS 시작 시 설정, calculateContentWidth/parseBoxModel에서 조회
 // delegation 경로(DFS/flex engine/recursive)에 무관하게 일관된 값 제공
@@ -1223,11 +1239,11 @@ export function calculateContentWidth(
 
       // Tag remove 버튼 너비: allowsRemoving 시 X 아이콘 + gap + padding 추가
       let removeExtra = 0;
+      const tagAllowsRemoving = tag === "tag" && isTagAllowsRemoving(element);
       if (tag === "tag") {
-        const tagAllowsRemoving = isTagAllowsRemoving(element);
         if (tagAllowsRemoving) {
           const removeIconSize = Math.round(fontSize * 0.75);
-          const removeGap = sizeConfig.paddingLeft > 0 ? 4 : 2;
+          const removeGap = 2; // CSS .tag-remove-btn margin-left
           const removePad = 2; // --spacing-2xs
           removeExtra = removeGap + removePad * 2 + removeIconSize;
         }
@@ -1237,7 +1253,12 @@ export function calculateContentWidth(
       // PixiBadge와 동일한 너비 계산 (cssVariableReader.ts BADGE_FALLBACKS 참조)
       const minWidth = (sizeConfig as { minWidth?: number }).minWidth;
       if (minWidth !== undefined) {
-        const padding = sizeConfig.paddingLeft + sizeConfig.paddingRight;
+        const effectivePaddingRight = getTagRemoveAdjustedPaddingRight(
+          tag,
+          sizeConfig,
+          tagAllowsRemoving,
+        );
+        const padding = sizeConfig.paddingLeft + effectivePaddingRight;
         const minContentWidth = Math.max(0, minWidth - padding);
         return Math.max(minContentWidth, textWidth + iconExtra + removeExtra);
       }
@@ -2468,6 +2489,7 @@ export function parseBoxModel(
       style?.paddingBottom !== undefined ||
       style?.paddingLeft !== undefined;
     if (!hasInlinePadding) {
+      const tagAllowsRemoving = tag === "tag" && isTagAllowsRemoving(element);
       // Icon-only 버튼: paddingX = paddingY (정사각형 패딩)
       const isIconOnlyButton =
         isFormElement &&
@@ -2478,7 +2500,11 @@ export function parseBoxModel(
         : sizeConfig.paddingLeft;
       const effectivePaddingRight = isIconOnlyButton
         ? sizeConfig.paddingY
-        : sizeConfig.paddingRight;
+        : getTagRemoveAdjustedPaddingRight(
+            tag,
+            sizeConfig,
+            tagAllowsRemoving,
+          );
       padding = {
         top: sizeConfig.paddingY,
         right: effectivePaddingRight,

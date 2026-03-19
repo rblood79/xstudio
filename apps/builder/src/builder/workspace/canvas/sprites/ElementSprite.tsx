@@ -1877,6 +1877,13 @@ export const ElementSprite = memo(function ElementSprite({
               if (tag === "Tag" && tagGroupAllowsRemoving) {
                 specProps = { ...specProps, allowsRemoving: true };
               }
+              if (tag === "Tag") {
+                specProps = {
+                  ...specProps,
+                  _containerWidth: finalWidth,
+                  _containerHeight: specHeight,
+                };
+              }
 
               // SelectIcon/ComboBoxTrigger: 부모의 iconName 전파 (specProps에 없으면 주입)
               if (parentDelegatedIconName && !specProps.iconName) {

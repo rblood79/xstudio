@@ -256,6 +256,42 @@ describe('parseBoxModel', () => {
     expect(result.width).toBe(192); // 1920 * 0.1
     expect(result.height).toBe(216); // 1080 * 0.2
   });
+
+  it('Tag allowsRemoving이면 size 기본 paddingRight 대신 축소된 우측 패딩을 사용한다', () => {
+    const element = {
+      id: 'tag-sm',
+      tag: 'Tag',
+      type: 'div',
+      props: {
+        size: 'sm',
+        allowsRemoving: true,
+      },
+      children: [],
+    } as unknown as Element;
+
+    const result = parseBoxModel(element, 400, 800);
+
+    expect(result.padding.left).toBe(8);
+    expect(result.padding.right).toBe(2);
+  });
+
+  it('Tag size 변경 후에도 allowsRemoving 우측 패딩 축소 규칙을 유지한다', () => {
+    const element = {
+      id: 'tag-lg',
+      tag: 'Tag',
+      type: 'div',
+      props: {
+        size: 'lg',
+        allowsRemoving: true,
+      },
+      children: [],
+    } as unknown as Element;
+
+    const result = parseBoxModel(element, 400, 800);
+
+    expect(result.padding.left).toBe(16);
+    expect(result.padding.right).toBe(8);
+  });
 });
 
 describe('parseVerticalAlign', () => {

@@ -126,6 +126,12 @@ const INPUT_FALLBACKS = {
   lg: { fontSize: '16px', paddingTop: '12px', paddingRight: '16px' },
 };
 
+const TAG_FALLBACKS = {
+  sm: { fontSize: '12px', paddingTop: '2px', paddingRight: '8px' },
+  md: { fontSize: '14px', paddingTop: '4px', paddingRight: '12px' },
+  lg: { fontSize: '16px', paddingTop: '8px', paddingRight: '16px' },
+};
+
 // ============================================
 // 1. computeSyntheticStyle() 기본 동작
 // ============================================
@@ -244,6 +250,42 @@ describe('computeSyntheticStyle() 기본 동작', () => {
     expect(result.fontSize).toBe(INPUT_FALLBACKS.md.fontSize);
     expect(result.paddingTop).toBe(INPUT_FALLBACKS.md.paddingTop);
     expect(result.paddingRight).toBe(INPUT_FALLBACKS.md.paddingRight);
+  });
+
+  it('Tag size="md"이면 기본 paddingRight를 반환한다', () => {
+    const element = createMockElement('Tag', { size: 'md' });
+
+    const result = computeSyntheticStyle(element);
+
+    expect(result.fontSize).toBe(TAG_FALLBACKS.md.fontSize);
+    expect(result.paddingTop).toBe(TAG_FALLBACKS.md.paddingTop);
+    expect(result.paddingRight).toBe(TAG_FALLBACKS.md.paddingRight);
+  });
+
+  it('Tag allowsRemoving=true이면 paddingRight가 paddingTop과 같아진다', () => {
+    const element = createMockElement('Tag', {
+      size: 'md',
+      allowsRemoving: true,
+    });
+
+    const result = computeSyntheticStyle(element);
+
+    expect(result.paddingTop).toBe(TAG_FALLBACKS.md.paddingTop);
+    expect(result.paddingRight).toBe(TAG_FALLBACKS.md.paddingTop);
+  });
+
+  it('Tag allowsRemoving 캐시는 size/variant가 같아도 분리된다', () => {
+    const plain = createMockElement('Tag', { size: 'md' });
+    const removable = createMockElement('Tag', {
+      size: 'md',
+      allowsRemoving: true,
+    });
+
+    const plainResult = computeSyntheticStyle(plain);
+    const removableResult = computeSyntheticStyle(removable);
+
+    expect(plainResult.paddingRight).toBe(TAG_FALLBACKS.md.paddingRight);
+    expect(removableResult.paddingRight).toBe(TAG_FALLBACKS.md.paddingTop);
   });
 });
 

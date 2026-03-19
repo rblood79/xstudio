@@ -26,6 +26,10 @@ export interface TagProps {
   isSelected?: boolean;
   allowsRemoving?: boolean;
   style?: Record<string, string | number | undefined>;
+  /** ElementSprite 주입: 엔진 계산 최종 폭 */
+  _containerWidth?: number;
+  /** ElementSprite 주입: 엔진 계산 최종 높이 */
+  _containerHeight?: number;
 }
 
 /**
@@ -120,6 +124,18 @@ export const TagSpec: ComponentSpec<TagProps> = {
 
   render: {
     shapes: (props, variant, size, state = "default") => {
+      const parseNumericStyleValue = (
+        value: string | number | undefined,
+        fallback: number,
+      ): number => {
+        if (typeof value === "number") return value;
+        if (typeof value === "string") {
+          const parsed = parseFloat(value);
+          return Number.isFinite(parsed) ? parsed : fallback;
+        }
+        return fallback;
+      };
+
       // 선택 상태면 selected variant 사용
       const effectiveVariant = props.isSelected
         ? {
@@ -184,6 +200,18 @@ export const TagSpec: ComponentSpec<TagProps> = {
               ? props.style.paddingLeft
               : parseFloat(String(props.style.paddingLeft)) || 0
             : size.paddingX;
+        const paddingRight =
+          props.style?.paddingRight != null
+            ? parseNumericStyleValue(props.style.paddingRight, size.paddingX)
+            : props.allowsRemoving
+              ? size.paddingY
+              : size.paddingX;
+        const containerWidth =
+          typeof props._containerWidth === "number" ? props._containerWidth : 0;
+        const containerHeight =
+          typeof props._containerHeight === "number"
+            ? props._containerHeight
+            : size.height + 2;
 
         const textColor = props.style?.color ?? effectiveVariant.text;
 
@@ -203,15 +231,23 @@ export const TagSpec: ComponentSpec<TagProps> = {
         // Remove 버튼 (X 아이콘) — allowsRemoving 시 텍스트 오른쪽에 표시
         if (props.allowsRemoving) {
           const iconSize = Math.round(fontSize * 0.75);
-          const gap = size.gap ?? 4;
-          const removeX = paddingX + fontSize * text.length * 0.55 + gap;
+          const removeButtonGap = 2; // CSS .tag-remove-btn margin-left
+          const removeX =
+            paddingX + fontSize * text.length * 0.55 + removeButtonGap;
           const removePad = 2; // --spacing-2xs
           // containerHeight = size.height + border(1)*2 → 정중앙 보정
           const borderWidth = 1;
-          const centerY = (size.height + borderWidth * 2) / 2;
+          const centerY = containerHeight / 2;
 
           const cs = iconSize / 4;
-          const cx = removeX + removePad + iconSize / 2;
+          const cx =
+            containerWidth > 0
+              ? containerWidth -
+                borderWidth -
+                paddingRight -
+                removePad -
+                iconSize / 2
+              : removeX + removePad + iconSize / 2;
 
           // X 마크 (두 대각선)
           shapes.push({

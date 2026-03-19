@@ -9,7 +9,13 @@
  */
 
 import type { SelectedElement } from "../builder/inspector/types";
-import { ProgressBarSpec, MeterSpec } from "@xstudio/specs";
+import {
+  ProgressBarSpec,
+  MeterSpec,
+  TagSpec,
+  resolveToken,
+  type TokenRef,
+} from "@xstudio/specs";
 import {
   getSizePreset,
   getCheckboxSizePreset,
@@ -63,8 +69,13 @@ export interface SyntheticComputedStyle {
 const styleCache = new Map<string, SyntheticComputedStyle>();
 const MAX_CACHE_SIZE = 200;
 
-function getCacheKey(type: string, size: string, variant: string): string {
-  return `${type}:${size}:${variant}`;
+function getCacheKey(
+  type: string,
+  size: string,
+  variant: string,
+  allowsRemoving: boolean,
+): string {
+  return `${type}:${size}:${variant}:${allowsRemoving ? "removable" : "plain"}`;
 }
 
 function cacheGet(key: string): SyntheticComputedStyle | undefined {
@@ -255,6 +266,35 @@ function computeFromTag(tag: string, size: string): SyntheticComputedStyle {
         borderRadius: px(Math.round(p.height / 2)),
       };
     }
+    case "Tag": {
+      const tagSize =
+        TagSpec.sizes[size.toLowerCase()] ?? TagSpec.sizes[TagSpec.defaultSize];
+      const rawFontSize = tagSize.fontSize;
+      const rawBorderRadius = tagSize.borderRadius;
+      const fontSize =
+        typeof rawFontSize === "number"
+          ? rawFontSize
+          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
+            ? Number(resolveToken(rawFontSize as TokenRef) ?? 14)
+            : 14;
+      const borderRadius =
+        typeof rawBorderRadius === "number"
+          ? rawBorderRadius
+          : typeof rawBorderRadius === "string" &&
+              rawBorderRadius.startsWith("{")
+            ? Number(resolveToken(rawBorderRadius as TokenRef) ?? 4)
+            : 4;
+      return {
+        fontSize: px(fontSize),
+        fontWeight: "400",
+        paddingTop: px(tagSize.paddingY),
+        paddingRight: px(tagSize.paddingX),
+        paddingBottom: px(tagSize.paddingY),
+        paddingLeft: px(tagSize.paddingX),
+        borderRadius: px(borderRadius),
+        gap: px(tagSize.gap ?? 4),
+      };
+    }
 
     // Card
     case "Card": {
@@ -310,14 +350,18 @@ export function computeSyntheticStyle(
   const tag = element.type;
   const size = (element.properties?.size as string) ?? "md";
   const variant = (element.properties?.variant as string) ?? "default";
+  const allowsRemoving = Boolean(element.properties?.allowsRemoving);
 
   // 캐시 확인
-  const cacheKey = getCacheKey(tag, size, variant);
+  const cacheKey = getCacheKey(tag, size, variant, allowsRemoving);
   const cached = cacheGet(cacheKey);
   if (cached) return cached;
 
   // tag + size에서 합성 스타일 생성
   const synthetic = computeFromTag(tag, size);
+  if (tag === "Tag" && allowsRemoving) {
+    synthetic.paddingRight = synthetic.paddingTop;
+  }
 
   // 캐시 저장
   cacheSet(cacheKey, synthetic);
