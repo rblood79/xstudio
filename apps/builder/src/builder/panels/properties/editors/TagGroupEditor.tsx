@@ -339,7 +339,25 @@ export const TagGroupEditor = memo(function TagGroupEditor({
         <PropertySwitch
           label={PROPERTY_LABELS.ALLOWS_REMOVING}
           isSelected={Boolean(currentProps.allowsRemoving)}
-          onChange={(checked) => updateProp("allowsRemoving", checked)}
+          onChange={(checked) => {
+            updateProp("allowsRemoving", checked);
+            // Tag 자식들에게 allowsRemoving delegation → store element 갱신으로 Skia 재렌더링 트리거
+            const state = useStore.getState();
+            const childrenMap = state.childrenMap;
+            const queue = [elementId];
+            while (queue.length > 0) {
+              const parentId = queue.pop()!;
+              const children = childrenMap.get(parentId) ?? [];
+              for (const child of children) {
+                if (child.tag === "Tag") {
+                  updateElementProps(child.id, {
+                    allowsRemoving: checked || undefined,
+                  });
+                }
+                queue.push(child.id);
+              }
+            }
+          }}
           icon={Trash}
         />
 

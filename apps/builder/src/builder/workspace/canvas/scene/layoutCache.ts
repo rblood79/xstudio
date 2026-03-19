@@ -1,10 +1,7 @@
 import type { Element } from "../../../../types/core/store.types";
 import type { ComputedLayout } from "../layout/engines/LayoutEngine";
 import { calculateFullTreeLayout } from "../layout/engines/fullTreeLayout";
-import {
-  parseBorder,
-  parsePadding,
-} from "../layout/engines/utils";
+import { parseBorder, parsePadding } from "../layout/engines/utils";
 import type { PageDirtyState } from "./subtreeInvalidation";
 
 interface BuildPageChildrenMapInput {
@@ -116,6 +113,7 @@ const LAYOUT_PROP_KEYS = [
   "rows",
   "columns",
   "src",
+  "allowsRemoving",
 ];
 
 function serializeLayoutRelevantValue(value: unknown): string {
@@ -278,8 +276,9 @@ export function getCachedPageLayout({
   ) {
     return cachedEntry.fullTreeLayoutMap;
   }
-
-  const bodyStyle = bodyElement.props?.style as Record<string, unknown> | undefined;
+  const bodyStyle = bodyElement.props?.style as
+    | Record<string, unknown>
+    | undefined;
   const bodyBorderVal = parseBorder(bodyStyle);
   const bodyPaddingVal = parsePadding(bodyStyle, pageWidth);
   const availableWidth =

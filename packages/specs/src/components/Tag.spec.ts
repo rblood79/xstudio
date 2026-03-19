@@ -61,12 +61,16 @@ export const TagSpec: ComponentSpec<TagProps> = {
   },
 
   // @sync Button.css/BUTTON_SIZE_CONFIG — padding/fontSize 동일
+  // @sync TagGroup.css line-height: var(--text-*--line-height)
+  // lineHeight = fontSize * multiplier (CSS line-height 정합성)
+  // height = lineHeight + paddingY*2 + borderWidth(1)*2
   sizes: {
     xs: {
       height: 18,
       paddingX: 4,
       paddingY: 1,
       fontSize: "{typography.text-2xs}" as TokenRef,
+      lineHeight: 16, // 10 * 1.6
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 2,
     },
@@ -75,6 +79,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
       paddingX: 8,
       paddingY: 2,
       fontSize: "{typography.text-xs}" as TokenRef,
+      lineHeight: 16, // 12 * 1.333
       borderRadius: "{radius.sm}" as TokenRef,
       gap: 4,
     },
@@ -83,6 +88,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
       paddingX: 12,
       paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
+      lineHeight: 20, // 14 * 1.429
       borderRadius: "{radius.md}" as TokenRef,
       gap: 4,
     },
@@ -91,6 +97,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
       paddingX: 16,
       paddingY: 8,
       fontSize: "{typography.text-base}" as TokenRef,
+      lineHeight: 24, // 16 * 1.5
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 6,
     },
@@ -99,6 +106,7 @@ export const TagSpec: ComponentSpec<TagProps> = {
       paddingX: 24,
       paddingY: 12,
       fontSize: "{typography.text-lg}" as TokenRef,
+      lineHeight: 28, // 18 * 1.556
       borderRadius: "{radius.lg}" as TokenRef,
       gap: 8,
     },
@@ -198,11 +206,14 @@ export const TagSpec: ComponentSpec<TagProps> = {
           const gap = size.gap ?? 4;
           const removeX = paddingX + fontSize * text.length * 0.55 + gap;
           const removePad = 2; // --spacing-2xs
-          const centerY = size.height / 2;
+          // containerHeight = size.height + border(1)*2 → 정중앙 보정
+          const borderWidth = 1;
+          const centerY = (size.height + borderWidth * 2) / 2;
 
-          // X 마크 (두 대각선) — 절대 좌표로 컨테이너 중앙에 배치
           const cs = iconSize / 4;
           const cx = removeX + removePad + iconSize / 2;
+
+          // X 마크 (두 대각선)
           shapes.push({
             type: "line" as const,
             x1: cx - cs,

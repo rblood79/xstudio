@@ -225,10 +225,24 @@ export const createInspectorActionsSlice: StateCreator<
           newProps;
       }
 
-      // 레이아웃 영향 prop 변경 시 layoutVersion 증가 (PersistentTaffyTree JSON 비교로 불필요 WASM 호출 방지)
+      // 레이아웃 영향 prop 변경 시 layoutVersion 증가 + dirtyElementIds 갱신
+      // dirtyElementIds: 변경 요소 + 하위 자식 전체 등록 (delegation prop이 자식 레이아웃에 영향)
       if (hasLayoutChange) {
+        const dirtyIds = new Set(prevState.dirtyElementIds);
+        dirtyIds.add(elementId);
+        // 하위 자식 전체 dirty 등록 (allowsRemoving, size 등 delegation prop)
+        const queue = [elementId];
+        while (queue.length > 0) {
+          const parentId = queue.pop()!;
+          const children = prevState.childrenMap.get(parentId) ?? [];
+          for (const child of children) {
+            dirtyIds.add(child.id);
+            queue.push(child.id);
+          }
+        }
         (stateUpdate as Record<string, unknown>).layoutVersion =
           prevState.layoutVersion + 1;
+        (stateUpdate as Record<string, unknown>).dirtyElementIds = dirtyIds;
       }
 
       return stateUpdate;

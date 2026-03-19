@@ -2476,13 +2476,9 @@ export function parseBoxModel(
       const effectivePaddingLeft = isIconOnlyButton
         ? sizeConfig.paddingY
         : sizeConfig.paddingLeft;
-      // Tag allowsRemoving: CSS padding-right = padding-top (remove 버튼 공간 확보)
-      const isTagWithRemove = tag === "tag" && isTagAllowsRemoving(element);
       const effectivePaddingRight = isIconOnlyButton
         ? sizeConfig.paddingY
-        : isTagWithRemove
-          ? sizeConfig.paddingY
-          : sizeConfig.paddingRight;
+        : sizeConfig.paddingRight;
       padding = {
         top: sizeConfig.paddingY,
         right: effectivePaddingRight,
