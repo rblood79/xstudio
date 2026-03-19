@@ -570,9 +570,12 @@ const INLINE_UI_SIZE_CONFIGS: Record<
 // delegation 경로(DFS/flex engine/recursive)에 무관하게 일관된 값 제공
 let _tagGroupAllowsRemovingMap = new Map<string, boolean>();
 
-/** fullTreeLayout DFS 시작 전 호출 — TagGroup의 allowsRemoving 상태 수집 */
+/** fullTreeLayout DFS 시작 전 호출 — TagGroup의 allowsRemoving 상태 수집
+ *  childrenMap 기반 DFS로 TagGroup 하위 전체 서브트리 ID를 등록하여
+ *  중간 래퍼 유무와 무관하게 remove 공간 계산이 일관되게 동작 */
 export function setTagGroupAllowsRemovingContext(
   elementsMap: Map<string, Element>,
+  childrenMap: Map<string | null, string[]>,
 ): void {
   _tagGroupAllowsRemovingMap = new Map();
   for (const el of elementsMap.values()) {
@@ -581,12 +584,17 @@ export function setTagGroupAllowsRemovingContext(
         (el.props as Record<string, unknown> | undefined)?.allowsRemoving,
       );
       if (ar) {
-        // TagGroup ID + 자식 TagList ID 모두 등록
-        // Tag의 parent_id가 TagList이므로 TagList ID도 필요
-        _tagGroupAllowsRemovingMap.set(el.id, true);
-        for (const child of elementsMap.values()) {
-          if (child.parent_id === el.id && child.tag === "TagList") {
-            _tagGroupAllowsRemovingMap.set(child.id, true);
+        // DFS(stack)로 TagGroup 하위 전체 서브트리 등록
+        // 중간 래퍼가 끼어도 Tag의 parent_id 조회가 항상 맵에 히트
+        const stack: string[] = [el.id];
+        while (stack.length > 0) {
+          const id = stack.pop()!;
+          _tagGroupAllowsRemovingMap.set(id, true);
+          const children = childrenMap.get(id);
+          if (children) {
+            for (const childId of children) {
+              stack.push(childId);
+            }
           }
         }
       }
@@ -594,23 +602,19 @@ export function setTagGroupAllowsRemovingContext(
   }
 }
 
-/** Tag element의 조상 TagGroup이 allowsRemoving인지 조회 */
+/** Tag element의 조상 TagGroup이 allowsRemoving인지 조회
+ *  DFS 서브트리 등록으로 parent_id 단일 조회만으로 충분 */
 export function isTagAllowsRemoving(
   element: Element,
-  elementsMap: Map<string, Element>,
+  _elementsMap?: Map<string, Element>,
 ): boolean {
   // props에 직접 있으면 (delegation된 경우)
   if ((element.props as Record<string, unknown> | undefined)?.allowsRemoving)
     return true;
-  // 조상 탐색: Tag → TagList → TagGroup
-  let ancestorId = element.parent_id;
-  for (let i = 0; i < 3 && ancestorId; i++) {
-    if (_tagGroupAllowsRemovingMap.has(ancestorId)) return true;
-    const ancestor = elementsMap.get(ancestorId);
-    if (!ancestor) break;
-    ancestorId = ancestor.parent_id;
-  }
-  return false;
+  // DFS 서브트리 맵에서 parent_id 조회 — 중간 래퍼 포함 전체 등록됨
+  return element.parent_id
+    ? _tagGroupAllowsRemovingMap.has(element.parent_id)
+    : false;
 }
 
 /**
@@ -1220,20 +1224,7 @@ export function calculateContentWidth(
       // Tag remove 버튼 너비: allowsRemoving 시 X 아이콘 + gap + padding 추가
       let removeExtra = 0;
       if (tag === "tag") {
-        // 모듈 레벨 컨텍스트로 TagGroup allowsRemoving 조회
-        // DFS/FlexEngine/재귀 등 모든 호출 경로에서 일관된 결과
-        let tagAllowsRemoving = Boolean(props?.allowsRemoving);
-        if (!tagAllowsRemoving && element.parent_id) {
-          let ancestorId: string | null | undefined = element.parent_id;
-          for (let i = 0; i < 3 && ancestorId; i++) {
-            if (_tagGroupAllowsRemovingMap.has(ancestorId)) {
-              tagAllowsRemoving = true;
-              break;
-            }
-            // parent_id 체인 탐색은 element 자체 정보만 사용
-            break; // parent_id만으로는 상위 탐색 불가 → Map 조회로 충분
-          }
-        }
+        const tagAllowsRemoving = isTagAllowsRemoving(element);
         if (tagAllowsRemoving) {
           const removeIconSize = Math.round(fontSize * 0.75);
           const removeGap = sizeConfig.paddingLeft > 0 ? 4 : 2;
@@ -2486,13 +2477,7 @@ export function parseBoxModel(
         ? sizeConfig.paddingY
         : sizeConfig.paddingLeft;
       // Tag allowsRemoving: CSS padding-right = padding-top (remove 버튼 공간 확보)
-      // 모듈 레벨 컨텍스트로 TagGroup 조상의 allowsRemoving 조회
-      const isTagWithRemove =
-        tag === "tag" &&
-        (Boolean(props?.allowsRemoving) ||
-          (element.parent_id
-            ? _tagGroupAllowsRemovingMap.has(element.parent_id)
-            : false));
+      const isTagWithRemove = tag === "tag" && isTagAllowsRemoving(element);
       const effectivePaddingRight = isIconOnlyButton
         ? sizeConfig.paddingY
         : isTagWithRemove
