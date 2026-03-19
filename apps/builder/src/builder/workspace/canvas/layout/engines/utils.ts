@@ -602,23 +602,19 @@ export function setTagGroupAllowsRemovingContext(
   }
 }
 
-/** Tag element의 조상 TagGroup이 allowsRemoving인지 조회 */
+/** Tag element의 조상 TagGroup이 allowsRemoving인지 조회
+ *  DFS 서브트리 등록으로 parent_id 단일 조회만으로 충분 */
 export function isTagAllowsRemoving(
   element: Element,
-  elementsMap: Map<string, Element>,
+  _elementsMap?: Map<string, Element>,
 ): boolean {
   // props에 직접 있으면 (delegation된 경우)
   if ((element.props as Record<string, unknown> | undefined)?.allowsRemoving)
     return true;
-  // 조상 탐색: Tag → TagList → TagGroup
-  let ancestorId = element.parent_id;
-  for (let i = 0; i < 3 && ancestorId; i++) {
-    if (_tagGroupAllowsRemovingMap.has(ancestorId)) return true;
-    const ancestor = elementsMap.get(ancestorId);
-    if (!ancestor) break;
-    ancestorId = ancestor.parent_id;
-  }
-  return false;
+  // DFS 서브트리 맵에서 parent_id 조회 — 중간 래퍼 포함 전체 등록됨
+  return element.parent_id
+    ? _tagGroupAllowsRemovingMap.has(element.parent_id)
+    : false;
 }
 
 /**
@@ -1228,20 +1224,7 @@ export function calculateContentWidth(
       // Tag remove 버튼 너비: allowsRemoving 시 X 아이콘 + gap + padding 추가
       let removeExtra = 0;
       if (tag === "tag") {
-        // 모듈 레벨 컨텍스트로 TagGroup allowsRemoving 조회
-        // DFS/FlexEngine/재귀 등 모든 호출 경로에서 일관된 결과
-        let tagAllowsRemoving = Boolean(props?.allowsRemoving);
-        if (!tagAllowsRemoving && element.parent_id) {
-          let ancestorId: string | null | undefined = element.parent_id;
-          for (let i = 0; i < 3 && ancestorId; i++) {
-            if (_tagGroupAllowsRemovingMap.has(ancestorId)) {
-              tagAllowsRemoving = true;
-              break;
-            }
-            // parent_id 체인 탐색은 element 자체 정보만 사용
-            break; // parent_id만으로는 상위 탐색 불가 → Map 조회로 충분
-          }
-        }
+        const tagAllowsRemoving = isTagAllowsRemoving(element);
         if (tagAllowsRemoving) {
           const removeIconSize = Math.round(fontSize * 0.75);
           const removeGap = sizeConfig.paddingLeft > 0 ? 4 : 2;
@@ -2494,13 +2477,7 @@ export function parseBoxModel(
         ? sizeConfig.paddingY
         : sizeConfig.paddingLeft;
       // Tag allowsRemoving: CSS padding-right = padding-top (remove 버튼 공간 확보)
-      // 모듈 레벨 컨텍스트로 TagGroup 조상의 allowsRemoving 조회
-      const isTagWithRemove =
-        tag === "tag" &&
-        (Boolean(props?.allowsRemoving) ||
-          (element.parent_id
-            ? _tagGroupAllowsRemovingMap.has(element.parent_id)
-            : false));
+      const isTagWithRemove = tag === "tag" && isTagAllowsRemoving(element);
       const effectivePaddingRight = isIconOnlyButton
         ? sizeConfig.paddingY
         : isTagWithRemove
