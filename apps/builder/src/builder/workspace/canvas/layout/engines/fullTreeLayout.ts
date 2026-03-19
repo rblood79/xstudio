@@ -1445,7 +1445,7 @@ export function calculateFullTreeLayout(
   const visiting = new Set<string>();
 
   // TagGroup allowsRemoving 컨텍스트 설정 (모든 DFS/FlexEngine/재귀 경로에서 조회)
-  setTagGroupAllowsRemovingContext(elementsMap);
+  setTagGroupAllowsRemovingContext(elementsMap, childrenMap);
 
   traversePostOrder(
     rootElementId,
