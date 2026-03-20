@@ -141,6 +141,7 @@ export const renderListBox = (
       <ListBox
         key={element.id}
         id={element.customId}
+        aria-label={String(element.props.label || "List")}
         data-element-id={element.id}
         style={element.props.style}
         className={element.props.className}

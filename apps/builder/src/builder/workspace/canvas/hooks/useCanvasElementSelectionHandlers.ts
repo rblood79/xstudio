@@ -134,7 +134,7 @@ export function useCanvasElementSelectionHandlers({
         setCurrentPageId(clickedElement.page_id);
       }
 
-      const resolvedTarget = resolveClickTarget(
+      let resolvedTarget = resolveClickTarget(
         elementId,
         state.editingContextId,
         state.elementsMap,
@@ -148,10 +148,21 @@ export function useCanvasElementSelectionHandlers({
             setCurrentPageId,
             setSelectedElement,
           );
-        } else {
-          state.exitEditingContext();
+          return;
         }
-        return;
+
+        // context 밖 요소 클릭: 루트로 즉시 복귀 후 해당 요소 선택 시도
+        state.setEditingContext(null);
+        resolvedTarget = resolveClickTarget(elementId, null, state.elementsMap);
+        if (!resolvedTarget) {
+          handleUnresolvedTarget(
+            elementId,
+            clickedElement,
+            setCurrentPageId,
+            setSelectedElement,
+          );
+          return;
+        }
       }
 
       selectResolvedTarget(

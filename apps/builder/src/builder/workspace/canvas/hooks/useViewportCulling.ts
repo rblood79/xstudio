@@ -14,12 +14,14 @@
  * @updated 2026-01-31 실시간 getBounds() 기반 스크린 좌표 culling (SpatialIndex 제거 — stale 좌표 이슈)
  */
 
-import { useMemo } from 'react';
-import type { Element } from '../../../../types/core/store.types';
-import { getElementContainer } from '../elementRegistry';
-import { getCachedCullingResult } from '../scene';
-import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
-import { queryVisibleElements } from '../wasm-bindings/spatialIndex';
+import { useMemo } from "react";
+import type { Element } from "../../../../types/core/store.types";
+import { getElementContainer } from "../elementRegistry";
+import { getCachedCullingResult } from "../scene";
+import { WASM_FLAGS } from "../wasm-bindings/featureFlags";
+import { queryVisibleElements } from "../wasm-bindings/spatialIndex";
+
+let _lastCullingWarnTime = 0;
 
 // ============================================
 // Types
@@ -83,7 +85,7 @@ export function calculateViewportBounds(
   screenHeight: number,
   _zoom?: number,
   _panOffset?: { x: number; y: number },
-  margin: number = VIEWPORT_MARGIN
+  margin: number = VIEWPORT_MARGIN,
 ): ViewportBounds {
   return {
     left: -margin,
@@ -112,8 +114,8 @@ export function calculateViewportBoundsScene(
   margin: number = VIEWPORT_MARGIN,
 ): { left: number; top: number; right: number; bottom: number } {
   const sceneMargin = margin / zoom;
-  const left = (-panOffset.x) / zoom - sceneMargin;
-  const top = (-panOffset.y) / zoom - sceneMargin;
+  const left = -panOffset.x / zoom - sceneMargin;
+  const top = -panOffset.y / zoom - sceneMargin;
   const right = (-panOffset.x + screenWidth) / zoom + sceneMargin;
   const bottom = (-panOffset.y + screenHeight) / zoom + sceneMargin;
   return { left, top, right, bottom };
@@ -124,7 +126,7 @@ export function calculateViewportBoundsScene(
  */
 export function getElementBounds(
   element: Element,
-  layoutPosition?: { x: number; y: number; width: number; height: number }
+  layoutPosition?: { x: number; y: number; width: number; height: number },
 ): ElementBounds {
   if (layoutPosition) {
     return {
@@ -149,7 +151,7 @@ export function getElementBounds(
  */
 export function isElementInViewport(
   elementBounds: ElementBounds,
-  viewport: ViewportBounds
+  viewport: ViewportBounds,
 ): boolean {
   // AABB (Axis-Aligned Bounding Box) 충돌 검사
   // 두 사각형이 겹치지 않는 조건의 부정
@@ -166,7 +168,10 @@ export function isElementInViewport(
  *
  * 부모-자식 관계를 고려하여 overflow 가능성이 있는 자식을 포함.
  */
-function getBoundsVisibleElements(elements: Element[], viewport: ViewportBounds): Element[] {
+function getBoundsVisibleElements(
+  elements: Element[],
+  viewport: ViewportBounds,
+): Element[] {
   const parentVisibilityCache = new Map<string, boolean>();
 
   const isParentOnScreen = (parentId: string | null | undefined): boolean => {
@@ -186,7 +191,12 @@ function getBoundsVisibleElements(elements: Element[], viewport: ViewportBounds)
         return true;
       }
       const visible = isElementInViewport(
-        { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+        {
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+        },
         viewport,
       );
       parentVisibilityCache.set(parentId, visible);
@@ -204,10 +214,18 @@ function getBoundsVisibleElements(elements: Element[], viewport: ViewportBounds)
     try {
       const bounds = container.getBounds();
       if (bounds.width <= 0 && bounds.height <= 0) return true;
-      if (isElementInViewport(
-        { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
-        viewport,
-      )) return true;
+      if (
+        isElementInViewport(
+          {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
+          },
+          viewport,
+        )
+      )
+        return true;
       if (isParentOnScreen(element.parent_id)) return true;
       return false;
     } catch {
@@ -228,7 +246,7 @@ function crossValidateCulling(
   zoom: number,
   panOffset: { x: number; y: number },
 ): void {
-  if (process.env.NODE_ENV !== 'development') return;
+  if (process.env.NODE_ENV !== "development") return;
 
   // panOffset은 변환 공식에서 사용됨 (향후 스크린→씬 좌표 역변환 교차검증용)
   void zoom;
@@ -251,10 +269,15 @@ function crossValidateCulling(
   }
 
   if (falseNegatives.length > 0 || falsePositives.length > 0) {
-    console.warn(
-      '[ViewportCulling] SpatialIndex vs getBounds() 불일치',
-      { falseNegatives: falseNegatives.slice(0, 5), falsePositives: falsePositives.slice(0, 5) },
-    );
+    // Throttle: 5초에 1회만 로그 출력 (레이아웃 타이밍 차이로 인한 일시적 불일치 스팸 방지)
+    const now = Date.now();
+    if (now - _lastCullingWarnTime > 5000) {
+      _lastCullingWarnTime = now;
+      console.warn("[ViewportCulling] SpatialIndex vs getBounds() 불일치", {
+        falseNegatives: falseNegatives.slice(0, 5),
+        falsePositives: falsePositives.slice(0, 5),
+      });
+    }
   }
 }
 
@@ -308,8 +331,8 @@ export function useViewportCulling({
   elements,
   zoom,
   panOffset,
-  screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1920,
-  screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1080,
+  screenWidth = typeof window !== "undefined" ? window.innerWidth : 1920,
+  screenHeight = typeof window !== "undefined" ? window.innerHeight : 1080,
   enabled = true,
   version = 0,
 }: UseViewportCullingOptions): CullingResult {
@@ -385,9 +408,18 @@ export function useViewportCulling({
     }
 
     return getCachedCullingResult(cacheKey, computeResult);
-  // zoom/panOffset은 getBounds()에 간접 반영되지만, 뷰 변경 시 재계산 트리거 필요
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey, elements, zoom, panOffset, screenWidth, screenHeight, enabled, version]);
+    // zoom/panOffset은 getBounds()에 간접 반영되지만, 뷰 변경 시 재계산 트리거 필요
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    cacheKey,
+    elements,
+    zoom,
+    panOffset,
+    screenWidth,
+    screenHeight,
+    enabled,
+    version,
+  ]);
 }
 
 // ============================================
@@ -398,13 +430,13 @@ export function useViewportCulling({
  * 컬링 상태 로깅 (개발 환경)
  */
 export function logCullingStats(result: CullingResult): void {
-  if (process.env.NODE_ENV !== 'development') return;
+  if (process.env.NODE_ENV !== "development") return;
 
   const { visibleElements, culledCount, totalCount, cullingRatio } = result;
 
   console.log(
     `🎯 [ViewportCulling] visible: ${visibleElements.length}/${totalCount} ` +
-      `(culled: ${culledCount}, ratio: ${(cullingRatio * 100).toFixed(1)}%)`
+      `(culled: ${culledCount}, ratio: ${(cullingRatio * 100).toFixed(1)}%)`,
   );
 }
 
