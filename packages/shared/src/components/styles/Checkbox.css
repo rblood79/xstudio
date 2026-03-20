@@ -159,19 +159,38 @@
 
   /* ===== Size delegation from CheckboxGroup ===== */
 
+  /* Group Label font-size */
+  .react-aria-CheckboxGroup[data-checkbox-size="sm"] {
+    --label-font-size: var(--text-xs);
+  }
+
+  .react-aria-CheckboxGroup[data-checkbox-size="md"] {
+    --label-font-size: var(--text-sm);
+  }
+
+  .react-aria-CheckboxGroup[data-checkbox-size="lg"] {
+    --label-font-size: var(--text-base);
+  }
+
   .react-aria-CheckboxGroup[data-checkbox-size="sm"] .react-aria-Checkbox {
     --cb-font-size: var(--text-sm);
     --cb-box-size: var(--text-lg);
+    --label-font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
   }
 
   .react-aria-CheckboxGroup[data-checkbox-size="md"] .react-aria-Checkbox {
     --cb-font-size: var(--text-base);
     --cb-box-size: var(--text-xl);
+    --label-font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
   }
 
   .react-aria-CheckboxGroup[data-checkbox-size="lg"] .react-aria-Checkbox {
     --cb-font-size: var(--text-lg);
     --cb-box-size: var(--text-2xl);
+    --label-font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
   }
 
   .react-aria-CheckboxGroup[data-checkbox-size] .react-aria-Checkbox {

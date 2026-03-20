@@ -696,43 +696,68 @@ function traversePostOrder(
     }
   }
 
-  // Label → Switch/Checkbox/Radio 부모 size 상속 (DFS 진입 시 fontSize 주입)
+  // Label → 부모 size 상속 (DFS 진입 시 fontSize/lineHeight 주입)
   // CSS는 --label-font-size 변수로 처리하지만, Taffy는 인라인 fontSize가 필요
+  // LabelSpec 단일 소스: sm=12(text-xs)/16lh, md=14(text-sm)/20lh, lg=16(text-md)/24lh
+  const LABEL_DELEGATION_PARENT_TAGS = new Set([
+    "Switch",
+    "Checkbox",
+    "Radio",
+    "CheckboxGroup",
+    "RadioGroup",
+    "TagGroup",
+    "Select",
+    "ComboBox",
+    "SearchField",
+    "TextField",
+    "TextArea",
+    "NumberField",
+    "DateField",
+    "TimeField",
+    "ColorField",
+    "Slider",
+    "ProgressBar",
+    "Meter",
+  ]);
+  const LABEL_SIZE_STYLE: Record<
+    string,
+    { fontSize: number; lineHeight: string }
+  > = {
+    sm: { fontSize: 12, lineHeight: "16px" },
+    md: { fontSize: 14, lineHeight: "20px" },
+    lg: { fontSize: 16, lineHeight: "24px" },
+  };
+  // 구조적 래퍼 태그: size 없이 통과하는 중간 컨테이너
+  const LABEL_WRAPPER_TAGS = new Set([
+    "Checkbox",
+    "Radio",
+    "CheckboxItems",
+    "RadioItems",
+  ]);
   if (rawElement.tag === "Label") {
     const rawProps = rawElement.props as Record<string, unknown> | undefined;
     const labelStyle = (rawProps?.style || {}) as Record<string, unknown>;
-    // 인라인 fontSize가 없을 때만 부모 size delegation 적용
     if (labelStyle.fontSize == null && rawElement.parent_id) {
-      const parent = elementsMap.get(rawElement.parent_id);
-      if (
-        parent &&
-        (parent.tag === "Switch" ||
-          parent.tag === "Checkbox" ||
-          parent.tag === "Radio")
-      ) {
-        const parentProps = parent.props as Record<string, unknown> | undefined;
-        const parentSize = (parentProps?.size as string) ?? "md";
-        // Switch: sm=text-xs(12), md=text-sm(14), lg=text-base(16)
-        // Checkbox/Radio: sm=text-sm(14), md=text-base(16), lg=text-lg(18)
-        const SWITCH_LABEL_STYLE: Record<
-          string,
-          { fontSize: number; lineHeight: string }
-        > = {
-          sm: { fontSize: 12, lineHeight: "16px" },
-          md: { fontSize: 14, lineHeight: "20px" },
-          lg: { fontSize: 16, lineHeight: "24px" },
-        };
-        const TOGGLE_LABEL_STYLE: Record<
-          string,
-          { fontSize: number; lineHeight: string }
-        > = {
-          sm: { fontSize: 14, lineHeight: "20px" },
-          md: { fontSize: 16, lineHeight: "24px" },
-          lg: { fontSize: 18, lineHeight: "28px" },
-        };
-        const sizeMap =
-          parent.tag === "Switch" ? SWITCH_LABEL_STYLE : TOGGLE_LABEL_STYLE;
-        const delegated = sizeMap[parentSize] ?? sizeMap.md;
+      // 부모 → 조상 탐색: size를 가진 delegation 부모를 찾을 때까지 래퍼를 통과
+      let ancestor = elementsMap.get(rawElement.parent_id);
+      let ancestorSize: string | undefined;
+      while (ancestor) {
+        if (LABEL_DELEGATION_PARENT_TAGS.has(ancestor.tag)) {
+          ancestorSize =
+            ((ancestor.props as Record<string, unknown> | undefined)
+              ?.size as string) || undefined;
+          if (ancestorSize) break;
+        }
+        // 래퍼 태그면 계속 상위 탐색
+        if (LABEL_WRAPPER_TAGS.has(ancestor.tag) && ancestor.parent_id) {
+          ancestor = elementsMap.get(ancestor.parent_id);
+        } else {
+          break;
+        }
+      }
+      if (ancestor && LABEL_DELEGATION_PARENT_TAGS.has(ancestor.tag)) {
+        const parentSize = ancestorSize ?? "md";
+        const delegated = LABEL_SIZE_STYLE[parentSize] ?? LABEL_SIZE_STYLE.md;
         rawElement = {
           ...rawElement,
           props: {
@@ -1000,26 +1025,101 @@ function traversePostOrder(
     }
   }
 
-  // Switch/Checkbox/Radio/TagGroup: 부모 size에 따른 Label fontSize 주입
+  // CheckboxGroup/RadioGroup: 자식 Checkbox/Radio에 size 주입
+  // 구조: CheckboxGroup → [Label, CheckboxItems → [Checkbox, ...]]
+  //        RadioGroup → [Label, RadioItems → [Radio, ...]]
+  if (containerTag === "checkboxgroup" || containerTag === "radiogroup") {
+    const groupSize = (rawElement.props as Record<string, unknown> | undefined)
+      ?.size as string | undefined;
+    if (groupSize) {
+      const childTag = containerTag === "checkboxgroup" ? "Checkbox" : "Radio";
+      const itemsTag =
+        containerTag === "checkboxgroup" ? "CheckboxItems" : "RadioItems";
+      const prevGetChildElements3 = effectiveGetChildElements;
+      effectiveGetChildElements = (id: string) => {
+        const children = prevGetChildElements3(id);
+        return children.map((child) => {
+          // 직접 자식 Checkbox/Radio에 size 주입
+          if (child.tag === childTag) {
+            const cp = child.props as Record<string, unknown> | undefined;
+            if (cp?.size) return child;
+            return { ...child, props: { ...child.props, size: groupSize } };
+          }
+          // CheckboxItems/RadioItems 래퍼의 자식에도 전파
+          if (child.tag === itemsTag) {
+            return child; // 래퍼 자체는 변경 없음, 내부 자식은 재귀 시 처리
+          }
+          return child;
+        });
+      };
+    }
+  }
+  // CheckboxItems/RadioItems: 부모 CheckboxGroup/RadioGroup의 size를 자식 Checkbox/Radio에 전파
+  if (containerTag === "checkboxitems" || containerTag === "radioitems") {
+    const parentEl = rawElement.parent_id
+      ? elementsMap.get(rawElement.parent_id)
+      : undefined;
+    const groupTag =
+      containerTag === "checkboxitems" ? "CheckboxGroup" : "RadioGroup";
+    const childTag = containerTag === "checkboxitems" ? "Checkbox" : "Radio";
+    if (parentEl?.tag === groupTag) {
+      const groupSize = (parentEl.props as Record<string, unknown> | undefined)
+        ?.size as string | undefined;
+      if (groupSize) {
+        const prevGetChildElements4 = effectiveGetChildElements;
+        effectiveGetChildElements = (id: string) => {
+          const children = prevGetChildElements4(id);
+          return children.map((child) => {
+            if (child.tag !== childTag) return child;
+            const cp = child.props as Record<string, unknown> | undefined;
+            if (cp?.size) return child;
+            return { ...child, props: { ...child.props, size: groupSize } };
+          });
+        };
+      }
+    }
+  }
+
+  // 부모 size에 따른 Label fontSize 주입
   // Label의 calculateContentHeight(TEXT_LEAF_TAGS 경로)는 style.fontSize를 참조하므로
   // spec size delegation된 fontSize를 인라인으로 주입해야 함
-  if (
-    containerTag === "switch" ||
-    containerTag === "checkbox" ||
-    containerTag === "radio" ||
-    containerTag === "taggroup"
-  ) {
-    const parentSize = (rawElement.props as Record<string, unknown> | undefined)
-      ?.size as string | undefined;
-    if (parentSize) {
-      // Label spec sizes: sm=12(text-xs), md=14(text-sm), lg=16(text-md)
-      const LABEL_SIZE_FONTSIZE: Record<string, number> = {
-        sm: 12,
-        md: 14,
-        lg: 16,
+  const LABEL_SIZE_DELEGATION_CONTAINERS = new Set([
+    "switch",
+    "checkbox",
+    "radio",
+    "checkboxgroup",
+    "radiogroup",
+    "taggroup",
+    "select",
+    "combobox",
+    "searchfield",
+    "textfield",
+    "textarea",
+    "numberfield",
+    "datefield",
+    "timefield",
+    "colorfield",
+    "slider",
+    "progressbar",
+    "meter",
+  ]);
+  if (LABEL_SIZE_DELEGATION_CONTAINERS.has(containerTag)) {
+    const parentSize =
+      ((rawElement.props as Record<string, unknown> | undefined)?.size as
+        | string
+        | undefined) || "md";
+    {
+      // LabelSpec 단일 소스: sm=12(text-xs)/16lh, md=14(text-sm)/20lh, lg=16(text-md)/24lh
+      const LABEL_SIZE_MAP: Record<
+        string,
+        { fontSize: number; lineHeight: string }
+      > = {
+        sm: { fontSize: 12, lineHeight: "16px" },
+        md: { fontSize: 14, lineHeight: "20px" },
+        lg: { fontSize: 16, lineHeight: "24px" },
       };
-      const delegatedFs = LABEL_SIZE_FONTSIZE[parentSize];
-      if (delegatedFs) {
+      const delegated = LABEL_SIZE_MAP[parentSize];
+      if (delegated) {
         const prevGetChildElements2 = effectiveGetChildElements;
         effectiveGetChildElements = (id: string) => {
           const children = prevGetChildElements2(id);
@@ -1032,7 +1132,11 @@ function traversePostOrder(
               props: {
                 ...child.props,
                 size: parentSize,
-                style: { ...cs, fontSize: delegatedFs },
+                style: {
+                  ...cs,
+                  fontSize: delegated.fontSize,
+                  lineHeight: delegated.lineHeight,
+                },
               },
             };
           });

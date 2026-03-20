@@ -1241,6 +1241,7 @@ export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementP
 export function createDefaultCheckboxGroupProps(): CheckboxGroupElementProps {
   return {
     name: "",
+    size: "md",
     value: [],
     isDisabled: false,
     isInvalid: false,
@@ -1251,6 +1252,7 @@ export function createDefaultCheckboxGroupProps(): CheckboxGroupElementProps {
 export function createDefaultRadioGroupProps(): RadioGroupElementProps {
   return {
     name: "",
+    size: "md",
     value: "",
     isDisabled: false,
     isInvalid: false,

@@ -93,6 +93,19 @@
 
   /* ===== Size delegation from RadioGroup ===== */
 
+  /* Group Label font-size */
+  .react-aria-RadioGroup[data-radio-size="sm"] {
+    --label-font-size: var(--text-xs);
+  }
+
+  .react-aria-RadioGroup[data-radio-size="md"] {
+    --label-font-size: var(--text-sm);
+  }
+
+  .react-aria-RadioGroup[data-radio-size="lg"] {
+    --label-font-size: var(--text-base);
+  }
+
   .react-aria-RadioGroup[data-radio-size="sm"] .react-aria-Radio {
     font-size: var(--text-sm);
     line-height: var(--text-sm--line-height);

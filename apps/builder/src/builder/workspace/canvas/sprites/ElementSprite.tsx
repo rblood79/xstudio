@@ -1107,6 +1107,8 @@ export const ElementSprite = memo(function ElementSprite({
     "SearchIcon",
     "SearchInput",
     "SearchClearButton",
+    "Checkbox",
+    "Radio",
     "Label",
   ]);
   const SIZE_DELEGATION_PARENT_TAGS = new Set([
@@ -1118,8 +1120,19 @@ export const ElementSprite = memo(function ElementSprite({
     "Switch",
     "Checkbox",
     "Radio",
+    "CheckboxGroup",
+    "RadioGroup",
     "TagGroup",
+    "TextField",
+    "TextArea",
+    "NumberField",
+    "DateField",
+    "TimeField",
+    "ColorField",
+    "Slider",
   ]);
+  // Group 래퍼 태그: 구조적 중간 컨테이너 (size 없이 통과)
+  const GROUP_WRAPPER_TAGS = new Set(["CheckboxItems", "RadioItems"]);
   const parentDelegatedSize = useStore((state) => {
     if (!PARENT_SIZE_DELEGATION_TAGS.has(element.tag) || !element.parent_id)
       return null;
@@ -1127,10 +1140,33 @@ export const ElementSprite = memo(function ElementSprite({
     const parent = state.elementsMap.get(element.parent_id);
     if (!parent) return null;
     if (SIZE_DELEGATION_PARENT_TAGS.has(parent.tag)) {
-      return (
+      const parentSize =
         ((parent.props as Record<string, unknown> | undefined)
-          ?.size as string) ?? null
-      );
+          ?.size as string) ?? null;
+      if (parentSize) return parentSize;
+      // 부모(Checkbox/Radio)에 size 없으면 → 조부모(CheckboxGroup/RadioGroup) 탐색
+      if (parent.parent_id) {
+        const gp = state.elementsMap.get(parent.parent_id);
+        if (gp) {
+          // 조부모가 Group 래퍼(CheckboxItems 등)면 → 증조부모 탐색
+          if (GROUP_WRAPPER_TAGS.has(gp.tag) && gp.parent_id) {
+            const ggp = state.elementsMap.get(gp.parent_id);
+            if (ggp && SIZE_DELEGATION_PARENT_TAGS.has(ggp.tag)) {
+              return (
+                ((ggp.props as Record<string, unknown> | undefined)
+                  ?.size as string) ?? null
+              );
+            }
+          }
+          if (SIZE_DELEGATION_PARENT_TAGS.has(gp.tag)) {
+            return (
+              ((gp.props as Record<string, unknown> | undefined)
+                ?.size as string) ?? null
+            );
+          }
+        }
+      }
+      return parentSize;
     }
     // 2단계 상위 (SelectValue → SelectTrigger → Select)
     if (parent.parent_id) {
@@ -1796,6 +1832,11 @@ export const ElementSprite = memo(function ElementSprite({
               // 🚀 ToggleButton: 그룹 내 위치 정보를 props에 주입하여 spec shapes에서 border-radius 분기 가능
               // 🚀 TagGroup: 자식 Tag 텍스트를 주입하여 spec shapes에서 label + tag chips 렌더링
               let specProps: Record<string, unknown> = props || {};
+              // parentDelegatedSize가 있고 props.size가 없으면 size 주입
+              // CheckboxSpec 등이 props.size로 indicator 크기를 결정하므로 필수
+              if (parentDelegatedSize && !specProps.size) {
+                specProps = { ...specProps, size: parentDelegatedSize };
+              }
               if (toggleGroupPosition) {
                 specProps = {
                   ...specProps,

@@ -2500,11 +2500,7 @@ export function parseBoxModel(
         : sizeConfig.paddingLeft;
       const effectivePaddingRight = isIconOnlyButton
         ? sizeConfig.paddingY
-        : getTagRemoveAdjustedPaddingRight(
-            tag,
-            sizeConfig,
-            tagAllowsRemoving,
-          );
+        : getTagRemoveAdjustedPaddingRight(tag, sizeConfig, tagAllowsRemoving);
       padding = {
         top: sizeConfig.paddingY,
         right: effectivePaddingRight,
@@ -2789,7 +2785,8 @@ export function enrichWithIntrinsicSize(
         )
       : IMAGE_INTRINSIC_TAGS.has(tag) ||
           SPEC_SHAPES_INPUT_TAGS.has(tag) ||
-          INLINE_BLOCK_TAGS.has(tag)
+          INLINE_BLOCK_TAGS.has(tag) ||
+          TEXT_LEAF_TAGS.has(tag)
         ? calculateContentHeight(
             element,
             availableWidth,

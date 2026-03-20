@@ -195,13 +195,12 @@ for (const shape of shapes) {
 - [x] `layoutCache.ts`: `LAYOUT_PROP_KEYS`에 `allowsRemoving` 추가
 - [x] `Tag.spec.ts`: `lineHeight` 필드 추가 (CSS line-height 토큰 동기화)
 
-### Phase 2: Breadcrumbs + Tabs (P2)
+### Phase 2: Breadcrumbs + Tabs (P2) — 적용 권장
 
 **대상 파일**:
 
 - `packages/specs/src/components/Breadcrumbs.spec.ts` — `fontSize * 0.55`, `fontSize * 0.35` 제거
 - `packages/specs/src/components/Tabs.spec.ts` — `fontSize * 0.55` 제거
-- `apps/builder/src/.../layout/engines/utils.ts` — Breadcrumbs `0.55`/`0.35`, StatusLight `0.6` 제거
 
 **접근**:
 
@@ -209,9 +208,9 @@ for (const shape of shapes) {
 2. Breadcrumbs: containerWidth 기준 crumb 균등 분배 또는 비례 배치
 3. Tabs: containerWidth 기준 탭 너비 분배
 
-**예상 규모**: 3파일 수정, ~50줄
+**예상 규모**: 2파일 수정, ~40줄
 
-### Phase 3: Toast + Table + GridList + Skeleton (P3)
+### Phase 3: Toast + Table + GridList + Skeleton — 보류 (버그 리포트 시 적용)
 
 **대상 파일**:
 
@@ -220,13 +219,52 @@ for (const shape of shapes) {
 - `packages/specs/src/components/GridList.spec.ts` — `fontSize * 0.6/0.8` → `_containerHeight` 기반
 - `packages/specs/src/components/Skeleton.spec.ts` — `size.height / 2` → `_containerHeight` 기반
 
-**접근**:
-
-1. `_containerHeight` 주입 (Phase 1과 동일 패턴)
-2. `size.height / 2` → `_containerHeight / 2`로 교체
-3. fallback: `size.height + borderWidth * 2` (엔진 미주입 시)
-
 **예상 규모**: 4파일 수정, ~30줄
+
+### StatusLight (utils.ts) — 보류 (별도 접근 필요)
+
+- `apps/builder/src/.../layout/engines/utils.ts` L843 — `text.length * fontSize * 0.6`
+- Spec이 아닌 레이아웃 엔진 내부이므로 `_containerWidth` 패턴 적용 불가, 별도 접근 필요
+
+---
+
+## Phase별 ROI 분석
+
+### Tier 1: `_containerWidth` (텍스트 폭 추정 제거) — Breadcrumbs, Tabs
+
+| 기준       | 분석                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------- |
+| **효과**   | **높음** — `fontSize * 0.55` 추정 제거, 폰트/다국어 정합성 보장                       |
+| **리스크** | **M** — 기존 `0.55` 추정과 다른 결과 → 시각적 변화 반드시 발생, 모든 사이즈 검증 필요 |
+| **ROI**    | **높음** — CJK/아랍어 등 글자폭이 다른 폰트에서 간격 오류 근본 해결                   |
+| **권장**   | **적용**                                                                              |
+
+### Tier 2: `_containerHeight` (세로 중앙) — Toast, Table, GridList, Skeleton
+
+| 기준       | 분석                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------- |
+| **효과**   | **낮음** — `size.height/2` → `containerHeight/2`는 1~2px(border) 차이, 육안 거의 불가 |
+| **리스크** | **L** — 1px 차이라 회귀해도 영향 미미                                                 |
+| **ROI**    | **낮음** — 수정 4곳 대비 시각적 개선 미미                                             |
+| **권장**   | **보류** — 실제 버그 리포트 시 적용                                                   |
+
+### Tier 3: StatusLight (utils.ts) — 레이아웃 엔진 내부
+
+| 기준       | 분석                                                                                          |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| **효과**   | 높음 — `0.6` 추정 제거                                                                        |
+| **리스크** | **M** — Spec이 아닌 레이아웃 엔진이라 `_containerWidth` 패턴과 다른 접근 필요, 패턴 혼재 위험 |
+| **ROI**    | 중간 — TextMeasurer fallback이 이미 존재 (L841-842)                                           |
+| **권장**   | **보류** — 별도 설계 필요                                                                     |
+
+### 유틸화 판단
+
+| 기준                    | 분석                                                            |
+| ----------------------- | --------------------------------------------------------------- |
+| **절대 좌표 역산 필요** | Tag, Breadcrumbs, Tabs — **3곳**뿐                              |
+| **단순 centerY**        | Toast, Table, GridList, Skeleton — `ch / 2` 한 줄               |
+| **인라인 코드**         | `typeof props._containerWidth === "number" ? ... : 0` — 3줄     |
+| **결론**                | **유틸 불필요** — 3곳을 위한 추상화는 과잉. 10곳 이상 시 재검토 |
 
 ---
 

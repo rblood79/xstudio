@@ -32,6 +32,7 @@
 
     /* ===== Size ===== */
     &[data-size="xs"] {
+      --cf-label-size: var(--text-2xs);
       --cf-input-padding: var(--spacing-3xs) var(--spacing-xs);
       --cf-input-size: var(--text-2xs);
       --cf-input-line-height: var(--text-2xs--line-height);
@@ -39,6 +40,7 @@
       --cf-hint-size: var(--text-2xs);
     }
     &[data-size="sm"] {
+      --cf-label-size: var(--text-xs);
       --cf-input-padding: var(--spacing-2xs) var(--spacing-sm);
       --cf-input-size: var(--text-xs);
       --cf-input-line-height: var(--text-xs--line-height);
@@ -46,6 +48,7 @@
       --cf-hint-size: var(--text-2xs);
     }
     &[data-size="md"] {
+      --cf-label-size: var(--text-sm);
       --cf-input-padding: var(--spacing-xs) var(--spacing-md);
       --cf-input-size: var(--text-sm);
       --cf-input-line-height: var(--text-sm--line-height);
@@ -53,6 +56,7 @@
       --cf-hint-size: var(--text-xs);
     }
     &[data-size="lg"] {
+      --cf-label-size: var(--text-base);
       --cf-input-padding: var(--spacing-sm) var(--spacing-lg);
       --cf-input-size: var(--text-base);
       --cf-input-line-height: var(--text-base--line-height);
@@ -60,12 +64,18 @@
       --cf-hint-size: var(--text-sm);
     }
     &[data-size="xl"] {
+      --cf-label-size: var(--text-lg);
       --cf-input-padding: var(--spacing-md) var(--spacing-xl);
       --cf-input-size: var(--text-lg);
       --cf-input-line-height: var(--text-lg--line-height);
       --cf-input-max-width: 16ch;
       --cf-hint-size: var(--text-base);
     }
+
+    /* ===== Label ===== */
+    --label-font-size: var(--cf-label-size);
+    --label-font-weight: 500;
+    --label-margin: var(--spacing-xs);
 
     /* ===== Input ===== */
     /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
