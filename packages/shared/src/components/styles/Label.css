@@ -2,14 +2,56 @@
  * Label Component Styles
  *
  * Label은 텍스트 콘텐츠에 맞게 크기 결정 (fit-content)
- * Generated CSS(archetype: simple)에서 기본 레이아웃 제공,
- * 이 파일에서 fit-content 크기 보정
+ * skipCSSGeneration: true — base.css의 --label-font-size 변수 상속을 위해 수동 관리
  */
 
 @layer components {
   .react-aria-Label {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
     width: fit-content;
     height: fit-content;
     white-space: nowrap;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  /* ===== Variant (from LabelSpec.variants) ===== */
+
+  .react-aria-Label[data-variant="accent"] {
+    color: var(--fg);
+  }
+
+  .react-aria-Label[data-variant="neutral"] {
+    color: var(--fg-muted);
+  }
+
+  .react-aria-Label[data-variant="purple"] {
+    color: var(--color-purple-600);
+  }
+
+  .react-aria-Label[data-variant="negative"] {
+    color: var(--negative);
+  }
+
+  /* ===== State ===== */
+
+  .react-aria-Label[data-focus-visible] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .react-aria-Label[data-disabled] {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  @media (forced-colors: active) {
+    .react-aria-Label {
+      forced-color-adjust: auto;
+    }
   }
 }

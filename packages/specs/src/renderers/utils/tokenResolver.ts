@@ -192,7 +192,8 @@ export function tokenToCSSVar(ref: TokenRef): string {
     case "spacing":
       return `var(--spacing-${name})`;
     case "typography":
-      return `var(--${name})`;
+      // text-md → text-base (CSS 변수에 --text-md 없음, --text-base만 정의됨)
+      return `var(--${name === "text-md" ? "text-base" : name})`;
     case "radius":
       return `var(--radius-${name})`;
     case "shadow":

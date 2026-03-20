@@ -42,6 +42,7 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
   description: "compound 컴포넌트의 라벨 텍스트 렌더링",
   element: "label",
   archetype: "simple",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -85,6 +86,14 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
   },
 
   sizes: {
+    xs: {
+      height: 0,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
+      gap: 0,
+    },
     sm: {
       height: 0,
       paddingX: 0,
@@ -106,6 +115,14 @@ export const LabelSpec: ComponentSpec<LabelProps> = {
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-md}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
+      gap: 0,
+    },
+    xl: {
+      height: 0,
+      paddingX: 0,
+      paddingY: 0,
+      fontSize: "{typography.text-lg}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },

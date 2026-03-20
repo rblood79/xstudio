@@ -89,8 +89,8 @@
   }
 
   .react-aria-ProgressBar[data-size="lg"] {
-    font-size: var(--text-md);
-    --label-font-size: var(--text-md);
+    font-size: var(--text-base);
+    --label-font-size: var(--text-base);
 
     .bar {
       height: var(--spacing-md);
@@ -98,7 +98,7 @@
     }
 
     .value {
-      font-size: var(--text-md);
+      font-size: var(--text-base);
     }
   }
 

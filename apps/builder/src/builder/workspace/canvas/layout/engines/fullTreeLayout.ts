@@ -754,9 +754,11 @@ function traversePostOrder(
     string,
     { fontSize: number; lineHeight: string }
   > = {
+    xs: { fontSize: 10, lineHeight: "16px" },
     sm: { fontSize: 12, lineHeight: "16px" },
     md: { fontSize: 14, lineHeight: "20px" },
     lg: { fontSize: 16, lineHeight: "24px" },
+    xl: { fontSize: 18, lineHeight: "28px" },
   };
   // 구조적 래퍼 태그: size 없이 통과하는 중간 컨테이너
   const LABEL_WRAPPER_TAGS = new Set([
@@ -1140,14 +1142,16 @@ function traversePostOrder(
         | string
         | undefined) || "md";
     {
-      // LabelSpec 단일 소스: sm=12(text-xs)/16lh, md=14(text-sm)/20lh, lg=16(text-md)/24lh
+      // LabelSpec 단일 소스: xs~xl
       const LABEL_SIZE_MAP: Record<
         string,
         { fontSize: number; lineHeight: string }
       > = {
+        xs: { fontSize: 10, lineHeight: "16px" },
         sm: { fontSize: 12, lineHeight: "16px" },
         md: { fontSize: 14, lineHeight: "20px" },
         lg: { fontSize: 16, lineHeight: "24px" },
+        xl: { fontSize: 18, lineHeight: "28px" },
       };
       const delegated = LABEL_SIZE_MAP[parentSize];
       if (delegated) {
