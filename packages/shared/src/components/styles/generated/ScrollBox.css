@@ -65,7 +65,7 @@
 .react-aria-ScrollBox[data-size="md"] {
   height: 200px;
   padding: 12px 12px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-md);
 }
 

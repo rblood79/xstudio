@@ -82,7 +82,7 @@
 .react-aria-Slider[data-size="lg"] {
   height: 28px;
   padding: 0px 0px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-full);
   gap: 12px;
 }

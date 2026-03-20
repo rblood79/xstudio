@@ -86,10 +86,10 @@ Store의 상태(width, height, padding 등)를 CSS와 Taffy가 **독립적으로
 
 ### 수동 CSS (`skipCSSGeneration: true`) — 35개 컴포넌트
 
-| 유형           | 컴포넌트                                                                |
-| -------------- | ----------------------------------------------------------------------- |
-| 부모 변수 상속 | Label                                                                   |
-| 그룹 컨테이너  | CheckboxGroup, RadioGroup, TagGroup, ToggleButtonGroup, DisclosureGroup |
+| 유형           | 컴포넌트                                                                | 비고                                                       |
+| -------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------- |
+| 부모 변수 상속 | Label                                                                   | `--label-font-size` 부모 CSS 변수 상속, generated CSS 간섭 |
+| 그룹 컨테이너  | CheckboxGroup, RadioGroup, TagGroup, ToggleButtonGroup, DisclosureGroup |                                                            |
 | 합성 입력      | TextField, NumberField, SearchField, DateField, TimeField, ColorField   |
 | 합성 선택기    | Select, ComboBox, DatePicker, DateRangePicker, ColorPicker              |
 | Color 인터랙션 | ColorArea, ColorSlider, ColorWheel, ColorSwatchPicker                   |

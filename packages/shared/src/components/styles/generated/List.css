@@ -67,7 +67,7 @@
 .react-aria-List[data-size="md"] {
   height: auto;
   padding: 8px 12px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-lg);
   gap: 4px;
   --icon-size: 20px;

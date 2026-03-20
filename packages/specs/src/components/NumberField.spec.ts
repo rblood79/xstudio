@@ -4,6 +4,7 @@
  * React Aria 기반 숫자 입력 컴포넌트 (stepper 버튼 포함)
  * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
  *
+ * @sync ComboBox.spec.ts — 동일한 컨테이너/버튼 패턴
  * @packageDocumentation
  */
 
@@ -16,7 +17,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface NumberFieldProps {
   variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   label?: string;
   value?: number;
   minValue?: number;
@@ -29,6 +30,7 @@ export interface NumberFieldProps {
   isRequired?: boolean;
   children?: string;
   style?: Record<string, string | number | undefined>;
+  _hasChildren?: boolean;
 }
 
 /**
@@ -41,101 +43,192 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
+  // @sync ComboBox.spec.ts variants — 동일한 컨테이너 배경
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      background: "{color.elevated}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
-      borderHover: "{color.accent}" as TokenRef,
     },
     accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
+      background: "{color.elevated}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border-hover}" as TokenRef,
-      borderHover: "{color.accent}" as TokenRef,
     },
     negative: {
-      background: "{color.base}" as TokenRef,
+      background: "{color.elevated}" as TokenRef,
       backgroundHover: "{color.negative-subtle}" as TokenRef,
       backgroundPressed: "{color.negative-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.negative}" as TokenRef,
-      borderHover: "{color.negative-hover}" as TokenRef,
     },
   },
 
+  // @sync ComboBox.spec.ts sizes — 동일한 height/padding/iconSize
   sizes: {
+    xs: {
+      height: 20,
+      paddingX: 4,
+      paddingY: 1,
+      fontSize: "{typography.text-2xs}" as TokenRef,
+      borderRadius: "{radius.xs}" as TokenRef,
+      iconSize: 10,
+      gap: 2,
+    },
     sm: {
-      height: 32,
-      paddingX: 10,
-      paddingY: 4,
-      fontSize: "{typography.text-sm}" as TokenRef,
+      height: 22,
+      paddingX: 8,
+      paddingY: 2,
+      fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
-      iconSize: 12,
+      iconSize: 14,
       gap: 4,
     },
     md: {
-      height: 40,
-      paddingX: 14,
-      paddingY: 8,
-      fontSize: "{typography.text-md}" as TokenRef,
+      height: 30,
+      paddingX: 12,
+      paddingY: 4,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
-      iconSize: 16,
+      iconSize: 18,
       gap: 6,
     },
     lg: {
-      height: 48,
+      height: 42,
       paddingX: 16,
+      paddingY: 8,
+      fontSize: "{typography.text-base}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
+      iconSize: 22,
+      gap: 8,
+    },
+    xl: {
+      height: 54,
+      paddingX: 24,
       paddingY: 12,
       fontSize: "{typography.text-lg}" as TokenRef,
-      borderRadius: "{radius.md}" as TokenRef,
-      iconSize: 20,
-      gap: 8,
+      borderRadius: "{radius.xl}" as TokenRef,
+      iconSize: 28,
+      gap: 10,
     },
   },
 
   // ADR-036 Phase 3a: Tier 2 Composite CSS 생성 메타데이터
+  // @sync ComboBox.spec.ts composition — 동일한 컨테이너/버튼 패턴
   composition: {
     layout: "flex-column",
     gap: "var(--spacing-xs)",
     delegation: [
       {
-        childSelector: ".react-aria-Label",
+        // Group 대응 — 컨테이너 (bg/border/padding)
+        // @sync ComboBox.spec.ts .combobox-container
+        childSelector: ".react-aria-Group",
         variables: {
-          sm: { "--label-font-size": "var(--text-xs)" },
-          md: { "--label-font-size": "var(--text-sm)" },
-          lg: { "--label-font-size": "var(--text-base)" },
+          xs: {
+            height: "auto",
+            background: "var(--bg-raised)",
+            color: "var(--fg)",
+            border: "1px solid var(--border)",
+            padding: "1px 1px 1px 4px",
+          },
+          sm: {
+            height: "auto",
+            background: "var(--bg-raised)",
+            color: "var(--fg)",
+            border: "1px solid var(--border)",
+            padding: "2px 2px 2px 8px",
+          },
+          md: {
+            height: "auto",
+            background: "var(--bg-raised)",
+            color: "var(--fg)",
+            border: "1px solid var(--border)",
+            padding: "4px 4px 4px 12px",
+          },
+          lg: {
+            height: "auto",
+            background: "var(--bg-raised)",
+            color: "var(--fg)",
+            border: "1px solid var(--border)",
+            padding: "8px 8px 8px 16px",
+          },
+          xl: {
+            height: "auto",
+            background: "var(--bg-raised)",
+            color: "var(--fg)",
+            border: "1px solid var(--border)",
+            padding: "12px 12px 12px 24px",
+          },
         },
       },
       {
+        // Input 대응
         childSelector: ".react-aria-Input",
         variables: {
+          xs: { height: "auto" },
+          sm: { height: "auto" },
+          md: { height: "auto" },
+          lg: { height: "auto" },
+          xl: { height: "auto" },
+        },
+      },
+      {
+        // Stepper Button 대응 — @sync ComboBox.spec.ts chevron 버튼
+        childSelector: ".react-aria-Button",
+        variables: {
+          xs: {
+            width: "10px",
+            height: "10px",
+            padding: "0",
+            background: "var(--bg-overlay)",
+            color: "var(--fg)",
+            border: "none",
+          },
           sm: {
-            "--nf-input-width": "80px",
-            "--nf-input-padding": "0 var(--spacing-sm)",
+            width: "14px",
+            height: "14px",
+            padding: "0",
+            background: "var(--bg-overlay)",
+            color: "var(--fg)",
+            border: "none",
           },
           md: {
-            "--nf-input-width": "120px",
-            "--nf-input-padding": "0 var(--spacing-md)",
+            width: "18px",
+            height: "18px",
+            padding: "0",
+            background: "var(--bg-overlay)",
+            color: "var(--fg)",
+            border: "none",
           },
           lg: {
-            "--nf-input-width": "160px",
-            "--nf-input-padding": "0 var(--spacing-lg)",
+            width: "22px",
+            height: "22px",
+            padding: "0",
+            background: "var(--bg-overlay)",
+            color: "var(--fg)",
+            border: "none",
+          },
+          xl: {
+            width: "28px",
+            height: "28px",
+            padding: "0",
+            background: "var(--bg-overlay)",
+            color: "var(--fg)",
+            border: "none",
           },
         },
       },
       {
         childSelector: ".react-aria-FieldError",
         variables: {
+          xs: { "--error-font-size": "var(--text-2xs)" },
           sm: { "--error-font-size": "var(--text-2xs)" },
           md: { "--error-font-size": "var(--text-xs)" },
           lg: { "--error-font-size": "var(--text-sm)" },
+          xl: { "--error-font-size": "var(--text-base)" },
         },
       },
     ],
@@ -157,9 +250,8 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
 
   render: {
     shapes: (props, variant, size, state = "default") => {
-      const width = (props.style?.width as number) || 160;
-      const height = size.height;
-      const stepperWidth = height;
+      const width = (props.style?.width as number) || 200;
+      const btnSize = size.iconSize ?? 18;
 
       const styleBr = props.style?.borderRadius;
       const borderRadius =
@@ -169,13 +261,15 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
             : parseFloat(String(styleBr)) || 0
           : (size.borderRadius as unknown as number);
 
+      const userBg = props.style?.backgroundColor;
       const bgColor =
-        props.style?.backgroundColor ??
-        (state === "hover"
-          ? variant.backgroundHover
-          : state === "pressed"
-            ? variant.backgroundPressed
-            : variant.background);
+        userBg != null && userBg !== "transparent"
+          ? userBg
+          : state === "hover"
+            ? variant.backgroundHover
+            : state === "pressed"
+              ? variant.backgroundPressed
+              : variant.background;
 
       const borderColor =
         props.style?.borderColor ??
@@ -199,7 +293,12 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
           : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
             : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+
+      const labelLineHeight = Math.ceil(fontSize * 1.5);
+      const labelGap = 8;
+      const labelOffset = labelLineHeight + labelGap;
+      const inputHeight = size.height as number;
 
       const fwRaw = props.style?.fontWeight;
       const fontWeight =
@@ -211,53 +310,65 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
 
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
-      const textAlign =
-        (props.style?.textAlign as "left" | "center" | "right") || "left";
-
       const textColor = props.style?.color ?? variant.text;
+
+      const stylePx =
+        props.style?.paddingLeft ??
+        props.style?.paddingRight ??
+        props.style?.padding;
+      const paddingX =
+        stylePx != null
+          ? typeof stylePx === "number"
+            ? stylePx
+            : parseFloat(String(stylePx)) || 0
+          : size.paddingX;
+
+      // 버튼 간 간격
+      const btnGap = 4;
 
       const shapes: Shape[] = [];
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
+      const inputY = props.label ? labelOffset : 0;
 
-      // 라벨
-      const labelFontSize = fontSize - 2;
-      const labelHeight = Math.ceil(labelFontSize * 1.2);
-      const labelGap = size.gap ?? 6;
-      const labelOffset = props.label ? labelHeight + labelGap : 0;
+      if (hasChildren) {
+        // Compositional: Label/Group/Button은 자식이 각자 렌더링
+        // NumberField 자체는 빈 shapes 반환 (Group에 컨테이너 Spec 없으므로)
+        return shapes;
+      }
 
+      // Label
       if (props.label) {
         shapes.push({
           type: "text" as const,
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: labelFontSize,
+          fontSize,
           fontFamily: ff,
           fontWeight,
           fill: textColor,
-          align: textAlign,
+          align: "left" as const,
           baseline: "top" as const,
         });
       }
 
-      // 입력 필드 배경
+      // 컨테이너 배경 (= ComboBox .combobox-container)
       shapes.push({
-        id: "bg",
+        id: "container",
         type: "roundRect" as const,
         x: 0,
-        y: labelOffset,
+        y: inputY,
         width,
-        height,
+        height: inputHeight,
         radius: borderRadius,
         fill: bgColor,
       });
 
-      // 테두리
+      // 컨테이너 테두리
       if (borderColor) {
         shapes.push({
           type: "border" as const,
-          target: "bg",
+          target: "container",
           borderWidth,
           color: props.isInvalid
             ? ("{color.negative}" as TokenRef)
@@ -266,78 +377,47 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         });
       }
 
-      // 입력 영역 너비 (전체 - stepper 2개)
-      const inputWidth = width - stepperWidth * 2;
-
-      // 숫자 값 (왼쪽)
+      // 숫자 값 텍스트 (왼쪽 패딩, 세로 중앙)
+      const textMaxWidth = width - paddingX * 2 - (btnSize * 2 + btnGap);
       shapes.push({
         type: "text" as const,
-        x: 0,
-        y: labelOffset + height / 2,
+        x: paddingX,
+        y: inputY + inputHeight / 2,
         text: String(props.value ?? 0),
         fontSize,
         fontFamily: ff,
         fill: textColor,
         align: "center" as const,
         baseline: "middle" as const,
-        maxWidth: inputWidth,
+        maxWidth: textMaxWidth,
       });
 
-      // 감소 버튼 (-) (중간)
+      // 감소 아이콘 (-) — @sync ComboBox chevron: 배경 없이 아이콘만
+      const btn1X = width - paddingX - btnSize * 2 - btnGap + btnSize / 2;
+      const btnCenterY = inputY + inputHeight / 2;
       shapes.push({
-        id: "decrement",
-        type: "roundRect" as const,
-        x: inputWidth,
-        y: labelOffset,
-        width: stepperWidth,
-        height,
-        radius: 0,
-        fill: "{color.layer-2}" as TokenRef,
+        type: "icon_font" as const,
+        iconName: "minus",
+        x: btn1X,
+        y: btnCenterY,
+        fontSize: btnSize,
+        fill: "{color.neutral-subdued}" as TokenRef,
+        strokeWidth: 2,
       });
 
-      // 감소 아이콘 (-)
+      // 증가 아이콘 (+) — @sync ComboBox chevron: 배경 없이 아이콘만
+      const btn2X = width - paddingX - btnSize + btnSize / 2;
       shapes.push({
-        type: "text" as const,
-        x: inputWidth,
-        y: labelOffset + height / 2,
-        text: "\u2212",
-        fontSize,
-        fontFamily: ff,
-        fontWeight,
-        fill: textColor,
-        align: "center" as const,
-        baseline: "middle" as const,
-        maxWidth: stepperWidth,
+        type: "icon_font" as const,
+        iconName: "plus",
+        x: btn2X,
+        y: btnCenterY,
+        fontSize: btnSize,
+        fill: "{color.neutral-subdued}" as TokenRef,
+        strokeWidth: 2,
       });
 
-      // 증가 버튼 (+) (오른쪽)
-      shapes.push({
-        id: "increment",
-        type: "roundRect" as const,
-        x: width - stepperWidth,
-        y: labelOffset,
-        width: stepperWidth,
-        height,
-        radius: [0, borderRadius, borderRadius, 0],
-        fill: "{color.layer-2}" as TokenRef,
-      });
-
-      // 증가 아이콘 (+)
-      shapes.push({
-        type: "text" as const,
-        x: width - stepperWidth,
-        y: labelOffset + height / 2,
-        text: "+",
-        fontSize,
-        fontFamily: ff,
-        fontWeight,
-        fill: textColor,
-        align: "center" as const,
-        baseline: "middle" as const,
-        maxWidth: stepperWidth,
-      });
-
-      // 에러 메시지
+      // 에러 메시지 / 설명
       const descText =
         props.isInvalid && props.errorMessage
           ? props.errorMessage
@@ -346,14 +426,14 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         shapes.push({
           type: "text" as const,
           x: 0,
-          y: labelOffset + height + 4,
+          y: inputY + inputHeight + 4,
           text: descText,
           fontSize: fontSize - 2,
           fontFamily: ff,
           fill: props.isInvalid
             ? ("{color.negative}" as TokenRef)
             : ("{color.neutral-subdued}" as TokenRef),
-          align: textAlign,
+          align: "left" as const,
           baseline: "top" as const,
         });
       }

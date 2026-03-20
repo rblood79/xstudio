@@ -130,10 +130,10 @@ export function NumberField({
       <Group>
         <Input />
         <Button slot="decrement">
-          <Minus size={16} />
+          <Minus />
         </Button>
         <Button slot="increment">
-          <Plus size={16} />
+          <Plus />
         </Button>
       </Group>
       {description && <Text slot="description">{description}</Text>}

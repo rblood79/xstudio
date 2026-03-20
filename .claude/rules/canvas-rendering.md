@@ -146,10 +146,22 @@ Label은 `TEXT_TAGS`에서 제외되어 TextSprite 경로가 아닌 **spec shape
 
 **Label 기본 크기: fit-content (3경로 동기화 필수)**:
 
-- **Spec**: `sizes.*.height: 0` → generated CSS `height: auto`, `baseline: "middle"` (세로 중앙 정렬)
+- **Spec**: `sizes.*.height: 0` → `skipCSSGeneration: true` (generated CSS 비활성)
 - **CSS**: `Label.css` (수동) — `width: fit-content; height: fit-content; white-space: nowrap;`
+- **CSS**: `base.css` — `font-size: var(--label-font-size)`, `line-height: var(--label-line-height)` (부모 CSS 변수 상속)
 - **Factory**: 모든 Label 자식에 `width: "fit-content", height: "fit-content"` 필수 (WebGL/Taffy 경로)
 - `createDefaultLabelProps()`: 독립 생성 시 기본값
+
+**Label size delegation (LabelSpec 단일 소스, 3경로 동기화 필수)**:
+
+- **LabelSpec sizes**: xs=10(text-2xs), sm=12(text-xs), md=14(text-sm), lg=16(text-base), xl=18(text-lg)
+- **CSS**: 부모가 `--label-font-size` 변수 설정 → Label이 `var(--label-font-size)` 상속
+- **Layout DFS**: `fullTreeLayout.ts` — Label DFS 진입 시 조상 탐색으로 `fontSize`/`lineHeight` 인라인 주입
+- **Skia**: `ElementSprite.tsx` — `parentDelegatedSize` → `specProps.size` 주입 → LabelSpec shapes
+- **조상 탐색 패턴**: Label → Checkbox(래퍼) → CheckboxItems(래퍼) → CheckboxGroup(size 소유자)
+  - `lastDelegationAncestor` 패턴으로 size 없는 standalone 부모도 기본값 "md" 적용
+- **`--text-md` CSS 변수 없음**: Spec의 `{typography.text-md}` → CSS는 `var(--text-base)` 사용 필수
+  - `tokenToCSSVar()`에서 `text-md` → `text-base` 자동 매핑
 
 **Checkbox/Radio/Switch 내부 Label nowrap (3경로 동기화 필수)**:
 
@@ -163,6 +175,9 @@ Label은 `TEXT_TAGS`에서 제외되어 TextSprite 경로가 아닌 **spec shape
 - `TEXT_TAGS`에 `"Label"` 재추가 금지 (TextSprite 경로와 spec shapes 경로 중복 렌더링)
 - `PARENT_VARIANT_TO_LABEL_TOKEN` 방식(hex 하드코딩) 부활 금지 → LabelSpec.variants 수정
 - Label factory 정의에 `width/height: "fit-content"` 누락 금지 → WebGL에서 auto와 다르게 동작
+- Label generated CSS 부활 금지 → `skipCSSGeneration: true` 유지 (부모 `--label-font-size` 상속 필수)
+- CSS에 `var(--text-md)` 사용 금지 → `var(--text-base)` 사용 (--text-md CSS 변수 미정의)
+- Label lineHeight를 숫자로 전달 금지 → `"20px"` 문자열 필수 (`parseLineHeight`가 숫자를 배율로 해석)
 
 ## registryVersion 캐싱
 

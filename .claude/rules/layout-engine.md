@@ -41,8 +41,25 @@ globs:
 - `getChildElements`는 `elementsMap` 원본 반환 — 부모의 size/variant 등 위임 props 미포함
 - 해결: `effectiveGetChildElements` 래퍼로 자식에 부모 props 주입 (TagGroup → Tag size 등)
 - `enrichWithIntrinsicSize`의 `calculateContentWidth` 재귀 호출과 DFS `filteredChildren` 양쪽에 적용 필수
-- **Select/ComboBox size delegation**: fullTreeLayout.ts에서 Select/ComboBox의 size를 SelectTrigger/ComboBoxWrapper에 주입 (L894-912)
+- **Select/ComboBox size delegation**: fullTreeLayout.ts에서 Select/ComboBox의 size를 SelectTrigger/ComboBoxWrapper에 주입
 - **Skia 렌더링 경로도 동기화 필수**: ElementSprite.tsx의 `parentDelegatedSize` selector가 부모/조부모에서 size를 읽어 Spec shapes에 전달
+
+## Label size delegation (DFS 진입 시 주입)
+
+- Label DFS 진입 시 조상 탐색으로 `fontSize`/`lineHeight` 인라인 주입 (`fullTreeLayout.ts`)
+- **`lastDelegationAncestor` 패턴**: 최초 발견된 DELEGATION 부모를 기억하고, 상위에 size 소유자가 있으면 갱신
+  - standalone Checkbox(size 없음) → `lastDelegationAncestor = Checkbox` → 기본값 "md"
+  - CheckboxGroup 내 → Checkbox(래퍼) → CheckboxItems(래퍼) → CheckboxGroup(size 소유) → 해당 size 사용
+- **LABEL_WRAPPER_TAGS**: `Checkbox, Radio, CheckboxItems, RadioItems` — size 없이 상위로 통과
+- **LABEL_DELEGATION_PARENT_TAGS**: 모든 size-delegation 컨테이너 (18개)
+- **LABEL_SIZE_STYLE**: LabelSpec 단일 소스 xs~xl 매핑 (fontSize + lineHeight "px" 단위)
+- lineHeight는 반드시 `"20px"` 문자열로 전달 (숫자는 `parseLineHeight`가 배율로 해석)
+
+## Checkbox/Radio → CheckboxGroup/RadioGroup size 주입 (DFS)
+
+- Checkbox/Radio DFS 진입 시 부모(CheckboxItems → CheckboxGroup) 탐색하여 `size` 주입
+- `implicitStyles.ts`가 `containerProps.size`로 indicator marginLeft를 계산하므로 필수
+- Store에 size가 없는 자식에만 적용 (이미 size가 있으면 스킵)
 
 ## Block-child normalization guard
 

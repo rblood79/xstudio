@@ -61,7 +61,7 @@
 .react-aria-Menu[data-size="md"] {
   height: auto;
   padding: 6px 12px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-md);
   gap: 4px;
 }

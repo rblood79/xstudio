@@ -72,7 +72,7 @@
 .react-aria-FileTrigger[data-size="md"] {
   height: 40px;
   padding: 8px 24px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-md);
   gap: 8px;
   --icon-size: 16px;

@@ -62,7 +62,7 @@
 .react-aria-DropZone[data-size="md"] {
   height: 120px;
   padding: 24px 24px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-lg);
   gap: 12px;
   --icon-size: 32px;

@@ -443,6 +443,97 @@ export function applyImplicitStyles(
     });
   }
 
+  // ── NumberField ──────────────────────────────────────────────────────
+  // @sync ComboBox: flex-column + gap, Group에 ComboBoxWrapper 동일 스타일
+  if (containerTag === "numberfield") {
+    const hasLabel = !!containerProps?.label;
+    filteredChildren = children.filter(
+      (c) =>
+        (c.tag === "Label" ? hasLabel : false) ||
+        c.tag === "Group" ||
+        c.tag === "FieldError",
+    );
+
+    // Group에 ComboBoxWrapper 동일 스타일 주입
+    const sizeName = getDelegatedSize(containerEl, elementById);
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag === "Group") {
+        const cs = (child.props?.style || {}) as Record<string, unknown>;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              display: cs.display ?? "flex",
+              flexDirection: cs.flexDirection ?? "row",
+              alignItems: cs.alignItems ?? "center",
+              gap: cs.gap ?? 4,
+              // @sync ComboBox.css .combobox-container
+              // backgroundColor/borderColor는 factory가 Group style에 직접 설정
+              borderWidth: cs.borderWidth ?? 1,
+              height:
+                cs.height ??
+                SPEC_TRIGGER_HEIGHT[sizeName] ??
+                SPEC_TRIGGER_HEIGHT.md,
+              ...withSpecPadding(cs, sizeName),
+            },
+          },
+        } as Element;
+      }
+      return child;
+    });
+
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: parentStyle.display ?? "flex",
+      flexDirection: parentStyle.flexDirection ?? "column",
+      gap: parentStyle.gap ?? 4,
+    });
+  }
+
+  // ── NumberField > Group ────────────────────────────────────────────
+  // Group 자식(Input + Button×2) 스타일 주입 — @sync ComboBoxWrapper
+  if (
+    containerTag === "group" &&
+    containerEl.parent_id &&
+    elementById.get(containerEl.parent_id)?.tag === "NumberField"
+  ) {
+    const sizeName = getDelegatedSize(containerEl, elementById);
+    const iconSz = SPEC_ICON_SIZE[sizeName] ?? SPEC_ICON_SIZE.md;
+    filteredChildren = filteredChildren.map((child) => {
+      const cs = (child.props?.style || {}) as Record<string, unknown>;
+      if (child.tag === "Input") {
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              flex: cs.flex ?? 1,
+              minWidth: cs.minWidth ?? 0,
+            },
+          },
+        } as Element;
+      }
+      if (child.tag === "Button") {
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              width: iconSz,
+              height: iconSz,
+              flexShrink: cs.flexShrink ?? 0,
+            },
+          },
+        } as Element;
+      }
+      return child;
+    });
+  }
+
   // ── SelectTrigger ──────────────────────────────────────────────────
   if (containerTag === "selecttrigger") {
     const sizeName = getDelegatedSize(containerEl, elementById);

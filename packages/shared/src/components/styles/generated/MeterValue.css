@@ -94,7 +94,7 @@
 
 .react-aria-MeterValue[data-size="lg"] {
   padding: 0px 0px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-none);
 }
 

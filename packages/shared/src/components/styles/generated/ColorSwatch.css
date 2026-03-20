@@ -67,7 +67,7 @@
 .react-aria-ColorSwatch[data-size="lg"] {
   height: 36px;
   padding: 0px 0px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-md);
 }
 

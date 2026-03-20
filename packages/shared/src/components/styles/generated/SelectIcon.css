@@ -20,7 +20,7 @@
   /* Default size */
   height: 18px;
   padding: 0px 0px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-none);
   --icon-size: 18px;
 }
@@ -57,7 +57,7 @@
 .react-aria-SelectIcon[data-size="md"] {
   height: 18px;
   padding: 0px 0px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-none);
   --icon-size: 18px;
 }

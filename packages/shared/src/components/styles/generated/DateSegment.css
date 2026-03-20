@@ -83,7 +83,7 @@
 .react-aria-DateSegment[data-size="lg"] {
   height: 40px;
   padding: 6px 8px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-md);
 }
 

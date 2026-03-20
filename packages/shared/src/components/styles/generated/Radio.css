@@ -22,7 +22,7 @@
   /* Default size */
   height: auto;
   padding: 0px 0px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-none);
   gap: 8px;
 }
@@ -90,7 +90,7 @@
 .react-aria-Radio[data-size="md"] {
   height: auto;
   padding: 0px 0px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-none);
   gap: 8px;
 }

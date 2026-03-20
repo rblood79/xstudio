@@ -236,13 +236,21 @@
       position: static;
       flex: 0 0 auto;
       padding: 0;
-      border-width: 0;
+      border: none;
+      border-radius: var(--radius-xs);
       width: var(--nf-btn-size);
       height: var(--nf-btn-size);
+      min-width: unset;
+      min-height: unset;
       background: var(--bg-overlay);
       color: var(--fg);
       forced-color-adjust: none;
       box-shadow: var(--shadow-sm);
+
+      & svg {
+        width: calc(var(--nf-btn-size) * 0.6);
+        height: calc(var(--nf-btn-size) * 0.6);
+      }
 
       &[data-hovered]:not([data-disabled]) {
         background: var(--accent-subtle);

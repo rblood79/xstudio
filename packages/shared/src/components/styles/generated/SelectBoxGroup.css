@@ -62,7 +62,7 @@
 .react-aria-SelectBoxGroup[data-size="lg"] {
   height: auto;
   padding: 0px 0px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: 0;
   gap: 16px;
 }

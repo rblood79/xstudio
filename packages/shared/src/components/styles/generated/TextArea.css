@@ -78,7 +78,7 @@
 .react-aria-TextArea[data-size="md"] {
   height: 80px;
   padding: 10px 14px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-md);
   gap: 6px;
 }

@@ -86,7 +86,7 @@
 .react-aria-SelectBoxItem[data-size="lg"] {
   height: auto;
   padding: 16px 20px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   border-radius: var(--radius-lg);
   gap: 6px;
 }
