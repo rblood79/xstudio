@@ -760,7 +760,7 @@ function traversePostOrder(
     lg: { fontSize: 16, lineHeight: "24px" },
     xl: { fontSize: 18, lineHeight: "28px" },
   };
-  // 구조적 래퍼 태그: size 없이 통과하는 중간 컨테이너
+  // 구조적 래퍼 태그: size 없이 상위로 통과하는 중간 컨테이너
   const LABEL_WRAPPER_TAGS = new Set([
     "Checkbox",
     "Radio",
@@ -771,24 +771,26 @@ function traversePostOrder(
     const rawProps = rawElement.props as Record<string, unknown> | undefined;
     const labelStyle = (rawProps?.style || {}) as Record<string, unknown>;
     if (labelStyle.fontSize == null && rawElement.parent_id) {
-      // 부모 → 조상 탐색: size를 가진 delegation 부모를 찾을 때까지 래퍼를 통과
+      // 부모 → 조상 탐색: 마지막으로 만난 delegation 부모를 기억
       let ancestor = elementsMap.get(rawElement.parent_id);
       let ancestorSize: string | undefined;
+      let lastDelegationAncestor: Element | undefined;
       while (ancestor) {
         if (LABEL_DELEGATION_PARENT_TAGS.has(ancestor.tag)) {
+          lastDelegationAncestor = ancestor;
           ancestorSize =
             ((ancestor.props as Record<string, unknown> | undefined)
               ?.size as string) || undefined;
-          if (ancestorSize) break;
+          if (ancestorSize) break; // size 찾음 → 확정
         }
-        // 래퍼 태그면 계속 상위 탐색
+        // 래퍼 태그면 계속 상위 탐색 (Checkbox → CheckboxItems → CheckboxGroup)
         if (LABEL_WRAPPER_TAGS.has(ancestor.tag) && ancestor.parent_id) {
           ancestor = elementsMap.get(ancestor.parent_id);
         } else {
           break;
         }
       }
-      if (ancestor && LABEL_DELEGATION_PARENT_TAGS.has(ancestor.tag)) {
+      if (lastDelegationAncestor) {
         const parentSize = ancestorSize ?? "md";
         const delegated = LABEL_SIZE_STYLE[parentSize] ?? LABEL_SIZE_STYLE.md;
         rawElement = {
