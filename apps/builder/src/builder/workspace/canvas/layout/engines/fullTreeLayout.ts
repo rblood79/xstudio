@@ -696,6 +696,37 @@ function traversePostOrder(
     }
   }
 
+  // Checkbox/Radio → CheckboxGroup/RadioGroup 부모 size 상속 (DFS 진입 시)
+  // implicitStyles가 containerProps.size로 indicator marginLeft를 계산하므로
+  // Store에 size가 없는 Checkbox/Radio에 부모 Group의 size를 주입해야 함
+  if (
+    (rawElement.tag === "Checkbox" || rawElement.tag === "Radio") &&
+    !(rawElement.props as Record<string, unknown> | undefined)?.size &&
+    rawElement.parent_id
+  ) {
+    let ancestor = elementsMap.get(rawElement.parent_id);
+    // CheckboxItems/RadioItems 래퍼 통과
+    if (
+      ancestor &&
+      (ancestor.tag === "CheckboxItems" || ancestor.tag === "RadioItems") &&
+      ancestor.parent_id
+    ) {
+      ancestor = elementsMap.get(ancestor.parent_id);
+    }
+    const groupTag =
+      rawElement.tag === "Checkbox" ? "CheckboxGroup" : "RadioGroup";
+    if (ancestor?.tag === groupTag) {
+      const groupSize = (ancestor.props as Record<string, unknown> | undefined)
+        ?.size as string | undefined;
+      if (groupSize) {
+        rawElement = {
+          ...rawElement,
+          props: { ...rawElement.props, size: groupSize },
+        };
+      }
+    }
+  }
+
   // Label → 부모 size 상속 (DFS 진입 시 fontSize/lineHeight 주입)
   // CSS는 --label-font-size 변수로 처리하지만, Taffy는 인라인 fontSize가 필요
   // LabelSpec 단일 소스: sm=12(text-xs)/16lh, md=14(text-sm)/20lh, lg=16(text-md)/24lh
