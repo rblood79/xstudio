@@ -1006,6 +1006,18 @@ function traversePostOrder(
       unknown
     >;
     patchBatchStyleFromImplicit(batch[batchIdx].style, origStyle, modStyle);
+
+    // fontSize가 implicitStyles에서 새로 주입된 경우, height 재계산
+    // DFS post-order에서 자식은 부모보다 먼저 enrichment되므로
+    // fontSize 없이 계산된 height(fallback 16→24)를 올바른 값으로 교정
+    if (modStyle.fontSize != null && modStyle.fontSize !== origStyle.fontSize) {
+      const childFs =
+        typeof modStyle.fontSize === "number"
+          ? modStyle.fontSize
+          : parseFloat(String(modStyle.fontSize)) || 16;
+      const correctedHeight = Math.ceil(childFs * 1.5);
+      batch[batchIdx].style.height = `${correctedHeight}px`;
+    }
   }
 
   // 4. enrichWithIntrinsicSize: intrinsic 크기 주입

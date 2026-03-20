@@ -48,6 +48,15 @@ const SPEC_ICON_SIZE: Record<string, number> = {
   xl: 28,
 };
 
+/** ComboBoxInput / SelectValue font size — NumberField.css --nf-input-font-size 동기 */
+const SPEC_INPUT_FONT_SIZE: Record<string, number> = {
+  xs: 10, // text-2xs
+  sm: 12, // text-xs
+  md: 14, // text-sm
+  lg: 16, // text-base
+  xl: 18, // text-lg
+};
+
 /** SelectTrigger / ComboBoxWrapper 높이 — SelectTriggerSpec.sizes.height 동기 */
 const SPEC_TRIGGER_HEIGHT: Record<string, number> = {
   xs: 20,
@@ -521,6 +530,10 @@ export function applyImplicitStyles(
               ...cs,
               flex: cs.flex ?? 1,
               minWidth: cs.minWidth ?? 0,
+              fontSize:
+                cs.fontSize ??
+                SPEC_INPUT_FONT_SIZE[sizeName] ??
+                SPEC_INPUT_FONT_SIZE.md,
               whiteSpace: cs.whiteSpace ?? "nowrap",
               overflow: cs.overflow ?? "hidden",
               textOverflow: cs.textOverflow ?? "ellipsis",
@@ -598,6 +611,10 @@ export function applyImplicitStyles(
               ...cs,
               flex: cs.flex ?? 1,
               minWidth: cs.minWidth ?? 0,
+              fontSize:
+                cs.fontSize ??
+                SPEC_INPUT_FONT_SIZE[sizeName] ??
+                SPEC_INPUT_FONT_SIZE.md,
               whiteSpace: cs.whiteSpace ?? "nowrap",
               overflow: cs.overflow ?? "hidden",
               textOverflow: cs.textOverflow ?? "ellipsis",
@@ -674,6 +691,10 @@ export function applyImplicitStyles(
               ...cs,
               flex: cs.flex ?? 1,
               minWidth: cs.minWidth ?? 0,
+              fontSize:
+                cs.fontSize ??
+                SPEC_INPUT_FONT_SIZE[sizeName] ??
+                SPEC_INPUT_FONT_SIZE.md,
               whiteSpace: cs.whiteSpace ?? "nowrap",
               overflow: cs.overflow ?? "hidden",
               textOverflow: cs.textOverflow ?? "ellipsis",

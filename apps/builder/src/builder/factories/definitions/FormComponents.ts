@@ -506,7 +506,6 @@ export function createNumberFieldDefinition(
               placeholder: "0",
               style: {
                 display: "block",
-                textAlign: "center",
               },
             } as ComponentElementProps,
             ...ownerFields,
