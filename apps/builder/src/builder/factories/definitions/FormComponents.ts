@@ -426,13 +426,13 @@ export function createToastDefinition(
 /**
  * NumberField 복합 컴포넌트 정의
  *
- * CSS DOM 구조:
+ * CSS DOM 구조 (@sync ComboBox):
  * NumberField (parent, tag="NumberField", display flex column)
  *   ├─ Label (tag="Label", children="Number")
- *   ├─ Group (tag="Group", display flex row)
- *   │    ├─ Input (tag="Input", type="number")
- *   │    ├─ Button (tag="Button", children="−", slot="decrement")
- *   │    └─ Button (tag="Button", children="+", slot="increment")
+ *   ├─ ComboBoxWrapper (tag="ComboBoxWrapper", display flex row, bg+border)
+ *   │    ├─ ComboBoxInput (tag="ComboBoxInput", placeholder="0")
+ *   │    ├─ ComboBoxTrigger (tag="ComboBoxTrigger", iconName="minus")
+ *   │    └─ ComboBoxTrigger (tag="ComboBoxTrigger", iconName="plus")
  *   └─ FieldError (tag="FieldError")
  */
 export function createNumberFieldDefinition(
@@ -489,67 +489,43 @@ export function createNumberFieldDefinition(
         order_num: 1,
       },
       {
-        tag: "Group",
+        tag: "ComboBoxWrapper",
         props: {
           style: {
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
-            backgroundColor: "#fafafa",
-            borderWidth: 1,
-            borderStyle: "solid",
-            borderColor: "#d4d4d8",
-            borderRadius: 6,
-            overflow: "hidden",
           },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
         children: [
           {
-            tag: "Input",
+            tag: "ComboBoxInput",
             props: {
-              type: "number",
               placeholder: "0",
               style: {
                 display: "block",
-                width: "60px",
                 textAlign: "center",
-                backgroundColor: "transparent",
-                borderWidth: 0,
               },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
           },
           {
-            tag: "Button",
+            tag: "ComboBoxTrigger",
             props: {
-              children: "−",
+              iconName: "minus",
               slot: "decrement",
-              variant: "secondary",
-              size: "XS",
-              isDisabled: false,
-              style: {
-                backgroundColor: "transparent",
-                borderWidth: 0,
-              },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 2,
           },
           {
-            tag: "Button",
+            tag: "ComboBoxTrigger",
             props: {
-              children: "+",
+              iconName: "plus",
               slot: "increment",
-              variant: "secondary",
-              size: "XS",
-              isDisabled: false,
-              style: {
-                backgroundColor: "transparent",
-                borderWidth: 0,
-              },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 3,

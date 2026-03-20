@@ -444,21 +444,23 @@ export function applyImplicitStyles(
   }
 
   // ── NumberField ──────────────────────────────────────────────────────
-  // @sync ComboBox: flex-column + gap, Group에 ComboBoxWrapper 동일 스타일
+  // ComboBox와 동일한 자식 태그(ComboBoxWrapper/Input/Trigger) 재사용
+  // → 기존 ComboBox implicitStyles 처리가 자동 적용됨
   if (containerTag === "numberfield") {
     const hasLabel = !!containerProps?.label;
+    const WRAPPER_TAGS = new Set(["ComboBoxWrapper"]);
     filteredChildren = children.filter(
       (c) =>
         (c.tag === "Label" ? hasLabel : false) ||
-        c.tag === "Group" ||
+        WRAPPER_TAGS.has(c.tag) ||
         c.tag === "FieldError",
     );
 
-    // Group에 ComboBoxWrapper 동일 스타일 주입
-    const sizeName = getDelegatedSize(containerEl, elementById);
+    // Wrapper에 padding + gap 주입 (ComboBox 분기와 동일)
     filteredChildren = filteredChildren.map((child) => {
-      if (child.tag === "Group") {
+      if (child.tag === "ComboBoxWrapper") {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
+        const sizeName = getDelegatedSize(containerEl, elementById);
         return {
           ...child,
           props: {
@@ -467,15 +469,7 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
-              alignItems: cs.alignItems ?? "center",
               gap: cs.gap ?? 4,
-              // @sync ComboBox.css .combobox-container
-              // backgroundColor/borderColor는 factory가 Group style에 직접 설정
-              borderWidth: cs.borderWidth ?? 1,
-              height:
-                cs.height ??
-                SPEC_TRIGGER_HEIGHT[sizeName] ??
-                SPEC_TRIGGER_HEIGHT.md,
               ...withSpecPadding(cs, sizeName),
             },
           },
@@ -489,48 +483,6 @@ export function applyImplicitStyles(
       display: parentStyle.display ?? "flex",
       flexDirection: parentStyle.flexDirection ?? "column",
       gap: parentStyle.gap ?? 4,
-    });
-  }
-
-  // ── NumberField > Group ────────────────────────────────────────────
-  // Group 자식(Input + Button×2) 스타일 주입 — @sync ComboBoxWrapper
-  if (
-    containerTag === "group" &&
-    containerEl.parent_id &&
-    elementById.get(containerEl.parent_id)?.tag === "NumberField"
-  ) {
-    const sizeName = getDelegatedSize(containerEl, elementById);
-    const iconSz = SPEC_ICON_SIZE[sizeName] ?? SPEC_ICON_SIZE.md;
-    filteredChildren = filteredChildren.map((child) => {
-      const cs = (child.props?.style || {}) as Record<string, unknown>;
-      if (child.tag === "Input") {
-        return {
-          ...child,
-          props: {
-            ...child.props,
-            style: {
-              ...cs,
-              flex: cs.flex ?? 1,
-              minWidth: cs.minWidth ?? 0,
-            },
-          },
-        } as Element;
-      }
-      if (child.tag === "Button") {
-        return {
-          ...child,
-          props: {
-            ...child.props,
-            style: {
-              ...cs,
-              width: iconSz,
-              height: iconSz,
-              flexShrink: cs.flexShrink ?? 0,
-            },
-          },
-        } as Element;
-      }
-      return child;
     });
   }
 

@@ -1184,7 +1184,11 @@ function traversePostOrder(
 
   // Select/ComboBox: 부모 size를 SelectTrigger/ComboBoxWrapper 자식에 위임
   // calculateContentHeight에서 trigger/wrapper 높이를 size별로 정확히 계산하기 위해 필요
-  if (containerTag === "select" || containerTag === "combobox") {
+  if (
+    containerTag === "select" ||
+    containerTag === "combobox" ||
+    containerTag === "numberfield"
+  ) {
     const parentSize = (rawElement.props as Record<string, unknown> | undefined)
       ?.size as string | undefined;
     if (parentSize) {
