@@ -5,6 +5,32 @@ All notable changes to XStudio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Canvas 선택 UX 개선 + NumberField/Input height 정합성] - 2026-03-21
+
+### Bug Fixes
+
+- **계층적 선택 drill-down 즉시 탈출**: 더블클릭으로 2~3단계 깊이 진입 후 다른 컴포넌트 클릭 시, 단계별 탈출이 아닌 즉시 루트로 복귀 후 해당 요소 선택
+  - 기존: `exitEditingContext()` 한 단계씩만 올라감 → 깊이만큼 반복 클릭 필요
+  - 수정: `setEditingContext(null)` 즉시 루트 복귀 → `resolveClickTarget()` 재시도 → 한 번에 선택
+  - 위치: `useCanvasElementSelectionHandlers.ts` `handleElementClick`
+
+- **NumberField input text-align:center 제거 (CSS + Factory)**:
+  - CSS: `NumberField.css` `.react-aria-Input`에서 `text-align: center` 제거
+  - Factory: `FormComponents.ts` ComboBoxInput style에서 `textAlign: "center"` 제거
+
+- **NumberField/ComboBox/Select/SearchField input height 오계산 수정 (24→21)**:
+  - **근본 원인**: DFS post-order에서 ComboBoxInput이 부모(ComboBoxWrapper)보다 먼저 enrichment → fontSize 없이 fallback 16 사용 → `16 × 1.5 = 24` (잘못된 높이)
+  - **수정 1**: `implicitStyles.ts`에 `SPEC_INPUT_FONT_SIZE` 상수 추가 (xs:10, sm:12, md:14, lg:16, xl:18) → ComboBoxInput/SelectValue/SearchInput에 fontSize 주입
+  - **수정 2**: `fullTreeLayout.ts` `patchBatchStyleFromImplicit` 루프에서 fontSize 변경 감지 시 height 재계산 (`Math.ceil(fontSize × 1.5)`) → batch entry 교정
+  - md size 기준: fontSize 14 → `14 × 1.5 = 21` (정확한 높이)
+
+- **ViewportCulling 콘솔 경고 스팸 억제**: `crossValidateCulling()` SpatialIndex vs getBounds() 불일치 로그를 5초 throttle
+  - 위치: `useViewportCulling.ts` — 모듈 스코프 `_lastCullingWarnTime` + 5000ms 간격 제한
+
+- **ListBox aria-label 누락 경고 수정**: `SelectionRenderers.tsx` ListBox에 `aria-label={String(element.props.label || "List")}` 추가
+
+---
+
 ## [Label spec shapes 경로 전환 + Select/ComboBox CSS 정합성] - 2026-03-16
 
 ### Breaking Changes
