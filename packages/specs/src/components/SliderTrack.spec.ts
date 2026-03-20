@@ -106,9 +106,9 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
 
   render: {
     shapes: (props, variant, _size) => {
-      const sizeName = props.size ?? "M";
+      const sizeName = props.size ?? "md";
       const trackDims =
-        SLIDER_TRACK_DIMENSIONS[sizeName] ?? SLIDER_TRACK_DIMENSIONS.M;
+        SLIDER_TRACK_DIMENSIONS[sizeName] ?? SLIDER_TRACK_DIMENSIONS.md;
       const variantName = props.variant ?? "default";
       const fillColors =
         SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
