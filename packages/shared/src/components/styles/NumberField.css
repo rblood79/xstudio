@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
+    color: var(--fg);
 
     /* Accent locals */
     --field-accent: var(--accent);
@@ -13,23 +14,21 @@
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
 
-    /* Size locals (md default) — @sync Button.css size variants */
+    /* Size locals (md default) — @sync ComboBox.css size pattern */
     --nf-label-size: var(--text-sm);
-    --nf-btn-size: var(--text-sm);
-    --nf-btn-width: 32px;
-    --nf-btn-padding: var(--spacing);
-    --nf-input-padding: var(--spacing-xs) var(--spacing-md);
-    --nf-input-size: var(--text-sm);
+    --nf-btn-size: 18px;
+    --nf-input-font-size: var(--text-sm);
     --nf-input-line-height: var(--text-sm--line-height);
-    --nf-input-width: 120px;
     --nf-hint-size: var(--text-xs);
 
-    /* Button variable overrides */
+    /* Button variable overrides — @sync ComboBox.css btn overrides */
     --btn-display: flex;
     --btn-justify: center;
-    --btn-font-size: var(--nf-btn-size);
+    --btn-radius: var(--radius-xs);
+    --btn-border: none;
+    --btn-padding: 0;
     --btn-cursor: pointer;
-    --btn-transition: all 200ms ease;
+    --btn-transition: all 150ms ease;
 
     /* ===== Variant ===== */
     &[data-variant="secondary"] {
@@ -43,59 +42,40 @@
     }
 
     /* ===== Size ===== */
+    /* @sync ComboBox.css size variants — same btn-size, font-size */
     &[data-size="xs"] {
       --nf-label-size: var(--text-2xs);
-      --nf-btn-size: var(--text-2xs);
-      --nf-btn-width: 24px;
-      --nf-btn-padding: var(--spacing-xs);
-      --nf-input-padding: var(--spacing-3xs) var(--spacing-xs);
-      --nf-input-size: var(--text-2xs);
+      --nf-btn-size: 10px;
+      --nf-input-font-size: var(--text-2xs);
       --nf-input-line-height: var(--text-2xs--line-height);
-      --nf-input-width: 60px;
       --nf-hint-size: var(--text-2xs);
     }
     &[data-size="sm"] {
       --nf-label-size: var(--text-xs);
-      --nf-btn-size: var(--text-xs);
-      --nf-btn-width: 28px;
-      --nf-btn-padding: var(--spacing-sm);
-      --nf-input-padding: var(--spacing-2xs) var(--spacing-sm);
-      --nf-input-size: var(--text-xs);
+      --nf-btn-size: 14px;
+      --nf-input-font-size: var(--text-xs);
       --nf-input-line-height: var(--text-xs--line-height);
-      --nf-input-width: 80px;
       --nf-hint-size: var(--text-xs);
     }
     &[data-size="md"] {
       --nf-label-size: var(--text-sm);
-      --nf-btn-size: var(--text-sm);
-      --nf-btn-width: 32px;
-      --nf-btn-padding: var(--spacing);
-      --nf-input-padding: var(--spacing-xs) var(--spacing-md);
-      --nf-input-size: var(--text-sm);
+      --nf-btn-size: 18px;
+      --nf-input-font-size: var(--text-sm);
       --nf-input-line-height: var(--text-sm--line-height);
-      --nf-input-width: 120px;
       --nf-hint-size: var(--text-xs);
     }
     &[data-size="lg"] {
       --nf-label-size: var(--text-base);
-      --nf-btn-size: var(--text-base);
-      --nf-btn-width: 40px;
-      --nf-btn-padding: var(--spacing-md);
-      --nf-input-padding: var(--spacing-sm) var(--spacing-lg);
-      --nf-input-size: var(--text-base);
+      --nf-btn-size: 22px;
+      --nf-input-font-size: var(--text-base);
       --nf-input-line-height: var(--text-base--line-height);
-      --nf-input-width: 160px;
       --nf-hint-size: var(--text-sm);
     }
     &[data-size="xl"] {
       --nf-label-size: var(--text-lg);
-      --nf-btn-size: var(--text-lg);
-      --nf-btn-width: 48px;
-      --nf-btn-padding: var(--spacing-lg);
-      --nf-input-padding: var(--spacing-md) var(--spacing-xl);
-      --nf-input-size: var(--text-lg);
+      --nf-btn-size: 28px;
+      --nf-input-font-size: var(--text-lg);
       --nf-input-line-height: var(--text-lg--line-height);
-      --nf-input-width: 200px;
       --nf-hint-size: var(--text-base);
     }
 
@@ -111,68 +91,176 @@
       --label-color: var(--field-accent);
     }
 
-    /* ===== Group Container ===== */
+    /* ===== Group Container — @sync ComboBox.css .combobox-container ===== */
     .react-aria-Group {
       display: flex;
-      width: fit-content;
+      align-items: center;
+      gap: var(--spacing-xs);
+      width: 100%;
+      border: 1px solid var(--border);
       border-radius: var(--border-radius);
+      background: var(--bg-raised);
+      overflow: hidden;
       transition: all 200ms ease;
+      padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs)
+        var(--spacing-md);
+    }
 
-      &[data-focus-within] {
+    &:has(
+      .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
+    ),
+    &:has(.react-aria-Button[data-hovered]:not([data-disabled])) {
+      .react-aria-Group {
+        border-color: var(--border-hover);
+        background: var(--bg-overlay);
+      }
+    }
+
+    &:has(.react-aria-Input[data-focused]),
+    &:has(.react-aria-Input[data-focus-within]),
+    &:has(.react-aria-Button[data-focus-visible]) {
+      .react-aria-Group {
         outline: 2px solid var(--accent);
         outline-offset: -1px;
-
-        .react-aria-Input,
-        .react-aria-Button {
-          outline: none;
-        }
       }
     }
 
-    &[data-variant="primary"] .react-aria-Group[data-focus-within],
-    &[data-variant="secondary"] .react-aria-Group[data-focus-within],
-    &[data-variant="tertiary"] .react-aria-Group[data-focus-within],
-    &[data-variant="error"] .react-aria-Group[data-focus-within] {
-      outline-color: var(--field-accent);
+    &[data-invalid] .react-aria-Group {
+      border-color: var(--negative);
     }
 
-    /* ===== Buttons ===== */
-    .react-aria-Button {
-      width: var(--nf-btn-width);
-      padding: var(--nf-btn-padding);
+    &[data-disabled] .react-aria-Group {
+      background: color-mix(in srgb, var(--fg) 4%, transparent);
+      border-color: color-mix(in srgb, var(--fg) 12%, transparent);
+      opacity: 0.38;
+    }
+
+    /* ===== Input — @sync ComboBox.css .react-aria-Input ===== */
+    --input-padding: 0;
+    --input-font-size: var(--nf-input-font-size);
+    --input-line-height: var(--nf-input-line-height);
+
+    .react-aria-Input {
+      flex: 1 1 auto;
+      min-width: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      outline: none;
+      forced-color-adjust: none;
+      padding: 0;
+      text-align: center;
+    }
+
+    /* ===== Variant — Container ===== */
+    &[data-variant="primary"] .react-aria-Group,
+    &[data-variant="secondary"] .react-aria-Group,
+    &[data-variant="tertiary"] .react-aria-Group,
+    &[data-variant="error"] .react-aria-Group {
+      border-color: var(--field-accent);
+    }
+
+    &[data-variant="primary"]:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
+      )
+      .react-aria-Group,
+    &[data-variant="primary"]:has(
+        .react-aria-Button[data-hovered]:not([data-disabled])
+      )
+      .react-aria-Group,
+    &[data-variant="secondary"]:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
+      )
+      .react-aria-Group,
+    &[data-variant="secondary"]:has(
+        .react-aria-Button[data-hovered]:not([data-disabled])
+      )
+      .react-aria-Group,
+    &[data-variant="tertiary"]:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
+      )
+      .react-aria-Group,
+    &[data-variant="tertiary"]:has(
+        .react-aria-Button[data-hovered]:not([data-disabled])
+      )
+      .react-aria-Group,
+    &[data-variant="error"]:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
+      )
+      .react-aria-Group,
+    &[data-variant="error"]:has(
+        .react-aria-Button[data-hovered]:not([data-disabled])
+      )
+      .react-aria-Group {
+      background: var(--field-accent-container);
+      border-color: var(--field-accent);
+    }
+
+    /* ===== Variant — Filled ===== */
+    &[data-variant="filled"] .react-aria-Group {
+      background: var(--accent-subtle);
+      border-bottom: 2px solid var(--border);
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+      border-color: transparent;
+    }
+
+    &[data-variant="filled"]:has(.react-aria-Input[data-focused])
+      .react-aria-Group,
+    &[data-variant="filled"]:has(.react-aria-Input[data-focus-within])
+      .react-aria-Group,
+    &[data-variant="filled"]:has(.react-aria-Button[data-focus-visible])
+      .react-aria-Group {
+      outline: none;
+      border-bottom-color: var(--accent);
       background: var(--bg-overlay);
-      border: 1px solid var(--border);
+    }
+
+    &[data-variant="filled"]:has(
+        .react-aria-Input[data-hovered]:not([data-focused]):not([data-disabled])
+      )
+      .react-aria-Group,
+    &[data-variant="filled"]:has(
+        .react-aria-Button[data-hovered]:not([data-disabled])
+      )
+      .react-aria-Group {
+      background: var(--bg-overlay);
+      border-bottom-color: var(--border-hover);
+    }
+
+    &[data-variant="filled"][data-invalid] .react-aria-Group {
+      border-bottom-color: var(--negative);
+    }
+
+    /* ===== Stepper Buttons — @sync ComboBox.css chevron button ===== */
+    .react-aria-Button {
+      position: static;
+      flex: 0 0 auto;
+      padding: 0;
+      border-width: 0;
+      width: var(--nf-btn-size);
+      height: var(--nf-btn-size);
+      background: var(--bg-overlay);
       color: var(--fg);
-
-      &[slot="decrement"] {
-        border-start-end-radius: 0;
-        border-end-end-radius: 0;
-        border-top-left-radius: var(--border-radius);
-        border-bottom-left-radius: var(--border-radius);
-      }
-
-      &[slot="increment"] {
-        border-start-start-radius: 0;
-        border-end-start-radius: 0;
-        border-top-right-radius: var(--border-radius);
-        border-bottom-right-radius: var(--border-radius);
-      }
+      forced-color-adjust: none;
+      box-shadow: var(--shadow-sm);
 
       &[data-hovered]:not([data-disabled]) {
         background: var(--accent-subtle);
-        border-color: var(--border-hover);
       }
 
       &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--bg-overlay) 88%, black);
+        background: color-mix(in srgb, var(--fg) 12%, var(--bg-overlay));
+      }
+
+      &[data-focus-visible] {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
 
       &[data-disabled] {
-        background: color-mix(in srgb, var(--fg) 4%, transparent);
-        border-color: color-mix(in srgb, var(--fg) 12%, transparent);
+        background: color-mix(in srgb, var(--fg) 12%, transparent);
         color: color-mix(in srgb, var(--fg) 38%, transparent);
         cursor: not-allowed;
-        opacity: 0.38;
       }
     }
 
@@ -180,88 +268,23 @@
     &[data-variant="secondary"] .react-aria-Button,
     &[data-variant="tertiary"] .react-aria-Button,
     &[data-variant="error"] .react-aria-Button {
+      background: var(--field-accent-container);
+      color: var(--field-on-accent);
+
       &[data-hovered]:not([data-disabled]) {
-        background: var(--field-accent-container);
-        border-color: var(--field-accent);
-        color: var(--field-on-accent);
+        background: color-mix(
+          in srgb,
+          var(--field-accent) 12%,
+          var(--field-accent-container)
+        );
       }
 
       &[data-pressed]:not([data-disabled]) {
         background: color-mix(
           in srgb,
-          var(--field-accent-container) 88%,
-          black
+          var(--field-accent) 16%,
+          var(--field-accent-container)
         );
-      }
-    }
-
-    /* ===== Input ===== */
-    /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
-    --input-padding: var(--nf-input-padding);
-    --input-font-size: var(--nf-input-size);
-    --input-line-height: var(--nf-input-line-height);
-
-    .react-aria-Input {
-      border-radius: 0;
-      margin: 0 -1px;
-      z-index: 1;
-      outline: none;
-      width: var(--nf-input-width);
-      flex: 1;
-      text-align: center;
-    }
-
-    &[data-variant="primary"] .react-aria-Input,
-    &[data-variant="secondary"] .react-aria-Input,
-    &[data-variant="tertiary"] .react-aria-Input,
-    &[data-variant="error"] .react-aria-Input {
-      --inset-border: var(--field-accent);
-    }
-
-    /* ===== Filled Variant ===== */
-    &[data-variant="filled"] {
-      .react-aria-Group {
-        border-radius: var(--border-radius) var(--border-radius) 0 0;
-
-        &[data-focus-within] {
-          outline: none;
-        }
-      }
-
-      .react-aria-Button {
-        background: var(--accent-subtle);
-        border: none;
-        border-bottom: 2px solid var(--border);
-
-        &[data-hovered]:not([data-disabled]) {
-          background: var(--bg-overlay);
-          border-bottom-color: var(--border-hover);
-        }
-      }
-
-      .react-aria-Input {
-        background: var(--accent-subtle);
-        border: none;
-        border-bottom: 2px solid var(--border);
-      }
-    }
-
-    /* ===== Invalid State ===== */
-    &[data-invalid] {
-      .react-aria-Group {
-        outline-color: var(--negative);
-      }
-
-      .react-aria-Input,
-      .react-aria-Button {
-        border-color: var(--negative);
-      }
-
-      &:focus-within {
-        .react-aria-Input,
-        .react-aria-Button {
-          border-color: var(--negative);
-        }
       }
     }
 

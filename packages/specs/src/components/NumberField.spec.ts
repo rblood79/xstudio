@@ -266,22 +266,39 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         });
       }
 
-      // 감소 버튼 (-)
+      // 입력 영역 너비 (전체 - stepper 2개)
+      const inputWidth = width - stepperWidth * 2;
+
+      // 숫자 값 (왼쪽)
+      shapes.push({
+        type: "text" as const,
+        x: 0,
+        y: labelOffset + height / 2,
+        text: String(props.value ?? 0),
+        fontSize,
+        fontFamily: ff,
+        fill: textColor,
+        align: "center" as const,
+        baseline: "middle" as const,
+        maxWidth: inputWidth,
+      });
+
+      // 감소 버튼 (-) (중간)
       shapes.push({
         id: "decrement",
         type: "roundRect" as const,
-        x: 0,
+        x: inputWidth,
         y: labelOffset,
         width: stepperWidth,
         height,
-        radius: [borderRadius, 0, 0, borderRadius],
+        radius: 0,
         fill: "{color.layer-2}" as TokenRef,
       });
 
       // 감소 아이콘 (-)
       shapes.push({
         type: "text" as const,
-        x: 0,
+        x: inputWidth,
         y: labelOffset + height / 2,
         text: "\u2212",
         fontSize,
@@ -293,7 +310,7 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         maxWidth: stepperWidth,
       });
 
-      // 증가 버튼 (+)
+      // 증가 버튼 (+) (오른쪽)
       shapes.push({
         id: "increment",
         type: "roundRect" as const,
@@ -318,20 +335,6 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         align: "center" as const,
         baseline: "middle" as const,
         maxWidth: stepperWidth,
-      });
-
-      // 숫자 값
-      shapes.push({
-        type: "text" as const,
-        x: stepperWidth,
-        y: labelOffset + height / 2,
-        text: String(props.value ?? 0),
-        fontSize,
-        fontFamily: ff,
-        fill: textColor,
-        align: "center" as const,
-        baseline: "middle" as const,
-        maxWidth: width - stepperWidth * 2,
       });
 
       // 에러 메시지

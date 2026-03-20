@@ -128,10 +128,10 @@ export function NumberField({
     >
       {label && <Label>{label}</Label>}
       <Group>
+        <Input />
         <Button slot="decrement">
           <Minus size={16} />
         </Button>
-        <Input />
         <Button slot="increment">
           <Plus size={16} />
         </Button>

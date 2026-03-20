@@ -430,8 +430,8 @@ export function createToastDefinition(
  * NumberField (parent, tag="NumberField", display flex column)
  *   ├─ Label (tag="Label", children="Number")
  *   ├─ Group (tag="Group", display flex row)
- *   │    ├─ Button (tag="Button", children="−", slot="decrement")
  *   │    ├─ Input (tag="Input", type="number")
+ *   │    ├─ Button (tag="Button", children="−", slot="decrement")
  *   │    └─ Button (tag="Button", children="+", slot="increment")
  *   └─ FieldError (tag="FieldError")
  */
@@ -501,18 +501,6 @@ export function createNumberFieldDefinition(
         order_num: 2,
         children: [
           {
-            tag: "Button",
-            props: {
-              children: "−",
-              slot: "decrement",
-              variant: "default",
-              size: "S",
-              isDisabled: false,
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 1,
-          },
-          {
             tag: "Input",
             props: {
               type: "number",
@@ -522,6 +510,18 @@ export function createNumberFieldDefinition(
                 width: "60px",
                 textAlign: "center",
               },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "Button",
+            props: {
+              children: "−",
+              slot: "decrement",
+              variant: "default",
+              size: "S",
+              isDisabled: false,
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 2,
