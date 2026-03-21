@@ -37,7 +37,7 @@ Select (parent)
 └── FieldError
 ```
 
-현재 WebGL/Skia 캔버스에서 각 자식 Element가 **독립적으로** 렌더링된다:
+현재 WebGL/Skia 캔버스에서 각 자식 Element가 독립적으로 렌더링된다:
 
 - **6개 ElementSprite** React 컴포넌트 마운트 + useMemo 실행
 - **6개 useSkiaNode** 레지스트리 등록
@@ -63,9 +63,9 @@ executeRenderCommands (선형) → canvas.save/translate/restore (×N)
 
 ### 기존 기반 메커니즘
 
-1. **`_hasChildren` 패턴**: Select/ComboBox 등의 Spec `render.shapes()`에 이미 `_hasChildren === false`일 때 전체를 단일 Spec으로 렌더링하는 fallback 경로 존재 (`Select.spec.ts:306`)
+1. **`_hasChildren` 패턴**: Select/ComboBox 등의 Spec `render.shapes()`에 이미 `_hasChildren === false`일 때 전체를 단일 Spec으로 렌더링하는 fallback 경로가 존재 (`Select.spec.ts:306`)
 
-2. **`editingContextId` 메커니즘**: 더블클릭 → `enterEditingContext(elementId)` → 자식 선택 가능. 계층적 선택 모델 구현 완료 (`selection.ts:142`)
+2. **`editingContextId` 메커니즘**: 더블클릭 → `enterEditingContext(elementId)` → 자식 선택 가능. 계층적 선택 모델이 이미 구현되어 있음 (`selection.ts:142`)
 
 3. **Command Stream 캐싱**: `registryVersion + layoutVersion + pagePosVersion` 기반 3중 키 캐시 (`renderCommands.ts:197`)
 
@@ -73,39 +73,64 @@ executeRenderCommands (선형) → canvas.save/translate/restore (×N)
 
 ---
 
+## Alternatives Considered
+
+### 대안 A: Offscreen Surface Blitting
+
+각 compositional 컴포넌트를 offscreen CanvasKit Surface에 렌더링 후 단일 이미지로 blit.
+
+- 설명: 컴포넌트별로 독립 Surface를 할당하여 한 번 렌더링한 결과를 메인 캔버스에 복사
+- 위험: 기술(M) / 성능(H) / 유지보수(H) / 마이그레이션(M)
+
+### 대안 B: Spec-Level Composite Shapes
+
+부모 Spec에서 모든 자식 shapes를 단일 호출로 생성하는 "메가 Spec" 패턴.
+
+- 설명: 부모 Spec이 자식 Spec을 내부적으로 호출하여 모든 shapes를 하나의 배열로 반환
+- 위험: 기술(H) / 성능(L) / 유지보수(C) / 마이그레이션(H)
+
+### 대안 C: Dirty Rectangle + Incremental Update
+
+변경된 요소만 재렌더링하는 incremental 접근 (ADR-012 P3-1 미완 작업).
+
+- 설명: 프레임마다 변경된 AABB 영역만 무효화하고 해당 영역만 재렌더
+- 위험: 기술(H) / 성능(L) / 유지보수(H) / 마이그레이션(M)
+
+### 대안 D: Command Stream + SkiaNodeData 병합 하이브리드 (선택)
+
+부모 ElementSprite가 자식 SkiaNodeData를 병합 생성하고, Command Stream DFS에서 자식 재귀를 스킵.
+
+- 설명: Collapsed 모드에서 부모가 자식 shapes를 통합 보유. Expanded 모드(더블클릭)에서 기존 개별 렌더링으로 전환
+- 위험: 기술(M) / 성능(L) / 유지보수(M) / 마이그레이션(L)
+
+---
+
 ## Decision
 
 ### Collapsed/Expanded 2모드 렌더링 도입
 
-Compositional 컴포넌트를 **기본적으로 Collapsed 모드**로 렌더링하고, 더블클릭 편집 진입 시에만 **Expanded 모드**로 전환한다.
+Compositional 컴포넌트를 **기본적으로 Collapsed 모드**로 렌더링하고, 더블클릭 편집 진입 시에만 **Expanded 모드**로 전환한다. 대안 D(Command Stream + SkiaNodeData 병합 하이브리드)를 채택한다.
 
-|                      | Collapsed (기본)             | Expanded (더블클릭 후) |
-| -------------------- | ---------------------------- | ---------------------- |
-| **ElementSprite**    | 부모 1개만                   | 기존대로 개별 마운트   |
-| **SkiaNodeData**     | 부모가 자식 shapes 병합 생성 | 각자 개별 생성         |
-| **useSkiaNode 등록** | 1개                          | N개                    |
-| **Command Stream**   | 자식 재귀 스킵               | 기존대로 DFS           |
-| **Hit Testing**      | 부모 영역만                  | 개별 자식              |
-| **선택**             | 부모만 선택 가능             | 자식 개별 선택 가능    |
+|                  | Collapsed (기본)             | Expanded (더블클릭 후) |
+| ---------------- | ---------------------------- | ---------------------- |
+| ElementSprite    | 부모 1개만                   | 기존대로 개별 마운트   |
+| SkiaNodeData     | 부모가 자식 shapes 병합 생성 | 각자 개별 생성         |
+| useSkiaNode 등록 | 1개                          | N개                    |
+| Command Stream   | 자식 재귀 스킵               | 기존대로 DFS           |
+| Hit Testing      | 부모 영역만                  | 개별 자식              |
+| 선택             | 부모만 선택 가능             | 자식 개별 선택 가능    |
 
-### 구현 레벨: Command Stream + ElementSprite 하이브리드 (Option C+B)
+**대안 A 기각 이유**: GPU 메모리 할당(Surface당), sub-pixel 텍스트 품질 손실, AABB culling 불가, DPR 변경 시 재생성 필요.
 
-검토한 4가지 접근:
+**대안 B 기각 이유**: Spec은 layout 위치를 모르며 자식별 독립 Spec 구조를 파괴. `_hasChildren` fallback은 layout-blind하여 정확한 위치 배치 불가. 단일 책임 원칙 위반.
 
-| Option | 방식                       | 판정      | 이유                                                    |
-| ------ | -------------------------- | --------- | ------------------------------------------------------- |
-| **A**  | Composite Spec (메가 Spec) | 기각      | 자식별 독립 Spec 구조 파괴, Spec은 layout 위치 모름     |
-| **B**  | SkiaNodeData 병합          | 부분 채택 | 부모가 자식 SkiaNodeData 병합 → React 오버헤드 제거     |
-| **C**  | Command Stream 배칭        | 채택      | DFS 자식 재귀 스킵 → save/restore/translate 제거        |
-| **D**  | Offscreen Surface Blit     | 기각      | GPU 메모리 할당, sub-pixel 품질 저하, AABB culling 불가 |
+**대안 C 보완 관계**: Collapsed rendering과 병행 가능. 향후 ADR-012 P3-1 완성 시 추가 최적화 가능하나 본 ADR 범위 외.
 
-**최종 결정**: B+C 하이브리드 — 부모 ElementSprite가 자식 shapes를 병합 생성(B)하고, Command Stream이 자식 재귀를 스킵(C)한다.
+**대안 D 채택 이유**: 기존 `editingContextId`, `_hasChildren` 메커니즘을 재활용하여 구현 부담 최소화. 동일한 `specShapesToSkia` 변환기를 양쪽 경로에서 사용하므로 시각 불일치 위험이 근본적으로 낮음.
 
 ### 대상 컴포넌트 (COMPOSITIONAL_PARENT_TAGS)
 
-고정 자식 구조를 가진 컴포넌트만 대상. 사용자가 자유롭게 자식 추가/삭제하는 컨테이너는 제외:
-
-**포함 (23개)**:
+고정 자식 구조를 가진 컴포넌트만 대상. 사용자가 자유롭게 자식을 추가/삭제하는 컨테이너는 제외한다:
 
 ```
 Select, ComboBox, TextField, TextArea, NumberField, SearchField,
@@ -114,7 +139,18 @@ DatePicker, DateRangePicker, Slider, ProgressBar, Meter, StatusLight,
 CheckboxGroup, RadioGroup, TagGroup, ColorSlider, ColorArea
 ```
 
-**제외**: Card, Panel, Form, Group, Table, GridList, Tree, Disclosure, DisclosureGroup, Toolbar (사용자 자식 편집 가능)
+**제외**: Card, Panel, Form, Group, Table, GridList, Tree, Disclosure, Toolbar (사용자 자식 편집 대상)
+
+---
+
+## Gates
+
+잔존 HIGH 위험에 대한 Gate:
+
+| 게이트 | 조건                                                                                                         | 시점            | 실패 시 대안                                 |
+| ------ | ------------------------------------------------------------------------------------------------------------ | --------------- | -------------------------------------------- |
+| G1     | Collapsed ↔ Expanded pixel-identical 검증 — 모든 COMPOSITIONAL_PARENT_TAGS, light/dark/tint 전체             | Phase 6 완료 시 | Spec별 개별 검증 후 해당 태그 Collapsed 제외 |
+| G2     | Prop injection 분기 불일치 검증 — size delegation, variant 상속이 collapsed/expanded 양쪽에서 동일 결과 반환 | Phase 1 완료 시 | 공유 유틸 추출 범위 확대, 단위 테스트 강화   |
 
 ---
 
@@ -139,12 +175,12 @@ export function buildCollapsedSkiaNodeData(
 
 **동작 흐름**:
 
-1. 부모 Element의 Spec → `render.shapes()` → `specShapesToSkia()` 로 부모 SkiaNodeData 생성
+1. 부모 Element의 Spec → shapes → `specShapesToSkia()`로 부모 SkiaNodeData 생성
 2. `childrenMap`에서 자식 목록 조회
 3. 각 자식에 대해:
    - `elementsMap`에서 최신 props 조회
    - Size delegation 처리 (부모 `size` → 자식 주입)
-   - `getSpecForTag(child.tag)` → `render.shapes()` → `specShapesToSkia()`
+   - `getSpecForTag(child.tag)` → shapes → `specShapesToSkia()`
    - `layoutMap`에서 부모 기준 상대 좌표(x, y) 획득
    - 자식 SkiaNodeData에 layout 오프셋 적용
 4. 모든 자식 SkiaNodeData를 부모의 `children` 배열에 병합
@@ -152,8 +188,8 @@ export function buildCollapsedSkiaNodeData(
 
 **주요 과제**:
 
-- **Prop injection 로직 공유**: `ElementsLayer.createContainerChildRenderer`의 prop 주입(size delegation, variant 상속 등)을 공유 유틸로 추출
-- **`fullTreeLayoutMap` 접근**: layout은 렌더링 전에 이미 계산 완료 — `getPublishedLayoutMap(pageId)`으로 접근
+- **Prop injection 로직 공유**: `ElementsLayer.createContainerChildRenderer`의 prop 주입(size delegation, variant 상속 등)을 공유 유틸로 추출 (Gate G2)
+- **`fullTreeLayoutMap` 접근**: layout은 렌더링 전에 이미 계산 완료 — `getPublishedLayoutMap(pageId)`로 접근
 
 **수정 파일**:
 
@@ -175,7 +211,6 @@ const skiaData = getSkiaNode(elementId);
 
 // ... (기존 ELEMENT_BEGIN, DRAW 커맨드 발행) ...
 
-// 외부 자식 재귀 분기
 if (skiaData?.collapsedChildren) {
   // 자식 shapes는 이미 skiaData.children에 병합됨
   // childrenMap 재귀 스킵 → CMD_CHILDREN_BEGIN/END 미발행
@@ -196,10 +231,40 @@ if (skiaData?.collapsedChildren) {
 
 **수정**: `stores/selection.ts`
 
-- **새 상태**: `expandedCompositionalIds: Set<string>`
-- **`enterEditingContext` 수정**: `expandedCompositionalIds`에 추가
-- **`exitEditingContext` 수정**: `expandedCompositionalIds`에서 제거
-- **셀렉터**: `isCompositionalExpanded(elementId): boolean`
+```typescript
+// 새 상태
+expandedCompositionalIds: Set<string>;
+
+// enterEditingContext 수정
+enterEditingContext: (elementId) => {
+  const { childrenMap } = get();
+  const children = childrenMap.get(elementId);
+  if (!children || children.length === 0) return;
+  set({
+    editingContextId: elementId,
+    expandedCompositionalIds: new Set([
+      ...get().expandedCompositionalIds,
+      elementId,
+    ]),
+    selectedElementIds: [],
+    selectedElementIdsSet: new Set<string>(),
+  });
+};
+
+// exitEditingContext 수정
+exitEditingContext: () => {
+  const { editingContextId } = get();
+  const newExpanded = new Set(get().expandedCompositionalIds);
+  if (editingContextId) newExpanded.delete(editingContextId);
+  set({
+    editingContextId: null,
+    expandedCompositionalIds: newExpanded,
+    // ...
+  });
+};
+```
+
+**셀렉터**: `isCompositionalExpanded(elementId): boolean`
 
 기존 `editingContextId` 메커니즘과 자연스럽게 통합:
 
@@ -218,11 +283,15 @@ Escape / 외부 클릭 → exitEditingContext → collapsed 복귀
 ```typescript
 if (COMPOSITIONAL_PARENT_TAGS.has(element.tag) && !isExpanded(element.id)) {
   // Collapsed: 자식 DirectContainer + ElementSprite 마운트 스킵
-  // 부모의 단일 ElementSprite만 렌더
   return <ElementSprite key={element.id} ... />;
 } else {
   // Expanded: 기존대로 자식 개별 렌더
-  return renderExistingTree(element);
+  return (
+    <DirectContainer>
+      <ElementSprite ... />
+      {children.map((child) => renderTree(child))}
+    </DirectContainer>
+  );
 }
 ```
 
@@ -236,17 +305,19 @@ if (COMPOSITIONAL_PARENT_TAGS.has(element.tag) && !isExpanded(element.id)) {
 
 ```typescript
 const childPropsSignature = useStore(
-  useCallback((state) => {
-    if (!isCollapsed) return "";
-    return hashDescendantProps(elementId, state.childrenMap, state.elementsMap);
-  }, [elementId, isCollapsed]),
+  useCallback(
+    (state) => {
+      if (!isCollapsed) return "";
+      return hashDescendantProps(elementId, state.childrenMap, state.elementsMap);
+    },
+    [elementId, isCollapsed],
+  ),
 );
 
 const skiaNodeData = useMemo(() => {
   if (isCollapsed) {
     return buildCollapsedSkiaNodeData(parentElement, ...);
   }
-  // 기존 개별 렌더링 경로
   return buildIndividualSkiaNodeData(...);
 }, [/* 기존 deps */, childPropsSignature]);
 ```
@@ -255,7 +326,7 @@ const skiaNodeData = useMemo(() => {
 
 **검증 항목**:
 
-- [ ] Collapsed ↔ Expanded 전환 시 pixel-identical 렌더링
+- [ ] Collapsed ↔ Expanded 전환 시 pixel-identical 렌더링 (Gate G1)
 - [ ] 모든 COMPOSITIONAL_PARENT_TAGS 23개 컴포넌트 시각 정합성
 - [ ] Dark mode, Tint color 변경 시 정상 갱신
 - [ ] Size/Variant props 변경 시 collapsed 갱신
@@ -275,51 +346,19 @@ const skiaNodeData = useMemo(() => {
 
 ## Consequences
 
-### 긍정적
+### Positive
 
 1. **GPU draw call 대폭 감소**: save/restore/translate 횟수 ~80% 절감 → FPS 개선
 2. **React reconciliation 비용 절감**: ElementSprite 인스턴스 수 ~80% 감소
 3. **Command Stream 경량화**: 캐시 메모리 사용량 감소, 선형 순회 속도 향상
 4. **기존 UX 보존**: 더블클릭 진입/나오기가 이미 구현되어 있어 사용자 경험 변화 없음
 
-### 부정적
+### Negative
 
-1. **Collapsed 모드에서 개별 자식 hover 불가**: 전체 컴포넌트 단위 hover만 → 편집 진입 전까지 세밀한 인터랙션 없음
-2. **Prop injection 로직 이중화 리스크**: ElementsLayer의 기존 로직과 collapsedComponentRenderer의 로직 분기 → 공유 유틸 추출로 완화
-3. **자식 props 변경 감지 오버헤드**: `childPropsSignature` 셀렉터가 매 store 업데이트마다 실행 → shallow 비교 + 해시 캐싱으로 완화
+1. **Collapsed 모드에서 개별 자식 hover 불가**: 전체 컴포넌트 단위 hover만 — 편집 진입 전까지 세밀한 인터랙션 없음
+2. **Prop injection 로직 이중화 리스크**: ElementsLayer의 기존 로직과 `collapsedComponentRenderer`의 로직이 분기되면 불일치 위험 — 공유 유틸 추출로 완화
+3. **자식 props 변경 감지 오버헤드**: `childPropsSignature` 셀렉터가 매 store 업데이트마다 실행 — shallow 비교 + 해시 캐싱으로 완화
 4. **2가지 렌더링 경로 유지보수**: collapsed/expanded 양쪽 경로의 시각 정합성 지속 검증 필요
-
-### Risk-First 분석
-
-| 리스크                             | 심각도 | 확률   | 완화 전략                                             |
-| ---------------------------------- | ------ | ------ | ----------------------------------------------------- |
-| 시각 불일치 (Collapsed ≠ Expanded) | High   | Low    | 동일 `specShapesToSkia` 변환기 사용, 시각 회귀 테스트 |
-| Stale child props in collapsed     | Medium | Medium | `childPropsSignature` 셀렉터로 자동 감지              |
-| Layout 타이밍 (자식 위치 미계산)   | Medium | Low    | `fullTreeLayoutMap`은 렌더 전 useMemo에서 계산 완료   |
-| Prop injection 분기 불일치         | High   | Medium | 공유 유틸 추출, 단위 테스트                           |
-| 컴포넌트 상태 hover/pressed        | Low    | High   | Collapsed에서 전체 단위 hover 수용 (설계 의도)        |
-
----
-
-## Alternatives Considered
-
-### A. Offscreen Surface Blitting
-
-각 compositional 컴포넌트를 offscreen CanvasKit Surface에 렌더링 후 단일 이미지로 blit.
-
-**기각 이유**: GPU 메모리 할당(Surface당), sub-pixel 텍스트 품질 손실, AABB culling 불가, DPR 변경 시 재생성 필요.
-
-### B. Spec-Level Composite Shapes
-
-부모 Spec에서 모든 자식 shapes를 단일 호출로 생성.
-
-**기각 이유**: Spec은 layout 위치를 모르며, 자식별 독립 Spec 구조를 파괴. `_hasChildren` fallback은 layout-blind하여 정확한 위치 배치 불가.
-
-### C. Dirty Rectangle + Incremental Update (ADR-012 P3-1)
-
-변경된 요소만 재렌더링하는 incremental approach.
-
-**보완적 관계**: Collapsed rendering과 병행 가능. 향후 ADR-012 P3-1 완성 시 추가 최적화.
 
 ---
 
@@ -338,13 +377,13 @@ const skiaNodeData = useMemo(() => {
 | Phase 5 (Cache Invalidation) | Medium | 1-2 수정      |
 | Phase 6 (Testing)            | Medium | 테스트 파일   |
 
-## Critical Files
+---
 
-| 파일                                               | 역할                                   |
-| -------------------------------------------------- | -------------------------------------- |
-| `canvas/skia/collapsedComponentRenderer.ts` (신규) | 핵심 병합 엔진                         |
-| `canvas/sprites/ElementSprite.tsx`                 | collapsed/expanded 분기 디스패치       |
-| `canvas/skia/renderCommands.ts`                    | 자식 DFS 스킵                          |
-| `canvas/components/ElementsLayer.tsx`              | 자식 React 마운트 스킵                 |
-| `stores/selection.ts`                              | `expandedCompositionalIds` 상태        |
-| `canvas/skia/specShapeConverter.ts`                | 각 자식 shapes 변환 (기존 로직 재사용) |
+## References
+
+- `apps/builder/src/builder/workspace/canvas/skia/` — 대상 Skia 렌더링 경로
+- `apps/builder/src/builder/workspace/canvas/renderCommands.ts` — Command Stream DFS
+- `apps/builder/src/builder/workspace/canvas/components/ElementsLayer.tsx` — React 컴포넌트 트리
+- `apps/builder/src/builder/store/selection.ts` — editingContextId 메커니즘
+- `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` — useMemo deps 패턴
+- [ADR-012](012-rendering-layout-pipeline-hardening.md): 파이프라인 캐시 3단계 구조 (pageLayoutCache, PersistentTaffyTree, commandStream)
