@@ -196,8 +196,18 @@ export function useCentralCanvasPointerHandlers({
             if (!newBounds) {
               return;
             }
+            // Read the resolved selection target from the store instead of
+            // using the raw hitElementId. handleElementClick resolves the hit
+            // to the correct target via resolveClickTarget (e.g., a deep child
+            // "Button" resolves to its container "Card" at root level).
+            // Using hitElementId directly would start a drag on the deep child,
+            // causing unintended reorder/position changes on pointerup.
+            const currentSelected = useStore.getState().selectedElementIds;
+            if (currentSelected.length !== 1) {
+              return;
+            }
             dragPointerRef.current = canvasPos;
-            startMove(hitElementId, newBounds, canvasPos);
+            startMove(currentSelected[0], newBounds, canvasPos);
           });
         }
         return;
@@ -310,7 +320,11 @@ export function useCentralCanvasPointerHandlers({
       if (isSingleSelection) {
         const selectionBounds =
           selectionBoundsRef.current ?? computeSelectionBoundsForHitTest();
-        const { hitHandle } = resolveSelectionHit(canvasPos, selectionBounds, zoom);
+        const { hitHandle } = resolveSelectionHit(
+          canvasPos,
+          selectionBounds,
+          zoom,
+        );
         if (hitHandle) {
           setCursor(hitHandle.cursor);
           return;
