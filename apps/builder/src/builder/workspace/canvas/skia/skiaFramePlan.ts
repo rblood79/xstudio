@@ -23,6 +23,7 @@ import type { PageFrame } from "./workflowRenderer";
 import type { CachedEdgeGeometry } from "./workflowHitTest";
 import type { WorkflowHoverState } from "../hooks/useWorkflowInteraction";
 import type { ElementHoverState } from "../hooks/useElementHoverInteraction";
+import type { DropIndicatorState } from "./dropIndicatorRenderer";
 import { renderGrid } from "./gridRenderer";
 import { buildGridRenderInput } from "./skiaOverlayHelpers";
 import { buildSelectionRenderData } from "./skiaWorkflowSelection";
@@ -85,6 +86,7 @@ export interface BuildFrameRenderPlanInput {
   }>;
   workflowHoverState: WorkflowHoverState;
   elementHoverState: ElementHoverState;
+  dropIndicatorState: DropIndicatorState | null;
   minimapVisible: boolean;
   minimapConfig: import("./workflowMinimap").MinimapConfig;
   skiaCanvasWidth: number;
@@ -112,6 +114,7 @@ export function buildFrameRenderPlan(
     visiblePageFrames,
     workflowHoverState,
     elementHoverState,
+    dropIndicatorState,
     minimapVisible,
     minimapConfig,
     skiaCanvasWidth,
@@ -158,6 +161,7 @@ export function buildFrameRenderPlan(
     workflowElementBoundsMap: workflow?.workflowElementBoundsMap ?? null,
     workflowHoveredEdgeId: workflowHoverState.hoveredEdgeId,
     elementHoverState,
+    dropIndicatorState,
     visiblePageFrames,
     minimapVisible,
     minimapConfig,

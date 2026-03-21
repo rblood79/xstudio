@@ -191,47 +191,21 @@ export function useCentralCanvasPointerHandlers({
 
         handleElementClickRef.current(hitElementId, modifiers);
         if (!isMultiSelectKey) {
-          requestAnimationFrame(() => {
+          const currentSelectedIds = useStore.getState().selectedElementIds;
+          if (currentSelectedIds.length > 0) {
+            const moveTargetId = currentSelectedIds[0];
             const newBounds = computeSelectionBoundsForHitTest();
-            if (!newBounds) {
-              return;
+            if (newBounds) {
+              dragPointerRef.current = canvasPos;
+              startMove(moveTargetId, newBounds, canvasPos);
             }
-            dragPointerRef.current = canvasPos;
-            startMove(hitElementId, newBounds, canvasPos);
-          });
+          }
         }
         return;
       }
 
       if (inSelectionBounds) {
-        if (hitElementId && !new Set(selectedIds).has(hitElementId)) {
-          if (
-            isPointerDoubleClick(
-              {
-                lastClickTargetId: lastClickTargetRef.current,
-                lastClickTime: lastClickTimeRef.current,
-              },
-              hitElementId,
-              now,
-            )
-          ) {
-            const resetState = resetPointerClick();
-            lastClickTargetRef.current = resetState.lastClickTargetId;
-            lastClickTimeRef.current = resetState.lastClickTime;
-            handleElementDoubleClickRef.current(hitElementId);
-            return;
-          }
-
-          const session = commitPointerClick(hitElementId, now);
-          lastClickTargetRef.current = session.lastClickTargetId;
-          lastClickTimeRef.current = session.lastClickTime;
-
-          handleElementClickRef.current(hitElementId, {
-            ctrlKey: event.ctrlKey,
-            metaKey: event.metaKey,
-            shiftKey: event.shiftKey,
-          });
-        } else if (selectedIds.length > 0 && selectionBounds) {
+        if (selectedIds.length > 0 && selectionBounds) {
           const targetId = selectedIds[0] ?? null;
           if (
             isPointerDoubleClick(
@@ -310,7 +284,11 @@ export function useCentralCanvasPointerHandlers({
       if (isSingleSelection) {
         const selectionBounds =
           selectionBoundsRef.current ?? computeSelectionBoundsForHitTest();
-        const { hitHandle } = resolveSelectionHit(canvasPos, selectionBounds, zoom);
+        const { hitHandle } = resolveSelectionHit(
+          canvasPos,
+          selectionBounds,
+          zoom,
+        );
         if (hitHandle) {
           setCursor(hitHandle.cursor);
           return;

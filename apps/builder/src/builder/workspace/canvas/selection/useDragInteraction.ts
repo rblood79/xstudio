@@ -17,8 +17,8 @@
  * @updated 2025-12-23 Phase 19 성능 최적화
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import type { DragState, HandlePosition, BoundingBox } from './types';
+import { useState, useCallback, useRef, useEffect } from "react";
+import type { DragState, HandlePosition, BoundingBox } from "./types";
 
 // ============================================
 // RAF Throttle
@@ -88,14 +88,14 @@ export interface UseDragInteractionOptions {
   onResizeEnd?: (
     elementId: string,
     handle: HandlePosition,
-    newBounds: BoundingBox
+    newBounds: BoundingBox,
   ) => void;
   /** 라쏘 선택 완료 콜백 */
   onLassoEnd?: (selectedIds: string[]) => void;
   /** 선택할 요소 찾기 */
   findElementsInLasso?: (
     start: { x: number; y: number },
-    end: { x: number; y: number }
+    end: { x: number; y: number },
   ) => string[];
   /**
    * 🚀 Phase 5: 드래그 시작 콜백 (해상도 조정 등)
@@ -108,27 +108,33 @@ export interface UseDragInteractionOptions {
    * - Lasso: start, current 전달
    */
   onDragUpdate?: (
-    operation: 'move' | 'resize' | 'lasso',
+    operation: "move" | "resize" | "lasso",
     data: {
       delta?: { x: number; y: number };
       newBounds?: BoundingBox;
       start?: { x: number; y: number };
       current?: { x: number; y: number };
-    }
+    },
   ) => void;
 }
 
 export interface UseDragInteractionReturn {
   /** 현재 드래그 상태 */
   dragState: DragState;
+  /** 동기적으로 업데이트되는 ref (startMove/endDrag 즉시 반영) */
+  dragStateRef: React.RefObject<DragState>;
   /** 이동 시작 */
-  startMove: (elementId: string, bounds: BoundingBox, position: { x: number; y: number }) => void;
+  startMove: (
+    elementId: string,
+    bounds: BoundingBox,
+    position: { x: number; y: number },
+  ) => void;
   /** 리사이즈 시작 */
   startResize: (
     elementId: string,
     handle: HandlePosition,
     bounds: BoundingBox,
-    position: { x: number; y: number }
+    position: { x: number; y: number },
   ) => void;
   /** 라쏘 선택 시작 */
   startLasso: (position: { x: number; y: number }) => void;
@@ -141,9 +147,16 @@ export interface UseDragInteractionReturn {
 }
 
 export function useDragInteraction(
-  options: UseDragInteractionOptions = {}
+  options: UseDragInteractionOptions = {},
 ): UseDragInteractionReturn {
-  const { onMoveEnd, onResizeEnd, onLassoEnd, findElementsInLasso, onDragStart, onDragUpdate } = options;
+  const {
+    onMoveEnd,
+    onResizeEnd,
+    onLassoEnd,
+    findElementsInLasso,
+    onDragStart,
+    onDragUpdate,
+  } = options;
 
   const [dragState, setDragState] = useState<DragState>(initialDragState);
 
@@ -155,13 +168,17 @@ export function useDragInteraction(
 
   // 이동 시작
   const startMove = useCallback(
-    (elementId: string, bounds: BoundingBox, position: { x: number; y: number }) => {
+    (
+      elementId: string,
+      bounds: BoundingBox,
+      position: { x: number; y: number },
+    ) => {
       // 🚀 Phase 5: 드래그 시작 콜백 (해상도 조정 등)
       onDragStart?.();
 
       const newState: DragState = {
         isDragging: true,
-        operation: 'move',
+        operation: "move",
         startPosition: position,
         currentPosition: position,
         targetElementId: elementId,
@@ -171,7 +188,7 @@ export function useDragInteraction(
       dragStateRef.current = newState;
       setDragState(newState);
     },
-    [onDragStart]
+    [onDragStart],
   );
 
   // 리사이즈 시작
@@ -180,14 +197,14 @@ export function useDragInteraction(
       elementId: string,
       handle: HandlePosition,
       bounds: BoundingBox,
-      position: { x: number; y: number }
+      position: { x: number; y: number },
     ) => {
       // 🚀 Phase 5: 드래그 시작 콜백 (해상도 조정 등)
       onDragStart?.();
 
       const newState: DragState = {
         isDragging: true,
-        operation: 'resize',
+        operation: "resize",
         startPosition: position,
         currentPosition: position,
         targetElementId: elementId,
@@ -197,82 +214,88 @@ export function useDragInteraction(
       dragStateRef.current = newState;
       setDragState(newState);
     },
-    [onDragStart]
+    [onDragStart],
   );
 
   // 라쏘 선택 시작
-  const startLasso = useCallback((position: { x: number; y: number }) => {
-    // 🚀 Phase 5: 드래그 시작 콜백 (해상도 조정 등)
-    onDragStart?.();
+  const startLasso = useCallback(
+    (position: { x: number; y: number }) => {
+      // 🚀 Phase 5: 드래그 시작 콜백 (해상도 조정 등)
+      onDragStart?.();
 
-    const newState: DragState = {
-      isDragging: true,
-      operation: 'lasso',
-      startPosition: position,
-      currentPosition: position,
-      targetElementId: null,
-      targetHandle: null,
-      startBounds: null,
-    };
-    dragStateRef.current = newState;
-    setDragState(newState);
-  }, [onDragStart]);
+      const newState: DragState = {
+        isDragging: true,
+        operation: "lasso",
+        startPosition: position,
+        currentPosition: position,
+        targetElementId: null,
+        targetHandle: null,
+        startBounds: null,
+      };
+      dragStateRef.current = newState;
+      setDragState(newState);
+    },
+    [onDragStart],
+  );
 
   // 드래그 업데이트 (🚀 Phase 19: React 리렌더링 없이 콜백만 호출)
   // 시간 기반 스로틀 제거 — RAF 스로틀이 디스플레이 주사율에 동기화.
   // move/resize: imperative PixiJS 업데이트이므로 포인터 이벤트 속도로 즉시 반영.
   // lasso: React state 업데이트이므로 RAF로 스로틀링.
-  const updateDrag = useCallback((position: { x: number; y: number }) => {
-    const state = dragStateRef.current;
-    if (!state.isDragging) return;
+  const updateDrag = useCallback(
+    (position: { x: number; y: number }) => {
+      const state = dragStateRef.current;
+      if (!state.isDragging) return;
 
-    // ref만 업데이트 (React state는 업데이트하지 않음!)
-    const newState: DragState = {
-      ...state,
-      currentPosition: position,
-    };
-    dragStateRef.current = newState;
+      // ref만 업데이트 (React state는 업데이트하지 않음!)
+      const newState: DragState = {
+        ...state,
+        currentPosition: position,
+      };
+      dragStateRef.current = newState;
 
-    // 🚀 Phase 19: 콜백을 통해 PixiJS 직접 조작 (React 리렌더링 없음)
-    if (onDragUpdate && state.startPosition) {
-      const { operation, startPosition, startBounds, targetHandle } = state;
+      // 🚀 Phase 19: 콜백을 통해 PixiJS 직접 조작 (React 리렌더링 없음)
+      if (onDragUpdate && state.startPosition) {
+        const { operation, startPosition, startBounds, targetHandle } = state;
 
-      switch (operation) {
-        case 'move': {
-          const delta = {
-            x: position.x - startPosition.x,
-            y: position.y - startPosition.y,
-          };
-          onDragUpdate('move', { delta });
-          break;
-        }
-        case 'resize': {
-          if (startBounds && targetHandle) {
-            const newBounds = calculateResizedBounds(
-              startBounds,
-              targetHandle,
-              startPosition,
-              position
-            );
-            onDragUpdate('resize', { newBounds });
+        switch (operation) {
+          case "move": {
+            const delta = {
+              x: position.x - startPosition.x,
+              y: position.y - startPosition.y,
+            };
+            onDragUpdate("move", { delta });
+            break;
           }
-          break;
+          case "resize": {
+            if (startBounds && targetHandle) {
+              const newBounds = calculateResizedBounds(
+                startBounds,
+                targetHandle,
+                startPosition,
+                position,
+              );
+              onDragUpdate("resize", { newBounds });
+            }
+            break;
+          }
+          case "lasso": {
+            // 🚀 lasso는 React state 업데이트 필요 (LassoSelection 컴포넌트가 dragState 사용)
+            scheduleUpdate(() => {
+              setDragState(dragStateRef.current);
+            });
+            break;
+          }
         }
-        case 'lasso': {
-          // 🚀 lasso는 React state 업데이트 필요 (LassoSelection 컴포넌트가 dragState 사용)
-          scheduleUpdate(() => {
-            setDragState(dragStateRef.current);
-          });
-          break;
-        }
+      } else {
+        // 🚀 onDragUpdate가 없으면 기존 방식 (React state 업데이트)
+        scheduleUpdate(() => {
+          setDragState(dragStateRef.current);
+        });
       }
-    } else {
-      // 🚀 onDragUpdate가 없으면 기존 방식 (React state 업데이트)
-      scheduleUpdate(() => {
-        setDragState(dragStateRef.current);
-      });
-    }
-  }, [onDragUpdate, scheduleUpdate]);
+    },
+    [onDragUpdate, scheduleUpdate],
+  );
 
   // 드래그 종료
   const endDrag = useCallback(() => {
@@ -282,12 +305,18 @@ export function useDragInteraction(
     const state = dragStateRef.current;
     if (!state.isDragging) return;
 
-    const { operation, startPosition, currentPosition, targetElementId, targetHandle, startBounds } =
-      state;
+    const {
+      operation,
+      startPosition,
+      currentPosition,
+      targetElementId,
+      targetHandle,
+      startBounds,
+    } = state;
 
     if (startPosition && currentPosition) {
       switch (operation) {
-        case 'move':
+        case "move":
           if (targetElementId) {
             const delta = {
               x: currentPosition.x - startPosition.x,
@@ -297,21 +326,24 @@ export function useDragInteraction(
           }
           break;
 
-        case 'resize':
+        case "resize":
           if (targetElementId && targetHandle && startBounds) {
             const newBounds = calculateResizedBounds(
               startBounds,
               targetHandle,
               startPosition,
-              currentPosition
+              currentPosition,
             );
             onResizeEnd?.(targetElementId, targetHandle, newBounds);
           }
           break;
 
-        case 'lasso':
+        case "lasso":
           if (findElementsInLasso) {
-            const selectedIds = findElementsInLasso(startPosition, currentPosition);
+            const selectedIds = findElementsInLasso(
+              startPosition,
+              currentPosition,
+            );
             onLassoEnd?.(selectedIds);
           }
           break;
@@ -333,6 +365,8 @@ export function useDragInteraction(
 
   return {
     dragState,
+    /** 동기적으로 업데이트되는 ref (startMove/endDrag 즉시 반영) */
+    dragStateRef,
     startMove,
     startResize,
     startLasso,
@@ -353,7 +387,7 @@ function calculateResizedBounds(
   startBounds: BoundingBox,
   handle: HandlePosition,
   startPos: { x: number; y: number },
-  currentPos: { x: number; y: number }
+  currentPos: { x: number; y: number },
 ): BoundingBox {
   const dx = currentPos.x - startPos.x;
   const dy = currentPos.y - startPos.y;
@@ -361,37 +395,37 @@ function calculateResizedBounds(
   let { x, y, width, height } = startBounds;
 
   switch (handle) {
-    case 'top-left':
+    case "top-left":
       x += dx;
       y += dy;
       width -= dx;
       height -= dy;
       break;
-    case 'top-center':
+    case "top-center":
       y += dy;
       height -= dy;
       break;
-    case 'top-right':
+    case "top-right":
       y += dy;
       width += dx;
       height -= dy;
       break;
-    case 'middle-right':
+    case "middle-right":
       width += dx;
       break;
-    case 'bottom-right':
+    case "bottom-right":
       width += dx;
       height += dy;
       break;
-    case 'bottom-center':
+    case "bottom-center":
       height += dy;
       break;
-    case 'bottom-left':
+    case "bottom-left":
       x += dx;
       width -= dx;
       height += dy;
       break;
-    case 'middle-left':
+    case "middle-left":
       x += dx;
       width -= dx;
       break;
@@ -400,13 +434,13 @@ function calculateResizedBounds(
   // 최소 크기 보장
   const minSize = 10;
   if (width < minSize) {
-    if (handle.includes('left')) {
+    if (handle.includes("left")) {
       x = startBounds.x + startBounds.width - minSize;
     }
     width = minSize;
   }
   if (height < minSize) {
-    if (handle.includes('top')) {
+    if (handle.includes("top")) {
       y = startBounds.y + startBounds.height - minSize;
     }
     height = minSize;

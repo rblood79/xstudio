@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
+- **컴포넌트 자식 의도치 않은 이동 수정 (startMove hitElementId 불일치)**:
+  - 컴포넌트를 반복 선택/해제/더블클릭 시 내부 자식 요소가 의도치 않게 이동되는 버그 수정
+  - **근본 원인**: `useCentralCanvasPointerHandlers.ts`에서 `startMove(hitElementId, ...)`가 히트 테스트의 가장 깊은 자식(예: Button)을 드래그 대상으로 전달하지만, `handleElementClick`은 `resolveClickTarget()`으로 올바른 상위 요소(예: Card)를 선택 — ID 불일치
+  - 마우스가 4px(`DRAG_DISTANCE_THRESHOLD`) 이상 이동 시 `onMoveEnd`가 깊은 자식의 `parent_id`/`order_num`/`left`/`top`을 변경
+  - **수정**: `startMove`에 `hitElementId` 대신 rAF 내에서 `useStore.getState().selectedElementIds[0]`(실제 선택된 요소)를 전달
+  - Zustand store는 `startTransition` 내에서도 동기적으로 갱신되므로 rAF 시점에 정확한 값 보장
+  - 위치: `useCentralCanvasPointerHandlers.ts` 라인 194-203
+
 - **계층적 선택 drill-down 즉시 탈출**: 더블클릭으로 2~3단계 깊이 진입 후 다른 컴포넌트 클릭 시, 단계별 탈출이 아닌 즉시 루트로 복귀 후 해당 요소 선택
   - 기존: `exitEditingContext()` 한 단계씩만 올라감 → 깊이만큼 반복 클릭 필요
   - 수정: `setEditingContext(null)` 즉시 루트 복귀 → `resolveClickTarget()` 재시도 → 한 번에 선택

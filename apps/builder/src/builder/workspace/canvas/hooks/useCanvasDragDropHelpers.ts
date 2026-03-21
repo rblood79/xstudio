@@ -1,6 +1,9 @@
 import { useCallback } from "react";
 import type { Element } from "../../../../types/core/store.types";
-import { getElementBoundsSimple, getElementContainer } from "../elementRegistry";
+import {
+  getElementBoundsSimple,
+  getElementContainer,
+} from "../elementRegistry";
 import { findElementsInLasso, type BoundingBox } from "../selection";
 import {
   viewportToScreenPoint,
@@ -76,7 +79,9 @@ export function useCanvasDragDropHelpers({
             };
           }
 
-          const style = element.props?.style as Record<string, unknown> | undefined;
+          const style = element.props?.style as
+            | Record<string, unknown>
+            | undefined;
           const localLeft = Number(style?.left ?? 0);
           const localTop = Number(style?.top ?? 0);
           const localWidth = Number(style?.width ?? 0);
@@ -223,7 +228,16 @@ export function useCanvasDragDropHelpers({
       const isHorizontal =
         flexDirection === "row" || flexDirection === "row-reverse";
 
-      let dropPosition: "before" | "after" | "on" = "on";
+      // 자식을 가질 수 있는 컨테이너인지 확인
+      const childrenMap = useStore.getState().childrenMap;
+      const targetChildren = childrenMap.get(target.element.id);
+      const isContainer =
+        target.element.tag.toLowerCase() === "body" ||
+        (targetChildren && targetChildren.length > 0);
+
+      let dropPosition: "before" | "after" | "on" = isContainer
+        ? "on"
+        : "before";
       const size = isHorizontal ? target.bounds.width : target.bounds.height;
 
       if (size > 0 && target.element.parent_id) {
@@ -231,16 +245,26 @@ export function useCanvasDragDropHelpers({
           ? point.x - target.bounds.x
           : point.y - target.bounds.y;
         const ratio = offset / size;
-        if (ratio <= 0.25) dropPosition = "before";
-        else if (ratio >= 0.75) dropPosition = "after";
+        if (isContainer) {
+          // 컨테이너: 가장자리 15%에서만 before/after, 중앙 70%는 on (내부 이동)
+          if (ratio <= 0.15) dropPosition = "before";
+          else if (ratio >= 0.85) dropPosition = "after";
+          else dropPosition = "on";
+        } else {
+          // 리프 요소: before/after만 (on 불가 — 내부 이동 방지)
+          dropPosition = ratio <= 0.5 ? "before" : "after";
+        }
       }
 
-      if (target.element.tag.toLowerCase() === "body") {
-        dropPosition = "on";
-      }
+      const resolvedParentId =
+        dropPosition === "on"
+          ? target.element.id
+          : (target.element.parent_id ?? null);
 
       return {
         dropPosition,
+        isHorizontal,
+        parentId: resolvedParentId,
         targetId: target.element.id,
       };
     },
@@ -272,7 +296,11 @@ export function useCanvasDragDropHelpers({
           ? targetElement.id
           : (targetElement.parent_id ?? null);
 
-      if (oldParentId === null && newParentId === null && dropPosition !== "on") {
+      if (
+        oldParentId === null &&
+        newParentId === null &&
+        dropPosition !== "on"
+      ) {
         return [];
       }
 
@@ -295,7 +323,8 @@ export function useCanvasDragDropHelpers({
       if (dropPosition !== "on") {
         const targetIndex = siblingIds.indexOf(targetElement.id);
         if (targetIndex >= 0) {
-          insertIndex = dropPosition === "before" ? targetIndex : targetIndex + 1;
+          insertIndex =
+            dropPosition === "before" ? targetIndex : targetIndex + 1;
         }
       }
 
@@ -337,8 +366,40 @@ export function useCanvasDragDropHelpers({
     [elementById, elements],
   );
 
+  /**
+   * Pencil findInsertionIndexInLayout 참조.
+   * 포인터 위치와 자식 중심점을 비교하여 삽입 인덱스를 반환한다.
+   */
+  const computeInsertionIndex = useCallback(
+    (
+      parentId: string,
+      point: { x: number; y: number },
+      draggedId: string,
+      isHorizontal: boolean,
+    ): number => {
+      const childrenMap = useStore.getState().childrenMap;
+      const siblings = (childrenMap.get(parentId) ?? [])
+        .filter((el) => el.id !== draggedId && !el.deleted)
+        .sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
+
+      const pos = isHorizontal ? point.x : point.y;
+
+      for (let i = 0; i < siblings.length; i++) {
+        const bounds = getElementBounds(siblings[i]);
+        if (!bounds) continue;
+        const center = isHorizontal
+          ? bounds.x + bounds.width / 2
+          : bounds.y + bounds.height / 2;
+        if (pos < center) return i;
+      }
+      return siblings.length;
+    },
+    [getElementBounds],
+  );
+
   return {
     buildReorderUpdates,
+    computeInsertionIndex,
     findDropTarget,
     findElementsInLassoArea,
     getElementBounds,

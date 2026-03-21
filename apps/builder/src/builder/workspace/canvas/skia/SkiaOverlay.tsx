@@ -29,7 +29,10 @@ import {
   syncCustomFontsWithSkia,
 } from "../../../fonts/loadCustomFontsToSkia";
 import { registerImageLoadCallback } from "./imageCache";
-import type { RendererInvalidationPacket, SkiaRendererInput } from "../renderers";
+import type {
+  RendererInvalidationPacket,
+  SkiaRendererInput,
+} from "../renderers";
 import { recordInvalidation } from "./renderInvalidation";
 import {
   readCssBgColor,
@@ -60,6 +63,7 @@ import {
   createFrameInputSnapshot,
   buildFrameRenderPlan,
 } from "./skiaFramePlan";
+import type { DropIndicatorState } from "./dropIndicatorRenderer";
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -70,6 +74,8 @@ interface SkiaOverlayProps {
   app: Application;
   /** 드래그 상태 Ref (라쏘 렌더링용) */
   dragStateRef?: RefObject<DragState | null>;
+  /** Drop Indicator 상태 Ref (드래그 중 타겟 표시) */
+  dropIndicatorStateRef?: RefObject<DropIndicatorState | null>;
   invalidateLayout: () => void;
   invalidationPacket: RendererInvalidationPacket;
   rendererInput: SkiaRendererInput;
@@ -106,6 +112,7 @@ export function SkiaOverlay({
   backgroundColor = 0xf3f4f6,
   app,
   dragStateRef,
+  dropIndicatorStateRef,
   invalidateLayout,
   invalidationPacket,
   rendererInput,
@@ -180,7 +187,8 @@ export function SkiaOverlay({
 
   // 페이지 프레임/현재 페이지 ref 갱신
   useEffect(() => {
-    allPageFramesRef.current = rendererInput.sceneSnapshot.document.allPageFrames;
+    allPageFramesRef.current =
+      rendererInput.sceneSnapshot.document.allPageFrames;
     visiblePageFramesRef.current =
       rendererInput.sceneSnapshot.document.visiblePageFrames;
     rendererInputRef.current = rendererInput;
@@ -764,6 +772,7 @@ export function SkiaOverlay({
         visiblePageFrames: visiblePageFramesRef.current,
         workflowHoverState: workflowHoverStateRef.current,
         elementHoverState: elementHoverStateRef.current,
+        dropIndicatorState: dropIndicatorStateRef?.current ?? null,
         minimapVisible: minimapVisibleRef.current,
         minimapConfig: minimapConfigRef.current,
         skiaCanvasWidth: skiaCanvas.width,
@@ -836,7 +845,9 @@ export function SkiaOverlay({
 
   // 🆕 Multi-page: 모든 페이지가 동시 마운트되므로 페이지 전환 시
   // 레지스트리/캐시 초기화 불필요. 선택 하이라이트 갱신만 수행.
-  const prevPageIdRef = useRef(rendererInput.sceneSnapshot.document.currentPageId);
+  const prevPageIdRef = useRef(
+    rendererInput.sceneSnapshot.document.currentPageId,
+  );
 
   useEffect(() => {
     const currentPageId = rendererInput.sceneSnapshot.document.currentPageId;

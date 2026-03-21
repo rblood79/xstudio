@@ -18,6 +18,10 @@ import type { PageFrame, ElementBounds } from "./workflowRenderer";
 import type { CachedEdgeGeometry } from "./workflowHitTest";
 import type { SelectionRenderResult } from "./skiaWorkflowSelection";
 import type { ElementHoverState } from "../hooks/useElementHoverInteraction";
+import {
+  renderDropIndicator,
+  type DropIndicatorState,
+} from "./dropIndicatorRenderer";
 import { renderGeneratingEffects, renderFlashes } from "./aiEffects";
 import {
   renderSelectionBox,
@@ -146,6 +150,8 @@ export interface OverlayBuildInput {
   workflowHoveredEdgeId: string | null;
   // Hover
   elementHoverState: ElementHoverState;
+  // Drop Indicator (드래그 중 타겟 표시)
+  dropIndicatorState: DropIndicatorState | null;
   // Visible page frames (page title/selection 계층)
   visiblePageFrames?: Array<{
     id: string;
@@ -185,6 +191,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
     workflowElementBoundsMap,
     workflowHoveredEdgeId,
     elementHoverState,
+    dropIndicatorState,
     visiblePageFrames,
     minimapVisible,
     skiaCanvasWidth,
@@ -206,13 +213,7 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           ai.generatingNodes,
           nodeBoundsMap,
         );
-        renderFlashes(
-          ck,
-          canvas,
-          now,
-          ai.flashAnimations,
-          nodeBoundsMap,
-        );
+        renderFlashes(ck, canvas, now, ai.flashAnimations, nodeBoundsMap);
         if (ai.flashAnimations.size > 0) {
           ai.cleanupExpiredFlashes(now);
         }
@@ -349,6 +350,11 @@ export function buildOverlayNode(input: OverlayBuildInput): SkiaRenderable {
           cameraZoom,
           target.dashed,
         );
+      }
+
+      // ── Drop Indicator ──
+      if (dropIndicatorState) {
+        renderDropIndicator(ck, canvas, dropIndicatorState, cameraZoom);
       }
 
       // ── Selection ──

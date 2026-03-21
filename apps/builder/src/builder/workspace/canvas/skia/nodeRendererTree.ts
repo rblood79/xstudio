@@ -5,9 +5,71 @@ import { renderBox } from "./nodeRendererBorders";
 import { buildClipPath, sortByStackingOrder } from "./nodeRendererClip";
 import { renderImage } from "./nodeRendererImage";
 import { getEditingElementId } from "./nodeRendererState";
-import { renderLine, renderArc, renderIconPath, renderPartialBorder, renderScrollbar } from "./nodeRendererShapes";
+import {
+  renderLine,
+  renderArc,
+  renderIconPath,
+  renderPartialBorder,
+  renderScrollbar,
+} from "./nodeRendererShapes";
 import { renderText } from "./nodeRendererText";
 import type { SkiaNodeData } from "./nodeRendererTypes";
+import { notifyLayoutChange } from "./useSkiaNode";
+
+// ============================================
+// Drag Visual Offset (Pencil deferred-drop 패턴)
+// globalThis 사용 — HMR 모듈 인스턴스 분리 방지
+// ============================================
+
+interface DragVisualOffsetData {
+  elementId: string;
+  dx: number;
+  dy: number;
+}
+
+const G = globalThis as unknown as {
+  __xstudio_dragVisualOffset?: DragVisualOffsetData | null;
+};
+
+function _get(): DragVisualOffsetData | null {
+  return G.__xstudio_dragVisualOffset ?? null;
+}
+
+/**
+ * 드래그 중인 요소의 시각적 오프셋을 설정한다.
+ * Store는 변경하지 않고, 렌더링 시점에만 canvas.translate로 적용.
+ *
+ * @param skipInvalidation true면 notifyLayoutChange() 호출 스킵 (drop 시 store 갱신이 별도로 트리거)
+ */
+export function setDragVisualOffset(
+  elementId: string | null,
+  dx = 0,
+  dy = 0,
+  skipInvalidation = false,
+): void {
+  const prev = _get();
+  G.__xstudio_dragVisualOffset =
+    elementId !== null ? { elementId, dx, dy } : null;
+
+  if (skipInvalidation) return;
+
+  const next = G.__xstudio_dragVisualOffset;
+  const changed =
+    (prev === null) !== (next === null) ||
+    (prev &&
+      next &&
+      (prev.elementId !== next.elementId ||
+        prev.dx !== next.dx ||
+        prev.dy !== next.dy));
+  if (changed) {
+    notifyLayoutChange();
+  }
+}
+
+/** 현재 드래그 시각적 오프셋 반환 */
+export function getDragVisualOffset() {
+  return _get();
+}
 
 export function renderNode(
   ck: CanvasKit,
@@ -42,9 +104,16 @@ function renderNodeInternal(
 ): void {
   if (!node.visible) return;
 
+  // Pencil deferred-drop: 드래그 대상 요소에 시각적 오프셋 적용
+  const dragOffset = _get();
+  const isDragTarget =
+    dragOffset !== null && node.elementId === dragOffset.elementId;
+  const offsetX = isDragTarget ? dragOffset.dx : 0;
+  const offsetY = isDragTarget ? dragOffset.dy : 0;
+
   if (node.width > 0 || node.height > 0) {
-    const nodeLeft = node.x;
-    const nodeTop = node.y;
+    const nodeLeft = node.x + offsetX;
+    const nodeTop = node.y + offsetY;
     const nodeRight = nodeLeft + node.width;
     const nodeBottom = nodeTop + node.height;
     if (
@@ -58,7 +127,7 @@ function renderNodeInternal(
   }
 
   canvas.save();
-  canvas.translate(node.x, node.y);
+  canvas.translate(node.x + offsetX, node.y + offsetY);
 
   if (node.transform) {
     canvas.concat(node.transform);

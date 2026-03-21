@@ -17,6 +17,7 @@ import type { BoundingBox } from "../selection/types";
 import type { AIEffectNodeBounds } from "./types";
 import type { Element } from "../../../../types/core/store.types";
 import { getSkiaNode } from "./useSkiaNode";
+import { getDragVisualOffset } from "./nodeRendererTree";
 import {
   renderBox,
   renderText,
@@ -626,23 +627,30 @@ export function executeRenderCommands(
           elementIdStack[eidTop] = cmd.elementId || elementIdStack[eidTop - 1];
         }
 
+        // Pencil deferred-drop: 드래그 대상 요소에 시각적 오프셋 적용
+        const dragOff = getDragVisualOffset();
+        const hasDragOffset =
+          dragOff !== null && cmd.elementId === dragOff.elementId;
+        const dox = hasDragOffset ? dragOff.dx : 0;
+        const doy = hasDragOffset ? dragOff.dy : 0;
+
         // translate 스택 갱신
         const parentPos = translateStack[stackTop];
         stackTop++;
         if (stackTop >= translateStack.length) {
           translateStack.push({
-            x: parentPos.x + cmd.x,
-            y: parentPos.y + cmd.y,
+            x: parentPos.x + cmd.x + dox,
+            y: parentPos.y + cmd.y + doy,
           });
         } else {
           translateStack[stackTop] = {
-            x: parentPos.x + cmd.x,
-            y: parentPos.y + cmd.y,
+            x: parentPos.x + cmd.x + dox,
+            y: parentPos.y + cmd.y + doy,
           };
         }
 
         canvas.save();
-        canvas.translate(cmd.x, cmd.y);
+        canvas.translate(cmd.x + dox, cmd.y + doy);
 
         if (cmd.transform) {
           canvas.concat(cmd.transform);
