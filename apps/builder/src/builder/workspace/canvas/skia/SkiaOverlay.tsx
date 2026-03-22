@@ -15,7 +15,6 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import type { RefObject } from "react";
 import type { Application, Container } from "pixi.js";
 import { SkiaRenderer } from "./SkiaRenderer";
 import { getRegistryVersion, notifyLayoutChange } from "./useSkiaNode";
@@ -56,14 +55,13 @@ import {
 } from "../hooks/useElementHoverInteraction";
 import { useScrollWheelInteraction } from "../hooks/useScrollWheelInteraction";
 import { DEFAULT_MINIMAP_CONFIG, type MinimapConfig } from "./workflowMinimap";
-import type { BoundingBox, DragState } from "../selection/types";
+import type { BoundingBox } from "../selection/types";
 import { watchContextLoss } from "./createSurface";
 import { flushWasmMetrics, recordWasmMetric } from "../utils/gpuProfilerCore";
 import {
   createFrameInputSnapshot,
   buildFrameRenderPlan,
 } from "./skiaFramePlan";
-import type { DropIndicatorState } from "./dropIndicatorRenderer";
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -72,10 +70,6 @@ interface SkiaOverlayProps {
   backgroundColor?: number;
   /** PixiJS Application 인스턴스 */
   app: Application;
-  /** 드래그 상태 Ref (라쏘 렌더링용) */
-  dragStateRef?: RefObject<DragState | null>;
-  /** Drop Indicator 상태 Ref (드래그 중 타겟 표시) */
-  dropIndicatorStateRef?: RefObject<DropIndicatorState | null>;
   invalidateLayout: () => void;
   invalidationPacket: RendererInvalidationPacket;
   rendererInput: SkiaRendererInput;
@@ -111,8 +105,6 @@ export function SkiaOverlay({
   containerEl,
   backgroundColor = 0xf3f4f6,
   app,
-  dragStateRef,
-  dropIndicatorStateRef,
   invalidateLayout,
   invalidationPacket,
   rendererInput,
@@ -767,12 +759,11 @@ export function SkiaOverlay({
         nodeBoundsMap,
         hasAIEffects,
         contentNode,
-        dragStateRef,
         allPageFrames: allPageFramesRef.current,
         visiblePageFrames: visiblePageFramesRef.current,
         workflowHoverState: workflowHoverStateRef.current,
         elementHoverState: elementHoverStateRef.current,
-        dropIndicatorState: dropIndicatorStateRef?.current ?? null,
+        dropIndicatorState: null,
         minimapVisible: minimapVisibleRef.current,
         minimapConfig: minimapConfigRef.current,
         skiaCanvasWidth: skiaCanvas.width,
@@ -841,7 +832,7 @@ export function SkiaOverlay({
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [ready, isActive, app, containerEl, backgroundColor, dragStateRef]);
+  }, [ready, isActive, app, containerEl, backgroundColor]);
 
   // 🆕 Multi-page: 모든 페이지가 동시 마운트되므로 페이지 전환 시
   // 레지스트리/캐시 초기화 불필요. 선택 하이라이트 갱신만 수행.

@@ -14,14 +14,7 @@
  * @updated 2025-12-23 Phase 19 성능 최적화
  */
 
-import {
-  useCallback,
-  useMemo,
-  memo,
-  type RefObject,
-  useState,
-  useEffect,
-} from "react";
+import { useCallback, useMemo, memo, useState, useEffect } from "react";
 import { useExtend } from "@pixi/react";
 import { PIXI_COMPONENTS } from "../pixiSetup";
 import { useStore } from "../../../stores";
@@ -33,17 +26,14 @@ import {
   computeSelectionBounds as computeSelectionBoundsModel,
   resolveSelectedElementsForPage,
 } from "../interaction";
-import { SelectionBox, type SelectionBoxHandle } from "./SelectionBox";
-import { LassoSelection } from "./LassoSelection";
-import type { BoundingBox, DragState } from "./types";
+import { SelectionBox } from "./SelectionBox";
+import type { BoundingBox } from "./types";
 
 // ============================================
 // Types
 // ============================================
 
 export interface SelectionLayerProps {
-  /** 드래그 상태 */
-  dragState: DragState;
   /** 페이지 너비 (Body 선택용) */
   pageWidth?: number;
   /** 페이지 높이 (Body 선택용) */
@@ -56,11 +46,6 @@ export interface SelectionLayerProps {
   zoom?: number;
   /** 🚀 Phase 7: Pan offset for coordinate transformation */
   panOffset?: { x: number; y: number };
-  /**
-   * 🚀 Phase 19: SelectionBox imperative handle ref
-   * 드래그 중 React 리렌더링 없이 위치 업데이트용
-   */
-  selectionBoxRef?: RefObject<SelectionBoxHandle | null>;
 }
 
 // ============================================
@@ -73,14 +58,12 @@ export interface SelectionLayerProps {
  * 캔버스의 선택 시스템을 관리하는 최상위 레이어입니다.
  */
 export const SelectionLayer = memo(function SelectionLayer({
-  dragState,
   pageWidth = 1920,
   pageHeight = 1080,
   pagePositions,
   pagePositionsVersion: _pagePositionsVersion = 0,
   zoom = 1,
   panOffset = { x: 0, y: 0 },
-  selectionBoxRef,
 }: SelectionLayerProps) {
   useExtend(PIXI_COMPONENTS);
 
@@ -146,24 +129,11 @@ export const SelectionLayer = memo(function SelectionLayer({
       {/* 선택 박스 (선택된 요소가 있을 때) */}
       {selectionBounds && selectedElements.length > 0 && (
         <SelectionBox
-          ref={selectionBoxRef}
           bounds={selectionBounds}
           showHandles={isSingleSelection}
           zoom={zoom}
         />
       )}
-
-      {/* 라쏘 선택 (드래그 중) */}
-      {dragState.isDragging &&
-        dragState.operation === "lasso" &&
-        dragState.startPosition &&
-        dragState.currentPosition && (
-          <LassoSelection
-            start={dragState.startPosition}
-            current={dragState.currentPosition}
-            zoom={zoom}
-          />
-        )}
     </pixiContainer>
   );
 });

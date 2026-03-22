@@ -2,25 +2,14 @@ import { useApplication } from "@pixi/react";
 import { Graphics as PixiGraphics } from "pixi.js";
 import { useCallback, useEffect, useRef } from "react";
 import { PIXI_COMPONENTS, useExtend } from "../pixiSetup";
-import { screenToViewportPoint } from "../viewport/viewportTransforms";
 
 interface ClickableBackgroundProps {
   onClick?: () => void;
-  onLassoDrag?: (position: { x: number; y: number }) => void;
-  onLassoEnd?: () => void;
-  onLassoStart?: (position: { x: number; y: number }) => void;
   panOffset: { x: number; y: number };
   zoom: number;
 }
 
-export function ClickableBackground({
-  onClick,
-  onLassoStart,
-  onLassoDrag,
-  onLassoEnd,
-  zoom,
-  panOffset,
-}: ClickableBackgroundProps) {
+export function ClickableBackground({ onClick }: ClickableBackgroundProps) {
   useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
 
@@ -68,35 +57,11 @@ export function ClickableBackground({
     graphics.fill({ color: 0xffffff, alpha: 0 });
   }, []);
 
-  const isDraggingRef = useRef(false);
   const isPointerDownOnCanvasRef = useRef(false);
 
-  const screenToCanvas = useCallback(
-    (screenX: number, screenY: number) => {
-      return screenToViewportPoint({ x: screenX, y: screenY }, zoom, panOffset);
-    },
-    [panOffset, zoom],
-  );
-
-  const handlePointerDown = useCallback(
-    (event: { global: { x: number; y: number } }) => {
-      isPointerDownOnCanvasRef.current = true;
-      isDraggingRef.current = true;
-      onLassoStart?.(screenToCanvas(event.global.x, event.global.y));
-    },
-    [onLassoStart, screenToCanvas],
-  );
-
-  const handlePointerMove = useCallback(
-    (event: { global: { x: number; y: number } }) => {
-      if (!isDraggingRef.current) {
-        return;
-      }
-
-      onLassoDrag?.(screenToCanvas(event.global.x, event.global.y));
-    },
-    [onLassoDrag, screenToCanvas],
-  );
+  const handlePointerDown = useCallback(() => {
+    isPointerDownOnCanvasRef.current = true;
+  }, []);
 
   const handlePointerUp = useCallback(() => {
     if (!isPointerDownOnCanvasRef.current) {
@@ -104,15 +69,8 @@ export function ClickableBackground({
     }
 
     isPointerDownOnCanvasRef.current = false;
-
-    if (isDraggingRef.current) {
-      isDraggingRef.current = false;
-      onLassoEnd?.();
-      return;
-    }
-
     onClick?.();
-  }, [onClick, onLassoEnd]);
+  }, [onClick]);
 
   return (
     <pixiGraphics
@@ -120,7 +78,6 @@ export function ClickableBackground({
       eventMode="static"
       cursor="default"
       onPointerDown={handlePointerDown}
-      onGlobalPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerUpOutside={handlePointerUp}
     />

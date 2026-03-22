@@ -21,8 +21,6 @@ interface UseCentralCanvasPointerHandlersOptions {
   completeEditRef: MutableRefObject<(elementId: string) => void>;
   computeSelectionBoundsForHitTest: () => BoundingBox | null;
   containerRef: RefObject<HTMLDivElement | null>;
-  dragPointerRef: MutableRefObject<{ x: number; y: number } | null>;
-  dragStateIsDragging: boolean;
   editingElementIdRef: MutableRefObject<string | null>;
   handleElementClickRef: MutableRefObject<
     (elementId: string, modifiers?: ModifierState) => void
@@ -42,17 +40,6 @@ interface UseCentralCanvasPointerHandlersOptions {
   setCursor: (cursor: string) => void;
   setSelectedElement: (elementId: string) => void;
   setSelectedElements: (elementIds: string[]) => void;
-  startMove: (
-    elementId: string,
-    bounds: BoundingBox,
-    startPoint: { x: number; y: number },
-  ) => void;
-  startResize: (
-    elementId: string,
-    position: string,
-    bounds: BoundingBox,
-    startPoint: { x: number; y: number },
-  ) => void;
   zoom: number;
 }
 
@@ -60,8 +47,6 @@ export function useCentralCanvasPointerHandlers({
   completeEditRef,
   computeSelectionBoundsForHitTest,
   containerRef,
-  dragPointerRef,
-  dragStateIsDragging,
   editingElementIdRef,
   handleElementClickRef,
   handleElementDoubleClickRef,
@@ -76,8 +61,6 @@ export function useCentralCanvasPointerHandlers({
   setCursor,
   setSelectedElement,
   setSelectedElements,
-  startMove,
-  startResize,
   zoom,
 }: UseCentralCanvasPointerHandlersOptions): void {
   useEffect(() => {
@@ -136,16 +119,7 @@ export function useCentralCanvasPointerHandlers({
           zoom,
         );
         if (hitHandle) {
-          const resetState = resetPointerClick();
-          lastClickTargetRef.current = resetState.lastClickTargetId;
-          lastClickTimeRef.current = resetState.lastClickTime;
-          dragPointerRef.current = canvasPos;
-          startResize(
-            selectedIds[0],
-            hitHandle.position,
-            selectionBounds,
-            canvasPos,
-          );
+          // 리사이즈 핸들 히트 — 드래그 기능 비활성 상태
           return;
         }
       }
@@ -190,17 +164,6 @@ export function useCentralCanvasPointerHandlers({
         const isMultiSelectKey = modifiers.metaKey || modifiers.ctrlKey;
 
         handleElementClickRef.current(hitElementId, modifiers);
-        if (!isMultiSelectKey) {
-          const currentSelectedIds = useStore.getState().selectedElementIds;
-          if (currentSelectedIds.length > 0) {
-            const moveTargetId = currentSelectedIds[0];
-            const newBounds = computeSelectionBoundsForHitTest();
-            if (newBounds) {
-              dragPointerRef.current = canvasPos;
-              startMove(moveTargetId, newBounds, canvasPos);
-            }
-          }
-        }
         return;
       }
 
@@ -229,8 +192,6 @@ export function useCentralCanvasPointerHandlers({
           const session = commitPointerClick(targetId, now);
           lastClickTargetRef.current = session.lastClickTargetId;
           lastClickTimeRef.current = session.lastClickTime;
-          dragPointerRef.current = canvasPos;
-          startMove(selectedIds[0], selectionBounds, canvasPos);
         }
         return;
       }
@@ -268,10 +229,6 @@ export function useCentralCanvasPointerHandlers({
     };
 
     const handlePointerMove = (event: PointerEvent) => {
-      if (dragStateIsDragging) {
-        return;
-      }
-
       const rect = element.getBoundingClientRect();
       const canvasPos = screenToCanvasPoint({
         x: event.clientX - rect.left,
@@ -309,8 +266,6 @@ export function useCentralCanvasPointerHandlers({
     completeEditRef,
     computeSelectionBoundsForHitTest,
     containerRef,
-    dragPointerRef,
-    dragStateIsDragging,
     editingElementIdRef,
     handleElementClickRef,
     handleElementDoubleClickRef,
@@ -325,8 +280,6 @@ export function useCentralCanvasPointerHandlers({
     setCursor,
     setSelectedElement,
     setSelectedElements,
-    startMove,
-    startResize,
     zoom,
   ]);
 }

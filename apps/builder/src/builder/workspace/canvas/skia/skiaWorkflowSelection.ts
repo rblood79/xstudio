@@ -1,9 +1,8 @@
-import type { RefObject } from "react";
 import type { Element } from "../../../../types/core/store.types";
 import { getElementBoundsSimple } from "../elementRegistry";
 import type { RendererSelectionInvalidation } from "../renderers";
 import { calculateCombinedBounds } from "../selection/types";
-import type { BoundingBox, DragState } from "../selection/types";
+import type { BoundingBox } from "../selection/types";
 import type { LassoRenderData } from "./selectionRenderer";
 import { computeConnectedEdges } from "./workflowGraphUtils";
 import type { WorkflowEdge } from "./workflowEdges";
@@ -88,7 +87,6 @@ export function buildSelectionRenderData(
   treeBoundsMap: Map<string, BoundingBox>,
   selection: RendererSelectionInvalidation,
   elementsMap: Map<string, Element>,
-  dragStateRef?: RefObject<DragState | null>,
   pageFrames?: PageFrameLike[],
 ): SelectionRenderResult {
   const selectedIds = selection.selectedElementIds;
@@ -129,7 +127,9 @@ export function buildSelectionRenderData(
       }
 
       if (element.tag.toLowerCase() === "body" && pageFrames) {
-        const pageFrame = pageFrames.find((frame) => frame.id === element.page_id);
+        const pageFrame = pageFrames.find(
+          (frame) => frame.id === element.page_id,
+        );
         if (pageFrame) {
           boxes.push({
             x: pageFrame.x,
@@ -145,25 +145,5 @@ export function buildSelectionRenderData(
     showHandles = selectedIds.length === 1;
   }
 
-  let lasso: LassoRenderData | null = null;
-  const dragState = dragStateRef?.current;
-  if (
-    dragState?.isDragging &&
-    dragState.operation === "lasso" &&
-    dragState.startPosition &&
-    dragState.currentPosition
-  ) {
-    const sx = dragState.startPosition.x;
-    const sy = dragState.startPosition.y;
-    const cx = dragState.currentPosition.x;
-    const cy = dragState.currentPosition.y;
-    lasso = {
-      x: Math.min(sx, cx),
-      y: Math.min(sy, cy),
-      width: Math.abs(cx - sx),
-      height: Math.abs(cy - sy),
-    };
-  }
-
-  return { bounds: selectionBounds, showHandles, lasso };
+  return { bounds: selectionBounds, showHandles, lasso: null };
 }

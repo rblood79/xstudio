@@ -5,10 +5,9 @@
  * 별도 모듈로 추출한다. 동작 변경 없이 orchestration 책임만 이동한다.
  */
 
-import type { RefObject } from "react";
 import type { CanvasKit, FontMgr, Canvas } from "canvaskit-wasm";
 import type { Element } from "../../../../types/core/store.types";
-import type { BoundingBox, DragState } from "../selection/types";
+import type { BoundingBox } from "../selection/types";
 import type { RendererInvalidationPacket } from "../renderers";
 import type {
   AIEffectNodeBounds,
@@ -63,7 +62,6 @@ export interface BuildFrameRenderPlanInput {
   nodeBoundsMap: Map<string, AIEffectNodeBounds> | null;
   hasAIEffects: boolean;
   contentNode: SkiaRenderable;
-  dragStateRef?: RefObject<DragState | null>;
   elementsMap: Map<string, Element>;
   invalidationPacket: RendererInvalidationPacket;
   allPageFrames?: Array<{
@@ -107,7 +105,6 @@ export function buildFrameRenderPlan(
     nodeBoundsMap,
     hasAIEffects,
     contentNode,
-    dragStateRef,
     elementsMap,
     invalidationPacket,
     allPageFrames,
@@ -129,7 +126,6 @@ export function buildFrameRenderPlan(
     sharedScene,
     invalidationPacket,
     elementsMap,
-    dragStateRef,
     visiblePageFrames,
   );
 
@@ -200,7 +196,6 @@ export function buildSelectionOverlayData(
   sharedScene: SharedSceneDerivedData,
   invalidationPacket: RendererInvalidationPacket,
   elementsMap: Map<string, Element>,
-  dragStateRef?: RefObject<DragState | null>,
   pageFrames?: Array<{
     id: string;
     title: string;
@@ -218,7 +213,6 @@ export function buildSelectionOverlayData(
     sharedScene.treeBoundsMap,
     invalidationPacket.selection,
     elementsMap,
-    dragStateRef,
     pageFrames,
   );
 }
