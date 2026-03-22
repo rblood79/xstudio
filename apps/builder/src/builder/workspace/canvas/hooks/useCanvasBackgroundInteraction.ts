@@ -24,19 +24,7 @@ export function useCanvasBackgroundInteraction({
       return;
     }
 
-    if (currentPageId) {
-      const pageElementIds = pageIndex.elementsByPage.get(currentPageId);
-      if (pageElementIds) {
-        for (const elementId of pageElementIds) {
-          const element = elementsMap.get(elementId);
-          if (element && element.tag === "body") {
-            setSelectedElement(element.id);
-            return;
-          }
-        }
-      }
-    }
-
+    // 페이지 영역 밖 클릭 → 선택 해제 (body 재선택 금지)
     clearSelection();
   }, [clearSelection, setSelectedElement]);
 }

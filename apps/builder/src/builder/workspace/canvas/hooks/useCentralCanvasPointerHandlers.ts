@@ -124,15 +124,21 @@ export function useCentralCanvasPointerHandlers({
         }
       }
 
-      const { inSelectionBounds } = resolveSelectionHit(
-        canvasPos,
-        selectionBounds,
-        zoom,
-      );
       const hitElementId = resolveTopmostHitElementId(
         hitTestPoint(canvasPos.x, canvasPos.y),
         state.elementsMap,
       );
+
+      // body가 선택된 상태에서는 inSelectionBounds를 무시한다.
+      // body의 selectionBounds가 전체 페이지를 커버하므로,
+      // 내부 요소 클릭 시 inSelectionBounds=true가 되어 클릭이 무시되는 버그 방지.
+      const selectedElement =
+        selectedIds.length === 1 ? state.elementsMap.get(selectedIds[0]) : null;
+      const isBodySelected = selectedElement?.tag.toLowerCase() === "body";
+
+      const { inSelectionBounds } = isBodySelected
+        ? { inSelectionBounds: false }
+        : resolveSelectionHit(canvasPos, selectionBounds, zoom);
 
       if (!inSelectionBounds && hitElementId) {
         if (
@@ -212,16 +218,18 @@ export function useCentralCanvasPointerHandlers({
             pages: state.pages,
           });
 
-          if (
-            bodySelection.pageId &&
-            bodySelection.pageId !== state.currentPageId
-          ) {
-            setCurrentPageId(bodySelection.pageId);
-          }
-
-          if (bodySelection.bodyElementId) {
-            setSelectedElement(bodySelection.bodyElementId);
+          if (bodySelection.pageId) {
+            // 페이지 영역 내부 빈 공간 클릭 → 해당 페이지로 전환 + body 선택
+            if (bodySelection.pageId !== state.currentPageId) {
+              setCurrentPageId(bodySelection.pageId);
+            }
+            if (bodySelection.bodyElementId) {
+              setSelectedElement(bodySelection.bodyElementId);
+            } else {
+              setSelectedElements([]);
+            }
           } else {
+            // 페이지 영역 밖 클릭 → 선택 모두 해제
             setSelectedElements([]);
           }
         }
