@@ -118,7 +118,6 @@ const formsComp = [
   { tag: "ComboBox", label: "combo box", icon: ChevronDown },
   { tag: "Switch", label: "switch", icon: ToggleRight },
   { tag: "Slider", label: "slider", icon: SlidersHorizontal },
-  { tag: "RangeSlider", label: "range slider", icon: SlidersHorizontal },
   { tag: "TailSwatch", label: "color picker", icon: Paintbrush },
   { tag: "DropZone", label: "drop zone", icon: Upload },
   { tag: "FileTrigger", label: "file trigger", icon: FileUp },

@@ -83,7 +83,7 @@ export const rendererMap: Record<
   ActionMenu: LayoutRenderers.renderActionMenu,
   Accordion: LayoutRenderers.renderAccordion,
   // Phase 3: Extended Controls (ADR-030)
-  RangeSlider: LayoutRenderers.renderRangeSlider,
+  RangeSlider: SelectionRenderers.renderSlider,
   ProgressCircle: LayoutRenderers.renderProgressCircle,
   Image: LayoutRenderers.renderImage,
   RangeCalendar: LayoutRenderers.renderRangeCalendar,

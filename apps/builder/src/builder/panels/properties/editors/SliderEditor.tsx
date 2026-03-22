@@ -12,6 +12,7 @@ import {
   PointerOff,
   Globe,
   DollarSign,
+  GripHorizontal,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -80,6 +81,148 @@ export const SliderEditor = memo(function SliderEditor({
     updateProp(key, numericValue);
   };
 
+  // SliderTrack에 부모 prop 직접 동기화 (value/minValue/maxValue)
+  const syncSliderTrackProp = useCallback(
+    (key: string, value: unknown) => {
+      const { childrenMap } = useStore.getState();
+      const children = childrenMap.get(elementId) ?? [];
+      const track = children.find((c) => c.tag === "SliderTrack");
+      if (!track) return;
+      useStore.getState().updateElementProps(track.id, {
+        ...track.props,
+        [key]: value,
+      });
+    },
+    [elementId],
+  );
+
+  const isRange = Array.isArray(currentProps.value);
+  const rangeValues: [number, number] = isRange
+    ? [
+        Number((currentProps.value as number[])[0]) || 0,
+        Number((currentProps.value as number[])[1]) || 100,
+      ]
+    : [0, 100];
+
+  const handleRangeModeToggle = useCallback(
+    async (checked: boolean) => {
+      const store = useStore.getState();
+      const { childrenMap, elementsMap } = store;
+      const minVal = Number(currentProps.minValue) || 0;
+      const maxVal = Number(currentProps.maxValue) || 100;
+
+      // SliderTrack 자식 찾기
+      const sliderChildren = childrenMap.get(elementId) ?? [];
+      const sliderTrack = sliderChildren.find((c) => c.tag === "SliderTrack");
+      const sliderOutput = sliderChildren.find((c) => c.tag === "SliderOutput");
+
+      if (checked) {
+        // Single → Range
+        const current = Number(currentProps.value) || 50;
+        const start = Math.max(minVal, current - (maxVal - minVal) * 0.15);
+        const end = Math.min(maxVal, current + (maxVal - minVal) * 0.15);
+        const startVal = Math.round(start);
+        const endVal = Math.round(end);
+
+        // 1. value 업데이트
+        onUpdate({ value: [startVal, endVal] });
+
+        // 2. SliderOutput 텍스트 업데이트
+        if (sliderOutput) {
+          store.updateElementProps(sliderOutput.id, {
+            ...sliderOutput.props,
+            children: `${startVal} – ${endVal}`,
+          });
+        }
+
+        // 3. SliderTrack에 두 번째 Thumb 추가
+        if (sliderTrack) {
+          const trackChildren = childrenMap.get(sliderTrack.id) ?? [];
+          const thumbCount = trackChildren.filter(
+            (c) => c.tag === "SliderThumb",
+          ).length;
+          if (thumbCount < 2) {
+            const parentEl = elementsMap.get(elementId);
+            await store.addElement({
+              id: crypto.randomUUID(),
+              tag: "SliderThumb",
+              props: {
+                style: { width: 18, height: 18, borderRadius: "50%" },
+              },
+              parent_id: sliderTrack.id,
+              page_id: parentEl?.page_id ?? null,
+              layout_id: parentEl?.layout_id ?? null,
+              order_num: thumbCount,
+              deleted: false,
+            });
+          }
+        }
+      } else {
+        // Range → Single
+        const vals = currentProps.value as number[];
+        const singleVal = Array.isArray(vals) ? vals[0] : (vals ?? 50);
+
+        // 1. value 업데이트
+        onUpdate({ value: singleVal });
+
+        // 2. SliderOutput 텍스트 업데이트
+        if (sliderOutput) {
+          store.updateElementProps(sliderOutput.id, {
+            ...sliderOutput.props,
+            children: String(singleVal),
+          });
+        }
+
+        // 3. SliderTrack에서 여분의 Thumb 제거 (1개만 남김)
+        if (sliderTrack) {
+          const trackChildren = childrenMap.get(sliderTrack.id) ?? [];
+          const thumbs = trackChildren.filter((c) => c.tag === "SliderThumb");
+          if (thumbs.length > 1) {
+            const toRemove = thumbs.slice(1).map((t) => t.id);
+            await store.removeElements(toRemove);
+          }
+        }
+      }
+    },
+    [
+      elementId,
+      currentProps.minValue,
+      currentProps.maxValue,
+      currentProps.value,
+      onUpdate,
+    ],
+  );
+
+  const updateRangeValue = useCallback(
+    (index: 0 | 1, raw: string) => {
+      const num = raw === "" ? 0 : Number(raw) || 0;
+      // Store에서 최신 value 직접 읽기 (stale closure 방지)
+      const el = useStore.getState().elementsMap.get(elementId);
+      const currentVal = (el?.props as Record<string, unknown>)?.value;
+      const latest: [number, number] = Array.isArray(currentVal)
+        ? [Number(currentVal[0]) || 0, Number(currentVal[1]) || 100]
+        : [0, 100];
+      latest[index] = num;
+      onUpdate({ value: latest });
+      syncSliderTrackProp("value", latest);
+
+      // SliderOutput 텍스트 동기화
+      const childUpdates = buildChildUpdates([
+        {
+          childTag: "SliderOutput",
+          propKey: "children",
+          value: `${latest[0]} – ${latest[1]}`,
+        },
+      ]);
+      if (childUpdates.length > 0) {
+        useStore
+          .getState()
+          .updateSelectedPropertiesWithChildren({}, childUpdates);
+      }
+    },
+    [elementId, onUpdate, buildChildUpdates],
+  );
+
   return (
     <>
       {/* Basic */}
@@ -102,13 +245,55 @@ export const SliderEditor = memo(function SliderEditor({
           icon={Type}
         />
 
-        <PropertyInput
-          label={PROPERTY_LABELS.DEFAULT_VALUE}
-          value={String(currentProps.value ?? "")}
-          onChange={(value) => updateNumberProp("value", value)}
-          icon={NotebookTabs}
-          placeholder="0"
+        <PropertySwitch
+          label="Range Mode"
+          isSelected={isRange}
+          onChange={handleRangeModeToggle}
+          icon={GripHorizontal}
         />
+
+        {isRange ? (
+          <>
+            <PropertyInput
+              label="Start Value"
+              value={String(rangeValues[0])}
+              onChange={(value) => updateRangeValue(0, value)}
+              icon={NotebookTabs}
+              placeholder="0"
+            />
+            <PropertyInput
+              label="End Value"
+              value={String(rangeValues[1])}
+              onChange={(value) => updateRangeValue(1, value)}
+              icon={NotebookTabs}
+              placeholder="100"
+            />
+          </>
+        ) : (
+          <PropertyInput
+            label={PROPERTY_LABELS.DEFAULT_VALUE}
+            value={String(currentProps.value ?? "")}
+            onChange={(value) => {
+              updateNumberProp("value", value);
+              const numVal = value === "" ? 0 : Number(value) || 0;
+              syncSliderTrackProp("value", numVal);
+              const childUpdates = buildChildUpdates([
+                {
+                  childTag: "SliderOutput",
+                  propKey: "children",
+                  value: String(numVal),
+                },
+              ]);
+              if (childUpdates.length > 0) {
+                useStore
+                  .getState()
+                  .updateSelectedPropertiesWithChildren({}, childUpdates);
+              }
+            }}
+            icon={NotebookTabs}
+            placeholder="0"
+          />
+        )}
       </PropertySection>
 
       {/* Number Formatting Section */}
@@ -192,7 +377,11 @@ export const SliderEditor = memo(function SliderEditor({
         <PropertyInput
           label={PROPERTY_LABELS.MIN_VALUE}
           value={String(currentProps.minValue ?? "")}
-          onChange={(value) => updateNumberProp("minValue", value, 0)}
+          onChange={(value) => {
+            const numVal = value === "" ? 0 : Number(value) || 0;
+            updateNumberProp("minValue", value, 0);
+            syncSliderTrackProp("minValue", numVal);
+          }}
           icon={ArrowDown}
           placeholder="0"
         />
@@ -200,7 +389,11 @@ export const SliderEditor = memo(function SliderEditor({
         <PropertyInput
           label={PROPERTY_LABELS.MAX_VALUE}
           value={String(currentProps.maxValue ?? "")}
-          onChange={(value) => updateNumberProp("maxValue", value, 100)}
+          onChange={(value) => {
+            const numVal = value === "" ? 100 : Number(value) || 100;
+            updateNumberProp("maxValue", value, 100);
+            syncSliderTrackProp("maxValue", numVal);
+          }}
           icon={ArrowUp}
           placeholder="100"
         />

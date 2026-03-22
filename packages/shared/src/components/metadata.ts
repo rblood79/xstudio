@@ -1239,7 +1239,7 @@ export const componentMetadata: ComponentMeta[] = [
     icon: "",
     inspector: {
       hasCustomEditor: true,
-      editorName: "RangeSliderEditor",
+      editorName: "SliderEditor",
       dataBindingType: "value",
       supportedEvents: ["onChange", "onChangeEnd"],
     },

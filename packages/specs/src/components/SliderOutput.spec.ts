@@ -17,7 +17,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface SliderOutputProps {
   variant?: "default" | "accent" | "neutral";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   /** 표시할 값 텍스트 (포맷팅된 문자열) */
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -31,9 +31,10 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
   description: "슬라이더 현재 값 텍스트 렌더링",
   element: "output",
   archetype: "simple",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {
@@ -52,7 +53,7 @@ export const SliderOutputSpec: ComponentSpec<SliderOutputProps> = {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
-      text: "{color.neutral-subtle}" as TokenRef,
+      text: "{color.neutral-subdued}" as TokenRef,
     },
   },
 

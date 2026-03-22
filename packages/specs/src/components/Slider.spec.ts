@@ -20,7 +20,8 @@ export interface SliderProps {
   size?: "sm" | "md" | "lg";
   label?: string;
   name?: string;
-  value?: number;
+  /** 단일 값 또는 범위 값 (React Aria Slider<number | number[]> 패턴) */
+  value?: number | number[];
   minValue?: number;
   maxValue?: number;
   step?: number;
@@ -50,14 +51,14 @@ export const SLIDER_FILL_COLORS: Record<
   },
 };
 
-/** 사이즈별 트랙/핸들 치수 */
+/** 사이즈별 트랙/핸들 치수 (PROGRESSBAR_DIMENSIONS barHeight 동기) */
 export const SLIDER_DIMENSIONS: Record<
   string,
   { trackHeight: number; thumbSize: number }
 > = {
   sm: { trackHeight: 4, thumbSize: 14 },
-  md: { trackHeight: 6, thumbSize: 18 },
-  lg: { trackHeight: 8, thumbSize: 22 },
+  md: { trackHeight: 8, thumbSize: 18 },
+  lg: { trackHeight: 12, thumbSize: 22 },
 };
 
 /**
@@ -67,56 +68,58 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
   name: "Slider",
   description: "React Aria 기반 슬라이더 컴포넌트",
   archetype: "slider",
+  skipCSSGeneration: true,
   element: "div",
 
   defaultVariant: "default",
   defaultSize: "md",
 
+  // preview CSS용: 배경 투명 (track 배경은 SliderTrack child가 담당)
   variants: {
     default: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
     accent: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
     neutral: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
   },
 
   sizes: {
     sm: {
-      height: 20,
+      height: 4,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
-      gap: 8,
+      gap: 6,
     },
     md: {
-      height: 24,
+      height: 8,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
-      gap: 10,
+      gap: 8,
     },
     lg: {
-      height: 28,
+      height: 12,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-md}" as TokenRef,
       borderRadius: "{radius.full}" as TokenRef,
-      gap: 12,
+      gap: 10,
     },
   },
 
@@ -146,13 +149,12 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
 
       const min = props.minValue ?? 0;
       const max = props.maxValue ?? 100;
-      const value = props.value ?? 50;
-      const percent = Math.max(
-        0,
-        Math.min(100, ((value - min) / (max - min)) * 100),
+      const rawValue = props.value ?? 50;
+      const values = Array.isArray(rawValue) ? rawValue : [rawValue];
+      const isRange = values.length >= 2;
+      const percents = values.map((v) =>
+        Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100)),
       );
-      const fillWidth = (width * percent) / 100;
-      const thumbX = fillWidth;
       const trackY = sliderDims.thumbSize / 2 - sliderDims.trackHeight / 2;
       const trackRadius = sliderDims.trackHeight / 2;
 
@@ -201,11 +203,14 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
           });
         }
         if (props.showValue) {
+          const valueText = isRange
+            ? values.map(String).join(" – ")
+            : String(values[0]);
           shapes.push({
             type: "text" as const,
             x: 0,
             y: 0,
-            text: String(value),
+            text: valueText,
             fontSize: numericFontSize,
             fontFamily: ff,
             fill: textColor,
@@ -216,63 +221,94 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         }
       }
 
-      const offsetY =
-        props.label || props.showValue ? numericFontSize + gap : 0;
+      // 자식 Element(SliderTrack, SliderThumb 등)가 있으면
+      // 트랙/fill/thumb은 자식 Spec shapes가 담당 → 부모에서 스킵
+      if (!hasChildren) {
+        const offsetY =
+          props.label || props.showValue ? numericFontSize + gap : 0;
 
-      // 트랙 배경
-      shapes.push({
-        id: "track",
-        type: "roundRect" as const,
-        x: 0,
-        y: offsetY + trackY,
-        width,
-        height: sliderDims.trackHeight,
-        radius: trackRadius,
-        fill: bgColor,
-      });
-
-      // 채우기
-      if (fillWidth > 0) {
+        // 트랙 배경
         shapes.push({
-          id: "fill",
+          id: "track",
           type: "roundRect" as const,
           x: 0,
           y: offsetY + trackY,
-          width: fillWidth,
+          width,
           height: sliderDims.trackHeight,
           radius: trackRadius,
-          fill: fillColors.fill,
+          fill: bgColor,
         });
+
+        // 채우기 (single: 0~value, range: value[0]~value[1])
+        if (isRange) {
+          const fillStartX = (width * percents[0]) / 100;
+          const fillEndX = (width * percents[1]) / 100;
+          const fillW = fillEndX - fillStartX;
+          if (fillW > 0) {
+            shapes.push({
+              id: "fill",
+              type: "roundRect" as const,
+              x: fillStartX,
+              y: offsetY + trackY,
+              width: fillW,
+              height: sliderDims.trackHeight,
+              radius: trackRadius,
+              fill: fillColors.fill,
+            });
+          }
+        } else {
+          const fillWidth = (width * percents[0]) / 100;
+          if (fillWidth > 0) {
+            shapes.push({
+              id: "fill",
+              type: "roundRect" as const,
+              x: 0,
+              y: offsetY + trackY,
+              width: fillWidth,
+              height: sliderDims.trackHeight,
+              radius: trackRadius,
+              fill: fillColors.fill,
+            });
+          }
+        }
+
+        // 썸 (핸들) — single: 1개, range: 2개
+        for (let i = 0; i < percents.length; i++) {
+          const thumbX = (width * percents[i]) / 100;
+          const thumbId = percents.length === 1 ? "thumb" : `thumb-${i}`;
+          shapes.push({
+            id: thumbId,
+            type: "circle" as const,
+            x: thumbX,
+            y: offsetY + sliderDims.thumbSize / 2,
+            radius: sliderDims.thumbSize / 2,
+            fill: fillColors.handle,
+          });
+          shapes.push({
+            type: "border" as const,
+            target: thumbId,
+            borderWidth: 2,
+            color: "{color.base}" as TokenRef,
+            radius: sliderDims.thumbSize / 2,
+          });
+        }
       }
-
-      // 썸 (핸들)
-      shapes.push({
-        id: "thumb",
-        type: "circle" as const,
-        x: thumbX,
-        y: offsetY + sliderDims.thumbSize / 2,
-        radius: sliderDims.thumbSize / 2,
-        fill: fillColors.handle,
-      });
-
-      // 썸 테두리 (흰 외곽)
-      shapes.push({
-        type: "border" as const,
-        target: "thumb",
-        borderWidth: 2,
-        color: "{color.base}" as TokenRef,
-        radius: sliderDims.thumbSize / 2,
-      });
 
       return shapes;
     },
 
     react: (props) => ({
       "data-disabled": props.isDisabled || undefined,
-      role: "slider",
-      "aria-valuemin": props.minValue ?? 0,
-      "aria-valuemax": props.maxValue ?? 100,
-      "aria-valuenow": props.value ?? 50,
+      role: Array.isArray(props.value) ? "group" : "slider",
+      "aria-valuemin": Array.isArray(props.value)
+        ? undefined
+        : (props.minValue ?? 0),
+      "aria-valuemax": Array.isArray(props.value)
+        ? undefined
+        : (props.maxValue ?? 100),
+      "aria-valuenow": Array.isArray(props.value)
+        ? undefined
+        : ((props.value as number) ?? 50),
     }),
 
     pixi: (props) => ({

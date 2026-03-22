@@ -1103,6 +1103,9 @@ export const ElementSprite = memo(function ElementSprite({
     "ProgressBarValue",
     "MeterTrack",
     "MeterValue",
+    "SliderTrack",
+    "SliderOutput",
+    "SliderThumb",
     "SearchFieldWrapper",
     "SearchIcon",
     "SearchInput",
@@ -1209,6 +1212,7 @@ export const ElementSprite = memo(function ElementSprite({
   const isProgressBarValue =
     element.tag === "ProgressBarValue" || element.tag === "MeterValue";
   const isProgressBarChild = isProgressBarTrack || isProgressBarValue;
+  const isSliderTrack = element.tag === "SliderTrack";
   const parentProgressValue = useStore((state) => {
     if (!isProgressBarChild || !element.parent_id) return null;
     const parent = state.elementsMap.get(element.parent_id);
@@ -1272,6 +1276,41 @@ export const ElementSprite = memo(function ElementSprite({
     return (
       ((parent?.props as Record<string, unknown> | undefined)?.maxValue as
         | number
+        | undefined) ?? null
+    );
+  });
+
+  // 🚀 Slider → SliderTrack: 부모의 value/minValue/maxValue/variant 전파
+  const parentSliderValueSerialized = useStore((state) => {
+    if (!isSliderTrack || !element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    const val = (parent?.props as Record<string, unknown> | undefined)?.value;
+    return val !== undefined ? JSON.stringify(val) : null;
+  });
+  const parentSliderMinValue = useStore((state) => {
+    if (!isSliderTrack || !element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    return (
+      ((parent?.props as Record<string, unknown> | undefined)?.minValue as
+        | number
+        | undefined) ?? null
+    );
+  });
+  const parentSliderMaxValue = useStore((state) => {
+    if (!isSliderTrack || !element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    return (
+      ((parent?.props as Record<string, unknown> | undefined)?.maxValue as
+        | number
+        | undefined) ?? null
+    );
+  });
+  const parentSliderVariant = useStore((state) => {
+    if (!isSliderTrack || !element.parent_id) return null;
+    const parent = state.elementsMap.get(element.parent_id);
+    return (
+      ((parent?.props as Record<string, unknown> | undefined)?.variant as
+        | string
         | undefined) ?? null
     );
   });
@@ -1956,6 +1995,22 @@ export const ElementSprite = memo(function ElementSprite({
                 };
               }
 
+              // SliderTrack: 부모 Slider의 value/minValue/maxValue/variant 전파
+              if (isSliderTrack) {
+                const parsedValue =
+                  parentSliderValueSerialized != null
+                    ? JSON.parse(parentSliderValueSerialized)
+                    : (specProps.value ?? 50);
+                specProps = {
+                  ...specProps,
+                  value: parsedValue,
+                  minValue: parentSliderMinValue ?? specProps.minValue ?? 0,
+                  maxValue: parentSliderMaxValue ?? specProps.maxValue ?? 100,
+                  variant:
+                    specProps.variant ?? parentSliderVariant ?? "default",
+                };
+              }
+
               // ProgressBarValue: 부모 ProgressBar의 value를 포맷팅하여 children에 주입
               // delegation 값이 항상 우선 (factory의 초기 "50%"보다 부모의 실시간 value 우선)
               if (isProgressBarValue && parentProgressShowValue) {
@@ -2379,6 +2434,10 @@ export const ElementSprite = memo(function ElementSprite({
     parentProgressShowValue,
     parentProgressMinValue,
     parentProgressMaxValue,
+    parentSliderValueSerialized,
+    parentSliderMinValue,
+    parentSliderMaxValue,
+    parentSliderVariant,
     isLabelInNowrapParent,
     tagGroupAncestorSize,
     tagGroupAllowsRemoving,

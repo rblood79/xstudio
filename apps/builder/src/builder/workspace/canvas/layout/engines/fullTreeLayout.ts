@@ -248,6 +248,23 @@ function patchBatchStyleFromImplicit(
       continue;
     }
 
+    // position + inset 속성: CSS left/top/right/bottom → Taffy insetLeft/Top/Right/Bottom
+    if (key === "position") {
+      batchStyle.position =
+        val === "absolute" || val === "fixed" ? "absolute" : val;
+      continue;
+    }
+    if (
+      key === "left" ||
+      key === "top" ||
+      key === "right" ||
+      key === "bottom"
+    ) {
+      const insetKey = `inset${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+      batchStyle[insetKey] = typeof val === "number" ? `${val}px` : String(val);
+      continue;
+    }
+
     // string 속성 (display, flexDirection, alignItems 등)
     if (typeof val === "string") {
       batchStyle[key] = val;

@@ -146,4 +146,4 @@
 
 /* Data Display */
 @import "./Table.css"; /* Tier 3 — 수동 유지 (가상 스크롤, column resizer) */
-@import "./generated/Slider.css";
+/* Slider: skipCSSGeneration — 수동 Slider.css가 담당 */

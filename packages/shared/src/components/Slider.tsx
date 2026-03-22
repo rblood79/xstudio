@@ -59,6 +59,11 @@ export interface SliderProps<T> extends AriaSliderProps<T> {
    */
   showValue?: boolean;
   /**
+   * Visual variant
+   * @default 'default'
+   */
+  variant?: "default" | "accent" | "neutral";
+  /**
    * Show loading skeleton instead of slider
    * @default false
    */
@@ -79,6 +84,7 @@ export function Slider<T extends number | number[]>({
   valueFormat = "number",
   unit,
   customFormatter,
+  variant = "default",
   showValue = true,
   isLoading,
   ...props
@@ -122,6 +128,7 @@ export function Slider<T extends number | number[]>({
       {...props}
       className={sliderClassName}
       data-emphasized={isEmphasized || undefined}
+      data-variant={variant}
       data-size={size}
     >
       {label && <Label>{label}</Label>}
@@ -133,11 +140,38 @@ export function Slider<T extends number | number[]>({
         </SliderOutput>
       )}
       <SliderTrack>
-        {({ state }) =>
-          state.values.map((_, i) => (
-            <SliderThumb key={i} index={i} aria-label={thumbLabels?.[i]} />
-          ))
-        }
+        {({ state, isDisabled }) => (
+          <>
+            {/* Track background */}
+            <div
+              className="slider-track-bg"
+              data-disabled={isDisabled || undefined}
+            />
+            {/* Fill bar */}
+            {state.values.length === 1 ? (
+              <div
+                className="slider-fill"
+                style={{
+                  width: `${state.getThumbPercent(0) * 100}%`,
+                }}
+                data-disabled={isDisabled || undefined}
+              />
+            ) : state.values.length >= 2 ? (
+              <div
+                className="slider-fill"
+                style={{
+                  left: `${state.getThumbPercent(0) * 100}%`,
+                  width: `${(state.getThumbPercent(1) - state.getThumbPercent(0)) * 100}%`,
+                }}
+                data-disabled={isDisabled || undefined}
+              />
+            ) : null}
+            {/* Thumbs */}
+            {state.values.map((_, i) => (
+              <SliderThumb key={i} index={i} aria-label={thumbLabels?.[i]} />
+            ))}
+          </>
+        )}
       </SliderTrack>
     </AriaSlider>
   );

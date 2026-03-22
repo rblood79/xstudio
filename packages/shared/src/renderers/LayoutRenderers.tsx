@@ -1513,50 +1513,6 @@ export const renderAccordion = (
 // ─── Phase 3: Extended Controls (ADR-030) ────────────────────────────────────
 
 /**
- * RangeSlider 렌더링
- * Slider와 동일한 구조, min/max 두 핸들
- */
-export const renderRangeSlider = (
-  element: PreviewElement,
-  context: RenderContext,
-): React.ReactNode => {
-  const eventHandlers =
-    context.services?.createEventHandlerMap?.(element, context) ?? {};
-
-  return (
-    <div
-      key={element.id}
-      data-element-id={element.id}
-      data-custom-id={element.customId}
-      role="group"
-      aria-label={String(element.props.label || "Range")}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "4px",
-        ...element.props.style,
-      }}
-      className={element.props.className}
-    >
-      {element.props.label ? (
-        <label style={{ fontSize: "14px" }}>
-          {String(element.props.label)}
-        </label>
-      ) : null}
-      <input
-        type="range"
-        min={Number(element.props.minValue ?? 0)}
-        max={Number(element.props.maxValue ?? 100)}
-        step={Number(element.props.step ?? 1)}
-        disabled={Boolean(element.props.isDisabled)}
-        style={{ width: "100%" }}
-        {...eventHandlers}
-      />
-    </div>
-  );
-};
-
-/**
  * ProgressCircle 렌더링
  * 원형 진행률 표시기 (SVG)
  */

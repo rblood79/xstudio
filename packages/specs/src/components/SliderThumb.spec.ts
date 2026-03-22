@@ -8,8 +8,7 @@
  * @packageDocumentation
  */
 
-import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { SLIDER_FILL_COLORS, SLIDER_DIMENSIONS } from "./Slider.spec";
+import type { ComponentSpec, TokenRef } from "../types";
 
 /**
  * SliderThumb Props
@@ -26,11 +25,11 @@ export interface SliderThumbProps {
   style?: Record<string, string | number | undefined>;
 }
 
-/** 사이즈별 썸 치수 */
+/** 사이즈별 썸 치수 (SLIDER_DIMENSIONS.thumbSize 동기) */
 export const SLIDER_THUMB_SIZES: Record<string, { thumbSize: number }> = {
-  sm: { thumbSize: 16 },
-  md: { thumbSize: 20 },
-  lg: { thumbSize: 24 },
+  sm: { thumbSize: 14 },
+  md: { thumbSize: 18 },
+  lg: { thumbSize: 22 },
 };
 
 /**
@@ -41,6 +40,7 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
   description: "슬라이더 드래그 핸들 (원형) 렌더링",
   element: "div",
   archetype: "slider",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",
@@ -108,40 +108,10 @@ export const SliderThumbSpec: ComponentSpec<SliderThumbProps> = {
   },
 
   render: {
-    shapes: (props, _variant) => {
-      const sizeName = props.size ?? "md";
-      // SLIDER_DIMENSIONS와 SLIDER_THUMB_SIZES 모두 참조해 일관성 유지
-      const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.md;
-      const thumbSize = sliderDims.thumbSize;
-      const thumbRadius = thumbSize / 2;
-
-      const variantName = props.variant ?? "default";
-      const fillColors =
-        SLIDER_FILL_COLORS[variantName] ?? SLIDER_FILL_COLORS.default;
-
-      const fillColor = props.style?.backgroundColor ?? fillColors.handle;
-
-      const shapes: Shape[] = [
-        // 썸 원형
-        {
-          id: "thumb",
-          type: "circle" as const,
-          x: thumbRadius,
-          y: thumbRadius,
-          radius: thumbRadius,
-          fill: fillColor,
-        },
-        // 흰 외곽 테두리
-        {
-          type: "border" as const,
-          target: "thumb",
-          borderWidth: 2,
-          color: "{color.base}" as TokenRef,
-          radius: thumbRadius,
-        },
-      ];
-
-      return shapes;
+    shapes: () => {
+      // 시각적 thumb은 SliderTrack spec shapes에서 렌더링 (value 기반 x 좌표 계산)
+      // SliderThumb 자체는 빈 shapes 반환 (이벤트 히트 영역 역할만)
+      return [];
     },
 
     react: (props) => ({

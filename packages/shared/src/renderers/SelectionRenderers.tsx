@@ -1141,17 +1141,20 @@ export const renderSlider = (
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
+  const rawValue = element.props.value;
+  const normalizedValue = Array.isArray(rawValue)
+    ? (rawValue as number[])
+    : [Number(rawValue) || 50];
+
   return (
     <Slider
-      key={element.id}
+      key={`${element.id}-${normalizedValue.length}`}
       id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
       label={String(element.props.label || "")}
-      defaultValue={
-        Array.isArray(element.props.value) ? element.props.value : [50]
-      }
+      value={normalizedValue}
       minValue={Number(element.props.minValue) || 0}
       maxValue={Number(element.props.maxValue) || 100}
       step={Number(element.props.step) || 1}
@@ -1161,12 +1164,15 @@ export const renderSlider = (
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
       isDisabled={Boolean(element.props.isDisabled)}
       isEmphasized={Boolean(element.props.isEmphasized)}
+      variant={
+        (element.props.variant as "default" | "accent" | "neutral") || "default"
+      }
+      showValue={element.props.showValue !== false}
       onChange={(value) => {
-        const updatedProps = {
+        updateElementProps(element.id, {
           ...element.props,
           value,
-        };
-        updateElementProps(element.id, updatedProps);
+        });
       }}
     />
   );

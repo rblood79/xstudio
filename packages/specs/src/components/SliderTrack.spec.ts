@@ -9,7 +9,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { SLIDER_FILL_COLORS } from "./Slider.spec";
+import { SLIDER_FILL_COLORS, SLIDER_DIMENSIONS } from "./Slider.spec";
 
 /**
  * SliderTrack Props
@@ -17,7 +17,8 @@ import { SLIDER_FILL_COLORS } from "./Slider.spec";
 export interface SliderTrackProps {
   variant?: "default" | "accent" | "neutral";
   size?: "sm" | "md" | "lg";
-  value?: number;
+  /** 단일 값 또는 범위 값 (부모 Slider에서 상속) */
+  value?: number | number[];
   minValue?: number;
   maxValue?: number;
   orientation?: "horizontal" | "vertical";
@@ -25,12 +26,12 @@ export interface SliderTrackProps {
   style?: Record<string, string | number | undefined>;
 }
 
-/** 사이즈별 트랙 치수 */
+/** 사이즈별 트랙 치수 (PROGRESSBAR_DIMENSIONS barHeight 동기) */
 export const SLIDER_TRACK_DIMENSIONS: Record<string, { trackHeight: number }> =
   {
     sm: { trackHeight: 4 },
-    md: { trackHeight: 4 },
-    lg: { trackHeight: 6 },
+    md: { trackHeight: 8 },
+    lg: { trackHeight: 12 },
   };
 
 /**
@@ -41,54 +42,57 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
   description: "슬라이더 트랙 배경 + 채우기 바 렌더링",
   element: "div",
   archetype: "slider",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",
 
+  // preview CSS용: 투명 배경 (시각적 렌더링은 shapes가 담당)
   variants: {
     default: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
     accent: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
     neutral: {
-      background: "{color.layer-1}" as TokenRef,
-      backgroundHover: "{color.neutral-subtle}" as TokenRef,
-      backgroundPressed: "{color.neutral-subtle}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
   },
 
+  // preview CSS용: borderRadius none (shapes가 직접 처리)
   sizes: {
     sm: {
-      height: 4,
+      height: SLIDER_TRACK_DIMENSIONS.sm.trackHeight,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
-      borderRadius: "{radius.full}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
     md: {
-      height: 4,
+      height: SLIDER_TRACK_DIMENSIONS.md.trackHeight,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: "{radius.full}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
     lg: {
-      height: 6,
+      height: SLIDER_TRACK_DIMENSIONS.lg.trackHeight,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-md}" as TokenRef,
-      borderRadius: "{radius.full}" as TokenRef,
+      borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
   },
@@ -105,7 +109,7 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
   },
 
   render: {
-    shapes: (props, variant, _size) => {
+    shapes: (props, _variant, _size) => {
       const sizeName = props.size ?? "md";
       const trackDims =
         SLIDER_TRACK_DIMENSIONS[sizeName] ?? SLIDER_TRACK_DIMENSIONS.md;
@@ -117,24 +121,30 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
       const trackHeight = trackDims.trackHeight;
       const trackRadius = trackHeight / 2;
 
+      // thumb 크기 기준 세로 중앙 배치: track bar를 레이아웃 영역 가운데에 위치
+      const sliderDims = SLIDER_DIMENSIONS[sizeName] ?? SLIDER_DIMENSIONS.md;
+      const thumbSize = sliderDims.thumbSize;
+      const trackY = (thumbSize - trackHeight) / 2;
+
       const min = props.minValue ?? 0;
       const max = props.maxValue ?? 100;
-      const value = props.value ?? 50;
-      const percent = Math.max(
-        0,
-        Math.min(100, ((value - min) / (max - min)) * 100),
+      const rawValue = props.value ?? 50;
+      const values = Array.isArray(rawValue) ? rawValue : [rawValue];
+      const isRange = values.length >= 2;
+      const percents = values.map((v) =>
+        Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100)),
       );
-      const fillWidth = (width * percent) / 100;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const bgColor =
+        props.style?.backgroundColor ?? ("{color.neutral-subtle}" as TokenRef);
 
       const shapes: Shape[] = [
-        // 트랙 배경
+        // 트랙 배경 (세로 중앙)
         {
           id: "track",
           type: "roundRect" as const,
           x: 0,
-          y: 0,
+          y: trackY,
           width,
           height: trackHeight,
           radius: trackRadius,
@@ -142,17 +152,57 @@ export const SliderTrackSpec: ComponentSpec<SliderTrackProps> = {
         },
       ];
 
-      // 채우기 (값 비율만큼)
-      if (fillWidth > 0) {
+      // 채우기 (single: 0~value, range: value[0]~value[1])
+      if (isRange) {
+        const fillStartX = (width * percents[0]) / 100;
+        const fillEndX = (width * percents[1]) / 100;
+        const fillW = fillEndX - fillStartX;
+        if (fillW > 0) {
+          shapes.push({
+            id: "fill",
+            type: "roundRect" as const,
+            x: fillStartX,
+            y: trackY,
+            width: fillW,
+            height: trackHeight,
+            radius: trackRadius,
+            fill: fillColors.fill,
+          });
+        }
+      } else {
+        const fillWidth = (width * percents[0]) / 100;
+        if (fillWidth > 0) {
+          shapes.push({
+            id: "fill",
+            type: "roundRect" as const,
+            x: 0,
+            y: trackY,
+            width: fillWidth,
+            height: trackHeight,
+            radius: trackRadius,
+            fill: fillColors.fill,
+          });
+        }
+      }
+
+      // 썸 (핸들) — SliderTrack shapes에서 직접 렌더링 (Taffy absolute 미사용)
+      for (let i = 0; i < percents.length; i++) {
+        const thumbX = (width * percents[i]) / 100;
+        const thumbId = percents.length === 1 ? "thumb" : `thumb-${i}`;
         shapes.push({
-          id: "fill",
-          type: "roundRect" as const,
-          x: 0,
-          y: 0,
-          width: fillWidth,
-          height: trackHeight,
-          radius: trackRadius,
-          fill: fillColors.fill,
+          id: thumbId,
+          type: "circle" as const,
+          x: thumbX,
+          y: thumbSize / 2,
+          radius: thumbSize / 2,
+          fill: fillColors.handle,
+        });
+        shapes.push({
+          type: "border" as const,
+          target: thumbId,
+          borderWidth: 2,
+          color: "{color.base}" as TokenRef,
+          radius: thumbSize / 2,
         });
       }
 

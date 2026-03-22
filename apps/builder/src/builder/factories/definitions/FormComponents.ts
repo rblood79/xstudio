@@ -660,46 +660,75 @@ export function createSearchFieldDefinition(
 
 /**
  * Slider 복합 컴포넌트 정의
+ * React Aria Slider<number | number[]> 패턴 — isRange로 range 모드 전환
  *
  * CSS DOM 구조:
  * Slider (parent, tag="Slider", display grid)
  *   ├─ Label (tag="Label", grid-area: label)
  *   ├─ SliderOutput (tag="SliderOutput", grid-area: output)
  *   └─ SliderTrack (tag="SliderTrack", grid-area: track, position relative)
- *        └─ SliderThumb (tag="SliderThumb", border-radius 50%)
+ *        ├─ SliderThumb (tag="SliderThumb", border-radius 50%)
+ *        └─ SliderThumb (tag="SliderThumb", range 모드 시 추가)
  */
 export function createSliderDefinition(
   context: ComponentCreationContext,
+  options?: { isRange?: boolean },
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+  const isRange = options?.isRange ?? false;
 
   const ownerFields = layoutId
     ? { page_id: null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null };
+
+  const thumbChildren = isRange
+    ? [
+        {
+          tag: "SliderThumb" as const,
+          props: {
+            style: { width: 18, height: 18, borderRadius: "50%" },
+          } as ComponentElementProps,
+          ...ownerFields,
+          order_num: 0,
+        },
+        {
+          tag: "SliderThumb" as const,
+          props: {
+            style: { width: 18, height: 18, borderRadius: "50%" },
+          } as ComponentElementProps,
+          ...ownerFields,
+          order_num: 1,
+        },
+      ]
+    : [
+        {
+          tag: "SliderThumb" as const,
+          props: {
+            style: { width: 18, height: 18, borderRadius: "50%" },
+          } as ComponentElementProps,
+          ...ownerFields,
+          order_num: 0,
+        },
+      ];
 
   return {
     tag: "Slider",
     parent: {
       tag: "Slider",
       props: {
-        label: "Slider",
+        label: isRange ? "Range Slider" : "Slider",
         name: "",
-        value: 50,
+        value: isRange ? [20, 80] : 50,
         minValue: 0,
         maxValue: 100,
         step: 1,
+        size: "md",
         isDisabled: false,
         isRequired: false,
         orientation: "horizontal",
         showValue: true,
-        style: {
-          display: "grid",
-          width: 200,
-          height: 45,
-          maxWidth: 300,
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -709,56 +738,38 @@ export function createSliderDefinition(
       {
         tag: "Label",
         props: {
-          children: "Slider",
+          children: isRange ? "Range Slider" : "Slider",
           variant: "default",
           style: {
-            fontSize: 14,
-            fontWeight: 500,
+            backgroundColor: "transparent",
             width: "fit-content",
             height: "fit-content",
-          },
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 0,
-      },
-      {
-        tag: "SliderOutput",
-        props: {
-          children: "50",
-          style: {
-            fontSize: 14,
-            width: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
       },
       {
-        tag: "SliderTrack",
+        tag: "SliderOutput",
         props: {
+          children: isRange ? "20 – 80" : "50",
           style: {
-            display: "flex",
-            alignItems: "center",
-            width: "100%",
-            height: 24,
+            width: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
-        children: [
-          {
-            tag: "SliderThumb",
-            props: {
-              style: {
-                width: 18,
-                height: 18,
-                borderRadius: "50%",
-              },
-            } as ComponentElementProps,
-            ...ownerFields,
-            order_num: 0,
+      },
+      {
+        tag: "SliderTrack",
+        props: {
+          style: {
+            width: "100%",
           },
-        ],
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
+        children: thumbChildren,
       },
     ],
   };

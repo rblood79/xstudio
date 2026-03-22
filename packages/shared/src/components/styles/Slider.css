@@ -1,18 +1,23 @@
 /**
  * Slider Component Styles
  *
- * Spec dimensions (SLIDER_DIMENSIONS):
+ * Spec dimensions (SLIDER_DIMENSIONS — PROGRESSBAR_DIMENSIONS barHeight 동기):
  *   sm: trackHeight=4, thumbSize=14
- *   md: trackHeight=6, thumbSize=18
- *   lg: trackHeight=8, thumbSize=22
+ *   md: trackHeight=8, thumbSize=18
+ *   lg: trackHeight=12, thumbSize=22
  */
 
 @layer components {
   .react-aria-Slider {
-    /* Default (non-emphasized): neutral color for track fill */
-    --slider-color: var(--fg);
+    /* Default variant: accent color */
+    --slider-color: var(--accent);
 
-    /* Emphasized: accent color for track fill */
+    /* Variant: neutral */
+    &[data-variant="neutral"] {
+      --slider-color: var(--fg-muted);
+    }
+
+    /* Emphasized override (legacy) */
     &[data-emphasized] {
       --slider-color: var(--accent);
     }
@@ -22,7 +27,6 @@
       "label output"
       "track track";
     grid-template-columns: 1fr auto;
-    max-width: 300px;
     color: var(--fg);
     gap: var(--spacing-sm);
 
@@ -45,11 +49,16 @@
       grid-area: track;
       position: relative;
 
-      &:before {
-        content: "";
+      .slider-track-bg {
         display: block;
         position: absolute;
-        background: var(--bg-overlay);
+        background: var(--bg-muted);
+        border-radius: var(--radius-full, 9999px);
+      }
+
+      .slider-fill {
+        position: absolute;
+        background: var(--slider-color);
         border-radius: var(--radius-full, 9999px);
       }
     }
@@ -60,7 +69,7 @@
       height: 18px;
       border-radius: 50%;
       background: var(--slider-color);
-      border: 2px solid var(--color-white);
+      border: 2px solid var(--bg);
       forced-color-adjust: none;
       cursor: grab;
 
@@ -82,9 +91,15 @@
         height: 24px;
         width: 100%;
 
-        &:before {
-          height: 6px;
+        .slider-track-bg {
+          height: 8px;
           width: 100%;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+
+        .slider-fill {
+          height: 8px;
           top: 50%;
           transform: translateY(-50%);
         }
@@ -109,11 +124,18 @@
         width: 24px;
         height: 100%;
 
-        &:before {
-          width: 6px;
+        .slider-track-bg {
+          width: 8px;
           height: 100%;
           left: 50%;
           transform: translateX(-50%);
+        }
+
+        .slider-fill {
+          width: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          bottom: 0;
         }
       }
 
@@ -127,7 +149,11 @@
       opacity: 0.38;
       cursor: not-allowed;
 
-      .react-aria-SliderTrack:before {
+      .react-aria-SliderTrack .slider-track-bg {
+        background: var(--bg-emphasis);
+      }
+
+      .react-aria-SliderTrack .slider-fill {
         background: var(--bg-emphasis);
       }
 
@@ -147,7 +173,8 @@
       .react-aria-SliderTrack {
         height: 20px;
 
-        &:before {
+        .slider-track-bg,
+        .slider-fill {
           height: 4px;
         }
       }
@@ -157,7 +184,8 @@
       .react-aria-SliderTrack {
         width: 20px;
 
-        &:before {
+        .slider-track-bg,
+        .slider-fill {
           width: 4px;
         }
       }
@@ -180,8 +208,9 @@
       .react-aria-SliderTrack {
         height: 24px;
 
-        &:before {
-          height: 6px;
+        .slider-track-bg,
+        .slider-fill {
+          height: 8px;
         }
       }
     }
@@ -190,8 +219,9 @@
       .react-aria-SliderTrack {
         width: 24px;
 
-        &:before {
-          width: 6px;
+        .slider-track-bg,
+        .slider-fill {
+          width: 8px;
         }
       }
     }
@@ -213,8 +243,9 @@
       .react-aria-SliderTrack {
         height: 28px;
 
-        &:before {
-          height: 8px;
+        .slider-track-bg,
+        .slider-fill {
+          height: 12px;
         }
       }
     }
@@ -223,8 +254,9 @@
       .react-aria-SliderTrack {
         width: 28px;
 
-        &:before {
-          width: 8px;
+        .slider-track-bg,
+        .slider-fill {
+          width: 12px;
         }
       }
     }

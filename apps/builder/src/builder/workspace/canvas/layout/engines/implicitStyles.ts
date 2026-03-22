@@ -103,6 +103,30 @@ const PROGRESSBAR_TAGS = new Set([
   "gauge",
 ]);
 
+/** Slider 태그 집합 */
+const SLIDER_TAGS = new Set(["slider", "rangeslider"]);
+
+/** Slider 사이즈별 gap (SliderSpec.sizes.gap 동기) */
+const SLIDER_GAP: Record<string, number> = {
+  sm: 6,
+  md: 8,
+  lg: 10,
+};
+
+/** Slider 사이즈별 레이아웃 높이 = thumbSize (시각적 trackHeight 4/8/12가 아님, thumb 수용 목적) */
+const SLIDER_TRACK_LAYOUT_HEIGHT: Record<string, number> = {
+  sm: 14,
+  md: 18,
+  lg: 22,
+};
+
+/** Slider 사이즈별 fontSize (SliderSpec.sizes.fontSize resolved) */
+const SLIDER_FONT_SIZE: Record<string, number> = {
+  sm: 12,
+  md: 14,
+  lg: 16,
+};
+
 /** Synthetic Label을 생성하는 태그 */
 const SYNTHETIC_LABEL_TAGS = new Set([
   "radio",
@@ -738,7 +762,7 @@ export function applyImplicitStyles(
       return true;
     });
 
-    // Label: flex:1로 나머지 공간 차지, Output: width:fit-content로 오른쪽 배치
+    // Label: fit-content 유지, Output: fit-content → justifyContent: space-between로 배치
     // Track: width:100%로 2행 강제
     filteredChildren = filteredChildren.map((child) => {
       const cs = (child.props?.style || {}) as Record<string, unknown>;
@@ -749,7 +773,7 @@ export function applyImplicitStyles(
           ...child,
           props: {
             ...child.props,
-            style: { ...cs, flex: cs.flex ?? 1, fontSize: labelFontSize },
+            style: { ...cs, fontSize: labelFontSize },
           },
         } as Element;
       }
@@ -789,7 +813,131 @@ export function applyImplicitStyles(
       display: parentStyle.display ?? "flex",
       flexDirection: parentStyle.flexDirection ?? "row",
       flexWrap: parentStyle.flexWrap ?? "wrap",
+      justifyContent: parentStyle.justifyContent ?? "space-between",
       gap: parentStyle.gap ?? specGap,
+    });
+  }
+
+  // ── Slider / RangeSlider ─────────────────────────────────────────────
+  // ProgressBar와 동일 구조: Label(좌상) + SliderOutput(우상) → 1행, SliderTrack(전폭) → 2행
+  // display: flex row wrap 패턴 (Label flex:1 + Output auto → Track width:100% 강제 줄바꿈)
+  if (SLIDER_TAGS.has(containerTag)) {
+    const hasLabel = !!containerProps?.label;
+    const showValue = containerProps?.showValue !== false;
+    const sizeName = (containerProps?.size as string) ?? "md";
+    const specGap = SLIDER_GAP[sizeName] ?? SLIDER_GAP.md;
+
+    // Label/Output 필터
+    filteredChildren = children.filter((c) => {
+      if (c.tag === "Label") return hasLabel;
+      if (c.tag === "SliderOutput") return showValue;
+      return true;
+    });
+
+    // Label: fit-content 유지, Output: fontSize, Track: width:100% + height
+    filteredChildren = filteredChildren.map((child) => {
+      const cs = (child.props?.style || {}) as Record<string, unknown>;
+      if (child.tag === "Label") {
+        const labelFontSize = SLIDER_FONT_SIZE[sizeName] ?? SLIDER_FONT_SIZE.md;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: { ...cs, fontSize: labelFontSize },
+          },
+        } as Element;
+      }
+      if (child.tag === "SliderTrack") {
+        const trackHeight =
+          SLIDER_TRACK_LAYOUT_HEIGHT[sizeName] ?? SLIDER_TRACK_LAYOUT_HEIGHT.md;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            size: sizeName,
+            value: containerProps?.value,
+            minValue: containerProps?.minValue,
+            maxValue: containerProps?.maxValue,
+            variant: containerProps?.variant,
+            style: {
+              ...cs,
+              width: cs.width ?? "100%",
+              height: trackHeight,
+            },
+          },
+        } as Element;
+      }
+      if (child.tag === "SliderOutput") {
+        const valueFontSize = SLIDER_FONT_SIZE[sizeName] ?? SLIDER_FONT_SIZE.md;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            size: sizeName,
+            style: { ...cs, fontSize: valueFontSize },
+          },
+        } as Element;
+      }
+      return child;
+    });
+
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: parentStyle.display ?? "flex",
+      flexDirection: parentStyle.flexDirection ?? "row",
+      flexWrap: parentStyle.flexWrap ?? "wrap",
+      justifyContent: parentStyle.justifyContent ?? "space-between",
+      gap: parentStyle.gap ?? specGap,
+    });
+  }
+
+  // ── SliderTrack (Thumb 배치) ─────────────────────────────────────────
+  // 시각적 thumb은 SliderTrack spec shapes가 렌더링.
+  // SliderThumb element는 selection bounds + 이벤트 히트 영역용으로 올바른 크기/위치 주입.
+  if (containerTag === "slidertrack") {
+    const sliderId = containerEl.parent_id;
+    const sliderEl = sliderId ? elementById.get(sliderId) : null;
+    const sliderProps = sliderEl?.props as Record<string, unknown> | undefined;
+    const rawValue = sliderProps?.value ?? 50;
+    const values = Array.isArray(rawValue)
+      ? (rawValue as number[])
+      : [Number(rawValue) || 50];
+    const min = Number(sliderProps?.minValue ?? 0);
+    const max = Number(sliderProps?.maxValue ?? 100);
+    const range = max - min || 1;
+    const sizeName = (sliderProps?.size as string) ?? "md";
+    const dims = { sm: 14, md: 18, lg: 22 };
+    const thumbSize = dims[sizeName as keyof typeof dims] ?? 18;
+
+    // SliderTrack에 position:relative 설정
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      position: "relative",
+    });
+
+    let thumbIdx = 0;
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag !== "SliderThumb") return child;
+      const cs = (child.props?.style || {}) as Record<string, unknown>;
+      const val = values[thumbIdx] ?? values[0] ?? 50;
+      thumbIdx++;
+      const percent = Math.max(0, Math.min(100, ((val - min) / range) * 100));
+      // absolute + left(percent) + marginLeft(-half) — selection bounds 용
+      return {
+        ...child,
+        props: {
+          ...child.props,
+          style: {
+            ...cs,
+            position: "absolute",
+            left: `${percent}%`,
+            top: 0,
+            width: thumbSize,
+            height: thumbSize,
+            marginLeft: -(thumbSize / 2),
+          },
+        },
+      } as Element;
     });
   }
 

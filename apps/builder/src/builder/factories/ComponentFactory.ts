@@ -81,7 +81,6 @@ import {
   createButtonGroupDefinition,
   createActionMenuDefinition,
   createAccordionDefinition,
-  createRangeSliderDefinition,
   createProgressBarDefinition,
   createMeterDefinition,
   createProgressCircleDefinition,
@@ -576,7 +575,10 @@ export class ComponentFactory {
   private static async createRangeSlider(
     context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
-    return this.createComponent(createRangeSliderDefinition, context);
+    return this.createComponent(
+      (ctx) => createSliderDefinition(ctx, { isRange: true }),
+      context,
+    );
   }
 
   private static async createProgressBar(
