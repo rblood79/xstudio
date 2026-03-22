@@ -181,7 +181,6 @@ const SPEC_RENDERS_ALL_TAGS_SET = new Set([
   "ColorField",
   "TextArea",
   "Slider",
-  "RangeSlider",
 ]);
 
 // ✅ SPEC_RENDERS_ALL_TAGS_SET 가드 적용

@@ -18,21 +18,21 @@ Parent Component (spec shapes: 배경/테두리만)
 
 Compositional 전환으로 7개의 독립 child spec이 생성되었습니다:
 
-| Child Spec                 | 파일                           | 용도                           | 사용 parent                                                       |
-| -------------------------- | ------------------------------ | ------------------------------ | ----------------------------------------------------------------- |
-| `LabelSpec`                | `Label.spec.ts`                | 라벨 텍스트                    | TextField, NumberField, SearchField, DateField, TimeField, Slider |
-| `FieldErrorSpec`           | `FieldError.spec.ts`           | 에러 메시지                    | TextField, NumberField, SearchField, DateField                    |
-| `DescriptionSpec`          | `Description.spec.ts`          | 설명 텍스트                    | Card, Dialog, Popover                                             |
-| _(CardPreview)_            | _(투명 div 컨테이너)_          | 이미지/미디어 미리보기         | Card                                                              |
-| _(CardFooter)_             | _(투명 div 컨테이너)_          | 하단 액션/상태 영역            | Card                                                              |
-| `SliderTrackSpec`          | `SliderTrack.spec.ts`          | 트랙 바 + fill                 | Slider, RangeSlider                                               |
-| `SliderThumbSpec`          | `SliderThumb.spec.ts`          | 원형 thumb                     | Slider, RangeSlider                                               |
-| `SliderOutputSpec`         | `SliderOutput.spec.ts`         | 값 텍스트 표시                 | Slider, RangeSlider                                               |
-| `DateSegmentSpec`          | `DateSegment.spec.ts`          | 날짜/시간 세그먼트             | DateField, TimeField                                              |
-| `CalendarHeaderSpec`       | `CalendarHeader.spec.ts`       | 캘린더 nav (prev/next + month) | Calendar                                                          |
-| `CalendarGridSpec`         | `CalendarGrid.spec.ts`         | 캘린더 날짜 그리드             | Calendar                                                          |
-| `SegmentedControlItemSpec` | `SegmentedControlItem.spec.ts` | 세그먼트 개별 항목             | SegmentedControl                                                  |
-| `SelectBoxItemSpec`        | `SelectBoxItem.spec.ts`        | 카드형 선택 항목               | SelectBoxGroup                                                    |
+| Child Spec                 | 파일                           | 용도                                   | 사용 parent                                                       |
+| -------------------------- | ------------------------------ | -------------------------------------- | ----------------------------------------------------------------- |
+| `LabelSpec`                | `Label.spec.ts`                | 라벨 텍스트                            | TextField, NumberField, SearchField, DateField, TimeField, Slider |
+| `FieldErrorSpec`           | `FieldError.spec.ts`           | 에러 메시지                            | TextField, NumberField, SearchField, DateField                    |
+| `DescriptionSpec`          | `Description.spec.ts`          | 설명 텍스트                            | Card, Dialog, Popover                                             |
+| _(CardPreview)_            | _(투명 div 컨테이너)_          | 이미지/미디어 미리보기                 | Card                                                              |
+| _(CardFooter)_             | _(투명 div 컨테이너)_          | 하단 액션/상태 영역                    | Card                                                              |
+| `SliderTrackSpec`          | `SliderTrack.spec.ts`          | 트랙 bg + fill + thumb 렌더링          | Slider (Range Mode 포함)                                          |
+| `SliderThumbSpec`          | `SliderThumb.spec.ts`          | 이벤트 히트 영역 전용 (shapes 빈 배열) | Slider (Range Mode 포함)                                          |
+| `SliderOutputSpec`         | `SliderOutput.spec.ts`         | 값 텍스트 표시                         | Slider (Range Mode 포함)                                          |
+| `DateSegmentSpec`          | `DateSegment.spec.ts`          | 날짜/시간 세그먼트                     | DateField, TimeField                                              |
+| `CalendarHeaderSpec`       | `CalendarHeader.spec.ts`       | 캘린더 nav (prev/next + month)         | Calendar                                                          |
+| `CalendarGridSpec`         | `CalendarGrid.spec.ts`         | 캘린더 날짜 그리드                     | Calendar                                                          |
+| `SegmentedControlItemSpec` | `SegmentedControlItem.spec.ts` | 세그먼트 개별 항목                     | SegmentedControl                                                  |
+| `SelectBoxItemSpec`        | `SelectBoxItem.spec.ts`        | 카드형 선택 항목                       | SelectBoxGroup                                                    |
 
 **TAG_SPEC_MAP 등록** (`ElementSprite.tsx`):
 
