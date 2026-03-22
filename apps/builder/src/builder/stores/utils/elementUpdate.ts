@@ -740,9 +740,10 @@ export const createBatchUpdateElementsAction =
       }),
     }));
 
-    // 2. 단일 히스토리 엔트리 추가 (batch 타입)
+    // 2. 히스토리 엔트리 추가
     const currentPageId = get().currentPageId;
     if (currentPageId && prevStates.length > 0) {
+      // props 변경이 있는 경우: batch 타입 엔트리
       historyManager.addEntry({
         type: "batch",
         elementId: prevStates[0].elementId,
@@ -756,6 +757,29 @@ export const createBatchUpdateElementsAction =
           })),
         },
       });
+    } else if (currentPageId && prevStates.length === 0) {
+      // 구조 변경만 있는 경우 (parent_id/order_num): diff 기반 히스토리
+      const hasStructuralChange = validUpdates.some(
+        (u) =>
+          u.updates.parent_id !== undefined ||
+          u.updates.order_num !== undefined,
+      );
+      if (hasStructuralChange) {
+        const affectedIds = validUpdates.map((u) => u.elementId);
+        const prevElements = affectedIds
+          .map((id) => getElementById(state.elementsMap, id))
+          .filter((el): el is Element => el !== undefined)
+          .map((el) => cloneForHistory(el) as Element);
+        const nextElements = affectedIds
+          .map((id) => updatedElements.find((el) => el.id === id))
+          .filter((el): el is Element => el !== undefined);
+        if (
+          prevElements.length > 0 &&
+          prevElements.length === nextElements.length
+        ) {
+          historyManager.addBatchDiffEntry(prevElements, nextElements);
+        }
+      }
     }
 
     // 4. IndexedDB 병렬 저장
