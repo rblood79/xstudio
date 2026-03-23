@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored - RangeSlider 잔여 참조 제거 및 SelectBoxGroup → GridList 통합 (2026-03-23)
+
+#### RangeSlider 잔여 참조 완전 제거
+
+이전 커밋(a73e8933)에서 RangeSlider를 Slider로 통합 완료 후, 코드베이스에 남아있던 참조를 전면 제거했다.
+
+- `ComponentFactory` — `RangeSlider` creator 항목 제거
+- `metadata.ts` — `RangeSlider` 메타데이터 항목 제거
+- `rendererMap` — `RangeSlider` 렌더러 매핑 제거
+- `ElementSprite.tsx` TAG_SPEC_MAP — `RangeSlider` spec 등록 제거
+- `implicitStyles.ts` SLIDER_TAGS — `RangeSlider` 태그 제거
+- `ComponentRegistry.tsx` (publish) — 배포 앱 등록에서 `RangeSlider` 제거
+- 개발 단계이므로 하위 호환 리다이렉트 불필요
+
+#### SelectBoxGroup/SelectBoxItem → GridList/GridListItem 통합
+
+React Spectrum S2의 SelectBoxGroup은 React Aria GridList를 래핑한 것으로 기능이 중복되었다. GridList에 카드형 레이아웃 지원을 추가하여 통합했다.
+
+##### 삭제된 파일
+
+- `packages/specs/src/components/SelectBoxGroup.spec.ts`
+- `packages/specs/src/components/SelectBoxItem.spec.ts`
+- `packages/shared/src/components/styles/generated/SelectBoxGroup.css`
+- `packages/shared/src/components/styles/generated/SelectBoxItem.css`
+- `apps/builder/src/builder/panels/properties/editors/SelectBoxGroupEditor.tsx`
+- `apps/builder/src/builder/panels/properties/editors/SelectBoxItemEditor.tsx`
+
+##### GridList 확장 — layout prop
+
+| prop      | 값                      | 동작                                                |
+| --------- | ----------------------- | --------------------------------------------------- |
+| `layout`  | `"stack"` (기본)        | 1열 세로 리스트 (`grid-template-columns: 1fr`)      |
+| `layout`  | `"grid"`                | 격자 배치 (`grid-template-columns: repeat(N, 1fr)`) |
+| `columns` | 숫자 (layout="grid" 시) | 열 개수                                             |
+
+- GridList 아이템: SelectBoxItem 카드형 디자인 적용 (border 카드 + accent border 선택 표시)
+- React Aria `GridList`의 `layout` prop 직접 전달 (`data-layout` 수동 전달 불가)
+
+##### 해결한 기술적 이슈
+
+| 문제                                       | 원인                                                           | 해결                                                |
+| ------------------------------------------ | -------------------------------------------------------------- | --------------------------------------------------- |
+| Taffy `gridTemplateColumns` 포맷 오류      | CSS 문자열(`"1fr 1fr"`) 전달 → Taffy WASM 파싱 실패            | 배열(`["1fr","1fr"]`) 형식으로 전달                 |
+| React Aria `data-layout` 미반영            | `data-layout` 수동 전달 불가 — React Aria 내부에서 설정        | `layout={layout}` prop으로 직접 전달                |
+| WebGL 레이아웃 캐시 미갱신                 | `LAYOUT_PROP_KEYS`에 `"layout"` 누락 → 캐시 히트 → 변경 미반영 | `layoutCache.ts` LAYOUT_PROP_KEYS에 `"layout"` 추가 |
+| Taffy incremental update display 전환 실패 | flex↔grid 전환 시 기존 Taffy 노드 재사용 → 타입 충돌           | display 타입 변경 감지 시 full rebuild 수행         |
+
+##### 수정된 주요 파일
+
+- **GridList.spec.ts** — `layout` prop 추가, 카드형 아이템 디자인 적용, 투명 컨테이너
+- **GridList.css** — display:grid 기본, 카드형 아이템 스타일(border + accent selected), `data-layout="grid"` 시 multi-column
+- **GridList.tsx** — `layout`/`columns` prop 추가, React Aria에 `layout` 직접 전달
+- **unified.types.ts** — `GridListElementProps`에 `layout` prop 추가
+- **GridListEditor.tsx** — Layout 선택 UI 추가
+- **SelectionRenderers.tsx** — `renderGridList`에 `layout`/`columns` prop 전달
+- **implicitStyles.ts** — GridList layout 처리 (stack→flex column, grid→display:grid + gridTemplateColumns 배열)
+- **inspectorActions.ts** — `LAYOUT_AFFECTING_PROPS`에 `"layout"`, `"columns"` 추가
+- **layoutCache.ts** — `LAYOUT_PROP_KEYS`에 `"layout"` 추가
+- **fullTreeLayout.ts** — display 타입 전환(flex↔grid) 감지 시 persistent tree full rebuild
+- **persistentTaffyTree.ts** — `getLastJson()` 메서드 추가
+
+---
+
 ### Refactored - Slider / RangeSlider 통합 (2026-03-23)
 
 #### RangeSlider → Slider Range Mode 통합
