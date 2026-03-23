@@ -49,8 +49,10 @@ import {
   AlertTriangle,
   CircleDashed,
   ImageIcon,
+  ChevronsDownUp,
 } from "lucide-react";
 import { PanelHeader, Section } from "../../components";
+import { ActionIconButton } from "../../components/ui/ActionIconButton";
 import { useEditModeStore } from "../../stores/editMode";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { ComponentSearch } from "./ComponentSearch";
@@ -122,7 +124,6 @@ const formsComp = [
   { tag: "DropZone", label: "drop zone", icon: Upload },
   { tag: "FileTrigger", label: "file trigger", icon: FileUp },
   { tag: "Form", label: "form", icon: GroupIcon },
-  { tag: "Field", label: "field", icon: GroupIcon },
 ] as const;
 
 const collectionsComp = [
@@ -220,6 +221,16 @@ const ComponentList = memo(
 
     // 검색 시 카테고리 자동 펼치기 (Section 컴포넌트가 collapse 상태 자체를 관리)
     const expandSections = useSectionCollapse((s) => s.expandSections);
+    const collapseAll = useSectionCollapse((s) => s.collapseAll);
+
+    const compSectionIds = useMemo(
+      () => Object.keys(categoryConfig).map((key) => `comp-${key}`),
+      [],
+    );
+
+    const handleCollapseAll = useCallback(() => {
+      collapseAll(compSectionIds);
+    }, [collapseAll, compSectionIds]);
 
     // 이벤트 핸들러를 메모이제이션
     const handleComponentAdd = useCallback(
@@ -410,13 +421,25 @@ const ComponentList = memo(
           icon={<Box size={16} />}
           title="Components"
           actions={
-            <button className="iconButton" aria-label="filter components">
-              <Settings2
-                color={iconProps.color}
-                strokeWidth={iconProps.strokeWidth}
-                size={iconProps.size}
-              />
-            </button>
+            <>
+              <ActionIconButton
+                tooltip="Collapse all sections"
+                onPress={handleCollapseAll}
+              >
+                <ChevronsDownUp
+                  color={iconProps.color}
+                  strokeWidth={iconProps.strokeWidth}
+                  size={iconProps.size}
+                />
+              </ActionIconButton>
+              <button className="iconButton" aria-label="filter components">
+                <Settings2
+                  color={iconProps.color}
+                  strokeWidth={iconProps.strokeWidth}
+                  size={iconProps.size}
+                />
+              </button>
+            </>
           }
         />
 

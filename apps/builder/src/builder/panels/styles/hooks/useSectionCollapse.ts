@@ -21,7 +21,7 @@ interface SectionCollapseState {
   isCollapsed: (sectionId: string) => boolean;
   expandSections: (sectionIds: string[]) => void;
   expandAll: () => void;
-  collapseAll: () => void;
+  collapseAll: (sectionIds?: string[]) => void;
   toggleFocusMode: () => void;
   setFocusSection: (sectionId: string) => void;
 }
@@ -75,16 +75,19 @@ export const useSectionCollapse = create<SectionCollapseState>()(
       // Expand all sections
       expandAll: () => set({ collapsedSections: new Set() }),
 
-      // Collapse all sections
-      collapseAll: () =>
-        set({
+      // Collapse all sections (specific IDs or default style panel sections)
+      collapseAll: (sectionIds?: string[]) =>
+        set((state) => ({
           collapsedSections: new Set([
-            "transform",
-            "layout",
-            "appearance",
-            "typography",
+            ...state.collapsedSections,
+            ...(sectionIds ?? [
+              "transform",
+              "layout",
+              "appearance",
+              "typography",
+            ]),
           ]),
-        }),
+        })),
 
       // Toggle Focus Mode
       toggleFocusMode: () =>
