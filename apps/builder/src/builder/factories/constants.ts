@@ -69,5 +69,4 @@ export const COMPLEX_COMPONENT_TAGS = new Set([
   // Phase 4: Advanced Components (ADR-030)
   "CardView",
   "TableView",
-  "SelectBoxGroup",
 ]);

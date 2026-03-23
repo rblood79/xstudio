@@ -200,6 +200,8 @@ export const createInspectorActionsSlice: StateCreator<
     const LAYOUT_AFFECTING_PROPS = new Set([
       "style",
       "size",
+      "layout",
+      "columns",
       "label",
       "children",
       "text",

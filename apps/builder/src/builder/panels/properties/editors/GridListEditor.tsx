@@ -286,6 +286,20 @@ export const GridListEditor = memo(function GridListEditor({
         </p>
       </PropertySection>
 
+      {/* Layout Section */}
+      <PropertySection title="Layout">
+        <PropertySelect
+          label="Layout"
+          value={String(currentProps.layout || "stack")}
+          onChange={(value) => updateProp("layout", value)}
+          options={[
+            { value: "stack", label: "Stack" },
+            { value: "grid", label: "Grid" },
+          ]}
+          icon={Grid}
+        />
+      </PropertySection>
+
       {/* State Section */}
       <PropertySection title="State">
         <PropertySelect

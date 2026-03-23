@@ -83,7 +83,6 @@ export const rendererMap: Record<
   ActionMenu: LayoutRenderers.renderActionMenu,
   Accordion: LayoutRenderers.renderAccordion,
   // Phase 3: Extended Controls (ADR-030)
-  RangeSlider: SelectionRenderers.renderSlider,
   ProgressCircle: LayoutRenderers.renderProgressCircle,
   Image: LayoutRenderers.renderImage,
   RangeCalendar: LayoutRenderers.renderRangeCalendar,
@@ -91,8 +90,6 @@ export const rendererMap: Record<
   IllustratedMessage: LayoutRenderers.renderIllustratedMessage,
   CardView: LayoutRenderers.renderCardView,
   TableView: LayoutRenderers.renderTableView,
-  SelectBoxGroup: LayoutRenderers.renderSelectBoxGroup,
-  SelectBoxItem: LayoutRenderers.renderSelectBoxItem,
 
   // Date 컴포넌트
   Calendar: DateRenderers.renderCalendar,

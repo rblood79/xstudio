@@ -121,7 +121,6 @@ const formsComp = [
   { tag: "TailSwatch", label: "color picker", icon: Paintbrush },
   { tag: "DropZone", label: "drop zone", icon: Upload },
   { tag: "FileTrigger", label: "file trigger", icon: FileUp },
-  { tag: "SelectBoxGroup", label: "select box group", icon: GroupIcon },
   { tag: "Form", label: "form", icon: GroupIcon },
   { tag: "Field", label: "field", icon: GroupIcon },
 ] as const;

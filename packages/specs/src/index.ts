@@ -447,9 +447,3 @@ export {
   TABLEVIEW_ROW_HEIGHTS,
 } from "./components/TableView.spec";
 export type { TableViewProps } from "./components/TableView.spec";
-
-export { SelectBoxGroupSpec } from "./components/SelectBoxGroup.spec";
-export type { SelectBoxGroupProps } from "./components/SelectBoxGroup.spec";
-
-export { SelectBoxItemSpec } from "./components/SelectBoxItem.spec";
-export type { SelectBoxItemProps } from "./components/SelectBoxItem.spec";

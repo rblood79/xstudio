@@ -277,7 +277,11 @@ export function createGridListDefinition(
     parent: {
       tag: "GridList",
       props: {
+        layout: "stack",
         selectionMode: "none",
+        style: {
+          width: "100%",
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,

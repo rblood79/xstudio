@@ -524,11 +524,6 @@ export function registerSharedComponents(): void {
   });
 
   // Phase 3: Extended Controls (ADR-030)
-  registerComponent("RangeSlider", {
-    component: createHtmlElement("div"),
-    displayName: "RangeSlider",
-    category: "input",
-  });
   registerComponent("ProgressCircle", {
     component: createHtmlElement("div"),
     displayName: "ProgressCircle",
@@ -546,16 +541,6 @@ export function registerSharedComponents(): void {
   });
 
   // Phase 4: Advanced Components (ADR-030)
-  registerComponent("SelectBoxGroup", {
-    component: createHtmlElement("div"),
-    displayName: "SelectBoxGroup",
-    category: "input",
-  });
-  registerComponent("SelectBoxItem", {
-    component: createHtmlElement("div"),
-    displayName: "SelectBoxItem",
-    category: "input",
-  });
   registerComponent("IllustratedMessage", {
     component: createHtmlElement("div"),
     displayName: "IllustratedMessage",

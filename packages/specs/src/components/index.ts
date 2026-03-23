@@ -380,11 +380,3 @@ export type { CardViewProps } from "./CardView.spec";
 // TableView
 export { TableViewSpec, TABLEVIEW_ROW_HEIGHTS } from "./TableView.spec";
 export type { TableViewProps } from "./TableView.spec";
-
-// SelectBoxGroup
-export { SelectBoxGroupSpec } from "./SelectBoxGroup.spec";
-export type { SelectBoxGroupProps } from "./SelectBoxGroup.spec";
-
-// SelectBoxItem
-export { SelectBoxItemSpec } from "./SelectBoxItem.spec";
-export type { SelectBoxItemProps } from "./SelectBoxItem.spec";

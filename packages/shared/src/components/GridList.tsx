@@ -30,6 +30,9 @@ import "./styles/GridList.css";
 interface ExtendedGridListProps<T extends object> extends GridListProps<T> {
   dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
+  // Layout
+  layout?: "stack" | "grid";
+  columns?: number;
   // M3 props
   variant?: string;
   size?: ComponentSize;
@@ -54,6 +57,8 @@ export function GridList<T extends object>({
   children,
   dataBinding,
   columnMapping,
+  layout = "stack",
+  columns = 2,
   variant = "primary",
   size = "md",
   filter,
@@ -119,6 +124,12 @@ export function GridList<T extends object>({
   const gridListClassName = baseClassName
     ? `react-aria-GridList ${baseClassName}`
     : "react-aria-GridList";
+  const gridListStyle = {
+    ...props.style,
+    ...(layout === "grid"
+      ? ({ "--gl-columns": columns } as React.CSSProperties)
+      : {}),
+  };
 
   // ColumnMapping이 있으면 각 데이터 항목마다 GridListItem 렌더링
   // ListBox와 동일한 패턴: Element tree의 GridListItem 템플릿 + Field 자식 사용
@@ -141,6 +152,8 @@ export function GridList<T extends object>({
           className={gridListClassName}
           data-variant={variant}
           data-size={size}
+          layout={layout}
+          style={gridListStyle}
         >
           <AriaGridListItem
             key="loading"
@@ -170,6 +183,8 @@ export function GridList<T extends object>({
           className={gridListClassName}
           data-variant={variant}
           data-size={size}
+          layout={layout}
+          style={gridListStyle}
         >
           <AriaGridListItem
             key="error"
@@ -206,6 +221,8 @@ export function GridList<T extends object>({
           className={gridListClassName}
           data-variant={variant}
           data-size={size}
+          layout={layout}
+          style={gridListStyle}
           items={items}
         >
           {children}
@@ -236,6 +253,8 @@ export function GridList<T extends object>({
           className={gridListClassName}
           data-variant={variant}
           data-size={size}
+          layout={layout}
+          style={gridListStyle}
         >
           <AriaGridListItem
             key="loading"
@@ -265,6 +284,8 @@ export function GridList<T extends object>({
           className={gridListClassName}
           data-variant={variant}
           data-size={size}
+          layout={layout}
+          style={gridListStyle}
         >
           <AriaGridListItem
             key="error"
@@ -304,6 +325,8 @@ export function GridList<T extends object>({
           className={gridListClassName}
           data-variant={variant}
           data-size={size}
+          layout={layout}
+          style={gridListStyle}
           items={items}
         >
           {(item) => (
@@ -337,6 +360,8 @@ export function GridList<T extends object>({
       className={gridListClassName}
       data-variant={variant}
       data-size={size}
+      layout={layout}
+      style={gridListStyle}
     >
       {children}
     </AriaGridList>

@@ -136,8 +136,6 @@ import {
   IllustratedMessageSpec,
   CardViewSpec,
   TableViewSpec,
-  SelectBoxGroupSpec,
-  SelectBoxItemSpec,
 } from "@xstudio/specs";
 import {
   PixiButton,
@@ -304,7 +302,7 @@ const UI_RADIO_ITEM_TAGS = new Set(["Radio"]); // Radio 개별 아이템 (투명
 /**
  * UI 컴포넌트 태그들 (Phase 6)
  */
-const UI_SLIDER_TAGS = new Set(["Slider", "RangeSlider"]);
+const UI_SLIDER_TAGS = new Set(["Slider"]);
 const UI_INPUT_TAGS = new Set(["Input"]); // TextField/TextInput은 UI_TEXTFIELD_TAGS, SearchField는 UI_SEARCHFIELD_TAGS로 분리
 const UI_SELECT_TAGS = new Set(["Select", "Dropdown"]); // ComboBox는 UI_COMBOBOX_TAGS로 분리
 const UI_PROGRESS_TAGS = new Set([
@@ -688,7 +686,6 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   RadioGroup: RadioGroupSpec,
   Radio: RadioSpec,
   Slider: SliderSpec,
-  RangeSlider: SliderSpec,
   Input: InputSpec,
   TextField: TextFieldSpec,
   TextInput: TextFieldSpec,
@@ -797,8 +794,6 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   IllustratedMessage: IllustratedMessageSpec,
   CardView: CardViewSpec,
   TableView: TableViewSpec,
-  SelectBoxGroup: SelectBoxGroupSpec,
-  SelectBoxItem: SelectBoxItemSpec,
   // child specs (compound 컴포넌트 하위 요소)
   Label: LabelSpec,
   FieldError: FieldErrorSpec,
@@ -1643,7 +1638,6 @@ export const ElementSprite = memo(function ElementSprite({
       "Dropdown",
       "DatePicker",
       "Slider",
-      "RangeSlider",
       "CheckboxGroup",
       "RadioGroup",
       "Switch",
@@ -1903,7 +1897,7 @@ export const ElementSprite = memo(function ElementSprite({
 
               // Slider: spec shapes에 실제 width 주입 + specHeight 보정
               // track/thumb가 label 아래에 위치하므로 전체 높이 필요
-              if (["Slider", "RangeSlider"].includes(tag)) {
+              if (tag === "Slider") {
                 const existingStyle = (specProps.style || {}) as Record<
                   string,
                   unknown

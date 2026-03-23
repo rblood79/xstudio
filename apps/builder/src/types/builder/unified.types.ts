@@ -704,6 +704,7 @@ export interface FieldElementProps extends BaseElementProps {
 
 export interface GridListElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  layout?: "stack" | "grid";
   items?: Array<{
     id: string;
     label: string;
@@ -1589,14 +1590,12 @@ export function createDefaultFieldProps(): FieldElementProps {
 
 export function createDefaultGridListProps(): GridListElementProps {
   return {
+    layout: "stack",
     items: [],
     selectedKeys: [],
     isDisabled: false,
     selectionMode: "single",
-    // CSS base: display:flex; flex-direction:column; width:100%
     style: {
-      display: "flex",
-      flexDirection: "column",
       width: "100%",
     },
   };

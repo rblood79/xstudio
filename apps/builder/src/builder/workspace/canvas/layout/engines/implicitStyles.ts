@@ -104,7 +104,7 @@ const PROGRESSBAR_TAGS = new Set([
 ]);
 
 /** Slider 태그 집합 */
-const SLIDER_TAGS = new Set(["slider", "rangeslider"]);
+const SLIDER_TAGS = new Set(["slider"]);
 
 /** Slider 사이즈별 gap (SliderSpec.sizes.gap 동기) */
 const SLIDER_GAP: Record<string, number> = {
@@ -296,6 +296,31 @@ export function applyImplicitStyles(
       flexWrap: orientation === "vertical" ? undefined : "wrap",
       gap: parentStyle.gap ?? 4,
     });
+  }
+
+  // ── GridList ─────────────────────────────────────────────────────────
+  // layout: "stack" → display:flex column, "grid" → display:grid with columns
+  if (containerTag === "gridlist") {
+    const layout = containerProps?.layout as string | undefined;
+    const columns = (containerProps?.columns as number) || 2;
+    const sizeName = (containerProps?.size as string) ?? "md";
+    const gap = sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
+
+    if (layout === "grid") {
+      effectiveParent = withParentStyle(containerEl, {
+        ...parentStyle,
+        display: "grid",
+        gridTemplateColumns: Array(columns).fill("1fr"),
+        gap: parentStyle.gap ?? gap,
+      });
+    } else {
+      effectiveParent = withParentStyle(containerEl, {
+        ...parentStyle,
+        display: "flex",
+        flexDirection: "column",
+        gap: parentStyle.gap ?? gap,
+      });
+    }
   }
 
   // ── ToggleButtonGroup ─────────────────────────────────────────────
@@ -818,7 +843,7 @@ export function applyImplicitStyles(
     });
   }
 
-  // ── Slider / RangeSlider ─────────────────────────────────────────────
+  // ── Slider ──────────────────────────────────────────────────────────
   // ProgressBar와 동일 구조: Label(좌상) + SliderOutput(우상) → 1행, SliderTrack(전폭) → 2행
   // display: flex row wrap 패턴 (Label flex:1 + Output auto → Track width:100% 강제 줄바꿈)
   if (SLIDER_TAGS.has(containerTag)) {

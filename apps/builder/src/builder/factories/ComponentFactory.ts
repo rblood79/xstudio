@@ -89,7 +89,6 @@ import {
   createIllustratedMessageDefinition,
   createCardViewDefinition,
   createTableViewDefinition,
-  createSelectBoxGroupDefinition,
 } from "./definitions/DisplayComponents";
 
 /**
@@ -161,7 +160,6 @@ export class ComponentFactory {
     ActionMenu: ComponentFactory.createActionMenu,
     Accordion: ComponentFactory.createAccordion,
     // ⭐ Display Components (Phase 3)
-    RangeSlider: ComponentFactory.createRangeSlider,
     ProgressBar: ComponentFactory.createProgressBar,
     Meter: ComponentFactory.createMeter,
     ProgressCircle: ComponentFactory.createProgressCircle,
@@ -171,7 +169,6 @@ export class ComponentFactory {
     IllustratedMessage: ComponentFactory.createIllustratedMessage,
     CardView: ComponentFactory.createCardView,
     TableView: ComponentFactory.createTableView,
-    SelectBoxGroup: ComponentFactory.createSelectBoxGroup,
   };
 
   /**
@@ -572,15 +569,6 @@ export class ComponentFactory {
 
   // ==================== Display Components (Phase 3) ====================
 
-  private static async createRangeSlider(
-    context: ComponentCreationContext,
-  ): Promise<ComponentCreationResult> {
-    return this.createComponent(
-      (ctx) => createSliderDefinition(ctx, { isRange: true }),
-      context,
-    );
-  }
-
   private static async createProgressBar(
     context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
@@ -629,12 +617,6 @@ export class ComponentFactory {
     context: ComponentCreationContext,
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createTableViewDefinition, context);
-  }
-
-  private static async createSelectBoxGroup(
-    context: ComponentCreationContext,
-  ): Promise<ComponentCreationResult> {
-    return this.createComponent(createSelectBoxGroupDefinition, context);
   }
 
   // ==================== Table Components ====================

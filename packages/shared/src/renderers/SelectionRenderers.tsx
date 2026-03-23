@@ -467,6 +467,8 @@ export const renderGridList = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      layout={(element.props.layout as "stack" | "grid") || "stack"}
+      columns={(element.props.columns as number) || 2}
       selectionMode={
         (element.props.selectionMode as "none" | "single" | "multiple") ||
         "none"

@@ -107,6 +107,7 @@ const LAYOUT_PROP_KEYS = [
   "placeholder",
   "value",
   "size",
+  "layout",
   "orientation",
   "items",
   "options",

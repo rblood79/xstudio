@@ -225,6 +225,13 @@ export class PersistentTaffyTree {
   }
 
   /**
+   * 노드의 마지막 스타일 JSON 문자열 반환 (display 전환 감지용).
+   */
+  getLastJson(elementId: string): string | undefined {
+    return this._lastJsonMap.get(elementId);
+  }
+
+  /**
    * 자식 구조 증분 갱신.
    *
    * childIds.join(',') 비교로 자식 추가/제거/순서 변경을 감지하고,

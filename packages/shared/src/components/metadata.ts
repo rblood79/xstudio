@@ -1233,18 +1233,6 @@ export const componentMetadata: ComponentMeta[] = [
 
   // Phase 3: Extended Controls (ADR-030)
   {
-    type: "RangeSlider",
-    label: "Range Slider",
-    category: "Forms",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "SliderEditor",
-      dataBindingType: "value",
-      supportedEvents: ["onChange", "onChangeEnd"],
-    },
-  },
-  {
     type: "ProgressCircle",
     label: "Progress Circle",
     category: "Content",
@@ -1270,30 +1258,6 @@ export const componentMetadata: ComponentMeta[] = [
   },
 
   // Phase 4: Advanced Components (ADR-030)
-  {
-    type: "SelectBoxGroup",
-    label: "Select Box Group",
-    category: "Forms",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "SelectBoxGroupEditor",
-      dataBindingType: null,
-      supportedEvents: ["onSelectionChange"],
-    },
-  },
-  {
-    type: "SelectBoxItem",
-    label: "Select Box Item",
-    category: "Forms",
-    icon: "",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "SelectBoxItemEditor",
-      dataBindingType: null,
-      supportedEvents: ["onPress"],
-    },
-  },
   {
     type: "IllustratedMessage",
     label: "Illustrated Message",

@@ -1118,6 +1118,7 @@ function traversePostOrder(
       };
     }
   }
+
   // CheckboxItems/RadioItems: 부모 CheckboxGroup/RadioGroup의 size를 자식 Checkbox/Radio에 전파
   if (containerTag === "checkboxitems" || containerTag === "radioitems") {
     const parentEl = rawElement.parent_id
@@ -1676,8 +1677,26 @@ export function calculateFullTreeLayout(
 
   // ── Step 3: 초기 빌드 또는 증분 갱신 ──────────────────────────────
   try {
-    if (!persistentTree.isInitialized) {
-      // Path A: 초기 빌드 (buildTreeBatch 1회 WASM 호출)
+    // display 타입 전환 감지 (flex↔grid↔block): incremental update로는
+    // Taffy WASM이 올바르게 재계산하지 않으므로 full rebuild 필요
+    let needsFullRebuild = !persistentTree.isInitialized;
+    if (!needsFullRebuild && affectedNodeIds && affectedNodeIds.size > 0) {
+      for (const node of batch) {
+        if (!affectedNodeIds.has(node.elementId)) continue;
+        const prevJson = persistentTree.getLastJson(node.elementId);
+        if (!prevJson) continue;
+        const prevDisplay = JSON.parse(prevJson).display as string | undefined;
+        const curDisplay = node.style.display as string | undefined;
+        if (prevDisplay !== curDisplay) {
+          needsFullRebuild = true;
+          break;
+        }
+      }
+    }
+
+    if (needsFullRebuild) {
+      // Path A: 초기 빌드 또는 display 전환 시 full rebuild
+      persistentTree.reset();
       persistentTree.buildFull(rootElementId, batch, filteredChildIdsMap);
     } else {
       // Path B: 증분 갱신 (변경된 노드만 WASM 호출)
