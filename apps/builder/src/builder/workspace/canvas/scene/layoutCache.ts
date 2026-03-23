@@ -115,6 +115,7 @@ const LAYOUT_PROP_KEYS = [
   "columns",
   "src",
   "allowsRemoving",
+  "maxRows",
 ];
 
 function serializeLayoutRelevantValue(value: unknown): string {

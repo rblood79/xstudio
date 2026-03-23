@@ -696,9 +696,9 @@ function traversePostOrder(
     if (ancestor?.tag === "TagGroup") {
       const groupProps = ancestor.props as Record<string, unknown> | undefined;
       const delegated: Record<string, unknown> = {};
-      // size delegation
-      if (!rawProps?.size && groupProps?.size) {
-        delegated.size = groupProps.size;
+      // size delegation: TagGroup size → Tag (없으면 "md" 기본값)
+      if (!rawProps?.size) {
+        delegated.size = (groupProps?.size as string) || "md";
       }
       // allowsRemoving delegation
       if (groupProps?.allowsRemoving) {
@@ -837,6 +837,7 @@ function traversePostOrder(
     rawChildren,
     getChildElements,
     elementsMap,
+    availableWidth,
   );
 
   // implicit style이 주입된 부모 요소 사용
@@ -1680,9 +1681,14 @@ export function calculateFullTreeLayout(
     // display 타입 전환 감지 (flex↔grid↔block): incremental update로는
     // Taffy WASM이 올바르게 재계산하지 않으므로 full rebuild 필요
     let needsFullRebuild = !persistentTree.isInitialized;
-    if (!needsFullRebuild && affectedNodeIds && affectedNodeIds.size > 0) {
+    if (!needsFullRebuild) {
+      // affectedNodeIds가 있으면 해당 노드만 검사 (성능 최적화),
+      // 없으면 (캐시 미스 등) 모든 배치 노드를 검사.
+      // implicitStyles가 주입하는 display 변경(GridList layout prop 등)은
+      // 캐시 미스로 affectedNodeIds 없이 호출될 수 있다.
+      const hasFilter = affectedNodeIds && affectedNodeIds.size > 0;
       for (const node of batch) {
-        if (!affectedNodeIds.has(node.elementId)) continue;
+        if (hasFilter && !affectedNodeIds.has(node.elementId)) continue;
         const prevJson = persistentTree.getLastJson(node.elementId);
         if (!prevJson) continue;
         const prevDisplay = JSON.parse(prevJson).display as string | undefined;
@@ -1692,6 +1698,7 @@ export function calculateFullTreeLayout(
           break;
         }
       }
+      // 자식 수 변경 감지는 incrementalUpdate의 updateChildren에서 처리
     }
 
     if (needsFullRebuild) {

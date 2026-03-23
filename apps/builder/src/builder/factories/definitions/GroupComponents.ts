@@ -407,6 +407,8 @@ export function createTagGroupDefinition(
       tag: "TagGroup",
       props: {
         label: "Tag Group",
+        size: "md",
+        maxRows: 2,
         allowsRemoving: false,
         selectionMode: "multiple",
       } as ComponentElementProps,
@@ -438,7 +440,7 @@ export function createTagGroupDefinition(
           {
             tag: "Tag",
             props: {
-              children: "Tag 1",
+              children: "Chocolate",
               isDisabled: false,
             } as ComponentElementProps,
             ...ownerFields,
@@ -447,11 +449,155 @@ export function createTagGroupDefinition(
           {
             tag: "Tag",
             props: {
-              children: "Tag 2",
+              children: "Mint",
               isDisabled: false,
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 2,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Strawberry",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 3,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Vanilla",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 4,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Chocolate Chip Cookie Dough",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 5,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Rocky Road",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 6,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Butter Pecan",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 7,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Neapolitan",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 8,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Salted Caramel",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 9,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Mint Chocolate Chip",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 10,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Tonight Dough",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 11,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Lemon Cookie",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 12,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Cookies and Cream",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 13,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Phish Food",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 14,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Peanut Butter Cup",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 15,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Coffee",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 16,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Pistachio",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 17,
+          },
+          {
+            tag: "Tag",
+            props: {
+              children: "Cherry",
+              isDisabled: false,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 18,
           },
         ],
       },

@@ -23,6 +23,7 @@ globs:
 - Store 내부: `set((state) => ({ ..., layoutVersion: state.layoutVersion + 1 }))` 패턴
 - Store 외부: `useStore.getState().invalidateLayout()` 호출
 - `LAYOUT_AFFECTING_PROPS` Set에 해당하는 프로퍼티 변경 시 필수
+- 새 레이아웃 영향 prop 추가 시 **2곳 동시 등록 필수**: `inspectorActions.ts`의 `LAYOUT_AFFECTING_PROPS` + `layoutCache.ts`의 `LAYOUT_PROP_KEYS` (캐시 시그니처). 후자 누락 시 캐시 히트로 변경 미반영
 
 ## CONTAINER_TAGS
 
@@ -70,6 +71,14 @@ globs:
 
 - `enrichWithIntrinsicSize`에서 width 주입 시 `Math.ceil` 적용
 - Taffy(f32)와 JS(f64) 간 부동소수점 정밀도 차이로 flex-wrap 컨테이너에서 불필요한 wrap 방지
+
+## PersistentTaffyTree display 전환 감지 (CRITICAL)
+
+- `implicitStyles`가 주입하는 display 변경(GridList `layout` prop 등)은 PersistentTaffyTree의 증분 갱신으로 처리 불가 → **full rebuild 필수**
+- `fullTreeLayout.ts` Step 3: `prevDisplay !== curDisplay` 비교로 display 전환 감지
+- `affectedNodeIds`가 있으면 해당 노드만 검사 (성능 최적화), 없으면 전체 배치 노드 검사
+- `affectedNodeIds` 필터를 걸 때 `undefined` 조건 누락 금지 — 캐시 미스 시 `affectedNodeIds`가 `undefined`로 전달될 수 있음
+- 위반 시: display 전환(flex↔grid↔block)이 새로고침 전까지 캔버스에 반영 안 됨
 
 ## order_num 재정렬
 

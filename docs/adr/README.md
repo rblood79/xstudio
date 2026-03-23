@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 26     |
 | 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 8      |
-| **합계**                               | **41** |
+| 미구현 (Proposed/계획)                 | 9      |
+| **합계**                               | **42** |
 
 ---
 
@@ -73,6 +73,7 @@
 | [038](038-figma-import.md)                | Figma 디자인 임포트 시스템            | Proposed | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                      |  **P3**  |
 | [041](041-spec-driven-property-editor.md) | Spec-Driven Property Editor 자동 생성 | Proposed | 107개 에디터 → Spec 기반 자동 생성 (ADR-036 후속)                                              |    P4    |
 | [042](042-spec-dimension-injection.md)    | Spec Container Dimension Injection    | Proposed | Spec shapes에 레이아웃 엔진 결과 주입 — 9개 컴포넌트 텍스트 폭 추정/고정값 제거 (Phase 1 완료) |    P2    |
+| [043](043-selection-drag-alignment.md)    | Selection Drag Alignment               | Proposed | Pencil selection drag 패턴 정렬 — deferred commit + Pixi/Skia 좌표 계약 분리                  |    P2    |
 
 ## Events Panel 설계 문서군
 
@@ -195,6 +196,13 @@ ADR-032 (Events Platform 재설계)
 ## ADR 작성 가이드라인 (Risk-First Design Loop)
 
 새 ADR 작성 시 아래 순서를 **필수로** 따릅니다. 자세한 방법론은 `.claude/agents/architect.md` 참조.
+
+ADR은 **결정 문서**로만 유지합니다.
+
+- ADR에는 문제 정의, 대안, 리스크, 결정, 게이트만 넣습니다.
+- 구현 phase, 파일 경계, 세부 작업 순서, 검증 시나리오는 별도 `docs/design/*-breakdown.md` 문서로 분리합니다.
+- ADR 본문에 구현 세부가 길게 들어가면, 해당 내용은 설계 문서로 이동합니다.
+- 설계 문서는 ADR의 결정에 종속되며, 구현 검증 과정에서 자주 갱신될 수 있습니다.
 
 ```
 [금지]  Context → Decision → Consequences/Risks (기록용)

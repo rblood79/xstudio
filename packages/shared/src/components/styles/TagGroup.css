@@ -219,6 +219,72 @@
     }
   }
 
+  /* ===== maxRows: Show all / Show less ===== */
+  /* Tag와 동일한 크기, 노멀 시 배경 없음, hover 시 Tag 스타일 */
+  .tag-show-all-btn {
+    width: fit-content;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    color: var(--accent);
+    cursor: pointer;
+    outline: none;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    transition: all 200ms;
+
+    &:hover {
+      background: var(--tag-color, var(--bg-overlay));
+      border-color: var(--tag-border, var(--border));
+      color: var(--tag-text, var(--fg));
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+  }
+
+  /* Size-aware: Show all 버튼도 Tag size에 맞춤 */
+  .react-aria-TagGroup[data-tag-size="xs"] .tag-show-all-btn {
+    padding: var(--spacing-3xs) var(--spacing-xs);
+    font-size: var(--text-2xs);
+    line-height: var(--text-2xs--line-height);
+    border-radius: var(--radius-sm);
+  }
+
+  .react-aria-TagGroup[data-tag-size="sm"] .tag-show-all-btn {
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    border-radius: var(--radius-sm);
+  }
+
+  .react-aria-TagGroup[data-tag-size="md"] .tag-show-all-btn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    border-radius: var(--radius-md);
+  }
+
+  .react-aria-TagGroup[data-tag-size="lg"] .tag-show-all-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    border-radius: var(--radius-lg);
+  }
+
+  .react-aria-TagGroup[data-tag-size="xl"] .tag-show-all-btn {
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
+    border-radius: var(--radius-lg);
+  }
+
   /* ===== Descriptions & Errors ===== */
 
   .react-aria-TagGroup {

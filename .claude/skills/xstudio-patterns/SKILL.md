@@ -82,6 +82,13 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - 누락 증상: 초기 로딩 후 크기 고정, 프로퍼티 변경(size sm→xs 등) 축소 미반영, 새로고침 시만 정상
 - 참조: ADR-012 P4 (layoutVersion 커버리지 보완)
 
+#### PersistentTaffyTree display 전환 (display transition)
+
+- **CRITICAL**: `implicitStyles`가 주입하는 display 변경(GridList `layout` prop 등)은 PersistentTaffyTree 증분 갱신으로 처리 불가 → **full rebuild 필수**
+- `fullTreeLayout.ts` Step 3: `prevDisplay !== curDisplay` 비교로 display 전환 감지 후 `persistentTree.reset()` + `buildFull()`
+- `affectedNodeIds` 필터 조건에 `undefined` 케이스 누락 금지 — 캐시 미스 시 `undefined`로 전달될 수 있음
+- 위반 증상: display 전환(flex↔grid↔block)이 새로고침 전까지 캔버스에 미반영
+
 #### Order Num (order_num 재정렬)
 
 - **CRITICAL**: order_num 재정렬 시 `batchUpdateElementOrders()` 사용 필수 (단일 set() + \_rebuildIndexes()). 구 패턴 `updateElementOrder` N회 호출 금지

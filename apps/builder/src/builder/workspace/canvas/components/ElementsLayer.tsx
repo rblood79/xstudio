@@ -39,8 +39,6 @@ const NON_CONTAINER_TAGS = new Set([
   "Pre",
   "Blockquote",
   "ListItem",
-  "ListBoxItem",
-  "GridListItem",
   "Input",
   "Separator",
   "Skeleton",
@@ -144,7 +142,14 @@ export const ElementsLayer = memo(function ElementsLayer({
       typeof window !== "undefined" ? window.innerHeight : pageHeight;
 
     return calculateViewportBounds(screenWidth, screenHeight);
-  }, [pageHeight, pageWidth, pagePositionVersion, panOffset.x, panOffset.y, zoom]);
+  }, [
+    pageHeight,
+    pageWidth,
+    pagePositionVersion,
+    panOffset.x,
+    panOffset.y,
+    zoom,
+  ]);
 
   const topLevelCandidateIds = useMemo(() => {
     return getCachedTopLevelCandidateIds({
@@ -160,7 +165,9 @@ export const ElementsLayer = memo(function ElementsLayer({
       return sortedElements;
     }
 
-    return sortedElements.filter((element) => topLevelCandidateIds.has(element.id));
+    return sortedElements.filter((element) =>
+      topLevelCandidateIds.has(element.id),
+    );
   }, [sortedElements, topLevelCandidateIds]);
 
   const { visibleElements } = useViewportCulling({

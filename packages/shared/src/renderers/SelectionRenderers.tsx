@@ -99,7 +99,6 @@ export const renderListBox = (
           data-element-id={listBoxItemTemplate.id}
           value={item}
           isDisabled={Boolean(listBoxItemTemplate.props.isDisabled)}
-          style={listBoxItemTemplate.props.style}
           className={listBoxItemTemplate.props.className}
           textValue={String(item.name || item.label || item.id || "")}
         >
@@ -143,7 +142,6 @@ export const renderListBox = (
         id={element.customId}
         aria-label={String(element.props.label || "List")}
         data-element-id={element.id}
-        style={element.props.style}
         className={element.props.className}
         orientation={
           (element.props.orientation as "horizontal" | "vertical") || "vertical"
@@ -196,7 +194,6 @@ export const renderListBox = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      style={element.props.style}
       className={element.props.className}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
@@ -248,9 +245,9 @@ export const renderListBoxItem = (
 ): React.ReactNode => {
   const { elements } = context;
 
-  // DataField 자식 요소들을 찾기
-  const fieldChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "Field")
+  // 모든 자식 요소를 찾기 (Composition 패턴: Text, Description, Field 등)
+  const childElements = elements
+    .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // 스켈레톤 플레이스홀더 체크
@@ -259,7 +256,7 @@ export const renderListBoxItem = (
     ? `skeleton ${element.props.className || ""}`.trim()
     : element.props.className;
 
-  // 스켈레톤 콘텐츠 렌더링
+  // 콘텐츠 렌더링: 스켈레톤 → 자식 Element → label fallback
   const renderContent = () => {
     if (isSkeleton) {
       return (
@@ -269,10 +266,10 @@ export const renderListBoxItem = (
         </>
       );
     }
-    if (fieldChildren.length > 0) {
-      return fieldChildren.map((child) => context.renderElement(child));
+    if (childElements.length > 0) {
+      return childElements.map((child) => context.renderElement(child));
     }
-    return String(element.props.label || "");
+    return String(element.props.label || element.props.children || "");
   };
 
   return (
@@ -282,9 +279,13 @@ export const renderListBoxItem = (
       data-element-id={element.id}
       value={element.props.value as object}
       isDisabled={Boolean(element.props.isDisabled) || isSkeleton}
-      style={element.props.style}
       className={className}
-      textValue={String(element.props.label || element.customId || "")}
+      textValue={String(
+        element.props.textValue ||
+          element.props.label ||
+          element.customId ||
+          "",
+      )}
     >
       {renderContent()}
     </ListBoxItem>
@@ -422,7 +423,6 @@ export const renderGridList = (
             data-element-id={gridListItemTemplate.id}
             value={item}
             isDisabled={Boolean(gridListItemTemplate.props.isDisabled)}
-            style={gridListItemTemplate.props.style}
             className={gridListItemTemplate.props.className}
           >
             {fieldChildren.length > 0
@@ -465,7 +465,6 @@ export const renderGridList = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      style={element.props.style}
       className={element.props.className}
       layout={(element.props.layout as "stack" | "grid") || "stack"}
       columns={(element.props.columns as number) || 2}
@@ -516,9 +515,9 @@ export const renderGridListItem = (
 ): React.ReactNode => {
   const { elements } = context;
 
-  // DataField 자식 요소들을 찾기
-  const fieldChildren = elements
-    .filter((child) => child.parent_id === element.id && child.tag === "Field")
+  // 모든 자식 요소를 찾기 (Composition 패턴: Text, Description, Field 등)
+  const childElements = elements
+    .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
   // 스켈레톤 플레이스홀더 체크
@@ -527,7 +526,7 @@ export const renderGridListItem = (
     ? `skeleton ${element.props.className || ""}`.trim()
     : element.props.className;
 
-  // 스켈레톤 콘텐츠 렌더링
+  // 콘텐츠 렌더링: 스켈레톤 → 자식 Element → label fallback
   const renderContent = () => {
     if (isSkeleton) {
       return (
@@ -537,10 +536,10 @@ export const renderGridListItem = (
         </>
       );
     }
-    if (fieldChildren.length > 0) {
-      return fieldChildren.map((child) => context.renderElement(child));
+    if (childElements.length > 0) {
+      return childElements.map((child) => context.renderElement(child));
     }
-    return String(element.props.label || "");
+    return String(element.props.label || element.props.children || "");
   };
 
   return (
@@ -550,8 +549,13 @@ export const renderGridListItem = (
       data-element-id={element.id}
       value={element.props.value as object}
       isDisabled={Boolean(element.props.isDisabled) || isSkeleton}
-      style={element.props.style}
       className={className}
+      textValue={String(
+        element.props.textValue ||
+          element.props.label ||
+          element.customId ||
+          "",
+      )}
     >
       {renderContent()}
     </GridListItem>

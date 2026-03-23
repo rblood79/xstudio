@@ -68,6 +68,45 @@ gh search repos "[기능 키워드]" --language=TypeScript --sort=stars --limit=
 gh search code "[패턴 키워드]" --language=TypeScript
 ```
 
+### React Spectrum S2 GitHub 소스코드 직접 참조 (CRITICAL)
+
+기존 컴포넌트를 S2 패턴으로 변경하거나 S2 기능을 추가할 때, **Skill 문서(API/Props)만으로는 내부 구현 메커니즘을 파악할 수 없다.** 반드시 S2 GitHub 소스코드를 직접 참조하여 실제 구현 방식을 확인한 후 내재화한다.
+
+**적용 시점**:
+
+- S2에만 있는 기능을 XStudio에 추가할 때 (예: TagGroup `maxRows`, 가상 스크롤 등)
+- S2의 동작 방식이 단순 CSS가 아닌 복잡한 DOM 측정/상태 관리를 포함할 때
+- Skill 문서의 Props 설명만으로 구현 방법이 불명확할 때
+
+**참조 절차**:
+
+1. **Skill 문서 먼저 확인** — Props/API 사양 파악
+
+   ```
+   Read .claude/skills/react-spectrum-s2/references/components/{ComponentName}.md
+   ```
+
+2. **S2 GitHub 소스코드 fetch** — 실제 구현 메커니즘 확인
+
+   ```
+   WebFetch https://raw.githubusercontent.com/adobe/react-spectrum/main/packages/@react-spectrum/s2/src/{ComponentName}.tsx
+   ```
+
+3. **핵심 패턴 추출** — DOM 측정 방식, 상태 관리 흐름, 무한 루프 방지, 성능 최적화 등
+4. **XStudio 컨벤션으로 내재화** — tv(), Zustand, Spec 패턴에 맞게 변환
+
+**검증된 S2 패턴 사례**:
+
+| S2 기능            | 핵심 메커니즘                                                                                                                                                          | XStudio 적용                                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| TagGroup `maxRows` | 숨겨진 미러 DOM(`inert`+`visibility:hidden`)에서 `getBoundingClientRect().y`로 행 측정 → `flushSync`로 `visibleTagCount` 설정 → 실제 DOM은 `slice(0, visibleTagCount)` | `TagGroup.tsx` — span 미러 + `queueMicrotask` + `flushSync` |
+
+**금지 패턴**:
+
+- ❌ Skill 문서만 보고 구현 방식을 추측하여 시행착오 반복
+- ❌ CSS `overflow: hidden` + `max-height`로 단순 숨기기 (S2는 실제 렌더링 제거)
+- ❌ 같은 DOM에서 측정+렌더 동시 수행 (무한 리렌더 루프 발생)
+
 ### 활용 원칙: 내재화 (Internalize, Not Install)
 
 - **❌ `npm install some-library`** — 외부 의존성 추가 금지. 번들 500KB 제약 + 의존성 리스크 회피
@@ -79,9 +118,10 @@ gh search code "[패턴 키워드]" --language=TypeScript
 ### 참조 우선순위
 
 1. **XStudio 기존 코드** — 프로젝트 내 유사 구현이 이미 있는지 먼저 확인
-2. **사용 중인 라이브러리의 공식 소스** — React-Aria/Spectrum, PixiJS, Taffy 등의 구현 참조
-3. **검증된 오픈소스** — GitHub Stars 1k+ 프로젝트의 관련 구현
-4. **공식 문서/예제** — 라이브러리 공식 문서의 고급 패턴
+2. **React Spectrum S2 GitHub 소스** — S2 기능 추가/변환 시 실제 구현 참조 (API 문서 < 소스코드)
+3. **사용 중인 라이브러리의 공식 소스** — React-Aria, PixiJS, Taffy 등의 구현 참조
+4. **검증된 오픈소스** — GitHub Stars 1k+ 프로젝트의 관련 구현
+5. **공식 문서/예제** — 라이브러리 공식 문서의 고급 패턴
 
 ### 조사 생략 조건
 

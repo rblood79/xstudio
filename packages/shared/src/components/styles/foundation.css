@@ -24,7 +24,7 @@
 @import "./utilities.css";
 @import "./forms.css";
 @import "./overlays.css";
-@import "./collections.css";
+/* collections.css — index.css에서 import (중복 방지) */
 
 /* ============================================
    ORPHAN CSS — No corresponding .tsx component

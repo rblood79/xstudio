@@ -618,6 +618,34 @@ effectiveGetChildElements = (id) => {
 
 참조: `docs/bug/tag-vertical-stacking-in-flex-row.md`
 
+#### 5. PersistentTaffyTree display 전환 감지 (2026-03-23)
+
+`implicitStyles`가 주입하는 `display` 변경(예: GridList `layout: "stack"` → `"grid"`)은 PersistentTaffyTree의 증분 갱신(`updateNodeStyle`)으로 처리할 수 없습니다. Taffy WASM은 display 타입 변경 시 내부 노드 구조를 재구축해야 하므로 **full rebuild**가 필요합니다.
+
+**감지 로직** (`fullTreeLayout.ts` Step 3):
+
+```typescript
+// affectedNodeIds가 있으면 해당 노드만 검사, 없으면 전체 노드 검사
+const hasFilter = affectedNodeIds && affectedNodeIds.size > 0;
+for (const node of batch) {
+  if (hasFilter && !affectedNodeIds.has(node.elementId)) continue;
+  const prevJson = persistentTree.getLastJson(node.elementId);
+  if (!prevJson) continue;
+  const prevDisplay = JSON.parse(prevJson).display;
+  if (prevDisplay !== node.style.display) {
+    needsFullRebuild = true;
+    break;
+  }
+}
+```
+
+**주의사항**:
+
+- `affectedNodeIds`가 `undefined`일 때(캐시 미스) 감지를 건너뛰면 안 됨 — `layoutCache.getCachedPageLayout`에서 `pageDirtyState.hasDirty`가 false이면 `undefined` 전달
+- 성능: `affectedNodeIds` 있으면 dirty 노드만 검사(O(dirty)), 없으면 전체 검사(O(N)) — 캐시 미스는 드문 이벤트이므로 허용 가능
+
+**2026-03-23 버그 수정**: 기존 코드가 `affectedNodeIds && affectedNodeIds.size > 0` 조건을 걸어 `undefined` 시 전체 감지를 스킵 → GridList layout 전환이 새로고침 전까지 캔버스 미반영
+
 ### 컴포넌트 등급 현황 (Wave 4 완료, 2026-02-19 / Breadcrumbs 승격 2026-02-23)
 
 모든 Pixi 컴포넌트가 A 또는 B+ 등급으로 전환 완료됐습니다.

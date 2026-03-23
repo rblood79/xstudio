@@ -11,7 +11,11 @@
  */
 
 import type { Element } from "../../../../../types/core/store.types";
-import { parsePadding, PHANTOM_INDICATOR_CONFIGS } from "./utils";
+import {
+  parsePadding,
+  PHANTOM_INDICATOR_CONFIGS,
+  measureTextWidth,
+} from "./utils";
 import { InlineAlertSpec } from "@xstudio/specs";
 
 // ─── 인터페이스 ──────────────────────────────────────────────────────
@@ -233,6 +237,8 @@ export function applyImplicitStyles(
   children: Element[],
   getChildElements: (id: string) => Element[],
   elementById: Map<string, Element>,
+  /** 현재 노드에 사용 가능한 너비 (px) — maxRows 행 시뮬레이션용 */
+  availableWidth?: number,
 ): ImplicitStyleResult {
   const containerTag = (containerEl.tag ?? "").toLowerCase();
   const parentStyle = (containerEl.props?.style || {}) as Record<
@@ -296,6 +302,111 @@ export function applyImplicitStyles(
       flexWrap: orientation === "vertical" ? undefined : "wrap",
       gap: parentStyle.gap ?? 4,
     });
+
+    // Tag 자식: white-space: nowrap (CSS .react-aria-Tag 동기화)
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag !== "Tag") return child;
+      const childStyle = (child.props?.style ?? {}) as Record<string, unknown>;
+      if (childStyle.whiteSpace) return child;
+      return {
+        ...child,
+        props: {
+          ...child.props,
+          style: { ...childStyle, whiteSpace: "nowrap" },
+        },
+      };
+    });
+
+    // maxRows: 초과 Tag를 filteredChildren에서 제거 (S2 패턴)
+    // Canvas에서는 행 위치를 사전에 알 수 없으므로, 부모 폭과 Tag 예상 폭으로 근사 계산
+    const maxRows =
+      typeof parentProps?.maxRows === "number" ? parentProps.maxRows : 0;
+    if (maxRows > 0) {
+      const tagChildren = filteredChildren.filter((c) => c.tag === "Tag");
+      if (tagChildren.length > 0) {
+        // 부모 폭: DFS에서 전달된 availableWidth 사용
+        const parentWidth = availableWidth || 350;
+        const gap = 4;
+        const sizeName = (parentProps?.size as string) || "md";
+        const tagPaddingX =
+          sizeName === "xs"
+            ? 4
+            : sizeName === "sm"
+              ? 8
+              : sizeName === "lg"
+                ? 16
+                : sizeName === "xl"
+                  ? 24
+                  : 12;
+        const tagFontSize =
+          sizeName === "xs"
+            ? 10
+            : sizeName === "sm"
+              ? 12
+              : sizeName === "lg"
+                ? 16
+                : sizeName === "xl"
+                  ? 18
+                  : 14;
+        const borderWidth = 1;
+
+        // 각 Tag의 실측 폭으로 행 배치 시뮬레이션
+        let currentRowWidth = 0;
+        let rowCount = 1;
+        let visibleCount = tagChildren.length;
+        for (let i = 0; i < tagChildren.length; i++) {
+          const text = String(
+            (tagChildren[i].props as Record<string, unknown>)?.children || "",
+          );
+          const textWidth = measureTextWidth(
+            text,
+            tagFontSize,
+            "Pretendard Variable",
+            400,
+          );
+          const tagWidth = tagPaddingX * 2 + borderWidth * 2 + textWidth;
+          if (
+            currentRowWidth + tagWidth + (i > 0 ? gap : 0) > parentWidth &&
+            i > 0
+          ) {
+            rowCount++;
+            currentRowWidth = tagWidth;
+          } else {
+            currentRowWidth += tagWidth + (i > 0 ? gap : 0);
+          }
+          if (rowCount > maxRows) {
+            visibleCount = i;
+            break;
+          }
+        }
+        if (visibleCount < tagChildren.length) {
+          const visibleIds = new Set(
+            tagChildren.slice(0, visibleCount).map((c) => c.id),
+          );
+          filteredChildren = filteredChildren.filter(
+            (c) => c.tag !== "Tag" || visibleIds.has(c.id),
+          );
+        }
+      }
+    }
+  }
+
+  // ── ListBox ──────────────────────────────────────────────────────────
+  // CSS: display:flex column, padding, gap, border
+  if (containerTag === "listbox") {
+    const sizeName = (containerProps?.size as string) ?? "md";
+    const pad = sizeName === "sm" ? 4 : sizeName === "lg" ? 8 : 6;
+    const gap = sizeName === "sm" ? 2 : sizeName === "lg" ? 6 : 4;
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: "flex",
+      flexDirection: "column",
+      gap: parentStyle.gap ?? gap,
+      paddingTop: parentStyle.paddingTop ?? pad,
+      paddingBottom: parentStyle.paddingBottom ?? pad,
+      paddingLeft: parentStyle.paddingLeft ?? pad,
+      paddingRight: parentStyle.paddingRight ?? pad,
+    });
   }
 
   // ── GridList ─────────────────────────────────────────────────────────
@@ -321,6 +432,50 @@ export function applyImplicitStyles(
         gap: parentStyle.gap ?? gap,
       });
     }
+  }
+
+  // ── GridListItem ────────────────────────────────────────────────
+  // Composition 패턴: 자식 Text/Description Element를 column 방향으로 배치
+  // CSS 동기화: .react-aria-GridListItem { padding, border(1px), border-radius }
+  if (containerTag === "gridlistitem") {
+    const sizeName =
+      (containerProps?.size as string) ??
+      ((containerEl.parent_id
+        ? (
+            elementById.get(containerEl.parent_id)?.props as
+              | Record<string, unknown>
+              | undefined
+          )?.size
+        : undefined) as string | undefined) ??
+      "md";
+    const itemPadX = sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
+    const itemPadY = sizeName === "sm" ? 8 : sizeName === "lg" ? 12 : 10;
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: "flex",
+      flexDirection: "column",
+      gap: parentStyle.gap ?? 4,
+      paddingTop: parentStyle.paddingTop ?? itemPadY,
+      paddingBottom: parentStyle.paddingBottom ?? itemPadY,
+      paddingLeft: parentStyle.paddingLeft ?? itemPadX,
+      paddingRight: parentStyle.paddingRight ?? itemPadX,
+      borderWidth: parentStyle.borderWidth ?? 1,
+    });
+  }
+
+  // ── ListBoxItem ───────────────────────────────────────────────
+  // Composition 패턴: CSS .react-aria-ListBoxItem { padding: 4px 12px } 동기화
+  if (containerTag === "listboxitem") {
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: "flex",
+      flexDirection: "column",
+      gap: parentStyle.gap ?? 2,
+      paddingTop: parentStyle.paddingTop ?? 4,
+      paddingBottom: parentStyle.paddingBottom ?? 4,
+      paddingLeft: parentStyle.paddingLeft ?? 12,
+      paddingRight: parentStyle.paddingRight ?? 12,
+    });
   }
 
   // ── ToggleButtonGroup ─────────────────────────────────────────────

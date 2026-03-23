@@ -211,6 +211,7 @@ export const createInspectorActionsSlice: StateCreator<
       "iconName",
       "iconPosition",
       "allowsRemoving",
+      "maxRows",
       "value",
       "minValue",
       "maxValue",

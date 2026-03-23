@@ -327,68 +327,15 @@
     box-shadow: var(--shadow-lg);
     contain: layout style paint;
 
+    /* ListBox: Popover 컨텍스트에서는 border/배경 불필요 (Popover가 담당) */
     .react-aria-ListBox {
-      padding: var(--spacing-xs);
-      outline: none;
+      border: none;
+      background: transparent;
+      max-height: none;
       transform: translate3d(0, 0, 0);
       backface-visibility: hidden;
       min-height: 24px;
-
-      .react-aria-ListBoxItem {
-        padding: var(--spacing) var(--spacing-md);
-        border-radius: var(--radius-xs);
-        color: var(--fg);
-        cursor: pointer;
-        outline: none;
-        transition: all 150ms ease;
-        transform: translate3d(0, 0, 0);
-
-        &[data-hovered] {
-          background: var(--bg-overlay);
-        }
-
-        &[data-focused] {
-          background: var(--bg-overlay);
-        }
-
-        &[data-selected] {
-          background: var(--color-primary-100);
-          color: var(--color-primary-900);
-          font-weight: 500;
-        }
-
-        &[data-disabled] {
-          color: color-mix(in srgb, var(--fg) 38%, transparent);
-          cursor: not-allowed;
-        }
-
-        &[href] {
-          text-decoration: none;
-          cursor: pointer;
-        }
-      }
     }
-  }
-
-  .react-aria-Popover[data-trigger="ComboBox"].sm
-    .react-aria-ListBox
-    .react-aria-ListBoxItem {
-    padding: var(--spacing-sm) var(--spacing);
-    font-size: var(--text-xs);
-  }
-
-  .react-aria-Popover[data-trigger="ComboBox"].md
-    .react-aria-ListBox
-    .react-aria-ListBoxItem {
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: var(--text-base);
-  }
-
-  .react-aria-Popover[data-trigger="ComboBox"].lg
-    .react-aria-ListBox
-    .react-aria-ListBoxItem {
-    padding: var(--spacing-md) var(--spacing-lg);
-    font-size: var(--text-base);
   }
 
   /* ========== Forced Colors Mode ========== */

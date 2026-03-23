@@ -56,8 +56,15 @@ export interface BoxSpriteProps {
 // Component
 // ============================================
 
+// Collection Item: 카드형(GridListItem=border有) / 리스트형(ListBoxItem=border無)
+const CARD_ITEM_TAGS = new Set(["GridListItem"]);
+const LIST_ITEM_TAGS = new Set(["ListBoxItem"]);
+
 export const BoxSprite = memo(function BoxSprite({ element }: BoxSpriteProps) {
   useExtend(PIXI_COMPONENTS);
+  const isCardItem = CARD_ITEM_TAGS.has(element.tag);
+  const isListItem = LIST_ITEM_TAGS.has(element.tag);
+  const isCollectionItem = isCardItem || isListItem;
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
   const computedContainerSize = useContext(LayoutComputedSizeContext);
@@ -128,26 +135,47 @@ export const BoxSprite = memo(function BoxSprite({ element }: BoxSpriteProps) {
   const padding = useMemo(() => parsePadding(style), [style]);
 
   // Border-Box v2: drawBox 유틸리티 사용
+  // GridListItem: 카드형 (배경 + border + borderRadius)
+  // ListBoxItem: 리스트형 (배경만, border 없음)
+  const collectionItemFillColor =
+    isCollectionItem && fill.alpha === 0 ? 0xfafafa : fill.color;
+  const collectionItemFillAlpha =
+    isCollectionItem && fill.alpha === 0 ? 1 : fill.alpha;
+  const collectionItemBorderRadius =
+    isCardItem &&
+    (typeof borderRadius === "number"
+      ? borderRadius
+      : (borderRadius?.[0] ?? 0)) === 0
+      ? 8
+      : undefined;
+  const collectionItemBorder =
+    isCardItem && !borderConfig
+      ? { width: 1, color: 0xd4d4d4, alpha: 1 }
+      : undefined;
+
   const draw = useCallback(
     (g: PixiGraphics) => {
       drawBox(g, {
         width: transform.width,
         height: transform.height,
-        backgroundColor: fill.color,
-        backgroundAlpha: fill.alpha,
+        backgroundColor: collectionItemFillColor,
+        backgroundAlpha: collectionItemFillAlpha,
         borderRadius:
-          typeof borderRadius === "number"
+          collectionItemBorderRadius ??
+          (typeof borderRadius === "number"
             ? borderRadius
-            : (borderRadius?.[0] ?? 0),
-        border: borderConfig,
+            : (borderRadius?.[0] ?? 0)),
+        border: borderConfig ?? collectionItemBorder,
       });
       // Selection highlight는 SelectionLayer에서 처리
     },
     [
       transform.width,
       transform.height,
-      fill.color,
-      fill.alpha,
+      collectionItemFillColor,
+      collectionItemFillAlpha,
+      collectionItemBorderRadius,
+      collectionItemBorder,
       borderRadius,
       borderConfig,
     ],
@@ -251,6 +279,10 @@ export const BoxSprite = memo(function BoxSprite({ element }: BoxSpriteProps) {
 
     if (fillV2Color) {
       fillColor = fillV2Color;
+    } else if (isCollectionItem && fill.alpha === 0) {
+      // Collection Item (GridListItem, ListBoxItem): 카드형 기본 배경
+      // CSS: background: var(--bg-overlay) ≈ #fafafa
+      fillColor = Float32Array.of(0.98, 0.98, 0.98, 1);
     } else {
       // 기존 backgroundColor → fillColor 폴백
       const r = ((fill.color >> 16) & 0xff) / 255;
@@ -264,7 +296,13 @@ export const BoxSprite = memo(function BoxSprite({ element }: BoxSpriteProps) {
     }
 
     // 배열 borderRadius는 그대로 전달하여 개별 모서리 radius 정보를 보존
-    const br = borderRadius ?? 0;
+    // GridListItem(카드형)만 기본 borderRadius 8
+    const defaultBr = borderRadius ?? 0;
+    const br =
+      isCardItem &&
+      (typeof defaultBr === "number" ? defaultBr : (defaultBr?.[0] ?? 0)) === 0
+        ? 8
+        : defaultBr;
 
     // CSS transform → CanvasKit 3x3 matrix (transform-origin 적용)
     let skiaTransform: Float32Array | undefined;
@@ -384,8 +422,10 @@ export const BoxSprite = memo(function BoxSprite({ element }: BoxSpriteProps) {
                 borderConfig.alpha ?? 1,
               );
             })()
-          : undefined,
-        strokeWidth: borderConfig?.width,
+          : isCardItem
+            ? Float32Array.of(0.83, 0.83, 0.83, 1) // #d4d4d4 — CSS var(--border)
+            : undefined,
+        strokeWidth: borderConfig?.width ?? (isCardItem ? 1 : undefined),
         strokeStyle:
           borderConfig?.style !== "solid" && borderConfig?.style !== "none"
             ? (borderConfig?.style as

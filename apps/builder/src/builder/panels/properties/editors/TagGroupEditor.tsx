@@ -16,6 +16,7 @@ import {
   CheckSquare,
   Database,
   Search,
+  Rows3,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -67,39 +68,6 @@ export const TagGroupEditor = memo(function TagGroupEditor({
       [key]: value,
     };
     onUpdate(updatedProps);
-  };
-
-  const syncDescendantTags = (
-    next: {
-      allowsRemoving?: boolean;
-      size?: string;
-    },
-  ) => {
-    const state = useStore.getState();
-    const childrenMap = state.childrenMap;
-    const queue = [elementId];
-
-    while (queue.length > 0) {
-      const parentId = queue.pop()!;
-      const children = childrenMap.get(parentId) ?? [];
-
-      for (const child of children) {
-        if (child.tag === "Tag") {
-          const childProps = (child.props || {}) as Record<string, unknown>;
-          const nextSize =
-            next.size ?? String(childProps.size ?? currentProps.size ?? "md");
-          const nextAllowsRemoving =
-            next.allowsRemoving ?? Boolean(childProps.allowsRemoving);
-          updateElementProps(child.id, {
-            ...childProps,
-            size: nextSize,
-            allowsRemoving: nextAllowsRemoving ? true : undefined,
-          });
-        }
-
-        queue.push(child.id);
-      }
-    }
   };
 
   const handleDataBindingChange = (binding: DataBindingValue | null) => {
@@ -304,11 +272,20 @@ export const TagGroupEditor = memo(function TagGroupEditor({
           value={String(currentProps.size || "md")}
           onChange={(value) => {
             updateProp("size", value);
-            syncDescendantTags({
-              size: value,
-              allowsRemoving: Boolean(currentProps.allowsRemoving),
-            });
           }}
+        />
+
+        <PropertyInput
+          label={PROPERTY_LABELS.MAX_ROWS}
+          value={
+            currentProps.maxRows != null ? String(currentProps.maxRows) : ""
+          }
+          onChange={(value) => {
+            const num = parseInt(value, 10);
+            updateProp("maxRows", num > 0 ? num : undefined);
+          }}
+          placeholder="No limit"
+          icon={Rows3}
         />
       </PropertySection>
 
@@ -380,10 +357,6 @@ export const TagGroupEditor = memo(function TagGroupEditor({
           isSelected={Boolean(currentProps.allowsRemoving)}
           onChange={(checked) => {
             updateProp("allowsRemoving", checked);
-            syncDescendantTags({
-              allowsRemoving: checked,
-              size: String(currentProps.size || "md"),
-            });
           }}
           icon={Trash}
         />

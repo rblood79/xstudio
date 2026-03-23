@@ -68,7 +68,7 @@ Store의 상태(width, height, padding 등)를 CSS와 Taffy가 **독립적으로
 
 ## 분류 테이블
 
-### Spec CSS 자동 생성 — 53개 컴포넌트
+### Spec CSS 자동 생성 — 52개 컴포넌트
 
 | Archetype          | 컴포넌트                                                                                                                                                                                   | 목적                             |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
@@ -78,24 +78,25 @@ Store의 상태(width, height, padding 등)를 CSS와 Taffy가 **독립적으로
 | `input-base`       | Input, TextArea                                                                                                                                                                            | 텍스트 입력                      |
 | `progress`         | ProgressCircle, MeterTrack, MeterValue, ProgressBarTrack, ProgressBarValue                                                                                                                 | 진행 표시 (자식 컴포넌트)        |
 | `calendar`         | Calendar, CalendarGrid, CalendarHeader                                                                                                                                                     | 달력                             |
-| `collection`       | ListBox, Menu                                                                                                                                                                              | 컬렉션 목록                      |
+| `collection`       | Menu                                                                                                                                                                                       | 컬렉션 목록                      |
 | `overlay`          | Dialog, Popover, Toast                                                                                                                                                                     | 오버레이                         |
 | `alert`            | InlineAlert, IllustratedMessage                                                                                                                                                            | 알림/메시지                      |
 | 미지정 (`default`) | AvatarGroup, ButtonGroup, CardView, SelectBoxGroup, TableView, List, Nav, ScrollBox, Section, Switcher                                                                                     | 서브/유틸리티                    |
 
-### 수동 CSS (`skipCSSGeneration: true`) — 40개 컴포넌트
+### 수동 CSS (`skipCSSGeneration: true`) — 41개 컴포넌트
 
-| 유형           | 컴포넌트                                                                | 비고                                                                                               |
-| -------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| 부모 변수 상속 | Label                                                                   | `--label-font-size` 부모 CSS 변수 상속, generated CSS 간섭                                         |
-| 그룹 컨테이너  | CheckboxGroup, RadioGroup, TagGroup, ToggleButtonGroup, DisclosureGroup |                                                                                                    |
-| 합성 입력      | TextField, NumberField, SearchField, DateField, TimeField, ColorField   |                                                                                                    |
-| 합성 선택기    | Select, ComboBox, DatePicker, DateRangePicker, ColorPicker              |                                                                                                    |
-| Color 인터랙션 | ColorArea, ColorSlider, ColorWheel, ColorSwatchPicker                   |                                                                                                    |
-| 구조 컨테이너  | Card, Panel, Form, Disclosure, Group, Slot, Toolbar, Pagination         |                                                                                                    |
-| 진행 표시      | ProgressBar, Meter                                                      |                                                                                                    |
-| 복합 탐색      | Tabs, GridList, Table, Tree                                             |                                                                                                    |
-| 슬라이더       | Slider, SliderTrack, SliderThumb, SliderOutput                          | 수동 `Slider.css`가 전담; SliderTrack이 thumb 시각을 shapes로 렌더링, SliderThumb은 히트 영역 전용 |
+| 유형            | 컴포넌트                                                                | 비고                                                                                               |
+| --------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 부모 변수 상속  | Label                                                                   | `--label-font-size` 부모 CSS 변수 상속, generated CSS 간섭                                         |
+| 그룹 컨테이너   | CheckboxGroup, RadioGroup, TagGroup, ToggleButtonGroup, DisclosureGroup |                                                                                                    |
+| 합성 입력       | TextField, NumberField, SearchField, DateField, TimeField, ColorField   |                                                                                                    |
+| 합성 선택기     | Select, ComboBox, DatePicker, DateRangePicker, ColorPicker              |                                                                                                    |
+| Color 인터랙션  | ColorArea, ColorSlider, ColorWheel, ColorSwatchPicker                   |                                                                                                    |
+| 구조 컨테이너   | Card, Panel, Form, Disclosure, Group, Slot, Toolbar, Pagination         |                                                                                                    |
+| 진행 표시       | ProgressBar, Meter                                                      |                                                                                                    |
+| 복합 탐색       | Tabs, GridList, Table, Tree                                             |                                                                                                    |
+| 컬렉션 컨테이너 | ListBox                                                                 | Composition 패턴 전환 — 수동 CSS가 ListBoxItem 카드 스타일 담당                                    |
+| 슬라이더        | Slider, SliderTrack, SliderThumb, SliderOutput                          | 수동 `Slider.css`가 전담; SliderTrack이 thumb 시각을 shapes로 렌더링, SliderThumb은 히트 영역 전용 |
 
 ---
 

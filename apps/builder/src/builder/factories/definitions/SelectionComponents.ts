@@ -86,12 +86,42 @@ export function createSelectDefinition(
       {
         tag: "SelectItem",
         props: {
-          label: "Option 1",
-          value: "option1",
+          label: "Aardvark",
+          value: "aardvark",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
+      },
+      {
+        tag: "SelectItem",
+        props: {
+          label: "Cat",
+          value: "cat",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
+      },
+      {
+        tag: "SelectItem",
+        props: {
+          label: "Dog",
+          value: "dog",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 4,
+      },
+      {
+        tag: "SelectItem",
+        props: {
+          label: "Kangaroo",
+          value: "kangaroo",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 5,
       },
     ],
   };
@@ -184,12 +214,42 @@ export function createComboBoxDefinition(
       {
         tag: "ComboBoxItem",
         props: {
-          label: "Option 1",
-          value: "option1",
+          label: "Aardvark",
+          value: "aardvark",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
+      },
+      {
+        tag: "ComboBoxItem",
+        props: {
+          label: "Cat",
+          value: "cat",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 3,
+      },
+      {
+        tag: "ComboBoxItem",
+        props: {
+          label: "Dog",
+          value: "dog",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 4,
+      },
+      {
+        tag: "ComboBoxItem",
+        props: {
+          label: "Kangaroo",
+          value: "kangaroo",
+          isDisabled: false,
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 5,
       },
     ],
   };
@@ -197,6 +257,7 @@ export function createComboBoxDefinition(
 
 /**
  * ListBox 컴포넌트 정의
+ * React Aria Composition 패턴: ListBoxItem 내부에 Text 자식 Element 조합
  */
 export function createListBoxDefinition(
   context: ComponentCreationContext,
@@ -226,32 +287,92 @@ export function createListBoxDefinition(
       {
         tag: "ListBoxItem",
         props: {
-          children: "Item 1",
-          value: "item1",
+          textValue: "Aardvark",
+          value: "aardvark",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
+        children: [
+          {
+            tag: "Text",
+            props: {
+              children: "Aardvark",
+              style: { fontSize: 14, fontWeight: 500 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "Description",
+            props: {
+              children: "A nocturnal burrowing mammal",
+              style: { fontSize: 12 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
       {
         tag: "ListBoxItem",
         props: {
-          children: "Item 2",
-          value: "item2",
+          textValue: "Cat",
+          value: "cat",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
+        children: [
+          {
+            tag: "Text",
+            props: {
+              children: "Cat",
+              style: { fontSize: 14, fontWeight: 500 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "Description",
+            props: {
+              children: "A small domesticated carnivore",
+              style: { fontSize: 12 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
       {
         tag: "ListBoxItem",
         props: {
-          children: "Item 3",
-          value: "item3",
+          textValue: "Kangaroo",
+          value: "kangaroo",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 3,
+        children: [
+          {
+            tag: "Text",
+            props: {
+              children: "Kangaroo",
+              style: { fontSize: 14, fontWeight: 500 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "Description",
+            props: {
+              children: "A large marsupial native to Australia",
+              style: { fontSize: 12 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
     ],
   };
@@ -259,6 +380,7 @@ export function createListBoxDefinition(
 
 /**
  * GridList 컴포넌트 정의
+ * React Aria Composition 패턴: GridListItem 내부에 Text + Description 자식 Element 조합
  */
 export function createGridListDefinition(
   context: ComponentCreationContext,
@@ -291,42 +413,92 @@ export function createGridListDefinition(
       {
         tag: "GridListItem",
         props: {
-          children: "Item 1",
-          value: "item1",
+          textValue: "Desert Sunset",
+          value: "desert-sunset",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
+        children: [
+          {
+            tag: "Text",
+            props: {
+              children: "Desert Sunset",
+              style: { fontSize: 14, fontWeight: 600 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "Description",
+            props: {
+              children: "PNG • 2/3/2024",
+              style: { fontSize: 12 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
       {
         tag: "GridListItem",
         props: {
-          children: "Item 2",
-          value: "item2",
+          textValue: "Hiking Trail",
+          value: "hiking-trail",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
+        children: [
+          {
+            tag: "Text",
+            props: {
+              children: "Hiking Trail",
+              style: { fontSize: 14, fontWeight: 600 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "Description",
+            props: {
+              children: "JPEG • 1/10/2022",
+              style: { fontSize: 12 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
       {
         tag: "GridListItem",
         props: {
-          children: "Item 3",
-          value: "item3",
+          textValue: "Mountain Sunrise",
+          value: "mountain-sunrise",
           isDisabled: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 3,
-      },
-      {
-        tag: "GridListItem",
-        props: {
-          children: "Item 4",
-          value: "item4",
-          isDisabled: false,
-        } as ComponentElementProps,
-        ...ownerFields,
-        order_num: 4,
+        children: [
+          {
+            tag: "Text",
+            props: {
+              children: "Mountain Sunrise",
+              style: { fontSize: 14, fontWeight: 600 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 0,
+          },
+          {
+            tag: "Description",
+            props: {
+              children: "PNG • 3/15/2015",
+              style: { fontSize: 12 },
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+        ],
       },
     ],
   };

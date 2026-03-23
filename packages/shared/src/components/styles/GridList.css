@@ -1,5 +1,3 @@
-@import "./collections.css";
-
 @layer components {
   /* ========== Base GridList Styles (카드형 선택 UI) ========== */
   .react-aria-GridList {

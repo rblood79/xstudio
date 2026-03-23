@@ -336,6 +336,11 @@ export const renderTagGroup = (
       isDisabled={Boolean(element.props.isDisabled)}
       disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      maxRows={
+        typeof element.props.maxRows === "number"
+          ? element.props.maxRows
+          : undefined
+      }
       dataBinding={
         (element.dataBinding || element.props.dataBinding) as
           | DataBinding

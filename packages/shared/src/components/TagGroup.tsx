@@ -1,4 +1,5 @@
-import React, { JSX } from "react";
+import React, { JSX, useState, useRef, useEffect, useCallback } from "react";
+import { flushSync } from "react-dom";
 import {
   Button,
   Label,
@@ -52,6 +53,12 @@ export interface TagGroupProps<T>
    */
   filter?: (item: T) => boolean;
   /**
+   * Limit the number of rows initially shown.
+   * Renders a button that allows the user to expand to show all tags.
+   * @example maxRows={2}
+   */
+  maxRows?: number;
+  /**
    * React Aria 1.13.0: 텍스트 기반 필터링
    * @example filterText="search query"
    */
@@ -83,6 +90,7 @@ export function TagGroup<T extends object>({
   removedItemIds = [],
   variant = "default",
   size = "md",
+  maxRows,
   filter,
   filterText,
   filterFields = ["label", "name", "title"] as (keyof T)[],
@@ -90,6 +98,63 @@ export function TagGroup<T extends object>({
 }: TagGroupProps<T>): JSX.Element {
   // Build className with variant and size (재사용을 위해 최상위에 선언)
   const tagGroupClassName = "react-aria-TagGroup";
+
+  // maxRows: S2 패턴 — 숨겨진 미러 DOM에서 측정, 실제 DOM에서 슬라이스
+  // 핵심: 미러 DOM은 항상 전체 태그 렌더 (상태 무관) → 무한 루프 방지
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const hiddenRef = useRef<HTMLDivElement>(null);
+  const [visibleTagCount, setVisibleTagCount] = useState<number>(Infinity);
+
+  const hasMaxRows = maxRows != null && maxRows > 0;
+  const showCollapsed = hasMaxRows && isCollapsed;
+
+  const computeVisibleTagCount = useCallback(() => {
+    if (!hiddenRef.current || !maxRows) return;
+    const items = hiddenRef.current.children;
+    if (items.length === 0) return;
+
+    let currY = -Infinity;
+    let rowCount = 0;
+    let index = 0;
+    for (let i = 0; i < items.length; i++) {
+      const { y } = items[i].getBoundingClientRect();
+      if (y !== currY) {
+        currY = y;
+        rowCount++;
+      }
+      if (rowCount > maxRows) break;
+      index++;
+    }
+
+    flushSync(() => {
+      setVisibleTagCount(index);
+    });
+  }, [maxRows]);
+
+  // 초기 측정 + 컬렉션 변경 시 재측정
+  useEffect(() => {
+    if (hasMaxRows && isCollapsed) {
+      // microtask로 DOM 렌더 완료 후 측정
+      queueMicrotask(computeVisibleTagCount);
+    }
+  }, [hasMaxRows, isCollapsed, computeVisibleTagCount]);
+
+  // ResizeObserver: 컨테이너 크기 변경 시 재측정
+  useEffect(() => {
+    if (!hasMaxRows || !hiddenRef.current) return;
+    const el = hiddenRef.current.parentElement;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      if (isCollapsed) computeVisibleTagCount();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMaxRows, isCollapsed, computeVisibleTagCount]);
+
+  useEffect(() => {
+    setIsCollapsed(true);
+    setVisibleTagCount(Infinity);
+  }, [maxRows]);
 
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
@@ -379,7 +444,7 @@ export function TagGroup<T extends object>({
   // Static Children (기존 방식)
   // React Aria의 TagList collection은 AriaTag(react-aria-components Tag)만 인식.
   // 커스텀 Tag 래퍼는 인식 불가 → AriaTag로 변환하여 전달.
-  const mappedChildren =
+  const allMappedChildren =
     typeof children === "function"
       ? children
       : React.Children.map(children as React.ReactNode, (child) => {
@@ -407,31 +472,98 @@ export function TagGroup<T extends object>({
           );
         });
 
+  // children에서 텍스트 추출 (미러 DOM용)
+  const tagTexts = React.useMemo(() => {
+    if (!Array.isArray(allMappedChildren)) return [];
+    return allMappedChildren.map((child) => {
+      if (!React.isValidElement(child)) return "";
+      const p = child.props as { textValue?: string; children?: unknown };
+      return p.textValue || String(p.children || "");
+    });
+  }, [allMappedChildren]);
+
+  const totalChildCount = tagTexts.length;
+
+  // 실제 렌더링할 children: collapsed 시 visibleTagCount만큼 슬라이스
+  const displayChildren =
+    showCollapsed && Array.isArray(allMappedChildren)
+      ? allMappedChildren.slice(0, visibleTagCount)
+      : allMappedChildren;
+
+  const showAllButton = showCollapsed && visibleTagCount < totalChildCount;
+
   return (
-    <AriaTagGroup
-      {...props}
-      selectionMode={selectionMode}
-      selectionBehavior={selectionBehavior}
-      selectedKeys={selectedKeys}
-      defaultSelectedKeys={defaultSelectedKeys}
-      onSelectionChange={onSelectionChange}
-      disallowEmptySelection={disallowEmptySelection}
-      onRemove={allowsRemoving ? onRemove : undefined}
-      className={tagGroupClassName}
-      data-tag-variant={variant}
-      data-tag-size={size}
-    >
-      {label && <Label>{label}</Label>}
-      <TagList
-        items={items}
-        renderEmptyState={renderEmptyState}
-        className="react-aria-TagList"
+    <div style={{ position: "relative" }}>
+      {/* S2 패턴: 숨겨진 미러 DOM — 항상 전체 태그를 span으로 렌더 (측정 전용) */}
+      {hasMaxRows && (
+        <div
+          ref={hiddenRef}
+          inert
+          aria-hidden="true"
+          className="react-aria-TagList"
+          data-tag-size={size}
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "var(--spacing-xs)",
+            position: "absolute",
+            visibility: "hidden",
+            overflow: "hidden",
+            opacity: 0,
+            pointerEvents: "none",
+            width: "100%",
+          }}
+        >
+          {tagTexts.map((text, i) => (
+            <span key={i} className="react-aria-Tag">
+              {text}
+            </span>
+          ))}
+        </div>
+      )}
+      <AriaTagGroup
+        {...props}
+        selectionMode={selectionMode}
+        selectionBehavior={selectionBehavior}
+        selectedKeys={selectedKeys}
+        defaultSelectedKeys={defaultSelectedKeys}
+        onSelectionChange={onSelectionChange}
+        disallowEmptySelection={disallowEmptySelection}
+        onRemove={allowsRemoving ? onRemove : undefined}
+        className={tagGroupClassName}
+        data-tag-variant={variant}
+        data-tag-size={size}
       >
-        {mappedChildren}
-      </TagList>
-      {description && <Text slot="description">{description}</Text>}
-      {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
-    </AriaTagGroup>
+        {label && <Label>{label}</Label>}
+        <TagList
+          items={items}
+          renderEmptyState={renderEmptyState}
+          className="react-aria-TagList"
+        >
+          {displayChildren}
+        </TagList>
+        {showAllButton && (
+          <button
+            className="tag-show-all-btn"
+            onClick={() => setIsCollapsed(false)}
+            type="button"
+          >
+            Show all ({totalChildCount})
+          </button>
+        )}
+        {hasMaxRows && !isCollapsed && (
+          <button
+            className="tag-show-all-btn"
+            onClick={() => setIsCollapsed(true)}
+            type="button"
+          >
+            Show less
+          </button>
+        )}
+        {description && <Text slot="description">{description}</Text>}
+        {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
+      </AriaTagGroup>
+    </div>
   );
 }
 

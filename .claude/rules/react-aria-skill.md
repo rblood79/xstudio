@@ -40,6 +40,19 @@ Read 도구로 해당 파일을 직접 읽어 참조한다.
 - 수동 ARIA 속성 작성 금지 — React Aria가 제공하는 hook 사용
 - React Stately hooks로 상태 관리 (useListState, useTreeState 등)
 
+### S2 기능 추가/변환 시: GitHub 소스코드 직접 참조 (CRITICAL)
+
+기존 컴포넌트에 S2 전용 기능을 추가하거나 S2 패턴으로 변환할 때, **Skill 문서(API/Props)만으로는 내부 구현을 파악할 수 없다.** GitHub 소스코드를 직접 fetch하여 실제 메커니즘을 확인한 후 내재화한다.
+
+**절차**:
+
+1. Skill 문서로 Props/API 사양 파악
+2. `WebFetch https://raw.githubusercontent.com/adobe/react-spectrum/main/packages/@react-spectrum/s2/src/{ComponentName}.tsx` — 실제 소스 참조
+3. 핵심 패턴 추출 (DOM 측정, 상태 흐름, 무한 루프 방지 등)
+4. XStudio 컨벤션으로 내재화
+
+**적용 시점**: S2 전용 기능 추가, 복잡한 DOM 측정/상태 관리 포함 기능, Skill 문서만으로 불명확한 경우
+
 ### 참조 생략 조건
 
 - 단순 스타일 변경, 버그 수정 등 API 설계와 무관한 작업

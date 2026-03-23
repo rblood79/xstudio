@@ -39,6 +39,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   description: "React Aria 기반 리스트박스 컴포넌트",
   archetype: "collection",
   element: "div",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "M",

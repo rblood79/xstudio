@@ -113,8 +113,8 @@
 @import "./TimeField.css";
 
 /* Collection Components */
-@import "./generated/ListBox.css";
-@import "./GridList.css"; /* Tier 3 — 수동 유지 (가상 스크롤, :has() 선택자) */
+@import "./ListBox.css"; /* skipCSSGeneration: true — 수동 CSS가 구조 담당 */
+@import "./GridList.css"; /* skipCSSGeneration: true — 수동 CSS가 구조 담당 */
 
 /* Overlay Components */
 @import "./Modal.css"; /* Foundation — Spec 없음 */

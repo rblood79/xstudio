@@ -22,6 +22,7 @@ export const PROPERTY_LABELS = {
   DEFAULT_VALUE: "Default Value",
   MIN_VALUE: "Min Value",
   MAX_VALUE: "Max Value",
+  MAX_ROWS: "Max Rows",
   STEP: "Step",
 
   // Selection properties

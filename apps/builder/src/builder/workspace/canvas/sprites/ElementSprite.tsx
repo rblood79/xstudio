@@ -280,8 +280,6 @@ const TEXT_TAGS = new Set([
   "Pre",
   "Blockquote",
   "ListItem",
-  "ListBoxItem",
-  "GridListItem",
 ]);
 
 /**
@@ -1064,7 +1062,7 @@ export const ElementSprite = memo(function ElementSprite({
     if (!ancestor || ancestor.tag !== "TagGroup") return null;
     return (
       ((ancestor.props as Record<string, unknown> | undefined)
-        ?.size as string) ?? null
+        ?.size as string) || "md"
     );
   });
 
@@ -1577,7 +1575,12 @@ export const ElementSprite = memo(function ElementSprite({
         spriteType !== "grid") ||
       getSpecForTag(element.tag) != null;
 
-    if (!style && !isUIComponent) return null;
+    // Collection Item 태그: 카드형 배경/border를 기본 적용 (CSS 동기화)
+    const isCardItem = element.tag === "GridListItem";
+    const isListItem = element.tag === "ListBoxItem";
+    const isCollectionItem = isCardItem || isListItem;
+
+    if (!style && !isUIComponent && !isCollectionItem) return null;
 
     // display: none → 레이아웃에서 제외, 렌더링 스킵
     if (style?.display === "none") return null;
@@ -1587,7 +1590,7 @@ export const ElementSprite = memo(function ElementSprite({
       fill,
       stroke,
       borderRadius: convertedBorderRadius,
-    } = convertStyle(style);
+    } = convertStyle(style || {});
     const br =
       typeof convertedBorderRadius === "number"
         ? convertedBorderRadius
@@ -1718,6 +1721,13 @@ export const ElementSprite = memo(function ElementSprite({
         b = (bgColor & 0xff) / 255;
         effectiveAlpha = VARIANT_BG_ALPHA[variant] ?? 1;
       }
+    } else if (isCollectionItem && !hasBgColor) {
+      // Collection Item (GridListItem, ListBoxItem): 카드형 밝은 배경
+      // CSS: background: var(--bg-overlay) ≈ #fafafa (light) / #3f3f46 (dark)
+      r = 0.98;
+      g = 0.98;
+      b = 0.98;
+      effectiveAlpha = 1;
     } else {
       r = ((fill.color >> 16) & 0xff) / 255;
       g = ((fill.color >> 8) & 0xff) / 255;
@@ -1746,12 +1756,13 @@ export const ElementSprite = memo(function ElementSprite({
         )
       : "";
     const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
+    const collectionItemBorderRadius = isCardItem ? 8 : 0;
     let effectiveBorderRadius: number | [number, number, number, number] =
       hasBorderRadiusSet
         ? br
         : isUIComponent && !hasBgColor
           ? defaultBorderRadius
-          : 0;
+          : collectionItemBorderRadius;
 
     if (toggleGroupPosition && typeof effectiveBorderRadius === "number") {
       const { orientation, isFirst, isLast, isOnly } = toggleGroupPosition;
@@ -1803,6 +1814,10 @@ export const ElementSprite = memo(function ElementSprite({
       const sb = (stroke.color & 0xff) / 255;
       boxData.strokeColor = Float32Array.of(sr, sg, sb, stroke.alpha);
       boxData.strokeWidth = stroke.width;
+    } else if (isCardItem && !stroke) {
+      // GridListItem 카드형 border: 1px solid #d4d4d4 (CSS var(--border) 동기화)
+      boxData.strokeColor = Float32Array.of(0.83, 0.83, 0.83, 1);
+      boxData.strokeWidth = 1;
     } else if (isUIComponent && !hasBgColor && !isTransparentContainer) {
       const borderColor = VARIANT_BORDER_COLORS[variant];
       if (borderColor !== undefined) {
@@ -2218,9 +2233,14 @@ export const ElementSprite = memo(function ElementSprite({
                   if (child.type === "text" && child.text) {
                     // ADR-008: element style → spec text child에 텍스트 래핑 속성 주입
                     // Checkbox/Radio/Switch 내부 Label: CSS white-space: nowrap 동기화
+                    // Tag/Badge: CSS white-space: nowrap 동기화
+                    const isNowrapTag =
+                      element.tag === "Tag" || element.tag === "Badge";
                     const effectiveWhiteSpace =
                       style?.whiteSpace ??
-                      (isLabelInNowrapParent ? "nowrap" : undefined);
+                      (isLabelInNowrapParent || isNowrapTag
+                        ? "nowrap"
+                        : undefined);
                     if (effectiveWhiteSpace)
                       child.text.whiteSpace =
                         effectiveWhiteSpace as typeof child.text.whiteSpace;
