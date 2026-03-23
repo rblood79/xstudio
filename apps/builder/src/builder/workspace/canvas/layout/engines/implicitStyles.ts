@@ -1255,7 +1255,7 @@ export function applyImplicitStyles(
   if (containerTag === "inlinealert") {
     const sizeName = (containerProps?.size as string) ?? "md";
     const specSize = (InlineAlertSpec.sizes[sizeName] ??
-      InlineAlertSpec.sizes[InlineAlertSpec.defaultSize]) as Record<
+      InlineAlertSpec.sizes[InlineAlertSpec.defaultSize]) as unknown as Record<
       string,
       unknown
     >;
@@ -1337,5 +1337,8 @@ export function applyImplicitStyles(
     } as Element;
   });
 
-  return { effectiveParent, filteredChildren };
+  return {
+    effectiveParent,
+    filteredChildren,
+  };
 }
