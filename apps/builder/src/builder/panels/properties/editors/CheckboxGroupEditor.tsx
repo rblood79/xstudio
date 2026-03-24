@@ -29,6 +29,7 @@ import { useStore } from "../../../stores";
 import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
 import type { Element } from "../../../../types/core/store.types";
+import { LABEL_POSITION_OPTIONS } from "./editorUtils";
 
 const EMPTY_CHILDREN: Element[] = [];
 
@@ -319,10 +320,7 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({
         <PropertySelect
           label={PROPERTY_LABELS.LABEL_POSITION}
           value={String(currentProps.labelPosition || "top")}
-          options={[
-            { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
-            { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
-          ]}
+          options={LABEL_POSITION_OPTIONS}
           onChange={handleLabelPositionChange}
           icon={Layout}
         />

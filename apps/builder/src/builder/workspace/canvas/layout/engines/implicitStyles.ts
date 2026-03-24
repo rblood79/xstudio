@@ -145,7 +145,36 @@ const SYNTHETIC_LABEL_TAGS = new Set([
   "gauge",
 ]);
 
+/** Necessity Indicator 지원 태그 — Label 자식에 suffix 주입 대상 */
+const NECESSITY_INDICATOR_TAGS = new Set([
+  "textfield",
+  "textarea",
+  "numberfield",
+  "searchfield",
+  "select",
+  "combobox",
+  "datefield",
+  "timefield",
+  "colorfield",
+  "checkboxgroup",
+  "radiogroup",
+  "taggroup",
+]);
+
 // ─── 내부 헬퍼 ──────────────────────────────────────────────────────
+
+/**
+ * labelPosition prop → flexDirection 변환.
+ * labelPosition이 명시되면 강제 적용, 없으면 fallback(기존 flexDirection) 사용.
+ */
+function resolveLabelFlexDir(
+  labelPos: string | undefined,
+  fallback: string | undefined,
+  defaultDir = "column",
+): string {
+  if (labelPos) return labelPos === "side" ? "row" : "column";
+  return fallback ?? defaultDir;
+}
 
 /**
  * 사용자 padding이 설정되어 있는지 확인.
@@ -279,12 +308,11 @@ export function applyImplicitStyles(
 
     const tgLabelPos = containerProps?.labelPosition as string | undefined;
     const tgDefaultDir = hasTagList ? "column" : "row";
-    // labelPosition이 명시되면 flexDirection 강제 적용
-    const tgFlexDir = tgLabelPos
-      ? tgLabelPos === "side"
-        ? "row"
-        : "column"
-      : (parentStyle.flexDirection ?? tgDefaultDir);
+    const tgFlexDir = resolveLabelFlexDir(
+      tgLabelPos,
+      parentStyle.flexDirection,
+      tgDefaultDir,
+    );
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
@@ -333,6 +361,7 @@ export function applyImplicitStyles(
     // Canvas에서는 행 위치를 사전에 알 수 없으므로, 부모 폭과 Tag 예상 폭으로 근사 계산
     const maxRows =
       typeof parentProps?.maxRows === "number" ? parentProps.maxRows : 0;
+    const gap = 4;
     if (maxRows > 0) {
       const tagChildren = filteredChildren.filter((c) => c.tag === "Tag");
       if (tagChildren.length > 0) {
@@ -364,7 +393,6 @@ export function applyImplicitStyles(
             parentWidth = Math.max(parentWidth - labelWidth, 50);
           }
         }
-        const gap = 4;
         const sizeName = (parentProps?.size as string) || "md";
         const tagPaddingX =
           sizeName === "xs"
@@ -583,11 +611,7 @@ export function applyImplicitStyles(
       });
 
     const labelPos = containerProps?.labelPosition as string | undefined;
-    const flexDir = labelPos
-      ? labelPos === "side"
-        ? "row"
-        : "column"
-      : (parentStyle.flexDirection ?? "column");
+    const flexDir = resolveLabelFlexDir(labelPos, parentStyle.flexDirection);
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
@@ -697,11 +721,7 @@ export function applyImplicitStyles(
     });
 
     const labelPos = containerProps?.labelPosition as string | undefined;
-    const flexDir = labelPos
-      ? labelPos === "side"
-        ? "row"
-        : "column"
-      : (parentStyle.flexDirection ?? "column");
+    const flexDir = resolveLabelFlexDir(labelPos, parentStyle.flexDirection);
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
@@ -747,11 +767,10 @@ export function applyImplicitStyles(
     });
 
     const nfLabelPos = containerProps?.labelPosition as string | undefined;
-    const nfFlexDir = nfLabelPos
-      ? nfLabelPos === "side"
-        ? "row"
-        : "column"
-      : (parentStyle.flexDirection ?? "column");
+    const nfFlexDir = resolveLabelFlexDir(
+      nfLabelPos,
+      parentStyle.flexDirection,
+    );
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
@@ -927,11 +946,10 @@ export function applyImplicitStyles(
     );
 
     const tfLabelPos = containerProps?.labelPosition as string | undefined;
-    const tfFlexDir = tfLabelPos
-      ? tfLabelPos === "side"
-        ? "row"
-        : "column"
-      : (parentStyle.flexDirection ?? "column");
+    const tfFlexDir = resolveLabelFlexDir(
+      tfLabelPos,
+      parentStyle.flexDirection,
+    );
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
@@ -980,11 +998,10 @@ export function applyImplicitStyles(
     });
 
     const dfLabelPos = containerProps?.labelPosition as string | undefined;
-    const dfFlexDir = dfLabelPos
-      ? dfLabelPos === "side"
-        ? "row"
-        : "column"
-      : (parentStyle.flexDirection ?? "column");
+    const dfFlexDir = resolveLabelFlexDir(
+      dfLabelPos,
+      parentStyle.flexDirection,
+    );
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
@@ -1485,20 +1502,6 @@ export function applyImplicitStyles(
     | string
     | undefined;
   const parentRequired = containerProps?.isRequired as boolean | undefined;
-  const NECESSITY_INDICATOR_TAGS = new Set([
-    "textfield",
-    "textarea",
-    "numberfield",
-    "searchfield",
-    "select",
-    "combobox",
-    "datefield",
-    "timefield",
-    "colorfield",
-    "checkboxgroup",
-    "radiogroup",
-    "taggroup",
-  ]);
 
   if (parentNecessity && NECESSITY_INDICATOR_TAGS.has(containerTag)) {
     filteredChildren = filteredChildren.map((child) => {

@@ -35,6 +35,7 @@ import { getDB } from "../../../../lib/db";
 import { useStore } from "../../../stores";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
 import { generateCustomId } from "../../../utils/idGeneration";
+import { LABEL_POSITION_OPTIONS } from "./editorUtils";
 
 interface SelectedTagState {
   parentId: string;
@@ -291,10 +292,7 @@ export const TagGroupEditor = memo(function TagGroupEditor({
         <PropertySelect
           label={PROPERTY_LABELS.LABEL_POSITION}
           value={String(currentProps.labelPosition || "top")}
-          options={[
-            { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
-            { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
-          ]}
+          options={LABEL_POSITION_OPTIONS}
           onChange={(value) => updateProp("labelPosition", value)}
           icon={Layout}
         />

@@ -1212,17 +1212,22 @@ export const ElementSprite = memo(function ElementSprite({
   });
 
   // 🚀 Label → 부모 field의 necessityIndicator/isRequired 전파 (단일 selector)
+  // primitive 반환으로 객체 비교 비용 제거 (Zustand Object.is 안정성)
   const isLabel = element.tag === "Label";
-  const labelNecessityProps = useStore((state) => {
+  const labelNecessityKey = useStore((state) => {
     if (!isLabel || !element.parent_id) return null;
     const p = state.elementsMap.get(element.parent_id);
     const pProps = p?.props as Record<string, unknown> | undefined;
     const ni = (pProps?.necessityIndicator as string) ?? null;
     if (!ni) return null;
-    return { indicator: ni, required: Boolean(pProps?.isRequired) };
+    return `${ni}:${Boolean(pProps?.isRequired)}`;
   });
-  const labelNecessityIndicator = labelNecessityProps?.indicator ?? null;
-  const labelIsRequired = labelNecessityProps?.required ?? null;
+  const labelNecessityIndicator = labelNecessityKey
+    ? labelNecessityKey.split(":")[0]
+    : null;
+  const labelIsRequired = labelNecessityKey
+    ? labelNecessityKey.split(":")[1] === "true"
+    : null;
 
   // 🚀 Select/ComboBox → SelectIcon/ComboBoxTrigger: 부모의 iconName 전파
   const ICON_DELEGATION_TAGS = new Set(["SelectIcon", "ComboBoxTrigger"]);
@@ -2542,7 +2547,7 @@ export const ElementSprite = memo(function ElementSprite({
     dateInputGranularity,
     dateInputHourCycle,
     dateInputLocale,
-    labelNecessityProps,
+    labelNecessityKey,
   ]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로

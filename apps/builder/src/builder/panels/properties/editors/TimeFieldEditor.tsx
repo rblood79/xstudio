@@ -23,6 +23,7 @@ import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
+import { LABEL_POSITION_OPTIONS } from "./editorUtils";
 
 export const TimeFieldEditor = memo(function TimeFieldEditor({
   elementId,
@@ -134,10 +135,7 @@ export const TimeFieldEditor = memo(function TimeFieldEditor({
         <PropertySelect
           label={PROPERTY_LABELS.LABEL_POSITION}
           value={String(currentProps.labelPosition || "top")}
-          options={[
-            { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
-            { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
-          ]}
+          options={LABEL_POSITION_OPTIONS}
           onChange={(value) => updateProp("labelPosition", value)}
           icon={Layout}
         />

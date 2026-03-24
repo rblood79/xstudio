@@ -39,6 +39,7 @@ import type { BatchPropsUpdate } from "../../../stores/utils/elementUpdate";
 import {
   buildRequiredUpdate,
   NECESSITY_INDICATOR_OPTIONS,
+  LABEL_POSITION_OPTIONS,
 } from "./editorUtils";
 
 export const ComboBoxEditor = memo(
@@ -418,10 +419,7 @@ export const ComboBoxEditor = memo(
           <PropertySelect
             label={PROPERTY_LABELS.LABEL_POSITION}
             value={String(currentProps.labelPosition || "top")}
-            options={[
-              { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
-              { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
-            ]}
+            options={LABEL_POSITION_OPTIONS}
             onChange={handleLabelPositionChange}
             icon={Layout}
           />
