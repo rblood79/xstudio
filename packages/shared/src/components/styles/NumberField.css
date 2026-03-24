@@ -106,7 +106,9 @@
       border-radius: var(--border-radius);
       background: var(--bg-raised);
       overflow: hidden;
-      transition: all 200ms ease;
+      transition:
+        border-color 200ms ease,
+        background-color 200ms ease;
       padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs)
         var(--spacing-md);
     }

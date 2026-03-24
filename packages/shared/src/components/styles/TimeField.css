@@ -104,7 +104,9 @@
       forced-color-adjust: none;
       font-size: var(--tf-input-size);
       line-height: var(--tf-input-line-height);
-      transition: all 200ms ease;
+      transition:
+        border-color 200ms ease,
+        background-color 200ms ease;
     }
 
     /* Variant-accented: override --inset-* vars */

@@ -104,7 +104,9 @@
       forced-color-adjust: none;
       font-size: var(--df-input-size);
       line-height: var(--df-input-line-height);
-      transition: all 200ms ease;
+      transition:
+        border-color 200ms ease,
+        background-color 200ms ease;
     }
 
     /* Variant-accented: override --inset-* vars */

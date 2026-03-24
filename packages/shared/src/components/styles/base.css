@@ -14,7 +14,6 @@
     color: var(--fg);
     transition:
       border-color 200ms ease,
-      outline 200ms ease,
       color 200ms ease;
 
     /* Autofill: 브라우저 기본 배경 무력화 */
