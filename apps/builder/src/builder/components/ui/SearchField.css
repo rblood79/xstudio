@@ -17,19 +17,7 @@
   border-width: 1px 0;
   background: var(--bg-inset);
   box-shadow: var(--inset-shadow-sm);
-  transition:
-    border-color 200ms ease,
-    background-color 200ms ease;
   cursor: text;
-
-  /*&:hover:not(:has([data-disabled])):not(:has([data-focused])) {
-    border-color: var(--border-hover);
-  }*/
-
-  /*&:has([data-focused]) {
-    border-color: var(--accent);
-    background: var(--bg-overlay);
-  }*/
 
   /* ===== Search Icon ===== */
   .builder-search-icon {

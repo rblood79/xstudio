@@ -1,5 +1,5 @@
 /* eslint-disable local/prefer-keyboard-shortcuts-registry */
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { SearchField } from "../../components/ui/SearchField";
 import { useRecentSearches } from "../../hooks/useRecentSearches";
 
@@ -17,10 +17,9 @@ interface ComponentSearchProps {
  */
 export function ComponentSearch({ onSearchChange }: ComponentSearchProps) {
   const [query, setQuery] = useState("");
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { addSearch } = useRecentSearches();
 
-  // Detect platform for keyboard shortcut display
   const isMac = useMemo(() => {
     if (typeof navigator === "undefined") return false;
     return (
@@ -46,10 +45,13 @@ export function ComponentSearch({ onSearchChange }: ComponentSearchProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Notify parent of search query changes
-  useEffect(() => {
-    onSearchChange(query);
-  }, [query, onSearchChange]);
+  const handleChange = useCallback(
+    (value: string) => {
+      setQuery(value);
+      onSearchChange(value);
+    },
+    [onSearchChange],
+  );
 
   // 검색 기록 저장 (debounce: 1초 후 저장)
   useEffect(() => {
@@ -57,15 +59,16 @@ export function ComponentSearch({ onSearchChange }: ComponentSearchProps) {
 
     const timeoutId = setTimeout(() => {
       addSearch(query);
-    }, 1000); // 1초 대기
+    }, 1000);
 
     return () => clearTimeout(timeoutId);
   }, [query, addSearch]);
 
   return (
     <SearchField
+      ref={inputRef}
       value={query}
-      onChange={setQuery}
+      onChange={handleChange}
       placeholder={placeholder}
       aria-label="Search components"
     />

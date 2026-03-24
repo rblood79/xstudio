@@ -212,12 +212,11 @@ function buildViaCommandStream(
   let commandChildrenMap: Map<string, Element[]>;
   if (filteredChildIds) {
     commandChildrenMap = new Map();
+    const syntheticMap = getSyntheticElementsMap();
     for (const [parentId, childIds] of filteredChildIds) {
       const children: Element[] = [];
       for (const cid of childIds) {
-        const el =
-          rendererInput.elementsMap.get(cid) ??
-          getSyntheticElementsMap().get(cid);
+        const el = rendererInput.elementsMap.get(cid) ?? syntheticMap.get(cid);
         if (el) children.push(el);
       }
       commandChildrenMap.set(parentId, children);
