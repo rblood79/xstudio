@@ -144,8 +144,12 @@
     }
 
     /* ===== Time Segments (React Aria uses DateSegment for TimeField too) ===== */
+    /* generated DateSegment.css override: border/background/height 제거 */
     .react-aria-DateSegment {
       padding: 0 2px;
+      border: none;
+      background: transparent;
+      height: auto;
       font-variant-numeric: tabular-nums;
       text-align: end;
       color: var(--fg);

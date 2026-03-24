@@ -17,6 +17,7 @@
     /* Size locals (md default) — @sync ComboBox.css size pattern */
     --nf-label-size: var(--text-sm);
     --nf-btn-size: 18px;
+    --nf-icon-size: 16px;
     --nf-input-font-size: var(--text-sm);
     --nf-input-line-height: var(--text-sm--line-height);
     --nf-hint-size: var(--text-xs);
@@ -41,11 +42,11 @@
       --field-accent: var(--negative);
     }
 
-    /* ===== Size ===== */
-    /* @sync ComboBox.css size variants — same btn-size, font-size */
+    /* ===== Size (@sync SearchField.css icon-size) ===== */
     &[data-size="xs"] {
       --nf-label-size: var(--text-2xs);
       --nf-btn-size: 10px;
+      --nf-icon-size: 10px;
       --nf-input-font-size: var(--text-2xs);
       --nf-input-line-height: var(--text-2xs--line-height);
       --nf-hint-size: var(--text-2xs);
@@ -53,6 +54,7 @@
     &[data-size="sm"] {
       --nf-label-size: var(--text-xs);
       --nf-btn-size: 14px;
+      --nf-icon-size: 12px;
       --nf-input-font-size: var(--text-xs);
       --nf-input-line-height: var(--text-xs--line-height);
       --nf-hint-size: var(--text-xs);
@@ -60,6 +62,7 @@
     &[data-size="md"] {
       --nf-label-size: var(--text-sm);
       --nf-btn-size: 18px;
+      --nf-icon-size: 16px;
       --nf-input-font-size: var(--text-sm);
       --nf-input-line-height: var(--text-sm--line-height);
       --nf-hint-size: var(--text-xs);
@@ -67,6 +70,7 @@
     &[data-size="lg"] {
       --nf-label-size: var(--text-base);
       --nf-btn-size: 22px;
+      --nf-icon-size: 18px;
       --nf-input-font-size: var(--text-base);
       --nf-input-line-height: var(--text-base--line-height);
       --nf-hint-size: var(--text-sm);
@@ -74,6 +78,7 @@
     &[data-size="xl"] {
       --nf-label-size: var(--text-lg);
       --nf-btn-size: 28px;
+      --nf-icon-size: 22px;
       --nf-input-font-size: var(--text-lg);
       --nf-input-line-height: var(--text-lg--line-height);
       --nf-hint-size: var(--text-base);
@@ -247,8 +252,8 @@
       box-shadow: var(--shadow-sm);
 
       & svg {
-        width: calc(var(--nf-btn-size) * 0.6);
-        height: calc(var(--nf-btn-size) * 0.6);
+        width: var(--nf-icon-size);
+        height: var(--nf-icon-size);
       }
 
       &[data-hovered]:not([data-disabled]) {
