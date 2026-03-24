@@ -20,17 +20,17 @@
   /* Default variant */
   background: var(--bg);
   color: var(--fg);
-  border: 1px solid var(--border-hover);
+  border: 1px solid var(--border);
 }
 
 .react-aria-SelectTrigger[data-variant="default"] {
   background: var(--bg);
   color: var(--fg);
-  border-color: var(--border-hover);
+  border-color: var(--border);
 
   &[data-hovered] {
     background: var(--bg-inset);
-    border-color: var(--accent);
+    border-color: var(--border-hover);
   }
 
   &[data-pressed] {
@@ -42,11 +42,11 @@
 .react-aria-SelectTrigger[data-variant="accent"] {
   background: var(--bg);
   color: var(--fg);
-  border-color: var(--border-hover);
+  border-color: var(--accent);
 
   &[data-hovered] {
     background: var(--bg-inset);
-    border-color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 85%, black);
   }
 
   &[data-pressed] {

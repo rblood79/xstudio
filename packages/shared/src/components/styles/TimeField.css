@@ -164,8 +164,8 @@
       }
 
       &:focus {
-        color: var(--color-primary-900);
-        background: var(--color-primary-100);
+        color: var(--fg);
+        background: var(--accent-subtle);
         outline: none;
         border-radius: var(--radius-xs);
         caret-color: transparent;
@@ -175,8 +175,8 @@
         color: var(--negative);
 
         &:focus {
-          background: var(--color-error-100);
-          color: var(--color-error-900);
+          background: color-mix(in srgb, var(--negative) 15%, transparent);
+          color: var(--negative);
         }
       }
 

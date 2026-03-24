@@ -1,11 +1,10 @@
 @layer components {
-
   /* 공통 Input structure — state styles delegated to .inset utility */
   .react-aria-Input,
   .react-aria-TextArea {
     width: 100%;
     margin: 0;
-    border: var(--input-border, 1px solid);
+    border: var(--input-border, 1px solid var(--border));
     border-radius: var(--border-radius);
     padding: var(--input-padding, var(--spacing));
     font-size: var(--input-font-size, var(--text-sm));

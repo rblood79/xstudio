@@ -95,21 +95,35 @@
     }
 
     /* ===== Input ===== */
-    /* State styles (hover/focus/invalid/disabled) delegated to .inset utility */
     --input-padding: var(--tf-input-padding);
     --input-font-size: var(--tf-input-size);
     --input-line-height: var(--tf-input-line-height);
 
-    /* Variant-accented: override --inset-* vars for accent styling */
-    &[data-variant="primary"],
-    &[data-variant="secondary"],
-    &[data-variant="tertiary"],
-    &[data-variant="error"] {
-      --inset-border: var(--field-accent);
-      --inset-hover-border: var(--field-accent);
-      --inset-hover-bg: var(--field-accent-container);
-      --inset-focus-color: var(--field-accent);
-      --inset-focus-bg: var(--field-accent-container);
+    .react-aria-Input {
+      &:where([data-hovered]:not([data-focused]):not([data-disabled])) {
+        border-color: var(--border-hover);
+      }
+
+      &:where([data-focused]) {
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+        border-color: var(--accent);
+      }
+
+      &:where([data-invalid]) {
+        border-color: var(--negative);
+      }
+
+      &:where([data-invalid][data-focused]) {
+        outline-color: var(--negative);
+      }
+
+      &:where([data-disabled]) {
+        border-color: color-mix(in srgb, var(--fg) 12%, transparent);
+        color: color-mix(in srgb, var(--fg) 38%, transparent);
+        cursor: not-allowed;
+        opacity: 0.38;
+      }
     }
 
     /* ===== Filled Variant ===== */
