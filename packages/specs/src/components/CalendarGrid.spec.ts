@@ -37,9 +37,9 @@ const CALENDAR_GRID_DIMS: Record<
     gap: number;
   }
 > = {
-  S: { fontSize: 12, iconSize: 24, gap: 4 },
-  M: { fontSize: 14, iconSize: 28, gap: 6 },
-  L: { fontSize: 16, iconSize: 32, gap: 8 },
+  sm: { fontSize: 12, iconSize: 24, gap: 4 },
+  md: { fontSize: 14, iconSize: 28, gap: 6 },
+  lg: { fontSize: 16, iconSize: 32, gap: 8 },
 };
 
 /**
@@ -110,8 +110,8 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
 
   render: {
     shapes: (props, variant, size) => {
-      const sizeName = props.size ?? "M";
-      const dims = CALENDAR_GRID_DIMS[sizeName] ?? CALENDAR_GRID_DIMS.M;
+      const sizeName = props.size ?? "md";
+      const dims = CALENDAR_GRID_DIMS[sizeName] ?? CALENDAR_GRID_DIMS.md;
       const rawFontSize = size.fontSize;
       const resolvedFs =
         typeof rawFontSize === "number"

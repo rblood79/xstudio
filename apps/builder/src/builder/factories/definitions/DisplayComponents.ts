@@ -701,7 +701,7 @@ export function createRangeCalendarDefinition(
         tag: "CalendarHeader",
         props: {
           variant: "default",
-          size: "M",
+          size: "md",
           children: new Intl.DateTimeFormat(navigator.language || "ko-KR", {
             year: "numeric",
             month: "long",
@@ -718,7 +718,7 @@ export function createRangeCalendarDefinition(
         tag: "CalendarGrid",
         props: {
           variant: "default",
-          size: "M",
+          size: "md",
           defaultToday: true,
           dayOffset: firstDay,
           totalDays: calTotalDays,

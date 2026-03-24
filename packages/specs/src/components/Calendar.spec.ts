@@ -17,7 +17,7 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
  */
 export interface CalendarProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   value?: string;
   isDisabled?: boolean;
   isReadOnly?: boolean;
@@ -36,7 +36,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
   element: "div",
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
 
   variants: {
     default: {

@@ -57,37 +57,47 @@ export const renderCalendar = (
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
-  const getVisibleDuration = () => {
-    const vd = element.props.visibleDuration;
-    if (typeof vd === "object" && vd !== null && "months" in vd) {
-      const months = Number(vd.months);
-      if (months >= 1 && months <= 12) {
-        return { months };
-      }
-    }
-    return { months: 1 };
-  };
-
   const getPageBehavior = () => {
     const pb = element.props.pageBehavior;
     return pb === "visible" || pb === "single" ? pb : "visible";
   };
 
+  const locale = element.props.locale as string | undefined;
+  const calendarSystem = element.props.calendarSystem as string | undefined;
+  const visibleMonths = Number(element.props.visibleMonths) || 1;
+  const size = element.props.size as string | undefined;
+  const variant = element.props.variant as string | undefined;
+  // locale/calendarSystem/size 변경 시 리마운트 (defaultValue 재적용)
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${size || ""}`;
+
   return (
     <Calendar
-      key={element.id}
+      key={remountKey}
       id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      variant={(variant as "default" | "accent") || "default"}
+      size={(size as "sm" | "md" | "lg") || "md"}
+      locale={locale}
+      calendarSystem={calendarSystem}
       aria-label={
         typeof element.props["aria-label"] === "string"
           ? element.props["aria-label"]
           : "Calendar"
       }
       isDisabled={Boolean(element.props.isDisabled)}
-      visibleDuration={getVisibleDuration()}
+      isReadOnly={Boolean(element.props.isReadOnly)}
+      isInvalid={Boolean(element.props.isInvalid)}
+      visibleMonths={visibleMonths}
       pageBehavior={getPageBehavior() as "visible" | "single"}
+      defaultToday={element.props.defaultToday !== false}
+      minDate={element.props.minDate as string | undefined}
+      maxDate={element.props.maxDate as string | undefined}
+      selectionAlignment={
+        (element.props.selectionAlignment as "start" | "center" | "end") ||
+        "center"
+      }
       defaultValue={today(getLocalTimeZone())}
       onChange={(date) => {
         const updatedProps = {

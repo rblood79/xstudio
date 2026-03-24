@@ -6,10 +6,10 @@ import {
   CalendarProps as AriaCalendarProps,
   DateValue,
   Heading,
+  I18nProvider,
   Text,
   composeRenderProps,
 } from "react-aria-components";
-
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
@@ -18,89 +18,43 @@ import { Skeleton } from "./Skeleton";
 
 import "./styles/Calendar.css";
 
-/**
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-variant, data-size 속성 사용
- */
-
 export interface CalendarProps<
   T extends DateValue,
 > extends AriaCalendarProps<T> {
-  /**
-   * M3 variant
-   * @default 'primary'
-   */
-  variant?: string;
-  /**
-   * Size variant
-   * @default 'md'
-   */
+  /** @default 'default' */
+  variant?: "default" | "accent";
+  /** @default 'md' */
   size?: ComponentSize;
   errorMessage?: string;
-  /**
-   * 타임존 (기본값: 로컬 타임존)
-   * @default getLocalTimeZone()
-   */
-  timezone?: string;
-  /**
-   * 기본값을 오늘로 설정
-   * @default false
-   */
+  /** BCP 47 locale (e.g. "ko-KR", "en-US") */
+  locale?: string;
+  /** Unicode calendar identifier (e.g. "gregory", "buddhist", "japanese") */
+  calendarSystem?: string;
+  /** @default false */
   defaultToday?: boolean;
-  /**
-   * 최소 날짜 (문자열 또는 DateValue)
-   * @example "2024-01-01"
-   */
+  /** @example "2024-01-01" */
   minDate?: string | DateValue;
-  /**
-   * 최대 날짜 (문자열 또는 DateValue)
-   * @example "2024-12-31"
-   */
+  /** @example "2024-12-31" */
   maxDate?: string | DateValue;
-  /**
-   * React Aria 1.13.0: 선택된 날짜의 정렬 방식
-   * - 'start': 선택된 날짜가 visible range의 시작에 오도록 스크롤
-   * - 'center': 선택된 날짜가 visible range의 중앙에 오도록 스크롤
-   * - 'end': 선택된 날짜가 visible range의 끝에 오도록 스크롤
-   * @default 'center'
-   */
+  /** @default 'center' */
   selectionAlignment?: "start" | "center" | "end";
-  /**
-   * Show loading skeleton instead of calendar
-   * @default false
-   */
+  /** @default 1 */
+  visibleMonths?: number;
+  /** @default false */
   isLoading?: boolean;
 }
 
-/**
- * Calendar Component with Material Design 3 support
- *
- * M3 Features:
- * - 3 variants: primary, secondary, tertiary
- * - 3 sizes: sm, md, lg
- * - M3 color tokens for consistent theming
- *
- * Features:
- * - Date selection with keyboard navigation
- * - Min/max date constraints
- * - Timezone support
- * - Default to today option
- * - Error message display
- *
- * @example
- * <Calendar variant="primary" size="md" defaultToday />
- * <Calendar variant="secondary" minDate="2024-01-01" maxDate="2024-12-31" />
- */
 export function Calendar<T extends DateValue>({
-  variant = "primary",
+  variant = "default",
   size = "md",
   errorMessage,
-  timezone,
+  locale,
+  calendarSystem,
   defaultToday = false,
   minDate,
   maxDate,
   selectionAlignment = "center",
+  visibleMonths = 1,
   isLoading,
   ...props
 }: CalendarProps<T>) {
@@ -114,9 +68,6 @@ export function Calendar<T extends DateValue>({
       />
     );
   }
-  // 타임존 설정
-  const effectiveTimezone = timezone || getLocalTimeZone();
-
   // minDate/maxDate 자동 파싱
   const minValue =
     typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
@@ -127,14 +78,14 @@ export function Calendar<T extends DateValue>({
   // defaultToday가 true이고 value가 없으면 오늘 날짜 설정
   const defaultValue =
     defaultToday && !props.value && !props.defaultValue
-      ? (today(effectiveTimezone) as T)
+      ? (today(getLocalTimeZone()) as T)
       : props.defaultValue;
 
   const calendarClassName = composeRenderProps(props.className, (className) =>
     className ? `react-aria-Calendar ${className}` : "react-aria-Calendar",
   );
 
-  return (
+  const calendar = (
     <AriaCalendar
       {...props}
       className={calendarClassName}
@@ -144,6 +95,7 @@ export function Calendar<T extends DateValue>({
       minValue={minValue as T | undefined}
       maxValue={maxValue as T | undefined}
       selectionAlignment={selectionAlignment}
+      visibleDuration={{ months: visibleMonths }}
     >
       <header>
         <Button slot="previous">
@@ -158,4 +110,15 @@ export function Calendar<T extends DateValue>({
       {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
     </AriaCalendar>
   );
+
+  // locale + calendarSystem → BCP 47 Unicode extension (e.g. "ko-KR-u-ca-buddhist")
+  const effectiveLocale = calendarSystem
+    ? `${locale || navigator.language}-u-ca-${calendarSystem}`
+    : locale;
+
+  if (effectiveLocale) {
+    return <I18nProvider locale={effectiveLocale}>{calendar}</I18nProvider>;
+  }
+
+  return calendar;
 }

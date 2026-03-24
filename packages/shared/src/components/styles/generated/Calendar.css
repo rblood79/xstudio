@@ -15,6 +15,14 @@
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--border);
+
+  /* Default size */
+  height: auto;
+  padding: 12px 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-lg);
+  gap: 6px;
+  --icon-size: 28px;
 }
 
 .react-aria-Calendar[data-variant="default"] {
