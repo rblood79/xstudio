@@ -10,7 +10,21 @@
     font-size: var(--input-font-size, var(--text-sm));
     font-family: inherit;
     line-height: var(--input-line-height, var(--text-sm--line-height));
-    transition: all 200ms ease;
+    background: var(--bg-inset);
+    color: var(--fg);
+    transition:
+      border-color 200ms ease,
+      outline 200ms ease,
+      color 200ms ease;
+
+    /* Autofill: 브라우저 기본 배경 무력화 */
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus {
+      -webkit-text-fill-color: var(--fg) !important;
+      -webkit-box-shadow: 0 0 0 1000px var(--bg-inset) inset !important;
+      caret-color: var(--fg);
+    }
   }
 
   /* 공통 Label, FieldError */
