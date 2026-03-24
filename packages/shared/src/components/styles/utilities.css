@@ -107,7 +107,7 @@
      Handles: hover, focus, invalid, disabled, readonly, placeholder.
      ========================================= */
   .inset {
-    background: var(--inset-bg, var(--bg-raised));
+    background: var(--inset-bg, var(--bg-inset));
     border-color: var(--inset-border, var(--border));
     color: var(--inset-text, var(--fg));
 
