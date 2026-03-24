@@ -23,7 +23,10 @@ S2 + React Aria 혼합 패턴. 모든 컴포넌트 CSS에서 시맨틱 변수만
 --bg-overlay  section-content, 모달, 카드 (가장 밝은/높은 레벨)
 --bg-muted    중립 강조 배경 (swatch, hover row, 구분선 배경)
 --bg-emphasis 컨트롤 fill (switch track, slider track, scrollbar thumb)
---bg-inset    입력필드, 검색바 (안으로 들어간 영역)
+--bg-inset    입력필드, 검색바, 모든 field 컨테이너 (안으로 들어간 영역)
+              ※ 모든 field 컴포넌트(TextField, NumberField, SearchField, DateField,
+                 TimeField, ComboBox, Select) 입력/컨테이너 영역 통일 배경
+              ※ Spec TokenRef: {color.layer-2}
 ```
 
 Light: `bg(gray-100) → raised(gray-100) → overlay(white) → muted(gray-200) → emphasis(gray-300) → inset(gray-50)`

@@ -19,6 +19,7 @@ import {
 } from "react-aria-components";
 import type { ComponentSize } from "../types";
 import { Plus, Minus } from "lucide-react";
+import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
 import "./styles/NumberField.css";
 
@@ -75,6 +76,7 @@ export interface NumberFieldProps extends AriaNumberFieldProps {
   showGroupSeparator?: boolean;
   // S2 props
   size?: ComponentSize;
+  necessityIndicator?: NecessityIndicator;
 }
 
 export function NumberField({
@@ -88,6 +90,7 @@ export function NumberField({
   decimals,
   showGroupSeparator = true,
   size = "md",
+  necessityIndicator,
   ...props
 }: NumberFieldProps) {
   // NumberFormatter 옵션 생성
@@ -126,7 +129,12 @@ export function NumberField({
       data-size={size}
       formatOptions={formatOptions}
     >
-      {label && <Label>{label}</Label>}
+      {label && (
+        <Label>
+          {label}
+          {renderNecessityIndicator(necessityIndicator, props.isRequired)}
+        </Label>
+      )}
       <Group>
         <Input />
         <Button slot="decrement">

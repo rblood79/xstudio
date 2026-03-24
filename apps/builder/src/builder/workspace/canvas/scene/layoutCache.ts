@@ -120,6 +120,8 @@ const LAYOUT_PROP_KEYS = [
   "hourCycle",
   "locale",
   "calendar",
+  "necessityIndicator",
+  "isRequired",
 ];
 
 function serializeLayoutRelevantValue(value: unknown): string {

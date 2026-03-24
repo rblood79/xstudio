@@ -39,6 +39,15 @@ globs:
 - Generated CSS는 `@layer components { ... }`로 래핑 — unlayered 시 수동 CSS의 nested selector override 실패
 - 상세: [SPEC_CSS_BOUNDARY.md](docs/reference/components/SPEC_CSS_BOUNDARY.md)
 
+## Field 컴포넌트 입력 영역 배경색 통일 (CRITICAL)
+
+모든 field 컴포넌트의 입력/컨테이너 영역 배경은 **`--bg-inset` / `{color.layer-2}`**로 통일.
+
+- **CSS**: `--bg-inset` (TextField, NumberField, SearchField, DateField, TimeField, ComboBox, Select)
+- **Spec**: `{color.layer-2}` (TextField.spec, SelectTrigger.spec, DateInput.spec)
+- **금지**: field 입력 영역에 `--bg-raised` / `{color.base}` 사용 금지 (raised는 패널 헤더/section-header용)
+- `.inset` 유틸리티 클래스의 기본 배경도 `--bg-inset` fallback
+
 ## Select/ComboBox/SearchField gap 정합성
 
 `implicitStyles.ts`에서 이들 컴포넌트의 gap은 CSS `var(--spacing-xs)` = **4px**로 통일.

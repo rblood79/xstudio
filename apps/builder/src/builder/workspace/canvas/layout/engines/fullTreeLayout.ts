@@ -824,6 +824,32 @@ function traversePostOrder(
         };
       }
     }
+
+    // Label necessity indicator: 부모의 necessityIndicator → children 텍스트에 반영
+    // enrichWithIntrinsicSize(fit-content 폭 측정)에 indicator 포함 텍스트 사용
+    if (rawElement.parent_id) {
+      const parent = elementsMap.get(rawElement.parent_id);
+      const parentProps = parent?.props as Record<string, unknown> | undefined;
+      const necessity = parentProps?.necessityIndicator as string | undefined;
+      if (necessity) {
+        const isReq = Boolean(parentProps?.isRequired);
+        const originalText =
+          ((rawElement.props as Record<string, unknown> | undefined)
+            ?.children as string) ?? "";
+        let suffix = "";
+        if (necessity === "icon" && isReq) {
+          suffix = " *";
+        } else if (necessity === "label") {
+          suffix = isReq ? " (required)" : " (optional)";
+        }
+        if (suffix) {
+          rawElement = {
+            ...rawElement,
+            props: { ...rawElement.props, children: originalText + suffix },
+          };
+        }
+      }
+    }
   }
 
   // GAP 3: Implicit Style 통합 — 원본 자식 수집 후 applyImplicitStyles로 전처리

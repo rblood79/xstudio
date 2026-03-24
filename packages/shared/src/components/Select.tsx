@@ -30,6 +30,8 @@ import type {
 } from "../types";
 
 import { useCollectionData } from "../hooks";
+import type { NecessityIndicator } from "./Field";
+import { renderNecessityIndicator } from "./Field";
 import { Skeleton } from "./Skeleton";
 import "./styles/Select.css";
 
@@ -73,6 +75,7 @@ export interface SelectProps<T extends object> extends Omit<
    * @default false
    */
   isLoading?: boolean;
+  necessityIndicator?: NecessityIndicator;
 }
 
 export function Select<T extends object>({
@@ -292,7 +295,13 @@ export function Select<T extends object>({
       {() => (
         <>
           {hasVisibleLabel && (
-            <Label className="react-aria-Label">{String(label)}</Label>
+            <Label className="react-aria-Label">
+              {String(label)}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
           )}
 
           <Button className="react-aria-Button">

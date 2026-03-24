@@ -16,6 +16,7 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import type { ComponentSize } from "../types";
+import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 import { Skeleton } from "./Skeleton";
 
 import "./styles/TextField.css";
@@ -39,6 +40,8 @@ export interface TextFieldProps extends AriaTextFieldProps {
   isReadOnly?: boolean;
   // S2 props
   size?: ComponentSize;
+  /** Necessity indicator type: "icon" (*) or "label" (required/optional) */
+  necessityIndicator?: NecessityIndicator;
   /** Show loading skeleton instead of input */
   isLoading?: boolean;
 }
@@ -55,6 +58,7 @@ export function TextField({
   isDisabled,
   isReadOnly,
   size = "md",
+  necessityIndicator,
   isLoading,
   ...props
 }: TextFieldProps) {
@@ -84,7 +88,12 @@ export function TextField({
       isDisabled={isDisabled}
       isReadOnly={isReadOnly}
     >
-      {label && <Label>{label}</Label>}
+      {label && (
+        <Label>
+          {label}
+          {renderNecessityIndicator(necessityIndicator, isRequired)}
+        </Label>
+      )}
       <Input type={type} placeholder={placeholder} />
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>

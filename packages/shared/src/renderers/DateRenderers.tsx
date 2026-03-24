@@ -149,6 +149,9 @@ export const renderDatePicker = (
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
+      necessityIndicator={
+        element.props.necessityIndicator as "icon" | "label" | undefined
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       defaultValue={today(getLocalTimeZone())}
       granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
@@ -299,6 +302,9 @@ export const renderDateField = (
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
+      necessityIndicator={
+        element.props.necessityIndicator as "icon" | "label" | undefined
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       defaultValue={
         granularity === "day"
@@ -360,6 +366,9 @@ export const renderTimeField = (
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
+      necessityIndicator={
+        element.props.necessityIndicator as "icon" | "label" | undefined
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       defaultValue={new Time(9, 0)}
       granularity={granularity}

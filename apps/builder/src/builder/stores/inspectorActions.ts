@@ -220,6 +220,8 @@ export const createInspectorActionsSlice: StateCreator<
       "hourCycle",
       "locale",
       "calendar",
+      "necessityIndicator",
+      "isRequired",
     ]);
     const hasLayoutChange = Object.keys(propsUpdate).some((key) =>
       LAYOUT_AFFECTING_PROPS.has(key),

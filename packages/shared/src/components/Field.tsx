@@ -15,6 +15,47 @@ import type { FieldType } from "../types";
 
 import "./styles/Field.css";
 
+export type NecessityIndicator = "icon" | "label";
+
+export interface NecessityIndicatorProps {
+  /** Necessity indicator type */
+  necessityIndicator?: NecessityIndicator;
+  /** Whether the field is required */
+  isRequired?: boolean;
+}
+
+/**
+ * Label 뒤에 필수/선택 표시를 렌더링하는 유틸리티 컴포넌트
+ * - icon: * (asterisk)
+ * - label: "(required)" or "(optional)"
+ */
+export function renderNecessityIndicator(
+  necessityIndicator?: NecessityIndicator,
+  isRequired?: boolean,
+): React.ReactNode {
+  if (!necessityIndicator) return null;
+
+  if (necessityIndicator === "icon") {
+    if (!isRequired) return null;
+    return (
+      <span className="necessity-indicator icon" aria-hidden="true">
+        *
+      </span>
+    );
+  }
+
+  // label mode
+  const text = isRequired ? "(required)" : "(optional)";
+  return (
+    <span
+      className="necessity-indicator label"
+      aria-hidden={isRequired ? "true" : undefined}
+    >
+      {text}
+    </span>
+  );
+}
+
 export function Label(props: LabelProps) {
   return <RACLabel {...props} className="react-aria-Label" />;
 }

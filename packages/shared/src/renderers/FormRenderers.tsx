@@ -63,6 +63,9 @@ export const renderTextField = (
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
       isInvalid={Boolean(element.props.isInvalid || false)}
+      necessityIndicator={
+        element.props.necessityIndicator as "icon" | "label" | undefined
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={(value) => {
         const updatedProps = {
@@ -114,6 +117,9 @@ export const renderNumberField = (
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
       isInvalid={Boolean(element.props.isInvalid || false)}
+      necessityIndicator={
+        element.props.necessityIndicator as "icon" | "label" | undefined
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={(value) => {
         const updatedProps = {
@@ -173,6 +179,9 @@ export const renderSearchField = (
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}
       isInvalid={Boolean(element.props.isInvalid || false)}
+      necessityIndicator={
+        element.props.necessityIndicator as "icon" | "label" | undefined
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       onChange={(value) => {
@@ -474,6 +483,9 @@ export const renderCheckboxGroup = (
       isInvalid={Boolean(element.props.isInvalid)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isRequired={Boolean(element.props.isRequired)}
+      necessityIndicator={
+        element.props.necessityIndicator as "icon" | "label" | undefined
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={async (newSelectedValues) => {
         const updatedProps = {
@@ -654,6 +666,9 @@ export const renderRadioGroup = (
       isInvalid={Boolean(element.props.isInvalid)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isRequired={Boolean(element.props.isRequired)}
+      necessityIndicator={
+        element.props.necessityIndicator as "icon" | "label" | undefined
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={(selectedValue) => {
         const updatedProps = {

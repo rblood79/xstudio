@@ -20,6 +20,7 @@ import {
 import type { ComponentSize } from "../types";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
+import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
 import "./styles/DateField.css";
 
@@ -58,6 +59,7 @@ export interface DateFieldProps<
   // M3 props
   variant?: string;
   size?: ComponentSize;
+  necessityIndicator?: NecessityIndicator;
 }
 
 export function DateField<T extends DateValue>({
@@ -70,6 +72,7 @@ export function DateField<T extends DateValue>({
   maxDate,
   variant = "default",
   size = "md",
+  necessityIndicator,
   ...props
 }: DateFieldProps<T>) {
   // 타임존 설정
@@ -102,7 +105,12 @@ export function DateField<T extends DateValue>({
       minValue={minValue as T | undefined}
       maxValue={maxValue as T | undefined}
     >
-      {label && <Label>{label}</Label>}
+      {label && (
+        <Label>
+          {label}
+          {renderNecessityIndicator(necessityIndicator, props.isRequired)}
+        </Label>
+      )}
       <DateInput className="react-aria-DateInput inset">
         {(segment) => <DateSegment segment={segment} />}
       </DateInput>

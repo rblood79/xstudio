@@ -738,6 +738,9 @@ export const renderSelect = (
       isDisabled={Boolean(elementProps.isDisabled)}
       isRequired={Boolean(elementProps.isRequired)}
       isInvalid={Boolean(elementProps.isInvalid)}
+      necessityIndicator={
+        elementProps.necessityIndicator as "icon" | "label" | undefined
+      }
       name={elementProps.name ? String(elementProps.name) : undefined}
       autoFocus={Boolean(elementProps.autoFocus)}
       dataBinding={
@@ -999,6 +1002,9 @@ export const renderComboBox = (
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
+      necessityIndicator={
+        element.props.necessityIndicator as "icon" | "label" | undefined
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       dataBinding={
         (element.dataBinding || element.props.dataBinding) as

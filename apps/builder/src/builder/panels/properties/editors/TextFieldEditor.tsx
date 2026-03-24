@@ -135,9 +135,15 @@ export const TextFieldEditor = memo(
       [onUpdate],
     );
 
-    const handleIsRequiredChange = useCallback(
-      (checked: boolean) => {
-        onUpdate({ isRequired: checked });
+    const handleRequiredChange = useCallback(
+      (value: string) => {
+        if (value === "") {
+          // None: required 해제 + indicator 제거
+          onUpdate({ isRequired: false, necessityIndicator: undefined });
+        } else {
+          // icon 또는 label: required 활성 + indicator 설정
+          onUpdate({ isRequired: true, necessityIndicator: value });
+        }
       },
       [onUpdate],
     );
@@ -413,10 +419,15 @@ export const TextFieldEditor = memo(
             placeholder="100"
           />
 
-          <PropertySwitch
+          <PropertySelect
             label={PROPERTY_LABELS.REQUIRED}
-            isSelected={Boolean(currentProps.isRequired)}
-            onChange={handleIsRequiredChange}
+            value={String(currentProps.necessityIndicator || "")}
+            onChange={handleRequiredChange}
+            options={[
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ]}
             icon={CheckSquare}
           />
         </PropertySection>
@@ -427,11 +438,12 @@ export const TextFieldEditor = memo(
         currentProps.minLength,
         currentProps.maxLength,
         currentProps.isRequired,
+        currentProps.necessityIndicator,
         handleErrorMessageChange,
         handlePatternChange,
         handleMinLengthChange,
         handleMaxLengthChange,
-        handleIsRequiredChange,
+        handleRequiredChange,
       ],
     );
 

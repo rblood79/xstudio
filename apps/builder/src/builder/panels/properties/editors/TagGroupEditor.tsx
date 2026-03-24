@@ -321,10 +321,21 @@ export const TagGroupEditor = memo(function TagGroupEditor({
           icon={ToggleRight}
         />
 
-        <PropertySwitch
+        <PropertySelect
           label={PROPERTY_LABELS.REQUIRED}
-          isSelected={Boolean(currentProps.isRequired)}
-          onChange={(checked) => updateProp("isRequired", checked)}
+          value={String(currentProps.necessityIndicator || "")}
+          onChange={(value) => {
+            if (value === "") {
+              onUpdate({ isRequired: false, necessityIndicator: undefined });
+            } else {
+              onUpdate({ isRequired: true, necessityIndicator: value });
+            }
+          }}
+          options={[
+            { value: "", label: "None" },
+            { value: "icon", label: "Icon (*)" },
+            { value: "label", label: "Label (required/optional)" },
+          ]}
           icon={CheckSquare}
         />
 

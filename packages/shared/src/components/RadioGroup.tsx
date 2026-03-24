@@ -18,6 +18,8 @@ import {
 import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
 import type { ComponentSizeSubset } from "../types";
+import type { NecessityIndicator } from "./Field";
+import { renderNecessityIndicator } from "./Field";
 import { useCollectionData } from "../hooks";
 
 import "./styles/RadioGroup.css";
@@ -46,6 +48,7 @@ export interface RadioGroupProps extends Omit<AriaRadioGroupProps, "children"> {
    * @default 'md'
    */
   size?: ComponentSizeSubset;
+  necessityIndicator?: NecessityIndicator;
 }
 
 export function RadioGroup({
@@ -114,7 +117,15 @@ export function RadioGroup({
           data-radio-variant={variant}
           data-radio-size={size}
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           <Text>⏳ 데이터 로딩 중...</Text>
           {description && <Text slot="description">{description}</Text>}
         </AriaRadioGroup>
@@ -131,7 +142,15 @@ export function RadioGroup({
           data-radio-variant={variant}
           data-radio-size={size}
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           <Text>❌ 오류: {error}</Text>
           {description && <Text slot="description">{description}</Text>}
         </AriaRadioGroup>
@@ -150,7 +169,15 @@ export function RadioGroup({
           data-radio-variant={variant}
           data-radio-size={size}
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           <div className="radio-items">{children}</div>
           {description && <Text slot="description">{description}</Text>}
           <FieldError>{errorMessage}</FieldError>
@@ -166,7 +193,15 @@ export function RadioGroup({
         data-radio-variant={variant}
         data-radio-size={size}
       >
-        {label && <Label>{label}</Label>}
+        {label && (
+          <Label>
+            {label}
+            {renderNecessityIndicator(
+              props.necessityIndicator,
+              props.isRequired,
+            )}
+          </Label>
+        )}
         <div className="radio-items">{children}</div>
         {description && <Text slot="description">{description}</Text>}
         <FieldError>{errorMessage}</FieldError>
@@ -186,7 +221,15 @@ export function RadioGroup({
           data-radio-variant={variant}
           data-radio-size={size}
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           <Text>⏳ 데이터 로딩 중...</Text>
           {description && <Text slot="description">{description}</Text>}
         </AriaRadioGroup>
@@ -203,7 +246,15 @@ export function RadioGroup({
           data-radio-variant={variant}
           data-radio-size={size}
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           <Text>❌ 오류: {error}</Text>
           {description && <Text slot="description">{description}</Text>}
         </AriaRadioGroup>
@@ -230,7 +281,15 @@ export function RadioGroup({
           data-radio-variant={variant}
           data-radio-size={size}
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           {radioItems.map((item) => (
             <AriaRadio
               key={item.id}
@@ -256,7 +315,12 @@ export function RadioGroup({
       data-radio-variant={variant}
       data-radio-size={size}
     >
-      {label && <Label>{label}</Label>}
+      {label && (
+        <Label>
+          {label}
+          {renderNecessityIndicator(props.necessityIndicator, props.isRequired)}
+        </Label>
+      )}
       {children}
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>

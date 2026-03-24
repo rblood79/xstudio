@@ -1,190 +1,219 @@
 import { memo, useMemo } from "react";
-import { CalendarDays, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Globe, Focus, FileText, Type, Calendar } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySection, PropertySelect } from '../../../components';
-import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
-import { useStore } from '../../../stores';
+import {
+  CalendarDays,
+  Tag,
+  PointerOff,
+  PenOff,
+  CheckSquare,
+  AlertTriangle,
+  Globe,
+  Focus,
+  FileText,
+  Type,
+  Calendar,
+} from "lucide-react";
+import {
+  PropertyInput,
+  PropertySwitch,
+  PropertyCustomId,
+  PropertySection,
+  PropertySelect,
+} from "../../../components";
+import { PropertyEditorProps } from "../types/editorTypes";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
+import { useStore } from "../../../stores";
 
-export const DateRangePickerEditor = memo(function DateRangePickerEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    // Get customId from element in store
-      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+export const DateRangePickerEditor = memo(function DateRangePickerEditor({
+  elementId,
+  currentProps,
+  onUpdate,
+}: PropertyEditorProps) {
+  // Get customId from element in store
+  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
   const customId = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
     return element?.customId || "";
   }, [elementId]);
 
-    const updateProp = (key: string, value: unknown) => {
-        const updatedProps = {
-            [key]: value
-        };
-        onUpdate(updatedProps);
+  const updateProp = (key: string, value: unknown) => {
+    const updatedProps = {
+      [key]: value,
     };
+    onUpdate(updatedProps);
+  };
 
-    const updateCustomId = (newCustomId: string) => {
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
+  const updateCustomId = (newCustomId: string) => {
+    const updateElement = useStore.getState().updateElement;
+    if (updateElement && elementId) {
+      updateElement(elementId, { customId: newCustomId });
+    }
+  };
 
-    return (
-        <>
+  return (
+    <>
       {/* Basic */}
       <PropertySection title="Basic">
-            <PropertyCustomId
-                label="ID"
-                value={customId}
-                elementId={elementId}
-                onChange={updateCustomId}
-                placeholder="daterangepicker_1"
-            />
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          onChange={updateCustomId}
+          placeholder="daterangepicker_1"
+        />
       </PropertySection>
 
       {/* Content Section */}
-            <PropertySection title="Content">
+      <PropertySection title="Content">
+        <PropertyInput
+          label={PROPERTY_LABELS.LABEL}
+          value={String(currentProps.label || "")}
+          onChange={(value) => updateProp("label", value || undefined)}
+          icon={Tag}
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.LABEL}
-                    value={String(currentProps.label || '')}
-                    onChange={(value) => updateProp('label', value || undefined)}
-                    icon={Tag}
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.DESCRIPTION}
+          value={String(currentProps.description || "")}
+          onChange={(value) => updateProp("description", value || undefined)}
+          icon={FileText}
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.DESCRIPTION}
-                    value={String(currentProps.description || '')}
-                    onChange={(value) => updateProp('description', value || undefined)}
-                    icon={FileText}
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.ERROR_MESSAGE}
+          value={String(currentProps.errorMessage || "")}
+          onChange={(value) => updateProp("errorMessage", value || undefined)}
+          icon={AlertTriangle}
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.ERROR_MESSAGE}
-                    value={String(currentProps.errorMessage || '')}
-                    onChange={(value) => updateProp('errorMessage', value || undefined)}
-                    icon={AlertTriangle}
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.PLACEHOLDER}
+          value={String(currentProps.placeholder || "")}
+          onChange={(value) => updateProp("placeholder", value || undefined)}
+          placeholder="Select date range"
+        />
+      </PropertySection>
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.PLACEHOLDER}
-                    value={String(currentProps.placeholder || '')}
-                    onChange={(value) => updateProp('placeholder', value || undefined)}
-                    placeholder="Select date range"
-                />
-            </PropertySection>
+      {/* State Section */}
+      <PropertySection title="State">
+        <PropertyInput
+          label="Timezone"
+          value={String(currentProps.timezone || "")}
+          onChange={(value) => updateProp("timezone", value || undefined)}
+          placeholder="Asia/Seoul, America/New_York"
+          icon={Globe}
+        />
 
-            {/* State Section */}
-            <PropertySection title="State">
+        <PropertySwitch
+          label="Default to Today"
+          isSelected={Boolean(currentProps.defaultToday)}
+          onChange={(checked) => updateProp("defaultToday", checked)}
+          icon={CalendarDays}
+        />
 
-                <PropertyInput
-                    label="Timezone"
-                    value={String(currentProps.timezone || '')}
-                    onChange={(value) => updateProp('timezone', value || undefined)}
-                    placeholder="Asia/Seoul, America/New_York"
-                    icon={Globe}
-                />
+        <PropertyInput
+          label="Min Date"
+          value={String(currentProps.minDate || "")}
+          onChange={(value) => updateProp("minDate", value || undefined)}
+          placeholder="2024-01-01"
+        />
 
-                <PropertySwitch
-                    label="Default to Today"
-                    isSelected={Boolean(currentProps.defaultToday)}
-                    onChange={(checked) => updateProp('defaultToday', checked)}
-                    icon={CalendarDays}
-                />
+        <PropertyInput
+          label="Max Date"
+          value={String(currentProps.maxDate || "")}
+          onChange={(value) => updateProp("maxDate", value || undefined)}
+          placeholder="2024-12-31"
+        />
 
-                <PropertyInput
-                    label="Min Date"
-                    value={String(currentProps.minDate || '')}
-                    onChange={(value) => updateProp('minDate', value || undefined)}
-                    placeholder="2024-01-01"
-                />
+        <PropertySelect
+          label={PROPERTY_LABELS.REQUIRED}
+          value={String(currentProps.necessityIndicator || "")}
+          onChange={(value) => {
+            if (value === "") {
+              onUpdate({ isRequired: false, necessityIndicator: undefined });
+            } else {
+              onUpdate({ isRequired: true, necessityIndicator: value });
+            }
+          }}
+          options={[
+            { value: "", label: "None" },
+            { value: "icon", label: "Icon (*)" },
+            { value: "label", label: "Label (required/optional)" },
+          ]}
+          icon={CheckSquare}
+        />
 
-                <PropertyInput
-                    label="Max Date"
-                    value={String(currentProps.maxDate || '')}
-                    onChange={(value) => updateProp('maxDate', value || undefined)}
-                    placeholder="2024-12-31"
-                />
+        <PropertySwitch
+          label={PROPERTY_LABELS.INVALID}
+          isSelected={Boolean(currentProps.isInvalid)}
+          onChange={(checked) => updateProp("isInvalid", checked)}
+          icon={AlertTriangle}
+        />
+      </PropertySection>
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.REQUIRED}
-                    isSelected={Boolean(currentProps.isRequired)}
-                    onChange={(checked) => updateProp('isRequired', checked)}
-                    icon={CheckSquare}
-                />
+      {/* Options Section */}
+      <PropertySection title="Options">
+        <PropertySelect
+          label="First Day of Week"
+          value={String(currentProps.firstDayOfWeek || "")}
+          onChange={(value) => updateProp("firstDayOfWeek", value || undefined)}
+          options={[
+            { value: "", label: "Default (Locale)" },
+            { value: "sun", label: "Sunday" },
+            { value: "mon", label: "Monday" },
+            { value: "tue", label: "Tuesday" },
+            { value: "wed", label: "Wednesday" },
+            { value: "thu", label: "Thursday" },
+            { value: "fri", label: "Friday" },
+            { value: "sat", label: "Saturday" },
+          ]}
+          icon={Calendar}
+        />
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.INVALID}
-                    isSelected={Boolean(currentProps.isInvalid)}
-                    onChange={(checked) => updateProp('isInvalid', checked)}
-                    icon={AlertTriangle}
-                />
-            </PropertySection>
+        <PropertySwitch
+          label="Show Week Numbers"
+          isSelected={Boolean(currentProps.showWeekNumbers)}
+          onChange={(checked) => updateProp("showWeekNumbers", checked)}
+          icon={CalendarDays}
+        />
 
-            {/* Options Section */}
-            <PropertySection title="Options">
+        <PropertySwitch
+          label="Highlight Today"
+          isSelected={currentProps.highlightToday !== false}
+          onChange={(checked) => updateProp("highlightToday", checked)}
+          icon={CalendarDays}
+        />
 
-                <PropertySelect
-                    label="First Day of Week"
-                    value={String(currentProps.firstDayOfWeek || '')}
-                    onChange={(value) => updateProp('firstDayOfWeek', value || undefined)}
-                    options={[
-                        { value: '', label: 'Default (Locale)' },
-                        { value: 'sun', label: 'Sunday' },
-                        { value: 'mon', label: 'Monday' },
-                        { value: 'tue', label: 'Tuesday' },
-                        { value: 'wed', label: 'Wednesday' },
-                        { value: 'thu', label: 'Thursday' },
-                        { value: 'fri', label: 'Friday' },
-                        { value: 'sat', label: 'Saturday' }
-                    ]}
-                    icon={Calendar}
-                />
+        <PropertySwitch
+          label="Allow Clear"
+          isSelected={currentProps.allowClear !== false}
+          onChange={(checked) => updateProp("allowClear", checked)}
+          icon={Type}
+        />
+      </PropertySection>
 
-                <PropertySwitch
-                    label="Show Week Numbers"
-                    isSelected={Boolean(currentProps.showWeekNumbers)}
-                    onChange={(checked) => updateProp('showWeekNumbers', checked)}
-                    icon={CalendarDays}
-                />
+      {/* Behavior Section */}
+      <PropertySection title="Behavior">
+        <PropertySwitch
+          label={PROPERTY_LABELS.DISABLED}
+          isSelected={Boolean(currentProps.isDisabled)}
+          onChange={(checked) => updateProp("isDisabled", checked)}
+          icon={PointerOff}
+        />
 
-                <PropertySwitch
-                    label="Highlight Today"
-                    isSelected={currentProps.highlightToday !== false}
-                    onChange={(checked) => updateProp('highlightToday', checked)}
-                    icon={CalendarDays}
-                />
+        <PropertySwitch
+          label={PROPERTY_LABELS.READONLY}
+          isSelected={Boolean(currentProps.isReadOnly)}
+          onChange={(checked) => updateProp("isReadOnly", checked)}
+          icon={PenOff}
+        />
 
-                <PropertySwitch
-                    label="Allow Clear"
-                    isSelected={currentProps.allowClear !== false}
-                    onChange={(checked) => updateProp('allowClear', checked)}
-                    icon={Type}
-                />
-            </PropertySection>
-
-            {/* Behavior Section */}
-            <PropertySection title="Behavior">
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.READONLY}
-                    isSelected={Boolean(currentProps.isReadOnly)}
-                    onChange={(checked) => updateProp('isReadOnly', checked)}
-                    icon={PenOff}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.AUTO_FOCUS}
-                    isSelected={Boolean(currentProps.autoFocus)}
-                    onChange={(checked) => updateProp('autoFocus', checked)}
-                    icon={Focus}
-                />
-            </PropertySection>
-        </>
-    );
+        <PropertySwitch
+          label={PROPERTY_LABELS.AUTO_FOCUS}
+          isSelected={Boolean(currentProps.autoFocus)}
+          onChange={(checked) => updateProp("autoFocus", checked)}
+          icon={Focus}
+        />
+      </PropertySection>
+    </>
+  );
 });

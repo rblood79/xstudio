@@ -18,6 +18,7 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import type { ComponentSize } from "../types";
+import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
 import "./styles/TimeField.css";
 
@@ -47,6 +48,7 @@ export interface TimeFieldProps<
   // S2 props
   variant?: string;
   size?: ComponentSize;
+  necessityIndicator?: NecessityIndicator;
 }
 
 export function TimeField<T extends TimeValue>({
@@ -57,6 +59,7 @@ export function TimeField<T extends TimeValue>({
   placeholder,
   variant = "default",
   size = "md",
+  necessityIndicator,
   ...props
 }: TimeFieldProps<T>) {
   return (
@@ -71,7 +74,12 @@ export function TimeField<T extends TimeValue>({
       data-size={size}
       hourCycle={hourCycle}
     >
-      {label && <Label>{label}</Label>}
+      {label && (
+        <Label>
+          {label}
+          {renderNecessityIndicator(necessityIndicator, props.isRequired)}
+        </Label>
+      )}
       <DateInput className="react-aria-DateInput inset">
         {(segment) => (
           <DateSegment

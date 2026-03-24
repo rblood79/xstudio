@@ -154,9 +154,13 @@ export const SelectEditor = memo(
       [onUpdate],
     );
 
-    const handleIsRequiredChange = useCallback(
-      (checked: boolean) => {
-        onUpdate({ isRequired: checked });
+    const handleRequiredChange = useCallback(
+      (value: string) => {
+        if (value === "") {
+          onUpdate({ isRequired: false, necessityIndicator: undefined });
+        } else {
+          onUpdate({ isRequired: true, necessityIndicator: value });
+        }
       },
       [onUpdate],
     );
@@ -466,10 +470,15 @@ export const SelectEditor = memo(
             icon={SquareX}
           />
 
-          <PropertySwitch
+          <PropertySelect
             label={PROPERTY_LABELS.REQUIRED}
-            isSelected={Boolean(currentProps.isRequired)}
-            onChange={handleIsRequiredChange}
+            value={String(currentProps.necessityIndicator || "")}
+            onChange={handleRequiredChange}
+            options={[
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ]}
             icon={CheckSquare}
           />
         </PropertySection>
@@ -481,12 +490,13 @@ export const SelectEditor = memo(
         currentProps.defaultSelectedKey,
         currentProps.disallowEmptySelection,
         currentProps.isRequired,
+        currentProps.necessityIndicator,
         handleSelectionModeChange,
         handleMultipleDisplayModeChange,
         handleSelectedValueChange,
         handleDefaultSelectedKeyChange,
         handleDisallowEmptySelectionChange,
-        handleIsRequiredChange,
+        handleRequiredChange,
       ],
     );
 

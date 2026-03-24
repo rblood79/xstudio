@@ -105,11 +105,10 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = "default") => {
+    shapes: (props, _variant, size, _state = "default") => {
       const shapes: Shape[] = [];
 
       // 사용자 스타일 우선
-      const textColor = props.style?.color ?? variant.text;
       const rawFontSize = props.style?.fontSize ?? size.fontSize;
       const resolvedFs =
         typeof rawFontSize === "number"
@@ -118,32 +117,11 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
             ? resolveToken(rawFontSize as TokenRef)
             : rawFontSize;
       const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
-      const fwRaw = props.style?.fontWeight;
-      const fw =
-        fwRaw != null
-          ? typeof fwRaw === "number"
-            ? fwRaw
-            : parseInt(String(fwRaw), 10) || 500
-          : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
       const textAlign =
         (props.style?.textAlign as "left" | "center" | "right") || "left";
 
-      // 그룹 라벨 — 자식 유무와 무관하게 항상 자체 렌더링
-      if (props.label) {
-        shapes.push({
-          type: "text" as const,
-          x: 0,
-          y: 0,
-          text: props.label,
-          fontSize,
-          fontFamily: ff,
-          fontWeight: fw,
-          fill: textColor,
-          align: textAlign,
-          baseline: "top" as const,
-        });
-      }
+      // 그룹 라벨: 자식 Label 요소가 독립 렌더링하므로 Spec에서는 렌더링하지 않음
 
       // 설명 / 에러 메시지 — 자식 유무와 무관하게 항상 자체 렌더링
       const descText =
@@ -174,7 +152,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
       shapes.push({
         type: "container" as const,
         x: 0,
-        y: props.label ? fontSize + 8 : 0,
+        y: 0,
         width: "auto",
         height: "auto",
         children: [],

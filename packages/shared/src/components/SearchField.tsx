@@ -18,6 +18,7 @@ import {
 } from "react-aria-components";
 import type { ComponentSize } from "../types";
 import { getIconData } from "@xstudio/specs";
+import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
 import "./styles/SearchField.css";
 
@@ -27,6 +28,7 @@ export interface SearchFieldProps extends AriaSearchFieldProps {
   errorMessage?: string | ((validation: ValidationResult) => string);
   placeholder?: string;
   size?: ComponentSize;
+  necessityIndicator?: NecessityIndicator;
 }
 
 export function SearchField({
@@ -35,6 +37,7 @@ export function SearchField({
   errorMessage,
   placeholder,
   size = "md",
+  necessityIndicator,
   ...props
 }: SearchFieldProps) {
   const searchIconData = getIconData("search");
@@ -50,7 +53,12 @@ export function SearchField({
       )}
       data-size={size}
     >
-      {label && <Label>{label}</Label>}
+      {label && (
+        <Label>
+          {label}
+          {renderNecessityIndicator(necessityIndicator, props.isRequired)}
+        </Label>
+      )}
       <div className="searchfield-container">
         {searchIconData && (
           <span className="search-icon" aria-hidden="true">

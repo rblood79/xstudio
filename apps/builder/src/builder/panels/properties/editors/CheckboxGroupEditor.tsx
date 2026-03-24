@@ -26,6 +26,7 @@ import { iconProps } from "../../../../utils/ui/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { supabase } from "../../../../env/supabase.client";
 import { useStore } from "../../../stores";
+import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
 import type { Element } from "../../../../types/core/store.types";
 
@@ -65,11 +66,23 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({
     setSelectedCheckbox(null);
   }, [elementId]);
 
+  const { buildChildUpdates } = useSyncChildProp(elementId);
+
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
       [key]: value,
     };
     onUpdate(updatedProps);
+  };
+
+  const handleLabelChange = (value: string) => {
+    const updatedProps = { label: value };
+    const childUpdates = buildChildUpdates([
+      { childTag: "Label", propKey: "children", value },
+    ]);
+    useStore
+      .getState()
+      .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
   };
 
   const updateCustomId = (newCustomId: string) => {
@@ -248,7 +261,7 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({
         <PropertyInput
           label={PROPERTY_LABELS.LABEL}
           value={String(currentProps.label || "")}
-          onChange={(value) => updateProp("label", value)}
+          onChange={handleLabelChange}
           icon={Tag}
         />
 
@@ -299,10 +312,21 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({
 
       {/* State Section */}
       <PropertySection title="State">
-        <PropertySwitch
+        <PropertySelect
           label={PROPERTY_LABELS.REQUIRED}
-          isSelected={Boolean(currentProps.isRequired)}
-          onChange={(checked) => updateProp("isRequired", checked)}
+          value={String(currentProps.necessityIndicator || "")}
+          onChange={(value) => {
+            if (value === "") {
+              onUpdate({ isRequired: false, necessityIndicator: undefined });
+            } else {
+              onUpdate({ isRequired: true, necessityIndicator: value });
+            }
+          }}
+          options={[
+            { value: "", label: "None" },
+            { value: "icon", label: "Icon (*)" },
+            { value: "label", label: "Label (required/optional)" },
+          ]}
           icon={CheckSquare}
         />
 

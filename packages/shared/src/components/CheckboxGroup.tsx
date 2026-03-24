@@ -12,6 +12,8 @@ import { CheckIcon, Minus } from "lucide-react";
 import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
 import type { ComponentSizeSubset } from "../types";
+import type { NecessityIndicator } from "./Field";
+import { renderNecessityIndicator } from "./Field";
 import { useCollectionData } from "../hooks";
 
 import "./styles/CheckboxGroup.css";
@@ -44,6 +46,7 @@ export interface CheckboxGroupProps extends Omit<
    * @default 'md'
    */
   size?: ComponentSizeSubset;
+  necessityIndicator?: NecessityIndicator;
 }
 
 export function CheckboxGroup({
@@ -117,7 +120,15 @@ export function CheckboxGroup({
           data-checkbox-size={size}
           isDisabled
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           <Text>⏳ 데이터 로딩 중...</Text>
           {description && <Text slot="description">{description}</Text>}
         </AriaCheckboxGroup>
@@ -135,7 +146,15 @@ export function CheckboxGroup({
           data-checkbox-size={size}
           isDisabled
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           <Text>❌ 오류: {error}</Text>
           {description && <Text slot="description">{description}</Text>}
         </AriaCheckboxGroup>
@@ -157,7 +176,15 @@ export function CheckboxGroup({
           data-checkbox-variant={variant}
           data-checkbox-size={size}
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           {children}
           {description && <Text slot="description">{description}</Text>}
           <FieldError>{errorMessage}</FieldError>
@@ -174,7 +201,15 @@ export function CheckboxGroup({
         data-checkbox-variant={variant}
         data-checkbox-size={size}
       >
-        {label && <Label>{label}</Label>}
+        {label && (
+          <Label>
+            {label}
+            {renderNecessityIndicator(
+              props.necessityIndicator,
+              props.isRequired,
+            )}
+          </Label>
+        )}
         {children}
         {description && <Text slot="description">{description}</Text>}
         <FieldError>{errorMessage}</FieldError>
@@ -195,7 +230,15 @@ export function CheckboxGroup({
           data-checkbox-size={size}
           isDisabled
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           <Text>⏳ 데이터 로딩 중...</Text>
           {description && <Text slot="description">{description}</Text>}
         </AriaCheckboxGroup>
@@ -213,7 +256,15 @@ export function CheckboxGroup({
           data-checkbox-size={size}
           isDisabled
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           <Text>❌ 오류: {error}</Text>
           {description && <Text slot="description">{description}</Text>}
         </AriaCheckboxGroup>
@@ -244,7 +295,15 @@ export function CheckboxGroup({
           data-checkbox-variant={variant}
           data-checkbox-size={size}
         >
-          {label && <Label>{label}</Label>}
+          {label && (
+            <Label>
+              {label}
+              {renderNecessityIndicator(
+                props.necessityIndicator,
+                props.isRequired,
+              )}
+            </Label>
+          )}
           {checkboxItems.map((item) => (
             <AriaCheckbox
               key={item.id}
@@ -282,7 +341,12 @@ export function CheckboxGroup({
       data-checkbox-variant={variant}
       data-checkbox-size={size}
     >
-      {label && <Label>{label}</Label>}
+      {label && (
+        <Label>
+          {label}
+          {renderNecessityIndicator(props.necessityIndicator, props.isRequired)}
+        </Label>
+      )}
       {children}
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>

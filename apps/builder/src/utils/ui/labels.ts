@@ -14,6 +14,7 @@ export const PROPERTY_LABELS = {
   REQUIRED: "Required",
   AUTO_FOCUS: "Focus",
   INDICATOR: "Indicator",
+  NECESSITY_INDICATOR: "Necessity Indicator",
 
   // Text and content
   TEXT: "Text",

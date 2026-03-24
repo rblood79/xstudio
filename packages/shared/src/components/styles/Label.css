@@ -49,6 +49,23 @@
     pointer-events: none;
   }
 
+  /* ===== Necessity Indicator ===== */
+
+  .necessity-indicator {
+    margin-left: 0.25em;
+  }
+
+  .necessity-indicator.icon {
+    color: var(--negative);
+    font-weight: 700;
+  }
+
+  .necessity-indicator.label {
+    color: var(--fg-muted);
+    font-weight: 400;
+    font-size: 0.85em;
+  }
+
   @media (forced-colors: active) {
     .react-aria-Label {
       forced-color-adjust: auto;

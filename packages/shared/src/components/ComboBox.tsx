@@ -25,6 +25,8 @@ import type { ComponentSize } from "../types";
 import type { DataBinding, ColumnMapping, DataBindingValue } from "../types";
 
 import { useCollectionData } from "../hooks";
+import type { NecessityIndicator } from "./Field";
+import { renderNecessityIndicator } from "./Field";
 import { Skeleton } from "./Skeleton";
 import "./styles/ComboBox.css";
 
@@ -58,6 +60,7 @@ export interface ComboBoxProps<T extends object> extends Omit<
    * @default false
    */
   isLoading?: boolean;
+  necessityIndicator?: NecessityIndicator;
 }
 
 export function ComboBox<T extends object>({
@@ -257,7 +260,12 @@ export function ComboBox<T extends object>({
       aria-label={ariaLabel}
       isDisabled={comboBoxDisabled}
     >
-      {hasVisibleLabel && <Label>{String(label)}</Label>}
+      {hasVisibleLabel && (
+        <Label>
+          {String(label)}
+          {renderNecessityIndicator(props.necessityIndicator, props.isRequired)}
+        </Label>
+      )}
       <div className="combobox-container">
         <Input placeholder={placeholder} />
         <Button>

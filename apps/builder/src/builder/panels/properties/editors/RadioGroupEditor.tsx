@@ -27,6 +27,7 @@ import { iconProps } from "../../../../utils/ui/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { supabase } from "../../../../env/supabase.client";
 import { useStore } from "../../../stores";
+import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
 import type { Element } from "../../../../types/core/store.types";
 
@@ -68,11 +69,19 @@ export const RadioGroupEditor = memo(
     }, [elementId]);
 
     // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
+    const { buildChildUpdates } = useSyncChildProp(elementId);
+
     const handleLabelChange = useCallback(
       (value: string) => {
-        onUpdate({ label: value });
+        const updatedProps = { label: value };
+        const childUpdates = buildChildUpdates([
+          { childTag: "Label", propKey: "children", value },
+        ]);
+        useStore
+          .getState()
+          .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
       },
-      [onUpdate],
+      [buildChildUpdates],
     );
 
     const handleDescriptionChange = useCallback(
@@ -124,9 +133,13 @@ export const RadioGroupEditor = memo(
       [onUpdate],
     );
 
-    const handleIsRequiredChange = useCallback(
-      (checked: boolean) => {
-        onUpdate({ isRequired: checked });
+    const handleRequiredChange = useCallback(
+      (value: string) => {
+        if (value === "") {
+          onUpdate({ isRequired: false, necessityIndicator: undefined });
+        } else {
+          onUpdate({ isRequired: true, necessityIndicator: value });
+        }
       },
       [onUpdate],
     );
@@ -350,10 +363,15 @@ export const RadioGroupEditor = memo(
             icon={CheckCheck}
           />
 
-          <PropertySwitch
+          <PropertySelect
             label={PROPERTY_LABELS.REQUIRED}
-            isSelected={Boolean(currentProps.isRequired)}
-            onChange={handleIsRequiredChange}
+            value={String(currentProps.necessityIndicator || "")}
+            onChange={handleRequiredChange}
+            options={[
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ]}
             icon={CheckSquare}
           />
 
@@ -369,10 +387,11 @@ export const RadioGroupEditor = memo(
         currentProps.value,
         currentProps.defaultValue,
         currentProps.isRequired,
+        currentProps.necessityIndicator,
         currentProps.isInvalid,
         handleValueChange,
         handleDefaultValueChange,
-        handleIsRequiredChange,
+        handleRequiredChange,
         handleIsInvalidChange,
       ],
     );

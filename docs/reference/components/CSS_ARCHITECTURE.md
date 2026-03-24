@@ -240,27 +240,27 @@ src/builder/styles/
 
 #### Semantic Token Catalog
 
-| Category  | Token                            | Description                     |
-| --------- | -------------------------------- | ------------------------------- |
-| Highlight | `--highlight-background`         | Primary accent (buttons, links) |
-| Highlight | `--highlight-foreground`         | Text on primary accent          |
-| Highlight | `--highlight-background-pressed` | Primary pressed state           |
-| Text      | `--text-color`                   | Default text                    |
-| Text      | `--text-color-secondary`         | Secondary text                  |
-| Text      | `--text-color-disabled`          | Disabled text                   |
-| Text      | `--text-color-placeholder`       | Placeholder text                |
-| Border    | `--border-color`                 | Default border                  |
-| Border    | `--border-color-hover`           | Border hover state              |
-| Border    | `--border-color-disabled`        | Disabled border                 |
-| Surface   | `--field-background`             | Input/select background         |
-| Surface   | `--overlay-background`           | Elevated surfaces               |
-| Surface   | `--button-background`            | Secondary button bg             |
-| Feedback  | `--invalid-color`                | Error/validation                |
-| Palette   | `--color-white`, `--color-black` | Fixed colors                    |
-| Surface   | `--color-white`                  | White (surface, on-primary)     |
-| Surface   | `--color-neutral-*`              | Neutral palette (100–900)       |
-| Palette   | `--color-purple-600`             | Tertiary accent                 |
-| Special   | `transparent`                    | Spec TokenRef용 투명 색상       |
+| Category  | Token                            | Description                                        |
+| --------- | -------------------------------- | -------------------------------------------------- |
+| Highlight | `--highlight-background`         | Primary accent (buttons, links)                    |
+| Highlight | `--highlight-foreground`         | Text on primary accent                             |
+| Highlight | `--highlight-background-pressed` | Primary pressed state                              |
+| Text      | `--text-color`                   | Default text                                       |
+| Text      | `--text-color-secondary`         | Secondary text                                     |
+| Text      | `--text-color-disabled`          | Disabled text                                      |
+| Text      | `--text-color-placeholder`       | Placeholder text                                   |
+| Border    | `--border-color`                 | Default border                                     |
+| Border    | `--border-color-hover`           | Border hover state                                 |
+| Border    | `--border-color-disabled`        | Disabled border                                    |
+| Surface   | `--bg-inset`                     | Input/select/field 배경 (모든 field 컴포넌트 통일) |
+| Surface   | `--bg-overlay`                   | Elevated surfaces                                  |
+| Surface   | `--bg-raised`                    | 패널 헤더, section-header                          |
+| Feedback  | `--invalid-color`                | Error/validation                                   |
+| Palette   | `--color-white`, `--color-black` | Fixed colors                                       |
+| Surface   | `--color-white`                  | White (surface, on-primary)                        |
+| Surface   | `--color-neutral-*`              | Neutral palette (100–900)                          |
+| Palette   | `--color-purple-600`             | Tertiary accent                                    |
+| Special   | `transparent`                    | Spec TokenRef용 투명 색상                          |
 
 **Hover/Pressed 파생 패턴:**
 

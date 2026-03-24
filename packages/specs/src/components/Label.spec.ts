@@ -31,6 +31,9 @@ export interface LabelProps {
   children?: string;
   label?: string;
   isDisabled?: boolean;
+  /** 부모 field에서 주입되는 necessity indicator 설정 */
+  _necessityIndicator?: "icon" | "label";
+  _isRequired?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 

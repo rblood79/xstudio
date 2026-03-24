@@ -523,23 +523,26 @@ export function applyImplicitStyles(
   // CSS 구조: RadioGroup(column) > Label + RadioItems(row/column) > Radios
   // RadioItems가 있으면 column 통과, 없으면(레거시) column 보정
   if (containerTag === "checkboxgroup" || containerTag === "radiogroup") {
-    // Compositional Label: whiteSpace nowrap 주입 (줄바꿈 방지)
-    filteredChildren = children.map((child) => {
-      if (child.tag === "Label") {
-        const cs = (child.props?.style || {}) as Record<string, unknown>;
-        return {
-          ...child,
-          props: {
-            ...child.props,
-            style: {
-              ...cs,
-              whiteSpace: cs.whiteSpace ?? "nowrap",
+    const hasLabel = !!containerProps?.label;
+    // Label 필터링 + whiteSpace nowrap 주입
+    filteredChildren = children
+      .filter((child) => (child.tag === "Label" ? hasLabel : true))
+      .map((child) => {
+        if (child.tag === "Label") {
+          const cs = (child.props?.style || {}) as Record<string, unknown>;
+          return {
+            ...child,
+            props: {
+              ...child.props,
+              style: {
+                ...cs,
+                whiteSpace: cs.whiteSpace ?? "nowrap",
+              },
             },
-          },
-        } as Element;
-      }
-      return child;
-    });
+          } as Element;
+        }
+        return child;
+      });
 
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
@@ -1383,6 +1386,40 @@ export function applyImplicitStyles(
       },
     } as Element;
   });
+
+  // ── Label necessity indicator 공통 주입 ────────────────────────────
+  // 부모 field의 necessityIndicator/isRequired → Label children 텍스트에 직접 반영
+  // (레이아웃 측정 + Spec shapes 양쪽에서 동일한 텍스트를 사용하기 위함)
+  const parentNecessity = containerProps?.necessityIndicator as
+    | string
+    | undefined;
+  const parentRequired = containerProps?.isRequired as boolean | undefined;
+  if (parentNecessity) {
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag === "Label") {
+        const originalText =
+          (child.props?.children as string) ||
+          (child.props?.label as string) ||
+          "";
+        let indicatorText = "";
+        if (parentNecessity === "icon" && parentRequired) {
+          indicatorText = " *";
+        } else if (parentNecessity === "label") {
+          indicatorText = parentRequired ? " (required)" : " (optional)";
+        }
+        if (indicatorText) {
+          return {
+            ...child,
+            props: {
+              ...child.props,
+              children: originalText + indicatorText,
+            },
+          } as Element;
+        }
+      }
+      return child;
+    });
+  }
 
   return {
     effectiveParent,

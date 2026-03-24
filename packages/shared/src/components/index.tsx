@@ -34,7 +34,9 @@ export {
   FieldGroup,
   Input,
   DataField,
+  renderNecessityIndicator,
 } from "./Field";
+export type { NecessityIndicator } from "./Field";
 export { FileTrigger } from "./FileTrigger";
 export { DropZone } from "./DropZone";
 

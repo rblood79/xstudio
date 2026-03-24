@@ -24,6 +24,8 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
 import type { ComponentSize } from "../types";
+import type { NecessityIndicator } from "./Field";
+import { renderNecessityIndicator } from "./Field";
 
 import "./styles/DatePicker.css";
 
@@ -89,6 +91,7 @@ export interface DatePickerProps<
    * @example "mon" (월요일 시작)
    */
   firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
+  necessityIndicator?: NecessityIndicator;
 }
 
 /**
@@ -132,6 +135,7 @@ export function DatePicker<T extends DateValue>({
   defaultToday = false,
   minDate,
   maxDate,
+  necessityIndicator,
   ...props
 }: DatePickerProps<T>) {
   // 타임존 설정 (명시하지 않으면 로컬 타임존 사용)
@@ -174,7 +178,12 @@ export function DatePicker<T extends DateValue>({
       minValue={minValue as T | undefined}
       maxValue={maxValue as T | undefined}
     >
-      {label && <Label>{label}</Label>}
+      {label && (
+        <Label>
+          {label}
+          {renderNecessityIndicator(necessityIndicator, props.isRequired)}
+        </Label>
+      )}
       <Group>
         {showCalendarIcon && calendarIconPosition === "left" && (
           <Button slot="prefix">📅</Button>

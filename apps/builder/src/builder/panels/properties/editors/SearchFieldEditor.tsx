@@ -1,203 +1,243 @@
 import { memo, useMemo, useCallback } from "react";
 import {
-    Tag, Search, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
-    SpellCheck2, Focus, Hash, Keyboard, Shield
-} from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../../components';
-import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
-import { useStore } from '../../../stores';
-import { useSyncChildProp } from '../../../hooks/useSyncChildProp';
+  Tag,
+  Search,
+  CheckSquare,
+  AlertTriangle,
+  PointerOff,
+  PenOff,
+  FileText,
+  SpellCheck2,
+  Focus,
+  Hash,
+  Keyboard,
+  Shield,
+} from "lucide-react";
+import {
+  PropertyInput,
+  PropertySwitch,
+  PropertyCustomId,
+  PropertySelect,
+  PropertySection,
+} from "../../../components";
+import { PropertyEditorProps } from "../types/editorTypes";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
+import { useStore } from "../../../stores";
+import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 
-export const SearchFieldEditor = memo(function SearchFieldEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    // Get customId from element in store
-      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+export const SearchFieldEditor = memo(function SearchFieldEditor({
+  elementId,
+  currentProps,
+  onUpdate,
+}: PropertyEditorProps) {
+  // Get customId from element in store
+  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
   const customId = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
     return element?.customId || "";
   }, [elementId]);
 
-    const updateProp = (key: string, value: unknown) => {
-        const updatedProps = {
-            [key]: value
-        };
-        onUpdate(updatedProps);
+  const updateProp = (key: string, value: unknown) => {
+    const updatedProps = {
+      [key]: value,
     };
+    onUpdate(updatedProps);
+  };
 
-    const { buildChildUpdates } = useSyncChildProp(elementId);
+  const { buildChildUpdates } = useSyncChildProp(elementId);
 
-    const handleLabelChange = useCallback((value: string) => {
-        const updatedProps = { label: value };
-        const childUpdates = buildChildUpdates([
-            { childTag: 'Label', propKey: 'children', value },
-        ]);
-        useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
-    }, [buildChildUpdates]);
+  const handleLabelChange = useCallback(
+    (value: string) => {
+      const updatedProps = { label: value };
+      const childUpdates = buildChildUpdates([
+        { childTag: "Label", propKey: "children", value },
+      ]);
+      useStore
+        .getState()
+        .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+    },
+    [buildChildUpdates],
+  );
 
-    const handlePlaceholderChange = useCallback((value: string) => {
-        const updatedProps = { placeholder: value };
-        const childUpdates = buildChildUpdates([
-            { childTag: 'Input', propKey: 'placeholder', value },
-        ]);
-        useStore.getState().updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
-    }, [buildChildUpdates]);
+  const handlePlaceholderChange = useCallback(
+    (value: string) => {
+      const updatedProps = { placeholder: value };
+      const childUpdates = buildChildUpdates([
+        { childTag: "Input", propKey: "placeholder", value },
+      ]);
+      useStore
+        .getState()
+        .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+    },
+    [buildChildUpdates],
+  );
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
+  const updateCustomId = (newCustomId: string) => {
+    // Update customId in store (not in props)
+    const updateElement = useStore.getState().updateElement;
+    if (updateElement && elementId) {
+      updateElement(elementId, { customId: newCustomId });
+    }
+  };
 
-    return (
-        <>
+  return (
+    <>
       {/* Basic */}
       <PropertySection title="Basic">
-            <PropertyCustomId
-                label="ID"
-                value={customId}
-                elementId={elementId}
-                onChange={updateCustomId}
-                placeholder="searchfield_1"
-            />
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          onChange={updateCustomId}
+          placeholder="searchfield_1"
+        />
       </PropertySection>
 
       {/* Content Section */}
-            <PropertySection title="Content">
+      <PropertySection title="Content">
+        <PropertyInput
+          label={PROPERTY_LABELS.LABEL}
+          value={String(currentProps.label || "")}
+          onChange={handleLabelChange}
+          icon={Tag}
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.LABEL}
-                    value={String(currentProps.label || '')}
-                    onChange={handleLabelChange}
-                    icon={Tag}
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.VALUE}
+          value={String(currentProps.value || "")}
+          onChange={(value) => updateProp("value", value)}
+          icon={Search}
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.VALUE}
-                    value={String(currentProps.value || '')}
-                    onChange={(value) => updateProp('value', value)}
-                    icon={Search}
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.PLACEHOLDER}
+          value={String(currentProps.placeholder || "")}
+          onChange={handlePlaceholderChange}
+          icon={SpellCheck2}
+          placeholder="Search..."
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.PLACEHOLDER}
-                    value={String(currentProps.placeholder || '')}
-                    onChange={handlePlaceholderChange}
-                    icon={SpellCheck2}
-                    placeholder="Search..."
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.DESCRIPTION}
+          value={String(currentProps.description || "")}
+          onChange={(value) => updateProp("description", value)}
+          icon={FileText}
+        />
+      </PropertySection>
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.DESCRIPTION}
-                    value={String(currentProps.description || '')}
-                    onChange={(value) => updateProp('description', value)}
-                    icon={FileText}
-                />
-            </PropertySection>
+      {/* Input Mode Section */}
+      <PropertySection title="Input Mode">
+        <PropertySelect
+          label={PROPERTY_LABELS.INPUT_MODE}
+          value={String(currentProps.inputMode || "")}
+          onChange={(value) => updateProp("inputMode", value || undefined)}
+          options={[
+            { value: "", label: PROPERTY_LABELS.INPUT_MODE_NONE },
+            { value: "text", label: PROPERTY_LABELS.INPUT_MODE_TEXT },
+            { value: "search", label: PROPERTY_LABELS.INPUT_MODE_SEARCH },
+          ]}
+          icon={Keyboard}
+        />
+      </PropertySection>
 
-            {/* Input Mode Section */}
-            <PropertySection title="Input Mode">
+      {/* Validation Section */}
+      <PropertySection title="Validation">
+        <PropertyInput
+          label={PROPERTY_LABELS.ERROR_MESSAGE}
+          value={String(currentProps.errorMessage || "")}
+          onChange={(value) => updateProp("errorMessage", value)}
+          icon={AlertTriangle}
+        />
 
-                <PropertySelect
-                    label={PROPERTY_LABELS.INPUT_MODE}
-                    value={String(currentProps.inputMode || '')}
-                    onChange={(value) => updateProp('inputMode', value || undefined)}
-                    options={[
-                        { value: '', label: PROPERTY_LABELS.INPUT_MODE_NONE },
-                        { value: 'text', label: PROPERTY_LABELS.INPUT_MODE_TEXT },
-                        { value: 'search', label: PROPERTY_LABELS.INPUT_MODE_SEARCH }
-                    ]}
-                    icon={Keyboard}
-                />
-            </PropertySection>
+        <PropertyInput
+          label={PROPERTY_LABELS.PATTERN}
+          value={String(currentProps.pattern || "")}
+          onChange={(value) => updateProp("pattern", value || undefined)}
+          icon={Shield}
+          placeholder="Regular expression"
+        />
 
-            {/* Validation Section */}
-            <PropertySection title="Validation">
+        <PropertyInput
+          label={PROPERTY_LABELS.MIN_LENGTH}
+          value={String(currentProps.minLength || "")}
+          onChange={(value) =>
+            updateProp("minLength", value ? Number(value) : undefined)
+          }
+          icon={Hash}
+          placeholder="0"
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.ERROR_MESSAGE}
-                    value={String(currentProps.errorMessage || '')}
-                    onChange={(value) => updateProp('errorMessage', value)}
-                    icon={AlertTriangle}
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.MAX_LENGTH}
+          value={String(currentProps.maxLength || "")}
+          onChange={(value) =>
+            updateProp("maxLength", value ? Number(value) : undefined)
+          }
+          icon={Hash}
+          placeholder="100"
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.PATTERN}
-                    value={String(currentProps.pattern || '')}
-                    onChange={(value) => updateProp('pattern', value || undefined)}
-                    icon={Shield}
-                    placeholder="Regular expression"
-                />
+        <PropertySelect
+          label={PROPERTY_LABELS.REQUIRED}
+          value={String(currentProps.necessityIndicator || "")}
+          onChange={(value) => {
+            if (value === "") {
+              onUpdate({ isRequired: false, necessityIndicator: undefined });
+            } else {
+              onUpdate({ isRequired: true, necessityIndicator: value });
+            }
+          }}
+          options={[
+            { value: "", label: "None" },
+            { value: "icon", label: "Icon (*)" },
+            { value: "label", label: "Label (required/optional)" },
+          ]}
+          icon={CheckSquare}
+        />
+      </PropertySection>
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.MIN_LENGTH}
-                    value={String(currentProps.minLength || '')}
-                    onChange={(value) => updateProp('minLength', value ? Number(value) : undefined)}
-                    icon={Hash}
-                    placeholder="0"
-                />
+      {/* Behavior Section */}
+      <PropertySection title="Behavior">
+        <PropertySwitch
+          label={PROPERTY_LABELS.AUTO_FOCUS}
+          isSelected={Boolean(currentProps.autoFocus)}
+          onChange={(checked) => updateProp("autoFocus", checked)}
+          icon={Focus}
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.MAX_LENGTH}
-                    value={String(currentProps.maxLength || '')}
-                    onChange={(value) => updateProp('maxLength', value ? Number(value) : undefined)}
-                    icon={Hash}
-                    placeholder="100"
-                />
+        <PropertySwitch
+          label={PROPERTY_LABELS.DISABLED}
+          isSelected={Boolean(currentProps.isDisabled)}
+          onChange={(checked) => updateProp("isDisabled", checked)}
+          icon={PointerOff}
+        />
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.REQUIRED}
-                    isSelected={Boolean(currentProps.isRequired)}
-                    onChange={(checked) => updateProp('isRequired', checked)}
-                    icon={CheckSquare}
-                />
-            </PropertySection>
+        <PropertySwitch
+          label={PROPERTY_LABELS.READONLY}
+          isSelected={Boolean(currentProps.isReadOnly)}
+          onChange={(checked) => updateProp("isReadOnly", checked)}
+          icon={PenOff}
+        />
+      </PropertySection>
 
-            {/* Behavior Section */}
-            <PropertySection title="Behavior">
+      {/* Form Integration Section */}
+      <PropertySection title="Form Integration">
+        <PropertyInput
+          label={PROPERTY_LABELS.NAME}
+          value={String(currentProps.name || "")}
+          onChange={(value) => updateProp("name", value || undefined)}
+          icon={Tag}
+          placeholder="search-name"
+        />
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.AUTO_FOCUS}
-                    isSelected={Boolean(currentProps.autoFocus)}
-                    onChange={(checked) => updateProp('autoFocus', checked)}
-                    icon={Focus}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.READONLY}
-                    isSelected={Boolean(currentProps.isReadOnly)}
-                    onChange={(checked) => updateProp('isReadOnly', checked)}
-                    icon={PenOff}
-                />
-            </PropertySection>
-
-            {/* Form Integration Section */}
-            <PropertySection title="Form Integration">
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.NAME}
-                    value={String(currentProps.name || '')}
-                    onChange={(value) => updateProp('name', value || undefined)}
-                    icon={Tag}
-                    placeholder="search-name"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.FORM}
-                    value={String(currentProps.form || '')}
-                    onChange={(value) => updateProp('form', value || undefined)}
-                    icon={FileText}
-                    placeholder="form-id"
-                />
-            </PropertySection>
-        </>
-    );
+        <PropertyInput
+          label={PROPERTY_LABELS.FORM}
+          value={String(currentProps.form || "")}
+          onChange={(value) => updateProp("form", value || undefined)}
+          icon={FileText}
+          placeholder="form-id"
+        />
+      </PropertySection>
+    </>
+  );
 });

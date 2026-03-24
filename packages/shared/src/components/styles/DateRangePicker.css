@@ -10,8 +10,8 @@
       white
     );
     --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
-    --drp-pressed-bg: var(--bg-raised);
-    --drp-group-bg: var(--bg-raised);
+    --drp-pressed-bg: var(--bg-inset);
+    --drp-group-bg: var(--bg-inset);
 
     /* Size locals (md default) */
     --drp-group-min-width: 220px;

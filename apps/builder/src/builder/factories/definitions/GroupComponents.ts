@@ -190,6 +190,7 @@ export function createCheckboxGroupDefinition(
       tag: "CheckboxGroup",
       props: {
         tag: "CheckboxGroup",
+        label: "Checkbox Group",
         name: "",
         orientation: "vertical",
         value: [],
@@ -298,6 +299,7 @@ export function createRadioGroupDefinition(
     parent: {
       tag: "RadioGroup",
       props: {
+        label: "Radio Group",
         name: "",
         orientation: "vertical",
         value: "",

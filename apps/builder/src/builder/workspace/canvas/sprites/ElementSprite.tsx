@@ -1210,6 +1210,25 @@ export const ElementSprite = memo(function ElementSprite({
     );
   });
 
+  // 🚀 Label → 부모 field의 necessityIndicator/isRequired 전파
+  const isLabel = element.tag === "Label";
+  const labelNecessityIndicator = useStore((state) => {
+    if (!isLabel || !element.parent_id) return null;
+    const p = state.elementsMap.get(element.parent_id);
+    return (
+      ((p?.props as Record<string, unknown> | undefined)
+        ?.necessityIndicator as string) ?? null
+    );
+  });
+  const labelIsRequired = useStore((state) => {
+    if (!isLabel || !element.parent_id) return null;
+    const p = state.elementsMap.get(element.parent_id);
+    return (
+      ((p?.props as Record<string, unknown> | undefined)
+        ?.isRequired as boolean) ?? null
+    );
+  });
+
   // 🚀 Select/ComboBox → SelectIcon/ComboBoxTrigger: 부모의 iconName 전파
   const ICON_DELEGATION_TAGS = new Set(["SelectIcon", "ComboBoxTrigger"]);
   const parentDelegatedIconName = useStore((state) => {
@@ -1941,6 +1960,30 @@ export const ElementSprite = memo(function ElementSprite({
                 };
               }
 
+              // Label: 부모 field의 necessityIndicator → children 텍스트에 indicator 추가
+              if (isLabel && labelNecessityIndicator) {
+                const originalText =
+                  (specProps.children as string) ||
+                  (specProps.label as string) ||
+                  "";
+                let indicatorText = "";
+                if (labelNecessityIndicator === "icon" && labelIsRequired) {
+                  indicatorText = " *";
+                } else if (labelNecessityIndicator === "label") {
+                  indicatorText = labelIsRequired
+                    ? " (required)"
+                    : " (optional)";
+                }
+                if (indicatorText) {
+                  specProps = {
+                    ...specProps,
+                    children: originalText + indicatorText,
+                    _necessityIndicator: labelNecessityIndicator,
+                    _isRequired: labelIsRequired,
+                  };
+                }
+              }
+
               // ComboBox/Select: spec shapes가 props.style.width로 입력 영역 너비 결정
               // 기본값 200px → 실제 레이아웃 width로 교체하여 CSS 정합성 확보
               if (
@@ -2508,6 +2551,8 @@ export const ElementSprite = memo(function ElementSprite({
     dateInputGranularity,
     dateInputHourCycle,
     dateInputLocale,
+    labelNecessityIndicator,
+    labelIsRequired,
   ]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로
