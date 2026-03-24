@@ -30,6 +30,12 @@ export function createSelectDefinition(
         isInvalid: false,
         isReadOnly: false,
         isRequired: false,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          width: "100%",
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -44,8 +50,6 @@ export function createSelectDefinition(
           style: {
             fontSize: 14,
             fontWeight: 500,
-            width: "fit-content",
-            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -55,9 +59,7 @@ export function createSelectDefinition(
         tag: "SelectTrigger",
         props: {
           style: {
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
+            width: "100%",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -157,6 +159,12 @@ export function createComboBoxDefinition(
         isInvalid: false,
         isReadOnly: false,
         isRequired: false,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          width: "100%",
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -171,8 +179,6 @@ export function createComboBoxDefinition(
           style: {
             fontSize: 14,
             fontWeight: 500,
-            width: "fit-content",
-            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -182,9 +188,7 @@ export function createComboBoxDefinition(
         tag: "ComboBoxWrapper",
         props: {
           style: {
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
+            width: "100%",
           },
         } as ComponentElementProps,
         ...ownerFields,

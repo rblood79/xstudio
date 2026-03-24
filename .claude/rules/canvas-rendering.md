@@ -56,6 +56,39 @@ globs:
 - 내부 gap (SelectTrigger/ComboBoxWrapper/SearchFieldWrapper): `4`
 - `SPEC_TRIGGER_GAP` 상수 제거됨 — 모든 경로에서 고정 4px 사용
 
+## Necessity Indicator (Required 표시)
+
+S2 패턴의 필수 필드 표시. 3경로 동기화 필수.
+
+- **Preview (CSS)**: `renderNecessityIndicator()` — Label 내 `<span class="necessity-indicator">` 렌더링
+  - `icon` 모드: `*` (빨간색 `--negative`)
+  - `label` 모드: `(required)` 또는 `(optional)` (회색 `--fg-muted`)
+- **WebGL (Taffy)**: `fullTreeLayout.ts` Label DFS + `implicitStyles.ts` — Label `children` 텍스트에 indicator 추가
+- **WebGL (Skia)**: `ElementSprite.tsx` — `specProps.children`에 indicator 추가
+- **에디터**: 통합 Required select (None / Icon / Label) — `isRequired` + `necessityIndicator` 동시 설정
+- **공유 유틸**: `Field.tsx`의 `renderNecessityIndicator()`, `NecessityIndicator` 타입
+- **LAYOUT_AFFECTING_PROPS + LAYOUT_PROP_KEYS**: `necessityIndicator`, `isRequired` 등록 필수
+
+## Label Factory 패턴 (field 컴포넌트 자식)
+
+모든 field 컴포넌트의 Label 자식 factory 정의 표준:
+
+```
+{
+  tag: "Label",
+  props: {
+    children: "Label Text",
+    variant: "default",
+    style: { width: "fit-content", height: "fit-content", fontWeight: 500 },
+  },
+}
+```
+
+- `width/height: "fit-content"` 필수 — Taffy에서 auto 대신 텍스트 크기에 맞춤 (누락 시 height 이상)
+- `fontWeight: 500` — Label 기본 굵기
+- `fontSize` — DFS Label size delegation이 주입하므로 factory에서는 선택적
+- `flexShrink: 0` — implicitStyles에서 공통 주입 (flex-direction: row 시 축소 방지)
+
 ## BUTTON_SIZE_CONFIG ↔ CSS 높이 정합성
 
 `BUTTON_SIZE_CONFIG` / `TOGGLEBUTTON_SIZE_CONFIG` (engines/utils.ts)는 `lineHeight` 필드를 필수로 포함해야 함.

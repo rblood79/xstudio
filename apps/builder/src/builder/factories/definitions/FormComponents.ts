@@ -43,7 +43,7 @@ export function createTextFieldDefinition(
         style: {
           display: "flex",
           flexDirection: "column",
-          gap: 6,
+          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -59,8 +59,6 @@ export function createTextFieldDefinition(
           variant: "default",
           size: "md",
           style: {
-            width: "fit-content",
-            height: "fit-content",
             fontSize: 14,
             fontWeight: 500,
           },
@@ -137,7 +135,7 @@ export function createTextAreaDefinition(
         style: {
           display: "flex",
           flexDirection: "column",
-          gap: 6,
+          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -152,8 +150,6 @@ export function createTextAreaDefinition(
           children: "Text Area",
           variant: "default",
           style: {
-            width: "fit-content",
-            height: "fit-content",
             fontSize: 14,
             fontWeight: 500,
           },
@@ -280,7 +276,6 @@ export function createFormDefinition(
             props: {
               children: "Field Label",
               variant: "default",
-              style: { width: "fit-content", height: "fit-content" },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -319,7 +314,6 @@ export function createFormDefinition(
             props: {
               children: "Another Field",
               variant: "default",
-              style: { width: "fit-content", height: "fit-content" },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -464,7 +458,7 @@ export function createNumberFieldDefinition(
         style: {
           display: "flex",
           flexDirection: "column",
-          gap: 6,
+          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -482,8 +476,6 @@ export function createNumberFieldDefinition(
             display: "block",
             fontSize: "14px",
             fontWeight: "500",
-            width: "fit-content",
-            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -493,9 +485,7 @@ export function createNumberFieldDefinition(
         tag: "ComboBoxWrapper",
         props: {
           style: {
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
+            width: "100%",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -592,6 +582,9 @@ export function createSearchFieldDefinition(
         isReadOnly: false,
         isRequired: false,
         style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -607,8 +600,6 @@ export function createSearchFieldDefinition(
           variant: "default",
           style: {
             fontWeight: 500,
-            width: "fit-content",
-            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -618,9 +609,7 @@ export function createSearchFieldDefinition(
         tag: "SearchFieldWrapper",
         props: {
           style: {
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
+            width: "100%",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -746,8 +735,6 @@ export function createSliderDefinition(
           variant: "default",
           style: {
             backgroundColor: "transparent",
-            width: "fit-content",
-            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,

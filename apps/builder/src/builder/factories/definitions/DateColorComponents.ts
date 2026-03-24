@@ -321,7 +321,7 @@ export function createDateFieldDefinition(
         style: {
           display: "flex",
           flexDirection: "column",
-          gap: 6,
+          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -336,8 +336,6 @@ export function createDateFieldDefinition(
           children: "Date",
           variant: "default",
           style: {
-            width: "fit-content",
-            height: "fit-content",
             fontWeight: 500,
           },
         } as ComponentElementProps,
@@ -399,7 +397,7 @@ export function createTimeFieldDefinition(
         style: {
           display: "flex",
           flexDirection: "column",
-          gap: 6,
+          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -414,8 +412,6 @@ export function createTimeFieldDefinition(
           children: "Time",
           variant: "default",
           style: {
-            width: "fit-content",
-            height: "fit-content",
             fontWeight: 500,
           },
         } as ComponentElementProps,
@@ -490,8 +486,6 @@ export function createColorFieldDefinition(
             display: "block",
             fontSize: "14px",
             fontWeight: "500",
-            width: "fit-content",
-            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -643,7 +637,7 @@ export function createColorSwatchPickerDefinition(
           display: "flex",
           flexDirection: "row",
           flexWrap: "wrap",
-          gap: 6,
+          gap: 4,
         },
       } as ComponentElementProps,
       ...ownerFields,

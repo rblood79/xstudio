@@ -198,6 +198,11 @@ export function createCheckboxGroupDefinition(
         isDisabled: false,
         isReadOnly: false,
         isRequired: false,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -212,6 +217,7 @@ export function createCheckboxGroupDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
+            fontWeight: 500,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -238,10 +244,6 @@ export function createCheckboxGroupDefinition(
                 props: {
                   children: "Option 1",
                   variant: "default",
-                  style: {
-                    width: "fit-content",
-                    height: "fit-content",
-                  },
                 } as ComponentElementProps,
                 ...ownerFields,
                 order_num: 1,
@@ -263,10 +265,6 @@ export function createCheckboxGroupDefinition(
                 props: {
                   children: "Option 2",
                   variant: "default",
-                  style: {
-                    width: "fit-content",
-                    height: "fit-content",
-                  },
                 } as ComponentElementProps,
                 ...ownerFields,
                 order_num: 1,
@@ -306,6 +304,11 @@ export function createRadioGroupDefinition(
         isInvalid: false,
         isReadOnly: false,
         isRequired: false,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -320,6 +323,7 @@ export function createRadioGroupDefinition(
           style: {
             width: "fit-content",
             height: "fit-content",
+            fontWeight: 500,
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -426,8 +430,6 @@ export function createTagGroupDefinition(
           variant: "default",
           style: {
             fontWeight: 500,
-            width: "fit-content",
-            height: "fit-content",
           },
         } as ComponentElementProps,
         ...ownerFields,
@@ -710,10 +712,6 @@ export function createCheckboxDefinition(
         props: {
           children: "Checkbox",
           variant: "default",
-          style: {
-            width: "fit-content",
-            height: "fit-content",
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -761,10 +759,6 @@ export function createRadioDefinition(
         props: {
           children: "Radio",
           variant: "default",
-          style: {
-            width: "fit-content",
-            height: "fit-content",
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -813,10 +807,6 @@ export function createSwitchDefinition(
         props: {
           children: "Switch",
           variant: "default",
-          style: {
-            width: "fit-content",
-            height: "fit-content",
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,

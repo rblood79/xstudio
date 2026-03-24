@@ -2319,7 +2319,15 @@ export function calculateContentHeight(
   // 4.9. Leaf text elements: 텍스트 줄바꿈 시 높이 자동 확장
   // TEXT_LEAF_TAGS 요소는 텍스트만 포함하는 리프 노드이므로
   // availableWidth가 있으면 줄바꿈을 고려한 실제 높이를 반환
-  if (TEXT_LEAF_TAGS.has(tag) && availableWidth != null && availableWidth > 0) {
+  // whiteSpace: "nowrap"이면 줄바꿈 없으므로 스킵
+  const ws49 = style?.whiteSpace as string | undefined;
+  if (
+    TEXT_LEAF_TAGS.has(tag) &&
+    availableWidth != null &&
+    availableWidth > 0 &&
+    ws49 !== "nowrap" &&
+    ws49 !== "pre"
+  ) {
     const props = element.props as Record<string, unknown> | undefined;
     const textContent = String(
       props?.children ?? props?.text ?? props?.label ?? "",

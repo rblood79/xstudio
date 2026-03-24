@@ -546,9 +546,9 @@ export function applyImplicitStyles(
 
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: "flex",
-      flexDirection: "column",
-      gap: 4,
+      display: parentStyle.display ?? "flex",
+      flexDirection: parentStyle.flexDirection ?? "column",
+      gap: parentStyle.gap ?? 4,
     });
   }
 
@@ -642,6 +642,7 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
+              width: cs.width ?? "100%",
               gap: cs.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
               ...withSpecPadding(cs, sizeName),
             },
@@ -685,6 +686,7 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
+              width: cs.width ?? "100%",
               gap: cs.gap ?? 4,
               ...withSpecPadding(cs, sizeName),
             },
@@ -854,6 +856,25 @@ export function applyImplicitStyles(
         } as Element;
       }
       return child;
+    });
+  }
+
+  // ── TextField / TextArea ──────────────────────────────────────────────
+  // Label + Input + FieldError 구조. column 레이아웃 보장.
+  if (containerTag === "textfield" || containerTag === "textarea") {
+    const hasLabel = !!containerProps?.label;
+    filteredChildren = children.filter(
+      (c) =>
+        (c.tag === "Label" ? hasLabel : false) ||
+        c.tag === "Input" ||
+        c.tag === "FieldError",
+    );
+
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: parentStyle.display ?? "flex",
+      flexDirection: parentStyle.flexDirection ?? "column",
+      gap: parentStyle.gap ?? 4,
     });
   }
 
@@ -1420,6 +1441,24 @@ export function applyImplicitStyles(
       return child;
     });
   }
+
+  // ── Label flexShrink 공통 주입 ────────────────────────────────────
+  // flex row 전환 시 Label이 축소되지 않도록 flexShrink: 0 보장
+  filteredChildren = filteredChildren.map((child) => {
+    if (child.tag === "Label") {
+      const cs = (child.props?.style || {}) as Record<string, unknown>;
+      if (cs.flexShrink == null) {
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: { ...cs, flexShrink: 0 },
+          },
+        } as Element;
+      }
+    }
+    return child;
+  });
 
   return {
     effectiveParent,

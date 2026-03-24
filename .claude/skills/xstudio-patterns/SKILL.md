@@ -124,6 +124,15 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 - **[domain-section-component](rules/domain-section-component.md)** - 모든 패널 섹션은 `Section` 컴포넌트 사용 필수. 수동 `.section` 마크업 금지. `PropertySection`은 `Section`의 re-export alias.
 
+#### Field Component (field-\*)
+
+- **CRITICAL**: 모든 field 입력/컨테이너 배경은 `--bg-inset` (CSS) / `{color.layer-2}` (Spec)으로 통일. `--bg-raised` / `{color.base}` 사용 금지
+- **CRITICAL**: field 컴포넌트 gap은 CSS `var(--spacing-xs)` = **4px**로 통일 (factory + implicitStyles + CSS 3경로)
+- **CRITICAL**: Label factory 정의에 `width: "fit-content"`, `height: "fit-content"`, `fontWeight: 500` 필수 (누락 시 Taffy height 이상)
+- **CRITICAL**: Necessity Indicator (Required 표시) — 3경로 동기화: Preview(`renderNecessityIndicator`), Taffy(`fullTreeLayout` + `implicitStyles` children 텍스트), Skia(`ElementSprite` specProps)
+- **에디터 패턴**: 통합 Required select (None / Icon / Label) — `isRequired` + `necessityIndicator` 동시 설정, `useSyncChildProp`으로 부모 label ↔ 자식 Label children 동기화
+- Label `flexShrink: 0` — implicitStyles 공통 주입 (flex row 시 축소 방지)
+
 ### HIGH (강력 권장)
 
 #### Architecture (arch-\*)
