@@ -506,6 +506,8 @@ export const PROPERTY_LABELS = {
   VISIBLE_DURATION: "Visible Duration",
   GRANULARITY: "Granularity",
   HOUR_CYCLE: "Hour Cycle",
+  LOCALE: "Locale",
+  CALENDAR_SYSTEM: "Calendar System",
   HIDE_TIMEZONE: "Hide Timezone",
   FORCE_LEADING_ZEROS: "Force Leading Zeros",
   SHOULD_CLOSE_ON_SELECT: "Close on Select",

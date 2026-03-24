@@ -316,6 +316,9 @@ export type { DateFieldProps } from "./components/DateField.spec";
 export { TimeFieldSpec } from "./components/TimeField.spec";
 export type { TimeFieldProps } from "./components/TimeField.spec";
 
+export { DateInputSpec } from "./components/DateInput.spec";
+export type { DateInputProps } from "./components/DateInput.spec";
+
 export { CalendarSpec } from "./components/Calendar.spec";
 export type { CalendarProps } from "./components/Calendar.spec";
 

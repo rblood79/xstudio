@@ -1,213 +1,206 @@
-import { memo, useMemo } from "react";
-import { Clock, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Globe, Focus, FileText, FormInput } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../../components';
-import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
-import { useStore } from '../../../stores';
+import { memo, useMemo, useCallback } from "react";
+import {
+  Tag,
+  PointerOff,
+  PenOff,
+  CheckSquare,
+  AlertTriangle,
+  Clock,
+  FileText,
+  FormInput,
+  Globe,
+} from "lucide-react";
+import {
+  PropertyInput,
+  PropertySwitch,
+  PropertySelect,
+  PropertyCustomId,
+  PropertySection,
+  PropertySizeToggle,
+} from "../../../components";
+import { PropertyEditorProps } from "../types/editorTypes";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
+import { useStore } from "../../../stores";
+import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 
-export const TimeFieldEditor = memo(function TimeFieldEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    // Get customId from element in store
-      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+export const TimeFieldEditor = memo(function TimeFieldEditor({
+  elementId,
+  currentProps,
+  onUpdate,
+}: PropertyEditorProps) {
   const customId = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
     return element?.customId || "";
   }, [elementId]);
 
-    const updateProp = (key: string, value: unknown) => {
-        const updatedProps = {
-            [key]: value
-        };
-        onUpdate(updatedProps);
-    };
+  const updateProp = (key: string, value: unknown) => {
+    onUpdate({ [key]: value });
+  };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
+  const { buildChildUpdates } = useSyncChildProp(elementId);
 
-    return (
-        <>
+  const handleLabelChange = useCallback(
+    (value: string) => {
+      const updatedProps = { label: value };
+      const childUpdates = buildChildUpdates([
+        { childTag: "Label", propKey: "children", value },
+      ]);
+      useStore
+        .getState()
+        .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
+    },
+    [buildChildUpdates],
+  );
+
+  const updateCustomId = (newCustomId: string) => {
+    const updateElement = useStore.getState().updateElement;
+    if (updateElement && elementId) {
+      updateElement(elementId, { customId: newCustomId });
+    }
+  };
+
+  return (
+    <>
       {/* Basic */}
       <PropertySection title="Basic">
-            <PropertyCustomId
-                label="ID"
-                value={customId}
-                elementId={elementId}
-                onChange={updateCustomId}
-                placeholder="timefield_1"
-            />
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          onChange={updateCustomId}
+          placeholder="timefield_1"
+        />
       </PropertySection>
 
-      {/* Content Section */}
-            <PropertySection title="Content">
+      {/* Content */}
+      <PropertySection title="Content">
+        <PropertyInput
+          label={PROPERTY_LABELS.LABEL}
+          value={String(currentProps.label || "")}
+          onChange={handleLabelChange}
+          icon={Tag}
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.LABEL}
-                    value={String(currentProps.label || '')}
-                    onChange={(value) => updateProp('label', value || undefined)}
-                    icon={Tag}
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.DESCRIPTION}
+          value={String(currentProps.description || "")}
+          onChange={(value) => updateProp("description", value || undefined)}
+          icon={FileText}
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.DESCRIPTION}
-                    value={String(currentProps.description || '')}
-                    onChange={(value) => updateProp('description', value || undefined)}
-                    icon={FileText}
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.ERROR_MESSAGE}
+          value={String(currentProps.errorMessage || "")}
+          onChange={(value) => updateProp("errorMessage", value || undefined)}
+          icon={AlertTriangle}
+        />
+      </PropertySection>
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.ERROR_MESSAGE}
-                    value={String(currentProps.errorMessage || '')}
-                    onChange={(value) => updateProp('errorMessage', value || undefined)}
-                    icon={AlertTriangle}
-                />
+      {/* Design */}
+      <PropertySection title="Design">
+        <PropertySizeToggle
+          label={PROPERTY_LABELS.SIZE}
+          value={String(currentProps.size || "md")}
+          onChange={(value) => updateProp("size", value)}
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.PLACEHOLDER}
-                    value={String(currentProps.placeholderValue || '')}
-                    onChange={(value) => updateProp('placeholderValue', value || undefined)}
-                    placeholder="00:00"
-                />
-            </PropertySection>
+        <PropertySelect
+          label={PROPERTY_LABELS.GRANULARITY}
+          value={String(currentProps.granularity || "minute")}
+          onChange={(value) => updateProp("granularity", value)}
+          options={[
+            { value: "hour", label: "Hour" },
+            { value: "minute", label: "Minute" },
+            { value: "second", label: "Second" },
+          ]}
+          icon={Clock}
+        />
 
-            {/* State Section */}
-            <PropertySection title="State">
+        <PropertySelect
+          label={PROPERTY_LABELS.HOUR_CYCLE}
+          value={String(currentProps.hourCycle || "")}
+          onChange={(value) =>
+            updateProp("hourCycle", value ? Number(value) : undefined)
+          }
+          options={[
+            { value: "", label: "Default (Locale)" },
+            { value: "12", label: "12 Hour" },
+            { value: "24", label: "24 Hour" },
+          ]}
+          icon={Clock}
+        />
+      </PropertySection>
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.MIN_VALUE}
-                    value={String(currentProps.minValue || '')}
-                    onChange={(value) => updateProp('minValue', value || undefined)}
-                    placeholder="00:00"
-                />
+      {/* Internationalization */}
+      <PropertySection title="Internationalization">
+        <PropertySelect
+          label={PROPERTY_LABELS.LOCALE}
+          value={String(currentProps.locale || "")}
+          onChange={(value) => updateProp("locale", value || undefined)}
+          options={[
+            { value: "", label: "Default (System)" },
+            { value: "en-US", label: "English (US)" },
+            { value: "en-GB", label: "English (UK)" },
+            { value: "ko-KR", label: "한국어" },
+            { value: "ja-JP", label: "日本語" },
+            { value: "zh-CN", label: "中文 (简体)" },
+            { value: "zh-TW", label: "中文 (繁體)" },
+            { value: "de-DE", label: "Deutsch" },
+            { value: "fr-FR", label: "Français" },
+            { value: "es-ES", label: "Español" },
+            { value: "pt-BR", label: "Português (BR)" },
+            { value: "it-IT", label: "Italiano" },
+            { value: "ru-RU", label: "Русский" },
+            { value: "ar-SA", label: "العربية" },
+            { value: "hi-IN", label: "हिन्दी" },
+            { value: "th-TH", label: "ไทย" },
+            { value: "vi-VN", label: "Tiếng Việt" },
+          ]}
+          icon={Globe}
+        />
+      </PropertySection>
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.MAX_VALUE}
-                    value={String(currentProps.maxValue || '')}
-                    onChange={(value) => updateProp('maxValue', value || undefined)}
-                    placeholder="23:59"
-                />
+      {/* State */}
+      <PropertySection title="State">
+        <PropertySwitch
+          label={PROPERTY_LABELS.REQUIRED}
+          isSelected={Boolean(currentProps.isRequired)}
+          onChange={(checked) => updateProp("isRequired", checked)}
+          icon={CheckSquare}
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.DEFAULT_VALUE}
-                    value={String(currentProps.defaultValue || '')}
-                    onChange={(value) => updateProp('defaultValue', value || undefined)}
-                    placeholder="12:00"
-                />
+        <PropertySwitch
+          label={PROPERTY_LABELS.INVALID}
+          isSelected={Boolean(currentProps.isInvalid)}
+          onChange={(checked) => updateProp("isInvalid", checked)}
+          icon={AlertTriangle}
+        />
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.REQUIRED}
-                    isSelected={Boolean(currentProps.isRequired)}
-                    onChange={(checked) => updateProp('isRequired', checked)}
-                    icon={CheckSquare}
-                />
+        <PropertySwitch
+          label={PROPERTY_LABELS.DISABLED}
+          isSelected={Boolean(currentProps.isDisabled)}
+          onChange={(checked) => updateProp("isDisabled", checked)}
+          icon={PointerOff}
+        />
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.INVALID}
-                    isSelected={Boolean(currentProps.isInvalid)}
-                    onChange={(checked) => updateProp('isInvalid', checked)}
-                    icon={AlertTriangle}
-                />
-            </PropertySection>
+        <PropertySwitch
+          label={PROPERTY_LABELS.READONLY}
+          isSelected={Boolean(currentProps.isReadOnly)}
+          onChange={(checked) => updateProp("isReadOnly", checked)}
+          icon={PenOff}
+        />
+      </PropertySection>
 
-            {/* Behavior Section */}
-            <PropertySection title="Behavior">
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.READONLY}
-                    isSelected={Boolean(currentProps.isReadOnly)}
-                    onChange={(checked) => updateProp('isReadOnly', checked)}
-                    icon={PenOff}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.AUTO_FOCUS}
-                    isSelected={Boolean(currentProps.autoFocus)}
-                    onChange={(checked) => updateProp('autoFocus', checked)}
-                    icon={Focus}
-                />
-            </PropertySection>
-
-            {/* Design Section */}
-            <PropertySection title="Design">
-
-                <PropertySelect
-                    label={PROPERTY_LABELS.HOUR_CYCLE}
-                    value={String(currentProps.hourCycle || '')}
-                    onChange={(value) => updateProp('hourCycle', value ? Number(value) : undefined)}
-                    options={[
-                        { value: '', label: 'Default (Locale)' },
-                        { value: '12', label: '12 Hour' },
-                        { value: '24', label: '24 Hour' }
-                    ]}
-                    icon={Clock}
-                />
-
-                <PropertySelect
-                    label={PROPERTY_LABELS.GRANULARITY}
-                    value={String(currentProps.granularity || 'minute')}
-                    onChange={(value) => updateProp('granularity', value)}
-                    options={[
-                        { value: 'hour', label: 'Hour' },
-                        { value: 'minute', label: 'Minute' },
-                        { value: 'second', label: 'Second' }
-                    ]}
-                    icon={Clock}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.HIDE_TIMEZONE}
-                    isSelected={Boolean(currentProps.hideTimeZone)}
-                    onChange={(checked) => updateProp('hideTimeZone', checked)}
-                    icon={Globe}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.FORCE_LEADING_ZEROS}
-                    isSelected={Boolean(currentProps.shouldForceLeadingZeros)}
-                    onChange={(checked) => updateProp('shouldForceLeadingZeros', checked)}
-                    icon={Clock}
-                />
-            </PropertySection>
-
-            {/* Form Integration Section */}
-            <PropertySection title="Form Integration">
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.NAME}
-                    value={String(currentProps.name || '')}
-                    onChange={(value) => updateProp('name', value || undefined)}
-                    icon={FormInput}
-                    placeholder="time-field-name"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.FORM}
-                    value={String(currentProps.form || '')}
-                    onChange={(value) => updateProp('form', value || undefined)}
-                    icon={FormInput}
-                    placeholder="form-id"
-                />
-
-                <PropertySelect
-                    label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
-                    value={String(currentProps.validationBehavior || 'native')}
-                    onChange={(value) => updateProp('validationBehavior', value)}
-                    options={[
-                        { value: 'native', label: 'Native' },
-                        { value: 'aria', label: 'ARIA' }
-                    ]}
-                />
-            </PropertySection>
-        </>
-    );
+      {/* Form Integration */}
+      <PropertySection title="Form Integration">
+        <PropertyInput
+          label={PROPERTY_LABELS.NAME}
+          value={String(currentProps.name || "")}
+          onChange={(value) => updateProp("name", value || undefined)}
+          icon={FormInput}
+          placeholder="time-field-name"
+        />
+      </PropertySection>
+    </>
+  );
 });

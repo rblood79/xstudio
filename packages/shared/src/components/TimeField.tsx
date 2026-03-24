@@ -45,6 +45,7 @@ export interface TimeFieldProps<
    */
   placeholder?: string;
   // S2 props
+  variant?: string;
   size?: ComponentSize;
 }
 
@@ -54,6 +55,7 @@ export function TimeField<T extends TimeValue>({
   errorMessage,
   hourCycle = 24,
   placeholder,
+  variant = "default",
   size = "md",
   ...props
 }: TimeFieldProps<T>) {
@@ -65,6 +67,7 @@ export function TimeField<T extends TimeValue>({
           ? `react-aria-TimeField ${className}`
           : "react-aria-TimeField",
       )}
+      data-variant={variant}
       data-size={size}
       hourCycle={hourCycle}
     >

@@ -116,6 +116,10 @@ const LAYOUT_PROP_KEYS = [
   "src",
   "allowsRemoving",
   "maxRows",
+  "granularity",
+  "hourCycle",
+  "locale",
+  "calendar",
 ];
 
 function serializeLayoutRelevantValue(value: unknown): string {

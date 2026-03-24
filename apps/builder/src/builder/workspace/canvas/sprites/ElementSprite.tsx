@@ -100,6 +100,7 @@ import {
   DateRangePickerSpec,
   DateFieldSpec,
   TimeFieldSpec,
+  DateInputSpec,
   CalendarSpec,
   CalendarHeaderSpec,
   CalendarGridSpec,
@@ -372,8 +373,7 @@ const UI_DIALOG_TAGS = new Set(["Dialog", "Modal", "AlertDialog"]);
  */
 const UI_COLORSWATCH_TAGS = new Set(["ColorSwatch"]);
 const UI_COLORSLIDER_TAGS = new Set(["ColorSlider"]);
-const UI_TIMEFIELD_TAGS = new Set(["TimeField"]);
-const UI_DATEFIELD_TAGS = new Set(["DateField"]);
+// DateField/TimeField: compositional 컴포넌트 전환 — 전용 Pixi 라우팅 제거, spec shapes 경로 사용
 const UI_COLORAREA_TAGS = new Set(["ColorArea"]);
 const UI_CALENDAR_TAGS = new Set([
   "Calendar",
@@ -543,8 +543,6 @@ type SpriteType =
   | "dialog"
   | "colorSwatch"
   | "colorSlider"
-  | "timeField"
-  | "dateField"
   | "colorArea"
   | "calendar"
   | "colorWheel"
@@ -625,8 +623,7 @@ function getSpriteType(element: Element): SpriteType {
   // Phase 6 WebGL Migration 컴포넌트 - Date/Color Components
   if (UI_COLORSWATCH_TAGS.has(tag)) return "colorSwatch";
   if (UI_COLORSLIDER_TAGS.has(tag)) return "colorSlider";
-  if (UI_TIMEFIELD_TAGS.has(tag)) return "timeField";
-  if (UI_DATEFIELD_TAGS.has(tag)) return "dateField";
+  // DateField/TimeField: compositional — getComponentCategory 미분류 → spec shapes 경로
   if (UI_COLORAREA_TAGS.has(tag)) return "colorArea";
   if (UI_CALENDAR_TAGS.has(tag)) return "calendar";
   if (UI_COLORWHEEL_TAGS.has(tag)) return "colorWheel";
@@ -815,6 +812,7 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   SearchInput: SelectValueSpec,
   SearchIcon: SelectIconSpec,
   SearchClearButton: SelectIconSpec,
+  DateInput: DateInputSpec,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1103,6 +1101,9 @@ export const ElementSprite = memo(function ElementSprite({
     "SearchIcon",
     "SearchInput",
     "SearchClearButton",
+    "DateInput",
+    "DateSegment",
+    "TimeSegment",
     "Checkbox",
     "Radio",
     "Label",
@@ -1175,6 +1176,38 @@ export const ElementSprite = memo(function ElementSprite({
       }
     }
     return null;
+  });
+
+  // 🚀 DateField/TimeField → DateInput: 부모의 parentTag/granularity/hourCycle/locale 전파
+  const isDateInput = element.tag === "DateInput";
+  const dateInputParentTag = useStore((state) => {
+    if (!isDateInput || !element.parent_id) return null;
+    const p = state.elementsMap.get(element.parent_id);
+    return p && (p.tag === "DateField" || p.tag === "TimeField") ? p.tag : null;
+  });
+  const dateInputGranularity = useStore((state) => {
+    if (!isDateInput || !element.parent_id) return null;
+    const p = state.elementsMap.get(element.parent_id);
+    return (
+      ((p?.props as Record<string, unknown> | undefined)
+        ?.granularity as string) ?? null
+    );
+  });
+  const dateInputHourCycle = useStore((state) => {
+    if (!isDateInput || !element.parent_id) return null;
+    const p = state.elementsMap.get(element.parent_id);
+    return (
+      ((p?.props as Record<string, unknown> | undefined)
+        ?.hourCycle as number) ?? null
+    );
+  });
+  const dateInputLocale = useStore((state) => {
+    if (!isDateInput || !element.parent_id) return null;
+    const p = state.elementsMap.get(element.parent_id);
+    return (
+      ((p?.props as Record<string, unknown> | undefined)?.locale as string) ??
+      null
+    );
   });
 
   // 🚀 Select/ComboBox → SelectIcon/ComboBoxTrigger: 부모의 iconName 전파
@@ -1891,6 +1924,22 @@ export const ElementSprite = memo(function ElementSprite({
                   _groupPosition: toggleGroupPosition,
                 };
               }
+              // DateInput: 부모 DateField/TimeField의 granularity/hourCycle/locale 주입
+              if (dateInputParentTag) {
+                specProps = {
+                  ...specProps,
+                  _parentTag: dateInputParentTag,
+                  ...(dateInputGranularity != null && {
+                    _granularity: dateInputGranularity,
+                  }),
+                  ...(dateInputHourCycle != null && {
+                    _hourCycle: dateInputHourCycle,
+                  }),
+                  ...(dateInputLocale != null && {
+                    _locale: dateInputLocale,
+                  }),
+                };
+              }
 
               // ComboBox/Select: spec shapes가 props.style.width로 입력 영역 너비 결정
               // 기본값 200px → 실제 레이아웃 width로 교체하여 CSS 정합성 확보
@@ -2455,6 +2504,10 @@ export const ElementSprite = memo(function ElementSprite({
     isLabelInNowrapParent,
     tagGroupAncestorSize,
     tagGroupAllowsRemoving,
+    dateInputParentTag,
+    dateInputGranularity,
+    dateInputHourCycle,
+    dateInputLocale,
   ]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로
@@ -2869,15 +2922,7 @@ export const ElementSprite = memo(function ElementSprite({
           <PixiColorSlider element={effectiveElement} isSelected={isSelected} />
         );
 
-      case "timeField":
-        return (
-          <PixiTimeField element={effectiveElement} isSelected={isSelected} />
-        );
-
-      case "dateField":
-        return (
-          <PixiDateField element={effectiveElement} isSelected={isSelected} />
-        );
+      // dateField/timeField: compositional — spec shapes 경로로 처리
 
       case "colorArea":
         return (

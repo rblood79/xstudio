@@ -6,8 +6,38 @@ import {
   DateField,
   TimeField,
 } from "../components/list";
+import { I18nProvider } from "react-aria-components";
 import type { PreviewElement, RenderContext } from "../types";
-import { today, getLocalTimeZone, Time } from "@internationalized/date";
+import { today, now, getLocalTimeZone, Time } from "@internationalized/date";
+
+/**
+ * locale + calendar → I18nProvider locale 문자열
+ * 예: "ko-KR" + "buddhist" → "ko-KR-u-ca-buddhist"
+ */
+function buildLocaleString(
+  locale?: string,
+  calendar?: string,
+): string | undefined {
+  if (!locale && !calendar) return undefined;
+  const base = locale || "en-US";
+  if (!calendar) return base;
+  return `${base}-u-ca-${calendar}`;
+}
+
+/** locale/calendar가 있으면 I18nProvider로 래핑 */
+function wrapWithI18n(
+  node: React.ReactElement,
+  locale?: string,
+  calendar?: string,
+): React.ReactNode {
+  const localeStr = buildLocaleString(locale, calendar);
+  if (!localeStr) return node;
+  return (
+    <I18nProvider key={node.key} locale={localeStr}>
+      {node}
+    </I18nProvider>
+  );
+}
 
 /**
  * Date 관련 컴포넌트 렌더러
@@ -236,14 +266,24 @@ export const renderDateField = (
 ): React.ReactNode => {
   const { updateElementProps } = context;
 
-  const getGranularity = () => {
+  const granularity = (() => {
     const g = String(element.props.granularity || "");
     return ["day", "hour", "minute", "second"].includes(g) ? g : "day";
-  };
+  })() as "day" | "hour" | "minute" | "second";
 
-  return (
+  const locale = element.props.locale as string | undefined;
+  const calendar = element.props.calendar as string | undefined;
+
+  const hourCycle = element.props.hourCycle
+    ? Number(element.props.hourCycle)
+    : undefined;
+  // key에 granularity/locale/calendar 포함 → 변경 시 리마운트 (defaultValue 재적용)
+  const size = element.props.size as string | undefined;
+  const remountKey = `${element.id}-${granularity}-${locale || ""}-${calendar || ""}-${size || ""}`;
+
+  return wrapWithI18n(
     <DateField
-      key={element.id}
+      key={remountKey}
       id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
@@ -251,13 +291,22 @@ export const renderDateField = (
       label={String(element.props.label || "Date")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
+      size={
+        (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || undefined
+      }
+      variant={String(element.props.variant || "default")}
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
       name={element.props.name ? String(element.props.name) : undefined}
-      defaultValue={today(getLocalTimeZone())}
-      granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
+      defaultValue={
+        granularity === "day"
+          ? today(getLocalTimeZone())
+          : now(getLocalTimeZone())
+      }
+      granularity={granularity}
+      hourCycle={hourCycle as 12 | 24 | undefined}
       onChange={(date) => {
         const updatedProps = {
           ...element.props,
@@ -265,7 +314,9 @@ export const renderDateField = (
         };
         updateElementProps(element.id, updatedProps);
       }}
-    />
+    />,
+    locale,
+    calendar,
   );
 };
 
@@ -283,9 +334,17 @@ export const renderTimeField = (
     return ["hour", "minute", "second"].includes(g) ? g : "minute";
   };
 
-  return (
+  const locale = element.props.locale as string | undefined;
+  const granularity = getGranularity() as "hour" | "minute" | "second";
+  const hourCycle = element.props.hourCycle
+    ? Number(element.props.hourCycle)
+    : undefined;
+  const size = element.props.size as string | undefined;
+  const remountKey = `${element.id}-${granularity}-${locale || ""}-${size || ""}`;
+
+  return wrapWithI18n(
     <TimeField
-      key={element.id}
+      key={remountKey}
       id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
@@ -293,13 +352,18 @@ export const renderTimeField = (
       label={String(element.props.label || "Time")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
+      size={
+        (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || undefined
+      }
+      variant={String(element.props.variant || "default")}
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
       name={element.props.name ? String(element.props.name) : undefined}
       defaultValue={new Time(9, 0)}
-      granularity={getGranularity() as "hour" | "minute" | "second"}
+      granularity={granularity}
+      hourCycle={hourCycle as 12 | 24 | undefined}
       onChange={(time) => {
         const updatedProps = {
           ...element.props,
@@ -307,6 +371,7 @@ export const renderTimeField = (
         };
         updateElementProps(element.id, updatedProps);
       }}
-    />
+    />,
+    locale,
   );
 };

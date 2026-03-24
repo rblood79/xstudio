@@ -166,6 +166,10 @@ export type { DateRangePickerProps } from "./DateRangePicker.spec";
 export { DateFieldSpec } from "./DateField.spec";
 export type { DateFieldProps } from "./DateField.spec";
 
+// DateInput (DateField/TimeField 입력 영역)
+export { DateInputSpec } from "./DateInput.spec";
+export type { DateInputProps } from "./DateInput.spec";
+
 // TimeField
 export { TimeFieldSpec } from "./TimeField.spec";
 export type { TimeFieldProps } from "./TimeField.spec";

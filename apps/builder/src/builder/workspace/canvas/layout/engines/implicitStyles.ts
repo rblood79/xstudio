@@ -854,6 +854,53 @@ export function applyImplicitStyles(
     });
   }
 
+  // ── DateField / TimeField ────────────────────────────────────────────
+  // Label + DateInput(입력 영역) + FieldError. DateInput에 부모 props 주입.
+  if (containerTag === "datefield" || containerTag === "timefield") {
+    const hasLabel = !!containerProps?.label;
+    const sizeName = (containerProps?.size as string) ?? "md";
+    const inputHeight = SPEC_TRIGGER_HEIGHT[sizeName] ?? SPEC_TRIGGER_HEIGHT.md;
+
+    filteredChildren = children.filter(
+      (c) =>
+        (c.tag === "Label" ? hasLabel : false) ||
+        c.tag === "DateInput" ||
+        c.tag === "FieldError",
+    );
+
+    // DateInput에 부모 props 주입 (Spec shapes에서 세그먼트 텍스트 생성용)
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag === "DateInput") {
+        const cs = (child.props?.style || {}) as Record<string, unknown>;
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            size: sizeName,
+            _parentTag:
+              containerTag === "datefield" ? "DateField" : "TimeField",
+            _granularity: containerProps?.granularity,
+            _hourCycle: containerProps?.hourCycle,
+            _locale: containerProps?.locale,
+            style: {
+              ...cs,
+              width: cs.width ?? "100%",
+              height: inputHeight,
+            },
+          },
+        } as Element;
+      }
+      return child;
+    });
+
+    effectiveParent = withParentStyle(containerEl, {
+      ...parentStyle,
+      display: parentStyle.display ?? "flex",
+      flexDirection: parentStyle.flexDirection ?? "column",
+      gap: parentStyle.gap ?? 4,
+    });
+  }
+
   // ── SearchFieldWrapper ────────────────────────────────────────────────
   // ComboBoxWrapper와 동일 패턴: border + height + padding + 자식 스타일 주입
   if (containerTag === "searchfieldwrapper") {

@@ -99,8 +99,7 @@
       padding: var(--tf-input-padding);
       border: 1px solid;
       border-radius: var(--border-radius);
-      width: fit-content;
-      min-width: var(--tf-input-min-width);
+      width: 100%;
       white-space: nowrap;
       forced-color-adjust: none;
       font-size: var(--tf-input-size);
@@ -144,8 +143,8 @@
       border-bottom-color: var(--negative);
     }
 
-    /* ===== Time Segments ===== */
-    .react-aria-TimeSegment {
+    /* ===== Time Segments (React Aria uses DateSegment for TimeField too) ===== */
+    .react-aria-DateSegment {
       padding: 0 2px;
       font-variant-numeric: tabular-nums;
       text-align: end;
@@ -187,10 +186,10 @@
       }
     }
 
-    &[data-variant="primary"] .react-aria-TimeSegment:focus,
-    &[data-variant="secondary"] .react-aria-TimeSegment:focus,
-    &[data-variant="tertiary"] .react-aria-TimeSegment:focus,
-    &[data-variant="error"] .react-aria-TimeSegment:focus {
+    &[data-variant="primary"] .react-aria-DateSegment:focus,
+    &[data-variant="secondary"] .react-aria-DateSegment:focus,
+    &[data-variant="tertiary"] .react-aria-DateSegment:focus,
+    &[data-variant="error"] .react-aria-DateSegment:focus {
       background: var(--field-accent-container);
       color: var(--field-on-accent);
     }

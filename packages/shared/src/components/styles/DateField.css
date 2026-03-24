@@ -99,8 +99,7 @@
       padding: var(--df-input-padding);
       border: 1px solid;
       border-radius: var(--border-radius);
-      width: fit-content;
-      min-width: var(--df-input-min-width);
+      width: 100%;
       white-space: nowrap;
       forced-color-adjust: none;
       font-size: var(--df-input-size);

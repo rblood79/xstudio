@@ -202,7 +202,12 @@ export const DateSegmentSpec: ComponentSpec<DateSegmentProps> = {
 
       const ff = (props.style?.fontFamily as string) || fontFamily.mono;
 
-      const displayText = String(props.value ?? props.placeholder ?? "");
+      const displayText = String(
+        props.value ??
+          props.placeholder ??
+          (props as Record<string, unknown>).children ??
+          "",
+      );
       const textColor =
         props.style?.color ??
         (props.isFocused

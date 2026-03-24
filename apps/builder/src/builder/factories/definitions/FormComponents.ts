@@ -465,6 +465,7 @@ export function createNumberFieldDefinition(
           display: "flex",
           flexDirection: "column",
           gap: 6,
+          width: 240,
         },
       } as ComponentElementProps,
       ...ownerFields,
@@ -590,6 +591,9 @@ export function createSearchFieldDefinition(
         isInvalid: false,
         isReadOnly: false,
         isRequired: false,
+        style: {
+          width: 240,
+        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
