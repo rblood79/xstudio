@@ -9,3 +9,8 @@ export {
   SwatchIconButton,
   type SwatchIconButtonProps,
 } from "./SwatchIconButton";
+
+export {
+  SearchField as BuilderSearchField,
+  type SearchFieldProps as BuilderSearchFieldProps,
+} from "./SearchField";

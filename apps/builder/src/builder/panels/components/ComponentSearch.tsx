@@ -1,8 +1,7 @@
 /* eslint-disable local/prefer-keyboard-shortcuts-registry */
 import { useState, useEffect, useRef, useMemo } from "react";
-import { SearchField } from "@xstudio/shared/components/SearchField";
+import { SearchField } from "../../components/ui/SearchField";
 import { useRecentSearches } from "../../hooks/useRecentSearches";
-import "@xstudio/shared/components/styles/ComponentSearch.css";
 
 interface ComponentSearchProps {
   onSearchChange: (query: string) => void;
@@ -63,20 +62,12 @@ export function ComponentSearch({ onSearchChange }: ComponentSearchProps) {
     return () => clearTimeout(timeoutId);
   }, [query, addSearch]);
 
-  // Store input ref when SearchField mounts
-  // const handleRef = (input: HTMLInputElement | null) => {
-  //     inputRef.current = input;
-  // };
-
   return (
-    <div className="component-search">
-      <SearchField
-        value={query}
-        onChange={setQuery}
-        placeholder={placeholder}
-        aria-label="Search components"
-        className="component-search-field"
-      />
-    </div>
+    <SearchField
+      value={query}
+      onChange={setQuery}
+      placeholder={placeholder}
+      aria-label="Search components"
+    />
   );
 }

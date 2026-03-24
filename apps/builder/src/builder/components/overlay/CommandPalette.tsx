@@ -13,27 +13,27 @@
  * ```
  */
 
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
   Modal,
   Dialog,
   ListBox,
   ListBoxItem,
   ModalOverlay,
-} from 'react-aria-components';
-import { Search } from 'lucide-react';
+} from "react-aria-components";
+import { Search } from "lucide-react";
 import {
   SHORTCUT_DEFINITIONS,
   type ShortcutId,
-} from '../../config/keyboardShortcuts';
+} from "../../config/keyboardShortcuts";
 import {
   formatShortcut,
   useKeyboardShortcutsRegistry,
   usePanelLayout,
   type ShortcutCategory,
-} from '@/builder/hooks';
-import { iconProps } from '../../../utils/ui/uiConstants';
-import './CommandPalette.css';
+} from "@/builder/hooks";
+import { iconProps } from "../../../utils/ui/uiConstants";
+import "./CommandPalette.css";
 
 // ============================================
 // Types
@@ -58,14 +58,14 @@ export interface CommandPaletteProps {
 // ============================================
 
 const CATEGORY_LABELS: Record<ShortcutCategory, string> = {
-  system: '시스템',
-  navigation: '탐색',
-  panels: '패널',
-  canvas: '캔버스',
-  tools: '도구',
-  properties: '속성',
-  events: '이벤트',
-  nodes: '노드',
+  system: "시스템",
+  navigation: "탐색",
+  panels: "패널",
+  canvas: "캔버스",
+  tools: "도구",
+  properties: "속성",
+  events: "이벤트",
+  nodes: "노드",
 };
 
 // ============================================
@@ -78,7 +78,7 @@ export function CommandPalette({
 }: CommandPaletteProps = {}) {
   // State
   const [internalOpen, setInternalOpen] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Controlled vs Uncontrolled
@@ -88,7 +88,7 @@ export function CommandPalette({
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
-        setSearch(''); // 열릴 때 검색어 초기화
+        setSearch(""); // 열릴 때 검색어 초기화
       }
       if (controlledOnOpenChange) {
         controlledOnOpenChange(open);
@@ -96,7 +96,7 @@ export function CommandPalette({
         setInternalOpen(open);
       }
     },
-    [controlledOnOpenChange]
+    [controlledOnOpenChange],
   );
 
   // 모든 명령어 목록 생성
@@ -119,27 +119,34 @@ export function CommandPalette({
         cmd.label.toLowerCase().includes(query) ||
         cmd.id.toLowerCase().includes(query) ||
         cmd.category.toLowerCase().includes(query) ||
-        cmd.shortcut.toLowerCase().includes(query)
+        cmd.shortcut.toLowerCase().includes(query),
     );
   }, [allCommands, search]);
+
+  // 커스텀 이벤트로 외부에서 열기
+  useEffect(() => {
+    const handler = () => handleOpenChange(true);
+    window.addEventListener("open-command-palette", handler);
+    return () => window.removeEventListener("open-command-palette", handler);
+  }, [handleOpenChange]);
 
   // Cmd+K로 열기
   useKeyboardShortcutsRegistry(
     [
       {
-        key: 'k',
-        modifier: 'cmd',
+        key: "k",
+        modifier: "cmd",
         handler: () => {
           handleOpenChange(true);
         },
         preventDefault: true,
         priority: 95,
-        category: 'system',
-        description: 'Open command palette',
+        category: "system",
+        description: "Open command palette",
       },
     ],
     [handleOpenChange],
-    { capture: true }
+    { capture: true },
   );
 
   // 열릴 때 입력창에 포커스
@@ -164,36 +171,36 @@ export function CommandPalette({
 
       // Modal 패널 명령 처리
       switch (commandId) {
-        case 'openSettingsModal':
-          openPanelAsModal('settings');
+        case "openSettingsModal":
+          openPanelAsModal("settings");
           return;
-        case 'openHistoryModal':
-          openPanelAsModal('history');
+        case "openHistoryModal":
+          openPanelAsModal("history");
           return;
-        case 'openAIModal':
-          openPanelAsModal('ai');
+        case "openAIModal":
+          openPanelAsModal("ai");
           return;
         // 일반 패널 토글 명령 처리
-        case 'toggleNodes':
-          togglePanel('left', 'nodes');
+        case "toggleNodes":
+          togglePanel("left", "nodes");
           return;
-        case 'toggleComponents':
-          togglePanel('left', 'components');
+        case "toggleComponents":
+          togglePanel("left", "components");
           return;
-        case 'toggleProperties':
-          togglePanel('right', 'properties');
+        case "toggleProperties":
+          togglePanel("right", "properties");
           return;
-        case 'toggleStyles':
-          togglePanel('right', 'styles');
+        case "toggleStyles":
+          togglePanel("right", "styles");
           return;
-        case 'toggleEvents':
-          togglePanel('right', 'events');
+        case "toggleEvents":
+          togglePanel("right", "events");
           return;
-        case 'toggleHistory':
-          togglePanel('right', 'history');
+        case "toggleHistory":
+          togglePanel("right", "history");
           return;
-        case 'openSettings':
-          togglePanel('left', 'settings');
+        case "openSettings":
+          togglePanel("left", "settings");
           return;
         default:
           // 다른 명령은 키보드 이벤트로 시뮬레이션
@@ -201,18 +208,18 @@ export function CommandPalette({
           break;
       }
     },
-    [handleOpenChange, openPanelAsModal, togglePanel]
+    [handleOpenChange, openPanelAsModal, togglePanel],
   );
 
   // 키보드 내비게이션
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         e.preventDefault();
         handleOpenChange(false);
       }
     },
-    [handleOpenChange]
+    [handleOpenChange],
   );
 
   return (
@@ -224,71 +231,71 @@ export function CommandPalette({
       <Modal className="command-palette-modal">
         <Dialog aria-label="Command Palette">
           <div onKeyDown={handleKeyDown}>
-          {/* Search Input */}
-          <div className="command-palette-search">
-            <Search
-              size={iconProps.size}
-              className="command-palette-search-icon"
-            />
-            <input
-              ref={inputRef}
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="명령어 검색..."
-              className="command-palette-input"
-              aria-label="Search commands"
-            />
-          </div>
-
-          {/* Command List */}
-          {filteredCommands.length > 0 ? (
-            <ListBox
-              aria-label="Commands"
-              className="command-palette-list"
-              selectionMode="single"
-              onAction={(key) => executeCommand(key as ShortcutId)}
-            >
-              {filteredCommands.map((cmd) => (
-                <ListBoxItem
-                  key={cmd.id}
-                  id={cmd.id}
-                  textValue={cmd.label}
-                  className="command-palette-item"
-                >
-                  <div className="command-palette-item-content">
-                    <span className="command-palette-item-label">
-                      {cmd.label}
-                    </span>
-                    <span className="command-palette-item-category">
-                      {CATEGORY_LABELS[cmd.category]}
-                    </span>
-                  </div>
-                  <kbd className="command-palette-kbd">{cmd.shortcut}</kbd>
-                </ListBoxItem>
-              ))}
-            </ListBox>
-          ) : (
-            <div className="command-palette-empty">
-              "{search}"에 대한 결과가 없습니다
+            {/* Search Input */}
+            <div className="command-palette-search">
+              <Search
+                size={iconProps.size}
+                className="command-palette-search-icon"
+              />
+              <input
+                ref={inputRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="명령어 검색..."
+                className="command-palette-input"
+                aria-label="Search commands"
+              />
             </div>
-          )}
 
-          {/* Footer */}
-          <div className="command-palette-footer">
-            <div className="command-palette-hints">
-              <span className="command-palette-hint">
-                <kbd>↑↓</kbd> 이동
-              </span>
-              <span className="command-palette-hint">
-                <kbd>↵</kbd> 실행
-              </span>
-              <span className="command-palette-hint">
-                <kbd>esc</kbd> 닫기
-              </span>
+            {/* Command List */}
+            {filteredCommands.length > 0 ? (
+              <ListBox
+                aria-label="Commands"
+                className="command-palette-list"
+                selectionMode="single"
+                onAction={(key) => executeCommand(key as ShortcutId)}
+              >
+                {filteredCommands.map((cmd) => (
+                  <ListBoxItem
+                    key={cmd.id}
+                    id={cmd.id}
+                    textValue={cmd.label}
+                    className="command-palette-item"
+                  >
+                    <div className="command-palette-item-content">
+                      <span className="command-palette-item-label">
+                        {cmd.label}
+                      </span>
+                      <span className="command-palette-item-category">
+                        {CATEGORY_LABELS[cmd.category]}
+                      </span>
+                    </div>
+                    <kbd className="command-palette-kbd">{cmd.shortcut}</kbd>
+                  </ListBoxItem>
+                ))}
+              </ListBox>
+            ) : (
+              <div className="command-palette-empty">
+                "{search}"에 대한 결과가 없습니다
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="command-palette-footer">
+              <div className="command-palette-hints">
+                <span className="command-palette-hint">
+                  <kbd>↑↓</kbd> 이동
+                </span>
+                <span className="command-palette-hint">
+                  <kbd>↵</kbd> 실행
+                </span>
+                <span className="command-palette-hint">
+                  <kbd>esc</kbd> 닫기
+                </span>
+              </div>
+              <span>{filteredCommands.length}개 명령어</span>
             </div>
-            <span>{filteredCommands.length}개 명령어</span>
-          </div>
           </div>
         </Dialog>
       </Modal>

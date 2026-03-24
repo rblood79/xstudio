@@ -12,10 +12,15 @@
     }
   }
 
-  .react-aria-TagList {
+  .tag-list-wrapper {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-xs);
+    align-items: center;
+  }
+
+  .react-aria-TagList {
+    display: contents;
   }
 
   .react-aria-Tag {
@@ -102,13 +107,9 @@
     cursor: pointer;
   }
 
-  .react-aria-TagList {
-    .react-aria-Tag {
-      &[data-disabled] {
-        border-color: var(--border-disabled);
-        color: var(--fg-disabled);
-      }
-    }
+  .react-aria-Tag[data-disabled] {
+    border-color: var(--border-disabled);
+    color: var(--fg-disabled);
   }
 
   /* ===== Parent-delegated Color Variants ===== */

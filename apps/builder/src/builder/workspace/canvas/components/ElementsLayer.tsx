@@ -7,6 +7,7 @@ import {
   type ComputedLayout,
 } from "../layout";
 import { applyImplicitStyles } from "../layout/engines/implicitStyles";
+import { getSyntheticElementsMap } from "../layout/engines/fullTreeLayout";
 import type { PixiPageRendererInput } from "../renderers";
 import {
   buildPageChildrenMap,
@@ -548,6 +549,21 @@ export const ElementsLayer = memo(function ElementsLayer({
               order_num: 1,
             } as Element;
             effectiveChildElements = [syntheticLabel];
+          }
+        }
+
+        // TagList: maxRows 초과 시 synthetic "Show all" Tag 추가
+        // implicitStyles에서 생성 → registerSyntheticElement로 등록된 객체 재사용
+        if (
+          effectiveChildElement.tag === "TagList" &&
+          isContainerType &&
+          fullTreeLayoutMap
+        ) {
+          const showAllEl = getSyntheticElementsMap().get(
+            `${effectiveChildElement.id}__showAll`,
+          );
+          if (showAllEl) {
+            effectiveChildElements = [...effectiveChildElements, showAllEl];
           }
         }
 

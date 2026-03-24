@@ -1,0 +1,110 @@
+/**
+ * Builder SearchField Styles
+ *
+ * 빌더 UI 전용 검색 필드 (패널 상단, 커맨드 팔레트 등)
+ * 패널 경계에 맞는 flat 디자인: border-radius 없음, 좌우 border 없음
+ */
+
+.builder-search-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  height: var(--header-height);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border);
+  border-width: 1px 0;
+  background: var(--bg-inset);
+  box-shadow: var(--inset-shadow-sm);
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease;
+  cursor: text;
+
+  /*&:hover:not(:has([data-disabled])):not(:has([data-focused])) {
+    border-color: var(--border-hover);
+  }*/
+
+  /*&:has([data-focused]) {
+    border-color: var(--accent);
+    background: var(--bg-overlay);
+  }*/
+
+  /* ===== Search Icon ===== */
+  .builder-search-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--fg-muted);
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  /* ===== Input ===== */
+  .react-aria-Input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--fg);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs-line-height);
+
+    &::placeholder {
+      color: var(--fg-muted);
+    }
+
+    &::-webkit-search-cancel-button,
+    &::-webkit-search-decoration {
+      -webkit-appearance: none;
+    }
+  }
+
+  /* ===== Clear Button ===== */
+  .react-aria-Button {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--fg-muted);
+    cursor: pointer;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &[data-hovered]:not([data-disabled]) {
+      background: var(--bg-muted);
+      color: var(--fg);
+    }
+
+    &[data-pressed]:not([data-disabled]) {
+      background: var(--bg-emphasis);
+      color: var(--fg);
+    }
+  }
+
+  /* Empty: show search icon, hide clear button */
+  &[data-empty] .react-aria-Button {
+    display: none;
+  }
+
+  /* Has value: hide search icon, show clear button */
+  &:not([data-empty]) .builder-search-icon {
+    display: none;
+  }
+}

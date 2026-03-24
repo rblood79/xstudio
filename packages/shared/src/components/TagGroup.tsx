@@ -263,31 +263,12 @@ export function TagGroup<T extends object>({
           // 원본 데이터의 id를 문자열로 변환하여 비교
           const itemId = String(item.id ?? index);
           const isRemoved = removedItemIds.includes(itemId);
-          console.log("🔍 Filter check:", {
-            originalId: item.id,
-            originalIdType: typeof item.id,
-            itemId,
-            removedItemIds: removedItemIds.slice(0, 5), // 처음 5개만 표시
-            isRemoved,
-          });
-          if (isRemoved) {
-            console.log("🚫 Filtering out removed item:", itemId);
-          }
           return !isRemoved;
         })
         .map((item, index) => ({
           id: String(item.id || index),
           ...item,
         })) as T[];
-
-      console.log("✅ TagGroup with columnMapping - items:", {
-        totalItems: filteredData.length,
-        removedItemIds,
-        filteredItems: tagItems.length,
-        tagItems: tagItems.map((item) =>
-          String((item as { id: string | number }).id),
-        ),
-      });
 
       return (
         <AriaTagGroup
@@ -399,8 +380,6 @@ export function TagGroup<T extends object>({
         ),
         ...item,
       }));
-
-      console.log("✅ TagGroup Dynamic Collection - items:", tagItems);
 
       return (
         <AriaTagGroup
@@ -546,31 +525,33 @@ export function TagGroup<T extends object>({
         data-label-position={labelPosition}
       >
         {label && <Label>{label}</Label>}
-        <TagList
-          items={items}
-          renderEmptyState={renderEmptyState}
-          className="react-aria-TagList"
-        >
-          {displayChildren}
-        </TagList>
-        {showAllButton && (
-          <button
-            className="tag-show-all-btn"
-            onClick={() => setIsCollapsed(false)}
-            type="button"
+        <div className="tag-list-wrapper">
+          <TagList
+            items={items}
+            renderEmptyState={renderEmptyState}
+            className="react-aria-TagList"
           >
-            Show all ({totalChildCount})
-          </button>
-        )}
-        {hasMaxRows && !isCollapsed && (
-          <button
-            className="tag-show-all-btn"
-            onClick={() => setIsCollapsed(true)}
-            type="button"
-          >
-            Show less
-          </button>
-        )}
+            {displayChildren}
+          </TagList>
+          {showAllButton && (
+            <button
+              className="tag-show-all-btn"
+              onClick={() => setIsCollapsed(false)}
+              type="button"
+            >
+              Show all ({totalChildCount})
+            </button>
+          )}
+          {hasMaxRows && !isCollapsed && (
+            <button
+              className="tag-show-all-btn"
+              onClick={() => setIsCollapsed(true)}
+              type="button"
+            >
+              Show less
+            </button>
+          )}
+        </div>
         {description && <Text slot="description">{description}</Text>}
         {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
       </AriaTagGroup>

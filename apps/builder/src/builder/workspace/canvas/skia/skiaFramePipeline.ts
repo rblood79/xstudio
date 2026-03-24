@@ -15,10 +15,7 @@
 import type { CanvasKit, FontMgr } from "canvaskit-wasm";
 import type { Container } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
-import type {
-  RendererAIInvalidation,
-  SkiaRendererInput,
-} from "../renderers";
+import type { RendererAIInvalidation, SkiaRendererInput } from "../renderers";
 import type { BoundingBox } from "../selection/types";
 import type {
   AIEffectNodeBounds,
@@ -31,6 +28,7 @@ import {
   getSharedLayoutMap,
   getSharedLayoutVersion,
   getSharedFilteredChildrenMap,
+  getSyntheticElementsMap,
 } from "../layout/engines/fullTreeLayout";
 import {
   getCachedCommandStream,
@@ -217,7 +215,9 @@ function buildViaCommandStream(
     for (const [parentId, childIds] of filteredChildIds) {
       const children: Element[] = [];
       for (const cid of childIds) {
-        const el = rendererInput.elementsMap.get(cid);
+        const el =
+          rendererInput.elementsMap.get(cid) ??
+          getSyntheticElementsMap().get(cid);
         if (el) children.push(el);
       }
       commandChildrenMap.set(parentId, children);

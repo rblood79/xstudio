@@ -452,6 +452,26 @@ export function applyImplicitStyles(
           filteredChildren = filteredChildren.filter(
             (c) => c.tag !== "Tag" || visibleIds.has(c.id),
           );
+
+          // Synthetic "Show all" Tag: maxRows 초과 시 표시하는 가상 Tag
+          // fullTreeLayout의 synthetic handler가 Taffy 트리에 자동 추가
+          const showAllTag: Element = {
+            id: `${containerEl.id}__showAll`,
+            tag: "Tag",
+            props: {
+              children: "Show all",
+              style: {
+                whiteSpace: "nowrap",
+                backgroundColor: "transparent",
+                borderColor: "transparent",
+                color: "{color.accent}",
+              },
+            },
+            parent_id: containerEl.id,
+            page_id: containerEl.page_id,
+            order_num: visibleCount + 1,
+          } as Element;
+          filteredChildren.push(showAllTag);
         }
       }
     }

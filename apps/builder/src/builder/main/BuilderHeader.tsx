@@ -11,6 +11,7 @@ import {
   Activity,
   GitBranch,
   Settings,
+  Command,
   FolderOpen,
   Download,
   Upload,
@@ -295,6 +296,19 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             onPress={() => openPanelAsModal("settings")}
           >
             <Settings
+              color={iconProps.color}
+              strokeWidth={iconProps.strokeWidth}
+              size={iconProps.size}
+            />
+          </ToggleButton>
+          <ToggleButton
+            id="shortcuts"
+            aria-label="Command Palette"
+            onPress={() =>
+              window.dispatchEvent(new CustomEvent("open-command-palette"))
+            }
+          >
+            <Command
               color={iconProps.color}
               strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}

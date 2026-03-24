@@ -170,6 +170,25 @@ export function publishFilteredChildrenMap(
   _filteredVersion++;
 }
 
+// ─── 공유 Synthetic Elements Map ──────────────────────────────────
+// Command Stream 경로에서 synthetic element를 조회할 수 있도록 공유
+const _syntheticElementsMap = new Map<string, Element>();
+
+/** Synthetic element 등록 (DFS synthetic handler에서 호출) */
+export function registerSyntheticElement(el: Element): void {
+  _syntheticElementsMap.set(el.id, el);
+}
+
+/** 레이아웃 패스 시작 시 이전 synthetic elements 정리 (메모리 릭 방지) */
+export function clearSyntheticElements(): void {
+  _syntheticElementsMap.clear();
+}
+
+/** Synthetic elements 조회 (command stream 경로에서 elementsMap fallback) */
+export function getSyntheticElementsMap(): ReadonlyMap<string, Element> {
+  return _syntheticElementsMap;
+}
+
 /** 공유된 filteredChildIdsMap 조회 (모든 페이지 머지, 버전 캐시) */
 export function getSharedFilteredChildrenMap(): Map<string, string[]> | null {
   if (_perPageFilteredMaps.size === 0) return null;
@@ -1020,6 +1039,7 @@ function traversePostOrder(
     );
     batch.push({ style: synthRecord, children: [], elementId: synthChild.id });
     indexMap.set(synthChild.id, batch.length - 1);
+    registerSyntheticElement(synthChild);
   }
 
   // 3.6. Implicit child style overrides → batch 반영
@@ -1626,6 +1646,9 @@ export function calculateFullTreeLayout(
   // 루트 요소 존재 확인
   const rootEl = elementsMap.get(rootElementId);
   if (!rootEl) return null;
+
+  // 이전 패스의 synthetic elements 정리 (삭제된 TagList의 유령 엔트리 방지)
+  clearSyntheticElements();
 
   // 페이지별 persistent tree 조회/생성
   const pageId = rootEl.page_id ?? "__default__";
