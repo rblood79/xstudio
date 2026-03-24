@@ -319,9 +319,6 @@ export function createDateFieldDefinition(
         isReadOnly: false,
         isInvalid: false,
         style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -395,9 +392,6 @@ export function createTimeFieldDefinition(
         isReadOnly: false,
         isInvalid: false,
         style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,

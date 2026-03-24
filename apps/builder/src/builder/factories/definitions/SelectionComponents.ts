@@ -31,9 +31,6 @@ export function createSelectDefinition(
         isReadOnly: false,
         isRequired: false,
         style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -160,9 +157,6 @@ export function createComboBoxDefinition(
         isReadOnly: false,
         isRequired: false,
         style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,

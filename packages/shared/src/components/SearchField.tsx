@@ -29,6 +29,7 @@ export interface SearchFieldProps extends AriaSearchFieldProps {
   placeholder?: string;
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
+  labelPosition?: "top" | "side";
 }
 
 export function SearchField({
@@ -38,6 +39,7 @@ export function SearchField({
   placeholder,
   size = "md",
   necessityIndicator,
+  labelPosition = "top",
   ...props
 }: SearchFieldProps) {
   const searchIconData = getIconData("search");
@@ -52,6 +54,7 @@ export function SearchField({
           : "react-aria-SearchField",
       )}
       data-size={size}
+      data-label-position={labelPosition}
     >
       {label && (
         <Label>

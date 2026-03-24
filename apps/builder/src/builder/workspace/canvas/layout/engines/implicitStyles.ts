@@ -17,6 +17,7 @@ import {
   measureTextWidth,
 } from "./utils";
 import { InlineAlertSpec } from "@xstudio/specs";
+import { getNecessityIndicatorSuffix } from "@xstudio/shared/components";
 
 // ─── 인터페이스 ──────────────────────────────────────────────────────
 
@@ -276,12 +277,20 @@ export function applyImplicitStyles(
       return child;
     });
 
+    const tgLabelPos = containerProps?.labelPosition as string | undefined;
+    const tgDefaultDir = hasTagList ? "column" : "row";
+    // labelPosition이 명시되면 flexDirection 강제 적용
+    const tgFlexDir = tgLabelPos
+      ? tgLabelPos === "side"
+        ? "row"
+        : "column"
+      : (parentStyle.flexDirection ?? tgDefaultDir);
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
-      display: "flex",
-      flexDirection: hasTagList ? "column" : "row",
-      flexWrap: hasTagList ? undefined : "wrap",
-      gap: 4,
+      display: parentStyle.display ?? "flex",
+      flexDirection: tgFlexDir,
+      flexWrap: hasTagList && tgLabelPos !== "side" ? undefined : "wrap",
+      gap: parentStyle.gap ?? 4,
     });
   }
 
@@ -294,6 +303,7 @@ export function applyImplicitStyles(
       : undefined;
     const parentProps = parentEl?.props as Record<string, unknown> | undefined;
     const orientation = parentProps?.orientation as string | undefined;
+    const parentLabelPos = parentProps?.labelPosition as string | undefined;
 
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
@@ -301,6 +311,8 @@ export function applyImplicitStyles(
       flexDirection: orientation === "vertical" ? "column" : "row",
       flexWrap: orientation === "vertical" ? undefined : "wrap",
       gap: parentStyle.gap ?? 4,
+      // labelPosition: "side" 시 flex:1로 남은 공간 차지 (Label 옆 배치)
+      ...(parentLabelPos === "side" ? { flex: 1, minWidth: 0 } : {}),
     });
 
     // Tag 자식: white-space: nowrap (CSS .react-aria-Tag 동기화)
@@ -325,7 +337,33 @@ export function applyImplicitStyles(
       const tagChildren = filteredChildren.filter((c) => c.tag === "Tag");
       if (tagChildren.length > 0) {
         // 부모 폭: DFS에서 전달된 availableWidth 사용
-        const parentWidth = availableWidth || 350;
+        // labelPosition: "side" 시 Label 폭을 빼서 TagList 실제 사용 가능 폭 계산
+        let parentWidth = availableWidth || 350;
+        if (parentLabelPos === "side") {
+          const labelChild = filteredChildren.find((c) => c.tag === "Label");
+          if (labelChild) {
+            const labelText = String(
+              (labelChild.props as Record<string, unknown>)?.children || "",
+            );
+            const labelFontSize =
+              parseFloat(
+                String(
+                  (
+                    (labelChild.props as Record<string, unknown>)
+                      ?.style as Record<string, unknown>
+                  )?.fontSize ?? 14,
+                ),
+              ) || 14;
+            const labelWidth =
+              measureTextWidth(
+                labelText,
+                labelFontSize,
+                "Pretendard Variable",
+                500,
+              ) + gap;
+            parentWidth = Math.max(parentWidth - labelWidth, 50);
+          }
+        }
         const gap = 4;
         const sizeName = (parentProps?.size as string) || "md";
         const tagPaddingX =
@@ -544,10 +582,16 @@ export function applyImplicitStyles(
         return child;
       });
 
+    const labelPos = containerProps?.labelPosition as string | undefined;
+    const flexDir = labelPos
+      ? labelPos === "side"
+        ? "row"
+        : "column"
+      : (parentStyle.flexDirection ?? "column");
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
-      flexDirection: parentStyle.flexDirection ?? "column",
+      flexDirection: flexDir,
       gap: parentStyle.gap ?? 4,
     });
   }
@@ -652,10 +696,16 @@ export function applyImplicitStyles(
       return child;
     });
 
+    const labelPos = containerProps?.labelPosition as string | undefined;
+    const flexDir = labelPos
+      ? labelPos === "side"
+        ? "row"
+        : "column"
+      : (parentStyle.flexDirection ?? "column");
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
-      flexDirection: parentStyle.flexDirection ?? "column",
+      flexDirection: flexDir,
       gap: parentStyle.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
     });
   }
@@ -696,10 +746,16 @@ export function applyImplicitStyles(
       return child;
     });
 
+    const nfLabelPos = containerProps?.labelPosition as string | undefined;
+    const nfFlexDir = nfLabelPos
+      ? nfLabelPos === "side"
+        ? "row"
+        : "column"
+      : (parentStyle.flexDirection ?? "column");
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
-      flexDirection: parentStyle.flexDirection ?? "column",
+      flexDirection: nfFlexDir,
       gap: parentStyle.gap ?? 4,
     });
   }
@@ -870,10 +926,16 @@ export function applyImplicitStyles(
         c.tag === "FieldError",
     );
 
+    const tfLabelPos = containerProps?.labelPosition as string | undefined;
+    const tfFlexDir = tfLabelPos
+      ? tfLabelPos === "side"
+        ? "row"
+        : "column"
+      : (parentStyle.flexDirection ?? "column");
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
-      flexDirection: parentStyle.flexDirection ?? "column",
+      flexDirection: tfFlexDir,
       gap: parentStyle.gap ?? 4,
     });
   }
@@ -917,10 +979,16 @@ export function applyImplicitStyles(
       return child;
     });
 
+    const dfLabelPos = containerProps?.labelPosition as string | undefined;
+    const dfFlexDir = dfLabelPos
+      ? dfLabelPos === "side"
+        ? "row"
+        : "column"
+      : (parentStyle.flexDirection ?? "column");
     effectiveParent = withParentStyle(containerEl, {
       ...parentStyle,
       display: parentStyle.display ?? "flex",
-      flexDirection: parentStyle.flexDirection ?? "column",
+      flexDirection: dfFlexDir,
       gap: parentStyle.gap ?? 4,
     });
   }
@@ -1386,27 +1454,29 @@ export function applyImplicitStyles(
   }
 
   // ── Separator: size → margin 주입 (Taffy는 CSS data-size 못 읽음) ──
-  filteredChildren = filteredChildren.map((child) => {
-    if (child.tag !== "Separator" && child.tag !== "Hr") return child;
-    const childProps = child.props as Record<string, unknown> | undefined;
-    const childStyle = (childProps?.style || {}) as Record<string, unknown>;
-    // 이미 인라인 margin이 있으면 스킵
-    if (childStyle.marginTop != null || childStyle.marginBottom != null)
-      return child;
-    const sep_size = (childProps?.size as string) ?? "md";
-    const sep_margin = sep_size === "sm" ? 4 : sep_size === "lg" ? 16 : 8;
-    return {
-      ...child,
-      props: {
-        ...childProps,
-        style: {
-          ...childStyle,
-          marginTop: sep_margin,
-          marginBottom: sep_margin,
+  if (filteredChildren.some((c) => c.tag === "Separator" || c.tag === "Hr")) {
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag !== "Separator" && child.tag !== "Hr") return child;
+      const childProps = child.props as Record<string, unknown> | undefined;
+      const childStyle = (childProps?.style || {}) as Record<string, unknown>;
+      // 이미 인라인 margin이 있으면 스킵
+      if (childStyle.marginTop != null || childStyle.marginBottom != null)
+        return child;
+      const sep_size = (childProps?.size as string) ?? "md";
+      const sep_margin = sep_size === "sm" ? 4 : sep_size === "lg" ? 16 : 8;
+      return {
+        ...child,
+        props: {
+          ...childProps,
+          style: {
+            ...childStyle,
+            marginTop: sep_margin,
+            marginBottom: sep_margin,
+          },
         },
-      },
-    } as Element;
-  });
+      } as Element;
+    });
+  }
 
   // ── Label necessity indicator 공통 주입 ────────────────────────────
   // 부모 field의 necessityIndicator/isRequired → Label children 텍스트에 직접 반영
@@ -1415,19 +1485,32 @@ export function applyImplicitStyles(
     | string
     | undefined;
   const parentRequired = containerProps?.isRequired as boolean | undefined;
-  if (parentNecessity) {
+  const NECESSITY_INDICATOR_TAGS = new Set([
+    "textfield",
+    "textarea",
+    "numberfield",
+    "searchfield",
+    "select",
+    "combobox",
+    "datefield",
+    "timefield",
+    "colorfield",
+    "checkboxgroup",
+    "radiogroup",
+    "taggroup",
+  ]);
+
+  if (parentNecessity && NECESSITY_INDICATOR_TAGS.has(containerTag)) {
     filteredChildren = filteredChildren.map((child) => {
       if (child.tag === "Label") {
         const originalText =
           (child.props?.children as string) ||
           (child.props?.label as string) ||
           "";
-        let indicatorText = "";
-        if (parentNecessity === "icon" && parentRequired) {
-          indicatorText = " *";
-        } else if (parentNecessity === "label") {
-          indicatorText = parentRequired ? " (required)" : " (optional)";
-        }
+        const indicatorText = getNecessityIndicatorSuffix(
+          parentNecessity,
+          parentRequired ?? false,
+        );
         if (indicatorText) {
           return {
             ...child,
@@ -1444,8 +1527,9 @@ export function applyImplicitStyles(
 
   // ── Label flexShrink 공통 주입 ────────────────────────────────────
   // flex row 전환 시 Label이 축소되지 않도록 flexShrink: 0 보장
-  filteredChildren = filteredChildren.map((child) => {
-    if (child.tag === "Label") {
+  if (filteredChildren.some((c) => c.tag === "Label")) {
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag !== "Label") return child;
       const cs = (child.props?.style || {}) as Record<string, unknown>;
       if (cs.flexShrink == null) {
         return {
@@ -1456,9 +1540,9 @@ export function applyImplicitStyles(
           },
         } as Element;
       }
-    }
-    return child;
-  });
+      return child;
+    });
+  }
 
   return {
     effectiveParent,

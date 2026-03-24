@@ -35,6 +35,7 @@ export {
   Input,
   DataField,
   renderNecessityIndicator,
+  getNecessityIndicatorSuffix,
 } from "./Field";
 export type { NecessityIndicator } from "./Field";
 export { FileTrigger } from "./FileTrigger";

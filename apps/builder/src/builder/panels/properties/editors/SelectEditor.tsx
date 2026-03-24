@@ -18,6 +18,7 @@ import {
   Database,
   List,
   LayoutList,
+  Layout,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -38,6 +39,10 @@ import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 import { useSyncGrandchildProp } from "../../../hooks/useSyncGrandchildProp";
 import { supabase } from "../../../../env/supabase.client";
 import type { BatchPropsUpdate } from "../../../stores/utils/elementUpdate";
+import {
+  buildRequiredUpdate,
+  NECESSITY_INDICATOR_OPTIONS,
+} from "./editorUtils";
 
 export const SelectEditor = memo(
   function SelectEditor({
@@ -155,13 +160,7 @@ export const SelectEditor = memo(
     );
 
     const handleRequiredChange = useCallback(
-      (value: string) => {
-        if (value === "") {
-          onUpdate({ isRequired: false, necessityIndicator: undefined });
-        } else {
-          onUpdate({ isRequired: true, necessityIndicator: value });
-        }
-      },
+      (value: string) => onUpdate(buildRequiredUpdate(value)),
       [onUpdate],
     );
 
@@ -240,6 +239,13 @@ export const SelectEditor = memo(
           .updateSelectedPropertiesWithChildren({ size: value }, childUpdates);
       },
       [elementId],
+    );
+
+    const handleLabelPositionChange = useCallback(
+      (value: string) => {
+        onUpdate({ labelPosition: value });
+      },
+      [onUpdate],
     );
 
     const handleMenuTriggerChange = useCallback(
@@ -372,9 +378,24 @@ export const SelectEditor = memo(
             value={String(currentProps.size || "md")}
             onChange={handleSizeChange}
           />
+          <PropertySelect
+            label={PROPERTY_LABELS.LABEL_POSITION}
+            value={String(currentProps.labelPosition || "top")}
+            options={[
+              { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
+              { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
+            ]}
+            onChange={handleLabelPositionChange}
+            icon={Layout}
+          />
         </PropertySection>
       ),
-      [currentProps.size, handleSizeChange],
+      [
+        currentProps.size,
+        currentProps.labelPosition,
+        handleSizeChange,
+        handleLabelPositionChange,
+      ],
     );
 
     const contentSection = useMemo(

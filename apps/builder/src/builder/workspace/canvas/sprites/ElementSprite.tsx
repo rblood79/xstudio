@@ -45,6 +45,7 @@ import type {
   TokenRef,
 } from "@xstudio/specs";
 import { resolveToken } from "@xstudio/specs";
+import { getNecessityIndicatorSuffix } from "@xstudio/shared/components";
 import {
   ButtonSpec,
   BadgeSpec,
@@ -1210,24 +1211,18 @@ export const ElementSprite = memo(function ElementSprite({
     );
   });
 
-  // 🚀 Label → 부모 field의 necessityIndicator/isRequired 전파
+  // 🚀 Label → 부모 field의 necessityIndicator/isRequired 전파 (단일 selector)
   const isLabel = element.tag === "Label";
-  const labelNecessityIndicator = useStore((state) => {
+  const labelNecessityProps = useStore((state) => {
     if (!isLabel || !element.parent_id) return null;
     const p = state.elementsMap.get(element.parent_id);
-    return (
-      ((p?.props as Record<string, unknown> | undefined)
-        ?.necessityIndicator as string) ?? null
-    );
+    const pProps = p?.props as Record<string, unknown> | undefined;
+    const ni = (pProps?.necessityIndicator as string) ?? null;
+    if (!ni) return null;
+    return { indicator: ni, required: Boolean(pProps?.isRequired) };
   });
-  const labelIsRequired = useStore((state) => {
-    if (!isLabel || !element.parent_id) return null;
-    const p = state.elementsMap.get(element.parent_id);
-    return (
-      ((p?.props as Record<string, unknown> | undefined)
-        ?.isRequired as boolean) ?? null
-    );
-  });
+  const labelNecessityIndicator = labelNecessityProps?.indicator ?? null;
+  const labelIsRequired = labelNecessityProps?.required ?? null;
 
   // 🚀 Select/ComboBox → SelectIcon/ComboBoxTrigger: 부모의 iconName 전파
   const ICON_DELEGATION_TAGS = new Set(["SelectIcon", "ComboBoxTrigger"]);
@@ -1966,14 +1961,10 @@ export const ElementSprite = memo(function ElementSprite({
                   (specProps.children as string) ||
                   (specProps.label as string) ||
                   "";
-                let indicatorText = "";
-                if (labelNecessityIndicator === "icon" && labelIsRequired) {
-                  indicatorText = " *";
-                } else if (labelNecessityIndicator === "label") {
-                  indicatorText = labelIsRequired
-                    ? " (required)"
-                    : " (optional)";
-                }
+                const indicatorText = getNecessityIndicatorSuffix(
+                  labelNecessityIndicator,
+                  labelIsRequired ?? false,
+                );
                 if (indicatorText) {
                   specProps = {
                     ...specProps,
@@ -2551,8 +2542,7 @@ export const ElementSprite = memo(function ElementSprite({
     dateInputGranularity,
     dateInputHourCycle,
     dateInputLocale,
-    labelNecessityIndicator,
-    labelIsRequired,
+    labelNecessityProps,
   ]);
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로

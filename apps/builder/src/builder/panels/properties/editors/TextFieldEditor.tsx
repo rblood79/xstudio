@@ -12,6 +12,7 @@ import {
   Focus,
   Keyboard,
   Shield,
+  Layout,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -25,6 +26,10 @@ import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
+import {
+  buildRequiredUpdate,
+  NECESSITY_INDICATOR_OPTIONS,
+} from "./editorUtils";
 
 export const TextFieldEditor = memo(
   function TextFieldEditor({
@@ -136,15 +141,7 @@ export const TextFieldEditor = memo(
     );
 
     const handleRequiredChange = useCallback(
-      (value: string) => {
-        if (value === "") {
-          // None: required 해제 + indicator 제거
-          onUpdate({ isRequired: false, necessityIndicator: undefined });
-        } else {
-          // icon 또는 label: required 활성 + indicator 설정
-          onUpdate({ isRequired: true, necessityIndicator: value });
-        }
-      },
+      (value: string) => onUpdate(buildRequiredUpdate(value)),
       [onUpdate],
     );
 
@@ -219,6 +216,13 @@ export const TextFieldEditor = memo(
       lg: 16,
     };
 
+    const handleLabelPositionChange = useCallback(
+      (value: string) => {
+        onUpdate({ labelPosition: value });
+      },
+      [onUpdate],
+    );
+
     const handleSizeChange = useCallback(
       (value: string) => {
         const updatedProps = { size: value };
@@ -261,9 +265,24 @@ export const TextFieldEditor = memo(
             onChange={handleSizeChange}
             scale="3"
           />
+          <PropertySelect
+            label={PROPERTY_LABELS.LABEL_POSITION}
+            value={String(currentProps.labelPosition || "top")}
+            options={[
+              { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
+              { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
+            ]}
+            onChange={handleLabelPositionChange}
+            icon={Layout}
+          />
         </PropertySection>
       ),
-      [currentProps.size, handleSizeChange],
+      [
+        currentProps.size,
+        currentProps.labelPosition,
+        handleSizeChange,
+        handleLabelPositionChange,
+      ],
     );
 
     const contentSection = useMemo(
@@ -423,11 +442,7 @@ export const TextFieldEditor = memo(
             label={PROPERTY_LABELS.REQUIRED}
             value={String(currentProps.necessityIndicator || "")}
             onChange={handleRequiredChange}
-            options={[
-              { value: "", label: "None" },
-              { value: "icon", label: "Icon (*)" },
-              { value: "label", label: "Label (required/optional)" },
-            ]}
+            options={NECESSITY_INDICATOR_OPTIONS}
             icon={CheckSquare}
           />
         </PropertySection>

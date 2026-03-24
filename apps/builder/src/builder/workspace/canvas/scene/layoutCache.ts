@@ -122,6 +122,7 @@ const LAYOUT_PROP_KEYS = [
   "calendar",
   "necessityIndicator",
   "isRequired",
+  "labelPosition",
 ];
 
 function serializeLayoutRelevantValue(value: unknown): string {

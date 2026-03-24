@@ -7,6 +7,11 @@
     gap: var(--spacing-xs);
     color: var(--fg);
 
+    &[data-label-position="side"] {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+
     [slot="description"] {
       font-size: var(--text-xs);
     }

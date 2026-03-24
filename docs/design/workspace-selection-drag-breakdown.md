@@ -14,6 +14,58 @@
 
 ---
 
+## Pre-code Readiness
+
+이 섹션의 체크리스트가 완료되기 전에는 코드 구현을 시작하지 않는다.
+
+### 1. 행동 기준 고정
+
+- [ ] Pencil에서 확인한 행동을 XStudio 용어로 다시 적어둠
+- [ ] drag start vacate, adjacent insertion, guide line fallback의 우선순위를 확정함
+- [ ] single selection과 multi selection의 동작 차이를 문서화함
+- [ ] body/page root는 move 대상에서 제외한다는 점을 확정함
+
+### 2. 좌표계/geometry 계약 고정
+
+- [ ] PixiJS는 interaction shell, Skia는 geometry source of truth로 합의함
+- [ ] `clientX/clientY` 기반 좌표와 scene-local 좌표를 분리함
+- [ ] drop target 탐색은 Skia-derived bounds만 사용함
+- [ ] Pixi display object bounds는 drop candidate 계산에 사용하지 않음
+- [ ] page offset, zoom, pan이 commit delta에 미치는 영향을 정리함
+
+### 3. 통합 전략 고정
+
+- [ ] `useDragInteraction.ts`는 유지하고 확장한다는 방침을 확정함
+- [ ] move만 Selection drag resolver로 재정렬하고 resize/lasso는 기존 경로를 유지함
+- [ ] existing deferred commit 패턴을 폐기하지 않고 확장함
+- [ ] SelectionBox는 drag shell, resolver는 geometry contract, store는 commit contract로 분리함
+- [ ] `useDragInteraction.ts` 내부 snapshot 생성과 resolver 연결 지점을 확정함
+
+### 4. 파일 경계 고정
+
+- [ ] 1차 수정 대상 파일 목록을 확정함
+- [ ] 수정하지 않을 파일 목록도 함께 확정함
+- [ ] store/history 변경과 renderer 변경을 같은 phase에 섞지 않음
+- [ ] tree interop와 guide line 렌더를 같은 phase에 섞지 않음
+- [ ] `useDragInteraction.ts`를 Phase 1의 인접 파일로 포함할지 확정함
+
+### 5. 회귀 기준 고정
+
+- [ ] 60fps 기준을 baseline 대비 비교 가능한 형태로 기록함
+- [ ] history 기록 시점을 drop commit으로 제한함
+- [ ] multi-page 정합성 검증 시나리오를 문서화함
+- [ ] 기존 drag/resize/lasso 하위 호환 시나리오를 문서화함
+
+### 6. 구현 승인 기준
+
+- [ ] Phase 0 checklist가 완료됨
+- [ ] Phase 1~5의 완료 조건이 모두 명확함
+- [ ] open design questions에 대해 최소한의 정책 결정을 내림
+- [ ] 구현 시작 전에 rollback 기준을 합의함
+- [ ] absolute positioned element와 flow/layout element의 drop semantics를 Phase 0에서 구분함
+
+---
+
 ## 핵심 전제
 
 ### Source of Truth
@@ -74,6 +126,21 @@ Phase 0
 5. **phase당 1커밋**
    - 문제 발생 시 해당 phase만 rollback 가능해야 한다.
 
+### 통합 전략
+
+- 기존 `useDragInteraction.ts`는 유지한다.
+- move는 selection drag resolver가 처리하고, resize/lasso는 기존 경로를 유지한다.
+- 이미 존재하는 부분적 deferred commit 패턴은 폐기하지 않고 확장한다.
+- SelectionBox는 drag shell, `useDragInteraction.ts`는 입력 상태 모델, Skia bounds resolver는 geometry contract로 분리한다.
+- history 기록과 store commit은 Phase 4 이전에 SelectionBox로 끌어오지 않는다.
+
+### 완료 판정 기준
+
+- 60fps 유지 기준은 평균 frame time이 baseline 대비 유의미하게 악화되지 않아야 한다.
+- drag 중 React state churn이 증가하지 않아야 한다.
+- selection move가 resize/lasso와 충돌하지 않아야 한다.
+- 구현 전후에 multi-page 선택이 동일한 의미를 가져야 한다.
+
 ---
 
 ## Phase 0. Baseline & Interaction Contract
@@ -105,6 +172,7 @@ Phase 0
 - Pixi-only bounds를 쓰지 않는다는 사실이 문서로 명시됨
 - drag start와 commit 시점이 분리됨
 - guide line은 insertion candidate가 없을 때만 fallback으로 표시됨
+- baseline FPS / frame time 비교가 가능함
 
 ---
 
@@ -124,6 +192,7 @@ Phase 0
 ### 예상 작업 파일
 
 - `apps/builder/src/builder/workspace/canvas/selection/SelectionBox.tsx`
+- `apps/builder/src/builder/workspace/canvas/selection/useDragInteraction.ts`
 - `apps/builder/src/builder/workspace/canvas/skia/nodeRendererTree.ts`
 - `apps/builder/src/builder/workspace/canvas/skia/renderCommands.ts`
 - `apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts`
@@ -133,6 +202,7 @@ Phase 0
 - drag 시작 시 item이 즉시 빠져나간 것처럼 보임
 - cancel 시 원위치 복귀
 - single selection과 multi selection 모두 drag session을 공유
+- history entry는 아직 생성되지 않음
 
 ---
 
@@ -160,6 +230,7 @@ Phase 0
 - 렌더된 위치와 drop candidate가 일치
 - Pixi display object bounds와 달라도 잘못된 drop target을 만들지 않음
 - page offset / zoom / pan이 반영된 scene-local 기준이 유지됨
+- fallback 없이 no-target이 안전하게 처리됨
 
 ---
 
@@ -189,6 +260,7 @@ Phase 0
 - adjacent insertion 시 시각적으로 끊기지 않음
 - guide line은 drop 가능 위치를 오해 없이 보여줌
 - tree reorder와 guide line의 상태가 충돌하지 않음
+- insertion preview와 guide line의 우선순위가 명확함
 
 ---
 
@@ -217,6 +289,7 @@ Phase 0
 - store는 drop 시점에만 갱신됨
 - history entry는 단일 commit으로 남음
 - tree move와 selection move가 중복 commit되지 않음
+- commit 시점의 selectedIds와 실제 props 반영이 일치함
 
 ---
 
@@ -237,6 +310,47 @@ Phase 0
 - Skia bounds 없는 drop target 계산 금지
 - drag 중 store mutation 금지
 - guide line과 insertion preview가 동시에 active일 때 우선순위 명시
+- baseline 대비 frame time 악화가 허용 범위를 넘지 않아야 함
+
+---
+
+## Phase Exit Checklist
+
+### Phase 0
+
+- [ ] Pixi shell / Skia geometry / store commit의 책임이 구분됨
+- [ ] 현재 `useDragInteraction`이 어떤 값을 소유하는지 문서화됨
+- [ ] baseline frame time 기록 완료
+
+### Phase 1
+
+- [ ] drag start 시 visual vacate 확인
+- [ ] cancel 시 원복 확인
+- [ ] store mutation이 발생하지 않음
+
+### Phase 2
+
+- [ ] rendered bounds를 기준으로 target을 찾음
+- [ ] Pixi bounds에 의존하지 않음
+- [ ] no-target fallback이 안전함
+
+### Phase 3
+
+- [ ] adjacent insertion preview 확인
+- [ ] guide line fallback 확인
+- [ ] 우선순위 충돌 없음
+
+### Phase 4
+
+- [ ] drop 시점에만 commit 발생
+- [ ] history entry가 1개만 생성됨
+- [ ] tree reorder/reparent 중복 없음
+
+### Phase 5
+
+- [ ] 60fps 유지
+- [ ] multi-page 정합성 유지
+- [ ] resize/lasso 하위 호환 유지
 
 ---
 

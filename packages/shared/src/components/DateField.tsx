@@ -60,6 +60,7 @@ export interface DateFieldProps<
   variant?: string;
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
+  labelPosition?: "top" | "side";
 }
 
 export function DateField<T extends DateValue>({
@@ -73,6 +74,7 @@ export function DateField<T extends DateValue>({
   variant = "default",
   size = "md",
   necessityIndicator,
+  labelPosition = "top",
   ...props
 }: DateFieldProps<T>) {
   // 타임존 설정
@@ -101,6 +103,7 @@ export function DateField<T extends DateValue>({
       )}
       data-variant={variant}
       data-size={size}
+      data-label-position={labelPosition}
       defaultValue={defaultValue}
       minValue={minValue as T | undefined}
       maxValue={maxValue as T | undefined}

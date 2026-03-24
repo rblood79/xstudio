@@ -15,6 +15,9 @@ export const PROPERTY_LABELS = {
   AUTO_FOCUS: "Focus",
   INDICATOR: "Indicator",
   NECESSITY_INDICATOR: "Necessity Indicator",
+  LABEL_POSITION: "Label Position",
+  LABEL_POSITION_TOP: "Top",
+  LABEL_POSITION_SIDE: "Side",
 
   // Text and content
   TEXT: "Text",

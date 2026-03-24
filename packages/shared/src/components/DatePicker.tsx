@@ -92,6 +92,7 @@ export interface DatePickerProps<
    */
   firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
   necessityIndicator?: NecessityIndicator;
+  labelPosition?: "top" | "side";
 }
 
 /**
@@ -136,6 +137,7 @@ export function DatePicker<T extends DateValue>({
   minDate,
   maxDate,
   necessityIndicator,
+  labelPosition = "top",
   ...props
 }: DatePickerProps<T>) {
   // 타임존 설정 (명시하지 않으면 로컬 타임존 사용)
@@ -173,6 +175,7 @@ export function DatePicker<T extends DateValue>({
       className={datePickerClassName}
       data-variant={variant}
       data-size={size}
+      data-label-position={labelPosition}
       granularity={effectiveGranularity}
       defaultValue={defaultValue}
       minValue={minValue as T | undefined}

@@ -12,6 +12,7 @@ import {
   Hash,
   Keyboard,
   Shield,
+  Layout,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -90,6 +91,20 @@ export const SearchFieldEditor = memo(function SearchFieldEditor({
           elementId={elementId}
           onChange={updateCustomId}
           placeholder="searchfield_1"
+        />
+      </PropertySection>
+
+      {/* Design Section */}
+      <PropertySection title="Design">
+        <PropertySelect
+          label={PROPERTY_LABELS.LABEL_POSITION}
+          value={String(currentProps.labelPosition || "top")}
+          options={[
+            { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
+            { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
+          ]}
+          onChange={(value) => updateProp("labelPosition", value)}
+          icon={Layout}
         />
       </PropertySection>
 

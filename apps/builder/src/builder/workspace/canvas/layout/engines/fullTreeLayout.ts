@@ -41,6 +41,7 @@ import { elementToTaffyStyle } from "./TaffyFlexEngine";
 import { applyImplicitStyles } from "./implicitStyles";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import { InlineAlertSpec } from "@xstudio/specs";
+import { getNecessityIndicatorSuffix } from "@xstudio/shared/components";
 import { useScrollState } from "../../../../stores/scrollState";
 
 // ─── 모듈 수준 상수 ──────────────────────────────────────────────────
@@ -836,12 +837,7 @@ function traversePostOrder(
         const originalText =
           ((rawElement.props as Record<string, unknown> | undefined)
             ?.children as string) ?? "";
-        let suffix = "";
-        if (necessity === "icon" && isReq) {
-          suffix = " *";
-        } else if (necessity === "label") {
-          suffix = isReq ? " (required)" : " (optional)";
-        }
+        const suffix = getNecessityIndicatorSuffix(necessity, isReq);
         if (suffix) {
           rawElement = {
             ...rawElement,

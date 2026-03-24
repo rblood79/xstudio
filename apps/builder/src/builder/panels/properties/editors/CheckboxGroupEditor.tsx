@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, memo } from "react";
+import { useState, useEffect, useMemo, memo, useCallback } from "react";
 import {
   Type,
   Tag,
@@ -74,6 +74,13 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({
     };
     onUpdate(updatedProps);
   };
+
+  const handleLabelPositionChange = useCallback(
+    (value: string) => {
+      onUpdate({ labelPosition: value });
+    },
+    [onUpdate],
+  );
 
   const handleLabelChange = (value: string) => {
     const updatedProps = { label: value };
@@ -307,6 +314,17 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({
             { value: "vertical", label: PROPERTY_LABELS.ORIENTATION_VERTICAL },
           ]}
           icon={Ratio}
+        />
+
+        <PropertySelect
+          label={PROPERTY_LABELS.LABEL_POSITION}
+          value={String(currentProps.labelPosition || "top")}
+          options={[
+            { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
+            { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
+          ]}
+          onChange={handleLabelPositionChange}
+          icon={Layout}
         />
       </PropertySection>
 

@@ -49,6 +49,7 @@ export interface TimeFieldProps<
   variant?: string;
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
+  labelPosition?: "top" | "side";
 }
 
 export function TimeField<T extends TimeValue>({
@@ -60,6 +61,7 @@ export function TimeField<T extends TimeValue>({
   variant = "default",
   size = "md",
   necessityIndicator,
+  labelPosition = "top",
   ...props
 }: TimeFieldProps<T>) {
   return (
@@ -72,6 +74,7 @@ export function TimeField<T extends TimeValue>({
       )}
       data-variant={variant}
       data-size={size}
+      data-label-position={labelPosition}
       hourCycle={hourCycle}
     >
       {label && (

@@ -77,6 +77,7 @@ export interface NumberFieldProps extends AriaNumberFieldProps {
   // S2 props
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
+  labelPosition?: "top" | "side";
 }
 
 export function NumberField({
@@ -91,6 +92,7 @@ export function NumberField({
   showGroupSeparator = true,
   size = "md",
   necessityIndicator,
+  labelPosition = "top",
   ...props
 }: NumberFieldProps) {
   // NumberFormatter 옵션 생성
@@ -127,6 +129,7 @@ export function NumberField({
           : "react-aria-NumberField",
       )}
       data-size={size}
+      data-label-position={labelPosition}
       formatOptions={formatOptions}
     >
       {label && (

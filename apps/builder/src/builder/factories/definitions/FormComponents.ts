@@ -41,9 +41,6 @@ export function createTextFieldDefinition(
         isReadOnly: false,
         isInvalid: false,
         style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -133,9 +130,6 @@ export function createTextAreaDefinition(
         isReadOnly: false,
         isInvalid: false,
         style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -456,9 +450,6 @@ export function createNumberFieldDefinition(
         isReadOnly: false,
         isRequired: false,
         style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,
@@ -582,9 +573,6 @@ export function createSearchFieldDefinition(
         isReadOnly: false,
         isRequired: false,
         style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
           width: "100%",
         },
       } as ComponentElementProps,

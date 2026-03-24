@@ -198,11 +198,6 @@ export function createCheckboxGroupDefinition(
         isDisabled: false,
         isReadOnly: false,
         isRequired: false,
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -304,11 +299,6 @@ export function createRadioGroupDefinition(
         isInvalid: false,
         isReadOnly: false,
         isRequired: false,
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,

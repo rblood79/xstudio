@@ -47,6 +47,7 @@ export interface CheckboxGroupProps extends Omit<
    */
   size?: ComponentSizeSubset;
   necessityIndicator?: NecessityIndicator;
+  labelPosition?: "top" | "side";
 }
 
 export function CheckboxGroup({
@@ -59,6 +60,7 @@ export function CheckboxGroup({
   columnMapping,
   variant = "default",
   size = "md",
+  labelPosition = "top",
   ...props
 }: CheckboxGroupProps) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -118,6 +120,7 @@ export function CheckboxGroup({
           data-orientation={orientation}
           data-checkbox-variant={variant}
           data-checkbox-size={size}
+          data-label-position={labelPosition}
           isDisabled
         >
           {label && (
@@ -144,6 +147,7 @@ export function CheckboxGroup({
           data-orientation={orientation}
           data-checkbox-variant={variant}
           data-checkbox-size={size}
+          data-label-position={labelPosition}
           isDisabled
         >
           {label && (
@@ -175,6 +179,7 @@ export function CheckboxGroup({
           data-orientation={orientation}
           data-checkbox-variant={variant}
           data-checkbox-size={size}
+          data-label-position={labelPosition}
         >
           {label && (
             <Label>
@@ -200,6 +205,7 @@ export function CheckboxGroup({
         data-orientation={orientation}
         data-checkbox-variant={variant}
         data-checkbox-size={size}
+        data-label-position={labelPosition}
       >
         {label && (
           <Label>
@@ -228,6 +234,7 @@ export function CheckboxGroup({
           data-orientation={orientation}
           data-checkbox-variant={variant}
           data-checkbox-size={size}
+          data-label-position={labelPosition}
           isDisabled
         >
           {label && (
@@ -254,6 +261,7 @@ export function CheckboxGroup({
           data-orientation={orientation}
           data-checkbox-variant={variant}
           data-checkbox-size={size}
+          data-label-position={labelPosition}
           isDisabled
         >
           {label && (
@@ -294,6 +302,7 @@ export function CheckboxGroup({
           data-orientation={orientation}
           data-checkbox-variant={variant}
           data-checkbox-size={size}
+          data-label-position={labelPosition}
         >
           {label && (
             <Label>
@@ -340,6 +349,7 @@ export function CheckboxGroup({
       data-orientation={orientation}
       data-checkbox-variant={variant}
       data-checkbox-size={size}
+      data-label-position={labelPosition}
     >
       {label && (
         <Label>

@@ -9,6 +9,7 @@ import {
   FileText,
   FormInput,
   Globe,
+  Layout,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -128,6 +129,17 @@ export const TimeFieldEditor = memo(function TimeFieldEditor({
             { value: "24", label: "24 Hour" },
           ]}
           icon={Clock}
+        />
+
+        <PropertySelect
+          label={PROPERTY_LABELS.LABEL_POSITION}
+          value={String(currentProps.labelPosition || "top")}
+          options={[
+            { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
+            { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
+          ]}
+          onChange={(value) => updateProp("labelPosition", value)}
+          icon={Layout}
         />
       </PropertySection>
 

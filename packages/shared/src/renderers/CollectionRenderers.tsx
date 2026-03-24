@@ -336,6 +336,7 @@ export const renderTagGroup = (
       isDisabled={Boolean(element.props.isDisabled)}
       disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
       size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       maxRows={
         typeof element.props.maxRows === "number"
           ? element.props.maxRows

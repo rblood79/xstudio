@@ -44,6 +44,7 @@ export interface TextFieldProps extends AriaTextFieldProps {
   necessityIndicator?: NecessityIndicator;
   /** Show loading skeleton instead of input */
   isLoading?: boolean;
+  labelPosition?: "top" | "side";
 }
 
 export function TextField({
@@ -60,6 +61,7 @@ export function TextField({
   size = "md",
   necessityIndicator,
   isLoading,
+  labelPosition = "top",
   ...props
 }: TextFieldProps) {
   if (isLoading) {
@@ -82,6 +84,7 @@ export function TextField({
           : "react-aria-TextField",
       )}
       data-size={size}
+      data-label-position={labelPosition}
       value={value}
       onChange={onChange}
       isRequired={isRequired}

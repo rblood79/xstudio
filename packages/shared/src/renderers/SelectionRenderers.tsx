@@ -741,6 +741,7 @@ export const renderSelect = (
       necessityIndicator={
         elementProps.necessityIndicator as "icon" | "label" | undefined
       }
+      labelPosition={(elementProps.labelPosition as "top" | "side") || "top"}
       name={elementProps.name ? String(elementProps.name) : undefined}
       autoFocus={Boolean(elementProps.autoFocus)}
       dataBinding={
@@ -1002,6 +1003,7 @@ export const renderComboBox = (
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined
       }

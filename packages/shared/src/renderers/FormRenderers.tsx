@@ -66,6 +66,7 @@ export const renderTextField = (
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={(value) => {
         const updatedProps = {
@@ -120,6 +121,7 @@ export const renderNumberField = (
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={(value) => {
         const updatedProps = {
@@ -182,6 +184,7 @@ export const renderSearchField = (
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       onChange={(value) => {
@@ -486,6 +489,7 @@ export const renderCheckboxGroup = (
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={async (newSelectedValues) => {
         const updatedProps = {
@@ -669,6 +673,7 @@ export const renderRadioGroup = (
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={(selectedValue) => {
         const updatedProps = {

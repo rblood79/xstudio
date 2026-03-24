@@ -49,6 +49,8 @@ export interface RadioGroupProps extends Omit<AriaRadioGroupProps, "children"> {
    */
   size?: ComponentSizeSubset;
   necessityIndicator?: NecessityIndicator;
+  /** Label position relative to radio items @default 'top' */
+  labelPosition?: "top" | "side";
 }
 
 export function RadioGroup({
@@ -60,6 +62,7 @@ export function RadioGroup({
   columnMapping,
   variant = "default",
   size = "md",
+  labelPosition = "top",
   ...props
 }: RadioGroupProps) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -116,6 +119,7 @@ export function RadioGroup({
           isDisabled
           data-radio-variant={variant}
           data-radio-size={size}
+          data-label-position={labelPosition}
         >
           {label && (
             <Label>
@@ -141,6 +145,7 @@ export function RadioGroup({
           isDisabled
           data-radio-variant={variant}
           data-radio-size={size}
+          data-label-position={labelPosition}
         >
           {label && (
             <Label>
@@ -168,6 +173,7 @@ export function RadioGroup({
           className={radioGroupClassName}
           data-radio-variant={variant}
           data-radio-size={size}
+          data-label-position={labelPosition}
         >
           {label && (
             <Label>
@@ -192,6 +198,7 @@ export function RadioGroup({
         className={radioGroupClassName}
         data-radio-variant={variant}
         data-radio-size={size}
+        data-label-position={labelPosition}
       >
         {label && (
           <Label>
@@ -220,6 +227,7 @@ export function RadioGroup({
           isDisabled
           data-radio-variant={variant}
           data-radio-size={size}
+          data-label-position={labelPosition}
         >
           {label && (
             <Label>
@@ -245,6 +253,7 @@ export function RadioGroup({
           isDisabled
           data-radio-variant={variant}
           data-radio-size={size}
+          data-label-position={labelPosition}
         >
           {label && (
             <Label>
@@ -280,6 +289,7 @@ export function RadioGroup({
           className={radioGroupClassName}
           data-radio-variant={variant}
           data-radio-size={size}
+          data-label-position={labelPosition}
         >
           {label && (
             <Label>
@@ -314,6 +324,7 @@ export function RadioGroup({
       className={radioGroupClassName}
       data-radio-variant={variant}
       data-radio-size={size}
+      data-label-position={labelPosition}
     >
       {label && (
         <Label>

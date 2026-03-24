@@ -14,6 +14,7 @@ import {
   Menu,
   Database,
   Parentheses,
+  Layout,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -35,6 +36,10 @@ import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
 import { useSyncGrandchildProp } from "../../../hooks/useSyncGrandchildProp";
 import { supabase } from "../../../../env/supabase.client";
 import type { BatchPropsUpdate } from "../../../stores/utils/elementUpdate";
+import {
+  buildRequiredUpdate,
+  NECESSITY_INDICATOR_OPTIONS,
+} from "./editorUtils";
 
 export const ComboBoxEditor = memo(
   function ComboBoxEditor({
@@ -138,13 +143,7 @@ export const ComboBoxEditor = memo(
     );
 
     const handleRequiredChange = useCallback(
-      (value: string) => {
-        if (value === "") {
-          onUpdate({ isRequired: false, necessityIndicator: undefined });
-        } else {
-          onUpdate({ isRequired: true, necessityIndicator: value });
-        }
-      },
+      (value: string) => onUpdate(buildRequiredUpdate(value)),
       [onUpdate],
     );
 
@@ -236,6 +235,13 @@ export const ComboBoxEditor = memo(
           .updateSelectedPropertiesWithChildren({ size: value }, childUpdates);
       },
       [elementId],
+    );
+
+    const handleLabelPositionChange = useCallback(
+      (value: string) => {
+        onUpdate({ labelPosition: value });
+      },
+      [onUpdate],
     );
 
     const handleMenuTriggerChange = useCallback(
@@ -409,6 +415,17 @@ export const ComboBoxEditor = memo(
             onChange={handleSizeChange}
           />
 
+          <PropertySelect
+            label={PROPERTY_LABELS.LABEL_POSITION}
+            value={String(currentProps.labelPosition || "top")}
+            options={[
+              { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
+              { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
+            ]}
+            onChange={handleLabelPositionChange}
+            icon={Layout}
+          />
+
           <PropertyIconPicker
             label="Trigger Icon"
             value={String(currentProps.iconName || "chevron-down")}
@@ -419,11 +436,12 @@ export const ComboBoxEditor = memo(
       [
         currentProps.variant,
         currentProps.size,
+        currentProps.labelPosition,
         currentProps.iconName,
         handleVariantChange,
         handleSizeChange,
+        handleLabelPositionChange,
         onUpdate,
-        currentProps,
       ],
     );
 
@@ -493,11 +511,7 @@ export const ComboBoxEditor = memo(
             label={PROPERTY_LABELS.REQUIRED}
             value={String(currentProps.necessityIndicator || "")}
             onChange={handleRequiredChange}
-            options={[
-              { value: "", label: "None" },
-              { value: "icon", label: "Icon (*)" },
-              { value: "label", label: "Label (required/optional)" },
-            ]}
+            options={NECESSITY_INDICATOR_OPTIONS}
             icon={CheckSquare}
           />
         </PropertySection>

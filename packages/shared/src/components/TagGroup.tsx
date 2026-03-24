@@ -58,6 +58,7 @@ export interface TagGroupProps<T>
    * @example maxRows={2}
    */
   maxRows?: number;
+  labelPosition?: "top" | "side";
   /**
    * React Aria 1.13.0: 텍스트 기반 필터링
    * @example filterText="search query"
@@ -94,6 +95,7 @@ export function TagGroup<T extends object>({
   filter,
   filterText,
   filterFields = ["label", "name", "title"] as (keyof T)[],
+  labelPosition = "top",
   ...props
 }: TagGroupProps<T>): JSX.Element {
   // Build className with variant and size (재사용을 위해 최상위에 선언)
@@ -222,6 +224,7 @@ export function TagGroup<T extends object>({
           className={tagGroupClassName}
           data-tag-variant={variant}
           data-tag-size={size}
+          data-label-position={labelPosition}
         >
           {label && <Label>{label}</Label>}
           <TagList className="react-aria-TagList">
@@ -241,6 +244,7 @@ export function TagGroup<T extends object>({
           className={tagGroupClassName}
           data-tag-variant={variant}
           data-tag-size={size}
+          data-label-position={labelPosition}
         >
           {label && <Label>{label}</Label>}
           <TagList className="react-aria-TagList">
@@ -298,6 +302,7 @@ export function TagGroup<T extends object>({
           className={tagGroupClassName}
           data-tag-variant={variant}
           data-tag-size={size}
+          data-label-position={labelPosition}
         >
           {label && <Label>{label}</Label>}
           <TagList
@@ -327,6 +332,7 @@ export function TagGroup<T extends object>({
         className={tagGroupClassName}
         data-tag-variant={variant}
         data-tag-size={size}
+        data-label-position={labelPosition}
       >
         {label && <Label>{label}</Label>}
         <TagList
@@ -353,6 +359,7 @@ export function TagGroup<T extends object>({
           className={tagGroupClassName}
           data-tag-variant={variant}
           data-tag-size={size}
+          data-label-position={labelPosition}
         >
           {label && <Label>{label}</Label>}
           <TagList className="react-aria-TagList">
@@ -372,6 +379,7 @@ export function TagGroup<T extends object>({
           className={tagGroupClassName}
           data-tag-variant={variant}
           data-tag-size={size}
+          data-label-position={labelPosition}
         >
           {label && <Label>{label}</Label>}
           <TagList className="react-aria-TagList">
@@ -407,6 +415,7 @@ export function TagGroup<T extends object>({
           className={tagGroupClassName}
           data-tag-variant={variant}
           data-tag-size={size}
+          data-label-position={labelPosition}
         >
           {label && <Label>{label}</Label>}
           <TagList
@@ -502,6 +511,7 @@ export function TagGroup<T extends object>({
           aria-hidden="true"
           className="react-aria-TagList"
           data-tag-size={size}
+          data-label-position={labelPosition}
           style={{
             display: "flex",
             flexWrap: "wrap",
@@ -533,6 +543,7 @@ export function TagGroup<T extends object>({
         className={tagGroupClassName}
         data-tag-variant={variant}
         data-tag-size={size}
+        data-label-position={labelPosition}
       >
         {label && <Label>{label}</Label>}
         <TagList

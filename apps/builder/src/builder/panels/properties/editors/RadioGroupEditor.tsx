@@ -119,6 +119,13 @@ export const RadioGroupEditor = memo(
       [onUpdate],
     );
 
+    const handleLabelPositionChange = useCallback(
+      (value: string) => {
+        onUpdate({ labelPosition: value });
+      },
+      [onUpdate],
+    );
+
     const handleValueChange = useCallback(
       (value: string) => {
         onUpdate({ value: value });
@@ -334,15 +341,28 @@ export const RadioGroupEditor = memo(
             onChange={handleOrientationChange}
             icon={Ratio}
           />
+
+          <PropertySelect
+            label={PROPERTY_LABELS.LABEL_POSITION}
+            value={String(currentProps.labelPosition || "top")}
+            options={[
+              { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
+              { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
+            ]}
+            onChange={handleLabelPositionChange}
+            icon={Layout}
+          />
         </PropertySection>
       ),
       [
         currentProps.isEmphasized,
         currentProps.size,
         currentProps.orientation,
+        currentProps.labelPosition,
         handleIsEmphasizedChange,
         handleSizeChange,
         handleOrientationChange,
+        handleLabelPositionChange,
       ],
     );
 

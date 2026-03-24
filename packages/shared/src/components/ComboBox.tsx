@@ -61,6 +61,7 @@ export interface ComboBoxProps<T extends object> extends Omit<
    */
   isLoading?: boolean;
   necessityIndicator?: NecessityIndicator;
+  labelPosition?: "top" | "side";
 }
 
 export function ComboBox<T extends object>({
@@ -78,6 +79,7 @@ export function ComboBox<T extends object>({
   size = "md",
   iconName,
   isLoading: externalLoading,
+  labelPosition = "top",
   ...props
 }: ComboBoxProps<T>) {
   // useCollectionData Hook - 항상 최상단에서 호출 (Rules of Hooks)
@@ -257,6 +259,7 @@ export function ComboBox<T extends object>({
       className={comboBoxClassName}
       data-variant={variant}
       data-size={size}
+      data-label-position={labelPosition}
       aria-label={ariaLabel}
       isDisabled={comboBoxDisabled}
     >

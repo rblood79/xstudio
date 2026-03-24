@@ -25,7 +25,22 @@ export interface NecessityIndicatorProps {
 }
 
 /**
- * Label 뒤에 필수/선택 표시를 렌더링하는 유틸리티 컴포넌트
+ * Necessity indicator suffix 텍스트 반환 (WebGL 3경로 공유 유틸)
+ * Preview/Taffy/Skia 모두 이 함수를 사용하여 동일한 텍스트를 생성
+ */
+export function getNecessityIndicatorSuffix(
+  necessityIndicator?: string,
+  isRequired?: boolean,
+): string {
+  if (!necessityIndicator) return "";
+  if (necessityIndicator === "icon") return isRequired ? " *" : "";
+  if (necessityIndicator === "label")
+    return isRequired ? " (required)" : " (optional)";
+  return "";
+}
+
+/**
+ * Label 뒤에 필수/선택 표시를 렌더링하는 유틸리티 컴포넌트 (Preview 전용)
  * - icon: * (asterisk)
  * - label: "(required)" or "(optional)"
  */

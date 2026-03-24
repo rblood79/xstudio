@@ -152,6 +152,7 @@ export const renderDatePicker = (
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       defaultValue={today(getLocalTimeZone())}
       granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
@@ -305,6 +306,7 @@ export const renderDateField = (
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       defaultValue={
         granularity === "day"
@@ -369,6 +371,7 @@ export const renderTimeField = (
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
+      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
       defaultValue={new Time(9, 0)}
       granularity={granularity}

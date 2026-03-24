@@ -5,6 +5,11 @@
     width: fit-content;
     gap: var(--spacing-xs);
 
+    &[data-label-position="side"] {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+
     /* Accent locals */
     --field-accent: var(--accent);
     --field-accent-container: color-mix(

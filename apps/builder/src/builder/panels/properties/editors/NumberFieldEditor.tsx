@@ -17,6 +17,7 @@ import {
   MousePointerClick,
   Globe,
   Hash as HashIcon,
+  Layout,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -101,6 +102,20 @@ export const NumberFieldEditor = memo(function NumberFieldEditor({
           value={customId}
           elementId={elementId}
           placeholder="numberfield_1"
+        />
+      </PropertySection>
+
+      {/* Design Section */}
+      <PropertySection title="Design">
+        <PropertySelect
+          label={PROPERTY_LABELS.LABEL_POSITION}
+          value={String(currentProps.labelPosition || "top")}
+          options={[
+            { value: "top", label: PROPERTY_LABELS.LABEL_POSITION_TOP },
+            { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
+          ]}
+          onChange={(value) => onUpdate({ labelPosition: value })}
+          icon={Layout}
         />
       </PropertySection>
 
