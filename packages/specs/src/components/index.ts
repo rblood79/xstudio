@@ -155,8 +155,16 @@ export { InputSpec } from "./Input.spec";
 export type { InputProps } from "./Input.spec";
 
 // DatePicker
-export { DatePickerSpec } from "./DatePicker.spec";
-export type { DatePickerProps } from "./DatePicker.spec";
+export {
+  DatePickerSpec,
+  buildDatePickerShapes,
+  buildDatePlaceholder,
+  DATE_PICKER_INPUT_HEIGHT,
+  DATE_PICKER_INPUT_PADDING,
+  DATE_PICKER_BORDER_RADIUS,
+  DATE_PICKER_ICON_SIZE,
+} from "./DatePicker.spec";
+export type { DatePickerProps, DatePickerShapesInput } from "./DatePicker.spec";
 
 // DateRangePicker
 export { DateRangePickerSpec } from "./DateRangePicker.spec";

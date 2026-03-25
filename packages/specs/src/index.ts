@@ -304,8 +304,19 @@ export { MaskedFrameSpec } from "./components/MaskedFrame.spec";
 export type { MaskedFrameProps } from "./components/MaskedFrame.spec";
 
 // ─── Phase 4: Special Components ────────────────────────────────────────────
-export { DatePickerSpec } from "./components/DatePicker.spec";
-export type { DatePickerProps } from "./components/DatePicker.spec";
+export {
+  DatePickerSpec,
+  buildDatePickerShapes,
+  buildDatePlaceholder,
+  DATE_PICKER_INPUT_HEIGHT,
+  DATE_PICKER_INPUT_PADDING,
+  DATE_PICKER_BORDER_RADIUS,
+  DATE_PICKER_ICON_SIZE,
+} from "./components/DatePicker.spec";
+export type {
+  DatePickerProps,
+  DatePickerShapesInput,
+} from "./components/DatePicker.spec";
 
 export { DateRangePickerSpec } from "./components/DateRangePicker.spec";
 export type { DateRangePickerProps } from "./components/DateRangePicker.spec";

@@ -22,13 +22,13 @@ export interface DatePickerProps {
   style?: Record<string, string | number | undefined>;
 }
 
-/** @sync DateInput.spec.ts */
-const INPUT_HEIGHT: Record<string, number> = {
+/** @sync DateInput.spec.ts — DateRangePicker.spec.ts에서도 import */
+export const DATE_PICKER_INPUT_HEIGHT: Record<string, number> = {
   sm: 22,
   md: 30,
   lg: 42,
 };
-const INPUT_PADDING: Record<
+export const DATE_PICKER_INPUT_PADDING: Record<
   string,
   { top: number; right: number; left: number }
 > = {
@@ -36,19 +36,19 @@ const INPUT_PADDING: Record<
   md: { top: 4, right: 4, left: 12 },
   lg: { top: 8, right: 8, left: 16 },
 };
-const INPUT_BORDER_RADIUS: Record<string, number> = {
+export const DATE_PICKER_BORDER_RADIUS: Record<string, number> = {
   sm: 6,
   md: 8,
   lg: 10,
 };
-const ICON_SIZE: Record<string, number> = {
+export const DATE_PICKER_ICON_SIZE: Record<string, number> = {
   sm: 14,
   md: 16,
   lg: 20,
 };
 
 /** locale 기반 날짜 placeholder */
-function buildDatePlaceholder(locale: string): string {
+export function buildDatePlaceholder(locale: string): string {
   const isAsian =
     locale.startsWith("ko") ||
     locale.startsWith("ja") ||
@@ -62,6 +62,105 @@ function buildDatePlaceholder(locale: string): string {
   if (isAsian) return "YYYY / MM / DD";
   if (isEuropean) return "DD / MM / YYYY";
   return "MM / DD / YYYY";
+}
+
+/** DatePicker / DateRangePicker 공유 shapes 빌더 */
+export interface DatePickerShapesInput {
+  props: Record<string, unknown>;
+  variant: Record<string, unknown>;
+  sizeEntry: Record<string, unknown>;
+  displayText: string;
+  hasValue: boolean;
+  defaultContainerWidth?: number;
+}
+
+export function buildDatePickerShapes(input: DatePickerShapesInput): Shape[] {
+  const { props, variant, sizeEntry, displayText, hasValue } = input;
+  const defaultCW = input.defaultContainerWidth ?? 200;
+
+  const sizeName = (props.size as string) || "md";
+  const inputHeight =
+    DATE_PICKER_INPUT_HEIGHT[sizeName] ?? DATE_PICKER_INPUT_HEIGHT.md;
+  const pad =
+    DATE_PICKER_INPUT_PADDING[sizeName] ?? DATE_PICKER_INPUT_PADDING.md;
+  const borderRadius =
+    DATE_PICKER_BORDER_RADIUS[sizeName] ?? DATE_PICKER_BORDER_RADIUS.md;
+  const iconSz = DATE_PICKER_ICON_SIZE[sizeName] ?? DATE_PICKER_ICON_SIZE.md;
+  const gap = 4;
+
+  const containerWidth =
+    (props._containerWidth as number) ||
+    ((props.style as Record<string, unknown> | undefined)?.width as number) ||
+    defaultCW;
+
+  const style = (props.style as Record<string, unknown> | undefined) ?? {};
+  const rawFontSize = style.fontSize ?? sizeEntry.fontSize;
+  const resolvedFs =
+    typeof rawFontSize === "number"
+      ? rawFontSize
+      : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
+        ? resolveToken(rawFontSize as TokenRef)
+        : rawFontSize;
+  const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
+  const ff = (style.fontFamily as string) || fontFamily.sans;
+
+  const textColor =
+    (style.color as string | undefined) ??
+    (hasValue
+      ? (variant.text as string)
+      : ("{color.neutral-subdued}" as TokenRef));
+  const bgColor =
+    (style.backgroundColor as string | undefined) ??
+    (variant.background as string);
+  const borderColor =
+    (style.borderColor as string | undefined) ??
+    (variant.border as string | undefined);
+
+  const btnAreaWidth = iconSz + pad.right + gap;
+  const textMaxWidth = containerWidth - pad.left - btnAreaWidth;
+  const btnX = containerWidth - pad.right - iconSz;
+
+  return [
+    {
+      id: "input-bg",
+      type: "roundRect" as const,
+      x: 0,
+      y: 0,
+      width: containerWidth,
+      height: inputHeight,
+      radius: borderRadius,
+      fill: bgColor,
+    },
+    {
+      type: "border" as const,
+      target: "input-bg",
+      borderWidth: 1,
+      color: borderColor ?? ("{color.border}" as TokenRef),
+      radius: borderRadius,
+    },
+    {
+      type: "text" as const,
+      x: pad.left,
+      y: 0,
+      text: displayText,
+      fontSize,
+      fontFamily: ff,
+      fontWeight: 400,
+      fill: textColor,
+      align: "left" as const,
+      baseline: "middle" as const,
+      maxWidth: textMaxWidth,
+    },
+    {
+      type: "icon_font" as const,
+      iconName: "calendar",
+      x: btnX + iconSz / 2,
+      y: inputHeight / 2,
+      fontSize: iconSz,
+      fill: "{color.neutral-subdued}" as TokenRef,
+      strokeWidth: 2,
+    },
+  ];
 }
 
 export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
@@ -136,90 +235,18 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
       if (hasChildren) return [];
 
-      const sizeName = (props.size as string) || "md";
-      const inputHeight = INPUT_HEIGHT[sizeName] ?? INPUT_HEIGHT.md;
-      const pad = INPUT_PADDING[sizeName] ?? INPUT_PADDING.md;
-      const borderRadius =
-        INPUT_BORDER_RADIUS[sizeName] ?? INPUT_BORDER_RADIUS.md;
-      const iconSz = ICON_SIZE[sizeName] ?? ICON_SIZE.md;
-      const gap = 4;
-
-      const containerWidth =
-        ((props as Record<string, unknown>)._containerWidth as number) ||
-        (props.style?.width as number) ||
-        200;
-
-      const rawFontSize = props.style?.fontSize ?? _size.fontSize;
-      const resolvedFs =
-        typeof rawFontSize === "number"
-          ? rawFontSize
-          : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
-            ? resolveToken(rawFontSize as TokenRef)
-            : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
-      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
-
       const locale = props.locale || "en-US";
       const displayText =
         props.value || props.placeholder || buildDatePlaceholder(locale);
-      const textColor =
-        props.style?.color ??
-        (props.value ? variant.text : ("{color.neutral-subdued}" as TokenRef));
-      const bgColor = props.style?.backgroundColor ?? variant.background;
-      const borderColor = props.style?.borderColor ?? variant.border;
 
-      // 버튼 영역 = iconSz + padding.right
-      const btnAreaWidth = iconSz + pad.right + gap;
-      const textMaxWidth = containerWidth - pad.left - btnAreaWidth;
-      const btnX = containerWidth - pad.right - iconSz;
-
-      const shapes: Shape[] = [
-        // 배경
-        {
-          id: "input-bg",
-          type: "roundRect" as const,
-          x: 0,
-          y: 0,
-          width: containerWidth,
-          height: inputHeight,
-          radius: borderRadius,
-          fill: bgColor,
-        },
-        // 테두리
-        {
-          type: "border" as const,
-          target: "input-bg",
-          borderWidth: 1,
-          color: borderColor ?? ("{color.border}" as TokenRef),
-          radius: borderRadius,
-        },
-        // 날짜 텍스트
-        {
-          type: "text" as const,
-          x: pad.left,
-          y: 0,
-          text: displayText,
-          fontSize,
-          fontFamily: ff,
-          fontWeight: 400,
-          fill: textColor,
-          align: "left" as const,
-          baseline: "middle" as const,
-          maxWidth: textMaxWidth,
-        },
-        // 캘린더 아이콘
-        {
-          type: "icon_font" as const,
-          iconName: "calendar",
-          x: btnX + iconSz / 2,
-          y: inputHeight / 2,
-          fontSize: iconSz,
-          fill: "{color.neutral-subdued}" as TokenRef,
-          strokeWidth: 2,
-        },
-      ];
-
-      return shapes;
+      return buildDatePickerShapes({
+        props: props as unknown as Record<string, unknown>,
+        variant: variant as unknown as Record<string, unknown>,
+        sizeEntry: _size as unknown as Record<string, unknown>,
+        displayText,
+        hasValue: !!props.value,
+        defaultContainerWidth: 200,
+      });
     },
 
     react: (props) => ({

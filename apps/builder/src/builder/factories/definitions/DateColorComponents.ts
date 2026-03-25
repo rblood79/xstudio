@@ -117,13 +117,14 @@ export function createDatePickerDefinition(
 }
 
 /**
- * DateRangePicker 복합 컴포넌트 정의
+ * DateRangePicker 복합 컴포넌트 정의 (@sync DatePicker 동일 구조)
  *
- * CSS DOM 구조와 동일:
- *   DateRangePicker (parent)
- *     ├─ DateField  (tag="DateField", placeholder="Start date", display:block)
- *     ├─ Separator  (tag="Separator", display:block)
- *     └─ DateField  (tag="DateField", placeholder="End date",   display:block)
+ *   DateRangePicker (parent, flex column, gap:8px, width:284px)
+ *     ├─ Label         (tag="Label")
+ *     ├─ DateInput     (tag="DateInput", _parentTag="DateRangePicker")
+ *     └─ Calendar      (tag="Calendar")
+ *         ├─ CalendarHeader
+ *         └─ CalendarGrid
  */
 export function createDateRangePickerDefinition(
   context: ComponentCreationContext,
@@ -137,6 +138,17 @@ export function createDateRangePickerDefinition(
     ? { page_id: null as null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null as null };
 
+  // Calendar 현재 월 데이터
+  const now = new Date();
+  const calYear = now.getFullYear();
+  const calMonth = now.getMonth();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const calTotalDays = new Date(calYear, calMonth + 1, 0).getDate();
+  const monthText = new Intl.DateTimeFormat(
+    (typeof navigator !== "undefined" && navigator.language) || "ko-KR",
+    { year: "numeric", month: "long" },
+  ).format(now);
+
   return {
     tag: "DateRangePicker",
     parent: {
@@ -145,6 +157,7 @@ export function createDateRangePickerDefinition(
         label: "Date Range",
         variant: "default",
         size: "md",
+        defaultToday: true,
         isDisabled: false,
         isReadOnly: false,
       } as ComponentElementProps,
@@ -165,29 +178,53 @@ export function createDateRangePickerDefinition(
           },
         } as ComponentElementProps,
         ...ownerFields,
-        order_num: 0,
-      },
-      {
-        tag: "DateField",
-        props: {
-          placeholder: "Start date",
-        } as ComponentElementProps,
-        ...ownerFields,
         order_num: 1,
       },
       {
-        tag: "Separator",
-        props: {} as ComponentElementProps,
+        tag: "DateInput",
+        props: {
+          _parentTag: "DateRangePicker",
+          size: "md",
+        } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
       },
       {
-        tag: "DateField",
+        tag: "Calendar",
         props: {
-          placeholder: "End date",
+          variant: "default",
+          size: "md",
+          defaultToday: true,
+          isDisabled: false,
+          isReadOnly: false,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 3,
+        children: [
+          {
+            tag: "CalendarHeader",
+            props: {
+              variant: "default",
+              size: "md",
+              children: monthText,
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 1,
+          },
+          {
+            tag: "CalendarGrid",
+            props: {
+              variant: "default",
+              size: "md",
+              defaultToday: true,
+              dayOffset: firstDay,
+              totalDays: calTotalDays,
+              todayDate: now.getDate(),
+            } as ComponentElementProps,
+            ...ownerFields,
+            order_num: 2,
+          },
+        ],
       },
     ],
   };
