@@ -58,8 +58,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
   sizes: {
     sm: {
       height: 0,
-      paddingX: 8,
-      paddingY: 8,
+      paddingX: 4,
+      paddingY: 4,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 24,
@@ -67,8 +67,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
     },
     md: {
       height: 0,
-      paddingX: 12,
-      paddingY: 12,
+      paddingX: 8,
+      paddingY: 8,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 28,
@@ -76,8 +76,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
     },
     lg: {
       height: 0,
-      paddingX: 16,
-      paddingY: 16,
+      paddingX: 12,
+      paddingY: 12,
       fontSize: "{typography.text-md}" as TokenRef,
       borderRadius: "{radius.xl}" as TokenRef,
       iconSize: 32,

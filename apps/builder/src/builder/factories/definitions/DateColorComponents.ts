@@ -231,16 +231,10 @@ export function createCalendarDefinition(
     parent: {
       tag: "Calendar",
       props: {
+        variant: "default",
+        size: "md",
         isDisabled: false,
         isReadOnly: false,
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: "6px",
-          padding: "12px",
-          width: "284px", // intrinsic: cellSize*7 + gap*6 + paddingX*2
-          // height 미지정 → calculateContentHeight 자동 계산 (Card 패턴)
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -256,11 +250,6 @@ export function createCalendarDefinition(
             year: "numeric",
             month: "long",
           }).format(now),
-          style: {
-            display: "block",
-            width: "100%",
-            // height 미지정 → calculateContentHeight 자동 계산
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -274,11 +263,6 @@ export function createCalendarDefinition(
           dayOffset: firstDay,
           totalDays: calTotalDays,
           todayDate: now.getDate(),
-          style: {
-            display: "block",
-            width: "100%",
-            // height 미지정 → calculateContentHeight 자동 계산
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,

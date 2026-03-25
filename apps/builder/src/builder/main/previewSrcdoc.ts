@@ -22,16 +22,8 @@ const BASE_STYLES = `
   }
   p { margin: 0; }
   h1, h2, h3, h4, h5, h6 {
-    font-size: inherit;
-    font-weight: inherit;
     margin: 0;
     padding: 0;
-    border: 0;
-    font: inherit;
-    vertical-align: baseline;
-    list-style: none;
-    text-decoration: none;
-    color: inherit;
   }
   /* ⭐ body가 React 루트이자 body element로 사용됨 (DOM/데이터 트리 일치) */
   body {

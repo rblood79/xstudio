@@ -398,7 +398,6 @@
 }
 
 @layer base {
-
   *,
   :after,
   :before,
@@ -427,15 +426,16 @@
     text-size-adjust: 100%;
     tab-size: 4;
     line-height: 1.5;
-    font-family: var(--default-font-family,
-        ui-sans-serif,
-        system-ui,
-        sans-serif,
-        "Apple Color Emoji",
-        "Segoe UI Emoji",
-        "Segoe UI Symbol",
-        "Noto Color Emoji"
-      );
+    font-family: var(
+      --default-font-family,
+      ui-sans-serif,
+      system-ui,
+      sans-serif,
+      "Apple Color Emoji",
+      "Segoe UI Emoji",
+      "Segoe UI Symbol",
+      "Noto Color Emoji"
+    );
     font-feature-settings: var(--default-font-feature-settings, normal);
     font-variation-settings: var(--default-font-variation-settings, normal);
     /* font-size: 16px (browser default) - DO NOT set to --text-sm or rem values will be incorrect */
@@ -455,24 +455,9 @@
     text-decoration: underline dotted;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-size: inherit;
-    font-weight: inherit;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    font-size: 100%;
-    font: inherit;
-    vertical-align: baseline;
-    list-style: none;
-    text-decoration: none;
-    color: inherit;
-  }
+  /* h1~h6 reset: Tailwind v4 Preflight(@layer base)가 담당
+   * font-size: inherit; font-weight: inherit; 만 설정됨
+   * 추가 reset 불필요 — @layer components에서 개별 컴포넌트가 오버라이드 */
 
   a {
     color: inherit;
@@ -489,18 +474,22 @@
   kbd,
   samp,
   pre {
-    font-family: var(--default-mono-font-family,
-        ui-monospace,
-        SFMono-Regular,
-        Menlo,
-        Monaco,
-        Consolas,
-        "Liberation Mono",
-        "Courier New",
-        monospace);
+    font-family: var(
+      --default-mono-font-family,
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Monaco,
+      Consolas,
+      "Liberation Mono",
+      "Courier New",
+      monospace
+    );
     font-feature-settings: var(--default-mono-font-feature-settings, normal);
-    font-variation-settings: var(--default-mono-font-variation-settings,
-        normal);
+    font-variation-settings: var(
+      --default-mono-font-variation-settings,
+      normal
+    );
     font-size: var(--text-xs);
     padding-top: var(--spacing);
     line-height: var(--text-xs);
@@ -610,7 +599,8 @@
     opacity: 1;
   }
 
-  @supports (not ((-webkit-appearance: -apple-pay-button))) or (contain-intrinsic-size: 1px) {
+  @supports (not ((-webkit-appearance: -apple-pay-button))) or
+    (contain-intrinsic-size: 1px) {
     ::placeholder {
       color: color-mix(in oklab, currentColor 50%, transparent);
     }
@@ -719,12 +709,16 @@
 
   @supports (color: color-mix(in lab, red, red)) {
     .prose {
-      --prose-marker-color: color-mix(in oklab,
-          var(--color-gray-700) 25%,
-          transparent);
-      --prose-hr-color: color-mix(in oklab,
-          var(--color-gray-950) 5%,
-          transparent);
+      --prose-marker-color: color-mix(
+        in oklab,
+        var(--color-gray-700) 25%,
+        transparent
+      );
+      --prose-hr-color: color-mix(
+        in oklab,
+        var(--color-gray-950) 5%,
+        transparent
+      );
     }
   }
 
@@ -744,12 +738,16 @@
 
   @supports (color: color-mix(in lab, red, red)) {
     .prose:where(.dark, .dark *) {
-      --prose-marker-color: color-mix(in oklab,
-          var(--color-gray-300) 35%,
-          transparent);
-      --prose-hr-color: color-mix(in oklab,
-          var(--color-white) 10%,
-          transparent);
+      --prose-marker-color: color-mix(
+        in oklab,
+        var(--color-gray-300) 35%,
+        transparent
+      );
+      --prose-hr-color: color-mix(
+        in oklab,
+        var(--color-white) 10%,
+        transparent
+      );
     }
   }
 
@@ -770,17 +768,23 @@
 
     @supports (color: color-mix(in lab, red, red)) {
       .prose:where(.system, .system *) {
-        --prose-marker-color: color-mix(in oklab,
-            var(--color-gray-300) 35%,
-            transparent);
-        --prose-hr-color: color-mix(in oklab,
-            var(--color-white) 10%,
-            transparent);
+        --prose-marker-color: color-mix(
+          in oklab,
+          var(--color-gray-300) 35%,
+          transparent
+        );
+        --prose-hr-color: color-mix(
+          in oklab,
+          var(--color-white) 10%,
+          transparent
+        );
       }
     }
   }
 
-  .prose :where(:not(.not-prose, .not-prose *))+ :where(:not(.not-prose, .not-prose *)) {
+  .prose
+    :where(:not(.not-prose, .not-prose *))
+    + :where(:not(.not-prose, .not-prose *)) {
     margin-top: calc(var(--spacing) * 6);
   }
 
@@ -812,7 +816,7 @@
     margin-top: calc(var(--spacing) * 16);
   }
 
-  .prose h2+h3:where(:not(.not-prose, .not-prose *)) {
+  .prose h2 + h3:where(:not(.not-prose, .not-prose *)) {
     margin-top: calc(var(--spacing) * 6);
   }
 
@@ -843,7 +847,7 @@
     padding-left: calc(var(--spacing) * 3);
   }
 
-  .prose ul li+li:where(:not(.not-prose, .not-prose *)) {
+  .prose ul li + li:where(:not(.not-prose, .not-prose *)) {
     margin-top: calc(var(--spacing) * 4);
   }
 
@@ -851,7 +855,8 @@
     color: var(--prose-marker-color);
   }
 
-  .prose a:not(:where(:is(h2, h3, h4) *)):where(:not(.not-prose, .not-prose *)) {
+  .prose
+    a:not(:where(:is(h2, h3, h4) *)):where(:not(.not-prose, .not-prose *)) {
     color: var(--prose-link-color);
     font-weight: var(--font-weight-semibold);
     text-underline-offset: 3px;
@@ -861,7 +866,9 @@
     text-decoration-thickness: 1px;
   }
 
-  .prose a:not(:where(:is(h2, h3, h4) *)):where(:not(.not-prose, .not-prose *)) code {
+  .prose
+    a:not(:where(:is(h2, h3, h4) *)):where(:not(.not-prose, .not-prose *))
+    code {
     font-weight: var(--font-weight-semibold);
   }
 
@@ -896,7 +903,7 @@
     margin-bottom: calc(var(--spacing) * 10);
   }
 
-  .prose pre code *+ :where(:not(.not-prose, .not-prose *)) {
+  .prose pre code * + :where(:not(.not-prose, .not-prose *)) {
     margin-top: 0;
   }
 
@@ -997,7 +1004,7 @@
     margin-block: calc(var(--spacing) * 16);
   }
 
-  .prose hr:where(:not(.not-prose, .not-prose *))+h2 {
+  .prose hr:where(:not(.not-prose, .not-prose *)) + h2 {
     margin-top: calc(var(--spacing) * 16);
   }
 
@@ -1016,7 +1023,9 @@
     content: close-quote;
   }
 
-  .prose figure:where(:not(.not-prose, .not-prose *)) figcaption:where(:not(.not-prose, .not-prose *)) {
+  .prose
+    figure:where(:not(.not-prose, .not-prose *))
+    figcaption:where(:not(.not-prose, .not-prose *)) {
     margin-top: calc(var(--spacing) * 3);
     text-align: center;
     font-size: var(--text-sm);

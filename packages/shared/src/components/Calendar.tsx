@@ -106,7 +106,13 @@ export function Calendar<T extends DateValue>({
           <ChevronRight size={16} />
         </Button>
       </header>
-      <CalendarGrid>{(date) => <CalendarCell date={date} />}</CalendarGrid>
+      <div className="calendar-grids">
+        {Array.from({ length: visibleMonths }, (_, i) => (
+          <CalendarGrid key={i} offset={{ months: i }}>
+            {(date) => <CalendarCell date={date} />}
+          </CalendarGrid>
+        ))}
+      </div>
       {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
     </AriaCalendar>
   );
