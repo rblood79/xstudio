@@ -25,7 +25,13 @@ import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 
 /** 자식에 동기화가 필요한 props (@sync DatePickerEditor 패턴) */
-const SYNC_KEYS = new Set(["variant", "size", "locale", "calendarSystem"]);
+const SYNC_KEYS = new Set([
+  "variant",
+  "size",
+  "locale",
+  "calendarSystem",
+  "defaultToday",
+]);
 
 export const DateRangePickerEditor = memo(function DateRangePickerEditor({
   elementId,

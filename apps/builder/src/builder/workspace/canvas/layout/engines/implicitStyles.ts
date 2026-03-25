@@ -15,6 +15,8 @@ import {
   parsePadding,
   PHANTOM_INDICATOR_CONFIGS,
   measureTextWidth,
+  TABS_BAR_HEIGHT,
+  TABS_PANEL_PADDING,
 } from "./utils";
 import { InlineAlertSpec } from "@xstudio/specs";
 import { getNecessityIndicatorSuffix } from "@xstudio/shared/components";
@@ -668,10 +670,9 @@ export function applyImplicitStyles(
   // ── Tabs ───────────────────────────────────────────────────────────
   if (containerTag === "tabs") {
     const sizeName = (containerProps?.size as string) ?? "md";
-    // @sync Button.spec.ts padding pattern: sm=21, md=29, lg=41
-    const tabBarHeight = sizeName === "sm" ? 21 : sizeName === "lg" ? 41 : 29;
-    // @sync Tabs.css TabPanel padding: sm=8, md=12, lg=16
-    const tabPanelPadding = sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
+    const tabBarHeight = TABS_BAR_HEIGHT[sizeName] ?? TABS_BAR_HEIGHT.md;
+    const tabPanelPadding =
+      TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
 
     // Dual Lookup: 직속 Panel 또는 TabPanels 내부 Panel
     let panelChildren = children.filter((c) => c.tag === "Panel");

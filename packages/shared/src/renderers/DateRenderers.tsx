@@ -39,6 +39,22 @@ function wrapWithI18n(
   );
 }
 
+// ─── 공통 헬퍼 ──────────────────────────────────────────
+
+function resolveCalendarIconPosition(cip: unknown): "left" | "right" {
+  return cip === "left" || cip === "right" ? cip : "right";
+}
+
+function resolvePlaceholder(
+  props: Record<string, unknown>,
+): string | undefined {
+  return typeof props.placeholderValue === "string"
+    ? props.placeholderValue
+    : typeof props.placeholder === "string"
+      ? props.placeholder
+      : undefined;
+}
+
 /**
  * Date 관련 컴포넌트 렌더러
  * - Calendar
@@ -67,8 +83,8 @@ export const renderCalendar = (
   const visibleMonths = Number(element.props.visibleMonths) || 1;
   const size = element.props.size as string | undefined;
   const variant = element.props.variant as string | undefined;
-  // locale/calendarSystem/size 변경 시 리마운트 (defaultValue 재적용)
-  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${size || ""}`;
+  // locale/calendarSystem 변경 시 리마운트 (defaultValue calendar 타입 재적용)
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}`;
 
   return (
     <Calendar
@@ -130,17 +146,12 @@ export const renderDatePicker = (
     }
   };
 
-  const getCalendarIconPosition = () => {
-    const cip = element.props.calendarIconPosition;
-    return cip === "left" || cip === "right" ? cip : "right";
-  };
-
   const locale = element.props.locale as string | undefined;
   const calendarSystem = element.props.calendarSystem as string | undefined;
   const size = element.props.size as string | undefined;
   const variant = element.props.variant as string | undefined;
-  // locale/calendarSystem/size 변경 시 리마운트 (defaultValue 재적용)
-  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${size || ""}`;
+  // locale/calendarSystem 변경 시 리마운트 (defaultValue calendar 타입 재적용)
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}`;
 
   return (
     <DatePicker
@@ -156,13 +167,7 @@ export const renderDatePicker = (
       label={String(element.props.label || "Date Picker")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
-      placeholder={
-        typeof element.props.placeholderValue === "string"
-          ? element.props.placeholderValue
-          : typeof element.props.placeholder === "string"
-            ? element.props.placeholder
-            : undefined
-      }
+      placeholder={resolvePlaceholder(element.props)}
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
@@ -191,7 +196,9 @@ export const renderDatePicker = (
         (element.props.pageBehavior as "visible" | "single") || undefined
       }
       showCalendarIcon={element.props.showCalendarIcon !== false}
-      calendarIconPosition={getCalendarIconPosition() as "left" | "right"}
+      calendarIconPosition={resolveCalendarIconPosition(
+        element.props.calendarIconPosition,
+      )}
       showWeekNumbers={Boolean(element.props.showWeekNumbers)}
       highlightToday={element.props.highlightToday !== false}
       allowClear={element.props.allowClear !== false}
@@ -226,16 +233,11 @@ export const renderDateRangePicker = (
     return ["day", "hour", "minute", "second"].includes(g) ? g : "day";
   };
 
-  const getCalendarIconPosition = () => {
-    const cip = element.props.calendarIconPosition;
-    return cip === "left" || cip === "right" ? cip : "right";
-  };
-
   const locale = element.props.locale as string | undefined;
   const calendarSystem = element.props.calendarSystem as string | undefined;
   const size = element.props.size as string | undefined;
-  // locale/calendarSystem/size 변경 시 리마운트 (defaultValue 재적용)
-  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${size || ""}`;
+  // locale/calendarSystem 변경 시 리마운트 (defaultValue calendar 타입 재적용)
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}`;
 
   return (
     <DateRangePicker
@@ -249,13 +251,7 @@ export const renderDateRangePicker = (
       label={String(element.props.label || "Date Range Picker")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
-      placeholder={
-        typeof element.props.placeholderValue === "string"
-          ? element.props.placeholderValue
-          : typeof element.props.placeholder === "string"
-            ? element.props.placeholder
-            : undefined
-      }
+      placeholder={resolvePlaceholder(element.props)}
       locale={locale}
       calendarSystem={calendarSystem}
       isDisabled={Boolean(element.props.isDisabled)}
@@ -289,7 +285,9 @@ export const renderDateRangePicker = (
         (element.props.validationBehavior as "native" | "aria") || undefined
       }
       showCalendarIcon={element.props.showCalendarIcon !== false}
-      calendarIconPosition={getCalendarIconPosition() as "left" | "right"}
+      calendarIconPosition={resolveCalendarIconPosition(
+        element.props.calendarIconPosition,
+      )}
       showWeekNumbers={Boolean(element.props.showWeekNumbers)}
       highlightToday={element.props.highlightToday !== false}
       allowClear={element.props.allowClear !== false}
@@ -334,9 +332,9 @@ export const renderDateField = (
   const hourCycle = element.props.hourCycle
     ? Number(element.props.hourCycle)
     : undefined;
-  // key에 granularity/locale/calendar 포함 → 변경 시 리마운트 (defaultValue 재적용)
   const size = element.props.size as string | undefined;
-  const remountKey = `${element.id}-${granularity}-${locale || ""}-${calendar || ""}-${size || ""}`;
+  // granularity/locale/calendar 변경 시 리마운트 (defaultValue 재적용)
+  const remountKey = `${element.id}-${granularity}-${locale || ""}-${calendar || ""}`;
 
   return wrapWithI18n(
     <DateField
@@ -410,7 +408,7 @@ export const renderTimeField = (
     ? Number(element.props.hourCycle)
     : undefined;
   const size = element.props.size as string | undefined;
-  const remountKey = `${element.id}-${granularity}-${locale || ""}-${size || ""}`;
+  const remountKey = `${element.id}-${granularity}-${locale || ""}`;
 
   return wrapWithI18n(
     <TimeField

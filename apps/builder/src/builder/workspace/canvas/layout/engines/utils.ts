@@ -1373,6 +1373,19 @@ export function calculateContentWidth(
  * height가 명시되지 않은 요소에 대한 추정 높이
  * 브라우저 CSS와 유사한 기본 크기 적용
  */
+
+/** @sync Button.spec.ts padding pattern + Tabs.css */
+export const TABS_BAR_HEIGHT: Record<string, number> = {
+  sm: 21,
+  md: 29,
+  lg: 41,
+};
+export const TABS_PANEL_PADDING: Record<string, number> = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+};
+
 const DEFAULT_ELEMENT_HEIGHTS: Record<string, number> = {
   // 버튼/인풋 계열
   button: 36,
@@ -2166,11 +2179,9 @@ export function calculateContentHeight(
     if (tag === "tabs") {
       const props = element.props as Record<string, unknown> | undefined;
       const sizeName = (props?.size as string) ?? "md";
-      // @sync Button.spec.ts padding pattern: sm=21, md=29, lg=41
-      const tabBarHeight = sizeName === "sm" ? 21 : sizeName === "lg" ? 41 : 29;
-      // @sync Tabs.css TabPanel padding: sm=8, md=12, lg=16
+      const tabBarHeight = TABS_BAR_HEIGHT[sizeName] ?? TABS_BAR_HEIGHT.md;
       const tabPanelPadding =
-        sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
+        TABS_PANEL_PADDING[sizeName] ?? TABS_PANEL_PADDING.md;
 
       // 활성 Panel의 높이 계산 (Dual Lookup: 직속 → TabPanels 내부)
       let panelChildren = childElements.filter((c) => c.tag === "Panel");
