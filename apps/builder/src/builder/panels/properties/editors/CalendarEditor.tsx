@@ -34,20 +34,24 @@ export const CalendarEditor = memo(function CalendarEditor({
     onUpdate({ [key]: value });
 
     // CalendarHeader/CalendarGrid 자식에 variant/size/defaultToday 동기화
-    if (key === "variant" || key === "size" || key === "defaultToday") {
+    // CalendarHeader/CalendarGrid 자식에 동기화가 필요한 props
+    const syncToChildrenKeys = new Set([
+      "variant",
+      "size",
+      "defaultToday",
+      "locale",
+      "calendarSystem",
+    ]);
+    if (syncToChildrenKeys.has(key)) {
       const state = useStore.getState();
       const children = state.childrenMap.get(elementId) ?? [];
       for (const child of children) {
         if (child.tag === "CalendarHeader" || child.tag === "CalendarGrid") {
-          const childUpdate: Record<string, unknown> =
-            key === "defaultToday" && child.tag !== "CalendarGrid"
-              ? {}
-              : { [key]: value };
-          if (Object.keys(childUpdate).length > 0) {
-            state.updateElement(child.id, {
-              props: { ...child.props, ...childUpdate },
-            });
-          }
+          // defaultToday는 CalendarGrid에만 적용
+          if (key === "defaultToday" && child.tag !== "CalendarGrid") continue;
+          state.updateElement(child.id, {
+            props: { ...child.props, [key]: value },
+          });
         }
       }
     }

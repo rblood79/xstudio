@@ -18,6 +18,10 @@ export interface CalendarHeaderProps {
   variant?: "default" | "accent";
   size?: "sm" | "md" | "lg";
   children?: string;
+  /** BCP 47 locale (e.g. "ko-KR") */
+  locale?: string;
+  /** Unicode calendar identifier (e.g. "buddhist") */
+  calendarSystem?: string;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -31,8 +35,8 @@ const CALENDAR_HEADER_DIMS: Record<
     gap: number;
   }
 > = {
-  sm: { fontSize: 12, iconSize: 24, gap: 4 },
-  md: { fontSize: 14, iconSize: 28, gap: 6 },
+  sm: { fontSize: 12, iconSize: 20, gap: 4 },
+  md: { fontSize: 14, iconSize: 26, gap: 6 },
   lg: { fontSize: 16, iconSize: 32, gap: 8 },
 };
 
@@ -44,28 +48,29 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
   description: "Calendar 네비게이션 헤더 (이전/다음 + 월/년 텍스트)",
   element: "header",
   archetype: "calendar",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",
 
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
     accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
     },
   },
 
   sizes: {
     sm: {
-      height: 28,
+      height: 24,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-xs}" as TokenRef,
@@ -73,7 +78,7 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
       gap: 4,
     },
     md: {
-      height: 32,
+      height: 30,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-sm}" as TokenRef,
@@ -81,7 +86,7 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
       gap: 6,
     },
     lg: {
-      height: 40,
+      height: 36,
       paddingX: 0,
       paddingY: 0,
       fontSize: "{typography.text-md}" as TokenRef,
@@ -125,7 +130,7 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
             ? parseFloat(rawWidth)
             : 0;
       const width = parsedWidth > 0 ? parsedWidth : cellSize * 7 + gap * 6;
-      const headerHeight = fontSize + 8;
+      const headerHeight = (size.height as unknown as number) || 30;
       const ff = fontFamily.sans;
       const cy = headerHeight / 2;
 
@@ -145,10 +150,25 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
           type: "text" as const,
           x: cellSize,
           y: cy,
-          text: props.children || "2024년 1월",
+          text: (() => {
+            const loc = props.calendarSystem
+              ? `${props.locale || "en-US"}-u-ca-${props.calendarSystem}`
+              : props.locale;
+            if (loc) {
+              try {
+                return new Intl.DateTimeFormat(loc, {
+                  year: "numeric",
+                  month: "long",
+                }).format(new Date());
+              } catch {
+                // fallback to children
+              }
+            }
+            return props.children || "2024년 1월";
+          })(),
           fontSize,
           fontFamily: ff,
-          fontWeight: 600,
+          fontWeight: 700,
           fill: variant.text,
           align: "center" as const,
           baseline: "middle" as const,

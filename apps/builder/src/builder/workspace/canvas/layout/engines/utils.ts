@@ -858,6 +858,20 @@ export function calculateContentWidth(
     return Math.ceil(textWidth);
   }
 
+  // 1.2a. CalendarGrid / CalendarHeader: intrinsic width = cellSize * 7 + gap * 6
+  if (tag === "calendargrid" || tag === "calendarheader") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? "md";
+    const calDims: Record<string, { iconSize: number; gap: number }> = {
+      sm: { iconSize: 20, gap: 4 },
+      md: { iconSize: 26, gap: 6 },
+      lg: { iconSize: 32, gap: 8 },
+    };
+    const d = calDims[sizeName] ?? calDims.md;
+    const cellSize = d.iconSize + 4;
+    return cellSize * 7 + d.gap * 6;
+  }
+
   // 1.2. Breadcrumbs: ToggleButtonGroup과 동일 패턴 — 자식 Breadcrumb 텍스트 실측 합산
   // fullTreeLayout.ts에서 rawChildren을 enrichChildren으로 전달하여 자식 기반 계산 가능
   if (tag === "breadcrumbs") {
@@ -1832,12 +1846,12 @@ export function calculateContentHeight(
     return 0;
   }
 
-  // CalendarHeader: intrinsic height = fontSize + 8
+  // CalendarHeader: intrinsic height = 버튼 높이 (sm:24, md:30, lg:36)
   if (tag === "calendarheader") {
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
-    const headerFontSizes: Record<string, number> = { sm: 12, md: 14, lg: 16 };
-    return (headerFontSizes[sizeName] ?? 14) + 8;
+    const headerHeights: Record<string, number> = { sm: 24, md: 30, lg: 36 };
+    return headerHeights[sizeName] ?? 30;
   }
 
   // CalendarGrid: intrinsic height = weekdayRow + dateRows
@@ -1845,8 +1859,8 @@ export function calculateContentHeight(
     const props = element.props as Record<string, unknown> | undefined;
     const sizeName = (props?.size as string) ?? "md";
     const gridDims: Record<string, { iconSize: number; gap: number }> = {
-      sm: { iconSize: 24, gap: 4 },
-      md: { iconSize: 28, gap: 6 },
+      sm: { iconSize: 20, gap: 4 },
+      md: { iconSize: 26, gap: 6 },
       lg: { iconSize: 32, gap: 8 },
     };
     const d = gridDims[sizeName] ?? gridDims.md;

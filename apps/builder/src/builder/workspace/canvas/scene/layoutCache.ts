@@ -120,6 +120,7 @@ const LAYOUT_PROP_KEYS = [
   "hourCycle",
   "locale",
   "calendar",
+  "calendarSystem",
   "necessityIndicator",
   "isRequired",
   "labelPosition",

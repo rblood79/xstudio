@@ -1298,6 +1298,50 @@ export function applyImplicitStyles(
   }
 
   // ── Card ────────────────────────────────────────────────────────────
+  // ── Calendar — padding/gap/display 주입 (Generated CSS 동기) ─────
+  if (containerTag === "calendar" || containerTag === "rangecalendar") {
+    const calSize = (containerEl.props?.size as string) || "md";
+    const calPadGap: Record<string, { pad: number; gap: number }> = {
+      sm: { pad: 4, gap: 4 },
+      md: { pad: 8, gap: 6 },
+      lg: { pad: 12, gap: 8 },
+    };
+    const { pad, gap: calGap } = calPadGap[calSize] ?? calPadGap.md;
+    const ps = parentStyle;
+    effectiveParent = {
+      ...effectiveParent,
+      props: {
+        ...effectiveParent.props,
+        style: {
+          ...(effectiveParent.props?.style as Record<string, unknown>),
+          width: ps.width ?? "fit-content",
+          display: ps.display ?? "flex",
+          flexDirection: ps.flexDirection ?? "column",
+          paddingTop: ps.paddingTop ?? pad,
+          paddingRight: ps.paddingRight ?? pad,
+          paddingBottom: ps.paddingBottom ?? pad,
+          paddingLeft: ps.paddingLeft ?? pad,
+          gap: ps.gap ?? calGap,
+        },
+      },
+    } as Element;
+
+    // CalendarHeader/CalendarGrid 자식에 width: 100% 주입
+    filteredChildren = filteredChildren.map((child) => {
+      if (child.tag === "CalendarHeader" || child.tag === "CalendarGrid") {
+        const cs = (child.props?.style || {}) as Record<string, unknown>;
+        if (!cs.width) {
+          return {
+            ...child,
+            props: { ...child.props, style: { ...cs, width: "100%" } },
+          } as Element;
+        }
+      }
+      return child;
+    });
+  }
+
+  // ── Card ──────────────────────────────────────────────────────────
   if (containerTag === "card") {
     filteredChildren = filteredChildren.map((child) => {
       if (child.tag === "CardHeader" || child.tag === "CardContent") {

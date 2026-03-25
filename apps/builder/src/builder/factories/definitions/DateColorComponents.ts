@@ -233,6 +233,7 @@ export function createCalendarDefinition(
       props: {
         variant: "default",
         size: "md",
+        defaultToday: true,
         isDisabled: false,
         isReadOnly: false,
       } as ComponentElementProps,

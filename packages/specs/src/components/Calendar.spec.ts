@@ -19,6 +19,8 @@ export interface CalendarProps {
   variant?: "default" | "accent";
   size?: "sm" | "md" | "lg";
   value?: string;
+  locale?: string;
+  calendarSystem?: string;
   isDisabled?: boolean;
   isReadOnly?: boolean;
   style?: Record<string, string | number | undefined>;
@@ -62,7 +64,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       paddingY: 4,
       fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
-      iconSize: 24,
+      iconSize: 20,
       gap: 4,
     },
     md: {
@@ -71,7 +73,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       paddingY: 8,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
-      iconSize: 28,
+      iconSize: 26,
       gap: 6,
     },
     lg: {
@@ -103,8 +105,8 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       const borderRadius = size.borderRadius;
       const cellSize = (size.iconSize ?? 28) + 4;
       const gap = (size.gap as unknown as number) || 6;
-      const paddingX = (size.paddingX as unknown as number) || 12;
-      const paddingY = (size.paddingY as unknown as number) || 12;
+      const paddingX = (size.paddingX as unknown as number) || 8;
+      const paddingY = (size.paddingY as unknown as number) || 8;
       const rawFontSize = size.fontSize;
       const resolvedFs =
         typeof rawFontSize === "number"
@@ -117,7 +119,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
       const ff = fontFamily.sans;
 
       // Phase C: 캘린더 헤더 + 요일 + 날짜 셀 생성
-      const headerHeight = fontSize + 8;
+      const headerHeight = cellSize; // 버튼 높이와 동일 (sm:24, md:30, lg:36)
       const navRowY = paddingY;
       const weekdayY = navRowY + headerHeight + gap;
       const gridStartY = weekdayY + cellSize;
@@ -175,10 +177,22 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           type: "text" as const,
           x: paddingX + cellSize,
           y: navRowY + headerHeight / 2,
-          text: "2024년 1월",
+          text: (() => {
+            const loc = _props.calendarSystem
+              ? `${_props.locale || "en-US"}-u-ca-${_props.calendarSystem}`
+              : _props.locale || "ko-KR";
+            try {
+              return new Intl.DateTimeFormat(loc, {
+                year: "numeric",
+                month: "long",
+              }).format(new Date());
+            } catch {
+              return "2024년 1월";
+            }
+          })(),
           fontSize,
           fontFamily: ff,
-          fontWeight: 600,
+          fontWeight: 700,
           fill: variant.text,
           align: "center" as const,
           baseline: "middle" as const,
@@ -196,8 +210,20 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
         },
       );
 
-      // 요일 헤더 (Sun ~ Sat)
-      const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+      // 요일 헤더 — locale 기반
+      const effectiveLocale = _props.calendarSystem
+        ? `${_props.locale || "en-US"}-u-ca-${_props.calendarSystem}`
+        : _props.locale || "en-US";
+      const weekdays = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(2024, 0, 7 + i); // 2024-01-07 = Sunday
+        try {
+          return new Intl.DateTimeFormat(effectiveLocale, {
+            weekday: "short",
+          }).format(d);
+        } catch {
+          return ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][i];
+        }
+      });
       for (let col = 0; col < 7; col++) {
         const cellLeft = paddingX + col * (cellSize + gap);
         shapes.push({
@@ -207,7 +233,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           text: weekdays[col],
           fontSize: fontSize - 2,
           fontFamily: ff,
-          fontWeight: 500,
+          fontWeight: 700,
           fill: "{color.neutral-subdued}" as TokenRef,
           align: "center" as const,
           baseline: "middle" as const,
@@ -224,17 +250,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
         const cx = cellLeft + cellSize / 2;
         const cy = gridStartY + row * (cellSize + gap) + cellSize / 2;
 
-        // today 강조 배경
-        if (day === today) {
-          shapes.push({
-            type: "circle" as const,
-            x: cx,
-            y: cy,
-            radius: cellSize / 2,
-            fill: "{color.accent}" as TokenRef,
-          });
-        }
-
+        // 날짜 텍스트
         shapes.push({
           type: "text" as const,
           x: cellLeft,
@@ -242,13 +258,23 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           text: String(day),
           fontSize,
           fontFamily: ff,
-          fontWeight: day === today ? 600 : 400,
-          fill:
-            day === today ? ("{color.on-accent}" as TokenRef) : variant.text,
+          fontWeight: day === today ? 700 : 400,
+          fill: variant.text,
           align: "center" as const,
           baseline: "middle" as const,
           maxWidth: cellSize,
         });
+
+        // today indicator dot (S2 패턴: 하단 4px 원형)
+        if (day === today) {
+          shapes.push({
+            type: "circle" as const,
+            x: cx,
+            y: cy + cellSize / 2 - 4,
+            radius: 3,
+            fill: "{color.accent}" as TokenRef,
+          });
+        }
       }
 
       return shapes;

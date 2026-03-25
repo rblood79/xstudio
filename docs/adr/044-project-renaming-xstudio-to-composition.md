@@ -15,6 +15,7 @@ XStudio Team
 ## Related ADRs
 
 - 전체 ADR 문서 내 "xstudio" 참조 일괄 갱신 대상
+- [Project Renaming Breakdown](../design/project-renaming-breakdown.md): 실행 설계
 
 ---
 
@@ -34,324 +35,107 @@ XStudio Team
 | TypeScript config (paths)          | 4       | 5          |
 | ESLint config                      | 3       | 3          |
 | 배포 설정 (Vercel, GitHub Actions) | 2       | 2          |
+| WASM (Cargo.toml, pkg/)            | 4       | ~20        |
 | 문서 (ADR, docs, CLAUDE.md 등)     | ~30     | ~150       |
 | pnpm-lock.yaml                     | 1       | 9          |
+
+### Hard Constraints
+
+1. **빌드 중단 최소화**: 코드 변경의 중간 상태에서 빌드가 깨지므로, 패키지명+alias+import 변경은 단일 커밋으로 묶어야 한다.
+2. **GitHub 리다이렉트 보존**: 이전 URL(`rblood79/xstudio`)의 자동 리다이렉트가 같은 이름의 새 repo 생성 시 소멸한다 — 리네이밍 후 구 이름으로 repo를 만들면 안 된다.
+3. **배포 연속성**: GitHub repo rename 후 Vercel/GitHub Actions 연동이 즉시 끊어질 수 있다 — 배포 파이프라인 복구를 같은 작업 세션에서 완료해야 한다.
+4. **WASM 바이너리 호환**: Cargo.toml의 `name`과 wasm-pack 출력 파일명(`xstudio_wasm_bg.wasm`, `xstudio_wasm.js`)이 연동되므로, WASM rebuild가 필수다.
+5. **런타임 영향 없음**: 순수 문자열 치환이므로 런타임 로직 변경이 발생하면 안 된다.
+6. **WASM dynamic import 런타임 검증**: `rustWasm.ts`의 WASM import는 `@vite-ignore`로 Vite alias를 우회하므로, 파일명 불일치가 빌드가 아닌 **런타임에** 실패한다 — WASM clean rebuild + dev 서버 기동 검증 필수.
+7. **활성 브랜치 사전 정리**: ~130개 파일 변경이 진행 중인 모든 브랜치와 conflict를 유발하므로, 리네이밍 전 활성 브랜치를 main에 merge하거나, 리네이밍 후 각 브랜치에서 `git rebase main`을 실행해야 한다.
+
+---
+
+## Alternatives Considered
+
+### 대안 A: 단일 커밋 전면 치환
+
+- 설명: GitHub repo rename 후, 모든 코드/설정/문서 변경을 하나의 커밋으로 일괄 적용한다.
+- 장점: 중간 상태 없이 깔끔하게 전환. bisect 가능.
+- 단점: 변경 파일 수가 ~130개로 커서 리뷰 부담. 문제 발생 시 전체 revert만 가능.
+- 위험: 기술(L) / 성능(None) / 유지보수(L) / 마이그레이션(M)
+
+### 대안 B: Alias 병행 점진 전환
+
+- 설명: `@xstudio/*`와 `@composition/*` alias를 일시 병행하고, 파일별로 점진적으로 import 경로를 전환한다.
+- 장점: 각 단계에서 빌드가 유지되어 안전.
+- 단점: 이중 alias 기간 동안 혼란 발생. 완료 판정이 어려움. 병행 기간에 새 코드가 구 경로를 사용할 수 있음.
+- 위험: 기술(L) / 성능(None) / 유지보수(**H**) / 마이그레이션(L)
+
+### 대안 C: Phase별 분리 커밋 (코드 변경은 단일 커밋)
+
+- 설명: GitHub repo rename(Phase 1)은 수동 선행, 코드 변경(패키지명+alias+import)은 단일 커밋(Phase 2~4), 문서/인프라는 후속 커밋(Phase 5)으로 분리한다.
+- 장점: 코드 변경은 원자적이면서, 문서 변경은 별도 추적 가능. revert 시 코드/문서를 독립 롤백.
+- 단점: Phase 1(repo rename)과 Phase 2~4(코드) 사이에 일시적 불일치.
+- 위험: 기술(L) / 성능(None) / 유지보수(L) / 마이그레이션(M)
+
+### Risk Threshold Check
+
+| 대안  | 기술 | 성능 | 유지보수 | 마이그레이션 | 판정                                    |
+| ----- | ---- | ---- | -------- | ------------ | --------------------------------------- |
+| A     | L    | None | L        | M            | 리뷰 부담 크지만 실행 가능              |
+| B     | L    | None | **H**    | L            | 이중 경로 유지보수 비용이 과도          |
+| **C** | L    | None | **L**    | M            | **채택** — 원자적 코드 변경 + 분리 추적 |
 
 ---
 
 ## Decision
 
-**xstudio → composition** 전면 리네이밍을 6단계(Phase 0~5)로 실행한다.
+**Phase별 분리 커밋 전략(대안 C)을 채택한다.** GitHub repo rename을 선행한 뒤, 패키지명+빌드설정+import 경로 변경을 단일 커밋으로 묶고, 문서/인프라 갱신은 후속 커밋으로 분리한다.
+
+### Decision Rationale
+
+1. 코드 변경을 단일 커밋으로 묶으면 중간 상태에서 빌드가 깨지지 않고, `git revert` 1회로 롤백할 수 있다.
+2. 문서 변경을 분리하면 코드 리뷰와 문서 리뷰를 독립적으로 진행할 수 있다.
+3. 대안 B의 이중 alias 유지보수 비용(H)을 회피하면서, 대안 A보다 리뷰/롤백 단위를 분리할 수 있다.
+4. WASM 패키지도 동일 커밋에서 Cargo.toml + pkg/package.json을 갱신하고 rebuild하여 정합성을 보장한다.
+
+### 변경 요약
 
 | 변경 전                         | 변경 후                |
 | ------------------------------- | ---------------------- |
 | GitHub repo: `rblood79/xstudio` | `rblood79/composition` |
 | 루트 패키지: `xstudio`          | `composition`          |
 | 네임스페이스: `@xstudio/*`      | `@composition/*`       |
+| WASM: `xstudio-wasm`            | `composition-wasm`     |
 | 빌드 base path: `/xstudio/`     | `/composition/`        |
 | Vercel 도메인                   | 재연결                 |
 | 문서 내 모든 "xstudio" 참조     | "composition"          |
 
----
-
-## Risk Assessment
-
-| 축           | 수준       | 설명                                          |
-| ------------ | ---------- | --------------------------------------------- |
-| 기술         | **Low**    | 문자열 치환 중심, 로직 변경 없음              |
-| 성능         | **None**   | 런타임 영향 없음                              |
-| 유지보수     | **Medium** | Phase별 순서 위반 시 빌드 깨짐                |
-| 마이그레이션 | **Medium** | GitHub 리다이렉트 만료 전 모든 참조 갱신 필요 |
+세부 구현 phase와 파일 목록은 [Project Renaming Breakdown](../design/project-renaming-breakdown.md)에서 관리한다.
 
 ---
 
-## Implementation Plan
+## Gates
 
-### Phase 0: 사전 준비 (빌드 기준선 확보)
-
-**Gate**: `pnpm build && pnpm type-check` 성공
-
-1. 현재 상태에서 빌드/타입체크 통과 확인
-2. 전체 `xstudio` 참조 목록 스냅샷 기록 (변경 추적용)
-
----
-
-### Phase 1: GitHub 리포지토리 리네이밍
-
-**작업**:
-
-1. GitHub Settings → Repository name: `xstudio` → `composition`
-2. 로컬 remote URL 업데이트:
-   ```bash
-   git remote set-url origin https://github.com/rblood79/composition.git
-   ```
-3. 팀원 전원 remote URL 갱신 공지
-
-**주의사항**:
-
-- GitHub은 이전 URL(`rblood79/xstudio`)을 자동 리다이렉트하지만, 새 리포지토리가 같은 이름으로 생성되면 리다이렉트 소멸
-- Vercel GitHub 연동이 끊어질 수 있으므로 Phase 5에서 재연결
+| 시점      | 조건                | 통과 기준                                                                      | 실패 시 rollback 범위            |
+| --------- | ------------------- | ------------------------------------------------------------------------------ | -------------------------------- |
+| Phase 0   | 빌드 기준선         | `pnpm build && pnpm type-check` 성공                                           | 없음 (사전 준비)                 |
+| Phase 1   | GitHub repo rename  | 로컬 + CI remote URL 정상 연결                                                 | GitHub에서 `xstudio`로 재rename  |
+| Phase 2~4 | 코드 변경 단일 커밋 | `pnpm install && pnpm build && pnpm type-check` 성공 + dev 서버 WASM 로드 확인 | `git revert` 1회                 |
+| Phase 5   | 문서 + 인프라 갱신  | Vercel 배포 성공 + 문서 내 `xstudio` 잔존 참조 0건                             | 문서 커밋 revert + Vercel 재연결 |
 
 ---
 
-### Phase 2: 패키지명 + 의존성 변경 (Monorepo 코어)
+## Consequences
 
-**변경 대상** (6 파일):
+### Positive
 
-#### 2-1. 루트 `package.json`
+- 프로젝트명이 제품의 핵심 가치(컴포넌트 합성)를 직접 반영한다.
+- `@composition/*` 네임스페이스가 외부 노출 시 제품 정체성을 전달한다.
+- 리네이밍 시점에 전체 참조를 정리하면서 문서/설정의 일관성을 재확보할 수 있다.
 
-```diff
-- "name": "xstudio",
-+ "name": "composition",
-```
+### Negative
 
-- scripts 내 `@xstudio/*` → `@composition/*` (7곳)
-
-#### 2-2. `packages/config/package.json`
-
-```diff
-- "name": "@xstudio/config",
-+ "name": "@composition/config",
-```
-
-#### 2-3. `packages/shared/package.json`
-
-```diff
-- "name": "@xstudio/shared",
-+ "name": "@composition/shared",
-```
-
-- dependencies 내 `@xstudio/config` → `@composition/config`
-
-#### 2-4. `packages/specs/package.json`
-
-```diff
-- "name": "@xstudio/specs",
-+ "name": "@composition/specs",
-```
-
-#### 2-5. `apps/builder/package.json`
-
-```diff
-- "name": "@xstudio/builder",
-+ "name": "@composition/builder",
-```
-
-- dependencies 내 `@xstudio/*` → `@composition/*` (3곳)
-
-#### 2-6. `apps/publish/package.json`
-
-```diff
-- "name": "@xstudio/publish",
-+ "name": "@composition/publish",
-```
-
-- dependencies 내 `@xstudio/*` → `@composition/*` (2곳)
-
-#### 2-7. `pnpm-lock.yaml`
-
-```bash
-pnpm install  # lockfile 자동 재생성
-```
-
-**Gate**: `pnpm install` 성공 (의존성 해소 확인)
-
----
-
-### Phase 3: 빌드 설정 + Import Path 변경
-
-#### 3-1. Vite config alias (2 파일)
-
-**`apps/builder/vite.config.ts`** (7곳):
-
-```diff
-- base: command === "build" ? "/xstudio/" : "/",
-+ base: command === "build" ? "/composition/" : "/",
-
-- { find: /^@xstudio\/shared\/components\/styles\/(.*)$/, ...
-+ { find: /^@composition\/shared\/components\/styles\/(.*)$/, ...
-  # (나머지 6개 alias 동일 패턴)
-
-- exclude: ["xstudio-wasm"],
-+ exclude: ["composition-wasm"],  # WASM 패키지명 확인 후 결정
-```
-
-**`apps/publish/vite.config.ts`** (6곳):
-
-```diff
-- '@xstudio/shared/components': ...
-+ '@composition/shared/components': ...
-  # (나머지 5개 alias 동일 패턴)
-```
-
-#### 3-2. TypeScript config paths (4 파일)
-
-- `apps/builder/tsconfig.app.json`
-- `apps/publish/tsconfig.json`
-- `packages/shared/tsconfig.json`
-- `packages/specs/tsconfig.json`
-
-```diff
-- "@xstudio/shared/*": [...]
-+ "@composition/shared/*": [...]
-```
-
-#### 3-3. ESLint config (3 파일)
-
-- `apps/builder/eslint.config.js`
-- `packages/shared/eslint.config.js`
-- `packages/specs/eslint.config.js`
-
-```diff
-- ...config("@xstudio/config/...")
-+ ...config("@composition/config/...")
-```
-
-#### 3-4. 배포 설정 (2 파일)
-
-**`vercel.json`**:
-
-```diff
-- "buildCommand": "pnpm turbo run build --filter=@xstudio/builder",
-+ "buildCommand": "pnpm turbo run build --filter=@composition/builder",
-```
-
-**`.github/workflows/deploy.yml`**:
-
-```diff
-- run: pnpm turbo run build --filter=@xstudio/builder
-+ run: pnpm turbo run build --filter=@composition/builder
-```
-
-**Gate**: `pnpm build && pnpm type-check` 성공
-
----
-
-### Phase 4: 소스 코드 Import 경로 일괄 변경
-
-**대상**: 88개 파일, 174개 참조
-
-일괄 치환 전략:
-
-```bash
-# 1. @xstudio/ import → @composition/
-find apps packages -type f \( -name "*.ts" -o -name "*.tsx" \) \
-  -exec sed -i 's/@xstudio\//@composition\//g' {} +
-
-# 2. 수동 확인 필요 항목
-grep -r "xstudio" apps/ packages/ --include="*.ts" --include="*.tsx"
-```
-
-**주요 파일별 참조 수**:
-| 파일 | 참조 수 | 비고 |
-| --- | --- | --- |
-| `apps/builder/src/builder/utils/componentMap.ts` | 40 | 최다 참조 |
-| `apps/publish/src/registry/ComponentRegistry.tsx` | 4 | |
-| `apps/publish/src/App.tsx` | 4 | |
-| `apps/publish/src/renderer/ElementRenderer.tsx` | 4 | |
-| `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` | 3 | |
-| 기타 ~119개 파일 | 1~3 | |
-
-**Gate**: `pnpm build && pnpm type-check` 성공
-
----
-
-### Phase 5: 문서 + 인프라 갱신
-
-#### 5-1. 프로젝트 문서
-
-| 파일                         | 변경 내용                    |
-| ---------------------------- | ---------------------------- |
-| `README.md`                  | 프로젝트명, 설명             |
-| `CLAUDE.md`                  | 프로젝트명, 구조 설명        |
-| `CHANGELOG.md`               | 프로젝트명                   |
-| `docs/COMPONENT_SPEC.md`     | `@xstudio/specs` 참조 (30곳) |
-| `docs/reference/MONOREPO.md` | 패키지 구조 설명 (85곳)      |
-| `docs/adr/*.md`              | ADR 내 참조 (~20곳)          |
-| `.claude/**/*.md`            | 규칙/스킬 문서               |
-
-#### 5-2. Claude Code 설정
-
-| 파일                                       | 변경                                 |
-| ------------------------------------------ | ------------------------------------ |
-| `.claude/skills/xstudio-patterns/`         | 디렉토리명 → `composition-patterns/` |
-| `.claude/skills/xstudio-patterns/SKILL.md` | 내용 갱신                            |
-| `.claude/rules/*.md`                       | `@xstudio` 참조                      |
-
-#### 5-3. 외부 서비스
-
-| 서비스           | 작업                                                       |
-| ---------------- | ---------------------------------------------------------- |
-| **Vercel**       | 프로젝트 재연결 (GitHub repo 변경 반영)                    |
-| **Supabase**     | GitHub integration 확인 (사용 시)                          |
-| **도메인/DNS**   | URL 경로 `/xstudio/` → `/composition/` 반영                |
-| **npm registry** | private 패키지면 영향 없음, public이면 새 이름으로 publish |
-
-**Gate**: 전체 빌드 + 배포 파이프라인 통과
-
----
-
-### Phase 6: 디렉토리 리네이밍 (선택)
-
-루트 디렉토리(`xstudio/`)는 로컬 clone 경로이므로 선택 사항:
-
-```bash
-# 새로 clone
-git clone https://github.com/rblood79/composition.git
-# 또는 기존 디렉토리 rename
-mv xstudio composition
-```
-
----
-
-## Phase 실행 순서 (의존 관계)
-
-```
-Phase 0 (기준선)
-    ↓
-Phase 1 (GitHub repo rename) ← 외부 작업, 수동
-    ↓
-Phase 2 (package.json) + Phase 3 (빌드설정 + import alias) ← 동시 가능
-    ↓
-Phase 4 (소스코드 import 일괄 치환)
-    ↓
-Phase 5 (문서 + 인프라)
-    ↓
-Phase 6 (디렉토리, 선택)
-```
-
-> **핵심**: Phase 2~4는 **단일 커밋**으로 묶는 것을 권장한다. 중간 상태에서는 빌드가 깨지므로 분리 커밋 시 bisect 불가.
-
----
-
-## Rollback Plan
-
-| 단계      | 롤백 방법                            |
-| --------- | ------------------------------------ |
-| Phase 1   | GitHub에서 다시 `xstudio`로 rename   |
-| Phase 2~4 | `git revert` (단일 커밋이므로 1회)   |
-| Phase 5   | 문서는 순수 텍스트이므로 revert 안전 |
-| Vercel    | 이전 repo 재연결                     |
-
----
-
-## Checklist
-
-- [ ] Phase 0: 빌드 기준선 확보
-- [ ] Phase 1: GitHub repo rename (`rblood79/xstudio` → `rblood79/composition`)
-- [ ] Phase 1: 로컬 + 팀원 remote URL 갱신
-- [ ] Phase 2: 6개 package.json 패키지명 변경
-- [ ] Phase 2: `pnpm install` 성공
-- [ ] Phase 3: Vite alias 변경 (2 파일)
-- [ ] Phase 3: TypeScript paths 변경 (4 파일)
-- [ ] Phase 3: ESLint config 변경 (3 파일)
-- [ ] Phase 3: 배포 설정 변경 (vercel.json, deploy.yml)
-- [ ] Phase 4: 88개 파일 import 경로 일괄 치환
-- [ ] Phase 4: `pnpm build && pnpm type-check` 성공
-- [ ] Phase 5: 문서 갱신 (README, CLAUDE.md, ADR 등)
-- [ ] Phase 5: `.claude/` 디렉토리/파일 갱신
-- [ ] Phase 5: Vercel 프로젝트 재연결
-- [ ] Phase 5: 배포 파이프라인 확인
+- ~130개 파일 변경으로 인해 진행 중인 브랜치와의 merge conflict가 발생할 수 있다.
+- GitHub 리다이렉트 만료 전까지 외부 링크(블로그, 위키 등)를 갱신해야 한다.
+- WASM rebuild가 필요하므로 wasm-pack 빌드 환경이 정상이어야 한다.
+- `.claude/` 디렉토리 내 skill/rule 참조 갱신이 누락되면 Claude Code 컨텍스트가 깨질 수 있다.
 
 ---
 

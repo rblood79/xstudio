@@ -220,6 +220,7 @@ export const createInspectorActionsSlice: StateCreator<
       "hourCycle",
       "locale",
       "calendar",
+      "calendarSystem",
       "necessityIndicator",
       "isRequired",
       "labelPosition",

@@ -48,6 +48,7 @@
 - [ ] store/history 변경과 renderer 변경을 같은 phase에 섞지 않음
 - [ ] tree interop와 guide line 렌더를 같은 phase에 섞지 않음
 - [ ] `useDragInteraction.ts`를 Phase 1의 인접 파일로 포함할지 확정함
+- [ ] `BuilderCanvas.tsx`, `SelectionLayer.tsx`, `selectionHitTest.ts`를 상위 조율 파일로 명시함
 
 ### 5. 회귀 기준 고정
 
@@ -63,6 +64,7 @@
 - [ ] open design questions에 대해 최소한의 정책 결정을 내림
 - [ ] 구현 시작 전에 rollback 기준을 합의함
 - [ ] absolute positioned element와 flow/layout element의 drop semantics를 Phase 0에서 구분함
+- [ ] Phase 0에서 absolute/flow semantics가 결정되지 않으면 구현 진입을 보류함
 
 ---
 
@@ -173,6 +175,7 @@ Phase 0
 - drag start와 commit 시점이 분리됨
 - guide line은 insertion candidate가 없을 때만 fallback으로 표시됨
 - baseline FPS / frame time 비교가 가능함
+- `BuilderCanvas.tsx` / `SelectionLayer.tsx` / `selectionHitTest.ts`가 Phase 0~2의 상위 조율 지점으로 문서화됨
 
 ---
 
@@ -321,6 +324,7 @@ Phase 0
 - [ ] Pixi shell / Skia geometry / store commit의 책임이 구분됨
 - [ ] 현재 `useDragInteraction`이 어떤 값을 소유하는지 문서화됨
 - [ ] baseline frame time 기록 완료
+- [ ] absolute positioned element와 flow/layout element의 drop semantics 결정 완료
 
 ### Phase 1
 

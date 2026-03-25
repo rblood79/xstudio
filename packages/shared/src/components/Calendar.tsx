@@ -75,11 +75,7 @@ export function Calendar<T extends DateValue>({
   const maxValue =
     typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
 
-  // defaultToday가 true이고 value가 없으면 오늘 날짜 설정
-  const defaultValue =
-    defaultToday && !props.value && !props.defaultValue
-      ? (today(getLocalTimeZone()) as T)
-      : props.defaultValue;
+  const defaultValue = props.defaultValue;
 
   const calendarClassName = composeRenderProps(props.className, (className) =>
     className ? `react-aria-Calendar ${className}` : "react-aria-Calendar",

@@ -91,14 +91,14 @@ export const renderCalendar = (
       isInvalid={Boolean(element.props.isInvalid)}
       visibleMonths={visibleMonths}
       pageBehavior={getPageBehavior() as "visible" | "single"}
-      defaultToday={element.props.defaultToday !== false}
+      defaultToday={element.props.defaultToday === true}
       minDate={element.props.minDate as string | undefined}
       maxDate={element.props.maxDate as string | undefined}
       selectionAlignment={
         (element.props.selectionAlignment as "start" | "center" | "end") ||
         "center"
       }
-      defaultValue={today(getLocalTimeZone())}
+      defaultValue={undefined}
       onChange={(date) => {
         const updatedProps = {
           ...element.props,

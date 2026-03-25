@@ -96,6 +96,7 @@ XStudio는 여기서 한 단계 더 복잡하다.
 3. 현재 `useDragInteraction.ts`의 부분적 패턴을 유지하면서도, commit 기준과 guide line 규칙을 명확히 분리할 수 있다.
 4. 중앙 Pointer Session으로 전면 통합하는 것보다 migration risk가 낮고, 기존 resize/lasso와의 충돌도 작다.
 5. Skia-derived bounds로 hit test를 전환하면 rendered element와 event region mismatch 문제를 피할 수 있다.
+6. Phase 2/3에서 판정이 불안정하면 즉시 `useDragInteraction.ts`의 기존 부분적 deferred-commit 경로로 안전 복귀할 수 있어, 대안 A 수준의 보수적 동작을 유지할 수 있다.
 
 ### Design Scope
 

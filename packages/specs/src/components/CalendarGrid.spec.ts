@@ -24,6 +24,10 @@ export interface CalendarGridProps {
   totalDays?: number;
   /** 오늘 날짜 (일), 해당 월이 아니면 -1 */
   todayDate?: number;
+  /** BCP 47 locale (e.g. "ko-KR") */
+  locale?: string;
+  /** Unicode calendar identifier (e.g. "buddhist") */
+  calendarSystem?: string;
   isDisabled?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -37,8 +41,8 @@ const CALENDAR_GRID_DIMS: Record<
     gap: number;
   }
 > = {
-  sm: { fontSize: 12, iconSize: 24, gap: 4 },
-  md: { fontSize: 14, iconSize: 28, gap: 6 },
+  sm: { fontSize: 12, iconSize: 20, gap: 4 },
+  md: { fontSize: 14, iconSize: 26, gap: 6 },
   lg: { fontSize: 16, iconSize: 32, gap: 8 },
 };
 
@@ -50,24 +54,25 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
   description: "Calendar 요일 헤더 + 날짜 셀 그리드",
   element: "table",
   archetype: "calendar",
+  skipCSSGeneration: true,
 
   defaultVariant: "default",
   defaultSize: "md",
 
   variants: {
     default: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
+      border: "{color.transparent}" as TokenRef,
     },
     accent: {
-      background: "{color.base}" as TokenRef,
-      backgroundHover: "{color.base}" as TokenRef,
-      backgroundPressed: "{color.base}" as TokenRef,
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
+      border: "{color.transparent}" as TokenRef,
     },
   },
 
@@ -137,13 +142,26 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
       const totalDays =
         props.totalDays ??
         new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const showToday = props.defaultToday !== false;
+      const showToday = props.defaultToday === true;
       const today = showToday ? (props.todayDate ?? now.getDate()) : -1;
 
       const shapes: Shape[] = [];
 
-      // 요일 헤더 (Su ~ Sa)
-      const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+      // 요일 헤더 — locale 기반 (Intl.DateTimeFormat)
+      const effectiveLocale = props.calendarSystem
+        ? `${props.locale || "en-US"}-u-ca-${props.calendarSystem}`
+        : props.locale || "en-US";
+      const weekdays = Array.from({ length: 7 }, (_, i) => {
+        // 2024-01-07 = Sunday
+        const d = new Date(2024, 0, 7 + i);
+        try {
+          return new Intl.DateTimeFormat(effectiveLocale, {
+            weekday: "short",
+          }).format(d);
+        } catch {
+          return ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][i];
+        }
+      });
       for (let col = 0; col < 7; col++) {
         const cellLeft = col * (cellSize + gap);
         shapes.push({
@@ -153,7 +171,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
           text: weekdays[col],
           fontSize: fontSize - 2,
           fontFamily: ff,
-          fontWeight: 500,
+          fontWeight: 700,
           fill: "{color.neutral-subdued}" as TokenRef,
           align: "center" as const,
           baseline: "middle" as const,
@@ -170,17 +188,7 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
         const cx = cellLeft + cellSize / 2;
         const cy = gridStartY + row * (cellSize + gap) + cellSize / 2;
 
-        // today 강조 배경
-        if (day === today) {
-          shapes.push({
-            type: "circle" as const,
-            x: cx,
-            y: cy,
-            radius: cellSize / 2,
-            fill: "{color.accent}" as TokenRef,
-          });
-        }
-
+        // 날짜 텍스트
         shapes.push({
           type: "text" as const,
           x: cellLeft,
@@ -188,13 +196,23 @@ export const CalendarGridSpec: ComponentSpec<CalendarGridProps> = {
           text: String(day),
           fontSize,
           fontFamily: ff,
-          fontWeight: day === today ? 600 : 400,
-          fill:
-            day === today ? ("{color.on-accent}" as TokenRef) : variant.text,
+          fontWeight: day === today ? 700 : 400,
+          fill: variant.text,
           align: "center" as const,
           baseline: "middle" as const,
           maxWidth: cellSize,
         });
+
+        // today indicator dot (S2 패턴: 하단 4px 원형)
+        if (day === today) {
+          shapes.push({
+            type: "circle" as const,
+            x: cx,
+            y: cy + cellSize / 2 - 4,
+            radius: 3,
+            fill: "{color.accent}" as TokenRef,
+          });
+        }
       }
 
       return shapes;
