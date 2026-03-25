@@ -24,6 +24,15 @@ import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 
+/** 자식에 동기화가 필요한 props (@sync CalendarEditor 패턴) */
+const SYNC_KEYS = new Set([
+  "variant",
+  "size",
+  "locale",
+  "calendarSystem",
+  "defaultToday",
+]);
+
 export const DatePickerEditor = memo(function DatePickerEditor({
   elementId,
   currentProps,
@@ -39,34 +48,27 @@ export const DatePickerEditor = memo(function DatePickerEditor({
   const updateProp = (key: string, value: unknown) => {
     onUpdate({ [key]: value });
 
+    const state = useStore.getState();
+    const children = state.childrenMap.get(elementId) ?? [];
+
     // label 변경 → Label 자식의 children 동기화
     if (key === "label") {
-      const state = useStore.getState();
-      const children = state.childrenMap.get(elementId) ?? [];
       const labelChild = children.find((c) => c.tag === "Label");
       if (labelChild) {
+        // childrenMap의 props는 stale → elementsMap에서 최신 조회
+        const freshProps =
+          state.elementsMap.get(labelChild.id)?.props ?? labelChild.props;
         state.updateElement(labelChild.id, {
-          props: { ...labelChild.props, children: value },
+          props: { ...freshProps, children: value },
         });
       }
     }
 
-    // 자식에 동기화가 필요한 props (@sync CalendarEditor 패턴)
-    const syncKeys = new Set([
-      "variant",
-      "size",
-      "locale",
-      "calendarSystem",
-      "defaultToday",
-    ]);
-    if (syncKeys.has(key)) {
-      const state = useStore.getState();
-      const children = state.childrenMap.get(elementId) ?? [];
+    if (SYNC_KEYS.has(key)) {
       const syncChildren = (kids: typeof children) => {
         for (const child of kids) {
           // defaultToday는 CalendarGrid에만 적용
           if (key === "defaultToday" && child.tag !== "CalendarGrid") {
-            // Calendar 자식 탐색
             const grandChildren = state.childrenMap.get(child.id) ?? [];
             syncChildren(grandChildren);
             continue;
@@ -75,8 +77,11 @@ export const DatePickerEditor = memo(function DatePickerEditor({
           if (child.tag === "Label" && key !== "size" && key !== "variant")
             continue;
 
+          // childrenMap의 props는 stale → elementsMap에서 최신 조회
+          const freshProps =
+            state.elementsMap.get(child.id)?.props ?? child.props;
           state.updateElement(child.id, {
-            props: { ...child.props, [key]: value },
+            props: { ...freshProps, [key]: value },
           });
 
           // Calendar의 자식(CalendarHeader/CalendarGrid)에도 전파

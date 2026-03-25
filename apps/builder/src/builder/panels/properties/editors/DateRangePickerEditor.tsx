@@ -25,6 +25,9 @@ import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 
+/** 자식에 동기화가 필요한 props (@sync DatePickerEditor 패턴) */
+const SYNC_KEYS = new Set(["variant", "size", "locale", "calendarSystem"]);
+
 export const DateRangePickerEditor = memo(function DateRangePickerEditor({
   elementId,
   currentProps,
@@ -40,14 +43,15 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
   const updateProp = (key: string, value: unknown) => {
     onUpdate({ [key]: value });
 
-    // 자식에 동기화 (@sync DatePickerEditor 패턴)
-    const syncKeys = new Set(["variant", "size", "locale", "calendarSystem"]);
-    if (syncKeys.has(key)) {
+    if (SYNC_KEYS.has(key)) {
       const state = useStore.getState();
       const children = state.childrenMap.get(elementId) ?? [];
       for (const child of children) {
+        // childrenMap의 props는 stale → elementsMap에서 최신 조회
+        const freshProps =
+          state.elementsMap.get(child.id)?.props ?? child.props;
         state.updateElement(child.id, {
-          props: { ...child.props, [key]: value },
+          props: { ...freshProps, [key]: value },
         });
       }
     }
