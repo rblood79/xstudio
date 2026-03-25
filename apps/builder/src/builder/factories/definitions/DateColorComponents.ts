@@ -315,6 +315,8 @@ export function createDateFieldDefinition(
           children: "Date Field",
           variant: "default",
           style: {
+            width: "fit-content",
+            height: "fit-content",
             fontWeight: 500,
           },
         } as ComponentElementProps,
@@ -388,6 +390,8 @@ export function createTimeFieldDefinition(
           children: "Time",
           variant: "default",
           style: {
+            width: "fit-content",
+            height: "fit-content",
             fontWeight: 500,
           },
         } as ComponentElementProps,

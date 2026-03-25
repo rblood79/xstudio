@@ -7,8 +7,6 @@
 
     /* Accent locals — @sync DatePicker.css */
     --field-accent: var(--border);
-    --field-accent-container: var(--bg-inset);
-    --field-on-accent: var(--fg-muted);
     --dp-pressed-bg: var(--bg-muted);
 
     /* Size locals (md default) — @sync DatePicker.css 패턴 B (비대칭: right=top) */
@@ -28,7 +26,6 @@
     &[data-variant="accent"] {
       --field-accent: var(--accent);
       --field-accent-container: color-mix(in srgb, var(--accent) 15%, white);
-      --field-on-accent: color-mix(in srgb, var(--accent) 85%, black);
       --dp-pressed-bg: color-mix(
         in srgb,
         var(--accent) 12%,
@@ -107,9 +104,9 @@
       }
 
       &[data-disabled] {
-        border-color: color-mix(in srgb, var(--fg) 12%, transparent);
-        color: var(--fg-disabled);
+        opacity: 0.38;
         cursor: not-allowed;
+        background: var(--bg-muted);
       }
     }
 
@@ -180,7 +177,6 @@
     }
 
     [slot="end"] {
-      margin-right: var(--drp-end-margin);
       flex: 1;
     }
 

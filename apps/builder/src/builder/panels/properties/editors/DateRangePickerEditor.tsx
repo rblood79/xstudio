@@ -43,11 +43,23 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
   const updateProp = (key: string, value: unknown) => {
     onUpdate({ [key]: value });
 
+    const state = useStore.getState();
+    const children = state.childrenMap.get(elementId) ?? [];
+
+    // label 변경 → Label 자식의 children 동기화 (@sync DatePickerEditor)
+    if (key === "label") {
+      const labelChild = children.find((c) => c.tag === "Label");
+      if (labelChild) {
+        const freshProps =
+          state.elementsMap.get(labelChild.id)?.props ?? labelChild.props;
+        state.updateElement(labelChild.id, {
+          props: { ...freshProps, children: value },
+        });
+      }
+    }
+
     if (SYNC_KEYS.has(key)) {
-      const state = useStore.getState();
-      const children = state.childrenMap.get(elementId) ?? [];
       for (const child of children) {
-        // childrenMap의 props는 stale → elementsMap에서 최신 조회
         const freshProps =
           state.elementsMap.get(child.id)?.props ?? child.props;
         state.updateElement(child.id, {
