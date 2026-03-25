@@ -11,6 +11,7 @@ import {
   Globe,
   CalendarDays,
   Layout,
+  Focus,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -97,6 +98,15 @@ export const DateFieldEditor = memo(function DateFieldEditor({
           onChange={(value) => updateProp("errorMessage", value || undefined)}
           icon={AlertTriangle}
         />
+
+        <PropertyInput
+          label={PROPERTY_LABELS.PLACEHOLDER}
+          value={String(currentProps.placeholderValue || "")}
+          onChange={(value) =>
+            updateProp("placeholderValue", value || undefined)
+          }
+          placeholder="YYYY-MM-DD"
+        />
       </PropertySection>
 
       {/* Design */}
@@ -140,6 +150,20 @@ export const DateFieldEditor = memo(function DateFieldEditor({
           options={LABEL_POSITION_OPTIONS}
           onChange={(value) => updateProp("labelPosition", value)}
           icon={Layout}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.HIDE_TIMEZONE}
+          isSelected={Boolean(currentProps.hideTimeZone)}
+          onChange={(checked) => updateProp("hideTimeZone", checked)}
+          icon={Globe}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.FORCE_LEADING_ZEROS}
+          isSelected={Boolean(currentProps.shouldForceLeadingZeros)}
+          onChange={(checked) => updateProp("shouldForceLeadingZeros", checked)}
+          icon={Clock}
         />
       </PropertySection>
 
@@ -194,6 +218,20 @@ export const DateFieldEditor = memo(function DateFieldEditor({
 
       {/* State */}
       <PropertySection title="State">
+        <PropertyInput
+          label="Min Value"
+          value={String(currentProps.minValue || "")}
+          onChange={(value) => updateProp("minValue", value || undefined)}
+          placeholder="2024-01-01"
+        />
+
+        <PropertyInput
+          label="Max Value"
+          value={String(currentProps.maxValue || "")}
+          onChange={(value) => updateProp("maxValue", value || undefined)}
+          placeholder="2024-12-31"
+        />
+
         <PropertySelect
           label={PROPERTY_LABELS.REQUIRED}
           value={String(currentProps.necessityIndicator || "")}
@@ -232,6 +270,13 @@ export const DateFieldEditor = memo(function DateFieldEditor({
           onChange={(checked) => updateProp("isReadOnly", checked)}
           icon={PenOff}
         />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.AUTO_FOCUS}
+          isSelected={Boolean(currentProps.autoFocus)}
+          onChange={(checked) => updateProp("autoFocus", checked)}
+          icon={Focus}
+        />
       </PropertySection>
 
       {/* Form Integration */}
@@ -242,6 +287,16 @@ export const DateFieldEditor = memo(function DateFieldEditor({
           onChange={(value) => updateProp("name", value || undefined)}
           icon={FormInput}
           placeholder="date-field-name"
+        />
+
+        <PropertySelect
+          label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
+          value={String(currentProps.validationBehavior || "native")}
+          onChange={(value) => updateProp("validationBehavior", value)}
+          options={[
+            { value: "native", label: "Native" },
+            { value: "aria", label: "ARIA" },
+          ]}
         />
       </PropertySection>
     </>

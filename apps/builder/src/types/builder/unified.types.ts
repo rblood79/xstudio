@@ -433,12 +433,10 @@ export interface CalendarElementProps extends BaseElementProps {
   isReadOnly?: boolean;
   isInvalid?: boolean;
   autoFocus?: boolean;
-  minValue?: Date;
-  maxValue?: Date;
-  minDate?: string;
-  maxDate?: string;
+  minValue?: Date | string;
+  maxValue?: Date | string;
   defaultToday?: boolean;
-  firstDayOfWeek?: "sun" | "mon" | "sat";
+
   pageBehavior?: "single" | "visible";
   errorMessage?: string;
   onChange?: (value: unknown) => void;
@@ -458,10 +456,8 @@ export interface DatePickerElementProps extends BaseElementProps {
   autoComplete?: string;
   name?: string;
   form?: string;
-  minValue?: Date;
-  maxValue?: Date;
-  minDate?: string;
-  maxDate?: string;
+  minValue?: Date | string;
+  maxValue?: Date | string;
   placeholder?: string;
   placeholderValue?: string;
   defaultToday?: boolean;
@@ -469,7 +465,7 @@ export interface DatePickerElementProps extends BaseElementProps {
   hourCycle?: 12 | 24;
   hideTimeZone?: boolean;
   timezone?: string;
-  firstDayOfWeek?: "sun" | "mon" | "sat";
+
   pageBehavior?: "single" | "visible";
   shouldCloseOnSelect?: boolean;
   shouldForceLeadingZeros?: boolean;
@@ -488,14 +484,11 @@ export interface DateRangePickerElementProps extends BaseElementProps {
   isRequired?: boolean;
   isInvalid?: boolean;
   autoFocus?: boolean;
-  minValue?: Date;
-  maxValue?: Date;
-  minDate?: string;
-  maxDate?: string;
+  minValue?: Date | string;
+  maxValue?: Date | string;
   placeholder?: string;
   defaultToday?: boolean;
-  allowClear?: boolean;
-  firstDayOfWeek?: "sun" | "mon" | "sat";
+
   highlightToday?: boolean;
   showWeekNumbers?: boolean;
   timezone?: string;
@@ -978,10 +971,10 @@ export interface RangeCalendarElementProps extends BaseElementProps {
   isReadOnly?: boolean;
   isInvalid?: boolean;
   autoFocus?: boolean;
-  minDate?: string;
-  maxDate?: string;
+  minValue?: Date | string;
+  maxValue?: Date | string;
   defaultToday?: boolean;
-  firstDayOfWeek?: "sun" | "mon" | "sat";
+
   errorMessage?: string;
 }
 

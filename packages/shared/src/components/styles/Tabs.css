@@ -77,8 +77,8 @@
   /* ========== Base Tab ========== */
   .react-aria-Tab {
     position: relative;
-    padding: var(--spacing) var(--spacing-lg);
-    font-size: var(--text-base);
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--text-sm);
     font-weight: 500;
     cursor: pointer;
     outline: none;
@@ -187,8 +187,8 @@
   .react-aria-Tabs[data-density="regular"],
   .react-aria-TabList[data-density="regular"] {
     .react-aria-Tab {
-      padding: var(--spacing) var(--spacing-lg);
-      font-size: var(--text-base);
+      padding: var(--spacing-xs) var(--spacing-md);
+      font-size: var(--text-sm);
     }
 
     .react-aria-TabPanel {
@@ -200,7 +200,7 @@
   .react-aria-Tabs[data-size="sm"],
   .react-aria-TabList[data-size="sm"] {
     .react-aria-Tab {
-      padding: var(--spacing-sm) var(--spacing-md);
+      padding: var(--spacing-2xs) var(--spacing-sm);
       font-size: var(--text-xs);
 
       &[data-orientation="horizontal"]::before,
@@ -211,7 +211,7 @@
     }
 
     .react-aria-TabPanel {
-      padding: var(--spacing-md);
+      padding: var(--spacing-sm);
     }
 
     &[data-orientation="horizontal"]
@@ -230,8 +230,9 @@
   .react-aria-Tabs[data-size="md"],
   .react-aria-TabList[data-size="md"] {
     .react-aria-Tab {
-      padding: var(--spacing) var(--spacing-lg);
-      font-size: var(--text-base);
+      padding: var(--spacing-xs) var(--spacing-md);
+      font-size: var(--text-sm);
+      line-height: var(--text-sm--line-height);
 
       &[data-orientation="horizontal"]::before {
         height: 3px;
@@ -243,7 +244,7 @@
     }
 
     .react-aria-TabPanel {
-      padding: var(--spacing-lg);
+      padding: var(--spacing-md);
     }
 
     &[data-orientation="horizontal"]
@@ -262,7 +263,7 @@
   .react-aria-Tabs[data-size="lg"],
   .react-aria-TabList[data-size="lg"] {
     .react-aria-Tab {
-      padding: var(--spacing-md) var(--spacing-xl);
+      padding: var(--spacing-sm) var(--spacing-lg);
       font-size: var(--text-base);
 
       &[data-orientation="horizontal"]::before {
@@ -275,7 +276,7 @@
     }
 
     .react-aria-TabPanel {
-      padding: var(--spacing-xl);
+      padding: var(--spacing-lg);
     }
 
     &[data-orientation="horizontal"]

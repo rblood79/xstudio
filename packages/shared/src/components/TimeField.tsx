@@ -17,6 +17,7 @@ import {
   ValidationResult,
   composeRenderProps,
 } from "react-aria-components";
+import { Time } from "@internationalized/date";
 import type { ComponentSize } from "../types";
 import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
@@ -28,9 +29,10 @@ import "./styles/TimeField.css";
  * - data-variant, data-size 속성 사용
  */
 
-export interface TimeFieldProps<
-  T extends TimeValue,
-> extends AriaTimeFieldProps<T> {
+export interface TimeFieldProps<T extends TimeValue> extends Omit<
+  AriaTimeFieldProps<T>,
+  "placeholderValue" | "minValue" | "maxValue"
+> {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -50,6 +52,14 @@ export interface TimeFieldProps<
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  hideTimeZone?: boolean;
+  shouldForceLeadingZeros?: boolean;
+  /** @example "09:00" */
+  placeholderValue?: string | T;
+  minValue?: T;
+  maxValue?: T;
+  form?: string;
+  validationBehavior?: "native" | "aria";
 }
 
 export function TimeField<T extends TimeValue>({
@@ -62,8 +72,29 @@ export function TimeField<T extends TimeValue>({
   size = "md",
   necessityIndicator,
   labelPosition = "top",
+  hideTimeZone,
+  shouldForceLeadingZeros,
+  placeholderValue,
+  minValue,
+  maxValue,
+  form,
+  validationBehavior,
   ...props
 }: TimeFieldProps<T>) {
+  // placeholderValue 문자열 자동 파싱 ("HH:MM" → Time)
+  const parsedPlaceholderValue = (() => {
+    if (!placeholderValue || typeof placeholderValue !== "string")
+      return placeholderValue as T | undefined;
+    const parts = placeholderValue.split(":");
+    if (parts.length >= 2) {
+      const h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const s = parts[2] ? parseInt(parts[2], 10) : 0;
+      if (!isNaN(h) && !isNaN(m)) return new Time(h, m, s) as T;
+    }
+    return undefined;
+  })();
+
   return (
     <AriaTimeField
       {...props}
@@ -76,6 +107,13 @@ export function TimeField<T extends TimeValue>({
       data-size={size}
       data-label-position={labelPosition}
       hourCycle={hourCycle}
+      placeholderValue={parsedPlaceholderValue}
+      hideTimeZone={hideTimeZone}
+      shouldForceLeadingZeros={shouldForceLeadingZeros}
+      minValue={minValue}
+      maxValue={maxValue}
+      form={form}
+      validationBehavior={validationBehavior}
     >
       {label && (
         <Label>

@@ -18,9 +18,10 @@ import { Skeleton } from "./Skeleton";
 
 import "./styles/RangeCalendar.css";
 
-export interface RangeCalendarProps<
-  T extends DateValue,
-> extends AriaRangeCalendarProps<T> {
+export interface RangeCalendarProps<T extends DateValue> extends Omit<
+  AriaRangeCalendarProps<T>,
+  "minValue" | "maxValue"
+> {
   /** @default 'default' */
   variant?: "default" | "accent";
   /** @default 'md' */
@@ -33,9 +34,9 @@ export interface RangeCalendarProps<
   /** @default 1 */
   visibleMonths?: number;
   /** @example "2024-01-01" */
-  minDate?: string | DateValue;
+  minValue?: string | DateValue;
   /** @example "2024-12-31" */
-  maxDate?: string | DateValue;
+  maxValue?: string | DateValue;
   /** @default false */
   isLoading?: boolean;
 }
@@ -47,8 +48,8 @@ export function RangeCalendar<T extends DateValue>({
   locale,
   calendarSystem,
   visibleMonths = 1,
-  minDate,
-  maxDate,
+  minValue,
+  maxValue,
   isLoading,
   ...props
 }: RangeCalendarProps<T>) {
@@ -63,12 +64,12 @@ export function RangeCalendar<T extends DateValue>({
     );
   }
 
-  // minDate/maxDate 자동 파싱
-  const minValue =
-    typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
+  // minValue/maxValue 문자열 자동 파싱
+  const parsedMinValue =
+    typeof minValue === "string" ? safeParseDateString(minValue) : minValue;
 
-  const maxValue =
-    typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
+  const parsedMaxValue =
+    typeof maxValue === "string" ? safeParseDateString(maxValue) : maxValue;
 
   const rangeCalendarClassName = composeRenderProps(
     props.className,
@@ -84,8 +85,8 @@ export function RangeCalendar<T extends DateValue>({
       className={rangeCalendarClassName}
       data-variant={variant}
       data-size={size}
-      minValue={minValue as T | undefined}
-      maxValue={maxValue as T | undefined}
+      minValue={parsedMinValue as T | undefined}
+      maxValue={parsedMaxValue as T | undefined}
       visibleDuration={{ months: visibleMonths }}
     >
       <header>

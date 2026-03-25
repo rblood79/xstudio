@@ -53,30 +53,30 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
     },
   },
 
-  // CSS Preview 기준 측정값: Tab padding(Y) + fontSize*lineHeight(1.5) + border(1)
-  // sm: 3*2 + 12*1.5 + 1 = 25, md: 4*2 + 14*1.5 + 1 = 30, lg: 5*2 + 16*1.5 + 1 = 35
+  // @sync Button.spec.ts padding/fontSize 패턴 + Tabs.css
+  // sm: 2*2 + 16(lh) + 1 = 21, md: 4*2 + 20(lh) + 1 = 29, lg: 8*2 + 24(lh) + 1 = 41
   sizes: {
     sm: {
-      height: 25,
-      paddingX: 12,
-      paddingY: 3,
-      fontSize: "{typography.text-sm}" as TokenRef,
+      height: 21,
+      paddingX: 8,
+      paddingY: 2,
+      fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
     md: {
-      height: 30,
-      paddingX: 16,
+      height: 29,
+      paddingX: 12,
       paddingY: 4,
-      fontSize: "{typography.text-md}" as TokenRef,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
     lg: {
-      height: 35,
-      paddingX: 20,
-      paddingY: 5,
-      fontSize: "{typography.text-lg}" as TokenRef,
+      height: 41,
+      paddingX: 16,
+      paddingY: 8,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.none}" as TokenRef,
       gap: 0,
     },
@@ -90,15 +90,15 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
         childSelector: ".react-aria-Tab",
         variables: {
           sm: {
-            "--tab-padding": "var(--spacing-xs) var(--spacing-sm)",
+            "--tab-padding": "var(--spacing-2xs) var(--spacing-sm)",
             "--tab-font-size": "var(--text-xs)",
           },
           md: {
-            "--tab-padding": "var(--spacing-sm) var(--spacing-md)",
+            "--tab-padding": "var(--spacing-xs) var(--spacing-md)",
             "--tab-font-size": "var(--text-sm)",
           },
           lg: {
-            "--tab-padding": "var(--spacing-md) var(--spacing-lg)",
+            "--tab-padding": "var(--spacing-sm) var(--spacing-lg)",
             "--tab-font-size": "var(--text-base)",
           },
         },

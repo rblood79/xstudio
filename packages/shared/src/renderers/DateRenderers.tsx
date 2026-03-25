@@ -92,13 +92,13 @@ export const renderCalendar = (
       visibleMonths={visibleMonths}
       pageBehavior={getPageBehavior() as "visible" | "single"}
       defaultToday={element.props.defaultToday === true}
-      minDate={element.props.minDate as string | undefined}
-      maxDate={element.props.maxDate as string | undefined}
-      selectionAlignment={
-        (element.props.selectionAlignment as "start" | "center" | "end") ||
-        "center"
+      minValue={element.props.minValue as string | undefined}
+      maxValue={element.props.maxValue as string | undefined}
+      defaultValue={element.props.defaultValue as string | undefined}
+      defaultFocusedValue={
+        element.props.defaultFocusedValue as string | undefined
       }
-      defaultValue={undefined}
+      autoFocus={Boolean(element.props.autoFocus)}
       onChange={(date) => {
         const updatedProps = {
           ...element.props,
@@ -130,11 +130,6 @@ export const renderDatePicker = (
     }
   };
 
-  const getFirstDayOfWeek = () => {
-    const fdow = Number(element.props.firstDayOfWeek);
-    return fdow >= 0 && fdow <= 6 ? fdow : 0;
-  };
-
   const getCalendarIconPosition = () => {
     const cip = element.props.calendarIconPosition;
     return cip === "left" || cip === "right" ? cip : "right";
@@ -162,9 +157,11 @@ export const renderDatePicker = (
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
       placeholder={
-        typeof element.props.placeholder === "string"
-          ? element.props.placeholder
-          : undefined
+        typeof element.props.placeholderValue === "string"
+          ? element.props.placeholderValue
+          : typeof element.props.placeholder === "string"
+            ? element.props.placeholder
+            : undefined
       }
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
@@ -175,12 +172,23 @@ export const renderDatePicker = (
       }
       labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
-      defaultValue={undefined}
+      form={element.props.form ? String(element.props.form) : undefined}
+      autoComplete={
+        element.props.autoComplete
+          ? String(element.props.autoComplete)
+          : undefined
+      }
+      validationBehavior={
+        (element.props.validationBehavior as "native" | "aria") || undefined
+      }
+      defaultValue={element.props.defaultValue as string | undefined}
+      defaultToday={element.props.defaultToday === true}
+      minValue={element.props.minValue as string | undefined}
+      maxValue={element.props.maxValue as string | undefined}
+      hideTimeZone={Boolean(element.props.hideTimeZone)}
       granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
-      firstDayOfWeek={
-        ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][
-          getFirstDayOfWeek()
-        ] as "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"
+      pageBehavior={
+        (element.props.pageBehavior as "visible" | "single") || undefined
       }
       showCalendarIcon={element.props.showCalendarIcon !== false}
       calendarIconPosition={getCalendarIconPosition() as "left" | "right"}
@@ -218,11 +226,6 @@ export const renderDateRangePicker = (
     return ["day", "hour", "minute", "second"].includes(g) ? g : "day";
   };
 
-  const getFirstDayOfWeek = () => {
-    const fdow = Number(element.props.firstDayOfWeek);
-    return fdow >= 0 && fdow <= 6 ? fdow : 0;
-  };
-
   const getCalendarIconPosition = () => {
     const cip = element.props.calendarIconPosition;
     return cip === "left" || cip === "right" ? cip : "right";
@@ -246,7 +249,13 @@ export const renderDateRangePicker = (
       label={String(element.props.label || "Date Range Picker")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
-      placeholder={(element.props.placeholder as string) || ""}
+      placeholder={
+        typeof element.props.placeholderValue === "string"
+          ? element.props.placeholderValue
+          : typeof element.props.placeholder === "string"
+            ? element.props.placeholder
+            : undefined
+      }
       locale={locale}
       calendarSystem={calendarSystem}
       isDisabled={Boolean(element.props.isDisabled)}
@@ -257,14 +266,27 @@ export const renderDateRangePicker = (
         element.props.necessityIndicator as "icon" | "label" | undefined
       }
       defaultValue={undefined}
-      minDate={element.props.minDate as string | undefined}
-      maxDate={element.props.maxDate as string | undefined}
+      minValue={element.props.minValue as string | undefined}
+      maxValue={element.props.maxValue as string | undefined}
       defaultToday={element.props.defaultToday === true}
+      hideTimeZone={Boolean(element.props.hideTimeZone)}
       granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
-      firstDayOfWeek={
-        ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][
-          getFirstDayOfWeek()
-        ] as "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"
+      hourCycle={
+        element.props.hourCycle
+          ? (Number(element.props.hourCycle) as 12 | 24)
+          : undefined
+      }
+      pageBehavior={
+        (element.props.pageBehavior as "visible" | "single") || undefined
+      }
+      startName={
+        element.props.startName ? String(element.props.startName) : undefined
+      }
+      endName={
+        element.props.endName ? String(element.props.endName) : undefined
+      }
+      validationBehavior={
+        (element.props.validationBehavior as "native" | "aria") || undefined
       }
       showCalendarIcon={element.props.showCalendarIcon !== false}
       calendarIconPosition={getCalendarIconPosition() as "left" | "right"}
@@ -339,6 +361,15 @@ export const renderDateField = (
       }
       labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
+      autoFocus={Boolean(element.props.autoFocus)}
+      hideTimeZone={Boolean(element.props.hideTimeZone)}
+      shouldForceLeadingZeros={Boolean(element.props.shouldForceLeadingZeros)}
+      minValue={element.props.minValue as string | undefined}
+      maxValue={element.props.maxValue as string | undefined}
+      validationBehavior={
+        (element.props.validationBehavior as "native" | "aria") || undefined
+      }
+      placeholderValue={element.props.placeholderValue as string | undefined}
       defaultValue={
         granularity === "day"
           ? today(getLocalTimeZone())
@@ -404,6 +435,13 @@ export const renderTimeField = (
       }
       labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
+      autoFocus={Boolean(element.props.autoFocus)}
+      hideTimeZone={Boolean(element.props.hideTimeZone)}
+      shouldForceLeadingZeros={Boolean(element.props.shouldForceLeadingZeros)}
+      validationBehavior={
+        (element.props.validationBehavior as "native" | "aria") || undefined
+      }
+      placeholderValue={element.props.placeholderValue as string | undefined}
       defaultValue={new Time(9, 0)}
       granularity={granularity}
       hourCycle={hourCycle as 12 | 24 | undefined}

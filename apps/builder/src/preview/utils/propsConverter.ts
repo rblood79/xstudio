@@ -53,7 +53,7 @@ export const toArray = <T>(value: unknown, defaultValue: T[] = []): T[] => {
  * Orientation 타입 변환
  */
 export const toOrientation = (
-  value: unknown
+  value: unknown,
 ): "horizontal" | "vertical" | undefined => {
   if (value === "horizontal" || value === "vertical") return value;
   return undefined;
@@ -63,7 +63,7 @@ export const toOrientation = (
  * SelectionMode 타입 변환
  */
 export const toSelectionMode = (
-  value: unknown
+  value: unknown,
 ): "none" | "single" | "multiple" | undefined => {
   if (value === "none" || value === "single" || value === "multiple")
     return value;
@@ -74,7 +74,7 @@ export const toSelectionMode = (
  * HTML 요소에서 React Aria 전용 props 제거
  */
 export const cleanPropsForHTML = (
-  props: Record<string, unknown>
+  props: Record<string, unknown>,
 ): Record<string, unknown> => {
   const cleanProps = { ...props };
 
@@ -101,7 +101,6 @@ export const cleanPropsForHTML = (
     "defaultSelectedKey",
     "allowsCustomValue",
     "granularity",
-    "firstDayOfWeek",
     "calendarIconPosition",
     "showCalendarIcon",
     "showWeekNumbers",

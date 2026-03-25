@@ -32,18 +32,13 @@ import {
   isToday,
   getDayOfWeek,
   type DateValue,
-} from '@internationalized/date';
+} from "@internationalized/date";
 
 // ============================================================================
 // Type Exports
 // ============================================================================
 
-export type {
-  CalendarDate,
-  CalendarDateTime,
-  ZonedDateTime,
-  DateValue,
-};
+export type { CalendarDate, CalendarDateTime, ZonedDateTime, DateValue };
 
 // ============================================================================
 // Constants
@@ -53,28 +48,28 @@ export type {
  * Common timezone identifiers
  */
 export const TIMEZONES = {
-  SEOUL: 'Asia/Seoul',
-  NEW_YORK: 'America/New_York',
-  LOS_ANGELES: 'America/Los_Angeles',
-  LONDON: 'Europe/London',
-  PARIS: 'Europe/Paris',
-  TOKYO: 'Asia/Tokyo',
-  SHANGHAI: 'Asia/Shanghai',
-  HONG_KONG: 'Asia/Hong_Kong',
-  SYDNEY: 'Australia/Sydney',
-  UTC: 'UTC',
+  SEOUL: "Asia/Seoul",
+  NEW_YORK: "America/New_York",
+  LOS_ANGELES: "America/Los_Angeles",
+  LONDON: "Europe/London",
+  PARIS: "Europe/Paris",
+  TOKYO: "Asia/Tokyo",
+  SHANGHAI: "Asia/Shanghai",
+  HONG_KONG: "Asia/Hong_Kong",
+  SYDNEY: "Australia/Sydney",
+  UTC: "UTC",
 } as const;
 
 /**
  * Common locales
  */
 export const LOCALES = {
-  KOREAN: 'ko-KR',
-  ENGLISH_US: 'en-US',
-  ENGLISH_GB: 'en-GB',
-  JAPANESE: 'ja-JP',
-  CHINESE_SIMPLIFIED: 'zh-CN',
-  CHINESE_TRADITIONAL: 'zh-TW',
+  KOREAN: "ko-KR",
+  ENGLISH_US: "en-US",
+  ENGLISH_GB: "en-GB",
+  JAPANESE: "ja-JP",
+  CHINESE_SIMPLIFIED: "zh-CN",
+  CHINESE_TRADITIONAL: "zh-TW",
 } as const;
 
 // ============================================================================
@@ -97,7 +92,9 @@ export const parseSimpleDate = (dateString: string): CalendarDate => {
  * @returns CalendarDateTime object
  * @example parseSimpleDateTime('2024-05-15T14:30:00')
  */
-export const parseSimpleDateTime = (dateTimeString: string): CalendarDateTime => {
+export const parseSimpleDateTime = (
+  dateTimeString: string,
+): CalendarDateTime => {
   return parseDateTime(dateTimeString);
 };
 
@@ -110,7 +107,7 @@ export const parseSimpleDateTime = (dateTimeString: string): CalendarDateTime =>
  */
 export const parseZonedDate = (
   zonedString: string,
-  timezone: string = getLocalTimeZone()
+  timezone: string = getLocalTimeZone(),
 ): ZonedDateTime => {
   return parseZonedDateTime(`${zonedString}[${timezone}]`);
 };
@@ -122,9 +119,7 @@ export const parseZonedDate = (
  * @returns ZonedDateTime in local timezone
  * @example parseAbsoluteDate('2024-05-15T14:30:00Z')
  */
-export const parseAbsoluteDate = (
-  isoString: string
-): ZonedDateTime => {
+export const parseAbsoluteDate = (isoString: string): ZonedDateTime => {
   return parseAbsoluteToLocal(isoString);
 };
 
@@ -133,13 +128,15 @@ export const parseAbsoluteDate = (
  * @param value - Date string or null
  * @returns CalendarDate or null
  */
-export const safeParseDateString = (value: string | null | undefined): CalendarDate | null => {
+export const safeParseDateString = (
+  value: string | null | undefined,
+): CalendarDate | null => {
   if (!value) return null;
 
   try {
     return parseDate(value);
   } catch (error) {
-    console.error('Failed to parse date:', value, error);
+    console.error("Failed to parse date:", value, error);
     return null;
   }
 };
@@ -212,7 +209,7 @@ export const isAfter = (date1: DateValue, date2: DateValue): boolean => {
 export const isBetween = (
   date: DateValue,
   start: DateValue,
-  end: DateValue
+  end: DateValue,
 ): boolean => {
   return date.compare(start) >= 0 && date.compare(end) <= 0;
 };
@@ -245,21 +242,30 @@ export const addYears = (date: CalendarDate, years: number): CalendarDate => {
 /**
  * Subtract days from a date
  */
-export const subtractDays = (date: CalendarDate, days: number): CalendarDate => {
+export const subtractDays = (
+  date: CalendarDate,
+  days: number,
+): CalendarDate => {
   return date.subtract({ days });
 };
 
 /**
  * Subtract months from a date
  */
-export const subtractMonths = (date: CalendarDate, months: number): CalendarDate => {
+export const subtractMonths = (
+  date: CalendarDate,
+  months: number,
+): CalendarDate => {
   return date.subtract({ months });
 };
 
 /**
  * Subtract years from a date
  */
-export const subtractYears = (date: CalendarDate, years: number): CalendarDate => {
+export const subtractYears = (
+  date: CalendarDate,
+  years: number,
+): CalendarDate => {
   return date.subtract({ years });
 };
 
@@ -275,7 +281,7 @@ export const subtractYears = (date: CalendarDate, years: number): CalendarDate =
  */
 export const getWeekRange = (
   date: CalendarDate,
-  locale: string = LOCALES.KOREAN
+  locale: string = LOCALES.KOREAN,
 ): { start: CalendarDate; end: CalendarDate } => {
   return {
     start: startOfWeek(date, locale),
@@ -287,7 +293,7 @@ export const getWeekRange = (
  * Get start and end of month for a given date
  */
 export const getMonthRange = (
-  date: CalendarDate
+  date: CalendarDate,
 ): { start: CalendarDate; end: CalendarDate } => {
   return {
     start: startOfMonth(date),
@@ -299,7 +305,7 @@ export const getMonthRange = (
  * Get start and end of year for a given date
  */
 export const getYearRange = (
-  date: CalendarDate
+  date: CalendarDate,
 ): { start: CalendarDate; end: CalendarDate } => {
   return {
     start: startOfYear(date),
@@ -312,7 +318,7 @@ export const getYearRange = (
  */
 export const getThisWeek = (
   timezone?: string,
-  locale?: string
+  locale?: string,
 ): { start: CalendarDate; end: CalendarDate } => {
   const today = getCurrentDate(timezone);
   return getWeekRange(today, locale);
@@ -322,7 +328,7 @@ export const getThisWeek = (
  * Get date range for "this month"
  */
 export const getThisMonth = (
-  timezone?: string
+  timezone?: string,
 ): { start: CalendarDate; end: CalendarDate } => {
   const today = getCurrentDate(timezone);
   return getMonthRange(today);
@@ -332,7 +338,7 @@ export const getThisMonth = (
  * Get date range for "this year"
  */
 export const getThisYear = (
-  timezone?: string
+  timezone?: string,
 ): { start: CalendarDate; end: CalendarDate } => {
   const today = getCurrentDate(timezone);
   return getYearRange(today);
@@ -345,14 +351,19 @@ export const getThisYear = (
 /**
  * Get day of week (0 = Sunday, 6 = Saturday)
  */
-export const getDayOfWeekNumber = (date: DateValue, locale: string = LOCALES.KOREAN): number => {
+export const getDayOfWeekNumber = (
+  date: DateValue,
+  locale: string = LOCALES.KOREAN,
+): number => {
   return getDayOfWeek(date, locale);
 };
 
 /**
  * Convert CalendarDateTime to CalendarDate
  */
-export const toDate = (dateTime: CalendarDateTime | ZonedDateTime): CalendarDate => {
+export const toDate = (
+  dateTime: CalendarDateTime | ZonedDateTime,
+): CalendarDate => {
   return toCalendarDate(dateTime);
 };
 
@@ -373,7 +384,10 @@ export const formatToISO = (date: DateValue): string => {
 /**
  * Get days between two dates
  */
-export const getDaysBetween = (start: CalendarDate, end: CalendarDate): number => {
+export const getDaysBetween = (
+  start: CalendarDate,
+  end: CalendarDate,
+): number => {
   let current = start;
   let days = 0;
 
@@ -388,7 +402,10 @@ export const getDaysBetween = (start: CalendarDate, end: CalendarDate): number =
 /**
  * Check if date is a weekend (Saturday or Sunday)
  */
-export const isWeekend = (date: DateValue, locale: string = LOCALES.KOREAN): boolean => {
+export const isWeekend = (
+  date: DateValue,
+  locale: string = LOCALES.KOREAN,
+): boolean => {
   const dayOfWeek = getDayOfWeek(date, locale);
   return dayOfWeek === 0 || dayOfWeek === 6; // 0 = Sunday, 6 = Saturday
 };
@@ -396,7 +413,10 @@ export const isWeekend = (date: DateValue, locale: string = LOCALES.KOREAN): boo
 /**
  * Check if date is a weekday (Monday-Friday)
  */
-export const isWeekday = (date: DateValue, locale: string = LOCALES.KOREAN): boolean => {
+export const isWeekday = (
+  date: DateValue,
+  locale: string = LOCALES.KOREAN,
+): boolean => {
   return !isWeekend(date, locale);
 };
 
@@ -407,9 +427,7 @@ export const isWeekday = (date: DateValue, locale: string = LOCALES.KOREAN): boo
 /**
  * Convert date to specific timezone
  */
-export const convertToTimezone = (
-  date: ZonedDateTime
-): ZonedDateTime => {
+export const convertToTimezone = (date: ZonedDateTime): ZonedDateTime => {
   return date.toAbsoluteString()
     ? parseAbsoluteToLocal(date.toAbsoluteString())
     : date;
@@ -443,10 +461,10 @@ export const isValidDateString = (dateString: string): boolean => {
  */
 export const isDateInRange = (
   date: DateValue,
-  minDate?: DateValue | null,
-  maxDate?: DateValue | null
+  minValue?: DateValue | null,
+  maxValue?: DateValue | null,
 ): boolean => {
-  if (minDate && date.compare(minDate) < 0) return false;
-  if (maxDate && date.compare(maxDate) > 0) return false;
+  if (minValue && date.compare(minValue) < 0) return false;
+  if (maxValue && date.compare(maxValue) > 0) return false;
   return true;
 };

@@ -147,16 +147,16 @@ export const CalendarEditor = memo(function CalendarEditor({
         />
 
         <PropertyInput
-          label="Min Date"
-          value={String(currentProps.minDate || "")}
-          onChange={(value) => updateProp("minDate", value || undefined)}
+          label="Min Value"
+          value={String(currentProps.minValue || "")}
+          onChange={(value) => updateProp("minValue", value || undefined)}
           placeholder="2024-01-01"
         />
 
         <PropertyInput
-          label="Max Date"
-          value={String(currentProps.maxDate || "")}
-          onChange={(value) => updateProp("maxDate", value || undefined)}
+          label="Max Value"
+          value={String(currentProps.maxValue || "")}
+          onChange={(value) => updateProp("maxValue", value || undefined)}
           placeholder="2024-12-31"
         />
 
@@ -220,35 +220,6 @@ export const CalendarEditor = memo(function CalendarEditor({
           options={[
             { value: "visible", label: "Visible" },
             { value: "single", label: "Single" },
-          ]}
-          icon={Calendar}
-        />
-
-        <PropertySelect
-          label={PROPERTY_LABELS.FIRST_DAY_OF_WEEK}
-          value={String(currentProps.firstDayOfWeek || "")}
-          onChange={(value) => updateProp("firstDayOfWeek", value || undefined)}
-          options={[
-            { value: "", label: "Default (Locale)" },
-            { value: "sun", label: "Sunday" },
-            { value: "mon", label: "Monday" },
-            { value: "tue", label: "Tuesday" },
-            { value: "wed", label: "Wednesday" },
-            { value: "thu", label: "Thursday" },
-            { value: "fri", label: "Friday" },
-            { value: "sat", label: "Saturday" },
-          ]}
-          icon={Calendar}
-        />
-
-        <PropertySelect
-          label={PROPERTY_LABELS.SELECTION_ALIGNMENT}
-          value={String(currentProps.selectionAlignment || "center")}
-          onChange={(value) => updateProp("selectionAlignment", value)}
-          options={[
-            { value: "start", label: "Start" },
-            { value: "center", label: "Center" },
-            { value: "end", label: "End" },
           ]}
           icon={Calendar}
         />

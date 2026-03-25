@@ -18,9 +18,10 @@ import { Skeleton } from "./Skeleton";
 
 import "./styles/Calendar.css";
 
-export interface CalendarProps<
-  T extends DateValue,
-> extends AriaCalendarProps<T> {
+export interface CalendarProps<T extends DateValue> extends Omit<
+  AriaCalendarProps<T>,
+  "minValue" | "maxValue" | "defaultValue" | "defaultFocusedValue"
+> {
   /** @default 'default' */
   variant?: "default" | "accent";
   /** @default 'md' */
@@ -33,11 +34,17 @@ export interface CalendarProps<
   /** @default false */
   defaultToday?: boolean;
   /** @example "2024-01-01" */
-  minDate?: string | DateValue;
+  minValue?: string | DateValue;
   /** @example "2024-12-31" */
-  maxDate?: string | DateValue;
+  maxValue?: string | DateValue;
+  /** @example "2024-06-15" */
+  defaultValue?: string | T;
+  /** @example "2024-06-15" */
+  defaultFocusedValue?: string | DateValue;
   /** @default 'center' */
   selectionAlignment?: "start" | "center" | "end";
+  /** @default 'visible' */
+  pageBehavior?: "visible" | "single";
   /** @default 1 */
   visibleMonths?: number;
   /** @default false */
@@ -51,9 +58,10 @@ export function Calendar<T extends DateValue>({
   locale,
   calendarSystem,
   defaultToday = false,
-  minDate,
-  maxDate,
+  minValue,
+  maxValue,
   selectionAlignment = "center",
+  pageBehavior,
   visibleMonths = 1,
   isLoading,
   ...props
@@ -68,14 +76,22 @@ export function Calendar<T extends DateValue>({
       />
     );
   }
-  // minDate/maxDate 자동 파싱
-  const minValue =
-    typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
+  // minValue/maxValue/defaultValue/defaultFocusedValue 문자열 자동 파싱
+  const parsedMinValue =
+    typeof minValue === "string" ? safeParseDateString(minValue) : minValue;
 
-  const maxValue =
-    typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
+  const parsedMaxValue =
+    typeof maxValue === "string" ? safeParseDateString(maxValue) : maxValue;
 
-  const defaultValue = props.defaultValue;
+  const parsedDefaultValue =
+    typeof props.defaultValue === "string"
+      ? safeParseDateString(props.defaultValue)
+      : props.defaultValue;
+
+  const parsedDefaultFocusedValue =
+    typeof props.defaultFocusedValue === "string"
+      ? safeParseDateString(props.defaultFocusedValue)
+      : props.defaultFocusedValue;
 
   const calendarClassName = composeRenderProps(props.className, (className) =>
     className ? `react-aria-Calendar ${className}` : "react-aria-Calendar",
@@ -87,10 +103,12 @@ export function Calendar<T extends DateValue>({
       className={calendarClassName}
       data-variant={variant}
       data-size={size}
-      defaultValue={defaultValue}
-      minValue={minValue as T | undefined}
-      maxValue={maxValue as T | undefined}
+      defaultValue={parsedDefaultValue as T | undefined}
+      defaultFocusedValue={parsedDefaultFocusedValue as T | undefined}
+      minValue={parsedMinValue as T | undefined}
+      maxValue={parsedMaxValue as T | undefined}
       selectionAlignment={selectionAlignment}
+      pageBehavior={pageBehavior}
       visibleDuration={{ months: visibleMonths }}
     >
       <header>

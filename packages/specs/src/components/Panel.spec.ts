@@ -60,29 +60,30 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
   },
 
   sizes: {
+    // @sync Button.spec.ts padding/fontSize 패턴
     sm: {
       height: 0,
+      paddingX: 8,
+      paddingY: 2,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.md}" as TokenRef,
+      gap: 6,
+    },
+    md: {
+      height: 0,
       paddingX: 12,
-      paddingY: 8,
+      paddingY: 4,
       fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       gap: 8,
     },
-    md: {
-      height: 0,
-      paddingX: 16,
-      paddingY: 12,
-      fontSize: "{typography.text-md}" as TokenRef,
-      borderRadius: "{radius.md}" as TokenRef,
-      gap: 12,
-    },
     lg: {
       height: 0,
-      paddingX: 24,
-      paddingY: 16,
-      fontSize: "{typography.text-lg}" as TokenRef,
+      paddingX: 16,
+      paddingY: 8,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
-      gap: 16,
+      gap: 10,
     },
   },
 

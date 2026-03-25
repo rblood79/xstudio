@@ -6,12 +6,11 @@ import {
   PenOff,
   CheckSquare,
   AlertTriangle,
+  Clock,
   Globe,
   Focus,
   FileText,
-  Type,
-  Calendar,
-  Palette,
+  FormInput,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -33,8 +32,6 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
   currentProps,
   onUpdate,
 }: PropertyEditorProps) {
-  // Get customId from element in store
-  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
   const customId = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
     return element?.customId || "";
@@ -89,26 +86,6 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
         />
       </PropertySection>
 
-      {/* Design Section */}
-      <PropertySection title="Design">
-        <PropertySelect
-          label="Variant"
-          value={String(currentProps.variant || "default")}
-          onChange={(value) => updateProp("variant", value)}
-          options={[
-            { value: "default", label: "Default" },
-            { value: "accent", label: "Accent" },
-          ]}
-          icon={Palette}
-        />
-
-        <PropertySizeToggle
-          label="Size"
-          value={String(currentProps.size || "md")}
-          onChange={(value) => updateProp("size", value)}
-        />
-      </PropertySection>
-
       {/* Content Section */}
       <PropertySection title="Content">
         <PropertyInput
@@ -134,14 +111,111 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
 
         <PropertyInput
           label={PROPERTY_LABELS.PLACEHOLDER}
-          value={String(currentProps.placeholder || "")}
-          onChange={(value) => updateProp("placeholder", value || undefined)}
-          placeholder="Select date range"
+          value={String(currentProps.placeholderValue || "")}
+          onChange={(value) =>
+            updateProp("placeholderValue", value || undefined)
+          }
+          placeholder="YYYY-MM-DD"
         />
       </PropertySection>
 
       {/* State Section */}
       <PropertySection title="State">
+        <PropertySwitch
+          label="Default to Today"
+          isSelected={Boolean(currentProps.defaultToday)}
+          onChange={(checked) => updateProp("defaultToday", checked)}
+          icon={CalendarDays}
+        />
+
+        <PropertyInput
+          label="Min Value"
+          value={String(currentProps.minValue || "")}
+          onChange={(value) => updateProp("minValue", value || undefined)}
+          placeholder="2024-01-01"
+        />
+
+        <PropertyInput
+          label="Max Value"
+          value={String(currentProps.maxValue || "")}
+          onChange={(value) => updateProp("maxValue", value || undefined)}
+          placeholder="2024-12-31"
+        />
+
+        <PropertySelect
+          label={PROPERTY_LABELS.REQUIRED}
+          value={String(currentProps.necessityIndicator || "")}
+          onChange={(value) => {
+            if (value === "") {
+              onUpdate({ isRequired: false, necessityIndicator: undefined });
+            } else {
+              onUpdate({ isRequired: true, necessityIndicator: value });
+            }
+          }}
+          options={[
+            { value: "", label: "None" },
+            { value: "icon", label: "Icon (*)" },
+            { value: "label", label: "Label (required/optional)" },
+          ]}
+          icon={CheckSquare}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.INVALID}
+          isSelected={Boolean(currentProps.isInvalid)}
+          onChange={(checked) => updateProp("isInvalid", checked)}
+          icon={AlertTriangle}
+        />
+      </PropertySection>
+
+      {/* Behavior Section */}
+      <PropertySection title="Behavior">
+        <PropertySwitch
+          label={PROPERTY_LABELS.DISABLED}
+          isSelected={Boolean(currentProps.isDisabled)}
+          onChange={(checked) => updateProp("isDisabled", checked)}
+          icon={PointerOff}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.READONLY}
+          isSelected={Boolean(currentProps.isReadOnly)}
+          onChange={(checked) => updateProp("isReadOnly", checked)}
+          icon={PenOff}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.AUTO_FOCUS}
+          isSelected={Boolean(currentProps.autoFocus)}
+          onChange={(checked) => updateProp("autoFocus", checked)}
+          icon={Focus}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.SHOULD_CLOSE_ON_SELECT}
+          isSelected={currentProps.shouldCloseOnSelect !== false}
+          onChange={(checked) => updateProp("shouldCloseOnSelect", checked)}
+        />
+      </PropertySection>
+
+      {/* Design Section — @sync DatePickerEditor */}
+      <PropertySection title="Design">
+        <PropertySelect
+          label={PROPERTY_LABELS.VARIANT}
+          value={String(currentProps.variant || "default")}
+          onChange={(value) => updateProp("variant", value)}
+          options={[
+            { value: "default", label: "Default" },
+            { value: "accent", label: "Accent" },
+          ]}
+        />
+
+        <PropertySizeToggle
+          label={PROPERTY_LABELS.SIZE}
+          value={String(currentProps.size || "md")}
+          onChange={(value) => updateProp("size", value)}
+        />
+
         <PropertySelect
           label="Locale"
           value={String(currentProps.locale || "")}
@@ -183,123 +257,93 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           icon={CalendarDays}
         />
 
-        <PropertyInput
-          label="Timezone"
-          value={String(currentProps.timezone || "")}
-          onChange={(value) => updateProp("timezone", value || undefined)}
-          placeholder="Asia/Seoul, America/New_York"
+        <PropertySelect
+          label={PROPERTY_LABELS.GRANULARITY}
+          value={String(currentProps.granularity || "")}
+          onChange={(value) => updateProp("granularity", value || undefined)}
+          options={[
+            { value: "", label: "Date Only" },
+            { value: "hour", label: "Hour" },
+            { value: "minute", label: "Minute" },
+            { value: "second", label: "Second" },
+          ]}
+          icon={Clock}
+        />
+
+        <PropertySelect
+          label={PROPERTY_LABELS.HOUR_CYCLE}
+          value={String(currentProps.hourCycle || "")}
+          onChange={(value) =>
+            updateProp("hourCycle", value ? Number(value) : undefined)
+          }
+          options={[
+            { value: "", label: "Default (Locale)" },
+            { value: "12", label: "12 Hour" },
+            { value: "24", label: "24 Hour" },
+          ]}
+          icon={Clock}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.HIDE_TIMEZONE}
+          isSelected={Boolean(currentProps.hideTimeZone)}
+          onChange={(checked) => updateProp("hideTimeZone", checked)}
           icon={Globe}
         />
 
         <PropertySwitch
-          label="Default to Today"
-          isSelected={Boolean(currentProps.defaultToday)}
-          onChange={(checked) => updateProp("defaultToday", checked)}
-          icon={CalendarDays}
-        />
-
-        <PropertyInput
-          label="Min Date"
-          value={String(currentProps.minDate || "")}
-          onChange={(value) => updateProp("minDate", value || undefined)}
-          placeholder="2024-01-01"
-        />
-
-        <PropertyInput
-          label="Max Date"
-          value={String(currentProps.maxDate || "")}
-          onChange={(value) => updateProp("maxDate", value || undefined)}
-          placeholder="2024-12-31"
+          label={PROPERTY_LABELS.FORCE_LEADING_ZEROS}
+          isSelected={Boolean(currentProps.shouldForceLeadingZeros)}
+          onChange={(checked) => updateProp("shouldForceLeadingZeros", checked)}
+          icon={Clock}
         />
 
         <PropertySelect
-          label={PROPERTY_LABELS.REQUIRED}
-          value={String(currentProps.necessityIndicator || "")}
-          onChange={(value) => {
-            if (value === "") {
-              onUpdate({ isRequired: false, necessityIndicator: undefined });
-            } else {
-              onUpdate({ isRequired: true, necessityIndicator: value });
-            }
-          }}
+          label={PROPERTY_LABELS.PAGE_BEHAVIOR}
+          value={String(currentProps.pageBehavior || "visible")}
+          onChange={(value) => updateProp("pageBehavior", value)}
           options={[
-            { value: "", label: "None" },
-            { value: "icon", label: "Icon (*)" },
-            { value: "label", label: "Label (required/optional)" },
+            { value: "visible", label: "Visible" },
+            { value: "single", label: "Single" },
           ]}
-          icon={CheckSquare}
-        />
-
-        <PropertySwitch
-          label={PROPERTY_LABELS.INVALID}
-          isSelected={Boolean(currentProps.isInvalid)}
-          onChange={(checked) => updateProp("isInvalid", checked)}
-          icon={AlertTriangle}
+          icon={CalendarDays}
         />
       </PropertySection>
 
-      {/* Options Section */}
-      <PropertySection title="Options">
+      {/* Form Integration Section — @sync DatePickerEditor */}
+      <PropertySection title="Form Integration">
+        <PropertyInput
+          label="Start Name"
+          value={String(currentProps.startName || "")}
+          onChange={(value) => updateProp("startName", value || undefined)}
+          icon={FormInput}
+          placeholder="start-date"
+        />
+
+        <PropertyInput
+          label="End Name"
+          value={String(currentProps.endName || "")}
+          onChange={(value) => updateProp("endName", value || undefined)}
+          icon={FormInput}
+          placeholder="end-date"
+        />
+
+        <PropertyInput
+          label={PROPERTY_LABELS.AUTOCOMPLETE}
+          value={String(currentProps.autoComplete || "")}
+          onChange={(value) => updateProp("autoComplete", value || undefined)}
+          icon={FormInput}
+          placeholder="bday"
+        />
+
         <PropertySelect
-          label="First Day of Week"
-          value={String(currentProps.firstDayOfWeek || "")}
-          onChange={(value) => updateProp("firstDayOfWeek", value || undefined)}
+          label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
+          value={String(currentProps.validationBehavior || "native")}
+          onChange={(value) => updateProp("validationBehavior", value)}
           options={[
-            { value: "", label: "Default (Locale)" },
-            { value: "sun", label: "Sunday" },
-            { value: "mon", label: "Monday" },
-            { value: "tue", label: "Tuesday" },
-            { value: "wed", label: "Wednesday" },
-            { value: "thu", label: "Thursday" },
-            { value: "fri", label: "Friday" },
-            { value: "sat", label: "Saturday" },
+            { value: "native", label: "Native" },
+            { value: "aria", label: "ARIA" },
           ]}
-          icon={Calendar}
-        />
-
-        <PropertySwitch
-          label="Show Week Numbers"
-          isSelected={Boolean(currentProps.showWeekNumbers)}
-          onChange={(checked) => updateProp("showWeekNumbers", checked)}
-          icon={CalendarDays}
-        />
-
-        <PropertySwitch
-          label="Highlight Today"
-          isSelected={currentProps.highlightToday !== false}
-          onChange={(checked) => updateProp("highlightToday", checked)}
-          icon={CalendarDays}
-        />
-
-        <PropertySwitch
-          label="Allow Clear"
-          isSelected={currentProps.allowClear !== false}
-          onChange={(checked) => updateProp("allowClear", checked)}
-          icon={Type}
-        />
-      </PropertySection>
-
-      {/* Behavior Section */}
-      <PropertySection title="Behavior">
-        <PropertySwitch
-          label={PROPERTY_LABELS.DISABLED}
-          isSelected={Boolean(currentProps.isDisabled)}
-          onChange={(checked) => updateProp("isDisabled", checked)}
-          icon={PointerOff}
-        />
-
-        <PropertySwitch
-          label={PROPERTY_LABELS.READONLY}
-          isSelected={Boolean(currentProps.isReadOnly)}
-          onChange={(checked) => updateProp("isReadOnly", checked)}
-          icon={PenOff}
-        />
-
-        <PropertySwitch
-          label={PROPERTY_LABELS.AUTO_FOCUS}
-          isSelected={Boolean(currentProps.autoFocus)}
-          onChange={(checked) => updateProp("autoFocus", checked)}
-          icon={Focus}
         />
       </PropertySection>
     </>

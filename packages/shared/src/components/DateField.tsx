@@ -30,9 +30,10 @@ import "./styles/DateField.css";
  * - data-variant, data-size 속성 사용
  */
 
-export interface DateFieldProps<
-  T extends DateValue,
-> extends AriaDateFieldProps<T> {
+export interface DateFieldProps<T extends DateValue> extends Omit<
+  AriaDateFieldProps<T>,
+  "minValue" | "maxValue" | "placeholderValue"
+> {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -50,17 +51,25 @@ export interface DateFieldProps<
    * 최소 날짜 (문자열 또는 DateValue)
    * @example "2024-01-01"
    */
-  minDate?: string | DateValue;
+  minValue?: string | DateValue;
   /**
    * 최대 날짜 (문자열 또는 DateValue)
    * @example "2024-12-31"
    */
-  maxDate?: string | DateValue;
-  // M3 props
+  maxValue?: string | DateValue;
+  // S2 props
   variant?: string;
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  hideTimeZone?: boolean;
+  shouldForceLeadingZeros?: boolean;
+  placeholderValue?: string;
+  locale?: string;
+  calendarSystem?: string;
+  form?: string;
+  autoComplete?: string;
+  validationBehavior?: "native" | "aria";
 }
 
 export function DateField<T extends DateValue>({
@@ -69,23 +78,37 @@ export function DateField<T extends DateValue>({
   errorMessage,
   timezone,
   defaultToday = false,
-  minDate,
-  maxDate,
+  minValue,
+  maxValue,
   variant = "default",
   size = "md",
   necessityIndicator,
   labelPosition = "top",
+  hideTimeZone,
+  shouldForceLeadingZeros,
+  placeholderValue,
+  locale,
+  calendarSystem,
+  form,
+  autoComplete,
+  validationBehavior,
   ...props
 }: DateFieldProps<T>) {
   // 타임존 설정
   const effectiveTimezone = timezone || getLocalTimeZone();
 
-  // minDate/maxDate 자동 파싱
-  const minValue =
-    typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
+  // minValue/maxValue 문자열 자동 파싱
+  const parsedMinValue =
+    typeof minValue === "string" ? safeParseDateString(minValue) : minValue;
 
-  const maxValue =
-    typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
+  const parsedMaxValue =
+    typeof maxValue === "string" ? safeParseDateString(maxValue) : maxValue;
+
+  // placeholderValue 문자열 자동 파싱
+  const parsedPlaceholderValue =
+    typeof placeholderValue === "string"
+      ? safeParseDateString(placeholderValue)
+      : undefined;
 
   // defaultToday가 true이고 value가 없으면 오늘 날짜 설정
   const defaultValue =
@@ -105,8 +128,14 @@ export function DateField<T extends DateValue>({
       data-size={size}
       data-label-position={labelPosition}
       defaultValue={defaultValue}
-      minValue={minValue as T | undefined}
-      maxValue={maxValue as T | undefined}
+      placeholderValue={parsedPlaceholderValue as T | undefined}
+      minValue={parsedMinValue as T | undefined}
+      maxValue={parsedMaxValue as T | undefined}
+      hideTimeZone={hideTimeZone}
+      shouldForceLeadingZeros={shouldForceLeadingZeros}
+      form={form}
+      autoComplete={autoComplete}
+      validationBehavior={validationBehavior}
     >
       {label && (
         <Label>

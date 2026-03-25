@@ -668,8 +668,10 @@ export function applyImplicitStyles(
   // ── Tabs ───────────────────────────────────────────────────────────
   if (containerTag === "tabs") {
     const sizeName = (containerProps?.size as string) ?? "md";
-    const tabBarHeight = sizeName === "sm" ? 25 : sizeName === "lg" ? 35 : 30;
-    const tabPanelPadding = 16;
+    // @sync Button.spec.ts padding pattern: sm=21, md=29, lg=41
+    const tabBarHeight = sizeName === "sm" ? 21 : sizeName === "lg" ? 41 : 29;
+    // @sync Tabs.css TabPanel padding: sm=8, md=12, lg=16
+    const tabPanelPadding = sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
 
     // Dual Lookup: 직속 Panel 또는 TabPanels 내부 Panel
     let panelChildren = children.filter((c) => c.tag === "Panel");

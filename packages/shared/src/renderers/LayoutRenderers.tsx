@@ -1671,8 +1671,8 @@ export const renderRangeCalendar = (
       allowsNonContiguousRanges={Boolean(
         element.props.allowsNonContiguousRanges,
       )}
-      minDate={element.props.minDate as string | undefined}
-      maxDate={element.props.maxDate as string | undefined}
+      minValue={element.props.minValue as string | undefined}
+      maxValue={element.props.maxValue as string | undefined}
       onChange={(dateRange) => {
         const updatedProps = {
           ...element.props,

@@ -2166,9 +2166,11 @@ export function calculateContentHeight(
     if (tag === "tabs") {
       const props = element.props as Record<string, unknown> | undefined;
       const sizeName = (props?.size as string) ?? "md";
-      // CSS 기준 탭 바 높이: sm=25, md=30, lg=35
-      const tabBarHeight = sizeName === "S" ? 25 : sizeName === "L" ? 35 : 30;
-      const tabPanelPadding = 16; // React-Aria TabPanel 기본 padding
+      // @sync Button.spec.ts padding pattern: sm=21, md=29, lg=41
+      const tabBarHeight = sizeName === "sm" ? 21 : sizeName === "lg" ? 41 : 29;
+      // @sync Tabs.css TabPanel padding: sm=8, md=12, lg=16
+      const tabPanelPadding =
+        sizeName === "sm" ? 8 : sizeName === "lg" ? 16 : 12;
 
       // 활성 Panel의 높이 계산 (Dual Lookup: 직속 → TabPanels 내부)
       let panelChildren = childElements.filter((c) => c.tag === "Panel");

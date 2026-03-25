@@ -140,17 +140,17 @@ export const RangeCalendarEditor = memo(function RangeCalendarEditor({
         />
 
         <PropertyInput
-          label="Min Date"
-          value={String(currentProps.minDate || "")}
-          onChange={(value) => updateProp("minDate", value || undefined)}
+          label="Min Value"
+          value={String(currentProps.minValue || "")}
+          onChange={(value) => updateProp("minValue", value || undefined)}
           placeholder="2024-01-01"
           icon={CalendarDays}
         />
 
         <PropertyInput
-          label="Max Date"
-          value={String(currentProps.maxDate || "")}
-          onChange={(value) => updateProp("maxDate", value || undefined)}
+          label="Max Value"
+          value={String(currentProps.maxValue || "")}
+          onChange={(value) => updateProp("maxValue", value || undefined)}
           placeholder="2024-12-31"
           icon={CalendarDays}
         />

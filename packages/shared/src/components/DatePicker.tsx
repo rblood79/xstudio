@@ -34,9 +34,10 @@ import { renderNecessityIndicator } from "./Field";
 
 import "./styles/DatePicker.css";
 
-export interface DatePickerProps<
-  T extends DateValue,
-> extends AriaDatePickerProps<T> {
+export interface DatePickerProps<T extends DateValue> extends Omit<
+  AriaDatePickerProps<T>,
+  "minValue" | "maxValue" | "defaultValue"
+> {
   /** @default 'default' */
   variant?: "default" | "accent";
   /** @default 'md' */
@@ -67,25 +68,25 @@ export interface DatePickerProps<
    * @default false
    */
   defaultToday?: boolean;
+  /** @example "2024-06-15" */
+  defaultValue?: string | T;
   /**
    * 최소 날짜 (문자열 또는 DateValue)
    * @example "2024-01-01" or parseDate("2024-01-01")
    */
-  minDate?: string | DateValue;
+  minValue?: string | DateValue;
   /**
    * 최대 날짜 (문자열 또는 DateValue)
    * @example "2024-12-31" or parseDate("2024-12-31")
    */
-  maxDate?: string | DateValue;
-  /**
-   * React Aria: 주의 첫 번째 요일
-   * "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"
-   * 기본값은 locale에 따라 자동 설정
-   * @example "mon" (월요일 시작)
-   */
-  firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
+  maxValue?: string | DateValue;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  hideTimeZone?: boolean;
+  pageBehavior?: "visible" | "single";
+  form?: string;
+  autoComplete?: string;
+  validationBehavior?: "native" | "aria";
   /** BCP 47 locale (e.g. "ko-KR", "en-US") */
   locale?: string;
   /** Unicode calendar identifier (e.g. "buddhist", "japanese") */
@@ -98,7 +99,6 @@ export function DatePicker<T extends DateValue>({
   label,
   description,
   errorMessage,
-  firstDayOfWeek,
   showCalendarIcon = true,
   calendarIconPosition = "right",
   placeholder,
@@ -111,10 +111,15 @@ export function DatePicker<T extends DateValue>({
   granularity,
   timezone,
   defaultToday = false,
-  minDate,
-  maxDate,
+  minValue,
+  maxValue,
   necessityIndicator,
   labelPosition = "top",
+  hideTimeZone,
+  pageBehavior,
+  form,
+  autoComplete,
+  validationBehavior,
   locale,
   calendarSystem,
   ...props
@@ -127,18 +132,24 @@ export function DatePicker<T extends DateValue>({
     ? granularity || "minute"
     : granularity || "day";
 
-  // minDate/maxDate 자동 파싱 (문자열인 경우)
-  const minValue =
-    typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
+  // minValue/maxValue 문자열 자동 파싱
+  const parsedMinValue =
+    typeof minValue === "string" ? safeParseDateString(minValue) : minValue;
 
-  const maxValue =
-    typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
+  const parsedMaxValue =
+    typeof maxValue === "string" ? safeParseDateString(maxValue) : maxValue;
+
+  // defaultValue 문자열 자동 파싱
+  const parsedDefaultValue =
+    typeof props.defaultValue === "string"
+      ? safeParseDateString(props.defaultValue)
+      : props.defaultValue;
 
   // defaultToday가 true이고 value가 없으면 오늘 날짜 설정
   const defaultValue =
-    defaultToday && !props.value && !props.defaultValue
+    defaultToday && !props.value && !parsedDefaultValue
       ? (today(effectiveTimezone) as T)
-      : props.defaultValue;
+      : (parsedDefaultValue as T | undefined);
 
   const datePickerClassName = composeRenderProps(
     props.className,
@@ -161,8 +172,13 @@ export function DatePicker<T extends DateValue>({
       data-label-position={labelPosition}
       granularity={effectiveGranularity}
       defaultValue={defaultValue}
-      minValue={minValue as T | undefined}
-      maxValue={maxValue as T | undefined}
+      minValue={parsedMinValue as T | undefined}
+      maxValue={parsedMaxValue as T | undefined}
+      hideTimeZone={hideTimeZone}
+      pageBehavior={pageBehavior}
+      form={form}
+      autoComplete={autoComplete}
+      validationBehavior={validationBehavior}
     >
       {label && (
         <Label>
@@ -204,7 +220,6 @@ export function DatePicker<T extends DateValue>({
         <Dialog>
           <div className="date-picker-popup">
             <Calendar
-              firstDayOfWeek={firstDayOfWeek}
               data-highlight-today={highlightToday}
               data-show-week-numbers={showWeekNumbers}
             >

@@ -34,9 +34,10 @@ import { renderNecessityIndicator } from "./Field";
 
 import "./styles/DateRangePicker.css";
 
-export interface DateRangePickerProps<
-  T extends DateValue,
-> extends AriaDateRangePickerProps<T> {
+export interface DateRangePickerProps<T extends DateValue> extends Omit<
+  AriaDateRangePickerProps<T>,
+  "minValue" | "maxValue"
+> {
   /** @default 'default' */
   variant?: "default" | "accent";
   /** @default 'md' */
@@ -63,11 +64,16 @@ export interface DateRangePickerProps<
   /** @default false */
   defaultToday?: boolean;
   /** @example "2024-01-01" */
-  minDate?: string | DateValue;
+  minValue?: string | DateValue;
   /** @example "2024-12-31" */
-  maxDate?: string | DateValue;
-  firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
+  maxValue?: string | DateValue;
   necessityIndicator?: NecessityIndicator;
+  hideTimeZone?: boolean;
+  pageBehavior?: "visible" | "single";
+  startName?: string;
+  endName?: string;
+  form?: string;
+  validationBehavior?: "native" | "aria";
 }
 
 export function DateRangePicker<T extends DateValue>({
@@ -76,7 +82,6 @@ export function DateRangePicker<T extends DateValue>({
   label,
   description,
   errorMessage,
-  firstDayOfWeek,
   showCalendarIcon = true,
   calendarIconPosition = "right",
   placeholder,
@@ -92,9 +97,15 @@ export function DateRangePicker<T extends DateValue>({
   calendarSystem,
   timezone,
   defaultToday = false,
-  minDate,
-  maxDate,
+  minValue,
+  maxValue,
   necessityIndicator,
+  hideTimeZone,
+  pageBehavior,
+  startName,
+  endName,
+  form,
+  validationBehavior,
   ...props
 }: DateRangePickerProps<T>) {
   const effectiveTimezone = timezone || getLocalTimeZone();
@@ -103,11 +114,12 @@ export function DateRangePicker<T extends DateValue>({
     ? granularity || "minute"
     : granularity || "day";
 
-  const minValue =
-    typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
+  // minValue/maxValue 문자열 자동 파싱
+  const parsedMinValue =
+    typeof minValue === "string" ? safeParseDateString(minValue) : minValue;
 
-  const maxValue =
-    typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
+  const parsedMaxValue =
+    typeof maxValue === "string" ? safeParseDateString(maxValue) : maxValue;
 
   const defaultValue =
     defaultToday && !props.value && !props.defaultValue
@@ -133,8 +145,14 @@ export function DateRangePicker<T extends DateValue>({
       data-size={size}
       granularity={effectiveGranularity}
       defaultValue={defaultValue}
-      minValue={minValue as T | undefined}
-      maxValue={maxValue as T | undefined}
+      minValue={parsedMinValue as T | undefined}
+      maxValue={parsedMaxValue as T | undefined}
+      hideTimeZone={hideTimeZone}
+      pageBehavior={pageBehavior}
+      startName={startName}
+      endName={endName}
+      form={form}
+      validationBehavior={validationBehavior}
     >
       {label && (
         <Label>
@@ -187,7 +205,6 @@ export function DateRangePicker<T extends DateValue>({
         <Dialog>
           <div className="date-picker-popup">
             <RangeCalendar
-              firstDayOfWeek={firstDayOfWeek}
               data-highlight-today={highlightToday}
               data-show-week-numbers={showWeekNumbers}
             >
