@@ -682,15 +682,11 @@ export function createRangeCalendarDefinition(
     parent: {
       tag: "RangeCalendar",
       props: {
+        variant: "default",
+        size: "md",
+        defaultToday: true,
         isDisabled: false,
         isReadOnly: false,
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: "6px",
-          padding: "12px",
-          width: "284px",
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -706,10 +702,6 @@ export function createRangeCalendarDefinition(
             year: "numeric",
             month: "long",
           }).format(now),
-          style: {
-            display: "block",
-            width: "100%",
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -723,10 +715,6 @@ export function createRangeCalendarDefinition(
           dayOffset: firstDay,
           totalDays: calTotalDays,
           todayDate: now.getDate(),
-          style: {
-            display: "block",
-            width: "100%",
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,

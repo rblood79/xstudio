@@ -11,6 +11,7 @@ import {
   FieldError,
   Group,
   Heading,
+  I18nProvider,
   Label,
   Popover,
   RangeCalendar,
@@ -20,7 +21,11 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
 import type { ComponentSize } from "../types";
@@ -29,86 +34,44 @@ import { renderNecessityIndicator } from "./Field";
 
 import "./styles/DateRangePicker.css";
 
-/**
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-variant, data-size 속성 사용
- */
-
 export interface DateRangePickerProps<
   T extends DateValue,
 > extends AriaDateRangePickerProps<T> {
-  /**
-   * Size variant
-   * @default 'md'
-   */
+  /** @default 'default' */
+  variant?: "default" | "accent";
+  /** @default 'md' */
   size?: ComponentSize;
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
-  // 추가 커스텀 프로퍼티들
   showCalendarIcon?: boolean;
   calendarIconPosition?: "left" | "right";
   placeholder?: string;
   showWeekNumbers?: boolean;
   highlightToday?: boolean;
   allowClear?: boolean;
-  // 새로운 time 옵션
   includeTime?: boolean;
   timeFormat?: "12h" | "24h";
   startTimeLabel?: string;
   endTimeLabel?: string;
-  /**
-   * 타임존 (기본값: 로컬 타임존)
-   * @default getLocalTimeZone()
-   */
+  /** BCP 47 locale (e.g. "ko-KR", "en-US") */
+  locale?: string;
+  /** Unicode calendar identifier (e.g. "buddhist", "japanese") */
+  calendarSystem?: string;
+  /** @default getLocalTimeZone() */
   timezone?: string;
-  /**
-   * 기본값을 오늘로 설정 (시작일과 종료일 모두 오늘)
-   * @default false
-   */
+  /** @default false */
   defaultToday?: boolean;
-  /**
-   * 최소 날짜 (문자열 또는 DateValue)
-   * @example "2024-01-01"
-   */
+  /** @example "2024-01-01" */
   minDate?: string | DateValue;
-  /**
-   * 최대 날짜 (문자열 또는 DateValue)
-   * @example "2024-12-31"
-   */
+  /** @example "2024-12-31" */
   maxDate?: string | DateValue;
-  /**
-   * React Aria: 주의 첫 번째 요일
-   * "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"
-   * 기본값은 locale에 따라 자동 설정
-   * @example "mon" (월요일 시작)
-   */
   firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
   necessityIndicator?: NecessityIndicator;
 }
 
-/**
- * DateRangePicker Component with Material Design 3 support
- *
- * M3 Features:
- * - 5 variants: primary, secondary, tertiary, error, filled
- * - 3 sizes: sm, md, lg
- * - M3 color tokens for consistent theming
- *
- * Features:
- * - Date range input with calendar popup
- * - Optional time selection for start and end
- * - Min/max date constraints
- * - Timezone support
- * - Default to today option
- * - Error message display
- *
- * @example
- * <DateRangePicker variant="primary" size="md" label="Select Date Range" />
- * <DateRangePicker variant="error" includeTime timeFormat="12h" />
- */
 export function DateRangePicker<T extends DateValue>({
+  variant = "default",
   size = "md",
   label,
   description,
@@ -125,6 +88,8 @@ export function DateRangePicker<T extends DateValue>({
   startTimeLabel = "시작 시간",
   endTimeLabel = "종료 시간",
   granularity,
+  locale,
+  calendarSystem,
   timezone,
   defaultToday = false,
   minDate,
@@ -132,22 +97,18 @@ export function DateRangePicker<T extends DateValue>({
   necessityIndicator,
   ...props
 }: DateRangePickerProps<T>) {
-  // 타임존 설정
   const effectiveTimezone = timezone || getLocalTimeZone();
 
-  // includeTime이 true일 때 granularity를 자동으로 설정
   const effectiveGranularity = includeTime
     ? granularity || "minute"
     : granularity || "day";
 
-  // minDate/maxDate 자동 파싱
   const minValue =
     typeof minDate === "string" ? safeParseDateString(minDate) : minDate;
 
   const maxValue =
     typeof maxDate === "string" ? safeParseDateString(maxDate) : maxDate;
 
-  // defaultToday가 true이고 value가 없으면 오늘 날짜로 시작일과 종료일 설정
   const defaultValue =
     defaultToday && !props.value && !props.defaultValue
       ? {
@@ -164,10 +125,11 @@ export function DateRangePicker<T extends DateValue>({
         : "react-aria-DateRangePicker",
   );
 
-  return (
+  const picker = (
     <AriaDateRangePicker
       {...props}
       className={dateRangePickerClassName}
+      data-variant={variant}
       data-size={size}
       granularity={effectiveGranularity}
       defaultValue={defaultValue}
@@ -207,7 +169,7 @@ export function DateRangePicker<T extends DateValue>({
         </DateInput>
         {showCalendarIcon && calendarIconPosition === "right" && (
           <Button>
-            <ChevronDown size={16} />
+            <CalendarIcon size={16} />
           </Button>
         )}
         {allowClear && props.value && (
@@ -280,4 +242,15 @@ export function DateRangePicker<T extends DateValue>({
       </Popover>
     </AriaDateRangePicker>
   );
+
+  // locale + calendarSystem → BCP 47 Unicode extension (e.g. "ko-KR-u-ca-buddhist")
+  const effectiveLocale = calendarSystem
+    ? `${locale || navigator.language}-u-ca-${calendarSystem}`
+    : locale;
+
+  if (effectiveLocale) {
+    return <I18nProvider locale={effectiveLocale}>{picker}</I18nProvider>;
+  }
+
+  return picker;
 }

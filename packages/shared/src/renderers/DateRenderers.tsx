@@ -140,13 +140,24 @@ export const renderDatePicker = (
     return cip === "left" || cip === "right" ? cip : "right";
   };
 
+  const locale = element.props.locale as string | undefined;
+  const calendarSystem = element.props.calendarSystem as string | undefined;
+  const size = element.props.size as string | undefined;
+  const variant = element.props.variant as string | undefined;
+  // locale/calendarSystem/size 변경 시 리마운트 (defaultValue 재적용)
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${size || ""}`;
+
   return (
     <DatePicker
-      key={element.id}
+      key={remountKey}
       id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      variant={(variant as "default" | "accent") || "default"}
+      size={(size as "sm" | "md" | "lg") || "md"}
+      locale={locale}
+      calendarSystem={calendarSystem}
       label={String(element.props.label || "Date Picker")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
@@ -164,7 +175,7 @@ export const renderDatePicker = (
       }
       labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       name={element.props.name ? String(element.props.name) : undefined}
-      defaultValue={today(getLocalTimeZone())}
+      defaultValue={undefined}
       granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
       firstDayOfWeek={
         ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][
@@ -217,28 +228,38 @@ export const renderDateRangePicker = (
     return cip === "left" || cip === "right" ? cip : "right";
   };
 
+  const locale = element.props.locale as string | undefined;
+  const calendarSystem = element.props.calendarSystem as string | undefined;
+  const size = element.props.size as string | undefined;
+  // locale/calendarSystem/size 변경 시 리마운트 (defaultValue 재적용)
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${size || ""}`;
+
   return (
     <DateRangePicker
-      key={element.id}
+      key={remountKey}
       id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      variant={(element.props.variant as "default" | "accent") || "default"}
+      size={(size as "sm" | "md" | "lg") || "md"}
       label={String(element.props.label || "Date Range Picker")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
       placeholder={(element.props.placeholder as string) || ""}
+      locale={locale}
+      calendarSystem={calendarSystem}
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
-      defaultValue={{
-        start: today(getLocalTimeZone()),
-        end: today(getLocalTimeZone()),
-      }}
-      minValue={element.props.minValue ? undefined : undefined}
-      maxValue={element.props.maxValue ? undefined : undefined}
-      placeholderValue={element.props.placeholderValue ? undefined : undefined}
+      necessityIndicator={
+        element.props.necessityIndicator as "icon" | "label" | undefined
+      }
+      defaultValue={undefined}
+      minDate={element.props.minDate as string | undefined}
+      maxDate={element.props.maxDate as string | undefined}
+      defaultToday={element.props.defaultToday === true}
       granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
       firstDayOfWeek={
         ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][

@@ -6,6 +6,7 @@ import {
   RangeCalendarProps as AriaRangeCalendarProps,
   DateValue,
   Heading,
+  I18nProvider,
   Text,
   composeRenderProps,
 } from "react-aria-components";
@@ -17,65 +18,35 @@ import { Skeleton } from "./Skeleton";
 
 import "./styles/RangeCalendar.css";
 
-/**
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-variant, data-size 속성 사용
- */
-
 export interface RangeCalendarProps<
   T extends DateValue,
 > extends AriaRangeCalendarProps<T> {
-  /**
-   * M3 variant
-   * @default 'primary'
-   */
-  variant?: string;
-  /**
-   * Size variant
-   * @default 'md'
-   */
+  /** @default 'default' */
+  variant?: "default" | "accent";
+  /** @default 'md' */
   size?: ComponentSize;
   errorMessage?: string;
-  /**
-   * 최소 날짜 (문자열 또는 DateValue)
-   * @example "2024-01-01"
-   */
+  /** BCP 47 locale (e.g. "ko-KR", "en-US") */
+  locale?: string;
+  /** Unicode calendar identifier (e.g. "gregory", "buddhist", "japanese") */
+  calendarSystem?: string;
+  /** @default 1 */
+  visibleMonths?: number;
+  /** @example "2024-01-01" */
   minDate?: string | DateValue;
-  /**
-   * 최대 날짜 (문자열 또는 DateValue)
-   * @example "2024-12-31"
-   */
+  /** @example "2024-12-31" */
   maxDate?: string | DateValue;
-  /**
-   * Show loading skeleton instead of calendar
-   * @default false
-   */
+  /** @default false */
   isLoading?: boolean;
 }
 
-/**
- * RangeCalendar Component with Material Design 3 support
- *
- * M3 Features:
- * - 3 variants: primary, secondary, tertiary
- * - 3 sizes: sm, md, lg
- * - M3 color tokens for consistent theming
- *
- * Features:
- * - Date range selection with keyboard navigation
- * - Min/max date constraints
- * - Visual range highlighting
- * - Error message display
- *
- * @example
- * <RangeCalendar variant="primary" size="md" />
- * <RangeCalendar variant="secondary" minDate="2024-01-01" maxDate="2024-12-31" />
- */
 export function RangeCalendar<T extends DateValue>({
-  variant = "primary",
+  variant = "default",
   size = "md",
   errorMessage,
+  locale,
+  calendarSystem,
+  visibleMonths = 1,
   minDate,
   maxDate,
   isLoading,
@@ -107,7 +78,7 @@ export function RangeCalendar<T extends DateValue>({
         : "react-aria-RangeCalendar",
   );
 
-  return (
+  const calendar = (
     <AriaRangeCalendar
       {...props}
       className={rangeCalendarClassName}
@@ -115,6 +86,7 @@ export function RangeCalendar<T extends DateValue>({
       data-size={size}
       minValue={minValue as T | undefined}
       maxValue={maxValue as T | undefined}
+      visibleDuration={{ months: visibleMonths }}
     >
       <header>
         <Button slot="previous">
@@ -125,8 +97,25 @@ export function RangeCalendar<T extends DateValue>({
           <ChevronRight size={16} />
         </Button>
       </header>
-      <CalendarGrid>{(date) => <CalendarCell date={date} />}</CalendarGrid>
+      <div className="calendar-grids">
+        {Array.from({ length: visibleMonths }, (_, i) => (
+          <CalendarGrid key={i} offset={{ months: i }}>
+            {(date) => <CalendarCell date={date} />}
+          </CalendarGrid>
+        ))}
+      </div>
       {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
     </AriaRangeCalendar>
   );
+
+  // locale + calendarSystem → BCP 47 Unicode extension (e.g. "ko-KR-u-ca-buddhist")
+  const effectiveLocale = calendarSystem
+    ? `${locale || navigator.language}-u-ca-${calendarSystem}`
+    : locale;
+
+  if (effectiveLocale) {
+    return <I18nProvider locale={effectiveLocale}>{calendar}</I18nProvider>;
+  }
+
+  return calendar;
 }

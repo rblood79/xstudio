@@ -40,14 +40,11 @@ export function createDatePickerDefinition(
     parent: {
       tag: "DatePicker",
       props: {
+        variant: "default",
+        size: "md",
+        defaultToday: true,
         isDisabled: false,
         isReadOnly: false,
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-          width: "284px", // Calendar intrinsic width (cellSize*7 + gap*6 + padding*2)
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -58,10 +55,6 @@ export function createDatePickerDefinition(
         tag: "DateField",
         props: {
           placeholder: "YYYY-MM-DD",
-          style: {
-            display: "block",
-            width: "100%",
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
@@ -69,15 +62,11 @@ export function createDatePickerDefinition(
       {
         tag: "Calendar",
         props: {
+          variant: "default",
+          size: "md",
+          defaultToday: true,
           isDisabled: false,
           isReadOnly: false,
-          style: {
-            display: "flex",
-            flexDirection: "column",
-            gap: "6px",
-            padding: "12px",
-            width: "100%",
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
@@ -88,10 +77,6 @@ export function createDatePickerDefinition(
               variant: "default",
               size: "md",
               children: monthText,
-              style: {
-                display: "block",
-                width: "100%",
-              },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 1,
@@ -105,10 +90,6 @@ export function createDatePickerDefinition(
               dayOffset: firstDay,
               totalDays: calTotalDays,
               todayDate: now.getDate(),
-              style: {
-                display: "block",
-                width: "100%",
-              },
             } as ComponentElementProps,
             ...ownerFields,
             order_num: 2,
@@ -145,13 +126,10 @@ export function createDateRangePickerDefinition(
     parent: {
       tag: "DateRangePicker",
       props: {
+        variant: "default",
+        size: "md",
         isDisabled: false,
         isReadOnly: false,
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-        },
       } as ComponentElementProps,
       ...ownerFields,
       parent_id: parentId,
@@ -162,22 +140,13 @@ export function createDateRangePickerDefinition(
         tag: "DateField",
         props: {
           placeholder: "Start date",
-          style: {
-            display: "block",
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
       },
       {
         tag: "Separator",
-        props: {
-          style: {
-            display: "block",
-            width: "100%",
-            height: "1px",
-          },
-        } as ComponentElementProps,
+        props: {} as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
       },
@@ -185,9 +154,6 @@ export function createDateRangePickerDefinition(
         tag: "DateField",
         props: {
           placeholder: "End date",
-          style: {
-            display: "block",
-          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 3,

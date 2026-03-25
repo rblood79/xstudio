@@ -11,6 +11,7 @@ import {
   FileText,
   Type,
   Calendar,
+  Palette,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -18,6 +19,7 @@ import {
   PropertyCustomId,
   PropertySection,
   PropertySelect,
+  PropertySizeToggle,
 } from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
@@ -62,6 +64,26 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
         />
       </PropertySection>
 
+      {/* Design Section */}
+      <PropertySection title="Design">
+        <PropertySelect
+          label="Variant"
+          value={String(currentProps.variant || "default")}
+          onChange={(value) => updateProp("variant", value)}
+          options={[
+            { value: "default", label: "Default" },
+            { value: "accent", label: "Accent" },
+          ]}
+          icon={Palette}
+        />
+
+        <PropertySizeToggle
+          label="Size"
+          value={String(currentProps.size || "md")}
+          onChange={(value) => updateProp("size", value)}
+        />
+      </PropertySection>
+
       {/* Content Section */}
       <PropertySection title="Content">
         <PropertyInput
@@ -95,6 +117,47 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
 
       {/* State Section */}
       <PropertySection title="State">
+        <PropertySelect
+          label="Locale"
+          value={String(currentProps.locale || "")}
+          onChange={(value) => updateProp("locale", value || undefined)}
+          options={[
+            { value: "", label: "Default (Browser)" },
+            { value: "ko-KR", label: "한국어 (ko-KR)" },
+            { value: "en-US", label: "English (en-US)" },
+            { value: "en-GB", label: "English (en-GB)" },
+            { value: "ja-JP", label: "日本語 (ja-JP)" },
+            { value: "zh-CN", label: "中文 (zh-CN)" },
+            { value: "zh-TW", label: "中文 (zh-TW)" },
+            { value: "de-DE", label: "Deutsch (de-DE)" },
+            { value: "fr-FR", label: "Français (fr-FR)" },
+            { value: "es-ES", label: "Español (es-ES)" },
+            { value: "pt-BR", label: "Português (pt-BR)" },
+            { value: "ar-SA", label: "العربية (ar-SA)" },
+          ]}
+          icon={Globe}
+        />
+
+        <PropertySelect
+          label="Calendar System"
+          value={String(currentProps.calendarSystem || "")}
+          onChange={(value) => updateProp("calendarSystem", value || undefined)}
+          options={[
+            { value: "", label: "Default (Gregorian)" },
+            { value: "buddhist", label: "Buddhist" },
+            { value: "hebrew", label: "Hebrew" },
+            { value: "indian", label: "Indian" },
+            { value: "islamic-civil", label: "Islamic (Civil)" },
+            { value: "islamic-umalqura", label: "Islamic (Umm al-Qura)" },
+            { value: "japanese", label: "Japanese" },
+            { value: "persian", label: "Persian" },
+            { value: "roc", label: "Taiwan (ROC)" },
+            { value: "coptic", label: "Coptic" },
+            { value: "ethiopic", label: "Ethiopic" },
+          ]}
+          icon={CalendarDays}
+        />
+
         <PropertyInput
           label="Timezone"
           value={String(currentProps.timezone || "")}

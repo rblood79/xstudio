@@ -1,120 +1,183 @@
 @layer components {
   .react-aria-DatePicker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
     color: var(--fg);
 
-    /* Accent locals */
-    --field-accent: var(--accent);
-    --field-accent-container: color-mix(
-      in srgb,
-      var(--field-accent) 15%,
-      white
-    );
-    --field-on-accent: color-mix(in srgb, var(--field-accent) 85%, black);
-    --dp-pressed-bg: var(--accent-subtle);
+    /* Accent locals (default variant) */
+    --field-accent: var(--border);
+    --field-accent-container: var(--bg-inset);
+    --field-on-accent: var(--fg-muted);
+    --dp-pressed-bg: var(--bg-muted);
 
-    /* Size locals (md default) */
-    --dp-input-padding: 8px 2.5rem 8px 14px;
-    --dp-input-size: var(--text-base);
+    /* Size locals (md default) — @sync SearchField.css padding 패턴 */
+    --dp-input-padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs)
+      var(--spacing-md);
+    --dp-input-size: var(--text-sm);
+    --dp-input-line-height: var(--text-sm--line-height);
+    --dp-gap: var(--spacing-xs);
     --dp-btn-width: var(--text-xl);
     --dp-btn-height: var(--text-xl);
-    --dp-btn-margin: calc(var(--text-2xl) * -1);
     --dp-hint-size: var(--text-xs);
+    --dp-segment-size: var(--text-sm);
 
     /* ===== Variant ===== */
-    &[data-variant="secondary"] {
-      --field-accent: var(--bg-inset);
-    }
-    &[data-variant="tertiary"] {
-      --field-accent: var(--color-purple-600);
-    }
-    &[data-variant="error"] {
-      --field-accent: var(--negative);
-    }
-    &[data-variant="filled"] {
-      --field-accent-container: var(--accent-subtle);
-      --field-on-accent: var(--fg);
-      --dp-pressed-bg: var(--bg-overlay);
-    }
-
-    /* Pressed bg for non-filled variants */
-    &[data-variant="primary"] {
+    &[data-variant="accent"] {
+      --field-accent: var(--accent);
+      --field-accent-container: color-mix(in srgb, var(--accent) 15%, white);
+      --field-on-accent: color-mix(in srgb, var(--accent) 85%, black);
       --dp-pressed-bg: color-mix(
         in srgb,
-        var(--field-accent) 12%,
-        var(--field-accent-container)
-      );
-    }
-    &[data-variant="secondary"] {
-      --dp-pressed-bg: color-mix(
-        in srgb,
-        var(--field-accent) 12%,
-        var(--field-accent-container)
-      );
-    }
-    &[data-variant="tertiary"] {
-      --dp-pressed-bg: color-mix(
-        in srgb,
-        var(--field-accent) 12%,
-        var(--field-accent-container)
-      );
-    }
-    &[data-variant="error"] {
-      --dp-pressed-bg: color-mix(
-        in srgb,
-        var(--field-accent) 12%,
+        var(--accent) 12%,
         var(--field-accent-container)
       );
     }
 
     /* ===== Size ===== */
     &[data-size="sm"] {
-      --dp-input-padding: 4px 2rem 4px 10px;
-      --dp-input-size: var(--text-sm);
+      --dp-input-padding: var(--spacing-2xs) var(--spacing-2xs)
+        var(--spacing-2xs) var(--spacing-sm);
+      --dp-input-size: var(--text-xs);
+      --dp-input-line-height: var(--text-xs--line-height);
+      --dp-gap: var(--spacing-xs);
       --dp-btn-width: var(--text-base);
       --dp-btn-height: var(--text-base);
-      --dp-btn-margin: calc(var(--text-xl) * -1);
       --dp-hint-size: var(--text-xs);
+      --dp-segment-size: var(--text-xs);
     }
     &[data-size="md"] {
-      --dp-input-padding: 8px 2.5rem 8px 14px;
-      --dp-input-size: var(--text-base);
+      --dp-input-padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs)
+        var(--spacing-md);
+      --dp-input-size: var(--text-sm);
+      --dp-input-line-height: var(--text-sm--line-height);
+      --dp-gap: var(--spacing-xs);
       --dp-btn-width: var(--text-xl);
       --dp-btn-height: var(--text-xl);
-      --dp-btn-margin: calc(var(--text-2xl) * -1);
       --dp-hint-size: var(--text-xs);
+      --dp-segment-size: var(--text-sm);
     }
     &[data-size="lg"] {
-      --dp-input-padding: 6px 3rem 6px 10px;
+      --dp-input-padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm)
+        var(--spacing-lg);
       --dp-input-size: var(--text-base);
+      --dp-input-line-height: var(--text-base--line-height);
+      --dp-gap: var(--spacing-xs);
       --dp-btn-width: var(--text-2xl);
       --dp-btn-height: var(--text-2xl);
-      --dp-btn-margin: calc(var(--text-3xl) * -1);
       --dp-hint-size: var(--text-sm);
+      --dp-segment-size: var(--text-base);
     }
 
-    /* ===== Structure ===== */
+    /* ===== Group Container (@sync SearchField .searchfield-container) ===== */
     .react-aria-Group {
       display: flex;
-      width: fit-content;
       align-items: center;
-    }
-
-    .react-aria-DateInput {
+      width: 100%;
+      gap: var(--dp-gap);
       padding: var(--dp-input-padding);
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius);
+      background: var(--bg-inset);
+      color: var(--fg);
+      white-space: nowrap;
+      forced-color-adjust: none;
       font-size: var(--dp-input-size);
+      line-height: var(--dp-input-line-height);
+      transition:
+        border-color 200ms ease,
+        background-color 200ms ease;
+      cursor: text;
+
+      &[data-hovered] {
+        border-color: var(--border-hover);
+        background: var(--bg-overlay);
+      }
+
+      &[data-focus-within] {
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+        border-color: var(--accent);
+        background: var(--bg-overlay);
+      }
+
+      &[data-invalid] {
+        border-color: var(--negative);
+      }
+
+      &[data-disabled] {
+        opacity: 0.38;
+        cursor: not-allowed;
+        background: var(--bg-muted);
+      }
     }
 
-    /* ===== Calendar Button ===== */
-    &[data-variant="primary"] .react-aria-Button,
-    &[data-variant="secondary"] .react-aria-Button,
-    &[data-variant="tertiary"] .react-aria-Button,
-    &[data-variant="error"] .react-aria-Button,
-    &[data-variant="filled"] .react-aria-Button {
-      background: var(--field-accent-container);
-      color: var(--field-on-accent);
+    /* ===== DateInput (Group 내부 — border/bg 제거, SearchField .react-aria-Input 패턴) ===== */
+    .react-aria-DateInput {
+      display: inline-flex;
+      flex: 1;
+      min-width: 0;
+      padding: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--fg);
+      font-size: var(--dp-input-size);
+      white-space: nowrap;
+    }
+
+    /* ===== Date Segments — @sync DateField.css ===== */
+    .react-aria-DateSegment {
+      padding: 0 2px;
+      border: none;
+      background: transparent;
+      height: auto;
+      font-variant-numeric: tabular-nums;
+      text-align: end;
+      color: var(--fg);
+      border-radius: var(--radius-xs);
+      font-size: var(--dp-segment-size);
+      transition: all 150ms ease;
+
+      &[data-type="literal"] {
+        padding: 0;
+      }
+
+      &[data-placeholder] {
+        color: var(--fg-muted);
+        font-style: italic;
+        opacity: 0.6;
+      }
+
+      &:focus {
+        color: var(--fg);
+        background: var(--accent-subtle);
+        outline: none;
+        border-radius: var(--radius-xs);
+        caret-color: transparent;
+      }
+
+      &[data-invalid] {
+        color: var(--negative);
+
+        &:focus {
+          background: color-mix(in srgb, var(--negative) 15%, transparent);
+          color: var(--negative);
+        }
+      }
+
+      &[data-disabled] {
+        color: color-mix(in srgb, var(--fg) 38%, transparent);
+        cursor: not-allowed;
+      }
+    }
+
+    /* ===== Calendar Button (@sync SearchField .react-aria-Button) ===== */
+    .react-aria-Button {
+      background: transparent;
+      color: var(--fg-muted);
       forced-color-adjust: none;
       border: none;
-      margin-left: var(--dp-btn-margin);
       width: var(--dp-btn-width);
       height: var(--dp-btn-height);
       padding: 0;

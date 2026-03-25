@@ -1,5 +1,5 @@
 @layer components {
-  /* RangeCalendar-specific styles (공통 스타일은 CalendarCommon.css) */
+  /* RangeCalendar-specific styles (공통 구조는 CalendarCommon.css) */
   .react-aria-RangeCalendar {
     .react-aria-CalendarCell {
       &[data-focus-visible] {
@@ -7,9 +7,15 @@
         outline-offset: -2px;
       }
 
-      /* Range selection overrides */
+      /* Range selection: 선택된 범위 전체 배경 */
       &[data-selected] {
-        border-radius: 0; /* Override for continuous range */
+        background: var(--accent);
+        color: var(--fg-on-accent);
+        border-radius: 0; /* 연속 범위를 위해 radius 제거 */
+
+        &[data-hovered] {
+          background: color-mix(in srgb, var(--accent) 85%, black);
+        }
 
         &[data-focus-visible] {
           outline-color: var(--fg-on-accent);
@@ -17,15 +23,99 @@
         }
       }
 
+      /* 범위 시작: 왼쪽만 둥글게 */
       &[data-selection-start] {
-        border-start-start-radius: 0px;
-        border-end-start-radius: 0px;
+        border-start-start-radius: var(--radius-full);
+        border-end-start-radius: var(--radius-full);
       }
 
+      /* 범위 끝: 오른쪽만 둥글게 */
       &[data-selection-end] {
-        border-start-end-radius: 0px;
-        border-end-end-radius: 0px;
+        border-start-end-radius: var(--radius-full);
+        border-end-end-radius: var(--radius-full);
       }
+
+      /* 시작 = 끝(단일 날짜 선택): 전체 둥글게 */
+      &[data-selection-start][data-selection-end] {
+        border-radius: var(--radius-full);
+      }
+    }
+  }
+
+  /* ========== Size-Responsive Inner Elements ========== */
+
+  /* --- sm --- */
+  .react-aria-RangeCalendar[data-size="sm"] {
+    header .react-aria-Heading {
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-Button {
+      width: calc(var(--text-2xl) + var(--spacing-xs));
+      height: var(--text-2xl);
+    }
+
+    .react-aria-CalendarGridHeader th {
+      font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
+      height: var(--text-2xl);
+    }
+
+    .react-aria-CalendarGridBody td .react-aria-CalendarCell {
+      width: var(--text-2xl);
+      height: var(--text-2xl);
+      line-height: var(--text-xs--line-height);
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* --- md --- */
+  .react-aria-RangeCalendar[data-size="md"] {
+    header .react-aria-Heading {
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-Button {
+      width: calc(var(--text-3xl) + var(--spacing-xs));
+      height: var(--text-3xl);
+    }
+
+    .react-aria-CalendarGridHeader th {
+      font-size: var(--text-sm);
+      line-height: var(--text-sm--line-height);
+      height: var(--text-3xl);
+    }
+
+    .react-aria-CalendarGridBody td .react-aria-CalendarCell {
+      width: var(--text-3xl);
+      height: var(--text-3xl);
+      line-height: var(--text-sm--line-height);
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* --- lg --- */
+  .react-aria-RangeCalendar[data-size="lg"] {
+    header .react-aria-Heading {
+      font-size: var(--text-base);
+    }
+
+    .react-aria-Button {
+      width: calc(var(--text-4xl) + var(--spacing-xs));
+      height: var(--text-4xl);
+    }
+
+    .react-aria-CalendarGridHeader th {
+      font-size: var(--text-base);
+      line-height: var(--text-base--line-height);
+      height: var(--text-4xl);
+    }
+
+    .react-aria-CalendarGridBody td .react-aria-CalendarCell {
+      width: var(--text-4xl);
+      height: var(--text-4xl);
+      line-height: var(--text-base--line-height);
+      font-size: var(--text-base);
     }
   }
 }

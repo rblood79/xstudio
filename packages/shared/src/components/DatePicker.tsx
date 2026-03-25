@@ -12,6 +12,7 @@ import {
   FieldError,
   Group,
   Heading,
+  I18nProvider,
   Label,
   Popover,
   Text,
@@ -20,7 +21,11 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { safeParseDateString } from "../utils/core/dateUtils";
 import type { ComponentSize } from "../types";
@@ -29,24 +34,12 @@ import { renderNecessityIndicator } from "./Field";
 
 import "./styles/DatePicker.css";
 
-/**
- * 🚀 Phase 4: data-* 패턴 전환
- * - tailwind-variants 제거
- * - data-variant, data-size 속성 사용
- */
-
 export interface DatePickerProps<
   T extends DateValue,
 > extends AriaDatePickerProps<T> {
-  /**
-   * M3 variant
-   * @default 'primary'
-   */
-  variant?: string;
-  /**
-   * Size variant
-   * @default 'md'
-   */
+  /** @default 'default' */
+  variant?: "default" | "accent";
+  /** @default 'md' */
   size?: ComponentSize;
   label?: string;
   description?: string;
@@ -93,30 +86,14 @@ export interface DatePickerProps<
   firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  /** BCP 47 locale (e.g. "ko-KR", "en-US") */
+  locale?: string;
+  /** Unicode calendar identifier (e.g. "buddhist", "japanese") */
+  calendarSystem?: string;
 }
 
-/**
- * DatePicker Component with Material Design 3 support
- *
- * M3 Features:
- * - 5 variants: primary, secondary, tertiary, error, filled
- * - 3 sizes: sm, md, lg
- * - M3 color tokens for consistent theming
- *
- * Features:
- * - Date input with calendar popup
- * - Optional time selection
- * - Min/max date constraints
- * - Timezone support
- * - Default to today option
- * - Error message display
- *
- * @example
- * <DatePicker variant="primary" size="md" label="Select Date" />
- * <DatePicker variant="error" includeTime timeFormat="12h" />
- */
 export function DatePicker<T extends DateValue>({
-  variant = "primary",
+  variant = "default",
   size = "md",
   label,
   description,
@@ -138,6 +115,8 @@ export function DatePicker<T extends DateValue>({
   maxDate,
   necessityIndicator,
   labelPosition = "top",
+  locale,
+  calendarSystem,
   ...props
 }: DatePickerProps<T>) {
   // 타임존 설정 (명시하지 않으면 로컬 타임존 사용)
@@ -169,7 +148,11 @@ export function DatePicker<T extends DateValue>({
         : "react-aria-DatePicker",
   );
 
-  return (
+  const effectiveLocale = calendarSystem
+    ? `${locale || navigator.language}-u-ca-${calendarSystem}`
+    : locale;
+
+  const component = (
     <AriaDatePicker
       {...props}
       className={datePickerClassName}
@@ -203,7 +186,7 @@ export function DatePicker<T extends DateValue>({
         </DateInput>
         {showCalendarIcon && calendarIconPosition === "right" && (
           <Button>
-            <ChevronDown size={16} />
+            <CalendarIcon size={16} />
           </Button>
         )}
         {allowClear && props.value && (
@@ -261,4 +244,9 @@ export function DatePicker<T extends DateValue>({
       </Popover>
     </AriaDatePicker>
   );
+
+  if (effectiveLocale) {
+    return <I18nProvider locale={effectiveLocale}>{component}</I18nProvider>;
+  }
+  return component;
 }

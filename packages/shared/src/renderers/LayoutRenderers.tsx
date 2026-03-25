@@ -17,6 +17,7 @@ import {
   Breadcrumb,
   Group,
   Skeleton,
+  RangeCalendar,
 } from "../components/list";
 import { Slot } from "../components/Slot";
 import { getIconData } from "@xstudio/specs";
@@ -1638,61 +1639,49 @@ export const renderRangeCalendar = (
   element: PreviewElement,
   context: RenderContext,
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
+  const { updateElementProps } = context;
 
-  const children = elements
-    .filter((child) => child.parent_id === element.id)
-    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  const locale = element.props.locale as string | undefined;
+  const calendarSystem = element.props.calendarSystem as string | undefined;
+  const visibleMonths = Number(element.props.visibleMonths) || 1;
+  const size = element.props.size as string | undefined;
+  const variant = element.props.variant as string | undefined;
+  // locale/calendarSystem/size 변경 시 리마운트
+  const remountKey = `${element.id}-${locale || ""}-${calendarSystem || ""}-${size || ""}`;
 
   return (
-    <div
-      key={element.id}
+    <RangeCalendar
+      key={remountKey}
+      id={element.customId}
       data-element-id={element.id}
-      data-custom-id={element.customId}
-      role="group"
-      aria-label="Range Calendar"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        padding: "16px",
-        border: "1px solid var(--border, #d1d5db)",
-        borderRadius: "8px",
-        backgroundColor: "var(--bg-overlay, #fff)",
-        ...element.props.style,
-      }}
+      style={element.props.style}
       className={element.props.className}
-    >
-      <div
-        style={{ textAlign: "center", fontWeight: 600, marginBottom: "8px" }}
-      >
-        Range Calendar
-      </div>
-      {children.length > 0 ? (
-        children.map((child) => renderElement(child, child.id))
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
-            gap: "2px",
-            fontSize: "12px",
-            textAlign: "center",
-            color: "var(--fg-muted, #6b7280)",
-          }}
-        >
-          {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-            <span key={i} style={{ padding: "4px", fontWeight: 500 }}>
-              {d}
-            </span>
-          ))}
-          {Array.from({ length: 30 }, (_, i) => (
-            <span key={`d${i}`} style={{ padding: "4px" }}>
-              {i + 1}
-            </span>
-          ))}
-        </div>
+      variant={(variant as "default" | "accent") || "default"}
+      size={(size as "sm" | "md" | "lg") || "md"}
+      locale={locale}
+      calendarSystem={calendarSystem}
+      aria-label={
+        typeof element.props["aria-label"] === "string"
+          ? element.props["aria-label"]
+          : "Range Calendar"
+      }
+      isDisabled={Boolean(element.props.isDisabled)}
+      isReadOnly={Boolean(element.props.isReadOnly)}
+      visibleMonths={visibleMonths}
+      allowsNonContiguousRanges={Boolean(
+        element.props.allowsNonContiguousRanges,
       )}
-    </div>
+      minDate={element.props.minDate as string | undefined}
+      maxDate={element.props.maxDate as string | undefined}
+      onChange={(dateRange) => {
+        const updatedProps = {
+          ...element.props,
+          value: dateRange,
+        };
+        updateElementProps(element.id, updatedProps);
+      }}
+      errorMessage={String(element.props.errorMessage || "")}
+    />
   );
 };
 
