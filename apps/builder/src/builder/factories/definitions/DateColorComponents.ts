@@ -40,6 +40,7 @@ export function createDatePickerDefinition(
     parent: {
       tag: "DatePicker",
       props: {
+        label: "Date Picker",
         variant: "default",
         size: "md",
         defaultToday: true,
@@ -54,7 +55,7 @@ export function createDatePickerDefinition(
       {
         tag: "Label",
         props: {
-          children: "Date",
+          children: "Date Picker",
           variant: "default",
           style: {
             width: "fit-content",
@@ -141,6 +142,7 @@ export function createDateRangePickerDefinition(
     parent: {
       tag: "DateRangePicker",
       props: {
+        label: "Date Range",
         variant: "default",
         size: "md",
         isDisabled: false,
@@ -151,6 +153,20 @@ export function createDateRangePickerDefinition(
       order_num: orderNum,
     },
     children: [
+      {
+        tag: "Label",
+        props: {
+          children: "Date Range",
+          variant: "default",
+          style: {
+            width: "fit-content",
+            height: "fit-content",
+            fontWeight: 500,
+          },
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 0,
+      },
       {
         tag: "DateField",
         props: {
@@ -279,7 +295,7 @@ export function createDateFieldDefinition(
     parent: {
       tag: "DateField",
       props: {
-        label: "Date",
+        label: "Date Field",
         size: "md",
         isDisabled: false,
         isReadOnly: false,
@@ -296,7 +312,7 @@ export function createDateFieldDefinition(
       {
         tag: "Label",
         props: {
-          children: "Date",
+          children: "Date Field",
           variant: "default",
           style: {
             fontWeight: 500,

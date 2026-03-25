@@ -1298,8 +1298,12 @@ export function applyImplicitStyles(
   }
 
   // ── Card ────────────────────────────────────────────────────────────
-  // ── DatePicker / DateRangePicker — flex column + gap ─────
+  // ── DatePicker / DateRangePicker — flex column + gap + Label 필터링 ─────
   if (containerTag === "datepicker" || containerTag === "daterangepicker") {
+    const hasLabel = !!containerProps?.label;
+    filteredChildren = children.filter((c) =>
+      c.tag === "Label" ? hasLabel : true,
+    );
     const ps = parentStyle;
     effectiveParent = {
       ...effectiveParent,

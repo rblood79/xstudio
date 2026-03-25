@@ -151,14 +151,6 @@ export const DatePickerEditor = memo(function DatePickerEditor({
 
       {/* State Section */}
       <PropertySection title="State">
-        <PropertyInput
-          label="Timezone"
-          value={String(currentProps.timezone || "")}
-          onChange={(value) => updateProp("timezone", value || undefined)}
-          placeholder="Asia/Seoul"
-          icon={Globe}
-        />
-
         <PropertySwitch
           label="Default to Today"
           isSelected={Boolean(currentProps.defaultToday)}
