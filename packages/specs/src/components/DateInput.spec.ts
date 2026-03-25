@@ -13,8 +13,8 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 export interface DateInputProps {
   variant?: "default" | "accent" | "negative";
   size?: "S" | "M" | "L";
-  /** 부모 DateField/TimeField에서 주입 */
-  _parentTag?: "DateField" | "TimeField";
+  /** 부모에서 주입 */
+  _parentTag?: "DateField" | "TimeField" | "DatePicker" | "DateRangePicker";
   _granularity?: string;
   _hourCycle?: number;
   _locale?: string;
@@ -36,6 +36,14 @@ const INPUT_PADDING_X: Record<string, number> = {
   md: 12,
   lg: 16,
   xl: 24,
+};
+/** Picker용 padding-right = paddingY (비대칭 패턴: right = top) */
+const INPUT_PADDING_Y: Record<string, number> = {
+  xs: 1,
+  sm: 2,
+  md: 4,
+  lg: 8,
+  xl: 12,
 };
 const INPUT_BORDER_RADIUS: Record<string, number> = {
   xs: 4,
@@ -218,10 +226,26 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
       const textColor = props.style?.color ?? variant.text;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
+      const isPickerInput =
+        parentTag === "DatePicker" || parentTag === "DateRangePicker";
+
       const displayText =
         parentTag === "TimeField"
           ? buildTimeText(granularity, hourCycle)
-          : buildDateText(granularity, locale, hourCycle);
+          : parentTag === "DateRangePicker"
+            ? buildDateText("day", locale) +
+              " – " +
+              buildDateText("day", locale)
+            : buildDateText(granularity, locale, hourCycle);
+
+      // Picker: 우측 캘린더 아이콘 영역 (padding-right = paddingY 패턴)
+      const padRight = isPickerInput
+        ? (INPUT_PADDING_Y[sizeName] ?? INPUT_PADDING_Y.md)
+        : paddingX;
+      const iconSz = isPickerInput
+        ? ({ xs: 10, sm: 14, md: 16, lg: 20, xl: 22 }[sizeName] ?? 16)
+        : 0;
+      const gap = isPickerInput ? 4 : 0;
 
       const shapes: Shape[] = [
         {
@@ -252,8 +276,25 @@ export const DateInputSpec: ComponentSpec<DateInputProps> = {
           fill: textColor,
           align: "left" as const,
           baseline: "middle" as const,
+          maxWidth: isPickerInput
+            ? containerWidth - paddingX - iconSz - gap - padRight
+            : undefined,
         },
       ];
+
+      // Picker: 캘린더 아이콘
+      if (isPickerInput) {
+        const btnX = containerWidth - padRight - iconSz / 2 - 4;
+        shapes.push({
+          type: "icon_font" as const,
+          iconName: "calendar",
+          x: btnX,
+          y: inputHeight / 2,
+          fontSize: iconSz,
+          fill: "{color.neutral-subdued}" as TokenRef,
+          strokeWidth: 2,
+        });
+      }
 
       return shapes;
     },

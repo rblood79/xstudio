@@ -146,6 +146,9 @@ export interface TextShape {
 
   /** 줄 수 제한 (multiline 텍스트) */
   maxLines?: number;
+
+  /** 줄바꿈 제어 — "nowrap"이면 다중 줄 보정 로직 우회 */
+  whiteSpace?: "normal" | "nowrap" | "pre";
 }
 
 /**

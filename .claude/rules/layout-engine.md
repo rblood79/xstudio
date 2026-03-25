@@ -48,13 +48,27 @@ globs:
 ## Label size delegation (DFS 진입 시 주입)
 
 - Label DFS 진입 시 조상 탐색으로 `fontSize`/`lineHeight` 인라인 주입 (`fullTreeLayout.ts`)
+- **주입 조건 (CRITICAL)**: `labelStyle.lineHeight == null` 기준으로 주입 여부 결정
+  - `fontSize == null` 조건 사용 금지 — factory에서 `fontSize: 14`를 미리 지정한 경우 fontSize 조건은 통과하지 못해 lineHeight 주입이 스킵됨
+  - lineHeight 미주입 시 `fontSize * 1.5` fallback 적용 → CSS Preview(`--text-sm--line-height` = 20px)와 불일치
+  - 동일 이유로 `getChildElements` 래퍼의 스킵 조건도 `cs.lineHeight != null` 기준 사용 (`cs.fontSize != null` 금지)
+- **batch height override**: `Math.ceil(childFs * 1.5)` 대신 LABEL_SIZE_STYLE lineHeight 역참조 필수
+  - `fullTreeLayout.ts:1078` — LABEL_SIZE_STYLE에서 size별 lineHeight 값을 읽어 override (CSS Preview 정합성)
 - **`lastDelegationAncestor` 패턴**: 최초 발견된 DELEGATION 부모를 기억하고, 상위에 size 소유자가 있으면 갱신
   - standalone Checkbox(size 없음) → `lastDelegationAncestor = Checkbox` → 기본값 "md"
   - CheckboxGroup 내 → Checkbox(래퍼) → CheckboxItems(래퍼) → CheckboxGroup(size 소유) → 해당 size 사용
 - **LABEL_WRAPPER_TAGS**: `Checkbox, Radio, CheckboxItems, RadioItems` — size 없이 상위로 통과
-- **LABEL_DELEGATION_PARENT_TAGS**: 모든 size-delegation 컨테이너 (18개)
+- **LABEL_DELEGATION_PARENT_TAGS**: 모든 size-delegation 컨테이너 — DatePicker, DateRangePicker 포함 필수
+  - 누락 시 Label height가 24px(fallback fontSize=16 × 1.5)로 오계산
 - **LABEL_SIZE_STYLE**: LabelSpec 단일 소스 xs~xl 매핑 (fontSize + lineHeight "px" 단위)
 - lineHeight는 반드시 `"20px"` 문자열로 전달 (숫자는 `parseLineHeight`가 배율로 해석)
+
+## Select/ComboBox 부모 높이 추정 (utils.ts)
+
+- Select/ComboBox의 부모 높이 추정 시 `parseLineHeight` 우선 사용 → `Math.ceil(fontSize * 1.5)` fallback 금지
+  - `utils.ts`의 `effectiveHeight` 계산: `parseLineHeight(lineHeight, fontSize)` 값이 있으면 우선 적용
+  - `lineHeight`가 null이면 `Math.ceil(fontSize * 1.5)` fallback (기존 동작 유지)
+  - 목적: LabelSpec lineHeight가 CSS `--text-sm--line-height`(20px)와 일치하도록 보장
 
 ## Checkbox/Radio → CheckboxGroup/RadioGroup size 주입 (DFS)
 

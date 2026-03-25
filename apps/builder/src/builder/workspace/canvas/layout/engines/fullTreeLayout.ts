@@ -786,6 +786,8 @@ function traversePostOrder(
     "Slider",
     "ProgressBar",
     "Meter",
+    "DatePicker",
+    "DateRangePicker",
   ]);
   const LABEL_SIZE_STYLE: Record<
     string,
@@ -807,7 +809,9 @@ function traversePostOrder(
   if (rawElement.tag === "Label") {
     const rawProps = rawElement.props as Record<string, unknown> | undefined;
     const labelStyle = (rawProps?.style || {}) as Record<string, unknown>;
-    if (labelStyle.fontSize == null && rawElement.parent_id) {
+    // lineHeight 미설정 시 주입 (factory가 fontSize만 설정하고 lineHeight를 누락한 경우 포함)
+    // CSS Preview 정합성: --text-sm--line-height 등과 동일한 lineHeight 보장
+    if (labelStyle.lineHeight == null && rawElement.parent_id) {
       // 부모 → 조상 탐색: 마지막으로 만난 delegation 부모를 기억
       let ancestor = elementsMap.get(rawElement.parent_id);
       let ancestorSize: string | undefined;
@@ -1070,12 +1074,19 @@ function traversePostOrder(
     // fontSize가 implicitStyles에서 새로 주입된 경우, height 재계산
     // DFS post-order에서 자식은 부모보다 먼저 enrichment되므로
     // fontSize 없이 계산된 height(fallback 16→24)를 올바른 값으로 교정
+    // LabelSpec lineHeight 사용: CSS Preview(--text-sm--line-height 등)와 정합성 보장
     if (modStyle.fontSize != null && modStyle.fontSize !== origStyle.fontSize) {
       const childFs =
         typeof modStyle.fontSize === "number"
           ? modStyle.fontSize
           : parseFloat(String(modStyle.fontSize)) || 16;
-      const correctedHeight = Math.ceil(childFs * 1.5);
+      // LABEL_SIZE_STYLE의 lineHeight를 역참조 (fontSize → lineHeight)
+      const labelEntry = Object.values(LABEL_SIZE_STYLE).find(
+        (e) => e.fontSize === childFs,
+      );
+      const correctedHeight = labelEntry
+        ? parseFloat(labelEntry.lineHeight)
+        : Math.ceil(childFs * 1.5);
       batch[batchIdx].style.height = `${correctedHeight}px`;
     }
   }
@@ -1210,6 +1221,8 @@ function traversePostOrder(
     "slider",
     "progressbar",
     "meter",
+    "datepicker",
+    "daterangepicker",
   ]);
   if (LABEL_SIZE_DELEGATION_CONTAINERS.has(containerTag)) {
     const parentSize =
@@ -1236,7 +1249,7 @@ function traversePostOrder(
           return children.map((child) => {
             if (child.tag !== "Label") return child;
             const cs = (child.props?.style || {}) as Record<string, unknown>;
-            if (cs.fontSize != null) return child; // 인라인 fontSize가 이미 있으면 스킵
+            if (cs.lineHeight != null) return child; // 인라인 lineHeight가 이미 있으면 스킵
             return {
               ...child,
               props: {

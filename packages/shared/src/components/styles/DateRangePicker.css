@@ -142,7 +142,6 @@
 
       &[data-placeholder] {
         color: var(--fg-muted);
-        font-style: italic;
         opacity: 0.6;
       }
 

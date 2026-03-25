@@ -166,6 +166,23 @@ Spec 기반 컴포넌트(Button, Badge 등)의 텍스트 폭 측정 시 `extract
 - Spec text 중앙 배치: `x: 0, y: 0` + `align: "center"` + `baseline: "middle"` 사용
   - `x: cx, y: cy` 사용 시 specShapeConverter가 paddingLeft/maxWidth를 오계산하여 텍스트 치우침
 
+## CalendarGrid/CalendarHeader 다중 줄 보정 스킵 (CRITICAL)
+
+ElementSprite의 다중 줄 텍스트 paddingTop 보정 로직은 `baseline: "middle" + y > 0` (절대 좌표 배치) 텍스트에 간섭하여 Y 위치를 이탈시킨다.
+
+- **`isCalendarText` 체크**: CalendarGrid/CalendarHeader 태그는 다중 줄 보정 블록에서 스킵
+- **`isNowrapTag`에 추가 금지**: `child.text.whiteSpace = "nowrap"` 설정 시 `align: "center"` 정렬 깨짐
+- CalendarGrid/CalendarHeader의 `skipCSSGeneration: true` 필수 — Generated CSS의 `display: grid` + `border`가 Taffy 레이아웃 방해
+
+```typescript
+// ElementSprite.tsx — 다중 줄 보정 블록
+const isCalendarText =
+  element.tag === "CalendarGrid" || element.tag === "CalendarHeader";
+if (!isCalendarText && ws !== "nowrap" && ws !== "pre") {
+  /* 보정 로직 */
+}
+```
+
 ## Compositional Component Size Delegation (Skia 경로)
 
 - Select/ComboBox 등 합성 컴포넌트에서 **부모의 size prop을 자식이 직접 참조** 필수
@@ -201,9 +218,13 @@ Label은 `TEXT_TAGS`에서 제외되어 TextSprite 경로가 아닌 **spec shape
 - **LabelSpec sizes**: xs=10(text-2xs), sm=12(text-xs), md=14(text-sm), lg=16(text-base), xl=18(text-lg)
 - **CSS**: 부모가 `--label-font-size` 변수 설정 → Label이 `var(--label-font-size)` 상속
 - **Layout DFS**: `fullTreeLayout.ts` — Label DFS 진입 시 조상 탐색으로 `fontSize`/`lineHeight` 인라인 주입
+  - **주입 조건 (CRITICAL)**: `labelStyle.lineHeight == null` 기준으로 주입 여부 결정
+  - `fontSize == null` 조건 사용 금지 — factory에서 `fontSize: 14`를 미리 지정한 경우 lineHeight 주입이 스킵되어 `fontSize * 1.5 = 21px` fallback 적용 → CSS Preview(20px)와 불일치
+  - CSS 근거: `--text-sm` = 14px, `--text-sm--line-height` = calc(1.25/0.875) = 1.42857 → 14 × 1.42857 = 20px
 - **Skia**: `ElementSprite.tsx` — `parentDelegatedSize` → `specProps.size` 주입 → LabelSpec shapes
 - **조상 탐색 패턴**: Label → Checkbox(래퍼) → CheckboxItems(래퍼) → CheckboxGroup(size 소유자)
   - `lastDelegationAncestor` 패턴으로 size 없는 standalone 부모도 기본값 "md" 적용
+- **LABEL_DELEGATION_PARENT_TAGS**: DatePicker, DateRangePicker 포함 필수 — 누락 시 Label height가 24px(fallback fontSize=16)로 오계산
 - **`--text-md` CSS 변수 없음**: Spec의 `{typography.text-md}` → CSS는 `var(--text-base)` 사용 필수
   - `tokenToCSSVar()`에서 `text-md` → `text-base` 자동 매핑
 
@@ -222,6 +243,8 @@ Label은 `TEXT_TAGS`에서 제외되어 TextSprite 경로가 아닌 **spec shape
 - Label generated CSS 부활 금지 → `skipCSSGeneration: true` 유지 (부모 `--label-font-size` 상속 필수)
 - CSS에 `var(--text-md)` 사용 금지 → `var(--text-base)` 사용 (--text-md CSS 변수 미정의)
 - Label lineHeight를 숫자로 전달 금지 → `"20px"` 문자열 필수 (`parseLineHeight`가 숫자를 배율로 해석)
+- DFS injection 조건에 `labelStyle.fontSize == null` 사용 금지 → `labelStyle.lineHeight == null` 필수 (factory가 fontSize 미리 설정 가능)
+- Label height 계산에 `Math.ceil(fontSize * 1.5)` 사용 금지 → LABEL_SIZE_STYLE lineHeight 역참조 필수
 
 ## registryVersion 캐싱
 

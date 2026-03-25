@@ -1854,6 +1854,20 @@ export function calculateContentHeight(
     return headerHeights[sizeName] ?? 30;
   }
 
+  // DateInput: intrinsic height (@sync DateInput.spec.ts INPUT_HEIGHT)
+  if (tag === "dateinput") {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? "md";
+    const inputHeights: Record<string, number> = {
+      xs: 20,
+      sm: 22,
+      md: 30,
+      lg: 42,
+      xl: 54,
+    };
+    return inputHeights[sizeName] ?? 30;
+  }
+
   // CalendarGrid: intrinsic height = weekdayRow + dateRows
   if (tag === "calendargrid") {
     const props = element.props as Record<string, unknown> | undefined;
@@ -1971,14 +1985,19 @@ export function calculateContentHeight(
           childTag === "description" ||
           childTag === "fielderror"
         ) {
-          // 텍스트 자식: explicit height 우선, 없으면 fontSize * lineHeight
+          // 텍스트 자식: explicit height 우선, 없으면 lineHeight, fallback fontSize * 1.5
+          // CSS Preview 정합성: LabelSpec lineHeight(--text-sm--line-height 등) 우선 사용
           const explicitH = parseNumericValue(childStyle.height);
           if (explicitH != null && explicitH > 0) {
             childH = explicitH;
           } else {
             const fontSize =
               parseFloat(String(childStyle.fontSize ?? 14)) || 14;
-            childH = Math.ceil(fontSize * 1.5);
+            const lh = parseLineHeight(
+              childStyle as Record<string, unknown>,
+              fontSize,
+            );
+            childH = lh != null ? Math.ceil(lh) : Math.ceil(fontSize * 1.5);
           }
         } else {
           // 기타 자식: explicit height 또는 텍스트 기반

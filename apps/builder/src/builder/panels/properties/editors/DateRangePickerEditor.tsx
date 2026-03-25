@@ -38,10 +38,19 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
   }, [elementId]);
 
   const updateProp = (key: string, value: unknown) => {
-    const updatedProps = {
-      [key]: value,
-    };
-    onUpdate(updatedProps);
+    onUpdate({ [key]: value });
+
+    // 자식에 동기화 (@sync DatePickerEditor 패턴)
+    const syncKeys = new Set(["variant", "size", "locale", "calendarSystem"]);
+    if (syncKeys.has(key)) {
+      const state = useStore.getState();
+      const children = state.childrenMap.get(elementId) ?? [];
+      for (const child of children) {
+        state.updateElement(child.id, {
+          props: { ...child.props, [key]: value },
+        });
+      }
+    }
   };
 
   const updateCustomId = (newCustomId: string) => {

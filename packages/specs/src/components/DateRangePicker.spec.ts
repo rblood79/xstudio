@@ -1,121 +1,130 @@
 /**
  * DateRangePicker Component Spec
  *
- * React Aria 기반 날짜 범위 선택기 컴포넌트
- * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
- *
- * @packageDocumentation
+ * DateField 입력 패턴 (start – end) + 우측 캘린더 버튼
+ * Compositional 자식이 있으면 빈 shapes 반환 (부모 투명 컨테이너)
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
 
-/**
- * DateRangePicker Props
- */
 export interface DateRangePickerProps {
-  variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  variant?: "default" | "accent";
+  size?: "sm" | "md" | "lg";
   startDate?: string;
   endDate?: string;
   placeholder?: string;
   label?: string;
-  isOpen?: boolean;
+  locale?: string;
+  calendarSystem?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
-/**
- * DateRangePicker Component Spec
- *
- * trigger + dual calendar overlay 구조
- */
+/** @sync DatePicker.spec.ts */
+const INPUT_HEIGHT: Record<string, number> = {
+  sm: 22,
+  md: 30,
+  lg: 42,
+};
+const INPUT_PADDING: Record<
+  string,
+  { top: number; right: number; left: number }
+> = {
+  sm: { top: 2, right: 2, left: 8 },
+  md: { top: 4, right: 4, left: 12 },
+  lg: { top: 8, right: 8, left: 16 },
+};
+const INPUT_BORDER_RADIUS: Record<string, number> = {
+  sm: 6,
+  md: 8,
+  lg: 10,
+};
+const ICON_SIZE: Record<string, number> = {
+  sm: 14,
+  md: 16,
+  lg: 20,
+};
+
+/** locale 기반 range placeholder */
+function buildRangePlaceholder(locale: string): string {
+  const isAsian =
+    locale.startsWith("ko") ||
+    locale.startsWith("ja") ||
+    locale.startsWith("zh");
+  const isEuropean =
+    locale.startsWith("de") ||
+    locale.startsWith("fr") ||
+    locale.startsWith("es") ||
+    locale.startsWith("it") ||
+    locale.startsWith("pt");
+  if (isAsian) return "YYYY / MM / DD – YYYY / MM / DD";
+  if (isEuropean) return "DD / MM / YYYY – DD / MM / YYYY";
+  return "MM / DD / YYYY – MM / DD / YYYY";
+}
+
 export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
   name: "DateRangePicker",
-  description: "React Aria 기반 날짜 범위 선택기 (dual calendar overlay)",
+  description: "DateField range 입력 + 캘린더 버튼",
   element: "div",
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
-
-  overlay: {
-    usePortal: true,
-    type: "popover",
-    hasBackdrop: false,
-    closeOnBackdropClick: true,
-    closeOnEscape: true,
-    trapFocus: true,
-    pixiLayer: "overlay",
-  },
+  defaultSize: "md",
 
   variants: {
     default: {
       background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-2}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
-      borderHover: "{color.border-hover}" as TokenRef,
     },
     accent: {
       background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.layer-2}" as TokenRef,
+      backgroundPressed: "{color.layer-2}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.accent}" as TokenRef,
-      borderHover: "{color.accent-hover}" as TokenRef,
-    },
-    negative: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-1}" as TokenRef,
-      backgroundPressed: "{color.layer-1}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.negative}" as TokenRef,
-      borderHover: "{color.negative-hover}" as TokenRef,
     },
   },
 
   sizes: {
     sm: {
-      height: 32,
-      paddingX: 10,
-      paddingY: 4,
-      fontSize: "{typography.text-sm}" as TokenRef,
+      height: 22,
+      paddingX: 8,
+      paddingY: 2,
+      fontSize: "{typography.text-xs}" as TokenRef,
       borderRadius: "{radius.sm}" as TokenRef,
       iconSize: 14,
-      gap: 6,
+      gap: 4,
     },
     md: {
-      height: 40,
-      paddingX: 14,
-      paddingY: 8,
-      fontSize: "{typography.text-md}" as TokenRef,
+      height: 30,
+      paddingX: 12,
+      paddingY: 4,
+      fontSize: "{typography.text-sm}" as TokenRef,
       borderRadius: "{radius.md}" as TokenRef,
       iconSize: 16,
-      gap: 8,
+      gap: 4,
     },
     lg: {
-      height: 48,
-      paddingX: 18,
-      paddingY: 12,
-      fontSize: "{typography.text-lg}" as TokenRef,
+      height: 42,
+      paddingX: 16,
+      paddingY: 8,
+      fontSize: "{typography.text-base}" as TokenRef,
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 20,
-      gap: 10,
+      gap: 4,
     },
   },
 
   states: {
     hover: {},
     pressed: {},
-    disabled: {
-      opacity: 0.38,
-      cursor: "not-allowed",
-      pointerEvents: "none",
-    },
+    disabled: { opacity: 0.38, pointerEvents: "none" },
     focusVisible: {
       outline: "2px solid var(--accent)",
       outlineOffset: "2px",
@@ -123,167 +132,93 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, state = "default") => {
-      const width = (props.style?.width as number) || 300;
-      const height = size.height;
+    shapes: (props, variant, _size, _state = "default") => {
+      // Compositional: 자식이 있으면 투명 컨테이너
+      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
+      if (hasChildren) return [];
 
-      const styleBr = props.style?.borderRadius;
+      const sizeName = (props.size as string) || "md";
+      const inputHeight = INPUT_HEIGHT[sizeName] ?? INPUT_HEIGHT.md;
+      const pad = INPUT_PADDING[sizeName] ?? INPUT_PADDING.md;
       const borderRadius =
-        styleBr != null
-          ? typeof styleBr === "number"
-            ? styleBr
-            : parseFloat(String(styleBr)) || 0
-          : (size.borderRadius as unknown as number);
+        INPUT_BORDER_RADIUS[sizeName] ?? INPUT_BORDER_RADIUS.md;
+      const iconSz = ICON_SIZE[sizeName] ?? ICON_SIZE.md;
+      const gap = 4;
 
-      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const containerWidth =
+        ((props as Record<string, unknown>)._containerWidth as number) ||
+        (props.style?.width as number) ||
+        320;
 
-      const borderColor =
-        props.style?.borderColor ??
-        (state === "hover" && variant.borderHover
-          ? variant.borderHover
-          : variant.border);
-
-      const styleBw = props.style?.borderWidth;
-      const borderWidth =
-        styleBw != null
-          ? typeof styleBw === "number"
-            ? styleBw
-            : parseFloat(String(styleBw)) || 0
-          : 1;
-
-      const rawFontSize = props.style?.fontSize ?? size.fontSize;
+      const rawFontSize = props.style?.fontSize ?? _size.fontSize;
       const resolvedFs =
         typeof rawFontSize === "number"
           ? rawFontSize
           : typeof rawFontSize === "string" && rawFontSize.startsWith("{")
             ? resolveToken(rawFontSize as TokenRef)
             : rawFontSize;
-      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 16;
-
-      const fwRaw = props.style?.fontWeight;
-      const fontWeight =
-        fwRaw != null
-          ? typeof fwRaw === "number"
-            ? fwRaw
-            : parseInt(String(fwRaw), 10) || 400
-          : 400;
-
+      const fontSize = typeof resolvedFs === "number" ? resolvedFs : 14;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
-      const textAlign =
-        (props.style?.textAlign as "left" | "center" | "right") || "left";
-
+      const locale = props.locale || "en-US";
+      const displayText = (() => {
+        if (props.startDate && props.endDate)
+          return `${props.startDate} – ${props.endDate}`;
+        return props.placeholder || buildRangePlaceholder(locale);
+      })();
       const textColor =
         props.style?.color ??
         (props.startDate
           ? variant.text
           : ("{color.neutral-subdued}" as TokenRef));
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const borderColor = props.style?.borderColor ?? variant.border;
 
-      const stylePx =
-        props.style?.paddingLeft ??
-        props.style?.paddingRight ??
-        props.style?.padding;
-      const paddingX =
-        stylePx != null
-          ? typeof stylePx === "number"
-            ? stylePx
-            : parseFloat(String(stylePx)) || 0
-          : size.paddingX;
-
-      // 범위 표시 텍스트
-      const displayText =
-        props.startDate && props.endDate
-          ? `${props.startDate} — ${props.endDate}`
-          : props.placeholder || "Start date — End date";
+      const btnAreaWidth = iconSz + pad.right + gap;
+      const textMaxWidth = containerWidth - pad.left - btnAreaWidth;
+      const btnX = containerWidth - pad.right - iconSz;
 
       const shapes: Shape[] = [
-        // Trigger 배경
         {
-          id: "trigger",
+          id: "input-bg",
           type: "roundRect" as const,
           x: 0,
           y: 0,
-          width,
-          height,
+          width: containerWidth,
+          height: inputHeight,
           radius: borderRadius,
           fill: bgColor,
         },
-        // Trigger 테두리
         {
           type: "border" as const,
-          target: "trigger",
-          borderWidth,
-          color: borderColor ?? ("{color.border-hover}" as TokenRef),
+          target: "input-bg",
+          borderWidth: 1,
+          color: borderColor ?? ("{color.border}" as TokenRef),
           radius: borderRadius,
         },
-        // 범위 텍스트
         {
           type: "text" as const,
-          x: paddingX,
+          x: pad.left,
           y: 0,
           text: displayText,
           fontSize,
           fontFamily: ff,
-          fontWeight,
+          fontWeight: 400,
           fill: textColor,
-          align: textAlign,
+          align: "left" as const,
           baseline: "middle" as const,
+          maxWidth: textMaxWidth,
+        },
+        {
+          type: "icon_font" as const,
+          iconName: "calendar",
+          x: btnX + iconSz / 2,
+          y: inputHeight / 2,
+          fontSize: iconSz,
+          fill: "{color.neutral-subdued}" as TokenRef,
+          strokeWidth: 2,
         },
       ];
-
-      const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
-      if (hasChildren) return shapes;
-
-      // Dual calendar overlay (열린 상태)
-      if (props.isOpen) {
-        const calendarY = height + (size.gap ?? 8);
-
-        shapes.push({
-          type: "shadow" as const,
-          target: "overlay",
-          offsetX: 0,
-          offsetY: 4,
-          blur: 12,
-          spread: 0,
-          color: "rgba(0, 0, 0, 0.15)",
-          alpha: 0.15,
-        });
-
-        shapes.push({
-          id: "overlay",
-          type: "roundRect" as const,
-          x: 0,
-          y: calendarY,
-          width,
-          height: "auto",
-          radius: borderRadius,
-          fill: "{color.layer-2}" as TokenRef,
-        });
-
-        shapes.push({
-          type: "border" as const,
-          target: "overlay",
-          borderWidth: 1,
-          color: "{color.border}" as TokenRef,
-          radius: borderRadius,
-        });
-
-        // 이중 캘린더 컨테이너
-        shapes.push({
-          type: "container" as const,
-          x: 0,
-          y: calendarY,
-          width: "auto",
-          height: "auto",
-          children: [],
-          layout: {
-            display: "flex",
-            flexDirection: "row",
-            gap: size.gap,
-            padding: size.paddingY,
-          },
-        });
-      }
 
       return shapes;
     },
@@ -291,7 +226,6 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
     react: (props) => ({
       "aria-invalid": props.isInvalid || undefined,
       "data-disabled": props.isDisabled || undefined,
-      "data-open": props.isOpen || undefined,
     }),
 
     pixi: (props) => ({

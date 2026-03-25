@@ -238,6 +238,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           align: "center" as const,
           baseline: "middle" as const,
           maxWidth: cellSize,
+          whiteSpace: "nowrap" as const,
         });
       }
 
@@ -263,6 +264,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
           align: "center" as const,
           baseline: "middle" as const,
           maxWidth: cellSize,
+          whiteSpace: "nowrap" as const,
         });
 
         // today indicator dot (S2 패턴: 하단 4px 원형)

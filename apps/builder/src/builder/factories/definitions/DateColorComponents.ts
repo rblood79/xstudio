@@ -52,12 +52,27 @@ export function createDatePickerDefinition(
     },
     children: [
       {
-        tag: "DateField",
+        tag: "Label",
         props: {
-          placeholder: "YYYY-MM-DD",
+          children: "Date",
+          variant: "default",
+          style: {
+            width: "fit-content",
+            height: "fit-content",
+            fontWeight: 500,
+          },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,
+      },
+      {
+        tag: "DateInput",
+        props: {
+          _parentTag: "DatePicker",
+          size: "md",
+        } as ComponentElementProps,
+        ...ownerFields,
+        order_num: 2,
       },
       {
         tag: "Calendar",
@@ -69,7 +84,7 @@ export function createDatePickerDefinition(
           isReadOnly: false,
         } as ComponentElementProps,
         ...ownerFields,
-        order_num: 2,
+        order_num: 3,
         children: [
           {
             tag: "CalendarHeader",

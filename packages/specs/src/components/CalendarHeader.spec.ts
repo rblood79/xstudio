@@ -173,6 +173,7 @@ export const CalendarHeaderSpec: ComponentSpec<CalendarHeaderProps> = {
           align: "center" as const,
           baseline: "middle" as const,
           maxWidth: width - cellSize * 2,
+          whiteSpace: "nowrap" as const,
         },
         // 다음 화살표
         {

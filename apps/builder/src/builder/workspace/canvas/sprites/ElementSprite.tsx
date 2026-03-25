@@ -2346,8 +2346,12 @@ export const ElementSprite = memo(function ElementSprite({
                       overflow === "hidden" || overflow === "clip";
 
                     // ADR-008: nowrap/pre → 단일 줄 → paddingTop 보정 불필요
+                    // CalendarGrid/CalendarHeader: 절대 좌표 배치 → 다중 줄 보정 스킵
+                    const isCalendarText =
+                      element.tag === "CalendarGrid" ||
+                      element.tag === "CalendarHeader";
                     const ws = child.text.whiteSpace;
-                    if (ws !== "nowrap" && ws !== "pre") {
+                    if (!isCalendarText && ws !== "nowrap" && ws !== "pre") {
                       const wrappedH = measureWrappedTextHeight(
                         child.text.content,
                         child.text.fontSize,

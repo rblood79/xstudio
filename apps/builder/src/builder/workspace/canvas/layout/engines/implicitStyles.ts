@@ -1298,6 +1298,23 @@ export function applyImplicitStyles(
   }
 
   // ── Card ────────────────────────────────────────────────────────────
+  // ── DatePicker / DateRangePicker — flex column + gap ─────
+  if (containerTag === "datepicker" || containerTag === "daterangepicker") {
+    const ps = parentStyle;
+    effectiveParent = {
+      ...effectiveParent,
+      props: {
+        ...effectiveParent.props,
+        style: {
+          ...(effectiveParent.props?.style as Record<string, unknown>),
+          display: ps.display ?? "flex",
+          flexDirection: ps.flexDirection ?? "column",
+          gap: ps.gap ?? 4,
+        },
+      },
+    } as Element;
+  }
+
   // ── Calendar — padding/gap/display 주입 (Generated CSS 동기) ─────
   if (containerTag === "calendar" || containerTag === "rangecalendar") {
     const calSize = (containerEl.props?.size as string) || "md";
@@ -1326,16 +1343,22 @@ export function applyImplicitStyles(
       },
     } as Element;
 
-    // CalendarHeader/CalendarGrid 자식에 width: 100% 주입
+    // CalendarHeader/CalendarGrid 자식에 width: 100% + whiteSpace: nowrap 주입
+    // whiteSpace: nowrap → ElementSprite 다중 줄 보정 로직 우회 (폰트 메트릭 기반 Y 이탈 방지)
     filteredChildren = filteredChildren.map((child) => {
       if (child.tag === "CalendarHeader" || child.tag === "CalendarGrid") {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
-        if (!cs.width) {
-          return {
-            ...child,
-            props: { ...child.props, style: { ...cs, width: "100%" } },
-          } as Element;
-        }
+        return {
+          ...child,
+          props: {
+            ...child.props,
+            style: {
+              ...cs,
+              width: cs.width || "100%",
+              whiteSpace: "nowrap",
+            },
+          },
+        } as Element;
       }
       return child;
     });
