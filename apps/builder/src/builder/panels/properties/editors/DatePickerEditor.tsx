@@ -23,23 +23,23 @@ import {
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
-
-/** 자식에 동기화가 필요한 props (@sync CalendarEditor 패턴) */
-const SYNC_KEYS = new Set([
-  "variant",
-  "size",
-  "locale",
-  "calendarSystem",
-  "defaultToday",
-]);
+import {
+  DATE_PICKER_SYNC_KEYS,
+  syncDatePickerChildren,
+  syncLabelChild,
+  LOCALE_OPTIONS,
+  CALENDAR_SYSTEM_OPTIONS,
+  GRANULARITY_OPTIONS,
+  HOUR_CYCLE_OPTIONS,
+  PAGE_BEHAVIOR_OPTIONS,
+  VALIDATION_BEHAVIOR_OPTIONS,
+} from "./editorUtils";
 
 export const DatePickerEditor = memo(function DatePickerEditor({
   elementId,
   currentProps,
   onUpdate,
 }: PropertyEditorProps) {
-  // Get customId from element in store
-  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
   const customId = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
     return element?.customId || "";
@@ -51,52 +51,13 @@ export const DatePickerEditor = memo(function DatePickerEditor({
     const state = useStore.getState();
     const children = state.childrenMap.get(elementId) ?? [];
 
-    // label 변경 → Label 자식의 children 동기화
-    if (key === "label") {
-      const labelChild = children.find((c) => c.tag === "Label");
-      if (labelChild) {
-        // childrenMap의 props는 stale → elementsMap에서 최신 조회
-        const freshProps =
-          state.elementsMap.get(labelChild.id)?.props ?? labelChild.props;
-        state.updateElement(labelChild.id, {
-          props: { ...freshProps, children: value },
-        });
-      }
-    }
-
-    if (SYNC_KEYS.has(key)) {
-      const syncChildren = (kids: typeof children) => {
-        for (const child of kids) {
-          // defaultToday는 CalendarGrid에만 적용
-          if (key === "defaultToday" && child.tag !== "CalendarGrid") {
-            const grandChildren = state.childrenMap.get(child.id) ?? [];
-            syncChildren(grandChildren);
-            continue;
-          }
-          // Label은 size/variant만 동기화
-          if (child.tag === "Label" && key !== "size" && key !== "variant")
-            continue;
-
-          // childrenMap의 props는 stale → elementsMap에서 최신 조회
-          const freshProps =
-            state.elementsMap.get(child.id)?.props ?? child.props;
-          state.updateElement(child.id, {
-            props: { ...freshProps, [key]: value },
-          });
-
-          // Calendar의 자식(CalendarHeader/CalendarGrid)에도 전파
-          if (child.tag === "Calendar") {
-            const grandChildren = state.childrenMap.get(child.id) ?? [];
-            syncChildren(grandChildren);
-          }
-        }
-      };
-      syncChildren(children);
+    if (key === "label") syncLabelChild(state, children, value);
+    if (DATE_PICKER_SYNC_KEYS.has(key)) {
+      syncDatePickerChildren(state, children, key, value);
     }
   };
 
   const updateCustomId = (newCustomId: string) => {
-    // Update customId in store (not in props)
     const updateElement = useStore.getState().updateElement;
     if (updateElement && elementId) {
       updateElement(elementId, { customId: newCustomId });
@@ -257,20 +218,7 @@ export const DatePickerEditor = memo(function DatePickerEditor({
           label="Locale"
           value={String(currentProps.locale || "")}
           onChange={(value) => updateProp("locale", value || undefined)}
-          options={[
-            { value: "", label: "Default (Browser)" },
-            { value: "ko-KR", label: "한국어 (ko-KR)" },
-            { value: "en-US", label: "English (en-US)" },
-            { value: "en-GB", label: "English (en-GB)" },
-            { value: "ja-JP", label: "日本語 (ja-JP)" },
-            { value: "zh-CN", label: "中文 (zh-CN)" },
-            { value: "zh-TW", label: "中文 (zh-TW)" },
-            { value: "de-DE", label: "Deutsch (de-DE)" },
-            { value: "fr-FR", label: "Français (fr-FR)" },
-            { value: "es-ES", label: "Español (es-ES)" },
-            { value: "pt-BR", label: "Português (pt-BR)" },
-            { value: "ar-SA", label: "العربية (ar-SA)" },
-          ]}
+          options={[...LOCALE_OPTIONS]}
           icon={Globe}
         />
 
@@ -278,19 +226,7 @@ export const DatePickerEditor = memo(function DatePickerEditor({
           label="Calendar System"
           value={String(currentProps.calendarSystem || "")}
           onChange={(value) => updateProp("calendarSystem", value || undefined)}
-          options={[
-            { value: "", label: "Default (Gregorian)" },
-            { value: "buddhist", label: "Buddhist" },
-            { value: "hebrew", label: "Hebrew" },
-            { value: "indian", label: "Indian" },
-            { value: "islamic-civil", label: "Islamic (Civil)" },
-            { value: "islamic-umalqura", label: "Islamic (Umm al-Qura)" },
-            { value: "japanese", label: "Japanese" },
-            { value: "persian", label: "Persian" },
-            { value: "roc", label: "Taiwan (ROC)" },
-            { value: "coptic", label: "Coptic" },
-            { value: "ethiopic", label: "Ethiopic" },
-          ]}
+          options={[...CALENDAR_SYSTEM_OPTIONS]}
           icon={CalendarDays}
         />
 
@@ -298,12 +234,7 @@ export const DatePickerEditor = memo(function DatePickerEditor({
           label={PROPERTY_LABELS.GRANULARITY}
           value={String(currentProps.granularity || "")}
           onChange={(value) => updateProp("granularity", value || undefined)}
-          options={[
-            { value: "", label: "Date Only" },
-            { value: "hour", label: "Hour" },
-            { value: "minute", label: "Minute" },
-            { value: "second", label: "Second" },
-          ]}
+          options={[...GRANULARITY_OPTIONS]}
           icon={Clock}
         />
 
@@ -313,11 +244,7 @@ export const DatePickerEditor = memo(function DatePickerEditor({
           onChange={(value) =>
             updateProp("hourCycle", value ? Number(value) : undefined)
           }
-          options={[
-            { value: "", label: "Default (Locale)" },
-            { value: "12", label: "12 Hour" },
-            { value: "24", label: "24 Hour" },
-          ]}
+          options={[...HOUR_CYCLE_OPTIONS]}
           icon={Clock}
         />
 
@@ -339,10 +266,7 @@ export const DatePickerEditor = memo(function DatePickerEditor({
           label={PROPERTY_LABELS.PAGE_BEHAVIOR}
           value={String(currentProps.pageBehavior || "visible")}
           onChange={(value) => updateProp("pageBehavior", value)}
-          options={[
-            { value: "visible", label: "Visible" },
-            { value: "single", label: "Single" },
-          ]}
+          options={[...PAGE_BEHAVIOR_OPTIONS]}
           icon={CalendarDays}
         />
       </PropertySection>
@@ -377,10 +301,7 @@ export const DatePickerEditor = memo(function DatePickerEditor({
           label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
           value={String(currentProps.validationBehavior || "native")}
           onChange={(value) => updateProp("validationBehavior", value)}
-          options={[
-            { value: "native", label: "Native" },
-            { value: "aria", label: "ARIA" },
-          ]}
+          options={[...VALIDATION_BEHAVIOR_OPTIONS]}
         />
       </PropertySection>
     </>

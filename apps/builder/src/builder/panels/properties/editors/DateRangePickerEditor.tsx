@@ -23,16 +23,24 @@ import {
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
+import {
+  DATE_PICKER_SYNC_KEYS,
+  syncDatePickerChildren,
+  syncLabelChild,
+  LOCALE_OPTIONS,
+  CALENDAR_SYSTEM_OPTIONS,
+  GRANULARITY_OPTIONS,
+  HOUR_CYCLE_OPTIONS,
+  PAGE_BEHAVIOR_OPTIONS,
+  VALIDATION_BEHAVIOR_OPTIONS,
+} from "./editorUtils";
 
-/** 자식에 동기화가 필요한 props (@sync DatePickerEditor 패턴) */
-const SYNC_KEYS = new Set([
-  "variant",
-  "size",
-  "locale",
-  "calendarSystem",
-  "defaultToday",
-]);
-
+/**
+ * DateRangePickerEditor
+ *
+ * DatePickerEditor와 동일한 구조 (@sync editorUtils.ts).
+ * 차이: Form section (startName/endName), defaultValue 없음.
+ */
 export const DateRangePickerEditor = memo(function DateRangePickerEditor({
   elementId,
   currentProps,
@@ -49,26 +57,9 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
     const state = useStore.getState();
     const children = state.childrenMap.get(elementId) ?? [];
 
-    // label 변경 → Label 자식의 children 동기화 (@sync DatePickerEditor)
-    if (key === "label") {
-      const labelChild = children.find((c) => c.tag === "Label");
-      if (labelChild) {
-        const freshProps =
-          state.elementsMap.get(labelChild.id)?.props ?? labelChild.props;
-        state.updateElement(labelChild.id, {
-          props: { ...freshProps, children: value },
-        });
-      }
-    }
-
-    if (SYNC_KEYS.has(key)) {
-      for (const child of children) {
-        const freshProps =
-          state.elementsMap.get(child.id)?.props ?? child.props;
-        state.updateElement(child.id, {
-          props: { ...freshProps, [key]: value },
-        });
-      }
+    if (key === "label") syncLabelChild(state, children, value);
+    if (DATE_PICKER_SYNC_KEYS.has(key)) {
+      syncDatePickerChildren(state, children, key, value);
     }
   };
 
@@ -226,20 +217,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           label="Locale"
           value={String(currentProps.locale || "")}
           onChange={(value) => updateProp("locale", value || undefined)}
-          options={[
-            { value: "", label: "Default (Browser)" },
-            { value: "ko-KR", label: "한국어 (ko-KR)" },
-            { value: "en-US", label: "English (en-US)" },
-            { value: "en-GB", label: "English (en-GB)" },
-            { value: "ja-JP", label: "日本語 (ja-JP)" },
-            { value: "zh-CN", label: "中文 (zh-CN)" },
-            { value: "zh-TW", label: "中文 (zh-TW)" },
-            { value: "de-DE", label: "Deutsch (de-DE)" },
-            { value: "fr-FR", label: "Français (fr-FR)" },
-            { value: "es-ES", label: "Español (es-ES)" },
-            { value: "pt-BR", label: "Português (pt-BR)" },
-            { value: "ar-SA", label: "العربية (ar-SA)" },
-          ]}
+          options={[...LOCALE_OPTIONS]}
           icon={Globe}
         />
 
@@ -247,19 +225,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           label="Calendar System"
           value={String(currentProps.calendarSystem || "")}
           onChange={(value) => updateProp("calendarSystem", value || undefined)}
-          options={[
-            { value: "", label: "Default (Gregorian)" },
-            { value: "buddhist", label: "Buddhist" },
-            { value: "hebrew", label: "Hebrew" },
-            { value: "indian", label: "Indian" },
-            { value: "islamic-civil", label: "Islamic (Civil)" },
-            { value: "islamic-umalqura", label: "Islamic (Umm al-Qura)" },
-            { value: "japanese", label: "Japanese" },
-            { value: "persian", label: "Persian" },
-            { value: "roc", label: "Taiwan (ROC)" },
-            { value: "coptic", label: "Coptic" },
-            { value: "ethiopic", label: "Ethiopic" },
-          ]}
+          options={[...CALENDAR_SYSTEM_OPTIONS]}
           icon={CalendarDays}
         />
 
@@ -267,12 +233,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           label={PROPERTY_LABELS.GRANULARITY}
           value={String(currentProps.granularity || "")}
           onChange={(value) => updateProp("granularity", value || undefined)}
-          options={[
-            { value: "", label: "Date Only" },
-            { value: "hour", label: "Hour" },
-            { value: "minute", label: "Minute" },
-            { value: "second", label: "Second" },
-          ]}
+          options={[...GRANULARITY_OPTIONS]}
           icon={Clock}
         />
 
@@ -282,11 +243,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           onChange={(value) =>
             updateProp("hourCycle", value ? Number(value) : undefined)
           }
-          options={[
-            { value: "", label: "Default (Locale)" },
-            { value: "12", label: "12 Hour" },
-            { value: "24", label: "24 Hour" },
-          ]}
+          options={[...HOUR_CYCLE_OPTIONS]}
           icon={Clock}
         />
 
@@ -308,15 +265,12 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           label={PROPERTY_LABELS.PAGE_BEHAVIOR}
           value={String(currentProps.pageBehavior || "visible")}
           onChange={(value) => updateProp("pageBehavior", value)}
-          options={[
-            { value: "visible", label: "Visible" },
-            { value: "single", label: "Single" },
-          ]}
+          options={[...PAGE_BEHAVIOR_OPTIONS]}
           icon={CalendarDays}
         />
       </PropertySection>
 
-      {/* Form Integration Section — @sync DatePickerEditor */}
+      {/* Form Integration Section — DateRangePicker: startName/endName */}
       <PropertySection title="Form Integration">
         <PropertyInput
           label="Start Name"
@@ -346,10 +300,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
           value={String(currentProps.validationBehavior || "native")}
           onChange={(value) => updateProp("validationBehavior", value)}
-          options={[
-            { value: "native", label: "Native" },
-            { value: "aria", label: "ARIA" },
-          ]}
+          options={[...VALIDATION_BEHAVIOR_OPTIONS]}
         />
       </PropertySection>
     </>
