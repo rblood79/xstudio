@@ -5,11 +5,13 @@
  * 공유 상수/shapes 빌더는 DatePicker.spec.ts에서 import.
  */
 
-import type { ComponentSpec, TokenRef } from "../types";
+import type { ComponentSpec } from "../types";
 import {
   buildDatePlaceholder,
   buildDatePickerShapes,
-  type DatePickerShapesInput,
+  DATE_PICKER_VARIANTS,
+  DATE_PICKER_SIZES,
+  DATE_PICKER_STATES,
 } from "./DatePicker.spec";
 
 export interface DateRangePickerProps {
@@ -41,64 +43,9 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
   defaultVariant: "default",
   defaultSize: "md",
 
-  /** @sync DatePicker.spec.ts — 동일 variants */
-  variants: {
-    default: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.border}" as TokenRef,
-    },
-    accent: {
-      background: "{color.layer-2}" as TokenRef,
-      backgroundHover: "{color.layer-2}" as TokenRef,
-      backgroundPressed: "{color.layer-2}" as TokenRef,
-      text: "{color.neutral}" as TokenRef,
-      border: "{color.accent}" as TokenRef,
-    },
-  },
-
-  /** @sync DatePicker.spec.ts — 동일 sizes */
-  sizes: {
-    sm: {
-      height: 22,
-      paddingX: 8,
-      paddingY: 2,
-      fontSize: "{typography.text-xs}" as TokenRef,
-      borderRadius: "{radius.sm}" as TokenRef,
-      iconSize: 14,
-      gap: 4,
-    },
-    md: {
-      height: 30,
-      paddingX: 12,
-      paddingY: 4,
-      fontSize: "{typography.text-sm}" as TokenRef,
-      borderRadius: "{radius.md}" as TokenRef,
-      iconSize: 16,
-      gap: 4,
-    },
-    lg: {
-      height: 42,
-      paddingX: 16,
-      paddingY: 8,
-      fontSize: "{typography.text-base}" as TokenRef,
-      borderRadius: "{radius.lg}" as TokenRef,
-      iconSize: 20,
-      gap: 4,
-    },
-  },
-
-  states: {
-    hover: {},
-    pressed: {},
-    disabled: { opacity: 0.38, pointerEvents: "none" },
-    focusVisible: {
-      outline: "2px solid var(--accent)",
-      outlineOffset: "2px",
-    },
-  },
+  variants: DATE_PICKER_VARIANTS,
+  sizes: DATE_PICKER_SIZES,
+  states: DATE_PICKER_STATES,
 
   render: {
     shapes: (props, variant, _size, _state = "default") => {
@@ -120,7 +67,7 @@ export const DateRangePickerSpec: ComponentSpec<DateRangePickerProps> = {
         displayText,
         hasValue: !!(props.startDate && props.endDate),
         defaultContainerWidth: 320,
-      } satisfies DatePickerShapesInput);
+      });
     },
 
     react: (props) => ({

@@ -2,6 +2,22 @@ import { ComponentElementProps } from "../../../types/core/store.types";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
 
+/** Calendar 현재 월 초기 데이터 (DatePicker/DateRangePicker/Calendar 공유) */
+function buildCalendarInitData() {
+  const now = new Date();
+  const calYear = now.getFullYear();
+  const calMonth = now.getMonth();
+  return {
+    now,
+    firstDay: new Date(calYear, calMonth, 1).getDay(),
+    calTotalDays: new Date(calYear, calMonth + 1, 0).getDate(),
+    monthText: new Intl.DateTimeFormat(
+      (typeof navigator !== "undefined" && navigator.language) || "ko-KR",
+      { year: "numeric", month: "long" },
+    ).format(now),
+  };
+}
+
 /**
  * DatePicker 복합 컴포넌트 정의 (Compositional Architecture)
  *
@@ -24,16 +40,7 @@ export function createDatePickerDefinition(
     ? { page_id: null as null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null as null };
 
-  // Calendar 현재 월 데이터
-  const now = new Date();
-  const calYear = now.getFullYear();
-  const calMonth = now.getMonth();
-  const firstDay = new Date(calYear, calMonth, 1).getDay();
-  const calTotalDays = new Date(calYear, calMonth + 1, 0).getDate();
-  const monthText = new Intl.DateTimeFormat(
-    (typeof navigator !== "undefined" && navigator.language) || "ko-KR",
-    { year: "numeric", month: "long" },
-  ).format(now);
+  const { now, firstDay, calTotalDays, monthText } = buildCalendarInitData();
 
   return {
     tag: "DatePicker",
@@ -138,16 +145,7 @@ export function createDateRangePickerDefinition(
     ? { page_id: null as null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null as null };
 
-  // Calendar 현재 월 데이터
-  const now = new Date();
-  const calYear = now.getFullYear();
-  const calMonth = now.getMonth();
-  const firstDay = new Date(calYear, calMonth, 1).getDay();
-  const calTotalDays = new Date(calYear, calMonth + 1, 0).getDate();
-  const monthText = new Intl.DateTimeFormat(
-    (typeof navigator !== "undefined" && navigator.language) || "ko-KR",
-    { year: "numeric", month: "long" },
-  ).format(now);
+  const { now, firstDay, calTotalDays, monthText } = buildCalendarInitData();
 
   return {
     tag: "DateRangePicker",
@@ -254,11 +252,7 @@ export function createCalendarDefinition(
     : { page_id: pageId, layout_id: null as null };
 
   // Calendar intrinsic width: cellSize*7 + gap*6 + paddingX*2 (md: 32*7+6*6+12*2 = 284)
-  const now = new Date();
-  const calYear = now.getFullYear();
-  const calMonth = now.getMonth();
-  const firstDay = new Date(calYear, calMonth, 1).getDay();
-  const calTotalDays = new Date(calYear, calMonth + 1, 0).getDate();
+  const { now, firstDay, calTotalDays, monthText } = buildCalendarInitData();
 
   return {
     tag: "Calendar",
@@ -281,10 +275,7 @@ export function createCalendarDefinition(
         props: {
           variant: "default",
           size: "md",
-          children: new Intl.DateTimeFormat(navigator.language || "ko-KR", {
-            year: "numeric",
-            month: "long",
-          }).format(now),
+          children: monthText,
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,

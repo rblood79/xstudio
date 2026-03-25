@@ -27,6 +27,8 @@ import {
   DATE_PICKER_SYNC_KEYS,
   syncDatePickerChildren,
   syncLabelChild,
+  buildRequiredUpdate,
+  NECESSITY_INDICATOR_OPTIONS,
   LOCALE_OPTIONS,
   CALENDAR_SYSTEM_OPTIONS,
   GRANULARITY_OPTIONS,
@@ -142,18 +144,8 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
         <PropertySelect
           label={PROPERTY_LABELS.REQUIRED}
           value={String(currentProps.necessityIndicator || "")}
-          onChange={(value) => {
-            if (value === "") {
-              onUpdate({ isRequired: false, necessityIndicator: undefined });
-            } else {
-              onUpdate({ isRequired: true, necessityIndicator: value });
-            }
-          }}
-          options={[
-            { value: "", label: "None" },
-            { value: "icon", label: "Icon (*)" },
-            { value: "label", label: "Label (required/optional)" },
-          ]}
+          onChange={(value) => onUpdate(buildRequiredUpdate(value))}
+          options={NECESSITY_INDICATOR_OPTIONS}
           icon={CheckSquare}
         />
 
@@ -217,7 +209,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           label="Locale"
           value={String(currentProps.locale || "")}
           onChange={(value) => updateProp("locale", value || undefined)}
-          options={[...LOCALE_OPTIONS]}
+          options={LOCALE_OPTIONS}
           icon={Globe}
         />
 
@@ -225,7 +217,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           label="Calendar System"
           value={String(currentProps.calendarSystem || "")}
           onChange={(value) => updateProp("calendarSystem", value || undefined)}
-          options={[...CALENDAR_SYSTEM_OPTIONS]}
+          options={CALENDAR_SYSTEM_OPTIONS}
           icon={CalendarDays}
         />
 
@@ -233,7 +225,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           label={PROPERTY_LABELS.GRANULARITY}
           value={String(currentProps.granularity || "")}
           onChange={(value) => updateProp("granularity", value || undefined)}
-          options={[...GRANULARITY_OPTIONS]}
+          options={GRANULARITY_OPTIONS}
           icon={Clock}
         />
 
@@ -243,7 +235,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           onChange={(value) =>
             updateProp("hourCycle", value ? Number(value) : undefined)
           }
-          options={[...HOUR_CYCLE_OPTIONS]}
+          options={HOUR_CYCLE_OPTIONS}
           icon={Clock}
         />
 
@@ -265,7 +257,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           label={PROPERTY_LABELS.PAGE_BEHAVIOR}
           value={String(currentProps.pageBehavior || "visible")}
           onChange={(value) => updateProp("pageBehavior", value)}
-          options={[...PAGE_BEHAVIOR_OPTIONS]}
+          options={PAGE_BEHAVIOR_OPTIONS}
           icon={CalendarDays}
         />
       </PropertySection>
@@ -300,7 +292,7 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({
           label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
           value={String(currentProps.validationBehavior || "native")}
           onChange={(value) => updateProp("validationBehavior", value)}
-          options={[...VALIDATION_BEHAVIOR_OPTIONS]}
+          options={VALIDATION_BEHAVIOR_OPTIONS}
         />
       </PropertySection>
     </>
