@@ -63,7 +63,6 @@ export function createDatePickerDefinition(
         tag: "Label",
         props: {
           children: "Date Picker",
-          variant: "default",
           style: {
             width: "fit-content",
             height: "fit-content",
@@ -77,7 +76,6 @@ export function createDatePickerDefinition(
         tag: "DateInput",
         props: {
           _parentTag: "DatePicker",
-          size: "md",
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
@@ -85,8 +83,6 @@ export function createDatePickerDefinition(
       {
         tag: "Calendar",
         props: {
-          variant: "default",
-          size: "md",
           defaultToday: true,
           isDisabled: false,
           isReadOnly: false,
@@ -97,8 +93,6 @@ export function createDatePickerDefinition(
           {
             tag: "CalendarHeader",
             props: {
-              variant: "default",
-              size: "md",
               children: monthText,
             } as ComponentElementProps,
             ...ownerFields,
@@ -107,8 +101,6 @@ export function createDatePickerDefinition(
           {
             tag: "CalendarGrid",
             props: {
-              variant: "default",
-              size: "md",
               defaultToday: true,
               dayOffset: firstDay,
               totalDays: calTotalDays,
@@ -168,7 +160,6 @@ export function createDateRangePickerDefinition(
         tag: "Label",
         props: {
           children: "Date Range",
-          variant: "default",
           style: {
             width: "fit-content",
             height: "fit-content",
@@ -182,7 +173,6 @@ export function createDateRangePickerDefinition(
         tag: "DateInput",
         props: {
           _parentTag: "DateRangePicker",
-          size: "md",
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 2,
@@ -190,8 +180,6 @@ export function createDateRangePickerDefinition(
       {
         tag: "Calendar",
         props: {
-          variant: "default",
-          size: "md",
           defaultToday: true,
           isDisabled: false,
           isReadOnly: false,
@@ -202,8 +190,6 @@ export function createDateRangePickerDefinition(
           {
             tag: "CalendarHeader",
             props: {
-              variant: "default",
-              size: "md",
               children: monthText,
             } as ComponentElementProps,
             ...ownerFields,
@@ -212,8 +198,6 @@ export function createDateRangePickerDefinition(
           {
             tag: "CalendarGrid",
             props: {
-              variant: "default",
-              size: "md",
               defaultToday: true,
               dayOffset: firstDay,
               totalDays: calTotalDays,
