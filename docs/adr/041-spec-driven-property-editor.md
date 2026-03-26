@@ -6,7 +6,7 @@ Partial
 
 ## Date
 
-2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강 + 설계 리뷰 반영 + 타입 안전성·간접성 제거 11건 개선 + 2차 설계 리뷰 12건 반영, 2026-03-26 Phase 0~1 + 배치 1/2/3 완료 + B/C 하이브리드 6개 진행)
+2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강 + 설계 리뷰 반영 + 타입 안전성·간접성 제거 11건 개선 + 2차 설계 리뷰 12건 반영, 2026-03-26 Phase 0~1 + 배치 1/2/3 완료 + B/C 하이브리드 11개 진행)
 
 ## Decision Makers
 
@@ -1211,6 +1211,11 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
   - `NumberField`
   - `Select`
   - `ComboBox`
+  - `GridList`
+  - `ListBox`
+  - `TagGroup`
+  - `Tabs`
+  - `Tree`
 - 수동 editor 삭제 누적
   - `Badge`
   - `Separator`
@@ -1222,8 +1227,6 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
   - `Tooltip`
   - `Dialog`
   - `Toast`
-  - `Form`
-  - `ColorField`
   - `Form`
   - `ColorField`
 - `Meter`, `ProgressBar`, `Link`, `Form`, `ColorField`는 수동 editor와 generic surface를 교차 점검해 동일함을 확인

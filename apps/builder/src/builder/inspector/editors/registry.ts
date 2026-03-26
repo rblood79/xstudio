@@ -5,9 +5,14 @@ import { GenericPropertyEditor } from "../../panels/properties/generic";
 import { getPropertyEditorSpec } from "../../panels/properties/specRegistry";
 import { ButtonHybridAfterSections } from "../../panels/properties/editors/ButtonEditor";
 import { ComboBoxHybridAfterSections } from "../../panels/properties/editors/ComboBoxEditor";
+import { GridListHybridAfterSections } from "../../panels/properties/editors/GridListEditor";
+import { ListBoxHybridAfterSections } from "../../panels/properties/editors/ListBoxEditor";
 import { NumberFieldHybridAfterSections } from "../../panels/properties/editors/NumberFieldEditor";
 import { SearchFieldHybridAfterSections } from "../../panels/properties/editors/SearchFieldEditor";
 import { SelectHybridAfterSections } from "../../panels/properties/editors/SelectEditor";
+import { TagGroupHybridAfterSections } from "../../panels/properties/editors/TagGroupEditor";
+import { TabsHybridAfterSections } from "../../panels/properties/editors/TabsEditor";
+import { TreeHybridAfterSections } from "../../panels/properties/editors/TreeEditor";
 import { TextFieldHybridAfterSections } from "../../panels/properties/editors/TextFieldEditor";
 
 /**
@@ -21,12 +26,22 @@ function getHybridAfterSections(type: string) {
       return ButtonHybridAfterSections;
     case "ComboBox":
       return ComboBoxHybridAfterSections;
+    case "GridList":
+      return GridListHybridAfterSections;
+    case "ListBox":
+      return ListBoxHybridAfterSections;
     case "NumberField":
       return NumberFieldHybridAfterSections;
     case "SearchField":
       return SearchFieldHybridAfterSections;
     case "Select":
       return SelectHybridAfterSections;
+    case "TagGroup":
+      return TagGroupHybridAfterSections;
+    case "Tabs":
+      return TabsHybridAfterSections;
+    case "Tree":
+      return TreeHybridAfterSections;
     case "TextField":
       return TextFieldHybridAfterSections;
     default:

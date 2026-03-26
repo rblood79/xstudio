@@ -11,6 +11,19 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Layout,
+  Rows3,
+  MousePointer,
+  ToggleLeft,
+  ToggleRight,
+  CheckSquare,
+  AlertTriangle,
+  PointerOff,
+  PenOff,
+  Trash,
+  FormInput,
+} from "lucide-react";
 
 /**
  * TagGroup Props
@@ -19,7 +32,21 @@ export interface TagGroupProps {
   variant?: "default" | "accent" | "neutral" | "negative";
   size?: "S" | "M" | "L";
   selectionMode?: "none" | "single" | "multiple";
+  selectionBehavior?: "toggle" | "replace";
   label?: string;
+  description?: string;
+  errorMessage?: string;
+  isDisabled?: boolean;
+  isReadOnly?: boolean;
+  disallowEmptySelection?: boolean;
+  isRequired?: boolean;
+  necessityIndicator?: "icon" | "label";
+  isInvalid?: boolean;
+  allowsRemoving?: boolean;
+  allowsCustomValue?: boolean;
+  name?: string;
+  maxRows?: number;
+  labelPosition?: "top" | "side";
   style?: Record<string, string | number | undefined>;
   /** ElementSprite에서 주입: 자식 Tag 텍스트 배열 (Skia 렌더링용) */
   _tagItems?: { text: string }[];
@@ -36,6 +63,144 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
 
   defaultVariant: "default",
   defaultSize: "M",
+
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "variant",
+            type: "variant",
+          },
+          {
+            key: "size",
+            type: "size",
+          },
+          {
+            key: "maxRows",
+            type: "number",
+            label: "Max Rows",
+            icon: Rows3,
+          },
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "selectionMode",
+            type: "enum",
+            label: "Selection Mode",
+            icon: MousePointer,
+            options: [
+              { value: "none", label: "None" },
+              { value: "single", label: "Single" },
+              { value: "multiple", label: "Multiple" },
+            ],
+          },
+          {
+            key: "selectionBehavior",
+            type: "enum",
+            label: "Selection Behavior",
+            icon: ToggleLeft,
+            options: [
+              { value: "toggle", label: "Toggle" },
+              { value: "replace", label: "Replace" },
+            ],
+          },
+          {
+            key: "disallowEmptySelection",
+            type: "boolean",
+            label: "Disallow Empty Selection",
+            icon: ToggleRight,
+          },
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            icon: CheckSquare,
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ],
+            derivedUpdateFn: (value) => {
+              if (value === "") {
+                return {
+                  isRequired: false,
+                  necessityIndicator: undefined,
+                };
+              }
+
+              return {
+                isRequired: true,
+                necessityIndicator: value as "icon" | "label",
+              };
+            },
+          },
+          {
+            key: "isInvalid",
+            type: "boolean",
+            label: "Invalid",
+            icon: AlertTriangle,
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "isReadOnly",
+            type: "boolean",
+            label: "Read Only",
+            icon: PenOff,
+          },
+          {
+            key: "allowsRemoving",
+            type: "boolean",
+            label: "Allows Removing",
+            icon: Trash,
+          },
+          {
+            key: "allowsCustomValue",
+            type: "boolean",
+            label: "Allows Custom Value",
+            icon: PenOff,
+          },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: FormInput,
+            emptyToUndefined: true,
+            placeholder: "tag-group-name",
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     default: {

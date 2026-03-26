@@ -143,6 +143,8 @@ export const renderListBox = (
         aria-label={String(element.props.label || "List")}
         data-element-id={element.id}
         className={element.props.className}
+        variant={(element.props.variant as string) || undefined}
+        size={(element.props.size as "sm" | "md" | "lg") || undefined}
         orientation={
           (element.props.orientation as "horizontal" | "vertical") || "vertical"
         }
@@ -150,6 +152,15 @@ export const renderListBox = (
           (element.props.selectionMode as "none" | "single" | "multiple") ||
           "none"
         }
+        disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
+        autoFocus={Boolean(element.props.autoFocus)}
+        enableVirtualization={Boolean(element.props.enableVirtualization)}
+        height={typeof element.props.height === "number" ? element.props.height : undefined}
+        overscan={typeof element.props.overscan === "number" ? element.props.overscan : undefined}
+        filterText={
+          element.props.filterText ? String(element.props.filterText) : undefined
+        }
+        filterFields={element.props.filterFields as string[] | undefined}
         defaultSelectedKeys={
           Array.isArray(element.props.selectedKeys)
             ? (element.props.selectedKeys as unknown as string[])
@@ -195,6 +206,8 @@ export const renderListBox = (
       id={element.customId}
       data-element-id={element.id}
       className={element.props.className}
+      variant={(element.props.variant as string) || undefined}
+      size={(element.props.size as "sm" | "md" | "lg") || undefined}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
       }
@@ -202,6 +215,15 @@ export const renderListBox = (
         (element.props.selectionMode as "none" | "single" | "multiple") ||
         "none"
       }
+      disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
+      autoFocus={Boolean(element.props.autoFocus)}
+      enableVirtualization={Boolean(element.props.enableVirtualization)}
+      height={typeof element.props.height === "number" ? element.props.height : undefined}
+      overscan={typeof element.props.overscan === "number" ? element.props.overscan : undefined}
+      filterText={
+        element.props.filterText ? String(element.props.filterText) : undefined
+      }
+      filterFields={element.props.filterFields as string[] | undefined}
       defaultSelectedKeys={
         Array.isArray(element.props.selectedKeys)
           ? (element.props.selectedKeys as unknown as string[])
@@ -466,12 +488,23 @@ export const renderGridList = (
       id={element.customId}
       data-element-id={element.id}
       className={element.props.className}
+      variant={(element.props.variant as "default" | "accent") || "default"}
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
       layout={(element.props.layout as "stack" | "grid") || "stack"}
       columns={(element.props.columns as number) || 2}
       selectionMode={
         (element.props.selectionMode as "none" | "single" | "multiple") ||
         "none"
       }
+      selectionBehavior={
+        (element.props.selectionBehavior as "toggle" | "replace") || "toggle"
+      }
+      disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
+      autoFocus={Boolean(element.props.autoFocus)}
+      filterText={
+        element.props.filterText ? String(element.props.filterText) : undefined
+      }
+      filterFields={element.props.filterFields as string[] | undefined}
       defaultSelectedKeys={
         Array.isArray(element.props.selectedKeys)
           ? (element.props.selectedKeys as unknown as string[])

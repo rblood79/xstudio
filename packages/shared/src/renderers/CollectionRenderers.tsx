@@ -105,7 +105,7 @@ export const renderTree = (
       }
       style={element.props.style}
       className={element.props.className}
-      aria-label={String(element.props["aria-label"] || "Tree")}
+      aria-label={String(element.props["aria-label"] || element.props.label || "Tree")}
       selectionMode={
         (element.props.selectionMode as "none" | "single" | "multiple") ||
         "single"
@@ -118,9 +118,19 @@ export const renderTree = (
           ? (element.props.expandedKeys as unknown as string[])
           : []
       }
+      defaultExpandedKeys={
+        Array.isArray(element.props.defaultExpandedKeys)
+          ? (element.props.defaultExpandedKeys as unknown as string[])
+          : []
+      }
       selectedKeys={
         Array.isArray(element.props.selectedKeys)
           ? (element.props.selectedKeys as unknown as string[])
+          : []
+      }
+      defaultSelectedKeys={
+        Array.isArray(element.props.defaultSelectedKeys)
+          ? (element.props.defaultSelectedKeys as unknown as string[])
           : []
       }
       onSelectionChange={(selectedKeys) => {
@@ -314,6 +324,7 @@ export const renderTagGroup = (
       id={element.customId}
       data-element-id={element.id}
       className={element.props.className}
+      variant={String(element.props.variant || "default")}
       label={String(element.props.label || "")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}

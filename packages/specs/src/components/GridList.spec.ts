@@ -11,6 +11,21 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Tag,
+  FileText,
+  AlertTriangle,
+  Grid,
+  Binary,
+  Rows,
+  SquareX,
+  CheckSquare,
+  PointerOff,
+  Focus,
+  MoveHorizontal,
+  Square,
+  FormInput,
+} from "lucide-react";
 
 /**
  * GridList Item
@@ -27,9 +42,23 @@ export interface GridListItem {
 export interface GridListProps {
   variant?: "default" | "accent";
   size?: "sm" | "md" | "lg";
+  label?: string;
+  description?: string;
+  errorMessage?: string;
   layout?: "stack" | "grid";
   selectionMode?: "none" | "single" | "multiple";
+  selectionBehavior?: "toggle" | "replace";
+  disallowEmptySelection?: boolean;
+  isRequired?: boolean;
+  isDisabled?: boolean;
+  autoFocus?: boolean;
+  allowsDragging?: boolean;
+  renderEmptyState?: boolean;
+  name?: string;
+  validationBehavior?: "native" | "aria";
   columns?: number;
+  filterText?: string;
+  filterFields?: string[];
   items?: GridListItem[];
   style?: Record<string, string | number | undefined>;
 }
@@ -45,6 +74,156 @@ export const GridListSpec: ComponentSpec<GridListProps> = {
 
   defaultVariant: "default",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            icon: Tag,
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+            emptyToUndefined: true,
+          },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+            emptyToUndefined: true,
+          },
+        ],
+      },
+      {
+        title: "Layout",
+        fields: [
+          {
+            key: "variant",
+            type: "variant",
+          },
+          {
+            key: "size",
+            type: "size",
+          },
+          {
+            key: "layout",
+            type: "enum",
+            label: "Layout",
+            icon: Grid,
+            options: [
+              { value: "stack", label: "Stack" },
+              { value: "grid", label: "Grid" },
+            ],
+          },
+          {
+            key: "columns",
+            type: "number",
+            label: "Columns",
+            icon: Binary,
+            visibleWhen: { key: "layout", equals: "grid" },
+          },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "selectionMode",
+            type: "enum",
+            label: "Selection Mode",
+            icon: Grid,
+            options: [
+              { value: "none", label: "None" },
+              { value: "single", label: "Single" },
+              { value: "multiple", label: "Multiple" },
+            ],
+          },
+          {
+            key: "selectionBehavior",
+            type: "enum",
+            label: "Selection Behavior",
+            icon: Rows,
+            options: [
+              { value: "toggle", label: "Toggle" },
+              { value: "replace", label: "Replace" },
+            ],
+          },
+          {
+            key: "disallowEmptySelection",
+            type: "boolean",
+            label: "Disallow Empty Selection",
+            icon: SquareX,
+          },
+          {
+            key: "isRequired",
+            type: "boolean",
+            label: "Required",
+            icon: CheckSquare,
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+          {
+            key: "allowsDragging",
+            type: "boolean",
+            label: "Allows Dragging",
+            icon: MoveHorizontal,
+          },
+          {
+            key: "renderEmptyState",
+            type: "boolean",
+            label: "Render Empty State",
+            icon: Square,
+          },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: FormInput,
+            emptyToUndefined: true,
+            placeholder: "gridlist-name",
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: FileText,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     default: {

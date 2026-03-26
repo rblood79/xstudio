@@ -11,6 +11,20 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Tag,
+  FileText,
+  AlertTriangle,
+  List,
+  SquareX,
+  CheckSquare,
+  PointerOff,
+  Focus,
+  Zap,
+  Ruler,
+  Rows,
+  FormInput,
+} from "lucide-react";
 
 /**
  * ListBox Props
@@ -19,8 +33,20 @@ export interface ListBoxProps {
   variant?: "default" | "accent";
   size?: "S" | "M" | "L";
   label?: string;
+  description?: string;
+  errorMessage?: string;
   isDisabled?: boolean;
-  selectionMode?: "single" | "multiple";
+  selectionMode?: "none" | "single" | "multiple";
+  disallowEmptySelection?: boolean;
+  isRequired?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  validationBehavior?: "native" | "aria";
+  enableVirtualization?: boolean;
+  height?: number;
+  overscan?: number;
+  filterText?: string;
+  filterFields?: string[];
   /** 아이템 목록 (우선순위: items > children 개행 분리) */
   items?: string[];
   /** 선택된 아이템 인덱스 (단일 선택용 하이라이트) */
@@ -43,6 +69,128 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
 
   defaultVariant: "default",
   defaultSize: "M",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            icon: Tag,
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+            emptyToUndefined: true,
+          },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+            emptyToUndefined: true,
+          },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "selectionMode",
+            type: "enum",
+            label: "Selection Mode",
+            icon: List,
+            options: [
+              { value: "single", label: "Single" },
+              { value: "multiple", label: "Multiple" },
+            ],
+          },
+          {
+            key: "disallowEmptySelection",
+            type: "boolean",
+            label: "Disallow Empty Selection",
+            icon: SquareX,
+          },
+          {
+            key: "isRequired",
+            type: "boolean",
+            label: "Required",
+            icon: CheckSquare,
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+        ],
+      },
+      {
+        title: "Performance",
+        fields: [
+          {
+            key: "enableVirtualization",
+            type: "boolean",
+            label: "Enable Virtualization",
+            icon: Zap,
+          },
+          {
+            key: "height",
+            type: "number",
+            label: "Container Height (px)",
+            icon: Ruler,
+            visibleWhen: { key: "enableVirtualization", equals: true },
+          },
+          {
+            key: "overscan",
+            type: "number",
+            label: "Overscan",
+            icon: Rows,
+            visibleWhen: { key: "enableVirtualization", equals: true },
+          },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: FormInput,
+            emptyToUndefined: true,
+            placeholder: "listbox-name",
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: FileText,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     default: {

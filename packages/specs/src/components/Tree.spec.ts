@@ -11,6 +11,25 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Tag,
+  FileText,
+  FolderTree,
+  Workflow,
+  SquareX,
+  PointerOff,
+  Focus,
+} from "lucide-react";
+
+function parseCsvList(value: unknown): string[] {
+  if (typeof value !== "string" || !value.trim()) {
+    return [];
+  }
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
 
 /**
  * Tree Props
@@ -18,7 +37,17 @@ import { resolveToken } from "../renderers/utils/tokenResolver";
 export interface TreeProps {
   variant?: "default" | "accent";
   size?: "S" | "M" | "L";
+  label?: string;
+  description?: string;
   selectionMode?: "none" | "single" | "multiple";
+  selectionBehavior?: "replace" | "toggle";
+  disallowEmptySelection?: boolean;
+  selectedKeys?: string[];
+  expandedKeys?: string[];
+  defaultSelectedKeys?: string[];
+  defaultExpandedKeys?: string[];
+  isDisabled?: boolean;
+  autoFocus?: boolean;
   style?: Record<string, string | number | undefined>;
 }
 
@@ -33,6 +62,108 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
 
   defaultVariant: "default",
   defaultSize: "M",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          { key: "label", type: "string", label: "Label", icon: Tag },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+          },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "selectionMode",
+            type: "enum",
+            label: "Selection Mode",
+            icon: FolderTree,
+            options: [
+              { value: "none", label: "None" },
+              { value: "single", label: "Single" },
+              { value: "multiple", label: "Multiple" },
+            ],
+          },
+          {
+            key: "selectionBehavior",
+            type: "enum",
+            label: "Selection Behavior",
+            icon: Workflow,
+            options: [
+              { value: "replace", label: "Replace" },
+              { value: "toggle", label: "Toggle" },
+            ],
+          },
+          {
+            key: "disallowEmptySelection",
+            type: "boolean",
+            label: "Disallow Empty Selection",
+            icon: SquareX,
+          },
+          {
+            key: "expandedKeys",
+            type: "string",
+            label: "Expanded Keys",
+            placeholder: "item1, item2, item3",
+            derivedUpdateFn: (value) => ({
+              expandedKeys: parseCsvList(value),
+            }),
+          },
+          {
+            key: "selectedKeys",
+            type: "string",
+            label: "Selected Keys",
+            placeholder: "item1, item2",
+            derivedUpdateFn: (value) => ({
+              selectedKeys: parseCsvList(value),
+            }),
+          },
+          {
+            key: "defaultExpandedKeys",
+            type: "string",
+            label: "Default Expanded Keys",
+            placeholder: "item1, item2",
+            derivedUpdateFn: (value) => ({
+              defaultExpandedKeys: parseCsvList(value),
+            }),
+          },
+          {
+            key: "defaultSelectedKeys",
+            type: "string",
+            label: "Default Selected Keys",
+            placeholder: "item1",
+            derivedUpdateFn: (value) => ({
+              defaultSelectedKeys: parseCsvList(value),
+            }),
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     default: {

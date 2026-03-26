@@ -398,6 +398,8 @@ export interface TabsElementProps extends BaseElementProps {
   onSelectionChange?: (key: string) => void;
   density?: "compact" | "regular";
   orientation?: "horizontal" | "vertical";
+  isDisabled?: boolean;
+  showIndicator?: boolean;
 }
 
 export interface TabElementProps extends BaseElementProps {
@@ -416,6 +418,8 @@ export interface PanelElementProps extends BaseElementProps {
 
 export interface TreeElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  label?: string;
+  description?: string;
   items?: Array<{
     id: string;
     name: string;
@@ -425,9 +429,16 @@ export interface TreeElementProps extends BaseElementProps {
     }>;
   }>;
   selectedKeys?: string[];
+  expandedKeys?: string[];
   defaultSelectedKeys?: string[];
+  defaultExpandedKeys?: string[];
   onSelectionChange?: (keys: string[]) => void;
+  selectionMode?: "none" | "single" | "multiple";
+  selectionBehavior?: "replace" | "toggle";
+  disallowEmptySelection?: boolean;
   isDisabled?: boolean;
+  autoFocus?: boolean;
+  dataBinding?: DataBinding;
 }
 
 export interface TreeItemElementProps extends BaseElementProps {
@@ -656,6 +667,11 @@ export interface BadgeElementProps extends BaseElementProps {
 
 export interface TagGroupElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  variant?: "default" | "accent" | "neutral" | "negative";
+  size?: "sm" | "md" | "lg";
+  label?: string;
+  description?: string;
+  errorMessage?: string;
   items?: Array<{
     id: string;
     label: string;
@@ -664,8 +680,24 @@ export interface TagGroupElementProps extends BaseElementProps {
   selectedKeys?: string[];
   defaultSelectedKeys?: string[];
   onSelectionChange?: (keys: string[]) => void;
+  selectionMode?: "none" | "single" | "multiple";
+  selectionBehavior?: "toggle" | "replace";
   isDisabled?: boolean;
+  isReadOnly?: boolean;
+  disallowEmptySelection?: boolean;
+  isRequired?: boolean;
+  necessityIndicator?: "icon" | "label";
+  isInvalid?: boolean;
   allowsRemoving?: boolean;
+  allowsCustomValue?: boolean;
+  name?: string;
+  labelPosition?: "top" | "side";
+  maxRows?: number;
+  filterText?: string;
+  filterFields?: string[];
+  dataBinding?: DataBinding;
+  orientation?: "horizontal" | "vertical";
+  removedItemIds?: string[];
   onRemove?: (key: string) => void;
 }
 
@@ -677,6 +709,9 @@ export interface TagElementProps extends BaseElementProps {
 
 export interface ListBoxElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  label?: string;
+  description?: string;
+  errorMessage?: string;
   items?: Array<{
     id: string;
     label: string;
@@ -687,7 +722,19 @@ export interface ListBoxElementProps extends BaseElementProps {
   defaultSelectedKeys?: string[];
   onSelectionChange?: (keys: string[]) => void;
   isDisabled?: boolean;
-  selectionMode?: "single" | "multiple";
+  selectionMode?: "none" | "single" | "multiple";
+  disallowEmptySelection?: boolean;
+  isRequired?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  validationBehavior?: "native" | "aria";
+  dataBinding?: DataBinding;
+  enableVirtualization?: boolean;
+  height?: number;
+  overscan?: number;
+  filterText?: string;
+  filterFields?: string[];
+  orientation?: "horizontal" | "vertical";
   columnMapping?: ColumnMapping; // 컬럼 매핑 정보 (자동 감지된 컬럼)
   autoDetectColumns?: boolean; // 자동 컬럼 감지 활성화
 }
@@ -707,18 +754,35 @@ export interface FieldElementProps extends BaseElementProps {
 
 export interface GridListElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  variant?: "default" | "accent";
+  size?: "sm" | "md" | "lg";
+  label?: string;
+  description?: string;
+  errorMessage?: string;
   layout?: "stack" | "grid";
+  columns?: number;
   items?: Array<{
     id: string;
     label: string;
     description?: string;
     thumbnail?: string;
   }>;
+  dataBinding?: DataBinding;
+  filterText?: string;
+  filterFields?: string[];
   selectedKeys?: string[];
   defaultSelectedKeys?: string[];
   onSelectionChange?: (keys: string[]) => void;
   isDisabled?: boolean;
-  selectionMode?: "single" | "multiple";
+  selectionMode?: "none" | "single" | "multiple";
+  selectionBehavior?: "toggle" | "replace";
+  disallowEmptySelection?: boolean;
+  isRequired?: boolean;
+  autoFocus?: boolean;
+  allowsDragging?: boolean;
+  renderEmptyState?: boolean;
+  name?: string;
+  validationBehavior?: "native" | "aria";
 }
 
 export interface GridListItemElementProps extends BaseElementProps {
@@ -1334,7 +1398,10 @@ export function createDefaultTailSwatchProps(): TailSwatchElementProps {
 
 export function createDefaultTabsProps(): TabsElementProps {
   return {
+    density: "regular",
     orientation: "horizontal",
+    isDisabled: false,
+    showIndicator: false,
     // CSS base: display:flex; flex-direction:column (generated)
     // width:100%는 CSS에 미포함이므로 유지
     style: {
@@ -1371,9 +1438,18 @@ export function createDefaultPanelProps(): PanelElementProps {
 
 export function createDefaultTreeProps(): TreeElementProps {
   return {
+    label: "Tree",
+    description: "",
     items: [],
     selectedKeys: [],
+    expandedKeys: [],
+    defaultSelectedKeys: [],
+    defaultExpandedKeys: [],
+    selectionMode: "single",
+    selectionBehavior: "replace",
+    disallowEmptySelection: false,
     isDisabled: false,
+    autoFocus: false,
     // CSS base: display:flex; flex-direction:column; gap:var(--spacing-2xs); width:100%
     style: {
       display: "flex",
@@ -1559,10 +1635,21 @@ export function createDefaultLabelProps(): BaseElementProps {
 
 export function createDefaultTagGroupProps(): TagGroupElementProps {
   return {
+    variant: "default",
+    size: "md",
+    label: "Tag Group",
     items: [],
     selectedKeys: [],
+    selectionMode: "none",
+    selectionBehavior: "toggle",
     isDisabled: false,
+    isReadOnly: false,
+    disallowEmptySelection: false,
+    isRequired: false,
+    isInvalid: false,
     allowsRemoving: false,
+    allowsCustomValue: false,
+    labelPosition: "top",
     style: {
       display: "flex",
       flexDirection: "column",
@@ -1586,10 +1673,18 @@ export function createDefaultTagProps(): TagElementProps {
 
 export function createDefaultListBoxProps(): ListBoxElementProps {
   return {
+    label: "List Box",
     items: [],
     selectedKeys: [],
     isDisabled: false,
     selectionMode: "single",
+    disallowEmptySelection: false,
+    isRequired: false,
+    autoFocus: false,
+    enableVirtualization: false,
+    height: 300,
+    overscan: 5,
+    orientation: "vertical",
     // CSS base: display:flex; flex-direction:column; width:100%
     style: {
       display: "flex",
@@ -1615,11 +1710,20 @@ export function createDefaultFieldProps(): FieldElementProps {
 
 export function createDefaultGridListProps(): GridListElementProps {
   return {
+    variant: "default",
+    size: "md",
     layout: "stack",
+    columns: 2,
     items: [],
     selectedKeys: [],
     isDisabled: false,
     selectionMode: "single",
+    selectionBehavior: "toggle",
+    disallowEmptySelection: false,
+    isRequired: false,
+    autoFocus: false,
+    allowsDragging: false,
+    renderEmptyState: false,
     style: {
       width: "100%",
     },

@@ -14,6 +14,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Ratio, PointerOff, MousePointer2 } from "lucide-react";
 
 /**
  * Tabs Props
@@ -24,6 +25,9 @@ export interface TabsProps {
   size?: "sm" | "md" | "lg";
   orientation?: "horizontal" | "vertical";
   selectedKey?: string;
+  defaultSelectedKey?: string;
+  isDisabled?: boolean;
+  showIndicator?: boolean;
   /** 컨테이너 시스템에서 주입하는 실제 Tab 레이블 */
   _tabLabels?: string[];
   style?: Record<string, string | number | undefined>;
@@ -40,6 +44,53 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
 
   defaultVariant: "default",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "density",
+            type: "enum",
+            label: "Density",
+            icon: Ratio,
+            options: [
+              { value: "compact", label: "Compact" },
+              { value: "regular", label: "Regular" },
+            ],
+          },
+          {
+            key: "orientation",
+            type: "enum",
+            label: "Orientation",
+            icon: Ratio,
+            options: [
+              { value: "horizontal", label: "Horizontal" },
+              { value: "vertical", label: "Vertical" },
+            ],
+          },
+          {
+            key: "showIndicator",
+            type: "boolean",
+            label: "Show Indicator",
+            icon: MousePointer2,
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     // S2에서 Tabs는 단일 스타일 (accent 기반 indicator)
