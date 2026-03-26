@@ -1053,9 +1053,6 @@ export const ElementSprite = memo(function ElementSprite({
     return state.elementsMap.get(element.parent_id) ?? null;
   });
 
-  // ADR-048: tagGroupAncestorSize는 parentDelegatedSize에 통합됨 (Registry 기반)
-  const tagGroupAncestorSize: string | null = null;
-
   const tagGroupAllowsRemoving = useStore((state) => {
     if (element.tag !== "Tag" || !element.parent_id) return false;
     const tagList = state.elementsMap.get(element.parent_id);
@@ -1804,9 +1801,7 @@ export const ElementSprite = memo(function ElementSprite({
       style?.borderRadius !== null &&
       style?.borderRadius !== "";
     const size = isUIComponent
-      ? String(
-          props?.size || parentDelegatedSize || tagGroupAncestorSize || "md",
-        )
+      ? String(props?.size || parentDelegatedSize || "md")
       : "";
     const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
     const collectionItemBorderRadius = isCardItem ? 8 : 0;
@@ -2560,7 +2555,6 @@ export const ElementSprite = memo(function ElementSprite({
     parentSliderMaxValue,
     parentSliderVariant,
     isLabelInNowrapParent,
-    tagGroupAncestorSize,
     tagGroupAllowsRemoving,
     dateInputParentTag,
     dateInputGranularity,

@@ -51,6 +51,15 @@ import { useScrollState } from "../../../../stores/scrollState";
 
 // ─── 모듈 수준 상수 ──────────────────────────────────────────────────
 
+/** ADR-048: Label이 childPath인 부모 태그 Set (lazy, 1회 빌드) */
+let labelDelegationParents: Set<string> | undefined;
+function getLabelDelegationParents(): Set<string> | undefined {
+  if (labelDelegationParents === undefined) {
+    labelDelegationParents = getParentTagsForChild("Label") ?? undefined;
+  }
+  return labelDelegationParents;
+}
+
 /** flex/grid container 판별 집합 (CSS Blockification 적용 기준) */
 const FLEX_GRID_DISPLAYS = new Set([
   "flex",
@@ -1161,10 +1170,8 @@ function traversePostOrder(
     }
   }
 
-  // ADR-048: Label fontSize/lineHeight 주입 — Registry 기반
-  // propagation 규칙에 Label이 childPath인 규칙이 있는 컨테이너만 대상
-  const labelParents = getParentTagsForChild("Label");
-  if (labelParents?.has(containerTag)) {
+  // Label fontSize/lineHeight 주입 — 부모의 size에 따라 Label에 fontSize/lineHeight 인라인 주입
+  if (getLabelDelegationParents()?.has(containerTag)) {
     const parentSize =
       ((rawElement.props as Record<string, unknown> | undefined)?.size as
         | string
