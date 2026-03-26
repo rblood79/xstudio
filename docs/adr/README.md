@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-26 (ADR-047 완료 이동 + ADR-042 부분 완료 이동 + ADR-048 추가 + ADR-041 ChildSyncField→PropagationSpec 관계 업데이트)
+> **최종 업데이트**: 2026-03-26 (우선순위 재산정 — ADR-041→048→045 Property Editor 체인 P2 확정, ADR-043/044 P3 하향)
 
 ## 현황 요약
 
@@ -58,8 +58,8 @@
 | [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-4 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment + Fill 비활성 힌트)                                                                              | 보류: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램                                                                                 |    P4    |
 | [019](019-icon-system.md)                         | 아이콘 시스템 — Icon 선택/변경/추가             | Phase A+B+C+D 완료 (C2 simple element 경로, C4 SelectIcon+ComboBox 연동, C5 ComboBoxEditor IconPicker)                                                               | Phase E (추가 라이브러리)                                                                                                              |    P4    |
 | [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B+C 완료 (TextEditOverlay + Quill + 멀티페이지 + Spec 컴포넌트 텍스트 편집)                                                                                  | Phase D (리치 텍스트/툴바)                                                                                                             |    P4    |
-| [041](041-spec-driven-property-editor.md)         | Spec-Driven Property Editor 자동 생성           | Phase 0~1 완료 + 배치 1/2/3 전환 완료 (12개) + 하이브리드 11개 진행 + 수동 editor 12개 제거. Spec 등록 23개, GenericPropertyEditor/SpecField/evaluateVisibility 구현 | ChildSyncField 미구현 (ADR-048 PropagationSpec으로 위임 예정), icon 필드 미구현, 나머지 등급 B/C 하이브리드 전환                       |    P4    |
-| [042](042-spec-dimension-injection.md)            | Spec Container Dimension Injection              | Phase 1 (Tag) 완료                                                                                                                                                   | Phase 2~4 (나머지 8개 컴포넌트 텍스트 폭 추정 제거)                                                                                    |    P2    |
+| [041](041-spec-driven-property-editor.md)         | Spec-Driven Property Editor 자동 생성           | Phase 0~1 완료 + 배치 1/2/3 전환 완료 (12개) + 하이브리드 11개 진행 + 수동 editor 12개 제거. Spec 등록 23개, GenericPropertyEditor/SpecField/evaluateVisibility 구현 | ChildSyncField 미구현 (ADR-048 PropagationSpec으로 대체), icon 필드 미구현, 나머지 등급 B/C 하이브리드 전환                            |  **P2**  |
+| [042](042-spec-dimension-injection.md)            | Spec Container Dimension Injection              | Phase 1 (Tag) 완료                                                                                                                                                   | Phase 2~4 (나머지 8개 컴포넌트 텍스트 폭 추정 제거)                                                                                    |    P3    |
 
 > **참고**: ADR-029에 동일 번호의 [Text Edit Overlay UX 개선](completed/029-text-edit-overlay-improvements.md) 문서가 존재하며, ADR-027의 후속 개선으로 Phase 1-2 모두 구현 완료 (Accepted).
 
@@ -74,8 +74,8 @@
 | [032](032-events-data-integration.md)                    | Events Platform 재설계 + Data 통합       | Proposed | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동                                                     |  **P3**  |
 | [034](034-events-panel-renovation.md)                    | Events Panel Renovation                  | Proposed | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                                                                  |  **P3**  |
 | [038](038-figma-import.md)                               | Figma 디자인 임포트 시스템               | Proposed | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                                  |  **P3**  |
-| [043](043-selection-drag-alignment.md)                   | Selection Drag Alignment                 | Proposed | Pencil selection drag 패턴 정렬 — deferred commit + Pixi/Skia 좌표 계약 분리                                                               |    P2    |
-| [044](044-project-renaming-xstudio-to-composition.md)    | 프로젝트 리네이밍 xstudio → composition  | Proposed | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                                                                |  **P2**  |
+| [043](043-selection-drag-alignment.md)                   | Selection Drag Alignment                 | Proposed | Pencil selection drag 패턴 정렬 — deferred commit + Pixi/Skia 좌표 계약 분리                                                               |    P3    |
+| [044](044-project-renaming-xstudio-to-composition.md)    | 프로젝트 리네이밍 xstudio → composition  | Proposed | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                                                                |    P4    |
 | [045](045-s2-property-editor-alignment.md)               | S2 Property Editor 프로퍼티 정합성 정렬  | Proposed | 3 Phase — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 + 기능 점검 (24개 파일)                                                            |  **P2**  |
 | [046](046-s2-contract-expansion-form-colorfield-tabs.md) | S2 계약 확장 — Form, ColorField, Tabs    | Accepted | 자동 생성 전 계약 확정 — `Tabs.density`, `ColorField` 1차 계약(`labelAlign` 포함), `Form.labelPosition/labelAlign/necessityIndicator` 채택 |  **P2**  |
 | [048](048-declarative-props-propagation.md)              | S2 Context 기반 선언적 Props Propagation | Proposed | 5 Phase — PropagationSpec 엔진 + Registry, 4경로 통합, 50개+ 조합형 컴포넌트. **선행: ADR-041** (Phase 0~2 충족)                           |  **P2**  |
@@ -104,20 +104,22 @@
 
 ---
 
-## 다음 진행 목표 (2026-03-17 기준)
+## 다음 진행 목표 (2026-03-26 기준)
 
-| 순서 | 대상        | 내용                                                                                                 | 규모 | 상태 |
-| :--: | ----------- | ---------------------------------------------------------------------------------------------------- | :--: | :--: |
-|  0   | 기반 안정화 | CSS↔WebGL 정합성 — 인라인 style 제거, height/padding/lineHeight 동기화, implicitStyles 통합          |  중  | 진행 |
-|  1   | ADR-041     | Spec-Driven Property Editor — 83개 자동화 목표, 1차 12개 단순 에디터부터 전환 (ADR-036/045/046 후속) |  중  |      |
-|  2   | ADR-038     | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                               |  대  |      |
-|  3   | ADR-032     | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL          |  대  |      |
-|  4   | ADR-034     | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)     |  중  |      |
-|  5   | ADR-013     | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                        |  대  |      |
+| 순서 | 대상    | 내용                                                                                                                  | 규모 |   상태   |
+| :--: | ------- | --------------------------------------------------------------------------------------------------------------------- | :--: | :------: |
+|  1   | ADR-041 | Spec-Driven Property Editor — 등급 B/C 하이브리드 전환 + icon 필드 구현 (Phase 0~2 완료, 잔여 전환)                   |  중  | 부분완료 |
+|  2   | ADR-048 | S2 Context 선언적 Props Propagation — Phase 0 인프라 → Phase 1 DatePicker 파일럿 → Phase 2 4경로 통합 (선행: ADR-041) |  대  |          |
+|  3   | ADR-045 | S2 Property Editor 정합성 — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 (ADR-041/048 기반)                          |  중  |          |
+|  4   | ADR-046 | S2 계약 확장 — Form, ColorField, Tabs 계약 확정 (Spec 완성도)                                                         |  소  |          |
+|  5   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                                |  대  |          |
+|  6   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                           |  대  |          |
+|  7   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)                      |  중  |          |
+|  8   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                         |  대  |          |
 
-> 완료된 #1~#21은 변경 이력 참조
+> 완료된 이전 목표는 변경 이력 참조
 >
-> **2026-03-17 우선순위 변경**: ADR-036 완료 후 CSS↔WebGL 정합성 이슈 다수 발견 (Button/Badge/ToggleButton height 고정값, 인라인 style CSS override, typography lineHeight 토큰 누락, Toolbar 레이아웃). 기반 안정화를 최우선으로 승격하고, ADR-041(Spec-Driven Property Editor)을 ADR-032보다 앞으로 이동 (ADR-036 직후라 컨텍스트 연속성 확보). ADR-032는 기반 안정 후 착수.
+> **2026-03-26 우선순위 재산정**: Property Editor 체인(ADR-041→048→045)을 P2 최우선 그룹으로 확정. 근거: ① ADR-041 진행 중(Phase 0~2 완료)이라 컨텍스트 연속성 확보 ② ADR-048은 50개+ 조합형 컴포넌트의 근본 구조 문제 해결 — 선행 조건(ADR-041 Phase 0~2) 이미 충족 ③ ADR-045는 041/048 기반 위에서 에디터 정합성 정렬. ADR-043(Selection Drag)은 UX 개선 → P3, ADR-044(리네이밍)은 기능 가치 없음 → P4, ADR-042(Dimension Injection)는 긴급 아님 → P3 하향.
 
 ---
 
@@ -138,21 +140,32 @@
 - ~~**ADR-039**: Multi-page Canvas Page-Scoped Rendering~~ — 2026-03-13 Phase 0~6 완료. visible page 중심 Pixi/Skia 렌더링, document/page snapshot 분리, page-scoped invalidation 반영
 - ~~**ADR-040**: Visible Page + Delta Runtime~~ — 2026-03-14 Phase 0~6 완료. snapshot recovery 분리, atomic activation, delta-first store/preview 계약 정착
 
-### P3: 기반 안정화 → ADR-041 → ADR-038 → ADR-032 → ADR-034 → ADR-013
+### P2: Property Editor 체인 (ADR-041 → ADR-048 → ADR-045) + 계약 확장
+
+**핵심 의존 체인** (순서 필수):
+
+```
+ADR-041 (Spec-Driven Property Editor, 부분완료)
+  → ADR-048 (선언적 Props Propagation, 선행 충족)
+    → ADR-045 (Property Editor 정합성 정렬)
+ADR-046 (S2 계약 확장, 독립)
+```
+
+- **ADR-041**: Phase 0~2 완료, 잔여는 등급 B/C 하이브리드 전환 + icon 필드. GenericPropertyEditor 인프라가 ADR-048의 기반
+- **ADR-048**: 50개+ 조합형 컴포넌트의 부모→자식 props 전파 근본 문제 해결. PropagationSpec 엔진 + Registry + 4경로 통합. ADR-041 Phase 0~2 선행 **이미 충족**
+- **ADR-045**: ADR-041/048 기반 위에서 에디터 정합성 정렬 (INCOMPLETE 9개 + 공통 패턴 16개)
+- **ADR-046**: S2 계약 확장 (Form, ColorField, Tabs) — Spec 완성도 향상, 독립 실행 가능
+
+### P3: ADR-042 + ADR-043 + ADR-038 → ADR-032 → ADR-034 → ADR-013
 
 - ~~**ADR-036**: Spec-First Single Source~~ — 2026-03-16 완료
-- ~~**ADR-024**: CSS 변수명 S2 체계 전환~~ — Superseded (ADR-022/028/029에서 4축 체계로 전환 완료)
-- **기반 안정화** (2026-03-17 진행 중):
-  - Button/Badge/ToggleButton: spec height 고정값 제거 → padding + lineHeight 기반 동적 높이
-  - typography lineHeight 토큰 추가 (text-2xs~text-lg--line-height → px 값)
-  - MIN_BUTTON_HEIGHT 제거 (CSS에 min-height 없으므로)
-  - CSSGenerator: height: 0 → height 속성 미출력
-  - Button CSS: `text-box: trim-both cap alphabetic` (폰트 무관 수직 중앙)
-  - 인라인 style CSS override 해소: ToggleButtonGroup, CheckboxGroup, RadioGroup, Select, ComboBox, Tabs, TabList, TabPanels, Breadcrumbs, SearchField, Toolbar — defaultProps/factory에서 구조적 style 제거, CSS + implicitStyles로 이관
-  - Toolbar: INLINE_BLOCK_TAGS 등록, implicitStyles 추가, border/padding 제거, orientation/flexDirection CSS 제어
-  - ToggleButtonGroup: orientation별 border-radius를 generated CSS로 이관 (layer 밖 specificity)
+- ~~**ADR-024**: CSS 변수명 S2 체계 전환~~ — Superseded
+- ~~기반 안정화~~ — 2026-03-26 완료 (Button/Badge/ToggleButton height, 인라인 style CSS override 해소, Toolbar 등)
+- **ADR-042**: Spec Container Dimension Injection Phase 2~4 — 긴급하지 않으나 렌더링 정합성 향상
+- **ADR-043**: Selection Drag Alignment — UX 개선이지만 기능 차단 아님
+- **ADR-038**: Figma 디자인 임포트 — 대규모, Property Editor 체인 완료 후 착수
 
-**의존 체인** (순서 필수):
+**Events 의존 체인** (순서 필수):
 
 ```
 ADR-032 (Events Platform 재설계)
@@ -160,29 +173,29 @@ ADR-032 (Events Platform 재설계)
     → ADR-013 (Quick Connect 데이터 바인딩)
 ```
 
-1. **ADR-032**: 현재 이벤트 엔진(Trigger/Effect 단순 구조) → Capability/Recipe 모델 + BindingRef + Condition DSL 재설계. 데이터 바인딩이 이벤트 시스템 위에서 동작하므로 **선행 필수**
-2. **ADR-034**: 재설계된 이벤트 모델을 조작할 패널 UX (recipe 중심 + diagnostics/preview). 이벤트 모델 없이 UI 구현 불가
-3. **ADR-013**: 이벤트 플랫폼 + 패널 UI 위에 Collection 데이터 바인딩 1클릭 자동화 레이어 구축
+1. **ADR-032**: Capability/Recipe 모델 + BindingRef + Condition DSL 재설계. 선행 필수
+2. **ADR-034**: recipe 중심 UX + diagnostics/preview. 이벤트 모델 없이 UI 구현 불가
+3. **ADR-013**: 이벤트 플랫폼 + 패널 UI 위에 Collection 데이터 바인딩 자동화
 
 **P3 실행 시 병행되는 Property Editor 구조 변경**:
 
-- **Child Item Management 제거 (10개 에디터)**: Select, ComboBox, RadioGroup, Tabs, Tag, Table, ListBox, GridList, Breadcrumbs 등의 Property Editor에 개별 구현된 자식 아이템 관리 UI를 제거. React Aria Components의 `items` data-driven Collection 패턴으로 전환하면 프로퍼티 에디터 내 자식 추가/삭제/정렬 관리가 불필요해짐
-- **이벤트 설정 제거 (108개 에디터)**: onClick, onChange, onPress 등 이벤트 바인딩이 각 Property Editor에 산재 → Events Panel(ADR-034)로 중앙 집중. 프로퍼티 패널은 시각적 속성만 담당, 동작/이벤트는 Events Panel이 전담
+- **Child Item Management 제거 (10개 에디터)**: React Aria Components `items` data-driven Collection 패턴 전환
+- **이벤트 설정 제거 (108개 에디터)**: Events Panel(ADR-034)로 중앙 집중
 
-### P4: ADR-009 Phase 2 잔여 + ADR-020 + ADR-026 잔여
+### P4: ADR-009 잔여 + ADR-020 + ADR-026 잔여 + ADR-044
 
-- ~~**ADR-021 Phase E**: 컴포넌트별 accent 오버라이드~~ — 완료
-- **ADR-026 잔여**: 자동 CSS 재매핑 (부모 display 변경 시), 다중 선택, Box Model 다이어그램 — Phase 1-4 완료
-- **ADR-009**: Phase 0~4 + Layout Worker 구현 완료로 대부분 성능 확보. SharedArrayBuffer + OffscreenCanvas Worker 잔여
-- **ADR-020**: Design Kit 패널 — 기존 인프라(DesignKitPanel/Store) 완성, ADR 범위 개선(Kit v2/Factory/History) 미착수
+- **ADR-009**: SharedArrayBuffer + OffscreenCanvas Worker 잔여 (대부분 성능 이미 확보)
+- **ADR-020**: Design Kit 패널 — Kit v2 스키마/Factory 연동/History 통합 미착수
+- **ADR-026 잔여**: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램 — Phase 1-4 완료
+- **ADR-044**: 프로젝트 리네이밍 xstudio → composition — 기능 가치 없음, 유지보수 작업
 
 ### P5: ADR-010 + ADR-011 A5 + ADR-012 P3-1 + ADR-015 + ADR-016
 
 - **근거**: 핵심 기능 완료, 부가 기능/장기 계획
-- **ADR-010**: EventsPanel P0/P1 완료, P1.5 UX 폴리싱 + P2 AI 이벤트 생성 미구현
+- **ADR-010**: EventsPanel P1.5 UX 폴리싱 + P2 AI 이벤트 생성 미구현
 - **ADR-011 A5**: 캔버스 통합(CanvasKit 스키마 변환, 멀티모달, 인스턴스/변수 도구) — AI 인프라 성숙 후 실행
-- **ADR-012 P3-1**: dirtyElementIds 인프라만 구현, 핵심 DFS 최적화(isLayoutAffecting, traversePostOrderDirty) 미구현
-- ADR-015: Sitemap 계층 시각화 (있으면 좋지만 필수 아님)
+- **ADR-012 P3-1**: dirtyElementIds 인프라만 구현, 핵심 DFS 최적화 미구현
+- ADR-015: Sitemap 계층 시각화
 - ADR-016: Photoshop UI/UX (Action Bar, Context Menu, Floating Panel)
 
 ---
