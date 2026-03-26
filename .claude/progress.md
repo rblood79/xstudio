@@ -29,6 +29,9 @@
 | 2-A   | 20개 컴포넌트 propagation spec 추가                       | 완료 |
 | 2-B   | propagationRegistry 전체 등록 (20개)                      | 완료 |
 | 2-D   | Factory 생성 시 초기값 전파 (applyFactoryPropagation)     | 완료 |
+| 2-E   | ElementSprite parentDelegatedSize Registry 교체           | 완료 |
+| 2-F   | fullTreeLayout effectiveGetChildElements Registry 교체    | 완료 |
+| 5     | Dead code 제거 (sync함수, ChildSyncField 타입)            | 완료 |
 
 **신규 파일:**
 
@@ -46,27 +49,29 @@ Checkbox, Radio, Switch, TextField, TextArea, NumberField,
 DateField, TimeField, ColorField, Slider, ProgressBar, Meter,
 DatePicker, DateRangePicker
 
-**미착수 Phase:**
+**추가 수정:**
 
-| Phase | 작업                                                            | 비고                                        |
-| ----- | --------------------------------------------------------------- | ------------------------------------------- |
-| 2-E   | ElementSprite.tsx Registry 교체                                 | PARENT_SIZE_DELEGATION_TAGS → Registry 기반 |
-| 2-F   | fullTreeLayout.ts effectiveGetChildElements 범용 블록 교체      | ~200줄 수동 코드 → 단일 블록                |
-| 2-G   | implicitStyles.ts getDelegatedSize() Registry 교체              | 3단계 탐색 → Registry 조회                  |
-| 3     | 컴포넌트 점진적 마이그레이션 (variant, locale 등 size 외 props) |                                             |
-| 4     | Factory 하드코딩 제거                                           |                                             |
-| 5     | 기존 수동 코드 최종 제거                                        | PARENT_SIZE_DELEGATION_TAGS 등              |
+- CSS Preview Popover 포탈 size 전파 (DatePicker/DateRangePicker/Select/ComboBox/Menu에 data-size 전달)
+- 20개 컴포넌트 CSS에 --label-font-size/--label-line-height 변수 완비
+- GenericPropertyEditor renderAfterSections typeof 방어
+
+**잔여 작업:**
+
+| Phase | 작업                                            | 비고                                          |
+| ----- | ----------------------------------------------- | --------------------------------------------- |
+| 2-G   | implicitStyles.ts getDelegatedSize()            | 기존 범용 3단계 탐색 — 교체 불필요            |
+| 3     | size 외 props 마이그레이션 (variant, locale 등) | 컴포넌트별 점진적                             |
+| 4     | Factory 하드코딩 제거                           | propagation이 처리하므로 불필요한 기본값 제거 |
 
 ## 다음 작업 후보
 
-- ADR-048 Phase 2-E/F/G: Skia/Layout/implicitStyles 3경로 Registry 교체 (대규모 리팩토링)
+- ADR-048 Phase 3: size 외 props (variant, locale 등) 컴포넌트별 점진적 마이그레이션
 - ADR-041 잔여 작업 (등급 B/C 하이브리드 전환 + icon 필드)
 - ADR-045 (ADR-041/048 이후)
 
 ## 알려진 이슈
 
-- `editorUtils.ts`에 `syncDatePickerChildren`, `syncLabelChild`, `DATE_PICKER_SYNC_KEYS` dead code 잔존 (Phase 5에서 제거 예정)
-- `ChildSyncField` 타입 정의만 존재, 구현/사용 0건 (PropagationSpec으로 대체, Phase 5에서 타입 제거)
+- `LABEL_DELEGATION_PARENT_TAGS`/`LABEL_WRAPPER_TAGS` (fullTreeLayout.ts Label DFS) — Phase 3에서 Registry 기반 교체 가능하지만 복잡한 DFS 로직이라 안전하게 유지 중
 
 ## 세션 로그
 

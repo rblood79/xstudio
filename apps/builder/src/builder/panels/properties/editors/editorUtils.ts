@@ -5,7 +5,6 @@
  */
 
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
-import type { Element } from "../../../../types/core/store.types";
 
 /** Necessity Indicator 선택 옵션 (Required select용) */
 export const NECESSITY_INDICATOR_OPTIONS = [
@@ -69,68 +68,8 @@ export function buildRequiredUpdate(value: string): Record<string, unknown> {
 }
 
 // ── DatePicker / DateRangePicker 공유 ────────────────────────────────────
-
-/** DatePicker/DateRangePicker 자식 동기화 키 */
-export const DATE_PICKER_SYNC_KEYS = new Set([
-  "variant",
-  "size",
-  "locale",
-  "calendarSystem",
-  "defaultToday",
-]);
-
-/** 재귀적 자식 동기화 (Calendar → CalendarHeader/CalendarGrid 전파) */
-export function syncDatePickerChildren(
-  state: {
-    childrenMap: Map<string, Element[]>;
-    elementsMap: Map<string, Element>;
-    updateElement: (id: string, updates: Partial<Element>) => void;
-  },
-  children: Element[],
-  key: string,
-  value: unknown,
-): void {
-  for (const child of children) {
-    // defaultToday는 CalendarGrid에만 적용
-    if (key === "defaultToday" && child.tag !== "CalendarGrid") {
-      const grandChildren = state.childrenMap.get(child.id) ?? [];
-      syncDatePickerChildren(state, grandChildren, key, value);
-      continue;
-    }
-    // Label은 size/variant만 동기화
-    if (child.tag === "Label" && key !== "size" && key !== "variant") continue;
-
-    const freshProps = state.elementsMap.get(child.id)?.props ?? child.props;
-    state.updateElement(child.id, {
-      props: { ...freshProps, [key]: value },
-    });
-
-    // Calendar의 자식(CalendarHeader/CalendarGrid)에도 전파
-    if (child.tag === "Calendar") {
-      const grandChildren = state.childrenMap.get(child.id) ?? [];
-      syncDatePickerChildren(state, grandChildren, key, value);
-    }
-  }
-}
-
-/** Label 자식의 children 텍스트 동기화 */
-export function syncLabelChild(
-  state: {
-    elementsMap: Map<string, Element>;
-    updateElement: (id: string, updates: Partial<Element>) => void;
-  },
-  children: Element[],
-  value: unknown,
-): void {
-  const labelChild = children.find((c) => c.tag === "Label");
-  if (labelChild) {
-    const freshProps =
-      state.elementsMap.get(labelChild.id)?.props ?? labelChild.props;
-    state.updateElement(labelChild.id, {
-      props: { ...freshProps, children: value },
-    });
-  }
-}
+// ADR-048: syncDatePickerChildren/syncLabelChild/DATE_PICKER_SYNC_KEYS 제거
+// → PropertiesPanel handleUpdate의 propagation 엔진으로 대체
 
 /** Locale 선택 옵션 */
 export const LOCALE_OPTIONS = [

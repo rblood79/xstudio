@@ -218,21 +218,6 @@ export type DerivedUpdateFn = (
   currentProps: Record<string, unknown>,
 ) => Record<string, unknown>;
 
-export interface ChildSyncConfig {
-  path: [string, ...string[]];
-  propKey: string;
-  derivedUpdateFn?: DerivedUpdateFn;
-  fallbackToDirectChild?: boolean;
-}
-
-export interface ChildSyncField extends BaseFieldDef {
-  type: "childSync";
-  uiType?: "string" | "size";
-  placeholder?: string;
-  multiline?: boolean;
-  childSync: ChildSyncConfig;
-}
-
 export type FieldDef =
   | VariantField
   | SizeField
@@ -241,8 +226,7 @@ export type FieldDef =
   | StringField
   | NumberField
   | IconField
-  | CustomField
-  | ChildSyncField;
+  | CustomField;
 
 // ─── ADR-036: Tier 2 Composite CSS 타입 ─────────────────────────────────────
 
