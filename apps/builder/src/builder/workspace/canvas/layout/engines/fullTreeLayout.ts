@@ -39,6 +39,11 @@ import {
 import { elementToTaffyBlockStyle } from "./TaffyBlockEngine";
 import { elementToTaffyStyle } from "./TaffyFlexEngine";
 import { applyImplicitStyles } from "./implicitStyles";
+import { resolvePropagatedProps } from "../../../../utils/propagationEngine";
+import {
+  getPropagationRules,
+  getParentTagsForChild,
+} from "../../../../utils/propagationRegistry";
 import { extractSpecTextStyle } from "../../utils/specTextStyle";
 import { InlineAlertSpec } from "@xstudio/specs";
 import { getNecessityIndicatorSuffix } from "@xstudio/shared/components";
@@ -1106,125 +1111,60 @@ function traversePostOrder(
   // fit-content/min-content 계산 시 정확한 border-box 크기를 산출한다.
   // (원본 childElements는 spec padding/gap 미포함 → 크기 과소 산출)
 
-  // TagGroup/TagList: getChildElements 래퍼로 재귀적 calculateContentWidth에서도
-  // Tag에 TagGroup size 상속 보장 (getChildElements는 elementsMap 원본을 반환하므로
-  // DFS rawElement 주입이 누락됨)
+  // ADR-048: Registry 기반 부모→자식 props 전파 (블록 1~3, 5 통합)
+  // propagation 규칙이 있는 컨테이너에서 자식에게 props를 주입
   let effectiveGetChildElements = getChildElements;
-  if (containerTag === "taggroup" || containerTag === "taglist") {
-    let tagGroupSize: string | undefined;
-    let tagGroupAllowsRemoving = false;
-    if (containerTag === "taggroup") {
-      const gp = rawElement.props as Record<string, unknown> | undefined;
-      tagGroupSize = gp?.size as string | undefined;
-      tagGroupAllowsRemoving = Boolean(gp?.allowsRemoving);
-    } else {
-      const parentEl = rawElement.parent_id
-        ? elementsMap.get(rawElement.parent_id)
-        : undefined;
-      if (parentEl?.tag === "TagGroup") {
-        const gp = parentEl.props as Record<string, unknown> | undefined;
-        tagGroupSize = gp?.size as string | undefined;
-        tagGroupAllowsRemoving = Boolean(gp?.allowsRemoving);
-      }
-    }
-    if (tagGroupSize || tagGroupAllowsRemoving) {
-      effectiveGetChildElements = (id: string) => {
-        const children = getChildElements(id);
-        return children.map((child) => {
-          if (child.tag !== "Tag") return child;
-          const cp = child.props as Record<string, unknown> | undefined;
-          const d: Record<string, unknown> = {};
-          if (tagGroupSize && !cp?.size) d.size = tagGroupSize;
-          if (tagGroupAllowsRemoving) d.allowsRemoving = true;
-          if (Object.keys(d).length === 0) return child;
-          return { ...child, props: { ...child.props, ...d } };
-        });
-      };
-    }
+  const propagationRules = getPropagationRules(containerTag);
+  if (propagationRules) {
+    const containerProps = rawElement.props as Record<string, unknown>;
+    const prevGet = effectiveGetChildElements;
+    effectiveGetChildElements = (id: string) => {
+      const children = prevGet(id);
+      return children.map((child) => {
+        const patch = resolvePropagatedProps(
+          containerTag,
+          containerProps,
+          child.tag,
+          child.props as Record<string, unknown>,
+        );
+        return patch
+          ? { ...child, props: { ...child.props, ...patch } }
+          : child;
+      });
+    };
   }
-
-  // CheckboxGroup/RadioGroup: 자식 Checkbox/Radio에 size 주입
-  // 구조: CheckboxGroup → [Label, CheckboxItems → [Checkbox, ...]]
-  //        RadioGroup → [Label, RadioItems → [Radio, ...]]
-  if (containerTag === "checkboxgroup" || containerTag === "radiogroup") {
-    const groupSize = (rawElement.props as Record<string, unknown> | undefined)
-      ?.size as string | undefined;
-    if (groupSize) {
-      const childTag = containerTag === "checkboxgroup" ? "Checkbox" : "Radio";
-      const itemsTag =
-        containerTag === "checkboxgroup" ? "CheckboxItems" : "RadioItems";
-      const prevGetChildElements3 = effectiveGetChildElements;
-      effectiveGetChildElements = (id: string) => {
-        const children = prevGetChildElements3(id);
-        return children.map((child) => {
-          // 직접 자식 Checkbox/Radio에 size 주입
-          if (child.tag === childTag) {
-            const cp = child.props as Record<string, unknown> | undefined;
-            if (cp?.size) return child;
-            return { ...child, props: { ...child.props, size: groupSize } };
-          }
-          // CheckboxItems/RadioItems 래퍼의 자식에도 전파
-          if (child.tag === itemsTag) {
-            return child; // 래퍼 자체는 변경 없음, 내부 자식은 재귀 시 처리
-          }
-          return child;
-        });
-      };
-    }
-  }
-
-  // CheckboxItems/RadioItems: 부모 CheckboxGroup/RadioGroup의 size를 자식 Checkbox/Radio에 전파
+  // CheckboxItems/RadioItems: 부모 Group의 propagation을 중계
   if (containerTag === "checkboxitems" || containerTag === "radioitems") {
     const parentEl = rawElement.parent_id
       ? elementsMap.get(rawElement.parent_id)
       : undefined;
-    const groupTag =
-      containerTag === "checkboxitems" ? "CheckboxGroup" : "RadioGroup";
-    const childTag = containerTag === "checkboxitems" ? "Checkbox" : "Radio";
-    if (parentEl?.tag === groupTag) {
-      const groupSize = (parentEl.props as Record<string, unknown> | undefined)
-        ?.size as string | undefined;
-      if (groupSize) {
-        const prevGetChildElements4 = effectiveGetChildElements;
+    if (parentEl) {
+      const parentRules = getPropagationRules(parentEl.tag.toLowerCase());
+      if (parentRules) {
+        const parentProps = parentEl.props as Record<string, unknown>;
+        const prevGet2 = effectiveGetChildElements;
         effectiveGetChildElements = (id: string) => {
-          const children = prevGetChildElements4(id);
+          const children = prevGet2(id);
           return children.map((child) => {
-            if (child.tag !== childTag) return child;
-            const cp = child.props as Record<string, unknown> | undefined;
-            if (cp?.size) return child;
-            return { ...child, props: { ...child.props, size: groupSize } };
+            const patch = resolvePropagatedProps(
+              parentEl.tag,
+              parentProps,
+              child.tag,
+              child.props as Record<string, unknown>,
+            );
+            return patch
+              ? { ...child, props: { ...child.props, ...patch } }
+              : child;
           });
         };
       }
     }
   }
 
-  // 부모 size에 따른 Label fontSize 주입
-  // Label의 calculateContentHeight(TEXT_LEAF_TAGS 경로)는 style.fontSize를 참조하므로
-  // spec size delegation된 fontSize를 인라인으로 주입해야 함
-  const LABEL_SIZE_DELEGATION_CONTAINERS = new Set([
-    "switch",
-    "checkbox",
-    "radio",
-    "checkboxgroup",
-    "radiogroup",
-    "taggroup",
-    "select",
-    "combobox",
-    "searchfield",
-    "textfield",
-    "textarea",
-    "numberfield",
-    "datefield",
-    "timefield",
-    "colorfield",
-    "slider",
-    "progressbar",
-    "meter",
-    "datepicker",
-    "daterangepicker",
-  ]);
-  if (LABEL_SIZE_DELEGATION_CONTAINERS.has(containerTag)) {
+  // ADR-048: Label fontSize/lineHeight 주입 — Registry 기반
+  // propagation 규칙에 Label이 childPath인 규칙이 있는 컨테이너만 대상
+  const labelParents = getParentTagsForChild("Label");
+  if (labelParents?.has(containerTag)) {
     const parentSize =
       ((rawElement.props as Record<string, unknown> | undefined)?.size as
         | string
@@ -1265,31 +1205,6 @@ function traversePostOrder(
           });
         };
       }
-    }
-  }
-
-  // Select/ComboBox: 부모 size를 SelectTrigger/ComboBoxWrapper 자식에 위임
-  // calculateContentHeight에서 trigger/wrapper 높이를 size별로 정확히 계산하기 위해 필요
-  if (
-    containerTag === "select" ||
-    containerTag === "combobox" ||
-    containerTag === "numberfield"
-  ) {
-    const parentSize = (rawElement.props as Record<string, unknown> | undefined)
-      ?.size as string | undefined;
-    if (parentSize) {
-      const wrapperTag =
-        containerTag === "select" ? "SelectTrigger" : "ComboBoxWrapper";
-      const prevGetChildElements = effectiveGetChildElements;
-      effectiveGetChildElements = (id: string) => {
-        const children = prevGetChildElements(id);
-        return children.map((child) => {
-          if (child.tag !== wrapperTag) return child;
-          const cp = child.props as Record<string, unknown> | undefined;
-          if (cp?.size) return child;
-          return { ...child, props: { ...child.props, size: parentSize } };
-        });
-      };
     }
   }
 

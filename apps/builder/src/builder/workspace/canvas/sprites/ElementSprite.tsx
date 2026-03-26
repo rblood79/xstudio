@@ -216,6 +216,7 @@ import {
   useThemeConfigVersion,
   useResolvedSkiaTheme,
 } from "../../../../stores/themeConfigStore";
+import { getParentTagsForChild } from "../../../utils/propagationRegistry";
 import { useResolvedElement } from "./useResolvedElement";
 import { isFlexContainer, isGridContainer } from "../layout";
 import { measureWrappedTextHeight } from "../utils/textMeasure";
@@ -1052,24 +1053,8 @@ export const ElementSprite = memo(function ElementSprite({
     return state.elementsMap.get(element.parent_id) ?? null;
   });
 
-  // Tag → TagGroup 조상 size/allowsRemoving 상속 (CSS parent delegation 에뮬레이션)
-  // Tag > TagList > TagGroup 구조에서 TagGroup의 props를 Tag에 전파
-  const tagGroupAncestorSize = useStore((state) => {
-    if (element.tag !== "Tag" || !element.parent_id) return null;
-    const tagList = state.elementsMap.get(element.parent_id);
-    if (!tagList?.parent_id) return null;
-    const ancestor =
-      tagList.tag === "TagList"
-        ? state.elementsMap.get(tagList.parent_id)
-        : tagList.tag === "TagGroup"
-          ? tagList
-          : null;
-    if (!ancestor || ancestor.tag !== "TagGroup") return null;
-    return (
-      ((ancestor.props as Record<string, unknown> | undefined)
-        ?.size as string) || "md"
-    );
-  });
+  // ADR-048: tagGroupAncestorSize는 parentDelegatedSize에 통합됨 (Registry 기반)
+  const tagGroupAncestorSize: string | null = null;
 
   const tagGroupAllowsRemoving = useStore((state) => {
     if (element.tag !== "Tag" || !element.parent_id) return false;
@@ -1087,100 +1072,23 @@ export const ElementSprite = memo(function ElementSprite({
     );
   });
 
-  // Select/ComboBox → SelectTrigger/ComboBoxWrapper/SelectValue 조상 size 상속
-  // Store에는 부모 Select/ComboBox에만 size prop이 있고,
-  // 자식 wrapper/value element에는 없으므로 부모에서 읽어 전파
-  const PARENT_SIZE_DELEGATION_TAGS = new Set([
-    "SelectTrigger",
-    "ComboBoxWrapper",
-    "SelectValue",
-    "SelectIcon",
-    "ComboBoxInput",
-    "ComboBoxTrigger",
-    "ProgressBarTrack",
-    "ProgressBarValue",
-    "MeterTrack",
-    "MeterValue",
-    "SliderTrack",
-    "SliderOutput",
-    "SliderThumb",
-    "SearchFieldWrapper",
-    "SearchIcon",
-    "SearchInput",
-    "SearchClearButton",
-    "DateInput",
-    "DateSegment",
-    "TimeSegment",
-    "Checkbox",
-    "Radio",
-    "Label",
-  ]);
-  const SIZE_DELEGATION_PARENT_TAGS = new Set([
-    "Select",
-    "ComboBox",
-    "SearchField",
-    "ProgressBar",
-    "Meter",
-    "Switch",
-    "Checkbox",
-    "Radio",
-    "CheckboxGroup",
-    "RadioGroup",
-    "TagGroup",
-    "TextField",
-    "TextArea",
-    "NumberField",
-    "DateField",
-    "TimeField",
-    "ColorField",
-    "Slider",
-  ]);
-  // Group 래퍼 태그: 구조적 중간 컨테이너 (size 없이 통과)
-  const GROUP_WRAPPER_TAGS = new Set(["CheckboxItems", "RadioItems"]);
+  // ADR-048: Registry 기반 부모 size delegation (수동 태그 Set 제거)
+  // getParentTagsForChild로 역방향 인덱스를 조회하고, 조상 체인을 최대 3단계 스캔
   const parentDelegatedSize = useStore((state) => {
-    if (!PARENT_SIZE_DELEGATION_TAGS.has(element.tag) || !element.parent_id)
-      return null;
-    // 직접 부모 확인
-    const parent = state.elementsMap.get(element.parent_id);
-    if (!parent) return null;
-    if (SIZE_DELEGATION_PARENT_TAGS.has(parent.tag)) {
-      const parentSize =
-        ((parent.props as Record<string, unknown> | undefined)
-          ?.size as string) ?? null;
-      if (parentSize) return parentSize;
-      // 부모(Checkbox/Radio)에 size 없으면 → 조부모(CheckboxGroup/RadioGroup) 탐색
-      if (parent.parent_id) {
-        const gp = state.elementsMap.get(parent.parent_id);
-        if (gp) {
-          // 조부모가 Group 래퍼(CheckboxItems 등)면 → 증조부모 탐색
-          if (GROUP_WRAPPER_TAGS.has(gp.tag) && gp.parent_id) {
-            const ggp = state.elementsMap.get(gp.parent_id);
-            if (ggp && SIZE_DELEGATION_PARENT_TAGS.has(ggp.tag)) {
-              return (
-                ((ggp.props as Record<string, unknown> | undefined)
-                  ?.size as string) ?? null
-              );
-            }
-          }
-          if (SIZE_DELEGATION_PARENT_TAGS.has(gp.tag)) {
-            return (
-              ((gp.props as Record<string, unknown> | undefined)
-                ?.size as string) ?? null
-            );
-          }
-        }
-      }
-      return parentSize;
-    }
-    // 2단계 상위 (SelectValue → SelectTrigger → Select)
-    if (parent.parent_id) {
-      const grandParent = state.elementsMap.get(parent.parent_id);
-      if (grandParent && SIZE_DELEGATION_PARENT_TAGS.has(grandParent.tag)) {
+    const delegationParents = getParentTagsForChild(element.tag);
+    if (!delegationParents || !element.parent_id) return null;
+
+    let currentId: string | null | undefined = element.parent_id;
+    for (let depth = 0; depth < 3 && currentId; depth++) {
+      const ancestor = state.elementsMap.get(currentId);
+      if (!ancestor) break;
+      if (delegationParents.has(ancestor.tag.toLowerCase())) {
         return (
-          ((grandParent.props as Record<string, unknown> | undefined)
+          ((ancestor.props as Record<string, unknown> | undefined)
             ?.size as string) ?? null
         );
       }
+      currentId = ancestor.parent_id;
     }
     return null;
   });
