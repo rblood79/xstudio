@@ -6,6 +6,8 @@ import {
   TabPanel,
   Panel,
   Card,
+  Dialog,
+  Popover,
   Button,
   Link,
   Badge,
@@ -695,12 +697,97 @@ export const renderTooltip = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
+      placement={
+        (element.props.placement as
+          | "top"
+          | "bottom"
+          | "left"
+          | "right"
+          | "top start"
+          | "top end"
+          | "bottom start"
+          | "bottom end") || undefined
+      }
+      offset={
+        element.props.offset !== undefined
+          ? Number(element.props.offset)
+          : undefined
+      }
     >
       {typeof element.props.children === "string"
         ? element.props.children
         : null}
       {children.map((child) => renderElement(child, child.id))}
     </Tooltip>
+  );
+};
+
+/**
+ * Dialog 렌더링
+ */
+export const renderDialog = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <Dialog
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+      role={(element.props.role as "dialog" | "alertdialog") || "dialog"}
+      isDismissable={Boolean(element.props.isDismissable)}
+    >
+      {typeof element.props.children === "string"
+        ? element.props.children
+        : null}
+      {children.map((child) => renderElement(child, child.id))}
+    </Dialog>
+  );
+};
+
+/**
+ * Popover 렌더링
+ */
+export const renderPopover = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <Popover
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+      placement={
+        (element.props.placement as
+          | "top"
+          | "bottom"
+          | "left"
+          | "right"
+          | "top start"
+          | "top end"
+          | "bottom start"
+          | "bottom end") || undefined
+      }
+    >
+      {typeof element.props.children === "string"
+        ? element.props.children
+        : null}
+      {children.map((child) => renderElement(child, child.id))}
+    </Popover>
   );
 };
 
@@ -729,6 +816,10 @@ export const renderProgressBar = (
       style={element.props.style}
       className={element.props.className}
       label={label}
+      variant={
+        (element.props.variant as "default" | "accent" | "neutral") ||
+        "default"
+      }
       value={Number(element.props.value || 0)}
       minValue={
         element.props.minValue !== undefined
@@ -1013,10 +1104,18 @@ export const renderLink = (
       data-element-id={element.id}
       href={String(element.props.href || "")}
       variant={(element.props.variant as "primary" | "secondary") || undefined}
-      size={(element.props.size as "sm" | "md" | "lg") || undefined}
+      size={
+        (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || undefined
+      }
+      isQuiet={Boolean(element.props.isQuiet)}
+      staticColor={
+        (element.props.staticColor as "auto" | "black" | "white") || "auto"
+      }
       isExternal={Boolean(element.props.isExternal)}
       showExternalIcon={element.props.showExternalIcon !== false}
       isDisabled={Boolean(element.props.isDisabled)}
+      target={(element.props.target as string) || undefined}
+      rel={(element.props.rel as string) || undefined}
       style={element.props.style}
       className={element.props.className}
       onPress={eventHandlers.onPress as unknown as () => void}
@@ -1136,6 +1235,18 @@ export const renderToast = (
       key={element.id}
       data-element-id={element.id}
       data-custom-id={element.customId}
+      data-position={(element.props.position as string) || "top-right"}
+      data-variant={(element.props.variant as string) || "info"}
+      data-timeout={
+        element.props.timeout !== undefined
+          ? String(element.props.timeout)
+          : undefined
+      }
+      data-max-toasts={
+        element.props.maxToasts !== undefined
+          ? String(element.props.maxToasts)
+          : undefined
+      }
       data-accent={
         element.props.accentColor
           ? String(element.props.accentColor)
@@ -1146,7 +1257,12 @@ export const renderToast = (
       className={element.props.className}
       onClick={eventHandlers.onClick as unknown as () => void}
     >
-      {children.map((child) => renderElement(child, child.id))}
+      {children.length > 0
+        ? children.map((child) => renderElement(child, child.id))
+        : (element.props.defaultTitle as React.ReactNode) ||
+          (element.props.defaultDescription as React.ReactNode) ||
+          (element.props.children as React.ReactNode) ||
+          "Toast"}
     </div>
   );
 };
@@ -1334,8 +1450,11 @@ export const renderStatusLight = (
   element: PreviewElement,
   _context: RenderContext,
 ): React.ReactNode => {
+  const size = String(element.props.size || "md").toLowerCase();
   const dotSize =
-    { S: 8, M: 10, L: 12 }[(element.props.size as string) || "M"] ?? 10;
+    { sm: 8, md: 10, lg: 12 }[size] ?? 10;
+  const fontSize =
+    { sm: 12, md: 14, lg: 16 }[size] ?? 14;
 
   const variantColorMap: Record<string, string> = {
     neutral: "var(--fg-muted)",
@@ -1372,7 +1491,7 @@ export const renderStatusLight = (
         }}
       />
       {element.props.children && (
-        <span style={{ fontSize: 14 }}>{element.props.children as string}</span>
+        <span style={{ fontSize }}>{element.props.children as string}</span>
       )}
     </div>
   );

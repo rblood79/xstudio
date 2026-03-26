@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveStateColors } from "../utils/stateEffect";
+import { MessageSquare, ToggleLeft, Parentheses } from "lucide-react";
 
 /**
  * Dialog Props
@@ -16,8 +17,10 @@ import { resolveStateColors } from "../utils/stateEffect";
 export interface DialogProps {
   variant?: "accent" | "negative";
   size?: "S" | "M" | "L";
+  children?: string;
   title?: string;
-  isDismissible?: boolean;
+  isDismissable?: boolean;
+  role?: "dialog" | "alertdialog";
 }
 
 /**
@@ -35,6 +38,43 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
 
   defaultVariant: "accent",
   defaultSize: "M",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "children",
+            type: "string",
+            label: "Text",
+            icon: MessageSquare,
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDismissable",
+            type: "boolean",
+            label: "Dismissable",
+            icon: ToggleLeft,
+          },
+          {
+            key: "role",
+            type: "enum",
+            label: "Role",
+            icon: Parentheses,
+            options: [
+              { value: "dialog", label: "Dialog" },
+              { value: "alertdialog", label: "Alert Dialog" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 
   overlay: {
     usePortal: true,
@@ -152,9 +192,10 @@ export const DialogSpec: ComponentSpec<DialogProps> = {
     },
 
     react: (props) => ({
-      role: "dialog",
+      role: props.role ?? "dialog",
       "aria-modal": true,
       "aria-label": props.title,
+      "data-dismissable": props.isDismissable || undefined,
     }),
 
     pixi: () => ({

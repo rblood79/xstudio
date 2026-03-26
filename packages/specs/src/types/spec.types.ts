@@ -145,6 +145,7 @@ export interface BaseFieldDef {
   icon?: LucideIcon;
   visibleWhen?: VisibilityCondition;
   emptyToUndefined?: boolean;
+  derivedUpdateFn?: DerivedUpdateFn;
 }
 
 export type VisibilityCondition = {
@@ -164,6 +165,7 @@ export interface VariantField extends Omit<BaseFieldDef, "key"> {
 export interface SizeField extends Omit<BaseFieldDef, "key"> {
   type: "size";
   key?: string;
+  options?: Array<{ value: string; label: string }>;
 }
 
 export interface BooleanField extends BaseFieldDef {

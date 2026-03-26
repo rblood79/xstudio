@@ -467,6 +467,7 @@
     padding-left: 0;
     background: transparent;
     border: none;
+    outline: none;
     color: var(--fg);
     cursor: pointer;
   }
@@ -478,7 +479,7 @@
   /* 포커스 링: 컨테이너에 적용 */
   .header_contents .zoom-controls .zoom-trigger-button:focus-within {
     outline: 2px solid var(--focus-ring);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
   /* Zoom Menu Popover */

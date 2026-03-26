@@ -5,7 +5,7 @@ import {
 } from "react-aria-components";
 import { useFocusRing } from "@react-aria/focus";
 import { mergeProps } from "@react-aria/utils";
-import type { LinkVariant, ComponentSize } from "../types";
+import type { LinkVariant, ComponentSize, StaticColor } from "../types";
 import { Skeleton } from "./Skeleton";
 import "./styles/Link.css";
 
@@ -20,6 +20,8 @@ export interface LinkProps extends RACLinkProps {
    * @default 'md'
    */
   size?: ComponentSize;
+  isQuiet?: boolean;
+  staticColor?: StaticColor;
   /**
    * Whether the link is external (opens in new tab)
    * Automatically adds rel="noopener noreferrer" for security
@@ -64,6 +66,8 @@ export function Link(props: LinkProps) {
   const {
     variant = "primary",
     size = "md",
+    isQuiet = false,
+    staticColor = "auto",
     isExternal,
     showExternalIcon = true,
     isLoading,
@@ -96,6 +100,8 @@ export function Link(props: LinkProps) {
       {...(allProps as RACLinkProps)}
       data-variant={variant}
       data-size={size}
+      data-quiet={isQuiet || undefined}
+      data-static-color={staticColor}
       data-focus-visible={isFocusVisible || undefined}
       data-external={isExternal || undefined}
       className={composeRenderProps(

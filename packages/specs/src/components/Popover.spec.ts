@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveStateColors } from "../utils/stateEffect";
+import { MessageSquare, MapPin } from "lucide-react";
 
 /**
  * Popover Props
@@ -16,7 +17,16 @@ import { resolveStateColors } from "../utils/stateEffect";
 export interface PopoverProps {
   variant?: "accent" | "neutral" | "surface";
   size?: "S" | "M" | "L";
-  placement?: "top" | "right" | "bottom" | "left";
+  children?: string;
+  placement?:
+    | "top"
+    | "bottom"
+    | "left"
+    | "right"
+    | "top start"
+    | "top end"
+    | "bottom start"
+    | "bottom end";
   showArrow?: boolean;
 }
 
@@ -34,6 +44,43 @@ export const PopoverSpec: ComponentSpec<PopoverProps> = {
 
   defaultVariant: "surface",
   defaultSize: "M",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "children",
+            type: "string",
+            label: "Text",
+            icon: MessageSquare,
+          },
+        ],
+      },
+      {
+        title: "Position",
+        fields: [
+          {
+            key: "placement",
+            type: "enum",
+            label: "Placement",
+            icon: MapPin,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "bottom", label: "Bottom" },
+              { value: "left", label: "Left" },
+              { value: "right", label: "Right" },
+              { value: "top start", label: "Top Start" },
+              { value: "top end", label: "Top End" },
+              { value: "bottom start", label: "Bottom Start" },
+              { value: "bottom end", label: "Bottom End" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 
   overlay: {
     usePortal: true,

@@ -11,6 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Type, Parentheses, Circle, Activity } from "lucide-react";
 
 /**
  * Badge Props
@@ -57,6 +58,72 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
 
   defaultVariant: "accent",
   defaultSize: "sm",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "children",
+            type: "string",
+            label: "Text",
+            placeholder: "5",
+            icon: Type,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            type: "variant",
+            label: "Variant",
+            icon: Parentheses,
+          },
+          {
+            key: "fillStyle",
+            type: "enum",
+            label: "Fill Style",
+            icon: Parentheses,
+            options: [
+              { value: "bold", label: "Bold" },
+              { value: "subtle", label: "Subtle" },
+              { value: "outline", label: "Outline" },
+            ],
+          },
+          {
+            type: "size",
+            label: "Size",
+            options: [
+              { value: "xs", label: "XS" },
+              { value: "sm", label: "S" },
+              { value: "md", label: "M" },
+              { value: "lg", label: "L" },
+              { value: "xl", label: "XL" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDot",
+            type: "boolean",
+            label: "Dot Badge",
+            icon: Circle,
+          },
+          {
+            key: "isPulsing",
+            type: "boolean",
+            label: "Pulsing Animation",
+            icon: Activity,
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     accent: {

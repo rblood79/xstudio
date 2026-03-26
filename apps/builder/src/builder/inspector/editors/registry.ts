@@ -1,6 +1,8 @@
-import type { ComponentType } from "react";
+import { createElement, type ComponentType } from "react";
 import type { ComponentEditorProps } from "../types";
 import { componentMetadata } from "@xstudio/shared/components/metadata";
+import { GenericPropertyEditor } from "../../panels/properties/generic";
+import { getPropertyEditorSpec } from "../../panels/properties/specRegistry";
 
 /**
  * 에디터 캐시
@@ -104,6 +106,17 @@ export async function getEditor(
   // 일반 에디터: 캐시 확인
   if (editorCache.has(type)) {
     return editorCache.get(type)!;
+  }
+
+  const propertySpec = getPropertyEditorSpec(type);
+  if (propertySpec?.properties) {
+    const genericEditor: ComponentType<ComponentEditorProps> = (props) =>
+      createElement(GenericPropertyEditor, {
+        ...props,
+        spec: propertySpec,
+      });
+    editorCache.set(type, genericEditor);
+    return genericEditor;
   }
 
   // 메타데이터에서 에디터 정보 확인

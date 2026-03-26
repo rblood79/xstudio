@@ -8,6 +8,7 @@
 @layer components {
   .react-aria-ProgressBar {
     --fill-color: var(--accent);
+    --track-color: var(--accent-subtle);
 
     display: grid;
     grid-template-areas:
@@ -39,7 +40,7 @@
       border-radius: var(--radius-sm);
       overflow: hidden;
       will-change: transform;
-      background: var(--accent-subtle);
+      background: var(--track-color);
     }
 
     .fill {
@@ -56,6 +57,17 @@
         will-change: transform;
       }
     }
+  }
+
+  .react-aria-ProgressBar[data-variant="default"],
+  .react-aria-ProgressBar[data-variant="accent"] {
+    --fill-color: var(--accent);
+    --track-color: var(--accent-subtle);
+  }
+
+  .react-aria-ProgressBar[data-variant="neutral"] {
+    --fill-color: var(--fg-muted);
+    --track-color: var(--bg-muted);
   }
 
   /* ===== Size Variants ===== */

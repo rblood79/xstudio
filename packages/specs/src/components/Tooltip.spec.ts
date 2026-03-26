@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
+import { MessageSquare, MapPin, Move } from "lucide-react";
 
 /**
  * Tooltip Props
@@ -19,7 +20,16 @@ export interface TooltipProps {
   size?: "S" | "M" | "L";
   children?: string;
   text?: string;
-  placement?: "top" | "right" | "bottom" | "left";
+  placement?:
+    | "top"
+    | "bottom"
+    | "left"
+    | "right"
+    | "top start"
+    | "top end"
+    | "bottom start"
+    | "bottom end";
+  offset?: number;
   showArrow?: boolean;
   style?: Record<string, string | number | undefined>;
 }
@@ -45,6 +55,49 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
 
   defaultVariant: "surface",
   defaultSize: "M",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "children",
+            type: "string",
+            label: "Text",
+            icon: MessageSquare,
+          },
+        ],
+      },
+      {
+        title: "Position",
+        fields: [
+          {
+            key: "placement",
+            type: "enum",
+            label: "Placement",
+            icon: MapPin,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "bottom", label: "Bottom" },
+              { value: "left", label: "Left" },
+              { value: "right", label: "Right" },
+              { value: "top start", label: "Top Start" },
+              { value: "top end", label: "Top End" },
+              { value: "bottom start", label: "Bottom Start" },
+              { value: "bottom end", label: "Bottom End" },
+            ],
+          },
+          {
+            key: "offset",
+            type: "number",
+            label: "Offset",
+            icon: Move,
+          },
+        ],
+      },
+    ],
+  },
 
   overlay: {
     usePortal: true,

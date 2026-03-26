@@ -54,6 +54,8 @@ export const rendererMap: Record<
   TabPanels: LayoutRenderers.renderTabPanels,
   Panel: LayoutRenderers.renderPanel,
   Card: LayoutRenderers.renderCard,
+  Dialog: LayoutRenderers.renderDialog,
+  Popover: LayoutRenderers.renderPopover,
   CardHeader: LayoutRenderers.renderCardHeader,
   CardContent: LayoutRenderers.renderCardContent,
   CardPreview: LayoutRenderers.renderCardPreview,

@@ -11,12 +11,24 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Tag, FileText, Clock, Bell, Layout } from "lucide-react";
 
 /**
  * Toast Props
  */
 export interface ToastProps {
-  variant?: "default" | "accent" | "negative" | "positive";
+  defaultTitle?: string;
+  defaultDescription?: string;
+  timeout?: number;
+  maxToasts?: number;
+  position?:
+    | "top-right"
+    | "top-left"
+    | "top-center"
+    | "bottom-right"
+    | "bottom-left"
+    | "bottom-center";
+  variant?: "info" | "success" | "warning" | "error";
   size?: "S" | "M" | "L";
   message?: string;
   children?: string;
@@ -34,8 +46,81 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
   archetype: "overlay",
   element: "div",
 
-  defaultVariant: "default",
+  defaultVariant: "info",
   defaultSize: "M",
+
+  properties: {
+    sections: [
+      {
+        title: "Default Toast Content",
+        fields: [
+          {
+            key: "defaultTitle",
+            type: "string",
+            label: "Default Title",
+            placeholder: "Notification",
+            emptyToUndefined: true,
+            icon: Tag,
+          },
+          {
+            key: "defaultDescription",
+            type: "string",
+            label: "Default Description",
+            emptyToUndefined: true,
+            icon: FileText,
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "timeout",
+            type: "number",
+            label: "Default Timeout (ms)",
+            icon: Clock,
+          },
+          {
+            key: "maxToasts",
+            type: "number",
+            label: "Max Toasts",
+            icon: Bell,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "variant",
+            type: "enum",
+            label: "Default Variant",
+            icon: Bell,
+            options: [
+              { value: "info", label: "Info" },
+              { value: "success", label: "Success" },
+              { value: "warning", label: "Warning" },
+              { value: "error", label: "Error" },
+            ],
+          },
+          {
+            key: "position",
+            type: "enum",
+            label: "Position",
+            icon: Layout,
+            options: [
+              { value: "top-right", label: "Top Right" },
+              { value: "top-left", label: "Top Left" },
+              { value: "top-center", label: "Top Center" },
+              { value: "bottom-right", label: "Bottom Right" },
+              { value: "bottom-left", label: "Bottom Left" },
+              { value: "bottom-center", label: "Bottom Center" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 
   overlay: {
     usePortal: true,
@@ -47,28 +132,28 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
   },
 
   variants: {
-    default: {
+    info: {
       background: "{color.neutral-subtle}" as TokenRef,
       backgroundHover: "{color.neutral-subtle}" as TokenRef,
       backgroundPressed: "{color.neutral-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.border}" as TokenRef,
     },
-    accent: {
+    success: {
       background: "{color.accent-subtle}" as TokenRef,
       backgroundHover: "{color.accent-subtle}" as TokenRef,
       backgroundPressed: "{color.accent-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.accent}" as TokenRef,
     },
-    negative: {
+    warning: {
       background: "{color.negative-subtle}" as TokenRef,
       backgroundHover: "{color.negative-subtle}" as TokenRef,
       backgroundPressed: "{color.negative-subtle}" as TokenRef,
       text: "{color.neutral}" as TokenRef,
       border: "{color.negative}" as TokenRef,
     },
-    positive: {
+    error: {
       background: "{color.purple-subtle}" as TokenRef,
       backgroundHover: "{color.purple-subtle}" as TokenRef,
       backgroundPressed: "{color.purple-subtle}" as TokenRef,
@@ -113,7 +198,12 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
     shapes: (props, variant, size, state = "default") => {
       const hasChildren = !!(props as Record<string, unknown>)._hasChildren;
 
-      const message = props.message || props.children || "Notification";
+      const message =
+        props.defaultDescription ||
+        props.defaultTitle ||
+        props.message ||
+        props.children ||
+        "Notification";
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const styleBr = props.style?.borderRadius;

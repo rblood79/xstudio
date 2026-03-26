@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { Layout, Minus } from "lucide-react";
 
 /**
  * Separator Props
@@ -41,6 +42,40 @@ export const SeparatorSpec: ComponentSpec<SeparatorProps> = {
 
   defaultVariant: "default",
   defaultSize: "M",
+
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          {
+            type: "variant",
+            label: "Variant",
+            icon: Layout,
+          },
+          {
+            type: "size",
+            label: "Size",
+            options: [
+              { value: "sm", label: "S" },
+              { value: "md", label: "M" },
+              { value: "lg", label: "L" },
+            ],
+          },
+          {
+            key: "orientation",
+            type: "enum",
+            label: "Orientation",
+            icon: Minus,
+            options: [
+              { value: "horizontal", label: "Horizontal" },
+              { value: "vertical", label: "Vertical" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     default: {

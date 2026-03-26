@@ -1,14 +1,14 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-26 (기반 안정화 진행 중 — CSS↔WebGL 정합성, 인라인 style 제거)
+> **최종 업데이트**: 2026-03-26 (ADR-041 배치 1 전환 시작, 기반 안정화 진행 중)
 
 ## 현황 요약
 
 | 구분                                   | 개수   |
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 26     |
-| 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 13     |
+| 부분 완료                              | 8      |
+| 미구현 (Proposed/계획)                 | 12     |
 | **합계**                               | **46** |
 
 ---
@@ -57,6 +57,7 @@
 | [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-4 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment + Fill 비활성 힌트)                                          | 보류: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램                                                                                 |    P4    |
 | [019](019-icon-system.md)                         | 아이콘 시스템 — Icon 선택/변경/추가             | Phase A+B+C+D 완료 (C2 simple element 경로, C4 SelectIcon+ComboBox 연동, C5 ComboBoxEditor IconPicker)                           | Phase E (추가 라이브러리)                                                                                                              |    P4    |
 | [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B+C 완료 (TextEditOverlay + Quill + 멀티페이지 + Spec 컴포넌트 텍스트 편집)                                              | Phase D (리치 텍스트/툴바)                                                                                                             |    P4    |
+| [041](041-spec-driven-property-editor.md)         | Spec-Driven Property Editor 자동 생성           | Phase 0~1 완료 + 배치 1/2/3 전환 완료 (`Badge`, `Separator`, `StatusLight`, `Meter`, `ProgressBar`, `Link`, `Tooltip`, `Dialog`, `Popover`, `Toast`, `Form`, `ColorField`) | 등급 B/C 하이브리드 전환                                                                                                               |    P4    |
 
 > **참고**: ADR-029에 동일 번호의 [Text Edit Overlay UX 개선](completed/029-text-edit-overlay-improvements.md) 문서가 존재하며, ADR-027의 후속 개선으로 Phase 1-2 모두 구현 완료 (Accepted).
 
@@ -71,7 +72,6 @@
 | [032](032-events-data-integration.md)                    | Events Platform 재설계 + Data 통합      | Proposed    | Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL + Events Panel 연동                                                     |  **P3**  |
 | [034](034-events-panel-renovation.md)                    | Events Panel Renovation                 | Proposed    | 패널 IA 전면 개편 + recipe 중심 UX + diagnostics/preview/handler workflow                                                                  |  **P3**  |
 | [038](038-figma-import.md)                               | Figma 디자인 임포트 시스템              | Proposed    | 4 Phase — API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑 + 이미지 파이프라인                                                                  |  **P3**  |
-| [041](041-spec-driven-property-editor.md)                | Spec-Driven Property Editor 자동 생성   | Proposed    | 83개 에디터 자동화 목표 — 1차 대상 12개(`Form`, `ColorField`, `Dialog`, `Popover`, `Toast` 등)부터 전환                                    |    P4    |
 | [042](042-spec-dimension-injection.md)                   | Spec Container Dimension Injection      | Proposed    | Spec shapes에 레이아웃 엔진 결과 주입 — 9개 컴포넌트 텍스트 폭 추정/고정값 제거 (Phase 1 완료)                                             |    P2    |
 | [043](043-selection-drag-alignment.md)                   | Selection Drag Alignment                | Proposed    | Pencil selection drag 패턴 정렬 — deferred commit + Pixi/Skia 좌표 계약 분리                                                               |    P2    |
 | [044](044-project-renaming-xstudio-to-composition.md)    | 프로젝트 리네이밍 xstudio → composition | Proposed    | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                                                                |  **P2**  |

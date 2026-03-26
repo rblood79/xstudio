@@ -10,16 +10,29 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Type,
+  Link as LinkIcon,
+  Parentheses,
+  ExternalLink,
+  Eye,
+  PointerOff,
+  FileText,
+} from "lucide-react";
 
 /**
  * Link Props
  */
 export interface LinkProps {
   variant?: "primary" | "secondary";
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   children?: string;
   text?: string;
   href?: string;
+  target?: "_self" | "_blank" | "_parent" | "_top";
+  rel?: string;
+  isQuiet?: boolean;
+  staticColor?: "auto" | "black" | "white";
   isExternal?: boolean;
   showExternalIcon?: boolean;
   isDisabled?: boolean;
@@ -40,6 +53,114 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
 
   defaultVariant: "primary",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "children",
+            type: "string",
+            label: "Text",
+            placeholder: "Link text",
+            icon: Type,
+          },
+          {
+            key: "href",
+            type: "string",
+            label: "Href",
+            placeholder: "https://example.com",
+            emptyToUndefined: true,
+            icon: LinkIcon,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            type: "variant",
+            label: "Variant",
+            icon: Parentheses,
+          },
+          {
+            type: "size",
+            label: "Size",
+            options: [
+              { value: "xs", label: "XS" },
+              { value: "sm", label: "S" },
+              { value: "md", label: "M" },
+              { value: "lg", label: "L" },
+              { value: "xl", label: "XL" },
+            ],
+          },
+          {
+            key: "staticColor",
+            type: "enum",
+            label: "Static Color",
+            icon: Parentheses,
+            options: [
+              { value: "auto", label: "Auto" },
+              { value: "white", label: "White" },
+              { value: "black", label: "Black" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "target",
+            type: "enum",
+            label: "Target",
+            icon: LinkIcon,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "_self", label: "Same Window" },
+              { value: "_blank", label: "New Window" },
+              { value: "_parent", label: "Parent Frame" },
+              { value: "_top", label: "Top Frame" },
+            ],
+          },
+          {
+            key: "rel",
+            type: "string",
+            label: "Rel",
+            placeholder: "noopener noreferrer",
+            emptyToUndefined: true,
+            icon: FileText,
+          },
+          {
+            key: "isQuiet",
+            type: "boolean",
+            label: "Quiet",
+            icon: Parentheses,
+          },
+          {
+            key: "isExternal",
+            type: "boolean",
+            label: "External Link",
+            icon: ExternalLink,
+          },
+          {
+            key: "showExternalIcon",
+            type: "boolean",
+            label: "Show External Icon",
+            icon: Eye,
+          },
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     primary: {
@@ -118,8 +239,15 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
       const text = props.children || props.text || "";
 
       // 상태에 따른 텍스트색 선택 (사용자 스타일 우선)
+      const staticTextColor =
+        props.staticColor === "black"
+          ? "#000000"
+          : props.staticColor === "white"
+            ? "#ffffff"
+            : undefined;
       const textColor =
         props.style?.color ??
+        staticTextColor ??
         (state === "hover" && variant.textHover
           ? variant.textHover
           : variant.text);
@@ -167,8 +295,10 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
 
     react: (props) => ({
       "data-external": props.isExternal || undefined,
-      target: props.isExternal ? "_blank" : undefined,
-      rel: props.isExternal ? "noopener noreferrer" : undefined,
+      "data-quiet": props.isQuiet || undefined,
+      "data-static-color": props.staticColor,
+      target: props.isExternal ? "_blank" : props.target,
+      rel: props.isExternal ? "noopener noreferrer" : props.rel,
     }),
 
     pixi: (props) => ({

@@ -2,11 +2,11 @@
 
 ## Status
 
-Proposed
+Partial
 
 ## Date
 
-2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강 + 설계 리뷰 반영 + 타입 안전성·간접성 제거 11건 개선 + 2차 설계 리뷰 12건 반영)
+2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강 + 설계 리뷰 반영 + 타입 안전성·간접성 제거 11건 개선 + 2차 설계 리뷰 12건 반영, 2026-03-26 Phase 0~1 + 배치 1 전환 시작)
 
 ## Decision Makers
 
@@ -194,6 +194,9 @@ interface BaseFieldDef {
   /** true 시 빈 문자열("")을 undefined로 변환하여 전달. 기본값: false.
    *  string/enum/number 등 여러 필드 타입에서 공통으로 사용. */
   emptyToUndefined?: boolean;
+  /** 단일 값 업데이트가 아니라 여러 prop를 함께 갱신해야 할 때 사용.
+   *  예: ColorField "Required" → isRequired + necessityIndicator 동시 갱신 */
+  derivedUpdateFn?: (value: unknown, currentProps: Record<string, unknown>) => Record<string, unknown>;
 }
 ```
 
@@ -1174,6 +1177,36 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 - registry에서 GenericPropertyEditor 경로로 전환
 - 기존 수동 에디터와 동작/노출 surface가 동일함을 확인
 - ADR-046에서 닫은 계약(`Form`, `ColorField`)이 손실 없이 자동 생성 경로로 표현됨을 확인
+
+**2026-03-26 현재 상태**:
+
+- Phase 0 인프라 완료
+  - `ComponentSpec.properties` 타입 추가
+  - `specRegistry` 추가
+- Phase 1 골격 완료
+  - `GenericPropertyEditor`
+  - `SpecField`
+  - `evaluateVisibility`
+  - `inferLabel`
+  - registry 분기 연결
+- 배치 1 전환 완료
+  - `Badge`
+  - `Separator`
+  - `StatusLight`
+  - `Meter`
+  - `ProgressBar`
+- 배치 2 전환 완료
+  - `Link`
+  - `Tooltip`
+  - `Dialog`
+  - `Popover`
+  - `Toast`
+- 배치 3 전환 완료
+  - `Form`
+  - `ColorField`
+- `Meter`, `ProgressBar`, `Link`, `Form`, `ColorField`는 수동 editor와 generic surface를 교차 점검해 동일함을 확인
+- 남은 범위
+  - 등급 B/C 하이브리드 전환
 
 **전환 방법 (안전한 롤백)**:
 

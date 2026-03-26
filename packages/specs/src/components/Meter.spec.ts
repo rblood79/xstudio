@@ -10,6 +10,15 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Tag,
+  Gauge,
+  Layout,
+  ArrowDown,
+  ArrowUp,
+  Globe,
+  DollarSign,
+} from "lucide-react";
 
 /**
  * Meter Props
@@ -22,7 +31,8 @@ export interface MeterProps {
   minValue?: number;
   maxValue?: number;
   showValue?: boolean;
-  valueFormat?: "number" | "percent";
+  locale?: string;
+  valueFormat?: "number" | "percent" | "custom";
   isDisabled?: boolean;
   children?: string;
   style?: Record<string, string | number | undefined>;
@@ -55,6 +65,96 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
 
   defaultVariant: "informative",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            placeholder: "Storage usage",
+            icon: Tag,
+          },
+          {
+            key: "value",
+            type: "number",
+            label: "Value",
+            min: 0,
+            icon: Gauge,
+          },
+        ],
+      },
+      {
+        title: "Number Formatting",
+        fields: [
+          {
+            key: "locale",
+            type: "string",
+            label: "Locale",
+            placeholder: "ko-KR, en-US, etc.",
+            emptyToUndefined: true,
+            icon: Globe,
+          },
+          {
+            key: "valueFormat",
+            type: "enum",
+            label: "Value Format",
+            icon: DollarSign,
+            options: [
+              { value: "number", label: "Number" },
+              { value: "percent", label: "Percent" },
+              { value: "custom", label: "Custom" },
+            ],
+          },
+          {
+            key: "showValue",
+            type: "boolean",
+            label: "Show Value",
+            icon: Gauge,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            type: "variant",
+            label: "Variant",
+            icon: Layout,
+          },
+          {
+            type: "size",
+            label: "Size",
+            options: [
+              { value: "sm", label: "S" },
+              { value: "md", label: "M" },
+              { value: "lg", label: "L" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Range",
+        fields: [
+          {
+            key: "minValue",
+            type: "number",
+            label: "Min Value",
+            icon: ArrowDown,
+          },
+          {
+            key: "maxValue",
+            type: "number",
+            label: "Max Value",
+            icon: ArrowUp,
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     informative: {

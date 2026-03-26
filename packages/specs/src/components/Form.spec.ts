@@ -10,6 +10,13 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Focus,
+  RotateCcw,
+  CheckSquare,
+  Globe,
+  Send,
+} from "lucide-react";
 
 /**
  * Form Props
@@ -21,6 +28,19 @@ export interface FormProps {
   title?: string;
   description?: string;
   isDisabled?: boolean;
+  action?: string;
+  method?: "get" | "post";
+  encType?:
+    | "application/x-www-form-urlencoded"
+    | "multipart/form-data"
+    | "text/plain";
+  target?: "_self" | "_blank" | "_parent" | "_top";
+  autoFocus?: boolean;
+  restoreFocus?: boolean;
+  validationBehavior?: "native" | "aria";
+  labelPosition?: "top" | "side";
+  labelAlign?: "start" | "center" | "end";
+  necessityIndicator?: "icon" | "label";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -35,6 +55,123 @@ export const FormSpec: ComponentSpec<FormProps> = {
 
   defaultVariant: "default",
   defaultSize: "M",
+
+  properties: {
+    sections: [
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+          {
+            key: "restoreFocus",
+            type: "boolean",
+            label: "Restore Focus",
+            icon: RotateCcw,
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: CheckSquare,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+          },
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+          {
+            key: "labelAlign",
+            type: "enum",
+            label: "Label Alignment",
+            options: [
+              { value: "start", label: "Left" },
+              { value: "center", label: "Center" },
+              { value: "end", label: "Right" },
+            ],
+          },
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Necessity Indicator",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Submission",
+        fields: [
+          {
+            key: "action",
+            type: "string",
+            label: "Action",
+            placeholder: "/api/submit",
+            emptyToUndefined: true,
+            icon: Send,
+          },
+          {
+            key: "method",
+            type: "enum",
+            label: "Method",
+            icon: Send,
+            options: [
+              { value: "get", label: "GET" },
+              { value: "post", label: "POST" },
+            ],
+          },
+          {
+            key: "encType",
+            type: "enum",
+            label: "Encoding Type",
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Default" },
+              {
+                value: "application/x-www-form-urlencoded",
+                label: "URL Encoded",
+              },
+              {
+                value: "multipart/form-data",
+                label: "Multipart (File Upload)",
+              },
+              { value: "text/plain", label: "Plain Text" },
+            ],
+          },
+          {
+            key: "target",
+            type: "enum",
+            label: "Target",
+            emptyToUndefined: true,
+            icon: Globe,
+            options: [
+              { value: "", label: "None" },
+              { value: "_self", label: "Same Window" },
+              { value: "_blank", label: "New Window" },
+              { value: "_parent", label: "Parent Frame" },
+              { value: "_top", label: "Top Frame" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     default: {

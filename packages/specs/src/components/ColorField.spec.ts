@@ -10,17 +10,49 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Tag,
+  FileText,
+  AlertTriangle,
+  Palette,
+  CheckSquare,
+  PointerOff,
+  PenOff,
+  Focus,
+} from "lucide-react";
 
 /**
  * ColorField Props
  */
 export interface ColorFieldProps {
-  variant?: "default" | "accent" | "negative";
-  size?: "S" | "M" | "L";
+  variant?: "default" | "accent" | "neutral" | "error" | "filled";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   value?: string;
+  defaultValue?: string;
   label?: string;
+  description?: string;
+  errorMessage?: string;
   isDisabled?: boolean;
   isInvalid?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  form?: string;
+  channel?:
+    | "hue"
+    | "saturation"
+    | "lightness"
+    | "brightness"
+    | "red"
+    | "green"
+    | "blue"
+    | "alpha";
+  colorSpace?: "rgb" | "hsl" | "hsb";
+  validationBehavior?: "native" | "aria";
+  necessityIndicator?: "icon" | "label";
+  labelPosition?: "top" | "side";
+  labelAlign?: "start" | "center" | "end";
   style?: Record<string, string | number | undefined>;
 }
 
@@ -34,7 +66,207 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
   skipCSSGeneration: true,
 
   defaultVariant: "default",
-  defaultSize: "M",
+  defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            emptyToUndefined: true,
+            icon: Tag,
+          },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            emptyToUndefined: true,
+            icon: FileText,
+          },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            emptyToUndefined: true,
+            icon: AlertTriangle,
+          },
+          {
+            key: "defaultValue",
+            type: "string",
+            label: "Default Value",
+            placeholder: "#000000",
+            emptyToUndefined: true,
+            icon: Palette,
+          },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            icon: CheckSquare,
+            emptyToUndefined: true,
+            derivedUpdateFn: (value) => {
+              if (value === undefined || value === "") {
+                return {
+                  isRequired: false,
+                  necessityIndicator: undefined,
+                };
+              }
+              return {
+                isRequired: true,
+                necessityIndicator: value,
+              };
+            },
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ],
+          },
+          {
+            key: "isInvalid",
+            type: "boolean",
+            label: "Invalid",
+            icon: AlertTriangle,
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "isReadOnly",
+            type: "boolean",
+            label: "Read Only",
+            icon: PenOff,
+          },
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            type: "variant",
+            label: "Variant",
+          },
+          {
+            type: "size",
+            label: "Size",
+            options: [
+              { value: "xs", label: "XS" },
+              { value: "sm", label: "S" },
+              { value: "md", label: "M" },
+              { value: "lg", label: "L" },
+              { value: "xl", label: "XL" },
+            ],
+          },
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Tag,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+          {
+            key: "labelAlign",
+            type: "enum",
+            label: "Label Alignment",
+            icon: Tag,
+            options: [
+              { value: "start", label: "Left" },
+              { value: "center", label: "Center" },
+              { value: "end", label: "Right" },
+            ],
+          },
+          {
+            key: "channel",
+            type: "enum",
+            label: "Channel",
+            icon: Palette,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Default (Hex)" },
+              { value: "hue", label: "Hue" },
+              { value: "saturation", label: "Saturation" },
+              { value: "lightness", label: "Lightness" },
+              { value: "brightness", label: "Brightness" },
+              { value: "red", label: "Red" },
+              { value: "green", label: "Green" },
+              { value: "blue", label: "Blue" },
+              { value: "alpha", label: "Alpha" },
+            ],
+          },
+          {
+            key: "colorSpace",
+            type: "enum",
+            label: "Color Space",
+            icon: Palette,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Default" },
+              { value: "rgb", label: "RGB" },
+              { value: "hsl", label: "HSL" },
+              { value: "hsb", label: "HSB" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            placeholder: "brandColor",
+            emptyToUndefined: true,
+            icon: Tag,
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            placeholder: "form-id",
+            emptyToUndefined: true,
+            icon: Tag,
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: CheckSquare,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     default: {
@@ -53,7 +285,15 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       border: "{color.accent}" as TokenRef,
       borderHover: "{color.accent-hover}" as TokenRef,
     },
-    negative: {
+    neutral: {
+      background: "{color.layer-2}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+      borderHover: "{color.border-hover}" as TokenRef,
+    },
+    error: {
       background: "{color.layer-2}" as TokenRef,
       backgroundHover: "{color.layer-1}" as TokenRef,
       backgroundPressed: "{color.layer-1}" as TokenRef,
@@ -61,9 +301,26 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       border: "{color.negative}" as TokenRef,
       borderHover: "{color.negative-hover}" as TokenRef,
     },
+    filled: {
+      background: "{color.layer-1}" as TokenRef,
+      backgroundHover: "{color.layer-1}" as TokenRef,
+      backgroundPressed: "{color.layer-1}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+      border: "{color.border}" as TokenRef,
+      borderHover: "{color.border-hover}" as TokenRef,
+    },
   },
 
   sizes: {
+    xs: {
+      height: 28,
+      paddingX: 6,
+      paddingY: 4,
+      fontSize: "{typography.text-xs}" as TokenRef,
+      borderRadius: "{radius.sm}" as TokenRef,
+      iconSize: 18,
+      gap: 6,
+    },
     sm: {
       height: 32,
       paddingX: 8,
@@ -90,6 +347,15 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       borderRadius: "{radius.lg}" as TokenRef,
       iconSize: 32,
       gap: 10,
+    },
+    xl: {
+      height: 56,
+      paddingX: 14,
+      paddingY: 10,
+      fontSize: "{typography.text-lg}" as TokenRef,
+      borderRadius: "{radius.lg}" as TokenRef,
+      iconSize: 36,
+      gap: 12,
     },
   },
 
@@ -207,7 +473,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
         width: swatchSize,
         height: swatchSize,
         radius: 4,
-        fill: props.value || "#3B82F6",
+        fill: props.value || props.defaultValue || "#3B82F6",
       });
 
       // Swatch 테두리
@@ -220,7 +486,7 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
       });
 
       // Hex 텍스트
-      const hexValue = props.value || "#3B82F6";
+      const hexValue = props.value || props.defaultValue || "#3B82F6";
       shapes.push({
         type: "text" as const,
         x: swatchX + swatchSize + (size.gap ?? 8),

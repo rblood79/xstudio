@@ -2,7 +2,7 @@
  * Zoom Controls Component (Adobe Style)
  *
  * Adobe Photoshop 온라인 스타일의 줌 컨트롤
- * - 현재 줌 레벨 표시 버튼
+ * - 현재 줌 레벨 표시 input
  * - 드롭다운 메뉴: 확대/축소, 프리셋, 화면 맞추기
  * - 키보드 단축키 표시
  *
@@ -13,12 +13,11 @@
 
 import { useCallback, useRef, memo, useState, useEffect } from "react";
 import {
-  ComboBox,
+  MenuTrigger,
+  Menu,
+  MenuItem,
   Button,
-  Input,
   Popover,
-  ListBox,
-  ListBoxItem,
 } from "react-aria-components";
 import { ChevronDown } from "lucide-react";
 import { useViewportSyncStore } from "./canvas/stores";
@@ -64,6 +63,9 @@ export const ZoomControls = memo(function ZoomControls({
   // 입력 상태 관리
   const [inputValue, setInputValue] = useState("");
   const zoomPercent = Math.round(zoom * 100);
+
+  // Popover 기준 요소 — triggerRef로 .zoom-trigger-button 기준 배치
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   // zoom 변경 시 입력값 동기화
   useEffect(() => {
@@ -137,16 +139,19 @@ export const ZoomControls = memo(function ZoomControls({
           break;
       }
     },
-    [zoomIn, zoomOut, zoomTo, zoomToFit, zoomToFill]
+    [zoomIn, zoomOut, zoomTo, zoomToFit, zoomToFill],
   );
 
   // ============================================
   // Input Handlers
   // ============================================
 
-  const handleInputChange = useCallback((value: string) => {
-    setInputValue(value);
-  }, []);
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setInputValue(e.target.value);
+    },
+    [],
+  );
 
   const handleInputBlur = useCallback(() => {
     // 숫자 파싱 (%, 공백 제거)
@@ -191,14 +196,14 @@ export const ZoomControls = memo(function ZoomControls({
         zoomTo(newZoom / 100);
       }
     },
-    [handleInputBlur, zoomPercent, zoomTo]
+    [handleInputBlur, zoomPercent, zoomTo],
   );
 
   const handleInputFocus = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
       e.target.select();
     },
-    []
+    [],
   );
 
   // ============================================
@@ -207,55 +212,53 @@ export const ZoomControls = memo(function ZoomControls({
 
   return (
     <div className={`zoom-controls ${className || ""}`}>
-      <ComboBox
-        aria-label="Zoom"
-        inputValue={inputValue}
-        onInputChange={handleInputChange}
-        onSelectionChange={(key) => {
-          if (key !== null) {
-            handleAction(key);
-          }
-        }}
-      >
-        <div className="zoom-trigger-button">
-          <Input
-            className="zoom-input"
-            onBlur={handleInputBlur}
-            onKeyDown={handleKeyDown}
-            onFocus={handleInputFocus}
-          />
-          <Button className="zoom-chevron-button">
+      <div ref={anchorRef} className="zoom-trigger-button">
+        <input
+          className="zoom-input"
+          value={inputValue}
+          onChange={handleInputChange}
+          onBlur={handleInputBlur}
+          onKeyDown={handleKeyDown}
+          onFocus={handleInputFocus}
+          aria-label="Zoom level"
+        />
+        <MenuTrigger>
+          <Button className="zoom-chevron-button" aria-label="Zoom menu">
             <ChevronDown size={iconProps.size} />
           </Button>
-        </div>
-        <Popover className="zoom-menu-popover" placement="bottom start">
-          <ListBox className="zoom-menu">
-            <ListBoxItem id="zoom-in" className="zoom-menu-item" textValue="확대">
-              <span>확대</span>
-              <kbd>⌘+</kbd>
-            </ListBoxItem>
-            <ListBoxItem id="zoom-out" className="zoom-menu-item" textValue="축소">
-              <span>축소</span>
-              <kbd>⌘-</kbd>
-            </ListBoxItem>
-            <ListBoxItem id="zoom-100" className="zoom-menu-item" textValue="100%">
-              <span>100%</span>
-              <kbd>⌘1</kbd>
-            </ListBoxItem>
-            <ListBoxItem id="zoom-200" className="zoom-menu-item" textValue="200%">
-              <span>200%</span>
-              <kbd>⌘2</kbd>
-            </ListBoxItem>
-            <ListBoxItem id="fit-to-screen" className="zoom-menu-item" textValue="화면에 맞추기">
-              <span>화면에 맞추기</span>
-              <kbd>⌘0</kbd>
-            </ListBoxItem>
-            <ListBoxItem id="fill-screen" className="zoom-menu-item" textValue="화면 채우기">
-              <span>화면 채우기</span>
-            </ListBoxItem>
-          </ListBox>
-        </Popover>
-      </ComboBox>
+          <Popover
+            className="zoom-menu-popover"
+            placement="bottom start"
+            triggerRef={anchorRef}
+          >
+            <Menu className="zoom-menu" onAction={handleAction}>
+              <MenuItem id="zoom-in" className="zoom-menu-item">
+                <span>확대</span>
+                <kbd>⌘+</kbd>
+              </MenuItem>
+              <MenuItem id="zoom-out" className="zoom-menu-item">
+                <span>축소</span>
+                <kbd>⌘-</kbd>
+              </MenuItem>
+              <MenuItem id="zoom-100" className="zoom-menu-item">
+                <span>100%</span>
+                <kbd>⌘1</kbd>
+              </MenuItem>
+              <MenuItem id="zoom-200" className="zoom-menu-item">
+                <span>200%</span>
+                <kbd>⌘2</kbd>
+              </MenuItem>
+              <MenuItem id="fit-to-screen" className="zoom-menu-item">
+                <span>화면에 맞추기</span>
+                <kbd>⌘0</kbd>
+              </MenuItem>
+              <MenuItem id="fill-screen" className="zoom-menu-item">
+                <span>화면 채우기</span>
+              </MenuItem>
+            </Menu>
+          </Popover>
+        </MenuTrigger>
+      </div>
     </div>
   );
 });

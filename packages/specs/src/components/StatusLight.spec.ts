@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Type, Parentheses, ToggleLeft } from "lucide-react";
 
 /**
  * StatusLight Props
@@ -56,6 +57,53 @@ export const StatusLightSpec: ComponentSpec<StatusLightProps> = {
 
   defaultVariant: "neutral",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "children",
+            type: "string",
+            label: "Text",
+            placeholder: "Status text",
+            icon: Type,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            type: "variant",
+            label: "Variant",
+            icon: Parentheses,
+          },
+          {
+            type: "size",
+            label: "Size",
+            options: [
+              { value: "sm", label: "S" },
+              { value: "md", label: "M" },
+              { value: "lg", label: "L" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: ToggleLeft,
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     neutral: {

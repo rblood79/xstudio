@@ -10,17 +10,30 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Tag,
+  BarChart3,
+  ToggleLeft,
+  Layout,
+  ArrowDown,
+  ArrowUp,
+  Globe,
+  DollarSign,
+} from "lucide-react";
 
 /**
  * ProgressBar Props
  */
 export interface ProgressBarProps {
-  variant?: "default";
+  variant?: "default" | "accent" | "neutral";
   size?: "sm" | "md" | "lg";
   label?: string;
   value?: number;
+  minValue?: number;
+  maxValue?: number;
+  locale?: string;
   showValue?: boolean;
-  valueFormat?: "number" | "percent";
+  valueFormat?: "number" | "percent" | "custom";
   isIndeterminate?: boolean;
   isDisabled?: boolean;
   children?: string;
@@ -30,6 +43,8 @@ export interface ProgressBarProps {
 /** variant별 채우기 색상 */
 export const PROGRESSBAR_FILL_COLORS: Record<string, TokenRef> = {
   default: "{color.accent}" as TokenRef,
+  accent: "{color.accent}" as TokenRef,
+  neutral: "{color.neutral}" as TokenRef,
 };
 
 /** 사이즈별 바 치수 */
@@ -52,9 +67,117 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
   defaultVariant: "default",
   defaultSize: "md",
 
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "label",
+            type: "string",
+            label: "Label",
+            placeholder: "Upload progress",
+            icon: Tag,
+          },
+          {
+            key: "value",
+            type: "number",
+            label: "Value",
+            min: 0,
+            icon: BarChart3,
+          },
+        ],
+      },
+      {
+        title: "Number Formatting",
+        fields: [
+          {
+            key: "locale",
+            type: "string",
+            label: "Locale",
+            placeholder: "ko-KR, en-US, etc.",
+            emptyToUndefined: true,
+            icon: Globe,
+          },
+          {
+            key: "valueFormat",
+            type: "enum",
+            label: "Value Format",
+            icon: DollarSign,
+            options: [
+              { value: "number", label: "Number" },
+              { value: "percent", label: "Percent" },
+              { value: "custom", label: "Custom" },
+            ],
+          },
+          {
+            key: "showValue",
+            type: "boolean",
+            label: "Show Value",
+            icon: BarChart3,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            type: "variant",
+            label: "Variant",
+            icon: Layout,
+          },
+          {
+            type: "size",
+            label: "Size",
+            options: [
+              { value: "sm", label: "S" },
+              { value: "md", label: "M" },
+              { value: "lg", label: "L" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Range",
+        fields: [
+          {
+            key: "minValue",
+            type: "number",
+            label: "Min Value",
+            icon: ArrowDown,
+          },
+          {
+            key: "maxValue",
+            type: "number",
+            label: "Max Value",
+            icon: ArrowUp,
+          },
+          {
+            key: "isIndeterminate",
+            type: "boolean",
+            label: "Indeterminate",
+            icon: ToggleLeft,
+          },
+        ],
+      },
+    ],
+  },
+
   // preview CSS용: 배경 투명 (track 배경은 ProgressBarTrack child가 담당)
   variants: {
     default: {
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
+    accent: {
+      background: "{color.transparent}" as TokenRef,
+      backgroundHover: "{color.transparent}" as TokenRef,
+      backgroundPressed: "{color.transparent}" as TokenRef,
+      text: "{color.neutral}" as TokenRef,
+    },
+    neutral: {
       background: "{color.transparent}" as TokenRef,
       backgroundHover: "{color.transparent}" as TokenRef,
       backgroundPressed: "{color.transparent}" as TokenRef,
@@ -145,8 +268,12 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
           : 500;
       const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
-      const value = Math.max(0, Math.min(100, props.value ?? 0));
-      const fillWidth = (width * value) / 100;
+      const min = props.minValue ?? 0;
+      const max = props.maxValue ?? 100;
+      const rawValue = props.value ?? 0;
+      const value = Math.max(min, Math.min(max, rawValue));
+      const percent = max === min ? 0 : ((value - min) / (max - min)) * 100;
+      const fillWidth = (width * percent) / 100;
 
       const shapes: Shape[] = [];
 
@@ -180,7 +307,9 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
           const formattedValue =
             props.valueFormat === "number"
               ? String(Math.round(value))
-              : `${Math.round(value)}%`;
+              : props.valueFormat === "custom"
+                ? String(Math.round(value))
+                : `${Math.round(percent)}%`;
           shapes.push({
             type: "text" as const,
             x: width,
@@ -242,9 +371,10 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
 
     react: (props) => ({
       role: "progressbar",
-      "aria-valuemin": 0,
-      "aria-valuemax": 100,
-      "aria-valuenow": props.isIndeterminate ? undefined : (props.value ?? 0),
+      "aria-valuemin": props.minValue ?? 0,
+      "aria-valuemax": props.maxValue ?? 100,
+      "aria-valuenow":
+        props.isIndeterminate ? undefined : (props.value ?? props.minValue ?? 0),
       "data-indeterminate": props.isIndeterminate || undefined,
     }),
 

@@ -819,7 +819,7 @@ export interface SearchFieldElementProps extends BaseElementProps {
 // === ProgressBar Element Props ===
 export interface ProgressBarElementProps extends BaseElementProps {
   size?: "sm" | "md" | "lg";
-  variant?: "default" | "accent";
+  variant?: "default" | "accent" | "neutral";
   label?: string;
   value?: number;
   minValue?: number;
@@ -827,20 +827,20 @@ export interface ProgressBarElementProps extends BaseElementProps {
   isIndeterminate?: boolean;
   showValue?: boolean;
   locale?: string;
-  valueFormat?: string;
+  valueFormat?: "number" | "percent" | "custom";
 }
 
 // === Meter Element Props ===
 export interface MeterElementProps extends BaseElementProps {
   size?: "sm" | "md" | "lg";
-  variant?: "default" | "accent";
+  variant?: "informative" | "positive" | "notice" | "negative";
   label?: string;
   value?: number;
   minValue?: number;
   maxValue?: number;
   showValue?: boolean;
   locale?: string;
-  valueFormat?: string;
+  valueFormat?: "number" | "percent" | "custom";
 }
 
 // === Form Element Props ===
