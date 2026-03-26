@@ -32,6 +32,7 @@
     outline: none;
     max-width: 250px;
     display: flex;
+    flex-direction: column;
     isolation: isolate;
     transition:
       transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -122,7 +123,9 @@
     }
   }
 
-  /* ========== Popover 내부 Dialog — overlay position 해제 (S2 패턴) ========== */
+  /* generated/Dialog.css가 position: fixed를 생성하지만, Popover 내부에서는
+     transform이 containing block을 변경하여 Dialog가 flow에서 빠지고
+     Popover가 2x2px로 축소된다. specificity 0-2-0 > 0-1-0 (ADR-047) */
   .react-aria-Popover .react-aria-Dialog {
     position: static;
   }

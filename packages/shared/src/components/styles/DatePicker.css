@@ -218,7 +218,6 @@
   /* ========== Popover ========== */
   .react-aria-Popover[data-trigger="DatePicker"] {
     max-width: unset;
-    display: flex;
   }
 
   /* ========== Time Field ========== */

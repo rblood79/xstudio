@@ -127,7 +127,7 @@
     z-index: 1000;
     overflow: hidden;
     min-width: 200px;
-    contain: layout style paint;
+    contain: layout style;
   }
 
   .header-menu-popover[data-entering] {
@@ -490,8 +490,7 @@
     z-index: 1000;
     overflow: hidden;
     min-width: 180px;
-    /* 🚀 ComboBox 패턴: 레이아웃 격리 + GPU 가속 */
-    contain: layout style paint;
+    contain: layout style;
   }
 
   .zoom-menu-popover[data-entering] {
@@ -530,9 +529,6 @@
   .zoom-menu {
     padding: var(--spacing-xs);
     outline: none;
-    /* 🚀 ComboBox 패턴: GPU 가속 */
-    transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
   }
 
   /* Zoom Menu Item (ListBoxItem) */
