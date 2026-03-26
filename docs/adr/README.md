@@ -78,7 +78,7 @@
 | [044](044-project-renaming-xstudio-to-composition.md)    | 프로젝트 리네이밍 xstudio → composition  | Proposed | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                                                                |  **P2**  |
 | [045](045-s2-property-editor-alignment.md)               | S2 Property Editor 프로퍼티 정합성 정렬  | Proposed | 3 Phase — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 + 기능 점검 (24개 파일)                                                            |  **P2**  |
 | [046](046-s2-contract-expansion-form-colorfield-tabs.md) | S2 계약 확장 — Form, ColorField, Tabs    | Accepted | 자동 생성 전 계약 확정 — `Tabs.density`, `ColorField` 1차 계약(`labelAlign` 포함), `Form.labelPosition/labelAlign/necessityIndicator` 채택 |  **P2**  |
-| [048](048-declarative-props-propagation.md)              | S2 Context 기반 선언적 Props Propagation | Proposed | 5 Phase — PropagationSpec 타입 + 엔진 + Registry, 4경로 통합 (Inspector/Skia/Layout/implicitStyles), 50개+ 조합형 컴포넌트 마이그레이션    |  **P2**  |
+| [048](048-declarative-props-propagation.md)              | S2 Context 기반 선언적 Props Propagation | Proposed | 5 Phase — PropagationSpec 엔진 + Registry, 4경로 통합, 50개+ 조합형 컴포넌트. **선행: ADR-041** (Phase 0~2 충족)                           |  **P2**  |
 
 ## Events Panel 설계 문서군
 

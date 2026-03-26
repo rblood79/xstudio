@@ -4,6 +4,15 @@
 
 Proposed (2026-03-26)
 
+## Prerequisites
+
+- [ADR-041](041-spec-driven-property-editor.md) Phase 0~2 완료 (GenericPropertyEditor + SpecField + specRegistry 인프라) — **이미 충족**
+- ADR-041의 ChildSyncField 직접 구현 대신 본 ADR의 PropagationSpec 엔진으로 대체
+
+## Related ADRs
+
+- [ADR-041](041-spec-driven-property-editor.md): Spec-Driven Property Editor — 본 ADR의 선행 인프라. Phase 3 ChildSyncField를 PropagationSpec 엔진으로 위임
+
 ## Context
 
 ### 문제 발견 경위
