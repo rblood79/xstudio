@@ -8,8 +8,8 @@
 | -------------------------------------- | ------ |
 | 완료 (Accepted/Implemented/Superseded) | 26     |
 | 부분 완료                              | 7      |
-| 미구현 (Proposed/계획)                 | 10     |
-| **합계**                               | **43** |
+| 미구현 (Proposed/계획)                 | 12     |
+| **합계**                               | **45** |
 
 ---
 
@@ -75,6 +75,8 @@
 | [042](042-spec-dimension-injection.md)                | Spec Container Dimension Injection      | Proposed | Spec shapes에 레이아웃 엔진 결과 주입 — 9개 컴포넌트 텍스트 폭 추정/고정값 제거 (Phase 1 완료) |    P2    |
 | [043](043-selection-drag-alignment.md)                | Selection Drag Alignment                | Proposed | Pencil selection drag 패턴 정렬 — deferred commit + Pixi/Skia 좌표 계약 분리                   |    P2    |
 | [044](044-project-renaming-xstudio-to-composition.md) | 프로젝트 리네이밍 xstudio → composition | Proposed | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                    |  **P2**  |
+| [045](045-s2-property-editor-alignment.md)            | S2 Property Editor 프로퍼티 정합성 정렬 | Proposed | 3 Phase — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 + 기능 점검 (24개 파일)                |  **P2**  |
+| [046](046-s2-contract-expansion-form-colorfield-tabs.md) | S2 계약 확장 — Form, ColorField, Tabs   | Proposed | 제품 계약 확정 — 자동 생성 전 `Form/ColorField/Tabs` prop surface와 전파 규칙 정리            |  **P2**  |
 
 ## Events Panel 설계 문서군
 
