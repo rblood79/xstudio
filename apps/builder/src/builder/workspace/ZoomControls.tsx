@@ -102,8 +102,6 @@ export const ZoomControls = memo(function ZoomControls({
 
     if (containerSize.width === 0 || containerSize.height === 0) return;
 
-    isFitModeRef.current = false;
-
     applyViewportState(computeFillViewport({ canvasSize, containerSize }));
   }, []);
 
