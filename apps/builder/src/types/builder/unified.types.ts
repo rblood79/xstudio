@@ -184,13 +184,14 @@ export interface TextFieldElementProps extends BaseElementProps {
   placeholder?: string;
   value?: string;
   defaultValue?: string;
-  type?: "text" | "email" | "password" | "search" | "tel" | "url";
+  type?: "text" | "email" | "password" | "search" | "tel" | "url" | "number";
   isRequired?: boolean;
   isDisabled?: boolean;
   isReadOnly?: boolean;
+  isInvalid?: boolean;
   autoFocus?: boolean;
   autoComplete?: string;
-  autoCorrect?: string;
+  autoCorrect?: boolean;
   inputMode?:
     | "none"
     | "text"
@@ -202,6 +203,8 @@ export interface TextFieldElementProps extends BaseElementProps {
     | "search";
   name?: string;
   form?: string;
+  labelPosition?: "top" | "side";
+  necessityIndicator?: "icon" | "label";
   pattern?: string;
   maxLength?: number;
   minLength?: number;
@@ -305,7 +308,7 @@ export interface RadioGroupElementProps extends BaseElementProps {
 
 export interface SelectElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   label?: string;
   description?: string;
   errorMessage?: string;
@@ -316,10 +319,13 @@ export interface SelectElementProps extends BaseElementProps {
   isDisabled?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  isInvalid?: boolean;
   autoFocus?: boolean;
   name?: string;
+  labelPosition?: "top" | "side";
+  necessityIndicator?: "icon" | "label";
   selectionMode?: "single" | "multiple";
-  multipleDisplayMode?: "tags" | "count";
+  multipleDisplayMode?: "count" | "list" | "custom";
   disallowEmptySelection?: boolean;
   menuTrigger?: "input" | "focus" | "manual";
   validationBehavior?: "native" | "aria";
@@ -329,8 +335,8 @@ export interface SelectElementProps extends BaseElementProps {
 
 export interface ComboBoxElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  size?: "sm" | "md" | "lg";
-  variant?: "default" | "quiet";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  variant?: "default" | "accent" | "negative";
   label?: string;
   description?: string;
   errorMessage?: string;
@@ -341,6 +347,7 @@ export interface ComboBoxElementProps extends BaseElementProps {
   defaultSelectedKey?: string;
   selectedValue?: string;
   isDisabled?: boolean;
+  isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
   autoFocus?: boolean;
@@ -348,6 +355,8 @@ export interface ComboBoxElementProps extends BaseElementProps {
   allowsCustomValue?: boolean;
   menuTrigger?: "input" | "focus" | "manual";
   iconName?: string;
+  labelPosition?: "top" | "side";
+  necessityIndicator?: "icon" | "label";
   validationBehavior?: "native" | "aria";
   dataBinding?: DataBinding;
   onInputChange?: (value: string) => void;
@@ -771,10 +780,13 @@ export interface NumberFieldElementProps extends BaseElementProps {
   isDisabled?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  isInvalid?: boolean;
   isWheelDisabled?: boolean;
   autoFocus?: boolean;
   name?: string;
   form?: string;
+  labelPosition?: "top" | "side";
+  necessityIndicator?: "icon" | "label";
   decimals?: number;
   formatStyle?: "decimal" | "percent" | "currency" | "unit";
   currency?: string;
@@ -798,9 +810,12 @@ export interface SearchFieldElementProps extends BaseElementProps {
   isDisabled?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  isInvalid?: boolean;
   autoFocus?: boolean;
   name?: string;
   form?: string;
+  labelPosition?: "top" | "side";
+  necessityIndicator?: "icon" | "label";
   inputMode?:
     | "none"
     | "text"
@@ -1271,14 +1286,17 @@ export function createDefaultRadioGroupProps(): RadioGroupElementProps {
 export function createDefaultSelectProps(): SelectElementProps {
   return {
     name: "",
+    size: "md",
     isDisabled: false,
     isInvalid: false,
+    selectionMode: "single",
   };
 }
 
 export function createDefaultComboBoxProps(): ComboBoxElementProps {
   return {
     name: "",
+    size: "md",
     isDisabled: false,
     isInvalid: false,
     allowsCustomValue: false,

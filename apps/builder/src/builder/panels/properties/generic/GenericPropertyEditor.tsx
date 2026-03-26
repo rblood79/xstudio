@@ -8,6 +8,11 @@ import { SpecField } from "./SpecField";
 
 interface GenericPropertyEditorProps extends ComponentEditorProps {
   spec: ComponentSpec<Record<string, unknown>>;
+  renderAfterSections?: (props: {
+    elementId: string;
+    currentProps: Record<string, unknown>;
+    onUpdate: (updatedProps: Record<string, unknown>) => void;
+  }) => React.ReactNode;
 }
 
 export const GenericPropertyEditor = memo(function GenericPropertyEditor({
@@ -15,6 +20,7 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
   currentProps,
   onUpdate,
   spec,
+  renderAfterSections,
 }: GenericPropertyEditorProps) {
   const customId = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
@@ -61,6 +67,12 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
             ))}
         </PropertySection>
       ))}
+
+      {renderAfterSections?.({
+        elementId,
+        currentProps,
+        onUpdate,
+      })}
     </>
   );
 });

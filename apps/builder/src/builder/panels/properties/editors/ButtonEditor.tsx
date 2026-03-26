@@ -1,9 +1,7 @@
 import { memo, useCallback, useMemo } from "react";
 import {
-  Type,
   PointerOff,
   Parentheses,
-  Focus,
   Link,
   FileText,
   Hash,
@@ -16,60 +14,17 @@ import {
   PropertyInput,
   PropertySwitch,
   PropertySelect,
-  PropertySizeToggle,
-  PropertyCustomId,
   PropertySection,
   PropertyIconPicker,
 } from "../../../components";
+import { GenericPropertyEditor } from "../generic";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
-import { useStore } from "../../../stores";
+import { ButtonSpec } from "@xstudio/specs";
 
-export const ButtonEditor = memo(function ButtonEditor({
-  elementId,
+export const ButtonHybridAfterSections = memo(function ButtonHybridAfterSections({
   currentProps,
   onUpdate,
 }: PropertyEditorProps) {
-  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
-  // useMemo로 캐싱하되, elementId가 변경될 때만 재계산
-  // PropertyCustomId는 React.memo로 감싸져 있어서 customId가 실제로 변경될 때만 리렌더링됨
-  const customId = useMemo(() => {
-    const element = useStore.getState().elementsMap.get(elementId);
-    return element?.customId || "";
-  }, [elementId]);
-
-  // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
-  // PropertyEditorWrapper가 이미 깊은 비교를 수행하므로
-  // currentProps가 실제로 변경될 때만 ButtonEditor가 리렌더링됨
-  // 각 자식 컴포넌트(PropertySwitch, PropertyInput 등)는 React.memo로
-  // 실제 value/isSelected가 변경될 때만 리렌더링됨
-  const handleChildrenChange = useCallback(
-    (value: string) => {
-      onUpdate({ children: value });
-    },
-    [onUpdate],
-  );
-
-  const handleVariantChange = useCallback(
-    (value: string) => {
-      onUpdate({ variant: value });
-    },
-    [onUpdate],
-  );
-
-  const handleFillStyleChange = useCallback(
-    (value: string) => {
-      onUpdate({ fillStyle: value });
-    },
-    [onUpdate],
-  );
-
-  const handleSizeChange = useCallback(
-    (value: string) => {
-      onUpdate({ size: value });
-    },
-    [onUpdate],
-  );
-
   const handleIconNameChange = useCallback(
     (value: string) => {
       onUpdate({ iconName: value || undefined });
@@ -101,34 +56,6 @@ export const ButtonEditor = memo(function ButtonEditor({
       iconStrokeWidth: undefined,
     });
   }, [onUpdate]);
-
-  const handleTypeChange = useCallback(
-    (value: string) => {
-      onUpdate({ type: value });
-    },
-    [onUpdate],
-  );
-
-  const handleAutoFocusChange = useCallback(
-    (checked: boolean) => {
-      onUpdate({ autoFocus: checked });
-    },
-    [onUpdate],
-  );
-
-  const handleIsPendingChange = useCallback(
-    (checked: boolean) => {
-      onUpdate({ isPending: checked });
-    },
-    [onUpdate],
-  );
-
-  const handleIsDisabledChange = useCallback(
-    (checked: boolean) => {
-      onUpdate({ isDisabled: checked });
-    },
-    [onUpdate],
-  );
 
   const handleHrefChange = useCallback(
     (value: string) => {
@@ -216,83 +143,6 @@ export const ButtonEditor = memo(function ButtonEditor({
     [currentProps.type],
   );
 
-  // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
-  // variant를 변경해도 Behavior Section의 JSX는 재생성되지 않음!
-  const basicSection = useMemo(
-    () => (
-      <PropertySection title="Basic">
-        <PropertyCustomId
-          label="ID"
-          value={customId}
-          elementId={elementId}
-          placeholder="button_1"
-        />
-      </PropertySection>
-    ),
-    [customId, elementId],
-  );
-
-  const contentSection = useMemo(
-    () => (
-      <PropertySection title="Content">
-        <PropertyInput
-          label={PROPERTY_LABELS.TEXT}
-          value={String(currentProps.children || "")}
-          onChange={handleChildrenChange}
-          icon={Type}
-        />
-      </PropertySection>
-    ),
-    [currentProps.children, handleChildrenChange],
-  );
-
-  const designSection = useMemo(
-    () => (
-      <PropertySection title="Design">
-        <PropertySelect
-          label={PROPERTY_LABELS.VARIANT}
-          value={String(currentProps.variant || "primary")}
-          onChange={handleVariantChange}
-          options={[
-            { value: "accent", label: "Accent" },
-            { value: "primary", label: "Primary" },
-            { value: "secondary", label: "Secondary" },
-            { value: "negative", label: "Negative" },
-            { value: "premium", label: "Premium" },
-            { value: "genai", label: "GenAI" },
-          ]}
-          icon={Parentheses}
-        />
-
-        <PropertySelect
-          label="Fill Style"
-          value={String(currentProps.fillStyle || "fill")}
-          onChange={handleFillStyleChange}
-          options={[
-            { value: "fill", label: "Fill" },
-            { value: "outline", label: "Outline" },
-          ]}
-          icon={Parentheses}
-        />
-
-        <PropertySizeToggle
-          label={PROPERTY_LABELS.SIZE}
-          value={String(currentProps.size || "md")}
-          onChange={handleSizeChange}
-          scale="5"
-        />
-      </PropertySection>
-    ),
-    [
-      currentProps.variant,
-      currentProps.fillStyle,
-      currentProps.size,
-      handleVariantChange,
-      handleFillStyleChange,
-      handleSizeChange,
-    ],
-  );
-
   const iconSection = useMemo(
     () => (
       <PropertySection title="Icon">
@@ -333,55 +183,6 @@ export const ButtonEditor = memo(function ButtonEditor({
       handleIconClear,
       handleIconPositionChange,
       handleIconStrokeWidthChange,
-    ],
-  );
-
-  const behaviorSection = useMemo(
-    () => (
-      <PropertySection title="Behavior">
-        <PropertySelect
-          label={PROPERTY_LABELS.TYPE}
-          value={String(currentProps.type || "button")}
-          onChange={handleTypeChange}
-          options={[
-            { value: "button", label: PROPERTY_LABELS.BUTTON },
-            { value: "submit", label: PROPERTY_LABELS.SUBMIT },
-            { value: "reset", label: PROPERTY_LABELS.RESET },
-          ]}
-          icon={Parentheses}
-        />
-
-        <PropertySwitch
-          label={PROPERTY_LABELS.AUTO_FOCUS}
-          isSelected={Boolean(currentProps.autoFocus)}
-          onChange={handleAutoFocusChange}
-          icon={Focus}
-        />
-
-        <PropertySwitch
-          label={PROPERTY_LABELS.IS_PENDING}
-          isSelected={Boolean(currentProps.isPending)}
-          onChange={handleIsPendingChange}
-          icon={PointerOff}
-        />
-
-        <PropertySwitch
-          label={PROPERTY_LABELS.DISABLED}
-          isSelected={Boolean(currentProps.isDisabled)}
-          onChange={handleIsDisabledChange}
-          icon={PointerOff}
-        />
-      </PropertySection>
-    ),
-    [
-      currentProps.type,
-      currentProps.autoFocus,
-      currentProps.isPending,
-      currentProps.isDisabled,
-      handleTypeChange,
-      handleAutoFocusChange,
-      handleIsPendingChange,
-      handleIsDisabledChange,
     ],
   );
 
@@ -531,14 +332,24 @@ export const ButtonEditor = memo(function ButtonEditor({
 
   return (
     <>
-      {basicSection}
-      {contentSection}
-      {designSection}
       {iconSection}
-      {behaviorSection}
       {linkSection}
       {formSection}
     </>
   );
 });
 // ⭐ memo의 기본 shallow 비교 사용 (PropertyEditorWrapper가 깊은 비교 수행)
+
+export const ButtonEditor = memo(function ButtonEditor(
+  props: PropertyEditorProps,
+) {
+  return (
+    <GenericPropertyEditor
+      {...props}
+      spec={ButtonSpec}
+      renderAfterSections={(sectionProps) => (
+        <ButtonHybridAfterSections {...sectionProps} />
+      )}
+    />
+  );
+});

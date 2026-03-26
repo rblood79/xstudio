@@ -64,7 +64,7 @@ export interface NumberFieldProps extends AriaNumberFieldProps {
    * - compact: 축약 표기 (1.2K)
    * @default 'standard'
    */
-  notation?: "standard" | "compact";
+  notation?: "standard" | "compact" | "scientific" | "engineering";
   /**
    * 소수점 자릿수
    */
@@ -78,6 +78,7 @@ export interface NumberFieldProps extends AriaNumberFieldProps {
   size?: ComponentSize;
   necessityIndicator?: NecessityIndicator;
   labelPosition?: "top" | "side";
+  formatOptions?: Intl.NumberFormatOptions;
 }
 
 export function NumberField({
@@ -93,6 +94,7 @@ export function NumberField({
   size = "md",
   necessityIndicator,
   labelPosition = "top",
+  formatOptions: formatOptionsOverride,
   ...props
 }: NumberFieldProps) {
   // NumberFormatter 옵션 생성
@@ -119,6 +121,8 @@ export function NumberField({
     formatOptions.minimumFractionDigits = decimals;
     formatOptions.maximumFractionDigits = decimals;
   }
+
+  Object.assign(formatOptions, formatOptionsOverride);
 
   return (
     <AriaNumberField

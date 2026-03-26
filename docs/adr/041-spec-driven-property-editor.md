@@ -6,7 +6,7 @@ Partial
 
 ## Date
 
-2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강 + 설계 리뷰 반영 + 타입 안전성·간접성 제거 11건 개선 + 2차 설계 리뷰 12건 반영, 2026-03-26 Phase 0~1 + 배치 1 전환 시작)
+2026-03-13 (2026-03-16 코드베이스 실측 + 구현 완성도 보강 + 설계 리뷰 반영 + 타입 안전성·간접성 제거 11건 개선 + 2차 설계 리뷰 12건 반영, 2026-03-26 Phase 0~1 + 배치 1/2/3 완료 + B/C 하이브리드 6개 진행)
 
 ## Decision Makers
 
@@ -1204,9 +1204,31 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 - 배치 3 전환 완료
   - `Form`
   - `ColorField`
+- 등급 B/C 하이브리드 진행
+  - `Button`
+  - `SearchField`
+  - `TextField`
+  - `NumberField`
+  - `Select`
+  - `ComboBox`
+- 수동 editor 삭제 누적
+  - `Badge`
+  - `Separator`
+  - `StatusLight`
+  - `Meter`
+  - `ProgressBar`
+  - `Link`
+  - `Popover`
+  - `Tooltip`
+  - `Dialog`
+  - `Toast`
+  - `Form`
+  - `ColorField`
+  - `Form`
+  - `ColorField`
 - `Meter`, `ProgressBar`, `Link`, `Form`, `ColorField`는 수동 editor와 generic surface를 교차 점검해 동일함을 확인
 - 남은 범위
-  - 등급 B/C 하이브리드 전환
+  - 나머지 등급 B/C 하이브리드 전환
 
 **전환 방법 (안전한 롤백)**:
 

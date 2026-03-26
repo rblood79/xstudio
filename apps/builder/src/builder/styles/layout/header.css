@@ -208,6 +208,15 @@
     opacity: 0.8;
   }
 
+  .header_contents {
+    .react-aria-ToggleButtonGroup,
+    .zoom-trigger-button {
+      &:focus-within {
+        outline-offset: -2px;
+      }
+    }
+  }
+
   /* Header Screen Section */
   .header_contents.screen {
     gap: var(--spacing-sm);
@@ -474,7 +483,6 @@
   /* 포커스 링: 컨테이너에 적용 */
   .header_contents .zoom-controls .zoom-trigger-button:focus-within {
     outline: 2px solid var(--focus-ring);
-    outline-offset: -2px;
   }
 
   /* Zoom Menu Popover */

@@ -1,15 +1,4 @@
-/**
- * Zoom Controls Component (Adobe Style)
- *
- * Adobe Photoshop 온라인 스타일의 줌 컨트롤
- * - 현재 줌 레벨 표시 input
- * - 드롭다운 메뉴: 확대/축소, 프리셋, 화면 맞추기
- * - 키보드 단축키 표시
- *
- * 🚀 Performance: zoom만 구독, 나머지는 getState()로 액세스
- *
- * @since 2025-12-24
- */
+/** 줌 레벨 표시 input + 프리셋 액션 메뉴 (MenuTrigger 패턴) */
 
 import { useCallback, useRef, memo, useState, useEffect } from "react";
 import {
@@ -53,20 +42,18 @@ export interface ZoomControlsProps {
 export const ZoomControls = memo(function ZoomControls({
   className,
 }: ZoomControlsProps) {
-  // 🚀 Performance: zoom만 구독 (UI 표시용)
-  // 나머지 값들은 액션 실행 시 getState()로 가져옴
   const zoom = useViewportSyncStore((state) => state.zoom);
 
-  // 입력 상태 관리
   const [inputValue, setInputValue] = useState("");
   const zoomPercent = Math.round(zoom * 100);
-
-  // Popover 기준 요소 — triggerRef로 .zoom-trigger-button 기준 배치
+  const isEditingRef = useRef(false);
   const anchorRef = useRef<HTMLDivElement>(null);
 
-  // zoom 변경 시 입력값 동기화
+  // 포커스 중이 아닐 때만 외부 zoom 변경을 input에 반영
   useEffect(() => {
-    setInputValue(`${zoomPercent}%`);
+    if (!isEditingRef.current) {
+      setInputValue(`${zoomPercent}%`);
+    }
   }, [zoomPercent]);
 
   // ============================================
@@ -139,25 +126,16 @@ export const ZoomControls = memo(function ZoomControls({
   // Input Handlers
   // ============================================
 
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setInputValue(e.target.value);
-    },
-    [],
-  );
-
   const handleInputBlur = useCallback(() => {
-    // 숫자 파싱 (%, 공백 제거)
+    isEditingRef.current = false;
     const numStr = inputValue.replace(/%/g, "").trim();
     const num = parseFloat(numStr);
 
     if (isNaN(num) || num < MIN_ZOOM * 100 || num > MAX_ZOOM * 100) {
-      // 유효하지 않으면 현재 값으로 복원
       setInputValue(`${zoomPercent}%`);
       return;
     }
 
-    // 퍼센트를 줌 레벨로 변환 (100% = 1.0)
     zoomTo(num / 100);
   }, [inputValue, zoomPercent, zoomTo]);
 
@@ -177,7 +155,6 @@ export const ZoomControls = memo(function ZoomControls({
         return;
       }
 
-      // 화살표 키로 줌 조절
       const step = e.shiftKey ? 10 : 1;
       if (e.key === "ArrowUp") {
         e.preventDefault();
@@ -194,6 +171,7 @@ export const ZoomControls = memo(function ZoomControls({
 
   const handleInputFocus = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
+      isEditingRef.current = true;
       e.target.select();
     },
     [],
@@ -209,7 +187,7 @@ export const ZoomControls = memo(function ZoomControls({
         <input
           className="zoom-input"
           value={inputValue}
-          onChange={handleInputChange}
+          onChange={(e) => setInputValue(e.target.value)}
           onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}

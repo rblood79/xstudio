@@ -10,17 +10,51 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Layout,
+  Keyboard,
+  AlertTriangle,
+  Hash,
+  CheckSquare,
+  Focus,
+  PointerOff,
+  PenOff,
+  FileText,
+  Tag,
+} from "lucide-react";
 
 /**
  * SearchField Props
  */
 export interface SearchFieldProps {
   variant?: "default" | "accent";
-  size?: "S" | "M" | "L";
+  size?: "sm" | "md" | "lg";
   label?: string;
   placeholder?: string;
   value?: string;
+  description?: string;
+  errorMessage?: string;
   isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  isInvalid?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  form?: string;
+  labelPosition?: "top" | "side";
+  necessityIndicator?: "icon" | "label";
+  inputMode?:
+    | "none"
+    | "text"
+    | "tel"
+    | "url"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search";
+  pattern?: string;
+  minLength?: number;
+  maxLength?: number;
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -36,6 +70,142 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
 
   defaultVariant: "default",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "Design",
+        fields: [
+          {
+            key: "labelPosition",
+            type: "enum",
+            label: "Label Position",
+            icon: Layout,
+            options: [
+              { value: "top", label: "Top" },
+              { value: "side", label: "Side" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Input Mode",
+        fields: [
+          {
+            key: "inputMode",
+            type: "enum",
+            label: "Input Mode",
+            icon: Keyboard,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "text", label: "Text" },
+              { value: "search", label: "Search" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Validation",
+        fields: [
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+          },
+          {
+            key: "pattern",
+            type: "string",
+            label: "Pattern",
+            icon: AlertTriangle,
+            emptyToUndefined: true,
+            placeholder: "Regular expression",
+          },
+          {
+            key: "minLength",
+            type: "number",
+            label: "Min Length",
+            icon: Hash,
+          },
+          {
+            key: "maxLength",
+            type: "number",
+            label: "Max Length",
+            icon: Hash,
+          },
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            icon: CheckSquare,
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ],
+            derivedUpdateFn: (value) => {
+              if (value === "") {
+                return {
+                  isRequired: false,
+                  necessityIndicator: undefined,
+                };
+              }
+
+              return {
+                isRequired: true,
+                necessityIndicator: value as "icon" | "label",
+              };
+            },
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "isReadOnly",
+            type: "boolean",
+            label: "Read Only",
+            icon: PenOff,
+          },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: Tag,
+            emptyToUndefined: true,
+            placeholder: "search-name",
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            icon: FileText,
+            emptyToUndefined: true,
+            placeholder: "form-id",
+          },
+        ],
+      },
+    ],
+  },
 
   // 컨테이너는 투명 — .searchfield-container가 border/background 담당
   variants: {

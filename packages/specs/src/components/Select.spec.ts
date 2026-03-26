@@ -10,6 +10,17 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  List,
+  LayoutList,
+  Hash,
+  SquareX,
+  CheckSquare,
+  PointerOff,
+  PenOff,
+  Focus,
+  FormInput,
+} from "lucide-react";
 
 /**
  * Select Props
@@ -21,6 +32,8 @@ export interface SelectProps {
   placeholder?: string;
   name?: string;
   value?: string;
+  defaultSelectedKey?: string;
+  selectedValue?: string;
   selectedText?: string;
   description?: string;
   errorMessage?: string;
@@ -29,6 +42,13 @@ export interface SelectProps {
   isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  autoFocus?: boolean;
+  labelPosition?: "top" | "side";
+  necessityIndicator?: "icon" | "label";
+  selectionMode?: "single" | "multiple";
+  multipleDisplayMode?: "count" | "list" | "custom";
+  disallowEmptySelection?: boolean;
+  validationBehavior?: "native" | "aria";
   /** 드롭다운 아이템 목록 */
   items?: string[];
   /** 선택된 아이템 인덱스 (하이라이트용) */
@@ -50,6 +70,131 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
 
   defaultVariant: "default",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "State",
+        fields: [
+          {
+            key: "selectionMode",
+            type: "enum",
+            label: "Selection Mode",
+            icon: List,
+            options: [
+              { value: "single", label: "Single" },
+              { value: "multiple", label: "Multiple" },
+            ],
+          },
+          {
+            key: "multipleDisplayMode",
+            type: "enum",
+            label: "Display Mode",
+            icon: LayoutList,
+            visibleWhen: {
+              key: "selectionMode",
+              equals: "multiple",
+            },
+            options: [
+              { value: "count", label: 'Count (e.g., "3 selected")' },
+              { value: "list", label: 'List (e.g., "A, B, C")' },
+              { value: "custom", label: "Custom" },
+            ],
+          },
+          {
+            key: "selectedValue",
+            type: "string",
+            label: "Value",
+            icon: Hash,
+            emptyToUndefined: true,
+          },
+          {
+            key: "defaultSelectedKey",
+            type: "string",
+            label: "Default Selected Key",
+            icon: Hash,
+            emptyToUndefined: true,
+          },
+          {
+            key: "disallowEmptySelection",
+            type: "boolean",
+            label: "Disallow Empty Selection",
+            icon: SquareX,
+          },
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            icon: CheckSquare,
+            emptyToUndefined: true,
+            derivedUpdateFn: (value) => {
+              if (value === undefined || value === "") {
+                return {
+                  isRequired: false,
+                  necessityIndicator: undefined,
+                };
+              }
+
+              return {
+                isRequired: true,
+                necessityIndicator: value as "icon" | "label",
+              };
+            },
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "isReadOnly",
+            type: "boolean",
+            label: "Read Only",
+            icon: PenOff,
+          },
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            placeholder: "select-name",
+            emptyToUndefined: true,
+            icon: FormInput,
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     default: {

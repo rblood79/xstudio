@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-26 (ADR-041 배치 1 전환 시작, 기반 안정화 진행 중)
+> **최종 업데이트**: 2026-03-26 (ADR-041 배치 1/2/3 완료 + B/C 하이브리드 6개 진행 + 수동 editor 12개 제거)
 
 ## 현황 요약
 
@@ -57,7 +57,7 @@
 | [026](026-responsive-constraint-ui.md)            | Responsive Constraint UI (Size Mode → CSS 매핑) | Phase 1-4 완료 (Size Mode + Min/Max + Aspect Ratio + Self-Alignment + Fill 비활성 힌트)                                          | 보류: 자동 CSS 재매핑, 다중 선택, Box Model 다이어그램                                                                                 |    P4    |
 | [019](019-icon-system.md)                         | 아이콘 시스템 — Icon 선택/변경/추가             | Phase A+B+C+D 완료 (C2 simple element 경로, C4 SelectIcon+ComboBox 연동, C5 ComboBoxEditor IconPicker)                           | Phase E (추가 라이브러리)                                                                                                              |    P4    |
 | [027](027-inline-text-editing.md)                 | Canvas Inline Text Editing                      | Phase A+B+C 완료 (TextEditOverlay + Quill + 멀티페이지 + Spec 컴포넌트 텍스트 편집)                                              | Phase D (리치 텍스트/툴바)                                                                                                             |    P4    |
-| [041](041-spec-driven-property-editor.md)         | Spec-Driven Property Editor 자동 생성           | Phase 0~1 완료 + 배치 1/2/3 전환 완료 (`Badge`, `Separator`, `StatusLight`, `Meter`, `ProgressBar`, `Link`, `Tooltip`, `Dialog`, `Popover`, `Toast`, `Form`, `ColorField`) | 등급 B/C 하이브리드 전환                                                                                                               |    P4    |
+| [041](041-spec-driven-property-editor.md)         | Spec-Driven Property Editor 자동 생성           | Phase 0~1 완료 + 배치 1/2/3 전환 완료 + 하이브리드 6개 진행 (`Button`, `SearchField`, `TextField`, `NumberField`, `Select`, `ComboBox`) + 수동 editor 12개 제거 | 나머지 등급 B/C 하이브리드 전환                                                                                                       |    P4    |
 
 > **참고**: ADR-029에 동일 번호의 [Text Edit Overlay UX 개선](completed/029-text-edit-overlay-improvements.md) 문서가 존재하며, ADR-027의 후속 개선으로 Phase 1-2 모두 구현 완료 (Accepted).
 

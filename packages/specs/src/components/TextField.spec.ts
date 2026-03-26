@@ -10,6 +10,18 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Keyboard,
+  SpellCheck2,
+  AlertTriangle,
+  Hash,
+  CheckSquare,
+  Focus,
+  PointerOff,
+  PenOff,
+  FileText,
+  Tag,
+} from "lucide-react";
 
 /**
  * TextField Props
@@ -33,6 +45,25 @@ export interface TextFieldProps {
   isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  autoFocus?: boolean;
+  autoComplete?: string;
+  autoCorrect?: boolean;
+  inputMode?:
+    | "none"
+    | "text"
+    | "tel"
+    | "url"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search";
+  labelPosition?: "top" | "side";
+  necessityIndicator?: "icon" | "label";
+  name?: string;
+  form?: string;
+  pattern?: string;
+  minLength?: number;
+  maxLength?: number;
   children?: string;
   style?: Record<string, string | number | undefined>;
 }
@@ -48,6 +79,177 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
   defaultVariant: "default",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "Input Type",
+        fields: [
+          {
+            key: "type",
+            type: "enum",
+            label: "Input Type",
+            icon: Keyboard,
+            options: [
+              { value: "text", label: "Text" },
+              { value: "email", label: "Email" },
+              { value: "password", label: "Password" },
+              { value: "search", label: "Search" },
+              { value: "tel", label: "Tel" },
+              { value: "url", label: "URL" },
+              { value: "number", label: "Number" },
+            ],
+          },
+          {
+            key: "inputMode",
+            type: "enum",
+            label: "Input Mode",
+            icon: Keyboard,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "text", label: "Text" },
+              { value: "numeric", label: "Numeric" },
+              { value: "decimal", label: "Decimal" },
+              { value: "tel", label: "Tel" },
+              { value: "email", label: "Email" },
+              { value: "url", label: "URL" },
+              { value: "search", label: "Search" },
+            ],
+          },
+          {
+            key: "autoComplete",
+            type: "enum",
+            label: "Autocomplete",
+            icon: SpellCheck2,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Off" },
+              { value: "on", label: "On" },
+              { value: "name", label: "Name" },
+              { value: "email", label: "Email" },
+              { value: "username", label: "Username" },
+              { value: "new-password", label: "New Password" },
+              { value: "current-password", label: "Current Password" },
+              { value: "tel", label: "Tel" },
+              { value: "url", label: "URL" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Validation",
+        fields: [
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+          },
+          {
+            key: "pattern",
+            type: "string",
+            label: "Pattern",
+            icon: AlertTriangle,
+            emptyToUndefined: true,
+            placeholder: "Regular expression",
+          },
+          {
+            key: "minLength",
+            type: "number",
+            label: "Min Length",
+            icon: Hash,
+          },
+          {
+            key: "maxLength",
+            type: "number",
+            label: "Max Length",
+            icon: Hash,
+          },
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            icon: CheckSquare,
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ],
+            derivedUpdateFn: (value) => {
+              if (value === "") {
+                return {
+                  isRequired: false,
+                  necessityIndicator: undefined,
+                };
+              }
+
+              return {
+                isRequired: true,
+                necessityIndicator: value as "icon" | "label",
+              };
+            },
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "isReadOnly",
+            type: "boolean",
+            label: "Read Only",
+            icon: PenOff,
+          },
+          {
+            key: "spellCheck",
+            type: "boolean",
+            label: "Spell Check",
+            icon: SpellCheck2,
+          },
+          {
+            key: "autoCorrect",
+            type: "boolean",
+            label: "Auto Correct",
+            icon: SpellCheck2,
+          },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: Tag,
+            emptyToUndefined: true,
+            placeholder: "field-name",
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            icon: FileText,
+            emptyToUndefined: true,
+            placeholder: "form-id",
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     default: {

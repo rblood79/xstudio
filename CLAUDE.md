@@ -35,7 +35,7 @@ xstudio/
 └── .claude/
     ├── hooks/            # 자동 품질 게이트 (type-check, protect, format)
     ├── rules/            # Glob-scoped 컨텍스트 규칙 (파일 패턴별 자동 로드)
-    ├── agents/           # Agent 가이드 (architect, implementer, reviewer 등)
+    ├── agents/           # Agent 가이드 (architect, implementer, reviewer, evaluator 등)
     └── skills/           # Code Patterns & Rules (SKILL.md)
 ```
 
@@ -89,14 +89,14 @@ xstudio/
 
 ## 참조 체계
 
-| 용도           | 경로                                                                                                     | 설명                                                                       |
-| -------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 코드 패턴/규칙 | [SKILL.md](.claude/skills/xstudio-patterns/SKILL.md)                                                     | 전체 규칙 인덱스 (CRITICAL/HIGH/MEDIUM)                                    |
-| 도메인 규칙    | [.claude/rules/](.claude/rules/)                                                                         | Glob-scoped — 해당 파일 작업 시 자동 로드                                  |
-| Agent 가이드   | [.claude/agents/](.claude/agents/)                                                                       | architect, implementer, reviewer, debugger, documenter, refactorer, tester |
-| ADR            | [docs/adr/README.md](docs/adr/README.md)                                                                 | 전체 ADR 현황 + Risk-First 템플릿                                          |
-| 렌더링 상세    | [RENDERING_ARCHITECTURE.md](docs/RENDERING_ARCHITECTURE.md)                                              | Dual Renderer, DirectContainer 패턴 상세                                   |
-| 컴포넌트 스펙  | [COMPONENT_SPEC.md](docs/COMPONENT_SPEC.md)                                                              | Spec 단일 소스 아키텍처                                                    |
-| CSS 상세       | [CSS_ARCHITECTURE.md](docs/reference/components/CSS_ARCHITECTURE.md)                                     | ITCSS + tv() 스타일링 상세                                                 |
-| CSS 자동 생성  | [docs/adr/completed/036-spec-first-single-source.md](docs/adr/completed/036-spec-first-single-source.md) | Spec → CSS 자동 생성, Archetype, CompositionSpec                           |
-| Spec↔CSS 경계  | [SPEC_CSS_BOUNDARY.md](docs/reference/components/SPEC_CSS_BOUNDARY.md)                                   | Leaf(Spec CSS) vs Container(수동 CSS) 분류표, 결정 흐름도                  |
+| 용도           | 경로                                                                                                     | 설명                                                                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 코드 패턴/규칙 | [SKILL.md](.claude/skills/xstudio-patterns/SKILL.md)                                                     | 전체 규칙 인덱스 (CRITICAL/HIGH/MEDIUM)                                               |
+| 도메인 규칙    | [.claude/rules/](.claude/rules/)                                                                         | Glob-scoped — 해당 파일 작업 시 자동 로드                                             |
+| Agent 가이드   | [.claude/agents/](.claude/agents/)                                                                       | architect, implementer, evaluator, reviewer, debugger, documenter, refactorer, tester |
+| ADR            | [docs/adr/README.md](docs/adr/README.md)                                                                 | 전체 ADR 현황 + Risk-First 템플릿                                                     |
+| 렌더링 상세    | [RENDERING_ARCHITECTURE.md](docs/RENDERING_ARCHITECTURE.md)                                              | Dual Renderer, DirectContainer 패턴 상세                                              |
+| 컴포넌트 스펙  | [COMPONENT_SPEC.md](docs/COMPONENT_SPEC.md)                                                              | Spec 단일 소스 아키텍처                                                               |
+| CSS 상세       | [CSS_ARCHITECTURE.md](docs/reference/components/CSS_ARCHITECTURE.md)                                     | ITCSS + tv() 스타일링 상세                                                            |
+| CSS 자동 생성  | [docs/adr/completed/036-spec-first-single-source.md](docs/adr/completed/036-spec-first-single-source.md) | Spec → CSS 자동 생성, Archetype, CompositionSpec                                      |
+| Spec↔CSS 경계  | [SPEC_CSS_BOUNDARY.md](docs/reference/components/SPEC_CSS_BOUNDARY.md)                                   | Leaf(Spec CSS) vs Container(수동 CSS) 분류표, 결정 흐름도                             |

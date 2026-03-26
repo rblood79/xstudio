@@ -11,6 +11,23 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Globe,
+  DollarSign,
+  Type,
+  Hash,
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  Move,
+  CheckSquare,
+  Focus,
+  PointerOff,
+  PenOff,
+  MousePointerClick,
+  FileText,
+  Tag,
+} from "lucide-react";
 
 /**
  * NumberField Props
@@ -28,6 +45,24 @@ export interface NumberFieldProps {
   isDisabled?: boolean;
   isInvalid?: boolean;
   isRequired?: boolean;
+  isReadOnly?: boolean;
+  isWheelDisabled?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  form?: string;
+  labelPosition?: "top" | "side";
+  necessityIndicator?: "icon" | "label";
+  locale?: string;
+  formatStyle?: "decimal" | "percent" | "currency" | "unit";
+  currency?: string;
+  unit?: string;
+  notation?: "standard" | "compact" | "scientific" | "engineering";
+  decimals?: number;
+  showGroupSeparator?: boolean;
+  formatOptions?: {
+    minimumFractionDigits?: number;
+    maximumFractionDigits?: number;
+  };
   children?: string;
   style?: Record<string, string | number | undefined>;
   _hasChildren?: boolean;
@@ -44,6 +79,214 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
 
   defaultVariant: "default",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "Internationalization",
+        fields: [
+          {
+            key: "locale",
+            type: "string",
+            label: "Locale",
+            icon: Globe,
+            emptyToUndefined: true,
+            placeholder: "ko-KR, en-US, etc.",
+          },
+          {
+            key: "formatStyle",
+            type: "enum",
+            label: "Format Style",
+            icon: DollarSign,
+            options: [
+              { value: "decimal", label: "Decimal" },
+              { value: "currency", label: "Currency" },
+              { value: "percent", label: "Percent" },
+              { value: "unit", label: "Unit" },
+            ],
+          },
+          {
+            key: "currency",
+            type: "enum",
+            label: "Currency",
+            icon: DollarSign,
+            visibleWhen: {
+              key: "formatStyle",
+              equals: "currency",
+            },
+            options: [
+              { value: "KRW", label: "KRW (\u20a9)" },
+              { value: "USD", label: "USD ($)" },
+              { value: "EUR", label: "EUR (\u20ac)" },
+              { value: "GBP", label: "GBP (\u00a3)" },
+              { value: "JPY", label: "JPY (\u00a5)" },
+              { value: "CNY", label: "CNY (\u00a5)" },
+              { value: "AUD", label: "AUD ($)" },
+              { value: "CAD", label: "CAD ($)" },
+            ],
+          },
+          {
+            key: "unit",
+            type: "string",
+            label: "Unit",
+            icon: Type,
+            emptyToUndefined: true,
+            visibleWhen: {
+              key: "formatStyle",
+              equals: "unit",
+            },
+            placeholder: "kilometer, celsius, megabyte, etc.",
+          },
+          {
+            key: "notation",
+            type: "enum",
+            label: "Notation",
+            icon: Hash,
+            options: [
+              { value: "standard", label: "Standard" },
+              { value: "compact", label: "Compact" },
+              { value: "scientific", label: "Scientific" },
+              { value: "engineering", label: "Engineering" },
+            ],
+          },
+          {
+            key: "decimals",
+            type: "number",
+            label: "Decimals",
+            icon: Hash,
+          },
+          {
+            key: "showGroupSeparator",
+            type: "boolean",
+            label: "Show Group Separator",
+            icon: Hash,
+          },
+        ],
+      },
+      {
+        title: "Advanced Format Options",
+        fields: [
+          {
+            key: "minimumFractionDigits",
+            type: "number",
+            label: "Min Fraction Digits",
+            icon: Hash,
+            updatePath: ["formatOptions", "minimumFractionDigits"],
+          },
+          {
+            key: "maximumFractionDigits",
+            type: "number",
+            label: "Max Fraction Digits",
+            icon: Hash,
+            updatePath: ["formatOptions", "maximumFractionDigits"],
+          },
+        ],
+      },
+      {
+        title: "Validation",
+        fields: [
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+          },
+          {
+            key: "minValue",
+            type: "number",
+            label: "Min Value",
+            icon: ArrowDown,
+          },
+          {
+            key: "maxValue",
+            type: "number",
+            label: "Max Value",
+            icon: ArrowUp,
+          },
+          {
+            key: "step",
+            type: "number",
+            label: "Step",
+            icon: Move,
+          },
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            icon: CheckSquare,
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ],
+            derivedUpdateFn: (value) => {
+              if (value === "") {
+                return {
+                  isRequired: false,
+                  necessityIndicator: undefined,
+                };
+              }
+
+              return {
+                isRequired: true,
+                necessityIndicator: value as "icon" | "label",
+              };
+            },
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "isReadOnly",
+            type: "boolean",
+            label: "Read Only",
+            icon: PenOff,
+          },
+          {
+            key: "isWheelDisabled",
+            type: "boolean",
+            label: "Wheel Disabled",
+            icon: MousePointerClick,
+          },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: Tag,
+            emptyToUndefined: true,
+            placeholder: "field-name",
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            icon: FileText,
+            emptyToUndefined: true,
+            placeholder: "form-id",
+          },
+        ],
+      },
+    ],
+  },
 
   // @sync ComboBox.spec.ts variants — 동일한 컨테이너 배경
   variants: {

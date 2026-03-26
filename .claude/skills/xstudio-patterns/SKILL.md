@@ -195,11 +195,11 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 #### Performance (perf-\*)
 
-- **[perf-checklist](rules/perf-checklist.md)** - 성능 체크리스트
-- **[perf-barrel-imports](rules/perf-barrel-imports.md)** - barrel import 회피
-- **[perf-promise-all](rules/perf-promise-all.md)** - Promise.all 병렬 실행
-- **[perf-dynamic-imports](rules/perf-dynamic-imports.md)** - 동적 임포트
-- **[perf-map-set-lookups](rules/perf-map-set-lookups.md)** - Map/Set O(1) 검색
+- **[perf-checklist](rules/perf-checklist.md)** - 성능 종합 체크리스트 (barrel import 회피, Promise.all 병렬 실행, 동적 임포트, Map/Set O(1) 검색 포함)
+
+> **Opus 4.6 참고**: `perf-barrel-imports`, `perf-promise-all`, `perf-dynamic-imports`는 범용 코딩 패턴으로 모델이 자연스럽게 준수합니다. 개별 파일은 레퍼런스용으로 유지하되, `perf-checklist`가 통합 진입점입니다.
+
+- **[perf-map-set-lookups](rules/perf-map-set-lookups.md)** - Map/Set O(1) 검색 (XStudio의 elementsMap 패턴과 직결)
 
 #### Testing (test-\*)
 
@@ -336,7 +336,25 @@ tags: [tag1, tag2]
 올바른 코드 예시
 ```
 
-## 공통 에러 복구 프로토콜 (전 agent 적용)
+## 공통 세션 프로토콜 (전 agent 적용)
+
+### 세션 시작 체크리스트
+
+모든 agent는 작업 시작 시 아래를 수행한다:
+
+1. **진행 파일 읽기**: `Read .claude/progress.md` — 현재 상태, 진행 중 작업, 알려진 이슈 확인
+2. **agent-memory 읽기**: `Read .claude/agent-memory/{자신}/MEMORY.md` — 이전 세션 맥락 확인
+3. **작업 파악 후 시작**: 중복 작업 방지, 이전 세션에서 막힌 지점 이어가기
+
+### 세션 종료 체크리스트
+
+작업을 마무리할 때:
+
+1. **progress.md 갱신**: 완료 항목 이동, 진행 중 항목 업데이트, 새로 발견된 이슈 기록, 세션 로그 추가
+2. **agent-memory 갱신**: 향후 세션에 도움될 발견사항 기록 (규칙 위반 패턴, 디버깅 단서, 아키텍처 인사이트)
+3. **깨끗한 상태 보장**: 빌드 통과, 미완성 변경 없이 커밋 가능한 상태
+
+### 에러 복구 프로토콜
 
 모든 agent는 에러 발생 시 아래 프로토콜을 따른다:
 
@@ -344,6 +362,23 @@ tags: [tag1, tag2]
 2. **금지 우회 패턴**: `any`로 타입 에러 우회 금지, `@ts-ignore`/`@ts-expect-error`로 에러 숨기기 금지, 에러를 무시하고 진행 금지.
 3. **불확실성 시 질문**: 컨텍스트가 부족하면 추측하지 말고 사용자에게 질문한다.
 4. **에스컬레이션**: 전략 전환 후에도 해결 안 되면 시도한 것 + 실패 이유 + 남은 가설을 사용자에게 보고한다.
+
+### 출력 크기 제한 (컨텍스트 오염 방지)
+
+서브에이전트로 호출될 때 결과 반환 크기를 제한한다:
+
+- **요약 우선**: 수천 토큰을 소비했더라도, 반환은 **1,000~2,000 토큰 이내의 구조화된 요약**으로
+- **상세 정보는 파일에 기록**: 긴 분석 결과, 전체 코드 diff, 에러 로그 → 파일에 저장하고 경로만 반환
+- **구조화된 형식**: 마크다운 테이블, 번호 리스트 등으로 핵심만 전달
+
+```
+❌ 나쁜 반환: 500줄의 코드 diff + 전체 에러 로그 + 상세 분석
+✅ 좋은 반환:
+   ## 결과 요약
+   - 3개 파일 수정, 타입 에러 0개
+   - 핵심 변경: X → Y 패턴 전환
+   - 상세 분석: `.claude/agent-memory/reviewer/last-review.md` 참조
+```
 
 ## 아키텍처 결정 기록 (ADR)
 

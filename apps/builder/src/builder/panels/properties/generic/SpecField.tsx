@@ -24,10 +24,58 @@ export const SpecField = memo(function SpecField({
   const fieldKey = "key" in field && field.key ? field.key : undefined;
   const label = field.label ?? inferLabel(fieldKey ?? field.type);
   const icon = field.icon;
-  const buildUpdate = (key: string, value: unknown) =>
-    field.derivedUpdateFn
-      ? field.derivedUpdateFn(value, currentProps)
-      : { [key]: value };
+  const getValueAtPath = (path: readonly string[]) =>
+    path.reduce<unknown>((acc, segment) => {
+      if (acc && typeof acc === "object" && segment in acc) {
+        return (acc as Record<string, unknown>)[segment];
+      }
+      return undefined;
+    }, currentProps);
+
+  const buildPathUpdate = (path: readonly string[], value: unknown) => {
+    const [head, ...rest] = path;
+
+    if (!head) {
+      return {};
+    }
+
+    if (rest.length === 0) {
+      return { [head]: value };
+    }
+
+    const currentHead =
+      currentProps[head] && typeof currentProps[head] === "object"
+        ? (currentProps[head] as Record<string, unknown>)
+        : {};
+
+    let nestedValue: unknown = value;
+    for (let index = rest.length - 1; index >= 0; index -= 1) {
+      const segment = rest[index];
+      nestedValue = { [segment]: nestedValue };
+    }
+
+    return {
+      [head]: {
+        ...currentHead,
+        ...(nestedValue as Record<string, unknown>),
+      },
+    };
+  };
+
+  const resolveCurrentValue = (key: string) =>
+    field.updatePath ? getValueAtPath(field.updatePath) : currentProps[key];
+
+  const buildUpdate = (key: string, value: unknown) => {
+    if (field.derivedUpdateFn) {
+      return field.derivedUpdateFn(value, currentProps);
+    }
+
+    if (field.updatePath) {
+      return buildPathUpdate(field.updatePath, value);
+    }
+
+    return { [key]: value };
+  };
 
   switch (field.type) {
     case "variant": {
@@ -40,7 +88,7 @@ export const SpecField = memo(function SpecField({
       return (
         <PropertySelect
           label={label}
-          value={String(currentProps[key] ?? spec.defaultVariant)}
+          value={String(resolveCurrentValue(key) ?? spec.defaultVariant)}
           onChange={(value) => onUpdate(buildUpdate(key, value))}
           options={options}
           icon={icon}
@@ -62,7 +110,7 @@ export const SpecField = memo(function SpecField({
       return (
         <PropertySizeToggle
           label={label}
-          value={String(currentProps[key] ?? spec.defaultSize)}
+          value={String(resolveCurrentValue(key) ?? spec.defaultSize)}
           onChange={(value) => onUpdate(buildUpdate(key, value))}
           options={sizeOptions}
         />
@@ -73,7 +121,7 @@ export const SpecField = memo(function SpecField({
       return (
         <PropertySwitch
           label={label}
-          isSelected={Boolean(currentProps[field.key])}
+          isSelected={Boolean(resolveCurrentValue(field.key))}
           onChange={(checked) => onUpdate(buildUpdate(field.key, checked))}
           icon={icon}
         />
@@ -83,7 +131,7 @@ export const SpecField = memo(function SpecField({
       return (
         <PropertySelect
           label={label}
-          value={String(currentProps[field.key] ?? "")}
+          value={String(resolveCurrentValue(field.key) ?? "")}
           onChange={(value) => {
             const normalizedValue =
               field.emptyToUndefined && value === ""
@@ -102,7 +150,7 @@ export const SpecField = memo(function SpecField({
       return (
         <PropertyInput
           label={label}
-          value={String(currentProps[field.key] ?? "")}
+          value={String(resolveCurrentValue(field.key) ?? "")}
           onChange={(value) => {
             const normalizedValue =
               field.emptyToUndefined && value === "" ? undefined : value;
@@ -119,7 +167,7 @@ export const SpecField = memo(function SpecField({
         <PropertyInput
           label={label}
           type="number"
-          value={String(currentProps[field.key] ?? "")}
+          value={String(resolveCurrentValue(field.key) ?? "")}
           onChange={(value) => {
             const normalizedValue = value === "" ? undefined : Number(value);
             onUpdate(buildUpdate(field.key, normalizedValue));

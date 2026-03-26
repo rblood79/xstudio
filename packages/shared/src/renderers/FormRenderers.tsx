@@ -197,6 +197,11 @@ export const renderNumberField = (
 ): React.ReactNode => {
   const { updateElementProps } = context;
   const inheritedProps = resolveInheritedFormFieldProps(element, context);
+  const formatOptions =
+    element.props.formatOptions &&
+    typeof element.props.formatOptions === "object"
+      ? (element.props.formatOptions as Intl.NumberFormatOptions)
+      : undefined;
 
   return (
     <NumberField
@@ -224,6 +229,36 @@ export const renderNumberField = (
           ? Number(element.props.step)
           : undefined
       }
+      locale={element.props.locale ? String(element.props.locale) : undefined}
+      formatStyle={
+        (element.props.formatStyle as
+          | "decimal"
+          | "currency"
+          | "percent"
+          | "unit"
+          | undefined) ?? "decimal"
+      }
+      currency={element.props.currency ? String(element.props.currency) : undefined}
+      unit={element.props.unit ? String(element.props.unit) : undefined}
+      notation={
+        (element.props.notation as
+          | "standard"
+          | "compact"
+          | "scientific"
+          | "engineering"
+          | undefined) ?? "standard"
+      }
+      decimals={
+        element.props.decimals !== undefined
+          ? Number(element.props.decimals)
+          : undefined
+      }
+      showGroupSeparator={
+        element.props.showGroupSeparator !== undefined
+          ? Boolean(element.props.showGroupSeparator)
+          : undefined
+      }
+      formatOptions={formatOptions}
       isDisabled={Boolean(element.props.isDisabled || false)}
       isRequired={Boolean(element.props.isRequired || false)}
       isReadOnly={Boolean(element.props.isReadOnly || false)}

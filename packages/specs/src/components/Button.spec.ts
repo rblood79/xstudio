@@ -10,6 +10,12 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Type,
+  Parentheses,
+  Focus,
+  PointerOff,
+} from "lucide-react";
 
 /**
  * Button Props
@@ -33,6 +39,18 @@ export interface ButtonProps {
   iconPosition?: "start" | "end";
   /** 아이콘 선 두께 (기본: 2) */
   iconStrokeWidth?: number;
+  type?: "button" | "submit" | "reset";
+  autoFocus?: boolean;
+  href?: string;
+  target?: "_self" | "_blank" | "_parent" | "_top";
+  rel?: string;
+  form?: string;
+  name?: string;
+  value?: string;
+  formAction?: string;
+  formMethod?: "get" | "post" | "dialog";
+  formNoValidate?: boolean;
+  formTarget?: "_self" | "_blank" | "_parent" | "_top";
   isDisabled?: boolean;
   isLoading?: boolean;
   isPending?: boolean;
@@ -50,6 +68,87 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
 
   defaultVariant: "primary",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "Content",
+        fields: [
+          {
+            key: "children",
+            type: "string",
+            label: "Text",
+            icon: Type,
+          },
+        ],
+      },
+      {
+        title: "Design",
+        fields: [
+          {
+            type: "variant",
+            label: "Variant",
+            icon: Parentheses,
+          },
+          {
+            key: "fillStyle",
+            type: "enum",
+            label: "Fill Style",
+            icon: Parentheses,
+            options: [
+              { value: "fill", label: "Fill" },
+              { value: "outline", label: "Outline" },
+            ],
+          },
+          {
+            type: "size",
+            label: "Size",
+            options: [
+              { value: "xs", label: "XS" },
+              { value: "sm", label: "S" },
+              { value: "md", label: "M" },
+              { value: "lg", label: "L" },
+              { value: "xl", label: "XL" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "type",
+            type: "enum",
+            label: "Type",
+            icon: Parentheses,
+            options: [
+              { value: "button", label: "Button" },
+              { value: "submit", label: "Submit" },
+              { value: "reset", label: "Reset" },
+            ],
+          },
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+          {
+            key: "isPending",
+            type: "boolean",
+            label: "Pending",
+            icon: PointerOff,
+          },
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     accent: {

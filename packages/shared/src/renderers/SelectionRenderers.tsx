@@ -982,7 +982,13 @@ export const renderComboBox = (
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
-      size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      size={
+        (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"
+      }
+      variant={
+        (element.props.variant as "default" | "accent" | "negative") ||
+        "default"
+      }
       iconName={
         element.props.iconName ? String(element.props.iconName) : undefined
       }
@@ -1003,6 +1009,13 @@ export const renderComboBox = (
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
       isInvalid={Boolean(element.props.isInvalid)}
+      autoFocus={Boolean(element.props.autoFocus)}
+      menuTrigger={
+        (element.props.menuTrigger as "input" | "focus" | "manual") || "focus"
+      }
+      validationBehavior={
+        (element.props.validationBehavior as "native" | "aria") || undefined
+      }
       labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
       necessityIndicator={
         element.props.necessityIndicator as "icon" | "label" | undefined

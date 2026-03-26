@@ -10,6 +10,16 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Tag,
+  Binary,
+  CheckSquare,
+  Focus,
+  PointerOff,
+  PenOff,
+  FormInput,
+  FileText,
+} from "lucide-react";
 
 /**
  * ComboBox Props
@@ -29,6 +39,11 @@ export interface ComboBoxProps {
   isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  allowsCustomValue?: boolean;
+  validationBehavior?: "native" | "aria";
+  necessityIndicator?: "icon" | "label";
   /** 트리거 아이콘 이름 */
   iconName?: string;
   /** 드롭다운 아이템 목록 */
@@ -52,6 +67,100 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
 
   defaultVariant: "default",
   defaultSize: "md",
+
+  properties: {
+    sections: [
+      {
+        title: "State",
+        fields: [
+          {
+            key: "selectedValue",
+            type: "string",
+            label: "Value",
+            icon: Tag,
+            emptyToUndefined: true,
+            placeholder: "선택된 값이 여기에 표시됩니다",
+          },
+          {
+            key: "allowsCustomValue",
+            type: "boolean",
+            label: "Allows Custom Value",
+            icon: Binary,
+          },
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            icon: CheckSquare,
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon (*)" },
+              { value: "label", label: "Label (required/optional)" },
+            ],
+            derivedUpdateFn: (value) => {
+              if (value === "") {
+                return {
+                  isRequired: false,
+                  necessityIndicator: undefined,
+                };
+              }
+
+              return {
+                isRequired: true,
+                necessityIndicator: value as "icon" | "label",
+              };
+            },
+          },
+        ],
+      },
+      {
+        title: "Behavior",
+        fields: [
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "isReadOnly",
+            type: "boolean",
+            label: "Read Only",
+            icon: PenOff,
+          },
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+        ],
+      },
+      {
+        title: "Form Integration",
+        fields: [
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: FormInput,
+            emptyToUndefined: true,
+            placeholder: "combobox-name",
+          },
+          {
+            key: "validationBehavior",
+            type: "enum",
+            label: "Validation Behavior",
+            icon: FileText,
+            options: [
+              { value: "native", label: "Native" },
+              { value: "aria", label: "ARIA" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 
   variants: {
     default: {

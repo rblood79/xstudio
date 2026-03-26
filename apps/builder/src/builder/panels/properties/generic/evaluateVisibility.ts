@@ -20,5 +20,13 @@ export function evaluateVisibility(
     return false;
   }
 
+  if (condition.truthy === true && !value) {
+    return false;
+  }
+
+  if (condition.truthy === false && Boolean(value)) {
+    return false;
+  }
+
   return true;
 }

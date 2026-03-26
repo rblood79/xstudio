@@ -145,6 +145,7 @@ export interface BaseFieldDef {
   icon?: LucideIcon;
   visibleWhen?: VisibilityCondition;
   emptyToUndefined?: boolean;
+  updatePath?: [string, ...string[]];
   derivedUpdateFn?: DerivedUpdateFn;
 }
 
@@ -153,6 +154,7 @@ export type VisibilityCondition = {
   equals?: string | number | boolean;
   notEquals?: string | number | boolean;
   oneOf?: Array<string | number | boolean>;
+  truthy?: boolean;
   parentTag?: string;
   parentTagNot?: string;
 };

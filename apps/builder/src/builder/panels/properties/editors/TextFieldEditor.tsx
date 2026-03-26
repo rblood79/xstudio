@@ -1,51 +1,31 @@
 import { memo, useCallback, useMemo } from "react";
-import {
-  Tag,
-  Binary,
-  CheckSquare,
-  AlertTriangle,
-  PointerOff,
-  PenOff,
-  FileText,
-  SpellCheck2,
-  Hash,
-  Focus,
-  Keyboard,
-  Shield,
-  Layout,
-} from "lucide-react";
+import { Binary, FileText, Layout, SpellCheck2, Tag } from "lucide-react";
+import { TextFieldSpec } from "@xstudio/specs";
 import {
   PropertyInput,
-  PropertySwitch,
-  PropertyCustomId,
-  PropertySelect,
   PropertySection,
+  PropertySelect,
 } from "../../../components";
 import { PropertySizeToggle } from "../../../components/property/PropertySizeToggle";
-import { PropertyEditorProps } from "../types/editorTypes";
-import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { useSyncChildProp } from "../../../hooks/useSyncChildProp";
-import {
-  buildRequiredUpdate,
-  NECESSITY_INDICATOR_OPTIONS,
-  LABEL_POSITION_OPTIONS,
-} from "./editorUtils";
+import { GenericPropertyEditor } from "../generic";
+import { PropertyEditorProps } from "../types/editorTypes";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
+import { LABEL_POSITION_OPTIONS } from "./editorUtils";
 
-export const TextFieldEditor = memo(
-  function TextFieldEditor({
+const LABEL_FONT_SIZE: Record<string, number> = {
+  sm: 12,
+  md: 14,
+  lg: 16,
+};
+
+export const TextFieldHybridAfterSections = memo(
+  function TextFieldHybridAfterSections({
     elementId,
     currentProps,
     onUpdate,
   }: PropertyEditorProps) {
-    // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
-    const customId = useMemo(() => {
-      const element = useStore.getState().elementsMap.get(elementId);
-      return element?.customId || "";
-    }, [elementId]);
-
-    // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
-
     const { buildChildUpdates } = useSyncChildProp(elementId);
 
     const handleLabelChange = useCallback(
@@ -63,7 +43,7 @@ export const TextFieldEditor = memo(
 
     const handleValueChange = useCallback(
       (value: string) => {
-        onUpdate({ value: value });
+        onUpdate({ value });
       },
       [onUpdate],
     );
@@ -88,135 +68,6 @@ export const TextFieldEditor = memo(
       [onUpdate],
     );
 
-    const handleTypeChange = useCallback(
-      (value: string) => {
-        onUpdate({ type: value });
-      },
-      [onUpdate],
-    );
-
-    const handleInputModeChange = useCallback(
-      (value: string) => {
-        onUpdate({ inputMode: value || undefined });
-      },
-      [onUpdate],
-    );
-
-    const handleAutoCompleteChange = useCallback(
-      (value: string) => {
-        onUpdate({ autoComplete: value || undefined });
-      },
-      [onUpdate],
-    );
-
-    const handleErrorMessageChange = useCallback(
-      (value: string) => {
-        onUpdate({ errorMessage: value });
-      },
-      [onUpdate],
-    );
-
-    const handlePatternChange = useCallback(
-      (value: string) => {
-        onUpdate({ pattern: value || undefined });
-      },
-      [onUpdate],
-    );
-
-    const handleMinLengthChange = useCallback(
-      (value: string) => {
-        onUpdate({
-          minLength: value ? Number(value) : undefined,
-        });
-      },
-      [onUpdate],
-    );
-
-    const handleMaxLengthChange = useCallback(
-      (value: string) => {
-        onUpdate({
-          maxLength: value ? Number(value) : undefined,
-        });
-      },
-      [onUpdate],
-    );
-
-    const handleRequiredChange = useCallback(
-      (value: string) => onUpdate(buildRequiredUpdate(value)),
-      [onUpdate],
-    );
-
-    const handleAutoFocusChange = useCallback(
-      (checked: boolean) => {
-        onUpdate({ autoFocus: checked });
-      },
-      [onUpdate],
-    );
-
-    const handleIsDisabledChange = useCallback(
-      (checked: boolean) => {
-        onUpdate({ isDisabled: checked });
-      },
-      [onUpdate],
-    );
-
-    const handleIsReadOnlyChange = useCallback(
-      (checked: boolean) => {
-        onUpdate({ isReadOnly: checked });
-      },
-      [onUpdate],
-    );
-
-    const handleSpellCheckChange = useCallback(
-      (checked: boolean) => {
-        onUpdate({ spellCheck: checked });
-      },
-      [onUpdate],
-    );
-
-    const handleAutoCorrectChange = useCallback(
-      (checked: boolean) => {
-        onUpdate({ autoCorrect: checked });
-      },
-      [onUpdate],
-    );
-
-    const handleNameChange = useCallback(
-      (value: string) => {
-        onUpdate({ name: value || undefined });
-      },
-      [onUpdate],
-    );
-
-    const handleFormChange = useCallback(
-      (value: string) => {
-        onUpdate({ form: value || undefined });
-      },
-      [onUpdate],
-    );
-
-    // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
-    const basicSection = useMemo(
-      () => (
-        <PropertySection title="Basic">
-          <PropertyCustomId
-            label="ID"
-            value={customId}
-            elementId={elementId}
-            placeholder="textfield_1"
-          />
-        </PropertySection>
-      ),
-      [customId, elementId],
-    );
-
-    // @sync TextField.css --tf-label-size per size
-    const LABEL_FONT_SIZE: Record<string, number> = {
-      sm: 12,
-      md: 14,
-      lg: 16,
-    };
-
     const handleLabelPositionChange = useCallback(
       (value: string) => {
         onUpdate({ labelPosition: value });
@@ -227,14 +78,13 @@ export const TextFieldEditor = memo(
     const handleSizeChange = useCallback(
       (value: string) => {
         const updatedProps = { size: value };
-        // Input: size prop 동기화
         const childUpdates = buildChildUpdates([
           { childTag: "Input", propKey: "size", value },
         ]);
-        // Label: style.fontSize도 업데이트 (WebGL에서 size prop만으로는 시각 변화 없음)
         const { childrenMap } = useStore.getState();
         const children = childrenMap.get(elementId);
-        const labelChild = children?.find((c) => c.tag === "Label");
+        const labelChild = children?.find((child) => child.tag === "Label");
+
         if (labelChild) {
           const labelStyle =
             (labelChild.props?.style as Record<string, unknown>) || {};
@@ -250,6 +100,7 @@ export const TextFieldEditor = memo(
             },
           });
         }
+
         useStore
           .getState()
           .updateSelectedPropertiesWithChildren(updatedProps, childUpdates);
@@ -266,6 +117,7 @@ export const TextFieldEditor = memo(
             onChange={handleSizeChange}
             scale="3"
           />
+
           <PropertySelect
             label={PROPERTY_LABELS.LABEL_POSITION}
             value={String(currentProps.labelPosition || "top")}
@@ -276,10 +128,10 @@ export const TextFieldEditor = memo(
         </PropertySection>
       ),
       [
-        currentProps.size,
         currentProps.labelPosition,
-        handleSizeChange,
+        currentProps.size,
         handleLabelPositionChange,
+        handleSizeChange,
       ],
     );
 
@@ -317,248 +169,36 @@ export const TextFieldEditor = memo(
         </PropertySection>
       ),
       [
-        currentProps.label,
-        currentProps.value,
-        currentProps.placeholder,
         currentProps.description,
-        handleLabelChange,
-        handleValueChange,
-        handlePlaceholderChange,
+        currentProps.label,
+        currentProps.placeholder,
+        currentProps.value,
         handleDescriptionChange,
-      ],
-    );
-
-    const inputTypeSection = useMemo(
-      () => (
-        <PropertySection title="Input Type">
-          <PropertySelect
-            label={PROPERTY_LABELS.INPUT_TYPE}
-            value={String(currentProps.type || "text")}
-            onChange={handleTypeChange}
-            options={[
-              { value: "text", label: PROPERTY_LABELS.INPUT_TYPE_TEXT },
-              { value: "email", label: PROPERTY_LABELS.INPUT_TYPE_EMAIL },
-              { value: "password", label: PROPERTY_LABELS.INPUT_TYPE_PASSWORD },
-              { value: "search", label: PROPERTY_LABELS.INPUT_TYPE_SEARCH },
-              { value: "tel", label: PROPERTY_LABELS.INPUT_TYPE_TEL },
-              { value: "url", label: PROPERTY_LABELS.INPUT_TYPE_URL },
-              { value: "number", label: PROPERTY_LABELS.INPUT_TYPE_NUMBER },
-            ]}
-            icon={Keyboard}
-          />
-
-          <PropertySelect
-            label={PROPERTY_LABELS.INPUT_MODE}
-            value={String(currentProps.inputMode || "")}
-            onChange={handleInputModeChange}
-            options={[
-              { value: "", label: PROPERTY_LABELS.INPUT_MODE_NONE },
-              { value: "text", label: PROPERTY_LABELS.INPUT_MODE_TEXT },
-              { value: "numeric", label: PROPERTY_LABELS.INPUT_MODE_NUMERIC },
-              { value: "decimal", label: PROPERTY_LABELS.INPUT_MODE_DECIMAL },
-              { value: "tel", label: PROPERTY_LABELS.INPUT_MODE_TEL },
-              { value: "email", label: PROPERTY_LABELS.INPUT_MODE_EMAIL },
-              { value: "url", label: PROPERTY_LABELS.INPUT_MODE_URL },
-              { value: "search", label: PROPERTY_LABELS.INPUT_MODE_SEARCH },
-            ]}
-            icon={Keyboard}
-          />
-
-          <PropertySelect
-            label={PROPERTY_LABELS.AUTOCOMPLETE}
-            value={String(currentProps.autoComplete || "")}
-            onChange={handleAutoCompleteChange}
-            options={[
-              { value: "", label: PROPERTY_LABELS.AUTO_COMPLETE_OFF },
-              { value: "on", label: PROPERTY_LABELS.AUTO_COMPLETE_ON },
-              { value: "name", label: PROPERTY_LABELS.AUTO_COMPLETE_NAME },
-              { value: "email", label: PROPERTY_LABELS.AUTO_COMPLETE_EMAIL },
-              {
-                value: "username",
-                label: PROPERTY_LABELS.AUTO_COMPLETE_USERNAME,
-              },
-              {
-                value: "new-password",
-                label: PROPERTY_LABELS.AUTO_COMPLETE_NEW_PASSWORD,
-              },
-              {
-                value: "current-password",
-                label: PROPERTY_LABELS.AUTO_COMPLETE_CURRENT_PASSWORD,
-              },
-              { value: "tel", label: PROPERTY_LABELS.AUTO_COMPLETE_TEL },
-              { value: "url", label: PROPERTY_LABELS.AUTO_COMPLETE_URL },
-            ]}
-            icon={SpellCheck2}
-          />
-        </PropertySection>
-      ),
-      [
-        currentProps.type,
-        currentProps.inputMode,
-        currentProps.autoComplete,
-        handleTypeChange,
-        handleInputModeChange,
-        handleAutoCompleteChange,
-      ],
-    );
-
-    const validationSection = useMemo(
-      () => (
-        <PropertySection title="Validation">
-          <PropertyInput
-            label={PROPERTY_LABELS.ERROR_MESSAGE}
-            value={String(currentProps.errorMessage || "")}
-            onChange={handleErrorMessageChange}
-            icon={AlertTriangle}
-          />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.PATTERN}
-            value={String(currentProps.pattern || "")}
-            onChange={handlePatternChange}
-            icon={Shield}
-            placeholder="Regular expression"
-          />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.MIN_LENGTH}
-            value={String(currentProps.minLength || "")}
-            onChange={handleMinLengthChange}
-            icon={Hash}
-            placeholder="0"
-          />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.MAX_LENGTH}
-            value={String(currentProps.maxLength || "")}
-            onChange={handleMaxLengthChange}
-            icon={Hash}
-            placeholder="100"
-          />
-
-          <PropertySelect
-            label={PROPERTY_LABELS.REQUIRED}
-            value={String(currentProps.necessityIndicator || "")}
-            onChange={handleRequiredChange}
-            options={NECESSITY_INDICATOR_OPTIONS}
-            icon={CheckSquare}
-          />
-        </PropertySection>
-      ),
-      [
-        currentProps.errorMessage,
-        currentProps.pattern,
-        currentProps.minLength,
-        currentProps.maxLength,
-        currentProps.isRequired,
-        currentProps.necessityIndicator,
-        handleErrorMessageChange,
-        handlePatternChange,
-        handleMinLengthChange,
-        handleMaxLengthChange,
-        handleRequiredChange,
-      ],
-    );
-
-    const behaviorSection = useMemo(
-      () => (
-        <PropertySection title="Behavior">
-          <PropertySwitch
-            label={PROPERTY_LABELS.AUTO_FOCUS}
-            isSelected={Boolean(currentProps.autoFocus)}
-            onChange={handleAutoFocusChange}
-            icon={Focus}
-          />
-
-          <PropertySwitch
-            label={PROPERTY_LABELS.DISABLED}
-            isSelected={Boolean(currentProps.isDisabled)}
-            onChange={handleIsDisabledChange}
-            icon={PointerOff}
-          />
-
-          <PropertySwitch
-            label={PROPERTY_LABELS.READONLY}
-            isSelected={Boolean(currentProps.isReadOnly)}
-            onChange={handleIsReadOnlyChange}
-            icon={PenOff}
-          />
-
-          <PropertySwitch
-            label={PROPERTY_LABELS.SPELL_CHECK}
-            isSelected={Boolean(currentProps.spellCheck)}
-            onChange={handleSpellCheckChange}
-            icon={SpellCheck2}
-          />
-
-          <PropertySwitch
-            label={PROPERTY_LABELS.AUTO_CORRECT}
-            isSelected={Boolean(currentProps.autoCorrect)}
-            onChange={handleAutoCorrectChange}
-            icon={SpellCheck2}
-          />
-        </PropertySection>
-      ),
-      [
-        currentProps.autoFocus,
-        currentProps.isDisabled,
-        currentProps.isReadOnly,
-        currentProps.spellCheck,
-        currentProps.autoCorrect,
-        handleAutoFocusChange,
-        handleIsDisabledChange,
-        handleIsReadOnlyChange,
-        handleSpellCheckChange,
-        handleAutoCorrectChange,
-      ],
-    );
-
-    const formIntegrationSection = useMemo(
-      () => (
-        <PropertySection title="Form Integration">
-          <PropertyInput
-            label={PROPERTY_LABELS.NAME}
-            value={String(currentProps.name || "")}
-            onChange={handleNameChange}
-            icon={Tag}
-            placeholder="field-name"
-          />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.FORM}
-            value={String(currentProps.form || "")}
-            onChange={handleFormChange}
-            icon={FileText}
-            placeholder="form-id"
-          />
-        </PropertySection>
-      ),
-      [
-        currentProps.name,
-        currentProps.form,
-        handleNameChange,
-        handleFormChange,
+        handleLabelChange,
+        handlePlaceholderChange,
+        handleValueChange,
       ],
     );
 
     return (
       <>
-        {basicSection}
         {designSection}
         {contentSection}
-        {inputTypeSection}
-        {validationSection}
-        {behaviorSection}
-        {formIntegrationSection}
       </>
     );
   },
-  (prevProps, nextProps) => {
-    // ⭐ 기본 비교: id와 properties만 비교
-    return (
-      prevProps.elementId === nextProps.elementId &&
-      JSON.stringify(prevProps.currentProps) ===
-        JSON.stringify(nextProps.currentProps)
-    );
-  },
 );
+
+export const TextFieldEditor = memo(function TextFieldEditor(
+  props: PropertyEditorProps,
+) {
+  return (
+    <GenericPropertyEditor
+      {...props}
+      spec={TextFieldSpec}
+      renderAfterSections={(sectionProps) => (
+        <TextFieldHybridAfterSections {...sectionProps} />
+      )}
+    />
+  );
+});

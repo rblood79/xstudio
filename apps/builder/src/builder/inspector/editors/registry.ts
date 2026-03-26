@@ -3,11 +3,36 @@ import type { ComponentEditorProps } from "../types";
 import { componentMetadata } from "@xstudio/shared/components/metadata";
 import { GenericPropertyEditor } from "../../panels/properties/generic";
 import { getPropertyEditorSpec } from "../../panels/properties/specRegistry";
+import { ButtonHybridAfterSections } from "../../panels/properties/editors/ButtonEditor";
+import { ComboBoxHybridAfterSections } from "../../panels/properties/editors/ComboBoxEditor";
+import { NumberFieldHybridAfterSections } from "../../panels/properties/editors/NumberFieldEditor";
+import { SearchFieldHybridAfterSections } from "../../panels/properties/editors/SearchFieldEditor";
+import { SelectHybridAfterSections } from "../../panels/properties/editors/SelectEditor";
+import { TextFieldHybridAfterSections } from "../../panels/properties/editors/TextFieldEditor";
 
 /**
  * 에디터 캐시
  */
 const editorCache = new Map<string, ComponentType<ComponentEditorProps>>();
+
+function getHybridAfterSections(type: string) {
+  switch (type) {
+    case "Button":
+      return ButtonHybridAfterSections;
+    case "ComboBox":
+      return ComboBoxHybridAfterSections;
+    case "NumberField":
+      return NumberFieldHybridAfterSections;
+    case "SearchField":
+      return SearchFieldHybridAfterSections;
+    case "Select":
+      return SelectHybridAfterSections;
+    case "TextField":
+      return TextFieldHybridAfterSections;
+    default:
+      return undefined;
+  }
+}
 
 /**
  * Vite의 import.meta.glob을 사용하여 모든 에디터를 사전 로드
@@ -110,10 +135,12 @@ export async function getEditor(
 
   const propertySpec = getPropertyEditorSpec(type);
   if (propertySpec?.properties) {
+    const renderAfterSections = getHybridAfterSections(type);
     const genericEditor: ComponentType<ComponentEditorProps> = (props) =>
       createElement(GenericPropertyEditor, {
         ...props,
         spec: propertySpec,
+        renderAfterSections,
       });
     editorCache.set(type, genericEditor);
     return genericEditor;
