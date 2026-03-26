@@ -58,6 +58,33 @@ Popover/Tooltip 등 overlay 컴포넌트 CSS에서 S2 패턴을 준수한다.
 }
 ```
 
+## 액션 메뉴 패턴 (ComboBox vs MenuTrigger)
+
+입력 필드 + 드롭다운 액션 메뉴 조합에서는 **MenuTrigger + Menu**를 사용한다. ComboBox는 "값 선택"용이며 액션 실행에 부적합.
+
+```tsx
+/* ❌ ComboBox — 액션 메뉴에 부적합 */
+/* selectedKey={null} 고정 → 팝오버 자동 닫힘 미작동 */
+/* menuTrigger="input" 기본값 → inputValue 변경 시 팝오버 재오픈 */
+<ComboBox selectedKey={null} allowsCustomValue onSelectionChange={...}>
+  <Input /><Button /><Popover><ListBox>...</ListBox></Popover>
+</ComboBox>
+
+/* ✅ MenuTrigger + Menu — 아이템 선택 시 자동 닫힘 (React Aria 내장) */
+<input value={inputValue} onChange={...} />
+<MenuTrigger>
+  <Button>▼</Button>
+  <Popover triggerRef={anchorRef} placement="bottom start">
+    <Menu onAction={handleAction}>
+      <MenuItem id="action-1">...</MenuItem>
+    </Menu>
+  </Popover>
+</MenuTrigger>
+```
+
+- **`triggerRef`**: Popover를 트리거 버튼이 아닌 다른 요소(컨테이너) 기준으로 배치 (React Aria 공식 API)
+- 참조: `ZoomControls.tsx`, React Aria Popover.md "Custom anchor" 섹션
+
 ## 근거
 
 - `contain: paint`는 요소 경계 밖 콘텐츠 렌더링을 차단 — Dialog가 `position: fixed`(generated CSS)로 flow에서 빠지면 Popover가 2x2px로 축소되고 캘린더 불가시

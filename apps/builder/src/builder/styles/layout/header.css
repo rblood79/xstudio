@@ -438,7 +438,7 @@
     overflow: hidden;
   }
 
-  /* Zoom Input (읽기 전용) */
+  /* Zoom Input */
   .header_contents .zoom-controls .zoom-input {
     width: 48px;
     padding: var(--spacing-sm);
@@ -454,7 +454,7 @@
     outline: none;
   }
 
-  .header_contents .zoom-controls .zoom-input[data-focused] {
+  .header_contents .zoom-controls .zoom-input:focus {
     outline: none;
   }
 
@@ -526,13 +526,13 @@
     }
   }
 
-  /* Zoom Menu (ListBox) */
+  /* Zoom Menu (Menu) */
   .zoom-menu {
     padding: var(--spacing-xs);
     outline: none;
   }
 
-  /* Zoom Menu Item (ListBoxItem) */
+  /* Zoom Menu Item (MenuItem) */
   .zoom-menu-item {
     display: flex;
     align-items: center;
@@ -543,8 +543,6 @@
     border-radius: var(--radius-md);
     cursor: pointer;
     outline: none;
-    /* 🚀 ComboBox 패턴: GPU 가속 + 부드러운 전환 */
-    transform: translate3d(0, 0, 0);
     transition: background-color 0.1s;
   }
 
@@ -553,8 +551,7 @@
     background: var(--bg-muted);
   }
 
-  .zoom-menu-item[data-pressed],
-  .zoom-menu-item[data-selected] {
+  .zoom-menu-item[data-pressed] {
     background: var(--accent-subtle);
   }
 
