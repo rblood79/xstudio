@@ -7,6 +7,7 @@ import {
   CheckSquare,
   AlertTriangle,
   FileText,
+  Focus,
 } from "lucide-react";
 import {
   PropertyInput,
@@ -19,6 +20,13 @@ import {
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
+import {
+  buildRequiredUpdate,
+  COLOR_CHANNEL_OPTIONS,
+  LABEL_POSITION_OPTIONS,
+  NECESSITY_INDICATOR_OPTIONS,
+  VALIDATION_BEHAVIOR_OPTIONS,
+} from "./editorUtils";
 
 export const ColorFieldEditor = memo(function ColorFieldEditor({
   elementId,
@@ -94,18 +102,8 @@ export const ColorFieldEditor = memo(function ColorFieldEditor({
         <PropertySelect
           label={PROPERTY_LABELS.REQUIRED}
           value={String(currentProps.necessityIndicator || "")}
-          onChange={(value) => {
-            if (value === "") {
-              onUpdate({ isRequired: false, necessityIndicator: undefined });
-            } else {
-              onUpdate({ isRequired: true, necessityIndicator: value });
-            }
-          }}
-          options={[
-            { value: "", label: "None" },
-            { value: "icon", label: "Icon (*)" },
-            { value: "label", label: "Label (required/optional)" },
-          ]}
+          onChange={(value) => onUpdate(buildRequiredUpdate(value))}
+          options={NECESSITY_INDICATOR_OPTIONS}
           icon={CheckSquare}
         />
 
@@ -132,6 +130,13 @@ export const ColorFieldEditor = memo(function ColorFieldEditor({
           onChange={(checked) => updateProp("isReadOnly", checked)}
           icon={PenOff}
         />
+
+        <PropertySwitch
+          label="Auto Focus"
+          isSelected={Boolean(currentProps.autoFocus)}
+          onChange={(checked) => updateProp("autoFocus", checked)}
+          icon={Focus}
+        />
       </PropertySection>
 
       {/* Design Section */}
@@ -156,6 +161,22 @@ export const ColorFieldEditor = memo(function ColorFieldEditor({
         />
 
         <PropertySelect
+          label="Label Position"
+          value={String(currentProps.labelPosition || "top")}
+          onChange={(value) => updateProp("labelPosition", value)}
+          options={LABEL_POSITION_OPTIONS}
+          icon={Tag}
+        />
+
+        <PropertySelect
+          label="Channel"
+          value={String(currentProps.channel || "")}
+          onChange={(value) => updateProp("channel", value || undefined)}
+          options={COLOR_CHANNEL_OPTIONS}
+          icon={Palette}
+        />
+
+        <PropertySelect
           label="Color Space"
           value={String(currentProps.colorSpace || "")}
           onChange={(value) => updateProp("colorSpace", value || undefined)}
@@ -166,6 +187,32 @@ export const ColorFieldEditor = memo(function ColorFieldEditor({
             { value: "hsb", label: "HSB" },
           ]}
           icon={Palette}
+        />
+      </PropertySection>
+
+      <PropertySection title="Form Integration">
+        <PropertyInput
+          label="Name"
+          value={String(currentProps.name || "")}
+          onChange={(value) => updateProp("name", value || undefined)}
+          icon={Tag}
+          placeholder="brandColor"
+        />
+
+        <PropertyInput
+          label="Form"
+          value={String(currentProps.form || "")}
+          onChange={(value) => updateProp("form", value || undefined)}
+          icon={Tag}
+          placeholder="form-id"
+        />
+
+        <PropertySelect
+          label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
+          value={String(currentProps.validationBehavior || "native")}
+          onChange={(value) => updateProp("validationBehavior", value)}
+          options={VALIDATION_BEHAVIOR_OPTIONS}
+          icon={CheckSquare}
         />
       </PropertySection>
     </>

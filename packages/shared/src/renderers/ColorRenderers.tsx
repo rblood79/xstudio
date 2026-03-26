@@ -1,5 +1,18 @@
 import React from "react";
+import type { Color } from "react-aria-components";
 import type { PreviewElement, RenderContext } from "../types";
+import { ColorField } from "../components/ColorField";
+import { resolveInheritedFormFieldProps } from "./FormRenderers";
+
+type ColorFieldChannel =
+  | "hue"
+  | "saturation"
+  | "lightness"
+  | "brightness"
+  | "red"
+  | "green"
+  | "blue"
+  | "alpha";
 
 /**
  * Color 관련 컴포넌트 렌더러
@@ -85,6 +98,79 @@ export const renderColorWheel = (
         ...element.props.style,
       }}
       className={element.props.className}
+    />
+  );
+};
+
+/**
+ * ColorField 렌더링
+ */
+export const renderColorField = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { updateElementProps } = context;
+  const inheritedProps = resolveInheritedFormFieldProps(element, context);
+
+  return (
+    <ColorField
+      key={element.id}
+      id={element.customId}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+      variant={String(element.props.variant || "default")}
+      size={
+        (element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"
+      }
+      label={element.props.label ? String(element.props.label) : undefined}
+      description={
+        element.props.description
+          ? String(element.props.description)
+          : undefined
+      }
+      errorMessage={
+        element.props.errorMessage
+          ? String(element.props.errorMessage)
+          : undefined
+      }
+      defaultValue={
+        element.props.defaultValue
+          ? String(element.props.defaultValue)
+          : undefined
+      }
+      isDisabled={Boolean(element.props.isDisabled)}
+      isInvalid={Boolean(element.props.isInvalid)}
+      isReadOnly={Boolean(element.props.isReadOnly)}
+      isRequired={Boolean(element.props.isRequired)}
+      autoFocus={Boolean(element.props.autoFocus)}
+      name={element.props.name ? String(element.props.name) : undefined}
+      form={element.props.form ? String(element.props.form) : undefined}
+      channel={element.props.channel as ColorFieldChannel | undefined}
+      colorSpace={
+        (element.props.colorSpace as "rgb" | "hsl" | "hsb" | undefined) ||
+        undefined
+      }
+      validationBehavior={
+        (element.props.validationBehavior as "native" | "aria" | undefined) ||
+        undefined
+      }
+      necessityIndicator={
+        (element.props.necessityIndicator as "icon" | "label" | undefined) ??
+        inheritedProps.necessityIndicator
+      }
+      labelPosition={
+        (element.props.labelPosition as "top" | "side" | undefined) ??
+        inheritedProps.labelPosition ??
+        "top"
+      }
+      onChange={(newColor: Color | null) => {
+        const updatedProps = {
+          ...element.props,
+          value: newColor ? newColor.toString("hex") : undefined,
+        };
+        updateElementProps(element.id, updatedProps);
+      }}
     />
   );
 };

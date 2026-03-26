@@ -20,6 +20,35 @@ export const LABEL_POSITION_OPTIONS = [
   { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
 ] as const;
 
+/** Static Color 선택 옵션 */
+export const STATIC_COLOR_OPTIONS = [
+  { value: "auto", label: "Auto" },
+  { value: "white", label: "White" },
+  { value: "black", label: "Black" },
+] as const;
+
+/** Link/Form Target 선택 옵션 */
+export const LINK_TARGET_OPTIONS = [
+  { value: "", label: PROPERTY_LABELS.TARGET_NONE },
+  { value: "_self", label: PROPERTY_LABELS.TARGET_SELF },
+  { value: "_blank", label: PROPERTY_LABELS.TARGET_BLANK },
+  { value: "_parent", label: PROPERTY_LABELS.TARGET_PARENT },
+  { value: "_top", label: PROPERTY_LABELS.TARGET_TOP },
+] as const;
+
+/** ColorField 채널 선택 옵션 */
+export const COLOR_CHANNEL_OPTIONS = [
+  { value: "", label: "Default (Hex)" },
+  { value: "hue", label: "Hue" },
+  { value: "saturation", label: "Saturation" },
+  { value: "lightness", label: "Lightness" },
+  { value: "brightness", label: "Brightness" },
+  { value: "red", label: "Red" },
+  { value: "green", label: "Green" },
+  { value: "blue", label: "Blue" },
+  { value: "alpha", label: "Alpha" },
+] as const;
+
 /**
  * Required + NecessityIndicator 통합 업데이트 생성
  * None → isRequired: false + necessityIndicator 제거

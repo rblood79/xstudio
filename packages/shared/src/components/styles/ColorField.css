@@ -2,7 +2,14 @@
   .react-aria-ColorField {
     display: flex;
     flex-direction: column;
+    width: fit-content;
+    gap: var(--spacing-xs);
     color: var(--fg);
+
+    &[data-label-position="side"] {
+      flex-direction: row;
+      align-items: flex-start;
+    }
 
     /* Accent locals */
     --field-accent: var(--accent);

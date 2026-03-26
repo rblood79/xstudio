@@ -151,6 +151,10 @@ export const renderTabs = (
       style={element.props.style}
       className={element.props.className}
       defaultSelectedKey={String(element.props.defaultSelectedKey || "")}
+      density={
+        (element.props.density as "compact" | "regular" | undefined) ||
+        "regular"
+      }
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "horizontal"
       }
@@ -169,7 +173,13 @@ export const renderTabs = (
         updateElementProps(element.id, updatedProps);
       }}
     >
-      <TabList showIndicator={Boolean(element.props.showIndicator)}>
+      <TabList
+        density={
+          (element.props.density as "compact" | "regular" | undefined) ||
+          "regular"
+        }
+        showIndicator={Boolean(element.props.showIndicator)}
+      >
         {tabChildren.map((tab) => {
           // tabId prop을 React Aria key로 사용 (defaultSelectedKey와 매칭)
           const tabKey = (tab.props.tabId as string) || tab.id;

@@ -9,6 +9,7 @@ import {
 import { Text } from "./Content";
 import { Label, FieldError } from "./Field";
 import type { ComponentSize } from "../types";
+import { type NecessityIndicator, renderNecessityIndicator } from "./Field";
 
 import "./styles/ColorField.css";
 
@@ -32,6 +33,8 @@ export interface ColorFieldProps extends AriaColorFieldProps {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
+  necessityIndicator?: NecessityIndicator;
+  labelPosition?: "top" | "side";
 }
 
 /**
@@ -58,6 +61,8 @@ export function ColorField({
   label,
   description,
   errorMessage,
+  necessityIndicator,
+  labelPosition = "top",
   ...props
 }: ColorFieldProps) {
   const colorFieldClassName = composeRenderProps(
@@ -74,8 +79,14 @@ export function ColorField({
       className={colorFieldClassName}
       data-variant={variant}
       data-size={size}
+      data-label-position={labelPosition}
     >
-      {label && <Label>{label}</Label>}
+      {label && (
+        <Label>
+          {label}
+          {renderNecessityIndicator(necessityIndicator, props.isRequired)}
+        </Label>
+      )}
       <Input />
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>

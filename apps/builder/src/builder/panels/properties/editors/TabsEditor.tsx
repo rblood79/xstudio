@@ -29,6 +29,11 @@ const ORIENTATIONS: Array<{ value: string; label: string }> = [
   { value: "vertical", label: PROPERTY_LABELS.ORIENTATION_VERTICAL },
 ];
 
+const DENSITY_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "compact", label: "Compact" },
+  { value: "regular", label: "Regular" },
+];
+
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -136,6 +141,13 @@ export const TabsEditor = memo(
     const handleOrientationChange = useCallback(
       (value: string) => {
         onUpdate({ orientation: value });
+      },
+      [onUpdate],
+    );
+
+    const handleDensityChange = useCallback(
+      (value: string) => {
+        onUpdate({ density: value });
       },
       [onUpdate],
     );
@@ -262,6 +274,13 @@ export const TabsEditor = memo(
       () => (
         <PropertySection title="Design">
           <PropertySelect
+            label="Density"
+            value={String(currentProps.density || "regular")}
+            onChange={handleDensityChange}
+            options={DENSITY_OPTIONS}
+            icon={Ratio}
+          />
+          <PropertySelect
             label={PROPERTY_LABELS.ORIENTATION}
             value={String(currentProps.orientation || "horizontal")}
             onChange={handleOrientationChange}
@@ -277,8 +296,10 @@ export const TabsEditor = memo(
         </PropertySection>
       ),
       [
+        currentProps.density,
         currentProps.orientation,
         currentProps.showIndicator,
+        handleDensityChange,
         handleOrientationChange,
         handleShowIndicatorChange,
       ],

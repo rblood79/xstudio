@@ -4,6 +4,10 @@ import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, Proper
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
+import {
+    LINK_TARGET_OPTIONS,
+    VALIDATION_BEHAVIOR_OPTIONS,
+} from './editorUtils';
 
 export const FormEditor = memo(function FormEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Get customId from element in store
@@ -59,10 +63,7 @@ export const FormEditor = memo(function FormEditor({ elementId, currentProps, on
                     label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
                     value={String(currentProps.validationBehavior || 'native')}
                     onChange={(value) => updateProp('validationBehavior', value)}
-                    options={[
-                        { value: 'native', label: 'Native' },
-                        { value: 'aria', label: 'ARIA' }
-                    ]}
+                    options={VALIDATION_BEHAVIOR_OPTIONS}
                     icon={CheckSquare}
                 />
             </PropertySection>
@@ -84,7 +85,6 @@ export const FormEditor = memo(function FormEditor({ elementId, currentProps, on
                     options={[
                         { value: 'get', label: 'GET' },
                         { value: 'post', label: 'POST' },
-                        { value: 'dialog', label: 'Dialog' }
                     ]}
                     icon={FormInput}
                 />
@@ -105,13 +105,7 @@ export const FormEditor = memo(function FormEditor({ elementId, currentProps, on
                     label="Target"
                     value={String(currentProps.target || '')}
                     onChange={(value) => updateProp('target', value || undefined)}
-                    options={[
-                        { value: '', label: 'Default' },
-                        { value: '_self', label: 'Same Window (_self)' },
-                        { value: '_blank', label: 'New Tab (_blank)' },
-                        { value: '_parent', label: 'Parent Frame (_parent)' },
-                        { value: '_top', label: 'Top Frame (_top)' }
-                    ]}
+                    options={LINK_TARGET_OPTIONS}
                     icon={Globe}
                 />
             </PropertySection>

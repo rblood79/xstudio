@@ -6,6 +6,7 @@ import {
   Parentheses,
   PointerOff,
   Eye,
+  FileText,
 } from "lucide-react";
 import { PropertyEditorProps } from "../types/editorTypes";
 import {
@@ -18,6 +19,10 @@ import {
 } from "../../../components";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
+import {
+  LINK_TARGET_OPTIONS,
+  STATIC_COLOR_OPTIONS,
+} from "./editorUtils";
 
 export const LinkEditor = memo(function LinkEditor({
   elementId,
@@ -96,10 +101,41 @@ export const LinkEditor = memo(function LinkEditor({
           onChange={(value) => updateProp("size", value)}
           scale="5"
         />
+
+        <PropertySelect
+          label="Static Color"
+          value={String(currentProps.staticColor || "auto")}
+          onChange={(value) => updateProp("staticColor", value || undefined)}
+          options={STATIC_COLOR_OPTIONS}
+          icon={Parentheses}
+        />
       </PropertySection>
 
       {/* Behavior Section */}
       <PropertySection title="Behavior">
+        <PropertySelect
+          label={PROPERTY_LABELS.TARGET}
+          value={String(currentProps.target || "")}
+          onChange={(value) => updateProp("target", value || undefined)}
+          options={LINK_TARGET_OPTIONS}
+          icon={LinkIcon}
+        />
+
+        <PropertyInput
+          label={PROPERTY_LABELS.REL}
+          value={String(currentProps.rel || "")}
+          onChange={(value) => updateProp("rel", value || undefined)}
+          icon={FileText}
+          placeholder="noopener noreferrer"
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.IS_QUIET}
+          isSelected={Boolean(currentProps.isQuiet)}
+          onChange={(checked) => updateProp("isQuiet", checked)}
+          icon={Parentheses}
+        />
+
         <PropertySwitch
           label="External Link"
           isSelected={Boolean(currentProps.isExternal)}

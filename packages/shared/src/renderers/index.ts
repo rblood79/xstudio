@@ -21,6 +21,7 @@ export const rendererMap: Record<
   (element: PreviewElement, context: RenderContext) => React.ReactNode
 > = {
   // Form 컴포넌트
+  Form: FormRenderers.renderForm,
   TextField: FormRenderers.renderTextField,
   NumberField: FormRenderers.renderNumberField,
   SearchField: FormRenderers.renderSearchField,
@@ -124,6 +125,7 @@ export const rendererMap: Record<
   Icon: IconRenderers.renderIcon,
 
   // Color 컴포넌트
+  ColorField: ColorRenderers.renderColorField,
   ColorArea: ColorRenderers.renderColorArea,
   ColorSlider: ColorRenderers.renderColorSlider,
   ColorWheel: ColorRenderers.renderColorWheel,

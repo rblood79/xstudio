@@ -1,11 +1,21 @@
 import { memo, useMemo } from "react";
-import { MessageSquare } from "lucide-react";
-import { PropertyInput, PropertyCustomId, PropertySection } from '../../../components';
+import { MessageSquare, Parentheses, ToggleLeft } from "lucide-react";
+import {
+  PropertyInput,
+  PropertyCustomId,
+  PropertySection,
+  PropertySelect,
+  PropertySwitch,
+} from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 
-export const DialogEditor = memo(function DialogEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const DialogEditor = memo(function DialogEditor({
+  elementId,
+  currentProps,
+  onUpdate,
+}: PropertyEditorProps) {
   // Get customId from element in store
   const customId = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
@@ -49,7 +59,26 @@ export const DialogEditor = memo(function DialogEditor({ elementId, currentProps
           icon={MessageSquare}
         />
       </PropertySection>
+
+      <PropertySection title="Behavior">
+        <PropertySwitch
+          label={PROPERTY_LABELS.IS_DISMISSABLE}
+          isSelected={Boolean(currentProps.isDismissable)}
+          onChange={(checked) => updateProp("isDismissable", checked)}
+          icon={ToggleLeft}
+        />
+
+        <PropertySelect
+          label="Role"
+          value={String(currentProps.role || "dialog")}
+          onChange={(value) => updateProp("role", value || undefined)}
+          options={[
+            { value: "dialog", label: "Dialog" },
+            { value: "alertdialog", label: "Alert Dialog" },
+          ]}
+          icon={Parentheses}
+        />
+      </PropertySection>
     </>
   );
 });
-

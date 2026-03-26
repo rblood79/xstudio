@@ -387,6 +387,7 @@ export interface TabsElementProps extends BaseElementProps {
   selectedKey?: string;
   defaultSelectedKey?: string;
   onSelectionChange?: (key: string) => void;
+  density?: "compact" | "regular";
   orientation?: "horizontal" | "vertical";
 }
 
@@ -980,16 +981,25 @@ export interface RangeCalendarElementProps extends BaseElementProps {
 
 // === Color Component Element Props ===
 export interface ColorFieldElementProps extends BaseElementProps {
+  variant?: "default" | "accent" | "neutral" | "error" | "filled";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   label?: string;
   description?: string;
   errorMessage?: string;
   value?: string;
   defaultValue?: string;
   isDisabled?: boolean;
+  isInvalid?: boolean;
   isReadOnly?: boolean;
   isRequired?: boolean;
+  autoFocus?: boolean;
+  name?: string;
+  form?: string;
   channel?: string;
   colorSpace?: "rgb" | "hsl" | "hsb";
+  validationBehavior?: "native" | "aria";
+  necessityIndicator?: "icon" | "label";
+  labelPosition?: "top" | "side";
 }
 
 export interface ColorPickerElementProps extends BaseElementProps {

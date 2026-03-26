@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Form,
   TextField,
   NumberField,
   SearchField,
@@ -27,6 +28,93 @@ import type { PreviewElement, RenderContext } from "../types";
  * - Switch
  */
 
+type InheritedFormFieldProps = {
+  labelPosition?: "top" | "side";
+  necessityIndicator?: "icon" | "label";
+};
+
+function findNearestAncestorForm(
+  element: PreviewElement,
+  elements: PreviewElement[],
+): PreviewElement | null {
+  let currentParentId = element.parent_id;
+
+  while (currentParentId) {
+    const parent = elements.find((candidate) => candidate.id === currentParentId);
+    if (!parent) return null;
+    if (parent.tag === "Form") return parent;
+    currentParentId = parent.parent_id;
+  }
+
+  return null;
+}
+
+export function resolveInheritedFormFieldProps(
+  element: PreviewElement,
+  context: RenderContext,
+): InheritedFormFieldProps {
+  const formElement = findNearestAncestorForm(element, context.elements);
+  if (!formElement) return {};
+
+  return {
+    labelPosition:
+      formElement.props.labelPosition as "top" | "side" | undefined,
+    necessityIndicator:
+      formElement.props.necessityIndicator as "icon" | "label" | undefined,
+  };
+}
+
+/**
+ * Form 렌더링
+ */
+export const renderForm = (
+  element: PreviewElement,
+  context: RenderContext,
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <Form
+      key={element.id}
+      id={element.customId}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+      action={element.props.action ? String(element.props.action) : undefined}
+      method={
+        (element.props.method as "get" | "post" | undefined) || undefined
+      }
+      encType={
+        (element.props.encType as
+          | "application/x-www-form-urlencoded"
+          | "multipart/form-data"
+          | "text/plain"
+          | undefined) || undefined
+      }
+      target={
+        (element.props.target as
+          | "_self"
+          | "_blank"
+          | "_parent"
+          | "_top"
+          | undefined) || undefined
+      }
+      autoFocus={Boolean(element.props.autoFocus)}
+      restoreFocus={Boolean(element.props.restoreFocus)}
+      validationBehavior={
+        (element.props.validationBehavior as "native" | "aria" | undefined) ||
+        undefined
+      }
+    >
+      {children.map((child) => renderElement(child, child.id))}
+    </Form>
+  );
+};
+
 /**
  * TextField 렌더링
  */
@@ -35,6 +123,7 @@ export const renderTextField = (
   context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
+  const inheritedProps = resolveInheritedFormFieldProps(element, context);
 
   return (
     <TextField
@@ -64,9 +153,14 @@ export const renderTextField = (
       isReadOnly={Boolean(element.props.isReadOnly || false)}
       isInvalid={Boolean(element.props.isInvalid || false)}
       necessityIndicator={
-        element.props.necessityIndicator as "icon" | "label" | undefined
+        (element.props.necessityIndicator as "icon" | "label" | undefined) ??
+        inheritedProps.necessityIndicator
       }
-      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
+      labelPosition={
+        (element.props.labelPosition as "top" | "side" | undefined) ??
+        inheritedProps.labelPosition ??
+        "top"
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={(value) => {
         const updatedProps = {
@@ -87,6 +181,7 @@ export const renderNumberField = (
   context: RenderContext,
 ): React.ReactNode => {
   const { updateElementProps } = context;
+  const inheritedProps = resolveInheritedFormFieldProps(element, context);
 
   return (
     <NumberField
@@ -119,9 +214,14 @@ export const renderNumberField = (
       isReadOnly={Boolean(element.props.isReadOnly || false)}
       isInvalid={Boolean(element.props.isInvalid || false)}
       necessityIndicator={
-        element.props.necessityIndicator as "icon" | "label" | undefined
+        (element.props.necessityIndicator as "icon" | "label" | undefined) ??
+        inheritedProps.necessityIndicator
       }
-      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
+      labelPosition={
+        (element.props.labelPosition as "top" | "side" | undefined) ??
+        inheritedProps.labelPosition ??
+        "top"
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       onChange={(value) => {
         const updatedProps = {
@@ -142,6 +242,7 @@ export const renderSearchField = (
   context: RenderContext,
 ): React.ReactNode => {
   const { elements, updateElementProps } = context;
+  const inheritedProps = resolveInheritedFormFieldProps(element, context);
 
   // Child element에서 props 읽기 (compositional 패턴)
   const childElements = elements
@@ -182,9 +283,14 @@ export const renderSearchField = (
       isReadOnly={Boolean(element.props.isReadOnly || false)}
       isInvalid={Boolean(element.props.isInvalid || false)}
       necessityIndicator={
-        element.props.necessityIndicator as "icon" | "label" | undefined
+        (element.props.necessityIndicator as "icon" | "label" | undefined) ??
+        inheritedProps.necessityIndicator
       }
-      labelPosition={(element.props.labelPosition as "top" | "side") || "top"}
+      labelPosition={
+        (element.props.labelPosition as "top" | "side" | undefined) ??
+        inheritedProps.labelPosition ??
+        "top"
+      }
       name={element.props.name ? String(element.props.name) : undefined}
       size={(element.props.size as "xs" | "sm" | "md" | "lg" | "xl") || "md"}
       onChange={(value) => {

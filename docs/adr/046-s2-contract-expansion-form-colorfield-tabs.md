@@ -15,6 +15,7 @@ ADR-045는 자동 생성 기반 Property Editor(ADR-041) 이전에 필요한 전
 - `Form`
   - XStudio 계약에는 `action`, `method`, `encType`, `target`, `autoFocus`, `restoreFocus`, `validationBehavior` 정도만 있다.
   - S2 문서에는 `labelPosition`, `labelAlign`, `necessityIndicator`, `isEmphasized`, `size` 등 상위 폼 계약이 더 있다.
+  - 하지만 현재 preview는 `Form` 전용 renderer 없이 HTML fallback으로 처리되고, child field wrapper들도 parent `Form`의 layout/necessity contract를 자동 상속하지 않는다.
 - `ColorField`
   - XStudio 계약은 `channel`, `colorSpace`, `isRequired` 중심으로 좁다.
   - editor는 이미 `variant`, `size`, `isInvalid`, `necessityIndicator` 같은 필드를 다루고 있어, 오히려 현재 타입보다 앞서 나가 있다.
@@ -80,6 +81,7 @@ ADR-045는 자동 생성 기반 Property Editor(ADR-041) 이전에 필요한 전
 3. `ColorField`처럼 현재 editor가 타입보다 앞서 있는 경우, editor를 기준으로 삼지 않고 문서와 제품 계약을 다시 맞춘다.
 4. `Tabs`는 `density`처럼 shared 계약에 이미 흔적이 있는 항목부터 우선 정리한다.
 5. `Form`의 상위 계약은 자식 필드 전반에 영향을 주므로, 개별 field prop와 분리해서 다룬다.
+6. `Form`의 `labelPosition`, `labelAlign`, `necessityIndicator`는 parent → child 전파 규칙이 구현되기 전에는 채택하지 않는다.
 
 ## Gates
 
@@ -105,6 +107,7 @@ ADR-045는 자동 생성 기반 Property Editor(ADR-041) 이전에 필요한 전
 - 자동 생성 전환까지 한 단계 문서 작업이 더 필요하다.
 - 일부 prop는 S2 문서에 있어도 제품 계약으로 채택되지 않을 수 있다.
 - 실제 구현 착수 전 계약 검토 비용이 늘어난다.
+- 특히 `Form` 상위 계약은 전파 규칙이 없는 상태에서 성급히 채택하지 않으므로, 단기적으로는 S2 문서 대비 노출 범위가 좁게 유지된다.
 
 ## References
 
