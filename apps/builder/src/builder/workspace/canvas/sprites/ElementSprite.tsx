@@ -352,6 +352,12 @@ const UI_TABS_TAGS = new Set(["Tabs", "TabList"]);
 const UI_NUMBERFIELD_TAGS = new Set(["NumberField"]);
 const UI_SEARCHFIELD_TAGS = new Set(["SearchField"]);
 const UI_COMBOBOX_TAGS = new Set(["ComboBox"]);
+const FORM_INHERITANCE_TAGS = new Set([
+  "TextField",
+  "NumberField",
+  "SearchField",
+  "ColorField",
+]);
 
 /**
  * Phase 4 WebGL Migration 컴포넌트 태그들
@@ -1228,6 +1234,68 @@ export const ElementSprite = memo(function ElementSprite({
   const labelIsRequired = labelNecessityKey
     ? labelNecessityKey.split(":")[1] === "true"
     : null;
+  const labelAlignment = useStore((state) => {
+    if (!isLabel || !element.parent_id) return null;
+
+    let currentParentId = element.parent_id;
+    while (currentParentId) {
+      const parent = state.elementsMap.get(currentParentId);
+      if (!parent) return null;
+
+      if (FORM_INHERITANCE_TAGS.has(parent.tag)) {
+        const parentProps = parent.props as Record<string, unknown> | undefined;
+        const labelPosition = (parentProps?.labelPosition as string) ?? null;
+        const labelAlign = (parentProps?.labelAlign as string) ?? null;
+        if (labelAlign && labelPosition === "side") {
+          if (labelAlign === "center") return "center";
+          if (labelAlign === "end") return "right";
+          return "left";
+        }
+      }
+
+      if (parent.tag === "Form") {
+        const parentProps = parent.props as Record<string, unknown> | undefined;
+        const labelPosition = (parentProps?.labelPosition as string) ?? null;
+        const labelAlign = (parentProps?.labelAlign as string) ?? null;
+        if (!labelAlign || labelPosition !== "side") return null;
+        if (labelAlign === "center") return "center";
+        if (labelAlign === "end") return "right";
+        return "left";
+      }
+
+      currentParentId = parent.parent_id;
+    }
+
+    return null;
+  });
+
+  // 🚀 Form → field 상위 계약 전파 (preview와 동일한 fallback 규칙)
+  // child own prop 우선, 가장 가까운 Form ancestor fallback, 없으면 component default
+  const inheritedFormFieldKey = useStore((state) => {
+    if (!FORM_INHERITANCE_TAGS.has(element.tag)) return null;
+
+    let currentParentId = element.parent_id;
+    while (currentParentId) {
+      const parent = state.elementsMap.get(currentParentId);
+      if (!parent) return null;
+
+      if (parent.tag === "Form") {
+        const parentProps = parent.props as Record<string, unknown> | undefined;
+        const labelPosition = (parentProps?.labelPosition as string) ?? "";
+        const necessityIndicator =
+          (parentProps?.necessityIndicator as string) ?? "";
+        return `${labelPosition}|${necessityIndicator}`;
+      }
+
+      currentParentId = parent.parent_id;
+    }
+
+    return null;
+  });
+  const inheritedFormLabelPosition =
+    inheritedFormFieldKey?.split("|")[0] || null;
+  const inheritedFormNecessityIndicator =
+    inheritedFormFieldKey?.split("|")[1] || null;
 
   // 🚀 Select/ComboBox → SelectIcon/ComboBoxTrigger: 부모의 iconName 전파
   const ICON_DELEGATION_TAGS = new Set(["SelectIcon", "ComboBoxTrigger"]);
@@ -1462,15 +1530,34 @@ export const ElementSprite = memo(function ElementSprite({
   const computedContainerSize = useContext(LayoutComputedSizeContext);
 
   const effectiveElement = useMemo(() => {
+    const baseElement =
+      FORM_INHERITANCE_TAGS.has(resolvedElement.tag) &&
+      (inheritedFormLabelPosition || inheritedFormNecessityIndicator)
+        ? {
+            ...resolvedElement,
+            props: {
+              ...(resolvedElement.props as Record<string, unknown>),
+              ...(!(resolvedElement.props as Record<string, unknown>)
+                .labelPosition && inheritedFormLabelPosition
+                ? { labelPosition: inheritedFormLabelPosition }
+                : {}),
+              ...(!(resolvedElement.props as Record<string, unknown>)
+                .necessityIndicator && inheritedFormNecessityIndicator
+                ? { necessityIndicator: inheritedFormNecessityIndicator }
+                : {}),
+            },
+          }
+        : resolvedElement;
+
     if (layoutPosition) {
-      const currentStyle = (resolvedElement.props?.style || {}) as Record<
+      const currentStyle = (baseElement.props?.style || {}) as Record<
         string,
         unknown
       >;
       return {
-        ...resolvedElement,
+        ...baseElement,
         props: {
-          ...resolvedElement.props,
+          ...baseElement.props,
           style: {
             ...currentStyle,
             left: layoutPosition.x,
@@ -1488,7 +1575,7 @@ export const ElementSprite = memo(function ElementSprite({
     // 키워드를 다시 적용하면 spec shapes가 문자열을 받아 렌더링 실패
     // (예: 'fit-content' → spec이 숫자 width 기대 → 배경/보더 미렌더링)
     if (computedContainerSize) {
-      const currentStyle = (resolvedElement.props?.style || {}) as Record<
+      const currentStyle = (baseElement.props?.style || {}) as Record<
         string,
         unknown
       >;
@@ -1504,9 +1591,9 @@ export const ElementSprite = memo(function ElementSprite({
 
       if (needsResolveWidth || needsResolveHeight) {
         return {
-          ...resolvedElement,
+          ...baseElement,
           props: {
-            ...resolvedElement.props,
+            ...baseElement.props,
             style: {
               ...currentStyle,
               ...(needsResolveWidth
@@ -1521,8 +1608,14 @@ export const ElementSprite = memo(function ElementSprite({
       }
     }
 
-    return resolvedElement;
-  }, [resolvedElement, layoutPosition, computedContainerSize]);
+    return baseElement;
+  }, [
+    resolvedElement,
+    layoutPosition,
+    computedContainerSize,
+    inheritedFormLabelPosition,
+    inheritedFormNecessityIndicator,
+  ]);
 
   // 🚀 InlineAlert 자식: spec 기반 font 스타일 주입 (WebGL TextSprite용)
   const effectiveElementForText = useMemo(() => {
@@ -1978,6 +2071,20 @@ export const ElementSprite = memo(function ElementSprite({
                     _isRequired: labelIsRequired,
                   };
                 }
+              }
+
+              if (isLabel && labelAlignment) {
+                const existingStyle = (specProps.style || {}) as Record<
+                  string,
+                  unknown
+                >;
+                specProps = {
+                  ...specProps,
+                  style: {
+                    ...existingStyle,
+                    textAlign: existingStyle.textAlign ?? labelAlignment,
+                  },
+                };
               }
 
               // ComboBox/Select: spec shapes가 props.style.width로 입력 영역 너비 결정

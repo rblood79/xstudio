@@ -23,6 +23,7 @@ import { useStore } from "../../../stores";
 import {
   buildRequiredUpdate,
   COLOR_CHANNEL_OPTIONS,
+  LABEL_ALIGN_OPTIONS,
   LABEL_POSITION_OPTIONS,
   NECESSITY_INDICATOR_OPTIONS,
   VALIDATION_BEHAVIOR_OPTIONS,
@@ -165,6 +166,14 @@ export const ColorFieldEditor = memo(function ColorFieldEditor({
           value={String(currentProps.labelPosition || "top")}
           onChange={(value) => updateProp("labelPosition", value)}
           options={LABEL_POSITION_OPTIONS}
+          icon={Tag}
+        />
+
+        <PropertySelect
+          label="Label Alignment"
+          value={String(currentProps.labelAlign || "start")}
+          onChange={(value) => updateProp("labelAlign", value)}
+          options={LABEL_ALIGN_OPTIONS}
           icon={Tag}
         />
 

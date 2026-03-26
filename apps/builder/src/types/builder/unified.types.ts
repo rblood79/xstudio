@@ -853,6 +853,9 @@ export interface FormElementProps extends BaseElementProps {
   autoFocus?: boolean;
   restoreFocus?: boolean;
   validationBehavior?: "native" | "aria";
+  labelPosition?: "top" | "side";
+  labelAlign?: "start" | "center" | "end";
+  necessityIndicator?: "icon" | "label";
 }
 
 // === Disclosure Element Props ===
@@ -1000,6 +1003,7 @@ export interface ColorFieldElementProps extends BaseElementProps {
   validationBehavior?: "native" | "aria";
   necessityIndicator?: "icon" | "label";
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "center" | "end";
 }
 
 export interface ColorPickerElementProps extends BaseElementProps {

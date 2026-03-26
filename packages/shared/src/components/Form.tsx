@@ -15,6 +15,9 @@ export interface ExtendedFormProps extends FormProps {
    * @default false
    */
   restoreFocus?: boolean;
+  labelPosition?: "top" | "side";
+  labelAlign?: "start" | "center" | "end";
+  necessityIndicator?: "icon" | "label";
 }
 
 /**
@@ -36,11 +39,20 @@ export interface ExtendedFormProps extends FormProps {
 export function Form({
   autoFocus = false,
   restoreFocus = false,
+  labelPosition,
+  labelAlign,
+  necessityIndicator,
   children,
   ...props
 }: ExtendedFormProps) {
   return (
-    <RACForm {...props} className="react-aria-Form">
+    <RACForm
+      {...props}
+      className="react-aria-Form"
+      data-label-position={labelPosition}
+      data-label-align={labelAlign}
+      data-necessity-indicator={necessityIndicator}
+    >
       <FocusScope autoFocus={autoFocus} restoreFocus={restoreFocus}>
         {children}
       </FocusScope>

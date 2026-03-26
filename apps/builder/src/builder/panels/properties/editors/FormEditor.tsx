@@ -5,6 +5,9 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 import {
+    LABEL_ALIGN_OPTIONS,
+    LABEL_POSITION_OPTIONS,
+    NECESSITY_INDICATOR_OPTIONS,
     LINK_TARGET_OPTIONS,
     VALIDATION_BEHAVIOR_OPTIONS,
 } from './editorUtils';
@@ -65,6 +68,37 @@ export const FormEditor = memo(function FormEditor({ elementId, currentProps, on
                     onChange={(value) => updateProp('validationBehavior', value)}
                     options={VALIDATION_BEHAVIOR_OPTIONS}
                     icon={CheckSquare}
+                />
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.LABEL_POSITION}
+                    value={String(currentProps.labelPosition || 'top')}
+                    onChange={(value) => updateProp('labelPosition', value)}
+                    options={LABEL_POSITION_OPTIONS}
+                />
+
+                <PropertySelect
+                    label="Label Alignment"
+                    value={String(currentProps.labelAlign || 'start')}
+                    onChange={(value) => updateProp('labelAlign', value)}
+                    options={LABEL_ALIGN_OPTIONS}
+                />
+
+                <PropertySelect
+                    label="Necessity Indicator"
+                    value={String(currentProps.necessityIndicator || '')}
+                    onChange={(value) => {
+                        if (value === '') {
+                            onUpdate({
+                                necessityIndicator: undefined,
+                            });
+                            return;
+                        }
+                        onUpdate({
+                            necessityIndicator: value,
+                        });
+                    }}
+                    options={NECESSITY_INDICATOR_OPTIONS}
                 />
             </PropertySection>
 

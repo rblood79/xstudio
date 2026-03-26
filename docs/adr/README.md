@@ -1,6 +1,6 @@
 # ADR (Architecture Decision Records) 관리 대시보드
 
-> **최종 업데이트**: 2026-03-17 (기반 안정화 진행 중 — CSS↔WebGL 정합성, 인라인 style 제거)
+> **최종 업데이트**: 2026-03-26 (기반 안정화 진행 중 — CSS↔WebGL 정합성, 인라인 style 제거)
 
 ## 현황 요약
 
@@ -76,7 +76,7 @@
 | [043](043-selection-drag-alignment.md)                | Selection Drag Alignment                | Proposed | Pencil selection drag 패턴 정렬 — deferred commit + Pixi/Skia 좌표 계약 분리                   |    P2    |
 | [044](044-project-renaming-xstudio-to-composition.md) | 프로젝트 리네이밍 xstudio → composition | Proposed | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                    |  **P2**  |
 | [045](045-s2-property-editor-alignment.md)            | S2 Property Editor 프로퍼티 정합성 정렬 | Proposed | 3 Phase — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 + 기능 점검 (24개 파일)                |  **P2**  |
-| [046](046-s2-contract-expansion-form-colorfield-tabs.md) | S2 계약 확장 — Form, ColorField, Tabs   | Proposed | 제품 계약 확정 — 자동 생성 전 `Form/ColorField/Tabs` prop surface와 전파 규칙 정리            |  **P2**  |
+| [046](046-s2-contract-expansion-form-colorfield-tabs.md) | S2 계약 확장 — Form, ColorField, Tabs   | Accepted | 자동 생성 전 계약 확정 — `Tabs.density`, `ColorField` 1차 계약(`labelAlign` 포함), `Form.labelPosition/labelAlign/necessityIndicator` 채택 |  **P2**  |
 
 ## Events Panel 설계 문서군
 

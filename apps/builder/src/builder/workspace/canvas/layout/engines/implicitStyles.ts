@@ -163,6 +163,9 @@ const NECESSITY_INDICATOR_TAGS = new Set([
   "taggroup",
 ]);
 
+const FORM_SIDE_LABEL_WIDTH = 176;
+const FORM_SIDE_LABEL_GAP = 16;
+
 // ─── 내부 헬퍼 ──────────────────────────────────────────────────────
 
 /**
@@ -218,6 +221,72 @@ function withParentStyle(el: Element, style: Record<string, unknown>): Element {
   return {
     ...el,
     props: { ...el.props, style },
+  };
+}
+
+function applySideLabelChildStyles(
+  children: Element[],
+  labelPos: string | undefined,
+): Element[] {
+  if (labelPos !== "side") return children;
+
+  return children.map((child) => {
+    const cs = (child.props?.style || {}) as Record<string, unknown>;
+
+    if (child.tag === "Label") {
+      return {
+        ...child,
+        props: {
+          ...child.props,
+          style: {
+            ...cs,
+            width: cs.width ?? FORM_SIDE_LABEL_WIDTH,
+            minWidth: cs.minWidth ?? FORM_SIDE_LABEL_WIDTH,
+            flexShrink: cs.flexShrink ?? 0,
+            alignSelf: cs.alignSelf ?? "flex-start",
+          },
+        },
+      };
+    }
+
+    if (child.tag === "FieldError" || child.tag === "Description") {
+      return {
+        ...child,
+        props: {
+          ...child.props,
+          style: {
+            ...cs,
+            width: cs.width ?? "100%",
+            marginLeft: cs.marginLeft ?? FORM_SIDE_LABEL_WIDTH + FORM_SIDE_LABEL_GAP,
+          },
+        },
+      };
+    }
+
+    return {
+      ...child,
+      props: {
+        ...child.props,
+        style: {
+          ...cs,
+          flex: cs.flex ?? 1,
+          minWidth: cs.minWidth ?? 0,
+        },
+      },
+    };
+  });
+}
+
+function getSideLabelParentStyle(
+  parentStyle: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    ...parentStyle,
+    display: parentStyle.display ?? "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    gap: parentStyle.gap ?? 4,
   };
 }
 
@@ -721,6 +790,7 @@ export function applyImplicitStyles(
         : containerTag === "searchfield"
           ? "SearchFieldWrapper"
           : "ComboBoxWrapper";
+    const labelPos = containerProps?.labelPosition as string | undefined;
     filteredChildren = filteredChildren.map((child) => {
       if (child.tag === wrapperChildTag) {
         const cs = (child.props?.style || {}) as Record<string, unknown>;
@@ -733,7 +803,11 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
-              width: cs.width ?? "100%",
+              width:
+                labelPos === "side" ? cs.width : (cs.width ?? "100%"),
+              flex: labelPos === "side" ? (cs.flex ?? 1) : cs.flex,
+              minWidth:
+                labelPos === "side" ? (cs.minWidth ?? 0) : cs.minWidth,
               gap: cs.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
               ...withSpecPadding(cs, sizeName),
             },
@@ -743,14 +817,19 @@ export function applyImplicitStyles(
       return child;
     });
 
-    const labelPos = containerProps?.labelPosition as string | undefined;
+    filteredChildren = applySideLabelChildStyles(filteredChildren, labelPos);
     const flexDir = resolveLabelFlexDir(labelPos, parentStyle.flexDirection);
-    effectiveParent = withParentStyle(containerEl, {
-      ...parentStyle,
-      display: parentStyle.display ?? "flex",
-      flexDirection: flexDir,
-      gap: parentStyle.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
-    });
+    effectiveParent = withParentStyle(
+      containerEl,
+      labelPos === "side"
+        ? getSideLabelParentStyle(parentStyle)
+        : {
+            ...parentStyle,
+            display: parentStyle.display ?? "flex",
+            flexDirection: flexDir,
+            gap: parentStyle.gap ?? 4, // CSS: gap: var(--spacing-xs) = 4px
+          },
+    );
   }
 
   // ── NumberField ──────────────────────────────────────────────────────
@@ -765,6 +844,7 @@ export function applyImplicitStyles(
         WRAPPER_TAGS.has(c.tag) ||
         c.tag === "FieldError",
     );
+    const nfLabelPos = containerProps?.labelPosition as string | undefined;
 
     // Wrapper에 padding + gap 주입 (ComboBox 분기와 동일)
     filteredChildren = filteredChildren.map((child) => {
@@ -779,7 +859,11 @@ export function applyImplicitStyles(
               ...cs,
               display: cs.display ?? "flex",
               flexDirection: cs.flexDirection ?? "row",
-              width: cs.width ?? "100%",
+              width:
+                nfLabelPos === "side" ? cs.width : (cs.width ?? "100%"),
+              flex: nfLabelPos === "side" ? (cs.flex ?? 1) : cs.flex,
+              minWidth:
+                nfLabelPos === "side" ? (cs.minWidth ?? 0) : cs.minWidth,
               gap: cs.gap ?? 4,
               ...withSpecPadding(cs, sizeName),
             },
@@ -789,17 +873,22 @@ export function applyImplicitStyles(
       return child;
     });
 
-    const nfLabelPos = containerProps?.labelPosition as string | undefined;
+    filteredChildren = applySideLabelChildStyles(filteredChildren, nfLabelPos);
     const nfFlexDir = resolveLabelFlexDir(
       nfLabelPos,
       parentStyle.flexDirection,
     );
-    effectiveParent = withParentStyle(containerEl, {
-      ...parentStyle,
-      display: parentStyle.display ?? "flex",
-      flexDirection: nfFlexDir,
-      gap: parentStyle.gap ?? 4,
-    });
+    effectiveParent = withParentStyle(
+      containerEl,
+      nfLabelPos === "side"
+        ? getSideLabelParentStyle(parentStyle)
+        : {
+            ...parentStyle,
+            display: parentStyle.display ?? "flex",
+            flexDirection: nfFlexDir,
+            gap: parentStyle.gap ?? 4,
+          },
+    );
   }
 
   // ── SelectTrigger ──────────────────────────────────────────────────
@@ -969,16 +1058,22 @@ export function applyImplicitStyles(
     );
 
     const tfLabelPos = containerProps?.labelPosition as string | undefined;
+    filteredChildren = applySideLabelChildStyles(filteredChildren, tfLabelPos);
     const tfFlexDir = resolveLabelFlexDir(
       tfLabelPos,
       parentStyle.flexDirection,
     );
-    effectiveParent = withParentStyle(containerEl, {
-      ...parentStyle,
-      display: parentStyle.display ?? "flex",
-      flexDirection: tfFlexDir,
-      gap: parentStyle.gap ?? 4,
-    });
+    effectiveParent = withParentStyle(
+      containerEl,
+      tfLabelPos === "side"
+        ? getSideLabelParentStyle(parentStyle)
+        : {
+            ...parentStyle,
+            display: parentStyle.display ?? "flex",
+            flexDirection: tfFlexDir,
+            gap: parentStyle.gap ?? 4,
+          },
+    );
   }
 
   // ── DateField / TimeField ────────────────────────────────────────────

@@ -164,6 +164,10 @@ export const renderColorField = (
         inheritedProps.labelPosition ??
         "top"
       }
+      labelAlign={
+        (element.props.labelAlign as "start" | "center" | "end" | undefined) ??
+        inheritedProps.labelAlign
+      }
       onChange={(newColor: Color | null) => {
         const updatedProps = {
           ...element.props,

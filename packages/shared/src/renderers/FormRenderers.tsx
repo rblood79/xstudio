@@ -30,6 +30,7 @@ import type { PreviewElement, RenderContext } from "../types";
 
 type InheritedFormFieldProps = {
   labelPosition?: "top" | "side";
+  labelAlign?: "start" | "center" | "end";
   necessityIndicator?: "icon" | "label";
 };
 
@@ -59,6 +60,8 @@ export function resolveInheritedFormFieldProps(
   return {
     labelPosition:
       formElement.props.labelPosition as "top" | "side" | undefined,
+    labelAlign:
+      formElement.props.labelAlign as "start" | "center" | "end" | undefined,
     necessityIndicator:
       formElement.props.necessityIndicator as "icon" | "label" | undefined,
   };
@@ -107,6 +110,18 @@ export const renderForm = (
       restoreFocus={Boolean(element.props.restoreFocus)}
       validationBehavior={
         (element.props.validationBehavior as "native" | "aria" | undefined) ||
+        undefined
+      }
+      labelPosition={
+        (element.props.labelPosition as "top" | "side" | undefined) ||
+        undefined
+      }
+      labelAlign={
+        (element.props.labelAlign as "start" | "center" | "end" | undefined) ||
+        undefined
+      }
+      necessityIndicator={
+        (element.props.necessityIndicator as "icon" | "label" | undefined) ||
         undefined
       }
     >

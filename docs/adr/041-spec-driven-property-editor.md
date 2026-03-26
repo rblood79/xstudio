@@ -15,6 +15,8 @@ XStudio Team
 ## Related ADRs
 
 - [ADR-036](completed/036-spec-first-single-source.md): Spec-First Single Source (CSS 자동 생성)
+- [ADR-045](045-s2-property-editor-alignment.md): 기존 계약과 Property Editor surface 정렬
+- [ADR-046](046-s2-contract-expansion-form-colorfield-tabs.md): 자동 생성 전 계약 확정
 
 ---
 
@@ -70,6 +72,34 @@ ADR-036이 **Spec → CSS** 동기화를 해결했다면, 이 ADR은 **Spec → 
 3. **커스텀 에디터 지원** — Table, ColorPicker 등 특수 에디터는 수동 유지 가능
 4. **Deep child sync 지원** — Card, Switch 등 자식 동기화 패턴 유지
 
+### ADR-046 선행 계약 기준
+
+ADR-041은 미확정 prop를 자동 생성 대상으로 포함하지 않는다. 자동 생성기는 **이미 제품 계약이 닫힌 prop surface만 입력으로 사용**한다.
+
+현재 ADR-046 기준으로 자동 생성 입력에 포함 가능한 항목은 다음과 같다.
+
+- `Tabs.density`
+- `ColorField.variant`
+- `ColorField.size`
+- `ColorField.isInvalid`
+- `ColorField.autoFocus`
+- `ColorField.name`
+- `ColorField.form`
+- `ColorField.validationBehavior`
+- `ColorField.necessityIndicator`
+- `ColorField.labelPosition`
+- `ColorField.labelAlign`
+- `ColorField.channel`
+- `ColorField.colorSpace`
+- `Form.labelPosition`
+- `Form.labelAlign`
+- `Form.necessityIndicator`
+
+반대로 아래 항목은 ADR-046에서 아직 보류 상태이므로 ADR-041 자동 생성 입력에 포함하지 않는다.
+
+- `Form.size`
+- `Form.isEmphasized`
+
 ---
 
 ## Alternatives Considered
@@ -111,6 +141,8 @@ ADR-036이 **Spec → CSS** 동기화를 해결했다면, 이 ADR은 **Spec → 
 ### Rationale
 
 > 103개 에디터 중 80% 이상이 5가지 필드 타입(variant, size, boolean, enum, string)의 조합이다. 이 패턴은 Spec의 `variants`/`sizes` + Props 인터페이스에서 완전히 유도 가능하다. 나머지 20%의 커스텀 로직(deep child sync, 조건부 표시, 특수 위젯)은 schema의 확장 필드로 처리한다.
+
+> ADR-045/046 이후에는 자동 생성기가 “문서에는 있는데 아직 제품 계약이 닫히지 않은 prop”를 추측하지 않는다. 생성기는 확정된 `unified.types.ts` + shared component API + renderer 경로를 전제로 동작한다.
 
 **ADR-036과의 관계 — Spec이 4중 단일 소스로 확장:**
 

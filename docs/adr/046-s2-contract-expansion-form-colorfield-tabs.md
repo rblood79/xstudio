@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed (2026-03-26)
+Accepted (2026-03-26)
 
 ## Context
 
@@ -81,7 +81,31 @@ ADR-045는 자동 생성 기반 Property Editor(ADR-041) 이전에 필요한 전
 3. `ColorField`처럼 현재 editor가 타입보다 앞서 있는 경우, editor를 기준으로 삼지 않고 문서와 제품 계약을 다시 맞춘다.
 4. `Tabs`는 `density`처럼 shared 계약에 이미 흔적이 있는 항목부터 우선 정리한다.
 5. `Form`의 상위 계약은 자식 필드 전반에 영향을 주므로, 개별 field prop와 분리해서 다룬다.
-6. `Form`의 `labelPosition`, `labelAlign`, `necessityIndicator`는 parent → child 전파 규칙이 구현되기 전에는 채택하지 않는다.
+6. `Form`의 `labelPosition`, `necessityIndicator`는 preview/canvas 양쪽의 parent → child 전파 규칙이 구현된 뒤 채택한다.
+7. `Form.labelAlign`은 shared CSS, preview renderer, canvas layout/spec 경로가 모두 닫힌 뒤 채택한다.
+
+### Decision Snapshot
+
+- 채택
+  - `Tabs.density`
+  - `ColorField.variant`
+  - `ColorField.size`
+  - `ColorField.isInvalid`
+  - `ColorField.autoFocus`
+  - `ColorField.name`
+  - `ColorField.form`
+  - `ColorField.validationBehavior`
+  - `ColorField.necessityIndicator`
+  - `ColorField.labelPosition`
+  - `ColorField.labelAlign`
+  - `ColorField.channel`
+  - `ColorField.colorSpace`
+  - `Form.labelPosition`
+  - `Form.labelAlign`
+  - `Form.necessityIndicator`
+- 보류
+  - `Form.size`
+  - `Form.isEmphasized`
 
 ## Gates
 
@@ -101,13 +125,17 @@ ADR-045는 자동 생성 기반 Property Editor(ADR-041) 이전에 필요한 전
 - ADR-041 이전에 어떤 계약을 먼저 확정해야 하는지 명확해진다.
 - `ColorField`처럼 editor가 타입보다 앞서 있는 상태를 정리할 수 있다.
 - 자동 생성기가 불안정한 임시 surface 대신 확정된 계약을 입력으로 받을 수 있다.
+- `Form.labelPosition`, `Form.necessityIndicator`는 parent `Form` fallback 규칙이 닫힌 뒤 계약으로 승격할 수 있다.
+- `ADR-046` 자체가 이제 구현 기준과 함께 닫혀, ADR-041 입력 계약으로 직접 참조할 수 있다.
 
 ### Negative
 
 - 자동 생성 전환까지 한 단계 문서 작업이 더 필요하다.
 - 일부 prop는 S2 문서에 있어도 제품 계약으로 채택되지 않을 수 있다.
 - 실제 구현 착수 전 계약 검토 비용이 늘어난다.
-- 특히 `Form` 상위 계약은 전파 규칙이 없는 상태에서 성급히 채택하지 않으므로, 단기적으로는 S2 문서 대비 노출 범위가 좁게 유지된다.
+- `ColorField.labelAlign`까지 포함해도, 나머지 보류 항목 때문에 S2 문서와 완전한 parity는 아직 아니다.
+- `Form.size`는 현재 XStudio의 field size 축(`xs/sm/md/lg/xl`)과 S2 `Form` size 축(`S/M/L/XL`)이 맞지 않아 계속 보류된다.
+- `Form.isEmphasized`는 현재 XStudio field 계열의 공통 시각 계약이 아니므로 계속 보류된다.
 
 ## References
 

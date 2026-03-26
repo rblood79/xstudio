@@ -20,6 +20,13 @@ export const LABEL_POSITION_OPTIONS = [
   { value: "side", label: PROPERTY_LABELS.LABEL_POSITION_SIDE },
 ] as const;
 
+/** Label Align 선택 옵션 */
+export const LABEL_ALIGN_OPTIONS = [
+  { value: "start", label: PROPERTY_LABELS.ALIGN_LEFT },
+  { value: "center", label: PROPERTY_LABELS.ALIGN_CENTER },
+  { value: "end", label: PROPERTY_LABELS.ALIGN_RIGHT },
+] as const;
+
 /** Static Color 선택 옵션 */
 export const STATIC_COLOR_OPTIONS = [
   { value: "auto", label: "Auto" },
