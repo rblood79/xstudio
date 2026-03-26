@@ -394,6 +394,7 @@ export function Select<T extends object>({
             triggerRef={selectRef}
             placement="bottom start"
             offset={4}
+            data-size={size}
             style={
               popoverWidth > 0 ? { width: `${popoverWidth}px` } : undefined
             }

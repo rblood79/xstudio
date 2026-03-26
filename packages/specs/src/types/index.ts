@@ -31,6 +31,8 @@ export type {
   ChildSyncConfig,
   DerivedUpdateFn,
   CustomFieldComponentProps,
+  PropagationRule,
+  PropagationSpec,
 } from "./spec.types";
 
 // Shape Types

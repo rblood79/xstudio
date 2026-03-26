@@ -98,6 +98,10 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
     },
   },
 
+  propagation: {
+    rules: [{ parentProp: "size", childPath: "Label" }],
+  },
+
   states: {
     hover: {},
     pressed: {},

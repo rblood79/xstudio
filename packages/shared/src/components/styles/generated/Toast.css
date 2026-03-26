@@ -17,7 +17,7 @@
   border: 1px solid var(--border);
 }
 
-.react-aria-Toast[data-variant="default"] {
+.react-aria-Toast[data-variant="info"] {
   background: var(--bg-muted);
   color: var(--fg);
   border-color: var(--border);
@@ -33,7 +33,7 @@
   }
 }
 
-.react-aria-Toast[data-variant="accent"] {
+.react-aria-Toast[data-variant="success"] {
   background: var(--accent-subtle);
   color: var(--fg);
   border-color: var(--accent);
@@ -49,7 +49,7 @@
   }
 }
 
-.react-aria-Toast[data-variant="negative"] {
+.react-aria-Toast[data-variant="warning"] {
   background: var(--color-error-100);
   color: var(--fg);
   border-color: var(--negative);
@@ -65,7 +65,7 @@
   }
 }
 
-.react-aria-Toast[data-variant="positive"] {
+.react-aria-Toast[data-variant="error"] {
   background: var(--color-purple-100);
   color: var(--fg);
   border-color: var(--color-purple-600);

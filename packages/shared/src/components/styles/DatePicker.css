@@ -21,6 +21,8 @@
     --dp-btn-height: var(--text-xl);
     --dp-hint-size: var(--text-xs);
     --dp-segment-size: var(--text-sm);
+    --label-font-size: var(--text-sm);
+    --label-line-height: var(--text-sm--line-height);
 
     /* ===== Variant ===== */
     &[data-variant="accent"] {
@@ -45,6 +47,8 @@
       --dp-btn-height: var(--text-base);
       --dp-hint-size: var(--text-xs);
       --dp-segment-size: var(--text-xs);
+      --label-font-size: var(--text-xs);
+      --label-line-height: var(--text-xs--line-height);
     }
     &[data-size="md"] {
       --dp-input-padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs)
@@ -56,6 +60,8 @@
       --dp-btn-height: var(--text-xl);
       --dp-hint-size: var(--text-xs);
       --dp-segment-size: var(--text-sm);
+      --label-font-size: var(--text-sm);
+      --label-line-height: var(--text-sm--line-height);
     }
     &[data-size="lg"] {
       --dp-input-padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm)
@@ -67,6 +73,8 @@
       --dp-btn-height: var(--text-2xl);
       --dp-hint-size: var(--text-sm);
       --dp-segment-size: var(--text-base);
+      --label-font-size: var(--text-base);
+      --label-line-height: var(--text-base--line-height);
     }
 
     /* ===== Group Container (@sync SearchField .searchfield-container) ===== */
@@ -215,9 +223,60 @@
     }
   }
 
-  /* ========== Popover ========== */
+  /* ========== Popover (body에 포탈 — data-size/data-variant로 size 전파) ========== */
   .react-aria-Popover[data-trigger="DatePicker"] {
     max-width: unset;
+
+    /* Popover 내부 Calendar에 size별 스타일 전파 */
+    &[data-size="sm"] .react-aria-Calendar {
+      header .react-aria-Heading {
+        font-size: var(--text-xs);
+      }
+      .react-aria-Button {
+        width: calc(var(--text-2xl) + var(--spacing-xs));
+        height: var(--text-2xl);
+      }
+      .react-aria-CalendarGridHeader th {
+        font-size: var(--text-xs);
+        line-height: var(--text-xs--line-height);
+        height: var(--text-2xl);
+      }
+      .react-aria-CalendarGridBody td .react-aria-CalendarCell {
+        width: var(--text-2xl);
+        height: var(--text-2xl);
+        line-height: var(--text-xs--line-height);
+        font-size: var(--text-xs);
+      }
+    }
+
+    &[data-size="lg"] .react-aria-Calendar {
+      header .react-aria-Heading {
+        font-size: var(--text-base);
+      }
+      .react-aria-Button {
+        width: calc(var(--text-4xl) + var(--spacing-xs));
+        height: var(--text-4xl);
+      }
+      .react-aria-CalendarGridHeader th {
+        font-size: var(--text-base);
+        line-height: var(--text-base--line-height);
+        height: var(--text-4xl);
+      }
+      .react-aria-CalendarGridBody td .react-aria-CalendarCell {
+        width: var(--text-4xl);
+        height: var(--text-4xl);
+        line-height: var(--text-base--line-height);
+        font-size: var(--text-base);
+      }
+    }
+
+    /* Popover 내부 variant 전파 */
+    &[data-variant="accent"] .react-aria-Calendar {
+      .react-aria-CalendarCell[data-selected] {
+        background: var(--accent);
+        color: var(--fg-on-accent);
+      }
+    }
   }
 
   /* ========== Time Field ========== */

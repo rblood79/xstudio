@@ -137,6 +137,15 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
     },
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "SliderTrack" },
+      { parentProp: "size", childPath: "SliderOutput" },
+      { parentProp: "size", childPath: "SliderThumb" },
+      { parentProp: "size", childPath: "Label" },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
       const variantName = props.variant ?? "default";

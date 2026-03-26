@@ -40,7 +40,6 @@ export interface ComboBoxProps {
   isReadOnly?: boolean;
   isRequired?: boolean;
   autoFocus?: boolean;
-  name?: string;
   allowsCustomValue?: boolean;
   validationBehavior?: "native" | "aria";
   necessityIndicator?: "icon" | "label";
@@ -359,6 +358,15 @@ export const ComboBoxSpec: ComponentSpec<ComboBoxProps> = {
       outline: "2px solid var(--accent)",
       outlineOffset: "2px",
     },
+  },
+
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "ComboBoxWrapper" },
+      { parentProp: "size", childPath: "ComboBoxInput" },
+      { parentProp: "size", childPath: "ComboBoxTrigger" },
+      { parentProp: "size", childPath: "Label" },
+    ],
   },
 
   render: {

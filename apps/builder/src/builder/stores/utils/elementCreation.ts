@@ -8,6 +8,7 @@ import { sanitizeElement } from "./elementSanitizer";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
 import { normalizeElementTagInElement } from "./elementTagNormalizer";
+import { applyFactoryPropagation } from "../../utils/propagationEngine";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
@@ -136,7 +137,11 @@ export const createAddComplexElementAction =
   async (parentElement: Element, childElements: Element[]) => {
     const state = get();
     const normalizedParent = normalizeElementTagInElement(parentElement);
-    const normalizedChildren = childElements.map(normalizeElementTagInElement);
+    // ADR-048: 부모 props를 자식에 미리 전파 (Store 추가 전)
+    const normalizedChildren = applyFactoryPropagation(
+      normalizedParent,
+      childElements.map(normalizeElementTagInElement),
+    );
 
     // 🔧 부모 요소의 order_num 중복 방지: set() 내부에서 atomic하게 할당
     let parentToAdd = normalizedParent;

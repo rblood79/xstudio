@@ -122,6 +122,9 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
   /** ADR-041: Property Editor 자동 생성용 schema */
   properties?: PropertySchema;
 
+  /** ADR-048: S2 Context 에뮬레이션 — 부모→자식 props 전파 규칙 */
+  propagation?: PropagationSpec;
+
   /** 렌더링 정의 */
   render: RenderSpec<Props>;
 }
@@ -267,6 +270,37 @@ export interface DelegationSpec {
 
   /** size → { CSS변수명 → 값 } 매핑 */
   variables: Record<string, Record<string, string>>;
+}
+
+// ─── ADR-048: S2 Context 기반 선언적 Props Propagation ──────────────────────
+
+/** S2 Context 에뮬레이션: 선언적 부모→자식 props 전파 규칙 */
+export interface PropagationRule {
+  /** 부모 prop 키 (e.g., "size", "variant", "locale") */
+  parentProp: string;
+
+  /** 대상 자식 태그 경로. 문자열 = 직접 자식, 배열 = 중첩 경로 */
+  childPath: string | string[];
+
+  /** 자식에 설정할 prop 키 (기본: parentProp과 동일) */
+  childProp?: string;
+
+  /** 부모 값 → 자식 값 변환 (e.g., size "md" → fontSize 14) */
+  transform?: (
+    parentValue: unknown,
+    parentProps: Record<string, unknown>,
+  ) => unknown;
+
+  /** true: style 객체 내 속성으로 설정 */
+  asStyle?: boolean;
+
+  /** true: 자식 자체 값을 무시하고 항상 덮어쓰기 (기본 미설정 = 자식 값 우선) */
+  override?: boolean;
+}
+
+/** 부모→자식 props 전파 규칙 집합 */
+export interface PropagationSpec {
+  rules: PropagationRule[];
 }
 
 /**

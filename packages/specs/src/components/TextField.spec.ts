@@ -59,7 +59,6 @@ export interface TextFieldProps {
     | "search";
   labelPosition?: "top" | "side";
   necessityIndicator?: "icon" | "label";
-  name?: string;
   form?: string;
   pattern?: string;
   minLength?: number;
@@ -378,6 +377,13 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           lg: { "--tf-hint-size": "var(--text-sm)" },
         },
       },
+    ],
+  },
+
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "Input" },
     ],
   },
 

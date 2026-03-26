@@ -55,7 +55,9 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
       {visibleSections.map((section) => (
         <PropertySection key={section.title} title={section.title}>
           {section.fields
-            .filter((field) => evaluateVisibility(field.visibleWhen, currentProps))
+            .filter((field) =>
+              evaluateVisibility(field.visibleWhen, currentProps),
+            )
             .map((field, index) => (
               <SpecField
                 key={`${section.title}:${"key" in field ? (field.key ?? field.type) : field.type}:${index}`}
@@ -68,11 +70,12 @@ export const GenericPropertyEditor = memo(function GenericPropertyEditor({
         </PropertySection>
       ))}
 
-      {renderAfterSections?.({
-        elementId,
-        currentProps,
-        onUpdate,
-      })}
+      {typeof renderAfterSections === "function" &&
+        renderAfterSections({
+          elementId,
+          currentProps,
+          onUpdate,
+        })}
     </>
   );
 });

@@ -45,6 +45,9 @@ import {
   useActiveScope,
 } from "@/builder/hooks";
 import { useStore } from "../../stores";
+import { getPropagationRules } from "../../utils/propagationRegistry";
+import { buildPropagationUpdates } from "../../utils/propagationEngine";
+import type { BatchPropsUpdate } from "../../stores/utils/elementUpdate";
 import {
   copyMultipleElements,
   pasteMultipleElements,
@@ -157,19 +160,51 @@ const PropertyEditorWrapper = memo(
         if (!element) return;
 
         const changedProps: Record<string, unknown> = {};
+        let changedCount = 0;
         for (const [key, value] of Object.entries(updatedProps)) {
-          // style/computedStyle/events는 properties에 포함되지 않으므로 스킵
           if (key === "style" || key === "computedStyle" || key === "events")
             continue;
-          // 현재 element.props와 다른 값만 포함
           if ((element.props as Record<string, unknown>)[key] !== value) {
             changedProps[key] = value;
+            changedCount++;
           }
         }
 
-        if (Object.keys(changedProps).length > 0) {
-          state.updateSelectedProperties(changedProps);
+        if (changedCount === 0) return;
+
+        // ADR-048: propagation 규칙 중 변경된 prop과 매칭되는 것이 있으면 자식도 업데이트
+        const rules = getPropagationRules(element.tag);
+        if (rules && rules.some((r) => r.parentProp in changedProps)) {
+          const childUpdates = buildPropagationUpdates(
+            element,
+            changedProps,
+            rules,
+            state.childrenMap as Map<
+              string,
+              { id: string; tag: string; props: Record<string, unknown> }[]
+            >,
+            state.elementsMap as Map<
+              string,
+              { id: string; tag: string; props: Record<string, unknown> }
+            >,
+          );
+
+          if (childUpdates.length > 0) {
+            const batchChildUpdates: BatchPropsUpdate[] = childUpdates.map(
+              (u) => ({
+                elementId: u.elementId,
+                props: u.props as BatchPropsUpdate["props"],
+              }),
+            );
+            state.updateSelectedPropertiesWithChildren(
+              changedProps,
+              batchChildUpdates,
+            );
+            return;
+          }
         }
+
+        state.updateSelectedProperties(changedProps);
       },
       [],
     );

@@ -220,6 +220,14 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
     focusVisible: {},
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "MeterTrack" },
+      { parentProp: "size", childPath: "MeterValue" },
+      { parentProp: "size", childPath: "Label" },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "informative";

@@ -78,6 +78,13 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
     },
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "TimeSegment" },
+    ],
+  },
+
   states: {
     hover: {},
     pressed: {},

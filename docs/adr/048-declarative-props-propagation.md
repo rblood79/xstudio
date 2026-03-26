@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed (2026-03-26)
+In Progress — Phase 0~2-D 완료 (2026-03-26)
 
 ## Prerequisites
 

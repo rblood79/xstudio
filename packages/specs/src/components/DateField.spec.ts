@@ -80,6 +80,14 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
     },
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "DateInput" },
+      { parentProp: "size", childPath: "DateSegment" },
+    ],
+  },
+
   states: {
     hover: {},
     pressed: {},

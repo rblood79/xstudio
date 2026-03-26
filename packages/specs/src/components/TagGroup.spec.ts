@@ -272,6 +272,16 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
     },
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "Tag" },
+      { parentProp: "size", childPath: "TagList" },
+      { parentProp: "allowsRemoving", childPath: "Tag" },
+      { parentProp: "allowsRemoving", childPath: "TagList" },
+      { parentProp: "size", childPath: "Label" },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
       const shapes: Shape[] = [];

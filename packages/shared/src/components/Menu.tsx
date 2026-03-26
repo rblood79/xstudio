@@ -123,7 +123,7 @@ export function MenuButton<T extends object>({
       return (
         <MenuTrigger {...props}>
           <Button>{label}</Button>
-          <Popover>
+          <Popover data-size={size}>
             <Menu
               className={getMenuClassName()}
               data-variant={variant}
@@ -143,7 +143,7 @@ export function MenuButton<T extends object>({
       return (
         <MenuTrigger {...props}>
           <Button>{label}</Button>
-          <Popover>
+          <Popover data-size={size}>
             <Menu
               className={getMenuClassName()}
               data-variant={variant}
@@ -221,7 +221,7 @@ export function MenuButton<T extends object>({
                   </span>
                 )}
               </AriaMenuItem>
-              <Popover>
+              <Popover data-size={size}>
                 <Menu
                   items={submenuItems as Iterable<T>}
                   className={getMenuClassName()}
@@ -254,7 +254,7 @@ export function MenuButton<T extends object>({
       return (
         <MenuTrigger {...props}>
           <Button>{label}</Button>
-          <Popover>
+          <Popover data-size={size}>
             <Menu
               items={menuItems as Iterable<T>}
               className={getMenuClassName()}
@@ -272,7 +272,7 @@ export function MenuButton<T extends object>({
     return (
       <MenuTrigger {...props}>
         <Button>{label}</Button>
-        <Popover>
+        <Popover data-size={size}>
           <Menu
             className={getMenuClassName()}
             data-variant={variant}

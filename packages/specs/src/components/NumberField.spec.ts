@@ -477,6 +477,13 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
     ],
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "Label" },
+      { parentProp: "size", childPath: "ComboBoxWrapper" },
+    ],
+  },
+
   states: {
     hover: {},
     pressed: {},

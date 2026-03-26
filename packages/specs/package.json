@@ -49,7 +49,9 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "lucide-react": "^0.575.0",
     "@types/node": "^20.0.0",
+    "@types/react": "catalog:",
     "@vitest/coverage-v8": "^4.0.18",
     "@xstudio/config": "workspace:*",
     "eslint": "^10.0.2",

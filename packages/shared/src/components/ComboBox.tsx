@@ -310,6 +310,7 @@ export function ComboBox<T extends object>({
           triggerRef={comboBoxRef}
           placement="bottom start"
           offset={4}
+          data-size={size}
           style={popoverStyle}
         >
           <ListBox className="react-aria-ListBox" items={comboBoxItems}>

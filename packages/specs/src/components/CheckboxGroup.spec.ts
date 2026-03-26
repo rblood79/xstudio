@@ -101,6 +101,14 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
     },
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "Checkbox" },
+      { parentProp: "size", childPath: "CheckboxItems" },
+      { parentProp: "size", childPath: "Label" },
+    ],
+  },
+
   render: {
     shapes: (props, _variant, size, _state = "default") => {
       const shapes: Shape[] = [];

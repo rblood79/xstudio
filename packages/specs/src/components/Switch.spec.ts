@@ -124,6 +124,10 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
     },
   },
 
+  propagation: {
+    rules: [{ parentProp: "size", childPath: "Label" }],
+  },
+
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";

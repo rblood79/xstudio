@@ -362,6 +362,15 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
     },
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "SelectTrigger" },
+      { parentProp: "size", childPath: "SelectValue" },
+      { parentProp: "size", childPath: "SelectIcon" },
+      { parentProp: "size", childPath: "Label" },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
       const width = (props.style?.width as number) || 200;

@@ -267,6 +267,16 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
     },
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "SearchFieldWrapper" },
+      { parentProp: "size", childPath: "SearchInput" },
+      { parentProp: "size", childPath: "SearchIcon" },
+      { parentProp: "size", childPath: "SearchClearButton" },
+      { parentProp: "size", childPath: "Label" },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
       const width = (props.style?.width as number) || 280;

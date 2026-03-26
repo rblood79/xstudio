@@ -157,6 +157,10 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
     },
   },
 
+  propagation: {
+    rules: [{ parentProp: "size", childPath: "Label" }],
+  },
+
   render: {
     shapes: (props, variant, size, state = "default") => {
       const variantName = props.variant ?? "default";

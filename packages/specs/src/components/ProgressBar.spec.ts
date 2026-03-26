@@ -222,6 +222,14 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
     focusVisible: {},
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "size", childPath: "ProgressBarTrack" },
+      { parentProp: "size", childPath: "ProgressBarValue" },
+      { parentProp: "size", childPath: "Label" },
+    ],
+  },
+
   render: {
     shapes: (props, variant, size, _state = "default") => {
       const variantName = props.variant ?? "default";
@@ -373,8 +381,9 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       role: "progressbar",
       "aria-valuemin": props.minValue ?? 0,
       "aria-valuemax": props.maxValue ?? 100,
-      "aria-valuenow":
-        props.isIndeterminate ? undefined : (props.value ?? props.minValue ?? 0),
+      "aria-valuenow": props.isIndeterminate
+        ? undefined
+        : (props.value ?? props.minValue ?? 0),
       "data-indeterminate": props.isIndeterminate || undefined,
     }),
 

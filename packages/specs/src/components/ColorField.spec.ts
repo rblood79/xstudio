@@ -359,6 +359,10 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
     },
   },
 
+  propagation: {
+    rules: [{ parentProp: "size", childPath: "Label" }],
+  },
+
   states: {
     hover: {},
     pressed: {},

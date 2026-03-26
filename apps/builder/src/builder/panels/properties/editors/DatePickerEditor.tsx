@@ -24,9 +24,6 @@ import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import {
-  DATE_PICKER_SYNC_KEYS,
-  syncDatePickerChildren,
-  syncLabelChild,
   buildRequiredUpdate,
   NECESSITY_INDICATOR_OPTIONS,
   LOCALE_OPTIONS,
@@ -47,16 +44,9 @@ export const DatePickerEditor = memo(function DatePickerEditor({
     return element?.customId || "";
   }, [elementId]);
 
+  // ADR-048: propagation은 PropertiesPanel handleUpdate에서 자동 처리
   const updateProp = (key: string, value: unknown) => {
     onUpdate({ [key]: value });
-
-    const state = useStore.getState();
-    const children = state.childrenMap.get(elementId) ?? [];
-
-    if (key === "label") syncLabelChild(state, children, value);
-    if (DATE_PICKER_SYNC_KEYS.has(key)) {
-      syncDatePickerChildren(state, children, key, value);
-    }
   };
 
   const updateCustomId = (newCustomId: string) => {

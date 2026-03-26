@@ -236,6 +236,52 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
   sizes: DATE_PICKER_SIZES,
   states: DATE_PICKER_STATES,
 
+  propagation: {
+    rules: [
+      // label → Label children (항상 덮어쓰기 — 부모 label이 Label.children의 단일 소스)
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
+
+      // size → 직접 자식
+      { parentProp: "size", childPath: "DateInput" },
+      { parentProp: "size", childPath: "Calendar" },
+      { parentProp: "size", childPath: "Label" },
+      // size → Calendar 서브트리
+      { parentProp: "size", childPath: ["Calendar", "CalendarHeader"] },
+      { parentProp: "size", childPath: ["Calendar", "CalendarGrid"] },
+
+      // variant → 직접 자식
+      { parentProp: "variant", childPath: "Calendar" },
+      { parentProp: "variant", childPath: "Label" },
+      // variant → Calendar 서브트리
+      { parentProp: "variant", childPath: ["Calendar", "CalendarHeader"] },
+      { parentProp: "variant", childPath: ["Calendar", "CalendarGrid"] },
+
+      // locale → Calendar 서브트리
+      { parentProp: "locale", childPath: "Calendar" },
+      { parentProp: "locale", childPath: ["Calendar", "CalendarHeader"] },
+      { parentProp: "locale", childPath: ["Calendar", "CalendarGrid"] },
+
+      // calendarSystem → Calendar 서브트리
+      { parentProp: "calendarSystem", childPath: "Calendar" },
+      {
+        parentProp: "calendarSystem",
+        childPath: ["Calendar", "CalendarHeader"],
+      },
+      {
+        parentProp: "calendarSystem",
+        childPath: ["Calendar", "CalendarGrid"],
+      },
+
+      // defaultToday → CalendarGrid only
+      { parentProp: "defaultToday", childPath: ["Calendar", "CalendarGrid"] },
+    ],
+  },
+
   render: {
     shapes: (props, variant, _size, _state = "default") => {
       // Compositional: 자식이 있으면 투명 컨테이너

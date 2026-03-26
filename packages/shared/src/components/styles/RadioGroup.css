@@ -6,6 +6,17 @@
     flex-direction: column;
     gap: var(--spacing-xs);
     color: var(--fg);
+    --label-font-size: var(--text-sm);
+    --label-line-height: var(--text-sm--line-height);
+
+    &[data-size="sm"] {
+      --label-font-size: var(--text-xs);
+      --label-line-height: var(--text-xs--line-height);
+    }
+    &[data-size="lg"] {
+      --label-font-size: var(--text-base);
+      --label-line-height: var(--text-base--line-height);
+    }
 
     &[data-label-position="side"] {
       flex-direction: row;
