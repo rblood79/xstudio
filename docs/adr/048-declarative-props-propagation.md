@@ -140,8 +140,8 @@ export interface PropagationRule {
   /** true: style 객체 내 속성으로 설정 */
   asStyle?: boolean;
 
-  /** true: 자식에 자체 값이 없을 때만 전파 (기본: false = 항상 덮어쓰기) */
-  inheritOnly?: boolean;
+  /** false: 자식 자체 값을 무시하고 항상 덮어쓰기 (기본: true = 자식 값 우선) */
+  override?: boolean;
 }
 
 export interface PropagationSpec {
@@ -164,12 +164,21 @@ export interface ComponentSpec<Props> {
 
 **파일**: `apps/builder/src/builder/utils/propagationEngine.ts`
 
+#### 역할 분담: buildPropagationUpdates vs resolvePropagatedProps
+
+두 함수는 **다른 경로, 다른 역할**이다:
+
+- **`buildPropagationUpdates`** (Inspector 전용): `childrenMap`을 받아 중첩 경로(`["Calendar", "CalendarHeader"]`)를 실제 Element ID로 해석. Store에 값을 기록하는 **primary 경로**.
+- **`resolvePropagatedProps`** (Skia/Layout fallback): 부모-자식 태그 쌍만으로 직접 자식 1단계 규칙만 매칭. Store에 값이 없을 때(Factory 생성 직후, 마이그레이션 과도기)의 **방어적 fallback**. Inspector가 정상 동작하면 대부분 null 반환.
+
 ```typescript
 /**
- * Inspector용: 부모 props 변경 시 자식 BatchPropsUpdate[] 생성
+ * Inspector용 (primary): 부모 props 변경 시 자식 BatchPropsUpdate[] 생성
  *
- * childPath를 childrenMap으로 순회하여 대상 자식을 찾고,
- * transform/asStyle/inheritOnly 규칙을 적용한 업데이트 배열 반환.
+ * childPath를 childrenMap으로 단계별 순회하여 대상 자식을 실제 Element ID로 해석.
+ * 중첩 경로 ["Calendar", "CalendarHeader"]도 해석 가능:
+ *   childrenMap.get(parentId) → Calendar 찾기 → childrenMap.get(calendarId) → CalendarHeader 찾기
+ * transform/asStyle/override 규칙을 적용한 업데이트 배열 반환.
  */
 export function buildPropagationUpdates(
   parentElement: Element,
@@ -180,11 +189,11 @@ export function buildPropagationUpdates(
 ): BatchPropsUpdate[];
 
 /**
- * Skia/Layout용: Store 쓰기 없이 가상 props 패치 반환
+ * Skia/Layout용 (fallback): Store 쓰기 없이 가상 props 패치 반환
  *
- * 부모 tag/props와 자식 tag/props를 받아,
- * propagation 규칙에 따라 자식에 주입할 props를 계산.
- * Store를 변경하지 않음 (렌더링 시점 in-memory 패치).
+ * 부모-자식 태그 쌍으로 직접 자식 1단계 규칙만 매칭.
+ * Store에 값이 없을 때의 방어적 fallback.
+ * Inspector가 정상 동작하면 대부분 null 반환 (Store에 이미 값 존재).
  */
 export function resolvePropagatedProps(
   parentTag: string,
@@ -212,8 +221,51 @@ export function getParentTagsForChild(
 ): Set<string> | undefined;
 ```
 
-- 정방향 인덱스: `handleFieldChange`에서 부모 태그로 규칙 조회
+- 정방향 인덱스: `handleFieldChange`에서 부모 태그로 규칙 조회 (모든 규칙 포함 — 중첩 경로도)
 - 역방향 인덱스: ElementSprite에서 자식 태그로 부모 후보 조회
+
+#### 역방향 인덱스 계약: 직접 부모 규칙만 포함
+
+역방향 인덱스는 **`childPath`가 단일 문자열인 규칙만** 인덱싱한다. 중첩 경로(`["Calendar", "CalendarHeader"]`)의 최종 자식(CalendarHeader)은 역방향 인덱스에 **포함하지 않는다**.
+
+이유: `resolvePropagatedProps`(Skia/Layout fallback)는 직접 부모-자식 1단계만 매칭한다. 역방향 인덱스에 중첩 경로의 최종 자식을 포함하면, ElementSprite에서 불필요한 ancestor scan이 발생하고 실제 매칭은 실패하여 false candidate만 증가한다.
+
+```typescript
+// 빌드 시 역방향 인덱스 규칙
+for (const rule of spec.propagation.rules) {
+  if (typeof rule.childPath === "string") {
+    // 직접 자식 → 역방향 인덱스에 포함
+    reverseIndex.get(rule.childPath).add(parentTag);
+  }
+  // 배열(중첩 경로) → 역방향 인덱스에서 제외
+  // 중첩 경로는 Inspector의 buildPropagationUpdates에서만 해석
+}
+```
+
+중첩 경로의 자식(CalendarHeader 등)은 Phase 2의 Factory 초기 적용으로 Store에 값이 기록되므로, fallback 자체가 불필요.
+
+#### 태그 정규화 규칙
+
+Registry는 **소문자 키**로 인덱싱한다. Spec 정의는 PascalCase(`DatePicker`)이지만, Registry 빌드 시 `toLowerCase()`로 정규화.
+
+현재 3경로의 태그 표기가 불일치하므로 통일 필요:
+
+| 경로              | 현재 표기           | Registry 조회 시                            |
+| ----------------- | ------------------- | ------------------------------------------- |
+| ElementSprite.tsx | PascalCase 그대로   | `element.tag.toLowerCase()` → Registry 조회 |
+| fullTreeLayout.ts | `tag.toLowerCase()` | 기존 정규화 그대로 → Registry 조회          |
+| implicitStyles.ts | `tag.toLowerCase()` | 기존 정규화 그대로 → Registry 조회          |
+
+```typescript
+// Registry 빌드 (1회)
+for (const [tag, spec] of specEntries) {
+  const key = tag.toLowerCase();
+  forwardIndex.set(key, spec.propagation.rules);
+}
+
+// 조회 (모든 경로에서 동일)
+getPropagationRules(tag.toLowerCase());
+```
 
 ### 4. Spec 적용 예시: DatePicker
 
@@ -346,12 +398,21 @@ Inspector가 정상 동작하면 Store에 이미 올바른 값이 있으므로, 
 우선순위: Store 저장 값 (Inspector 전파) > 렌더링 시 메모리 패치 (Skia/Layout fallback)
 ```
 
-#### 자식 독립 편집 미지원 원칙
+#### 자식 명시값 우선 원칙 (기본 동작)
 
-조합형 컴포넌트(DatePicker→Calendar, Select→SelectTrigger 등)의 자식은 **부모 전파 대상**이며, 전파 대상 prop의 독립 편집을 지원하지 않는다. S2 레퍼런스와 동일하게 부모 Context가 자식을 일방적으로 덮어쓴다.
+현재 코드 6곳에서 일관된 패턴: **자식에 이미 값이 있으면 전파를 건너뜀**.
 
-- 부모 size 변경 → 모든 자식 size 일괄 갱신 (기본 동작)
-- 특수 케이스에서 자식 자체 값을 유지해야 하면 `inheritOnly: true` 옵션 사용
+- ElementSprite: `if (parentDelegatedSize && !specProps.size)`
+- fullTreeLayout Tag: `if (tagGroupSize && !cp?.size)`
+- fullTreeLayout Checkbox: `if (cp?.size) return child`
+- fullTreeLayout Label: `if (cs.lineHeight != null) return child`
+- fullTreeLayout Select: `if (cp?.size) return child`
+- fullTreeLayout DFS: `if (!rawElement.props?.size)`
+
+이 원칙을 PropagationSpec에서도 유지한다. `override` 옵션 기본값은 미설정(= 자식 값 우선):
+
+- 자식에 자체 값이 없을 때만 전파 (기본 동작, `override` 미설정)
+- 자식 값을 무시하고 강제 덮어쓰기 필요 시 `override: true` 명시
 
 ### 7. ADR-041 ChildSyncField와의 관계
 
@@ -429,16 +490,21 @@ PropagationSpec: ChildSyncField가 하려던 일을 4경로 통합으로 수행
 
 **게이트**: DatePicker size "lg" → Calendar/CalendarHeader/CalendarGrid 모두 "lg" 반영 (Canvas + Preview)
 
-### Phase 2: Skia/Layout 3경로 통합
+### Phase 2: Factory 초기 적용 + Skia/Layout 3경로 통합
 
-| 순서 | 작업                                                                |
-| ---- | ------------------------------------------------------------------- |
-| 2-1  | `ElementSprite.tsx`: `parentDelegatedSize`를 Registry 기반으로 교체 |
-| 2-2  | `fullTreeLayout.ts`: `effectiveGetChildElements` 범용 블록 교체     |
-| 2-3  | `implicitStyles.ts`: `getDelegatedSize()` Registry 기반 교체        |
-| 2-4  | Select/ComboBox size 변경 → 기존 동작 유지 회귀 검증                |
+Phase 2의 핵심: **Store에 값이 없는 상태를 먼저 해소**한 뒤 렌더링 경로를 교체한다.
 
-**게이트**: 기존 delegation 동작 100% 유지 + 수동 상수 제거
+현재 렌더링 경로의 래퍼 경유 탐색(CheckboxGroup→CheckboxItems→Checkbox, DatePicker→Calendar→CalendarHeader)은 Store에 값이 없어서 존재한다. `resolvePropagatedProps`(직접 자식 1단계 fallback)만으로는 이 다단계 구조를 커버할 수 없다. 따라서 **Factory 초기 적용을 Phase 2로 앞당겨**, 요소 생성 시점에 `buildPropagationUpdates` 1회 호출로 모든 자식에 값을 기록한다.
+
+| 순서 | 작업                                                                           |
+| ---- | ------------------------------------------------------------------------------ |
+| 2-1  | Factory 생성 시 `buildPropagationUpdates` 1회 호출 → 자식 Store에 초기값 기록  |
+| 2-2  | `ElementSprite.tsx`: `parentDelegatedSize`를 Registry 기반으로 교체            |
+| 2-3  | `fullTreeLayout.ts`: `effectiveGetChildElements` 범용 블록 교체                |
+| 2-4  | `implicitStyles.ts`: `getDelegatedSize()` Registry 기반 교체                   |
+| 2-5  | 기존 delegation 컴포넌트 회귀 검증 (Select/ComboBox/CheckboxGroup/TagGroup 등) |
+
+**게이트**: 기존 delegation 동작 100% 유지 + 수동 상수 제거. Factory 초기 적용이 선행하므로, Store에 값이 보장된 상태에서 렌더링 경로 교체.
 
 ### Phase 3: 컴포넌트 점진적 마이그레이션
 
@@ -453,19 +519,17 @@ PropagationSpec: ChildSyncField가 하려던 일을 4경로 통합으로 수행
 | 3-7  | Slider                                        | size → Track/Thumb/Output             |   L    |
 | 3-8  | Card, Dialog, ButtonGroup, AvatarGroup 등     | 점진적                                |  L-M   |
 
-### Phase 4: Factory 정리
+### Phase 4: Factory 하드코딩 제거
 
-propagation 규칙이 있으면 Factory에서 자식 props 하드코딩 제거:
+Phase 2에서 Factory 생성 시 `buildPropagationUpdates` 1회 호출이 도입되었으므로, Factory 정의에서 자식 props 하드코딩을 점진적으로 제거:
 
 ```typescript
 // Before
 { tag: "Calendar", props: { variant: "default", size: "md", ... } }
 
-// After — size/variant는 부모에서 전파
+// After — size/variant는 부모에서 전파 (Factory 생성 시 buildPropagationUpdates가 자동 적용)
 { tag: "Calendar", props: { defaultToday: true } }
 ```
-
-Factory 생성 시 `buildPropagationUpdates`를 1회 호출하여 부모 기본값을 자식에 초기 적용.
 
 ### Phase 5: 기존 수동 코드 제거
 
