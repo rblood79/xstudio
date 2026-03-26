@@ -78,7 +78,7 @@
 | [044](044-project-renaming-xstudio-to-composition.md)    | 프로젝트 리네이밍 xstudio → composition  | Proposed        | 6 Phase — GitHub repo + 패키지명 + 124파일 import + 문서 + 인프라 일괄 전환                                                                |    P4    |
 | [045](045-s2-property-editor-alignment.md)               | S2 Property Editor 프로퍼티 정합성 정렬  | Proposed        | 3 Phase — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 + 기능 점검 (24개 파일)                                                            |  **P2**  |
 | [046](046-s2-contract-expansion-form-colorfield-tabs.md) | S2 계약 확장 — Form, ColorField, Tabs    | Accepted        | 자동 생성 전 계약 확정 — `Tabs.density`, `ColorField` 1차 계약(`labelAlign` 포함), `Form.labelPosition/labelAlign/necessityIndicator` 채택 |  **P2**  |
-| [048](048-declarative-props-propagation.md)              | S2 Context 기반 선언적 Props Propagation | **In Progress** | Phase 0~2-D 완료 (엔진+Registry+Inspector전파+Factory전파+20개Spec). 미착수: 2-E/F/G (3경로 교체), 3~5                                     |  **P2**  |
+| [048](048-declarative-props-propagation.md)              | S2 Context 기반 선언적 Props Propagation | **In Progress** | Phase 0~3+5 완료, Phase 4 파일럿(DatePicker). 잔여: 18개 컴포넌트 Factory 하드코딩 점진적 제거                                             |  **P2**  |
 
 ## Events Panel 설계 문서군
 
@@ -106,16 +106,16 @@
 
 ## 다음 진행 목표 (2026-03-26 기준)
 
-| 순서 | 대상    | 내용                                                                                                          | 규모 |   상태   |
-| :--: | ------- | ------------------------------------------------------------------------------------------------------------- | :--: | :------: |
-|  1   | ADR-041 | Spec-Driven Property Editor — 등급 B/C 하이브리드 전환 + icon 필드 구현 (Phase 0~2 완료, 잔여 전환)           |  중  | 부분완료 |
-|  2   | ADR-048 | S2 Context 선언적 Props Propagation — Phase 0~2-D 완료. 다음: Phase 2-E/F/G (3경로 Registry 교체) → Phase 3~5 |  대  | 부분완료 |
-|  3   | ADR-045 | S2 Property Editor 정합성 — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 (ADR-041/048 기반)                  |  중  |          |
-|  4   | ADR-046 | S2 계약 확장 — Form, ColorField, Tabs 계약 확정 (Spec 완성도)                                                 |  소  |          |
-|  5   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                        |  대  |          |
-|  6   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                   |  대  |          |
-|  7   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)              |  중  |          |
-|  8   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                 |  대  |          |
+| 순서 | 대상    | 내용                                                                                                                               | 규모 |    상태     |
+| :--: | ------- | ---------------------------------------------------------------------------------------------------------------------------------- | :--: | :---------: |
+|  1   | ADR-041 | Spec-Driven Property Editor — 등급 B/C 하이브리드 전환 + icon 필드 구현 (Phase 0~2 완료, 잔여 전환)                                |  중  |  부분완료   |
+|  2   | ADR-048 | S2 Context 선언적 Props Propagation — Phase 0~3+5 완료. Phase 4 잔여: 18개 컴포넌트 Factory 하드코딩 제거 (컴포넌트별 테스트 필요) |  대  | 대부분 완료 |
+|  3   | ADR-045 | S2 Property Editor 정합성 — INCOMPLETE 9개 에디터 + 공통 패턴 16개 에디터 (ADR-041/048 기반)                                       |  중  |             |
+|  4   | ADR-046 | S2 계약 확장 — Form, ColorField, Tabs 계약 확정 (Spec 완성도)                                                                      |  소  |             |
+|  5   | ADR-038 | Figma 디자인 임포트 — REST API 프록시 + 노드 변환 엔진 + 컴포넌트 매핑                                                             |  대  |             |
+|  6   | ADR-032 | Events Platform 재설계 — Trigger/Effect/Capability/Recipe 모델 + BindingRef + Condition DSL                                        |  대  |             |
+|  7   | ADR-034 | Events Panel Renovation — recipe 중심 UX + diagnostics/preview + handler workflow (ADR-032 선행)                                   |  중  |             |
+|  8   | ADR-013 | Quick Connect 데이터 바인딩 — 1클릭 Collection 연결 자동화 (ADR-032/034 선행)                                                      |  대  |             |
 
 > 완료된 이전 목표는 변경 이력 참조
 >
