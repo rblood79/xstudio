@@ -57,9 +57,6 @@ export const ZoomControls = memo(function ZoomControls({
   // 나머지 값들은 액션 실행 시 getState()로 가져옴
   const zoom = useViewportSyncStore((state) => state.zoom);
 
-  // Fit 모드 추적
-  const isFitModeRef = useRef(true);
-
   // 입력 상태 관리
   const [inputValue, setInputValue] = useState("");
   const zoomPercent = Math.round(zoom * 100);
@@ -77,7 +74,6 @@ export const ZoomControls = memo(function ZoomControls({
   // ============================================
 
   const zoomTo = useCallback((level: number) => {
-    isFitModeRef.current = false;
     zoomViewportAtContainerCenter(level);
   }, []);
 
@@ -97,7 +93,6 @@ export const ZoomControls = memo(function ZoomControls({
 
     if (containerSize.width === 0 || containerSize.height === 0) return;
 
-    isFitModeRef.current = true;
     applyViewportState(computeFitViewport({ canvasSize, containerSize }));
   }, []);
 
