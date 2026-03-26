@@ -17,7 +17,7 @@ XStudio Team
 - [ADR-036](completed/036-spec-first-single-source.md): Spec-First Single Source (CSS 자동 생성)
 - [ADR-045](045-s2-property-editor-alignment.md): 기존 계약과 Property Editor surface 정렬
 - [ADR-046](046-s2-contract-expansion-form-colorfield-tabs.md): 자동 생성 전 계약 확정
-- [ADR-048](048-declarative-props-propagation.md): S2 Context 기반 선언적 Props Propagation — ChildSyncField의 동기화 로직을 PropagationSpec 엔진으로 위임하는 후속 ADR
+- [ADR-048](048-declarative-props-propagation.md): S2 Context 기반 선언적 Props Propagation — ChildSyncField를 PropagationSpec으로 대체(supersede). ChildSyncField는 미구현 상태에서 직행 전환
 
 ---
 
@@ -1239,11 +1239,12 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
   - SpecField.tsx에서 `type: "childSync"` 처리: **미구현** (default case에서 null 반환)
   - 어떤 Spec에서도 `type: "childSync"` 필드 사용 사례 없음
   - 하이브리드 에디터에서 `useSyncChildProp` 훅으로 수동 처리 중
-  - **ADR-048에서 ChildSyncField의 동기화 로직을 PropagationSpec 엔진으로 위임 결정** — ChildSyncField는 UI 표현만 담당, 실제 전파는 PropagationSpec 엔진이 4경로 통합 처리
+  - **ADR-048에서 ChildSyncField를 PropagationSpec으로 대체(supersede) 결정** — ChildSyncField는 구현하지 않고, PropagationSpec 엔진이 4경로(Inspector/Skia/Layout/implicitStyles) 통합 전파를 직접 수행. ChildSyncField 타입 정의는 제거 예정
 - icon 필드: SpecField.tsx에서 미구현 (Button 하이브리드에서 수동 처리 중)
 - 남은 범위
   - 나머지 등급 B/C 하이브리드 전환
-  - ChildSyncField → PropagationSpec 엔진 위임 (ADR-048)
+  - ChildSyncField → PropagationSpec 대체 (ADR-048)
+  - ChildSyncField 타입 정의 제거
   - icon 필드 타입 SpecField 구현
 
 **전환 방법 (안전한 롤백)**:
@@ -1268,9 +1269,9 @@ variant + size + boolean + enum + string만으로 구성된 단순 에디터를 
 
 ### Phase 3: 등급 B 에디터 전환 (8개)
 
-childSync 또는 복합 visibleWhen이 필요한 에디터. ChildSyncField의 UI 표현 + ADR-048 PropagationSpec 엔진의 동기화 로직으로 처리.
+childSync 또는 복합 visibleWhen이 필요한 에디터.
 
-> **참고**: ChildSyncField의 동기화 로직은 ADR-048의 PropagationSpec 엔진으로 위임됨. ChildSyncField는 Inspector UI 표현(필드 렌더링)만 담당하고, 실제 부모→자식 전파는 4경로(Inspector/Skia/Layout/implicitStyles) 통합 엔진이 수행.
+> **변경**: ChildSyncField는 미구현 상태에서 ADR-048의 PropagationSpec으로 대체(supersede). ChildSyncField 타입/구현 없이, PropagationSpec 엔진이 부모→자식 전파를 4경로(Inspector/Skia/Layout/implicitStyles) 통합으로 직접 수행.
 
 **전환 대상**:
 
