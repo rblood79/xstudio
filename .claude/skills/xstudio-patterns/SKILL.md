@@ -45,6 +45,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[style-tv-variants](rules/style-tv-variants.md)** - tv() 사용 필수
 - **[style-react-aria-prefix](rules/style-react-aria-prefix.md)** - react-aria-\* CSS 접두사
 - **style-action-icon-button** - Builder 아이콘 버튼은 공유 `Button variant="ghost"` 대신 `ActionIconButton` 사용 (`.button-base` 우회, tooltip/shortcut 내장). 위치: `builder/components/ui/ActionIconButton.tsx`
+- **[style-overlay-s2-pattern](rules/style-overlay-s2-pattern.md)** - Overlay CSS S2 패턴: Popover/Tooltip에 `contain: paint` 금지, 상시 `transform`/`will-change`/`backface-visibility` 금지, `display: flex` + `isolation: isolate` 사용 (ADR-047)
 
 #### TypeScript (type-\*)
 

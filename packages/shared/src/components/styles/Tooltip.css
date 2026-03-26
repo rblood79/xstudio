@@ -33,7 +33,7 @@
     padding: 6px 10px;
     max-width: 150px;
     font-size: var(--text-xs);
-    transform: translate3d(0, 0, 0);
+    isolation: isolate;
     transition:
       transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
       opacity 150ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -44,10 +44,12 @@
     transform-origin: var(--tooltip-origin-x) var(--tooltip-origin-y);
 
     &[data-entering] {
+      will-change: transform, opacity;
       animation: tooltip-enter 150ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     &[data-exiting] {
+      will-change: transform, opacity;
       animation: tooltip-exit 100ms ease-in;
     }
 

@@ -229,16 +229,7 @@
   /* ========== Popover ========== */
   .react-aria-Popover[data-trigger="DateRangePicker"] {
     max-width: unset;
-    contain: layout style paint;
-
-    .react-aria-Dialog {
-      transform: translate3d(0, 0, 0);
-      backface-visibility: hidden;
-
-      .react-aria-RangeCalendar {
-        transform: translate3d(0, 0, 0);
-      }
-    }
+    display: flex;
   }
 
   /* ========== Time Fields ========== */

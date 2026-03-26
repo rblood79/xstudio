@@ -1102,6 +1102,79 @@ Phase 4 (기존 에디터 파일 정리 + 롤백 체계)  [Gate G5]
 
 variant + size + boolean + enum + string만으로 구성된 단순 에디터를 우선 전환.
 
+#### 1차 자동 생성 대상 묶음
+
+1차는 **ADR-046으로 계약이 닫힌 항목 + 등급 A 단순 에디터**만 포함한다. 기준은 다음과 같다.
+
+- `Spec.properties`만으로 표현 가능할 것
+- 컬렉션 관리가 없을 것
+- childSync가 없을 것
+- 복합 UI 모드 전환이 없을 것
+- 현재 계약이 `unified.types.ts` + shared component API + renderer 경로에서 이미 닫혀 있을 것
+
+**1차 대상 (12개)**:
+
+- `Form`
+- `ColorField`
+- `Dialog`
+- `Popover`
+- `Toast`
+- `Tooltip`
+- `Link`
+- `Badge`
+- `Separator`
+- `StatusLight`
+- `Meter`
+- `ProgressBar`
+
+**1차 배치 순서**:
+
+1. 배치 1
+   - `Badge`
+   - `Separator`
+   - `StatusLight`
+   - `Meter`
+   - `ProgressBar`
+2. 배치 2
+   - `Link`
+   - `Tooltip`
+   - `Dialog`
+   - `Popover`
+   - `Toast`
+3. 배치 3
+   - `Form`
+   - `ColorField`
+
+**배치 기준**:
+
+- 배치 1: 가장 단순한 leaf 에디터
+- 배치 2: overlay/interaction 성격이 있지만 컬렉션/childSync가 없는 에디터
+- 배치 3: ADR-046 확정 계약을 직접 소비하는 에디터
+
+**선정 이유**:
+
+- `Form`, `ColorField`는 ADR-046에서 자동 생성 입력 계약이 확정됐다.
+- 나머지 10개는 등급 A이며 컬렉션/childSync 없이 `variant`, `size`, `boolean`, `enum`, `string` 조합으로 닫힌다.
+- 모두 개별 leaf 성격이 강해서 전환 실패 시 registry 분기만 되돌리면 즉시 롤백 가능하다.
+
+**1차 제외 항목**:
+
+- `Tabs`
+  - ADR-046에서 `density` 계약은 닫혔지만, 에디터 자체는 tab/panel 동적 관리가 있어 등급 C다.
+- `Button`
+  - 등급 B이며 `Icon`/`Link`/`Form` 섹션의 복합 visibleWhen이 있다.
+- `TextField`, `SearchField`
+  - 등급 B이며 childSync가 필요하다.
+- `NumberField`
+  - 중첩 `formatOptions` 객체 때문에 등급 C다.
+
+**1차 완료 기준**:
+
+- 위 12개 컴포넌트에 `Spec.properties` 추가
+- registry에서 GenericPropertyEditor 경로로 전환
+- 기존 수동 에디터와 동작/노출 surface가 동일함을 확인
+- ADR-046에서 닫은 계약(`Form`, `ColorField`)이 손실 없이 자동 생성 경로로 표현됨을 확인
+
 **전환 방법 (안전한 롤백)**:
 
 ```

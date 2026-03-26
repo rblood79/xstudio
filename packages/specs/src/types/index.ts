@@ -14,6 +14,23 @@ export type {
   RenderSpec,
   CompositionSpec,
   DelegationSpec,
+  PropertySchema,
+  SectionDef,
+  FieldDef,
+  BaseFieldDef,
+  VisibilityCondition,
+  VariantField,
+  SizeField,
+  BooleanField,
+  EnumField,
+  StringField,
+  NumberField,
+  IconField,
+  CustomField,
+  ChildSyncField,
+  ChildSyncConfig,
+  DerivedUpdateFn,
+  CustomFieldComponentProps,
 } from "./spec.types";
 
 // Shape Types

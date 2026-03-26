@@ -10,6 +10,8 @@
 import type { Shape } from "./shape.types";
 import type { TokenRef } from "./token.types";
 import type { StateStyles } from "./state.types";
+import type { ComponentType } from "react";
+import type { LucideIcon } from "lucide-react";
 
 /**
  * 컴포넌트 상태
@@ -117,9 +119,123 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
   /** ADR-036 Phase 3a: Tier 2 Composite CSS 생성용 메타데이터 */
   composition?: CompositionSpec;
 
+  /** ADR-041: Property Editor 자동 생성용 schema */
+  properties?: PropertySchema;
+
   /** 렌더링 정의 */
   render: RenderSpec<Props>;
 }
+
+// ─── ADR-041: PropertySchema 타입 ───────────────────────────────────────────
+
+export interface PropertySchema {
+  sections: SectionDef[];
+  includeBasicSection?: boolean;
+}
+
+export interface SectionDef {
+  title: string;
+  fields: FieldDef[];
+  visibleWhen?: VisibilityCondition;
+}
+
+export interface BaseFieldDef {
+  key: string;
+  label?: string;
+  icon?: LucideIcon;
+  visibleWhen?: VisibilityCondition;
+  emptyToUndefined?: boolean;
+}
+
+export type VisibilityCondition = {
+  key?: string;
+  equals?: string | number | boolean;
+  notEquals?: string | number | boolean;
+  oneOf?: Array<string | number | boolean>;
+  parentTag?: string;
+  parentTagNot?: string;
+};
+
+export interface VariantField extends Omit<BaseFieldDef, "key"> {
+  type: "variant";
+  key?: string;
+}
+
+export interface SizeField extends Omit<BaseFieldDef, "key"> {
+  type: "size";
+  key?: string;
+}
+
+export interface BooleanField extends BaseFieldDef {
+  type: "boolean";
+}
+
+export interface EnumField extends BaseFieldDef {
+  type: "enum";
+  options: Array<{ value: string; label: string }>;
+  valueTransform?: "number";
+}
+
+export interface StringField extends BaseFieldDef {
+  type: "string";
+  placeholder?: string;
+  multiline?: boolean;
+}
+
+export interface NumberField extends BaseFieldDef {
+  type: "number";
+  min?: number;
+  max?: number;
+  step?: number;
+}
+
+export interface IconField extends BaseFieldDef {
+  type: "icon";
+  clearKeys?: string[];
+}
+
+export interface CustomFieldComponentProps {
+  elementId: string;
+  currentProps: Record<string, unknown>;
+  value: unknown;
+  onUpdate: (updates: Record<string, unknown>) => void;
+}
+
+export interface CustomField extends BaseFieldDef {
+  type: "custom";
+  component: ComponentType<CustomFieldComponentProps>;
+}
+
+export type DerivedUpdateFn = (
+  value: unknown,
+  currentProps: Record<string, unknown>,
+) => Record<string, unknown>;
+
+export interface ChildSyncConfig {
+  path: [string, ...string[]];
+  propKey: string;
+  derivedUpdateFn?: DerivedUpdateFn;
+  fallbackToDirectChild?: boolean;
+}
+
+export interface ChildSyncField extends BaseFieldDef {
+  type: "childSync";
+  uiType?: "string" | "size";
+  placeholder?: string;
+  multiline?: boolean;
+  childSync: ChildSyncConfig;
+}
+
+export type FieldDef =
+  | VariantField
+  | SizeField
+  | BooleanField
+  | EnumField
+  | StringField
+  | NumberField
+  | IconField
+  | CustomField
+  | ChildSyncField;
 
 // ─── ADR-036: Tier 2 Composite CSS 타입 ─────────────────────────────────────
 

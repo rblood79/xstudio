@@ -264,15 +264,13 @@
     border-radius: var(--border-radius);
     background: var(--bg-raised);
     box-shadow: var(--shadow-lg);
-    contain: layout style paint;
+    contain: layout style;
 
     /* ListBox: Popover 컨텍스트에서는 border/배경 불필요 (Popover가 담당) */
     .react-aria-ListBox {
       border: none;
       background: transparent;
       max-height: none;
-      transform: translate3d(0, 0, 0);
-      backface-visibility: hidden;
       min-height: 24px;
     }
   }
