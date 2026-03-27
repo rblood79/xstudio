@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef, ImageShape } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Image, FileText, Maximize, PointerOff } from "lucide-react";
 
 /**
  * Image Props
@@ -181,12 +182,14 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
             key: "src",
             type: "string",
             label: "Source URL",
+            icon: Image,
             placeholder: "https://...",
           },
           {
             key: "alt",
             type: "string",
             label: "Alt Text",
+            icon: FileText,
             placeholder: "Image description",
           },
         ],
@@ -198,6 +201,7 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
             key: "objectFit",
             type: "enum",
             label: "Object Fit",
+            icon: Maximize,
             options: [
               { value: "cover", label: "Cover" },
               { value: "contain", label: "Contain" },
@@ -209,7 +213,7 @@ export const ImageSpec: ComponentSpec<ImageProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean" }],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

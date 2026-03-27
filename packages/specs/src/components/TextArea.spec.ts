@@ -10,7 +10,17 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Layout } from "lucide-react";
+import {
+  Layout,
+  SpellCheck2,
+  Focus,
+  FormInput,
+  PointerOff,
+  AlertTriangle,
+  PenOff,
+  Hash,
+  CheckSquare,
+} from "lucide-react";
 
 /**
  * TextArea Props
@@ -123,46 +133,31 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
         ],
       },
       {
-        title: "Validation",
-        fields: [
-          {
-            key: "necessityIndicator",
-            type: "enum",
-            label: "Required",
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "None" },
-              { value: "icon", label: "Icon" },
-              { value: "label", label: "Label" },
-            ],
-          },
-          { key: "isInvalid", type: "boolean" },
-          { key: "maxLength", type: "number", label: "Max Length" },
-        ],
-      },
-      {
         title: "State",
         fields: [
-          { key: "autoFocus", type: "boolean" },
-          { key: "isDisabled", type: "boolean" },
-          { key: "isReadOnly", type: "boolean" },
+          { key: "autoFocus", type: "boolean", icon: Focus },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          { key: "isReadOnly", type: "boolean", icon: PenOff },
 
           {
             key: "name",
             type: "string",
             label: "Name",
+            icon: FormInput,
             emptyToUndefined: true,
           },
           {
             key: "form",
             type: "string",
             label: "Form",
+            icon: FormInput,
             emptyToUndefined: true,
           },
           {
             key: "autoComplete",
             type: "enum",
             label: "Autocomplete",
+            icon: SpellCheck2,
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },
@@ -170,6 +165,20 @@ export const TextAreaSpec: ComponentSpec<TextAreaProps> = {
               { value: "off", label: "Off" },
             ],
           },
+          {
+            key: "necessityIndicator",
+            type: "enum",
+            label: "Required",
+            icon: CheckSquare,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "None" },
+              { value: "icon", label: "Icon" },
+              { value: "label", label: "Label" },
+            ],
+          },
+          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
+          { key: "maxLength", type: "number", label: "Max Length", icon: Hash },
         ],
       },
     ],

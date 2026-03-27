@@ -15,6 +15,7 @@
 import type { ComponentSpec, ArcShape, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Hash, Palette, Loader, PointerOff } from "lucide-react";
 
 /**
  * ProgressCircle Props
@@ -234,7 +235,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
     sections: [
       {
         title: "Content",
-        fields: [{ key: "value", type: "number", label: "Value" }],
+        fields: [{ key: "value", type: "number", label: "Value", icon: Hash }],
       },
       {
         title: "Appearance",
@@ -245,6 +246,7 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
             type: "enum",
             label: "Static Color",
             emptyToUndefined: true,
+            icon: Palette,
             options: [
               { value: "", label: "None" },
               { value: "white", label: "White" },
@@ -256,8 +258,8 @@ export const ProgressCircleSpec: ComponentSpec<ProgressCircleProps> = {
       {
         title: "State",
         fields: [
-          { key: "isIndeterminate", type: "boolean" },
-          { key: "isDisabled", type: "boolean" },
+          { key: "isIndeterminate", type: "boolean", icon: Loader },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
         ],
       },
     ],

@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { Tag, Shield, PointerOff, AlertTriangle, PenOff } from "lucide-react";
 
 /**
  * Group Props
@@ -129,6 +130,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
             key: "label",
             type: "string",
             label: "Label",
+            icon: Tag,
             placeholder: "Group label",
           },
         ],
@@ -140,6 +142,7 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
             key: "role",
             type: "enum",
             label: "Role",
+            icon: Shield,
             options: [
               { value: "group", label: "Group" },
               { value: "region", label: "Region" },
@@ -149,11 +152,11 @@ export const GroupSpec: ComponentSpec<GroupProps> = {
         ],
       },
       {
-        title: "States",
+        title: "State",
         fields: [
-          { key: "isDisabled", type: "boolean" },
-          { key: "isInvalid", type: "boolean" },
-          { key: "isReadOnly", type: "boolean" },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
+          { key: "isReadOnly", type: "boolean", icon: PenOff },
         ],
       },
     ],

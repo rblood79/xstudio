@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Heading, Type, Parentheses } from "lucide-react";
 
 /**
  * InlineAlert Props
@@ -124,12 +125,14 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
             key: "heading",
             type: "string",
             label: "Heading",
+            icon: Heading,
             placeholder: "Alert heading",
           },
           {
             key: "children",
             type: "string",
             label: "Description",
+            icon: Type,
             placeholder: "Alert message",
             multiline: true,
           },
@@ -137,7 +140,7 @@ export const InlineAlertSpec: ComponentSpec<InlineAlertProps> = {
       },
       {
         title: "Appearance",
-        fields: [{ type: "variant" }],
+        fields: [{ type: "variant", icon: Parentheses }],
       },
     ],
   },

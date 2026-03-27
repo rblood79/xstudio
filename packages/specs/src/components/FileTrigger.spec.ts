@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { FileCheck, ToggleLeft, Folder, Camera } from "lucide-react";
 
 /**
  * FileTrigger Props
@@ -232,13 +233,20 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
             key: "acceptedFileTypes",
             type: "string",
             label: "Accepted File Types",
+            icon: FileCheck,
             placeholder: "image/*, .pdf, .docx",
           },
-          { key: "allowsMultiple", type: "boolean", label: "Allow Multiple" },
+          {
+            key: "allowsMultiple",
+            type: "boolean",
+            label: "Allow Multiple",
+            icon: ToggleLeft,
+          },
           {
             key: "acceptDirectory",
             type: "boolean",
             label: "Accept Directory",
+            icon: Folder,
           },
         ],
       },
@@ -249,6 +257,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
             key: "defaultCamera",
             type: "enum",
             label: "Default Camera",
+            icon: Camera,
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },

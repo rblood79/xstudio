@@ -9,7 +9,14 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Layout, ToggleLeft, Columns } from "lucide-react";
+import {
+  Layout,
+  ToggleLeft,
+  Columns,
+  ArrowUpDown,
+  GripVertical,
+  List,
+} from "lucide-react";
 
 /**
  * TableView Props
@@ -117,12 +124,13 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
         ],
       },
       {
-        title: "Selection",
+        title: "State",
         fields: [
           {
             key: "selectionMode",
             type: "enum",
             label: "Selection Mode",
+            icon: List,
             options: [
               { value: "none", label: "None" },
               { value: "single", label: "Single" },
@@ -134,11 +142,17 @@ export const TableViewSpec: ComponentSpec<TableViewProps> = {
       {
         title: "Features",
         fields: [
-          { key: "allowsSorting", type: "boolean", label: "Allow Sorting" },
+          {
+            key: "allowsSorting",
+            type: "boolean",
+            label: "Allow Sorting",
+            icon: ArrowUpDown,
+          },
           {
             key: "allowsResizingColumns",
             type: "boolean",
             label: "Allow Resizing Columns",
+            icon: GripVertical,
           },
         ],
       },

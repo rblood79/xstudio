@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { Sliders, PointerOff } from "lucide-react";
 
 /**
  * ColorArea Props
@@ -103,6 +104,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
             key: "colorSpace",
             type: "enum",
             label: "Color Space",
+            icon: Sliders,
             options: [
               { value: "rgb", label: "RGB" },
               { value: "hsl", label: "HSL" },
@@ -113,6 +115,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
             key: "xChannel",
             type: "enum",
             label: "X Channel",
+            icon: Sliders,
             options: [
               { value: "red", label: "Red" },
               { value: "green", label: "Green" },
@@ -127,6 +130,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
             key: "yChannel",
             type: "enum",
             label: "Y Channel",
+            icon: Sliders,
             options: [
               { value: "red", label: "Red" },
               { value: "green", label: "Green" },
@@ -141,7 +145,7 @@ export const ColorAreaSpec: ComponentSpec<ColorAreaProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean" }],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

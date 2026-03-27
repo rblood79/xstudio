@@ -8,6 +8,18 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import {
+  Tag,
+  FileText,
+  AlertTriangle,
+  Eye,
+  ArrowLeftRight,
+  List,
+  CheckSquare,
+  PointerOff,
+  Focus,
+  FormInput,
+} from "lucide-react";
 
 /**
  * ToggleButtonGroup Props
@@ -101,27 +113,38 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
       {
         title: "Content",
         fields: [
-          { key: "label", type: "string", label: "Label" },
-          { key: "description", type: "string", label: "Description" },
-          { key: "errorMessage", type: "string", label: "Error Message" },
+          { key: "label", type: "string", label: "Label", icon: Tag },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+          },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+          },
         ],
       },
       {
         title: "Appearance",
         fields: [
-          { key: "isEmphasized", type: "boolean" },
-          { key: "isQuiet", type: "boolean", label: "Quiet" },
+          { key: "isEmphasized", type: "boolean", icon: Eye },
+          { key: "isQuiet", type: "boolean", label: "Quiet", icon: Eye },
           { type: "size" },
           {
             key: "orientation",
             type: "enum",
             label: "Orientation",
+            icon: ArrowLeftRight,
             options: [
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
             ],
           },
-          { key: "indicator", type: "boolean", label: "Indicator" },
+          { key: "indicator", type: "boolean", label: "Indicator", icon: Eye },
         ],
       },
       {
@@ -131,16 +154,17 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
             key: "selectionMode",
             type: "enum",
             label: "Selection Mode",
+            icon: List,
             options: [
               { value: "single", label: "Single" },
               { value: "multiple", label: "Multiple" },
             ],
           },
-          { key: "isRequired", type: "boolean" },
-          { key: "isInvalid", type: "boolean" },
+          { key: "isRequired", type: "boolean", icon: CheckSquare },
+          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
 
-          { key: "isDisabled", type: "boolean" },
-          { key: "autoFocus", type: "boolean" },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          { key: "autoFocus", type: "boolean", icon: Focus },
 
           {
             key: "name",
@@ -148,6 +172,7 @@ export const ToggleButtonGroupSpec: ComponentSpec<ToggleButtonGroupProps> = {
             label: "Name",
             emptyToUndefined: true,
             placeholder: "togglebutton-group-name",
+            icon: FormInput,
           },
         ],
       },

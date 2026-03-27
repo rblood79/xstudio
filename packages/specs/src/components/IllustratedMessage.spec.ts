@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Heading, FileText, ArrowLeftRight } from "lucide-react";
 
 /**
  * IllustratedMessage Props
@@ -182,12 +183,14 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
             key: "heading",
             type: "string",
             label: "Heading",
+            icon: Heading,
             placeholder: "No content",
           },
           {
             key: "description",
             type: "string",
             label: "Description",
+            icon: FileText,
             placeholder: "There is nothing to display.",
           },
         ],
@@ -200,6 +203,7 @@ export const IllustratedMessageSpec: ComponentSpec<IllustratedMessageProps> = {
             key: "orientation",
             type: "enum",
             label: "Orientation",
+            icon: ArrowLeftRight,
             options: [
               { value: "vertical", label: "Vertical" },
               { value: "horizontal", label: "Horizontal" },

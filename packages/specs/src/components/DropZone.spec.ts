@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Tag, FileText, Parentheses, PointerOff } from "lucide-react";
 
 /**
  * DropZone Props
@@ -224,22 +225,24 @@ export const DropZoneSpec: ComponentSpec<DropZoneProps> = {
             type: "string",
             label: "Label",
             placeholder: "Drop files here",
+            icon: Tag,
           },
           {
             key: "description",
             type: "string",
             label: "Description",
             placeholder: "or click to browse",
+            icon: FileText,
           },
         ],
       },
       {
         title: "Appearance",
-        fields: [{ type: "variant" }, { type: "size" }],
+        fields: [{ type: "variant", icon: Parentheses }, { type: "size" }],
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean" }],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

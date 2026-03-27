@@ -251,6 +251,7 @@ export const SelectSpec: ComponentSpec<SelectProps> = {
             key: "validationBehavior",
             type: "enum",
             label: "Validation Behavior",
+            icon: CheckSquare,
             options: [
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },

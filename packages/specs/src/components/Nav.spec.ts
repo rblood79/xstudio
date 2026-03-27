@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { Tag } from "lucide-react";
 
 /**
  * Nav Props
@@ -129,13 +130,14 @@ export const NavSpec: ComponentSpec<NavProps> = {
   properties: {
     sections: [
       {
-        title: "Accessibility",
+        title: "Content",
         fields: [
           {
             key: "aria-label",
             type: "string",
             label: "aria-label",
             placeholder: "Main navigation",
+            icon: Tag,
           },
         ],
       },

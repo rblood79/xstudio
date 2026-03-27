@@ -7,6 +7,7 @@
  * @packageDocumentation
  */
 
+import { Tag, PointerOff } from "lucide-react";
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
@@ -96,7 +97,7 @@ export const AvatarGroupSpec: ComponentSpec<AvatarGroupProps> = {
     sections: [
       {
         title: "Content",
-        fields: [{ key: "label", type: "string", label: "Label" }],
+        fields: [{ key: "label", type: "string", label: "Label", icon: Tag }],
       },
       {
         title: "Appearance",
@@ -104,7 +105,7 @@ export const AvatarGroupSpec: ComponentSpec<AvatarGroupProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean" }],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

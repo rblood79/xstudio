@@ -1,6 +1,7 @@
 /**
  * Accordion Component Spec (properties-only)
  */
+import { ToggleLeft, PointerOff } from "lucide-react";
 import type { ComponentSpec, TokenRef } from "../types";
 
 export interface AccordionProps {
@@ -28,8 +29,9 @@ export const AccordionSpec: ComponentSpec<AccordionProps> = {
             key: "allowsMultipleExpanded",
             type: "boolean",
             label: "Allow Multiple Expanded",
+            icon: ToggleLeft,
           },
-          { key: "isDisabled", type: "boolean" },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
         ],
       },
     ],

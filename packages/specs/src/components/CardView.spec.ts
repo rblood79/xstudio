@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, TokenRef } from "../types";
+import { LayoutGrid, Hash, List } from "lucide-react";
 
 /**
  * CardView Props
@@ -89,6 +90,7 @@ export const CardViewSpec: ComponentSpec<CardViewProps> = {
             key: "layout",
             type: "enum",
             label: "Layout",
+            icon: LayoutGrid,
             options: [
               { value: "grid", label: "Grid" },
               { value: "waterfall", label: "Waterfall" },
@@ -100,23 +102,25 @@ export const CardViewSpec: ComponentSpec<CardViewProps> = {
             key: "density",
             type: "enum",
             label: "Density",
+            icon: LayoutGrid,
             options: [
               { value: "compact", label: "Compact" },
               { value: "regular", label: "Regular" },
               { value: "spacious", label: "Spacious" },
             ],
           },
-          { key: "columns", type: "number", label: "Columns" },
-          { key: "gap", type: "number", label: "Gap" },
+          { key: "columns", type: "number", label: "Columns", icon: Hash },
+          { key: "gap", type: "number", label: "Gap", icon: Hash },
         ],
       },
       {
-        title: "Selection",
+        title: "State",
         fields: [
           {
             key: "selectionMode",
             type: "enum",
             label: "Selection Mode",
+            icon: List,
             options: [
               { value: "none", label: "None" },
               { value: "single", label: "Single" },
@@ -127,6 +131,7 @@ export const CardViewSpec: ComponentSpec<CardViewProps> = {
             key: "selectionStyle",
             type: "enum",
             label: "Selection Style",
+            icon: List,
             options: [
               { value: "checkbox", label: "Checkbox" },
               { value: "highlight", label: "Highlight" },

@@ -11,7 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Tag, PointerOff, Focus, SquareX, List } from "lucide-react";
+import { Tag, PointerOff, Focus, SquareX, List, Hash } from "lucide-react";
 
 /**
  * Menu Props
@@ -128,12 +128,14 @@ export const MenuSpec: ComponentSpec<MenuProps> = {
             key: "selectedKeys",
             type: "string-array",
             label: "Selected Keys",
+            icon: Hash,
             placeholder: "key1, key2",
           },
           {
             key: "defaultSelectedKeys",
             type: "string-array",
             label: "Default Selected Keys",
+            icon: Hash,
             placeholder: "key1, key2",
           },
           { key: "isDisabled", type: "boolean", icon: PointerOff },

@@ -133,11 +133,20 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         fields: [
           {
             key: "locale",
-            type: "string",
+            type: "enum",
             label: "Locale",
             icon: Globe,
             emptyToUndefined: true,
-            placeholder: "ko-KR, en-US, etc.",
+            options: [
+              { value: "", label: "Auto" },
+              { value: "ko-KR", label: "한국어" },
+              { value: "en-US", label: "English (US)" },
+              { value: "en-GB", label: "English (UK)" },
+              { value: "ja-JP", label: "日本語" },
+              { value: "zh-CN", label: "中文" },
+              { value: "de-DE", label: "Deutsch" },
+              { value: "fr-FR", label: "Français" },
+            ],
           },
           {
             key: "formatStyle",
@@ -229,8 +238,49 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
         ],
       },
       {
-        title: "Validation",
+        title: "State",
         fields: [
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "isReadOnly",
+            type: "boolean",
+            label: "Read Only",
+            icon: PenOff,
+          },
+          {
+            key: "isWheelDisabled",
+            type: "boolean",
+            label: "Wheel Disabled",
+            icon: MousePointerClick,
+          },
+
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: Tag,
+            emptyToUndefined: true,
+            placeholder: "field-name",
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            icon: FileText,
+            emptyToUndefined: true,
+            placeholder: "form-id",
+          },
           {
             key: "errorMessage",
             type: "string",
@@ -278,52 +328,6 @@ export const NumberFieldSpec: ComponentSpec<NumberFieldProps> = {
                 necessityIndicator: value as "icon" | "label",
               };
             },
-          },
-        ],
-      },
-      {
-        title: "State",
-        fields: [
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
-          },
-          {
-            key: "isDisabled",
-            type: "boolean",
-            label: "Disabled",
-            icon: PointerOff,
-          },
-          {
-            key: "isReadOnly",
-            type: "boolean",
-            label: "Read Only",
-            icon: PenOff,
-          },
-          {
-            key: "isWheelDisabled",
-            type: "boolean",
-            label: "Wheel Disabled",
-            icon: MousePointerClick,
-          },
-
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: Tag,
-            emptyToUndefined: true,
-            placeholder: "field-name",
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            icon: FileText,
-            emptyToUndefined: true,
-            placeholder: "form-id",
           },
         ],
       },

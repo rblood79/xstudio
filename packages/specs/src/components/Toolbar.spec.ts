@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { ArrowLeftRight } from "lucide-react";
 
 /**
  * Toolbar Props
@@ -156,6 +157,7 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
             key: "orientation",
             type: "enum",
             label: "Orientation",
+            icon: ArrowLeftRight,
             options: [
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },

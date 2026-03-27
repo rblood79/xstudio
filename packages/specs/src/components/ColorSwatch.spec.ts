@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { Palette, Sliders } from "lucide-react";
 
 /**
  * ColorSwatch Props
@@ -95,11 +96,12 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
       {
         title: "Color",
         fields: [
-          { key: "color", type: "string", label: "Color Value" },
+          { key: "color", type: "string", label: "Color Value", icon: Palette },
           {
             key: "colorSpace",
             type: "enum",
             label: "Color Space",
+            icon: Sliders,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Auto" },

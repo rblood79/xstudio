@@ -5,7 +5,19 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { Layout } from "lucide-react";
+import {
+  Layout,
+  Globe,
+  Clock,
+  Hash,
+  EyeOff,
+  AlertTriangle,
+  PointerOff,
+  PenOff,
+  Focus,
+  CheckSquare,
+  FormInput,
+} from "lucide-react";
 
 export interface TimeFieldProps {
   variant?: "default" | "accent" | "negative";
@@ -103,6 +115,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
             key: "granularity",
             type: "enum",
             label: "Granularity",
+            icon: Clock,
             options: [
               { value: "hour", label: "Hour" },
               { value: "minute", label: "Minute" },
@@ -113,6 +126,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
             key: "hourCycle",
             type: "enum",
             label: "Hour Cycle",
+            icon: Clock,
             emptyToUndefined: true,
             valueTransform: "number",
             options: [
@@ -131,11 +145,17 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "side", label: "Side" },
             ],
           },
-          { key: "hideTimeZone", type: "boolean", label: "Hide Timezone" },
+          {
+            key: "hideTimeZone",
+            type: "boolean",
+            label: "Hide Timezone",
+            icon: EyeOff,
+          },
           {
             key: "shouldForceLeadingZeros",
             type: "boolean",
             label: "Force Leading Zeros",
+            icon: Hash,
           },
         ],
       },
@@ -146,6 +166,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
             key: "locale",
             type: "enum",
             label: "Locale",
+            icon: Globe,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Auto" },
@@ -167,18 +188,21 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
             key: "minValue",
             type: "string",
             label: "Min Value",
+            icon: Hash,
             placeholder: "09:00",
           },
           {
             key: "maxValue",
             type: "string",
             label: "Max Value",
+            icon: Hash,
             placeholder: "18:00",
           },
           {
             key: "necessityIndicator",
             type: "enum",
             label: "Required",
+            icon: CheckSquare,
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },
@@ -186,15 +210,16 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
               { value: "label", label: "Label" },
             ],
           },
-          { key: "isInvalid", type: "boolean" },
-          { key: "isDisabled", type: "boolean" },
-          { key: "isReadOnly", type: "boolean" },
-          { key: "autoFocus", type: "boolean" },
+          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          { key: "isReadOnly", type: "boolean", icon: PenOff },
+          { key: "autoFocus", type: "boolean", icon: Focus },
 
           {
             key: "name",
             type: "string",
             label: "Name",
+            icon: FormInput,
             emptyToUndefined: true,
             placeholder: "time-field-name",
           },
@@ -202,6 +227,7 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
             key: "validationBehavior",
             type: "enum",
             label: "Validation Behavior",
+            icon: CheckSquare,
             options: [
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },

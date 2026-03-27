@@ -8,7 +8,23 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Layout } from "lucide-react";
+import {
+  Layout,
+  Globe,
+  Tag,
+  FileText,
+  AlertTriangle,
+  Clock,
+  ArrowLeftRight,
+  Hash,
+  EyeOff,
+  CheckSquare,
+  PointerOff,
+  PenOff,
+  Focus,
+  FormInput,
+  ToggleLeft,
+} from "lucide-react";
 
 export interface DatePickerProps {
   variant?: "default" | "accent";
@@ -243,10 +259,25 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
       {
         title: "Content",
         fields: [
-          { key: "label", type: "string", label: "Label" },
-          { key: "description", type: "string", label: "Description" },
-          { key: "errorMessage", type: "string", label: "Error Message" },
-          { key: "placeholderValue", type: "string", label: "Placeholder" },
+          { key: "label", type: "string", label: "Label", icon: Tag },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+          },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+          },
+          {
+            key: "placeholderValue",
+            type: "string",
+            label: "Placeholder",
+            icon: FileText,
+          },
         ],
       },
       {
@@ -265,37 +296,10 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
             ],
           },
           {
-            key: "locale",
-            type: "enum",
-            label: "Locale",
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Auto" },
-              { value: "ko-KR", label: "한국어" },
-              { value: "en-US", label: "English (US)" },
-              { value: "ja-JP", label: "日本語" },
-              { value: "zh-CN", label: "中文" },
-              { value: "de-DE", label: "Deutsch" },
-              { value: "fr-FR", label: "Français" },
-            ],
-          },
-          {
-            key: "calendarSystem",
-            type: "enum",
-            label: "Calendar System",
-            emptyToUndefined: true,
-            options: [
-              { value: "", label: "Default" },
-              { value: "buddhist", label: "Buddhist" },
-              { value: "hebrew", label: "Hebrew" },
-              { value: "islamic-civil", label: "Islamic (Civil)" },
-              { value: "persian", label: "Persian" },
-            ],
-          },
-          {
             key: "granularity",
             type: "enum",
             label: "Granularity",
+            icon: Clock,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Day" },
@@ -308,6 +312,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
             key: "hourCycle",
             type: "enum",
             label: "Hour Cycle",
+            icon: Clock,
             emptyToUndefined: true,
             valueTransform: "number" as const,
             options: [
@@ -316,16 +321,23 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "24", label: "24 Hour" },
             ],
           },
-          { key: "hideTimeZone", type: "boolean", label: "Hide Timezone" },
+          {
+            key: "hideTimeZone",
+            type: "boolean",
+            label: "Hide Timezone",
+            icon: EyeOff,
+          },
           {
             key: "shouldForceLeadingZeros",
             type: "boolean",
             label: "Force Leading Zeros",
+            icon: Hash,
           },
           {
             key: "pageBehavior",
             type: "enum",
             label: "Page Behavior",
+            icon: ArrowLeftRight,
             options: [
               { value: "visible", label: "Visible" },
               { value: "single", label: "Single" },
@@ -334,16 +346,63 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
         ],
       },
       {
+        title: "Locale",
+        fields: [
+          {
+            key: "locale",
+            type: "enum",
+            label: "Locale",
+            icon: Globe,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "ko-KR", label: "한국어" },
+              { value: "en-US", label: "English (US)" },
+              { value: "en-GB", label: "English (UK)" },
+              { value: "ja-JP", label: "日本語" },
+              { value: "zh-CN", label: "中文" },
+              { value: "de-DE", label: "Deutsch" },
+              { value: "fr-FR", label: "Français" },
+            ],
+          },
+          {
+            key: "calendarSystem",
+            type: "enum",
+            label: "Calendar System",
+            icon: Globe,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Default" },
+              { value: "buddhist", label: "Buddhist" },
+              { value: "hebrew", label: "Hebrew" },
+              { value: "islamic-civil", label: "Islamic (Civil)" },
+              { value: "persian", label: "Persian" },
+            ],
+          },
+        ],
+      },
+      {
         title: "State",
         fields: [
-          { key: "defaultToday", type: "boolean", label: "Default to Today" },
-          { key: "minValue", type: "string", label: "Min Value" },
-          { key: "maxValue", type: "string", label: "Max Value" },
-          { key: "defaultValue", type: "string", label: "Default Value" },
+          {
+            key: "defaultToday",
+            type: "boolean",
+            label: "Default to Today",
+            icon: ToggleLeft,
+          },
+          { key: "minValue", type: "string", label: "Min Value", icon: Hash },
+          { key: "maxValue", type: "string", label: "Max Value", icon: Hash },
+          {
+            key: "defaultValue",
+            type: "string",
+            label: "Default Value",
+            icon: Hash,
+          },
           {
             key: "necessityIndicator",
             type: "enum",
             label: "Required",
+            icon: CheckSquare,
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },
@@ -351,39 +410,44 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
               { value: "label", label: "Label" },
             ],
           },
-          { key: "isInvalid", type: "boolean" },
+          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
 
-          { key: "isDisabled", type: "boolean" },
-          { key: "isReadOnly", type: "boolean" },
-          { key: "autoFocus", type: "boolean" },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          { key: "isReadOnly", type: "boolean", icon: PenOff },
+          { key: "autoFocus", type: "boolean", icon: Focus },
           {
             key: "shouldCloseOnSelect",
             type: "boolean",
             label: "Close On Select",
+            icon: CheckSquare,
           },
 
           {
             key: "name",
             type: "string",
             label: "Name",
+            icon: FormInput,
             emptyToUndefined: true,
           },
           {
             key: "form",
             type: "string",
             label: "Form",
+            icon: FormInput,
             emptyToUndefined: true,
           },
           {
             key: "autoComplete",
             type: "string",
             label: "Autocomplete",
+            icon: FormInput,
             emptyToUndefined: true,
           },
           {
             key: "validationBehavior",
             type: "enum",
             label: "Validation Behavior",
+            icon: CheckSquare,
             options: [
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },

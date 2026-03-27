@@ -17,6 +17,7 @@ import {
   Globe,
   Send,
   Layout,
+  FormInput,
 } from "lucide-react";
 
 /**
@@ -84,6 +85,11 @@ export const FormSpec: ComponentSpec<FormProps> = {
               { value: "aria", label: "ARIA" },
             ],
           },
+        ],
+      },
+      {
+        title: "Appearance",
+        fields: [
           {
             key: "labelPosition",
             type: "enum",
@@ -98,6 +104,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
             key: "labelAlign",
             type: "enum",
             label: "Label Alignment",
+            icon: Layout,
             options: [
               { value: "start", label: "Left" },
               { value: "center", label: "Center" },
@@ -108,6 +115,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
             key: "necessityIndicator",
             type: "enum",
             label: "Necessity Indicator",
+            icon: CheckSquare,
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },
@@ -142,6 +150,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
             key: "encType",
             type: "enum",
             label: "Encoding Type",
+            icon: FormInput,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Default" },

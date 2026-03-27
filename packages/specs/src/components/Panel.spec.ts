@@ -11,6 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Type, Palette, ToggleLeft, Parentheses } from "lucide-react";
 
 /**
  * Panel Props
@@ -103,16 +104,17 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
     sections: [
       {
         title: "Content",
-        fields: [{ key: "title", type: "string", label: "Title" }],
+        fields: [{ key: "title", type: "string", label: "Title", icon: Type }],
       },
       {
         title: "Appearance",
         fields: [
-          { type: "variant" },
+          { type: "variant", icon: Parentheses },
           {
             key: "accentColor",
             type: "enum",
             label: "Accent Color",
+            icon: Palette,
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },
@@ -133,8 +135,18 @@ export const PanelSpec: ComponentSpec<PanelProps> = {
       {
         title: "State",
         fields: [
-          { key: "isOpen", type: "boolean", label: "Is Open" },
-          { key: "isDismissable", type: "boolean", label: "Dismissable" },
+          {
+            key: "isOpen",
+            type: "boolean",
+            label: "Is Open",
+            icon: ToggleLeft,
+          },
+          {
+            key: "isDismissable",
+            type: "boolean",
+            label: "Dismissable",
+            icon: ToggleLeft,
+          },
         ],
       },
     ],

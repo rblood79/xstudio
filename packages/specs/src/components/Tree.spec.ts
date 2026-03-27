@@ -19,6 +19,8 @@ import {
   SquareX,
   PointerOff,
   Focus,
+  ChevronsUpDown,
+  Hash,
 } from "lucide-react";
 
 function parseCsvList(value: unknown): string[] {
@@ -111,6 +113,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
             key: "expandedKeys",
             type: "string",
             label: "Expanded Keys",
+            icon: ChevronsUpDown,
             placeholder: "item1, item2, item3",
             derivedUpdateFn: (value) => ({
               expandedKeys: parseCsvList(value),
@@ -120,6 +123,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
             key: "selectedKeys",
             type: "string",
             label: "Selected Keys",
+            icon: Hash,
             placeholder: "item1, item2",
             derivedUpdateFn: (value) => ({
               selectedKeys: parseCsvList(value),
@@ -129,6 +133,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
             key: "defaultExpandedKeys",
             type: "string",
             label: "Default Expanded Keys",
+            icon: ChevronsUpDown,
             placeholder: "item1, item2",
             derivedUpdateFn: (value) => ({
               defaultExpandedKeys: parseCsvList(value),
@@ -138,6 +143,7 @@ export const TreeSpec: ComponentSpec<TreeProps> = {
             key: "defaultSelectedKeys",
             type: "string",
             label: "Default Selected Keys",
+            icon: Hash,
             placeholder: "item1",
             derivedUpdateFn: (value) => ({
               defaultSelectedKeys: parseCsvList(value),

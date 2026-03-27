@@ -7,6 +7,7 @@
  * @packageDocumentation
  */
 
+import { Link, Type, PointerOff } from "lucide-react";
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
@@ -108,9 +109,10 @@ export const AvatarSpec: ComponentSpec<AvatarProps> = {
             type: "string",
             label: "Image URL",
             placeholder: "https://...",
+            icon: Link,
           },
-          { key: "alt", type: "string", label: "Alt Text" },
-          { key: "initials", type: "string", label: "Initials" },
+          { key: "alt", type: "string", label: "Alt Text", icon: Type },
+          { key: "initials", type: "string", label: "Initials", icon: Type },
         ],
       },
       {
@@ -119,7 +121,7 @@ export const AvatarSpec: ComponentSpec<AvatarProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean" }],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

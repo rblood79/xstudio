@@ -88,15 +88,24 @@ export const MeterSpec: ComponentSpec<MeterProps> = {
         ],
       },
       {
-        title: "Number Formatting",
+        title: "Locale",
         fields: [
           {
             key: "locale",
-            type: "string",
+            type: "enum",
             label: "Locale",
-            placeholder: "ko-KR, en-US, etc.",
-            emptyToUndefined: true,
             icon: Globe,
+            emptyToUndefined: true,
+            options: [
+              { value: "", label: "Auto" },
+              { value: "ko-KR", label: "한국어" },
+              { value: "en-US", label: "English (US)" },
+              { value: "en-GB", label: "English (UK)" },
+              { value: "ja-JP", label: "日本語" },
+              { value: "zh-CN", label: "中文" },
+              { value: "de-DE", label: "Deutsch" },
+              { value: "fr-FR", label: "Français" },
+            ],
           },
           {
             key: "valueFormat",

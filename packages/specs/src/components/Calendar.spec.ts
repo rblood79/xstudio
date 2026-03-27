@@ -7,6 +7,16 @@
  * @packageDocumentation
  */
 
+import {
+  Globe,
+  Hash,
+  AlertTriangle,
+  PointerOff,
+  PenOff,
+  Focus,
+  ToggleLeft,
+  ArrowLeftRight,
+} from "lucide-react";
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
@@ -121,12 +131,13 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
         fields: [{ type: "variant" }, { type: "size" }],
       },
       {
-        title: "State",
+        title: "Locale",
         fields: [
           {
             key: "locale",
             type: "enum",
             label: "Locale",
+            icon: Globe,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Auto" },
@@ -143,6 +154,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
             key: "calendarSystem",
             type: "enum",
             label: "Calendar System",
+            icon: Globe,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Default" },
@@ -152,24 +164,46 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
               { value: "persian", label: "Persian" },
             ],
           },
-          { key: "defaultToday", type: "boolean", label: "Default to Today" },
-          { key: "minValue", type: "string", label: "Min Value" },
-          { key: "maxValue", type: "string", label: "Max Value" },
-          { key: "defaultValue", type: "string", label: "Default Value" },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
+          {
+            key: "defaultToday",
+            type: "boolean",
+            label: "Default to Today",
+            icon: ToggleLeft,
+          },
+          { key: "minValue", type: "string", label: "Min Value", icon: Hash },
+          { key: "maxValue", type: "string", label: "Max Value", icon: Hash },
+          {
+            key: "defaultValue",
+            type: "string",
+            label: "Default Value",
+            icon: Hash,
+          },
           {
             key: "defaultFocusedValue",
             type: "string",
             label: "Default Focused Value",
+            icon: Hash,
           },
-          { key: "isInvalid", type: "boolean" },
-          { key: "errorMessage", type: "string", label: "Error Message" },
-          { key: "isDisabled", type: "boolean" },
-          { key: "isReadOnly", type: "boolean" },
-          { key: "autoFocus", type: "boolean" },
+          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+          },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          { key: "isReadOnly", type: "boolean", icon: PenOff },
+          { key: "autoFocus", type: "boolean", icon: Focus },
           {
             key: "pageBehavior",
             type: "enum",
             label: "Page Behavior",
+            icon: ArrowLeftRight,
             options: [
               { value: "visible", label: "Visible" },
               { value: "single", label: "Single" },
@@ -179,6 +213,7 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
             key: "visibleMonths",
             type: "enum",
             label: "Visible Months",
+            icon: Hash,
             valueTransform: "number",
             options: [
               { value: "1", label: "1" },

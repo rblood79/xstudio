@@ -7,6 +7,7 @@
  * @packageDocumentation
  */
 
+import { ArrowLeftRight, Layout, PointerOff } from "lucide-react";
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
@@ -108,6 +109,7 @@ export const ButtonGroupSpec: ComponentSpec<ButtonGroupProps> = {
             key: "orientation",
             type: "enum",
             label: "Orientation",
+            icon: ArrowLeftRight,
             options: [
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
@@ -117,6 +119,7 @@ export const ButtonGroupSpec: ComponentSpec<ButtonGroupProps> = {
             key: "align",
             type: "enum",
             label: "Align",
+            icon: Layout,
             options: [
               { value: "start", label: "Start" },
               { value: "center", label: "Center" },
@@ -127,7 +130,7 @@ export const ButtonGroupSpec: ComponentSpec<ButtonGroupProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean" }],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

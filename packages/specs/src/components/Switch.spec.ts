@@ -10,6 +10,18 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily, typography } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import {
+  Type,
+  Eye,
+  ToggleLeft,
+  CheckSquare,
+  AlertTriangle,
+  Focus,
+  PointerOff,
+  PenOff,
+  FormInput,
+  Hash,
+} from "lucide-react";
 
 /** fontSize(px) → CSS lineHeight(px) 매핑 */
 const FONT_SIZE_TO_LINE_HEIGHT: Record<number, number> = {
@@ -140,40 +152,48 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
     sections: [
       {
         title: "Content",
-        fields: [{ key: "children", type: "string", label: "Label" }],
+        fields: [
+          { key: "children", type: "string", label: "Label", icon: Type },
+        ],
       },
       {
         title: "Appearance",
-        fields: [{ key: "isEmphasized", type: "boolean" }, { type: "size" }],
+        fields: [
+          { key: "isEmphasized", type: "boolean", icon: Eye },
+          { type: "size" },
+        ],
       },
       {
         title: "State",
         fields: [
-          { key: "isSelected", type: "boolean" },
-          { key: "isRequired", type: "boolean" },
-          { key: "isInvalid", type: "boolean" },
+          { key: "isSelected", type: "boolean", icon: ToggleLeft },
+          { key: "isRequired", type: "boolean", icon: CheckSquare },
+          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
 
-          { key: "autoFocus", type: "boolean" },
-          { key: "isDisabled", type: "boolean" },
-          { key: "isReadOnly", type: "boolean" },
+          { key: "autoFocus", type: "boolean", icon: Focus },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          { key: "isReadOnly", type: "boolean", icon: PenOff },
 
           {
             key: "name",
             type: "string",
             label: "Name",
             emptyToUndefined: true,
+            icon: FormInput,
           },
           {
             key: "value",
             type: "string",
             label: "Value",
             emptyToUndefined: true,
+            icon: Hash,
           },
           {
             key: "form",
             type: "string",
             label: "Form",
             emptyToUndefined: true,
+            icon: FormInput,
           },
         ],
       },

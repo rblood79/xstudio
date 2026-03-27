@@ -18,6 +18,14 @@ interface SpecFieldProps {
   elementId?: string;
 }
 
+const SIZE_DISPLAY_LABELS: Record<string, string> = {
+  xs: "XS",
+  sm: "S",
+  md: "M",
+  lg: "L",
+  xl: "XL",
+};
+
 export const SpecField = memo(function SpecField({
   field,
   spec,
@@ -107,7 +115,7 @@ export const SpecField = memo(function SpecField({
         field.options ??
         sizeKeys.map((value) => ({
           value,
-          label: value.toUpperCase(),
+          label: SIZE_DISPLAY_LABELS[value] ?? value.toUpperCase(),
         }))
       ).map((option) => ({
         id: option.value,

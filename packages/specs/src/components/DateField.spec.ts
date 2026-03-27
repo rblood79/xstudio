@@ -6,7 +6,19 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
-import { Layout } from "lucide-react";
+import {
+  Layout,
+  Globe,
+  Clock,
+  Hash,
+  EyeOff,
+  AlertTriangle,
+  PointerOff,
+  PenOff,
+  Focus,
+  CheckSquare,
+  FormInput,
+} from "lucide-react";
 
 export interface DateFieldProps {
   variant?: "default" | "accent" | "negative";
@@ -106,6 +118,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
             key: "granularity",
             type: "enum",
             label: "Granularity",
+            icon: Clock,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Day" },
@@ -118,6 +131,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
             key: "hourCycle",
             type: "enum",
             label: "Hour Cycle",
+            icon: Clock,
             emptyToUndefined: true,
             valueTransform: "number",
             options: [
@@ -136,11 +150,17 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
               { value: "side", label: "Side" },
             ],
           },
-          { key: "hideTimeZone", type: "boolean", label: "Hide Timezone" },
+          {
+            key: "hideTimeZone",
+            type: "boolean",
+            label: "Hide Timezone",
+            icon: EyeOff,
+          },
           {
             key: "shouldForceLeadingZeros",
             type: "boolean",
             label: "Force Leading Zeros",
+            icon: Hash,
           },
         ],
       },
@@ -151,6 +171,7 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
             key: "locale",
             type: "enum",
             label: "Locale",
+            icon: Globe,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Auto" },
@@ -164,9 +185,10 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
             ],
           },
           {
-            key: "calendar",
+            key: "calendarSystem",
             type: "enum",
             label: "Calendar System",
+            icon: Globe,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Default" },
@@ -181,12 +203,13 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       {
         title: "State",
         fields: [
-          { key: "minValue", type: "string", label: "Min Value" },
-          { key: "maxValue", type: "string", label: "Max Value" },
+          { key: "minValue", type: "string", label: "Min Value", icon: Hash },
+          { key: "maxValue", type: "string", label: "Max Value", icon: Hash },
           {
             key: "necessityIndicator",
             type: "enum",
             label: "Required",
+            icon: CheckSquare,
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },
@@ -194,21 +217,23 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
               { value: "label", label: "Label" },
             ],
           },
-          { key: "isInvalid", type: "boolean" },
-          { key: "isDisabled", type: "boolean" },
-          { key: "isReadOnly", type: "boolean" },
-          { key: "autoFocus", type: "boolean" },
+          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          { key: "isReadOnly", type: "boolean", icon: PenOff },
+          { key: "autoFocus", type: "boolean", icon: Focus },
 
           {
             key: "name",
             type: "string",
             label: "Name",
+            icon: FormInput,
             emptyToUndefined: true,
           },
           {
             key: "validationBehavior",
             type: "enum",
             label: "Validation Behavior",
+            icon: CheckSquare,
             options: [
               { value: "native", label: "Native" },
               { value: "aria", label: "ARIA" },

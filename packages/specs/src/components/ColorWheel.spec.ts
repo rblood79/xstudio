@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { Hash, PointerOff } from "lucide-react";
 
 /**
  * ColorWheel Props
@@ -97,13 +98,23 @@ export const ColorWheelSpec: ComponentSpec<ColorWheelProps> = {
       {
         title: "Size",
         fields: [
-          { key: "outerRadius", type: "number", label: "Outer Radius" },
-          { key: "innerRadius", type: "number", label: "Inner Radius" },
+          {
+            key: "outerRadius",
+            type: "number",
+            label: "Outer Radius",
+            icon: Hash,
+          },
+          {
+            key: "innerRadius",
+            type: "number",
+            label: "Inner Radius",
+            icon: Hash,
+          },
         ],
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean" }],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

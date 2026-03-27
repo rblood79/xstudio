@@ -7,6 +7,19 @@
  * @packageDocumentation
  */
 
+import {
+  Type,
+  ArrowLeftRight,
+  Link,
+  ExternalLink,
+  ToggleLeft,
+  Eye,
+  PointerOff,
+  Parentheses,
+  Palette,
+  Image,
+  Layout,
+} from "lucide-react";
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 
 /**
@@ -152,24 +165,26 @@ export const CardSpec: ComponentSpec<CardProps> = {
       {
         title: "Content",
         fields: [
-          { key: "title", type: "string", label: "Title" },
+          { key: "title", type: "string", label: "Title", icon: Type },
           {
             key: "description",
             type: "string",
             label: "Description",
             multiline: true,
+            icon: Type,
           },
-          { key: "footer", type: "string", label: "Footer" },
+          { key: "footer", type: "string", label: "Footer", icon: Type },
         ],
       },
       {
         title: "Appearance",
         fields: [
-          { type: "variant" },
+          { type: "variant", icon: Parentheses },
           {
             key: "cardType",
             type: "enum",
             label: "Card Type",
+            icon: Layout,
             options: [
               { value: "default", label: "Default" },
               { value: "media", label: "Media" },
@@ -181,6 +196,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
             key: "orientation",
             type: "enum",
             label: "Orientation",
+            icon: ArrowLeftRight,
             options: [
               { value: "vertical", label: "Vertical" },
               { value: "horizontal", label: "Horizontal" },
@@ -190,6 +206,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
             key: "accentColor",
             type: "enum",
             label: "Accent Color",
+            icon: Palette,
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },
@@ -214,6 +231,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
             key: "asset",
             type: "enum",
             label: "Asset Type",
+            icon: Image,
             emptyToUndefined: true,
             options: [
               { value: "", label: "None" },
@@ -246,31 +264,39 @@ export const CardSpec: ComponentSpec<CardProps> = {
             type: "string",
             label: "Link",
             placeholder: "https://...",
+            icon: Link,
           },
           {
             key: "target",
             type: "enum",
             label: "Target",
+            icon: ExternalLink,
             visibleWhen: { key: "href", truthy: true },
             options: [
               { value: "_self", label: "Self" },
               { value: "_blank", label: "Blank" },
             ],
           },
-          { key: "isSelectable", type: "boolean", label: "Selectable" },
+          {
+            key: "isSelectable",
+            type: "boolean",
+            label: "Selectable",
+            icon: ToggleLeft,
+          },
           {
             key: "isSelected",
             type: "boolean",
             label: "Selected",
+            icon: ToggleLeft,
             visibleWhen: { key: "isSelectable", equals: true },
           },
         ],
       },
       {
-        title: "States",
+        title: "State",
         fields: [
-          { key: "isQuiet", type: "boolean", label: "Quiet" },
-          { key: "isDisabled", type: "boolean" },
+          { key: "isQuiet", type: "boolean", label: "Quiet", icon: Eye },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
         ],
       },
     ],

@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveStateColors } from "../utils/stateEffect";
+import { ToggleLeft, PointerOff } from "lucide-react";
 
 /**
  * DisclosureGroup Props
@@ -150,8 +151,9 @@ export const DisclosureGroupSpec: ComponentSpec<DisclosureGroupProps> = {
             key: "allowsMultipleExpanded",
             type: "boolean",
             label: "Allow Multiple Expanded",
+            icon: ToggleLeft,
           },
-          { key: "isDisabled", type: "boolean" },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
         ],
       },
     ],

@@ -10,7 +10,18 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
-import { Layout } from "lucide-react";
+import {
+  Layout,
+  Tag,
+  FileText,
+  AlertTriangle,
+  PointerOff,
+  Eye,
+  PenOff,
+  FormInput,
+  CheckSquare,
+  ArrowLeftRight,
+} from "lucide-react";
 
 /**
  * RadioGroup Props
@@ -121,20 +132,31 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
       {
         title: "Content",
         fields: [
-          { key: "label", type: "string", label: "Label" },
-          { key: "description", type: "string", label: "Description" },
-          { key: "errorMessage", type: "string", label: "Error Message" },
+          { key: "label", type: "string", label: "Label", icon: Tag },
+          {
+            key: "description",
+            type: "string",
+            label: "Description",
+            icon: FileText,
+          },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+          },
         ],
       },
       {
         title: "Appearance",
         fields: [
-          { key: "isEmphasized", type: "boolean" },
+          { key: "isEmphasized", type: "boolean", icon: Eye },
           { type: "size" },
           {
             key: "orientation",
             type: "enum",
             label: "Orientation",
+            icon: ArrowLeftRight,
             options: [
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
@@ -159,6 +181,7 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
             key: "necessityIndicator",
             type: "enum",
             label: "Required",
+            icon: CheckSquare,
             emptyToUndefined: true,
             derivedUpdateFn: (value: unknown) =>
               value
@@ -170,13 +193,14 @@ export const RadioGroupSpec: ComponentSpec<RadioGroupProps> = {
               { value: "label", label: "Label" },
             ],
           },
-          { key: "isInvalid", type: "boolean" },
-          { key: "isDisabled", type: "boolean" },
-          { key: "isReadOnly", type: "boolean" },
+          { key: "isInvalid", type: "boolean", icon: AlertTriangle },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          { key: "isReadOnly", type: "boolean", icon: PenOff },
           {
             key: "name",
             type: "string",
             label: "Name",
+            icon: FormInput,
             emptyToUndefined: true,
           },
         ],

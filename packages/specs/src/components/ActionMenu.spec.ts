@@ -2,7 +2,7 @@
  * ActionMenu Component Spec (properties-only)
  */
 import type { ComponentSpec, TokenRef } from "../types";
-import { Type, ToggleLeft, Layout } from "lucide-react";
+import { Type, ToggleLeft, Layout, PointerOff } from "lucide-react";
 
 export interface ActionMenuProps {
   children?: string;
@@ -57,7 +57,7 @@ export const ActionMenuSpec: ComponentSpec<ActionMenuProps> = {
         title: "State",
         fields: [
           { key: "isQuiet", type: "boolean", label: "Quiet", icon: ToggleLeft },
-          { key: "isDisabled", type: "boolean" },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
         ],
       },
     ],

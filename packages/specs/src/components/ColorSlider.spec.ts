@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { Sliders, ArrowLeftRight, PointerOff } from "lucide-react";
 
 /**
  * ColorSlider Props
@@ -102,6 +103,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
             key: "colorSpace",
             type: "enum",
             label: "Color Space",
+            icon: Sliders,
             options: [
               { value: "rgb", label: "RGB" },
               { value: "hsl", label: "HSL" },
@@ -112,6 +114,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
             key: "channel",
             type: "enum",
             label: "Channel",
+            icon: Sliders,
             options: [
               { value: "hue", label: "Hue" },
               { value: "saturation", label: "Saturation" },
@@ -127,6 +130,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
             key: "orientation",
             type: "enum",
             label: "Orientation",
+            icon: ArrowLeftRight,
             options: [
               { value: "horizontal", label: "Horizontal" },
               { value: "vertical", label: "Vertical" },
@@ -136,7 +140,7 @@ export const ColorSliderSpec: ComponentSpec<ColorSliderProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean" }],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

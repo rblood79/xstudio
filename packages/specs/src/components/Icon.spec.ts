@@ -9,6 +9,7 @@
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Image, Pen } from "lucide-react";
 
 export interface IconProps {
   variant?: "default";
@@ -102,7 +103,7 @@ export const IconSpec: ComponentSpec<IconProps> = {
       {
         title: "Icon",
         fields: [
-          { key: "iconName", type: "icon", label: "Icon" },
+          { key: "iconName", type: "icon", label: "Icon", icon: Image },
           {
             type: "size",
             derivedUpdateFn: (value, currentProps) => {
@@ -126,6 +127,7 @@ export const IconSpec: ComponentSpec<IconProps> = {
             key: "strokeWidth",
             type: "number",
             label: "Stroke Width",
+            icon: Pen,
             min: 0.5,
             max: 4,
             step: 0.5,

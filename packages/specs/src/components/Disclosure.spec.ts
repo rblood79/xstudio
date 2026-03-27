@@ -11,6 +11,7 @@ import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveStateColors } from "../utils/stateEffect";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Type, ToggleLeft, PointerOff, Parentheses } from "lucide-react";
 
 /**
  * Disclosure Props
@@ -267,12 +268,13 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
             type: "string",
             label: "Title",
             placeholder: "Click to expand",
+            icon: Type,
           },
         ],
       },
       {
         title: "Appearance",
-        fields: [{ type: "variant" }, { type: "size" }],
+        fields: [{ type: "variant", icon: Parentheses }, { type: "size" }],
       },
       {
         title: "State",
@@ -281,14 +283,16 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
             key: "defaultExpanded",
             type: "boolean",
             label: "Default Expanded",
+            icon: ToggleLeft,
           },
           {
             key: "isExpanded",
             type: "boolean",
             label: "Expanded (Controlled)",
+            icon: ToggleLeft,
           },
 
-          { key: "isDisabled", type: "boolean" },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
         ],
       },
     ],

@@ -86,6 +86,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
             key: "value",
             type: "string",
             label: "Value",
+            icon: Hash,
           },
           {
             key: "placeholder",
@@ -135,8 +136,42 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         ],
       },
       {
-        title: "Validation",
+        title: "State",
         fields: [
+          {
+            key: "autoFocus",
+            type: "boolean",
+            label: "Auto Focus",
+            icon: Focus,
+          },
+          {
+            key: "isDisabled",
+            type: "boolean",
+            label: "Disabled",
+            icon: PointerOff,
+          },
+          {
+            key: "isReadOnly",
+            type: "boolean",
+            label: "Read Only",
+            icon: PenOff,
+          },
+          {
+            key: "name",
+            type: "string",
+            label: "Name",
+            icon: Tag,
+            emptyToUndefined: true,
+            placeholder: "search-name",
+          },
+          {
+            key: "form",
+            type: "string",
+            label: "Form",
+            icon: FileText,
+            emptyToUndefined: true,
+            placeholder: "form-id",
+          },
           {
             key: "errorMessage",
             type: "string",
@@ -186,45 +221,6 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
                 necessityIndicator: value as "icon" | "label",
               };
             },
-          },
-        ],
-      },
-      {
-        title: "State",
-        fields: [
-          {
-            key: "autoFocus",
-            type: "boolean",
-            label: "Auto Focus",
-            icon: Focus,
-          },
-          {
-            key: "isDisabled",
-            type: "boolean",
-            label: "Disabled",
-            icon: PointerOff,
-          },
-          {
-            key: "isReadOnly",
-            type: "boolean",
-            label: "Read Only",
-            icon: PenOff,
-          },
-          {
-            key: "name",
-            type: "string",
-            label: "Name",
-            icon: Tag,
-            emptyToUndefined: true,
-            placeholder: "search-name",
-          },
-          {
-            key: "form",
-            type: "string",
-            label: "Form",
-            icon: FileText,
-            emptyToUndefined: true,
-            placeholder: "form-id",
           },
         ],
       },

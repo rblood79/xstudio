@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from "../types";
+import { LayoutGrid, Hash, Sliders, PointerOff } from "lucide-react";
 
 /**
  * ColorSwatchPicker Props
@@ -103,6 +104,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
             key: "layout",
             type: "enum",
             label: "Layout",
+            icon: LayoutGrid,
             options: [
               { value: "grid", label: "Grid" },
               { value: "stack", label: "Stack" },
@@ -113,11 +115,17 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       {
         title: "Colors",
         fields: [
-          { key: "defaultValue", type: "string", label: "Default Value" },
+          {
+            key: "defaultValue",
+            type: "string",
+            label: "Default Value",
+            icon: Hash,
+          },
           {
             key: "colorSpace",
             type: "enum",
             label: "Color Space",
+            icon: Sliders,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Auto" },
@@ -130,7 +138,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean" }],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

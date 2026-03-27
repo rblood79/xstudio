@@ -7,6 +7,14 @@
 
 import type { ComponentSpec } from "../types";
 import { CalendarSpec, type CalendarProps } from "./Calendar.spec";
+import {
+  AlertTriangle,
+  Hash,
+  PointerOff,
+  PenOff,
+  Globe,
+  ToggleLeft,
+} from "lucide-react";
 
 /**
  * RangeCalendar Props — Calendar와 동일 + 범위 전용 props
@@ -46,12 +54,13 @@ export const RangeCalendarSpec: ComponentSpec<RangeCalendarProps> = {
         fields: [{ type: "variant" }, { type: "size" }],
       },
       {
-        title: "State",
+        title: "Locale",
         fields: [
           {
             key: "locale",
             type: "enum",
             label: "Locale",
+            icon: Globe,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Auto" },
@@ -68,6 +77,7 @@ export const RangeCalendarSpec: ComponentSpec<RangeCalendarProps> = {
             key: "calendarSystem",
             type: "enum",
             label: "Calendar System",
+            icon: Globe,
             emptyToUndefined: true,
             options: [
               { value: "", label: "Default" },
@@ -77,10 +87,16 @@ export const RangeCalendarSpec: ComponentSpec<RangeCalendarProps> = {
               { value: "persian", label: "Persian" },
             ],
           },
+        ],
+      },
+      {
+        title: "State",
+        fields: [
           {
             key: "visibleMonths",
             type: "enum",
             label: "Visible Months",
+            icon: Hash,
             valueTransform: "number" as const,
             options: [
               { value: "1", label: "1" },
@@ -93,20 +109,28 @@ export const RangeCalendarSpec: ComponentSpec<RangeCalendarProps> = {
             type: "string",
             label: "Min Value",
             placeholder: "2024-01-01",
+            icon: Hash,
           },
           {
             key: "maxValue",
             type: "string",
             label: "Max Value",
             placeholder: "2024-12-31",
+            icon: Hash,
           },
-          { key: "errorMessage", type: "string", label: "Error Message" },
-          { key: "isDisabled", type: "boolean" },
-          { key: "isReadOnly", type: "boolean" },
+          {
+            key: "errorMessage",
+            type: "string",
+            label: "Error Message",
+            icon: AlertTriangle,
+          },
+          { key: "isDisabled", type: "boolean", icon: PointerOff },
+          { key: "isReadOnly", type: "boolean", icon: PenOff },
           {
             key: "allowsNonContiguousRanges",
             type: "boolean",
             label: "Allow Non-Contiguous Ranges",
+            icon: ToggleLeft,
           },
         ],
       },

@@ -10,6 +10,7 @@
 import type { ComponentSpec, Shape, TokenRef } from "../types";
 import { fontFamily } from "../primitives/typography";
 import { resolveToken } from "../renderers/utils/tokenResolver";
+import { Tag, Hash, PointerOff } from "lucide-react";
 
 /**
  * ColorPicker Props
@@ -119,8 +120,13 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       {
         title: "Content",
         fields: [
-          { key: "label", type: "string", label: "Label" },
-          { key: "defaultValue", type: "string", label: "Default Value" },
+          { key: "label", type: "string", label: "Label", icon: Tag },
+          {
+            key: "defaultValue",
+            type: "string",
+            label: "Default Value",
+            icon: Hash,
+          },
         ],
       },
       {
@@ -129,7 +135,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       },
       {
         title: "State",
-        fields: [{ key: "isDisabled", type: "boolean" }],
+        fields: [{ key: "isDisabled", type: "boolean", icon: PointerOff }],
       },
     ],
   },

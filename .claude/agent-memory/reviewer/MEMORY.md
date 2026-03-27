@@ -25,6 +25,12 @@
 - **Spec properties field key가 Props 인터페이스에 미등록**: `Slider.spec.ts`의 `key: "orientation"` 필드가 `SliderProps`에 없는 패턴 — Spec properties 추가 시 Props 인터페이스에도 동시 등록 필수
 - **Spec sizes 키와 Props.size 타입 불일치**: `ListBox.spec.ts`에서 `sizes` 키는 `sm/md/lg`인데 `ListBoxProps.size`는 `"S"|"M"|"L"` — runtime에 `spec.sizes[props.size]` undefined 반환
 - **string-array join/split 구분자 비대칭**: `SpecField.tsx`의 `string-array` 케이스에서 join은 `sep + " "`, split은 `sep`만 사용 — 커스텀 separator 사용 시 round-trip 불완전
+- **memo 컴포넌트 내 useCallback 누락 (핸들러)**: `GenericPropertyEditor` 등 memo 컴포넌트에서 자식에게 전달하는 콜백을 useCallback 없이 정의 — 자식이 memo여도 매 렌더마다 새 참조로 리렌더 유발
+- **JSX 객체 단일 인스턴스 이중 위치 참조**: `customIdField` 변수에 JSX를 한 번 생성 후 두 조건 분기에서 동시 사용 — 함수로 분리하여 각 경로에서 독립 생성 필요
+- **Spec properties `calendar` vs `calendarSystem` key 불일치**: `DateField.spec.ts`만 `key: "calendar"` 사용, 나머지 6개 파일(Calendar/DatePicker/DateRangePicker/RangeCalendar 등)은 `calendarSystem` — 동일 prop을 가리키면서 key 불일치
+- **Spec properties icon 일관성 결여**: 동일 key(isDisabled/isInvalid/necessityIndicator/orientation 등)가 어떤 파일에선 icon 있고 다른 파일에선 없음 — DatePicker/DateRangePicker/TextArea/RadioGroup/CheckboxGroup이 특히 많이 누락
+- **Spec properties 섹션 배치 불일치**: `necessityIndicator`가 절반은 "State"에 절반은 "Validation"에 배치, `labelPosition`이 `Form.spec.ts`만 "State"에 배치(나머지 14개 파일은 "Appearance"), `selectionMode`가 CardView/TableView는 "Selection"에 나머지는 "State"에 배치
+- **Card/Group spec 섹션 타이틀 "States" (복수)**: 표준 단수 "State" 대신 "States" 사용 — isDisabled/isInvalid/isReadOnly 섹션 불일치 원인
 
 ## False Positive 기록
 
