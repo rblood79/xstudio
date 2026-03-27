@@ -36,7 +36,6 @@ export { FieldEditor } from "./FieldEditor";
 // export { PanelGroupEditor } from './PanelGroupEditor';
 // export { ResizablePanelEditor } from './ResizablePanelEditor';
 // export { PanelResizeHandleEditor } from './PanelResizeHandleEditor';
-export { CalendarEditor } from "./CalendarEditor";
 export { DatePickerEditor } from "./DatePickerEditor";
 export { TimeFieldEditor } from "./TimeFieldEditor";
 export { BreadcrumbsEditor } from "./BreadcrumbsEditor";
@@ -61,6 +60,3 @@ export { DateFieldEditor } from "./DateFieldEditor";
 
 // ⭐ Form/Disclosure 에디터 추가
 export { AutocompleteEditor } from "./AutocompleteEditor";
-
-// ⭐ 신규 컴포넌트 에디터 추가
-export { RangeCalendarEditor } from "./RangeCalendarEditor";

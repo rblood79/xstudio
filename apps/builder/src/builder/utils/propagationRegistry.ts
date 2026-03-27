@@ -29,6 +29,8 @@ import {
   SliderSpec,
   ProgressBarSpec,
   MeterSpec,
+  CalendarSpec,
+  RangeCalendarSpec,
 } from "@xstudio/specs";
 
 // ─── Lazy Index ─────────────────────────────────────────────────────────────
@@ -137,3 +139,5 @@ registerPropagationSpec("ColorField", ColorFieldSpec);
 registerPropagationSpec("Slider", SliderSpec);
 registerPropagationSpec("ProgressBar", ProgressBarSpec);
 registerPropagationSpec("Meter", MeterSpec);
+registerPropagationSpec("Calendar", CalendarSpec);
+registerPropagationSpec("RangeCalendar", RangeCalendarSpec);

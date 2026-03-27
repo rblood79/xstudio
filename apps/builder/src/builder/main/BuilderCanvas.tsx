@@ -87,7 +87,6 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
             id="previewFrame"
             srcDoc={srcdocContent}
             style={{ width: "100%", height: "100%", border: "none" }}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             title="XStudio Preview"
             onLoad={onIframeLoad}
           />
@@ -100,7 +99,6 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
                 : "/preview?isIframe=true"
             }
             style={{ width: "100%", height: "100%", border: "none" }}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             title="XStudio Preview"
             onLoad={onIframeLoad}
           />

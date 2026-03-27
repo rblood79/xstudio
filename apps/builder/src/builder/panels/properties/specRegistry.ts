@@ -59,6 +59,7 @@ import {
   ToolbarSpec,
   TooltipSpec,
   TreeSpec,
+  RangeCalendarSpec,
 } from "@xstudio/specs";
 
 /**
@@ -140,6 +141,7 @@ export const PROPERTY_EDITOR_SPEC_MAP: Record<
   Toolbar: ToolbarSpec as ComponentSpec<Record<string, unknown>>,
   Tooltip: TooltipSpec as ComponentSpec<Record<string, unknown>>,
   Tree: TreeSpec as ComponentSpec<Record<string, unknown>>,
+  RangeCalendar: RangeCalendarSpec as ComponentSpec<Record<string, unknown>>,
 };
 
 export function getPropertyEditorSpec(

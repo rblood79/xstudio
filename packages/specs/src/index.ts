@@ -359,6 +359,9 @@ export type { CalendarHeaderProps } from "./components/CalendarHeader.spec";
 export { CalendarGridSpec } from "./components/CalendarGrid.spec";
 export type { CalendarGridProps } from "./components/CalendarGrid.spec";
 
+export { RangeCalendarSpec } from "./components/RangeCalendar.spec";
+export type { RangeCalendarProps } from "./components/RangeCalendar.spec";
+
 export { ColorPickerSpec } from "./components/ColorPicker.spec";
 export type { ColorPickerProps } from "./components/ColorPicker.spec";
 

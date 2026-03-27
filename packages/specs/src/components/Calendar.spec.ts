@@ -100,6 +100,20 @@ export const CalendarSpec: ComponentSpec<CalendarProps> = {
     },
   },
 
+  propagation: {
+    rules: [
+      { parentProp: "variant", childPath: "CalendarHeader" },
+      { parentProp: "variant", childPath: "CalendarGrid" },
+      { parentProp: "size", childPath: "CalendarHeader" },
+      { parentProp: "size", childPath: "CalendarGrid" },
+      { parentProp: "locale", childPath: "CalendarHeader" },
+      { parentProp: "locale", childPath: "CalendarGrid" },
+      { parentProp: "calendarSystem", childPath: "CalendarHeader" },
+      { parentProp: "calendarSystem", childPath: "CalendarGrid" },
+      { parentProp: "defaultToday", childPath: "CalendarGrid" },
+    ],
+  },
+
   properties: {
     sections: [
       {

@@ -189,6 +189,10 @@ export type { TimeFieldProps } from "./TimeField.spec";
 export { CalendarSpec } from "./Calendar.spec";
 export type { CalendarProps } from "./Calendar.spec";
 
+// RangeCalendar
+export { RangeCalendarSpec } from "./RangeCalendar.spec";
+export type { RangeCalendarProps } from "./RangeCalendar.spec";
+
 // ColorPicker
 export { ColorPickerSpec } from "./ColorPicker.spec";
 export type { ColorPickerProps } from "./ColorPicker.spec";

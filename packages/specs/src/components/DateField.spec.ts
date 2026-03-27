@@ -85,6 +85,12 @@ export const DateFieldSpec: ComponentSpec<DateFieldProps> = {
       { parentProp: "size", childPath: "Label" },
       { parentProp: "size", childPath: "DateInput" },
       { parentProp: "size", childPath: "DateSegment" },
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
     ],
   },
 

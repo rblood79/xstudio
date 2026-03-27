@@ -82,6 +82,12 @@ export const TimeFieldSpec: ComponentSpec<TimeFieldProps> = {
     rules: [
       { parentProp: "size", childPath: "Label" },
       { parentProp: "size", childPath: "TimeSegment" },
+      {
+        parentProp: "label",
+        childPath: "Label",
+        childProp: "children",
+        override: true,
+      },
     ],
   },
 
