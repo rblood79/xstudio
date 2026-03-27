@@ -8,6 +8,8 @@
       "Bash(pnpm run perf:*)"
     ]
   },
+  "alwaysThinkingEnabled": true,
+  "autoDreamEnabled": true,
   "hooks": {
     "Stop": [
       {
